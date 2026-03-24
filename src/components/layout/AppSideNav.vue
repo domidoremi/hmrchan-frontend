@@ -7,6 +7,8 @@
           class="app-side-nav__brand"
           :aria-label="$t('app.name')"
           :title="$t('app.name')"
+          @pointermove="handleMagneticMove"
+          @pointerleave="resetMagneticMove"
         >
           <span class="app-side-nav__brand-mark">M</span>
           <span class="sr-only">{{ $t('app.name') }}</span>
@@ -27,8 +29,11 @@
           :title="$t(item.i18nKey)"
           @mouseenter="prefetchRoute(item.path)"
           @focus="prefetchRoute(item.path)"
+          @pointermove="handleMagneticMove"
+          @pointerleave="resetMagneticMove"
         >
           <component :is="item.icon" class="app-side-nav__icon" aria-hidden="true" />
+          <span class="app-side-nav__label" aria-hidden="true">{{ $t(item.i18nKey) }}</span>
           <span class="sr-only">{{ $t(item.i18nKey) }}</span>
         </RouterLink>
       </nav>
@@ -45,8 +50,11 @@
           :class="{ 'app-side-nav__link--active': isRouteActive(item.path) }"
           :aria-label="$t(item.i18nKey)"
           :title="$t(item.i18nKey)"
+          @pointermove="handleMagneticMove"
+          @pointerleave="resetMagneticMove"
         >
           <component :is="item.icon" class="app-side-nav__icon" aria-hidden="true" />
+          <span class="app-side-nav__label" aria-hidden="true">{{ $t(item.i18nKey) }}</span>
           <span class="sr-only">{{ $t(item.i18nKey) }}</span>
         </RouterLink>
       </nav>
@@ -139,27 +147,54 @@ function prefetchRoute(path: string) {
       return
   }
 }
+
+function handleMagneticMove(event: PointerEvent) {
+  const target = event.currentTarget as HTMLElement | null
+  if (!target) return
+
+  const rect = target.getBoundingClientRect()
+  const offsetX = ((event.clientX - rect.left) / rect.width - 0.5) * 10
+  const offsetY = ((event.clientY - rect.top) / rect.height - 0.5) * 8
+
+  target.style.setProperty('--app-side-nav-magnet-x', `${offsetX.toFixed(2)}px`)
+  target.style.setProperty('--app-side-nav-magnet-y', `${offsetY.toFixed(2)}px`)
+}
+
+function resetMagneticMove(event: PointerEvent) {
+  const target = event.currentTarget as HTMLElement | null
+  if (!target) return
+
+  target.style.setProperty('--app-side-nav-magnet-x', '0px')
+  target.style.setProperty('--app-side-nav-magnet-y', '0px')
+}
 </script>
 
 <style scoped>
 .app-side-nav {
-  --app-side-nav-item-radius: 999rem;
-  --app-side-nav-border: var(--chrome-action-border);
-  --app-side-nav-border-strong: var(--chrome-action-border-strong);
-  --app-side-nav-bg: transparent;
-  --app-side-nav-hover-bg: var(--chrome-muted-bg);
+  --app-side-nav-item-radius: clamp(1rem, 1.75vw, 1.2rem);
+  --app-side-nav-border: color-mix(in srgb, var(--chrome-action-border) 62%, transparent);
+  --app-side-nav-border-strong: color-mix(
+    in srgb,
+    var(--chrome-action-border-strong) 72%,
+    rgba(var(--color-primary-rgb), 0.18)
+  );
+  --app-side-nav-bg: color-mix(in srgb, var(--chrome-action-bg) 22%, transparent);
+  --app-side-nav-hover-bg: color-mix(in srgb, var(--chrome-action-bg-hover) 34%, transparent);
   --app-side-nav-active-bg: color-mix(
     in srgb,
-    var(--chrome-muted-bg-strong) 78%,
+    var(--chrome-action-bg-hover) 38%,
     rgba(var(--color-primary-rgb), 0.12)
   );
   --app-side-nav-ink: var(--color-text-secondary);
   --app-side-nav-ink-active: var(--color-primary);
+  --app-side-nav-label-bg: color-mix(in srgb, var(--color-background) 58%, transparent);
+  --app-side-nav-label-border: color-mix(in srgb, var(--chrome-surface-border) 72%, transparent);
+  --app-side-nav-label-shadow: 0 1rem 1.8rem -1.5rem rgba(15, 23, 42, 0.34);
   position: fixed;
   inset-block: 0;
   inset-inline-start: var(--app-side-nav-inline-start, clamp(0.75rem, 2vw, 1.25rem));
   z-index: calc(var(--z-sticky) + 1);
-  inline-size: var(--app-side-nav-width, clamp(3.5rem, 5vw, 4rem));
+  inline-size: var(--app-side-nav-width, clamp(2.875rem, 4vw, 3.25rem));
   padding-block: max(env(safe-area-inset-top, 0rem), clamp(0.75rem, 2vw, 1rem))
     max(env(safe-area-inset-bottom, 0rem), clamp(0.75rem, 2vw, 1rem));
   pointer-events: none;
@@ -177,7 +212,7 @@ function prefetchRoute(path: string) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.625rem;
+  gap: clamp(0.5rem, 1vw, 0.75rem);
   pointer-events: auto;
 }
 
@@ -192,21 +227,26 @@ function prefetchRoute(path: string) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: clamp(3rem, 4vw, 3.5rem);
-  block-size: clamp(3rem, 4vw, 3.5rem);
+  inline-size: 100%;
+  block-size: clamp(2.875rem, 4vw, 3.25rem);
   border: 0.0625rem solid var(--app-side-nav-border);
   border-radius: var(--app-side-nav-item-radius);
   background: var(--app-side-nav-bg);
   color: var(--app-side-nav-ink);
   text-decoration: none;
+  overflow: visible;
   transition:
     color var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
     background-color var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: none;
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-spring);
+  box-shadow: 0 0.85rem 1.6rem -1.5rem rgba(15, 23, 42, 0.1);
+  transform: translate3d(
+    calc(var(--app-side-nav-magnet-x, 0px) * 0.16),
+    calc(var(--app-side-nav-magnet-y, 0px) * 0.16),
+    0
+  );
 }
 
 .app-side-nav__brand:hover,
@@ -216,13 +256,14 @@ function prefetchRoute(path: string) {
   border-color: var(--app-side-nav-border-strong);
   background: var(--app-side-nav-hover-bg);
   color: var(--app-side-nav-ink-active);
-  transform: translate3d(0.125rem, 0, 0);
+  box-shadow: 0 1.1rem 1.9rem -1.45rem rgba(15, 23, 42, 0.3);
 }
 
 .app-side-nav__link--active {
   border-color: var(--app-side-nav-border-strong);
   background: var(--app-side-nav-active-bg);
   color: var(--app-side-nav-ink-active);
+  box-shadow: 0 1.2rem 2rem -1.55rem rgba(var(--color-primary-rgb), 0.4);
 }
 
 .app-side-nav__brand-mark {
@@ -230,11 +271,62 @@ function prefetchRoute(path: string) {
   font-weight: var(--font-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    filter var(--duration-fast) var(--ease-out);
 }
 
 .app-side-nav__icon {
   inline-size: 1.125rem;
   block-size: 1.125rem;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    filter var(--duration-fast) var(--ease-out);
+}
+
+.app-side-nav__brand:hover .app-side-nav__brand-mark,
+.app-side-nav__brand:focus-visible .app-side-nav__brand-mark,
+.app-side-nav__link:hover .app-side-nav__icon,
+.app-side-nav__link:focus-visible .app-side-nav__icon,
+.app-side-nav__link--active .app-side-nav__icon {
+  transform: translate3d(var(--app-side-nav-magnet-x, 0px), var(--app-side-nav-magnet-y, 0px), 0)
+    scale(1.12);
+  filter: drop-shadow(0 0.45rem 0.85rem rgba(var(--color-primary-rgb), 0.24));
+}
+
+.app-side-nav__label {
+  position: absolute;
+  inset-inline-start: calc(100% + 0.75rem);
+  inset-block-start: 50%;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.5rem;
+  padding-inline: 0.85rem;
+  border: 0.0625rem solid var(--app-side-nav-label-border);
+  border-radius: calc(var(--app-side-nav-item-radius) + 0.125rem);
+  background: var(--app-side-nav-label-bg);
+  box-shadow: var(--app-side-nav-label-shadow);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(-0.5rem, -50%, 0);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.app-side-nav__link:hover .app-side-nav__label,
+.app-side-nav__link:focus-visible .app-side-nav__label {
+  opacity: 1;
+  transform: translate3d(
+    calc(var(--app-side-nav-magnet-x, 0px) * 0.22),
+    calc(-50% + (var(--app-side-nav-magnet-y, 0px) * 0.12)),
+    0
+  );
 }
 
 @media (max-width: 960px) {
@@ -248,15 +340,20 @@ function prefetchRoute(path: string) {
   --app-side-nav-item-radius: var(--ui-radius-button, var(--radius-xl));
   --app-side-nav-hover-bg: color-mix(
     in srgb,
-    var(--chrome-muted-bg) 74%,
+    var(--chrome-action-bg-hover) 52%,
     rgba(var(--color-primary-rgb), 0.1)
   );
   --app-side-nav-active-bg: color-mix(
     in srgb,
-    var(--chrome-muted-bg-strong) 72%,
+    var(--chrome-action-bg-hover) 56%,
     rgba(var(--color-primary-rgb), 0.16)
   );
   --app-side-nav-border: var(--ui-surface-border);
+}
+
+:global(#app[data-ui-style='ios'] .app-side-nav),
+:global([data-ui-style='ios'] .app-side-nav) {
+  --app-side-nav-item-radius: clamp(1.1rem, 1.95vw, 1.35rem);
 }
 
 :global(#app[data-theme='dark'] .app-side-nav),
@@ -271,6 +368,8 @@ function prefetchRoute(path: string) {
     var(--chrome-action-border-strong) 78%,
     rgba(var(--color-primary-rgb), 0.18)
   );
+  --app-side-nav-label-bg: color-mix(in srgb, var(--color-background) 56%, rgba(8, 12, 22, 0.48));
+  --app-side-nav-label-border: color-mix(in srgb, var(--chrome-surface-border) 76%, transparent);
 }
 
 :global(#app[data-theme='blue'] .app-side-nav),

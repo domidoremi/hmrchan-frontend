@@ -17,576 +17,578 @@
       </button>
     </div>
 
-    <!-- Theme -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="explore" :fallback-icon="Palette" size="sm" />
+    <div class="settings-panel__body">
+      <!-- Theme -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="explore" :fallback-icon="Palette" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.theme') }}</span>
         </div>
-        <span class="settings-label">{{ $t('settings.theme') }}</span>
-      </div>
-      <div class="settings-options ui-style-options">
-        <button
-          v-for="opt in themeOptions"
-          :key="opt.value"
-          type="button"
-          class="theme-btn"
-          :class="{ active: theme === opt.value }"
-          :aria-pressed="theme === opt.value"
-          @click="setTheme(opt.value)"
-        >
-          <div class="theme-btn-icon">
-            <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
-          </div>
-          <span class="theme-btn-label">{{ opt.label }}</span>
-          <Transition name="check">
-            <div v-if="theme === opt.value" class="theme-btn-check">
-              <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
-            </div>
-          </Transition>
-        </button>
-      </div>
-    </div>
-
-    <!-- UI Style -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="sparkle" :fallback-icon="Layers" size="sm" />
-        </div>
-        <span class="settings-label">{{ $t('settings.uiStyle') }}</span>
-      </div>
-      <div class="settings-options theme-options">
-        <button
-          v-for="opt in uiStyleOptions"
-          :key="opt.value"
-          type="button"
-          class="theme-btn"
-          :class="{ active: settings.uiStyle === opt.value }"
-          :aria-pressed="settings.uiStyle === opt.value"
-          @click="setUiStyle(opt.value)"
-        >
-          <div class="theme-btn-icon">
-            <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
-          </div>
-          <span class="theme-btn-label">{{ opt.label }}</span>
-          <Transition name="check">
-            <div v-if="settings.uiStyle === opt.value" class="theme-btn-check">
-              <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
-            </div>
-          </Transition>
-        </button>
-      </div>
-    </div>
-
-    <!-- Language -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="user" :fallback-icon="Globe" size="sm" />
-        </div>
-        <span class="settings-label">{{ $t('settings.language') }}</span>
-      </div>
-      <div class="settings-options lang-options">
-        <button
-          v-for="opt in localeOptions"
-          :key="opt.code"
-          type="button"
-          class="lang-btn"
-          :class="{ active: locale === opt.code }"
-          :aria-pressed="locale === opt.code"
-          @click="changeLocale(opt.code)"
-        >
-          <span class="lang-flag">{{ opt.flag }}</span>
-          <span class="lang-name">{{ opt.name }}</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Display -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
-        </div>
-        <span class="settings-label">{{ $t('settings.display') }}</span>
-      </div>
-
-      <div class="toggle-list">
-        <button type="button" class="toggle-btn" @click="toggleHeroSection">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="explore" :fallback-icon="Layers" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.toggleHeroSection') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.heroSectionDesc') }}</span>
-            </div>
-          </div>
-          <div class="toggle-switch" :class="{ active: settings.showHeroSection }">
-            <span class="toggle-knob" />
-          </div>
-        </button>
-
-        <button type="button" class="toggle-btn" @click="toggleAnimations">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.toggleAnimations') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.animationsDesc') }}</span>
-            </div>
-          </div>
-          <div class="toggle-switch" :class="{ active: settings.enableAnimations }">
-            <span class="toggle-knob" />
-          </div>
-        </button>
-
-        <button type="button" class="toggle-btn" @click="toggleSwipeNavigation">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="explore" :fallback-icon="Smartphone" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.toggleSwipeNavigation') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.swipeNavigationDesc') }}</span>
-            </div>
-          </div>
-          <div class="toggle-switch" :class="{ active: settings.enableSwipeNavigation }">
-            <span class="toggle-knob" />
-          </div>
-        </button>
-      </div>
-
-      <template v-if="settings.enableAnimations">
-        <div class="slider-group">
-          <label class="slider-label">
-            {{ $t('settings.animationIntensity') }}
-            <span class="slider-value">{{ selectedAnimationIntensityLabel }}</span>
-          </label>
-          <div class="settings-options bg-effect-options">
-            <button
-              v-for="opt in animationIntensityOptions"
-              :key="opt.value"
-              type="button"
-              class="bg-effect-btn"
-              :class="{ active: settings.animationIntensity === opt.value }"
-              :aria-pressed="settings.animationIntensity === opt.value"
-              @click="setAnimationIntensity(opt.value)"
-            >
-              <span class="bg-effect-label">{{ opt.label }}</span>
-            </button>
-          </div>
-        </div>
-      </template>
-
-      <div class="slider-group">
-        <label class="slider-label">
-          {{ $t('settings.postsPerPage') }}
-          <span class="slider-value">{{ settings.postsPerPage }}</span>
-        </label>
-        <div class="settings-options bg-effect-options">
+        <div class="settings-options ui-style-options">
           <button
-            v-for="pageSize in postsPerPageOptions"
-            :key="pageSize"
+            v-for="opt in themeOptions"
+            :key="opt.value"
             type="button"
-            class="bg-effect-btn"
-            :class="{ active: settings.postsPerPage === pageSize }"
-            :aria-pressed="settings.postsPerPage === pageSize"
-            @click="setPostsPerPage(pageSize)"
+            class="theme-btn"
+            :class="{ active: theme === opt.value }"
+            :aria-pressed="theme === opt.value"
+            @click="setTheme(opt.value)"
           >
-            <span class="bg-effect-label">{{ pageSize }}</span>
+            <div class="theme-btn-icon">
+              <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
+            </div>
+            <span class="theme-btn-label">{{ opt.label }}</span>
+            <Transition name="check">
+              <div v-if="theme === opt.value" class="theme-btn-check">
+                <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
+              </div>
+            </Transition>
           </button>
         </div>
       </div>
 
-      <div v-if="isAuthenticated" class="link-list preferences-actions">
-        <button
-          type="button"
-          class="link-btn"
-          :disabled="isSavingPreferences"
-          @click="handleReplacePreferences"
-        >
-          <div class="link-btn-icon">
-            <AnimatedIcon name="sparkle" :fallback-icon="Save" size="sm" />
+      <!-- UI Style -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="Layers" size="sm" />
           </div>
-          <span class="link-btn-text">{{ $t('settings.replacePreferences') }}</span>
-        </button>
-        <button
-          type="button"
-          class="link-btn"
-          :disabled="isSavingPreferences"
-          @click="handleResetPreferences"
-        >
-          <div class="link-btn-icon">
-            <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
-          </div>
-          <span class="link-btn-text">{{ $t('settings.resetPreferences') }}</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Privacy & Analytics -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="sparkle" :fallback-icon="ShieldCheck" size="sm" />
+          <span class="settings-label">{{ $t('settings.uiStyle') }}</span>
         </div>
-        <span class="settings-label">{{ $t('settings.privacy') }}</span>
+        <div class="settings-options theme-options">
+          <button
+            v-for="opt in uiStyleOptions"
+            :key="opt.value"
+            type="button"
+            class="theme-btn"
+            :class="{ active: settings.uiStyle === opt.value }"
+            :aria-pressed="settings.uiStyle === opt.value"
+            @click="setUiStyle(opt.value)"
+          >
+            <div class="theme-btn-icon">
+              <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
+            </div>
+            <span class="theme-btn-label">{{ opt.label }}</span>
+            <Transition name="check">
+              <div v-if="settings.uiStyle === opt.value" class="theme-btn-check">
+                <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
+              </div>
+            </Transition>
+          </button>
+        </div>
       </div>
 
-      <div class="toggle-list">
-        <button type="button" class="toggle-btn" @click="toggleCookieConsent">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="sparkle" :fallback-icon="ShieldCheck" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.cookieConsent') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.cookieConsentDesc') }}</span>
-            </div>
+      <!-- Language -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="user" :fallback-icon="Globe" size="sm" />
           </div>
-          <div class="toggle-switch" :class="{ active: settings.cookieConsent === true }">
-            <span class="toggle-knob" />
-          </div>
-        </button>
-
-        <button type="button" class="toggle-btn" @click="toggleAnalyticsEnabled">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="explore" :fallback-icon="BarChart3" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.analyticsEnabled') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.analyticsEnabledDesc') }}</span>
-            </div>
-          </div>
-          <div class="toggle-switch" :class="{ active: settings.analyticsEnabled }">
-            <span class="toggle-knob" />
-          </div>
-        </button>
-
-        <button type="button" class="toggle-btn" @click="togglePerformanceCookies">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="explore" :fallback-icon="Gauge" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.performanceCookies') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.performanceCookiesDesc') }}</span>
-            </div>
-          </div>
-          <div class="toggle-switch" :class="{ active: settings.performanceCookiesEnabled }">
-            <span class="toggle-knob" />
-          </div>
-        </button>
-      </div>
-    </div>
-
-    <!-- Background Effect -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+          <span class="settings-label">{{ $t('settings.language') }}</span>
         </div>
-        <span class="settings-label">{{ $t('settings.backgroundEffect') }}</span>
-      </div>
-      <div class="settings-options bg-effect-options">
-        <button
-          v-for="opt in bgEffectOptions"
-          :key="opt.value"
-          type="button"
-          class="bg-effect-btn"
-          :class="{ active: settings.backgroundEffect.type === opt.value }"
-          :aria-pressed="settings.backgroundEffect.type === opt.value"
-          @click="setBackgroundEffect(opt.value)"
-        >
-          <span class="bg-effect-emoji">{{ opt.emoji }}</span>
-          <span class="bg-effect-label">{{ opt.label }}</span>
-        </button>
+        <div class="settings-options lang-options">
+          <button
+            v-for="opt in localeOptions"
+            :key="opt.code"
+            type="button"
+            class="lang-btn"
+            :class="{ active: locale === opt.code }"
+            :aria-pressed="locale === opt.code"
+            @click="changeLocale(opt.code)"
+          >
+            <span class="lang-flag">{{ opt.flag }}</span>
+            <span class="lang-name">{{ opt.name }}</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Density / Speed sliders (only when effect is active) -->
-      <template v-if="settings.backgroundEffect.type !== 'none'">
-        <div class="slider-group">
-          <label class="slider-label">
-            {{ $t('settings.bgDensity') }}
-            <span class="slider-value"
-              >{{ Math.round(settings.backgroundEffect.density * 100) }}%</span
-            >
-          </label>
-          <input
-            type="range"
-            class="settings-slider"
-            min="0.1"
-            max="1"
-            step="0.1"
-            :aria-label="$t('settings.bgDensity')"
-            :value="settings.backgroundEffect.density"
-            @input="onDensityChange"
-          />
-        </div>
-        <div class="slider-group">
-          <label class="slider-label">
-            {{ $t('settings.bgSpeed') }}
-            <span class="slider-value">{{ settings.backgroundEffect.speed.toFixed(1) }}x</span>
-          </label>
-          <input
-            type="range"
-            class="settings-slider"
-            min="0.2"
-            max="2"
-            step="0.2"
-            :aria-label="$t('settings.bgSpeed')"
-            :value="settings.backgroundEffect.speed"
-            @input="onSpeedChange"
-          />
-        </div>
-        <div class="slider-group">
-          <label class="slider-label">
-            {{ $t('settings.bgOpacity') }}
-            <span class="slider-value"
-              >{{ Math.round(settings.backgroundEffect.opacity * 100) }}%</span
-            >
-          </label>
-          <input
-            type="range"
-            class="settings-slider"
-            min="0.1"
-            max="1"
-            step="0.1"
-            :aria-label="$t('settings.bgOpacity')"
-            :value="settings.backgroundEffect.opacity"
-            @input="onOpacityChange"
-          />
-        </div>
-      </template>
-    </div>
-
-    <!-- Mascot Flight Background -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
-        </div>
-        <span class="settings-label">{{ $t('settings.mascotBackground') }}</span>
-      </div>
-
-      <div class="toggle-list">
-        <button type="button" class="toggle-btn" @click="toggleMascotBackground">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.mascotEnabled') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.mascotEnabledDesc') }}</span>
-            </div>
+      <!-- Display -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
           </div>
-          <div class="toggle-switch" :class="{ active: mascotBackground.enabled }">
-            <span class="toggle-knob" />
-          </div>
-        </button>
-      </div>
-
-      <template v-if="mascotBackground.enabled">
-        <div class="slider-group">
-          <label class="slider-label">
-            {{ $t('settings.mascotDensity') }}
-            <span class="slider-value">{{ mascotBackground.density.toFixed(1) }}x</span>
-          </label>
-          <input
-            type="range"
-            class="settings-slider"
-            min="0.4"
-            max="1.6"
-            step="0.1"
-            :aria-label="$t('settings.mascotDensity')"
-            :value="mascotBackground.density"
-            @input="onMascotDensityChange"
-          />
+          <span class="settings-label">{{ $t('settings.display') }}</span>
         </div>
-        <div class="slider-group">
-          <label class="slider-label">
-            {{ $t('settings.mascotSpeed') }}
-            <span class="slider-value">{{ mascotBackground.speed.toFixed(1) }}x</span>
-          </label>
-          <input
-            type="range"
-            class="settings-slider"
-            min="0.6"
-            max="1.8"
-            step="0.1"
-            :aria-label="$t('settings.mascotSpeed')"
-            :value="mascotBackground.speed"
-            @input="onMascotSpeedChange"
-          />
-        </div>
-        <div class="slider-group">
-          <label class="slider-label">
-            {{ $t('settings.mascotOpacity') }}
-            <span class="slider-value">{{ Math.round(mascotBackground.opacity * 100) }}%</span>
-          </label>
-          <input
-            type="range"
-            class="settings-slider"
-            min="0.3"
-            max="1"
-            step="0.05"
-            :aria-label="$t('settings.mascotOpacity')"
-            :value="mascotBackground.opacity"
-            @input="onMascotOpacityChange"
-          />
-        </div>
-      </template>
-    </div>
 
-    <!-- Desk Pet -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
-        </div>
-        <span class="settings-label">{{ $t('settings.deskPet') }}</span>
-      </div>
-
-      <div class="toggle-list">
-        <button type="button" class="toggle-btn" @click="toggleDeskPetEnabled">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.deskPetEnabled') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.deskPetEnabledDesc') }}</span>
-            </div>
-          </div>
-          <div class="toggle-switch" :class="{ active: deskPetConfig.enabled }">
-            <span class="toggle-knob" />
-          </div>
-        </button>
-      </div>
-
-      <template v-if="deskPetConfig.enabled">
         <div class="toggle-list">
-          <button type="button" class="toggle-btn" @click="toggleDeskPetSpeech">
+          <button type="button" class="toggle-btn" @click="toggleHeroSection">
             <div class="toggle-btn-content">
               <div class="toggle-btn-icon">
-                <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
+                <AnimatedIcon name="explore" :fallback-icon="Layers" size="sm" />
               </div>
               <div class="toggle-btn-text">
-                <span class="toggle-btn-title">{{ $t('settings.deskPetSpeech') }}</span>
-                <span class="toggle-btn-desc">{{ $t('settings.deskPetSpeechDesc') }}</span>
+                <span class="toggle-btn-title">{{ $t('settings.toggleHeroSection') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.heroSectionDesc') }}</span>
               </div>
             </div>
-            <div class="toggle-switch" :class="{ active: deskPetConfig.speechEnabled }">
+            <div class="toggle-switch" :class="{ active: settings.showHeroSection }">
               <span class="toggle-knob" />
             </div>
           </button>
 
-          <button type="button" class="toggle-btn" @click="toggleDeskPetAutoHero">
+          <button type="button" class="toggle-btn" @click="toggleAnimations">
             <div class="toggle-btn-content">
               <div class="toggle-btn-icon">
                 <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
               </div>
               <div class="toggle-btn-text">
-                <span class="toggle-btn-title">{{ $t('settings.deskPetAutoHero') }}</span>
-                <span class="toggle-btn-desc">{{ $t('settings.deskPetAutoHeroDesc') }}</span>
+                <span class="toggle-btn-title">{{ $t('settings.toggleAnimations') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.animationsDesc') }}</span>
               </div>
             </div>
-            <div class="toggle-switch" :class="{ active: deskPetConfig.autoHeroInteraction }">
+            <div class="toggle-switch" :class="{ active: settings.enableAnimations }">
+              <span class="toggle-knob" />
+            </div>
+          </button>
+
+          <button type="button" class="toggle-btn" @click="toggleSwipeNavigation">
+            <div class="toggle-btn-content">
+              <div class="toggle-btn-icon">
+                <AnimatedIcon name="explore" :fallback-icon="Smartphone" size="sm" />
+              </div>
+              <div class="toggle-btn-text">
+                <span class="toggle-btn-title">{{ $t('settings.toggleSwipeNavigation') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.swipeNavigationDesc') }}</span>
+              </div>
+            </div>
+            <div class="toggle-switch" :class="{ active: settings.enableSwipeNavigation }">
               <span class="toggle-knob" />
             </div>
           </button>
         </div>
 
+        <template v-if="settings.enableAnimations">
+          <div class="slider-group">
+            <label class="slider-label">
+              {{ $t('settings.animationIntensity') }}
+              <span class="slider-value">{{ selectedAnimationIntensityLabel }}</span>
+            </label>
+            <div class="settings-options bg-effect-options">
+              <button
+                v-for="opt in animationIntensityOptions"
+                :key="opt.value"
+                type="button"
+                class="bg-effect-btn"
+                :class="{ active: settings.animationIntensity === opt.value }"
+                :aria-pressed="settings.animationIntensity === opt.value"
+                @click="setAnimationIntensity(opt.value)"
+              >
+                <span class="bg-effect-label">{{ opt.label }}</span>
+              </button>
+            </div>
+          </div>
+        </template>
+
         <div class="slider-group">
           <label class="slider-label">
-            {{ $t('settings.deskPetScale') }}
-            <span class="slider-value">{{ deskPetConfig.scale.toFixed(1) }}x</span>
+            {{ $t('settings.postsPerPage') }}
+            <span class="slider-value">{{ settings.postsPerPage }}</span>
           </label>
-          <input
-            type="range"
-            class="settings-slider"
-            min="0.8"
-            max="1.5"
-            step="0.1"
-            :aria-label="$t('settings.deskPetScale')"
-            :value="deskPetConfig.scale"
-            @input="onDeskPetScaleChange"
-          />
+          <div class="settings-options bg-effect-options">
+            <button
+              v-for="pageSize in postsPerPageOptions"
+              :key="pageSize"
+              type="button"
+              class="bg-effect-btn"
+              :class="{ active: settings.postsPerPage === pageSize }"
+              :aria-pressed="settings.postsPerPage === pageSize"
+              @click="setPostsPerPage(pageSize)"
+            >
+              <span class="bg-effect-label">{{ pageSize }}</span>
+            </button>
+          </div>
         </div>
-        <div class="slider-group">
-          <label class="slider-label">
-            {{ $t('settings.deskPetFollowSensitivity') }}
-            <span class="slider-value">{{ deskPetConfig.followSensitivity.toFixed(1) }}x</span>
-          </label>
-          <input
-            type="range"
-            class="settings-slider"
-            min="0.5"
-            max="1.8"
-            step="0.1"
-            :aria-label="$t('settings.deskPetFollowSensitivity')"
-            :value="deskPetConfig.followSensitivity"
-            @input="onDeskPetFollowSensitivityChange"
-          />
-        </div>
-      </template>
-    </div>
 
-    <!-- Video Settings -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="explore" :fallback-icon="Video" size="sm" />
+        <div v-if="isAuthenticated" class="link-list preferences-actions">
+          <button
+            type="button"
+            class="link-btn"
+            :disabled="isSavingPreferences"
+            @click="handleReplacePreferences"
+          >
+            <div class="link-btn-icon">
+              <AnimatedIcon name="sparkle" :fallback-icon="Save" size="sm" />
+            </div>
+            <span class="link-btn-text">{{ $t('settings.replacePreferences') }}</span>
+          </button>
+          <button
+            type="button"
+            class="link-btn"
+            :disabled="isSavingPreferences"
+            @click="handleResetPreferences"
+          >
+            <div class="link-btn-icon">
+              <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+            </div>
+            <span class="link-btn-text">{{ $t('settings.resetPreferences') }}</span>
+          </button>
         </div>
-        <span class="settings-label">{{ $t('settings.videoSettings') }}</span>
       </div>
-      <div class="link-list">
-        <button type="button" class="link-btn" @click="resetVideoSettings">
-          <div class="link-btn-icon">
-            <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
-          </div>
-          <span class="link-btn-text">{{ $t('settings.resetVideoSettings') }}</span>
-        </button>
-      </div>
-    </div>
 
-    <!-- Links -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
+      <!-- Privacy & Analytics -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="ShieldCheck" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.privacy') }}</span>
         </div>
-        <span class="settings-label">{{ $t('settings.links') }}</span>
+
+        <div class="toggle-list">
+          <button type="button" class="toggle-btn" @click="toggleCookieConsent">
+            <div class="toggle-btn-content">
+              <div class="toggle-btn-icon">
+                <AnimatedIcon name="sparkle" :fallback-icon="ShieldCheck" size="sm" />
+              </div>
+              <div class="toggle-btn-text">
+                <span class="toggle-btn-title">{{ $t('settings.cookieConsent') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.cookieConsentDesc') }}</span>
+              </div>
+            </div>
+            <div class="toggle-switch" :class="{ active: settings.cookieConsent === true }">
+              <span class="toggle-knob" />
+            </div>
+          </button>
+
+          <button type="button" class="toggle-btn" @click="toggleAnalyticsEnabled">
+            <div class="toggle-btn-content">
+              <div class="toggle-btn-icon">
+                <AnimatedIcon name="explore" :fallback-icon="BarChart3" size="sm" />
+              </div>
+              <div class="toggle-btn-text">
+                <span class="toggle-btn-title">{{ $t('settings.analyticsEnabled') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.analyticsEnabledDesc') }}</span>
+              </div>
+            </div>
+            <div class="toggle-switch" :class="{ active: settings.analyticsEnabled }">
+              <span class="toggle-knob" />
+            </div>
+          </button>
+
+          <button type="button" class="toggle-btn" @click="togglePerformanceCookies">
+            <div class="toggle-btn-content">
+              <div class="toggle-btn-icon">
+                <AnimatedIcon name="explore" :fallback-icon="Gauge" size="sm" />
+              </div>
+              <div class="toggle-btn-text">
+                <span class="toggle-btn-title">{{ $t('settings.performanceCookies') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.performanceCookiesDesc') }}</span>
+              </div>
+            </div>
+            <div class="toggle-switch" :class="{ active: settings.performanceCookiesEnabled }">
+              <span class="toggle-knob" />
+            </div>
+          </button>
+        </div>
       </div>
-      <div class="link-list">
-        <RouterLink to="/about" class="link-btn" @click="$emit('close')">
-          <div class="link-btn-icon">
-            <AnimatedIcon name="explore" :fallback-icon="Info" size="sm" />
+
+      <!-- Background Effect -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
           </div>
-          <span class="link-btn-text">{{ $t('nav.about') }}</span>
-          <AnimatedIcon
-            name="explore"
-            :fallback-icon="ChevronRight"
-            size="sm"
-            class="link-btn-arrow"
-          />
-        </RouterLink>
-        <RouterLink to="/contact" class="link-btn" @click="$emit('close')">
-          <div class="link-btn-icon">
-            <AnimatedIcon name="sparkle" :fallback-icon="Mail" size="sm" />
+          <span class="settings-label">{{ $t('settings.backgroundEffect') }}</span>
+        </div>
+        <div class="settings-options bg-effect-options">
+          <button
+            v-for="opt in bgEffectOptions"
+            :key="opt.value"
+            type="button"
+            class="bg-effect-btn"
+            :class="{ active: settings.backgroundEffect.type === opt.value }"
+            :aria-pressed="settings.backgroundEffect.type === opt.value"
+            @click="setBackgroundEffect(opt.value)"
+          >
+            <span class="bg-effect-emoji">{{ opt.emoji }}</span>
+            <span class="bg-effect-label">{{ opt.label }}</span>
+          </button>
+        </div>
+
+        <!-- Density / Speed sliders (only when effect is active) -->
+        <template v-if="settings.backgroundEffect.type !== 'none'">
+          <div class="slider-group">
+            <label class="slider-label">
+              {{ $t('settings.bgDensity') }}
+              <span class="slider-value"
+                >{{ Math.round(settings.backgroundEffect.density * 100) }}%</span
+              >
+            </label>
+            <input
+              type="range"
+              class="settings-slider"
+              min="0.1"
+              max="1"
+              step="0.1"
+              :aria-label="$t('settings.bgDensity')"
+              :value="settings.backgroundEffect.density"
+              @input="onDensityChange"
+            />
           </div>
-          <span class="link-btn-text">{{ $t('nav.contact') }}</span>
-          <AnimatedIcon
-            name="explore"
-            :fallback-icon="ChevronRight"
-            size="sm"
-            class="link-btn-arrow"
-          />
-        </RouterLink>
+          <div class="slider-group">
+            <label class="slider-label">
+              {{ $t('settings.bgSpeed') }}
+              <span class="slider-value">{{ settings.backgroundEffect.speed.toFixed(1) }}x</span>
+            </label>
+            <input
+              type="range"
+              class="settings-slider"
+              min="0.2"
+              max="2"
+              step="0.2"
+              :aria-label="$t('settings.bgSpeed')"
+              :value="settings.backgroundEffect.speed"
+              @input="onSpeedChange"
+            />
+          </div>
+          <div class="slider-group">
+            <label class="slider-label">
+              {{ $t('settings.bgOpacity') }}
+              <span class="slider-value"
+                >{{ Math.round(settings.backgroundEffect.opacity * 100) }}%</span
+              >
+            </label>
+            <input
+              type="range"
+              class="settings-slider"
+              min="0.1"
+              max="1"
+              step="0.1"
+              :aria-label="$t('settings.bgOpacity')"
+              :value="settings.backgroundEffect.opacity"
+              @input="onOpacityChange"
+            />
+          </div>
+        </template>
+      </div>
+
+      <!-- Mascot Flight Background -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.mascotBackground') }}</span>
+        </div>
+
+        <div class="toggle-list">
+          <button type="button" class="toggle-btn" @click="toggleMascotBackground">
+            <div class="toggle-btn-content">
+              <div class="toggle-btn-icon">
+                <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+              </div>
+              <div class="toggle-btn-text">
+                <span class="toggle-btn-title">{{ $t('settings.mascotEnabled') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.mascotEnabledDesc') }}</span>
+              </div>
+            </div>
+            <div class="toggle-switch" :class="{ active: mascotBackground.enabled }">
+              <span class="toggle-knob" />
+            </div>
+          </button>
+        </div>
+
+        <template v-if="mascotBackground.enabled">
+          <div class="slider-group">
+            <label class="slider-label">
+              {{ $t('settings.mascotDensity') }}
+              <span class="slider-value">{{ mascotBackground.density.toFixed(1) }}x</span>
+            </label>
+            <input
+              type="range"
+              class="settings-slider"
+              min="0.4"
+              max="1.6"
+              step="0.1"
+              :aria-label="$t('settings.mascotDensity')"
+              :value="mascotBackground.density"
+              @input="onMascotDensityChange"
+            />
+          </div>
+          <div class="slider-group">
+            <label class="slider-label">
+              {{ $t('settings.mascotSpeed') }}
+              <span class="slider-value">{{ mascotBackground.speed.toFixed(1) }}x</span>
+            </label>
+            <input
+              type="range"
+              class="settings-slider"
+              min="0.6"
+              max="1.8"
+              step="0.1"
+              :aria-label="$t('settings.mascotSpeed')"
+              :value="mascotBackground.speed"
+              @input="onMascotSpeedChange"
+            />
+          </div>
+          <div class="slider-group">
+            <label class="slider-label">
+              {{ $t('settings.mascotOpacity') }}
+              <span class="slider-value">{{ Math.round(mascotBackground.opacity * 100) }}%</span>
+            </label>
+            <input
+              type="range"
+              class="settings-slider"
+              min="0.3"
+              max="1"
+              step="0.05"
+              :aria-label="$t('settings.mascotOpacity')"
+              :value="mascotBackground.opacity"
+              @input="onMascotOpacityChange"
+            />
+          </div>
+        </template>
+      </div>
+
+      <!-- Desk Pet -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.deskPet') }}</span>
+        </div>
+
+        <div class="toggle-list">
+          <button type="button" class="toggle-btn" @click="toggleDeskPetEnabled">
+            <div class="toggle-btn-content">
+              <div class="toggle-btn-icon">
+                <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+              </div>
+              <div class="toggle-btn-text">
+                <span class="toggle-btn-title">{{ $t('settings.deskPetEnabled') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.deskPetEnabledDesc') }}</span>
+              </div>
+            </div>
+            <div class="toggle-switch" :class="{ active: deskPetConfig.enabled }">
+              <span class="toggle-knob" />
+            </div>
+          </button>
+        </div>
+
+        <template v-if="deskPetConfig.enabled">
+          <div class="toggle-list">
+            <button type="button" class="toggle-btn" @click="toggleDeskPetSpeech">
+              <div class="toggle-btn-content">
+                <div class="toggle-btn-icon">
+                  <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
+                </div>
+                <div class="toggle-btn-text">
+                  <span class="toggle-btn-title">{{ $t('settings.deskPetSpeech') }}</span>
+                  <span class="toggle-btn-desc">{{ $t('settings.deskPetSpeechDesc') }}</span>
+                </div>
+              </div>
+              <div class="toggle-switch" :class="{ active: deskPetConfig.speechEnabled }">
+                <span class="toggle-knob" />
+              </div>
+            </button>
+
+            <button type="button" class="toggle-btn" @click="toggleDeskPetAutoHero">
+              <div class="toggle-btn-content">
+                <div class="toggle-btn-icon">
+                  <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+                </div>
+                <div class="toggle-btn-text">
+                  <span class="toggle-btn-title">{{ $t('settings.deskPetAutoHero') }}</span>
+                  <span class="toggle-btn-desc">{{ $t('settings.deskPetAutoHeroDesc') }}</span>
+                </div>
+              </div>
+              <div class="toggle-switch" :class="{ active: deskPetConfig.autoHeroInteraction }">
+                <span class="toggle-knob" />
+              </div>
+            </button>
+          </div>
+
+          <div class="slider-group">
+            <label class="slider-label">
+              {{ $t('settings.deskPetScale') }}
+              <span class="slider-value">{{ deskPetConfig.scale.toFixed(1) }}x</span>
+            </label>
+            <input
+              type="range"
+              class="settings-slider"
+              min="0.8"
+              max="1.5"
+              step="0.1"
+              :aria-label="$t('settings.deskPetScale')"
+              :value="deskPetConfig.scale"
+              @input="onDeskPetScaleChange"
+            />
+          </div>
+          <div class="slider-group">
+            <label class="slider-label">
+              {{ $t('settings.deskPetFollowSensitivity') }}
+              <span class="slider-value">{{ deskPetConfig.followSensitivity.toFixed(1) }}x</span>
+            </label>
+            <input
+              type="range"
+              class="settings-slider"
+              min="0.5"
+              max="1.8"
+              step="0.1"
+              :aria-label="$t('settings.deskPetFollowSensitivity')"
+              :value="deskPetConfig.followSensitivity"
+              @input="onDeskPetFollowSensitivityChange"
+            />
+          </div>
+        </template>
+      </div>
+
+      <!-- Video Settings -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="explore" :fallback-icon="Video" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.videoSettings') }}</span>
+        </div>
+        <div class="link-list">
+          <button type="button" class="link-btn" @click="resetVideoSettings">
+            <div class="link-btn-icon">
+              <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+            </div>
+            <span class="link-btn-text">{{ $t('settings.resetVideoSettings') }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Links -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.links') }}</span>
+        </div>
+        <div class="link-list">
+          <RouterLink to="/about" class="link-btn" @click="$emit('close')">
+            <div class="link-btn-icon">
+              <AnimatedIcon name="explore" :fallback-icon="Info" size="sm" />
+            </div>
+            <span class="link-btn-text">{{ $t('nav.about') }}</span>
+            <AnimatedIcon
+              name="explore"
+              :fallback-icon="ChevronRight"
+              size="sm"
+              class="link-btn-arrow"
+            />
+          </RouterLink>
+          <RouterLink to="/contact" class="link-btn" @click="$emit('close')">
+            <div class="link-btn-icon">
+              <AnimatedIcon name="sparkle" :fallback-icon="Mail" size="sm" />
+            </div>
+            <span class="link-btn-text">{{ $t('nav.contact') }}</span>
+            <AnimatedIcon
+              name="explore"
+              :fallback-icon="ChevronRight"
+              size="sm"
+              class="link-btn-arrow"
+            />
+          </RouterLink>
+        </div>
       </div>
     </div>
   </div>
@@ -842,6 +844,8 @@ function resetVideoSettings() {
 
 <style scoped>
 .settings-panel {
+  display: grid;
+  gap: var(--spacing-3);
   padding: var(--spacing-2);
   min-inline-size: 0;
   inline-size: 100%;
@@ -860,9 +864,14 @@ function resetVideoSettings() {
   inline-size: min(100%, 22rem);
   max-inline-size: min(100%, 22rem);
   max-block-size: min(var(--app-safe-block-size), 36rem);
-  background: var(--color-background);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--ui-radius-dialog, var(--radius-xl));
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.settings-panel__body {
+  display: grid;
+  gap: var(--spacing-3);
 }
 
 /* 移动端优化：确保面板可以滚动 */
@@ -884,15 +893,15 @@ function resetVideoSettings() {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-2);
-  padding: var(--spacing-3) var(--spacing-3) var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-2) var(--spacing-1);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   position: sticky;
   inset-block-start: 0;
   z-index: 2;
-  background: var(--color-background);
-  border-bottom: 1px solid var(--glass-border);
+  background: transparent;
+  border-bottom: 0;
 }
 
 .settings-header-main {
@@ -912,9 +921,10 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--gradient-primary);
-  border-radius: var(--radius-md);
-  color: var(--color-on-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, rgba(var(--color-primary-rgb), 0.22) 72%, transparent);
+  border-radius: var(--radius-lg);
+  color: var(--color-primary);
 }
 
 .settings-panel--compact .settings-header-icon {
@@ -930,8 +940,8 @@ function resetVideoSettings() {
   height: 2rem;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
-  background: var(--glass-bg-subtle);
-  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--chrome-action-bg) 46%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chrome-action-border) 68%, transparent);
   box-shadow: none;
   transition:
     color var(--transition-fast),
@@ -947,31 +957,43 @@ function resetVideoSettings() {
 
 .settings-close-btn:hover {
   color: var(--color-text-primary);
-  background: var(--glass-bg-light);
-  border-color: var(--glass-border-strong);
+  background: color-mix(in srgb, var(--chrome-action-bg-hover) 62%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-action-border-strong) 72%, transparent);
   transform: none;
   box-shadow: none;
 }
 
 /* ========== Group ========== */
 .settings-group {
-  padding: var(--spacing-2);
+  padding: var(--spacing-3);
   min-inline-size: 0;
+  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 52%, transparent);
+  border-radius: var(--ui-radius-card, var(--radius-xl));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chrome-surface-bg-soft) 18%, transparent),
+    color-mix(in srgb, var(--chrome-surface-bg-soft) 8%, transparent)
+  );
+  box-shadow:
+    inset 0 0.0625rem 0 color-mix(in srgb, rgba(255, 255, 255, 0.14) 72%, transparent),
+    0 1rem 1.8rem -1.6rem rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(0.375rem);
+  -webkit-backdrop-filter: blur(0.375rem);
 }
 
 .settings-group + .settings-group {
-  border-top: 1px solid var(--glass-border);
+  border-top: 1px solid color-mix(in srgb, var(--chrome-surface-border) 42%, transparent);
 }
 
 .settings-panel--compact .settings-group {
-  padding: var(--spacing-2) var(--spacing-1);
+  padding: var(--spacing-3) var(--spacing-3);
 }
 
 .settings-group-header {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
 }
 
 .settings-group-icon {
@@ -980,9 +1002,10 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--glass-bg-subtle);
-  border-radius: var(--radius-md);
-  color: var(--color-text-tertiary);
+  background: color-mix(in srgb, var(--chrome-action-bg-hover) 56%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chrome-action-border) 70%, transparent);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
 }
 
 .settings-label {
@@ -1010,8 +1033,8 @@ function resetVideoSettings() {
   align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-3) var(--spacing-2);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 28%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 52%, transparent);
   border-radius: var(--radius-lg);
   min-inline-size: 0;
   transition:
@@ -1027,8 +1050,8 @@ function resetVideoSettings() {
 }
 
 .theme-btn:hover {
-  background: var(--glass-bg);
-  border-color: var(--glass-border-strong);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 42%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 72%, transparent);
 }
 
 .theme-btn.active {
@@ -1042,7 +1065,7 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--glass-bg-subtle);
+  background: color-mix(in srgb, var(--chrome-action-bg) 48%, transparent);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   transition:
@@ -1057,7 +1080,7 @@ function resetVideoSettings() {
 }
 
 .theme-btn:hover .theme-btn-icon {
-  background: var(--glass-bg);
+  background: color-mix(in srgb, var(--chrome-action-bg-hover) 68%, transparent);
   color: var(--color-text-primary);
 }
 
@@ -1131,8 +1154,8 @@ function resetVideoSettings() {
   align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-3);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 28%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 52%, transparent);
   border-radius: var(--radius-full);
   min-inline-size: 0;
   font-size: var(--text-sm);
@@ -1150,8 +1173,8 @@ function resetVideoSettings() {
 }
 
 .lang-btn:hover {
-  background: var(--glass-bg);
-  border-color: var(--glass-border-strong);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 42%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 72%, transparent);
 }
 
 .lang-btn.active {
@@ -1185,8 +1208,8 @@ function resetVideoSettings() {
   gap: var(--spacing-3);
   width: 100%;
   padding: var(--spacing-3);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 46%, transparent);
   border-radius: var(--radius-lg);
   min-inline-size: 0;
   transition:
@@ -1196,8 +1219,8 @@ function resetVideoSettings() {
 }
 
 .toggle-btn:hover {
-  background: var(--glass-bg);
-  border-color: var(--glass-border-strong);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 38%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 68%, transparent);
 }
 
 .toggle-btn-content {
@@ -1214,7 +1237,7 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--glass-bg-subtle);
+  background: color-mix(in srgb, var(--chrome-action-bg) 48%, transparent);
   border-radius: var(--radius-md);
   color: var(--color-text-tertiary);
   flex-shrink: 0;
@@ -1304,8 +1327,8 @@ function resetVideoSettings() {
   gap: var(--spacing-3);
   width: 100%;
   padding: var(--spacing-3);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 48%, transparent);
   border-radius: var(--radius-lg);
   min-inline-size: 0;
   color: var(--color-text-primary);
@@ -1322,8 +1345,8 @@ function resetVideoSettings() {
 }
 
 .link-btn:hover {
-  background: var(--glass-bg);
-  border-color: var(--glass-border-strong);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 38%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 68%, transparent);
 }
 
 .link-btn-icon {
@@ -1332,7 +1355,7 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--glass-bg-subtle);
+  background: color-mix(in srgb, var(--chrome-action-bg) 48%, transparent);
   border-radius: var(--radius-md);
   color: var(--color-text-tertiary);
   flex-shrink: 0;
@@ -1400,8 +1423,8 @@ function resetVideoSettings() {
   align-items: center;
   gap: var(--spacing-1);
   padding: var(--spacing-2) var(--spacing-1);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 48%, transparent);
   border-radius: var(--radius-lg);
   transition:
     background var(--transition-fast),
@@ -1415,8 +1438,8 @@ function resetVideoSettings() {
 }
 
 .bg-effect-btn:hover {
-  background: var(--glass-bg);
-  border-color: var(--glass-border-strong);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 36%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 68%, transparent);
 }
 
 .bg-effect-btn.active {
@@ -1508,8 +1531,8 @@ function resetVideoSettings() {
 }
 
 [data-theme='dark'] .bg-effect-btn:not(.active) {
-  background: rgba(18, 24, 36, 0.78);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 58%, transparent);
 }
 
 [data-theme='dark'] .bg-effect-btn.active {
@@ -1517,28 +1540,28 @@ function resetVideoSettings() {
 }
 
 [data-theme='dark'] .lang-btn:not(.active) {
-  background: rgba(18, 24, 36, 0.78);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 58%, transparent);
 }
 
 [data-theme='dark'] .toggle-btn {
-  background: rgba(18, 24, 36, 0.78);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 58%, transparent);
 }
 
 [data-theme='dark'] .toggle-btn:hover {
-  background: rgba(28, 36, 52, 0.96);
-  border-color: rgba(var(--color-primary-rgb), 0.18);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 38%, transparent);
+  border-color: color-mix(in srgb, rgba(var(--color-primary-rgb), 0.16) 72%, transparent);
 }
 
 [data-theme='dark'] .link-btn {
-  background: rgba(18, 24, 36, 0.78);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 58%, transparent);
 }
 
 [data-theme='dark'] .link-btn:hover {
-  background: rgba(28, 36, 52, 0.96);
-  border-color: rgba(var(--color-primary-rgb), 0.18);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 38%, transparent);
+  border-color: color-mix(in srgb, rgba(var(--color-primary-rgb), 0.16) 72%, transparent);
 }
 
 /* ========== Blue Theme ========== */
