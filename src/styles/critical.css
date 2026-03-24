@@ -136,6 +136,10 @@ body {
 }
 
 .navbar {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: var(--z-sticky);
   display: flex;
   align-items: center;
   height: var(--navbar-height);

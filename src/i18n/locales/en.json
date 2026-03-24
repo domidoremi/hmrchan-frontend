@@ -79,6 +79,9 @@
     "confirmDelete": "Confirm delete",
     "warning": "Warning",
     "success": "Success",
+    "siteNavigation": "Site navigation",
+    "primaryNavigation": "Primary navigation",
+    "utilityNavigation": "Utility navigation",
     "footerNav": "Footer navigation",
     "zoomSlider": "Zoom level",
     "cropPreview": "Crop preview"

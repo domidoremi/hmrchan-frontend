@@ -79,6 +79,9 @@
     "confirmDelete": "削除を確認",
     "warning": "警告",
     "success": "成功",
+    "siteNavigation": "サイトナビゲーション",
+    "primaryNavigation": "メインナビゲーション",
+    "utilityNavigation": "補助ナビゲーション",
     "footerNav": "フッターナビゲーション",
     "zoomSlider": "ズームレベル",
     "cropPreview": "トリミングプレビュー"
