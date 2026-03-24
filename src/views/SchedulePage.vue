@@ -441,6 +441,7 @@ import { useScheduleStore } from '@/stores/schedule'
 import { ApiError } from '@/api'
 import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/fallbacks/scheduleFallback'
 import { applyPageMeta } from '@/utils/pageMeta'
+import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import {
   isServiceUnavailableError,
   resolvePublicFallbackReason,
@@ -461,7 +462,10 @@ const error = ref<string | null>(null)
 const eventsSource = ref<PublicPageDataSource>('live')
 const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => eventsSource.value === 'fallback')
-const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
+const showPreviewNotice = computed(
+  () =>
+    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
+)
 const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth())
 const activeCategory = ref<ScheduleCategory | 'all'>('all')

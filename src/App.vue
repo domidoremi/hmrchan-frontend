@@ -52,7 +52,7 @@
     <VerificationDialog v-if="shouldMountVerificationDialog" />
 
     <!-- Back to Top Button -->
-    <BackToTop :show-progress="true" />
+    <BackToTop v-if="!isHomeRoute" :show-progress="true" />
 
     <div
       v-if="showMascotBackground || showParticleBackground"

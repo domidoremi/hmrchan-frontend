@@ -182,7 +182,31 @@ const i18n = createI18n({
   legacy: false,
   locale: 'en-US',
   messages: {
-    'en-US': {},
+    'en-US': {
+      home: {
+        portal: {
+          title: 'Portal',
+        },
+        hero: {
+          spotlightLabel: 'Spotlight',
+          fallbackTitle: 'Fallback hero title',
+        },
+        featured: {
+          title: 'Featured',
+        },
+        trends: {
+          authorsTitle: 'Hot Creators',
+        },
+      },
+      common: {
+        minutesAgo: '{count} minutes ago',
+        hoursAgo: '{count} hours ago',
+      },
+      post: {
+        views: 'views',
+        likes: 'likes',
+      },
+    },
   },
 })
 

@@ -308,7 +308,14 @@
   },
   "home": {
     "quickNav": {
-      "ariaLabel": "首頁分區導覽"
+      "ariaLabel": "首頁分區導覽",
+      "items": {
+        "fold": "首頁",
+        "rail": "今日入口",
+        "posts": "最新發布",
+        "media": "今日推薦",
+        "footer": "頁腳"
+      }
     },
     "hero": {
       "title": "發現今天值得收藏的創作者瞬間",
@@ -410,6 +417,7 @@
       "scheduleAction": "查看日程",
       "authorsEmpty": "暫無熱門作者",
       "tagsEmpty": "暫無熱門標籤",
+      "authorsHint": "關注本週最受注意的創作者",
       "scheduleHint": "查看本週最新活動與直播安排",
       "authorCount": "共 {n} 則更新"
     },
@@ -1031,7 +1039,7 @@
     "updated": "收藏資訊已更新"
   },
   "footer": {
-    "desc": "發現來自優秀創作者的精彩內容，探索無限可能。",
+    "desc": "在一個地方瀏覽貼文、創作者、日程與社群更新。",
     "rights": "保留所有權利。",
     "cta": {
       "title1": "準備好了嗎？",
@@ -1046,7 +1054,7 @@
       "explore": "探索",
       "support": "支援"
     },
-    "note": "適合慢慢逛、慢慢收藏，也適合明天再回來。",
+    "note": "為日常瀏覽、輕量發現與快速回訪而設計。",
     "columns": {
       "discover": "發現",
       "community": "社群"

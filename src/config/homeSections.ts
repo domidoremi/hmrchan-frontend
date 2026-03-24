@@ -12,31 +12,31 @@ export const homeSectionAnchors: readonly HomeSectionAnchor[] = [
   {
     key: 'fold',
     id: 'home-fold',
-    labelKey: 'nav.home',
+    labelKey: 'home.quickNav.items.fold',
     icon: Home,
   },
   {
     key: 'rail',
     id: 'home-rail',
-    labelKey: 'home.portal.title',
+    labelKey: 'home.quickNav.items.rail',
     icon: Sparkles,
   },
   {
     key: 'posts',
     id: 'home-posts',
-    labelKey: 'home.latest',
+    labelKey: 'home.quickNav.items.posts',
     icon: MessagesSquare,
   },
   {
     key: 'media',
     id: 'home-media',
-    labelKey: 'home.featured.title',
+    labelKey: 'home.quickNav.items.media',
     icon: Images,
   },
   {
     key: 'footer',
     id: 'home-footer',
-    labelKey: 'common.backToTop',
+    labelKey: 'home.quickNav.items.footer',
     icon: ChevronsDown,
   },
 ] as const
