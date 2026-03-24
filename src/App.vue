@@ -336,6 +336,9 @@ function handleRetry() {
 <style scoped>
 #app {
   --app-side-nav-offset: 0rem;
+  --app-side-nav-inline-start: 0rem;
+  --app-side-nav-width: 0rem;
+  --app-side-nav-gap: 0rem;
   min-height: 100svh;
   min-height: 100dvh;
   display: flex;
@@ -472,7 +475,12 @@ main.main--home {
 
 @media (min-width: 961px) {
   #app {
-    --app-side-nav-offset: clamp(4.75rem, 7vw, 6rem);
+    --app-side-nav-inline-start: clamp(0.75rem, 2vw, 1.25rem);
+    --app-side-nav-width: clamp(3.5rem, 5vw, 4rem);
+    --app-side-nav-gap: clamp(1rem, 2vw, 1.5rem);
+    --app-side-nav-offset: calc(
+      var(--app-side-nav-inline-start) + var(--app-side-nav-width) + var(--app-side-nav-gap)
+    );
   }
 
   main,
