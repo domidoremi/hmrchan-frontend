@@ -50,6 +50,7 @@ import { Bookmark, Share2 } from 'lucide-vue-next'
 import { favoriteService, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { copyToClipboard } from '@/utils/modernAPIs'
 
 const props = withDefaults(
   defineProps<{
@@ -196,12 +197,11 @@ async function sharePost() {
   const href = router.resolve({ path: `/post/${props.postId}` }).href
   const url = new URL(href, window.location.origin).toString()
 
-  try {
-    await navigator.clipboard.writeText(url)
+  if (await copyToClipboard(url)) {
     toastStore.success(t('comment.shareSuccess'))
-  } catch {
-    toastStore.error(t('common.error'))
+    return
   }
+  toastStore.error(t('common.error'))
 }
 </script>
 

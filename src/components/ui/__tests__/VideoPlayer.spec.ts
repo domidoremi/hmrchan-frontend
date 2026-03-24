@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import VideoPlayer from '../VideoPlayer.vue'
+import vClickOutside from '@/directives/clickOutside'
 
 const i18n = createI18n({
   legacy: false,
@@ -48,6 +49,9 @@ const createWrapper = (props: VideoPlayerProps) => {
     props,
     global: {
       plugins: [i18n],
+      directives: {
+        'click-outside': vClickOutside,
+      },
     },
   })
 }
