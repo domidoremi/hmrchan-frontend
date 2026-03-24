@@ -143,12 +143,25 @@ function prefetchRoute(path: string) {
 
 <style scoped>
 .app-side-nav {
+  --app-side-nav-item-radius: 999rem;
+  --app-side-nav-border: var(--chrome-action-border);
+  --app-side-nav-border-strong: var(--chrome-action-border-strong);
+  --app-side-nav-bg: transparent;
+  --app-side-nav-hover-bg: var(--chrome-muted-bg);
+  --app-side-nav-active-bg: color-mix(
+    in srgb,
+    var(--chrome-muted-bg-strong) 78%,
+    rgba(var(--color-primary-rgb), 0.12)
+  );
+  --app-side-nav-ink: var(--color-text-secondary);
+  --app-side-nav-ink-active: var(--color-primary);
   position: fixed;
-  inset-block-start: calc(var(--navbar-visible-height) + clamp(0.75rem, 2vw, 1rem));
-  inset-block-end: clamp(0.75rem, 2vw, 1rem);
-  inset-inline-start: clamp(0.75rem, 2vw, 1.25rem);
+  inset-block: 0;
+  inset-inline-start: var(--app-side-nav-inline-start, clamp(0.75rem, 2vw, 1.25rem));
   z-index: calc(var(--z-sticky) + 1);
-  inline-size: clamp(3.5rem, 5vw, 4rem);
+  inline-size: var(--app-side-nav-width, clamp(3.5rem, 5vw, 4rem));
+  padding-block: max(env(safe-area-inset-top, 0rem), clamp(0.75rem, 2vw, 1rem))
+    max(env(safe-area-inset-bottom, 0rem), clamp(0.75rem, 2vw, 1rem));
   pointer-events: none;
 }
 
@@ -157,7 +170,7 @@ function prefetchRoute(path: string) {
   flex-direction: column;
   justify-content: space-between;
   block-size: 100%;
-  gap: clamp(1rem, 2vw, 1.5rem);
+  gap: var(--app-side-nav-gap, clamp(1rem, 2vw, 1.5rem));
 }
 
 .app-side-nav__section {
@@ -181,32 +194,35 @@ function prefetchRoute(path: string) {
   justify-content: center;
   inline-size: clamp(3rem, 4vw, 3.5rem);
   block-size: clamp(3rem, 4vw, 3.5rem);
-  border: 0.0625rem solid rgba(148, 163, 184, 0.18);
-  border-radius: 999rem;
-  background: transparent;
-  color: var(--color-text-secondary);
+  border: 0.0625rem solid var(--app-side-nav-border);
+  border-radius: var(--app-side-nav-item-radius);
+  background: var(--app-side-nav-bg);
+  color: var(--app-side-nav-ink);
   text-decoration: none;
   transition:
     color var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
     background-color var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-out);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
 }
 
 .app-side-nav__brand:hover,
 .app-side-nav__link:hover,
 .app-side-nav__brand:focus-visible,
 .app-side-nav__link:focus-visible {
-  border-color: rgba(var(--color-primary-rgb), 0.24);
-  background: rgba(var(--color-primary-rgb), 0.08);
-  color: var(--color-primary);
+  border-color: var(--app-side-nav-border-strong);
+  background: var(--app-side-nav-hover-bg);
+  color: var(--app-side-nav-ink-active);
   transform: translate3d(0.125rem, 0, 0);
 }
 
 .app-side-nav__link--active {
-  border-color: rgba(var(--color-primary-rgb), 0.26);
-  background: rgba(var(--color-primary-rgb), 0.12);
-  color: var(--color-primary);
+  border-color: var(--app-side-nav-border-strong);
+  background: var(--app-side-nav-active-bg);
+  color: var(--app-side-nav-ink-active);
 }
 
 .app-side-nav__brand-mark {
@@ -227,27 +243,43 @@ function prefetchRoute(path: string) {
   }
 }
 
-:global(#app[data-theme='dark'] .app-side-nav__brand),
-:global(#app[data-theme='dark'] .app-side-nav__link),
-:global([data-theme='dark'] .app-side-nav__brand),
-:global([data-theme='dark'] .app-side-nav__link) {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: var(--color-text-secondary);
+:global(#app[data-ui-style='material'] .app-side-nav),
+:global([data-ui-style='material'] .app-side-nav) {
+  --app-side-nav-item-radius: var(--ui-radius-button, var(--radius-xl));
+  --app-side-nav-hover-bg: color-mix(
+    in srgb,
+    var(--chrome-muted-bg) 74%,
+    rgba(var(--color-primary-rgb), 0.1)
+  );
+  --app-side-nav-active-bg: color-mix(
+    in srgb,
+    var(--chrome-muted-bg-strong) 72%,
+    rgba(var(--color-primary-rgb), 0.16)
+  );
+  --app-side-nav-border: var(--ui-surface-border);
 }
 
-:global(#app[data-theme='dark'] .app-side-nav__brand:hover),
-:global(#app[data-theme='dark'] .app-side-nav__link:hover),
-:global(#app[data-theme='dark'] .app-side-nav__brand:focus-visible),
-:global(#app[data-theme='dark'] .app-side-nav__link:focus-visible),
-:global([data-theme='dark'] .app-side-nav__brand:hover),
-:global([data-theme='dark'] .app-side-nav__link:hover),
-:global([data-theme='dark'] .app-side-nav__brand:focus-visible),
-:global([data-theme='dark'] .app-side-nav__link:focus-visible) {
-  background: rgba(255, 255, 255, 0.08);
+:global(#app[data-theme='dark'] .app-side-nav),
+:global([data-theme='dark'] .app-side-nav) {
+  --app-side-nav-border: color-mix(
+    in srgb,
+    var(--chrome-action-border) 82%,
+    rgba(255, 255, 255, 0.12)
+  );
+  --app-side-nav-border-strong: color-mix(
+    in srgb,
+    var(--chrome-action-border-strong) 78%,
+    rgba(var(--color-primary-rgb), 0.18)
+  );
 }
 
-:global(#app[data-theme='dark'] .app-side-nav__link--active),
-:global([data-theme='dark'] .app-side-nav__link--active) {
-  background: rgba(255, 255, 255, 0.1);
+:global(#app[data-theme='blue'] .app-side-nav),
+:global([data-theme='blue'] .app-side-nav) {
+  --app-side-nav-hover-bg: color-mix(in srgb, var(--chrome-muted-bg) 72%, rgba(59, 130, 246, 0.08));
+  --app-side-nav-active-bg: color-mix(
+    in srgb,
+    var(--chrome-muted-bg-strong) 68%,
+    rgba(59, 130, 246, 0.16)
+  );
 }
 </style>
