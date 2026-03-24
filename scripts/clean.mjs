@@ -12,7 +12,15 @@ const STATIC_TARGETS = [
   'dist',
   'output',
   'tmp',
+  '.lighthouse',
+  '.lighthouse-a11y',
   '.tmp-lighthouse-prod',
+  'playwright-report',
+  'test-results',
+  'blob-report',
+  '.playwright',
+  '.tmp-playwright',
+  '.tmp-codex',
   '%SystemDrive%',
   '.codex-dev.log',
   path.join('node_modules', '.vite'),
@@ -20,7 +28,11 @@ const STATIC_TARGETS = [
 ]
 
 function shouldRemoveDynamicTarget(name) {
-  return /^\.lighthouse-prod(?:$|-)/.test(name) || /^\.tmp-lighthouse-.*\.json$/.test(name)
+  return (
+    /^\.lighthouse-prod(?:$|-)/.test(name) ||
+    /^\.tmp-lighthouse-.*\.json$/.test(name) ||
+    /^vitest-results.*\.json$/i.test(name)
+  )
 }
 
 async function pathExists(targetPath) {
