@@ -9,6 +9,7 @@ import {
 } from '@/api'
 import { HOME_FALLBACK_POSTS } from '@/fallbacks/homepageFallback'
 import { formatRelativeTime } from '@/utils/date'
+import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import type { ComputedRef, Ref } from 'vue'
 import {
   bubbleBursts,
@@ -72,7 +73,9 @@ export function useHomeViewModel(options: {
   })
 
   const isUsingFallbackPosts = computed(() => homeDataSource.value === 'fallback')
-  const showPreviewNotice = computed(() => Boolean(error.value) && isUsingFallbackPosts.value)
+  const showPreviewNotice = computed(
+    () => Boolean(error.value) && isUsingFallbackPosts.value && shouldExposeFallbackPreviewNotice()
+  )
 
   const fallbackTrendingTags = computed(() => {
     const tagCounts = new Map<string, number>()

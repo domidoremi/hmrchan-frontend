@@ -384,6 +384,7 @@ import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 import { applyPageMeta } from '@/utils/pageMeta'
+import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import {
   buildActiveMediaElementStyle,
   buildActiveMediaViewerStyle,
@@ -437,7 +438,10 @@ let fetchPostToken = 0
 const dataSource = ref<PublicPageDataSource>('live')
 const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
-const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
+const showPreviewNotice = computed(
+  () =>
+    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
+)
 
 const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailResponse>(
   postService.getPost,

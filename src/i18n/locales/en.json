@@ -308,7 +308,14 @@
   },
   "home": {
     "quickNav": {
-      "ariaLabel": "Homepage section navigation"
+      "ariaLabel": "Homepage section navigation",
+      "items": {
+        "fold": "Home",
+        "rail": "Today",
+        "posts": "Posts",
+        "media": "Picks",
+        "footer": "Footer"
+      }
     },
     "hero": {
       "title": "Discover creator moments worth saving today",
@@ -410,6 +417,7 @@
       "scheduleAction": "View Schedule",
       "authorsEmpty": "No trending creators yet",
       "tagsEmpty": "No popular tags yet",
+      "authorsHint": "Creators getting the most attention this week",
       "scheduleHint": "See the latest events and live sessions",
       "authorCount": "{n} updates"
     },
@@ -1031,7 +1039,7 @@
     "updated": "Favorite updated"
   },
   "footer": {
-    "desc": "Discover amazing content from talented creators and explore endless possibilities.",
+    "desc": "Browse posts, creators, schedules, and community updates in one place.",
     "rights": "All rights reserved.",
     "cta": {
       "title1": "Ready to dive in?",
@@ -1046,7 +1054,7 @@
       "explore": "Explore",
       "support": "Support"
     },
-    "note": "Made for quiet browsing, collecting, and coming back tomorrow.",
+    "note": "Built for daily browsing, lightweight discovery, and quick return visits.",
     "columns": {
       "discover": "Discover",
       "community": "Community"

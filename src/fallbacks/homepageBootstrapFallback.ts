@@ -117,7 +117,7 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
     {
       id: createHomeFallbackId('featured-studio-desk'),
       kind: 'editorial-cover',
-      kicker: 'Studio',
+      kicker: '专题',
       title: '把创作者的桌面、速写和灵感片段编成一张会呼吸的首页',
       subtitle: '让首页第一眼同时拥有作者温度、画面层次和可继续探索的方向。',
       summary: '拟真回退不该只是几张占位图，而是要把栏目主次、阅读节奏和 CTA 关系一并保留下来。',
@@ -162,7 +162,7 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
     {
       id: createHomeFallbackId('featured-editorial-column'),
       kind: 'editorial-column',
-      kicker: 'Editorial',
+      kicker: '编辑',
       title: '今天的编辑清单：图像、文字与作者关系一起排版',
       subtitle: '不是简单堆卡，而是像栏目页那样组织主次和留白。',
       summary: '当线上接口暂时不可用时，首页依旧应该保持“真的像一个内容产品”而不是空白框架。',
@@ -205,7 +205,7 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
     {
       id: createHomeFallbackId('featured-schedule-window'),
       kind: 'schedule-window',
-      kicker: 'Live',
+      kicker: '直播',
       title: '把活动预告做得像一本薄杂志，而不是消息列表',
       subtitle: '时间、作者和主题都该有更明确的栏目秩序。',
       summary: '回退态也要让用户知道接下来能看什么、什么时候发生、为什么值得点进去。',
@@ -248,7 +248,7 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
     {
       id: createHomeFallbackId('featured-community-thread'),
       kind: 'community-thread',
-      kicker: 'Community',
+      kicker: '社区',
       title: '社区热帖也应该有封面感，讨论不是一串冷冰冰的列表',
       subtitle: '把观点、参与人数与更新时间都编排进一个更有情绪的入口。',
       summary: '当真实讨论流暂时断线时，一组高保真社区示例能维持社区模块的可信度。',
@@ -466,7 +466,7 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
       end_date: hoursFromNow(7),
       is_all_day: false,
       author: sora,
-      badge: 'Tonight',
+      badge: '今晚',
       deep_link: '/schedule',
     },
     {
@@ -477,7 +477,7 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
       end_date: hoursFromNow(24),
       is_all_day: false,
       author: momo,
-      badge: 'Workshop',
+      badge: '工作坊',
       deep_link: '/schedule',
     },
     {
@@ -488,7 +488,7 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
       end_date: hoursFromNow(46),
       is_all_day: false,
       author: mika,
-      badge: 'Preview',
+      badge: '预告',
       deep_link: '/schedule',
     },
   ]
@@ -529,8 +529,8 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
   const portalItems: HomePortalItem[] = [
     {
       key: 'recommend',
-      title: 'Featured',
-      description: 'Curated editorial picks that keep the homepage feeling complete.',
+      title: '今日推荐',
+      description: '精选栏目与编辑推荐，即使在回退态也能保持首页的完整浏览感。',
       count: featuredItems.length,
       display_count: String(featuredItems.length),
       icon: 'sparkles',
@@ -547,8 +547,8 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
     },
     {
       key: 'authors',
-      title: 'Authors',
-      description: 'Creators worth following today, even while live feeds are reconnecting.',
+      title: '热门作者',
+      description: '实时内容回连期间，仍然能继续追踪值得关注的创作者。',
       count: trendAuthors.length,
       display_count: String(trendAuthors.length),
       icon: 'users',
@@ -565,8 +565,8 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
     },
     {
       key: 'schedule',
-      title: 'Schedule',
-      description: 'Upcoming streams and updates still deserve a confident place on the homepage.',
+      title: '日程',
+      description: '即将开始的直播与更新，仍应在首页保留清晰稳定的入口。',
       count: scheduleHighlights.length,
       display_count: String(scheduleHighlights.length),
       icon: 'calendar',
@@ -583,8 +583,8 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
     },
     {
       key: 'community',
-      title: 'Community',
-      description: 'Discussion highlights keep the community block warm instead of going blank.',
+      title: '社区',
+      description: '用讨论精选维持社区区块的热度，而不是直接留下一片空白。',
       count: communityHighlights.length,
       display_count: String(communityHighlights.length),
       icon: 'message-circle',
@@ -628,24 +628,24 @@ export function buildHomepageBootstrapFallback(): HomeAggregateResponse {
       stats: [
         {
           key: 'updates',
-          label: 'Updates',
+          label: '更新',
           value: latestTextPosts.length + storyDeckItems.length,
           display_value: String(latestTextPosts.length + storyDeckItems.length),
-          hint: 'curated sample updates ready for the homepage',
+          hint: '首页可立即展示的精选样本更新',
         },
         {
           key: 'authors',
-          label: 'Authors',
+          label: '作者',
           value: trendAuthors.length,
           display_value: String(trendAuthors.length),
-          hint: 'featured creators still visible in fallback mode',
+          hint: '回退模式下仍然可以继续浏览的重点创作者',
         },
         {
           key: 'tags',
-          label: 'Tags',
+          label: '标签',
           value: 8,
           display_value: '8',
-          hint: 'editorial tags that keep the browse cues intact',
+          hint: '维持浏览线索与栏目感的编辑标签',
         },
       ],
       trending_tags: [

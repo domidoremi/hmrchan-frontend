@@ -85,6 +85,7 @@ import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { applyPageMeta } from '@/utils/pageMeta'
+import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { getFallbackAuthorById, getFallbackAuthorPosts } from '@/fallbacks/authorsFallback'
 import {
   isServiceUnavailableError,
@@ -110,7 +111,10 @@ const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
 const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
-const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
+const showPreviewNotice = computed(
+  () =>
+    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
+)
 const resolvedAuthorAvatarSrc = computed(
   () =>
     normalizeAvatarUrl(author.value?.avatar_url || undefined) ||

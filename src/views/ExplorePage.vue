@@ -192,6 +192,7 @@ import { useSettingsStore } from '@/stores'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { storePostNavigationContext } from '@/utils/postNavigation'
+import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { getFallbackExplorePosts } from '@/fallbacks/exploreFallback'
 import {
   isServiceUnavailableError,
@@ -242,7 +243,10 @@ const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
 const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
-const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
+const showPreviewNotice = computed(
+  () =>
+    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
+)
 
 // 使用缓存感知的帖子列表加载
 const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
