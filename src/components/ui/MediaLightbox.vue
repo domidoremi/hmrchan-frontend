@@ -17,11 +17,8 @@
           @touchstart="handleTouchStart"
         >
           <header class="lightbox-header">
-            <div class="lightbox-title">
-              <span class="lightbox-label">{{ $t('common.imageViewer') }}</span>
-              <span v-if="hasMultiple" class="lightbox-count">
-                {{ currentIndex + 1 }} / {{ mediaList.length }}
-              </span>
+            <div v-if="hasMultiple" class="lightbox-title">
+              <span class="lightbox-count">{{ currentIndex + 1 }} / {{ mediaList.length }}</span>
             </div>
             <div class="lightbox-header-actions">
               <button
@@ -63,12 +60,6 @@
               >
                 <div v-if="!isLoaded && !hasError" class="media-loading">
                   <span class="spinner spinner-lg" />
-                  <span class="media-loading-text">{{ $t('common.loading') }}</span>
-                </div>
-                <div class="media-hint" :class="{ 'is-visible': showHints }" aria-hidden="true">
-                  <span>{{ $t('media.zoomHint') }}</span>
-                  <span class="media-dot" />
-                  <span>{{ $t('media.dragHint') }}</span>
                 </div>
 
                 <div v-if="hasError" class="media-error glass-card">
@@ -128,7 +119,11 @@
             <AnimatedIcon name="explore" :fallback-icon="ChevronRight" size="xl" />
           </button>
 
-          <div v-if="showToolbar" class="lightbox-toolbar" :class="{ hidden: !controlsVisible }">
+          <div
+            v-if="showImageToolbar"
+            class="lightbox-toolbar"
+            :class="{ hidden: !controlsVisible }"
+          >
             <button
               type="button"
               class="icon-btn"
@@ -165,9 +160,6 @@
               <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
             </button>
             <span class="zoom-indicator">{{ Math.round(scale * 100) }}%</span>
-          </div>
-          <div class="lightbox-footer" :class="{ hidden: !controlsVisible }" aria-hidden="true">
-            <span>{{ $t('media.shortcutHint') }}</span>
           </div>
         </div>
       </div>
@@ -262,7 +254,6 @@ const isLoaded = ref(false)
 const hasError = ref(false)
 const imageReloadToken = ref(0)
 const controlsVisible = ref(true)
-const showHints = ref(true)
 const transitionName = ref('lightbox-slide-left')
 const shouldFocusShell = ref(false)
 
@@ -282,10 +273,11 @@ const MAX_SCALE = 4
 const ZOOM_STEP = 0.25
 const CONTROLS_HIDE_DELAY = 2500
 let controlsTimer: ReturnType<typeof setTimeout> | null = null
-let hintsTimer: ReturnType<typeof setTimeout> | null = null
 
 const currentMedia = computed(() => props.mediaList[currentIndex.value] ?? null)
+const isImageMedia = computed(() => currentMedia.value?.file_type === 'image')
 const hasMultiple = computed(() => props.mediaList.length > 1)
+const showImageToolbar = computed(() => props.showToolbar && isImageMedia.value)
 const fullSizeUrl = computed(() => {
   if (!currentMedia.value) return ''
   return getMediaStreamUrl(currentMedia.value.id)
@@ -334,8 +326,6 @@ watch(
       unbindGlobalEvents()
       unlockBodyScroll()
       clearControlsTimer()
-      clearHintsTimer()
-      showHints.value = false
     }
   },
   { immediate: true }
@@ -345,7 +335,6 @@ watchPostEffect(() => {
   if (!props.isOpen || !shouldFocusShell.value) return
   containerRef.value?.focus()
   showControlsTemporarily()
-  startHintsTimer()
   shouldFocusShell.value = false
 })
 
@@ -369,7 +358,6 @@ watch(currentIndex, (idx) => {
   isSwiping.value = false
   warmCurrentImage()
   prefetchAround(idx)
-  startHintsTimer()
 })
 
 watchSyncEffect(() => {
@@ -411,10 +399,12 @@ function retryLoad() {
 }
 
 function zoomIn() {
+  if (!isImageMedia.value) return
   setScale(scale.value + ZOOM_STEP)
 }
 
 function zoomOut() {
+  if (!isImageMedia.value) return
   setScale(scale.value - ZOOM_STEP)
 }
 
@@ -445,6 +435,7 @@ function setScale(value: number, anchor?: { x: number; y: number }) {
 }
 
 function onZoomInput(event: Event) {
+  if (!isImageMedia.value) return
   const value = Number((event.target as HTMLInputElement).value)
   if (!Number.isNaN(value)) {
     setScale(value)
@@ -452,11 +443,13 @@ function onZoomInput(event: Event) {
 }
 
 function handleWheel(e: WheelEvent) {
+  if (!isImageMedia.value) return
   const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP
   setScale(scale.value + delta, { x: e.clientX, y: e.clientY })
 }
 
 function toggleZoom(event: MouseEvent) {
+  if (!isImageMedia.value) return
   if (scale.value > 1) {
     resetZoom()
     return
@@ -465,6 +458,7 @@ function toggleZoom(event: MouseEvent) {
 }
 
 function startDrag(e: MouseEvent | TouchEvent) {
+  if (!isImageMedia.value) return
   if (scale.value <= 1) return
   isDragging.value = true
   const point = 'touches' in e ? e.touches[0] : e
@@ -485,6 +479,7 @@ function startDrag(e: MouseEvent | TouchEvent) {
 
 function handleStageTouchStart(e: TouchEvent) {
   if (!props.isOpen) return
+  if (!isImageMedia.value) return
 
   // When zoomed, drag to pan.
   if (scale.value > 1) {
@@ -503,6 +498,7 @@ function handleStageTouchStart(e: TouchEvent) {
 
 function handleStageTouchMove(e: TouchEvent) {
   if (!props.isOpen) return
+  if (!isImageMedia.value) return
   if (!swipeStart.value) return
   if (scale.value > 1) return
 
@@ -532,6 +528,7 @@ function handleStageTouchMove(e: TouchEvent) {
 
 function handleStageTouchEnd() {
   if (!props.isOpen) return
+  if (!isImageMedia.value) return
   if (scale.value > 1) return
 
   const dx = swipeOffsetX.value
@@ -619,13 +616,6 @@ function clearControlsTimer() {
   }
 }
 
-function clearHintsTimer() {
-  if (hintsTimer) {
-    window.clearTimeout(hintsTimer)
-    hintsTimer = null
-  }
-}
-
 function handleMouseMove() {
   if (!props.isOpen) return
   showControlsTemporarily()
@@ -634,14 +624,6 @@ function handleMouseMove() {
 function handleTouchStart() {
   if (!props.isOpen) return
   showControlsTemporarily()
-}
-
-function startHintsTimer() {
-  showHints.value = true
-  clearHintsTimer()
-  hintsTimer = window.setTimeout(() => {
-    showHints.value = false
-  }, 2200)
 }
 
 function bindGlobalEvents() {
@@ -685,7 +667,6 @@ onUnmounted(() => {
   unbindGlobalEvents()
   unlockBodyScroll()
   clearControlsTimer()
-  clearHintsTimer()
 })
 </script>
 
@@ -722,29 +703,26 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-4) var(--spacing-5);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.35);
+  min-block-size: 3.75rem;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: linear-gradient(180deg, rgba(4, 6, 11, 0.5), rgba(4, 6, 11, 0.08));
+  pointer-events: none;
 }
 
 .lightbox-title {
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
+  gap: var(--spacing-2);
   color: rgba(255, 255, 255, 0.8);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
 }
 
-.lightbox-label {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
 .lightbox-count {
-  padding: 0.25rem 0.6rem;
+  padding: 0.25rem 0.65rem;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.1);
   font-variant-numeric: tabular-nums;
 }
 
@@ -752,6 +730,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
+  margin-inline-start: auto;
+  pointer-events: auto;
 }
 
 .icon-btn {
@@ -798,49 +778,11 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-3);
   color: rgba(255, 255, 255, 0.75);
 }
 
-.media-loading-text {
-  font-size: var(--text-sm);
-}
-
-.media-hint {
-  position: absolute;
-  bottom: var(--spacing-4);
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: 0.4rem 0.9rem;
-  border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.6);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: var(--text-xs);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  opacity: 0;
-  transition:
-    opacity var(--transition-fast),
-    transform var(--transition-fast);
-  pointer-events: none;
-}
-
-.media-hint.is-visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(-0.25rem);
-}
-
-.media-dot {
-  width: 0.25rem;
-  height: 0.25rem;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.6);
-}
 .lightbox-media {
   max-width: 90vw;
   max-height: 78dvh;
@@ -937,24 +879,6 @@ onUnmounted(() => {
   transform: translateX(-50%) translateY(0.625rem);
   pointer-events: none;
 }
-
-.lightbox-footer {
-  position: absolute;
-  bottom: var(--spacing-2);
-  right: var(--spacing-4);
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.6);
-  opacity: 1;
-  transition:
-    opacity var(--transition-fast),
-    transform var(--transition-fast);
-}
-
-.lightbox-footer.hidden {
-  opacity: 0;
-  transform: translateY(0.375rem);
-  pointer-events: none;
-}
 .zoom-slider input[type='range'] {
   width: 7.5rem;
   accent-color: var(--color-primary);
@@ -1012,6 +936,10 @@ onUnmounted(() => {
     width: 100%;
     height: 100%;
     border-radius: 0;
+  }
+
+  .lightbox-header {
+    padding-inline: var(--spacing-3);
   }
 
   .lightbox-toolbar {

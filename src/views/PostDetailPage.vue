@@ -64,7 +64,7 @@
               :style="activeMediaViewerStyle"
             >
               <button
-                v-if="hasMultipleMedia"
+                v-if="showMediaNavButtons"
                 type="button"
                 class="media-nav prev"
                 :aria-label="t('common.previous')"
@@ -109,24 +109,39 @@
                     :fetchpriority="activeMediaIndex === 0 ? 'high' : 'auto'"
                     @load="onMediaLoad"
                   />
-                  <!-- 点击提示 -->
-                  <div class="media-zoom-hint">
-                    <span class="zoom-icon">🔍</span>
-                    {{ t('common.clickToEnlarge') }}
-                  </div>
+                  <button
+                    type="button"
+                    class="media-viewer-expand"
+                    :aria-label="t('common.clickToEnlarge')"
+                    @click.stop="openLightbox()"
+                  >
+                    <AnimatedIcon name="explore" :fallback-icon="Maximize2" size="sm" />
+                  </button>
                 </div>
-                <VideoPlayer
+                <div
                   v-else-if="activeMedia?.file_type === 'video'"
                   :key="`video-${activeMedia.id}`"
-                  class="media-viewer-item is-loaded"
-                  :src="getMediaStreamUrl(activeMedia.id)"
-                  :poster="getMediaThumbnailUrl(activeMedia.id, 'medium')"
-                  :style="activeMediaElementStyle"
-                  playsinline
-                  preload="none"
-                  :subtitles="activeMedia.subtitles ?? null"
-                  @ready="onMediaLoad"
-                />
+                  class="media-item-container media-item-container--viewer"
+                >
+                  <VideoPlayer
+                    class="media-viewer-item is-loaded"
+                    :src="getMediaStreamUrl(activeMedia.id)"
+                    :poster="getMediaThumbnailUrl(activeMedia.id, 'medium')"
+                    :style="activeMediaElementStyle"
+                    playsinline
+                    preload="none"
+                    :subtitles="activeMedia.subtitles ?? null"
+                    @ready="onMediaLoad"
+                  />
+                  <button
+                    type="button"
+                    class="media-viewer-expand media-viewer-expand--video"
+                    :aria-label="t('common.clickToEnlarge')"
+                    @click.stop="openLightbox()"
+                  >
+                    <AnimatedIcon name="explore" :fallback-icon="Maximize2" size="sm" />
+                  </button>
+                </div>
                 <div
                   v-else
                   :key="`fallback-${activeMedia?.id ?? activeMediaIndex}`"
@@ -137,7 +152,7 @@
               </Transition>
 
               <button
-                v-if="hasMultipleMedia"
+                v-if="showMediaNavButtons"
                 type="button"
                 class="media-nav next"
                 :aria-label="t('common.next')"
@@ -345,7 +360,7 @@ import {
   warmDecodedImage,
 } from '@/utils/performance'
 import { formatDate } from '@/utils/date'
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart } from 'lucide-vue-next'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, Maximize2 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { postService, type PostDetailResponse, ApiError } from '@/api'
@@ -545,6 +560,9 @@ const hasMultipleMedia = computed(() => (post.value?.media_files?.length ?? 0) >
 const mediaCount = computed(() => post.value?.media_files?.length ?? 0)
 const canGoPrevMedia = computed(() => activeMediaIndex.value > 0)
 const canGoNextMedia = computed(() => activeMediaIndex.value + 1 < mediaCount.value)
+const showMediaNavButtons = computed(
+  () => hasMultipleMedia.value && activeMedia.value?.file_type !== 'video'
+)
 
 // 缓存来自列表页时可能没有 media_files，但 media_count > 0 表示有媒体
 // 此时应显示加载骨架而非"无媒体"占位
@@ -1855,35 +1873,55 @@ onUnmounted(() => {
   box-shadow: inset 0 0 0 2px rgba(var(--color-primary-rgb), 0.4);
 }
 
-.media-zoom-hint {
+.media-viewer-expand {
   position: absolute;
-  bottom: var(--spacing-3);
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
+  inset-block-start: var(--spacing-3);
+  inset-block-end: auto;
+  inset-inline-end: var(--spacing-3);
+  z-index: 3;
+  display: inline-flex;
   align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-4);
-  background: var(--post-overlay);
-  backdrop-filter: blur(0.5rem);
+  justify-content: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  padding: 0;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-full);
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(0.625rem);
+  -webkit-backdrop-filter: blur(0.625rem);
   color: var(--post-overlay-text);
-  font-size: var(--text-sm);
   opacity: 0;
-  transition: opacity var(--transition-fast);
-  pointer-events: none;
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
-.media-clickable:hover .media-zoom-hint {
+.media-item-container--viewer {
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.media-item-container--viewer :deep(.vp) {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.media-clickable:hover .media-viewer-expand,
+.media-clickable:focus-visible .media-viewer-expand,
+.media-item-container--viewer:hover .media-viewer-expand,
+.media-item-container--viewer:focus-within .media-viewer-expand {
   opacity: 1;
 }
 
-.media-clickable:focus-visible .media-zoom-hint {
+.media-viewer-expand:hover,
+.media-viewer-expand:focus-visible {
   opacity: 1;
-}
-
-.zoom-icon {
-  font-size: var(--text-base);
+  transform: translate3d(0, -0.0625rem, 0);
+  background: rgba(15, 23, 42, 0.74);
+  border-color: rgba(var(--color-primary-rgb), 0.24);
 }
 
 .media-placeholder {
@@ -2057,6 +2095,12 @@ onUnmounted(() => {
 
   .media-item-container {
     padding: var(--spacing-2);
+  }
+
+  .media-viewer-expand {
+    opacity: 1;
+    inline-size: 2.625rem;
+    block-size: 2.625rem;
   }
 
   .post-description--clamped {
