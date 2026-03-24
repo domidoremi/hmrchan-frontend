@@ -115,27 +115,18 @@
                     {{ t('common.clickToEnlarge') }}
                   </div>
                 </div>
-                <video
+                <VideoPlayer
                   v-else-if="activeMedia?.file_type === 'video'"
                   :key="`video-${activeMedia.id}`"
                   class="media-viewer-item is-loaded"
                   :src="getMediaStreamUrl(activeMedia.id)"
                   :poster="getMediaThumbnailUrl(activeMedia.id, 'medium')"
                   :style="activeMediaElementStyle"
-                  controls
                   playsinline
                   preload="none"
-                  @loadeddata="onMediaLoad"
-                >
-                  <track
-                    v-for="track in activeMedia.subtitles ?? []"
-                    :key="`${track.language}-${track.url ?? track.file_path ?? track.path ?? ''}`"
-                    kind="subtitles"
-                    :label="track.label ?? track.language"
-                    :srclang="track.language"
-                    :src="track.url ?? track.file_path ?? track.path ?? ''"
-                  />
-                </video>
+                  :subtitles="activeMedia.subtitles ?? null"
+                  @ready="onMediaLoad"
+                />
                 <div
                   v-else
                   :key="`fallback-${activeMedia?.id ?? activeMediaIndex}`"
@@ -380,6 +371,7 @@ import {
 import { resolveThumbnailSrc, resolveThumbnailSrcset } from '@/utils/thumbnailPresentation'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
+import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
