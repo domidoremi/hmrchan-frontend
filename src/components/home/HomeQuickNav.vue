@@ -90,13 +90,17 @@ defineEmits<{
 
 @media (max-width: 768px) {
   .home-quick-nav {
-    inset-inline: 50% auto auto 50%;
+    inset-inline-start: 50%;
+    inset-inline-end: auto;
     inset-block-start: auto;
     inset-block-end: calc(env(safe-area-inset-bottom, 0rem) + 0.75rem);
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     padding: 0.5rem;
+    inline-size: max-content;
+    max-inline-size: calc(100vw - 1rem);
     transform: translateX(-50%);
     border: 0.0625rem solid rgba(15, 23, 42, 0.05);
     border-radius: 999rem;

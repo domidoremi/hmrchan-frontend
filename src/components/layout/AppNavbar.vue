@@ -61,17 +61,21 @@
             <span class="nav-action-btn__label">{{ $t('common.search') }}</span>
           </button>
 
-          <RouterLink
+          <button
             v-if="isMobile"
-            to="/explore"
-            class="nav-action-btn nav-action-btn--pill nav-action-btn--primary navbar-cta"
-            :aria-label="$t('home.hero.primaryAction')"
-            @mouseenter="prefetchExplorePage"
-            @focus="prefetchExplorePage"
+            type="button"
+            ref="routeBtnRef"
+            class="nav-action-btn nav-action-btn--square nav-route-btn"
+            :class="{ 'nav-action-btn--active': showRouteMenu }"
+            :aria-label="$t('common.primaryNavigation')"
+            :aria-expanded="showRouteMenu"
+            aria-haspopup="dialog"
+            :aria-controls="showRouteMenu ? 'navbar-route-menu' : undefined"
+            @click="toggleRouteMenu"
           >
-            <AnimatedIcon name="explore" :fallback-icon="Compass" size="sm" />
-            <span class="nav-action-btn__label">{{ $t('home.hero.primaryAction') }}</span>
-          </RouterLink>
+            <AnimatedIcon name="explore" :fallback-icon="Menu" size="md" :active="showRouteMenu" />
+            <span class="nav-action-btn__label">{{ $t('common.primaryNavigation') }}</span>
+          </button>
 
           <button
             type="button"
@@ -139,6 +143,44 @@
         </div>
       </div>
     </div>
+
+    <!-- Settings Dropdown -->
+    <Transition name="dropdown">
+      <div
+        v-if="showRouteMenu && isMobile"
+        id="navbar-route-menu"
+        ref="routeDropdownRef"
+        v-click-outside="{ handler: () => closeRouteMenu(), include: [routeBtnRef] }"
+        class="route-dropdown glass-dropdown"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="$t('common.primaryNavigation')"
+        tabindex="-1"
+        @click.stop
+      >
+        <div class="route-dropdown__grid">
+          <RouterLink
+            v-for="item in mobileRouteItems"
+            :key="item.path"
+            :to="getNavigationLink(item)"
+            class="route-dropdown__link"
+            :class="{ 'route-dropdown__link--active': isRouteActive(item.path) }"
+            @click="closeRouteMenu()"
+            @mouseenter="prefetchMobileRoute(item.path)"
+            @focus="prefetchMobileRoute(item.path)"
+          >
+            <component :is="item.icon" class="route-dropdown__icon" aria-hidden="true" />
+            <span>{{ $t(item.i18nKey) }}</span>
+          </RouterLink>
+        </div>
+        <div class="route-dropdown__footer">
+          <RouterLink to="/about" class="route-dropdown__utility" @click="closeRouteMenu()">
+            <Info class="route-dropdown__icon" aria-hidden="true" />
+            <span>{{ $t('nav.about') }}</span>
+          </RouterLink>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Settings Dropdown -->
     <Transition name="dropdown">
@@ -300,9 +342,10 @@ import { storeToRefs } from 'pinia'
 import {
   Bell,
   ChevronRight,
-  Compass,
+  Info,
   LogIn,
   LogOut,
+  Menu,
   Search,
   Settings,
   Smartphone,
@@ -316,6 +359,7 @@ import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { runWhenIdle, throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 import { resolveNavbarDropdownPosition } from '@/components/layout/navbarDropdownPosition'
+import { useNavigation } from '@/composables/useNavigation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Separator from '@/components/ui/Separator.vue'
@@ -337,12 +381,16 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
+const { mobileNavItems, getNavigationLink } = useNavigation()
 
+const showRouteMenu = ref(false)
 const showSettings = ref(false)
 const showUserMenu = ref(false)
 const isDesktopSearchExpanded = ref(false)
 const desktopSearchQuery = ref('')
 
+const routeBtnRef = useTemplateRef<HTMLButtonElement>('routeBtnRef')
+const routeDropdownRef = useTemplateRef<HTMLDivElement>('routeDropdownRef')
 const settingsBtnRef = useTemplateRef<HTMLButtonElement>('settingsBtnRef')
 const userBtnRef = useTemplateRef<HTMLButtonElement>('userBtnRef')
 const settingsDropdownRef = useTemplateRef<HTMLDivElement>('settingsDropdownRef')
@@ -351,6 +399,13 @@ const navbarRef = useTemplateRef<HTMLElement>('navbarRef')
 const desktopSearchInputRef = useTemplateRef<HTMLInputElement>('desktopSearchInputRef')
 
 const desktopSearchInputId = 'navbar-desktop-search'
+
+useFocusTrap(routeDropdownRef, showRouteMenu, {
+  autoFocus: true,
+  restoreFocus: false,
+  initialFocus: '.route-dropdown__link',
+  onEscape: () => closeRouteMenu({ restoreFocus: true }),
+})
 
 useFocusTrap(settingsDropdownRef, showSettings, {
   autoFocus: true,
@@ -410,6 +465,7 @@ const userAvatarFallbackLabel = computed(() =>
 )
 
 const prefetchedPageKeys = new Set<string>()
+const mobileRouteItems = computed(() => mobileNavItems.value)
 
 function runOncePrefetch(key: string, loader: () => void) {
   if (prefetchedPageKeys.has(key)) return
@@ -453,6 +509,7 @@ function prefetchProfileSettingsPage() {
 watch(
   () => route.fullPath,
   () => {
+    closeRouteMenu()
     closeSettings()
     closeUserMenu()
     nextTick(() => {
@@ -511,6 +568,11 @@ function goToSearch() {
   router.push('/search')
 }
 
+function isRouteActive(path: string): boolean {
+  if (path === '/') return route.path === '/'
+  return route.path === path || route.path.startsWith(path + '/')
+}
+
 function expandDesktopSearch(focusInput = true) {
   if (isMobile.value) return
   isDesktopSearchExpanded.value = true
@@ -554,12 +616,24 @@ function handleDesktopSearchEscape() {
   collapseDesktopSearch(!desktopSearchQuery.value)
 }
 
-function restoreTriggerFocus(kind: 'settings' | 'user') {
+function restoreTriggerFocus(kind: 'route' | 'settings' | 'user') {
+  if (kind === 'route') {
+    routeBtnRef.value?.focus()
+    return
+  }
   if (kind === 'settings') {
     settingsBtnRef.value?.focus()
     return
   }
   userBtnRef.value?.focus()
+}
+
+function closeRouteMenu(options: { restoreFocus?: boolean } = {}) {
+  if (!showRouteMenu.value) return
+  showRouteMenu.value = false
+  if (options.restoreFocus) {
+    nextTick(() => restoreTriggerFocus('route'))
+  }
 }
 
 function closeSettings(options: { restoreFocus?: boolean } = {}) {
@@ -582,8 +656,24 @@ function closeUserMenu(options: { restoreFocus?: boolean } = {}) {
   }
 }
 
+function toggleRouteMenu() {
+  updateIsMobile()
+  if (!isMobile.value) return
+
+  closeSettings()
+  closeUserMenu()
+
+  if (showRouteMenu.value) {
+    closeRouteMenu()
+    return
+  }
+
+  showRouteMenu.value = true
+}
+
 function toggleSettings() {
   updateIsMobile()
+  closeRouteMenu()
   closeUserMenu()
 
   if (showSettings.value) {
@@ -605,6 +695,7 @@ function toggleSettings() {
 
 function toggleUserMenu() {
   updateIsMobile()
+  closeRouteMenu()
   closeSettings()
 
   if (showUserMenu.value) {
@@ -633,6 +724,12 @@ function handleLogout() {
 function handleKeydown(event: KeyboardEvent) {
   if (event.key !== 'Escape') return
 
+  if (showRouteMenu.value) {
+    event.preventDefault()
+    closeRouteMenu({ restoreFocus: true })
+    return
+  }
+
   if (showUserMenu.value) {
     event.preventDefault()
     closeUserMenu({ restoreFocus: true })
@@ -649,6 +746,36 @@ function updateIsMobile() {
   isMobile.value = window.matchMedia(MOBILE_NAV_BREAKPOINT_QUERY).matches
   if (isMobile.value) {
     isDesktopSearchExpanded.value = false
+    return
+  }
+  closeRouteMenu()
+}
+
+function prefetchMobileRoute(path: string) {
+  switch (path) {
+    case '/explore':
+      prefetchExplorePage()
+      return
+    case '/authors':
+      prefetchAuthorsPage()
+      return
+    case '/favorites':
+      runOncePrefetch('favorites', () => {
+        import('@/views/FavoritesPage.vue').catch(() => {})
+      })
+      return
+    case '/community':
+      runOncePrefetch('community', () => {
+        import('@/views/CommunityPage.vue').catch(() => {})
+      })
+      return
+    case '/schedule':
+      runOncePrefetch('schedule', () => {
+        import('@/views/SchedulePage.vue').catch(() => {})
+      })
+      return
+    default:
+      return
   }
 }
 
@@ -1140,10 +1267,6 @@ onUnmounted(() => {
   background: linear-gradient(180deg, rgba(var(--color-primary-rgb), 0.06), transparent);
 }
 
-.navbar-cta {
-  text-decoration: none;
-}
-
 .icon-spin {
   animation: icon-spin var(--duration-slow) var(--ease-out);
 }
@@ -1242,6 +1365,7 @@ onUnmounted(() => {
 }
 
 /* ========== Dropdowns ========== */
+.route-dropdown,
 .settings-dropdown,
 .user-dropdown {
   position: fixed;
@@ -1260,6 +1384,7 @@ onUnmounted(() => {
     visibility 0s linear var(--duration-fast);
 }
 
+.route-dropdown.glass-dropdown,
 .settings-dropdown.glass-dropdown,
 .user-dropdown.glass-dropdown {
   background: var(--nav-dropdown-bg);
@@ -1295,6 +1420,7 @@ onUnmounted(() => {
   transition-delay: 0s;
 }
 
+.dropdown-enter-active.route-dropdown,
 .dropdown-enter-active.settings-dropdown,
 .dropdown-enter-active.user-dropdown {
   transition:
@@ -1302,6 +1428,7 @@ onUnmounted(() => {
     transform 280ms var(--ease-spring);
 }
 
+.dropdown-leave-active.route-dropdown,
 .dropdown-leave-active.settings-dropdown,
 .dropdown-leave-active.user-dropdown {
   transition:
@@ -1309,6 +1436,7 @@ onUnmounted(() => {
     transform 180ms var(--ease-in);
 }
 
+.dropdown-enter-from.route-dropdown,
 .dropdown-enter-from.settings-dropdown,
 .dropdown-enter-from.user-dropdown {
   opacity: 0;
@@ -1316,11 +1444,91 @@ onUnmounted(() => {
     scale3d(var(--nav-dropdown-enter-scale), var(--nav-dropdown-enter-scale), 1);
 }
 
+.dropdown-leave-to.route-dropdown,
 .dropdown-leave-to.settings-dropdown,
 .dropdown-leave-to.user-dropdown {
   opacity: 0;
   transform: translate3d(0, var(--nav-dropdown-leave-y), 0)
     scale3d(var(--nav-dropdown-leave-scale), var(--nav-dropdown-leave-scale), 1);
+}
+
+.route-dropdown {
+  inset-inline: clamp(0.75rem, 3vw, 1rem);
+  inline-size: auto;
+  max-inline-size: calc(100vw - (clamp(0.75rem, 3vw, 1rem) * 2));
+  padding: var(--spacing-3);
+  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 88%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 82%, transparent);
+  box-shadow: var(--nav-dropdown-shadow);
+}
+
+.route-dropdown__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-2);
+}
+
+.route-dropdown__link,
+.route-dropdown__utility {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-block-size: 4.75rem;
+  padding: 0.75rem 0.5rem;
+  border: 0.0625rem solid transparent;
+  border-radius: var(--ui-radius-button, var(--radius-lg));
+  background: color-mix(in srgb, var(--chrome-action-bg) 28%, transparent);
+  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  text-align: center;
+  text-decoration: none;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.route-dropdown__link:hover,
+.route-dropdown__link:focus-visible,
+.route-dropdown__utility:hover,
+.route-dropdown__utility:focus-visible {
+  border-color: var(--nav-action-border-strong);
+  background: color-mix(in srgb, var(--chrome-action-bg-hover) 48%, transparent);
+  color: var(--color-primary);
+  transform: translate3d(0, -0.0625rem, 0);
+}
+
+.route-dropdown__link--active {
+  border-color: color-mix(
+    in srgb,
+    var(--nav-action-border-strong) 76%,
+    rgba(var(--color-primary-rgb), 0.16)
+  );
+  background: color-mix(in srgb, var(--chrome-action-bg-hover) 56%, transparent);
+  color: var(--color-primary);
+}
+
+.route-dropdown__icon {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  flex: 0 0 auto;
+}
+
+.route-dropdown__footer {
+  margin-block-start: var(--spacing-2);
+  padding-block-start: var(--spacing-2);
+  border-block-start: 0.0625rem solid color-mix(in srgb, var(--nav-muted-border) 72%, transparent);
+}
+
+.route-dropdown__utility {
+  min-block-size: 3.5rem;
+  flex-direction: row;
+  justify-content: flex-start;
+  padding-inline: 0.875rem;
 }
 
 .settings-dropdown :deep(.settings-header),
@@ -1521,12 +1729,31 @@ onUnmounted(() => {
     transform: none;
   }
 
+  .nav-action-btn__label {
+    display: none;
+  }
+
   .brand-name {
     font-size: var(--text-lg);
   }
 
   .navbar-shell {
     padding-inline: 0.75rem;
+  }
+
+  .navbar-actions {
+    gap: 0.375rem;
+  }
+
+  .route-dropdown {
+    --nav-dropdown-enter-y: -0.3rem;
+    --nav-dropdown-leave-y: -0.14rem;
+    --nav-dropdown-enter-scale: 0.99;
+    --nav-dropdown-leave-scale: 0.995;
+    inset-inline: clamp(0.75rem, 3vw, 1rem);
+    inset-block-start: calc(var(--navbar-visible-height) + clamp(0.5rem, 2vw, 0.75rem));
+    max-block-size: min(var(--app-safe-block-size), 32rem);
+    overflow: auto;
   }
 
   .settings-dropdown,

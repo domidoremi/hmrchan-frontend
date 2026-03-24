@@ -6607,33 +6607,34 @@ onBeforeUnmount(() => {
 
   .rail-track {
     display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: clamp(18.5rem, calc(100vw - 1.75rem), 22.625rem);
-    inline-size: auto;
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+    grid-template-columns: minmax(0, 1fr);
+    inline-size: 100%;
     block-size: auto;
-    gap: 0.75rem;
+    gap: 0.875rem;
     transform: none !important;
     will-change: auto;
-    overflow-x: auto;
+    overflow-x: visible;
     overflow-y: visible;
     padding-inline: 0.875rem;
     padding-block-end: 0.375rem;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: 0.875rem;
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x;
+    scroll-snap-type: none;
+    scroll-padding-inline: 0;
+    overscroll-behavior-x: auto;
+    -webkit-overflow-scrolling: auto;
+    touch-action: auto;
     scrollbar-width: none;
   }
 
   .rail-panel {
-    flex: none;
+    flex: 1 1 auto;
     block-size: auto;
     min-inline-size: 0;
     padding: 0;
     overflow: visible;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
   }
 
   .rail-panel__content {
@@ -7666,21 +7667,28 @@ onBeforeUnmount(() => {
 
   .home-page .rail-track {
     display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: clamp(18.5rem, calc(100vw - 1.75rem), 22.625rem);
-    inline-size: auto;
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+    grid-template-columns: minmax(0, 1fr);
+    inline-size: 100%;
     block-size: auto;
-    gap: 0.75rem;
+    gap: 0.875rem;
     transform: none !important;
     will-change: auto;
-    overflow-x: auto;
+    overflow-x: visible;
     overflow-y: visible;
     padding-inline: 0.875rem;
     padding-block-end: 0.375rem;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: 0.875rem;
-    overscroll-behavior-x: contain;
+    scroll-snap-type: none;
+    scroll-padding-inline: 0;
+    overscroll-behavior-x: auto;
     scrollbar-width: none;
+  }
+
+  .home-page .rail-panel {
+    min-inline-size: 0;
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
   }
 
   .home-page .story-stage {
