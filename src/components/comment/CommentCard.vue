@@ -2,7 +2,13 @@
   <article class="comment-card" :class="{ 'is-reply': isReply }">
     <!-- Comment Header -->
     <div class="comment-header">
-      <img :src="avatarUrl" :alt="getUserDisplayName(comment.user)" class="comment-avatar" />
+      <Avatar
+        :src="avatarUrl"
+        :alt="getUserDisplayName(comment.user)"
+        :fallback="avatarFallbackLabel"
+        size="custom"
+        class="comment-avatar"
+      />
       <div class="comment-meta">
         <span class="comment-author">{{ getUserDisplayName(comment.user) }}</span>
         <Badge v-if="comment.is_thread_owner" variant="success" size="sm">{{
@@ -197,11 +203,13 @@ import {
 } from 'lucide-vue-next'
 import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import type { Comment } from '@/types'
+import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserDisplayName } from '@/utils/user'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { formatRelativeTime } from '@/utils/date'
 import CommentForm from './CommentForm.vue'
 import { commentTreeContextKey } from './commentTreeContext'
+import Avatar from '@/components/ui/Avatar.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Button from '@/components/ui/Button.vue'
@@ -293,6 +301,10 @@ async function handleShowReplies() {
 const avatarUrl = computed(() => {
   return getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
 })
+
+const avatarFallbackLabel = computed(() =>
+  getAvatarFallbackLabel(props.comment.user.username, getUserDisplayName(props.comment.user))
+)
 
 const userLevelBadge = computed(() => {
   const badges: Record<string, string> = {
@@ -491,14 +503,15 @@ onUnmounted(() => {
   margin-bottom: var(--spacing-3);
 }
 
-.comment-avatar {
+.comment-avatar.ui-avatar {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 50%;
-  object-fit: cover;
+  border: none;
+  background: transparent;
 }
 
-.is-reply .comment-avatar {
+.is-reply .comment-avatar.ui-avatar {
   width: 1.75rem;
   height: 1.75rem;
 }

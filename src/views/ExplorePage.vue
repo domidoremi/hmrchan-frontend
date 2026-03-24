@@ -193,6 +193,7 @@ import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
+import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { getFallbackExplorePosts } from '@/fallbacks/exploreFallback'
 import {
   isServiceUnavailableError,
@@ -376,9 +377,7 @@ const platformOptions = computed(() => [
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
   storePostNavigationContext(posts.value, postId, 'explore')
-  if (thumbnailSrc) {
-    sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
-  }
+  cachePostThumbnailPreview(postId, thumbnailSrc)
   router.push(`/post/${postId}`)
 }
 
@@ -567,7 +566,7 @@ async function loadMore(): Promise<boolean> {
 // 增加预加载距离，让内容提前加载，避免用户等待
 useInfiniteScroll(sentinelRef, loadMore, {
   rootMargin: '800px', // 提前 800px 开始加载下一批
-  enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
+  enabled: () => isActive && hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
 })
 
 // ========== Masonry 布局管理 ==========

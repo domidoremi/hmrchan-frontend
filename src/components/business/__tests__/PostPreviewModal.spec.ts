@@ -85,7 +85,7 @@ describe('PostPreviewModal', () => {
 
     expect(wrapper.find('.post-preview-media').exists()).toBe(true)
     expect(wrapper.find('.post-preview-media-item').exists()).toBe(true)
-    expect(wrapper.find('.post-preview-media-item').attributes('fetchpriority')).toBe('high')
+    expect(wrapper.find('.post-preview-media-item').attributes('fetchpriority')).toBe('auto')
     expect(wrapper.find('.post-preview-media-backdrop').attributes('fetchpriority')).toBe('low')
     expect(wrapper.find('.post-preview-content').text()).toContain('Test post')
 
@@ -102,7 +102,7 @@ describe('PostPreviewModal', () => {
 
     expect(wrapper.find('.post-preview-media').exists()).toBe(true)
     expect(wrapper.find('.post-preview-media-item').exists()).toBe(true)
-    expect(wrapper.find('.post-preview-media-item').attributes('fetchpriority')).toBe('high')
+    expect(wrapper.find('.post-preview-media-item').attributes('fetchpriority')).toBe('auto')
     expect(wrapper.find('.post-preview-media-backdrop').attributes('fetchpriority')).toBe('low')
 
     wrapper.unmount()

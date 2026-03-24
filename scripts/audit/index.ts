@@ -12,9 +12,24 @@ import cssAudit from './css'
 import i18nAudit from './i18n'
 import apiContractAudit from './api-contract'
 import envConfigAudit from './env-config'
+import frontendPatternsAudit from './frontend-patterns'
 
 // --- Module registry ---
-const modules: AuditModule[] = [typeCheckAudit, lintAudit, buildAudit, testAudit, securityAudit, deadCodeAudit, pwaAudit, buildArtifactAudit, cssAudit, i18nAudit, apiContractAudit, envConfigAudit]
+const modules: AuditModule[] = [
+  typeCheckAudit,
+  lintAudit,
+  buildAudit,
+  testAudit,
+  securityAudit,
+  deadCodeAudit,
+  pwaAudit,
+  buildArtifactAudit,
+  cssAudit,
+  i18nAudit,
+  apiContractAudit,
+  envConfigAudit,
+  frontendPatternsAudit,
+]
 
 // --- CLI arg parsing ---
 function parseArgs(argv: string[]): { fix: boolean; verbose: boolean; only: string | null } {
@@ -55,7 +70,7 @@ function printReport(report: AuditReport): void {
   console.log('')
   console.log(colorize('───────────────────────────────────────────────', 'dim'))
   console.log(
-    `  ${colorize(`Pass: ${report.passCount}`, 'pass')}  ${colorize(`Warn: ${report.warnCount}`, 'warn')}  ${colorize(`Fail: ${report.failCount}`, 'fail')}  Issues: ${report.totalIssues}`,
+    `  ${colorize(`Pass: ${report.passCount}`, 'pass')}  ${colorize(`Warn: ${report.warnCount}`, 'warn')}  ${colorize(`Fail: ${report.failCount}`, 'fail')}  Issues: ${report.totalIssues}`
   )
   console.log(`  Total duration: ${formatDuration(report.totalDuration)}`)
   console.log('')

@@ -3,6 +3,20 @@ import { computed, nextTick, reactive } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
+
+vi.mock('@/components/ui/Avatar.vue', () => ({
+  default: {
+    name: 'Avatar',
+    props: ['src', 'alt', 'fallback'],
+    template: `
+      <span class="ui-avatar">
+        <img v-if="src" :src="src" :alt="alt" />
+        <span v-else>{{ fallback }}</span>
+      </span>
+    `,
+  },
+}))
+
 import AppNavbar from '../AppNavbar.vue'
 
 const MOBILE_NAV_QUERY = '(max-width: 960px)'
@@ -148,6 +162,15 @@ async function createWrapper() {
         AnimatedIcon: {
           template: '<span aria-hidden="true" />',
         },
+        Avatar: {
+          props: ['src', 'alt', 'fallback'],
+          template: `
+            <span class="ui-avatar">
+              <img v-if="src" :src="src" :alt="alt" />
+              <span v-else>{{ fallback }}</span>
+            </span>
+          `,
+        },
         Separator: {
           template: '<hr />',
         },
@@ -178,6 +201,20 @@ function stubMatchMedia(isMobile: boolean) {
   )
 }
 
+function setNavigatorOnline(online: boolean) {
+  Object.defineProperty(window.navigator, 'onLine', {
+    configurable: true,
+    value: online,
+  })
+}
+
+function setDocumentVisibilityState(state: 'visible' | 'hidden') {
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    value: state,
+  })
+}
+
 describe('AppNavbar', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -191,6 +228,8 @@ describe('AppNavbar', () => {
     scheduleStoreState.hasNew = false
     scheduleStoreState.checkForNew.mockClear()
     stubMatchMedia(false)
+    setNavigatorOnline(true)
+    setDocumentVisibilityState('visible')
   })
 
   afterEach(() => {
@@ -292,6 +331,62 @@ describe('AppNavbar', () => {
     await vi.advanceTimersByTimeAsync(8000)
 
     expect(navbarMocks.runWhenIdleMock).toHaveBeenCalledTimes(2)
+
+    wrapper.unmount()
+  })
+
+  it('cancels pending idle prefetch while hidden and reschedules after becoming visible again', async () => {
+    authStoreState.isAuthenticated = true
+    authStoreState.user = { username: 'momo', email: 'momo@example.com' }
+    const { wrapper } = await createWrapper()
+
+    await vi.advanceTimersByTimeAsync(8000)
+    expect(navbarMocks.runWhenIdleMock).toHaveBeenCalledTimes(1)
+    expect(navbarMocks.idleTasks).toHaveLength(1)
+
+    setDocumentVisibilityState('hidden')
+    document.dispatchEvent(new Event('visibilitychange'))
+    await nextTick()
+
+    expect(navbarMocks.idleTasks[0]?.cancel).toHaveBeenCalledTimes(1)
+
+    setDocumentVisibilityState('visible')
+    document.dispatchEvent(new Event('visibilitychange'))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(8000)
+
+    expect(navbarMocks.runWhenIdleMock).toHaveBeenCalledTimes(2)
+
+    navbarMocks.idleTasks[1]?.task()
+    await nextTick()
+
+    expect(navbarMocks.prefetchExploreDataMock).toHaveBeenCalledTimes(1)
+    expect(navbarMocks.prefetchAuthorsDataMock).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+  })
+
+  it('schedules idle prefetch after the browser comes back online', async () => {
+    authStoreState.isAuthenticated = true
+    authStoreState.user = { username: 'momo', email: 'momo@example.com' }
+    setNavigatorOnline(false)
+    const { wrapper } = await createWrapper()
+
+    await vi.advanceTimersByTimeAsync(8000)
+    expect(navbarMocks.runWhenIdleMock).not.toHaveBeenCalled()
+
+    setNavigatorOnline(true)
+    window.dispatchEvent(new Event('online'))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(8000)
+
+    expect(navbarMocks.runWhenIdleMock).toHaveBeenCalledTimes(1)
+
+    navbarMocks.idleTasks[0]?.task()
+    await nextTick()
+
+    expect(navbarMocks.prefetchExploreDataMock).toHaveBeenCalledTimes(1)
+    expect(navbarMocks.prefetchAuthorsDataMock).toHaveBeenCalledTimes(1)
 
     wrapper.unmount()
   })

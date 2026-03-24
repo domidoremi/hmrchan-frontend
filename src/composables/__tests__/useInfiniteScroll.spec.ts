@@ -46,6 +46,45 @@ function mountHost(
   return mount(Host)
 }
 
+function mountSwitchingSentinelHost(
+  loadMore: () => void | boolean | Promise<void | boolean>,
+  enabled?: boolean | Ref<boolean> | (() => boolean)
+) {
+  const primarySentinel = ref<HTMLElement | null>(null)
+  const secondarySentinel = ref<HTMLElement | null>(null)
+  const useSecondarySentinel = ref(false)
+
+  const Host = defineComponent({
+    setup() {
+      useInfiniteScroll(
+        () => (useSecondarySentinel.value ? secondarySentinel.value : primarySentinel.value),
+        loadMore,
+        { enabled }
+      )
+
+      return () =>
+        h('div', [
+          useSecondarySentinel.value
+            ? h('div', {
+                key: 'secondary-sentinel',
+                ref: secondarySentinel,
+                'data-testid': 'sentinel-secondary',
+              })
+            : h('div', {
+                key: 'primary-sentinel',
+                ref: primarySentinel,
+                'data-testid': 'sentinel-primary',
+              }),
+        ])
+    },
+  })
+
+  return {
+    wrapper: mount(Host),
+    useSecondarySentinel,
+  }
+}
+
 describe('useInfiniteScroll', () => {
   beforeEach(() => {
     MockIntersectionObserver.instances = []
@@ -119,7 +158,12 @@ describe('useInfiniteScroll', () => {
     enabled.value = false
     await nextTick()
 
-    expect(observer.disconnect).toHaveBeenCalled()
+    observer.trigger({ isIntersecting: true, target: sentinel })
+    await Promise.resolve()
+
+    expect(loadMore).toHaveBeenCalledTimes(1)
+    expect(observer.unobserve).toHaveBeenCalledWith(sentinel)
+    expect(observer.disconnect).not.toHaveBeenCalled()
 
     wrapper.unmount()
   })
@@ -233,6 +277,62 @@ describe('useInfiniteScroll', () => {
     resolveLoadMore?.(true)
     await Promise.resolve()
     await Promise.resolve()
+
+    wrapper.unmount()
+  })
+
+  it('enabled 恢复时应复用已有 observer 实例', async () => {
+    const loadMore = vi.fn()
+    const enabled = ref(true)
+    const wrapper = mountHost(loadMore, enabled)
+
+    await nextTick()
+
+    expect(MockIntersectionObserver.instances).toHaveLength(1)
+
+    const observer = MockIntersectionObserver.instances[0]!
+    const sentinel = wrapper.get('[data-testid="sentinel"]').element
+
+    enabled.value = false
+    await nextTick()
+    enabled.value = true
+    await nextTick()
+
+    expect(MockIntersectionObserver.instances).toHaveLength(1)
+    expect(observer.unobserve).toHaveBeenCalledWith(sentinel)
+    expect(observer.observe).toHaveBeenCalledTimes(2)
+    expect(observer.disconnect).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it('sentinel 变更时应复用 observer 并忽略旧节点回调', async () => {
+    const loadMore = vi.fn()
+    const { wrapper, useSecondarySentinel } = mountSwitchingSentinelHost(loadMore, true)
+
+    await nextTick()
+
+    expect(MockIntersectionObserver.instances).toHaveLength(1)
+
+    const observer = MockIntersectionObserver.instances[0]!
+    const primarySentinel = wrapper.get('[data-testid="sentinel-primary"]').element
+
+    useSecondarySentinel.value = true
+    await nextTick()
+
+    const secondarySentinel = wrapper.get('[data-testid="sentinel-secondary"]').element
+
+    expect(observer.unobserve).toHaveBeenCalledWith(primarySentinel)
+    expect(observer.observe).toHaveBeenLastCalledWith(secondarySentinel)
+    expect(observer.disconnect).not.toHaveBeenCalled()
+
+    observer.trigger({ isIntersecting: true, target: primarySentinel })
+    await Promise.resolve()
+    expect(loadMore).not.toHaveBeenCalled()
+
+    observer.trigger({ isIntersecting: true, target: secondarySentinel })
+    await Promise.resolve()
+    expect(loadMore).toHaveBeenCalledTimes(1)
 
     wrapper.unmount()
   })

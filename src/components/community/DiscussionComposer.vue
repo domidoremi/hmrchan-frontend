@@ -55,11 +55,12 @@
           @keydown.enter.prevent="selectMention(post)"
           @keydown.space.prevent="selectMention(post)"
         >
-          <img
+          <ThumbnailImage
             v-if="post.thumbnail_url"
             :src="post.thumbnail_url"
             :alt="post.title"
             class="mention-thumb"
+            size="small"
             loading="lazy"
           />
           <div class="mention-info">
@@ -139,6 +140,7 @@ import { debounce } from '@/utils/performance'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
+import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 
 const emit = defineEmits<{
   created: [discussion: Discussion]

@@ -1,9 +1,6 @@
 <template>
   <div class="relations-tab">
-    <div class="tab-header">
-      <h2 class="tab-title">{{ tabTitle }}</h2>
-      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
-    </div>
+    <ProfileTabHeader :title="tabTitle" :count="total" />
 
     <StateIndicator
       v-if="error"
@@ -30,11 +27,10 @@
         <article v-for="item in users" :key="item.id" class="relation-card glass-surface--elevated">
           <div class="relation-main">
             <Avatar
-              :src="
-                normalizeAvatarUrl(item.avatar_url || undefined) || item.avatar_url || undefined
-              "
+              :src="resolveAvatarSrc(item.avatar_url)"
               :alt="item.username"
               size="lg"
+              :fallback="getAvatarFallbackLabel(item.username)"
             />
 
             <div class="relation-copy">
@@ -93,9 +89,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { ApiError, normalizeAvatarUrl, userRelationsService, type UserListItem } from '@/api'
+import { ApiError, userRelationsService, type UserListItem } from '@/api'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
+import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { useAuthStore, useToastStore } from '@/stores'
+import ProfileTabHeader from '@/components/profile/ProfileTabHeader.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -255,28 +253,8 @@ watch(pageSize, () => {
 <style scoped>
 .relations-tab {
   min-height: 20rem;
-}
-
-.tab-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-block-end: clamp(1.25rem, 3vw, 2rem);
-}
-
-.tab-title {
-  margin: 0;
-  font-size: clamp(var(--text-lg), 2.5vw, var(--text-xl));
-  font-weight: var(--font-bold);
-}
-
-.item-count {
-  padding: 0.125rem 0.625rem;
-  border-radius: var(--radius-full);
-  background: rgba(var(--color-primary-rgb), 0.08);
-  color: var(--color-primary);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
+  --profile-tab-header-count-bg: rgba(var(--color-primary-rgb), 0.08);
+  --profile-tab-header-count-border: transparent;
 }
 
 .relations-skeleton,

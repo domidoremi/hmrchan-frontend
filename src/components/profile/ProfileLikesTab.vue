@@ -1,9 +1,6 @@
 <template>
   <div class="likes-tab">
-    <div class="tab-header">
-      <h2 class="tab-title">{{ $t('profile.tabs.likes') }}</h2>
-      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
-    </div>
+    <ProfileTabHeader :title="$t('profile.tabs.likes')" :count="total" />
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLikes" />
 
@@ -109,6 +106,7 @@ import { apiClient, ApiError } from '@/api'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
+import ProfileTabHeader from '@/components/profile/ProfileTabHeader.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -272,29 +270,7 @@ onUnmounted(() => {
 <style scoped>
 .likes-tab {
   min-height: 20rem;
-}
-
-.tab-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-bottom: clamp(1.25rem, 3vw, 2rem);
-}
-
-.tab-title {
-  font-size: clamp(var(--text-lg), 2.5vw, var(--text-xl));
-  font-weight: var(--font-bold);
-  margin: 0;
-}
-
-.item-count {
-  padding: 0.125rem 0.625rem;
-  background: var(--profile-chip-bg);
-  border: 1px solid var(--profile-chip-border);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  color: var(--color-error);
-  font-weight: var(--font-medium);
+  --profile-tab-header-count-color: var(--color-error);
 }
 
 /* Skeleton */
@@ -596,8 +572,8 @@ onUnmounted(() => {
   border-radius: var(--radius-lg);
 }
 
-#app[data-ui-style='material'] .likes-tab .item-count {
-  border-radius: var(--radius-sm);
+#app[data-ui-style='material'] .likes-tab {
+  --profile-tab-header-count-radius: var(--radius-sm);
 }
 
 /* ===== Dark Theme Overrides ===== */
@@ -631,9 +607,9 @@ onUnmounted(() => {
   background: linear-gradient(to bottom, rgba(59, 130, 246, 0.15), transparent);
 }
 
-[data-theme='blue'] .likes-tab .item-count {
-  background: rgba(59, 130, 246, 0.08);
-  color: #3b82f6;
+[data-theme='blue'] .likes-tab {
+  --profile-tab-header-count-bg: rgba(59, 130, 246, 0.08);
+  --profile-tab-header-count-color: #3b82f6;
 }
 
 [data-theme='blue'] .likes-tab .source-icon {

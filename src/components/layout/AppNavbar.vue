@@ -86,7 +86,14 @@
             :aria-controls="showUserMenu ? 'navbar-user-menu' : undefined"
             @click="toggleUserMenu"
           >
-            <img :src="userAvatar" :alt="user?.username" class="nav-user-avatar" />
+            <Avatar
+              :src="userAvatar"
+              :alt="user?.username"
+              :fallback="userAvatarFallbackLabel"
+              size="custom"
+              loading="eager"
+              class="nav-user-avatar"
+            />
             <div class="nav-user-status" />
           </button>
         </div>
@@ -128,9 +135,12 @@
       >
         <div class="user-info">
           <div class="user-avatar-wrapper">
-            <img
+            <Avatar
               :src="userAvatar"
               :alt="user ? getUserDisplayName(user) : ''"
+              :fallback="userAvatarFallbackLabel"
+              size="custom"
+              loading="eager"
               class="user-avatar-lg"
             />
             <div class="nav-user-status nav-user-status--lg" />
@@ -234,6 +244,7 @@
 
 <script setup lang="ts">
 import {
+  computed,
   ref,
   watch,
   onMounted,
@@ -256,6 +267,7 @@ import {
   User,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
+import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserDisplayName } from '@/utils/user'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
@@ -263,6 +275,7 @@ import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { runWhenIdle, throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 import { resolveNavbarDropdownPosition } from '@/components/layout/navbarDropdownPosition'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 import Separator from '@/components/ui/Separator.vue'
 
 // 懒加载设置面板，减少首屏 JS
@@ -341,6 +354,13 @@ function isHomeRailNavLockEnabled(): boolean {
 
 // 使用统一的用户头像 composable，确保与其他组件同步
 const { avatarUrl: userAvatar } = useUserAvatar()
+const userAvatarFallbackLabel = computed(() =>
+  getAvatarFallbackLabel(
+    user.value ? getUserDisplayName(user.value) : undefined,
+    user.value?.username,
+    user.value?.email
+  )
+)
 
 const prefetchedPageKeys = new Set<string>()
 
@@ -716,6 +736,25 @@ function scheduleNavigationIdlePrefetch() {
     prefetchAuthorsPage()
   })
 }
+
+function resetIdlePrefetchCycle() {
+  hasCompletedIdlePrefetchCycle = false
+  scheduleNavigationIdlePrefetch()
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState !== 'visible') {
+    cancelIdlePrefetch()
+    return
+  }
+
+  resetIdlePrefetchCycle()
+}
+
+function handleWindowOnline() {
+  resetIdlePrefetchCycle()
+}
+
 onMounted(() => {
   updateIsMobile()
 
@@ -733,8 +772,10 @@ onMounted(() => {
   syncNavbarVisibleHeight()
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleKeydown)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   window.addEventListener('resize', handleResize)
   window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('online', handleWindowOnline)
   requestAnimationFrame(() => {
     handleScroll()
   })
@@ -744,8 +785,10 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeydown)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('online', handleWindowOnline)
   handleResize.cancel?.()
   handleScroll.cancel?.()
   cancelIdlePrefetch()
@@ -1027,12 +1070,12 @@ onUnmounted(() => {
   opacity: 1;
 }
 
-.nav-user-avatar {
+.nav-user-avatar.ui-avatar {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 50%;
-  object-fit: cover;
   border: 2px solid var(--nav-chip-border);
+  background: var(--nav-muted-bg);
   transition: border-color var(--transition-fast);
 }
 
@@ -1189,12 +1232,12 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.user-avatar-lg {
+.user-avatar-lg.ui-avatar {
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  object-fit: cover;
   border: 2px solid var(--nav-chip-border);
+  background: var(--nav-muted-bg);
 }
 
 .nav-user-status--lg {
