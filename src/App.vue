@@ -475,17 +475,10 @@ main.main--home {
 
 @media (min-width: 961px) {
   #app {
-    --app-side-nav-inline-start: clamp(0.75rem, 2vw, 1.25rem);
-    --app-side-nav-width: clamp(3.5rem, 5vw, 4rem);
-    --app-side-nav-gap: clamp(1rem, 2vw, 1.5rem);
-    --app-side-nav-offset: calc(
-      var(--app-side-nav-inline-start) + var(--app-side-nav-width) + var(--app-side-nav-gap)
-    );
-  }
-
-  main,
-  .app-footer-shell {
-    padding-inline-start: var(--app-side-nav-offset);
+    --app-side-nav-width: clamp(2.875rem, 4vw, 3.25rem);
+    --app-side-nav-inline-start: clamp(0.5rem, 1.1vw, 1rem);
+    --app-side-nav-gap: clamp(0.75rem, 1.6vw, 1.125rem);
+    --app-side-nav-offset: 0rem;
   }
 }
 

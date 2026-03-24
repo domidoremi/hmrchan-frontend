@@ -26,11 +26,7 @@
           <span class="hero-copy__divider" aria-hidden="true" />
 
           <div class="hero-copy__right">
-            <div
-              class="hero-editorial glass-card"
-              :class="{ 'hero-editorial--loaded': heroEditorialVisible }"
-              :style="noGlassBackdropStyle"
-            >
+            <div class="hero-editorial" :class="{ 'hero-editorial--loaded': heroEditorialVisible }">
               <div class="hero-editorial__state hero-editorial__state--loading" aria-hidden="true">
                 <div class="hero-editorial__kicker">
                   <span class="hero-editorial__dot" />
@@ -108,12 +104,7 @@
             </div>
 
             <div class="hero-stats" :aria-label="$t('home.hero.stats.ariaLabel')">
-              <div
-                v-for="item in heroStats"
-                :key="item.key"
-                class="hero-stat glass-card"
-                :style="noGlassBackdropStyle"
-              >
+              <div v-for="item in heroStats" :key="item.key" class="hero-stat">
                 <span class="hero-stat__label">{{ item.label }}</span>
                 <strong class="hero-stat__value">{{ item.value }}</strong>
                 <span class="hero-stat__note">{{ item.note }}</span>
@@ -2770,9 +2761,10 @@ onBeforeUnmount(() => {
   padding: clamp(1rem, 1.8vw, 1.25rem);
   opacity: 0.72;
   transform: translate3d(0, 0.5rem, 0);
-  border-color: var(--home-soft-border);
-  background: var(--home-panel-bg-strong), var(--home-pill-bg);
-  box-shadow: var(--home-card-shadow);
+  border: 0.0625rem solid color-mix(in srgb, var(--home-soft-border) 82%, transparent);
+  border-radius: clamp(1.15rem, 2vw, 1.5rem);
+  background: transparent;
+  box-shadow: none;
   overflow: clip;
   transition:
     opacity 260ms ease,
@@ -2787,7 +2779,7 @@ onBeforeUnmount(() => {
     linear-gradient(125deg, transparent 0%, rgba(255, 255, 255, 0.24) 46%, transparent 68%),
     radial-gradient(circle at top right, rgba(var(--home-mist-rgb), 0.12), transparent 42%);
   pointer-events: none;
-  opacity: 0.72;
+  opacity: 0.4;
 }
 
 .hero-editorial--loaded {
@@ -2983,8 +2975,10 @@ onBeforeUnmount(() => {
   gap: 0.125rem;
   padding: var(--spacing-3);
   min-height: 100%;
-  border-color: var(--home-soft-border);
-  box-shadow: var(--home-card-shadow);
+  border: 0.0625rem solid color-mix(in srgb, var(--home-soft-border) 78%, transparent);
+  border-radius: clamp(1rem, 1.8vw, 1.35rem);
+  background: transparent;
+  box-shadow: none;
 }
 
 .hero-stat__label {
@@ -4109,8 +4103,14 @@ onBeforeUnmount(() => {
 
 .rail-panel--portal .rail-panel__content,
 .rail-panel--trends .rail-panel__content {
-  grid-template-rows: auto auto;
-  align-content: start;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: stretch;
+}
+
+.rail-panel--portal .portal-grid,
+.rail-panel--portal .portal-sidebar,
+.rail-panel--portal .portal-sidebar__row {
+  overflow: clip;
 }
 
 .portal-card {
@@ -6184,6 +6184,10 @@ onBeforeUnmount(() => {
     grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
   }
 
+  .portal-sidebar__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .rail-panel--portal .portal-card--primary {
     gap: clamp(0.5rem, 1vw, 0.75rem);
     padding: clamp(0.75rem, 1.2vw, 0.9rem);
@@ -6401,6 +6405,10 @@ onBeforeUnmount(() => {
 }
 
 @media (min-width: 769px) and (max-height: 760px) {
+  .rail-panel--portal .portal-card--secondary-compact .portal-card__body p {
+    display: none;
+  }
+
   .trends-card {
     gap: 0.625rem;
     padding: 0.75rem;

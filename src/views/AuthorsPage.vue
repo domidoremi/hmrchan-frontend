@@ -7,7 +7,7 @@
     </div>
 
     <div class="container">
-      <header class="page-hero authors-hero">
+      <header class="page-hero page-hero--bare authors-hero">
         <div class="page-hero__content">
           <div class="page-hero__header">
             <div class="page-hero__heading">
