@@ -49,7 +49,6 @@
             </div>
             <div class="discussion-author">
               <Avatar
-                :key="`${discussion.id}:${resolvedDiscussionAuthorAvatarSrc ?? 'fallback'}`"
                 :src="resolvedDiscussionAuthorAvatarSrc"
                 :alt="discussion.author.username"
                 class="author-avatar"
@@ -97,31 +96,11 @@
             {{ discussion.content }}
           </div>
 
-          <div
+          <ReferencedPostPreview
             v-if="discussion.referenced_post"
-            class="referenced-post page-list-card"
-            role="button"
-            tabindex="0"
-            @click="goToReferencedPost(discussion.referenced_post)"
-            @keydown.enter.prevent="goToReferencedPost(discussion.referenced_post)"
-            @keydown.space.prevent="goToReferencedPost(discussion.referenced_post)"
-          >
-            <img
-              v-if="discussion.referenced_post.thumbnail_url"
-              :src="
-                normalizeToThumbnailUrl(discussion.referenced_post.thumbnail_url, 'medium') ||
-                discussion.referenced_post.thumbnail_url
-              "
-              :alt="discussion.referenced_post.title"
-              class="referenced-thumb"
-              loading="lazy"
-              decoding="async"
-            />
-            <div class="referenced-content">
-              <span class="referenced-label">{{ $t('community.referencedPost') }}</span>
-              <span class="referenced-title">{{ discussion.referenced_post.title }}</span>
-            </div>
-          </div>
+            :post="discussion.referenced_post"
+            class="discussion-reference page-list-card"
+          />
         </article>
 
         <section v-if="discussion" class="discussion-comments">
@@ -155,8 +134,7 @@ import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Eye, MessageSquare, Trash2, Pin } from 'lucide-vue-next'
 import { useAuthStore, useToastStore, useDiscussionsStore } from '@/stores'
 import { discussionService, ApiError } from '@/api'
-import { normalizeAvatarUrl } from '@/api/userService'
-import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
+import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { formatRelativeTime } from '@/utils/date'
 import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import Button from '@/components/ui/Button.vue'
@@ -165,6 +143,7 @@ import Skeleton from '@/components/ui/Skeleton.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import DiscussionCommentList from '@/components/community/DiscussionCommentList.vue'
+import ReferencedPostPreview from '@/components/community/ReferencedPostPreview.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
 const route = useRoute()
@@ -189,16 +168,12 @@ const showPreviewNotice = computed(
   () =>
     Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
 )
-const resolvedDiscussionAuthorAvatarSrc = computed(
-  () =>
-    normalizeAvatarUrl(discussion.value?.author.avatar_url || undefined) ||
-    discussion.value?.author.avatar_url ||
-    undefined
+const resolvedDiscussionAuthorAvatarSrc = computed(() =>
+  resolveAvatarSrc(discussion.value?.author.avatar_url)
 )
-const discussionAuthorFallbackLabel = computed(() => {
-  const source = discussion.value?.author.username?.trim() || '?'
-  return source.slice(0, 1).toUpperCase() || '?'
-})
+const discussionAuthorFallbackLabel = computed(() =>
+  getAvatarFallbackLabel(discussion.value?.author.username)
+)
 
 const isAdmin = computed(() => {
   return Boolean(user.value?.is_admin || user.value?.roles?.includes('admin'))
@@ -223,16 +198,6 @@ function goBack() {
   } else {
     router.push('/community')
   }
-}
-
-function goToReferencedPost(post: { id: string; thumbnail_url?: string | null }) {
-  if (post.thumbnail_url) {
-    sessionStorage.setItem(
-      `post-thumbnail-${post.id}`,
-      normalizeToThumbnailUrl(post.thumbnail_url, 'medium') || post.thumbnail_url
-    )
-  }
-  router.push(`/post/${post.id}`)
 }
 
 function isAbortError(err: unknown): boolean {
@@ -465,40 +430,8 @@ watch(
   margin-top: var(--spacing-6);
 }
 
-.referenced-post {
+.discussion-reference {
   margin-top: var(--spacing-4);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3);
-  cursor: pointer;
-}
-
-.referenced-thumb {
-  inline-size: 3rem;
-  block-size: 3rem;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.referenced-content {
-  display: flex;
-  flex-direction: column;
-  min-inline-size: 0;
-}
-
-.referenced-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.referenced-title {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 @media (max-width: 640px) {

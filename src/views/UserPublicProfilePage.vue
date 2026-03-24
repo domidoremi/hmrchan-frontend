@@ -26,16 +26,13 @@
           <template v-else-if="profile">
             <div class="profile-hero">
               <Avatar
-                :src="
-                  normalizeAvatarUrl(profile.avatar_url || undefined) ||
-                  profile.avatar_url ||
-                  undefined
-                "
+                :src="resolveAvatarSrc(profile.avatar_url)"
                 :alt="profile.username"
                 size="xl"
                 loading="eager"
                 decoding="async"
                 fetch-priority="high"
+                :fallback="getAvatarFallbackLabel(profile.username)"
               />
 
               <div class="profile-copy">
@@ -138,13 +135,8 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import {
-  ApiError,
-  normalizeAvatarUrl,
-  userRelationsService,
-  type UserPublicProfile,
-  type UserRelation,
-} from '@/api'
+import { ApiError, userRelationsService, type UserPublicProfile, type UserRelation } from '@/api'
+import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { useAuthStore, useToastStore } from '@/stores'
 import Avatar from '@/components/ui/Avatar.vue'
 import Button from '@/components/ui/Button.vue'

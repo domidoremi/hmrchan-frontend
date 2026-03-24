@@ -26,7 +26,6 @@
 
           <template v-else-if="author">
             <Avatar
-              :key="`${authorId}:${resolvedAuthorAvatarSrc ?? 'fallback'}`"
               class="author-avatar"
               size="custom"
               :src="resolvedAuthorAvatarSrc"
@@ -81,11 +80,12 @@ import { ref, computed, watch, onWatcherCleanup, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
-import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { applyPageMeta } from '@/utils/pageMeta'
 import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
+import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
+import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { getFallbackAuthorById, getFallbackAuthorPosts } from '@/fallbacks/authorsFallback'
 import {
   isServiceUnavailableError,
@@ -115,20 +115,10 @@ const showPreviewNotice = computed(
   () =>
     Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
 )
-const resolvedAuthorAvatarSrc = computed(
-  () =>
-    normalizeAvatarUrl(author.value?.avatar_url || undefined) ||
-    author.value?.avatar_url ||
-    undefined
+const resolvedAuthorAvatarSrc = computed(() => resolveAvatarSrc(author.value?.avatar_url))
+const authorFallbackLabel = computed(() =>
+  getAvatarFallbackLabel(author.value?.display_name, author.value?.name, author.value?.username)
 )
-const authorFallbackLabel = computed(() => {
-  const source =
-    author.value?.display_name?.trim() ||
-    author.value?.name?.trim() ||
-    author.value?.username?.trim() ||
-    '?'
-  return source.slice(0, 1).toUpperCase() || '?'
-})
 let latestRequestId = 0
 let authorController: AbortController | null = null
 
@@ -254,9 +244,7 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
   storePostNavigationContext(posts.value, postId, 'author')
-  if (thumbnailSrc) {
-    sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
-  }
+  cachePostThumbnailPreview(postId, thumbnailSrc)
   router.push(`/post/${postId}`)
 }
 

@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   getCommunityHighlights: vi.fn(),
   scheduleTask: vi.fn(),
   createResizeObserver: vi.fn(),
+  createVisibilityObserver: vi.fn(),
   storePostNavigationContext: vi.fn(),
   throttleRAF: vi.fn((fn: (...args: unknown[]) => void) => {
     const wrapped = (...args: unknown[]) => fn(...args)
@@ -49,6 +50,7 @@ vi.mock('@/utils/performance', () => ({
 vi.mock('@/utils/modernAPIs', () => ({
   scheduleTask: mocks.scheduleTask,
   createResizeObserver: mocks.createResizeObserver,
+  createVisibilityObserver: mocks.createVisibilityObserver,
 }))
 
 vi.mock('@/utils/postNavigation', () => ({
@@ -144,6 +146,16 @@ vi.mock('@/components/ui/StateIndicator.vue', async () => {
     default: defineComponent({
       name: 'StateIndicator',
       template: '<div data-stub="StateIndicator"><slot /></div>',
+    }),
+  }
+})
+
+vi.mock('@/components/ui/Avatar.vue', async () => {
+  const { defineComponent } = await import('vue')
+  return {
+    default: defineComponent({
+      name: 'AvatarStub',
+      template: '<div data-stub="Avatar"><slot name="fallback" /></div>',
     }),
   }
 })
@@ -289,11 +301,16 @@ describe('HomePage', () => {
     mocks.getCommunityHighlights.mockReset()
     mocks.scheduleTask.mockReset()
     mocks.createResizeObserver.mockReset()
+    mocks.createVisibilityObserver.mockReset()
     mocks.storePostNavigationContext.mockReset()
     mocks.throttleRAF.mockClear()
 
     mocks.scheduleTask.mockImplementation(() => {})
     mocks.createResizeObserver.mockImplementation(() => ({
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+    }))
+    mocks.createVisibilityObserver.mockImplementation(() => ({
       observe: vi.fn(),
       disconnect: vi.fn(),
     }))

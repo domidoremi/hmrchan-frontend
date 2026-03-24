@@ -96,7 +96,7 @@
                       :alt="post?.title || ''"
                       loading="eager"
                       decoding="async"
-                      fetchpriority="high"
+                      fetchpriority="auto"
                     />
 
                     <VideoPlayer
@@ -124,7 +124,7 @@
                       :alt="displayTitle || ''"
                       loading="eager"
                       decoding="async"
-                      fetchpriority="high"
+                      fetchpriority="auto"
                     />
                   </div>
                   <div v-else class="post-preview-media-empty">

@@ -8,7 +8,7 @@
 import { computed, getCurrentScope, onScopeDispose, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores'
-import { normalizeAvatarUrl } from '@/api/userService'
+import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 
 // 全局头像缓存（带版本号防止浏览器缓存）
 const avatarVersion = ref(Date.now())
@@ -23,7 +23,7 @@ function getDefaultAvatar(): string {
  * 获取用户头像 URL（带缓存破坏）
  */
 export function getUserAvatarUrl(avatarUrl: string | null | undefined): string {
-  const normalized = normalizeAvatarUrl(avatarUrl)
+  const normalized = resolveAvatarSrc(avatarUrl)
 
   if (normalized) {
     // 添加版本参数以破坏浏览器缓存（仅在头像更新后）

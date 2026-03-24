@@ -1,9 +1,6 @@
 <template>
   <div class="favorites-tab">
-    <div class="tab-header">
-      <h2 class="tab-title">{{ $t('profile.tabs.favorites') }}</h2>
-      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
-    </div>
+    <ProfileTabHeader :title="$t('profile.tabs.favorites')" :count="total" />
 
     <StateIndicator
       v-if="error"
@@ -44,20 +41,20 @@
           @keydown.space.prevent="goToPost(fav.post_id, fav.post?.thumbnail_url)"
         >
           <div class="favorite-image">
-            <img
-              v-if="fav.post?.thumbnail_url"
-              :src="
-                normalizeToThumbnailUrl(fav.post.thumbnail_url, 'medium') || fav.post.thumbnail_url
-              "
-              :srcset="getThumbnailSrcset(fav.post.thumbnail_url) || undefined"
+            <ThumbnailImage
+              :src="fav.post?.thumbnail_url"
               :sizes="thumbnailSizes"
               :alt="fav.post?.title"
+              responsive
               loading="lazy"
               decoding="async"
-            />
-            <div v-else class="image-placeholder">
-              <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
-            </div>
+            >
+              <template #fallback>
+                <div class="image-placeholder">
+                  <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
+                </div>
+              </template>
+            </ThumbnailImage>
           </div>
           <div class="favorite-content">
             <h3 class="favorite-title" :title="fav.post?.title || $t('favorites.unknownPost')">
@@ -102,19 +99,18 @@ import { useI18n } from 'vue-i18n'
 import { Heart, X } from 'lucide-vue-next'
 import { useAuthStore, useToastStore, useFavoritesStore } from '@/stores'
 import { storeToRefs } from 'pinia'
-import {
-  normalizeToThumbnailUrl,
-  getThumbnailSrcset,
-  extractMediaIdFromUrl,
-} from '@/utils/mediaOptimizer'
+import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
+import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
+import ProfileTabHeader from '@/components/profile/ProfileTabHeader.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
+import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
@@ -178,6 +174,7 @@ async function removeFavorite(favoriteId: string) {
 }
 
 function goToPost(postId: string, thumbnailUrl?: string | null) {
+  cachePostThumbnailPreview(postId, thumbnailUrl)
   if (thumbnailUrl) {
     const mediaId = extractMediaIdFromUrl(thumbnailUrl)
     if (mediaId) {
@@ -204,29 +201,6 @@ watch(
 <style scoped>
 .favorites-tab {
   min-height: 20rem;
-}
-
-.tab-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-bottom: clamp(1.25rem, 3vw, 2rem);
-}
-
-.tab-title {
-  font-size: clamp(var(--text-lg), 2.5vw, var(--text-xl));
-  font-weight: var(--font-bold);
-  margin: 0;
-}
-
-.item-count {
-  padding: 0.125rem 0.625rem;
-  background: var(--profile-chip-bg);
-  border: 1px solid var(--profile-chip-border);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  color: var(--color-primary);
-  font-weight: var(--font-medium);
 }
 
 .loading-indicator {
@@ -500,8 +474,8 @@ watch(
   border-radius: 50%;
 }
 
-#app[data-ui-style='material'] .favorites-tab .item-count {
-  border-radius: var(--radius-sm);
+#app[data-ui-style='material'] .favorites-tab {
+  --profile-tab-header-count-radius: var(--radius-sm);
 }
 
 /* ===== Dark Theme Overrides ===== */
@@ -523,9 +497,9 @@ watch(
 }
 
 /* ===== Blue Theme Overrides ===== */
-[data-theme='blue'] .favorites-tab .item-count {
-  background: rgba(59, 130, 246, 0.08);
-  color: #3b82f6;
+[data-theme='blue'] .favorites-tab {
+  --profile-tab-header-count-bg: rgba(59, 130, 246, 0.08);
+  --profile-tab-header-count-color: #3b82f6;
 }
 
 [data-theme='blue'] .favorites-tab .favorite-card {

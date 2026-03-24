@@ -542,26 +542,18 @@
                   :to="leadingTrendingAuthor.link"
                   class="trends-authors-highlight"
                 >
-                  <img
-                    v-if="
-                      leadingTrendingAuthor.avatar &&
-                      !isTrendAuthorAvatarFailed(leadingTrendingAuthor.key)
-                    "
+                  <Avatar
                     class="trends-authors-highlight__avatar"
-                    :src="leadingTrendingAuthor.avatar"
+                    size="custom"
+                    :src="leadingTrendingAuthor.avatar || undefined"
                     :alt="leadingTrendingAuthor.name"
-                    :width="TREND_AUTHOR_HIGHLIGHT_AVATAR_SIZE.width"
-                    :height="TREND_AUTHOR_HIGHLIGHT_AVATAR_SIZE.height"
                     loading="lazy"
                     decoding="async"
-                    @error="markTrendAuthorAvatarFailed(leadingTrendingAuthor.key)"
-                  />
-                  <div
-                    v-else
-                    class="trends-authors-highlight__avatar trends-authors-highlight__avatar--fallback"
                   >
-                    <AnimatedIcon name="user" :fallback-icon="Users" size="sm" />
-                  </div>
+                    <template #fallback>
+                      <AnimatedIcon name="user" :fallback-icon="Users" size="sm" />
+                    </template>
+                  </Avatar>
                   <span class="trends-authors-highlight__copy">
                     <span class="trends-authors-highlight__label">
                       {{ $t('home.hero.spotlightLabel') }}
@@ -584,20 +576,18 @@
                     :to="author.link"
                     class="trend-author"
                   >
-                    <img
-                      v-if="author.avatar && !isTrendAuthorAvatarFailed(author.key)"
+                    <Avatar
                       class="trend-author__avatar"
-                      :src="author.avatar"
+                      size="custom"
+                      :src="author.avatar || undefined"
                       :alt="author.name"
-                      :width="TREND_AUTHOR_AVATAR_SIZE.width"
-                      :height="TREND_AUTHOR_AVATAR_SIZE.height"
                       loading="lazy"
                       decoding="async"
-                      @error="markTrendAuthorAvatarFailed(author.key)"
-                    />
-                    <div v-else class="trend-author__avatar trend-author__avatar--fallback">
-                      <AnimatedIcon name="user" :fallback-icon="Users" size="sm" />
-                    </div>
+                    >
+                      <template #fallback>
+                        <AnimatedIcon name="user" :fallback-icon="Users" size="sm" />
+                      </template>
+                    </Avatar>
                     <div class="trend-author__meta">
                       <span class="trend-author__name">{{ author.name }}</span>
                       <span class="trend-author__count">
@@ -985,6 +975,7 @@ import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
 import { getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { isFilteredAuthor } from '@/config/filters'
 import { storePostNavigationContext } from '@/utils/postNavigation'
+import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { HOME_FALLBACK_POSTS, isHomeFallbackPost } from '@/fallbacks/homepageFallback'
 import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import {
@@ -1003,6 +994,7 @@ import { useHomeViewModel } from '@/views/homepage/useHomeViewModel'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import HeroSection from '@/components/home/HeroSection.vue'
 import HomeQuickNav from '@/components/home/HomeQuickNav.vue'
@@ -1011,7 +1003,7 @@ import {
   readNavbarVisibleOffset,
   resolveDocumentAnchorTop,
 } from '@/components/ui/scrollAnchorTargets'
-import { createResizeObserver, scheduleTask } from '@/utils/modernAPIs'
+import { createResizeObserver, createVisibilityObserver, scheduleTask } from '@/utils/modernAPIs'
 import { homeSectionAnchors, type HomeSectionAnchor } from '@/config/homeSections'
 import { scrollWithSmoothScroll } from '@/composables/useSmoothScroll'
 
@@ -1026,8 +1018,6 @@ let scrollTriggerReadyPromise: Promise<boolean> | null = null
 const SCENE_LAYOUT_REFRESH_THRESHOLD_PX = 24
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
-const TREND_AUTHOR_HIGHLIGHT_AVATAR_SIZE = Object.freeze({ width: 44, height: 44 })
-const TREND_AUTHOR_AVATAR_SIZE = Object.freeze({ width: 32, height: 32 })
 
 function defineHomeAsyncComponent<T extends object>(loader: () => Promise<T>) {
   return defineAsyncComponent({
@@ -1100,7 +1090,6 @@ const homeCommunityHighlights = ref<HomeCommunityHighlight[]>(
   initialHomeAggregate.trends.community ?? []
 )
 const homeDataSource = ref<'idle' | 'aggregate' | 'support' | 'fallback'>('idle')
-const failedTrendAuthorAvatarKeys = ref<Set<string>>(new Set())
 const failedHomeMediaUrls = ref<Set<string>>(new Set())
 
 type HomeSectionInstance = {
@@ -1255,7 +1244,7 @@ function observeHomeSections() {
   if (typeof window.IntersectionObserver !== 'function') return
 
   const visibility = new Map<HomeSectionAnchor['id'], number>()
-  homeSectionObserver = new IntersectionObserver(
+  homeSectionObserver = createVisibilityObserver(
     (entries) => {
       for (const entry of entries) {
         const id = entry.target.getAttribute('id') as HomeSectionAnchor['id'] | null
@@ -1561,7 +1550,6 @@ async function fetchHomeData(): Promise<boolean> {
   isLoading.value = true
   isLoadingMore.value = false
   error.value = null
-  failedTrendAuthorAvatarKeys.value = new Set()
   failedHomeMediaUrls.value = new Set()
   homeScheduleHighlights.value = []
   homeCommunityHighlights.value = []
@@ -2086,17 +2074,6 @@ function scrollToFeatured() {
   scrollToHomeSection('home-rail')
 }
 
-function isTrendAuthorAvatarFailed(key: string): boolean {
-  return failedTrendAuthorAvatarKeys.value.has(key)
-}
-
-function markTrendAuthorAvatarFailed(key: string) {
-  if (!key || failedTrendAuthorAvatarKeys.value.has(key)) return
-  const next = new Set(failedTrendAuthorAvatarKeys.value)
-  next.add(key)
-  failedTrendAuthorAvatarKeys.value = next
-}
-
 function isHomeMediaFailed(source: string | null | undefined): boolean {
   const key = normalizeText(source)
   return key ? failedHomeMediaUrls.value.has(key) : false
@@ -2136,9 +2113,7 @@ function openDetailFromPreview(postId: string) {
     return
   }
   storePostNavigationContext(homeSourcePosts.value, postId, 'home')
-  if (previewThumbnailSrc.value) {
-    sessionStorage.setItem(`post-thumbnail-${postId}`, previewThumbnailSrc.value)
-  }
+  cachePostThumbnailPreview(postId, previewThumbnailSrc.value)
   isPreviewOpen.value = false
   router.push(`/post/${postId}`)
 }
@@ -3479,17 +3454,14 @@ onBeforeUnmount(() => {
   border-color: var(--glass-border);
 }
 
-.trend-author__avatar {
+.trend-author__avatar.ui-avatar {
   width: 2rem;
   height: 2rem;
   border-radius: var(--radius-full);
-  object-fit: cover;
   border: 1px solid var(--glass-border);
 }
 
-.trend-author__avatar--fallback {
-  display: grid;
-  place-items: center;
+.trend-author__avatar:deep(.ui-avatar__fallback) {
   background: var(--glass-bg-light);
   color: var(--color-text-tertiary);
 }
@@ -4875,18 +4847,15 @@ onBeforeUnmount(() => {
   box-shadow: var(--home-panel-highlight), var(--home-panel-shadow-strong);
 }
 
-.trends-authors-highlight__avatar {
+.trends-authors-highlight__avatar.ui-avatar {
   inline-size: 2.75rem;
   block-size: 2.75rem;
   border-radius: var(--home-card-radius);
-  object-fit: cover;
   background: var(--home-panel-muted-strong);
   border: 0.0625rem solid var(--home-panel-border);
 }
 
-.trends-authors-highlight__avatar--fallback {
-  display: grid;
-  place-items: center;
+.trends-authors-highlight__avatar:deep(.ui-avatar__fallback) {
   color: var(--color-text-tertiary);
 }
 
@@ -6450,7 +6419,7 @@ onBeforeUnmount(() => {
     padding: 0.5rem 0.625rem;
   }
 
-  .trends-authors-highlight__avatar {
+  .trends-authors-highlight__avatar.ui-avatar {
     inline-size: 2.25rem;
     block-size: 2.25rem;
   }
@@ -6460,7 +6429,7 @@ onBeforeUnmount(() => {
     padding: 0.4375rem 0.5625rem;
   }
 
-  .trend-author__avatar {
+  .trend-author__avatar.ui-avatar {
     inline-size: 1.75rem;
     block-size: 1.75rem;
   }

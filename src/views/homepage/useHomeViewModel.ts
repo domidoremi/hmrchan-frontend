@@ -1,7 +1,6 @@
 import { computed } from 'vue'
 import { Calendar, MessageSquare, Users } from 'lucide-vue-next'
 import {
-  normalizeAvatarUrl,
   type HomeAggregateResponse,
   type HomeCommunityHighlight,
   type HomeScheduleHighlight,
@@ -10,6 +9,7 @@ import {
 import { HOME_FALLBACK_POSTS } from '@/fallbacks/homepageFallback'
 import { formatRelativeTime } from '@/utils/date'
 import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
+import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 import type { ComputedRef, Ref } from 'vue'
 import {
   bubbleBursts,
@@ -132,7 +132,7 @@ export function useHomeViewModel(options: {
       if (!key) continue
 
       const name = formatAuthorName(post)
-      const avatar = normalizeAvatarUrl(post.author_avatar_url) || post.author_avatar_url || null
+      const avatar = resolveAvatarSrc(post.author_avatar_url) ?? null
       const entry = authorMap.get(key)
       if (entry) {
         entry.count += 1
@@ -160,7 +160,7 @@ export function useHomeViewModel(options: {
       return liveAuthors.slice(0, 4).map((author) => ({
         key: author.id || author.deep_link || author.display_name,
         name: author.display_name || translate('home.hero.fallbackAuthor'),
-        avatar: normalizeAvatarUrl(author.avatar_url) || author.avatar_url || null,
+        avatar: resolveAvatarSrc(author.avatar_url) ?? null,
         count: author.post_count ?? 0,
         link: author.deep_link || '/authors',
       }))

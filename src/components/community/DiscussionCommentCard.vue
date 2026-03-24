@@ -5,7 +5,13 @@
     :class="{ 'is-reply': isReply }"
   >
     <div class="comment-header">
-      <img :src="avatarUrl" :alt="comment.user.username" class="comment-avatar" />
+      <Avatar
+        :src="avatarUrl"
+        :alt="comment.user.username"
+        :fallback="avatarFallbackLabel"
+        size="custom"
+        class="comment-avatar"
+      />
       <div class="comment-meta">
         <span class="comment-author">{{ comment.user.username }}</span>
         <Badge v-if="isThreadOwner" variant="success" size="sm">{{
@@ -211,10 +217,12 @@ import {
 } from 'lucide-vue-next'
 import { useAuthStore, useToastStore } from '@/stores'
 import { discussionService, type DiscussionComment, ApiError } from '@/api'
+import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { formatRelativeTime } from '@/utils/date'
 import DiscussionCommentForm from './DiscussionCommentForm.vue'
 import { discussionCommentTreeContextKey } from './discussionCommentTreeContext'
+import Avatar from '@/components/ui/Avatar.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Button from '@/components/ui/Button.vue'
@@ -289,6 +297,8 @@ const replyParentId = computed(() => {
 const avatarUrl = computed(() => {
   return getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
 })
+
+const avatarFallbackLabel = computed(() => getAvatarFallbackLabel(props.comment.user.username))
 
 const isThreadOwner = computed(() => {
   if (!props.discussionAuthorId) return false
@@ -590,14 +600,15 @@ onUnmounted(() => {
   margin-bottom: var(--spacing-3);
 }
 
-.comment-avatar {
+.comment-avatar.ui-avatar {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 50%;
-  object-fit: cover;
+  border: none;
+  background: transparent;
 }
 
-.is-reply .comment-avatar {
+.is-reply .comment-avatar.ui-avatar {
   width: 1.75rem;
   height: 1.75rem;
 }

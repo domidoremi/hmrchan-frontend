@@ -346,6 +346,7 @@ import {
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
+  createLazyObserver,
   preconnect,
   preloadResource,
   runWhenIdle,
@@ -361,8 +362,6 @@ import {
   getMediaStreamUrl,
   getMediaThumbnailSrcset,
   getMediaThumbnailUrl,
-  getThumbnailSrcset,
-  normalizeToThumbnailUrl,
 } from '@/utils/mediaOptimizer'
 import { useCachedPost } from '@/composables/useCachedPosts'
 import { trackPostView } from '@/composables/useViewTracking'
@@ -378,6 +377,7 @@ import {
   resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
+import { resolveThumbnailSrc, resolveThumbnailSrcset } from '@/utils/thumbnailPresentation'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
@@ -586,14 +586,12 @@ const activeImageSrcset = computed(() => {
 })
 
 const fallbackMediaSrc = computed(() => {
-  return (
-    normalizeToThumbnailUrl(post.value?.thumbnail_url ?? '', 'large') ||
-    post.value?.thumbnail_url ||
-    ''
-  )
+  return resolveThumbnailSrc(post.value?.thumbnail_url ?? null, 'large') || ''
 })
 
-const fallbackMediaSrcset = computed(() => getThumbnailSrcset(post.value?.thumbnail_url ?? null))
+const fallbackMediaSrcset = computed(() =>
+  resolveThumbnailSrcset(post.value?.thumbnail_url ?? null)
+)
 
 const shouldShowThumbnailRail = computed(() =>
   computeShouldShowThumbnailRail(post.value, detailFetched.value)
@@ -624,8 +622,7 @@ function hintPostMedia(postDetail: PostDetailResponse | null | undefined) {
     return
   }
 
-  const fallbackUrl =
-    normalizeToThumbnailUrl(postDetail.thumbnail_url ?? '', 'large') || postDetail.thumbnail_url
+  const fallbackUrl = resolveThumbnailSrc(postDetail.thumbnail_url ?? null, 'large')
   primeImageRequest(fallbackUrl)
 }
 
@@ -795,11 +792,9 @@ function observeCommentsSection() {
   }
 
   disconnectCommentsObserver()
-  commentsObserver = new IntersectionObserver(
-    (entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
-        loadCommentsWhenVisible()
-      }
+  commentsObserver = createLazyObserver(
+    () => {
+      loadCommentsWhenVisible()
     },
     { rootMargin: '320px 0px' }
   )
@@ -1015,7 +1010,7 @@ async function fetchPost(signal?: AbortSignal) {
   const cachedThumb = sessionStorage.getItem(`post-thumbnail-${currentPostId}`)
   if (cachedThumb) {
     cachedThumbnailUrl.value = cachedThumb
-    primeImageRequest(normalizeToThumbnailUrl(cachedThumb, 'large') || cachedThumb)
+    primeImageRequest(resolveThumbnailSrc(cachedThumb, 'large') || cachedThumb)
   }
 
   try {

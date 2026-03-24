@@ -94,7 +94,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'AuthorsPage' })
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorListItem, ApiError } from '@/api'
@@ -132,6 +132,7 @@ const showPreviewNotice = computed(
 const page = ref(1)
 const total = ref(0)
 const pageSize = 24
+const isPageActive = ref(true)
 
 const hasMore = computed(() => authors.value.length < total.value)
 
@@ -251,7 +252,7 @@ async function loadMore(): Promise<boolean> {
 
 useInfiniteScroll(sentinelRef, loadMore, {
   rootMargin: '800px', // 提前 800px 开始加载
-  enabled: () => hasMore.value && !isLoading.value && !isLoadingMore.value,
+  enabled: () => isPageActive.value && hasMore.value && !isLoading.value && !isLoadingMore.value,
 })
 
 function goToAuthor(authorId: string) {
@@ -266,6 +267,18 @@ onMounted(() => {
   if (authors.value.length === 0) {
     void fetchAuthors()
   }
+})
+
+onActivated(() => {
+  isPageActive.value = true
+  if (authors.value.length === 0) {
+    void fetchAuthors()
+  }
+})
+
+onDeactivated(() => {
+  isPageActive.value = false
+  abortFetchAuthors()
 })
 
 onUnmounted(() => {

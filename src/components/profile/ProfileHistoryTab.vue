@@ -1,14 +1,13 @@
 <template>
   <div class="history-tab">
-    <div class="tab-header">
-      <h2 class="tab-title">{{ $t('profile.tabs.history') }}</h2>
-      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
-      <div class="tab-header-spacer" />
-      <Button v-if="history.length > 0" variant="ghost" size="sm" @click="clearHistory">
-        <Trash2 :size="14" />
-        {{ $t('profile.clearHistory') }}
-      </Button>
-    </div>
+    <ProfileTabHeader :title="$t('profile.tabs.history')" :count="total">
+      <template #actions>
+        <Button v-if="history.length > 0" variant="ghost" size="sm" @click="clearHistory">
+          <Trash2 :size="14" />
+          {{ $t('profile.clearHistory') }}
+        </Button>
+      </template>
+    </ProfileTabHeader>
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchHistory" />
 
@@ -50,16 +49,18 @@
               @keydown.space.prevent="goToPost(item.post_uuid, item.post.thumbnail_url)"
             >
               <div class="card-thumb">
-                <img
-                  v-if="item.post.thumbnail_url"
+                <ThumbnailImage
                   :src="item.post.thumbnail_url"
                   :alt="item.post.title"
                   loading="lazy"
                   decoding="async"
-                />
-                <div v-else class="thumb-placeholder">
-                  <Clock :size="20" />
-                </div>
+                >
+                  <template #fallback>
+                    <div class="thumb-placeholder">
+                      <Clock :size="20" />
+                    </div>
+                  </template>
+                </ThumbnailImage>
                 <span class="card-time">
                   {{ formatTime(item.viewed_at) }}
                 </span>
@@ -105,7 +106,10 @@ import { useToastStore } from '@/stores'
 import { apiClient, ApiError } from '@/api'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'
+import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
+import ProfileTabHeader from '@/components/profile/ProfileTabHeader.vue'
 import Button from '@/components/ui/Button.vue'
+import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -290,6 +294,7 @@ function formatTime(dateStr: string): string {
 }
 
 function goToPost(postId: string, thumbnailUrl?: string | null) {
+  cachePostThumbnailPreview(postId, thumbnailUrl)
   if (thumbnailUrl) {
     const mediaId = extractMediaIdFromUrl(thumbnailUrl)
     if (mediaId) {
@@ -318,33 +323,6 @@ onUnmounted(() => {
 <style scoped>
 .history-tab {
   min-height: 20rem;
-}
-
-.tab-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-bottom: clamp(1.25rem, 3vw, 2rem);
-}
-
-.tab-title {
-  font-size: clamp(var(--text-lg), 2.5vw, var(--text-xl));
-  font-weight: var(--font-bold);
-  margin: 0;
-}
-
-.tab-header-spacer {
-  flex: 1;
-}
-
-.item-count {
-  padding: 0.125rem 0.625rem;
-  background: var(--profile-chip-bg);
-  border: 1px solid var(--profile-chip-border);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  color: var(--color-primary);
-  font-weight: var(--font-medium);
 }
 
 /* ===== Skeleton ===== */
@@ -534,10 +512,6 @@ onUnmounted(() => {
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .tab-header {
-    flex-wrap: wrap;
-  }
-
   .group-grid {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 8rem), 1fr));
     gap: var(--spacing-2);
@@ -570,8 +544,8 @@ onUnmounted(() => {
   border-radius: var(--radius-sm);
 }
 
-#app[data-ui-style='material'] .history-tab .item-count {
-  border-radius: var(--radius-sm);
+#app[data-ui-style='material'] .history-tab {
+  --profile-tab-header-count-radius: var(--radius-sm);
 }
 
 #app[data-ui-style='material'] .history-tab .group-line {
@@ -592,9 +566,9 @@ onUnmounted(() => {
 }
 
 /* ===== Blue Theme Overrides ===== */
-[data-theme='blue'] .history-tab .item-count {
-  background: rgba(59, 130, 246, 0.08);
-  color: #3b82f6;
+[data-theme='blue'] .history-tab {
+  --profile-tab-header-count-bg: rgba(59, 130, 246, 0.08);
+  --profile-tab-header-count-color: #3b82f6;
 }
 
 [data-theme='blue'] .history-tab .group-line {

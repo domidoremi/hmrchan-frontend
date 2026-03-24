@@ -21,7 +21,7 @@ function createAuthor(overrides: Partial<AuthorCardAuthor> = {}): AuthorCardAuth
 
 const mountedApps: Array<{ app: App; host: HTMLDivElement }> = []
 
-function mountAuthorCard(author: AuthorCardAuthor) {
+function mountAuthorCard(author: AuthorCardAuthor, props: Record<string, unknown> = {}) {
   const emitted: string[] = []
   const host = document.createElement('div')
   document.body.appendChild(host)
@@ -36,6 +36,7 @@ function mountAuthorCard(author: AuthorCardAuthor) {
         return () =>
           h(AuthorCard, {
             author,
+            ...props,
             onClick: handleClick,
           })
       },
@@ -77,6 +78,13 @@ describe('AuthorCard', () => {
     await nextTick()
 
     expect(host.querySelector('img')).toBeNull()
-    expect(host.querySelector('.author-avatar--fallback')?.textContent?.trim()).toBe('T')
+    expect(host.querySelector('.ui-avatar__fallback')?.textContent?.trim()).toBe('T')
+  })
+
+  it('hides description and cta affordance in compact mode', () => {
+    const { host } = mountAuthorCard(createAuthor(), { compact: true })
+
+    expect(host.querySelector('.author-description')).toBeNull()
+    expect(host.querySelector('.author-card__cta')).toBeNull()
   })
 })

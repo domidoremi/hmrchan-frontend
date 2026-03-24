@@ -11,20 +11,15 @@
     @click="emit('click', author.id)"
   >
     <div class="author-card__head">
-      <img
-        v-if="hasAuthorAvatar"
+      <Avatar
         class="author-avatar"
+        size="custom"
         :src="resolvedAvatarSrc"
         :alt="displayName"
-        width="72"
-        height="72"
+        :fallback="fallbackLabel"
         loading="lazy"
         decoding="async"
-        @error="markAvatarFailed"
       />
-      <div v-else class="author-avatar author-avatar--fallback">
-        {{ fallbackLabel }}
-      </div>
       <span v-if="author.is_verified" class="author-verified">
         <BadgeCheck :size="14" />
       </span>
@@ -35,8 +30,10 @@
         <h3 class="author-name">{{ displayName }}</h3>
         <span class="author-platform">{{ author.platform }}</span>
       </div>
-      <p class="author-username">@{{ author.username }}</p>
-      <p v-if="author.description" class="author-description">{{ author.description }}</p>
+      <p v-if="!compact" class="author-username">@{{ author.username }}</p>
+      <p v-if="!compact && author.description" class="author-description">
+        {{ author.description }}
+      </p>
       <div class="author-meta">
         <span v-if="hasFollowerCount" class="author-metric">
           <Users :size="14" />
@@ -49,17 +46,18 @@
       </div>
     </div>
 
-    <span class="author-card__cta">
+    <span v-if="!compact" class="author-card__cta">
       <ArrowRight :size="16" />
     </span>
   </button>
 </template>
 
 <script setup lang="ts" vapor>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { ArrowRight, BadgeCheck, FileText, Users } from 'lucide-vue-next'
-import { normalizeAvatarUrl } from '@/api/userService'
 import type { AuthorListItem } from '@/api'
+import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
+import Avatar from '@/components/ui/Avatar.vue'
 
 defineOptions({ name: 'AuthorCard' })
 
@@ -92,8 +90,6 @@ const emit = defineEmits<{
   click: [authorId: string]
 }>()
 
-const avatarFailed = ref(false)
-
 const displayName = computed(
   () => props.author.display_name || props.author.name || props.author.username || 'Unknown'
 )
@@ -104,16 +100,16 @@ const cardAriaLabel = computed(() => {
   return username && username !== name ? `${name} @${username}` : name
 })
 
-const resolvedAvatarSrc = computed(
-  () => normalizeAvatarUrl(props.author.avatar_url) || props.author.avatar_url || undefined
+const resolvedAvatarSrc = computed(() => resolveAvatarSrc(props.author.avatar_url))
+
+const fallbackLabel = computed(() =>
+  getAvatarFallbackLabel(
+    props.author.display_name,
+    props.author.name,
+    props.author.username,
+    displayName.value
+  )
 )
-
-const hasAuthorAvatar = computed(() => Boolean(props.author.avatar_url) && !avatarFailed.value)
-
-const fallbackLabel = computed(() => {
-  const source = displayName.value.trim().slice(0, 1).toUpperCase()
-  return source || '?'
-})
 
 const hasFollowerCount = computed(
   () => typeof props.author.follower_count === 'number' && props.author.follower_count > 0
@@ -122,10 +118,6 @@ const hasFollowerCount = computed(
 const hasPostCount = computed(
   () => typeof props.author.post_count === 'number' && props.author.post_count > 0
 )
-
-function markAvatarFailed() {
-  avatarFailed.value = true
-}
 
 function formatCompactCount(value: number): string {
   if (value >= 1000000) return `${(value / 1000000).toFixed(value >= 10000000 ? 0 : 1)}M`
@@ -149,28 +141,32 @@ function formatCompactCount(value: number): string {
 }
 
 .author-card--compact {
+  flex-direction: row;
+  align-items: center;
   gap: var(--spacing-3);
   padding: var(--spacing-3);
+  min-block-size: 5.5rem;
 }
 
 .author-card__head {
   position: relative;
   isolation: isolate;
+  flex-shrink: 0;
 }
 
-.author-avatar {
+.author-avatar.ui-avatar {
   inline-size: 4rem;
   block-size: 4rem;
   border-radius: 1.4rem;
   flex-shrink: 0;
-  object-fit: cover;
+  border: none;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(var(--color-accent-rgb), 0.08), transparent 55%),
+    rgba(255, 255, 255, 0.82);
   box-shadow: 0 1rem 1.8rem -1.3rem rgba(15, 23, 42, 0.45);
 }
 
-.author-avatar--fallback {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.author-avatar:deep(.ui-avatar__fallback) {
   font-size: 1.25rem;
   font-weight: var(--font-semibold);
   color: var(--page-control-ink-strong);
@@ -181,15 +177,21 @@ function formatCompactCount(value: number): string {
 }
 
 @media (min-width: 768px) {
-  .author-avatar {
+  .author-avatar.ui-avatar {
     inline-size: 4.5rem;
     block-size: 4.5rem;
   }
 
-  .author-card--compact .author-avatar {
-    inline-size: 4rem;
-    block-size: 4rem;
+  .author-card--compact .author-avatar.ui-avatar {
+    inline-size: 3.25rem;
+    block-size: 3.25rem;
   }
+}
+
+.author-card--compact .author-avatar.ui-avatar {
+  inline-size: 3rem;
+  block-size: 3rem;
+  border-radius: 1.15rem;
 }
 
 .author-verified {
@@ -214,11 +216,19 @@ function formatCompactCount(value: number): string {
   min-inline-size: 0;
 }
 
+.author-card--compact .author-info {
+  gap: var(--spacing-1);
+}
+
 .author-topline {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-2);
+}
+
+.author-card--compact .author-topline {
+  gap: var(--spacing-1);
 }
 
 .author-name {
@@ -269,6 +279,10 @@ function formatCompactCount(value: number): string {
   gap: var(--spacing-2);
 }
 
+.author-card--compact .author-meta {
+  gap: var(--spacing-1);
+}
+
 .author-metric {
   display: inline-flex;
   align-items: center;
@@ -282,6 +296,11 @@ function formatCompactCount(value: number): string {
   box-shadow: 0 0.8rem 1.5rem -1.45rem rgba(15, 23, 42, 0.22);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
+}
+
+.author-card--compact .author-metric {
+  min-block-size: 1.75rem;
+  padding-inline: 0.65rem;
 }
 
 .author-card__cta {
