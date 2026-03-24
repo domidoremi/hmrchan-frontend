@@ -25,7 +25,11 @@
       </div>
 
       <!-- More Actions Menu -->
-      <div class="comment-menu" v-if="showActions">
+      <div
+        v-if="showActions"
+        v-click-outside="showMenu ? closeMenu : undefined"
+        class="comment-menu"
+      >
         <button type="button" class="menu-btn" @click="toggleMenu" :aria-label="t('common.more')">
           <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
         </button>
@@ -188,7 +192,7 @@
 </template>
 
 <script setup lang="ts" vapor>
-import { ref, computed, inject, nextTick, onMounted, onUnmounted, useTemplateRef } from 'vue'
+import { ref, computed, inject, nextTick, onUnmounted, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import {
@@ -207,6 +211,7 @@ import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserDisplayName } from '@/utils/user'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { formatRelativeTime } from '@/utils/date'
+import { copyToClipboard } from '@/utils/modernAPIs'
 import CommentForm from './CommentForm.vue'
 import { commentTreeContextKey } from './commentTreeContext'
 import Avatar from '@/components/ui/Avatar.vue'
@@ -354,6 +359,10 @@ function toggleMenu() {
   showMenu.value = !showMenu.value
 }
 
+function closeMenu() {
+  showMenu.value = false
+}
+
 async function handleLike() {
   if (!isAuthenticated.value) {
     toastStore.warning(t('comment.loginRequired'))
@@ -407,7 +416,7 @@ function handleReplySubmitted() {
 }
 
 function handleDelete() {
-  showMenu.value = false
+  closeMenu()
   showDeleteDialog.value = true
 }
 
@@ -421,16 +430,20 @@ async function confirmDelete() {
   }
 }
 
-function handleShare() {
-  showMenu.value = false
+async function handleShare() {
+  closeMenu()
 
   const url = `${window.location.origin}/post/${props.postId}#comment-${props.comment.id}`
-  navigator.clipboard.writeText(url)
-  toastStore.success(t('comment.shareSuccess'))
+  if (await copyToClipboard(url)) {
+    toastStore.success(t('comment.shareSuccess'))
+    return
+  }
+
+  toastStore.error(t('common.error'))
 }
 
 function openReportDialog() {
-  showMenu.value = false
+  closeMenu()
   showReportDialog.value = true
 }
 
@@ -459,21 +472,8 @@ async function submitReport() {
   }
 }
 
-// 点击外部关闭菜单
-function handleClickOutside(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  if (!target.closest('.comment-menu')) {
-    showMenu.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
 onUnmounted(() => {
   abortFetchReplies()
-  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 

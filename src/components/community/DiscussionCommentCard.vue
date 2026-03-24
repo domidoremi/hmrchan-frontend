@@ -26,7 +26,7 @@
         <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
       </div>
 
-      <div class="comment-menu">
+      <div v-click-outside="showMenu ? closeMenu : undefined" class="comment-menu">
         <button
           type="button"
           class="menu-btn"
@@ -196,7 +196,6 @@ import {
   computed,
   inject,
   nextTick,
-  onMounted,
   onUnmounted,
   onRenderTracked,
   onRenderTriggered,
@@ -220,6 +219,7 @@ import { discussionService, type DiscussionComment, ApiError } from '@/api'
 import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { formatRelativeTime } from '@/utils/date'
+import { copyToClipboard } from '@/utils/modernAPIs'
 import DiscussionCommentForm from './DiscussionCommentForm.vue'
 import { discussionCommentTreeContextKey } from './discussionCommentTreeContext'
 import Avatar from '@/components/ui/Avatar.vue'
@@ -345,6 +345,10 @@ function toggleMenu() {
   showMenu.value = !showMenu.value
 }
 
+function closeMenu() {
+  showMenu.value = false
+}
+
 async function handleLike() {
   if (!isAuthenticated.value) {
     toastStore.warning(t('comment.loginRequired'))
@@ -453,7 +457,7 @@ async function loadMoreReplies() {
 }
 
 function handleDelete() {
-  showMenu.value = false
+  closeMenu()
   showDeleteDialog.value = true
 }
 
@@ -471,15 +475,19 @@ async function confirmDelete() {
   }
 }
 
-function handleShare() {
-  showMenu.value = false
+async function handleShare() {
+  closeMenu()
   const url = `${window.location.origin}/community/discussions/${props.discussionId}#comment-${props.comment.id}`
-  navigator.clipboard.writeText(url)
-  toastStore.success(t('comment.shareSuccess'))
+  if (await copyToClipboard(url)) {
+    toastStore.success(t('comment.shareSuccess'))
+    return
+  }
+
+  toastStore.error(t('common.error'))
 }
 
 function openReportDialog() {
-  showMenu.value = false
+  closeMenu()
   showReportDialog.value = true
 }
 
@@ -507,7 +515,7 @@ async function submitReport() {
 }
 
 async function togglePin() {
-  showMenu.value = false
+  closeMenu()
   try {
     if (props.comment.is_pinned) {
       await discussionService.unpinComment(String(props.comment.id))
@@ -533,7 +541,7 @@ async function togglePin() {
 }
 
 async function toggleFeature() {
-  showMenu.value = false
+  closeMenu()
   try {
     if (props.comment.is_featured) {
       await discussionService.unfeatureComment(String(props.comment.id))
@@ -557,20 +565,8 @@ async function toggleFeature() {
   }
 }
 
-function handleClickOutside(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  if (!target.closest('.comment-menu')) {
-    showMenu.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
 onUnmounted(() => {
   abortFetchReplies()
-  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 

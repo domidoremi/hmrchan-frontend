@@ -3,6 +3,7 @@ import { computed, nextTick, reactive } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import vClickOutside from '@/directives/clickOutside'
 
 vi.mock('@/components/ui/Avatar.vue', () => ({
   default: {
@@ -157,6 +158,9 @@ async function createWrapper() {
     attachTo: document.body,
     global: {
       plugins: [router, i18n],
+      directives: {
+        'click-outside': vClickOutside,
+      },
       stubs: {
         transition: true,
         AnimatedIcon: {

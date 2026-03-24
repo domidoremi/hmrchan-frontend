@@ -143,6 +143,7 @@
             <!-- CC button -->
             <button
               v-if="normalizedSubtitles.length"
+              ref="subtitleBtnRef"
               type="button"
               class="vp__btn vp__btn--cc"
               :class="{ 'is-active': !!selectedSubtitleLanguage }"
@@ -255,6 +256,7 @@
       <div
         v-if="showSettings"
         :id="settingsPanelId"
+        v-click-outside="{ handler: () => (showSettings = false), include: [settingsBtnRef] }"
         class="vp__panel vp__panel--settings"
         @click.stop
       >
@@ -526,6 +528,10 @@
       <div
         v-if="showSubtitlePicker"
         :id="subtitlePanelId"
+        v-click-outside="{
+          handler: () => (showSubtitlePicker = false),
+          include: [subtitleBtnRef],
+        }"
         class="vp__panel vp__panel--subs"
         @click.stop
       >
@@ -681,6 +687,7 @@ const VOLUME_STEP = 0.1
 const videoRef = useTemplateRef<HTMLVideoElement>('videoRef')
 const playerElement = useTemplateRef<HTMLElement>('playerElement')
 const settingsBtnRef = useTemplateRef<HTMLElement>('settingsBtnRef')
+const subtitleBtnRef = useTemplateRef<HTMLElement>('subtitleBtnRef')
 const isPlaying = ref(false)
 const isBuffering = ref(false)
 const currentTime = ref(0)
@@ -1344,27 +1351,12 @@ const handleFullscreenChange = () => {
   isFullscreen.value = !!document.fullscreenElement
 }
 
-const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as Element
-  if (showSubtitlePicker.value && !target.closest?.('.vp__panel--subs')) {
-    showSubtitlePicker.value = false
-  }
-  if (
-    showSettings.value &&
-    !target.closest?.('.vp__panel--settings') &&
-    !settingsBtnRef.value?.contains(target as Node)
-  ) {
-    showSettings.value = false
-  }
-}
-
 // --- Lifecycle ---
 
 onMounted(() => {
   startHintTimer()
   document.addEventListener('keydown', handleKeydown)
   document.addEventListener('fullscreenchange', handleFullscreenChange)
-  document.addEventListener('click', handleClickOutside)
 
   if (videoRef.value) {
     videoRef.value.volume = videoSettings.value.volume
@@ -1403,7 +1395,6 @@ onBeforeUnmount(() => {
   }
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  document.removeEventListener('click', handleClickOutside)
   stopControlsTimer()
   stopSeekDrag()
   clearSeekPending()

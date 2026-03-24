@@ -106,6 +106,7 @@
         v-if="showSettings"
         id="navbar-settings-panel"
         ref="settingsDropdownRef"
+        v-click-outside="{ handler: () => closeSettings(), include: [settingsBtnRef] }"
         class="settings-dropdown glass-dropdown"
         :data-positioned="isSettingsDropdownPositioned"
         :style="settingsDropdownStyle"
@@ -125,6 +126,7 @@
         v-if="showUserMenu && isAuthenticated"
         id="navbar-user-menu"
         ref="userDropdownRef"
+        v-click-outside="{ handler: () => closeUserMenu(), include: [userBtnRef] }"
         class="user-dropdown glass-dropdown"
         :data-positioned="isUserDropdownPositioned"
         :style="userDropdownStyle"
@@ -526,25 +528,6 @@ function handleLogout() {
   router.push('/')
 }
 
-function isTargetWithin(
-  target: Node | null,
-  ...elements: Array<HTMLElement | null | undefined>
-): boolean {
-  if (!target) return false
-  return elements.some((element) => element?.contains(target))
-}
-
-function handleClickOutside(e: MouseEvent) {
-  const target = e.target as Node | null
-
-  if (!isTargetWithin(target, settingsDropdownRef.value, settingsBtnRef.value)) {
-    closeSettings()
-  }
-  if (!isTargetWithin(target, userDropdownRef.value, userBtnRef.value)) {
-    closeUserMenu()
-  }
-}
-
 function handleKeydown(event: KeyboardEvent) {
   if (event.key !== 'Escape') return
 
@@ -770,7 +753,6 @@ onMounted(() => {
 
   // Initialize visible height.
   syncNavbarVisibleHeight()
-  document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleKeydown)
   document.addEventListener('visibilitychange', handleVisibilityChange)
   window.addEventListener('resize', handleResize)
@@ -783,7 +765,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('resize', handleResize)
