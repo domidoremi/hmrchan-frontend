@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('vue', async () => await import('vue/dist/vue.runtime-with-vapor.esm-browser.js'))
-import { createApp, defineComponent, h, nextTick, vaporInteropPlugin, type App } from 'vue'
+import {
+  createApp,
+  defineComponent,
+  h,
+  nextTick,
+  reactive,
+  vaporInteropPlugin,
+  type App,
+} from 'vue'
 import Avatar from '../Avatar.vue'
 
 const mountedApps: Array<{ app: App; host: HTMLDivElement }> = []
@@ -68,6 +76,28 @@ describe('UiAvatar', () => {
     expect(host.querySelector('img')).toBeNull()
     expect(host.querySelector('.ui-avatar__fallback')?.textContent?.trim()).toBe('A')
     expect(host.querySelector('.ui-avatar')?.classList.contains('ui-avatar--square')).toBe(true)
+  })
+
+  it('resets the error state when the image source changes', async () => {
+    const props = reactive<Record<string, unknown>>({
+      src: 'https://example.com/avatar-a.jpg',
+      alt: 'Avatar alt',
+      fallback: 'A',
+      size: 'custom',
+    })
+    const host = mountAvatar(props)
+
+    host.querySelector('img')?.dispatchEvent(new Event('error'))
+    await nextTick()
+
+    expect(host.querySelector('img')).toBeNull()
+    expect(host.querySelector('.ui-avatar__fallback')?.textContent?.trim()).toBe('A')
+
+    props.src = 'https://example.com/avatar-b.jpg'
+    await nextTick()
+
+    expect(host.querySelector('.ui-avatar__fallback')).toBeNull()
+    expect(host.querySelector('img')?.getAttribute('src')).toBe('https://example.com/avatar-b.jpg')
   })
 
   it('skips inline sizing when custom size is requested', () => {

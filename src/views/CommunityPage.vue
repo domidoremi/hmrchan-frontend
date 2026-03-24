@@ -214,18 +214,13 @@
                 class="discussion-thumbnail"
                 v-if="discussion.referenced_post && discussion.referenced_post.thumbnail_url"
               >
-                <img
-                  :src="
-                    normalizeToThumbnailUrl(discussion.referenced_post.thumbnail_url, 'medium') ||
-                    discussion.referenced_post.thumbnail_url
-                  "
-                  :srcset="
-                    getThumbnailSrcset(discussion.referenced_post.thumbnail_url) || undefined
-                  "
+                <ThumbnailImage
+                  :src="discussion.referenced_post.thumbnail_url"
                   :sizes="thumbnailSizes"
                   :alt="discussion.referenced_post.title"
                   width="80"
                   height="80"
+                  responsive
                   loading="lazy"
                   decoding="async"
                 />
@@ -252,42 +247,20 @@
                     #{{ tag }}
                   </span>
                 </div>
-                <div
+                <ReferencedPostPreview
                   v-if="discussion.referenced_post"
-                  class="referenced-post"
-                  role="button"
-                  tabindex="0"
-                  @click.stop="goToReferencedPost(discussion.referenced_post)"
-                  @keydown.enter.prevent.stop="goToReferencedPost(discussion.referenced_post)"
-                  @keydown.space.prevent.stop="goToReferencedPost(discussion.referenced_post)"
-                >
-                  <img
-                    v-if="discussion.referenced_post.thumbnail_url"
-                    :src="
-                      normalizeToThumbnailUrl(discussion.referenced_post.thumbnail_url, 'medium') ||
-                      discussion.referenced_post.thumbnail_url
-                    "
-                    :alt="discussion.referenced_post.title"
-                    class="referenced-thumb"
-                    width="36"
-                    height="36"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <div class="referenced-content">
-                    <span class="referenced-label">{{ $t('community.referencedPost') }}</span>
-                    <span class="referenced-title">{{ discussion.referenced_post.title }}</span>
-                  </div>
-                </div>
+                  :post="discussion.referenced_post"
+                  compact
+                />
                 <div class="discussion-author">
                   <Avatar
-                    :src="normalizeAvatarUrl(discussion.author.avatar_url) || undefined"
+                    :src="resolveAvatarSrc(discussion.author.avatar_url)"
                     :alt="discussion.author.username"
                     class="author-avatar"
                     size="custom"
                     loading="lazy"
                     decoding="async"
-                    :fallback="getDiscussionAuthorFallbackLabel(discussion.author.username)"
+                    :fallback="getAvatarFallbackLabel(discussion.author.username)"
                   />
                   <span class="author-name">{{ discussion.author.username }}</span>
                 </div>
@@ -369,15 +342,23 @@
 <script setup lang="ts">
 defineOptions({ name: 'CommunityPage' })
 
-import { ref, computed, onMounted, onUnmounted, watch, onWatcherCleanup } from 'vue'
+import {
+  ref,
+  computed,
+  onMounted,
+  onUnmounted,
+  onActivated,
+  onDeactivated,
+  watch,
+  onWatcherCleanup,
+} from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { MessageSquare, Flame, HelpCircle, Search, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useDiscussionsStore } from '@/stores'
 import { discussionService, type Discussion, ApiError } from '@/api'
-import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
-import { normalizeAvatarUrl } from '@/api/userService'
+import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { formatRelativeTime } from '@/utils/date'
 import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
@@ -392,8 +373,10 @@ import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
+import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
+import ReferencedPostPreview from '@/components/community/ReferencedPostPreview.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 
@@ -405,6 +388,7 @@ const { isAuthenticated } = storeToRefs(authStore)
 
 const showGuide = ref(false)
 const activeTab = ref('recent')
+const isPageActive = ref(true)
 
 const discussions = computed(() => discStore.items)
 const isLoading = computed(() => discStore.isLoading)
@@ -478,23 +462,8 @@ function formatTime(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
 }
 
-function getDiscussionAuthorFallbackLabel(username: string | null | undefined): string {
-  const source = username?.trim() || '?'
-  return source.slice(0, 1).toUpperCase() || '?'
-}
-
 function goToDiscussion(discussionId: string) {
   router.push(`/community/discussions/${discussionId}`)
-}
-
-function goToReferencedPost(post: { id: string; thumbnail_url?: string | null }) {
-  if (post.thumbnail_url) {
-    sessionStorage.setItem(
-      `post-thumbnail-${post.id}`,
-      normalizeToThumbnailUrl(post.thumbnail_url, 'medium') || post.thumbnail_url
-    )
-  }
-  router.push(`/post/${post.id}`)
 }
 
 function goToLogin() {
@@ -580,6 +549,19 @@ function clearSearch() {
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
 }
 
+function cleanupCommunityTransientState() {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = null
+  }
+  searchRequestToken += 1
+  isSearching.value = false
+  hotTopicsRequestToken += 1
+  hotTopicsController?.abort()
+  hotTopicsController = null
+  isLoadingHot.value = false
+}
+
 async function searchDiscussions(q: string, signal?: AbortSignal, requestToken?: number) {
   const token = requestToken ?? ++searchRequestToken
   isSearching.value = true
@@ -656,7 +638,11 @@ watch(
 useInfiniteScroll(sentinelRef, loadMore, {
   rootMargin: '800px',
   enabled: () =>
-    activeTab.value === 'recent' && hasMore.value && !isLoading.value && !isLoadingMore.value,
+    isPageActive.value &&
+    activeTab.value === 'recent' &&
+    hasMore.value &&
+    !isLoading.value &&
+    !isLoadingMore.value,
 })
 
 onMounted(() => {
@@ -665,17 +651,20 @@ onMounted(() => {
   }
 })
 
-onUnmounted(() => {
-  if (searchDebounceTimer) {
-    clearTimeout(searchDebounceTimer)
-    searchDebounceTimer = null
+onActivated(() => {
+  isPageActive.value = true
+  if (activeTab.value === 'recent' && discStore.items.length === 0) {
+    void discStore.fetchDiscussions(true)
   }
-  searchRequestToken += 1
-  isSearching.value = false
-  hotTopicsRequestToken += 1
-  hotTopicsController?.abort()
-  hotTopicsController = null
-  isLoadingHot.value = false
+})
+
+onDeactivated(() => {
+  isPageActive.value = false
+  cleanupCommunityTransientState()
+})
+
+onUnmounted(() => {
+  cleanupCommunityTransientState()
 })
 </script>
 
@@ -1011,53 +1000,6 @@ onUnmounted(() => {
 
 .discussion-tag {
   font-size: var(--text-xs);
-}
-
-.referenced-post {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2);
-  border-radius: var(--radius-md);
-  background: var(--glass-bg-light);
-  cursor: pointer;
-}
-
-.referenced-post:hover {
-  background: var(--glass-bg);
-}
-
-.referenced-post:focus-visible {
-  outline: none;
-  background: var(--glass-bg);
-  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
-}
-
-.referenced-thumb {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.referenced-content {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.referenced-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.referenced-title {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .author-avatar {

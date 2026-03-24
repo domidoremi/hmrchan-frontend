@@ -88,19 +88,18 @@
 
       <div class="post-meta">
         <div class="post-author-wrapper" v-if="showAuthor && displayAuthorName">
-          <img
-            v-if="post.author_avatar_url"
+          <Avatar
             class="post-author-avatar"
-            :src="normalizeAvatarUrl(post.author_avatar_url) || undefined"
+            size="custom"
+            :src="resolveAvatarSrc(post.author_avatar_url)"
             :alt="displayAuthorName"
-            width="24"
-            height="24"
             loading="lazy"
             decoding="async"
-          />
-          <div v-else class="post-author-avatar post-author-avatar--fallback">
-            <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
-          </div>
+          >
+            <template #fallback>
+              <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
+            </template>
+          </Avatar>
           <span class="post-author">{{ displayAuthorName }}</span>
         </div>
 
@@ -129,7 +128,7 @@ import { useI18n } from 'vue-i18n'
 import { Calendar, Eye, Film, Globe, Heart, Play, User } from 'lucide-vue-next'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import type { PostListItem } from '@/api'
-import { normalizeAvatarUrl } from '@/api/userService'
+import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import { reportClientEvent } from '@/utils/clientReporter'
 import { warmDecodedImage } from '@/utils/performance'
@@ -141,6 +140,7 @@ import {
 } from '@/utils/mediaOptimizer'
 import { thumbnailCache } from '@/utils/thumbnailCache'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
 
 /**
@@ -954,21 +954,18 @@ post-meta {
   flex: 1;
 }
 
-.post-author-avatar {
+.post-author-avatar.ui-avatar {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: var(--radius-full);
   flex-shrink: 0;
-  object-fit: cover;
   background: var(--glass-bg-subtle);
   border: 1px solid rgba(148, 163, 184, 0.16);
 }
 
-.post-author-avatar--fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.post-author-avatar:deep(.ui-avatar__fallback) {
   color: var(--color-text-tertiary);
+  background: transparent;
 }
 
 .post-author {

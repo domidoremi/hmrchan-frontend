@@ -17,6 +17,7 @@ import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useAuthStore, useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
 import { storePostNavigationContext } from '@/utils/postNavigation'
+import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 
 import {
   buildSearchHistoryFilters,
@@ -315,9 +316,7 @@ export function useSearchPageState() {
   function goToPost(postId: string, thumbnailSrc: string | null) {
     const contextPosts = results.value.length > 0 ? results.value : discoverPosts.value
     storePostNavigationContext(contextPosts, postId, 'search')
-    if (thumbnailSrc) {
-      sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
-    }
+    cachePostThumbnailPreview(postId, thumbnailSrc)
     router.push(`/post/${postId}`)
   }
 

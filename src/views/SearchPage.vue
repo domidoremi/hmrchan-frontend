@@ -194,42 +194,14 @@
             />
 
             <div v-else class="authors-grid">
-              <article
+              <AuthorCard
                 v-for="author in authors"
                 :key="author.id"
                 v-memo="getAuthorMemo(author)"
-                class="author-card page-list-card content-auto-sm"
-                role="button"
-                tabindex="0"
-                @click="goToAuthor(author.id)"
-                @keydown.enter.prevent="goToAuthor(author.id)"
-                @keydown.space.prevent="goToAuthor(author.id)"
-              >
-                <Avatar
-                  :key="`${author.id}:${getSearchAuthorAvatarSrc(author.avatar_url) ?? 'fallback'}`"
-                  class="author-avatar"
-                  size="custom"
-                  :src="getSearchAuthorAvatarSrc(author.avatar_url)"
-                  :alt="author.display_name || author.name"
-                  loading="lazy"
-                  decoding="async"
-                  :fallback="getAuthorFallbackLabel(author)"
-                />
-                <div class="author-info">
-                  <h3 class="author-name">{{ author.display_name || author.name }}</h3>
-                  <p class="author-platform">
-                    <AnimatedIcon
-                      name="explore"
-                      :fallback-icon="getPlatformIcon(author.platform)"
-                      size="sm"
-                    />
-                    {{ author.platform }}
-                  </p>
-                  <p class="author-posts">
-                    {{ $t('author.postCount', { count: author.post_count }) }}
-                  </p>
-                </div>
-              </article>
+                compact
+                :author="author"
+                @click="goToAuthor"
+              />
             </div>
           </template>
         </div>
@@ -249,7 +221,10 @@
           </div>
         </div>
 
-        <section v-if="isAuthenticated" class="search-history-section empty-surface content-auto">
+        <section
+          v-if="isAuthenticated"
+          class="search-history-section empty-surface content-auto-xl"
+        >
           <div class="search-history-header">
             <div>
               <h2 class="search-history-title">{{ $t('search.history') }}</h2>
@@ -447,12 +422,11 @@ import {
   Trash2,
 } from 'lucide-vue-next'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
-import { normalizeAvatarUrl } from '@/api/userService'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import AuthorCard from '@/components/business/AuthorCard.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Select from '@/components/ui/Select.vue'
-import Avatar from '@/components/ui/Avatar.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -545,35 +519,6 @@ const sortOptions = computed(() => [
   { value: 'published_at' as SearchSortBy, label: t('search.sort.date') },
   { value: 'view_count' as SearchSortBy, label: t('search.sort.views') },
 ])
-
-function getPlatformIcon(platform: string) {
-  switch (platform.toLowerCase()) {
-    case 'youtube':
-      return IconYoutube
-    case 'tiktok':
-      return IconTiktok
-    case 'twitter':
-      return IconX
-    case 'instagram':
-      return IconInstagram
-    default:
-      return Globe
-  }
-}
-
-function getSearchAuthorAvatarSrc(avatarUrl: string | null | undefined): string | undefined {
-  return normalizeAvatarUrl(avatarUrl || undefined) || avatarUrl || undefined
-}
-
-function getAuthorFallbackLabel(author: {
-  display_name?: string | null
-  name?: string | null
-  username?: string | null
-}): string {
-  const source =
-    author.display_name?.trim() || author.name?.trim() || author.username?.trim() || '?'
-  return source.slice(0, 1).toUpperCase() || '?'
-}
 </script>
 
 <style scoped>
@@ -871,53 +816,6 @@ function getAuthorFallbackLabel(author: {
   .authors-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
-}
-
-.author-card {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3);
-  cursor: pointer;
-  min-inline-size: 0;
-  min-block-size: 5.5rem;
-  text-align: left;
-}
-
-.author-avatar {
-  --avatar-size: 3rem;
-  border: 0;
-}
-
-.author-info {
-  flex: 1;
-  min-inline-size: 0;
-  display: grid;
-  gap: var(--spacing-1);
-}
-
-.author-name {
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  margin: 0 0 var(--spacing-1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.author-platform {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-1);
-}
-
-.author-posts {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  margin: 0;
 }
 
 .search-empty {

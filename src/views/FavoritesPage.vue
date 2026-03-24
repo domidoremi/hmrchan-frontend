@@ -88,21 +88,20 @@
               @keydown.space.prevent="goToPost(fav.post_id, fav.post?.thumbnail_url)"
             >
               <div class="favorite-image">
-                <img
-                  v-if="fav.post?.thumbnail_url"
-                  :src="
-                    normalizeToThumbnailUrl(fav.post.thumbnail_url, 'medium') ||
-                    fav.post.thumbnail_url
-                  "
-                  :srcset="getThumbnailSrcset(fav.post.thumbnail_url) || undefined"
+                <ThumbnailImage
+                  :src="fav.post?.thumbnail_url"
                   :sizes="thumbnailSizes"
                   :alt="fav.post?.title"
+                  responsive
                   loading="lazy"
                   decoding="async"
-                />
-                <div v-else class="image-placeholder">
-                  <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
-                </div>
+                >
+                  <template #fallback>
+                    <div class="image-placeholder">
+                      <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
+                    </div>
+                  </template>
+                </ThumbnailImage>
               </div>
               <div class="favorite-content">
                 <h3 class="favorite-title" :title="fav.post?.title || $t('favorites.unknownPost')">
@@ -215,16 +214,16 @@
 <script setup lang="ts">
 defineOptions({ name: 'FavoritesPage' })
 
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onActivated, onDeactivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { Heart, PencilLine, X } from 'lucide-vue-next'
 import { useAuthStore, useToastStore, useFavoritesStore } from '@/stores'
 import { favoriteService, type FavoriteResponse } from '@/api/favoriteService'
-import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
 import { storePostNavigationContext } from '@/utils/postNavigation'
+import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
@@ -237,6 +236,7 @@ import Select from '@/components/ui/Select.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import Textarea from '@/components/ui/Textarea.vue'
+import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
@@ -258,6 +258,7 @@ const preferredPageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 
 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
+const isPageActive = ref(true)
 
 const selectedFolder = ref('')
 const selectedTag = ref('')
@@ -333,7 +334,8 @@ async function loadMore(): Promise<boolean> {
 
 useInfiniteScroll(sentinelRef, loadMore, {
   rootMargin: '800px',
-  enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
+  enabled: () =>
+    isPageActive.value && hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
 })
 
 async function removeFavorite(favoriteId: string) {
@@ -403,12 +405,7 @@ async function saveFavoriteEditor() {
 function goToPost(postId: string, thumbnailUrl?: string | null) {
   const navigationItems = favorites.value.map((favorite) => ({ post_id: favorite.post_id }))
   storePostNavigationContext(navigationItems, postId, 'favorites')
-  if (thumbnailUrl) {
-    sessionStorage.setItem(
-      `post-thumbnail-${postId}`,
-      normalizeToThumbnailUrl(thumbnailUrl, 'medium') || thumbnailUrl
-    )
-  }
+  cachePostThumbnailPreview(postId, thumbnailUrl)
   router.push(`/post/${postId}`)
 }
 
@@ -440,6 +437,14 @@ watch(
   },
   { immediate: true }
 )
+
+onActivated(() => {
+  isPageActive.value = true
+})
+
+onDeactivated(() => {
+  isPageActive.value = false
+})
 </script>
 
 <style scoped>
