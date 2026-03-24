@@ -15,6 +15,7 @@
 
     <!-- Navbar -->
     <AppNavbar />
+    <AppSideNav />
 
     <!-- Main Content with Error Boundary -->
     <main id="main-content" :class="{ 'main--home': isHomeRoute }">
@@ -77,6 +78,7 @@ import { useLocaleConfig } from '@/composables/useLocaleConfig'
 import { usePreferencesSync } from '@/composables/usePreferencesSync'
 import { scheduleTask } from '@/utils/modernAPIs'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
+import AppSideNav from '@/components/layout/AppSideNav.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import PageLoading from '@/components/ui/PageLoading.vue'
 import BackToTop from '@/components/ui/BackToTop.vue'
@@ -333,6 +335,7 @@ function handleRetry() {
 
 <style scoped>
 #app {
+  --app-side-nav-offset: 0rem;
   min-height: 100svh;
   min-height: 100dvh;
   display: flex;
@@ -465,6 +468,17 @@ main.main--home {
 .app-footer-shell {
   position: relative;
   z-index: 1;
+}
+
+@media (min-width: 961px) {
+  #app {
+    --app-side-nav-offset: clamp(4.75rem, 7vw, 6rem);
+  }
+
+  main,
+  .app-footer-shell {
+    padding-inline-start: var(--app-side-nav-offset);
+  }
 }
 
 /* 动效强度控制 */

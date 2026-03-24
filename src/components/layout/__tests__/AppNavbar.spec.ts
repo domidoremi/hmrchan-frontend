@@ -162,6 +162,22 @@ async function createWrapper() {
   return { wrapper, router }
 }
 
+function stubMatchMedia(isMobile: boolean) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation((query: string) => ({
+      matches: query === MOBILE_NAV_QUERY ? isMobile : false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+  )
+}
+
 describe('AppNavbar', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -174,19 +190,7 @@ describe('AppNavbar', () => {
     authStoreState.logout.mockClear()
     scheduleStoreState.hasNew = false
     scheduleStoreState.checkForNew.mockClear()
-    vi.stubGlobal(
-      'matchMedia',
-      vi.fn().mockImplementation((query: string) => ({
-        matches: query === MOBILE_NAV_QUERY ? false : false,
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      }))
-    )
+    stubMatchMedia(false)
   })
 
   afterEach(() => {
@@ -212,16 +216,28 @@ describe('AppNavbar', () => {
     wrapper.unmount()
   })
 
-  it('renders the transparent compact shell without the legacy nav rows', async () => {
+  it('renders the desktop transparent shell without top-level route links', async () => {
     const { wrapper } = await createWrapper()
 
     expect(wrapper.find('.brand-mark').exists()).toBe(false)
     expect(wrapper.find('.brand-tagline').exists()).toBe(false)
-    expect(wrapper.find('.navbar-brand .brand-name').text()).toContain('MomiChan')
+    expect(wrapper.find('.navbar-brand').exists()).toBe(false)
     expect(wrapper.find('.navbar-shell').exists()).toBe(true)
+    expect(wrapper.find('.navbar-shell--actions-only').exists()).toBe(true)
     expect(wrapper.find('.glass-navbar').exists()).toBe(false)
     expect(wrapper.find('.navbar-links').exists()).toBe(false)
     expect(wrapper.find('.mobile-nav').exists()).toBe(false)
+    expect(wrapper.find('.navbar-cta').exists()).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('keeps brand and explore CTA in the mobile navbar', async () => {
+    stubMatchMedia(true)
+    const { wrapper } = await createWrapper()
+
+    expect(wrapper.find('.navbar-brand .brand-name').text()).toContain('MomiChan')
+    expect(wrapper.find('.navbar-shell--actions-only').exists()).toBe(false)
     expect(wrapper.find('.navbar-cta').text()).toContain('Start Exploring')
 
     wrapper.unmount()
