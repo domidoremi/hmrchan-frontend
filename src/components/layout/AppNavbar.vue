@@ -1,8 +1,8 @@
 <template>
   <nav ref="navbarRef" class="navbar navbar--minimal" :class="{ 'navbar-hidden': isNavbarHidden }">
     <div class="container navbar-content">
-      <div class="navbar-shell">
-        <RouterLink to="/" class="navbar-brand" :aria-label="$t('app.name')">
+      <div class="navbar-shell" :class="{ 'navbar-shell--actions-only': !isMobile }">
+        <RouterLink v-if="isMobile" to="/" class="navbar-brand" :aria-label="$t('app.name')">
           <span class="navbar-brand__meta">
             <span class="brand-name gradient-text">{{ $t('app.name') }}</span>
           </span>
@@ -22,6 +22,7 @@
           </button>
 
           <RouterLink
+            v-if="isMobile"
             to="/explore"
             class="nav-action-btn nav-action-btn--pill nav-action-btn--primary navbar-cta"
             :aria-label="$t('home.hero.primaryAction')"
@@ -773,6 +774,10 @@ onUnmounted(() => {
   --nav-action-border: var(--chrome-action-border);
   --nav-action-border-strong: var(--chrome-action-border-strong);
   --nav-dropdown-bg: var(--chrome-surface-bg-soft);
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: var(--z-sticky);
   display: flex;
   align-items: center;
   height: var(--navbar-height);
@@ -792,7 +797,7 @@ onUnmounted(() => {
 .navbar-content {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: var(--spacing-3);
   min-inline-size: 0;
 }
@@ -807,10 +812,16 @@ onUnmounted(() => {
   padding: 0.625rem clamp(0.75rem, 1.8vw, 1.1rem);
   border: 0.0625rem solid var(--nav-shell-border);
   border-radius: 999rem;
-  background: var(--nav-shell-bg);
-  box-shadow: var(--nav-shell-shadow);
-  backdrop-filter: blur(0.5rem);
-  -webkit-backdrop-filter: blur(0.5rem);
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.navbar-shell--actions-only {
+  inline-size: auto;
+  margin-inline-start: auto;
+  justify-content: flex-end;
 }
 
 /* ========== Brand ========== */
@@ -916,16 +927,16 @@ onUnmounted(() => {
 
 .nav-action-btn--primary {
   border-color: rgba(var(--color-primary-rgb), 0.16);
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.2);
   color: var(--color-text-primary);
-  box-shadow: 0 0.85rem 1.8rem -1.4rem rgba(15, 23, 42, 0.14);
+  box-shadow: none;
 }
 
 .nav-action-btn--primary:hover,
 .nav-action-btn--primary.nav-action-btn--active {
   color: var(--color-primary);
   border-color: rgba(var(--color-primary-rgb), 0.18);
-  box-shadow: 0 1rem 2rem -1.4rem rgba(15, 23, 42, 0.22);
+  box-shadow: none;
 }
 
 .nav-action-btn--primary:hover::before,
@@ -1325,25 +1336,25 @@ onUnmounted(() => {
 
 :global(#app[data-theme='dark'] .nav-action-btn--primary),
 :global([data-theme='dark'] .nav-action-btn--primary) {
-  background: rgba(15, 23, 42, 0.62);
+  background: rgba(15, 23, 42, 0.24);
   color: var(--color-text-primary);
 }
 
 :global(#app[data-theme='dark'] .navbar),
 :global([data-theme='dark'] .navbar) {
-  --nav-shell-bg: rgba(15, 23, 42, 0.28);
+  --nav-shell-bg: transparent;
   --nav-shell-border: rgba(255, 255, 255, 0.1);
-  --nav-shell-shadow: 0 1.5rem 3rem -2.25rem rgba(2, 6, 23, 0.34);
+  --nav-shell-shadow: none;
 }
 
 :global(#app[data-theme='blue'] .navbar),
 :global([data-theme='blue'] .navbar) {
-  --nav-shell-bg: rgba(239, 246, 255, 0.32);
+  --nav-shell-bg: transparent;
   --nav-shell-border: rgba(96, 165, 250, 0.16);
 }
 
 :global(#app[data-ui-style='material'] .navbar),
 :global([data-ui-style='material'] .navbar) {
-  --nav-shell-shadow: var(--shadow-md);
+  --nav-shell-shadow: none;
 }
 </style>

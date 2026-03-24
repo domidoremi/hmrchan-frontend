@@ -79,6 +79,9 @@
     "confirmDelete": "确认删除",
     "warning": "警告",
     "success": "成功",
+    "siteNavigation": "站点导航",
+    "primaryNavigation": "主导航",
+    "utilityNavigation": "辅助导航",
     "footerNav": "页脚导航",
     "zoomSlider": "缩放级别",
     "cropPreview": "裁剪预览"

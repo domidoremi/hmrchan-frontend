@@ -79,6 +79,9 @@
     "confirmDelete": "確認刪除",
     "warning": "警告",
     "success": "成功",
+    "siteNavigation": "網站導覽",
+    "primaryNavigation": "主導覽",
+    "utilityNavigation": "輔助導覽",
     "footerNav": "頁尾導航",
     "zoomSlider": "縮放級別",
     "cropPreview": "裁剪預覽"
