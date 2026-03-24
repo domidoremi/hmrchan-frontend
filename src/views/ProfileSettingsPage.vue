@@ -1120,6 +1120,7 @@ import {
 import { useAuthStore, useToastStore } from '@/stores'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
 import { checkPasswordStrength } from '@/utils/crypto'
+import { copyToClipboard } from '@/utils/modernAPIs'
 import { ensureVerificationToken, isVerificationCancelledError } from '@/api/verificationBridge'
 import {
   buildPasswordToggleLabel,
@@ -1598,12 +1599,11 @@ async function disableTwoFactor() {
 }
 
 async function copyText(value: string) {
-  try {
-    await navigator.clipboard.writeText(value)
+  if (await copyToClipboard(value)) {
     toastStore.success(t('profile.twoFactorCopied'))
-  } catch {
-    toastStore.error(t('common.error'))
+    return
   }
+  toastStore.error(t('common.error'))
 }
 
 async function copyBackupCodes(codes: string[]) {

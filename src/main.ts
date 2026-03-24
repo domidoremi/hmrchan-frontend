@@ -19,6 +19,7 @@ import 'lenis/dist/lenis.css'
 import './styles/index.css'
 import { canTrackAnalytics, updateAnalyticsConsent } from './utils/analyticsConsent'
 import { reportClientError, reportClientEvent } from './utils/clientReporter'
+import vClickOutside from './directives/clickOutside'
 
 // 生产环境控制台保护（防止 Self-XSS 攻击）
 import { initConsoleGuard } from './utils/consoleGuard'
@@ -45,6 +46,7 @@ if (import.meta.hot) {
 }
 
 const app = createApp(App)
+app.directive('click-outside', vClickOutside)
 
 /**
  * 动态模块加载失败兜底：

@@ -46,6 +46,7 @@ import { useRouter } from 'vue-router'
 import { AlertTriangle, RefreshCw, Home, Copy } from 'lucide-vue-next'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { copyToClipboard } from '@/utils/modernAPIs'
 
 interface Props {
   fallbackMessage?: string
@@ -109,12 +110,11 @@ function goHome() {
 
 async function copyReport() {
   const report = `${errorMessage.value}\n${errorDetails.value}\nTime: ${timestamp.value}`
-  try {
-    await navigator.clipboard.writeText(report)
+  if (await copyToClipboard(report)) {
     copyLabel.value = t('error.copySuccess')
-  } catch {
-    copyLabel.value = t('error.copyFailed')
+    return
   }
+  copyLabel.value = t('error.copyFailed')
 }
 </script>
 
