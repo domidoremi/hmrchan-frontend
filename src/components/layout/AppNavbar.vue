@@ -9,16 +9,56 @@
         </RouterLink>
 
         <div class="navbar-actions">
+          <form
+            v-if="!isMobile"
+            class="nav-search-shell"
+            :class="{
+              'nav-search-shell--expanded': isDesktopSearchExpanded || !!desktopSearchQuery.trim(),
+            }"
+            role="search"
+            @submit.prevent="handleDesktopSearchSubmit"
+            @mouseenter="expandDesktopSearch()"
+            @mouseleave="collapseDesktopSearch()"
+            @focusin="expandDesktopSearch(false)"
+            @focusout="handleDesktopSearchFocusOut"
+          >
+            <label class="nav-search-shell__field" :for="desktopSearchInputId">
+              <span class="sr-only">{{ $t('common.search') }}</span>
+              <input
+                :id="desktopSearchInputId"
+                ref="desktopSearchInputRef"
+                v-model="desktopSearchQuery"
+                type="search"
+                class="nav-search-shell__input"
+                :placeholder="$t('common.search')"
+                autocomplete="off"
+                enterkeyhint="search"
+                @keydown.esc.prevent="handleDesktopSearchEscape"
+              />
+            </label>
+            <button
+              type="submit"
+              class="nav-action-btn nav-action-btn--pill nav-action-btn--search"
+              @mouseenter="prefetchSearchPage"
+              @focus="prefetchSearchPage"
+              :aria-label="$t('common.search')"
+            >
+              <AnimatedIcon name="search" :fallback-icon="Search" size="md" />
+              <span class="sr-only">{{ $t('common.search') }}</span>
+            </button>
+          </form>
+
           <button
+            v-else
             type="button"
             class="nav-action-btn nav-action-btn--pill nav-action-btn--search"
             @click="goToSearch"
-            @mouseenter="prefetchExplorePage"
-            @focus="prefetchExplorePage"
+            @mouseenter="prefetchSearchPage"
+            @focus="prefetchSearchPage"
             :aria-label="$t('common.search')"
           >
             <AnimatedIcon name="search" :fallback-icon="Search" size="md" />
-            <span class="nav-action-btn__label desktop-only">{{ $t('common.search') }}</span>
+            <span class="nav-action-btn__label">{{ $t('common.search') }}</span>
           </button>
 
           <RouterLink
@@ -300,12 +340,17 @@ const { user, isAuthenticated } = storeToRefs(authStore)
 
 const showSettings = ref(false)
 const showUserMenu = ref(false)
+const isDesktopSearchExpanded = ref(false)
+const desktopSearchQuery = ref('')
 
 const settingsBtnRef = useTemplateRef<HTMLButtonElement>('settingsBtnRef')
 const userBtnRef = useTemplateRef<HTMLButtonElement>('userBtnRef')
 const settingsDropdownRef = useTemplateRef<HTMLDivElement>('settingsDropdownRef')
 const userDropdownRef = useTemplateRef<HTMLDivElement>('userDropdownRef')
 const navbarRef = useTemplateRef<HTMLElement>('navbarRef')
+const desktopSearchInputRef = useTemplateRef<HTMLInputElement>('desktopSearchInputRef')
+
+const desktopSearchInputId = 'navbar-desktop-search'
 
 useFocusTrap(settingsDropdownRef, showSettings, {
   autoFocus: true,
@@ -379,6 +424,12 @@ function prefetchExplorePage() {
   })
 }
 
+function prefetchSearchPage() {
+  runOncePrefetch('search', () => {
+    import('@/views/SearchPage.vue').catch(() => {})
+  })
+}
+
 function prefetchAuthorsPage() {
   runOncePrefetch('authors', () => {
     import('@/views/AuthorsPage.vue').catch(() => {})
@@ -422,6 +473,14 @@ watch([() => route.fullPath, isAuthenticated], () => {
   scheduleNavigationIdlePrefetch()
 })
 
+watch(
+  () => route.query.q,
+  (value) => {
+    desktopSearchQuery.value = typeof value === 'string' ? value : ''
+  },
+  { immediate: true }
+)
+
 // 预加载头像以提高导航栏显示优先级
 watch(
   userAvatar,
@@ -450,6 +509,49 @@ function shouldPrefetchOnIdle(): boolean {
 
 function goToSearch() {
   router.push('/search')
+}
+
+function expandDesktopSearch(focusInput = true) {
+  if (isMobile.value) return
+  isDesktopSearchExpanded.value = true
+  closeSettings()
+  closeUserMenu()
+  prefetchSearchPage()
+  if (focusInput) {
+    nextTick(() => desktopSearchInputRef.value?.focus())
+  }
+}
+
+function collapseDesktopSearch(force = false) {
+  if (isMobile.value) return
+  if (!force && desktopSearchQuery.value.trim()) return
+  isDesktopSearchExpanded.value = false
+}
+
+async function handleDesktopSearchSubmit() {
+  if (isMobile.value) {
+    await router.push('/search')
+    return
+  }
+
+  const query = desktopSearchQuery.value.trim()
+  if (!query) {
+    expandDesktopSearch()
+    return
+  }
+
+  await router.push(`/search?q=${encodeURIComponent(query)}`)
+}
+
+function handleDesktopSearchFocusOut(event: FocusEvent) {
+  const nextTarget = event.relatedTarget as Node | null
+  if (nextTarget && (event.currentTarget as HTMLElement | null)?.contains(nextTarget)) return
+  collapseDesktopSearch()
+}
+
+function handleDesktopSearchEscape() {
+  desktopSearchQuery.value = typeof route.query.q === 'string' ? route.query.q : ''
+  collapseDesktopSearch(!desktopSearchQuery.value)
 }
 
 function restoreTriggerFocus(kind: 'settings' | 'user') {
@@ -545,6 +647,9 @@ function handleKeydown(event: KeyboardEvent) {
 
 function updateIsMobile() {
   isMobile.value = window.matchMedia(MOBILE_NAV_BREAKPOINT_QUERY).matches
+  if (isMobile.value) {
+    isDesktopSearchExpanded.value = false
+  }
 }
 
 function updateDropdownPosition(kind: 'settings' | 'user') {
@@ -784,7 +889,7 @@ onUnmounted(() => {
 <style scoped>
 .navbar {
   --nav-shell-bg: transparent;
-  --nav-shell-border: var(--chrome-surface-border);
+  --nav-shell-border: transparent;
   --nav-shell-shadow: none;
   --nav-muted-bg: var(--chrome-muted-bg);
   --nav-muted-bg-strong: var(--chrome-muted-bg-strong);
@@ -793,10 +898,14 @@ onUnmounted(() => {
   --nav-chip-bg: var(--chrome-chip-bg);
   --nav-chip-border: var(--chrome-chip-border);
   --nav-chip-text: var(--chrome-chip-text);
-  --nav-action-bg: var(--chrome-action-bg);
-  --nav-action-bg-hover: var(--chrome-action-bg-hover);
-  --nav-action-border: var(--chrome-action-border);
-  --nav-action-border-strong: var(--chrome-action-border-strong);
+  --nav-action-bg: color-mix(in srgb, var(--chrome-action-bg) 34%, transparent);
+  --nav-action-bg-hover: color-mix(in srgb, var(--chrome-action-bg-hover) 56%, transparent);
+  --nav-action-border: color-mix(in srgb, var(--chrome-action-border) 58%, transparent);
+  --nav-action-border-strong: color-mix(
+    in srgb,
+    var(--chrome-action-border-strong) 74%,
+    rgba(var(--color-primary-rgb), 0.18)
+  );
   --nav-dropdown-bg: var(--chrome-surface-bg-soft);
   --nav-dropdown-border: var(--chrome-surface-border);
   --nav-dropdown-shadow: var(--chrome-surface-shadow);
@@ -808,7 +917,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   height: var(--navbar-height);
-  padding-block: 0.75rem;
+  padding-block: max(env(safe-area-inset-top, 0rem), clamp(0.75rem, 2vw, 1rem))
+    clamp(0.35rem, 1vw, 0.5rem);
   transition:
     transform var(--duration-normal) var(--ease-out),
     box-shadow var(--transition-fast);
@@ -827,6 +937,7 @@ onUnmounted(() => {
   justify-content: flex-end;
   gap: var(--spacing-3);
   min-inline-size: 0;
+  padding-inline-end: clamp(0.25rem, 0.8vw, 0.75rem);
 }
 
 .navbar-shell {
@@ -836,7 +947,7 @@ onUnmounted(() => {
   gap: clamp(0.75rem, 2vw, 1.5rem);
   inline-size: 100%;
   min-inline-size: 0;
-  padding: 0.625rem clamp(0.75rem, 1.8vw, 1.1rem);
+  padding: 0.35rem clamp(0.4rem, 1.4vw, 0.75rem);
   border: 0.0625rem solid var(--nav-shell-border);
   border-radius: 999rem;
   background: transparent;
@@ -885,6 +996,57 @@ onUnmounted(() => {
   flex-wrap: nowrap;
 }
 
+.nav-search-shell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-inline-size: 0;
+}
+
+.nav-search-shell__field {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  max-inline-size: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translate3d(0.75rem, 0, 0);
+  transition:
+    max-inline-size var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.nav-search-shell--expanded .nav-search-shell__field,
+.nav-search-shell:hover .nav-search-shell__field,
+.nav-search-shell:focus-within .nav-search-shell__field {
+  max-inline-size: clamp(11rem, 18vw, 14rem);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.nav-search-shell__input {
+  inline-size: clamp(11rem, 18vw, 14rem);
+  min-inline-size: 0;
+  min-block-size: 2.5rem;
+  padding-inline: 0.95rem;
+  border: 0.0625rem solid color-mix(in srgb, var(--nav-action-border) 78%, transparent);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--nav-action-bg-hover) 72%, transparent);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  line-height: 1;
+  outline: none;
+}
+
+.nav-search-shell__input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.nav-search-shell__input:focus {
+  border-color: var(--nav-action-border-strong);
+}
+
 .nav-action-btn {
   position: relative;
   display: inline-flex;
@@ -902,7 +1064,8 @@ onUnmounted(() => {
     color var(--duration-fast) var(--ease-out),
     background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .nav-action-btn::before {
@@ -917,6 +1080,7 @@ onUnmounted(() => {
 .nav-action-btn:hover {
   color: var(--color-primary);
   border-color: var(--nav-action-border-strong);
+  transform: translate3d(0, -0.0625rem, 0);
 }
 
 .nav-action-btn:hover::before {
@@ -933,6 +1097,7 @@ onUnmounted(() => {
 
 .nav-action-btn--search {
   gap: var(--spacing-2);
+  padding-inline: 0.625rem;
 }
 
 .nav-action-btn__label {
@@ -1027,9 +1192,9 @@ onUnmounted(() => {
   position: relative;
   padding: 0.125rem;
   border: 1px solid var(--nav-action-border);
-  background: var(--nav-action-bg);
+  background: color-mix(in srgb, var(--nav-action-bg) 82%, transparent);
   border-radius: 50%;
-  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1);
+  box-shadow: none;
   transition:
     background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
@@ -1103,6 +1268,14 @@ onUnmounted(() => {
   box-shadow: var(--nav-dropdown-shadow);
   backdrop-filter: var(--nav-dropdown-backdrop);
   -webkit-backdrop-filter: var(--nav-dropdown-backdrop);
+}
+
+.settings-dropdown.glass-dropdown {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .settings-dropdown[data-positioned='false'],
@@ -1338,9 +1511,14 @@ onUnmounted(() => {
     display: none;
   }
 
+  .nav-search-shell {
+    display: none;
+  }
+
   .nav-action-btn {
     inline-size: var(--ui-action-size, 2.5rem);
     padding-inline: 0;
+    transform: none;
   }
 
   .brand-name {

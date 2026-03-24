@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, reactive } from 'vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import vClickOutside from '@/directives/clickOutside'
@@ -186,8 +186,11 @@ async function createWrapper() {
     },
   })
 
+  mountedWrappers.push(wrapper)
   return { wrapper, router }
 }
+
+const mountedWrappers: Array<VueWrapper> = []
 
 function stubMatchMedia(isMobile: boolean) {
   vi.stubGlobal(
@@ -237,6 +240,14 @@ describe('AppNavbar', () => {
   })
 
   afterEach(() => {
+    while (mountedWrappers.length > 0) {
+      const wrapper = mountedWrappers.pop()
+      try {
+        wrapper?.unmount()
+      } catch {
+        // ignore wrappers already unmounted inside the test body
+      }
+    }
     vi.useRealTimers()
     vi.unstubAllGlobals()
     document.body.innerHTML = ''
@@ -255,6 +266,29 @@ describe('AppNavbar', () => {
     await nextTick()
 
     expect(wrapper.find('#navbar-settings-panel').exists()).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('expands desktop search before routing and submits the typed query', async () => {
+    const { wrapper, router } = await createWrapper()
+
+    const searchForm = wrapper.find('.nav-search-shell')
+    expect(searchForm.exists()).toBe(true)
+
+    await searchForm.trigger('submit')
+    await nextTick()
+
+    expect(router.currentRoute.value.fullPath).toBe('/')
+    expect(searchForm.classes()).toContain('nav-search-shell--expanded')
+
+    const searchInput = wrapper.find('#navbar-desktop-search')
+    await searchInput.setValue('momo')
+    await searchForm.trigger('submit')
+    await flushPromises()
+    await nextTick()
+
+    expect(router.currentRoute.value.fullPath).toBe('/search?q=momo')
 
     wrapper.unmount()
   })

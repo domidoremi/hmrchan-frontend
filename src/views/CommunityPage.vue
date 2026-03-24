@@ -8,7 +8,7 @@
 
     <div class="container">
       <!-- Header -->
-      <header class="page-hero community-hero">
+      <header class="page-hero page-hero--bare community-hero">
         <div class="page-hero__content">
           <div class="page-hero__header">
             <div class="page-hero__heading">
@@ -153,7 +153,7 @@
           class="composer-section"
           @created="handleDiscussionCreated"
         />
-        <div v-else class="login-prompt empty-surface surface-editorial">
+        <div v-else class="login-prompt surface-editorial">
           <div class="login-prompt__content">
             <p class="login-prompt__title">{{ $t('community.loginToPost') }}</p>
             <ul class="login-prompt__list">
