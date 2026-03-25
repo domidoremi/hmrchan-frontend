@@ -536,6 +536,7 @@
                   <Avatar
                     class="trends-authors-highlight__avatar"
                     size="custom"
+                    shape="square"
                     :src="leadingTrendingAuthor.avatar || undefined"
                     :alt="leadingTrendingAuthor.name"
                     loading="lazy"
@@ -546,9 +547,6 @@
                     </template>
                   </Avatar>
                   <span class="trends-authors-highlight__copy">
-                    <span class="trends-authors-highlight__label">
-                      {{ $t('home.hero.spotlightLabel') }}
-                    </span>
                     <strong class="trends-authors-highlight__title">
                       {{ leadingTrendingAuthor.name }}
                     </strong>
@@ -556,8 +554,8 @@
                       {{ $t('home.trends.authorCount', { n: leadingTrendingAuthor.count }) }}
                     </span>
                   </span>
-                  <span class="trends-authors-highlight__action">
-                    {{ $t('home.trends.authorsAction') }}
+                  <span class="trends-authors-highlight__arrow" aria-hidden="true">
+                    <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
                   </span>
                 </RouterLink>
                 <div class="trends-list">
@@ -4845,35 +4843,40 @@ onBeforeUnmount(() => {
 .trends-authors-highlight {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.625rem;
+  gap: 0.75rem;
   align-items: center;
-  padding: 0.75rem 0.875rem;
+  padding: 0.8125rem 0.875rem;
   min-block-size: auto;
   align-self: start;
   border-radius: var(--home-card-radius);
   color: var(--color-text-primary);
   text-decoration: none;
-  background: var(--home-panel-bg-soft), var(--home-pill-bg);
+  background: color-mix(in srgb, var(--home-panel-bg-soft) 92%, transparent);
   border: 0.0625rem solid var(--home-panel-border);
-  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow);
+  box-shadow: var(--home-panel-highlight);
   transition:
     transform var(--transition-fast),
     border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    background-color var(--transition-fast);
 }
 
 .trends-authors-highlight:hover {
-  transform: translate3d(0, -0.125rem, 0);
+  transform: translate3d(0, -0.0625rem, 0);
   border-color: var(--home-panel-border-strong);
-  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow-strong);
+  background: color-mix(in srgb, var(--home-panel-bg-soft) 98%, transparent);
 }
 
 .trends-authors-highlight__avatar.ui-avatar {
-  inline-size: 2.75rem;
-  block-size: 2.75rem;
-  border-radius: var(--home-card-radius);
+  inline-size: 3rem;
+  block-size: 3rem;
+  border-radius: calc(var(--home-card-radius) * 0.9);
   background: var(--home-panel-muted-strong);
   border: 0.0625rem solid var(--home-panel-border);
+}
+
+.trends-authors-highlight__avatar:deep(.ui-avatar__image),
+.trends-authors-highlight__avatar:deep(.ui-avatar__fallback) {
+  border-radius: inherit;
 }
 
 .trends-authors-highlight__avatar:deep(.ui-avatar__fallback) {
@@ -4882,22 +4885,19 @@ onBeforeUnmount(() => {
 
 .trends-authors-highlight__copy {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.125rem;
   min-inline-size: 0;
 }
 
-.trends-authors-highlight__label {
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-}
-
 .trends-authors-highlight__title {
-  font-size: clamp(1rem, 1.3vw, 1.12rem);
-  line-height: 1.3;
-  letter-spacing: -0.01em;
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: clamp(1rem, 1.28vw, 1.08rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
   color: var(--home-ink);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
 .trends-authors-highlight__meta {
@@ -4905,20 +4905,27 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
 }
 
-.trends-authors-highlight__action {
+.trends-authors-highlight__arrow {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 2rem;
-  padding-inline: 0.75rem;
-  border-radius: var(--home-chip-radius);
-  background: var(--home-panel-muted);
-  border: 0.0625rem solid var(--home-panel-border);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: 999rem;
+  background: color-mix(in srgb, var(--home-panel-muted) 84%, transparent);
+  border: 0.0625rem solid color-mix(in srgb, var(--home-panel-border) 86%, transparent);
+  box-shadow: none;
   color: var(--color-text-secondary);
-  white-space: nowrap;
-  box-shadow: var(--home-panel-highlight);
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.trends-authors-highlight:hover .trends-authors-highlight__arrow {
+  transform: translate3d(0.0625rem, 0, 0);
+  border-color: var(--home-panel-border-strong);
+  color: var(--home-ink);
 }
 
 .trends-card__hint {
@@ -6348,7 +6355,7 @@ onBeforeUnmount(() => {
     padding: 0.625rem 0.75rem;
   }
 
-  .trends-authors-highlight__action {
+  .trends-authors-highlight__arrow {
     display: none;
   }
 
@@ -7084,7 +7091,7 @@ onBeforeUnmount(() => {
     padding: 0.625rem 0.75rem;
   }
 
-  .trends-authors-highlight__action {
+  .trends-authors-highlight__arrow {
     display: none;
   }
 
