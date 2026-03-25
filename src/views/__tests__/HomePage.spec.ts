@@ -4,6 +4,7 @@ import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
+import { resolvePreviewablePostLink } from '@/views/homepage/homeModel'
 
 const mocks = vi.hoisted(() => ({
   loadHomepageBootstrap: vi.fn(),
@@ -273,7 +274,12 @@ async function mountHomePage() {
   const { default: HomePage } = await import('../HomePage.vue')
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: [{ path: '/', component: { template: '<div />' } }],
+    routes: [
+      { path: '/', component: { template: '<div />' } },
+      { path: '/post/:id', component: { template: '<div />' } },
+      { path: '/schedule/:id', component: { template: '<div />' } },
+      { path: '/explore', component: { template: '<div />' } },
+    ],
   })
 
   await router.push('/')
@@ -380,6 +386,12 @@ describe('HomePage', () => {
 
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
+  })
+
+  it('sanitizes upstream non-post deep links back into the post detail flow', () => {
+    expect(
+      resolvePreviewablePostLink('/schedule/177885f6-814d-4661-9b08-1bde93b0568a', 'post-bubble-1')
+    ).toBe('/post/post-bubble-1')
   })
 
   it('refreshes only the missing support block when aggregate data leaves one block empty', async () => {

@@ -953,7 +953,7 @@ import {
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { ArrowUpRight, Compass, Image, Sparkles } from 'lucide-vue-next'
+import { ArrowUpRight, Calendar, Compass, Image, Sparkles, Users } from 'lucide-vue-next'
 import { useSettingsStore } from '@/stores'
 import {
   homeService,
@@ -977,7 +977,7 @@ import {
   formatScheduleHighlightMeta as formatScheduleHighlightMetaValue,
   normalizeText,
   resolvePostIdFromLink,
-  resolvePostLink,
+  resolvePreviewablePostLink,
 } from '@/views/homepage/homeModel'
 import { resolveBubbleRevealWindow } from '@/views/homepage/bubbleRevealState'
 import { buildStoryCardMotion } from '@/views/homepage/storyDeckMotion'
@@ -1377,21 +1377,21 @@ const homePageMotionStyle = computed<Record<string, string>>(() => {
 
   return {
     '--home-hero-opacity': String(clamp(1 - heroExit * 0.08, 0.92, 1)),
-    '--home-hero-scale': String(clamp(1 - heroExit * 0.012, 0.988, 1)),
-    '--home-hero-y': `${(-1.1 * heroExit).toFixed(4)}rem`,
-    '--home-hero-blur': `${(heroExit * 0.12).toFixed(4)}rem`,
+    '--home-hero-scale': String(clamp(1 - heroExit * 0.01, 0.992, 1)),
+    '--home-hero-y': `${(-0.85 * heroExit).toFixed(4)}rem`,
+    '--home-hero-blur': `${(heroExit * 0.08).toFixed(4)}rem`,
     '--home-rail-opacity': String(clamp(0.9 + railEnter * 0.1 - railExit * 0.06, 0.88, 1)),
-    '--home-rail-scale': String(clamp(0.985 + railEnter * 0.015 - railExit * 0.01, 0.97, 1)),
-    '--home-rail-y': `${((1 - railEnter) * 1.3 - railExit * 0.45).toFixed(4)}rem`,
-    '--home-rail-blur': `${((1 - railEnter) * 0.14 + railExit * 0.08).toFixed(4)}rem`,
+    '--home-rail-scale': String(clamp(0.988 + railEnter * 0.012 - railExit * 0.008, 0.978, 1)),
+    '--home-rail-y': `${((1 - railEnter) * 0.95 - railExit * 0.32).toFixed(4)}rem`,
+    '--home-rail-blur': `${((1 - railEnter) * 0.1 + railExit * 0.05).toFixed(4)}rem`,
     '--home-posts-opacity': String(clamp(0.9 + postsEnter * 0.1 - postsExit * 0.06, 0.88, 1)),
-    '--home-posts-scale': String(clamp(0.985 + postsEnter * 0.015 - postsExit * 0.01, 0.97, 1)),
-    '--home-posts-y': `${((1 - postsEnter) * 1.25 - postsExit * 0.45).toFixed(4)}rem`,
-    '--home-posts-blur': `${((1 - postsEnter) * 0.14 + postsExit * 0.08).toFixed(4)}rem`,
+    '--home-posts-scale': String(clamp(0.988 + postsEnter * 0.012 - postsExit * 0.008, 0.978, 1)),
+    '--home-posts-y': `${((1 - postsEnter) * 0.9 - postsExit * 0.28).toFixed(4)}rem`,
+    '--home-posts-blur': `${((1 - postsEnter) * 0.09 + postsExit * 0.05).toFixed(4)}rem`,
     '--home-story-opacity': String(clamp(0.92 + storyEnter * 0.08 - storyOutro * 0.08, 0.86, 1)),
-    '--home-story-scale': String(clamp(0.988 + storyEnter * 0.012 - storyOutro * 0.01, 0.97, 1)),
-    '--home-story-y': `${((1 - storyEnter) * 1.15 - storyOutro * 0.4).toFixed(4)}rem`,
-    '--home-story-blur': `${((1 - storyEnter) * 0.12 + storyOutro * 0.08).toFixed(4)}rem`,
+    '--home-story-scale': String(clamp(0.99 + storyEnter * 0.01 - storyOutro * 0.008, 0.98, 1)),
+    '--home-story-y': `${((1 - storyEnter) * 0.82 - storyOutro * 0.26).toFixed(4)}rem`,
+    '--home-story-blur': `${((1 - storyEnter) * 0.08 + storyOutro * 0.05).toFixed(4)}rem`,
   }
 })
 
@@ -2084,9 +2084,9 @@ function openPostPreview(post: PostListItem, thumbnailSrc: string | null) {
     return
   }
 
-  const detailLink = resolvePostLink(post.post_url, post.id)
+  const detailLink = resolvePreviewablePostLink(post.post_url, post.id)
   const resolvedPostId = resolvePostIdFromLink(detailLink) || post.id
-  if (!resolvePostIdFromLink(detailLink) && detailLink !== `/post/${post.id}`) {
+  if (!resolvedPostId || !resolvePostIdFromLink(detailLink)) {
     void router.push(detailLink)
     return
   }
@@ -2242,7 +2242,7 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.12) 0%, transparent 42%),
     radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.12) 0%, transparent 38%),
     linear-gradient(180deg, rgba(246, 244, 241, 0) 0%, rgba(248, 247, 244, 0.66) 100%);
-  --home-screen-transition-ms: 640ms;
+  --home-screen-transition-ms: 780ms;
 }
 
 .home-page .home-screen {
@@ -3957,7 +3957,7 @@ onBeforeUnmount(() => {
       var(--home-stage-safe-top) + var(--home-stage-chrome-height) + clamp(0.4rem, 0.8vw, 0.65rem)
     )
     clamp(1rem, 3vw, 2.5rem) clamp(1rem, 2.4vw, 1.6rem);
-  overflow: clip;
+  overflow: visible;
 }
 
 .rail-panel__content {
@@ -3969,7 +3969,7 @@ onBeforeUnmount(() => {
   align-content: stretch;
   min-block-size: 0;
   gap: clamp(0.55rem, 1.2vw, 0.85rem);
-  overflow: clip;
+  overflow: visible;
 }
 
 .page-section-head--stage {
@@ -4063,7 +4063,7 @@ onBeforeUnmount(() => {
 
 .rail-panel--portal .portal-grid {
   inline-size: 100%;
-  block-size: 100%;
+  block-size: auto;
   min-block-size: 0;
   align-self: stretch;
   grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
@@ -4073,21 +4073,22 @@ onBeforeUnmount(() => {
 }
 
 .rail-panel--portal .portal-grid > .portal-card--primary {
-  min-block-size: 0;
-  block-size: 100%;
+  min-block-size: clamp(19rem, 46dvh, 27rem);
+  block-size: auto;
   position: relative;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(12rem, 1fr) auto;
   gap: clamp(0.75rem, 1.4vw, 1rem);
   align-content: stretch;
   padding: clamp(0.875rem, 1.6vw, 1rem);
+  overflow: hidden;
 }
 
 .portal-sidebar {
   display: grid;
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: clamp(0.75rem, 1.4vw, 1rem);
-  block-size: 100%;
+  block-size: auto;
   min-block-size: 0;
   align-content: stretch;
 }
@@ -4096,7 +4097,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(0.75rem, 1.4vw, 1rem);
-  block-size: 100%;
+  block-size: auto;
   min-block-size: 0;
   align-items: stretch;
 }
@@ -4110,11 +4111,12 @@ onBeforeUnmount(() => {
 .rail-panel--portal .portal-grid,
 .rail-panel--portal .portal-sidebar,
 .rail-panel--portal .portal-sidebar__row {
-  overflow: clip;
+  overflow: visible;
 }
 
 .portal-card {
   min-block-size: clamp(8.75rem, 13dvh, 11rem);
+  overflow: hidden;
 }
 
 .rail-panel--portal .portal-card--secondary {
@@ -4123,7 +4125,7 @@ onBeforeUnmount(() => {
   align-content: start;
   gap: clamp(0.75rem, 1.4vw, 1rem);
   min-block-size: 0;
-  block-size: 100%;
+  block-size: auto;
   background: var(--home-panel-bg-soft), var(--home-pill-bg);
 }
 
@@ -4274,6 +4276,7 @@ onBeforeUnmount(() => {
   border-radius: var(--home-card-radius);
   background: var(--home-panel-bg-soft), var(--home-pill-bg);
   box-shadow: var(--home-panel-shadow);
+  overflow: hidden;
 }
 
 .hero-spotlight-card--lead {
@@ -4762,6 +4765,7 @@ onBeforeUnmount(() => {
   min-block-size: 0;
   align-self: start;
   block-size: auto;
+  overflow: hidden;
 }
 
 .trends-card--authors {
@@ -4988,6 +4992,7 @@ onBeforeUnmount(() => {
   background: var(--home-panel-muted);
   border: 0.0625rem solid var(--home-panel-border);
   box-shadow: var(--home-panel-shadow);
+  overflow: hidden;
   transition:
     transform var(--transition-fast),
     border-color var(--transition-fast),
@@ -5159,6 +5164,13 @@ onBeforeUnmount(() => {
 
 .bubble-stage {
   position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  align-items: stretch;
+  align-content: stretch;
+  gap: clamp(0.75rem, 1.2vw, 0.95rem);
+  padding: clamp(0.875rem, 1.5vw, 1.1rem);
   margin-top: 0;
   block-size: 100%;
   min-block-size: 0;
@@ -5217,53 +5229,48 @@ onBeforeUnmount(() => {
 }
 
 .latest-bubble {
-  position: absolute;
-  inset-inline-start: 50%;
-  inset-block-start: 50%;
+  position: relative;
+  inset: auto;
+  display: grid;
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 0;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
   padding: 0;
-  max-inline-size: min(var(--home-bubble-max-inline), calc(100% - 3rem));
+  max-inline-size: none;
   max-width: none;
   opacity: 0;
   filter: none;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   pointer-events: none;
-  transform: translate3d(
-      calc(-50% + var(--bubble-x-intro, 0rem)),
-      calc(-50% + var(--bubble-y-intro, 0rem)),
-      0
-    )
-    scale(0.72);
+  transform: translate3d(0, 0.9rem, 0) scale(0.985);
   transition:
-    opacity 220ms var(--ease-out-smooth),
-    transform 320ms var(--ease-fluid);
+    opacity 320ms var(--ease-out-smooth),
+    transform 560ms var(--ease-fluid);
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
+.latest-bubble:nth-child(n + 9) {
+  display: none;
+}
+
 .latest-bubble::after {
-  content: '';
-  position: absolute;
-  inset-inline-start: 50%;
-  inset-block-start: 50%;
-  inline-size: clamp(0.9rem, 1.6vw, 1.1rem);
-  block-size: clamp(0.9rem, 1.6vw, 1.1rem);
-  border-radius: 0 0 0.35rem 0;
-  background: var(--home-panel-bg-strong);
-  box-shadow: 0 0.65rem 1.8rem rgba(15, 23, 42, 0.12);
-  transform: translate3d(-50%, -50%, 0) rotate(var(--bubble-tail-angle, 45deg)) translateX(1rem)
-    rotate(45deg);
+  display: none;
 }
 
 .latest-bubble__inner {
   display: grid;
-  gap: 0.5625rem;
-  inline-size: clamp(12rem, 14vw, var(--home-bubble-inner-max-inline));
-  max-inline-size: min(100%, var(--home-bubble-inner-max-inline));
-  padding: 0.8125rem 0.9375rem;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: clamp(0.45rem, 0.8vw, 0.625rem);
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 0;
+  max-inline-size: none;
+  padding: clamp(0.8rem, 1.3vw, 1rem);
   border-radius: var(--home-card-radius) var(--home-shell-radius) var(--home-shell-radius)
     calc(var(--home-card-radius) * 0.9);
   border: 0.0625rem solid var(--home-panel-border-strong);
@@ -5272,10 +5279,10 @@ onBeforeUnmount(() => {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   text-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.08);
-  transform: translate3d(0, 0.35rem, 0) scale(0.99);
+  transform: translate3d(0, 0.25rem, 0);
   transition:
-    opacity 220ms var(--ease-out-smooth),
-    transform 320ms var(--ease-fluid);
+    opacity 320ms var(--ease-out-smooth),
+    transform 560ms var(--ease-fluid);
   backface-visibility: hidden;
 }
 
@@ -5287,14 +5294,13 @@ onBeforeUnmount(() => {
   line-height: 1.44;
   text-wrap: pretty;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 7;
+  -webkit-line-clamp: 5;
 }
 
 .posts--revealed .latest-bubble {
   opacity: 1;
   pointer-events: auto;
-  transform: translate3d(calc(-50% + var(--bubble-x)), calc(-50% + var(--bubble-y)), 0)
-    scale(var(--bubble-scale, 1));
+  transform: translate3d(0, 0, 0) scale(1);
   transition-delay: var(--bubble-delay, 0s);
 }
 
@@ -5832,15 +5838,15 @@ onBeforeUnmount(() => {
   }
 
   to {
-    opacity: 0.22;
-    transform: translate3d(0, -5rem, 0) scale(0.92);
+    opacity: 0.34;
+    transform: translate3d(0, -3rem, 0) scale(0.96);
   }
 }
 
 @keyframes homeScreenEnterRise {
   from {
-    opacity: 0.3;
-    transform: translate3d(0, 5rem, 0) scale(0.94);
+    opacity: 0.4;
+    transform: translate3d(0, 3rem, 0) scale(0.97);
   }
 
   to {
@@ -5851,8 +5857,8 @@ onBeforeUnmount(() => {
 
 @keyframes homeScreenEnterBloom {
   from {
-    opacity: 0.24;
-    transform: translate3d(0, 2.75rem, 0) scale(0.9);
+    opacity: 0.36;
+    transform: translate3d(0, 1.6rem, 0) scale(0.96);
   }
 
   to {
@@ -5868,8 +5874,8 @@ onBeforeUnmount(() => {
   }
 
   to {
-    opacity: 0.18;
-    transform: translate3d(0, -2rem, 0) scale(0.88);
+    opacity: 0.32;
+    transform: translate3d(0, -1rem, 0) scale(0.94);
   }
 }
 
@@ -5880,8 +5886,8 @@ onBeforeUnmount(() => {
   }
 
   to {
-    opacity: 0.78;
-    transform: translate3d(0, -1rem, 0) scale(0.985);
+    opacity: 0.84;
+    transform: translate3d(0, -0.6rem, 0) scale(0.992);
   }
 }
 
@@ -6254,8 +6260,7 @@ onBeforeUnmount(() => {
   }
 
   .bubble-stage {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: stretch;
     align-content: stretch;
     gap: clamp(0.55rem, 1vw, 0.75rem);
@@ -6281,7 +6286,7 @@ onBeforeUnmount(() => {
     min-block-size: 0;
   }
 
-  .latest-bubble:nth-child(n + 5) {
+  .latest-bubble:nth-child(n + 7) {
     display: none;
   }
 
@@ -7431,8 +7436,7 @@ onBeforeUnmount(() => {
 
   .latest-bubble {
     opacity: 1;
-    transform: translate3d(calc(-50% + var(--bubble-x)), calc(-50% + var(--bubble-y)), 0)
-      scale(var(--bubble-scale, 1));
+    transform: none;
   }
 
   .media-slice {

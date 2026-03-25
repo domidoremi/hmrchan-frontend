@@ -25,6 +25,8 @@
   --auth-button-accent-soft: #8893ff;
   --auth-button-shadow: rgba(95, 107, 255, 0.42);
   --auth-shell-radius: clamp(1.4rem, 2.7vw, 2.5rem);
+  --auth-shell-outline: rgba(255, 255, 255, 0.42);
+  --auth-shell-blur: clamp(0.6rem, 1.6vw, 1rem);
   --auth-shell-gloss: rgba(255, 255, 255, 0.34);
   --auth-shell-sheen: rgba(255, 255, 255, 0.08);
   --auth-shell-overlay: rgba(255, 255, 255, 0.08);
@@ -45,8 +47,9 @@
   transform: translateZ(0);
   will-change: opacity, transform;
   background:
-    radial-gradient(circle at 12% 10%, rgba(var(--color-primary-rgb), 0.28), transparent 42%),
-    radial-gradient(circle at 88% 84%, rgba(var(--color-accent-rgb), 0.2), transparent 46%),
+    radial-gradient(circle at 12% 10%, rgba(var(--color-primary-rgb), 0.22), transparent 40%),
+    radial-gradient(circle at 88% 84%, rgba(var(--color-accent-rgb), 0.16), transparent 44%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.28), transparent 54%),
     linear-gradient(
       160deg,
       var(--auth-stage-top),
@@ -83,29 +86,32 @@
 
 #app .auth-page .auth-book {
   position: relative;
-  inline-size: min(100%, 64rem) !important;
-  max-inline-size: min(100%, 64rem) !important;
-  min-block-size: min(44rem, var(--auth-route-max-block-size)) !important;
-  max-block-size: min(44rem, var(--auth-route-max-block-size)) !important;
-  grid-template-columns: minmax(18rem, 0.9fr) minmax(0, 1.1fr) !important;
+  inline-size: min(100%, 62rem) !important;
+  max-inline-size: min(100%, 62rem) !important;
+  min-block-size: min(42rem, var(--auth-route-max-block-size)) !important;
+  max-block-size: min(42rem, var(--auth-route-max-block-size)) !important;
+  grid-template-columns: minmax(17rem, 0.88fr) minmax(0, 1.12fr) !important;
   overflow: hidden;
   border-radius: var(--auth-shell-radius);
   border-color: var(--auth-panel-border);
   background: linear-gradient(145deg, var(--auth-card-shell), var(--auth-card-shell-strong));
-  animation: none !important;
+  backdrop-filter: blur(var(--auth-shell-blur));
+  -webkit-backdrop-filter: blur(var(--auth-shell-blur));
+  animation: auth-sheet-enter 720ms cubic-bezier(0.22, 0.8, 0.2, 1) both !important;
   backface-visibility: hidden;
-  transform: translateZ(0);
+  transform: translate3d(0, 0.75rem, 0);
   will-change: transform, opacity;
   box-shadow:
-    0 2.2rem 3.6rem -2rem var(--auth-panel-shadow),
-    0 0.95rem 1.85rem -1.2rem rgba(var(--color-primary-rgb), 0.2);
+    inset 0 0 0 0.0625rem var(--auth-shell-outline),
+    0 2.4rem 4.2rem -2.2rem var(--auth-panel-shadow),
+    0 1.1rem 2.1rem -1.3rem rgba(var(--color-primary-rgb), 0.2);
 }
 
 #app .auth-page .auth-card {
   position: relative;
-  inline-size: min(100%, 28rem) !important;
-  max-inline-size: min(100%, 28rem) !important;
-  padding: clamp(1.25rem, 3vw, 1.75rem) !important;
+  inline-size: min(100%, 30rem) !important;
+  max-inline-size: min(100%, 30rem) !important;
+  padding: clamp(1.4rem, 3vw, 1.9rem) !important;
   border-radius: calc(var(--auth-shell-radius) - 0.25rem);
   border: 0.0625rem solid var(--auth-panel-border) !important;
   background: linear-gradient(
@@ -117,7 +123,10 @@
     inset 0 0 0 0.0625rem var(--auth-panel-outline),
     inset 0 1.4rem 2.6rem -1.8rem var(--auth-panel-shine),
     0 2rem 3rem -2rem var(--auth-panel-shadow);
+  backdrop-filter: blur(var(--auth-shell-blur));
+  -webkit-backdrop-filter: blur(var(--auth-shell-blur));
   overflow: hidden;
+  animation: auth-sheet-enter 720ms cubic-bezier(0.22, 0.8, 0.2, 1) both !important;
 }
 
 #app .auth-page .auth-book::before {
@@ -137,6 +146,7 @@
 
 #app .auth-page .auth-visual {
   position: relative;
+  overflow: hidden;
   background:
     radial-gradient(circle at 22% 18%, rgba(var(--color-primary-rgb), 0.16), transparent 36%),
     radial-gradient(circle at 82% 22%, rgba(var(--color-accent-rgb), 0.14), transparent 32%),
@@ -167,6 +177,8 @@
   align-items: center !important;
   justify-content: center !important;
   padding: clamp(1.1rem, 2.8vw, 1.8rem) !important;
+  backdrop-filter: blur(calc(var(--auth-shell-blur) * 0.9));
+  -webkit-backdrop-filter: blur(calc(var(--auth-shell-blur) * 0.9));
 }
 
 #app .auth-page .auth-panel-inner {
@@ -212,10 +224,16 @@
   );
   color: var(--color-on-primary) !important;
   box-shadow: 0 0.8rem 1.6rem -1rem var(--auth-button-shadow) !important;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast);
 }
 
 #app .auth-page .auth-panel .btn-default:hover:not(:disabled) {
+  transform: translate3d(0, -0.08rem, 0);
   box-shadow: 0 1rem 1.9rem -1rem rgba(95, 107, 255, 0.5) !important;
+  filter: saturate(1.04);
 }
 
 #app .auth-page .auth-panel .btn-ghost {
@@ -484,6 +502,23 @@
     0 0.9rem 1.8rem -1.4rem rgba(var(--color-primary-rgb), 0.22) !important;
 }
 
+@keyframes auth-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1rem, 0) scale(0.985);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translate3d(0, -0.12rem, 0) scale(1.002);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 /* Mobile: keep complete auth form in one viewport block */
 @media (max-width: 56rem) {
   #app .auth-page {
@@ -498,9 +533,8 @@
   #app .auth-page .auth-book--sent,
   #app .auth-page .auth-card {
     max-width: min(100%, 34rem) !important;
-    min-height: calc(
-      var(--app-safe-block-size-with-mobile-nav) - clamp(0.8rem, 4vw, 1.5rem)
-    ) !important;
+    min-height: 0 !important;
+    height: auto !important;
     max-height: calc(
       var(--app-safe-block-size-with-mobile-nav) - clamp(0.8rem, 4vw, 1.5rem)
     ) !important;
@@ -518,6 +552,8 @@
   }
 
   #app .auth-page .auth-panel {
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
     padding: clamp(0.55rem, 2.25vw, 0.9rem) !important;
     overflow: hidden !important;
     max-height: 100% !important;
@@ -525,7 +561,7 @@
 
   #app .auth-page .auth-panel-inner {
     width: min(100%, 28rem) !important;
-    min-height: 100%;
+    min-height: 0;
     justify-content: flex-start;
     gap: var(--spacing-2) !important;
   }
