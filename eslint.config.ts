@@ -32,6 +32,7 @@ export default defineConfigWithVueTs(
       '**/.wrangler/**',
       '**/.claude/**',
       '**/.agent/**',
+      '**/.agents/**',
       '**/.qoder/**',
       '**/.skills/**',
       '**/.superpowers/**',
