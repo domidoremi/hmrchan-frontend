@@ -28,6 +28,18 @@
   --auth-shell-gloss: rgba(255, 255, 255, 0.34);
   --auth-shell-sheen: rgba(255, 255, 255, 0.08);
   --auth-shell-overlay: rgba(255, 255, 255, 0.08);
+  --auth-route-padding-inline: clamp(1rem, 3vw, 2rem);
+  --auth-route-padding-block: clamp(1rem, 3vw, 2rem);
+  --auth-route-max-block-size: calc(
+    var(--app-safe-block-size) - var(--navbar-visible-height) - clamp(2rem, 6vw, 4rem)
+  );
+  position: relative;
+  min-block-size: max(0rem, var(--auth-route-max-block-size));
+  display: grid !important;
+  place-items: center;
+  padding: var(--auth-route-padding-block) var(--auth-route-padding-inline) !important;
+  overflow: hidden;
+  isolation: isolate;
   contain: paint;
   backface-visibility: hidden;
   transform: translateZ(0);
@@ -43,7 +55,40 @@
     );
 }
 
+#app .auth-page::before,
+#app .auth-page::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(clamp(1.5rem, 4vw, 2.75rem));
+  opacity: 0.65;
+}
+
+#app .auth-page::before {
+  inline-size: clamp(12rem, 24vw, 20rem);
+  block-size: clamp(12rem, 24vw, 20rem);
+  inset-inline-start: clamp(-4rem, -2vw, -1.5rem);
+  inset-block-start: clamp(1rem, 8vh, 5rem);
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.18), transparent 72%);
+}
+
+#app .auth-page::after {
+  inline-size: clamp(10rem, 20vw, 16rem);
+  block-size: clamp(10rem, 20vw, 16rem);
+  inset-inline-end: clamp(-3rem, -1vw, -1rem);
+  inset-block-end: clamp(0rem, 6vh, 4rem);
+  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.14), transparent 72%);
+}
+
 #app .auth-page .auth-book {
+  position: relative;
+  inline-size: min(100%, 64rem) !important;
+  max-inline-size: min(100%, 64rem) !important;
+  min-block-size: min(44rem, var(--auth-route-max-block-size)) !important;
+  max-block-size: min(44rem, var(--auth-route-max-block-size)) !important;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(0, 1.1fr) !important;
+  overflow: hidden;
   border-radius: var(--auth-shell-radius);
   border-color: var(--auth-panel-border);
   background: linear-gradient(145deg, var(--auth-card-shell), var(--auth-card-shell-strong));
@@ -56,15 +101,63 @@
     0 0.95rem 1.85rem -1.2rem rgba(var(--color-primary-rgb), 0.2);
 }
 
+#app .auth-page .auth-card {
+  position: relative;
+  inline-size: min(100%, 28rem) !important;
+  max-inline-size: min(100%, 28rem) !important;
+  padding: clamp(1.25rem, 3vw, 1.75rem) !important;
+  border-radius: calc(var(--auth-shell-radius) - 0.25rem);
+  border: 0.0625rem solid var(--auth-panel-border) !important;
+  background: linear-gradient(
+    165deg,
+    var(--auth-panel-gradient-top),
+    var(--auth-panel-gradient-bottom)
+  ) !important;
+  box-shadow:
+    inset 0 0 0 0.0625rem var(--auth-panel-outline),
+    inset 0 1.4rem 2.6rem -1.8rem var(--auth-panel-shine),
+    0 2rem 3rem -2rem var(--auth-panel-shadow);
+  overflow: hidden;
+}
+
 #app .auth-page .auth-book::before {
   background:
     radial-gradient(circle at 14% 14%, var(--auth-shell-gloss), transparent 34%),
     linear-gradient(120deg, var(--auth-shell-sheen), transparent 45%);
 }
 
+#app .auth-page .auth-book::after,
+#app .auth-page .auth-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 28%);
+}
+
 #app .auth-page .auth-visual {
-  background: var(--auth-form-surface) !important;
+  position: relative;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(var(--color-primary-rgb), 0.16), transparent 36%),
+    radial-gradient(circle at 82% 22%, rgba(var(--color-accent-rgb), 0.14), transparent 32%),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--auth-form-surface) 82%, #ffffff 18%),
+      color-mix(in srgb, var(--auth-form-surface) 90%, var(--auth-panel-bg) 10%)
+    ) !important;
   border-inline-end-color: var(--auth-panel-border) !important;
+}
+
+#app .auth-page .auth-visual::after {
+  content: '';
+  position: absolute;
+  inset-inline: clamp(1rem, 4vw, 2rem);
+  inset-block-end: clamp(1rem, 4vw, 2rem);
+  block-size: clamp(3rem, 10vw, 5rem);
+  border-radius: 999rem;
+  background: linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.12), transparent 70%);
+  filter: blur(clamp(1rem, 2vw, 1.5rem));
+  pointer-events: none;
 }
 
 #app .auth-page .auth-panel {
@@ -73,6 +166,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  padding: clamp(1.1rem, 2.8vw, 1.8rem) !important;
 }
 
 #app .auth-page .auth-panel-inner {
@@ -80,6 +174,9 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  inline-size: min(100%, 30rem) !important;
+  padding-inline-end: 0 !important;
+  margin-inline-end: 0 !important;
 }
 
 #app .auth-page .auth-panel::-webkit-scrollbar-thumb {
@@ -302,8 +399,13 @@
   text-align: center !important;
 }
 
+#app .auth-page .auth-title {
+  letter-spacing: -0.02em;
+}
+
 #app .auth-page .auth-subtitle {
   margin-bottom: var(--spacing-3) !important;
+  max-inline-size: 36ch;
 }
 
 #app .auth-page .auth-helper {
@@ -325,6 +427,14 @@
   --auth-panel-shine: rgba(208, 199, 255, 0.1);
   --auth-panel-inset: rgba(5, 9, 20, 0.44);
   --auth-panel-outline: rgba(var(--color-primary-rgb), 0.2);
+}
+
+#app[data-theme='dark'] .auth-page::before {
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.22), transparent 74%);
+}
+
+#app[data-theme='dark'] .auth-page::after {
+  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.16), transparent 74%);
 }
 
 #app[data-theme='blue'] .auth-page {
@@ -385,12 +495,10 @@
 
   #app .auth-page .auth-book,
   #app .auth-page .auth-book--two-factor,
-  #app .auth-page .auth-book--sent {
+  #app .auth-page .auth-book--sent,
+  #app .auth-page .auth-card {
     max-width: min(100%, 34rem) !important;
     min-height: calc(
-      var(--app-safe-block-size-with-mobile-nav) - clamp(0.8rem, 4vw, 1.5rem)
-    ) !important;
-    height: calc(
       var(--app-safe-block-size-with-mobile-nav) - clamp(0.8rem, 4vw, 1.5rem)
     ) !important;
     max-height: calc(
@@ -398,6 +506,11 @@
     ) !important;
     grid-template-columns: 1fr !important;
     grid-template-areas: 'panel' !important;
+  }
+
+  #app .auth-page .auth-card {
+    height: auto !important;
+    min-height: 0 !important;
   }
 
   #app .auth-page .auth-visual {

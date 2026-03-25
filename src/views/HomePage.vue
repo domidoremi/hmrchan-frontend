@@ -4739,10 +4739,19 @@ onBeforeUnmount(() => {
   max-block-size: none;
 }
 
+.rail-panel--trends .trends-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) repeat(2, minmax(0, 0.96fr));
+  grid-template-rows: minmax(0, 0.94fr) minmax(0, 1.06fr);
+  align-items: stretch;
+  align-content: stretch;
+  block-size: 100%;
+}
+
 .rail-panel--trends .trends-card {
   flex: 1 1 clamp(18rem, 24vw, 22rem);
-  min-inline-size: min(100%, clamp(18rem, 24vw, 22rem));
-  block-size: auto;
+  min-inline-size: 0;
+  block-size: 100%;
   align-self: stretch;
 }
 
@@ -4760,6 +4769,8 @@ onBeforeUnmount(() => {
   min-block-size: clamp(12rem, 22dvh, 16rem);
   grid-template-rows: auto minmax(0, 1fr);
   align-content: stretch;
+  grid-column: 1;
+  grid-row: 1 / span 2;
 }
 
 .trends-card--authors .trends-list {
@@ -4781,6 +4792,8 @@ onBeforeUnmount(() => {
   min-block-size: clamp(10rem, 18dvh, 13rem);
   grid-template-rows: auto minmax(0, 1fr) auto;
   align-content: stretch;
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .trends-card--editorial {
@@ -4788,6 +4801,8 @@ onBeforeUnmount(() => {
   min-block-size: clamp(10rem, 18dvh, 13rem);
   grid-template-rows: auto minmax(0, 1fr);
   background: var(--home-panel-bg-soft), var(--home-pill-bg);
+  grid-column: 3;
+  grid-row: 1;
 }
 
 .trends-card--schedule {
@@ -4796,6 +4811,8 @@ onBeforeUnmount(() => {
   grid-template-rows: auto minmax(0, 1fr);
   align-content: stretch;
   background: var(--home-panel-bg-soft), var(--home-pill-bg);
+  grid-column: 2 / -1;
+  grid-row: 2;
 }
 
 .trends-list {
@@ -4953,6 +4970,7 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
   align-content: start;
+  grid-auto-rows: minmax(0, 1fr);
   gap: 0.625rem;
 }
 
@@ -5012,6 +5030,7 @@ onBeforeUnmount(() => {
 .trends-community-note {
   display: grid;
   gap: 0.45rem;
+  min-block-size: 100%;
   padding: 1rem 1.125rem;
   border-radius: var(--home-card-radius);
   background: var(--home-panel-muted);
@@ -6284,7 +6303,7 @@ onBeforeUnmount(() => {
   .rail-panel--trends .trends-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 0.82fr) minmax(0, 1.18fr);
     block-size: 100%;
     align-content: stretch;
   }

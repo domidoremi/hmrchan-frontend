@@ -18,8 +18,11 @@
     <AppSideNav />
 
     <!-- Main Content with Error Boundary -->
-    <main id="main-content" :class="{ 'main--home': isHomeRoute }">
-      <div class="route-view" :class="{ 'route-view--home': isHomeRoute }">
+    <main id="main-content" :class="{ 'main--home': isHomeRoute, 'main--auth': isAuthRoute }">
+      <div
+        class="route-view"
+        :class="{ 'route-view--home': isHomeRoute, 'route-view--auth': isAuthRoute }"
+      >
         <ErrorBoundary @retry="handleRetry">
           <RouterView v-slot="{ Component, route }">
             <Transition :name="transitionName" :mode="transitionMode">
@@ -161,6 +164,16 @@ const showDeskPet = computed(() => decorationsReady.value && settings.value.desk
 // Footer only appears on key pages (configured via route meta)
 const showFooter = computed(() => Boolean(route.meta.showFooter) && !isHomeRoute.value)
 const isHomeRoute = computed(() => route.name === 'home' || route.path === '/')
+const isAuthRoute = computed(() => {
+  const routeName = typeof route.name === 'string' ? route.name : ''
+  return (
+    routeName === 'login' ||
+    routeName === 'register' ||
+    routeName === 'forgot-password' ||
+    routeName === 'reset-password' ||
+    routeName === 'verify-email'
+  )
+})
 const shouldMountClientChallengeDialog = computed(() => clientChallengeState.isOpen.value)
 const shouldMountVerificationDialog = computed(
   () =>
@@ -380,6 +393,11 @@ main.main--home {
   overflow: visible;
 }
 
+.route-view.route-view--auth {
+  background: transparent;
+  overflow: visible;
+}
+
 @media (max-width: 768px) {
   .route-view.route-view--home {
     min-height: var(--app-safe-block-size-with-mobile-nav);
@@ -422,42 +440,42 @@ main.main--home {
 
 .auth-enter-enter-from {
   opacity: 0;
-  transform: translate3d(0.55rem, 0.35rem, 0) scale3d(0.997, 0.997, 1);
+  transform: translate3d(0, 1rem, 0) scale3d(0.985, 0.985, 1);
 }
 
 .auth-enter-leave-to {
   opacity: 0;
-  transform: translate3d(-0.2rem, 0, 0) scale3d(0.999, 0.999, 1);
+  transform: translate3d(0, -0.35rem, 0) scale3d(0.994, 0.994, 1);
 }
 
 .auth-swap-forward-enter-from {
   opacity: 0;
-  transform: translate3d(0.75rem, 0, 0) scale3d(0.997, 0.997, 1);
+  transform: translate3d(1rem, 0.2rem, 0) scale3d(0.988, 0.988, 1);
 }
 
 .auth-swap-forward-leave-to {
   opacity: 0;
-  transform: translate3d(-0.45rem, 0, 0) scale3d(0.998, 0.998, 1);
+  transform: translate3d(-0.7rem, -0.1rem, 0) scale3d(0.992, 0.992, 1);
 }
 
 .auth-swap-back-enter-from {
   opacity: 0;
-  transform: translate3d(-0.75rem, 0, 0) scale3d(0.997, 0.997, 1);
+  transform: translate3d(-1rem, 0.2rem, 0) scale3d(0.988, 0.988, 1);
 }
 
 .auth-swap-back-leave-to {
   opacity: 0;
-  transform: translate3d(0.45rem, 0, 0) scale3d(0.998, 0.998, 1);
+  transform: translate3d(0.7rem, -0.1rem, 0) scale3d(0.992, 0.992, 1);
 }
 
 .auth-exit-enter-from {
   opacity: 0;
-  transform: translate3d(-0.25rem, 0.4rem, 0) scale3d(0.997, 0.997, 1);
+  transform: translate3d(0, -0.55rem, 0) scale3d(1.008, 1.008, 1);
 }
 
 .auth-exit-leave-to {
   opacity: 0;
-  transform: translate3d(0.45rem, 0, 0) scale3d(0.999, 0.999, 1);
+  transform: translate3d(0, 0.8rem, 0) scale3d(0.986, 0.986, 1);
 }
 
 .app-decoration-layer {
