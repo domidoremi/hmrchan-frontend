@@ -876,14 +876,13 @@
             :style="getStoryCardStyle(index)"
           >
             <div class="media-slice__sticky glass-card" :style="noGlassBackdropStyle">
-              <div class="media-slice__visual">
-                <PostCard
-                  :post="card.post"
-                  :show-content="false"
-                  :style="noGlassBackdropStyle"
-                  @click="(_id, thumb) => openPostPreview(card.post, thumb)"
-                />
-              </div>
+              <PostCard
+                class="media-slice__visual"
+                :post="card.post"
+                :show-content="false"
+                :style="noGlassBackdropStyle"
+                @click="(_id, thumb) => openPostPreview(card.post, thumb)"
+              />
               <div class="media-slice__copy">
                 <p class="media-slice__eyebrow">{{ card.eyebrow }}</p>
                 <h3>{{ card.title }}</h3>
@@ -1606,9 +1605,10 @@ function buildSceneSnap(stepCount: number) {
 
   return {
     snapTo: 1 / Math.max(stepCount - 1, 1),
-    delay: 0.04,
-    duration: { min: 0.12, max: 0.24 },
-    ease: 'power2.out',
+    delay: 0.12,
+    duration: { min: 0.16, max: 0.3 },
+    ease: 'power1.inOut',
+    directional: false,
     inertia: false,
   }
 }
@@ -3465,13 +3465,21 @@ onBeforeUnmount(() => {
 }
 
 .trend-author__name {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
 .trend-author__count {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
 .trend-tags {
@@ -4370,8 +4378,9 @@ onBeforeUnmount(() => {
 .featured-rail-card {
   position: relative;
   display: grid;
+  align-items: start;
   min-block-size: 0;
-  block-size: 100%;
+  block-size: auto;
   align-self: start;
   padding: clamp(0.875rem, 1.5vw, 1rem);
   gap: clamp(0.75rem, 1.4vw, 0.95rem);
@@ -4523,6 +4532,7 @@ onBeforeUnmount(() => {
   min-inline-size: 0;
   min-block-size: 0;
   padding: clamp(0.2rem, 0.6vw, 0.35rem) 0 clamp(0.2rem, 0.6vw, 0.35rem);
+  overflow: hidden;
 }
 
 .featured-rail-card--lead .featured-rail-card__body {
@@ -4599,6 +4609,7 @@ onBeforeUnmount(() => {
   gap: 0.35rem 0.65rem;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+  min-inline-size: 0;
 }
 
 .featured-rail-card__stats {
@@ -4607,6 +4618,9 @@ onBeforeUnmount(() => {
   gap: 0.5rem;
   margin-top: 0.15rem;
   align-self: flex-start;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: hidden;
 }
 
 .featured-rail-card__stat {
@@ -4640,7 +4654,7 @@ onBeforeUnmount(() => {
   max-inline-size: 100%;
   min-block-size: 2rem;
   min-inline-size: 0;
-  margin-top: 0.25rem;
+  margin-top: auto;
   padding: 0.4rem 0.68rem;
   border-radius: var(--radius-full);
   border: 0.0625rem solid color-mix(in srgb, var(--home-panel-border) 88%, transparent);
@@ -4657,11 +4671,27 @@ onBeforeUnmount(() => {
 }
 
 .featured-rail-card__meta + .featured-rail-card__action {
-  margin-top: 0.3rem;
+  margin-top: auto;
 }
 
 .featured-rail-card__stats + .featured-rail-card__action {
-  margin-top: 0.3rem;
+  margin-top: auto;
+}
+
+.featured-rail-card--compact .featured-rail-card__media {
+  min-block-size: clamp(6.5rem, 8.5vw, 7.75rem);
+}
+
+.featured-rail-card--compact .featured-rail-card__stats {
+  gap: 0.375rem;
+}
+
+.featured-rail-card--compact .featured-rail-card__stat {
+  padding: 0.5rem 0.625rem;
+}
+
+.featured-rail-card--compact.featured-rail-card--dense .featured-rail-card__meta {
+  display: none;
 }
 
 .rail-feature-card {
@@ -4784,9 +4814,11 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 0.625rem;
+  min-inline-size: 0;
   min-block-size: 0;
   align-items: start;
   align-content: start;
+  overflow: hidden;
 }
 
 .trends-card--tags {
@@ -4820,16 +4852,24 @@ onBeforeUnmount(() => {
 .trends-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  grid-auto-rows: minmax(0, auto);
+  min-inline-size: 0;
   align-content: start;
   gap: 0.625rem;
+  overflow: hidden;
 }
 
 .trend-author {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
   min-block-size: 4rem;
+  min-inline-size: 0;
 }
 
 .trend-author__meta {
   min-inline-size: 0;
+  overflow: hidden;
 }
 
 .trends-authors-highlight {
@@ -4887,6 +4927,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.125rem;
   min-inline-size: 0;
+  overflow: hidden;
 }
 
 .trends-authors-highlight__title {
@@ -4901,8 +4942,12 @@ onBeforeUnmount(() => {
 }
 
 .trends-authors-highlight__meta {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
 .trends-authors-highlight__arrow {
@@ -5170,12 +5215,12 @@ onBeforeUnmount(() => {
 }
 
 .bubble-stage {
-  position: relative;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: minmax(0, 1fr);
-  align-items: stretch;
-  align-content: stretch;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  align-content: center;
+  justify-items: center;
   gap: clamp(0.75rem, 1.2vw, 0.95rem);
   padding: clamp(0.875rem, 1.5vw, 1.1rem);
   margin-top: 0;
@@ -5196,67 +5241,28 @@ onBeforeUnmount(() => {
   overflow: clip;
 }
 
-.bubble-stage::before,
-.bubble-stage::after {
-  content: '';
-  position: absolute;
-  inset-inline-start: 50%;
-  inset-block-start: 50%;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.bubble-stage::before {
-  inline-size: clamp(12rem, 24vw, 18rem);
-  block-size: clamp(7rem, 14vw, 10rem);
-  background: radial-gradient(
-    ellipse,
-    rgba(var(--home-mist-rgb), 0.18) 0%,
-    rgba(var(--home-blush-rgb), 0.08) 42%,
-    transparent 76%
-  );
-  transform: translate3d(-50%, -50%, 0);
-  filter: blur(0.3rem);
-  opacity: 0.44;
-}
-
-.bubble-stage::after {
-  inline-size: clamp(22rem, 50vw, 36rem);
-  block-size: clamp(22rem, 50vw, 36rem);
-  background: conic-gradient(
-    from 0deg,
-    rgba(var(--home-mist-rgb), 0.08),
-    rgba(var(--home-blush-rgb), 0.16),
-    rgba(var(--home-lilac-rgb), 0.1),
-    rgba(var(--home-mist-rgb), 0.08)
-  );
-  transform: translate3d(-50%, -50%, 0) rotate(12deg);
-  filter: blur(0.35rem);
-  opacity: 0.14;
-}
-
 .latest-bubble {
-  position: relative;
-  inset: auto;
   display: grid;
-  inline-size: 100%;
-  block-size: 100%;
-  min-block-size: 0;
+  inline-size: min(100%, clamp(11.5rem, 17vw, 18rem));
+  max-inline-size: 100%;
+  block-size: auto;
+  min-block-size: auto;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
   padding: 0;
-  max-inline-size: none;
-  max-width: none;
   opacity: 0;
   filter: none;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   pointer-events: none;
-  transform: translate3d(0, 0.9rem, 0) scale(0.985);
-  transition:
-    opacity 320ms var(--ease-out-smooth),
-    transform 560ms var(--ease-fluid);
+  transform: translate3d(
+      calc(var(--bubble-x-intro, 0rem) * 0.26),
+      calc(var(--bubble-y-intro, 0rem) * 0.26),
+      0
+    )
+    scale(0.72);
+  transition: opacity 240ms var(--ease-out-smooth);
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
@@ -5274,9 +5280,9 @@ onBeforeUnmount(() => {
   grid-template-rows: minmax(0, 1fr) auto;
   gap: clamp(0.45rem, 0.8vw, 0.625rem);
   inline-size: 100%;
-  block-size: 100%;
-  min-block-size: 0;
-  max-inline-size: none;
+  block-size: auto;
+  min-block-size: clamp(7.5rem, 12vw, 10rem);
+  max-inline-size: 100%;
   padding: clamp(0.8rem, 1.3vw, 1rem);
   border-radius: var(--home-card-radius) var(--home-shell-radius) var(--home-shell-radius)
     calc(var(--home-card-radius) * 0.9);
@@ -5286,10 +5292,8 @@ onBeforeUnmount(() => {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   text-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.08);
-  transform: translate3d(0, 0.25rem, 0);
-  transition:
-    opacity 320ms var(--ease-out-smooth),
-    transform 560ms var(--ease-fluid);
+  transform: none;
+  transition: opacity 320ms var(--ease-out-smooth);
   backface-visibility: hidden;
 }
 
@@ -5307,13 +5311,12 @@ onBeforeUnmount(() => {
 .posts--revealed .latest-bubble {
   opacity: 1;
   pointer-events: auto;
-  transform: translate3d(0, 0, 0) scale(1);
-  transition-delay: var(--bubble-delay, 0s);
+  animation: bubbleBurstFromGrid 760ms var(--ease-fluid) both;
+  animation-delay: var(--bubble-delay, 0s);
 }
 
 .posts--revealed .latest-bubble__inner {
   opacity: 1;
-  transform: translate3d(0, 0, 0);
   transition-delay: var(--bubble-delay, 0s);
 }
 
@@ -5626,15 +5629,10 @@ onBeforeUnmount(() => {
 }
 
 .media-slice__visual {
-  inline-size: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(0.75rem, 1.8vw, 1rem);
-  border-radius: var(--home-card-radius);
-  background: var(--home-story-visual-bg);
-  border: 0.0625rem solid var(--home-story-card-border);
-  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.12);
+  display: block;
+  inline-size: min(100%, var(--home-story-visual-max-inline));
+  margin-inline: auto;
+  padding: 0;
   transform: translate3d(0, var(--story-visual-y, 0rem), calc(var(--story-card-lift, 0rem) * 0.5))
     scale(var(--story-visual-scale, 1));
   transform-origin: 50% 100%;
@@ -5736,7 +5734,7 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: none !important;
 }
 
-:deep(.media-slice__visual .post-card.glass-card) {
+.media-slice__visual.post-card.glass-card {
   inline-size: min(100%, var(--home-story-visual-max-inline));
   block-size: auto;
   margin-inline: auto;
@@ -5747,8 +5745,8 @@ onBeforeUnmount(() => {
     rgba(35, 53, 85, calc(0.18 + (var(--story-shadow-strength, 1) * 0.05))) !important;
 }
 
-:deep(.media-slice__visual .post-card.glass-card::before),
-:deep(.media-slice__visual .post-card.glass-card::after) {
+.media-slice__visual.post-card.glass-card::before,
+.media-slice__visual.post-card.glass-card::after {
   display: none !important;
 }
 
@@ -5898,17 +5896,22 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes bubbleBurstFromCenter {
+@keyframes bubbleBurstFromGrid {
   0% {
     opacity: 0;
-    transform: translate3d(-50%, -50%, 0) scale(0.72);
+    transform: translate3d(
+        calc(var(--bubble-x-intro, 0rem) * 0.26),
+        calc(var(--bubble-y-intro, 0rem) * 0.26),
+        0
+      )
+      scale(0.72);
   }
 
   58% {
     opacity: 1;
     transform: translate3d(
-        calc(-50% + (var(--bubble-x) * 0.9)),
-        calc(-50% + (var(--bubble-y) * 0.9)),
+        calc(var(--bubble-x, 0rem) * 0.18),
+        calc(var(--bubble-y, 0rem) * 0.18),
         0
       )
       scale(calc(var(--bubble-scale, 1) * 1.01));
@@ -5916,7 +5919,11 @@ onBeforeUnmount(() => {
 
   100% {
     opacity: 1;
-    transform: translate3d(calc(-50% + var(--bubble-x)), calc(-50% + var(--bubble-y)), 0)
+    transform: translate3d(
+        calc(var(--bubble-x, 0rem) * 0.16),
+        calc(var(--bubble-y, 0rem) * 0.16),
+        0
+      )
       scale(var(--bubble-scale, 1));
   }
 }
@@ -6281,8 +6288,6 @@ onBeforeUnmount(() => {
   }
 
   .latest-bubble {
-    position: relative;
-    inset: auto;
     inline-size: 100%;
     block-size: 100%;
     max-inline-size: none;
@@ -7202,8 +7207,6 @@ onBeforeUnmount(() => {
   }
 
   .latest-bubble {
-    position: relative;
-    inset: auto;
     inline-size: 100%;
     block-size: 100%;
     max-inline-size: none;
@@ -7341,7 +7344,7 @@ onBeforeUnmount(() => {
     padding-inline: 0.875rem;
   }
 
-  :deep(.media-slice__visual .post-card.glass-card) {
+  .media-slice__visual.post-card.glass-card {
     inline-size: 100%;
     max-inline-size: none;
   }
