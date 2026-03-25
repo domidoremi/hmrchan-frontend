@@ -255,6 +255,19 @@ export function resolvePostLink(
   return fallback ? `/post/${fallback}` : '/explore'
 }
 
+export function resolvePreviewablePostLink(
+  link: string | null | undefined,
+  fallbackId: string | null | undefined
+): string {
+  const postIdFromLink = resolvePostIdFromLink(link)
+  if (postIdFromLink) return `/post/${postIdFromLink}`
+
+  const fallback = normalizeText(fallbackId)
+  if (fallback) return `/post/${fallback}`
+
+  return resolvePostLink(link, fallbackId)
+}
+
 export function normalizePlatform(value: string | null | undefined, fallback = 'story'): string {
   const normalized = normalizeText(value).toLowerCase()
   if (!normalized) return fallback

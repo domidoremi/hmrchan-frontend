@@ -117,9 +117,9 @@ function startLenis(mode: Exclude<SmoothScrollMode, 'disabled'>) {
     autoRaf: false,
     smoothWheel: true,
     syncTouch: false,
-    lerp: mode === 'reduced' ? 0.14 : 0.1,
-    duration: mode === 'reduced' ? 1 : 1.2,
-    wheelMultiplier: mode === 'reduced' ? 0.92 : 1,
+    lerp: mode === 'reduced' ? 0.12 : 0.085,
+    duration: mode === 'reduced' ? 1.15 : 1.35,
+    wheelMultiplier: mode === 'reduced' ? 0.9 : 0.96,
     touchMultiplier: 1,
     overscroll: true,
     prevent: (node) =>
