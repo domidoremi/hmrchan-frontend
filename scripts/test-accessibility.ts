@@ -15,6 +15,14 @@ import * as chromeLauncher from 'chrome-launcher'
 const REPORT_DIR = join(process.cwd(), '.lighthouse-a11y')
 const TEMP_DIR = join(REPORT_DIR, 'tmp')
 const DEFAULT_PREVIEW_PORT = 0
+const ENV_CHROME_PATH =
+  process.env['LIGHTHOUSE_CHROMIUM_PATH'] ??
+  process.env['CHROME_PATH'] ??
+  process.env['CHROME_BIN'] ??
+  process.env['PUPPETEER_EXECUTABLE_PATH'] ??
+  null
+
+let cachedChromePathPromise: Promise<string | null> | null = null
 
 const ROUTES = [
   '/',
@@ -60,6 +68,34 @@ const AUDIT_ENV = {
 
 function getBunExecutable(): string {
   return 'bun'
+}
+
+async function resolveChromePath(): Promise<string | null> {
+  if (!cachedChromePathPromise) {
+    cachedChromePathPromise = (async () => {
+      if (ENV_CHROME_PATH) return ENV_CHROME_PATH
+
+      try {
+        const puppeteerModule = await import('puppeteer')
+        const executablePath =
+          puppeteerModule.executablePath?.() ?? puppeteerModule.default?.executablePath?.()
+
+        if (
+          typeof executablePath === 'string' &&
+          executablePath.length > 0 &&
+          existsSync(executablePath)
+        ) {
+          return executablePath
+        }
+      } catch {
+        // ignore puppeteer fallback failures
+      }
+
+      return null
+    })()
+  }
+
+  return cachedChromePathPromise
 }
 
 async function findAvailablePort(preferredPort: number): Promise<number> {
@@ -128,23 +164,39 @@ function startPreviewServer(port: number): Promise<{ kill: () => Promise<void>; 
     })
 
     let resolved = false
+    let startupCheck: ReturnType<typeof setInterval> | null = null
+
+    function cleanupStartupCheck() {
+      if (startupCheck) {
+        clearInterval(startupCheck)
+        startupCheck = null
+      }
+    }
+
+    async function tryResolveWhenReady() {
+      if (resolved) return
+
+      try {
+        const response = await fetch(`http://127.0.0.1:${port}/`, {
+          redirect: 'manual',
+        })
+
+        if (response.status >= 200 && response.status < 500) {
+          resolved = true
+          cleanupStartupCheck()
+          resolve({
+            kill: () => terminateProcessTree(server.pid),
+            port,
+          })
+        }
+      } catch {
+        // preview server not ready yet
+      }
+    }
 
     server.stdout?.on('data', (data: Buffer) => {
       const output = data.toString()
       process.stdout.write(output)
-      const match = output.match(/Local:\s+http:\/\/localhost:(\d+)\//)
-      if (!resolved && match?.[1]) {
-        const actualPort = Number(match[1])
-        resolved = true
-        setTimeout(
-          () =>
-            resolve({
-              kill: () => terminateProcessTree(server.pid),
-              port: actualPort,
-            }),
-          1000
-        )
-      }
     })
 
     server.stderr?.on('data', (data: Buffer) => {
@@ -152,11 +204,25 @@ function startPreviewServer(port: number): Promise<{ kill: () => Promise<void>; 
     })
 
     server.on('error', (error: Error) => {
+      cleanupStartupCheck()
       if (!resolved) reject(error)
     })
 
+    server.on('close', (code) => {
+      cleanupStartupCheck()
+      if (!resolved) {
+        reject(new Error(`Preview server exited before becoming ready (code ${code ?? 'unknown'})`))
+      }
+    })
+
+    startupCheck = setInterval(() => {
+      void tryResolveWhenReady()
+    }, 500)
+    void tryResolveWhenReady()
+
     setTimeout(() => {
       if (!resolved) {
+        cleanupStartupCheck()
         void terminateProcessTree(server.pid)
         reject(new Error(`Preview server startup timeout on port ${port}`))
       }
@@ -231,6 +297,7 @@ async function main() {
 
     const previewPort = await findAvailablePort(DEFAULT_PREVIEW_PORT)
     previewServer = await startPreviewServer(previewPort)
+    const chromePath = await resolveChromePath()
     chrome = await chromeLauncher.launch({
       chromeFlags: [
         '--headless',
@@ -240,6 +307,7 @@ async function main() {
         `--user-data-dir=${chromeProfileDir}`,
       ],
       userDataDir: launcherProfileDir,
+      ...(chromePath ? { chromePath } : {}),
     })
 
     let pass = 0
