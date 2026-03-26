@@ -5,12 +5,17 @@
 import {
   createRouter,
   createWebHistory,
-  type RouteRecordRaw,
   type RouteLocationNormalized,
+  type RouteRecordRaw,
   type RouteLocationNormalizedLoadedGeneric,
 } from 'vue-router'
 import i18n from '@/i18n'
 import { applyPageMeta } from '@/utils/pageMeta'
+import LoginPage from '@/views/LoginPage.vue'
+import RegisterPage from '@/views/RegisterPage.vue'
+import ForgotPasswordPage from '@/views/ForgotPasswordPage.vue'
+import ResetPasswordPage from '@/views/ResetPasswordPage.vue'
+import VerifyEmailPage from '@/views/VerifyEmailPage.vue'
 
 // 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
 declare module 'vue-router' {
@@ -37,14 +42,6 @@ function getAuthStore() {
 
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
-const AUTH_COMPAT_STYLE_ROUTES = new Set([
-  'login',
-  'register',
-  'forgot-password',
-  'reset-password',
-  'verify-email',
-])
-let authCompatStylesLoaded = false
 
 function isValidPostRouteId(value: unknown): value is string {
   if (typeof value !== 'string') return false
@@ -57,20 +54,6 @@ function isValidPostRouteId(value: unknown): value is string {
 
 function toNotFoundParams(path: string): { pathMatch: string[] } {
   return { pathMatch: path.replace(/^\/+/, '').split('/').filter(Boolean) }
-}
-
-async function ensureAuthCompatStyles(to: RouteLocationNormalized): Promise<void> {
-  if (authCompatStylesLoaded) return
-  if (typeof to.name !== 'string' || !AUTH_COMPAT_STYLE_ROUTES.has(to.name)) return
-
-  try {
-    await import('@/styles/auth-compat.css')
-    authCompatStylesLoaded = true
-  } catch (error) {
-    if (import.meta.env.DEV) {
-      console.warn('[Router] Failed to load auth compat styles:', error)
-    }
-  }
 }
 
 function resolveViewKey(route: RouteLocationNormalized): string | null {
@@ -203,31 +186,31 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('@/views/LoginPage.vue'),
+    component: LoginPage,
     meta: { title: 'nav.login', guestOnly: true },
   },
   {
     path: '/register',
     name: 'register',
-    component: () => import('@/views/RegisterPage.vue'),
+    component: RegisterPage,
     meta: { title: 'nav.register', guestOnly: true },
   },
   {
     path: '/forgot-password',
     name: 'forgot-password',
-    component: () => import('@/views/ForgotPasswordPage.vue'),
+    component: ForgotPasswordPage,
     meta: { title: 'email.forgotPasswordTitle', guestOnly: true },
   },
   {
     path: '/reset-password',
     name: 'reset-password',
-    component: () => import('@/views/ResetPasswordPage.vue'),
+    component: ResetPasswordPage,
     meta: { title: 'email.resetPasswordTitle', guestOnly: true },
   },
   {
     path: '/verify-email',
     name: 'verify-email',
-    component: () => import('@/views/VerifyEmailPage.vue'),
+    component: VerifyEmailPage,
     meta: { title: 'email.verifyTitle' },
   },
   {
@@ -316,8 +299,6 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach(async (to) => {
-  await ensureAuthCompatStyles(to)
-
   const authStore = getAuthStore()
 
   // 仅在需要认证判断的路由等待初始化，避免阻塞公开页面首屏渲染
