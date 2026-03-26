@@ -32,10 +32,7 @@
           :title="$t(item.i18nKey)"
           @mouseenter="prefetchRoute(item.path)"
           @pointerenter="setDockHover('primary', index)"
-          @focus="
-            prefetchRoute(item.path)
-            setDockHover('primary', index)
-          "
+          @focus="handlePrimaryLinkFocus(item.path, index)"
           @pointermove="handleMagneticMove"
           @pointerleave="resetMagneticMove"
         >
@@ -180,6 +177,11 @@ function handleMagneticMove(event: PointerEvent) {
 
 function setDockHover(section: DockSection, index: number) {
   hoveredDockIndex.value[section] = index
+}
+
+function handlePrimaryLinkFocus(path: string, index: number) {
+  prefetchRoute(path)
+  setDockHover('primary', index)
 }
 
 function clearDockHover(section: DockSection) {
