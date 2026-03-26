@@ -1,25 +1,52 @@
 <template>
   <div class="settings-panel" :class="{ 'settings-panel--compact': compact }">
     <div class="settings-header">
-      <div class="settings-header-main">
-        <div class="settings-header-icon">
-          <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+      <div class="settings-header-bar">
+        <div class="settings-header-main">
+          <div class="settings-header-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+          </div>
+          <span>{{ $t('nav.settings') }}</span>
         </div>
-        <span>{{ $t('nav.settings') }}</span>
+        <button
+          type="button"
+          class="settings-close-btn page-control-btn page-control-btn--square"
+          :aria-label="$t('common.close')"
+          @click="$emit('close')"
+        >
+          <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
+        </button>
       </div>
-      <button
-        type="button"
-        class="settings-close-btn page-control-btn page-control-btn--square"
-        :aria-label="$t('common.close')"
-        @click="$emit('close')"
-      >
-        <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
-      </button>
+
+      <div class="settings-category-switcher" role="tablist" :aria-label="$t('nav.settings')">
+        <button
+          v-for="category in settingsCategories"
+          :id="`settings-category-tab-${category.id}`"
+          :key="category.id"
+          type="button"
+          class="settings-category-switcher__item"
+          :class="{
+            'settings-category-switcher__item--active': activeSettingsCategory === category.id,
+          }"
+          :aria-selected="activeSettingsCategory === category.id"
+          :tabindex="activeSettingsCategory === category.id ? 0 : -1"
+          :title="category.label"
+          role="tab"
+          @click="setActiveSettingsCategory(category.id)"
+        >
+          {{ category.label }}
+        </button>
+      </div>
     </div>
 
-    <div class="settings-panel__body">
+    <div
+      class="settings-panel__body"
+      :id="`settings-category-panel-${activeSettingsCategory}`"
+      role="tabpanel"
+      :aria-labelledby="`settings-category-tab-${activeSettingsCategory}`"
+    >
       <!-- Theme -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="explore" :fallback-icon="Palette" size="sm" />
@@ -50,7 +77,7 @@
       </div>
 
       <!-- UI Style -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="sparkle" :fallback-icon="Layers" size="sm" />
@@ -81,7 +108,7 @@
       </div>
 
       <!-- Language -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('system')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="user" :fallback-icon="Globe" size="sm" />
@@ -105,7 +132,7 @@
       </div>
 
       <!-- Display -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('experience')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
@@ -229,7 +256,7 @@
       </div>
 
       <!-- Privacy & Analytics -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('privacy')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="sparkle" :fallback-icon="ShieldCheck" size="sm" />
@@ -286,7 +313,7 @@
       </div>
 
       <!-- Background Effect -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
@@ -366,7 +393,7 @@
       </div>
 
       <!-- Mascot Flight Background -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('experience')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
@@ -444,7 +471,7 @@
       </div>
 
       <!-- Desk Pet -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('experience')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
@@ -538,7 +565,7 @@
       </div>
 
       <!-- Video Settings -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('system')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="explore" :fallback-icon="Video" size="sm" />
@@ -556,7 +583,7 @@
       </div>
 
       <!-- Links -->
-      <div class="settings-group">
+      <div v-show="isSettingsCategoryVisible('system')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
@@ -617,7 +644,7 @@ import {
   BarChart3,
   Gauge,
 } from 'lucide-vue-next'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -628,6 +655,8 @@ import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { Theme } from '@/types'
 import type { AnimationIntensity, UiStyle, ParticleEffectType } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+
+type SettingsCategory = 'appearance' | 'experience' | 'privacy' | 'system'
 
 withDefaults(
   defineProps<{
@@ -651,6 +680,7 @@ const { isSavingPreferences, resetPreferences, replacePreferences } = usePrefere
 const { isAuthenticated } = storeToRefs(authStore)
 const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+const activeSettingsCategory = ref<SettingsCategory>('appearance')
 const mascotBackground = computed(() => {
   return (
     settings.value.mascotBackground ?? {
@@ -672,6 +702,12 @@ const deskPetConfig = computed(() => {
     }
   )
 })
+const settingsCategories = computed<{ id: SettingsCategory; label: string }[]>(() => [
+  { id: 'appearance', label: t('settings.categoryAppearance') },
+  { id: 'experience', label: t('settings.categoryExperience') },
+  { id: 'privacy', label: t('settings.categoryPrivacy') },
+  { id: 'system', label: t('settings.categorySystem') },
+])
 
 const themeOptions = computed(() => [
   { value: 'light' as Theme, icon: Sun, label: t('settings.light') },
@@ -704,6 +740,14 @@ const localeOptions: { code: SupportedLocale; name: string; flag: string }[] = [
   { code: 'zh-TW', name: '繁體中文', flag: '🇹🇼' },
   { code: 'ja', name: '日本語', flag: '🇯🇵' },
 ]
+
+function setActiveSettingsCategory(category: SettingsCategory) {
+  activeSettingsCategory.value = category
+}
+
+function isSettingsCategoryVisible(category: SettingsCategory) {
+  return activeSettingsCategory.value === category
+}
 
 function setTheme(value: Theme) {
   themeStore.setTheme(value)
@@ -844,17 +888,23 @@ function resetVideoSettings() {
 
 <style scoped>
 .settings-panel {
+  --settings-shell-surface: color-mix(in srgb, var(--chrome-surface-bg-soft) 86%, #ffffff 14%);
+  --settings-shell-surface-strong: color-mix(
+    in srgb,
+    var(--chrome-surface-bg-soft) 92%,
+    #ffffff 8%
+  );
+  --settings-shell-border: color-mix(in srgb, var(--chrome-surface-border) 72%, transparent);
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: var(--spacing-3);
   padding: var(--spacing-2);
   min-inline-size: 0;
   inline-size: 100%;
   max-inline-size: min(100%, 24rem);
   max-block-size: var(--app-safe-block-size);
-  overflow-y: auto;
+  overflow: hidden;
   overflow-x: hidden;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
 }
 
 .settings-panel--compact {
@@ -872,6 +922,12 @@ function resetVideoSettings() {
 .settings-panel__body {
   display: grid;
   gap: var(--spacing-3);
+  min-block-size: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-block-end: var(--spacing-1);
 }
 
 /* 移动端优化：确保面板可以滚动 */
@@ -889,19 +945,22 @@ function resetVideoSettings() {
 
 /* ========== Header ========== */
 .settings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-2) var(--spacing-1);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 2;
   background: transparent;
   border-bottom: 0;
+}
+
+.settings-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .settings-header-main {
@@ -913,6 +972,47 @@ function resetVideoSettings() {
 
 .settings-panel--compact .settings-header {
   padding: var(--spacing-2) var(--spacing-2);
+}
+
+.settings-category-switcher {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--spacing-1);
+}
+
+.settings-category-switcher__item {
+  min-inline-size: 0;
+  min-block-size: 2.35rem;
+  padding-inline: var(--spacing-2);
+  border: 1px solid var(--settings-shell-border);
+  border-radius: var(--radius-full);
+  background: var(--settings-shell-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  line-height: 1.2;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.settings-category-switcher__item:hover {
+  color: var(--color-text-primary);
+  background: var(--settings-shell-surface-strong);
+  border-color: color-mix(in srgb, var(--chrome-surface-border) 88%, transparent);
+}
+
+.settings-category-switcher__item--active {
+  color: var(--color-primary);
+  background: color-mix(in srgb, rgba(var(--color-primary-rgb), 0.14) 78%, #ffffff 22%);
+  border-color: color-mix(
+    in srgb,
+    rgba(var(--color-primary-rgb), 0.32) 72%,
+    var(--chrome-surface-border) 28%
+  );
+  box-shadow: inset 0 0 0 0.0625rem rgba(var(--color-primary-rgb), 0.06);
 }
 
 .settings-header-icon {
@@ -971,18 +1071,16 @@ function resetVideoSettings() {
   border-radius: var(--ui-radius-card, var(--radius-xl));
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--chrome-surface-bg-soft) 18%, transparent),
-    color-mix(in srgb, var(--chrome-surface-bg-soft) 8%, transparent)
+    color-mix(in srgb, var(--chrome-surface-bg-soft) 88%, #ffffff 12%),
+    color-mix(in srgb, var(--chrome-surface-bg-soft) 78%, #ffffff 22%)
   );
   box-shadow:
-    inset 0 0.0625rem 0 color-mix(in srgb, rgba(255, 255, 255, 0.14) 72%, transparent),
-    0 1rem 1.8rem -1.6rem rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(0.375rem);
-  -webkit-backdrop-filter: blur(0.375rem);
+    inset 0 0.0625rem 0 color-mix(in srgb, rgba(255, 255, 255, 0.42) 72%, transparent),
+    0 1rem 2rem -1.6rem rgba(15, 23, 42, 0.14);
 }
 
 .settings-group + .settings-group {
-  border-top: 1px solid color-mix(in srgb, var(--chrome-surface-border) 42%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--chrome-surface-border) 38%, transparent);
 }
 
 .settings-panel--compact .settings-group {
@@ -1530,6 +1628,31 @@ function resetVideoSettings() {
   background: rgba(var(--color-primary-rgb), 0.15);
 }
 
+[data-theme='dark'] .settings-panel {
+  --settings-shell-surface: color-mix(
+    in srgb,
+    var(--chrome-surface-bg-soft) 76%,
+    rgba(8, 12, 22, 0.82)
+  );
+  --settings-shell-surface-strong: color-mix(
+    in srgb,
+    var(--chrome-surface-bg-soft) 84%,
+    rgba(15, 23, 42, 0.9)
+  );
+  --settings-shell-border: color-mix(in srgb, var(--chrome-surface-border) 82%, transparent);
+}
+
+[data-theme='dark'] .settings-group {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chrome-surface-bg-soft) 76%, rgba(8, 12, 22, 0.84)),
+    color-mix(in srgb, var(--chrome-surface-bg-soft) 68%, rgba(8, 12, 22, 0.94))
+  );
+  box-shadow:
+    inset 0 0.0625rem 0 color-mix(in srgb, rgba(255, 255, 255, 0.08) 82%, transparent),
+    0 1rem 2rem -1.6rem rgba(0, 0, 0, 0.3);
+}
+
 [data-theme='dark'] .bg-effect-btn:not(.active) {
   background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
   border-color: color-mix(in srgb, var(--chrome-surface-border) 58%, transparent);
@@ -1628,6 +1751,10 @@ function resetVideoSettings() {
 }
 
 @media (max-width: 28rem) {
+  .settings-category-switcher {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .toggle-btn {
     gap: var(--spacing-2);
     padding: var(--spacing-2);
