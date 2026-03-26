@@ -18,7 +18,11 @@ import i18n, { preloadActiveLocale } from './i18n'
 import 'lenis/dist/lenis.css'
 import './styles/index.css'
 import './styles/auth-compat.css'
-import { canTrackAnalytics, updateAnalyticsConsent } from './utils/analyticsConsent'
+import {
+  canTrackAnalytics,
+  canTrackPerformance,
+  updateAnalyticsConsent,
+} from './utils/analyticsConsent'
 import { reportClientError, reportClientEvent } from './utils/clientReporter'
 import vClickOutside from './directives/clickOutside'
 
@@ -180,10 +184,17 @@ watch(
   }),
   (snapshot) => {
     updateAnalyticsConsent(snapshot)
-    if (canTrackAnalytics()) {
+
+    if (canTrackAnalytics(snapshot)) {
       initCloudflareAnalytics()
     } else {
       removeCloudflareAnalytics()
+    }
+
+    if (canTrackPerformance(snapshot)) {
+      initPerformanceMonitoring()
+    } else {
+      disposePerformanceMonitoring()
     }
   },
   { immediate: true, deep: true }
@@ -256,9 +267,8 @@ void preloadActiveLocale()
     app.mount('#app-root')
   })
 
-// 性能监控：立即启动以捕获所有指标
+// 性能监控：由隐私设置动态控制
 import { disposePerformanceMonitoring, initPerformanceMonitoring } from './utils/performanceMonitor'
-initPerformanceMonitoring()
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     disposePerformanceMonitoring()
