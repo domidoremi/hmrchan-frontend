@@ -1407,13 +1407,23 @@ onUnmounted(() => {
   -webkit-backdrop-filter: var(--nav-dropdown-backdrop);
 }
 
+.settings-dropdown.glass-dropdown,
+.user-dropdown.glass-dropdown {
+  background: color-mix(in srgb, var(--nav-dropdown-bg) 92%, rgba(255, 255, 255, 0.92));
+  border-color: color-mix(in srgb, var(--nav-dropdown-border) 84%, rgba(255, 255, 255, 0.72));
+  box-shadow:
+    0 1.5rem 3rem -2rem rgba(15, 23, 42, 0.24),
+    inset 0 0 0 0.0625rem rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(1rem) saturate(1.08);
+  -webkit-backdrop-filter: blur(1rem) saturate(1.08);
+}
+
 .settings-dropdown.glass-dropdown {
   padding: clamp(0.25rem, 0.8vw, 0.375rem);
-  background: color-mix(in srgb, var(--nav-dropdown-bg) 86%, rgba(255, 255, 255, 0.84));
-  border-color: color-mix(in srgb, var(--nav-dropdown-border) 82%, rgba(255, 255, 255, 0.68));
-  box-shadow: 0 1.4rem 3rem -2rem rgba(15, 23, 42, 0.28);
-  backdrop-filter: blur(0.9rem);
-  -webkit-backdrop-filter: blur(0.9rem);
+}
+
+.user-dropdown.glass-dropdown {
+  overflow: hidden;
 }
 
 .settings-dropdown[data-positioned='false'],
@@ -1801,10 +1811,14 @@ onUnmounted(() => {
 }
 
 :global(#app[data-theme='dark'] .settings-dropdown.glass-dropdown),
-:global([data-theme='dark'] .settings-dropdown.glass-dropdown) {
-  background: color-mix(in srgb, var(--nav-dropdown-bg) 88%, rgba(8, 12, 22, 0.84));
-  border-color: color-mix(in srgb, var(--nav-dropdown-border) 88%, rgba(255, 255, 255, 0.08));
-  box-shadow: 0 1.5rem 3rem -2rem rgba(0, 0, 0, 0.44);
+:global([data-theme='dark'] .settings-dropdown.glass-dropdown),
+:global(#app[data-theme='dark'] .user-dropdown.glass-dropdown),
+:global([data-theme='dark'] .user-dropdown.glass-dropdown) {
+  background: color-mix(in srgb, var(--nav-dropdown-bg) 92%, rgba(8, 12, 22, 0.94));
+  border-color: color-mix(in srgb, var(--nav-dropdown-border) 92%, rgba(255, 255, 255, 0.12));
+  box-shadow:
+    0 1.5rem 3rem -2rem rgba(0, 0, 0, 0.5),
+    inset 0 0 0 0.0625rem rgba(255, 255, 255, 0.06);
 }
 
 :global(#app[data-theme='blue'] .navbar),

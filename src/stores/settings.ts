@@ -124,6 +124,13 @@ function createDefaultSettings(): Settings {
   }
 }
 
+function normalizePrivacySettings(target: Settings): void {
+  if (target.cookieConsent !== true) {
+    target.analyticsEnabled = false
+    target.performanceCookiesEnabled = false
+  }
+}
+
 export const useSettingsStore = defineStore(
   'settings',
   () => {
@@ -185,6 +192,8 @@ export const useSettingsStore = defineStore(
         1.8,
         Math.max(0.5, settings.value.deskPet.followSensitivity)
       )
+
+      normalizePrivacySettings(settings.value)
     })
 
     /**
@@ -247,31 +256,25 @@ export const useSettingsStore = defineStore(
 
     function setCookieConsent(value: boolean | null) {
       settings.value.cookieConsent = value
-
-      if (value !== true) {
-        settings.value.analyticsEnabled = false
-        settings.value.performanceCookiesEnabled = false
-      }
+      normalizePrivacySettings(settings.value)
     }
 
     function setAnalyticsEnabled(enabled: boolean) {
-      settings.value.analyticsEnabled = enabled
-
       if (enabled) {
         settings.value.cookieConsent = true
-        settings.value.performanceCookiesEnabled = true
-      } else {
-        settings.value.performanceCookiesEnabled = false
       }
+
+      settings.value.analyticsEnabled = enabled
+      normalizePrivacySettings(settings.value)
     }
 
     function setPerformanceCookiesEnabled(enabled: boolean) {
-      settings.value.performanceCookiesEnabled = enabled
-
       if (enabled) {
         settings.value.cookieConsent = true
-        settings.value.analyticsEnabled = true
       }
+
+      settings.value.performanceCookiesEnabled = enabled
+      normalizePrivacySettings(settings.value)
     }
 
     function setBackgroundEffect(config: Partial<ParticleEffectConfig>) {
@@ -346,6 +349,7 @@ export const useSettingsStore = defineStore(
         nextSettings.personalizedContent = preferences.personalized_content
       }
 
+      normalizePrivacySettings(nextSettings)
       settings.value = nextSettings
     }
 

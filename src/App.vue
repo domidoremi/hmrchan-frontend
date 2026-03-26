@@ -231,9 +231,9 @@ function toRouteViewKey(viewKey: unknown): string | null {
 function resolveRouteKey(routeRecord: RouteLocationNormalizedLoaded): string {
   const viewKey = toRouteViewKey(routeRecord.meta.viewKey)
   if (viewKey) {
-    return `view:${viewKey}`
+    return `view:${viewKey}:${currentLocale.value}`
   }
-  return routeRecord.matched[0]?.path ?? routeRecord.path
+  return `${routeRecord.matched[0]?.path ?? routeRecord.path}:${currentLocale.value}`
 }
 
 // Update transition based on route depth and navigation type

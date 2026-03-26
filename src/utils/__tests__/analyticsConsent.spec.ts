@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   canTrackAnalytics,
+  canTrackPerformance,
   resetAnalyticsConsent,
   updateAnalyticsConsent,
 } from '../analyticsConsent'
@@ -12,6 +13,7 @@ describe('analyticsConsent', () => {
 
   it('blocks analytics until explicit consent is granted', () => {
     expect(canTrackAnalytics()).toBe(false)
+    expect(canTrackPerformance()).toBe(false)
 
     updateAnalyticsConsent({
       cookieConsent: true,
@@ -19,10 +21,11 @@ describe('analyticsConsent', () => {
       performanceCookiesEnabled: false,
     })
 
-    expect(canTrackAnalytics()).toBe(false)
+    expect(canTrackAnalytics()).toBe(true)
+    expect(canTrackPerformance()).toBe(false)
   })
 
-  it('allows analytics when all required consent flags are enabled', () => {
+  it('allows analytics and performance independently once cookie consent is granted', () => {
     updateAnalyticsConsent({
       cookieConsent: true,
       analyticsEnabled: true,
@@ -30,5 +33,6 @@ describe('analyticsConsent', () => {
     })
 
     expect(canTrackAnalytics()).toBe(true)
+    expect(canTrackPerformance()).toBe(true)
   })
 })

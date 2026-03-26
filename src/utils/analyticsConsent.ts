@@ -28,9 +28,9 @@ export function getAnalyticsConsent(): AnalyticsConsentSnapshot {
 }
 
 export function canTrackAnalytics(snapshot: AnalyticsConsentSnapshot = currentConsent): boolean {
-  return (
-    snapshot.cookieConsent === true &&
-    snapshot.analyticsEnabled === true &&
-    snapshot.performanceCookiesEnabled === true
-  )
+  return snapshot.cookieConsent === true && snapshot.analyticsEnabled === true
+}
+
+export function canTrackPerformance(snapshot: AnalyticsConsentSnapshot = currentConsent): boolean {
+  return snapshot.cookieConsent === true && snapshot.performanceCookiesEnabled === true
 }
