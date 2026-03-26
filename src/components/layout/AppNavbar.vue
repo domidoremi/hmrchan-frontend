@@ -8,13 +8,15 @@
           </span>
         </RouterLink>
 
-        <div class="navbar-actions">
+        <div
+          class="navbar-actions"
+          @mouseleave="handleNavbarActionsLeave"
+          @focusout="handleNavbarActionsFocusOut"
+        >
           <form
             v-if="!isMobile"
             class="nav-search-shell"
-            :class="{
-              'nav-search-shell--expanded': isDesktopSearchExpanded || !!desktopSearchQuery.trim(),
-            }"
+            :class="{ 'nav-search-shell--expanded': isDesktopSearchExpanded }"
             role="search"
             @submit.prevent="handleDesktopSearchSubmit"
             @mouseenter="expandDesktopSearch()"
@@ -586,7 +588,7 @@ function expandDesktopSearch(focusInput = true) {
 
 function collapseDesktopSearch(force = false) {
   if (isMobile.value) return
-  if (!force && desktopSearchQuery.value.trim()) return
+  if (!force && document.activeElement === desktopSearchInputRef.value) return
   isDesktopSearchExpanded.value = false
 }
 
@@ -608,7 +610,17 @@ async function handleDesktopSearchSubmit() {
 function handleDesktopSearchFocusOut(event: FocusEvent) {
   const nextTarget = event.relatedTarget as Node | null
   if (nextTarget && (event.currentTarget as HTMLElement | null)?.contains(nextTarget)) return
-  collapseDesktopSearch()
+  collapseDesktopSearch(true)
+}
+
+function handleNavbarActionsLeave() {
+  collapseDesktopSearch(true)
+}
+
+function handleNavbarActionsFocusOut(event: FocusEvent) {
+  const nextTarget = event.relatedTarget as Node | null
+  if (nextTarget && (event.currentTarget as HTMLElement | null)?.contains(nextTarget)) return
+  collapseDesktopSearch(true)
 }
 
 function handleDesktopSearchEscape() {
