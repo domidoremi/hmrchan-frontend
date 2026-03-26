@@ -1,6 +1,6 @@
 <template>
-  <div class="auth-page">
-    <div class="auth-card empty-surface">
+  <div class="auth-page auth-page--verify">
+    <div class="auth-card auth-card--stack">
       <!-- Verifying -->
       <template v-if="status === 'loading'">
         <div class="status-icon status-icon--loading">
@@ -135,85 +135,13 @@ async function resend() {
 </script>
 
 <style scoped>
-.auth-page {
-  min-height: var(--app-safe-block-size);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-3);
-}
-
 .auth-card {
-  inline-size: 100%;
-  max-inline-size: min(90vw, 23.75rem);
-  display: grid;
-  align-content: start;
   justify-items: center;
-  gap: var(--spacing-4);
   text-align: center;
 }
 
-.status-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 4.5rem;
-  block-size: 4.5rem;
-  border-radius: var(--radius-full);
-}
-
-.status-icon--loading {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  color: var(--color-primary);
-}
-
-.status-icon--success {
-  background: rgba(var(--color-success-rgb, 34, 197, 94), 0.1);
-  color: var(--color-success);
-}
-
-.status-icon--error {
-  background: rgba(var(--color-error-rgb, 239, 68, 68), 0.1);
-  color: var(--color-error);
-}
-
-.auth-title {
-  font-size: var(--text-xl);
-  margin: 0;
-}
-
-@media (min-width: 640px) {
-  .auth-title {
-    font-size: var(--text-2xl);
-  }
-}
-
 .auth-subtitle {
-  color: var(--color-text-tertiary);
   margin: 0;
   max-inline-size: 32ch;
-  font-size: var(--text-sm);
-}
-
-.action-group {
-  inline-size: 100%;
-  display: grid;
-  gap: var(--spacing-2);
-}
-
-@media (max-width: 768px) {
-  .auth-page {
-    min-height: var(--app-safe-block-size-with-mobile-nav);
-    align-items: stretch;
-    justify-content: flex-start;
-    padding: clamp(0.6rem, 3.2vw, 1rem);
-  }
-
-  .auth-card {
-    max-inline-size: min(100%, 23.75rem);
-    margin-inline: auto;
-    margin-block-start: clamp(0.5rem, 2vw, 0.9rem);
-    gap: var(--spacing-3);
-  }
 }
 </style>

@@ -153,12 +153,8 @@ export const useSettingsStore = defineStore(
         settings.value.mascotBackground = { ...defaultSettings.mascotBackground }
       }
       if (!settings.value.deskPet) {
-        const legacyShowDeskPet = (settings.value as Settings & { showDeskPet?: boolean })
-          .showDeskPet
         settings.value.deskPet = {
           ...defaultSettings.deskPet,
-          enabled:
-            legacyShowDeskPet === undefined ? defaultSettings.deskPet.enabled : legacyShowDeskPet,
         }
       }
 
