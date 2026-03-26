@@ -425,20 +425,22 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
   }
 
   if (path === '/contact') {
-    const description = '联系 MomiChan 团队，提交产品反馈、合作请求或安全问题披露。'
+    const description = '提交产品反馈，或通过私密渠道披露安全问题。'
     return createDocumentConfig(
       path,
       'Contact',
       description,
-      'Contact the team',
-      'Get in touch with MomiChan',
-      '联系页首包直接提供反馈、安全披露说明与团队联系入口。',
+      'Feedback & security',
+      'Product feedback and private security reporting',
+      '联系页首包只保留正式反馈入口与私密安全披露说明，不再展示占位式团队联系文案。',
       {
         shellSummary: [
-          'Use the contact route for public feedback, partnership requests, or private security reports.',
+          'Use the feedback form for product issues, bugs, and improvement ideas.',
+          'Use private disclosure for vulnerabilities, authentication issues, access-control mistakes, or data exposure.',
         ],
         shellLinks: [
-          { href: '/', label: 'Home' },
+          { href: '/community', label: 'Community' },
+          { href: '/.well-known/security.txt', label: 'security.txt' },
           { href: '/about', label: 'About' },
         ],
         structuredData: [createWebPageStructuredData('ContactPage', path, 'Contact', description)],
