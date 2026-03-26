@@ -238,6 +238,10 @@
   },
   "settings": {
     "title": "設定",
+    "categoryAppearance": "外觀",
+    "categoryExperience": "體驗",
+    "categoryPrivacy": "隱私",
+    "categorySystem": "系統",
     "links": "連結",
     "theme": "主題",
     "light": "淺色",

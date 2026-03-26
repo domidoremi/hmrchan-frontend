@@ -18,17 +18,24 @@
       <nav
         class="app-side-nav__section app-side-nav__section--primary"
         :aria-label="$t('common.primaryNavigation')"
+        @pointerleave="clearDockHover('primary')"
+        @focusout="handleDockSectionFocusOut('primary', $event)"
       >
         <RouterLink
-          v-for="item in primaryNavItems"
+          v-for="(item, index) in primaryNavItems"
           :key="item.path"
           :to="getNavigationLink(item)"
           class="app-side-nav__link"
           :class="{ 'app-side-nav__link--active': isRouteActive(item.path) }"
+          :style="getDockStyle('primary', index, primaryNavItems.length)"
           :aria-label="$t(item.i18nKey)"
           :title="$t(item.i18nKey)"
           @mouseenter="prefetchRoute(item.path)"
-          @focus="prefetchRoute(item.path)"
+          @pointerenter="setDockHover('primary', index)"
+          @focus="
+            prefetchRoute(item.path)
+            setDockHover('primary', index)
+          "
           @pointermove="handleMagneticMove"
           @pointerleave="resetMagneticMove"
         >
@@ -41,15 +48,20 @@
       <nav
         class="app-side-nav__section app-side-nav__section--utility"
         :aria-label="$t('common.utilityNavigation')"
+        @pointerleave="clearDockHover('utility')"
+        @focusout="handleDockSectionFocusOut('utility', $event)"
       >
         <RouterLink
-          v-for="item in utilityNavItems"
+          v-for="(item, index) in utilityNavItems"
           :key="item.path"
           :to="item.to"
           class="app-side-nav__link"
           :class="{ 'app-side-nav__link--active': isRouteActive(item.path) }"
+          :style="getDockStyle('utility', index, utilityNavItems.length)"
           :aria-label="$t(item.i18nKey)"
           :title="$t(item.i18nKey)"
+          @pointerenter="setDockHover('utility', index)"
+          @focus="setDockHover('utility', index)"
           @pointermove="handleMagneticMove"
           @pointerleave="resetMagneticMove"
         >
@@ -63,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type Component } from 'vue'
+import { computed, ref, type Component } from 'vue'
 import { RouterLink, useRoute, type RouteLocationRaw } from 'vue-router'
 import { Info, Settings2 } from 'lucide-vue-next'
 import { prefetchAuthorsData, prefetchExploreData } from '@/utils/prefetch'
@@ -77,10 +89,16 @@ interface UtilityNavItem {
   to: RouteLocationRaw
 }
 
+type DockSection = 'primary' | 'utility'
+
 const route = useRoute()
 const { desktopNavItems, getNavigationLink } = useNavigation()
 
 const prefetchedRoutes = new Set<string>()
+const hoveredDockIndex = ref<Record<DockSection, number | null>>({
+  primary: null,
+  utility: null,
+})
 
 const primaryNavItems = computed(() =>
   desktopNavItems.value.filter((item) =>
@@ -158,6 +176,45 @@ function handleMagneticMove(event: PointerEvent) {
 
   target.style.setProperty('--app-side-nav-magnet-x', `${offsetX.toFixed(2)}px`)
   target.style.setProperty('--app-side-nav-magnet-y', `${offsetY.toFixed(2)}px`)
+}
+
+function setDockHover(section: DockSection, index: number) {
+  hoveredDockIndex.value[section] = index
+}
+
+function clearDockHover(section: DockSection) {
+  hoveredDockIndex.value[section] = null
+}
+
+function handleDockSectionFocusOut(section: DockSection, event: FocusEvent) {
+  const nextTarget = event.relatedTarget as Node | null
+  if (nextTarget && (event.currentTarget as HTMLElement | null)?.contains(nextTarget)) return
+  clearDockHover(section)
+}
+
+function getDockStyle(
+  section: DockSection,
+  index: number,
+  totalItems: number
+): Record<string, string> | undefined {
+  if (totalItems < 2) return undefined
+
+  const hoveredIndex = hoveredDockIndex.value[section]
+  if (hoveredIndex === null) return undefined
+
+  const distance = Math.abs(index - hoveredIndex)
+  const direction = hoveredIndex === index ? 0 : index < hoveredIndex ? -1 : 1
+  const linkScale = distance === 0 ? 1.08 : distance === 1 ? 0.94 : 0.97
+  const iconScale = distance === 0 ? 1.18 : distance === 1 ? 0.88 : 0.94
+  const shift = distance === 0 ? 0 : distance === 1 ? direction * 0.2 : direction * 0.08
+  const emphasis = distance === 0 ? 1 : distance === 1 ? 0.9 : 0.78
+
+  return {
+    '--app-side-nav-dock-scale': linkScale.toFixed(3),
+    '--app-side-nav-dock-icon-scale': iconScale.toFixed(3),
+    '--app-side-nav-dock-shift': `${shift.toFixed(3)}rem`,
+    '--app-side-nav-dock-emphasis': emphasis.toFixed(3),
+  }
 }
 
 function resetMagneticMove(event: PointerEvent) {
@@ -240,13 +297,16 @@ function resetMagneticMove(event: PointerEvent) {
     border-color var(--duration-fast) var(--ease-out),
     background-color var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-spring);
   box-shadow: 0 0.85rem 1.6rem -1.5rem rgba(15, 23, 42, 0.1);
   transform: translate3d(
-    calc(var(--app-side-nav-magnet-x, 0px) * 0.16),
-    calc(var(--app-side-nav-magnet-y, 0px) * 0.16),
-    0
-  );
+      calc(var(--app-side-nav-magnet-x, 0px) * 0.16),
+      calc((var(--app-side-nav-magnet-y, 0px) * 0.16) + var(--app-side-nav-dock-shift, 0rem)),
+      0
+    )
+    scale(var(--app-side-nav-dock-scale, 1));
+  opacity: var(--app-side-nav-dock-emphasis, 1);
 }
 
 .app-side-nav__brand:hover,
@@ -279,18 +339,24 @@ function resetMagneticMove(event: PointerEvent) {
 .app-side-nav__icon {
   inline-size: 1.125rem;
   block-size: 1.125rem;
+  transform: translate3d(0, 0, 0) scale(var(--app-side-nav-dock-icon-scale, 1));
   transition:
     transform var(--duration-fast) var(--ease-out),
     filter var(--duration-fast) var(--ease-out);
 }
 
 .app-side-nav__brand:hover .app-side-nav__brand-mark,
-.app-side-nav__brand:focus-visible .app-side-nav__brand-mark,
+.app-side-nav__brand:focus-visible .app-side-nav__brand-mark {
+  transform: translate3d(var(--app-side-nav-magnet-x, 0px), var(--app-side-nav-magnet-y, 0px), 0)
+    scale(1.12);
+  filter: drop-shadow(0 0.45rem 0.85rem rgba(var(--color-primary-rgb), 0.24));
+}
+
 .app-side-nav__link:hover .app-side-nav__icon,
 .app-side-nav__link:focus-visible .app-side-nav__icon,
 .app-side-nav__link--active .app-side-nav__icon {
   transform: translate3d(var(--app-side-nav-magnet-x, 0px), var(--app-side-nav-magnet-y, 0px), 0)
-    scale(1.12);
+    scale(var(--app-side-nav-dock-icon-scale, 1));
   filter: drop-shadow(0 0.45rem 0.85rem rgba(var(--color-primary-rgb), 0.24));
 }
 

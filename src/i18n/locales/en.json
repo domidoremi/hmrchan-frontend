@@ -238,6 +238,10 @@
   },
   "settings": {
     "title": "Settings",
+    "categoryAppearance": "Appearance",
+    "categoryExperience": "Experience",
+    "categoryPrivacy": "Privacy",
+    "categorySystem": "System",
     "links": "Links",
     "theme": "Theme",
     "light": "Light",
