@@ -18,10 +18,21 @@
     <AppSideNav />
 
     <!-- Main Content with Error Boundary -->
-    <main id="main-content" :class="{ 'main--home': isHomeRoute, 'main--auth': isAuthRoute }">
+    <main
+      id="main-content"
+      :class="{
+        'main--home': isHomeRoute,
+        'main--auth': isAuthRoute,
+        'main--decorated': showBackgroundDecorations,
+      }"
+    >
       <div
         class="route-view"
-        :class="{ 'route-view--home': isHomeRoute, 'route-view--auth': isAuthRoute }"
+        :class="{
+          'route-view--home': isHomeRoute,
+          'route-view--auth': isAuthRoute,
+          'route-view--decorated': showBackgroundDecorations,
+        }"
       >
         <ErrorBoundary @retry="handleRetry">
           <RouterView v-slot="{ Component, route }">
@@ -33,7 +44,7 @@
                   </KeepAlive>
                 </template>
                 <template #fallback>
-                  <PageLoading />
+                  <PageLoading v-if="!isAuthRouteName(toRouteName(route.name))" />
                 </template>
               </Suspense>
             </Transition>
@@ -59,12 +70,19 @@
     <BackToTop v-if="!isHomeRoute" :show-progress="true" />
 
     <div
-      v-if="showMascotBackground || showParticleBackground"
-      class="app-decoration-layer"
+      v-if="showParticleBackground"
+      class="app-decoration-layer app-decoration-layer--particle"
       aria-hidden="true"
     >
-      <MascotFlightBackground v-if="showMascotBackground" />
-      <ParticleBackground v-if="showParticleBackground" />
+      <ParticleBackground />
+    </div>
+
+    <div
+      v-if="showMascotBackground"
+      class="app-decoration-layer app-decoration-layer--mascot"
+      aria-hidden="true"
+    >
+      <MascotFlightBackground />
     </div>
 
     <!-- Desk Pet -->
@@ -154,12 +172,14 @@ const showParticleBackground = computed(
 )
 const showMascotBackground = computed(
   () =>
-    decorationsReady.value &&
     settings.value.enableAnimations &&
     settings.value.animationIntensity !== 'none' &&
     settings.value.mascotBackground.enabled
 )
-const showDeskPet = computed(() => decorationsReady.value && settings.value.deskPet.enabled)
+const showDeskPet = computed(() => settings.value.deskPet.enabled)
+const showBackgroundDecorations = computed(
+  () => showMascotBackground.value || showParticleBackground.value
+)
 
 // Footer only appears on key pages (configured via route meta)
 const showFooter = computed(() => Boolean(route.meta.showFooter) && !isHomeRoute.value)
@@ -182,57 +202,20 @@ const shouldMountVerificationDialog = computed(
 
 // Page transition name
 const transitionName = ref('')
-const AUTH_ENTER_TRANSITION_NAME = 'auth-enter'
-const AUTH_SWAP_FORWARD_TRANSITION_NAME = 'auth-swap-forward'
-const AUTH_SWAP_BACK_TRANSITION_NAME = 'auth-swap-back'
-const AUTH_EXIT_TRANSITION_NAME = 'auth-exit'
-const AUTH_TRANSITION_NAMES = new Set([
-  AUTH_ENTER_TRANSITION_NAME,
-  AUTH_SWAP_FORWARD_TRANSITION_NAME,
-  AUTH_SWAP_BACK_TRANSITION_NAME,
-  AUTH_EXIT_TRANSITION_NAME,
+const AUTH_ROUTE_NAMES = new Set([
+  'login',
+  'register',
+  'forgot-password',
+  'reset-password',
+  'verify-email',
 ])
 const authKeepAliveExclude = ['LoginPage', 'RegisterPage', 'ForgotPasswordPage']
 const transitionMode = computed<'out-in' | undefined>(() =>
-  AUTH_TRANSITION_NAMES.has(transitionName.value) ? undefined : 'out-in'
+  transitionName.value ? 'out-in' : undefined
 )
-const authRouteOrder: Record<string, number> = {
-  login: 0,
-  'forgot-password': 1,
-  register: 2,
-}
 
 function isAuthRouteName(routeName: string | undefined): boolean {
-  return Boolean(routeName && authRouteOrder[routeName] !== undefined)
-}
-
-function resolveAuthTransition(
-  toName: string | undefined,
-  fromName: string | undefined
-):
-  | typeof AUTH_ENTER_TRANSITION_NAME
-  | typeof AUTH_SWAP_FORWARD_TRANSITION_NAME
-  | typeof AUTH_SWAP_BACK_TRANSITION_NAME
-  | typeof AUTH_EXIT_TRANSITION_NAME
-  | null {
-  const toIsAuth = isAuthRouteName(toName)
-  const fromIsAuth = isAuthRouteName(fromName)
-
-  if (toIsAuth && fromIsAuth) {
-    const toOrder = authRouteOrder[toName!]
-    const fromOrder = authRouteOrder[fromName!]
-    return toOrder >= fromOrder ? AUTH_SWAP_FORWARD_TRANSITION_NAME : AUTH_SWAP_BACK_TRANSITION_NAME
-  }
-
-  if (toIsAuth && !fromIsAuth) {
-    return AUTH_ENTER_TRANSITION_NAME
-  }
-
-  if (!toIsAuth && fromIsAuth) {
-    return AUTH_EXIT_TRANSITION_NAME
-  }
-
-  return null
+  return Boolean(routeName && AUTH_ROUTE_NAMES.has(routeName))
 }
 
 function toRouteName(routeName: unknown): string | undefined {
@@ -302,9 +285,8 @@ watch(
       }
     }
 
-    const authTransition = resolveAuthTransition(toName, fromName)
-    if (authTransition) {
-      transitionName.value = authTransition
+    if (isAuthRouteName(toName) || isAuthRouteName(fromName)) {
+      transitionName.value = ''
       return
     }
 
@@ -398,97 +380,34 @@ main.main--home {
   overflow: visible;
 }
 
+.route-view.route-view--decorated {
+  background: transparent;
+}
+
 @media (max-width: 768px) {
   .route-view.route-view--home {
     min-height: var(--app-safe-block-size-with-mobile-nav);
   }
 }
 
-/* 认证页安全过渡：同帧交叠，避免 out-in 空窗白屏 */
-.auth-enter-enter-active,
-.auth-enter-leave-active,
-.auth-swap-forward-enter-active,
-.auth-swap-forward-leave-active,
-.auth-swap-back-enter-active,
-.auth-swap-back-leave-active,
-.auth-exit-enter-active,
-.auth-exit-leave-active {
-  transition:
-    opacity var(--duration-fast) var(--ease-out-smooth),
-    transform var(--duration-fast) var(--ease-fluid);
-  will-change: transform, opacity;
-}
-
-.auth-enter-enter-active,
-.auth-swap-forward-enter-active,
-.auth-swap-back-enter-active,
-.auth-exit-enter-active {
-  position: relative;
-  z-index: 2;
-}
-
-.auth-enter-leave-active,
-.auth-swap-forward-leave-active,
-.auth-swap-back-leave-active,
-.auth-exit-leave-active {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.auth-enter-enter-from {
-  opacity: 0;
-  transform: translate3d(0, 1rem, 0) scale3d(0.985, 0.985, 1);
-}
-
-.auth-enter-leave-to {
-  opacity: 0;
-  transform: translate3d(0, -0.35rem, 0) scale3d(0.994, 0.994, 1);
-}
-
-.auth-swap-forward-enter-from {
-  opacity: 0;
-  transform: translate3d(1rem, 0.2rem, 0) scale3d(0.988, 0.988, 1);
-}
-
-.auth-swap-forward-leave-to {
-  opacity: 0;
-  transform: translate3d(-0.7rem, -0.1rem, 0) scale3d(0.992, 0.992, 1);
-}
-
-.auth-swap-back-enter-from {
-  opacity: 0;
-  transform: translate3d(-1rem, 0.2rem, 0) scale3d(0.988, 0.988, 1);
-}
-
-.auth-swap-back-leave-to {
-  opacity: 0;
-  transform: translate3d(0.7rem, -0.1rem, 0) scale3d(0.992, 0.992, 1);
-}
-
-.auth-exit-enter-from {
-  opacity: 0;
-  transform: translate3d(0, -0.55rem, 0) scale3d(1.008, 1.008, 1);
-}
-
-.auth-exit-leave-to {
-  opacity: 0;
-  transform: translate3d(0, 0.8rem, 0) scale3d(0.986, 0.986, 1);
-}
-
 .app-decoration-layer {
   position: fixed;
   inset: 0;
-  z-index: 0;
   overflow: hidden;
   pointer-events: none;
 }
 
+.app-decoration-layer--particle {
+  z-index: 0;
+}
+
+.app-decoration-layer--mascot {
+  z-index: calc(var(--z-sticky) - 2);
+}
+
 .app-footer-shell {
   position: relative;
-  z-index: 1;
+  z-index: calc(var(--z-sticky) - 1);
 }
 
 @media (min-width: 961px) {

@@ -1,6 +1,6 @@
 <template>
-  <div class="auth-page">
-    <div class="auth-card glass-card">
+  <div class="auth-page auth-page--reset">
+    <div class="auth-card auth-card--stack">
       <!-- Success -->
       <template v-if="resetSuccess">
         <div class="status-icon status-icon--success">
@@ -204,196 +204,26 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.auth-page {
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-3);
-}
-
 .auth-card {
-  width: 100%;
-  max-width: min(90vw, 23.75rem);
-  padding: var(--spacing-5);
-  border: 1px solid rgba(var(--color-border-rgb), 0.6);
-  box-shadow:
-    0 16px 40px -24px rgba(15, 23, 42, 0.4),
-    0 6px 20px -12px rgba(15, 23, 42, 0.35);
-}
-
-@media (min-width: 640px) {
-  .auth-card {
-    padding: var(--spacing-6);
-  }
+  justify-items: stretch;
 }
 
 .auth-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-full);
-  background: rgba(var(--color-primary-rgb), 0.12);
-  color: var(--color-text-primary);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  width: fit-content;
-  margin-bottom: var(--spacing-3);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+  justify-self: start;
 }
 
-.auth-badge-dot {
-  width: 0.375rem;
-  height: 0.375rem;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.6);
-}
-
-.status-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 4.5rem;
-  height: 4.5rem;
-  border-radius: var(--radius-full);
-  margin: 0 auto var(--spacing-4);
-}
-
-.status-icon--success {
-  background: rgba(var(--color-success-rgb, 34, 197, 94), 0.1);
-  color: var(--color-success);
-}
-
-.status-icon--error {
-  background: rgba(var(--color-error-rgb, 239, 68, 68), 0.1);
-  color: var(--color-error);
-}
-
-.auth-title {
-  font-size: var(--text-xl);
+.status-icon,
+.auth-title,
+.auth-subtitle {
+  justify-self: center;
   text-align: center;
-  margin-bottom: var(--spacing-1);
-}
-
-@media (min-width: 640px) {
-  .auth-title {
-    font-size: var(--text-2xl);
-  }
 }
 
 .auth-subtitle {
-  text-align: center;
-  color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-4);
-  font-size: var(--text-sm);
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-3);
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-}
-
-.form-group label {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-}
-
-.password-field {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.password-input {
-  padding-right: 2.75rem;
-}
-
-.password-toggle {
-  position: absolute;
-  right: var(--spacing-3);
-  height: 2rem;
-  width: 2rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  color: var(--color-text-tertiary);
-}
-
-.password-toggle:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text-secondary);
-}
-
-.field-error {
-  font-size: var(--text-sm);
-  color: var(--color-error);
   margin: 0;
 }
 
-/* Password Strength */
-.password-strength {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-}
-
-.strength-bar {
-  flex: 1;
-  height: 0.25rem;
-  background: var(--color-border);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.strength-fill {
-  height: 100%;
-  border-radius: var(--radius-full);
-  transition:
-    width 0.3s ease,
-    background 0.3s ease;
-}
-
-.strength-fill.strength-weak {
-  background: var(--color-error);
-}
-.strength-fill.strength-fair {
-  background: var(--color-warning, #f59e0b);
-}
-.strength-fill.strength-good {
-  background: var(--color-info, #3b82f6);
-}
-.strength-fill.strength-strong {
-  background: var(--color-success);
-}
-
-.strength-text {
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  min-width: 2.5rem;
-}
-
-.strength-text.strength-weak {
-  color: var(--color-error);
-}
-.strength-text.strength-fair {
-  color: var(--color-warning, #f59e0b);
-}
-.strength-text.strength-good {
-  color: var(--color-info, #3b82f6);
-}
-.strength-text.strength-strong {
-  color: var(--color-success);
+.field-error {
+  margin: 0;
 }
 </style>

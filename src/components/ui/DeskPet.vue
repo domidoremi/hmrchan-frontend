@@ -676,7 +676,7 @@ const getRestState = () =>
 
 const hidePet = () => {
   showContextMenu.value = false
-  settings.value.deskPet.enabled = false
+  settingsStore.setDeskPet({ enabled: false })
 }
 let hoverFallbackState: PetState = PetState.IDLE
 
