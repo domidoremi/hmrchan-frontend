@@ -5,6 +5,7 @@
  */
 
 import { apiClient, type RequestConfig } from './client'
+import { normalizeResponse } from './client/error-mapping'
 import { ensureVerificationToken } from './verificationBridge'
 import { normalizeToProxyPath } from '@/utils/url'
 
@@ -65,6 +66,22 @@ export interface AvatarUploadResponse {
 export interface ExportAccountDataResult {
   blob: Blob
   filename?: string | null
+}
+
+async function buildExportAccountBlob(response: Response): Promise<Blob> {
+  const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
+
+  if (!contentType.includes('application/json')) {
+    return response.blob()
+  }
+
+  const payload = normalizeResponse<unknown>(await response.json())
+  const serializedPayload =
+    typeof payload === 'string' ? payload : JSON.stringify(payload ?? {}, null, 2)
+
+  return new Blob([serializedPayload], {
+    type: 'application/json;charset=utf-8',
+  })
 }
 
 /**
@@ -148,11 +165,19 @@ export const userService = {
    */
   async deleteAccount(reason?: string): Promise<void> {
     const verificationToken = await ensureVerificationToken('delete_account')
-    await apiClient.post('/account/delete', {
-      confirm: true,
-      verification_token: verificationToken,
-      ...(reason ? { reason } : {}),
-    })
+    await apiClient.post(
+      '/account/delete',
+      {
+        confirm: true,
+        ...(reason ? { reason } : {}),
+      },
+      {
+        headers: {
+          'X-Verification-Token': verificationToken,
+        },
+        verificationAction: 'delete_account',
+      }
+    )
   },
 
   /**
@@ -194,7 +219,7 @@ export const userService = {
       },
       verificationAction: 'export_data',
     })
-    const blob = await response.blob()
+    const blob = await buildExportAccountBlob(response)
     const contentDisposition = response.headers.get('Content-Disposition')
     const filenameMatch =
       contentDisposition?.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i) ?? null

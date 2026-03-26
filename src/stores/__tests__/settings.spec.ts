@@ -41,6 +41,7 @@ describe('Settings Store', () => {
     store.updateSetting('postsPerPage', 50)
     store.setCookieConsent(true)
     store.setAnalyticsEnabled(true)
+    store.setPerformanceCookiesEnabled(true)
 
     expect(store.exportPreferences()).toEqual({
       show_hero_section: false,
@@ -53,6 +54,36 @@ describe('Settings Store', () => {
       data_collection: false,
       personalized_content: false,
     })
+  })
+
+  it('keeps analytics and performance toggles independent under granted cookie consent', () => {
+    const store = useSettingsStore()
+
+    store.setAnalyticsEnabled(true)
+
+    expect(store.settings.cookieConsent).toBe(true)
+    expect(store.settings.analyticsEnabled).toBe(true)
+    expect(store.settings.performanceCookiesEnabled).toBe(false)
+
+    store.setPerformanceCookiesEnabled(true)
+    store.setAnalyticsEnabled(false)
+
+    expect(store.settings.cookieConsent).toBe(true)
+    expect(store.settings.analyticsEnabled).toBe(false)
+    expect(store.settings.performanceCookiesEnabled).toBe(true)
+  })
+
+  it('clears non-essential telemetry toggles when cookie consent is revoked', () => {
+    const store = useSettingsStore()
+
+    store.setCookieConsent(true)
+    store.setAnalyticsEnabled(true)
+    store.setPerformanceCookiesEnabled(true)
+    store.setCookieConsent(false)
+
+    expect(store.settings.cookieConsent).toBe(false)
+    expect(store.settings.analyticsEnabled).toBe(false)
+    expect(store.settings.performanceCookiesEnabled).toBe(false)
   })
 
   it('defaults non-essential decorations to disabled for new users', () => {

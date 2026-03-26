@@ -2,6 +2,7 @@
  * Vue Router Configuration
  */
 
+import { watch } from 'vue'
 import {
   createRouter,
   createWebHistory,
@@ -336,16 +337,21 @@ router.beforeEach(async (to) => {
   return true
 })
 
-router.afterEach((to) => {
-  const titleValue = typeof to.meta.title === 'function' ? to.meta.title(to) : to.meta.title
+function syncRoutePageMeta(route: RouteLocationNormalizedLoadedGeneric): void {
+  const titleValue =
+    typeof route.meta.title === 'function' ? route.meta.title(route) : route.meta.title
   const rawTitle = titleValue ? String(titleValue) : ''
   const translatedTitle = rawTitle ? String(i18n.global.t(rawTitle)) : ''
 
   applyPageMeta({
     title: translatedTitle || undefined,
-    description: typeof to.meta.description === 'string' ? to.meta.description : undefined,
-    canonicalPath: to.path,
+    description: typeof route.meta.description === 'string' ? route.meta.description : undefined,
+    canonicalPath: route.path,
   })
+}
+
+router.afterEach((to) => {
+  syncRoutePageMeta(to)
 
   // 记录访问历史（用于智能预缓存）
   if (to.name === 'post-detail' && to.params.id) {
@@ -362,5 +368,14 @@ router.afterEach((to) => {
     })
   }
 })
+
+watch(
+  () => i18n.global.locale.value,
+  () => {
+    const currentRoute = router.currentRoute.value
+    if (!currentRoute.matched.length) return
+    syncRoutePageMeta(currentRoute)
+  }
+)
 
 export default router

@@ -1,4 +1,4 @@
-import { canTrackAnalytics } from './analyticsConsent'
+import { canTrackAnalytics, canTrackPerformance } from './analyticsConsent'
 
 type ReportKind = 'error' | 'event' | 'performance'
 type ReportSeverity = 'info' | 'warn' | 'error'
@@ -102,9 +102,11 @@ function buildPayload(
   }
 }
 
-function canSend(options: ReportOptions): boolean {
+function canSend(kind: ReportKind, options: ReportOptions): boolean {
   if (!REPORTING_ENABLED) return false
-  if (options.requiresAnalyticsConsent && !canTrackAnalytics()) return false
+  if (options.requiresAnalyticsConsent === false) return true
+  if (kind === 'performance') return canTrackPerformance()
+  if (!canTrackAnalytics()) return false
   return true
 }
 
@@ -134,7 +136,7 @@ export function reportClientEvent(
   data?: Record<string, unknown>,
   options: ReportOptions = {}
 ): void {
-  if (!canSend(options)) return
+  if (!canSend('event', options)) return
   sendPayload(buildPayload('event', name, options, data))
 }
 
@@ -144,7 +146,7 @@ export function reportClientError(
   data?: Record<string, unknown>,
   options: ReportOptions = {}
 ): void {
-  if (!canSend(options)) return
+  if (!canSend('error', options)) return
   sendPayload(buildPayload('error', name, { ...options, severity: 'error' }, data, error))
 }
 
@@ -153,6 +155,6 @@ export function reportClientPerformance(
   data?: Record<string, unknown>,
   options: ReportOptions = {}
 ): void {
-  if (!canSend({ ...options, requiresAnalyticsConsent: true })) return
+  if (!canSend('performance', options)) return
   sendPayload(buildPayload('performance', name, options, data))
 }

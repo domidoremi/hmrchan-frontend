@@ -131,7 +131,7 @@ self.addEventListener('install', (event) => {
         .filter(({ result }) => result.status === 'rejected')
 
       if (failures.length > 0) {
-        console.error(
+        swWarn(
           '[SW] Install completed with partial precache failure:',
           failures.map(({ asset, result }) => ({
             asset,
@@ -145,7 +145,7 @@ self.addEventListener('install', (event) => {
       )
 
       if (missingEssentialAssets.length > 0) {
-        console.error('[SW] Essential precache assets missing:', missingEssentialAssets)
+        swWarn('[SW] Essential precache assets missing:', missingEssentialAssets)
       }
 
       // console.log('[SW] Install complete')
@@ -492,7 +492,7 @@ async function cacheFirstMedia(request) {
 
     return response
   } catch (error) {
-    console.error('[SW] Media fetch failed:', error)
+    swWarn('[SW] Media fetch failed:', request.url, error)
     // 返回占位符图片
     return getPlaceholderImage()
   }

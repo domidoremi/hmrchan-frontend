@@ -757,8 +757,9 @@ function setUiStyle(value: UiStyle) {
   settingsStore.setUiStyle(value)
 }
 
-function changeLocale(code: SupportedLocale) {
-  void setLocale(code)
+async function changeLocale(code: SupportedLocale) {
+  if (code === locale.value) return
+  await setLocale(code)
 }
 
 function toggleHeroSection() {
