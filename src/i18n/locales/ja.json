@@ -238,6 +238,10 @@
   },
   "settings": {
     "title": "設定",
+    "categoryAppearance": "外観",
+    "categoryExperience": "体験",
+    "categoryPrivacy": "プライバシー",
+    "categorySystem": "システム",
     "links": "リンク",
     "theme": "テーマ",
     "light": "ライト",

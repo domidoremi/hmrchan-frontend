@@ -238,6 +238,10 @@
   },
   "settings": {
     "title": "设置",
+    "categoryAppearance": "外观",
+    "categoryExperience": "体验",
+    "categoryPrivacy": "隐私",
+    "categorySystem": "系统",
     "links": "链接",
     "theme": "主题",
     "light": "浅色",
