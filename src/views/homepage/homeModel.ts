@@ -60,115 +60,396 @@ export type StoryDeckCard = {
   detailLink: string
 }
 
-function spreadInline(value: string): string {
-  return `calc(${value} * var(--home-bubble-spread-inline, 1))`
+export type BubbleLayoutTier = 'desktop' | 'tablet' | 'mobile'
+
+type BubbleSelfPlacement = 'start' | 'center' | 'end' | 'stretch'
+
+export type BubbleSlot = {
+  key: string
+  colStart: number
+  colSpan: number
+  rowStart: number
+  rowSpan: number
+  justifySelf: BubbleSelfPlacement
+  alignSelf: BubbleSelfPlacement
+  nudgeX: string
+  nudgeY: string
+  introX: string
+  introY: string
+  driftX: string
+  driftY: string
+  delay: string
+  scale: string
+  maxInlineSize: string
 }
 
-function spreadBlock(value: string): string {
-  return `calc(${value} * var(--home-bubble-spread-block, 1))`
+const MOBILE_BUBBLE_LAYOUT_MAX_WIDTH = 34 * 16
+const TABLET_BUBBLE_LAYOUT_MAX_WIDTH = 62 * 16
+
+export function resolveBubbleLayoutTier(width: number): BubbleLayoutTier {
+  if (width > 0 && width <= MOBILE_BUBBLE_LAYOUT_MAX_WIDTH) return 'mobile'
+  if (width > 0 && width <= TABLET_BUBBLE_LAYOUT_MAX_WIDTH) return 'tablet'
+  return 'desktop'
 }
 
-export const bubbleBursts = [
-  {
-    x: spreadInline('clamp(-30rem, -31vw, -17rem)'),
-    y: spreadBlock('clamp(-13.2rem, -14dvh, -7.8rem)'),
-    introX: spreadInline('clamp(-7.2rem, -8vw, -4.6rem)'),
-    introY: spreadBlock('clamp(-4.4rem, -5dvh, -2.7rem)'),
-    delay: '0s',
-    scale: '1.02',
-    tailAngle: '-148deg',
-  },
-  {
-    x: spreadInline('clamp(-11rem, -12vw, -6rem)'),
-    y: spreadBlock('clamp(-16.8rem, -18dvh, -9.4rem)'),
-    introX: spreadInline('clamp(-2.8rem, -3.6vw, -1.8rem)'),
-    introY: spreadBlock('clamp(-5.6rem, -6dvh, -3.2rem)'),
-    delay: '0.03s',
-    scale: '0.94',
-    tailAngle: '-108deg',
-  },
-  {
-    x: spreadInline('clamp(11.5rem, 13vw, 6.6rem)'),
-    y: spreadBlock('clamp(-14.6rem, -15.8dvh, -8.2rem)'),
-    introX: spreadInline('clamp(3rem, 3.8vw, 2rem)'),
-    introY: spreadBlock('clamp(-4.8rem, -5.4dvh, -3rem)'),
-    delay: '0.06s',
-    scale: '0.9',
-    tailAngle: '-28deg',
-  },
-  {
-    x: spreadInline('clamp(29rem, 31vw, 17.8rem)'),
-    y: spreadBlock('clamp(-7rem, -8dvh, -4rem)'),
-    introX: spreadInline('clamp(7.8rem, 8.4vw, 4.8rem)'),
-    introY: spreadBlock('clamp(-2.4rem, -3dvh, -1.5rem)'),
-    delay: '0.09s',
-    scale: '0.92',
-    tailAngle: '18deg',
-  },
-  {
-    x: spreadInline('clamp(-31.5rem, -32vw, -18.5rem)'),
-    y: spreadBlock('clamp(-1.6rem, -0.4dvh, 0.8rem)'),
-    introX: spreadInline('clamp(-8rem, -8.8vw, -4.8rem)'),
-    introY: spreadBlock('clamp(-0.2rem, 0.4dvh, 0.8rem)'),
-    delay: '0.12s',
-    scale: '0.88',
-    tailAngle: '164deg',
-  },
-  {
-    x: spreadInline('clamp(31rem, 31vw, 18.5rem)'),
-    y: spreadBlock('clamp(0.2rem, 1dvh, 1.8rem)'),
-    introX: spreadInline('clamp(8.2rem, 8.8vw, 5rem)'),
-    introY: spreadBlock('clamp(0.4rem, 0.8dvh, 1rem)'),
-    delay: '0.15s',
-    scale: '0.9',
-    tailAngle: '32deg',
-  },
-  {
-    x: spreadInline('clamp(-22rem, -23vw, -12rem)'),
-    y: spreadBlock('clamp(4.8rem, 5.5dvh, 3rem)'),
-    introX: spreadInline('clamp(-5.6rem, -6vw, -3.3rem)'),
-    introY: spreadBlock('clamp(2rem, 2.4dvh, 1.2rem)'),
-    delay: '0.18s',
-    scale: '0.92',
-    tailAngle: '120deg',
-  },
-  {
-    x: '0rem',
-    y: spreadBlock('clamp(5.8rem, 6.4dvh, 3.6rem)'),
-    introX: '0rem',
-    introY: spreadBlock('clamp(2.4rem, 2.8dvh, 1.4rem)'),
-    delay: '0.21s',
-    scale: '0.92',
-    tailAngle: '92deg',
-  },
-  {
-    x: spreadInline('clamp(21rem, 22vw, 12rem)'),
-    y: spreadBlock('clamp(4.9rem, 5.6dvh, 3rem)'),
-    introX: spreadInline('clamp(5.2rem, 5.8vw, 3.2rem)'),
-    introY: spreadBlock('clamp(1.8rem, 2.2dvh, 1.1rem)'),
-    delay: '0.24s',
-    scale: '0.88',
-    tailAngle: '64deg',
-  },
-  {
-    x: spreadInline('clamp(-8rem, -8.8vw, -4.6rem)'),
-    y: spreadBlock('clamp(6.3rem, 7dvh, 3.9rem)'),
-    introX: spreadInline('clamp(-1.8rem, -2.2vw, -1rem)'),
-    introY: spreadBlock('clamp(2.8rem, 3dvh, 1.6rem)'),
-    delay: '0.27s',
-    scale: '0.86',
-    tailAngle: '104deg',
-  },
-] as const
+export const bubbleSlotsByTier: Record<BubbleLayoutTier, readonly BubbleSlot[]> = {
+  desktop: [
+    {
+      key: 'north-west',
+      colStart: 1,
+      colSpan: 4,
+      rowStart: 1,
+      rowSpan: 2,
+      justifySelf: 'start',
+      alignSelf: 'start',
+      nudgeX: '-0.35rem',
+      nudgeY: '-0.25rem',
+      introX: '-1rem',
+      introY: '-0.85rem',
+      driftX: '0.2rem',
+      driftY: '0.22rem',
+      delay: '0s',
+      scale: '1.02',
+      maxInlineSize: '15.5rem',
+    },
+    {
+      key: 'north-center',
+      colStart: 4,
+      colSpan: 5,
+      rowStart: 1,
+      rowSpan: 2,
+      justifySelf: 'center',
+      alignSelf: 'start',
+      nudgeX: '0rem',
+      nudgeY: '-0.35rem',
+      introX: '0rem',
+      introY: '-0.95rem',
+      driftX: '0.16rem',
+      driftY: '0.18rem',
+      delay: '0.03s',
+      scale: '0.98',
+      maxInlineSize: '14.5rem',
+    },
+    {
+      key: 'north-east',
+      colStart: 9,
+      colSpan: 4,
+      rowStart: 1,
+      rowSpan: 2,
+      justifySelf: 'end',
+      alignSelf: 'start',
+      nudgeX: '0.35rem',
+      nudgeY: '-0.2rem',
+      introX: '1rem',
+      introY: '-0.8rem',
+      driftX: '0.2rem',
+      driftY: '0.22rem',
+      delay: '0.06s',
+      scale: '0.96',
+      maxInlineSize: '15.5rem',
+    },
+    {
+      key: 'mid-left',
+      colStart: 1,
+      colSpan: 4,
+      rowStart: 3,
+      rowSpan: 2,
+      justifySelf: 'start',
+      alignSelf: 'center',
+      nudgeX: '-0.4rem',
+      nudgeY: '0rem',
+      introX: '-1.15rem',
+      introY: '0rem',
+      driftX: '0.2rem',
+      driftY: '0.16rem',
+      delay: '0.09s',
+      scale: '0.94',
+      maxInlineSize: '15rem',
+    },
+    {
+      key: 'mid-right',
+      colStart: 9,
+      colSpan: 4,
+      rowStart: 3,
+      rowSpan: 2,
+      justifySelf: 'end',
+      alignSelf: 'center',
+      nudgeX: '0.4rem',
+      nudgeY: '0rem',
+      introX: '1.15rem',
+      introY: '0rem',
+      driftX: '0.2rem',
+      driftY: '0.16rem',
+      delay: '0.12s',
+      scale: '0.94',
+      maxInlineSize: '15rem',
+    },
+    {
+      key: 'south-left',
+      colStart: 2,
+      colSpan: 4,
+      rowStart: 5,
+      rowSpan: 2,
+      justifySelf: 'start',
+      alignSelf: 'end',
+      nudgeX: '-0.28rem',
+      nudgeY: '0.28rem',
+      introX: '-0.9rem',
+      introY: '0.85rem',
+      driftX: '0.16rem',
+      driftY: '0.18rem',
+      delay: '0.15s',
+      scale: '0.96',
+      maxInlineSize: '14.75rem',
+    },
+    {
+      key: 'south-center',
+      colStart: 5,
+      colSpan: 4,
+      rowStart: 5,
+      rowSpan: 2,
+      justifySelf: 'center',
+      alignSelf: 'end',
+      nudgeX: '0rem',
+      nudgeY: '0.34rem',
+      introX: '0rem',
+      introY: '0.95rem',
+      driftX: '0.14rem',
+      driftY: '0.16rem',
+      delay: '0.18s',
+      scale: '0.98',
+      maxInlineSize: '13.5rem',
+    },
+    {
+      key: 'south-right',
+      colStart: 8,
+      colSpan: 4,
+      rowStart: 5,
+      rowSpan: 2,
+      justifySelf: 'end',
+      alignSelf: 'end',
+      nudgeX: '0.32rem',
+      nudgeY: '0.3rem',
+      introX: '0.95rem',
+      introY: '0.85rem',
+      driftX: '0.16rem',
+      driftY: '0.18rem',
+      delay: '0.21s',
+      scale: '0.96',
+      maxInlineSize: '14.75rem',
+    },
+  ],
+  tablet: [
+    {
+      key: 'tablet-top-left',
+      colStart: 1,
+      colSpan: 4,
+      rowStart: 1,
+      rowSpan: 2,
+      justifySelf: 'start',
+      alignSelf: 'start',
+      nudgeX: '-0.25rem',
+      nudgeY: '-0.22rem',
+      introX: '-0.8rem',
+      introY: '-0.75rem',
+      driftX: '0.14rem',
+      driftY: '0.16rem',
+      delay: '0s',
+      scale: '1.01',
+      maxInlineSize: '13.5rem',
+    },
+    {
+      key: 'tablet-top-right',
+      colStart: 5,
+      colSpan: 4,
+      rowStart: 1,
+      rowSpan: 2,
+      justifySelf: 'end',
+      alignSelf: 'start',
+      nudgeX: '0.25rem',
+      nudgeY: '-0.22rem',
+      introX: '0.8rem',
+      introY: '-0.75rem',
+      driftX: '0.14rem',
+      driftY: '0.16rem',
+      delay: '0.03s',
+      scale: '0.99',
+      maxInlineSize: '13.5rem',
+    },
+    {
+      key: 'tablet-mid-left',
+      colStart: 1,
+      colSpan: 4,
+      rowStart: 3,
+      rowSpan: 2,
+      justifySelf: 'start',
+      alignSelf: 'center',
+      nudgeX: '-0.25rem',
+      nudgeY: '0rem',
+      introX: '-0.85rem',
+      introY: '0rem',
+      driftX: '0.14rem',
+      driftY: '0.12rem',
+      delay: '0.06s',
+      scale: '0.96',
+      maxInlineSize: '13.25rem',
+    },
+    {
+      key: 'tablet-mid-right',
+      colStart: 5,
+      colSpan: 4,
+      rowStart: 3,
+      rowSpan: 2,
+      justifySelf: 'end',
+      alignSelf: 'center',
+      nudgeX: '0.25rem',
+      nudgeY: '0rem',
+      introX: '0.85rem',
+      introY: '0rem',
+      driftX: '0.14rem',
+      driftY: '0.12rem',
+      delay: '0.09s',
+      scale: '0.96',
+      maxInlineSize: '13.25rem',
+    },
+    {
+      key: 'tablet-bottom-left',
+      colStart: 1,
+      colSpan: 4,
+      rowStart: 5,
+      rowSpan: 2,
+      justifySelf: 'start',
+      alignSelf: 'end',
+      nudgeX: '-0.18rem',
+      nudgeY: '0.24rem',
+      introX: '-0.65rem',
+      introY: '0.8rem',
+      driftX: '0.12rem',
+      driftY: '0.15rem',
+      delay: '0.12s',
+      scale: '0.98',
+      maxInlineSize: '12.75rem',
+    },
+    {
+      key: 'tablet-bottom-right',
+      colStart: 5,
+      colSpan: 4,
+      rowStart: 5,
+      rowSpan: 2,
+      justifySelf: 'end',
+      alignSelf: 'end',
+      nudgeX: '0.18rem',
+      nudgeY: '0.24rem',
+      introX: '0.65rem',
+      introY: '0.8rem',
+      driftX: '0.12rem',
+      driftY: '0.15rem',
+      delay: '0.15s',
+      scale: '0.98',
+      maxInlineSize: '12.75rem',
+    },
+  ],
+  mobile: [
+    {
+      key: 'mobile-top',
+      colStart: 1,
+      colSpan: 4,
+      rowStart: 1,
+      rowSpan: 1,
+      justifySelf: 'stretch',
+      alignSelf: 'start',
+      nudgeX: '-0.08rem',
+      nudgeY: '-0.12rem',
+      introX: '0rem',
+      introY: '-0.55rem',
+      driftX: '0.08rem',
+      driftY: '0.1rem',
+      delay: '0s',
+      scale: '1',
+      maxInlineSize: '100%',
+    },
+    {
+      key: 'mobile-upper-mid',
+      colStart: 1,
+      colSpan: 4,
+      rowStart: 2,
+      rowSpan: 1,
+      justifySelf: 'stretch',
+      alignSelf: 'center',
+      nudgeX: '0.08rem',
+      nudgeY: '-0.04rem',
+      introX: '0rem',
+      introY: '-0.35rem',
+      driftX: '0.08rem',
+      driftY: '0.09rem',
+      delay: '0.04s',
+      scale: '0.98',
+      maxInlineSize: '100%',
+    },
+    {
+      key: 'mobile-lower-mid',
+      colStart: 1,
+      colSpan: 4,
+      rowStart: 3,
+      rowSpan: 1,
+      justifySelf: 'stretch',
+      alignSelf: 'center',
+      nudgeX: '-0.06rem',
+      nudgeY: '0.08rem',
+      introX: '0rem',
+      introY: '0.3rem',
+      driftX: '0.08rem',
+      driftY: '0.09rem',
+      delay: '0.08s',
+      scale: '0.98',
+      maxInlineSize: '100%',
+    },
+    {
+      key: 'mobile-bottom',
+      colStart: 1,
+      colSpan: 4,
+      rowStart: 4,
+      rowSpan: 1,
+      justifySelf: 'stretch',
+      alignSelf: 'end',
+      nudgeX: '0.06rem',
+      nudgeY: '0.12rem',
+      introX: '0rem',
+      introY: '0.45rem',
+      driftX: '0.08rem',
+      driftY: '0.1rem',
+      delay: '0.12s',
+      scale: '1',
+      maxInlineSize: '100%',
+    },
+  ],
+}
 
-const bubbleBurstLayoutByCount: Partial<Record<number, readonly number[]>> = {
-  1: [7],
-  2: [4, 5],
-  3: [0, 3, 7],
-  4: [0, 3, 6, 8],
-  5: [0, 3, 4, 5, 7],
-  6: [0, 3, 4, 5, 6, 8],
-  7: [0, 3, 4, 5, 6, 7, 8],
+const bubbleSlotLayoutByTier: Record<
+  BubbleLayoutTier,
+  Partial<Record<number, readonly number[]>>
+> = {
+  desktop: {
+    1: [6],
+    2: [3, 4],
+    3: [0, 2, 6],
+    4: [0, 2, 5, 7],
+    5: [0, 2, 3, 4, 6],
+    6: [0, 2, 3, 4, 5, 7],
+    7: [0, 1, 2, 3, 4, 5, 7],
+  },
+  tablet: {
+    1: [2],
+    2: [2, 3],
+    3: [0, 1, 4],
+    4: [0, 1, 4, 5],
+    5: [0, 1, 2, 3, 5],
+  },
+  mobile: {
+    1: [1],
+    2: [1, 2],
+    3: [0, 1, 2],
+  },
 }
 
 function getEvenlyDistributedBubbleIndexes(count: number, total: number): number[] {
@@ -187,20 +468,25 @@ function getEvenlyDistributedBubbleIndexes(count: number, total: number): number
   return Array.from(indexes).sort((left, right) => left - right)
 }
 
-export function selectBubbleBursts(
-  count: number,
-  bursts: readonly (typeof bubbleBursts)[number][] = bubbleBursts
-): Array<(typeof bubbleBursts)[number]> {
-  if (count <= 0 || bursts.length === 0) return []
+export function resolveBubbleSlotCount(tier: BubbleLayoutTier): number {
+  return bubbleSlotsByTier[tier].length
+}
 
-  const clampedCount = Math.min(count, bursts.length)
-  const preferredIndexes = bubbleBurstLayoutByCount[clampedCount]
+export function selectBubbleSlots(
+  count: number,
+  tier: BubbleLayoutTier,
+  slots: readonly BubbleSlot[] = bubbleSlotsByTier[tier]
+): BubbleSlot[] {
+  if (count <= 0 || slots.length === 0) return []
+
+  const clampedCount = Math.min(count, slots.length)
+  const preferredIndexes = bubbleSlotLayoutByTier[tier][clampedCount]
   const indexes =
     preferredIndexes && preferredIndexes.length === clampedCount
       ? [...preferredIndexes]
-      : getEvenlyDistributedBubbleIndexes(clampedCount, bursts.length)
+      : getEvenlyDistributedBubbleIndexes(clampedCount, slots.length)
 
-  return indexes.map((index) => bursts[index]).filter(Boolean)
+  return indexes.map((index) => slots[index]).filter(Boolean)
 }
 
 export function normalizeTag(tag: string): string {

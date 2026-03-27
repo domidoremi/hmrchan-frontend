@@ -746,7 +746,7 @@
       id="home-posts"
       ref="postsSectionRef"
       class="posts posts--bubble home-screen"
-      :revealed="hasTriggeredBubbleBurst"
+      :reveal-phase="bubbleRevealPhase"
     >
       <header class="posts-header">
         <div class="posts-header__title">
@@ -813,7 +813,11 @@
       />
 
       <template v-else>
-        <div class="bubble-stage">
+        <div
+          ref="bubbleStageRef"
+          class="bubble-stage"
+          :class="[`bubble-stage--${bubbleLayoutTier}`, { 'has-active-bubble': hasActiveBubble }]"
+        >
           <div
             v-if="isLoading && bubbleItems.length === 0"
             class="bubble-empty glass-card"
@@ -824,18 +828,27 @@
           </div>
           <template v-else-if="bubbleItems.length > 0">
             <button
-              v-for="(bubble, index) in bubbleItems"
-              :key="`bubble-${bubble.post.id}-${index}`"
+              v-for="bubble in bubbleItems"
+              :key="bubble.id"
               type="button"
               class="latest-bubble glass-card"
+              :class="bubbleStateClasses(bubble.id)"
               :style="[noGlassBackdropStyle, bubble.style]"
+              :aria-pressed="isBubbleSelected(bubble.id)"
+              :data-bubble-slot="bubble.slotKey"
+              @pointerenter="setHoveredBubble(bubble.id)"
+              @pointerleave="clearHoveredBubble(bubble.id)"
+              @focus="setHoveredBubble(bubble.id)"
+              @blur="clearHoveredBubble(bubble.id)"
               @click="openPostPreview(bubble.post, bubble.thumbnail)"
             >
-              <span class="latest-bubble__inner">
-                <span class="latest-bubble__text">{{ bubble.text }}</span>
-                <span class="latest-bubble__meta">
-                  <span class="latest-bubble__author">{{ bubble.author }}</span>
-                  <span v-if="bubble.time" class="latest-bubble__time">{{ bubble.time }}</span>
+              <span class="latest-bubble__float">
+                <span class="latest-bubble__inner">
+                  <span class="latest-bubble__text">{{ bubble.text }}</span>
+                  <span class="latest-bubble__meta">
+                    <span class="latest-bubble__author">{{ bubble.author }}</span>
+                    <span v-if="bubble.time" class="latest-bubble__time">{{ bubble.time }}</span>
+                  </span>
                 </span>
               </span>
             </button>
@@ -967,12 +980,14 @@ import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { HOME_FALLBACK_POSTS, isHomeFallbackPost } from '@/fallbacks/homepageFallback'
 import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import {
+  type BubbleLayoutTier,
   buildHomePostsFromAggregate,
   clamp,
   formatHomeAuthorName,
   formatCommunityHighlightMeta as formatCommunityHighlightMetaValue,
   formatScheduleHighlightMeta as formatScheduleHighlightMetaValue,
   normalizeText,
+  resolveBubbleLayoutTier,
   resolvePostIdFromLink,
   resolvePreviewablePostLink,
 } from '@/views/homepage/homeModel'
@@ -1004,6 +1019,7 @@ let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
 let scrollTriggerReadyPromise: Promise<boolean> | null = null
 
 const SCENE_LAYOUT_REFRESH_THRESHOLD_PX = 24
+const BUBBLE_EXIT_DURATION_MS = 420
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
 
@@ -1064,6 +1080,11 @@ const previewPost = ref<PostListItem | null>(null)
 const shouldMountHomepagePreviewController = computed(
   () => isPreviewOpen.value || Boolean(previewPostId.value)
 )
+const hoveredBubbleId = ref<string | null>(null)
+const selectedBubbleId = computed(() =>
+  isPreviewOpen.value ? normalizeText(previewPostId.value) || null : null
+)
+const hasActiveBubble = computed(() => Boolean(selectedBubbleId.value || hoveredBubbleId.value))
 
 // Loading & error state
 const isLoading = ref(false)
@@ -1091,6 +1112,7 @@ type HomeSupportRefreshTargets = {
 
 // DOM refs
 const postsSectionRef = useTemplateRef<HomeSectionInstance>('postsSectionRef')
+const bubbleStageRef = useTemplateRef<HTMLElement>('bubbleStageRef')
 const featuredSectionRef = useTemplateRef<HomeSectionInstance>('featuredSectionRef')
 const storyDeckRef = useTemplateRef<HomeSectionInstance>('storyDeckRef')
 const homeQuickNavAnchors = homeSectionAnchors
@@ -1099,8 +1121,8 @@ let homeSectionObserver: IntersectionObserver | null = null
 
 const railProgress = ref(0)
 const storyProgress = ref(0)
-const bubbleRevealPhase = ref<'idle' | 'arming' | 'revealed'>('idle')
-const hasTriggeredBubbleBurst = computed(() => bubbleRevealPhase.value === 'revealed')
+const bubbleLayoutTier = ref<BubbleLayoutTier>('desktop')
+const bubbleRevealPhase = ref<'idle' | 'arming' | 'revealed' | 'exiting'>('idle')
 const viewportSceneBlend = ref({
   heroRail: 0,
   railPosts: 0,
@@ -1154,6 +1176,7 @@ const {
   homeScheduleHighlights,
   homeCommunityHighlights,
   shouldAnimate,
+  bubbleLayoutTier,
   translate: t,
   locale,
 })
@@ -1283,17 +1306,47 @@ function scrollToHomeSection(id: HomeSectionAnchor['id']) {
   })
 }
 
+function refreshBubbleLayoutTier() {
+  const width = Math.round(bubbleStageRef.value?.getBoundingClientRect().width ?? 0)
+  bubbleLayoutTier.value = resolveBubbleLayoutTier(width)
+}
+
+function disconnectBubbleStageLayoutObserver() {
+  bubbleStageResizeObserver?.disconnect()
+  bubbleStageResizeObserver = null
+}
+
+function observeBubbleStageLayout() {
+  if (typeof window === 'undefined') return
+
+  disconnectBubbleStageLayoutObserver()
+  refreshBubbleLayoutTier()
+
+  if (!bubbleStageRef.value) return
+
+  bubbleStageResizeObserver = createResizeObserver((entries) => {
+    for (const entry of entries) {
+      if (!(entry.target instanceof HTMLElement)) continue
+      bubbleLayoutTier.value = resolveBubbleLayoutTier(Math.round(entry.contentRect.width))
+    }
+  })
+
+  bubbleStageResizeObserver?.observe(bubbleStageRef.value)
+}
+
 let storyDeckTrigger: ScrollTriggerInstance | null = null
 let featuredRailTrigger: ScrollTriggerInstance | null = null
 let sceneSetupFrame: number | null = null
 let sceneSetupQueued = false
 let scenesEnabled = false
 let sceneResizeObserver: ResizeObserver | null = null
+let bubbleStageResizeObserver: ResizeObserver | null = null
 let sceneObservedSizes = new WeakMap<HTMLElement, { width: number; height: number }>()
 const scheduleSceneRefreshFromResize = throttleRAF(() => {
   scheduleSceneSetup()
 })
 let bubbleBurstReplayFrame: number | null = null
+let bubbleExitResetTimer: ReturnType<typeof setTimeout> | null = null
 let viewportSceneFrame: number | null = null
 let viewportSceneTrackingBound = false
 
@@ -1399,9 +1452,18 @@ watchSyncEffect(() => {
   }
 })
 
+watch(isPreviewOpen, (open) => {
+  if (!open) {
+    clearHoveredBubble()
+  }
+})
+
 onActivated(() => {
   setHomeSceneLifecycleEnabled(true)
   observeHomeSections()
+  void nextTick(() => {
+    observeBubbleStageLayout()
+  })
   if (
     (homeDataSource.value === 'idle' || homeDataSource.value === 'fallback') &&
     !isLoading.value
@@ -1416,6 +1478,7 @@ onDeactivated(() => {
   abortHomeSupportRefresh()
   setRailNavbarLock(false)
   disconnectHomeSectionObserver()
+  disconnectBubbleStageLayoutObserver()
 })
 let homeRequestController: AbortController | null = null
 
@@ -1699,9 +1762,32 @@ function clearBubbleBurstReplayFrame() {
   bubbleBurstReplayFrame = null
 }
 
+function clearBubbleExitResetTimer() {
+  if (bubbleExitResetTimer === null) return
+  clearTimeout(bubbleExitResetTimer)
+  bubbleExitResetTimer = null
+}
+
 function resetBubbleRevealState() {
   clearBubbleBurstReplayFrame()
+  clearBubbleExitResetTimer()
   bubbleRevealPhase.value = 'idle'
+}
+
+function startBubbleRetreat() {
+  clearBubbleBurstReplayFrame()
+  clearBubbleExitResetTimer()
+
+  if (!shouldAnimate.value) {
+    bubbleRevealPhase.value = 'idle'
+    return
+  }
+
+  bubbleRevealPhase.value = 'exiting'
+  bubbleExitResetTimer = window.setTimeout(() => {
+    bubbleExitResetTimer = null
+    bubbleRevealPhase.value = 'idle'
+  }, BUBBLE_EXIT_DURATION_MS)
 }
 
 function clearViewportSceneFrame() {
@@ -1782,7 +1868,9 @@ function updateViewportSceneBlend() {
   if (typeof window === 'undefined') return
 
   if (isCompactHomeViewport()) {
-    resetBubbleRevealState()
+    clearBubbleBurstReplayFrame()
+    clearBubbleExitResetTimer()
+    bubbleRevealPhase.value = bubbleItems.value.length > 0 ? 'revealed' : 'idle'
     viewportSceneBlend.value = {
       heroRail: 0,
       railPosts: 0,
@@ -1822,7 +1910,10 @@ function updateViewportSceneBlend() {
   }
 
   if (bubbleRevealWindow.shouldReveal) {
-    if (bubbleRevealPhase.value === 'idle' && bubbleBurstReplayFrame === null) {
+    if (
+      (bubbleRevealPhase.value === 'idle' || bubbleRevealPhase.value === 'exiting') &&
+      bubbleBurstReplayFrame === null
+    ) {
       if (shouldAnimate.value) {
         restartBubbleBurst()
       } else {
@@ -1834,7 +1925,7 @@ function updateViewportSceneBlend() {
     bubbleRevealPhase.value === 'revealed' &&
     bubbleBurstReplayFrame === null
   ) {
-    resetBubbleRevealState()
+    startBubbleRetreat()
   }
 
   setRailNavbarLock(railLockActive)
@@ -1868,7 +1959,9 @@ function unbindViewportSceneBlendTracking() {
 function restartBubbleBurst() {
   if (typeof window === 'undefined') return
 
-  resetBubbleRevealState()
+  clearBubbleExitResetTimer()
+  clearBubbleBurstReplayFrame()
+  bubbleRevealPhase.value = 'idle'
 
   if (bubbleItems.value.length === 0) return
   if (!shouldAnimate.value) {
@@ -2076,6 +2169,49 @@ function markHomeMediaFailed(source: string | null | undefined) {
   failedHomeMediaUrls.value = next
 }
 
+function setHoveredBubble(bubbleId: string) {
+  const nextId = normalizeText(bubbleId)
+  if (!nextId) return
+  hoveredBubbleId.value = nextId
+}
+
+function clearHoveredBubble(bubbleId?: string | null) {
+  if (!bubbleId) {
+    hoveredBubbleId.value = null
+    return
+  }
+
+  const nextId = normalizeText(bubbleId)
+  if (hoveredBubbleId.value === nextId) {
+    hoveredBubbleId.value = null
+  }
+}
+
+function isBubbleSelected(bubbleId: string): boolean {
+  return selectedBubbleId.value === normalizeText(bubbleId)
+}
+
+function isBubbleHovered(bubbleId: string): boolean {
+  const normalizedId = normalizeText(bubbleId)
+  if (!normalizedId) return false
+  return !isBubbleSelected(normalizedId) && hoveredBubbleId.value === normalizedId
+}
+
+function isBubbleDimmed(bubbleId: string): boolean {
+  const normalizedId = normalizeText(bubbleId)
+  if (!normalizedId || !hasActiveBubble.value) return false
+  if (selectedBubbleId.value) return selectedBubbleId.value !== normalizedId
+  return hoveredBubbleId.value !== normalizedId
+}
+
+function bubbleStateClasses(bubbleId: string) {
+  return {
+    'is-hovered': isBubbleHovered(bubbleId),
+    'is-selected': isBubbleSelected(bubbleId),
+    'is-dimmed': isBubbleDimmed(bubbleId),
+  }
+}
+
 function openPostPreview(post: PostListItem, thumbnailSrc: string | null) {
   if (isHomeFallbackPost(post)) {
     void router.push('/explore')
@@ -2092,6 +2228,7 @@ function openPostPreview(post: PostListItem, thumbnailSrc: string | null) {
   previewPostId.value = resolvedPostId
   previewPost.value = { ...post, id: resolvedPostId }
   previewThumbnailSrc.value = thumbnailSrc
+  hoveredBubbleId.value = resolvedPostId
   isPreviewOpen.value = true
 }
 
@@ -2111,6 +2248,9 @@ watch(
   [railSlideCount, () => storyCardCount.value, () => bubbleItems.value.length, shouldAnimate],
   () => {
     resetBubbleRevealState()
+    if (isCompactHomeViewport() && bubbleItems.value.length > 0) {
+      bubbleRevealPhase.value = 'revealed'
+    }
     if (!scenesEnabled) return
     scheduleSceneSetup()
   }
@@ -2119,6 +2259,9 @@ watch(
 onMounted(() => {
   setHomeSceneLifecycleEnabled(true)
   observeHomeSections()
+  void nextTick(() => {
+    observeBubbleStageLayout()
+  })
   void fetchHomeData()
 })
 
@@ -2128,6 +2271,7 @@ onBeforeUnmount(() => {
   abortHomeSupportRefresh()
   setRailNavbarLock(false)
   disconnectHomeSectionObserver()
+  disconnectBubbleStageLayoutObserver()
 })
 </script>
 
@@ -2158,10 +2302,7 @@ onBeforeUnmount(() => {
   --home-story-copy-max-inline: 27rem;
   --home-story-visual-max-inline: 31rem;
   --home-story-merge-max-inline: 74rem;
-  --home-bubble-spread-inline: 1;
-  --home-bubble-spread-block: 0.72;
   --home-bubble-max-inline: 18.5rem;
-  --home-bubble-inner-max-inline: 15rem;
   --home-blush-rgb: 246, 218, 229;
   --home-mist-rgb: 199, 220, 244;
   --home-lilac-rgb: 219, 211, 245;
@@ -3755,12 +3896,14 @@ onBeforeUnmount(() => {
 }
 
 .bubble-empty {
-  position: absolute;
-  inset: var(--spacing-4);
   display: grid;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
   place-items: center;
   text-align: center;
   gap: var(--spacing-2);
+  min-block-size: 100%;
+  inline-size: 100%;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
 }
@@ -5216,13 +5359,13 @@ onBeforeUnmount(() => {
 
 .bubble-stage {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  align-items: center;
-  align-content: center;
-  justify-items: center;
-  gap: clamp(0.75rem, 1.2vw, 0.95rem);
-  padding: clamp(0.875rem, 1.5vw, 1.1rem);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  align-items: stretch;
+  align-content: stretch;
+  justify-items: stretch;
+  gap: clamp(0.7rem, 1vw, 0.95rem);
+  padding: clamp(1rem, 1.8vw, 1.3rem);
   margin-top: 0;
   block-size: 100%;
   min-block-size: 0;
@@ -5241,12 +5384,28 @@ onBeforeUnmount(() => {
   overflow: clip;
 }
 
+.bubble-stage--tablet {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+}
+
+.bubble-stage--mobile {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.55rem, 1vw, 0.75rem);
+  padding: clamp(0.625rem, 1.4vw, 0.875rem);
+}
+
 .latest-bubble {
   display: grid;
-  inline-size: min(100%, clamp(11.5rem, 17vw, 18rem));
+  grid-column: var(--bubble-col-start, auto) / span var(--bubble-col-span, 1);
+  grid-row: var(--bubble-row-start, auto) / span var(--bubble-row-span, 1);
+  justify-self: var(--bubble-justify-self, center);
+  align-self: var(--bubble-align-self, center);
+  inline-size: min(100%, var(--bubble-max-inline, var(--home-bubble-max-inline)));
   max-inline-size: 100%;
-  block-size: auto;
-  min-block-size: auto;
+  min-inline-size: 0;
+  min-block-size: 0;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
@@ -5256,23 +5415,36 @@ onBeforeUnmount(() => {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   pointer-events: none;
-  transform: translate3d(
-      calc(var(--bubble-x-intro, 0rem) * 0.26),
-      calc(var(--bubble-y-intro, 0rem) * 0.26),
-      0
-    )
-    scale(0.72);
-  transition: opacity 240ms var(--ease-out-smooth);
+  transform: translate3d(var(--bubble-intro-x, 0rem), var(--bubble-intro-y, 0rem), 0) scale(0.92);
+  transition:
+    opacity 240ms var(--ease-out-smooth),
+    z-index 220ms var(--ease-out-smooth);
   will-change: transform, opacity;
   backface-visibility: hidden;
+  z-index: 1;
 }
 
-.latest-bubble:nth-child(n + 9) {
-  display: none;
+.latest-bubble__float {
+  display: grid;
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 0;
+  transform: translate3d(var(--bubble-nudge-x, 0rem), var(--bubble-nudge-y, 0rem), 0);
+  will-change: transform;
 }
 
-.latest-bubble::after {
-  display: none;
+.bubble-stage.has-active-bubble .latest-bubble.is-dimmed {
+  z-index: 1;
+}
+
+.latest-bubble.is-hovered,
+.latest-bubble.is-selected,
+.latest-bubble:focus-visible {
+  z-index: 3;
+}
+
+.latest-bubble:focus-visible {
+  outline: none;
 }
 
 .latest-bubble__inner {
@@ -5280,8 +5452,8 @@ onBeforeUnmount(() => {
   grid-template-rows: minmax(0, 1fr) auto;
   gap: clamp(0.45rem, 0.8vw, 0.625rem);
   inline-size: 100%;
-  block-size: auto;
-  min-block-size: clamp(7.5rem, 12vw, 10rem);
+  block-size: 100%;
+  min-block-size: clamp(6.75rem, 10vw, 8.75rem);
   max-inline-size: 100%;
   padding: clamp(0.8rem, 1.3vw, 1rem);
   border-radius: var(--home-card-radius) var(--home-shell-radius) var(--home-shell-radius)
@@ -5292,8 +5464,14 @@ onBeforeUnmount(() => {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   text-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.08);
-  transform: none;
-  transition: opacity 320ms var(--ease-out-smooth);
+  transform: scale(var(--bubble-scale, 1));
+  transform-origin: center center;
+  transition:
+    transform 220ms var(--ease-out-smooth),
+    opacity 220ms var(--ease-out-smooth),
+    box-shadow 220ms var(--ease-out-smooth),
+    border-color 220ms var(--ease-out-smooth),
+    background 220ms var(--ease-out-smooth);
   backface-visibility: hidden;
 }
 
@@ -5305,19 +5483,57 @@ onBeforeUnmount(() => {
   line-height: 1.44;
   text-wrap: pretty;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 4;
+}
+
+.latest-bubble.is-hovered .latest-bubble__inner,
+.latest-bubble:focus-visible .latest-bubble__inner {
+  box-shadow:
+    0 1.2rem 2.8rem -1.8rem rgba(15, 23, 42, 0.36),
+    0 0 0 0.1rem rgba(var(--color-primary-rgb), 0.18);
+  transform: scale(calc(var(--bubble-scale, 1) + 0.02));
+}
+
+.latest-bubble.is-selected .latest-bubble__inner {
+  border-color: rgba(var(--color-primary-rgb), 0.32);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--color-primary-rgb), 0.08),
+      rgba(var(--color-primary-rgb), 0.02)
+    ),
+    var(--home-panel-muted-strong);
+  box-shadow:
+    0 1.5rem 3.4rem -1.9rem rgba(15, 23, 42, 0.38),
+    0 0 0 0.12rem rgba(var(--color-primary-rgb), 0.26);
+  transform: scale(calc(var(--bubble-scale, 1) + 0.03));
+}
+
+.bubble-stage.has-active-bubble .latest-bubble.is-dimmed .latest-bubble__inner {
+  opacity: 0.76;
+  transform: scale(calc(var(--bubble-scale, 1) - 0.02));
 }
 
 .posts--revealed .latest-bubble {
   opacity: 1;
   pointer-events: auto;
-  animation: bubbleBurstFromGrid 760ms var(--ease-fluid) both;
+  animation: bubbleBurstToSlot 760ms var(--ease-fluid) both;
   animation-delay: var(--bubble-delay, 0s);
 }
 
-.posts--revealed .latest-bubble__inner {
+.posts--revealed .latest-bubble__float {
+  animation: bubbleDrift 5.4s ease-in-out infinite;
+  animation-delay: var(--bubble-delay, 0s);
+}
+
+.posts--exiting .latest-bubble {
   opacity: 1;
-  transition-delay: var(--bubble-delay, 0s);
+  pointer-events: none;
+  animation: bubbleRetreatFromSlot 420ms var(--ease-out-smooth) both;
+}
+
+.posts--exiting .latest-bubble__float {
+  animation: none;
 }
 
 .media-slices {
@@ -5896,35 +6112,49 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes bubbleBurstFromGrid {
+@keyframes bubbleBurstToSlot {
   0% {
     opacity: 0;
-    transform: translate3d(
-        calc(var(--bubble-x-intro, 0rem) * 0.26),
-        calc(var(--bubble-y-intro, 0rem) * 0.26),
-        0
-      )
-      scale(0.72);
-  }
-
-  58% {
-    opacity: 1;
-    transform: translate3d(
-        calc(var(--bubble-x, 0rem) * 0.18),
-        calc(var(--bubble-y, 0rem) * 0.18),
-        0
-      )
-      scale(calc(var(--bubble-scale, 1) * 1.01));
+    transform: translate3d(var(--bubble-intro-x, 0rem), var(--bubble-intro-y, 0rem), 0) scale(0.92);
   }
 
   100% {
     opacity: 1;
+    transform: translate3d(0rem, 0rem, 0rem) scale(1);
+  }
+}
+
+@keyframes bubbleRetreatFromSlot {
+  0% {
+    opacity: 1;
+    transform: translate3d(0rem, 0rem, 0rem) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--bubble-intro-x, 0rem), var(--bubble-intro-y, 0rem), 0) scale(0.92);
+  }
+}
+
+@keyframes bubbleDrift {
+  0% {
+    transform: translate3d(var(--bubble-nudge-x, 0rem), var(--bubble-nudge-y, 0rem), 0rem);
+  }
+
+  50% {
     transform: translate3d(
-        calc(var(--bubble-x, 0rem) * 0.16),
-        calc(var(--bubble-y, 0rem) * 0.16),
-        0
-      )
-      scale(var(--bubble-scale, 1));
+      calc(var(--bubble-nudge-x, 0rem) + var(--bubble-drift-x, 0rem)),
+      calc(var(--bubble-nudge-y, 0rem) - var(--bubble-drift-y, 0rem)),
+      0rem
+    );
+  }
+
+  100% {
+    transform: translate3d(
+      calc(var(--bubble-nudge-x, 0rem) - var(--bubble-drift-x, 0rem)),
+      calc(var(--bubble-nudge-y, 0rem) + var(--bubble-drift-y, 0rem)),
+      0rem
+    );
   }
 }
 
@@ -5960,10 +6190,7 @@ onBeforeUnmount(() => {
     --home-story-copy-max-inline: 29rem;
     --home-story-visual-max-inline: 33rem;
     --home-story-merge-max-inline: 80rem;
-    --home-bubble-spread-inline: 1.14;
-    --home-bubble-spread-block: 0.82;
     --home-bubble-max-inline: 20.5rem;
-    --home-bubble-inner-max-inline: 16.25rem;
   }
 }
 
@@ -5979,10 +6206,7 @@ onBeforeUnmount(() => {
     --home-story-copy-max-inline: 33rem;
     --home-story-visual-max-inline: 39rem;
     --home-story-merge-max-inline: 94rem;
-    --home-bubble-spread-inline: 1.34;
-    --home-bubble-spread-block: 0.92;
     --home-bubble-max-inline: 22.75rem;
-    --home-bubble-inner-max-inline: 18.25rem;
   }
 
   .hero {
@@ -6274,43 +6498,17 @@ onBeforeUnmount(() => {
   }
 
   .bubble-stage {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: stretch;
-    align-content: stretch;
     gap: clamp(0.55rem, 1vw, 0.75rem);
     padding: clamp(0.625rem, 1.2vw, 0.875rem);
   }
 
-  .bubble-stage::before,
-  .bubble-stage::after,
-  .latest-bubble::after {
-    display: none;
-  }
-
   .latest-bubble {
-    inline-size: 100%;
-    block-size: 100%;
-    max-inline-size: none;
-    opacity: 1;
-    pointer-events: auto;
-    transform: none !important;
-    display: grid;
-    min-block-size: 0;
-  }
-
-  .latest-bubble:nth-child(n + 7) {
-    display: none;
+    inline-size: min(100%, var(--bubble-max-inline, 13.5rem));
   }
 
   .latest-bubble__inner {
-    inline-size: 100%;
-    block-size: 100%;
-    min-block-size: 0;
-    max-inline-size: none;
     padding: clamp(0.625rem, 1.1vw, 0.8rem);
     gap: 0.375rem;
-    transform: none;
-    grid-template-rows: minmax(0, 1fr) auto;
   }
 
   .latest-bubble__text {
@@ -6761,7 +6959,7 @@ onBeforeUnmount(() => {
   }
 
   .latest-bubble__inner {
-    max-inline-size: min(18ch, 12rem);
+    max-inline-size: min(100%, 13rem);
   }
 
   .portal-card {
@@ -7188,12 +7386,7 @@ onBeforeUnmount(() => {
   }
 
   .bubble-stage {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(0, 1fr));
     gap: 0.625rem;
-    align-content: stretch;
-    align-items: stretch;
     padding: 0.625rem;
     block-size: 100%;
     min-block-size: 0;
@@ -7201,43 +7394,18 @@ onBeforeUnmount(() => {
     overflow: clip;
   }
 
-  .bubble-stage::before,
-  .bubble-stage::after {
-    display: none;
-  }
-
   .latest-bubble {
     inline-size: 100%;
-    block-size: 100%;
-    max-inline-size: none;
-    opacity: 1;
-    pointer-events: auto;
-    transform: none !important;
-    display: grid;
-    min-block-size: 0;
-  }
-
-  .posts--revealed .latest-bubble {
-    animation: none;
-  }
-
-  .latest-bubble:nth-child(n + 5) {
-    display: none;
-  }
-
-  .latest-bubble::after {
-    display: none;
+    justify-self: stretch;
+    align-self: stretch;
   }
 
   .latest-bubble__inner {
-    inline-size: 100%;
     block-size: 100%;
     min-block-size: 0;
     grid-template-rows: minmax(0, 1fr) auto;
-    max-inline-size: none;
     padding: 0.75rem 0.8125rem;
     border-radius: 1.125rem;
-    transform: none;
     gap: 0.375rem;
   }
 
@@ -7247,7 +7415,7 @@ onBeforeUnmount(() => {
     font-size: var(--text-base);
     line-height: 1.45;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
   }
 
   .latest-bubble__meta {
@@ -7429,7 +7597,9 @@ onBeforeUnmount(() => {
   .hero--animated .hero-copy__line,
   .hero--animated .hero-copy__right > *,
   .posts--revealed .latest-bubble,
-  .posts--revealed .latest-bubble__inner {
+  .posts--revealed .latest-bubble__float,
+  .posts--revealed .latest-bubble__inner,
+  .posts--exiting .latest-bubble {
     animation: none;
   }
 
@@ -7447,6 +7617,12 @@ onBeforeUnmount(() => {
   .latest-bubble {
     opacity: 1;
     transform: none;
+  }
+
+  .latest-bubble__float,
+  .latest-bubble__inner {
+    transform: none;
+    transition: none;
   }
 
   .media-slice {

@@ -90,17 +90,27 @@ vi.mock('@/components/home/HomepagePreviewController.vue', async () => {
 
 function createSectionModuleStub(name: string) {
   return async () => {
-    const { defineComponent, ref } = await import('vue')
+    const { computed, defineComponent, ref } = await import('vue')
 
     return {
       default: defineComponent({
         name,
+        props: {
+          revealPhase: {
+            type: String,
+            default: 'idle',
+          },
+        },
         setup(_, { expose }) {
           const element = ref<HTMLElement | null>(null)
+          const props = _ as { revealPhase?: string }
+          const sectionClasses = computed(() =>
+            props.revealPhase && props.revealPhase !== 'idle' ? [`posts--${props.revealPhase}`] : []
+          )
           expose({ element })
-          return { element }
+          return { element, sectionClasses }
         },
-        template: '<section ref="element"><slot /></section>',
+        template: '<section ref="element" :class="sectionClasses"><slot /></section>',
       }),
     }
   }
@@ -288,6 +298,7 @@ async function mountHomePage() {
   return shallowMount(HomePage, {
     global: {
       plugins: [router, i18n],
+      renderStubDefaultSlot: true,
       stubs: {
         RouterLink: {
           template: '<a><slot /></a>',
@@ -386,6 +397,38 @@ describe('HomePage', () => {
 
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
+  })
+
+  it('adds hover and persistent selection states to latest-text bubbles', async () => {
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    const bubbles = wrapper.findAll('.latest-bubble')
+    expect(bubbles.length).toBeGreaterThan(0)
+
+    const firstBubble = bubbles[0]
+    expect(firstBubble).toBeDefined()
+
+    await firstBubble!.trigger('pointerenter')
+    expect(firstBubble!.classes()).toContain('is-hovered')
+    expect(wrapper.find('.bubble-stage').classes()).toContain('has-active-bubble')
+
+    await firstBubble!.trigger('blur')
+    expect(firstBubble!.classes()).not.toContain('is-hovered')
+
+    await firstBubble!.trigger('focus')
+    expect(firstBubble!.classes()).toContain('is-hovered')
+
+    await firstBubble!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'HomepagePreviewController' }).exists()).toBe(true)
+    expect(firstBubble!.classes()).toContain('is-selected')
+
+    wrapper.findComponent({ name: 'HomepagePreviewController' }).vm.$emit('update:isOpen', false)
+    await flushPromises()
+
+    expect(firstBubble!.classes()).not.toContain('is-selected')
   })
 
   it('sanitizes upstream non-post deep links back into the post detail flow', () => {

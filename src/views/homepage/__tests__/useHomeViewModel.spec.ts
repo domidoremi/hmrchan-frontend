@@ -23,6 +23,7 @@ describe('useHomeViewModel', () => {
       homeScheduleHighlights: ref(aggregate.trends.schedules),
       homeCommunityHighlights: ref(aggregate.trends.community),
       shouldAnimate: computed(() => false),
+      bubbleLayoutTier: ref('desktop'),
       translate: t,
       locale: ref('en-US'),
     })
@@ -50,6 +51,7 @@ describe('useHomeViewModel', () => {
       homeScheduleHighlights: ref([]),
       homeCommunityHighlights: ref([]),
       shouldAnimate: computed(() => true),
+      bubbleLayoutTier: ref('desktop'),
       translate: t,
       locale: ref('en-US'),
     })
@@ -73,6 +75,7 @@ describe('useHomeViewModel', () => {
       homeScheduleHighlights: ref(aggregate.trends.schedules),
       homeCommunityHighlights: ref(aggregate.trends.community),
       shouldAnimate: computed(() => false),
+      bubbleLayoutTier: ref('desktop'),
       translate: t,
       locale: ref('en-US'),
     })
@@ -85,7 +88,41 @@ describe('useHomeViewModel', () => {
     expect(viewModel.storyCards.value.length).toBeGreaterThan(0)
     expect(viewModel.storyCardCount.value).toBeGreaterThan(0)
     expect(viewModel.bubbleItems.value.length).toBeGreaterThan(0)
+    expect(viewModel.bubbleItems.value[0]?.style['--bubble-col-start']).toBeDefined()
+    expect(viewModel.bubbleItems.value[0]?.style['--bubble-drift-x']).toBeDefined()
     expect(viewModel.trendingAuthors.value.length).toBeGreaterThan(0)
     expect(viewModel.spotlightTextCards.value.length).toBeGreaterThan(0)
+  })
+
+  it('switches bubble slot styles when the layout tier changes', async () => {
+    const aggregate = buildHomepageBootstrapFallback()
+    const allPosts = ref(buildHomePostsFromAggregate(aggregate, t))
+    const bubbleLayoutTier = ref<'desktop' | 'tablet' | 'mobile'>('desktop')
+
+    const viewModel = useHomeViewModel({
+      homeAggregate: ref(aggregate),
+      allPosts,
+      homeDataSource: ref<'aggregate'>('aggregate'),
+      error: ref(null),
+      total: ref(allPosts.value.length),
+      homeScheduleHighlights: ref(aggregate.trends.schedules),
+      homeCommunityHighlights: ref(aggregate.trends.community),
+      shouldAnimate: computed(() => true),
+      bubbleLayoutTier,
+      translate: t,
+      locale: ref('en-US'),
+    })
+
+    await nextTick()
+
+    const desktopJustifySelf = viewModel.bubbleItems.value[0]?.style['--bubble-justify-self']
+    bubbleLayoutTier.value = 'mobile'
+    await nextTick()
+
+    expect(viewModel.bubbleItems.value.length).toBeLessThanOrEqual(4)
+    expect(viewModel.bubbleItems.value[0]?.style['--bubble-justify-self']).not.toBe(
+      desktopJustifySelf
+    )
+    expect(viewModel.bubbleItems.value[0]?.slotKey).toContain('mobile')
   })
 })
