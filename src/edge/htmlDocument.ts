@@ -425,23 +425,23 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
   }
 
   if (path === '/contact') {
-    const description = '提交产品反馈，或通过私密渠道披露安全问题。'
+    const description = '发送留言、使用问题或建议反馈，我们会尽快查看。'
     return createDocumentConfig(
       path,
       'Contact',
       description,
-      'Feedback & security',
-      'Product feedback and private security reporting',
-      '联系页首包只保留正式反馈入口与私密安全披露说明，不再展示占位式团队联系文案。',
+      'Contact',
+      'Send a message or share feedback',
+      '联系页首包聚焦于普通用户可理解的联系入口，只保留简洁的私密提交通道提示。',
       {
         shellSummary: [
-          'Use the feedback form for product issues, bugs, and improvement ideas.',
-          'Use private disclosure for vulnerabilities, authentication issues, access-control mistakes, or data exposure.',
+          'Use the contact form for questions, suggestions, corrections, or anything you want to tell us.',
+          'Leave a clear subject and a reply email so we can follow up if needed.',
         ],
         shellLinks: [
           { href: '/community', label: 'Community' },
-          { href: '/.well-known/security.txt', label: 'security.txt' },
           { href: '/about', label: 'About' },
+          { href: '/.well-known/security.txt', label: 'Private reporting' },
         ],
         structuredData: [createWebPageStructuredData('ContactPage', path, 'Contact', description)],
       }

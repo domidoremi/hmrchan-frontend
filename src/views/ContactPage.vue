@@ -5,26 +5,20 @@
         <div class="page-hero__content contact-hero__content">
           <div class="page-hero__header contact-hero__header">
             <div class="page-hero__heading contact-hero__heading">
-              <span class="page-hero__eyebrow">{{ activeTrackMeta.label }}</span>
+              <span class="page-hero__eyebrow">{{ $t('contact.title') }}</span>
               <div class="contact-hero__copy">
                 <h1 class="page-hero__title">{{ $t('contact.title') }}</h1>
-                <p class="page-hero__subtitle">{{ activeTrackMeta.subtitle }}</p>
+                <p class="page-hero__subtitle">{{ $t('contact.subtitle') }}</p>
               </div>
             </div>
 
-            <div class="contact-track-switch" :aria-label="$t('contact.workflowTitle')">
-              <button
-                v-for="track in trackOptions"
-                :key="track.value"
-                type="button"
-                class="contact-track-switch__item page-control-btn"
-                :class="{ active: activeTrack === track.value }"
-                :aria-pressed="activeTrack === track.value"
-                @click="setTrack(track.value)"
-              >
-                <span class="contact-track-switch__title">{{ track.label }}</span>
-                <span class="contact-track-switch__subtitle">{{ track.subtitle }}</span>
-              </button>
+            <div class="contact-hero__links">
+              <RouterLink to="/community" class="page-inline-cta">
+                {{ $t('nav.community') }}
+              </RouterLink>
+              <RouterLink to="/about" class="page-control-btn page-control-btn--compact">
+                {{ $t('nav.about') }}
+              </RouterLink>
             </div>
           </div>
 
@@ -38,25 +32,13 @@
               <p class="contact-highlight__value">{{ item.value }}</p>
             </article>
           </div>
-
-          <div class="contact-hero__links">
-            <RouterLink to="/community" class="page-inline-cta">
-              {{ $t('nav.community') }}
-            </RouterLink>
-            <a href="/.well-known/security.txt" class="page-control-btn page-control-btn--compact">
-              {{ $t('contact.securityTxtAction') }}
-            </a>
-            <RouterLink to="/about" class="page-control-btn page-control-btn--compact">
-              {{ $t('nav.about') }}
-            </RouterLink>
-          </div>
         </div>
       </section>
 
       <section class="contact-workflow surface-editorial" aria-labelledby="contact-workflow-title">
         <div class="contact-workflow__header">
           <div class="contact-workflow__copy">
-            <span class="page-section-kicker">{{ activeTrackMeta.label }}</span>
+            <span class="page-section-kicker">{{ $t('contact.workflowTitle') }}</span>
             <h2 id="contact-workflow-title" class="page-section-title contact-workflow__title">
               {{ $t('contact.workflowTitle') }}
             </h2>
@@ -76,131 +58,53 @@
               @click="goToStep(step.value)"
             >
               <span class="contact-stepper__index">{{ step.index }}</span>
-              <span class="contact-stepper__copy">
-                <span class="contact-stepper__label">{{ step.label }}</span>
-              </span>
+              <span class="contact-stepper__label">{{ step.label }}</span>
             </button>
           </div>
         </div>
 
         <Transition name="contact-stage" mode="out-in">
-          <section :key="`${activeTrack}-${activeStep}`" class="contact-stage surface-base">
+          <section :key="activeStep" class="contact-stage surface-base">
             <template v-if="activeStep === 1">
-              <div v-if="activeTrack === 'feedback'" id="security-reporting" class="contact-panel">
+              <div id="contact-step-topic" class="contact-panel">
                 <div class="contact-panel__header">
-                  <span class="page-section-kicker">{{ $t('contact.securityTitle') }}</span>
-                  <h3 class="contact-panel__title">{{ $t('contact.feedbackGuideTitle') }}</h3>
-                  <p class="contact-panel__subtitle">{{ $t('contact.feedbackGuideBody') }}</p>
+                  <span class="page-section-kicker">{{ $t('contact.stepExplain') }}</span>
+                  <h3 class="contact-panel__title">{{ $t('contact.topicTitle') }}</h3>
+                  <p class="contact-panel__subtitle">{{ $t('contact.topicSubtitle') }}</p>
                 </div>
 
-                <div class="contact-panel__grid">
-                  <article
-                    v-for="item in securitySummaryItems"
-                    :key="item.label"
-                    class="contact-guide-card surface-base"
+                <div class="contact-topic-grid">
+                  <button
+                    v-for="topic in contactTopicOptions"
+                    :key="topic.value"
+                    type="button"
+                    class="contact-topic-card page-control-btn"
+                    :class="{ active: selectedTopic === topic.value }"
+                    :aria-pressed="selectedTopic === topic.value"
+                    @click="selectedTopic = topic.value"
                   >
-                    <span class="contact-guide-card__label">{{ item.label }}</span>
-                    <p class="contact-guide-card__value">{{ item.value }}</p>
-                  </article>
+                    <span class="contact-topic-card__title">{{ topic.label }}</span>
+                    <span class="contact-topic-card__hint">{{ topic.hint }}</span>
+                  </button>
                 </div>
 
-                <div class="contact-panel__actions">
-                  <a
-                    href="#security-feedback-form"
-                    class="page-inline-cta"
-                    @click="prepareSecurityFeedback"
-                  >
-                    {{ $t('contact.securityAction') }}
-                  </a>
-                  <a
-                    href="/.well-known/security.txt"
-                    class="page-control-btn page-control-btn--compact"
-                  >
-                    {{ $t('contact.securityTxtAction') }}
-                  </a>
-                </div>
-              </div>
-
-              <div v-else id="direct-contact-guide" class="contact-panel">
-                <div class="contact-panel__header">
-                  <span class="page-section-kicker">{{ $t('contact.directTitle') }}</span>
-                  <h3 class="contact-panel__title">{{ $t('contact.messageGuideTitle') }}</h3>
-                  <p class="contact-panel__subtitle">{{ $t('contact.messageGuideBody') }}</p>
-                </div>
-
-                <div class="contact-panel__grid">
-                  <article
-                    v-for="item in directGuideItems"
-                    :key="item.label"
-                    class="contact-guide-card surface-base"
-                  >
-                    <span class="contact-guide-card__label">{{ item.label }}</span>
-                    <p class="contact-guide-card__value">{{ item.value }}</p>
-                  </article>
-                </div>
+                <p class="contact-panel__note">
+                  {{ $t('contact.topicNote') }}
+                </p>
               </div>
             </template>
 
             <template v-else-if="activeStep === 2">
-              <div
-                v-if="activeTrack === 'feedback'"
-                id="feedback-description"
-                class="contact-panel"
-              >
+              <div id="contact-step-details" class="contact-panel">
                 <div class="contact-panel__header">
-                  <span class="page-section-kicker">{{ $t('contact.stepDescribe') }}</span>
-                  <h3 class="contact-panel__title">{{ $t('contact.feedbackTitle') }}</h3>
-                  <p class="contact-panel__subtitle">{{ $t('contact.feedbackSubtitle') }}</p>
-                </div>
-
-                <div class="form-group">
-                  <label>{{ $t('contact.feedbackCategory') }}</label>
-                  <div
-                    class="category-list page-control-group"
-                    :aria-label="$t('contact.feedbackCategory')"
-                  >
-                    <button
-                      v-for="option in feedbackCategoryOptions"
-                      :key="option.value"
-                      type="button"
-                      class="category-btn page-control-btn page-control-btn--compact"
-                      :class="{ active: feedback.category === option.value }"
-                      :aria-pressed="feedback.category === option.value"
-                      @click="feedback.category = option.value"
-                    >
-                      {{ option.label }}
-                    </button>
-                  </div>
+                  <span class="page-section-kicker">{{ selectedTopicMeta.label }}</span>
+                  <h3 class="contact-panel__title">{{ $t('contact.detailTitle') }}</h3>
+                  <p class="contact-panel__subtitle">{{ selectedTopicMeta.hint }}</p>
                 </div>
 
                 <div class="contact-panel__grid">
                   <article
-                    v-for="item in feedbackGuideItems"
-                    :key="item.label"
-                    class="contact-guide-card surface-base"
-                  >
-                    <span class="contact-guide-card__label">{{ item.label }}</span>
-                    <p class="contact-guide-card__value">{{ item.value }}</p>
-                  </article>
-                </div>
-
-                <ul class="contact-panel__list">
-                  <li v-for="item in securityChecklistItems" :key="item">
-                    {{ item }}
-                  </li>
-                </ul>
-              </div>
-
-              <div v-else id="message-description" class="contact-panel">
-                <div class="contact-panel__header">
-                  <span class="page-section-kicker">{{ $t('contact.stepDescribe') }}</span>
-                  <h3 class="contact-panel__title">{{ $t('contact.directTitle') }}</h3>
-                  <p class="contact-panel__subtitle">{{ $t('contact.directSubtitle') }}</p>
-                </div>
-
-                <div class="contact-panel__grid">
-                  <article
-                    v-for="item in directGuideItems"
+                    v-for="item in detailGuideItems"
                     :key="item.label"
                     class="contact-guide-card surface-base"
                   >
@@ -212,68 +116,17 @@
             </template>
 
             <template v-else>
-              <div
-                v-if="activeTrack === 'feedback'"
-                id="security-feedback-form"
-                class="contact-panel"
-              >
+              <div id="contact-step-send" class="contact-panel">
                 <div class="contact-panel__header">
                   <span class="page-section-kicker">{{ $t('contact.stepSubmit') }}</span>
-                  <h3 class="contact-panel__title">{{ $t('contact.feedbackTitle') }}</h3>
-                  <p class="contact-panel__subtitle">{{ $t('contact.feedbackSubtitle') }}</p>
+                  <h3 class="contact-panel__title">{{ $t('contact.sendTitle') }}</h3>
+                  <p class="contact-panel__subtitle">{{ $t('contact.sendSubtitle') }}</p>
                 </div>
 
                 <div class="contact-form__meta">
                   <span class="summary-chip">
-                    <strong>{{ $t('contact.feedbackCategory') }}</strong>
-                    {{ selectedFeedbackCategoryLabel }}
-                  </span>
-                  <span class="summary-chip">
-                    {{ $t('contact.securityTitle') }}
-                  </span>
-                </div>
-
-                <form class="contact-form" @submit.prevent="handleFeedbackSubmit">
-                  <div class="form-group">
-                    <label for="feedback-contact">{{ $t('contact.feedbackContact') }}</label>
-                    <Input id="feedback-contact" v-model="feedback.contact" type="email" />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="feedback-message">{{ $t('contact.feedbackMessage') }}</label>
-                    <Textarea
-                      id="feedback-message"
-                      v-model="feedback.message"
-                      class="contact-textarea"
-                      rows="6"
-                      required
-                    />
-                  </div>
-
-                  <Button type="submit" :loading="isFeedbackSubmitting" full-width>
-                    {{
-                      isFeedbackSubmitting
-                        ? $t('contact.feedbackSending')
-                        : $t('contact.feedbackSend')
-                    }}
-                  </Button>
-                </form>
-              </div>
-
-              <div v-else id="contact-direct-form" class="contact-panel">
-                <div class="contact-panel__header">
-                  <span class="page-section-kicker">{{ $t('contact.stepSubmit') }}</span>
-                  <h3 class="contact-panel__title">{{ $t('contact.directTitle') }}</h3>
-                  <p class="contact-panel__subtitle">{{ $t('contact.subtitle') }}</p>
-                </div>
-
-                <div class="contact-form__meta">
-                  <span class="summary-chip">
-                    <strong>{{ $t('contact.subject') }}</strong>
-                    {{ $t('contact.messageGuideSubjectLabel') }}
-                  </span>
-                  <span class="summary-chip">
-                    {{ $t('contact.feedbackContact') }}
+                    <strong>{{ $t('contact.topicBadgeLabel') }}</strong>
+                    {{ selectedTopicMeta.label }}
                   </span>
                 </div>
 
@@ -328,12 +181,29 @@
           <button
             v-if="activeStep < 3"
             type="button"
-            class="cta-primary contact-workflow__next"
+            class="page-control-btn page-control-btn--compact active contact-workflow__next"
             @click="nextStep"
           >
             {{ $t('contact.nextStep') }}
           </button>
         </div>
+      </section>
+
+      <section
+        class="contact-private-note surface-base"
+        aria-labelledby="contact-private-note-title"
+      >
+        <div class="contact-private-note__copy">
+          <span class="page-section-kicker">{{ $t('contact.privateTitle') }}</span>
+          <h2 id="contact-private-note-title" class="contact-private-note__title">
+            {{ $t('contact.privateTitle') }}
+          </h2>
+          <p class="contact-private-note__body">{{ $t('contact.privateBody') }}</p>
+        </div>
+
+        <a href="/.well-known/security.txt" class="page-inline-cta">
+          {{ $t('contact.privateAction') }}
+        </a>
       </section>
     </div>
   </div>
@@ -347,19 +217,18 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
 import { contactService } from '@/api/contactService'
-import { feedbackService } from '@/api/feedbackService'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 
-type ContactTrack = 'feedback' | 'message'
 type ContactStep = 1 | 2 | 3
+type ContactTopic = 'general' | 'bug' | 'feature' | 'other'
 
 const { t } = useI18n()
 const toastStore = useToastStore()
 
-const activeTrack = ref<ContactTrack>('feedback')
 const activeStep = ref<ContactStep>(1)
+const selectedTopic = ref<ContactTopic>('general')
 
 const form = reactive({
   name: '',
@@ -367,120 +236,86 @@ const form = reactive({
   subject: '',
   message: '',
 })
-const feedback = reactive({
-  category: 'general' as 'general' | 'bug' | 'feature' | 'other',
-  contact: '',
-  message: '',
-})
 
 const isSubmitting = ref(false)
-const isFeedbackSubmitting = ref(false)
 
 const workflowSteps = computed(() => [
   { value: 1 as const, index: '01', label: t('contact.stepExplain') },
   { value: 2 as const, index: '02', label: t('contact.stepDescribe') },
   { value: 3 as const, index: '03', label: t('contact.stepSubmit') },
 ])
-const trackOptions = computed(() => [
+
+const contactTopicOptions = computed(() => [
   {
-    value: 'feedback' as const,
-    label: t('contact.feedbackTitle'),
-    subtitle: t('contact.feedbackSubtitle'),
+    value: 'general' as const,
+    label: t('contact.topicGeneral'),
+    hint: t('contact.topicGeneralHint'),
   },
   {
-    value: 'message' as const,
-    label: t('contact.directTitle'),
-    subtitle: t('contact.directSubtitle'),
+    value: 'bug' as const,
+    label: t('contact.topicIssue'),
+    hint: t('contact.topicIssueHint'),
+  },
+  {
+    value: 'feature' as const,
+    label: t('contact.topicSuggestion'),
+    hint: t('contact.topicSuggestionHint'),
+  },
+  {
+    value: 'other' as const,
+    label: t('contact.topicOther'),
+    hint: t('contact.topicOtherHint'),
   },
 ])
-const activeTrackMeta = computed(
-  () => trackOptions.value.find((item) => item.value === activeTrack.value) ?? trackOptions.value[0]
-)
-const feedbackCategoryOptions = computed(() => [
-  { value: 'general' as const, label: t('contact.feedbackCategoryGeneral') },
-  { value: 'bug' as const, label: t('contact.feedbackCategoryBug') },
-  { value: 'feature' as const, label: t('contact.feedbackCategoryFeature') },
-  { value: 'other' as const, label: t('contact.feedbackCategoryOther') },
-])
-const selectedFeedbackCategoryLabel = computed(
+
+const selectedTopicMeta = computed(
   () =>
-    feedbackCategoryOptions.value.find((option) => option.value === feedback.category)?.label ??
-    feedbackCategoryOptions.value[0].label
-)
-const securitySummaryItems = computed(() => [
-  {
-    label: t('contact.securitySummaryScopeLabel'),
-    value: t('contact.securitySummaryScopeValue'),
-  },
-  {
-    label: t('contact.securitySummaryChannelLabel'),
-    value: t('contact.securitySummaryChannelValue'),
-  },
-  {
-    label: t('contact.securitySummaryPreparationLabel'),
-    value: t('contact.securitySummaryPreparationValue'),
-  },
-])
-const securityChecklistItems = computed(() => [
-  t('contact.securityChecklistPrivate'),
-  t('contact.securityChecklistScope'),
-  t('contact.securityChecklistEvidence'),
-])
-const directGuideItems = computed(() => [
-  {
-    label: t('contact.messageGuideSubjectLabel'),
-    value: t('contact.messageGuideSubject'),
-  },
-  {
-    label: t('contact.messageGuideMessageLabel'),
-    value: t('contact.messageGuideMessage'),
-  },
-  {
-    label: t('contact.messageGuideReplyLabel'),
-    value: t('contact.messageGuideReply'),
-  },
-])
-const feedbackGuideItems = computed(() => [
-  {
-    label: t('contact.feedbackGuideEvidenceLabel'),
-    value: t('contact.feedbackGuideEvidence'),
-  },
-  {
-    label: t('contact.feedbackGuideChannelLabel'),
-    value: t('contact.feedbackGuideChannel'),
-  },
-  {
-    label: t('contact.feedbackGuideTimingLabel'),
-    value: t('contact.feedbackGuideTiming'),
-  },
-])
-const heroHighlights = computed(() =>
-  activeTrack.value === 'feedback' ? securitySummaryItems.value : directGuideItems.value
+    contactTopicOptions.value.find((topic) => topic.value === selectedTopic.value) ??
+    contactTopicOptions.value[0]
 )
 
-function setTrack(track: ContactTrack) {
-  activeTrack.value = track
-  activeStep.value = 1
+const heroHighlights = computed(() => [
+  {
+    label: t('contact.heroSummaryTopicLabel'),
+    value: t('contact.heroSummaryTopicValue'),
+  },
+  {
+    label: t('contact.heroSummaryReplyLabel'),
+    value: t('contact.heroSummaryReplyValue'),
+  },
+  {
+    label: t('contact.heroSummaryClarityLabel'),
+    value: t('contact.heroSummaryClarityValue'),
+  },
+])
+
+const detailGuideItems = computed(() => [
+  {
+    label: t('contact.detailContextLabel'),
+    value: t('contact.detailContextValue'),
+  },
+  {
+    label: t('contact.detailNeedLabel'),
+    value: t('contact.detailNeedValue'),
+  },
+  {
+    label: t('contact.detailReplyLabel'),
+    value: t('contact.detailReplyValue'),
+  },
+])
+
+function resolveStepTargetId(step = activeStep.value) {
+  if (step === 1) return 'contact-step-topic'
+  if (step === 2) return 'contact-step-details'
+  return 'contact-step-send'
 }
 
-function resolveStepTargetId(track = activeTrack.value, step = activeStep.value) {
-  if (step === 1) {
-    return track === 'feedback' ? 'security-reporting' : 'direct-contact-guide'
-  }
-
-  if (step === 2) {
-    return track === 'feedback' ? 'feedback-description' : 'message-description'
-  }
-
-  return track === 'feedback' ? 'security-feedback-form' : 'contact-direct-form'
-}
-
-async function focusStep(track = activeTrack.value, step = activeStep.value) {
+async function focusStep(step = activeStep.value) {
   await nextTick()
 
   if (typeof document === 'undefined') return
 
-  const target = document.getElementById(resolveStepTargetId(track, step))
+  const target = document.getElementById(resolveStepTargetId(step))
 
   if (target && typeof target.scrollIntoView === 'function') {
     target.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -489,7 +324,7 @@ async function focusStep(track = activeTrack.value, step = activeStep.value) {
 
 async function goToStep(step: ContactStep) {
   activeStep.value = step
-  await focusStep()
+  await focusStep(step)
 }
 
 function nextStep() {
@@ -502,14 +337,6 @@ function previousStep() {
   void goToStep((activeStep.value - 1) as ContactStep)
 }
 
-async function prepareSecurityFeedback(event?: Event) {
-  event?.preventDefault()
-  activeTrack.value = 'feedback'
-  feedback.category = 'bug'
-  activeStep.value = 3
-  await focusStep('feedback', 3)
-}
-
 async function handleSubmit() {
   isSubmitting.value = true
 
@@ -517,7 +344,7 @@ async function handleSubmit() {
     await contactService.sendMessage({
       name: form.name,
       email: form.email,
-      subject: form.subject,
+      subject: `${selectedTopicMeta.value.label}｜${form.subject}`,
       message: form.message,
     })
 
@@ -527,34 +354,12 @@ async function handleSubmit() {
     form.email = ''
     form.subject = ''
     form.message = ''
+    selectedTopic.value = 'general'
     activeStep.value = 1
   } catch {
     toastStore.error(t('contact.error'))
   } finally {
     isSubmitting.value = false
-  }
-}
-
-async function handleFeedbackSubmit() {
-  isFeedbackSubmitting.value = true
-
-  try {
-    await feedbackService.submit({
-      message: feedback.message,
-      contact: feedback.contact || undefined,
-      category: feedback.category,
-    })
-
-    toastStore.success(t('contact.feedbackSuccess'))
-
-    feedback.category = 'general'
-    feedback.contact = ''
-    feedback.message = ''
-    activeStep.value = 1
-  } catch {
-    toastStore.error(t('contact.feedbackError'))
-  } finally {
-    isFeedbackSubmitting.value = false
   }
 }
 </script>
@@ -566,20 +371,28 @@ async function handleFeedbackSubmit() {
 
 .container {
   display: grid;
-  gap: var(--spacing-5);
+  gap: var(--spacing-4);
 }
 
-.contact-hero__content {
-  gap: var(--spacing-4);
+.contact-hero__content,
+.contact-workflow,
+.contact-workflow__header,
+.contact-workflow__copy,
+.contact-panel,
+.contact-panel__header,
+.contact-private-note,
+.contact-private-note__copy {
+  display: grid;
+  gap: var(--spacing-3);
 }
 
 .contact-hero__header {
   display: grid;
-  gap: var(--spacing-4);
+  gap: var(--spacing-3);
 }
 
 .contact-hero__heading {
-  max-inline-size: min(100%, 48rem);
+  max-inline-size: min(100%, 46rem);
 }
 
 .contact-hero__copy {
@@ -587,103 +400,66 @@ async function handleFeedbackSubmit() {
   gap: var(--spacing-2);
 }
 
-.contact-track-switch {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
-  gap: var(--spacing-2);
-}
-
-.contact-track-switch__item {
-  display: grid;
-  justify-items: start;
-  gap: var(--spacing-1);
-  inline-size: 100%;
-  min-inline-size: 0;
-  padding: var(--spacing-3);
-  border-radius: var(--radius-xl);
-  text-align: start;
-  white-space: normal;
-}
-
-.contact-track-switch__title {
-  color: var(--color-text-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  line-height: 1.3;
-}
-
-.contact-track-switch__subtitle {
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  line-height: 1.5;
-}
-
-.contact-track-switch__item.active .contact-track-switch__title,
-.contact-track-switch__item.active .contact-track-switch__subtitle,
-.contact-stepper__item.active .contact-stepper__label {
-  color: currentColor;
-}
-
-.contact-hero__summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
-  gap: var(--spacing-3);
-}
-
-.contact-highlight {
-  display: grid;
-  gap: var(--spacing-2);
-  min-inline-size: 0;
-  padding: clamp(1rem, 2vw, 1.35rem);
-}
-
-.contact-highlight__label,
-.contact-guide-card__label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-}
-
-.contact-highlight__value,
-.contact-guide-card__value {
-  margin: 0;
-  color: var(--color-text-secondary);
-  line-height: 1.65;
-}
-
-.contact-hero__links {
+.contact-hero__links,
+.contact-form__meta,
+.contact-workflow__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-2);
 }
 
-.contact-workflow {
-  display: grid;
-  gap: var(--spacing-4);
-  padding: clamp(1.25rem, 2.5vw, 1.75rem);
-}
-
-.contact-workflow__header,
-.contact-workflow__copy,
-.contact-panel,
-.contact-panel__header {
+.contact-hero__summary,
+.contact-topic-grid,
+.contact-panel__grid {
   display: grid;
   gap: var(--spacing-3);
 }
 
-.contact-workflow__title,
-.contact-panel__title {
-  margin: 0;
-  max-inline-size: none;
+.contact-hero__summary,
+.contact-panel__grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
 }
 
-.contact-workflow__subtitle,
-.contact-panel__subtitle {
+.contact-highlight,
+.contact-guide-card {
+  display: grid;
+  gap: var(--spacing-2);
+  min-inline-size: 0;
+  padding: clamp(1rem, 2vw, 1.3rem);
+}
+
+.contact-highlight__label,
+.contact-guide-card__label {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.contact-highlight__value,
+.contact-guide-card__value,
+.contact-panel__subtitle,
+.contact-panel__note,
+.contact-private-note__body {
   margin: 0;
-  max-inline-size: 60ch;
   color: var(--color-text-secondary);
+  line-height: 1.65;
+}
+
+.contact-workflow {
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+.contact-workflow__title,
+.contact-panel__title,
+.contact-private-note__title {
+  margin: 0;
+}
+
+.contact-workflow__subtitle {
+  margin: 0;
+  max-inline-size: 58ch;
 }
 
 .contact-stepper {
@@ -692,18 +468,9 @@ async function handleFeedbackSubmit() {
   gap: var(--spacing-2);
 }
 
-.contact-stepper__item {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--spacing-3);
+.contact-stepper__item,
+.contact-topic-card {
   min-inline-size: 0;
-  padding: var(--spacing-3);
-  border: 1px solid var(--page-control-border);
-  border-radius: var(--radius-xl);
-  background: var(--page-control-bg);
-  color: var(--page-control-ink);
-  text-align: start;
   transition:
     transform 220ms var(--ease-out),
     background 220ms var(--ease-out),
@@ -712,8 +479,22 @@ async function handleFeedbackSubmit() {
     color 220ms var(--ease-out);
 }
 
+.contact-stepper__item {
+  display: grid;
+  justify-items: start;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border: 1px solid var(--page-control-border);
+  border-radius: var(--radius-xl);
+  background: var(--page-control-bg);
+  color: var(--page-control-ink);
+  text-align: start;
+}
+
 .contact-stepper__item:hover,
-.contact-stepper__item:focus-visible {
+.contact-stepper__item:focus-visible,
+.contact-topic-card:hover,
+.contact-topic-card:focus-visible {
   outline: none;
   transform: translateY(-0.1rem);
   background: var(--page-control-bg-hover);
@@ -736,21 +517,44 @@ async function handleFeedbackSubmit() {
   block-size: 2.25rem;
   border-radius: var(--radius-full);
   background: rgba(var(--color-primary-rgb), 0.08);
-  color: currentColor;
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
 }
 
-.contact-stepper__copy {
-  display: grid;
-  min-inline-size: 0;
-}
-
-.contact-stepper__label {
+.contact-stepper__label,
+.contact-topic-card__title {
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   line-height: 1.35;
+}
+
+.contact-topic-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+.contact-topic-card {
+  display: grid;
+  justify-items: start;
+  gap: var(--spacing-2);
+  inline-size: 100%;
+  padding: var(--spacing-3);
+  border-radius: var(--radius-xl);
+  text-align: start;
+  white-space: normal;
+}
+
+.contact-topic-card__hint {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.contact-topic-card.active,
+.contact-topic-card.active .contact-topic-card__title,
+.contact-topic-card.active .contact-topic-card__hint,
+.contact-stepper__item.active .contact-stepper__label {
+  color: currentColor;
 }
 
 .contact-stage {
@@ -759,48 +563,11 @@ async function handleFeedbackSubmit() {
   padding: clamp(1.25rem, 2.6vw, 1.75rem);
 }
 
-.contact-panel__grid,
+.contact-form,
 .contact-form__split,
-.category-list {
-  display: grid;
-  gap: var(--spacing-3);
-}
-
-.contact-panel__grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
-}
-
-.contact-guide-card {
-  display: grid;
-  gap: var(--spacing-2);
-  min-inline-size: 0;
-  padding: clamp(1rem, 1.8vw, 1.15rem);
-}
-
-.contact-panel__list {
-  display: grid;
-  gap: var(--spacing-2);
-  margin: 0;
-  padding-inline-start: 1.25rem;
-  color: var(--color-text-secondary);
-  line-height: 1.65;
-}
-
-.contact-panel__actions,
-.contact-form__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-2);
-}
-
-.contact-form {
-  display: grid;
-  gap: var(--spacing-3);
-}
-
 .form-group {
   display: grid;
-  gap: var(--spacing-2);
+  gap: var(--spacing-3);
 }
 
 .form-group label {
@@ -809,29 +576,22 @@ async function handleFeedbackSubmit() {
   font-weight: var(--font-medium);
 }
 
-.category-list {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
-}
-
-.category-btn {
-  inline-size: 100%;
-  justify-content: center;
-  white-space: normal;
-}
-
 .contact-textarea {
   min-height: 8rem;
   resize: vertical;
 }
 
 .contact-workflow__actions {
-  display: flex;
   justify-content: space-between;
-  gap: var(--spacing-2);
 }
 
 .contact-workflow__next {
   margin-inline-start: auto;
+}
+
+.contact-private-note {
+  align-items: center;
+  padding: clamp(1rem, 2vw, 1.35rem);
 }
 
 .contact-stage-enter-active,
@@ -851,6 +611,10 @@ async function handleFeedbackSubmit() {
   .contact-form__split {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .contact-private-note {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
 }
 
 @media (max-width: 48rem) {
@@ -858,13 +622,8 @@ async function handleFeedbackSubmit() {
     padding: var(--spacing-3) 0 var(--spacing-6);
   }
 
-  .container {
-    gap: var(--spacing-4);
-  }
-
-  .contact-stepper__item {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: start;
+  .contact-stepper {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .contact-workflow__actions {
@@ -880,13 +639,16 @@ async function handleFeedbackSubmit() {
 
 @media (prefers-reduced-motion: reduce) {
   .contact-stepper__item,
+  .contact-topic-card,
   .contact-stage-enter-active,
   .contact-stage-leave-active {
     transition: none;
   }
 
   .contact-stepper__item:hover,
-  .contact-stepper__item:focus-visible {
+  .contact-stepper__item:focus-visible,
+  .contact-topic-card:hover,
+  .contact-topic-card:focus-visible {
     transform: none;
   }
 }
