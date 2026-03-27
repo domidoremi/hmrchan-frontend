@@ -12,9 +12,9 @@ import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 import type { ComputedRef, Ref } from 'vue'
 import {
-  bubbleBursts,
   buildMediaHighlightCard,
   collectUniqueItems,
+  type BubbleLayoutTier,
   formatAuthorName,
   formatBubbleText,
   formatCommunityHighlightMeta,
@@ -35,7 +35,8 @@ import {
   normalizeHomeTag,
   normalizeTag,
   normalizeText,
-  selectBubbleBursts,
+  resolveBubbleSlotCount,
+  selectBubbleSlots,
   type FeaturedRailCard,
   type HomeTranslate,
 } from './homeModel'
@@ -51,6 +52,7 @@ export function useHomeViewModel(options: {
   homeScheduleHighlights: Ref<HomeScheduleHighlight[]>
   homeCommunityHighlights: Ref<HomeCommunityHighlight[]>
   shouldAnimate: ComputedRef<boolean>
+  bubbleLayoutTier: Ref<BubbleLayoutTier> | ComputedRef<BubbleLayoutTier>
   translate: HomeTranslate
   locale: Ref<string>
 }) {
@@ -63,6 +65,7 @@ export function useHomeViewModel(options: {
     homeScheduleHighlights,
     homeCommunityHighlights,
     shouldAnimate,
+    bubbleLayoutTier,
     translate,
     locale,
   } = options
@@ -522,6 +525,7 @@ export function useHomeViewModel(options: {
   })
 
   const bubbleItems = computed(() => {
+    const bubbleSlotCount = resolveBubbleSlotCount(bubbleLayoutTier.value)
     const liveItems = homeAggregate.value?.latest_text_posts ?? []
     if (liveItems.length > 0) {
       const editorialPostId = homeAggregate.value?.hero.editorial_card?.post_id ?? null
@@ -534,17 +538,19 @@ export function useHomeViewModel(options: {
           ),
           liveItems,
         ],
-        bubbleBursts.length,
+        bubbleSlotCount,
         (item) => item.post_id
       )
 
-      const orbits = selectBubbleBursts(preferredItems.length, bubbleBursts)
+      const slots = selectBubbleSlots(preferredItems.length, bubbleLayoutTier.value)
 
       return preferredItems.map((item, index) => {
-        const orbit = orbits[index]
+        const slot = slots[index]
         const post = mapLatestTextItemToPost(item, translate)
         return {
+          id: post.id,
           post,
+          slotKey: slot?.key ?? `bubble-slot-${index + 1}`,
           thumbnail: null,
           text: formatBubbleText(post, translate),
           author: formatHomeAuthorName(item.author) || translate('home.hero.fallbackAuthor'),
@@ -552,13 +558,21 @@ export function useHomeViewModel(options: {
             normalizeText(item.time_hint) ||
             (item.published_at ? formatRelativeTime(item.published_at, translate) : ''),
           style: {
-            '--bubble-x': orbit.x,
-            '--bubble-y': orbit.y,
-            '--bubble-x-intro': orbit.introX,
-            '--bubble-y-intro': orbit.introY,
-            '--bubble-delay': orbit.delay,
-            '--bubble-scale': orbit.scale,
-            '--bubble-tail-angle': orbit.tailAngle,
+            '--bubble-col-start': String(slot?.colStart ?? 1),
+            '--bubble-col-span': String(slot?.colSpan ?? 1),
+            '--bubble-row-start': String(slot?.rowStart ?? index + 1),
+            '--bubble-row-span': String(slot?.rowSpan ?? 1),
+            '--bubble-justify-self': slot?.justifySelf ?? 'center',
+            '--bubble-align-self': slot?.alignSelf ?? 'center',
+            '--bubble-nudge-x': slot?.nudgeX ?? '0rem',
+            '--bubble-nudge-y': slot?.nudgeY ?? '0rem',
+            '--bubble-intro-x': slot?.introX ?? '0rem',
+            '--bubble-intro-y': slot?.introY ?? '0rem',
+            '--bubble-drift-x': slot?.driftX ?? '0rem',
+            '--bubble-drift-y': slot?.driftY ?? '0rem',
+            '--bubble-delay': slot?.delay ?? '0s',
+            '--bubble-scale': slot?.scale ?? '1',
+            '--bubble-max-inline': slot?.maxInlineSize ?? '100%',
           } as Record<string, string>,
         }
       })
@@ -573,28 +587,38 @@ export function useHomeViewModel(options: {
         ),
         textPosts.value,
       ],
-      bubbleBursts.length,
+      bubbleSlotCount,
       (post) => post.id
     )
 
-    const orbits = selectBubbleBursts(items.length, bubbleBursts)
+    const slots = selectBubbleSlots(items.length, bubbleLayoutTier.value)
 
     return items.map((post, index) => {
-      const orbit = orbits[index]
+      const slot = slots[index]
       return {
+        id: post.id,
         post,
+        slotKey: slot?.key ?? `bubble-slot-${index + 1}`,
         thumbnail: post.thumbnail_url ?? null,
         text: formatBubbleText(post, translate),
         author: formatAuthorName(post) || translate('home.hero.fallbackAuthor'),
         time: post.published_at ? formatRelativeTime(post.published_at, translate) : '',
         style: {
-          '--bubble-x': orbit.x,
-          '--bubble-y': orbit.y,
-          '--bubble-x-intro': orbit.introX,
-          '--bubble-y-intro': orbit.introY,
-          '--bubble-delay': orbit.delay,
-          '--bubble-scale': orbit.scale,
-          '--bubble-tail-angle': orbit.tailAngle,
+          '--bubble-col-start': String(slot?.colStart ?? 1),
+          '--bubble-col-span': String(slot?.colSpan ?? 1),
+          '--bubble-row-start': String(slot?.rowStart ?? index + 1),
+          '--bubble-row-span': String(slot?.rowSpan ?? 1),
+          '--bubble-justify-self': slot?.justifySelf ?? 'center',
+          '--bubble-align-self': slot?.alignSelf ?? 'center',
+          '--bubble-nudge-x': slot?.nudgeX ?? '0rem',
+          '--bubble-nudge-y': slot?.nudgeY ?? '0rem',
+          '--bubble-intro-x': slot?.introX ?? '0rem',
+          '--bubble-intro-y': slot?.introY ?? '0rem',
+          '--bubble-drift-x': slot?.driftX ?? '0rem',
+          '--bubble-drift-y': slot?.driftY ?? '0rem',
+          '--bubble-delay': slot?.delay ?? '0s',
+          '--bubble-scale': slot?.scale ?? '1',
+          '--bubble-max-inline': slot?.maxInlineSize ?? '100%',
         } as Record<string, string>,
       }
     })
