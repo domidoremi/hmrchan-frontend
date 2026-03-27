@@ -6,6 +6,71 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import { resolvePreviewablePostLink } from '@/views/homepage/homeModel'
 
+function createRect(x: number, y: number, width: number, height: number): DOMRect {
+  return {
+    x,
+    y,
+    width,
+    height,
+    top: y,
+    right: x + width,
+    bottom: y + height,
+    left: x,
+    toJSON: () => ({}),
+  } as DOMRect
+}
+
+function setViewport(width: number, height: number) {
+  Object.defineProperty(window, 'innerWidth', {
+    configurable: true,
+    writable: true,
+    value: width,
+  })
+  Object.defineProperty(window, 'innerHeight', {
+    configurable: true,
+    writable: true,
+    value: height,
+  })
+}
+
+function resolveBubbleRect(element: HTMLElement): DOMRect {
+  const stageLeft = 120
+  const stageTop = 220
+  const slot = element.getAttribute('data-bubble-slot')
+  const slotRects: Record<string, DOMRect> = {
+    'north-west': createRect(stageLeft + 24, stageTop + 18, 232, 126),
+    'north-center': createRect(stageLeft + 296, stageTop + 24, 220, 120),
+    'north-east': createRect(stageLeft + 680, stageTop + 18, 232, 126),
+    'mid-left': createRect(stageLeft + 40, stageTop + 162, 224, 126),
+    'mid-right': createRect(stageLeft + 684, stageTop + 162, 224, 126),
+    'south-left': createRect(stageLeft + 84, stageTop + 292, 214, 124),
+    'south-center': createRect(stageLeft + 370, stageTop + 304, 198, 116),
+    'south-right': createRect(stageLeft + 634, stageTop + 296, 214, 124),
+  }
+
+  return slotRects[slot ?? ''] ?? createRect(stageLeft + 320, stageTop + 180, 220, 120)
+}
+
+let nextRafTimestamp = 0
+
+function dispatchPointerEvent(
+  element: Element,
+  type: string,
+  options: Partial<PointerEventInit> = {}
+) {
+  const event = new PointerEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    pointerId: 1,
+    pointerType: 'mouse',
+    isPrimary: true,
+    ...options,
+  })
+
+  element.dispatchEvent(event)
+}
+
 const mocks = vi.hoisted(() => ({
   loadHomepageBootstrap: vi.fn(),
   getScheduleHighlights: vi.fn(),
@@ -204,6 +269,8 @@ vi.mock('@/components/ui/ScrollDownFab.vue', async () => {
 const i18n = createI18n({
   legacy: false,
   locale: 'en-US',
+  missingWarn: false,
+  fallbackWarn: false,
   messages: {
     'en-US': {
       home: {
@@ -240,6 +307,15 @@ function buildInteractiveAggregate() {
     post_id: `interactive-post-${index + 1}`,
     deep_link: `/post/interactive-post-${index + 1}`,
   }))
+  const leadBubble = aggregate.latest_text_posts[0]
+  if (leadBubble) {
+    aggregate.latest_text_posts.push({
+      ...leadBubble,
+      post_id: `interactive-post-${aggregate.latest_text_posts.length + 1}`,
+      deep_link: `/post/interactive-post-${aggregate.latest_text_posts.length + 1}`,
+      content: `${leadBubble.content} · encore`,
+    })
+  }
   return aggregate
 }
 
@@ -308,10 +384,17 @@ async function mountHomePage() {
   })
 }
 
+async function settleHomeMotion(ms = 96) {
+  await vi.advanceTimersByTimeAsync(ms)
+  await flushPromises()
+}
+
 describe('HomePage', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.useFakeTimers()
+    setViewport(760, 900)
+    nextRafTimestamp = 0
 
     mocks.loadHomepageBootstrap.mockReset()
     mocks.getScheduleHighlights.mockReset()
@@ -356,10 +439,47 @@ describe('HomePage', () => {
     })
 
     vi.stubGlobal('scrollTo', vi.fn())
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      return window.setTimeout(() => {
+        nextRafTimestamp += 16
+        callback(nextRafTimestamp)
+      }, 16) as unknown as number
+    })
+    vi.stubGlobal('cancelAnimationFrame', (handle: number) => {
+      window.clearTimeout(handle)
+    })
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function () {
+      if (this.id === 'home-posts') {
+        return createRect(0, 180, 1280, 760)
+      }
+
+      if (this.id === 'home-rail') {
+        return createRect(0, -120, 1280, 760)
+      }
+
+      if (this.id === 'home-media') {
+        return createRect(0, 980, 1280, 760)
+      }
+
+      if (this.id === 'home-footer') {
+        return createRect(0, 1540, 1280, 320)
+      }
+
+      if (this.classList.contains('bubble-stage')) {
+        return createRect(120, 220, 960, 420)
+      }
+
+      if (this.classList.contains('latest-bubble')) {
+        return resolveBubbleRect(this)
+      }
+
+      return createRect(0, 0, 320, 120)
+    })
   })
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.restoreAllMocks()
     vi.useRealTimers()
   })
 
@@ -399,36 +519,100 @@ describe('HomePage', () => {
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
   })
 
-  it('adds hover and persistent selection states to latest-text bubbles', async () => {
+  it('adds hover-active and persistent-selected states to latest-text bubbles', async () => {
     const wrapper = await mountHomePage()
     await flushPromises()
+    await settleHomeMotion(128)
 
     const bubbles = wrapper.findAll('.latest-bubble')
     expect(bubbles.length).toBeGreaterThan(0)
 
-    const firstBubble = bubbles[0]
-    expect(firstBubble).toBeDefined()
+    const firstBubble = bubbles[0]!
+    const secondBubble = bubbles[1]!
 
-    await firstBubble!.trigger('pointerenter')
-    expect(firstBubble!.classes()).toContain('is-hovered')
+    dispatchPointerEvent(firstBubble.element, 'pointerenter', {
+      clientX: 220,
+      clientY: 280,
+    })
+    await settleHomeMotion(48)
+
+    expect(firstBubble.classes()).toContain('is-hover-active')
     expect(wrapper.find('.bubble-stage').classes()).toContain('has-active-bubble')
 
-    await firstBubble!.trigger('blur')
-    expect(firstBubble!.classes()).not.toContain('is-hovered')
+    dispatchPointerEvent(firstBubble.element, 'pointerleave')
+    await flushPromises()
+    expect(firstBubble.classes()).not.toContain('is-hover-active')
 
-    await firstBubble!.trigger('focus')
-    expect(firstBubble!.classes()).toContain('is-hovered')
-
-    await firstBubble!.trigger('click')
+    await secondBubble.trigger('click')
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'HomepagePreviewController' }).exists()).toBe(true)
-    expect(firstBubble!.classes()).toContain('is-selected')
+    expect(secondBubble.classes()).toContain('is-persistent-selected')
+
+    await firstBubble.trigger('focus')
+    await settleHomeMotion(48)
+
+    expect(firstBubble.classes()).toContain('is-hover-active')
+    expect(secondBubble.classes()).toContain('is-persistent-selected')
 
     wrapper.findComponent({ name: 'HomepagePreviewController' }).vm.$emit('update:isOpen', false)
     await flushPromises()
 
-    expect(firstBubble!.classes()).not.toContain('is-selected')
+    expect(secondBubble.classes()).not.toContain('is-persistent-selected')
+  })
+
+  it('applies pointer pressure to nearby bubbles when the cursor moves inside the bubble stage', async () => {
+    const wrapper = await mountHomePage()
+    await flushPromises()
+    await settleHomeMotion(128)
+
+    const stage = wrapper.find('.bubble-stage')
+    const firstBubble = wrapper.findAll('.latest-bubble')[0]!
+
+    dispatchPointerEvent(stage.element, 'pointerenter', {
+      clientX: 420,
+      clientY: 330,
+    })
+    dispatchPointerEvent(stage.element, 'pointermove', {
+      clientX: 420,
+      clientY: 330,
+    })
+    await settleHomeMotion(96)
+
+    expect(firstBubble.element.style.getPropertyValue('--bubble-live-x')).not.toBe('0rem')
+    expect(
+      firstBubble.classes().includes('is-under-pressure') ||
+        firstBubble.element.style.getPropertyValue('--bubble-live-y') !== '0rem'
+    ).toBe(true)
+  })
+
+  it('settles pressure motion instead of snapping immediately when the pointer leaves the stage', async () => {
+    const wrapper = await mountHomePage()
+    await flushPromises()
+    await settleHomeMotion(128)
+
+    const stage = wrapper.find('.bubble-stage')
+    const firstBubble = wrapper.findAll('.latest-bubble')[0]!
+
+    dispatchPointerEvent(stage.element, 'pointerenter', {
+      clientX: 420,
+      clientY: 330,
+    })
+    dispatchPointerEvent(stage.element, 'pointermove', {
+      clientX: 420,
+      clientY: 330,
+    })
+    await settleHomeMotion(64)
+
+    const activeOffset = firstBubble.element.style.getPropertyValue('--bubble-live-x')
+    expect(activeOffset).not.toBe('0rem')
+
+    dispatchPointerEvent(stage.element, 'pointerleave')
+    await flushPromises()
+    expect(firstBubble.element.style.getPropertyValue('--bubble-live-x')).toBe(activeOffset)
+
+    await settleHomeMotion(256)
+    expect(firstBubble.classes()).not.toContain('is-under-pressure')
   })
 
   it('sanitizes upstream non-post deep links back into the post detail flow', () => {

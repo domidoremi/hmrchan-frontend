@@ -89,7 +89,7 @@ describe('useHomeViewModel', () => {
     expect(viewModel.storyCardCount.value).toBeGreaterThan(0)
     expect(viewModel.bubbleItems.value.length).toBeGreaterThan(0)
     expect(viewModel.bubbleItems.value[0]?.style['--bubble-col-start']).toBeDefined()
-    expect(viewModel.bubbleItems.value[0]?.style['--bubble-drift-x']).toBeDefined()
+    expect(viewModel.bubbleItems.value[0]?.motionProfile.driftPeriodMs).toBeGreaterThan(0)
     expect(viewModel.trendingAuthors.value.length).toBeGreaterThan(0)
     expect(viewModel.spotlightTextCards.value.length).toBeGreaterThan(0)
   })
@@ -123,6 +123,7 @@ describe('useHomeViewModel', () => {
     expect(viewModel.bubbleItems.value[0]?.style['--bubble-justify-self']).not.toBe(
       desktopJustifySelf
     )
+    expect(viewModel.bubbleItems.value[0]?.motionProfile).toBeDefined()
     expect(viewModel.bubbleItems.value[0]?.slotKey).toContain('mobile')
   })
 })
