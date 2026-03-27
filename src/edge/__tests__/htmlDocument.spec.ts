@@ -27,7 +27,7 @@ describe('resolveHtmlDocument', () => {
     expect(contactConfig.status).toBe(200)
     expect(contactConfig.title).toBe('Contact · MomiChan')
     expect(contactConfig.robots).toBe('index, follow')
-    expect(contactConfig.description).toContain('私密渠道')
+    expect(contactConfig.description).toContain('留言')
     expect(resolveCanonicalUrl(contactConfig)).toBe('https://momichan.xyz/contact')
   })
 
@@ -141,12 +141,12 @@ describe('resolveHtmlDocument', () => {
     const contactConfig = resolveHtmlDocument(new URL('https://momichan.xyz/contact'))
     const shell = renderPrerenderShell(contactConfig)
 
-    expect(contactConfig.shellEyebrow).toBe('Feedback & security')
-    expect(contactConfig.shellTitle).toContain('private security reporting')
-    expect(shell).toContain('product issues, bugs, and improvement ideas')
-    expect(shell).toContain('security.txt')
+    expect(contactConfig.shellEyebrow).toBe('Contact')
+    expect(contactConfig.shellTitle).toContain('share feedback')
+    expect(shell).toContain('questions, suggestions, corrections')
+    expect(shell).toContain('Private reporting')
     expect(shell).not.toContain('partnership requests')
-    expect(shell).not.toContain('Get in touch with MomiChan')
+    expect(shell).not.toContain('private security reporting')
   })
 })
 
