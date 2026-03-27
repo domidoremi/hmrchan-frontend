@@ -7,6 +7,18 @@ import {
 } from '../homeModel'
 
 describe('selectBubbleSlots', () => {
+  it('spreads six latest-post bubbles across the desktop field with top and bottom center coverage', () => {
+    const selection = selectBubbleSlots(6, 'desktop')
+
+    expect(selection).toHaveLength(6)
+    expect(selection[0]).toBe(bubbleSlotsByTier.desktop[0])
+    expect(selection[1]).toBe(bubbleSlotsByTier.desktop[1])
+    expect(selection[2]).toBe(bubbleSlotsByTier.desktop[2])
+    expect(selection[3]).toBe(bubbleSlotsByTier.desktop[5])
+    expect(selection[4]).toBe(bubbleSlotsByTier.desktop[6])
+    expect(selection[5]).toBe(bubbleSlotsByTier.desktop[7])
+  })
+
   it('balances six latest-post bubbles across the tablet field', () => {
     const selection = selectBubbleSlots(6, 'tablet')
 
