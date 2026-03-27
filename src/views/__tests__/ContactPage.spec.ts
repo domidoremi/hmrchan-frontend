@@ -57,6 +57,31 @@ const i18n = createI18n({
         feedbackCategoryBug: 'Bug',
         feedbackCategoryFeature: 'Feature',
         feedbackCategoryOther: 'Other',
+        directTitle: 'Direct Message',
+        directSubtitle: 'Use this route for general contact and private context.',
+        workflowTitle: 'Three-step submission flow',
+        workflowSubtitle: 'Follow explanation, details, and submission in order.',
+        stepExplain: 'Explain',
+        stepDescribe: 'Describe',
+        stepSubmit: 'Submit',
+        nextStep: 'Next step',
+        previousStep: 'Previous step',
+        messageGuideTitle: 'Check whether direct contact is the right route',
+        messageGuideBody: 'Use direct contact for general outreach.',
+        messageGuideSubjectLabel: 'Subject',
+        messageGuideSubject: 'Summarize the request clearly.',
+        messageGuideMessageLabel: 'Description',
+        messageGuideMessage: 'Describe context and impact.',
+        messageGuideReplyLabel: 'Reply path',
+        messageGuideReply: 'Leave a reachable email.',
+        feedbackGuideTitle: 'Check whether this is feedback or security reporting',
+        feedbackGuideBody: 'Private reports should stay private.',
+        feedbackGuideEvidenceLabel: 'Evidence',
+        feedbackGuideEvidence: 'Bring a reliable reproduction path.',
+        feedbackGuideChannelLabel: 'Route',
+        feedbackGuideChannel: 'Pick a category before submitting.',
+        feedbackGuideTimingLabel: 'Timing',
+        feedbackGuideTiming: 'Submit once you have enough evidence.',
         feedbackContact: 'Contact Info (Optional)',
         feedbackMessage: 'Feedback',
         feedbackSend: 'Send Feedback',
@@ -96,6 +121,9 @@ describe('ContactPage', () => {
 
     expect(wrapper.find('#security-reporting').exists()).toBe(true)
     expect(wrapper.find('a[href="/.well-known/security.txt"]').exists()).toBe(true)
+    expect(wrapper.find('.contact-side').exists()).toBe(false)
+    expect(wrapper.find('.contact-security').exists()).toBe(false)
+    expect(wrapper.findAll('.contact-stepper__item')).toHaveLength(3)
     expect(wrapper.text()).toContain('Security Reporting')
 
     const securityAction = wrapper.find('a[href="#security-feedback-form"]')
@@ -103,11 +131,8 @@ describe('ContactPage', () => {
 
     await securityAction.trigger('click')
 
-    const bugCategoryButton = wrapper
-      .findAll('.category-btn')
-      .find((button) => button.text().includes('Bug'))
-
-    expect(bugCategoryButton).toBeDefined()
-    expect(bugCategoryButton?.classes()).toContain('active')
+    expect(wrapper.find('#security-feedback-form').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Bug')
+    expect(wrapper.findAll('.contact-stepper__item')[2]?.classes()).toContain('active')
   })
 })
