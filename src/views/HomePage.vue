@@ -816,7 +816,16 @@
         <div
           ref="bubbleStageRef"
           class="bubble-stage"
-          :class="[`bubble-stage--${bubbleLayoutTier}`, { 'has-active-bubble': hasActiveBubble }]"
+          :class="[
+            `bubble-stage--${bubbleLayoutTier}`,
+            {
+              'has-active-bubble': hasActiveBubble,
+              'is-motion-active': bubbleMotionFrameActive,
+            },
+          ]"
+          @pointerenter="handleBubbleStagePointerEnter"
+          @pointermove="handleBubbleStagePointerMove"
+          @pointerleave="handleBubbleStagePointerLeave"
         >
           <div
             v-if="isLoading && bubbleItems.length === 0"
@@ -830,16 +839,17 @@
             <button
               v-for="bubble in bubbleItems"
               :key="bubble.id"
+              :ref="(element) => registerBubbleElement(bubble.id, element)"
               type="button"
               class="latest-bubble glass-card"
               :class="bubbleStateClasses(bubble.id)"
               :style="[noGlassBackdropStyle, bubble.style]"
-              :aria-pressed="isBubbleSelected(bubble.id)"
+              :aria-pressed="isBubblePersistentSelected(bubble.id)"
               :data-bubble-slot="bubble.slotKey"
-              @pointerenter="setHoveredBubble(bubble.id)"
-              @pointerleave="clearHoveredBubble(bubble.id)"
-              @focus="setHoveredBubble(bubble.id)"
-              @blur="clearHoveredBubble(bubble.id)"
+              @pointerenter="handleBubblePointerEnter(bubble.id, $event)"
+              @pointerleave="handleBubblePointerLeave(bubble.id)"
+              @focus="handleBubbleFocus(bubble.id)"
+              @blur="handleBubbleBlur(bubble.id)"
               @click="openPostPreview(bubble.post, bubble.thumbnail)"
             >
               <span class="latest-bubble__float">
@@ -950,6 +960,7 @@ defineOptions({ name: 'HomePage' })
 import {
   ref,
   computed,
+  type ComponentPublicInstance,
   defineAsyncComponent,
   nextTick,
   onMounted,
@@ -991,6 +1002,13 @@ import {
   resolvePostIdFromLink,
   resolvePreviewablePostLink,
 } from '@/views/homepage/homeModel'
+import {
+  computeBubbleFrameState,
+  type BubbleAnchorMetrics,
+  type BubbleFrameState,
+  type BubblePointerState,
+  type BubbleStageMetrics,
+} from '@/views/homepage/bubbleMotion'
 import { resolveBubbleRevealWindow } from '@/views/homepage/bubbleRevealState'
 import { buildStoryCardMotion } from '@/views/homepage/storyDeckMotion'
 import { useHomeViewModel } from '@/views/homepage/useHomeViewModel'
@@ -1020,6 +1038,8 @@ let scrollTriggerReadyPromise: Promise<boolean> | null = null
 
 const SCENE_LAYOUT_REFRESH_THRESHOLD_PX = 24
 const BUBBLE_EXIT_DURATION_MS = 420
+const BUBBLE_POINTER_SETTLE_MS = 200
+const BUBBLE_FORCE_CENTER_LERP_MS = 110
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
 
@@ -1081,10 +1101,25 @@ const shouldMountHomepagePreviewController = computed(
   () => isPreviewOpen.value || Boolean(previewPostId.value)
 )
 const hoveredBubbleId = ref<string | null>(null)
+const hoveredBubbleSource = ref<'pointer' | 'focus' | null>(null)
 const selectedBubbleId = computed(() =>
   isPreviewOpen.value ? normalizeText(previewPostId.value) || null : null
 )
 const hasActiveBubble = computed(() => Boolean(selectedBubbleId.value || hoveredBubbleId.value))
+const pointerInsideBubbleStage = ref(false)
+const pointerOverBubbleId = ref<string | null>(null)
+const pointerStagePosition = ref<{
+  x: number | null
+  y: number | null
+  normalizedX: number
+  normalizedY: number
+}>({
+  x: null,
+  y: null,
+  normalizedX: 0.5,
+  normalizedY: 0.5,
+})
+const bubbleMotionFrameActive = ref(false)
 
 // Loading & error state
 const isLoading = ref(false)
@@ -1328,10 +1363,365 @@ function observeBubbleStageLayout() {
     for (const entry of entries) {
       if (!(entry.target instanceof HTMLElement)) continue
       bubbleLayoutTier.value = resolveBubbleLayoutTier(Math.round(entry.contentRect.width))
+      scheduleBubbleMotionMeasurement()
     }
   })
 
   bubbleStageResizeObserver?.observe(bubbleStageRef.value)
+  scheduleBubbleMotionMeasurement()
+}
+
+const isBubbleInteractiveTier = computed(() => bubbleLayoutTier.value !== 'mobile')
+
+function clearBubbleMotionMeasureFrame() {
+  if (typeof window === 'undefined' || bubbleMotionMeasureFrame === null) return
+  window.cancelAnimationFrame(bubbleMotionMeasureFrame)
+  bubbleMotionMeasureFrame = null
+}
+
+function clearBubbleMotionFrame() {
+  if (typeof window === 'undefined' || bubbleMotionFrame === null) return
+  window.cancelAnimationFrame(bubbleMotionFrame)
+  bubbleMotionFrame = null
+}
+
+function clearBubbleRuntimeClasses(element: HTMLButtonElement) {
+  element.classList.remove('is-displaced', 'is-under-pressure')
+}
+
+function resetBubbleFrameStateStyle(element: HTMLButtonElement) {
+  element.style.setProperty('--bubble-live-x', '0rem')
+  element.style.setProperty('--bubble-live-y', '0rem')
+  element.style.setProperty('--bubble-live-rotate', '0deg')
+  element.style.setProperty('--bubble-live-scale', '1')
+  element.style.setProperty('--bubble-live-opacity', '1')
+  element.style.setProperty('--bubble-live-shadow-x', '0rem')
+  element.style.setProperty('--bubble-live-shadow-y', '0rem')
+  clearBubbleRuntimeClasses(element)
+}
+
+function resetAllBubbleFrameStateStyles() {
+  for (const element of bubbleElementMap.values()) {
+    resetBubbleFrameStateStyle(element)
+  }
+  bubbleFrameStateMap.clear()
+}
+
+function stopBubbleMotionLoop(options: { resetStyles?: boolean } = {}) {
+  clearBubbleMotionFrame()
+  bubbleMotionFrameActive.value = false
+  bubbleMotionLastTimestamp = null
+  bubbleMotionPointerStrength = 0
+  bubbleMotionForceCenter = null
+
+  if (options.resetStyles ?? true) {
+    resetAllBubbleFrameStateStyles()
+  }
+}
+
+function resolveBubbleButtonElement(
+  value: Element | ComponentPublicInstance | null
+): HTMLButtonElement | null {
+  if (value instanceof HTMLButtonElement) return value
+  if (value instanceof HTMLElement && value.tagName === 'BUTTON') {
+    return value as HTMLButtonElement
+  }
+  return null
+}
+
+function registerBubbleElement(bubbleId: string, value: Element | ComponentPublicInstance | null) {
+  const normalizedId = normalizeText(bubbleId)
+  if (!normalizedId) return
+
+  const element = resolveBubbleButtonElement(value)
+  if (!element) {
+    bubbleElementMap.delete(normalizedId)
+    bubbleAnchorMetricsMap.delete(normalizedId)
+    bubbleFrameStateMap.delete(normalizedId)
+    return
+  }
+
+  bubbleElementMap.set(normalizedId, element)
+  if (!bubbleFrameStateMap.has(normalizedId)) {
+    resetBubbleFrameStateStyle(element)
+  }
+  scheduleBubbleMotionMeasurement()
+}
+
+function measureBubbleMotionAnchors() {
+  if (typeof window === 'undefined' || !bubbleStageRef.value) return
+
+  const stageRect = bubbleStageRef.value.getBoundingClientRect()
+  bubbleStageMetrics.value = {
+    width: Math.max(stageRect.width, 0),
+    height: Math.max(stageRect.height, 0),
+    viewportWidth: Math.max(window.innerWidth, stageRect.width, 0),
+  }
+
+  bubbleAnchorMetricsMap.clear()
+
+  for (const [bubbleId, element] of bubbleElementMap.entries()) {
+    const rect = element.getBoundingClientRect()
+    const currentState = bubbleFrameStateMap.get(bubbleId)
+    const translateX = (currentState?.translateX ?? 0) * 16
+    const translateY = (currentState?.translateY ?? 0) * 16
+    const width = element.offsetWidth || rect.width
+    const height = element.offsetHeight || rect.height
+    const left = rect.left - stageRect.left - translateX
+    const top = rect.top - stageRect.top - translateY
+
+    bubbleAnchorMetricsMap.set(bubbleId, {
+      left,
+      top,
+      width,
+      height,
+      centerX: left + width / 2,
+      centerY: top + height / 2,
+    })
+  }
+}
+
+function scheduleBubbleMotionMeasurement() {
+  if (typeof window === 'undefined') return
+
+  clearBubbleMotionMeasureFrame()
+  bubbleMotionMeasureFrame = window.requestAnimationFrame(() => {
+    bubbleMotionMeasureFrame = null
+    measureBubbleMotionAnchors()
+    syncBubbleMotionLoop()
+  })
+}
+
+function writeBubbleFrameState(element: HTMLButtonElement, state: BubbleFrameState) {
+  element.style.setProperty('--bubble-live-x', `${state.translateX.toFixed(4)}rem`)
+  element.style.setProperty('--bubble-live-y', `${state.translateY.toFixed(4)}rem`)
+  element.style.setProperty('--bubble-live-rotate', `${state.rotateDeg.toFixed(4)}deg`)
+  element.style.setProperty('--bubble-live-scale', state.liveScale.toFixed(4))
+  element.style.setProperty('--bubble-live-opacity', state.opacity.toFixed(4))
+  element.style.setProperty('--bubble-live-shadow-x', `${state.shadowShiftX.toFixed(4)}rem`)
+  element.style.setProperty('--bubble-live-shadow-y', `${state.shadowShiftY.toFixed(4)}rem`)
+  element.classList.toggle('is-displaced', state.isDisplaced)
+  element.classList.toggle('is-under-pressure', state.isUnderPressure)
+}
+
+function updateBubbleStagePointerPosition(event: PointerEvent) {
+  if (typeof window === 'undefined' || !bubbleStageRef.value) return
+
+  const stageRect = bubbleStageRef.value.getBoundingClientRect()
+  const nextX = clamp(event.clientX - stageRect.left, 0, stageRect.width)
+  const nextY = clamp(event.clientY - stageRect.top, 0, stageRect.height)
+
+  pointerStagePosition.value = {
+    x: nextX,
+    y: nextY,
+    normalizedX: stageRect.width > 0 ? clamp(nextX / stageRect.width) : 0.5,
+    normalizedY: stageRect.height > 0 ? clamp(nextY / stageRect.height) : 0.5,
+  }
+  bubbleStageMetrics.value = {
+    width: Math.max(stageRect.width, 0),
+    height: Math.max(stageRect.height, 0),
+    viewportWidth: Math.max(window.innerWidth, stageRect.width, 0),
+  }
+}
+
+function handleBubbleStagePointerEnter(event: PointerEvent) {
+  pointerInsideBubbleStage.value = true
+  updateBubbleStagePointerPosition(event)
+}
+
+function handleBubbleStagePointerMove(event: PointerEvent) {
+  pointerInsideBubbleStage.value = true
+  updateBubbleStagePointerPosition(event)
+}
+
+function handleBubbleStagePointerLeave() {
+  pointerInsideBubbleStage.value = false
+  pointerOverBubbleId.value = null
+  clearHoveredBubble(undefined, 'pointer')
+}
+
+function handleBubblePointerEnter(bubbleId: string, event: PointerEvent) {
+  pointerInsideBubbleStage.value = true
+  pointerOverBubbleId.value = normalizeText(bubbleId) || null
+  updateBubbleStagePointerPosition(event)
+  setHoveredBubble(bubbleId, 'pointer')
+}
+
+function handleBubblePointerLeave(bubbleId: string) {
+  const normalizedId = normalizeText(bubbleId)
+  if (pointerOverBubbleId.value === normalizedId) {
+    pointerOverBubbleId.value = null
+  }
+  clearHoveredBubble(bubbleId, 'pointer')
+}
+
+function handleBubbleFocus(bubbleId: string) {
+  setHoveredBubble(bubbleId, 'focus')
+}
+
+function handleBubbleBlur(bubbleId: string) {
+  clearHoveredBubble(bubbleId, 'focus')
+}
+
+function resolveBubbleMotionLerpFactor(deltaMs: number, durationMs: number): number {
+  if (durationMs <= 0) return 1
+  return 1 - Math.exp(-deltaMs / durationMs)
+}
+
+function buildBubblePointerState(): BubblePointerState {
+  const hoverAnchor =
+    hoveredBubbleId.value !== null
+      ? (bubbleAnchorMetricsMap.get(hoveredBubbleId.value) ?? null)
+      : null
+
+  if (hoverAnchor) {
+    return {
+      insideStage: pointerInsideBubbleStage.value,
+      overBubbleId: pointerOverBubbleId.value,
+      x: pointerStagePosition.value.x,
+      y: pointerStagePosition.value.y,
+      normalizedX: pointerStagePosition.value.normalizedX,
+      normalizedY: pointerStagePosition.value.normalizedY,
+      activeCenterX: bubbleMotionForceCenter?.x ?? hoverAnchor.centerX,
+      activeCenterY: bubbleMotionForceCenter?.y ?? hoverAnchor.centerY,
+      intensity: bubbleMotionPointerStrength,
+      mode: 'hover',
+    }
+  }
+
+  if (
+    pointerInsideBubbleStage.value &&
+    isBubbleInteractiveTier.value &&
+    pointerStagePosition.value.x !== null &&
+    pointerStagePosition.value.y !== null
+  ) {
+    return {
+      insideStage: true,
+      overBubbleId: pointerOverBubbleId.value,
+      x: pointerStagePosition.value.x,
+      y: pointerStagePosition.value.y,
+      normalizedX: pointerStagePosition.value.normalizedX,
+      normalizedY: pointerStagePosition.value.normalizedY,
+      activeCenterX: bubbleMotionForceCenter?.x ?? pointerStagePosition.value.x,
+      activeCenterY: bubbleMotionForceCenter?.y ?? pointerStagePosition.value.y,
+      intensity: bubbleMotionPointerStrength,
+      mode: 'pointer',
+    }
+  }
+
+  return {
+    insideStage: false,
+    overBubbleId: pointerOverBubbleId.value,
+    x: pointerStagePosition.value.x,
+    y: pointerStagePosition.value.y,
+    normalizedX: pointerStagePosition.value.normalizedX,
+    normalizedY: pointerStagePosition.value.normalizedY,
+    activeCenterX: bubbleMotionForceCenter?.x ?? null,
+    activeCenterY: bubbleMotionForceCenter?.y ?? null,
+    intensity: bubbleMotionPointerStrength,
+    mode: 'idle',
+  }
+}
+
+function shouldRunBubbleMotionLoop(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    bubbleRevealPhase.value === 'revealed' &&
+    bubbleItems.value.length > 0 &&
+    shouldAnimate.value &&
+    bubbleStageRef.value !== null &&
+    bubbleAnchorMetricsMap.size >= bubbleItems.value.length
+  )
+}
+
+function runBubbleMotionFrame(timestamp: number) {
+  bubbleMotionFrame = null
+
+  if (!shouldRunBubbleMotionLoop()) {
+    stopBubbleMotionLoop({
+      resetStyles: bubbleRevealPhase.value !== 'exiting',
+    })
+    return
+  }
+
+  const deltaMs =
+    bubbleMotionLastTimestamp === null ? 16 : Math.min(timestamp - bubbleMotionLastTimestamp, 34)
+  bubbleMotionLastTimestamp = timestamp
+
+  const hoverAnchor =
+    hoveredBubbleId.value !== null
+      ? (bubbleAnchorMetricsMap.get(hoveredBubbleId.value) ?? null)
+      : null
+  const pointerTargetCenter =
+    pointerInsideBubbleStage.value &&
+    isBubbleInteractiveTier.value &&
+    pointerStagePosition.value.x !== null &&
+    pointerStagePosition.value.y !== null
+      ? {
+          x: pointerStagePosition.value.x,
+          y: pointerStagePosition.value.y,
+        }
+      : null
+  const targetCenter = hoverAnchor
+    ? {
+        x: hoverAnchor.centerX,
+        y: hoverAnchor.centerY,
+      }
+    : pointerTargetCenter
+  const targetStrength = targetCenter ? 1 : 0
+  const pointerLerp = resolveBubbleMotionLerpFactor(deltaMs, BUBBLE_POINTER_SETTLE_MS * 0.5)
+
+  bubbleMotionPointerStrength += (targetStrength - bubbleMotionPointerStrength) * pointerLerp
+
+  if (targetCenter) {
+    if (!bubbleMotionForceCenter) {
+      bubbleMotionForceCenter = { ...targetCenter }
+    } else {
+      const centerLerp = resolveBubbleMotionLerpFactor(deltaMs, BUBBLE_FORCE_CENTER_LERP_MS)
+      bubbleMotionForceCenter.x += (targetCenter.x - bubbleMotionForceCenter.x) * centerLerp
+      bubbleMotionForceCenter.y += (targetCenter.y - bubbleMotionForceCenter.y) * centerLerp
+    }
+  } else if (bubbleMotionPointerStrength <= 0.001) {
+    bubbleMotionForceCenter = null
+    bubbleMotionPointerStrength = 0
+  }
+
+  const pointerState = buildBubblePointerState()
+
+  for (const bubble of bubbleItems.value) {
+    const element = bubbleElementMap.get(bubble.id)
+    if (!element) continue
+
+    const frameState = computeBubbleFrameState({
+      bubbleId: bubble.id,
+      tier: bubbleLayoutTier.value,
+      nowMs: timestamp,
+      profile: bubble.motionProfile,
+      anchor: bubbleAnchorMetricsMap.get(bubble.id),
+      stage: bubbleStageMetrics.value,
+      pointer: pointerState,
+      isHoverActive: isBubbleHoverActive(bubble.id),
+      isPersistentSelected: isBubblePersistentSelected(bubble.id),
+    })
+
+    bubbleFrameStateMap.set(bubble.id, frameState)
+    writeBubbleFrameState(element, frameState)
+  }
+
+  bubbleMotionFrameActive.value = true
+  bubbleMotionFrame = window.requestAnimationFrame(runBubbleMotionFrame)
+}
+
+function syncBubbleMotionLoop() {
+  if (!shouldRunBubbleMotionLoop()) {
+    stopBubbleMotionLoop({
+      resetStyles: bubbleRevealPhase.value !== 'exiting',
+    })
+    return
+  }
+
+  if (bubbleMotionFrame !== null) return
+  bubbleMotionFrame = window.requestAnimationFrame(runBubbleMotionFrame)
 }
 
 let storyDeckTrigger: ScrollTriggerInstance | null = null
@@ -1341,6 +1731,18 @@ let sceneSetupQueued = false
 let scenesEnabled = false
 let sceneResizeObserver: ResizeObserver | null = null
 let bubbleStageResizeObserver: ResizeObserver | null = null
+let bubbleMotionFrame: number | null = null
+let bubbleMotionMeasureFrame: number | null = null
+let bubbleMotionLastTimestamp: number | null = null
+let bubbleMotionPointerStrength = 0
+let bubbleMotionForceCenter: {
+  x: number
+  y: number
+} | null = null
+const bubbleElementMap = new Map<string, HTMLButtonElement>()
+const bubbleAnchorMetricsMap = new Map<string, BubbleAnchorMetrics>()
+const bubbleFrameStateMap = new Map<string, BubbleFrameState>()
+const bubbleStageMetrics = ref<BubbleStageMetrics | null>(null)
 let sceneObservedSizes = new WeakMap<HTMLElement, { width: number; height: number }>()
 const scheduleSceneRefreshFromResize = throttleRAF(() => {
   scheduleSceneSetup()
@@ -1454,7 +1856,7 @@ watchSyncEffect(() => {
 
 watch(isPreviewOpen, (open) => {
   if (!open) {
-    clearHoveredBubble()
+    clearHoveredBubble(undefined, 'all')
   }
 })
 
@@ -1463,6 +1865,7 @@ onActivated(() => {
   observeHomeSections()
   void nextTick(() => {
     observeBubbleStageLayout()
+    scheduleBubbleMotionMeasurement()
   })
   if (
     (homeDataSource.value === 'idle' || homeDataSource.value === 'fallback') &&
@@ -1479,6 +1882,8 @@ onDeactivated(() => {
   setRailNavbarLock(false)
   disconnectHomeSectionObserver()
   disconnectBubbleStageLayoutObserver()
+  clearBubbleMotionMeasureFrame()
+  stopBubbleMotionLoop()
 })
 let homeRequestController: AbortController | null = null
 
@@ -1771,12 +2176,14 @@ function clearBubbleExitResetTimer() {
 function resetBubbleRevealState() {
   clearBubbleBurstReplayFrame()
   clearBubbleExitResetTimer()
+  stopBubbleMotionLoop()
   bubbleRevealPhase.value = 'idle'
 }
 
 function startBubbleRetreat() {
   clearBubbleBurstReplayFrame()
   clearBubbleExitResetTimer()
+  stopBubbleMotionLoop({ resetStyles: false })
 
   if (!shouldAnimate.value) {
     bubbleRevealPhase.value = 'idle'
@@ -1961,6 +2368,7 @@ function restartBubbleBurst() {
 
   clearBubbleExitResetTimer()
   clearBubbleBurstReplayFrame()
+  stopBubbleMotionLoop()
   bubbleRevealPhase.value = 'idle'
 
   if (bubbleItems.value.length === 0) return
@@ -2169,46 +2577,51 @@ function markHomeMediaFailed(source: string | null | undefined) {
   failedHomeMediaUrls.value = next
 }
 
-function setHoveredBubble(bubbleId: string) {
+function setHoveredBubble(bubbleId: string, source: 'pointer' | 'focus' = 'pointer') {
   const nextId = normalizeText(bubbleId)
   if (!nextId) return
   hoveredBubbleId.value = nextId
+  hoveredBubbleSource.value = source
 }
 
-function clearHoveredBubble(bubbleId?: string | null) {
+function clearHoveredBubble(bubbleId?: string | null, source: 'pointer' | 'focus' | 'all' = 'all') {
+  if (
+    source !== 'all' &&
+    hoveredBubbleSource.value !== null &&
+    hoveredBubbleSource.value !== source
+  ) {
+    return
+  }
+
   if (!bubbleId) {
     hoveredBubbleId.value = null
+    hoveredBubbleSource.value = null
     return
   }
 
   const nextId = normalizeText(bubbleId)
   if (hoveredBubbleId.value === nextId) {
     hoveredBubbleId.value = null
+    hoveredBubbleSource.value = null
   }
 }
 
-function isBubbleSelected(bubbleId: string): boolean {
+function isBubblePersistentSelected(bubbleId: string): boolean {
   return selectedBubbleId.value === normalizeText(bubbleId)
 }
 
-function isBubbleHovered(bubbleId: string): boolean {
+function isBubbleHoverActive(bubbleId: string): boolean {
   const normalizedId = normalizeText(bubbleId)
   if (!normalizedId) return false
-  return !isBubbleSelected(normalizedId) && hoveredBubbleId.value === normalizedId
-}
-
-function isBubbleDimmed(bubbleId: string): boolean {
-  const normalizedId = normalizeText(bubbleId)
-  if (!normalizedId || !hasActiveBubble.value) return false
-  if (selectedBubbleId.value) return selectedBubbleId.value !== normalizedId
-  return hoveredBubbleId.value !== normalizedId
+  return hoveredBubbleId.value === normalizedId
 }
 
 function bubbleStateClasses(bubbleId: string) {
   return {
-    'is-hovered': isBubbleHovered(bubbleId),
-    'is-selected': isBubbleSelected(bubbleId),
-    'is-dimmed': isBubbleDimmed(bubbleId),
+    'is-hover-active': isBubbleHoverActive(bubbleId),
+    'is-hovered': isBubbleHoverActive(bubbleId),
+    'is-persistent-selected': isBubblePersistentSelected(bubbleId),
+    'is-selected': isBubblePersistentSelected(bubbleId),
   }
 }
 
@@ -2228,7 +2641,7 @@ function openPostPreview(post: PostListItem, thumbnailSrc: string | null) {
   previewPostId.value = resolvedPostId
   previewPost.value = { ...post, id: resolvedPostId }
   previewThumbnailSrc.value = thumbnailSrc
-  hoveredBubbleId.value = resolvedPostId
+  setHoveredBubble(resolvedPostId, pointerInsideBubbleStage.value ? 'pointer' : 'focus')
   isPreviewOpen.value = true
 }
 
@@ -2245,14 +2658,37 @@ function openDetailFromPreview(postId: string) {
 }
 
 watch(
-  [railSlideCount, () => storyCardCount.value, () => bubbleItems.value.length, shouldAnimate],
+  [
+    railSlideCount,
+    () => storyCardCount.value,
+    () => bubbleItems.value.map((bubble) => bubble.id).join('|'),
+    shouldAnimate,
+  ],
   () => {
     resetBubbleRevealState()
     if (isCompactHomeViewport() && bubbleItems.value.length > 0) {
       bubbleRevealPhase.value = 'revealed'
     }
+    void nextTick(() => {
+      scheduleBubbleMotionMeasurement()
+    })
     if (!scenesEnabled) return
     scheduleSceneSetup()
+  },
+  { immediate: true }
+)
+
+watch(
+  [
+    bubbleRevealPhase,
+    bubbleLayoutTier,
+    shouldAnimate,
+    () => bubbleItems.value.map((bubble) => bubble.id).join('|'),
+  ],
+  () => {
+    void nextTick(() => {
+      scheduleBubbleMotionMeasurement()
+    })
   }
 )
 
@@ -2261,6 +2697,7 @@ onMounted(() => {
   observeHomeSections()
   void nextTick(() => {
     observeBubbleStageLayout()
+    scheduleBubbleMotionMeasurement()
   })
   void fetchHomeData()
 })
@@ -2272,6 +2709,10 @@ onBeforeUnmount(() => {
   setRailNavbarLock(false)
   disconnectHomeSectionObserver()
   disconnectBubbleStageLayoutObserver()
+  clearBubbleMotionMeasureFrame()
+  stopBubbleMotionLoop()
+  bubbleElementMap.clear()
+  bubbleAnchorMetricsMap.clear()
 })
 </script>
 
@@ -5397,6 +5838,13 @@ onBeforeUnmount(() => {
 }
 
 .latest-bubble {
+  --bubble-live-x: 0rem;
+  --bubble-live-y: 0rem;
+  --bubble-live-rotate: 0deg;
+  --bubble-live-scale: 1;
+  --bubble-live-opacity: 1;
+  --bubble-live-shadow-x: 0rem;
+  --bubble-live-shadow-y: 0rem;
   display: grid;
   grid-column: var(--bubble-col-start, auto) / span var(--bubble-col-span, 1);
   grid-row: var(--bubble-row-start, auto) / span var(--bubble-row-span, 1);
@@ -5429,16 +5877,17 @@ onBeforeUnmount(() => {
   inline-size: 100%;
   block-size: 100%;
   min-block-size: 0;
-  transform: translate3d(var(--bubble-nudge-x, 0rem), var(--bubble-nudge-y, 0rem), 0);
+  transform: translate3d(
+      calc(var(--bubble-nudge-x, 0rem) + var(--bubble-live-x, 0rem)),
+      calc(var(--bubble-nudge-y, 0rem) + var(--bubble-live-y, 0rem)),
+      0
+    )
+    rotate(var(--bubble-live-rotate, 0deg));
   will-change: transform;
 }
 
-.bubble-stage.has-active-bubble .latest-bubble.is-dimmed {
-  z-index: 1;
-}
-
-.latest-bubble.is-hovered,
-.latest-bubble.is-selected,
+.latest-bubble.is-hover-active,
+.latest-bubble.is-persistent-selected,
 .latest-bubble:focus-visible {
   z-index: 3;
 }
@@ -5460,12 +5909,16 @@ onBeforeUnmount(() => {
     calc(var(--home-card-radius) * 0.9);
   border: 0.0625rem solid var(--home-panel-border-strong);
   background: var(--home-panel-bg-strong), var(--home-panel-muted-strong);
-  box-shadow: var(--home-panel-shadow-strong);
+  box-shadow:
+    calc(var(--bubble-live-shadow-x, 0rem) * 0.36) calc(1rem + var(--bubble-live-shadow-y, 0rem))
+      2.4rem -1.5rem rgba(15, 23, 42, 0.24),
+    0 0.5rem 1.1rem -0.8rem rgba(15, 23, 42, 0.18);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   text-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.08);
-  transform: scale(var(--bubble-scale, 1));
+  transform: scale(calc(var(--bubble-scale, 1) * var(--bubble-live-scale, 1)));
   transform-origin: center center;
+  opacity: var(--bubble-live-opacity, 1);
   transition:
     transform 220ms var(--ease-out-smooth),
     opacity 220ms var(--ease-out-smooth),
@@ -5486,32 +5939,60 @@ onBeforeUnmount(() => {
   -webkit-line-clamp: 4;
 }
 
-.latest-bubble.is-hovered .latest-bubble__inner,
+.latest-bubble.is-hover-active .latest-bubble__inner,
 .latest-bubble:focus-visible .latest-bubble__inner {
-  box-shadow:
-    0 1.2rem 2.8rem -1.8rem rgba(15, 23, 42, 0.36),
-    0 0 0 0.1rem rgba(var(--color-primary-rgb), 0.18);
-  transform: scale(calc(var(--bubble-scale, 1) + 0.02));
-}
-
-.latest-bubble.is-selected .latest-bubble__inner {
-  border-color: rgba(var(--color-primary-rgb), 0.32);
+  border-color: rgba(var(--color-primary-rgb), 0.28);
   background:
     linear-gradient(
       180deg,
-      rgba(var(--color-primary-rgb), 0.08),
-      rgba(var(--color-primary-rgb), 0.02)
+      rgba(var(--color-primary-rgb), 0.1),
+      rgba(var(--color-primary-rgb), 0.03)
     ),
     var(--home-panel-muted-strong);
   box-shadow:
-    0 1.5rem 3.4rem -1.9rem rgba(15, 23, 42, 0.38),
-    0 0 0 0.12rem rgba(var(--color-primary-rgb), 0.26);
-  transform: scale(calc(var(--bubble-scale, 1) + 0.03));
+    0 1.2rem 2.8rem -1.8rem rgba(15, 23, 42, 0.36),
+    0 0 0 0.1rem rgba(var(--color-primary-rgb), 0.18);
+  transform: scale(calc(var(--bubble-scale, 1) * var(--bubble-live-scale, 1) + 0.02));
 }
 
-.bubble-stage.has-active-bubble .latest-bubble.is-dimmed .latest-bubble__inner {
-  opacity: 0.76;
-  transform: scale(calc(var(--bubble-scale, 1) - 0.02));
+.latest-bubble.is-persistent-selected .latest-bubble__inner {
+  border-color: rgba(var(--color-primary-rgb), 0.24);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--color-primary-rgb), 0.05),
+      rgba(var(--color-primary-rgb), 0.015)
+    ),
+    var(--home-panel-muted-strong);
+  box-shadow:
+    0 1rem 2.4rem -1.65rem rgba(15, 23, 42, 0.32),
+    0 0 0 0.08rem rgba(var(--color-primary-rgb), 0.18);
+  transform: scale(calc(var(--bubble-scale, 1) * var(--bubble-live-scale, 1) + 0.01));
+}
+
+.latest-bubble.is-hover-active.is-persistent-selected .latest-bubble__inner {
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--color-primary-rgb), 0.11),
+      rgba(var(--color-primary-rgb), 0.035)
+    ),
+    var(--home-panel-muted-strong);
+  box-shadow:
+    0 1.35rem 3rem -1.8rem rgba(15, 23, 42, 0.36),
+    0 0 0 0.1rem rgba(var(--color-primary-rgb), 0.2);
+  transform: scale(calc(var(--bubble-scale, 1) * var(--bubble-live-scale, 1) + 0.022));
+}
+
+.latest-bubble.is-displaced .latest-bubble__inner {
+  border-color: rgba(var(--home-lilac-rgb), 0.12);
+}
+
+.latest-bubble.is-under-pressure:not(.is-hover-active) .latest-bubble__inner {
+  box-shadow:
+    0 1rem 2.4rem -1.6rem rgba(15, 23, 42, 0.28),
+    0 0 0 0.0625rem rgba(var(--home-mist-rgb), 0.16);
 }
 
 .posts--revealed .latest-bubble {
@@ -5521,19 +6002,10 @@ onBeforeUnmount(() => {
   animation-delay: var(--bubble-delay, 0s);
 }
 
-.posts--revealed .latest-bubble__float {
-  animation: bubbleDrift 5.4s ease-in-out infinite;
-  animation-delay: var(--bubble-delay, 0s);
-}
-
 .posts--exiting .latest-bubble {
   opacity: 1;
   pointer-events: none;
   animation: bubbleRetreatFromSlot 420ms var(--ease-out-smooth) both;
-}
-
-.posts--exiting .latest-bubble__float {
-  animation: none;
 }
 
 .media-slices {
@@ -6133,28 +6605,6 @@ onBeforeUnmount(() => {
   100% {
     opacity: 0;
     transform: translate3d(var(--bubble-intro-x, 0rem), var(--bubble-intro-y, 0rem), 0) scale(0.92);
-  }
-}
-
-@keyframes bubbleDrift {
-  0% {
-    transform: translate3d(var(--bubble-nudge-x, 0rem), var(--bubble-nudge-y, 0rem), 0rem);
-  }
-
-  50% {
-    transform: translate3d(
-      calc(var(--bubble-nudge-x, 0rem) + var(--bubble-drift-x, 0rem)),
-      calc(var(--bubble-nudge-y, 0rem) - var(--bubble-drift-y, 0rem)),
-      0rem
-    );
-  }
-
-  100% {
-    transform: translate3d(
-      calc(var(--bubble-nudge-x, 0rem) - var(--bubble-drift-x, 0rem)),
-      calc(var(--bubble-nudge-y, 0rem) + var(--bubble-drift-y, 0rem)),
-      0rem
-    );
   }
 }
 
