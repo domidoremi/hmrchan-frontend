@@ -11,6 +11,7 @@ import { formatRelativeTime } from '@/utils/date'
 import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 import type { ComputedRef, Ref } from 'vue'
+import { createBubbleMotionProfile } from './bubbleMotion'
 import {
   buildMediaHighlightCard,
   collectUniqueItems,
@@ -551,6 +552,11 @@ export function useHomeViewModel(options: {
           id: post.id,
           post,
           slotKey: slot?.key ?? `bubble-slot-${index + 1}`,
+          motionProfile: createBubbleMotionProfile(
+            post.id,
+            slot?.key ?? `bubble-slot-${index + 1}`,
+            bubbleLayoutTier.value
+          ),
           thumbnail: null,
           text: formatBubbleText(post, translate),
           author: formatHomeAuthorName(item.author) || translate('home.hero.fallbackAuthor'),
@@ -568,8 +574,6 @@ export function useHomeViewModel(options: {
             '--bubble-nudge-y': slot?.nudgeY ?? '0rem',
             '--bubble-intro-x': slot?.introX ?? '0rem',
             '--bubble-intro-y': slot?.introY ?? '0rem',
-            '--bubble-drift-x': slot?.driftX ?? '0rem',
-            '--bubble-drift-y': slot?.driftY ?? '0rem',
             '--bubble-delay': slot?.delay ?? '0s',
             '--bubble-scale': slot?.scale ?? '1',
             '--bubble-max-inline': slot?.maxInlineSize ?? '100%',
@@ -599,6 +603,11 @@ export function useHomeViewModel(options: {
         id: post.id,
         post,
         slotKey: slot?.key ?? `bubble-slot-${index + 1}`,
+        motionProfile: createBubbleMotionProfile(
+          post.id,
+          slot?.key ?? `bubble-slot-${index + 1}`,
+          bubbleLayoutTier.value
+        ),
         thumbnail: post.thumbnail_url ?? null,
         text: formatBubbleText(post, translate),
         author: formatAuthorName(post) || translate('home.hero.fallbackAuthor'),
@@ -614,8 +623,6 @@ export function useHomeViewModel(options: {
           '--bubble-nudge-y': slot?.nudgeY ?? '0rem',
           '--bubble-intro-x': slot?.introX ?? '0rem',
           '--bubble-intro-y': slot?.introY ?? '0rem',
-          '--bubble-drift-x': slot?.driftX ?? '0rem',
-          '--bubble-drift-y': slot?.driftY ?? '0rem',
           '--bubble-delay': slot?.delay ?? '0s',
           '--bubble-scale': slot?.scale ?? '1',
           '--bubble-max-inline': slot?.maxInlineSize ?? '100%',
