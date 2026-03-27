@@ -649,43 +649,6 @@
   color: var(--page-control-ink-strong);
 }
 
-.cta-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-block-size: 2.5rem;
-  max-inline-size: 100%;
-  padding-inline: 1rem;
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
-  background:
-    linear-gradient(
-      145deg,
-      rgba(var(--color-primary-rgb), 0.94),
-      rgba(var(--color-accent-rgb), 0.88)
-    ),
-    rgba(var(--color-primary-rgb), 0.94);
-  box-shadow: 0 0.95rem 1.8rem -1.3rem rgba(var(--color-primary-rgb), 0.44);
-  color: var(--color-on-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  line-height: 1.2;
-  text-decoration: none;
-  transition:
-    border-color 220ms var(--ease-out),
-    box-shadow 220ms var(--ease-out),
-    filter 220ms var(--ease-out);
-}
-
-.cta-primary:hover,
-.cta-primary:focus-visible {
-  outline: none;
-  border-color: rgba(var(--color-primary-rgb), 0.24);
-  box-shadow: 0 1.1rem 2rem -1.3rem rgba(var(--color-primary-rgb), 0.52);
-  filter: saturate(1.04);
-}
-
 .ui-pill--progress {
   background: var(--page-control-active-bg);
   border-color: var(--page-control-active-border);

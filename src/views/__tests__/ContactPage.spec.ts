@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   sendMessage: vi.fn(),
-  submitFeedback: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
 }))
@@ -19,12 +18,6 @@ vi.mock('@/stores', () => ({
 vi.mock('@/api/contactService', () => ({
   contactService: {
     sendMessage: mocks.sendMessage,
-  },
-}))
-
-vi.mock('@/api/feedbackService', () => ({
-  feedbackService: {
-    submit: mocks.submitFeedback,
   },
 }))
 
@@ -66,49 +59,49 @@ const i18n = createI18n({
         stepSubmit: 'Submit',
         nextStep: 'Next step',
         previousStep: 'Previous step',
-        messageGuideTitle: 'Check whether direct contact is the right route',
-        messageGuideBody: 'Use direct contact for general outreach.',
-        messageGuideSubjectLabel: 'Subject',
-        messageGuideSubject: 'Summarize the request clearly.',
-        messageGuideMessageLabel: 'Description',
-        messageGuideMessage: 'Describe context and impact.',
-        messageGuideReplyLabel: 'Reply path',
-        messageGuideReply: 'Leave a reachable email.',
-        feedbackGuideTitle: 'Check whether this is feedback or security reporting',
-        feedbackGuideBody: 'Private reports should stay private.',
-        feedbackGuideEvidenceLabel: 'Evidence',
-        feedbackGuideEvidence: 'Bring a reliable reproduction path.',
-        feedbackGuideChannelLabel: 'Route',
-        feedbackGuideChannel: 'Pick a category before submitting.',
-        feedbackGuideTimingLabel: 'Timing',
-        feedbackGuideTiming: 'Submit once you have enough evidence.',
+        topicTitle: 'Start by choosing the topic',
+        topicSubtitle: 'Pick the closest option so the message can be routed faster.',
+        topicNote: 'Choose the closest option and we will sort it out on our side.',
+        topicGeneral: 'General message',
+        topicGeneralHint: 'For everyday contact.',
+        topicIssue: 'Usage issue',
+        topicIssueHint: 'For broken pages and similar issues.',
+        topicSuggestion: 'Suggestion',
+        topicSuggestionHint: 'For ideas and improvements.',
+        topicOther: 'Other',
+        topicOtherHint: 'Use this when nothing else fits.',
+        heroSummaryTopicLabel: 'Topic first',
+        heroSummaryTopicValue: 'Choose the topic early.',
+        heroSummaryReplyLabel: 'Reply path',
+        heroSummaryReplyValue: 'Leave a reachable email address.',
+        heroSummaryClarityLabel: 'Clarity',
+        heroSummaryClarityValue: 'Keep the subject and message clear.',
+        detailTitle: 'Write the situation clearly',
+        detailContextLabel: 'Context',
+        detailContextValue: 'Describe what happened.',
+        detailNeedLabel: 'Need',
+        detailNeedValue: 'Describe what you need help with.',
+        detailReplyLabel: 'Reply',
+        detailReplyValue: 'Use an email address you can receive replies on.',
+        sendTitle: 'Last step: send the message',
+        sendSubtitle: 'You can send everything from one place.',
+        topicBadgeLabel: 'Current topic',
+        privateTitle: 'If this involves account safety or privacy',
+        privateBody: 'Use the private reporting route instead.',
+        privateAction: 'Open private reporting route',
         feedbackContact: 'Contact Info (Optional)',
         feedbackMessage: 'Feedback',
         feedbackSend: 'Send Feedback',
         feedbackSending: 'Submitting...',
         feedbackSuccess: 'Feedback submitted',
         feedbackError: 'Failed to submit feedback',
-        securityTitle: 'Security Reporting',
-        securitySubtitle: 'Share suspected vulnerabilities privately.',
-        securityBody: 'Use this page for security reports that affect the public site.',
-        securityAction: 'Open bug report form',
-        securityTxtAction: 'View security.txt',
-        securitySummaryScopeLabel: 'Best for',
-        securitySummaryScopeValue: 'XSS and authentication bugs.',
-        securitySummaryChannelLabel: 'Submission path',
-        securitySummaryChannelValue: 'Use the bug feedback form below.',
-        securitySummaryPreparationLabel: 'Include',
-        securitySummaryPreparationValue: 'The affected URL and reproduction steps.',
-        securityChecklistPrivate: 'Keep the report private.',
-        securityChecklistScope: 'Test only accounts you control.',
-        securityChecklistEvidence: 'Describe the smallest reliable reproduction path.',
       },
     },
   },
 })
 
 describe('ContactPage', () => {
-  it('shows the security reporting section and primes bug feedback from the CTA', async () => {
+  it('uses a single contact flow with neutral workflow actions', async () => {
     const { default: ContactPage } = await import('../ContactPage.vue')
     const wrapper = shallowMount(ContactPage, {
       global: {
@@ -119,20 +112,28 @@ describe('ContactPage', () => {
       },
     })
 
-    expect(wrapper.find('#security-reporting').exists()).toBe(true)
-    expect(wrapper.find('a[href="/.well-known/security.txt"]').exists()).toBe(true)
-    expect(wrapper.find('.contact-side').exists()).toBe(false)
-    expect(wrapper.find('.contact-security').exists()).toBe(false)
+    expect(wrapper.find('#contact-step-topic').exists()).toBe(true)
     expect(wrapper.findAll('.contact-stepper__item')).toHaveLength(3)
-    expect(wrapper.text()).toContain('Security Reporting')
+    expect(wrapper.findAll('.contact-topic-card')).toHaveLength(4)
+    expect(wrapper.text()).toContain('General message')
 
-    const securityAction = wrapper.find('a[href="#security-feedback-form"]')
-    expect(securityAction.exists()).toBe(true)
+    const nextButton = wrapper.find('.contact-workflow__next')
+    expect(nextButton.exists()).toBe(true)
+    expect(nextButton.classes()).toContain('page-control-btn')
 
-    await securityAction.trigger('click')
+    const issueTopic = wrapper
+      .findAll('.contact-topic-card')
+      .find((button) => button.text().includes('Usage issue'))
 
-    expect(wrapper.find('#security-feedback-form').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Bug')
+    expect(issueTopic).toBeDefined()
+
+    await issueTopic?.trigger('click')
+    await nextButton.trigger('click')
+    await wrapper.find('.contact-workflow__next').trigger('click')
+
+    expect(wrapper.find('#contact-step-send').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Usage issue')
     expect(wrapper.findAll('.contact-stepper__item')[2]?.classes()).toContain('active')
+    expect(wrapper.find('.contact-private-note').exists()).toBe(true)
   })
 })
