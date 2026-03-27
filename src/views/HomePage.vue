@@ -1038,8 +1038,9 @@ let scrollTriggerReadyPromise: Promise<boolean> | null = null
 
 const SCENE_LAYOUT_REFRESH_THRESHOLD_PX = 24
 const BUBBLE_EXIT_DURATION_MS = 420
-const BUBBLE_POINTER_SETTLE_MS = 200
-const BUBBLE_FORCE_CENTER_LERP_MS = 110
+const BUBBLE_POINTER_ATTACK_MS = 220
+const BUBBLE_POINTER_RELEASE_MS = 360
+const BUBBLE_FORCE_CENTER_LERP_MS = 180
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
 
@@ -1669,7 +1670,8 @@ function runBubbleMotionFrame(timestamp: number) {
       }
     : pointerTargetCenter
   const targetStrength = targetCenter ? 1 : 0
-  const pointerLerp = resolveBubbleMotionLerpFactor(deltaMs, BUBBLE_POINTER_SETTLE_MS * 0.5)
+  const pointerSettleDuration = targetCenter ? BUBBLE_POINTER_ATTACK_MS : BUBBLE_POINTER_RELEASE_MS
+  const pointerLerp = resolveBubbleMotionLerpFactor(deltaMs, pointerSettleDuration)
 
   bubbleMotionPointerStrength += (targetStrength - bubbleMotionPointerStrength) * pointerLerp
 
@@ -5865,8 +5867,8 @@ onBeforeUnmount(() => {
   pointer-events: none;
   transform: translate3d(var(--bubble-intro-x, 0rem), var(--bubble-intro-y, 0rem), 0) scale(0.92);
   transition:
-    opacity 240ms var(--ease-out-smooth),
-    z-index 220ms var(--ease-out-smooth);
+    opacity 320ms var(--ease-out-smooth),
+    z-index 320ms var(--ease-out-smooth);
   will-change: transform, opacity;
   backface-visibility: hidden;
   z-index: 1;
@@ -5920,11 +5922,11 @@ onBeforeUnmount(() => {
   transform-origin: center center;
   opacity: var(--bubble-live-opacity, 1);
   transition:
-    transform 220ms var(--ease-out-smooth),
-    opacity 220ms var(--ease-out-smooth),
-    box-shadow 220ms var(--ease-out-smooth),
-    border-color 220ms var(--ease-out-smooth),
-    background 220ms var(--ease-out-smooth);
+    transform 320ms var(--ease-out-smooth),
+    opacity 320ms var(--ease-out-smooth),
+    box-shadow 320ms var(--ease-out-smooth),
+    border-color 320ms var(--ease-out-smooth),
+    background 320ms var(--ease-out-smooth);
   backface-visibility: hidden;
 }
 
