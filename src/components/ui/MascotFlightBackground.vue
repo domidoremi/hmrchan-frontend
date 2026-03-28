@@ -55,7 +55,7 @@ const defaultMascotSettings = {
 }
 const mascotSettings = computed(() => settings.value.mascotBackground ?? defaultMascotSettings)
 
-const mascotSrc = '/images/expressions/fly-sm.webp'
+const mascotSrc = '/images/expressions/fly-sm-transparent.webp'
 const MAX_LANES = 12
 const sizePresets = [
   'clamp(2.5rem, 4.6vw, 3.9rem)',
@@ -242,7 +242,8 @@ const wobbleStyle = (lane: FlightLane): Record<string, string> => ({
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0.2rem 0.45rem rgba(15, 23, 42, 0.18));
+  background: transparent;
+  filter: drop-shadow(0 0.2rem 0.45rem rgba(15, 23, 42, 0.14));
   animation: mascot-flap var(--lane-flap-duration) ease-in-out infinite;
   animation-delay: var(--lane-flap-delay);
   transform-origin: 50% 70%;

@@ -41,823 +41,947 @@
       </template>
 
       <template v-else-if="profile">
-        <div class="settings-layout">
-          <div class="settings-main">
-            <form class="settings-form" @submit.prevent="saveProfile">
-              <!-- Avatar Section -->
-              <section id="avatar-section" class="settings-section glass-surface--editorial">
+        <div class="settings-dashboard">
+          <section class="settings-overview glass-surface--editorial">
+            <div class="settings-overview__copy">
+              <p class="settings-overview__eyebrow">{{ $t('profile.summary') }}</p>
+              <h2 class="settings-overview__title">{{ userDisplayName }}</h2>
+              <p class="settings-overview__subtitle">{{ $t('profile.settingsHint') }}</p>
+            </div>
+
+            <div class="settings-overview__meta">
+              <div class="settings-overview__meta-item">
+                <span class="settings-overview__meta-label">{{ $t('email.currentEmail') }}</span>
+                <strong class="settings-overview__meta-value">{{ profile.email }}</strong>
+              </div>
+              <div class="settings-overview__meta-item">
+                <span class="settings-overview__meta-label">{{
+                  $t('profile.twoFactorSummaryLabel')
+                }}</span>
+                <strong class="settings-overview__meta-value">
+                  {{
+                    isTwoFactorLoading
+                      ? $t('common.loading')
+                      : twoFactorStatus?.enabled
+                        ? $t('profile.twoFactorEnabled')
+                        : $t('profile.twoFactorDisabled')
+                  }}
+                </strong>
+              </div>
+              <div class="settings-overview__meta-item">
+                <span class="settings-overview__meta-label">{{
+                  $t('profile.accountStatusLabel')
+                }}</span>
+                <strong class="settings-overview__meta-value">
+                  {{
+                    isDeletionStatusLoading
+                      ? $t('common.loading')
+                      : deletionStatus?.is_deleted
+                        ? $t('profile.accountDeletionPending')
+                        : $t('profile.accountActive')
+                  }}
+                </strong>
+              </div>
+            </div>
+          </section>
+
+          <div class="settings-group-switcher" role="tablist" :aria-label="$t('profile.settings')">
+            <button
+              v-for="group in settingsDashboardGroups"
+              :key="group.id"
+              type="button"
+              class="settings-group-switcher__item"
+              :class="{ 'settings-group-switcher__item--active': activeSettingsGroup === group.id }"
+              :aria-selected="activeSettingsGroup === group.id"
+              :tabindex="activeSettingsGroup === group.id ? 0 : -1"
+              role="tab"
+              @click="activeSettingsGroup = group.id"
+            >
+              <div class="settings-group-switcher__icon">
+                <AnimatedIcon :name="group.iconName" :fallback-icon="group.icon" size="sm" />
+              </div>
+              <div class="settings-group-switcher__copy">
+                <strong>{{ group.title }}</strong>
+                <span>{{ group.description }}</span>
+              </div>
+            </button>
+          </div>
+
+          <div class="settings-layout">
+            <div class="settings-main">
+              <div v-show="activeSettingsGroup === 'account'" class="settings-group-panel">
+                <form class="settings-form" @submit.prevent="saveProfile">
+                  <!-- Avatar Section -->
+                  <section id="avatar-section" class="settings-section glass-surface--editorial">
+                    <div class="settings-section-head">
+                      <div class="settings-section-icon">
+                        <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
+                      </div>
+                      <div>
+                        <h2 class="settings-section-title">{{ $t('profile.avatar') }}</h2>
+                        <p class="settings-section-desc">{{ $t('profile.avatarSectionHint') }}</p>
+                      </div>
+                    </div>
+                    <div class="avatar-section">
+                      <div class="avatar-wrapper">
+                        <img
+                          v-if="profile.avatar_url"
+                          class="avatar-preview"
+                          :src="normalizeAvatarUrl(profile.avatar_url) || profile.avatar_url"
+                          :alt="profile.username"
+                        />
+                        <div v-else class="avatar-preview avatar-placeholder">
+                          <AnimatedIcon name="user" :fallback-icon="User" size="xl" />
+                        </div>
+                        <div class="avatar-badge">
+                          <AnimatedIcon name="sparkle" :fallback-icon="Camera" size="sm" />
+                        </div>
+                      </div>
+                      <div class="avatar-info">
+                        <p class="avatar-hint">
+                          {{ $t('profile.avatarHint') }}
+                        </p>
+                        <label class="glass-button avatar-upload-btn">
+                          <AnimatedIcon name="explore" :fallback-icon="Upload" size="sm" />
+                          {{ $t('profile.uploadAvatar') }}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            class="sr-only"
+                            :aria-label="$t('profile.uploadAvatar')"
+                            @change="handleAvatarSelect"
+                          />
+                        </label>
+                        <div class="avatar-meta">
+                          <span>{{ $t('profile.avatarMetaHint') }}</span>
+                          <span class="meta-dot" />
+                          <span>{{ $t('profile.avatarMetaPrivacy') }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Basic Info Section -->
+                  <section id="basic-info" class="settings-section glass-surface--editorial">
+                    <div class="settings-section-head">
+                      <div class="settings-section-icon">
+                        <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
+                      </div>
+                      <div>
+                        <h2 class="settings-section-title">{{ $t('profile.basicInfo') }}</h2>
+                        <p class="settings-section-desc">{{ $t('profile.basicInfoHint') }}</p>
+                      </div>
+                    </div>
+
+                    <!-- Username (readonly) -->
+                    <div class="form-group">
+                      <label for="username">
+                        <AnimatedIcon name="explore" :fallback-icon="AtSign" size="sm" />
+                        {{ $t('profile.username') }}
+                      </label>
+                      <div class="input-wrapper input-readonly">
+                        <Input
+                          id="username"
+                          :model-value="profile.username"
+                          type="text"
+                          class="input-with-icon"
+                          autocomplete="username"
+                          disabled
+                          readonly
+                        />
+                        <AnimatedIcon
+                          name="sparkle"
+                          :fallback-icon="Lock"
+                          size="sm"
+                          class="input-icon-right"
+                        />
+                      </div>
+                      <p class="field-hint">{{ $t('profile.usernameReadonly') }}</p>
+                    </div>
+
+                    <!-- Display Name -->
+                    <div class="form-group">
+                      <label for="full_name">
+                        <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
+                        {{ $t('profile.fullName') }}
+                      </label>
+                      <div class="input-wrapper">
+                        <Input
+                          id="full_name"
+                          v-model="form.full_name"
+                          type="text"
+                          class="input-with-icon"
+                          maxlength="255"
+                          :placeholder="$t('profile.fullNamePlaceholder')"
+                          autocomplete="name"
+                        />
+                      </div>
+                      <p class="field-hint">{{ $t('profile.displayNameHint') }}</p>
+                    </div>
+
+                    <!-- Bio -->
+                    <div class="form-group">
+                      <label for="bio">
+                        <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
+                        {{ $t('profile.bio') }}
+                      </label>
+                      <div class="input-wrapper">
+                        <Textarea
+                          id="bio"
+                          v-model="form.bio"
+                          class="bio-textarea"
+                          maxlength="500"
+                          rows="4"
+                          :placeholder="$t('profile.bioPlaceholder')"
+                        />
+                      </div>
+                      <div class="field-hint-row">
+                        <p class="field-hint">{{ $t('profile.bioHint') }}</p>
+                        <span
+                          class="char-count"
+                          :class="{ 'char-count--warning': (form.bio?.length || 0) > 450 }"
+                        >
+                          {{ form.bio?.length || 0 }}/500
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="form-actions">
+                      <Button type="submit" :disabled="isSaving">
+                        <span v-if="isSaving" class="spinner spinner-sm" />
+                        <AnimatedIcon v-else name="sparkle" :fallback-icon="Save" size="sm" />
+                        {{ $t('common.save') }}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        :disabled="isSaving"
+                        @click="fetchProfile"
+                      >
+                        <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
+                        {{ $t('common.reset') }}
+                      </Button>
+                    </div>
+                  </section>
+                </form>
+
+                <!-- Change Email Section -->
+                <section
+                  id="email-section"
+                  class="settings-section glass-surface--editorial email-section"
+                >
+                  <div class="settings-section-head">
+                    <div class="settings-section-icon">
+                      <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
+                    </div>
+                    <div>
+                      <h2 class="settings-section-title">{{ $t('email.changeEmailTitle') }}</h2>
+                      <p class="settings-section-desc">{{ $t('email.changeEmailHint') }}</p>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>
+                      <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
+                      {{ $t('email.currentEmail') }}
+                    </label>
+                    <div class="input-wrapper input-readonly">
+                      <Input
+                        :model-value="profile.email"
+                        type="email"
+                        class="input-with-icon"
+                        autocomplete="email"
+                        disabled
+                        readonly
+                      />
+                      <AnimatedIcon
+                        name="sparkle"
+                        :fallback-icon="Lock"
+                        size="sm"
+                        class="input-icon-right"
+                      />
+                    </div>
+                  </div>
+
+                  <form @submit.prevent="handleChangeEmail">
+                    <div class="form-group">
+                      <label for="new_email">
+                        <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
+                        {{ $t('email.newEmail') }}
+                      </label>
+                      <div class="input-wrapper">
+                        <Input
+                          id="new_email"
+                          v-model="emailForm.new_email"
+                          type="email"
+                          class="input-with-icon"
+                          :placeholder="$t('email.newEmailPlaceholder')"
+                          autocomplete="email"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="email_password">
+                        <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
+                        {{ $t('email.confirmWithPassword') }}
+                      </label>
+                      <div class="input-wrapper">
+                        <Input
+                          id="email_password"
+                          v-model="emailForm.password"
+                          :type="showEmailPassword ? 'text' : 'password'"
+                          class="input-with-icon"
+                          autocomplete="current-password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          class="password-toggle"
+                          :aria-label="passwordToggleLabel(showEmailPassword)"
+                          :aria-pressed="showEmailPassword"
+                          @click="showEmailPassword = !showEmailPassword"
+                        >
+                          <AnimatedIcon
+                            v-if="showEmailPassword"
+                            name="explore"
+                            :fallback-icon="EyeOff"
+                            size="sm"
+                          />
+                          <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                        </button>
+                      </div>
+                      <p class="field-hint">{{ $t('email.changeEmailVerifyHint') }}</p>
+                    </div>
+
+                    <div class="form-actions">
+                      <Button
+                        type="submit"
+                        variant="secondary"
+                        :disabled="isChangingEmail || !canChangeEmail"
+                      >
+                        <span v-if="isChangingEmail" class="spinner spinner-sm" />
+                        <AnimatedIcon v-else name="explore" :fallback-icon="Mail" size="sm" />
+                        {{ $t('email.changeEmailButton') }}
+                      </Button>
+                    </div>
+                  </form>
+                </section>
+              </div>
+
+              <section
+                v-show="activeSettingsGroup === 'appearance'"
+                class="settings-section settings-section--embedded glass-surface--editorial"
+              >
                 <div class="settings-section-head">
                   <div class="settings-section-icon">
-                    <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
+                    <AnimatedIcon name="sparkle" :fallback-icon="Palette" size="sm" />
                   </div>
                   <div>
-                    <h2 class="settings-section-title">{{ $t('profile.avatar') }}</h2>
-                    <p class="settings-section-desc">{{ $t('profile.avatarSectionHint') }}</p>
+                    <h2 class="settings-section-title">{{ $t('settings.categoryAppearance') }}</h2>
+                    <p class="settings-section-desc">{{ $t('settings.display') }}</p>
                   </div>
                 </div>
-                <div class="avatar-section">
-                  <div class="avatar-wrapper">
-                    <img
-                      v-if="profile.avatar_url"
-                      class="avatar-preview"
-                      :src="normalizeAvatarUrl(profile.avatar_url) || profile.avatar_url"
-                      :alt="profile.username"
-                    />
-                    <div v-else class="avatar-preview avatar-placeholder">
-                      <AnimatedIcon name="user" :fallback-icon="User" size="xl" />
-                    </div>
-                    <div class="avatar-badge">
-                      <AnimatedIcon name="sparkle" :fallback-icon="Camera" size="sm" />
-                    </div>
-                  </div>
-                  <div class="avatar-info">
-                    <p class="avatar-hint">
-                      {{ $t('profile.avatarHint') }}
-                    </p>
-                    <label class="glass-button avatar-upload-btn">
-                      <AnimatedIcon name="explore" :fallback-icon="Upload" size="sm" />
-                      {{ $t('profile.uploadAvatar') }}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        class="sr-only"
-                        :aria-label="$t('profile.uploadAvatar')"
-                        @change="handleAvatarSelect"
-                      />
-                    </label>
-                    <div class="avatar-meta">
-                      <span>{{ $t('profile.avatarMetaHint') }}</span>
-                      <span class="meta-dot" />
-                      <span>{{ $t('profile.avatarMetaPrivacy') }}</span>
-                    </div>
-                  </div>
-                </div>
+
+                <SettingsPanel
+                  :compact="false"
+                  :embedded="true"
+                  :show-header="false"
+                  :allowed-categories="appearanceSettingsCategories"
+                />
               </section>
 
-              <!-- Basic Info Section -->
-              <section id="basic-info" class="settings-section glass-surface--editorial">
-                <div class="settings-section-head">
-                  <div class="settings-section-icon">
-                    <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
+              <div v-show="activeSettingsGroup === 'security'" class="settings-group-panel">
+                <!-- Password Section -->
+                <section
+                  id="password-section"
+                  class="settings-section glass-surface--editorial password-section"
+                >
+                  <div class="settings-section-head">
+                    <div class="settings-section-icon settings-section-icon--warning">
+                      <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
+                    </div>
+                    <div>
+                      <h2 class="settings-section-title">{{ $t('profile.changePassword') }}</h2>
+                      <p class="settings-section-desc">{{ $t('profile.passwordHint') }}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 class="settings-section-title">{{ $t('profile.basicInfo') }}</h2>
-                    <p class="settings-section-desc">{{ $t('profile.basicInfoHint') }}</p>
-                  </div>
-                </div>
-
-                <!-- Username (readonly) -->
-                <div class="form-group">
-                  <label for="username">
-                    <AnimatedIcon name="explore" :fallback-icon="AtSign" size="sm" />
-                    {{ $t('profile.username') }}
-                  </label>
-                  <div class="input-wrapper input-readonly">
-                    <Input
-                      id="username"
-                      :model-value="profile.username"
+                  <form @submit.prevent="changePassword">
+                    <!-- Hidden username for password managers -->
+                    <input
                       type="text"
-                      class="input-with-icon"
+                      :value="profile?.username"
                       autocomplete="username"
-                      disabled
+                      class="sr-only"
+                      tabindex="-1"
+                      aria-hidden="true"
                       readonly
                     />
-                    <AnimatedIcon
-                      name="sparkle"
-                      :fallback-icon="Lock"
-                      size="sm"
-                      class="input-icon-right"
-                    />
+
+                    <div class="form-group">
+                      <label for="current_password">
+                        <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
+                        {{ $t('profile.currentPassword') }}
+                      </label>
+                      <div class="input-wrapper">
+                        <Input
+                          id="current_password"
+                          v-model="passwordForm.current_password"
+                          :type="showCurrentPassword ? 'text' : 'password'"
+                          class="input-with-icon"
+                          autocomplete="current-password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          class="password-toggle"
+                          :aria-label="passwordToggleLabel(showCurrentPassword)"
+                          :aria-pressed="showCurrentPassword"
+                          @click="showCurrentPassword = !showCurrentPassword"
+                        >
+                          <AnimatedIcon
+                            v-if="showCurrentPassword"
+                            name="explore"
+                            :fallback-icon="EyeOff"
+                            size="sm"
+                          />
+                          <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="new_password">
+                        <AnimatedIcon name="sparkle" :fallback-icon="Lock" size="sm" />
+                        {{ $t('profile.newPassword') }}
+                      </label>
+                      <div class="input-wrapper">
+                        <Input
+                          id="new_password"
+                          v-model="passwordForm.new_password"
+                          :type="showNewPassword ? 'text' : 'password'"
+                          class="input-with-icon"
+                          autocomplete="new-password"
+                          minlength="8"
+                          required
+                        />
+                        <button
+                          type="button"
+                          class="password-toggle"
+                          :aria-label="passwordToggleLabel(showNewPassword)"
+                          :aria-pressed="showNewPassword"
+                          @click="showNewPassword = !showNewPassword"
+                        >
+                          <AnimatedIcon
+                            v-if="showNewPassword"
+                            name="explore"
+                            :fallback-icon="EyeOff"
+                            size="sm"
+                          />
+                          <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                        </button>
+                      </div>
+                      <!-- Password Strength Indicator -->
+                      <div v-if="passwordForm.new_password" class="password-strength">
+                        <div class="strength-bar">
+                          <div
+                            class="strength-fill"
+                            :class="passwordStrengthClass"
+                            :style="{ width: `${passwordStrength * 25}%` }"
+                          />
+                        </div>
+                        <span class="strength-text" :class="passwordStrengthClass">
+                          {{ passwordStrengthText }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="confirm_password">
+                        <AnimatedIcon name="sparkle" :fallback-icon="CheckCircle" size="sm" />
+                        {{ $t('profile.confirmPassword') }}
+                      </label>
+                      <div class="input-wrapper">
+                        <Input
+                          id="confirm_password"
+                          v-model="passwordForm.confirm_password"
+                          :type="showConfirmPassword ? 'text' : 'password'"
+                          class="input-with-icon"
+                          :error="Boolean(passwordForm.confirm_password && !passwordsMatch)"
+                          autocomplete="new-password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          class="password-toggle"
+                          :aria-label="passwordToggleLabel(showConfirmPassword)"
+                          :aria-pressed="showConfirmPassword"
+                          @click="showConfirmPassword = !showConfirmPassword"
+                        >
+                          <AnimatedIcon
+                            v-if="showConfirmPassword"
+                            name="explore"
+                            :fallback-icon="EyeOff"
+                            size="sm"
+                          />
+                          <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                        </button>
+                      </div>
+                      <p
+                        v-if="passwordForm.confirm_password && !passwordsMatch"
+                        class="field-error"
+                      >
+                        {{ $t('profile.passwordMismatch') }}
+                      </p>
+                    </div>
+
+                    <div class="form-actions">
+                      <Button
+                        type="submit"
+                        variant="secondary"
+                        :disabled="isChangingPassword || !canChangePassword"
+                      >
+                        <span v-if="isChangingPassword" class="spinner spinner-sm" />
+                        <AnimatedIcon v-else name="sparkle" :fallback-icon="Shield" size="sm" />
+                        {{ $t('profile.changePassword') }}
+                      </Button>
+                    </div>
+                  </form>
+                </section>
+
+                <!-- 2FA Section -->
+                <section
+                  id="two-factor-section"
+                  class="settings-section glass-surface--editorial two-factor-section"
+                >
+                  <div class="settings-section-head">
+                    <div class="settings-section-icon settings-section-icon--success">
+                      <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
+                    </div>
+                    <div>
+                      <h2 class="settings-section-title">{{ $t('profile.twoFactorTitle') }}</h2>
+                      <p class="settings-section-desc">{{ $t('profile.twoFactorHint') }}</p>
+                    </div>
                   </div>
-                  <p class="field-hint">{{ $t('profile.usernameReadonly') }}</p>
-                </div>
 
-                <!-- Display Name -->
-                <div class="form-group">
-                  <label for="full_name">
-                    <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
-                    {{ $t('profile.fullName') }}
-                  </label>
-                  <div class="input-wrapper">
-                    <Input
-                      id="full_name"
-                      v-model="form.full_name"
-                      type="text"
-                      class="input-with-icon"
-                      maxlength="255"
-                      :placeholder="$t('profile.fullNamePlaceholder')"
-                      autocomplete="name"
-                    />
+                  <div class="two-factor-status-card">
+                    <div class="two-factor-status-copy">
+                      <p class="two-factor-status-label">
+                        {{ $t('profile.twoFactorStatusLabel') }}
+                      </p>
+                      <p class="two-factor-status-value">
+                        {{
+                          isTwoFactorLoading
+                            ? $t('common.loading')
+                            : twoFactorStatus?.enabled
+                              ? $t('profile.twoFactorEnabled')
+                              : $t('profile.twoFactorDisabled')
+                        }}
+                      </p>
+                      <p class="field-hint">
+                        {{
+                          isTwoFactorLoading
+                            ? $t('profile.twoFactorStatusLoadingHint')
+                            : twoFactorStatus?.enabled
+                              ? $t('profile.twoFactorEnabledHint', {
+                                  count: twoFactorStatus.backup_codes_remaining,
+                                })
+                              : $t('profile.twoFactorDisabledHint')
+                        }}
+                      </p>
+                    </div>
+
+                    <div class="two-factor-actions">
+                      <Button
+                        v-if="!twoFactorStatus?.enabled && !twoFactorSetup"
+                        type="button"
+                        variant="secondary"
+                        :loading="isSettingUpTwoFactor"
+                        :disabled="isTwoFactorLoading"
+                        @click="beginTwoFactorSetup"
+                      >
+                        <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
+                        {{ $t('profile.twoFactorSetupAction') }}
+                      </Button>
+
+                      <template v-else-if="twoFactorStatus?.enabled">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          :disabled="isTwoFactorLoading"
+                          @click="openBackupCodesDialog"
+                        >
+                          <AnimatedIcon name="explore" :fallback-icon="Key" size="sm" />
+                          {{ $t('profile.twoFactorViewBackupCodes') }}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          :disabled="isTwoFactorLoading"
+                          @click="openRegenerateDialog"
+                        >
+                          <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
+                          {{ $t('profile.twoFactorRegenerateAction') }}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          :disabled="isTwoFactorLoading"
+                          @click="openDisableDialog"
+                        >
+                          <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
+                          {{ $t('profile.twoFactorDisableAction') }}
+                        </Button>
+                      </template>
+                    </div>
                   </div>
-                  <p class="field-hint">{{ $t('profile.displayNameHint') }}</p>
-                </div>
 
-                <!-- Bio -->
-                <div class="form-group">
-                  <label for="bio">
-                    <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
-                    {{ $t('profile.bio') }}
-                  </label>
-                  <div class="input-wrapper">
-                    <Textarea
-                      id="bio"
-                      v-model="form.bio"
-                      class="bio-textarea"
-                      maxlength="500"
-                      rows="4"
-                      :placeholder="$t('profile.bioPlaceholder')"
-                    />
-                  </div>
-                  <div class="field-hint-row">
-                    <p class="field-hint">{{ $t('profile.bioHint') }}</p>
-                    <span
-                      class="char-count"
-                      :class="{ 'char-count--warning': (form.bio?.length || 0) > 450 }"
-                    >
-                      {{ form.bio?.length || 0 }}/500
-                    </span>
-                  </div>
-                </div>
-
-                <div class="form-actions">
-                  <Button type="submit" :disabled="isSaving">
-                    <span v-if="isSaving" class="spinner spinner-sm" />
-                    <AnimatedIcon v-else name="sparkle" :fallback-icon="Save" size="sm" />
-                    {{ $t('common.save') }}
-                  </Button>
-                  <Button type="button" variant="ghost" :disabled="isSaving" @click="fetchProfile">
-                    <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
-                    {{ $t('common.reset') }}
-                  </Button>
-                </div>
-              </section>
-            </form>
-
-            <!-- Change Email Section -->
-            <section
-              id="email-section"
-              class="settings-section glass-surface--editorial email-section"
-            >
-              <div class="settings-section-head">
-                <div class="settings-section-icon">
-                  <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
-                </div>
-                <div>
-                  <h2 class="settings-section-title">{{ $t('email.changeEmailTitle') }}</h2>
-                  <p class="settings-section-desc">{{ $t('email.changeEmailHint') }}</p>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label>
-                  <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
-                  {{ $t('email.currentEmail') }}
-                </label>
-                <div class="input-wrapper input-readonly">
-                  <Input
-                    :model-value="profile.email"
-                    type="email"
-                    class="input-with-icon"
-                    autocomplete="email"
-                    disabled
-                    readonly
-                  />
-                  <AnimatedIcon
-                    name="sparkle"
-                    :fallback-icon="Lock"
-                    size="sm"
-                    class="input-icon-right"
-                  />
-                </div>
-              </div>
-
-              <form @submit.prevent="handleChangeEmail">
-                <div class="form-group">
-                  <label for="new_email">
-                    <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
-                    {{ $t('email.newEmail') }}
-                  </label>
-                  <div class="input-wrapper">
-                    <Input
-                      id="new_email"
-                      v-model="emailForm.new_email"
-                      type="email"
-                      class="input-with-icon"
-                      :placeholder="$t('email.newEmailPlaceholder')"
-                      autocomplete="email"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="email_password">
-                    <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-                    {{ $t('email.confirmWithPassword') }}
-                  </label>
-                  <div class="input-wrapper">
-                    <Input
-                      id="email_password"
-                      v-model="emailForm.password"
-                      :type="showEmailPassword ? 'text' : 'password'"
-                      class="input-with-icon"
-                      autocomplete="current-password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      class="password-toggle"
-                      :aria-label="passwordToggleLabel(showEmailPassword)"
-                      :aria-pressed="showEmailPassword"
-                      @click="showEmailPassword = !showEmailPassword"
-                    >
-                      <AnimatedIcon
-                        v-if="showEmailPassword"
-                        name="explore"
-                        :fallback-icon="EyeOff"
-                        size="sm"
-                      />
-                      <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                    </button>
-                  </div>
-                  <p class="field-hint">{{ $t('email.changeEmailVerifyHint') }}</p>
-                </div>
-
-                <div class="form-actions">
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    :disabled="isChangingEmail || !canChangeEmail"
-                  >
-                    <span v-if="isChangingEmail" class="spinner spinner-sm" />
-                    <AnimatedIcon v-else name="explore" :fallback-icon="Mail" size="sm" />
-                    {{ $t('email.changeEmailButton') }}
-                  </Button>
-                </div>
-              </form>
-            </section>
-
-            <!-- Password Section -->
-            <section
-              id="password-section"
-              class="settings-section glass-surface--editorial password-section"
-            >
-              <div class="settings-section-head">
-                <div class="settings-section-icon settings-section-icon--warning">
-                  <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-                </div>
-                <div>
-                  <h2 class="settings-section-title">{{ $t('profile.changePassword') }}</h2>
-                  <p class="settings-section-desc">{{ $t('profile.passwordHint') }}</p>
-                </div>
-              </div>
-              <form @submit.prevent="changePassword">
-                <!-- Hidden username for password managers -->
-                <input
-                  type="text"
-                  :value="profile?.username"
-                  autocomplete="username"
-                  class="sr-only"
-                  tabindex="-1"
-                  aria-hidden="true"
-                  readonly
-                />
-
-                <div class="form-group">
-                  <label for="current_password">
-                    <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-                    {{ $t('profile.currentPassword') }}
-                  </label>
-                  <div class="input-wrapper">
-                    <Input
-                      id="current_password"
-                      v-model="passwordForm.current_password"
-                      :type="showCurrentPassword ? 'text' : 'password'"
-                      class="input-with-icon"
-                      autocomplete="current-password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      class="password-toggle"
-                      :aria-label="passwordToggleLabel(showCurrentPassword)"
-                      :aria-pressed="showCurrentPassword"
-                      @click="showCurrentPassword = !showCurrentPassword"
-                    >
-                      <AnimatedIcon
-                        v-if="showCurrentPassword"
-                        name="explore"
-                        :fallback-icon="EyeOff"
-                        size="sm"
-                      />
-                      <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                    </button>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="new_password">
-                    <AnimatedIcon name="sparkle" :fallback-icon="Lock" size="sm" />
-                    {{ $t('profile.newPassword') }}
-                  </label>
-                  <div class="input-wrapper">
-                    <Input
-                      id="new_password"
-                      v-model="passwordForm.new_password"
-                      :type="showNewPassword ? 'text' : 'password'"
-                      class="input-with-icon"
-                      autocomplete="new-password"
-                      minlength="8"
-                      required
-                    />
-                    <button
-                      type="button"
-                      class="password-toggle"
-                      :aria-label="passwordToggleLabel(showNewPassword)"
-                      :aria-pressed="showNewPassword"
-                      @click="showNewPassword = !showNewPassword"
-                    >
-                      <AnimatedIcon
-                        v-if="showNewPassword"
-                        name="explore"
-                        :fallback-icon="EyeOff"
-                        size="sm"
-                      />
-                      <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                    </button>
-                  </div>
-                  <!-- Password Strength Indicator -->
-                  <div v-if="passwordForm.new_password" class="password-strength">
-                    <div class="strength-bar">
-                      <div
-                        class="strength-fill"
-                        :class="passwordStrengthClass"
-                        :style="{ width: `${passwordStrength * 25}%` }"
+                  <div v-if="twoFactorSetup" class="two-factor-setup">
+                    <div class="two-factor-setup-qr">
+                      <img
+                        class="two-factor-qr-image"
+                        :src="normalizedTwoFactorQrCode"
+                        :alt="$t('profile.twoFactorQrAlt')"
                       />
                     </div>
-                    <span class="strength-text" :class="passwordStrengthClass">
-                      {{ passwordStrengthText }}
-                    </span>
-                  </div>
-                </div>
 
-                <div class="form-group">
-                  <label for="confirm_password">
-                    <AnimatedIcon name="sparkle" :fallback-icon="CheckCircle" size="sm" />
-                    {{ $t('profile.confirmPassword') }}
-                  </label>
-                  <div class="input-wrapper">
-                    <Input
-                      id="confirm_password"
-                      v-model="passwordForm.confirm_password"
-                      :type="showConfirmPassword ? 'text' : 'password'"
-                      class="input-with-icon"
-                      :error="Boolean(passwordForm.confirm_password && !passwordsMatch)"
-                      autocomplete="new-password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      class="password-toggle"
-                      :aria-label="passwordToggleLabel(showConfirmPassword)"
-                      :aria-pressed="showConfirmPassword"
-                      @click="showConfirmPassword = !showConfirmPassword"
-                    >
-                      <AnimatedIcon
-                        v-if="showConfirmPassword"
-                        name="explore"
-                        :fallback-icon="EyeOff"
-                        size="sm"
-                      />
-                      <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                    </button>
-                  </div>
-                  <p v-if="passwordForm.confirm_password && !passwordsMatch" class="field-error">
-                    {{ $t('profile.passwordMismatch') }}
-                  </p>
-                </div>
+                    <div class="two-factor-setup-details">
+                      <p class="field-hint">{{ $t('profile.twoFactorSetupInstructions') }}</p>
 
-                <div class="form-actions">
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    :disabled="isChangingPassword || !canChangePassword"
+                      <div class="two-factor-secret-card">
+                        <span class="two-factor-secret-label">{{
+                          $t('profile.twoFactorManualCode')
+                        }}</span>
+                        <code class="two-factor-secret-value">{{ twoFactorSetup.secret }}</code>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          @click="copyText(twoFactorSetup.secret)"
+                        >
+                          {{ $t('profile.twoFactorCopySecret') }}
+                        </Button>
+                      </div>
+
+                      <div class="two-factor-backup-box">
+                        <div class="two-factor-backup-header">
+                          <h3>{{ $t('profile.twoFactorBackupCodesTitle') }}</h3>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            @click="copyBackupCodes(setupBackupCodes)"
+                          >
+                            {{ $t('profile.twoFactorCopyBackupCodes') }}
+                          </Button>
+                        </div>
+                        <p class="field-hint">{{ $t('profile.twoFactorBackupCodesHint') }}</p>
+                        <div class="two-factor-backup-grid">
+                          <code
+                            v-for="code in setupBackupCodes"
+                            :key="code"
+                            class="two-factor-backup-code"
+                          >
+                            {{ code }}
+                          </code>
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="two_factor_code">
+                          <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
+                          {{ $t('profile.twoFactorVerifyCodeLabel') }}
+                        </label>
+                        <div class="input-wrapper">
+                          <Input
+                            id="two_factor_code"
+                            v-model="twoFactorVerificationCode"
+                            type="text"
+                            class="input-with-icon"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            maxlength="6"
+                            :placeholder="$t('auth.twoFactorCodePlaceholder')"
+                          />
+                        </div>
+                      </div>
+
+                      <div class="form-actions">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          :loading="isVerifyingTwoFactor"
+                          :disabled="twoFactorVerificationCode.length < 6"
+                          @click="confirmTwoFactorSetup"
+                        >
+                          <AnimatedIcon name="sparkle" :fallback-icon="CheckCircle" size="sm" />
+                          {{ $t('profile.twoFactorConfirmSetup') }}
+                        </Button>
+                        <Button type="button" variant="ghost" @click="cancelTwoFactorSetup">
+                          {{ $t('common.cancel') }}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    v-else-if="twoFactorStatus?.enabled && latestBackupCodes.length"
+                    class="two-factor-backup-box two-factor-backup-box--saved"
                   >
-                    <span v-if="isChangingPassword" class="spinner spinner-sm" />
-                    <AnimatedIcon v-else name="sparkle" :fallback-icon="Shield" size="sm" />
-                    {{ $t('profile.changePassword') }}
-                  </Button>
-                </div>
-              </form>
-            </section>
-
-            <!-- 2FA Section -->
-            <section
-              id="two-factor-section"
-              class="settings-section glass-surface--editorial two-factor-section"
-            >
-              <div class="settings-section-head">
-                <div class="settings-section-icon settings-section-icon--success">
-                  <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-                </div>
-                <div>
-                  <h2 class="settings-section-title">{{ $t('profile.twoFactorTitle') }}</h2>
-                  <p class="settings-section-desc">{{ $t('profile.twoFactorHint') }}</p>
-                </div>
-              </div>
-
-              <div class="two-factor-status-card">
-                <div class="two-factor-status-copy">
-                  <p class="two-factor-status-label">{{ $t('profile.twoFactorStatusLabel') }}</p>
-                  <p class="two-factor-status-value">
-                    {{
-                      isTwoFactorLoading
-                        ? $t('common.loading')
-                        : twoFactorStatus?.enabled
-                          ? $t('profile.twoFactorEnabled')
-                          : $t('profile.twoFactorDisabled')
-                    }}
-                  </p>
-                  <p class="field-hint">
-                    {{
-                      isTwoFactorLoading
-                        ? $t('profile.twoFactorStatusLoadingHint')
-                        : twoFactorStatus?.enabled
-                          ? $t('profile.twoFactorEnabledHint', {
-                              count: twoFactorStatus.backup_codes_remaining,
-                            })
-                          : $t('profile.twoFactorDisabledHint')
-                    }}
-                  </p>
-                </div>
-
-                <div class="two-factor-actions">
-                  <Button
-                    v-if="!twoFactorStatus?.enabled && !twoFactorSetup"
-                    type="button"
-                    variant="secondary"
-                    :loading="isSettingUpTwoFactor"
-                    :disabled="isTwoFactorLoading"
-                    @click="beginTwoFactorSetup"
-                  >
-                    <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-                    {{ $t('profile.twoFactorSetupAction') }}
-                  </Button>
-
-                  <template v-else-if="twoFactorStatus?.enabled">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      :disabled="isTwoFactorLoading"
-                      @click="openBackupCodesDialog"
-                    >
-                      <AnimatedIcon name="explore" :fallback-icon="Key" size="sm" />
-                      {{ $t('profile.twoFactorViewBackupCodes') }}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      :disabled="isTwoFactorLoading"
-                      @click="openRegenerateDialog"
-                    >
-                      <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
-                      {{ $t('profile.twoFactorRegenerateAction') }}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="danger"
-                      size="sm"
-                      :disabled="isTwoFactorLoading"
-                      @click="openDisableDialog"
-                    >
-                      <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-                      {{ $t('profile.twoFactorDisableAction') }}
-                    </Button>
-                  </template>
-                </div>
-              </div>
-
-              <div v-if="twoFactorSetup" class="two-factor-setup">
-                <div class="two-factor-setup-qr">
-                  <img
-                    class="two-factor-qr-image"
-                    :src="normalizedTwoFactorQrCode"
-                    :alt="$t('profile.twoFactorQrAlt')"
-                  />
-                </div>
-
-                <div class="two-factor-setup-details">
-                  <p class="field-hint">{{ $t('profile.twoFactorSetupInstructions') }}</p>
-
-                  <div class="two-factor-secret-card">
-                    <span class="two-factor-secret-label">{{
-                      $t('profile.twoFactorManualCode')
-                    }}</span>
-                    <code class="two-factor-secret-value">{{ twoFactorSetup.secret }}</code>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      @click="copyText(twoFactorSetup.secret)"
-                    >
-                      {{ $t('profile.twoFactorCopySecret') }}
-                    </Button>
-                  </div>
-
-                  <div class="two-factor-backup-box">
                     <div class="two-factor-backup-header">
-                      <h3>{{ $t('profile.twoFactorBackupCodesTitle') }}</h3>
+                      <h3>{{ $t('profile.twoFactorLatestBackupCodes') }}</h3>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        @click="copyBackupCodes(setupBackupCodes)"
+                        @click="copyBackupCodes(latestBackupCodes)"
                       >
                         {{ $t('profile.twoFactorCopyBackupCodes') }}
                       </Button>
                     </div>
-                    <p class="field-hint">{{ $t('profile.twoFactorBackupCodesHint') }}</p>
+                    <p class="field-hint">{{ $t('profile.twoFactorBackupCodesSavedHint') }}</p>
                     <div class="two-factor-backup-grid">
                       <code
-                        v-for="code in setupBackupCodes"
-                        :key="code"
+                        v-for="code in latestBackupCodes"
+                        :key="`latest-${code}`"
                         class="two-factor-backup-code"
                       >
                         {{ code }}
                       </code>
                     </div>
                   </div>
+                </section>
 
-                  <div class="form-group">
-                    <label for="two_factor_code">
-                      <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-                      {{ $t('profile.twoFactorVerifyCodeLabel') }}
-                    </label>
-                    <div class="input-wrapper">
-                      <Input
-                        id="two_factor_code"
-                        v-model="twoFactorVerificationCode"
-                        type="text"
-                        class="input-with-icon"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
-                        maxlength="6"
-                        :placeholder="$t('auth.twoFactorCodePlaceholder')"
-                      />
+                <section class="settings-section settings-section--danger glass-surface--editorial">
+                  <div class="settings-section-head">
+                    <div class="settings-section-icon settings-section-icon--warning">
+                      <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
+                    </div>
+                    <div>
+                      <h2 class="settings-section-title">{{ $t('profile.accountToolsTitle') }}</h2>
+                      <p class="settings-section-desc">{{ $t('profile.accountToolsHint') }}</p>
                     </div>
                   </div>
 
-                  <div class="form-actions">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      :loading="isVerifyingTwoFactor"
-                      :disabled="twoFactorVerificationCode.length < 6"
-                      @click="confirmTwoFactorSetup"
-                    >
-                      <AnimatedIcon name="sparkle" :fallback-icon="CheckCircle" size="sm" />
-                      {{ $t('profile.twoFactorConfirmSetup') }}
-                    </Button>
-                    <Button type="button" variant="ghost" @click="cancelTwoFactorSetup">
-                      {{ $t('common.cancel') }}
-                    </Button>
+                  <div class="account-status-card">
+                    <div class="account-status-copy">
+                      <p class="two-factor-status-label">{{ $t('profile.accountStatusLabel') }}</p>
+                      <p class="two-factor-status-value">
+                        {{
+                          isDeletionStatusLoading
+                            ? $t('common.loading')
+                            : deletionStatus?.is_deleted
+                              ? $t('profile.accountDeletionPending')
+                              : $t('profile.accountActive')
+                        }}
+                      </p>
+                      <p class="field-hint">
+                        {{
+                          isDeletionStatusLoading
+                            ? $t('profile.accountStatusLoadingHint')
+                            : deletionStatus?.is_deleted
+                              ? $t('profile.accountDeletionPendingHint', {
+                                  days: deletionStatus.days_remaining ?? 0,
+                                })
+                              : $t('profile.accountActiveHint')
+                        }}
+                      </p>
+                    </div>
+
+                    <div class="account-actions">
+                      <Button
+                        v-if="deletionStatus?.is_deleted && deletionStatus.can_restore"
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        @click="openRestoreAccountFlow"
+                      >
+                        <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+                        {{ $t('profile.restoreAccountAction') }}
+                      </Button>
+                      <Button
+                        v-else
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        :disabled="isDeletionStatusLoading"
+                        @click="openDeleteAccountDialog"
+                      >
+                        <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
+                        {{ $t('profile.deleteAccountAction') }}
+                      </Button>
+                    </div>
                   </div>
-                </div>
+
+                  <div v-if="deletionStatus?.is_deleted" class="account-danger-box">
+                    <div class="account-meta-grid">
+                      <div v-if="deletionStatus.deleted_at" class="account-meta-item">
+                        <span class="account-meta-label">{{ $t('profile.accountDeletedAt') }}</span>
+                        <span class="account-meta-value">{{
+                          formatDateTime(deletionStatus.deleted_at)
+                        }}</span>
+                      </div>
+                      <div v-if="deletionStatus.permanent_delete_at" class="account-meta-item">
+                        <span class="account-meta-label">{{
+                          $t('profile.accountPermanentDeleteAt')
+                        }}</span>
+                        <span class="account-meta-value">{{
+                          formatDateTime(deletionStatus.permanent_delete_at)
+                        }}</span>
+                      </div>
+                    </div>
+                    <p class="field-hint">
+                      {{ $t('profile.deleteAccountHint') }}
+                    </p>
+                  </div>
+                </section>
               </div>
 
-              <div
-                v-else-if="twoFactorStatus?.enabled && latestBackupCodes.length"
-                class="two-factor-backup-box two-factor-backup-box--saved"
-              >
-                <div class="two-factor-backup-header">
-                  <h3>{{ $t('profile.twoFactorLatestBackupCodes') }}</h3>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    @click="copyBackupCodes(latestBackupCodes)"
-                  >
-                    {{ $t('profile.twoFactorCopyBackupCodes') }}
-                  </Button>
-                </div>
-                <p class="field-hint">{{ $t('profile.twoFactorBackupCodesSavedHint') }}</p>
-                <div class="two-factor-backup-grid">
-                  <code
-                    v-for="code in latestBackupCodes"
-                    :key="`latest-${code}`"
-                    class="two-factor-backup-code"
-                  >
-                    {{ code }}
-                  </code>
-                </div>
+              <div v-show="activeSettingsGroup === 'privacy'" class="settings-group-panel">
+                <section
+                  class="settings-section settings-section--embedded glass-surface--editorial"
+                >
+                  <div class="settings-section-head">
+                    <div class="settings-section-icon">
+                      <AnimatedIcon name="sparkle" :fallback-icon="Download" size="sm" />
+                    </div>
+                    <div>
+                      <h2 class="settings-section-title">{{ $t('settings.categoryPrivacy') }}</h2>
+                      <p class="settings-section-desc">{{ $t('settings.privacy') }}</p>
+                    </div>
+                  </div>
+
+                  <SettingsPanel
+                    :compact="false"
+                    :embedded="true"
+                    :show-header="false"
+                    :allowed-categories="privacySettingsCategories"
+                  />
+                </section>
+
+                <section
+                  id="account-section"
+                  class="settings-section glass-surface--editorial account-section"
+                >
+                  <div class="settings-section-head">
+                    <div class="settings-section-icon">
+                      <AnimatedIcon name="explore" :fallback-icon="Download" size="sm" />
+                    </div>
+                    <div>
+                      <h2 class="settings-section-title">{{ $t('profile.accountToolsTitle') }}</h2>
+                      <p class="settings-section-desc">{{ $t('profile.accountToolsHint') }}</p>
+                    </div>
+                  </div>
+
+                  <div class="account-status-card">
+                    <div class="account-status-copy">
+                      <p class="two-factor-status-label">{{ $t('profile.accountStatusLabel') }}</p>
+                      <p class="two-factor-status-value">
+                        {{
+                          isDeletionStatusLoading
+                            ? $t('common.loading')
+                            : deletionStatus?.is_deleted
+                              ? $t('profile.accountDeletionPending')
+                              : $t('profile.accountActive')
+                        }}
+                      </p>
+                      <p class="field-hint">
+                        {{
+                          isDeletionStatusLoading
+                            ? $t('profile.accountStatusLoadingHint')
+                            : deletionStatus?.is_deleted
+                              ? $t('profile.accountDeletionPendingHint', {
+                                  days: deletionStatus.days_remaining ?? 0,
+                                })
+                              : $t('profile.accountActiveHint')
+                        }}
+                      </p>
+                    </div>
+
+                    <div class="account-actions">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        :loading="isExportingData"
+                        @click="exportAccountData"
+                      >
+                        <AnimatedIcon name="explore" :fallback-icon="Download" size="sm" />
+                        {{ $t('profile.exportDataAction') }}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div class="account-summary-card">
+                    <div class="account-summary-card__header">
+                      <div>
+                        <p class="two-factor-status-label">{{ $t('profile.dataSummaryTitle') }}</p>
+                        <p class="field-hint">{{ $t('profile.dataSummaryHint') }}</p>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        :loading="isDataSummaryLoading"
+                        @click="refreshAccountDataSummary"
+                      >
+                        <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
+                        {{ $t('common.refresh') }}
+                      </Button>
+                    </div>
+
+                    <div class="account-meta-grid">
+                      <div class="account-meta-item">
+                        <span class="account-meta-label">{{ $t('profile.accountCreatedAt') }}</span>
+                        <span class="account-meta-value">
+                          {{
+                            dataSummary?.created_at
+                              ? formatDateTime(dataSummary.created_at)
+                              : formatDateTime(profile.created_at)
+                          }}
+                        </span>
+                      </div>
+                      <div class="account-meta-item">
+                        <span class="account-meta-label">{{
+                          $t('profile.accountSummaryUsername')
+                        }}</span>
+                        <span class="account-meta-value"
+                          >@{{ dataSummary?.username || profile.username }}</span
+                        >
+                      </div>
+                      <div class="account-meta-item">
+                        <span class="account-meta-label">{{
+                          $t('profile.accountSummaryEmail')
+                        }}</span>
+                        <span class="account-meta-value">{{
+                          dataSummary?.email || profile.email
+                        }}</span>
+                      </div>
+                    </div>
+
+                    <div v-if="dataSummary" class="account-count-grid">
+                      <div
+                        v-for="item in dataSummaryItems"
+                        :key="item.key"
+                        class="account-count-item glass-surface--base"
+                      >
+                        <span class="account-count-value">{{ item.value }}</span>
+                        <span class="account-count-label">{{ item.label }}</span>
+                      </div>
+                    </div>
+                    <p v-else-if="!isDataSummaryLoading" class="field-hint">
+                      {{ $t('profile.dataSummaryUnavailable') }}
+                    </p>
+                  </div>
+                </section>
               </div>
-            </section>
-
-            <section
-              id="account-section"
-              class="settings-section glass-surface--editorial account-section"
-            >
-              <div class="settings-section-head">
-                <div class="settings-section-icon settings-section-icon--warning">
-                  <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
-                </div>
-                <div>
-                  <h2 class="settings-section-title">{{ $t('profile.accountToolsTitle') }}</h2>
-                  <p class="settings-section-desc">{{ $t('profile.accountToolsHint') }}</p>
-                </div>
-              </div>
-
-              <div class="account-status-card">
-                <div class="account-status-copy">
-                  <p class="two-factor-status-label">{{ $t('profile.accountStatusLabel') }}</p>
-                  <p class="two-factor-status-value">
-                    {{
-                      isDeletionStatusLoading
-                        ? $t('common.loading')
-                        : deletionStatus?.is_deleted
-                          ? $t('profile.accountDeletionPending')
-                          : $t('profile.accountActive')
-                    }}
-                  </p>
-                  <p class="field-hint">
-                    {{
-                      isDeletionStatusLoading
-                        ? $t('profile.accountStatusLoadingHint')
-                        : deletionStatus?.is_deleted
-                          ? $t('profile.accountDeletionPendingHint', {
-                              days: deletionStatus.days_remaining ?? 0,
-                            })
-                          : $t('profile.accountActiveHint')
-                    }}
-                  </p>
-                </div>
-
-                <div class="account-actions">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    :loading="isExportingData"
-                    @click="exportAccountData"
-                  >
-                    <AnimatedIcon name="explore" :fallback-icon="Download" size="sm" />
-                    {{ $t('profile.exportDataAction') }}
-                  </Button>
-                  <Button
-                    v-if="deletionStatus?.is_deleted && deletionStatus.can_restore"
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    @click="openRestoreAccountFlow"
-                  >
-                    <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
-                    {{ $t('profile.restoreAccountAction') }}
-                  </Button>
-                  <Button
-                    v-else
-                    type="button"
-                    variant="danger"
-                    size="sm"
-                    :disabled="isDeletionStatusLoading"
-                    @click="openDeleteAccountDialog"
-                  >
-                    <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
-                    {{ $t('profile.deleteAccountAction') }}
-                  </Button>
-                </div>
-              </div>
-
-              <div class="account-summary-card">
-                <div class="account-summary-card__header">
-                  <div>
-                    <p class="two-factor-status-label">{{ $t('profile.dataSummaryTitle') }}</p>
-                    <p class="field-hint">{{ $t('profile.dataSummaryHint') }}</p>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    :loading="isDataSummaryLoading"
-                    @click="refreshAccountDataSummary"
-                  >
-                    <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
-                    {{ $t('common.refresh') }}
-                  </Button>
-                </div>
-
-                <div class="account-meta-grid">
-                  <div class="account-meta-item">
-                    <span class="account-meta-label">{{ $t('profile.accountCreatedAt') }}</span>
-                    <span class="account-meta-value">
-                      {{
-                        dataSummary?.created_at
-                          ? formatDateTime(dataSummary.created_at)
-                          : formatDateTime(profile.created_at)
-                      }}
-                    </span>
-                  </div>
-                  <div class="account-meta-item">
-                    <span class="account-meta-label">{{
-                      $t('profile.accountSummaryUsername')
-                    }}</span>
-                    <span class="account-meta-value"
-                      >@{{ dataSummary?.username || profile.username }}</span
-                    >
-                  </div>
-                  <div class="account-meta-item">
-                    <span class="account-meta-label">{{ $t('profile.accountSummaryEmail') }}</span>
-                    <span class="account-meta-value">{{
-                      dataSummary?.email || profile.email
-                    }}</span>
-                  </div>
-                </div>
-
-                <div v-if="dataSummary" class="account-count-grid">
-                  <div
-                    v-for="item in dataSummaryItems"
-                    :key="item.key"
-                    class="account-count-item glass-surface--base"
-                  >
-                    <span class="account-count-value">{{ item.value }}</span>
-                    <span class="account-count-label">{{ item.label }}</span>
-                  </div>
-                </div>
-                <p v-else-if="!isDataSummaryLoading" class="field-hint">
-                  {{ $t('profile.dataSummaryUnavailable') }}
-                </p>
-              </div>
-
-              <div v-if="deletionStatus?.is_deleted" class="account-danger-box">
-                <div class="account-meta-grid">
-                  <div v-if="deletionStatus.deleted_at" class="account-meta-item">
-                    <span class="account-meta-label">{{ $t('profile.accountDeletedAt') }}</span>
-                    <span class="account-meta-value">{{
-                      formatDateTime(deletionStatus.deleted_at)
-                    }}</span>
-                  </div>
-                  <div v-if="deletionStatus.permanent_delete_at" class="account-meta-item">
-                    <span class="account-meta-label">{{
-                      $t('profile.accountPermanentDeleteAt')
-                    }}</span>
-                    <span class="account-meta-value">{{
-                      formatDateTime(deletionStatus.permanent_delete_at)
-                    }}</span>
-                  </div>
-                </div>
-                <p class="field-hint">
-                  {{ $t('profile.deleteAccountHint') }}
-                </p>
-              </div>
-            </section>
+            </div>
           </div>
-
-          <!-- Right Aside (Wide Screens) -->
-          <aside class="settings-aside">
-            <div class="settings-aside-card glass-surface--base">
-              <h3 class="aside-title">{{ $t('profile.settings') }}</h3>
-              <nav class="aside-nav">
-                <a class="aside-link" href="#avatar-section">{{ $t('profile.avatar') }}</a>
-                <a class="aside-link" href="#basic-info">{{ $t('profile.basicInfo') }}</a>
-                <a class="aside-link" href="#email-section">{{ $t('email.changeEmailTitle') }}</a>
-                <a class="aside-link" href="#password-section">{{
-                  $t('profile.changePassword')
-                }}</a>
-                <a class="aside-link" href="#two-factor-section">{{
-                  $t('profile.twoFactorTitle')
-                }}</a>
-                <a class="aside-link" href="#account-section">{{
-                  $t('profile.accountToolsTitle')
-                }}</a>
-              </nav>
-            </div>
-
-            <div class="settings-aside-card glass-surface--base">
-              <h3 class="aside-title">{{ $t('profile.summary') }}</h3>
-              <div class="aside-meta">
-                <div class="meta-row">
-                  <span class="meta-label">{{ $t('profile.username') }}</span>
-                  <span class="meta-value">@{{ profile.username }}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="meta-label">{{ $t('email.currentEmail') }}</span>
-                  <span class="meta-value">{{ profile.email }}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="meta-label">{{ $t('profile.twoFactorSummaryLabel') }}</span>
-                  <span class="meta-value">
-                    {{
-                      twoFactorStatus?.enabled
-                        ? $t('profile.twoFactorEnabled')
-                        : $t('profile.twoFactorDisabled')
-                    }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </aside>
         </div>
       </template>
     </div>
@@ -1107,6 +1231,7 @@ import {
   Download,
   RotateCcw,
   Trash2,
+  Palette,
 } from 'lucide-vue-next'
 import {
   userService,
@@ -1140,6 +1265,7 @@ import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
 import Dialog from '@/components/ui/Dialog.vue'
+import SettingsPanel from '@/components/layout/SettingsPanel.vue'
 
 // 动态导入大型组件以减少初始包体积
 const ImageCropper = defineAsyncComponent(() => import('@/components/ui/ImageCropper.vue'))
@@ -1151,6 +1277,7 @@ const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
+const activeSettingsGroup = ref<'account' | 'appearance' | 'privacy' | 'security'>('account')
 
 const profile = ref<UserProfile | null>(null)
 // ... refs ...
@@ -1166,6 +1293,11 @@ const isDisablingTwoFactor = ref(false)
 const isDeletionStatusLoading = ref(false)
 const isExportingData = ref(false)
 const isDeletingAccount = ref(false)
+const appearanceSettingsCategories: Array<'appearance' | 'experience'> = [
+  'appearance',
+  'experience',
+]
+const privacySettingsCategories: Array<'privacy'> = ['privacy']
 
 const showCropper = ref(false)
 const cropImageSrc = ref('')
@@ -1218,6 +1350,39 @@ type AccountDataSummary = Awaited<ReturnType<typeof userService.getDataSummary>>
 }
 const dataSummary = ref<AccountDataSummary | null>(null)
 const isDataSummaryLoading = ref(false)
+const userDisplayName = computed(
+  () => profile.value?.full_name?.trim() || profile.value?.username || ''
+)
+const settingsDashboardGroups = computed(() => [
+  {
+    id: 'account' as const,
+    title: t('profile.basicInfo'),
+    description: t('profile.basicInfoHint'),
+    icon: User,
+    iconName: 'user',
+  },
+  {
+    id: 'appearance' as const,
+    title: t('settings.categoryAppearance'),
+    description: t('settings.display'),
+    icon: Palette,
+    iconName: 'sparkle',
+  },
+  {
+    id: 'privacy' as const,
+    title: t('settings.categoryPrivacy'),
+    description: t('profile.accountToolsHint'),
+    icon: Download,
+    iconName: 'explore',
+  },
+  {
+    id: 'security' as const,
+    title: t('profile.twoFactorTitle'),
+    description: t('profile.passwordHint'),
+    icon: Shield,
+    iconName: 'sparkle',
+  },
+])
 const dataSummaryItems = computed(() => {
   const counts = (dataSummary.value?.data_counts ?? {}) as Record<string, number>
 
@@ -1866,6 +2031,148 @@ onUnmounted(() => {
   padding: clamp(1rem, 3vw, 1.5rem) 0;
 }
 
+.settings-dashboard {
+  display: grid;
+  gap: clamp(1rem, 2.6vw, 1.5rem);
+}
+
+.settings-overview {
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.25rem);
+  padding: clamp(1rem, 2.8vw, 1.5rem);
+  border-radius: var(--profile-shell-radius);
+  background: var(--ui-compat-surface-base);
+  border: 1px solid var(--ui-compat-border);
+  box-shadow: var(--ui-compat-shadow);
+}
+
+.settings-overview__copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.settings-overview__eyebrow {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-compat-text-muted);
+}
+
+.settings-overview__title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+  line-height: 1.08;
+  color: var(--color-text-primary);
+}
+
+.settings-overview__subtitle {
+  margin: 0;
+  max-inline-size: 48ch;
+  color: var(--ui-compat-text-secondary);
+}
+
+.settings-overview__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.75rem, 1.8vw, 1rem);
+}
+
+.settings-overview__meta-item {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: clamp(0.875rem, 2vw, 1rem);
+  border-radius: var(--ui-compat-control-radius);
+  border: 1px solid var(--ui-compat-border);
+  background: var(--ui-compat-surface-interactive);
+}
+
+.settings-overview__meta-label {
+  font-size: var(--text-xs);
+  color: var(--ui-compat-text-muted);
+}
+
+.settings-overview__meta-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+}
+
+.settings-group-switcher {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.75rem, 1.8vw, 1rem);
+}
+
+.settings-group-switcher__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--spacing-3);
+  align-items: start;
+  min-width: 0;
+  padding: clamp(0.875rem, 2vw, 1rem);
+  border: 1px solid var(--ui-compat-border);
+  border-radius: var(--profile-section-radius);
+  background: var(--ui-compat-surface-base);
+  box-shadow: var(--ui-compat-shadow);
+  text-align: left;
+  color: inherit;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.settings-group-switcher__item:hover,
+.settings-group-switcher__item:focus-visible {
+  border-color: var(--ui-compat-border-strong);
+  background: var(--ui-compat-surface-elevated);
+  box-shadow: var(--ui-compat-shadow-strong);
+  transform: translate3d(0, -0.0625rem, 0);
+  outline: none;
+}
+
+.settings-group-switcher__item--active {
+  border-color: var(--ui-compat-border-strong);
+  background: var(--ui-compat-surface-elevated);
+  box-shadow:
+    var(--ui-compat-shadow-strong),
+    inset 0 0 0 0.0625rem rgba(var(--color-primary-rgb), 0.08);
+}
+
+.settings-group-switcher__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--ui-compat-control-radius);
+  border: 1px solid var(--ui-compat-border);
+  background: var(--ui-compat-surface-interactive);
+  color: var(--color-primary);
+}
+
+.settings-group-switcher__copy {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.settings-group-switcher__copy strong {
+  color: var(--color-text-primary);
+}
+
+.settings-group-switcher__copy span {
+  color: var(--ui-compat-text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
 .settings-layout {
   display: grid;
   gap: clamp(1rem, 3vw, 1.5rem);
@@ -1876,6 +2183,24 @@ onUnmounted(() => {
   flex-direction: column;
   gap: clamp(1rem, 2vw, 1.25rem);
   min-width: 0;
+}
+
+.settings-group-panel {
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.25rem);
+}
+
+.settings-section--embedded {
+  padding: clamp(1rem, 2.6vw, 1.35rem);
+}
+
+.settings-section--embedded :deep(.settings-panel) {
+  max-inline-size: none;
+}
+
+.settings-section--danger {
+  border-color: var(--ui-compat-danger-border);
+  background: var(--ui-compat-surface-elevated);
 }
 
 .settings-aside {
@@ -2622,6 +2947,11 @@ onUnmounted(() => {
 
 /* Tablet and below */
 @media (max-width: 1024px) {
+  .settings-overview__meta,
+  .settings-group-switcher {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .settings-form,
   .settings-section {
     max-width: 100%;
@@ -2631,19 +2961,8 @@ onUnmounted(() => {
 /* Wide screens */
 @media (min-width: 1200px) {
   .settings-layout {
-    grid-template-columns: minmax(0, 1fr) 16rem;
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
-  }
-
-  .settings-aside {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(0.625rem, 1.5vw, 0.875rem);
-    position: sticky;
-    top: calc(var(--navbar-height) + var(--spacing-4));
-    max-height: calc(100dvh - var(--navbar-height) - var(--spacing-8));
-    height: fit-content;
-    overflow-y: auto;
   }
 
   .settings-form,
@@ -2654,6 +2973,15 @@ onUnmounted(() => {
 
 /* Mobile */
 @media (max-width: 768px) {
+  .settings-overview__meta,
+  .settings-group-switcher {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-group-switcher__item {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+  }
+
   .settings-section {
     margin-bottom: var(--spacing-4);
   }

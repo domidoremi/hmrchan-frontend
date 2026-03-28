@@ -153,7 +153,7 @@ const uiStyle = computed(() => settings.value.uiStyle)
 
 // 延迟挂载装饰性组件，避免首屏抢占主线程与网络资源
 const decorationsReady = ref(false)
-const DECORATIONS_DELAY_MS = 2500
+const DECORATIONS_DELAY_MS = 180
 onMounted(() => {
   scheduleTask(
     () => {
@@ -395,14 +395,19 @@ main.main--home {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  opacity: 1;
+  transition: opacity var(--duration-normal) var(--ease-out);
 }
 
 .app-decoration-layer--particle {
   z-index: 0;
+  opacity: var(--app-particle-layer-opacity, 0.9);
+  filter: saturate(1.04);
 }
 
 .app-decoration-layer--mascot {
-  z-index: calc(var(--z-sticky) - 2);
+  z-index: 0;
+  opacity: var(--app-mascot-layer-opacity, 0.9);
 }
 
 .app-footer-shell {
@@ -417,6 +422,25 @@ main.main--home {
     --app-side-nav-gap: clamp(0.75rem, 1.6vw, 1.125rem);
     --app-side-nav-offset: 0rem;
   }
+}
+
+#app[data-theme='light'] {
+  --app-particle-layer-opacity: 0.94;
+  --app-mascot-layer-opacity: 0.72;
+}
+
+#app[data-theme='dark'] {
+  --app-particle-layer-opacity: 1;
+  --app-mascot-layer-opacity: 0.68;
+}
+
+#app[data-theme='blue'] {
+  --app-particle-layer-opacity: 0.96;
+  --app-mascot-layer-opacity: 0.74;
+}
+
+#app[data-ui-style='material'] {
+  --app-particle-layer-opacity: 0.88;
 }
 
 /* 动效强度控制 */

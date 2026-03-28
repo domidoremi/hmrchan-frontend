@@ -918,13 +918,16 @@
                   <Button
                     size="sm"
                     variant="primary"
-                    class="media-slice__button"
+                    class="media-slice__action media-slice__button"
                     @click="openPostPreview(card.post, card.thumbnail)"
                   >
                     <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
                     {{ $t('home.featured.action') }}
                   </Button>
-                  <RouterLink :to="card.detailLink" class="page-inline-cta media-slice__link">
+                  <RouterLink
+                    :to="card.detailLink"
+                    class="page-inline-cta media-slice__action media-slice__link"
+                  >
                     <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
                     {{ $t('home.latestAction') }}
                   </RouterLink>
@@ -6384,17 +6387,31 @@ onBeforeUnmount(() => {
 }
 
 .media-slice__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
   gap: 0.75rem;
   margin-top: 0.25rem;
 }
 
-.media-slice__button.btn {
-  min-block-size: 2.5rem;
+.media-slice__action {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  gap: 0.5rem;
+  min-block-size: 2.625rem;
   padding-inline: 1rem;
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-compat-control-radius);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  line-height: 1;
+}
+
+.media-slice__button.btn {
+  min-block-size: 2.625rem;
+  padding-inline: 1rem;
+  border-radius: var(--ui-compat-control-radius);
   border-color: var(--home-pill-border);
   background: var(--home-pill-bg);
   color: var(--color-text-primary);
@@ -6407,7 +6424,22 @@ onBeforeUnmount(() => {
 }
 
 .media-slice__link {
+  min-block-size: 2.625rem;
+  padding-inline: 1rem;
+  border-radius: var(--ui-compat-control-radius);
+  border-color: color-mix(in srgb, var(--home-panel-border) 92%, var(--ui-compat-border));
+  background: color-mix(in srgb, var(--home-panel-muted) 92%, var(--ui-compat-surface-interactive));
   color: var(--color-text-secondary);
+}
+
+.media-slice__link:hover {
+  color: var(--color-text-primary);
+  border-color: var(--home-panel-border-strong);
+  background: color-mix(
+    in srgb,
+    var(--home-panel-muted-strong) 90%,
+    var(--ui-compat-surface-interactive-strong)
+  );
 }
 
 .media-empty {
@@ -7956,6 +7988,7 @@ onBeforeUnmount(() => {
   }
 
   .media-slice__actions {
+    grid-template-columns: 1fr;
     gap: 0.625rem;
   }
 
