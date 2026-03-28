@@ -376,6 +376,11 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
+  padding: 0.375rem;
+  border: 1px solid var(--ui-compat-border);
+  border-radius: var(--ui-compat-panel-radius);
+  background: var(--ui-compat-surface-base);
+  box-shadow: var(--ui-compat-shadow);
 }
 
 .quick-nav-item {
@@ -383,11 +388,11 @@ onMounted(() => {
   align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--radius-lg);
-  border: 1px solid transparent;
-  background: var(--profile-muted-bg);
+  border-radius: var(--ui-compat-control-radius);
+  border: 1px solid var(--ui-compat-border);
+  background: var(--ui-compat-surface-interactive);
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  color: var(--ui-compat-text-secondary);
   text-decoration: none;
   transition:
     color var(--duration-fast) var(--ease-smooth),
@@ -397,8 +402,8 @@ onMounted(() => {
 
 .quick-nav-item:hover {
   color: var(--color-primary);
-  background: var(--profile-muted-bg-strong);
-  border-color: var(--profile-muted-border-strong);
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
 }
 
 .quick-nav-badge {
@@ -497,14 +502,14 @@ onMounted(() => {
   align-items: stretch;
   gap: 0.125rem;
   padding: 0.1875rem;
-  background: var(--profile-muted-bg);
-  border: 1px solid var(--profile-muted-border);
-  border-radius: var(--radius-xl);
+  background: var(--ui-compat-surface-base);
+  border: 1px solid var(--ui-compat-border);
+  border-radius: var(--ui-compat-panel-radius);
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-padding-inline: 0.1875rem;
   scrollbar-width: none;
-  box-shadow: var(--profile-surface-shadow);
+  box-shadow: var(--ui-compat-shadow);
 }
 
 .tab-bar::-webkit-scrollbar {
@@ -523,7 +528,7 @@ onMounted(() => {
   border: 1px solid transparent;
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
-  color: var(--profile-chip-text);
+  color: var(--ui-compat-text-secondary);
   white-space: nowrap;
   transition:
     color var(--duration-fast) var(--ease-smooth),
@@ -533,15 +538,15 @@ onMounted(() => {
 }
 
 .tab-btn:hover:not(.tab-btn--active) {
-  color: var(--color-text-secondary);
-  background: var(--profile-action-bg);
+  color: var(--color-text-primary);
+  background: var(--ui-compat-surface-interactive);
 }
 
 .tab-btn--active {
   color: var(--color-text-primary);
-  background: var(--profile-surface-bg-soft);
-  border-color: var(--profile-surface-border);
-  box-shadow: 0 0.875rem 1.75rem -1.5rem rgba(15, 23, 42, 0.35);
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
+  box-shadow: inset 0 0 0 0.0625rem rgba(var(--color-primary-rgb), 0.06);
 }
 
 .tab-label {
@@ -610,11 +615,11 @@ onMounted(() => {
     gap: var(--spacing-1);
     min-inline-size: max-content;
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--profile-chip-bg);
-    border: 1px solid var(--profile-chip-border);
+    background: var(--ui-compat-surface-interactive);
+    border: 1px solid var(--ui-compat-border);
     border-radius: var(--radius-full);
     font-size: var(--text-xs);
-    color: var(--profile-chip-text);
+    color: var(--ui-compat-text-secondary);
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
@@ -626,8 +631,8 @@ onMounted(() => {
 
   .quick-nav-chip:hover {
     color: var(--color-primary);
-    background: var(--profile-muted-bg-strong);
-    border-color: var(--profile-muted-border-strong);
+    background: var(--ui-compat-surface-interactive-strong);
+    border-color: var(--ui-compat-border-strong);
   }
 
   .quick-nav-badge--sm {
@@ -715,8 +720,8 @@ onMounted(() => {
 
 #app[data-ui-style='material'] .profile-page .tab-bar {
   border-radius: var(--radius-md);
-  background: var(--md-surface-container, var(--glass-bg-light));
-  border-color: var(--md-outline-variant, var(--glass-border-subtle));
+  background: var(--ui-compat-surface-base);
+  border-color: var(--ui-compat-border);
 }
 
 #app[data-ui-style='material'] .profile-page .tab-btn {
@@ -724,7 +729,7 @@ onMounted(() => {
 }
 
 #app[data-ui-style='material'] .profile-page .tab-btn--active {
-  background: var(--md-surface-container-highest, var(--glass-bg-ultra-light));
+  background: var(--ui-compat-surface-interactive-strong);
 }
 
 #app[data-ui-style='material'] .profile-page .quick-nav-item {
@@ -773,11 +778,11 @@ onMounted(() => {
 }
 
 #app[data-ui-style='material'][data-theme='dark'] .profile-page .tab-bar {
-  background: var(--md-surface-container-low, rgba(26, 26, 30, 1));
+  background: var(--ui-compat-surface-base);
 }
 
 #app[data-ui-style='material'][data-theme='dark'] .profile-page .tab-btn--active {
-  background: var(--md-surface-container-highest, rgba(51, 51, 56, 1));
+  background: var(--ui-compat-surface-interactive-strong);
 }
 
 /* ===== Material + Blue ===== */
@@ -788,7 +793,7 @@ onMounted(() => {
 }
 
 #app[data-ui-style='material'][data-theme='blue'] .profile-page .tab-bar {
-  background: #eff6ff;
-  border-color: rgba(59, 130, 246, 0.12);
+  background: var(--ui-compat-surface-base);
+  border-color: var(--ui-compat-border);
 }
 </style>

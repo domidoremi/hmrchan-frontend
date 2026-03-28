@@ -1,6 +1,12 @@
 <template>
-  <div class="settings-panel" :class="{ 'settings-panel--compact': compact }">
-    <div class="settings-header">
+  <div
+    class="settings-panel"
+    :class="{
+      'settings-panel--compact': props.compact,
+      'settings-panel--embedded': props.embedded,
+    }"
+  >
+    <div v-if="props.showHeader" class="settings-header">
       <div class="settings-header-bar">
         <div class="settings-header-main">
           <div class="settings-header-icon">
@@ -18,9 +24,14 @@
         </button>
       </div>
 
-      <div class="settings-category-switcher" role="tablist" :aria-label="$t('nav.settings')">
+      <div
+        v-if="visibleSettingsCategories.length > 1"
+        class="settings-category-switcher"
+        role="tablist"
+        :aria-label="$t('nav.settings')"
+      >
         <button
-          v-for="category in settingsCategories"
+          v-for="category in visibleSettingsCategories"
           :id="`settings-category-tab-${category.id}`"
           :key="category.id"
           type="button"
@@ -658,12 +669,18 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 type SettingsCategory = 'appearance' | 'experience' | 'privacy' | 'system'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     compact?: boolean
+    embedded?: boolean
+    showHeader?: boolean
+    allowedCategories?: SettingsCategory[]
   }>(),
   {
     compact: true,
+    embedded: false,
+    showHeader: true,
+    allowedCategories: () => [],
   }
 )
 
@@ -680,7 +697,19 @@ const { isSavingPreferences, resetPreferences, replacePreferences } = usePrefere
 const { isAuthenticated } = storeToRefs(authStore)
 const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
-const activeSettingsCategory = ref<SettingsCategory>('appearance')
+const visibleSettingsCategories = computed<{ id: SettingsCategory; label: string }[]>(() => {
+  const allCategories = [
+    { id: 'appearance' as SettingsCategory, label: t('settings.categoryAppearance') },
+    { id: 'experience' as SettingsCategory, label: t('settings.categoryExperience') },
+    { id: 'privacy' as SettingsCategory, label: t('settings.categoryPrivacy') },
+    { id: 'system' as SettingsCategory, label: t('settings.categorySystem') },
+  ]
+  if (!props.allowedCategories.length) return allCategories
+  return allCategories.filter((category) => props.allowedCategories.includes(category.id))
+})
+const activeSettingsCategory = ref<SettingsCategory>(
+  props.allowedCategories[0] ?? ('appearance' as SettingsCategory)
+)
 const mascotBackground = computed(() => {
   return (
     settings.value.mascotBackground ?? {
@@ -702,13 +731,6 @@ const deskPetConfig = computed(() => {
     }
   )
 })
-const settingsCategories = computed<{ id: SettingsCategory; label: string }[]>(() => [
-  { id: 'appearance', label: t('settings.categoryAppearance') },
-  { id: 'experience', label: t('settings.categoryExperience') },
-  { id: 'privacy', label: t('settings.categoryPrivacy') },
-  { id: 'system', label: t('settings.categorySystem') },
-])
-
 const themeOptions = computed(() => [
   { value: 'light' as Theme, icon: Sun, label: t('settings.light') },
   { value: 'dark' as Theme, icon: Moon, label: t('settings.dark') },
@@ -746,6 +768,9 @@ function setActiveSettingsCategory(category: SettingsCategory) {
 }
 
 function isSettingsCategoryVisible(category: SettingsCategory) {
+  if (props.embedded) {
+    return visibleSettingsCategories.value.some((item) => item.id === category)
+  }
   return activeSettingsCategory.value === category
 }
 
@@ -889,13 +914,9 @@ function resetVideoSettings() {
 
 <style scoped>
 .settings-panel {
-  --settings-shell-surface: color-mix(in srgb, var(--chrome-surface-bg-soft) 86%, #ffffff 14%);
-  --settings-shell-surface-strong: color-mix(
-    in srgb,
-    var(--chrome-surface-bg-soft) 92%,
-    #ffffff 8%
-  );
-  --settings-shell-border: color-mix(in srgb, var(--chrome-surface-border) 72%, transparent);
+  --settings-shell-surface: var(--ui-compat-surface-interactive);
+  --settings-shell-surface-strong: var(--ui-compat-surface-interactive-strong);
+  --settings-shell-border: var(--ui-compat-border);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: var(--spacing-3);
@@ -920,6 +941,16 @@ function resetVideoSettings() {
   border-radius: 0;
 }
 
+.settings-panel--embedded {
+  padding: 0;
+  gap: var(--spacing-4);
+  max-inline-size: none;
+  max-block-size: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
 .settings-panel__body {
   display: grid;
   gap: var(--spacing-3);
@@ -929,6 +960,11 @@ function resetVideoSettings() {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding-block-end: var(--spacing-1);
+}
+
+.settings-panel--embedded .settings-panel__body {
+  overflow: visible;
+  padding-block-end: 0;
 }
 
 /* 移动端优化：确保面板可以滚动 */
@@ -986,9 +1022,9 @@ function resetVideoSettings() {
   min-block-size: 2.35rem;
   padding-inline: var(--spacing-2);
   border: 1px solid var(--settings-shell-border);
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-compat-control-radius);
   background: var(--settings-shell-surface);
-  color: var(--color-text-secondary);
+  color: var(--ui-compat-text-secondary);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
   line-height: 1.2;
@@ -1002,17 +1038,13 @@ function resetVideoSettings() {
 .settings-category-switcher__item:hover {
   color: var(--color-text-primary);
   background: var(--settings-shell-surface-strong);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 88%, transparent);
+  border-color: var(--ui-compat-border-strong);
 }
 
 .settings-category-switcher__item--active {
   color: var(--color-primary);
-  background: color-mix(in srgb, rgba(var(--color-primary-rgb), 0.14) 78%, #ffffff 22%);
-  border-color: color-mix(
-    in srgb,
-    rgba(var(--color-primary-rgb), 0.32) 72%,
-    var(--chrome-surface-border) 28%
-  );
+  background: var(--ui-compat-surface-accent);
+  border-color: var(--ui-compat-border-strong);
   box-shadow: inset 0 0 0 0.0625rem rgba(var(--color-primary-rgb), 0.06);
 }
 
@@ -1068,20 +1100,14 @@ function resetVideoSettings() {
 .settings-group {
   padding: var(--spacing-3);
   min-inline-size: 0;
-  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 52%, transparent);
+  border: 1px solid var(--ui-compat-border);
   border-radius: var(--ui-radius-card, var(--radius-xl));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--chrome-surface-bg-soft) 88%, #ffffff 12%),
-    color-mix(in srgb, var(--chrome-surface-bg-soft) 78%, #ffffff 22%)
-  );
-  box-shadow:
-    inset 0 0.0625rem 0 color-mix(in srgb, rgba(255, 255, 255, 0.42) 72%, transparent),
-    0 1rem 2rem -1.6rem rgba(15, 23, 42, 0.14);
+  background: var(--ui-compat-surface-base);
+  box-shadow: var(--ui-compat-shadow);
 }
 
 .settings-group + .settings-group {
-  border-top: 1px solid color-mix(in srgb, var(--chrome-surface-border) 38%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ui-compat-border) 72%, transparent);
 }
 
 .settings-panel--compact .settings-group {
@@ -1132,8 +1158,8 @@ function resetVideoSettings() {
   align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-3) var(--spacing-2);
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 28%, transparent);
-  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 52%, transparent);
+  background: var(--ui-compat-surface-interactive);
+  border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
   min-inline-size: 0;
   transition:
@@ -1149,13 +1175,13 @@ function resetVideoSettings() {
 }
 
 .theme-btn:hover {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 42%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 72%, transparent);
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
 }
 
 .theme-btn.active {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  border-color: var(--color-primary);
+  background: var(--ui-compat-surface-accent);
+  border-color: var(--ui-compat-border-strong);
 }
 
 .theme-btn-icon {
@@ -1164,7 +1190,7 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--chrome-action-bg) 48%, transparent);
+  background: var(--ui-compat-surface-interactive);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   transition:
@@ -1179,7 +1205,7 @@ function resetVideoSettings() {
 }
 
 .theme-btn:hover .theme-btn-icon {
-  background: color-mix(in srgb, var(--chrome-action-bg-hover) 68%, transparent);
+  background: var(--ui-compat-surface-interactive-strong);
   color: var(--color-text-primary);
 }
 
@@ -1253,8 +1279,8 @@ function resetVideoSettings() {
   align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-3);
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 28%, transparent);
-  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 52%, transparent);
+  background: var(--ui-compat-surface-interactive);
+  border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-full);
   min-inline-size: 0;
   font-size: var(--text-sm);
@@ -1272,8 +1298,8 @@ function resetVideoSettings() {
 }
 
 .lang-btn:hover {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 42%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 72%, transparent);
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
 }
 
 .lang-btn.active {
@@ -1307,8 +1333,8 @@ function resetVideoSettings() {
   gap: var(--spacing-3);
   width: 100%;
   padding: var(--spacing-3);
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 22%, transparent);
-  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 46%, transparent);
+  background: var(--ui-compat-surface-interactive);
+  border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
   min-inline-size: 0;
   transition:
@@ -1318,8 +1344,8 @@ function resetVideoSettings() {
 }
 
 .toggle-btn:hover {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 38%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 68%, transparent);
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
 }
 
 .toggle-btn-content {
@@ -1336,7 +1362,7 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--chrome-action-bg) 48%, transparent);
+  background: var(--ui-compat-surface-interactive);
   border-radius: var(--radius-md);
   color: var(--color-text-tertiary);
   flex-shrink: 0;
@@ -1426,8 +1452,8 @@ function resetVideoSettings() {
   gap: var(--spacing-3);
   width: 100%;
   padding: var(--spacing-3);
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
-  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 48%, transparent);
+  background: var(--ui-compat-surface-interactive);
+  border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
   min-inline-size: 0;
   color: var(--color-text-primary);
@@ -1444,8 +1470,8 @@ function resetVideoSettings() {
 }
 
 .link-btn:hover {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 38%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 68%, transparent);
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
 }
 
 .link-btn-icon {
@@ -1454,7 +1480,7 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--chrome-action-bg) 48%, transparent);
+  background: var(--ui-compat-surface-interactive);
   border-radius: var(--radius-md);
   color: var(--color-text-tertiary);
   flex-shrink: 0;
@@ -1522,8 +1548,8 @@ function resetVideoSettings() {
   align-items: center;
   gap: var(--spacing-1);
   padding: var(--spacing-2) var(--spacing-1);
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 22%, transparent);
-  border: 1px solid color-mix(in srgb, var(--chrome-surface-border) 48%, transparent);
+  background: var(--ui-compat-surface-interactive);
+  border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
   transition:
     background var(--transition-fast),
@@ -1537,13 +1563,13 @@ function resetVideoSettings() {
 }
 
 .bg-effect-btn:hover {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 36%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 68%, transparent);
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
 }
 
 .bg-effect-btn.active {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  border-color: var(--color-primary);
+  background: var(--ui-compat-surface-accent);
+  border-color: var(--ui-compat-border-strong);
 }
 
 .bg-effect-emoji {
@@ -1630,62 +1656,48 @@ function resetVideoSettings() {
 }
 
 [data-theme='dark'] .settings-panel {
-  --settings-shell-surface: color-mix(
-    in srgb,
-    var(--chrome-surface-bg-soft) 76%,
-    rgba(8, 12, 22, 0.82)
-  );
-  --settings-shell-surface-strong: color-mix(
-    in srgb,
-    var(--chrome-surface-bg-soft) 84%,
-    rgba(15, 23, 42, 0.9)
-  );
-  --settings-shell-border: color-mix(in srgb, var(--chrome-surface-border) 82%, transparent);
+  --settings-shell-surface: var(--ui-compat-surface-interactive);
+  --settings-shell-surface-strong: var(--ui-compat-surface-interactive-strong);
+  --settings-shell-border: var(--ui-compat-border);
 }
 
 [data-theme='dark'] .settings-group {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--chrome-surface-bg-soft) 76%, rgba(8, 12, 22, 0.84)),
-    color-mix(in srgb, var(--chrome-surface-bg-soft) 68%, rgba(8, 12, 22, 0.94))
-  );
-  box-shadow:
-    inset 0 0.0625rem 0 color-mix(in srgb, rgba(255, 255, 255, 0.08) 82%, transparent),
-    0 1rem 2rem -1.6rem rgba(0, 0, 0, 0.3);
+  background: var(--ui-compat-surface-base);
+  box-shadow: var(--ui-compat-shadow);
 }
 
 [data-theme='dark'] .bg-effect-btn:not(.active) {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 58%, transparent);
+  background: var(--ui-compat-surface-interactive);
+  border-color: var(--ui-compat-border);
 }
 
 [data-theme='dark'] .bg-effect-btn.active {
-  background: rgba(var(--color-primary-rgb), 0.15);
+  background: var(--ui-compat-surface-accent);
 }
 
 [data-theme='dark'] .lang-btn:not(.active) {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 58%, transparent);
+  background: var(--ui-compat-surface-interactive);
+  border-color: var(--ui-compat-border);
 }
 
 [data-theme='dark'] .toggle-btn {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 58%, transparent);
+  background: var(--ui-compat-surface-interactive);
+  border-color: var(--ui-compat-border);
 }
 
 [data-theme='dark'] .toggle-btn:hover {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 38%, transparent);
-  border-color: color-mix(in srgb, rgba(var(--color-primary-rgb), 0.16) 72%, transparent);
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
 }
 
 [data-theme='dark'] .link-btn {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 24%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 58%, transparent);
+  background: var(--ui-compat-surface-interactive);
+  border-color: var(--ui-compat-border);
 }
 
 [data-theme='dark'] .link-btn:hover {
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 38%, transparent);
-  border-color: color-mix(in srgb, rgba(var(--color-primary-rgb), 0.16) 72%, transparent);
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
 }
 
 /* ========== Blue Theme ========== */

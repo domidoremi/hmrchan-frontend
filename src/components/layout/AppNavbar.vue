@@ -111,7 +111,7 @@
                     : undefined,
               },
             }"
-            class="login-btn nav-action-btn nav-action-btn--pill"
+            class="login-btn nav-action-btn nav-action-btn--primary"
             :aria-label="$t('nav.login')"
             @mouseenter="prefetchLoginPage"
             @focus="prefetchLoginPage"
@@ -219,98 +219,103 @@
         tabindex="-1"
         @click.stop
       >
-        <div class="user-info">
-          <div class="user-avatar-wrapper">
-            <Avatar
-              :src="userAvatar"
-              :alt="user ? getUserDisplayName(user) : ''"
-              :fallback="userAvatarFallbackLabel"
-              size="custom"
-              loading="eager"
-              class="user-avatar-lg"
-            />
-            <div class="nav-user-status nav-user-status--lg" />
+        <div class="user-menu-shell">
+          <div class="user-info">
+            <div class="user-avatar-wrapper">
+              <Avatar
+                :src="userAvatar"
+                :alt="user ? getUserDisplayName(user) : ''"
+                :fallback="userAvatarFallbackLabel"
+                size="custom"
+                loading="eager"
+                class="user-avatar-lg"
+              />
+              <div class="nav-user-status nav-user-status--lg" />
+            </div>
+            <div class="user-details">
+              <div class="user-menu-eyebrow">{{ $t('profile.summary') }}</div>
+              <div class="user-name">{{ user ? getUserDisplayName(user) : '' }}</div>
+              <div class="user-email">{{ user?.email }}</div>
+            </div>
           </div>
-          <div class="user-details">
-            <div class="user-name">{{ user ? getUserDisplayName(user) : '' }}</div>
-            <div class="user-email">{{ user?.email }}</div>
+
+          <div class="user-menu-primary">
+            <RouterLink
+              to="/profile"
+              class="dropdown-link user-menu-card"
+              role="menuitem"
+              @click="showUserMenu = false"
+            >
+              <div class="dropdown-link-icon user-menu-card__icon">
+                <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
+              </div>
+              <span class="user-menu-card__label">{{ $t('nav.profile') }}</span>
+              <AnimatedIcon
+                name="explore"
+                :fallback-icon="ChevronRight"
+                size="sm"
+                class="dropdown-link-arrow user-menu-card__arrow"
+              />
+            </RouterLink>
+            <RouterLink
+              to="/profile/settings"
+              class="dropdown-link user-menu-card"
+              role="menuitem"
+              @click="showUserMenu = false"
+              @mouseenter="prefetchProfileSettingsPage"
+              @focus="prefetchProfileSettingsPage"
+            >
+              <div class="dropdown-link-icon user-menu-card__icon">
+                <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+              </div>
+              <span class="user-menu-card__label">{{ $t('nav.profileSettings') }}</span>
+              <AnimatedIcon
+                name="explore"
+                :fallback-icon="ChevronRight"
+                size="sm"
+                class="dropdown-link-arrow user-menu-card__arrow"
+              />
+            </RouterLink>
+            <RouterLink
+              to="/profile/notifications"
+              class="dropdown-link user-menu-card"
+              role="menuitem"
+              @click="showUserMenu = false"
+            >
+              <div class="dropdown-link-icon user-menu-card__icon">
+                <AnimatedIcon name="sparkle" :fallback-icon="Bell" size="sm" />
+              </div>
+              <span class="user-menu-card__label">{{ $t('profile.tabs.notifications') }}</span>
+              <AnimatedIcon
+                name="explore"
+                :fallback-icon="ChevronRight"
+                size="sm"
+                class="dropdown-link-arrow user-menu-card__arrow"
+              />
+            </RouterLink>
+            <RouterLink
+              to="/profile/devices"
+              class="dropdown-link user-menu-card"
+              role="menuitem"
+              @click="showUserMenu = false"
+            >
+              <div class="dropdown-link-icon user-menu-card__icon">
+                <AnimatedIcon name="explore" :fallback-icon="Smartphone" size="sm" />
+              </div>
+              <span class="user-menu-card__label">{{ $t('profile.tabs.devices') }}</span>
+              <AnimatedIcon
+                name="explore"
+                :fallback-icon="ChevronRight"
+                size="sm"
+                class="dropdown-link-arrow user-menu-card__arrow"
+              />
+            </RouterLink>
           </div>
+
+          <Separator />
         </div>
-        <Separator />
-        <div class="dropdown-links">
-          <RouterLink
-            to="/profile"
-            class="dropdown-link"
-            role="menuitem"
-            @click="showUserMenu = false"
-          >
-            <div class="dropdown-link-icon">
-              <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
-            </div>
-            <span>{{ $t('nav.profile') }}</span>
-            <AnimatedIcon
-              name="explore"
-              :fallback-icon="ChevronRight"
-              size="sm"
-              class="dropdown-link-arrow"
-            />
-          </RouterLink>
-          <RouterLink
-            to="/profile/settings"
-            class="dropdown-link"
-            role="menuitem"
-            @click="showUserMenu = false"
-            @mouseenter="prefetchProfileSettingsPage"
-            @focus="prefetchProfileSettingsPage"
-          >
-            <div class="dropdown-link-icon">
-              <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
-            </div>
-            <span>{{ $t('nav.profileSettings') }}</span>
-            <AnimatedIcon
-              name="explore"
-              :fallback-icon="ChevronRight"
-              size="sm"
-              class="dropdown-link-arrow"
-            />
-          </RouterLink>
-          <RouterLink
-            to="/profile/notifications"
-            class="dropdown-link"
-            role="menuitem"
-            @click="showUserMenu = false"
-          >
-            <div class="dropdown-link-icon">
-              <AnimatedIcon name="sparkle" :fallback-icon="Bell" size="sm" />
-            </div>
-            <span>{{ $t('profile.tabs.notifications') }}</span>
-            <AnimatedIcon
-              name="explore"
-              :fallback-icon="ChevronRight"
-              size="sm"
-              class="dropdown-link-arrow"
-            />
-          </RouterLink>
-          <RouterLink
-            to="/profile/devices"
-            class="dropdown-link"
-            role="menuitem"
-            @click="showUserMenu = false"
-          >
-            <div class="dropdown-link-icon">
-              <AnimatedIcon name="explore" :fallback-icon="Smartphone" size="sm" />
-            </div>
-            <span>{{ $t('profile.tabs.devices') }}</span>
-            <AnimatedIcon
-              name="explore"
-              :fallback-icon="ChevronRight"
-              size="sm"
-              class="dropdown-link-arrow"
-            />
-          </RouterLink>
-        </div>
-        <Separator />
-        <div class="dropdown-links">
+
+        <div class="dropdown-links dropdown-links--secondary">
           <button
             type="button"
             class="dropdown-link dropdown-link--danger"
@@ -418,7 +423,7 @@ useFocusTrap(settingsDropdownRef, showSettings, {
 useFocusTrap(userDropdownRef, showUserMenu, {
   autoFocus: true,
   restoreFocus: false,
-  initialFocus: '.dropdown-link',
+  initialFocus: '.user-menu-card',
   onEscape: () => closeUserMenu({ restoreFocus: true }),
 })
 
@@ -1045,10 +1050,10 @@ onUnmounted(() => {
     var(--chrome-action-border-strong) 74%,
     rgba(var(--color-primary-rgb), 0.18)
   );
-  --nav-dropdown-bg: var(--chrome-surface-bg-soft);
-  --nav-dropdown-border: var(--chrome-surface-border);
-  --nav-dropdown-shadow: var(--chrome-surface-shadow);
-  --nav-dropdown-backdrop: blur(0.5rem);
+  --nav-dropdown-bg: var(--ui-compat-surface-base);
+  --nav-dropdown-border: var(--ui-compat-border);
+  --nav-dropdown-shadow: var(--ui-compat-shadow);
+  --nav-dropdown-backdrop: var(--ui-compat-backdrop);
   position: fixed;
   inset-block-start: 0;
   inset-inline: 0;
@@ -1296,6 +1301,7 @@ onUnmounted(() => {
 .login-btn {
   gap: var(--spacing-2);
   padding-inline: var(--spacing-4);
+  min-inline-size: 5.5rem;
   font-size: var(--text-sm);
   text-decoration: none;
   white-space: nowrap;
@@ -1409,13 +1415,11 @@ onUnmounted(() => {
 
 .settings-dropdown.glass-dropdown,
 .user-dropdown.glass-dropdown {
-  background: color-mix(in srgb, var(--nav-dropdown-bg) 92%, rgba(255, 255, 255, 0.92));
-  border-color: color-mix(in srgb, var(--nav-dropdown-border) 84%, rgba(255, 255, 255, 0.72));
-  box-shadow:
-    0 1.5rem 3rem -2rem rgba(15, 23, 42, 0.24),
-    inset 0 0 0 0.0625rem rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(1rem) saturate(1.08);
-  -webkit-backdrop-filter: blur(1rem) saturate(1.08);
+  background: var(--ui-compat-surface-elevated);
+  border-color: var(--ui-compat-border);
+  box-shadow: var(--ui-compat-shadow-strong);
+  backdrop-filter: var(--ui-compat-backdrop);
+  -webkit-backdrop-filter: var(--ui-compat-backdrop);
 }
 
 .settings-dropdown.glass-dropdown {
@@ -1424,6 +1428,7 @@ onUnmounted(() => {
 
 .user-dropdown.glass-dropdown {
   overflow: hidden;
+  padding: 0;
 }
 
 .settings-dropdown[data-positioned='false'],
@@ -1610,6 +1615,10 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-3);
   padding: var(--spacing-4);
+  border: 1px solid var(--ui-compat-border);
+  border-radius: calc(var(--ui-compat-panel-radius) - 0.375rem);
+  background: var(--ui-compat-surface-interactive);
+  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.08);
 }
 
 .user-avatar-wrapper {
@@ -1635,6 +1644,21 @@ onUnmounted(() => {
   min-width: 0;
 }
 
+.user-menu-shell {
+  display: grid;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+}
+
+.user-menu-eyebrow {
+  margin-bottom: 0.125rem;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ui-compat-text-muted);
+}
+
 .user-name {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
@@ -1645,10 +1669,16 @@ onUnmounted(() => {
 
 .user-email {
   font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
+  color: var(--ui-compat-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.user-menu-primary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-2);
 }
 
 .dropdown-links {
@@ -1662,7 +1692,8 @@ onUnmounted(() => {
   width: 100%;
   padding: var(--spacing-3);
   border-radius: var(--ui-radius-button, var(--radius-lg));
-  border: 1px solid transparent;
+  border: 1px solid var(--ui-compat-border);
+  background: transparent;
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   text-decoration: none;
@@ -1672,9 +1703,11 @@ onUnmounted(() => {
     color var(--duration-fast) var(--ease-out);
 }
 
-.dropdown-link:hover {
-  background: var(--nav-muted-bg);
-  border-color: var(--nav-muted-border-strong);
+.dropdown-link:hover,
+.dropdown-link:focus-visible {
+  background: var(--ui-compat-surface-interactive-strong);
+  border-color: var(--ui-compat-border-strong);
+  outline: none;
 }
 
 .dropdown-link:hover .dropdown-link-arrow {
@@ -1687,10 +1720,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--nav-chip-bg);
-  border: 1px solid var(--nav-chip-border);
+  background: var(--ui-compat-surface-interactive);
+  border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-md);
-  color: var(--nav-chip-text);
+  color: var(--ui-compat-text-secondary);
   transition:
     background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
@@ -1698,8 +1731,8 @@ onUnmounted(() => {
 }
 
 .dropdown-link:hover .dropdown-link-icon {
-  background: rgba(var(--color-primary-rgb), 0.08);
-  border-color: rgba(var(--color-primary-rgb), 0.14);
+  background: var(--ui-compat-surface-accent);
+  border-color: var(--ui-compat-border-strong);
   color: var(--color-primary);
 }
 
@@ -1718,18 +1751,49 @@ onUnmounted(() => {
 
 .dropdown-link--danger .dropdown-link-icon,
 .dropdown-link-icon--danger {
-  background: rgba(var(--color-error-rgb), 0.08);
-  border-color: rgba(var(--color-error-rgb), 0.12);
+  background: var(--ui-compat-surface-danger);
+  border-color: var(--ui-compat-danger-border);
   color: var(--color-error);
 }
 
 .dropdown-link--danger:hover {
-  background: rgba(var(--color-error-rgb), 0.08);
-  border-color: rgba(var(--color-error-rgb), 0.16);
+  background: var(--ui-compat-surface-danger);
+  border-color: var(--ui-compat-danger-border);
 }
 
 .dropdown-link--danger:hover .dropdown-link-icon {
   background: rgba(var(--color-error-rgb), 0.15);
+}
+
+.dropdown-links--secondary {
+  padding: 0 var(--spacing-4) var(--spacing-4);
+}
+
+.user-menu-card {
+  min-block-size: 6.25rem;
+  align-items: flex-start;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  background: var(--ui-compat-surface-interactive);
+}
+
+.user-menu-card__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.user-menu-card__label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  font-weight: var(--font-semibold);
+  line-height: 1.3;
+}
+
+.user-menu-card__arrow {
+  opacity: 0.45;
 }
 
 /* ========== Responsive ========== */
@@ -1791,6 +1855,10 @@ onUnmounted(() => {
     max-inline-size: calc(100vw - (clamp(0.75rem, 3vw, 1rem) * 2));
     max-block-size: min(var(--app-safe-block-size), 34rem);
   }
+
+  .user-menu-primary {
+    grid-template-columns: 1fr;
+  }
 }
 
 :global(#app[data-theme='dark'] .nav-action-btn--primary),
@@ -1810,17 +1878,6 @@ onUnmounted(() => {
   --nav-shell-shadow: none;
 }
 
-:global(#app[data-theme='dark'] .settings-dropdown.glass-dropdown),
-:global([data-theme='dark'] .settings-dropdown.glass-dropdown),
-:global(#app[data-theme='dark'] .user-dropdown.glass-dropdown),
-:global([data-theme='dark'] .user-dropdown.glass-dropdown) {
-  background: color-mix(in srgb, var(--nav-dropdown-bg) 92%, rgba(8, 12, 22, 0.94));
-  border-color: color-mix(in srgb, var(--nav-dropdown-border) 92%, rgba(255, 255, 255, 0.12));
-  box-shadow:
-    0 1.5rem 3rem -2rem rgba(0, 0, 0, 0.5),
-    inset 0 0 0 0.0625rem rgba(255, 255, 255, 0.06);
-}
-
 :global(#app[data-theme='blue'] .navbar),
 :global([data-theme='blue'] .navbar) {
   --nav-shell-bg: transparent;
@@ -1830,10 +1887,10 @@ onUnmounted(() => {
 :global(#app[data-ui-style='material'] .navbar),
 :global([data-ui-style='material'] .navbar) {
   --nav-action-bg: color-mix(in srgb, var(--chrome-action-bg) 90%, transparent);
-  --nav-dropdown-bg: color-mix(in srgb, var(--ui-surface-bg) 94%, transparent);
-  --nav-dropdown-border: var(--ui-surface-border);
-  --nav-dropdown-shadow: var(--shadow-md);
-  --nav-dropdown-backdrop: blur(0.375rem);
+  --nav-dropdown-bg: var(--ui-compat-surface-base);
+  --nav-dropdown-border: var(--ui-compat-border);
+  --nav-dropdown-shadow: var(--ui-compat-shadow);
+  --nav-dropdown-backdrop: var(--ui-compat-backdrop);
   --nav-shell-shadow: none;
 }
 
@@ -1841,5 +1898,12 @@ onUnmounted(() => {
 :global([data-ui-style='ios'] .navbar) {
   --nav-dropdown-bg: color-mix(in srgb, var(--chrome-surface-bg-soft) 92%, transparent);
   --nav-dropdown-backdrop: blur(0.75rem);
+}
+
+:global(#app[data-ui-style='material'] .nav-action-btn--pill),
+:global([data-ui-style='material'] .nav-action-btn--pill),
+:global(#app[data-ui-style='material'] .nav-search-shell__input),
+:global([data-ui-style='material'] .nav-search-shell__input) {
+  border-radius: var(--ui-radius-button, var(--radius-lg));
 }
 </style>
