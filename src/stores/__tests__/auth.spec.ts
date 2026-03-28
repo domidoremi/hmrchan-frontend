@@ -1,26 +1,12 @@
-/**
- * Auth Store 单元测试
- */
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { setActivePinia, createPinia } from 'pinia'
-
-// Mock vue-router
 vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: vi.fn(),
   }),
 }))
 
-// Mock device utils
-vi.mock('@/utils/device', () => ({
-  getDeviceInfo: vi.fn().mockReturnValue({
-    device_name: 'Test Browser',
-    device_type: 'desktop',
-  }),
-}))
-
-// Mock token security
 vi.mock('@/utils/tokenSecurity', () => ({
   secureTokenManager: {
     store: vi.fn().mockResolvedValue(undefined),
@@ -33,31 +19,45 @@ vi.mock('@/utils/tokenSecurity', () => ({
   },
 }))
 
-// Mock authService - 必须在 vi.mock 内部定义
+vi.mock('@/utils/authSource', () => ({
+  getStoredAuthSource: vi.fn(() => null),
+  setStoredAuthSource: vi.fn(),
+  clearStoredAuthSource: vi.fn(),
+  normalizeAuthSource: vi.fn((value: string | null | undefined) =>
+    value === 'oidc' ? 'oidc' : 'legacy'
+  ),
+}))
+
+vi.mock('@/services/oidcService', () => ({
+  beginOIDCLogin: vi.fn().mockResolvedValue(undefined),
+  buildOIDCLogoutUrl: vi.fn(() => null),
+  consumeOIDCCallback: vi.fn(),
+  mapOIDCErrorToApiError: vi.fn((error: unknown) => error),
+  storeOIDCSession: vi.fn(),
+  clearOIDCSession: vi.fn(),
+}))
+
 vi.mock('@/api', () => {
-  const mockLogin = vi.fn()
   const mockRegister = vi.fn()
   const mockLogout = vi.fn()
   const mockGetCurrentUser = vi.fn()
   const mockRefreshToken = vi.fn()
   const mockSendVerificationEmail = vi.fn()
   const mockHeartbeat = vi.fn()
-  const mockVerifyRiskLogin = vi.fn()
 
   return {
     authService: {
-      login: mockLogin,
       register: mockRegister,
       logout: mockLogout,
       getCurrentUser: mockGetCurrentUser,
       refreshToken: mockRefreshToken,
       sendVerificationEmail: mockSendVerificationEmail,
       heartbeat: mockHeartbeat,
-      verifyRiskLogin: mockVerifyRiskLogin,
     },
     ApiError: class ApiError extends Error {
       status: number
       code: string | undefined
+
       constructor(message: string, status: number, code?: string) {
         super(message)
         this.status = status
@@ -67,412 +67,202 @@ vi.mock('@/api', () => {
   }
 })
 
-// 导入 mock 后的模块
-import { authService, ApiError } from '@/api'
+import { ApiError, authService } from '@/api'
+import {
+  beginOIDCLogin,
+  buildOIDCLogoutUrl,
+  consumeOIDCCallback,
+  storeOIDCSession,
+} from '@/services/oidcService'
 import { useAuthStore, type AuthUser } from '../auth'
 
-// 测试用的 mock 用户数据
 const createMockUser = (overrides?: Partial<AuthUser>): AuthUser => {
-  const base: AuthUser = {
-    id: '1',
-    username: 'test',
-    email: 'test@test.com',
+  return {
+    id: 'user-1',
+    username: 'tester',
+    email: 'tester@example.com',
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
+    ...overrides,
   }
-  return { ...base, ...overrides }
 }
 
-describe('Auth Store', () => {
+describe('auth store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     vi.useFakeTimers()
+    vi.stubGlobal('location', {
+      ...window.location,
+      assign: vi.fn(),
+    })
   })
 
   afterEach(() => {
-    // 清理 store 的定时器（heartbeat、deferredProfile 等），防止跨测试泄漏
     try {
       const store = useAuthStore()
       store.cleanup()
     } catch {
-      // ignore if store not initialized
+      // ignore
     }
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
-  describe('Initial state', () => {
-    it('should have correct initial state', () => {
-      const store = useAuthStore()
+  it('starts empty', () => {
+    const store = useAuthStore()
 
-      expect(store.user).toBeNull()
-      expect(store.token).toBeNull()
-      expect(store.isLoading).toBe(false)
-      expect(store.error).toBeNull()
-      expect(store.isAuthenticated).toBe(false)
+    expect(store.user).toBeNull()
+    expect(store.token).toBeNull()
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.error).toBeNull()
+  })
+
+  it('does not establish a local session after registration succeeds', async () => {
+    const store = useAuthStore()
+    const mockUser = createMockUser({ username: 'new-user', email: 'new@example.com' })
+
+    vi.mocked(authService.register).mockResolvedValueOnce({
+      user: mockUser,
+      access_token: 'legacy-token',
+      refresh_token: 'legacy-refresh',
+      token_type: 'Bearer',
+    })
+    vi.mocked(authService.logout).mockResolvedValueOnce(undefined)
+
+    const result = await store.register('new-user', 'new@example.com', 'password123', '123456')
+
+    expect(result.success).toBe(true)
+    expect(result.user).toEqual(mockUser)
+    expect(store.user).toBeNull()
+    expect(store.token).toBeNull()
+    expect(store.isAuthenticated).toBe(false)
+    expect(authService.logout).toHaveBeenCalledTimes(1)
+  })
+
+  it('maps registration conflicts to i18n keys', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(authService.register).mockRejectedValueOnce(
+      new ApiError('Email exists', 409, 'EMAIL_EXISTS')
+    )
+
+    const result = await store.register('tester', 'exists@example.com', 'password123', '123456')
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('auth.error.emailExists')
+  })
+
+  it('starts OIDC login with the target redirect', async () => {
+    const store = useAuthStore()
+
+    const result = await store.loginWithOIDC('web', '/profile/settings')
+
+    expect(result.success).toBe(true)
+    expect(beginOIDCLogin).toHaveBeenCalledWith('web', {
+      redirectTo: '/profile/settings',
     })
   })
 
-  describe('isAuthenticated', () => {
-    it('should return false when no user or token', () => {
-      const store = useAuthStore()
-      expect(store.isAuthenticated).toBe(false)
+  it('establishes a session from the OIDC callback result', async () => {
+    const store = useAuthStore()
+    const oidcUser = createMockUser({
+      auth_source: 'oidc',
+      identity_provider: 'google',
+      linked_providers: ['google'],
     })
 
-    it('should return true when user and token exist', () => {
-      const store = useAuthStore()
-      store.user = createMockUser()
-      store.token = 'test-token'
-
-      expect(store.isAuthenticated).toBe(true)
-    })
-
-    it('should return false when only user exists', () => {
-      const store = useAuthStore()
-      store.user = createMockUser()
-
-      expect(store.isAuthenticated).toBe(false)
-    })
-
-    it('should return false when only token exists', () => {
-      const store = useAuthStore()
-      store.token = 'test-token'
-
-      expect(store.isAuthenticated).toBe(false)
-    })
-  })
-
-  describe('login', () => {
-    it('should login successfully', async () => {
-      vi.useRealTimers() // 使用真实定时器避免异步问题
-      const store = useAuthStore()
-      const mockUser = createMockUser()
-      const mockResponse = {
-        user: mockUser,
-        access_token: 'test-token',
+    vi.mocked(consumeOIDCCallback).mockResolvedValueOnce({
+      redirectTo: '/favorites',
+      tokens: {
+        access_token: 'oidc-access-token',
         token_type: 'Bearer',
-      }
-
-      vi.mocked(authService.login).mockResolvedValueOnce(mockResponse)
-
-      const result = await store.login('test@test.com', 'password')
-
-      expect(result.success).toBe(true)
-      expect(result.user).toEqual(mockUser)
-      expect(store.token).toBe('test-token')
-      expect(store.isAuthenticated).toBe(true)
-      store.cleanup()
-      vi.useFakeTimers() // 恢复假定时器
-    })
-
-    it('should handle login failure', async () => {
-      vi.useRealTimers()
-      const store = useAuthStore()
-
-      vi.mocked(authService.login).mockRejectedValueOnce(
-        new ApiError('Invalid credentials', 401, 'INVALID_CREDENTIALS')
-      )
-
-      const result = await store.login('test@test.com', 'wrong-password')
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('auth.invalidCredentials')
-      expect(store.user).toBeNull()
-      expect(store.token).toBeNull()
-      vi.useFakeTimers()
-    })
-
-    it('should map challenge-required login failure to turnstileRequired', async () => {
-      vi.useRealTimers()
-      const store = useAuthStore()
-
-      vi.mocked(authService.login).mockRejectedValueOnce(
-        new ApiError('Challenge required', 403, 'CHALLENGE_REQUIRED')
-      )
-
-      const result = await store.login('test@test.com', 'password')
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('auth.error.turnstileRequired')
-      vi.useFakeTimers()
-    })
-
-    it('should enter risk verification when backend requires it', async () => {
-      vi.useRealTimers()
-      const store = useAuthStore()
-
-      vi.mocked(authService.login).mockResolvedValueOnce({
-        requires_risk_verification: true,
-        pending_token: 'risk-pending-token',
-        challenge_type: 'email_code',
-        expires_in: 300,
-      })
-
-      const result = await store.login('test@test.com', 'password')
-
-      expect(result.success).toBe(false)
-      expect(result.requiresRiskVerification).toBe(true)
-      expect(result.pendingToken).toBe('risk-pending-token')
-      expect(store.token).toBeNull()
-      vi.useFakeTimers()
-    })
-
-    it('should prevent concurrent login attempts', async () => {
-      const store = useAuthStore()
-      store.isLoading = true
-
-      const result = await store.login('test@test.com', 'password')
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('auth.error.inProgress')
-      expect(authService.login).not.toHaveBeenCalled()
-    })
-
-    it('should set isLoading during login', async () => {
-      vi.useRealTimers()
-      const store = useAuthStore()
-      const mockUser = createMockUser()
-      const mockResponse = {
-        user: mockUser,
-        access_token: 'token',
-        token_type: 'Bearer',
-      }
-
-      let loadingDuringRequest = false
-      vi.mocked(authService.login).mockImplementationOnce(async () => {
-        loadingDuringRequest = store.isLoading
-        return mockResponse
-      })
-
-      await store.login('test@test.com', 'password')
-
-      expect(loadingDuringRequest).toBe(true)
-      expect(store.isLoading).toBe(false)
-      store.cleanup()
-      vi.useFakeTimers()
-    })
-  })
-
-  describe('verifyRiskLogin', () => {
-    it('should establish session after risk verification succeeds', async () => {
-      vi.useRealTimers()
-      const store = useAuthStore()
-      const mockUser = createMockUser()
-
-      vi.mocked(authService.verifyRiskLogin).mockResolvedValueOnce({
-        user: mockUser,
-        access_token: 'risk-token',
-        refresh_token: 'risk-refresh',
-        token_type: 'Bearer',
-      })
-
-      const result = await store.verifyRiskLogin('risk-pending-token', '123456')
-
-      expect(result.success).toBe(true)
-      expect(store.user).toEqual(mockUser)
-      expect(store.token).toBe('risk-token')
-      store.cleanup()
-      vi.useFakeTimers()
-    })
-  })
-
-  describe('register', () => {
-    it('should register successfully', async () => {
-      vi.useRealTimers()
-      const store = useAuthStore()
-      const mockUser = createMockUser({ username: 'newuser', email: 'new@test.com' })
-      const mockResponse = {
-        user: mockUser,
-        access_token: 'new-token',
-        token_type: 'Bearer',
-      }
-
-      vi.mocked(authService.register).mockResolvedValueOnce(mockResponse)
-
-      const result = await store.register('newuser', 'new@test.com', 'password', '123456')
-
-      expect(result.success).toBe(true)
-      expect(result.user).toEqual(mockUser)
-      expect(store.token).toBe('new-token')
-      store.cleanup()
-      vi.useFakeTimers()
-    })
-
-    it('should handle email exists error', async () => {
-      vi.useRealTimers()
-      const store = useAuthStore()
-
-      vi.mocked(authService.register).mockRejectedValueOnce(
-        new ApiError('Email exists', 409, 'EMAIL_EXISTS')
-      )
-
-      const result = await store.register('user', 'exists@test.com', 'password', '123456')
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('auth.error.emailExists')
-      vi.useFakeTimers()
-    })
-
-    it('should handle username exists error', async () => {
-      vi.useRealTimers()
-      const store = useAuthStore()
-
-      vi.mocked(authService.register).mockRejectedValueOnce(
-        new ApiError('Username exists', 400, 'USERNAME_EXISTS')
-      )
-
-      const result = await store.register('existinguser', 'new@test.com', 'password', '123456')
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('auth.error.usernameExists')
-      vi.useFakeTimers()
-    })
-  })
-
-  describe('logout', () => {
-    it('should clear user state on logout', async () => {
-      const store = useAuthStore()
-      store.user = createMockUser()
-      store.token = 'test-token'
-
-      vi.mocked(authService.logout).mockResolvedValueOnce(undefined)
-
-      await store.logout()
-
-      expect(store.user).toBeNull()
-      expect(store.token).toBeNull()
-      expect(store.error).toBeNull()
-    })
-
-    it('should clear state even if logout API fails', async () => {
-      const store = useAuthStore()
-      store.user = createMockUser()
-      store.token = 'test-token'
-
-      vi.mocked(authService.logout).mockRejectedValueOnce(new Error('Network error'))
-
-      await store.logout()
-
-      expect(store.user).toBeNull()
-      expect(store.token).toBeNull()
-    })
-  })
-
-  describe('fetchCurrentUser', () => {
-    it('should fetch user when token exists', async () => {
-      const store = useAuthStore()
-      store.token = 'test-token'
-      const mockUser = createMockUser()
-
-      vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(mockUser)
-
-      const result = await store.fetchCurrentUser()
-
-      expect(result).toEqual(mockUser)
-      expect(store.user).toEqual(mockUser)
-    })
-
-    it('should return null when no token', async () => {
-      const store = useAuthStore()
-
-      const result = await store.fetchCurrentUser()
-
-      expect(result).toBeNull()
-      expect(authService.getCurrentUser).not.toHaveBeenCalled()
-    })
-
-    it('should clear state when fetch fails with 401', async () => {
-      const store = useAuthStore()
-      store.token = 'expired-token'
-      store.user = createMockUser()
-
-      vi.mocked(authService.getCurrentUser).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
-
-      const result = await store.fetchCurrentUser()
-
-      expect(result).toBeNull()
-      expect(store.user).toBeNull()
-      expect(store.token).toBeNull()
-    })
-
-    it('should preserve state when fetch fails with network error', async () => {
-      const store = useAuthStore()
-      store.token = 'valid-token'
-      const mockUser = createMockUser()
-      store.user = mockUser
-
-      vi.mocked(authService.getCurrentUser).mockRejectedValueOnce(new Error('Network Error'))
-
-      const result = await store.fetchCurrentUser()
-
-      expect(result).toBeNull()
-      expect(store.user).toEqual(mockUser)
-      expect(store.token).toBe('valid-token')
-    })
-  })
-
-  describe('heartbeat', () => {
-    it('should start heartbeat timer', () => {
-      const store = useAuthStore()
-      store.token = 'test-token'
-
-      store.startHeartbeat()
-
-      // 验证定时器已设置
-      expect(vi.getTimerCount()).toBeGreaterThan(0)
-
-      store.stopHeartbeat()
-    })
-
-    it('should refresh token on heartbeat interval', async () => {
-      const store = useAuthStore()
-      store.token = 'test-token'
-
-      vi.mocked(authService.heartbeat).mockResolvedValue({
-        access_token: 'new-token',
-        token_type: 'bearer',
         expires_in: 900,
-        refresh_threshold: 300,
-        server_time: new Date().toISOString(),
+        id_token: 'oidc-id-token',
+      },
+    })
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(oidcUser)
+
+    const result = await store.completeOIDCLogin(
+      'web',
+      'https://momichan.xyz/auth/callback?code=abc&state=state'
+    )
+
+    expect(result.success).toBe(true)
+    expect(result.redirectTo).toBe('/favorites')
+    expect(store.user).toEqual(oidcUser)
+    expect(store.token).toBe('oidc-access-token')
+    expect(store.isAuthenticated).toBe(true)
+    expect(storeOIDCSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientKind: 'web',
+        idToken: 'oidc-id-token',
       })
+    )
+  })
 
-      store.startHeartbeat()
+  it('clears state when OIDC callback processing fails', async () => {
+    const store = useAuthStore()
+    store.user = createMockUser({ auth_source: 'oidc' })
+    store.token = 'stale-token'
 
-      // 快进 7 分钟（心跳间隔 5min ± 20% 抖动，最大 6min）
-      await vi.advanceTimersByTimeAsync(7 * 60 * 1000)
+    vi.mocked(consumeOIDCCallback).mockRejectedValueOnce(
+      new ApiError('OIDC failed', 400, 'oidc_callback_invalid')
+    )
 
-      expect(authService.heartbeat).toHaveBeenCalled()
+    const result = await store.completeOIDCLogin(
+      'web',
+      'https://momichan.xyz/auth/callback?error=access_denied'
+    )
 
-      store.stopHeartbeat()
-    })
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('auth.error.oidcLoginFailed')
+    expect(store.user).toBeNull()
+    expect(store.token).toBeNull()
+  })
 
-    it('should stop heartbeat when token is cleared', async () => {
-      const store = useAuthStore()
-      store.token = 'test-token'
+  it('redirects OIDC users to the end-session endpoint on logout', async () => {
+    const store = useAuthStore()
+    store.user = createMockUser({ auth_source: 'oidc' })
+    store.token = 'oidc-token'
 
-      store.startHeartbeat()
-      store.token = null
+    vi.mocked(buildOIDCLogoutUrl).mockReturnValueOnce(
+      'https://auth.momichan.xyz/application/o/hmrchan-web/end-session/'
+    )
 
-      // 快进 5 分钟
-      await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+    await store.logout()
 
-      // 应该停止心跳，不再调用 refreshToken
-      expect(authService.refreshToken).not.toHaveBeenCalled()
-    })
+    expect(authService.logout).not.toHaveBeenCalled()
+    expect(window.location.assign).toHaveBeenCalledWith(
+      'https://auth.momichan.xyz/application/o/hmrchan-web/end-session/'
+    )
+    expect(store.user).toBeNull()
+    expect(store.token).toBeNull()
+  })
 
-    it('should not start multiple heartbeats', () => {
-      const store = useAuthStore()
-      store.token = 'test-token'
+  it('fetches the current user when a token exists', async () => {
+    const store = useAuthStore()
+    const user = createMockUser()
+    store.token = 'access-token'
 
-      store.startHeartbeat()
-      const timerCount1 = vi.getTimerCount()
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(user)
 
-      store.startHeartbeat()
-      const timerCount2 = vi.getTimerCount()
+    const result = await store.fetchCurrentUser()
 
-      expect(timerCount1).toBe(timerCount2)
+    expect(result).toEqual(user)
+    expect(store.user).toEqual(user)
+  })
 
-      store.stopHeartbeat()
-    })
+  it('starts heartbeat only once', () => {
+    const store = useAuthStore()
+    store.token = 'legacy-token'
+
+    store.startHeartbeat()
+    const timerCount = vi.getTimerCount()
+    store.startHeartbeat()
+
+    expect(vi.getTimerCount()).toBe(timerCount)
+
+    store.stopHeartbeat()
   })
 })

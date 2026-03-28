@@ -56,17 +56,9 @@
               </div>
               <div class="settings-overview__meta-item">
                 <span class="settings-overview__meta-label">{{
-                  $t('profile.twoFactorSummaryLabel')
+                  $t('profile.loginMethodTitle')
                 }}</span>
-                <strong class="settings-overview__meta-value">
-                  {{
-                    isTwoFactorLoading
-                      ? $t('common.loading')
-                      : twoFactorStatus?.enabled
-                        ? $t('profile.twoFactorEnabled')
-                        : $t('profile.twoFactorDisabled')
-                  }}
-                </strong>
+                <strong class="settings-overview__meta-value">{{ authSourceSummaryLabel }}</strong>
               </div>
               <div class="settings-overview__meta-item">
                 <span class="settings-overview__meta-label">{{
@@ -550,9 +542,8 @@
                   </form>
                 </section>
 
-                <!-- 2FA Section -->
                 <section
-                  id="two-factor-section"
+                  id="login-method-section"
                   class="settings-section glass-surface--editorial two-factor-section"
                 >
                   <div class="settings-section-head">
@@ -560,199 +551,56 @@
                       <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
                     </div>
                     <div>
-                      <h2 class="settings-section-title">{{ $t('profile.twoFactorTitle') }}</h2>
-                      <p class="settings-section-desc">{{ $t('profile.twoFactorHint') }}</p>
+                      <h2 class="settings-section-title">{{ $t('profile.loginMethodTitle') }}</h2>
+                      <p class="settings-section-desc">{{ $t('profile.loginMethodHint') }}</p>
                     </div>
                   </div>
 
                   <div class="two-factor-status-card">
                     <div class="two-factor-status-copy">
                       <p class="two-factor-status-label">
-                        {{ $t('profile.twoFactorStatusLabel') }}
+                        {{ $t('profile.loginMethodCurrentLabel') }}
                       </p>
-                      <p class="two-factor-status-value">
-                        {{
-                          isTwoFactorLoading
-                            ? $t('common.loading')
-                            : twoFactorStatus?.enabled
-                              ? $t('profile.twoFactorEnabled')
-                              : $t('profile.twoFactorDisabled')
-                        }}
-                      </p>
-                      <p class="field-hint">
-                        {{
-                          isTwoFactorLoading
-                            ? $t('profile.twoFactorStatusLoadingHint')
-                            : twoFactorStatus?.enabled
-                              ? $t('profile.twoFactorEnabledHint', {
-                                  count: twoFactorStatus.backup_codes_remaining,
-                                })
-                              : $t('profile.twoFactorDisabledHint')
-                        }}
-                      </p>
+                      <p class="two-factor-status-value">{{ authSourceSummaryLabel }}</p>
+                      <p class="field-hint">{{ authSourceSummaryHint }}</p>
                     </div>
 
                     <div class="two-factor-actions">
-                      <Button
-                        v-if="!twoFactorStatus?.enabled && !twoFactorSetup"
-                        type="button"
-                        variant="secondary"
-                        :loading="isSettingUpTwoFactor"
-                        :disabled="isTwoFactorLoading"
-                        @click="beginTwoFactorSetup"
-                      >
+                      <Button type="button" variant="secondary" @click="openAuthentikAccountCenter">
                         <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-                        {{ $t('profile.twoFactorSetupAction') }}
+                        {{ $t('profile.authentikAccountCenterCta') }}
                       </Button>
-
-                      <template v-else-if="twoFactorStatus?.enabled">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          :disabled="isTwoFactorLoading"
-                          @click="openBackupCodesDialog"
-                        >
-                          <AnimatedIcon name="explore" :fallback-icon="Key" size="sm" />
-                          {{ $t('profile.twoFactorViewBackupCodes') }}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          :disabled="isTwoFactorLoading"
-                          @click="openRegenerateDialog"
-                        >
-                          <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
-                          {{ $t('profile.twoFactorRegenerateAction') }}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="danger"
-                          size="sm"
-                          :disabled="isTwoFactorLoading"
-                          @click="openDisableDialog"
-                        >
-                          <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-                          {{ $t('profile.twoFactorDisableAction') }}
-                        </Button>
-                      </template>
                     </div>
                   </div>
 
-                  <div v-if="twoFactorSetup" class="two-factor-setup">
-                    <div class="two-factor-setup-qr">
-                      <img
-                        class="two-factor-qr-image"
-                        :src="normalizedTwoFactorQrCode"
-                        :alt="$t('profile.twoFactorQrAlt')"
-                      />
+                  <div class="account-meta-grid auth-method-meta-grid">
+                    <div class="account-meta-item">
+                      <span class="account-meta-label">{{ $t('profile.authSourceLabel') }}</span>
+                      <span class="account-meta-value">{{ authSourceSummaryLabel }}</span>
                     </div>
-
-                    <div class="two-factor-setup-details">
-                      <p class="field-hint">{{ $t('profile.twoFactorSetupInstructions') }}</p>
-
-                      <div class="two-factor-secret-card">
-                        <span class="two-factor-secret-label">{{
-                          $t('profile.twoFactorManualCode')
-                        }}</span>
-                        <code class="two-factor-secret-value">{{ twoFactorSetup.secret }}</code>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          @click="copyText(twoFactorSetup.secret)"
-                        >
-                          {{ $t('profile.twoFactorCopySecret') }}
-                        </Button>
-                      </div>
-
-                      <div class="two-factor-backup-box">
-                        <div class="two-factor-backup-header">
-                          <h3>{{ $t('profile.twoFactorBackupCodesTitle') }}</h3>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            @click="copyBackupCodes(setupBackupCodes)"
-                          >
-                            {{ $t('profile.twoFactorCopyBackupCodes') }}
-                          </Button>
-                        </div>
-                        <p class="field-hint">{{ $t('profile.twoFactorBackupCodesHint') }}</p>
-                        <div class="two-factor-backup-grid">
-                          <code
-                            v-for="code in setupBackupCodes"
-                            :key="code"
-                            class="two-factor-backup-code"
-                          >
-                            {{ code }}
-                          </code>
-                        </div>
-                      </div>
-
-                      <div class="form-group">
-                        <label for="two_factor_code">
-                          <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-                          {{ $t('profile.twoFactorVerifyCodeLabel') }}
-                        </label>
-                        <div class="input-wrapper">
-                          <Input
-                            id="two_factor_code"
-                            v-model="twoFactorVerificationCode"
-                            type="text"
-                            class="input-with-icon"
-                            inputmode="numeric"
-                            pattern="[0-9]*"
-                            maxlength="6"
-                            :placeholder="$t('auth.twoFactorCodePlaceholder')"
-                          />
-                        </div>
-                      </div>
-
-                      <div class="form-actions">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          :loading="isVerifyingTwoFactor"
-                          :disabled="twoFactorVerificationCode.length < 6"
-                          @click="confirmTwoFactorSetup"
-                        >
-                          <AnimatedIcon name="sparkle" :fallback-icon="CheckCircle" size="sm" />
-                          {{ $t('profile.twoFactorConfirmSetup') }}
-                        </Button>
-                        <Button type="button" variant="ghost" @click="cancelTwoFactorSetup">
-                          {{ $t('common.cancel') }}
-                        </Button>
-                      </div>
+                    <div class="account-meta-item">
+                      <span class="account-meta-label">{{
+                        $t('profile.identityProviderLabel')
+                      }}</span>
+                      <span class="account-meta-value">{{ primaryIdentityProviderLabel }}</span>
+                    </div>
+                    <div class="account-meta-item">
+                      <span class="account-meta-label">{{
+                        $t('profile.linkedProvidersLabel')
+                      }}</span>
+                      <span class="account-meta-value">{{ linkedProvidersLabel }}</span>
+                    </div>
+                    <div class="account-meta-item">
+                      <span class="account-meta-label">{{ $t('profile.mfaManagedByLabel') }}</span>
+                      <span class="account-meta-value">{{
+                        $t('profile.mfaManagedByAuthentik')
+                      }}</span>
                     </div>
                   </div>
 
-                  <div
-                    v-else-if="twoFactorStatus?.enabled && latestBackupCodes.length"
-                    class="two-factor-backup-box two-factor-backup-box--saved"
-                  >
-                    <div class="two-factor-backup-header">
-                      <h3>{{ $t('profile.twoFactorLatestBackupCodes') }}</h3>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        @click="copyBackupCodes(latestBackupCodes)"
-                      >
-                        {{ $t('profile.twoFactorCopyBackupCodes') }}
-                      </Button>
-                    </div>
-                    <p class="field-hint">{{ $t('profile.twoFactorBackupCodesSavedHint') }}</p>
-                    <div class="two-factor-backup-grid">
-                      <code
-                        v-for="code in latestBackupCodes"
-                        :key="`latest-${code}`"
-                        class="two-factor-backup-code"
-                      >
-                        {{ code }}
-                      </code>
-                    </div>
+                  <div class="account-danger-box">
+                    <p class="two-factor-status-label">{{ $t('profile.twoFactorRetiredTitle') }}</p>
+                    <p class="field-hint">{{ $t('profile.twoFactorRetiredHint') }}</p>
                   </div>
                 </section>
 
@@ -1009,161 +857,6 @@
     />
 
     <Dialog
-      :is-open="showBackupCodesDialog"
-      :title="$t('profile.twoFactorBackupCodesTitle')"
-      size="sm"
-      @update:isOpen="showBackupCodesDialog = $event"
-    >
-      <div class="two-factor-backup-box two-factor-backup-box--dialog">
-        <p class="field-hint">{{ $t('profile.twoFactorBackupCodesSavedHint') }}</p>
-        <div v-if="latestBackupCodes.length" class="two-factor-backup-grid">
-          <code
-            v-for="code in latestBackupCodes"
-            :key="`dialog-${code}`"
-            class="two-factor-backup-code"
-          >
-            {{ code }}
-          </code>
-        </div>
-        <p v-else class="field-hint">{{ $t('profile.twoFactorNoBackupCodes') }}</p>
-      </div>
-
-      <template #footer>
-        <Button type="button" variant="ghost" size="sm" @click="showBackupCodesDialog = false">
-          {{ $t('common.cancel') }}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          :disabled="!latestBackupCodes.length"
-          @click="copyBackupCodes(latestBackupCodes)"
-        >
-          {{ $t('profile.twoFactorCopyBackupCodes') }}
-        </Button>
-      </template>
-    </Dialog>
-
-    <Dialog
-      :is-open="showRegenerateDialog"
-      :title="$t('profile.twoFactorRegenerateAction')"
-      :description="$t('profile.twoFactorRegenerateHint')"
-      size="sm"
-      @update:isOpen="showRegenerateDialog = $event"
-    >
-      <div class="report-form">
-        <div class="form-group">
-          <label for="regenerate_backup_code">
-            <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-            {{ $t('profile.twoFactorVerifyCodeLabel') }}
-          </label>
-          <div class="input-wrapper">
-            <Input
-              id="regenerate_backup_code"
-              v-model="regenerateBackupCode"
-              type="text"
-              class="input-with-icon"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              maxlength="6"
-              :placeholder="$t('auth.twoFactorCodePlaceholder')"
-            />
-          </div>
-        </div>
-      </div>
-
-      <template #footer>
-        <Button type="button" variant="ghost" size="sm" @click="showRegenerateDialog = false">
-          {{ $t('common.cancel') }}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          :loading="isRegeneratingBackupCodes"
-          :disabled="regenerateBackupCode.length < 6"
-          @click="regenerateTwoFactorBackupCodes"
-        >
-          {{ $t('profile.twoFactorRegenerateAction') }}
-        </Button>
-      </template>
-    </Dialog>
-
-    <Dialog
-      :is-open="showDisableTwoFactorDialog"
-      :title="$t('profile.twoFactorDisableAction')"
-      :description="$t('profile.twoFactorDisableHint')"
-      size="sm"
-      @update:isOpen="showDisableTwoFactorDialog = $event"
-    >
-      <div class="report-form">
-        <div class="form-group">
-          <label for="disable_two_factor_code">
-            <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-            {{ $t('profile.twoFactorVerifyCodeLabel') }}
-          </label>
-          <div class="input-wrapper">
-            <Input
-              id="disable_two_factor_code"
-              v-model="disableTwoFactorForm.code"
-              type="text"
-              class="input-with-icon"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              maxlength="6"
-              :placeholder="$t('auth.twoFactorCodePlaceholder')"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="disable_two_factor_password">
-            <AnimatedIcon name="sparkle" :fallback-icon="Lock" size="sm" />
-            {{ $t('profile.currentPassword') }}
-          </label>
-          <div class="input-wrapper">
-            <Input
-              id="disable_two_factor_password"
-              v-model="disableTwoFactorForm.password"
-              :type="showDisableTwoFactorPassword ? 'text' : 'password'"
-              class="input-with-icon"
-              autocomplete="current-password"
-            />
-            <button
-              type="button"
-              class="password-toggle"
-              :aria-label="passwordToggleLabel(showDisableTwoFactorPassword)"
-              :aria-pressed="showDisableTwoFactorPassword"
-              @click="showDisableTwoFactorPassword = !showDisableTwoFactorPassword"
-            >
-              <AnimatedIcon
-                v-if="showDisableTwoFactorPassword"
-                name="explore"
-                :fallback-icon="EyeOff"
-                size="sm"
-              />
-              <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <template #footer>
-        <Button type="button" variant="ghost" size="sm" @click="showDisableTwoFactorDialog = false">
-          {{ $t('common.cancel') }}
-        </Button>
-        <Button
-          type="button"
-          variant="danger"
-          size="sm"
-          :loading="isDisablingTwoFactor"
-          :disabled="disableTwoFactorForm.code.length < 6 || !disableTwoFactorForm.password"
-          @click="disableTwoFactor"
-        >
-          {{ $t('profile.twoFactorDisableAction') }}
-        </Button>
-      </template>
-    </Dialog>
-
-    <Dialog
       :is-open="showDeleteAccountDialog"
       :title="$t('profile.deleteAccountConfirmTitle')"
       :description="$t('profile.deleteAccountConfirmDesc')"
@@ -1233,19 +926,11 @@ import {
   Trash2,
   Palette,
 } from 'lucide-vue-next'
-import {
-  userService,
-  normalizeAvatarUrl,
-  twoFactorService,
-  type UserProfile,
-  type TwoFactorStatusResponse,
-  type TwoFactorSetupResponse,
-  ApiError,
-} from '@/api'
+import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
 import { checkPasswordStrength } from '@/utils/crypto'
-import { copyToClipboard } from '@/utils/modernAPIs'
+import { normalizeAuthSource } from '@/utils/authSource'
 import { ensureVerificationToken, isVerificationCancelledError } from '@/api/verificationBridge'
 import {
   buildPasswordToggleLabel,
@@ -1253,7 +938,6 @@ import {
   getPasswordStrengthScore,
   isEmailChangeAllowed,
   isPasswordChangeAllowed,
-  normalizeTwoFactorQrCode,
   passwordsMatch as checkPasswordsMatch,
 } from './profile-settings/profileSettingsModel'
 import Button from '@/components/ui/Button.vue'
@@ -1285,11 +969,6 @@ const isLoading = ref(false)
 const isSaving = ref(false)
 const isChangingPassword = ref(false)
 const error = ref<string | null>(null)
-const isTwoFactorLoading = ref(false)
-const isSettingUpTwoFactor = ref(false)
-const isVerifyingTwoFactor = ref(false)
-const isRegeneratingBackupCodes = ref(false)
-const isDisablingTwoFactor = ref(false)
 const isDeletionStatusLoading = ref(false)
 const isExportingData = ref(false)
 const isDeletingAccount = ref(false)
@@ -1307,7 +986,6 @@ const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 const showEmailPassword = ref(false)
-const showDisableTwoFactorPassword = ref(false)
 let profileFetchController: AbortController | null = null
 let profileFetchToken = 0
 
@@ -1326,20 +1004,8 @@ const emailForm = ref({
   new_email: '',
   password: '',
 })
-const twoFactorStatus = ref<TwoFactorStatusResponse | null>(null)
-const twoFactorSetup = ref<TwoFactorSetupResponse | null>(null)
-const twoFactorVerificationCode = ref('')
-const latestBackupCodes = ref<string[]>([])
-const showBackupCodesDialog = ref(false)
-const showRegenerateDialog = ref(false)
-const showDisableTwoFactorDialog = ref(false)
 const showDeleteAccountDialog = ref(false)
-const regenerateBackupCode = ref('')
 const deleteAccountReason = ref('')
-const disableTwoFactorForm = ref({
-  code: '',
-  password: '',
-})
 type AccountDeletionStatus = Awaited<ReturnType<typeof userService.getDeletionStatus>>
 const deletionStatus = ref<AccountDeletionStatus | null>(null)
 type AccountDataSummary = Awaited<ReturnType<typeof userService.getDataSummary>> & {
@@ -1377,8 +1043,8 @@ const settingsDashboardGroups = computed(() => [
   },
   {
     id: 'security' as const,
-    title: t('profile.twoFactorTitle'),
-    description: t('profile.passwordHint'),
+    title: t('profile.tabs.security'),
+    description: t('profile.loginMethodHint'),
     icon: Shield,
     iconName: 'sparkle',
   },
@@ -1508,11 +1174,51 @@ const canChangePassword = computed(() =>
   })
 )
 
-const normalizedTwoFactorQrCode = computed(() =>
-  normalizeTwoFactorQrCode(twoFactorSetup.value?.qr_code)
+const authentikAccountCenterUrl = computed(
+  () =>
+    import.meta.env.VITE_AUTHENTIK_ACCOUNT_CENTER_URL?.trim() ||
+    'https://auth.momichan.xyz/if/user/#/settings'
 )
 
-const setupBackupCodes = computed(() => twoFactorSetup.value?.backup_codes ?? [])
+const authSource = computed(() =>
+  normalizeAuthSource(profile.value?.auth_source ?? authStore.user?.auth_source)
+)
+
+const authSourceSummaryLabel = computed(() =>
+  authSource.value === 'oidc' ? t('profile.authSourceOidc') : t('profile.authSourceLegacy')
+)
+
+const authSourceSummaryHint = computed(() =>
+  authSource.value === 'oidc' ? t('profile.authSourceOidcHint') : t('profile.authSourceLegacyHint')
+)
+
+const linkedProviders = computed(() => {
+  const values = [
+    profile.value?.identity_provider,
+    ...(profile.value?.linked_providers ?? []),
+    authStore.user?.identity_provider,
+    ...(authStore.user?.linked_providers ?? []),
+  ]
+
+  return [
+    ...new Set(
+      values
+        .filter((value): value is string => Boolean(value?.trim()))
+        .map(formatIdentityProviderLabel)
+    ),
+  ]
+})
+
+const primaryIdentityProviderLabel = computed(() => {
+  const provider = profile.value?.identity_provider ?? authStore.user?.identity_provider
+  return provider ? formatIdentityProviderLabel(provider) : t('profile.identityProviderUnavailable')
+})
+
+const linkedProvidersLabel = computed(() => {
+  return linkedProviders.value.length
+    ? linkedProviders.value.join(', ')
+    : t('profile.noLinkedProviders')
+})
 
 async function fetchProfile() {
   profileFetchController?.abort()
@@ -1552,19 +1258,31 @@ async function fetchProfile() {
   }
 }
 
-async function fetchTwoFactorStatus() {
-  isTwoFactorLoading.value = true
-  try {
-    twoFactorStatus.value = await twoFactorService.getStatus()
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isTwoFactorLoading.value = false
+function formatIdentityProviderLabel(provider: string): string {
+  const normalized = provider.trim().toLowerCase()
+  const knownLabels: Record<string, string> = {
+    authentik: 'Authentik',
+    google: 'Google',
+    github: 'GitHub',
+    apple: 'Apple',
+    microsoft: 'Microsoft',
+    discord: 'Discord',
   }
+
+  if (knownLabels[normalized]) {
+    return knownLabels[normalized]
+  }
+
+  return provider
+    .trim()
+    .split(/[_\-\s]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ')
+}
+
+function openAuthentikAccountCenter() {
+  window.location.assign(authentikAccountCenterUrl.value)
 }
 
 async function fetchDeletionStatus() {
@@ -1602,7 +1320,6 @@ async function refreshAccountDataSummary() {
 async function refreshSettingsData() {
   await Promise.allSettled([
     fetchProfile(),
-    fetchTwoFactorStatus(),
     fetchDeletionStatus(),
     fetchDataSummary({ silent: true }),
   ])
@@ -1636,144 +1353,6 @@ async function saveProfile() {
   } finally {
     isSaving.value = false
   }
-}
-
-async function beginTwoFactorSetup() {
-  if (isSettingUpTwoFactor.value) return
-
-  isSettingUpTwoFactor.value = true
-  try {
-    twoFactorSetup.value = await twoFactorService.setup()
-    twoFactorVerificationCode.value = ''
-  } catch (err) {
-    if (isVerificationCancelledError(err)) return
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isSettingUpTwoFactor.value = false
-  }
-}
-
-function cancelTwoFactorSetup() {
-  twoFactorSetup.value = null
-  twoFactorVerificationCode.value = ''
-}
-
-async function confirmTwoFactorSetup() {
-  if (isVerifyingTwoFactor.value || twoFactorVerificationCode.value.length < 6) return
-
-  isVerifyingTwoFactor.value = true
-  try {
-    await twoFactorService.verify(twoFactorVerificationCode.value)
-    latestBackupCodes.value = [...setupBackupCodes.value]
-    twoFactorSetup.value = null
-    twoFactorVerificationCode.value = ''
-    await Promise.all([fetchTwoFactorStatus(), authStore.fetchCurrentUser()])
-    toastStore.success(t('profile.twoFactorSetupSuccess'))
-    showBackupCodesDialog.value = true
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isVerifyingTwoFactor.value = false
-  }
-}
-
-function openBackupCodesDialog() {
-  showBackupCodesDialog.value = true
-}
-
-function openRegenerateDialog() {
-  regenerateBackupCode.value = ''
-  showRegenerateDialog.value = true
-}
-
-function openDisableDialog() {
-  disableTwoFactorForm.value = {
-    code: '',
-    password: '',
-  }
-  showDisableTwoFactorPassword.value = false
-  showDisableTwoFactorDialog.value = true
-}
-
-async function regenerateTwoFactorBackupCodes() {
-  if (isRegeneratingBackupCodes.value || regenerateBackupCode.value.length < 6) return
-
-  isRegeneratingBackupCodes.value = true
-  try {
-    const response = await twoFactorService.regenerateBackupCodes(regenerateBackupCode.value)
-    latestBackupCodes.value = [...response.backup_codes]
-    regenerateBackupCode.value = ''
-    showRegenerateDialog.value = false
-    await fetchTwoFactorStatus()
-    toastStore.success(response.message || t('profile.twoFactorBackupCodesRegenerated'))
-    showBackupCodesDialog.value = true
-  } catch (err) {
-    if (isVerificationCancelledError(err)) return
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isRegeneratingBackupCodes.value = false
-  }
-}
-
-async function disableTwoFactor() {
-  if (
-    isDisablingTwoFactor.value ||
-    disableTwoFactorForm.value.code.length < 6 ||
-    !disableTwoFactorForm.value.password
-  ) {
-    return
-  }
-
-  isDisablingTwoFactor.value = true
-  try {
-    const response = await twoFactorService.disable(
-      disableTwoFactorForm.value.code,
-      disableTwoFactorForm.value.password
-    )
-    twoFactorSetup.value = null
-    latestBackupCodes.value = []
-    showDisableTwoFactorDialog.value = false
-    disableTwoFactorForm.value = {
-      code: '',
-      password: '',
-    }
-    await Promise.all([fetchTwoFactorStatus(), authStore.fetchCurrentUser()])
-    toastStore.success(response.message || t('profile.twoFactorDisabledSuccess'))
-  } catch (err) {
-    if (isVerificationCancelledError(err)) return
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isDisablingTwoFactor.value = false
-  }
-}
-
-async function copyText(value: string) {
-  if (await copyToClipboard(value)) {
-    toastStore.success(t('profile.twoFactorCopied'))
-    return
-  }
-  toastStore.error(t('common.error'))
-}
-
-async function copyBackupCodes(codes: string[]) {
-  if (!codes.length) return
-  await copyText(codes.join('\n'))
 }
 
 function openDeleteAccountDialog() {

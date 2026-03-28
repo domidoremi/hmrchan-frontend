@@ -83,6 +83,9 @@ export interface UserResponse {
   email_verified_at?: string
   last_login_at?: string
   roles?: string[]
+  auth_source?: 'legacy' | 'oidc'
+  identity_provider?: string
+  linked_providers?: string[]
   created_at: string
   updated_at?: string
 }

@@ -44,6 +44,22 @@ vi.mock('@/utils/tokenSecurity', () => ({
   },
 }))
 
+vi.mock('@/utils/authSource', () => ({
+  getStoredAuthSource: vi.fn(() => null),
+  setStoredAuthSource: vi.fn(),
+  clearStoredAuthSource: vi.fn(),
+  normalizeAuthSource: vi.fn((value: string | null | undefined) =>
+    value === 'oidc' ? 'oidc' : 'legacy'
+  ),
+}))
+
+vi.mock('@/services/oidcService', () => ({
+  beginOIDCLogin: vi.fn(() => Promise.resolve()),
+  clearOIDCSession: vi.fn(),
+}))
+
+import { beginOIDCLogin } from '@/services/oidcService'
+
 function createUser(overrides: Record<string, unknown> = {}) {
   return {
     id: 'user-1',
@@ -72,6 +88,7 @@ describe('createAuthSessionController', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
+    window.history.replaceState({}, '', '/')
   })
 
   afterEach(() => {
@@ -214,6 +231,81 @@ describe('createAuthSessionController', () => {
     expect(state.token.value).toBeNull()
     expect(vi.getTimerCount()).toBeGreaterThan(0)
 
+    controller.cleanup()
+  })
+
+  it('does not start heartbeat for oidc sessions', async () => {
+    const state = createState()
+    const controller = createAuthSessionController({ router, state })
+    const oidcUser = createUser({ auth_source: 'oidc' })
+
+    await controller.establishSession({
+      user: oidcUser,
+      access_token: 'oidc-token',
+      refresh_token: null,
+      token_type: 'Bearer',
+    } as Parameters<typeof controller.establishSession>[0])
+
+    await vi.advanceTimersByTimeAsync(7 * 60 * 1000)
+
+    expect(authService.heartbeat).not.toHaveBeenCalled()
+    controller.cleanup()
+  })
+
+  it('skips legacy refresh bootstrap when the persisted session is oidc', async () => {
+    const state = createState()
+    state.user.value = createUser({ auth_source: 'oidc' })
+    const controller = createAuthSessionController({ router, state })
+
+    vi.mocked(secureTokenManager.retrieveState).mockResolvedValueOnce({
+      token: null,
+      state: 'missing',
+    })
+
+    await controller.initAuth()
+
+    expect(authService.refreshToken).not.toHaveBeenCalled()
+  })
+
+  it('restarts unified login when an oidc session is invalidated on a protected route', async () => {
+    const state = createState()
+    state.user.value = createUser({ auth_source: 'oidc' })
+    state.token.value = 'oidc-token'
+    const controller = createAuthSessionController({ router, state })
+    const cleanup = controller.setupAuthListener()
+
+    window.history.replaceState({}, '', '/profile/settings?tab=security')
+    window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason: 'auth_failed' } }))
+    await Promise.resolve()
+
+    expect(state.user.value).toBeNull()
+    expect(state.token.value).toBeNull()
+    expect(beginOIDCLogin).toHaveBeenCalledWith('web', {
+      redirectTo: '/profile/settings?tab=security',
+    })
+    expect(router.push).not.toHaveBeenCalledWith('/login')
+
+    cleanup()
+    controller.cleanup()
+  })
+
+  it('does not restart unified login after the explicit logout callback', async () => {
+    const state = createState()
+    state.user.value = createUser({ auth_source: 'oidc' })
+    state.token.value = 'oidc-token'
+    const controller = createAuthSessionController({ router, state })
+    const cleanup = controller.setupAuthListener()
+
+    window.history.replaceState({}, '', '/auth/logout/callback')
+    window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason: 'logout_callback' } }))
+    await Promise.resolve()
+
+    expect(state.user.value).toBeNull()
+    expect(state.token.value).toBeNull()
+    expect(beginOIDCLogin).not.toHaveBeenCalled()
+    expect(router.push).not.toHaveBeenCalledWith('/login')
+
+    cleanup()
     controller.cleanup()
   })
 })

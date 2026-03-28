@@ -33,11 +33,16 @@ describe('resolveHtmlDocument', () => {
 
   it('marks auth and private routes as noindex', () => {
     const loginConfig = resolveHtmlDocument(new URL('https://momichan.xyz/login'))
+    const oidcCallbackConfig = resolveHtmlDocument(new URL('https://momichan.xyz/auth/callback'))
     const favoritesConfig = resolveHtmlDocument(new URL('https://momichan.xyz/favorites'))
 
     expect(loginConfig.status).toBe(200)
     expect(loginConfig.robots).toBe('noindex, nofollow')
     expect(loginConfig.title).toBe('Login · MomiChan')
+
+    expect(oidcCallbackConfig.status).toBe(200)
+    expect(oidcCallbackConfig.robots).toBe('noindex, nofollow')
+    expect(oidcCallbackConfig.title).toBe('Authentication callback · MomiChan')
 
     expect(favoritesConfig.status).toBe(200)
     expect(favoritesConfig.robots).toBe('noindex, nofollow')
