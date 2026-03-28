@@ -12,7 +12,10 @@ import {
 } from 'vue-router'
 import i18n from '@/i18n'
 import { applyPageMeta } from '@/utils/pageMeta'
+import { getStoredAuthSource } from '@/utils/authSource'
 import LoginPage from '@/views/LoginPage.vue'
+import OIDCCallbackPage from '@/views/OIDCCallbackPage.vue'
+import OIDCLogoutCallbackPage from '@/views/OIDCLogoutCallbackPage.vue'
 import RegisterPage from '@/views/RegisterPage.vue'
 import ForgotPasswordPage from '@/views/ForgotPasswordPage.vue'
 import ResetPasswordPage from '@/views/ResetPasswordPage.vue'
@@ -191,6 +194,18 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.login', guestOnly: true },
   },
   {
+    path: '/auth/callback',
+    name: 'oidc-callback',
+    component: OIDCCallbackPage,
+    meta: { title: 'auth.oidc.callbackTitle' },
+  },
+  {
+    path: '/auth/logout/callback',
+    name: 'oidc-logout-callback',
+    component: OIDCLogoutCallbackPage,
+    meta: { title: 'auth.oidc.logoutTitle' },
+  },
+  {
     path: '/register',
     name: 'register',
     component: RegisterPage,
@@ -323,6 +338,14 @@ router.beforeEach(async (to) => {
 
   // 需要认证的页面
   if (to.meta.requiresAuth && !isAuthenticated) {
+    const authSource = authStore.user?.auth_source ?? getStoredAuthSource()
+    if (authSource === 'oidc') {
+      const result = await authStore.loginWithOIDC('web', to.fullPath)
+      if (result.success) {
+        return false
+      }
+    }
+
     return {
       path: '/login',
       query: { redirect: to.fullPath },

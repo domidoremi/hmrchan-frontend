@@ -309,6 +309,7 @@ import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import EmailCodeInput from '@/components/ui/EmailCodeInput.vue'
 import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
+import { validateMainstreamEmailDomain } from '@/utils/emailDomainPolicy'
 import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
 
 const router = useRouter()
@@ -418,9 +419,6 @@ const maskedEmail = computed(() => {
   return `${visible}***@${domain}`
 })
 
-// Email format regex (basic check)
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
 // 如果已登录，重定向到首页
 if (isAuthenticated.value) {
   router.replace('/')
@@ -515,20 +513,49 @@ function hasValidRegisterToken() {
   return Date.now() < registerTokenExpiresAt.value
 }
 
+function validateRegistrationEmail(options: { showToast?: boolean } = {}) {
+  const { showToast = false } = options
+  const validation = validateMainstreamEmailDomain(email.value)
+
+  if (!validation.valid) {
+    const message =
+      validation.reason === 'domain'
+        ? t('auth.error.mainstreamEmailOnly')
+        : t('auth.error.invalidEmail')
+
+    emailError.value = message
+    if (showToast) {
+      toastStore.warning(message)
+    }
+
+    return {
+      valid: false,
+      normalizedEmail: validation.normalizedEmail,
+    }
+  }
+
+  emailError.value = ''
+  return {
+    valid: true,
+    normalizedEmail: validation.normalizedEmail,
+  }
+}
+
 async function handleSendCode() {
   setVisualMood('submitting')
   emailError.value = ''
-  const trimmedEmail = email.value.trim()
-  if (!trimmedEmail) {
+  if (!email.value.trim()) {
     emailError.value = t('auth.emailRequired')
     setVisualMood('typing', 900)
     return
   }
-  if (!emailRegex.test(trimmedEmail)) {
-    emailError.value = t('auth.error.invalidEmail')
+  const validation = validateRegistrationEmail()
+  if (!validation.valid) {
     setVisualMood('typing', 900)
     return
   }
+  const trimmedEmail = validation.normalizedEmail
+  email.value = trimmedEmail
   if (turnstileEnabled.value && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     setVisualMood('typing', 900)
@@ -600,17 +627,18 @@ async function handleSendCode() {
 async function handleResendCode() {
   setVisualMood('submitting')
   // 如果启用了 Turnstile，需要重新验证
-  const trimmedEmail = email.value.trim()
-  if (!trimmedEmail) {
+  if (!email.value.trim()) {
     toastStore.warning(t('auth.emailRequired'))
     setVisualMood('typing', 900)
     return
   }
-  if (!emailRegex.test(trimmedEmail)) {
-    toastStore.warning(t('auth.error.invalidEmail'))
+  const validation = validateRegistrationEmail({ showToast: true })
+  if (!validation.valid) {
     setVisualMood('typing', 900)
     return
   }
+  const trimmedEmail = validation.normalizedEmail
+  email.value = trimmedEmail
   if (turnstileEnabled.value && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     setVisualMood('typing', 900)
@@ -706,13 +734,19 @@ function goBackToEmail() {
 async function handleRegister() {
   setVisualMood('submitting')
   const trimmedUsername = username.value.trim()
-  const trimmedEmail = email.value.trim()
+  const emailValidation = validateRegistrationEmail({ showToast: true })
+  const trimmedEmail = emailValidation.normalizedEmail
 
   if (!trimmedUsername || !password.value || !confirmPassword.value) {
     toastStore.warning(t('auth.error.fieldsRequired'))
     setVisualMood('typing', 1000)
     return
   }
+  if (!emailValidation.valid) {
+    setVisualMood('typing', 1000)
+    return
+  }
+  email.value = trimmedEmail
   if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
     toastStore.warning(t('auth.error.usernameInvalid'))
     setVisualMood('typing', 1000)
@@ -760,7 +794,7 @@ async function handleRegister() {
   if (result.success) {
     setVisualMood('success', 900)
     toastStore.success(t('auth.registerSuccess'))
-    router.replace('/')
+    router.replace('/login')
   } else {
     codeError.value = true
     codeInputRef.value?.reset()

@@ -13,6 +13,18 @@ interface ImportMetaEnv {
   readonly VITE_APP_DESCRIPTION?: string
   /** Turnstile 站点密钥 */
   readonly VITE_TURNSTILE_SITE_KEY?: string
+  /** 是否启用 OIDC SSO */
+  readonly VITE_OIDC_ENABLED?: string
+  /** 统一认证中心域名 */
+  readonly VITE_OIDC_AUTHORITY?: string
+  /** 主站 OIDC Client ID */
+  readonly VITE_OIDC_WEB_CLIENT_ID?: string
+  /** 主站 OIDC 回调地址 */
+  readonly VITE_OIDC_WEB_REDIRECT_URI?: string
+  /** 主站 OIDC 登出回调地址 */
+  readonly VITE_OIDC_WEB_LOGOUT_REDIRECT_URI?: string
+  /** Authentik 账户中心地址 */
+  readonly VITE_AUTHENTIK_ACCOUNT_CENTER_URL?: string
   /** 启用 DevTools */
   readonly VITE_ENABLE_DEVTOOLS?: string
   /** Anti-tamper 模式：off|warn|balanced|strict */

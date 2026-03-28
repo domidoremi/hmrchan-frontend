@@ -41,6 +41,12 @@ VITE_APP_NAME = "MomiChan"
 VITE_APP_DESCRIPTION = "Image and video content community"
 VITE_ENABLE_DEBUG = "false"
 VITE_ENABLE_DEVTOOLS = "false"
+VITE_OIDC_ENABLED = "true"
+VITE_OIDC_AUTHORITY = "https://auth.momichan.xyz"
+VITE_OIDC_WEB_CLIENT_ID = "hmrchan-web"
+VITE_OIDC_WEB_REDIRECT_URI = "https://momichan.xyz/auth/callback"
+VITE_OIDC_WEB_LOGOUT_REDIRECT_URI = "https://momichan.xyz/auth/logout/callback"
+VITE_AUTHENTIK_ACCOUNT_CENTER_URL = "https://auth.momichan.xyz/if/user/#/settings"
 
 # ============================================================================
 # Preview 环境配置
@@ -53,6 +59,8 @@ VITE_APP_NAME = "MomiChan (Preview)"
 VITE_APP_DESCRIPTION = "Image and video content community"
 VITE_ENABLE_DEBUG = "true"
 VITE_ENABLE_DEVTOOLS = "true"
+VITE_OIDC_ENABLED = "false"
+VITE_AUTHENTIK_ACCOUNT_CENTER_URL = "https://auth.momichan.xyz/if/user/#/settings"
 
 # ============================================================================
 # 绑定配置（Bindings）

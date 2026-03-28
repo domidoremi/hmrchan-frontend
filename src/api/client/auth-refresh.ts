@@ -1,4 +1,5 @@
 import { secureTokenManager } from '@/utils/tokenSecurity'
+import { getStoredAuthSource } from '@/utils/authSource'
 import { reportClientError, reportClientEvent } from '@/utils/clientReporter'
 import { API_AUTH_URL, REFRESH_TIMEOUT } from './transport'
 import type { RequestConfig } from './types'
@@ -40,6 +41,11 @@ export function onTokenRefreshFailed(error: Error): void {
 }
 
 export async function refreshAccessToken(request: RequestExecutor): Promise<string | null> {
+  if (getStoredAuthSource() === 'oidc') {
+    reportClientEvent('auth.refresh.skipped_oidc')
+    return null
+  }
+
   try {
     const data = await request<{ access_token?: string }>('/auth/refresh', {
       method: 'POST',

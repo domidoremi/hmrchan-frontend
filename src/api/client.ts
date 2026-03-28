@@ -400,7 +400,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
         const authError = refreshError || new Error('Token refresh failed')
         onTokenRefreshFailed(authError)
-        window.dispatchEvent(new CustomEvent('auth:logout'))
+        window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason: 'auth_failed' } }))
         await handleErrorResponse(response, skipErrorToast)
       }
 

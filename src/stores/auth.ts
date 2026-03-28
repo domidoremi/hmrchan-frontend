@@ -14,12 +14,17 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { authService, ApiError } from '@/api'
-import type {
-  RiskVerificationChallengeResponse,
-  TwoFactorRequiredResponse,
-  UserResponse,
-} from '@/api'
-import { getDeviceInfo } from '@/utils/device'
+import type { UserResponse } from '@/api'
+import {
+  beginOIDCLogin,
+  buildOIDCLogoutUrl,
+  consumeOIDCCallback,
+  mapOIDCErrorToApiError,
+  storeOIDCSession,
+  type OIDCClientKind,
+} from '@/services/oidcService'
+import { getStoredAuthSource, setStoredAuthSource } from '@/utils/authSource'
+import { secureTokenManager } from '@/utils/tokenSecurity'
 import { createAuthSessionController } from '@/services/authSessionController'
 
 // 用户类型（与 API 响应匹配）
@@ -49,162 +54,6 @@ export const useAuthStore = defineStore(
       },
     })
 
-    function isTwoFactorPendingResponse(response: unknown): response is TwoFactorRequiredResponse {
-      return (
-        !!response &&
-        typeof response === 'object' &&
-        'requires_2fa' in response &&
-        (response as { requires_2fa?: unknown }).requires_2fa === true &&
-        typeof (response as { pending_token?: unknown }).pending_token === 'string'
-      )
-    }
-
-    function isRiskVerificationPendingResponse(
-      response: unknown
-    ): response is RiskVerificationChallengeResponse {
-      return (
-        !!response &&
-        typeof response === 'object' &&
-        'requires_risk_verification' in response &&
-        (response as { requires_risk_verification?: unknown }).requires_risk_verification ===
-          true &&
-        typeof (response as { pending_token?: unknown }).pending_token === 'string'
-      )
-    }
-
-    /**
-     * 用户登录
-     */
-    async function login(email: string, password: string, turnstileToken?: string) {
-      if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
-
-      isLoading.value = true
-      error.value = null
-
-      try {
-        const deviceInfo = getDeviceInfo()
-        const response = await authService.login({
-          username: email,
-          password,
-          device_name: deviceInfo.device_name,
-          device_type: deviceInfo.device_type,
-          ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
-        })
-
-        if (isTwoFactorPendingResponse(response)) {
-          return {
-            success: false,
-            requires2fa: true,
-            pendingToken: response.pending_token,
-          }
-        }
-
-        if (isRiskVerificationPendingResponse(response)) {
-          return {
-            success: false,
-            requiresRiskVerification: true,
-            pendingToken: response.pending_token,
-            challengeType: response.challenge_type ?? 'email_code',
-            expiresIn: response.expires_in,
-          }
-        }
-
-        await sessionController.establishSession(response)
-
-        return {
-          success: true,
-          user: response.user,
-          securityWarning: response._securityWarning,
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof ApiError ? getAuthErrorKey(err.status, err.code) : 'auth.error.loginFailed'
-        error.value = errorMessage
-        return { success: false, error: errorMessage }
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    /**
-     * 完成 2FA 登录验证
-     */
-    async function verify2faLogin(pendingToken: string, code: string) {
-      if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
-
-      isLoading.value = true
-      error.value = null
-
-      try {
-        const { twoFactorService } = await import('@/api/twoFactorService')
-        const deviceInfo = getDeviceInfo()
-        const response = await twoFactorService.verifyLogin(
-          pendingToken,
-          code,
-          deviceInfo.device_name,
-          deviceInfo.device_type
-        )
-
-        if (isRiskVerificationPendingResponse(response)) {
-          return {
-            success: false,
-            requiresRiskVerification: true,
-            pendingToken: response.pending_token,
-            challengeType: response.challenge_type ?? 'email_code',
-            expiresIn: response.expires_in,
-          }
-        }
-
-        await sessionController.establishSession(response)
-
-        return { success: true, user: response.user }
-      } catch (err) {
-        const errorMessage =
-          err instanceof ApiError ? getAuthErrorKey(err.status, err.code) : 'auth.error.loginFailed'
-        error.value = errorMessage
-        return { success: false, error: errorMessage }
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    /**
-     * 完成高风险登录确认
-     */
-    async function verifyRiskLogin(pendingToken: string, code: string) {
-      if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
-
-      isLoading.value = true
-      error.value = null
-
-      try {
-        const deviceInfo = getDeviceInfo()
-        const response = await authService.verifyRiskLogin(
-          pendingToken,
-          code,
-          deviceInfo.device_name,
-          deviceInfo.device_type
-        )
-
-        await sessionController.establishSession(response)
-
-        return { success: true, user: response.user }
-      } catch (err) {
-        let errorMessage = 'auth.error.loginFailed'
-        if (err instanceof ApiError) {
-          if (err.status === 400 || err.status === 401 || err.status === 422) {
-            errorMessage = 'auth.error.riskVerificationInvalid'
-          } else {
-            errorMessage = getAuthErrorKey(err.status, err.code)
-          }
-        }
-        error.value = errorMessage
-        return { success: false, error: errorMessage }
-      } finally {
-        isLoading.value = false
-      }
-    }
-
     /**
      * 用户注册
      */
@@ -232,8 +81,8 @@ export const useAuthStore = defineStore(
           ...(registerToken ? { register_token: registerToken } : {}),
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
-
-        await sessionController.establishSession(response)
+        sessionController.clearSession()
+        await authService.logout().catch(() => {})
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -276,12 +125,17 @@ export const useAuthStore = defineStore(
      */
     async function logout() {
       sessionController.suspendSession()
+      const authSource = user.value?.auth_source ?? getStoredAuthSource() ?? 'legacy'
+      const oidcLogoutUrl = authSource === 'oidc' ? buildOIDCLogoutUrl() : null
+
       try {
-        await authService.logout()
+        if (authSource !== 'oidc') {
+          await authService.logout()
+        }
       } catch {
         // 忽略登出 API 错误
       } finally {
-        sessionController.clearSession({ navigateToLogin: true })
+        sessionController.clearSession({ navigateToLogin: authSource !== 'oidc' || !oidcLogoutUrl })
         error.value = null
         // 清除客户端安全凭证
         try {
@@ -290,6 +144,79 @@ export const useAuthStore = defineStore(
         } catch {
           // ignore
         }
+        if (oidcLogoutUrl) {
+          window.location.assign(oidcLogoutUrl)
+        }
+      }
+    }
+
+    async function loginWithOIDC(kind: OIDCClientKind, redirectTo?: string) {
+      if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        await beginOIDCLogin(kind, { redirectTo })
+        return { success: true }
+      } catch (err) {
+        const apiError = mapOIDCErrorToApiError(err)
+        const errorMessage = getAuthErrorKey(apiError.status, apiError.code)
+        error.value = errorMessage
+        return { success: false, error: errorMessage }
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    async function completeOIDCLogin(kind: OIDCClientKind, callbackUrl: string) {
+      if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const { redirectTo, tokens } = await consumeOIDCCallback(kind, callbackUrl)
+        await secureTokenManager.store(tokens.access_token)
+        token.value = tokens.access_token
+        refreshToken.value = null
+        setStoredAuthSource('oidc')
+        storeOIDCSession({
+          clientKind: kind,
+          idToken: tokens.id_token,
+          createdAt: Date.now(),
+        })
+
+        const currentUser = (await authService.getCurrentUser({
+          skipErrorToast: true,
+        })) as AuthUser
+
+        await sessionController.establishSession({
+          access_token: tokens.access_token,
+          refresh_token: null,
+          token_type: tokens.token_type,
+          expires_in: tokens.expires_in,
+          user: currentUser,
+        })
+
+        return {
+          success: true,
+          user: currentUser,
+          redirectTo,
+        }
+      } catch (err) {
+        const apiError = mapOIDCErrorToApiError(err)
+        const errorMessage = getAuthErrorKey(apiError.status, apiError.code)
+        error.value = errorMessage
+        sessionController.clearSession()
+        return {
+          success: false,
+          error: errorMessage,
+          code: apiError.code,
+          detail: apiError.message,
+        }
+      } finally {
+        isLoading.value = false
       }
     }
 
@@ -323,6 +250,22 @@ export const useAuthStore = defineStore(
           return 'auth.error.turnstileRequired'
         case 'TURNSTILE_FAILED':
           return 'auth.error.turnstileFailed'
+        case 'identity_link_required':
+          return 'auth.error.identityLinkRequired'
+        case 'oidc_email_missing':
+          return 'auth.error.oidcEmailMissing'
+        case 'oidc_subject_missing':
+          return 'auth.error.oidcSubjectMissing'
+        case 'access_denied':
+          return 'auth.error.oidcAccessDenied'
+        case 'oidc_request_missing':
+        case 'oidc_state_mismatch':
+        case 'oidc_request_expired':
+        case 'oidc_callback_invalid':
+        case 'oidc_token_exchange_failed':
+        case 'oidc_login_failed':
+        case 'oidc_disabled':
+          return 'auth.error.oidcLoginFailed'
         // USER 类
         case 'USER_1101':
         case 'USER_EXISTS':
@@ -379,9 +322,8 @@ export const useAuthStore = defineStore(
       isLoading,
       error,
       isAuthenticated,
-      login,
-      verify2faLogin,
-      verifyRiskLogin,
+      loginWithOIDC,
+      completeOIDCLogin,
       register,
       logout,
       fetchCurrentUser: sessionController.fetchCurrentUser,
