@@ -460,6 +460,18 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     )
   }
 
+  if (path === '/auth/callback' || path === '/auth/logout/callback') {
+    return createDocumentConfig(
+      path,
+      'Authentication callback',
+      'OIDC 登录与登出回调页面。',
+      'Authentication',
+      'Authentication callback',
+      '该页面只用于统一登录回跳与登出收口，不应被搜索引擎收录。',
+      { robots: 'noindex, nofollow' }
+    )
+  }
+
   if (
     path === '/favorites' ||
     path === '/profile' ||

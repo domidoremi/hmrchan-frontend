@@ -15,6 +15,9 @@ export interface UserProfile {
   id: string
   username: string
   email: string
+  auth_source?: 'legacy' | 'oidc'
+  identity_provider?: string | null
+  linked_providers?: string[] | null
   full_name?: string | null
   bio?: string | null
   avatar_url?: string | null
