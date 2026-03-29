@@ -16,7 +16,7 @@ export {
   type RegisterRequest,
   type AuthResponse,
   type AuthLoginFlowResponse,
-  type TwoFactorRequiredResponse,
+  type MfaRequiredResponse,
   type RiskVerificationChallengeResponse,
   type UserResponse,
   type SendVerificationEmailRequest,

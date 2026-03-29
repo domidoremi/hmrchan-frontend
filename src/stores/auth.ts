@@ -13,22 +13,117 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
-import { authService, ApiError } from '@/api'
-import type { UserResponse } from '@/api'
+import { authService, ApiError, twoFactorService } from '@/api'
+import type {
+  AuthResponse,
+  MfaRequiredResponse,
+  RiskVerificationChallengeResponse,
+  UserResponse,
+} from '@/api'
 import {
-  beginOIDCLogin,
-  buildOIDCLogoutUrl,
-  consumeOIDCCallback,
-  mapOIDCErrorToApiError,
-  storeOIDCSession,
-  type OIDCClientKind,
-} from '@/services/oidcService'
-import { getStoredAuthSource, setStoredAuthSource } from '@/utils/authSource'
-import { secureTokenManager } from '@/utils/tokenSecurity'
+  startGoogleAuth as startGoogleAuthRedirect,
+  exchangeGoogleHandoff,
+  confirmGoogleLink as confirmGoogleLinkRequest,
+  clearPendingGoogleAuthRequest,
+  type GoogleAuthIntent,
+  type GoogleLinkRequiredResponse,
+} from '@/services/googleAuthService'
+import { getDeviceInfo } from '@/utils/device'
 import { createAuthSessionController } from '@/services/authSessionController'
 
 // 用户类型（与 API 响应匹配）
 export type AuthUser = UserResponse
+
+type AuthFlowSuccessResult = {
+  status: 'success'
+  user: AuthUser
+  redirectTo?: string
+  securityWarning?: AuthResponse['_securityWarning']
+}
+
+type AuthFlowRiskVerificationResult = {
+  status: 'risk-verification'
+  pendingToken: string
+  challengeType?: string
+  expiresIn?: number
+  message?: string
+  redirectTo?: string
+}
+
+type AuthFlowMfaResult = {
+  status: 'mfa'
+  pendingMfaLoginToken: string
+  methods: string[]
+  expiresIn?: number
+  message?: string
+  redirectTo?: string
+}
+
+type AuthFlowLinkRequiredResult = {
+  status: 'link-required'
+  pendingGoogleLinkToken: string
+  maskedEmail: string
+  expiresIn?: number
+  redirectTo?: string
+}
+
+type AuthFlowErrorResult = {
+  status: 'error'
+  error: string
+  code?: string
+  detail?: string
+}
+
+export type AuthFlowResult =
+  | AuthFlowSuccessResult
+  | AuthFlowRiskVerificationResult
+  | AuthFlowMfaResult
+  | AuthFlowLinkRequiredResult
+  | AuthFlowErrorResult
+
+type WebAuthnLoginOptionsResult =
+  | {
+      status: 'success'
+      ceremonyId: string
+      options: Record<string, unknown>
+      methods?: string[]
+      provider?: string
+    }
+  | AuthFlowErrorResult
+
+function isMfaPendingResponse(response: unknown): response is MfaRequiredResponse {
+  return (
+    !!response &&
+    typeof response === 'object' &&
+    'requires_mfa' in response &&
+    (response as { requires_mfa?: unknown }).requires_mfa === true &&
+    typeof (response as { pending_mfa_login_token?: unknown }).pending_mfa_login_token === 'string'
+  )
+}
+
+function isRiskVerificationPendingResponse(
+  response: unknown
+): response is RiskVerificationChallengeResponse {
+  return (
+    !!response &&
+    typeof response === 'object' &&
+    'requires_risk_verification' in response &&
+    (response as { requires_risk_verification?: unknown }).requires_risk_verification === true &&
+    typeof (response as { pending_token?: unknown }).pending_token === 'string'
+  )
+}
+
+function isGoogleLinkRequiredResponse(response: unknown): response is GoogleLinkRequiredResponse {
+  return (
+    !!response &&
+    typeof response === 'object' &&
+    'link_required' in response &&
+    (response as { link_required?: unknown }).link_required === true &&
+    typeof (response as { pending_google_link_token?: unknown }).pending_google_link_token ===
+      'string' &&
+    typeof (response as { masked_email?: unknown }).masked_email === 'string'
+  )
+}
 
 export const useAuthStore = defineStore(
   'auth',
@@ -54,9 +149,6 @@ export const useAuthStore = defineStore(
       },
     })
 
-    /**
-     * 用户注册
-     */
     async function register(
       username: string,
       email: string,
@@ -89,7 +181,6 @@ export const useAuthStore = defineStore(
         let errorMessage = 'auth.error.registerFailed'
         let passwordErrors: string[] | undefined
         if (err instanceof ApiError) {
-          // 提取密码验证错误列表（Go 后端返回 errors 数组）
           const errorsArray = (err.details as { errors?: string[] } | undefined)?.errors
           if (Array.isArray(errorsArray) && errorsArray.length > 0) {
             passwordErrors = errorsArray
@@ -107,9 +198,241 @@ export const useAuthStore = defineStore(
       }
     }
 
-    /**
-     * 重新发送邮箱验证邮件
-     */
+    async function login(
+      usernameOrEmail: string,
+      password: string,
+      turnstileToken?: string
+    ): Promise<AuthFlowResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const deviceInfo = getDeviceInfo()
+        const response = await authService.login({
+          username: usernameOrEmail,
+          password,
+          device_name: deviceInfo.device_name,
+          device_type: deviceInfo.device_type,
+          ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+        })
+
+        return await resolveAuthFlowResponse(response)
+      } catch (err) {
+        const errorResult = mapApiError(err)
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    async function verifyRiskLogin(
+      pendingToken: string,
+      verificationCode: string,
+      turnstileToken?: string
+    ): Promise<AuthFlowResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const deviceInfo = getDeviceInfo()
+        const response = await authService.verifyRiskLogin(
+          pendingToken,
+          verificationCode,
+          turnstileToken,
+          deviceInfo.device_name,
+          deviceInfo.device_type
+        )
+
+        return await resolveAuthFlowResponse(response)
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.riskVerificationInvalid',
+          invalidStatusCodes: [400, 401, 403, 422],
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    async function startGoogleAuth(
+      intent: GoogleAuthIntent,
+      redirectTo = '/'
+    ): Promise<{ status: 'success' } | AuthFlowErrorResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        startGoogleAuthRedirect(intent, redirectTo)
+        return { status: 'success' }
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.googleLoginFailed',
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    async function completeGoogleAuth(handoffCode: string): Promise<AuthFlowResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const deviceInfo = getDeviceInfo()
+        const response = await exchangeGoogleHandoff({
+          handoff_code: handoffCode,
+          device_name: deviceInfo.device_name,
+          device_type: deviceInfo.device_type,
+        })
+
+        return await resolveAuthFlowResponse(response)
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.googleLoginFailed',
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    async function confirmGoogleLink(
+      pendingGoogleLinkToken: string,
+      verificationCode: string
+    ): Promise<AuthFlowResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const deviceInfo = getDeviceInfo()
+        const response = await confirmGoogleLinkRequest({
+          pending_google_link_token: pendingGoogleLinkToken,
+          verification_code: verificationCode,
+          device_name: deviceInfo.device_name,
+          device_type: deviceInfo.device_type,
+        })
+
+        return await resolveAuthFlowResponse(response)
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.linkVerificationInvalid',
+          invalidStatusCodes: [400, 401, 403, 422],
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    async function completeMfaLogin(
+      pendingMfaLoginToken: string,
+      code: string
+    ): Promise<AuthFlowResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const deviceInfo = getDeviceInfo()
+        const response = await twoFactorService.verifyLogin(
+          pendingMfaLoginToken,
+          code,
+          deviceInfo.device_name,
+          deviceInfo.device_type
+        )
+
+        return await resolveAuthFlowResponse(response)
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.twoFactorInvalid',
+          invalidStatusCodes: [400, 401, 403, 422],
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    async function beginWebAuthnLogin(
+      pendingMfaLoginToken: string
+    ): Promise<WebAuthnLoginOptionsResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const response = await twoFactorService.beginWebAuthnLogin(pendingMfaLoginToken)
+        return {
+          status: 'success',
+          ceremonyId: response.ceremony_id,
+          options: response.options,
+          methods: response.methods,
+          provider: response.provider,
+        }
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.webauthnNotEnrolled',
+          invalidStatusCodes: [400, 401, 403, 422],
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    async function finishWebAuthnLogin(
+      pendingMfaLoginToken: string,
+      ceremonyId: string,
+      credential: Record<string, unknown>
+    ): Promise<AuthFlowResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const deviceInfo = getDeviceInfo()
+        const response = await twoFactorService.finishWebAuthnLogin(
+          pendingMfaLoginToken,
+          ceremonyId,
+          credential,
+          deviceInfo.device_name,
+          deviceInfo.device_type
+        )
+
+        return await resolveAuthFlowResponse(response)
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.webauthnLoginFailed',
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    }
+
     async function resendVerificationEmail(email?: string) {
       try {
         await authService.sendVerificationEmail(email ? { email } : undefined)
@@ -120,113 +443,108 @@ export const useAuthStore = defineStore(
       }
     }
 
-    /**
-     * 用户登出
-     */
     async function logout() {
       sessionController.suspendSession()
-      const authSource = user.value?.auth_source ?? getStoredAuthSource() ?? 'legacy'
-      const oidcLogoutUrl = authSource === 'oidc' ? buildOIDCLogoutUrl() : null
-
       try {
-        if (authSource !== 'oidc') {
-          await authService.logout()
-        }
+        await authService.logout()
       } catch {
         // 忽略登出 API 错误
       } finally {
-        sessionController.clearSession({ navigateToLogin: authSource !== 'oidc' || !oidcLogoutUrl })
+        clearPendingGoogleAuthRequest()
+        sessionController.clearSession({ navigateToLogin: true })
         error.value = null
-        // 清除客户端安全凭证
         try {
           const { clientSecurityManager } = await import('@/api/clientSecurityService')
           clientSecurityManager.clear()
         } catch {
           // ignore
         }
-        if (oidcLogoutUrl) {
-          window.location.assign(oidcLogoutUrl)
-        }
       }
     }
 
-    async function loginWithOIDC(kind: OIDCClientKind, redirectTo?: string) {
-      if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
-
-      isLoading.value = true
-      error.value = null
-
-      try {
-        await beginOIDCLogin(kind, { redirectTo })
-        return { success: true }
-      } catch (err) {
-        const apiError = mapOIDCErrorToApiError(err)
-        const errorMessage = getAuthErrorKey(apiError.status, apiError.code)
-        error.value = errorMessage
-        return { success: false, error: errorMessage }
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    async function completeOIDCLogin(kind: OIDCClientKind, callbackUrl: string) {
-      if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
-
-      isLoading.value = true
-      error.value = null
-
-      try {
-        const { redirectTo, tokens } = await consumeOIDCCallback(kind, callbackUrl)
-        await secureTokenManager.store(tokens.access_token)
-        token.value = tokens.access_token
-        refreshToken.value = null
-        setStoredAuthSource('oidc')
-        storeOIDCSession({
-          clientKind: kind,
-          idToken: tokens.id_token,
-          createdAt: Date.now(),
-        })
-
-        const currentUser = (await authService.getCurrentUser({
-          skipErrorToast: true,
-        })) as AuthUser
-
-        await sessionController.establishSession({
-          access_token: tokens.access_token,
-          refresh_token: null,
-          token_type: tokens.token_type,
-          expires_in: tokens.expires_in,
-          user: currentUser,
-        })
-
+    async function resolveAuthFlowResponse(response: unknown): Promise<AuthFlowResult> {
+      if (isGoogleLinkRequiredResponse(response)) {
         return {
-          success: true,
-          user: currentUser,
-          redirectTo,
+          status: 'link-required',
+          pendingGoogleLinkToken: response.pending_google_link_token,
+          maskedEmail: response.masked_email,
+          expiresIn: response.expires_in,
+          redirectTo: response.return_to,
         }
-      } catch (err) {
-        const apiError = mapOIDCErrorToApiError(err)
-        const errorMessage = getAuthErrorKey(apiError.status, apiError.code)
-        error.value = errorMessage
-        sessionController.clearSession()
+      }
+
+      if (isRiskVerificationPendingResponse(response)) {
         return {
-          success: false,
-          error: errorMessage,
-          code: apiError.code,
-          detail: apiError.message,
+          status: 'risk-verification',
+          pendingToken: response.pending_token,
+          challengeType: response.challenge_type,
+          expiresIn: response.expires_in,
+          message: response.message,
+          redirectTo: response.return_to,
         }
-      } finally {
-        isLoading.value = false
+      }
+
+      if (isMfaPendingResponse(response)) {
+        return {
+          status: 'mfa',
+          pendingMfaLoginToken: response.pending_mfa_login_token,
+          methods: Array.isArray(response.methods) ? response.methods : [],
+          expiresIn: response.expires_in,
+          message: response.message,
+          redirectTo:
+            typeof (response as { return_to?: unknown }).return_to === 'string'
+              ? (response as { return_to: string }).return_to
+              : undefined,
+        }
+      }
+
+      const successResponse = response as AuthResponse
+      await establishSession(successResponse)
+      clearPendingGoogleAuthRequest()
+
+      return {
+        status: 'success',
+        user: successResponse.user,
+        redirectTo: successResponse.return_to,
+        securityWarning: successResponse._securityWarning,
       }
     }
 
-    /**
-     * 根据错误状态码返回对应的 i18n key
-     */
+    async function establishSession(response: AuthResponse) {
+      await sessionController.establishSession({
+        ...response,
+        user: {
+          ...response.user,
+          auth_source: response.user.auth_source ?? 'session',
+        },
+      })
+    }
+
+    function mapApiError(
+      err: unknown,
+      options: {
+        defaultError?: string
+        invalidStatusCodes?: number[]
+      } = {}
+    ): AuthFlowErrorResult {
+      const { defaultError = 'auth.error.loginFailed', invalidStatusCodes = [] } = options
+      const apiError = err instanceof ApiError ? err : null
+      const errorKey = apiError
+        ? invalidStatusCodes.includes(apiError.status)
+          ? defaultError
+          : getAuthErrorKey(apiError.status, apiError.code)
+        : defaultError
+
+      return {
+        status: 'error',
+        error: errorKey,
+        code: apiError?.code,
+        detail: extractApiErrorDetail(apiError),
+      }
+    }
+
     function getAuthErrorKey(status: number, code?: string): string {
-      // 合约错误码映射
       switch (code) {
-        // AUTH 类
         case 'AUTH_1001':
         case 'INVALID_CREDENTIALS':
           return 'auth.invalidCredentials'
@@ -238,6 +556,7 @@ export const useAuthStore = defineStore(
           return 'auth.error.tokenInvalid'
         case 'AUTH_1004':
         case 'PERMISSION_DENIED':
+        case 'admin_access_required':
           return 'auth.error.permissionDenied'
         case 'AUTH_1005':
         case 'ACCOUNT_LOCKED':
@@ -247,26 +566,28 @@ export const useAuthStore = defineStore(
           return 'auth.error.twoFactorRequired'
         case 'CHALLENGE_REQUIRED':
         case 'TURNSTILE_REQUIRED':
+        case 'TURNSTILE_TOKEN_MISSING':
           return 'auth.error.turnstileRequired'
         case 'TURNSTILE_FAILED':
+        case 'TURNSTILE_VERIFICATION_FAILED':
           return 'auth.error.turnstileFailed'
+        case 'password_login_unavailable':
+          return 'auth.error.passwordLoginUnavailable'
         case 'identity_link_required':
           return 'auth.error.identityLinkRequired'
-        case 'oidc_email_missing':
-          return 'auth.error.oidcEmailMissing'
-        case 'oidc_subject_missing':
-          return 'auth.error.oidcSubjectMissing'
+        case 'invalid_mfa_code':
+        case 'invalid_totp_code':
+        case 'mfa_verification_failed':
+          return 'auth.error.twoFactorInvalid'
+        case 'webauthn_not_enrolled':
+          return 'auth.error.webauthnNotEnrolled'
         case 'access_denied':
-          return 'auth.error.oidcAccessDenied'
-        case 'oidc_request_missing':
-        case 'oidc_state_mismatch':
-        case 'oidc_request_expired':
-        case 'oidc_callback_invalid':
-        case 'oidc_token_exchange_failed':
-        case 'oidc_login_failed':
-        case 'oidc_disabled':
-          return 'auth.error.oidcLoginFailed'
-        // USER 类
+        case 'invalid_google_callback':
+        case 'invalid_google_state':
+        case 'google_exchange_failed':
+        case 'invalid_google_identity':
+        case 'handoff_failed':
+          return 'auth.error.googleLoginFailed'
         case 'USER_1101':
         case 'USER_EXISTS':
         case 'USERNAME_EXISTS':
@@ -282,7 +603,6 @@ export const useAuthStore = defineStore(
           return 'auth.error.invalidEmail'
       }
 
-      // 按 HTTP 状态码兜底
       if (status === 400) return 'auth.error.validationError'
       if (status === 401) return 'auth.invalidCredentials'
       if (status === 403) return 'auth.error.permissionDenied'
@@ -292,12 +612,28 @@ export const useAuthStore = defineStore(
       return 'auth.error.unknown'
     }
 
+    function extractApiErrorDetail(apiError: ApiError | null): string | undefined {
+      if (!apiError) return undefined
+      const detailMessage = extractApiErrorMessage(apiError.details)
+      return detailMessage ?? apiError.message
+    }
+
     function extractApiErrorMessage(details?: Record<string, unknown>): string | null {
       if (!details) return null
       if (typeof details === 'string') return details
 
       const detail = (details as { detail?: unknown }).detail
       if (typeof detail === 'string') return detail
+      if (detail && typeof detail === 'object') {
+        const nestedCode = (detail as { code?: unknown }).code
+        const nestedMessage = (detail as { message?: unknown }).message
+        if (typeof nestedMessage === 'string') {
+          return nestedMessage
+        }
+        if (typeof nestedCode === 'string') {
+          return nestedCode
+        }
+      }
 
       const message = (details as { message?: unknown }).message
       if (typeof message === 'string') return message
@@ -322,8 +658,14 @@ export const useAuthStore = defineStore(
       isLoading,
       error,
       isAuthenticated,
-      loginWithOIDC,
-      completeOIDCLogin,
+      login,
+      verifyRiskLogin,
+      startGoogleAuth,
+      completeGoogleAuth,
+      confirmGoogleLink,
+      completeMfaLogin,
+      beginWebAuthnLogin,
+      finishWebAuthnLogin,
       register,
       logout,
       fetchCurrentUser: sessionController.fetchCurrentUser,
