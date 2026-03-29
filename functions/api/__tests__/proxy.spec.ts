@@ -100,4 +100,65 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('Vary')).toContain('Cookie')
     expect(response.headers.get('content-encoding')).toBeNull()
   })
+
+  it('preserves browser redirects for google auth start and rewrites redirect_uri to the app origin', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: {
+          Location:
+            'https://accounts.google.com/o/oauth2/v2/auth?client_id=test-client&redirect_uri=' +
+            encodeURIComponent('https://api.momichan.xyz/api/auth/google/callback') +
+            '&response_type=code',
+        },
+      })
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/api/auth/google/start?intent=register'),
+      env: {
+        API_BASE_URL: 'https://api.momichan.xyz',
+      },
+      params: {
+        path: ['auth', 'google', 'start'],
+      },
+    })
+
+    expect(publicFetch).toHaveBeenCalledTimes(1)
+    expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toContain(
+      encodeURIComponent('https://momichan.xyz/api/auth/google/callback')
+    )
+  })
+
+  it('rewrites auth callback redirects from the api origin back to the site origin', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: {
+          Location: 'https://api.momichan.xyz/auth/callback?handoff_code=test-code',
+        },
+      })
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/api/auth/google/callback?code=abc&state=xyz'),
+      env: {
+        API_BASE_URL: 'https://api.momichan.xyz',
+      },
+      params: {
+        path: ['auth', 'google', 'callback'],
+      },
+    })
+
+    expect(publicFetch).toHaveBeenCalledTimes(1)
+    expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toBe(
+      'https://momichan.xyz/auth/callback?handoff_code=test-code'
+    )
+  })
 })
