@@ -47,14 +47,18 @@ export interface AuthResponse {
   token_type: string
   expires_in?: number
   refresh_threshold?: number
+  return_to?: string
   user: UserResponse
   /** 安全警告级别（从 X-Security-Warning header 读取） */
   _securityWarning?: 'high' | 'medium' | 'low'
 }
 
-export interface TwoFactorRequiredResponse {
-  requires_2fa: true
-  pending_token: string
+export interface MfaRequiredResponse {
+  requires_mfa: true
+  pending_mfa_login_token: string
+  methods: string[]
+  expires_in?: number
+  message?: string
 }
 
 export interface RiskVerificationChallengeResponse {
@@ -62,12 +66,14 @@ export interface RiskVerificationChallengeResponse {
   pending_token: string
   challenge_type?: string
   expires_in?: number
+  message?: string
+  return_to?: string
 }
 
 export type AuthLoginFlowResponse =
   | AuthResponse
-  | TwoFactorRequiredResponse
   | RiskVerificationChallengeResponse
+  | MfaRequiredResponse
 
 export interface UserResponse {
   id: string
@@ -83,7 +89,7 @@ export interface UserResponse {
   email_verified_at?: string
   last_login_at?: string
   roles?: string[]
-  auth_source?: 'legacy' | 'oidc'
+  auth_source?: string
   identity_provider?: string
   linked_providers?: string[]
   created_at: string
@@ -275,15 +281,17 @@ export const authService = {
   async verifyRiskLogin(
     pendingToken: string,
     code: string,
+    turnstileToken?: string,
     deviceName?: string,
     deviceType?: string
-  ): Promise<AuthResponse> {
+  ): Promise<AuthResponse | MfaRequiredResponse> {
     return apiClient.post(
       '/auth/verify-risk-login',
       {
         pending_token: pendingToken,
         code,
         verification_code: code,
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         ...(deviceName ? { device_name: deviceName } : {}),
         ...(deviceType ? { device_type: deviceType } : {}),
       },

@@ -542,67 +542,7 @@
                   </form>
                 </section>
 
-                <section
-                  id="login-method-section"
-                  class="settings-section glass-surface--editorial two-factor-section"
-                >
-                  <div class="settings-section-head">
-                    <div class="settings-section-icon settings-section-icon--success">
-                      <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-                    </div>
-                    <div>
-                      <h2 class="settings-section-title">{{ $t('profile.loginMethodTitle') }}</h2>
-                      <p class="settings-section-desc">{{ $t('profile.loginMethodHint') }}</p>
-                    </div>
-                  </div>
-
-                  <div class="two-factor-status-card">
-                    <div class="two-factor-status-copy">
-                      <p class="two-factor-status-label">
-                        {{ $t('profile.loginMethodCurrentLabel') }}
-                      </p>
-                      <p class="two-factor-status-value">{{ authSourceSummaryLabel }}</p>
-                      <p class="field-hint">{{ authSourceSummaryHint }}</p>
-                    </div>
-
-                    <div class="two-factor-actions">
-                      <Button type="button" variant="secondary" @click="openAuthentikAccountCenter">
-                        <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-                        {{ $t('profile.authentikAccountCenterCta') }}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div class="account-meta-grid auth-method-meta-grid">
-                    <div class="account-meta-item">
-                      <span class="account-meta-label">{{ $t('profile.authSourceLabel') }}</span>
-                      <span class="account-meta-value">{{ authSourceSummaryLabel }}</span>
-                    </div>
-                    <div class="account-meta-item">
-                      <span class="account-meta-label">{{
-                        $t('profile.identityProviderLabel')
-                      }}</span>
-                      <span class="account-meta-value">{{ primaryIdentityProviderLabel }}</span>
-                    </div>
-                    <div class="account-meta-item">
-                      <span class="account-meta-label">{{
-                        $t('profile.linkedProvidersLabel')
-                      }}</span>
-                      <span class="account-meta-value">{{ linkedProvidersLabel }}</span>
-                    </div>
-                    <div class="account-meta-item">
-                      <span class="account-meta-label">{{ $t('profile.mfaManagedByLabel') }}</span>
-                      <span class="account-meta-value">{{
-                        $t('profile.mfaManagedByAuthentik')
-                      }}</span>
-                    </div>
-                  </div>
-
-                  <div class="account-danger-box">
-                    <p class="two-factor-status-label">{{ $t('profile.twoFactorRetiredTitle') }}</p>
-                    <p class="field-hint">{{ $t('profile.twoFactorRetiredHint') }}</p>
-                  </div>
-                </section>
+                <ProfileSecurityMfaSection :profile="profile" :auth-user="authStore.user" />
 
                 <section class="settings-section settings-section--danger glass-surface--editorial">
                   <div class="settings-section-head">
@@ -930,7 +870,6 @@ import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/a
 import { useAuthStore, useToastStore } from '@/stores'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
 import { checkPasswordStrength } from '@/utils/crypto'
-import { normalizeAuthSource } from '@/utils/authSource'
 import { ensureVerificationToken, isVerificationCancelledError } from '@/api/verificationBridge'
 import {
   buildPasswordToggleLabel,
@@ -948,6 +887,7 @@ import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
+import ProfileSecurityMfaSection from '@/components/profile/ProfileSecurityMfaSection.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import SettingsPanel from '@/components/layout/SettingsPanel.vue'
 
@@ -1044,7 +984,7 @@ const settingsDashboardGroups = computed(() => [
   {
     id: 'security' as const,
     title: t('profile.tabs.security'),
-    description: t('profile.loginMethodHint'),
+    description: t('profile.twoFactorHint'),
     icon: Shield,
     iconName: 'sparkle',
   },
@@ -1174,50 +1114,21 @@ const canChangePassword = computed(() =>
   })
 )
 
-const authentikAccountCenterUrl = computed(
-  () =>
-    import.meta.env.VITE_AUTHENTIK_ACCOUNT_CENTER_URL?.trim() ||
-    'https://auth.momichan.xyz/if/user/#/settings'
-)
-
-const authSource = computed(() =>
-  normalizeAuthSource(profile.value?.auth_source ?? authStore.user?.auth_source)
-)
-
-const authSourceSummaryLabel = computed(() =>
-  authSource.value === 'oidc' ? t('profile.authSourceOidc') : t('profile.authSourceLegacy')
-)
-
-const authSourceSummaryHint = computed(() =>
-  authSource.value === 'oidc' ? t('profile.authSourceOidcHint') : t('profile.authSourceLegacyHint')
-)
-
-const linkedProviders = computed(() => {
-  const values = [
-    profile.value?.identity_provider,
-    ...(profile.value?.linked_providers ?? []),
-    authStore.user?.identity_provider,
-    ...(authStore.user?.linked_providers ?? []),
-  ]
-
-  return [
-    ...new Set(
-      values
-        .filter((value): value is string => Boolean(value?.trim()))
-        .map(formatIdentityProviderLabel)
-    ),
-  ]
-})
-
-const primaryIdentityProviderLabel = computed(() => {
+const normalizedIdentityProvider = computed(() => {
   const provider = profile.value?.identity_provider ?? authStore.user?.identity_provider
-  return provider ? formatIdentityProviderLabel(provider) : t('profile.identityProviderUnavailable')
+  return provider?.trim().toLowerCase() || 'local'
 })
 
-const linkedProvidersLabel = computed(() => {
-  return linkedProviders.value.length
-    ? linkedProviders.value.join(', ')
-    : t('profile.noLinkedProviders')
+const authSourceSummaryLabel = computed(() => {
+  if (normalizedIdentityProvider.value === 'google') {
+    return t('profile.authSourceGoogle')
+  }
+
+  if (normalizedIdentityProvider.value !== 'local') {
+    return t('profile.authSourceThirdParty')
+  }
+
+  return t('profile.authSourceEmail')
 })
 
 async function fetchProfile() {
@@ -1256,33 +1167,6 @@ async function fetchProfile() {
       }
     }
   }
-}
-
-function formatIdentityProviderLabel(provider: string): string {
-  const normalized = provider.trim().toLowerCase()
-  const knownLabels: Record<string, string> = {
-    authentik: 'Authentik',
-    google: 'Google',
-    github: 'GitHub',
-    apple: 'Apple',
-    microsoft: 'Microsoft',
-    discord: 'Discord',
-  }
-
-  if (knownLabels[normalized]) {
-    return knownLabels[normalized]
-  }
-
-  return provider
-    .trim()
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(' ')
-}
-
-function openAuthentikAccountCenter() {
-  window.location.assign(authentikAccountCenterUrl.value)
 }
 
 async function fetchDeletionStatus() {
