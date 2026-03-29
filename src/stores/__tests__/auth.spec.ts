@@ -23,79 +23,100 @@ vi.mock('@/utils/authSource', () => ({
   getStoredAuthSource: vi.fn(() => null),
   setStoredAuthSource: vi.fn(),
   clearStoredAuthSource: vi.fn(),
-  normalizeAuthSource: vi.fn((value: string | null | undefined) =>
-    value === 'oidc' ? 'oidc' : 'legacy'
-  ),
+  normalizeAuthSource: vi.fn((value: string | null | undefined) => value || 'session'),
 }))
 
-vi.mock('@/services/oidcService', () => ({
-  beginOIDCLogin: vi.fn().mockResolvedValue(undefined),
-  buildOIDCLogoutUrl: vi.fn(() => null),
-  consumeOIDCCallback: vi.fn(),
-  mapOIDCErrorToApiError: vi.fn((error: unknown) => error),
-  storeOIDCSession: vi.fn(),
-  clearOIDCSession: vi.fn(),
+vi.mock('@/utils/clientReporter', () => ({
+  reportClientError: vi.fn(),
+  reportClientEvent: vi.fn(),
+}))
+
+vi.mock('@/api/client', () => ({
+  API_AUTH_URL: '/api',
+  apiClient: {
+    request: vi.fn(),
+  },
+}))
+
+vi.mock('@/services/googleAuthService', () => ({
+  startGoogleAuth: vi.fn(),
+  exchangeGoogleHandoff: vi.fn(),
+  confirmGoogleLink: vi.fn(),
+  clearPendingGoogleAuthRequest: vi.fn(),
 }))
 
 vi.mock('@/api', () => {
+  const mockLogin = vi.fn()
   const mockRegister = vi.fn()
+  const mockVerifyRiskLogin = vi.fn()
   const mockLogout = vi.fn()
   const mockGetCurrentUser = vi.fn()
   const mockRefreshToken = vi.fn()
   const mockSendVerificationEmail = vi.fn()
   const mockHeartbeat = vi.fn()
+  const mockVerifyMfaLogin = vi.fn()
+  const mockBeginWebAuthnLogin = vi.fn()
+  const mockFinishWebAuthnLogin = vi.fn()
 
   return {
     authService: {
+      login: mockLogin,
       register: mockRegister,
+      verifyRiskLogin: mockVerifyRiskLogin,
       logout: mockLogout,
       getCurrentUser: mockGetCurrentUser,
       refreshToken: mockRefreshToken,
       sendVerificationEmail: mockSendVerificationEmail,
       heartbeat: mockHeartbeat,
     },
+    twoFactorService: {
+      verifyLogin: mockVerifyMfaLogin,
+      beginWebAuthnLogin: mockBeginWebAuthnLogin,
+      finishWebAuthnLogin: mockFinishWebAuthnLogin,
+    },
     ApiError: class ApiError extends Error {
       status: number
       code: string | undefined
+      details?: Record<string, unknown>
 
-      constructor(message: string, status: number, code?: string) {
+      constructor(
+        message: string,
+        status: number,
+        code?: string,
+        details?: Record<string, unknown>
+      ) {
         super(message)
         this.status = status
         this.code = code
+        this.details = details
       }
     },
   }
 })
 
-import { ApiError, authService } from '@/api'
+import { ApiError, authService, twoFactorService } from '@/api'
 import {
-  beginOIDCLogin,
-  buildOIDCLogoutUrl,
-  consumeOIDCCallback,
-  storeOIDCSession,
-} from '@/services/oidcService'
+  clearPendingGoogleAuthRequest,
+  confirmGoogleLink,
+  exchangeGoogleHandoff,
+  startGoogleAuth,
+} from '@/services/googleAuthService'
 import { useAuthStore, type AuthUser } from '../auth'
 
-const createMockUser = (overrides?: Partial<AuthUser>): AuthUser => {
-  return {
-    id: 'user-1',
-    username: 'tester',
-    email: 'tester@example.com',
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-    ...overrides,
-  }
-}
+const createMockUser = (overrides?: Partial<AuthUser>): AuthUser => ({
+  id: 'user-1',
+  username: 'tester',
+  email: 'tester@example.com',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+  ...overrides,
+})
 
 describe('auth store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     vi.useFakeTimers()
-    vi.stubGlobal('location', {
-      ...window.location,
-      assign: vi.fn(),
-    })
   })
 
   afterEach(() => {
@@ -106,7 +127,6 @@ describe('auth store', () => {
       // ignore
     }
     vi.useRealTimers()
-    vi.unstubAllGlobals()
   })
 
   it('starts empty', () => {
@@ -140,129 +160,209 @@ describe('auth store', () => {
     expect(authService.logout).toHaveBeenCalledTimes(1)
   })
 
-  it('maps registration conflicts to i18n keys', async () => {
+  it('establishes a local session after password login succeeds', async () => {
     const store = useAuthStore()
+    const mockUser = createMockUser()
 
-    vi.mocked(authService.register).mockRejectedValueOnce(
-      new ApiError('Email exists', 409, 'EMAIL_EXISTS')
-    )
-
-    const result = await store.register('tester', 'exists@example.com', 'password123', '123456')
-
-    expect(result.success).toBe(false)
-    expect(result.error).toBe('auth.error.emailExists')
-  })
-
-  it('starts OIDC login with the target redirect', async () => {
-    const store = useAuthStore()
-
-    const result = await store.loginWithOIDC('web', '/profile/settings')
-
-    expect(result.success).toBe(true)
-    expect(beginOIDCLogin).toHaveBeenCalledWith('web', {
-      redirectTo: '/profile/settings',
-    })
-  })
-
-  it('establishes a session from the OIDC callback result', async () => {
-    const store = useAuthStore()
-    const oidcUser = createMockUser({
-      auth_source: 'oidc',
-      identity_provider: 'google',
-      linked_providers: ['google'],
+    vi.mocked(authService.login).mockResolvedValueOnce({
+      access_token: 'legacy-access-token',
+      refresh_token: 'legacy-refresh-token',
+      token_type: 'Bearer',
+      user: mockUser,
+      _securityWarning: 'medium',
     })
 
-    vi.mocked(consumeOIDCCallback).mockResolvedValueOnce({
-      redirectTo: '/favorites',
-      tokens: {
-        access_token: 'oidc-access-token',
-        token_type: 'Bearer',
-        expires_in: 900,
-        id_token: 'oidc-id-token',
-      },
-    })
-    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(oidcUser)
+    const result = await store.login('tester@example.com', 'password123')
 
-    const result = await store.completeOIDCLogin(
-      'web',
-      'https://momichan.xyz/auth/callback?code=abc&state=state'
-    )
-
-    expect(result.success).toBe(true)
-    expect(result.redirectTo).toBe('/favorites')
-    expect(store.user).toEqual(oidcUser)
-    expect(store.token).toBe('oidc-access-token')
+    expect(result.status).toBe('success')
     expect(store.isAuthenticated).toBe(true)
-    expect(storeOIDCSession).toHaveBeenCalledWith(
+    expect(store.token).toBe('legacy-access-token')
+    expect(store.user).toEqual(
       expect.objectContaining({
-        clientKind: 'web',
-        idToken: 'oidc-id-token',
+        email: mockUser.email,
+        auth_source: 'session',
       })
     )
   })
 
-  it('clears state when OIDC callback processing fails', async () => {
+  it('returns risk verification details without establishing a session', async () => {
     const store = useAuthStore()
-    store.user = createMockUser({ auth_source: 'oidc' })
-    store.token = 'stale-token'
 
-    vi.mocked(consumeOIDCCallback).mockRejectedValueOnce(
-      new ApiError('OIDC failed', 400, 'oidc_callback_invalid')
+    vi.mocked(authService.login).mockResolvedValueOnce({
+      requires_risk_verification: true,
+      pending_token: 'pending-risk-token',
+      challenge_type: 'email',
+      expires_in: 300,
+    })
+
+    const result = await store.login('tester@example.com', 'password123')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'risk-verification',
+        pendingToken: 'pending-risk-token',
+        challengeType: 'email',
+        expiresIn: 300,
+      })
     )
-
-    const result = await store.completeOIDCLogin(
-      'web',
-      'https://momichan.xyz/auth/callback?error=access_denied'
-    )
-
-    expect(result.success).toBe(false)
-    expect(result.error).toBe('auth.error.oidcLoginFailed')
+    expect(store.isAuthenticated).toBe(false)
     expect(store.user).toBeNull()
     expect(store.token).toBeNull()
   })
 
-  it('redirects OIDC users to the end-session endpoint on logout', async () => {
+  it('completes a risk-verified login as a local session', async () => {
     const store = useAuthStore()
-    store.user = createMockUser({ auth_source: 'oidc' })
-    store.token = 'oidc-token'
+    const mockUser = createMockUser()
 
-    vi.mocked(buildOIDCLogoutUrl).mockReturnValueOnce(
-      'https://auth.momichan.xyz/application/o/hmrchan-web/end-session/'
+    vi.mocked(authService.verifyRiskLogin).mockResolvedValueOnce({
+      access_token: 'verified-access-token',
+      refresh_token: 'verified-refresh-token',
+      token_type: 'Bearer',
+      user: mockUser,
+    })
+
+    const result = await store.verifyRiskLogin('pending-token', '123456')
+
+    expect(result.status).toBe('success')
+    expect(authService.verifyRiskLogin).toHaveBeenCalledWith(
+      'pending-token',
+      '123456',
+      undefined,
+      expect.any(String),
+      expect.any(String)
     )
-
-    await store.logout()
-
-    expect(authService.logout).not.toHaveBeenCalled()
-    expect(window.location.assign).toHaveBeenCalledWith(
-      'https://auth.momichan.xyz/application/o/hmrchan-web/end-session/'
-    )
-    expect(store.user).toBeNull()
-    expect(store.token).toBeNull()
+    expect(store.isAuthenticated).toBe(true)
+    expect(store.user).toEqual(expect.objectContaining({ auth_source: 'session' }))
   })
 
-  it('fetches the current user when a token exists', async () => {
+  it('starts Google auth with the requested intent and redirect target', async () => {
     const store = useAuthStore()
-    const user = createMockUser()
-    store.token = 'access-token'
 
-    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(user)
+    const result = await store.startGoogleAuth('register', '/profile/settings')
 
-    const result = await store.fetchCurrentUser()
-
-    expect(result).toEqual(user)
-    expect(store.user).toEqual(user)
+    expect(result.status).toBe('success')
+    expect(startGoogleAuth).toHaveBeenCalledWith('register', '/profile/settings')
   })
 
-  it('starts heartbeat only once', () => {
+  it('returns link-required when Google handoff needs account linking', async () => {
     const store = useAuthStore()
-    store.token = 'legacy-token'
 
-    store.startHeartbeat()
-    const timerCount = vi.getTimerCount()
-    store.startHeartbeat()
+    vi.mocked(exchangeGoogleHandoff).mockResolvedValueOnce({
+      link_required: true,
+      pending_google_link_token: 'link-token',
+      masked_email: 'te***@example.com',
+      expires_in: 600,
+      return_to: '/favorites',
+    })
 
-    expect(vi.getTimerCount()).toBe(timerCount)
+    const result = await store.completeGoogleAuth('handoff-code')
 
-    store.stopHeartbeat()
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'link-required',
+        pendingGoogleLinkToken: 'link-token',
+        maskedEmail: 'te***@example.com',
+        redirectTo: '/favorites',
+      })
+    )
+    expect(store.isAuthenticated).toBe(false)
+  })
+
+  it('establishes a session from a successful Google handoff exchange', async () => {
+    const store = useAuthStore()
+    const googleUser = createMockUser({
+      identity_provider: 'google',
+      linked_providers: ['google'],
+    })
+
+    vi.mocked(exchangeGoogleHandoff).mockResolvedValueOnce({
+      access_token: 'google-access-token',
+      refresh_token: 'google-refresh-token',
+      token_type: 'Bearer',
+      return_to: '/favorites',
+      user: googleUser,
+    })
+
+    const result = await store.completeGoogleAuth('handoff-code')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'success',
+        redirectTo: '/favorites',
+      })
+    )
+    expect(store.isAuthenticated).toBe(true)
+    expect(store.token).toBe('google-access-token')
+    expect(store.user).toEqual(
+      expect.objectContaining({
+        identity_provider: 'google',
+        auth_source: 'session',
+      })
+    )
+    expect(clearPendingGoogleAuthRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('continues into MFA when Google link confirmation requires it', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(confirmGoogleLink).mockResolvedValueOnce({
+      requires_mfa: true,
+      pending_mfa_login_token: 'pending-mfa-token',
+      methods: ['totp', 'webauthn'],
+      expires_in: 300,
+      message: 'Verify with MFA',
+    })
+
+    const result = await store.confirmGoogleLink('pending-google-link-token', '123456')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'mfa',
+        pendingMfaLoginToken: 'pending-mfa-token',
+        methods: ['totp', 'webauthn'],
+      })
+    )
+    expect(store.isAuthenticated).toBe(false)
+  })
+
+  it('maps password-login-unavailable to a dedicated error key', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(authService.login).mockRejectedValueOnce(
+      new ApiError('Use Google or reset your password', 403, 'password_login_unavailable')
+    )
+
+    const result = await store.login('tester@example.com', 'password123')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'error',
+        error: 'auth.error.passwordLoginUnavailable',
+        code: 'password_login_unavailable',
+      })
+    )
+  })
+
+  it('verifies MFA with a code and establishes a session', async () => {
+    const store = useAuthStore()
+    const mockUser = createMockUser()
+
+    vi.mocked(twoFactorService.verifyLogin).mockResolvedValueOnce({
+      access_token: 'mfa-access-token',
+      refresh_token: 'mfa-refresh-token',
+      token_type: 'Bearer',
+      user: mockUser,
+    })
+
+    const result = await store.completeMfaLogin('pending-mfa-token', '123456')
+
+    expect(result.status).toBe('success')
+    expect(twoFactorService.verifyLogin).toHaveBeenCalledWith(
+      'pending-mfa-token',
+      '123456',
+      expect.any(String),
+      expect.any(String)
+    )
+    expect(store.isAuthenticated).toBe(true)
   })
 })

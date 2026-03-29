@@ -192,8 +192,7 @@ const isAuthRoute = computed(() => {
     routeName === 'forgot-password' ||
     routeName === 'reset-password' ||
     routeName === 'verify-email' ||
-    routeName === 'oidc-callback' ||
-    routeName === 'oidc-logout-callback'
+    routeName === 'auth-callback'
   )
 })
 const shouldMountClientChallengeDialog = computed(() => clientChallengeState.isOpen.value)
@@ -210,16 +209,9 @@ const AUTH_ROUTE_NAMES = new Set([
   'forgot-password',
   'reset-password',
   'verify-email',
-  'oidc-callback',
-  'oidc-logout-callback',
+  'auth-callback',
 ])
-const authKeepAliveExclude = [
-  'LoginPage',
-  'RegisterPage',
-  'ForgotPasswordPage',
-  'OIDCCallbackPage',
-  'OIDCLogoutCallbackPage',
-]
+const authKeepAliveExclude = ['LoginPage', 'RegisterPage', 'ForgotPasswordPage', 'AuthCallbackPage']
 const transitionMode = computed<'out-in' | undefined>(() =>
   transitionName.value ? 'out-in' : undefined
 )

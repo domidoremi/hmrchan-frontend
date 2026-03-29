@@ -1,13 +1,7 @@
 import type { Ref } from 'vue'
 import { authService, ApiError, type AuthResponse, type UserResponse } from '@/api'
 import { apiClient, API_AUTH_URL } from '@/api/client'
-import { beginOIDCLogin, clearOIDCSession } from '@/services/oidcService'
-import {
-  clearStoredAuthSource,
-  getStoredAuthSource,
-  normalizeAuthSource,
-  setStoredAuthSource,
-} from '@/utils/authSource'
+import { clearStoredAuthSource, setStoredAuthSource } from '@/utils/authSource'
 import { secureTokenManager } from '@/utils/tokenSecurity'
 import { reportClientEvent } from '@/utils/clientReporter'
 
@@ -38,8 +32,7 @@ function isAuthBoundaryPath(path: string): boolean {
     path === '/forgot-password' ||
     path === '/reset-password' ||
     path === '/verify-email' ||
-    path === '/auth/callback' ||
-    path === '/auth/logout/callback'
+    path === '/auth/callback'
   )
 }
 
@@ -68,24 +61,13 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   let refreshBlockedUntil = 0
   let authRecoveryTimer: ReturnType<typeof setTimeout> | null = null
 
-  function resolveSessionAuthSource(user?: UserResponse | null): 'legacy' | 'oidc' {
+  function syncAuthSource(user?: UserResponse | null): void {
     if (user?.auth_source) {
-      return normalizeAuthSource(user.auth_source)
+      setStoredAuthSource(user.auth_source)
+      return
     }
 
-    const storedSource = getStoredAuthSource()
-    return storedSource ?? 'legacy'
-  }
-
-  function syncAuthSource(user?: UserResponse | null): 'legacy' | 'oidc' {
-    const authSource = resolveSessionAuthSource(user)
-    setStoredAuthSource(authSource)
-
-    if (authSource !== 'oidc') {
-      clearOIDCSession()
-    }
-
-    return authSource
+    setStoredAuthSource('session')
   }
 
   function clearAuthRecoveryTimer(): void {
@@ -120,9 +102,9 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     return error.status === 408 || error.status === 429 || error.status >= 500
   }
 
-  async function persistAccessToken(token: string): Promise<void> {
-    state.token.value = token
-    await secureTokenManager.store(token).catch(() => {})
+  async function persistAccessToken(nextToken: string): Promise<void> {
+    state.token.value = nextToken
+    await secureTokenManager.store(nextToken).catch(() => {})
   }
 
   async function applySessionTokens(
@@ -245,7 +227,6 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     state.token.value = null
     state.refreshToken.value = null
     clearStoredAuthSource()
-    clearOIDCSession()
     secureTokenManager.clear()
 
     if (options.navigateToLogin) {
@@ -259,15 +240,10 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   }
 
   async function establishSession(response: AuthResponse) {
-    const authSource = resolveSessionAuthSource(response.user)
     await applySessionTokens(response, {
       deferProfile: true,
-      startHeartbeat: authSource === 'legacy',
+      startHeartbeat: true,
     })
-
-    if (authSource !== 'legacy') {
-      stopHeartbeat()
-    }
   }
 
   function deferProfileRefresh() {
@@ -303,6 +279,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
         if (controller.signal.aborted || requestToken !== deferredProfileRequestToken) return
         if (data && typeof data === 'object' && 'id' in data) {
           state.user.value = data as TUser
+          syncAuthSource(data)
         }
       } catch {
         // defer refresh failures should stay silent
@@ -332,6 +309,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
 
       if (controller.signal.aborted || requestToken !== fetchCurrentUserToken) return null
       state.user.value = currentUser
+      syncAuthSource(currentUser)
       return currentUser
     } catch (err) {
       if (
@@ -380,10 +358,6 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
         return
       }
 
-      if (resolveSessionAuthSource(state.user.value) === 'oidc') {
-        return
-      }
-
       const refreshOutcome = await attemptTokenRefresh({
         source: 'bootstrap',
         reason: secureTokenResult.reason ?? secureTokenResult.state,
@@ -413,17 +387,12 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       if (!state.token.value) {
         state.refreshToken.value = null
         clearStoredAuthSource()
-        clearOIDCSession()
         secureTokenManager.clear()
       }
       return
     }
 
-    if (resolveSessionAuthSource(currentUser) === 'legacy') {
-      startHeartbeat()
-    } else {
-      stopHeartbeat()
-    }
+    startHeartbeat()
   }
 
   function ensureAuthInitialized(): Promise<void> {
@@ -450,22 +419,18 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     authLogoutHandler = (event?: Event) => {
       const detail = (event as CustomEvent<{ reason?: string }> | undefined)?.detail
       const reason = detail?.reason
-      const authSource = resolveSessionAuthSource(state.user.value)
       const redirectTo = getCurrentLocationPath()
-      const shouldReauthenticateOIDC =
-        reason !== 'logout_callback' &&
-        authSource === 'oidc' &&
-        !isAuthBoundaryPath(window.location.pathname)
+      const shouldPreserveRedirect =
+        reason === 'auth_failed' && !isAuthBoundaryPath(window.location.pathname)
 
-      clearSession({ navigateToLogin: !shouldReauthenticateOIDC && reason !== 'logout_callback' })
+      clearSession()
 
-      if (!shouldReauthenticateOIDC) {
+      if (shouldPreserveRedirect) {
+        navigateToLoginWithRedirect(redirectTo)
         return
       }
 
-      void beginOIDCLogin('web', { redirectTo }).catch(() => {
-        navigateToLoginWithRedirect(redirectTo)
-      })
+      router.push('/login')
     }
 
     const tokenRefreshHandler = (event: Event) => {
@@ -501,8 +466,8 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     if (heartbeatTimer) return
 
     function scheduleNextHeartbeat() {
-      const jitter = heartbeatInterval * 0.2 * (Math.random() * 2 - 1)
-      const interval = Math.max(30000, heartbeatInterval + jitter)
+      const jitter = heartbeatInterval * 0.2 * Math.random()
+      const interval = Math.max(30000, heartbeatInterval - jitter)
 
       scheduleHeartbeatTick(interval)
     }
@@ -539,6 +504,13 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
 
           if (refreshOutcome === 'cooldown') {
             scheduleHeartbeatTick(getRefreshCooldownRemaining() || REFRESH_RETRY_COOLDOWN_MS)
+            return
+          }
+
+          const redirectTo = getCurrentLocationPath()
+          clearSession()
+          if (!isAuthBoundaryPath(window.location.pathname)) {
+            navigateToLoginWithRedirect(redirectTo)
           }
         }
       }, interval)

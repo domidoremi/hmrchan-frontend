@@ -460,14 +460,14 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     )
   }
 
-  if (path === '/auth/callback' || path === '/auth/logout/callback') {
+  if (path === '/auth/callback') {
     return createDocumentConfig(
       path,
       'Authentication callback',
-      'OIDC 登录与登出回调页面。',
+      'Google 快捷登录回跳与登录接续页面。',
       'Authentication',
       'Authentication callback',
-      '该页面只用于统一登录回跳与登出收口，不应被搜索引擎收录。',
+      '该页面仅用于第三方快捷登录完成后的站内接续，不应被搜索引擎收录。',
       { robots: 'noindex, nofollow' }
     )
   }

@@ -1,9 +1,10 @@
-export type AuthSource = 'legacy' | 'oidc'
+export type AuthSource = string
 
 const AUTH_SOURCE_STORAGE_KEY = 'momi_auth_source'
 
 export function normalizeAuthSource(value: string | null | undefined): AuthSource {
-  return value === 'oidc' ? 'oidc' : 'legacy'
+  const normalized = value?.trim().toLowerCase()
+  return normalized && normalized.length > 0 ? normalized : 'session'
 }
 
 export function getStoredAuthSource(): AuthSource | null {
@@ -18,7 +19,7 @@ export function getStoredAuthSource(): AuthSource | null {
 
 export function setStoredAuthSource(source: AuthSource): void {
   try {
-    localStorage.setItem(AUTH_SOURCE_STORAGE_KEY, source)
+    localStorage.setItem(AUTH_SOURCE_STORAGE_KEY, normalizeAuthSource(source))
   } catch {
     // ignore storage errors
   }

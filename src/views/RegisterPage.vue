@@ -33,6 +33,25 @@
             </RouterLink>
           </nav>
 
+          <div class="auth-provider-card glass-surface--base">
+            <div class="auth-provider-card__copy">
+              <h2 class="auth-provider-card__title">{{ $t('auth.googleRegisterButton') }}</h2>
+              <p class="auth-provider-card__hint">{{ $t('auth.googleRegisterHint') }}</p>
+            </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              :loading="isLoading"
+              full-width
+              @click="handleGoogleContinue"
+            >
+              {{ $t('auth.googleRegisterButton') }}
+            </Button>
+
+            <p class="auth-provider-card__footnote">{{ $t('auth.moreProvidersSoon') }}</p>
+          </div>
+
           <!-- Step indicator -->
           <div
             class="step-indicator"
@@ -296,13 +315,14 @@
 defineOptions({ name: 'RegisterPage' })
 
 import { ref, computed, watch, onMounted, onUnmounted, useTemplateRef } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
 import { authService, ApiError } from '@/api'
 import { useI18n } from 'vue-i18n'
 import { Mail, ArrowLeft, Eye, EyeOff } from 'lucide-vue-next'
 import { checkPasswordStrength } from '@/utils/crypto'
+import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
@@ -312,6 +332,7 @@ import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { validateMainstreamEmailDomain } from '@/utils/emailDomainPolicy'
 import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
@@ -419,6 +440,11 @@ const maskedEmail = computed(() => {
   return `${visible}***@${domain}`
 })
 
+const redirectTo = computed(() => {
+  const redirect = typeof route.query['redirect'] === 'string' ? route.query['redirect'] : null
+  return resolveAuthRedirectTarget(redirect, '/')
+})
+
 // 如果已登录，重定向到首页
 if (isAuthenticated.value) {
   router.replace('/')
@@ -443,6 +469,16 @@ function handleBackWithMood() {
 
 function handleNavigateToLogin() {
   setVisualMood('submitting', 580)
+}
+
+async function handleGoogleContinue() {
+  setVisualMood('submitting')
+  const result = await authStore.startGoogleAuth('register', redirectTo.value)
+
+  if (result.status === 'error') {
+    toastStore.error(t(result.error))
+    setVisualMood('dodge', 1200)
+  }
 }
 
 function togglePasswordVisibility(target: 'password' | 'confirm') {
@@ -840,3 +876,35 @@ function isTurnstileTokenFresh() {
   return Date.now() - turnstileIssuedAt.value < 4 * 60 * 1000
 }
 </script>
+
+<style scoped>
+.auth-provider-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+}
+
+.auth-provider-card__copy {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.auth-provider-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgba(15, 23, 42, 0.96);
+}
+
+.auth-provider-card__hint,
+.auth-provider-card__footnote {
+  margin: 0;
+  color: rgba(15, 23, 42, 0.72);
+  line-height: 1.6;
+}
+
+.auth-provider-card__footnote {
+  font-size: 0.92rem;
+}
+</style>

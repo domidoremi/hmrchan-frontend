@@ -48,17 +48,13 @@ vi.mock('@/utils/authSource', () => ({
   getStoredAuthSource: vi.fn(() => null),
   setStoredAuthSource: vi.fn(),
   clearStoredAuthSource: vi.fn(),
-  normalizeAuthSource: vi.fn((value: string | null | undefined) =>
-    value === 'oidc' ? 'oidc' : 'legacy'
-  ),
+  normalizeAuthSource: vi.fn((value: string | null | undefined) => value || 'session'),
 }))
 
-vi.mock('@/services/oidcService', () => ({
-  beginOIDCLogin: vi.fn(() => Promise.resolve()),
-  clearOIDCSession: vi.fn(),
+vi.mock('@/utils/clientReporter', () => ({
+  reportClientError: vi.fn(),
+  reportClientEvent: vi.fn(),
 }))
-
-import { beginOIDCLogin } from '@/services/oidcService'
 
 function createUser(overrides: Record<string, unknown> = {}) {
   return {
@@ -104,14 +100,12 @@ describe('createAuthSessionController', () => {
     vi.mocked(secureTokenManager.retrieve).mockResolvedValueOnce('access-token-1')
     vi.mocked(apiClient.request).mockResolvedValueOnce(refreshedUser)
 
-    const response = {
+    await controller.establishSession({
       user: initialUser,
       access_token: 'access-token-1',
       refresh_token: 'refresh-token-1',
       token_type: 'Bearer',
-    }
-
-    await controller.establishSession(response as Parameters<typeof controller.establishSession>[0])
+    })
 
     expect(state.user.value).toEqual(initialUser)
     expect(state.token.value).toBe('access-token-1')
@@ -130,7 +124,6 @@ describe('createAuthSessionController', () => {
     )
     expect(state.user.value).toEqual(refreshedUser)
 
-    controller.stopHeartbeat()
     controller.cleanup()
   })
 
@@ -166,7 +159,7 @@ describe('createAuthSessionController', () => {
     expect(state.token.value).toBeNull()
   })
 
-  it('attempts a single bootstrap refresh when the stored token binding mismatches', async () => {
+  it('attempts bootstrap refresh when the stored token binding mismatches', async () => {
     const state = createState()
     state.user.value = createUser({ username: 'persisted-user' })
     const controller = createAuthSessionController({ router, state })
@@ -193,26 +186,6 @@ describe('createAuthSessionController', () => {
     expect(state.user.value).toEqual(refreshedUser)
   })
 
-  it('clears the stale session when bootstrap refresh returns 401', async () => {
-    const state = createState()
-    state.user.value = createUser({ username: 'persisted-user' })
-    const controller = createAuthSessionController({ router, state })
-
-    vi.mocked(secureTokenManager.retrieveState).mockResolvedValueOnce({
-      token: null,
-      state: 'binding_invalid',
-      reason: 'device_mismatch',
-    })
-    vi.mocked(authService.refreshToken).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
-
-    await controller.initAuth()
-
-    expect(state.user.value).toBeNull()
-    expect(state.token.value).toBeNull()
-    expect(state.refreshToken.value).toBeNull()
-    expect(secureTokenManager.clear).toHaveBeenCalled()
-  })
-
   it('keeps state and schedules a retry when bootstrap refresh fails with a network error', async () => {
     const state = createState()
     state.user.value = createUser({ username: 'persisted-user' })
@@ -234,76 +207,75 @@ describe('createAuthSessionController', () => {
     controller.cleanup()
   })
 
-  it('does not start heartbeat for oidc sessions', async () => {
+  it('starts heartbeat for all established sessions', async () => {
     const state = createState()
     const controller = createAuthSessionController({ router, state })
-    const oidcUser = createUser({ auth_source: 'oidc' })
+
+    vi.mocked(authService.heartbeat).mockResolvedValueOnce({
+      access_token: 'rotated-token',
+      token_type: 'Bearer',
+      expires_in: 900,
+      refresh_threshold: 30,
+      server_time: '2026-03-29T00:00:00Z',
+    })
 
     await controller.establishSession({
-      user: oidcUser,
-      access_token: 'oidc-token',
-      refresh_token: null,
+      user: createUser({ auth_source: 'session' }),
+      access_token: 'access-token',
+      refresh_token: 'refresh-token',
       token_type: 'Bearer',
-    } as Parameters<typeof controller.establishSession>[0])
+      refresh_threshold: 30,
+    })
 
-    await vi.advanceTimersByTimeAsync(7 * 60 * 1000)
+    await vi.advanceTimersByTimeAsync(30000)
 
-    expect(authService.heartbeat).not.toHaveBeenCalled()
+    expect(authService.heartbeat).toHaveBeenCalledTimes(1)
+    expect(state.token.value).toBe('rotated-token')
+
     controller.cleanup()
   })
 
-  it('skips legacy refresh bootstrap when the persisted session is oidc', async () => {
+  it('redirects to login with the current route when heartbeat refresh fails fatally', async () => {
     const state = createState()
-    state.user.value = createUser({ auth_source: 'oidc' })
     const controller = createAuthSessionController({ router, state })
 
-    vi.mocked(secureTokenManager.retrieveState).mockResolvedValueOnce({
-      token: null,
-      state: 'missing',
+    vi.mocked(authService.heartbeat).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
+    vi.mocked(authService.refreshToken).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
+
+    await controller.establishSession({
+      user: createUser(),
+      access_token: 'access-token',
+      refresh_token: 'refresh-token',
+      token_type: 'Bearer',
+      refresh_threshold: 30,
     })
 
-    await controller.initAuth()
+    window.history.replaceState({}, '', '/profile/settings?tab=security')
+    await vi.advanceTimersByTimeAsync(30000)
 
-    expect(authService.refreshToken).not.toHaveBeenCalled()
+    expect(state.user.value).toBeNull()
+    expect(state.token.value).toBeNull()
+    expect(router.push).toHaveBeenCalledWith(
+      '/login?redirect=%2Fprofile%2Fsettings%3Ftab%3Dsecurity'
+    )
+
+    controller.cleanup()
   })
 
-  it('restarts unified login when an oidc session is invalidated on a protected route', async () => {
+  it('preserves the protected redirect when auth:logout fires for an auth failure', async () => {
     const state = createState()
-    state.user.value = createUser({ auth_source: 'oidc' })
-    state.token.value = 'oidc-token'
+    state.user.value = createUser()
+    state.token.value = 'access-token'
     const controller = createAuthSessionController({ router, state })
     const cleanup = controller.setupAuthListener()
 
-    window.history.replaceState({}, '', '/profile/settings?tab=security')
+    window.history.replaceState({}, '', '/favorites?tab=recent')
     window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason: 'auth_failed' } }))
     await Promise.resolve()
 
     expect(state.user.value).toBeNull()
     expect(state.token.value).toBeNull()
-    expect(beginOIDCLogin).toHaveBeenCalledWith('web', {
-      redirectTo: '/profile/settings?tab=security',
-    })
-    expect(router.push).not.toHaveBeenCalledWith('/login')
-
-    cleanup()
-    controller.cleanup()
-  })
-
-  it('does not restart unified login after the explicit logout callback', async () => {
-    const state = createState()
-    state.user.value = createUser({ auth_source: 'oidc' })
-    state.token.value = 'oidc-token'
-    const controller = createAuthSessionController({ router, state })
-    const cleanup = controller.setupAuthListener()
-
-    window.history.replaceState({}, '', '/auth/logout/callback')
-    window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason: 'logout_callback' } }))
-    await Promise.resolve()
-
-    expect(state.user.value).toBeNull()
-    expect(state.token.value).toBeNull()
-    expect(beginOIDCLogin).not.toHaveBeenCalled()
-    expect(router.push).not.toHaveBeenCalledWith('/login')
+    expect(router.push).toHaveBeenCalledWith('/login?redirect=%2Ffavorites%3Ftab%3Drecent')
 
     cleanup()
     controller.cleanup()
