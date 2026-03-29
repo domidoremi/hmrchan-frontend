@@ -35,13 +35,17 @@
 
           <div class="auth-provider-card glass-surface--base">
             <div class="auth-provider-card__copy">
-              <h2 class="auth-provider-card__title">{{ $t('auth.googleRegisterButton') }}</h2>
+              <h2 class="auth-provider-card__title">
+                <IconGoogle class="auth-provider-card__brand-icon" />
+                <span>{{ $t('auth.googleRegisterButton') }}</span>
+              </h2>
               <p class="auth-provider-card__hint">{{ $t('auth.googleRegisterHint') }}</p>
             </div>
 
             <Button
               type="button"
               variant="secondary"
+              :icon="IconGoogle"
               :loading="isLoading"
               full-width
               @click="handleGoogleContinue"
@@ -328,6 +332,7 @@ import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import EmailCodeInput from '@/components/ui/EmailCodeInput.vue'
 import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
+import IconGoogle from '@/components/icons/IconGoogle.vue'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { validateMainstreamEmailDomain } from '@/utils/emailDomainPolicy'
 import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
@@ -891,10 +896,19 @@ function isTurnstileTokenFresh() {
 }
 
 .auth-provider-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   margin: 0;
   font-size: 1.05rem;
   font-weight: 700;
   color: rgba(15, 23, 42, 0.96);
+}
+
+.auth-provider-card__brand-icon {
+  inline-size: 1.1em;
+  block-size: 1.1em;
+  flex: none;
 }
 
 .auth-provider-card__hint,

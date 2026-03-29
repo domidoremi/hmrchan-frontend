@@ -132,7 +132,13 @@
                 </div>
 
                 <div class="action-group">
-                  <Button type="button" variant="ghost" full-width @click="handleGoogleContinue">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    full-width
+                    :icon="IconGoogle"
+                    @click="handleGoogleContinue"
+                  >
                     {{ $t('auth.googleLoginButton') }}
                   </Button>
                   <RouterLink class="auth-link" to="/forgot-password" @click="handleNavigateLink">
@@ -147,7 +153,10 @@
 
               <div class="auth-card auth-card--stack glass-surface--base auth-provider-card">
                 <div class="auth-provider-card__copy">
-                  <h2 class="auth-provider-card__title">{{ $t('auth.googleLoginButton') }}</h2>
+                  <h2 class="auth-provider-card__title">
+                    <IconGoogle class="auth-provider-card__brand-icon" />
+                    <span>{{ $t('auth.googleLoginButton') }}</span>
+                  </h2>
                   <p class="auth-provider-card__hint">{{ $t('auth.googleLoginHint') }}</p>
                 </div>
 
@@ -156,6 +165,7 @@
                     type="button"
                     variant="ghost"
                     full-width
+                    :icon="IconGoogle"
                     :loading="isLoading"
                     @click="handleGoogleContinue"
                   >
@@ -352,6 +362,7 @@ import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
 import AuthMfaStep from '@/components/auth/AuthMfaStep.vue'
+import IconGoogle from '@/components/icons/IconGoogle.vue'
 
 type VisualMood = 'idle' | 'typing' | 'dodge' | 'submitting' | 'success'
 type Step = 'credentials' | 'risk-verification' | 'mfa'
@@ -855,10 +866,19 @@ onUnmounted(() => {
 }
 
 .auth-provider-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   margin: 0;
   color: var(--auth-text-strong);
   font-size: clamp(1.05rem, 0.95rem + 0.45vw, 1.2rem);
   font-weight: var(--font-semibold);
+}
+
+.auth-provider-card__brand-icon {
+  inline-size: 1.1em;
+  block-size: 1.1em;
+  flex: none;
 }
 
 .auth-provider-card__hint,

@@ -14,6 +14,8 @@ interface Env {
   VPC_SERVICE?: Fetcher
 }
 
+type RedirectMode = 'follow' | 'manual'
+
 type CFPagesContext = {
   request: Request
   env: Env
@@ -108,14 +110,15 @@ async function fetchViaVPC(
   path: string,
   search: string,
   request: Request,
-  headers: Headers
+  headers: Headers,
+  redirectMode: RedirectMode
 ): Promise<Response> {
   const targetUrl = `${vpcOrigin}/api/${path}${search}`
 
   const fetchOptions: RequestInit = {
     method: request.method,
     headers,
-    redirect: 'follow',
+    redirect: redirectMode,
   }
 
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -135,14 +138,15 @@ async function fetchViaPublic(
   path: string,
   search: string,
   request: Request,
-  headers: Headers
+  headers: Headers,
+  redirectMode: RedirectMode
 ): Promise<Response> {
   const targetUrl = `${apiBaseUrl}/api/${path}${search}`
 
   const fetchOptions: RequestInit = {
     method: request.method,
     headers,
-    redirect: 'follow',
+    redirect: redirectMode,
   }
 
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -152,6 +156,49 @@ async function fetchViaPublic(
   }
 
   return fetch(targetUrl, fetchOptions)
+}
+
+function shouldPreserveBrowserRedirect(path: string, request: Request): boolean {
+  if (request.method !== 'GET') return false
+  const normalizedPath = path.replace(/^\/+/, '')
+  return (
+    normalizedPath === 'auth/google/start' ||
+    normalizedPath === 'auth/google/callback' ||
+    normalizedPath.startsWith('auth/google/')
+  )
+}
+
+function safelyParseUrl(value: string, base?: string): URL | null {
+  try {
+    return base ? new URL(value, base) : new URL(value)
+  } catch {
+    return null
+  }
+}
+
+function rewriteRedirectLocation(location: string, requestUrl: URL, apiBaseUrl: string): string {
+  const parsedLocation = safelyParseUrl(location, requestUrl.toString())
+  if (!parsedLocation) return location
+
+  const apiOrigin = safelyParseUrl(apiBaseUrl)?.origin
+  if (!apiOrigin) return parsedLocation.toString()
+
+  if (parsedLocation.origin === apiOrigin) {
+    parsedLocation.protocol = requestUrl.protocol
+    parsedLocation.host = requestUrl.host
+  }
+
+  const redirectUri = parsedLocation.searchParams.get('redirect_uri')
+  if (redirectUri) {
+    const parsedRedirectUri = safelyParseUrl(redirectUri)
+    if (parsedRedirectUri && parsedRedirectUri.origin === apiOrigin) {
+      parsedRedirectUri.protocol = requestUrl.protocol
+      parsedRedirectUri.host = requestUrl.host
+      parsedLocation.searchParams.set('redirect_uri', parsedRedirectUri.toString())
+    }
+  }
+
+  return parsedLocation.toString()
 }
 
 export async function onRequest(context: CFPagesContext): Promise<Response> {
@@ -174,6 +221,9 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   const originalPath = url.pathname
   const hasTrailingSlash = originalPath.endsWith('/')
   const normalizedPath = path + (hasTrailingSlash && !path.endsWith('/') ? '/' : '')
+  const redirectMode: RedirectMode = shouldPreserveBrowserRedirect(normalizedPath, request)
+    ? 'manual'
+    : 'follow'
 
   // 复制请求头，移除不应转发的头
   const headers = new Headers()
@@ -203,16 +253,31 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
           normalizedPath,
           url.search,
           request,
-          headers
+          headers,
+          redirectMode
         )
       } catch (vpcError) {
         // VPC 失败，回退到公网
         console.error('[API Proxy] VPC fetch failed, falling back to public:', vpcError)
-        response = await fetchViaPublic(apiBaseUrl, normalizedPath, url.search, request, headers)
+        response = await fetchViaPublic(
+          apiBaseUrl,
+          normalizedPath,
+          url.search,
+          request,
+          headers,
+          redirectMode
+        )
       }
     } else {
       // 没有 VPC 绑定，直接走公网
-      response = await fetchViaPublic(apiBaseUrl, normalizedPath, url.search, request, headers)
+      response = await fetchViaPublic(
+        apiBaseUrl,
+        normalizedPath,
+        url.search,
+        request,
+        headers,
+        redirectMode
+      )
     }
 
     // 复制响应头
@@ -231,6 +296,13 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     RESPONSE_HEADERS_TO_STRIP.forEach((header) => {
       responseHeaders.delete(header)
     })
+
+    if (redirectMode === 'manual') {
+      const location = response.headers.get('Location')
+      if (location) {
+        responseHeaders.set('Location', rewriteRedirectLocation(location, url, apiBaseUrl))
+      }
+    }
 
     const apiVersion = extractApiVersion(path)
     if (apiVersion) {
