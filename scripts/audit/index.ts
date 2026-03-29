@@ -13,6 +13,7 @@ import i18nAudit from './i18n'
 import apiContractAudit from './api-contract'
 import envConfigAudit from './env-config'
 import frontendPatternsAudit from './frontend-patterns'
+import authSurfaceAudit from './auth-surface'
 
 // --- Module registry ---
 const modules: AuditModule[] = [
@@ -28,6 +29,7 @@ const modules: AuditModule[] = [
   i18nAudit,
   apiContractAudit,
   envConfigAudit,
+  authSurfaceAudit,
   frontendPatternsAudit,
 ]
 
