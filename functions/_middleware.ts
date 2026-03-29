@@ -17,6 +17,14 @@ import { resolveHtmlDocumentWithEdgeData } from '../src/edge/detailDocumentResol
 
 const CANONICAL_HOSTNAME = 'momichan.xyz'
 const REDIRECT_HOSTNAMES = new Set(['www.momichan.xyz'])
+const AUTH_ROUTE_PATHS = new Set([
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/auth/callback',
+])
 const HTML_CORS_HEADERS = [
   'Access-Control-Allow-Origin',
   'Access-Control-Allow-Credentials',
@@ -131,6 +139,18 @@ function resolveCanonicalHostRedirect(requestUrl: URL): string | null {
   return redirectUrl.toString()
 }
 
+function normalizePathname(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.slice(0, -1)
+  }
+
+  return pathname
+}
+
+function isAuthRoutePath(pathname: string): boolean {
+  return AUTH_ROUTE_PATHS.has(normalizePathname(pathname))
+}
+
 export async function onRequest(
   context: EventContext<
     {
@@ -204,6 +224,9 @@ export async function onRequest(
   Object.entries(HTML_SECURITY_HEADERS).forEach(([key, value]) => {
     headers.set(key, value)
   })
+  if (isAuthRoutePath(requestUrl.pathname)) {
+    headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+  }
 
   return new Response(rewritten.body, {
     status: documentConfig.status,

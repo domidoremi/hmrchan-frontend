@@ -10,6 +10,15 @@ let isInitialized = false
 let isChecking = false
 let lastNotifiedScriptUrl: string | null = null
 const SW_UPDATE_DEBUG = import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true'
+const AUTH_ROUTE_PATHS = new Set([
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/auth/callback',
+])
+const AUTH_ROUTE_RELOAD_GUARD_KEY = '__auth_route_sw_reload_controller__'
 let checkIntervalId: ReturnType<typeof setInterval> | null = null
 let visibilityHandler: (() => void) | null = null
 let controllerChangeHandler: (() => void) | null = null
@@ -22,6 +31,76 @@ export interface SwUpdateOptions {
   autoRefresh?: boolean
   /** 是否显示更新提示，默认 true */
   showToast?: boolean
+}
+
+let reloadPageImpl = () => {
+  window.location.reload()
+}
+
+function normalizePathname(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.slice(0, -1)
+  }
+
+  return pathname
+}
+
+function isAuthRoutePath(pathname: string): boolean {
+  return AUTH_ROUTE_PATHS.has(normalizePathname(pathname))
+}
+
+function isCurrentAuthRoute(): boolean {
+  if (typeof window === 'undefined') return false
+  return isAuthRoutePath(window.location.pathname)
+}
+
+function activateWaitingWorker(registration: ServiceWorkerRegistration): boolean {
+  if (!registration.waiting) return false
+
+  lastNotifiedScriptUrl = registration.waiting.scriptURL || null
+  registration.waiting.postMessage({ type: 'SKIP_WAITING' })
+  return true
+}
+
+export function reloadPageForSwActivation(): void {
+  reloadPageImpl()
+}
+
+export function setReloadPageForSwActivationForTest(fn: (() => void) | null): void {
+  reloadPageImpl =
+    fn ||
+    (() => {
+      window.location.reload()
+    })
+}
+
+function reloadAuthRouteOnceForController(): boolean {
+  if (typeof window === 'undefined' || !isCurrentAuthRoute()) {
+    return false
+  }
+
+  const controllerScriptUrl = navigator.serviceWorker.controller?.scriptURL
+  if (!controllerScriptUrl) {
+    return false
+  }
+
+  try {
+    if (sessionStorage.getItem(AUTH_ROUTE_RELOAD_GUARD_KEY) === controllerScriptUrl) {
+      return false
+    }
+    sessionStorage.setItem(AUTH_ROUTE_RELOAD_GUARD_KEY, controllerScriptUrl)
+  } catch (error) {
+    if (SW_UPDATE_DEBUG) {
+      console.warn('[SW Update] Failed to persist auth-route reload guard:', error)
+    }
+    return false
+  }
+
+  reportClientEvent('sw.update.auth_route_reloaded', {
+    scriptUrl: controllerScriptUrl,
+  })
+  reloadPageForSwActivation()
+  return true
 }
 
 /**
@@ -82,6 +161,9 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
           console.log('[SW Update] New service worker activated')
         }
         reportClientEvent('sw.update.activated')
+        if (reloadAuthRouteOnceForController()) {
+          return
+        }
         if (autoRefresh) {
           window.dispatchEvent(new CustomEvent('sw:refresh-suggested'))
         }
@@ -138,6 +220,21 @@ async function checkForUpdates(showToast: boolean): Promise<void> {
     }
 
     // 如果有等待中的 SW，提示用户
+    if (registration.waiting && isCurrentAuthRoute()) {
+      const scriptUrl = registration.waiting.scriptURL || 'waiting'
+      const isFirstSeen = lastNotifiedScriptUrl !== scriptUrl
+      const activated = activateWaitingWorker(registration)
+      if (activated) {
+        if (isFirstSeen) {
+          reportClientEvent('sw.update.available', {
+            scriptUrl,
+            strategy: 'auth-route-immediate',
+          })
+        }
+        return
+      }
+    }
+
     if (registration.waiting && showToast) {
       const scriptUrl = registration.waiting.scriptURL || 'waiting'
       if (lastNotifiedScriptUrl !== scriptUrl) {
@@ -180,9 +277,7 @@ function showUpdateToast(): void {
       label: '立即更新',
       onClick: () => {
         navigator.serviceWorker.getRegistration().then((registration) => {
-          if (registration?.waiting) {
-            lastNotifiedScriptUrl = registration.waiting.scriptURL || null
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' })
+          if (registration?.waiting && activateWaitingWorker(registration)) {
             // bfcache 友好：避免强制 reload，交由后续导航自然应用新版本
             toastStore.success('新版本已激活，将在下次导航自动生效')
           }

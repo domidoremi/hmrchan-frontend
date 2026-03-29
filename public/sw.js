@@ -89,6 +89,14 @@ const RUNTIME_CONFIG = {
 
 // 静态资源列表（预缓存）
 const OFFLINE_FALLBACK = '/offline.html'
+const AUTH_ROUTE_PATHS = new Set([
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/auth/callback',
+])
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -362,6 +370,7 @@ self.addEventListener('message', (event) => {
  */
 async function handleNavigationRequest(event) {
   const { request } = event
+  const authRoute = isAuthRoutePath(new URL(request.url).pathname)
 
   try {
     // 优先使用 navigation preload（如果可用）
@@ -371,6 +380,9 @@ async function handleNavigationRequest(event) {
     }
 
     const networkResponse = await fetch(request)
+    if (authRoute && networkResponse) {
+      return networkResponse
+    }
     if (networkResponse && networkResponse.ok) {
       return networkResponse
     }
@@ -378,15 +390,23 @@ async function handleNavigationRequest(event) {
     // ignore
   }
 
-  // 离线兜底：优先 index.html，其次 offline.html
+  // 离线兜底：auth-route 不允许回退到旧版 index.html 壳
   const cache = await caches.open(CACHE_NAMES.static)
-  const cached = await cache.match('/index.html')
-  if (cached) return cached
+  if (!authRoute) {
+    const cached = await cache.match('/index.html')
+    if (cached) return cached
+  }
 
   const offline = await cache.match(OFFLINE_FALLBACK)
   if (offline) return offline
 
-  return new Response('Offline', { status: 503 })
+  return new Response(authRoute ? 'Authentication page unavailable offline' : 'Offline', {
+    status: 503,
+    headers: {
+      'Cache-Control': 'no-store',
+      'Content-Type': 'text/plain; charset=utf-8',
+    },
+  })
 }
 
 async function cacheStaticAsset(cache, asset) {
@@ -711,6 +731,18 @@ function shouldHandleRequest(url) {
 function isStaticAsset(url) {
   const staticExtensions = ['.js', '.css', '.woff', '.woff2', '.ttf', '.eot']
   return staticExtensions.some((ext) => url.pathname.endsWith(ext))
+}
+
+function normalizePathname(pathname) {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.slice(0, -1)
+  }
+
+  return pathname
+}
+
+function isAuthRoutePath(pathname) {
+  return AUTH_ROUTE_PATHS.has(normalizePathname(pathname))
 }
 
 function isMediaRequest(url) {

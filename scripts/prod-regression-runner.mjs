@@ -14,6 +14,13 @@ const DEFAULT_BASE_URL = 'https://momichan.xyz'
 const DEFAULT_SECONDARY_EMAIL_MODE = 'user-assisted'
 const SITE_NAME = 'MomiChan'
 const EN_LOCALE_PATH = path.resolve('src', 'i18n', 'locales', 'en.json')
+const RETIRED_AUTH_PAGE_TERMS = Object.freeze([
+  ['Auth', 'entik'].join(''),
+  ['OI', 'DC'].join(''),
+  ['统一', '登录'].join(''),
+  ['历史认证', '子域'].join(''),
+  ['历史后台', '子域'].join(''),
+])
 const CHECKPOINT_TYPES = {
   registerCode: 'register-code',
   login2fa: 'login-2fa',
@@ -145,6 +152,12 @@ function truncate(value, max = 140) {
   const text = String(value ?? '')
   if (text.length <= max) return text
   return `${text.slice(0, Math.max(0, max - 1))}…`
+}
+
+function normalizePageText(value) {
+  return String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function maskEmail(email) {
@@ -583,11 +596,11 @@ async function waitForRouteIdle(page, selector, timeout = 20_000) {
 
 async function gotoPath(page, baseUrl, target, selector, timeout = 20_000) {
   const absolute = /^https?:\/\//i.test(target) ? target : new URL(target, baseUrl).toString()
-  await page.goto(absolute, { waitUntil: 'domcontentloaded' })
+  const response = await page.goto(absolute, { waitUntil: 'domcontentloaded' })
   if (selector) {
     await waitForRouteIdle(page, selector, timeout)
   }
-  return page.url()
+  return response
 }
 
 async function takeScreenshot(page, screenshotDir, fileBase) {
@@ -893,6 +906,9 @@ async function prepareRouteEvidence(page, expected) {
   const finalUrlObject = new URL(finalUrl)
   const canonical = await readCanonical(page)
   const title = await page.title()
+  const pageText = normalizePageText(
+    await page.evaluate(() => document.body?.innerText || document.documentElement?.innerText || '')
+  )
 
   if (expected.expectedFinalPath) {
     assert(
@@ -915,6 +931,18 @@ async function prepareRouteEvidence(page, expected) {
   if (expected.expectedTitleIncludes?.length) {
     for (const part of expected.expectedTitleIncludes) {
       assert(title.includes(part), `title 未包含 "${part}"，实际 "${title}"`)
+    }
+  }
+
+  if (expected.expectedTextIncludes?.length) {
+    for (const part of expected.expectedTextIncludes) {
+      assert(pageText.includes(part), `页面内容未包含 "${part}"`)
+    }
+  }
+
+  if (expected.forbiddenTextIncludes?.length) {
+    for (const part of expected.forbiddenTextIncludes) {
+      assert(!pageText.includes(part), `页面内容不应包含 "${part}"`)
     }
   }
 
@@ -953,12 +981,36 @@ async function verifyRoute({
   expectedCanonicalPath,
   expectedTitleExact,
   expectedTitleIncludes,
+  expectedTextIncludes,
+  forbiddenTextIncludes,
+  expectedCacheControlIncludes,
   captureScreenshot = false,
 }) {
   return runCheck(state, meta, async () => {
-    const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
-      await gotoPath(harness.page, baseUrl, pathOrUrl, selector)
-    })
+    const { result: navigationResponse, diagnostics } = await captureDiagnosticsWindow(
+      harness.diagnostics,
+      async () => {
+        return gotoPath(harness.page, baseUrl, pathOrUrl, selector)
+      }
+    )
+
+    const responseHeaders =
+      navigationResponse && typeof navigationResponse.headers === 'function'
+        ? navigationResponse.headers()
+        : {}
+
+    if (expectedCacheControlIncludes?.length) {
+      const cacheControl = String(
+        responseHeaders['cache-control'] ?? responseHeaders['Cache-Control'] ?? ''
+      )
+      assert(cacheControl.length > 0, '未读取到主文档 Cache-Control 响应头')
+      for (const part of expectedCacheControlIncludes) {
+        assert(
+          cacheControl.toLowerCase().includes(String(part).toLowerCase()),
+          `Cache-Control 未包含 "${part}"，实际 "${cacheControl}"`
+        )
+      }
+    }
 
     const evidence = await prepareRouteEvidence(harness.page, {
       baseUrl,
@@ -966,6 +1018,8 @@ async function verifyRoute({
       expectedCanonicalPath,
       expectedTitleExact,
       expectedTitleIncludes,
+      expectedTextIncludes,
+      forbiddenTextIncludes,
     })
 
     const diagnosticSummary = summarizeDiagnosticsForCheck(diagnostics)
@@ -990,6 +1044,8 @@ async function verifyRoute({
       artifacts,
       details: {
         selector,
+        cacheControl:
+          responseHeaders['cache-control'] ?? responseHeaders['Cache-Control'] ?? null,
       },
     }
   })
@@ -1356,6 +1412,12 @@ async function runPublicRegression(state, harness, config, discovered) {
       selector: '.auth-page--login',
       expectedFinalPath: '/login',
       titleKey: 'nav.login',
+      expectedTextIncludes: [
+        getNestedValue(state._locale, 'auth.loginButton'),
+        getNestedValue(state._locale, 'auth.googleLoginButton'),
+      ].filter(Boolean),
+      forbiddenTextIncludes: RETIRED_AUTH_PAGE_TERMS,
+      expectedCacheControlIncludes: ['no-store'],
       screenshot: true,
     },
     {
@@ -1364,6 +1426,7 @@ async function runPublicRegression(state, harness, config, discovered) {
       selector: '.auth-page--register',
       expectedFinalPath: '/register',
       titleKey: 'nav.register',
+      expectedCacheControlIncludes: ['no-store'],
     },
     {
       name: 'forgot password',
@@ -1371,6 +1434,7 @@ async function runPublicRegression(state, harness, config, discovered) {
       selector: '.auth-page--forgot',
       expectedFinalPath: '/forgot-password',
       titleKey: 'email.forgotPasswordTitle',
+      expectedCacheControlIncludes: ['no-store'],
     },
     {
       name: 'reset password',
@@ -1378,6 +1442,7 @@ async function runPublicRegression(state, harness, config, discovered) {
       selector: '.auth-page',
       expectedFinalPath: '/reset-password',
       titleKey: 'email.resetPasswordTitle',
+      expectedCacheControlIncludes: ['no-store'],
     },
     {
       name: 'verify email',
@@ -1385,6 +1450,7 @@ async function runPublicRegression(state, harness, config, discovered) {
       selector: '.auth-page',
       expectedFinalPath: '/verify-email',
       titleKey: 'email.verifyTitle',
+      expectedCacheControlIncludes: ['no-store'],
     },
   ]
 
@@ -1405,6 +1471,9 @@ async function runPublicRegression(state, harness, config, discovered) {
       expectedFinalPath: route.expectedFinalPath,
       expectedCanonicalPath: route.expectedFinalPath,
       expectedTitleExact: buildExpectedTitleFromKey(state._locale, route.titleKey),
+      expectedTextIncludes: route.expectedTextIncludes,
+      forbiddenTextIncludes: route.forbiddenTextIncludes,
+      expectedCacheControlIncludes: route.expectedCacheControlIncludes,
       captureScreenshot: route.screenshot,
     })
   }
@@ -2405,6 +2474,12 @@ async function runFinalRecheck(state, publicHarness, mainHarness, qaHarness, con
     expectedFinalPath: '/login',
     expectedCanonicalPath: '/login',
     expectedTitleExact: buildExpectedTitleFromKey(state._locale, 'nav.login'),
+    expectedTextIncludes: [
+      getNestedValue(state._locale, 'auth.loginButton'),
+      getNestedValue(state._locale, 'auth.googleLoginButton'),
+    ].filter(Boolean),
+    forbiddenTextIncludes: RETIRED_AUTH_PAGE_TERMS,
+    expectedCacheControlIncludes: ['no-store'],
   })
 
   await verifyRoute({
