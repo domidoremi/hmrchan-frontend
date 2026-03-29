@@ -1,14 +1,14 @@
-# 主站前端认证接入文档（2026-03-29 canonical）
+# 主站前端认证接入文档（2026-03-30 canonical）
 
 ## 1. 范围
 
-本文档只描述当前前端仓库负责的主站 `https://momichan.xyz` 认证接入结果。
+本文档只描述当前前端仓库负责的主站 `https://momichan.xyz` 与公开 API `https://api.momichan.xyz` 的认证接入结果。
 
 不在本轮范围内：
 
-- `https://console.momichan.xyz`
-- `https://console-api.momichan.xyz` 的后台前端接入
-- 任何外部身份中心页面或登出回调页面
+- 历史后台子域的前端接入
+- 历史后台 API 子域的联调与发布
+- 任何旧认证中间层页面或外部登出回调页面
 
 前端实现已对齐后端仓库中的 canonical 联调文档。
 
@@ -241,13 +241,13 @@ Google callback 固定进入：
 - 所有会话统一 heartbeat / refresh / logout
 - `/auth/callback` 仍保持 noindex
 
-## 13. 后续留给 console 的复用边界
+## 13. 后续后台接入工作流的复用边界
 
-虽然本轮只交付主站，当前 service / type / store 组织方式已避免写死旧外部身份流程模型，后续可复用到 console：
+虽然本轮只交付主站，当前 service / type / store 组织方式已避免写死历史认证流程模型，后续可复用到后续后台接入工作流：
 
 - Google handoff service
 - 链式 challenge 状态机
 - WebAuthn 工具与登录期 MFA 组件
 - provider-aware 登录方式展示
 
-但 console 仍需要独立接入自己的 host、路由和页面。
+但历史后台子域与历史后台 API 子域的后续接入仍需要独立处理各自的 host、路由和页面。

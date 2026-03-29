@@ -244,4 +244,36 @@ describe('functions/_middleware', () => {
 
     expect(response).toBe(original)
   })
+
+  it('marks auth-route HTML responses as no-store', async () => {
+    resolveHtmlDocumentWithEdgeData.mockResolvedValue({
+      status: 200,
+      title: 'Login · MomiChan',
+      description: 'login',
+      robots: 'noindex, nofollow',
+      ogType: 'website',
+      canonicalPath: '/login',
+      ogImage: null,
+      shellTitle: 'Login',
+    })
+
+    const { onRequest } = await import('../_middleware')
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/login'),
+      env: {},
+      next: () =>
+        Promise.resolve(
+          new MockResponse(
+            '<!doctype html><html><head><title>Login</title></head><body><div id="app-root"></div></body></html>',
+            {
+              headers: {
+                'content-type': 'text/html; charset=utf-8',
+              },
+            }
+          )
+        ),
+    } as never)
+
+    expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate')
+  })
 })
