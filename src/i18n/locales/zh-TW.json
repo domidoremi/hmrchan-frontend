@@ -712,6 +712,15 @@
       "fileTooLarge": "圖片檔案過大（最大10MB）",
       "tooManyImages": "每條評論最多9張圖片",
       "totalSizeTooLarge": "圖片總大小過大（最大50MB）"
+    },
+    "toolbar": {
+      "label": "評論工具",
+      "emoji": "插入符號",
+      "mention": "提及",
+      "link": "插入連結",
+      "quote": "插入引用",
+      "code": "插入程式碼區塊",
+      "media": "新增圖片"
     }
   },
   "community": {
@@ -753,6 +762,8 @@
   "schedule": {
     "title": "日程",
     "subtitle": "活動與日程安排",
+    "plannerTitle": "規劃本",
+    "plannerSubtitle": "用一頁安靜的週視圖整理接下來的安排。",
     "upcoming": "即將到來",
     "noEvents": "當天沒有活動",
     "noUpcoming": "暫無即將到來的活動",
@@ -765,6 +776,18 @@
     "filterLabel": "分類篩選",
     "calendarLabel": "日曆",
     "eventsCount": "個活動",
+    "view": {
+      "week": "週",
+      "day": "日",
+      "month": "月"
+    },
+    "insights": {
+      "title": "本週概覽",
+      "focus": "重點安排",
+      "distribution": "分類分布",
+      "next": "下一個重點",
+      "empty": "目前範圍內還沒有需要重點關注的活動。"
+    },
     "categories": {
       "all": "全部",
       "live": "直播",
@@ -777,6 +800,21 @@
       "eventPage": "活動頁面",
       "buyTicket": "購票",
       "source": "來源"
+    }
+  },
+  "uploader": {
+    "select": "選擇檔案",
+    "status": {
+      "success": "已上傳",
+      "error": "需要處理",
+      "uploading": "上傳中",
+      "canceled": "已取消",
+      "ready": "待上傳"
+    },
+    "errors": {
+      "queueLimit": "佇列中最多保留 {count} 個檔案。",
+      "uploadFailed": "上傳失敗",
+      "removeFailed": "刪除檔案失敗"
     }
   },
   "contact": {

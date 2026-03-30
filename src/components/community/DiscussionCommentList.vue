@@ -1,6 +1,6 @@
 <template>
   <section
-    class="discussion-comment-section"
+    class="discussion-comment-section surface-paper-sketch analog-dot-grid"
     :class="{ 'comment-section--guest': !isAuthenticated }"
   >
     <header class="comment-header">
@@ -458,24 +458,20 @@ onUnmounted(() => {
 
 <style scoped>
 .discussion-comment-section {
-  padding: var(--spacing-6);
-  background: var(--glass-bg-light);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
+  display: grid;
+  gap: var(--spacing-5);
+  padding: var(--spacing-5);
   min-height: 12.5rem;
 }
 
 .comment-section--guest {
-  background: var(--glass-bg);
+  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.3));
 }
 
 .comment-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--spacing-6);
   flex-wrap: wrap;
   gap: var(--spacing-4);
 }
@@ -496,8 +492,8 @@ onUnmounted(() => {
 
 .comment-count {
   padding: var(--spacing-0) var(--spacing-2);
-  background: var(--color-primary-100);
-  color: var(--color-primary);
+  background: color-mix(in srgb, var(--surface-paper-bg) 74%, rgba(255, 255, 255, 0.45));
+  color: var(--surface-paper-ink);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
 }
@@ -579,6 +575,20 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+}
+
+.list-enter-active,
+.list-leave-active,
+.list-move {
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(0.35rem) scale(0.98);
 }
 
 .load-more-btn {

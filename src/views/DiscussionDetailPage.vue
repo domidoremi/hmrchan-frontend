@@ -26,7 +26,10 @@
           <Skeleton width="100%" height="7.5rem" />
         </div>
 
-        <article v-else-if="discussion" class="discussion-card empty-surface">
+        <article
+          v-else-if="discussion"
+          class="discussion-card surface-paper-sketch analog-dot-grid"
+        >
           <header class="discussion-header">
             <div class="title-row">
               <h1 class="discussion-title">{{ discussion.title }}</h1>
@@ -92,7 +95,7 @@
             </div>
           </header>
 
-          <div class="discussion-content">
+          <div class="discussion-content paper-rule">
             {{ discussion.content }}
           </div>
 
@@ -324,6 +327,12 @@ watch(
   justify-self: start;
 }
 
+.discussion-card {
+  display: grid;
+  gap: var(--spacing-4);
+  padding: var(--spacing-5);
+}
+
 .discussion-header {
   display: flex;
   flex-direction: column;
@@ -342,6 +351,7 @@ watch(
   font-size: var(--text-xl);
   font-weight: var(--font-semibold);
   margin: 0;
+  color: var(--surface-paper-ink);
 }
 
 .discussion-pin {
@@ -356,7 +366,7 @@ watch(
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-3);
-  color: var(--color-text-tertiary);
+  color: var(--surface-paper-ink-soft);
   font-size: var(--text-xs);
 }
 
@@ -380,7 +390,7 @@ watch(
 
 .author-name {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  color: var(--surface-paper-ink-soft);
 }
 
 .category-pill {
@@ -388,8 +398,8 @@ watch(
   font-size: var(--text-xs);
   padding: 0.125rem 0.625rem;
   border-radius: var(--radius-full);
-  background: var(--glass-bg-light);
-  color: var(--color-text-secondary);
+  background: color-mix(in srgb, var(--surface-paper-bg) 80%, rgba(255, 255, 255, 0.42));
+  color: var(--surface-paper-ink-soft);
 }
 
 .discussion-tags {
@@ -408,7 +418,7 @@ watch(
   flex-wrap: wrap;
   gap: var(--spacing-2);
   padding-top: var(--spacing-3);
-  border-top: 1px solid var(--page-control-border);
+  border-top: 0.0625rem solid var(--surface-paper-border);
 }
 
 .action-danger {
@@ -420,9 +430,10 @@ watch(
 }
 
 .discussion-content {
+  padding-top: var(--spacing-3);
   white-space: pre-wrap;
   font-size: var(--text-base);
-  color: var(--color-text-primary);
+  color: var(--surface-paper-ink);
   line-height: var(--leading-relaxed);
 }
 

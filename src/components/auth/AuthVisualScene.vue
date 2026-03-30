@@ -6,19 +6,34 @@
     aria-hidden="true"
   >
     <div class="scene-stage" :class="[sceneKindClass, sceneMoodClass]">
-      <div class="scene-ambient" aria-hidden="true">
-        <span class="scene-blob scene-blob--one" />
-        <span class="scene-blob scene-blob--two" />
-        <span class="scene-blob scene-blob--three" />
+      <div class="scene-sky">
+        <span class="scene-aura scene-aura--sun" />
+        <span class="scene-aura scene-aura--mist" />
+        <span class="scene-cloud scene-cloud--one" />
+        <span class="scene-cloud scene-cloud--two" />
       </div>
 
-      <div class="scene-fallback">
-        <p class="scene-fallback__title">{{ title }}</p>
-        <p class="scene-fallback__subtitle">{{ subtitle }}</p>
+      <div class="scene-canopy">
+        <span class="scene-leaf scene-leaf--one" />
+        <span class="scene-leaf scene-leaf--two" />
+        <span class="scene-leaf scene-leaf--three" />
+      </div>
+
+      <div class="scene-ground">
+        <span class="scene-hill scene-hill--back" />
+        <span class="scene-hill scene-hill--front" />
+        <span class="scene-ripple scene-ripple--one" />
+        <span class="scene-ripple scene-ripple--two" />
+      </div>
+
+      <div class="scene-copy-card">
+        <p class="scene-copy-card__eyebrow">{{ sceneLabel }}</p>
+        <h2 class="scene-copy-card__title">{{ title }}</h2>
+        <p class="scene-copy-card__subtitle">{{ subtitle }}</p>
       </div>
     </div>
 
-    <p v-if="showCopy" class="scene-copy">{{ subtitle }}</p>
+    <p v-if="showCopy" class="scene-caption">{{ subtitle }}</p>
   </div>
 </template>
 
@@ -46,255 +61,309 @@ const props = withDefaults(defineProps<Props>(), {
 
 const sceneKindClass = computed(() => `scene-stage--${props.sceneKind}`)
 const sceneMoodClass = computed(() => `scene-stage--mood-${props.mood}`)
+const sceneLabel = computed(() => {
+  if (props.sceneKind === 'register') return 'Grow'
+  if (props.sceneKind === 'forgot') return 'Restore'
+  return 'Return'
+})
 </script>
 
 <style scoped>
 .auth-scene {
-  min-height: 100%;
-  height: 100%;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  align-items: stretch;
-  gap: clamp(0.7rem, 1.8vw, 1.2rem);
-  padding: clamp(0.9rem, 2.5vw, 1.7rem);
-  background: transparent;
+  gap: 0.9rem;
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 100%;
+  padding: clamp(0.9rem, 2vw, 1.2rem);
 }
 
 .auth-scene--compact {
-  grid-template-rows: minmax(0, 1fr);
-  gap: 0;
   padding: 0;
-  min-height: 0;
+  gap: 0;
 }
 
 .scene-stage {
-  --scene-base: var(--color-surface-variant);
-  --scene-top-wash: rgba(255, 255, 255, 0.82);
-  --scene-bottom-wash: rgba(244, 246, 248, 0.92);
-  --scene-fog: rgba(241, 243, 247, 0.96);
-  --scene-blob-1: rgba(var(--color-primary-rgb), 0.18);
-  --scene-blob-2: rgba(var(--color-accent-rgb), 0.18);
-  --scene-blob-3: rgba(251, 146, 60, 0.18);
-  --scene-blob-4: rgba(59, 130, 246, 0.16);
-  --scene-blob-opacity: 0.86;
-  --scene-blob-blur: 3.1rem;
-  --fallback-title: #f8fafc;
-  --fallback-subtitle: rgba(241, 245, 249, 0.84);
+  --scene-leaf-duration: 8.6s;
+  --scene-cloud-duration: 18s;
   position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: clamp(12rem, 22vw, 17.6rem);
+  overflow: hidden;
   display: grid;
   align-items: end;
-  overflow: hidden;
+  min-block-size: clamp(12rem, 24vw, 18rem);
+  padding: clamp(1.1rem, 2.4vw, 1.6rem);
   border-radius: inherit;
-  padding: clamp(1.15rem, 2.8vw, 1.9rem);
   background:
-    linear-gradient(180deg, var(--scene-top-wash), var(--scene-bottom-wash) 72%, var(--scene-fog)),
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.18), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 36%),
+    linear-gradient(180deg, rgba(5, 20, 28, 0.04), rgba(4, 16, 24, 0.26)),
     linear-gradient(
       145deg,
-      var(--scene-base),
-      color-mix(in srgb, var(--scene-base) 86%, #ffffff 14%)
+      var(--auth-visual-ink-a),
+      var(--auth-visual-ink-b) 56%,
+      var(--auth-visual-ink-c)
     );
 }
 
-.auth-scene--compact .scene-stage {
-  min-height: 0;
-  border-radius: 0;
-  padding: clamp(1rem, 2.8vw, 1.7rem);
-}
-
-.scene-stage::before,
-.scene-stage::after {
-  content: '';
+.scene-sky,
+.scene-canopy,
+.scene-ground {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.scene-stage::before {
-  z-index: 0;
+.scene-aura,
+.scene-cloud,
+.scene-leaf,
+.scene-hill,
+.scene-ripple {
+  position: absolute;
+  display: block;
+}
+
+.scene-aura--sun {
+  inset-block-start: 8%;
+  inset-inline-start: 12%;
+  inline-size: 30%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 233, 180, 0.9),
+    rgba(255, 233, 180, 0.08) 72%,
+    transparent 76%
+  );
+  filter: blur(0.25rem);
+}
+
+.scene-aura--mist {
+  inset-block-start: 18%;
+  inset-inline-end: 8%;
+  inline-size: 42%;
+  block-size: 28%;
+  border-radius: 999rem;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.24), transparent 74%);
+  filter: blur(1.2rem);
+}
+
+.scene-cloud {
+  block-size: 1.6rem;
+  border-radius: 999rem;
+  background: rgba(255, 255, 255, 0.12);
+  filter: blur(0.18rem);
+  animation: scene-cloud-drift var(--scene-cloud-duration) linear infinite;
+}
+
+.scene-cloud--one {
+  inset-block-start: 16%;
+  inset-inline-start: 12%;
+  inline-size: 7rem;
+}
+
+.scene-cloud--two {
+  inset-block-start: 26%;
+  inset-inline-end: 16%;
+  inline-size: 5.5rem;
+  animation-duration: calc(var(--scene-cloud-duration) * 0.82);
+}
+
+.scene-leaf {
+  inline-size: clamp(3.2rem, 10vw, 5rem);
+  aspect-ratio: 1 / 1.6;
   background:
-    radial-gradient(68% 58% at 18% 16%, var(--scene-blob-1), transparent 74%),
-    radial-gradient(66% 54% at 84% 24%, var(--scene-blob-3), transparent 76%);
-  filter: blur(3rem);
-  opacity: 0.56;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 42%),
+    linear-gradient(160deg, rgba(110, 183, 171, 0.82), rgba(21, 111, 108, 0.34));
+  clip-path: path(
+    'M 50 0 C 82 10 100 42 98 76 C 95 120 63 156 50 176 C 38 155 4 118 2 76 C 0 42 18 10 50 0 Z'
+  );
+  transform-origin: top center;
+  filter: drop-shadow(0 0.65rem 1rem rgba(0, 0, 0, 0.12));
+  animation: scene-leaf-sway var(--scene-leaf-duration) ease-in-out infinite alternate;
 }
 
-.scene-stage::after {
-  z-index: 2;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 34%, rgba(7, 20, 28, 0.34) 100%);
+.scene-leaf--one {
+  inset-block-start: -2%;
+  inset-inline-start: 10%;
 }
 
-.scene-stage--login {
-  --scene-blob-1: rgba(var(--color-primary-rgb), 0.22);
+.scene-leaf--two {
+  inset-block-start: 8%;
+  inset-inline-end: 14%;
+  animation-duration: calc(var(--scene-leaf-duration) * 0.9);
+}
+
+.scene-leaf--three {
+  inset-block-start: 18%;
+  inset-inline-end: 4%;
+  inline-size: clamp(2.6rem, 8vw, 4rem);
+  animation-duration: calc(var(--scene-leaf-duration) * 1.14);
+}
+
+.scene-hill {
+  inset-block-end: 0;
+  border-radius: 50% 50% 0 0;
+}
+
+.scene-hill--back {
+  inset-inline-start: -8%;
+  inline-size: 74%;
+  block-size: 34%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(10, 32, 38, 0.32)),
+    color-mix(in srgb, var(--auth-visual-orb-a) 58%, rgba(12, 32, 36, 0.42));
+}
+
+.scene-hill--front {
+  inset-inline-end: -10%;
+  inline-size: 76%;
+  block-size: 28%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(8, 24, 32, 0.42)),
+    color-mix(in srgb, var(--auth-visual-orb-b) 52%, rgba(7, 22, 30, 0.52));
+}
+
+.scene-ripple {
+  inset-inline-start: 50%;
+  inset-block-end: 10%;
+  inline-size: 9rem;
+  block-size: 2.2rem;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  opacity: 0.5;
+  animation: scene-ripple-expand 6.8s ease-out infinite;
+}
+
+.scene-ripple--two {
+  inset-block-end: 6%;
+  inline-size: 6.5rem;
+  animation-delay: 1.4s;
+}
+
+.scene-copy-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.45rem;
+  max-inline-size: min(100%, 32ch);
+  padding: 0.95rem 1rem;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.14);
+  border-radius: 1.2rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+  backdrop-filter: blur(0.4rem);
+}
+
+.scene-copy-card__eyebrow,
+.scene-copy-card__title,
+.scene-copy-card__subtitle,
+.scene-caption {
+  margin: 0;
+}
+
+.scene-copy-card__eyebrow {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(247, 243, 236, 0.72);
+}
+
+.scene-copy-card__title {
+  font-size: clamp(1.45rem, 1rem + 1vw, 2.1rem);
+  line-height: 1.08;
+  color: var(--auth-visual-copy);
+}
+
+.scene-copy-card__subtitle,
+.scene-caption {
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: rgba(247, 243, 236, 0.8);
+}
+
+.scene-caption {
+  max-inline-size: 28ch;
+  color: var(--color-text-secondary);
 }
 
 .scene-stage--register {
-  --scene-blob-2: rgba(var(--color-accent-rgb), 0.24);
-  --scene-blob-3: rgba(251, 146, 60, 0.22);
+  --scene-leaf-duration: 7.2s;
 }
 
-.scene-stage--forgot {
-  --scene-blob-1: rgba(59, 130, 246, 0.22);
-  --scene-blob-2: rgba(var(--color-accent-rgb), 0.18);
-  --scene-blob-3: rgba(245, 158, 11, 0.18);
+.scene-stage--forgot .scene-cloud,
+.scene-stage--forgot .scene-aura--mist {
+  opacity: 0.72;
 }
 
-.scene-stage--mood-typing .scene-blob,
-.scene-stage--mood-dodge .scene-blob {
-  animation-duration: calc(var(--blob-duration) * 0.84);
+.scene-stage--forgot .scene-ripple {
+  border-color: rgba(191, 219, 254, 0.22);
 }
 
-.scene-stage--mood-submitting .scene-blob,
-.scene-stage--mood-success .scene-blob {
-  animation-duration: calc(var(--blob-duration) * 0.74);
+.scene-stage--mood-typing .scene-leaf,
+.scene-stage--mood-dodge .scene-leaf {
+  animation-duration: calc(var(--scene-leaf-duration) * 0.82);
 }
 
-.scene-ambient {
-  position: absolute;
-  inset: -12% -10% -18% -12%;
-  pointer-events: none;
-  z-index: 1;
+.scene-stage--mood-submitting .scene-cloud,
+.scene-stage--mood-success .scene-cloud {
+  animation-duration: calc(var(--scene-cloud-duration) * 0.72);
 }
 
-.scene-blob {
-  position: absolute;
-  display: block;
-  filter: blur(var(--scene-blob-blur));
-  opacity: var(--scene-blob-opacity);
-  transform-origin: center;
-  will-change: transform, opacity;
-  animation: scene-blob-breathe var(--blob-duration) ease-in-out infinite alternate;
-  animation-delay: var(--blob-delay);
+@keyframes scene-cloud-drift {
+  from {
+    transform: translateX(-0.4rem);
+  }
+
+  to {
+    transform: translateX(0.7rem);
+  }
 }
 
-.scene-blob--one {
-  top: 6%;
-  left: -8%;
-  width: 54%;
-  height: 44%;
-  border-radius: 61% 39% 54% 46% / 43% 58% 42% 57%;
-  background: var(--scene-blob-1);
-  --blob-rot: -12deg;
-  --blob-x-start: -0.28rem;
-  --blob-x-end: 0.72rem;
-  --blob-y-start: 0rem;
-  --blob-y-end: -0.56rem;
-  --blob-scale-min: 0.96;
-  --blob-scale-max: 1.05;
-  --blob-duration: 8.6s;
-  --blob-delay: -0.9s;
+@keyframes scene-leaf-sway {
+  from {
+    transform: rotate(-4deg) translateY(-0.1rem);
+  }
+
+  to {
+    transform: rotate(5deg) translateY(0.2rem);
+  }
 }
 
-.scene-blob--two {
-  top: -4%;
-  right: -6%;
-  width: 42%;
-  height: 52%;
-  border-radius: 42% 58% 36% 64% / 57% 39% 61% 43%;
-  background: var(--scene-blob-3);
-  --blob-rot: 17deg;
-  --blob-x-start: -0.68rem;
-  --blob-x-end: 0.42rem;
-  --blob-y-start: -0.34rem;
-  --blob-y-end: 0.56rem;
-  --blob-scale-min: 0.95;
-  --blob-scale-max: 1.06;
-  --blob-duration: 9.4s;
-  --blob-delay: -2.2s;
-}
-
-.scene-blob--three {
-  bottom: -8%;
-  right: 6%;
-  width: 56%;
-  height: 42%;
-  border-radius: 66% 34% 47% 53% / 52% 38% 62% 48%;
-  background: var(--scene-blob-4);
-  --blob-rot: 8deg;
-  --blob-x-start: -0.48rem;
-  --blob-x-end: 0.24rem;
-  --blob-y-start: 0.58rem;
-  --blob-y-end: -0.36rem;
-  --blob-scale-min: 0.97;
-  --blob-scale-max: 1.07;
-  --blob-duration: 10.4s;
-  --blob-delay: -1.4s;
-}
-
-.scene-fallback {
-  position: relative;
-  z-index: 3;
-  display: grid;
-  gap: clamp(0.5rem, 1vw, 0.8rem);
-  max-inline-size: min(100%, 34ch);
-}
-
-.scene-fallback__title {
-  margin: 0;
-  font-size: clamp(1.55rem, 1.2rem + 0.9vw, 2.3rem);
-  font-weight: var(--font-semibold);
-  color: var(--fallback-title);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
-  overflow-wrap: anywhere;
-}
-
-.scene-fallback__subtitle {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--fallback-subtitle);
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
-.scene-copy {
-  margin: 0;
-  max-width: 30ch;
-  font-size: var(--text-sm);
-  line-height: 1.58;
-  color: var(--color-text-secondary);
-  overflow-wrap: anywhere;
-}
-
-@keyframes scene-blob-breathe {
+@keyframes scene-ripple-expand {
   0% {
-    transform: translate3d(var(--blob-x-start), var(--blob-y-start), 0) rotate(var(--blob-rot))
-      scale(var(--blob-scale-min));
-    opacity: calc(var(--scene-blob-opacity) * 0.88);
+    transform: translateX(-50%) scale(0.94);
+    opacity: 0.28;
+  }
+
+  60% {
+    opacity: 0.52;
   }
 
   100% {
-    transform: translate3d(var(--blob-x-end), var(--blob-y-end), 0) rotate(var(--blob-rot))
-      scale(var(--blob-scale-max));
-    opacity: calc(var(--scene-blob-opacity) * 1.06);
+    transform: translateX(-50%) scale(1.08);
+    opacity: 0;
   }
 }
 
 @media (max-width: 56rem) {
   .auth-scene {
-    min-height: 13rem;
-    padding: clamp(0.75rem, 3.2vw, 1.15rem);
-  }
-
-  .auth-scene--compact {
-    min-height: 0;
     padding: 0;
   }
 
   .scene-stage {
-    min-height: clamp(10.5rem, 36vw, 13rem);
+    min-block-size: clamp(11rem, 34vw, 14rem);
   }
 
-  .scene-copy {
+  .scene-caption {
     display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scene-blob {
+  .scene-cloud,
+  .scene-leaf,
+  .scene-ripple {
     animation: none;
   }
 }

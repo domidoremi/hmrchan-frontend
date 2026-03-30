@@ -1,5 +1,5 @@
 <template>
-  <article class="comment-card" :class="{ 'is-reply': isReply }">
+  <article class="comment-card surface-paper-sketch" :class="{ 'is-reply': isReply }">
     <!-- Comment Header -->
     <div class="comment-header">
       <Avatar
@@ -34,7 +34,7 @@
           <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
         </button>
         <Transition name="dropdown">
-          <div v-if="showMenu" class="menu-dropdown glass-dropdown" @click.stop>
+          <div v-if="showMenu" class="menu-dropdown surface-paper-sketch" @click.stop>
             <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
               <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
               <span>{{ t('common.delete') }}</span>
@@ -60,7 +60,25 @@
         <span class="reply-label">{{ t('comment.replyingTo') }}</span>
         <span class="reply-to-user">{{ getUserDisplayName(comment.replied_to_user) }}</span>
       </div>
-      <p>{{ comment.content }}</p>
+      <p class="comment-copy">{{ comment.content }}</p>
+      <div v-if="commentImages.length > 0" class="comment-gallery">
+        <a
+          v-for="image in commentImages"
+          :key="image.id"
+          class="comment-gallery__item"
+          :href="image.url"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            :src="image.thumbnail_url || image.url"
+            :alt="image.filename || comment.content"
+            class="comment-gallery__image"
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+      </div>
     </div>
 
     <!-- Comment Actions -->
@@ -320,6 +338,8 @@ const userLevelBadge = computed(() => {
   return badges[props.comment.user.level] || null
 })
 
+const commentImages = computed(() => props.comment.images ?? [])
+
 const likeCount = computed(() => props.comment.like_count ?? props.comment.likes_count ?? 0)
 const replyCount = computed(() => props.comment.reply_count ?? props.comment.replies_count ?? 0)
 const isAdmin = computed(() => {
@@ -479,21 +499,24 @@ onUnmounted(() => {
 
 <style scoped>
 .comment-card {
+  display: grid;
+  gap: var(--spacing-3);
   padding: var(--spacing-4);
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg-light);
-  transition: background var(--transition-fast);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 .comment-card:hover {
-  background: var(--glass-bg);
+  transform: translateY(-0.08rem);
 }
 
 .comment-card.is-reply {
-  margin-left: var(--spacing-8);
+  margin-inline-start: var(--spacing-8);
   padding: var(--spacing-3);
-  background: transparent;
-  border-left: 2px solid var(--glass-border);
+  background: color-mix(in srgb, var(--surface-paper-bg) 62%, transparent);
+  border-inline-start: 0.125rem solid var(--surface-paper-border-strong);
 }
 
 .comment-header {
@@ -504,16 +527,16 @@ onUnmounted(() => {
 }
 
 .comment-avatar.ui-avatar {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 50%;
-  border: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 1rem;
+  border: 0.0625rem solid var(--surface-paper-border);
   background: transparent;
 }
 
 .is-reply .comment-avatar.ui-avatar {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 .comment-meta {
@@ -526,7 +549,7 @@ onUnmounted(() => {
 
 .comment-author {
   font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
+  color: var(--surface-paper-ink);
   font-size: var(--text-sm);
 }
 
@@ -563,7 +586,7 @@ onUnmounted(() => {
 
 .comment-time {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--surface-paper-ink-soft);
 }
 
 .comment-menu {
@@ -577,15 +600,15 @@ onUnmounted(() => {
   width: 2rem;
   height: 2rem;
   border-radius: var(--radius-md);
-  color: var(--color-text-tertiary);
+  color: var(--surface-paper-ink-soft);
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
 }
 
 .menu-btn:hover {
-  background: var(--glass-bg);
-  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.4));
+  color: var(--surface-paper-ink);
 }
 
 .menu-dropdown {
@@ -593,7 +616,7 @@ onUnmounted(() => {
   top: 100%;
   right: 0;
   margin-top: var(--spacing-1);
-  min-width: 150px;
+  min-width: 9.5rem;
   padding: var(--spacing-1);
 }
 
@@ -605,12 +628,12 @@ onUnmounted(() => {
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-  color: var(--color-text-primary);
+  color: var(--surface-paper-ink);
   transition: background var(--transition-fast);
 }
 
 .menu-item:hover {
-  background: var(--glass-bg-light);
+  background: color-mix(in srgb, var(--surface-paper-bg) 82%, rgba(255, 255, 255, 0.44));
 }
 
 .menu-item.danger {
@@ -618,15 +641,38 @@ onUnmounted(() => {
 }
 
 .comment-content {
-  margin-bottom: var(--spacing-3);
+  display: grid;
+  gap: var(--spacing-2);
 }
 
-.comment-content p {
+.comment-copy {
+  margin: 0;
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
-  color: var(--color-text-primary);
+  color: var(--surface-paper-ink);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.comment-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--spacing-2);
+}
+
+.comment-gallery__item {
+  display: block;
+  overflow: hidden;
+  border: 0.0625rem solid var(--surface-paper-border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.42));
+}
+
+.comment-gallery__image {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
 }
 
 .reply-indicator {
@@ -635,7 +681,7 @@ onUnmounted(() => {
   gap: var(--spacing-1);
   padding: var(--spacing-1) var(--spacing-2);
   margin-bottom: var(--spacing-2);
-  background: var(--glass-bg-light);
+  background: color-mix(in srgb, var(--surface-paper-bg) 86%, rgba(255, 255, 255, 0.4));
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
 }
@@ -647,7 +693,7 @@ onUnmounted(() => {
 }
 
 .reply-label {
-  color: var(--color-text-tertiary);
+  color: var(--surface-paper-ink-soft);
 }
 
 .reply-to-user {
@@ -662,7 +708,10 @@ onUnmounted(() => {
 
 .comment-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--spacing-2);
+  padding-block-start: var(--spacing-2);
+  border-top: 0.0625rem solid var(--surface-paper-border);
 }
 
 .action-btn {
@@ -670,9 +719,9 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-1);
   padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--radius-md);
+  border-radius: 999rem;
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--surface-paper-ink-soft);
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
@@ -680,8 +729,8 @@ onUnmounted(() => {
 }
 
 .action-btn:hover:not(:disabled) {
-  background: var(--glass-bg);
-  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--surface-paper-bg) 86%, rgba(255, 255, 255, 0.4));
+  color: var(--surface-paper-ink);
 }
 
 .action-btn:disabled {
@@ -714,7 +763,7 @@ onUnmounted(() => {
 }
 
 .show-replies-btn:hover {
-  background: var(--glass-bg-light);
+  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.4));
 }
 
 .replies-list {
@@ -738,7 +787,7 @@ onUnmounted(() => {
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
   .comment-card.is-reply {
-    margin-left: var(--spacing-4);
+    margin-inline-start: var(--spacing-4);
   }
 
   .reply-form-wrapper {
