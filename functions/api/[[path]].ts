@@ -168,6 +168,10 @@ function shouldPreserveBrowserRedirect(path: string, request: Request): boolean 
   )
 }
 
+function shouldBypassVPCForRequest(path: string, request: Request): boolean {
+  return shouldPreserveBrowserRedirect(path, request)
+}
+
 function safelyParseUrl(value: string, base?: string): URL | null {
   try {
     return base ? new URL(value, base) : new URL(value)
@@ -224,6 +228,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   const redirectMode: RedirectMode = shouldPreserveBrowserRedirect(normalizedPath, request)
     ? 'manual'
     : 'follow'
+  const bypassVPC = shouldBypassVPCForRequest(normalizedPath, request)
 
   // 复制请求头，移除不应转发的头
   const headers = new Headers()
@@ -244,7 +249,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     let response: Response
 
     // 优先使用 Workers VPC（通过 Cloudflare Tunnel 私有访问）
-    if (env.VPC_SERVICE) {
+    if (env.VPC_SERVICE && !bypassVPC) {
       const vpcOrigin = env.VPC_API_ORIGIN || 'http://localhost:8000'
       try {
         response = await fetchViaVPC(
@@ -269,7 +274,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
         )
       }
     } else {
-      // 没有 VPC 绑定，直接走公网
+      // 没有 VPC 绑定，或当前请求需要保留浏览器重定向时，直接走公网
       response = await fetchViaPublic(
         apiBaseUrl,
         normalizedPath,
