@@ -4,7 +4,7 @@
 
 import { ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
-import type { Comment, CommentFormData } from '@/types'
+import type { Comment, CommentAttachment, CommentFormData } from '@/types'
 import { sanitizeComment, validateComment, commentRateLimiter } from '@/utils/security'
 import { apiClient, ApiError, type PaginatedApiResponse, type RequestConfig } from '@/api'
 
@@ -117,6 +117,34 @@ export const useCommentsStore = defineStore('comments', () => {
 
   function normalizeCommentList(list: Comment[]): Comment[] {
     return list.map(normalizeCommentTree)
+  }
+
+  async function hydrateCommentImages(
+    imageIds: string[] | undefined
+  ): Promise<CommentAttachment[]> {
+    if (!imageIds?.length) return []
+
+    const { commentService } = await import('@/api/commentService')
+    const settled = await Promise.allSettled(
+      imageIds.map((imageId) => commentService.getImage(imageId))
+    )
+
+    return settled.flatMap((result) => {
+      if (result.status !== 'fulfilled') return []
+
+      return [
+        {
+          id: result.value.id,
+          url: result.value.url,
+          thumbnail_url: result.value.thumbnail_url,
+          filename: result.value.filename,
+          file_size: result.value.file_size,
+          mime_type: result.value.mime_type,
+          width: result.value.width,
+          height: result.value.height,
+        },
+      ]
+    })
   }
 
   // 获取评论数量
@@ -350,10 +378,19 @@ export const useCommentsStore = defineStore('comments', () => {
         {
           content: sanitizedContent,
           parent_id: formData.parent_id || null,
+          image_ids: formData.image_ids?.length ? formData.image_ids : undefined,
         },
         { skipErrorToast: true }
       )
-      const normalizedNewComment = normalizeCommentTree(newComment)
+      const hydratedImages =
+        newComment.images && newComment.images.length > 0
+          ? newComment.images
+          : await hydrateCommentImages(formData.image_ids)
+      const normalizedNewComment = normalizeCommentTree({
+        ...newComment,
+        image_ids: newComment.image_ids ?? formData.image_ids,
+        images: hydratedImages,
+      })
 
       // 记录速率限制
       commentRateLimiter.record()

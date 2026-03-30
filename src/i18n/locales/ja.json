@@ -712,6 +712,15 @@
       "fileTooLarge": "画像ファイルが大きすぎます（最大10MB）",
       "tooManyImages": "1コメントにつき最大9枚の画像",
       "totalSizeTooLarge": "画像の合計サイズが大きすぎます（最大50MB）"
+    },
+    "toolbar": {
+      "label": "コメントツール",
+      "emoji": "記号を挿入",
+      "mention": "メンション",
+      "link": "リンクを挿入",
+      "quote": "引用を挿入",
+      "code": "コードブロックを挿入",
+      "media": "画像を追加"
     }
   },
   "community": {
@@ -753,6 +762,8 @@
   "schedule": {
     "title": "スケジュール",
     "subtitle": "イベント＆スケジュール",
+    "plannerTitle": "プランナー",
+    "plannerSubtitle": "静かな週ビューでこれからの予定を整理します。",
     "upcoming": "今後の予定",
     "noEvents": "この日のイベントはありません",
     "noUpcoming": "今後の予定はありません",
@@ -765,6 +776,18 @@
     "filterLabel": "カテゴリフィルター",
     "calendarLabel": "カレンダー",
     "eventsCount": "件のイベント",
+    "view": {
+      "week": "週",
+      "day": "日",
+      "month": "月"
+    },
+    "insights": {
+      "title": "今週の概況",
+      "focus": "注目予定",
+      "distribution": "カテゴリ分布",
+      "next": "次のハイライト",
+      "empty": "この範囲では注目予定がまだありません。"
+    },
     "categories": {
       "all": "すべて",
       "live": "ライブ",
@@ -777,6 +800,21 @@
       "eventPage": "イベントページ",
       "buyTicket": "チケット購入",
       "source": "ソース"
+    }
+  },
+  "uploader": {
+    "select": "ファイルを選択",
+    "status": {
+      "success": "アップロード済み",
+      "error": "要確認",
+      "uploading": "アップロード中",
+      "canceled": "キャンセル済み",
+      "ready": "準備完了"
+    },
+    "errors": {
+      "queueLimit": "キューに保持できるのは最大 {count} 件です。",
+      "uploadFailed": "アップロードに失敗しました",
+      "removeFailed": "ファイルの削除に失敗しました"
     }
   },
   "contact": {

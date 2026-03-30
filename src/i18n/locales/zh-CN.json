@@ -712,6 +712,15 @@
       "fileTooLarge": "图片文件过大（最大10MB）",
       "tooManyImages": "每条评论最多9张图片",
       "totalSizeTooLarge": "图片总大小过大（最大50MB）"
+    },
+    "toolbar": {
+      "label": "评论工具",
+      "emoji": "插入符号",
+      "mention": "提及",
+      "link": "插入链接",
+      "quote": "插入引用",
+      "code": "插入代码块",
+      "media": "添加图片"
     }
   },
   "community": {
@@ -753,6 +762,8 @@
   "schedule": {
     "title": "日程",
     "subtitle": "活动与日程安排",
+    "plannerTitle": "计划本",
+    "plannerSubtitle": "用一页安静的周视图梳理接下来的安排。",
     "upcoming": "即将到来",
     "noEvents": "当天没有活动",
     "noUpcoming": "暂无即将到来的活动",
@@ -765,6 +776,18 @@
     "filterLabel": "分类筛选",
     "calendarLabel": "日历",
     "eventsCount": "个活动",
+    "view": {
+      "week": "周",
+      "day": "日",
+      "month": "月"
+    },
+    "insights": {
+      "title": "本周概览",
+      "focus": "重点安排",
+      "distribution": "分类分布",
+      "next": "下一个重点",
+      "empty": "当前范围内还没有需要重点关注的活动。"
+    },
     "categories": {
       "all": "全部",
       "live": "直播",
@@ -777,6 +800,21 @@
       "eventPage": "活动页面",
       "buyTicket": "购票",
       "source": "来源"
+    }
+  },
+  "uploader": {
+    "select": "选择文件",
+    "status": {
+      "success": "已上传",
+      "error": "需要处理",
+      "uploading": "上传中",
+      "canceled": "已取消",
+      "ready": "待上传"
+    },
+    "errors": {
+      "queueLimit": "队列中最多保留 {count} 个文件。",
+      "uploadFailed": "上传失败",
+      "removeFailed": "删除文件失败"
     }
   },
   "contact": {

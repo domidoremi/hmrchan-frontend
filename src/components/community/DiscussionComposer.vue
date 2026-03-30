@@ -1,9 +1,17 @@
 <template>
-  <div class="discussion-composer empty-surface">
-    <h3 class="composer-title">{{ $t('community.newDiscussion') }}</h3>
+  <div class="discussion-composer surface-paper-sketch analog-dot-grid">
+    <header class="composer-header">
+      <div class="composer-header__copy">
+        <p class="composer-kicker">{{ $t('nav.community') }}</p>
+        <h3 class="composer-title">{{ $t('community.newDiscussion') }}</h3>
+        <p class="composer-subtitle">{{ $t('community.subtitle') }}</p>
+      </div>
+      <span class="paper-chip">{{
+        categories.find((item) => item.value === category)?.label
+      }}</span>
+    </header>
 
     <div class="composer-body">
-      <!-- 标题输入 -->
       <Input
         v-model="title"
         type="text"
@@ -13,7 +21,6 @@
         :maxlength="TITLE_MAX"
       />
 
-      <!-- 分类选择 -->
       <div class="category-selector">
         <button
           v-for="cat in categories"
@@ -28,6 +35,8 @@
         </button>
       </div>
 
+      <PlainTextToolbar @action="handleToolbarAction" />
+
       <Textarea
         ref="textareaRef"
         v-model="content"
@@ -40,7 +49,7 @@
         @keydown="handleKeydown"
       />
 
-      <div v-if="showMentions" class="mentions-dropdown empty-surface">
+      <div v-if="showMentions" class="mentions-dropdown surface-paper-sketch">
         <div v-if="isSearching" class="mentions-loading">
           <span class="spinner spinner-sm" />
         </div>
@@ -114,8 +123,8 @@
 
     <div class="composer-footer">
       <div class="composer-hints">
-        <span class="hint">{{ $t('community.mentionHint') }}</span>
-        <span class="hint">{{ $t('community.tagHint') }}</span>
+        <span class="paper-chip">{{ $t('community.mentionHint') }}</span>
+        <span class="paper-chip">{{ $t('community.tagHint') }}</span>
       </div>
       <Button :disabled="!canSubmit || isSubmitting" @click="handleSubmit">
         <span v-if="isSubmitting" class="spinner spinner-sm" />
@@ -126,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, useTemplateRef } from 'vue'
+import { ref, computed, watch, onUnmounted, useTemplateRef, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   discussionService,
@@ -137,10 +146,12 @@ import {
 } from '@/api'
 import { useToastStore } from '@/stores'
 import { debounce } from '@/utils/performance'
+import { applyPlainTextSnippet, type PlainTextToolAction } from '@/utils/plainTextTools'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
+import PlainTextToolbar from '@/components/thread/PlainTextToolbar.vue'
 
 const emit = defineEmits<{
   created: [discussion: Discussion]
@@ -265,6 +276,21 @@ function handleKeydown(e: KeyboardEvent) {
   } else if (e.key === 'Escape') {
     showMentions.value = false
   }
+}
+
+function handleToolbarAction(action: PlainTextToolAction) {
+  const textarea = textareaRef.value?.el
+  const result = applyPlainTextSnippet(
+    content.value,
+    action,
+    textarea?.selectionStart,
+    textarea?.selectionEnd
+  )
+  content.value = result.value
+  nextTick(() => {
+    textareaRef.value?.el?.focus()
+    textareaRef.value?.el?.setSelectionRange(result.caretStart, result.caretEnd)
+  })
 }
 
 function selectMention(post: PostReference) {
@@ -396,24 +422,48 @@ watch(searchResults, () => {
 
 <style scoped>
 .discussion-composer {
+  display: grid;
+  gap: var(--spacing-4);
   padding: var(--spacing-4);
 }
 
-.discussion-composer.empty-surface,
-.mentions-dropdown.empty-surface {
-  animation: none;
+.composer-header,
+.composer-header__copy {
+  display: grid;
+  gap: var(--spacing-1);
+}
+
+.composer-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  border-bottom: 0.0625rem solid var(--surface-paper-border);
+  padding-block-end: var(--spacing-3);
+}
+
+.composer-kicker {
+  margin: 0;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--surface-paper-ink-soft);
 }
 
 .composer-title {
+  margin: 0;
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-4);
+  color: var(--surface-paper-ink);
+}
+
+.composer-subtitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--surface-paper-ink-soft);
 }
 
 .composer-body {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--spacing-3);
 }
 

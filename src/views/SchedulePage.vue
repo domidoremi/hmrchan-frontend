@@ -19,6 +19,22 @@
             </div>
             <div class="page-hero__actions schedule-hero__actions">
               <div
+                class="planner-view-switch page-control-group"
+                :aria-label="$t('schedule.plannerTitle')"
+              >
+                <button
+                  v-for="view in plannerViews"
+                  :key="view.value"
+                  type="button"
+                  class="page-control-btn page-control-btn--compact"
+                  :class="{ active: plannerView === view.value }"
+                  :aria-pressed="plannerView === view.value"
+                  @click="setPlannerView(view.value)"
+                >
+                  {{ $t(view.label) }}
+                </button>
+              </div>
+              <div
                 class="category-filters page-control-group"
                 role="radiogroup"
                 :aria-label="$t('schedule.filterLabel')"
@@ -69,11 +85,11 @@
         <button
           type="button"
           class="month-nav-title page-control-btn"
-          :aria-label="`${monthLabel} ${$t('schedule.goToday')}`"
+          :aria-label="`${plannerPeriodLabel} ${$t('schedule.goToday')}`"
           :title="$t('schedule.goToday')"
           @click="goToday"
         >
-          {{ monthLabel }}
+          {{ plannerPeriodLabel }}
         </button>
         <button
           type="button"
@@ -102,8 +118,86 @@
         <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
       </div>
 
+      <section class="planner-shell surface-paper-sketch analog-dot-grid">
+        <div class="planner-shell__head">
+          <div class="planner-shell__copy">
+            <p class="planner-shell__eyebrow">{{ $t('schedule.plannerTitle') }}</p>
+            <h2 class="planner-shell__title">{{ $t('schedule.plannerSubtitle') }}</h2>
+          </div>
+          <span class="paper-chip">{{ activeCategoryLabel }}</span>
+        </div>
+
+        <div v-if="plannerView === 'week'" class="planner-week-grid">
+          <button
+            v-for="day in weekDays"
+            :key="day.key"
+            type="button"
+            class="planner-week-day"
+            :class="{
+              'is-selected': selectedDay?.key === day.key,
+              'is-today': day.isToday,
+              'has-events': day.events.length > 0,
+            }"
+            @click="selectPlannerDay(day)"
+          >
+            <span class="planner-week-day__label">
+              {{ formatWeekdayLabel(day.fullDate) }}
+            </span>
+            <strong class="planner-week-day__date">{{ day.date }}</strong>
+            <span class="planner-week-day__count">
+              {{ day.events.length }} {{ $t('schedule.eventsCount') }}
+            </span>
+            <span v-if="day.events[0]" class="planner-week-day__event">
+              {{ day.events[0].title }}
+            </span>
+          </button>
+        </div>
+
+        <div v-else-if="plannerView === 'day'" class="planner-day-focus paper-rule">
+          <strong class="planner-day-focus__title">{{
+            selectedDayLabel || plannerPeriodLabel
+          }}</strong>
+          <p class="planner-day-focus__summary">
+            {{
+              selectedDayEvents.length > 0
+                ? `${selectedDayEvents.length} ${$t('schedule.eventsCount')}`
+                : $t('schedule.noEvents')
+            }}
+          </p>
+        </div>
+
+        <div class="planner-insights">
+          <article class="planner-insight">
+            <span class="planner-insight__label">{{ $t('schedule.insights.focus') }}</span>
+            <strong class="planner-insight__value">
+              {{ highlightedEvent?.title || $t('schedule.insights.empty') }}
+            </strong>
+          </article>
+          <article class="planner-insight">
+            <span class="planner-insight__label">{{ $t('schedule.insights.next') }}</span>
+            <strong class="planner-insight__value">
+              {{ nextHighlightLabel }}
+            </strong>
+          </article>
+          <article class="planner-insight">
+            <span class="planner-insight__label">{{ $t('schedule.insights.distribution') }}</span>
+            <div class="planner-insight__chips">
+              <span
+                v-for="item in categoryBreakdown"
+                :key="item.category"
+                class="paper-chip"
+                :style="{ '--paper-chip-accent': getCategoryColor(item.category) }"
+              >
+                {{ $t(`schedule.categories.${item.category}`) }} · {{ item.count }}
+              </span>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <!-- 日历网格 -->
       <div
+        v-if="plannerView === 'month'"
         ref="calendarRef"
         class="calendar-wrapper empty-surface"
         :aria-label="$t('schedule.calendarLabel')"
@@ -281,7 +375,7 @@
 
       <!-- 选中日期的事件列表 -->
       <Transition name="slide-fade">
-        <section v-if="selectedDay" class="day-events content-auto-lg">
+        <section v-if="selectedDay && plannerView !== 'month'" class="day-events content-auto-lg">
           <div class="page-section-head page-section-head--stage day-events-header">
             <div class="page-section-copy">
               <p class="page-section-kicker">{{ $t('schedule.title') }}</p>
@@ -358,7 +452,10 @@
       </Transition>
 
       <!-- 即将到来的事件 -->
-      <section v-if="!selectedDay" class="upcoming-section content-auto-lg">
+      <section
+        v-if="plannerView === 'month' && !selectedDay"
+        class="upcoming-section content-auto-lg"
+      >
         <div class="page-section-head">
           <div class="page-section-copy">
             <p class="page-section-kicker">{{ monthLabel }}</p>
@@ -437,6 +534,7 @@ import {
 } from 'lucide-vue-next'
 import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleService'
 import type { ScheduleCategory, ScheduleResponse } from '@/api/scheduleService'
+import type { PlannerView } from '@/types'
 import { useScheduleStore } from '@/stores/schedule'
 import { ApiError } from '@/api'
 import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/fallbacks/scheduleFallback'
@@ -470,6 +568,7 @@ const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth())
 const activeCategory = ref<ScheduleCategory | 'all'>('all')
 const selectedDay = ref<CalendarDay | null>(null)
+const plannerView = ref<PlannerView>('week')
 const calendarRef = useTemplateRef<HTMLElement>('calendarRef')
 const monthTransition = ref<'month-slide-left' | 'month-slide-right'>('month-slide-left')
 
@@ -504,6 +603,12 @@ const categories = [
   { value: 'media' as const, label: 'schedule.categories.media', icon: Film },
   { value: 'birth' as const, label: 'schedule.categories.birth', icon: Cake },
   { value: 'other' as const, label: 'schedule.categories.other', icon: Calendar },
+]
+
+const plannerViews = [
+  { value: 'week' as const, label: 'schedule.view.week' },
+  { value: 'day' as const, label: 'schedule.view.day' },
+  { value: 'month' as const, label: 'schedule.view.month' },
 ]
 
 const activeCategoryLabel = computed(() => {
@@ -643,12 +748,77 @@ const selectedDayLabel = computed(() => {
   )
 })
 
+const plannerAnchorDate = computed(() => selectedDay.value?.fullDate ?? new Date())
+
+function buildCalendarDay(date: Date): CalendarDay {
+  const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const today = new Date()
+  const isToday =
+    today.getFullYear() === normalized.getFullYear() &&
+    today.getMonth() === normalized.getMonth() &&
+    today.getDate() === normalized.getDate()
+
+  return {
+    key: normalized.toISOString().slice(0, 10),
+    date: normalized.getDate(),
+    fullDate: normalized,
+    currentMonth: normalized.getMonth() === currentMonth.value,
+    isToday,
+    events: getEventsForDate(normalized),
+  }
+}
+
+const weekDays = computed(() => {
+  const anchor = plannerAnchorDate.value
+  const start = new Date(
+    anchor.getFullYear(),
+    anchor.getMonth(),
+    anchor.getDate() - anchor.getDay()
+  )
+  return Array.from({ length: 7 }, (_, index) =>
+    buildCalendarDay(new Date(start.getFullYear(), start.getMonth(), start.getDate() + index))
+  )
+})
+
+const plannerPeriodLabel = computed(() => {
+  if (plannerView.value === 'month') return monthLabel.value
+  if (plannerView.value === 'day') return selectedDayLabel.value || t('schedule.today')
+
+  const first = weekDays.value[0]
+  const last = weekDays.value[weekDays.value.length - 1]
+  if (!first || !last) return monthLabel.value
+
+  return `${formatEventDate(first.fullDate.toISOString())} - ${formatEventDate(last.fullDate.toISOString())}`
+})
+
 const upcomingEvents = computed(() => {
   const now = new Date()
   return filteredEvents.value
     .filter((e) => new Date(e.start) >= now)
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
     .slice(0, 10)
+})
+
+const highlightedEvent = computed(
+  () => selectedDayEvents.value[0] ?? upcomingEvents.value[0] ?? null
+)
+
+const nextHighlightLabel = computed(() => {
+  const event = upcomingEvents.value[0]
+  if (!event) return t('schedule.insights.empty')
+  return `${formatEventDate(event.start)} · ${event.title}`
+})
+
+const categoryBreakdown = computed(() => {
+  const counts = new Map<ScheduleCategory, number>()
+  for (const event of filteredEvents.value) {
+    counts.set(event.category, (counts.get(event.category) ?? 0) + 1)
+  }
+
+  return Array.from(counts.entries())
+    .map(([category, count]) => ({ category, count }))
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 4)
 })
 
 // ========== 无障碍 ==========
@@ -722,6 +892,19 @@ function onTouchEnd(e: TouchEvent) {
 
 // ========== 操作 ==========
 function prevMonth() {
+  if (plannerView.value !== 'month') {
+    const offsetDays = plannerView.value === 'week' ? -7 : -1
+    const target = new Date(
+      plannerAnchorDate.value.getFullYear(),
+      plannerAnchorDate.value.getMonth(),
+      plannerAnchorDate.value.getDate() + offsetDays
+    )
+    currentYear.value = target.getFullYear()
+    currentMonth.value = target.getMonth()
+    selectedDay.value = buildCalendarDay(target)
+    return
+  }
+
   monthTransition.value = 'month-slide-right'
   selectedDay.value = null
   if (currentMonth.value === 0) {
@@ -733,6 +916,19 @@ function prevMonth() {
 }
 
 function nextMonth() {
+  if (plannerView.value !== 'month') {
+    const offsetDays = plannerView.value === 'week' ? 7 : 1
+    const target = new Date(
+      plannerAnchorDate.value.getFullYear(),
+      plannerAnchorDate.value.getMonth(),
+      plannerAnchorDate.value.getDate() + offsetDays
+    )
+    currentYear.value = target.getFullYear()
+    currentMonth.value = target.getMonth()
+    selectedDay.value = buildCalendarDay(target)
+    return
+  }
+
   monthTransition.value = 'month-slide-left'
   selectedDay.value = null
   if (currentMonth.value === 11) {
@@ -752,12 +948,16 @@ function goToday() {
   }
   currentYear.value = now.getFullYear()
   currentMonth.value = now.getMonth()
-  selectedDay.value = null
+  selectedDay.value = buildCalendarDay(now)
 }
 
 function setCategory(cat: ScheduleCategory | 'all') {
   activeCategory.value = cat
-  selectedDay.value = null
+  if (plannerView.value === 'month') {
+    selectedDay.value = null
+    return
+  }
+  selectedDay.value = buildCalendarDay(plannerAnchorDate.value)
 }
 
 function selectDay(day: CalendarDay) {
@@ -766,6 +966,23 @@ function selectDay(day: CalendarDay) {
   } else {
     selectedDay.value = day
   }
+}
+
+function setPlannerView(view: PlannerView) {
+  plannerView.value = view
+  if (!selectedDay.value) {
+    selectedDay.value = buildCalendarDay(new Date())
+  }
+}
+
+function selectPlannerDay(day: CalendarDay) {
+  selectedDay.value = buildCalendarDay(day.fullDate)
+}
+
+function formatWeekdayLabel(date: Date): string {
+  return date.toLocaleDateString(locale.value === 'zh-CN' ? 'zh-CN' : locale.value, {
+    weekday: 'short',
+  })
 }
 
 function formatEventTime(dateStr: string): string {
@@ -955,6 +1172,9 @@ async function fetchEvents(signal?: AbortSignal) {
     events.value = result
     eventsSource.value = 'live'
     fallbackReason.value = null
+    if (!selectedDay.value && plannerView.value !== 'month') {
+      selectedDay.value = buildCalendarDay(new Date())
+    }
   } catch (err) {
     if (signal?.aborted || isAbortError(err) || fetchId !== latestFetchId) return
 
@@ -969,6 +1189,9 @@ async function fetchEvents(signal?: AbortSignal) {
       eventsSource.value = 'fallback'
       fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
       error.value = null
+      if (!selectedDay.value && plannerView.value !== 'month') {
+        selectedDay.value = buildCalendarDay(new Date())
+      }
     } else {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
@@ -1015,6 +1238,13 @@ watch(
   },
   { immediate: true }
 )
+
+watch(plannerView, (nextView) => {
+  if (nextView === 'month') return
+  if (!selectedDay.value) {
+    selectedDay.value = buildCalendarDay(new Date())
+  }
+})
 
 onMounted(() => {
   scheduleStore.markVisited()
@@ -1087,6 +1317,13 @@ onMounted(() => {
   white-space: nowrap;
 }
 
+.planner-view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  justify-content: flex-end;
+}
+
 /* ========== 月份导航 ========== */
 .month-nav {
   display: flex;
@@ -1111,6 +1348,122 @@ onMounted(() => {
 
 .today-btn {
   flex-shrink: 0;
+}
+
+.planner-shell {
+  display: grid;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-6);
+}
+
+.planner-shell__head,
+.planner-shell__copy,
+.planner-insight {
+  display: grid;
+  gap: var(--spacing-1);
+}
+
+.planner-shell__head {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.planner-shell__eyebrow {
+  margin: 0;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--surface-paper-ink-soft);
+}
+
+.planner-shell__title {
+  margin: 0;
+  font-size: clamp(1.1rem, 0.95rem + 0.45vw, 1.4rem);
+  color: var(--surface-paper-ink);
+}
+
+.planner-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--spacing-2);
+}
+
+.planner-week-day {
+  display: grid;
+  gap: var(--spacing-1);
+  padding: var(--spacing-3);
+  border: 0.0625rem solid var(--surface-paper-border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.4));
+  text-align: start;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.planner-week-day.is-selected,
+.planner-week-day:hover {
+  transform: translateY(-0.08rem);
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--surface-paper-border));
+}
+
+.planner-week-day.is-today {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--surface-paper-bg));
+}
+
+.planner-week-day__label,
+.planner-week-day__count,
+.planner-day-focus__summary,
+.planner-insight__label {
+  font-size: var(--text-xs);
+  color: var(--surface-paper-ink-soft);
+}
+
+.planner-week-day__date,
+.planner-day-focus__title,
+.planner-insight__value {
+  color: var(--surface-paper-ink);
+}
+
+.planner-week-day__date {
+  font-size: var(--text-lg);
+  line-height: 1;
+}
+
+.planner-week-day__event {
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--surface-paper-ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.planner-day-focus {
+  padding-block-start: var(--spacing-3);
+}
+
+.planner-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-3);
+}
+
+.planner-insight {
+  padding: var(--spacing-3);
+  border: 0.0625rem solid var(--surface-paper-border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface-paper-bg) 82%, rgba(255, 255, 255, 0.44));
+}
+
+.planner-insight__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
 }
 
 /* ========== 日历 ========== */
@@ -1439,6 +1792,16 @@ onMounted(() => {
 @media (max-width: 640px) {
   .schedule-hero .page-hero__header {
     flex-direction: column;
+  }
+
+  .planner-view-switch,
+  .planner-shell__head,
+  .planner-insights {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-week-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .calendar-cell {

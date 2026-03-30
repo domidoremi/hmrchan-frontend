@@ -712,6 +712,15 @@
       "fileTooLarge": "Image file is too large (max 10MB)",
       "tooManyImages": "Maximum 9 images per comment",
       "totalSizeTooLarge": "Total image size is too large (max 50MB)"
+    },
+    "toolbar": {
+      "label": "Comment tools",
+      "emoji": "Insert symbol",
+      "mention": "Mention",
+      "link": "Insert link",
+      "quote": "Insert quote",
+      "code": "Insert code block",
+      "media": "Attach image"
     }
   },
   "community": {
@@ -753,6 +762,8 @@
   "schedule": {
     "title": "Schedule",
     "subtitle": "Events & Schedule",
+    "plannerTitle": "Planner",
+    "plannerSubtitle": "A calm weekly view of what is coming next.",
     "upcoming": "Upcoming",
     "noEvents": "No events on this day",
     "noUpcoming": "No upcoming events",
@@ -765,6 +776,18 @@
     "filterLabel": "Category filter",
     "calendarLabel": "Calendar",
     "eventsCount": "events",
+    "view": {
+      "week": "Week",
+      "day": "Day",
+      "month": "Month"
+    },
+    "insights": {
+      "title": "This week at a glance",
+      "focus": "Focus",
+      "distribution": "Category spread",
+      "next": "Next highlight",
+      "empty": "No highlighted events in this range yet."
+    },
     "categories": {
       "all": "All",
       "live": "Live",
@@ -777,6 +800,21 @@
       "eventPage": "Event Page",
       "buyTicket": "Buy Ticket",
       "source": "Source"
+    }
+  },
+  "uploader": {
+    "select": "Choose files",
+    "status": {
+      "success": "Uploaded",
+      "error": "Needs attention",
+      "uploading": "Uploading",
+      "canceled": "Canceled",
+      "ready": "Ready"
+    },
+    "errors": {
+      "queueLimit": "Only {count} file(s) can stay in the queue.",
+      "uploadFailed": "Upload failed",
+      "removeFailed": "Failed to remove file"
     }
   },
   "contact": {
