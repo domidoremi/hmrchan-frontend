@@ -126,6 +126,7 @@
                 ref="riskTurnstileRef"
                 :site-key="turnstileSiteKey"
                 action="risk-login"
+                size="compact"
                 @verify="handleRiskTurnstileVerify"
                 @expire="handleRiskTurnstileExpire"
                 @error="handleTurnstileError"

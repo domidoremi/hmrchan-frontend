@@ -1,41 +1,41 @@
 <template>
   <div class="auth-page auth-page--reset">
-    <div class="auth-card auth-card--stack">
-      <!-- Success -->
-      <template v-if="resetSuccess">
-        <div class="status-icon status-icon--success">
-          <CheckCircle :size="40" />
-        </div>
-        <h1 class="auth-title">{{ $t('email.resetSuccess') }}</h1>
-        <p class="auth-subtitle">{{ $t('email.resetSuccessHint') }}</p>
-        <Button full-width @click="$router.push('/login')">
-          {{ $t('auth.loginButton') }}
-        </Button>
-      </template>
-
-      <!-- Invalid token -->
-      <template v-else-if="!token">
-        <div class="status-icon status-icon--error">
-          <AlertTriangle :size="40" />
-        </div>
-        <h1 class="auth-title">{{ $t('email.invalidLink') }}</h1>
-        <p class="auth-subtitle">{{ $t('email.invalidResetLinkHint') }}</p>
-        <Button full-width @click="$router.push('/forgot-password')">
-          {{ $t('email.requestNewLink') }}
-        </Button>
-      </template>
-
-      <!-- Reset form -->
-      <template v-else>
-        <div class="auth-badge">
+    <AuthEntryShell
+      :title="pageTitle"
+      :subtitle="pageSubtitle"
+      :show-tabs="false"
+      split
+      @back="handleBack"
+    >
+      <template #eyebrow>
+        <span class="auth-badge">
           <span class="auth-badge-dot" />
-          <span>{{ $t('auth.secureBadge') }}</span>
-        </div>
+          <span>{{ badgeLabel }}</span>
+        </span>
+      </template>
 
-        <h1 class="auth-title">{{ $t('email.resetPasswordTitle') }}</h1>
-        <p class="auth-subtitle">{{ $t('email.resetPasswordHint') }}</p>
+      <div class="auth-card auth-card--stack">
+        <template v-if="resetSuccess">
+          <div class="status-icon status-icon--success">
+            <CheckCircle :size="40" />
+          </div>
+          <p class="auth-helper auth-helper--emphasis">{{ $t('email.resetSuccessHint') }}</p>
+          <Button full-width @click="router.push('/login')">
+            {{ $t('auth.loginButton') }}
+          </Button>
+        </template>
 
-        <form class="auth-form" @submit.prevent="handleReset">
+        <template v-else-if="!token">
+          <div class="status-icon status-icon--error">
+            <AlertTriangle :size="40" />
+          </div>
+          <p class="auth-helper auth-helper--emphasis">{{ $t('email.invalidResetLinkHint') }}</p>
+          <Button full-width @click="router.push('/forgot-password')">
+            {{ $t('email.requestNewLink') }}
+          </Button>
+        </template>
+
+        <form v-else class="auth-form" @submit.prevent="handleReset">
           <div class="form-group">
             <label for="new_password">{{ $t('email.newPassword') }}</label>
             <div class="password-field">
@@ -58,7 +58,6 @@
                 <Eye v-else :size="18" />
               </button>
             </div>
-            <!-- Password Strength -->
             <div v-if="newPassword" class="password-strength">
               <div class="strength-bar">
                 <div
@@ -100,12 +99,21 @@
             </p>
           </div>
 
-          <Button type="submit" :loading="isLoading" :disabled="!canSubmit" full-width>
-            {{ $t('email.resetPasswordButton') }}
-          </Button>
+          <div class="action-group">
+            <Button type="submit" :loading="isLoading" :disabled="!canSubmit" full-width>
+              {{ $t('email.resetPasswordButton') }}
+            </Button>
+          </div>
         </form>
+      </div>
+
+      <template #footer>
+        <p class="auth-footer">
+          {{ $t('email.rememberPassword') }}
+          <RouterLink to="/login">{{ $t('nav.login') }}</RouterLink>
+        </p>
       </template>
-    </div>
+    </AuthEntryShell>
   </div>
 </template>
 
@@ -113,7 +121,7 @@
 defineOptions({ name: 'ResetPasswordPage' })
 
 import { ref, computed, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { CheckCircle, AlertTriangle, Eye, EyeOff } from 'lucide-vue-next'
 import { authService, ApiError } from '@/api'
@@ -121,6 +129,7 @@ import { useToastStore } from '@/stores'
 import { checkPasswordStrength } from '@/utils/crypto'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
+import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -151,6 +160,24 @@ const passwordStrengthText = computed(() => {
   return textMap[passwordStrengthResult.value.level]
 })
 
+const badgeLabel = computed(() => {
+  if (resetSuccess.value) return t('email.resetSuccess')
+  if (!token.value) return t('email.invalidLink')
+  return t('auth.secureBadge')
+})
+
+const pageTitle = computed(() => {
+  if (resetSuccess.value) return t('email.resetSuccess')
+  if (!token.value) return t('email.invalidLink')
+  return t('email.resetPasswordTitle')
+})
+
+const pageSubtitle = computed(() => {
+  if (resetSuccess.value) return t('email.resetSuccessHint')
+  if (!token.value) return t('email.invalidResetLinkHint')
+  return t('email.resetPasswordHint')
+})
+
 const passwordsMatch = computed(() => newPassword.value === confirmPassword.value)
 
 const canSubmit = computed(() => {
@@ -160,6 +187,15 @@ const canSubmit = computed(() => {
     passwordStrengthResult.value.level !== 'weak'
   )
 })
+
+function handleBack() {
+  if (window.history.length > 1) {
+    router.back()
+    return
+  }
+
+  void router.replace('/login')
+}
 
 async function handleReset() {
   if (!canSubmit.value) return
@@ -208,19 +244,9 @@ onUnmounted(() => {
   justify-items: stretch;
 }
 
-.auth-badge {
-  justify-self: start;
-}
-
-.status-icon,
-.auth-title,
-.auth-subtitle {
+.status-icon {
   justify-self: center;
   text-align: center;
-}
-
-.auth-subtitle {
-  margin: 0;
 }
 
 .field-error {
