@@ -58,6 +58,28 @@ describe('googleAuthService', () => {
     expect(result).toEqual({ status: 'blocked' })
   })
 
+  it('opens Google auth through the site proxy instead of the API origin', () => {
+    const popup = {
+      closed: false,
+      close: vi.fn(),
+      focus: vi.fn(),
+    } as unknown as Window
+
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(popup)
+
+    openGoogleAuthPopup('login', '/schedule')
+
+    expect(openSpy).toHaveBeenCalledWith(
+      expect.stringMatching(
+        new RegExp(
+          `^${window.location.origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/api/auth/google/start\\?`
+        )
+      ),
+      'momi-google-auth',
+      expect.any(String)
+    )
+  })
+
   it('prefers popup on desktop-like environments', () => {
     expect(prefersGoogleAuthPopup()).toBe(true)
   })

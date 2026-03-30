@@ -42,6 +42,7 @@ const GOOGLE_AUTH_REQUEST_STORAGE_KEY = 'momi_google_auth_request'
 const GOOGLE_AUTH_POPUP_NAME = 'momi-google-auth'
 const GOOGLE_AUTH_POPUP_WIDTH = 34
 const GOOGLE_AUTH_POPUP_HEIGHT = 42
+const GOOGLE_AUTH_START_PATH = '/api/auth/google/start'
 
 function writePendingGoogleAuthRequest(request: PendingGoogleAuthRequest): void {
   try {
@@ -96,7 +97,7 @@ export function clearPendingGoogleAuthRequest(): void {
 }
 
 function buildGoogleStartUrl(intent: GoogleAuthIntent, returnTo: string): string {
-  const url = new URL(`${API_AUTH_URL}/auth/google/start`, window.location.origin)
+  const url = new URL(GOOGLE_AUTH_START_PATH, window.location.origin)
   url.searchParams.set('intent', intent)
   url.searchParams.set('return_to', returnTo)
   return url.toString()
