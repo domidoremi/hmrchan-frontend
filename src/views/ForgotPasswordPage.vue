@@ -1,144 +1,118 @@
 <template>
   <div class="auth-page auth-page--forgot">
-    <div class="auth-book" :class="{ 'auth-book--sent': emailSent }">
-      <section class="auth-visual" aria-hidden="true">
-        <AuthVisualScene
-          :title="$t('email.forgotPasswordTitle')"
-          :subtitle="emailSent ? $t('email.resetEmailSent') : $t('email.forgotPasswordHint')"
-          :mood="visualMood"
-          :show-copy="false"
-          scene-kind="forgot"
-        />
-      </section>
+    <AuthEntryShell
+      :title="emailSent ? $t('email.resetEmailSent') : $t('email.forgotPasswordTitle')"
+      :subtitle="
+        emailSent
+          ? $t('email.resetEmailSentHint', { email: maskedEmail })
+          : $t('email.forgotPasswordHint')
+      "
+      :show-tabs="false"
+      @back="handleBack"
+    >
+      <template #eyebrow>
+        <span class="auth-badge">
+          <span class="auth-badge-dot" aria-hidden="true" />
+          {{ emailSent ? $t('email.resetEmailSent') : $t('auth.secureBadge') }}
+        </span>
+      </template>
 
-      <section class="auth-panel">
-        <div class="auth-panel-inner">
-          <!-- Success state: email sent -->
-          <template v-if="emailSent">
-            <div class="status-icon status-icon--success">
-              <Mail :size="40" />
-            </div>
-            <h1 class="auth-title">{{ $t('email.resetEmailSent') }}</h1>
-            <p class="auth-subtitle">
-              {{ $t('email.resetEmailSentHint', { email: maskedEmail }) }}
-            </p>
-            <div class="action-group">
-              <Button
-                variant="ghost"
-                full-width
-                :disabled="resendCooldown > 0"
-                @click="handleSubmit"
-              >
-                {{
-                  resendCooldown > 0
-                    ? $t('email.resendCooldown', { seconds: resendCooldown })
-                    : $t('email.resend')
-                }}
-              </Button>
-              <RouterLink
-                to="/login"
-                class="auth-link page-control-btn page-control-btn--compact"
-                @click="handleNavigateToLogin"
-              >
-                {{ $t('email.backToLogin') }}
-              </RouterLink>
-            </div>
-            <div v-if="showTurnstileChallenge" class="turnstile-block">
-              <div class="turnstile-header">
-                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-              </div>
-              <TurnstileWidget
-                ref="turnstileRef"
-                :site-key="turnstileSiteKey"
-                action="forgot-password"
-                @verify="handleTurnstileVerify"
-                @expire="handleTurnstileExpire"
-                @error="handleTurnstileError"
-              />
-            </div>
-          </template>
-
-          <!-- Form state -->
-          <template v-else>
-            <div class="auth-topline">
-              <div class="auth-header">
-                <button
-                  type="button"
-                  class="back-btn page-control-btn page-control-btn--square"
-                  :aria-label="$t('common.back')"
-                  @click="handleBackWithMood"
-                >
-                  <ArrowLeft :size="18" />
-                </button>
-              </div>
-              <div class="auth-headings">
-                <h1 class="auth-title">{{ $t('email.forgotPasswordTitle') }}</h1>
-                <p class="auth-subtitle">{{ $t('email.forgotPasswordHint') }}</p>
-              </div>
-            </div>
-
-            <form class="auth-form" @submit.prevent="handleSubmit">
-              <div class="form-group">
-                <label for="email">{{ $t('auth.email') }}</label>
-                <Input
-                  id="email"
-                  v-model="email"
-                  type="email"
-                  :placeholder="$t('email.emailPlaceholder')"
-                  autocomplete="email"
-                  required
-                  @focus="handleTypingFocus"
-                  @blur="handleFieldBlur"
-                />
-              </div>
-
-              <div v-if="showTurnstileChallenge" class="turnstile-block">
-                <div class="turnstile-header">
-                  <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                  <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-                </div>
-                <TurnstileWidget
-                  ref="turnstileRef"
-                  :site-key="turnstileSiteKey"
-                  action="forgot-password"
-                  @verify="handleTurnstileVerify"
-                  @expire="handleTurnstileExpire"
-                  @error="handleTurnstileError"
-                />
-              </div>
-
-              <Button type="submit" :loading="isLoading" full-width>
-                {{ $t('email.sendResetLink') }}
-              </Button>
-            </form>
-
-            <p class="auth-footer">
-              {{ $t('email.rememberPassword') }}
-              <RouterLink to="/login" @click="handleNavigateToLogin">{{
-                $t('nav.login')
-              }}</RouterLink>
-            </p>
-          </template>
+      <div v-if="emailSent" class="auth-form">
+        <div class="auth-card auth-card--stack auth-status-card">
+          <div class="status-icon status-icon--success">
+            <Mail :size="24" />
+          </div>
+          <p class="auth-helper">{{ $t('email.resetEmailSentHint', { email: maskedEmail }) }}</p>
+          <div class="action-group">
+            <Button variant="ghost" full-width :disabled="resendCooldown > 0" @click="handleSubmit">
+              {{
+                resendCooldown > 0
+                  ? $t('email.resendCooldown', { seconds: resendCooldown })
+                  : $t('email.resend')
+              }}
+            </Button>
+            <RouterLink to="/login" class="auth-link">
+              {{ $t('email.backToLogin') }}
+            </RouterLink>
+          </div>
         </div>
-      </section>
-    </div>
+
+        <div v-if="showTurnstileChallenge" class="turnstile-block">
+          <div class="turnstile-header">
+            <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+            <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+          </div>
+          <TurnstileWidget
+            ref="turnstileRef"
+            :site-key="turnstileSiteKey"
+            action="forgot-password"
+            @verify="handleTurnstileVerify"
+            @expire="handleTurnstileExpire"
+            @error="handleTurnstileError"
+          />
+        </div>
+      </div>
+
+      <form v-else class="auth-form" @submit.prevent="handleSubmit">
+        <div class="auth-card auth-card--stack">
+          <div class="form-group">
+            <label for="email">{{ $t('auth.email') }}</label>
+            <Input
+              id="email"
+              v-model="email"
+              type="email"
+              :placeholder="$t('email.emailPlaceholder')"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          <div v-if="showTurnstileChallenge" class="turnstile-block">
+            <div class="turnstile-header">
+              <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+              <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+            </div>
+            <TurnstileWidget
+              ref="turnstileRef"
+              :site-key="turnstileSiteKey"
+              action="forgot-password"
+              @verify="handleTurnstileVerify"
+              @expire="handleTurnstileExpire"
+              @error="handleTurnstileError"
+            />
+          </div>
+
+          <div class="action-group">
+            <Button type="submit" :loading="isLoading" full-width>
+              {{ $t('email.sendResetLink') }}
+            </Button>
+          </div>
+        </div>
+      </form>
+
+      <template #footer>
+        <p class="auth-footer">
+          {{ $t('email.rememberPassword') }}
+          <RouterLink to="/login">{{ $t('nav.login') }}</RouterLink>
+        </p>
+      </template>
+    </AuthEntryShell>
   </div>
 </template>
 
 <script setup lang="ts">
 defineOptions({ name: 'ForgotPasswordPage' })
 
-import { computed, onMounted, ref, onUnmounted, useTemplateRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Mail } from 'lucide-vue-next'
+import { Mail } from 'lucide-vue-next'
 import { authService, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
-import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
+import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
 
@@ -150,9 +124,6 @@ const email = ref('')
 const isLoading = ref(false)
 const emailSent = ref(false)
 const resendCooldown = ref(0)
-type VisualMood = 'idle' | 'typing' | 'dodge' | 'submitting' | 'success'
-const visualMood = ref<VisualMood>('idle')
-let moodTimer: ReturnType<typeof setTimeout> | null = null
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
 
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
@@ -167,32 +138,6 @@ const showTurnstileChallenge = computed(
 
 const maskedEmail = ref('')
 
-function setVisualMood(next: VisualMood, holdMs = 0) {
-  if (moodTimer) {
-    clearTimeout(moodTimer)
-    moodTimer = null
-  }
-
-  visualMood.value = next
-
-  if (holdMs > 0) {
-    moodTimer = setTimeout(() => {
-      visualMood.value = 'idle'
-      moodTimer = null
-    }, holdMs)
-  }
-}
-
-function handleTypingFocus() {
-  if (visualMood.value === 'submitting') return
-  setVisualMood('typing')
-}
-
-function handleFieldBlur() {
-  if (visualMood.value === 'submitting') return
-  setVisualMood('idle')
-}
-
 function maskEmail(raw: string): string {
   const parts = raw.split('@')
   const local = parts[0] ?? ''
@@ -206,7 +151,7 @@ function startCooldown() {
   resendCooldown.value = 60
   if (cooldownTimer) clearInterval(cooldownTimer)
   cooldownTimer = setInterval(() => {
-    resendCooldown.value--
+    resendCooldown.value -= 1
     if (resendCooldown.value <= 0 && cooldownTimer) {
       clearInterval(cooldownTimer)
       cooldownTimer = null
@@ -214,46 +159,35 @@ function startCooldown() {
   }, 1000)
 }
 
-onUnmounted(() => {
-  if (cooldownTimer) {
-    clearInterval(cooldownTimer)
-    cooldownTimer = null
-  }
-  if (moodTimer) {
-    clearTimeout(moodTimer)
-    moodTimer = null
-  }
-})
-
 onMounted(() => {
   void import('@/views/LoginPage.vue').catch(() => {})
   void import('@/views/RegisterPage.vue').catch(() => {})
 })
 
-function handleBackWithMood() {
-  setVisualMood('dodge', 460)
+onUnmounted(() => {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
+})
+
+function handleBack() {
   if (window.history.length > 1) {
     router.back()
-  } else {
-    router.replace('/login')
+    return
   }
-}
 
-function handleNavigateToLogin() {
-  setVisualMood('submitting', 580)
+  void router.replace('/login')
 }
 
 async function handleSubmit() {
-  setVisualMood('submitting')
   if (!email.value) {
     toastStore.warning(t('auth.emailRequired'))
-    setVisualMood('typing', 900)
     return
   }
 
   if (showTurnstileChallenge.value && !turnstileToken.value) {
     toastStore.warning(t('auth.error.turnstileRequired'))
-    setVisualMood('typing', 900)
     return
   }
 
@@ -268,34 +202,30 @@ async function handleSubmit() {
     emailSent.value = true
     requiresTurnstileChallenge.value = false
     turnstileToken.value = null
-    setVisualMood('success', 1200)
     startCooldown()
-  } catch (err) {
-    if (err instanceof ApiError) {
-      if (isTurnstileRequiredError(err) && turnstileEnabled.value) {
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (isTurnstileRequiredError(error) && turnstileEnabled.value) {
         requiresTurnstileChallenge.value = true
         turnstileToken.value = null
         turnstileRef.value?.reset()
         toastStore.warning(t('auth.error.turnstileRequired'))
-        setVisualMood('typing', 900)
         return
       }
-      // For security, still show success to avoid email enumeration
-      if (err.status === 404 || err.status === 422) {
+
+      if (error.status === 404 || error.status === 422) {
         maskedEmail.value = maskEmail(email.value)
         emailSent.value = true
         requiresTurnstileChallenge.value = false
         turnstileToken.value = null
-        setVisualMood('success', 1200)
         startCooldown()
       } else {
-        toastStore.error(err.message)
-        setVisualMood('typing', 1200)
+        toastStore.error(error.message)
       }
     } else {
       toastStore.error(t('auth.error.unknown'))
-      setVisualMood('typing', 1200)
     }
+
     turnstileToken.value = null
     turnstileRef.value?.reset()
   } finally {
@@ -306,19 +236,23 @@ async function handleSubmit() {
 function handleTurnstileVerify(token: string) {
   requiresTurnstileChallenge.value = true
   turnstileToken.value = token
-  setVisualMood('typing', 500)
 }
 
 function handleTurnstileExpire() {
   requiresTurnstileChallenge.value = true
   turnstileToken.value = null
-  setVisualMood('typing', 500)
 }
 
 function handleTurnstileError(error?: Error) {
   requiresTurnstileChallenge.value = true
   turnstileToken.value = null
   toastStore.error(t(getTurnstileErrorMessageKey(error)))
-  setVisualMood('dodge', 900)
 }
 </script>
+
+<style scoped>
+.auth-status-card {
+  justify-items: center;
+  text-align: center;
+}
+</style>

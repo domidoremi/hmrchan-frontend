@@ -1,177 +1,180 @@
 <template>
   <div class="auth-page auth-page--login">
-    <div class="auth-book auth-book--two-factor">
-      <section class="auth-visual" aria-hidden="true">
-        <AuthVisualScene
-          :title="pageTitle"
-          :subtitle="pageSubtitle"
-          :mood="visualMood"
-          :show-copy="false"
-          scene-kind="login"
-        />
-      </section>
+    <AuthEntryShell
+      :title="pageTitle"
+      :subtitle="pageSubtitle"
+      :show-back="!isPopupBridgeMode"
+      :show-tabs="false"
+      wide
+      @back="returnToLogin"
+    >
+      <template #eyebrow>
+        <span class="auth-badge">
+          <span class="auth-badge-dot" aria-hidden="true" />
+          {{ $t('auth.googleLoginButton') }}
+        </span>
+      </template>
 
-      <section class="auth-panel">
-        <div class="auth-panel-inner auth-panel-inner--callback">
-          <div class="auth-headings auth-headings--callback">
-            <span class="auth-badge">
-              <span class="auth-badge-dot" aria-hidden="true" />
-              {{ $t('auth.googleLoginButton') }}
-            </span>
-            <h1 class="auth-title">{{ pageTitle }}</h1>
-            <p class="auth-subtitle">{{ pageSubtitle }}</p>
+      <template v-if="isPopupBridgeMode">
+        <div class="auth-card auth-card--stack auth-callback-card">
+          <div class="status-icon status-icon--loading auth-callback-spinner" aria-hidden="true" />
+          <p class="auth-helper">
+            {{
+              popupBridgeState === 'manual-close'
+                ? $t('auth.callback.popupManualCloseHint')
+                : $t('auth.callback.popupHint')
+            }}
+          </p>
+
+          <div v-if="popupBridgeState === 'manual-close'" class="action-group">
+            <Button type="button" full-width @click="closePopupWindow">
+              {{ $t('auth.callback.closeAction') }}
+            </Button>
           </div>
-
-          <Transition name="step-fade" mode="out-in">
-            <div
-              v-if="currentStep === 'loading'"
-              key="loading"
-              class="auth-card auth-card--stack glass-surface--base auth-callback-card"
-            >
-              <div
-                class="status-icon status-icon--loading auth-callback-spinner"
-                aria-hidden="true"
-              />
-              <p class="auth-helper">{{ $t('auth.callback.loadingHint') }}</p>
-            </div>
-
-            <form
-              v-else-if="currentStep === 'link-required'"
-              key="link"
-              class="auth-form"
-              @submit.prevent="handleLinkVerificationSubmit"
-            >
-              <div class="auth-card auth-card--stack glass-surface--base">
-                <div class="code-sent-banner">
-                  <Mail :size="16" />
-                  <span>{{ $t('auth.callback.linkEmailHint', { email: maskedEmail }) }}</span>
-                </div>
-
-                <p class="auth-helper">{{ $t('auth.callback.linkHint') }}</p>
-                <p v-if="linkExpiresIn" class="auth-helper">
-                  {{ $t('auth.callback.linkExpiresIn', { seconds: linkExpiresIn }) }}
-                </p>
-
-                <div class="form-group">
-                  <label for="link-code">{{ $t('auth.verificationCode') }}</label>
-                  <Input
-                    id="link-code"
-                    v-model="linkVerificationCode"
-                    type="text"
-                    inputmode="numeric"
-                    maxlength="8"
-                    :placeholder="$t('auth.riskVerificationCodePlaceholder')"
-                    autocomplete="one-time-code"
-                  />
-                </div>
-
-                <p v-if="linkError" class="field-error">{{ linkError }}</p>
-
-                <div class="action-group">
-                  <Button type="submit" full-width :loading="isLoading">
-                    {{ $t('auth.callback.linkAction') }}
-                  </Button>
-                  <Button type="button" variant="ghost" full-width @click="returnToLogin">
-                    {{ $t('auth.backToLogin') }}
-                  </Button>
-                </div>
-              </div>
-            </form>
-
-            <form
-              v-else-if="currentStep === 'risk-verification'"
-              key="risk"
-              class="auth-form"
-              @submit.prevent="handleRiskVerificationSubmit"
-            >
-              <div class="auth-card auth-card--stack glass-surface--base">
-                <p class="auth-helper">{{ $t('auth.riskVerificationHint') }}</p>
-                <p v-if="riskMessage" class="auth-helper auth-helper--emphasis">
-                  {{ riskMessage }}
-                </p>
-                <p v-if="riskExpiresIn" class="auth-helper">
-                  {{ $t('auth.riskVerificationExpiresIn', { seconds: riskExpiresIn }) }}
-                </p>
-
-                <div class="form-group">
-                  <label for="callback-risk-code">{{ $t('auth.riskVerificationCode') }}</label>
-                  <Input
-                    id="callback-risk-code"
-                    v-model="riskVerificationCode"
-                    type="text"
-                    inputmode="numeric"
-                    maxlength="8"
-                    :placeholder="$t('auth.riskVerificationCodePlaceholder')"
-                    autocomplete="one-time-code"
-                  />
-                </div>
-
-                <p v-if="riskError" class="field-error">{{ riskError }}</p>
-
-                <div v-if="turnstileEnabled" class="turnstile-block">
-                  <div class="turnstile-header">
-                    <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                    <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-                  </div>
-                  <TurnstileWidget
-                    ref="riskTurnstileRef"
-                    :site-key="turnstileSiteKey"
-                    action="risk-login"
-                    @verify="handleRiskTurnstileVerify"
-                    @expire="handleRiskTurnstileExpire"
-                    @error="handleTurnstileError"
-                  />
-                </div>
-
-                <div class="action-group">
-                  <Button type="submit" full-width :loading="isLoading">
-                    {{ $t('auth.verifyButton') }}
-                  </Button>
-                  <Button type="button" variant="ghost" full-width @click="returnToLogin">
-                    {{ $t('auth.backToLogin') }}
-                  </Button>
-                </div>
-              </div>
-            </form>
-
-            <div v-else-if="currentStep === 'mfa'" key="mfa" class="auth-form">
-              <AuthMfaStep
-                :pending-mfa-login-token="pendingMfaLoginToken"
-                :methods="mfaMethods"
-                :message="mfaMessage"
-                :error-message="mfaError"
-                @resolved="handleMfaResolved"
-              />
-
-              <button type="button" class="auth-link-button auth-2fa-back" @click="returnToLogin">
-                {{ $t('auth.backToLogin') }}
-              </button>
-            </div>
-
-            <div
-              v-else
-              key="error"
-              class="auth-card auth-card--stack glass-surface--base auth-callback-card"
-            >
-              <div class="status-icon status-icon--error" aria-hidden="true">
-                <AlertCircle :size="28" />
-              </div>
-              <p class="field-error">{{ errorMessage }}</p>
-              <p v-if="errorDetail" class="auth-helper">{{ errorDetail }}</p>
-
-              <div class="action-group">
-                <Button type="button" full-width @click="retryGoogleAuth">
-                  {{ $t('auth.callback.retryAction') }}
-                </Button>
-                <Button type="button" variant="ghost" full-width @click="returnToLogin">
-                  {{ $t('auth.backToLogin') }}
-                </Button>
-              </div>
-            </div>
-          </Transition>
         </div>
-      </section>
-    </div>
+      </template>
+
+      <Transition v-else name="step-fade" mode="out-in">
+        <div
+          v-if="currentStep === 'loading'"
+          key="loading"
+          class="auth-card auth-card--stack auth-callback-card"
+        >
+          <div class="status-icon status-icon--loading auth-callback-spinner" aria-hidden="true" />
+          <p class="auth-helper">{{ $t('auth.callback.loadingHint') }}</p>
+        </div>
+
+        <form
+          v-else-if="currentStep === 'link-required'"
+          key="link"
+          class="auth-form"
+          @submit.prevent="handleLinkVerificationSubmit"
+        >
+          <div class="auth-card auth-card--stack">
+            <div class="code-sent-banner">
+              <Mail :size="16" />
+              <span>{{ $t('auth.callback.linkEmailHint', { email: maskedEmail }) }}</span>
+            </div>
+
+            <p class="auth-helper">{{ $t('auth.callback.linkHint') }}</p>
+            <p v-if="linkExpiresIn" class="auth-helper">
+              {{ $t('auth.callback.linkExpiresIn', { seconds: linkExpiresIn }) }}
+            </p>
+
+            <div class="form-group">
+              <label for="link-code">{{ $t('auth.verificationCode') }}</label>
+              <Input
+                id="link-code"
+                v-model="linkVerificationCode"
+                type="text"
+                inputmode="numeric"
+                maxlength="8"
+                :placeholder="$t('auth.riskVerificationCodePlaceholder')"
+                autocomplete="one-time-code"
+              />
+            </div>
+
+            <p v-if="linkError" class="field-error">{{ linkError }}</p>
+
+            <div class="action-group">
+              <Button type="submit" full-width :loading="isLoading">
+                {{ $t('auth.callback.linkAction') }}
+              </Button>
+              <Button type="button" variant="ghost" full-width @click="returnToLogin">
+                {{ $t('auth.backToLogin') }}
+              </Button>
+            </div>
+          </div>
+        </form>
+
+        <form
+          v-else-if="currentStep === 'risk-verification'"
+          key="risk"
+          class="auth-form"
+          @submit.prevent="handleRiskVerificationSubmit"
+        >
+          <div class="auth-card auth-card--stack">
+            <p class="auth-helper">{{ $t('auth.riskVerificationHint') }}</p>
+            <p v-if="riskMessage" class="auth-helper auth-helper--emphasis">
+              {{ riskMessage }}
+            </p>
+            <p v-if="riskExpiresIn" class="auth-helper">
+              {{ $t('auth.riskVerificationExpiresIn', { seconds: riskExpiresIn }) }}
+            </p>
+
+            <div class="form-group">
+              <label for="callback-risk-code">{{ $t('auth.riskVerificationCode') }}</label>
+              <Input
+                id="callback-risk-code"
+                v-model="riskVerificationCode"
+                type="text"
+                inputmode="numeric"
+                maxlength="8"
+                :placeholder="$t('auth.riskVerificationCodePlaceholder')"
+                autocomplete="one-time-code"
+              />
+            </div>
+
+            <p v-if="riskError" class="field-error">{{ riskError }}</p>
+
+            <div v-if="turnstileEnabled" class="turnstile-block">
+              <div class="turnstile-header">
+                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+              </div>
+              <TurnstileWidget
+                ref="riskTurnstileRef"
+                :site-key="turnstileSiteKey"
+                action="risk-login"
+                @verify="handleRiskTurnstileVerify"
+                @expire="handleRiskTurnstileExpire"
+                @error="handleTurnstileError"
+              />
+            </div>
+
+            <div class="action-group">
+              <Button type="submit" full-width :loading="isLoading">
+                {{ $t('auth.verifyButton') }}
+              </Button>
+              <Button type="button" variant="ghost" full-width @click="returnToLogin">
+                {{ $t('auth.backToLogin') }}
+              </Button>
+            </div>
+          </div>
+        </form>
+
+        <div v-else-if="currentStep === 'mfa'" key="mfa" class="auth-form">
+          <AuthMfaStep
+            :pending-mfa-login-token="pendingMfaLoginToken"
+            :methods="mfaMethods"
+            :message="mfaMessage"
+            :error-message="mfaError"
+            @resolved="handleMfaResolved"
+          />
+
+          <button type="button" class="auth-link-button auth-2fa-back" @click="returnToLogin">
+            {{ $t('auth.backToLogin') }}
+          </button>
+        </div>
+
+        <div v-else key="error" class="auth-card auth-card--stack auth-callback-card">
+          <div class="status-icon status-icon--error" aria-hidden="true">
+            <AlertCircle :size="28" />
+          </div>
+          <p class="field-error">{{ errorMessage }}</p>
+          <p v-if="errorDetail" class="auth-helper">{{ errorDetail }}</p>
+
+          <div class="action-group">
+            <Button type="button" full-width @click="retryGoogleAuth">
+              {{ $t('auth.callback.retryAction') }}
+            </Button>
+            <Button type="button" variant="ghost" full-width @click="returnToLogin">
+              {{ $t('auth.backToLogin') }}
+            </Button>
+          </div>
+        </div>
+      </Transition>
+    </AuthEntryShell>
   </div>
 </template>
 
@@ -185,18 +188,23 @@ import { AlertCircle, Mail } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
-import { getPendingGoogleAuthRequest } from '@/services/googleAuthService'
+import {
+  getPendingGoogleAuthRequest,
+  startGoogleAuthRedirect,
+  type GooglePopupMessage,
+} from '@/services/googleAuthService'
 import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
+import { safePostMessage } from '@/utils/security'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
-import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
 import AuthMfaStep from '@/components/auth/AuthMfaStep.vue'
+import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
 
 type CallbackStep = 'loading' | 'link-required' | 'risk-verification' | 'mfa' | 'error'
-type VisualMood = 'idle' | 'typing' | 'dodge' | 'submitting' | 'success'
+type PopupBridgeState = 'posting' | 'manual-close'
 
 const route = useRoute()
 const router = useRouter()
@@ -207,8 +215,9 @@ const { isLoading } = storeToRefs(authStore)
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 
 const pendingRequest = getPendingGoogleAuthRequest()
+const isPopupBridgeMode = ref(false)
+const popupBridgeState = ref<PopupBridgeState>('posting')
 const currentStep = ref<CallbackStep>('loading')
-const visualMood = ref<VisualMood>('submitting')
 const nextRedirectTarget = ref(
   resolveAuthRedirectTarget(
     typeof route.query['redirect'] === 'string' ? route.query['redirect'] : null,
@@ -240,6 +249,10 @@ const errorMessage = ref('')
 const errorDetail = ref('')
 
 const pageTitle = computed(() => {
+  if (isPopupBridgeMode.value) {
+    return t('auth.callback.popupTitle')
+  }
+
   switch (currentStep.value) {
     case 'link-required':
       return t('auth.callback.linkTitle')
@@ -255,6 +268,10 @@ const pageTitle = computed(() => {
 })
 
 const pageSubtitle = computed(() => {
+  if (isPopupBridgeMode.value) {
+    return t('auth.callback.popupSubtitle')
+  }
+
   switch (currentStep.value) {
     case 'link-required':
       return t('auth.callback.linkHint')
@@ -293,7 +310,6 @@ function handleRiskTurnstileExpire() {
 
 function handleTurnstileError(error?: Error) {
   toastStore.error(t(getTurnstileErrorMessageKey(error)))
-  visualMood.value = 'dodge'
 }
 
 function clearInlineErrors() {
@@ -305,7 +321,6 @@ function clearInlineErrors() {
 }
 
 async function finalizeSuccessfulLogin(result: Extract<AuthFlowResult, { status: 'success' }>) {
-  visualMood.value = 'success'
   toastStore.success(t('auth.loginSuccess'))
   await router.replace(resolveAuthRedirectTarget(result.redirectTo, nextRedirectTarget.value))
 }
@@ -317,7 +332,6 @@ async function applyCallbackResult(result: AuthFlowResult) {
       return
     case 'link-required':
       currentStep.value = 'link-required'
-      visualMood.value = 'typing'
       pendingGoogleLinkToken.value = result.pendingGoogleLinkToken
       maskedEmail.value = result.maskedEmail
       linkExpiresIn.value = result.expiresIn ?? null
@@ -330,7 +344,6 @@ async function applyCallbackResult(result: AuthFlowResult) {
       return
     case 'risk-verification':
       currentStep.value = 'risk-verification'
-      visualMood.value = 'typing'
       riskPendingToken.value = result.pendingToken
       riskVerificationCode.value = ''
       riskMessage.value = result.message || ''
@@ -344,7 +357,6 @@ async function applyCallbackResult(result: AuthFlowResult) {
       return
     case 'mfa':
       currentStep.value = 'mfa'
-      visualMood.value = 'typing'
       pendingMfaLoginToken.value = result.pendingMfaLoginToken
       mfaMethods.value = result.methods
       mfaMessage.value = result.message || ''
@@ -354,22 +366,19 @@ async function applyCallbackResult(result: AuthFlowResult) {
         nextRedirectTarget.value
       )
       return
-    case 'error': {
-      const translated = t(result.error)
+    case 'error':
       if (currentStep.value === 'link-required') {
-        linkError.value = translated
+        linkError.value = t(result.error)
       } else if (currentStep.value === 'risk-verification') {
-        riskError.value = translated
+        riskError.value = t(result.error)
       } else if (currentStep.value === 'mfa') {
-        mfaError.value = translated
+        mfaError.value = t(result.error)
       } else {
         currentStep.value = 'error'
-        errorMessage.value = translated
+        errorMessage.value = t(result.error)
         errorDetail.value = result.detail || ''
       }
-      visualMood.value = 'dodge'
       return
-    }
     default:
       return
   }
@@ -384,26 +393,21 @@ function returnToLogin() {
   void router.replace(`/login?redirect=${encodeURIComponent(redirect)}`)
 }
 
+function closePopupWindow() {
+  window.close()
+}
+
 async function retryGoogleAuth() {
-  visualMood.value = 'submitting'
   const intent = pendingRequest?.intent || 'login'
   const redirect = resolveAuthRedirectTarget(pendingRequest?.redirectTo, nextRedirectTarget.value)
-  const result = await authStore.startGoogleAuth(intent, redirect)
-  if (result.status === 'error') {
-    currentStep.value = 'error'
-    errorMessage.value = t(result.error)
-    errorDetail.value = ''
-    visualMood.value = 'dodge'
-  }
+  startGoogleAuthRedirect(intent, redirect)
 }
 
 async function handleLinkVerificationSubmit() {
   clearInlineErrors()
-  visualMood.value = 'submitting'
 
   if (!linkVerificationCode.value.trim()) {
     linkError.value = t('auth.error.codeRequired')
-    visualMood.value = 'typing'
     return
   }
 
@@ -416,17 +420,14 @@ async function handleLinkVerificationSubmit() {
 
 async function handleRiskVerificationSubmit() {
   clearInlineErrors()
-  visualMood.value = 'submitting'
 
   if (!riskVerificationCode.value.trim()) {
     riskError.value = t('auth.error.codeRequired')
-    visualMood.value = 'typing'
     return
   }
 
   if (!isTurnstileTokenFresh(riskTurnstileToken.value, riskTurnstileIssuedAt.value)) {
     riskError.value = t('auth.error.turnstileRequired')
-    visualMood.value = 'typing'
     return
   }
 
@@ -445,10 +446,57 @@ async function handleMfaResolved(result: AuthFlowResult) {
   await applyCallbackResult(result)
 }
 
+function buildPopupBridgeMessage(): GooglePopupMessage {
+  const handoffCode =
+    typeof route.query['handoff_code'] === 'string' ? route.query['handoff_code'].trim() : ''
+  const error = typeof route.query['error'] === 'string' ? route.query['error'].trim() : ''
+
+  if (handoffCode) {
+    return {
+      type: 'google-auth-result',
+      status: 'success',
+      handoffCode,
+      redirectTo: pendingRequest?.redirectTo,
+      intent: pendingRequest?.intent,
+    }
+  }
+
+  return {
+    type: 'google-auth-result',
+    status: 'error',
+    error: error || 'missing_handoff_code',
+    redirectTo: pendingRequest?.redirectTo,
+    intent: pendingRequest?.intent,
+  }
+}
+
+function shouldUsePopupBridge(): boolean {
+  if (typeof window === 'undefined' || !window.opener) return false
+  return typeof route.query['handoff_code'] === 'string' || typeof route.query['error'] === 'string'
+}
+
+async function runPopupBridge(): Promise<boolean> {
+  if (!shouldUsePopupBridge()) return false
+
+  isPopupBridgeMode.value = true
+  popupBridgeState.value = 'posting'
+
+  safePostMessage(window.opener!, buildPopupBridgeMessage(), window.location.origin)
+
+  window.setTimeout(() => {
+    window.close()
+  }, 80)
+
+  window.setTimeout(() => {
+    popupBridgeState.value = 'manual-close'
+  }, 700)
+
+  return true
+}
+
 async function runInitialExchange() {
   clearInlineErrors()
   currentStep.value = 'loading'
-  visualMood.value = 'submitting'
 
   const handoffCode =
     typeof route.query['handoff_code'] === 'string' ? route.query['handoff_code'] : ''
@@ -459,8 +507,6 @@ async function runInitialExchange() {
         ? 'auth.error.googleAccessDenied'
         : 'auth.error.callbackMissingHandoffCode'
     )
-    errorDetail.value = ''
-    visualMood.value = 'dodge'
     return
   }
 
@@ -468,21 +514,16 @@ async function runInitialExchange() {
   await applyCallbackResult(result)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (await runPopupBridge()) {
+    return
+  }
+
   void runInitialExchange()
 })
 </script>
 
 <style scoped>
-.auth-panel-inner--callback {
-  justify-content: center;
-}
-
-.auth-headings--callback {
-  display: grid;
-  gap: 0.8rem;
-}
-
 .auth-callback-card {
   justify-items: center;
   text-align: center;
@@ -490,16 +531,12 @@ onMounted(() => {
 
 .auth-callback-spinner::before {
   content: '';
-  width: 2rem;
-  height: 2rem;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border: 0.18rem solid color-mix(in srgb, var(--auth-form-border) 80%, transparent);
+  border-top-color: var(--auth-accent);
   border-radius: 999rem;
-  border: 0.18rem solid rgba(37, 99, 235, 0.18);
-  border-top-color: rgba(37, 99, 235, 0.94);
   animation: auth-callback-spin 0.9s linear infinite;
-}
-
-.auth-helper--emphasis {
-  color: var(--auth-text-strong);
 }
 
 @keyframes auth-callback-spin {
