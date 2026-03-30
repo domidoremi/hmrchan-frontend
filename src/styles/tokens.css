@@ -114,6 +114,16 @@
   --color-text-tertiary: var(--color-gray-400);
   --color-text-inverse: var(--color-white);
   --color-on-primary: #ffffff;
+  --surface-minimal-canvas: color-mix(in srgb, var(--color-background) 92%, #ffffff 8%);
+  --surface-minimal-panel: var(--color-surface);
+  --surface-minimal-panel-strong: color-mix(in srgb, var(--color-surface) 94%, #ffffff 6%);
+  --surface-minimal-muted: color-mix(in srgb, var(--color-surface-variant) 78%, #ffffff 22%);
+  --surface-minimal-border: rgba(15, 23, 42, 0.08);
+  --surface-minimal-border-strong: rgba(15, 23, 42, 0.16);
+  --surface-minimal-text: var(--color-text-primary);
+  --surface-minimal-text-muted: var(--color-text-secondary);
+  --surface-minimal-text-soft: var(--color-text-tertiary);
+  --surface-minimal-accent: var(--color-primary);
 
   /* shadcn/ui style colors */
   --color-foreground: var(--color-gray-900);
@@ -474,6 +484,16 @@
   --color-text-muted: #94a3b8;
   --color-text-inverse: #ffffff;
   --color-on-primary: #ffffff;
+  --surface-minimal-canvas: color-mix(in srgb, var(--color-background) 92%, #ffffff 8%);
+  --surface-minimal-panel: #ffffff;
+  --surface-minimal-panel-strong: #ffffff;
+  --surface-minimal-muted: color-mix(in srgb, var(--color-surface-variant) 82%, #ffffff 18%);
+  --surface-minimal-border: rgba(37, 99, 235, 0.12);
+  --surface-minimal-border-strong: rgba(37, 99, 235, 0.2);
+  --surface-minimal-text: var(--color-text-primary);
+  --surface-minimal-text-muted: var(--color-text-secondary);
+  --surface-minimal-text-soft: var(--color-text-tertiary);
+  --surface-minimal-accent: #0f172a;
 
   /* shadcn/ui style colors */
   --color-foreground: #0f172a;
@@ -593,6 +613,16 @@
   /* 从 #9ca3af 提升到 #a3a3a3，确保在所有背景上满足 WCAG AA 4.5:1 对比度 */
   --color-text-muted: #71717a;
   --color-on-primary: #09090b;
+  --surface-minimal-canvas: #060810;
+  --surface-minimal-panel: #0c1017;
+  --surface-minimal-panel-strong: #121925;
+  --surface-minimal-muted: #141c27;
+  --surface-minimal-border: rgba(255, 255, 255, 0.08);
+  --surface-minimal-border-strong: rgba(255, 255, 255, 0.16);
+  --surface-minimal-text: #f8fafc;
+  --surface-minimal-text-muted: #cbd5e1;
+  --surface-minimal-text-soft: #94a3b8;
+  --surface-minimal-accent: #f8fafc;
 
   /* shadcn/ui style colors - dark mode */
   --color-foreground: #f8fafc;
