@@ -821,7 +821,7 @@
       "copyFailed": "予定リンクをコピーできませんでした",
       "shareFailed": "共有シートを開けませんでした",
       "backendNoticeTitle": "まだバックエンド対応が必要です",
-      "backendNoticeBody": "永続的なお気に入り、リマインダー登録、@予定 メンションはバックエンド API が必要です。",
+      "backendNoticeBody": "永続的なお気に入り、リマインダー登録、予定メンション機能はバックエンド API が必要です。",
       "eventPage": "イベントページ",
       "buyTicket": "チケット購入",
       "source": "ソース"

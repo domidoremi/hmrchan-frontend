@@ -8,6 +8,7 @@
           : $t('email.forgotPasswordHint')
       "
       :show-tabs="false"
+      split
       @back="handleBack"
     >
       <template #eyebrow>
@@ -46,6 +47,7 @@
             ref="turnstileRef"
             :site-key="turnstileSiteKey"
             action="forgot-password"
+            size="compact"
             @verify="handleTurnstileVerify"
             @expire="handleTurnstileExpire"
             @error="handleTurnstileError"
@@ -76,6 +78,7 @@
               ref="turnstileRef"
               :site-key="turnstileSiteKey"
               action="forgot-password"
+              size="compact"
               @verify="handleTurnstileVerify"
               @expire="handleTurnstileExpire"
               @error="handleTurnstileError"

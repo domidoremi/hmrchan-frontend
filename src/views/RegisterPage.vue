@@ -5,6 +5,7 @@
       :subtitle="pageSubtitle"
       active-tab="register"
       :redirect-to="redirectTo"
+      split
       @back="handleBack"
     >
       <template #eyebrow>
@@ -59,6 +60,7 @@
                 ref="turnstileRef"
                 :site-key="turnstileSiteKey"
                 action="register"
+                size="compact"
                 @verify="handleTurnstileVerify"
                 @expire="handleTurnstileExpire"
                 @error="handleTurnstileError"
@@ -217,6 +219,7 @@
                 ref="turnstileRef"
                 :site-key="turnstileSiteKey"
                 action="register"
+                size="compact"
                 @verify="handleTurnstileVerify"
                 @expire="handleTurnstileExpire"
                 @error="handleTurnstileError"
@@ -322,6 +325,7 @@
                 ref="riskTurnstileRef"
                 :site-key="turnstileSiteKey"
                 action="risk-login"
+                size="compact"
                 @verify="handleRiskTurnstileVerify"
                 @expire="handleRiskTurnstileExpire"
                 @error="handleTurnstileError"

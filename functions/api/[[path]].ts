@@ -205,6 +205,10 @@ function rewriteRedirectLocation(location: string, requestUrl: URL, apiBaseUrl: 
   return parsedLocation.toString()
 }
 
+function isRedirectStatus(status: number): boolean {
+  return status >= 300 && status < 400
+}
+
 export async function onRequest(context: CFPagesContext): Promise<Response> {
   const { request, env, params } = context
 
@@ -306,6 +310,15 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       const location = response.headers.get('Location')
       if (location) {
         responseHeaders.set('Location', rewriteRedirectLocation(location, url, apiBaseUrl))
+        responseHeaders.delete('content-length')
+        responseHeaders.delete('Content-Length')
+        responseHeaders.delete('content-type')
+        responseHeaders.delete('Content-Type')
+
+        return new Response(null, {
+          status: isRedirectStatus(response.status) ? response.status : 302,
+          headers: responseHeaders,
+        })
       }
     }
 

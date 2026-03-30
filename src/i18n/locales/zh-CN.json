@@ -821,7 +821,7 @@
       "copyFailed": "暂时无法复制日程链接",
       "shareFailed": "暂时无法打开分享面板",
       "backendNoticeTitle": "仍需后端支持",
-      "backendNoticeBody": "持久化收藏、提醒订阅和 @某个日程 的能力需要后端 API 配合后才能真正上线。",
+      "backendNoticeBody": "持久化收藏、提醒订阅和日程提及能力需要后端 API 配合后才能真正上线。",
       "eventPage": "活动页面",
       "buyTicket": "购票",
       "source": "来源"

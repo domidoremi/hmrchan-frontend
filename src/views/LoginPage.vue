@@ -5,6 +5,7 @@
       :subtitle="pageSubtitle"
       active-tab="login"
       :redirect-to="redirectTo"
+      split
       @back="handleBack"
     >
       <template #eyebrow>
@@ -69,6 +70,7 @@
                 ref="credentialsTurnstileRef"
                 :site-key="turnstileSiteKey"
                 action="login"
+                size="compact"
                 @verify="handleCredentialsTurnstileVerify"
                 @expire="handleCredentialsTurnstileExpire"
                 @error="handleTurnstileError"
@@ -250,6 +252,7 @@
                 ref="riskTurnstileRef"
                 :site-key="turnstileSiteKey"
                 action="risk-login"
+                size="compact"
                 @verify="handleRiskTurnstileVerify"
                 @expire="handleRiskTurnstileExpire"
                 @error="handleTurnstileError"

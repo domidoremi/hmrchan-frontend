@@ -1,13 +1,16 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import ForgotPasswordPage from '../ForgotPasswordPage.vue'
 import LoginPage from '../LoginPage.vue'
 import RegisterPage from '../RegisterPage.vue'
+import ResetPasswordPage from '../ResetPasswordPage.vue'
 
 const testState = vi.hoisted(() => ({
   route: { query: {} as Record<string, unknown> },
   routerReplace: vi.fn(),
   routerBack: vi.fn(),
+  routerPush: vi.fn(),
   authStore: {
     isAuthenticated: false,
     isLoading: false,
@@ -34,6 +37,10 @@ const testState = vi.hoisted(() => ({
       restoreAccount: vi.fn(),
     },
   },
+  turnstile: {
+    siteKey: '',
+    enabled: false,
+  },
 }))
 
 vi.mock('vue-router', () => ({
@@ -41,6 +48,7 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({
     replace: testState.routerReplace,
     back: testState.routerBack,
+    push: testState.routerPush,
   }),
   RouterLink: {
     template: '<a><slot /></a>',
@@ -95,8 +103,8 @@ vi.mock('@/api', () => ({
 
 vi.mock('@/composables/useTurnstileConfig', () => ({
   useTurnstileConfig: () => ({
-    turnstileSiteKey: '',
-    turnstileEnabled: false,
+    turnstileSiteKey: testState.turnstile.siteKey,
+    turnstileEnabled: testState.turnstile.enabled,
   }),
 }))
 
@@ -105,7 +113,10 @@ const globalConfig = {
     $t: (key: string) => key,
   },
   stubs: {
-    TurnstileWidget: true,
+    TurnstileWidget: {
+      props: ['size'],
+      template: '<div class="turnstile-widget-stub" :data-size="size" />',
+    },
     AuthMfaStep: true,
     EmailCodeInput: {
       emits: ['complete'],
@@ -119,6 +130,7 @@ describe('Auth entry pages', () => {
     testState.route.query = {}
     testState.routerReplace.mockReset()
     testState.routerBack.mockReset()
+    testState.routerPush.mockReset()
 
     testState.authStore.isAuthenticated = false
     testState.authStore.isLoading = false
@@ -147,6 +159,8 @@ describe('Auth entry pages', () => {
     testState.toastStore.success.mockReset()
     testState.toastStore.error.mockReset()
     testState.toastStore.warning.mockReset()
+    testState.turnstile.siteKey = ''
+    testState.turnstile.enabled = false
   })
 
   afterEach(() => {
@@ -154,14 +168,19 @@ describe('Auth entry pages', () => {
   })
 
   it('renders forgot password, tab navigation, and Google entry on the login page', () => {
+    testState.turnstile.siteKey = 'site-key'
+    testState.turnstile.enabled = true
+
     const wrapper = mount(LoginPage, {
       global: globalConfig,
     })
 
+    expect(wrapper.find('.auth-shell--split').exists()).toBe(true)
     expect(wrapper.find('.auth-tab-nav').exists()).toBe(true)
     expect(wrapper.text()).toContain('auth.forgotPassword')
     expect(wrapper.text()).toContain('auth.googleDivider')
     expect(wrapper.text()).toContain('auth.googleLoginButton')
+    expect(wrapper.find('.turnstile-widget-stub').attributes('data-size')).toBe('compact')
   })
 
   it('renders the shared shell and Google provider on the register page', () => {
@@ -169,10 +188,26 @@ describe('Auth entry pages', () => {
       global: globalConfig,
     })
 
+    expect(wrapper.find('.auth-shell--split').exists()).toBe(true)
     expect(wrapper.find('.auth-tab-nav').exists()).toBe(true)
     expect(wrapper.text()).toContain('auth.googleDivider')
     expect(wrapper.text()).toContain('auth.googleRegisterButton')
     expect(wrapper.text()).toContain('nav.login')
+  })
+
+  it('reuses the split auth shell on forgot and reset password pages', () => {
+    const forgotWrapper = mount(ForgotPasswordPage, {
+      global: globalConfig,
+    })
+
+    testState.route.query = { token: 'reset-token' }
+    const resetWrapper = mount(ResetPasswordPage, {
+      global: globalConfig,
+    })
+
+    expect(forgotWrapper.find('.auth-shell--split').exists()).toBe(true)
+    expect(resetWrapper.find('.auth-shell--split').exists()).toBe(true)
+    expect(resetWrapper.text()).toContain('email.resetPasswordButton')
   })
 
   it('completes Google popup auth on the login page without leaving the current tab', async () => {

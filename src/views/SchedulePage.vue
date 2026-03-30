@@ -1568,6 +1568,26 @@ onMounted(() => {
 }
 
 .planner-shell {
+  --planner-surface-radius: clamp(1rem, 1.6vw, 1.35rem);
+  --planner-surface-bg: color-mix(
+    in srgb,
+    var(--surface-minimal-panel, var(--color-surface)) 88%,
+    var(--surface-minimal-muted, var(--color-surface-variant)) 12%
+  );
+  --planner-surface-bg-strong: color-mix(
+    in srgb,
+    var(--surface-minimal-panel, var(--color-surface)) 72%,
+    var(--surface-minimal-muted, var(--color-surface-variant)) 28%
+  );
+  --planner-surface-border: color-mix(
+    in srgb,
+    var(--surface-minimal-border, var(--color-border)) 84%,
+    transparent
+  );
+  --planner-surface-border-strong: var(
+    --surface-minimal-border-strong,
+    var(--color-divider-strong)
+  );
   display: grid;
   gap: var(--spacing-4);
   padding: clamp(1rem, 2vw, 1.5rem);
@@ -1600,6 +1620,36 @@ onMounted(() => {
   color: var(--surface-paper-ink);
 }
 
+.planner-shell .page-control-btn,
+.planner-shell .paper-chip,
+.planner-week-day,
+.planner-insight {
+  border-radius: var(--planner-surface-radius);
+  border-color: var(--planner-surface-border);
+  background: var(--planner-surface-bg);
+  box-shadow: none;
+}
+
+.planner-shell .page-control-btn {
+  min-block-size: 2.25rem;
+  padding-inline: 0.875rem;
+  font-weight: var(--font-medium);
+}
+
+.planner-shell .page-control-btn:hover,
+.planner-shell .page-control-btn:focus-visible,
+.planner-shell .page-control-btn.active,
+.planner-shell .page-control-btn[aria-pressed='true'],
+.planner-shell .page-control-btn[aria-current='page'] {
+  background: var(--planner-surface-bg-strong);
+  border-color: var(--planner-surface-border-strong);
+  box-shadow: none;
+}
+
+.planner-shell .paper-chip {
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
+}
+
 .planner-week-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -1609,28 +1659,23 @@ onMounted(() => {
 .planner-week-day {
   display: grid;
   gap: var(--spacing-1);
-  padding: var(--spacing-3);
-  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
-  border-radius: var(--ui-radius-button, var(--radius-lg));
-  background: var(--surface-minimal-muted, var(--color-surface-variant));
+  min-block-size: 10.5rem;
+  padding: 0.95rem;
+  border: 0.0625rem solid var(--planner-surface-border);
   text-align: start;
   transition:
-    transform var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
     background-color var(--duration-fast) var(--ease-out);
 }
 
 .planner-week-day.is-selected,
 .planner-week-day:hover {
-  border-color: var(--surface-minimal-border-strong, var(--color-divider-strong));
+  border-color: var(--planner-surface-border-strong);
+  background: var(--planner-surface-bg-strong);
 }
 
 .planner-week-day.is-today {
-  background: color-mix(
-    in srgb,
-    var(--surface-minimal-muted, var(--color-surface-variant)) 82%,
-    var(--surface-minimal-accent, var(--color-primary)) 18%
-  );
+  background: color-mix(in srgb, var(--planner-surface-bg) 78%, var(--color-primary) 22%);
 }
 
 .planner-week-day__label,
@@ -1674,10 +1719,8 @@ onMounted(() => {
 }
 
 .planner-insight {
-  padding: var(--spacing-3);
-  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
-  border-radius: var(--ui-radius-button, var(--radius-lg));
-  background: var(--surface-minimal-muted, var(--color-surface-variant));
+  padding: 0.95rem;
+  border: 0.0625rem solid var(--planner-surface-border);
 }
 
 .planner-insight__chips {
