@@ -176,6 +176,45 @@ describe('functions/api proxy', () => {
     )
   })
 
+  it('canonicalizes pseudo redirects with a Found body into an empty browser redirect', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(
+        '<a href="https://accounts.google.com/o/oauth2/v2/auth?redirect_uri=' +
+          encodeURIComponent('https://api.momichan.xyz/api/auth/google/callback') +
+          '">Found</a>.',
+        {
+          status: 404,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Length': '46',
+            Location:
+              'https://accounts.google.com/o/oauth2/v2/auth?client_id=test-client&redirect_uri=' +
+              encodeURIComponent('https://api.momichan.xyz/api/auth/google/callback') +
+              '&response_type=code',
+          },
+        }
+      )
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/api/auth/google/start?intent=login&return_to=%2F'),
+      env: {
+        API_BASE_URL: 'https://api.momichan.xyz',
+      },
+      params: {
+        path: ['auth', 'google', 'start'],
+      },
+    })
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toContain(
+      encodeURIComponent('https://momichan.xyz/api/auth/google/callback')
+    )
+    expect(response.headers.get('Content-Type')).toBeNull()
+    await expect(response.text()).resolves.toBe('')
+  })
+
   it('rewrites auth callback redirects from the api origin back to the site origin', async () => {
     const publicFetch = vi.fn().mockResolvedValue(
       new Response(null, {

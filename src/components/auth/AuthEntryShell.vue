@@ -1,5 +1,11 @@
 <template>
-  <section class="auth-shell" :class="{ 'auth-shell--wide': wide }">
+  <section
+    class="auth-shell"
+    :class="{
+      'auth-shell--wide': wide,
+      'auth-shell--split': split,
+    }"
+  >
     <header class="auth-shell__header">
       <div class="auth-shell__topline">
         <button
@@ -54,6 +60,7 @@ withDefaults(
     backLabel?: string
     tabAriaLabel?: string
     wide?: boolean
+    split?: boolean
   }>(),
   {
     subtitle: '',
@@ -64,6 +71,7 @@ withDefaults(
     backLabel: '',
     tabAriaLabel: '',
     wide: false,
+    split: false,
   }
 )
 

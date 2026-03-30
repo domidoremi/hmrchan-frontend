@@ -821,7 +821,7 @@
       "copyFailed": "Could not copy the schedule link",
       "shareFailed": "Could not open the share sheet",
       "backendNoticeTitle": "Backend support still needed",
-      "backendNoticeBody": "Persistent bookmarks, reminders, and @schedule mentions need backend APIs before they can be shipped here.",
+      "backendNoticeBody": "Persistent bookmarks, reminders, and schedule mention features need backend APIs before they can be shipped here.",
       "eventPage": "Event Page",
       "buyTicket": "Buy Ticket",
       "source": "Source"
