@@ -1756,6 +1756,8 @@ let bubbleBurstReplayFrame: number | null = null
 let bubbleExitResetTimer: ReturnType<typeof setTimeout> | null = null
 let viewportSceneFrame: number | null = null
 let viewportSceneTrackingBound = false
+let sceneProgressFrame: number | null = null
+let sceneProgressTrackingBound = false
 
 const storyTravel = computed(() => Math.max(effectiveStoryCardCount.value - 1, 0))
 const storyProgressIndex = computed(() => storyProgress.value * storyTravel.value)
@@ -1802,8 +1804,16 @@ function isCompactHomeViewport(): boolean {
   return typeof window !== 'undefined' && window.innerWidth <= 768
 }
 
+function shouldUseHomeSectionBlendEffects(): boolean {
+  return false
+}
+
+function shouldUseHomeScrollScrubScenes(): boolean {
+  return false
+}
+
 const homePageMotionStyle = computed<Record<string, string>>(() => {
-  if (isCompactHomeViewport()) {
+  if (isCompactHomeViewport() || !shouldUseHomeSectionBlendEffects()) {
     return {
       '--home-hero-opacity': '1',
       '--home-hero-scale': '1',
@@ -2130,15 +2140,30 @@ function scheduleHomeEnhancements(delay = 1800) {
   scheduleTask(
     async () => {
       if (!scenesEnabled) return
+      bindSceneInteractions()
+      bindSceneProgressTracking()
+
+      if (!shouldUseHomeScrollScrubScenes()) {
+        runAfterNextPaint(() => {
+          scheduleSceneProgressUpdate()
+          if (shouldUseHomeSectionBlendEffects()) {
+            bindViewportSceneBlendTracking()
+            scheduleViewportSceneBlendUpdate()
+          }
+        })
+        return
+      }
+
       const ready = await ensureScrollTriggerReady()
       if (!ready || !scenesEnabled) return
-      bindSceneInteractions()
-      bindViewportSceneBlendTracking()
       observeSceneLayout()
       scheduleSceneSetup()
       runAfterNextPaint(() => {
-        scheduleViewportSceneBlendUpdate()
-        window.dispatchEvent(new Event('scroll'))
+        if (shouldUseHomeSectionBlendEffects()) {
+          bindViewportSceneBlendTracking()
+          scheduleViewportSceneBlendUpdate()
+          window.dispatchEvent(new Event('scroll'))
+        }
       })
     },
     { priority: 'background', delay }
@@ -2147,11 +2172,12 @@ function scheduleHomeEnhancements(delay = 1800) {
 
 function setHomeSceneLifecycleEnabled(enabled: boolean) {
   scenesEnabled = enabled
-  setRailNavbarLock(enabled)
-  setHomeFooterBlend(enabled)
+  setRailNavbarLock(enabled && shouldUseHomeSectionBlendEffects())
+  setHomeFooterBlend(enabled && shouldUseHomeSectionBlendEffects())
 
   if (!enabled) {
     unbindSceneInteractions()
+    unbindSceneProgressTracking()
     unbindViewportSceneBlendTracking()
     disconnectSceneLayoutObserver()
     cleanupSceneTriggers()
@@ -2352,6 +2378,36 @@ function scheduleViewportSceneBlendUpdate() {
   })
 }
 
+function clearSceneProgressFrame() {
+  if (typeof window === 'undefined' || sceneProgressFrame === null) return
+  window.cancelAnimationFrame(sceneProgressFrame)
+  sceneProgressFrame = null
+}
+
+function scheduleSceneProgressUpdate() {
+  if (typeof window === 'undefined' || sceneProgressFrame !== null) return
+  sceneProgressFrame = window.requestAnimationFrame(() => {
+    sceneProgressFrame = null
+    syncSceneProgressFromViewport()
+  })
+}
+
+function bindSceneProgressTracking() {
+  if (typeof window === 'undefined' || sceneProgressTrackingBound) return
+  sceneProgressTrackingBound = true
+  window.addEventListener('scroll', scheduleSceneProgressUpdate, { passive: true })
+  window.addEventListener('resize', scheduleSceneProgressUpdate)
+  scheduleSceneProgressUpdate()
+}
+
+function unbindSceneProgressTracking() {
+  if (typeof window === 'undefined' || !sceneProgressTrackingBound) return
+  sceneProgressTrackingBound = false
+  clearSceneProgressFrame()
+  window.removeEventListener('scroll', scheduleSceneProgressUpdate)
+  window.removeEventListener('resize', scheduleSceneProgressUpdate)
+}
+
 function bindViewportSceneBlendTracking() {
   if (typeof window === 'undefined' || viewportSceneTrackingBound) return
   viewportSceneTrackingBound = true
@@ -2487,6 +2543,7 @@ async function setupSceneTriggers() {
   syncSceneProgressFromViewport()
 
   if (typeof window === 'undefined' || !scenesEnabled) return
+  if (!shouldUseHomeScrollScrubScenes()) return
 
   const ready = await ensureScrollTriggerReady()
   if (!ready || !scrollTriggerModule || !scenesEnabled) return
@@ -2527,11 +2584,17 @@ async function setupSceneTriggers() {
     })
   }
 
-  scheduleViewportSceneBlendUpdate()
+  if (shouldUseHomeSectionBlendEffects()) {
+    scheduleViewportSceneBlendUpdate()
+  }
 }
 
 function scheduleSceneSetup() {
   if (typeof window === 'undefined' || !scenesEnabled || sceneSetupQueued) return
+  if (!shouldUseHomeScrollScrubScenes()) {
+    scheduleSceneProgressUpdate()
+    return
+  }
   sceneSetupQueued = true
   void nextTick(() => {
     if (typeof window === 'undefined' || !scenesEnabled) {
@@ -2673,6 +2736,12 @@ watch(
     resetBubbleRevealState()
     if (isCompactHomeViewport() && bubbleItems.value.length > 0) {
       bubbleRevealPhase.value = 'revealed'
+    } else if (bubbleItems.value.length > 0) {
+      if (shouldAnimate.value) {
+        restartBubbleBurst()
+      } else {
+        bubbleRevealPhase.value = 'revealed'
+      }
     }
     void nextTick(() => {
       scheduleBubbleMotionMeasurement()

@@ -1,10 +1,6 @@
 <template>
   <div class="schedule-page">
-    <!-- 背景装饰 -->
-    <div class="schedule-bg" aria-hidden="true">
-      <div class="schedule-bg__blob schedule-bg__blob--blue" />
-      <div class="schedule-bg__blob schedule-bg__blob--amber" />
-    </div>
+    <div class="schedule-bg" aria-hidden="true" />
 
     <div class="container">
       <header class="page-hero page-hero--bare schedule-hero">
@@ -118,7 +114,7 @@
         <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
       </div>
 
-      <section class="planner-shell surface-paper-sketch analog-dot-grid">
+      <section class="planner-shell schedule-panel schedule-panel--planner">
         <div class="planner-shell__head">
           <div class="planner-shell__copy">
             <p class="planner-shell__eyebrow">{{ $t('schedule.plannerTitle') }}</p>
@@ -196,58 +192,6 @@
       </section>
 
       <!-- 日历网格 -->
-      <div
-        v-if="plannerView === 'month'"
-        ref="calendarRef"
-        class="calendar-wrapper empty-surface"
-        :aria-label="$t('schedule.calendarLabel')"
-        @keydown="handleCalendarKeydown"
-        @touchstart.passive="onTouchStart"
-        @touchend.passive="onTouchEnd"
-      >
-        <div class="calendar-weekdays">
-          <div v-for="d in weekdays" :key="d" class="weekday-cell">
-            {{ d }}
-          </div>
-        </div>
-
-        <Transition :name="monthTransition" mode="out-in">
-          <div v-if="isLoading && events.length === 0" key="skeleton" class="calendar-grid">
-            <div v-for="i in 42" :key="i" class="calendar-cell calendar-cell--skeleton">
-              <div class="skeleton-day" />
-            </div>
-          </div>
-
-          <div v-else :key="monthKey" class="calendar-grid">
-            <button
-              v-for="(day, idx) in calendarDays"
-              :key="day.key"
-              type="button"
-              class="calendar-cell"
-              :class="{
-                'calendar-cell--other': !day.currentMonth,
-                'calendar-cell--today': day.isToday,
-                'calendar-cell--has-events': day.events.length > 0,
-                'calendar-cell--selected': selectedDay?.key === day.key,
-              }"
-              :tabindex="day.isToday || (idx === 0 && !selectedDay) ? 0 : -1"
-              :aria-label="getDayAriaLabel(day)"
-              @click="selectDay(day)"
-            >
-              <span class="day-number">{{ day.date }}</span>
-              <div v-if="day.events.length > 0" class="day-dots">
-                <span
-                  v-for="(evt, i) in day.events.slice(0, 3)"
-                  :key="i"
-                  class="day-dot"
-                  :style="{ background: getCategoryColor(evt.category) }"
-                />
-              </div>
-            </button>
-          </div>
-        </Transition>
-      </div>
-
       <StateIndicator
         v-if="error && !isUsingFallback"
         variant="error"
@@ -255,258 +199,404 @@
         @action="fetchEvents"
       />
 
-      <!-- 日程详情弹窗 -->
-      <Dialog
-        :is-open="!!detailEvent"
-        :title="detailEvent?.title ?? ''"
-        size="default"
-        @close="closeDetail"
-      >
-        <div v-if="detailLoading" class="detail-loading">
-          <div class="detail-skeleton" />
-          <div class="detail-skeleton detail-skeleton--short" />
-          <div class="detail-skeleton detail-skeleton--long" />
-        </div>
-        <div v-else-if="detailEvent" class="event-detail">
-          <!-- 分类 & 时间 -->
-          <div class="detail-meta">
-            <span
-              class="event-badge"
-              :style="{
-                background: getCategoryColor(detailEvent.category) + '20',
-                color: getCategoryColor(detailEvent.category),
-              }"
-            >
-              {{ $t(`schedule.categories.${detailEvent.category}`) }}
-            </span>
-            <span v-if="detailEvent.is_published === false" class="draft-badge">
-              {{ $t('schedule.detail.draft') }}
-            </span>
-          </div>
-
-          <!-- 时间信息 -->
-          <div class="detail-row">
-            <Clock :size="16" class="detail-icon" />
-            <div class="detail-row-content">
-              <template v-if="detailEvent.is_all_day">
-                <span>{{ formatDetailDate(detailEvent.start_date) }}</span>
-                <template
-                  v-if="detailEvent.end_date && detailEvent.end_date !== detailEvent.start_date"
-                >
-                  <span class="detail-separator">—</span>
-                  <span>{{ formatDetailDate(detailEvent.end_date) }}</span>
-                </template>
-                <span class="detail-allday-tag">{{ $t('schedule.allDay') }}</span>
-              </template>
-              <template v-else>
-                <span>{{ formatDetailTime(detailEvent.start_date) }}</span>
-                <template v-if="detailEvent.end_date">
-                  <span class="detail-separator">—</span>
-                  <span v-if="isSameDay(detailEvent.start_date, detailEvent.end_date)">
-                    {{ formatTimeOnly(detailEvent.end_date) }}
-                  </span>
-                  <span v-else>{{ formatDetailTime(detailEvent.end_date) }}</span>
-                </template>
-              </template>
-            </div>
-          </div>
-
-          <!-- 地点 -->
-          <div v-if="detailEvent.venue" class="detail-row">
-            <MapPin :size="16" class="detail-icon" />
-            <div class="detail-row-content">
-              <span class="detail-venue-name">{{ detailEvent.venue }}</span>
-              <span v-if="detailEvent.venue_address" class="detail-venue-addr">
-                {{ detailEvent.venue_address }}
-              </span>
-            </div>
-          </div>
-
-          <!-- 描述 -->
-          <div v-if="detailEvent.description" class="detail-description">
-            <template v-if="parsedDescription.length > 0">
-              <div v-for="(section, idx) in parsedDescription" :key="idx" class="desc-section">
-                <h4 v-if="section.heading" class="desc-heading">{{ section.heading }}</h4>
-                <p
-                  v-for="(line, li) in section.lines"
-                  :key="li"
-                  class="desc-line"
-                  v-html="linkify(line)"
-                />
-              </div>
-            </template>
-          </div>
-
-          <!-- 链接区域 -->
-          <div v-if="hasDetailLinks" class="detail-links">
-            <a
-              v-if="detailEvent.event_url"
-              :href="detailEvent.event_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="detail-link-btn page-control-btn page-control-btn--compact"
-            >
-              <ExternalLink :size="14" />
-              <span>{{ $t('schedule.detail.eventPage') }}</span>
-            </a>
-            <a
-              v-if="detailEvent.ticket_url"
-              :href="detailEvent.ticket_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="detail-link-btn detail-link-btn--ticket page-control-btn page-control-btn--compact"
-            >
-              <Ticket :size="14" />
-              <span>{{ $t('schedule.detail.buyTicket') }}</span>
-            </a>
-            <a
-              v-if="detailEvent.source_url"
-              :href="detailEvent.source_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="detail-link-btn page-control-btn page-control-btn--compact"
-            >
-              <ExternalLink :size="14" />
-              <span>{{ $t('schedule.detail.source') }}</span>
-            </a>
-          </div>
-        </div>
-      </Dialog>
-
-      <!-- 选中日期的事件列表 -->
-      <Transition name="slide-fade">
-        <section v-if="selectedDay && plannerView !== 'month'" class="day-events content-auto-lg">
-          <div class="page-section-head page-section-head--stage day-events-header">
-            <div class="page-section-copy">
-              <p class="page-section-kicker">{{ $t('schedule.title') }}</p>
-              <h2 class="page-section-title">{{ selectedDayLabel }}</h2>
-              <p class="page-section-subtitle">
-                {{
-                  selectedDayEvents.length > 0 ? $t('schedule.upcoming') : $t('schedule.noEvents')
-                }}
-              </p>
-            </div>
-            <span v-if="selectedDayEvents.length" class="event-count">
-              {{ selectedDayEvents.length }}
-            </span>
-            <button
-              type="button"
-              class="close-btn page-control-btn page-control-btn--square"
-              :aria-label="$t('common.close')"
-              @click="selectedDay = null"
-            >
-              <X :size="16" />
-            </button>
-          </div>
-
-          <StateIndicator
-            v-if="selectedDayEvents.length === 0"
-            variant="empty"
-            :description="$t('schedule.noEvents')"
-          />
-
-          <div v-else class="events-list">
-            <article
-              v-for="evt in selectedDayEvents"
-              :key="evt.id"
-              class="event-card page-list-card"
-              role="button"
-              tabindex="0"
-              @click="openDetail(evt.id)"
-              @keydown.enter.prevent="openDetail(evt.id)"
-              @keydown.space.prevent="openDetail(evt.id)"
-            >
-              <div
-                class="event-category-bar"
-                :style="{ background: getCategoryColor(evt.category) }"
-              />
-              <div class="event-body">
-                <div class="event-header">
-                  <span
-                    class="event-badge"
-                    :style="{
-                      background: getCategoryColor(evt.category) + '20',
-                      color: getCategoryColor(evt.category),
-                    }"
-                  >
-                    {{ $t(`schedule.categories.${evt.category}`) }}
-                  </span>
-                  <span v-if="!evt.allDay" class="event-time">
-                    {{ formatEventTime(evt.start) }}
-                  </span>
-                  <span v-else class="event-time">{{ $t('schedule.allDay') }}</span>
-                </div>
-                <h3 class="event-title">{{ evt.title }}</h3>
-                <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
-                <div v-if="evt.venue" class="event-venue">
-                  <MapPin :size="14" />
-                  <span>{{ evt.venue }}</span>
-                </div>
-                <div class="event-card-hint">
-                  <ChevronRight :size="14" />
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-      </Transition>
-
-      <!-- 即将到来的事件 -->
-      <section
-        v-if="plannerView === 'month' && !selectedDay"
-        class="upcoming-section content-auto-lg"
-      >
-        <div class="page-section-head">
-          <div class="page-section-copy">
-            <p class="page-section-kicker">{{ monthLabel }}</p>
-            <h2 class="page-section-title">{{ $t('schedule.upcoming') }}</h2>
-            <p class="page-section-subtitle">{{ $t('schedule.subtitle') }}</p>
-          </div>
-        </div>
-        <StateIndicator
-          v-if="upcomingEvents.length === 0 && !isLoading"
-          variant="empty"
-          :description="$t('schedule.noUpcoming')"
-        />
-        <div v-else class="events-list">
-          <article
-            v-for="evt in upcomingEvents"
-            :key="evt.id"
-            class="event-card page-list-card"
-            role="button"
-            tabindex="0"
-            @click="openDetail(evt.id)"
-            @keydown.enter.prevent="openDetail(evt.id)"
-            @keydown.space.prevent="openDetail(evt.id)"
+      <div class="schedule-workspace" :class="{ 'schedule-workspace--detail': detailPanelVisible }">
+        <div class="schedule-workspace__main">
+          <div
+            v-if="plannerView === 'month'"
+            ref="calendarRef"
+            class="calendar-wrapper schedule-panel"
+            :aria-label="$t('schedule.calendarLabel')"
+            @keydown="handleCalendarKeydown"
+            @touchstart.passive="onTouchStart"
+            @touchend.passive="onTouchEnd"
           >
-            <div
-              class="event-category-bar"
-              :style="{ background: getCategoryColor(evt.category) }"
+            <div class="calendar-weekdays">
+              <div v-for="d in weekdays" :key="d" class="weekday-cell">
+                {{ d }}
+              </div>
+            </div>
+
+            <Transition :name="monthTransition" mode="out-in">
+              <div v-if="isLoading && events.length === 0" key="skeleton" class="calendar-grid">
+                <div v-for="i in 42" :key="i" class="calendar-cell calendar-cell--skeleton">
+                  <div class="skeleton-day" />
+                </div>
+              </div>
+
+              <div v-else :key="monthKey" class="calendar-grid">
+                <button
+                  v-for="(day, idx) in calendarDays"
+                  :key="day.key"
+                  type="button"
+                  class="calendar-cell"
+                  :class="{
+                    'calendar-cell--other': !day.currentMonth,
+                    'calendar-cell--today': day.isToday,
+                    'calendar-cell--has-events': day.events.length > 0,
+                    'calendar-cell--selected': selectedDay?.key === day.key,
+                  }"
+                  :tabindex="day.isToday || (idx === 0 && !selectedDay) ? 0 : -1"
+                  :aria-label="getDayAriaLabel(day)"
+                  @click="selectDay(day)"
+                >
+                  <span class="day-number">{{ day.date }}</span>
+                  <div v-if="day.events.length > 0" class="day-dots">
+                    <span
+                      v-for="(evt, i) in day.events.slice(0, 3)"
+                      :key="i"
+                      class="day-dot"
+                      :style="{ background: getCategoryColor(evt.category) }"
+                    />
+                  </div>
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <Transition name="slide-fade">
+            <section
+              v-if="selectedDay && plannerView !== 'month'"
+              class="day-events schedule-panel content-auto-lg"
+            >
+              <div class="page-section-head page-section-head--stage day-events-header">
+                <div class="page-section-copy">
+                  <p class="page-section-kicker">{{ $t('schedule.title') }}</p>
+                  <h2 class="page-section-title">{{ selectedDayLabel }}</h2>
+                  <p class="page-section-subtitle">
+                    {{
+                      selectedDayEvents.length > 0
+                        ? $t('schedule.upcoming')
+                        : $t('schedule.noEvents')
+                    }}
+                  </p>
+                </div>
+                <span v-if="selectedDayEvents.length" class="event-count">
+                  {{ selectedDayEvents.length }}
+                </span>
+                <button
+                  type="button"
+                  class="close-btn page-control-btn page-control-btn--square"
+                  :aria-label="$t('common.close')"
+                  @click="selectedDay = null"
+                >
+                  <X :size="16" />
+                </button>
+              </div>
+
+              <StateIndicator
+                v-if="selectedDayEvents.length === 0"
+                variant="empty"
+                :description="$t('schedule.noEvents')"
+              />
+
+              <div v-else class="events-list">
+                <article
+                  v-for="evt in selectedDayEvents"
+                  :key="evt.id"
+                  class="event-card page-list-card"
+                  role="button"
+                  tabindex="0"
+                  @click="openDetail(evt.id)"
+                  @keydown.enter.prevent="openDetail(evt.id)"
+                  @keydown.space.prevent="openDetail(evt.id)"
+                >
+                  <div
+                    class="event-category-bar"
+                    :style="{ background: getCategoryColor(evt.category) }"
+                  />
+                  <div class="event-body">
+                    <div class="event-header">
+                      <span
+                        class="event-badge"
+                        :style="{
+                          background: getCategoryColor(evt.category) + '16',
+                          color: getCategoryColor(evt.category),
+                        }"
+                      >
+                        {{ $t(`schedule.categories.${evt.category}`) }}
+                      </span>
+                      <span v-if="!evt.allDay" class="event-time">
+                        {{ formatEventTime(evt.start) }}
+                      </span>
+                      <span v-else class="event-time">{{ $t('schedule.allDay') }}</span>
+                    </div>
+                    <h3 class="event-title">{{ evt.title }}</h3>
+                    <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
+                    <div v-if="evt.venue" class="event-venue">
+                      <MapPin :size="14" />
+                      <span>{{ evt.venue }}</span>
+                    </div>
+                    <div class="event-card-hint">
+                      <ChevronRight :size="14" />
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </Transition>
+
+          <section
+            v-if="plannerView === 'month' && !selectedDay"
+            class="upcoming-section schedule-panel content-auto-lg"
+          >
+            <div class="page-section-head">
+              <div class="page-section-copy">
+                <p class="page-section-kicker">{{ monthLabel }}</p>
+                <h2 class="page-section-title">{{ $t('schedule.upcoming') }}</h2>
+                <p class="page-section-subtitle">{{ $t('schedule.subtitle') }}</p>
+              </div>
+            </div>
+            <StateIndicator
+              v-if="upcomingEvents.length === 0 && !isLoading"
+              variant="empty"
+              :description="$t('schedule.noUpcoming')"
             />
-            <div class="event-body">
-              <div class="event-header">
+            <div v-else class="events-list">
+              <article
+                v-for="evt in upcomingEvents"
+                :key="evt.id"
+                class="event-card page-list-card"
+                role="button"
+                tabindex="0"
+                @click="openDetail(evt.id)"
+                @keydown.enter.prevent="openDetail(evt.id)"
+                @keydown.space.prevent="openDetail(evt.id)"
+              >
+                <div
+                  class="event-category-bar"
+                  :style="{ background: getCategoryColor(evt.category) }"
+                />
+                <div class="event-body">
+                  <div class="event-header">
+                    <span
+                      class="event-badge"
+                      :style="{
+                        background: getCategoryColor(evt.category) + '16',
+                        color: getCategoryColor(evt.category),
+                      }"
+                    >
+                      {{ $t(`schedule.categories.${evt.category}`) }}
+                    </span>
+                    <span class="event-time">
+                      {{ formatEventDate(evt.start) }}
+                    </span>
+                  </div>
+                  <h3 class="event-title">{{ evt.title }}</h3>
+                  <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
+                  <div class="event-card-hint">
+                    <ChevronRight :size="14" />
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
+
+        <aside
+          v-if="detailPanelVisible"
+          ref="detailPanelRef"
+          class="schedule-detail-shell schedule-panel content-auto-xl"
+        >
+          <div v-if="detailLoading" class="detail-loading">
+            <div class="detail-skeleton" />
+            <div class="detail-skeleton detail-skeleton--short" />
+            <div class="detail-skeleton detail-skeleton--long" />
+          </div>
+
+          <article v-else-if="detailEvent" class="schedule-detail-article">
+            <header class="schedule-detail-article__header">
+              <div class="schedule-detail-article__topline">
+                <span class="schedule-detail-article__eyebrow">
+                  {{ $t('schedule.detail.panelEyebrow') }}
+                </span>
+                <button
+                  type="button"
+                  class="schedule-detail-shell__close page-control-btn page-control-btn--square"
+                  :aria-label="$t('common.close')"
+                  @click="closeDetail"
+                >
+                  <X :size="16" />
+                </button>
+              </div>
+
+              <div class="detail-meta">
                 <span
                   class="event-badge"
                   :style="{
-                    background: getCategoryColor(evt.category) + '20',
-                    color: getCategoryColor(evt.category),
+                    background: getCategoryColor(detailEvent.category) + '16',
+                    color: getCategoryColor(detailEvent.category),
                   }"
                 >
-                  {{ $t(`schedule.categories.${evt.category}`) }}
+                  {{ $t(`schedule.categories.${detailEvent.category}`) }}
                 </span>
-                <span class="event-time">
-                  {{ formatEventDate(evt.start) }}
+                <span v-if="detailEvent.is_published === false" class="draft-badge">
+                  {{ $t('schedule.detail.draft') }}
                 </span>
               </div>
-              <h3 class="event-title">{{ evt.title }}</h3>
-              <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
-              <div class="event-card-hint">
-                <ChevronRight :size="14" />
-              </div>
+
+              <h2 class="schedule-detail-article__title">{{ detailEvent.title }}</h2>
+              <p v-if="detailLead" class="schedule-detail-article__lead">{{ detailLead }}</p>
+            </header>
+
+            <div class="schedule-detail-actions">
+              <button
+                type="button"
+                class="schedule-detail-action page-control-btn page-control-btn--compact"
+                @click="copyDetailLink"
+              >
+                <Copy :size="14" />
+                <span>{{ $t('schedule.detail.copyLinkAction') }}</span>
+              </button>
+
+              <button
+                v-if="canShareDetail"
+                type="button"
+                class="schedule-detail-action page-control-btn page-control-btn--compact"
+                @click="shareDetail"
+              >
+                <Share2 :size="14" />
+                <span>{{ $t('schedule.detail.shareAction') }}</span>
+              </button>
             </div>
+
+            <div class="schedule-detail-facts">
+              <article class="schedule-detail-fact">
+                <span class="schedule-detail-fact__label">
+                  {{ $t('schedule.detail.whenLabel') }}
+                </span>
+                <div class="detail-row">
+                  <Clock :size="16" class="detail-icon" />
+                  <div class="detail-row-content">
+                    <template v-if="detailEvent.is_all_day">
+                      <span>{{ formatDetailDate(detailEvent.start_date) }}</span>
+                      <template
+                        v-if="
+                          detailEvent.end_date && detailEvent.end_date !== detailEvent.start_date
+                        "
+                      >
+                        <span class="detail-separator">—</span>
+                        <span>{{ formatDetailDate(detailEvent.end_date) }}</span>
+                      </template>
+                      <span class="detail-allday-tag">{{ $t('schedule.allDay') }}</span>
+                    </template>
+                    <template v-else>
+                      <span>{{ formatDetailTime(detailEvent.start_date) }}</span>
+                      <template v-if="detailEvent.end_date">
+                        <span class="detail-separator">—</span>
+                        <span v-if="isSameDay(detailEvent.start_date, detailEvent.end_date)">
+                          {{ formatTimeOnly(detailEvent.end_date) }}
+                        </span>
+                        <span v-else>{{ formatDetailTime(detailEvent.end_date) }}</span>
+                      </template>
+                    </template>
+                  </div>
+                </div>
+              </article>
+
+              <article v-if="detailEvent.venue" class="schedule-detail-fact">
+                <span class="schedule-detail-fact__label">
+                  {{ $t('schedule.detail.whereLabel') }}
+                </span>
+                <div class="detail-row">
+                  <MapPin :size="16" class="detail-icon" />
+                  <div class="detail-row-content detail-row-content--stack">
+                    <span class="detail-venue-name">{{ detailEvent.venue }}</span>
+                    <span v-if="detailEvent.venue_address" class="detail-venue-addr">
+                      {{ detailEvent.venue_address }}
+                    </span>
+                  </div>
+                </div>
+              </article>
+
+              <article v-if="detailHostLabel" class="schedule-detail-fact">
+                <span class="schedule-detail-fact__label">
+                  {{ $t('schedule.detail.hostLabel') }}
+                </span>
+                <div class="schedule-detail-fact__copy">
+                  {{ detailHostLabel }}
+                </div>
+              </article>
+            </div>
+
+            <section class="schedule-detail-section">
+              <h3 class="schedule-detail-section__title">
+                {{ $t('schedule.detail.aboutTitle') }}
+              </h3>
+
+              <div v-if="detailEvent.description" class="detail-description">
+                <template v-if="parsedDescription.length > 0">
+                  <div v-for="(section, idx) in parsedDescription" :key="idx" class="desc-section">
+                    <h4 v-if="section.heading" class="desc-heading">{{ section.heading }}</h4>
+                    <p
+                      v-for="(line, li) in section.lines"
+                      :key="li"
+                      class="desc-line"
+                      v-html="linkify(line)"
+                    />
+                  </div>
+                </template>
+              </div>
+
+              <p v-else class="schedule-detail-empty">
+                {{ $t('schedule.detail.descriptionFallback') }}
+              </p>
+            </section>
+
+            <section v-if="hasDetailLinks" class="schedule-detail-section">
+              <h3 class="schedule-detail-section__title">
+                {{ $t('schedule.detail.linksTitle') }}
+              </h3>
+
+              <div class="detail-links">
+                <a
+                  v-if="detailEvent.event_url"
+                  :href="detailEvent.event_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="detail-link-btn page-control-btn page-control-btn--compact"
+                >
+                  <ExternalLink :size="14" />
+                  <span>{{ $t('schedule.detail.eventPage') }}</span>
+                </a>
+                <a
+                  v-if="detailEvent.ticket_url"
+                  :href="detailEvent.ticket_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="detail-link-btn detail-link-btn--ticket page-control-btn page-control-btn--compact"
+                >
+                  <Ticket :size="14" />
+                  <span>{{ $t('schedule.detail.buyTicket') }}</span>
+                </a>
+                <a
+                  v-if="detailEvent.source_url"
+                  :href="detailEvent.source_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="detail-link-btn page-control-btn page-control-btn--compact"
+                >
+                  <Link2 :size="14" />
+                  <span>{{ $t('schedule.detail.source') }}</span>
+                </a>
+              </div>
+            </section>
+
+            <section class="schedule-detail-note">
+              <div class="schedule-detail-note__icon" aria-hidden="true">
+                <Info :size="16" />
+              </div>
+              <div class="schedule-detail-note__copy">
+                <p class="schedule-detail-note__title">
+                  {{ $t('schedule.detail.backendNoticeTitle') }}
+                </p>
+                <p class="schedule-detail-note__body">
+                  {{ $t('schedule.detail.backendNoticeBody') }}
+                </p>
+              </div>
+            </section>
           </article>
-        </div>
-      </section>
+        </aside>
+      </div>
     </div>
   </div>
 </template>
@@ -514,14 +604,18 @@
 <script setup lang="ts">
 defineOptions({ name: 'SchedulePage' })
 
-import { ref, computed, onMounted, watch, onWatcherCleanup, useTemplateRef } from 'vue'
+import { ref, computed, nextTick, onMounted, watch, onWatcherCleanup, useTemplateRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   ChevronLeft,
   ChevronRight,
+  Copy,
+  Info,
+  Link2,
   MapPin,
   ExternalLink,
+  Share2,
   X,
   Calendar,
   Radio,
@@ -536,6 +630,7 @@ import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleServic
 import type { ScheduleCategory, ScheduleResponse } from '@/api/scheduleService'
 import type { PlannerView } from '@/types'
 import { useScheduleStore } from '@/stores/schedule'
+import { useToastStore } from '@/stores'
 import { ApiError } from '@/api'
 import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/fallbacks/scheduleFallback'
 import { applyPageMeta } from '@/utils/pageMeta'
@@ -546,12 +641,12 @@ import {
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
-import Dialog from '@/components/ui/Dialog.vue'
 
 const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const scheduleStore = useScheduleStore()
+const toastStore = useToastStore()
 
 // ========== 状态 ==========
 const events = ref<ScheduleCalendarItem[]>([])
@@ -570,6 +665,7 @@ const activeCategory = ref<ScheduleCategory | 'all'>('all')
 const selectedDay = ref<CalendarDay | null>(null)
 const plannerView = ref<PlannerView>('week')
 const calendarRef = useTemplateRef<HTMLElement>('calendarRef')
+const detailPanelRef = useTemplateRef<HTMLElement>('detailPanelRef')
 const monthTransition = ref<'month-slide-left' | 'month-slide-right'>('month-slide-left')
 
 // 详情弹窗
@@ -1023,9 +1119,60 @@ const hasDetailLinks = computed(() => {
   return detailEvent.value.event_url || detailEvent.value.ticket_url || detailEvent.value.source_url
 })
 
+const detailPanelVisible = computed(() =>
+  Boolean(routeScheduleId.value || detailLoading.value || detailEvent.value)
+)
+
+const detailLead = computed(() => {
+  const event = detailEvent.value
+  if (!event?.description) return ''
+  const firstLine = normalizeHtml(event.description)
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .find(Boolean)
+  return firstLine ?? ''
+})
+
+const detailHostLabel = computed(() => {
+  const event = detailEvent.value
+  if (!event) return ''
+
+  const authorLabel = event.author?.display_name || event.author?.username || ''
+  const sourceLabel = event.source_platform || ''
+
+  if (authorLabel && sourceLabel) {
+    return `${authorLabel} · ${sourceLabel}`
+  }
+
+  return authorLabel || sourceLabel
+})
+
+const detailPermalink = computed(() => {
+  const eventId = detailEvent.value?.id || routeScheduleId.value
+  if (!eventId) return ''
+
+  const resolved = router.resolve({
+    name: 'schedule-detail',
+    params: { id: eventId },
+  })
+
+  if (typeof window === 'undefined') {
+    return resolved.href
+  }
+
+  return new URL(resolved.href, window.location.origin).toString()
+})
+
+const canShareDetail = computed(
+  () =>
+    Boolean(detailEvent.value && detailPermalink.value) &&
+    typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function'
+)
+
 async function loadDetail(eventId: string) {
   detailLoading.value = true
-  detailEvent.value = { id: eventId } as ScheduleResponse // placeholder to open dialog
+  detailEvent.value = { id: eventId } as ScheduleResponse
   try {
     detailEvent.value = await scheduleService.getById(eventId, { skipErrorToast: true })
     syncScheduleDetailMeta(detailEvent.value)
@@ -1064,6 +1211,46 @@ function closeDetail() {
   detailEvent.value = null
   if (routeScheduleId.value) {
     void router.replace({ name: 'schedule' })
+  }
+}
+
+async function copyDetailLink() {
+  if (
+    !detailPermalink.value ||
+    typeof navigator === 'undefined' ||
+    !navigator.clipboard?.writeText
+  ) {
+    toastStore.error(t('schedule.detail.copyFailed'))
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(detailPermalink.value)
+    toastStore.success(t('schedule.detail.copySuccess'))
+  } catch {
+    toastStore.error(t('schedule.detail.copyFailed'))
+  }
+}
+
+async function shareDetail() {
+  if (!detailEvent.value || !detailPermalink.value || typeof navigator === 'undefined') return
+
+  if (typeof navigator.share !== 'function') {
+    await copyDetailLink()
+    return
+  }
+
+  try {
+    await navigator.share({
+      title: detailEvent.value.title,
+      text: detailLead.value || detailEvent.value.venue || undefined,
+      url: detailPermalink.value,
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return
+    }
+    toastStore.error(t('schedule.detail.shareFailed'))
   }
 }
 
@@ -1155,6 +1342,19 @@ function linkify(text: string): string {
   )
 }
 
+function scrollDetailPanelIntoView() {
+  if (typeof window === 'undefined' || window.innerWidth > 768) return
+
+  void nextTick(() => {
+    window.requestAnimationFrame(() => {
+      detailPanelRef.value?.scrollIntoView({
+        block: 'start',
+        behavior: 'smooth',
+      })
+    })
+  })
+}
+
 // ========== 数据加载 ==========
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError'
@@ -1234,6 +1434,7 @@ watch(
       return
     }
 
+    scrollDetailPanelIntoView()
     void loadDetail(nextId)
   },
   { immediate: true }
@@ -1256,45 +1457,61 @@ onMounted(() => {
   position: relative;
   min-height: 100dvh;
   padding: var(--spacing-6) 0;
+  color: var(--surface-minimal-text, var(--color-text-primary));
 }
 
-/* ========== 背景装饰 ========== */
 .schedule-bg {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: -2;
-  overflow: hidden;
   contain: paint;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-minimal-canvas, var(--color-background)) 92%, transparent),
+    color-mix(in srgb, var(--surface-minimal-canvas, var(--color-background)) 100%, #ffffff 0%)
+  );
 }
 
-.schedule-bg__blob {
+.schedule-bg::before {
+  content: '';
   position: absolute;
-  border-radius: 50%;
-  filter: blur(6.25rem);
-  opacity: 0.3;
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      var(--surface-minimal-border, rgba(15, 23, 42, 0.08)) 0.0625rem,
+      transparent 0.0625rem
+    ),
+    linear-gradient(
+      90deg,
+      var(--surface-minimal-border, rgba(15, 23, 42, 0.08)) 0.0625rem,
+      transparent 0.0625rem
+    );
+  background-size: 1.5rem 1.5rem;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.14), transparent 78%);
+  opacity: 0.34;
 }
 
-.schedule-bg__blob--blue {
-  width: 26.25rem;
-  height: 26.25rem;
-  top: 4.5rem;
-  right: -3.75rem;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+.schedule-panel {
+  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
+  border-radius: var(--ui-radius-card, var(--radius-xl));
+  background: var(--surface-minimal-panel, var(--color-surface));
+  box-shadow: 0 1.25rem 2.5rem -2rem rgba(15, 23, 42, 0.16);
 }
 
-.schedule-bg__blob--amber {
-  width: 23.75rem;
-  height: 23.75rem;
-  bottom: 6.5rem;
-  left: -3rem;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.35) 0%, transparent 70%);
+.schedule-workspace {
+  display: grid;
+  gap: var(--spacing-6);
 }
 
-[data-theme='dark'] .schedule-bg__blob {
-  opacity: 0.15;
+.schedule-workspace--detail {
+  grid-template-columns: minmax(0, 1.3fr) minmax(20rem, 0.92fr);
+  align-items: start;
+}
+
+.schedule-workspace__main {
+  display: grid;
+  gap: var(--spacing-6);
 }
 
 /* ========== Header ========== */
@@ -1353,7 +1570,7 @@ onMounted(() => {
 .planner-shell {
   display: grid;
   gap: var(--spacing-4);
-  padding: var(--spacing-4);
+  padding: clamp(1rem, 2vw, 1.5rem);
   margin-bottom: var(--spacing-6);
 }
 
@@ -1393,9 +1610,9 @@ onMounted(() => {
   display: grid;
   gap: var(--spacing-1);
   padding: var(--spacing-3);
-  border: 0.0625rem solid var(--surface-paper-border);
-  border-radius: 1rem;
-  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.4));
+  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
+  border-radius: var(--ui-radius-button, var(--radius-lg));
+  background: var(--surface-minimal-muted, var(--color-surface-variant));
   text-align: start;
   transition:
     transform var(--duration-fast) var(--ease-out),
@@ -1405,12 +1622,15 @@ onMounted(() => {
 
 .planner-week-day.is-selected,
 .planner-week-day:hover {
-  transform: translateY(-0.08rem);
-  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--surface-paper-border));
+  border-color: var(--surface-minimal-border-strong, var(--color-divider-strong));
 }
 
 .planner-week-day.is-today {
-  background: color-mix(in srgb, var(--color-primary) 8%, var(--surface-paper-bg));
+  background: color-mix(
+    in srgb,
+    var(--surface-minimal-muted, var(--color-surface-variant)) 82%,
+    var(--surface-minimal-accent, var(--color-primary)) 18%
+  );
 }
 
 .planner-week-day__label,
@@ -1418,13 +1638,13 @@ onMounted(() => {
 .planner-day-focus__summary,
 .planner-insight__label {
   font-size: var(--text-xs);
-  color: var(--surface-paper-ink-soft);
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
 }
 
 .planner-week-day__date,
 .planner-day-focus__title,
 .planner-insight__value {
-  color: var(--surface-paper-ink);
+  color: var(--surface-minimal-text, var(--color-text-primary));
 }
 
 .planner-week-day__date {
@@ -1435,7 +1655,7 @@ onMounted(() => {
 .planner-week-day__event {
   font-size: var(--text-sm);
   line-height: 1.45;
-  color: var(--surface-paper-ink);
+  color: var(--surface-minimal-text, var(--color-text-primary));
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1455,9 +1675,9 @@ onMounted(() => {
 
 .planner-insight {
   padding: var(--spacing-3);
-  border: 0.0625rem solid var(--surface-paper-border);
-  border-radius: 1rem;
-  background: color-mix(in srgb, var(--surface-paper-bg) 82%, rgba(255, 255, 255, 0.44));
+  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
+  border-radius: var(--ui-radius-button, var(--radius-lg));
+  background: var(--surface-minimal-muted, var(--color-surface-variant));
 }
 
 .planner-insight__chips {
@@ -1468,12 +1688,10 @@ onMounted(() => {
 
 /* ========== 日历 ========== */
 .calendar-wrapper {
-  padding: var(--spacing-4);
+  padding: clamp(1rem, 2vw, 1.5rem);
   margin-bottom: var(--spacing-6);
   overflow: hidden;
   touch-action: pan-y;
-  max-inline-size: 56rem;
-  margin-inline: auto;
 }
 
 .calendar-weekdays {
@@ -1486,7 +1704,7 @@ onMounted(() => {
   text-align: center;
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
-  color: var(--color-text-tertiary);
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
   padding: var(--spacing-2) 0;
   text-transform: uppercase;
 }
@@ -1520,7 +1738,7 @@ onMounted(() => {
 }
 
 .calendar-cell:hover {
-  background: var(--glass-bg-subtle);
+  background: var(--surface-minimal-muted, var(--color-surface-variant));
 }
 
 .calendar-cell:focus-visible {
@@ -1533,9 +1751,9 @@ onMounted(() => {
 }
 
 .calendar-cell--today .day-number {
-  background: var(--color-primary);
+  background: var(--surface-minimal-accent, var(--color-primary));
   color: var(--color-on-primary);
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-radius-button, var(--radius-md));
   width: 1.75rem;
   height: 1.75rem;
   display: flex;
@@ -1545,8 +1763,12 @@ onMounted(() => {
 }
 
 .calendar-cell--selected {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  border-color: var(--color-primary);
+  background: color-mix(
+    in srgb,
+    var(--surface-minimal-muted, var(--color-surface-variant)) 82%,
+    var(--surface-minimal-accent, var(--color-primary)) 18%
+  );
+  border-color: var(--surface-minimal-border-strong, var(--color-divider-strong));
 }
 
 .calendar-cell--has-events {
@@ -1555,7 +1777,7 @@ onMounted(() => {
 
 .day-number {
   font-size: var(--text-sm);
-  color: var(--color-text-primary);
+  color: var(--surface-minimal-text, var(--color-text-primary));
   line-height: 1;
 }
 
@@ -1578,7 +1800,11 @@ onMounted(() => {
   width: 1.5rem;
   height: 1rem;
   border-radius: var(--radius-sm);
-  background: var(--glass-bg-light);
+  background: color-mix(
+    in srgb,
+    var(--surface-minimal-border, var(--color-border)) 46%,
+    transparent
+  );
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
 
@@ -1638,7 +1864,8 @@ onMounted(() => {
 
 /* ========== 事件列表 ========== */
 .day-events {
-  margin-bottom: var(--spacing-6);
+  margin-bottom: 0;
+  padding: clamp(1rem, 2vw, 1.5rem);
 }
 
 .day-events-header {
@@ -1656,10 +1883,11 @@ onMounted(() => {
 
 .event-count {
   padding: 0.125rem 0.625rem;
-  background: var(--glass-bg-light);
-  border-radius: var(--radius-full);
+  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
+  background: var(--surface-minimal-muted, var(--color-surface-variant));
+  border-radius: var(--ui-radius-button, var(--radius-md));
   font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
 }
 
 .close-btn {
@@ -1677,6 +1905,13 @@ onMounted(() => {
   display: flex;
   overflow: hidden;
   min-inline-size: 0;
+  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
+  border-radius: var(--ui-radius-card, var(--radius-xl));
+  background: var(--surface-minimal-panel, var(--color-surface));
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .event-category-bar {
@@ -1702,14 +1937,14 @@ onMounted(() => {
 
 .event-badge {
   padding: 0.125rem 0.5rem;
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-radius-button, var(--radius-md));
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
 }
 
 .event-time {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
   margin-inline-start: auto;
 }
 
@@ -1717,12 +1952,12 @@ onMounted(() => {
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
   margin: 0;
-  color: var(--color-text-primary);
+  color: var(--surface-minimal-text, var(--color-text-primary));
 }
 
 .event-desc {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1736,7 +1971,7 @@ onMounted(() => {
   align-items: center;
   gap: var(--spacing-1);
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
   margin: 0;
 }
 
@@ -1756,7 +1991,8 @@ onMounted(() => {
 
 /* ========== 即将到来 ========== */
 .upcoming-section {
-  margin-bottom: var(--spacing-8);
+  margin-bottom: 0;
+  padding: clamp(1rem, 2vw, 1.5rem);
 }
 
 .schedule-section-title {
@@ -1789,6 +2025,16 @@ onMounted(() => {
 }
 
 /* ========== 响应式 ========== */
+@media (max-width: 64rem) {
+  .schedule-workspace--detail {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-detail-shell {
+    position: static;
+  }
+}
+
 @media (max-width: 640px) {
   .schedule-hero .page-hero__header {
     flex-direction: column;
@@ -1802,6 +2048,14 @@ onMounted(() => {
 
   .planner-week-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .schedule-panel,
+  .day-events,
+  .upcoming-section,
+  .calendar-wrapper,
+  .schedule-detail-shell {
+    padding: 1rem;
   }
 
   .calendar-cell {
@@ -1841,6 +2095,14 @@ onMounted(() => {
     flex: 0 0 auto;
     white-space: nowrap;
   }
+
+  .schedule-detail-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-detail-note {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ========== 可点击事件卡片 ========== */
@@ -1848,11 +2110,21 @@ onMounted(() => {
   cursor: pointer;
 }
 
+.event-card:hover,
+.event-card:focus-visible {
+  border-color: var(--surface-minimal-border-strong, var(--color-divider-strong));
+  background: color-mix(
+    in srgb,
+    var(--surface-minimal-panel, var(--color-surface)) 88%,
+    var(--surface-minimal-muted, var(--color-surface-variant)) 12%
+  );
+}
+
 .event-card-hint {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  color: var(--color-text-tertiary);
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
   opacity: 0;
   transition: opacity 0.15s ease;
   margin-top: auto;
@@ -1863,18 +2135,26 @@ onMounted(() => {
   opacity: 1;
 }
 
-/* ========== 详情弹窗 ========== */
+.schedule-detail-shell {
+  position: sticky;
+  top: calc(var(--navbar-visible-height, var(--navbar-height, 4rem)) + 1rem);
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.schedule-detail-article,
 .detail-loading {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--spacing-3);
-  padding: var(--spacing-2) 0;
 }
 
 .detail-skeleton {
   height: 1rem;
   border-radius: var(--radius-sm);
-  background: var(--glass-bg-light);
+  background: color-mix(
+    in srgb,
+    var(--surface-minimal-border, var(--color-border)) 48%,
+    transparent
+  );
   animation: skeleton-pulse 1.5s ease-in-out infinite;
   width: 80%;
 }
@@ -1888,10 +2168,92 @@ onMounted(() => {
   height: 3rem;
 }
 
-.event-detail {
+.schedule-detail-article {
+  gap: var(--spacing-5);
+}
+
+.schedule-detail-article__header,
+.schedule-detail-section,
+.schedule-detail-note {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.schedule-detail-article__topline {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+}
+
+.schedule-detail-article__eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
+}
+
+.schedule-detail-article__title {
+  margin: 0;
+  font-size: clamp(1.4rem, 1.2rem + 0.9vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--surface-minimal-text, var(--color-text-primary));
+}
+
+.schedule-detail-article__lead {
+  margin: 0;
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
+.schedule-detail-shell__close {
+  flex-shrink: 0;
+}
+
+.schedule-detail-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-2);
+}
+
+.schedule-detail-action {
+  inline-size: 100%;
+}
+
+.schedule-detail-facts {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.schedule-detail-fact {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
+  border-radius: var(--ui-radius-button, var(--radius-lg));
+  background: var(--surface-minimal-muted, var(--color-surface-variant));
+}
+
+.schedule-detail-fact__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
+}
+
+.schedule-detail-fact__copy,
+.schedule-detail-section__title {
+  margin: 0;
+  color: var(--surface-minimal-text, var(--color-text-primary));
+}
+
+.schedule-detail-section__title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
 }
 
 .detail-meta {
@@ -1903,7 +2265,7 @@ onMounted(() => {
 
 .draft-badge {
   padding: 0.125rem 0.5rem;
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-radius-button, var(--radius-md));
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
   background: rgba(245, 158, 11, 0.15);
@@ -1917,7 +2279,7 @@ onMounted(() => {
 }
 
 .detail-icon {
-  color: var(--color-text-tertiary);
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
   flex-shrink: 0;
   margin-top: 0.125rem;
 }
@@ -1928,42 +2290,48 @@ onMounted(() => {
   align-items: baseline;
   gap: var(--spacing-1);
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
+}
+
+.detail-row-content--stack {
+  display: grid;
+  align-items: start;
+  gap: 0.125rem;
 }
 
 .detail-separator {
-  color: var(--color-text-tertiary);
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
   margin: 0 var(--spacing-1);
 }
 
 .detail-allday-tag {
   padding: 0.0625rem 0.375rem;
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-radius-button, var(--radius-md));
   font-size: var(--text-xs);
-  background: var(--glass-bg-light);
-  color: var(--color-text-tertiary);
-  margin-left: var(--spacing-2);
+  background: var(--surface-minimal-panel, var(--color-surface));
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
+  margin-inline-start: var(--spacing-2);
 }
 
 .detail-venue-name {
   font-weight: var(--font-medium);
-  color: var(--color-text-primary);
+  color: var(--surface-minimal-text, var(--color-text-primary));
 }
 
 .detail-venue-addr {
   display: block;
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  margin-top: 0.125rem;
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
 }
 
 .detail-description {
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
-  color: var(--color-text-secondary);
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
   padding: var(--spacing-3);
-  background: var(--glass-bg-subtle);
-  border-radius: var(--radius-md);
+  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
+  border-radius: var(--ui-radius-button, var(--radius-lg));
+  background: var(--surface-minimal-muted, var(--color-surface-variant));
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
@@ -1976,13 +2344,13 @@ onMounted(() => {
 
 .desc-section + .desc-section {
   padding-top: var(--spacing-3);
-  border-top: 1px solid var(--glass-border);
+  border-top: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
 }
 
 .desc-heading {
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
+  color: var(--surface-minimal-text, var(--color-text-primary));
   margin: 0 0 var(--spacing-1);
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -1995,7 +2363,7 @@ onMounted(() => {
 }
 
 .desc-link {
-  color: var(--color-primary);
+  color: var(--surface-minimal-accent, var(--color-primary));
   text-decoration: none;
   word-break: break-all;
 }
@@ -2004,12 +2372,20 @@ onMounted(() => {
   text-decoration: underline;
 }
 
+.schedule-detail-empty {
+  margin: 0;
+  padding: var(--spacing-3);
+  border: 0.0625rem dashed var(--surface-minimal-border, var(--color-border));
+  border-radius: var(--ui-radius-button, var(--radius-lg));
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
 .detail-links {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-2);
-  padding-top: var(--spacing-2);
-  border-top: 1px solid var(--glass-border);
 }
 
 .detail-link-btn {
@@ -2024,6 +2400,53 @@ onMounted(() => {
 .detail-link-btn--ticket:hover {
   border-color: rgba(245, 158, 11, 0.26);
   color: #f59e0b;
+}
+
+.schedule-detail-note {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  padding: var(--spacing-3);
+  border: 0.0625rem dashed var(--surface-minimal-border, var(--color-border));
+  border-radius: var(--ui-radius-button, var(--radius-lg));
+  background: color-mix(
+    in srgb,
+    var(--surface-minimal-panel, var(--color-surface)) 86%,
+    var(--surface-minimal-muted, var(--color-surface-variant)) 14%
+  );
+}
+
+.schedule-detail-note__icon {
+  inline-size: 2rem;
+  block-size: 2rem;
+  display: inline-grid;
+  place-items: center;
+  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
+  border-radius: var(--ui-radius-button, var(--radius-md));
+  color: var(--surface-minimal-text, var(--color-text-primary));
+}
+
+.schedule-detail-note__copy,
+.schedule-detail-note__title,
+.schedule-detail-note__body {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.schedule-detail-note__title,
+.schedule-detail-note__body {
+  margin: 0;
+}
+
+.schedule-detail-note__title {
+  color: var(--surface-minimal-text, var(--color-text-primary));
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+}
+
+.schedule-detail-note__body {
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
+  font-size: var(--text-xs);
+  line-height: 1.6;
 }
 
 /* ========== Reduced Motion ========== */
