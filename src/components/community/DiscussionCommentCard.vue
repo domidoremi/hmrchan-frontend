@@ -1,7 +1,7 @@
 <template>
   <article
     :id="`comment-${comment.id}`"
-    class="discussion-comment-card"
+    class="discussion-comment-card surface-paper-sketch"
     :class="{ 'is-reply': isReply }"
   >
     <div class="comment-header">
@@ -36,7 +36,7 @@
           <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
         </button>
         <Transition name="dropdown">
-          <div v-if="showMenu" class="menu-dropdown glass-dropdown" @click.stop>
+          <div v-if="showMenu" class="menu-dropdown surface-paper-sketch" @click.stop>
             <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
               <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
               <span>{{ $t('common.delete') }}</span>
@@ -65,7 +65,7 @@
     </div>
 
     <div class="comment-content">
-      <p>{{ comment.content }}</p>
+      <p class="comment-copy">{{ comment.content }}</p>
     </div>
 
     <div class="comment-actions">
@@ -572,21 +572,24 @@ onUnmounted(() => {
 
 <style scoped>
 .discussion-comment-card {
+  display: grid;
+  gap: var(--spacing-3);
   padding: var(--spacing-4);
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg-light);
-  transition: background var(--transition-fast);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 .discussion-comment-card:hover {
-  background: var(--glass-bg);
+  transform: translateY(-0.08rem);
 }
 
 .discussion-comment-card.is-reply {
-  margin-left: var(--spacing-8);
+  margin-inline-start: var(--spacing-8);
   padding: var(--spacing-3);
-  background: transparent;
-  border-left: 2px solid var(--glass-border);
+  background: color-mix(in srgb, var(--surface-paper-bg) 62%, transparent);
+  border-inline-start: 0.125rem solid var(--surface-paper-border-strong);
 }
 
 .comment-header {
@@ -597,16 +600,16 @@ onUnmounted(() => {
 }
 
 .comment-avatar.ui-avatar {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 50%;
-  border: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 1rem;
+  border: 0.0625rem solid var(--surface-paper-border);
   background: transparent;
 }
 
 .is-reply .comment-avatar.ui-avatar {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 .comment-meta {
@@ -619,13 +622,13 @@ onUnmounted(() => {
 
 .comment-author {
   font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
+  color: var(--surface-paper-ink);
   font-size: var(--text-sm);
 }
 
 .comment-time {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--surface-paper-ink-soft);
 }
 
 .comment-badge {
@@ -663,15 +666,15 @@ onUnmounted(() => {
   width: 2rem;
   height: 2rem;
   border-radius: var(--radius-md);
-  color: var(--color-text-tertiary);
+  color: var(--surface-paper-ink-soft);
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
 }
 
 .menu-btn:hover {
-  background: var(--glass-bg);
-  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.4));
+  color: var(--surface-paper-ink);
 }
 
 .menu-dropdown {
@@ -679,7 +682,7 @@ onUnmounted(() => {
   top: 100%;
   right: 0;
   margin-top: var(--spacing-1);
-  min-width: 160px;
+  min-width: 10rem;
   padding: var(--spacing-1);
   z-index: 2;
 }
@@ -692,12 +695,12 @@ onUnmounted(() => {
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-  color: var(--color-text-primary);
+  color: var(--surface-paper-ink);
   transition: background var(--transition-fast);
 }
 
 .menu-item:hover {
-  background: var(--glass-bg-light);
+  background: color-mix(in srgb, var(--surface-paper-bg) 82%, rgba(255, 255, 255, 0.44));
 }
 
 .menu-item.danger {
@@ -705,20 +708,25 @@ onUnmounted(() => {
 }
 
 .comment-content {
-  margin-bottom: var(--spacing-3);
+  display: grid;
+  gap: var(--spacing-2);
 }
 
-.comment-content p {
+.comment-copy {
+  margin: 0;
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
-  color: var(--color-text-primary);
+  color: var(--surface-paper-ink);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .comment-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--spacing-2);
+  padding-block-start: var(--spacing-2);
+  border-top: 0.0625rem solid var(--surface-paper-border);
 }
 
 .action-btn {
@@ -726,9 +734,9 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-1);
   padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--radius-md);
+  border-radius: 999rem;
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--surface-paper-ink-soft);
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
@@ -736,8 +744,8 @@ onUnmounted(() => {
 }
 
 .action-btn:hover:not(:disabled) {
-  background: var(--glass-bg);
-  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--surface-paper-bg) 86%, rgba(255, 255, 255, 0.4));
+  color: var(--surface-paper-ink);
 }
 
 .action-btn:disabled {
@@ -770,7 +778,7 @@ onUnmounted(() => {
 }
 
 .show-replies-btn:hover {
-  background: var(--glass-bg-light);
+  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.4));
 }
 
 .replies-list {
@@ -800,7 +808,7 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .discussion-comment-card.is-reply {
-    margin-left: var(--spacing-4);
+    margin-inline-start: var(--spacing-4);
   }
 
   .reply-form-wrapper {

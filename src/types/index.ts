@@ -117,6 +117,8 @@ export interface Comment {
   id: string
   content: string
   parent_id: string | null
+  image_ids?: string[]
+  images?: CommentAttachment[]
   like_count: number
   reply_count: number
   is_liked: boolean
@@ -149,6 +151,42 @@ export interface CommentFormData {
   parent_id?: string
   image_ids?: string[]
 }
+
+export interface CommentAttachment {
+  id: string
+  url: string
+  thumbnail_url?: string
+  filename?: string
+  file_size?: number
+  mime_type?: string
+  width?: number
+  height?: number
+}
+
+export type ThreadSurfaceVariant = 'post-comment' | 'discussion-comment' | 'discussion-root'
+
+export type ThreadMessageState = 'idle' | 'submitting' | 'inserted' | 'error'
+
+export type UploadSurfaceMode = 'avatar' | 'comment-images'
+
+export interface UploadQueueItem {
+  id: string
+  file: File
+  name: string
+  size: number
+  mimeType: string
+  status: 'ready' | 'uploading' | 'success' | 'error' | 'canceled'
+  progress: number
+  previewUrl?: string | null
+  remoteId?: string | null
+  remoteUrl?: string | null
+  thumbnailUrl?: string | null
+  error?: string | null
+}
+
+export type PlannerView = 'week' | 'day' | 'month'
+
+export type AuthSceneVariant = 'login' | 'register' | 'forgot'
 
 export interface CommentSortOption {
   value: 'newest' | 'oldest' | 'popular'

@@ -153,7 +153,7 @@ const uiStyle = computed(() => settings.value.uiStyle)
 
 // 延迟挂载装饰性组件，避免首屏抢占主线程与网络资源
 const decorationsReady = ref(false)
-const DECORATIONS_DELAY_MS = 180
+const DECORATIONS_DELAY_MS = 0
 onMounted(() => {
   scheduleTask(
     () => {
@@ -211,7 +211,7 @@ const AUTH_ROUTE_NAMES = new Set([
   'verify-email',
   'auth-callback',
 ])
-const authKeepAliveExclude = ['LoginPage', 'RegisterPage', 'ForgotPasswordPage', 'AuthCallbackPage']
+const authKeepAliveExclude = ['AuthCallbackPage']
 const transitionMode = computed<'out-in' | undefined>(() =>
   transitionName.value ? 'out-in' : undefined
 )

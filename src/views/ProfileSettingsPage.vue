@@ -133,17 +133,23 @@
                         <p class="avatar-hint">
                           {{ $t('profile.avatarHint') }}
                         </p>
-                        <label class="glass-button avatar-upload-btn">
-                          <AnimatedIcon name="explore" :fallback-icon="Upload" size="sm" />
-                          {{ $t('profile.uploadAvatar') }}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            class="sr-only"
-                            :aria-label="$t('profile.uploadAvatar')"
-                            @change="handleAvatarSelect"
-                          />
-                        </label>
+                        <SketchDropUploader
+                          ref="avatarUploaderRef"
+                          v-model="avatarUploadItems"
+                          mode="avatar"
+                          class="avatar-uploader"
+                          :title="$t('profile.uploadAvatar')"
+                          :description="$t('profile.avatarSectionHint')"
+                          :select-label="$t('uploader.select')"
+                          :hint="$t('profile.avatarMetaHint')"
+                          accept="image/jpeg,image/png,image/gif,image/webp"
+                          :multiple="false"
+                          :max-files="1"
+                          :auto-upload="false"
+                          :validate-fn="validateAvatarUpload"
+                          @error="toastStore.error($event)"
+                          @selected="handleAvatarQueueSelected"
+                        />
                         <div class="avatar-meta">
                           <span>{{ $t('profile.avatarMetaHint') }}</span>
                           <span class="meta-dot" />
@@ -849,7 +855,6 @@ import { useRouter } from 'vue-router'
 import {
   User,
   Camera,
-  Upload,
   FileText,
   AtSign,
   Lock,
@@ -868,6 +873,7 @@ import {
 } from 'lucide-vue-next'
 import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
+import type { UploadQueueItem } from '@/types'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
 import { checkPasswordStrength } from '@/utils/crypto'
 import { ensureVerificationToken, isVerificationCancelledError } from '@/api/verificationBridge'
@@ -890,6 +896,7 @@ import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
 import ProfileSecurityMfaSection from '@/components/profile/ProfileSecurityMfaSection.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import SettingsPanel from '@/components/layout/SettingsPanel.vue'
+import SketchDropUploader from '@/components/ui/SketchDropUploader.vue'
 
 // 动态导入大型组件以减少初始包体积
 const ImageCropper = defineAsyncComponent(() => import('@/components/ui/ImageCropper.vue'))
@@ -920,6 +927,8 @@ const privacySettingsCategories: Array<'privacy'> = ['privacy']
 
 const showCropper = ref(false)
 const cropImageSrc = ref('')
+const avatarUploadItems = ref<UploadQueueItem[]>([])
+const avatarUploaderRef = useTemplateRef<{ clear: () => void }>('avatarUploaderRef')
 
 // Password visibility toggles
 const showCurrentPassword = ref(false)
@@ -1413,23 +1422,23 @@ const AVATAR_LIMITS = {
   ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
 }
 
-function handleAvatarSelect(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-
-  // 验证文件类型
+function validateAvatarUpload(file: File): string | null {
   if (!AVATAR_LIMITS.ALLOWED_TYPES.includes(file.type)) {
-    toastStore.error(t('profile.avatarTypeError'))
-    input.value = ''
-    return
+    return t('profile.avatarTypeError')
   }
 
-  // 验证文件大小
   const sizeMB = file.size / (1024 * 1024)
   if (sizeMB > AVATAR_LIMITS.MAX_FILE_SIZE_MB) {
-    toastStore.error(t('profile.avatarSizeError', { max: AVATAR_LIMITS.MAX_FILE_SIZE_MB }))
-    input.value = ''
+    return t('profile.avatarSizeError', { max: AVATAR_LIMITS.MAX_FILE_SIZE_MB })
+  }
+
+  return null
+}
+
+function openAvatarCropper(file: File) {
+  const validationError = validateAvatarUpload(file)
+  if (validationError) {
+    toastStore.error(validationError)
     return
   }
 
@@ -1439,7 +1448,13 @@ function handleAvatarSelect(event: Event) {
     showCropper.value = true
   }
   reader.readAsDataURL(file)
-  input.value = ''
+}
+
+function handleAvatarQueueSelected(items: UploadQueueItem[]) {
+  const selectedItem = items[0]
+  if (!selectedItem) return
+  openAvatarCropper(selectedItem.file)
+  avatarUploaderRef.value?.clear()
 }
 
 function closeCropper() {
