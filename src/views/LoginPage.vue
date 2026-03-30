@@ -1,344 +1,346 @@
 <template>
   <div class="auth-page auth-page--login">
-    <div class="auth-book">
-      <section class="auth-visual" aria-hidden="true">
-        <AuthVisualScene
-          :title="$t('auth.loginTitle')"
-          :subtitle="visualSubtitle"
-          :mood="visualMood"
-          :show-copy="false"
-          scene-kind="login"
-        />
-      </section>
+    <AuthEntryShell
+      :title="pageTitle"
+      :subtitle="pageSubtitle"
+      active-tab="login"
+      :redirect-to="redirectTo"
+      @back="handleBack"
+    >
+      <template #eyebrow>
+        <span class="auth-badge">
+          <span class="auth-badge-dot" aria-hidden="true" />
+          {{ badgeLabel }}
+        </span>
+      </template>
 
-      <section class="auth-panel">
-        <div class="auth-panel-inner">
-          <div class="auth-topline">
-            <div class="auth-header">
-              <button
-                type="button"
-                class="back-btn page-control-btn page-control-btn--square"
-                :aria-label="$t('common.back')"
-                @click="handleBackWithMood"
-              >
-                <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="sm" />
-              </button>
-            </div>
-            <div class="auth-headings">
-              <h1 class="auth-title">{{ pageTitle }}</h1>
-              <p class="auth-subtitle">{{ pageSubtitle }}</p>
-            </div>
-          </div>
-
-          <nav class="auth-switcher" :aria-label="$t('auth.loginTitle')">
-            <RouterLink
-              to="/login"
-              class="auth-switcher__item auth-switcher__item--active"
-              aria-current="page"
-            >
-              {{ $t('nav.login') }}
-            </RouterLink>
-            <RouterLink to="/register" class="auth-switcher__item" @click="handleNavigateLink">
-              {{ $t('nav.register') }}
-            </RouterLink>
-          </nav>
-
-          <Transition name="step-fade" mode="out-in">
-            <form
-              v-if="step === 'credentials'"
-              key="credentials"
-              class="auth-form"
-              @submit.prevent="handleCredentialsSubmit"
-            >
-              <div class="auth-card auth-card--stack glass-surface--base">
-                <span class="auth-badge">
-                  <span class="auth-badge-dot" aria-hidden="true" />
-                  {{ $t('auth.secureBadge') }}
-                </span>
-
-                <div class="form-group">
-                  <label for="login-identifier">{{ $t('auth.usernameOrEmail') }}</label>
-                  <Input
-                    id="login-identifier"
-                    v-model="loginIdentifier"
-                    type="text"
-                    :placeholder="$t('auth.usernameOrEmailPlaceholder')"
-                    autocomplete="username"
-                    required
-                    @focus="handleTypingFocus"
-                    @blur="handleFieldBlur"
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label for="login-password">{{ $t('auth.password') }}</label>
-                  <div class="password-field">
-                    <Input
-                      id="login-password"
-                      v-model="loginPassword"
-                      :type="showLoginPassword ? 'text' : 'password'"
-                      class="password-input"
-                      :placeholder="$t('auth.passwordPlaceholder')"
-                      autocomplete="current-password"
-                      required
-                      @focus="handlePasswordFocus"
-                      @blur="handleFieldBlur"
-                    />
-                    <button
-                      type="button"
-                      class="password-toggle"
-                      :aria-label="showLoginPassword ? $t('common.hide') : $t('common.show')"
-                      @click="togglePasswordVisibility('login')"
-                    >
-                      <AnimatedIcon
-                        v-if="showLoginPassword"
-                        name="explore"
-                        :fallback-icon="EyeOff"
-                        size="sm"
-                      />
-                      <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                    </button>
-                  </div>
-                </div>
-
-                <p v-if="credentialsError" class="field-error">{{ credentialsError }}</p>
-
-                <div v-if="turnstileEnabled" class="turnstile-block">
-                  <div class="turnstile-header">
-                    <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                    <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-                  </div>
-                  <TurnstileWidget
-                    ref="credentialsTurnstileRef"
-                    :site-key="turnstileSiteKey"
-                    action="login"
-                    @verify="handleCredentialsTurnstileVerify"
-                    @expire="handleCredentialsTurnstileExpire"
-                    @error="handleTurnstileError"
-                  />
-                </div>
-
-                <div class="action-group">
-                  <Button type="submit" full-width :loading="isLoading">
-                    {{ $t('auth.loginButton') }}
-                  </Button>
-                </div>
-              </div>
-
-              <div v-if="isPasswordLoginUnavailable" class="auth-restore">
-                <div class="auth-restore__copy">
-                  <p class="auth-restore__title">{{ $t('auth.passwordLoginUnavailableTitle') }}</p>
-                  <p class="auth-restore__hint">{{ $t('auth.passwordLoginUnavailableHint') }}</p>
-                </div>
-
-                <div class="action-group">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    full-width
-                    :icon="IconGoogle"
-                    @click="handleGoogleContinue"
-                  >
-                    {{ $t('auth.googleLoginButton') }}
-                  </Button>
-                  <RouterLink class="auth-link" to="/forgot-password" @click="handleNavigateLink">
-                    {{ $t('auth.passwordLoginUnavailableResetAction') }}
-                  </RouterLink>
-                </div>
-              </div>
-
-              <div class="auth-provider-divider" aria-hidden="true">
-                <span>{{ $t('auth.googleDivider') }}</span>
-              </div>
-
-              <div class="auth-card auth-card--stack glass-surface--base auth-provider-card">
-                <div class="auth-provider-card__copy">
-                  <h2 class="auth-provider-card__title">
-                    <IconGoogle class="auth-provider-card__brand-icon" />
-                    <span>{{ $t('auth.googleLoginButton') }}</span>
-                  </h2>
-                  <p class="auth-provider-card__hint">{{ $t('auth.googleLoginHint') }}</p>
-                </div>
-
-                <div class="action-group">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    full-width
-                    :icon="IconGoogle"
-                    :loading="isLoading"
-                    @click="handleGoogleContinue"
-                  >
-                    {{ $t('auth.googleLoginButton') }}
-                  </Button>
-                </div>
-              </div>
-
-              <div class="auth-support-copy">
-                <p class="auth-support-copy__text">{{ $t('auth.loginHint') }}</p>
-                <p class="auth-support-copy__text">{{ $t('auth.registerHint') }}</p>
-              </div>
-            </form>
-
-            <form
-              v-else-if="step === 'risk-verification'"
-              key="risk"
-              class="auth-form"
-              @submit.prevent="handleRiskVerificationSubmit"
-            >
-              <div class="auth-card auth-card--stack glass-surface--base">
-                <span class="auth-badge">
-                  <span class="auth-badge-dot" aria-hidden="true" />
-                  {{ $t('auth.riskVerificationTitle') }}
-                </span>
-                <p class="auth-helper">{{ $t('auth.riskVerificationHint') }}</p>
-                <p v-if="riskMessage" class="auth-helper auth-helper--emphasis">
-                  {{ riskMessage }}
-                </p>
-                <p v-if="riskExpiresIn" class="auth-helper">
-                  {{ $t('auth.riskVerificationExpiresIn', { seconds: riskExpiresIn }) }}
-                </p>
-
-                <div class="form-group">
-                  <label for="risk-code">{{ $t('auth.riskVerificationCode') }}</label>
-                  <Input
-                    id="risk-code"
-                    v-model="riskVerificationCode"
-                    type="text"
-                    inputmode="numeric"
-                    maxlength="8"
-                    :placeholder="$t('auth.riskVerificationCodePlaceholder')"
-                    autocomplete="one-time-code"
-                    @focus="handleTypingFocus"
-                    @blur="handleFieldBlur"
-                  />
-                </div>
-
-                <p v-if="riskError" class="field-error">{{ riskError }}</p>
-
-                <div v-if="turnstileEnabled" class="turnstile-block">
-                  <div class="turnstile-header">
-                    <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                    <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-                  </div>
-                  <TurnstileWidget
-                    ref="riskTurnstileRef"
-                    :site-key="turnstileSiteKey"
-                    action="risk-login"
-                    @verify="handleRiskTurnstileVerify"
-                    @expire="handleRiskTurnstileExpire"
-                    @error="handleTurnstileError"
-                  />
-                </div>
-
-                <div class="action-group">
-                  <Button type="submit" full-width :loading="isLoading">
-                    {{ $t('auth.verifyButton') }}
-                  </Button>
-                  <Button type="button" variant="ghost" full-width @click="returnToCredentials">
-                    {{ $t('auth.returnToCredentials') }}
-                  </Button>
-                </div>
-              </div>
-            </form>
-
-            <div v-else key="mfa" class="auth-form">
-              <AuthMfaStep
-                :pending-mfa-login-token="pendingMfaLoginToken"
-                :methods="mfaMethods"
-                :message="mfaMessage"
-                :error-message="mfaError"
-                @resolved="handleMfaResolved"
-              />
-
-              <button
-                type="button"
-                class="auth-link-button auth-2fa-back"
-                @click="returnToCredentials"
-              >
-                {{ $t('auth.returnToCredentials') }}
-              </button>
-            </div>
-          </Transition>
-
-          <section v-if="showRestorePanel" class="auth-restore glass-surface--base">
-            <div class="auth-restore__copy">
-              <p class="auth-restore__title">{{ $t('auth.restoreTitle') }}</p>
-              <p class="auth-restore__hint">{{ restoreNotice }}</p>
-            </div>
-
+      <Transition name="step-fade" mode="out-in">
+        <form
+          v-if="step === 'credentials'"
+          key="credentials"
+          class="auth-form"
+          @submit.prevent="handleCredentialsSubmit"
+        >
+          <div class="auth-card auth-card--stack">
             <div class="form-group">
-              <label for="restore-identifier">{{ $t('auth.usernameOrEmail') }}</label>
+              <label for="login-identifier">{{ $t('auth.usernameOrEmail') }}</label>
               <Input
-                id="restore-identifier"
-                v-model="restoreIdentifier"
+                id="login-identifier"
+                v-model="loginIdentifier"
                 type="text"
                 :placeholder="$t('auth.usernameOrEmailPlaceholder')"
                 autocomplete="username"
                 required
-                @focus="handleTypingFocus"
-                @blur="handleFieldBlur"
               />
             </div>
 
             <div class="form-group">
-              <label for="restore-password">{{ $t('auth.password') }}</label>
+              <label for="login-password">{{ $t('auth.password') }}</label>
               <div class="password-field">
                 <Input
-                  id="restore-password"
-                  v-model="restorePassword"
-                  :type="showRestorePassword ? 'text' : 'password'"
+                  id="login-password"
+                  v-model="loginPassword"
+                  :type="showLoginPassword ? 'text' : 'password'"
                   class="password-input"
                   :placeholder="$t('auth.passwordPlaceholder')"
                   autocomplete="current-password"
                   required
-                  @focus="handlePasswordFocus"
-                  @blur="handleFieldBlur"
                 />
                 <button
                   type="button"
                   class="password-toggle"
-                  :aria-label="showRestorePassword ? $t('common.hide') : $t('common.show')"
-                  @click="togglePasswordVisibility('restore')"
+                  :aria-label="showLoginPassword ? $t('common.hide') : $t('common.show')"
+                  @click="showLoginPassword = !showLoginPassword"
                 >
-                  <AnimatedIcon
-                    v-if="showRestorePassword"
-                    name="explore"
-                    :fallback-icon="EyeOff"
-                    size="sm"
-                  />
-                  <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                  <EyeOff v-if="showLoginPassword" :size="16" />
+                  <Eye v-else :size="16" />
                 </button>
               </div>
             </div>
 
-            <Button
-              type="button"
-              variant="ghost"
-              :loading="isRestoringAccount"
-              :disabled="!canRestoreAccount"
-              full-width
-              @click="handleRestoreAccount"
-            >
-              {{ $t('auth.restoreButton') }}
-            </Button>
-          </section>
+            <p v-if="credentialsError" class="field-error">{{ credentialsError }}</p>
 
-          <p class="auth-forgot">
-            <RouterLink to="/forgot-password" @click="handleNavigateLink">{{
-              $t('auth.forgotPassword')
-            }}</RouterLink>
-          </p>
+            <div v-if="turnstileEnabled" class="turnstile-block">
+              <div class="turnstile-header">
+                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+              </div>
+              <TurnstileWidget
+                ref="credentialsTurnstileRef"
+                :site-key="turnstileSiteKey"
+                action="login"
+                @verify="handleCredentialsTurnstileVerify"
+                @expire="handleCredentialsTurnstileExpire"
+                @error="handleTurnstileError"
+              />
+            </div>
 
-          <p class="auth-footer">
-            {{ $t('auth.noAccount') }}
-            <RouterLink to="/register" @click="handleNavigateLink">{{
-              $t('nav.register')
-            }}</RouterLink>
-          </p>
+            <div class="action-group">
+              <Button type="submit" full-width :loading="isLoading">
+                {{ $t('auth.loginButton') }}
+              </Button>
+            </div>
+
+            <div class="auth-primary-meta">
+              <RouterLink class="auth-forgot" to="/forgot-password">{{
+                $t('auth.forgotPassword')
+              }}</RouterLink>
+              <span>{{ $t('auth.loginHint') }}</span>
+            </div>
+          </div>
+
+          <div
+            v-if="isPasswordLoginUnavailable"
+            class="auth-inline-state auth-inline-state--warning"
+          >
+            <div class="auth-inline-state__icon" aria-hidden="true">
+              <CircleAlert :size="16" />
+            </div>
+            <div class="auth-inline-state__content">
+              <p class="auth-restore__title">{{ $t('auth.passwordLoginUnavailableTitle') }}</p>
+              <p class="auth-inline-state__copy">
+                {{ $t('auth.passwordLoginUnavailableHint') }}
+              </p>
+              <div class="auth-inline-state__actions">
+                <AuthProviderButton
+                  action="google"
+                  :label="$t('auth.googleLoginButton')"
+                  :hint="$t('auth.googleLoginHint')"
+                  :loading="googleProviderBusy"
+                  :icon="IconGoogle"
+                  @click="handleGoogleContinue"
+                />
+                <RouterLink class="auth-link" to="/forgot-password">{{
+                  $t('auth.passwordLoginUnavailableResetAction')
+                }}</RouterLink>
+              </div>
+            </div>
+          </div>
+
+          <AuthDivider :label="$t('auth.googleDivider')" />
+
+          <AuthProviderButton
+            action="google"
+            :label="$t('auth.googleLoginButton')"
+            :hint="$t('auth.googleLoginHint')"
+            :loading="googleProviderBusy"
+            :icon="IconGoogle"
+            @click="handleGoogleContinue"
+          />
+
+          <div v-if="googlePopupState === 'waiting'" class="auth-inline-state">
+            <div class="auth-inline-state__icon" aria-hidden="true">
+              <LoaderCircle :size="16" class="auth-inline-spin" />
+            </div>
+            <div class="auth-inline-state__content">
+              <p class="auth-restore__title">{{ $t('auth.googlePopupWaitingTitle') }}</p>
+              <p class="auth-inline-state__copy">{{ $t('auth.googlePopupWaitingHint') }}</p>
+            </div>
+          </div>
+
+          <div
+            v-else-if="googlePopupState === 'blocked' || googlePopupState === 'error'"
+            class="auth-inline-state"
+            :class="
+              googlePopupState === 'blocked'
+                ? 'auth-inline-state--warning'
+                : 'auth-inline-state--error'
+            "
+          >
+            <div class="auth-inline-state__icon" aria-hidden="true">
+              <CircleAlert :size="16" />
+            </div>
+            <div class="auth-inline-state__content">
+              <p class="auth-restore__title">{{ $t('auth.googlePopupFallbackTitle') }}</p>
+              <p class="auth-inline-state__copy">{{ googlePopupErrorMessage }}</p>
+              <div v-if="googlePopupState === 'blocked'" class="auth-inline-state__actions">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  full-width
+                  :loading="isLoading"
+                  @click="continueGoogleInCurrentPage"
+                >
+                  {{ $t('auth.googlePopupFallbackAction') }}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <form
+          v-else-if="step === 'link-required'"
+          key="link"
+          class="auth-form"
+          @submit.prevent="handleLinkVerificationSubmit"
+        >
+          <div class="auth-card auth-card--stack">
+            <div class="code-sent-banner">
+              <Mail :size="16" />
+              <span>{{ $t('auth.callback.linkEmailHint', { email: maskedEmail }) }}</span>
+            </div>
+
+            <p class="auth-helper">{{ $t('auth.callback.linkHint') }}</p>
+            <p v-if="linkExpiresIn" class="auth-helper">
+              {{ $t('auth.callback.linkExpiresIn', { seconds: linkExpiresIn }) }}
+            </p>
+
+            <div class="form-group">
+              <label for="login-link-code">{{ $t('auth.verificationCode') }}</label>
+              <Input
+                id="login-link-code"
+                v-model="linkVerificationCode"
+                type="text"
+                inputmode="numeric"
+                maxlength="8"
+                :placeholder="$t('auth.riskVerificationCodePlaceholder')"
+                autocomplete="one-time-code"
+              />
+            </div>
+
+            <p v-if="linkError" class="field-error">{{ linkError }}</p>
+
+            <div class="action-group">
+              <Button type="submit" full-width :loading="isLoading">
+                {{ $t('auth.callback.linkAction') }}
+              </Button>
+              <Button type="button" variant="ghost" full-width @click="returnToCredentials">
+                {{ $t('auth.returnToCredentials') }}
+              </Button>
+            </div>
+          </div>
+        </form>
+
+        <form
+          v-else-if="step === 'risk-verification'"
+          key="risk"
+          class="auth-form"
+          @submit.prevent="handleRiskVerificationSubmit"
+        >
+          <div class="auth-card auth-card--stack">
+            <p class="auth-helper">{{ $t('auth.riskVerificationHint') }}</p>
+            <p v-if="riskMessage" class="auth-helper auth-helper--emphasis">
+              {{ riskMessage }}
+            </p>
+            <p v-if="riskExpiresIn" class="auth-helper">
+              {{ $t('auth.riskVerificationExpiresIn', { seconds: riskExpiresIn }) }}
+            </p>
+
+            <div class="form-group">
+              <label for="risk-code">{{ $t('auth.riskVerificationCode') }}</label>
+              <Input
+                id="risk-code"
+                v-model="riskVerificationCode"
+                type="text"
+                inputmode="numeric"
+                maxlength="8"
+                :placeholder="$t('auth.riskVerificationCodePlaceholder')"
+                autocomplete="one-time-code"
+              />
+            </div>
+
+            <p v-if="riskError" class="field-error">{{ riskError }}</p>
+
+            <div v-if="turnstileEnabled" class="turnstile-block">
+              <div class="turnstile-header">
+                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+              </div>
+              <TurnstileWidget
+                ref="riskTurnstileRef"
+                :site-key="turnstileSiteKey"
+                action="risk-login"
+                @verify="handleRiskTurnstileVerify"
+                @expire="handleRiskTurnstileExpire"
+                @error="handleTurnstileError"
+              />
+            </div>
+
+            <div class="action-group">
+              <Button type="submit" full-width :loading="isLoading">
+                {{ $t('auth.verifyButton') }}
+              </Button>
+              <Button type="button" variant="ghost" full-width @click="returnToCredentials">
+                {{ $t('auth.returnToCredentials') }}
+              </Button>
+            </div>
+          </div>
+        </form>
+
+        <div v-else key="mfa" class="auth-form">
+          <AuthMfaStep
+            :pending-mfa-login-token="pendingMfaLoginToken"
+            :methods="mfaMethods"
+            :message="mfaMessage"
+            :error-message="mfaError"
+            @resolved="handleMfaResolved"
+          />
+
+          <button type="button" class="auth-link-button auth-2fa-back" @click="returnToCredentials">
+            {{ $t('auth.returnToCredentials') }}
+          </button>
         </div>
-      </section>
-    </div>
+      </Transition>
+
+      <template #footer>
+        <section v-if="showRestorePanel && step === 'credentials'" class="auth-restore">
+          <div class="auth-restore__copy">
+            <p class="auth-restore__title">{{ $t('auth.restoreTitle') }}</p>
+            <p class="auth-inline-state__copy">{{ restoreNotice }}</p>
+          </div>
+
+          <div class="form-group">
+            <label for="restore-identifier">{{ $t('auth.usernameOrEmail') }}</label>
+            <Input
+              id="restore-identifier"
+              v-model="restoreIdentifier"
+              type="text"
+              :placeholder="$t('auth.usernameOrEmailPlaceholder')"
+              autocomplete="username"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="restore-password">{{ $t('auth.password') }}</label>
+            <div class="password-field">
+              <Input
+                id="restore-password"
+                v-model="restorePassword"
+                :type="showRestorePassword ? 'text' : 'password'"
+                class="password-input"
+                :placeholder="$t('auth.passwordPlaceholder')"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="showRestorePassword ? $t('common.hide') : $t('common.show')"
+                @click="showRestorePassword = !showRestorePassword"
+              >
+                <EyeOff v-if="showRestorePassword" :size="16" />
+                <Eye v-else :size="16" />
+              </button>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            full-width
+            :loading="isRestoringAccount"
+            :disabled="!canRestoreAccount"
+            @click="handleRestoreAccount"
+          >
+            {{ $t('auth.restoreButton') }}
+          </Button>
+        </section>
+
+        <p v-if="step === 'credentials'" class="auth-footer">
+          {{ $t('auth.noAccount') }}
+          <RouterLink to="/register">{{ $t('nav.register') }}</RouterLink>
+        </p>
+      </template>
+    </AuthEntryShell>
   </div>
 </template>
 
@@ -348,25 +350,32 @@ defineOptions({ name: 'LoginPage' })
 import { computed, onMounted, onUnmounted, ref, watch, useTemplateRef } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { ArrowLeft, Eye, EyeOff } from 'lucide-vue-next'
+import { CircleAlert, Eye, EyeOff, LoaderCircle, Mail } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { userService, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
+import {
+  mapGooglePopupError,
+  openGoogleAuthPopup,
+  prefersGoogleAuthPopup,
+  waitForGooglePopupResult,
+  type GooglePopupMessage,
+  type GooglePopupState,
+} from '@/services/googleAuthService'
 import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
-import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
 import AuthMfaStep from '@/components/auth/AuthMfaStep.vue'
+import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
+import AuthDivider from '@/components/auth/AuthDivider.vue'
+import AuthProviderButton from '@/components/auth/AuthProviderButton.vue'
 import IconGoogle from '@/components/icons/IconGoogle.vue'
 
-type VisualMood = 'idle' | 'typing' | 'dodge' | 'submitting' | 'success'
-type Step = 'credentials' | 'risk-verification' | 'mfa'
-type PasswordFieldTarget = 'login' | 'restore'
+type Step = 'credentials' | 'link-required' | 'risk-verification' | 'mfa'
 
 const route = useRoute()
 const router = useRouter()
@@ -384,6 +393,12 @@ const credentialsError = ref('')
 const credentialsErrorCode = ref('')
 
 const step = ref<Step>('credentials')
+const pendingGoogleLinkToken = ref('')
+const maskedEmail = ref('')
+const linkVerificationCode = ref('')
+const linkExpiresIn = ref<number | null>(null)
+const linkError = ref('')
+
 const riskPendingToken = ref('')
 const riskVerificationCode = ref('')
 const riskMessage = ref('')
@@ -396,6 +411,9 @@ const mfaMessage = ref('')
 const mfaError = ref('')
 
 const nextRedirectTarget = ref('/')
+const googlePopupState = ref<GooglePopupState>('idle')
+const googlePopupErrorKey = ref('')
+let googlePopupDispose: (() => void) | null = null
 
 const restoreIdentifier = ref('')
 const restorePassword = ref('')
@@ -403,15 +421,8 @@ const showRestorePassword = ref(false)
 const isRestoringAccount = ref(false)
 const showRestorePanel = ref(false)
 
-const visualMood = ref<VisualMood>('idle')
-let moodTimer: ReturnType<typeof setTimeout> | null = null
-
-const credentialsTurnstileRef = useTemplateRef<{
-  reset: () => void
-}>('credentialsTurnstileRef')
-const riskTurnstileRef = useTemplateRef<{
-  reset: () => void
-}>('riskTurnstileRef')
+const credentialsTurnstileRef = useTemplateRef<{ reset: () => void }>('credentialsTurnstileRef')
+const riskTurnstileRef = useTemplateRef<{ reset: () => void }>('riskTurnstileRef')
 const credentialsTurnstileToken = ref<string | null>(null)
 const credentialsTurnstileIssuedAt = ref<number | null>(null)
 const riskTurnstileToken = ref<string | null>(null)
@@ -433,8 +444,28 @@ const restoreNotice = computed(() =>
 const isPasswordLoginUnavailable = computed(
   () => credentialsErrorCode.value === 'password_login_unavailable'
 )
+const googleProviderBusy = computed(
+  () => ['opening', 'waiting', 'handling'].includes(googlePopupState.value) || isLoading.value
+)
+const googlePopupErrorMessage = computed(() =>
+  googlePopupErrorKey.value ? t(googlePopupErrorKey.value) : ''
+)
+const badgeLabel = computed(() => {
+  switch (step.value) {
+    case 'link-required':
+      return t('auth.callback.linkTitle')
+    case 'risk-verification':
+      return t('auth.riskVerificationTitle')
+    case 'mfa':
+      return t('auth.mfa.badge')
+    default:
+      return t('auth.secureBadge')
+  }
+})
 const pageTitle = computed(() => {
   switch (step.value) {
+    case 'link-required':
+      return t('auth.callback.linkTitle')
     case 'risk-verification':
       return t('auth.riskVerificationTitle')
     case 'mfa':
@@ -445,6 +476,8 @@ const pageTitle = computed(() => {
 })
 const pageSubtitle = computed(() => {
   switch (step.value) {
+    case 'link-required':
+      return t('auth.callback.linkHint')
     case 'risk-verification':
       return t('auth.riskVerificationHint')
     case 'mfa':
@@ -453,79 +486,6 @@ const pageSubtitle = computed(() => {
       return t('auth.loginSubtitle')
   }
 })
-const visualSubtitle = computed(() => {
-  switch (step.value) {
-    case 'risk-verification':
-      return t('auth.riskVerificationTitle')
-    case 'mfa':
-      return t('auth.mfa.badge')
-    default:
-      return t('auth.loginSubtitle')
-  }
-})
-
-function setVisualMood(next: VisualMood, holdMs = 0) {
-  if (moodTimer) {
-    clearTimeout(moodTimer)
-    moodTimer = null
-  }
-
-  visualMood.value = next
-
-  if (holdMs > 0) {
-    moodTimer = setTimeout(() => {
-      visualMood.value = 'idle'
-      moodTimer = null
-    }, holdMs)
-  }
-}
-
-function handleTypingFocus() {
-  if (visualMood.value === 'submitting') return
-  setVisualMood('typing')
-}
-
-function handlePasswordFocus() {
-  if (visualMood.value === 'submitting') return
-  setVisualMood('dodge')
-}
-
-function handleFieldBlur() {
-  if (visualMood.value === 'submitting') return
-  setVisualMood(step.value === 'credentials' ? 'idle' : 'typing')
-}
-
-function togglePasswordVisibility(target: PasswordFieldTarget) {
-  if (target === 'login') {
-    showLoginPassword.value = !showLoginPassword.value
-  } else {
-    showRestorePassword.value = !showRestorePassword.value
-  }
-  setVisualMood('dodge', 520)
-}
-
-function handleNavigateLink() {
-  setVisualMood('submitting', 580)
-}
-
-function handleBack() {
-  if (step.value !== 'credentials') {
-    returnToCredentials()
-    return
-  }
-
-  if (window.history.length > 1) {
-    router.back()
-    return
-  }
-
-  router.replace('/')
-}
-
-function handleBackWithMood() {
-  setVisualMood('dodge', 460)
-  handleBack()
-}
 
 function isTurnstileTokenFresh(
   token: string | null,
@@ -571,22 +531,43 @@ function handleRiskTurnstileExpire() {
 
 function handleTurnstileError(error?: Error) {
   toastStore.error(t(getTurnstileErrorMessageKey(error)))
-  setVisualMood('dodge', 900)
+}
+
+function clearInlineErrors() {
+  credentialsError.value = ''
+  credentialsErrorCode.value = ''
+  linkError.value = ''
+  riskError.value = ''
+  mfaError.value = ''
+}
+
+function setGooglePopupStatus(state: GooglePopupState, errorKey = '') {
+  googlePopupState.value = state
+  googlePopupErrorKey.value = errorKey
+}
+
+function clearGooglePopupListener() {
+  if (googlePopupDispose) {
+    googlePopupDispose()
+    googlePopupDispose = null
+  }
+}
+
+function resetGooglePopupState() {
+  clearGooglePopupListener()
+  setGooglePopupStatus('idle')
 }
 
 function getPrimaryFallbackRedirect(): string {
   return resolveAuthRedirectTarget(nextRedirectTarget.value, redirectTo.value)
 }
 
-function clearInlineErrors() {
-  credentialsError.value = ''
-  credentialsErrorCode.value = ''
-  riskError.value = ''
-  mfaError.value = ''
-}
-
 function returnToCredentials() {
   step.value = 'credentials'
+  pendingGoogleLinkToken.value = ''
+  maskedEmail.value = ''
+  linkVerificationCode.value = ''
+  linkExpiresIn.value = null
   riskPendingToken.value = ''
   riskVerificationCode.value = ''
   riskMessage.value = ''
@@ -594,10 +575,23 @@ function returnToCredentials() {
   pendingMfaLoginToken.value = ''
   mfaMethods.value = []
   mfaMessage.value = ''
-  riskError.value = ''
-  mfaError.value = ''
+  clearInlineErrors()
   resetRiskTurnstile()
-  setVisualMood('typing', 420)
+  resetGooglePopupState()
+}
+
+function handleBack() {
+  if (step.value !== 'credentials') {
+    returnToCredentials()
+    return
+  }
+
+  if (window.history.length > 1) {
+    router.back()
+    return
+  }
+
+  void router.replace('/')
 }
 
 async function finalizeSuccessfulLogin(result: Extract<AuthFlowResult, { status: 'success' }>) {
@@ -609,17 +603,30 @@ async function finalizeSuccessfulLogin(result: Extract<AuthFlowResult, { status:
     toastStore.success(t('auth.loginSuccess'))
   }
 
-  setVisualMood('success', 900)
-
   await router.replace(resolveAuthRedirectTarget(result.redirectTo, getPrimaryFallbackRedirect()))
 }
 
 async function applyAuthFlowResult(result: AuthFlowResult) {
   switch (result.status) {
     case 'success':
+      resetGooglePopupState()
       await finalizeSuccessfulLogin(result)
       return
+    case 'link-required':
+      resetGooglePopupState()
+      step.value = 'link-required'
+      pendingGoogleLinkToken.value = result.pendingGoogleLinkToken
+      maskedEmail.value = result.maskedEmail
+      linkExpiresIn.value = result.expiresIn ?? null
+      linkVerificationCode.value = ''
+      linkError.value = ''
+      nextRedirectTarget.value = resolveAuthRedirectTarget(
+        result.redirectTo,
+        getPrimaryFallbackRedirect()
+      )
+      return
     case 'risk-verification':
+      resetGooglePopupState()
       step.value = 'risk-verification'
       riskPendingToken.value = result.pendingToken
       riskVerificationCode.value = ''
@@ -631,9 +638,9 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
         getPrimaryFallbackRedirect()
       )
       resetRiskTurnstile()
-      setVisualMood('typing', 420)
       return
     case 'mfa':
+      resetGooglePopupState()
       step.value = 'mfa'
       pendingMfaLoginToken.value = result.pendingMfaLoginToken
       mfaMethods.value = result.methods
@@ -643,19 +650,18 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
         result.redirectTo,
         getPrimaryFallbackRedirect()
       )
-      setVisualMood('typing', 420)
       return
     case 'error': {
-      const translated = t(result.error)
-      if (step.value === 'risk-verification') {
-        riskError.value = translated
+      if (step.value === 'link-required') {
+        linkError.value = t(result.error)
+      } else if (step.value === 'risk-verification') {
+        riskError.value = t(result.error)
       } else if (step.value === 'mfa') {
-        mfaError.value = translated
+        mfaError.value = t(result.error)
       } else {
-        credentialsError.value = translated
+        credentialsError.value = t(result.error)
         credentialsErrorCode.value = result.code || ''
       }
-      setVisualMood('dodge', 1200)
       return
     }
     default:
@@ -666,12 +672,11 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
 async function handleCredentialsSubmit() {
   if (isLoading.value) return
 
-  setVisualMood('submitting')
   clearInlineErrors()
+  resetGooglePopupState()
 
   if (!loginIdentifier.value.trim() || !loginPassword.value) {
     credentialsError.value = t('auth.error.fieldsRequired')
-    setVisualMood('typing', 900)
     return
   }
 
@@ -684,7 +689,6 @@ async function handleCredentialsSubmit() {
     )
   ) {
     credentialsError.value = t('auth.error.turnstileRequired')
-    setVisualMood('typing', 900)
     return
   }
 
@@ -701,16 +705,26 @@ async function handleCredentialsSubmit() {
   await applyAuthFlowResult(result)
 }
 
-async function handleRiskVerificationSubmit() {
-  if (isLoading.value) return
+async function handleLinkVerificationSubmit() {
+  clearInlineErrors()
 
-  setVisualMood('submitting')
-  riskError.value = ''
-  mfaError.value = ''
+  if (!linkVerificationCode.value.trim()) {
+    linkError.value = t('auth.error.codeRequired')
+    return
+  }
+
+  const result = await authStore.confirmGoogleLink(
+    pendingGoogleLinkToken.value,
+    linkVerificationCode.value.trim()
+  )
+  await applyAuthFlowResult(result)
+}
+
+async function handleRiskVerificationSubmit() {
+  clearInlineErrors()
 
   if (!riskVerificationCode.value.trim()) {
     riskError.value = t('auth.error.codeRequired')
-    setVisualMood('typing', 900)
     return
   }
 
@@ -723,7 +737,6 @@ async function handleRiskVerificationSubmit() {
     )
   ) {
     riskError.value = t('auth.error.turnstileRequired')
-    setVisualMood('typing', 900)
     return
   }
 
@@ -742,13 +755,56 @@ async function handleMfaResolved(result: AuthFlowResult) {
   await applyAuthFlowResult(result)
 }
 
-async function handleGoogleContinue() {
-  setVisualMood('submitting')
-  const result = await authStore.startGoogleAuth('login', redirectTo.value)
-  if (result.status === 'error') {
-    credentialsError.value = t(result.error)
-    setVisualMood('dodge', 1200)
+async function handleGooglePopupResult(message: GooglePopupMessage) {
+  if (message.status === 'success' && message.handoffCode) {
+    const result = await authStore.completeGoogleAuth(message.handoffCode)
+    await applyAuthFlowResult(result)
+    return
   }
+
+  const errorKey = mapGooglePopupError(message.error)
+  setGooglePopupStatus(message.error === 'popup_blocked' ? 'blocked' : 'error', errorKey)
+  credentialsError.value = t(errorKey)
+}
+
+async function continueGoogleInCurrentPage() {
+  setGooglePopupStatus('handling')
+  const result = await authStore.startGoogleAuth('login', redirectTo.value)
+
+  if (result.status === 'error') {
+    setGooglePopupStatus('error', result.error)
+    credentialsError.value = t(result.error)
+  }
+}
+
+async function handleGoogleContinue() {
+  if (googleProviderBusy.value) return
+
+  clearInlineErrors()
+
+  if (!prefersGoogleAuthPopup()) {
+    await continueGoogleInCurrentPage()
+    return
+  }
+
+  setGooglePopupStatus('opening')
+  const popupResult = openGoogleAuthPopup('login', redirectTo.value)
+
+  if (popupResult.status === 'blocked') {
+    setGooglePopupStatus('blocked', 'auth.error.googlePopupBlocked')
+    return
+  }
+
+  setGooglePopupStatus('waiting')
+  const pendingPopup = waitForGooglePopupResult(popupResult.popup, {
+    timeoutMs: 4 * 60 * 1000,
+  })
+  googlePopupDispose = pendingPopup.dispose
+
+  const message = await pendingPopup.promise
+  googlePopupDispose = null
+  setGooglePopupStatus('handling')
+  await handleGooglePopupResult(message)
 }
 
 function buildLoginQueryWithoutRestore() {
@@ -762,11 +818,8 @@ function buildLoginQueryWithoutRestore() {
 async function handleRestoreAccount() {
   if (isRestoringAccount.value) return
 
-  setVisualMood('submitting')
-
   if (!canRestoreAccount.value) {
     toastStore.warning(t('auth.error.fieldsRequired'))
-    setVisualMood('typing', 900)
     return
   }
 
@@ -783,10 +836,8 @@ async function handleRestoreAccount() {
       name: 'login',
       query: buildLoginQueryWithoutRestore(),
     })
-    setVisualMood('success', 900)
   } catch (error) {
     toastStore.error(error instanceof ApiError ? error.message : t('common.error'))
-    setVisualMood('dodge', 1200)
   } finally {
     isRestoringAccount.value = false
   }
@@ -820,72 +871,18 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (moodTimer) {
-    clearTimeout(moodTimer)
-    moodTimer = null
-  }
+  clearGooglePopupListener()
 })
 </script>
 
 <style scoped>
-.auth-provider-divider {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 1.25rem;
+.auth-inline-spin {
+  animation: auth-inline-spin 0.9s linear infinite;
 }
 
-.auth-provider-divider::before {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  top: 50%;
-  border-top: 0.0625rem solid color-mix(in srgb, var(--auth-panel-border) 80%, transparent);
-}
-
-.auth-provider-divider > span {
-  position: relative;
-  padding-inline: 0.85rem;
-  background: var(--auth-panel-bg);
-  color: var(--auth-text-soft);
-  font-size: var(--text-xs);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.auth-provider-card,
-.auth-support-copy {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.auth-provider-card__copy {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.auth-provider-card__title {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  margin: 0;
-  color: var(--auth-text-strong);
-  font-size: clamp(1.05rem, 0.95rem + 0.45vw, 1.2rem);
-  font-weight: var(--font-semibold);
-}
-
-.auth-provider-card__brand-icon {
-  inline-size: 1.1em;
-  block-size: 1.1em;
-  flex: none;
-}
-
-.auth-provider-card__hint,
-.auth-support-copy__text,
-.auth-helper--emphasis {
-  margin: 0;
-  color: var(--auth-text-muted);
-  line-height: 1.6;
+@keyframes auth-inline-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
