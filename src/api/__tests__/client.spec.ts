@@ -255,6 +255,35 @@ describe('apiClient', () => {
         })
       )
     })
+
+    it('should forward external abort signals to fetch', async () => {
+      let capturedSignal: AbortSignal | undefined
+      let rejectFetch: ((reason?: unknown) => void) | undefined
+      mockFetch.mockImplementationOnce((_url: string, init?: RequestInit) => {
+        capturedSignal = init?.signal ?? undefined
+        return new Promise((_, reject) => {
+          rejectFetch = reject
+        })
+      })
+
+      const controller = new AbortController()
+      const requestPromise = apiClient.response('/inbox/stream', {
+        signal: controller.signal,
+        skipAuth: true,
+        skipSecurity: true,
+        skipErrorToast: true,
+      })
+
+      await vi.waitFor(() => {
+        expect(rejectFetch).toBeTypeOf('function')
+      })
+      controller.abort()
+      rejectFetch?.(new DOMException('Aborted', 'AbortError'))
+
+      await expect(requestPromise).rejects.toBeInstanceOf(Error)
+      expect(capturedSignal).toBeDefined()
+      expect(capturedSignal?.aborted).toBe(true)
+    })
   })
 
   describe('POST requests', () => {

@@ -1092,7 +1092,7 @@
     "followerCount": "フォロワー {count} 人",
     "followingCount": "フォロー中 {count} 人",
     "you": "あなた",
-    "notificationsSubtitle": "いいね・返信・システム通知を確認",
+    "notificationsSubtitle": "インタラクション・セキュリティ・システム通知をまとめて確認します。",
     "devicesSubtitle": "ログイン中のデバイスと信頼済みセッションを管理",
     "insights": {
       "activity": "アクティビティ",
@@ -1198,7 +1198,40 @@
     "passkeyEmpty": "まだパスキーは追加されていません。",
     "mfaMethodTotp": "認証アプリ",
     "mfaMethodBackupCode": "バックアップコード",
-    "mfaMethodWebauthn": "パスキー"
+    "mfaMethodWebauthn": "パスキー",
+    "notificationStatusLabel": "状態",
+    "notificationCategoryLabel": "カテゴリ",
+    "notificationStatus": {
+      "all": "すべて",
+      "unread": "未読",
+      "archived": "アーカイブ"
+    },
+    "notificationCategories": {
+      "interaction": "インタラクション",
+      "security": "セキュリティ",
+      "system": "システム"
+    },
+    "notificationPriorities": {
+      "low": "低",
+      "normal": "通常",
+      "high": "高",
+      "critical": "重大"
+    },
+    "notificationPreferences": "通知設定",
+    "notificationPreferencesHint": "どの通知をアプリ内で受け取り、どれをメールにも送るかを選択します。",
+    "notificationInApp": "アプリ内",
+    "notificationEmail": "メール",
+    "notificationAggregated": "{count} 件の更新",
+    "archiveAction": "アーカイブ",
+    "archiveRead": "既読をアーカイブ",
+    "archiveReadSuccess": "既読通知をアーカイブしました",
+    "noArchivedNotifications": "アーカイブ済みの通知はありません",
+    "noUnreadNotifications": "未読通知はありません",
+    "notificationRealtimeLive": "リアルタイム更新中",
+    "notificationRealtimeConnecting": "リアルタイム更新に接続中",
+    "notificationRealtimeReconnecting": "リアルタイム更新に再接続中",
+    "notificationRealtimeDegraded": "リアルタイム更新は一時停止中です",
+    "retryRealtime": "リアルタイム更新を再試行"
   },
   "favorite": {
     "error": {
@@ -1207,7 +1240,12 @@
   },
   "notification": {
     "error": {
-      "fetchFailed": "通知の読み込みに失敗しました。しばらくしてから再試行してください"
+      "fetchFailed": "通知を読み込めませんでした。しばらくしてからもう一度お試しください",
+      "summaryFailed": "通知件数を更新できませんでした",
+      "preferencesFailed": "通知設定を保存できませんでした",
+      "streamFailed": "リアルタイム通知に接続できませんでした",
+      "streamDisconnected": "リアルタイム通知の接続が切れました",
+      "streamDegraded": "リアルタイム通知は現在停止しています"
     }
   },
   "favorites": {

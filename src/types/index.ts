@@ -339,25 +339,27 @@ export interface Discussion {
 
 // ========== Notification ==========
 
-export type NotificationType =
-  | 'comment_reply'
-  | 'comment_like'
-  | 'comment_mention'
-  | 'like'
-  | 'follow'
-  | 'system'
-  | 'report_resolved'
+export type NotificationCategory = 'interaction' | 'security' | 'system'
+
+export type NotificationStatus = 'all' | 'unread' | 'archived'
+
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical'
 
 export interface Notification {
   id: string
-  type: NotificationType
+  category: NotificationCategory
+  event_type: string
+  priority: NotificationPriority
   title: string
-  content?: string | null
-  related_type?: 'post' | 'comment' | 'discussion' | null
-  related_id?: number | null
+  body?: string | null
+  action_url?: string | null
+  aggregate_count: number
   is_read: boolean
-  created_at: string
   read_at?: string | null
+  archived_at?: string | null
+  last_event_at: string
+  created_at: string
+  updated_at: string
 }
 
 // ========== Device ==========

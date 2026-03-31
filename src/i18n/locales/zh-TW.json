@@ -1020,7 +1020,7 @@
     "followerCount": "{count} 位關注者",
     "followingCount": "已關注 {count} 人",
     "you": "你",
-    "notificationsSubtitle": "查看按讚、回覆與系統通知。",
+    "notificationsSubtitle": "集中查看互動、安全與系統通知。",
     "devicesSubtitle": "管理已登入裝置與信任會話。",
     "insights": {
       "activity": "活躍度",
@@ -1198,7 +1198,40 @@
     "passkeyEmpty": "尚未新增 Passkey。",
     "mfaMethodTotp": "驗證器 App",
     "mfaMethodBackupCode": "備份碼",
-    "mfaMethodWebauthn": "Passkey"
+    "mfaMethodWebauthn": "Passkey",
+    "notificationStatusLabel": "狀態",
+    "notificationCategoryLabel": "分類",
+    "notificationStatus": {
+      "all": "全部",
+      "unread": "未讀",
+      "archived": "已封存"
+    },
+    "notificationCategories": {
+      "interaction": "互動",
+      "security": "安全",
+      "system": "系統"
+    },
+    "notificationPriorities": {
+      "low": "低",
+      "normal": "一般",
+      "high": "高",
+      "critical": "關鍵"
+    },
+    "notificationPreferences": "通知偏好",
+    "notificationPreferencesHint": "選擇哪些通知僅在站內顯示，哪些也會寄送到電子郵件。",
+    "notificationInApp": "站內",
+    "notificationEmail": "電子郵件",
+    "notificationAggregated": "{count} 則動態",
+    "archiveAction": "封存",
+    "archiveRead": "封存已讀",
+    "archiveReadSuccess": "已封存已讀通知",
+    "noArchivedNotifications": "暫無已封存通知",
+    "noUnreadNotifications": "暫無未讀通知",
+    "notificationRealtimeLive": "即時更新已啟用",
+    "notificationRealtimeConnecting": "正在連線即時更新",
+    "notificationRealtimeReconnecting": "正在重新連線即時更新",
+    "notificationRealtimeDegraded": "即時更新暫時不可用",
+    "retryRealtime": "重新嘗試即時更新"
   },
   "user": {
     "username": {
@@ -1214,7 +1247,12 @@
   },
   "notification": {
     "error": {
-      "fetchFailed": "載入通知失敗，請稍後重試"
+      "fetchFailed": "載入通知失敗，請稍後再試",
+      "summaryFailed": "通知統計更新失敗",
+      "preferencesFailed": "儲存通知偏好失敗",
+      "streamFailed": "即時通知連線失敗",
+      "streamDisconnected": "即時通知連線已中斷",
+      "streamDegraded": "即時通知暫時暫停"
     }
   },
   "favorites": {
