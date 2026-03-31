@@ -1611,10 +1611,11 @@ onUnmounted(() => {
 }
 
 .user-info {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
+  gap: clamp(0.875rem, 1.5vw, 1rem);
+  padding: clamp(0.875rem, 1.5vw, 1rem);
   border: 1px solid var(--ui-compat-border);
   border-radius: calc(var(--ui-compat-panel-radius) - 0.375rem);
   background: var(--ui-compat-surface-interactive);
@@ -1627,20 +1628,25 @@ onUnmounted(() => {
 }
 
 .user-avatar-lg.ui-avatar {
-  width: 3rem;
-  height: 3rem;
+  width: clamp(3.5rem, 9vw, 4.25rem);
+  height: clamp(3.5rem, 9vw, 4.25rem);
   border-radius: 50%;
   border: 2px solid var(--nav-chip-border);
   background: var(--nav-muted-bg);
 }
 
 .nav-user-status--lg {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 0.7rem;
+  height: 0.7rem;
   border-width: 2px;
+  inset-inline-end: 0.1rem;
+  inset-block-end: 0.1rem;
 }
 
 .user-details {
+  display: grid;
+  align-content: center;
+  gap: 0.15rem;
   min-width: 0;
 }
 
@@ -1678,7 +1684,9 @@ onUnmounted(() => {
 .user-menu-primary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--spacing-2);
+  gap: clamp(0.625rem, 1vw, 0.75rem);
+  align-items: stretch;
+  grid-auto-rows: minmax(0, 1fr);
 }
 
 .dropdown-links {
@@ -1770,30 +1778,36 @@ onUnmounted(() => {
 }
 
 .user-menu-card {
-  min-block-size: 6.25rem;
-  align-items: flex-start;
-  align-content: flex-start;
-  flex-wrap: wrap;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-block-size: 4.25rem;
+  gap: 0.75rem;
+  padding: 0.8rem 0.95rem;
   background: var(--ui-compat-surface-interactive);
 }
 
 .user-menu-card__icon {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2rem;
+  height: 2rem;
+  align-self: center;
+  justify-self: center;
 }
 
 .user-menu-card__label {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.5rem;
+  display: block;
+  min-width: 0;
+  min-height: auto;
   font-weight: var(--font-semibold);
-  line-height: 1.3;
+  line-height: 1.35;
+  align-self: center;
 }
 
 .user-menu-card__arrow {
-  opacity: 0.45;
+  margin-left: 0;
+  opacity: 0.55;
+  align-self: center;
+  justify-self: end;
 }
 
 /* ========== Responsive ========== */
@@ -1858,6 +1872,10 @@ onUnmounted(() => {
 
   .user-menu-primary {
     grid-template-columns: 1fr;
+  }
+
+  .user-info {
+    grid-template-columns: auto minmax(0, 1fr);
   }
 }
 
