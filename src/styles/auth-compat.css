@@ -135,14 +135,30 @@
   gap: 0.875rem;
 }
 
+#app .auth-shell__header {
+  align-items: center;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
 #app .auth-shell__topline {
+  position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  align-content: center;
+  justify-items: center;
   gap: 0.75rem;
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding-inline: clamp(2.9rem, 7vw, 3.4rem);
 }
 
 #app .auth-shell__back {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
   inline-size: 2.75rem;
   block-size: 2.75rem;
   display: inline-grid;
@@ -166,7 +182,14 @@
 
 #app .auth-shell__copy {
   display: grid;
+  align-items: center;
+  align-content: center;
   gap: 0.35rem;
+  justify-items: center;
+  text-align: center;
+  inline-size: min(100%, 32rem);
+  max-inline-size: 32rem;
+  margin-inline: auto;
 }
 
 #app .auth-title {
@@ -180,7 +203,7 @@
 }
 
 #app .auth-subtitle {
-  margin: 0;
+  margin: 0 auto;
   max-inline-size: 30ch;
   color: var(--auth-text-muted);
   font-size: clamp(0.9rem, 0.86rem + 0.2vw, 0.98rem);
@@ -196,6 +219,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.25rem;
+  inline-size: min(100%, 26rem);
   padding: 0.25rem;
   border: 0.0625rem solid var(--auth-panel-border);
   border-radius: var(--ui-radius-button, var(--radius-lg));
@@ -478,19 +502,45 @@
 }
 
 #app .turnstile-header {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
-  column-gap: 0.75rem;
+  inline-size: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  text-align: center;
+  row-gap: 0.2rem;
 }
 
 #app .turnstile-block {
-  justify-items: stretch;
+  grid-template-columns: minmax(0, 1fr);
+  justify-self: stretch;
+  inline-size: min(100%, 22rem);
+  min-block-size: 0;
+  align-items: center;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  gap: 0.625rem;
+  padding: 0.8rem 0.9rem;
+  margin-inline: auto;
 }
 
 #app .auth-page .turnstile-container {
   inline-size: 100%;
-  min-block-size: 3.875rem;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 0;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  margin-inline: auto;
+}
+
+#app .auth-page .turnstile-container > * {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-inline-size: 100%;
+  margin-inline: auto;
 }
 
 #app .auth-forgot,
@@ -721,9 +771,11 @@
   #app .auth-shell--split .auth-shell__header {
     grid-column: 1;
     grid-row: 1 / span 2;
-    align-content: start;
+    align-content: center;
+    align-items: center;
+    justify-items: center;
     min-block-size: 100%;
-    padding-inline-end: clamp(0.75rem, 1.5vw, 1rem);
+    padding-inline: clamp(0.75rem, 1.5vw, 1rem);
     border-inline-end: 0.0625rem solid var(--auth-panel-border);
   }
 
@@ -774,6 +826,8 @@
 
   #app .auth-shell__topline {
     gap: 0.625rem;
+    min-block-size: 2.5rem;
+    padding-inline: 2.75rem;
   }
 
   #app .auth-title {
@@ -786,6 +840,10 @@
 
   #app .step {
     padding-inline: 0.55rem;
+  }
+
+  #app .turnstile-block {
+    inline-size: 100%;
   }
 
   #app .resend-row > * {
