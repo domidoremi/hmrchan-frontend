@@ -1,18 +1,19 @@
 <template>
   <div class="notifications-tab">
     <StateIndicator
-      v-if="error"
+      v-if="error && notifications.length === 0"
       variant="error"
       :description="error"
       @action="fetchNotifications"
     />
 
     <div v-else-if="isLoading && notifications.length === 0" class="notifications-skeleton">
-      <div v-for="i in 5" :key="i" class="notification-skeleton glass-surface--base">
+      <div v-for="i in 4" :key="i" class="notification-skeleton">
         <Skeleton variant="avatar" />
-        <div style="flex: 1">
-          <Skeleton width="70%" height="1rem" />
-          <Skeleton width="50%" height="0.875rem" />
+        <div class="notification-skeleton__content">
+          <Skeleton width="55%" height="1rem" />
+          <Skeleton width="85%" height="0.875rem" />
+          <Skeleton width="40%" height="0.875rem" />
         </div>
       </div>
     </div>
@@ -21,68 +22,131 @@
       <StateIndicator
         v-if="notifications.length === 0"
         variant="empty"
-        :description="$t('profile.noNotifications')"
+        :description="emptyDescription"
       />
 
       <div v-else class="notifications-list">
         <article
-          v-for="notif in notifications"
-          :key="notif.id"
-          class="notification-item glass-surface--base"
-          :class="{ unread: !notif.is_read }"
-          role="button"
-          tabindex="0"
-          @click="handleNotificationClick(notif)"
-          @keydown.enter.prevent="handleNotificationClick(notif)"
-          @keydown.space.prevent="handleNotificationClick(notif)"
+          v-for="message in notifications"
+          :key="message.id"
+          class="notification-item"
+          :class="{
+            'notification-item--unread': !message.is_read,
+            'notification-item--archived': Boolean(message.archived_at),
+            'notification-item--actionable': Boolean(resolveActionTarget(message.action_url)),
+          }"
+          :role="resolveActionTarget(message.action_url) ? 'button' : undefined"
+          :tabindex="resolveActionTarget(message.action_url) ? 0 : undefined"
+          @click="handleMessageClick(message)"
+          @keydown.enter.prevent="handleMessageClick(message)"
+          @keydown.space.prevent="handleMessageClick(message)"
         >
-          <div class="notification-icon" :class="`type-${notif.type}`">
-            <AnimatedIcon
-              :name="getNotificationAnimation(notif.type)"
-              :fallback-icon="getNotificationIcon(notif.type)"
-              size="md"
+          <div class="notification-item__media">
+            <Avatar
+              v-if="message.last_actor"
+              :src="resolveAvatarSrc(message.last_actor.avatar_url)"
+              :fallback="resolveActorFallback(message)"
+              :alt="message.last_actor.username"
+              size="default"
             />
+            <div v-else class="notification-item__icon">
+              <AnimatedIcon
+                :name="getNotificationAnimation(message)"
+                :fallback-icon="getNotificationIcon(message)"
+                size="sm"
+              />
+            </div>
           </div>
-          <div class="notification-content">
-            <p class="notification-text">{{ notif.title || notif.content }}</p>
-            <span class="notification-time">{{ formatDate(notif.created_at) }}</span>
+
+          <div class="notification-item__content">
+            <div class="notification-item__header">
+              <div class="notification-item__headline-wrap">
+                <p class="notification-item__title">{{ message.title }}</p>
+                <p v-if="message.body" class="notification-item__body">{{ message.body }}</p>
+              </div>
+              <ChevronRight
+                v-if="resolveActionTarget(message.action_url)"
+                :size="16"
+                class="notification-item__chevron"
+              />
+            </div>
+
+            <div class="notification-item__meta-row">
+              <span v-if="message.last_actor" class="notification-item__actor">
+                {{ message.last_actor.username }}
+              </span>
+              <span class="notification-item__time">{{ formatDate(message.last_event_at) }}</span>
+            </div>
+
+            <div class="notification-item__tag-row">
+              <span class="notification-chip">
+                {{ t(`profile.notificationCategories.${message.category}`) }}
+              </span>
+              <span class="notification-chip notification-chip--priority">
+                {{ t(`profile.notificationPriorities.${message.priority}`) }}
+              </span>
+              <span
+                v-if="message.aggregate_count > 1"
+                class="notification-chip notification-chip--count"
+              >
+                {{ t('profile.notificationAggregated', { count: message.aggregate_count }) }}
+              </span>
+              <span
+                v-if="message.archived_at"
+                class="notification-chip notification-chip--archived"
+              >
+                {{ t('profile.notificationStatus.archived') }}
+              </span>
+            </div>
           </div>
-          <button
-            v-if="!notif.is_read"
-            type="button"
-            class="mark-read-btn"
-            :title="$t('profile.markAsRead')"
-            :aria-label="$t('profile.markAsRead')"
-            @click.stop="markAsRead(notif.id)"
-          >
-            <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
-          </button>
+
+          <div class="notification-item__actions">
+            <Button
+              v-if="!message.is_read"
+              variant="ghost"
+              size="sm"
+              :loading="pendingReadId === message.id"
+              @click.stop="handleMarkAsRead(message.id)"
+            >
+              {{ t('profile.markAsRead') }}
+            </Button>
+            <Button
+              v-if="!message.archived_at"
+              variant="ghost"
+              size="sm"
+              :loading="pendingArchiveId === message.id"
+              @click.stop="handleArchive(message.id)"
+            >
+              {{ t('profile.archiveAction') }}
+            </Button>
+          </div>
         </article>
       </div>
 
-      <LoadMoreSection
-        v-if="hasMore"
-        :count="notifications.length"
-        :total="total"
-        :has-more="hasMore"
-        :loading="isLoadingMore"
-        @load-more="loadMore"
-      />
+      <div v-if="hasMore" class="notifications-load-more">
+        <Button variant="secondary" size="sm" :loading="isLoadingMore" @click="loadMore">
+          {{ t('common.loadMore') }}
+        </Button>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Bell, Heart, MessageCircle, UserPlus, AlertCircle, Check } from 'lucide-vue-next'
+import { Bell, ChevronRight, Heart, MessageCircle, ShieldAlert } from 'lucide-vue-next'
 import { useNotificationsStore } from '@/stores'
+import { type InboxMessage } from '@/api/inboxService'
 import { formatRelativeTime } from '@/utils/date'
-import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
+import { isSafeRedirect } from '@/utils/security'
+import { resolveAvatarSrc, getAvatarFallbackLabel } from '@/utils/avatarPresentation'
+import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -90,39 +154,44 @@ const notifStore = useNotificationsStore()
 
 const notifications = computed(() => notifStore.items)
 const isLoading = computed(() => notifStore.isLoading)
-const error = computed(() => (notifStore.error ? t(notifStore.error) : null))
-const total = computed(() => notifStore.total)
-const hasMore = computed(() => notifStore.hasMore)
 const isLoadingMore = computed(() => notifStore.isLoading && notifStore.items.length > 0)
+const error = computed(() => (notifStore.error ? t(notifStore.error) : null))
+const hasMore = computed(() => notifStore.hasMore)
+const emptyDescription = computed(() => {
+  if (notifStore.status === 'archived') return t('profile.noArchivedNotifications')
+  if (notifStore.status === 'unread') return t('profile.noUnreadNotifications')
+  return t('profile.noNotifications')
+})
 
-function getNotificationIcon(type: string) {
-  const icons: Record<string, typeof Bell> = {
-    comment_reply: MessageCircle,
-    comment_like: Heart,
-    comment_mention: MessageCircle,
-    follow: UserPlus,
-    system: AlertCircle,
-    report_resolved: AlertCircle,
-    like: Heart,
-    comment: MessageCircle,
-    reply: MessageCircle,
+const pendingReadId = ref<string | null>(null)
+const pendingArchiveId = ref<string | null>(null)
+
+type NavigationTarget =
+  | {
+      kind: 'internal'
+      to: string
+    }
+  | {
+      kind: 'external'
+      to: string
+    }
+
+function getNotificationIcon(message: InboxMessage) {
+  if (message.category === 'security') return ShieldAlert
+  if (message.event_type.includes('like')) return Heart
+  if (message.event_type.includes('comment') || message.event_type.includes('reply')) {
+    return MessageCircle
   }
-  return icons[type] || Bell
+  return Bell
 }
 
-function getNotificationAnimation(type: string) {
-  const animations: Record<string, string> = {
-    comment_reply: 'sparkle',
-    comment_like: 'heart',
-    comment_mention: 'sparkle',
-    follow: 'user',
-    system: 'explore',
-    report_resolved: 'explore',
-    like: 'heart',
-    comment: 'sparkle',
-    reply: 'sparkle',
+function getNotificationAnimation(message: InboxMessage) {
+  if (message.category === 'security') return 'explore'
+  if (message.event_type.includes('like')) return 'heart'
+  if (message.event_type.includes('comment') || message.event_type.includes('reply')) {
+    return 'sparkle'
   }
-  return animations[type] || 'sparkle'
+  return 'sparkle'
 }
 
 function fetchNotifications() {
@@ -133,51 +202,79 @@ function loadMore() {
   return notifStore.loadMore()
 }
 
-function markAsRead(notificationId: string) {
-  return notifStore.markAsRead(notificationId)
+async function handleMarkAsRead(messageId: string) {
+  pendingReadId.value = messageId
+  try {
+    await notifStore.markAsRead(messageId)
+  } finally {
+    pendingReadId.value = null
+  }
 }
 
-function handleNotificationClick(notif: {
-  id: string
-  is_read: boolean
-  related_id?: number | null
-  related_type?: string | null
-}) {
-  if (!notif.is_read) {
-    void markAsRead(notif.id)
+async function handleArchive(messageId: string) {
+  pendingArchiveId.value = messageId
+  try {
+    await notifStore.archiveMessage(messageId)
+  } finally {
+    pendingArchiveId.value = null
   }
+}
 
-  // 导航到关联内容
-  if (notif.related_id && notif.related_type) {
-    switch (notif.related_type) {
-      case 'post':
-        router.push(`/post/${notif.related_id}`)
-        break
-      case 'comment':
-      case 'discussion':
-        if (notif.related_id) {
-          router.push(`/community/discussions/${notif.related_id}`)
-        }
-        break
-      case 'author':
-        router.push(`/author/${notif.related_id}`)
-        break
+function resolveActorFallback(message: InboxMessage): string {
+  return getAvatarFallbackLabel(message.last_actor?.username, message.title)
+}
+
+function resolveActionTarget(actionUrl: string | null | undefined): NavigationTarget | null {
+  if (!actionUrl) return null
+
+  if (actionUrl.startsWith('/') && !actionUrl.startsWith('//')) {
+    return {
+      kind: 'internal',
+      to: actionUrl,
     }
   }
+
+  if (!isSafeRedirect(actionUrl)) {
+    return null
+  }
+
+  try {
+    const parsed = new URL(actionUrl, window.location.origin)
+    if (parsed.origin === window.location.origin) {
+      return {
+        kind: 'internal',
+        to: `${parsed.pathname}${parsed.search}${parsed.hash}`,
+      }
+    }
+
+    return {
+      kind: 'external',
+      to: parsed.toString(),
+    }
+  } catch {
+    return null
+  }
+}
+
+async function handleMessageClick(message: InboxMessage) {
+  const target = resolveActionTarget(message.action_url)
+  if (!target) return
+
+  if (!message.is_read) {
+    await notifStore.markAsRead(message.id)
+  }
+
+  if (target.kind === 'internal') {
+    await router.push(target.to)
+    return
+  }
+
+  window.location.assign(target.to)
 }
 
 function formatDate(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
 }
-
-onMounted(() => {
-  void notifStore.fetchNotifications(true)
-  notifStore.startPolling()
-})
-
-onUnmounted(() => {
-  notifStore.stopPolling()
-})
 </script>
 
 <style scoped>
@@ -185,299 +282,245 @@ onUnmounted(() => {
   min-height: 20rem;
 }
 
-/* Skeleton */
 .notifications-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
+  display: grid;
+  gap: var(--spacing-3);
 }
 
 .notification-skeleton {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: var(--spacing-3);
-  padding: var(--spacing-4);
-  border-radius: var(--profile-section-radius);
+  padding: clamp(0.875rem, 2vw, 1rem);
   border: 1px solid var(--profile-surface-border);
-  background: var(--profile-surface-bg-soft);
+  border-radius: var(--profile-section-radius);
+  background: var(--profile-surface-bg);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-/* List */
+.notification-skeleton__content {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .notifications-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
+  display: grid;
+  gap: var(--spacing-3);
 }
 
 .notification-item {
-  display: flex;
-  align-items: flex-start;
-  gap: clamp(0.625rem, 2vw, 0.875rem);
-  padding: clamp(0.75rem, 2vw, 1rem);
-  cursor: pointer;
-  position: relative;
-  border-radius: var(--profile-section-radius);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--spacing-4);
+  padding: clamp(0.875rem, 2vw, 1.125rem);
   border: 1px solid var(--profile-surface-border);
-  background: var(--profile-surface-bg-soft);
-  box-shadow: var(--profile-surface-shadow);
+  border-radius: var(--profile-section-radius);
+  background: var(--profile-surface-bg);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   transition:
-    transform var(--duration-fast) var(--ease-out-smooth),
-    background var(--duration-fast) var(--ease-smooth),
     border-color var(--duration-fast) var(--ease-smooth),
+    background var(--duration-fast) var(--ease-smooth),
     box-shadow var(--duration-fast) var(--ease-smooth);
 }
 
-.notification-item:hover {
-  transform: none;
-  background: var(--profile-surface-bg-soft);
-  border-color: var(--profile-surface-border-strong);
-  box-shadow: var(--profile-surface-shadow-hover);
+.notification-item--actionable {
+  cursor: pointer;
 }
 
-.notification-item:focus-visible {
+.notification-item--actionable:hover,
+.notification-item--actionable:focus-visible {
   outline: none;
-  transform: none;
-  background: var(--profile-surface-bg-soft);
   border-color: var(--profile-surface-border-strong);
-  box-shadow:
-    var(--profile-surface-shadow-hover),
-    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
+  background: var(--profile-muted-bg);
+  box-shadow: none;
 }
 
-.notification-item.unread {
-  background: var(--profile-muted-bg-strong);
-  border-color: var(--profile-muted-border-strong);
+.notification-item--unread {
+  border-color: var(--profile-surface-border-strong);
+  background: var(--profile-surface-bg);
+  box-shadow: inset 0.1875rem 0 0 rgba(var(--color-primary-rgb), 0.3);
 }
 
-.notification-item.unread::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 50%;
-  background: var(--color-primary);
-  border-radius: 0 calc(var(--radius-sm) / 2) calc(var(--radius-sm) / 2) 0;
+.notification-item--archived {
+  opacity: 0.72;
 }
 
-/* Icon */
-.notification-icon {
+.notification-item__media {
   display: flex;
+  align-items: flex-start;
+  padding-top: 0.125rem;
+}
+
+.notification-item__icon {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radius-lg);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: calc(var(--profile-section-radius) - 0.1rem);
   border: 1px solid var(--profile-muted-border);
-  flex-shrink: 0;
-  transition: transform var(--duration-fast) var(--ease-bounce-soft);
+  background: var(--profile-muted-bg);
+  color: var(--color-text-secondary);
 }
 
-.notification-item:hover .notification-icon {
-  transform: scale(1.01);
-}
-
-.notification-item:focus-visible .notification-icon {
-  transform: scale(1.01);
-}
-
-.notification-icon.type-like,
-.notification-icon.type-comment_like {
-  background: rgba(244, 63, 94, 0.1);
-  color: var(--color-error);
-}
-
-.notification-icon.type-comment,
-.notification-icon.type-reply,
-.notification-icon.type-comment_reply,
-.notification-icon.type-comment_mention {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  color: var(--color-primary);
-}
-
-.notification-icon.type-follow {
-  background: rgba(var(--color-success-rgb), 0.1);
-  color: var(--color-success);
-}
-
-.notification-icon.type-system,
-.notification-icon.type-report_resolved {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-}
-
-/* Content */
-.notification-content {
-  flex: 1;
+.notification-item__content {
+  display: grid;
+  gap: 0.625rem;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
 }
 
-.notification-text {
+.notification-item__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+}
+
+.notification-item__headline-wrap {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.notification-item__title {
   margin: 0;
   font-size: var(--text-sm);
-  line-height: 1.5;
+  font-weight: var(--font-semibold);
   color: var(--color-text-primary);
+  line-height: 1.5;
 }
 
-.unread .notification-text {
-  font-weight: var(--font-medium);
+.notification-item__body {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
-.notification-time {
+.notification-item__chevron {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+
+.notification-item__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
 }
 
-/* Mark Read Button */
-.mark-read-btn {
+.notification-item__actor {
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+}
+
+.notification-item__tag-row {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.notification-chip {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  background: var(--profile-action-bg);
-  color: var(--color-text-tertiary);
+  min-height: 1.75rem;
+  padding: 0 0.625rem;
+  border-radius: 0.6rem;
   border: 1px solid var(--profile-action-border);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  flex-shrink: 0;
-  opacity: 0;
-  transition:
-    opacity var(--duration-fast) var(--ease-smooth),
-    background var(--duration-fast) var(--ease-smooth),
-    color var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth),
-    transform var(--duration-fast) var(--ease-bounce-soft);
+  background: var(--profile-muted-bg);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
 }
 
-.notification-item:hover .mark-read-btn {
-  opacity: 1;
+.notification-chip--priority {
+  color: var(--color-text-primary);
 }
 
-.notification-item:focus-visible .mark-read-btn {
-  opacity: 1;
+.notification-chip--count {
+  color: var(--color-text-secondary);
+  border-color: var(--profile-action-border);
 }
 
-.mark-read-btn:hover {
-  background: var(--profile-action-bg-hover);
-  color: var(--color-primary);
+.notification-chip--archived {
+  color: var(--color-text-tertiary);
+}
+
+.notification-item__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.notification-item__actions :deep(.btn) {
+  min-width: 6.5rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--profile-action-border);
+  background: var(--profile-action-bg);
+  color: var(--color-text-secondary);
+  box-shadow: none !important;
+}
+
+.notification-item__actions :deep(.btn:hover:not(:disabled)),
+.notification-item__actions :deep(.btn:focus-visible) {
   border-color: var(--profile-action-border-strong);
-  transform: scale(1.01);
+  background: var(--profile-action-bg-hover);
+  color: var(--color-text-primary);
 }
 
-/* ===== Responsive ===== */
+.notifications-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--spacing-5);
+}
+
+.notifications-load-more :deep(.btn) {
+  min-width: 8rem;
+  border-radius: 0.7rem;
+  box-shadow: none !important;
+}
+
 @media (max-width: 768px) {
-  .tab-header {
-    flex-wrap: wrap;
-  }
-
   .notification-item {
-    gap: var(--spacing-2);
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .notification-icon {
-    width: 2rem;
-    height: 2rem;
-  }
-
-  .notification-text {
-    font-size: var(--text-xs);
-  }
-
-  .mark-read-btn {
-    opacity: 1;
+  .notification-item__actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
   }
 }
 </style>
 
 <style>
-/* ===== Material 3 Overrides ===== */
-#app[data-ui-style='material'] .notifications-tab .notification-item {
-  border-radius: var(--radius-md);
+[data-theme='dark'] .notifications-tab .notification-item--unread {
+  background: var(--profile-surface-bg);
+  box-shadow: inset 0.1875rem 0 0 rgba(var(--color-primary-rgb), 0.45);
 }
 
-#app[data-ui-style='material'] .notifications-tab .notification-item:hover,
-#app[data-ui-style='material'] .notifications-tab .notification-item:focus-visible {
-  transform: none;
-  background: rgba(var(--color-primary-rgb), 0.06);
+#app .notifications-tab .notification-skeleton,
+#app .notifications-tab .notification-item {
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
-#app[data-ui-style='material'] .notifications-tab .notification-item.unread::after {
-  border-radius: 0;
-  width: 3px;
+#app .notifications-tab .notification-item:hover,
+#app .notifications-tab .notification-item:focus-visible {
+  box-shadow: none !important;
 }
 
-#app[data-ui-style='material'] .notifications-tab .notification-icon {
-  border-radius: var(--radius-md);
-}
-
-#app[data-ui-style='material'] .notifications-tab .mark-read-btn {
-  border-radius: 50%;
-}
-
-#app[data-ui-style='material'] .notifications-tab .unread-badge {
-  border-radius: var(--radius-sm);
-}
-
+#app[data-ui-style='material'] .notifications-tab .notification-item,
 #app[data-ui-style='material'] .notifications-tab .notification-skeleton {
-  border-radius: var(--radius-md);
-}
-
-/* ===== Dark Theme ===== */
-[data-theme='dark'] .notifications-tab .notification-item.unread {
-  background: rgba(var(--color-primary-rgb), 0.06);
-  border-color: rgba(var(--color-primary-rgb), 0.15);
-}
-
-[data-theme='dark'] .notifications-tab .notification-item:hover,
-[data-theme='dark'] .notifications-tab .notification-item:focus-visible {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.06);
-}
-
-[data-theme='dark'] .notifications-tab .notification-icon.type-system,
-[data-theme='dark'] .notifications-tab .notification-icon.type-report_resolved {
-  background: rgba(245, 158, 11, 0.15);
-}
-
-/* ===== Blue Theme ===== */
-[data-theme='blue'] .notifications-tab .notification-item.unread {
-  background: rgba(59, 130, 246, 0.04);
-  border-color: rgba(59, 130, 246, 0.12);
-}
-
-[data-theme='blue'] .notifications-tab .notification-item.unread::after {
-  background: #3b82f6;
-}
-
-[data-theme='blue'] .notifications-tab .notification-icon.type-comment,
-[data-theme='blue'] .notifications-tab .notification-icon.type-reply,
-[data-theme='blue'] .notifications-tab .notification-icon.type-comment_reply,
-[data-theme='blue'] .notifications-tab .notification-icon.type-comment_mention {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-}
-
-[data-theme='blue'] .notifications-tab .unread-badge {
-  background: #3b82f6;
-}
-
-/* ===== Material + Dark ===== */
-#app[data-ui-style='material'][data-theme='dark'] .notifications-tab .notification-item {
-  border-color: transparent;
-}
-
-#app[data-ui-style='material'][data-theme='dark'] .notifications-tab .notification-item.unread {
-  background: rgba(var(--color-primary-rgb), 0.08);
-  border-color: rgba(var(--color-primary-rgb), 0.12);
-}
-
-/* ===== Material + Blue ===== */
-#app[data-ui-style='material'][data-theme='blue'] .notifications-tab .notification-item.unread {
-  background: rgba(59, 130, 246, 0.05);
-  border-color: rgba(59, 130, 246, 0.1);
+  border-radius: var(--radius-lg);
 }
 </style>

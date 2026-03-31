@@ -215,7 +215,7 @@ const quickLinks = computed(() => [
     to: '/profile/notifications',
     icon: Bell,
     label: t('profile.tabs.notifications'),
-    badge: notifStore.unreadCount > 0 ? notifStore.unreadCount : undefined,
+    badge: notifStore.unreadDisplayCount ?? undefined,
   },
   { to: '/profile/devices', icon: Smartphone, label: t('profile.tabs.devices') },
 ])
@@ -237,7 +237,10 @@ function editProfile() {
 onMounted(() => {
   if (!isAuthenticated.value) {
     router.push('/login')
+    return
   }
+
+  void notifStore.fetchSummary()
 })
 </script>
 
