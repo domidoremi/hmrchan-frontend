@@ -1,5 +1,9 @@
 <template>
-  <div ref="containerRef" class="turnstile-container" />
+  <div
+    ref="containerRef"
+    class="turnstile-container"
+    :class="`turnstile-container--${props.size}`"
+  />
 </template>
 
 <script setup lang="ts">
@@ -346,7 +350,17 @@ defineExpose({
 <style scoped>
 .turnstile-container {
   display: flex;
+  align-items: center;
   justify-content: center;
+  width: 100%;
+  min-height: 0;
+}
+
+.turnstile-container--normal {
   min-height: 4.0625rem;
+}
+
+.turnstile-container--compact {
+  min-height: 3.25rem;
 }
 </style>

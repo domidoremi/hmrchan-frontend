@@ -8,13 +8,6 @@
       split
       @back="handleBack"
     >
-      <template #eyebrow>
-        <span class="auth-badge">
-          <span class="auth-badge-dot" aria-hidden="true" />
-          {{ badgeLabel }}
-        </span>
-      </template>
-
       <Transition name="step-fade" mode="out-in">
         <form
           v-if="step === 'credentials'"
@@ -453,18 +446,6 @@ const googleProviderBusy = computed(
 const googlePopupErrorMessage = computed(() =>
   googlePopupErrorKey.value ? t(googlePopupErrorKey.value) : ''
 )
-const badgeLabel = computed(() => {
-  switch (step.value) {
-    case 'link-required':
-      return t('auth.callback.linkTitle')
-    case 'risk-verification':
-      return t('auth.riskVerificationTitle')
-    case 'mfa':
-      return t('auth.mfa.badge')
-    default:
-      return t('auth.secureBadge')
-  }
-})
 const pageTitle = computed(() => {
   switch (step.value) {
     case 'link-required':
