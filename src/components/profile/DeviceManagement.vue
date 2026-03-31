@@ -14,7 +14,7 @@ import {
   Info,
   Calendar,
   Hash,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useSessionManagement } from '@/composables/useSessionManagement'
 import { useDeviceNameEditor } from '@/composables/useDeviceNameEditor'
 import { getDeviceIcon, formatRelativeTime } from '@/utils/deviceHelpers'

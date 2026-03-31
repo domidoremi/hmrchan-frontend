@@ -75,7 +75,7 @@
             aria-label="GitHub"
             class="footer-social-link cta-secondary"
           >
-            <AnimatedIcon name="explore" :fallback-icon="Github" size="sm" />
+            <AnimatedIcon name="explore" :fallback-icon="IconGithub" size="sm" />
           </a>
         </div>
       </div>
@@ -87,10 +87,11 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
-import { Github, Sparkles } from 'lucide-vue-next'
+import { Sparkles } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore, useThemeStore } from '@/stores'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { IconGithub } from '@/components/icons'
 
 const props = withDefaults(
   defineProps<{

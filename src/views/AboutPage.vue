@@ -300,9 +300,6 @@ import {
   Palette,
   ExternalLink,
   Share2,
-  Twitter,
-  Instagram,
-  Youtube,
   Video,
   MessageCircle,
   Radio,
@@ -311,9 +308,10 @@ import {
   Disc,
   Gamepad2,
   Camera,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useAboutData } from '@/composables/useAboutData'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { IconInstagram, IconX, IconYoutube } from '@/components/icons'
 
 const { locale, t } = useI18n()
 
@@ -376,13 +374,13 @@ const personalLinks = computed(() => [
   {
     name: 'X (Twitter)',
     url: 'https://mobile.twitter.com/himeri_momiyama',
-    icon: Twitter,
+    icon: IconX,
     color: '#000000',
   },
   {
     name: 'Instagram',
     url: 'https://www.instagram.com/momichan_hime/',
-    icon: Instagram,
+    icon: IconInstagram,
     color: '#E4405F',
   },
   {
@@ -404,7 +402,7 @@ const groupSocialLinks = computed(() => [
   {
     name: 'YouTube',
     url: 'https://www.youtube.com/channel/UCoR4zZDvWvUIqgEWz4HS-sA',
-    icon: Youtube,
+    icon: IconYoutube,
     color: '#FF0000',
   },
   {
@@ -416,7 +414,7 @@ const groupSocialLinks = computed(() => [
   {
     name: 'Instagram',
     url: 'https://www.instagram.com/takanenofficial/',
-    icon: Instagram,
+    icon: IconInstagram,
     color: '#E4405F',
   },
   {

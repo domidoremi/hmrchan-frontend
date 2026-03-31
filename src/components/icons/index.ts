@@ -2,7 +2,7 @@
  * 图标注册表 - 只导出项目实际使用的图标
  *
  * 优化说明：
- * - 从 lucide-vue-next 按需导入，避免加载所有 1500+ 图标
+ * - 从 @lucide/vue 按需导入，避免加载所有 1500+ 图标
  * - 在开发模式下可减少约 1500 个 HTTP 请求
  * - 生产环境会通过 tree-shaking 自动优化
  *
@@ -69,7 +69,7 @@ export {
   Square,
   // 社交平台（通用）
   Globe,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 // 品牌图标（Lucide 无官方品牌图标，使用自定义 SVG）
 export { default as IconYoutube } from './IconYoutube.vue'
@@ -77,3 +77,4 @@ export { default as IconX } from './IconX.vue'
 export { default as IconTiktok } from './IconTiktok.vue'
 export { default as IconInstagram } from './IconInstagram.vue'
 export { default as IconGoogle } from './IconGoogle.vue'
+export { default as IconGithub } from './IconGithub.vue'

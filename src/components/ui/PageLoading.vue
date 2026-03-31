@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2 } from '@lucide/vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiPageLoading' })

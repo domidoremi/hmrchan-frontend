@@ -16,7 +16,7 @@
 defineOptions({ name: 'NotFoundPage' })
 
 import { useRouter } from 'vue-router'
-import { Home } from 'lucide-vue-next'
+import { Home } from '@lucide/vue'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 

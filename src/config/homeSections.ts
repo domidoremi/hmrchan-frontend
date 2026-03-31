@@ -1,5 +1,5 @@
 import type { Component } from 'vue'
-import { ChevronsDown, Home, Images, MessagesSquare, Sparkles } from 'lucide-vue-next'
+import { ChevronsDown, Home, Images, MessagesSquare, Sparkles } from '@lucide/vue'
 
 export interface HomeSectionAnchor {
   key: 'fold' | 'rail' | 'posts' | 'media' | 'footer'

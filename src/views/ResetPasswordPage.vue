@@ -123,7 +123,7 @@ defineOptions({ name: 'ResetPasswordPage' })
 import { ref, computed, onUnmounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { CheckCircle, AlertTriangle, Eye, EyeOff } from 'lucide-vue-next'
+import { CheckCircle, AlertTriangle, Eye, EyeOff } from '@lucide/vue'
 import { authService, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
 import { checkPasswordStrength } from '@/utils/crypto'

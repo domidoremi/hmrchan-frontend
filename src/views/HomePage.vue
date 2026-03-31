@@ -977,7 +977,7 @@ import {
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { ArrowUpRight, Calendar, Compass, Image, Sparkles, Users } from 'lucide-vue-next'
+import { ArrowUpRight, Calendar, Compass, Image, Sparkles, Users } from '@lucide/vue'
 import { useSettingsStore } from '@/stores'
 import {
   homeService,

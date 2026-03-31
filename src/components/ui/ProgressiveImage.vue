@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, RefreshCw } from 'lucide-vue-next'
+import { AlertTriangle, RefreshCw } from '@lucide/vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { warmDecodedImage } from '@/utils/performance'
 

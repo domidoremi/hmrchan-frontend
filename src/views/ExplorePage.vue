@@ -179,7 +179,7 @@ import {
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { Search, Globe } from 'lucide-vue-next'
+import { Search, Globe } from '@lucide/vue'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { useCachedPostList } from '@/composables/useCachedPosts'

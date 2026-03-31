@@ -60,7 +60,7 @@ defineOptions({ name: 'VerifyEmailPage' })
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { CheckCircle, XCircle, AlertTriangle } from 'lucide-vue-next'
+import { CheckCircle, XCircle, AlertTriangle } from '@lucide/vue'
 import { authService, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
 import Button from '@/components/ui/Button.vue'

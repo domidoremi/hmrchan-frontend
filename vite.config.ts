@@ -306,8 +306,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
         'pinia',
         'pinia-plugin-persistedstate',
         'vue-i18n',
-        // 关键优化：预构建 lucide-vue-next 避免 1500+ 个单独请求
-        'lucide-vue-next',
+        // 关键优化：预构建 @lucide/vue 避免 1500+ 个单独请求
+        '@lucide/vue',
       ],
 
       /**
@@ -457,7 +457,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
               { test: /vue-i18n|@intlify/, name: 'i18n' },
 
               // 图标库
-              { test: /lucide-vue-next/, name: 'icons' },
+              { test: /@lucide\/vue/, name: 'icons' },
 
               // GSAP 动画库
               { test: /gsap/, name: 'gsap' },

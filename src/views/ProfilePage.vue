@@ -124,7 +124,7 @@ import {
   Settings,
   Bell,
   Smartphone,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useFavoritesStore, useNotificationsStore } from '@/stores'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'

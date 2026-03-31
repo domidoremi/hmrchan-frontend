@@ -115,7 +115,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
-import { X, Circle, Square } from 'lucide-vue-next'
+import { X, Circle, Square } from '@lucide/vue'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 

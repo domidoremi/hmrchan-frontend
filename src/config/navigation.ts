@@ -4,7 +4,7 @@
  */
 
 import type { Component } from 'vue'
-import { Home, Compass, Heart, Users, MessageSquare, CalendarDays, Info } from 'lucide-vue-next'
+import { Home, Compass, Heart, Users, MessageSquare, CalendarDays, Info } from '@lucide/vue'
 
 /** 预加载函数类型 */
 export type PrefetchFunction =

@@ -70,7 +70,7 @@
 <script setup lang="ts" vapor>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ChevronDown } from 'lucide-vue-next'
+import { ChevronDown } from '@lucide/vue'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { resolveLoadMoreMetrics } from '@/components/ui/loadMoreMetrics'
