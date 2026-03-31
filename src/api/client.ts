@@ -68,19 +68,35 @@ async function fetchWithTimeout(
   timeout: number,
   useTransportGuards = false
 ): Promise<Response> {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeout)
+  const timeoutController = new AbortController()
+  const externalSignal = init.signal
+  const timeoutId = setTimeout(() => timeoutController.abort(), timeout)
+
+  const forwardAbort = () => {
+    timeoutController.abort()
+  }
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      timeoutController.abort()
+    } else {
+      externalSignal.addEventListener('abort', forwardAbort, { once: true })
+    }
+  }
 
   try {
     const requestInit = {
       ...init,
-      signal: controller.signal,
+      signal: timeoutController.signal,
     }
     return useTransportGuards
       ? await fetchWithTransportGuards(url, requestInit)
       : await fetch(url, requestInit)
   } finally {
     clearTimeout(timeoutId)
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', forwardAbort)
+    }
   }
 }
 

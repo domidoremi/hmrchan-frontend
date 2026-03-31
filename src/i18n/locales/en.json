@@ -1092,7 +1092,7 @@
     "followerCount": "{count} followers",
     "followingCount": "Following {count}",
     "you": "You",
-    "notificationsSubtitle": "Keep up with likes, replies, and system messages.",
+    "notificationsSubtitle": "Review interaction, security, and system notifications in one place.",
     "devicesSubtitle": "Review active devices and manage trusted sessions.",
     "insights": {
       "activity": "Activity",
@@ -1198,7 +1198,40 @@
     "passkeyEmpty": "No passkeys added yet.",
     "mfaMethodTotp": "Authenticator app",
     "mfaMethodBackupCode": "Backup code",
-    "mfaMethodWebauthn": "Passkey"
+    "mfaMethodWebauthn": "Passkey",
+    "notificationStatusLabel": "Status",
+    "notificationCategoryLabel": "Category",
+    "notificationStatus": {
+      "all": "All",
+      "unread": "Unread",
+      "archived": "Archived"
+    },
+    "notificationCategories": {
+      "interaction": "Interaction",
+      "security": "Security",
+      "system": "System"
+    },
+    "notificationPriorities": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "notificationPreferences": "Notification preferences",
+    "notificationPreferencesHint": "Choose which categories stay in-app and which can also reach your email.",
+    "notificationInApp": "In-app",
+    "notificationEmail": "Email",
+    "notificationAggregated": "{count} events",
+    "archiveAction": "Archive",
+    "archiveRead": "Archive read",
+    "archiveReadSuccess": "Read notifications archived",
+    "noArchivedNotifications": "No archived notifications",
+    "noUnreadNotifications": "No unread notifications",
+    "notificationRealtimeLive": "Live updates on",
+    "notificationRealtimeConnecting": "Connecting live updates",
+    "notificationRealtimeReconnecting": "Reconnecting live updates",
+    "notificationRealtimeDegraded": "Live updates paused",
+    "retryRealtime": "Retry live updates"
   },
   "user": {
     "username": {
@@ -1214,7 +1247,12 @@
   },
   "notification": {
     "error": {
-      "fetchFailed": "Failed to load notifications, please try again later"
+      "fetchFailed": "Failed to load notifications, please try again later",
+      "summaryFailed": "Failed to update notification counts",
+      "preferencesFailed": "Failed to save notification preferences",
+      "streamFailed": "Live notifications could not connect",
+      "streamDisconnected": "Live notifications disconnected",
+      "streamDegraded": "Live notifications are paused for now"
     }
   },
   "favorites": {

@@ -79,12 +79,20 @@ export {
   type TimeRange,
 } from './communityService'
 export {
-  notificationService,
-  type Notification,
-  type NotificationType,
-  type NotificationListResponse,
-  type UnreadCountResponse,
-} from './notificationService'
+  inboxService,
+  consumeInboxStream,
+  splitInboxSseFrames,
+  type InboxActor,
+  type InboxCategory,
+  type InboxListResponse,
+  type InboxMessage,
+  type InboxPreference,
+  type InboxPreferencesPatch,
+  type InboxPriority,
+  type InboxStatus,
+  type InboxStreamEvent,
+  type InboxSummary,
+} from './inboxService'
 export {
   searchService,
   type SearchSuggestion,

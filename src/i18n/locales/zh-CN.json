@@ -1092,7 +1092,7 @@
     "followerCount": "{count} 位关注者",
     "followingCount": "已关注 {count} 人",
     "you": "你",
-    "notificationsSubtitle": "查看点赞、回复与系统通知。",
+    "notificationsSubtitle": "统一查看互动、安全与系统通知。",
     "devicesSubtitle": "管理已登录设备与信任会话。",
     "insights": {
       "activity": "活跃度",
@@ -1198,7 +1198,40 @@
     "passkeyEmpty": "暂未添加 Passkey。",
     "mfaMethodTotp": "验证器应用",
     "mfaMethodBackupCode": "备份码",
-    "mfaMethodWebauthn": "Passkey"
+    "mfaMethodWebauthn": "Passkey",
+    "notificationStatusLabel": "状态",
+    "notificationCategoryLabel": "分类",
+    "notificationStatus": {
+      "all": "全部",
+      "unread": "未读",
+      "archived": "已归档"
+    },
+    "notificationCategories": {
+      "interaction": "互动",
+      "security": "安全",
+      "system": "系统"
+    },
+    "notificationPriorities": {
+      "low": "低",
+      "normal": "普通",
+      "high": "高",
+      "critical": "关键"
+    },
+    "notificationPreferences": "通知偏好",
+    "notificationPreferencesHint": "选择哪些通知仅在站内显示，哪些也会发送到邮箱。",
+    "notificationInApp": "站内",
+    "notificationEmail": "邮件",
+    "notificationAggregated": "{count} 条动态",
+    "archiveAction": "归档",
+    "archiveRead": "归档已读",
+    "archiveReadSuccess": "已归档已读通知",
+    "noArchivedNotifications": "暂无已归档通知",
+    "noUnreadNotifications": "暂无未读通知",
+    "notificationRealtimeLive": "实时更新已开启",
+    "notificationRealtimeConnecting": "正在连接实时更新",
+    "notificationRealtimeReconnecting": "正在重连实时更新",
+    "notificationRealtimeDegraded": "实时更新暂时不可用",
+    "retryRealtime": "重试实时更新"
   },
   "user": {
     "username": {
@@ -1214,7 +1247,12 @@
   },
   "notification": {
     "error": {
-      "fetchFailed": "加载通知失败，请稍后重试"
+      "fetchFailed": "加载通知失败，请稍后重试",
+      "summaryFailed": "通知统计更新失败",
+      "preferencesFailed": "保存通知偏好失败",
+      "streamFailed": "实时通知连接失败",
+      "streamDisconnected": "实时通知连接已断开",
+      "streamDegraded": "实时通知暂时暂停"
     }
   },
   "favorites": {
