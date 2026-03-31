@@ -54,7 +54,7 @@
 
 <script setup lang="ts" vapor>
 import { computed } from 'vue'
-import { ArrowRight, BadgeCheck, FileText, Users } from 'lucide-vue-next'
+import { ArrowRight, BadgeCheck, FileText, Users } from '@lucide/vue'
 import type { AuthorListItem } from '@/api'
 import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import Avatar from '@/components/ui/Avatar.vue'

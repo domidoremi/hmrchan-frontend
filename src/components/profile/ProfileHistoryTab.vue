@@ -101,7 +101,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Clock, Trash2 } from 'lucide-vue-next'
+import { Clock, Trash2 } from '@lucide/vue'
 import { useToastStore } from '@/stores'
 import { apiClient, ApiError } from '@/api'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'

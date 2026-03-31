@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ArrowLeft, User } from 'lucide-vue-next'
+import { ArrowLeft, User } from '@lucide/vue'
 import Button from '@/components/ui/Button.vue'
 
 defineProps<{

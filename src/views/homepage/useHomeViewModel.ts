@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { Calendar, MessageSquare, Users } from 'lucide-vue-next'
+import { Calendar, MessageSquare, Users } from '@lucide/vue'
 import {
   type HomeAggregateResponse,
   type HomeCommunityHighlight,

@@ -213,7 +213,7 @@ import {
   ChevronDown,
   Pin,
   Star,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useAuthStore, useToastStore } from '@/stores'
 import { discussionService, type DiscussionComment, ApiError } from '@/api'
 import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'

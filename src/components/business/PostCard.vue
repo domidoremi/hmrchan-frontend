@@ -125,7 +125,7 @@
 <script setup lang="ts" vapor>
 import { ref, computed, watch, onRenderTracked, onRenderTriggered, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Calendar, Eye, Film, Globe, Heart, Play, User } from 'lucide-vue-next'
+import { Calendar, Eye, Film, Globe, Heart, Play, User } from '@lucide/vue'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import type { PostListItem } from '@/api'
 import { resolveAvatarSrc } from '@/utils/avatarPresentation'

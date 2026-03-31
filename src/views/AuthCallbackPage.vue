@@ -185,7 +185,7 @@ defineOptions({ name: 'AuthCallbackPage' })
 import { computed, onMounted, ref, useTemplateRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { AlertCircle, Mail } from 'lucide-vue-next'
+import { AlertCircle, Mail } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'

@@ -230,7 +230,7 @@ import {
   SlidersHorizontal,
   Wifi,
   WifiOff,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useNotificationsStore, useToastStore } from '@/stores'
 import type { InboxCategory } from '@/api/inboxService'
 import ProfileNotificationsTab from '@/components/profile/ProfileNotificationsTab.vue'

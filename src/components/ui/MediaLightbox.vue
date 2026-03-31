@@ -187,7 +187,7 @@ import {
   Download,
   AlertTriangle,
   RefreshCw,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { getMediaStreamUrl } from '@/utils/mediaOptimizer'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import { warmDecodedImage } from '@/utils/performance'

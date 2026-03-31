@@ -235,7 +235,7 @@ import {
   useTemplateRef,
 } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import { postService, type PostDetailResponse, type PostListItem } from '@/api'
 import { useCachedPost } from '@/composables/useCachedPosts'
 import { prefetchPostDetail } from '@/utils/prefetch'

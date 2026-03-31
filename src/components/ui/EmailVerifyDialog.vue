@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onUnmounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Mail } from 'lucide-vue-next'
+import { Mail } from '@lucide/vue'
 import { authService, ApiError, type SendEmailCodeRequest } from '@/api'
 import { useToastStore } from '@/stores'
 import Dialog from '@/components/ui/Dialog.vue'

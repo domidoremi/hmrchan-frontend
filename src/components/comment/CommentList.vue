@@ -66,7 +66,7 @@
 
 <script setup lang="ts" vapor>
 import { ref, computed, provide, watch, onWatcherCleanup } from 'vue'
-import { MessageSquare } from 'lucide-vue-next'
+import { MessageSquare } from '@lucide/vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useCommentsStore } from '@/stores'

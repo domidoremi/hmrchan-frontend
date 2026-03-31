@@ -121,7 +121,7 @@ import {
   Trash2,
   UploadCloud,
   X,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import type { UploadQueueItem, UploadSurfaceMode } from '@/types'
 
 interface UploadResponseShape {

@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { AtSign, Code2, Link2, MessageCircleHeart, Paperclip, Quote } from 'lucide-vue-next'
+import { AtSign, Code2, Link2, MessageCircleHeart, Paperclip, Quote } from '@lucide/vue'
 
 interface Props {
   disabled?: boolean

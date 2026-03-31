@@ -83,7 +83,7 @@
 import { computed, nextTick, ref, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { LogIn } from 'lucide-vue-next'
+import { LogIn } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useToastStore } from '@/stores'
 import { discussionService, type DiscussionComment, ApiError } from '@/api'

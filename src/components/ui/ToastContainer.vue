@@ -58,7 +58,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { AlertTriangle, CheckCircle2, Info, TriangleAlert, X, CircleAlert } from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle2, Info, TriangleAlert, X, CircleAlert } from '@lucide/vue'
 import { useToastStore, useThemeStore, useSettingsStore, type Toast } from '@/stores'
 
 defineOptions({ name: 'UiToastContainer' })

@@ -346,7 +346,7 @@ defineOptions({ name: 'LoginPage' })
 import { computed, onMounted, onUnmounted, ref, watch, useTemplateRef } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { CircleAlert, Eye, EyeOff, LoaderCircle, Mail } from 'lucide-vue-next'
+import { CircleAlert, Eye, EyeOff, LoaderCircle, Mail } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { userService, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
