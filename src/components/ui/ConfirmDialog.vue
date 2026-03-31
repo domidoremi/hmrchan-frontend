@@ -54,7 +54,7 @@
 <script setup lang="ts">
 import { computed, watch, onUnmounted, type Component, useId, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, Trash2, Info, HelpCircle, CheckCircle } from 'lucide-vue-next'
+import { AlertTriangle, Trash2, Info, HelpCircle, CheckCircle } from '@lucide/vue'
 import Button from './Button.vue'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'

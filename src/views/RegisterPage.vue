@@ -426,7 +426,7 @@ defineOptions({ name: 'RegisterPage' })
 import { computed, onMounted, onUnmounted, ref, watch, useTemplateRef } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { CircleAlert, Eye, EyeOff, LoaderCircle, Mail } from 'lucide-vue-next'
+import { CircleAlert, Eye, EyeOff, LoaderCircle, Mail } from '@lucide/vue'
 import { useAuthStore, useToastStore } from '@/stores'
 import { authService, ApiError } from '@/api'
 import { useI18n } from 'vue-i18n'

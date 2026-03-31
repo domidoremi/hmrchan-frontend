@@ -74,7 +74,7 @@
 <script setup lang="ts">
 import { computed, ref, type Component } from 'vue'
 import { RouterLink, useRoute, type RouteLocationRaw } from 'vue-router'
-import { Info, Settings2 } from 'lucide-vue-next'
+import { Info, Settings2 } from '@lucide/vue'
 import { prefetchAuthorsData, prefetchExploreData } from '@/utils/prefetch'
 import { useNavigation } from '@/composables/useNavigation'
 import type { NavigationItem } from '@/config/navigation'

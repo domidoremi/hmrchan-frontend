@@ -2,7 +2,7 @@
 defineOptions({ name: 'ScrollDownFab' })
 
 import { ref, onMounted, onUnmounted } from 'vue'
-import { ChevronDown } from 'lucide-vue-next'
+import { ChevronDown } from '@lucide/vue'
 import { throttleRAF } from '@/utils/performance'
 import {
   collectDocumentScrollTargets,

@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { ArrowUp } from 'lucide-vue-next'
+import { ArrowUp } from '@lucide/vue'
 import { throttleRAF } from '@/utils/performance'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 

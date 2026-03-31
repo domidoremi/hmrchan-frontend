@@ -222,7 +222,7 @@ import {
   Share2,
   Flag,
   ChevronDown,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import type { Comment } from '@/types'
 import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'

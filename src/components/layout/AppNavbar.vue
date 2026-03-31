@@ -357,7 +357,7 @@ import {
   Settings,
   Smartphone,
   User,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useAuthStore } from '@/stores'
 import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserDisplayName } from '@/utils/user'

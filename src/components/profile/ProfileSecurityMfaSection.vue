@@ -308,7 +308,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Shield } from 'lucide-vue-next'
+import { Shield } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'

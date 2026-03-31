@@ -106,7 +106,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Search, X, History, FileText, User, Tag } from 'lucide-vue-next'
+import { Search, X, History, FileText, User, Tag } from '@lucide/vue'
 import { searchService, type SearchSuggestion } from '@/api/searchService'
 import { useDebouncedRef } from '@/composables/useDebouncedRef'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'

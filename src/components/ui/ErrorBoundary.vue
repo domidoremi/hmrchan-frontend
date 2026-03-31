@@ -43,7 +43,7 @@
 import { ref, onErrorCaptured, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { AlertTriangle, RefreshCw, Home, Copy } from 'lucide-vue-next'
+import { AlertTriangle, RefreshCw, Home, Copy } from '@lucide/vue'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { copyToClipboard } from '@/utils/modernAPIs'

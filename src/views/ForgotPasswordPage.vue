@@ -109,7 +109,7 @@ defineOptions({ name: 'ForgotPasswordPage' })
 import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Mail } from 'lucide-vue-next'
+import { Mail } from '@lucide/vue'
 import { authService, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
 import Button from '@/components/ui/Button.vue'

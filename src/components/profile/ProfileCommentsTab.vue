@@ -101,7 +101,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Heart, MessageCircle, Trash2, ExternalLink } from 'lucide-vue-next'
+import { Heart, MessageCircle, Trash2, ExternalLink } from '@lucide/vue'
 import { apiClient, ApiError } from '@/api'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useToastStore } from '@/stores'

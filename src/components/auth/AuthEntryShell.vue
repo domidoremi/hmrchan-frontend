@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft } from '@lucide/vue'
 import AuthTabNav from './AuthTabNav.vue'
 import type { AuthEntryTab } from './authTypes'
 

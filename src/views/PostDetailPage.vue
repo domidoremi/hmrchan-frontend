@@ -360,7 +360,7 @@ import {
   warmDecodedImage,
 } from '@/utils/performance'
 import { formatDate } from '@/utils/date'
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, Maximize2 } from 'lucide-vue-next'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, Maximize2 } from '@lucide/vue'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { postService, type PostDetailResponse, ApiError } from '@/api'

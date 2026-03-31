@@ -654,7 +654,7 @@ import {
   ShieldCheck,
   BarChart3,
   Gauge,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'

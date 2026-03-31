@@ -87,7 +87,7 @@ export function useAboutData() {
     },
     {
       name: 'Lucide Icons',
-      version: extractVersion(deps['lucide-vue-next']),
+      version: extractVersion(deps['@lucide/vue']),
       description: t('about.tech.lucide'),
       url: 'https://lucide.dev',
     },

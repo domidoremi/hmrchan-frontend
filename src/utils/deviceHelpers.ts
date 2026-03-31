@@ -3,7 +3,7 @@
  * Formatting and mapping functions for device management
  */
 
-import { Monitor, Smartphone, Tablet } from 'lucide-vue-next'
+import { Monitor, Smartphone, Tablet } from '@lucide/vue'
 import type { Component } from 'vue'
 
 /**

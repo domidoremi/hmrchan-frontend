@@ -34,14 +34,7 @@
 <script setup lang="ts" vapor>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  AlertTriangle,
-  Inbox,
-  Search,
-  FileQuestion,
-  RefreshCw,
-  type LucideIcon,
-} from 'lucide-vue-next'
+import { AlertTriangle, Inbox, Search, FileQuestion, RefreshCw, type LucideIcon } from '@lucide/vue'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 

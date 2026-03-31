@@ -21,7 +21,7 @@
 defineOptions({ name: 'NextPostFab' })
 
 import { ref, onMounted, onUnmounted } from 'vue'
-import { ChevronsDown } from 'lucide-vue-next'
+import { ChevronsDown } from '@lucide/vue'
 import { throttleRAF } from '@/utils/performance'
 
 const props = withDefaults(

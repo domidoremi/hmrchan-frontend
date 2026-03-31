@@ -420,7 +420,7 @@ import {
   History,
   BarChart3,
   Trash2,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import AuthorCard from '@/components/business/AuthorCard.vue'

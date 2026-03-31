@@ -638,7 +638,7 @@ import {
   Type,
   X,
   RotateCcw,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { SubtitleShadowPreset, SubtitleAlign } from '@/composables/useVideoSettings'
 import { useVideoGestures } from '@/composables/useVideoGestures'

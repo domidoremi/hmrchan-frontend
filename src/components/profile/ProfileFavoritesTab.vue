@@ -96,7 +96,7 @@
 import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Heart, X } from 'lucide-vue-next'
+import { Heart, X } from '@lucide/vue'
 import { useAuthStore, useToastStore, useFavoritesStore } from '@/stores'
 import { storeToRefs } from 'pinia'
 import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'

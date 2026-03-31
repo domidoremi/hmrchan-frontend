@@ -625,7 +625,7 @@ import {
   CalendarCheck,
   Clock,
   Ticket,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleService'
 import type { ScheduleCategory, ScheduleResponse } from '@/api/scheduleService'
 import type { PlannerView } from '@/types'

@@ -58,7 +58,7 @@
 defineOptions({ name: 'ProfileDevicesPage' })
 
 import { computed, onMounted } from 'vue'
-import { Monitor, ShieldCheck, ShieldAlert, Fingerprint, Check } from 'lucide-vue-next'
+import { Monitor, ShieldCheck, ShieldAlert, Fingerprint, Check } from '@lucide/vue'
 import { useSessionManagement } from '@/composables/useSessionManagement'
 import DeviceManagement from '@/components/profile/DeviceManagement.vue'
 import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'

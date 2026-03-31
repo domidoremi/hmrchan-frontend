@@ -870,7 +870,7 @@ import {
   RotateCcw,
   Trash2,
   Palette,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { UploadQueueItem } from '@/types'

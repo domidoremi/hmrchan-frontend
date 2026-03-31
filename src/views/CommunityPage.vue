@@ -354,7 +354,7 @@ import {
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { MessageSquare, Flame, HelpCircle, Search, X } from 'lucide-vue-next'
+import { MessageSquare, Flame, HelpCircle, Search, X } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useDiscussionsStore } from '@/stores'
 import { discussionService, type Discussion, ApiError } from '@/api'

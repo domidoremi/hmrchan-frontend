@@ -136,7 +136,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Bell, ChevronRight, Heart, MessageCircle, ShieldAlert } from 'lucide-vue-next'
+import { Bell, ChevronRight, Heart, MessageCircle, ShieldAlert } from '@lucide/vue'
 import { useNotificationsStore } from '@/stores'
 import { type InboxMessage } from '@/api/inboxService'
 import { formatRelativeTime } from '@/utils/date'

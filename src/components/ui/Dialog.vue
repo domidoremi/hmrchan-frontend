@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { computed, watch, onUnmounted, ref, useId, useSlots, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'

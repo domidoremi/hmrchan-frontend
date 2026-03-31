@@ -104,7 +104,7 @@
 import { ref, computed, onMounted, onUnmounted, defineAsyncComponent, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Heart, Bookmark, BookmarkMinus } from 'lucide-vue-next'
+import { Heart, Bookmark, BookmarkMinus } from '@lucide/vue'
 import { apiClient, ApiError } from '@/api'
 import type { MyCommentFavoriteItem } from '@/api'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
