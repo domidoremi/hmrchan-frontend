@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import { nextTick } from 'vue'
@@ -52,6 +52,31 @@ describe('SearchBar', () => {
     route.query = {}
     getSuggestions.mockResolvedValue([{ text: 'editorial', type: 'post', label: 'editorial' }])
     localStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('does not issue a suggestion request on mount from initial sync state', async () => {
+    route.query = { q: 'editorial' }
+
+    const wrapper = mount(SearchBar, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          AnimatedIcon: { template: '<span aria-hidden="true" />' },
+        },
+      },
+    })
+
+    vi.advanceTimersByTime(400)
+    await nextTick()
+    await Promise.resolve()
+
+    expect(getSuggestions).not.toHaveBeenCalled()
+
+    wrapper.unmount()
   })
 
   it('issues only one suggestion request for a single debounced input burst', async () => {

@@ -15,15 +15,87 @@ interface UseDebouncedRefResult<T> {
   cancel: () => void
 }
 
-export function useDebouncedRef<T>(
-  source: MaybeRefOrGetter<T>,
-  delay = 300
-): UseDebouncedRefResult<T> {
+interface UseWritableDebouncedRefResult<T> {
+  state: Ref<T>
+  flush: () => void
+  cancel: () => void
+}
+
+interface DebouncedStateController<T> {
+  state: Ref<T>
+  flush: (resolveValue?: () => T) => void
+  cancel: () => void
+}
+
+function createDebouncedState<T>(initialValue: T, delay: number): DebouncedStateController<T> {
   let timer: ReturnType<typeof setTimeout> | null = null
   let triggerRef: (() => void) | null = null
-  let currentValue = toValue(source)
+  let currentValue = initialValue
+  let pendingValue = initialValue
+  let hasPending = false
 
-  const debounced = customRef<T>((track, trigger) => {
+  const clearTimer = () => {
+    if (!timer) return
+    clearTimeout(timer)
+    timer = null
+  }
+
+  const publish = (value: T) => {
+    currentValue = value
+    triggerRef?.()
+  }
+
+  const commit = (value: T) => {
+    clearTimer()
+    hasPending = false
+    pendingValue = value
+
+    if (Object.is(currentValue, value)) {
+      currentValue = value
+      return
+    }
+
+    publish(value)
+  }
+
+  const schedule = (value: T) => {
+    if (Object.is(value, currentValue)) {
+      clearTimer()
+      hasPending = false
+      pendingValue = value
+      return
+    }
+
+    pendingValue = value
+    hasPending = true
+    clearTimer()
+    timer = setTimeout(() => {
+      commit(pendingValue)
+    }, delay)
+  }
+
+  const flush = (resolveValue?: () => T) => {
+    const nextValue = resolveValue ? resolveValue() : hasPending ? pendingValue : currentValue
+
+    clearTimer()
+    hasPending = false
+    pendingValue = nextValue
+
+    if (Object.is(currentValue, nextValue)) {
+      currentValue = nextValue
+      return
+    }
+
+    publish(nextValue)
+  }
+
+  const cancel = () => {
+    clearTimer()
+    hasPending = false
+    pendingValue = currentValue
+  }
+
+  const state = customRef<T>((track, trigger) => {
     triggerRef = trigger
 
     return {
@@ -32,51 +104,60 @@ export function useDebouncedRef<T>(
         return currentValue
       },
       set(value) {
-        if (timer) {
-          clearTimeout(timer)
-        }
-        timer = setTimeout(() => {
-          timer = null
-          currentValue = value
-          trigger()
-        }, delay)
+        schedule(value)
       },
     }
   })
 
+  return {
+    state,
+    flush,
+    cancel,
+  }
+}
+
+export function useDebouncedRef<T>(
+  source: MaybeRefOrGetter<T>,
+  delay = 300
+): UseDebouncedRefResult<T> {
+  const controller = createDebouncedState(toValue(source), delay)
+
   const stop = watch(
     () => toValue(source),
     (value) => {
-      debounced.value = value
-    },
-    { immediate: true }
-  )
-
-  const cancel = () => {
-    if (timer) {
-      clearTimeout(timer)
-      timer = null
+      controller.state.value = value
     }
-  }
-
-  const flush = () => {
-    if (!timer) return
-    clearTimeout(timer)
-    timer = null
-    currentValue = toValue(source)
-    triggerRef?.()
-  }
+  )
 
   if (getCurrentScope()) {
     onScopeDispose(() => {
-      cancel()
+      controller.cancel()
       stop()
     })
   }
 
   return {
-    debounced: readonly(debounced),
-    flush,
-    cancel,
+    debounced: readonly(controller.state),
+    flush: () => controller.flush(() => toValue(source)),
+    cancel: controller.cancel,
+  }
+}
+
+export function useWritableDebouncedRef<T>(
+  initialValue: T,
+  delay = 300
+): UseWritableDebouncedRefResult<T> {
+  const controller = createDebouncedState(initialValue, delay)
+
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      controller.cancel()
+    })
+  }
+
+  return {
+    state: controller.state,
+    flush: controller.flush,
+    cancel: controller.cancel,
   }
 }
