@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_APPEARANCE_PRESET,
+  getAppearancePresetSpec,
+  getAppearancePresetSpecs,
   normalizeAppearancePreset,
   presetUsesEnhancer,
   resolveSceneRole,
@@ -15,6 +17,28 @@ describe('appearance config', () => {
   it('marks enhancer-backed presets', () => {
     expect(presetUsesEnhancer('clay-playful')).toBe(true)
     expect(presetUsesEnhancer('minimal-editorial')).toBe(false)
+  })
+
+  it('exposes preset design specs for the runtime presets only', () => {
+    const specs = getAppearancePresetSpecs()
+
+    expect(specs).toHaveLength(8)
+    expect(specs.map((spec) => spec.preset)).toEqual([
+      'minimal-editorial',
+      'fluent-soft',
+      'material-calm',
+      'organic-natural',
+      'biophilic-serene',
+      'clay-playful',
+      'sketch-doodle',
+      'gradient-narrative',
+    ])
+
+    expect(getAppearancePresetSpec('gradient-narrative')).toMatchObject({
+      sourceDoc: 'docs/滚动叙事.txt',
+      family: 'rounded',
+      enhancer: 'gradient',
+    })
   })
 
   it('resolves scene roles from routes', () => {

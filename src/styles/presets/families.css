@@ -1,86 +1,68 @@
 /**
- * Preset family bridge
- *
- * Rounded family:
- * - minimal-editorial
- * - fluent-soft
- * - organic-natural
- * - biophilic-serene
- * - clay-playful
- * - gradient-narrative
- *
- * Sharp family:
- * - material-calm
- * - sketch-doodle
- *
- * Components continue consuming the shared --ui-* contract, but family identity
- * now resolves purely from data-preset and data-color-mode.
- */
+   * Preset family bridge
+   *
+   * Rounded family:
+   * - minimal-editorial
+   * - fluent-soft
+   * - organic-natural
+   * - biophilic-serene
+   * - clay-playful
+   * - gradient-narrative
+   *
+   * Sharp family:
+   * - material-calm
+   * - sketch-doodle
+   *
+   * This file keeps only family-level silhouettes, interaction language, and
+   * legacy utility coverage. Preset identity lives in the preset files.
+   */
 
-/* Defaults (iOS / SwiftUI-like) */
 :root,
 #app {
-  /* Touch targets */
-  --ui-control-min-size: 2.75rem;
-  --ui-control-height-sm: 2.25rem;
-  --ui-control-height-md: 2.5rem;
-  --ui-control-height-lg: 2.75rem;
-  --ui-control-padding-x-sm: 0.75rem;
-  --ui-control-padding-x-md: 1rem;
-  --ui-control-padding-x-lg: 2rem;
-
-  /* Corner radii */
-  --ui-radius-sheet: 1.125rem;
-  --ui-radius-dialog: var(--radius-xl);
+  --ui-control-min-size: var(--component-control-min-block-size);
+  --ui-control-height-sm: calc(var(--component-control-min-block-size) - 0.25rem);
+  --ui-control-height-md: var(--component-control-min-block-size);
+  --ui-control-height-lg: calc(var(--component-control-min-block-size) + 0.25rem);
+  --ui-control-padding-x-sm: calc(var(--appearance-control-padding-inline) * 0.8);
+  --ui-control-padding-x-md: var(--appearance-control-padding-inline);
+  --ui-control-padding-x-lg: calc(var(--appearance-control-padding-inline) * 1.25);
+  --ui-radius-sheet: var(--appearance-radius-panel);
+  --ui-radius-dialog: var(--appearance-radius-panel);
   --ui-radius-button: var(--appearance-radius-control-md);
-  --ui-radius-input: var(--radius);
+  --ui-radius-input: var(--appearance-radius-control-md);
   --ui-radius-card: var(--appearance-radius-panel);
   --ui-radius-tabs: var(--appearance-radius-control-lg);
-  --ui-radius-toast: var(--radius-lg);
+  --ui-radius-toast: var(--appearance-radius-control-lg);
   --ui-radius-nav: var(--appearance-radius-control-lg);
-  --ui-radius-nav-icon: var(--appearance-radius-control-lg);
-  --ui-radius-dropdown: var(--radius-xl);
-  --ui-radius-checkbox: var(--radius-sm);
+  --ui-radius-nav-icon: var(--appearance-radius-control-md);
+  --ui-radius-dropdown: var(--appearance-radius-panel);
+  --ui-radius-checkbox: var(--appearance-radius-control-sm);
   --ui-radius-badge: var(--appearance-radius-chip);
-
-  /* Dialog control sizing */
-  --ui-dialog-close-size: 2rem;
-
-  /* Backdrop / scrim */
-  --ui-backdrop-dim: rgba(0, 0, 0, 0.45);
-  --ui-backdrop-blur: blur(1.125rem) saturate(1.05);
-
-  /* Surfaces */
-  --ui-surface-border: rgba(255, 255, 255, 0.12);
-  --ui-surface-bg: rgba(10, 10, 14, 0.86);
-
-  /* Switch sizing */
+  --ui-dialog-close-size: var(--component-control-min-block-size);
+  --ui-backdrop-dim: rgb(15 23 42 / 0.46);
+  --ui-backdrop-blur: var(--appearance-backdrop-token);
+  --ui-surface-border: var(--semantic-border);
+  --ui-surface-bg: var(--semantic-surface-base);
   --ui-switch-width-sm: 2rem;
   --ui-switch-height-sm: 1.125rem;
   --ui-switch-thumb-sm: 0.875rem;
-  --ui-switch-translate-sm: calc(var(--ui-switch-width-sm) - var(--ui-switch-thumb-sm) - 4px);
+  --ui-switch-translate-sm: calc(var(--ui-switch-width-sm) - var(--ui-switch-thumb-sm) - 0.25rem);
   --ui-switch-width-md: 2.75rem;
   --ui-switch-height-md: 1.5rem;
   --ui-switch-thumb-md: 1.25rem;
-  --ui-switch-translate-md: calc(var(--ui-switch-width-md) - var(--ui-switch-thumb-md) - 4px);
+  --ui-switch-translate-md: calc(var(--ui-switch-width-md) - var(--ui-switch-thumb-md) - 0.25rem);
   --ui-switch-width-lg: 3.25rem;
   --ui-switch-height-lg: 1.75rem;
   --ui-switch-thumb-lg: 1.5rem;
-  --ui-switch-translate-lg: calc(var(--ui-switch-width-lg) - var(--ui-switch-thumb-lg) - 4px);
-
-  /* Slider sizing */
+  --ui-switch-translate-lg: calc(var(--ui-switch-width-lg) - var(--ui-switch-thumb-lg) - 0.25rem);
   --ui-slider-track-height: 0.5rem;
   --ui-slider-thumb-size: 1.25rem;
-  --ui-slider-thumb-border: 2px;
-
-  /* Toast sizing */
-  --ui-toast-padding-y: var(--spacing-3);
-  --ui-toast-padding-x: var(--spacing-4);
+  --ui-slider-thumb-border: 0.125rem;
+  --ui-toast-padding-y: 0.75rem;
+  --ui-toast-padding-x: 1rem;
   --ui-toast-icon-size: 2rem;
   --ui-toast-close-size: 1.5rem;
-
-  /* Navbar/action sizing */
-  --ui-action-size: var(--ui-control-min-size);
+  --ui-action-size: var(--component-control-min-block-size);
 }
 
 :is(:root, #app):is(
@@ -91,191 +73,49 @@
   [data-preset='clay-playful'],
   [data-preset='gradient-narrative']
 ) {
-  --font-family:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI',
-    sans-serif;
-
-  font-family: var(--font-family);
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in: cubic-bezier(0.32, 0, 0.67, 0);
-  --ease-in-out: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
-
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.12);
-  --radius: 0.9rem;
-  --radius-lg: 1.05rem;
-  --radius-xl: 1.3rem;
-  --radius-2xl: 1.6rem;
-
-  --glass-blur: blur(24px);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.12);
-
-  --ui-control-height-sm: 2.375rem;
-  --ui-control-height-md: 2.75rem;
-  --ui-control-height-lg: 3rem;
-  --ui-control-padding-x-sm: 0.875rem;
-  --ui-control-padding-x-md: 1.25rem;
-  --ui-control-padding-x-lg: 2.25rem;
-
-  --ui-radius-button: var(--appearance-radius-control-md);
+  --ui-radius-button: var(--appearance-radius-control-lg);
   --ui-radius-input: var(--appearance-radius-control-md);
   --ui-radius-card: var(--appearance-radius-panel);
   --ui-radius-tabs: var(--appearance-radius-control-lg);
-  --ui-radius-toast: var(--radius-xl);
+  --ui-radius-toast: var(--appearance-radius-control-lg);
   --ui-radius-nav: var(--appearance-radius-control-lg);
   --ui-radius-nav-icon: var(--appearance-radius-control-lg);
+  --ui-radius-dropdown: var(--appearance-radius-panel);
   --ui-radius-checkbox: var(--appearance-radius-control-sm);
   --ui-radius-badge: var(--appearance-radius-chip);
-  --ui-radius-dialog: var(--appearance-radius-panel);
-
-  --ui-dialog-close-size: 2.25rem;
-
-  --ui-switch-width-sm: 2.125rem;
-  --ui-switch-height-sm: 1.25rem;
-  --ui-switch-thumb-sm: 1rem;
-  --ui-switch-translate-sm: calc(var(--ui-switch-width-sm) - var(--ui-switch-thumb-sm) - 4px);
-  --ui-switch-width-md: 3rem;
-  --ui-switch-height-md: 1.75rem;
-  --ui-switch-thumb-md: 1.5rem;
-  --ui-switch-translate-md: calc(var(--ui-switch-width-md) - var(--ui-switch-thumb-md) - 4px);
-  --ui-switch-width-lg: 3.5rem;
-  --ui-switch-height-lg: 2rem;
-  --ui-switch-thumb-lg: 1.75rem;
-  --ui-switch-translate-lg: calc(var(--ui-switch-width-lg) - var(--ui-switch-thumb-lg) - 4px);
+  --ui-family-surface-bg: var(--chrome-surface-bg);
+  --ui-family-surface-bg-soft: var(--chrome-surface-bg-soft);
+  --ui-family-surface-border: var(--chrome-surface-border);
+  --ui-family-surface-border-strong: var(--chrome-surface-border-strong);
+  --ui-family-surface-shadow: var(--chrome-surface-shadow);
+  --ui-family-control-bg: var(--chrome-action-bg);
+  --ui-family-control-bg-hover: var(--chrome-action-bg-hover);
+  --ui-family-control-border: var(--chrome-action-border);
+  --ui-family-control-border-strong: var(--chrome-action-border-strong);
+  --ui-family-hover-transform: translateY(-0.0625rem);
 }
 
-/* Material-ish defaults (kept intentionally conservative; can be refined later) */
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) {
-  --font-family: 'Roboto', 'Noto Sans', 'Inter', 'Segoe UI', sans-serif;
-  font-family: var(--font-family);
-
-  --ease-out: cubic-bezier(0.2, 0, 0, 1);
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --ease-in-out: cubic-bezier(0.2, 0, 0, 1);
-  --ease-spring: cubic-bezier(0.2, 0, 0, 1);
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.14);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.16);
-
-  /* Material tends to use smaller radii + clearer elevation */
-  --ui-radius-sheet: var(--radius-xl);
-  --ui-radius-dialog: 1.75rem;
-  /* M3 Dialog radius */
-
-  --ui-backdrop-dim: rgba(0, 0, 0, 0.52);
-  --ui-backdrop-blur: blur(0);
-  /* Material typically uses dimming, minimal blur */
-
-  /* Make the switch obvious: tune the global radii for descendants */
-  --radius: 0.25rem;
-  /* 4px M2 / 12-20px M3 usually varies */
-  --radius-lg: 0.75rem;
-  /* 12px */
-  --radius-xl: 1rem;
-  /* 16px */
-  --radius-2xl: 1.5rem;
-  /* 24px */
-
-  /* Material: reduce blur, increase elevation cues */
-  --glass-blur: blur(0px);
-  --glass-shadow: var(--shadow-md);
-  --glass-shadow-lg: var(--shadow-lg);
-
-  --transition-fast: 150ms;
-
-  --ui-control-min-size: 2.5rem;
-  --ui-control-height-sm: 2.125rem;
-  --ui-control-height-md: 2.5rem;
-  /* M3 Filled Button height is 40px */
-  --ui-control-height-lg: 2.75rem;
-  --ui-control-padding-x-sm: 0.75rem;
-  --ui-control-padding-x-md: 1.5rem;
-  --ui-control-padding-x-lg: 2rem;
-
   --ui-radius-button: var(--appearance-radius-control-md);
-  /* Keep material buttons controlled rather than full-pill so long labels stay proportional */
   --ui-radius-input: var(--appearance-radius-control-sm);
-  /* Text fields usually small radius or 0 for filled */
   --ui-radius-card: var(--appearance-radius-panel);
-  /* M3 Card */
-  --ui-radius-tabs: var(--appearance-radius-control-lg);
-  /* Navigation bar/rail items */
-  --ui-radius-toast: var(--radius-sm);
-  /* Snackbar */
-  --ui-radius-nav: 0;
+  --ui-radius-tabs: var(--appearance-radius-control-md);
+  --ui-radius-toast: var(--appearance-radius-control-sm);
+  --ui-radius-nav: var(--appearance-radius-control-sm);
   --ui-radius-nav-icon: var(--appearance-radius-control-lg);
-  /* Active indicator */
-  --ui-radius-checkbox: 0.125rem;
+  --ui-radius-dropdown: var(--appearance-radius-panel);
+  --ui-radius-checkbox: var(--appearance-radius-control-sm);
   --ui-radius-badge: var(--appearance-radius-chip);
-
-  --ui-dialog-close-size: 2rem;
-
-  /* Material Switch Overrides */
-  --ui-switch-width-sm: 2.25rem;
-  --ui-switch-height-sm: 1.25rem;
-  --ui-switch-thumb-sm: 0.875rem;
-  /* Smaller thumb vs track */
-  --ui-switch-translate-sm: calc(var(--ui-switch-width-sm) - var(--ui-switch-thumb-sm) - 6px);
-
-  --ui-switch-width-md: 3.25rem;
-  /* ~52px */
-  --ui-switch-height-md: 2rem;
-  /* 32px */
-  --ui-switch-thumb-md: 1.5rem;
-  /* 24px */
-  --ui-switch-translate-md: calc(var(--ui-switch-width-md) - var(--ui-switch-thumb-md) - 8px);
-
-  --ui-switch-width-lg: 3.75rem;
-  --ui-switch-height-lg: 2.25rem;
-  --ui-switch-thumb-lg: 1.75rem;
-  --ui-switch-translate-lg: calc(var(--ui-switch-width-lg) - var(--ui-switch-thumb-lg) - 8px);
-}
-
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='light'] {
-  --ui-surface-border: rgba(121, 116, 126, 0.1);
-  /* M3 Outline Variant */
-  --ui-surface-bg: #fdfcff;
-
-  --glass-bg: #fdfcff;
-  --glass-bg-light: #f3f3fa;
-  --glass-bg-strong: #ffffff;
-  --glass-border: rgba(121, 116, 126, 0.2);
-  --glass-border-strong: rgba(121, 116, 126, 0.4);
-}
-
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='dark'] {
-  --ui-surface-border: rgba(147, 143, 153, 0.2);
-  --ui-surface-bg: #1a1c1e;
-
-  --glass-bg: #1a1c1e;
-  --glass-bg-light: #2f3033;
-  --glass-bg-strong: #141218;
-  --glass-border: rgba(147, 143, 153, 0.2);
-  --glass-border-strong: rgba(147, 143, 153, 0.4);
-}
-
-/* ========== iOS / SwiftUI Style ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .glass-card {
-  border-radius: var(--radius-2xl);
-  border: 1px solid var(--glass-border);
+  --ui-family-surface-bg: var(--chrome-surface-bg);
+  --ui-family-surface-bg-soft: var(--chrome-surface-bg-soft);
+  --ui-family-surface-border: var(--chrome-surface-border);
+  --ui-family-surface-border-strong: var(--chrome-surface-border-strong);
+  --ui-family-surface-shadow: var(--chrome-surface-shadow);
+  --ui-family-control-bg: var(--chrome-action-bg);
+  --ui-family-control-bg-hover: var(--chrome-action-bg-hover);
+  --ui-family-control-border: var(--chrome-action-border);
+  --ui-family-control-border-strong: var(--chrome-action-border-strong);
+  --ui-family-hover-transform: none;
 }
 
 :is(:root, #app):is(
@@ -286,164 +126,158 @@
     [data-preset='clay-playful'],
     [data-preset='gradient-narrative']
   )
-  .glass-card::before {
-  opacity: 0.6;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .btn,
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .glass-button {
-  border-radius: var(--radius-full);
-  letter-spacing: -0.01em;
-}
-
-/* iOS Light Mode */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='light'] {
-  --ui-surface-border: rgba(0, 0, 0, 0.08);
-  --ui-surface-bg: rgba(255, 255, 255, 0.85);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-bg-strong: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(0, 0, 0, 0.08);
-}
-
-/* iOS Dark Mode */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='dark'] {
-  --ui-surface-border: rgba(255, 255, 255, 0.12);
-  --ui-surface-bg: rgba(30, 30, 30, 0.8);
-  --glass-bg: rgba(30, 30, 30, 0.65);
-  --glass-bg-strong: rgba(44, 44, 46, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.12);
-}
-
-/* iOS Blue Theme - Frosted Blue Glass */
-:is(:root, #app)[data-preset='gradient-narrative'][data-color-mode='light'] {
-  --ui-surface-border: rgba(59, 130, 246, 0.12);
-  --ui-surface-bg: rgba(255, 255, 255, 0.82);
-  --glass-bg: rgba(240, 249, 255, 0.7);
-  --glass-bg-light: rgba(224, 242, 254, 0.5);
-  --glass-bg-strong: rgba(255, 255, 255, 0.92);
-  --glass-border: rgba(59, 130, 246, 0.15);
-  --glass-border-strong: rgba(59, 130, 246, 0.3);
-}
-
-/* ========== Material Style ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .glass-card {
+  :where(.glass-card, .glass-dropdown, .grouped-list, .sheet, .action-sheet-group) {
+  background: var(--ui-family-surface-bg);
+  border: var(--appearance-surface-border-token);
   border-radius: var(--ui-radius-card);
-  box-shadow: var(--shadow-sm);
-  background: var(--color-surface);
-  /* Solid background for Material */
+  box-shadow: var(--ui-family-surface-shadow);
+}
+
+:is(:root, #app):is(
+    [data-preset='minimal-editorial'],
+    [data-preset='fluent-soft'],
+    [data-preset='organic-natural'],
+    [data-preset='biophilic-serene'],
+    [data-preset='clay-playful'],
+    [data-preset='gradient-narrative']
+  )
+  :where(.grouped-list, .sheet, .action-sheet-group) {
+  overflow: hidden;
+}
+
+@supports ((backdrop-filter: blur(1rem)) or (-webkit-backdrop-filter: blur(1rem))) {
+  :is(:root, #app):is(
+      [data-preset='minimal-editorial'],
+      [data-preset='fluent-soft'],
+      [data-preset='organic-natural'],
+      [data-preset='biophilic-serene'],
+      [data-preset='clay-playful'],
+      [data-preset='gradient-narrative']
+    )
+    :where(.glass-card, .glass-dropdown, .glass-navbar, .sheet, .action-sheet-group) {
+    backdrop-filter: var(--appearance-backdrop-token);
+    -webkit-backdrop-filter: var(--appearance-backdrop-token);
+  }
+}
+
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
+  :where(.glass-card, .glass-dropdown, .grouped-list, .sheet, .action-sheet-group) {
+  background: var(--ui-family-surface-bg);
+  border: var(--appearance-surface-border-token);
+  border-radius: var(--ui-radius-card);
+  box-shadow: var(--ui-family-surface-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border: 1px solid var(--ui-surface-border);
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-card::before {
-  display: none;
-  /* No top gloss for material */
+  .glass-card::before,
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
+  .glass-card::after,
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
+  .glass-navbar::after {
+  opacity: 0;
 }
 
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .btn,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .glass-button {
+:is(:root, #app):is(
+    [data-preset='minimal-editorial'],
+    [data-preset='fluent-soft'],
+    [data-preset='organic-natural'],
+    [data-preset='biophilic-serene'],
+    [data-preset='clay-playful'],
+    [data-preset='gradient-narrative']
+  )
+  :where(.glass-button, .btn--pill, .nav-link, .chip) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--appearance-control-gap);
+  min-block-size: var(--ui-control-height-md);
+  max-inline-size: 100%;
+  padding-inline: var(--ui-control-padding-x-md);
+  padding-block: var(--ui-control-padding-y-md);
+  border: 0.0625rem solid var(--ui-family-control-border);
   border-radius: var(--ui-radius-button);
-  text-transform: none;
-  /* M3 removed uppercase constraint */
-  letter-spacing: 0.01em;
-  font-weight: 500;
+  background: var(--ui-family-control-bg);
+  color: var(--semantic-text-primary);
+  box-shadow: var(--appearance-control-shadow-token);
+  transition:
+    background-color 220ms var(--ease-out),
+    border-color 220ms var(--ease-out),
+    color 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out),
+    transform 220ms var(--ease-out);
+}
+
+:is(:root, #app):is(
+    [data-preset='minimal-editorial'],
+    [data-preset='fluent-soft'],
+    [data-preset='organic-natural'],
+    [data-preset='biophilic-serene'],
+    [data-preset='clay-playful'],
+    [data-preset='gradient-narrative']
+  )
+  :where(.glass-button:hover, .btn--pill:hover, .nav-link:hover, .chip:hover) {
+  background: var(--ui-family-control-bg-hover);
+  border-color: var(--ui-family-control-border-strong);
+  transform: var(--ui-family-hover-transform);
+}
+
+:is(:root, #app):is(
+    [data-preset='minimal-editorial'],
+    [data-preset='fluent-soft'],
+    [data-preset='organic-natural'],
+    [data-preset='biophilic-serene'],
+    [data-preset='clay-playful'],
+    [data-preset='gradient-narrative']
+  )
+  :where(
+    .glass-button:focus-visible,
+    .btn--pill:focus-visible,
+    .nav-link:focus-visible,
+    .chip:focus-visible
+  ) {
+  box-shadow: var(--appearance-focus-ring-token);
+  outline: none;
+}
+
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
+  :where(.glass-button, .btn--pill, .nav-link, .chip) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--appearance-control-gap);
+  min-block-size: var(--ui-control-height-md);
+  max-inline-size: 100%;
+  padding-inline: var(--ui-control-padding-x-md);
+  padding-block: var(--ui-control-padding-y-md);
+  border: 0.0625rem solid var(--ui-family-control-border);
+  border-radius: var(--ui-radius-button);
+  background: var(--ui-family-control-bg);
+  color: var(--semantic-text-primary);
   box-shadow: none;
-  /* M3 filled buttons flat by default until hover/elevated */
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .btn-default,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button--primary {
-  box-shadow: var(--shadow-sm);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) input,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) textarea {
-  border-radius: var(--radius);
-}
-
-/* Material Light Mode - Enhanced */
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='light']
-  .glass-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-/* Material Dark Mode - Enhanced */
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='dark']
-  .glass-card:hover {
-  box-shadow: var(--shadow-md);
-  background:
-    linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
-    var(--color-surface);
-  /* M3 Surface Tint */
-}
-
-/* iOS Blue Mode - Enhanced */
-:is(:root, #app)[data-preset='gradient-narrative'][data-color-mode='light'] .glass-card:hover {
-  box-shadow:
-    0 18px 50px rgba(59, 130, 246, 0.1),
-    0 6px 16px rgba(59, 130, 246, 0.06);
-}
-
-:is(:root, #app)[data-preset='gradient-narrative'][data-color-mode='light'] .glass-button {
-  border-color: rgba(59, 130, 246, 0.12);
-}
-
-:is(:root, #app)[data-preset='gradient-narrative'][data-color-mode='light'] .glass-button:hover {
-  border-color: rgba(59, 130, 246, 0.25);
-}
-
-/* ========== iOS Motion & Interaction ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .glass-card {
   transition:
-    box-shadow var(--duration-normal) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
+    background-color 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out);
+}
+
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
+  :where(.glass-button:hover, .btn--pill:hover, .nav-link:hover, .chip:hover) {
+  background: var(--ui-family-control-bg-hover);
+  border-color: var(--ui-family-control-border-strong);
+}
+
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
+  :where(
+    .glass-button:focus-visible,
+    .btn--pill:focus-visible,
+    .nav-link:focus-visible,
+    .chip:focus-visible
+  ) {
+  box-shadow: var(--appearance-focus-ring-token);
+  outline: none;
 }
 
 :is(:root, #app):is(
@@ -454,109 +288,39 @@
     [data-preset='clay-playful'],
     [data-preset='gradient-narrative']
   )
-  .glass-button {
-  transition:
-    box-shadow var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-}
-
-/* ========== Material Motion & Interaction ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .glass-card {
-  transition:
-    box-shadow var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .glass-button {
-  transition:
-    background-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .btn:active,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button:active {
-  transform: none;
-  /* Material buttons don't shrink */
-  box-shadow: inset 0 0 0 100px rgba(0, 0, 0, 0.1);
-  /* Ripple-like darken */
-}
-
-/* ========== iOS Blur Effects ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .glass-card {
-  backdrop-filter: blur(1.5rem) saturate(1.4);
-  -webkit-backdrop-filter: blur(1.5rem) saturate(1.4);
-}
-
-/* ========== Material Ripple Indicator ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .btn:focus-visible,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* ================================================================
- *  Extended Component Coverage
- *  iOS (SwiftUI) vs Material Design overrides
- * ================================================================ */
-
-/* ========== Glass Input ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .glass-input {
-  border-radius: var(--radius-lg);
-  padding: 0.6875rem var(--spacing-4);
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg-light);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .glass-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.12);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .glass-input {
-  border-radius: var(--radius);
-  padding: 0.875rem var(--spacing-4) 0.625rem;
-  border: none;
-  border-bottom: 2px solid var(--glass-border-strong);
-  background: var(--glass-bg-subtle);
+  :where(.glass-input, .search-input) {
+  min-block-size: var(--ui-control-height-md);
+  border: 0.0625rem solid var(--ui-family-control-border);
+  border-radius: var(--ui-radius-input);
+  background: var(--chrome-muted-bg);
+  color: var(--semantic-text-primary);
+  box-shadow: var(--appearance-control-shadow-token);
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-input:focus {
-  border-bottom-color: var(--color-primary);
+  :where(.glass-input, .search-input) {
+  min-block-size: var(--ui-control-height-md);
+  border: 0.0625rem solid var(--ui-family-control-border);
+  border-radius: var(--ui-radius-input);
+  background: var(--chrome-muted-bg);
+  color: var(--semantic-text-primary);
   box-shadow: none;
-  background: var(--glass-bg-light);
 }
 
-/* ========== Navbar ========== */
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .search-input,
+:is(:root, #app):is(
+    [data-preset='minimal-editorial'],
+    [data-preset='fluent-soft'],
+    [data-preset='organic-natural'],
+    [data-preset='biophilic-serene'],
+    [data-preset='clay-playful'],
+    [data-preset='gradient-narrative']
+  )
+  .search-input {
+  padding-inline: var(--ui-control-padding-x-md);
+  padding-inline-start: calc(var(--ui-control-padding-x-md) + 1.5rem);
+}
+
 :is(:root, #app):is(
     [data-preset='minimal-editorial'],
     [data-preset='fluent-soft'],
@@ -566,19 +330,17 @@
     [data-preset='gradient-narrative']
   )
   .glass-navbar {
-  border-bottom: 0.5px solid var(--glass-border);
-  backdrop-filter: blur(1.25rem) saturate(1.4);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(1.4);
+  background: var(--chrome-shell-bg);
+  border: 0.0625rem solid var(--chrome-shell-border);
+  box-shadow: var(--chrome-shell-shadow);
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .glass-navbar {
-  border-bottom: none;
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(0.5rem);
-  -webkit-backdrop-filter: blur(0.5rem);
+  background: var(--chrome-shell-bg);
+  border: 0.0625rem solid var(--chrome-shell-border);
+  box-shadow: var(--chrome-shell-shadow);
 }
 
-/* ========== Nav Links ========== */
 :is(:root, #app):is(
     [data-preset='minimal-editorial'],
     [data-preset='fluent-soft'],
@@ -588,1286 +350,32 @@
     [data-preset='gradient-narrative']
   )
   .nav-link {
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-2) var(--spacing-3);
-  transition: background var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .nav-link:hover {
-  background: rgba(var(--color-primary-rgb), 0.08);
+  border-radius: var(--ui-radius-nav);
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .nav-link {
-  border-radius: var(--radius);
-  padding: var(--spacing-2) var(--spacing-4);
   position: relative;
-  transition: color var(--duration-fast) var(--ease-out);
+  border-radius: var(--ui-radius-nav);
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .nav-link::after {
   content: '';
   position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 0;
-  height: 0.125rem;
-  background: var(--color-primary);
-  transition: width var(--duration-fast) var(--ease-out);
-  transform: translateX(-50%);
+  inset-inline: 20%;
+  inset-block-end: 0.25rem;
+  block-size: 0.125rem;
+  border-radius: 999rem;
+  background: transparent;
+  transition: background-color 180ms var(--ease-out);
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
   .nav-link:hover::after,
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
   .nav-link--active::after {
-  width: 60%;
+  background: currentColor;
 }
 
-/* ========== Dropdown Menus ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .glass-dropdown {
-  border-radius: var(--ui-radius-dialog);
-  border: 0.5px solid var(--glass-border);
-  backdrop-filter: blur(1.25rem) saturate(1.3);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(1.3);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .glass-dropdown {
-  border-radius: var(--radius);
-  border: none;
-  box-shadow: var(--glass-shadow-lg);
-  backdrop-filter: blur(0.375rem);
-  -webkit-backdrop-filter: blur(0.375rem);
-}
-
-/* ========== Toggle Switch ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .toggle-switch {
-  width: 3rem;
-  height: 1.75rem;
-  border-radius: 0.875rem;
-  background: var(--color-gray-300);
-  transition: background var(--duration-fast) var(--ease-spring);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .toggle-switch
-  .toggle-knob {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
-  transition: transform var(--duration-fast) var(--ease-spring);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .toggle-switch.active {
-  background: var(--color-primary);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .toggle-switch {
-  width: 2.625rem;
-  height: 1.5rem;
-  border-radius: 0.75rem;
-  background: var(--color-gray-300);
-  transition: background var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .toggle-switch
-  .toggle-knob {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 0.625rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .toggle-switch.active {
-  background: rgba(var(--color-primary-rgb), 0.5);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .toggle-switch.active
-  .toggle-knob {
-  background: var(--color-primary);
-}
-
-/* ========== Modal / Dialog Overrides ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .modal-overlay {
-  backdrop-filter: var(--ui-backdrop-blur);
-  -webkit-backdrop-filter: var(--ui-backdrop-blur);
-  background: var(--ui-backdrop-dim);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .modal-content,
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .dialog-content {
-  border-radius: var(--ui-radius-dialog);
-  border: 0.5px solid var(--glass-border);
-  backdrop-filter: blur(1.5rem) saturate(1.3);
-  -webkit-backdrop-filter: blur(1.5rem) saturate(1.3);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .modal-overlay {
-  backdrop-filter: blur(0.25rem);
-  -webkit-backdrop-filter: blur(0.25rem);
-  background: var(--ui-backdrop-dim);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .modal-content,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .dialog-content {
-  border-radius: var(--ui-radius-dialog);
-  border: none;
-  box-shadow: var(--shadow-2xl);
-}
-
-/* ========== Badges & Chips ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .badge,
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .chip,
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .tag {
-  border-radius: var(--radius-full);
-  padding: var(--spacing-1) var(--spacing-3);
-  font-weight: var(--font-medium);
-  border: none;
-  background: rgba(var(--color-primary-rgb), 0.1);
-  color: var(--color-primary);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .badge,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .chip,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .tag {
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-1) var(--spacing-2);
-  font-weight: var(--font-semibold);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-  background: rgba(var(--color-primary-rgb), 0.08);
-  color: var(--color-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  font-size: 0.8em;
-}
-
-/* ========== Tabs ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .tab-btn {
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-2) var(--spacing-4);
-  transition:
-    background-color var(--duration-fast) var(--ease-spring),
-    color var(--duration-fast) var(--ease-spring),
-    border-color var(--duration-fast) var(--ease-spring),
-    box-shadow var(--duration-fast) var(--ease-spring);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .tab-btn.active,
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .tab-btn--active {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  color: var(--color-primary);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .tab-btn {
-  border-radius: 0;
-  padding: var(--spacing-3) var(--spacing-4);
-  position: relative;
-  transition: color var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .tab-btn::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 0.125rem;
-  background: var(--color-primary);
-  transform: scaleX(0);
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .tab-btn.active::after,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .tab-btn--active::after {
-  transform: scaleX(1);
-}
-
-/* ========== Mobile Bottom Nav ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .mobile-nav {
-  border-top: 0.5px solid var(--glass-border);
-  backdrop-filter: blur(1.25rem) saturate(1.4);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(1.4);
-  background: var(--glass-bg-strong);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .mobile-nav {
-  border-top: none;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(0.375rem);
-  -webkit-backdrop-filter: blur(0.375rem);
-  background: var(--glass-bg-strong);
-}
-
-/* ========== Toast Notifications ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .toast {
-  border-radius: var(--radius-xl);
-  backdrop-filter: blur(1rem) saturate(1.2);
-  -webkit-backdrop-filter: blur(1rem) saturate(1.2);
-  border: 0.5px solid var(--glass-border);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .toast {
-  border-radius: var(--radius);
-  border: none;
-  box-shadow: var(--shadow-lg);
-}
-
-/* ========== Scrollbar ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  ::-webkit-scrollbar {
-  width: 0.375rem;
-  height: 0.375rem;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  ::-webkit-scrollbar-thumb {
-  background: rgba(var(--color-primary-rgb), 0.2);
-  border-radius: 0.1875rem;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  ::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--color-primary-rgb), 0.35);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  ::-webkit-scrollbar {
-  width: 0.5rem;
-  height: 0.5rem;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  ::-webkit-scrollbar-thumb {
-  background: var(--color-gray-300);
-  border-radius: var(--radius-sm);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gray-400);
-}
-
-/* ========== Action Buttons (icon buttons in navbar etc.) ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  :is(.action-btn, .nav-action-btn) {
-  border-radius: var(--radius-lg);
-  transition: background var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  :is(.action-btn, .nav-action-btn):hover {
-  background: rgba(var(--color-primary-rgb), 0.08);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  :is(.action-btn, .nav-action-btn) {
-  border-radius: 50%;
-  transition:
-    background var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  :is(.action-btn, .nav-action-btn):hover {
-  background: rgba(var(--color-primary-rgb), 0.12);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  :is(.action-btn, .nav-action-btn):active {
-  box-shadow: inset 0 0 0 100px rgba(var(--color-primary-rgb), 0.08);
-}
-
-/* ========== Video Player Controls ========== */
-
-/* iOS: frosted glass panels, pill buttons, spring motion */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vp {
-  --vp-radius: var(--radius-2xl);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vp__panel {
-  border-radius: var(--ui-radius-dialog);
-  backdrop-filter: blur(1.25rem) saturate(1.3);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(1.3);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vp__chip {
-  border-radius: var(--radius-full);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vp__btn {
-  border-radius: var(--radius-lg);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vp__btn:active {
-  transform: scale(0.88);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vp__indicator {
-  border-radius: var(--radius-2xl);
-  backdrop-filter: blur(1.25rem) saturate(1.3);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(1.3);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vp__center-play {
-  backdrop-filter: blur(1rem) saturate(1.3);
-  -webkit-backdrop-filter: blur(1rem) saturate(1.3);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vp__progress-thumb {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* Material: solid surfaces, sharper corners, elevation cues */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .vp {
-  --vp-radius: var(--radius-xl);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .vp__panel {
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(0.5rem);
-  -webkit-backdrop-filter: blur(0.5rem);
-  box-shadow: var(--shadow-lg);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .vp__chip {
-  border-radius: var(--radius-sm);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .vp__btn {
-  border-radius: var(--radius);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .vp__btn:active {
-  transform: none;
-  box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.08);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .vp__indicator {
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(0.5rem);
-  -webkit-backdrop-filter: blur(0.5rem);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .vp__center-play {
-  border-radius: var(--radius-xl);
-  backdrop-filter: blur(0.5rem);
-  -webkit-backdrop-filter: blur(0.5rem);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .vp__progress-thumb {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-}
-
-/* Mobile bottom sheet: iOS gets rounded top, Material gets sharper */
-@media (max-width: 768px) {
-  :is(:root, #app):is(
-      [data-preset='minimal-editorial'],
-      [data-preset='fluent-soft'],
-      [data-preset='organic-natural'],
-      [data-preset='biophilic-serene'],
-      [data-preset='clay-playful'],
-      [data-preset='gradient-narrative']
-    )
-    .vp__panel {
-    border-radius: var(--ui-radius-sheet) var(--ui-radius-sheet) 0 0;
-    backdrop-filter: blur(1.5rem) saturate(1.3);
-    -webkit-backdrop-filter: blur(1.5rem) saturate(1.3);
-  }
-
-  :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .vp__panel {
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    backdrop-filter: blur(0.5rem);
-    -webkit-backdrop-filter: blur(0.5rem);
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
-  }
-}
-
-/* Blue theme accent override for video player */
-#app[data-preset='gradient-narrative'][data-color-mode='light'] .vp {
-  --vp-accent: #3b82f6;
-  --vp-accent-rgb: 59, 130, 246;
-}
-
-/* ========== Back to Top Button ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .back-to-top {
-  border-radius: var(--radius-full);
-  backdrop-filter: blur(0.75rem);
-  -webkit-backdrop-filter: blur(0.75rem);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .back-to-top {
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-}
-
-/* ========== Dark Mode Specific Enhancements ========== */
-
-/* iOS Dark: more luminous glass borders */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='dark']
-  .glass-button {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='dark']
-  .glass-button:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
-/* Material Dark: elevated surfaces stand out with subtle tint */
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='dark']
-  .glass-card {
-  background: rgba(28, 28, 32, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='dark']
-  .glass-card:hover {
-  background: rgba(34, 34, 38, 0.95);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Material Dark: toggle switch contrast */
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='dark']
-  .toggle-switch {
-  background: var(--color-gray-200);
-}
-
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='dark']
-  .toggle-switch.active {
-  background: rgba(var(--color-primary-rgb), 0.4);
-}
-
-/* iOS Light: softer card hover */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='light']
-  .glass-card:hover {
-  box-shadow:
-    0 18px 50px rgba(15, 23, 42, 0.12),
-    0 6px 16px rgba(var(--color-primary-rgb), 0.06);
-}
-
-/* Material Light: crisp elevation on hover */
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='light']
-  .glass-card:hover {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-/* ========== Blue Theme Specific Enhancements ========== */
-
-/* Blue theme scrollbar */
-:is(:root, #app)[data-preset='gradient-narrative'][data-color-mode='light']
-  ::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.2);
-}
-
-:is(:root, #app)[data-preset='gradient-narrative'][data-color-mode='light']
-  ::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.35);
-}
-
-/* ================================================================
- *  Material Design 3 - Extended System
- * ================================================================ */
-
-/* ========== M3 Surface Container Hierarchy ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) {
-  --md-surface: var(--color-surface);
-  --md-surface-container-lowest: var(--color-white);
-  --md-surface-container-low: #f6f6f8;
-  --md-surface-container: #f0f0f3;
-  --md-surface-container-high: #eaeaed;
-  --md-surface-container-highest: #e4e4e8;
-  --md-on-surface: var(--color-text-primary);
-  --md-on-surface-variant: var(--color-text-secondary);
-  --md-outline: var(--color-outline);
-  --md-outline-variant: var(--color-outline-variant);
-}
-
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='dark'] {
-  --md-surface: #121216;
-  --md-surface-container-lowest: #0e0e12;
-  --md-surface-container-low: #1a1a1e;
-  --md-surface-container: #1e1e22;
-  --md-surface-container-high: #282830;
-  --md-surface-container-highest: #333338;
-  --md-on-surface: #e6e1e5;
-  --md-on-surface-variant: #c4c4cc;
-  --md-outline: rgba(255, 255, 255, 0.16);
-  --md-outline-variant: rgba(255, 255, 255, 0.08);
-}
-
-/* ========== M3 Filled Button ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .btn--filled,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button--filled {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  border: none;
-  border-radius: 1.25rem;
-  padding: 0.625rem 1.5rem;
-  font-weight: var(--font-medium);
-  letter-spacing: 0.02em;
-  box-shadow: none;
-  transition:
-    background var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .btn--filled:hover,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button--filled:hover {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.12),
-    0 1px 2px rgba(0, 0, 0, 0.24);
-  transform: none;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .btn--filled:active,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button--filled:active {
-  transform: none;
-  box-shadow: none;
-}
-
-/* ========== M3 Tonal Button ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .btn--tonal,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button--tonal {
-  background: rgba(var(--color-primary-rgb), 0.12);
-  color: var(--color-primary);
-  border: none;
-  border-radius: 1.25rem;
-  padding: 0.625rem 1.5rem;
-  font-weight: var(--font-medium);
-  letter-spacing: 0.02em;
-  backdrop-filter: none;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .btn--tonal:hover,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button--tonal:hover {
-  background: rgba(var(--color-primary-rgb), 0.18);
-  transform: none;
-  box-shadow: none;
-}
-
-/* ========== M3 Outlined Button ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .btn--outlined,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button--outlined {
-  background: transparent;
-  color: var(--color-primary);
-  border: 1px solid var(--md-outline);
-  border-radius: 1.25rem;
-  padding: 0.625rem 1.5rem;
-  font-weight: var(--font-medium);
-  letter-spacing: 0.02em;
-  backdrop-filter: none;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .btn--outlined:hover,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-button--outlined:hover {
-  background: rgba(var(--color-primary-rgb), 0.08);
-  transform: none;
-  box-shadow: none;
-}
-
-/* ========== M3 FAB (Floating Action Button) ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .fab {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 1rem;
-  background: var(--md-surface-container-high);
-  color: var(--color-primary);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 3px 6px rgba(0, 0, 0, 0.15),
-    0 2px 4px rgba(0, 0, 0, 0.12);
-  transition:
-    box-shadow var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out);
-  cursor: pointer;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .fab:hover {
-  box-shadow:
-    0 6px 10px rgba(0, 0, 0, 0.15),
-    0 2px 4px rgba(0, 0, 0, 0.12);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .fab:active {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.12),
-    0 1px 2px rgba(0, 0, 0, 0.24);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .fab--small {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.75rem;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .fab--large {
-  width: 6rem;
-  height: 6rem;
-  border-radius: 1.75rem;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .fab--primary {
-  background: rgba(var(--color-primary-rgb), 0.12);
-}
-
-/* ========== M3 Outlined Text Field ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .input--outlined,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-input--outlined {
-  border: 1px solid var(--md-outline);
-  border-radius: var(--radius);
-  padding: 1rem var(--spacing-4);
-  background: transparent;
-  backdrop-filter: none;
-  transition:
-    border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .input--outlined:hover,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-input--outlined:hover {
-  border-color: var(--md-on-surface);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .input--outlined:focus,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-input--outlined:focus {
-  border-color: var(--color-primary);
-  border-width: 2px;
-  padding: 0.9375rem calc(var(--spacing-4) - 0.0625rem);
-  box-shadow: none;
-  background: transparent;
-}
-
-/* ========== M3 Filled Text Field ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .input--filled,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-input--filled {
-  border: none;
-  border-bottom: 1px solid var(--md-on-surface-variant);
-  border-radius: var(--radius) var(--radius) 0 0;
-  padding: 1.5rem var(--spacing-4) 0.5rem;
-  background: var(--md-surface-container-highest);
-  backdrop-filter: none;
-  transition:
-    border-color var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .input--filled:focus,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .glass-input--filled:focus {
-  border-bottom: 2px solid var(--color-primary);
-  padding-bottom: 0.4375rem;
-  box-shadow: none;
-}
-
-/* ========== M3 Chip ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  height: 2rem;
-  padding: 0 var(--spacing-4);
-  border-radius: 0.5rem;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  letter-spacing: 0.02em;
-  border: 1px solid var(--md-outline);
-  background: transparent;
-  color: var(--md-on-surface);
-  cursor: pointer;
-  transition:
-    background var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .chip:hover {
-  background: rgba(var(--color-primary-rgb), 0.08);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .chip.active,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .chip--selected {
-  background: rgba(var(--color-primary-rgb), 0.12);
-  border-color: transparent;
-  color: var(--color-primary);
-}
-
-/* ========== M3 Linear Progress Indicator ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .progress-bar {
-  height: 0.25rem;
-  background: rgba(var(--color-primary-rgb), 0.12);
-  border-radius: 0.125rem;
-  overflow: hidden;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .progress-bar-fill {
-  background: var(--color-primary);
-  border-radius: inherit;
-  transition: width var(--duration-normal) var(--ease-out);
-}
-
-/* ========== M3 Circular Progress Indicator ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .spinner {
-  border: 3px solid transparent;
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-}
-
-/* ========== M3 Grouped List / Surface Cards ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .grouped-list {
-  background: var(--md-surface-container);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .grouped-list-item {
-  padding: var(--spacing-4);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  border-bottom: 1px solid var(--md-outline-variant);
-  transition: background var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .grouped-list-item:last-child {
-  border-bottom: none;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .grouped-list-item:hover {
-  background: rgba(var(--color-primary-rgb), 0.08);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .grouped-list-item:active {
-  background: rgba(var(--color-primary-rgb), 0.12);
-}
-
-/* ========== M3 Slider ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .slider-track {
-  height: 0.25rem;
-  border-radius: 0.125rem;
-  background: rgba(var(--color-primary-rgb), 0.24);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .slider-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--color-primary);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .slider-thumb {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .slider-thumb:hover {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.3),
-    0 0 0 10px rgba(var(--color-primary-rgb), 0.12);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .slider-thumb:active {
-  transform: scale(1.15);
-}
-
-/* ========== M3 Divider ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .divider {
-  height: 0.0625rem;
-  background: var(--md-outline-variant);
-  border: none;
-}
-
-/* ========== M3 Snackbar ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .snackbar,
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .toast {
-  background: #323232;
-  color: #f5f5f5;
-  border-radius: var(--radius);
-  border: none;
-  box-shadow:
-    0 3px 6px rgba(0, 0, 0, 0.16),
-    0 3px 6px rgba(0, 0, 0, 0.23);
-  padding: 0.875rem var(--spacing-4);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  letter-spacing: 0.02em;
-}
-
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='dark']
-  .snackbar,
-:is(:root, #app):is(
-    [data-preset='material-calm'],
-    [data-preset='sketch-doodle']
-  )[data-color-mode='dark']
-  .toast {
-  background: #d4d4d8;
-  color: #18181b;
-}
-
-/* ========== M3 Bottom Sheet ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .bottom-sheet {
-  border-radius: 1.75rem 1.75rem 0 0;
-  background: var(--md-surface-container-low);
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .bottom-sheet-handle {
-  width: 2rem;
-  height: 0.25rem;
-  border-radius: 0.125rem;
-  background: var(--md-outline-variant);
-  margin: 1rem auto 0.5rem;
-}
-
-/* ========== M3 Checkbox Indicator ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .checkbox {
-  width: 1.125rem;
-  height: 1.125rem;
-  border: 2px solid var(--md-on-surface-variant);
-  border-radius: 0.125rem;
-  transition:
-    background var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .checkbox.checked {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-/* ========== M3 Radio Button ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .radio {
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid var(--md-on-surface-variant);
-  border-radius: 50%;
-  transition:
-    border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .radio.checked {
-  border-color: var(--color-primary);
-  border-width: 6px;
-}
-
-/* ================================================================
- *  iOS / SwiftUI - Extended System
- * ================================================================ */
-
-/* ========== iOS Inset Grouped List ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .grouped-list {
-  background: var(--glass-bg);
-  backdrop-filter: blur(1.25rem) saturate(1.2);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(1.2);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  border: 0.5px solid var(--glass-border);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .grouped-list-item {
-  padding: 0.6875rem var(--spacing-4);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  min-height: var(--ui-control-min-size);
-  transition: background var(--duration-fast) var(--ease-out);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .grouped-list-item
-  + .grouped-list-item {
-  border-top: 0.5px solid var(--glass-border);
-  margin-left: var(--spacing-4);
-  padding-left: 0;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .grouped-list-item:active {
-  background: rgba(var(--color-primary-rgb), 0.08);
-}
-
-/* iOS grouped list header */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .grouped-list-header {
-  padding: var(--spacing-6) var(--spacing-4) var(--spacing-2);
-  font-size: 0.8125rem;
-  font-weight: var(--font-normal);
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-/* iOS grouped list footer */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .grouped-list-footer {
-  padding: var(--spacing-2) var(--spacing-4) var(--spacing-4);
-  font-size: 0.8125rem;
-  color: var(--color-text-tertiary);
-  line-height: 1.4;
-}
-
-/* ========== iOS Segmented Control ========== */
 :is(:root, #app):is(
     [data-preset='minimal-editorial'],
     [data-preset='fluent-soft'],
@@ -1878,10 +386,12 @@
   )
   .segmented-control {
   display: inline-flex;
-  background: rgba(var(--color-primary-rgb), 0.08);
-  border-radius: 0.5rem;
+  align-items: stretch;
+  gap: 0.125rem;
   padding: 0.125rem;
-  position: relative;
+  border-radius: var(--ui-radius-tabs);
+  background: color-mix(in srgb, var(--ui-family-control-bg) 92%, transparent);
+  border: 0.0625rem solid var(--ui-family-control-border);
 }
 
 :is(:root, #app):is(
@@ -1893,17 +403,16 @@
     [data-preset='gradient-narrative']
   )
   .segmented-control-item {
-  position: relative;
-  z-index: 1;
-  padding: 0.375rem 1rem;
-  font-size: 0.8125rem;
-  font-weight: var(--font-medium);
-  color: var(--color-text-primary);
-  border-radius: 0.4375rem;
-  transition: color var(--duration-fast) var(--ease-out);
-  cursor: pointer;
-  background: transparent;
   border: none;
+  border-radius: calc(var(--ui-radius-tabs) - 0.1875rem);
+  background: transparent;
+  min-block-size: calc(var(--ui-control-height-sm) + 0.125rem);
+  padding-inline: var(--ui-control-padding-x-md);
+  color: var(--semantic-text-secondary);
+  transition:
+    background-color 220ms var(--ease-out),
+    color 220ms var(--ease-out),
+    transform 220ms var(--ease-out);
 }
 
 :is(:root, #app):is(
@@ -1915,608 +424,99 @@
     [data-preset='gradient-narrative']
   )
   .segmented-control-item.active {
-  color: var(--color-text-primary);
-  background: var(--color-surface);
-  box-shadow:
-    0 1px 4px rgba(0, 0, 0, 0.08),
-    0 1px 2px rgba(0, 0, 0, 0.04);
+  background: var(--ui-family-control-bg-hover);
+  color: var(--semantic-text-primary);
+  box-shadow: var(--appearance-control-shadow-token);
 }
 
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='dark']
-  .segmented-control {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='dark']
-  .segmented-control-item.active {
-  background: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* ========== iOS Vibrancy Effect ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vibrancy {
-  background: rgba(var(--color-primary-rgb), 0.04);
-  backdrop-filter: blur(1.25rem) saturate(1.6) brightness(1.02);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(1.6) brightness(1.02);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='dark']
-  .vibrancy {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(1.25rem) saturate(1.4) brightness(0.95);
-  -webkit-backdrop-filter: blur(1.25rem) saturate(1.4) brightness(0.95);
-}
-
-/* 较浅的 vibrancy 层次 */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .vibrancy--thin {
-  backdrop-filter: blur(2.5rem) saturate(1.8);
-  -webkit-backdrop-filter: blur(2.5rem) saturate(1.8);
-}
-
-/* ========== iOS Sheet / Action Sheet ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .sheet {
-  border-radius: 1.125rem 1.125rem 0 0;
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(1.5rem) saturate(1.3);
-  -webkit-backdrop-filter: blur(1.5rem) saturate(1.3);
-  border-top: 0.5px solid var(--glass-border);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .sheet-handle {
-  width: 2.25rem;
-  height: 0.3125rem;
-  border-radius: 0.15625rem;
-  background: rgba(var(--color-primary-rgb), 0.2);
-  margin: 0.5rem auto 0.25rem;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='dark']
-  .sheet-handle {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* iOS Action Sheet Button Group */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .action-sheet-group {
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(1.5rem) saturate(1.3);
-  -webkit-backdrop-filter: blur(1.5rem) saturate(1.3);
-  border-radius: 0.875rem;
-  overflow: hidden;
-  margin-bottom: var(--spacing-2);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .action-sheet-btn {
-  width: 100%;
-  padding: 1rem;
-  font-size: 1.25rem;
-  font-weight: var(--font-normal);
-  color: var(--color-primary);
-  background: transparent;
-  border: none;
-  text-align: center;
-  transition: background var(--duration-fast) var(--ease-out);
-  cursor: pointer;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .action-sheet-btn
-  + .action-sheet-btn {
-  border-top: 0.5px solid var(--glass-border);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .action-sheet-btn:active {
-  background: rgba(var(--color-primary-rgb), 0.1);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .action-sheet-btn--destructive {
-  color: var(--color-error);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .action-sheet-btn--cancel {
-  font-weight: var(--font-semibold);
-}
-
-/* ========== iOS Pull-to-Refresh ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .pull-to-refresh-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-4);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .pull-to-refresh-spinner {
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid var(--color-gray-300);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-}
-
-/* ========== iOS Navigation Bar Title ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .navbar-title {
-  font-size: 1.0625rem;
-  font-weight: var(--font-semibold);
-  letter-spacing: -0.01em;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .navbar-large-title {
-  font-size: 2.125rem;
-  font-weight: var(--font-bold);
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-
-/* ========== iOS Checkbox (circular) ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .checkbox {
-  width: 1.375rem;
-  height: 1.375rem;
-  border: 2px solid var(--color-gray-300);
-  border-radius: 50%;
-  transition:
-    background var(--duration-fast) var(--ease-spring),
-    border-color var(--duration-fast) var(--ease-spring);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .checkbox.checked {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-/* ========== iOS Radio Button ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .radio {
-  width: 1.375rem;
-  height: 1.375rem;
-  border: 2px solid var(--color-gray-300);
-  border-radius: 50%;
-  transition:
-    border-color var(--duration-fast) var(--ease-spring),
-    box-shadow var(--duration-fast) var(--ease-spring);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .radio.checked {
-  border-color: var(--color-primary);
-  box-shadow: inset 0 0 0 5px var(--color-primary);
-}
-
-/* ========== iOS Slider ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .slider-track {
-  height: 0.25rem;
-  border-radius: 0.125rem;
-  background: var(--color-gray-200);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .slider-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--color-primary);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .slider-thumb {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  background: var(--color-white);
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.16),
-    0 0 0 0.5px rgba(0, 0, 0, 0.04);
-  transition: transform var(--duration-fast) var(--ease-spring);
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .slider-thumb:active {
-  transform: scale(1.15);
-}
-
-/* ========== iOS Progress Bar ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .progress-bar {
-  height: 0.25rem;
-  background: rgba(var(--color-primary-rgb), 0.12);
-  border-radius: 0.125rem;
-  overflow: hidden;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .progress-bar-fill {
-  background: var(--color-primary);
-  border-radius: inherit;
-  transition: width var(--duration-normal) var(--ease-out);
-}
-
-/* ========== iOS Search Bar ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .search-input {
-  border-radius: 0.625rem;
-  background: rgba(var(--color-primary-rgb), 0.06);
-  border: none;
-  padding: 0.5rem 0.75rem 0.5rem 2rem;
-  font-size: 1.0625rem;
-  backdrop-filter: none;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .search-input:focus {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  box-shadow: none;
-}
-
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )[data-color-mode='dark']
-  .search-input {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* ========== Material Search Bar ========== */
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .search-input {
-  border-radius: 1.75rem;
-  background: var(--md-surface-container-highest);
-  border: none;
-  padding: 0.75rem 1rem 0.75rem 3rem;
-  font-size: var(--text-base);
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .search-input:focus {
-  background: var(--md-surface-container-highest);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-}
-
-/* ========== Material Segmented Button ========== */
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
   .segmented-control {
   display: inline-flex;
-  border: 1px solid var(--md-outline);
-  border-radius: 1.25rem;
+  align-items: stretch;
   overflow: hidden;
+  border: 0.0625rem solid var(--ui-family-control-border);
+  border-radius: var(--ui-radius-tabs);
+  background: var(--ui-family-surface-bg-soft);
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
   .segmented-control-item {
-  padding: 0.625rem 1rem;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  letter-spacing: 0.02em;
-  color: var(--md-on-surface);
-  background: transparent;
+  min-block-size: var(--ui-control-height-sm);
+  padding-inline: var(--ui-control-padding-x-md);
   border: none;
-  border-right: 1px solid var(--md-outline);
-  cursor: pointer;
-  transition: background var(--duration-fast) var(--ease-out);
+  border-inline-end: 0.0625rem solid var(--ui-family-control-border);
+  background: transparent;
+  color: var(--semantic-text-secondary);
+  transition:
+    background-color 180ms var(--ease-out),
+    color 180ms var(--ease-out);
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
   .segmented-control-item:last-child {
-  border-right: none;
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .segmented-control-item:hover {
-  background: rgba(var(--color-primary-rgb), 0.08);
+  border-inline-end: none;
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
   .segmented-control-item.active {
-  background: rgba(var(--color-primary-rgb), 0.12);
-  color: var(--color-primary);
+  background: var(--ui-family-control-bg-hover);
+  color: var(--semantic-text-primary);
 }
 
-/* ========== Material Navigation Rail (sidebar) ========== */
+:is(:root, #app):is(
+    [data-preset='minimal-editorial'],
+    [data-preset='fluent-soft'],
+    [data-preset='organic-natural'],
+    [data-preset='biophilic-serene'],
+    [data-preset='clay-playful'],
+    [data-preset='gradient-narrative']
+  )
+  .grouped-list-item,
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
+  .grouped-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--appearance-surface-gap-sm);
+  min-block-size: var(--ui-control-height-lg);
+  padding-inline: var(--appearance-surface-padding-md);
+  padding-block: var(--appearance-surface-padding-sm);
+  border-block-end: 0.0625rem solid var(--ui-family-surface-border);
+}
+
+:is(:root, #app):is(
+    [data-preset='minimal-editorial'],
+    [data-preset='fluent-soft'],
+    [data-preset='organic-natural'],
+    [data-preset='biophilic-serene'],
+    [data-preset='clay-playful'],
+    [data-preset='gradient-narrative']
+  )
+  .grouped-list-item:last-child,
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
+  .grouped-list-item:last-child {
+  border-block-end: none;
+}
+
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .nav-rail-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.75rem 0;
-  min-width: 56px;
-  border-radius: 1rem;
-  font-size: 0.75rem;
-  font-weight: var(--font-medium);
-  letter-spacing: 0.04em;
-  color: var(--md-on-surface-variant);
+  min-inline-size: 3.5rem;
+  min-block-size: 4rem;
+  padding-block: 0.75rem;
+  padding-inline: 0.5rem;
+  border-radius: var(--ui-radius-nav);
   transition:
-    background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-  cursor: pointer;
+    background-color 180ms var(--ease-out),
+    color 180ms var(--ease-out);
 }
 
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .nav-rail-item:hover {
-  background: rgba(var(--color-primary-rgb), 0.08);
-}
-
+  .nav-rail-item:hover,
 :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
   .nav-rail-item.active {
-  color: var(--color-primary);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-  .nav-rail-item.active
-  .nav-rail-icon {
-  background: rgba(var(--color-primary-rgb), 0.12);
-  border-radius: 1rem;
-  padding: 0.25rem 1.25rem;
-}
-
-/* ========== Cross-style: Avatar ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .avatar {
-  border-radius: 50%;
-  border: 1px solid rgba(var(--color-primary-rgb), 0.06);
-}
-
-:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .avatar {
-  border-radius: 50%;
-  border: none;
-}
-
-/* ========== iOS Pill Button (common in iOS nav) ========== */
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .btn--pill {
-  border-radius: var(--radius-full);
-  padding: 0.5rem 1rem;
-  font-size: 0.9375rem;
-  font-weight: var(--font-semibold);
-  background: rgba(var(--color-primary-rgb), 0.1);
-  color: var(--color-primary);
-  border: none;
-  transition:
-    background-color var(--duration-fast) var(--ease-spring),
-    color var(--duration-fast) var(--ease-spring),
-    border-color var(--duration-fast) var(--ease-spring),
-    box-shadow var(--duration-fast) var(--ease-spring);
+  background: var(--ui-family-control-bg-hover);
 }
 
 :is(:root, #app):is(
@@ -2527,34 +527,79 @@
     [data-preset='clay-playful'],
     [data-preset='gradient-narrative']
   )
-  .btn--pill:hover {
-  background: rgba(var(--color-primary-rgb), 0.16);
-  transform: none;
+  :where(.checkbox, .radio) {
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+  border: 0.125rem solid var(--ui-family-control-border-strong);
+  border-radius: 999rem;
+}
+
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .checkbox {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 0.125rem solid var(--ui-family-control-border-strong);
+  border-radius: var(--ui-radius-checkbox);
+}
+
+:is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .radio {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 0.125rem solid var(--ui-family-control-border-strong);
+  border-radius: 999rem;
+}
+
+:is(:root, #app) :where(.slider-track, .progress-bar) {
+  border-radius: 999rem;
+  background: color-mix(in srgb, var(--semantic-accent) 18%, transparent);
+}
+
+:is(:root, #app) :where(.slider-fill, .progress-bar-fill) {
+  border-radius: inherit;
+  background: var(--semantic-accent);
+}
+
+:is(:root, #app) .slider-thumb {
+  inline-size: var(--ui-slider-thumb-size);
+  block-size: var(--ui-slider-thumb-size);
+  border-radius: 999rem;
+  border: var(--ui-slider-thumb-border) solid
+    color-mix(in srgb, var(--semantic-surface-base) 88%, transparent);
+  background: var(--semantic-surface-base);
+  box-shadow: var(--appearance-control-shadow-token);
+}
+
+:is(:root, #app) .avatar {
+  border-radius: 999rem;
+}
+
+:is(:root, #app)[data-contrast='high']
+  :where(.glass-card, .glass-dropdown, .glass-navbar, .grouped-list, .sheet, .action-sheet-group) {
   box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--semantic-border-strong);
 }
 
-:is(:root, #app):is(
-    [data-preset='minimal-editorial'],
-    [data-preset='fluent-soft'],
-    [data-preset='organic-natural'],
-    [data-preset='biophilic-serene'],
-    [data-preset='clay-playful'],
-    [data-preset='gradient-narrative']
-  )
-  .btn--pill-primary {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+:is(:root, #app)[data-motion='reduced']
+  :where(
+    .glass-button:hover,
+    .btn--pill:hover,
+    .nav-link:hover,
+    .chip:hover,
+    .segmented-control-item.active
+  ),
+:is(:root, #app)[data-motion='none']
+  :where(
+    .glass-button:hover,
+    .btn--pill:hover,
+    .nav-link:hover,
+    .chip:hover,
+    .segmented-control-item.active
+  ) {
+  transform: none;
 }
 
-/* ========== Responsive Overrides ========== */
-@media (max-width: 768px) {
-  /* Material: reduce elevation blur on mobile for perf */
-  :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle']) .glass-card {
-    backdrop-filter: blur(0.25rem);
-    -webkit-backdrop-filter: blur(0.25rem);
-  }
-
-  /* iOS: simpler vibrancy on mobile */
+@media (prefers-reduced-transparency: reduce) {
   :is(:root, #app):is(
       [data-preset='minimal-editorial'],
       [data-preset='fluent-soft'],
@@ -2563,40 +608,9 @@
       [data-preset='clay-playful'],
       [data-preset='gradient-narrative']
     )
-    .vibrancy {
-    backdrop-filter: blur(1rem) saturate(1.3);
-    -webkit-backdrop-filter: blur(1rem) saturate(1.3);
-  }
-
-  /* Both: ensure touch targets */
-  :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-    .grouped-list-item,
-  :is(:root, #app):is(
-      [data-preset='minimal-editorial'],
-      [data-preset='fluent-soft'],
-      [data-preset='organic-natural'],
-      [data-preset='biophilic-serene'],
-      [data-preset='clay-playful'],
-      [data-preset='gradient-narrative']
-    )
-    .grouped-list-item {
-    min-height: 3rem;
-  }
-
-  :is(:root, #app):is(
-      [data-preset='minimal-editorial'],
-      [data-preset='fluent-soft'],
-      [data-preset='organic-natural'],
-      [data-preset='biophilic-serene'],
-      [data-preset='clay-playful'],
-      [data-preset='gradient-narrative']
-    )
-    .segmented-control-item {
-    padding: 0.5rem 0.75rem;
-  }
-
-  :is(:root, #app):is([data-preset='material-calm'], [data-preset='sketch-doodle'])
-    .segmented-control-item {
-    padding: 0.625rem 0.75rem;
+    :where(.glass-card, .glass-dropdown, .glass-navbar, .sheet, .action-sheet-group) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--ui-family-surface-bg-soft);
   }
 }
