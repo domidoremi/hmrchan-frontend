@@ -531,7 +531,8 @@ onUnmounted(() => {
 
 <style>
 /* ===== Material 3 Overrides ===== */
-#app[data-ui-style='material'] .comment-favorites-tab .timeline-card {
+#app[data-preset='material-calm'] .comment-favorites-tab .timeline-card,
+#app[data-preset='sketch-doodle'] .comment-favorites-tab .timeline-card {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--color-surface, var(--glass-bg-light));
@@ -540,94 +541,105 @@ onUnmounted(() => {
   box-shadow: var(--shadow-sm);
 }
 
-#app[data-ui-style='material'] .comment-favorites-tab .timeline-card::before {
+#app[data-preset='material-calm'] .comment-favorites-tab .timeline-card::before,
+#app[data-preset='sketch-doodle'] .comment-favorites-tab .timeline-card::before {
   display: none;
 }
 
-#app[data-ui-style='material'] .comment-favorites-tab .timeline-card:hover {
+#app[data-preset='material-calm'] .comment-favorites-tab .timeline-card:hover,
+#app[data-preset='sketch-doodle'] .comment-favorites-tab .timeline-card:hover {
   transform: none;
   box-shadow: var(--shadow-md);
 }
 
-#app[data-ui-style='material'] .comment-favorites-tab .timeline-dot {
+#app[data-preset='material-calm'] .comment-favorites-tab .timeline-dot,
+#app[data-preset='sketch-doodle'] .comment-favorites-tab .timeline-dot {
   border-radius: calc(var(--radius-lg) / 2);
 }
 
-#app[data-ui-style='material'] .comment-favorites-tab .unfav-btn {
+#app[data-preset='material-calm'] .comment-favorites-tab .unfav-btn,
+#app[data-preset='sketch-doodle'] .comment-favorites-tab .unfav-btn {
   border-radius: var(--radius-md);
 }
 
-#app[data-ui-style='material'] .comment-favorites-tab .unfav-btn:hover:not(:disabled) {
+#app[data-preset='material-calm'] .comment-favorites-tab .unfav-btn:hover:not(:disabled),
+#app[data-preset='sketch-doodle'] .comment-favorites-tab .unfav-btn:hover:not(:disabled) {
   background: rgba(245, 158, 11, 0.12);
 }
 
-#app[data-ui-style='material'] .comment-favorites-tab .skeleton-body {
+#app[data-preset='material-calm'] .comment-favorites-tab .skeleton-body,
+#app[data-preset='sketch-doodle'] .comment-favorites-tab .skeleton-body {
   border-radius: var(--radius-lg);
 }
 
-#app[data-ui-style='material'] .comment-favorites-tab {
+#app[data-preset='material-calm'] .comment-favorites-tab,
+#app[data-preset='sketch-doodle'] .comment-favorites-tab {
   --profile-tab-header-count-radius: var(--radius-sm);
 }
 
 /* ===== Dark Theme Overrides ===== */
-[data-theme='dark'] .comment-favorites-tab .timeline-dot {
+[data-color-mode='dark'] .comment-favorites-tab .timeline-dot {
   background: rgba(245, 158, 11, 0.2);
 }
 
-[data-theme='dark'] .comment-favorites-tab .timeline-line {
+[data-color-mode='dark'] .comment-favorites-tab .timeline-line {
   background: linear-gradient(to bottom, rgba(245, 158, 11, 0.25), transparent);
 }
 
-[data-theme='dark'] .comment-favorites-tab .card-bottom {
+[data-color-mode='dark'] .comment-favorites-tab .card-bottom {
   border-top-color: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme='dark'] .comment-favorites-tab .source-icon {
+[data-color-mode='dark'] .comment-favorites-tab .source-icon {
   color: #fbbf24;
 }
 
 /* ===== Blue Theme Overrides ===== */
-[data-theme='blue'] .comment-favorites-tab .timeline-dot {
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .comment-favorites-tab
+  .timeline-dot {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
 
-[data-theme='blue'] .comment-favorites-tab .timeline-item:hover .timeline-dot {
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .comment-favorites-tab
+  .timeline-item:hover
+  .timeline-dot {
   background: rgba(59, 130, 246, 0.2);
 }
 
-[data-theme='blue'] .comment-favorites-tab .timeline-line {
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .comment-favorites-tab
+  .timeline-line {
   background: linear-gradient(to bottom, rgba(59, 130, 246, 0.15), transparent);
 }
 
-[data-theme='blue'] .comment-favorites-tab {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .comment-favorites-tab {
   --profile-tab-header-count-bg: rgba(59, 130, 246, 0.08);
   --profile-tab-header-count-color: #3b82f6;
 }
 
-[data-theme='blue'] .comment-favorites-tab .source-icon {
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .comment-favorites-tab
+  .source-icon {
   color: #3b82f6;
 }
 
 /* ===== Material + Dark ===== */
-#app[data-ui-style='material'][data-theme='dark'] .comment-favorites-tab .timeline-card {
+#app[data-preset='material-calm'][data-color-mode='dark'] .comment-favorites-tab .timeline-card,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .comment-favorites-tab .timeline-card {
   background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-#app[data-ui-style='material'][data-theme='dark'] .comment-favorites-tab .timeline-card:hover {
+#app[data-preset='material-calm'][data-color-mode='dark']
+  .comment-favorites-tab
+  .timeline-card:hover,
+#app[data-preset='sketch-doodle'][data-color-mode='dark']
+  .comment-favorites-tab
+  .timeline-card:hover {
   background: var(--md-surface-container-high, rgba(34, 34, 38, 0.95));
   border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* ===== Material + Blue ===== */
-#app[data-ui-style='material'][data-theme='blue'] .comment-favorites-tab .timeline-card {
-  background: var(--profile-surface-bg);
-  border-color: rgba(59, 130, 246, 0.12);
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
-}
-
-#app[data-ui-style='material'][data-theme='blue'] .comment-favorites-tab .timeline-card:hover {
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
 }
 </style>

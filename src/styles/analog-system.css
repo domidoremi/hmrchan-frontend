@@ -32,7 +32,7 @@
   --surface-nature-glow: rgba(139, 185, 150, 0.18);
 }
 
-[data-theme='dark'] {
+[data-color-mode='dark'] {
   --surface-paper-bg: color-mix(in srgb, var(--color-surface-elevated, #151b24) 92%, #2f3946 8%);
   --surface-paper-bg-strong: color-mix(
     in srgb,
@@ -67,7 +67,7 @@
   --surface-nature-glow: rgba(85, 125, 96, 0.18);
 }
 
-[data-theme='blue'] {
+[data-preset='gradient-narrative'][data-color-mode='light'] {
   --surface-paper-bg: color-mix(in srgb, var(--color-surface) 82%, #f7fbff 18%);
   --surface-paper-bg-strong: color-mix(in srgb, var(--color-surface) 70%, #ffffff 30%);
   --surface-paper-border: rgba(69, 97, 144, 0.12);

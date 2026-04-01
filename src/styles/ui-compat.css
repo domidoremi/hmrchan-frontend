@@ -4,34 +4,43 @@
  * Shared by navbar dropdowns, profile controls, settings panels, and inline actions.
  */
 
+:root,
 #app {
-  --ui-compat-surface-base: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.94),
-    rgba(248, 250, 252, 0.84)
+  --ui-compat-surface-base: color-mix(in srgb, var(--semantic-surface-base) 94%, transparent);
+  --ui-compat-surface-elevated: color-mix(in srgb, var(--semantic-surface-base) 98%, white 2%);
+  --ui-compat-surface-interactive: color-mix(
+    in srgb,
+    var(--semantic-surface-muted) 82%,
+    transparent
   );
-  --ui-compat-surface-elevated: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.98),
-    rgba(248, 250, 252, 0.9)
+  --ui-compat-surface-interactive-strong: color-mix(
+    in srgb,
+    var(--semantic-surface-muted) 92%,
+    white 8%
   );
-  --ui-compat-surface-interactive: rgba(255, 255, 255, 0.82);
-  --ui-compat-surface-interactive-strong: rgba(255, 255, 255, 0.94);
   --ui-compat-surface-accent: rgba(var(--color-primary-rgb), 0.08);
   --ui-compat-surface-danger: rgba(var(--color-error-rgb), 0.08);
-  --ui-compat-border: rgba(148, 163, 184, 0.18);
-  --ui-compat-border-strong: rgba(var(--color-primary-rgb), 0.22);
+  --ui-compat-border: color-mix(in srgb, var(--semantic-border) 88%, transparent);
+  --ui-compat-border-strong: color-mix(
+    in srgb,
+    var(--semantic-border-strong) 84%,
+    rgba(var(--semantic-accent-rgb), 0.12)
+  );
   --ui-compat-danger-border: rgba(var(--color-error-rgb), 0.16);
-  --ui-compat-shadow: 0 1.4rem 3rem -2rem rgba(15, 23, 42, 0.24);
-  --ui-compat-shadow-strong: 0 1.8rem 3.4rem -2rem rgba(15, 23, 42, 0.32);
-  --ui-compat-text-secondary: rgba(51, 65, 85, 0.82);
-  --ui-compat-text-muted: rgba(71, 85, 105, 0.72);
-  --ui-compat-backdrop: blur(0.875rem) saturate(1.08);
-  --ui-compat-control-radius: var(--ui-radius-button, var(--radius-lg));
-  --ui-compat-panel-radius: var(--ui-radius-dropdown, var(--radius-xl));
+  --ui-compat-shadow: var(--appearance-shadow-medium);
+  --ui-compat-shadow-strong: var(--appearance-shadow-strong);
+  --ui-compat-text-secondary: color-mix(in srgb, var(--semantic-text-secondary) 88%, transparent);
+  --ui-compat-text-muted: color-mix(in srgb, var(--semantic-text-tertiary) 82%, transparent);
+  --ui-compat-backdrop: none;
+  --ui-compat-control-radius: var(--appearance-radius-lg);
+  --ui-compat-panel-radius: var(--appearance-radius-xl);
+  --ui-compat-pill-radius: var(--appearance-radius-full);
+  --ui-compat-shell-border: var(--chrome-surface-border);
+  --ui-compat-shell-shadow: var(--chrome-surface-shadow);
 }
 
-#app[data-theme='dark'] {
+:root[data-color-mode='dark'],
+#app[data-color-mode='dark'] {
   --ui-compat-surface-base: linear-gradient(160deg, rgba(12, 16, 24, 0.96), rgba(18, 25, 38, 0.92));
   --ui-compat-surface-elevated: linear-gradient(
     160deg,
@@ -51,7 +60,8 @@
   --ui-compat-text-muted: rgba(203, 213, 225, 0.72);
 }
 
-#app[data-theme='blue'] {
+:root[data-preset='gradient-narrative'][data-color-mode='light'],
+#app[data-preset='gradient-narrative'][data-color-mode='light'] {
   --ui-compat-surface-base: linear-gradient(
     160deg,
     rgba(255, 255, 255, 0.98),
@@ -70,8 +80,58 @@
   --ui-compat-shadow-strong: 0 1.8rem 3.4rem -2rem rgba(37, 99, 235, 0.24);
 }
 
-#app[data-ui-style='material'] {
-  --ui-compat-backdrop: blur(0.4rem) saturate(1.03);
-  --ui-compat-shadow: 0 1rem 2rem -1.4rem rgba(15, 23, 42, 0.22);
-  --ui-compat-shadow-strong: 0 1.25rem 2.5rem -1.4rem rgba(15, 23, 42, 0.28);
+:root[data-preset='fluent-soft'],
+:root[data-preset='organic-natural'],
+:root[data-preset='biophilic-serene'],
+:root[data-preset='clay-playful'],
+:root[data-preset='gradient-narrative'],
+#app[data-preset='fluent-soft'],
+#app[data-preset='organic-natural'],
+#app[data-preset='biophilic-serene'],
+#app[data-preset='clay-playful'],
+#app[data-preset='gradient-narrative'] {
+  --ui-compat-surface-base: var(--chrome-surface-bg-soft);
+  --ui-compat-surface-elevated: var(--chrome-surface-bg);
+  --ui-compat-surface-interactive: color-mix(in srgb, var(--chrome-action-bg) 92%, transparent);
+  --ui-compat-surface-interactive-strong: color-mix(
+    in srgb,
+    var(--chrome-action-bg-hover) 96%,
+    transparent
+  );
+  --ui-compat-shadow: var(--appearance-shadow-medium);
+  --ui-compat-shadow-strong: var(--appearance-shadow-strong);
+  --ui-compat-backdrop: var(--appearance-backdrop-token);
+  --ui-compat-control-radius: var(--appearance-radius-lg);
+  --ui-compat-panel-radius: var(--appearance-radius-xl);
+  --ui-compat-pill-radius: var(--appearance-radius-full);
+}
+
+:root[data-preset='material-calm'],
+:root[data-preset='sketch-doodle'],
+#app[data-preset='material-calm'],
+#app[data-preset='sketch-doodle'] {
+  --ui-compat-surface-base: color-mix(in srgb, var(--semantic-surface-base) 98%, transparent);
+  --ui-compat-surface-elevated: color-mix(
+    in srgb,
+    var(--semantic-surface-base) 96%,
+    var(--semantic-surface-muted) 4%
+  );
+  --ui-compat-surface-interactive: color-mix(
+    in srgb,
+    var(--semantic-surface-muted) 78%,
+    transparent
+  );
+  --ui-compat-surface-interactive-strong: color-mix(
+    in srgb,
+    var(--semantic-surface-muted) 88%,
+    transparent
+  );
+  --ui-compat-shadow: var(--appearance-shadow-soft);
+  --ui-compat-shadow-strong: var(--appearance-shadow-medium);
+  --ui-compat-backdrop: blur(calc(0.5rem * var(--appearance-backdrop-strength)));
+  --ui-compat-control-radius: var(--appearance-radius-md);
+  --ui-compat-panel-radius: var(--appearance-radius-lg);
+  --ui-compat-pill-radius: var(--appearance-radius-lg);
+  --ui-compat-shell-border: color-mix(in srgb, var(--semantic-border) 92%, transparent);
+  --ui-compat-shell-shadow: var(--appearance-shadow-soft);
 }

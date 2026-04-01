@@ -1,17 +1,20 @@
-/**
- * Main Stylesheet Entry Point
- *
- * Import order matters for CSS cascade
- */
+@layer reset, foundation, semantics, components, scene-roles, presets, enhancers, utilities,
+  overrides;
 
-@import './tokens.css';
-@import './locale.css';
-@import './ui-style.css';
-@import './base.css';
-@import './glass.css';
-@import './analog-system.css';
-@import './public-pages.css';
-@import './profile-system.css';
-@import './chrome-system.css';
-@import './ui-compat.css';
-@import './utilities.css';
+@import './base.css' layer(reset);
+@import './tokens.css' layer(foundation);
+@import './foundation/primitives.css' layer(foundation);
+@import './locale.css' layer(semantics);
+@import './semantics/appearance.css' layer(semantics);
+@import './chrome-system.css' layer(semantics);
+@import './ui-compat.css' layer(semantics);
+@import './components/core.css' layer(components);
+@import './scene-roles/core.css' layer(scene-roles);
+@import './presets/minimal-editorial.css' layer(presets);
+@import './presets/families.css' layer(presets);
+@import './utilities/appearance.css' layer(utilities);
+@import './utilities.css' layer(utilities);
+@import './glass.css' layer(overrides);
+@import './analog-system.css' layer(overrides);
+@import './public-pages.css' layer(overrides);
+@import './profile-system.css' layer(overrides);

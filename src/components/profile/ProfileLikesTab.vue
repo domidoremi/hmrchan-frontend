@@ -534,7 +534,8 @@ onUnmounted(() => {
 
 <style>
 /* ===== Material 3 Overrides ===== */
-#app[data-ui-style='material'] .likes-tab .timeline-card {
+#app[data-preset='material-calm'] .likes-tab .timeline-card,
+#app[data-preset='sketch-doodle'] .likes-tab .timeline-card {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--color-surface, var(--glass-bg-light));
@@ -543,98 +544,100 @@ onUnmounted(() => {
   box-shadow: var(--shadow-sm);
 }
 
-#app[data-ui-style='material'] .likes-tab .timeline-card::before {
+#app[data-preset='material-calm'] .likes-tab .timeline-card::before,
+#app[data-preset='sketch-doodle'] .likes-tab .timeline-card::before {
   display: none;
 }
 
-#app[data-ui-style='material'] .likes-tab .timeline-card:hover {
+#app[data-preset='material-calm'] .likes-tab .timeline-card:hover,
+#app[data-preset='sketch-doodle'] .likes-tab .timeline-card:hover {
   transform: none;
   box-shadow: var(--shadow-md);
 }
 
-#app[data-ui-style='material'] .likes-tab .timeline-dot {
+#app[data-preset='material-calm'] .likes-tab .timeline-dot,
+#app[data-preset='sketch-doodle'] .likes-tab .timeline-dot {
   border-radius: calc(var(--radius-lg) / 2);
 }
 
-#app[data-ui-style='material'] .likes-tab .profile-stat-pill {
+#app[data-preset='material-calm'] .likes-tab .profile-stat-pill,
+#app[data-preset='sketch-doodle'] .likes-tab .profile-stat-pill {
   border-radius: var(--radius-sm);
 }
 
-#app[data-ui-style='material'] .likes-tab .unlike-btn {
+#app[data-preset='material-calm'] .likes-tab .unlike-btn,
+#app[data-preset='sketch-doodle'] .likes-tab .unlike-btn {
   border-radius: var(--radius-md);
 }
 
-#app[data-ui-style='material'] .likes-tab .unlike-btn:hover:not(:disabled) {
+#app[data-preset='material-calm'] .likes-tab .unlike-btn:hover:not(:disabled),
+#app[data-preset='sketch-doodle'] .likes-tab .unlike-btn:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.12);
 }
 
-#app[data-ui-style='material'] .likes-tab .skeleton-body {
+#app[data-preset='material-calm'] .likes-tab .skeleton-body,
+#app[data-preset='sketch-doodle'] .likes-tab .skeleton-body {
   border-radius: var(--radius-lg);
 }
 
-#app[data-ui-style='material'] .likes-tab {
+#app[data-preset='material-calm'] .likes-tab,
+#app[data-preset='sketch-doodle'] .likes-tab {
   --profile-tab-header-count-radius: var(--radius-sm);
 }
 
 /* ===== Dark Theme Overrides ===== */
-[data-theme='dark'] .likes-tab .timeline-dot {
+[data-color-mode='dark'] .likes-tab .timeline-dot {
   background: rgba(244, 63, 94, 0.2);
 }
 
-[data-theme='dark'] .likes-tab .timeline-line {
+[data-color-mode='dark'] .likes-tab .timeline-line {
   background: linear-gradient(to bottom, rgba(244, 63, 94, 0.25), transparent);
 }
 
-[data-theme='dark'] .likes-tab .card-bottom {
+[data-color-mode='dark'] .likes-tab .card-bottom {
   border-top-color: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme='dark'] .likes-tab .profile-stat-pill {
+[data-color-mode='dark'] .likes-tab .profile-stat-pill {
   background: rgba(255, 255, 255, 0.08);
 }
 
 /* ===== Blue Theme Overrides ===== */
-[data-theme='blue'] .likes-tab .timeline-dot {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .likes-tab .timeline-dot {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
 
-[data-theme='blue'] .likes-tab .timeline-item:hover .timeline-dot {
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .likes-tab
+  .timeline-item:hover
+  .timeline-dot {
   background: rgba(59, 130, 246, 0.2);
 }
 
-[data-theme='blue'] .likes-tab .timeline-line {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .likes-tab .timeline-line {
   background: linear-gradient(to bottom, rgba(59, 130, 246, 0.15), transparent);
 }
 
-[data-theme='blue'] .likes-tab {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .likes-tab {
   --profile-tab-header-count-bg: rgba(59, 130, 246, 0.08);
   --profile-tab-header-count-color: #3b82f6;
 }
 
-[data-theme='blue'] .likes-tab .source-icon {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .likes-tab .source-icon {
   color: #3b82f6;
 }
 
 /* ===== Material + Dark ===== */
-#app[data-ui-style='material'][data-theme='dark'] .likes-tab .timeline-card {
+#app[data-preset='material-calm'][data-color-mode='dark'] .likes-tab .timeline-card,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .likes-tab .timeline-card {
   background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-#app[data-ui-style='material'][data-theme='dark'] .likes-tab .timeline-card:hover {
+#app[data-preset='material-calm'][data-color-mode='dark'] .likes-tab .timeline-card:hover,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .likes-tab .timeline-card:hover {
   background: var(--md-surface-container-high, rgba(34, 34, 38, 0.95));
   border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* ===== Material + Blue ===== */
-#app[data-ui-style='material'][data-theme='blue'] .likes-tab .timeline-card {
-  background: var(--profile-surface-bg);
-  border-color: rgba(59, 130, 246, 0.12);
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
-}
-
-#app[data-ui-style='material'][data-theme='blue'] .likes-tab .timeline-card:hover {
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
 }
 </style>

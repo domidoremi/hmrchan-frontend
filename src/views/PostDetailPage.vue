@@ -1379,7 +1379,7 @@ onUnmounted(() => {
   color: var(--post-text-tertiary);
 }
 
-[data-theme='dark'] .post-detail-page {
+[data-color-mode='dark'] .post-detail-page {
   --post-bg-base: #050507;
   --post-bg-spot-1: rgba(var(--color-primary-rgb, 139, 92, 246), 0.16);
   --post-bg-spot-2: rgba(var(--color-secondary-rgb, 59, 130, 246), 0.2);
@@ -1398,7 +1398,7 @@ onUnmounted(() => {
   --post-modal-border: rgba(255, 255, 255, 0.12);
 }
 
-[data-theme='blue'] .post-detail-page {
+[data-preset='gradient-narrative'][data-color-mode='light'] .post-detail-page {
   --post-bg-base: #f0f9ff;
   --post-bg-spot-1: rgba(59, 130, 246, 0.1);
   --post-bg-spot-2: rgba(99, 102, 241, 0.08);
@@ -2021,25 +2021,25 @@ onUnmounted(() => {
 
 /* Light theme: darker nav buttons for contrast */
 :root .media-nav,
-[data-theme='blue'] .media-nav {
+[data-preset='gradient-narrative'][data-color-mode='light'] .media-nav {
   background: rgba(15, 23, 42, 0.56);
   border-color: rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.96);
 }
 
 :root .media-nav:hover:not(:disabled),
-[data-theme='blue'] .media-nav:hover:not(:disabled) {
+[data-preset='gradient-narrative'][data-color-mode='light'] .media-nav:hover:not(:disabled) {
   background: rgba(15, 23, 42, 0.72);
 }
 
 /* Dark theme: stable high-contrast nav */
-[data-theme='dark'] .media-nav {
+[data-color-mode='dark'] .media-nav {
   background: rgba(8, 12, 18, 0.76);
   border-color: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.96);
 }
 
-[data-theme='dark'] .media-nav:hover:not(:disabled) {
+[data-color-mode='dark'] .media-nav:hover:not(:disabled) {
   background: rgba(17, 24, 39, 0.92);
 }
 

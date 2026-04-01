@@ -1,0 +1,27 @@
+:root {
+  --component-chip-radius: var(--appearance-radius-full);
+  --component-dialog-radius: var(--appearance-radius-2xl);
+  --component-rail-radius: var(--appearance-radius-xl);
+}
+
+:where(button, input, select, textarea) {
+  font-family: var(--appearance-font-family);
+  line-height: var(--appearance-ui-line-height);
+}
+
+:where(button, .btn, .page-control-btn, .theme-btn, .bg-effect-btn) :where(svg) {
+  transform: translateY(var(--appearance-inline-icon-offset));
+}
+
+:where(.surface-shell, .surface-panel, .surface-card) {
+  background: var(--component-card-background);
+  border: var(--surface-border-token);
+  border-radius: var(--component-card-radius);
+  box-shadow: var(--component-card-shadow);
+}
+
+:where(.control-cluster) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+}

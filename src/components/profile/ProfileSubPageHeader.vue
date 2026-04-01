@@ -149,7 +149,8 @@ function goToProfile() {
 
 <style>
 /* ===== Material 3 Overrides ===== */
-#app[data-ui-style='material'] .sub-header .sub-header__content {
+#app[data-preset='material-calm'] .sub-header .sub-header__content,
+#app[data-preset='sketch-doodle'] .sub-header .sub-header__content {
   border-radius: var(--radius-lg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -157,28 +158,26 @@ function goToProfile() {
   box-shadow: var(--shadow-sm);
 }
 
-#app[data-ui-style='material'] .sub-header .sub-header__content::before {
+#app[data-preset='material-calm'] .sub-header .sub-header__content::before,
+#app[data-preset='sketch-doodle'] .sub-header .sub-header__content::before {
   display: none;
 }
 
-#app[data-ui-style='material'] .sub-header .back-btn {
+#app[data-preset='material-calm'] .sub-header .back-btn,
+#app[data-preset='sketch-doodle'] .sub-header .back-btn {
   border-radius: 50%;
 }
 
-#app[data-ui-style='material'] .sub-header .back-btn:hover {
+#app[data-preset='material-calm'] .sub-header .back-btn:hover,
+#app[data-preset='sketch-doodle'] .sub-header .back-btn:hover {
   transform: none;
   background: rgba(var(--color-primary-rgb), 0.12);
 }
 
 /* ===== Material + Dark ===== */
-#app[data-ui-style='material'][data-theme='dark'] .sub-header .sub-header__content {
+#app[data-preset='material-calm'][data-color-mode='dark'] .sub-header .sub-header__content,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .sub-header .sub-header__content {
   background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
   border-color: rgba(255, 255, 255, 0.06);
-}
-
-/* ===== Material + Blue ===== */
-#app[data-ui-style='material'][data-theme='blue'] .sub-header .sub-header__content {
-  background: var(--profile-surface-bg);
-  border-color: rgba(59, 130, 246, 0.1);
 }
 </style>

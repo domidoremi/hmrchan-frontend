@@ -67,11 +67,32 @@ export interface LocaleContentConfig {
   ellipsis: string
 }
 
+export interface LocaleTypographyConfig {
+  fontFamily: string
+  readingLineHeight: number
+  uiLineHeight: number
+  labelLetterSpacing: string
+}
+
+export interface LocaleAccessibilityConfig {
+  minimumControlHeight: string
+  inlineLabelMax: string
+}
+
+export interface LocaleAlignmentConfig {
+  iconTextOffset: string
+  controlPaddingNudge: string
+  baselineShift: string
+}
+
 export interface LocaleConfig {
   colors: LocaleColorScheme
   layout: LocaleLayoutConfig
   interaction: LocaleInteractionConfig
   content: LocaleContentConfig
+  typography: LocaleTypographyConfig
+  accessibility: LocaleAccessibilityConfig
+  alignment: LocaleAlignmentConfig
 }
 
 /* ---------- 各地区配置 ---------- */
@@ -106,6 +127,21 @@ const zhCNConfig: LocaleConfig = {
     emptyStateStyle: 'illustrated',
     ellipsis: '……',
   },
+  typography: {
+    fontFamily: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif',
+    readingLineHeight: 1.7,
+    uiLineHeight: 1.45,
+    labelLetterSpacing: '0',
+  },
+  accessibility: {
+    minimumControlHeight: '2.875rem',
+    inlineLabelMax: '18ch',
+  },
+  alignment: {
+    iconTextOffset: '0.05em',
+    controlPaddingNudge: '0.08rem',
+    baselineShift: '0.02em',
+  },
 }
 
 const zhTWConfig: LocaleConfig = {
@@ -137,6 +173,21 @@ const zhTWConfig: LocaleConfig = {
     compactNumberThreshold: 10000,
     emptyStateStyle: 'illustrated',
     ellipsis: '……',
+  },
+  typography: {
+    fontFamily: '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
+    readingLineHeight: 1.7,
+    uiLineHeight: 1.45,
+    labelLetterSpacing: '0',
+  },
+  accessibility: {
+    minimumControlHeight: '2.875rem',
+    inlineLabelMax: '18ch',
+  },
+  alignment: {
+    iconTextOffset: '0.05em',
+    controlPaddingNudge: '0.08rem',
+    baselineShift: '0.02em',
   },
 }
 
@@ -170,6 +221,21 @@ const jaConfig: LocaleConfig = {
     emptyStateStyle: 'illustrated',
     ellipsis: '…',
   },
+  typography: {
+    fontFamily: '"Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", sans-serif',
+    readingLineHeight: 1.72,
+    uiLineHeight: 1.5,
+    labelLetterSpacing: '0.01em',
+  },
+  accessibility: {
+    minimumControlHeight: '2.875rem',
+    inlineLabelMax: '17ch',
+  },
+  alignment: {
+    iconTextOffset: '0.04em',
+    controlPaddingNudge: '0.06rem',
+    baselineShift: '0.01em',
+  },
 }
 
 const enConfig: LocaleConfig = {
@@ -201,6 +267,21 @@ const enConfig: LocaleConfig = {
     compactNumberThreshold: 1000,
     emptyStateStyle: 'minimal',
     ellipsis: '…',
+  },
+  typography: {
+    fontFamily: '"Inter", "Segoe UI", sans-serif',
+    readingLineHeight: 1.62,
+    uiLineHeight: 1.4,
+    labelLetterSpacing: '0.01em',
+  },
+  accessibility: {
+    minimumControlHeight: '2.75rem',
+    inlineLabelMax: '20ch',
+  },
+  alignment: {
+    iconTextOffset: '0',
+    controlPaddingNudge: '0',
+    baselineShift: '0',
   },
 }
 

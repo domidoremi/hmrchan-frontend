@@ -390,7 +390,7 @@
 }
 
 /* ========== Dark Theme - 简约中性 ========== */
-[data-theme='dark'] {
+[data-color-mode='dark'] {
   /* Primary - 简约石墨黑体系 (zinc) */
   --color-primary: #f4f4f5;
   --color-primary-rgb: 244, 244, 245;
@@ -409,7 +409,7 @@
 
 /* Vibrant Theme - 赛博朋克/霓虹风格 */
 /* Minimal Blue Theme - 简约蓝/专业风格 */
-[data-theme='blue'] {
+[data-preset='gradient-narrative'][data-color-mode='light'] {
   /* Primary - Solid Blue */
   --color-primary: #3b82f6;
   --color-primary-rgb: 59, 130, 246;
@@ -541,7 +541,7 @@
   --gradient-text-shadow: none;
 }
 
-[data-theme='dark'] {
+[data-color-mode='dark'] {
   /* ... continue existing dark mode from here ... */
 
   /* Accent - 暗色模式下绿色稍亮 */

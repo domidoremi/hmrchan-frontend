@@ -27,7 +27,7 @@ const themeStoreState = reactive({
 
 const settingsStoreState = reactive({
   settings: {
-    uiStyle: 'ios',
+    appearancePreset: 'minimal-editorial',
   },
 })
 
@@ -116,10 +116,10 @@ describe('AppFooter', () => {
 
     expect(style).toContain('--footer-bg: transparent;')
     expect(style).toContain(
-      '--footer-shell-bg: var(--home-panel-bg-soft, var(--chrome-surface-bg));'
+      '--footer-shell-bg: var(--home-panel-bg-soft, var(--ui-compat-surface-elevated, var(--chrome-surface-bg)));'
     )
     expect(style).toContain(
-      '--footer-shell-border: var(--home-panel-border, var(--chrome-surface-border));'
+      '--footer-shell-border: var(--home-panel-border, var(--ui-compat-shell-border, var(--chrome-surface-border)));'
     )
   })
 

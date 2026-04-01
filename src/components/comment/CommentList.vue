@@ -202,7 +202,7 @@ watch(
   font-size: var(--text-sm);
 }
 
-[data-theme='dark'] .comment-count {
+[data-color-mode='dark'] .comment-count {
   background: rgba(var(--color-primary-rgb), 0.2);
 }
 

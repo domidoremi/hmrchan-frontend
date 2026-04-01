@@ -1,0 +1,19 @@
+:root[data-preset='sketch-doodle']
+  :where(.theme-btn, .bg-effect-btn, .page-control-btn, .glass-card),
+#app[data-preset='sketch-doodle']
+  :where(.theme-btn, .bg-effect-btn, .page-control-btn, .glass-card) {
+  border: 0.125rem dashed rgba(31, 41, 55, 0.24);
+  box-shadow:
+    0 0.25rem 0 rgba(31 41 55 / 0.12),
+    0 1rem 1.75rem rgba(31, 41, 55, 0.08);
+}
+
+:root[data-preset='sketch-doodle'] :where(.theme-btn, .bg-effect-btn, .glass-card)::before,
+#app[data-preset='sketch-doodle'] :where(.theme-btn, .bg-effect-btn, .glass-card)::before {
+  background-image: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(31, 41, 55, var(--appearance-texture-opacity)) 100%
+  );
+}

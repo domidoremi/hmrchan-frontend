@@ -1042,12 +1042,12 @@ onUnmounted(() => {
   --nav-chip-bg: var(--chrome-chip-bg);
   --nav-chip-border: var(--chrome-chip-border);
   --nav-chip-text: var(--chrome-chip-text);
-  --nav-action-bg: color-mix(in srgb, var(--chrome-action-bg) 34%, transparent);
-  --nav-action-bg-hover: color-mix(in srgb, var(--chrome-action-bg-hover) 56%, transparent);
-  --nav-action-border: color-mix(in srgb, var(--chrome-action-border) 58%, transparent);
+  --nav-action-bg: var(--ui-compat-surface-interactive);
+  --nav-action-bg-hover: var(--ui-compat-surface-interactive-strong);
+  --nav-action-border: color-mix(in srgb, var(--ui-compat-border) 72%, transparent);
   --nav-action-border-strong: color-mix(
     in srgb,
-    var(--chrome-action-border-strong) 74%,
+    var(--ui-compat-border-strong) 78%,
     rgba(var(--color-primary-rgb), 0.18)
   );
   --nav-dropdown-bg: var(--ui-compat-surface-base);
@@ -1175,7 +1175,7 @@ onUnmounted(() => {
   min-block-size: 2.5rem;
   padding-inline: 0.95rem;
   border: 0.0625rem solid color-mix(in srgb, var(--nav-action-border) 78%, transparent);
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-compat-pill-radius, var(--radius-full));
   background: color-mix(in srgb, var(--nav-action-bg-hover) 72%, transparent);
   color: var(--color-text-primary);
   font-size: var(--text-sm);
@@ -1232,7 +1232,7 @@ onUnmounted(() => {
 }
 
 .nav-action-btn--pill {
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-compat-pill-radius, var(--radius-full));
 }
 
 .nav-action-btn--square {
@@ -1407,7 +1407,7 @@ onUnmounted(() => {
 .user-dropdown.glass-dropdown {
   background: var(--nav-dropdown-bg);
   border: 1px solid var(--nav-dropdown-border);
-  border-radius: var(--ui-radius-dropdown, var(--radius-xl));
+  border-radius: var(--ui-compat-panel-radius, var(--ui-radius-dropdown, var(--radius-xl)));
   box-shadow: var(--nav-dropdown-shadow);
   backdrop-filter: var(--nav-dropdown-backdrop);
   -webkit-backdrop-filter: var(--nav-dropdown-backdrop);
@@ -1485,8 +1485,8 @@ onUnmounted(() => {
   inline-size: auto;
   max-inline-size: calc(100vw - (clamp(0.75rem, 3vw, 1rem) * 2));
   padding: var(--spacing-3);
-  background: color-mix(in srgb, var(--chrome-surface-bg-soft) 88%, transparent);
-  border-color: color-mix(in srgb, var(--chrome-surface-border) 82%, transparent);
+  background: var(--ui-compat-surface-base);
+  border-color: color-mix(in srgb, var(--ui-compat-border) 82%, transparent);
   box-shadow: var(--nav-dropdown-shadow);
 }
 
@@ -1506,8 +1506,8 @@ onUnmounted(() => {
   min-block-size: 4.75rem;
   padding: 0.75rem 0.5rem;
   border: 0.0625rem solid transparent;
-  border-radius: var(--ui-radius-button, var(--radius-lg));
-  background: color-mix(in srgb, var(--chrome-action-bg) 28%, transparent);
+  border-radius: var(--ui-compat-control-radius, var(--ui-radius-button, var(--radius-lg)));
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive) 82%, transparent);
   color: var(--color-text-primary);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
@@ -1525,7 +1525,7 @@ onUnmounted(() => {
 .route-dropdown__utility:hover,
 .route-dropdown__utility:focus-visible {
   border-color: var(--nav-action-border-strong);
-  background: color-mix(in srgb, var(--chrome-action-bg-hover) 48%, transparent);
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive-strong) 92%, transparent);
   color: var(--color-primary);
   transform: translate3d(0, -0.0625rem, 0);
 }
@@ -1536,7 +1536,7 @@ onUnmounted(() => {
     var(--nav-action-border-strong) 76%,
     rgba(var(--color-primary-rgb), 0.16)
   );
-  background: color-mix(in srgb, var(--chrome-action-bg-hover) 56%, transparent);
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive-strong) 96%, transparent);
   color: var(--color-primary);
 }
 
@@ -1879,14 +1879,14 @@ onUnmounted(() => {
   }
 }
 
-:global(#app[data-theme='dark'] .nav-action-btn--primary),
-:global([data-theme='dark'] .nav-action-btn--primary) {
+:global(#app[data-color-mode='dark'] .nav-action-btn--primary),
+:global([data-color-mode='dark'] .nav-action-btn--primary) {
   background: color-mix(in srgb, var(--nav-action-bg) 78%, rgba(var(--color-primary-rgb), 0.12));
   color: var(--color-text-primary);
 }
 
-:global(#app[data-theme='dark'] .navbar),
-:global([data-theme='dark'] .navbar) {
+:global(#app[data-color-mode='dark'] .navbar),
+:global([data-color-mode='dark'] .navbar) {
   --nav-shell-bg: transparent;
   --nav-shell-border: color-mix(
     in srgb,
@@ -1896,32 +1896,9 @@ onUnmounted(() => {
   --nav-shell-shadow: none;
 }
 
-:global(#app[data-theme='blue'] .navbar),
-:global([data-theme='blue'] .navbar) {
+:global(#app[data-preset='gradient-narrative'][data-color-mode='light'] .navbar),
+:global([data-preset='gradient-narrative'][data-color-mode='light'] .navbar) {
   --nav-shell-bg: transparent;
   --nav-shell-border: rgba(96, 165, 250, 0.16);
-}
-
-:global(#app[data-ui-style='material'] .navbar),
-:global([data-ui-style='material'] .navbar) {
-  --nav-action-bg: color-mix(in srgb, var(--chrome-action-bg) 90%, transparent);
-  --nav-dropdown-bg: var(--ui-compat-surface-base);
-  --nav-dropdown-border: var(--ui-compat-border);
-  --nav-dropdown-shadow: var(--ui-compat-shadow);
-  --nav-dropdown-backdrop: var(--ui-compat-backdrop);
-  --nav-shell-shadow: none;
-}
-
-:global(#app[data-ui-style='ios'] .navbar),
-:global([data-ui-style='ios'] .navbar) {
-  --nav-dropdown-bg: color-mix(in srgb, var(--chrome-surface-bg-soft) 92%, transparent);
-  --nav-dropdown-backdrop: blur(0.75rem);
-}
-
-:global(#app[data-ui-style='material'] .nav-action-btn--pill),
-:global([data-ui-style='material'] .nav-action-btn--pill),
-:global(#app[data-ui-style='material'] .nav-search-shell__input),
-:global([data-ui-style='material'] .nav-search-shell__input) {
-  border-radius: var(--ui-radius-button, var(--radius-lg));
 }
 </style>

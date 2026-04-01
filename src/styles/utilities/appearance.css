@@ -1,0 +1,14 @@
+:where(.appearance-reading-width) {
+  max-inline-size: var(--component-reading-max-inline-size);
+}
+
+:where(.appearance-content-width) {
+  max-inline-size: var(--component-content-max-inline-size);
+}
+
+:where(.appearance-surface) {
+  background: var(--component-card-background);
+  border: var(--surface-border-token);
+  border-radius: var(--component-card-radius);
+  box-shadow: var(--component-card-shadow);
+}

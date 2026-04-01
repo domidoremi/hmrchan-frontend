@@ -76,13 +76,13 @@ defineEmits<{
   transform: scale(1.04);
 }
 
-:global([data-theme='dark'] .home-quick-nav__item) {
+:global([data-color-mode='dark'] .home-quick-nav__item) {
   border-color: rgba(255, 255, 255, 0.08);
   background: rgba(15, 23, 42, 0.32);
   color: rgba(248, 250, 252, 0.8);
 }
 
-:global([data-theme='dark'] .home-quick-nav__item.is-active) {
+:global([data-color-mode='dark'] .home-quick-nav__item.is-active) {
   background: rgba(15, 23, 42, 0.64);
   border-color: rgba(var(--color-primary-rgb), 0.32);
   color: rgba(255, 255, 255, 0.96);
@@ -117,7 +117,7 @@ defineEmits<{
     box-shadow: none;
   }
 
-  :global([data-theme='dark'] .home-quick-nav) {
+  :global([data-color-mode='dark'] .home-quick-nav) {
     border-color: rgba(255, 255, 255, 0.08);
     background: rgba(15, 23, 42, 0.42);
   }

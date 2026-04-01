@@ -1,12 +1,16 @@
 <template>
   <div
     id="app"
-    :data-theme="resolvedTheme"
+    :data-preset="activePreset"
+    :data-color-mode="resolvedColorMode"
+    :data-density="settings.densityMode"
     :data-animation-intensity="animationIntensity"
-    :data-ui-style="uiStyle"
+    :data-motion="motionMode"
+    :data-contrast="settings.contrastMode"
     :data-locale="currentLocale"
     :data-locale-density="localeDensity"
     :data-locale-animation="localeAnimation"
+    :data-scene-role="routeSceneRole"
   >
     <!-- Skip to main content -->
     <a href="#main-content" class="skip-link">
@@ -20,6 +24,7 @@
     <!-- Main Content with Error Boundary -->
     <main
       id="main-content"
+      :data-scene-role="routeSceneRole"
       :class="{
         'main--home': isHomeRoute,
         'main--auth': isAuthRoute,
@@ -28,6 +33,7 @@
     >
       <div
         class="route-view"
+        :data-scene-role="routeSceneRole"
         :class="{
           'route-view--home': isHomeRoute,
           'route-view--auth': isAuthRoute,
@@ -94,7 +100,8 @@
 import { ref, watch, computed, defineAsyncComponent, onMounted } from 'vue'
 import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { useThemeStore, useSettingsStore } from '@/stores'
+import { useSettingsStore } from '@/stores'
+import { useAppearanceRuntime } from '@/composables/useAppearanceRuntime'
 import { useLocaleConfig } from '@/composables/useLocaleConfig'
 import { usePreferencesSync } from '@/composables/usePreferencesSync'
 import { scheduleTask } from '@/utils/modernAPIs'
@@ -127,12 +134,11 @@ const DeskPet = defineAsyncComponent(() => import('@/components/ui/DeskPet.vue')
 
 const route = useRoute()
 const router = useRouter()
-const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
 usePreferencesSync()
 
-const { resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+const { activePreset, routeSceneRole, resolvedColorMode, motionMode } = useAppearanceRuntime(route)
 useSmoothScroll(
   computed(() => settings.value.enableAnimations),
   computed(() => settings.value.animationIntensity)
@@ -147,9 +153,6 @@ const localeAnimation = computed(() => localeInteraction.value.animationStyle)
 const animationIntensity = computed(() =>
   settings.value.enableAnimations ? settings.value.animationIntensity : 'none'
 )
-
-// UI 风格（默认 iOS/SwiftUI）
-const uiStyle = computed(() => settings.value.uiStyle)
 
 // 延迟挂载装饰性组件，避免首屏抢占主线程与网络资源
 const decorationsReady = ref(false)
@@ -426,22 +429,23 @@ main.main--home {
   }
 }
 
-#app[data-theme='light'] {
+#app[data-color-mode='light'] {
   --app-particle-layer-opacity: 0.94;
   --app-mascot-layer-opacity: 0.72;
 }
 
-#app[data-theme='dark'] {
+#app[data-color-mode='dark'] {
   --app-particle-layer-opacity: 1;
   --app-mascot-layer-opacity: 0.68;
 }
 
-#app[data-theme='blue'] {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] {
   --app-particle-layer-opacity: 0.96;
   --app-mascot-layer-opacity: 0.74;
 }
 
-#app[data-ui-style='material'] {
+#app[data-preset='material-calm'],
+#app[data-preset='sketch-doodle'] {
   --app-particle-layer-opacity: 0.88;
 }
 

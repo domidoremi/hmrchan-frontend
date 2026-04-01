@@ -883,7 +883,7 @@ async function handleEmailPreferenceChange(category: InboxCategory, value: boole
 </style>
 
 <style>
-[data-theme='dark'] .notifications-page {
+[data-color-mode='dark'] .notifications-page {
   --profile-surface-bg: rgba(13, 16, 22, 0.98);
   --profile-surface-bg-soft: rgba(17, 21, 29, 0.96);
   --profile-surface-border: rgba(255, 255, 255, 0.08);
@@ -900,7 +900,7 @@ async function handleEmailPreferenceChange(category: InboxCategory, value: boole
   --profile-action-border-strong: rgba(255, 255, 255, 0.14);
 }
 
-[data-theme='blue'] .notifications-page {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .notifications-page {
   --profile-surface-bg: rgba(255, 255, 255, 0.98);
   --profile-surface-bg-soft: rgba(247, 250, 255, 0.96);
   --profile-surface-border: rgba(59, 130, 246, 0.1);
@@ -915,22 +915,27 @@ async function handleEmailPreferenceChange(category: InboxCategory, value: boole
   --profile-action-border-strong: rgba(59, 130, 246, 0.16);
 }
 
-[data-theme='dark'] .notifications-page .notifications-live-pill--degraded {
+[data-color-mode='dark'] .notifications-page .notifications-live-pill--degraded {
   background: var(--profile-action-bg);
 }
 
-[data-theme='dark'] .notifications-page .notifications-feedback {
+[data-color-mode='dark'] .notifications-page .notifications-feedback {
   background: rgba(var(--color-warning-rgb, 245, 158, 11), 0.08);
 }
 
-#app[data-ui-style='material'] .notifications-page .notification-filter-chip,
-#app[data-ui-style='material'] .notifications-page .notifications-live-pill {
+#app[data-preset='material-calm'] .notifications-page .notification-filter-chip,
+#app[data-preset='sketch-doodle'] .notifications-page .notification-filter-chip,
+#app[data-preset='material-calm'] .notifications-page .notifications-live-pill,
+#app[data-preset='sketch-doodle'] .notifications-page .notifications-live-pill {
   border-radius: var(--radius-md);
 }
 
-#app[data-ui-style='material'] .notifications-page .notifications-summary-card,
-#app[data-ui-style='material'] .notifications-page .notification-preference-row,
-#app[data-ui-style='material'] .notifications-page .notifications-header-actions .btn {
+#app[data-preset='material-calm'] .notifications-page .notifications-summary-card,
+#app[data-preset='sketch-doodle'] .notifications-page .notifications-summary-card,
+#app[data-preset='material-calm'] .notifications-page .notification-preference-row,
+#app[data-preset='sketch-doodle'] .notifications-page .notification-preference-row,
+#app[data-preset='material-calm'] .notifications-page .notifications-header-actions .btn,
+#app[data-preset='sketch-doodle'] .notifications-page .notifications-header-actions .btn {
   border-radius: var(--radius-lg);
 }
 </style>

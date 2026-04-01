@@ -5,9 +5,11 @@
 import { ref, computed, nextTick } from 'vue'
 import { defineStore } from 'pinia'
 import type { UserPreferences } from '@/api/preferencesService'
+import type { AppearancePreset, ContrastMode, DensityMode, MotionMode, TextureLevel } from '@/types'
+import { DEFAULT_APPEARANCE_PRESET, normalizeAppearancePreset } from '@/config/appearance'
 
 export type AnimationIntensity = 'none' | 'reduced' | 'normal' | 'full'
-export type UiStyle = 'ios' | 'material'
+type LegacyUiStyleSnapshot = 'ios' | 'material'
 
 /** 背景粒子效果类型 */
 export type ParticleEffectType = 'none' | 'rain' | 'snow' | 'stars'
@@ -68,8 +70,14 @@ export interface Settings {
   animationIntensity: AnimationIntensity
   /** 帖子详情视图模式：stream=流媒体，data=数据展示 */
   postDetailViewMode: 'stream' | 'data'
-  /** UI 风格（默认圆润；可切换棱角） */
-  uiStyle: UiStyle
+  /** 外观预设 */
+  appearancePreset: AppearancePreset
+  /** 用户显式密度偏好 */
+  densityMode: DensityMode
+  /** 用户显式对比度偏好 */
+  contrastMode: ContrastMode
+  /** 装饰纹理强度 */
+  textureLevel: TextureLevel
   /** 全局背景粒子效果 */
   backgroundEffect: ParticleEffectConfig
   /** 吉祥物飞行背景 */
@@ -92,7 +100,10 @@ const defaultSettings: Settings = {
   defaultSort: 'newest',
   animationIntensity: 'normal',
   postDetailViewMode: 'stream',
-  uiStyle: 'ios',
+  appearancePreset: DEFAULT_APPEARANCE_PRESET,
+  densityMode: 'comfortable',
+  contrastMode: 'normal',
+  textureLevel: 'subtle',
   backgroundEffect: {
     type: 'none',
     density: 0.5,
@@ -131,6 +142,35 @@ function normalizePrivacySettings(target: Settings): void {
   }
 }
 
+type SettingsHydrationSnapshot = Settings & {
+  uiStyle?: LegacyUiStyleSnapshot
+}
+
+function resolvePresetFromLegacyUiStyle(style: LegacyUiStyleSnapshot): AppearancePreset {
+  return style === 'material' ? 'material-calm' : DEFAULT_APPEARANCE_PRESET
+}
+
+function normalizeAppearanceSettings(target: SettingsHydrationSnapshot): void {
+  const normalizedPreset = normalizeAppearancePreset(target.appearancePreset)
+  const legacyUiStyle = target.uiStyle
+
+  target.appearancePreset =
+    legacyUiStyle && normalizedPreset === DEFAULT_APPEARANCE_PRESET
+      ? resolvePresetFromLegacyUiStyle(legacyUiStyle)
+      : normalizedPreset
+  target.densityMode = ['compact', 'comfortable', 'spacious'].includes(target.densityMode)
+    ? target.densityMode
+    : 'comfortable'
+  target.contrastMode = target.contrastMode === 'high' ? 'high' : 'normal'
+  target.textureLevel = ['off', 'subtle', 'rich'].includes(target.textureLevel)
+    ? target.textureLevel
+    : 'subtle'
+
+  if ('uiStyle' in target) {
+    delete target.uiStyle
+  }
+}
+
 export const useSettingsStore = defineStore(
   'settings',
   () => {
@@ -140,7 +180,11 @@ export const useSettingsStore = defineStore(
     // pinia-plugin-persistedstate 在 store 创建后恢复数据，
     // 使用 nextTick 确保持久化数据已写入 ref
     nextTick(() => {
-      if (!settings.value.uiStyle) settings.value.uiStyle = 'ios'
+      if (!settings.value.appearancePreset)
+        settings.value.appearancePreset = DEFAULT_APPEARANCE_PRESET
+      if (!settings.value.densityMode) settings.value.densityMode = 'comfortable'
+      if (!settings.value.contrastMode) settings.value.contrastMode = 'normal'
+      if (!settings.value.textureLevel) settings.value.textureLevel = 'subtle'
       if (settings.value.cookieConsent === undefined) settings.value.cookieConsent = null
       if (settings.value.analyticsEnabled === undefined) settings.value.analyticsEnabled = false
       if (settings.value.functionalCookiesEnabled === undefined) {
@@ -193,6 +237,7 @@ export const useSettingsStore = defineStore(
         Math.max(0.5, settings.value.deskPet.followSensitivity)
       )
 
+      normalizeAppearanceSettings(settings.value)
       normalizePrivacySettings(settings.value)
     })
 
@@ -230,6 +275,15 @@ export const useSettingsStore = defineStore(
       )
     })
 
+    const motionMode = computed<MotionMode>(() => {
+      if (!settings.value.enableAnimations || settings.value.animationIntensity === 'none') {
+        return 'none'
+      }
+      if (settings.value.animationIntensity === 'reduced') return 'reduced'
+      if (settings.value.animationIntensity === 'full') return 'expressive'
+      return 'standard'
+    })
+
     function updateSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
       settings.value[key] = value
     }
@@ -250,8 +304,20 @@ export const useSettingsStore = defineStore(
       }
     }
 
-    function setUiStyle(style: UiStyle) {
-      settings.value.uiStyle = style
+    function setAppearancePreset(preset: AppearancePreset) {
+      settings.value.appearancePreset = normalizeAppearancePreset(preset)
+    }
+
+    function setDensityMode(mode: DensityMode) {
+      settings.value.densityMode = mode
+    }
+
+    function setContrastMode(mode: ContrastMode) {
+      settings.value.contrastMode = mode
+    }
+
+    function setTextureLevel(level: TextureLevel) {
+      settings.value.textureLevel = level
     }
 
     function setCookieConsent(value: boolean | null) {
@@ -350,6 +416,7 @@ export const useSettingsStore = defineStore(
       }
 
       normalizePrivacySettings(nextSettings)
+      normalizeAppearanceSettings(nextSettings)
       settings.value = nextSettings
     }
 
@@ -376,10 +443,14 @@ export const useSettingsStore = defineStore(
       animationDurationMultiplier,
       shouldAnimate,
       prefersReducedMotion,
+      motionMode,
       updateSetting,
       toggleSetting,
       setAnimationIntensity,
-      setUiStyle,
+      setAppearancePreset,
+      setDensityMode,
+      setContrastMode,
+      setTextureLevel,
       setCookieConsent,
       setAnalyticsEnabled,
       setPerformanceCookiesEnabled,

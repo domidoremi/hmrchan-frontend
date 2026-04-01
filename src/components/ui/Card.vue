@@ -86,13 +86,10 @@ function handleMouseLeave() {
   position: relative;
   display: flex;
   flex-direction: column;
-  border-radius: var(--ui-radius-card, var(--radius-xl));
-  border: 1px solid var(--glass-border);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72)), var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-shadow);
+  border-radius: var(--component-card-radius);
+  border: var(--surface-border-token);
+  background: var(--component-card-background);
+  box-shadow: var(--component-card-shadow);
   overflow: hidden;
   transition:
     box-shadow 200ms var(--ease-out),
@@ -135,7 +132,7 @@ function handleMouseLeave() {
 
 /* Elevated 变体 */
 .ui-card--elevated {
-  box-shadow: var(--glass-shadow-lg);
+  box-shadow: var(--appearance-shadow-strong);
 }
 
 .ui-card--outline {
@@ -144,8 +141,8 @@ function handleMouseLeave() {
 }
 
 .ui-card--subtle {
-  background: var(--glass-bg-light);
-  box-shadow: var(--shadow-sm);
+  background: var(--component-card-background-muted);
+  box-shadow: var(--appearance-shadow-soft);
 }
 
 .ui-card--interactive {
@@ -155,10 +152,10 @@ function handleMouseLeave() {
 /* 悬停状态 */
 .ui-card--hovered {
   transform: translateY(-0.3rem);
-  border-color: var(--glass-border-strong);
+  border-color: var(--semantic-border-strong);
   box-shadow:
-    var(--glass-shadow-lg),
-    0 16px 40px -12px rgba(var(--color-primary-rgb), 0.15);
+    var(--appearance-shadow-strong),
+    0 1rem 2.5rem -0.75rem rgba(var(--color-primary-rgb), 0.15);
 }
 
 /* 3D 悬停卡片 */
@@ -191,10 +188,8 @@ function handleMouseLeave() {
 }
 
 .ui-card:focus-within {
-  border-color: var(--glass-border-strong);
-  box-shadow:
-    var(--glass-shadow-lg),
-    0 0 0 0.1875rem rgba(var(--color-primary-rgb), 0.12);
+  border-color: var(--semantic-border-strong);
+  box-shadow: var(--appearance-shadow-medium), var(--focus-ring-token);
 }
 
 /* Reduced motion */
