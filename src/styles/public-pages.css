@@ -237,18 +237,28 @@
 .page-section-head {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: clamp(0.875rem, 1.8vw, 1.25rem);
   margin-bottom: clamp(0.9rem, 1.8vw, 1.2rem);
+  min-inline-size: 0;
 }
 
 .page-section-head--stage {
   align-items: flex-end;
+  justify-content: space-between;
+}
+
+.page-section-head > * {
+  min-inline-size: 0;
+  max-inline-size: 100%;
 }
 
 .page-section-copy {
   display: grid;
+  flex: 1 1 18rem;
   gap: clamp(0.3rem, 0.8vw, 0.5rem);
+  min-inline-size: 0;
   max-inline-size: min(100%, 34rem);
 }
 
@@ -264,10 +274,12 @@
 .page-section-title {
   margin: 0;
   max-inline-size: 17ch;
+  min-inline-size: 0;
   font-size: clamp(1.55rem, 2.2vw, 2.1rem);
   font-weight: var(--font-bold);
   line-height: 1.06;
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
   text-wrap: balance;
   color: var(--color-text-primary);
 }

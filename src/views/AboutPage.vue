@@ -528,8 +528,18 @@ const { techStack } = useAboutData()
 
 /* 页面标题 */
 .about-hero .page-hero-shell__content {
-  align-items: center;
+  align-items: stretch;
   text-align: center;
+}
+
+.about-hero .page-hero-shell__header,
+.about-hero .page-hero-shell__heading,
+.about-hero .page-hero-shell__meta {
+  inline-size: 100%;
+}
+
+.about-hero .page-hero-shell__header {
+  justify-content: center;
 }
 
 .about-hero .page-hero-shell__heading {
@@ -551,19 +561,28 @@ const { techStack } = useAboutData()
 
 .about-section-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: var(--spacing-3);
   margin-bottom: var(--spacing-4);
+  min-inline-size: 0;
 }
 
 .about-section-icon {
   color: var(--color-primary);
+  flex: 0 0 auto;
 }
 
 .about-section-title {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+  max-inline-size: none;
   font-size: var(--text-2xl);
   font-weight: var(--font-semibold);
+  line-height: 1.12;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 /* 关于 Himeri - 优化版 */
