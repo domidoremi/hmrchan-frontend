@@ -2825,16 +2825,7 @@ onBeforeUnmount(() => {
   --home-shell-radius: var(--ui-radius-card, var(--radius-2xl));
   --home-card-radius: var(--ui-radius-input, var(--radius-xl));
   --home-chip-radius: var(--ui-radius-button, var(--radius-full));
-  --home-section-bg:
-    radial-gradient(circle at top left, rgba(var(--home-mist-rgb), 0.42) 0%, transparent 34%),
-    radial-gradient(circle at top right, rgba(var(--home-blush-rgb), 0.34) 0%, transparent 28%),
-    radial-gradient(circle at 50% 18%, rgba(var(--home-lilac-rgb), 0.24) 0%, transparent 24%),
-    linear-gradient(
-      180deg,
-      rgba(250, 247, 243, 0.98) 0%,
-      rgba(245, 246, 251, 0.96) 52%,
-      #f6f4f1 100%
-    );
+  --home-section-bg: transparent;
   --home-card-shadow: 0 1.25rem 3.5rem -2.25rem rgba(83, 103, 144, 0.35);
   --home-soft-border: rgba(255, 255, 255, 0.7);
   --home-pill-bg: rgba(255, 255, 255, 0.72);
@@ -2888,14 +2879,16 @@ onBeforeUnmount(() => {
     rgba(248, 251, 255, 0.98),
     rgba(243, 247, 254, 0.92)
   );
-  --home-story-stage-bg:
-    radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.18) 0%, transparent 42%),
-    radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.16) 0%, transparent 38%),
-    linear-gradient(180deg, rgba(248, 247, 244, 0.64) 0%, rgba(248, 247, 244, 0.88) 100%);
-  --home-story-stage-footer-bg:
-    radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.12) 0%, transparent 42%),
-    radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.12) 0%, transparent 38%),
-    linear-gradient(180deg, rgba(246, 244, 241, 0) 0%, rgba(248, 247, 244, 0.66) 100%);
+  --home-story-stage-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--page-shell-surface-bg) 44%, transparent) 0%,
+    color-mix(in srgb, var(--page-shell-surface-bg-strong) 76%, transparent) 100%
+  );
+  --home-story-stage-end-surface: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--page-shell-surface-bg-strong) 52%, transparent) 100%
+  );
   --home-screen-transition-ms: 780ms;
 }
 
@@ -2908,15 +2901,7 @@ onBeforeUnmount(() => {
   position: relative;
   min-block-size: min(36rem, 100dvh);
   padding-block-start: clamp(1.5rem, 4vw, 3rem);
-  background: var(--home-story-stage-footer-bg);
-}
-
-.home-page .app-footer-shell--home::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--home-story-stage-footer-bg);
-  pointer-events: none;
+  background: transparent;
 }
 
 .home-page .app-footer-shell--home > * {
@@ -2926,10 +2911,7 @@ onBeforeUnmount(() => {
 
 :global(#app[data-color-mode='dark'] .home-page),
 :global([data-color-mode='dark'] .home-page) {
-  --home-section-bg:
-    radial-gradient(circle at top left, rgba(var(--home-mist-rgb), 0.08) 0%, transparent 30%),
-    radial-gradient(circle at top right, rgba(var(--home-blush-rgb), 0.08) 0%, transparent 24%),
-    linear-gradient(180deg, rgba(8, 10, 18, 0.98) 0%, rgba(10, 13, 23, 0.96) 56%, #070910 100%);
+  --home-section-bg: transparent;
   --home-card-shadow: 0 1.5rem 4rem -2rem rgba(0, 0, 0, 0.6);
   --home-soft-border: rgba(255, 255, 255, 0.08);
   --home-pill-bg: rgba(15, 20, 31, 0.76);
@@ -2962,28 +2944,21 @@ onBeforeUnmount(() => {
   --home-story-card-border: rgba(148, 163, 184, 0.26);
   --home-story-card-shadow: 0 3.3rem 5.9rem -3rem rgba(0, 0, 0, 0.72);
   --home-story-visual-bg: linear-gradient(160deg, rgba(16, 22, 34, 0.94), rgba(18, 24, 36, 0.86));
-  --home-story-stage-bg:
-    radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.08) 0%, transparent 42%),
-    radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.08) 0%, transparent 38%),
-    linear-gradient(180deg, rgba(8, 12, 18, 0.72) 0%, rgba(8, 12, 18, 0.94) 100%);
-  --home-story-stage-footer-bg:
-    radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.06) 0%, transparent 42%),
-    radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.06) 0%, transparent 38%),
-    linear-gradient(180deg, rgba(7, 10, 16, 0) 0%, rgba(8, 12, 18, 0.82) 100%);
+  --home-story-stage-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--page-shell-surface-bg) 28%, transparent) 0%,
+    color-mix(in srgb, var(--page-shell-surface-bg-strong) 62%, transparent) 100%
+  );
+  --home-story-stage-end-surface: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--page-shell-surface-bg-strong) 44%, transparent) 100%
+  );
 }
 
 :global(#app[data-preset='gradient-narrative'][data-color-mode='light'] .home-page),
 :global([data-preset='gradient-narrative'][data-color-mode='light'] .home-page) {
-  --home-section-bg:
-    radial-gradient(circle at top left, rgba(147, 197, 253, 0.34) 0%, transparent 34%),
-    radial-gradient(circle at top right, rgba(129, 140, 248, 0.24) 0%, transparent 28%),
-    radial-gradient(circle at 50% 18%, rgba(186, 230, 253, 0.32) 0%, transparent 26%),
-    linear-gradient(
-      180deg,
-      rgba(240, 249, 255, 0.98) 0%,
-      rgba(239, 246, 255, 0.96) 52%,
-      #eff6ff 100%
-    );
+  --home-section-bg: transparent;
   --home-ink: #0f172a;
   --home-accent: #2563eb;
   --home-accent-soft: #6366f1;
@@ -3036,14 +3011,16 @@ onBeforeUnmount(() => {
     rgba(255, 255, 255, 0.94),
     rgba(224, 242, 254, 0.84)
   );
-  --home-story-stage-bg:
-    radial-gradient(circle at 18% 18%, rgba(147, 197, 253, 0.18) 0%, transparent 42%),
-    radial-gradient(circle at 84% 22%, rgba(129, 140, 248, 0.12) 0%, transparent 38%),
-    linear-gradient(180deg, rgba(239, 246, 255, 0.72) 0%, rgba(240, 249, 255, 0.92) 100%);
-  --home-story-stage-footer-bg:
-    radial-gradient(circle at 18% 18%, rgba(147, 197, 253, 0.12) 0%, transparent 42%),
-    radial-gradient(circle at 84% 22%, rgba(129, 140, 248, 0.1) 0%, transparent 38%),
-    linear-gradient(180deg, rgba(240, 249, 255, 0) 0%, rgba(239, 246, 255, 0.74) 100%);
+  --home-story-stage-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--page-shell-surface-bg) 46%, transparent) 0%,
+    color-mix(in srgb, var(--page-shell-surface-bg-strong) 80%, transparent) 100%
+  );
+  --home-story-stage-end-surface: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--page-shell-surface-bg-strong) 56%, transparent) 100%
+  );
 }
 
 :global(#app[data-preset='material-calm'] .home-page),
@@ -3058,29 +3035,6 @@ onBeforeUnmount(() => {
   --home-panel-shadow-strong: var(--shadow-lg);
   --home-panel-highlight: none;
   --home-story-card-shadow: var(--shadow-xl);
-}
-
-.home-page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: var(--home-section-bg);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.home-page::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(
-    circle at 50% 0%,
-    rgba(var(--home-mist-rgb), 0.16) 0%,
-    transparent 30%
-  );
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.28;
 }
 
 .home-screen {
@@ -3314,18 +3268,6 @@ onBeforeUnmount(() => {
   padding-block: clamp(2rem, 6dvh, 4rem) calc(2rem + var(--home-stage-safe-bottom));
   display: flex;
   align-items: center;
-}
-
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: -10% auto auto -6%;
-  width: clamp(14rem, 30vw, 24rem);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--home-blush-rgb), 0.24) 0%, transparent 72%);
-  filter: blur(1rem);
-  pointer-events: none;
 }
 
 .hero-layout {
@@ -6131,7 +6073,7 @@ onBeforeUnmount(() => {
   inset-inline: 0;
   inset-block-end: 0;
   block-size: min(48dvh, 28rem);
-  background: var(--home-story-stage-footer-bg);
+  background: var(--home-story-stage-end-surface);
   opacity: calc(0.08 + (var(--story-footer-fade, 0) * 0.46));
   pointer-events: none;
 }

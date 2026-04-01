@@ -379,14 +379,14 @@ export const COMMUNITY_FALLBACK_COMMENTS: Record<string, DiscussionComment[]> = 
   [createPublicFallbackId('community', 'footer-background-unify')]: [
     comment(
       createPublicFallbackId('community', 'footer-background-unify'),
-      'footer-bg-1',
+      'footer-surface-1',
       '我更喜欢轻微渐层，因为它能把上一屏的色相悄悄带进 footer。',
       'fallback-author-yui',
       hoursAgo(2)
     ),
     comment(
       createPublicFallbackId('community', 'footer-background-unify'),
-      'footer-bg-2',
+      'footer-surface-2',
       '前提是渐层不能太重，否则页脚会突然像另一块舞台。',
       'fallback-author-rin',
       hoursAgo(1)

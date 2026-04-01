@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <div class="footer-shell empty-surface" :style="[footerShellStyle, noGlassBackdropStyle]">
+      <div class="footer-shell empty-surface" :style="footerShellStyle">
         <div class="footer-main">
           <div class="footer-brand">
             <RouterLink to="/" class="brand-logo" :aria-label="$t('app.name')">
@@ -90,11 +90,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
 import { Sparkles } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
-import { useThemeStore } from '@/stores'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -111,13 +109,7 @@ const props = withDefaults(
 
 const { t } = useI18n()
 const currentYear = computed(() => new Date().getFullYear())
-const themeStore = useThemeStore()
-const { resolvedTheme } = storeToRefs(themeStore)
 const isHomeVariant = computed(() => props.variant === 'home')
-const noGlassBackdropStyle = Object.freeze({
-  backdropFilter: 'blur(0rem)',
-  WebkitBackdropFilter: 'blur(0rem)',
-}) as Readonly<Record<string, string>>
 const marqueeItems = computed(() => [
   t('app.name'),
   t('nav.explore'),
@@ -149,16 +141,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
       ? 'var(--home-tag-hover, var(--chrome-muted-bg))'
       : 'var(--chrome-muted-bg)',
   }
-
-  if (isHomeVariant.value) {
-    style['--footer-bg'] = 'transparent'
-    style['--footer-overlay'] = 'none'
-    style['--footer-top-fade'] = 'none'
-  } else if (resolvedTheme.value === 'dark') {
-    style['--footer-top-fade'] =
-      'linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%)'
-  }
-
   return style
 })
 </script>
@@ -167,19 +149,8 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 .footer {
   position: relative;
   isolation: isolate;
-  overflow: clip;
+  overflow: visible;
   padding: clamp(1.25rem, 3vw, 2rem) 0 clamp(2rem, 4vw, 2.75rem);
-  --footer-bg: linear-gradient(
-    180deg,
-    rgba(248, 247, 244, 0) 0%,
-    rgba(248, 247, 244, 0.42) 20%,
-    rgba(248, 247, 244, 0.82) 54%,
-    #f8f7f4 100%
-  );
-  --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.04) 0%, transparent 34%),
-    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.03) 0%, transparent 30%);
-  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, transparent 100%);
   --footer-shell-bg: var(--ui-compat-surface-elevated, var(--chrome-surface-bg));
   --footer-shell-border: var(--ui-compat-shell-border, var(--chrome-surface-border));
   --footer-shell-shadow: var(--ui-compat-shell-shadow, var(--chrome-surface-shadow));
@@ -187,7 +158,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-chip-border: var(--chrome-chip-border);
   --footer-divider: var(--chrome-muted-border);
   --footer-link-hover-bg: var(--chrome-muted-bg);
-  background: var(--footer-bg);
 }
 
 .footer--home {
@@ -200,128 +170,19 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     transform 220ms cubic-bezier(0.2, 0.84, 0.24, 1);
 }
 
-.footer::before,
-.footer::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.footer::before {
-  inset: 0;
-  background: var(--footer-overlay);
-  opacity: 0.96;
-}
-
-.footer::after {
-  inset-block-start: 0;
-  block-size: min(18rem, 34dvh);
-  background: var(--footer-top-fade);
-}
-
 .footer > .container {
   position: relative;
   z-index: 1;
 }
 
-:global(#app[data-color-mode='dark'] .footer),
-:global([data-color-mode='dark'] .footer) {
-  --footer-bg: linear-gradient(
-    180deg,
-    rgba(8, 12, 18, 0) 0%,
-    rgba(8, 12, 18, 0.54) 20%,
-    rgba(7, 10, 16, 0.88) 54%,
-    #070910 100%
-  );
-  --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.06) 0%, transparent 34%),
-    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.04) 0%, transparent 30%);
-  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
-  --footer-shell-bg: var(--chrome-surface-bg);
-  --footer-shell-border: var(--chrome-surface-border);
-  --footer-shell-shadow: var(--chrome-surface-shadow);
-  --footer-chip-bg: var(--chrome-chip-bg);
-  --footer-chip-border: var(--chrome-chip-border);
-  --footer-divider: var(--chrome-muted-border);
-  --footer-link-hover-bg: var(--chrome-muted-bg);
-}
-
-:global(#app[data-preset='gradient-narrative'][data-color-mode='light'] .footer),
-:global([data-preset='gradient-narrative'][data-color-mode='light'] .footer) {
-  --footer-bg: linear-gradient(
-    180deg,
-    rgba(239, 246, 255, 0.24) 0%,
-    rgba(239, 246, 255, 0.72) 28%,
-    rgba(239, 246, 255, 0.96) 62%,
-    #eff6ff 100%
-  );
-  --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 36%),
-    radial-gradient(circle at 82% 6%, rgba(99, 102, 241, 0.06) 0%, transparent 32%);
-  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, transparent 100%);
-  --footer-shell-bg: var(--chrome-surface-bg);
-  --footer-shell-border: var(--chrome-surface-border);
-  --footer-shell-shadow: var(--chrome-surface-shadow);
-  --footer-chip-bg: var(--chrome-chip-bg);
-  --footer-chip-border: var(--chrome-chip-border);
-  --footer-divider: var(--chrome-muted-border);
-  --footer-link-hover-bg: var(--chrome-muted-bg);
-}
-
-:global(main.main--home + .footer) {
-  --footer-bg: linear-gradient(
-    180deg,
-    rgba(248, 247, 244, 0.18) 0%,
-    rgba(248, 247, 244, 0.62) 34%,
-    rgba(248, 247, 244, 0.92) 70%,
-    #f8f7f4 100%
-  );
-  --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.04) 0%, transparent 36%),
-    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.03) 0%, transparent 32%);
-  --footer-top-fade: linear-gradient(180deg, rgba(248, 247, 244, 0.12) 0%, transparent 100%);
-}
-
-:global(#app[data-color-mode='dark'] main.main--home + .footer),
-:global([data-color-mode='dark'] main.main--home + .footer) {
-  --footer-bg: linear-gradient(
-    180deg,
-    rgba(8, 12, 18, 0.18) 0%,
-    rgba(8, 12, 18, 0.72) 34%,
-    rgba(7, 10, 16, 0.94) 70%,
-    #070910 100%
-  );
-  --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.06) 0%, transparent 36%),
-    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.04) 0%, transparent 32%);
-  --footer-top-fade: linear-gradient(180deg, rgba(8, 12, 18, 0.08) 0%, transparent 100%);
-}
-
-:global(#app[data-preset='gradient-narrative'][data-color-mode='light'] main.main--home + .footer),
-:global([data-preset='gradient-narrative'][data-color-mode='light'] main.main--home + .footer) {
-  --footer-bg: linear-gradient(
-    180deg,
-    rgba(239, 246, 255, 0.2) 0%,
-    rgba(239, 246, 255, 0.72) 34%,
-    rgba(239, 246, 255, 0.96) 70%,
-    #eff6ff 100%
-  );
-  --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.06) 0%, transparent 36%),
-    radial-gradient(circle at 82% 6%, rgba(99, 102, 241, 0.05) 0%, transparent 32%);
-  --footer-top-fade: linear-gradient(180deg, rgba(239, 246, 255, 0.12) 0%, transparent 100%);
-}
-
 .footer-shell.empty-surface {
   padding: clamp(1.5rem, 3vw, 2rem);
-  border-radius: var(--ui-compat-panel-radius, var(--ui-radius-card, var(--radius-2xl)));
-  border-color: var(--footer-shell-border) !important;
-  background: var(--footer-shell-bg) !important;
-  box-shadow: var(--footer-shell-shadow) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  border-radius: var(--appearance-radius-panel);
+  border-color: var(--footer-shell-border);
+  background: var(--footer-shell-bg);
+  box-shadow: var(--footer-shell-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   animation: none;
   will-change: box-shadow;
   transition:
@@ -353,15 +214,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   animation-duration: calc(22s - (var(--home-footer-marquee-speed-progress, 0) * 6s));
   animation-play-state: var(--home-footer-marquee-play-state, running);
   will-change: transform;
-}
-
-.footer--home .footer-shell.empty-surface {
-  background: var(--footer-shell-bg) !important;
-}
-
-.footer-shell.empty-surface::before,
-.footer-shell.empty-surface::after {
-  display: none;
 }
 
 .footer-shell.empty-surface:hover {

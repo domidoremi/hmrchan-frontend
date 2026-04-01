@@ -4,8 +4,8 @@
  */
 
 #app .auth-page {
-  --auth-shell-radius: var(--ui-radius-card, var(--radius-xl));
-  --auth-section-radius: var(--ui-radius-button, var(--radius-lg));
+  --auth-shell-radius: var(--appearance-radius-panel);
+  --auth-section-radius: var(--appearance-radius-rich-block);
   --auth-page-bg: var(--surface-minimal-canvas, var(--color-background));
   --auth-page-bg-strong: color-mix(
     in srgb,
@@ -100,7 +100,11 @@
   inline-size: min(100%, 34rem);
   display: grid;
   gap: 0.875rem;
-  padding: clamp(1rem, 2.4vw, 1.5rem);
+  padding: clamp(
+    var(--appearance-surface-padding-md),
+    1.9vw + 0.5rem,
+    var(--appearance-surface-padding-lg)
+  );
   border: 0.0625rem solid var(--auth-panel-border);
   border-radius: var(--auth-shell-radius);
   background: var(--auth-panel-bg);
@@ -137,13 +141,14 @@
 #app .auth-shell__body,
 #app .auth-shell__footer {
   display: grid;
-  gap: 0.875rem;
+  gap: var(--appearance-surface-gap-sm);
 }
 
 #app .auth-shell__header {
   align-items: center;
   align-content: center;
   justify-items: center;
+  inline-size: 100%;
   text-align: center;
 }
 
@@ -170,7 +175,7 @@
   place-items: center;
   padding: 0;
   border: 0.0625rem solid var(--auth-panel-border);
-  border-radius: var(--ui-radius-button, var(--radius-lg));
+  border-radius: var(--appearance-radius-control-md);
   background: var(--auth-form-surface);
   color: var(--auth-text-strong);
   transition:
@@ -227,7 +232,7 @@
   inline-size: min(100%, 26rem);
   padding: 0.25rem;
   border: 0.0625rem solid var(--auth-panel-border);
-  border-radius: var(--ui-radius-button, var(--radius-lg));
+  border-radius: var(--appearance-radius-panel);
   background: color-mix(in srgb, var(--auth-form-surface) 96%, transparent);
 }
 
@@ -237,7 +242,7 @@
   justify-content: center;
   min-block-size: 2.55rem;
   padding-inline: 1rem;
-  border-radius: calc(var(--ui-radius-button, var(--radius-lg)) - 0.125rem);
+  border-radius: var(--appearance-radius-control-md);
   color: var(--auth-text-muted);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
@@ -443,7 +448,7 @@
 #app .code-sent-banner {
   display: grid;
   gap: 0.5rem;
-  padding: 0.8rem 0.9rem;
+  padding: var(--appearance-surface-padding-sm) var(--appearance-surface-padding-md);
   border: 0.0625rem solid var(--auth-panel-border);
   border-radius: var(--auth-section-radius);
   background: color-mix(in srgb, var(--auth-form-surface) 98%, transparent);
@@ -504,8 +509,8 @@
   justify-items: center;
   align-content: center;
   text-align: center;
-  gap: 0.625rem;
-  padding: 0.8rem 0.9rem;
+  gap: var(--appearance-surface-gap-sm);
+  padding: var(--appearance-surface-padding-sm) var(--appearance-surface-padding-md);
   margin-inline: auto;
 }
 
@@ -602,7 +607,7 @@
   min-block-size: 2.65rem;
   padding-inline: 0.7rem;
   border: 0.0625rem solid var(--auth-panel-border);
-  border-radius: var(--ui-radius-button, var(--radius-lg));
+  border-radius: var(--appearance-radius-control-md);
   background: color-mix(in srgb, var(--auth-form-surface) 98%, transparent);
   color: var(--auth-text-muted);
   font-size: var(--text-xs);
@@ -627,7 +632,7 @@
   display: inline-grid;
   place-items: center;
   border: 0.0625rem solid currentColor;
-  border-radius: var(--ui-radius-button, var(--radius-sm));
+  border-radius: var(--appearance-radius-control-sm);
   font-size: 0.7rem;
   font-weight: var(--font-semibold);
 }
@@ -670,7 +675,7 @@
   display: inline-grid;
   place-items: center;
   border: 0.0625rem solid var(--auth-panel-border);
-  border-radius: 1.35rem;
+  border-radius: var(--appearance-radius-panel);
   background: var(--auth-form-surface);
   color: var(--auth-text-strong);
 }

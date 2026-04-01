@@ -5,8 +5,8 @@
  */
 
 :root {
-  --profile-shell-radius: clamp(1.15rem, 2vw, 1.5rem);
-  --profile-section-radius: clamp(1rem, 1.6vw, 1.25rem);
+  --profile-shell-radius: var(--appearance-radius-panel);
+  --profile-section-radius: var(--appearance-radius-rich-block);
   --profile-surface-bg: linear-gradient(
     155deg,
     color-mix(in srgb, var(--semantic-surface-base) 96%, transparent),
@@ -106,8 +106,8 @@
   gap: 0.35rem;
   min-block-size: 1.875rem;
   padding-inline: 0.75rem;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--profile-chip-border);
+  border-radius: var(--appearance-radius-chip);
+  border: 0.0625rem solid var(--profile-chip-border);
   background: var(--profile-chip-bg);
   color: var(--profile-chip-text);
   font-size: var(--text-xs);
@@ -127,7 +127,7 @@
 
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  :is(.page-control, .page-control-btn) {
+  .page-control {
   background: var(--profile-action-bg);
   border-color: var(--profile-action-border);
   color: var(--profile-chip-text);
@@ -136,10 +136,10 @@
 
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  :is(.page-control, .page-control-btn):hover,
+  .page-control:hover,
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  :is(.page-control, .page-control-btn):focus-visible {
+  .page-control:focus-visible {
   background: var(--profile-action-bg-hover);
   border-color: var(--profile-action-border-strong);
   color: var(--color-text-primary);
@@ -147,10 +147,10 @@
 
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  :is(.page-control, .page-control-btn)[aria-pressed='true'],
+  .page-control[aria-pressed='true'],
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  :is(.page-control, .page-control-btn).active,
+  .page-control.active,
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
   .page-control.page-control--active {
@@ -237,11 +237,9 @@
     .notifications-tab .notification-item
   ) {
   border-radius: var(--profile-section-radius);
-  border: 1px solid var(--profile-surface-border);
+  border: 0.0625rem solid var(--profile-surface-border);
   background: var(--profile-surface-bg-soft);
   box-shadow: var(--profile-surface-shadow);
-  backdrop-filter: blur(var(--blur-sm));
-  -webkit-backdrop-filter: blur(var(--blur-sm));
   transition:
     border-color var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out),
@@ -300,8 +298,8 @@
   justify-content: center;
   min-block-size: 1.875rem;
   padding-inline: 0.75rem;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--profile-chip-border);
+  border-radius: var(--appearance-radius-chip);
+  border: 0.0625rem solid var(--profile-chip-border);
   background: var(--profile-chip-bg);
   color: var(--profile-chip-text);
   font-size: var(--text-xs);
@@ -352,9 +350,7 @@
     align-items: stretch;
   }
 
-  #app
-    :is(.settings-page, .notifications-page, .devices-page, .profile-sub-page)
-    .page-control-btn {
+  #app :is(.settings-page, .notifications-page, .devices-page, .profile-sub-page) .page-control {
     justify-content: center;
   }
 }

@@ -5,13 +5,13 @@
   --appearance-control-gap: var(--spacing-2);
   --appearance-chip-min-block-size: 2.375rem;
   --appearance-chip-padding-inline: 0.95rem;
-  --appearance-chip-radius: var(--appearance-radius-full);
-  --appearance-eyebrow-radius: var(--appearance-radius-full);
-  --appearance-toolbar-radius: var(--appearance-radius-2xl);
-  --appearance-toolbar-padding: clamp(0.875rem, 1.8vw, 1.125rem);
-  --appearance-toolbar-gap: clamp(0.875rem, 1.8vw, 1.25rem);
-  --appearance-hero-panel-radius: var(--appearance-radius-2xl);
-  --appearance-hero-gap: clamp(0.875rem, 2vw, 1.5rem);
+  --appearance-chip-radius: var(--appearance-radius-chip);
+  --appearance-eyebrow-radius: var(--appearance-radius-chip);
+  --appearance-toolbar-radius: var(--appearance-radius-panel);
+  --appearance-toolbar-padding: var(--appearance-surface-padding-md);
+  --appearance-toolbar-gap: var(--appearance-surface-gap-md);
+  --appearance-hero-panel-radius: var(--appearance-radius-panel);
+  --appearance-hero-gap: var(--appearance-surface-gap-md);
   --appearance-page-control-shadow: var(--appearance-shadow-soft);
   --appearance-page-surface-shadow: var(--appearance-shadow-medium);
   --page-shell-surface-bg: color-mix(in srgb, var(--semantic-surface-base) 92%, transparent);
@@ -52,7 +52,11 @@
   display: grid;
   gap: var(--appearance-hero-gap);
   margin-block-end: clamp(1rem, 2vw, 1.75rem);
-  padding: clamp(1.125rem, 2.6vw, 2rem);
+  padding: clamp(
+    var(--appearance-surface-padding-md),
+    2vw + 0.45rem,
+    var(--appearance-surface-padding-lg)
+  );
   border: 0.0625rem solid var(--page-shell-surface-border);
   border-radius: var(--appearance-hero-panel-radius);
   background:
@@ -82,7 +86,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: clamp(0.625rem, 1.4vw, 1rem);
+  gap: var(--appearance-surface-gap-sm);
   min-inline-size: 0;
 }
 
@@ -96,14 +100,14 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: clamp(0.875rem, 1.8vw, 1.25rem);
+  gap: var(--appearance-surface-gap-md);
   min-inline-size: 0;
 }
 
 .page-hero-shell__heading {
   display: grid;
   align-content: start;
-  gap: clamp(0.35rem, 0.8vw, 0.55rem);
+  gap: clamp(0.4rem, 0.9vw, 0.6rem);
   min-inline-size: 0;
   max-inline-size: min(100%, 44rem);
 }
@@ -111,8 +115,8 @@
 .page-hero-shell__title-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: clamp(0.5rem, 1vw, 0.75rem);
+  align-items: center;
+  gap: clamp(0.625rem, 1.1vw, 0.875rem);
   min-inline-size: 0;
 }
 
@@ -143,7 +147,8 @@
   max-inline-size: 100%;
   gap: var(--appearance-control-gap);
   min-block-size: var(--appearance-chip-min-block-size);
-  padding-inline: calc(var(--appearance-chip-padding-inline) - 0.1rem);
+  padding-inline: max(var(--appearance-chip-padding-inline), 1rem);
+  padding-block: 0.35rem;
   border: 0.0625rem solid var(--page-shell-eyebrow-border);
   border-radius: var(--appearance-eyebrow-radius);
   background: var(--page-shell-eyebrow-bg);
@@ -152,6 +157,7 @@
   font-weight: var(--font-semibold);
   letter-spacing: 0.04em;
   line-height: var(--appearance-ui-line-height);
+  text-align: center;
   text-transform: uppercase;
 }
 
@@ -163,7 +169,8 @@
   inline-size: fit-content;
   max-inline-size: 100%;
   min-block-size: var(--appearance-chip-min-block-size);
-  padding-inline: var(--appearance-chip-padding-inline);
+  padding-inline: max(var(--appearance-chip-padding-inline), 1rem);
+  padding-block: 0.35rem;
   border: 0.0625rem solid var(--page-shell-control-border);
   border-radius: var(--appearance-chip-radius);
   background: var(--page-shell-control-bg);
@@ -199,7 +206,8 @@
   max-inline-size: 100%;
   gap: 0.5rem;
   min-block-size: var(--appearance-chip-min-block-size);
-  padding-inline: var(--appearance-chip-padding-inline);
+  padding-inline: max(var(--appearance-chip-padding-inline), 1rem);
+  padding-block: 0.35rem;
   border: 0.0625rem solid var(--page-shell-control-border);
   border-radius: var(--appearance-chip-radius);
   background: var(--page-shell-control-bg);
@@ -208,6 +216,7 @@
   font-weight: var(--font-medium);
   line-height: var(--appearance-ui-line-height);
   box-shadow: var(--appearance-page-control-shadow);
+  text-align: center;
 }
 
 .page-meta-chip strong {
@@ -227,7 +236,11 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--appearance-toolbar-gap);
-  padding: var(--appearance-toolbar-padding);
+  padding: clamp(
+    var(--appearance-surface-padding-sm),
+    1.2vw + 0.45rem,
+    var(--appearance-surface-padding-md)
+  );
   border: 0.0625rem solid var(--page-shell-surface-border);
   border-radius: var(--appearance-toolbar-radius);
   background:
@@ -267,12 +280,13 @@
   padding-inline: var(--ui-control-padding-x-md);
   padding-block: var(--ui-control-padding-y-md);
   border: 0.0625rem solid var(--page-shell-control-border);
-  border-radius: var(--ui-radius-button);
+  border-radius: var(--appearance-radius-control-md);
   background: var(--page-shell-control-bg);
   color: var(--page-shell-control-ink);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   line-height: var(--appearance-ui-line-height);
+  text-align: center;
   text-decoration: none;
   box-shadow: var(--appearance-page-control-shadow);
   transition:
@@ -314,13 +328,16 @@
   min-inline-size: var(--ui-control-compact-min-inline-size);
   padding-inline: var(--ui-control-padding-x-sm);
   padding-block: var(--ui-control-padding-y-sm);
+  border-radius: var(--appearance-radius-control-sm);
   font-size: var(--text-xs);
 }
 
 .page-control--square,
 .page-control--icon-only {
   min-inline-size: var(--ui-action-size);
+  block-size: var(--ui-action-size);
   padding-inline: 0;
+  border-radius: var(--appearance-radius-control-sm);
 }
 
 .page-control__icon,
@@ -336,12 +353,33 @@
   align-items: center;
   justify-content: center;
   min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   transform: translateY(var(--appearance-baseline-shift));
 }
 
 .page-control__icon :where(svg),
 .page-control__meta :where(svg) {
   transform: translateY(var(--appearance-inline-icon-offset));
+}
+
+.empty-surface {
+  position: relative;
+  overflow: clip;
+  display: grid;
+  gap: var(--appearance-surface-gap-sm);
+  padding: clamp(
+    var(--appearance-surface-padding-sm),
+    1.5vw + 0.35rem,
+    var(--appearance-surface-padding-lg)
+  );
+  border: 0.0625rem solid var(--page-shell-surface-border);
+  border-radius: var(--appearance-radius-panel);
+  background: var(--page-shell-surface-bg);
+  box-shadow: var(--appearance-page-surface-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 @media (max-width: 768px) {
