@@ -2,7 +2,11 @@
   <nav
     ref="navbarRef"
     class="navbar navbar--minimal"
-    :class="{ 'navbar-hidden': isNavbarHidden, 'navbar--chromeless': props.chromeless }"
+    :class="{
+      'navbar-hidden': isNavbarHidden,
+      'navbar--chromeless': props.chromeless,
+      'navbar--post-detail': isPostDetailRoute,
+    }"
   >
     <div class="container navbar-content">
       <div class="navbar-shell" :class="{ 'navbar-shell--actions-only': !isMobile }">
@@ -399,6 +403,7 @@ function prefetchSettingsPanel() {
 
 const router = useRouter()
 const route = useRoute()
+const isPostDetailRoute = computed(() => route.name === 'post-detail')
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 const { mobileNavItems, getNavigationLink } = useNavigation()
@@ -1105,6 +1110,19 @@ onUnmounted(() => {
   );
 }
 
+.navbar--chromeless.navbar--post-detail {
+  --nav-muted-bg: transparent;
+  --nav-muted-bg-strong: color-mix(in srgb, var(--ui-compat-surface-elevated) 44%, transparent);
+  --nav-muted-border: transparent;
+  --nav-muted-border-strong: color-mix(in srgb, var(--ui-compat-border-strong) 30%, transparent);
+  --nav-chip-bg: transparent;
+  --nav-chip-border: transparent;
+  --nav-action-bg: transparent;
+  --nav-action-bg-hover: color-mix(in srgb, var(--ui-compat-surface-interactive) 52%, transparent);
+  --nav-action-border: transparent;
+  --nav-action-border-strong: color-mix(in srgb, var(--ui-compat-border-strong) 36%, transparent);
+}
+
 .navbar.navbar-hidden {
   transform: translate3d(0, -100%, 0);
 }
@@ -1238,8 +1256,18 @@ onUnmounted(() => {
   box-shadow: none;
 }
 
+.navbar--chromeless.navbar--post-detail .nav-search-shell__input {
+  border-color: transparent;
+  background: transparent;
+}
+
 .navbar--chromeless .nav-search-shell__input:focus {
   border-color: color-mix(in srgb, var(--ui-compat-border-strong) 62%, transparent);
+}
+
+.navbar--chromeless.navbar--post-detail .nav-search-shell__input:focus {
+  border-color: var(--nav-action-border-strong);
+  background: color-mix(in srgb, var(--ui-compat-surface-base) 44%, transparent);
 }
 
 .nav-action-btn {
@@ -1340,6 +1368,12 @@ onUnmounted(() => {
   box-shadow: none;
 }
 
+.navbar--chromeless.navbar--post-detail .nav-action-btn,
+.navbar--chromeless.navbar--post-detail .nav-user-btn {
+  border-color: transparent;
+  background: transparent;
+}
+
 .icon-spin {
   animation: icon-spin var(--duration-slow) var(--ease-out);
 }
@@ -1425,6 +1459,10 @@ onUnmounted(() => {
 .nav-user-btn:hover .nav-user-avatar,
 .nav-user-btn--active .nav-user-avatar {
   border-color: var(--color-primary);
+}
+
+.navbar--chromeless.navbar--post-detail .nav-user-avatar.ui-avatar {
+  border-color: color-mix(in srgb, var(--ui-compat-border) 22%, transparent);
 }
 
 .nav-user-status {
@@ -1941,6 +1979,12 @@ onUnmounted(() => {
 :global([data-color-mode='dark'] .nav-action-btn--primary) {
   background: color-mix(in srgb, var(--nav-action-bg) 78%, rgba(var(--color-primary-rgb), 0.12));
   color: var(--color-text-primary);
+}
+
+:global(#app .navbar--chromeless.navbar--post-detail .nav-action-btn--primary),
+:global(.navbar--chromeless.navbar--post-detail .nav-action-btn--primary) {
+  background: transparent;
+  border-color: transparent;
 }
 
 :global(#app[data-color-mode='dark'] .navbar),

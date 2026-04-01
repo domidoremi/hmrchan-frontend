@@ -140,13 +140,14 @@ const i18n = createI18n({
   },
 })
 
-async function createWrapper() {
+async function createWrapper(initialPath = '/') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
       { path: '/', component: { template: '<div>home</div>' } },
       { path: '/explore', component: { template: '<div>explore</div>' } },
       { path: '/search', component: { template: '<div>search</div>' } },
+      { path: '/post/:id', name: 'post-detail', component: { template: '<div>post detail</div>' } },
       { path: '/favorites', component: { template: '<div>favorites</div>' } },
       { path: '/authors', component: { template: '<div>authors</div>' } },
       { path: '/community', component: { template: '<div>community</div>' } },
@@ -157,11 +158,14 @@ async function createWrapper() {
     ],
   })
 
-  await router.push('/')
+  await router.push(initialPath)
   await router.isReady()
 
   const wrapper = mount(AppNavbar, {
     attachTo: document.body,
+    props: {
+      chromeless: true,
+    },
     global: {
       plugins: [router, i18n],
       directives: {
@@ -311,6 +315,15 @@ describe('AppNavbar', () => {
     expect(wrapper.find('.navbar-links').exists()).toBe(false)
     expect(wrapper.find('.mobile-nav').exists()).toBe(false)
     expect(wrapper.find('.navbar-cta').exists()).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('adds the post-detail chromeless class on post routes', async () => {
+    const { wrapper } = await createWrapper('/post/post-1')
+
+    expect(wrapper.classes()).toContain('navbar--chromeless')
+    expect(wrapper.classes()).toContain('navbar--post-detail')
 
     wrapper.unmount()
   })
