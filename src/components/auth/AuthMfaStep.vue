@@ -1,10 +1,6 @@
 <template>
   <div class="auth-card auth-card--stack glass-surface--base auth-mfa-step">
     <div class="auth-mfa-step__copy">
-      <span class="auth-badge">
-        <span class="auth-badge-dot" aria-hidden="true" />
-        {{ $t('auth.mfa.badge') }}
-      </span>
       <h2 class="auth-title auth-title--section">{{ title }}</h2>
       <p class="auth-helper">{{ hint }}</p>
       <p v-if="message" class="auth-helper auth-helper--emphasis">{{ message }}</p>

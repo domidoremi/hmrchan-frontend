@@ -1,17 +1,21 @@
 <template>
   <div class="favorites-page">
     <div class="container">
-      <header class="page-hero favorites-hero">
-        <div class="page-hero__content">
-          <span class="page-hero__eyebrow">{{ $t('nav.favorites') }}</span>
-          <h1 class="page-hero__title">{{ $t('nav.favorites') }}</h1>
-          <p class="page-hero__subtitle">{{ $t('favorites.organizeHint') }}</p>
-          <div v-if="isAuthenticated" class="page-hero__meta">
-            <span v-if="isLoading" class="spinner spinner-sm" />
-            <span class="page-hero__note">{{ $t('favorites.totalCount', { count: total }) }}</span>
-          </div>
-        </div>
-      </header>
+      <PageHeroShell
+        class="favorites-hero"
+        :eyebrow="$t('nav.favorites')"
+        :title="$t('nav.favorites')"
+        :subtitle="$t('favorites.organizeHint')"
+      >
+        <template #meta>
+          <PageMetaRow v-if="isAuthenticated">
+            <PageMetaChip>
+              <span v-if="isLoading" class="spinner spinner-sm" />
+              <span>{{ $t('favorites.totalCount', { count: total }) }}</span>
+            </PageMetaChip>
+          </PageMetaRow>
+        </template>
+      </PageHeroShell>
 
       <div v-if="!isAuthenticated" class="empty-state empty-surface">
         <AnimatedIcon name="heart" :fallback-icon="Heart" size="xl" class="empty-icon" />
@@ -37,7 +41,7 @@
         </div>
 
         <template v-else>
-          <section class="favorites-toolbar empty-surface">
+          <PageToolbar tag="section" class="favorites-toolbar">
             <div class="favorites-toolbar__copy">
               <h2 class="favorites-toolbar__title">{{ $t('favorites.organizeTitle') }}</h2>
               <p class="favorites-toolbar__hint">{{ $t('favorites.organizeHint') }}</p>
@@ -68,7 +72,7 @@
                 </option>
               </Select>
             </div>
-          </section>
+          </PageToolbar>
 
           <StateIndicator
             v-if="favorites.length === 0"
@@ -121,24 +125,30 @@
                 </div>
               </div>
               <div class="favorite-card-actions">
-                <button
-                  type="button"
-                  class="card-action-btn page-control-btn page-control-btn--square"
+                <ControlButton
+                  class="card-action-btn"
+                  size="square"
+                  icon-only
                   :title="$t('common.edit')"
                   :aria-label="$t('common.edit')"
                   @click.stop="openFavoriteEditor(fav)"
                 >
-                  <AnimatedIcon name="sparkle" :fallback-icon="PencilLine" size="sm" />
-                </button>
-                <button
-                  type="button"
-                  class="card-action-btn card-action-btn--danger page-control-btn page-control-btn--square"
+                  <template #start>
+                    <AnimatedIcon name="sparkle" :fallback-icon="PencilLine" size="sm" />
+                  </template>
+                </ControlButton>
+                <ControlButton
+                  class="card-action-btn card-action-btn--danger"
+                  size="square"
+                  icon-only
                   :title="$t('favorites.remove')"
                   :aria-label="$t('favorites.remove')"
                   @click.stop="removeFavorite(fav.id)"
                 >
-                  <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
-                </button>
+                  <template #start>
+                    <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
+                  </template>
+                </ControlButton>
               </div>
             </article>
           </div>
@@ -228,6 +238,11 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
+import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
+import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
+import PageToolbar from '@/components/appearance/PageToolbar.vue'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Input from '@/components/ui/Input.vue'
@@ -459,18 +474,20 @@ onDeactivated(() => {
   gap: var(--spacing-4);
 }
 
-.favorites-hero .page-hero__meta {
+.favorites-hero .page-hero-shell__meta {
   align-items: center;
 }
 
-.favorites-toolbar {
-  display: grid;
+.favorites-toolbar.page-toolbar-shell {
+  align-items: flex-end;
   gap: var(--spacing-3);
 }
 
 .favorites-toolbar__copy {
+  flex: 1 1 16rem;
   display: grid;
   gap: var(--spacing-1);
+  min-inline-size: 0;
 }
 
 .favorites-toolbar__title {
@@ -486,8 +503,10 @@ onDeactivated(() => {
 }
 
 .favorites-toolbar__controls {
+  flex: 1 1 22rem;
   display: grid;
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .favorites-filter {
@@ -674,13 +693,14 @@ onDeactivated(() => {
   transition: opacity var(--transition-fast);
 }
 
-.card-action-btn {
-  min-inline-size: 2rem;
-  min-block-size: 2rem;
+.card-action-btn.page-control {
+  min-inline-size: var(--ui-action-size);
+  block-size: var(--ui-action-size);
   padding: 0;
+  box-shadow: none;
 }
 
-.card-action-btn--danger {
+.card-action-btn--danger.page-control {
   color: var(--color-error);
   border-color: rgba(var(--color-error-rgb), 0.18);
   background: rgba(var(--color-error-rgb), 0.08);

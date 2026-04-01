@@ -16,14 +16,17 @@
             <p class="profile-kicker">{{ $t('nav.profile') }}</p>
             <div class="profile-name-row">
               <h1 class="profile-name">{{ displayName }}</h1>
-              <button
-                type="button"
+              <ControlButton
                 class="edit-btn"
-                @click="editProfile"
+                size="square"
+                icon-only
                 :aria-label="$t('profile.editProfile')"
+                @click="editProfile"
               >
-                <Pencil :size="14" />
-              </button>
+                <template #start>
+                  <Pencil :size="14" />
+                </template>
+              </ControlButton>
             </div>
             <p class="profile-handle">@{{ username }}</p>
             <p v-if="userBio" class="profile-bio">{{ userBio }}</p>
@@ -31,16 +34,22 @@
 
           <!-- Quick Nav (desktop) -->
           <nav class="profile-quick-nav">
-            <RouterLink
+            <ControlButton
               v-for="link in quickLinks"
               :key="link.to"
+              :tag="RouterLink"
+              class="quick-nav-item"
               :to="link.to"
-              class="quick-nav-item page-control-btn"
+              :current="route.path === link.to"
             >
-              <component :is="link.icon" :size="18" />
+              <template #start>
+                <component :is="link.icon" :size="18" />
+              </template>
               <span>{{ link.label }}</span>
-              <span v-if="link.badge" class="quick-nav-badge">{{ link.badge }}</span>
-            </RouterLink>
+              <template #end>
+                <span v-if="link.badge" class="quick-nav-badge">{{ link.badge }}</span>
+              </template>
+            </ControlButton>
           </nav>
         </div>
 
@@ -65,33 +74,43 @@
       <div class="profile-content">
         <!-- Mobile Quick Nav -->
         <nav class="profile-quick-nav--mobile">
-          <RouterLink
+          <ControlButton
             v-for="link in quickLinks"
             :key="link.to"
+            :tag="RouterLink"
+            class="quick-nav-chip"
+            size="compact"
             :to="link.to"
-            class="quick-nav-chip page-control-btn page-control-btn--compact"
+            :current="route.path === link.to"
           >
-            <component :is="link.icon" :size="14" />
+            <template #start>
+              <component :is="link.icon" :size="14" />
+            </template>
             <span>{{ link.label }}</span>
-            <span v-if="link.badge" class="quick-nav-badge--sm">{{ link.badge }}</span>
-          </RouterLink>
+            <template #end>
+              <span v-if="link.badge" class="quick-nav-badge--sm">{{ link.badge }}</span>
+            </template>
+          </ControlButton>
         </nav>
 
         <!-- Tab Selector -->
-        <div class="tab-bar page-toolbar">
-          <button
-            v-for="tab in tabs"
-            :key="tab.value"
-            type="button"
-            class="tab-btn"
-            :class="{ 'tab-btn--active': activeTab === tab.value }"
-            :aria-pressed="activeTab === tab.value"
-            @click="activeTab = tab.value"
-          >
-            <component :is="tab.icon" :size="16" />
-            <span class="tab-label">{{ tab.label }}</span>
-          </button>
-        </div>
+        <PageToolbar tag="div" class="tab-bar">
+          <ControlGroup class="tab-bar__group">
+            <ControlButton
+              v-for="tab in tabs"
+              :key="tab.value"
+              class="tab-btn"
+              size="compact"
+              :pressed="activeTab === tab.value"
+              @click="activeTab = tab.value"
+            >
+              <template #start>
+                <component :is="tab.icon" :size="16" />
+              </template>
+              <span class="tab-label">{{ tab.label }}</span>
+            </ControlButton>
+          </ControlGroup>
+        </PageToolbar>
 
         <div class="tab-panel">
           <Transition name="tab-slide" mode="out-in">
@@ -107,7 +126,7 @@
 defineOptions({ name: 'ProfilePage' })
 
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
   Heart,
@@ -128,6 +147,9 @@ import {
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useFavoritesStore, useNotificationsStore } from '@/stores'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import ControlGroup from '@/components/appearance/ControlGroup.vue'
+import PageToolbar from '@/components/appearance/PageToolbar.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import ProfileFavoritesTab from '@/components/profile/ProfileFavoritesTab.vue'
 import ProfileCommentsTab from '@/components/profile/ProfileCommentsTab.vue'
@@ -139,6 +161,7 @@ import ProfileSecurityTab from '@/components/profile/ProfileSecurityTab.vue'
 import ProfileRelationsTab from '@/components/profile/ProfileRelationsTab.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const favStore = useFavoritesStore()
@@ -331,17 +354,16 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.edit-btn {
+.edit-btn.page-control {
   flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  min-inline-size: var(--ui-action-size);
+  block-size: var(--ui-action-size);
+  padding: 0;
   border-radius: var(--radius-full);
   color: var(--color-text-tertiary);
   background: var(--profile-action-bg);
   border: 1px solid var(--profile-action-border);
+  box-shadow: none;
   transition:
     color var(--duration-fast) var(--ease-smooth),
     background var(--duration-fast) var(--ease-smooth),
@@ -349,7 +371,8 @@ onMounted(() => {
     transform var(--duration-fast) var(--ease-bounce-soft);
 }
 
-.edit-btn:hover {
+.edit-btn.page-control:hover,
+.edit-btn.page-control:focus-visible {
   color: var(--color-primary);
   background: var(--profile-action-bg-hover);
   border-color: var(--profile-action-border-strong);
@@ -387,30 +410,22 @@ onMounted(() => {
 }
 
 .quick-nav-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--ui-compat-control-radius);
-  border: 1px solid var(--ui-compat-border);
-  background: var(--ui-compat-surface-interactive);
-  font-size: var(--text-sm);
-  color: var(--ui-compat-text-secondary);
-  text-decoration: none;
-  transition:
-    color var(--duration-fast) var(--ease-smooth),
-    background var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth);
+  justify-content: flex-start;
+  min-inline-size: 100%;
+  box-shadow: none;
 }
 
-.quick-nav-item:hover {
+.quick-nav-item:hover,
+.quick-nav-item:focus-visible,
+.quick-nav-item.page-control--active,
+.quick-nav-item[aria-current='page'] {
   color: var(--color-primary);
   background: var(--ui-compat-surface-interactive-strong);
   border-color: var(--ui-compat-border-strong);
 }
 
 .quick-nav-badge {
-  margin-left: auto;
+  margin-inline-start: auto;
   min-width: 1.25rem;
   height: 1.25rem;
   display: inline-flex;
@@ -500,52 +515,40 @@ onMounted(() => {
   gap: clamp(0.875rem, 2vw, 1.25rem);
 }
 
-.tab-bar {
-  display: flex;
-  align-items: stretch;
-  gap: 0.125rem;
+.tab-bar.page-toolbar-shell {
   padding: 0.1875rem;
-  background: var(--ui-compat-surface-base);
-  border: 1px solid var(--ui-compat-border);
-  border-radius: var(--ui-compat-panel-radius);
+}
+
+.tab-bar__group {
+  flex-wrap: nowrap;
+  gap: 0.125rem;
+  inline-size: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-padding-inline: 0.1875rem;
   scrollbar-width: none;
-  box-shadow: var(--ui-compat-shadow);
 }
 
-.tab-bar::-webkit-scrollbar {
+.tab-bar__group::-webkit-scrollbar {
   display: none;
 }
 
 .tab-btn {
   flex: 1 1 0;
   min-inline-size: 0;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-3);
-  border-radius: calc(var(--radius-xl) - 0.1875rem);
-  border: 1px solid transparent;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--ui-compat-text-secondary);
-  white-space: nowrap;
-  transition:
-    color var(--duration-fast) var(--ease-smooth),
-    background var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth),
-    box-shadow var(--duration-fast) var(--ease-smooth);
+  box-shadow: none;
+  background: transparent;
+  border-color: transparent;
 }
 
-.tab-btn:hover:not(.tab-btn--active) {
+.tab-btn:hover:not(.page-control--active) {
   color: var(--color-text-primary);
   background: var(--ui-compat-surface-interactive);
 }
 
-.tab-btn--active {
+.tab-btn.page-control--active,
+.tab-btn[aria-pressed='true'] {
   color: var(--color-text-primary);
   background: var(--ui-compat-surface-interactive-strong);
   border-color: var(--ui-compat-border-strong);
@@ -613,26 +616,14 @@ onMounted(() => {
   }
 
   .quick-nav-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-1);
     min-inline-size: max-content;
-    padding: var(--spacing-2) var(--spacing-3);
-    background: var(--ui-compat-surface-interactive);
-    border: 1px solid var(--ui-compat-border);
-    border-radius: var(--radius-full);
-    font-size: var(--text-xs);
-    color: var(--ui-compat-text-secondary);
-    text-decoration: none;
-    white-space: nowrap;
     flex-shrink: 0;
-    transition:
-      color var(--duration-fast) var(--ease-smooth),
-      background var(--duration-fast) var(--ease-smooth),
-      border-color var(--duration-fast) var(--ease-smooth);
   }
 
-  .quick-nav-chip:hover {
+  .quick-nav-chip:hover,
+  .quick-nav-chip:focus-visible,
+  .quick-nav-chip.page-control--active,
+  .quick-nav-chip[aria-current='page'] {
     color: var(--color-primary);
     background: var(--ui-compat-surface-interactive-strong);
     border-color: var(--ui-compat-border-strong);
@@ -663,20 +654,21 @@ onMounted(() => {
   .tab-btn {
     flex: 0 0 auto;
     min-inline-size: 3rem;
-    padding: var(--spacing-2);
-    font-size: var(--text-xs);
+    padding-inline: var(--ui-control-padding-x-sm);
     gap: var(--spacing-1);
   }
 
-  .tab-label {
+  .tab-btn .tab-label {
     display: none;
   }
 
-  .tab-btn--active .tab-label {
+  .tab-btn.page-control--active .tab-label,
+  .tab-btn[aria-pressed='true'] .tab-label {
     display: inline;
   }
 
-  .tab-btn--active {
+  .tab-btn.page-control--active,
+  .tab-btn[aria-pressed='true'] {
     padding-inline: var(--spacing-3);
   }
 }
@@ -739,8 +731,10 @@ onMounted(() => {
   border-radius: calc(var(--radius-lg) / 2);
 }
 
-#app[data-preset='material-calm'] .profile-page .tab-btn--active,
-#app[data-preset='sketch-doodle'] .profile-page .tab-btn--active {
+#app[data-preset='material-calm'] .profile-page .tab-btn.page-control--active,
+#app[data-preset='material-calm'] .profile-page .tab-btn[aria-pressed='true'],
+#app[data-preset='sketch-doodle'] .profile-page .tab-btn.page-control--active,
+#app[data-preset='sketch-doodle'] .profile-page .tab-btn[aria-pressed='true'] {
   background: var(--ui-compat-surface-interactive-strong);
 }
 
@@ -775,7 +769,12 @@ onMounted(() => {
   background: #3b82f6;
 }
 
-#app[data-preset='gradient-narrative'][data-color-mode='light'] .profile-page .tab-btn--active {
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .profile-page
+  .tab-btn.page-control--active,
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .profile-page
+  .tab-btn[aria-pressed='true'] {
   color: #3b82f6;
 }
 
@@ -802,8 +801,18 @@ onMounted(() => {
   background: var(--ui-compat-surface-base);
 }
 
-#app[data-preset='material-calm'][data-color-mode='dark'] .profile-page .tab-btn--active,
-#app[data-preset='sketch-doodle'][data-color-mode='dark'] .profile-page .tab-btn--active {
+#app[data-preset='material-calm'][data-color-mode='dark']
+  .profile-page
+  .tab-btn.page-control--active,
+#app[data-preset='material-calm'][data-color-mode='dark']
+  .profile-page
+  .tab-btn[aria-pressed='true'],
+#app[data-preset='sketch-doodle'][data-color-mode='dark']
+  .profile-page
+  .tab-btn.page-control--active,
+#app[data-preset='sketch-doodle'][data-color-mode='dark']
+  .profile-page
+  .tab-btn[aria-pressed='true'] {
   background: var(--ui-compat-surface-interactive-strong);
 }
 </style>

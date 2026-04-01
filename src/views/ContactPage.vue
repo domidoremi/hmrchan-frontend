@@ -1,39 +1,37 @@
 <template>
   <div class="contact-page">
     <div class="container">
-      <section class="page-hero contact-hero">
-        <div class="page-hero__content contact-hero__content">
-          <div class="page-hero__header contact-hero__header">
-            <div class="page-hero__heading contact-hero__heading">
-              <span class="page-hero__eyebrow">{{ $t('contact.title') }}</span>
-              <div class="contact-hero__copy">
-                <h1 class="page-hero__title">{{ $t('contact.title') }}</h1>
-                <p class="page-hero__subtitle">{{ $t('contact.subtitle') }}</p>
-              </div>
-            </div>
-
-            <div class="contact-hero__links">
-              <RouterLink to="/community" class="page-inline-cta">
-                {{ $t('nav.community') }}
-              </RouterLink>
-              <RouterLink to="/about" class="page-control-btn page-control-btn--compact">
-                {{ $t('nav.about') }}
-              </RouterLink>
-            </div>
+      <PageHeroShell tag="section" class="contact-hero">
+        <template #heading>
+          <span class="page-hero-shell__eyebrow">{{ $t('contact.title') }}</span>
+          <div class="contact-hero__copy">
+            <h1 class="page-hero-shell__title">{{ $t('contact.title') }}</h1>
+            <p class="page-hero-shell__subtitle">{{ $t('contact.subtitle') }}</p>
           </div>
+        </template>
 
-          <div class="contact-hero__summary">
-            <article
-              v-for="item in heroHighlights"
-              :key="item.label"
-              class="contact-highlight surface-base"
-            >
-              <span class="contact-highlight__label">{{ item.label }}</span>
-              <p class="contact-highlight__value">{{ item.value }}</p>
-            </article>
+        <template #actions>
+          <div class="contact-hero__links">
+            <RouterLink to="/community" class="page-inline-cta">
+              {{ $t('nav.community') }}
+            </RouterLink>
+            <ControlButton :tag="RouterLink" size="compact" to="/about">
+              {{ $t('nav.about') }}
+            </ControlButton>
           </div>
+        </template>
+
+        <div class="contact-hero__summary">
+          <article
+            v-for="item in heroHighlights"
+            :key="item.label"
+            class="contact-highlight surface-base"
+          >
+            <span class="contact-highlight__label">{{ item.label }}</span>
+            <p class="contact-highlight__value">{{ item.value }}</p>
+          </article>
         </div>
-      </section>
+      </PageHeroShell>
 
       <section class="contact-workflow surface-editorial" aria-labelledby="contact-workflow-title">
         <div class="contact-workflow__header">
@@ -74,18 +72,16 @@
                 </div>
 
                 <div class="contact-topic-grid">
-                  <button
+                  <ControlButton
                     v-for="topic in contactTopicOptions"
                     :key="topic.value"
-                    type="button"
-                    class="contact-topic-card page-control-btn"
-                    :class="{ active: selectedTopic === topic.value }"
-                    :aria-pressed="selectedTopic === topic.value"
+                    class="contact-topic-card"
+                    :pressed="selectedTopic === topic.value"
                     @click="selectedTopic = topic.value"
                   >
                     <span class="contact-topic-card__title">{{ topic.label }}</span>
                     <span class="contact-topic-card__hint">{{ topic.hint }}</span>
-                  </button>
+                  </ControlButton>
                 </div>
 
                 <p class="contact-panel__note">
@@ -169,23 +165,19 @@
         </Transition>
 
         <div class="contact-workflow__actions">
-          <button
-            type="button"
-            class="page-control-btn page-control-btn--compact"
-            :disabled="activeStep === 1"
-            @click="previousStep"
-          >
+          <ControlButton size="compact" :disabled="activeStep === 1" @click="previousStep">
             {{ $t('contact.previousStep') }}
-          </button>
+          </ControlButton>
 
-          <button
+          <ControlButton
             v-if="activeStep < 3"
-            type="button"
-            class="page-control-btn page-control-btn--compact active contact-workflow__next"
+            class="contact-workflow__next"
+            size="compact"
+            active
             @click="nextStep"
           >
             {{ $t('contact.nextStep') }}
-          </button>
+          </ControlButton>
         </div>
       </section>
 
@@ -217,6 +209,8 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
 import { contactService } from '@/api/contactService'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
@@ -550,9 +544,9 @@ async function handleSubmit() {
   line-height: 1.6;
 }
 
-.contact-topic-card.active,
-.contact-topic-card.active .contact-topic-card__title,
-.contact-topic-card.active .contact-topic-card__hint,
+.contact-topic-card.page-control--active,
+.contact-topic-card.page-control--active .contact-topic-card__title,
+.contact-topic-card.page-control--active .contact-topic-card__hint,
 .contact-stepper__item.active .contact-stepper__label {
   color: currentColor;
 }

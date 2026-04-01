@@ -10,19 +10,18 @@
         <span v-if="commentsCount > 0" class="comment-count">{{ commentsCount }}</span>
       </h3>
 
-      <div class="comment-sort" v-if="comments.length > 0">
-        <button
+      <ControlGroup v-if="comments.length > 0" class="comment-sort">
+        <ControlButton
           v-for="option in sortOptions"
           :key="option.value"
-          type="button"
           class="sort-btn"
-          :class="{ active: currentSort === option.value }"
-          :aria-pressed="currentSort === option.value"
+          size="compact"
+          :pressed="currentSort === option.value"
           @click="changeSort(option.value)"
         >
           {{ option.label }}
-        </button>
-      </div>
+        </ControlButton>
+      </ControlGroup>
     </header>
 
     <!-- Comment Form -->
@@ -53,14 +52,9 @@
     </TransitionGroup>
 
     <!-- Load More -->
-    <button
-      v-if="hasMore && !isLoading"
-      type="button"
-      class="load-more-btn page-control-btn"
-      @click="loadMore"
-    >
+    <ControlButton v-if="hasMore && !isLoading" class="load-more-btn" @click="loadMore">
       {{ t('common.viewMore') }}
-    </button>
+    </ControlButton>
   </section>
 </template>
 
@@ -75,6 +69,8 @@ import CommentCard from './CommentCard.vue'
 import CommentForm from './CommentForm.vue'
 import { commentTreeContextKey } from './commentTreeContext'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import ControlGroup from '@/components/appearance/ControlGroup.vue'
 
 interface Props {
   postId: string
@@ -225,25 +221,21 @@ watch(
   transform: translateY(0.35rem) scale(0.98);
 }
 
-.sort-btn {
-  padding: var(--spacing-1) var(--spacing-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast),
-    border-color var(--transition-fast);
+.sort-btn.page-control {
+  box-shadow: none;
 }
 
-.sort-btn:hover {
+.sort-btn.page-control:hover,
+.sort-btn.page-control:focus-visible {
   background: var(--glass-bg);
   color: var(--color-text-primary);
 }
 
-.sort-btn.active {
+.sort-btn.page-control--active,
+.sort-btn[aria-pressed='true'] {
   background: var(--color-primary);
   color: var(--color-on-primary);
+  border-color: transparent;
 }
 
 .loading-state {
@@ -304,7 +296,7 @@ watch(
 }
 
 .load-more-btn {
-  width: 100%;
+  inline-size: 100%;
   margin-top: var(--spacing-4);
   justify-content: center;
 }

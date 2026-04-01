@@ -6,10 +6,21 @@
   --appearance-content-max-inline-size: min(92vw, 1440px);
   --appearance-reading-max-inline-size: var(--locale-content-max-ch, 68ch);
   --appearance-control-min-block-size: var(--locale-control-min-block-size, 2.75rem);
+  --appearance-control-min-inline-size: 4.75rem;
+  --appearance-control-compact-min-inline-size: 4rem;
   --appearance-control-padding-inline: var(--spacing-4);
   --appearance-control-padding-block: calc(
     var(--spacing-3) + var(--locale-control-padding-nudge, 0rem)
   );
+  --appearance-control-gap: var(--spacing-2);
+  --appearance-chip-min-block-size: 2.375rem;
+  --appearance-chip-padding-inline: 0.95rem;
+  --appearance-chip-radius: var(--appearance-radius-full);
+  --appearance-eyebrow-radius: var(--appearance-radius-full);
+  --appearance-toolbar-radius: var(--appearance-radius-2xl);
+  --appearance-toolbar-padding: clamp(0.875rem, 1.8vw, 1.125rem);
+  --appearance-toolbar-gap: clamp(0.875rem, 1.8vw, 1.25rem);
+  --appearance-hero-panel-radius: var(--appearance-radius-2xl);
   --appearance-inline-icon-offset: var(--locale-icon-text-offset, 0);
   --appearance-baseline-shift: var(--locale-baseline-shift, 0);
   --appearance-texture-opacity: 0.08;
@@ -52,6 +63,8 @@
 
 :root[data-density='compact'] {
   --appearance-control-min-block-size: 2.5rem;
+  --appearance-control-min-inline-size: 4.25rem;
+  --appearance-control-compact-min-inline-size: 3.75rem;
   --appearance-control-padding-inline: var(--spacing-3);
   --appearance-control-padding-block: calc(
     var(--spacing-2) + var(--locale-control-padding-nudge, 0rem)
@@ -65,6 +78,8 @@
 
 :root[data-density='spacious'] {
   --appearance-control-min-block-size: 3rem;
+  --appearance-control-min-inline-size: 5rem;
+  --appearance-control-compact-min-inline-size: 4.25rem;
   --appearance-control-padding-inline: var(--spacing-5);
   --appearance-control-padding-block: calc(
     var(--spacing-4) + var(--locale-control-padding-nudge, 0rem)

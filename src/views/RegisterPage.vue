@@ -8,13 +8,6 @@
       split
       @back="handleBack"
     >
-      <template #eyebrow>
-        <span class="auth-badge">
-          <span class="auth-badge-dot" aria-hidden="true" />
-          {{ badgeLabel }}
-        </span>
-      </template>
-
       <div v-if="showRegistrationProgress" class="step-indicator" role="presentation">
         <div class="step" :class="{ active: true, done: step === 'register' }">
           <span class="step-num">1</span>
@@ -555,21 +548,6 @@ const googleProviderBusy = computed(
 const googlePopupErrorMessage = computed(() =>
   googlePopupErrorKey.value ? t(googlePopupErrorKey.value) : ''
 )
-const badgeLabel = computed(() => {
-  switch (step.value) {
-    case 'email':
-    case 'register':
-      return t('auth.secureBadge')
-    case 'link-required':
-      return t('auth.callback.linkTitle')
-    case 'risk-verification':
-      return t('auth.riskVerificationTitle')
-    case 'mfa':
-      return t('auth.mfa.badge')
-    default:
-      return t('auth.secureBadge')
-  }
-})
 const pageTitle = computed(() => {
   switch (step.value) {
     case 'link-required':

@@ -2,20 +2,21 @@
   <div class="about-page">
     <div class="container">
       <!-- 页面标题 -->
-      <header class="page-hero about-hero">
-        <div class="page-hero__content">
-          <div class="page-hero__heading">
-            <span class="page-hero__eyebrow">{{ $t('nav.about') }}</span>
-            <h1 class="page-hero__title gradient-text">{{ $t('about.title') }}</h1>
-            <p class="page-hero__subtitle">{{ $t('about.subtitle') }}</p>
-          </div>
-          <div class="page-hero__meta">
-            <span class="page-hero__note">{{ $t('about.links.title') }}</span>
-            <span class="page-hero__note">{{ $t('about.features.title') }}</span>
-            <span class="page-hero__note">{{ $t('about.tech.title') }}</span>
-          </div>
-        </div>
-      </header>
+      <PageHeroShell class="about-hero">
+        <template #heading>
+          <span class="page-hero-shell__eyebrow">{{ $t('nav.about') }}</span>
+          <h1 class="page-hero-shell__title gradient-text">{{ $t('about.title') }}</h1>
+          <p class="page-hero-shell__subtitle">{{ $t('about.subtitle') }}</p>
+        </template>
+
+        <template #meta>
+          <PageMetaRow>
+            <PageMetaChip>{{ $t('about.links.title') }}</PageMetaChip>
+            <PageMetaChip>{{ $t('about.features.title') }}</PageMetaChip>
+            <PageMetaChip>{{ $t('about.tech.title') }}</PageMetaChip>
+          </PageMetaRow>
+        </template>
+      </PageHeroShell>
 
       <!-- 关于 Himeri -->
       <section class="section himeri-section">
@@ -311,6 +312,9 @@ import {
 } from '@lucide/vue'
 import { useAboutData } from '@/composables/useAboutData'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
+import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
+import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
 import { IconInstagram, IconX, IconYoutube } from '@/components/icons'
 
 const { locale, t } = useI18n()
@@ -529,20 +533,20 @@ const { techStack } = useAboutData()
 }
 
 /* 页面标题 */
-.about-hero .page-hero__content {
+.about-hero .page-hero-shell__content {
   align-items: center;
   text-align: center;
 }
 
-.about-hero .page-hero__heading {
+.about-hero .page-hero-shell__heading {
   justify-items: center;
 }
 
-.about-hero .page-hero__eyebrow {
+.about-hero .page-hero-shell__eyebrow {
   align-self: center;
 }
 
-.about-hero .page-hero__meta {
+.about-hero .page-hero-shell__meta {
   justify-content: center;
 }
 

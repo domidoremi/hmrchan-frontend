@@ -12,6 +12,15 @@
   --appearance-text-tertiary: #64748b;
   --appearance-accent: #2563eb;
   --appearance-accent-rgb: 37, 99, 235;
+  --appearance-control-min-inline-size: 4.5rem;
+  --appearance-control-compact-min-inline-size: 3.75rem;
+  --appearance-control-gap: 0.5rem;
+  --appearance-chip-min-block-size: 2.25rem;
+  --appearance-chip-padding-inline: 0.85rem;
+  --appearance-chip-radius: 999rem;
+  --appearance-eyebrow-radius: 1rem;
+  --appearance-toolbar-radius: 1.125rem;
+  --appearance-hero-panel-radius: 1.25rem;
   --appearance-radius-md: 0.625rem;
   --appearance-radius-lg: 0.875rem;
   --appearance-radius-xl: 1.125rem;

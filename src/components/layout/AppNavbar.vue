@@ -1,5 +1,9 @@
 <template>
-  <nav ref="navbarRef" class="navbar navbar--minimal" :class="{ 'navbar-hidden': isNavbarHidden }">
+  <nav
+    ref="navbarRef"
+    class="navbar navbar--minimal"
+    :class="{ 'navbar-hidden': isNavbarHidden, 'navbar--chromeless': props.chromeless }"
+  >
     <div class="container navbar-content">
       <div class="navbar-shell" :class="{ 'navbar-shell--actions-only': !isMobile }">
         <RouterLink v-if="isMobile" to="/" class="navbar-brand" :aria-label="$t('app.name')">
@@ -370,6 +374,15 @@ import { useNavigation } from '@/composables/useNavigation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Separator from '@/components/ui/Separator.vue'
+
+const props = withDefaults(
+  defineProps<{
+    chromeless?: boolean
+  }>(),
+  {
+    chromeless: false,
+  }
+)
 
 // 懒加载设置面板，减少首屏 JS
 const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
@@ -1071,6 +1084,19 @@ onUnmounted(() => {
   isolation: isolate;
 }
 
+.navbar--chromeless {
+  --nav-muted-bg: transparent;
+  --nav-muted-bg-strong: transparent;
+  --nav-muted-border: transparent;
+  --nav-muted-border-strong: rgba(var(--color-primary-rgb), 0.12);
+  --nav-chip-bg: transparent;
+  --nav-chip-border: transparent;
+  --nav-action-bg: transparent;
+  --nav-action-bg-hover: color-mix(in srgb, var(--ui-compat-surface-interactive) 54%, transparent);
+  --nav-action-border: transparent;
+  --nav-action-border-strong: transparent;
+}
+
 .navbar.navbar-hidden {
   transform: translate3d(0, -100%, 0);
 }
@@ -1104,6 +1130,13 @@ onUnmounted(() => {
   inline-size: auto;
   margin-inline-start: auto;
   justify-content: flex-end;
+}
+
+.navbar--chromeless .navbar-shell {
+  padding-inline: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ========== Brand ========== */
@@ -1189,6 +1222,16 @@ onUnmounted(() => {
 
 .nav-search-shell__input:focus {
   border-color: var(--nav-action-border-strong);
+}
+
+.navbar--chromeless .nav-search-shell__input {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--ui-compat-surface-base) 52%, transparent);
+  box-shadow: none;
+}
+
+.navbar--chromeless .nav-search-shell__input:focus {
+  border-color: color-mix(in srgb, var(--ui-compat-border-strong) 62%, transparent);
 }
 
 .nav-action-btn {
@@ -1282,6 +1325,11 @@ onUnmounted(() => {
 .nav-action-btn--primary:hover::before,
 .nav-action-btn--primary.nav-action-btn--active::before {
   background: linear-gradient(180deg, rgba(var(--color-primary-rgb), 0.06), transparent);
+}
+
+.navbar--chromeless .nav-action-btn,
+.navbar--chromeless .nav-user-btn {
+  box-shadow: none;
 }
 
 .icon-spin {
@@ -1684,9 +1732,9 @@ onUnmounted(() => {
 .user-menu-primary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.625rem, 1vw, 0.75rem);
+  gap: clamp(0.5rem, 0.9vw, 0.7rem);
   align-items: stretch;
-  grid-auto-rows: minmax(0, 1fr);
+  grid-auto-rows: auto;
 }
 
 .dropdown-links {
@@ -1723,8 +1771,8 @@ onUnmounted(() => {
 }
 
 .dropdown-link-icon {
-  width: 2rem;
-  height: 2rem;
+  inline-size: clamp(2rem, 3vw, 2.25rem);
+  block-size: clamp(2rem, 3vw, 2.25rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1781,25 +1829,27 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  min-block-size: 4.25rem;
-  gap: 0.75rem;
-  padding: 0.8rem 0.95rem;
+  min-block-size: clamp(3.35rem, 6vw, 3.75rem);
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
   background: var(--ui-compat-surface-interactive);
 }
 
 .user-menu-card__icon {
-  width: 2rem;
-  height: 2rem;
+  inline-size: clamp(2rem, 3vw, 2.25rem);
+  block-size: clamp(2rem, 3vw, 2.25rem);
   align-self: center;
   justify-self: center;
 }
 
 .user-menu-card__label {
-  display: block;
+  display: inline-flex;
+  align-items: center;
   min-width: 0;
-  min-height: auto;
+  min-block-size: 0;
   font-weight: var(--font-semibold);
-  line-height: 1.35;
+  line-height: var(--appearance-ui-line-height);
+  transform: translateY(var(--appearance-baseline-shift));
   align-self: center;
 }
 

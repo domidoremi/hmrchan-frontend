@@ -10,79 +10,83 @@
     </div>
 
     <div class="container">
-      <header class="page-hero page-hero--bare explore-hero">
-        <div class="page-hero__content">
-          <div class="page-hero__header">
-            <div class="page-hero__heading">
-              <span class="page-hero__eyebrow">{{ $t('nav.explore') }}</span>
-              <div class="page-hero__title-row">
-                <h1 class="page-hero__title">{{ $t('explore.title') }}</h1>
-                <span class="page-hero__badge">{{ total }} {{ $t('search.tab.posts') }}</span>
-              </div>
-              <p class="page-hero__subtitle">{{ $t('explore.subtitle') }}</p>
-            </div>
-            <div class="page-actions page-hero__actions">
-              <button
-                type="button"
-                class="search-trigger page-control-btn"
-                @click="goToSearch"
-                :aria-label="$t('search.title')"
-              >
-                <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
-                <span class="search-trigger-text">{{ $t('search.title') }}</span>
-                <kbd class="search-kbd">/</kbd>
-              </button>
-              <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
-            </div>
+      <PageHeroShell class="explore-hero" bare>
+        <template #heading>
+          <span class="page-hero-shell__eyebrow">{{ $t('nav.explore') }}</span>
+          <div class="page-hero-shell__title-row">
+            <h1 class="page-hero-shell__title">{{ $t('explore.title') }}</h1>
+            <span class="page-hero-shell__badge">{{ total }} {{ $t('search.tab.posts') }}</span>
           </div>
+          <p class="page-hero-shell__subtitle">{{ $t('explore.subtitle') }}</p>
+        </template>
 
-          <div class="page-hero__meta">
-            <span class="page-hero__stat">
+        <template #actions>
+          <div class="page-actions">
+            <ControlButton
+              class="search-trigger"
+              :aria-label="$t('search.title')"
+              @click="goToSearch"
+            >
+              <template #start>
+                <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
+              </template>
+              <span class="search-trigger-text">{{ $t('search.title') }}</span>
+              <template #end>
+                <kbd class="search-kbd">/</kbd>
+              </template>
+            </ControlButton>
+            <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
+          </div>
+        </template>
+
+        <template #meta>
+          <PageMetaRow>
+            <PageMetaChip>
               <strong>{{ total }}</strong>
               <span>{{ $t('search.tab.posts') }}</span>
-            </span>
-            <span class="page-hero__note">{{ $t('explore.sortBy') }}</span>
-            <span class="page-hero__note">{{ $t('explore.platformFilter') }}</span>
-          </div>
+            </PageMetaChip>
+            <PageMetaChip>{{ $t('explore.sortBy') }}</PageMetaChip>
+            <PageMetaChip>{{ $t('explore.platformFilter') }}</PageMetaChip>
+          </PageMetaRow>
+        </template>
 
-          <div class="filters-row page-toolbar" role="group" :aria-label="$t('explore.filters')">
-            <div class="filters page-control-group" role="group" :aria-label="$t('explore.sortBy')">
-              <button
-                v-for="sort in sortOptions"
-                :key="sort.value"
-                type="button"
-                class="filter-btn page-control-btn"
-                :class="{ active: currentSort === sort.value }"
-                :aria-pressed="currentSort === sort.value"
-                :aria-label="sort.label"
-                @click="currentSort = sort.value"
-              >
-                {{ sort.label }}
-              </button>
-            </div>
-
-            <div
-              class="platform-filters page-control-group"
-              role="group"
-              :aria-label="$t('explore.platformFilter')"
+        <PageToolbar class="filters-row" role="group" :aria-label="$t('explore.filters')">
+          <ControlGroup class="filters" role="group" :aria-label="$t('explore.sortBy')">
+            <ControlButton
+              v-for="sort in sortOptions"
+              :key="sort.value"
+              class="filter-btn"
+              :pressed="currentSort === sort.value"
+              :aria-label="sort.label"
+              @click="currentSort = sort.value"
             >
-              <button
-                v-for="platform in platformOptions"
-                :key="platform.value"
-                type="button"
-                class="platform-btn page-control-btn page-control-btn--compact"
-                :class="{ active: currentPlatform === platform.value }"
-                :aria-pressed="currentPlatform === platform.value"
-                :aria-label="platform.label"
-                @click="currentPlatform = platform.value"
-              >
+              {{ sort.label }}
+            </ControlButton>
+          </ControlGroup>
+
+          <ControlGroup
+            class="platform-filters"
+            justify="end"
+            role="group"
+            :aria-label="$t('explore.platformFilter')"
+          >
+            <ControlButton
+              v-for="platform in platformOptions"
+              :key="platform.value"
+              class="platform-btn"
+              size="compact"
+              :pressed="currentPlatform === platform.value"
+              :aria-label="platform.label"
+              @click="currentPlatform = platform.value"
+            >
+              <template #start>
                 <AnimatedIcon name="explore" :fallback-icon="platform.icon" size="sm" />
-                <span class="platform-label">{{ platform.label }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+              </template>
+              <span class="platform-label">{{ platform.label }}</span>
+            </ControlButton>
+          </ControlGroup>
+        </PageToolbar>
+      </PageHeroShell>
 
       <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
@@ -206,6 +210,12 @@ import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import NextPostFab from '@/components/ui/NextPostFab.vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import ControlGroup from '@/components/appearance/ControlGroup.vue'
+import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
+import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
+import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
+import PageToolbar from '@/components/appearance/PageToolbar.vue'
 
 const AsyncPlatformCanvas = defineAsyncComponent(() => import('@/components/ui/PlatformCanvas.vue'))
 
@@ -875,11 +885,12 @@ onBeforeUnmount(() => {
   opacity: 0.2;
 }
 
-.page-hero__badge {
-  padding: 0.5rem 0.85rem;
-  background: var(--page-control-bg);
-  border: 0.0625rem solid var(--page-control-border);
-  color: var(--page-control-ink);
+.page-hero-shell__badge {
+  min-block-size: var(--ui-chip-height);
+  padding-inline: var(--ui-chip-padding-x);
+  background: var(--page-shell-control-bg);
+  border: 0.0625rem solid var(--page-shell-control-border);
+  color: var(--page-shell-control-ink);
   box-shadow: none;
 }
 
@@ -904,13 +915,19 @@ onBeforeUnmount(() => {
 }
 
 .search-kbd {
-  padding: 0.125rem 0.375rem;
-  background: var(--page-control-bg);
-  border: 1px solid var(--page-control-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: calc(var(--ui-control-height-sm) - 0.75rem);
+  min-inline-size: 1.5rem;
+  padding-inline: 0.375rem;
+  background: var(--page-shell-control-bg);
+  border: 0.0625rem solid var(--page-shell-control-border);
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
   font-family: var(--font-mono);
-  color: var(--color-text-tertiary);
+  line-height: var(--appearance-ui-line-height);
+  color: var(--semantic-text-tertiary);
 }
 
 .filters {

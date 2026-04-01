@@ -1,5 +1,9 @@
 <template>
-  <aside class="app-side-nav" :aria-label="$t('common.siteNavigation')">
+  <aside
+    class="app-side-nav"
+    :class="{ 'app-side-nav--chromeless': props.chromeless }"
+    :aria-label="$t('common.siteNavigation')"
+  >
     <div class="app-side-nav__shell">
       <div class="app-side-nav__section app-side-nav__section--brand">
         <RouterLink
@@ -78,6 +82,15 @@ import { Info, Settings2 } from '@lucide/vue'
 import { prefetchAuthorsData, prefetchExploreData } from '@/utils/prefetch'
 import { useNavigation } from '@/composables/useNavigation'
 import type { NavigationItem } from '@/config/navigation'
+
+const props = withDefaults(
+  defineProps<{
+    chromeless?: boolean
+  }>(),
+  {
+    chromeless: false,
+  }
+)
 
 interface UtilityNavItem {
   path: string
@@ -263,6 +276,23 @@ function resetMagneticMove(event: PointerEvent) {
   pointer-events: none;
 }
 
+.app-side-nav--chromeless {
+  --app-side-nav-border: transparent;
+  --app-side-nav-border-strong: transparent;
+  --app-side-nav-bg: transparent;
+  --app-side-nav-hover-bg: color-mix(
+    in srgb,
+    var(--ui-compat-surface-interactive) 54%,
+    transparent
+  );
+  --app-side-nav-active-bg: color-mix(
+    in srgb,
+    var(--ui-compat-surface-interactive-strong) 58%,
+    transparent
+  );
+  --app-side-nav-label-shadow: none;
+}
+
 .app-side-nav__shell {
   display: flex;
   flex-direction: column;
@@ -323,6 +353,16 @@ function resetMagneticMove(event: PointerEvent) {
   background: var(--app-side-nav-hover-bg);
   color: var(--app-side-nav-ink-active);
   box-shadow: 0 1.1rem 1.9rem -1.45rem rgba(15, 23, 42, 0.3);
+}
+
+.app-side-nav--chromeless .app-side-nav__brand,
+.app-side-nav--chromeless .app-side-nav__link,
+.app-side-nav--chromeless .app-side-nav__brand:hover,
+.app-side-nav--chromeless .app-side-nav__link:hover,
+.app-side-nav--chromeless .app-side-nav__brand:focus-visible,
+.app-side-nav--chromeless .app-side-nav__link:focus-visible,
+.app-side-nav--chromeless .app-side-nav__link--active {
+  box-shadow: none;
 }
 
 .app-side-nav__link--active {
