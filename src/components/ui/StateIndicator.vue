@@ -241,7 +241,7 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
   margin-top: var(--spacing-1);
 }
 
-[data-theme='dark'] .state-indicator {
+[data-color-mode='dark'] .state-indicator {
   border-color: rgba(148, 163, 184, 0.18);
   background:
     linear-gradient(145deg, rgba(21, 27, 44, 0.84), rgba(17, 22, 36, 0.7)),

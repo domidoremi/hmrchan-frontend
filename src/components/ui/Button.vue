@@ -188,19 +188,19 @@ function handleMouseLeave() {
   justify-content: center;
   gap: var(--spacing-2);
   font-weight: var(--font-medium);
-  border-radius: var(--ui-radius-button, var(--radius));
+  border-radius: var(--ui-radius-button, var(--component-control-radius));
   cursor: pointer;
   transition-property: color, background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: var(--ease-out);
-  border: 1px solid transparent;
+  border: 0.0625rem solid transparent;
   outline: none;
   white-space: nowrap;
   user-select: none;
   overflow: hidden;
   transform-origin: center;
   will-change: transform;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.22);
 }
 
 /* Ripple 容器 */
@@ -345,37 +345,39 @@ function handleMouseLeave() {
 }
 
 .btn-secondary {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.7)), var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border-color: var(--glass-border);
-  color: var(--color-foreground);
+  background: var(--ui-compat-surface-elevated, var(--semantic-surface-base));
+  backdrop-filter: var(--ui-backdrop-blur);
+  -webkit-backdrop-filter: var(--ui-backdrop-blur);
+  border-color: var(--ui-surface-border, var(--semantic-border));
+  color: var(--color-text-primary);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--glass-bg-strong);
+  background: var(--ui-compat-surface-interactive-strong, var(--semantic-surface-muted));
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px rgba(var(--color-primary-rgb), 0.16);
+  box-shadow:
+    var(--appearance-shadow-soft),
+    0 0 0 0.0625rem rgba(var(--color-primary-rgb), 0.16);
 }
 
 .btn-outline {
-  background: rgba(255, 255, 255, 0.45);
-  border-color: var(--color-input);
-  color: var(--color-foreground);
+  background: transparent;
+  border-color: var(--ui-surface-border, var(--semantic-border));
+  color: var(--color-text-primary);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: var(--color-muted);
+  background: var(--ui-compat-surface-interactive, var(--semantic-surface-muted));
   border-color: var(--color-primary);
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--color-foreground);
+  color: var(--color-text-primary);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--glass-bg-light);
+  background: var(--ui-compat-surface-interactive, var(--semantic-surface-muted));
 }
 
 .btn-link {
@@ -416,45 +418,9 @@ function handleMouseLeave() {
     0 0 20px rgba(var(--color-success-rgb), 0.3);
 }
 
-:global(#app[data-theme='dark'] .btn),
-:global([data-theme='dark'] .btn) {
+:global(#app[data-color-mode='dark'] .btn),
+:global([data-color-mode='dark'] .btn) {
   box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.08);
-}
-
-:global(#app[data-theme='dark'] .btn-secondary),
-:global([data-theme='dark'] .btn-secondary) {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-    rgba(12, 16, 23, 0.88);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--color-text-primary);
-}
-
-:global(#app[data-theme='dark'] .btn-secondary:hover:not(:disabled)),
-:global([data-theme='dark'] .btn-secondary:hover:not(:disabled)) {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04)),
-    rgba(18, 24, 36, 0.94);
-  border-color: rgba(var(--color-primary-rgb), 0.28);
-  box-shadow: 0 0 0 1px rgba(var(--color-primary-rgb), 0.14);
-}
-
-:global(#app[data-theme='dark'] .btn-outline),
-:global([data-theme='dark'] .btn-outline) {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: var(--color-text-primary);
-}
-
-:global(#app[data-theme='dark'] .btn-outline:hover:not(:disabled)),
-:global([data-theme='dark'] .btn-outline:hover:not(:disabled)) {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(var(--color-primary-rgb), 0.28);
-}
-
-:global(#app[data-theme='dark'] .btn-ghost:hover:not(:disabled)),
-:global([data-theme='dark'] .btn-ghost:hover:not(:disabled)) {
-  background: rgba(255, 255, 255, 0.05);
 }
 
 /* States */
@@ -474,8 +440,8 @@ function handleMouseLeave() {
 
 /* Focus */
 .btn:focus-visible {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--focus-ring-token);
 }
 
 .btn-content {

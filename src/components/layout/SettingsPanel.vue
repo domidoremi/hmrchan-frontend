@@ -64,7 +64,7 @@
           </div>
           <span class="settings-label">{{ $t('settings.theme') }}</span>
         </div>
-        <div class="settings-options ui-style-options">
+        <div class="settings-options theme-options">
           <button
             v-for="opt in themeOptions"
             :key="opt.value"
@@ -87,33 +87,100 @@
         </div>
       </div>
 
-      <!-- UI Style -->
+      <!-- Appearance Preset -->
       <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="sparkle" :fallback-icon="Layers" size="sm" />
           </div>
-          <span class="settings-label">{{ $t('settings.uiStyle') }}</span>
+          <span class="settings-label">{{ $t('settings.appearancePreset') }}</span>
         </div>
         <div class="settings-options theme-options">
           <button
-            v-for="opt in uiStyleOptions"
+            v-for="opt in appearancePresetOptions"
             :key="opt.value"
             type="button"
             class="theme-btn"
-            :class="{ active: settings.uiStyle === opt.value }"
-            :aria-pressed="settings.uiStyle === opt.value"
-            @click="setUiStyle(opt.value)"
+            :class="{ active: settings.appearancePreset === opt.value }"
+            :aria-pressed="settings.appearancePreset === opt.value"
+            :disabled="isApplyingPreset"
+            @click="setAppearancePresetOption(opt.value)"
           >
             <div class="theme-btn-icon">
               <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
             </div>
             <span class="theme-btn-label">{{ opt.label }}</span>
             <Transition name="check">
-              <div v-if="settings.uiStyle === opt.value" class="theme-btn-check">
+              <div v-if="settings.appearancePreset === opt.value" class="theme-btn-check">
                 <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
               </div>
             </Transition>
+          </button>
+        </div>
+      </div>
+
+      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="explore" :fallback-icon="Gauge" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.density') }}</span>
+        </div>
+        <div class="settings-options bg-effect-options">
+          <button
+            v-for="opt in densityModeOptions"
+            :key="opt.value"
+            type="button"
+            class="bg-effect-btn"
+            :class="{ active: settings.densityMode === opt.value }"
+            :aria-pressed="settings.densityMode === opt.value"
+            @click="settingsStore.setDensityMode(opt.value)"
+          >
+            <span class="bg-effect-label">{{ opt.label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="ShieldCheck" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.contrast') }}</span>
+        </div>
+        <div class="settings-options bg-effect-options">
+          <button
+            v-for="opt in contrastModeOptions"
+            :key="opt.value"
+            type="button"
+            class="bg-effect-btn"
+            :class="{ active: settings.contrastMode === opt.value }"
+            :aria-pressed="settings.contrastMode === opt.value"
+            @click="settingsStore.setContrastMode(opt.value)"
+          >
+            <span class="bg-effect-label">{{ opt.label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.texture') }}</span>
+        </div>
+        <div class="settings-options bg-effect-options">
+          <button
+            v-for="opt in textureLevelOptions"
+            :key="opt.value"
+            type="button"
+            class="bg-effect-btn"
+            :class="{ active: settings.textureLevel === opt.value }"
+            :aria-pressed="settings.textureLevel === opt.value"
+            @click="settingsStore.setTextureLevel(opt.value)"
+          >
+            <span class="bg-effect-label">{{ opt.label }}</span>
           </button>
         </div>
       </div>
@@ -661,10 +728,12 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { setLocale, type SupportedLocale } from '@/i18n'
+import { getAppearancePresets } from '@/config/appearance'
 import { usePreferencesSync } from '@/composables/usePreferencesSync'
 import { useVideoSettings } from '@/composables/useVideoSettings'
-import type { Theme } from '@/types'
-import type { AnimationIntensity, UiStyle, ParticleEffectType } from '@/stores/settings'
+import { applyAppearancePreset } from '@/services/appearanceLoader'
+import type { AppearancePreset, ContrastMode, DensityMode, TextureLevel, Theme } from '@/types'
+import type { AnimationIntensity, ParticleEffectType } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 type SettingsCategory = 'appearance' | 'experience' | 'privacy' | 'system'
@@ -695,8 +764,9 @@ const { resetSettings: resetVideoPlayerSettings } = useVideoSettings()
 const { isSavingPreferences, resetPreferences, replacePreferences } = usePreferencesSync()
 
 const { isAuthenticated } = storeToRefs(authStore)
-const { theme } = storeToRefs(themeStore)
+const { theme, resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+const isApplyingPreset = ref(false)
 const visibleSettingsCategories = computed<{ id: SettingsCategory; label: string }[]>(() => {
   const allCategories = [
     { id: 'appearance' as SettingsCategory, label: t('settings.categoryAppearance') },
@@ -734,13 +804,44 @@ const deskPetConfig = computed(() => {
 const themeOptions = computed(() => [
   { value: 'light' as Theme, icon: Sun, label: t('settings.light') },
   { value: 'dark' as Theme, icon: Moon, label: t('settings.dark') },
-  { value: 'blue' as Theme, icon: Palette, label: t('settings.blue') },
   { value: 'auto' as Theme, icon: Monitor, label: t('settings.auto') },
 ])
 
-const uiStyleOptions = computed(() => [
-  { value: 'ios' as UiStyle, icon: Smartphone, label: t('settings.uiStyleIos') },
-  { value: 'material' as UiStyle, icon: Layers, label: t('settings.uiStyleMaterial') },
+const appearancePresetOptions = computed(() =>
+  getAppearancePresets().map((value) => ({
+    value,
+    icon:
+      value === 'fluent-soft'
+        ? Sparkles
+        : value === 'material-calm'
+          ? Layers
+          : value === 'organic-natural'
+            ? Sun
+            : value === 'biophilic-serene'
+              ? ShieldCheck
+              : value === 'clay-playful'
+                ? Gauge
+                : value === 'sketch-doodle'
+                  ? Smartphone
+                  : value === 'gradient-narrative'
+                    ? Monitor
+                    : Palette,
+    label: t(`settings.presets.${value}`),
+  }))
+)
+const densityModeOptions = computed<{ value: DensityMode; label: string }[]>(() => [
+  { value: 'compact', label: t('settings.densityCompact') },
+  { value: 'comfortable', label: t('settings.densityComfortable') },
+  { value: 'spacious', label: t('settings.densitySpacious') },
+])
+const contrastModeOptions = computed<{ value: ContrastMode; label: string }[]>(() => [
+  { value: 'normal', label: t('settings.contrastNormal') },
+  { value: 'high', label: t('settings.contrastHigh') },
+])
+const textureLevelOptions = computed<{ value: TextureLevel; label: string }[]>(() => [
+  { value: 'off', label: t('settings.textureOff') },
+  { value: 'subtle', label: t('settings.textureSubtle') },
+  { value: 'rich', label: t('settings.textureRich') },
 ])
 const animationIntensityOptions = computed<{ value: AnimationIntensity; label: string }[]>(() => [
   { value: 'none', label: t('settings.animationNone') },
@@ -778,8 +879,17 @@ function setTheme(value: Theme) {
   themeStore.setTheme(value)
 }
 
-function setUiStyle(value: UiStyle) {
-  settingsStore.setUiStyle(value)
+async function setAppearancePresetOption(value: AppearancePreset) {
+  if (settings.value.appearancePreset === value || isApplyingPreset.value) return
+
+  isApplyingPreset.value = true
+  const applied = await applyAppearancePreset(value, resolvedTheme.value)
+  if (applied) {
+    settingsStore.setAppearancePreset(value)
+  } else {
+    toastStore.error(t('settings.appearanceRuntimeFailed'))
+  }
+  isApplyingPreset.value = false
 }
 
 async function changeLocale(code: SupportedLocale) {
@@ -1142,8 +1252,7 @@ function resetVideoSettings() {
 }
 
 /* ========== Theme Options ========== */
-.theme-options,
-.ui-style-options {
+.theme-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--spacing-2);
@@ -1414,7 +1523,7 @@ function resetVideoSettings() {
   transition: background var(--transition-fast);
 }
 
-[data-theme='dark'] .toggle-switch {
+[data-color-mode='dark'] .toggle-switch {
   background: rgba(148, 163, 184, 0.22);
 }
 
@@ -1646,101 +1755,58 @@ function resetVideoSettings() {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme='dark'] .settings-slider {
+[data-color-mode='dark'] .settings-slider {
   background: rgba(255, 255, 255, 0.14);
 }
 
 /* ========== Dark Mode ========== */
-[data-theme='dark'] .theme-btn.active {
+[data-color-mode='dark'] .theme-btn.active {
   background: rgba(var(--color-primary-rgb), 0.15);
 }
 
-[data-theme='dark'] .settings-panel {
+[data-color-mode='dark'] .settings-panel {
   --settings-shell-surface: var(--ui-compat-surface-interactive);
   --settings-shell-surface-strong: var(--ui-compat-surface-interactive-strong);
   --settings-shell-border: var(--ui-compat-border);
 }
 
-[data-theme='dark'] .settings-group {
+[data-color-mode='dark'] .settings-group {
   background: var(--ui-compat-surface-base);
   box-shadow: var(--ui-compat-shadow);
 }
 
-[data-theme='dark'] .bg-effect-btn:not(.active) {
+[data-color-mode='dark'] .bg-effect-btn:not(.active) {
   background: var(--ui-compat-surface-interactive);
   border-color: var(--ui-compat-border);
 }
 
-[data-theme='dark'] .bg-effect-btn.active {
+[data-color-mode='dark'] .bg-effect-btn.active {
   background: var(--ui-compat-surface-accent);
 }
 
-[data-theme='dark'] .lang-btn:not(.active) {
+[data-color-mode='dark'] .lang-btn:not(.active) {
   background: var(--ui-compat-surface-interactive);
   border-color: var(--ui-compat-border);
 }
 
-[data-theme='dark'] .toggle-btn {
+[data-color-mode='dark'] .toggle-btn {
   background: var(--ui-compat-surface-interactive);
   border-color: var(--ui-compat-border);
 }
 
-[data-theme='dark'] .toggle-btn:hover {
+[data-color-mode='dark'] .toggle-btn:hover {
   background: var(--ui-compat-surface-interactive-strong);
   border-color: var(--ui-compat-border-strong);
 }
 
-[data-theme='dark'] .link-btn {
+[data-color-mode='dark'] .link-btn {
   background: var(--ui-compat-surface-interactive);
   border-color: var(--ui-compat-border);
 }
 
-[data-theme='dark'] .link-btn:hover {
+[data-color-mode='dark'] .link-btn:hover {
   background: var(--ui-compat-surface-interactive-strong);
   border-color: var(--ui-compat-border-strong);
-}
-
-/* ========== Blue Theme ========== */
-[data-theme='blue'] .theme-btn.active {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: #3b82f6;
-}
-
-[data-theme='blue'] .theme-btn.active .theme-btn-icon {
-  background: #3b82f6;
-  color: var(--color-on-primary);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-[data-theme='blue'] .theme-btn.active .theme-btn-label {
-  color: #2563eb;
-}
-
-[data-theme='blue'] .bg-effect-btn.active {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: #3b82f6;
-}
-
-[data-theme='blue'] .bg-effect-btn.active .bg-effect-label {
-  color: #2563eb;
-}
-
-[data-theme='blue'] .lang-btn.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-color: transparent;
-  color: var(--color-on-primary);
-}
-
-[data-theme='blue'] .settings-slider::-webkit-slider-thumb {
-  background: #3b82f6;
-}
-
-[data-theme='blue'] .settings-slider::-moz-range-thumb {
-  background: #3b82f6;
-}
-
-[data-theme='blue'] .toggle-switch.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 /* ========== Reduced Motion Notice ========== */

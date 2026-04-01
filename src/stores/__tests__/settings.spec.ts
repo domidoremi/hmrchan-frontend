@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSettingsStore } from '../settings'
 
@@ -10,7 +11,7 @@ describe('Settings Store', () => {
   it('applies backend preferences without overwriting local-only settings', () => {
     const store = useSettingsStore()
 
-    store.setUiStyle('material')
+    store.setAppearancePreset('material-calm')
     store.setBackgroundEffect({ type: 'stars', density: 0.8, speed: 1.2 })
 
     store.applyPreferences({
@@ -28,7 +29,7 @@ describe('Settings Store', () => {
     expect(store.settings.cookieConsent).toBe(true)
     expect(store.settings.analyticsEnabled).toBe(true)
     expect(store.settings.performanceCookiesEnabled).toBe(true)
-    expect(store.settings.uiStyle).toBe('material')
+    expect(store.settings.appearancePreset).toBe('material-calm')
     expect(store.settings.backgroundEffect.type).toBe('stars')
     expect(store.settings.backgroundEffect.density).toBe(0.8)
   })
@@ -89,8 +90,54 @@ describe('Settings Store', () => {
   it('defaults non-essential decorations to disabled for new users', () => {
     const store = useSettingsStore()
 
+    expect(store.settings.appearancePreset).toBe('minimal-editorial')
+    expect(store.settings.densityMode).toBe('comfortable')
+    expect(store.settings.contrastMode).toBe('normal')
+    expect(store.settings.textureLevel).toBe('subtle')
     expect(store.settings.backgroundEffect.type).toBe('none')
     expect(store.settings.mascotBackground.enabled).toBe(false)
     expect(store.settings.deskPet.enabled).toBe(false)
+    expect('uiStyle' in store.settings).toBe(false)
+  })
+
+  it('keeps appearance preset as the only runtime appearance state', () => {
+    const store = useSettingsStore()
+
+    store.setAppearancePreset('material-calm')
+    expect(store.settings.appearancePreset).toBe('material-calm')
+
+    store.setAppearancePreset('gradient-narrative')
+    expect(store.settings.appearancePreset).toBe('gradient-narrative')
+    expect('uiStyle' in store.settings).toBe(false)
+  })
+
+  it('migrates legacy material uiStyle snapshots to material-calm on hydration', async () => {
+    const store = useSettingsStore()
+    const legacySnapshot = store.settings as typeof store.settings & {
+      uiStyle?: 'ios' | 'material'
+      appearancePreset?: string
+    }
+
+    legacySnapshot.uiStyle = 'material'
+    legacySnapshot.appearancePreset = undefined
+    await nextTick()
+
+    expect(store.settings.appearancePreset).toBe('material-calm')
+    expect('uiStyle' in store.settings).toBe(false)
+  })
+
+  it('migrates legacy ios uiStyle snapshots to the default rounded preset on hydration', async () => {
+    const store = useSettingsStore()
+    const legacySnapshot = store.settings as typeof store.settings & {
+      uiStyle?: 'ios' | 'material'
+      appearancePreset?: string
+    }
+
+    legacySnapshot.uiStyle = 'ios'
+    legacySnapshot.appearancePreset = undefined
+    await nextTick()
+
+    expect(store.settings.appearancePreset).toBe('minimal-editorial')
+    expect('uiStyle' in store.settings).toBe(false)
   })
 })

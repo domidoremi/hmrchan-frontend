@@ -3,9 +3,49 @@
  * 与 API_FRONTEND_SPEC.md 对齐
  */
 
-export type Theme = 'light' | 'dark' | 'auto' | 'blue'
+export type ColorMode = 'light' | 'dark' | 'auto'
+
+export type Theme = ColorMode
+
+export type AppearancePreset =
+  | 'minimal-editorial'
+  | 'fluent-soft'
+  | 'material-calm'
+  | 'organic-natural'
+  | 'biophilic-serene'
+  | 'clay-playful'
+  | 'sketch-doodle'
+  | 'gradient-narrative'
+
+export type DensityMode = 'compact' | 'comfortable' | 'spacious'
+
+export type MotionMode = 'none' | 'reduced' | 'standard' | 'expressive'
+
+export type ContrastMode = 'normal' | 'high'
+
+export type TextureLevel = 'off' | 'subtle' | 'rich'
+
+export type SceneRole =
+  | 'editorial'
+  | 'productivity'
+  | 'discussion'
+  | 'narrative'
+  | 'utility'
+  | 'immersive'
+  | 'playful'
 
 export type Locale = 'en' | 'zh-CN' | 'zh-TW' | 'ja'
+
+export interface AppearanceContext {
+  preset: AppearancePreset
+  sceneRole: SceneRole
+  density: DensityMode
+  colorMode: ColorMode
+  motion: MotionMode
+  contrast: ContrastMode
+  texture: TextureLevel
+  locale: Locale
+}
 
 export interface User {
   id: string

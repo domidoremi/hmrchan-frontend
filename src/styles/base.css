@@ -63,7 +63,7 @@ body::before {
   pointer-events: none;
 }
 
-[data-theme='dark'] body::before {
+[data-color-mode='dark'] body::before {
   background:
     radial-gradient(
       ellipse 80% 60% at 25% 15%,
@@ -79,8 +79,8 @@ body::before {
     var(--color-background);
 }
 
-/* Blue theme: soft blue ambient glow */
-[data-theme='blue'] body::before {
+/* Gradient preset: soft blue ambient glow */
+[data-preset='gradient-narrative'][data-color-mode='light'] body::before {
   background:
     radial-gradient(ellipse 80% 60% at 25% 15%, rgba(59, 130, 246, 0.06) 0%, transparent 55%),
     radial-gradient(ellipse 60% 50% at 80% 70%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
@@ -88,7 +88,7 @@ body::before {
 }
 
 /* Dark mode: subtle noise overlay for depth */
-[data-theme='dark'] body::after {
+[data-color-mode='dark'] body::after {
   content: '';
   position: fixed;
   inset: 0;
@@ -217,17 +217,17 @@ ol {
   color: var(--color-primary-700);
 }
 
-[data-theme='dark'] ::selection {
+[data-color-mode='dark'] ::selection {
   background: var(--color-primary-700);
   color: var(--color-white);
 }
 
 /* Dark mode link colors */
-[data-theme='dark'] a {
+[data-color-mode='dark'] a {
   color: var(--color-primary);
 }
 
-[data-theme='dark'] a:hover {
+[data-color-mode='dark'] a:hover {
   color: var(--color-primary-light);
 }
 
@@ -250,11 +250,11 @@ ol {
   background: var(--color-gray-400);
 }
 
-[data-theme='dark'] ::-webkit-scrollbar-thumb {
+[data-color-mode='dark'] ::-webkit-scrollbar-thumb {
   background: var(--color-gray-600);
 }
 
-[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+[data-color-mode='dark'] ::-webkit-scrollbar-thumb:hover {
   background: var(--color-gray-500);
 }
 

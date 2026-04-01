@@ -564,7 +564,8 @@ onUnmounted(() => {
 
 <style>
 /* ===== Material 3 Overrides ===== */
-#app[data-ui-style='material'] .comments-tab .timeline-card {
+#app[data-preset='material-calm'] .comments-tab .timeline-card,
+#app[data-preset='sketch-doodle'] .comments-tab .timeline-card {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--color-surface, var(--glass-bg-light));
@@ -573,90 +574,92 @@ onUnmounted(() => {
   box-shadow: var(--shadow-sm);
 }
 
-#app[data-ui-style='material'] .comments-tab .timeline-card::before {
+#app[data-preset='material-calm'] .comments-tab .timeline-card::before,
+#app[data-preset='sketch-doodle'] .comments-tab .timeline-card::before {
   display: none;
 }
 
-#app[data-ui-style='material'] .comments-tab .timeline-card:hover {
+#app[data-preset='material-calm'] .comments-tab .timeline-card:hover,
+#app[data-preset='sketch-doodle'] .comments-tab .timeline-card:hover {
   transform: none;
   box-shadow: var(--shadow-md);
 }
 
-#app[data-ui-style='material'] .comments-tab .timeline-dot {
+#app[data-preset='material-calm'] .comments-tab .timeline-dot,
+#app[data-preset='sketch-doodle'] .comments-tab .timeline-dot {
   border-radius: calc(var(--radius-lg) / 2);
   background: rgba(var(--color-primary-rgb), 0.12);
 }
 
-#app[data-ui-style='material'] .comments-tab .timeline-item:hover .timeline-dot {
+#app[data-preset='material-calm'] .comments-tab .timeline-item:hover .timeline-dot,
+#app[data-preset='sketch-doodle'] .comments-tab .timeline-item:hover .timeline-dot {
   background: rgba(var(--color-primary-rgb), 0.2);
 }
 
-#app[data-ui-style='material'] .comments-tab .skeleton-card {
+#app[data-preset='material-calm'] .comments-tab .skeleton-card,
+#app[data-preset='sketch-doodle'] .comments-tab .skeleton-card {
   border-radius: var(--radius-lg);
 }
 
-#app[data-ui-style='material'] .comments-tab .reply-count {
+#app[data-preset='material-calm'] .comments-tab .reply-count,
+#app[data-preset='sketch-doodle'] .comments-tab .reply-count {
   border-radius: var(--radius-sm);
 }
 
-#app[data-ui-style='material'] .comments-tab .delete-btn {
+#app[data-preset='material-calm'] .comments-tab .delete-btn,
+#app[data-preset='sketch-doodle'] .comments-tab .delete-btn {
   border-radius: 50%;
 }
 
-#app[data-ui-style='material'] .comments-tab .delete-btn:hover:not(:disabled) {
+#app[data-preset='material-calm'] .comments-tab .delete-btn:hover:not(:disabled),
+#app[data-preset='sketch-doodle'] .comments-tab .delete-btn:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.12);
 }
 
 /* ===== Dark Theme Overrides ===== */
-[data-theme='dark'] .comments-tab .timeline-dot {
+[data-color-mode='dark'] .comments-tab .timeline-dot {
   background: rgba(var(--color-primary-rgb), 0.2);
 }
 
-[data-theme='dark'] .comments-tab .timeline-line {
+[data-color-mode='dark'] .comments-tab .timeline-line {
   background: linear-gradient(to bottom, rgba(var(--color-primary-rgb), 0.25), transparent);
 }
 
-[data-theme='dark'] .comments-tab .card-footer {
+[data-color-mode='dark'] .comments-tab .card-footer {
   border-top-color: rgba(255, 255, 255, 0.06);
 }
 
 /* ===== Blue Theme Overrides ===== */
-[data-theme='blue'] .comments-tab .timeline-dot {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .comments-tab .timeline-dot {
   background: rgba(59, 130, 246, 0.12);
   color: #3b82f6;
 }
 
-[data-theme='blue'] .comments-tab .timeline-item:hover .timeline-dot {
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .comments-tab
+  .timeline-item:hover
+  .timeline-dot {
   background: rgba(59, 130, 246, 0.22);
 }
 
-[data-theme='blue'] .comments-tab .timeline-line {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .comments-tab .timeline-line {
   background: linear-gradient(to bottom, rgba(59, 130, 246, 0.18), transparent);
 }
 
-[data-theme='blue'] .comments-tab .like-count .liked {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .comments-tab .like-count .liked {
   color: #3b82f6;
 }
 
 /* ===== Material + Dark ===== */
-#app[data-ui-style='material'][data-theme='dark'] .comments-tab .timeline-card {
+#app[data-preset='material-calm'][data-color-mode='dark'] .comments-tab .timeline-card,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .comments-tab .timeline-card {
   background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-#app[data-ui-style='material'][data-theme='dark'] .comments-tab .timeline-card:hover {
+#app[data-preset='material-calm'][data-color-mode='dark'] .comments-tab .timeline-card:hover,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .comments-tab .timeline-card:hover {
   background: var(--md-surface-container-high, rgba(34, 34, 38, 0.95));
   border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* ===== Material + Blue ===== */
-#app[data-ui-style='material'][data-theme='blue'] .comments-tab .timeline-card {
-  background: var(--profile-surface-bg);
-  border-color: rgba(59, 130, 246, 0.12);
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
-}
-
-#app[data-ui-style='material'][data-theme='blue'] .comments-tab .timeline-card:hover {
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
 }
 </style>

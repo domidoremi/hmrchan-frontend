@@ -64,8 +64,10 @@ function applyLocaleToDocument(locale: SupportedLocale): void {
 
   if (isCJKLocale(locale)) {
     root.setAttribute('data-cjk', '')
+    root.setAttribute('data-locale-script', 'cjk')
   } else {
     root.removeAttribute('data-cjk')
+    root.setAttribute('data-locale-script', 'latin')
   }
 }
 

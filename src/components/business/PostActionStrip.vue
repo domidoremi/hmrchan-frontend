@@ -206,7 +206,7 @@ async function sharePost() {
 </script>
 
 <style scoped>
-:global(#app[data-theme='dark'] .post-action-strip) {
+:global(#app[data-color-mode='dark'] .post-action-strip) {
   --action-text: rgba(255, 255, 255, 0.88);
   --action-bg: rgba(255, 255, 255, 0.08);
   --action-border: rgba(255, 255, 255, 0.16);

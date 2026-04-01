@@ -34,7 +34,7 @@
   --profile-action-border-strong: rgba(var(--color-primary-rgb), 0.22);
 }
 
-[data-theme='dark'] {
+[data-color-mode='dark'] {
   --profile-surface-bg: linear-gradient(155deg, rgba(12, 16, 23, 0.96), rgba(19, 25, 37, 0.9));
   --profile-surface-bg-soft: linear-gradient(
     155deg,
@@ -58,7 +58,7 @@
   --profile-action-border-strong: rgba(var(--color-primary-rgb), 0.24);
 }
 
-[data-theme='blue'] {
+[data-preset='gradient-narrative'][data-color-mode='light'] {
   --profile-surface-bg: linear-gradient(
     155deg,
     rgba(255, 255, 255, 0.96),
@@ -307,7 +307,7 @@
   opacity: 0.9;
 }
 
-[data-theme='dark']
+[data-color-mode='dark']
   #app
   :is(
     .profile-page,

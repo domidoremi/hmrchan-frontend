@@ -969,7 +969,7 @@
   will-change: transform;
 }
 
-[data-theme='dark'] .skeleton-wave::after {
+[data-color-mode='dark'] .skeleton-wave::after {
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -1041,7 +1041,7 @@
   pointer-events: none;
 }
 
-[data-theme='dark'] .ripple {
+[data-color-mode='dark'] .ripple {
   background: rgba(255, 255, 255, 0.15);
 }
 

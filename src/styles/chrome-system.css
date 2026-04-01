@@ -27,7 +27,8 @@
   --chrome-action-border-strong: rgba(var(--color-primary-rgb), 0.22);
 }
 
-[data-theme='dark'] {
+:root[data-color-mode='dark'],
+#app[data-color-mode='dark'] {
   --chrome-surface-bg: linear-gradient(155deg, rgba(12, 16, 23, 0.96), rgba(19, 25, 37, 0.92));
   --chrome-surface-bg-soft: linear-gradient(155deg, rgba(15, 20, 31, 0.92), rgba(22, 29, 43, 0.88));
   --chrome-surface-border: rgba(255, 255, 255, 0.1);
@@ -46,7 +47,8 @@
   --chrome-action-border-strong: rgba(var(--color-primary-rgb), 0.24);
 }
 
-[data-theme='blue'] {
+:root[data-preset='gradient-narrative'][data-color-mode='light'],
+#app[data-preset='gradient-narrative'][data-color-mode='light'] {
   --chrome-surface-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.9));
   --chrome-surface-bg-soft: linear-gradient(
     155deg,

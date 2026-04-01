@@ -230,25 +230,29 @@ function resetMagneticMove(event: PointerEvent) {
 
 <style scoped>
 .app-side-nav {
-  --app-side-nav-item-radius: clamp(1rem, 1.75vw, 1.2rem);
-  --app-side-nav-border: color-mix(in srgb, var(--chrome-action-border) 62%, transparent);
+  --app-side-nav-item-radius: var(--ui-compat-pill-radius, clamp(1rem, 1.75vw, 1.2rem));
+  --app-side-nav-border: color-mix(in srgb, var(--ui-compat-border) 78%, transparent);
   --app-side-nav-border-strong: color-mix(
     in srgb,
-    var(--chrome-action-border-strong) 72%,
+    var(--ui-compat-border-strong) 82%,
     rgba(var(--color-primary-rgb), 0.18)
   );
-  --app-side-nav-bg: color-mix(in srgb, var(--chrome-action-bg) 22%, transparent);
-  --app-side-nav-hover-bg: color-mix(in srgb, var(--chrome-action-bg-hover) 34%, transparent);
+  --app-side-nav-bg: color-mix(in srgb, var(--ui-compat-surface-interactive) 82%, transparent);
+  --app-side-nav-hover-bg: color-mix(
+    in srgb,
+    var(--ui-compat-surface-interactive-strong) 92%,
+    transparent
+  );
   --app-side-nav-active-bg: color-mix(
     in srgb,
-    var(--chrome-action-bg-hover) 38%,
+    var(--ui-compat-surface-interactive-strong) 96%,
     rgba(var(--color-primary-rgb), 0.12)
   );
   --app-side-nav-ink: var(--color-text-secondary);
   --app-side-nav-ink-active: var(--color-primary);
-  --app-side-nav-label-bg: color-mix(in srgb, var(--color-background) 58%, transparent);
-  --app-side-nav-label-border: color-mix(in srgb, var(--chrome-surface-border) 72%, transparent);
-  --app-side-nav-label-shadow: 0 1rem 1.8rem -1.5rem rgba(15, 23, 42, 0.34);
+  --app-side-nav-label-bg: var(--ui-compat-surface-elevated);
+  --app-side-nav-label-border: color-mix(in srgb, var(--ui-compat-border) 84%, transparent);
+  --app-side-nav-label-shadow: var(--ui-compat-shadow);
   position: fixed;
   inset-block: 0;
   inset-inline-start: var(--app-side-nav-inline-start, clamp(0.75rem, 2vw, 1.25rem));
@@ -401,52 +405,5 @@ function resetMagneticMove(event: PointerEvent) {
   .app-side-nav {
     display: none;
   }
-}
-
-:global(#app[data-ui-style='material'] .app-side-nav),
-:global([data-ui-style='material'] .app-side-nav) {
-  --app-side-nav-item-radius: var(--ui-radius-button, var(--radius-xl));
-  --app-side-nav-hover-bg: color-mix(
-    in srgb,
-    var(--chrome-action-bg-hover) 52%,
-    rgba(var(--color-primary-rgb), 0.1)
-  );
-  --app-side-nav-active-bg: color-mix(
-    in srgb,
-    var(--chrome-action-bg-hover) 56%,
-    rgba(var(--color-primary-rgb), 0.16)
-  );
-  --app-side-nav-border: var(--ui-surface-border);
-}
-
-:global(#app[data-ui-style='ios'] .app-side-nav),
-:global([data-ui-style='ios'] .app-side-nav) {
-  --app-side-nav-item-radius: clamp(1.1rem, 1.95vw, 1.35rem);
-}
-
-:global(#app[data-theme='dark'] .app-side-nav),
-:global([data-theme='dark'] .app-side-nav) {
-  --app-side-nav-border: color-mix(
-    in srgb,
-    var(--chrome-action-border) 82%,
-    rgba(255, 255, 255, 0.12)
-  );
-  --app-side-nav-border-strong: color-mix(
-    in srgb,
-    var(--chrome-action-border-strong) 78%,
-    rgba(var(--color-primary-rgb), 0.18)
-  );
-  --app-side-nav-label-bg: color-mix(in srgb, var(--color-background) 56%, rgba(8, 12, 22, 0.48));
-  --app-side-nav-label-border: color-mix(in srgb, var(--chrome-surface-border) 76%, transparent);
-}
-
-:global(#app[data-theme='blue'] .app-side-nav),
-:global([data-theme='blue'] .app-side-nav) {
-  --app-side-nav-hover-bg: color-mix(in srgb, var(--chrome-muted-bg) 72%, rgba(59, 130, 246, 0.08));
-  --app-side-nav-active-bg: color-mix(
-    in srgb,
-    var(--chrome-muted-bg-strong) 68%,
-    rgba(59, 130, 246, 0.16)
-  );
 }
 </style>

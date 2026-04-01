@@ -1,0 +1,48 @@
+:where([data-scene-role='editorial']) {
+  --scene-content-max-inline-size: min(86vw, 78rem);
+  --scene-reading-max-inline-size: min(72ch, var(--component-reading-max-inline-size));
+  --scene-surface-radius: var(--appearance-radius-xl);
+  --scene-surface-shadow: var(--appearance-shadow-soft);
+}
+
+:where([data-scene-role='productivity']) {
+  --scene-content-max-inline-size: min(94vw, 1440px);
+  --scene-reading-max-inline-size: min(78ch, var(--component-reading-max-inline-size));
+  --scene-surface-radius: var(--appearance-radius-lg);
+  --scene-surface-shadow: var(--appearance-shadow-medium);
+}
+
+:where([data-scene-role='discussion']) {
+  --scene-content-max-inline-size: min(88vw, 90rem);
+  --scene-reading-max-inline-size: min(74ch, var(--component-reading-max-inline-size));
+  --scene-surface-radius: var(--appearance-radius-lg);
+  --scene-surface-shadow: var(--appearance-shadow-soft);
+}
+
+:where([data-scene-role='narrative']) {
+  --scene-content-max-inline-size: min(96vw, 1440px);
+  --scene-reading-max-inline-size: min(76ch, var(--component-reading-max-inline-size));
+  --scene-surface-radius: var(--appearance-radius-2xl);
+  --scene-surface-shadow: var(--appearance-shadow-strong);
+}
+
+:where([data-scene-role='utility']) {
+  --scene-content-max-inline-size: min(90vw, 40rem);
+  --scene-reading-max-inline-size: min(40ch, var(--component-reading-max-inline-size));
+  --scene-surface-radius: var(--appearance-radius-lg);
+  --scene-surface-shadow: var(--appearance-shadow-medium);
+}
+
+:where([data-scene-role='immersive']) {
+  --scene-content-max-inline-size: min(96vw, 1440px);
+  --scene-reading-max-inline-size: min(78ch, var(--component-reading-max-inline-size));
+  --scene-surface-radius: var(--appearance-radius-2xl);
+  --scene-surface-shadow: var(--appearance-shadow-medium);
+}
+
+:where([data-scene-role='playful']) {
+  --scene-content-max-inline-size: min(92vw, 112rem);
+  --scene-reading-max-inline-size: min(70ch, var(--component-reading-max-inline-size));
+  --scene-surface-radius: var(--appearance-radius-2xl);
+  --scene-surface-shadow: var(--appearance-shadow-strong);
+}

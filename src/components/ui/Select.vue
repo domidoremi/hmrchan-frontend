@@ -85,7 +85,7 @@ function handleChange(event: Event) {
   padding: 0.5rem;
 }
 
-[data-theme='dark'] .ui-select option {
+[data-color-mode='dark'] .ui-select option {
   background-color: var(--color-background, #1a1a2e);
   color: var(--color-foreground, #e0e0e0);
 }

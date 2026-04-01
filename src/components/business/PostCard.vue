@@ -932,7 +932,7 @@ function handleClick() {
   color: var(--color-primary);
 }
 
-[data-theme='dark'] .post-tag {
+[data-color-mode='dark'] .post-tag {
   background: rgba(15, 23, 42, 0.78);
   border-color: rgba(255, 255, 255, 0.08);
   color: var(--color-gray-200);

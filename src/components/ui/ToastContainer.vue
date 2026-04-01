@@ -2,8 +2,11 @@
   <div
     class="toast-viewport"
     :class="`toast-viewport--${position}`"
-    :data-theme="resolvedTheme"
-    :data-ui-style="uiStyle"
+    :data-preset="settings.appearancePreset"
+    :data-color-mode="resolvedTheme"
+    :data-motion="motionMode"
+    :data-contrast="settings.contrastMode"
+    data-scene-role="utility"
   >
     <TransitionGroup name="toast-slide" tag="div" class="toast-stack">
       <section
@@ -81,11 +84,10 @@ const settingsStore = useSettingsStore()
 
 const { toasts } = storeToRefs(toastStore)
 const { resolvedTheme } = storeToRefs(themeStore)
-const { settings } = storeToRefs(settingsStore)
+const { settings, motionMode } = storeToRefs(settingsStore)
 const { removeToast } = toastStore
 
 const pausedIds = ref(new Set<string>())
-const uiStyle = computed(() => settings.value.uiStyle)
 const visibleToasts = computed(() => toasts.value.slice(0, 5))
 
 function getIcon(type: Toast['type']) {
@@ -174,10 +176,10 @@ function handleAction(toast: Toast) {
   overflow: hidden;
   padding-block: 0.85rem;
   padding-inline: 0.95rem;
-  border: 0.0625rem solid color-mix(in srgb, var(--color-border) 88%, transparent);
-  border-radius: clamp(0.65rem, 1vw, 0.85rem);
-  background: color-mix(in srgb, var(--color-surface) 94%, rgba(255, 255, 255, 0.58));
-  box-shadow: 0 0.75rem 1.5rem -1rem rgba(15, 23, 42, 0.28);
+  border: var(--surface-border-token);
+  border-radius: var(--ui-compat-panel-radius, var(--component-panel-radius));
+  background: var(--ui-compat-surface-elevated);
+  box-shadow: var(--ui-compat-shadow);
   pointer-events: auto;
 }
 
@@ -211,7 +213,7 @@ function handleAction(toast: Toast) {
   place-items: center;
   inline-size: 2rem;
   block-size: 2rem;
-  border-radius: 0.7rem;
+  border-radius: var(--ui-compat-control-radius, var(--component-control-radius));
   color: var(--toast-accent);
   background: color-mix(in srgb, var(--toast-accent) 12%, transparent);
 }
@@ -260,9 +262,9 @@ function handleAction(toast: Toast) {
 .toast-card__close {
   display: grid;
   place-items: center;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
-  border-radius: 0.6rem;
+  inline-size: calc(var(--component-control-min-block-size) - 0.75rem);
+  block-size: calc(var(--component-control-min-block-size) - 0.75rem);
+  border-radius: var(--ui-compat-control-radius, var(--component-control-radius));
 }
 
 .toast-card__close:hover,

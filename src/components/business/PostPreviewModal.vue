@@ -709,7 +709,7 @@ function openDetail() {
   -webkit-backdrop-filter: var(--ui-backdrop-blur);
   will-change: opacity;
 }
-:global(#app[data-theme='dark'] .post-preview-overlay) {
+:global(#app[data-color-mode='dark'] .post-preview-overlay) {
   --preview-control-bg: rgba(255, 255, 255, 0.08);
   --preview-control-border: rgba(255, 255, 255, 0.12);
   --preview-pill-bg: rgba(255, 255, 255, 0.1);
@@ -1054,7 +1054,7 @@ function openDetail() {
   z-index: 0;
 }
 
-:global([data-theme='dark'] .post-preview-media-backdrop) {
+:global([data-color-mode='dark'] .post-preview-media-backdrop) {
   opacity: 0.65;
   filter: blur(3.75rem) saturate(1.6) brightness(0.8);
 }
@@ -1072,7 +1072,7 @@ function openDetail() {
   filter: drop-shadow(0 0 0.75rem rgba(0, 0, 0, 0.15));
 }
 
-:global([data-theme='dark'] .post-preview-media-item) {
+:global([data-color-mode='dark'] .post-preview-media-item) {
   filter: drop-shadow(0 0 1rem rgba(255, 255, 255, 0.08));
 }
 

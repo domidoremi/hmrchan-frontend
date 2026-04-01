@@ -3,9 +3,13 @@
  * 支持 light/dark/auto 三种模式，auto 跟随系统偏好
  */
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { defineStore } from 'pinia'
-import type { Theme } from '@/types'
+import type { ColorMode, Theme } from '@/types'
+
+function normalizeLegacyThemeValue(value: string | null | undefined): Theme {
+  return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto'
+}
 
 export const useThemeStore = defineStore(
   'theme',
@@ -56,6 +60,15 @@ export const useThemeStore = defineStore(
       return theme.value
     })
 
+    const colorMode = computed<ColorMode>({
+      get: () => theme.value,
+      set: (value) => {
+        theme.value = value
+      },
+    })
+
+    const resolvedColorMode = computed(() => resolvedTheme.value)
+
     // 是否为暗色主题
     const isDark = computed(() => resolvedTheme.value === 'dark')
 
@@ -66,9 +79,12 @@ export const useThemeStore = defineStore(
       theme.value = newTheme
     }
 
+    function setColorMode(newMode: ColorMode) {
+      theme.value = newMode
+    }
+
     /**
      * 切换主题（在 light/dark 之间切换）
-     * 如果当前是特殊主题（如 blue），先切换到与系统相反的标准主题
      */
     function toggleTheme() {
       if (theme.value === 'auto') {
@@ -76,10 +92,11 @@ export const useThemeStore = defineStore(
         theme.value = systemTheme.value === 'dark' ? 'light' : 'dark'
       } else if (theme.value === 'light' || theme.value === 'dark') {
         theme.value = theme.value === 'dark' ? 'light' : 'dark'
-      } else {
-        // 特殊主题（如 blue）：切换到与系统偏好相反的标准主题
-        theme.value = systemTheme.value === 'dark' ? 'light' : 'dark'
       }
+    }
+
+    function toggleColorMode() {
+      toggleTheme()
     }
 
     // 应用主题到 document
@@ -87,7 +104,7 @@ export const useThemeStore = defineStore(
       resolvedTheme,
       (newTheme) => {
         if (typeof document !== 'undefined') {
-          document.documentElement.setAttribute('data-theme', newTheme)
+          document.documentElement.setAttribute('data-color-mode', newTheme)
         }
       },
       { immediate: true }
@@ -95,6 +112,9 @@ export const useThemeStore = defineStore(
 
     // 初始化
     setupSystemThemeDetection()
+    nextTick(() => {
+      theme.value = normalizeLegacyThemeValue(theme.value)
+    })
 
     if (import.meta.hot) {
       import.meta.hot.dispose(() => {
@@ -104,11 +124,15 @@ export const useThemeStore = defineStore(
 
     return {
       theme,
+      colorMode,
       systemTheme,
       resolvedTheme,
+      resolvedColorMode,
       isDark,
       setTheme,
+      setColorMode,
       toggleTheme,
+      toggleColorMode,
       cleanup,
     }
   },
