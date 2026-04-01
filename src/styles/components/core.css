@@ -9,7 +9,7 @@
   line-height: var(--appearance-ui-line-height);
 }
 
-:where(button, .btn, .page-control-btn, .page-control, .theme-btn, .bg-effect-btn) :where(svg) {
+:where(button, .btn, .page-control, .theme-btn, .bg-effect-btn) :where(svg) {
   transform: translateY(var(--appearance-inline-icon-offset));
 }
 

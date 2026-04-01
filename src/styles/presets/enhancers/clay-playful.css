@@ -3,7 +3,6 @@
     .theme-btn,
     .bg-effect-btn,
     .page-control,
-    .page-control-btn,
     .page-toolbar-shell,
     .page-hero-shell,
     .glass-card
@@ -17,14 +16,14 @@
 }
 
 :is(:root, #app)[data-preset='clay-playful']
-  :where(.theme-btn:hover, .bg-effect-btn:hover, .page-control:hover, .page-control-btn:hover) {
+  :where(.theme-btn:hover, .bg-effect-btn:hover, .page-control:hover) {
   transform: translateY(-0.0625rem);
 }
 
 :is(:root, #app)[data-preset='clay-playful'][data-motion='reduced']
-  :where(.theme-btn:hover, .bg-effect-btn:hover, .page-control:hover, .page-control-btn:hover),
+  :where(.theme-btn:hover, .bg-effect-btn:hover, .page-control:hover),
 :is(:root, #app)[data-preset='clay-playful'][data-motion='none']
-  :where(.theme-btn:hover, .bg-effect-btn:hover, .page-control:hover, .page-control-btn:hover) {
+  :where(.theme-btn:hover, .bg-effect-btn:hover, .page-control:hover) {
   transform: none;
 }
 
@@ -33,7 +32,6 @@
     .theme-btn,
     .bg-effect-btn,
     .page-control,
-    .page-control-btn,
     .page-toolbar-shell,
     .page-hero-shell,
     .glass-card

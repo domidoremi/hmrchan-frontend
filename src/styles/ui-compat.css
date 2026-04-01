@@ -32,9 +32,9 @@
   --ui-compat-text-secondary: color-mix(in srgb, var(--semantic-text-secondary) 88%, transparent);
   --ui-compat-text-muted: color-mix(in srgb, var(--semantic-text-tertiary) 82%, transparent);
   --ui-compat-backdrop: none;
-  --ui-compat-control-radius: var(--appearance-radius-lg);
-  --ui-compat-panel-radius: var(--appearance-radius-xl);
-  --ui-compat-pill-radius: var(--appearance-radius-full);
+  --ui-compat-control-radius: var(--appearance-radius-control-md);
+  --ui-compat-panel-radius: var(--appearance-radius-panel);
+  --ui-compat-pill-radius: var(--appearance-radius-control-lg);
   --ui-compat-shell-border: var(--chrome-surface-border);
   --ui-compat-shell-shadow: var(--chrome-surface-shadow);
 }
@@ -101,9 +101,9 @@
   --ui-compat-shadow: var(--appearance-shadow-medium);
   --ui-compat-shadow-strong: var(--appearance-shadow-strong);
   --ui-compat-backdrop: var(--appearance-backdrop-token);
-  --ui-compat-control-radius: var(--appearance-radius-lg);
-  --ui-compat-panel-radius: var(--appearance-radius-xl);
-  --ui-compat-pill-radius: var(--appearance-radius-full);
+  --ui-compat-control-radius: var(--appearance-radius-control-md);
+  --ui-compat-panel-radius: var(--appearance-radius-panel);
+  --ui-compat-pill-radius: var(--appearance-radius-control-lg);
 }
 
 :root[data-preset='material-calm'],
@@ -129,9 +129,9 @@
   --ui-compat-shadow: var(--appearance-shadow-soft);
   --ui-compat-shadow-strong: var(--appearance-shadow-medium);
   --ui-compat-backdrop: blur(calc(0.5rem * var(--appearance-backdrop-strength)));
-  --ui-compat-control-radius: var(--appearance-radius-md);
-  --ui-compat-panel-radius: var(--appearance-radius-lg);
-  --ui-compat-pill-radius: var(--appearance-radius-lg);
+  --ui-compat-control-radius: var(--appearance-radius-control-md);
+  --ui-compat-panel-radius: var(--appearance-radius-panel);
+  --ui-compat-pill-radius: var(--appearance-radius-chip);
   --ui-compat-shell-border: color-mix(in srgb, var(--semantic-border) 92%, transparent);
   --ui-compat-shell-shadow: var(--appearance-shadow-soft);
 }

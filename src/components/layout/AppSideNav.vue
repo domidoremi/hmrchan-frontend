@@ -244,28 +244,28 @@ function resetMagneticMove(event: PointerEvent) {
 <style scoped>
 .app-side-nav {
   --app-side-nav-item-radius: var(--ui-compat-pill-radius, clamp(1rem, 1.75vw, 1.2rem));
-  --app-side-nav-border: color-mix(in srgb, var(--ui-compat-border) 78%, transparent);
+  --app-side-nav-border: color-mix(in srgb, var(--ui-compat-border) 42%, transparent);
   --app-side-nav-border-strong: color-mix(
     in srgb,
-    var(--ui-compat-border-strong) 82%,
-    rgba(var(--color-primary-rgb), 0.18)
+    var(--ui-compat-border-strong) 56%,
+    rgba(var(--color-primary-rgb), 0.12)
   );
-  --app-side-nav-bg: color-mix(in srgb, var(--ui-compat-surface-interactive) 82%, transparent);
+  --app-side-nav-bg: color-mix(in srgb, var(--ui-compat-surface-interactive) 76%, transparent);
   --app-side-nav-hover-bg: color-mix(
     in srgb,
-    var(--ui-compat-surface-interactive-strong) 92%,
+    var(--ui-compat-surface-interactive-strong) 88%,
     transparent
   );
   --app-side-nav-active-bg: color-mix(
     in srgb,
-    var(--ui-compat-surface-interactive-strong) 96%,
+    var(--ui-compat-surface-interactive-strong) 92%,
     rgba(var(--color-primary-rgb), 0.12)
   );
   --app-side-nav-ink: var(--color-text-secondary);
   --app-side-nav-ink-active: var(--color-primary);
-  --app-side-nav-label-bg: var(--ui-compat-surface-elevated);
-  --app-side-nav-label-border: color-mix(in srgb, var(--ui-compat-border) 84%, transparent);
-  --app-side-nav-label-shadow: var(--ui-compat-shadow);
+  --app-side-nav-label-bg: color-mix(in srgb, var(--ui-compat-surface-elevated) 92%, transparent);
+  --app-side-nav-label-border: color-mix(in srgb, var(--ui-compat-border) 46%, transparent);
+  --app-side-nav-label-shadow: none;
   position: fixed;
   inset-block: 0;
   inset-inline-start: var(--app-side-nav-inline-start, clamp(0.75rem, 2vw, 1.25rem));
@@ -277,18 +277,22 @@ function resetMagneticMove(event: PointerEvent) {
 }
 
 .app-side-nav--chromeless {
-  --app-side-nav-border: transparent;
-  --app-side-nav-border-strong: transparent;
-  --app-side-nav-bg: transparent;
+  --app-side-nav-border: color-mix(in srgb, var(--ui-compat-border) 28%, transparent);
+  --app-side-nav-border-strong: color-mix(
+    in srgb,
+    var(--ui-compat-border-strong) 42%,
+    rgba(var(--color-primary-rgb), 0.08)
+  );
+  --app-side-nav-bg: color-mix(in srgb, var(--ui-compat-surface-interactive) 68%, transparent);
   --app-side-nav-hover-bg: color-mix(
     in srgb,
-    var(--ui-compat-surface-interactive) 54%,
+    var(--ui-compat-surface-interactive) 82%,
     transparent
   );
   --app-side-nav-active-bg: color-mix(
     in srgb,
-    var(--ui-compat-surface-interactive-strong) 58%,
-    transparent
+    var(--ui-compat-surface-interactive-strong) 88%,
+    rgba(var(--color-primary-rgb), 0.08)
   );
   --app-side-nav-label-shadow: none;
 }
@@ -335,7 +339,7 @@ function resetMagneticMove(event: PointerEvent) {
     box-shadow var(--duration-fast) var(--ease-out),
     opacity var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-spring);
-  box-shadow: 0 0.85rem 1.6rem -1.5rem rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   transform: translate3d(
       calc(var(--app-side-nav-magnet-x, 0px) * 0.16),
       calc((var(--app-side-nav-magnet-y, 0px) * 0.16) + var(--app-side-nav-dock-shift, 0rem)),
@@ -352,7 +356,7 @@ function resetMagneticMove(event: PointerEvent) {
   border-color: var(--app-side-nav-border-strong);
   background: var(--app-side-nav-hover-bg);
   color: var(--app-side-nav-ink-active);
-  box-shadow: 0 1.1rem 1.9rem -1.45rem rgba(15, 23, 42, 0.3);
+  box-shadow: none;
 }
 
 .app-side-nav--chromeless .app-side-nav__brand,
@@ -369,7 +373,7 @@ function resetMagneticMove(event: PointerEvent) {
   border-color: var(--app-side-nav-border-strong);
   background: var(--app-side-nav-active-bg);
   color: var(--app-side-nav-ink-active);
-  box-shadow: 0 1.2rem 2rem -1.55rem rgba(var(--color-primary-rgb), 0.4);
+  box-shadow: none;
 }
 
 .app-side-nav__brand-mark {
@@ -412,10 +416,10 @@ function resetMagneticMove(event: PointerEvent) {
   inset-block-start: 50%;
   display: inline-flex;
   align-items: center;
-  min-block-size: 2.5rem;
-  padding-inline: 0.85rem;
+  min-block-size: 2.375rem;
+  padding-inline: 0.8rem;
   border: 0.0625rem solid var(--app-side-nav-label-border);
-  border-radius: calc(var(--app-side-nav-item-radius) + 0.125rem);
+  border-radius: var(--appearance-radius-control-md);
   background: var(--app-side-nav-label-bg);
   box-shadow: var(--app-side-nav-label-shadow);
   color: var(--color-text-primary);

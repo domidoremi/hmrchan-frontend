@@ -32,16 +32,16 @@
   /* Corner radii */
   --ui-radius-sheet: 1.125rem;
   --ui-radius-dialog: var(--radius-xl);
-  --ui-radius-button: var(--radius);
+  --ui-radius-button: var(--appearance-radius-control-md);
   --ui-radius-input: var(--radius);
-  --ui-radius-card: var(--radius-xl);
-  --ui-radius-tabs: var(--radius-lg);
+  --ui-radius-card: var(--appearance-radius-panel);
+  --ui-radius-tabs: var(--appearance-radius-control-lg);
   --ui-radius-toast: var(--radius-lg);
-  --ui-radius-nav: var(--radius-lg);
-  --ui-radius-nav-icon: var(--radius-xl);
+  --ui-radius-nav: var(--appearance-radius-control-lg);
+  --ui-radius-nav-icon: var(--appearance-radius-control-lg);
   --ui-radius-dropdown: var(--radius-xl);
   --ui-radius-checkbox: var(--radius-sm);
-  --ui-radius-badge: var(--radius-full);
+  --ui-radius-badge: var(--appearance-radius-chip);
 
   /* Dialog control sizing */
   --ui-dialog-close-size: 2rem;
@@ -120,16 +120,16 @@
   --ui-control-padding-x-md: 1.25rem;
   --ui-control-padding-x-lg: 2.25rem;
 
-  --ui-radius-button: var(--radius-full);
-  --ui-radius-input: var(--radius-lg);
-  --ui-radius-card: var(--radius-2xl);
-  --ui-radius-tabs: var(--radius-full);
+  --ui-radius-button: var(--appearance-radius-control-md);
+  --ui-radius-input: var(--appearance-radius-control-md);
+  --ui-radius-card: var(--appearance-radius-panel);
+  --ui-radius-tabs: var(--appearance-radius-control-lg);
   --ui-radius-toast: var(--radius-xl);
-  --ui-radius-nav: var(--radius-xl);
-  --ui-radius-nav-icon: var(--radius-2xl);
-  --ui-radius-checkbox: var(--radius-full);
-  --ui-radius-badge: var(--radius-full);
-  --ui-radius-dialog: var(--radius-2xl);
+  --ui-radius-nav: var(--appearance-radius-control-lg);
+  --ui-radius-nav-icon: var(--appearance-radius-control-lg);
+  --ui-radius-checkbox: var(--appearance-radius-control-sm);
+  --ui-radius-badge: var(--appearance-radius-chip);
+  --ui-radius-dialog: var(--appearance-radius-panel);
 
   --ui-dialog-close-size: 2.25rem;
 
@@ -196,21 +196,21 @@
   --ui-control-padding-x-md: 1.5rem;
   --ui-control-padding-x-lg: 2rem;
 
-  --ui-radius-button: var(--radius-full);
-  /* M3 Buttons are pill-shaped (full) */
-  --ui-radius-input: var(--radius-sm);
+  --ui-radius-button: var(--appearance-radius-control-md);
+  /* Keep material buttons controlled rather than full-pill so long labels stay proportional */
+  --ui-radius-input: var(--appearance-radius-control-sm);
   /* Text fields usually small radius or 0 for filled */
-  --ui-radius-card: var(--radius-lg);
+  --ui-radius-card: var(--appearance-radius-panel);
   /* M3 Card */
-  --ui-radius-tabs: var(--radius-full);
+  --ui-radius-tabs: var(--appearance-radius-control-lg);
   /* Navigation bar/rail items */
   --ui-radius-toast: var(--radius-sm);
   /* Snackbar */
   --ui-radius-nav: 0;
-  --ui-radius-nav-icon: var(--radius-xl);
+  --ui-radius-nav-icon: var(--appearance-radius-control-lg);
   /* Active indicator */
   --ui-radius-checkbox: 0.125rem;
-  --ui-radius-badge: var(--radius-full);
+  --ui-radius-badge: var(--appearance-radius-chip);
 
   --ui-dialog-close-size: 2rem;
 

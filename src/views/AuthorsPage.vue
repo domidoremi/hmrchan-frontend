@@ -1,11 +1,5 @@
 <template>
   <div class="authors-page">
-    <!-- MindMarket 风格背景装饰 -->
-    <div class="authors-bg" aria-hidden="true">
-      <div class="authors-bg__blob authors-bg__blob--purple" />
-      <div class="authors-bg__blob authors-bg__blob--teal" />
-    </div>
-
     <div class="container">
       <PageHeroShell class="authors-hero" bare>
         <template #heading>
@@ -295,44 +289,6 @@ onUnmounted(() => {
   padding: var(--spacing-4) 0 var(--spacing-8);
   min-height: 100svh;
   min-height: 100dvh;
-}
-
-/* ========== MindMarket 风格背景 ========== */
-.authors-bg {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  /* Keep page blobs behind the global contextual 3D background */
-  z-index: -2;
-  overflow: hidden;
-}
-
-.authors-bg__blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(6.25rem);
-  opacity: 0.3;
-}
-
-.authors-bg__blob--purple {
-  width: 28.125rem;
-  height: 28.125rem;
-  top: 10%;
-  right: -10%;
-  background: radial-gradient(circle, rgba(167, 139, 250, 0.5) 0%, transparent 70%);
-}
-
-.authors-bg__blob--teal {
-  width: 25rem;
-  height: 25rem;
-  bottom: 15%;
-  left: -8%;
-  background: radial-gradient(circle, rgba(45, 212, 191, 0.4) 0%, transparent 70%);
-}
-
-/* 暗色模式调整 */
-[data-color-mode='dark'] .authors-bg__blob {
-  opacity: 0.15;
 }
 
 .authors-grid {

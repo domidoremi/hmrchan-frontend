@@ -3,12 +3,6 @@
     <!-- Platform-specific animated background -->
     <AsyncPlatformCanvas v-if="shouldRenderPlatformBg" :platform="currentPlatform" />
 
-    <!-- MindMarket 风格背景装饰 -->
-    <div v-once class="explore-bg" aria-hidden="true">
-      <div class="explore-bg__blob explore-bg__blob--green" />
-      <div class="explore-bg__blob explore-bg__blob--purple" />
-    </div>
-
     <div class="container">
       <PageHeroShell class="explore-hero" bare>
         <template #heading>
@@ -842,47 +836,6 @@ onBeforeUnmount(() => {
 .fallback-preview__detail {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-}
-
-/* ========== MindMarket 风格背景 ========== */
-.explore-bg {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  /* Keep page blobs behind the global contextual 3D background */
-  z-index: -2;
-  overflow: hidden;
-  contain: paint;
-}
-
-.explore-bg__blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(6.25rem);
-  opacity: 0.35;
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
-}
-
-.explore-bg__blob--green {
-  width: 31.25rem;
-  height: 31.25rem;
-  top: -6.25rem;
-  left: -5rem;
-  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.25) 0%, transparent 70%);
-}
-
-.explore-bg__blob--purple {
-  width: 25rem;
-  height: 25rem;
-  top: 14rem;
-  right: -6.25rem;
-  background: radial-gradient(circle, rgba(var(--color-secondary-rgb), 0.15) 0%, transparent 70%);
-}
-
-/* 暗色模式调整 */
-[data-color-mode='dark'] .explore-bg__blob {
-  opacity: 0.2;
 }
 
 .page-hero-shell__badge {
