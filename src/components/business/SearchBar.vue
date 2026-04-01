@@ -17,15 +17,18 @@
         @keydown.down.prevent="selectNext"
         @keydown.up.prevent="selectPrev"
       />
-      <button
+      <ControlButton
         v-if="query"
-        type="button"
-        class="clear-btn page-control-btn page-control-btn--square"
+        class="clear-btn"
+        size="square"
+        icon-only
         :aria-label="$t('common.clear')"
         @click="clearQuery"
       >
-        <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
-      </button>
+        <template #start>
+          <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
+        </template>
+      </ControlButton>
       <button
         type="button"
         class="search-submit-btn"
@@ -48,13 +51,9 @@
           <div v-if="searchHistory.length > 0 && !query" class="dropdown-section">
             <div class="search-dropdown__header">
               <span>{{ $t('search.history') }}</span>
-              <button
-                type="button"
-                class="clear-history-btn page-control-btn page-control-btn--compact"
-                @click="clearHistory"
-              >
+              <ControlButton class="clear-history-btn" size="compact" @click="clearHistory">
                 {{ $t('search.clearHistory') }}
-              </button>
+              </ControlButton>
             </div>
             <button
               v-for="(item, index) in searchHistory.slice(0, 5)"
@@ -110,6 +109,7 @@ import { Search, X, History, FileText, User, Tag } from '@lucide/vue'
 import { searchService, type SearchSuggestion } from '@/api/searchService'
 import { useDebouncedRef } from '@/composables/useDebouncedRef'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
 
 let suggestionController: AbortController | null = null
 let suggestionRequestToken = 0
@@ -519,17 +519,15 @@ defineExpose({
   color: var(--color-text-muted);
 }
 
-.clear-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-inline-size: 1.875rem;
-  min-block-size: 1.875rem;
-  padding: var(--spacing-1);
+.clear-btn.page-control {
+  min-inline-size: var(--ui-control-height-sm);
+  block-size: var(--ui-control-height-sm);
+  padding: var(--ui-control-padding-y-sm);
   border: 1px solid transparent;
   color: var(--color-text-secondary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ui-radius-button, var(--radius-sm));
   box-shadow: none;
+  line-height: var(--appearance-ui-line-height);
   transition:
     background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
@@ -537,7 +535,8 @@ defineExpose({
     box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.clear-btn:hover {
+.clear-btn.page-control:hover,
+.clear-btn.page-control:focus-visible {
   background: var(--search-action-bg-hover);
   border-color: var(--search-action-border);
   color: var(--color-primary);
@@ -548,12 +547,17 @@ defineExpose({
 .search-submit-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--radius-md);
+  min-inline-size: var(--ui-control-min-inline-size);
+  min-block-size: var(--ui-control-height-sm);
+  padding-inline: var(--ui-control-padding-x-sm);
+  padding-block: var(--ui-control-padding-y-sm);
+  border-radius: var(--ui-radius-button, var(--radius-md));
   border: 1px solid var(--search-action-border);
   background: var(--search-action-bg);
   color: var(--color-text-secondary);
+  line-height: var(--appearance-ui-line-height);
   transition:
     background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
@@ -575,6 +579,7 @@ defineExpose({
   display: none;
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
+  transform: translateY(var(--appearance-baseline-shift));
 }
 
 @media (min-width: 640px) {
@@ -640,14 +645,17 @@ defineExpose({
   letter-spacing: 0.05em;
 }
 
-.clear-history-btn {
-  min-height: 1.875rem;
-  padding: 0.25rem 0.5rem;
+.clear-history-btn.page-control {
+  min-block-size: var(--ui-control-height-sm);
+  min-inline-size: var(--ui-control-compact-min-inline-size);
+  padding-inline: var(--ui-control-padding-x-sm);
+  padding-block: var(--ui-control-padding-y-sm);
   border: 1px solid transparent;
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-radius-button, var(--radius-full));
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   box-shadow: none;
+  line-height: var(--appearance-ui-line-height);
   transition:
     color var(--duration-fast) var(--ease-out),
     background var(--duration-fast) var(--ease-out),
@@ -655,7 +663,8 @@ defineExpose({
     box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.clear-history-btn:hover {
+.clear-history-btn.page-control:hover,
+.clear-history-btn.page-control:focus-visible {
   color: var(--color-primary);
   background: var(--search-action-bg-hover);
   border-color: var(--search-action-border);

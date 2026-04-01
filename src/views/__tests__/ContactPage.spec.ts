@@ -1,4 +1,4 @@
-import { RouterLinkStub, shallowMount } from '@vue/test-utils'
+import { RouterLinkStub, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -103,7 +103,7 @@ const i18n = createI18n({
 describe('ContactPage', () => {
   it('uses a single contact flow with neutral workflow actions', async () => {
     const { default: ContactPage } = await import('../ContactPage.vue')
-    const wrapper = shallowMount(ContactPage, {
+    const wrapper = mount(ContactPage, {
       global: {
         plugins: [i18n],
         stubs: {
@@ -119,7 +119,6 @@ describe('ContactPage', () => {
 
     const nextButton = wrapper.find('.contact-workflow__next')
     expect(nextButton.exists()).toBe(true)
-    expect(nextButton.classes()).toContain('page-control-btn')
 
     const issueTopic = wrapper
       .findAll('.contact-topic-card')

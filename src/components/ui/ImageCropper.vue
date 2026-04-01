@@ -3,14 +3,17 @@
     <div class="image-cropper empty-surface" role="dialog" aria-modal="true">
       <header class="cropper-header">
         <h3>{{ $t('profile.cropAvatar') }}</h3>
-        <button
-          type="button"
-          class="close-btn page-control-btn page-control-btn--square"
+        <ControlButton
+          class="close-btn"
+          size="square"
+          icon-only
           :aria-label="$t('common.close')"
           @click="cancel"
         >
-          <AnimatedIcon name="sparkle" :fallback-icon="X" size="md" />
-        </button>
+          <template #start>
+            <AnimatedIcon name="sparkle" :fallback-icon="X" size="md" />
+          </template>
+        </ControlButton>
       </header>
 
       <div class="cropper-body">
@@ -71,33 +74,35 @@
             />
           </label>
           <div class="control-actions">
-            <button type="button" class="ghost-btn" @click="resetAdjustments">
+            <ControlButton class="ghost-btn" size="compact" @click="resetAdjustments">
               {{ $t('common.reset') }}
-            </button>
+            </ControlButton>
           </div>
         </div>
 
         <div class="shape-selector">
-          <button
-            type="button"
+          <ControlButton
             class="shape-btn"
-            :class="{ active: shape === 'circle' }"
-            :aria-pressed="shape === 'circle'"
+            size="compact"
+            :pressed="shape === 'circle'"
             @click="shape = 'circle'"
           >
-            <AnimatedIcon name="explore" :fallback-icon="Circle" size="md" />
+            <template #start>
+              <AnimatedIcon name="explore" :fallback-icon="Circle" size="md" />
+            </template>
             {{ $t('profile.circleShape') }}
-          </button>
-          <button
-            type="button"
+          </ControlButton>
+          <ControlButton
             class="shape-btn"
-            :class="{ active: shape === 'square' }"
-            :aria-pressed="shape === 'square'"
+            size="compact"
+            :pressed="shape === 'square'"
             @click="shape = 'square'"
           >
-            <AnimatedIcon name="explore" :fallback-icon="Square" size="md" />
+            <template #start>
+              <AnimatedIcon name="explore" :fallback-icon="Square" size="md" />
+            </template>
             {{ $t('profile.squareShape') }}
-          </button>
+          </ControlButton>
         </div>
       </div>
 
@@ -116,6 +121,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { X, Circle, Square } from '@lucide/vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
@@ -410,13 +416,11 @@ onUnmounted(() => {
   font-size: var(--text-lg);
 }
 
-.close-btn {
-  width: 2.25rem;
-  height: 2.25rem;
+.close-btn.page-control {
+  min-inline-size: var(--ui-action-size);
+  block-size: var(--ui-action-size);
   padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-shadow: none;
 }
 
 .cropper-body {
@@ -571,21 +575,20 @@ onUnmounted(() => {
   justify-content: flex-end;
 }
 
-.ghost-btn {
+.ghost-btn.page-control {
   border: 1px solid var(--color-border);
   background: transparent;
   border-radius: var(--radius-full);
-  padding: 0.35rem 0.9rem;
-  font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  cursor: pointer;
+  box-shadow: none;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
     color var(--transition-fast);
 }
 
-.ghost-btn:hover {
+.ghost-btn.page-control:hover,
+.ghost-btn.page-control:focus-visible {
   background: var(--color-muted);
   color: var(--color-text-primary);
 }
@@ -597,28 +600,24 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.shape-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-4);
+.shape-btn.page-control {
+  min-inline-size: var(--ui-control-compact-min-inline-size);
   border-radius: var(--radius-md);
-  font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast);
+  box-shadow: none;
 }
 
-.shape-btn:hover {
+.shape-btn.page-control:hover,
+.shape-btn.page-control:focus-visible {
   background: var(--glass-bg-light);
   color: var(--color-text);
 }
 
-.shape-btn.active {
+.shape-btn.page-control.page-control--active,
+.shape-btn.page-control[aria-pressed='true'] {
   background: var(--color-primary);
   color: var(--color-on-primary);
+  border-color: transparent;
 }
 
 .cropper-footer {

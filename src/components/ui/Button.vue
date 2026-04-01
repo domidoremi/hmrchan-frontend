@@ -183,9 +183,11 @@ function handleMouseLeave() {
 <style scoped>
 .btn {
   position: relative;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-inline-size: var(--ui-control-min-inline-size);
   gap: var(--spacing-2);
   font-weight: var(--font-medium);
   border-radius: var(--ui-radius-button, var(--component-control-radius));
@@ -201,6 +203,7 @@ function handleMouseLeave() {
   transform-origin: center;
   will-change: transform;
   box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.22);
+  line-height: var(--appearance-ui-line-height);
 }
 
 /* Ripple 容器 */
@@ -289,45 +292,52 @@ function handleMouseLeave() {
 .btn-icon-el {
   flex-shrink: 0;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translate3d(0, var(--appearance-inline-icon-offset), 0);
 }
 
 .btn:hover:not(:disabled) .btn-icon-el {
-  transform: scale(1.1);
+  transform: translate3d(0, var(--appearance-inline-icon-offset), 0) scale(1.1);
 }
 
 /* Sizes */
 .btn-sm {
-  height: var(--ui-control-height-sm);
-  padding: 0 var(--ui-control-padding-x-sm);
+  min-block-size: var(--ui-control-height-sm);
+  padding-block: var(--ui-control-padding-y-sm);
+  padding-inline: var(--ui-control-padding-x-sm);
   font-size: var(--text-xs);
 }
 
 .btn-md {
-  height: var(--ui-control-height-md);
-  padding: 0 var(--ui-control-padding-x-md);
+  min-block-size: var(--ui-control-height-md);
+  padding-block: var(--ui-control-padding-y-md);
+  padding-inline: var(--ui-control-padding-x-md);
   font-size: var(--text-sm);
 }
 
 .btn-lg {
-  height: var(--ui-control-height-lg);
-  padding: 0 var(--ui-control-padding-x-lg);
+  min-block-size: var(--ui-control-height-lg);
+  padding-block: var(--ui-control-padding-y-lg);
+  padding-inline: var(--ui-control-padding-x-lg);
   font-size: var(--text-base);
 }
 
 .btn-icon {
-  height: var(--ui-control-height-md);
-  width: var(--ui-control-height-md);
+  min-inline-size: var(--ui-action-size);
+  block-size: var(--ui-control-height-md);
+  inline-size: var(--ui-action-size);
   padding: 0;
 }
 
 .btn-icon-only.btn-sm {
-  height: var(--ui-control-height-sm);
-  width: var(--ui-control-height-sm);
+  min-inline-size: var(--ui-control-height-sm);
+  block-size: var(--ui-control-height-sm);
+  inline-size: var(--ui-control-height-sm);
 }
 
 .btn-icon-only.btn-lg {
-  height: var(--ui-control-height-lg);
-  width: var(--ui-control-height-lg);
+  min-inline-size: var(--ui-control-height-lg);
+  block-size: var(--ui-control-height-lg);
+  inline-size: var(--ui-control-height-lg);
 }
 
 /* Variants */
@@ -381,6 +391,8 @@ function handleMouseLeave() {
 }
 
 .btn-link {
+  min-inline-size: 0;
+  padding-inline: 0;
   background: transparent;
   color: var(--color-primary);
   text-decoration: underline;
@@ -447,6 +459,8 @@ function handleMouseLeave() {
 .btn-content {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  transform: translateY(var(--appearance-baseline-shift));
 }
 
 .btn-visual {

@@ -7,13 +7,6 @@
       split
       @back="handleBack"
     >
-      <template #eyebrow>
-        <span class="auth-badge">
-          <span class="auth-badge-dot" />
-          <span>{{ badgeLabel }}</span>
-        </span>
-      </template>
-
       <div class="auth-card auth-card--stack">
         <template v-if="resetSuccess">
           <div class="status-icon status-icon--success">
@@ -158,12 +151,6 @@ const passwordStrengthText = computed(() => {
     strong: t('auth.passwordStrong'),
   }
   return textMap[passwordStrengthResult.value.level]
-})
-
-const badgeLabel = computed(() => {
-  if (resetSuccess.value) return t('email.resetSuccess')
-  if (!token.value) return t('email.invalidLink')
-  return t('auth.secureBadge')
 })
 
 const pageTitle = computed(() => {

@@ -1,14 +1,17 @@
 <template>
   <header class="sub-header">
     <div class="sub-header__content empty-surface surface-editorial">
-      <button
-        type="button"
-        class="back-btn page-control-btn page-control-btn--square"
-        @click="goBack"
+      <ControlButton
+        class="back-btn"
+        size="square"
+        icon-only
         :aria-label="$t('common.back')"
+        @click="goBack"
       >
-        <ArrowLeft :size="16" />
-      </button>
+        <template #start>
+          <ArrowLeft :size="16" />
+        </template>
+      </ControlButton>
       <div class="header-text">
         <span class="header-eyebrow">{{ $t('nav.profile') }}</span>
         <h1>{{ title }}</h1>
@@ -30,6 +33,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ArrowLeft, User } from '@lucide/vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
 import Button from '@/components/ui/Button.vue'
 
 defineProps<{
@@ -132,11 +136,6 @@ function goToProfile() {
   .sub-header__content {
     flex-wrap: wrap;
     gap: var(--spacing-2);
-  }
-
-  .back-btn {
-    width: 2rem;
-    height: 2rem;
   }
 
   .header-actions {

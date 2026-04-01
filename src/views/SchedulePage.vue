@@ -3,110 +3,111 @@
     <div class="schedule-bg" aria-hidden="true" />
 
     <div class="container">
-      <header class="page-hero page-hero--bare schedule-hero">
-        <div class="page-hero__content">
-          <div class="page-hero__header">
-            <div class="page-hero__heading">
-              <span class="page-hero__eyebrow">{{ $t('nav.schedule') }}</span>
-              <div class="schedule-hero__copy">
-                <h1 class="page-hero__title">{{ $t('schedule.title') }}</h1>
-                <p class="page-hero__subtitle">{{ $t('schedule.subtitle') }}</p>
-              </div>
-            </div>
-            <div class="page-hero__actions schedule-hero__actions">
-              <div
-                class="planner-view-switch page-control-group"
-                :aria-label="$t('schedule.plannerTitle')"
-              >
-                <button
-                  v-for="view in plannerViews"
-                  :key="view.value"
-                  type="button"
-                  class="page-control-btn page-control-btn--compact"
-                  :class="{ active: plannerView === view.value }"
-                  :aria-pressed="plannerView === view.value"
-                  @click="setPlannerView(view.value)"
-                >
-                  {{ $t(view.label) }}
-                </button>
-              </div>
-              <div
-                class="category-filters page-control-group"
-                role="radiogroup"
-                :aria-label="$t('schedule.filterLabel')"
-              >
-                <button
-                  v-for="cat in categories"
-                  :key="cat.value"
-                  type="button"
-                  class="schedule-filter-pill page-control-btn page-control-btn--compact"
-                  :class="{ active: activeCategory === cat.value }"
-                  role="radio"
-                  :aria-checked="activeCategory === cat.value"
-                  @click="setCategory(cat.value)"
-                >
-                  <component :is="cat.icon" :size="14" />
-                  <span>{{ $t(cat.label) }}</span>
-                </button>
-              </div>
-            </div>
+      <PageHeroShell class="schedule-hero" bare>
+        <template #heading>
+          <span class="page-hero-shell__eyebrow">{{ $t('nav.schedule') }}</span>
+          <div class="schedule-hero__copy">
+            <h1 class="page-hero-shell__title">{{ $t('schedule.title') }}</h1>
+            <p class="page-hero-shell__subtitle">{{ $t('schedule.subtitle') }}</p>
           </div>
-          <div class="page-hero__meta schedule-hero__meta">
-            <span class="page-hero__note">
+        </template>
+
+        <template #actions>
+          <div class="schedule-hero__actions">
+            <ControlGroup class="planner-view-switch" :aria-label="$t('schedule.plannerTitle')">
+              <ControlButton
+                v-for="view in plannerViews"
+                :key="view.value"
+                size="compact"
+                :pressed="plannerView === view.value"
+                @click="setPlannerView(view.value)"
+              >
+                {{ $t(view.label) }}
+              </ControlButton>
+            </ControlGroup>
+            <ControlGroup
+              class="category-filters"
+              role="radiogroup"
+              :aria-label="$t('schedule.filterLabel')"
+            >
+              <ControlButton
+                v-for="cat in categories"
+                :key="cat.value"
+                class="schedule-filter-pill"
+                size="compact"
+                :pressed="activeCategory === cat.value"
+                role="radio"
+                :aria-checked="activeCategory === cat.value"
+                @click="setCategory(cat.value)"
+              >
+                <template #start>
+                  <component :is="cat.icon" :size="14" />
+                </template>
+                <span>{{ $t(cat.label) }}</span>
+              </ControlButton>
+            </ControlGroup>
+          </div>
+        </template>
+
+        <template #meta>
+          <PageMetaRow class="schedule-hero__meta">
+            <PageMetaChip>
               <strong>{{ monthLabel }}</strong>
               {{ $t('schedule.goToday') }}
-            </span>
-            <span class="page-hero__note">
+            </PageMetaChip>
+            <PageMetaChip>
               <strong>{{ upcomingEvents.length }}</strong>
               {{ $t('schedule.upcoming') }}
-            </span>
-            <span class="page-hero__note">
+            </PageMetaChip>
+            <PageMetaChip>
               <strong>{{ activeCategoryLabel }}</strong>
               {{ $t('schedule.filterLabel') }}
-            </span>
-          </div>
-        </div>
-      </header>
+            </PageMetaChip>
+          </PageMetaRow>
+        </template>
+      </PageHeroShell>
 
       <!-- 月份导航 -->
-      <div class="month-nav page-toolbar">
-        <button
-          type="button"
-          class="month-nav-btn page-control-btn page-control-btn--square"
+      <PageToolbar class="month-nav">
+        <ControlButton
+          class="month-nav-btn"
+          size="square"
+          icon-only
           :aria-label="$t('schedule.prevMonth')"
           @click="prevMonth"
         >
-          <ChevronLeft :size="18" />
-        </button>
-        <button
-          type="button"
-          class="month-nav-title page-control-btn"
+          <template #start>
+            <ChevronLeft :size="18" />
+          </template>
+        </ControlButton>
+        <ControlButton
+          class="month-nav-title"
           :aria-label="`${plannerPeriodLabel} ${$t('schedule.goToday')}`"
           :title="$t('schedule.goToday')"
           @click="goToday"
         >
           {{ plannerPeriodLabel }}
-        </button>
-        <button
-          type="button"
-          class="month-nav-btn page-control-btn page-control-btn--square"
+        </ControlButton>
+        <ControlButton
+          class="month-nav-btn"
+          size="square"
+          icon-only
           :aria-label="$t('schedule.nextMonth')"
           @click="nextMonth"
         >
-          <ChevronRight :size="18" />
-        </button>
+          <template #start>
+            <ChevronRight :size="18" />
+          </template>
+        </ControlButton>
         <Transition name="today-fade">
-          <button
-            v-if="!isCurrentMonth"
-            type="button"
-            class="today-btn page-control-btn page-control-btn--compact"
-            @click="goToday"
-          >
-            <CalendarCheck :size="14" />
+          <ControlButton v-if="!isCurrentMonth" class="today-btn" size="compact" @click="goToday">
+            <template #start>
+              <CalendarCheck :size="14" />
+            </template>
             <span>{{ $t('schedule.today') }}</span>
-          </button>
+          </ControlButton>
         </Transition>
-      </div>
+      </PageToolbar>
 
       <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
@@ -273,14 +274,17 @@
                 <span v-if="selectedDayEvents.length" class="event-count">
                   {{ selectedDayEvents.length }}
                 </span>
-                <button
-                  type="button"
-                  class="close-btn page-control-btn page-control-btn--square"
+                <ControlButton
+                  class="close-btn"
+                  size="square"
+                  icon-only
                   :aria-label="$t('common.close')"
                   @click="selectedDay = null"
                 >
-                  <X :size="16" />
-                </button>
+                  <template #start>
+                    <X :size="16" />
+                  </template>
+                </ControlButton>
               </div>
 
               <StateIndicator
@@ -409,14 +413,17 @@
                 <span class="schedule-detail-article__eyebrow">
                   {{ $t('schedule.detail.panelEyebrow') }}
                 </span>
-                <button
-                  type="button"
-                  class="schedule-detail-shell__close page-control-btn page-control-btn--square"
+                <ControlButton
+                  class="schedule-detail-shell__close"
+                  size="square"
+                  icon-only
                   :aria-label="$t('common.close')"
                   @click="closeDetail"
                 >
-                  <X :size="16" />
-                </button>
+                  <template #start>
+                    <X :size="16" />
+                  </template>
+                </ControlButton>
               </div>
 
               <div class="detail-meta">
@@ -439,24 +446,24 @@
             </header>
 
             <div class="schedule-detail-actions">
-              <button
-                type="button"
-                class="schedule-detail-action page-control-btn page-control-btn--compact"
-                @click="copyDetailLink"
-              >
-                <Copy :size="14" />
+              <ControlButton class="schedule-detail-action" size="compact" @click="copyDetailLink">
+                <template #start>
+                  <Copy :size="14" />
+                </template>
                 <span>{{ $t('schedule.detail.copyLinkAction') }}</span>
-              </button>
+              </ControlButton>
 
-              <button
+              <ControlButton
                 v-if="canShareDetail"
-                type="button"
-                class="schedule-detail-action page-control-btn page-control-btn--compact"
+                class="schedule-detail-action"
+                size="compact"
                 @click="shareDetail"
               >
-                <Share2 :size="14" />
+                <template #start>
+                  <Share2 :size="14" />
+                </template>
                 <span>{{ $t('schedule.detail.shareAction') }}</span>
-              </button>
+              </ControlButton>
             </div>
 
             <div class="schedule-detail-facts">
@@ -548,36 +555,48 @@
               </h3>
 
               <div class="detail-links">
-                <a
+                <ControlButton
                   v-if="detailEvent.event_url"
+                  :tag="'a'"
                   :href="detailEvent.event_url"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="detail-link-btn page-control-btn page-control-btn--compact"
+                  class="detail-link-btn"
+                  size="compact"
                 >
-                  <ExternalLink :size="14" />
+                  <template #start>
+                    <ExternalLink :size="14" />
+                  </template>
                   <span>{{ $t('schedule.detail.eventPage') }}</span>
-                </a>
-                <a
+                </ControlButton>
+                <ControlButton
                   v-if="detailEvent.ticket_url"
+                  :tag="'a'"
                   :href="detailEvent.ticket_url"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="detail-link-btn detail-link-btn--ticket page-control-btn page-control-btn--compact"
+                  class="detail-link-btn detail-link-btn--ticket"
+                  size="compact"
                 >
-                  <Ticket :size="14" />
+                  <template #start>
+                    <Ticket :size="14" />
+                  </template>
                   <span>{{ $t('schedule.detail.buyTicket') }}</span>
-                </a>
-                <a
+                </ControlButton>
+                <ControlButton
                   v-if="detailEvent.source_url"
+                  :tag="'a'"
                   :href="detailEvent.source_url"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="detail-link-btn page-control-btn page-control-btn--compact"
+                  class="detail-link-btn"
+                  size="compact"
                 >
-                  <Link2 :size="14" />
+                  <template #start>
+                    <Link2 :size="14" />
+                  </template>
                   <span>{{ $t('schedule.detail.source') }}</span>
-                </a>
+                </ControlButton>
               </div>
             </section>
 
@@ -640,6 +659,12 @@ import {
   resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import ControlGroup from '@/components/appearance/ControlGroup.vue'
+import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
+import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
+import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
+import PageToolbar from '@/components/appearance/PageToolbar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 
 const { t, locale } = useI18n()
@@ -1620,7 +1645,7 @@ onMounted(() => {
   color: var(--surface-paper-ink);
 }
 
-.planner-shell .page-control-btn,
+.planner-shell .page-control,
 .planner-shell .paper-chip,
 .planner-week-day,
 .planner-insight {
@@ -1630,17 +1655,17 @@ onMounted(() => {
   box-shadow: none;
 }
 
-.planner-shell .page-control-btn {
+.planner-shell .page-control {
   min-block-size: 2.25rem;
   padding-inline: 0.875rem;
   font-weight: var(--font-medium);
 }
 
-.planner-shell .page-control-btn:hover,
-.planner-shell .page-control-btn:focus-visible,
-.planner-shell .page-control-btn.active,
-.planner-shell .page-control-btn[aria-pressed='true'],
-.planner-shell .page-control-btn[aria-current='page'] {
+.planner-shell .page-control:hover,
+.planner-shell .page-control:focus-visible,
+.planner-shell .page-control.page-control--active,
+.planner-shell .page-control[aria-pressed='true'],
+.planner-shell .page-control[aria-current='page'] {
   background: var(--planner-surface-bg-strong);
   border-color: var(--planner-surface-border-strong);
   box-shadow: none;
@@ -2079,7 +2104,7 @@ onMounted(() => {
 }
 
 @media (max-width: 640px) {
-  .schedule-hero .page-hero__header {
+  .schedule-hero .page-hero-shell__header {
     flex-direction: column;
   }
 

@@ -88,53 +88,55 @@
           <p class="notifications-filter-group__label">
             {{ $t('profile.notificationStatusLabel') }}
           </p>
-          <div
+          <ControlGroup
             class="notifications-filter-row"
             role="tablist"
             :aria-label="$t('profile.notificationStatusLabel')"
           >
-            <button
+            <ControlButton
               v-for="option in statusOptions"
               :key="option.value"
-              type="button"
-              class="notification-filter-chip page-control-btn page-control-btn--compact"
+              class="notification-filter-chip"
+              size="compact"
               :class="{ 'notification-filter-chip--active': notifStore.status === option.value }"
-              :aria-pressed="notifStore.status === option.value"
+              :pressed="notifStore.status === option.value"
               @click="notifStore.setStatus(option.value)"
             >
               <span>{{ option.label }}</span>
               <span v-if="option.badge" class="notification-filter-chip__badge">
                 {{ option.badge }}
               </span>
-            </button>
-          </div>
+            </ControlButton>
+          </ControlGroup>
         </div>
 
         <div class="notifications-filter-group">
           <p class="notifications-filter-group__label">
             {{ $t('profile.notificationCategoryLabel') }}
           </p>
-          <div
+          <ControlGroup
             class="notifications-filter-row"
             role="tablist"
             :aria-label="$t('profile.notificationCategoryLabel')"
           >
-            <button
+            <ControlButton
               v-for="option in categoryOptions"
               :key="option.value"
-              type="button"
-              class="notification-filter-chip page-control-btn page-control-btn--compact"
+              class="notification-filter-chip"
+              size="compact"
               :class="{ 'notification-filter-chip--active': notifStore.category === option.value }"
-              :aria-pressed="notifStore.category === option.value"
+              :pressed="notifStore.category === option.value"
               @click="notifStore.setCategory(option.value)"
             >
-              <component :is="option.icon" :size="14" />
+              <template #start>
+                <component :is="option.icon" :size="14" />
+              </template>
               <span>{{ option.label }}</span>
               <span v-if="option.badge" class="notification-filter-chip__badge">
                 {{ option.badge }}
               </span>
-            </button>
-          </div>
+            </ControlButton>
+          </ControlGroup>
         </div>
       </section>
 
@@ -233,6 +235,8 @@ import {
 } from '@lucide/vue'
 import { useNotificationsStore, useToastStore } from '@/stores'
 import type { InboxCategory } from '@/api/inboxService'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import ControlGroup from '@/components/appearance/ControlGroup.vue'
 import ProfileNotificationsTab from '@/components/profile/ProfileNotificationsTab.vue'
 import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
 import Button from '@/components/ui/Button.vue'
@@ -483,7 +487,7 @@ async function handleEmailPreferenceChange(category: InboxCategory, value: boole
 .notifications-page :deep(.sub-header__content),
 .notifications-page :deep(.sub-header .back-btn),
 .notifications-header-actions :deep(.btn),
-.notifications-filter-row :deep(.page-control-btn) {
+.notifications-filter-row :deep(.page-control) {
   box-shadow: none;
 }
 
@@ -697,28 +701,24 @@ async function handleEmailPreferenceChange(category: InboxCategory, value: boole
 }
 
 .notification-filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 2.25rem;
-  padding: 0 0.875rem;
-  border-radius: calc(var(--profile-section-radius) - 0.12rem);
-  border: 1px solid var(--profile-action-border);
+  justify-content: flex-start;
+  border-color: var(--profile-action-border);
   background: var(--profile-action-bg);
   color: var(--color-text-secondary);
-  transition:
-    color var(--duration-fast) var(--ease-smooth),
-    background var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth);
+  box-shadow: none;
 }
 
-.notification-filter-chip:hover {
+.notification-filter-chip:hover,
+.notification-filter-chip:focus-visible {
   color: var(--color-text-primary);
   border-color: var(--profile-action-border-strong);
   background: var(--profile-action-bg-hover);
+  box-shadow: none;
 }
 
-.notification-filter-chip--active {
+.notification-filter-chip--active,
+.notification-filter-chip.page-control--active,
+.notification-filter-chip[aria-pressed='true'] {
   color: var(--color-text-primary);
   border-color: var(--profile-action-border-strong);
   background: var(--profile-surface-bg-soft);
