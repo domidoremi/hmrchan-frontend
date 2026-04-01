@@ -200,26 +200,6 @@ export class RateLimiter {
 export const commentRateLimiter = new RateLimiter(5, 60000)
 
 /**
- * 防抖函数 - 防止频繁触发
- */
-export function debounce<T extends (...args: unknown[]) => unknown>(
-  fn: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null
-
-  return (...args: Parameters<T>) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-    }
-    timeoutId = setTimeout(() => {
-      fn(...args)
-      timeoutId = null
-    }, delay)
-  }
-}
-
-/**
  * 检测内容是否包含敏感词 (基础实现，实际应该从服务端获取词库)
  */
 export function containsSensitiveWords(content: string): boolean {
