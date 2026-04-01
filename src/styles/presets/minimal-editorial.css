@@ -1,6 +1,51 @@
 :root[data-preset='minimal-editorial'],
 #app[data-preset='minimal-editorial'] {
   --appearance-font-family: var(--locale-font-family, 'Inter', 'Segoe UI', sans-serif);
+  --appearance-reading-max-inline-size: var(--locale-content-max-ch, 66ch);
+  --appearance-content-max-inline-size: min(92vw, 84rem);
+  --appearance-reading-line-height: var(--locale-reading-line-height, 1.68);
+  --appearance-ui-line-height: var(--locale-ui-line-height, 1.42);
+  --appearance-control-min-block-size: var(--locale-control-min-block-size, 2.625rem);
+  --appearance-control-min-inline-size: 4.5rem;
+  --appearance-control-compact-min-inline-size: 3.875rem;
+  --appearance-control-padding-inline: 0.9375rem;
+  --appearance-control-padding-block: calc(0.5625rem + var(--locale-control-padding-nudge, 0rem));
+  --appearance-control-gap: 0.4375rem;
+  --appearance-surface-padding-sm: 0.75rem;
+  --appearance-surface-padding-md: 1rem;
+  --appearance-surface-padding-lg: 1.5rem;
+  --appearance-surface-gap-sm: 0.75rem;
+  --appearance-surface-gap-md: 1rem;
+  --appearance-surface-gap-lg: 1.5rem;
+  --appearance-chip-min-block-size: 2.25rem;
+  --appearance-chip-padding-inline: 0.9rem;
+  --appearance-radius-md: 0.625rem;
+  --appearance-radius-lg: 0.875rem;
+  --appearance-radius-xl: 1.125rem;
+  --appearance-radius-2xl: 1.375rem;
+  --appearance-radius-chip: 999rem;
+  --appearance-radius-panel: 1.25rem;
+  --appearance-radius-rich-block: 1rem;
+  --appearance-toolbar-radius: 1.25rem;
+  --appearance-toolbar-padding: clamp(0.875rem, 1.1vw + 0.55rem, 1rem);
+  --appearance-toolbar-gap: clamp(0.75rem, 0.95vw + 0.45rem, 1rem);
+  --appearance-hero-panel-radius: 1.375rem;
+  --appearance-shadow-soft: 0 0.0625rem 0.125rem rgb(15 23 42 / 0.05);
+  --appearance-shadow-medium: 0 0.75rem 1.75rem rgb(15 23 42 / 0.08);
+  --appearance-shadow-strong: 0 1.5rem 3rem rgb(15 23 42 / 0.1);
+  --appearance-page-control-shadow: var(--appearance-shadow-soft);
+  --appearance-page-surface-shadow: var(--appearance-shadow-medium);
+  --appearance-structure-shadow-token:
+    0 0.0625rem 0 rgb(255 255 255 / 0.72) inset, var(--appearance-shadow-medium);
+  --appearance-control-shadow-token: var(--appearance-shadow-soft);
+  --appearance-surface-border-token: 0.0625rem solid rgba(17, 24, 39, 0.09);
+  --appearance-surface-border-strong-token: 0.0625rem solid rgba(17, 24, 39, 0.18);
+  --appearance-focus-ring-token: 0 0 0 0.125rem rgba(17, 24, 39, 0.16);
+  --appearance-backdrop-token: blur(calc(0.625rem * var(--appearance-backdrop-strength)));
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: cubic-bezier(0.28, 0.94, 0.42, 1);
   --appearance-canvas: #f7f5ef;
   --appearance-surface-1: #fffdf8;
   --appearance-surface-2: #f1eee5;
@@ -12,21 +57,6 @@
   --appearance-text-tertiary: #667085;
   --appearance-accent: #111827;
   --appearance-accent-rgb: 17, 24, 39;
-  --appearance-control-min-inline-size: 4.9rem;
-  --appearance-control-compact-min-inline-size: 4.1rem;
-  --appearance-control-gap: 0.5rem;
-  --appearance-chip-min-block-size: 2.25rem;
-  --appearance-chip-padding-inline: 0.95rem;
-  --appearance-chip-radius: 999rem;
-  --appearance-eyebrow-radius: 999rem;
-  --appearance-toolbar-radius: 1.625rem;
-  --appearance-hero-panel-radius: 1.75rem;
-  --appearance-radius-md: 0.75rem;
-  --appearance-radius-lg: 1rem;
-  --appearance-radius-xl: 1.25rem;
-  --appearance-shadow-soft: 0 0.0625rem 0.125rem rgb(15 23 42 / 0.06);
-  --appearance-shadow-medium: 0 0.75rem 2rem rgb(15 23 42 / 0.08);
-  --appearance-shadow-strong: 0 1.5rem 3.5rem rgb(15 23 42 / 0.1);
   --color-primary: #101828;
   --color-primary-rgb: 16, 24, 40;
   --color-primary-light: #344054;
@@ -41,12 +71,60 @@
   --color-text-secondary: #475467;
   --color-text-tertiary: #667085;
   --glass-bg: rgb(255 253 248 / 0.84);
-  --glass-bg-strong: rgb(255 253 248 / 0.92);
+  --glass-bg-light: rgb(255 253 248 / 0.72);
+  --glass-bg-strong: rgb(255 253 248 / 0.94);
+  --glass-bg-subtle: rgb(17 24 39 / 0.04);
   --glass-border: rgb(17 24 39 / 0.08);
-  --glass-shadow: 0 0.75rem 2.5rem rgb(15 23 42 / 0.08);
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
+  --glass-border-strong: rgb(17 24 39 / 0.14);
+  --glass-shadow: 0 0.75rem 2rem rgb(15 23 42 / 0.08);
+  --glass-shadow-lg: 0 1.5rem 3rem rgb(15 23 42 / 0.1);
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+  --chrome-shell-bg: linear-gradient(180deg, rgb(255 253 248 / 0.96), rgb(255 253 248 / 0.92));
+  --chrome-shell-border: rgb(17 24 39 / 0.08);
+  --chrome-shell-shadow: 0 1rem 2.5rem -1.75rem rgb(15 23 42 / 0.18);
+  --chrome-surface-bg: var(--chrome-shell-bg);
+  --chrome-surface-bg-soft: linear-gradient(
+    180deg,
+    rgb(255 253 248 / 0.92),
+    rgb(241 238 229 / 0.78)
+  );
+  --chrome-surface-border: rgb(17 24 39 / 0.08);
+  --chrome-surface-border-strong: rgb(17 24 39 / 0.14);
+  --chrome-surface-shadow: var(--chrome-shell-shadow);
+  --chrome-muted-bg: rgb(255 253 248 / 0.88);
+  --chrome-muted-bg-strong: rgb(255 253 248 / 0.95);
+  --chrome-muted-border: rgb(17 24 39 / 0.08);
+  --chrome-muted-border-strong: rgb(17 24 39 / 0.14);
+  --chrome-chip-bg: rgb(255 253 248 / 0.92);
+  --chrome-chip-border: rgb(17 24 39 / 0.08);
+  --chrome-chip-text: var(--appearance-text-secondary);
+  --chrome-action-bg: rgb(255 253 248 / 0.88);
+  --chrome-action-bg-hover: rgb(255 253 248 / 0.96);
+  --chrome-action-border: rgb(17 24 39 / 0.08);
+  --chrome-action-border-strong: rgb(17 24 39 / 0.14);
+  --page-shell-surface-bg: rgb(255 253 248 / 0.92);
+  --page-shell-surface-bg-strong: rgb(255 253 248 / 0.98);
+  --page-shell-surface-border: rgb(17 24 39 / 0.08);
+  --page-shell-surface-border-strong: rgb(17 24 39 / 0.14);
+  --page-shell-control-bg: rgb(255 253 248 / 0.92);
+  --page-shell-control-bg-hover: rgb(255 253 248 / 0.98);
+  --page-shell-control-border: rgb(17 24 39 / 0.08);
+  --page-shell-control-border-strong: rgb(17 24 39 / 0.16);
+  --page-shell-control-active-bg: color-mix(
+    in srgb,
+    var(--appearance-surface-1) 90%,
+    var(--appearance-accent) 10%
+  );
+  --page-shell-control-active-border: color-mix(
+    in srgb,
+    var(--appearance-border-strong) 78%,
+    var(--appearance-accent) 22%
+  );
+  --page-shell-eyebrow-bg: rgb(17 24 39 / 0.04);
+  --page-shell-eyebrow-border: rgb(17 24 39 / 0.08);
+  --page-shell-eyebrow-ink: var(--appearance-text-secondary);
 }
 
 :root[data-preset='minimal-editorial'][data-color-mode='dark'],
@@ -76,7 +154,51 @@
   --color-text-secondary: #cbd5e1;
   --color-text-tertiary: #94a3b8;
   --glass-bg: rgb(19 25 32 / 0.84);
-  --glass-bg-strong: rgb(19 25 32 / 0.92);
+  --glass-bg-light: rgb(19 25 32 / 0.72);
+  --glass-bg-strong: rgb(19 25 32 / 0.94);
+  --glass-bg-subtle: rgb(248 250 252 / 0.05);
   --glass-border: rgb(248 250 252 / 0.08);
-  --glass-shadow: 0 0.75rem 2.5rem rgb(2 6 23 / 0.32);
+  --glass-border-strong: rgb(248 250 252 / 0.14);
+  --glass-shadow: 0 0.75rem 2rem rgb(2 6 23 / 0.3);
+  --glass-shadow-lg: 0 1.5rem 3rem rgb(2 6 23 / 0.38);
+  --chrome-shell-bg: linear-gradient(180deg, rgb(19 25 32 / 0.96), rgb(19 25 32 / 0.92));
+  --chrome-shell-border: rgb(248 250 252 / 0.08);
+  --chrome-shell-shadow: 0 1rem 2.75rem -1.75rem rgb(2 6 23 / 0.44);
+  --chrome-surface-bg: var(--chrome-shell-bg);
+  --chrome-surface-bg-soft: linear-gradient(180deg, rgb(19 25 32 / 0.92), rgb(25 33 43 / 0.82));
+  --chrome-surface-border: rgb(248 250 252 / 0.08);
+  --chrome-surface-border-strong: rgb(248 250 252 / 0.14);
+  --chrome-surface-shadow: var(--chrome-shell-shadow);
+  --chrome-muted-bg: rgb(19 25 32 / 0.88);
+  --chrome-muted-bg-strong: rgb(25 33 43 / 0.94);
+  --chrome-muted-border: rgb(248 250 252 / 0.08);
+  --chrome-muted-border-strong: rgb(248 250 252 / 0.14);
+  --chrome-chip-bg: rgb(19 25 32 / 0.92);
+  --chrome-chip-border: rgb(248 250 252 / 0.08);
+  --chrome-chip-text: var(--appearance-text-secondary);
+  --chrome-action-bg: rgb(19 25 32 / 0.9);
+  --chrome-action-bg-hover: rgb(25 33 43 / 0.96);
+  --chrome-action-border: rgb(248 250 252 / 0.08);
+  --chrome-action-border-strong: rgb(248 250 252 / 0.16);
+  --page-shell-surface-bg: rgb(19 25 32 / 0.9);
+  --page-shell-surface-bg-strong: rgb(19 25 32 / 0.96);
+  --page-shell-surface-border: rgb(248 250 252 / 0.08);
+  --page-shell-surface-border-strong: rgb(248 250 252 / 0.14);
+  --page-shell-control-bg: rgb(19 25 32 / 0.92);
+  --page-shell-control-bg-hover: rgb(25 33 43 / 0.98);
+  --page-shell-control-border: rgb(248 250 252 / 0.08);
+  --page-shell-control-border-strong: rgb(248 250 252 / 0.16);
+  --page-shell-control-active-bg: color-mix(
+    in srgb,
+    var(--appearance-surface-2) 82%,
+    var(--appearance-accent) 18%
+  );
+  --page-shell-control-active-border: color-mix(
+    in srgb,
+    var(--appearance-border-strong) 72%,
+    var(--appearance-accent) 28%
+  );
+  --page-shell-eyebrow-bg: rgb(248 250 252 / 0.05);
+  --page-shell-eyebrow-border: rgb(248 250 252 / 0.08);
+  --page-shell-eyebrow-ink: var(--appearance-text-secondary);
 }

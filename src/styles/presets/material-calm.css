@@ -1,79 +1,198 @@
-:root[data-preset='material-calm'],
-#app[data-preset='material-calm'] {
-  --appearance-font-family: var(--locale-font-family, 'Inter', 'Segoe UI', sans-serif);
-  --appearance-canvas: #f4f6fb;
-  --appearance-surface-1: #ffffff;
-  --appearance-surface-2: #edf2ff;
-  --appearance-surface-3: #dde7ff;
-  --appearance-border: rgba(59, 91, 140, 0.14);
-  --appearance-border-strong: rgba(59, 91, 140, 0.24);
-  --appearance-text-primary: #14213d;
-  --appearance-text-secondary: #475569;
-  --appearance-text-tertiary: #64748b;
-  --appearance-accent: #2563eb;
-  --appearance-accent-rgb: 37, 99, 235;
-  --appearance-control-min-inline-size: 4.5rem;
-  --appearance-control-compact-min-inline-size: 3.75rem;
-  --appearance-control-gap: 0.5rem;
-  --appearance-chip-min-block-size: 2.25rem;
-  --appearance-chip-padding-inline: 0.85rem;
-  --appearance-chip-radius: 999rem;
-  --appearance-eyebrow-radius: 1rem;
-  --appearance-toolbar-radius: 1.125rem;
-  --appearance-hero-panel-radius: 1.25rem;
-  --appearance-radius-md: 0.625rem;
-  --appearance-radius-lg: 0.875rem;
-  --appearance-radius-xl: 1.125rem;
-  --appearance-shadow-soft: 0 0.125rem 0.375rem rgb(15 23 42 / 0.08);
-  --appearance-shadow-medium: 0 0.75rem 2rem rgb(37 99 235 / 0.1);
-  --appearance-shadow-strong: 0 1.5rem 3rem rgb(37 99 235 / 0.12);
-  --color-primary: #1d4ed8;
-  --color-primary-rgb: 29, 78, 216;
-  --color-primary-light: #3b82f6;
-  --color-primary-dark: #1e3a8a;
-  --color-accent: #2563eb;
-  --color-accent-rgb: 37, 99, 235;
-  --color-background: #f4f6fb;
-  --color-surface: #ffffff;
-  --color-surface-variant: #edf2ff;
-  --color-border: rgba(59, 91, 140, 0.14);
-  --color-text-primary: #14213d;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #64748b;
-  --glass-bg: rgb(255 255 255 / 0.78);
-  --glass-bg-strong: rgb(255 255 255 / 0.9);
-  --glass-border: rgb(148 163 184 / 0.18);
-  --glass-shadow: 0 0.75rem 2rem rgb(37 99 235 / 0.1);
-}
+@layer presets {
+  :root[data-preset='material-calm'],
+  #app[data-preset='material-calm'] {
+    --appearance-font-family: var(--locale-font-family, 'Inter', 'Segoe UI', sans-serif);
+    --appearance-reading-max-inline-size: var(--locale-content-max-ch, 70ch);
+    --appearance-content-max-inline-size: min(92vw, 88rem);
+    --appearance-reading-line-height: var(--locale-reading-line-height, 1.64);
+    --appearance-ui-line-height: var(--locale-ui-line-height, 1.4);
+    --appearance-control-min-block-size: var(--locale-control-min-block-size, 2.5rem);
+    --appearance-control-min-inline-size: 4.5rem;
+    --appearance-control-compact-min-inline-size: 3.75rem;
+    --appearance-control-padding-inline: 0.9375rem;
+    --appearance-control-padding-block: calc(0.5625rem + var(--locale-control-padding-nudge, 0rem));
+    --appearance-control-gap: 0.5rem;
+    --appearance-surface-padding-sm: 0.75rem;
+    --appearance-surface-padding-md: 1rem;
+    --appearance-surface-padding-lg: 1.5rem;
+    --appearance-surface-gap-sm: 0.75rem;
+    --appearance-surface-gap-md: 1rem;
+    --appearance-surface-gap-lg: 1.5rem;
+    --appearance-chip-min-block-size: 2.25rem;
+    --appearance-chip-padding-inline: 0.875rem;
+    --appearance-radius-md: 0.5rem;
+    --appearance-radius-lg: 0.75rem;
+    --appearance-radius-xl: 1rem;
+    --appearance-radius-2xl: 1.25rem;
+    --appearance-radius-chip: 0.875rem;
+    --appearance-radius-panel: 1rem;
+    --appearance-radius-rich-block: 0.875rem;
+    --appearance-toolbar-radius: 1rem;
+    --appearance-toolbar-padding: clamp(0.875rem, 1.15vw + 0.5rem, 1rem);
+    --appearance-toolbar-gap: clamp(0.75rem, 1vw + 0.4rem, 1rem);
+    --appearance-hero-panel-radius: 1.125rem;
+    --appearance-shadow-soft: 0 0.125rem 0.375rem rgb(15 23 42 / 0.08);
+    --appearance-shadow-medium: 0 0.75rem 2rem rgb(37 99 235 / 0.1);
+    --appearance-shadow-strong: 0 1.5rem 3rem rgb(37 99 235 / 0.12);
+    --appearance-page-control-shadow: 0 0.125rem 0.25rem rgb(15 23 42 / 0.08);
+    --appearance-page-surface-shadow: 0 0.875rem 2rem -1.5rem rgb(15 23 42 / 0.18);
+    --appearance-structure-shadow-token: 0 0.0625rem 0 rgb(255 255 255 / 0.62) inset;
+    --appearance-control-shadow-token: none;
+    --appearance-surface-border-token: 0.0625rem solid rgba(59, 91, 140, 0.14);
+    --appearance-surface-border-strong-token: 0.0625rem solid rgba(59, 91, 140, 0.24);
+    --appearance-focus-ring-token: 0 0 0 0.125rem rgba(37, 99, 235, 0.24);
+    --appearance-backdrop-token: none;
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-in-out: cubic-bezier(0.2, 0, 0, 1);
+    --ease-spring: cubic-bezier(0.2, 0, 0, 1);
+    --appearance-canvas: #f4f6fb;
+    --appearance-surface-1: #ffffff;
+    --appearance-surface-2: #edf2ff;
+    --appearance-surface-3: #dde7ff;
+    --appearance-border: rgba(59, 91, 140, 0.14);
+    --appearance-border-strong: rgba(59, 91, 140, 0.24);
+    --appearance-text-primary: #14213d;
+    --appearance-text-secondary: #475569;
+    --appearance-text-tertiary: #64748b;
+    --appearance-accent: #2563eb;
+    --appearance-accent-rgb: 37, 99, 235;
+    --color-primary: #1d4ed8;
+    --color-primary-rgb: 29, 78, 216;
+    --color-primary-light: #3b82f6;
+    --color-primary-dark: #1e3a8a;
+    --color-accent: #2563eb;
+    --color-accent-rgb: 37, 99, 235;
+    --color-background: #f4f6fb;
+    --color-surface: #ffffff;
+    --color-surface-variant: #edf2ff;
+    --color-border: rgba(59, 91, 140, 0.14);
+    --color-text-primary: #14213d;
+    --color-text-secondary: #475569;
+    --color-text-tertiary: #64748b;
+    --glass-bg: #ffffff;
+    --glass-bg-light: #f7f9ff;
+    --glass-bg-strong: #ffffff;
+    --glass-bg-subtle: rgb(37 99 235 / 0.04);
+    --glass-border: rgb(148 163 184 / 0.18);
+    --glass-border-strong: rgb(59 91 140 / 0.24);
+    --glass-shadow: 0 0.75rem 2rem rgb(37 99 235 / 0.1);
+    --glass-shadow-lg: 0 1.25rem 2.5rem rgb(37 99 235 / 0.12);
+    --chrome-shell-bg: linear-gradient(180deg, #ffffff, #edf2ff);
+    --chrome-shell-border: rgb(59 91 140 / 0.14);
+    --chrome-shell-shadow: 0 0.875rem 2rem -1.5rem rgb(15 23 42 / 0.18);
+    --chrome-surface-bg: var(--chrome-shell-bg);
+    --chrome-surface-bg-soft: linear-gradient(180deg, #ffffff, #f4f6fb);
+    --chrome-surface-border: rgb(59 91 140 / 0.14);
+    --chrome-surface-border-strong: rgb(59 91 140 / 0.24);
+    --chrome-surface-shadow: var(--chrome-shell-shadow);
+    --chrome-muted-bg: #ffffff;
+    --chrome-muted-bg-strong: #edf2ff;
+    --chrome-muted-border: rgb(59 91 140 / 0.12);
+    --chrome-muted-border-strong: rgb(37 99 235 / 0.22);
+    --chrome-chip-bg: #edf2ff;
+    --chrome-chip-border: rgb(59 91 140 / 0.12);
+    --chrome-chip-text: var(--appearance-text-secondary);
+    --chrome-action-bg: #edf2ff;
+    --chrome-action-bg-hover: color-mix(in srgb, #edf2ff 84%, white 16%);
+    --chrome-action-border: rgb(59 91 140 / 0.12);
+    --chrome-action-border-strong: rgb(37 99 235 / 0.22);
+    --page-shell-surface-bg: #ffffff;
+    --page-shell-surface-bg-strong: #ffffff;
+    --page-shell-surface-border: rgb(59 91 140 / 0.12);
+    --page-shell-surface-border-strong: rgb(59 91 140 / 0.2);
+    --page-shell-control-bg: #edf2ff;
+    --page-shell-control-bg-hover: color-mix(in srgb, #edf2ff 84%, white 16%);
+    --page-shell-control-border: rgb(59 91 140 / 0.12);
+    --page-shell-control-border-strong: rgb(37 99 235 / 0.22);
+    --page-shell-control-active-bg: color-mix(
+      in srgb,
+      var(--appearance-surface-2) 76%,
+      var(--appearance-accent) 24%
+    );
+    --page-shell-control-active-border: color-mix(
+      in srgb,
+      var(--appearance-border-strong) 68%,
+      var(--appearance-accent) 32%
+    );
+    --page-shell-eyebrow-bg: rgb(37 99 235 / 0.08);
+    --page-shell-eyebrow-border: rgb(37 99 235 / 0.16);
+    --page-shell-eyebrow-ink: var(--appearance-text-secondary);
+  }
 
-:root[data-preset='material-calm'][data-color-mode='dark'],
-#app[data-preset='material-calm'][data-color-mode='dark'] {
-  --appearance-canvas: #0b1320;
-  --appearance-surface-1: #111b2b;
-  --appearance-surface-2: #172336;
-  --appearance-surface-3: #1f3048;
-  --appearance-border: rgba(148, 163, 184, 0.16);
-  --appearance-border-strong: rgba(148, 163, 184, 0.28);
-  --appearance-text-primary: #e2e8f0;
-  --appearance-text-secondary: #cbd5e1;
-  --appearance-text-tertiary: #94a3b8;
-  --appearance-accent: #60a5fa;
-  --appearance-accent-rgb: 96, 165, 250;
-  --color-primary: #93c5fd;
-  --color-primary-rgb: 147, 197, 253;
-  --color-primary-light: #dbeafe;
-  --color-primary-dark: #60a5fa;
-  --color-accent: #60a5fa;
-  --color-accent-rgb: 96, 165, 250;
-  --color-background: #0b1320;
-  --color-surface: #111b2b;
-  --color-surface-variant: #172336;
-  --color-border: rgba(148, 163, 184, 0.16);
-  --color-text-primary: #e2e8f0;
-  --color-text-secondary: #cbd5e1;
-  --color-text-tertiary: #94a3b8;
-  --glass-bg: rgb(17 27 43 / 0.8);
-  --glass-bg-strong: rgb(23 35 54 / 0.9);
-  --glass-border: rgb(148 163 184 / 0.16);
-  --glass-shadow: 0 1rem 2.75rem rgb(2 6 23 / 0.34);
+  :root[data-preset='material-calm'][data-color-mode='dark'],
+  #app[data-preset='material-calm'][data-color-mode='dark'] {
+    --appearance-canvas: #0b1320;
+    --appearance-surface-1: #111b2b;
+    --appearance-surface-2: #172336;
+    --appearance-surface-3: #1f3048;
+    --appearance-border: rgba(148, 163, 184, 0.16);
+    --appearance-border-strong: rgba(148, 163, 184, 0.28);
+    --appearance-text-primary: #e2e8f0;
+    --appearance-text-secondary: #cbd5e1;
+    --appearance-text-tertiary: #94a3b8;
+    --appearance-accent: #60a5fa;
+    --appearance-accent-rgb: 96, 165, 250;
+    --color-primary: #93c5fd;
+    --color-primary-rgb: 147, 197, 253;
+    --color-primary-light: #dbeafe;
+    --color-primary-dark: #60a5fa;
+    --color-accent: #60a5fa;
+    --color-accent-rgb: 96, 165, 250;
+    --color-background: #0b1320;
+    --color-surface: #111b2b;
+    --color-surface-variant: #172336;
+    --color-border: rgba(148, 163, 184, 0.16);
+    --color-text-primary: #e2e8f0;
+    --color-text-secondary: #cbd5e1;
+    --color-text-tertiary: #94a3b8;
+    --glass-bg: #111b2b;
+    --glass-bg-light: #172336;
+    --glass-bg-strong: #172336;
+    --glass-bg-subtle: rgb(96 165 250 / 0.08);
+    --glass-border: rgb(148 163 184 / 0.16);
+    --glass-border-strong: rgb(148 163 184 / 0.24);
+    --glass-shadow: 0 1rem 2.75rem rgb(2 6 23 / 0.34);
+    --glass-shadow-lg: 0 1.5rem 3rem rgb(2 6 23 / 0.42);
+    --chrome-shell-bg: linear-gradient(180deg, #111b2b, #172336);
+    --chrome-shell-border: rgb(148 163 184 / 0.16);
+    --chrome-shell-shadow: 0 1rem 2.75rem -1.75rem rgb(2 6 23 / 0.42);
+    --chrome-surface-bg: var(--chrome-shell-bg);
+    --chrome-surface-bg-soft: linear-gradient(180deg, #111b2b, #172336);
+    --chrome-surface-border: rgb(148 163 184 / 0.16);
+    --chrome-surface-border-strong: rgb(148 163 184 / 0.24);
+    --chrome-surface-shadow: var(--chrome-shell-shadow);
+    --chrome-muted-bg: #172336;
+    --chrome-muted-bg-strong: #1f3048;
+    --chrome-muted-border: rgb(148 163 184 / 0.14);
+    --chrome-muted-border-strong: rgb(96 165 250 / 0.24);
+    --chrome-chip-bg: #172336;
+    --chrome-chip-border: rgb(148 163 184 / 0.14);
+    --chrome-chip-text: var(--appearance-text-secondary);
+    --chrome-action-bg: #172336;
+    --chrome-action-bg-hover: #1f3048;
+    --chrome-action-border: rgb(148 163 184 / 0.14);
+    --chrome-action-border-strong: rgb(96 165 250 / 0.24);
+    --page-shell-surface-bg: #111b2b;
+    --page-shell-surface-bg-strong: #172336;
+    --page-shell-surface-border: rgb(148 163 184 / 0.14);
+    --page-shell-surface-border-strong: rgb(148 163 184 / 0.24);
+    --page-shell-control-bg: #172336;
+    --page-shell-control-bg-hover: #1f3048;
+    --page-shell-control-border: rgb(148 163 184 / 0.14);
+    --page-shell-control-border-strong: rgb(96 165 250 / 0.24);
+    --page-shell-control-active-bg: color-mix(
+      in srgb,
+      var(--appearance-surface-2) 72%,
+      var(--appearance-accent) 28%
+    );
+    --page-shell-control-active-border: color-mix(
+      in srgb,
+      var(--appearance-border-strong) 64%,
+      var(--appearance-accent) 36%
+    );
+    --page-shell-eyebrow-bg: rgb(96 165 250 / 0.12);
+    --page-shell-eyebrow-border: rgb(96 165 250 / 0.18);
+    --page-shell-eyebrow-ink: var(--appearance-text-secondary);
+  }
 }

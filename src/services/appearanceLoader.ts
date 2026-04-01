@@ -45,13 +45,23 @@ export function createAppearanceAssetLoader(registry: AppearanceLoaderRegistry =
       return
     }
 
-    const loaderPromise = Promise.all([
-      registry.presets[preset]?.(),
-      presetUsesEnhancer(preset) ? registry.enhancers[preset]?.() : undefined,
-    ]).then(() => {
-      loadedPresets.add(preset)
-      inFlight.delete(preset)
-    })
+    const loaderPromise = (async () => {
+      try {
+        await registry.presets[preset]?.()
+
+        if (presetUsesEnhancer(preset)) {
+          try {
+            await registry.enhancers[preset]?.()
+          } catch {
+            // Enhancers are optional polish layers and must not block the preset baseline.
+          }
+        }
+
+        loadedPresets.add(preset)
+      } finally {
+        inFlight.delete(preset)
+      }
+    })()
 
     inFlight.set(preset, loaderPromise)
     await loaderPromise
