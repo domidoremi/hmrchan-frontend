@@ -9,6 +9,7 @@
 @import './chrome-system.css' layer(semantics);
 @import './ui-compat.css' layer(semantics);
 @import './components/core.css' layer(components);
+@import './components/page-primitives.css' layer(components);
 @import './scene-roles/core.css' layer(scene-roles);
 @import './presets/minimal-editorial.css' layer(presets);
 @import './presets/families.css' layer(presets);

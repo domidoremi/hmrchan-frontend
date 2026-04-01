@@ -11,13 +11,6 @@
       split
       @back="handleBack"
     >
-      <template #eyebrow>
-        <span class="auth-badge">
-          <span class="auth-badge-dot" aria-hidden="true" />
-          {{ emailSent ? $t('email.resetEmailSent') : $t('auth.secureBadge') }}
-        </span>
-      </template>
-
       <div v-if="emailSent" class="auth-form">
         <div class="auth-card auth-card--stack auth-status-card">
           <div class="status-icon status-icon--success">

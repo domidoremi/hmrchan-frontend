@@ -9,53 +9,67 @@
   --profile-section-radius: clamp(1rem, 1.6vw, 1.25rem);
   --profile-surface-bg: linear-gradient(
     155deg,
-    rgba(255, 255, 255, 0.94),
-    rgba(255, 255, 255, 0.82)
+    color-mix(in srgb, var(--semantic-surface-base) 96%, transparent),
+    color-mix(in srgb, var(--semantic-surface-muted) 90%, transparent)
   );
   --profile-surface-bg-soft: linear-gradient(
     155deg,
-    rgba(255, 255, 255, 0.88),
-    rgba(255, 255, 255, 0.74)
+    color-mix(in srgb, var(--semantic-surface-base) 90%, transparent),
+    color-mix(in srgb, var(--semantic-surface-muted) 84%, transparent)
   );
-  --profile-surface-border: rgba(255, 255, 255, 0.58);
-  --profile-surface-border-strong: rgba(148, 163, 184, 0.22);
-  --profile-surface-shadow: 0 1.4rem 3rem -2rem rgba(15, 23, 42, 0.26);
-  --profile-surface-shadow-hover: 0 1.8rem 3.4rem -2rem rgba(15, 23, 42, 0.32);
-  --profile-muted-bg: rgba(255, 255, 255, 0.68);
-  --profile-muted-bg-strong: rgba(255, 255, 255, 0.84);
-  --profile-muted-border: rgba(148, 163, 184, 0.16);
-  --profile-muted-border-strong: rgba(var(--color-primary-rgb), 0.22);
-  --profile-chip-bg: rgba(255, 255, 255, 0.78);
-  --profile-chip-border: rgba(148, 163, 184, 0.16);
-  --profile-chip-text: var(--color-text-secondary);
-  --profile-action-bg: rgba(255, 255, 255, 0.62);
-  --profile-action-bg-hover: rgba(255, 255, 255, 0.86);
-  --profile-action-border: rgba(148, 163, 184, 0.16);
-  --profile-action-border-strong: rgba(var(--color-primary-rgb), 0.22);
-}
-
-[data-color-mode='dark'] {
-  --profile-surface-bg: linear-gradient(155deg, rgba(12, 16, 23, 0.96), rgba(19, 25, 37, 0.9));
-  --profile-surface-bg-soft: linear-gradient(
-    155deg,
-    rgba(15, 20, 31, 0.92),
-    rgba(22, 29, 43, 0.84)
+  --profile-surface-border: color-mix(in srgb, var(--semantic-border) 78%, transparent);
+  --profile-surface-border-strong: color-mix(
+    in srgb,
+    var(--semantic-border-strong) 70%,
+    var(--semantic-accent) 30%
   );
-  --profile-surface-border: rgba(255, 255, 255, 0.09);
-  --profile-surface-border-strong: rgba(255, 255, 255, 0.14);
-  --profile-surface-shadow: 0 1.6rem 3.4rem -2rem rgba(0, 0, 0, 0.46);
-  --profile-surface-shadow-hover: 0 2rem 3.8rem -2rem rgba(0, 0, 0, 0.56);
-  --profile-muted-bg: rgba(20, 26, 38, 0.82);
-  --profile-muted-bg-strong: rgba(25, 32, 46, 0.94);
-  --profile-muted-border: rgba(255, 255, 255, 0.08);
-  --profile-muted-border-strong: rgba(var(--color-primary-rgb), 0.24);
-  --profile-chip-bg: rgba(21, 28, 40, 0.9);
-  --profile-chip-border: rgba(255, 255, 255, 0.08);
-  --profile-chip-text: var(--color-gray-200);
-  --profile-action-bg: rgba(22, 29, 43, 0.82);
-  --profile-action-bg-hover: rgba(28, 36, 52, 0.96);
-  --profile-action-border: rgba(255, 255, 255, 0.08);
-  --profile-action-border-strong: rgba(var(--color-primary-rgb), 0.24);
+  --profile-surface-shadow: var(--appearance-shadow-medium);
+  --profile-surface-shadow-hover: var(--appearance-shadow-strong);
+  --profile-muted-bg: color-mix(in srgb, var(--semantic-surface-base) 84%, transparent);
+  --profile-muted-bg-strong: color-mix(
+    in srgb,
+    var(--semantic-surface-base) 92%,
+    var(--semantic-surface-muted) 8%
+  );
+  --profile-muted-border: color-mix(in srgb, var(--semantic-border) 74%, transparent);
+  --profile-muted-border-strong: color-mix(
+    in srgb,
+    var(--semantic-border-strong) 66%,
+    var(--semantic-accent) 34%
+  );
+  --profile-chip-bg: color-mix(in srgb, var(--semantic-surface-base) 88%, transparent);
+  --profile-chip-border: color-mix(in srgb, var(--semantic-border) 74%, transparent);
+  --profile-chip-text: var(--semantic-text-secondary);
+  --profile-action-bg: color-mix(in srgb, var(--semantic-surface-base) 82%, transparent);
+  --profile-action-bg-hover: color-mix(
+    in srgb,
+    var(--semantic-surface-base) 90%,
+    var(--semantic-surface-muted) 10%
+  );
+  --profile-action-border: color-mix(in srgb, var(--semantic-border) 74%, transparent);
+  --profile-action-border-strong: color-mix(
+    in srgb,
+    var(--semantic-border-strong) 66%,
+    var(--semantic-accent) 34%
+  );
+  --page-shell-surface-bg: var(--profile-surface-bg-soft);
+  --page-shell-surface-bg-strong: var(--profile-surface-bg);
+  --page-shell-surface-border: var(--profile-surface-border);
+  --page-shell-surface-border-strong: var(--profile-surface-border-strong);
+  --page-shell-control-bg: var(--profile-action-bg);
+  --page-shell-control-bg-hover: var(--profile-action-bg-hover);
+  --page-shell-control-border: var(--profile-action-border);
+  --page-shell-control-border-strong: var(--profile-action-border-strong);
+  --page-shell-control-ink: var(--profile-chip-text);
+  --page-shell-control-ink-strong: var(--color-text-primary);
+  --page-shell-control-active-bg: var(--profile-surface-bg-soft);
+  --page-shell-control-active-border: var(--profile-action-border-strong);
+  --page-shell-control-active-ink: var(--color-primary);
+  --page-shell-eyebrow-bg: var(--profile-chip-bg);
+  --page-shell-eyebrow-border: var(--profile-chip-border);
+  --page-shell-eyebrow-ink: var(--profile-chip-text);
+  --appearance-page-control-shadow: none;
+  --appearance-page-surface-shadow: var(--profile-surface-shadow);
 }
 
 [data-preset='gradient-narrative'][data-color-mode='light'] {
@@ -113,7 +127,7 @@
 
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  .page-control-btn {
+  :is(.page-control, .page-control-btn) {
   background: var(--profile-action-bg);
   border-color: var(--profile-action-border);
   color: var(--profile-chip-text);
@@ -122,10 +136,10 @@
 
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  .page-control-btn:hover,
+  :is(.page-control, .page-control-btn):hover,
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  .page-control-btn:focus-visible {
+  :is(.page-control, .page-control-btn):focus-visible {
   background: var(--profile-action-bg-hover);
   border-color: var(--profile-action-border-strong);
   color: var(--color-text-primary);
@@ -133,10 +147,13 @@
 
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  .page-control-btn[aria-pressed='true'],
+  :is(.page-control, .page-control-btn)[aria-pressed='true'],
 #app
   :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
-  .page-control-btn.active {
+  :is(.page-control, .page-control-btn).active,
+#app
+  :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
+  .page-control.page-control--active {
   color: var(--color-primary);
 }
 

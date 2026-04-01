@@ -18,8 +18,8 @@
     </a>
 
     <!-- Navbar -->
-    <AppNavbar />
-    <AppSideNav />
+    <AppNavbar :chromeless="isAuthRoute" />
+    <AppSideNav :chromeless="isAuthRoute" />
 
     <!-- Main Content with Error Boundary -->
     <main
@@ -361,6 +361,11 @@ main.main--home {
   padding-top: 0;
 }
 
+main.main--auth {
+  padding-top: 0;
+  background: transparent;
+}
+
 @media (max-width: 768px) {
   main.main--home {
     padding-bottom: 0;
@@ -381,6 +386,7 @@ main.main--home {
 }
 
 .route-view.route-view--auth {
+  min-height: 100dvh;
   background: transparent;
   overflow: visible;
 }

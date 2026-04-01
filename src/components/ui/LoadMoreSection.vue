@@ -1,20 +1,20 @@
 <template>
   <section class="load-more-section">
     <header class="load-more-header">
-      <div class="progress-pill ui-pill ui-pill--progress empty-surface">
+      <PageMetaChip class="progress-pill">
         <span class="progress-label">{{
           t('common.showing', { count: displayCount, total: displayTotal })
         }}</span>
         <span class="progress-value">{{ Math.round(progressPercent) }}%</span>
-      </div>
-      <button
+      </PageMetaChip>
+      <ControlButton
         v-if="hasMore && allowManual"
-        type="button"
-        class="ghost-action page-control-btn page-control-btn--compact"
+        class="ghost-action"
+        size="compact"
         @click="emit('load-more')"
       >
         {{ t('common.loadMore') }}
-      </button>
+      </ControlButton>
     </header>
 
     <div class="progress-track">
@@ -71,6 +71,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronDown } from '@lucide/vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { resolveLoadMoreMetrics } from '@/components/ui/loadMoreMetrics'
@@ -133,9 +135,11 @@ const setSentinelRef = (el: Element | null) => {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-3);
-  padding: var(--spacing-2) var(--spacing-4);
-  border-radius: var(--radius-full);
+  min-block-size: var(--appearance-chip-min-block-size);
+  padding-inline: var(--appearance-chip-padding-inline);
+  border-radius: var(--appearance-chip-radius);
   font-size: var(--text-sm);
+  line-height: var(--appearance-ui-line-height);
 }
 
 .progress-pill.empty-surface,
@@ -152,7 +156,7 @@ const setSentinelRef = (el: Element | null) => {
   color: var(--color-text-primary);
 }
 
-.ghost-action.page-control-btn {
+.ghost-action.page-control {
   box-shadow: none;
 }
 
@@ -223,10 +227,12 @@ const setSentinelRef = (el: Element | null) => {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-4);
-  border-radius: var(--radius-full);
+  min-block-size: var(--appearance-chip-min-block-size);
+  padding-inline: var(--appearance-chip-padding-inline);
+  border-radius: var(--appearance-chip-radius);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  line-height: var(--appearance-ui-line-height);
 }
 
 .sentinel-idle {

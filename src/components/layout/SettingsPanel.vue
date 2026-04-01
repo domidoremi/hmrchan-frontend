@@ -14,14 +14,17 @@
           </div>
           <span>{{ $t('nav.settings') }}</span>
         </div>
-        <button
-          type="button"
-          class="settings-close-btn page-control-btn page-control-btn--square"
+        <ControlButton
+          class="settings-close-btn"
+          size="square"
+          icon-only
           :aria-label="$t('common.close')"
           @click="$emit('close')"
         >
-          <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
-        </button>
+          <template #start>
+            <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
+          </template>
+        </ControlButton>
       </div>
 
       <div
@@ -735,6 +738,7 @@ import { applyAppearancePreset } from '@/services/appearanceLoader'
 import type { AppearancePreset, ContrastMode, DensityMode, TextureLevel, Theme } from '@/types'
 import type { AnimationIntensity, ParticleEffectType } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
 
 type SettingsCategory = 'appearance' | 'experience' | 'privacy' | 'system'
 
@@ -1175,12 +1179,10 @@ function resetVideoSettings() {
   height: 1.5rem;
 }
 
-.settings-close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
+.settings-close-btn.page-control {
+  min-inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   background: color-mix(in srgb, var(--chrome-action-bg) 46%, transparent);
@@ -1193,12 +1195,13 @@ function resetVideoSettings() {
     box-shadow var(--transition-fast);
 }
 
-.settings-panel--compact .settings-close-btn {
-  width: 1.75rem;
-  height: 1.75rem;
+.settings-panel--compact .settings-close-btn.page-control {
+  min-inline-size: 1.75rem;
+  block-size: 1.75rem;
 }
 
-.settings-close-btn:hover {
+.settings-close-btn.page-control:hover,
+.settings-close-btn.page-control:focus-visible {
   color: var(--color-text-primary);
   background: color-mix(in srgb, var(--chrome-action-bg-hover) 62%, transparent);
   border-color: color-mix(in srgb, var(--chrome-action-border-strong) 72%, transparent);

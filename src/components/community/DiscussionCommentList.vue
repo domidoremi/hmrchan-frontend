@@ -75,14 +75,9 @@
       />
     </TransitionGroup>
 
-    <button
-      v-if="hasMore && !isLoadingMore"
-      type="button"
-      class="load-more-btn page-control-btn"
-      @click="loadMore"
-    >
+    <ControlButton v-if="hasMore && !isLoadingMore" class="load-more-btn" @click="loadMore">
       {{ $t('common.viewMore') }}
-    </button>
+    </ControlButton>
   </section>
 </template>
 
@@ -97,6 +92,7 @@ import DiscussionCommentForm from './DiscussionCommentForm.vue'
 import DiscussionCommentCard from './DiscussionCommentCard.vue'
 import { discussionCommentTreeContextKey } from './discussionCommentTreeContext'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Select from '@/components/ui/Select.vue'
 
@@ -593,7 +589,8 @@ onUnmounted(() => {
 
 .load-more-btn {
   margin-top: var(--spacing-4);
-  width: 100%;
+  inline-size: 100%;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {

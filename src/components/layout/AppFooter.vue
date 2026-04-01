@@ -22,45 +22,45 @@
               </span>
             </RouterLink>
             <p>{{ $t('footer.desc') }}</p>
-            <div class="footer-note ui-pill ui-pill--info">
+            <PageMetaChip class="footer-note">
               <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
               <span>{{ $t('footer.note') }}</span>
-            </div>
+            </PageMetaChip>
             <div v-if="isHomeVariant" class="footer-actions">
-              <RouterLink to="/explore" class="footer-link footer-link--cta cta-secondary">
+              <ControlButton :tag="RouterLink" to="/explore" class="footer-link footer-link--cta">
                 {{ $t('home.hero.primaryAction') }}
-              </RouterLink>
-              <RouterLink to="/contact" class="footer-link cta-secondary">
+              </ControlButton>
+              <ControlButton :tag="RouterLink" to="/contact" class="footer-link" size="compact">
                 {{ $t('nav.contact') }}
-              </RouterLink>
+              </ControlButton>
             </div>
           </div>
 
           <div class="footer-columns">
             <nav class="footer-column" :aria-label="$t('common.footerNav')">
               <span class="footer-column__title">{{ $t('footer.columns.discover') }}</span>
-              <RouterLink to="/explore" class="footer-link cta-secondary">
+              <ControlButton :tag="RouterLink" to="/explore" class="footer-link" size="compact">
                 {{ $t('nav.explore') }}
-              </RouterLink>
-              <RouterLink to="/authors" class="footer-link cta-secondary">
+              </ControlButton>
+              <ControlButton :tag="RouterLink" to="/authors" class="footer-link" size="compact">
                 {{ $t('nav.authors') }}
-              </RouterLink>
-              <RouterLink to="/schedule" class="footer-link cta-secondary">
+              </ControlButton>
+              <ControlButton :tag="RouterLink" to="/schedule" class="footer-link" size="compact">
                 {{ $t('nav.schedule') }}
-              </RouterLink>
+              </ControlButton>
             </nav>
 
             <nav class="footer-column" :aria-label="$t('common.footerNav')">
               <span class="footer-column__title">{{ $t('footer.columns.community') }}</span>
-              <RouterLink to="/community" class="footer-link cta-secondary">
+              <ControlButton :tag="RouterLink" to="/community" class="footer-link" size="compact">
                 {{ $t('nav.community') }}
-              </RouterLink>
-              <RouterLink to="/contact" class="footer-link cta-secondary">
+              </ControlButton>
+              <ControlButton :tag="RouterLink" to="/contact" class="footer-link" size="compact">
                 {{ $t('nav.contact') }}
-              </RouterLink>
-              <RouterLink to="/about" class="footer-link cta-secondary">
+              </ControlButton>
+              <ControlButton :tag="RouterLink" to="/about" class="footer-link" size="compact">
                 {{ $t('nav.about') }}
-              </RouterLink>
+              </ControlButton>
             </nav>
           </div>
         </div>
@@ -68,15 +68,20 @@
         <div class="footer-bottom">
           <span>&copy; {{ currentYear }} {{ $t('app.name') }}</span>
           <span class="footer-bottom__meta">{{ $t('footer.rights') }}</span>
-          <a
+          <ControlButton
+            :tag="'a'"
             href="https://github.com/domidoremi/hmrchan-frontend"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"
-            class="footer-social-link cta-secondary"
+            class="footer-social-link"
+            size="square"
+            icon-only
           >
-            <AnimatedIcon name="explore" :fallback-icon="IconGithub" size="sm" />
-          </a>
+            <template #start>
+              <AnimatedIcon name="explore" :fallback-icon="IconGithub" size="sm" />
+            </template>
+          </ControlButton>
         </div>
       </div>
     </div>
@@ -90,6 +95,8 @@ import { RouterLink } from 'vue-router'
 import { Sparkles } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '@/stores'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { IconGithub } from '@/components/icons'
 
@@ -417,13 +424,12 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   color: var(--color-text-secondary);
 }
 
-.footer-note {
-  display: inline-flex;
-  align-items: center;
+.footer-note.page-meta-chip {
   gap: var(--spacing-2);
   align-self: flex-start;
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
+  box-shadow: none;
 }
 
 .footer-actions {
@@ -452,32 +458,24 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   text-transform: uppercase;
 }
 
-.footer-link {
-  display: inline-flex;
-  align-items: center;
+.footer-link.page-control {
   justify-content: flex-start;
-  min-block-size: 2.25rem;
+  min-inline-size: 0;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  text-decoration: none;
+  box-shadow: none;
   transition:
     color var(--transition-fast),
     background var(--transition-fast),
     border-color var(--transition-fast);
 }
 
-.footer-link--cta {
+.footer-link--cta.page-control {
   color: var(--color-text-primary);
 }
 
-.footer-link:hover {
-  color: var(--color-text-primary);
-  background: var(--footer-link-hover-bg);
-  border-color: var(--footer-chip-border);
-}
-
-.footer-link:focus-visible {
-  outline: none;
+.footer-link.page-control:hover,
+.footer-link.page-control:focus-visible {
   color: var(--color-text-primary);
   background: var(--footer-link-hover-bg);
   border-color: var(--footer-chip-border);
@@ -500,21 +498,20 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   margin-inline-start: auto;
 }
 
-.footer-social-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 2.25rem;
-  block-size: 2.25rem;
+.footer-social-link.page-control {
+  min-inline-size: var(--ui-action-size);
+  block-size: var(--ui-action-size);
+  padding: 0;
   color: var(--color-text-secondary);
+  box-shadow: none;
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
     border-color var(--transition-fast);
 }
 
-.footer-social-link:hover,
-.footer-social-link:focus-visible {
+.footer-social-link.page-control:hover,
+.footer-social-link.page-control:focus-visible {
   background: var(--footer-link-hover-bg);
   border-color: var(--footer-chip-border);
   color: var(--color-primary);

@@ -8,13 +8,6 @@
       wide
       @back="returnToLogin"
     >
-      <template #eyebrow>
-        <span class="auth-badge">
-          <span class="auth-badge-dot" aria-hidden="true" />
-          {{ $t('auth.googleLoginButton') }}
-        </span>
-      </template>
-
       <template v-if="isPopupBridgeMode">
         <div class="auth-card auth-card--stack auth-callback-card">
           <div class="status-icon status-icon--loading auth-callback-spinner" aria-hidden="true" />

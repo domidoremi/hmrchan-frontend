@@ -1,15 +1,35 @@
-:root[data-preset='gradient-narrative'] body::before {
-  background:
-    radial-gradient(circle at 18% 18%, rgba(59, 130, 246, 0.16) 0%, transparent 42%),
-    radial-gradient(circle at 78% 16%, rgba(124, 58, 237, 0.14) 0%, transparent 38%),
-    radial-gradient(circle at 72% 72%, rgba(14, 165, 233, 0.12) 0%, transparent 36%),
-    var(--color-background);
+@supports (
+  background: radial-gradient(circle at 18% 18%, rgba(59, 130, 246, 0.16) 0%, transparent 42%)
+) {
+  :is(:root, #app)[data-preset='gradient-narrative'] body::before {
+    background:
+      radial-gradient(circle at 18% 18%, rgba(59, 130, 246, 0.16) 0%, transparent 42%),
+      radial-gradient(circle at 78% 16%, rgba(124, 58, 237, 0.14) 0%, transparent 38%),
+      radial-gradient(circle at 72% 72%, rgba(14, 165, 233, 0.12) 0%, transparent 36%),
+      var(--color-background);
+    opacity: calc(0.28 + (var(--appearance-texture-opacity) * 2.8));
+  }
+
+  :is(:root, #app)[data-preset='gradient-narrative'][data-color-mode='dark'] body::before {
+    background:
+      radial-gradient(circle at 18% 18%, rgba(96, 165, 250, 0.22) 0%, transparent 40%),
+      radial-gradient(circle at 78% 16%, rgba(167, 139, 250, 0.18) 0%, transparent 34%),
+      radial-gradient(circle at 72% 72%, rgba(56, 189, 248, 0.16) 0%, transparent 34%),
+      var(--color-background);
+  }
 }
 
-:root[data-preset='gradient-narrative'][data-color-mode='dark'] body::before {
-  background:
-    radial-gradient(circle at 18% 18%, rgba(96, 165, 250, 0.22) 0%, transparent 40%),
-    radial-gradient(circle at 78% 16%, rgba(167, 139, 250, 0.18) 0%, transparent 34%),
-    radial-gradient(circle at 72% 72%, rgba(56, 189, 248, 0.16) 0%, transparent 34%),
-    var(--color-background);
+:is(:root, #app)[data-preset='gradient-narrative'][data-contrast='high'] body::before {
+  opacity: 0.24;
+}
+
+:is(:root, #app)[data-preset='gradient-narrative'][data-motion='reduced'] body::before,
+:is(:root, #app)[data-preset='gradient-narrative'][data-motion='none'] body::before {
+  transform: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :is(:root, #app)[data-preset='gradient-narrative'] body::before {
+    opacity: 0.22;
+  }
 }

@@ -7,33 +7,32 @@
     </div>
 
     <div class="container">
-      <header class="page-hero page-hero--bare authors-hero">
-        <div class="page-hero__content">
-          <div class="page-hero__header">
-            <div class="page-hero__heading">
-              <span class="page-hero__eyebrow">{{ $t('nav.authors') }}</span>
-              <div class="page-hero__title-row">
-                <h1 class="page-hero__title">{{ $t('nav.authors') }}</h1>
-                <span class="page-hero__badge">{{ total }}</span>
-              </div>
-              <p class="page-hero__subtitle">{{ $t('authors.subtitle') }}</p>
-            </div>
-            <div class="page-hero__actions">
-              <button type="button" class="page-control-btn" @click="goToExplore">
-                {{ $t('nav.explore') }}
-              </button>
-              <span v-if="isLoading && authors.length > 0" class="spinner spinner-sm" />
-            </div>
+      <PageHeroShell class="authors-hero" bare>
+        <template #heading>
+          <span class="page-hero-shell__eyebrow">{{ $t('nav.authors') }}</span>
+          <div class="page-hero-shell__title-row">
+            <h1 class="page-hero-shell__title">{{ $t('nav.authors') }}</h1>
+            <span class="page-hero-shell__badge">{{ total }}</span>
           </div>
+          <p class="page-hero-shell__subtitle">{{ $t('authors.subtitle') }}</p>
+        </template>
 
-          <div class="page-hero__meta">
-            <span class="page-hero__stat">
+        <template #actions>
+          <div class="page-hero-shell__actions">
+            <ControlButton @click="goToExplore">{{ $t('nav.explore') }}</ControlButton>
+            <span v-if="isLoading && authors.length > 0" class="spinner spinner-sm" />
+          </div>
+        </template>
+
+        <template #meta>
+          <PageMetaRow>
+            <PageMetaChip>
               <strong>{{ total }}</strong>
               <span>{{ $t('nav.authors') }}</span>
-            </span>
-          </div>
-        </div>
-      </header>
+            </PageMetaChip>
+          </PageMetaRow>
+        </template>
+      </PageHeroShell>
 
       <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
@@ -108,6 +107,10 @@ import {
   resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
+import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
+import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
 import AuthorCard from '@/components/business/AuthorCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'

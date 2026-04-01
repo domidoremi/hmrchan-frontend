@@ -46,15 +46,18 @@
   );
   --auth-track: color-mix(in srgb, var(--auth-panel-border) 88%, transparent);
   --auth-button-shadow: rgba(15, 23, 42, 0.08);
-  --auth-stage-max-block: calc(
-    var(--app-safe-block-size) - var(--navbar-visible-height) - clamp(2rem, 5vw, 4rem)
-  );
+  --auth-page-safe-top: calc((var(--navbar-visible-height) * 0.35) + clamp(0.75rem, 2vw, 1.25rem));
+  --auth-page-safe-bottom: max(env(safe-area-inset-bottom, 0rem), clamp(0.9rem, 2vw, 1.5rem));
+  --auth-stage-max-block: calc(100dvh - var(--auth-page-safe-top) - var(--auth-page-safe-bottom));
   position: relative;
-  block-size: max(0rem, calc(var(--app-safe-block-size) - var(--navbar-visible-height)));
+  min-block-size: 100dvh;
+  block-size: auto;
   display: grid;
   place-items: center;
   align-content: center;
-  padding: clamp(0.75rem, 2.4vw, 1.5rem);
+  padding-inline: clamp(0.75rem, 2.4vw, 1.5rem);
+  padding-block-start: var(--auth-page-safe-top);
+  padding-block-end: var(--auth-page-safe-bottom);
   overflow: hidden;
   color: var(--auth-text-strong);
   background:
@@ -395,26 +398,6 @@
 
 #app .auth-card--stack {
   gap: 0.875rem;
-}
-
-#app .auth-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.8rem;
-  border: 0.0625rem solid var(--auth-panel-border);
-  border-radius: var(--ui-radius-button, var(--radius-md));
-  background: color-mix(in srgb, var(--auth-form-surface) 96%, transparent);
-  color: var(--auth-text-strong);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-}
-
-#app .auth-badge-dot {
-  inline-size: 0.45rem;
-  block-size: 0.45rem;
-  border-radius: 50%;
-  background: var(--auth-accent);
 }
 
 #app .auth-divider {
@@ -812,12 +795,14 @@
 
 @media (max-width: 48rem) {
   #app .auth-page {
-    block-size: max(
-      0rem,
-      calc(var(--app-safe-block-size-with-mobile-nav) - var(--navbar-visible-height))
-    );
+    --auth-page-safe-top: calc((var(--navbar-visible-height) * 0.25) + 0.5rem);
+    --auth-page-safe-bottom: max(env(safe-area-inset-bottom, 0rem), 0.75rem);
+    min-block-size: 100dvh;
+    block-size: auto;
     place-items: center;
-    padding: 0.75rem;
+    padding-inline: 0.75rem;
+    padding-block-start: var(--auth-page-safe-top);
+    padding-block-end: var(--auth-page-safe-bottom);
   }
 
   #app .auth-shell,

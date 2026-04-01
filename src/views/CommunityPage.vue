@@ -8,79 +8,83 @@
 
     <div class="container">
       <!-- Header -->
-      <header class="page-hero page-hero--bare community-hero">
-        <div class="page-hero__content">
-          <div class="page-hero__header">
-            <div class="page-hero__heading">
-              <span class="page-hero__eyebrow">{{ $t('nav.community') }}</span>
-              <div>
-                <h1 class="page-hero__title">{{ $t('community.title') }}</h1>
-                <p class="page-hero__subtitle">{{ $t('community.subtitle') }}</p>
-              </div>
-            </div>
-            <div class="community-hero__actions page-hero__actions">
-              <div class="discussion-search page-input-shell">
-                <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
-                <input
-                  v-model="searchQuery"
-                  type="search"
-                  class="discussion-search-input"
-                  :placeholder="$t('community.searchPlaceholder')"
-                  :aria-label="$t('community.searchPlaceholder')"
-                  @keydown.escape="clearSearch"
-                />
-                <button
-                  v-if="searchQuery"
-                  type="button"
-                  class="search-clear-btn page-input-shell__action"
-                  :aria-label="$t('common.clear')"
-                  @click="clearSearch"
-                >
-                  <AnimatedIcon name="explore" :fallback-icon="X" size="sm" />
-                </button>
-              </div>
+      <PageHeroShell class="community-hero" bare>
+        <template #heading>
+          <span class="page-hero-shell__eyebrow">{{ $t('nav.community') }}</span>
+          <div>
+            <h1 class="page-hero-shell__title">{{ $t('community.title') }}</h1>
+            <p class="page-hero-shell__subtitle">{{ $t('community.subtitle') }}</p>
+          </div>
+        </template>
+
+        <template #actions>
+          <div class="community-hero__actions">
+            <div class="discussion-search page-input-shell">
+              <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
+              <input
+                v-model="searchQuery"
+                type="search"
+                class="discussion-search-input"
+                :placeholder="$t('community.searchPlaceholder')"
+                :aria-label="$t('community.searchPlaceholder')"
+                @keydown.escape="clearSearch"
+              />
               <button
+                v-if="searchQuery"
                 type="button"
-                class="guide-trigger page-control-btn page-control-btn--square"
-                :aria-label="$t('community.guideTitle')"
-                @click="showGuide = true"
+                class="search-clear-btn page-input-shell__action"
+                :aria-label="$t('common.clear')"
+                @click="clearSearch"
               >
-                <AnimatedIcon name="sparkle" :fallback-icon="HelpCircle" size="sm" />
+                <AnimatedIcon name="explore" :fallback-icon="X" size="sm" />
               </button>
             </div>
-          </div>
-
-          <div v-if="!searchQuery" class="community-tabs page-toolbar">
-            <button
-              v-for="tab in tabs"
-              :key="tab.id"
-              type="button"
-              class="tab-btn page-control-btn"
-              :class="{ active: activeTab === tab.id }"
-              :aria-pressed="activeTab === tab.id"
-              @click="switchTab(tab.id)"
+            <ControlButton
+              class="guide-trigger"
+              size="square"
+              icon-only
+              :aria-label="$t('community.guideTitle')"
+              @click="showGuide = true"
             >
-              <AnimatedIcon name="explore" :fallback-icon="tab.icon" size="sm" />
-              <span>{{ tab.label }}</span>
-            </button>
+              <template #start>
+                <AnimatedIcon name="sparkle" :fallback-icon="HelpCircle" size="sm" />
+              </template>
+            </ControlButton>
           </div>
+        </template>
 
-          <div v-if="!searchQuery" class="page-hero__meta community-hero__meta">
-            <span class="page-hero__note">
+        <PageToolbar v-if="!searchQuery" class="community-tabs">
+          <ControlButton
+            v-for="tab in tabs"
+            :key="tab.id"
+            class="tab-btn"
+            :pressed="activeTab === tab.id"
+            @click="switchTab(tab.id)"
+          >
+            <template #start>
+              <AnimatedIcon name="explore" :fallback-icon="tab.icon" size="sm" />
+            </template>
+            <span>{{ tab.label }}</span>
+          </ControlButton>
+        </PageToolbar>
+
+        <template #meta>
+          <PageMetaRow v-if="!searchQuery" class="community-hero__meta">
+            <PageMetaChip>
               <strong>{{ $t('community.recentDiscussions') }}</strong>
               {{ $t('community.guidePoint1') }}
-            </span>
-            <span class="page-hero__note">
+            </PageMetaChip>
+            <PageMetaChip>
               <strong>{{ $t('community.hotTopics') }}</strong>
               {{ $t('community.guidePoint2') }}
-            </span>
-            <span class="page-hero__note">
+            </PageMetaChip>
+            <PageMetaChip>
               <strong>{{ $t('community.guideTitle') }}</strong>
               {{ $t('community.guidePoint3') }}
-            </span>
-          </div>
-        </div>
-      </header>
+            </PageMetaChip>
+          </PageMetaRow>
+        </template>
+      </PageHeroShell>
 
       <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
@@ -164,13 +168,9 @@
           </div>
           <div class="login-prompt__actions">
             <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
-            <button
-              type="button"
-              class="login-prompt__secondary page-control-btn page-control-btn--compact"
-              @click="goToExplore"
-            >
+            <ControlButton class="login-prompt__secondary" size="compact" @click="goToExplore">
               {{ $t('nav.explore') }}
-            </button>
+            </ControlButton>
           </div>
         </div>
 
@@ -378,6 +378,11 @@ import Avatar from '@/components/ui/Avatar.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
 import ReferencedPostPreview from '@/components/community/ReferencedPostPreview.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
+import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
+import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
+import PageToolbar from '@/components/appearance/PageToolbar.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 
 const router = useRouter()

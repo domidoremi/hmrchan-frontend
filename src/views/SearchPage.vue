@@ -1,41 +1,45 @@
 <template>
   <div class="search-page">
     <div class="container">
-      <header class="search-header page-hero search-hero">
-        <div class="page-hero__content">
-          <div class="page-hero__header">
-            <div class="page-hero__heading">
-              <span class="page-hero__eyebrow">{{ $t('search.title') }}</span>
-              <div class="page-hero__title-row search-header-top">
-                <button
-                  type="button"
-                  class="back-btn page-control-btn page-control-btn--square"
-                  @click="goBack"
-                  :aria-label="$t('common.back')"
-                >
-                  <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
-                </button>
-                <h1 class="page-hero__title search-title">{{ $t('search.title') }}</h1>
-              </div>
-              <p class="page-hero__subtitle">{{ $t('search.subtitle') }}</p>
-            </div>
-            <div v-if="query" class="page-hero__actions">
-              <span class="page-hero__note">
-                {{ $t('search.resultsFor') }} <strong>"{{ query }}"</strong>
-              </span>
-            </div>
+      <PageHeroShell class="search-header search-hero">
+        <template #heading>
+          <span class="page-hero-shell__eyebrow">{{ $t('search.title') }}</span>
+          <div class="page-hero-shell__title-row search-header-top">
+            <ControlButton
+              class="back-btn"
+              size="square"
+              icon-only
+              :aria-label="$t('common.back')"
+              @click="goBack"
+            >
+              <template #start>
+                <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
+              </template>
+            </ControlButton>
+            <h1 class="page-hero-shell__title search-title">{{ $t('search.title') }}</h1>
           </div>
-          <SearchBar class="search-bar-main" />
-          <div v-if="!query" class="page-hero__meta">
-            <span class="page-hero__note">{{ $t('search.tips.keyword') }}</span>
-            <span class="page-hero__note">{{ $t('search.tips.author') }}</span>
-            <span class="page-hero__note">{{ $t('search.tips.platform') }}</span>
-          </div>
-        </div>
-      </header>
+          <p class="page-hero-shell__subtitle">{{ $t('search.subtitle') }}</p>
+        </template>
+
+        <template #actions>
+          <PageMetaChip v-if="query">
+            {{ $t('search.resultsFor') }} <strong>"{{ query }}"</strong>
+          </PageMetaChip>
+        </template>
+
+        <SearchBar class="search-bar-main" />
+
+        <template #meta>
+          <PageMetaRow v-if="!query">
+            <PageMetaChip>{{ $t('search.tips.keyword') }}</PageMetaChip>
+            <PageMetaChip>{{ $t('search.tips.author') }}</PageMetaChip>
+            <PageMetaChip>{{ $t('search.tips.platform') }}</PageMetaChip>
+          </PageMetaRow>
+        </template>
+      </PageHeroShell>
 
       <div v-if="query" class="search-content">
-        <section class="search-overview page-toolbar">
+        <PageToolbar tag="section" class="search-overview">
           <div class="search-meta">
             <p class="search-query-info">
               {{ $t('search.resultsFor') }} <strong>"{{ query }}"</strong>
@@ -43,54 +47,59 @@
           </div>
 
           <div class="search-filters">
-            <div class="filter-tabs page-control-group">
-              <button
+            <ControlGroup class="filter-tabs">
+              <ControlButton
                 v-for="tab in tabs"
                 :key="tab.id"
-                type="button"
-                class="filter-tab page-control-btn"
-                :class="{ active: activeTab === tab.id }"
-                :aria-pressed="activeTab === tab.id"
+                class="filter-tab"
+                :pressed="activeTab === tab.id"
                 @click="activeTab = tab.id"
               >
-                <AnimatedIcon
-                  :name="tab.id === 'posts' ? 'search' : 'user'"
-                  :fallback-icon="tab.icon"
-                  size="sm"
-                  :active="activeTab === tab.id"
-                />
+                <template #start>
+                  <AnimatedIcon
+                    :name="tab.id === 'posts' ? 'search' : 'user'"
+                    :fallback-icon="tab.icon"
+                    size="sm"
+                    :active="activeTab === tab.id"
+                  />
+                </template>
                 {{ tab.label }}
-                <span v-if="tab.id === 'posts' && total > 0" class="tab-count page-control-count">{{
-                  total
-                }}</span>
-                <span
-                  v-if="tab.id === 'authors' && authorTotal > 0"
-                  class="tab-count page-control-count"
-                  >{{ authorTotal }}</span
-                >
-              </button>
-            </div>
+                <template #end>
+                  <span
+                    v-if="tab.id === 'posts' && total > 0"
+                    class="tab-count page-control-count"
+                    >{{ total }}</span
+                  >
+                  <span
+                    v-else-if="tab.id === 'authors' && authorTotal > 0"
+                    class="tab-count page-control-count"
+                    >{{ authorTotal }}</span
+                  >
+                </template>
+              </ControlButton>
+            </ControlGroup>
 
             <div class="filter-options">
-              <div v-if="activeTab === 'posts'" class="platform-filters page-control-group">
-                <button
+              <ControlGroup v-if="activeTab === 'posts'" class="platform-filters" justify="end">
+                <ControlButton
                   v-for="platform in platformOptions"
                   :key="platform.value"
-                  type="button"
-                  class="platform-btn page-control-btn page-control-btn--compact"
-                  :class="{ active: currentPlatform === platform.value }"
-                  :aria-pressed="currentPlatform === platform.value"
+                  class="platform-btn"
+                  size="compact"
+                  :pressed="currentPlatform === platform.value"
                   @click="currentPlatform = platform.value"
                 >
-                  <AnimatedIcon
-                    :name="platform.value === 'all' ? 'explore' : 'sparkle'"
-                    :fallback-icon="platform.icon"
-                    size="sm"
-                    :active="currentPlatform === platform.value"
-                  />
+                  <template #start>
+                    <AnimatedIcon
+                      :name="platform.value === 'all' ? 'explore' : 'sparkle'"
+                      :fallback-icon="platform.icon"
+                      size="sm"
+                      :active="currentPlatform === platform.value"
+                    />
+                  </template>
                   <span class="platform-label">{{ platform.label }}</span>
-                </button>
-              </div>
+                </ControlButton>
+              </ControlGroup>
 
               <div v-if="activeTab === 'posts'" class="sort-controls">
                 <Select v-model="sortBy" class="sort-select">
@@ -98,11 +107,12 @@
                     {{ opt.label }}
                   </option>
                 </Select>
-                <button
-                  type="button"
-                  class="sort-order-btn page-control-btn page-control-btn--square"
+                <ControlButton
+                  class="sort-order-btn"
                   :class="{ 'sort-order-btn--asc': sortOrder === 'asc' }"
-                  :aria-pressed="sortOrder === 'asc'"
+                  size="square"
+                  icon-only
+                  :pressed="sortOrder === 'asc'"
                   :aria-label="
                     sortOrder === 'desc'
                       ? $t('search.sort.descending')
@@ -115,12 +125,14 @@
                   "
                   @click="toggleSortOrder"
                 >
-                  <AnimatedIcon name="explore" :fallback-icon="ArrowUpDown" size="sm" />
-                </button>
+                  <template #start>
+                    <AnimatedIcon name="explore" :fallback-icon="ArrowUpDown" size="sm" />
+                  </template>
+                </ControlButton>
               </div>
             </div>
           </div>
-        </section>
+        </PageToolbar>
 
         <div class="search-results">
           <div v-if="isLoading && results.length === 0" class="results-loading">
@@ -162,9 +174,9 @@
               <AnimatedIcon name="user" :fallback-icon="LogIn" size="md" class="login-hint-icon" />
               <div class="login-hint-content">
                 <p class="login-hint-text">{{ $t('search.loginForMore') }}</p>
-                <button type="button" class="login-hint-btn page-control-btn" @click="goToLogin">
+                <ControlButton class="login-hint-btn" @click="goToLogin">
                   {{ $t('nav.login') }}
-                </button>
+                </ControlButton>
               </div>
             </div>
           </template>
@@ -232,25 +244,29 @@
             </div>
 
             <div class="search-history-actions">
-              <button
-                type="button"
-                class="search-history-action page-control-btn page-control-btn--compact"
+              <ControlButton
+                class="search-history-action"
+                size="compact"
                 :disabled="isHistoryLoading || isHistoryMutating"
                 @click="fetchSearchInsights"
               >
-                <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+                <template #start>
+                  <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+                </template>
                 {{ $t('common.refresh') }}
-              </button>
-              <button
+              </ControlButton>
+              <ControlButton
                 v-if="searchHistory.length > 0"
-                type="button"
-                class="search-history-action page-control-btn page-control-btn--compact"
+                class="search-history-action"
+                size="compact"
                 :disabled="isHistoryMutating"
                 @click="clearSearchHistory"
               >
-                <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
+                <template #start>
+                  <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
+                </template>
                 {{ $t('search.clearHistory') }}
-              </button>
+              </ControlButton>
             </div>
           </div>
 
@@ -338,18 +354,20 @@
               <div class="search-history-trending">
                 <h4>{{ $t('search.topSearches') }}</h4>
                 <div v-if="topSearchQueries.length" class="search-history-tags">
-                  <button
+                  <ControlButton
                     v-for="item in topSearchQueries"
                     :key="item.query"
-                    type="button"
-                    class="search-history-tag page-control-btn page-control-btn--compact"
+                    class="search-history-tag"
+                    size="compact"
                     @click="runSearch(item.query)"
                   >
                     <span>#{{ item.query }}</span>
-                    <span v-if="item.count" class="search-history-tag__count">{{
-                      item.count
-                    }}</span>
-                  </button>
+                    <template #end>
+                      <span v-if="item.count" class="search-history-tag__count">{{
+                        item.count
+                      }}</span>
+                    </template>
+                  </ControlButton>
                 </div>
                 <p v-else class="search-history-empty-copy">
                   {{ $t('search.topSearchesEmpty') }}
@@ -365,15 +383,16 @@
               <h2 class="discover-title">{{ $t('search.discoverTitle') }}</h2>
               <p class="discover-subtitle">{{ $t('search.discoverHint') }}</p>
             </div>
-            <button
-              type="button"
-              class="discover-refresh page-control-btn"
+            <ControlButton
+              class="discover-refresh"
               :disabled="isDiscoverLoading"
               @click="fetchDiscoverPosts"
             >
-              <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+              <template #start>
+                <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+              </template>
               <span>{{ $t('common.refresh') }}</span>
-            </button>
+            </ControlButton>
           </div>
 
           <div v-if="isDiscoverLoading" class="results-loading">
@@ -425,6 +444,12 @@ import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icon
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import AuthorCard from '@/components/business/AuthorCard.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
+import ControlButton from '@/components/appearance/ControlButton.vue'
+import ControlGroup from '@/components/appearance/ControlGroup.vue'
+import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
+import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
+import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
+import PageToolbar from '@/components/appearance/PageToolbar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Select from '@/components/ui/Select.vue'
 import PostCard from '@/components/business/PostCard.vue'
@@ -684,7 +709,7 @@ const sortOptions = computed(() => [
   white-space: nowrap;
 }
 
-.login-hint-btn.page-control-btn {
+.login-hint-btn.page-control {
   background:
     linear-gradient(
       135deg,
@@ -697,7 +722,7 @@ const sortOptions = computed(() => [
   box-shadow: 0 0.9rem 1.7rem -1.25rem rgba(var(--color-primary-rgb), 0.34);
 }
 
-.login-hint-btn.page-control-btn:hover {
+.login-hint-btn.page-control:hover {
   background:
     linear-gradient(
       135deg,

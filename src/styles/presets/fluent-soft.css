@@ -12,12 +12,22 @@
   --appearance-text-tertiary: #64748b;
   --appearance-accent: #2563eb;
   --appearance-accent-rgb: 37, 99, 235;
+  --appearance-control-min-inline-size: 5.1rem;
+  --appearance-control-compact-min-inline-size: 4.2rem;
+  --appearance-control-gap: 0.625rem;
+  --appearance-chip-min-block-size: 2.5rem;
+  --appearance-chip-padding-inline: 1rem;
+  --appearance-chip-radius: 999rem;
+  --appearance-eyebrow-radius: 999rem;
+  --appearance-toolbar-radius: 1.75rem;
+  --appearance-hero-panel-radius: 1.9rem;
   --appearance-radius-md: 0.875rem;
   --appearance-radius-lg: 1.125rem;
   --appearance-radius-xl: 1.5rem;
   --appearance-shadow-soft: 0 0.125rem 0.5rem rgb(37 99 235 / 0.08);
   --appearance-shadow-medium: 0 1rem 2.5rem rgb(37 99 235 / 0.12);
   --appearance-shadow-strong: 0 1.75rem 4rem rgb(15 23 42 / 0.14);
+  --appearance-toolbar-padding: clamp(0.95rem, 2vw, 1.2rem);
   --appearance-structure-shadow-token:
     0 0.0625rem 0 rgb(255 255 255 / 0.72) inset, 0 1rem 2.5rem rgb(37 99 235 / 0.12);
   --appearance-backdrop-token: blur(calc(1.5rem * var(--appearance-backdrop-strength)));
