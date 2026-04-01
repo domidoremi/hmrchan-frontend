@@ -53,7 +53,6 @@ export function useSearchPageState() {
   )
   const { debounced: debouncedSearchControlKey, cancel: cancelSearchControlDebounce } =
     useDebouncedRef(searchControlKey, 120)
-  let hasInitializedSearchControlWatcher = false
 
   const results = ref<PostListItem[]>([])
   const discoverPosts = ref<PostListItem[]>([])
@@ -455,11 +454,6 @@ export function useSearchPageState() {
   })
 
   watch(debouncedSearchControlKey, () => {
-    if (!hasInitializedSearchControlWatcher) {
-      hasInitializedSearchControlWatcher = true
-      return
-    }
-
     const controller = new AbortController()
     onWatcherCleanup(() => controller.abort())
     if (query.value) {
