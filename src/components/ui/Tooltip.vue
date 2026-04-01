@@ -128,7 +128,7 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-[data-theme='dark'] .ui-tooltip {
+[data-color-mode='dark'] .ui-tooltip {
   background: var(--color-gray-100);
   color: var(--color-gray-900);
 }

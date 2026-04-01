@@ -207,63 +207,59 @@ function handleRevokeAll() {
 
 <style>
 /* ===== Material 3 Overrides ===== */
-#app[data-ui-style='material'] .devices-page .security-card {
+#app[data-preset='material-calm'] .devices-page .security-card,
+#app[data-preset='sketch-doodle'] .devices-page .security-card {
   border-radius: var(--radius-lg);
 }
 
-#app[data-ui-style='material'] .devices-page .security-icon {
+#app[data-preset='material-calm'] .devices-page .security-icon,
+#app[data-preset='sketch-doodle'] .devices-page .security-icon {
   border-radius: var(--radius-md);
 }
 
-#app[data-ui-style='material'] .devices-page .page-body {
+#app[data-preset='material-calm'] .devices-page .page-body,
+#app[data-preset='sketch-doodle'] .devices-page .page-body {
   border-radius: var(--radius-lg);
 }
 
 /* ===== Dark Theme ===== */
-[data-theme='dark'] .devices-page .security-icon--devices {
+[data-color-mode='dark'] .devices-page .security-icon--devices {
   background: rgba(var(--color-primary-rgb), 0.15);
 }
 
-[data-theme='dark'] .devices-page .security-icon--trusted {
+[data-color-mode='dark'] .devices-page .security-icon--trusted {
   background: rgba(var(--color-success-rgb), 0.15);
 }
 
 /* ===== Blue Theme ===== */
-[data-theme='blue'] .devices-page .security-icon--devices {
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .devices-page
+  .security-icon--devices {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
 
-[data-theme='blue'] .devices-page .security-icon--current {
+#app[data-preset='gradient-narrative'][data-color-mode='light']
+  .devices-page
+  .security-icon--current {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
 
-[data-theme='blue'] .devices-page .security-number--ok {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .devices-page .security-number--ok {
   color: #3b82f6;
 }
 
 /* ===== Material + Dark ===== */
-#app[data-ui-style='material'][data-theme='dark'] .devices-page .security-card {
+#app[data-preset='material-calm'][data-color-mode='dark'] .devices-page .security-card,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .devices-page .security-card {
   background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-#app[data-ui-style='material'][data-theme='dark'] .devices-page .page-body {
+#app[data-preset='material-calm'][data-color-mode='dark'] .devices-page .page-body,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .devices-page .page-body {
   background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
   border-color: rgba(255, 255, 255, 0.06);
-}
-
-/* ===== Material + Blue ===== */
-#app[data-ui-style='material'][data-theme='blue'] .devices-page .security-card {
-  background: var(--profile-surface-bg);
-  border-color: rgba(59, 130, 246, 0.08);
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
-}
-
-#app[data-ui-style='material'][data-theme='blue'] .devices-page .page-body {
-  background: var(--profile-surface-bg);
-  border-color: rgba(59, 130, 246, 0.08);
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
 }
 </style>

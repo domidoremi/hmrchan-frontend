@@ -116,7 +116,7 @@ const computedStyle = computed(() => {
   animation: skeleton-wave 1.5s ease-in-out infinite;
 }
 
-[data-theme='dark'] .skeleton--wave::after {
+[data-color-mode='dark'] .skeleton--wave::after {
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -130,9 +130,9 @@ const computedStyle = computed(() => {
   animation: skeleton-pulse 2s ease-in-out infinite;
 }
 
-[data-theme='dark'] .skeleton,
-[data-theme='dark'] .skeleton--wave,
-[data-theme='dark'] .skeleton--pulse {
+[data-color-mode='dark'] .skeleton,
+[data-color-mode='dark'] .skeleton--wave,
+[data-color-mode='dark'] .skeleton--pulse {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.72), rgba(51, 65, 85, 0.92));
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.06);
 }

@@ -251,7 +251,7 @@
   pointer-events: none;
 }
 
-[data-theme='dark'] .glass-navbar::after {
+[data-color-mode='dark'] .glass-navbar::after {
   opacity: 0.5;
 }
 
@@ -316,25 +316,25 @@
   animation: glass-wave 1.5s ease-in-out infinite;
 }
 
-[data-theme='dark'] .glass-surface--base,
-[data-theme='dark'] .glass-card,
-[data-theme='dark'] .glass-surface--elevated,
-[data-theme='dark'] .glass-card-enhanced,
-[data-theme='dark'] .glass-surface--editorial,
-[data-theme='dark'] .glass-card--editorial,
-[data-theme='dark'] .glass-panel,
-[data-theme='dark'] .glass-button {
+[data-color-mode='dark'] .glass-surface--base,
+[data-color-mode='dark'] .glass-card,
+[data-color-mode='dark'] .glass-surface--elevated,
+[data-color-mode='dark'] .glass-card-enhanced,
+[data-color-mode='dark'] .glass-surface--editorial,
+[data-color-mode='dark'] .glass-card--editorial,
+[data-color-mode='dark'] .glass-panel,
+[data-color-mode='dark'] .glass-button {
   background:
     linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.62)), rgba(15, 23, 42, 0.64);
   border-color: rgba(148, 163, 184, 0.16);
 }
 
-[data-theme='dark'] .glass-skeleton,
-[data-theme='dark'] .glass-skeleton--wave {
+[data-color-mode='dark'] .glass-skeleton,
+[data-color-mode='dark'] .glass-skeleton--wave {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.74), rgba(51, 65, 85, 0.9));
 }
 
-[data-theme='dark'] .glass-skeleton--wave::after {
+[data-color-mode='dark'] .glass-skeleton--wave::after {
   background: linear-gradient(
     90deg,
     transparent 0%,

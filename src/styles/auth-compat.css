@@ -84,8 +84,10 @@
   opacity: 0.42;
 }
 
-#app[data-ui-style='material'] .auth-page,
-[data-ui-style='material'] #app .auth-page {
+#app[data-preset='material-calm'] .auth-page,
+#app[data-preset='sketch-doodle'] .auth-page,
+[data-preset='material-calm'] #app .auth-page,
+[data-preset='sketch-doodle'] #app .auth-page {
   --auth-shell-radius: var(--radius-lg);
   --auth-section-radius: var(--radius-md);
 }

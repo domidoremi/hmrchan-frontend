@@ -89,7 +89,7 @@ import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
 import { Sparkles } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
-import { useSettingsStore, useThemeStore } from '@/stores'
+import { useThemeStore } from '@/stores'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { IconGithub } from '@/components/icons'
 
@@ -105,9 +105,7 @@ const props = withDefaults(
 const { t } = useI18n()
 const currentYear = computed(() => new Date().getFullYear())
 const themeStore = useThemeStore()
-const settingsStore = useSettingsStore()
 const { resolvedTheme } = storeToRefs(themeStore)
-const { settings } = storeToRefs(settingsStore)
 const isHomeVariant = computed(() => props.variant === 'home')
 const noGlassBackdropStyle = Object.freeze({
   backdropFilter: 'blur(0rem)',
@@ -123,14 +121,14 @@ const marqueeItems = computed(() => [
 const footerShellStyle = computed<Record<string, string>>(() => {
   const style: Record<string, string> = {
     '--footer-shell-bg': isHomeVariant.value
-      ? 'var(--home-panel-bg-soft, var(--chrome-surface-bg))'
-      : 'var(--chrome-surface-bg)',
+      ? 'var(--home-panel-bg-soft, var(--ui-compat-surface-elevated, var(--chrome-surface-bg)))'
+      : 'var(--ui-compat-surface-elevated, var(--chrome-surface-bg))',
     '--footer-shell-border': isHomeVariant.value
-      ? 'var(--home-panel-border, var(--chrome-surface-border))'
-      : 'var(--chrome-surface-border)',
+      ? 'var(--home-panel-border, var(--ui-compat-shell-border, var(--chrome-surface-border)))'
+      : 'var(--ui-compat-shell-border, var(--chrome-surface-border))',
     '--footer-shell-shadow': isHomeVariant.value
-      ? 'var(--home-panel-shadow, var(--chrome-surface-shadow))'
-      : 'var(--chrome-surface-shadow)',
+      ? 'var(--home-panel-shadow, var(--ui-compat-shell-shadow, var(--chrome-surface-shadow)))'
+      : 'var(--ui-compat-shell-shadow, var(--chrome-surface-shadow))',
     '--footer-chip-bg': isHomeVariant.value
       ? 'var(--home-pill-bg, var(--chrome-chip-bg))'
       : 'var(--chrome-chip-bg)',
@@ -154,11 +152,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
       'linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%)'
   }
 
-  if (settings.value.uiStyle === 'material') {
-    style['--footer-shell-shadow'] = 'var(--shadow-md)'
-    style['--footer-shell-border'] = 'var(--ui-surface-border)'
-  }
-
   return style
 })
 </script>
@@ -180,9 +173,9 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.04) 0%, transparent 34%),
     radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.03) 0%, transparent 30%);
   --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, transparent 100%);
-  --footer-shell-bg: var(--chrome-surface-bg);
-  --footer-shell-border: var(--chrome-surface-border);
-  --footer-shell-shadow: var(--chrome-surface-shadow);
+  --footer-shell-bg: var(--ui-compat-surface-elevated, var(--chrome-surface-bg));
+  --footer-shell-border: var(--ui-compat-shell-border, var(--chrome-surface-border));
+  --footer-shell-shadow: var(--ui-compat-shell-shadow, var(--chrome-surface-shadow));
   --footer-chip-bg: var(--chrome-chip-bg);
   --footer-chip-border: var(--chrome-chip-border);
   --footer-divider: var(--chrome-muted-border);
@@ -226,8 +219,8 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   z-index: 1;
 }
 
-:global(#app[data-theme='dark'] .footer),
-:global([data-theme='dark'] .footer) {
+:global(#app[data-color-mode='dark'] .footer),
+:global([data-color-mode='dark'] .footer) {
   --footer-bg: linear-gradient(
     180deg,
     rgba(8, 12, 18, 0) 0%,
@@ -248,8 +241,8 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-link-hover-bg: var(--chrome-muted-bg);
 }
 
-:global(#app[data-theme='blue'] .footer),
-:global([data-theme='blue'] .footer) {
+:global(#app[data-preset='gradient-narrative'][data-color-mode='light'] .footer),
+:global([data-preset='gradient-narrative'][data-color-mode='light'] .footer) {
   --footer-bg: linear-gradient(
     180deg,
     rgba(239, 246, 255, 0.24) 0%,
@@ -284,8 +277,8 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-top-fade: linear-gradient(180deg, rgba(248, 247, 244, 0.12) 0%, transparent 100%);
 }
 
-:global(#app[data-theme='dark'] main.main--home + .footer),
-:global([data-theme='dark'] main.main--home + .footer) {
+:global(#app[data-color-mode='dark'] main.main--home + .footer),
+:global([data-color-mode='dark'] main.main--home + .footer) {
   --footer-bg: linear-gradient(
     180deg,
     rgba(8, 12, 18, 0.18) 0%,
@@ -299,8 +292,8 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-top-fade: linear-gradient(180deg, rgba(8, 12, 18, 0.08) 0%, transparent 100%);
 }
 
-:global(#app[data-theme='blue'] main.main--home + .footer),
-:global([data-theme='blue'] main.main--home + .footer) {
+:global(#app[data-preset='gradient-narrative'][data-color-mode='light'] main.main--home + .footer),
+:global([data-preset='gradient-narrative'][data-color-mode='light'] main.main--home + .footer) {
   --footer-bg: linear-gradient(
     180deg,
     rgba(239, 246, 255, 0.2) 0%,
@@ -314,14 +307,9 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-top-fade: linear-gradient(180deg, rgba(239, 246, 255, 0.12) 0%, transparent 100%);
 }
 
-:global(#app[data-ui-style='material'] .footer),
-:global([data-ui-style='material'] .footer) {
-  --footer-shell-shadow: var(--shadow-md);
-}
-
 .footer-shell.empty-surface {
   padding: clamp(1.5rem, 3vw, 2rem);
-  border-radius: var(--ui-radius-card, var(--radius-2xl));
+  border-radius: var(--ui-compat-panel-radius, var(--ui-radius-card, var(--radius-2xl)));
   border-color: var(--footer-shell-border) !important;
   background: var(--footer-shell-bg) !important;
   box-shadow: var(--footer-shell-shadow) !important;

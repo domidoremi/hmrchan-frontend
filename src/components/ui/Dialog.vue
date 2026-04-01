@@ -258,11 +258,12 @@ onUnmounted(() => {
   max-height: calc(100dvh - var(--spacing-8));
   display: flex;
   flex-direction: column;
-  border-radius: var(--ui-radius-dialog);
-  background: var(--ui-surface-bg, var(--glass-bg-strong));
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--ui-surface-border, var(--glass-border));
-  box-shadow: var(--shadow-xl);
+  border-radius: var(--ui-radius-dialog, var(--component-panel-radius));
+  background: var(--ui-surface-bg, var(--semantic-surface-base));
+  backdrop-filter: var(--ui-backdrop-blur);
+  -webkit-backdrop-filter: var(--ui-backdrop-blur);
+  border: 0.0625rem solid var(--ui-surface-border, var(--semantic-border));
+  box-shadow: var(--appearance-shadow-strong);
   overflow: hidden;
   color: var(--color-text-primary);
 }
@@ -347,7 +348,7 @@ onUnmounted(() => {
   justify-content: center;
   width: var(--ui-dialog-close-size);
   height: var(--ui-dialog-close-size);
-  border-radius: var(--ui-radius-button, var(--radius));
+  border-radius: var(--ui-radius-button, var(--component-control-radius));
   color: var(--color-text-secondary);
   transition:
     background-color 150ms var(--ease-out),
@@ -355,13 +356,13 @@ onUnmounted(() => {
 }
 
 .ui-dialog__close:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-foreground);
+  background: var(--ui-compat-surface-interactive-strong, var(--semantic-surface-muted));
+  color: var(--color-text-primary);
 }
 
 .ui-dialog__close:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+  box-shadow: var(--focus-ring-token);
 }
 
 .ui-dialog__close-icon {
@@ -386,7 +387,7 @@ onUnmounted(() => {
   justify-content: flex-end;
   gap: var(--spacing-2);
   padding: var(--spacing-4) var(--spacing-5);
-  border-top: 1px solid var(--glass-border);
+  border-top: 0.0625rem solid var(--semantic-border);
   flex-shrink: 0;
 }
 

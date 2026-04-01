@@ -328,7 +328,7 @@ onUnmounted(() => {
 }
 
 /* 暗色模式调整 */
-[data-theme='dark'] .authors-bg__blob {
+[data-color-mode='dark'] .authors-bg__blob {
   opacity: 0.15;
 }
 

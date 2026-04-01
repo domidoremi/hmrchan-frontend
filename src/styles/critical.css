@@ -75,7 +75,7 @@
 }
 
 /* 暗色模式 - 与 tokens.css 暗色体系保持一致 */
-[data-theme='dark'] {
+[data-color-mode='dark'] {
   --color-primary: #f4f4f5;
   --color-primary-rgb: 244, 244, 245;
   --color-primary-dark: #fafafa;
@@ -279,11 +279,11 @@ main {
   will-change: transform;
 }
 
-[data-theme='dark'] .skeleton {
+[data-color-mode='dark'] .skeleton {
   background: rgba(71, 85, 105, 0.3);
 }
 
-[data-theme='dark'] .skeleton::after {
+[data-color-mode='dark'] .skeleton::after {
   background: linear-gradient(90deg, transparent 0%, rgba(71, 85, 105, 0.5) 50%, transparent 100%);
 }
 

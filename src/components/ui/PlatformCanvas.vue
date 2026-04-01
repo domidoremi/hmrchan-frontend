@@ -68,12 +68,12 @@ usePlatformAnimation(
   }
 }
 
-[data-theme='dark'] .platform-canvas {
+[data-color-mode='dark'] .platform-canvas {
   opacity: 0.7;
 }
 
 @media (max-width: 768px) {
-  [data-theme='dark'] .platform-canvas {
+  [data-color-mode='dark'] .platform-canvas {
     opacity: 0.4;
   }
 }

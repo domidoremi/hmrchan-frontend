@@ -1,0 +1,73 @@
+:root[data-preset='fluent-soft'],
+#app[data-preset='fluent-soft'] {
+  --appearance-font-family: var(--locale-font-family, 'Inter', 'Segoe UI', sans-serif);
+  --appearance-canvas: #eef4fb;
+  --appearance-surface-1: rgb(255 255 255 / 0.86);
+  --appearance-surface-2: rgb(232 242 252 / 0.92);
+  --appearance-surface-3: #d6e7fb;
+  --appearance-border: rgba(66, 88, 120, 0.14);
+  --appearance-border-strong: rgba(66, 88, 120, 0.22);
+  --appearance-text-primary: #112a46;
+  --appearance-text-secondary: #44556d;
+  --appearance-text-tertiary: #64748b;
+  --appearance-accent: #2563eb;
+  --appearance-accent-rgb: 37, 99, 235;
+  --appearance-radius-md: 0.875rem;
+  --appearance-radius-lg: 1.125rem;
+  --appearance-radius-xl: 1.5rem;
+  --appearance-shadow-soft: 0 0.125rem 0.5rem rgb(37 99 235 / 0.08);
+  --appearance-shadow-medium: 0 1rem 2.5rem rgb(37 99 235 / 0.12);
+  --appearance-shadow-strong: 0 1.75rem 4rem rgb(15 23 42 / 0.14);
+  --appearance-structure-shadow-token:
+    0 0.0625rem 0 rgb(255 255 255 / 0.72) inset, 0 1rem 2.5rem rgb(37 99 235 / 0.12);
+  --appearance-backdrop-token: blur(calc(1.5rem * var(--appearance-backdrop-strength)));
+  --color-primary: #1d4ed8;
+  --color-primary-rgb: 29, 78, 216;
+  --color-primary-light: #60a5fa;
+  --color-primary-dark: #1e3a8a;
+  --color-accent: #38bdf8;
+  --color-accent-rgb: 56, 189, 248;
+  --color-background: #eef4fb;
+  --color-surface: rgb(255 255 255 / 0.86);
+  --color-surface-variant: rgb(232 242 252 / 0.92);
+  --color-border: rgba(66, 88, 120, 0.14);
+  --color-text-primary: #112a46;
+  --color-text-secondary: #44556d;
+  --color-text-tertiary: #64748b;
+  --glass-bg: rgb(255 255 255 / 0.72);
+  --glass-bg-strong: rgb(255 255 255 / 0.82);
+  --glass-border: rgb(255 255 255 / 0.48);
+  --glass-shadow: 0 1rem 2.5rem rgb(37 99 235 / 0.12);
+}
+
+:root[data-preset='fluent-soft'][data-color-mode='dark'],
+#app[data-preset='fluent-soft'][data-color-mode='dark'] {
+  --appearance-canvas: #0d1420;
+  --appearance-surface-1: rgb(16 24 37 / 0.84);
+  --appearance-surface-2: rgb(23 34 52 / 0.9);
+  --appearance-surface-3: #243449;
+  --appearance-border: rgba(147, 197, 253, 0.16);
+  --appearance-border-strong: rgba(147, 197, 253, 0.28);
+  --appearance-text-primary: #eff6ff;
+  --appearance-text-secondary: #cbd5e1;
+  --appearance-text-tertiary: #94a3b8;
+  --appearance-accent: #7dd3fc;
+  --appearance-accent-rgb: 125, 211, 252;
+  --color-primary: #bfdbfe;
+  --color-primary-rgb: 191, 219, 254;
+  --color-primary-light: #e0f2fe;
+  --color-primary-dark: #93c5fd;
+  --color-accent: #38bdf8;
+  --color-accent-rgb: 56, 189, 248;
+  --color-background: #0d1420;
+  --color-surface: rgb(16 24 37 / 0.84);
+  --color-surface-variant: rgb(23 34 52 / 0.9);
+  --color-border: rgba(147, 197, 253, 0.16);
+  --color-text-primary: #eff6ff;
+  --color-text-secondary: #cbd5e1;
+  --color-text-tertiary: #94a3b8;
+  --glass-bg: rgb(16 24 37 / 0.76);
+  --glass-bg-strong: rgb(23 34 52 / 0.88);
+  --glass-border: rgb(147 197 253 / 0.16);
+  --glass-shadow: 0 1rem 2.75rem rgb(2 6 23 / 0.36);
+}

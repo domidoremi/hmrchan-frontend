@@ -2924,8 +2924,8 @@ onBeforeUnmount(() => {
   z-index: 1;
 }
 
-:global(#app[data-theme='dark'] .home-page),
-:global([data-theme='dark'] .home-page) {
+:global(#app[data-color-mode='dark'] .home-page),
+:global([data-color-mode='dark'] .home-page) {
   --home-section-bg:
     radial-gradient(circle at top left, rgba(var(--home-mist-rgb), 0.08) 0%, transparent 30%),
     radial-gradient(circle at top right, rgba(var(--home-blush-rgb), 0.08) 0%, transparent 24%),
@@ -2972,8 +2972,8 @@ onBeforeUnmount(() => {
     linear-gradient(180deg, rgba(7, 10, 16, 0) 0%, rgba(8, 12, 18, 0.82) 100%);
 }
 
-:global(#app[data-theme='blue'] .home-page),
-:global([data-theme='blue'] .home-page) {
+:global(#app[data-preset='gradient-narrative'][data-color-mode='light'] .home-page),
+:global([data-preset='gradient-narrative'][data-color-mode='light'] .home-page) {
   --home-section-bg:
     radial-gradient(circle at top left, rgba(147, 197, 253, 0.34) 0%, transparent 34%),
     radial-gradient(circle at top right, rgba(129, 140, 248, 0.24) 0%, transparent 28%),
@@ -3046,8 +3046,10 @@ onBeforeUnmount(() => {
     linear-gradient(180deg, rgba(240, 249, 255, 0) 0%, rgba(239, 246, 255, 0.74) 100%);
 }
 
-:global(#app[data-ui-style='material'] .home-page),
-:global([data-ui-style='material'] .home-page) {
+:global(#app[data-preset='material-calm'] .home-page),
+:global(#app[data-preset='sketch-doodle'] .home-page),
+:global([data-preset='material-calm'] .home-page),
+:global([data-preset='sketch-doodle'] .home-page) {
   --home-shell-radius: var(--ui-radius-card, var(--radius-xl));
   --home-card-radius: var(--ui-radius-input, var(--radius-md));
   --home-chip-radius: var(--ui-radius-button, var(--radius-full));
@@ -6134,8 +6136,8 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-:global(#app[data-theme='dark'] .media-slices),
-:global([data-theme='dark'] .media-slices) {
+:global(#app[data-color-mode='dark'] .media-slices),
+:global([data-color-mode='dark'] .media-slices) {
   background: linear-gradient(
     180deg,
     rgba(8, 12, 18, 0.06) 0%,
@@ -6144,8 +6146,8 @@ onBeforeUnmount(() => {
   );
 }
 
-:global(#app[data-theme='blue'] .media-slices),
-:global([data-theme='blue'] .media-slices) {
+:global(#app[data-preset='gradient-narrative'][data-color-mode='light'] .media-slices),
+:global([data-preset='gradient-narrative'][data-color-mode='light'] .media-slices) {
   background: linear-gradient(
     180deg,
     rgba(239, 246, 255, 0.08) 0%,

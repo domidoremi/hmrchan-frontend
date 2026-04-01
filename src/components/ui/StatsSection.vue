@@ -253,21 +253,21 @@ const platforms = [
 }
 
 /* 暗色模式 */
-[data-theme='dark'] .platform-card--tiktok .platform-card__icon {
+[data-color-mode='dark'] .platform-card--tiktok .platform-card__icon {
   background: rgba(255, 255, 255, 0.12);
   color: var(--color-gray-100);
 }
 
-[data-theme='dark'] .platform-card--tiktok:hover {
+[data-color-mode='dark'] .platform-card--tiktok:hover {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-[data-theme='dark'] .platform-card--twitter .platform-card__icon {
+[data-color-mode='dark'] .platform-card--twitter .platform-card__icon {
   background: rgba(255, 255, 255, 0.12);
   color: var(--color-gray-100);
 }
 
-[data-theme='dark'] .platform-card--twitter:hover {
+[data-color-mode='dark'] .platform-card--twitter:hover {
   border-color: rgba(255, 255, 255, 0.2);
 }
 

@@ -502,7 +502,7 @@ function formatDate(dateStr: string): string {
 </style>
 
 <style>
-[data-theme='dark'] .notifications-tab .notification-item--unread {
+[data-color-mode='dark'] .notifications-tab .notification-item--unread {
   background: var(--profile-surface-bg);
   box-shadow: inset 0.1875rem 0 0 rgba(var(--color-primary-rgb), 0.45);
 }
@@ -519,8 +519,10 @@ function formatDate(dateStr: string): string {
   box-shadow: none !important;
 }
 
-#app[data-ui-style='material'] .notifications-tab .notification-item,
-#app[data-ui-style='material'] .notifications-tab .notification-skeleton {
+#app[data-preset='material-calm'] .notifications-tab .notification-item,
+#app[data-preset='sketch-doodle'] .notifications-tab .notification-item,
+#app[data-preset='material-calm'] .notifications-tab .notification-skeleton,
+#app[data-preset='sketch-doodle'] .notifications-tab .notification-skeleton {
   border-radius: var(--radius-lg);
 }
 </style>

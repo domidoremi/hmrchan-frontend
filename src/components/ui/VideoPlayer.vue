@@ -2416,7 +2416,7 @@ onBeforeUnmount(() => {
 /* Mobile panel theme overrides — light theme */
 @media (max-width: 768px) {
   :root .vp__panel,
-  [data-theme='blue'] .vp__panel {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel {
     background: rgba(255, 255, 255, 0.97);
     border-color: rgba(0, 0, 0, 0.06);
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
@@ -2424,90 +2424,96 @@ onBeforeUnmount(() => {
   }
 
   :root .vp__panel::before,
-  [data-theme='blue'] .vp__panel::before {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel::before {
     background: rgba(0, 0, 0, 0.15);
   }
 
   :root .vp__panel-head,
-  [data-theme='blue'] .vp__panel-head {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-head {
     border-bottom-color: rgba(0, 0, 0, 0.08);
   }
 
   :root .vp__panel-title,
-  [data-theme='blue'] .vp__panel-title {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-title {
     color: var(--color-text-secondary, #475569);
   }
 
   :root .vp__btn--close,
-  [data-theme='blue'] .vp__btn--close {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__btn--close {
     color: var(--color-text-secondary, #475569);
   }
 
   :root .vp__panel-label,
-  [data-theme='blue'] .vp__panel-label {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-label {
     color: var(--color-text-tertiary, #64748b);
   }
 
   :root .vp__chip,
-  [data-theme='blue'] .vp__chip {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__chip {
     border-color: rgba(0, 0, 0, 0.1);
     color: var(--color-text-primary, #0f172a);
   }
 
   :root .vp__chip:hover,
-  [data-theme='blue'] .vp__chip:hover {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__chip:hover {
     background: rgba(0, 0, 0, 0.04);
     border-color: rgba(0, 0, 0, 0.15);
   }
 
   :root .vp__sub-item,
-  [data-theme='blue'] .vp__sub-item {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__sub-item {
     color: var(--color-text-primary, #0f172a);
   }
 
   :root .vp__sub-item:hover,
-  [data-theme='blue'] .vp__sub-item:hover {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__sub-item:hover {
     background: rgba(0, 0, 0, 0.04);
   }
 
   :root .vp__panel-slider-row,
-  [data-theme='blue'] .vp__panel-slider-row {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-slider-row {
     color: var(--color-text-tertiary, #64748b);
   }
 
   :root .vp__panel-slider-row .vp__slider--panel,
-  [data-theme='blue'] .vp__panel-slider-row .vp__slider--panel {
+  [data-preset='gradient-narrative'][data-color-mode='light']
+    .vp__panel-slider-row
+    .vp__slider--panel {
     background: rgba(0, 0, 0, 0.1);
   }
 
   :root .vp__panel-slider-row .vp__slider--panel::-webkit-slider-thumb,
-  [data-theme='blue'] .vp__panel-slider-row .vp__slider--panel::-webkit-slider-thumb {
+  [data-preset='gradient-narrative'][data-color-mode='light']
+    .vp__panel-slider-row
+    .vp__slider--panel::-webkit-slider-thumb {
     background: var(--color-primary, #18181b);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 
   :root .vp__panel-slider-row .vp__slider--panel::-moz-range-thumb,
-  [data-theme='blue'] .vp__panel-slider-row .vp__slider--panel::-moz-range-thumb {
+  [data-preset='gradient-narrative'][data-color-mode='light']
+    .vp__panel-slider-row
+    .vp__slider--panel::-moz-range-thumb {
     background: var(--color-primary, #18181b);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 
   :root .vp__panel-backdrop,
-  [data-theme='blue'] .vp__panel-backdrop {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-backdrop {
     background: rgba(0, 0, 0, 0.2);
   }
 
   :root .vp__subtitle-preview-wrap,
-  [data-theme='blue'] .vp__subtitle-preview-wrap {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__subtitle-preview-wrap {
     background: #1e293b;
   }
 
-  /* Blue theme accent tint on panel */
-  [data-theme='blue'] .vp__panel {
+  /* Gradient preset accent tint on panel */
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel {
     border-color: rgba(59, 130, 246, 0.1);
   }
 
-  [data-theme='blue'] .vp__chip.is-active {
+  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__chip.is-active {
     background: rgba(59, 130, 246, 0.1);
     border-color: rgba(59, 130, 246, 0.3);
     color: #2563eb;

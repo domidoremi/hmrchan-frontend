@@ -1,0 +1,55 @@
+:root {
+  --semantic-canvas: var(--appearance-canvas);
+  --semantic-surface-base: var(--appearance-surface-1);
+  --semantic-surface-muted: var(--appearance-surface-2);
+  --semantic-surface-emphasis: var(--appearance-surface-3);
+  --semantic-border: var(--appearance-border);
+  --semantic-border-strong: var(--appearance-border-strong);
+  --semantic-text-primary: var(--appearance-text-primary);
+  --semantic-text-secondary: var(--appearance-text-secondary);
+  --semantic-text-tertiary: var(--appearance-text-tertiary);
+  --semantic-accent: var(--appearance-accent);
+  --semantic-accent-rgb: var(--appearance-accent-rgb);
+  --semantic-success: var(--appearance-success);
+  --semantic-warning: var(--appearance-warning);
+  --semantic-danger: var(--appearance-danger);
+  --surface-shadow-token: var(--appearance-structure-shadow-token);
+  --surface-border-token: var(--appearance-surface-border-token);
+  --surface-border-strong-token: var(--appearance-surface-border-strong-token);
+  --focus-ring-token: var(--appearance-focus-ring-token);
+  --backdrop-token: var(--appearance-backdrop-token);
+  --component-card-background: var(--semantic-surface-base);
+  --component-card-background-muted: var(--semantic-surface-muted);
+  --component-card-shadow: var(--surface-shadow-token);
+  --component-card-radius: var(--appearance-radius-lg);
+  --component-panel-radius: var(--appearance-radius-xl);
+  --component-control-radius: var(--appearance-radius-md);
+  --component-control-shadow: var(--appearance-control-shadow-token);
+  --component-control-border: var(--surface-border-token);
+  --component-control-min-block-size: var(--appearance-control-min-block-size);
+  --component-reading-max-inline-size: var(--appearance-reading-max-inline-size);
+  --component-content-max-inline-size: var(--appearance-content-max-inline-size);
+  --ui-control-min-size: var(--component-control-min-block-size);
+  --ui-action-size: var(--component-control-min-block-size);
+  --ui-control-height-sm: calc(var(--component-control-min-block-size) - 0.25rem);
+  --ui-control-height-md: var(--component-control-min-block-size);
+  --ui-control-height-lg: calc(var(--component-control-min-block-size) + 0.25rem);
+  --ui-control-padding-x-sm: calc(var(--appearance-control-padding-inline) * 0.75);
+  --ui-control-padding-x-md: var(--appearance-control-padding-inline);
+  --ui-control-padding-x-lg: calc(var(--appearance-control-padding-inline) * 1.35);
+  --ui-radius-button: var(--ui-compat-control-radius, var(--component-control-radius));
+  --ui-radius-card: var(--ui-compat-panel-radius, var(--component-card-radius));
+  --ui-radius-dropdown: var(--ui-compat-panel-radius, var(--component-panel-radius));
+  --ui-radius-dialog: var(--component-panel-radius);
+  --ui-dialog-close-size: var(--component-control-min-block-size);
+  --ui-backdrop-dim: rgb(15 23 42 / 0.45);
+  --ui-backdrop-blur: var(--backdrop-token, none);
+  --ui-surface-bg: var(--semantic-surface-base);
+  --ui-surface-border: var(--semantic-border);
+}
+
+:root[data-contrast='high'] {
+  --component-card-shadow: 0 0 0 0.0625rem rgb(15 23 42 / 0.18);
+  --component-control-border: var(--surface-border-strong-token);
+  --ui-surface-border: var(--semantic-border-strong);
+}

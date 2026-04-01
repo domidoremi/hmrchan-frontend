@@ -107,9 +107,9 @@ function handleKeydown(event: KeyboardEvent, currentIndex: number) {
   display: inline-flex;
   align-items: center;
   padding: var(--spacing-1);
-  background: var(--glass-bg-light);
-  border-radius: var(--ui-radius-tabs, var(--radius-lg));
-  border: 1px solid var(--glass-border);
+  background: var(--ui-compat-surface-interactive, var(--semantic-surface-muted));
+  border-radius: var(--ui-radius-dropdown, var(--component-panel-radius));
+  border: 0.0625rem solid var(--ui-surface-border, var(--semantic-border));
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -130,7 +130,7 @@ function handleKeydown(event: KeyboardEvent, currentIndex: number) {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-muted-foreground);
-  border-radius: var(--ui-radius-button, var(--radius));
+  border-radius: var(--ui-radius-button, var(--component-control-radius));
   cursor: pointer;
   transition-property: color, background-color;
   transition-duration: 150ms;
@@ -140,13 +140,13 @@ function handleKeydown(event: KeyboardEvent, currentIndex: number) {
 
 .ui-tabs__trigger:hover:not(:disabled):not(.ui-tabs__trigger--active) {
   color: var(--color-foreground);
-  background: var(--glass-bg-subtle);
+  background: var(--ui-compat-surface-interactive-strong, var(--semantic-surface-base));
 }
 
 .ui-tabs__trigger--active {
   color: var(--color-foreground);
-  background: var(--glass-bg-strong);
-  box-shadow: var(--shadow-sm);
+  background: var(--ui-compat-surface-elevated, var(--semantic-surface-base));
+  box-shadow: var(--appearance-shadow-soft);
 }
 
 .ui-tabs__trigger:disabled {
@@ -156,7 +156,7 @@ function handleKeydown(event: KeyboardEvent, currentIndex: number) {
 
 .ui-tabs__trigger:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+  box-shadow: var(--focus-ring-token);
 }
 
 .ui-tabs__icon {

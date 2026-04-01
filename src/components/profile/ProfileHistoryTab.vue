@@ -527,76 +527,74 @@ onUnmounted(() => {
 
 <style>
 /* ===== Material 3 Overrides ===== */
-#app[data-ui-style='material'] .history-tab .history-card {
+#app[data-preset='material-calm'] .history-tab .history-card,
+#app[data-preset='sketch-doodle'] .history-tab .history-card {
   border-radius: var(--radius-lg);
 }
 
-#app[data-ui-style='material'] .history-tab .history-card:hover {
+#app[data-preset='material-calm'] .history-tab .history-card:hover,
+#app[data-preset='sketch-doodle'] .history-tab .history-card:hover {
   transform: none;
   box-shadow: var(--shadow-md);
 }
 
-#app[data-ui-style='material'] .history-tab .card-time {
+#app[data-preset='material-calm'] .history-tab .card-time,
+#app[data-preset='sketch-doodle'] .history-tab .card-time {
   border-radius: var(--radius-sm);
 }
 
-#app[data-ui-style='material'] .history-tab .group-count {
+#app[data-preset='material-calm'] .history-tab .group-count,
+#app[data-preset='sketch-doodle'] .history-tab .group-count {
   border-radius: var(--radius-sm);
 }
 
-#app[data-ui-style='material'] .history-tab {
+#app[data-preset='material-calm'] .history-tab,
+#app[data-preset='sketch-doodle'] .history-tab {
   --profile-tab-header-count-radius: var(--radius-sm);
 }
 
-#app[data-ui-style='material'] .history-tab .group-line {
+#app[data-preset='material-calm'] .history-tab .group-line,
+#app[data-preset='sketch-doodle'] .history-tab .group-line {
   background: var(--md-outline-variant, var(--glass-border-medium));
 }
 
 /* ===== Dark Theme Overrides ===== */
-[data-theme='dark'] .history-tab .card-time {
+[data-color-mode='dark'] .history-tab .card-time {
   background: rgba(0, 0, 0, 0.75);
 }
 
-[data-theme='dark'] .history-tab .group-line {
+[data-color-mode='dark'] .history-tab .group-line {
   background: linear-gradient(to right, rgba(255, 255, 255, 0.08), transparent);
 }
 
-[data-theme='dark'] .history-tab .thumb-placeholder {
+[data-color-mode='dark'] .history-tab .thumb-placeholder {
   background: rgba(255, 255, 255, 0.04);
 }
 
 /* ===== Blue Theme Overrides ===== */
-[data-theme='blue'] .history-tab {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .history-tab {
   --profile-tab-header-count-bg: rgba(59, 130, 246, 0.08);
   --profile-tab-header-count-color: #3b82f6;
 }
 
-[data-theme='blue'] .history-tab .group-line {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .history-tab .group-line {
   background: linear-gradient(to right, rgba(59, 130, 246, 0.15), transparent);
 }
 
-[data-theme='blue'] .history-tab .group-count {
+#app[data-preset='gradient-narrative'][data-color-mode='light'] .history-tab .group-count {
   background: rgba(59, 130, 246, 0.08);
   color: #3b82f6;
 }
 
 /* ===== Material + Dark ===== */
-#app[data-ui-style='material'][data-theme='dark'] .history-tab .history-card {
+#app[data-preset='material-calm'][data-color-mode='dark'] .history-tab .history-card,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .history-tab .history-card {
   background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-#app[data-ui-style='material'][data-theme='dark'] .history-tab .history-card:hover {
+#app[data-preset='material-calm'][data-color-mode='dark'] .history-tab .history-card:hover,
+#app[data-preset='sketch-doodle'][data-color-mode='dark'] .history-tab .history-card:hover {
   background: var(--md-surface-container-high, rgba(34, 34, 38, 0.95));
-}
-
-/* ===== Material + Blue ===== */
-#app[data-ui-style='material'][data-theme='blue'] .history-tab .history-card {
-  border-color: rgba(59, 130, 246, 0.1);
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
-}
-
-#app[data-ui-style='material'][data-theme='blue'] .history-tab .history-card:hover {
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 </style>

@@ -101,8 +101,7 @@
     "basic-ftp": "^5.2.0",
     "flatted": "^3.4.2",
     "lodash-es": "^4.17.23",
-    "minimatch": "^10.2.4",
-    "rollup": "^4.59.1"
+    "minimatch": "^10.2.4"
   },
   "lint-staged": {
     "*.{ts,tsx,vue}": [

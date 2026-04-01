@@ -871,7 +871,7 @@ onBeforeUnmount(() => {
 }
 
 /* 暗色模式调整 */
-[data-theme='dark'] .explore-bg__blob {
+[data-color-mode='dark'] .explore-bg__blob {
   opacity: 0.2;
 }
 

@@ -18,6 +18,9 @@ import {
   type LocaleLayoutConfig,
   type LocaleInteractionConfig,
   type LocaleContentConfig,
+  type LocaleTypographyConfig,
+  type LocaleAccessibilityConfig,
+  type LocaleAlignmentConfig,
   getLocaleConfig,
   isCJKLocale,
 } from '@/config/locale'
@@ -136,6 +139,21 @@ function applyLocaleCSSVariables(locale: string, config: LocaleConfig): void {
   // 交互 CSS 变量
   const { interaction } = config
   root.style.setProperty('--locale-hover-intensity', String(interaction.hoverIntensity))
+
+  const { typography } = config
+  root.style.setProperty('--locale-font-family', typography.fontFamily)
+  root.style.setProperty('--locale-reading-line-height', String(typography.readingLineHeight))
+  root.style.setProperty('--locale-ui-line-height', String(typography.uiLineHeight))
+  root.style.setProperty('--locale-label-letter-spacing', typography.labelLetterSpacing)
+
+  const { accessibility } = config
+  root.style.setProperty('--locale-control-min-block-size', accessibility.minimumControlHeight)
+  root.style.setProperty('--locale-inline-label-max', accessibility.inlineLabelMax)
+
+  const { alignment } = config
+  root.style.setProperty('--locale-icon-text-offset', alignment.iconTextOffset)
+  root.style.setProperty('--locale-control-padding-nudge', alignment.controlPaddingNudge)
+  root.style.setProperty('--locale-baseline-shift', alignment.baselineShift)
 }
 
 /* ---------- Composable ---------- */
@@ -181,6 +199,15 @@ export function useLocaleConfig() {
 
   /** 内容展示偏好 */
   const content = computed<LocaleContentConfig>(() => localeConfig.value.content)
+
+  /** 排版偏好 */
+  const typography = computed<LocaleTypographyConfig>(() => localeConfig.value.typography)
+
+  /** 可访问性偏好 */
+  const accessibility = computed<LocaleAccessibilityConfig>(() => localeConfig.value.accessibility)
+
+  /** 垂直对齐与基线微调 */
+  const alignment = computed<LocaleAlignmentConfig>(() => localeConfig.value.alignment)
 
   /** 是否为 CJK 语言 */
   const isCJK = computed(() => isCJKLocale(locale.value))
@@ -263,6 +290,9 @@ export function useLocaleConfig() {
     layout,
     interaction,
     content,
+    typography,
+    accessibility,
+    alignment,
     isCJK,
     densityClass,
     formatDate,
