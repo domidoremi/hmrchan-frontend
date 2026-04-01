@@ -1085,16 +1085,24 @@ onUnmounted(() => {
 }
 
 .navbar--chromeless {
-  --nav-muted-bg: transparent;
-  --nav-muted-bg-strong: transparent;
-  --nav-muted-border: transparent;
-  --nav-muted-border-strong: rgba(var(--color-primary-rgb), 0.12);
-  --nav-chip-bg: transparent;
-  --nav-chip-border: transparent;
-  --nav-action-bg: transparent;
-  --nav-action-bg-hover: color-mix(in srgb, var(--ui-compat-surface-interactive) 54%, transparent);
-  --nav-action-border: transparent;
-  --nav-action-border-strong: transparent;
+  --nav-muted-bg: color-mix(in srgb, var(--ui-compat-surface-base) 72%, transparent);
+  --nav-muted-bg-strong: color-mix(in srgb, var(--ui-compat-surface-elevated) 84%, transparent);
+  --nav-muted-border: color-mix(in srgb, var(--ui-compat-border) 42%, transparent);
+  --nav-muted-border-strong: color-mix(in srgb, var(--ui-compat-border-strong) 54%, transparent);
+  --nav-chip-bg: color-mix(in srgb, var(--ui-compat-surface-base) 76%, transparent);
+  --nav-chip-border: color-mix(in srgb, var(--ui-compat-border) 40%, transparent);
+  --nav-action-bg: color-mix(in srgb, var(--ui-compat-surface-interactive) 72%, transparent);
+  --nav-action-bg-hover: color-mix(
+    in srgb,
+    var(--ui-compat-surface-interactive-strong) 88%,
+    transparent
+  );
+  --nav-action-border: color-mix(in srgb, var(--ui-compat-border) 36%, transparent);
+  --nav-action-border-strong: color-mix(
+    in srgb,
+    var(--ui-compat-border-strong) 52%,
+    rgba(var(--color-primary-rgb), 0.08)
+  );
 }
 
 .navbar.navbar-hidden {
@@ -1225,8 +1233,8 @@ onUnmounted(() => {
 }
 
 .navbar--chromeless .nav-search-shell__input {
-  border-color: transparent;
-  background: color-mix(in srgb, var(--ui-compat-surface-base) 52%, transparent);
+  border-color: color-mix(in srgb, var(--ui-compat-border) 30%, transparent);
+  background: color-mix(in srgb, var(--ui-compat-surface-base) 78%, transparent);
   box-shadow: none;
 }
 

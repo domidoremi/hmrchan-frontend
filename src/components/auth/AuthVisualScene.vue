@@ -7,8 +7,6 @@
   >
     <div class="scene-stage" :class="[sceneKindClass, sceneMoodClass]">
       <div class="scene-sky">
-        <span class="scene-aura scene-aura--sun" />
-        <span class="scene-aura scene-aura--mist" />
         <span class="scene-cloud scene-cloud--one" />
         <span class="scene-cloud scene-cloud--two" />
       </div>
@@ -70,6 +68,32 @@ const sceneLabel = computed(() => {
 
 <style scoped>
 .auth-scene {
+  --auth-visual-ink-a: color-mix(
+    in srgb,
+    var(--page-shell-surface-bg-strong) 78%,
+    rgba(56, 189, 248, 0.22)
+  );
+  --auth-visual-ink-b: color-mix(
+    in srgb,
+    var(--page-shell-surface-bg) 82%,
+    rgba(14, 165, 233, 0.18)
+  );
+  --auth-visual-ink-c: color-mix(
+    in srgb,
+    var(--page-shell-surface-bg-strong) 88%,
+    rgba(15, 23, 42, 0.1)
+  );
+  --auth-visual-ground-a: color-mix(
+    in srgb,
+    var(--page-shell-surface-bg-strong) 72%,
+    rgba(16, 185, 129, 0.22)
+  );
+  --auth-visual-ground-b: color-mix(
+    in srgb,
+    var(--page-shell-surface-bg-strong) 74%,
+    rgba(59, 130, 246, 0.2)
+  );
+  --auth-visual-copy: color-mix(in srgb, var(--color-text-primary) 92%, white 8%);
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 0.9rem;
@@ -95,9 +119,8 @@ const sceneLabel = computed(() => {
   padding: clamp(1.1rem, 2.4vw, 1.6rem);
   border-radius: inherit;
   background:
-    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.18), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 36%),
-    linear-gradient(180deg, rgba(5, 20, 28, 0.04), rgba(4, 16, 24, 0.26)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 32%),
+    linear-gradient(180deg, rgba(5, 20, 28, 0.06), rgba(4, 16, 24, 0.22)),
     linear-gradient(
       145deg,
       var(--auth-visual-ink-a),
@@ -114,38 +137,12 @@ const sceneLabel = computed(() => {
   pointer-events: none;
 }
 
-.scene-aura,
 .scene-cloud,
 .scene-leaf,
 .scene-hill,
 .scene-ripple {
   position: absolute;
   display: block;
-}
-
-.scene-aura--sun {
-  inset-block-start: 8%;
-  inset-inline-start: 12%;
-  inline-size: 30%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 233, 180, 0.9),
-    rgba(255, 233, 180, 0.08) 72%,
-    transparent 76%
-  );
-  filter: blur(0.25rem);
-}
-
-.scene-aura--mist {
-  inset-block-start: 18%;
-  inset-inline-end: 8%;
-  inline-size: 42%;
-  block-size: 28%;
-  border-radius: 999rem;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.24), transparent 74%);
-  filter: blur(1.2rem);
 }
 
 .scene-cloud {
@@ -212,7 +209,7 @@ const sceneLabel = computed(() => {
   block-size: 34%;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(10, 32, 38, 0.32)),
-    color-mix(in srgb, var(--auth-visual-orb-a) 58%, rgba(12, 32, 36, 0.42));
+    color-mix(in srgb, var(--auth-visual-ground-a) 58%, rgba(12, 32, 36, 0.42));
 }
 
 .scene-hill--front {
@@ -221,7 +218,7 @@ const sceneLabel = computed(() => {
   block-size: 28%;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(8, 24, 32, 0.42)),
-    color-mix(in srgb, var(--auth-visual-orb-b) 52%, rgba(7, 22, 30, 0.52));
+    color-mix(in srgb, var(--auth-visual-ground-b) 52%, rgba(7, 22, 30, 0.52));
 }
 
 .scene-ripple {
@@ -250,9 +247,8 @@ const sceneLabel = computed(() => {
   max-inline-size: min(100%, 32ch);
   padding: 0.95rem 1rem;
   border: 0.0625rem solid rgba(255, 255, 255, 0.14);
-  border-radius: 1.2rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
-  backdrop-filter: blur(0.4rem);
+  border-radius: var(--appearance-radius-panel);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
 }
 
 .scene-copy-card__eyebrow,
@@ -291,8 +287,7 @@ const sceneLabel = computed(() => {
   --scene-leaf-duration: 7.2s;
 }
 
-.scene-stage--forgot .scene-cloud,
-.scene-stage--forgot .scene-aura--mist {
+.scene-stage--forgot .scene-cloud {
   opacity: 0.72;
 }
 

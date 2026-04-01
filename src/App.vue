@@ -18,8 +18,8 @@
     </a>
 
     <!-- Navbar -->
-    <AppNavbar :chromeless="isAuthRoute" />
-    <AppSideNav :chromeless="isAuthRoute" />
+    <AppNavbar chromeless />
+    <AppSideNav chromeless />
 
     <!-- Main Content with Error Boundary -->
     <main

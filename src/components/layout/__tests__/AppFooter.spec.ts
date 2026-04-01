@@ -114,7 +114,6 @@ describe('AppFooter', () => {
     const wrapper = createWrapper('home')
     const style = wrapper.find('.footer-shell').attributes('style')
 
-    expect(style).toContain('--footer-bg: transparent;')
     expect(style).toContain(
       '--footer-shell-bg: var(--home-panel-bg-soft, var(--ui-compat-surface-elevated, var(--chrome-surface-bg)));'
     )

@@ -13,14 +13,26 @@
     var(--spacing-3) + var(--locale-control-padding-nudge, 0rem)
   );
   --appearance-control-gap: var(--spacing-2);
+  --appearance-surface-padding-sm: var(--spacing-3);
+  --appearance-surface-padding-md: var(--spacing-4);
+  --appearance-surface-padding-lg: var(--spacing-6);
+  --appearance-surface-gap-sm: var(--spacing-3);
+  --appearance-surface-gap-md: var(--spacing-4);
+  --appearance-surface-gap-lg: var(--spacing-6);
   --appearance-chip-min-block-size: 2.375rem;
   --appearance-chip-padding-inline: 0.95rem;
-  --appearance-chip-radius: var(--appearance-radius-full);
-  --appearance-eyebrow-radius: var(--appearance-radius-full);
-  --appearance-toolbar-radius: var(--appearance-radius-2xl);
+  --appearance-radius-control-sm: var(--appearance-radius-md);
+  --appearance-radius-control-md: var(--appearance-radius-lg);
+  --appearance-radius-control-lg: var(--appearance-radius-xl);
+  --appearance-radius-chip: var(--appearance-radius-lg);
+  --appearance-radius-panel: var(--appearance-radius-xl);
+  --appearance-radius-rich-block: var(--appearance-radius-lg);
+  --appearance-chip-radius: var(--appearance-radius-chip);
+  --appearance-eyebrow-radius: var(--appearance-radius-chip);
+  --appearance-toolbar-radius: var(--appearance-radius-panel);
   --appearance-toolbar-padding: clamp(0.875rem, 1.8vw, 1.125rem);
   --appearance-toolbar-gap: clamp(0.875rem, 1.8vw, 1.25rem);
-  --appearance-hero-panel-radius: var(--appearance-radius-2xl);
+  --appearance-hero-panel-radius: var(--appearance-radius-panel);
   --appearance-inline-icon-offset: var(--locale-icon-text-offset, 0);
   --appearance-baseline-shift: var(--locale-baseline-shift, 0);
   --appearance-texture-opacity: 0.08;
@@ -59,6 +71,9 @@
   --appearance-surface-border-strong-token: 0.0625rem solid var(--appearance-border-strong);
   --appearance-focus-ring-token: 0 0 0 0.125rem rgba(var(--appearance-accent-rgb), 0.2);
   --appearance-backdrop-token: blur(calc(1rem * var(--appearance-backdrop-strength)));
+  --chrome-shell-bg: transparent;
+  --chrome-shell-border: transparent;
+  --chrome-shell-shadow: none;
 }
 
 :root[data-density='compact'] {

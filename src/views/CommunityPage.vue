@@ -1,11 +1,5 @@
 <template>
   <div class="community-page">
-    <!-- MindMarket 风格背景装饰 -->
-    <div class="community-bg" aria-hidden="true">
-      <div class="community-bg__blob community-bg__blob--coral" />
-      <div class="community-bg__blob community-bg__blob--green" />
-    </div>
-
     <div class="container">
       <!-- Header -->
       <PageHeroShell class="community-hero" bare>
@@ -679,44 +673,6 @@ onUnmounted(() => {
   padding: var(--spacing-4) 0 var(--spacing-8);
   min-height: 100svh;
   min-height: 100dvh;
-}
-
-/* ========== MindMarket 风格背景 ========== */
-.community-bg {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  /* Keep page blobs behind the global contextual 3D background */
-  z-index: -2;
-  overflow: hidden;
-}
-
-.community-bg__blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(6.25rem);
-  opacity: 0.3;
-}
-
-.community-bg__blob--coral {
-  width: 25rem;
-  height: 25rem;
-  top: 5%;
-  left: -5%;
-  background: radial-gradient(circle, rgba(251, 113, 133, 0.4) 0%, transparent 70%);
-}
-
-.community-bg__blob--green {
-  width: 28.125rem;
-  height: 28.125rem;
-  bottom: 10%;
-  right: -8%;
-  background: radial-gradient(circle, rgba(74, 222, 128, 0.45) 0%, transparent 70%);
-}
-
-/* 暗色模式调整 */
-[data-color-mode='dark'] .community-bg__blob {
-  opacity: 0.15;
 }
 
 .community-hero__actions {

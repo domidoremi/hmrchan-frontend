@@ -518,12 +518,6 @@ const { techStack } = useAboutData()
   min-height: 100svh;
   min-height: 100dvh;
   padding: var(--spacing-6) 0;
-  background: linear-gradient(
-    180deg,
-    rgba(var(--mm-green-rgb), 0.02) 0%,
-    transparent 50%,
-    rgba(var(--mm-purple-rgb), 0.02) 100%
-  );
 }
 
 .container {
@@ -584,27 +578,15 @@ const { techStack } = useAboutData()
 
 /* 名字卡片 */
 .himeri-header {
-  padding: var(--spacing-8) var(--spacing-6);
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-primary-rgb), 0.1) 0%,
-    rgba(var(--color-primary-rgb), 0.05) 100%
+  padding: clamp(
+    var(--appearance-surface-padding-md),
+    2vw + 0.45rem,
+    var(--appearance-surface-padding-lg)
   );
-  border-bottom: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--page-shell-surface-bg) 96%, transparent);
+  border-bottom: 0.0625rem solid var(--page-shell-surface-border);
   position: relative;
   overflow: hidden;
-}
-
-.himeri-header::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -10%;
-  width: 18.75rem;
-  height: 18.75rem;
-  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
 }
 
 .himeri-name-card {
@@ -642,10 +624,12 @@ const { techStack } = useAboutData()
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 5rem;
-  height: 5rem;
-  background: rgba(var(--color-primary-rgb), 0.1);
-  border-radius: 50%;
+  inline-size: 5rem;
+  block-size: 5rem;
+  min-inline-size: 5rem;
+  background: var(--page-shell-control-bg);
+  border-radius: var(--appearance-radius-panel);
+  border: 0.0625rem solid var(--page-shell-control-border);
   position: relative;
 }
 
@@ -653,9 +637,10 @@ const { techStack } = useAboutData()
   content: '';
   position: absolute;
   inset: -0.25rem;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  opacity: 0.16;
+  border-radius: calc(var(--appearance-radius-panel) + 0.25rem);
+  border: 0.0625rem solid
+    color-mix(in srgb, var(--page-shell-control-border-strong) 68%, transparent);
+  opacity: 0.5;
 }
 
 .decoration-icon {

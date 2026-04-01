@@ -2298,11 +2298,13 @@ onMounted(() => {
 
 .schedule-detail-fact {
   display: grid;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3);
+  min-inline-size: 0;
+  gap: var(--appearance-surface-gap-sm);
+  padding: var(--appearance-surface-padding-md);
   border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
-  border-radius: var(--ui-radius-button, var(--radius-lg));
+  border-radius: var(--appearance-radius-rich-block);
   background: var(--surface-minimal-muted, var(--color-surface-variant));
+  overflow: clip;
 }
 
 .schedule-detail-fact__label {
@@ -2317,6 +2319,8 @@ onMounted(() => {
 .schedule-detail-section__title {
   margin: 0;
   color: var(--surface-minimal-text, var(--color-text-primary));
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
 }
 
 .schedule-detail-section__title {
@@ -2365,6 +2369,7 @@ onMounted(() => {
   display: grid;
   align-items: start;
   gap: 0.125rem;
+  min-inline-size: 0;
 }
 
 .detail-separator {
@@ -2390,20 +2395,27 @@ onMounted(() => {
   display: block;
   font-size: var(--text-xs);
   color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
+  overflow-wrap: anywhere;
 }
 
 .detail-description {
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--surface-minimal-text-muted, var(--color-text-secondary));
-  padding: var(--spacing-3);
+  min-inline-size: 0;
+  padding: clamp(
+    var(--appearance-surface-padding-md),
+    1.4vw + 0.45rem,
+    var(--appearance-surface-padding-lg)
+  );
   border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
-  border-radius: var(--ui-radius-button, var(--radius-lg));
+  border-radius: var(--appearance-radius-rich-block);
   background: var(--surface-minimal-muted, var(--color-surface-variant));
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
-  overflow-wrap: break-word;
+  gap: var(--appearance-surface-gap-sm);
+  overflow: clip;
+  overflow-wrap: anywhere;
 }
 
 .detail-description p {
@@ -2411,7 +2423,7 @@ onMounted(() => {
 }
 
 .desc-section + .desc-section {
-  padding-top: var(--spacing-3);
+  padding-top: var(--appearance-surface-padding-sm);
   border-top: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
 }
 
@@ -2426,8 +2438,8 @@ onMounted(() => {
 
 .desc-line {
   margin: 0;
-  word-break: break-word;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .desc-link {
@@ -2442,9 +2454,9 @@ onMounted(() => {
 
 .schedule-detail-empty {
   margin: 0;
-  padding: var(--spacing-3);
+  padding: var(--appearance-surface-padding-md);
   border: 0.0625rem dashed var(--surface-minimal-border, var(--color-border));
-  border-radius: var(--ui-radius-button, var(--radius-lg));
+  border-radius: var(--appearance-radius-rich-block);
   color: var(--surface-minimal-text-muted, var(--color-text-secondary));
   font-size: var(--text-sm);
   line-height: 1.6;
@@ -2454,6 +2466,7 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .detail-link-btn {
@@ -2473,9 +2486,10 @@ onMounted(() => {
 .schedule-detail-note {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  padding: var(--spacing-3);
+  gap: var(--appearance-surface-gap-sm);
+  padding: var(--appearance-surface-padding-md);
   border: 0.0625rem dashed var(--surface-minimal-border, var(--color-border));
-  border-radius: var(--ui-radius-button, var(--radius-lg));
+  border-radius: var(--appearance-radius-rich-block);
   background: color-mix(
     in srgb,
     var(--surface-minimal-panel, var(--color-surface)) 86%,
@@ -2489,7 +2503,7 @@ onMounted(() => {
   display: inline-grid;
   place-items: center;
   border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
-  border-radius: var(--ui-radius-button, var(--radius-md));
+  border-radius: var(--appearance-radius-control-sm);
   color: var(--surface-minimal-text, var(--color-text-primary));
 }
 
