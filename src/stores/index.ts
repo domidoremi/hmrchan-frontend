@@ -7,6 +7,7 @@ export {
   useSettingsStore,
   type Settings,
   type AnimationIntensity,
+  type AppUpdateStrategy,
   type ParticleEffectType,
   type ParticleEffectConfig,
 } from './settings'

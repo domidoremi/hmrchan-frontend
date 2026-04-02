@@ -212,6 +212,39 @@
         </div>
       </div>
 
+      <div v-show="isSettingsCategoryVisible('system')" class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-group-icon">
+            <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
+          </div>
+          <span class="settings-label">{{ $t('settings.appUpdateTitle') }}</span>
+        </div>
+        <div class="settings-options strategy-options">
+          <button
+            v-for="opt in appUpdateStrategyOptions"
+            :key="opt.value"
+            type="button"
+            class="theme-btn strategy-btn"
+            :class="{ active: settings.appUpdateStrategy === opt.value }"
+            :aria-pressed="settings.appUpdateStrategy === opt.value"
+            @click="setAppUpdateStrategy(opt.value)"
+          >
+            <div class="theme-btn-icon">
+              <AnimatedIcon name="loading" :fallback-icon="opt.icon" size="sm" />
+            </div>
+            <div class="strategy-btn__copy">
+              <span class="strategy-btn__title">{{ opt.label }}</span>
+              <span class="strategy-btn__desc">{{ opt.description }}</span>
+            </div>
+            <Transition name="check">
+              <div v-if="settings.appUpdateStrategy === opt.value" class="theme-btn-check">
+                <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
+              </div>
+            </Transition>
+          </button>
+        </div>
+      </div>
+
       <!-- Display -->
       <div v-show="isSettingsCategoryVisible('experience')" class="settings-group">
         <div class="settings-group-header">
@@ -718,6 +751,7 @@ import {
   Save,
   Video,
   RotateCcw,
+  RefreshCw,
   Layers,
   Smartphone,
   Sparkles,
@@ -736,7 +770,7 @@ import { usePreferencesSync } from '@/composables/usePreferencesSync'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import { applyAppearancePreset } from '@/services/appearanceLoader'
 import type { AppearancePreset, ContrastMode, DensityMode, TextureLevel, Theme } from '@/types'
-import type { AnimationIntensity, ParticleEffectType } from '@/stores/settings'
+import type { AnimationIntensity, AppUpdateStrategy, ParticleEffectType } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 
@@ -853,6 +887,33 @@ const animationIntensityOptions = computed<{ value: AnimationIntensity; label: s
   { value: 'normal', label: t('settings.animationNormal') },
   { value: 'full', label: t('settings.animationFull') },
 ])
+const appUpdateStrategyOptions = computed<
+  Array<{
+    value: AppUpdateStrategy
+    icon: typeof RefreshCw
+    label: string
+    description: string
+  }>
+>(() => [
+  {
+    value: 'prompt-only',
+    icon: RefreshCw,
+    label: t('settings.appUpdatePromptOnly'),
+    description: t('settings.appUpdatePromptOnlyDesc'),
+  },
+  {
+    value: 'public-idle-refresh',
+    icon: Globe,
+    label: t('settings.appUpdatePublicIdle'),
+    description: t('settings.appUpdatePublicIdleDesc'),
+  },
+  {
+    value: 'aggressive-idle-refresh',
+    icon: Gauge,
+    label: t('settings.appUpdateAggressive'),
+    description: t('settings.appUpdateAggressiveDesc'),
+  },
+])
 const selectedAnimationIntensityLabel = computed(() => {
   return (
     animationIntensityOptions.value.find((opt) => opt.value === settings.value.animationIntensity)
@@ -899,6 +960,11 @@ async function setAppearancePresetOption(value: AppearancePreset) {
 async function changeLocale(code: SupportedLocale) {
   if (code === locale.value) return
   await setLocale(code)
+}
+
+function setAppUpdateStrategy(value: AppUpdateStrategy) {
+  if (settings.value.appUpdateStrategy === value) return
+  settingsStore.setAppUpdateStrategy(value)
 }
 
 function toggleHeroSection() {
@@ -1262,6 +1328,10 @@ function resetVideoSettings() {
   min-inline-size: 0;
 }
 
+.strategy-options {
+  grid-template-columns: 1fr;
+}
+
 .theme-btn {
   flex: 1;
   position: relative;
@@ -1325,6 +1395,33 @@ function resetVideoSettings() {
   background: var(--color-primary);
   color: var(--color-on-primary);
   box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.strategy-btn {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  text-align: left;
+}
+
+.strategy-btn__copy {
+  display: grid;
+  gap: 0.25rem;
+  min-inline-size: 0;
+  flex: 1;
+}
+
+.strategy-btn__title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  line-height: 1.35;
+}
+
+.strategy-btn__desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  line-height: 1.45;
 }
 
 .theme-btn-label {

@@ -304,6 +304,13 @@
     "dark": "深色",
     "auto": "跟隨系統",
     "language": "語言",
+    "appUpdateTitle": "應用更新",
+    "appUpdatePromptOnly": "僅提示",
+    "appUpdatePromptOnlyDesc": "偵測到新版本時一律只提示，不自動重新整理目前頁面。",
+    "appUpdatePublicIdle": "公開頁閒置自動更新",
+    "appUpdatePublicIdleDesc": "公開閱讀頁會在閒置時自動重新整理，輸入或表單頁只提示。",
+    "appUpdateAggressive": "更積極自動更新",
+    "appUpdateAggressiveDesc": "除受保護頁面外，盡量在閒置時自動重新整理到新版本。",
     "display": "顯示",
     "toggleHeroSection": "顯示首頁橫幅",
     "heroSectionDesc": "在首頁顯示橫幅區域",
@@ -386,6 +393,13 @@
       "description": "清除快取資料以釋放空間",
       "clear": "清除快取"
     }
+  },
+  "appUpdate": {
+    "title": "應用更新",
+    "availableMessage": "發現新版本，可在方便時立即更新。",
+    "updateNow": "立即更新",
+    "activatedNextNavigation": "新版本已啟用，將在下次導覽時生效。",
+    "autoRefreshBlocked": "新版本已啟用，但目前頁面仍受保護，這次不會自動重新整理；下次導覽時會生效。"
   },
   "home": {
     "quickNav": {
