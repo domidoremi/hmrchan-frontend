@@ -145,6 +145,7 @@ import {
   type CreateDiscussionRequest,
 } from '@/api'
 import { useToastStore } from '@/stores'
+import { useUpdateBlocker } from '@/utils/app-update/updateBlockers'
 import { debounce } from '@/utils/performance'
 import { applyPlainTextSnippet, type PlainTextToolAction } from '@/utils/plainTextTools'
 import Button from '@/components/ui/Button.vue'
@@ -184,6 +185,16 @@ const CONTENT_MAX = 10000
 const canSubmit = computed(
   () => title.value.trim().length >= TITLE_MIN && content.value.trim().length >= CONTENT_MIN
 )
+const shouldBlockUpdate = computed(() => {
+  return (
+    isSubmitting.value ||
+    title.value.trim().length > 0 ||
+    content.value.trim().length > 0 ||
+    tagInput.value.trim().length > 0 ||
+    tags.value.length > 0 ||
+    selectedPosts.value.length > 0
+  )
+})
 
 const categories = [
   { value: 'general' as const, label: '💬 综合' },
@@ -233,6 +244,8 @@ onUnmounted(() => {
   mentionSearchController = null
   debouncedSearchPosts.cancel?.()
 })
+
+useUpdateBlocker('discussion-composer:create', shouldBlockUpdate)
 
 function handleInput() {
   const textarea = textareaRef.value?.el

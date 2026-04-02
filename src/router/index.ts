@@ -26,6 +26,7 @@ declare module 'vue-router' {
     description?: string
     requiresAuth?: boolean
     guestOnly?: boolean
+    appUpdateMode?: 'auto' | 'prompt'
     /** Show global footer on this route */
     showFooter?: boolean
     /** Stable view key used to preserve component instance across modal/detail URL changes */
@@ -92,7 +93,7 @@ const routes: RouteRecordRaw[] = [
     path: '/search',
     name: 'search',
     component: () => import('@/views/SearchPage.vue'),
-    meta: { title: 'nav.search' },
+    meta: { title: 'nav.search', appUpdateMode: 'prompt' },
   },
   {
     path: '/post/:id',
@@ -109,7 +110,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/community',
     component: () => import('@/layouts/CommunityLayout.vue'),
-    meta: { title: 'community.title' },
+    meta: { title: 'community.title', appUpdateMode: 'prompt' },
     children: [
       {
         path: '',
@@ -120,7 +121,7 @@ const routes: RouteRecordRaw[] = [
         path: 'discussions/:id',
         name: 'discussion-detail',
         component: () => import('@/views/DiscussionDetailPage.vue'),
-        meta: { title: 'community.recentDiscussions' },
+        meta: { title: 'community.recentDiscussions', appUpdateMode: 'auto' },
       },
     ],
   },
@@ -142,12 +143,12 @@ const routes: RouteRecordRaw[] = [
     path: '/users/:id',
     name: 'user-public-profile',
     component: () => import('@/views/UserPublicProfilePage.vue'),
-    meta: { title: 'nav.userProfile', requiresAuth: true },
+    meta: { title: 'nav.userProfile', requiresAuth: true, appUpdateMode: 'prompt' },
   },
   {
     path: '/profile',
     component: () => import('@/layouts/ProfileLayout.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, appUpdateMode: 'prompt' },
     children: [
       {
         path: '',
@@ -179,7 +180,7 @@ const routes: RouteRecordRaw[] = [
     path: '/favorites',
     name: 'favorites',
     component: () => import('@/views/FavoritesPage.vue'),
-    meta: { title: 'nav.favorites', requiresAuth: true },
+    meta: { title: 'nav.favorites', requiresAuth: true, appUpdateMode: 'prompt' },
   },
   {
     path: '/settings/profile',
@@ -189,43 +190,43 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'login',
     component: LoginPage,
-    meta: { title: 'nav.login', guestOnly: true },
+    meta: { title: 'nav.login', guestOnly: true, appUpdateMode: 'prompt' },
   },
   {
     path: '/auth/callback',
     name: 'auth-callback',
     component: AuthCallbackPage,
-    meta: { title: 'auth.callback.title' },
+    meta: { title: 'auth.callback.title', appUpdateMode: 'prompt' },
   },
   {
     path: '/register',
     name: 'register',
     component: RegisterPage,
-    meta: { title: 'nav.register', guestOnly: true },
+    meta: { title: 'nav.register', guestOnly: true, appUpdateMode: 'prompt' },
   },
   {
     path: '/forgot-password',
     name: 'forgot-password',
     component: ForgotPasswordPage,
-    meta: { title: 'email.forgotPasswordTitle', guestOnly: true },
+    meta: { title: 'email.forgotPasswordTitle', guestOnly: true, appUpdateMode: 'prompt' },
   },
   {
     path: '/reset-password',
     name: 'reset-password',
     component: ResetPasswordPage,
-    meta: { title: 'email.resetPasswordTitle', guestOnly: true },
+    meta: { title: 'email.resetPasswordTitle', guestOnly: true, appUpdateMode: 'prompt' },
   },
   {
     path: '/verify-email',
     name: 'verify-email',
     component: VerifyEmailPage,
-    meta: { title: 'email.verifyTitle' },
+    meta: { title: 'email.verifyTitle', appUpdateMode: 'prompt' },
   },
   {
     path: '/contact',
     name: 'contact',
     component: () => import('@/views/ContactPage.vue'),
-    meta: { title: 'nav.contact', showFooter: true },
+    meta: { title: 'nav.contact', showFooter: true, appUpdateMode: 'prompt' },
   },
   {
     path: '/schedule',

@@ -13,6 +13,7 @@ describe('Settings Store', () => {
 
     store.setAppearancePreset('material-calm')
     store.setBackgroundEffect({ type: 'stars', density: 0.8, speed: 1.2 })
+    store.setAppUpdateStrategy('aggressive-idle-refresh')
 
     store.applyPreferences({
       show_hero_section: false,
@@ -32,6 +33,7 @@ describe('Settings Store', () => {
     expect(store.settings.appearancePreset).toBe('material-calm')
     expect(store.settings.backgroundEffect.type).toBe('stars')
     expect(store.settings.backgroundEffect.density).toBe(0.8)
+    expect(store.settings.appUpdateStrategy).toBe('aggressive-idle-refresh')
   })
 
   it('exports stable preferences payload for API sync', () => {
@@ -97,7 +99,17 @@ describe('Settings Store', () => {
     expect(store.settings.backgroundEffect.type).toBe('none')
     expect(store.settings.mascotBackground.enabled).toBe(false)
     expect(store.settings.deskPet.enabled).toBe(false)
+    expect(store.settings.appUpdateStrategy).toBe('public-idle-refresh')
     expect('uiStyle' in store.settings).toBe(false)
+  })
+
+  it('stores app update strategy locally without exporting it to backend preferences', () => {
+    const store = useSettingsStore()
+
+    store.setAppUpdateStrategy('prompt-only')
+
+    expect(store.settings.appUpdateStrategy).toBe('prompt-only')
+    expect(store.exportPreferences()).not.toHaveProperty('app_update_strategy')
   })
 
   it('keeps appearance preset as the only runtime appearance state', () => {

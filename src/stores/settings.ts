@@ -9,6 +9,7 @@ import type { AppearancePreset, ContrastMode, DensityMode, MotionMode, TextureLe
 import { DEFAULT_APPEARANCE_PRESET, normalizeAppearancePreset } from '@/config/appearance'
 
 export type AnimationIntensity = 'none' | 'reduced' | 'normal' | 'full'
+export type AppUpdateStrategy = 'prompt-only' | 'public-idle-refresh' | 'aggressive-idle-refresh'
 type LegacyUiStyleSnapshot = 'ios' | 'material'
 
 /** 背景粒子效果类型 */
@@ -84,6 +85,8 @@ export interface Settings {
   mascotBackground: MascotBackgroundConfig
   /** 桌宠配置 */
   deskPet: DeskPetConfig
+  /** 应用更新策略 */
+  appUpdateStrategy: AppUpdateStrategy
 }
 
 const defaultSettings: Settings = {
@@ -124,6 +127,7 @@ const defaultSettings: Settings = {
     autoHeroInteraction: true,
     followSensitivity: 1,
   },
+  appUpdateStrategy: 'public-idle-refresh',
 }
 
 function createDefaultSettings(): Settings {
@@ -208,6 +212,9 @@ export const useSettingsStore = defineStore(
           ...defaultSettings.deskPet,
         }
       }
+      if (!settings.value.appUpdateStrategy) {
+        settings.value.appUpdateStrategy = defaultSettings.appUpdateStrategy
+      }
 
       settings.value.mascotBackground = {
         ...defaultSettings.mascotBackground,
@@ -236,6 +243,13 @@ export const useSettingsStore = defineStore(
         1.8,
         Math.max(0.5, settings.value.deskPet.followSensitivity)
       )
+      settings.value.appUpdateStrategy = [
+        'prompt-only',
+        'public-idle-refresh',
+        'aggressive-idle-refresh',
+      ].includes(settings.value.appUpdateStrategy)
+        ? settings.value.appUpdateStrategy
+        : defaultSettings.appUpdateStrategy
 
       normalizeAppearanceSettings(settings.value)
       normalizePrivacySettings(settings.value)
@@ -371,6 +385,10 @@ export const useSettingsStore = defineStore(
       settings.value.deskPet = next
     }
 
+    function setAppUpdateStrategy(strategy: AppUpdateStrategy) {
+      settings.value.appUpdateStrategy = strategy
+    }
+
     function applyPreferences(preferences: UserPreferences) {
       const nextSettings = {
         ...settings.value,
@@ -457,6 +475,7 @@ export const useSettingsStore = defineStore(
       setBackgroundEffect,
       setMascotBackground,
       setDeskPet,
+      setAppUpdateStrategy,
       applyPreferences,
       exportPreferences,
       resetSettings,

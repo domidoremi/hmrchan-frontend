@@ -24,10 +24,11 @@ import {
   asyncCssPlugin,
   criticalCSSPlugin,
   obfuscationPlugin,
+  serviceWorkerBuildPlugin,
   sriPlugin,
   staticPrerenderPlugin,
-  swVersionPlugin,
 } from './build/vite/plugins'
+import { getSwCacheVersion } from './build/vite/swCacheVersion'
 
 type DevProxyServer = {
   on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void
@@ -71,6 +72,7 @@ function getBuildHash(): string {
 }
 
 const BUILD_HASH = getBuildHash()
+const SW_CACHE_VERSION = getSwCacheVersion()
 
 type EnvMap = Record<string, string | undefined>
 
@@ -217,7 +219,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       ...(isProd
         ? [
             criticalCSSPlugin(),
-            swVersionPlugin(),
+            serviceWorkerBuildPlugin(),
             sriPlugin(),
             staticPrerenderPlugin(),
             ...(asyncMainCss ? [asyncCssPlugin()] : []),
@@ -277,6 +279,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
       /** Git commit hash */
       __BUILD_HASH__: JSON.stringify(BUILD_HASH),
+      /** Service Worker cache version */
+      __SW_CACHE_VERSION__: JSON.stringify(SW_CACHE_VERSION),
       /** 生产环境标识 */
       __PROD__: isProd,
       /** 开发环境标识 */

@@ -351,8 +351,9 @@ scheduleTask(
         ({ initSwUpdateChecker, disposeSwUpdateChecker }) => {
           initSwUpdateChecker({
             checkInterval: 30 * 60 * 1000, // 30 分钟检查一次
-            autoRefresh: false, // 不自动刷新，让用户决定
             showToast: true, // 显示更新提示
+            router,
+            pinia,
           })
           // HMR 下避免重复注册监听器
           if (import.meta.hot) {

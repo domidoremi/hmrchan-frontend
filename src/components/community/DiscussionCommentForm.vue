@@ -89,6 +89,7 @@ import { useAuthStore, useToastStore } from '@/stores'
 import { discussionService, type DiscussionComment, ApiError } from '@/api'
 import { validateComment, sanitizeComment, commentRateLimiter } from '@/utils/security'
 import { useUserAvatar } from '@/composables/useUserAvatar'
+import { useUpdateBlocker } from '@/utils/app-update/updateBlockers'
 import { applyPlainTextSnippet, type PlainTextToolAction } from '@/utils/plainTextTools'
 import Avatar from '@/components/ui/Avatar.vue'
 import Button from '@/components/ui/Button.vue'
@@ -134,11 +135,19 @@ const userAvatarFallbackLabel = computed(() => {
   const source = user.value?.username?.trim() || '?'
   return source.slice(0, 1).toUpperCase() || '?'
 })
+const shouldBlockUpdate = computed(() => {
+  return isSubmitting.value || content.value.trim().length > 0
+})
+const updateBlockerId = computed(
+  () => `discussion-comment-form:${props.discussionId}:${props.parentId ?? 'root'}`
+)
 
 const canSubmit = computed(() => {
   const validation = validateComment(content.value)
   return validation.valid && !isSubmitting.value
 })
+
+useUpdateBlocker(updateBlockerId, shouldBlockUpdate)
 
 function autoResize() {
   nextTick(() => {

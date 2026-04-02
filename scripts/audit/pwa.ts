@@ -58,26 +58,46 @@ async function checkManifest(options: AuditOptions): Promise<AuditIssue[]> {
 
 async function checkServiceWorker(options: AuditOptions): Promise<AuditIssue[]> {
   const issues: AuditIssue[] = []
-  const swPath = join(options.projectRoot, 'public/sw.js')
+  const swSourcePath = join(options.projectRoot, 'src/sw/index.ts')
+  const swPluginPath = join(options.projectRoot, 'build/vite/plugins/serviceWorkerBuild.ts')
+  const viteConfigPath = join(options.projectRoot, 'vite.config.ts')
+
+  if (!existsSync(swSourcePath)) {
+    issues.push({
+      severity: 'error',
+      message: 'src/sw/index.ts not found',
+      file: 'src/sw/index.ts',
+      rule: 'pwa-sw',
+    })
+    return issues
+  }
+
+  if (!existsSync(swPluginPath)) {
+    issues.push({
+      severity: 'error',
+      message: 'serviceWorkerBuild plugin not found',
+      file: 'build/vite/plugins/serviceWorkerBuild.ts',
+      rule: 'pwa-sw-build',
+    })
+  }
 
   try {
-    const content = await readFile(swPath, 'utf-8')
-
-    if (!content.includes('__SW_CACHE_VERSION__')) {
+    const viteConfigContent = await readFile(viteConfigPath, 'utf-8')
+    if (!viteConfigContent.includes('serviceWorkerBuildPlugin')) {
       issues.push({
         severity: 'error',
-        message: 'sw.js missing __SW_CACHE_VERSION__ placeholder',
-        file: 'public/sw.js',
-        rule: 'pwa-sw',
-        suggestion: 'Ensure the cache version placeholder exists for build-time injection',
+        message: 'vite.config.ts does not reference serviceWorkerBuildPlugin',
+        file: 'vite.config.ts',
+        rule: 'pwa-sw-build',
+        suggestion: 'Register the dedicated SW build plugin so dist/sw.js is emitted from src/sw/',
       })
     }
   } catch {
     issues.push({
       severity: 'error',
-      message: 'public/sw.js not found',
-      file: 'public/sw.js',
-      rule: 'pwa-sw',
+      message: 'vite.config.ts not found',
+      file: 'vite.config.ts',
+      rule: 'pwa-sw-build',
     })
   }
 
