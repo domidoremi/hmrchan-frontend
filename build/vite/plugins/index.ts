@@ -1,6 +1,6 @@
 export { asyncCssPlugin } from './asyncCss'
 export { criticalCSSPlugin } from './criticalCss'
 export { obfuscationPlugin } from './obfuscation'
+export { serviceWorkerBuildPlugin } from './serviceWorkerBuild'
 export { sriPlugin } from './sri'
 export { staticPrerenderPlugin } from './staticPrerender'
-export { swVersionPlugin } from './swVersion'

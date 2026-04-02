@@ -54,6 +54,7 @@ declare const __BUILD_TIME__: string
 declare const __BUILD_HASH__: string
 declare const __PROD__: boolean
 declare const __DEV__: boolean
+declare const __SW_CACHE_VERSION__: string
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'

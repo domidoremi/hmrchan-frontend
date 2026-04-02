@@ -304,6 +304,13 @@
     "dark": "Dark",
     "auto": "Auto",
     "language": "Language",
+    "appUpdateTitle": "App updates",
+    "appUpdatePromptOnly": "Prompt only",
+    "appUpdatePromptOnlyDesc": "Always show an update prompt and never refresh the current page automatically.",
+    "appUpdatePublicIdle": "Auto refresh public pages",
+    "appUpdatePublicIdleDesc": "Reading pages refresh when idle, while forms and input-heavy pages only show a prompt.",
+    "appUpdateAggressive": "More aggressive auto refresh",
+    "appUpdateAggressiveDesc": "Refresh into the new version on idle whenever the page is not protected.",
     "display": "Display",
     "toggleHeroSection": "Show Hero Section",
     "heroSectionDesc": "Show the hero banner on the homepage",
@@ -386,6 +393,13 @@
       "description": "Clear cached data to free up space",
       "clear": "Clear Cache"
     }
+  },
+  "appUpdate": {
+    "title": "App update",
+    "availableMessage": "A new version is ready. Update now when convenient.",
+    "updateNow": "Update now",
+    "activatedNextNavigation": "The new version is active and will apply on your next navigation.",
+    "autoRefreshBlocked": "The new version is active, but this page stayed protected. It will refresh on your next navigation."
   },
   "home": {
     "quickNav": {

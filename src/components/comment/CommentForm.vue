@@ -121,6 +121,7 @@ import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import type { UploadQueueItem } from '@/types'
 import { validateComment } from '@/utils/security'
 import { useUserAvatar } from '@/composables/useUserAvatar'
+import { useUpdateBlocker } from '@/utils/app-update/updateBlockers'
 import { applyPlainTextSnippet, type PlainTextToolAction } from '@/utils/plainTextTools'
 import Avatar from '@/components/ui/Avatar.vue'
 import Button from '@/components/ui/Button.vue'
@@ -182,6 +183,15 @@ const successfulImageIds = computed(() =>
 const isUploadingImages = computed(() =>
   attachmentItems.value.some((item) => item.status === 'uploading')
 )
+const shouldBlockUpdate = computed(() => {
+  return (
+    isSubmitting.value ||
+    content.value.trim().length > 0 ||
+    attachmentItems.value.length > 0 ||
+    isUploadingImages.value
+  )
+})
+const updateBlockerId = computed(() => `comment-form:${props.postId}:${props.replyTo ?? 'root'}`)
 
 const uploadHint = computed(() => t('comment.image.tooManyImages'))
 
@@ -189,6 +199,8 @@ const canSubmit = computed(() => {
   const validation = validateComment(content.value)
   return validation.valid && !isSubmitting.value && !isUploadingImages.value
 })
+
+useUpdateBlocker(updateBlockerId, shouldBlockUpdate)
 
 function autoResize() {
   nextTick(() => {

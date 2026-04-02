@@ -304,6 +304,13 @@
     "dark": "ダーク",
     "auto": "自動",
     "language": "言語",
+    "appUpdateTitle": "アプリ更新",
+    "appUpdatePromptOnly": "通知のみ",
+    "appUpdatePromptOnlyDesc": "新しいバージョンを検出しても通知だけを出し、現在のページは自動更新しません。",
+    "appUpdatePublicIdle": "公開ページを待機時に自動更新",
+    "appUpdatePublicIdleDesc": "閲覧中心の公開ページは待機時に更新し、入力やフォーム画面は通知のみにします。",
+    "appUpdateAggressive": "より積極的に自動更新",
+    "appUpdateAggressiveDesc": "保護対象ページ以外は、待機時にできるだけ新バージョンへ更新します。",
     "display": "表示",
     "toggleHeroSection": "ヒーローセクション表示",
     "heroSectionDesc": "ホームページにヒーローバナーを表示",
@@ -386,6 +393,13 @@
       "description": "キャッシュデータを削除して空き容量を確保",
       "clear": "キャッシュをクリア"
     }
+  },
+  "appUpdate": {
+    "title": "アプリ更新",
+    "availableMessage": "新しいバージョンの準備ができました。都合のよいタイミングで更新できます。",
+    "updateNow": "今すぐ更新",
+    "activatedNextNavigation": "新しいバージョンは有効になっており、次の画面遷移で反映されます。",
+    "autoRefreshBlocked": "新しいバージョンは有効ですが、このページは保護対象のため自動更新しません。次の画面遷移で反映されます。"
   },
   "home": {
     "quickNav": {
