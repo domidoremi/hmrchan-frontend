@@ -91,6 +91,20 @@ function normalizePath(path: string): string {
   return path.replace(/^\/+/, '').replace(/\/+$/, '')
 }
 
+function resolveUpstreamPath(path: string): string {
+  const normalizedPath = normalizePath(path)
+
+  if (
+    normalizedPath === 'auth/google/start' ||
+    normalizedPath === 'auth/google/callback' ||
+    normalizedPath.startsWith('auth/google/')
+  ) {
+    return `v1/${normalizedPath}`
+  }
+
+  return normalizedPath
+}
+
 function extractApiVersion(path: string): string | null {
   const versionSegment = path
     .split('/')
@@ -151,7 +165,7 @@ function buildErrorResponse(
 
 function shouldPreserveBrowserRedirect(path: string, request: Request): boolean {
   if (request.method !== 'GET') return false
-  const normalizedPath = normalizePath(path)
+  const normalizedPath = resolveUpstreamPath(path)
   return (
     normalizedPath === 'v1/auth/google/start' ||
     normalizedPath === 'v1/auth/google/callback' ||
@@ -304,7 +318,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   const pathSegments = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
   const hasTrailingSlash = requestUrl.pathname.endsWith('/')
   const normalizedPath = pathSegments + (hasTrailingSlash && !pathSegments.endsWith('/') ? '/' : '')
-  const compactPath = normalizePath(normalizedPath)
+  const compactPath = resolveUpstreamPath(normalizedPath)
   const redirectMode: RedirectMode = shouldPreserveBrowserRedirect(normalizedPath, request)
     ? 'manual'
     : 'follow'
