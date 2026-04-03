@@ -167,6 +167,43 @@ describe('functions/api proxy', () => {
     )
   })
 
+  it('rewrites legacy google auth start requests to the v1 upstream route', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: {
+          Location:
+            'https://accounts.google.com/o/oauth2/v2/auth?client_id=test-client&redirect_uri=' +
+            encodeURIComponent(`${BACKEND_ORIGIN}/api/v1/auth/google/callback`) +
+            '&response_type=code',
+        },
+      })
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    const response = await onRequest({
+      request: new Request(
+        'https://momichan.xyz/api/auth/google/start?intent=login&return_to=%2Fexplore'
+      ),
+      env: {
+        API_BASE_URL: BACKEND_ORIGIN,
+      },
+      params: {
+        path: ['auth', 'google', 'start'],
+      },
+    })
+
+    expect(publicFetch).toHaveBeenCalledTimes(1)
+    expect(publicFetch.mock.calls[0]?.[0]).toBe(
+      `${BACKEND_ORIGIN}/api/v1/auth/google/start?intent=login&return_to=%2Fexplore`
+    )
+    expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toContain(
+      encodeURIComponent('https://momichan.xyz/api/v1/auth/google/callback')
+    )
+  })
+
   it('bypasses VPC for google auth redirects so the browser redirect path stays intact', async () => {
     const publicFetch = vi.fn().mockResolvedValue(
       new Response(null, {
@@ -234,6 +271,38 @@ describe('functions/api proxy', () => {
     })
 
     expect(publicFetch).toHaveBeenCalledTimes(1)
+    expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toBe(
+      'https://momichan.xyz/auth/callback?handoff_code=test-code'
+    )
+  })
+
+  it('rewrites legacy google callback requests to the v1 upstream route', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: {
+          Location: `${BACKEND_ORIGIN}/auth/callback?handoff_code=test-code`,
+        },
+      })
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/api/auth/google/callback?code=abc&state=xyz'),
+      env: {
+        API_BASE_URL: BACKEND_ORIGIN,
+      },
+      params: {
+        path: ['auth', 'google', 'callback'],
+      },
+    })
+
+    expect(publicFetch).toHaveBeenCalledTimes(1)
+    expect(publicFetch.mock.calls[0]?.[0]).toBe(
+      `${BACKEND_ORIGIN}/api/v1/auth/google/callback?code=abc&state=xyz`
+    )
     expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toBe(
