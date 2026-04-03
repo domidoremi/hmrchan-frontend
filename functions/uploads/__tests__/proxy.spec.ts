@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { onRequest } from '../[[path]]'
 
+const BACKEND_ORIGIN = 'https://backend.test'
+
 describe('functions/uploads proxy', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -22,14 +24,14 @@ describe('functions/uploads proxy', () => {
     const response = await onRequest({
       request: new Request('https://momichan.xyz/uploads/avatar.png'),
       env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
+        API_BASE_URL: BACKEND_ORIGIN,
       },
       params: {
         path: ['avatar.png'],
       },
     })
 
-    expect(fetchMock).toHaveBeenCalledWith('https://api.momichan.xyz/uploads/avatar.png', {
+    expect(fetchMock).toHaveBeenCalledWith(`${BACKEND_ORIGIN}/uploads/avatar.png`, {
       method: 'GET',
       headers: expect.any(Headers),
     })
@@ -46,7 +48,7 @@ describe('functions/uploads proxy', () => {
     const response = await onRequest({
       request: new Request('https://momichan.xyz/uploads/missing.png'),
       env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
+        API_BASE_URL: BACKEND_ORIGIN,
       },
       params: {
         path: ['missing.png'],

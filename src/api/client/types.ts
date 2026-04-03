@@ -4,12 +4,17 @@ export interface RequestConfig extends RequestInit {
   skipErrorToast?: boolean
   responseType?: 'json' | 'text' | 'blob' | 'response'
   skipSecurity?: boolean
+  securityPolicy?: 'default' | 'sensitive'
   baseUrl?: string | undefined
+  idempotencyKey?: string | false
   onResponseHeaders?: (headers: Headers) => void
   skipChallengeRetry?: boolean
   verificationAction?: string
   verificationResourceId?: string
   skipVerificationRetry?: boolean
+  skipUnauthorizedRetry?: boolean
+  skipClientReinitRetry?: boolean
+  skipClientSignatureRetry?: boolean
 }
 
 export interface ApiResponse<T = unknown> {

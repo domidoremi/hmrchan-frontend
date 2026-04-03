@@ -2,13 +2,17 @@ import { ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createAuthSessionController } from '../authSessionController'
 import { ApiError, authService } from '@/api'
-import { apiClient } from '@/api/client'
-import { secureTokenManager } from '@/utils/tokenSecurity'
+import { clearAuthRuntimeSession } from '@/api/client/auth-runtime'
+
+const mockRouterPush = vi.hoisted(() => vi.fn())
+const mockSetStoredAuthSource = vi.hoisted(() => vi.fn())
+const mockClearStoredAuthSource = vi.hoisted(() => vi.fn())
+const mockReportClientEvent = vi.hoisted(() => vi.fn())
 
 vi.mock('@/api', () => ({
   authService: {
-    getCurrentUser: vi.fn(),
     refreshToken: vi.fn(),
+    getCurrentUser: vi.fn(),
     heartbeat: vi.fn(),
   },
   ApiError: class ApiError extends Error {
@@ -23,38 +27,29 @@ vi.mock('@/api', () => ({
   },
 }))
 
-vi.mock('@/api/client', () => ({
-  API_AUTH_URL: '/api',
-  apiClient: {
-    request: vi.fn(),
-  },
-}))
-
-vi.mock('@/utils/tokenSecurity', () => ({
-  secureTokenManager: {
-    store: vi.fn(() => Promise.resolve()),
-    retrieve: vi.fn(() => Promise.resolve(null)),
-    retrieveState: vi.fn(() =>
-      Promise.resolve({
-        token: null,
-        state: 'missing',
-      })
-    ),
-    clear: vi.fn(),
-  },
-}))
-
 vi.mock('@/utils/authSource', () => ({
-  getStoredAuthSource: vi.fn(() => null),
-  setStoredAuthSource: vi.fn(),
-  clearStoredAuthSource: vi.fn(),
-  normalizeAuthSource: vi.fn((value: string | null | undefined) => value || 'session'),
+  setStoredAuthSource: mockSetStoredAuthSource,
+  clearStoredAuthSource: mockClearStoredAuthSource,
 }))
 
 vi.mock('@/utils/clientReporter', () => ({
-  reportClientError: vi.fn(),
-  reportClientEvent: vi.fn(),
+  reportClientEvent: mockReportClientEvent,
 }))
+
+function createAccessToken(overrides: Record<string, unknown> = {}) {
+  const payload = {
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    permissions: ['profile.read'],
+    permission_version: 1,
+    ...overrides,
+  }
+
+  return [
+    Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url'),
+    Buffer.from(JSON.stringify(payload)).toString('base64url'),
+    'signature',
+  ].join('.')
+}
 
 function createUser(overrides: Record<string, unknown> = {}) {
   return {
@@ -67,62 +62,103 @@ function createUser(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function createLoginResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    access_token: createAccessToken(),
+    token_type: 'bearer',
+    expires_in: 3600,
+    refresh_threshold: 30,
+    permission_version: 1,
+    user: createUser(),
+    ...overrides,
+  }
+}
+
+function createMeResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    ...createUser({ auth_source: 'session' }),
+    permission_version: 1,
+    auth_source: 'session',
+    identity_provider: 'local',
+    linked_providers: ['local'],
+    ...overrides,
+  }
+}
+
+function createHeartbeatResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    access_token: createAccessToken(),
+    token_type: 'bearer',
+    expires_in: 3600,
+    refresh_threshold: 30,
+    permission_version: 1,
+    server_time: '2026-04-03T00:00:00Z',
+    ...overrides,
+  }
+}
+
 function createState() {
   return {
     user: ref<ReturnType<typeof createUser> | null>(null),
-    token: ref<string | null>(null),
-    refreshToken: ref<string | null>(null),
+    runtimeAuthzCache: ref<{
+      roles: string[]
+      permissions: string[]
+      version: string
+      expiresAt: number
+    } | null>(null),
+    sessionExpiresAt: ref<string | null>(null),
+    stepUpRequired: ref(false),
     isInitialized: ref(false),
   }
 }
 
 describe('createAuthSessionController', () => {
   const router = {
-    push: vi.fn(),
+    push: mockRouterPush,
   }
 
   beforeEach(() => {
     vi.clearAllMocks()
+    clearAuthRuntimeSession()
     vi.useFakeTimers()
     window.history.replaceState({}, '', '/')
   })
 
   afterEach(() => {
+    clearAuthRuntimeSession()
     vi.useRealTimers()
   })
 
-  it('establishes a session and performs the deferred profile refresh', async () => {
+  it('establishes a session, creates a runtime authz cache and starts heartbeat', async () => {
     const state = createState()
     const controller = createAuthSessionController({ router, state })
-    const initialUser = createUser({ username: 'initial-user' })
-    const refreshedUser = createUser({ username: 'refreshed-user' })
 
-    vi.mocked(secureTokenManager.retrieve).mockResolvedValueOnce('access-token-1')
-    vi.mocked(apiClient.request).mockResolvedValueOnce(refreshedUser)
-
-    await controller.establishSession({
-      user: initialUser,
-      access_token: 'access-token-1',
-      refresh_token: 'refresh-token-1',
-      token_type: 'Bearer',
-    })
-
-    expect(state.user.value).toEqual(initialUser)
-    expect(state.token.value).toBe('access-token-1')
-    expect(state.refreshToken.value).toBe('refresh-token-1')
-    expect(secureTokenManager.store).toHaveBeenCalledWith('access-token-1')
-
-    await vi.advanceTimersByTimeAsync(2000)
-
-    expect(apiClient.request).toHaveBeenCalledWith(
-      '/auth/me',
-      expect.objectContaining({
-        baseUrl: '/api',
-        skipAuth: true,
-        skipErrorToast: true,
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+    vi.mocked(authService.heartbeat).mockResolvedValueOnce(
+      createHeartbeatResponse({
+        access_token: createAccessToken({ permission_version: 2 }),
+        permission_version: 2,
       })
     )
-    expect(state.user.value).toEqual(refreshedUser)
+
+    await controller.establishSession(createLoginResponse())
+
+    expect(state.user.value).toEqual(expect.objectContaining({ email: 'tester@example.com' }))
+    expect(state.runtimeAuthzCache.value).toEqual(
+      expect.objectContaining({
+        roles: [],
+        permissions: ['profile.read'],
+        version: '1',
+      })
+    )
+    expect(state.sessionExpiresAt.value).toContain('T')
+    expect(state.stepUpRequired.value).toBe(false)
+    expect(mockSetStoredAuthSource).toHaveBeenCalledWith('session')
+
+    await vi.advanceTimersByTimeAsync(30000)
+
+    expect(authService.heartbeat).toHaveBeenCalledTimes(1)
+    expect(state.runtimeAuthzCache.value?.version).toBe('2')
 
     controller.cleanup()
   })
@@ -132,129 +168,107 @@ describe('createAuthSessionController', () => {
     const controller = createAuthSessionController({ router, state })
 
     state.user.value = createUser()
-    state.token.value = 'access-token'
-    state.refreshToken.value = 'refresh-token'
+    state.runtimeAuthzCache.value = {
+      roles: ['member'],
+      permissions: ['profile.read'],
+      version: '1',
+      expiresAt: Date.now() + 60000,
+    }
+    state.sessionExpiresAt.value = '2026-04-03T00:00:00Z'
+    state.stepUpRequired.value = true
 
     controller.clearSession({ navigateToLogin: true })
 
     expect(state.user.value).toBeNull()
-    expect(state.token.value).toBeNull()
-    expect(state.refreshToken.value).toBeNull()
-    expect(secureTokenManager.clear).toHaveBeenCalled()
+    expect(state.runtimeAuthzCache.value).toBeNull()
+    expect(state.sessionExpiresAt.value).toBeNull()
+    expect(state.stepUpRequired.value).toBe(false)
+    expect(mockClearStoredAuthSource).toHaveBeenCalledTimes(1)
     expect(router.push).toHaveBeenCalledWith('/login')
   })
 
-  it('clears auth state when fetching the current user returns 401', async () => {
+  it('clears auth state when refresh restore returns 401', async () => {
     const state = createState()
     const controller = createAuthSessionController({ router, state })
 
-    state.token.value = 'expired-token'
     state.user.value = createUser()
-    vi.mocked(authService.getCurrentUser).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
+    state.runtimeAuthzCache.value = {
+      roles: ['member'],
+      permissions: ['profile.read'],
+      version: '1',
+      expiresAt: Date.now() + 60000,
+    }
+
+    vi.mocked(authService.refreshToken).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
 
     const result = await controller.fetchCurrentUser()
 
     expect(result).toBeNull()
     expect(state.user.value).toBeNull()
-    expect(state.token.value).toBeNull()
+    expect(state.runtimeAuthzCache.value).toBeNull()
   })
 
-  it('attempts bootstrap refresh when the stored token binding mismatches', async () => {
+  it('reuses a fresh authenticated snapshot and refreshes user data for sensitive routes', async () => {
     const state = createState()
-    state.user.value = createUser({ username: 'persisted-user' })
     const controller = createAuthSessionController({ router, state })
-    const refreshedUser = createUser({ username: 'boot-refreshed' })
 
-    vi.mocked(secureTokenManager.retrieveState).mockResolvedValueOnce({
-      token: null,
-      state: 'binding_invalid',
-      reason: 'device_mismatch',
-    })
-    vi.mocked(authService.refreshToken).mockResolvedValueOnce({
-      access_token: 'boot-token',
-      refresh_token: 'boot-refresh',
-      token_type: 'Bearer',
-      user: refreshedUser,
-    })
-    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(refreshedUser)
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+    await controller.establishSession(createLoginResponse())
 
-    await controller.initAuth()
+    vi.clearAllMocks()
+
+    await expect(controller.ensureFreshAuthz('authenticated')).resolves.toBe(true)
+    expect(authService.getCurrentUser).not.toHaveBeenCalled()
+    expect(authService.refreshToken).not.toHaveBeenCalled()
+
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(
+      createMeResponse({
+        permission_version: 2,
+      })
+    )
+
+    await expect(controller.ensureFreshAuthz('sensitive')).resolves.toBe(true)
+    expect(authService.getCurrentUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        securityPolicy: 'sensitive',
+        skipErrorToast: true,
+      })
+    )
+    expect(state.runtimeAuthzCache.value?.version).toBe('2')
+    expect(state.runtimeAuthzCache.value?.expiresAt).toBeLessThanOrEqual(Date.now())
+  })
+
+  it('bootstraps the session during init and marks auth initialized', async () => {
+    const state = createState()
+    const controller = createAuthSessionController({ router, state })
+
+    vi.mocked(authService.refreshToken).mockResolvedValueOnce(createLoginResponse())
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+
+    await controller.ensureAuthInitialized()
 
     expect(authService.refreshToken).toHaveBeenCalledTimes(1)
-    expect(secureTokenManager.store).toHaveBeenCalledWith('boot-token')
-    expect(state.token.value).toBe('boot-token')
-    expect(state.user.value).toEqual(refreshedUser)
-  })
-
-  it('keeps state and schedules a retry when bootstrap refresh fails with a network error', async () => {
-    const state = createState()
-    state.user.value = createUser({ username: 'persisted-user' })
-    const controller = createAuthSessionController({ router, state })
-
-    vi.mocked(secureTokenManager.retrieveState).mockResolvedValue({
-      token: null,
-      state: 'binding_invalid',
-      reason: 'device_mismatch',
-    })
-    vi.mocked(authService.refreshToken).mockRejectedValueOnce(new Error('Network error'))
-
-    await controller.initAuth()
-
-    expect(state.user.value).not.toBeNull()
-    expect(state.token.value).toBeNull()
-    expect(vi.getTimerCount()).toBeGreaterThan(0)
+    expect(authService.getCurrentUser).toHaveBeenCalledTimes(1)
+    expect(state.user.value).toEqual(expect.objectContaining({ email: 'tester@example.com' }))
+    expect(state.isInitialized.value).toBe(true)
 
     controller.cleanup()
   })
 
-  it('starts heartbeat for all established sessions', async () => {
+  it('redirects to login with the current route when heartbeat fails with 401', async () => {
     const state = createState()
     const controller = createAuthSessionController({ router, state })
 
-    vi.mocked(authService.heartbeat).mockResolvedValueOnce({
-      access_token: 'rotated-token',
-      token_type: 'Bearer',
-      expires_in: 900,
-      refresh_threshold: 30,
-      server_time: '2026-03-29T00:00:00Z',
-    })
-
-    await controller.establishSession({
-      user: createUser({ auth_source: 'session' }),
-      access_token: 'access-token',
-      refresh_token: 'refresh-token',
-      token_type: 'Bearer',
-      refresh_threshold: 30,
-    })
-
-    await vi.advanceTimersByTimeAsync(30000)
-
-    expect(authService.heartbeat).toHaveBeenCalledTimes(1)
-    expect(state.token.value).toBe('rotated-token')
-
-    controller.cleanup()
-  })
-
-  it('redirects to login with the current route when heartbeat refresh fails fatally', async () => {
-    const state = createState()
-    const controller = createAuthSessionController({ router, state })
-
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
     vi.mocked(authService.heartbeat).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
-    vi.mocked(authService.refreshToken).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
 
-    await controller.establishSession({
-      user: createUser(),
-      access_token: 'access-token',
-      refresh_token: 'refresh-token',
-      token_type: 'Bearer',
-      refresh_threshold: 30,
-    })
+    await controller.establishSession(createLoginResponse())
 
     window.history.replaceState({}, '', '/profile/settings?tab=security')
     await vi.advanceTimersByTimeAsync(30000)
 
     expect(state.user.value).toBeNull()
-    expect(state.token.value).toBeNull()
+    expect(state.runtimeAuthzCache.value).toBeNull()
     expect(router.push).toHaveBeenCalledWith(
       '/login?redirect=%2Fprofile%2Fsettings%3Ftab%3Dsecurity'
     )
@@ -265,7 +279,12 @@ describe('createAuthSessionController', () => {
   it('preserves the protected redirect when auth:logout fires for an auth failure', async () => {
     const state = createState()
     state.user.value = createUser()
-    state.token.value = 'access-token'
+    state.runtimeAuthzCache.value = {
+      roles: ['member'],
+      permissions: ['profile.read'],
+      version: '1',
+      expiresAt: Date.now() + 60000,
+    }
     const controller = createAuthSessionController({ router, state })
     const cleanup = controller.setupAuthListener()
 
@@ -274,8 +293,37 @@ describe('createAuthSessionController', () => {
     await Promise.resolve()
 
     expect(state.user.value).toBeNull()
-    expect(state.token.value).toBeNull()
+    expect(state.runtimeAuthzCache.value).toBeNull()
     expect(router.push).toHaveBeenCalledWith('/login?redirect=%2Ffavorites%3Ftab%3Drecent')
+
+    cleanup()
+    controller.cleanup()
+  })
+
+  it('invalidates authz on permissions version drift and risk-mode degrade', () => {
+    const state = createState()
+    state.user.value = createUser()
+    state.runtimeAuthzCache.value = {
+      roles: ['member'],
+      permissions: ['profile.read'],
+      version: '1',
+      expiresAt: Date.now() + 60000,
+    }
+    const controller = createAuthSessionController({ router, state })
+    const cleanup = controller.setupAuthListener()
+
+    window.dispatchEvent(new CustomEvent('authz:version-changed', { detail: { version: '2' } }))
+    expect(state.runtimeAuthzCache.value).toBeNull()
+
+    state.runtimeAuthzCache.value = {
+      roles: ['member'],
+      permissions: ['profile.read'],
+      version: '2',
+      expiresAt: Date.now() + 60000,
+    }
+    window.dispatchEvent(new CustomEvent('security:risk-mode-changed'))
+    expect(state.runtimeAuthzCache.value).toBeNull()
+    expect(state.stepUpRequired.value).toBe(true)
 
     cleanup()
     controller.cleanup()

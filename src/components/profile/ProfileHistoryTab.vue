@@ -118,7 +118,6 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 interface ApiHistoryItem {
   id: number
   content_type: string
-  content_id: number
   content_uuid: string
   source: string
   duration_seconds: number | null

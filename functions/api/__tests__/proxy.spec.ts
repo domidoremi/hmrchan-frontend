@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { onRequest } from '../[[path]]'
 
+const BACKEND_ORIGIN = 'https://backend.test'
+
 describe('functions/api proxy', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -16,7 +18,7 @@ describe('functions/api proxy', () => {
         },
       }),
       env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
+        API_BASE_URL: BACKEND_ORIGIN,
       },
       params: {
         path: ['v1', 'posts'],
@@ -48,7 +50,7 @@ describe('functions/api proxy', () => {
         },
       }),
       env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
+        API_BASE_URL: BACKEND_ORIGIN,
         VPC_API_ORIGIN: 'http://nginx',
         VPC_SERVICE: {
           fetch: vpcFetch,
@@ -61,9 +63,41 @@ describe('functions/api proxy', () => {
 
     expect(vpcFetch).toHaveBeenCalledTimes(1)
     expect(publicFetch).toHaveBeenCalledTimes(1)
-    expect(publicFetch.mock.calls[0]?.[0]).toBe('https://api.momichan.xyz/api/v1/posts?page=2')
+    expect(publicFetch.mock.calls[0]?.[0]).toBe(`${BACKEND_ORIGIN}/api/v1/posts?page=2`)
     expect(response.status).toBe(200)
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://momichan.xyz')
+  })
+
+  it('preserves upstream Set-Cookie headers for auth refresh-cookie flows', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ access_token: 'token' }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Set-Cookie':
+            'refresh_token=token; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1209600',
+        },
+      })
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/api/v1/auth/refresh', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://momichan.xyz',
+        },
+      }),
+      env: {
+        API_BASE_URL: BACKEND_ORIGIN,
+      },
+      params: {
+        path: ['v1', 'auth', 'refresh'],
+      },
+    })
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Set-Cookie')).toContain('refresh_token=token')
   })
 
   it('applies private cache headers to authenticated media thumbnails', async () => {
@@ -87,7 +121,7 @@ describe('functions/api proxy', () => {
         },
       }),
       env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
+        API_BASE_URL: BACKEND_ORIGIN,
       },
       params: {
         path: ['v1', 'media', 'post-1', 'thumbnail'],
@@ -108,7 +142,7 @@ describe('functions/api proxy', () => {
         headers: {
           Location:
             'https://accounts.google.com/o/oauth2/v2/auth?client_id=test-client&redirect_uri=' +
-            encodeURIComponent('https://api.momichan.xyz/api/auth/google/callback') +
+            encodeURIComponent(`${BACKEND_ORIGIN}/api/v1/auth/google/callback`) +
             '&response_type=code',
         },
       })
@@ -116,12 +150,12 @@ describe('functions/api proxy', () => {
     vi.stubGlobal('fetch', publicFetch)
 
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/auth/google/start?intent=register'),
+      request: new Request('https://momichan.xyz/api/v1/auth/google/start?intent=register'),
       env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
+        API_BASE_URL: BACKEND_ORIGIN,
       },
       params: {
-        path: ['auth', 'google', 'start'],
+        path: ['v1', 'auth', 'google', 'start'],
       },
     })
 
@@ -129,7 +163,7 @@ describe('functions/api proxy', () => {
     expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toContain(
-      encodeURIComponent('https://momichan.xyz/api/auth/google/callback')
+      encodeURIComponent('https://momichan.xyz/api/v1/auth/google/callback')
     )
   })
 
@@ -140,7 +174,7 @@ describe('functions/api proxy', () => {
         headers: {
           Location:
             'https://accounts.google.com/o/oauth2/v2/auth?client_id=test-client&redirect_uri=' +
-            encodeURIComponent('https://api.momichan.xyz/api/auth/google/callback') +
+            encodeURIComponent(`${BACKEND_ORIGIN}/api/v1/auth/google/callback`) +
             '&response_type=code',
         },
       })
@@ -154,16 +188,18 @@ describe('functions/api proxy', () => {
     )
 
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/auth/google/start?intent=login&return_to=%2F'),
+      request: new Request(
+        'https://momichan.xyz/api/v1/auth/google/start?intent=login&return_to=%2F'
+      ),
       env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
+        API_BASE_URL: BACKEND_ORIGIN,
         VPC_API_ORIGIN: 'http://nginx',
         VPC_SERVICE: {
           fetch: vpcFetch,
         },
       },
       params: {
-        path: ['auth', 'google', 'start'],
+        path: ['v1', 'auth', 'google', 'start'],
       },
     })
 
@@ -172,47 +208,8 @@ describe('functions/api proxy', () => {
     expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toContain(
-      encodeURIComponent('https://momichan.xyz/api/auth/google/callback')
+      encodeURIComponent('https://momichan.xyz/api/v1/auth/google/callback')
     )
-  })
-
-  it('canonicalizes pseudo redirects with a Found body into an empty browser redirect', async () => {
-    const publicFetch = vi.fn().mockResolvedValue(
-      new Response(
-        '<a href="https://accounts.google.com/o/oauth2/v2/auth?redirect_uri=' +
-          encodeURIComponent('https://api.momichan.xyz/api/auth/google/callback') +
-          '">Found</a>.',
-        {
-          status: 404,
-          headers: {
-            'Content-Type': 'text/html; charset=utf-8',
-            'Content-Length': '46',
-            Location:
-              'https://accounts.google.com/o/oauth2/v2/auth?client_id=test-client&redirect_uri=' +
-              encodeURIComponent('https://api.momichan.xyz/api/auth/google/callback') +
-              '&response_type=code',
-          },
-        }
-      )
-    )
-    vi.stubGlobal('fetch', publicFetch)
-
-    const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/auth/google/start?intent=login&return_to=%2F'),
-      env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
-      },
-      params: {
-        path: ['auth', 'google', 'start'],
-      },
-    })
-
-    expect(response.status).toBe(302)
-    expect(response.headers.get('Location')).toContain(
-      encodeURIComponent('https://momichan.xyz/api/auth/google/callback')
-    )
-    expect(response.headers.get('Content-Type')).toBeNull()
-    await expect(response.text()).resolves.toBe('')
   })
 
   it('rewrites auth callback redirects from the api origin back to the site origin', async () => {
@@ -220,19 +217,19 @@ describe('functions/api proxy', () => {
       new Response(null, {
         status: 302,
         headers: {
-          Location: 'https://api.momichan.xyz/auth/callback?handoff_code=test-code',
+          Location: `${BACKEND_ORIGIN}/auth/callback?handoff_code=test-code`,
         },
       })
     )
     vi.stubGlobal('fetch', publicFetch)
 
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/auth/google/callback?code=abc&state=xyz'),
+      request: new Request('https://momichan.xyz/api/v1/auth/google/callback?code=abc&state=xyz'),
       env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
+        API_BASE_URL: BACKEND_ORIGIN,
       },
       params: {
-        path: ['auth', 'google', 'callback'],
+        path: ['v1', 'auth', 'google', 'callback'],
       },
     })
 

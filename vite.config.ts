@@ -149,11 +149,11 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   }
   const isProd = mode === 'production'
   const isDev = mode === 'development'
-  const obfuscationEnabled = parseBoolEnv(env, 'VITE_ENABLE_OBFUSCATION', false)
+  const obfuscationEnabled = parseBoolEnv(env, 'VITE_ENABLE_OBFUSCATION', isProd)
   const asyncMainCss = parseBoolEnv(env, 'VITE_ASYNC_MAIN_CSS', true)
   const disablePreviewProxy = parseBoolEnv(env, 'VITE_DISABLE_PREVIEW_PROXY', false)
   const devtoolsEnabled = isDev && parseBoolEnv(env, 'VITE_ENABLE_DEVTOOLS', false)
-  const sourcemapMode = parseSourcemapEnv(env.VITE_SOURCEMAP)
+  const sourcemapMode = isProd ? false : parseSourcemapEnv(env.VITE_SOURCEMAP)
   const apiProxyTarget = normalizeProxyTarget(env.VITE_API_BASE_URL, 'https://api.momichan.xyz')
   const sharedProxyConfig = createProxyConfig(apiProxyTarget)
   const obfuscationProfile = env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
@@ -226,6 +226,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
             obfuscationPlugin({
               enabled: obfuscationEnabled,
               profile: obfuscationProfile,
+              include: /assets\/js\/.*(auth|security|profile|settings|devices).*.js$/i,
               stringArray: obfuscationStringArray,
               stringArrayEncoding: obfuscationStringArrayEncoding,
               antiFormatting: obfuscationAntiFormatting,
@@ -279,6 +280,10 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
       /** Git commit hash */
       __BUILD_HASH__: JSON.stringify(BUILD_HASH),
+      /** Frontend/backend lockstep contract version */
+      __CLIENT_CONTRACT_VERSION__: JSON.stringify(
+        (env.VITE_CLIENT_CONTRACT_VERSION || env.CLIENT_CONTRACT_VERSION || '').trim()
+      ),
       /** Service Worker cache version */
       __SW_CACHE_VERSION__: JSON.stringify(SW_CACHE_VERSION),
       /** 生产环境标识 */

@@ -1,4 +1,4 @@
-import { API_AUTH_URL, apiClient } from '@/api/client'
+import { apiClient } from '@/api/client'
 import type {
   AuthResponse,
   MfaRequiredResponse,
@@ -42,7 +42,7 @@ const GOOGLE_AUTH_REQUEST_STORAGE_KEY = 'momi_google_auth_request'
 const GOOGLE_AUTH_POPUP_NAME = 'momi-google-auth'
 const GOOGLE_AUTH_POPUP_WIDTH = 34
 const GOOGLE_AUTH_POPUP_HEIGHT = 42
-const GOOGLE_AUTH_START_PATH = '/api/auth/google/start'
+const GOOGLE_AUTH_START_PATH = '/api/v1/auth/google/start'
 
 function writePendingGoogleAuthRequest(request: PendingGoogleAuthRequest): void {
   try {
@@ -274,7 +274,6 @@ export async function exchangeGoogleHandoff(payload: {
   device_type?: string
 }): Promise<GoogleAuthFlowResponse> {
   return apiClient.post<GoogleAuthFlowResponse>('/auth/google/exchange', payload, {
-    baseUrl: API_AUTH_URL,
     skipAuth: true,
     skipErrorToast: true,
   })
@@ -290,7 +289,6 @@ export async function confirmGoogleLink(payload: {
     '/auth/google/confirm-link',
     payload,
     {
-      baseUrl: API_AUTH_URL,
       skipAuth: true,
       skipErrorToast: true,
     }

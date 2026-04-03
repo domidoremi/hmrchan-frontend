@@ -50,7 +50,10 @@ export const deviceService = {
    * 获取设备列表
    */
   async getDevices(config?: RequestConfig): Promise<DeviceListResponse> {
-    return apiClient.get<DeviceListResponse>('/devices', config)
+    return apiClient.get<DeviceListResponse>('/devices', {
+      ...config,
+      securityPolicy: config?.securityPolicy ?? 'sensitive',
+    })
   },
 
   /** 取消当前设备信任状态 */
@@ -62,7 +65,10 @@ export const deviceService = {
    * 获取当前设备信息
    */
   async getCurrentDevice(config?: RequestConfig): Promise<Device> {
-    return apiClient.get<Device>('/devices/current', config)
+    return apiClient.get<Device>('/devices/current', {
+      ...config,
+      securityPolicy: config?.securityPolicy ?? 'sensitive',
+    })
   },
 
   /**
@@ -71,6 +77,7 @@ export const deviceService = {
   async revokeDevice(deviceId: string | number): Promise<void> {
     const verificationToken = await ensureVerificationToken('revoke_sessions')
     return apiClient.delete(`/devices/${deviceId}`, {
+      securityPolicy: 'sensitive',
       headers: {
         'X-Verification-Token': verificationToken,
       },
@@ -88,6 +95,7 @@ export const deviceService = {
   }> {
     const verificationToken = await ensureVerificationToken('revoke_sessions')
     return apiClient.delete('/devices', {
+      securityPolicy: 'sensitive',
       headers: {
         'X-Verification-Token': verificationToken,
       },
@@ -102,6 +110,7 @@ export const deviceService = {
       '/devices/trust',
       {},
       {
+        securityPolicy: 'sensitive',
         verificationAction: 'update_security_settings',
       }
     )
@@ -114,9 +123,15 @@ export const deviceService = {
     deviceId: string | number,
     deviceName: string
   ): Promise<{ success: boolean }> {
-    return apiClient.post('/devices/rename', {
-      device_id: deviceId,
-      device_name: deviceName,
-    })
+    return apiClient.post(
+      '/devices/rename',
+      {
+        device_id: deviceId,
+        device_name: deviceName,
+      },
+      {
+        securityPolicy: 'sensitive',
+      }
+    )
   },
 }

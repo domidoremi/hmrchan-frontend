@@ -72,7 +72,7 @@ describe('googleAuthService', () => {
     expect(openSpy).toHaveBeenCalledWith(
       expect.stringMatching(
         new RegExp(
-          `^${window.location.origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/api/auth/google/start\\?`
+          `^${window.location.origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/api/v1/auth/google/start\\?`
         )
       ),
       'momi-google-auth',

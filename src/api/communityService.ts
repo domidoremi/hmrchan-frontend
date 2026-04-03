@@ -34,11 +34,10 @@ export interface HotTopicItem {
 
 export interface CommunityStats {
   total_comments: number
-  total_users: number
+  active_participants: number
   comments_today: number
   hot_topics_count: number
   // 兼容旧字段
-  total_participants?: number
   active_discussions?: number
 }
 

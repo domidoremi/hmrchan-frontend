@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { onRequest } from '../../../functions/_middleware'
 
+const BACKEND_ORIGIN = 'https://backend.test'
+
 class PassthroughHTMLRewriter {
   on() {
     return this
@@ -67,7 +69,7 @@ describe('Cloudflare HTML middleware', () => {
     const response = await onRequest({
       request: new Request('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
       env: {
-        API_BASE_URL: 'https://api.momichan.xyz',
+        API_BASE_URL: BACKEND_ORIGIN,
       },
       next: () =>
         Promise.resolve(

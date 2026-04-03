@@ -1,10 +1,10 @@
-import { secureTokenManager } from '@/utils/tokenSecurity'
 import { normalizeResponse } from './error-mapping'
+import { getRuntimeAccessToken } from './auth-runtime'
 import type { RequestConfig } from './types'
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
-const API_AUTH_URL = import.meta.env.VITE_API_URL || '/api'
+  import.meta.env.VITE_API_ENDPOINT?.trim() ||
+  `${(import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')}/v1`
 const REQUEST_TIMEOUT = 30000
 const REFRESH_TIMEOUT = 10000
 
@@ -30,19 +30,22 @@ function acquireSlot(): Promise<void> {
 function releaseSlot(): void {
   activeCount -= 1
   const next = waitQueue.shift()
-  if (next) next()
+  if (next) {
+    next()
+  }
 }
 
 async function waitForRateLimit(): Promise<void> {
   const now = Date.now()
   if (rateLimitedUntil <= now) return
+
   await new Promise<void>((resolve) => setTimeout(resolve, rateLimitedUntil - now))
 }
 
-export { API_AUTH_URL, API_BASE_URL, REFRESH_TIMEOUT, REQUEST_TIMEOUT }
+export { API_BASE_URL, REFRESH_TIMEOUT, REQUEST_TIMEOUT }
 
 export function buildRequestUrl(endpoint: string, baseUrl?: string): string {
-  const effectiveBase = baseUrl ?? API_BASE_URL
+  const effectiveBase = (baseUrl ?? API_BASE_URL).replace(/\/+$/, '')
   return endpoint.startsWith('http') ? endpoint : `${effectiveBase}${endpoint}`
 }
 
@@ -66,13 +69,7 @@ export async function fetchWithTransportGuards(url: string, init: RequestInit): 
 }
 
 export async function getAccessTokenAsync(): Promise<string | null> {
-  try {
-    const secureToken = await secureTokenManager.retrieve()
-    return secureToken || null
-  } catch (error) {
-    console.error('Failed to retrieve access token from secure storage:', error)
-    return null
-  }
+  return getRuntimeAccessToken()
 }
 
 export async function parseSuccessfulResponse<T>(
@@ -91,9 +88,7 @@ export async function parseSuccessfulResponse<T>(
     case 'text':
       return (await response.text()) as T
     case 'json':
-    default: {
-      const data = await response.json()
-      return normalizeResponse<T>(data)
-    }
+    default:
+      return normalizeResponse<T>(await response.json())
   }
 }
