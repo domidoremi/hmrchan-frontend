@@ -41,6 +41,14 @@ if (import.meta.hot) {
 import { initFrameGuard } from './utils/frameGuard'
 initFrameGuard()
 
+import { initRuntimeIntegrityGuard } from './security/runtimeIntegrityGuard'
+const disposeRuntimeIntegrityGuard = initRuntimeIntegrityGuard()
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    disposeRuntimeIntegrityGuard()
+  })
+}
+
 // 过滤 Cloudflare 相关的控制台警告
 import { disposeConsoleFilter, initConsoleFilter } from './utils/consoleFilter'
 initConsoleFilter()
