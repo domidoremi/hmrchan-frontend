@@ -261,6 +261,36 @@ async function retryAfterAuthRefresh(): Promise<boolean> {
           )
           return false
         }
+
+        if (error.status === 0 || error.status === 408) {
+          reportClientEvent(
+            'auth.session.refresh_transport_failed',
+            {
+              status: error.status,
+            },
+            {
+              category: 'security',
+              requiresAnalyticsConsent: false,
+              severity: 'warn',
+            }
+          )
+          dispatchLogout('auth_failed')
+          return false
+        }
+      }
+
+      if (!(error instanceof ApiError)) {
+        reportClientEvent(
+          'auth.session.refresh_transport_failed',
+          {},
+          {
+            category: 'security',
+            requiresAnalyticsConsent: false,
+            severity: 'warn',
+          }
+        )
+        dispatchLogout('auth_failed')
+        return false
       }
 
       throw error
@@ -537,6 +567,16 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
     if (response.status === 401 && !skipAuth) {
       if (!skipUnauthorizedRetry) {
+        const refreshedToken = getRuntimeAccessToken()
+        if (accessToken && refreshedToken && refreshedToken !== accessToken) {
+          return request<T>(endpoint, {
+            ...config,
+            skipUnauthorizedRetry: true,
+            skipClientReinitRetry,
+            skipClientSignatureRetry,
+          })
+        }
+
         const refreshed = await retryAfterAuthRefresh()
         if (refreshed) {
           return request<T>(endpoint, {

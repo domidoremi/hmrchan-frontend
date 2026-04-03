@@ -91,18 +91,18 @@ function normalizePath(path: string): string {
   return path.replace(/^\/+/, '').replace(/\/+$/, '')
 }
 
-function resolveUpstreamPath(path: string): string {
+function isLegacyGoogleAuthPath(path: string): boolean {
   const normalizedPath = normalizePath(path)
-
-  if (
+  return (
     normalizedPath === 'auth/google/start' ||
     normalizedPath === 'auth/google/callback' ||
-    normalizedPath.startsWith('auth/google/')
-  ) {
-    return `v1/${normalizedPath}`
-  }
+    normalizedPath === 'auth/google/exchange' ||
+    normalizedPath === 'auth/google/confirm-link'
+  )
+}
 
-  return normalizedPath
+function resolveUpstreamPath(path: string): string {
+  return normalizePath(path)
 }
 
 function extractApiVersion(path: string): string | null {
@@ -121,7 +121,7 @@ function handleCORS(request: Request, isDev: boolean): Response {
     'Access-Control-Allow-Origin': allowedOrigin ?? ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature, X-Signature-Version, X-Nonce, X-Content-SHA256, X-Request-Id, X-Security-Policy, X-Verification-Token, X-Client-Contract-Version, Idempotency-Key',
+      'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature, X-Signature-Version, X-Nonce, X-Content-SHA256, X-Request-Id, X-Verification-Token, X-Client-Contract-Version, Idempotency-Key',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   })
@@ -185,7 +185,12 @@ function safelyParseUrl(value: string, base?: string): URL | null {
   }
 }
 
-function rewriteRedirectLocation(location: string, requestUrl: URL, apiBaseUrl: string): string {
+function rewriteRedirectLocation(
+  location: string,
+  requestUrl: URL,
+  apiBaseUrl: string,
+  upstreamPath: string
+): string {
   const parsedLocation = safelyParseUrl(location, requestUrl.toString())
   if (!parsedLocation) return location
 
@@ -197,8 +202,14 @@ function rewriteRedirectLocation(location: string, requestUrl: URL, apiBaseUrl: 
     parsedLocation.host = requestUrl.host
   }
 
+  const shouldRewriteGoogleRedirectUri =
+    upstreamPath !== 'v1/auth/google/start' &&
+    upstreamPath !== 'auth/google/start' &&
+    !upstreamPath.startsWith('v1/auth/google/start/') &&
+    !upstreamPath.startsWith('auth/google/start/')
+
   const redirectUri = parsedLocation.searchParams.get('redirect_uri')
-  if (redirectUri) {
+  if (redirectUri && shouldRewriteGoogleRedirectUri) {
     const parsedRedirectUri = safelyParseUrl(redirectUri)
     if (parsedRedirectUri && parsedRedirectUri.origin === apiOrigin) {
       parsedRedirectUri.protocol = requestUrl.protocol
@@ -318,6 +329,15 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   const pathSegments = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
   const hasTrailingSlash = requestUrl.pathname.endsWith('/')
   const normalizedPath = pathSegments + (hasTrailingSlash && !pathSegments.endsWith('/') ? '/' : '')
+  if (isLegacyGoogleAuthPath(normalizedPath)) {
+    return buildErrorResponse(
+      request,
+      isDev,
+      404,
+      'NOT_FOUND',
+      'Legacy Google auth paths are retired. Use /api/v1/auth/google/*.'
+    )
+  }
   const compactPath = resolveUpstreamPath(normalizedPath)
   const redirectMode: RedirectMode = shouldPreserveBrowserRedirect(normalizedPath, request)
     ? 'manual'
@@ -351,7 +371,10 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
 
       const location = upstream.response.headers.get('Location')
       if (location) {
-        redirectHeaders.set('Location', rewriteRedirectLocation(location, requestUrl, apiBaseUrl))
+        redirectHeaders.set(
+          'Location',
+          rewriteRedirectLocation(location, requestUrl, apiBaseUrl, compactPath)
+        )
         redirectHeaders.delete('content-length')
         redirectHeaders.delete('Content-Length')
         redirectHeaders.delete('content-type')

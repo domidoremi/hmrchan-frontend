@@ -12,9 +12,11 @@
    split-only 切换后的 UUID canonical、best-effort 富化、rehearsal fixture 与 smoke 要点。
 4. `frontend-security-handoff.md`
    强制安全策略、签名/来源校验、幂等键、`permission_version` 和错误码动作映射。
-5. `contracts/README.md`
+5. `google-auth-e2e-checklist.md`
+   Google 生产 redirect URI、callback 二跳、post-deploy smoke 和 QA 验收清单。
+6. `contracts/README.md`
    后端契约文档入口。
-6. `contracts/*.md` 与 `contracts/openapi/*.yaml`
+7. `contracts/*.md` 与 `contracts/openapi/*.yaml`
    供联调或生成类型时使用的按域契约与 OpenAPI 真相源。
 
 ## 当前已同步的文件
@@ -23,6 +25,7 @@
 - `frontend-improvement-checklist.md`
 - `frontend-split-handoff.md`
 - `frontend-security-handoff.md`
+- `google-auth-e2e-checklist.md`
 - `contracts/README.md`
 - `contracts/identity-account-security.md`
 - `contracts/community-interaction.md`
@@ -30,11 +33,6 @@
 - `contracts/openapi/identity-account-security.openapi.yaml`
 - `contracts/openapi/community-interaction.openapi.yaml`
 - `contracts/openapi/content-discovery.openapi.yaml`
-
-## 当前未同步的内容
-
-- `docs/google-auth-e2e-checklist.md`
-  这份仍是后端仓库里的独立 QA 草稿，当前没有并入这批正式前端交付文档。
 
 ## 同步来源
 

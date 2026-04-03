@@ -275,6 +275,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err) {
       const errorResult = mapApiError(err, {
         defaultError: 'auth.error.googleLoginFailed',
+        invalidStatusCodes: [400, 401, 403, 422],
       })
       error.value = errorResult.error
       return errorResult
@@ -301,6 +302,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err) {
       const errorResult = mapApiError(err, {
         defaultError: 'auth.error.googleLoginFailed',
+        invalidStatusCodes: [400, 401, 403, 422],
       })
       error.value = errorResult.error
       return errorResult

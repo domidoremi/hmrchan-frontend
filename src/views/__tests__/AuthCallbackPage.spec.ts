@@ -79,10 +79,12 @@ describe('AuthCallbackPage', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllEnvs()
     vi.useRealTimers()
   })
 
   it('bridges popup results back to the opener and closes the window', async () => {
+    vi.stubEnv('VITE_FRONTEND_ORIGIN', 'http://127.0.0.1:4173')
     const postMessage = vi.fn()
     const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => undefined)
 
@@ -123,9 +125,43 @@ describe('AuthCallbackPage', () => {
         redirectTo: '/profile',
         intent: 'login',
       }),
-      window.location.origin
+      'http://127.0.0.1:4173'
     )
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
     expect(closeSpy).toHaveBeenCalled()
+  })
+
+  it('does not call google exchange when callback contains an OAuth error', async () => {
+    testState.route.query = { error: 'access_denied' }
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: undefined,
+    })
+
+    const wrapper = mount(AuthCallbackPage, {
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: {
+          AuthEntryShell: {
+            template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
+          },
+          Button: {
+            template: '<button><slot /></button>',
+          },
+          Input: {
+            template: '<input />',
+          },
+          TurnstileWidget: true,
+          AuthMfaStep: true,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('auth.error.googleAccessDenied')
   })
 })
