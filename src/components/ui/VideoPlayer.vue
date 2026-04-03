@@ -226,7 +226,7 @@
         aria-live="polite"
         role="status"
       >
-        <span class="vp__subtitle-text" v-html="activeCueHtml" />
+        <SafeHtml as="span" class="vp__subtitle-text" :html="activeCueHtml" />
       </div>
     </Transition>
 
@@ -639,6 +639,7 @@ import {
   X,
   RotateCcw,
 } from '@lucide/vue'
+import SafeHtml from '@/components/ui/SafeHtml.vue'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { SubtitleShadowPreset, SubtitleAlign } from '@/composables/useVideoSettings'
 import { useVideoGestures } from '@/composables/useVideoGestures'

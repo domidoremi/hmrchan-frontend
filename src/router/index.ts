@@ -11,13 +11,13 @@ import {
   type RouteLocationNormalizedLoadedGeneric,
 } from 'vue-router'
 import i18n from '@/i18n'
+import {
+  getRiskMode,
+  setCurrentSecurityLevel,
+  type DataSensitivity,
+  type SecurityLevel,
+} from '@/security/runtimeState'
 import { applyPageMeta } from '@/utils/pageMeta'
-import LoginPage from '@/views/LoginPage.vue'
-import AuthCallbackPage from '@/views/AuthCallbackPage.vue'
-import RegisterPage from '@/views/RegisterPage.vue'
-import ForgotPasswordPage from '@/views/ForgotPasswordPage.vue'
-import ResetPasswordPage from '@/views/ResetPasswordPage.vue'
-import VerifyEmailPage from '@/views/VerifyEmailPage.vue'
 
 // 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
 declare module 'vue-router' {
@@ -26,6 +26,8 @@ declare module 'vue-router' {
     description?: string
     requiresAuth?: boolean
     guestOnly?: boolean
+    securityLevel?: SecurityLevel
+    dataSensitivity?: DataSensitivity
     appUpdateMode?: 'auto' | 'prompt'
     /** Show global footer on this route */
     showFooter?: boolean
@@ -81,36 +83,46 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'home',
     component: () => import('@/views/HomePage.vue'),
-    meta: { title: 'nav.home', showFooter: true },
+    meta: { title: 'nav.home', showFooter: true, securityLevel: 'public', dataSensitivity: 'none' },
   },
   {
     path: '/explore',
     name: 'explore',
     component: () => import('@/views/ExplorePage.vue'),
-    meta: { title: 'nav.explore' },
+    meta: { title: 'nav.explore', securityLevel: 'public', dataSensitivity: 'none' },
   },
   {
     path: '/search',
     name: 'search',
     component: () => import('@/views/SearchPage.vue'),
-    meta: { title: 'nav.search', appUpdateMode: 'prompt' },
+    meta: {
+      title: 'nav.search',
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/post/:id',
     name: 'post-detail',
     component: () => import('@/views/PostDetailPage.vue'),
-    meta: { title: 'nav.postDetail' },
+    meta: { title: 'nav.postDetail', securityLevel: 'public', dataSensitivity: 'none' },
   },
   {
     path: '/authors',
     name: 'authors',
     component: () => import('@/views/AuthorsPage.vue'),
-    meta: { title: 'nav.authors' },
+    meta: { title: 'nav.authors', securityLevel: 'public', dataSensitivity: 'none' },
   },
   {
     path: '/community',
     component: () => import('@/layouts/CommunityLayout.vue'),
-    meta: { title: 'community.title', appUpdateMode: 'prompt' },
+    meta: {
+      title: 'community.title',
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
     children: [
       {
         path: '',
@@ -121,7 +133,12 @@ const routes: RouteRecordRaw[] = [
         path: 'discussions/:id',
         name: 'discussion-detail',
         component: () => import('@/views/DiscussionDetailPage.vue'),
-        meta: { title: 'community.recentDiscussions', appUpdateMode: 'auto' },
+        meta: {
+          title: 'community.recentDiscussions',
+          appUpdateMode: 'auto',
+          securityLevel: 'public',
+          dataSensitivity: 'none',
+        },
       },
     ],
   },
@@ -137,42 +154,65 @@ const routes: RouteRecordRaw[] = [
     path: '/author/:id',
     name: 'author-detail',
     component: () => import('@/views/AuthorDetailPage.vue'),
-    meta: { title: 'nav.authorDetail' },
+    meta: { title: 'nav.authorDetail', securityLevel: 'public', dataSensitivity: 'none' },
   },
   {
     path: '/users/:id',
     name: 'user-public-profile',
     component: () => import('@/views/UserPublicProfilePage.vue'),
-    meta: { title: 'nav.userProfile', requiresAuth: true, appUpdateMode: 'prompt' },
+    meta: {
+      title: 'nav.userProfile',
+      requiresAuth: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'authenticated',
+      dataSensitivity: 'profile',
+    },
   },
   {
     path: '/profile',
     component: () => import('@/layouts/ProfileLayout.vue'),
-    meta: { requiresAuth: true, appUpdateMode: 'prompt' },
+    meta: {
+      requiresAuth: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'authenticated',
+      dataSensitivity: 'profile',
+    },
     children: [
       {
         path: '',
         name: 'profile',
         component: () => import('@/views/ProfilePage.vue'),
-        meta: { title: 'nav.profile' },
+        meta: { title: 'nav.profile', securityLevel: 'authenticated', dataSensitivity: 'profile' },
       },
       {
         path: 'notifications',
         name: 'profile-notifications',
         component: () => import('@/views/ProfileNotificationsPage.vue'),
-        meta: { title: 'profile.tabs.notifications' },
+        meta: {
+          title: 'profile.tabs.notifications',
+          securityLevel: 'authenticated',
+          dataSensitivity: 'profile',
+        },
       },
       {
         path: 'devices',
         name: 'profile-devices',
         component: () => import('@/views/ProfileDevicesPage.vue'),
-        meta: { title: 'profile.tabs.devices' },
+        meta: {
+          title: 'profile.tabs.devices',
+          securityLevel: 'sensitive',
+          dataSensitivity: 'security',
+        },
       },
       {
         path: 'settings',
         name: 'profile-settings',
         component: () => import('@/views/ProfileSettingsPage.vue'),
-        meta: { title: 'nav.profileSettings' },
+        meta: {
+          title: 'nav.profileSettings',
+          securityLevel: 'sensitive',
+          dataSensitivity: 'security',
+        },
       },
     ],
   },
@@ -180,7 +220,13 @@ const routes: RouteRecordRaw[] = [
     path: '/favorites',
     name: 'favorites',
     component: () => import('@/views/FavoritesPage.vue'),
-    meta: { title: 'nav.favorites', requiresAuth: true, appUpdateMode: 'prompt' },
+    meta: {
+      title: 'nav.favorites',
+      requiresAuth: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'authenticated',
+      dataSensitivity: 'profile',
+    },
   },
   {
     path: '/settings/profile',
@@ -189,44 +235,84 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
-    component: LoginPage,
-    meta: { title: 'nav.login', guestOnly: true, appUpdateMode: 'prompt' },
+    component: () => import('@/views/LoginPage.vue'),
+    meta: {
+      title: 'nav.login',
+      guestOnly: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/auth/callback',
     name: 'auth-callback',
-    component: AuthCallbackPage,
-    meta: { title: 'auth.callback.title', appUpdateMode: 'prompt' },
+    component: () => import('@/views/AuthCallbackPage.vue'),
+    meta: {
+      title: 'auth.callback.title',
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/register',
     name: 'register',
-    component: RegisterPage,
-    meta: { title: 'nav.register', guestOnly: true, appUpdateMode: 'prompt' },
+    component: () => import('@/views/RegisterPage.vue'),
+    meta: {
+      title: 'nav.register',
+      guestOnly: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/forgot-password',
     name: 'forgot-password',
-    component: ForgotPasswordPage,
-    meta: { title: 'email.forgotPasswordTitle', guestOnly: true, appUpdateMode: 'prompt' },
+    component: () => import('@/views/ForgotPasswordPage.vue'),
+    meta: {
+      title: 'email.forgotPasswordTitle',
+      guestOnly: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/reset-password',
     name: 'reset-password',
-    component: ResetPasswordPage,
-    meta: { title: 'email.resetPasswordTitle', guestOnly: true, appUpdateMode: 'prompt' },
+    component: () => import('@/views/ResetPasswordPage.vue'),
+    meta: {
+      title: 'email.resetPasswordTitle',
+      guestOnly: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/verify-email',
     name: 'verify-email',
-    component: VerifyEmailPage,
-    meta: { title: 'email.verifyTitle', appUpdateMode: 'prompt' },
+    component: () => import('@/views/VerifyEmailPage.vue'),
+    meta: {
+      title: 'email.verifyTitle',
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/contact',
     name: 'contact',
     component: () => import('@/views/ContactPage.vue'),
-    meta: { title: 'nav.contact', showFooter: true, appUpdateMode: 'prompt' },
+    meta: {
+      title: 'nav.contact',
+      showFooter: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/schedule',
@@ -236,6 +322,8 @@ const routes: RouteRecordRaw[] = [
       title: 'nav.schedule',
       viewKey: 'schedule',
       preserveScrollOnIntraViewNav: true,
+      securityLevel: 'public',
+      dataSensitivity: 'none',
     },
   },
   {
@@ -246,19 +334,26 @@ const routes: RouteRecordRaw[] = [
       title: 'nav.schedule',
       viewKey: 'schedule',
       preserveScrollOnIntraViewNav: true,
+      securityLevel: 'public',
+      dataSensitivity: 'none',
     },
   },
   {
     path: '/about',
     name: 'about',
     component: () => import('@/views/AboutPage.vue'),
-    meta: { title: 'nav.about', showFooter: true },
+    meta: {
+      title: 'nav.about',
+      showFooter: true,
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundPage.vue'),
-    meta: { title: 'error.notFound' },
+    meta: { title: 'error.notFound', securityLevel: 'public', dataSensitivity: 'none' },
   },
 ]
 
@@ -309,9 +404,10 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach(async (to) => {
   const authStore = getAuthStore()
+  const securityLevel = to.meta.securityLevel ?? (to.meta.requiresAuth ? 'authenticated' : 'public')
 
   // 仅在需要认证判断的路由等待初始化，避免阻塞公开页面首屏渲染
-  if (to.meta.requiresAuth || to.meta.guestOnly) {
+  if (securityLevel !== 'public' || to.meta.guestOnly || to.meta.requiresAuth) {
     await authStore.ensureAuthInitialized()
   }
   const isAuthenticated = authStore.isAuthenticated
@@ -337,6 +433,31 @@ router.beforeEach(async (to) => {
     }
   }
 
+  if (securityLevel === 'authenticated' && isAuthenticated) {
+    await authStore.ensureFreshAuthz('authenticated')
+  }
+
+  if (securityLevel === 'sensitive') {
+    if (!isAuthenticated) {
+      return {
+        path: '/login',
+        query: { redirect: to.fullPath },
+      }
+    }
+
+    if (getRiskMode() === 'degraded') {
+      return { path: '/profile' }
+    }
+
+    const allowed = await authStore.ensureFreshAuthz('sensitive')
+    if (!allowed) {
+      return {
+        path: '/login',
+        query: { redirect: to.fullPath },
+      }
+    }
+  }
+
   // 仅游客可访问的页面（登录、注册）
   if (to.meta.guestOnly && isAuthenticated) {
     return '/'
@@ -359,6 +480,9 @@ function syncRoutePageMeta(route: RouteLocationNormalizedLoadedGeneric): void {
 }
 
 router.afterEach((to) => {
+  setCurrentSecurityLevel(
+    to.meta.securityLevel ?? (to.meta.requiresAuth ? 'authenticated' : 'public')
+  )
   syncRoutePageMeta(to)
 
   // 记录访问历史（用于智能预缓存）

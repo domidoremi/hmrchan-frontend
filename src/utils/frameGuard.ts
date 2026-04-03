@@ -26,6 +26,15 @@ export function initFrameGuard(): void {
     return
   }
 
+  window.dispatchEvent(
+    new CustomEvent('security:tamper-suspected', {
+      detail: {
+        signal: 'iframe-context',
+        timestamp: Date.now(),
+      },
+    })
+  )
+
   // 仍在 iframe 内（跨域跳出失败）— 彻底阻断页面
   // 保持 html 隐藏，额外清空 DOM 防止通过 DevTools 恢复
   if (document.body) {

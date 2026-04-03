@@ -2,11 +2,15 @@ interface ClientReportPayload {
   kind?: 'error' | 'event' | 'performance'
   name?: string
   severity?: 'info' | 'warn' | 'error'
+  category?: 'app' | 'security'
   timestamp?: string
   path?: string
   href?: string
   buildHash?: string
   buildTime?: string
+  requestId?: string
+  securityLevel?: 'public' | 'authenticated' | 'sensitive'
+  riskMode?: 'normal' | 'degraded'
   data?: Record<string, unknown>
   message?: string
   stack?: string
@@ -37,6 +41,7 @@ function normalizePayload(payload: unknown): ClientReportPayload | null {
       payload['severity'] === 'warn' || payload['severity'] === 'error'
         ? payload['severity']
         : 'info',
+    category: payload['category'] === 'security' ? 'security' : 'app',
     timestamp: typeof payload['timestamp'] === 'string' ? payload['timestamp'] : undefined,
     path: typeof payload['path'] === 'string' ? payload['path'].slice(0, 500) : undefined,
     href: typeof payload['href'] === 'string' ? payload['href'].slice(0, 500) : undefined,
@@ -44,6 +49,13 @@ function normalizePayload(payload: unknown): ClientReportPayload | null {
       typeof payload['buildHash'] === 'string' ? payload['buildHash'].slice(0, 120) : undefined,
     buildTime:
       typeof payload['buildTime'] === 'string' ? payload['buildTime'].slice(0, 120) : undefined,
+    requestId:
+      typeof payload['requestId'] === 'string' ? payload['requestId'].slice(0, 120) : undefined,
+    securityLevel:
+      payload['securityLevel'] === 'authenticated' || payload['securityLevel'] === 'sensitive'
+        ? payload['securityLevel']
+        : 'public',
+    riskMode: payload['riskMode'] === 'degraded' ? 'degraded' : 'normal',
     data: isRecord(payload['data']) ? payload['data'] : undefined,
     message: typeof payload['message'] === 'string' ? payload['message'].slice(0, 1000) : undefined,
     stack: typeof payload['stack'] === 'string' ? payload['stack'].slice(0, 4000) : undefined,

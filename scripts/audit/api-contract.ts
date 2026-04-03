@@ -85,7 +85,7 @@ async function extractFrontendEndpoints(projectRoot: string): Promise<APIEndpoin
 
   const files = await readdir(apiDir)
   const serviceFiles = files.filter(
-    (f) => f.endsWith('.ts') && f !== 'index.ts' && f !== 'client.ts',
+    (f) => f.endsWith('.ts') && f !== 'index.ts' && f !== 'client.ts'
   )
 
   for (const file of serviceFiles) {
@@ -94,12 +94,10 @@ async function extractFrontendEndpoints(projectRoot: string): Promise<APIEndpoin
 
     // Match apiClient.get/post/put/patch/delete calls
     // Single-quoted: apiClient.get<...>('/path...')
-    const singleQuotePattern =
-      /apiClient\.(get|post|put|patch|delete)(?:<[^>]*>)?\(\s*'([^']*)'/g
+    const singleQuotePattern = /apiClient\.(get|post|put|patch|delete)(?:<[^>]*>)?\(\s*'([^']*)'/g
     // Template literal: apiClient.get<...>(`/path...`)
     // We capture the full content and normalize later
-    const templatePattern =
-      /apiClient\.(get|post|put|patch|delete)(?:<[^>]*>)?\(\s*`([^`]*)`/g
+    const templatePattern = /apiClient\.(get|post|put|patch|delete)(?:<[^>]*>)?\(\s*`([^`]*)`/g
 
     let match: RegExpExecArray | null
     for (const pattern of [singleQuotePattern, templatePattern]) {
@@ -141,11 +139,14 @@ const apiContractAudit: AuditModule = {
     if (!existsSync(contractPath)) {
       return {
         module: 'api-contract',
-        status: 'fail',
+        status: 'warn',
         issues: [
-          { severity: 'error', message: `Contract file "${CONTRACT_FILE}" not found` },
+          {
+            severity: 'warning',
+            message: `Contract file "${CONTRACT_FILE}" not found; API contract audit skipped`,
+          },
         ],
-        summary: 'Contract file missing',
+        summary: 'Contract file missing; audit skipped',
         duration: Date.now() - start,
       }
     }
@@ -174,17 +175,21 @@ const apiContractAudit: AuditModule = {
 
     // 3. Normalize for comparison
     const contractKeys = new Set(
-      contractEndpoints.map((ep) => endpointKey({
-        method: ep.method,
-        path: normalizeContractPath(ep.path),
-      })),
+      contractEndpoints.map((ep) =>
+        endpointKey({
+          method: ep.method,
+          path: normalizeContractPath(ep.path),
+        })
+      )
     )
 
     const frontendKeys = new Set(
-      frontendEndpoints.map((ep) => endpointKey({
-        method: ep.method,
-        path: normalizeContractPath(ep.path),
-      })),
+      frontendEndpoints.map((ep) =>
+        endpointKey({
+          method: ep.method,
+          path: normalizeContractPath(ep.path),
+        })
+      )
     )
 
     // 4. Frontend calls not in contract

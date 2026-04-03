@@ -23,6 +23,7 @@ const CONSOLE_METHODS: ConsoleMethod[] = ['log', 'warn', 'error', 'info']
 
 let errorListener: ((event: ErrorEvent) => void) | null = null
 let rejectionListener: ((event: PromiseRejectionEvent) => void) | null = null
+let originalConsoleRef: OriginalConsole | null = null
 
 const CLOUDFLARE_PATTERNS = [
   // Private Access Token
@@ -117,13 +118,16 @@ export function initConsoleFilter(): void {
   if (window.__consoleFilterApplied) return
 
   // 保存原始的控制台方法
-  const originalConsole: OriginalConsole = window.__originalConsole ?? {
+  const originalConsole: OriginalConsole = {
     log: console.log.bind(console),
     warn: console.warn.bind(console),
     error: console.error.bind(console),
     info: console.info.bind(console),
   }
-  window.__originalConsole = originalConsole
+  originalConsoleRef = originalConsole
+  if (import.meta.env.DEV) {
+    window.__originalConsole = originalConsole
+  }
 
   // 创建过滤包装器
   function createFilteredMethod(method: ConsoleMethod): (...args: unknown[]) => void {
@@ -188,7 +192,8 @@ export function disposeConsoleFilter(): void {
   if (typeof window === 'undefined') return
   if (!window.__consoleFilterApplied) return
 
-  const originalConsole = window.__originalConsole
+  const originalConsole =
+    (import.meta.env.DEV ? window.__originalConsole : originalConsoleRef) ?? originalConsoleRef
   if (!originalConsole) return
 
   CONSOLE_METHODS.forEach((method) => {
@@ -206,4 +211,5 @@ export function disposeConsoleFilter(): void {
   }
 
   window.__consoleFilterApplied = false
+  originalConsoleRef = null
 }

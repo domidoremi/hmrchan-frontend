@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "node scripts/patch-lucide.mjs && vite",
     "build": "node scripts/patch-lucide.mjs && vue-tsc --noEmit --pretty && node ./node_modules/vite/bin/vite.js build",
+    "build:security-check": "node scripts/check-build-security.mjs",
     "preview": "vite preview",
     "postinstall": "node scripts/patch-lucide.mjs",
     "test:unit": "node scripts/patch-lucide.mjs && vitest run --passWithNoTests",
@@ -83,6 +84,7 @@
     "estree-walker": "3.0.3",
     "husky": "^9.1.7",
     "jiti": "^2.6.1",
+    "javascript-obfuscator": "^4.1.1",
     "jsdom": "^29.0.1",
     "knip": "^6.1.0",
     "lighthouse": "^13.0.3",
@@ -98,9 +100,12 @@
     "vue-tsc": "^3.2.6"
   },
   "overrides": {
+    "brace-expansion": "^5.0.5",
+    "yaml": "^2.8.3",
+    "picomatch": "^2.3.2",
     "basic-ftp": "^5.2.0",
     "flatted": "^3.4.2",
-    "lodash-es": "^4.17.23",
+    "lodash-es": "^4.18.1",
     "minimatch": "^10.2.4"
   },
   "lint-staged": {

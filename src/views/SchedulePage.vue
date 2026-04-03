@@ -534,11 +534,12 @@
                 <template v-if="parsedDescription.length > 0">
                   <div v-for="(section, idx) in parsedDescription" :key="idx" class="desc-section">
                     <h4 v-if="section.heading" class="desc-heading">{{ section.heading }}</h4>
-                    <p
+                    <SafeHtml
                       v-for="(line, li) in section.lines"
                       :key="li"
+                      as="p"
                       class="desc-line"
-                      v-html="linkify(line)"
+                      :html="linkify(line)"
                     />
                   </div>
                 </template>
@@ -665,6 +666,7 @@ import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
 import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
 import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
 import PageToolbar from '@/components/appearance/PageToolbar.vue'
+import SafeHtml from '@/components/ui/SafeHtml.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 
 const { t, locale } = useI18n()
