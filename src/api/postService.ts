@@ -304,28 +304,6 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
   }
 }
 
-export interface PostAuthorResponse {
-  id: string
-  platform: string
-  platform_user_id?: string
-  username: string
-  display_name?: string | null
-  avatar_url?: string | null
-  profile_url?: string | null
-  profile_banner_url?: string | null
-  bio?: string | null
-  follower_count?: number | null
-  following_count?: number | null
-  post_count?: number | null
-  is_verified: boolean
-  created_at?: string | null
-  updated_at?: string | null
-  // 兼容旧字段
-  name?: string
-  description?: string | null
-  video_count?: number | null
-}
-
 export const postService = {
   async listPosts(
     params: ListPostsParams = {},
@@ -362,14 +340,5 @@ export const postService = {
       ...config,
     })
     return normalizePostDetail(raw)
-  },
-
-  /**
-   * 获取帖子作者详情
-   */
-  async getPostAuthor(postId: string): Promise<PostAuthorResponse> {
-    return apiClient.get<PostAuthorResponse>(`/posts/${postId}/author`, {
-      skipAuth: true,
-    })
   },
 }
