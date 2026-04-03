@@ -71,7 +71,7 @@
 
 - `X-Nonce` 现在是强制项，只要请求签名就必须发送
 - `X-Content-SHA256` 也是强制项
-- Google `exchange` 与 `confirm-link` 已纳入正式签名链路，不再 exempt
+- Google `exchange` 已纳入正式签名链路，不再 exempt
 - 旧 `/api/auth/google/*` 已退役；前端不要再保留任何 fallback
 
 ## 5. 哪些请求现在强制 `Idempotency-Key`
@@ -82,7 +82,6 @@
 - `/api/v1/account/delete`
 - `/api/v1/auth/verify-identity`
 - 所有验证码/邮件发送类接口
-- `/api/v1/auth/google/confirm-link`
 - `/api/v1/feedback`
 - `/api/v1/contact/send`
 
@@ -175,7 +174,7 @@
 3. `GET /api/v1/auth/turnstile-config`
 4. `POST /api/v1/client/init`
 5. `POST /api/v1/auth/google/exchange`，带完整 V2 签名头
-6. 如进入 link flow，`POST /api/v1/auth/google/confirm-link` 也必须带完整 V2 签名头与 `Idempotency-Key`
+6. 若返回 `requires_risk_verification` 或 `requires_mfa`，继续走对应挑战链路；不再存在 `confirm-link` 分支
 
 ### 9.3 Popup bridge 安全边界
 
@@ -188,6 +187,7 @@
 ## 10. 前端不要再依赖的假设
 
 - 不要再假设 `X-CSRF-Token` 会被后端校验
-- 不要再假设 Google `exchange/confirm-link` 可以不签名
+- 不要再假设 Google `exchange` 可以不签名
+- 不要再假设同邮箱 Google 首次登录会进入邮件验证码绑定页
 - 不要再假设旧 refresh 会话在权限状态变化后仍可继续 rotation
 - 不要再把 localStorage 中的角色/权限当授权真相

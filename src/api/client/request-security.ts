@@ -21,7 +21,6 @@ const IDEMPOTENCY_REQUIRED_EXACT_PATHS = new Set([
   '/api/v1/account/export-data',
   '/api/v1/account/delete',
   '/api/v1/auth/verify-identity',
-  '/api/v1/auth/google/confirm-link',
 ])
 
 const IDEMPOTENCY_REQUIRED_PREFIXES = ['/api/v1/email/']

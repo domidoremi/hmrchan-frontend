@@ -9,7 +9,6 @@ const testState = vi.hoisted(() => ({
   authStore: {
     isLoading: false,
     completeGoogleAuth: vi.fn(),
-    confirmGoogleLink: vi.fn(),
     verifyRiskLogin: vi.fn(),
   },
   toastStore: {
@@ -70,7 +69,6 @@ describe('AuthCallbackPage', () => {
     testState.route.query = { handoff_code: 'popup-handoff' }
     testState.routerReplace.mockReset()
     testState.authStore.completeGoogleAuth = vi.fn()
-    testState.authStore.confirmGoogleLink = vi.fn()
     testState.authStore.verifyRiskLogin = vi.fn()
     testState.toastStore.success.mockReset()
     testState.toastStore.error.mockReset()
