@@ -82,13 +82,6 @@ paths:
       security: []
       responses:
         "200": { $ref: "#/components/responses/SuccessEnvelope" }
-  /api/v1/auth/google/confirm-link:
-    post:
-      tags: [auth]
-      summary: Confirm Google account linking with email verification
-      security: []
-      responses:
-        "200": { $ref: "#/components/responses/SuccessEnvelope" }
   /api/v1/auth/register:
     post:
       tags: [auth]

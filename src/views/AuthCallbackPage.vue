@@ -38,49 +38,6 @@
         </div>
 
         <form
-          v-else-if="currentStep === 'link-required'"
-          key="link"
-          class="auth-form"
-          @submit.prevent="handleLinkVerificationSubmit"
-        >
-          <div class="auth-card auth-card--stack">
-            <div class="code-sent-banner">
-              <Mail :size="16" />
-              <span>{{ $t('auth.callback.linkEmailHint', { email: maskedEmail }) }}</span>
-            </div>
-
-            <p class="auth-helper">{{ $t('auth.callback.linkHint') }}</p>
-            <p v-if="linkExpiresIn" class="auth-helper">
-              {{ $t('auth.callback.linkExpiresIn', { seconds: linkExpiresIn }) }}
-            </p>
-
-            <div class="form-group">
-              <label for="link-code">{{ $t('auth.verificationCode') }}</label>
-              <Input
-                id="link-code"
-                v-model="linkVerificationCode"
-                type="text"
-                inputmode="numeric"
-                maxlength="8"
-                :placeholder="$t('auth.riskVerificationCodePlaceholder')"
-                autocomplete="one-time-code"
-              />
-            </div>
-
-            <p v-if="linkError" class="field-error">{{ linkError }}</p>
-
-            <div class="action-group">
-              <Button type="submit" full-width :loading="isLoading">
-                {{ $t('auth.callback.linkAction') }}
-              </Button>
-              <Button type="button" variant="ghost" full-width @click="returnToLogin">
-                {{ $t('auth.backToLogin') }}
-              </Button>
-            </div>
-          </div>
-        </form>
-
-        <form
           v-else-if="currentStep === 'risk-verification'"
           key="risk"
           class="auth-form"
@@ -178,7 +135,7 @@ defineOptions({ name: 'AuthCallbackPage' })
 import { computed, onMounted, ref, useTemplateRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { AlertCircle, Mail } from '@lucide/vue'
+import { AlertCircle } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
@@ -197,7 +154,7 @@ import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import AuthMfaStep from '@/components/auth/AuthMfaStep.vue'
 import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
 
-type CallbackStep = 'loading' | 'link-required' | 'risk-verification' | 'mfa' | 'error'
+type CallbackStep = 'loading' | 'risk-verification' | 'mfa' | 'error'
 type PopupBridgeState = 'posting' | 'manual-close'
 
 const route = useRoute()
@@ -218,12 +175,6 @@ const nextRedirectTarget = ref(
     pendingRequest?.redirectTo || '/'
   )
 )
-
-const pendingGoogleLinkToken = ref('')
-const maskedEmail = ref('')
-const linkVerificationCode = ref('')
-const linkExpiresIn = ref<number | null>(null)
-const linkError = ref('')
 
 const riskPendingToken = ref('')
 const riskVerificationCode = ref('')
@@ -248,8 +199,6 @@ const pageTitle = computed(() => {
   }
 
   switch (currentStep.value) {
-    case 'link-required':
-      return t('auth.callback.linkTitle')
     case 'risk-verification':
       return t('auth.riskVerificationTitle')
     case 'mfa':
@@ -267,8 +216,6 @@ const pageSubtitle = computed(() => {
   }
 
   switch (currentStep.value) {
-    case 'link-required':
-      return t('auth.callback.linkHint')
     case 'risk-verification':
       return t('auth.riskVerificationHint')
     case 'mfa':
@@ -307,7 +254,6 @@ function handleTurnstileError(error?: Error) {
 }
 
 function clearInlineErrors() {
-  linkError.value = ''
   riskError.value = ''
   mfaError.value = ''
   errorMessage.value = ''
@@ -323,18 +269,6 @@ async function applyCallbackResult(result: AuthFlowResult) {
   switch (result.status) {
     case 'success':
       await finalizeSuccessfulLogin(result)
-      return
-    case 'link-required':
-      currentStep.value = 'link-required'
-      pendingGoogleLinkToken.value = result.pendingGoogleLinkToken
-      maskedEmail.value = result.maskedEmail
-      linkExpiresIn.value = result.expiresIn ?? null
-      linkVerificationCode.value = ''
-      linkError.value = ''
-      nextRedirectTarget.value = resolveAuthRedirectTarget(
-        result.redirectTo,
-        nextRedirectTarget.value
-      )
       return
     case 'risk-verification':
       currentStep.value = 'risk-verification'
@@ -361,9 +295,7 @@ async function applyCallbackResult(result: AuthFlowResult) {
       )
       return
     case 'error':
-      if (currentStep.value === 'link-required') {
-        linkError.value = t(result.error)
-      } else if (currentStep.value === 'risk-verification') {
+      if (currentStep.value === 'risk-verification') {
         riskError.value = t(result.error)
       } else if (currentStep.value === 'mfa') {
         mfaError.value = t(result.error)
@@ -395,21 +327,6 @@ async function retryGoogleAuth() {
   const intent = pendingRequest?.intent || 'login'
   const redirect = resolveAuthRedirectTarget(pendingRequest?.redirectTo, nextRedirectTarget.value)
   startGoogleAuthRedirect(intent, redirect)
-}
-
-async function handleLinkVerificationSubmit() {
-  clearInlineErrors()
-
-  if (!linkVerificationCode.value.trim()) {
-    linkError.value = t('auth.error.codeRequired')
-    return
-  }
-
-  const result = await authStore.confirmGoogleLink(
-    pendingGoogleLinkToken.value,
-    linkVerificationCode.value.trim()
-  )
-  await applyCallbackResult(result)
 }
 
 async function handleRiskVerificationSubmit() {
