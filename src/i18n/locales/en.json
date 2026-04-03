@@ -1040,6 +1040,7 @@
     "twoFactorSetupInstructions": "Scan the QR code with your authenticator app, or enter the manual key, then input a 6-digit code to finish setup.",
     "twoFactorManualCode": "Manual setup key",
     "twoFactorCopySecret": "Copy key",
+    "twoFactorCopyOtpAuthUrl": "Copy setup link",
     "twoFactorVerifyCodeLabel": "Authenticator code",
     "twoFactorConfirmSetup": "Confirm setup",
     "twoFactorSetupSuccess": "Two-factor authentication enabled",

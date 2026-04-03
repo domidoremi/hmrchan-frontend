@@ -61,24 +61,6 @@ export interface ListSchedulesParams {
   published_only?: boolean
 }
 
-export interface ScheduleCreateRequest {
-  title: string
-  description?: string | null
-  category?: ScheduleCategory
-  start_date: string
-  end_date?: string | null
-  is_all_day?: boolean
-  venue?: string | null
-  venue_address?: string | null
-  event_url?: string | null
-  ticket_url?: string | null
-  author_id?: number | null
-  source_url?: string | null
-  source_platform?: string | null
-  color?: string | null
-  is_published?: boolean
-}
-
 // ========== 日程服务 ==========
 
 export const scheduleService = {
@@ -139,24 +121,6 @@ export const scheduleService = {
     return apiClient.get<ScheduleResponse>(`/schedules/${scheduleId}`, {
       ...config,
       skipErrorToast: config?.skipErrorToast ?? true,
-    })
-  },
-
-  /**
-   * 创建日程（管理员）
-   */
-  async create(data: ScheduleCreateRequest): Promise<ScheduleResponse> {
-    return apiClient.post<ScheduleResponse>('/schedules', data, {
-      verificationAction: 'admin_operation',
-    })
-  },
-
-  /**
-   * 删除日程（管理员）
-   */
-  async delete(scheduleId: string): Promise<void> {
-    return apiClient.delete(`/schedules/${scheduleId}`, {
-      verificationAction: 'admin_operation',
     })
   },
 }
