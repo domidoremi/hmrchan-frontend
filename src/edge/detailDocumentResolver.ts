@@ -10,14 +10,13 @@ import {
   type HtmlDocumentShellStat,
   type HtmlStructuredData,
 } from './htmlDocument'
+import { resolveConfiguredApiBaseUrl, resolveVpcOrigin, type UpstreamRuntimeEnv } from './upstream'
 
 type EdgeFetcher = {
   fetch(input: Request): Promise<Response>
 }
 
-export type EdgeRuntimeEnv = {
-  API_BASE_URL?: string
-  VPC_API_ORIGIN?: string
+export type EdgeRuntimeEnv = UpstreamRuntimeEnv & {
   VPC_SERVICE?: EdgeFetcher
 }
 
@@ -350,7 +349,14 @@ async function fetchEdgeJson<T>(
   env: EdgeRuntimeEnv | undefined,
   path: string
 ): Promise<{ status: number; data: T | null }> {
-  const baseUrl = (env?.API_BASE_URL || 'https://api.momichan.xyz').replace(/\/+$/, '')
+  const baseUrl = resolveConfiguredApiBaseUrl(env)
+  if (!baseUrl) {
+    return {
+      status: 503,
+      data: null,
+    }
+  }
+
   const targetUrl = `${baseUrl}${path}`
   const headers = new Headers({
     Accept: 'application/json',
@@ -360,7 +366,7 @@ async function fetchEdgeJson<T>(
   let response: Response
 
   if (env?.VPC_SERVICE) {
-    const vpcOrigin = (env.VPC_API_ORIGIN || 'http://localhost:8000').replace(/\/+$/, '')
+    const vpcOrigin = resolveVpcOrigin(env)
     response = await env.VPC_SERVICE.fetch(
       new Request(`${vpcOrigin}${path}`, {
         method: 'GET',

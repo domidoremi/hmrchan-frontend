@@ -1,28 +1,50 @@
 import type { Ref } from 'vue'
-import { authService, ApiError, type AuthResponse, type UserResponse } from '@/api'
-import { apiClient, API_AUTH_URL } from '@/api/client'
+import {
+  authService,
+  ApiError,
+  type AuthResponse,
+  type HeartbeatResponse,
+  type MeResponse,
+  type UserResponse,
+} from '@/api'
+import {
+  clearAuthRuntimeSession,
+  establishAuthRuntimeSession,
+  getAuthRuntimeSession,
+  isRuntimeAccessTokenExpired,
+  isRuntimeAccessTokenNearRefreshThreshold,
+  touchAuthzCheck,
+  updateRuntimePermissionVersion,
+} from '@/api/client/auth-runtime'
 import { clearStoredAuthSource, setStoredAuthSource } from '@/utils/authSource'
-import { secureTokenManager } from '@/utils/tokenSecurity'
 import { reportClientEvent } from '@/utils/clientReporter'
 
-const DEFAULT_HEARTBEAT_INTERVAL = 5 * 60 * 1000
-const REFRESH_RETRY_COOLDOWN_MS = 60 * 1000
+const DEFAULT_AUTHZ_TTL_MS = 60 * 1000
+const DEFAULT_HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000
 
 interface RouterLike {
   push: (to: string) => unknown
 }
 
+interface RuntimeAuthzCache {
+  roles: string[]
+  permissions: string[]
+  version: string
+  expiresAt: number
+}
+
 interface AuthSessionState<TUser extends UserResponse> {
   user: Ref<TUser | null>
-  token: Ref<string | null>
-  refreshToken: Ref<string | null>
+  runtimeAuthzCache: Ref<RuntimeAuthzCache | null>
+  sessionExpiresAt: Ref<string | null>
+  stepUpRequired: Ref<boolean>
   isInitialized: Ref<boolean>
 }
 
-function isAbortError(err: unknown): boolean {
-  return err instanceof DOMException
-    ? err.name === 'AbortError'
-    : err instanceof Error && err.name === 'AbortError'
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException
+    ? error.name === 'AbortError'
+    : error instanceof Error && error.name === 'AbortError'
 }
 
 function isAuthBoundaryPath(path: string): boolean {
@@ -44,6 +66,26 @@ function getCurrentLocationPath(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}` || '/'
 }
 
+function resolveSessionExpiresAt(): string | null {
+  const runtimeSession = getAuthRuntimeSession()
+  return runtimeSession ? new Date(runtimeSession.accessTokenExpiresAt).toISOString() : null
+}
+
+function buildRuntimeAuthzCache(
+  user: UserResponse | null,
+  securityLevel: 'authenticated' | 'sensitive' = 'authenticated'
+): RuntimeAuthzCache | null {
+  const runtimeSession = getAuthRuntimeSession()
+  if (!runtimeSession) return null
+
+  return {
+    roles: runtimeSession.roles.length > 0 ? runtimeSession.roles : user?.is_admin ? ['admin'] : [],
+    permissions: runtimeSession.permissions,
+    version: runtimeSession.permissionVersion,
+    expiresAt: securityLevel === 'sensitive' ? Date.now() : Date.now() + DEFAULT_AUTHZ_TTL_MS,
+  }
+}
+
 export function createAuthSessionController<TUser extends UserResponse>(options: {
   router: RouterLike
   state: AuthSessionState<TUser>
@@ -51,15 +93,10 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   const { router, state } = options
   let initPromise: Promise<void> | null = null
   let heartbeatTimer: ReturnType<typeof setTimeout> | null = null
-  let authLogoutHandler: (() => void) | null = null
-  let heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL
-  let deferredProfileTimer: ReturnType<typeof setTimeout> | null = null
-  let deferredProfileController: AbortController | null = null
-  let deferredProfileRequestToken = 0
-  let fetchCurrentUserController: AbortController | null = null
-  let fetchCurrentUserToken = 0
-  let refreshBlockedUntil = 0
-  let authRecoveryTimer: ReturnType<typeof setTimeout> | null = null
+  let authLogoutHandler: ((to?: Event) => void) | null = null
+  let authzVersionHandler: ((to?: Event) => void) | null = null
+  let riskModeHandler: ((to?: Event) => void) | null = null
+  let heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL_MS
 
   function syncAuthSource(user?: UserResponse | null): void {
     if (user?.auth_source) {
@@ -70,164 +107,65 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     setStoredAuthSource('session')
   }
 
-  function clearAuthRecoveryTimer(): void {
-    if (!authRecoveryTimer) return
-    clearTimeout(authRecoveryTimer)
-    authRecoveryTimer = null
+  function updateStateFromRuntimeSession(
+    securityLevel: 'authenticated' | 'sensitive' = 'authenticated'
+  ): void {
+    state.runtimeAuthzCache.value = buildRuntimeAuthzCache(state.user.value, securityLevel)
+    state.sessionExpiresAt.value = resolveSessionExpiresAt()
+
+    const runtimeSession = getAuthRuntimeSession()
+    heartbeatInterval = Math.max(
+      30000,
+      (runtimeSession?.refreshThresholdSeconds ?? DEFAULT_HEARTBEAT_INTERVAL_MS / 1000) * 1000
+    )
   }
 
-  function setRefreshCooldown(delay = REFRESH_RETRY_COOLDOWN_MS): void {
-    refreshBlockedUntil = Date.now() + delay
-  }
-
-  function clearRefreshCooldown(): void {
-    refreshBlockedUntil = 0
-  }
-
-  function getRefreshCooldownRemaining(): number {
-    return Math.max(0, refreshBlockedUntil - Date.now())
-  }
-
-  function isRefreshInCooldown(): boolean {
-    return getRefreshCooldownRemaining() > 0
-  }
-
-  function isAuthFailure(error: unknown): error is ApiError {
-    return error instanceof ApiError && (error.status === 401 || error.status === 403)
-  }
-
-  function isRetriableRefreshError(error: unknown): boolean {
-    if (isAbortError(error) || isAuthFailure(error)) return false
-    if (!(error instanceof ApiError)) return true
-    return error.status === 408 || error.status === 429 || error.status >= 500
-  }
-
-  async function persistAccessToken(nextToken: string): Promise<void> {
-    state.token.value = nextToken
-    await secureTokenManager.store(nextToken).catch(() => {})
-  }
-
-  async function applySessionTokens(
-    response: Pick<AuthResponse, 'access_token'> & Partial<AuthResponse>,
+  function applyCurrentUser(
+    user: MeResponse | UserResponse,
     options: {
-      deferProfile?: boolean
+      securityLevel?: 'authenticated' | 'sensitive'
+      stepUpRequired?: boolean
       startHeartbeat?: boolean
     } = {}
-  ): Promise<void> {
-    await persistAccessToken(response.access_token)
-
-    if (response.refresh_token !== undefined) {
-      state.refreshToken.value = response.refresh_token ?? null
-    }
-    if (response.user) {
-      state.user.value = response.user as TUser
-    }
-    if (response.refresh_threshold) {
-      heartbeatInterval = response.refresh_threshold * 1000
-    }
-
-    syncAuthSource(response.user ?? state.user.value)
-
-    clearRefreshCooldown()
-    clearAuthRecoveryTimer()
+  ): void {
+    state.user.value = user as TUser
+    updateStateFromRuntimeSession(options.securityLevel)
+    state.stepUpRequired.value = options.stepUpRequired ?? state.stepUpRequired.value
+    syncAuthSource(state.user.value)
+    touchAuthzCheck()
 
     if (options.startHeartbeat) {
       startHeartbeat()
     }
-    if (options.deferProfile) {
-      deferProfileRefresh()
-    }
   }
 
-  function scheduleInitAuthRetry(delay = REFRESH_RETRY_COOLDOWN_MS): void {
-    clearAuthRecoveryTimer()
-    authRecoveryTimer = setTimeout(() => {
-      authRecoveryTimer = null
-      if (state.token.value || !state.user.value) return
-      void initAuth().catch(() => {
-        // Keep background recovery silent.
-      })
-    }, delay)
-  }
-
-  async function attemptTokenRefresh(options: {
-    source: 'bootstrap' | 'heartbeat'
-    reason?: string
-    refreshToken?: string
-  }): Promise<'success' | 'fatal' | 'cooldown' | 'skipped'> {
-    const { source, reason, refreshToken } = options
-
-    if (isRefreshInCooldown()) {
-      return 'cooldown'
+  function invalidateAuthz(reason?: string): void {
+    state.runtimeAuthzCache.value = null
+    if (reason) {
+      reportClientEvent(
+        'authz.invalidated',
+        { reason },
+        {
+          category: 'security',
+          requiresAnalyticsConsent: false,
+          severity: 'warn',
+        }
+      )
     }
-
-    try {
-      const response = await authService.refreshToken(refreshToken)
-      await applySessionTokens(response, {
-        deferProfile: source !== 'bootstrap',
-      })
-      return 'success'
-    } catch (error) {
-      if (source === 'bootstrap') {
-        reportClientEvent(
-          'auth.bootstrap_refresh_failed',
-          {
-            reason,
-            status: error instanceof ApiError ? error.status : undefined,
-            code: error instanceof ApiError ? error.code : undefined,
-          },
-          { severity: 'warn' }
-        )
-      }
-
-      if (isAbortError(error)) {
-        return 'skipped'
-      }
-
-      if (isAuthFailure(error)) {
-        clearSession()
-        return 'fatal'
-      }
-
-      if (isRetriableRefreshError(error)) {
-        setRefreshCooldown()
-        return 'cooldown'
-      }
-
-      clearSession()
-      return 'fatal'
-    }
-  }
-
-  function abortFetchCurrentUserRequest() {
-    fetchCurrentUserController?.abort()
-    fetchCurrentUserController = null
   }
 
   function suspendSession(): void {
     stopHeartbeat()
-    clearAuthRecoveryTimer()
-
-    if (deferredProfileTimer) {
-      clearTimeout(deferredProfileTimer)
-      deferredProfileTimer = null
-    }
-
-    deferredProfileController?.abort()
-    deferredProfileController = null
-    deferredProfileRequestToken += 1
-    abortFetchCurrentUserRequest()
-    fetchCurrentUserToken += 1
   }
 
   function clearSession(options: { navigateToLogin?: boolean } = {}): void {
     suspendSession()
-    clearRefreshCooldown()
     state.user.value = null
-    state.token.value = null
-    state.refreshToken.value = null
+    state.runtimeAuthzCache.value = null
+    state.sessionExpiresAt.value = null
+    state.stepUpRequired.value = false
     clearStoredAuthSource()
-    secureTokenManager.clear()
+    clearAuthRuntimeSession()
 
     if (options.navigateToLogin) {
       router.push('/login')
@@ -239,174 +177,201 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     router.push(`/login?redirect=${encodeURIComponent(normalizedRedirect)}`)
   }
 
-  async function establishSession(response: AuthResponse) {
-    await applySessionTokens(response, {
-      deferProfile: true,
-      startHeartbeat: true,
-    })
-  }
-
-  function deferProfileRefresh() {
-    if (deferredProfileTimer) clearTimeout(deferredProfileTimer)
-    deferredProfileController?.abort()
-    const requestToken = ++deferredProfileRequestToken
-    deferredProfileTimer = setTimeout(async () => {
-      deferredProfileTimer = null
-      const controller = new AbortController()
-      deferredProfileController = controller
-      const currentToken = await secureTokenManager.retrieve()
-
-      if (
-        !currentToken ||
-        controller.signal.aborted ||
-        requestToken !== deferredProfileRequestToken
-      ) {
-        return
-      }
-
-      try {
-        const data = await apiClient.request<UserResponse>('/auth/me', {
-          baseUrl: API_AUTH_URL,
-          signal: controller.signal,
-          skipAuth: true,
-          skipErrorToast: true,
-          headers: {
-            Authorization: `Bearer ${currentToken}`,
-          },
-          responseType: 'json',
-        })
-
-        if (controller.signal.aborted || requestToken !== deferredProfileRequestToken) return
-        if (data && typeof data === 'object' && 'id' in data) {
-          state.user.value = data as TUser
-          syncAuthSource(data)
-        }
-      } catch {
-        // defer refresh failures should stay silent
-      } finally {
-        if (
-          requestToken === deferredProfileRequestToken &&
-          deferredProfileController === controller
-        ) {
-          deferredProfileController = null
-        }
-      }
-    }, 2000)
-  }
-
-  async function fetchCurrentUser(clearOnAuthError = true): Promise<TUser | null> {
-    if (!state.token.value) return null
-    abortFetchCurrentUserRequest()
-    const controller = new AbortController()
-    fetchCurrentUserController = controller
-    const requestToken = ++fetchCurrentUserToken
+  async function hydrateCurrentUser(
+    options: {
+      clearOnAuthError?: boolean
+      securityLevel?: 'authenticated' | 'sensitive'
+      skipErrorToast?: boolean
+    } = {}
+  ): Promise<TUser | null> {
+    const {
+      clearOnAuthError = true,
+      securityLevel = 'authenticated',
+      skipErrorToast = true,
+    } = options
 
     try {
-      const currentUser = (await authService.getCurrentUser({
-        signal: controller.signal,
-        skipErrorToast: true,
-      })) as TUser
+      const me = await authService.getCurrentUser({
+        securityPolicy: securityLevel === 'sensitive' ? 'sensitive' : 'default',
+        skipErrorToast,
+      })
 
-      if (controller.signal.aborted || requestToken !== fetchCurrentUserToken) return null
-      state.user.value = currentUser
-      syncAuthSource(currentUser)
-      return currentUser
-    } catch (err) {
-      if (
-        controller.signal.aborted ||
-        isAbortError(err) ||
-        requestToken !== fetchCurrentUserToken
-      ) {
+      updateRuntimePermissionVersion(me.permission_version)
+      applyCurrentUser(me, {
+        securityLevel,
+      })
+      return me as TUser
+    } catch (error) {
+      if (clearOnAuthError && error instanceof ApiError && error.status === 401) {
+        clearSession()
         return null
       }
 
-      if (
-        clearOnAuthError &&
-        err instanceof ApiError &&
-        (err.status === 401 || err.status === 403)
-      ) {
-        state.user.value = null
-        state.token.value = null
+      if (isAbortError(error)) {
+        return state.user.value
       }
 
-      return null
-    } finally {
-      if (requestToken === fetchCurrentUserToken && fetchCurrentUserController === controller) {
-        fetchCurrentUserController = null
-      }
+      throw error
     }
   }
 
-  async function initAuth() {
-    const secureTokenResult = await secureTokenManager.retrieveState()
-    let secureToken = secureTokenResult.token
+  async function refreshSession(
+    options: {
+      clearOnAuthError?: boolean
+      securityLevel?: 'authenticated' | 'sensitive'
+      skipErrorToast?: boolean
+    } = {}
+  ): Promise<TUser | null> {
+    const {
+      clearOnAuthError = true,
+      securityLevel = 'authenticated',
+      skipErrorToast = true,
+    } = options
 
-    if (!secureToken) {
-      if (secureTokenResult.state === 'binding_invalid') {
-        reportClientEvent(
-          'auth.token_binding_mismatch',
-          {
-            reason: secureTokenResult.reason,
-          },
-          { severity: 'warn' }
-        )
-      } else if (secureTokenResult.state === 'invalid_payload') {
-        secureTokenManager.clear()
-      }
-
-      if (!state.user.value) {
-        return
-      }
-
-      const refreshOutcome = await attemptTokenRefresh({
-        source: 'bootstrap',
-        reason: secureTokenResult.reason ?? secureTokenResult.state,
-        refreshToken: state.refreshToken.value ?? undefined,
+    try {
+      const response = await authService.refreshToken()
+      establishAuthRuntimeSession(response)
+      updateStateFromRuntimeSession(securityLevel)
+      state.user.value = {
+        ...response.user,
+        auth_source: response.user.auth_source ?? 'session',
+      } as TUser
+      syncAuthSource(state.user.value)
+      const currentUser = await hydrateCurrentUser({
+        clearOnAuthError,
+        securityLevel,
+        skipErrorToast,
       })
 
-      if (refreshOutcome === 'cooldown') {
-        scheduleInitAuthRetry(getRefreshCooldownRemaining() || REFRESH_RETRY_COOLDOWN_MS)
+      if (currentUser) {
+        startHeartbeat()
+      }
+
+      return currentUser
+    } catch (error) {
+      if (clearOnAuthError && error instanceof ApiError && error.status === 401) {
+        clearSession()
+        return null
+      }
+
+      if (isAbortError(error)) {
+        return state.user.value
+      }
+
+      throw error
+    }
+  }
+
+  async function establishSession(response: AuthResponse) {
+    establishAuthRuntimeSession(response)
+    applyCurrentUser(
+      {
+        ...response.user,
+        auth_source: response.user.auth_source ?? 'session',
+      },
+      {
+        securityLevel: 'authenticated',
+        stepUpRequired: false,
+        startHeartbeat: true,
+      }
+    )
+
+    try {
+      await hydrateCurrentUser({
+        clearOnAuthError: false,
+        securityLevel: 'authenticated',
+        skipErrorToast: true,
+      })
+    } catch {
+      // keep login payload as the fallback user snapshot
+    }
+  }
+
+  async function fetchCurrentUser(clearOnAuthError = true): Promise<TUser | null> {
+    if (!getAuthRuntimeSession() || isRuntimeAccessTokenExpired()) {
+      return refreshSession({
+        clearOnAuthError,
+        securityLevel: 'authenticated',
+        skipErrorToast: true,
+      })
+    }
+
+    return hydrateCurrentUser({
+      clearOnAuthError,
+      securityLevel: 'authenticated',
+      skipErrorToast: true,
+    })
+  }
+
+  async function ensureFreshAuthz(
+    securityLevel: 'authenticated' | 'sensitive' = 'authenticated'
+  ): Promise<boolean> {
+    if (!state.user.value) return false
+
+    const snapshot = state.runtimeAuthzCache.value
+    if (securityLevel === 'authenticated' && snapshot && snapshot.expiresAt > Date.now()) {
+      return true
+    }
+
+    if (
+      !getAuthRuntimeSession() ||
+      isRuntimeAccessTokenExpired() ||
+      (securityLevel === 'sensitive' && isRuntimeAccessTokenNearRefreshThreshold())
+    ) {
+      const refreshedUser = await refreshSession({
+        clearOnAuthError: true,
+        securityLevel,
+        skipErrorToast: true,
+      })
+      return Boolean(refreshedUser)
+    }
+
+    const refreshedUser = await hydrateCurrentUser({
+      clearOnAuthError: true,
+      securityLevel,
+      skipErrorToast: true,
+    })
+    return Boolean(refreshedUser)
+  }
+
+  async function initAuth() {
+    try {
+      const currentUser = await refreshSession({
+        clearOnAuthError: false,
+        securityLevel: 'authenticated',
+        skipErrorToast: true,
+      })
+      if (currentUser) {
+        startHeartbeat()
+      }
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        clearSession()
         return
       }
 
-      if (refreshOutcome !== 'success') {
-        return
-      }
-
-      secureToken = state.token.value
+      reportClientEvent(
+        'auth.session.bootstrap_failed',
+        {
+          status: error instanceof ApiError ? error.status : undefined,
+        },
+        {
+          category: 'security',
+          requiresAnalyticsConsent: false,
+          severity: 'warn',
+        }
+      )
     }
-
-    if (!secureToken) {
-      return
-    }
-
-    state.token.value = secureToken
-
-    const currentUser = await fetchCurrentUser()
-    if (!currentUser) {
-      if (!state.token.value) {
-        state.refreshToken.value = null
-        clearStoredAuthSource()
-        secureTokenManager.clear()
-      }
-      return
-    }
-
-    startHeartbeat()
   }
 
   function ensureAuthInitialized(): Promise<void> {
     if (state.isInitialized.value) return Promise.resolve()
     if (initPromise) return initPromise
 
-    initPromise = initAuth()
-      .catch(() => {
-        // Keep existing state on boot failures.
-      })
-      .finally(() => {
-        state.isInitialized.value = true
-        initPromise = null
-      })
+    initPromise = initAuth().finally(() => {
+      state.isInitialized.value = true
+      initPromise = null
+    })
 
     return initPromise
   }
@@ -415,13 +380,21 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     if (authLogoutHandler) {
       window.removeEventListener('auth:logout', authLogoutHandler)
     }
+    if (authzVersionHandler) {
+      window.removeEventListener('authz:version-changed', authzVersionHandler)
+    }
+    if (riskModeHandler) {
+      window.removeEventListener('security:risk-mode-changed', riskModeHandler)
+    }
 
     authLogoutHandler = (event?: Event) => {
       const detail = (event as CustomEvent<{ reason?: string }> | undefined)?.detail
       const reason = detail?.reason
       const redirectTo = getCurrentLocationPath()
       const shouldPreserveRedirect =
-        reason === 'auth_failed' && !isAuthBoundaryPath(window.location.pathname)
+        reason === 'auth_failed' &&
+        typeof window !== 'undefined' &&
+        !isAuthBoundaryPath(window.location.pathname)
 
       clearSession()
 
@@ -433,106 +406,115 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       router.push('/login')
     }
 
-    const tokenRefreshHandler = (event: Event) => {
-      const detail = (event as CustomEvent<{ token: string }>).detail
-      if (detail?.token) {
-        state.token.value = detail.token
-      }
+    authzVersionHandler = (event?: Event) => {
+      const version =
+        (event as CustomEvent<{ version?: string }> | undefined)?.detail?.version?.trim() ?? ''
+      if (!version || !state.runtimeAuthzCache.value) return
+      if (state.runtimeAuthzCache.value.version === version) return
+
+      invalidateAuthz('permissions-version-changed')
+    }
+
+    riskModeHandler = () => {
+      state.stepUpRequired.value = true
+      invalidateAuthz('risk-mode-degraded')
     }
 
     window.addEventListener('auth:logout', authLogoutHandler)
-    window.addEventListener('auth:token-refreshed', tokenRefreshHandler)
+    window.addEventListener('authz:version-changed', authzVersionHandler)
+    window.addEventListener('security:risk-mode-changed', riskModeHandler)
 
     return () => {
       if (authLogoutHandler) {
         window.removeEventListener('auth:logout', authLogoutHandler)
         authLogoutHandler = null
       }
-
-      window.removeEventListener('auth:token-refreshed', tokenRefreshHandler)
+      if (authzVersionHandler) {
+        window.removeEventListener('authz:version-changed', authzVersionHandler)
+        authzVersionHandler = null
+      }
+      if (riskModeHandler) {
+        window.removeEventListener('security:risk-mode-changed', riskModeHandler)
+        riskModeHandler = null
+      }
     }
   }
 
-  function cleanup() {
-    suspendSession()
-
-    if (authLogoutHandler) {
-      window.removeEventListener('auth:logout', authLogoutHandler)
-      authLogoutHandler = null
+  function applyHeartbeatResponse(response: HeartbeatResponse): void {
+    establishAuthRuntimeSession(response)
+    updateStateFromRuntimeSession('authenticated')
+    if (state.user.value) {
+      touchAuthzCheck()
+      state.runtimeAuthzCache.value = buildRuntimeAuthzCache(state.user.value, 'authenticated')
     }
   }
 
   function startHeartbeat() {
     if (heartbeatTimer) return
 
-    function scheduleNextHeartbeat() {
-      const jitter = heartbeatInterval * 0.2 * Math.random()
-      const interval = Math.max(30000, heartbeatInterval - jitter)
-
-      scheduleHeartbeatTick(interval)
-    }
-
-    function scheduleHeartbeatTick(delay: number) {
-      const interval = Math.max(30000, delay)
-
+    const scheduleNext = () => {
       heartbeatTimer = setTimeout(async () => {
         heartbeatTimer = null
-        if (!state.token.value) return
 
         try {
-          const heartbeatResp = await authService.heartbeat()
-          if (heartbeatResp.access_token) {
-            await applySessionTokens(heartbeatResp, {
-              deferProfile: false,
-            })
-          }
-          scheduleNextHeartbeat()
-        } catch (heartbeatError) {
-          if (isAbortError(heartbeatError)) {
+          const response = await authService.heartbeat()
+          applyHeartbeatResponse(response)
+          scheduleNext()
+          return
+        } catch (error) {
+          if (isAbortError(error)) {
             return
           }
 
-          const refreshOutcome = await attemptTokenRefresh({
-            source: 'heartbeat',
-            refreshToken: state.refreshToken.value ?? undefined,
-          })
+          if (error instanceof ApiError && error.status === 401) {
+            const redirectTo = getCurrentLocationPath()
+            clearSession()
+            if (typeof window !== 'undefined' && !isAuthBoundaryPath(window.location.pathname)) {
+              navigateToLoginWithRedirect(redirectTo)
+              return
+            }
 
-          if (refreshOutcome === 'success') {
-            scheduleNextHeartbeat()
+            router.push('/login')
             return
           }
 
-          if (refreshOutcome === 'cooldown') {
-            scheduleHeartbeatTick(getRefreshCooldownRemaining() || REFRESH_RETRY_COOLDOWN_MS)
-            return
-          }
-
-          const redirectTo = getCurrentLocationPath()
-          clearSession()
-          if (!isAuthBoundaryPath(window.location.pathname)) {
-            navigateToLoginWithRedirect(redirectTo)
-          }
+          reportClientEvent(
+            'auth.session.heartbeat_failed',
+            {
+              status: error instanceof ApiError ? error.status : undefined,
+            },
+            {
+              category: 'security',
+              requiresAnalyticsConsent: false,
+              severity: 'warn',
+            }
+          )
         }
-      }, interval)
+      }, heartbeatInterval)
     }
 
-    scheduleNextHeartbeat()
+    scheduleNext()
   }
 
   function stopHeartbeat() {
-    if (heartbeatTimer) {
-      clearTimeout(heartbeatTimer)
-      heartbeatTimer = null
-    }
+    if (!heartbeatTimer) return
+    clearTimeout(heartbeatTimer)
+    heartbeatTimer = null
+  }
+
+  function cleanup() {
+    stopHeartbeat()
   }
 
   return {
     clearSession,
     cleanup,
     ensureAuthInitialized,
+    ensureFreshAuthz,
     establishSession,
     fetchCurrentUser,
     initAuth,
+    invalidateAuthz,
     setupAuthListener,
     startHeartbeat,
     stopHeartbeat,

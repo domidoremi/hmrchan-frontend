@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveHtmlDocumentWithEdgeData } from '@/edge/detailDocumentResolver'
 
+const BACKEND_ORIGIN = 'https://backend.test'
+
 describe('resolveHtmlDocumentWithEdgeData', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -52,7 +54,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
 
     const config = await resolveHtmlDocumentWithEdgeData(
       new URL('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
-      { API_BASE_URL: 'https://api.momichan.xyz' }
+      { API_BASE_URL: BACKEND_ORIGIN }
     )
 
     expect(config.status).toBe(200)
@@ -113,7 +115,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
 
     const config = await resolveHtmlDocumentWithEdgeData(
       new URL('https://momichan.xyz/author/momichan'),
-      { API_BASE_URL: 'https://api.momichan.xyz' }
+      { API_BASE_URL: BACKEND_ORIGIN }
     )
 
     expect(config.status).toBe(200)
@@ -168,7 +170,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
 
     const config = await resolveHtmlDocumentWithEdgeData(
       new URL('https://momichan.xyz/discussion/discussion-1'),
-      { API_BASE_URL: 'https://api.momichan.xyz' }
+      { API_BASE_URL: BACKEND_ORIGIN }
     )
 
     expect(config.status).toBe(200)
@@ -220,7 +222,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
 
     const config = await resolveHtmlDocumentWithEdgeData(
       new URL('https://momichan.xyz/schedule/schedule-1'),
-      { API_BASE_URL: 'https://api.momichan.xyz' }
+      { API_BASE_URL: BACKEND_ORIGIN }
     )
 
     expect(config.status).toBe(200)
@@ -246,7 +248,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
 
     const config = await resolveHtmlDocumentWithEdgeData(
       new URL('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
-      { API_BASE_URL: 'https://api.momichan.xyz' }
+      { API_BASE_URL: BACKEND_ORIGIN }
     )
 
     expect(config.status).toBe(404)
@@ -259,7 +261,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
 
     const config = await resolveHtmlDocumentWithEdgeData(
       new URL('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
-      { API_BASE_URL: 'https://api.momichan.xyz' }
+      { API_BASE_URL: BACKEND_ORIGIN }
     )
 
     expect(config.status).toBe(200)

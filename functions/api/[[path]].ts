@@ -1,15 +1,17 @@
 /**
- * Cloudflare Pages Function - API 代理
+ * Cloudflare Pages Function - 透明 API 反向代理
  *
- * 将 /api/* 请求代理到后端 API 服务器
- * 优先通过 Workers VPC（Cloudflare Tunnel）私有访问后端
- * 如果 VPC 绑定不可用，回退到公网访问
+ * 作用：
+ * - 将同源 /api/v1/* 请求转发到后端
+ * - 保留上游 Set-Cookie、Google redirect rewrite、媒体缓存策略
+ * - 不再承担 BFF 会话、CSRF、timestamp、session summary 等职责
  */
 
 import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
+import { resolveConfiguredApiBaseUrl, resolveVpcOrigin } from '../../src/edge/upstream'
 
 interface Env {
-  API_BASE_URL: string
+  API_BASE_URL?: string
   VPC_API_ORIGIN?: string
   VPC_SERVICE?: Fetcher
 }
@@ -22,15 +24,32 @@ type CFPagesContext = {
   params: { path?: string | string[] }
 }
 
-// 允许的 Origin 白名单
+interface ForwardRequestOptions {
+  apiBaseUrl: string
+  bodyBuffer: ArrayBuffer | null
+  headers: Headers
+  path: string
+  redirectMode: RedirectMode
+  request: Request
+  search: string
+  vpcBinding?: Fetcher
+  vpcOrigin?: string
+}
+
+interface UpstreamFetchResult {
+  response: Response
+  usedVpc: boolean
+}
+
 const ALLOWED_ORIGINS = [
   'https://momichan.xyz',
   'https://www.momichan.xyz',
   'https://himeri.momichan.xyz',
 ]
-
-// 开发环境允许 localhost
 const DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+
+const REQUEST_HEADERS_TO_SKIP = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
+
 const RESPONSE_HEADERS_TO_STRIP = [
   'content-security-policy',
   'content-security-policy-report-only',
@@ -42,39 +61,7 @@ const RESPONSE_HEADERS_TO_STRIP = [
   'x-xss-protection',
 ]
 
-/**
- * 验证 Origin 是否在白名单中
- */
-function isAllowedOrigin(origin: string | null, isDev: boolean): boolean {
-  if (!origin) return false
-  if (ALLOWED_ORIGINS.includes(origin)) return true
-  if (isDev && DEV_ORIGINS.includes(origin)) return true
-  // 支持 Cloudflare Pages 预览部署
-  if (origin.endsWith('.pages.dev')) return true
-  return false
-}
-
-// CORS 预检响应
-function handleCORS(request: Request, isDev: boolean): Response {
-  const origin = request.headers.get('Origin')
-  const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
-  const headers = new Headers({
-    'Access-Control-Allow-Origin': allowedOrigin!,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-  })
-  appendVary(headers, 'Origin')
-
-  return new Response(null, {
-    status: 204,
-    headers,
-  })
-}
-
-function appendVary(headers: Headers, value: string) {
+function appendVary(headers: Headers, value: string): void {
   const current = headers.get('Vary')
   if (!current) {
     headers.set('Vary', value)
@@ -92,6 +79,18 @@ function appendVary(headers: Headers, value: string) {
   }
 }
 
+function isAllowedOrigin(origin: string | null, isDev: boolean): boolean {
+  if (!origin) return false
+  if (ALLOWED_ORIGINS.includes(origin)) return true
+  if (isDev && DEV_ORIGINS.includes(origin)) return true
+  if (origin.endsWith('.pages.dev')) return true
+  return false
+}
+
+function normalizePath(path: string): string {
+  return path.replace(/^\/+/, '').replace(/\/+$/, '')
+}
+
 function extractApiVersion(path: string): string | null {
   const versionSegment = path
     .split('/')
@@ -101,70 +100,62 @@ function extractApiVersion(path: string): string | null {
   return versionSegment ? versionSegment.toLowerCase() : null
 }
 
-/**
- * 通过 Workers VPC 发送请求（私有网络，不经过公网）
- */
-async function fetchViaVPC(
-  vpcBinding: Fetcher,
-  vpcOrigin: string,
-  path: string,
-  search: string,
-  request: Request,
-  headers: Headers,
-  redirectMode: RedirectMode
-): Promise<Response> {
-  const targetUrl = `${vpcOrigin}/api/${path}${search}`
+function handleCORS(request: Request, isDev: boolean): Response {
+  const origin = request.headers.get('Origin')
+  const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
+  const headers = new Headers({
+    'Access-Control-Allow-Origin': allowedOrigin ?? ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature, X-Signature-Version, X-Nonce, X-Content-SHA256, X-Request-Id, X-Security-Policy, X-Verification-Token, X-Client-Contract-Version, Idempotency-Key',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  })
+  appendVary(headers, 'Origin')
 
-  const fetchOptions: RequestInit = {
-    method: request.method,
+  return new Response(null, {
+    status: 204,
     headers,
-    redirect: redirectMode,
-  }
-
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
-    fetchOptions.body = request.body
-    // @ts-expect-error - Cloudflare Workers 支持 duplex
-    fetchOptions.duplex = 'half'
-  }
-
-  return vpcBinding.fetch(new Request(targetUrl, fetchOptions))
+  })
 }
 
-/**
- * 通过公网发送请求（fallback）
- */
-async function fetchViaPublic(
-  apiBaseUrl: string,
-  path: string,
-  search: string,
+function buildErrorResponse(
   request: Request,
-  headers: Headers,
-  redirectMode: RedirectMode
-): Promise<Response> {
-  const targetUrl = `${apiBaseUrl}/api/${path}${search}`
+  isDev: boolean,
+  status: number,
+  code: string,
+  message: string
+): Response {
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store',
+  })
 
-  const fetchOptions: RequestInit = {
-    method: request.method,
-    headers,
-    redirect: redirectMode,
-  }
+  const origin = request.headers.get('Origin')
+  const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
+  headers.set('Access-Control-Allow-Origin', allowedOrigin ?? ALLOWED_ORIGINS[0])
+  headers.set('Access-Control-Allow-Credentials', 'true')
+  appendVary(headers, 'Origin')
 
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
-    fetchOptions.body = request.body
-    // @ts-expect-error - Cloudflare Workers 支持 duplex
-    fetchOptions.duplex = 'half'
-  }
-
-  return fetch(targetUrl, fetchOptions)
+  return new Response(
+    JSON.stringify({
+      error: code,
+      message,
+    }),
+    {
+      status,
+      headers,
+    }
+  )
 }
 
 function shouldPreserveBrowserRedirect(path: string, request: Request): boolean {
   if (request.method !== 'GET') return false
-  const normalizedPath = path.replace(/^\/+/, '')
+  const normalizedPath = normalizePath(path)
   return (
-    normalizedPath === 'auth/google/start' ||
-    normalizedPath === 'auth/google/callback' ||
-    normalizedPath.startsWith('auth/google/')
+    normalizedPath === 'v1/auth/google/start' ||
+    normalizedPath === 'v1/auth/google/callback' ||
+    normalizedPath.startsWith('v1/auth/google/')
   )
 }
 
@@ -209,129 +200,173 @@ function isRedirectStatus(status: number): boolean {
   return status >= 300 && status < 400
 }
 
-export async function onRequest(context: CFPagesContext): Promise<Response> {
-  const { request, env, params } = context
-
-  // 判断是否为开发环境
-  const isDev = env.API_BASE_URL?.includes('localhost') || false
-
-  // 处理 CORS 预检请求
-  if (request.method === 'OPTIONS') {
-    return handleCORS(request, isDev)
-  }
-
-  // 获取后端 API 地址
-  const apiBaseUrl = env.API_BASE_URL || 'https://api.momichan.xyz'
-
-  // 构建路径
-  const path = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
-  const url = new URL(request.url)
-  const originalPath = url.pathname
-  const hasTrailingSlash = originalPath.endsWith('/')
-  const normalizedPath = path + (hasTrailingSlash && !path.endsWith('/') ? '/' : '')
-  const redirectMode: RedirectMode = shouldPreserveBrowserRedirect(normalizedPath, request)
-    ? 'manual'
-    : 'follow'
-  const bypassVPC = shouldBypassVPCForRequest(normalizedPath, request)
-
-  // 复制请求头，移除不应转发的头
+function cloneHeadersWithoutHopByHop(request: Request, requestUrl: URL): Headers {
   const headers = new Headers()
-  const skipHeaders = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
-
   for (const [key, value] of request.headers.entries()) {
-    if (!skipHeaders.includes(key.toLowerCase())) {
+    if (!REQUEST_HEADERS_TO_SKIP.includes(key.toLowerCase())) {
       headers.set(key, value)
     }
   }
 
-  // 添加代理标识
   headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP') || '')
   headers.set('X-Forwarded-Proto', 'https')
-  headers.set('X-Forwarded-Host', url.host)
+  headers.set('X-Forwarded-Host', requestUrl.host)
+
+  return headers
+}
+
+async function fetchViaVPC(options: ForwardRequestOptions): Promise<Response> {
+  const { bodyBuffer, headers, path, redirectMode, request, search, vpcBinding, vpcOrigin } =
+    options
+  if (!vpcBinding || !vpcOrigin) {
+    throw new Error('VPC binding unavailable')
+  }
+
+  const targetUrl = `${vpcOrigin}/api/${path}${search}`
+  const init: RequestInit = {
+    method: request.method,
+    headers,
+    redirect: redirectMode,
+  }
+
+  if (request.method !== 'GET' && request.method !== 'HEAD' && bodyBuffer) {
+    init.body = bodyBuffer.slice(0)
+  }
+
+  return vpcBinding.fetch(new Request(targetUrl, init))
+}
+
+async function fetchViaPublic(options: ForwardRequestOptions): Promise<Response> {
+  const { apiBaseUrl, bodyBuffer, headers, path, redirectMode, request, search } = options
+  const targetUrl = `${apiBaseUrl}/api/${path}${search}`
+  const init: RequestInit = {
+    method: request.method,
+    headers,
+    redirect: redirectMode,
+  }
+
+  if (request.method !== 'GET' && request.method !== 'HEAD' && bodyBuffer) {
+    init.body = bodyBuffer.slice(0)
+  }
+
+  return fetch(targetUrl, init)
+}
+
+async function forwardToUpstream(options: ForwardRequestOptions): Promise<UpstreamFetchResult> {
+  const { path, request, vpcBinding } = options
+
+  if (vpcBinding && !shouldBypassVPCForRequest(path, request)) {
+    try {
+      return {
+        response: await fetchViaVPC(options),
+        usedVpc: true,
+      }
+    } catch (error) {
+      console.error('[API Proxy] VPC fetch failed, falling back to public:', error)
+    }
+  }
+
+  return {
+    response: await fetchViaPublic(options),
+    usedVpc: false,
+  }
+}
+
+function withCorsHeaders(request: Request, isDev: boolean, headers: Headers): Headers {
+  const origin = request.headers.get('Origin')
+  const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
+  headers.set('Access-Control-Allow-Origin', allowedOrigin ?? ALLOWED_ORIGINS[0])
+  headers.set('Access-Control-Allow-Credentials', 'true')
+  appendVary(headers, 'Origin')
+  return headers
+}
+
+export async function onRequest(context: CFPagesContext): Promise<Response> {
+  const { request, env, params } = context
+  const apiBaseUrl = resolveConfiguredApiBaseUrl(env)
+  const isDev = apiBaseUrl?.includes('localhost') ?? false
+
+  if (request.method === 'OPTIONS') {
+    return handleCORS(request, isDev)
+  }
+
+  if (!apiBaseUrl) {
+    return buildErrorResponse(
+      request,
+      isDev,
+      500,
+      'UPSTREAM_NOT_CONFIGURED',
+      'API upstream is not configured.'
+    )
+  }
+
+  const requestUrl = new URL(request.url)
+  const pathSegments = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
+  const hasTrailingSlash = requestUrl.pathname.endsWith('/')
+  const normalizedPath = pathSegments + (hasTrailingSlash && !pathSegments.endsWith('/') ? '/' : '')
+  const compactPath = normalizePath(normalizedPath)
+  const redirectMode: RedirectMode = shouldPreserveBrowserRedirect(normalizedPath, request)
+    ? 'manual'
+    : 'follow'
+  const headers = cloneHeadersWithoutHopByHop(request, requestUrl)
+  const bodyBuffer =
+    request.method === 'GET' || request.method === 'HEAD' ? null : await request.arrayBuffer()
 
   try {
-    let response: Response
-
-    // 优先使用 Workers VPC（通过 Cloudflare Tunnel 私有访问）
-    if (env.VPC_SERVICE && !bypassVPC) {
-      const vpcOrigin = env.VPC_API_ORIGIN || 'http://localhost:8000'
-      try {
-        response = await fetchViaVPC(
-          env.VPC_SERVICE,
-          vpcOrigin,
-          normalizedPath,
-          url.search,
-          request,
-          headers,
-          redirectMode
-        )
-      } catch (vpcError) {
-        // VPC 失败，回退到公网
-        console.error('[API Proxy] VPC fetch failed, falling back to public:', vpcError)
-        response = await fetchViaPublic(
-          apiBaseUrl,
-          normalizedPath,
-          url.search,
-          request,
-          headers,
-          redirectMode
-        )
-      }
-    } else {
-      // 没有 VPC 绑定，或当前请求需要保留浏览器重定向时，直接走公网
-      response = await fetchViaPublic(
-        apiBaseUrl,
-        normalizedPath,
-        url.search,
-        request,
-        headers,
-        redirectMode
-      )
-    }
-
-    // 复制响应头
-    const responseHeaders = new Headers(response.headers)
-
-    // 添加 CORS 头（使用白名单验证）
-    const origin = request.headers.get('Origin')
-    const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
-    responseHeaders.set('Access-Control-Allow-Origin', allowedOrigin!)
-    responseHeaders.set('Access-Control-Allow-Credentials', 'true')
-    appendVary(responseHeaders, 'Origin')
-
-    // 移除可能导致问题的头
-    responseHeaders.delete('content-encoding')
-    responseHeaders.delete('transfer-encoding')
-    RESPONSE_HEADERS_TO_STRIP.forEach((header) => {
-      responseHeaders.delete(header)
+    const upstream = await forwardToUpstream({
+      apiBaseUrl,
+      bodyBuffer,
+      headers,
+      path: compactPath,
+      redirectMode,
+      request,
+      search: requestUrl.search,
+      vpcBinding: env.VPC_SERVICE,
+      vpcOrigin: resolveVpcOrigin(env),
     })
 
     if (redirectMode === 'manual') {
-      const location = response.headers.get('Location')
+      const redirectHeaders = withCorsHeaders(
+        request,
+        isDev,
+        new Headers(upstream.response.headers)
+      )
+      RESPONSE_HEADERS_TO_STRIP.forEach((header) => {
+        redirectHeaders.delete(header)
+      })
+
+      const location = upstream.response.headers.get('Location')
       if (location) {
-        responseHeaders.set('Location', rewriteRedirectLocation(location, url, apiBaseUrl))
-        responseHeaders.delete('content-length')
-        responseHeaders.delete('Content-Length')
-        responseHeaders.delete('content-type')
-        responseHeaders.delete('Content-Type')
+        redirectHeaders.set('Location', rewriteRedirectLocation(location, requestUrl, apiBaseUrl))
+        redirectHeaders.delete('content-length')
+        redirectHeaders.delete('Content-Length')
+        redirectHeaders.delete('content-type')
+        redirectHeaders.delete('Content-Type')
 
         return new Response(null, {
-          status: isRedirectStatus(response.status) ? response.status : 302,
-          headers: responseHeaders,
+          status: isRedirectStatus(upstream.response.status) ? upstream.response.status : 302,
+          headers: redirectHeaders,
         })
       }
     }
 
-    const apiVersion = extractApiVersion(path)
+    const responseHeaders = withCorsHeaders(request, isDev, new Headers(upstream.response.headers))
+    RESPONSE_HEADERS_TO_STRIP.forEach((header) => {
+      responseHeaders.delete(header)
+    })
+    responseHeaders.delete('content-encoding')
+    responseHeaders.delete('transfer-encoding')
+
+    const apiVersion = extractApiVersion(compactPath)
     if (apiVersion) {
       responseHeaders.set('X-API-Version', apiVersion)
     }
 
     const mediaCacheControl = resolveMediaCacheControl({
-      path,
+      path: compactPath,
       method: request.method,
       requestHeaders: request.headers,
-      responseStatus: response.status,
+      responseStatus: upstream.response.status,
     })
 
     if (mediaCacheControl) {
@@ -343,34 +378,19 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       }
     }
 
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
+    return new Response(upstream.response.body, {
+      status: upstream.response.status,
+      statusText: upstream.response.statusText,
       headers: responseHeaders,
     })
   } catch (error) {
     console.error('[API Proxy] Error:', error)
-
-    const origin = request.headers.get('Origin')
-    const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
-
-    return new Response(
-      JSON.stringify({
-        error: 'Service Unavailable',
-        message: 'Unable to process request. Please try again later.',
-      }),
-      {
-        status: 502,
-        headers: (() => {
-          const headers = new Headers({
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': allowedOrigin!,
-            'Access-Control-Allow-Credentials': 'true',
-          })
-          appendVary(headers, 'Origin')
-          return headers
-        })(),
-      }
+    return buildErrorResponse(
+      request,
+      isDev,
+      502,
+      'SERVICE_UNAVAILABLE',
+      'Unable to process request. Please try again later.'
     )
   }
 }

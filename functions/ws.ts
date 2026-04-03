@@ -4,8 +4,10 @@
  * 将 /ws 请求代理到后端 WebSocket 服务器
  */
 
+import { buildWebSocketUpstreamUrl, resolveConfiguredApiBaseUrl } from '../src/edge/upstream'
+
 interface Env {
-  API_BASE_URL: string
+  API_BASE_URL?: string
 }
 
 interface Context {
@@ -23,8 +25,12 @@ export async function onRequest(context: Context): Promise<Response> {
   }
 
   // 获取后端 API 地址
-  const apiBaseUrl = env.API_BASE_URL || 'https://api.momichan.xyz'
-  const wsUrl = apiBaseUrl.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws'
+  const apiBaseUrl = resolveConfiguredApiBaseUrl(env)
+  if (!apiBaseUrl) {
+    return new Response('WebSocket proxy is not configured', { status: 500 })
+  }
+
+  const wsUrl = buildWebSocketUpstreamUrl(apiBaseUrl)
 
   // 复制请求头
   const headers = new Headers(request.headers)
@@ -48,7 +54,7 @@ export async function onRequest(context: Context): Promise<Response> {
       {
         status: 502,
         headers: { 'Content-Type': 'application/json' },
-      },
+      }
     )
   }
 }

@@ -1,41 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { clearAuthRuntimeSession } from '@/api/client/auth-runtime'
+
+const mockRouterPush = vi.hoisted(() => vi.fn())
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: mockRouterPush,
   }),
 }))
 
-vi.mock('@/utils/tokenSecurity', () => ({
-  secureTokenManager: {
-    store: vi.fn().mockResolvedValue(undefined),
-    retrieve: vi.fn().mockResolvedValue(null),
-    retrieveState: vi.fn().mockResolvedValue({
-      token: null,
-      state: 'missing',
-    }),
-    clear: vi.fn(),
-  },
-}))
-
 vi.mock('@/utils/authSource', () => ({
-  getStoredAuthSource: vi.fn(() => null),
   setStoredAuthSource: vi.fn(),
   clearStoredAuthSource: vi.fn(),
-  normalizeAuthSource: vi.fn((value: string | null | undefined) => value || 'session'),
 }))
 
 vi.mock('@/utils/clientReporter', () => ({
-  reportClientError: vi.fn(),
   reportClientEvent: vi.fn(),
 }))
 
-vi.mock('@/api/client', () => ({
-  API_AUTH_URL: '/api',
-  apiClient: {
-    request: vi.fn(),
-  },
+vi.mock('@/utils/device', () => ({
+  getDeviceInfo: vi.fn(() => ({
+    device_name: 'Vitest Browser',
+    device_type: 'web',
+  })),
 }))
 
 vi.mock('@/services/googleAuthService', () => ({
@@ -50,8 +38,8 @@ vi.mock('@/api', () => {
   const mockRegister = vi.fn()
   const mockVerifyRiskLogin = vi.fn()
   const mockLogout = vi.fn()
-  const mockGetCurrentUser = vi.fn()
   const mockRefreshToken = vi.fn()
+  const mockGetCurrentUser = vi.fn()
   const mockSendVerificationEmail = vi.fn()
   const mockHeartbeat = vi.fn()
   const mockVerifyMfaLogin = vi.fn()
@@ -64,8 +52,8 @@ vi.mock('@/api', () => {
       register: mockRegister,
       verifyRiskLogin: mockVerifyRiskLogin,
       logout: mockLogout,
-      getCurrentUser: mockGetCurrentUser,
       refreshToken: mockRefreshToken,
+      getCurrentUser: mockGetCurrentUser,
       sendVerificationEmail: mockSendVerificationEmail,
       heartbeat: mockHeartbeat,
     },
@@ -103,19 +91,60 @@ import {
 } from '@/services/googleAuthService'
 import { useAuthStore, type AuthUser } from '../auth'
 
-const createMockUser = (overrides?: Partial<AuthUser>): AuthUser => ({
-  id: 'user-1',
-  username: 'tester',
-  email: 'tester@example.com',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
-  ...overrides,
-})
+function createAccessToken(overrides: Record<string, unknown> = {}): string {
+  const payload = {
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    permissions: ['profile.read'],
+    permission_version: 1,
+    ...overrides,
+  }
+
+  return [
+    Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url'),
+    Buffer.from(JSON.stringify(payload)).toString('base64url'),
+    'signature',
+  ].join('.')
+}
+
+function createMockUser(overrides?: Partial<AuthUser>): AuthUser {
+  return {
+    id: 'user-1',
+    username: 'tester',
+    email: 'tester@example.com',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+    ...overrides,
+  }
+}
+
+function createLoginResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    access_token: createAccessToken(),
+    token_type: 'bearer',
+    expires_in: 3600,
+    refresh_threshold: 300,
+    permission_version: 1,
+    user: createMockUser(),
+    ...overrides,
+  }
+}
+
+function createMeResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    ...createMockUser({ auth_source: 'session' }),
+    permission_version: 1,
+    auth_source: 'session',
+    identity_provider: 'local',
+    linked_providers: ['local'],
+    ...overrides,
+  }
+}
 
 describe('auth store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    clearAuthRuntimeSession()
     vi.useFakeTimers()
   })
 
@@ -126,63 +155,75 @@ describe('auth store', () => {
     } catch {
       // ignore
     }
+    clearAuthRuntimeSession()
     vi.useRealTimers()
   })
 
-  it('starts empty', () => {
+  it('starts empty with runtime-only auth cache state', () => {
     const store = useAuthStore()
 
     expect(store.user).toBeNull()
-    expect(store.token).toBeNull()
+    expect(store.runtimeAuthzCache).toBeNull()
+    expect(store.sessionExpiresAt).toBeNull()
+    expect(store.stepUpRequired).toBe(false)
     expect(store.isAuthenticated).toBe(false)
     expect(store.error).toBeNull()
   })
 
-  it('does not establish a local session after registration succeeds', async () => {
+  it('keeps registration as a logged-out flow', async () => {
     const store = useAuthStore()
     const mockUser = createMockUser({ username: 'new-user', email: 'new@example.com' })
 
     vi.mocked(authService.register).mockResolvedValueOnce({
       user: mockUser,
-      access_token: 'legacy-token',
-      refresh_token: 'legacy-refresh',
-      token_type: 'Bearer',
+      message: 'registered',
     })
-    vi.mocked(authService.logout).mockResolvedValueOnce(undefined)
 
     const result = await store.register('new-user', 'new@example.com', 'password123', '123456')
 
     expect(result.success).toBe(true)
     expect(result.user).toEqual(mockUser)
     expect(store.user).toBeNull()
-    expect(store.token).toBeNull()
+    expect(store.runtimeAuthzCache).toBeNull()
     expect(store.isAuthenticated).toBe(false)
-    expect(authService.logout).toHaveBeenCalledTimes(1)
+    expect(authService.logout).not.toHaveBeenCalled()
   })
 
-  it('establishes a local session after password login succeeds', async () => {
+  it('establishes an in-memory access-token session after password login succeeds', async () => {
     const store = useAuthStore()
-    const mockUser = createMockUser()
-
-    vi.mocked(authService.login).mockResolvedValueOnce({
-      access_token: 'legacy-access-token',
-      refresh_token: 'legacy-refresh-token',
-      token_type: 'Bearer',
-      user: mockUser,
-      _securityWarning: 'medium',
-    })
+    vi.mocked(authService.login).mockResolvedValueOnce(
+      createLoginResponse({
+        _securityWarning: 'medium',
+      })
+    )
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
 
     const result = await store.login('tester@example.com', 'password123')
 
-    expect(result.status).toBe('success')
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'success',
+        user: expect.objectContaining({
+          email: 'tester@example.com',
+        }),
+        securityWarning: 'medium',
+      })
+    )
     expect(store.isAuthenticated).toBe(true)
-    expect(store.token).toBe('legacy-access-token')
     expect(store.user).toEqual(
       expect.objectContaining({
-        email: mockUser.email,
+        email: 'tester@example.com',
         auth_source: 'session',
       })
     )
+    expect(store.runtimeAuthzCache).toEqual(
+      expect.objectContaining({
+        roles: [],
+        permissions: ['profile.read'],
+        version: '1',
+      })
+    )
+    expect(store.stepUpRequired).toBe(false)
   })
 
   it('returns risk verification details without establishing a session', async () => {
@@ -207,19 +248,13 @@ describe('auth store', () => {
     )
     expect(store.isAuthenticated).toBe(false)
     expect(store.user).toBeNull()
-    expect(store.token).toBeNull()
+    expect(store.runtimeAuthzCache).toBeNull()
   })
 
-  it('completes a risk-verified login as a local session', async () => {
+  it('completes a risk-verified login as an access-token session', async () => {
     const store = useAuthStore()
-    const mockUser = createMockUser()
-
-    vi.mocked(authService.verifyRiskLogin).mockResolvedValueOnce({
-      access_token: 'verified-access-token',
-      refresh_token: 'verified-refresh-token',
-      token_type: 'Bearer',
-      user: mockUser,
-    })
+    vi.mocked(authService.verifyRiskLogin).mockResolvedValueOnce(createLoginResponse())
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
 
     const result = await store.verifyRiskLogin('pending-token', '123456')
 
@@ -228,11 +263,11 @@ describe('auth store', () => {
       'pending-token',
       '123456',
       undefined,
-      expect.any(String),
-      expect.any(String)
+      'Vitest Browser',
+      'web'
     )
     expect(store.isAuthenticated).toBe(true)
-    expect(store.user).toEqual(expect.objectContaining({ auth_source: 'session' }))
+    expect(store.runtimeAuthzCache?.version).toBe('1')
   })
 
   it('starts Google auth with the requested intent and redirect target', async () => {
@@ -244,7 +279,7 @@ describe('auth store', () => {
     expect(startGoogleAuth).toHaveBeenCalledWith('register', '/profile/settings')
   })
 
-  it('returns link-required when Google handoff needs account linking', async () => {
+  it('returns link-required when Google handoff requires linking', async () => {
     const store = useAuthStore()
 
     vi.mocked(exchangeGoogleHandoff).mockResolvedValueOnce({
@@ -270,18 +305,22 @@ describe('auth store', () => {
 
   it('establishes a session from a successful Google handoff exchange', async () => {
     const store = useAuthStore()
-    const googleUser = createMockUser({
-      identity_provider: 'google',
-      linked_providers: ['google'],
-    })
 
-    vi.mocked(exchangeGoogleHandoff).mockResolvedValueOnce({
-      access_token: 'google-access-token',
-      refresh_token: 'google-refresh-token',
-      token_type: 'Bearer',
-      return_to: '/favorites',
-      user: googleUser,
-    })
+    vi.mocked(exchangeGoogleHandoff).mockResolvedValueOnce(
+      createLoginResponse({
+        return_to: '/favorites',
+        user: createMockUser({
+          identity_provider: 'google',
+          linked_providers: ['google'],
+        }),
+      })
+    )
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(
+      createMeResponse({
+        identity_provider: 'google',
+        linked_providers: ['google'],
+      })
+    )
 
     const result = await store.completeGoogleAuth('handoff-code')
 
@@ -292,10 +331,10 @@ describe('auth store', () => {
       })
     )
     expect(store.isAuthenticated).toBe(true)
-    expect(store.token).toBe('google-access-token')
     expect(store.user).toEqual(
       expect.objectContaining({
         identity_provider: 'google',
+        linked_providers: ['google'],
         auth_source: 'session',
       })
     )
@@ -345,14 +384,8 @@ describe('auth store', () => {
 
   it('verifies MFA with a code and establishes a session', async () => {
     const store = useAuthStore()
-    const mockUser = createMockUser()
-
-    vi.mocked(twoFactorService.verifyLogin).mockResolvedValueOnce({
-      access_token: 'mfa-access-token',
-      refresh_token: 'mfa-refresh-token',
-      token_type: 'Bearer',
-      user: mockUser,
-    })
+    vi.mocked(twoFactorService.verifyLogin).mockResolvedValueOnce(createLoginResponse())
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
 
     const result = await store.completeMfaLogin('pending-mfa-token', '123456')
 
@@ -360,9 +393,27 @@ describe('auth store', () => {
     expect(twoFactorService.verifyLogin).toHaveBeenCalledWith(
       'pending-mfa-token',
       '123456',
-      expect.any(String),
-      expect.any(String)
+      'Vitest Browser',
+      'web'
     )
     expect(store.isAuthenticated).toBe(true)
+    expect(store.runtimeAuthzCache?.permissions).toEqual(['profile.read'])
+  })
+
+  it('clears in-memory authz on logout', async () => {
+    const store = useAuthStore()
+    vi.mocked(authService.login).mockResolvedValueOnce(createLoginResponse())
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+    vi.mocked(authService.logout).mockResolvedValueOnce(undefined)
+
+    await store.login('tester@example.com', 'password123')
+    await store.logout()
+
+    expect(authService.logout).toHaveBeenCalledTimes(1)
+    expect(store.user).toBeNull()
+    expect(store.runtimeAuthzCache).toBeNull()
+    expect(store.sessionExpiresAt).toBeNull()
+    expect(store.stepUpRequired).toBe(false)
+    expect(mockRouterPush).toHaveBeenCalledWith('/login')
   })
 })

@@ -1,4 +1,4 @@
-const AUTH_COOKIE_PATTERN = /(?:^|;\s*)(refresh_token|session|auth_token|access_token)=/i
+const AUTH_COOKIE_PATTERN = /(?:^|;\s*)refresh_token=/i
 
 export function isMediaAssetRequest(path: string, method: string): boolean {
   return (
