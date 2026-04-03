@@ -1,14 +1,20 @@
 /**
  * API Client - HTTP 请求客户端
  *
- * 保持统一门面：
- * - request/get/post/put/patch/delete/text/blob/response
- * - 认证刷新
- * - challenge / verification / client security
- * - 错误映射与请求退避
+ * 统一负责：
+ * - 同源 /api/v1/* 请求基线
+ * - 内存 access token 注入与 401 单飞 refresh
+ * - request-integrity V2
+ * - challenge / verification / client re-init / contract gate
+ * - multipart 自组装上传
  */
 
 import { reportClientEvent } from '@/utils/clientReporter'
+import {
+  clearAuthRuntimeSession,
+  establishAuthRuntimeSession,
+  getRuntimeAccessToken,
+} from './client/auth-runtime'
 import {
   ApiError,
   extractApiErrorMeta,
@@ -16,20 +22,11 @@ import {
   handleTransportError,
 } from './client/error-mapping'
 import {
-  isTokenRefreshInProgress,
-  onTokenRefreshFailed,
-  onTokenRefreshed,
-  refreshAccessToken,
-  setTokenRefreshInProgress,
-  subscribeTokenRefresh,
-} from './client/auth-refresh'
-import {
   attachClientSecurityHeaders,
   isCredentialRefreshInProgress,
   isSignatureErrorResponse,
   onCredentialsRefreshFailed,
   onCredentialsRefreshed,
-  rebuildClientSecurityHeaders,
   refreshClientSecurityCredentials,
   setCredentialRefreshInProgress,
   subscribeCredentialRefresh,
@@ -39,16 +36,17 @@ import {
   isAccessRestrictedMessage,
   withVerificationToken,
 } from './client/challenge-verification'
+import { buildMultipartRequestBody } from './client/multipart'
 import {
-  API_AUTH_URL,
   REQUEST_TIMEOUT,
+  REFRESH_TIMEOUT,
   buildCacheKey,
   buildRequestUrl,
   fetchWithTransportGuards,
-  getAccessTokenAsync,
   parseSuccessfulResponse,
   setRateLimitCooldown,
 } from './client/transport'
+import { applyRequestSecurityHeaders } from './client/request-security'
 import type {
   ApiResponse,
   PaginatedApiResponse,
@@ -56,11 +54,20 @@ import type {
   RequestConfig,
 } from './client/types'
 
-export { API_AUTH_URL }
 export { ApiError }
 export type { ApiResponse, PaginatedApiResponse, PaginatedApiResponseWithLimit, RequestConfig }
 
+interface RefreshResponse {
+  access_token: string
+  token_type: string
+  expires_in: number
+  refresh_threshold: number
+  permission_version: number | string
+}
+
+const textEncoder = new TextEncoder()
 const inflightRequests = new Map<string, Promise<unknown>>()
+let authRefreshPromise: Promise<boolean> | null = null
 
 async function fetchWithTimeout(
   url: string,
@@ -89,6 +96,7 @@ async function fetchWithTimeout(
       ...init,
       signal: timeoutController.signal,
     }
+
     return useTransportGuards
       ? await fetchWithTransportGuards(url, requestInit)
       : await fetch(url, requestInit)
@@ -100,35 +108,168 @@ async function fetchWithTimeout(
   }
 }
 
-async function retryWithAuthToken<T>(options: {
-  url: string
-  timeout: number
-  headers: HeadersInit
-  requestInit: RequestInit
-  responseType: RequestConfig['responseType']
-  skipErrorToast: boolean
-  token: string
-}): Promise<T> {
-  const { url, timeout, headers, requestInit, responseType, skipErrorToast, token } = options
-  ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+function dispatchLogout(reason: 'auth_failed' | 'permission_version_stale' = 'auth_failed'): void {
+  const hadSession = Boolean(getRuntimeAccessToken())
+  clearAuthRuntimeSession()
+  if (typeof window !== 'undefined' && hadSession) {
+    window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason } }))
+  }
+}
 
-  const retryResponse = await fetchWithTimeout(
-    url,
-    {
-      ...requestInit,
-      headers,
-    },
-    timeout
+function isClientReinitRequired(response: Response): boolean {
+  return response.headers.get('X-Client-Reinit-Required')?.toLowerCase() === 'true'
+}
+
+function isClientUpgradeRequired(response: Response): boolean {
+  return (
+    response.status === 426 ||
+    response.headers.get('X-Client-Upgrade-Required')?.toLowerCase() === 'true'
   )
+}
 
-  if (!retryResponse.ok) {
-    if (retryResponse.status === 304) {
-      return parseSuccessfulResponse<T>(retryResponse, responseType)
+function triggerHardReloadGate(): never {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('app:hard-reload-required'))
+
+    const isTest = import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+    if (!isTest) {
+      window.setTimeout(() => {
+        window.location.reload()
+      }, 0)
     }
-    await handleErrorResponse(retryResponse, skipErrorToast)
   }
 
-  return parseSuccessfulResponse<T>(retryResponse, responseType)
+  throw new ApiError('Client upgrade required', 426, 'CLIENT_UPGRADE_REQUIRED')
+}
+
+async function readErrorMeta(response: Response): Promise<{ code?: string; message: string }> {
+  try {
+    const body = await response.clone().json()
+    return extractApiErrorMeta(body)
+  } catch {
+    return { message: '' }
+  }
+}
+
+async function serializeRequestBody(body: BodyInit | null | undefined): Promise<{
+  body: BodyInit | null
+  bodyBytes: Uint8Array
+  contentType?: string
+}> {
+  if (body == null) {
+    return {
+      body: null,
+      bodyBytes: new Uint8Array(),
+    }
+  }
+
+  if (body instanceof FormData) {
+    const multipart = await buildMultipartRequestBody(body)
+    return {
+      body: multipart.body,
+      bodyBytes: multipart.body,
+      contentType: multipart.contentType,
+    }
+  }
+
+  if (typeof body === 'string') {
+    const bytes = textEncoder.encode(body)
+    return {
+      body,
+      bodyBytes: bytes,
+    }
+  }
+
+  if (body instanceof URLSearchParams) {
+    const encoded = body.toString()
+    return {
+      body: encoded,
+      bodyBytes: textEncoder.encode(encoded),
+      contentType: 'application/x-www-form-urlencoded;charset=UTF-8',
+    }
+  }
+
+  if (body instanceof Blob) {
+    const bytes = new Uint8Array(await body.arrayBuffer())
+    return {
+      body,
+      bodyBytes: bytes,
+      contentType: body.type || undefined,
+    }
+  }
+
+  if (body instanceof ArrayBuffer) {
+    const bytes = new Uint8Array(body)
+    return {
+      body: bytes,
+      bodyBytes: bytes,
+    }
+  }
+
+  if (ArrayBuffer.isView(body)) {
+    const bytes = new Uint8Array(
+      body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength)
+    )
+    return {
+      body: bytes,
+      bodyBytes: bytes,
+    }
+  }
+
+  throw new TypeError('Unsupported request body type')
+}
+
+async function retryAfterClientReinit<T>(
+  endpoint: string,
+  config: RequestConfig,
+  shouldRetry: boolean
+): Promise<T | null> {
+  if (!shouldRetry) return null
+
+  const { clientSecurityService } = await import('./clientSecurityService')
+  await clientSecurityService.init(true, { promptChallenge: false })
+  return request<T>(endpoint, {
+    ...config,
+    skipClientReinitRetry: true,
+  })
+}
+
+async function retryAfterAuthRefresh(): Promise<boolean> {
+  if (authRefreshPromise) {
+    return authRefreshPromise
+  }
+
+  authRefreshPromise = (async () => {
+    try {
+      const refreshed = await request<RefreshResponse>('/auth/refresh', {
+        method: 'POST',
+        skipAuth: true,
+        skipErrorToast: true,
+        timeout: REFRESH_TIMEOUT,
+        skipUnauthorizedRetry: true,
+        skipChallengeRetry: true,
+        skipVerificationRetry: true,
+      })
+
+      establishAuthRuntimeSession(refreshed)
+      return true
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.code === 'PERMISSION_VERSION_STALE' || error.status === 401) {
+          dispatchLogout(
+            error.code === 'PERMISSION_VERSION_STALE' ? 'permission_version_stale' : 'auth_failed'
+          )
+          return false
+        }
+      }
+
+      throw error
+    } finally {
+      authRefreshPromise = null
+    }
+  })()
+
+  return authRefreshPromise
 }
 
 async function handleForbiddenResponse<T>(options: {
@@ -137,13 +278,7 @@ async function handleForbiddenResponse<T>(options: {
   response: Response
   method: string
   body: BodyInit | null | undefined
-  headers: HeadersInit
-  timeout: number
-  url: string
-  requestInit: RequestInit
-  responseType: RequestConfig['responseType']
   skipErrorToast: boolean
-  onResponseHeaders?: (headers: Headers) => void
   verificationAction?: string
   verificationResourceId?: string
   skipChallengeRetry?: boolean
@@ -155,13 +290,7 @@ async function handleForbiddenResponse<T>(options: {
     response,
     method,
     body,
-    headers,
-    timeout,
-    url,
-    requestInit,
-    responseType,
     skipErrorToast,
-    onResponseHeaders,
     verificationAction,
     verificationResourceId,
     skipChallengeRetry = false,
@@ -181,6 +310,7 @@ async function handleForbiddenResponse<T>(options: {
           detail: { turnstile_site_key: siteKey },
         })
       )
+
       reportClientEvent(
         'client.challenge.prompted',
         {
@@ -194,6 +324,7 @@ async function handleForbiddenResponse<T>(options: {
       if (!skipChallengeRetry) {
         const { requestClientChallenge } = await import('./clientChallengeBridge')
         const verified = await requestClientChallenge(siteKey)
+
         if (verified) {
           return request<T>(endpoint, {
             ...config,
@@ -215,7 +346,7 @@ async function handleForbiddenResponse<T>(options: {
       const { body: retryBody, headers: retryHeaders } = withVerificationToken(
         method,
         body,
-        headers,
+        config.headers ?? {},
         verificationToken
       )
 
@@ -227,38 +358,17 @@ async function handleForbiddenResponse<T>(options: {
       })
     }
 
-    if (isSignatureErrorResponse(errorCode, errorMessage)) {
-      const retryWithNewCredentials = async (): Promise<T> => {
-        await rebuildClientSecurityHeaders(headers, { method, url })
-
-        const retryResponse = await fetchWithTimeout(
-          url,
-          {
-            ...requestInit,
-            headers,
-          },
-          timeout,
-          true
-        )
-
-        if (!retryResponse.ok) {
-          if (retryResponse.status === 304) {
-            return parseSuccessfulResponse<T>(retryResponse, responseType)
-          }
-          await handleErrorResponse(retryResponse, skipErrorToast)
-        }
-
-        onResponseHeaders?.(retryResponse.headers)
-        return parseSuccessfulResponse<T>(retryResponse, responseType)
-      }
-
+    if (isSignatureErrorResponse(errorCode, errorMessage) && !config.skipClientSignatureRetry) {
       if (!isCredentialRefreshInProgress()) {
         setCredentialRefreshInProgress(true)
         try {
           await refreshClientSecurityCredentials()
           setCredentialRefreshInProgress(false)
           onCredentialsRefreshed()
-          return await retryWithNewCredentials()
+          return request<T>(endpoint, {
+            ...config,
+            skipClientSignatureRetry: true,
+          })
         } catch (initError) {
           setCredentialRefreshInProgress(false)
           const refreshError =
@@ -266,16 +376,13 @@ async function handleForbiddenResponse<T>(options: {
           onCredentialsRefreshFailed(refreshError)
         }
       } else {
-        try {
-          await new Promise<void>((resolve, reject) => {
-            subscribeCredentialRefresh(resolve, reject)
-          })
-          return await retryWithNewCredentials()
-        } catch (queueError) {
-          if (queueError instanceof ApiError) {
-            throw queueError
-          }
-        }
+        await new Promise<void>((resolve, reject) => {
+          subscribeCredentialRefresh(resolve, reject)
+        })
+        return request<T>(endpoint, {
+          ...config,
+          skipClientSignatureRetry: true,
+        })
       }
     }
 
@@ -315,48 +422,58 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     skipVerificationRetry = false,
     headers: customHeaders = {},
     body,
+    skipUnauthorizedRetry = false,
+    skipClientReinitRetry = false,
+    skipClientSignatureRetry = false,
     ...fetchConfig
   } = config
 
-  const headers: HeadersInit = { ...customHeaders }
   const method = fetchConfig.method?.toUpperCase() || 'GET'
-  const isFormData = body instanceof FormData
-  const shouldSetContentType = body && !isFormData && ['POST', 'PUT', 'PATCH'].includes(method)
-
-  if (shouldSetContentType) {
-    ;(headers as Record<string, string>)['Content-Type'] = 'application/json'
-  }
-
-  let hadToken = false
-  if (!skipAuth) {
-    const token = await getAccessTokenAsync()
-    if (token) {
-      hadToken = true
-      ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
-    }
-  }
-
   const url = buildRequestUrl(endpoint, baseUrl)
+  const requestHeaders: Record<string, string> = { ...(customHeaders as Record<string, string>) }
+  const serializedBody = await serializeRequestBody(body)
+  const accessToken = !skipAuth ? getRuntimeAccessToken() : null
+  const requestId = applyRequestSecurityHeaders(requestHeaders, method, url, config)
+
+  if (serializedBody.contentType && !requestHeaders['Content-Type']) {
+    requestHeaders['Content-Type'] = serializedBody.contentType
+  }
+
+  if (
+    serializedBody.body &&
+    !serializedBody.contentType &&
+    !requestHeaders['Content-Type'] &&
+    ['POST', 'PUT', 'PATCH'].includes(method)
+  ) {
+    requestHeaders['Content-Type'] = 'application/json'
+  }
+
+  if (accessToken) {
+    requestHeaders['Authorization'] = `Bearer ${accessToken}`
+  }
 
   if (!skipSecurity) {
     try {
-      await attachClientSecurityHeaders(headers, { method, url, hadToken })
+      await attachClientSecurityHeaders(requestHeaders, {
+        method,
+        url,
+        hadToken: Boolean(accessToken),
+        bodyBytes: serializedBody.bodyBytes,
+      })
     } catch (error) {
       if (error instanceof ApiError && error.code === 'CHALLENGE_REQUIRED') {
-        reportClientEvent(
-          'client.challenge.required',
-          { endpoint, method: config.method ?? 'GET' },
-          { severity: 'warn' }
-        )
-        throw error
+        reportClientEvent('client.challenge.required', { endpoint, method }, { severity: 'warn' })
       }
+
+      throw error
     }
   }
 
   const requestInit: RequestInit = {
     ...fetchConfig,
-    body: body ?? null,
-    headers,
+    method,
+    body: serializedBody.body,
+    headers: requestHeaders,
     credentials: 'include',
   }
 
@@ -381,81 +498,88 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       }
     }
 
+    if (isClientUpgradeRequired(response)) {
+      triggerHardReloadGate()
+    }
+
+    const errorMeta = response.ok ? null : await readErrorMeta(response)
+
+    if (
+      !response.ok &&
+      isClientReinitRequired(response) &&
+      errorMeta?.code !== 'PERMISSION_VERSION_STALE'
+    ) {
+      const retried = await retryAfterClientReinit<T>(
+        endpoint,
+        {
+          ...config,
+          headers: requestHeaders,
+          body,
+          skipClientSignatureRetry,
+        },
+        !skipClientReinitRetry
+      )
+
+      if (retried !== null) {
+        return retried
+      }
+    }
+
     if (response.status === 304) {
       onResponseHeaders?.(response.headers)
       return parseSuccessfulResponse<T>(response, responseType)
     }
 
-    if (response.status === 401 && !skipAuth && hadToken) {
-      if (!isTokenRefreshInProgress()) {
-        setTokenRefreshInProgress(true)
+    if (!response.ok && errorMeta?.code === 'PERMISSION_VERSION_STALE') {
+      dispatchLogout('permission_version_stale')
+      await handleErrorResponse(response, skipErrorToast)
+    }
 
-        let nextToken: string | null = null
-        let refreshError: Error | null = null
-
-        try {
-          nextToken = await refreshAccessToken(request)
-        } catch (error) {
-          refreshError = error instanceof Error ? error : new Error('Token refresh failed')
-        } finally {
-          setTokenRefreshInProgress(false)
-        }
-
-        if (nextToken) {
-          onTokenRefreshed(nextToken)
-          return retryWithAuthToken<T>({
-            url,
-            timeout,
-            headers,
-            requestInit,
-            responseType,
-            skipErrorToast,
-            token: nextToken,
+    if (response.status === 401 && !skipAuth) {
+      if (!skipUnauthorizedRetry) {
+        const refreshed = await retryAfterAuthRefresh()
+        if (refreshed) {
+          return request<T>(endpoint, {
+            ...config,
+            skipUnauthorizedRetry: true,
+            skipClientReinitRetry,
+            skipClientSignatureRetry,
           })
         }
-
-        const authError = refreshError || new Error('Token refresh failed')
-        onTokenRefreshFailed(authError)
-        window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason: 'auth_failed' } }))
-        await handleErrorResponse(response, skipErrorToast)
       }
 
-      return new Promise<T>((resolve, reject) => {
-        subscribeTokenRefresh(async (token) => {
-          try {
-            resolve(
-              await retryWithAuthToken<T>({
-                url,
-                timeout,
-                headers,
-                requestInit,
-                responseType,
-                skipErrorToast,
-                token,
-              })
-            )
-          } catch (error) {
-            reject(error)
-          }
-        }, reject)
-      })
+      reportClientEvent(
+        'auth.session.rejected',
+        {
+          endpoint,
+          method,
+        },
+        {
+          category: 'security',
+          requestId,
+          requiresAnalyticsConsent: false,
+          severity: 'warn',
+        }
+      )
+      dispatchLogout('auth_failed')
+      await handleErrorResponse(response, skipErrorToast)
     }
 
     if (!response.ok) {
       if (response.status === 403) {
         return handleForbiddenResponse<T>({
           endpoint,
-          config,
+          config: {
+            ...config,
+            headers: requestHeaders,
+            body,
+            skipClientSignatureRetry,
+            skipClientReinitRetry,
+          },
           response,
           method,
           body,
-          headers,
-          timeout,
-          url,
-          requestInit,
-          responseType,
           skipErrorToast,
-          onResponseHeaders,
           verificationAction,
           verificationResourceId,
           skipChallengeRetry,
@@ -469,6 +593,23 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     onResponseHeaders?.(response.headers)
     return parseSuccessfulResponse<T>(response, responseType)
   } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    reportClientEvent(
+      'client.request.transport_failed',
+      {
+        endpoint,
+        method,
+      },
+      {
+        category: 'security',
+        requestId,
+        requiresAnalyticsConsent: false,
+        severity: 'warn',
+      }
+    )
     return handleTransportError(error, skipErrorToast)
   }
 }
@@ -502,14 +643,19 @@ export const apiClient = {
   },
 
   post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
-    const isFormData = data instanceof FormData
-    const body = data !== undefined ? (isFormData ? data : JSON.stringify(data)) : null
+    const body = data !== undefined ? ((data as BodyInit) ?? null) : null
 
     return request<T>(endpoint, {
       ...config,
       method: 'POST',
-      body,
-      ...(isFormData ? {} : config?.headers ? { headers: config.headers } : {}),
+      body:
+        body instanceof FormData ||
+        body instanceof Blob ||
+        body instanceof URLSearchParams ||
+        typeof body === 'string' ||
+        body == null
+          ? body
+          : JSON.stringify(body),
     })
   },
 
@@ -517,7 +663,14 @@ export const apiClient = {
     return request<T>(endpoint, {
       ...config,
       method: 'PUT',
-      body: data !== undefined ? JSON.stringify(data) : null,
+      body:
+        data instanceof FormData ||
+        data instanceof Blob ||
+        data instanceof URLSearchParams ||
+        typeof data === 'string' ||
+        data == null
+          ? (data as BodyInit | null | undefined)
+          : JSON.stringify(data),
     })
   },
 
@@ -525,7 +678,14 @@ export const apiClient = {
     return request<T>(endpoint, {
       ...config,
       method: 'PATCH',
-      body: data !== undefined ? JSON.stringify(data) : null,
+      body:
+        data instanceof FormData ||
+        data instanceof Blob ||
+        data instanceof URLSearchParams ||
+        typeof data === 'string' ||
+        data == null
+          ? (data as BodyInit | null | undefined)
+          : JSON.stringify(data),
     })
   },
 

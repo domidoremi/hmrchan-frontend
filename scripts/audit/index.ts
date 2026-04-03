@@ -14,6 +14,7 @@ import apiContractAudit from './api-contract'
 import envConfigAudit from './env-config'
 import frontendPatternsAudit from './frontend-patterns'
 import authSurfaceAudit from './auth-surface'
+import legacyAlignmentAudit from './legacy-alignment'
 
 // --- Module registry ---
 const modules: AuditModule[] = [
@@ -28,6 +29,7 @@ const modules: AuditModule[] = [
   cssAudit,
   i18nAudit,
   apiContractAudit,
+  legacyAlignmentAudit,
   envConfigAudit,
   authSurfaceAudit,
   frontendPatternsAudit,

@@ -27,7 +27,7 @@ export const CACHE_NAMES = {
   posts: `hmrchan-posts-${CACHE_VERSION}`,
 } as const
 
-const API_HOSTNAMES = ['api.momichan.xyz']
+const API_HOSTNAMES: string[] = []
 
 export const RUNTIME_CONFIG = {
   apiBase: null as string | null,

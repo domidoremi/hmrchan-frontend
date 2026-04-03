@@ -93,7 +93,7 @@ async function buildExportAccountBlob(response: Response): Promise<Blob> {
  *
  * 后端返回格式: /uploads/avatars/xxx.jpg
  * 通过 Cloudflare Pages 代理访问: /uploads/avatars/xxx.jpg
- * 代理会转发到: https://api.momichan.xyz/uploads/avatars/xxx.jpg
+ * 代理会再转发到后端 uploads 服务
  */
 export function normalizeAvatarUrl(url: string | null | undefined): string | null {
   if (!url) return null

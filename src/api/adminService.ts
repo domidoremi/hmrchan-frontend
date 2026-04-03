@@ -24,7 +24,6 @@ export interface DbHealth {
 }
 
 export interface SystemStats {
-  total_users: number
   total_posts: number
   total_comments: number
   total_discussions: number

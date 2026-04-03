@@ -73,7 +73,7 @@ export async function trackPostView(postId: string, isAuthenticated: boolean): P
 
     // 2. 如果已登录，记录浏览历史
     if (isAuthenticated) {
-      tasks.push(historyService.recordBrowsing('post', 0, { content_uuid: postId }))
+      tasks.push(historyService.recordBrowsing('post', postId))
     }
 
     await Promise.allSettled(tasks)

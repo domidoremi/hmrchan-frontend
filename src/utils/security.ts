@@ -6,6 +6,35 @@
 
 import DOMPurify from 'dompurify'
 
+let domPurifyHooksConfigured = false
+
+function configureDomPurifyHooks(): void {
+  if (domPurifyHooksConfigured) return
+
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (!(node instanceof Element)) return
+
+    if (node.hasAttribute('href')) {
+      const href = node.getAttribute('href') ?? ''
+      const loweredHref = href.trim().toLowerCase()
+      if (loweredHref.startsWith('javascript:')) {
+        node.removeAttribute('href')
+      } else if (/^https?:\/\//i.test(href)) {
+        node.setAttribute('rel', 'noopener noreferrer nofollow')
+      }
+    }
+
+    if (node.hasAttribute('src')) {
+      const src = node.getAttribute('src') ?? ''
+      if (src.trim().toLowerCase().startsWith('javascript:')) {
+        node.removeAttribute('src')
+      }
+    }
+  })
+
+  domPurifyHooksConfigured = true
+}
+
 // HTML 实体编码映射
 const HTML_ENTITIES: Record<string, string> = {
   '&': '&amp;',
@@ -32,6 +61,7 @@ export function escapeHtml(str: string): string {
  */
 export function sanitizeHtml(html: string): string {
   if (!html || typeof html !== 'string') return ''
+  configureDomPurifyHooks()
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
       'b',
@@ -70,7 +100,7 @@ export function sanitizeHtml(html: string): string {
       'del',
       'ins',
     ],
-    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'width', 'height'],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'width', 'height', 'rel'],
     ALLOW_DATA_ATTR: false,
   })
 }
@@ -283,12 +313,7 @@ export function safeJsonParse<T = unknown>(json: string): T | null {
 // ==================== Open Redirect 防护 ====================
 
 /** 允许重定向的域名白名单 */
-const REDIRECT_WHITELIST = [
-  'momichan.xyz',
-  'www.momichan.xyz',
-  'himeri.momichan.xyz',
-  'api.momichan.xyz',
-]
+const REDIRECT_WHITELIST = ['momichan.xyz', 'www.momichan.xyz', 'himeri.momichan.xyz']
 
 /**
  * 校验重定向 URL 是否安全（仅允许同站或白名单域名）

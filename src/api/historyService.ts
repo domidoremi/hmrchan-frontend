@@ -46,8 +46,7 @@ export type BrowsingContentType = 'post' | 'author'
 export interface BrowsingHistoryItem {
   id: string
   content_type: BrowsingContentType
-  content_id: number
-  content_uuid?: string
+  content_uuid: string
   source?: string
   duration_seconds?: number
   created_at: string
@@ -193,9 +192,8 @@ export const historyService = {
    */
   async recordBrowsing(
     contentType: BrowsingContentType,
-    contentId: number,
+    contentUuid: string,
     options?: {
-      content_uuid?: string
       source?: string
       duration_seconds?: number
     }
@@ -204,9 +202,7 @@ export const historyService = {
       '/history/browsing',
       {
         content_type: contentType,
-        // content_id 为 0 时省略，后端可能要求正整数
-        ...(contentId > 0 ? { content_id: contentId } : {}),
-        ...(options?.content_uuid ? { content_uuid: options.content_uuid } : {}),
+        content_uuid: contentUuid,
         ...(options?.source ? { source: options.source } : {}),
         ...(options?.duration_seconds != null
           ? { duration_seconds: options.duration_seconds }

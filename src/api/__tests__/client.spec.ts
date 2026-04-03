@@ -1,9 +1,6 @@
-/**
- * API Client 单元测试
- */
-
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, apiClient } from '../client'
+import { clearAuthRuntimeSession, establishAuthRuntimeSession } from '../client/auth-runtime'
 
 const mockGetDeviceFingerprint = vi.hoisted(() => vi.fn(async () => 'fingerprint-123'))
 const mockClientSecurity = vi.hoisted(() => ({
@@ -14,12 +11,12 @@ const mockClientSecurity = vi.hoisted(() => ({
   getClientSecret: vi.fn(() => null),
   signRequest: vi.fn(() => Promise.resolve('mock-signature')),
 }))
+const mockEnsureVerificationToken = vi.hoisted(() => vi.fn())
+const mockReportClientEvent = vi.hoisted(() => vi.fn())
+const mockFetch = vi.hoisted(() => vi.fn())
 
-// Mock fetch
-const mockFetch = vi.fn()
 global.fetch = mockFetch
 
-// Mock localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {}
   return {
@@ -35,9 +32,9 @@ const localStorageMock = (() => {
     }),
   }
 })()
+
 Object.defineProperty(global, 'localStorage', { value: localStorageMock })
 
-// Mock i18n
 vi.mock('@/i18n', () => ({
   default: {
     global: {
@@ -46,7 +43,6 @@ vi.mock('@/i18n', () => ({
   },
 }))
 
-// Mock toast store
 vi.mock('@/stores/toast', () => ({
   useToastStore: () => ({
     error: vi.fn(),
@@ -54,36 +50,10 @@ vi.mock('@/stores/toast', () => ({
   }),
 }))
 
-// Mock secure token manager - use vi.hoisted to avoid hoisting issues
-const mockSecureTokenManager = vi.hoisted(() => ({
-  retrieve: vi.fn(() => Promise.resolve(null)),
-  retrieveState: vi.fn(() =>
-    Promise.resolve({
-      token: null,
-      state: 'missing',
-    })
-  ),
-  store: vi.fn(() => Promise.resolve()),
-  clear: vi.fn(),
-}))
-
-vi.mock('@/utils/tokenSecurity', () => ({
-  secureTokenManager: mockSecureTokenManager,
-}))
-
 vi.mock('@/utils/fingerprint', () => ({
   getDeviceFingerprint: mockGetDeviceFingerprint,
 }))
 
-// Mock memory cache
-vi.mock('@/utils/cache', () => ({
-  memoryCache: {
-    get: vi.fn(() => undefined),
-    set: vi.fn(),
-  },
-}))
-
-const mockEnsureVerificationToken = vi.fn()
 vi.mock('../verificationBridge', () => ({
   ensureVerificationToken: mockEnsureVerificationToken,
 }))
@@ -101,8 +71,50 @@ vi.mock('../clientSecurityService', () => ({
   signRequest: mockClientSecurity.signRequest,
 }))
 
+vi.mock('@/utils/clientReporter', () => ({
+  reportClientEvent: mockReportClientEvent,
+}))
+
+function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
+  const headers = new Headers(init.headers)
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  return new Response(JSON.stringify(body), {
+    ...init,
+    headers,
+  })
+}
+
+function clearCsrfCookie() {
+  document.cookie =
+    '__Host-momi_origin_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax'
+}
+
+function getLastRequestInit(): RequestInit & { headers: Record<string, string> } {
+  return (mockFetch.mock.calls.at(-1)?.[1] ?? {}) as RequestInit & {
+    headers: Record<string, string>
+  }
+}
+
+function createAccessToken(overrides: Record<string, unknown> = {}): string {
+  const payload = {
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    permissions: ['profile.read'],
+    permission_version: 1,
+    ...overrides,
+  }
+
+  return [
+    Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url'),
+    Buffer.from(JSON.stringify(payload)).toString('base64url'),
+    'signature',
+  ].join('.')
+}
+
 describe('ApiError', () => {
-  it('should create error with correct properties', () => {
+  it('creates an error with the expected properties', () => {
     const error = new ApiError('Test error', 404, 'NOT_FOUND', { id: 1 })
 
     expect(error.message).toBe('Test error')
@@ -112,7 +124,7 @@ describe('ApiError', () => {
     expect(error.name).toBe('ApiError')
   })
 
-  it('should create error without optional properties', () => {
+  it('supports optional error metadata', () => {
     const error = new ApiError('Test error', 500)
 
     expect(error.message).toBe('Test error')
@@ -126,7 +138,8 @@ describe('apiClient', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.clear()
-    mockSecureTokenManager.retrieve.mockResolvedValue(null)
+    clearCsrfCookie()
+    clearAuthRuntimeSession()
     mockGetDeviceFingerprint.mockResolvedValue('fingerprint-123')
     mockClientSecurity.ensureInitialized.mockResolvedValue(undefined)
     mockClientSecurity.init.mockResolvedValue({ trust_level: 'untrusted' })
@@ -138,18 +151,18 @@ describe('apiClient', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    clearCsrfCookie()
+    clearAuthRuntimeSession()
   })
 
   describe('GET requests', () => {
-    it('should make GET request successfully', async () => {
-      const mockData = { success: true, data: { id: 1, name: 'Test' }, meta: { api_version: '1' } }
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(mockData),
-      })
+    it('makes a GET request with cookie-session transport headers', async () => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse({ success: true, data: { id: 1, name: 'Test' }, meta: { api_version: '1' } })
+      )
 
       const result = await apiClient.get('/test')
+      const requestInit = getLastRequestInit()
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/v1/test',
@@ -158,21 +171,20 @@ describe('apiClient', () => {
           credentials: 'include',
         })
       )
+      expect(requestInit.headers['X-Request-Id']).toEqual(expect.any(String))
+      expect(requestInit.headers['X-Client-Fingerprint']).toBe('fingerprint-123')
+      expect(requestInit.headers['Authorization']).toBeUndefined()
       expect(result).toEqual({ id: 1, name: 'Test' })
     })
 
-    it('should normalize paginated array responses', async () => {
-      const mockData = {
-        success: true,
-        data: [{ id: 1 }, { id: 2 }],
-        pagination: { page: 1, page_size: 20, total: 2, total_pages: 1 },
-        meta: { api_version: '1' },
-      }
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(mockData),
-      })
+    it('normalizes paginated array envelopes', async () => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: [{ id: 1 }, { id: 2 }],
+          pagination: { page: 1, page_size: 20, total: 2, total_pages: 1 },
+        })
+      )
 
       const result = await apiClient.get('/test')
 
@@ -185,78 +197,25 @@ describe('apiClient', () => {
       })
     })
 
-    it('should keep raw responses when no envelope is present', async () => {
-      const mockData = { id: 1, name: 'Raw' }
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(mockData),
-      })
+    it('keeps raw JSON when no API envelope is present', async () => {
+      const payload = { id: 1, name: 'Raw' }
+      mockFetch.mockResolvedValueOnce(jsonResponse(payload))
 
       const result = await apiClient.get('/raw')
 
-      expect(result).toEqual(mockData)
+      expect(result).toEqual(payload)
     })
 
-    it('should include auth header when token exists', async () => {
-      mockSecureTokenManager.retrieve.mockResolvedValueOnce('test-token-12345678')
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({}),
-      })
+    it('does not trust persisted frontend tokens for Authorization injection', async () => {
+      localStorageMock.setItem('auth', JSON.stringify({ token: 'legacy-token' }))
+      mockFetch.mockResolvedValueOnce(jsonResponse({ ok: true }))
 
       await apiClient.get('/test')
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/test',
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: 'Bearer test-token-12345678',
-          }),
-        })
-      )
+      expect(getLastRequestInit().headers['Authorization']).toBeUndefined()
     })
 
-    it('should skip auth header when skipAuth is true', async () => {
-      localStorageMock.setItem('auth', JSON.stringify({ token: 'test-token' }))
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({}),
-      })
-
-      await apiClient.get('/test', { skipAuth: true })
-
-      const callArgs = mockFetch.mock.calls[0]?.[1] as
-        | { headers: Record<string, string> }
-        | undefined
-      expect(callArgs?.headers['Authorization']).toBeUndefined()
-    })
-
-    it('should attach client fingerprint for public GET requests', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () =>
-          Promise.resolve({ success: true, data: { ok: true }, meta: { api_version: '1' } }),
-      })
-
-      await apiClient.get('/posts')
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/posts',
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            'X-Client-Fingerprint': 'fingerprint-123',
-          }),
-        })
-      )
-    })
-
-    it('should forward external abort signals to fetch', async () => {
+    it('forwards external abort signals to fetch', async () => {
       let capturedSignal: AbortSignal | undefined
       let rejectFetch: ((reason?: unknown) => void) | undefined
       mockFetch.mockImplementationOnce((_url: string, init?: RequestInit) => {
@@ -277,151 +236,103 @@ describe('apiClient', () => {
       await vi.waitFor(() => {
         expect(rejectFetch).toBeTypeOf('function')
       })
+
       controller.abort()
       rejectFetch?.(new DOMException('Aborted', 'AbortError'))
 
       await expect(requestPromise).rejects.toBeInstanceOf(Error)
-      expect(capturedSignal).toBeDefined()
       expect(capturedSignal?.aborted).toBe(true)
     })
   })
 
-  describe('POST requests', () => {
-    it('should make POST request with JSON body', async () => {
+  describe('mutating requests', () => {
+    it('adds request-id, contract and idempotency headers for protected POST requests', async () => {
       const requestData = { name: 'Test' }
-      const responseData = { id: 1, name: 'Test' }
+      mockFetch.mockResolvedValueOnce(jsonResponse({ id: 1, name: 'Test' }, { status: 201 }))
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 201,
-        json: () => Promise.resolve(responseData),
+      const result = await apiClient.post('/contact/send', requestData, {
+        securityPolicy: 'sensitive',
       })
-
-      const result = await apiClient.post('/test', requestData)
+      const requestInit = getLastRequestInit()
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/test',
+        '/api/v1/contact/send',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(requestData),
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-          }),
         })
       )
-      expect(result).toEqual(responseData)
+      expect(requestInit.headers['Content-Type']).toBe('application/json')
+      expect(requestInit.headers['X-Request-Id']).toEqual(expect.any(String))
+      expect(requestInit.headers['Idempotency-Key']).toEqual(expect.any(String))
+      expect(requestInit.headers['X-Security-Policy']).toBe('sensitive')
+      expect(result).toEqual({ id: 1, name: 'Test' })
     })
 
-    it('should handle FormData without Content-Type header', async () => {
+    it('serializes FormData into a signed multipart payload', async () => {
       const formData = new FormData()
       formData.append('file', new Blob(['test']), 'test.txt')
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ success: true }),
-      })
+      mockFetch.mockResolvedValueOnce(jsonResponse({ success: true }))
 
       await apiClient.post('/upload', formData)
 
-      const callArgs = mockFetch.mock.calls[0]?.[1] as
-        | { headers: Record<string, string> }
-        | undefined
-      // FormData 不应设置 Content-Type，让浏览器自动设置
-      expect(callArgs?.headers['Content-Type']).toBeUndefined()
+      expect(getLastRequestInit().headers['Content-Type']).toMatch(
+        /^multipart\/form-data; boundary=----momi-/
+      )
+      expect(getLastRequestInit().body).toBeInstanceOf(Uint8Array)
     })
-  })
 
-  describe('PUT requests', () => {
-    it('should make PUT request', async () => {
-      const requestData = { name: 'Updated' }
+    it('supports PUT, PATCH and DELETE with the unified request contract', async () => {
+      mockFetch
+        .mockResolvedValueOnce(jsonResponse({ name: 'Updated' }))
+        .mockResolvedValueOnce(jsonResponse({ name: 'Patched' }))
+        .mockResolvedValueOnce(new Response(null, { status: 204, headers: new Headers() }))
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(requestData),
-      })
-
-      await apiClient.put('/test/1', requestData)
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/test/1',
+      await apiClient.put('/test/1', { name: 'Updated' })
+      expect(getLastRequestInit()).toEqual(
         expect.objectContaining({
           method: 'PUT',
-          body: JSON.stringify(requestData),
+          body: JSON.stringify({ name: 'Updated' }),
         })
       )
-    })
-  })
 
-  describe('PATCH requests', () => {
-    it('should make PATCH request', async () => {
-      const requestData = { name: 'Patched' }
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(requestData),
-      })
-
-      await apiClient.patch('/test/1', requestData)
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/test/1',
+      await apiClient.patch('/test/1', { name: 'Patched' })
+      expect(getLastRequestInit()).toEqual(
         expect.objectContaining({
           method: 'PATCH',
-          body: JSON.stringify(requestData),
+          body: JSON.stringify({ name: 'Patched' }),
         })
       )
-    })
-  })
 
-  describe('DELETE requests', () => {
-    it('should make DELETE request', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 204,
-      })
-
-      await apiClient.delete('/test/1')
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/test/1',
+      const deleted = await apiClient.delete('/test/1')
+      expect(getLastRequestInit()).toEqual(
         expect.objectContaining({
           method: 'DELETE',
         })
       )
+      expect(deleted).toBeUndefined()
     })
   })
 
-  describe('Error handling', () => {
-    it('should throw ApiError on 404 response', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        json: () => Promise.resolve({ detail: 'Not found' }),
-      })
+  describe('error handling', () => {
+    it('throws ApiError for 404 responses', async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse({ detail: 'Not found' }, { status: 404 }))
 
       await expect(apiClient.get('/not-found')).rejects.toThrow(ApiError)
     })
 
-    it('should throw ApiError on 500 response', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        json: () => Promise.resolve({ detail: 'Server error' }),
-      })
+    it('throws ApiError for 500 responses', async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse({ detail: 'Server error' }, { status: 500 }))
 
       await expect(apiClient.get('/error')).rejects.toThrow(ApiError)
     })
 
-    it('should treat Cloudflare tunnel HTML errors as service unavailable', async () => {
+    it('treats Cloudflare tunnel HTML failures as service unavailable', async () => {
       const cloudflareTunnelHtml = `
         <html>
           <body>
             <h1>Error 1033</h1>
             <h2>Cloudflare Tunnel error</h2>
-            <p>The host is configured as a Cloudflare Tunnel, and Cloudflare is currently unable to resolve it.</p>
           </body>
         </html>
       `
@@ -429,7 +340,9 @@ describe('apiClient', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
-        headers: new Headers(),
+        headers: new Headers({
+          'Content-Type': 'text/html; charset=utf-8',
+        }),
         json: () => Promise.reject(new SyntaxError('Unexpected token < in JSON')),
         text: () => Promise.resolve(cloudflareTunnelHtml),
         clone() {
@@ -443,26 +356,16 @@ describe('apiClient', () => {
       })
     })
 
-    it('should retry JSON request after verification is required', async () => {
+    it('retries JSON requests after verification is required', async () => {
       mockEnsureVerificationToken.mockResolvedValueOnce('verification-token-1')
-
       mockFetch
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 403,
-          headers: new Headers({ 'X-Verification-Required': 'true' }),
-          json: () => Promise.resolve({ detail: 'verification required' }),
-          clone() {
-            return this
-          },
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          headers: new Headers(),
-          json: () =>
-            Promise.resolve({ success: true, data: { ok: true }, meta: { api_version: '1' } }),
-        })
+        .mockResolvedValueOnce(
+          jsonResponse(
+            { detail: 'verification required' },
+            { status: 403, headers: { 'X-Verification-Required': 'true' } }
+          )
+        )
+        .mockResolvedValueOnce(jsonResponse({ success: true, data: { ok: true } }))
 
       const result = await apiClient.post(
         '/sensitive',
@@ -482,24 +385,16 @@ describe('apiClient', () => {
       )
     })
 
-    it('should retry DELETE request with verification header', async () => {
+    it('retries DELETE requests with a verification header', async () => {
       mockEnsureVerificationToken.mockResolvedValueOnce('verification-token-2')
-
       mockFetch
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 403,
-          headers: new Headers({ 'X-Verification-Required': 'true' }),
-          json: () => Promise.resolve({ detail: 'verification required' }),
-          clone() {
-            return this
-          },
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 204,
-          headers: new Headers(),
-        })
+        .mockResolvedValueOnce(
+          jsonResponse(
+            { detail: 'verification required' },
+            { status: 403, headers: { 'X-Verification-Required': 'true' } }
+          )
+        )
+        .mockResolvedValueOnce(new Response(null, { status: 204, headers: new Headers() }))
 
       const result = await apiClient.delete('/devices/1', {
         verificationAction: 'revoke_sessions',
@@ -509,7 +404,6 @@ describe('apiClient', () => {
       expect(mockEnsureVerificationToken).toHaveBeenCalledWith('revoke_sessions', {
         resourceId: undefined,
       })
-      expect(mockFetch).toHaveBeenCalledTimes(2)
       expect(mockFetch.mock.calls[1]?.[1]).toEqual(
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -518,18 +412,27 @@ describe('apiClient', () => {
         })
       )
     })
-  })
 
-  describe('204 No Content', () => {
-    it('should handle 204 response', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 204,
+    it('dispatches auth:logout on authenticated 401 responses', async () => {
+      const logoutHandler = vi.fn()
+      window.addEventListener('auth:logout', logoutHandler)
+      establishAuthRuntimeSession({
+        access_token: createAccessToken(),
+        expires_in: 3600,
+        refresh_threshold: 300,
+        permission_version: 1,
       })
+      mockFetch
+        .mockResolvedValueOnce(jsonResponse({ detail: 'Unauthorized' }, { status: 401 }))
+        .mockResolvedValueOnce(jsonResponse({ detail: 'Unauthorized' }, { status: 401 }))
 
-      const result = await apiClient.delete('/test/1')
+      await expect(apiClient.get('/profile')).rejects.toThrow(ApiError)
 
-      expect(result).toBeUndefined()
+      expect(logoutHandler).toHaveBeenCalledTimes(1)
+      expect(logoutHandler.mock.calls[0]?.[0]).toMatchObject({
+        detail: { reason: 'auth_failed' },
+      })
+      window.removeEventListener('auth:logout', logoutHandler)
     })
   })
 })

@@ -16,6 +16,8 @@ import {
 import { resolveHtmlDocumentWithEdgeData } from '../src/edge/detailDocumentResolver'
 
 const CANONICAL_HOSTNAME = 'momichan.xyz'
+const CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
+const REPORTING_ENDPOINT_GROUP = 'csp-endpoint'
 const REDIRECT_HOSTNAMES = new Set(['www.momichan.xyz'])
 const AUTH_ROUTE_PATHS = new Set([
   '/login',
@@ -46,10 +48,11 @@ function buildCSP(nonce: string): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://static.cloudflareinsights.com https://challenges.cloudflare.com`,
+    "script-src-attr 'none'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.momichan.xyz https://api.dicebear.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://pbs.twimg.com https://i.ytimg.com",
+    "connect-src 'self' https://api.dicebear.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://pbs.twimg.com https://i.ytimg.com",
     "media-src 'self' blob:",
     "object-src 'none'",
     "worker-src 'self' blob:",
@@ -57,6 +60,8 @@ function buildCSP(nonce: string): string {
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self'",
+    'report-uri /csp-report',
+    `report-to ${REPORTING_ENDPOINT_GROUP}`,
     'upgrade-insecure-requests',
   ].join('; ')
 }
@@ -71,6 +76,29 @@ const HTML_SECURITY_HEADERS = {
   'Permissions-Policy':
     'camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), midi=(), usb=(), display-capture=(), screen-wake-lock=(), xr-spatial-tracking=(), clipboard-read=(), clipboard-write=(self), autoplay=(self)',
 } as const
+
+function toBase64Url(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '')
+}
+
+function hasCookie(request: Request, cookieName: string): boolean {
+  const cookieHeader = request.headers.get('Cookie') ?? request.headers.get('cookie') ?? ''
+  return cookieHeader.split(';').some((segment) => segment.trim().startsWith(`${cookieName}=`))
+}
+
+function ensureCsrfCookie(request: Request, headers: Headers): void {
+  if (hasCookie(request, CSRF_COOKIE_NAME)) return
+
+  const bytes = new Uint8Array(24)
+  crypto.getRandomValues(bytes)
+  headers.append(
+    'Set-Cookie',
+    `${CSRF_COOKIE_NAME}=${toBase64Url(bytes)}; Path=/; Secure; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}`
+  )
+}
 
 class ScriptNonceHandler {
   constructor(private readonly nonce: string) {}
@@ -221,9 +249,18 @@ export async function onRequest(
     headers.delete(headerName)
   })
   headers.set('Content-Security-Policy', buildCSP(nonce))
+  headers.set(
+    'Report-To',
+    JSON.stringify({
+      group: REPORTING_ENDPOINT_GROUP,
+      max_age: 10886400,
+      endpoints: [{ url: '/csp-report' }],
+    })
+  )
   Object.entries(HTML_SECURITY_HEADERS).forEach(([key, value]) => {
     headers.set(key, value)
   })
+  ensureCsrfCookie(context.request, headers)
   if (isAuthRoutePath(requestUrl.pathname)) {
     headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
   }

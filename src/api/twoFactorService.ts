@@ -90,6 +90,7 @@ export const twoFactorService = {
   async setup(): Promise<TwoFactorSetupResponse> {
     const verificationToken = await ensureVerificationToken('update_security_settings')
     return apiClient.post<TwoFactorSetupResponse>('/2fa/setup', null, {
+      securityPolicy: 'sensitive',
       headers: {
         'X-Verification-Token': verificationToken,
       },
@@ -105,6 +106,7 @@ export const twoFactorService = {
       '/2fa/verify',
       { code },
       {
+        securityPolicy: 'sensitive',
         skipErrorToast: true,
       }
     )
@@ -129,6 +131,7 @@ export const twoFactorService = {
         verification_token: verificationToken,
       },
       {
+        securityPolicy: 'sensitive',
         skipErrorToast: true,
       }
     )
@@ -167,6 +170,7 @@ export const twoFactorService = {
         verification_token: verificationToken,
       },
       {
+        securityPolicy: 'sensitive',
         skipErrorToast: true,
       }
     )
@@ -180,6 +184,7 @@ export const twoFactorService = {
       '/2fa/webauthn/register/options',
       deviceName ? { device_name: deviceName } : {},
       {
+        securityPolicy: 'sensitive',
         headers: {
           'X-Verification-Token': verificationToken,
         },
@@ -201,6 +206,7 @@ export const twoFactorService = {
         ...(deviceName ? { device_name: deviceName } : {}),
       },
       {
+        securityPolicy: 'sensitive',
         skipErrorToast: true,
       }
     )

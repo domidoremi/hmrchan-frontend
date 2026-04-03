@@ -5,8 +5,10 @@
  * 用于访问需要认证的用户头像等上传文件
  */
 
+import { resolveConfiguredApiBaseUrl } from '../../src/edge/upstream'
+
 interface Env {
-  API_BASE_URL: string
+  API_BASE_URL?: string
 }
 
 type CFPagesContext = {
@@ -19,7 +21,10 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   const { request, env, params } = context
 
   // 获取后端地址
-  const apiBaseUrl = env.API_BASE_URL || 'https://api.momichan.xyz'
+  const apiBaseUrl = resolveConfiguredApiBaseUrl(env)
+  if (!apiBaseUrl) {
+    return new Response('Uploads proxy is not configured', { status: 500 })
+  }
 
   // 构建目标 URL
   const path = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
