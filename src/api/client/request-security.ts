@@ -67,10 +67,6 @@ export function applyRequestSecurityHeaders(
 
   targetHeaders['X-Request-Id'] = requestId
 
-  if (config.securityPolicy) {
-    targetHeaders['X-Security-Policy'] = config.securityPolicy
-  }
-
   if (shouldAttachContractVersion(pathname) && typeof __CLIENT_CONTRACT_VERSION__ === 'string') {
     const version = __CLIENT_CONTRACT_VERSION__.trim()
     if (version) {

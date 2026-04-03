@@ -72,6 +72,7 @@
 - `X-Nonce` 现在是强制项，只要请求签名就必须发送
 - `X-Content-SHA256` 也是强制项
 - Google `exchange` 与 `confirm-link` 已纳入正式签名链路，不再 exempt
+- 旧 `/api/auth/google/*` 已退役；前端不要再保留任何 fallback
 
 ## 5. 哪些请求现在强制 `Idempotency-Key`
 
@@ -175,6 +176,14 @@
 4. `POST /api/v1/client/init`
 5. `POST /api/v1/auth/google/exchange`，带完整 V2 签名头
 6. 如进入 link flow，`POST /api/v1/auth/google/confirm-link` 也必须带完整 V2 签名头与 `Idempotency-Key`
+
+### 9.3 Popup bridge 安全边界
+
+- popup callback 页只桥接 `handoff_code/error`
+- `postMessage` 目标 origin 在生产固定为 `https://momichan.xyz`
+- 禁止使用 `*`
+- opener 监听消息时必须校验 `event.origin`
+- popup callback 页不自行执行 `google/exchange`
 
 ## 10. 前端不要再依赖的假设
 

@@ -265,7 +265,7 @@ describe('apiClient', () => {
       expect(requestInit.headers['Content-Type']).toBe('application/json')
       expect(requestInit.headers['X-Request-Id']).toEqual(expect.any(String))
       expect(requestInit.headers['Idempotency-Key']).toEqual(expect.any(String))
-      expect(requestInit.headers['X-Security-Policy']).toBe('sensitive')
+      expect(requestInit.headers['X-Security-Policy']).toBeUndefined()
       expect(result).toEqual({ id: 1, name: 'Test' })
     })
 
@@ -432,6 +432,99 @@ describe('apiClient', () => {
       expect(logoutHandler.mock.calls[0]?.[0]).toMatchObject({
         detail: { reason: 'auth_failed' },
       })
+      window.removeEventListener('auth:logout', logoutHandler)
+    })
+
+    it('uses a single refresh request for concurrent 401 responses', async () => {
+      establishAuthRuntimeSession({
+        access_token: createAccessToken(),
+        expires_in: 3600,
+        refresh_threshold: 300,
+        permission_version: 1,
+      })
+
+      let profileAttempts = 0
+      let settingsAttempts = 0
+      let refreshAttempts = 0
+
+      mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = String(input)
+
+        if (url.endsWith('/api/v1/profile')) {
+          profileAttempts += 1
+          if (profileAttempts === 1) {
+            return jsonResponse({ detail: 'Unauthorized' }, { status: 401 })
+          }
+          return jsonResponse({ success: true, data: { profile: true } })
+        }
+
+        if (url.endsWith('/api/v1/settings')) {
+          settingsAttempts += 1
+          if (settingsAttempts === 1) {
+            return jsonResponse({ detail: 'Unauthorized' }, { status: 401 })
+          }
+          return jsonResponse({ success: true, data: { settings: true } })
+        }
+
+        if (url.endsWith('/api/v1/auth/refresh')) {
+          refreshAttempts += 1
+          await new Promise((resolve) => setTimeout(resolve, 25))
+          return jsonResponse({
+            access_token: createAccessToken({ permission_version: 2 }),
+            token_type: 'bearer',
+            expires_in: 3600,
+            refresh_threshold: 300,
+            permission_version: 2,
+          })
+        }
+
+        throw new Error(`Unexpected URL: ${url}`)
+      })
+
+      const [profile, settings] = await Promise.all([
+        apiClient.get('/profile'),
+        apiClient.get('/settings'),
+      ])
+
+      expect(profile).toEqual({ profile: true })
+      expect(settings).toEqual({ settings: true })
+      expect(refreshAttempts).toBe(1)
+      expect(profileAttempts).toBe(2)
+      expect(settingsAttempts).toBe(2)
+    })
+
+    it('logs out when refresh transport fails', async () => {
+      const logoutHandler = vi.fn()
+      window.addEventListener('auth:logout', logoutHandler)
+
+      establishAuthRuntimeSession({
+        access_token: createAccessToken(),
+        expires_in: 3600,
+        refresh_threshold: 300,
+        permission_version: 1,
+      })
+
+      mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = String(input)
+
+        if (url.endsWith('/api/v1/profile')) {
+          return jsonResponse({ detail: 'Unauthorized' }, { status: 401 })
+        }
+
+        if (url.endsWith('/api/v1/auth/refresh')) {
+          throw new DOMException('Aborted', 'AbortError')
+        }
+
+        throw new Error(`Unexpected URL: ${url}`)
+      })
+
+      await expect(apiClient.get('/profile')).rejects.toThrow(ApiError)
+
+      expect(logoutHandler).toHaveBeenCalledTimes(1)
+      expect(logoutHandler.mock.calls[0]?.[0]).toMatchObject({
+        detail: { reason: 'auth_failed' },
+      })
+
       window.removeEventListener('auth:logout', logoutHandler)
     })
   })

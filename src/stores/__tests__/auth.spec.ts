@@ -341,6 +341,26 @@ describe('auth store', () => {
     expect(clearPendingGoogleAuthRequest).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps invalid Google handoff failures in Google auth semantics', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(exchangeGoogleHandoff).mockRejectedValueOnce(
+      new ApiError('Google handoff expired', 401, undefined, {
+        detail: 'Invalid or expired Google handoff code',
+      })
+    )
+
+    const result = await store.completeGoogleAuth('expired-handoff')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'error',
+        error: 'auth.error.googleLoginFailed',
+        detail: 'Invalid or expired Google handoff code',
+      })
+    )
+  })
+
   it('continues into MFA when Google link confirmation requires it', async () => {
     const store = useAuthStore()
 

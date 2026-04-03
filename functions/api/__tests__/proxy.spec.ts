@@ -135,7 +135,7 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('content-encoding')).toBeNull()
   })
 
-  it('preserves browser redirects for google auth start and rewrites redirect_uri to the app origin', async () => {
+  it('preserves browser redirects for google auth start and keeps the upstream redirect_uri', async () => {
     const publicFetch = vi.fn().mockResolvedValue(
       new Response(null, {
         status: 302,
@@ -163,44 +163,7 @@ describe('functions/api proxy', () => {
     expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toContain(
-      encodeURIComponent('https://momichan.xyz/api/v1/auth/google/callback')
-    )
-  })
-
-  it('rewrites legacy google auth start requests to the v1 upstream route', async () => {
-    const publicFetch = vi.fn().mockResolvedValue(
-      new Response(null, {
-        status: 302,
-        headers: {
-          Location:
-            'https://accounts.google.com/o/oauth2/v2/auth?client_id=test-client&redirect_uri=' +
-            encodeURIComponent(`${BACKEND_ORIGIN}/api/v1/auth/google/callback`) +
-            '&response_type=code',
-        },
-      })
-    )
-    vi.stubGlobal('fetch', publicFetch)
-
-    const response = await onRequest({
-      request: new Request(
-        'https://momichan.xyz/api/auth/google/start?intent=login&return_to=%2Fexplore'
-      ),
-      env: {
-        API_BASE_URL: BACKEND_ORIGIN,
-      },
-      params: {
-        path: ['auth', 'google', 'start'],
-      },
-    })
-
-    expect(publicFetch).toHaveBeenCalledTimes(1)
-    expect(publicFetch.mock.calls[0]?.[0]).toBe(
-      `${BACKEND_ORIGIN}/api/v1/auth/google/start?intent=login&return_to=%2Fexplore`
-    )
-    expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
-    expect(response.status).toBe(302)
-    expect(response.headers.get('Location')).toContain(
-      encodeURIComponent('https://momichan.xyz/api/v1/auth/google/callback')
+      encodeURIComponent(`${BACKEND_ORIGIN}/api/v1/auth/google/callback`)
     )
   })
 
@@ -245,7 +208,7 @@ describe('functions/api proxy', () => {
     expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toContain(
-      encodeURIComponent('https://momichan.xyz/api/v1/auth/google/callback')
+      encodeURIComponent(`${BACKEND_ORIGIN}/api/v1/auth/google/callback`)
     )
   })
 
@@ -278,35 +241,36 @@ describe('functions/api proxy', () => {
     )
   })
 
-  it('rewrites legacy google callback requests to the v1 upstream route', async () => {
-    const publicFetch = vi.fn().mockResolvedValue(
-      new Response(null, {
-        status: 302,
-        headers: {
-          Location: `${BACKEND_ORIGIN}/auth/callback?handoff_code=test-code`,
-        },
-      })
-    )
+  it.each([
+    ['https://momichan.xyz/api/auth/google/start?intent=login', ['auth', 'google', 'start']],
+    ['https://momichan.xyz/api/auth/google/callback?code=abc', ['auth', 'google', 'callback']],
+    ['https://momichan.xyz/api/auth/google/exchange', ['auth', 'google', 'exchange']],
+    ['https://momichan.xyz/api/auth/google/confirm-link', ['auth', 'google', 'confirm-link']],
+  ])('returns 404 for retired legacy google auth path %s', async (url, path) => {
+    const publicFetch = vi.fn()
     vi.stubGlobal('fetch', publicFetch)
 
+    const method = url.endsWith('/exchange') || url.endsWith('/confirm-link') ? 'POST' : 'GET'
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/auth/google/callback?code=abc&state=xyz'),
+      request: new Request(url, {
+        method,
+        headers: {
+          Origin: 'https://momichan.xyz',
+        },
+      }),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
       },
       params: {
-        path: ['auth', 'google', 'callback'],
+        path,
       },
     })
 
-    expect(publicFetch).toHaveBeenCalledTimes(1)
-    expect(publicFetch.mock.calls[0]?.[0]).toBe(
-      `${BACKEND_ORIGIN}/api/v1/auth/google/callback?code=abc&state=xyz`
-    )
-    expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
-    expect(response.status).toBe(302)
-    expect(response.headers.get('Location')).toBe(
-      'https://momichan.xyz/auth/callback?handoff_code=test-code'
-    )
+    expect(publicFetch).not.toHaveBeenCalled()
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({
+      error: 'NOT_FOUND',
+      message: 'Legacy Google auth paths are retired. Use /api/v1/auth/google/*.',
+    })
   })
 })
