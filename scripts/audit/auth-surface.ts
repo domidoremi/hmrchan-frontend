@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process'
+import { readdir, readFile } from 'node:fs/promises'
+import { relative, resolve, sep } from 'node:path'
 import type { AuditIssue, AuditModule, AuditOptions, AuditResult, AuditStatus } from './types'
 
 interface BannedSurfaceTerm {
@@ -62,6 +64,28 @@ const BANNED_SURFACE_TERMS: BannedSurfaceTerm[] = [
 ]
 
 const RG_EXCLUDE_GLOBS = ['node_modules/**', 'dist/**', 'coverage/**', 'output/**', '.git/**']
+const EXCLUDED_ROOT_DIRS = ['node_modules', 'dist', 'coverage', 'output', '.git']
+
+function normalizeRelativePath(filePath: string): string {
+  return filePath.split(sep).join('/')
+}
+
+function isExcludedPath(relativePath: string): boolean {
+  return EXCLUDED_ROOT_DIRS.some(
+    (rootDir) => relativePath === rootDir || relativePath.startsWith(`${rootDir}/`)
+  )
+}
+
+function isRipgrepUnavailableError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+
+  const message = error.message.toLowerCase()
+  return (
+    message.includes('executable not found') ||
+    message.includes('spawn rg') ||
+    message.includes('enoent')
+  )
+}
 
 function runRipgrep(projectRoot: string, terms: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -104,6 +128,69 @@ function runRipgrep(projectRoot: string, terms: string[]): Promise<string> {
   })
 }
 
+export async function scanProjectFiles(
+  projectRoot: string,
+  currentDir: string,
+  terms: string[]
+): Promise<string[]> {
+  const entries = await readdir(currentDir, { withFileTypes: true })
+  const matches: string[] = []
+
+  for (const entry of entries) {
+    const absolutePath = resolve(currentDir, entry.name)
+    const relativePath = normalizeRelativePath(relative(projectRoot, absolutePath))
+
+    if (isExcludedPath(relativePath)) {
+      continue
+    }
+
+    if (entry.isDirectory()) {
+      matches.push(...(await scanProjectFiles(projectRoot, absolutePath, terms)))
+      continue
+    }
+
+    if (!entry.isFile()) {
+      continue
+    }
+
+    const buffer = await readFile(absolutePath)
+    if (buffer.includes(0)) {
+      continue
+    }
+
+    const contents = buffer.toString('utf8')
+    if (!terms.some((term) => contents.includes(term))) {
+      continue
+    }
+
+    const lines = contents.split(/\r?\n/)
+    lines.forEach((line, index) => {
+      if (terms.some((term) => line.includes(term))) {
+        matches.push(`${relativePath}:${index + 1}:${line}`)
+      }
+    })
+  }
+
+  return matches
+}
+
+export async function searchTrackedFiles(
+  projectRoot: string,
+  terms: string[],
+  textSearcher: (projectRoot: string, terms: string[]) => Promise<string> = runRipgrep
+): Promise<string> {
+  try {
+    return await textSearcher(projectRoot, terms)
+  } catch (error) {
+    if (!isRipgrepUnavailableError(error)) {
+      throw error
+    }
+
+    const matches = await scanProjectFiles(projectRoot, projectRoot, terms)
+    return matches.join('\n')
+  }
+}
+
 function parseRipgrepOutput(stdout: string): AuditIssue[] {
   const issues: AuditIssue[] = []
   const termByValue = new Map(BANNED_SURFACE_TERMS.map((item) => [item.term, item]))
@@ -143,7 +230,7 @@ const authSurfaceAudit: AuditModule = {
 
     let issues: AuditIssue[]
     try {
-      const stdout = await runRipgrep(
+      const stdout = await searchTrackedFiles(
         options.projectRoot,
         BANNED_SURFACE_TERMS.map((item) => item.term)
       )

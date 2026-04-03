@@ -38,7 +38,6 @@ export {
   postService,
   type PostListItem,
   type PostDetailResponse,
-  type PostAuthorResponse,
   type AuthorOtherPost,
   type ThumbnailQuality,
 } from './postService'
@@ -155,7 +154,6 @@ export {
   type ScheduleCalendarItem,
   type ScheduleCategory,
   type ListSchedulesParams,
-  type ScheduleCreateRequest,
 } from './scheduleService'
 export {
   homeService,

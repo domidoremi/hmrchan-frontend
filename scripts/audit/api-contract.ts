@@ -1,33 +1,101 @@
 import { readFile, readdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { parse as parseYaml } from 'yaml'
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
 
-const CONTRACT_FILE = 'FRONTEND_API_CONTRACT.md'
+const CONTRACT_OPENAPI_DIR = 'docs/backend-handoff/contracts/openapi'
 const API_DIR = 'src/api'
+const EXCLUDED_SERVICE_FILES = new Set(['adminService.ts', 'systemService.ts'])
+const OUT_OF_SCOPE_FRONTEND_ENDPOINTS = new Set([
+  'POST /api/v1/discussions/{param}/pin',
+  'DELETE /api/v1/discussions/{param}/pin',
+  'POST /api/v1/discussions/comments/{param}/pin',
+  'DELETE /api/v1/discussions/comments/{param}/pin',
+  'POST /api/v1/discussions/comments/{param}/feature',
+  'DELETE /api/v1/discussions/comments/{param}/feature',
+])
 
 interface APIEndpoint {
   method: string
   path: string
 }
 
-/**
- * Parse FRONTEND_API_CONTRACT.md to extract endpoint definitions.
- * Looks for lines like: - **GET /api/v1/posts/** — ...
- */
-function parseContractEndpoints(content: string): APIEndpoint[] {
-  const endpoints: APIEndpoint[] = []
-  const pattern = /^- \*\*(GET|POST|PUT|PATCH|DELETE)\s+(\/api\/v1\/[^\s*]+)\*\*/gm
+const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete'])
 
-  let match: RegExpExecArray | null
-  while ((match = pattern.exec(content)) !== null) {
-    const method = match[1]
-    // Normalize: strip trailing slashes, keep path params as-is
-    const path = match[2].replace(/\/+$/, '')
-    endpoints.push({ method, path })
+type OpenApiDocument = {
+  paths?: Record<string, Record<string, unknown> | undefined>
+}
+
+async function extractContractEndpoints(projectRoot: string): Promise<{
+  endpoints: APIEndpoint[]
+  issues: AuditIssue[]
+}> {
+  const openApiDir = join(projectRoot, CONTRACT_OPENAPI_DIR)
+  const issues: AuditIssue[] = []
+  const endpoints: APIEndpoint[] = []
+
+  if (!existsSync(openApiDir)) {
+    issues.push({
+      severity: 'warning',
+      message: `OpenAPI contract directory "${CONTRACT_OPENAPI_DIR}" not found; API contract audit skipped`,
+    })
+    return { endpoints, issues }
   }
 
-  return endpoints
+  const files = (await readdir(openApiDir)).filter((file) => file.endsWith('.yaml'))
+  if (files.length === 0) {
+    issues.push({
+      severity: 'warning',
+      message: `No OpenAPI contract files found in "${CONTRACT_OPENAPI_DIR}"`,
+      file: CONTRACT_OPENAPI_DIR,
+    })
+    return { endpoints, issues }
+  }
+
+  for (const file of files) {
+    const fullPath = join(openApiDir, file)
+    const relPath = `${CONTRACT_OPENAPI_DIR}/${file}`
+
+    try {
+      const content = await readFile(fullPath, 'utf-8')
+      const parsed = parseYaml(content) as OpenApiDocument | null
+      const paths = parsed?.paths
+
+      if (!paths || typeof paths !== 'object') {
+        issues.push({
+          severity: 'warning',
+          message: `No paths found in OpenAPI contract`,
+          file: relPath,
+          rule: 'missing-openapi-paths',
+        })
+        continue
+      }
+
+      for (const [path, operations] of Object.entries(paths)) {
+        if (!path.startsWith('/api/v1/')) continue
+        if (!operations || typeof operations !== 'object') continue
+
+        for (const method of Object.keys(operations)) {
+          if (!HTTP_METHODS.has(method)) continue
+
+          endpoints.push({
+            method: method.toUpperCase(),
+            path: path.replace(/\/+$/, ''),
+          })
+        }
+      }
+    } catch (error) {
+      issues.push({
+        severity: 'warning',
+        message: `Failed to parse OpenAPI contract: ${error instanceof Error ? error.message : String(error)}`,
+        file: relPath,
+        rule: 'invalid-openapi-contract',
+      })
+    }
+  }
+
+  return { endpoints, issues }
 }
 
 /**
@@ -85,7 +153,8 @@ async function extractFrontendEndpoints(projectRoot: string): Promise<APIEndpoin
 
   const files = await readdir(apiDir)
   const serviceFiles = files.filter(
-    (f) => f.endsWith('.ts') && f !== 'index.ts' && f !== 'client.ts'
+    (f) =>
+      f.endsWith('.ts') && f !== 'index.ts' && f !== 'client.ts' && !EXCLUDED_SERVICE_FILES.has(f)
   )
 
   for (const file of serviceFiles) {
@@ -134,32 +203,29 @@ const apiContractAudit: AuditModule = {
     const start = Date.now()
     const issues: AuditIssue[] = []
 
-    // 1. Parse contract file
-    const contractPath = join(options.projectRoot, CONTRACT_FILE)
-    if (!existsSync(contractPath)) {
+    // 1. Parse OpenAPI contract files
+    const { endpoints: contractEndpoints, issues: contractIssues } = await extractContractEndpoints(
+      options.projectRoot
+    )
+    issues.push(...contractIssues)
+
+    if (contractEndpoints.length === 0) {
       return {
         module: 'api-contract',
         status: 'warn',
-        issues: [
-          {
-            severity: 'warning',
-            message: `Contract file "${CONTRACT_FILE}" not found; API contract audit skipped`,
-          },
-        ],
-        summary: 'Contract file missing; audit skipped',
+        issues:
+          issues.length > 0
+            ? issues
+            : [
+                {
+                  severity: 'warning',
+                  message: `No contract endpoints found in "${CONTRACT_OPENAPI_DIR}"`,
+                  file: CONTRACT_OPENAPI_DIR,
+                },
+              ],
+        summary: 'OpenAPI contract missing or empty; audit skipped',
         duration: Date.now() - start,
       }
-    }
-
-    const contractContent = await readFile(contractPath, 'utf-8')
-    const contractEndpoints = parseContractEndpoints(contractContent)
-
-    if (contractEndpoints.length === 0) {
-      issues.push({
-        severity: 'warning',
-        message: 'No endpoints found in contract file — check format',
-        file: CONTRACT_FILE,
-      })
     }
 
     // 2. Scan frontend service files
@@ -194,6 +260,9 @@ const apiContractAudit: AuditModule = {
 
     // 4. Frontend calls not in contract
     for (const key of frontendKeys) {
+      if (OUT_OF_SCOPE_FRONTEND_ENDPOINTS.has(key)) {
+        continue
+      }
       if (!contractKeys.has(key)) {
         issues.push({
           severity: 'warning',

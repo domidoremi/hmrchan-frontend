@@ -1033,6 +1033,7 @@ function openDetail() {
   flex: 1;
   min-height: 0;
   min-block-size: min(24rem, 52vh);
+  min-block-size: min(24rem, 52dvh);
   aspect-ratio: 16 / 10;
   display: flex;
   align-items: center;

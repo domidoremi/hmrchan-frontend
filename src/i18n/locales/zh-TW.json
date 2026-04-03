@@ -1161,6 +1161,7 @@
     "twoFactorSetupInstructions": "使用認證器 App 掃描 QR Code，或手動輸入金鑰後，再輸入 6 位驗證碼完成啟用。",
     "twoFactorManualCode": "手動輸入金鑰",
     "twoFactorCopySecret": "複製金鑰",
+    "twoFactorCopyOtpAuthUrl": "複製設定連結",
     "twoFactorVerifyCodeLabel": "認證器驗證碼",
     "twoFactorConfirmSetup": "確認啟用",
     "twoFactorSetupSuccess": "兩步驗證已啟用",

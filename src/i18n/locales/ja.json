@@ -1040,6 +1040,7 @@
     "twoFactorSetupInstructions": "認証アプリで QR コードを読み取るか手動キーを入力し、その後 6 桁のコードを入力して設定を完了してください。",
     "twoFactorManualCode": "手動設定キー",
     "twoFactorCopySecret": "キーをコピー",
+    "twoFactorCopyOtpAuthUrl": "設定リンクをコピー",
     "twoFactorVerifyCodeLabel": "認証アプリのコード",
     "twoFactorConfirmSetup": "設定を確定",
     "twoFactorSetupSuccess": "二段階認証を有効にしました",
