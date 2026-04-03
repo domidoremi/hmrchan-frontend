@@ -61,7 +61,7 @@ function normalizeGuardMode(raw: string | undefined): ConsoleGuardMode {
   if (mode === 'off' || mode === 'warn' || mode === 'balanced' || mode === 'strict') {
     return mode
   }
-  return 'balanced'
+  return import.meta.env.PROD ? 'strict' : 'balanced'
 }
 
 function emitGuardSignal(signal: GuardSignal): void {

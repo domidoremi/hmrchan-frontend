@@ -1,22 +1,32 @@
 import { canTrackAnalytics, canTrackPerformance } from './analyticsConsent'
+import { getRuntimeSecurityState, type RiskMode, type SecurityLevel } from '@/security/runtimeState'
 
 type ReportKind = 'error' | 'event' | 'performance'
 type ReportSeverity = 'info' | 'warn' | 'error'
+type ReportCategory = 'app' | 'security'
 
 interface ReportOptions {
   requiresAnalyticsConsent?: boolean
   severity?: ReportSeverity
+  category?: ReportCategory
+  requestId?: string
+  securityLevel?: SecurityLevel
+  riskMode?: RiskMode
 }
 
 interface ClientReportPayload {
   kind: ReportKind
   name: string
   severity: ReportSeverity
+  category: ReportCategory
   timestamp: string
   path: string
   href: string
   buildHash: string
   buildTime: string
+  requestId?: string
+  securityLevel: SecurityLevel
+  riskMode: RiskMode
   data?: Record<string, unknown>
   message?: string
   stack?: string
@@ -85,17 +95,22 @@ function buildPayload(
   error?: unknown
 ): ClientReportPayload {
   const runtimeInfo = getRuntimeInfo()
+  const runtimeSecurity = getRuntimeSecurityState()
   const normalizedError = error instanceof Error ? error : null
 
   return {
     kind,
     name,
     severity: options.severity ?? (kind === 'error' ? 'error' : 'info'),
+    category: options.category ?? 'app',
     timestamp: new Date().toISOString(),
     path: runtimeInfo.path,
     href: runtimeInfo.href,
     buildHash: typeof __BUILD_HASH__ === 'string' ? __BUILD_HASH__ : 'unknown',
     buildTime: typeof __BUILD_TIME__ === 'string' ? __BUILD_TIME__ : '',
+    requestId: options.requestId,
+    securityLevel: options.securityLevel ?? runtimeSecurity.currentSecurityLevel,
+    riskMode: options.riskMode ?? runtimeSecurity.riskMode,
     data: sanitizeData(data),
     message: normalizedError?.message,
     stack: normalizedError?.stack?.slice(0, 4000),
@@ -104,6 +119,7 @@ function buildPayload(
 
 function canSend(kind: ReportKind, options: ReportOptions): boolean {
   if (!REPORTING_ENABLED) return false
+  if (options.category === 'security') return true
   if (options.requiresAnalyticsConsent === false) return true
   if (kind === 'performance') return canTrackPerformance()
   if (!canTrackAnalytics()) return false
