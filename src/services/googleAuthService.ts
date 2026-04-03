@@ -4,7 +4,7 @@ import type {
   MfaRequiredResponse,
   RiskVerificationChallengeResponse,
 } from '@/api/authService'
-import { createSecureMessageHandler } from '@/utils/security'
+import { createSecureMessageHandler, getTrustedFrontendOrigins } from '@/utils/security'
 
 export type GoogleAuthIntent = 'login' | 'register'
 export type GooglePopupState = 'idle' | 'opening' | 'waiting' | 'blocked' | 'handling' | 'error'
@@ -230,7 +230,7 @@ export function waitForGooglePopupResult(
     removeMessageHandler = createSecureMessageHandler<GooglePopupMessage>(
       (message) => settle(message),
       {
-        allowedOrigins: [window.location.origin],
+        allowedOrigins: getTrustedFrontendOrigins(),
         validateData: isGooglePopupMessage,
       }
     )

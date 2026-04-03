@@ -1,13 +1,13 @@
 /**
  * Client Security Service - 客户端安全服务
  *
- * 实现后端四层安全机制：
+ * 实现后端 client/init + anti-abuse 凭证管理：
  * 1. 应用初始化 — POST /api/v1/client/init 获取 client_token + client_secret
- * 2. 每个请求附带安全头 — X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature
+ * 2. 本地持久化 anti-abuse 凭证（不用于登录态）
  * 3. Turnstile 人机验证 — 处理 CHALLENGE_REQUIRED
- * 4. 封禁处理 — 处理 access temporarily restricted
+ * 4. 凭证重签发 — 处理签名失败 / client token 失效
  *
- * 签名算法: HMAC-SHA256(client_secret, "METHOD|/path?query|timestamp")
+ * request-integrity V2 的签名拼装由 `src/api/client/client-security.ts` 统一负责。
  */
 
 import { ApiError, apiClient } from './client'
@@ -15,7 +15,7 @@ import { requestClientChallenge } from './clientChallengeBridge'
 import type { RequestConfig } from './client'
 import { getDeviceFingerprint } from '@/utils/fingerprint'
 import { getScreenResolution, getTimezone } from '@/utils/device'
-import { getRandomHex, hmacSha256 } from '@/utils/crypto'
+import { getRandomHex } from '@/utils/crypto'
 
 // ========== 类型定义 ==========
 
@@ -137,24 +137,6 @@ function isRecoverableVerifyError(error: unknown): error is ApiError {
     typeof error.details?.rawMessage === 'string' ? error.details.rawMessage.toLowerCase() : ''
 
   return rawMessage.includes('missing client token') || rawMessage.includes('invalid client token')
-}
-
-// ========== 签名工具 ==========
-
-/**
- * 生成 HMAC-SHA256 请求签名
- * 格式: HMAC-SHA256(client_secret, "METHOD|/path?query|timestamp")
- */
-export async function signRequest(
-  method: string,
-  pathWithQuery: string,
-  timestamp: number
-): Promise<string | null> {
-  const creds = getStoredCredentials()
-  if (!creds?.client_secret) return null
-
-  const payload = `${method.toUpperCase()}|${pathWithQuery}|${timestamp}`
-  return hmacSha256(creds.client_secret, payload)
 }
 
 // ========== 客户端安全管理器 ==========

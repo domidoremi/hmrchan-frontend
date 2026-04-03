@@ -34,6 +34,12 @@ Split-only 架构切换后的前端联调补充说明见：
 | 主站前端 | `https://momichan.xyz`     | 前端仓库负责        |
 | 主站 API | `https://api.momichan.xyz` | 公开 API / 认证入口 |
 
+Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
+
+- `https://api.momichan.xyz/api/v1/auth/google/callback`
+
+不要把前端页面 `https://momichan.xyz/auth/callback` 填到 Google Console；它只是后端二跳目标。
+
 ### 3.1 已退役 Host
 
 以下 host 不应再被前端调用：
@@ -157,6 +163,7 @@ Split-only 架构切换后的前端联调补充说明见：
    - 直接展示 Google 登录失败页
    - 提供“重试 Google 登录 / 返回登录页”
    - **不得再调用** `POST /api/v1/auth/google/exchange`
+   - popup 模式下只允许向受信前端 origin `postMessage`，不得使用 `*`
 2. 若 URL 含 `handoff_code`
    - 先完成当前安全链路初始化：
      - `GET /api/v1/auth/turnstile-config`
@@ -279,6 +286,7 @@ Split-only 架构切换后的前端联调补充说明见：
 
 - **不允许邮箱一致即自动静默合并**
 - 旧 Authentik 时代的身份记录不会被视为 Google 直连绑定
+- 旧 `/api/auth/google/*` 路径已退役，当前应直接视为 `404`
 
 ## 7. 本地邮箱登录 / 注册契约
 

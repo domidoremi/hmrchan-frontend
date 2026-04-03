@@ -114,6 +114,37 @@ describe('googleAuthService', () => {
     )
   })
 
+  it('accepts popup bridge messages from the configured frontend origin in dev', async () => {
+    vi.stubEnv('VITE_FRONTEND_ORIGIN', 'http://127.0.0.1:4173')
+
+    const popup = {
+      closed: false,
+      close: vi.fn(),
+      focus: vi.fn(),
+    } as unknown as Window
+
+    const pending = waitForGooglePopupResult(popup)
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        origin: 'http://127.0.0.1:4173',
+        data: {
+          type: 'google-auth-result',
+          status: 'success',
+          handoffCode: 'handoff-dev-origin',
+        },
+      })
+    )
+
+    await expect(pending.promise).resolves.toEqual(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        status: 'success',
+        handoffCode: 'handoff-dev-origin',
+      })
+    )
+  })
+
   it('ignores foreign-origin messages and settles when the popup closes', async () => {
     const popup = {
       closed: false,

@@ -353,13 +353,39 @@ export function safeRedirect(url: string, fallback: string = '/'): void {
 
 // ==================== PostMessage 安全 ====================
 
-/** 可信的 postMessage 来源 */
+const PRIMARY_FRONTEND_MESSAGE_ORIGIN = 'https://momichan.xyz'
 const TRUSTED_ORIGINS = new Set([
-  window.location.origin,
-  'https://momichan.xyz',
+  PRIMARY_FRONTEND_MESSAGE_ORIGIN,
   'https://www.momichan.xyz',
   'https://challenges.cloudflare.com',
 ])
+
+function normalizeMessageOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, '')
+}
+
+export function getTrustedFrontendOrigins(): string[] {
+  if (import.meta.env.PROD) {
+    return [PRIMARY_FRONTEND_MESSAGE_ORIGIN]
+  }
+
+  const origins = new Set<string>()
+  const configuredOrigin = normalizeMessageOrigin(import.meta.env.VITE_FRONTEND_ORIGIN ?? '')
+  if (configuredOrigin) {
+    origins.add(configuredOrigin)
+  }
+  if (typeof window !== 'undefined' && window.location.origin) {
+    origins.add(normalizeMessageOrigin(window.location.origin))
+  }
+  if (origins.size === 0) {
+    origins.add(PRIMARY_FRONTEND_MESSAGE_ORIGIN)
+  }
+  return Array.from(origins)
+}
+
+export function resolveTrustedFrontendTargetOrigin(): string {
+  return getTrustedFrontendOrigins()[0] ?? PRIMARY_FRONTEND_MESSAGE_ORIGIN
+}
 
 export type MessageHandler<T = unknown> = (data: T, event: MessageEvent) => void
 
@@ -378,16 +404,26 @@ export function createSecureMessageHandler<T = unknown>(
     validateData?: (data: unknown) => data is T
   }
 ): () => void {
-  const origins = new Set(TRUSTED_ORIGINS)
-  if (options?.allowedOrigins) {
-    for (const o of options.allowedOrigins) {
-      origins.add(o)
+  const origins = new Set<string>()
+  if (options?.allowedOrigins?.length) {
+    for (const origin of options.allowedOrigins) {
+      const normalized = normalizeMessageOrigin(origin)
+      if (normalized) {
+        origins.add(normalized)
+      }
+    }
+  } else {
+    for (const origin of TRUSTED_ORIGINS) {
+      origins.add(origin)
+    }
+    if (typeof window !== 'undefined' && window.location.origin) {
+      origins.add(normalizeMessageOrigin(window.location.origin))
     }
   }
 
   function onMessage(event: MessageEvent): void {
     // 校验 origin
-    if (!origins.has(event.origin)) return
+    if (!origins.has(normalizeMessageOrigin(event.origin))) return
 
     // 可选的数据结构校验
     if (options?.validateData && !options.validateData(event.data)) return
@@ -406,9 +442,14 @@ export function createSecureMessageHandler<T = unknown>(
  * 安全地发送 postMessage，始终指定目标 origin
  */
 export function safePostMessage(target: Window, data: unknown, targetOrigin: string): void {
-  if (!targetOrigin || targetOrigin === '*') {
+  const normalizedTargetOrigin = normalizeMessageOrigin(targetOrigin)
+  if (!normalizedTargetOrigin || normalizedTargetOrigin === '*') {
     console.warn('[Security] postMessage with wildcard origin is not allowed')
     return
   }
-  target.postMessage(data, targetOrigin)
+  if (!getTrustedFrontendOrigins().includes(normalizedTargetOrigin)) {
+    console.warn('[Security] postMessage target origin is not trusted', normalizedTargetOrigin)
+    return
+  }
+  target.postMessage(data, normalizedTargetOrigin)
 }

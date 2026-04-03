@@ -190,7 +190,7 @@ import {
 import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
-import { safePostMessage } from '@/utils/security'
+import { resolveTrustedFrontendTargetOrigin, safePostMessage } from '@/utils/security'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
@@ -475,7 +475,7 @@ async function runPopupBridge(): Promise<boolean> {
   isPopupBridgeMode.value = true
   popupBridgeState.value = 'posting'
 
-  safePostMessage(window.opener!, buildPopupBridgeMessage(), window.location.origin)
+  safePostMessage(window.opener!, buildPopupBridgeMessage(), resolveTrustedFrontendTargetOrigin())
 
   window.setTimeout(() => {
     window.close()

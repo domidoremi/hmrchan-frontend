@@ -40,16 +40,6 @@ const DEV_PROXY_BROWSER_UA =
   '(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 
 function normalizeProxyRequestHeaders(proxyReq: ClientRequest, req: IncomingMessage): void {
-  proxyReq.removeHeader('origin')
-  proxyReq.removeHeader('referer')
-  proxyReq.removeHeader('sec-fetch-site')
-  proxyReq.removeHeader('sec-fetch-mode')
-  proxyReq.removeHeader('sec-fetch-dest')
-  proxyReq.removeHeader('sec-fetch-user')
-  proxyReq.removeHeader('sec-ch-ua')
-  proxyReq.removeHeader('sec-ch-ua-mobile')
-  proxyReq.removeHeader('sec-ch-ua-platform')
-
   const incomingUserAgent = req.headers['user-agent']
   const normalizedUserAgent =
     typeof incomingUserAgent === 'string' && !incomingUserAgent.includes('HeadlessChrome')
