@@ -47,15 +47,15 @@ Google Console 中 `已授权的重新导向 URI` 也必须填写：
 
 - 准备一个本地账号，邮箱与 Google 账号一致，但尚未绑定 Google
 - 发起 Google 登录
-- `google/exchange` 返回：
-  - `link_required=true`
+- `google/exchange` 不再返回 `link_required`
+- 后端自动创建 Google identity 并继续后续认证分支：
+  - 若无风险/MFA：直接登录成功
+  - 若命中高风险登录：进入 `verify-risk-login`
+  - 若启用 MFA：进入 MFA 验证页
+- 响应里不得再出现：
+  - `link_required`
   - `pending_google_link_token`
-  - `masked_email`
-- 前端跳转“Google 账号合并确认页”
-- 用户输入邮件验证码
-- `POST /api/v1/auth/google/confirm-link` 成功后：
-  - 若无 MFA：直接登录成功
-  - 若有 MFA：进入 MFA 验证页
+- 整个流程不应发送 Google 绑定验证码邮件
 
 ### 1.4 已绑定 Google 且启用 MFA
 
@@ -101,17 +101,18 @@ Google Console 中 `已授权的重新导向 URI` 也必须填写：
 - 当前前端仍把该 `401` 的次级错误文案误显示成 `Invalid email or password`
 - 当前前端还会额外拉起 `Security check` 弹窗，语义上与 Google handoff 失效不一致
 
-### 2.3 `pending_google_link_token` 无效或过期
+### 2.3 不应再存在 Google 绑定验证码流
 
-- 合并页提交过期 token
-- 预期显示“Google 账号合并已失效，需要重新发起”
+- 本地邮箱账号首次走 Google 时，不应跳转“账号合并确认页”
+- 不应要求用户输入邮件验证码
+- 不应调用 `POST /api/v1/auth/google/confirm-link`
+- 若前端仍尝试调用该路径，应视为前端使用了过期契约
 
-### 2.4 邮件验证码错误 / 过期 / 重复提交
+### 2.4 已退役路径探测
 
-- 在合并页分别验证三种场景
-- 预期提示验证码无效或已失效
-- 不得跳回邮箱密码登录失败态
-- 后端当前应稳定返回 `400 Invalid or expired verification code`，不应退化为 `500`
+- 直接请求 `POST /api/v1/auth/google/confirm-link`
+- 预期：`404`
+- 不应再存在“已废弃但还能成功”的兼容桥
 
 ### 2.5 MFA 错误路径
 
@@ -129,7 +130,7 @@ Google Console 中 `已授权的重新导向 URI` 也必须填写：
 - `/api/v1/auth/google/start` → `302`
 - `/api/v1/auth/google/callback` → `302`
 - `/api/v1/auth/google/exchange` → `200` 或预期 `401`
-- `/api/v1/auth/google/confirm-link` → `200/400/401/403`
+- 不再存在 `/api/v1/auth/google/confirm-link` 的正常运行流量
 
 ### 浏览器网络
 
@@ -151,3 +152,9 @@ Google Console 中 `已授权的重新导向 URI` 也必须填写：
 
 - Google 登录已失效 / 已过期
 - 需要重新发起 Google 登录
+
+## 5. 当前固定产品规则
+
+- Google 返回邮箱已验证，且数据库中存在同邮箱本地账号时，后端会自动关联 Google identity
+- Google 返回邮箱已验证，且数据库中不存在同邮箱账号时，后端会创建新 Google 用户
+- Google 快捷登录 / 注册流程不再要求邮件验证码或确认合并页面

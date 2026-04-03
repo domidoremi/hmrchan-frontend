@@ -24,11 +24,12 @@
 前端当前需要重点确认：
 
 - `google/exchange` 失效、`handoff_code` 缺失、Google callback 错误，不得再落到“邮箱或密码错误”
-- `link_required=true`、`requires_mfa=true`、Google handoff 无效，这三类返回必须走独立状态机
+- `requires_risk_verification=true`、`requires_mfa=true`、Google handoff 无效，这三类返回必须走独立状态机
 - `/auth/callback` 页面要严格区分：
   - URL 上有 `error`
   - URL 上有 `handoff_code`
   - 二者都没有
+- 同邮箱本地账号首次走 Google 时，前端应直接承接后端自动关联后的登录 / 风险验证 / MFA 分支，不再进入验证码绑定页
 
 已观察到的相关位置：
 
@@ -71,19 +72,18 @@
 - 统一只发后端当前要求的 V2 头
 - `Idempotency-Key` 使用标准 header 名，不加 `X-`
 
-### 3. Google `exchange` / `confirm-link` 必须走正式安全链
+### 3. Google `exchange` 必须走正式安全链
 
-这两个接口现在已经不是 exempt：
+这个接口现在已经不是 exempt：
 
 - `POST /api/v1/auth/google/exchange`
-- `POST /api/v1/auth/google/confirm-link`
 
 前端需要确保：
 
 - 先完成 `turnstile-config -> client/init`
 - 请求带完整 V2 签名头
-- `confirm-link` 带 `Idempotency-Key`
 - 失败时按 Google 专属错误展示，不回退到邮箱密码文案
+- 不再保留 `confirm-link` 的 UI、状态机或请求封装
 
 ## P1. split-only canonical 契约还需要清理
 
@@ -213,7 +213,7 @@
 ## 建议执行顺序
 
 1. 先统一请求安全头与签名 V2。
-2. 再修 Google callback / exchange / confirm-link 的错误语义。
+2. 再修 Google callback / exchange 的错误语义。
 3. 再清 browsing history 的 `content_id`。
 4. 再把 `community/stats` 切到 `active_participants`。
 5. 最后清理旧兼容层与重复实现。
@@ -222,7 +222,7 @@
 
 - Google 登录成功后能到 `/auth/callback?handoff_code=...`
 - `google/exchange` 无效时不再显示“邮箱或密码错误”
-- `google/confirm-link` 携带标准 `Idempotency-Key`
+- 同邮箱本地账号首次走 Google 时，不再出现验证码绑定页
 - 浏览历史请求只发送 `content_uuid + content_type`
 - 社区统计不再依赖 `total_users`
 - 收到 `PERMISSION_VERSION_STALE` 后会清会话并重新初始化

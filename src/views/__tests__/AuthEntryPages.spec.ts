@@ -18,7 +18,6 @@ const testState = vi.hoisted(() => ({
     register: vi.fn(),
     startGoogleAuth: vi.fn(),
     completeGoogleAuth: vi.fn(),
-    confirmGoogleLink: vi.fn(),
     verifyRiskLogin: vi.fn(),
     completeMfaLogin: vi.fn(),
     beginWebAuthnLogin: vi.fn(),
@@ -147,7 +146,6 @@ describe('Auth entry pages', () => {
       },
       redirectTo: '/feed',
     })
-    testState.authStore.confirmGoogleLink = vi.fn()
     testState.authStore.verifyRiskLogin = vi.fn()
     testState.authStore.completeMfaLogin = vi.fn()
     testState.authStore.beginWebAuthnLogin = vi.fn()

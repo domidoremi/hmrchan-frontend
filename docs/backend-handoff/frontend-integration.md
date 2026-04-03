@@ -8,6 +8,8 @@ Split-only 架构切换后的前端联调补充说明见：
 
 - `docs/frontend-split-handoff.md`
 - `docs/frontend-security-handoff.md`
+- `docs/frontend-joint-checklist.md`
+- `docs/frontend-qa-checklist.md`
 
 后端规范、按域契约与 OpenAPI artifact 的真相源已迁移到：
 
@@ -59,6 +61,7 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
   - `token_type`
   - `expires_in`
   - `refresh_threshold`
+  - `permission_version`
   - `user`
 - 同时设置 refresh cookie
 
@@ -185,7 +188,7 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
 - `device_name`（可选）
 - `device_type`（可选）
 
-`google/exchange` 只会返回以下三类结果之一：
+`google/exchange` 现在只保留以下结果类型：
 
 #### A. 正常登录成功
 
@@ -195,24 +198,37 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
 - `token_type`
 - `expires_in`
 - `refresh_threshold`
+- `permission_version`
 - `user`
 - `return_to`
 
-#### B. 需要账号合并
+这条成功分支同时覆盖三种后端真实行为：
+
+- 已绑定 Google identity 的老用户直接登录
+- 不存在本地账号时，后端创建新 Google 用户并登录
+- 已有本地账号且邮箱与 Google 返回邮箱一致、且 Google 邮箱已验证时，后端**自动关联** Google identity 后直接登录
+
+重要规则：
+
+- **同邮箱命中现有本地账号时，现在允许自动关联**
+- 整个 Google 快捷登录 / 注册流程**不再要求邮件验证码**
+- 前端不再处理 `link_required`、`pending_google_link_token` 或 `google/confirm-link`
+
+#### B. 需要高风险登录验证
 
 返回字段：
 
-- `link_required=true`
-- `pending_google_link_token`
-- `masked_email`
+- `requires_risk_verification=true`
+- `pending_token`
+- `challenge_type`
 - `expires_in`
+- `message`
 - `return_to`
 
 前端动作：
 
-- 跳转到“确认合并”页面
-- 让用户输入邮件验证码
-- 调用 `POST /api/v1/auth/google/confirm-link`
+- 进入风险登录验证码页
+- 调用 `POST /api/v1/auth/verify-risk-login`
 
 #### C. 需要本地 MFA
 
@@ -252,39 +268,8 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
 - 但前端次级文案仍错误显示为 `Invalid email or password`
 - 当前前端还会弹出 `Security check` 对话框；这不应属于 Google handoff 失效语义
 
-### 6.4 Google 账号合并确认
+补充规则：
 
-| 接口                               | Host               | 方法   | 用途                                             |
-| ---------------------------------- | ------------------ | ------ | ------------------------------------------------ |
-| `/api/v1/auth/google/confirm-link` | `api.momichan.xyz` | `POST` | 用邮件验证码确认把 Google 身份绑定到既有本地账号 |
-
-请求字段：
-
-- `pending_google_link_token`
-- `verification_code`
-- `device_name`（可选）
-- `device_type`（可选）
-
-返回分支：
-
-- 正常成功登录
-- 或 `requires_mfa=true`
-
-错误分支前端必须明确区分：
-
-- 验证码错误或过期
-- `pending_google_link_token` 无效或过期
-- 同一验证码重复提交
-
-这些场景都应提示“Google 账号合并失败/已失效，需要重新发起或重新获取验证码”，不得回退成邮箱密码登录失败提示。
-
-后端当前约定：
-
-- 验证码错误、过期、重复使用或并发消费失败时，应稳定返回 `400 Invalid or expired verification code`
-
-重要规则：
-
-- **不允许邮箱一致即自动静默合并**
 - 旧 Authentik 时代的身份记录不会被视为 Google 直连绑定
 - 旧 `/api/auth/google/*` 路径已退役，当前应直接视为 `404`
 
@@ -338,7 +323,6 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
 
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/google/exchange`
-- `POST /api/v1/auth/google/confirm-link`
 
 返回字段：
 
@@ -359,7 +343,6 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
 
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/google/exchange`
-- `POST /api/v1/auth/google/confirm-link`
 - `POST /api/v1/auth/verify-risk-login`
 
 返回字段：
@@ -404,7 +387,6 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
 - `/auth/callback`
 - 风险登录验证码页
 - MFA 验证页
-- Google 账号合并确认页
 
 ### 不得再出现的文案 / 路径
 

@@ -17,10 +17,8 @@ import type {
 import {
   startGoogleAuth as startGoogleAuthRedirect,
   exchangeGoogleHandoff,
-  confirmGoogleLink as confirmGoogleLinkRequest,
   clearPendingGoogleAuthRequest,
   type GoogleAuthIntent,
-  type GoogleLinkRequiredResponse,
 } from '@/services/googleAuthService'
 import { getDeviceInfo } from '@/utils/device'
 import { createAuthSessionController } from '@/services/authSessionController'
@@ -59,14 +57,6 @@ type AuthFlowMfaResult = {
   redirectTo?: string
 }
 
-type AuthFlowLinkRequiredResult = {
-  status: 'link-required'
-  pendingGoogleLinkToken: string
-  maskedEmail: string
-  expiresIn?: number
-  redirectTo?: string
-}
-
 type AuthFlowErrorResult = {
   status: 'error'
   error: string
@@ -78,7 +68,6 @@ export type AuthFlowResult =
   | AuthFlowSuccessResult
   | AuthFlowRiskVerificationResult
   | AuthFlowMfaResult
-  | AuthFlowLinkRequiredResult
   | AuthFlowErrorResult
 
 type WebAuthnLoginOptionsResult =
@@ -110,18 +99,6 @@ function isRiskVerificationPendingResponse(
     'requires_risk_verification' in response &&
     (response as { requires_risk_verification?: unknown }).requires_risk_verification === true &&
     typeof (response as { pending_token?: unknown }).pending_token === 'string'
-  )
-}
-
-function isGoogleLinkRequiredResponse(response: unknown): response is GoogleLinkRequiredResponse {
-  return (
-    !!response &&
-    typeof response === 'object' &&
-    'link_required' in response &&
-    (response as { link_required?: unknown }).link_required === true &&
-    typeof (response as { pending_google_link_token?: unknown }).pending_google_link_token ===
-      'string' &&
-    typeof (response as { masked_email?: unknown }).masked_email === 'string'
   )
 }
 
@@ -311,37 +288,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function confirmGoogleLink(
-    pendingGoogleLinkToken: string,
-    verificationCode: string
-  ): Promise<AuthFlowResult> {
-    if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
-
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const deviceInfo = getDeviceInfo()
-      const response = await confirmGoogleLinkRequest({
-        pending_google_link_token: pendingGoogleLinkToken,
-        verification_code: verificationCode,
-        device_name: deviceInfo.device_name,
-        device_type: deviceInfo.device_type,
-      })
-
-      return await resolveAuthFlowResponse(response)
-    } catch (err) {
-      const errorResult = mapApiError(err, {
-        defaultError: 'auth.error.linkVerificationInvalid',
-        invalidStatusCodes: [400, 401, 403, 422],
-      })
-      error.value = errorResult.error
-      return errorResult
-    } finally {
-      isLoading.value = false
-    }
-  }
-
   async function completeMfaLogin(
     pendingMfaLoginToken: string,
     code: string
@@ -464,16 +410,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function resolveAuthFlowResponse(response: unknown): Promise<AuthFlowResult> {
-    if (isGoogleLinkRequiredResponse(response)) {
-      return {
-        status: 'link-required',
-        pendingGoogleLinkToken: response.pending_google_link_token,
-        maskedEmail: response.masked_email,
-        expiresIn: response.expires_in,
-        redirectTo: response.return_to,
-      }
-    }
-
     if (isRiskVerificationPendingResponse(response)) {
       return {
         status: 'risk-verification',
@@ -536,10 +472,12 @@ export const useAuthStore = defineStore('auth', () => {
   ): AuthFlowErrorResult {
     const { defaultError = 'auth.error.loginFailed', invalidStatusCodes = [] } = options
     const apiError = err instanceof ApiError ? err : null
+    const detailErrorKey = getAuthErrorKeyFromDetail(apiError)
     const errorKey = apiError
-      ? invalidStatusCodes.includes(apiError.status)
-        ? defaultError
-        : getAuthErrorKey(apiError.status, apiError.code)
+      ? (detailErrorKey ??
+        (invalidStatusCodes.includes(apiError.status)
+          ? defaultError
+          : getAuthErrorKey(apiError.status, apiError.code)))
       : defaultError
 
     return {
@@ -580,8 +518,6 @@ export const useAuthStore = defineStore('auth', () => {
         return 'auth.error.turnstileFailed'
       case 'password_login_unavailable':
         return 'auth.error.passwordLoginUnavailable'
-      case 'identity_link_required':
-        return 'auth.error.identityLinkRequired'
       case 'invalid_mfa_code':
       case 'invalid_totp_code':
       case 'mfa_verification_failed':
@@ -617,6 +553,18 @@ export const useAuthStore = defineStore('auth', () => {
     if (status === 422) return 'auth.error.validationError'
     if (status === 429) return 'auth.error.tooManyRequests'
     return 'auth.error.unknown'
+  }
+
+  function getAuthErrorKeyFromDetail(apiError: ApiError | null): string | null {
+    if (!apiError) return null
+
+    const detail = extractApiErrorDetail(apiError)?.trim().toLowerCase()
+    if (!detail) return null
+
+    switch (detail) {
+      default:
+        return null
+    }
   }
 
   function extractApiErrorDetail(apiError: ApiError | null): string | undefined {
@@ -670,7 +618,6 @@ export const useAuthStore = defineStore('auth', () => {
     verifyRiskLogin,
     startGoogleAuth,
     completeGoogleAuth,
-    confirmGoogleLink,
     completeMfaLogin,
     beginWebAuthnLogin,
     finishWebAuthnLogin,

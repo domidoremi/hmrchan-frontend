@@ -18,17 +18,8 @@ export interface GooglePopupMessage {
   intent?: GoogleAuthIntent
 }
 
-export interface GoogleLinkRequiredResponse {
-  link_required: true
-  pending_google_link_token: string
-  masked_email: string
-  expires_in?: number
-  return_to?: string
-}
-
 export type GoogleAuthFlowResponse =
   | AuthResponse
-  | GoogleLinkRequiredResponse
   | RiskVerificationChallengeResponse
   | MfaRequiredResponse
 
@@ -277,20 +268,4 @@ export async function exchangeGoogleHandoff(payload: {
     skipAuth: true,
     skipErrorToast: true,
   })
-}
-
-export async function confirmGoogleLink(payload: {
-  pending_google_link_token: string
-  verification_code: string
-  device_name?: string
-  device_type?: string
-}): Promise<AuthResponse | RiskVerificationChallengeResponse | MfaRequiredResponse> {
-  return apiClient.post<AuthResponse | RiskVerificationChallengeResponse | MfaRequiredResponse>(
-    '/auth/google/confirm-link',
-    payload,
-    {
-      skipAuth: true,
-      skipErrorToast: true,
-    }
-  )
 }

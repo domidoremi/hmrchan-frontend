@@ -237,49 +237,6 @@
         </form>
 
         <form
-          v-else-if="step === 'link-required'"
-          key="step-link"
-          class="auth-form"
-          @submit.prevent="handleLinkVerificationSubmit"
-        >
-          <div class="auth-card auth-card--stack">
-            <div class="code-sent-banner">
-              <Mail :size="16" />
-              <span>{{ $t('auth.callback.linkEmailHint', { email: maskedEmail }) }}</span>
-            </div>
-
-            <p class="auth-helper">{{ $t('auth.callback.linkHint') }}</p>
-            <p v-if="linkExpiresIn" class="auth-helper">
-              {{ $t('auth.callback.linkExpiresIn', { seconds: linkExpiresIn }) }}
-            </p>
-
-            <div class="form-group">
-              <label for="register-link-code">{{ $t('auth.verificationCode') }}</label>
-              <Input
-                id="register-link-code"
-                v-model="linkVerificationCode"
-                type="text"
-                inputmode="numeric"
-                maxlength="8"
-                :placeholder="$t('auth.riskVerificationCodePlaceholder')"
-                autocomplete="one-time-code"
-              />
-            </div>
-
-            <p v-if="linkError" class="field-error">{{ linkError }}</p>
-
-            <div class="action-group">
-              <Button type="submit" full-width :loading="isLoading">
-                {{ $t('auth.callback.linkAction') }}
-              </Button>
-              <Button type="button" variant="ghost" full-width @click="returnToPrimaryStep">
-                {{ $t('auth.stepRegister') }}
-              </Button>
-            </div>
-          </div>
-        </form>
-
-        <form
           v-else-if="step === 'risk-verification'"
           key="step-risk"
           class="auth-form"
@@ -447,7 +404,7 @@ import { validateMainstreamEmailDomain } from '@/utils/emailDomainPolicy'
 import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
 import type { AuthFlowResult } from '@/stores/auth'
 
-type Step = 'email' | 'register' | 'link-required' | 'risk-verification' | 'mfa'
+type Step = 'email' | 'register' | 'risk-verification' | 'mfa'
 type RegistrationStep = 'email' | 'register'
 
 const route = useRoute()
@@ -473,12 +430,6 @@ const isSendingCode = ref(false)
 const registerToken = ref<string | null>(null)
 const registerTokenExpiresAt = ref<number | null>(null)
 const forceTurnstileForSend = ref(false)
-
-const pendingGoogleLinkToken = ref('')
-const linkVerificationCode = ref('')
-const linkExpiresIn = ref<number | null>(null)
-const linkError = ref('')
-const maskedEmailText = ref('')
 
 const riskPendingToken = ref('')
 const riskVerificationCode = ref('')
@@ -531,7 +482,6 @@ const redirectTo = computed(() => {
 })
 
 const maskedEmail = computed(() => {
-  if (maskedEmailText.value) return maskedEmailText.value
   if (!email.value) return ''
   const parts = email.value.split('@')
   const local = parts[0] ?? ''
@@ -550,8 +500,6 @@ const googlePopupErrorMessage = computed(() =>
 )
 const pageTitle = computed(() => {
   switch (step.value) {
-    case 'link-required':
-      return t('auth.callback.linkTitle')
     case 'risk-verification':
       return t('auth.riskVerificationTitle')
     case 'mfa':
@@ -564,8 +512,6 @@ const pageSubtitle = computed(() => {
   switch (step.value) {
     case 'register':
       return t('auth.stepRegister')
-    case 'link-required':
-      return t('auth.callback.linkHint')
     case 'risk-verification':
       return t('auth.riskVerificationHint')
     case 'mfa':
@@ -589,7 +535,6 @@ if (isAuthenticated.value) {
 
 function clearInlineErrors() {
   emailError.value = ''
-  linkError.value = ''
   riskError.value = ''
   mfaError.value = ''
 }
@@ -619,10 +564,6 @@ function rememberPrimaryStep() {
 
 function returnToPrimaryStep() {
   step.value = primaryStep.value
-  pendingGoogleLinkToken.value = ''
-  linkVerificationCode.value = ''
-  linkExpiresIn.value = null
-  linkError.value = ''
   riskPendingToken.value = ''
   riskVerificationCode.value = ''
   riskMessage.value = ''
@@ -772,16 +713,6 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
     case 'success':
       await finalizeSuccessfulGoogleAuth(result)
       return
-    case 'link-required':
-      rememberPrimaryStep()
-      resetGooglePopupState()
-      step.value = 'link-required'
-      pendingGoogleLinkToken.value = result.pendingGoogleLinkToken
-      maskedEmailText.value = result.maskedEmail
-      linkExpiresIn.value = result.expiresIn ?? null
-      linkVerificationCode.value = ''
-      linkError.value = ''
-      return
     case 'risk-verification':
       rememberPrimaryStep()
       resetGooglePopupState()
@@ -803,9 +734,7 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
       mfaError.value = ''
       return
     case 'error':
-      if (step.value === 'link-required') {
-        linkError.value = t(result.error)
-      } else if (step.value === 'risk-verification') {
+      if (step.value === 'risk-verification') {
         riskError.value = t(result.error)
       } else if (step.value === 'mfa') {
         mfaError.value = t(result.error)
@@ -908,7 +837,6 @@ async function handleSendCode() {
     if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
 
     setRegisterToken(response.register_token, response.expires_in)
-    maskedEmailText.value = ''
     step.value = 'register'
     primaryStep.value = 'register'
     forceTurnstileForSend.value = false
@@ -1148,21 +1076,6 @@ async function handleRegister() {
   } else {
     toastStore.error(t('auth.error.registerFailed'))
   }
-}
-
-async function handleLinkVerificationSubmit() {
-  clearInlineErrors()
-
-  if (!linkVerificationCode.value.trim()) {
-    linkError.value = t('auth.error.codeRequired')
-    return
-  }
-
-  const result = await authStore.confirmGoogleLink(
-    pendingGoogleLinkToken.value,
-    linkVerificationCode.value.trim()
-  )
-  await applyAuthFlowResult(result)
 }
 
 async function handleRiskVerificationSubmit() {

@@ -29,7 +29,6 @@ vi.mock('@/utils/device', () => ({
 vi.mock('@/services/googleAuthService', () => ({
   startGoogleAuth: vi.fn(),
   exchangeGoogleHandoff: vi.fn(),
-  confirmGoogleLink: vi.fn(),
   clearPendingGoogleAuthRequest: vi.fn(),
 }))
 
@@ -85,7 +84,6 @@ vi.mock('@/api', () => {
 import { ApiError, authService, twoFactorService } from '@/api'
 import {
   clearPendingGoogleAuthRequest,
-  confirmGoogleLink,
   exchangeGoogleHandoff,
   startGoogleAuth,
 } from '@/services/googleAuthService'
@@ -279,30 +277,6 @@ describe('auth store', () => {
     expect(startGoogleAuth).toHaveBeenCalledWith('register', '/profile/settings')
   })
 
-  it('returns link-required when Google handoff requires linking', async () => {
-    const store = useAuthStore()
-
-    vi.mocked(exchangeGoogleHandoff).mockResolvedValueOnce({
-      link_required: true,
-      pending_google_link_token: 'link-token',
-      masked_email: 'te***@example.com',
-      expires_in: 600,
-      return_to: '/favorites',
-    })
-
-    const result = await store.completeGoogleAuth('handoff-code')
-
-    expect(result).toEqual(
-      expect.objectContaining({
-        status: 'link-required',
-        pendingGoogleLinkToken: 'link-token',
-        maskedEmail: 'te***@example.com',
-        redirectTo: '/favorites',
-      })
-    )
-    expect(store.isAuthenticated).toBe(false)
-  })
-
   it('establishes a session from a successful Google handoff exchange', async () => {
     const store = useAuthStore()
 
@@ -359,29 +333,6 @@ describe('auth store', () => {
         detail: 'Invalid or expired Google handoff code',
       })
     )
-  })
-
-  it('continues into MFA when Google link confirmation requires it', async () => {
-    const store = useAuthStore()
-
-    vi.mocked(confirmGoogleLink).mockResolvedValueOnce({
-      requires_mfa: true,
-      pending_mfa_login_token: 'pending-mfa-token',
-      methods: ['totp', 'webauthn'],
-      expires_in: 300,
-      message: 'Verify with MFA',
-    })
-
-    const result = await store.confirmGoogleLink('pending-google-link-token', '123456')
-
-    expect(result).toEqual(
-      expect.objectContaining({
-        status: 'mfa',
-        pendingMfaLoginToken: 'pending-mfa-token',
-        methods: ['totp', 'webauthn'],
-      })
-    )
-    expect(store.isAuthenticated).toBe(false)
   })
 
   it('maps password-login-unavailable to a dedicated error key', async () => {
