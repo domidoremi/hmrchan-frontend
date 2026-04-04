@@ -140,6 +140,8 @@ describe('functions/api proxy', () => {
       new Response(null, {
         status: 302,
         headers: {
+          'Cross-Origin-Opener-Policy': 'unsafe-none',
+          'Cross-Origin-Resource-Policy': 'same-origin',
           Location:
             'https://accounts.google.com/o/oauth2/v2/auth?client_id=test-client&redirect_uri=' +
             encodeURIComponent(`${BACKEND_ORIGIN}/api/v1/auth/google/callback`) +
@@ -165,6 +167,8 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('Location')).toContain(
       encodeURIComponent(`${BACKEND_ORIGIN}/api/v1/auth/google/callback`)
     )
+    expect(response.headers.get('Cross-Origin-Opener-Policy')).toBe('unsafe-none')
+    expect(response.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin')
   })
 
   it('bypasses VPC for google auth redirects so the browser redirect path stays intact', async () => {
@@ -217,6 +221,8 @@ describe('functions/api proxy', () => {
       new Response(null, {
         status: 302,
         headers: {
+          'Cross-Origin-Opener-Policy': 'unsafe-none',
+          'Cross-Origin-Resource-Policy': 'same-origin',
           Location: `${BACKEND_ORIGIN}/auth/callback?handoff_code=test-code`,
         },
       })
@@ -239,6 +245,8 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('Location')).toBe(
       'https://momichan.xyz/auth/callback?handoff_code=test-code'
     )
+    expect(response.headers.get('Cross-Origin-Opener-Policy')).toBe('unsafe-none')
+    expect(response.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin')
   })
 
   it.each([

@@ -141,6 +141,8 @@ import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
 import {
   getPendingGoogleAuthRequest,
+  publishGooglePopupResult,
+  resolveGoogleAuthPopupRequestIdFromWindowName,
   startGoogleAuthRedirect,
   type GooglePopupMessage,
 } from '@/services/googleAuthService'
@@ -358,6 +360,8 @@ async function handleMfaResolved(result: AuthFlowResult) {
 }
 
 function buildPopupBridgeMessage(): GooglePopupMessage {
+  const popupRequestId =
+    pendingRequest?.requestId || resolveGoogleAuthPopupRequestIdFromWindowName()
   const handoffCode =
     typeof route.query['handoff_code'] === 'string' ? route.query['handoff_code'].trim() : ''
   const error = typeof route.query['error'] === 'string' ? route.query['error'].trim() : ''
@@ -365,6 +369,7 @@ function buildPopupBridgeMessage(): GooglePopupMessage {
   if (handoffCode) {
     return {
       type: 'google-auth-result',
+      requestId: popupRequestId || undefined,
       status: 'success',
       handoffCode,
       redirectTo: pendingRequest?.redirectTo,
@@ -374,6 +379,7 @@ function buildPopupBridgeMessage(): GooglePopupMessage {
 
   return {
     type: 'google-auth-result',
+    requestId: popupRequestId || undefined,
     status: 'error',
     error: error || 'missing_handoff_code',
     redirectTo: pendingRequest?.redirectTo,
@@ -382,8 +388,12 @@ function buildPopupBridgeMessage(): GooglePopupMessage {
 }
 
 function shouldUsePopupBridge(): boolean {
-  if (typeof window === 'undefined' || !window.opener) return false
-  return typeof route.query['handoff_code'] === 'string' || typeof route.query['error'] === 'string'
+  const hasCallbackPayload =
+    typeof route.query['handoff_code'] === 'string' || typeof route.query['error'] === 'string'
+
+  if (!hasCallbackPayload) return false
+  if (pendingRequest?.mode === 'popup') return true
+  return Boolean(resolveGoogleAuthPopupRequestIdFromWindowName())
 }
 
 async function runPopupBridge(): Promise<boolean> {
@@ -391,8 +401,12 @@ async function runPopupBridge(): Promise<boolean> {
 
   isPopupBridgeMode.value = true
   popupBridgeState.value = 'posting'
+  const popupMessage = buildPopupBridgeMessage()
 
-  safePostMessage(window.opener!, buildPopupBridgeMessage(), resolveTrustedFrontendTargetOrigin())
+  publishGooglePopupResult(popupMessage)
+  if (window.opener) {
+    safePostMessage(window.opener, popupMessage, resolveTrustedFrontendTargetOrigin())
+  }
 
   window.setTimeout(() => {
     window.close()
