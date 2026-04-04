@@ -298,7 +298,7 @@ export const clientSecurityService = {
   async ensureInitialized(): Promise<void> {
     if (clientSecurityManager.isInitialized()) return
     if (!ensureInitPromise) {
-      ensureInitPromise = this.init()
+      ensureInitPromise = this.init(false, { promptChallenge: false })
         .then(() => undefined)
         .finally(() => {
           ensureInitPromise = null

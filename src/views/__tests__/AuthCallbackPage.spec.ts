@@ -7,6 +7,19 @@ const testState = vi.hoisted(() => ({
   route: { query: {} as Record<string, unknown> },
   routerReplace: vi.fn(),
   publishGooglePopupResult: vi.fn(),
+  api: {
+    authService: {
+      getTurnstileConfig: vi.fn(),
+    },
+    clientSecurityService: {
+      init: vi.fn(),
+      verify: vi.fn(),
+    },
+  },
+  turnstile: {
+    siteKey: '',
+    enabled: false,
+  },
   pendingGoogleAuthRequest: {
     requestId: 'popup-request-1',
     mode: 'popup' as const,
@@ -51,12 +64,34 @@ vi.mock('@/stores', async () => {
   }
 })
 
-vi.mock('@/composables/useTurnstileConfig', () => ({
-  useTurnstileConfig: () => ({
-    turnstileSiteKey: '',
-    turnstileEnabled: false,
-  }),
+vi.mock('@/api', () => ({
+  authService: testState.api.authService,
 }))
+
+vi.mock('@/api/clientSecurityService', () => ({
+  clientSecurityService: testState.api.clientSecurityService,
+}))
+
+vi.mock('@/composables/useTurnstileConfig', async () => {
+  const { computed, ref, watch } = await vi.importActual<typeof import('vue')>('vue')
+
+  return {
+    useTurnstileConfig: () => {
+      const turnstileSiteKey = ref(testState.turnstile.siteKey)
+      watch(
+        () => testState.turnstile.siteKey,
+        (nextValue) => {
+          turnstileSiteKey.value = nextValue
+        }
+      )
+
+      return {
+        turnstileSiteKey,
+        turnstileEnabled: computed(() => testState.turnstile.enabled),
+      }
+    },
+  }
+})
 
 vi.mock('@/services/googleAuthService', async () => {
   const actual = await vi.importActual<typeof import('@/services/googleAuthService')>(
@@ -69,10 +104,50 @@ vi.mock('@/services/googleAuthService', async () => {
   }
 })
 
+const globalConfig = {
+  mocks: {
+    $t: (key: string) => key,
+  },
+  stubs: {
+    AuthEntryShell: {
+      template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
+    },
+    Button: {
+      template: '<button><slot /></button>',
+    },
+    Input: {
+      template: '<input />',
+    },
+    TurnstileWidget: {
+      name: 'TurnstileWidget',
+      emits: ['verify', 'expire', 'error'],
+      template: '<div class="turnstile-widget-stub" />',
+    },
+    AuthMfaStep: true,
+  },
+}
+
 describe('AuthCallbackPage', () => {
   beforeEach(() => {
     testState.route.query = { handoff_code: 'popup-handoff' }
     testState.routerReplace.mockReset()
+    testState.api.authService.getTurnstileConfig.mockReset()
+    testState.api.clientSecurityService.init.mockReset()
+    testState.api.clientSecurityService.verify.mockReset()
+    testState.api.authService.getTurnstileConfig.mockResolvedValue({
+      enabled: true,
+      site_key: 'site-key',
+    })
+    testState.api.clientSecurityService.init.mockResolvedValue({
+      trust_level: 'basic',
+      challenge_required: false,
+    })
+    testState.api.clientSecurityService.verify.mockResolvedValue({
+      success: true,
+      trust_level: 'basic',
+    })
+    testState.turnstile.siteKey = 'site-key'
+    testState.turnstile.enabled = true
     testState.pendingGoogleAuthRequest = {
       requestId: 'popup-request-1',
       mode: 'popup',
@@ -105,24 +180,7 @@ describe('AuthCallbackPage', () => {
     })
 
     mount(AuthCallbackPage, {
-      global: {
-        mocks: {
-          $t: (key: string) => key,
-        },
-        stubs: {
-          AuthEntryShell: {
-            template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
-          },
-          Button: {
-            template: '<button><slot /></button>',
-          },
-          Input: {
-            template: '<input />',
-          },
-          TurnstileWidget: true,
-          AuthMfaStep: true,
-        },
-      },
+      global: globalConfig,
     })
 
     await flushPromises()
@@ -163,24 +221,7 @@ describe('AuthCallbackPage', () => {
     })
 
     mount(AuthCallbackPage, {
-      global: {
-        mocks: {
-          $t: (key: string) => key,
-        },
-        stubs: {
-          AuthEntryShell: {
-            template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
-          },
-          Button: {
-            template: '<button><slot /></button>',
-          },
-          Input: {
-            template: '<input />',
-          },
-          TurnstileWidget: true,
-          AuthMfaStep: true,
-        },
-      },
+      global: globalConfig,
     })
 
     await flushPromises()
@@ -214,24 +255,7 @@ describe('AuthCallbackPage', () => {
     })
 
     mount(AuthCallbackPage, {
-      global: {
-        mocks: {
-          $t: (key: string) => key,
-        },
-        stubs: {
-          AuthEntryShell: {
-            template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
-          },
-          Button: {
-            template: '<button><slot /></button>',
-          },
-          Input: {
-            template: '<input />',
-          },
-          TurnstileWidget: true,
-          AuthMfaStep: true,
-        },
-      },
+      global: globalConfig,
     })
 
     await flushPromises()
@@ -264,24 +288,7 @@ describe('AuthCallbackPage', () => {
     })
 
     const wrapper = mount(AuthCallbackPage, {
-      global: {
-        mocks: {
-          $t: (key: string) => key,
-        },
-        stubs: {
-          AuthEntryShell: {
-            template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
-          },
-          Button: {
-            template: '<button><slot /></button>',
-          },
-          Input: {
-            template: '<input />',
-          },
-          TurnstileWidget: true,
-          AuthMfaStep: true,
-        },
-      },
+      global: globalConfig,
     })
 
     await flushPromises()
@@ -313,29 +320,86 @@ describe('AuthCallbackPage', () => {
     })
 
     mount(AuthCallbackPage, {
-      global: {
-        mocks: {
-          $t: (key: string) => key,
-        },
-        stubs: {
-          AuthEntryShell: {
-            template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
-          },
-          Button: {
-            template: '<button><slot /></button>',
-          },
-          Input: {
-            template: '<input />',
-          },
-          TurnstileWidget: true,
-          AuthMfaStep: true,
-        },
-      },
+      global: globalConfig,
     })
 
     await flushPromises()
 
     expect(testState.publishGooglePopupResult).not.toHaveBeenCalled()
+    expect(testState.api.authService.getTurnstileConfig).toHaveBeenCalledTimes(1)
+    expect(testState.api.clientSecurityService.init).toHaveBeenCalledWith(false, {
+      promptChallenge: false,
+    })
+    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('redirect-handoff')
+  })
+
+  it('shows an inline client challenge step before exchange when client init requires verification', async () => {
+    testState.route.query = { handoff_code: 'redirect-handoff' }
+    testState.pendingGoogleAuthRequest = {
+      requestId: 'redirect-request-1',
+      mode: 'redirect',
+      intent: 'login',
+      redirectTo: '/profile',
+      createdAt: Date.now(),
+    }
+    testState.api.clientSecurityService.init.mockResolvedValueOnce({
+      trust_level: 'untrusted',
+      challenge_required: true,
+      turnstile_site_key: 'site-key',
+    })
+
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: undefined,
+    })
+
+    const wrapper = mount(AuthCallbackPage, {
+      global: globalConfig,
+    })
+
+    await flushPromises()
+
+    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('auth.clientChallengeHint')
+    expect(wrapper.find('.turnstile-widget-stub').exists()).toBe(true)
+  })
+
+  it('verifies the inline client challenge before exchanging the Google handoff', async () => {
+    testState.route.query = { handoff_code: 'redirect-handoff' }
+    testState.pendingGoogleAuthRequest = {
+      requestId: 'redirect-request-1',
+      mode: 'redirect',
+      intent: 'login',
+      redirectTo: '/profile',
+      createdAt: Date.now(),
+    }
+    testState.api.clientSecurityService.init.mockResolvedValueOnce({
+      trust_level: 'untrusted',
+      challenge_required: true,
+      turnstile_site_key: 'site-key',
+    })
+    testState.authStore.completeGoogleAuth = vi.fn().mockResolvedValue({
+      status: 'success',
+      redirectTo: '/profile',
+      user: {
+        id: 'user-1',
+      },
+    })
+
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: undefined,
+    })
+
+    const wrapper = mount(AuthCallbackPage, {
+      global: globalConfig,
+    })
+
+    await flushPromises()
+    await wrapper.findComponent({ name: 'TurnstileWidget' }).vm.$emit('verify', 'turnstile-token')
+    await flushPromises()
+
+    expect(testState.api.clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
     expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('redirect-handoff')
   })
 })

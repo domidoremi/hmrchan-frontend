@@ -253,6 +253,7 @@ export const useAuthStore = defineStore('auth', () => {
       const errorResult = mapApiError(err, {
         defaultError: 'auth.error.googleLoginFailed',
         invalidStatusCodes: [400, 401, 403, 422],
+        preferCodeMapping: true,
       })
       error.value = errorResult.error
       return errorResult
@@ -280,6 +281,7 @@ export const useAuthStore = defineStore('auth', () => {
       const errorResult = mapApiError(err, {
         defaultError: 'auth.error.googleLoginFailed',
         invalidStatusCodes: [400, 401, 403, 422],
+        preferCodeMapping: true,
       })
       error.value = errorResult.error
       return errorResult
@@ -468,16 +470,25 @@ export const useAuthStore = defineStore('auth', () => {
     options: {
       defaultError?: string
       invalidStatusCodes?: number[]
+      preferCodeMapping?: boolean
     } = {}
   ): AuthFlowErrorResult {
-    const { defaultError = 'auth.error.loginFailed', invalidStatusCodes = [] } = options
+    const {
+      defaultError = 'auth.error.loginFailed',
+      invalidStatusCodes = [],
+      preferCodeMapping = false,
+    } = options
     const apiError = err instanceof ApiError ? err : null
     const detailErrorKey = getAuthErrorKeyFromDetail(apiError)
+    const codeMappedError =
+      apiError && apiError.code ? getAuthErrorKey(apiError.status, apiError.code) : null
     const errorKey = apiError
       ? (detailErrorKey ??
-        (invalidStatusCodes.includes(apiError.status)
-          ? defaultError
-          : getAuthErrorKey(apiError.status, apiError.code)))
+        (preferCodeMapping && codeMappedError
+          ? codeMappedError
+          : invalidStatusCodes.includes(apiError.status)
+            ? defaultError
+            : getAuthErrorKey(apiError.status, apiError.code)))
       : defaultError
 
     return {
@@ -516,6 +527,19 @@ export const useAuthStore = defineStore('auth', () => {
       case 'TURNSTILE_FAILED':
       case 'TURNSTILE_VERIFICATION_FAILED':
         return 'auth.error.turnstileFailed'
+      case 'REQUEST_SIGNATURE_REQUIRED':
+      case 'INVALID_SIGNATURE':
+        return 'error.server.invalidSignature'
+      case 'INVALID_CLIENT_TOKEN':
+        return 'error.server.invalidClientToken'
+      case 'CLIENT_TOKEN_EXPIRED':
+        return 'error.server.clientTokenExpired'
+      case 'REQUEST_TIMESTAMP_INVALID':
+        return 'error.server.invalidTimestamp'
+      case 'REQUEST_EXPIRED':
+        return 'error.server.requestExpired'
+      case 'REQUEST_ORIGIN_NOT_AUTHORIZED':
+        return 'error.server.requestOriginNotAuthorized'
       case 'password_login_unavailable':
         return 'auth.error.passwordLoginUnavailable'
       case 'invalid_mfa_code':
@@ -562,6 +586,12 @@ export const useAuthStore = defineStore('auth', () => {
     if (!detail) return null
 
     switch (detail) {
+      case 'invalid or expired google handoff code':
+        return 'auth.error.googleLoginExpired'
+      case 'invalid or expired google link token':
+        return 'auth.error.googleLinkExpired'
+      case 'invalid or expired verification code':
+        return 'auth.error.googleVerificationCodeInvalid'
       default:
         return null
     }

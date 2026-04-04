@@ -203,7 +203,7 @@
               </div>
             </div>
 
-            <div v-if="turnstileEnabled && !hasValidRegisterToken()" class="turnstile-block">
+            <div v-if="showRegisterTurnstile" class="turnstile-block">
               <div class="turnstile-header">
                 <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
                 <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
@@ -226,7 +226,7 @@
                 :disabled="
                   verificationCode.length !== 6 ||
                   (!!confirmPassword && password !== confirmPassword) ||
-                  (turnstileEnabled && !hasValidRegisterToken() && !isTurnstileTokenFresh())
+                  (showRegisterTurnstile && !isTurnstileTokenFresh())
                 "
                 full-width
               >
@@ -430,6 +430,7 @@ const isSendingCode = ref(false)
 const registerToken = ref<string | null>(null)
 const registerTokenExpiresAt = ref<number | null>(null)
 const forceTurnstileForSend = ref(false)
+const forceTurnstileForRegister = ref(false)
 
 const riskPendingToken = ref('')
 const riskVerificationCode = ref('')
@@ -494,6 +495,9 @@ const maskedEmail = computed(() => {
 const showRegistrationProgress = computed(() => step.value === 'email' || step.value === 'register')
 const googleProviderBusy = computed(
   () => ['opening', 'waiting', 'handling'].includes(googlePopupState.value) || isLoading.value
+)
+const showRegisterTurnstile = computed(
+  () => turnstileEnabled.value && !hasValidRegisterToken() && forceTurnstileForRegister.value
 )
 const googlePopupErrorMessage = computed(() =>
   googlePopupErrorKey.value ? t(googlePopupErrorKey.value) : ''
@@ -1000,6 +1004,7 @@ function goBackToEmail() {
   }
 
   forceTurnstileForSend.value = false
+  forceTurnstileForRegister.value = false
 }
 
 async function handleRegister() {
@@ -1038,6 +1043,7 @@ async function handleRegister() {
 
   const needsTurnstile = !hasValidRegisterToken()
   if (turnstileEnabled.value && needsTurnstile && !isTurnstileTokenFresh()) {
+    forceTurnstileForRegister.value = true
     toastStore.warning(t('auth.error.turnstileRequired'))
     return
   }
@@ -1055,6 +1061,7 @@ async function handleRegister() {
   )
 
   if (result.success) {
+    forceTurnstileForRegister.value = false
     toastStore.success(t('auth.registerSuccess'))
     const nextLogin =
       redirectTo.value === '/'
@@ -1069,6 +1076,16 @@ async function handleRegister() {
 
   if (result.passwordErrors && result.passwordErrors.length > 0) {
     serverPasswordErrors.value = result.passwordErrors
+  }
+
+  if (
+    result.error === 'auth.error.turnstileRequired' ||
+    result.error === 'auth.error.turnstileFailed'
+  ) {
+    forceTurnstileForRegister.value = true
+    turnstileToken.value = null
+    turnstileIssuedAt.value = null
+    turnstileRef.value?.reset()
   }
 
   if (result.error) {
