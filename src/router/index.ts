@@ -406,8 +406,8 @@ router.beforeEach(async (to) => {
   const authStore = getAuthStore()
   const securityLevel = to.meta.securityLevel ?? (to.meta.requiresAuth ? 'authenticated' : 'public')
 
-  // 仅在需要认证判断的路由等待初始化，避免阻塞公开页面首屏渲染
-  if (securityLevel !== 'public' || to.meta.guestOnly || to.meta.requiresAuth) {
+  // 仅在受保护路由等待认证恢复；guestOnly 公开页不再首屏静默 refresh
+  if (securityLevel !== 'public') {
     await authStore.ensureAuthInitialized()
   }
   const isAuthenticated = authStore.isAuthenticated

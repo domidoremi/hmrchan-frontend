@@ -221,13 +221,13 @@ describe('googleAuthService', () => {
 
   it('ignores relay messages for a different popup request id', async () => {
     const popup = {
-      closed: false,
       close: vi.fn(),
       focus: vi.fn(),
-    } as { closed: boolean; close: () => void; focus: () => void }
+    } as { close: () => void; focus: () => void }
 
     const pending = waitForGooglePopupResult(popup as unknown as Window, {
       requestId: 'expected-request',
+      timeoutMs: 10_000,
     })
 
     window.dispatchEvent(
@@ -245,8 +245,7 @@ describe('googleAuthService', () => {
       })
     )
 
-    popup.closed = true
-    vi.advanceTimersByTime(1600)
+    vi.advanceTimersByTime(10_000)
 
     await expect(pending.promise).resolves.toEqual(
       expect.objectContaining({
@@ -258,15 +257,15 @@ describe('googleAuthService', () => {
     )
   })
 
-  it('ignores foreign-origin messages and settles when the popup closes', async () => {
+  it('ignores foreign-origin messages and settles when the popup times out', async () => {
     const popup = {
-      closed: false,
       close: vi.fn(),
       focus: vi.fn(),
-    } as { closed: boolean; close: () => void; focus: () => void }
+    } as { close: () => void; focus: () => void }
 
     const pending = waitForGooglePopupResult(popup as unknown as Window, {
       requestId: 'close-request',
+      timeoutMs: 10_000,
     })
 
     window.dispatchEvent(
@@ -281,8 +280,7 @@ describe('googleAuthService', () => {
       })
     )
 
-    popup.closed = true
-    vi.advanceTimersByTime(1600)
+    vi.advanceTimersByTime(10_000)
 
     await expect(pending.promise).resolves.toEqual(
       expect.objectContaining({
@@ -292,5 +290,6 @@ describe('googleAuthService', () => {
         error: 'popup_closed',
       })
     )
+    expect(popup.close).toHaveBeenCalled()
   })
 })

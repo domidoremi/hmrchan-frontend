@@ -258,11 +258,8 @@ const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 const enableDeferredAnimationStyles =
   import.meta.env.VITE_ENABLE_DEFERRED_ANIMATION_STYLES !== 'false'
 
-// 客户端安全改为按需初始化，避免公共页面首屏自动弹出 challenge；
-// 认证恢复阶段若真的需要签名，请求层会自行完成初始化。
-void authStore.ensureAuthInitialized().catch((error) => {
-  reportClientError('auth.init_failed', error, undefined, { severity: 'warn' })
-})
+// 公共页面首屏不再静默恢复登录态，避免 /login /register 等匿名入口主动触发
+// refresh + challenge 噪音；受保护路由仍由路由守卫按需完成初始化。
 
 void preloadActiveLocale()
   .catch((error) => {
