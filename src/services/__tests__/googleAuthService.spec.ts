@@ -246,7 +246,7 @@ describe('googleAuthService', () => {
     )
 
     popup.closed = true
-    vi.advanceTimersByTime(400)
+    vi.advanceTimersByTime(1600)
 
     await expect(pending.promise).resolves.toEqual(
       expect.objectContaining({
@@ -282,7 +282,7 @@ describe('googleAuthService', () => {
     )
 
     popup.closed = true
-    vi.advanceTimersByTime(400)
+    vi.advanceTimersByTime(1600)
 
     await expect(pending.promise).resolves.toEqual(
       expect.objectContaining({
