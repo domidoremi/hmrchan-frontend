@@ -40,9 +40,6 @@ const GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY = '__momi_google_auth_popup_result__'
 const GOOGLE_AUTH_POPUP_WIDTH = 34
 const GOOGLE_AUTH_POPUP_HEIGHT = 42
 const GOOGLE_AUTH_START_PATH = '/api/v1/auth/google/start'
-const GOOGLE_POPUP_CLOSE_POLL_INTERVAL_MS = 320
-const GOOGLE_POPUP_CLOSE_SETTLE_GRACE_MS = 720
-
 type GooglePopupRelayEnvelope = {
   id: string
   payload: GooglePopupMessage
@@ -323,11 +320,9 @@ export function waitForGooglePopupResult(
   options?: { timeoutMs?: number; requestId?: string }
 ): { promise: Promise<GooglePopupMessage>; dispose: () => void } {
   let isSettled = false
-  let closePollId: number | null = null
   let timeoutId: number | null = null
   let removeMessageHandler: (() => void) | null = null
   let removeRelayHandler: (() => void) | null = null
-  let popupClosedAt: number | null = null
 
   const cleanup = () => {
     if (removeMessageHandler) {
@@ -337,10 +332,6 @@ export function waitForGooglePopupResult(
     if (removeRelayHandler) {
       removeRelayHandler()
       removeRelayHandler = null
-    }
-    if (closePollId !== null) {
-      window.clearInterval(closePollId)
-      closePollId = null
     }
     if (timeoutId !== null) {
       window.clearTimeout(timeoutId)
@@ -370,38 +361,6 @@ export function waitForGooglePopupResult(
       (message) => settle(message),
       options?.requestId
     )
-
-    closePollId = window.setInterval(() => {
-      let popupIsClosed = false
-
-      try {
-        popupIsClosed = popup.closed
-      } catch {
-        popupClosedAt = null
-        return
-      }
-
-      if (!popupIsClosed) {
-        popupClosedAt = null
-        return
-      }
-
-      if (popupClosedAt === null) {
-        popupClosedAt = Date.now()
-        return
-      }
-
-      if (Date.now() - popupClosedAt < GOOGLE_POPUP_CLOSE_SETTLE_GRACE_MS) {
-        return
-      }
-
-      settle({
-        type: 'google-auth-result',
-        requestId: options?.requestId,
-        status: 'error',
-        error: 'popup_closed',
-      })
-    }, GOOGLE_POPUP_CLOSE_POLL_INTERVAL_MS)
 
     if (options?.timeoutMs) {
       timeoutId = window.setTimeout(() => {

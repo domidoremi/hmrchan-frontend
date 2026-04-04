@@ -382,7 +382,6 @@ import { authService, ApiError } from '@/api'
 import { useI18n } from 'vue-i18n'
 import { checkPasswordStrength } from '@/utils/crypto'
 import {
-  clearPendingGoogleAuthRequest,
   mapGooglePopupError,
   openGoogleAuthPopup,
   prefersGoogleAuthPopup,
@@ -748,23 +747,6 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
   }
 }
 
-async function recoverGooglePopupSession(): Promise<boolean> {
-  try {
-    const currentUser = await authStore.fetchCurrentUser(false)
-    if (!currentUser) {
-      return false
-    }
-
-    resetGooglePopupState()
-    clearPendingGoogleAuthRequest()
-    toastStore.success(t('auth.registerSuccess'))
-    await router.replace(redirectTo.value)
-    return true
-  } catch {
-    return false
-  }
-}
-
 async function handleGooglePopupResult(message: GooglePopupMessage) {
   if (message.status === 'success' && message.handoffCode) {
     const result = await authStore.completeGoogleAuth(message.handoffCode)
@@ -772,12 +754,11 @@ async function handleGooglePopupResult(message: GooglePopupMessage) {
     return
   }
 
-  if (message.error === 'popup_closed' && (await recoverGooglePopupSession())) {
-    return
-  }
-
   const errorKey = mapGooglePopupError(message.error)
-  setGooglePopupStatus(message.error === 'popup_blocked' ? 'blocked' : 'error', errorKey)
+  setGooglePopupStatus(
+    message.error === 'popup_blocked' || message.error === 'popup_closed' ? 'blocked' : 'error',
+    errorKey
+  )
 }
 
 async function continueGoogleInCurrentPage() {
