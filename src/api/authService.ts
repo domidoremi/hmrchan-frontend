@@ -172,6 +172,7 @@ export const authService = {
     const response = await apiClient.post<AuthLoginFlowResponse>('/auth/login', credentials, {
       skipAuth: true,
       skipErrorToast: true,
+      skipChallengeRetry: true,
       onResponseHeaders: (headers) => {
         const warning = headers.get('X-Security-Warning')
         if (warning === 'high' || warning === 'medium' || warning === 'low') {
@@ -191,6 +192,7 @@ export const authService = {
     return apiClient.post<RegisterResponse>('/auth/register', data, {
       skipAuth: true,
       skipErrorToast: true,
+      skipChallengeRetry: true,
     })
   },
 
@@ -273,6 +275,7 @@ export const authService = {
       {
         skipAuth: true,
         skipErrorToast: true,
+        skipChallengeRetry: true,
       }
     )
   },
@@ -292,6 +295,7 @@ export const authService = {
       ...config,
       skipAuth: true,
       skipErrorToast: true,
+      skipChallengeRetry: true,
     })
   },
 
@@ -317,6 +321,7 @@ export const authService = {
     return apiClient.post('/email/request-password-reset', data, {
       skipAuth: true,
       skipErrorToast: true,
+      skipChallengeRetry: true,
     })
   },
 
