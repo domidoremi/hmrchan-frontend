@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { ApiError } from '@/api'
 import ForgotPasswordPage from '../ForgotPasswordPage.vue'
 import LoginPage from '../LoginPage.vue'
 import RegisterPage from '../RegisterPage.vue'
@@ -101,12 +102,26 @@ vi.mock('@/api', () => ({
   },
 }))
 
-vi.mock('@/composables/useTurnstileConfig', () => ({
-  useTurnstileConfig: () => ({
-    turnstileSiteKey: testState.turnstile.siteKey,
-    turnstileEnabled: testState.turnstile.enabled,
-  }),
-}))
+vi.mock('@/composables/useTurnstileConfig', async () => {
+  const { computed, ref, watch } = await vi.importActual<typeof import('vue')>('vue')
+
+  return {
+    useTurnstileConfig: () => {
+      const turnstileSiteKey = ref(testState.turnstile.siteKey)
+      watch(
+        () => testState.turnstile.siteKey,
+        (nextValue) => {
+          turnstileSiteKey.value = nextValue
+        }
+      )
+
+      return {
+        turnstileSiteKey,
+        turnstileEnabled: computed(() => testState.turnstile.enabled),
+      }
+    },
+  }
+})
 
 const globalConfig = {
   mocks: {
@@ -114,11 +129,13 @@ const globalConfig = {
   },
   stubs: {
     TurnstileWidget: {
+      name: 'TurnstileWidget',
       props: ['size'],
       template: '<div class="turnstile-widget-stub" :data-size="size" />',
     },
     AuthMfaStep: true,
     EmailCodeInput: {
+      name: 'EmailCodeInput',
       emits: ['complete'],
       template: '<div class="email-code-input-stub" />',
     },
@@ -181,10 +198,34 @@ describe('Auth entry pages', () => {
     expect(wrapper.text()).toContain('auth.forgotPassword')
     expect(wrapper.text()).toContain('auth.googleDivider')
     expect(wrapper.text()).toContain('auth.googleLoginButton')
+    expect(wrapper.find('.turnstile-widget-stub').exists()).toBe(false)
+  })
+
+  it('reveals the login Turnstile widget only after a challenge-required response', async () => {
+    testState.turnstile.siteKey = 'site-key'
+    testState.turnstile.enabled = true
+    testState.authStore.login = vi.fn().mockResolvedValue({
+      status: 'error',
+      error: 'auth.error.turnstileRequired',
+      code: 'CHALLENGE_REQUIRED',
+    })
+
+    const wrapper = mount(LoginPage, {
+      global: globalConfig,
+    })
+
+    await wrapper.find('#login-identifier').setValue('tester@example.com')
+    await wrapper.find('#login-password').setValue('password123')
+    await wrapper.find('form.auth-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(testState.authStore.login).toHaveBeenCalled()
     expect(wrapper.find('.turnstile-widget-stub').attributes('data-size')).toBe('compact')
   })
 
   it('renders the shared shell and Google provider on the register page', () => {
+    testState.turnstile.siteKey = 'site-key'
+    testState.turnstile.enabled = true
     const wrapper = mount(RegisterPage, {
       global: globalConfig,
     })
@@ -194,6 +235,26 @@ describe('Auth entry pages', () => {
     expect(wrapper.text()).toContain('auth.googleDivider')
     expect(wrapper.text()).toContain('auth.googleRegisterButton')
     expect(wrapper.text()).toContain('nav.login')
+    expect(wrapper.find('.turnstile-widget-stub').exists()).toBe(false)
+  })
+
+  it('reveals the register Turnstile widget only after a challenge-required send-code response', async () => {
+    testState.turnstile.siteKey = 'site-key'
+    testState.turnstile.enabled = true
+    testState.api.authService.sendRegistrationCode.mockRejectedValue(
+      new ApiError('Challenge required', 403, 'CHALLENGE_REQUIRED')
+    )
+
+    const wrapper = mount(RegisterPage, {
+      global: globalConfig,
+    })
+
+    await wrapper.find('#reg-email').setValue('tester@gmail.com')
+    await wrapper.find('form.auth-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(testState.authStore.register).not.toHaveBeenCalled()
+    expect(wrapper.find('.turnstile-widget-stub').attributes('data-size')).toBe('compact')
   })
 
   it('reuses the split auth shell on forgot and reset password pages', () => {

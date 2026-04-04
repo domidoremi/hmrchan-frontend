@@ -54,7 +54,7 @@
 
             <p v-if="credentialsError" class="field-error">{{ credentialsError }}</p>
 
-            <div v-if="turnstileEnabled" class="turnstile-block">
+            <div v-if="showCredentialsTurnstile" class="turnstile-block">
               <div class="turnstile-header">
                 <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
                 <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
@@ -338,12 +338,19 @@ const { t } = useI18n()
 
 const { isAuthenticated, isLoading } = storeToRefs(authStore)
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
+const CHALLENGE_TURNSTILE_ERROR_CODES = new Set([
+  'CHALLENGE_REQUIRED',
+  'TURNSTILE_REQUIRED',
+  'TURNSTILE_TOKEN_MISSING',
+  'TURNSTILE_VERIFICATION_FAILED',
+])
 
 const loginIdentifier = ref('')
 const loginPassword = ref('')
 const showLoginPassword = ref(false)
 const credentialsError = ref('')
 const credentialsErrorCode = ref('')
+const requiresCredentialsTurnstile = ref(false)
 
 const step = ref<Step>('credentials')
 const riskPendingToken = ref('')
@@ -394,6 +401,9 @@ const isPasswordLoginUnavailable = computed(
 const googleProviderBusy = computed(
   () => ['opening', 'waiting', 'handling'].includes(googlePopupState.value) || isLoading.value
 )
+const showCredentialsTurnstile = computed(
+  () => turnstileEnabled.value && requiresCredentialsTurnstile.value
+)
 const googlePopupErrorMessage = computed(() =>
   googlePopupErrorKey.value ? t(googlePopupErrorKey.value) : ''
 )
@@ -441,6 +451,7 @@ function resetRiskTurnstile() {
 }
 
 function handleCredentialsTurnstileVerify(token: string) {
+  requiresCredentialsTurnstile.value = true
   credentialsTurnstileToken.value = token
   credentialsTurnstileIssuedAt.value = Date.now()
 }
@@ -461,6 +472,9 @@ function handleRiskTurnstileExpire() {
 }
 
 function handleTurnstileError(error?: Error) {
+  if (step.value === 'credentials') {
+    requiresCredentialsTurnstile.value = true
+  }
   toastStore.error(t(getTurnstileErrorMessageKey(error)))
 }
 
@@ -570,6 +584,13 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
       } else if (step.value === 'mfa') {
         mfaError.value = t(result.error)
       } else {
+        if (
+          (result.code && CHALLENGE_TURNSTILE_ERROR_CODES.has(result.code)) ||
+          result.error === 'auth.error.turnstileRequired' ||
+          result.error === 'auth.error.turnstileFailed'
+        ) {
+          requiresCredentialsTurnstile.value = true
+        }
         credentialsError.value = t(result.error)
         credentialsErrorCode.value = result.code || ''
       }
@@ -592,7 +613,7 @@ async function handleCredentialsSubmit() {
   }
 
   if (
-    turnstileEnabled.value &&
+    showCredentialsTurnstile.value &&
     !isTurnstileTokenFresh(
       credentialsTurnstileToken.value,
       credentialsTurnstileIssuedAt.value,

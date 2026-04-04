@@ -2,6 +2,7 @@
  * Console Filter - 过滤 Cloudflare 相关的控制台警告
  *
  * 过滤以下 Cloudflare 产生的噪音：
+ * - Cloudflare 注入的 /cdn-cgi/challenge-platform/scripts/jsd/main.js 弃用告警
  * - Private Access Token 请求
  * - CSP (Content Security Policy) 警告
  * - document.write() 违规警告

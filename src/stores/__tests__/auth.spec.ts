@@ -329,8 +329,26 @@ describe('auth store', () => {
     expect(result).toEqual(
       expect.objectContaining({
         status: 'error',
-        error: 'auth.error.googleLoginFailed',
+        error: 'auth.error.googleLoginExpired',
         detail: 'Invalid or expired Google handoff code',
+      })
+    )
+  })
+
+  it('keeps Google exchange security failures mapped to their dedicated server error keys', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(exchangeGoogleHandoff).mockRejectedValueOnce(
+      new ApiError('Forbidden', 403, 'INVALID_SIGNATURE')
+    )
+
+    const result = await store.completeGoogleAuth('expired-handoff')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'error',
+        error: 'error.server.invalidSignature',
+        code: 'INVALID_SIGNATURE',
       })
     )
   })

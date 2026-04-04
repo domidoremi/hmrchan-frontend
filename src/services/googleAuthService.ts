@@ -394,5 +394,6 @@ export async function exchangeGoogleHandoff(payload: {
   return apiClient.post<GoogleAuthFlowResponse>('/auth/google/exchange', payload, {
     skipAuth: true,
     skipErrorToast: true,
+    skipChallengeRetry: true,
   })
 }

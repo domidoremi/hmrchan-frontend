@@ -37,6 +37,48 @@
           <p class="auth-helper">{{ $t('auth.callback.loadingHint') }}</p>
         </div>
 
+        <div
+          v-else-if="currentStep === 'client-challenge'"
+          key="client-challenge"
+          class="auth-form"
+        >
+          <div class="auth-card auth-card--stack auth-callback-card">
+            <p class="auth-helper">{{ $t('auth.clientChallengeHint') }}</p>
+
+            <div v-if="resolvedClientChallengeSiteKey" class="turnstile-block">
+              <div class="turnstile-header">
+                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+              </div>
+              <TurnstileWidget
+                ref="clientChallengeTurnstileRef"
+                :site-key="resolvedClientChallengeSiteKey"
+                action="google-exchange"
+                size="compact"
+                @verify="handleClientChallengeVerify"
+                @expire="handleClientChallengeExpire"
+                @error="handleClientChallengeWidgetError"
+              />
+            </div>
+
+            <p v-else class="auth-helper">{{ $t('auth.clientChallengeLoading') }}</p>
+            <p v-if="clientChallengeError" class="field-error">{{ clientChallengeError }}</p>
+            <p v-if="clientChallengeDetail" class="auth-helper">{{ clientChallengeDetail }}</p>
+
+            <div class="action-group">
+              <Button
+                type="button"
+                variant="ghost"
+                full-width
+                :disabled="isClientChallengeSubmitting"
+                @click="returnToLogin"
+              >
+                {{ $t('auth.backToLogin') }}
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <form
           v-else-if="currentStep === 'risk-verification'"
           key="risk"
@@ -137,6 +179,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { AlertCircle } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
+import { ApiError, authService } from '@/api'
+import { clientSecurityService } from '@/api/clientSecurityService'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
 import {
@@ -156,11 +200,16 @@ import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import AuthMfaStep from '@/components/auth/AuthMfaStep.vue'
 import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
 
-type CallbackStep = 'loading' | 'risk-verification' | 'mfa' | 'error'
+type CallbackStep = 'loading' | 'client-challenge' | 'risk-verification' | 'mfa' | 'error'
 type PopupBridgeState = 'posting' | 'manual-close'
 
 const POPUP_BRIDGE_CLOSE_DELAY_MS = 320
 const POPUP_BRIDGE_MANUAL_CLOSE_HINT_DELAY_MS = 1000
+const CLIENT_CHALLENGE_ERROR_CODES = new Set([
+  'CHALLENGE_REQUIRED',
+  'TURNSTILE_REQUIRED',
+  'TURNSTILE_TOKEN_MISSING',
+])
 
 const route = useRoute()
 const router = useRouter()
@@ -174,6 +223,7 @@ const pendingRequest = getPendingGoogleAuthRequest()
 const isPopupBridgeMode = ref(false)
 const popupBridgeState = ref<PopupBridgeState>('posting')
 const currentStep = ref<CallbackStep>('loading')
+const pendingGoogleHandoffCode = ref('')
 const nextRedirectTarget = ref(
   resolveAuthRedirectTarget(
     typeof route.query['redirect'] === 'string' ? route.query['redirect'] : null,
@@ -186,6 +236,13 @@ const riskVerificationCode = ref('')
 const riskMessage = ref('')
 const riskExpiresIn = ref<number | null>(null)
 const riskError = ref('')
+const clientChallengeSiteKey = ref('')
+const clientChallengeError = ref('')
+const clientChallengeDetail = ref('')
+const isClientChallengeSubmitting = ref(false)
+const clientChallengeTurnstileRef = useTemplateRef<{ reset: () => void }>(
+  'clientChallengeTurnstileRef'
+)
 const riskTurnstileRef = useTemplateRef<{ reset: () => void }>('riskTurnstileRef')
 const riskTurnstileToken = ref<string | null>(null)
 const riskTurnstileIssuedAt = ref<number | null>(null)
@@ -197,6 +254,9 @@ const mfaError = ref('')
 
 const errorMessage = ref('')
 const errorDetail = ref('')
+const resolvedClientChallengeSiteKey = computed(
+  () => clientChallengeSiteKey.value || turnstileSiteKey.value
+)
 
 const pageTitle = computed(() => {
   if (isPopupBridgeMode.value) {
@@ -204,6 +264,8 @@ const pageTitle = computed(() => {
   }
 
   switch (currentStep.value) {
+    case 'client-challenge':
+      return t('auth.verifyTitle')
     case 'risk-verification':
       return t('auth.riskVerificationTitle')
     case 'mfa':
@@ -221,6 +283,8 @@ const pageSubtitle = computed(() => {
   }
 
   switch (currentStep.value) {
+    case 'client-challenge':
+      return t('auth.clientChallengeHint')
     case 'risk-verification':
       return t('auth.riskVerificationHint')
     case 'mfa':
@@ -258,11 +322,131 @@ function handleTurnstileError(error?: Error) {
   toastStore.error(t(getTurnstileErrorMessageKey(error)))
 }
 
+function resolveSecurityStepError(error: unknown): { message: string; detail: string } {
+  const apiError = error instanceof ApiError ? error : null
+  const detail = error instanceof Error ? error.message : ''
+
+  switch (apiError?.code) {
+    case 'CHALLENGE_REQUIRED':
+    case 'TURNSTILE_REQUIRED':
+    case 'TURNSTILE_TOKEN_MISSING':
+      return {
+        message: t('auth.error.turnstileRequired'),
+        detail,
+      }
+    case 'TURNSTILE_FAILED':
+    case 'TURNSTILE_VERIFICATION_FAILED':
+      return {
+        message: t('auth.error.turnstileFailed'),
+        detail,
+      }
+    case 'REQUEST_SIGNATURE_REQUIRED':
+    case 'INVALID_SIGNATURE':
+      return {
+        message: t('error.server.invalidSignature'),
+        detail,
+      }
+    case 'INVALID_CLIENT_TOKEN':
+      return {
+        message: t('error.server.invalidClientToken'),
+        detail,
+      }
+    case 'CLIENT_TOKEN_EXPIRED':
+      return {
+        message: t('error.server.clientTokenExpired'),
+        detail,
+      }
+    case 'REQUEST_TIMESTAMP_INVALID':
+      return {
+        message: t('error.server.invalidTimestamp'),
+        detail,
+      }
+    case 'REQUEST_EXPIRED':
+      return {
+        message: t('error.server.requestExpired'),
+        detail,
+      }
+    case 'REQUEST_ORIGIN_NOT_AUTHORIZED':
+      return {
+        message: t('error.server.requestOriginNotAuthorized'),
+        detail,
+      }
+    default:
+      return {
+        message:
+          error instanceof Error
+            ? t(getTurnstileErrorMessageKey(error))
+            : t('auth.error.turnstileFailed'),
+        detail,
+      }
+  }
+}
+
 function clearInlineErrors() {
+  clientChallengeError.value = ''
+  clientChallengeDetail.value = ''
   riskError.value = ''
   mfaError.value = ''
   errorMessage.value = ''
   errorDetail.value = ''
+}
+
+function enterClientChallengeStep(siteKey?: string | null) {
+  const resolvedSiteKey =
+    siteKey?.trim() || turnstileSiteKey.value.trim() || clientChallengeSiteKey.value.trim()
+
+  if (!resolvedSiteKey) {
+    currentStep.value = 'error'
+    errorMessage.value = t('auth.error.turnstileFailed')
+    errorDetail.value = 'Missing Turnstile site key for Google callback challenge.'
+    return
+  }
+
+  clientChallengeSiteKey.value = resolvedSiteKey
+  clientChallengeError.value = ''
+  clientChallengeDetail.value = ''
+  currentStep.value = 'client-challenge'
+}
+
+function handleClientChallengeExpire() {
+  clientChallengeError.value = t('auth.error.turnstileRequired')
+  clientChallengeDetail.value = ''
+}
+
+function handleClientChallengeWidgetError(error?: Error) {
+  clientChallengeError.value = t(getTurnstileErrorMessageKey(error))
+  clientChallengeDetail.value = error?.message || ''
+}
+
+async function handleClientChallengeVerify(token: string) {
+  if (isClientChallengeSubmitting.value) return
+
+  isClientChallengeSubmitting.value = true
+  clientChallengeError.value = ''
+  clientChallengeDetail.value = ''
+
+  try {
+    await clientSecurityService.verify(token)
+
+    if (!pendingGoogleHandoffCode.value.trim()) {
+      currentStep.value = 'error'
+      errorMessage.value = t('auth.error.callbackMissingHandoffCode')
+      return
+    }
+
+    currentStep.value = 'loading'
+    const handoffCode = pendingGoogleHandoffCode.value.trim()
+    const result = await authStore.completeGoogleAuth(handoffCode)
+    await applyCallbackResult(result)
+  } catch (error) {
+    currentStep.value = 'client-challenge'
+    const resolvedError = resolveSecurityStepError(error)
+    clientChallengeError.value = resolvedError.message
+    clientChallengeDetail.value = resolvedError.detail
+    clientChallengeTurnstileRef.value?.reset()
+  } finally {
+    isClientChallengeSubmitting.value = false
+  }
 }
 
 async function finalizeSuccessfulLogin(result: Extract<AuthFlowResult, { status: 'success' }>) {
@@ -304,6 +488,10 @@ async function applyCallbackResult(result: AuthFlowResult) {
         riskError.value = t(result.error)
       } else if (currentStep.value === 'mfa') {
         mfaError.value = t(result.error)
+      } else if (result.code && CLIENT_CHALLENGE_ERROR_CODES.has(result.code)) {
+        enterClientChallengeStep()
+        clientChallengeError.value = t(result.error)
+        clientChallengeDetail.value = result.detail || ''
       } else {
         currentStep.value = 'error'
         errorMessage.value = t(result.error)
@@ -423,6 +611,17 @@ async function runPopupBridge(): Promise<boolean> {
   return true
 }
 
+async function preloadTurnstileSiteKey(): Promise<string> {
+  try {
+    const config = await authService.getTurnstileConfig()
+    const resolvedSiteKey = config.enabled ? (config.site_key ?? '').trim() : ''
+    turnstileSiteKey.value = resolvedSiteKey
+    return resolvedSiteKey
+  } catch {
+    return turnstileSiteKey.value.trim()
+  }
+}
+
 async function runInitialExchange() {
   clearInlineErrors()
   currentStep.value = 'loading'
@@ -439,7 +638,25 @@ async function runInitialExchange() {
     return
   }
 
-  const result = await authStore.completeGoogleAuth(handoffCode.trim())
+  pendingGoogleHandoffCode.value = handoffCode.trim()
+
+  try {
+    const resolvedSiteKey = await preloadTurnstileSiteKey()
+    const initResponse = await clientSecurityService.init(false, { promptChallenge: false })
+
+    if (initResponse.challenge_required) {
+      enterClientChallengeStep(initResponse.turnstile_site_key || resolvedSiteKey)
+      return
+    }
+  } catch (error) {
+    currentStep.value = 'error'
+    const resolvedError = resolveSecurityStepError(error)
+    errorMessage.value = resolvedError.message
+    errorDetail.value = resolvedError.detail
+    return
+  }
+
+  const result = await authStore.completeGoogleAuth(pendingGoogleHandoffCode.value)
   await applyCallbackResult(result)
 }
 
