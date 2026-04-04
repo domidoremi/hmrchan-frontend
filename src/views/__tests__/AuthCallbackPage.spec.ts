@@ -151,6 +151,60 @@ describe('AuthCallbackPage', () => {
     expect(closeSpy).toHaveBeenCalled()
   })
 
+  it('still bridges popup results when popup session state is missing but opener survives', async () => {
+    const postMessage = vi.fn()
+    const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => undefined)
+
+    testState.pendingGoogleAuthRequest = null as never
+
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: { postMessage },
+    })
+
+    mount(AuthCallbackPage, {
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: {
+          AuthEntryShell: {
+            template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
+          },
+          Button: {
+            template: '<button><slot /></button>',
+          },
+          Input: {
+            template: '<input />',
+          },
+          TurnstileWidget: true,
+          AuthMfaStep: true,
+        },
+      },
+    })
+
+    await flushPromises()
+    vi.advanceTimersByTime(100)
+
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        status: 'success',
+        handoffCode: 'popup-handoff',
+      }),
+      window.location.origin
+    )
+    expect(testState.publishGooglePopupResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        status: 'success',
+        handoffCode: 'popup-handoff',
+      })
+    )
+    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(closeSpy).toHaveBeenCalled()
+  })
+
   it('uses popup relay mode without opener and does not exchange in the popup', async () => {
     const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => undefined)
 

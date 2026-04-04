@@ -392,6 +392,7 @@ function shouldUsePopupBridge(): boolean {
     typeof route.query['handoff_code'] === 'string' || typeof route.query['error'] === 'string'
 
   if (!hasCallbackPayload) return false
+  if (typeof window !== 'undefined' && window.opener) return true
   if (pendingRequest?.mode === 'popup') return true
   return Boolean(resolveGoogleAuthPopupRequestIdFromWindowName())
 }
