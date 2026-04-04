@@ -18,6 +18,7 @@ const testState = vi.hoisted(() => ({
     register: vi.fn(),
     startGoogleAuth: vi.fn(),
     completeGoogleAuth: vi.fn(),
+    fetchCurrentUser: vi.fn(),
     verifyRiskLogin: vi.fn(),
     completeMfaLogin: vi.fn(),
     beginWebAuthnLogin: vi.fn(),
@@ -146,6 +147,7 @@ describe('Auth entry pages', () => {
       },
       redirectTo: '/feed',
     })
+    testState.authStore.fetchCurrentUser = vi.fn().mockResolvedValue(null)
     testState.authStore.verifyRiskLogin = vi.fn()
     testState.authStore.completeMfaLogin = vi.fn()
     testState.authStore.beginWebAuthnLogin = vi.fn()
@@ -163,6 +165,7 @@ describe('Auth entry pages', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.useRealTimers()
   })
 
   it('renders forgot password, tab navigation, and Google entry on the login page', () => {
@@ -257,5 +260,105 @@ describe('Auth entry pages', () => {
 
     expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('popup-handoff')
     expect(testState.routerReplace).toHaveBeenCalledWith('/feed')
+  })
+
+  it('recovers login popup completion from the refresh cookie when the popup closes before bridging', async () => {
+    vi.useFakeTimers()
+    testState.route.query = { redirect: '/feed' }
+    testState.authStore.fetchCurrentUser = vi.fn().mockResolvedValue({
+      id: 'user-1',
+      username: 'tester',
+      email: 'tester@example.com',
+      created_at: '2024-01-01T00:00:00Z',
+    })
+
+    const popup = {
+      closed: false,
+      focus: vi.fn(),
+      close: vi.fn(),
+    } as { closed: boolean; focus: () => void; close: () => void }
+
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+    )
+    vi.spyOn(window, 'open').mockReturnValue(popup as unknown as Window)
+
+    const wrapper = mount(LoginPage, {
+      global: globalConfig,
+    })
+
+    const googleButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('auth.googleLoginButton'))
+
+    await googleButton!.trigger('click')
+
+    popup.closed = true
+    vi.advanceTimersByTime(400)
+    await flushPromises()
+
+    expect(testState.authStore.fetchCurrentUser).toHaveBeenCalledWith(false)
+    expect(testState.routerReplace).toHaveBeenCalledWith('/feed')
+    expect(testState.toastStore.success).toHaveBeenCalledWith('auth.loginSuccess')
+  })
+
+  it('recovers register popup completion from the refresh cookie when the popup closes before bridging', async () => {
+    vi.useFakeTimers()
+    testState.route.query = { redirect: '/welcome' }
+    testState.authStore.fetchCurrentUser = vi.fn().mockResolvedValue({
+      id: 'user-2',
+      username: 'new-user',
+      email: 'new-user@example.com',
+      created_at: '2024-01-01T00:00:00Z',
+    })
+
+    const popup = {
+      closed: false,
+      focus: vi.fn(),
+      close: vi.fn(),
+    } as { closed: boolean; focus: () => void; close: () => void }
+
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+    )
+    vi.spyOn(window, 'open').mockReturnValue(popup as unknown as Window)
+
+    const wrapper = mount(RegisterPage, {
+      global: globalConfig,
+    })
+
+    const googleButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('auth.googleRegisterButton'))
+
+    await googleButton!.trigger('click')
+
+    popup.closed = true
+    vi.advanceTimersByTime(400)
+    await flushPromises()
+
+    expect(testState.authStore.fetchCurrentUser).toHaveBeenCalledWith(false)
+    expect(testState.routerReplace).toHaveBeenCalledWith('/welcome')
+    expect(testState.toastStore.success).toHaveBeenCalledWith('auth.registerSuccess')
   })
 })

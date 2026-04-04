@@ -7,10 +7,12 @@ import type {
 import { createSecureMessageHandler, getTrustedFrontendOrigins } from '@/utils/security'
 
 export type GoogleAuthIntent = 'login' | 'register'
+export type GoogleAuthMode = 'popup' | 'redirect'
 export type GooglePopupState = 'idle' | 'opening' | 'waiting' | 'blocked' | 'handling' | 'error'
 
 export interface GooglePopupMessage {
   type: 'google-auth-result'
+  requestId?: string
   status: 'success' | 'error'
   handoffCode?: string
   error?: string
@@ -24,16 +26,127 @@ export type GoogleAuthFlowResponse =
   | MfaRequiredResponse
 
 type PendingGoogleAuthRequest = {
+  requestId: string
+  mode: GoogleAuthMode
   intent: GoogleAuthIntent
   redirectTo: string
   createdAt: number
 }
 
 const GOOGLE_AUTH_REQUEST_STORAGE_KEY = 'momi_google_auth_request'
-const GOOGLE_AUTH_POPUP_NAME = 'momi-google-auth'
+const GOOGLE_AUTH_POPUP_NAME_PREFIX = 'momi-google-auth'
+const GOOGLE_AUTH_POPUP_RELAY_CHANNEL = 'momi-google-auth-relay'
+const GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY = '__momi_google_auth_popup_result__'
 const GOOGLE_AUTH_POPUP_WIDTH = 34
 const GOOGLE_AUTH_POPUP_HEIGHT = 42
 const GOOGLE_AUTH_START_PATH = '/api/v1/auth/google/start'
+
+type GooglePopupRelayEnvelope = {
+  id: string
+  payload: GooglePopupMessage
+}
+
+function createGoogleAuthRequestId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+
+  return `google-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function buildGooglePopupWindowName(requestId: string): string {
+  return `${GOOGLE_AUTH_POPUP_NAME_PREFIX}:${requestId}`
+}
+
+export function resolveGoogleAuthPopupRequestIdFromWindowName(name?: string): string | null {
+  const candidate = (name ?? (typeof window !== 'undefined' ? window.name : '')).trim()
+  const prefix = `${GOOGLE_AUTH_POPUP_NAME_PREFIX}:`
+
+  if (!candidate.startsWith(prefix)) {
+    return null
+  }
+
+  const requestId = candidate.slice(prefix.length).trim()
+  return requestId || null
+}
+
+function isGooglePopupRelayEnvelope(value: unknown): value is GooglePopupRelayEnvelope {
+  if (!value || typeof value !== 'object') return false
+
+  const envelope = value as Partial<GooglePopupRelayEnvelope>
+  return typeof envelope.id === 'string' && isGooglePopupMessage(envelope.payload)
+}
+
+function shouldAcceptGooglePopupMessage(
+  message: GooglePopupMessage,
+  expectedRequestId?: string
+): boolean {
+  if (!expectedRequestId) return true
+  if (!message.requestId) return true
+  return message.requestId === expectedRequestId
+}
+
+function subscribeToGooglePopupRelay(
+  handler: (message: GooglePopupMessage) => void,
+  expectedRequestId?: string
+): () => void {
+  if (typeof window === 'undefined') {
+    return () => undefined
+  }
+
+  let channel: BroadcastChannel | null = null
+
+  const handleRelayEnvelope = (value: unknown) => {
+    if (!isGooglePopupRelayEnvelope(value)) return
+    if (!shouldAcceptGooglePopupMessage(value.payload, expectedRequestId)) return
+    handler(value.payload)
+  }
+
+  if (typeof BroadcastChannel !== 'undefined') {
+    channel = new BroadcastChannel(GOOGLE_AUTH_POPUP_RELAY_CHANNEL)
+    channel.addEventListener('message', (event: MessageEvent<unknown>) => {
+      handleRelayEnvelope(event.data)
+    })
+  }
+
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY || !event.newValue) return
+
+    try {
+      handleRelayEnvelope(JSON.parse(event.newValue))
+    } catch {
+      // ignore malformed relay payloads
+    }
+  }
+
+  window.addEventListener('storage', onStorage)
+
+  return () => {
+    window.removeEventListener('storage', onStorage)
+    channel?.close()
+  }
+}
+
+export function publishGooglePopupResult(message: GooglePopupMessage): void {
+  if (typeof window === 'undefined') return
+
+  const envelope: GooglePopupRelayEnvelope = {
+    id: createGoogleAuthRequestId(),
+    payload: message,
+  }
+
+  if (typeof BroadcastChannel !== 'undefined') {
+    const channel = new BroadcastChannel(GOOGLE_AUTH_POPUP_RELAY_CHANNEL)
+    channel.postMessage(envelope)
+    channel.close()
+  }
+
+  try {
+    localStorage.setItem(GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY, JSON.stringify(envelope))
+  } catch {
+    // ignore storage errors
+  }
+}
 
 function writePendingGoogleAuthRequest(request: PendingGoogleAuthRequest): void {
   try {
@@ -47,16 +160,23 @@ function normalizeGoogleReturnTo(returnTo: string): string {
   return returnTo.trim() || '/'
 }
 
-function persistPendingGoogleAuthRequest(intent: GoogleAuthIntent, returnTo: string): string {
+function persistPendingGoogleAuthRequest(
+  intent: GoogleAuthIntent,
+  returnTo: string,
+  mode: GoogleAuthMode
+): PendingGoogleAuthRequest {
   const redirectTo = normalizeGoogleReturnTo(returnTo)
-
-  writePendingGoogleAuthRequest({
+  const request: PendingGoogleAuthRequest = {
+    requestId: createGoogleAuthRequestId(),
+    mode,
     intent,
     redirectTo,
     createdAt: Date.now(),
-  })
+  }
 
-  return redirectTo
+  writePendingGoogleAuthRequest(request)
+
+  return request
 }
 
 export function getPendingGoogleAuthRequest(): PendingGoogleAuthRequest | null {
@@ -64,7 +184,7 @@ export function getPendingGoogleAuthRequest(): PendingGoogleAuthRequest | null {
     const raw = sessionStorage.getItem(GOOGLE_AUTH_REQUEST_STORAGE_KEY)
     if (!raw) return null
 
-    const parsed = JSON.parse(raw) as PendingGoogleAuthRequest
+    const parsed = JSON.parse(raw) as Partial<PendingGoogleAuthRequest>
     if (
       (parsed.intent !== 'login' && parsed.intent !== 'register') ||
       typeof parsed.redirectTo !== 'string' ||
@@ -73,7 +193,16 @@ export function getPendingGoogleAuthRequest(): PendingGoogleAuthRequest | null {
       return null
     }
 
-    return parsed
+    return {
+      requestId:
+        typeof parsed.requestId === 'string' && parsed.requestId.trim()
+          ? parsed.requestId.trim()
+          : createGoogleAuthRequestId(),
+      mode: parsed.mode === 'popup' || parsed.mode === 'redirect' ? parsed.mode : 'redirect',
+      intent: parsed.intent,
+      redirectTo: parsed.redirectTo,
+      createdAt: parsed.createdAt,
+    }
   } catch {
     return null
   }
@@ -133,6 +262,7 @@ export function isGooglePopupMessage(data: unknown): data is GooglePopupMessage 
   const message = data as Partial<GooglePopupMessage>
   if (message.type !== 'google-auth-result') return false
   if (message.status !== 'success' && message.status !== 'error') return false
+  if (message.requestId !== undefined && typeof message.requestId !== 'string') return false
   if (message.intent && message.intent !== 'login' && message.intent !== 'register') return false
   if (message.handoffCode !== undefined && typeof message.handoffCode !== 'string') return false
   if (message.error !== undefined && typeof message.error !== 'string') return false
@@ -156,8 +286,8 @@ export function mapGooglePopupError(error?: string): string {
 }
 
 export function startGoogleAuthRedirect(intent: GoogleAuthIntent, returnTo: string): void {
-  const redirectTo = persistPendingGoogleAuthRequest(intent, returnTo)
-  window.location.assign(buildGoogleStartUrl(intent, redirectTo))
+  const request = persistPendingGoogleAuthRequest(intent, returnTo, 'redirect')
+  window.location.assign(buildGoogleStartUrl(intent, request.redirectTo))
 }
 
 export const startGoogleAuth = startGoogleAuthRedirect
@@ -165,11 +295,11 @@ export const startGoogleAuth = startGoogleAuthRedirect
 export function openGoogleAuthPopup(
   intent: GoogleAuthIntent,
   returnTo: string
-): { status: 'opened'; popup: Window } | { status: 'blocked' } {
-  const redirectTo = persistPendingGoogleAuthRequest(intent, returnTo)
+): { status: 'opened'; popup: Window; requestId: string } | { status: 'blocked' } {
+  const request = persistPendingGoogleAuthRequest(intent, returnTo, 'popup')
   const popup = window.open(
-    buildGoogleStartUrl(intent, redirectTo),
-    GOOGLE_AUTH_POPUP_NAME,
+    buildGoogleStartUrl(intent, request.redirectTo),
+    buildGooglePopupWindowName(request.requestId),
     buildPopupFeatures()
   )
 
@@ -183,22 +313,27 @@ export function openGoogleAuthPopup(
     // ignore focus failures
   }
 
-  return { status: 'opened', popup }
+  return { status: 'opened', popup, requestId: request.requestId }
 }
 
 export function waitForGooglePopupResult(
   popup: Window,
-  options?: { timeoutMs?: number }
+  options?: { timeoutMs?: number; requestId?: string }
 ): { promise: Promise<GooglePopupMessage>; dispose: () => void } {
   let isSettled = false
   let closePollId: number | null = null
   let timeoutId: number | null = null
   let removeMessageHandler: (() => void) | null = null
+  let removeRelayHandler: (() => void) | null = null
 
   const cleanup = () => {
     if (removeMessageHandler) {
       removeMessageHandler()
       removeMessageHandler = null
+    }
+    if (removeRelayHandler) {
+      removeRelayHandler()
+      removeRelayHandler = null
     }
     if (closePollId !== null) {
       window.clearInterval(closePollId)
@@ -219,17 +354,25 @@ export function waitForGooglePopupResult(
     }
 
     removeMessageHandler = createSecureMessageHandler<GooglePopupMessage>(
-      (message) => settle(message),
+      (message) => {
+        if (!shouldAcceptGooglePopupMessage(message, options?.requestId)) return
+        settle(message)
+      },
       {
         allowedOrigins: getTrustedFrontendOrigins(),
         validateData: isGooglePopupMessage,
       }
+    )
+    removeRelayHandler = subscribeToGooglePopupRelay(
+      (message) => settle(message),
+      options?.requestId
     )
 
     closePollId = window.setInterval(() => {
       if (popup.closed) {
         settle({
           type: 'google-auth-result',
+          requestId: options?.requestId,
           status: 'error',
           error: 'popup_closed',
         })
@@ -246,6 +389,7 @@ export function waitForGooglePopupResult(
 
         settle({
           type: 'google-auth-result',
+          requestId: options?.requestId,
           status: 'error',
           error: 'popup_closed',
         })
