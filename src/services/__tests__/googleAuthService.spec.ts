@@ -5,9 +5,44 @@ import {
   getPendingGoogleAuthRequest,
   openGoogleAuthPopup,
   prefersGoogleAuthPopup,
+  publishGooglePopupResult,
   startGoogleAuthRedirect,
   waitForGooglePopupResult,
 } from '../googleAuthService'
+
+const GOOGLE_POPUP_RELAY_STORAGE_KEY = '__momi_google_auth_popup_result__'
+
+class FakeBroadcastChannel {
+  private static listeners = new Map<string, Set<(event: MessageEvent<unknown>) => void>>()
+  readonly name: string
+
+  constructor(name: string) {
+    this.name = name
+    if (!FakeBroadcastChannel.listeners.has(name)) {
+      FakeBroadcastChannel.listeners.set(name, new Set())
+    }
+  }
+
+  addEventListener(_type: 'message', listener: (event: MessageEvent<unknown>) => void) {
+    FakeBroadcastChannel.listeners.get(this.name)?.add(listener)
+  }
+
+  removeEventListener(_type: 'message', listener: (event: MessageEvent<unknown>) => void) {
+    FakeBroadcastChannel.listeners.get(this.name)?.delete(listener)
+  }
+
+  postMessage(data: unknown) {
+    for (const listener of FakeBroadcastChannel.listeners.get(this.name) ?? []) {
+      listener(new MessageEvent('message', { data }))
+    }
+  }
+
+  close() {}
+
+  static reset() {
+    FakeBroadcastChannel.listeners.clear()
+  }
+}
 
 describe('googleAuthService', () => {
   beforeEach(() => {
@@ -33,6 +68,7 @@ describe('googleAuthService', () => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
     vi.useRealTimers()
+    FakeBroadcastChannel.reset()
   })
 
   it('stores pending auth state before redirecting', () => {
@@ -67,7 +103,7 @@ describe('googleAuthService', () => {
 
     const openSpy = vi.spyOn(window, 'open').mockReturnValue(popup)
 
-    openGoogleAuthPopup('login', '/schedule')
+    const result = openGoogleAuthPopup('login', '/schedule')
 
     expect(openSpy).toHaveBeenCalledWith(
       expect.stringMatching(
@@ -75,8 +111,14 @@ describe('googleAuthService', () => {
           `^${window.location.origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/api/v1/auth/google/start\\?`
         )
       ),
-      'momi-google-auth',
+      expect.stringMatching(/^momi-google-auth:/),
       expect.any(String)
+    )
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'opened',
+        requestId: expect.any(String),
+      })
     )
   })
 
@@ -91,13 +133,14 @@ describe('googleAuthService', () => {
       focus: vi.fn(),
     } as unknown as Window
 
-    const pending = waitForGooglePopupResult(popup)
+    const pending = waitForGooglePopupResult(popup, { requestId: 'request-1' })
 
     window.dispatchEvent(
       new MessageEvent('message', {
         origin: window.location.origin,
         data: {
           type: 'google-auth-result',
+          requestId: 'request-1',
           status: 'success',
           handoffCode: 'handoff-123',
           intent: 'login',
@@ -108,6 +151,7 @@ describe('googleAuthService', () => {
     await expect(pending.promise).resolves.toEqual(
       expect.objectContaining({
         type: 'google-auth-result',
+        requestId: 'request-1',
         status: 'success',
         handoffCode: 'handoff-123',
       })
@@ -123,13 +167,14 @@ describe('googleAuthService', () => {
       focus: vi.fn(),
     } as unknown as Window
 
-    const pending = waitForGooglePopupResult(popup)
+    const pending = waitForGooglePopupResult(popup, { requestId: 'request-dev' })
 
     window.dispatchEvent(
       new MessageEvent('message', {
         origin: 'http://127.0.0.1:4173',
         data: {
           type: 'google-auth-result',
+          requestId: 'request-dev',
           status: 'success',
           handoffCode: 'handoff-dev-origin',
         },
@@ -139,8 +184,76 @@ describe('googleAuthService', () => {
     await expect(pending.promise).resolves.toEqual(
       expect.objectContaining({
         type: 'google-auth-result',
+        requestId: 'request-dev',
         status: 'success',
         handoffCode: 'handoff-dev-origin',
+      })
+    )
+  })
+
+  it('resolves popup results from the relay BroadcastChannel when opener messaging is unavailable', async () => {
+    vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel as unknown as typeof BroadcastChannel)
+
+    const popup = {
+      closed: false,
+      close: vi.fn(),
+      focus: vi.fn(),
+    } as unknown as Window
+
+    const pending = waitForGooglePopupResult(popup, { requestId: 'relay-request' })
+
+    publishGooglePopupResult({
+      type: 'google-auth-result',
+      requestId: 'relay-request',
+      status: 'success',
+      handoffCode: 'relay-handoff',
+    })
+
+    await expect(pending.promise).resolves.toEqual(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        requestId: 'relay-request',
+        status: 'success',
+        handoffCode: 'relay-handoff',
+      })
+    )
+  })
+
+  it('ignores relay messages for a different popup request id', async () => {
+    const popup = {
+      closed: false,
+      close: vi.fn(),
+      focus: vi.fn(),
+    } as { closed: boolean; close: () => void; focus: () => void }
+
+    const pending = waitForGooglePopupResult(popup as unknown as Window, {
+      requestId: 'expected-request',
+    })
+
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: GOOGLE_POPUP_RELAY_STORAGE_KEY,
+        newValue: JSON.stringify({
+          id: 'relay-1',
+          payload: {
+            type: 'google-auth-result',
+            requestId: 'other-request',
+            status: 'success',
+            handoffCode: 'ignored-handoff',
+          },
+        }),
+      })
+    )
+
+    popup.closed = true
+    vi.advanceTimersByTime(400)
+
+    await expect(pending.promise).resolves.toEqual(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        requestId: 'expected-request',
+        status: 'error',
+        error: 'popup_closed',
       })
     )
   })
@@ -152,13 +265,16 @@ describe('googleAuthService', () => {
       focus: vi.fn(),
     } as { closed: boolean; close: () => void; focus: () => void }
 
-    const pending = waitForGooglePopupResult(popup as unknown as Window)
+    const pending = waitForGooglePopupResult(popup as unknown as Window, {
+      requestId: 'close-request',
+    })
 
     window.dispatchEvent(
       new MessageEvent('message', {
         origin: 'https://evil.example',
         data: {
           type: 'google-auth-result',
+          requestId: 'close-request',
           status: 'success',
           handoffCode: 'should-be-ignored',
         },
@@ -171,6 +287,7 @@ describe('googleAuthService', () => {
     await expect(pending.promise).resolves.toEqual(
       expect.objectContaining({
         type: 'google-auth-result',
+        requestId: 'close-request',
         status: 'error',
         error: 'popup_closed',
       })

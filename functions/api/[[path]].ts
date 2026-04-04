@@ -61,6 +61,11 @@ const RESPONSE_HEADERS_TO_STRIP = [
   'x-xss-protection',
 ]
 
+const GOOGLE_POPUP_REDIRECT_HEADERS_TO_PRESERVE = [
+  'cross-origin-opener-policy',
+  'cross-origin-resource-policy',
+]
+
 function appendVary(headers: Headers, value: string): void {
   const current = headers.get('Vary')
   if (!current) {
@@ -171,6 +176,25 @@ function shouldPreserveBrowserRedirect(path: string, request: Request): boolean 
     normalizedPath === 'v1/auth/google/callback' ||
     normalizedPath.startsWith('v1/auth/google/')
   )
+}
+
+function shouldPreserveGooglePopupSecurityHeaders(path: string): boolean {
+  const normalizedPath = resolveUpstreamPath(path)
+  return normalizedPath === 'v1/auth/google/start' || normalizedPath === 'v1/auth/google/callback'
+}
+
+function stripResponseHeaders(headers: Headers, path: string): void {
+  const preservedHeaders = shouldPreserveGooglePopupSecurityHeaders(path)
+    ? new Set(GOOGLE_POPUP_REDIRECT_HEADERS_TO_PRESERVE)
+    : null
+
+  RESPONSE_HEADERS_TO_STRIP.forEach((header) => {
+    if (preservedHeaders?.has(header)) {
+      return
+    }
+
+    headers.delete(header)
+  })
 }
 
 function shouldBypassVPCForRequest(path: string, request: Request): boolean {
@@ -365,9 +389,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
         isDev,
         new Headers(upstream.response.headers)
       )
-      RESPONSE_HEADERS_TO_STRIP.forEach((header) => {
-        redirectHeaders.delete(header)
-      })
+      stripResponseHeaders(redirectHeaders, compactPath)
 
       const location = upstream.response.headers.get('Location')
       if (location) {
@@ -388,9 +410,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     }
 
     const responseHeaders = withCorsHeaders(request, isDev, new Headers(upstream.response.headers))
-    RESPONSE_HEADERS_TO_STRIP.forEach((header) => {
-      responseHeaders.delete(header)
-    })
+    stripResponseHeaders(responseHeaders, compactPath)
     responseHeaders.delete('content-encoding')
     responseHeaders.delete('transfer-encoding')
 

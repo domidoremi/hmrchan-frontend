@@ -6,6 +6,14 @@ import AuthCallbackPage from '../AuthCallbackPage.vue'
 const testState = vi.hoisted(() => ({
   route: { query: {} as Record<string, unknown> },
   routerReplace: vi.fn(),
+  publishGooglePopupResult: vi.fn(),
+  pendingGoogleAuthRequest: {
+    requestId: 'popup-request-1',
+    mode: 'popup' as const,
+    intent: 'login' as const,
+    redirectTo: '/profile',
+    createdAt: 0,
+  },
   authStore: {
     isLoading: false,
     completeGoogleAuth: vi.fn(),
@@ -56,11 +64,8 @@ vi.mock('@/services/googleAuthService', async () => {
   )
   return {
     ...actual,
-    getPendingGoogleAuthRequest: () => ({
-      intent: 'login' as const,
-      redirectTo: '/profile',
-      createdAt: Date.now(),
-    }),
+    getPendingGoogleAuthRequest: () => testState.pendingGoogleAuthRequest,
+    publishGooglePopupResult: testState.publishGooglePopupResult,
   }
 })
 
@@ -68,8 +73,16 @@ describe('AuthCallbackPage', () => {
   beforeEach(() => {
     testState.route.query = { handoff_code: 'popup-handoff' }
     testState.routerReplace.mockReset()
+    testState.pendingGoogleAuthRequest = {
+      requestId: 'popup-request-1',
+      mode: 'popup',
+      intent: 'login',
+      redirectTo: '/profile',
+      createdAt: Date.now(),
+    }
     testState.authStore.completeGoogleAuth = vi.fn()
     testState.authStore.verifyRiskLogin = vi.fn()
+    testState.publishGooglePopupResult.mockReset()
     testState.toastStore.success.mockReset()
     testState.toastStore.error.mockReset()
     vi.useFakeTimers()
@@ -118,6 +131,7 @@ describe('AuthCallbackPage', () => {
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'google-auth-result',
+        requestId: 'popup-request-1',
         status: 'success',
         handoffCode: 'popup-handoff',
         redirectTo: '/profile',
@@ -125,12 +139,71 @@ describe('AuthCallbackPage', () => {
       }),
       'http://127.0.0.1:4173'
     )
+    expect(testState.publishGooglePopupResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        requestId: 'popup-request-1',
+        status: 'success',
+        handoffCode: 'popup-handoff',
+      })
+    )
+    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(closeSpy).toHaveBeenCalled()
+  })
+
+  it('uses popup relay mode without opener and does not exchange in the popup', async () => {
+    const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => undefined)
+
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: undefined,
+    })
+
+    mount(AuthCallbackPage, {
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: {
+          AuthEntryShell: {
+            template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
+          },
+          Button: {
+            template: '<button><slot /></button>',
+          },
+          Input: {
+            template: '<input />',
+          },
+          TurnstileWidget: true,
+          AuthMfaStep: true,
+        },
+      },
+    })
+
+    await flushPromises()
+    vi.advanceTimersByTime(100)
+
+    expect(testState.publishGooglePopupResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        requestId: 'popup-request-1',
+        status: 'success',
+        handoffCode: 'popup-handoff',
+      })
+    )
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
     expect(closeSpy).toHaveBeenCalled()
   })
 
   it('does not call google exchange when callback contains an OAuth error', async () => {
     testState.route.query = { error: 'access_denied' }
+    testState.pendingGoogleAuthRequest = {
+      requestId: 'redirect-error-1',
+      mode: 'redirect',
+      intent: 'login',
+      redirectTo: '/profile',
+      createdAt: Date.now(),
+    }
     Object.defineProperty(window, 'opener', {
       configurable: true,
       value: undefined,
@@ -161,5 +234,54 @@ describe('AuthCallbackPage', () => {
 
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('auth.error.googleAccessDenied')
+  })
+
+  it('continues full-page exchange when the pending auth mode is redirect', async () => {
+    testState.route.query = { handoff_code: 'redirect-handoff' }
+    testState.pendingGoogleAuthRequest = {
+      requestId: 'redirect-request-1',
+      mode: 'redirect',
+      intent: 'login',
+      redirectTo: '/profile',
+      createdAt: Date.now(),
+    }
+    testState.authStore.completeGoogleAuth = vi.fn().mockResolvedValue({
+      status: 'success',
+      redirectTo: '/profile',
+      user: {
+        id: 'user-1',
+      },
+    })
+
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: undefined,
+    })
+
+    mount(AuthCallbackPage, {
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: {
+          AuthEntryShell: {
+            template: '<div><slot name="eyebrow" /><slot /><slot name="footer" /></div>',
+          },
+          Button: {
+            template: '<button><slot /></button>',
+          },
+          Input: {
+            template: '<input />',
+          },
+          TurnstileWidget: true,
+          AuthMfaStep: true,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(testState.publishGooglePopupResult).not.toHaveBeenCalled()
+    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('redirect-handoff')
   })
 })

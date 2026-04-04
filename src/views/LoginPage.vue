@@ -309,6 +309,7 @@ import { userService, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
 import {
+  clearPendingGoogleAuthRequest,
   mapGooglePopupError,
   openGoogleAuthPopup,
   prefersGoogleAuthPopup,
@@ -651,10 +652,31 @@ async function handleMfaResolved(result: AuthFlowResult) {
   await applyAuthFlowResult(result)
 }
 
+async function recoverGooglePopupSession(): Promise<boolean> {
+  try {
+    const currentUser = await authStore.fetchCurrentUser(false)
+    if (!currentUser) {
+      return false
+    }
+
+    resetGooglePopupState()
+    clearPendingGoogleAuthRequest()
+    toastStore.success(t('auth.loginSuccess'))
+    await router.replace(resolveAuthRedirectTarget(redirectTo.value, getPrimaryFallbackRedirect()))
+    return true
+  } catch {
+    return false
+  }
+}
+
 async function handleGooglePopupResult(message: GooglePopupMessage) {
   if (message.status === 'success' && message.handoffCode) {
     const result = await authStore.completeGoogleAuth(message.handoffCode)
     await applyAuthFlowResult(result)
+    return
+  }
+
+  if (message.error === 'popup_closed' && (await recoverGooglePopupSession())) {
     return
   }
 
@@ -693,6 +715,7 @@ async function handleGoogleContinue() {
 
   setGooglePopupStatus('waiting')
   const pendingPopup = waitForGooglePopupResult(popupResult.popup, {
+    requestId: popupResult.requestId,
     timeoutMs: 4 * 60 * 1000,
   })
   googlePopupDispose = pendingPopup.dispose
