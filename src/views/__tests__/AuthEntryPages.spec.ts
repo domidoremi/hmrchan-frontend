@@ -304,7 +304,7 @@ describe('Auth entry pages', () => {
     await googleButton!.trigger('click')
 
     popup.closed = true
-    vi.advanceTimersByTime(400)
+    vi.advanceTimersByTime(1600)
     await flushPromises()
 
     expect(testState.authStore.fetchCurrentUser).toHaveBeenCalledWith(false)
@@ -354,7 +354,7 @@ describe('Auth entry pages', () => {
     await googleButton!.trigger('click')
 
     popup.closed = true
-    vi.advanceTimersByTime(400)
+    vi.advanceTimersByTime(1600)
     await flushPromises()
 
     expect(testState.authStore.fetchCurrentUser).toHaveBeenCalledWith(false)

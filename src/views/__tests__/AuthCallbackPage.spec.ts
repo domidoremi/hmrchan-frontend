@@ -126,7 +126,7 @@ describe('AuthCallbackPage', () => {
     })
 
     await flushPromises()
-    vi.advanceTimersByTime(100)
+    vi.advanceTimersByTime(400)
 
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -184,7 +184,7 @@ describe('AuthCallbackPage', () => {
     })
 
     await flushPromises()
-    vi.advanceTimersByTime(100)
+    vi.advanceTimersByTime(400)
 
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -235,7 +235,7 @@ describe('AuthCallbackPage', () => {
     })
 
     await flushPromises()
-    vi.advanceTimersByTime(100)
+    vi.advanceTimersByTime(400)
 
     expect(testState.publishGooglePopupResult).toHaveBeenCalledWith(
       expect.objectContaining({
