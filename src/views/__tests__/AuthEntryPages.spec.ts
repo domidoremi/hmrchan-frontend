@@ -262,21 +262,14 @@ describe('Auth entry pages', () => {
     expect(testState.routerReplace).toHaveBeenCalledWith('/feed')
   })
 
-  it('recovers login popup completion from the refresh cookie when the popup closes before bridging', async () => {
+  it('surfaces login popup fallback without probing refresh on popup timeout', async () => {
     vi.useFakeTimers()
     testState.route.query = { redirect: '/feed' }
-    testState.authStore.fetchCurrentUser = vi.fn().mockResolvedValue({
-      id: 'user-1',
-      username: 'tester',
-      email: 'tester@example.com',
-      created_at: '2024-01-01T00:00:00Z',
-    })
 
     const popup = {
-      closed: false,
       focus: vi.fn(),
       close: vi.fn(),
-    } as { closed: boolean; focus: () => void; close: () => void }
+    } as { focus: () => void; close: () => void }
 
     vi.stubGlobal(
       'matchMedia',
@@ -303,30 +296,23 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    popup.closed = true
-    vi.advanceTimersByTime(1600)
+    vi.advanceTimersByTime(4 * 60 * 1000)
     await flushPromises()
 
-    expect(testState.authStore.fetchCurrentUser).toHaveBeenCalledWith(false)
-    expect(testState.routerReplace).toHaveBeenCalledWith('/feed')
-    expect(testState.toastStore.success).toHaveBeenCalledWith('auth.loginSuccess')
+    expect(testState.authStore.fetchCurrentUser).not.toHaveBeenCalled()
+    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('auth.error.googlePopupClosed')
+    expect(wrapper.text()).toContain('auth.googlePopupFallbackAction')
   })
 
-  it('recovers register popup completion from the refresh cookie when the popup closes before bridging', async () => {
+  it('surfaces register popup fallback without probing refresh on popup timeout', async () => {
     vi.useFakeTimers()
     testState.route.query = { redirect: '/welcome' }
-    testState.authStore.fetchCurrentUser = vi.fn().mockResolvedValue({
-      id: 'user-2',
-      username: 'new-user',
-      email: 'new-user@example.com',
-      created_at: '2024-01-01T00:00:00Z',
-    })
 
     const popup = {
-      closed: false,
       focus: vi.fn(),
       close: vi.fn(),
-    } as { closed: boolean; focus: () => void; close: () => void }
+    } as { focus: () => void; close: () => void }
 
     vi.stubGlobal(
       'matchMedia',
@@ -353,12 +339,12 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    popup.closed = true
-    vi.advanceTimersByTime(1600)
+    vi.advanceTimersByTime(4 * 60 * 1000)
     await flushPromises()
 
-    expect(testState.authStore.fetchCurrentUser).toHaveBeenCalledWith(false)
-    expect(testState.routerReplace).toHaveBeenCalledWith('/welcome')
-    expect(testState.toastStore.success).toHaveBeenCalledWith('auth.registerSuccess')
+    expect(testState.authStore.fetchCurrentUser).not.toHaveBeenCalled()
+    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('auth.error.googlePopupClosed')
+    expect(wrapper.text()).toContain('auth.googlePopupFallbackAction')
   })
 })
