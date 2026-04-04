@@ -159,6 +159,9 @@ import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
 type CallbackStep = 'loading' | 'risk-verification' | 'mfa' | 'error'
 type PopupBridgeState = 'posting' | 'manual-close'
 
+const POPUP_BRIDGE_CLOSE_DELAY_MS = 320
+const POPUP_BRIDGE_MANUAL_CLOSE_HINT_DELAY_MS = 1000
+
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -411,11 +414,11 @@ async function runPopupBridge(): Promise<boolean> {
 
   window.setTimeout(() => {
     window.close()
-  }, 80)
+  }, POPUP_BRIDGE_CLOSE_DELAY_MS)
 
   window.setTimeout(() => {
     popupBridgeState.value = 'manual-close'
-  }, 700)
+  }, POPUP_BRIDGE_MANUAL_CLOSE_HINT_DELAY_MS)
 
   return true
 }

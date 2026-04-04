@@ -40,6 +40,8 @@ const GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY = '__momi_google_auth_popup_result__'
 const GOOGLE_AUTH_POPUP_WIDTH = 34
 const GOOGLE_AUTH_POPUP_HEIGHT = 42
 const GOOGLE_AUTH_START_PATH = '/api/v1/auth/google/start'
+const GOOGLE_POPUP_CLOSE_POLL_INTERVAL_MS = 320
+const GOOGLE_POPUP_CLOSE_SETTLE_GRACE_MS = 720
 
 type GooglePopupRelayEnvelope = {
   id: string
@@ -325,6 +327,7 @@ export function waitForGooglePopupResult(
   let timeoutId: number | null = null
   let removeMessageHandler: (() => void) | null = null
   let removeRelayHandler: (() => void) | null = null
+  let popupClosedAt: number | null = null
 
   const cleanup = () => {
     if (removeMessageHandler) {
@@ -369,15 +372,36 @@ export function waitForGooglePopupResult(
     )
 
     closePollId = window.setInterval(() => {
-      if (popup.closed) {
-        settle({
-          type: 'google-auth-result',
-          requestId: options?.requestId,
-          status: 'error',
-          error: 'popup_closed',
-        })
+      let popupIsClosed = false
+
+      try {
+        popupIsClosed = popup.closed
+      } catch {
+        popupClosedAt = null
+        return
       }
-    }, 320)
+
+      if (!popupIsClosed) {
+        popupClosedAt = null
+        return
+      }
+
+      if (popupClosedAt === null) {
+        popupClosedAt = Date.now()
+        return
+      }
+
+      if (Date.now() - popupClosedAt < GOOGLE_POPUP_CLOSE_SETTLE_GRACE_MS) {
+        return
+      }
+
+      settle({
+        type: 'google-auth-result',
+        requestId: options?.requestId,
+        status: 'error',
+        error: 'popup_closed',
+      })
+    }, GOOGLE_POPUP_CLOSE_POLL_INTERVAL_MS)
 
     if (options?.timeoutMs) {
       timeoutId = window.setTimeout(() => {
