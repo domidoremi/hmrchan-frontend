@@ -82,12 +82,6 @@
         </PageToolbar>
       </PageHeroShell>
 
-      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
-        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
-        <p>{{ $t('home.preview.desc') }}</p>
-        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
-      </div>
-
       <h2 class="sr-only">{{ $t('search.tab.posts') }}</h2>
 
       <StateIndicator
@@ -190,12 +184,10 @@ import { useSettingsStore } from '@/stores'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { storePostNavigationContext } from '@/utils/postNavigation'
-import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { getFallbackExplorePosts } from '@/fallbacks/exploreFallback'
 import {
   isServiceUnavailableError,
-  resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -246,12 +238,7 @@ const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
-const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
-const showPreviewNotice = computed(
-  () =>
-    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
-)
 
 // 使用缓存感知的帖子列表加载
 const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
@@ -469,8 +456,7 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       return false
     }
 
-    dataSource.value = 'live'
-    fallbackReason.value = null
+    dataSource.value = result.fromCache ? 'cached' : 'live'
 
     if (reset) {
       posts.value = items
@@ -502,7 +488,6 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       })
 
       dataSource.value = 'fallback'
-      fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
       error.value = null
       total.value = fallbackResult.total
 

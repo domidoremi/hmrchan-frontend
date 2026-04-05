@@ -12,13 +12,11 @@ describe('useHomeViewModel', () => {
   it('derives homepage content from the bootstrap aggregate', async () => {
     const aggregate = buildHomepageBootstrapFallback()
     const allPosts = ref(buildHomePostsFromAggregate(aggregate, t))
-    const error = ref<string | null>('offline')
 
     const viewModel = useHomeViewModel({
       homeAggregate: ref(aggregate),
       allPosts,
       homeDataSource: ref<'fallback'>('fallback'),
-      error,
       total: ref(allPosts.value.length),
       homeScheduleHighlights: ref(aggregate.trends.schedules),
       homeCommunityHighlights: ref(aggregate.trends.community),
@@ -30,7 +28,7 @@ describe('useHomeViewModel', () => {
 
     await nextTick()
 
-    expect(viewModel.showPreviewNotice.value).toBe(true)
+    expect(viewModel.isUsingFallbackPosts.value).toBe(true)
     expect(viewModel.heroTags.value.length).toBeGreaterThan(0)
     expect(viewModel.storyCards.value.length).toBeGreaterThan(0)
     expect(viewModel.featuredRailCards.value.length).toBeGreaterThan(0)
@@ -46,7 +44,6 @@ describe('useHomeViewModel', () => {
       homeAggregate: ref(aggregate),
       allPosts,
       homeDataSource: ref<'aggregate'>('aggregate'),
-      error: ref('transient'),
       total: ref(allPosts.value.length),
       homeScheduleHighlights: ref([]),
       homeCommunityHighlights: ref([]),
@@ -58,7 +55,7 @@ describe('useHomeViewModel', () => {
 
     await nextTick()
 
-    expect(viewModel.showPreviewNotice.value).toBe(false)
+    expect(viewModel.isUsingFallbackPosts.value).toBe(false)
     expect(viewModel.trendingAuthors.value.length).toBeGreaterThan(0)
   })
 
@@ -70,7 +67,6 @@ describe('useHomeViewModel', () => {
       homeAggregate: ref(aggregate),
       allPosts,
       homeDataSource: ref<'aggregate'>('aggregate'),
-      error: ref(null),
       total: ref(allPosts.value.length),
       homeScheduleHighlights: ref(aggregate.trends.schedules),
       homeCommunityHighlights: ref(aggregate.trends.community),
@@ -103,7 +99,6 @@ describe('useHomeViewModel', () => {
       homeAggregate: ref(aggregate),
       allPosts,
       homeDataSource: ref<'aggregate'>('aggregate'),
-      error: ref(null),
       total: ref(allPosts.value.length),
       homeScheduleHighlights: ref(aggregate.trends.schedules),
       homeCommunityHighlights: ref(aggregate.trends.community),

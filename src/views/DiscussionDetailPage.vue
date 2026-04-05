@@ -6,12 +6,6 @@
         {{ $t('common.back') }}
       </Button>
 
-      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
-        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
-        <p>{{ $t('home.preview.desc') }}</p>
-        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
-      </div>
-
       <StateIndicator
         v-if="error && !isUsingFallback"
         variant="error"
@@ -139,7 +133,6 @@ import { useAuthStore, useToastStore, useDiscussionsStore } from '@/stores'
 import { discussionService, ApiError } from '@/api'
 import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { formatRelativeTime } from '@/utils/date'
-import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -166,11 +159,6 @@ const isDeleting = ref(false)
 const isPinning = ref(false)
 let fetchDiscussionToken = 0
 const isUsingFallback = computed(() => discStore.source === 'fallback')
-const fallbackReason = computed(() => discStore.fallbackReason)
-const showPreviewNotice = computed(
-  () =>
-    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
-)
 const resolvedDiscussionAuthorAvatarSrc = computed(() =>
   resolveAvatarSrc(discussion.value?.author.avatar_url)
 )

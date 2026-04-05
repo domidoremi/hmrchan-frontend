@@ -8,7 +8,6 @@ import {
 } from '@/api'
 import { HOME_FALLBACK_POSTS } from '@/fallbacks/homepageFallback'
 import { formatRelativeTime } from '@/utils/date'
-import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 import type { ComputedRef, Ref } from 'vue'
 import { createBubbleMotionProfile } from './bubbleMotion'
@@ -47,8 +46,7 @@ import { useHomeStoryDeck } from './useHomeStoryDeck'
 export function useHomeViewModel(options: {
   homeAggregate: Ref<HomeAggregateResponse | null>
   allPosts: Ref<PostListItem[]>
-  homeDataSource: Ref<'idle' | 'aggregate' | 'support' | 'fallback'>
-  error: Ref<string | null>
+  homeDataSource: Ref<'idle' | 'aggregate' | 'support' | 'cached' | 'fallback'>
   total: Ref<number>
   homeScheduleHighlights: Ref<HomeScheduleHighlight[]>
   homeCommunityHighlights: Ref<HomeCommunityHighlight[]>
@@ -61,7 +59,6 @@ export function useHomeViewModel(options: {
     homeAggregate,
     allPosts,
     homeDataSource,
-    error,
     total,
     homeScheduleHighlights,
     homeCommunityHighlights,
@@ -77,9 +74,6 @@ export function useHomeViewModel(options: {
   })
 
   const isUsingFallbackPosts = computed(() => homeDataSource.value === 'fallback')
-  const showPreviewNotice = computed(
-    () => Boolean(error.value) && isUsingFallbackPosts.value && shouldExposeFallbackPreviewNotice()
-  )
 
   const fallbackTrendingTags = computed(() => {
     const tagCounts = new Map<string, number>()
@@ -670,7 +664,6 @@ export function useHomeViewModel(options: {
     resolvedCommunityHighlights,
     resolvedScheduleHighlights,
     scheduleFallbackCard,
-    showPreviewNotice,
     spotlightMediaCards,
     spotlightTextCards,
     storyCardCount,

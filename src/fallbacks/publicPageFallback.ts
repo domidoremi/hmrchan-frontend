@@ -1,13 +1,18 @@
 import { ApiError, type PaginatedApiResponse } from '@/api/client'
+import { deepClone } from '@/utils/modernAPIs'
 
 export const PUBLIC_FALLBACK_PREFIX = '__public_fallback__'
 
-export type PublicPageDataSource = 'live' | 'fallback'
+export type PublicPageDataSource = 'live' | 'cached' | 'fallback'
 
 export function createPublicFallbackId(scope: string, key: string): string {
   const normalizedScope = scope.trim().replace(/\s+/g, '-').toLowerCase()
   const normalizedKey = key.trim().replace(/\s+/g, '-').toLowerCase()
   return `${PUBLIC_FALLBACK_PREFIX}${normalizedScope}__${normalizedKey}`
+}
+
+export function clonePublicSnapshot<T>(value: T): T {
+  return deepClone(value)
 }
 
 export function isPublicFallbackId(id: string | null | undefined): boolean {

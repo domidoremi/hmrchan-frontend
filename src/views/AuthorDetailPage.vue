@@ -1,12 +1,6 @@
 <template>
   <div class="author-detail-page">
     <div class="container">
-      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
-        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
-        <p>{{ $t('home.preview.desc') }}</p>
-        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
-      </div>
-
       <StateIndicator
         v-if="error && !isUsingFallback"
         variant="error"
@@ -80,16 +74,14 @@ import { ref, computed, watch, onWatcherCleanup, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
-import { authorCache } from '@/utils/cache'
+import { authorCache, getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { applyPageMeta } from '@/utils/pageMeta'
-import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { getFallbackAuthorById, getFallbackAuthorPosts } from '@/fallbacks/authorsFallback'
 import {
   isServiceUnavailableError,
-  resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
 import Avatar from '@/components/ui/Avatar.vue'
@@ -109,18 +101,14 @@ const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
-const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
-const showPreviewNotice = computed(
-  () =>
-    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
-)
 const resolvedAuthorAvatarSrc = computed(() => resolveAvatarSrc(author.value?.avatar_url))
 const authorFallbackLabel = computed(() =>
   getAvatarFallbackLabel(author.value?.display_name, author.value?.name, author.value?.username)
 )
 let latestRequestId = 0
 let authorController: AbortController | null = null
+const AUTHOR_DETAIL_SNAPSHOT_SCOPE = 'author/detail'
 
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException
@@ -205,22 +193,41 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
     author.value = authorRes
     posts.value = postsRes.items
     dataSource.value = 'live'
-    fallbackReason.value = null
     syncAuthorMeta(authorRes)
 
     // 写入缓存
     await authorCache.setAuthor(targetAuthorId, authorRes)
+    await setPublicSnapshot(
+      AUTHOR_DETAIL_SNAPSHOT_SCOPE,
+      targetAuthorId ? { id: targetAuthorId } : {},
+      {
+        author: authorRes,
+        posts: postsRes.items,
+      }
+    )
   } catch (err) {
     if (requestSignal?.aborted || isAbortError(err) || requestId !== latestRequestId) return
 
     if (isServiceUnavailableError(err)) {
+      const cachedSnapshot = await getPublicSnapshot<{
+        author: AuthorResponse
+        posts: PostListItem[]
+      }>(AUTHOR_DETAIL_SNAPSHOT_SCOPE, { id: targetAuthorId })
+      if (cachedSnapshot) {
+        author.value = cachedSnapshot.author
+        posts.value = cachedSnapshot.posts
+        dataSource.value = 'cached'
+        error.value = null
+        syncAuthorMeta(cachedSnapshot.author)
+        return
+      }
+
       const fallbackAuthor = getFallbackAuthorById(targetAuthorId)
       if (fallbackAuthor) {
         const fallbackPosts = getFallbackAuthorPosts(targetAuthorId, 1, 24)
         author.value = fallbackAuthor
         posts.value = fallbackPosts.items
         dataSource.value = 'fallback'
-        fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
         error.value = null
         syncAuthorMeta(fallbackAuthor)
         return
