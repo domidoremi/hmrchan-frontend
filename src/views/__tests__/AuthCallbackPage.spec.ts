@@ -129,6 +129,11 @@ const globalConfig = {
 
 describe('AuthCallbackPage', () => {
   beforeEach(() => {
+    Object.defineProperty(window, 'name', {
+      configurable: true,
+      value: '',
+      writable: true,
+    })
     testState.route.query = { handoff_code: 'popup-handoff' }
     testState.routerReplace.mockReset()
     testState.api.authService.getTurnstileConfig.mockReset()
@@ -249,6 +254,11 @@ describe('AuthCallbackPage', () => {
   it('uses popup relay mode without opener and does not exchange in the popup', async () => {
     const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => undefined)
 
+    Object.defineProperty(window, 'name', {
+      configurable: true,
+      value: 'momi-google-auth:popup-request-1',
+      writable: true,
+    })
     Object.defineProperty(window, 'opener', {
       configurable: true,
       value: undefined,

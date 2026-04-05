@@ -753,8 +753,14 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
 
 async function handleGooglePopupResult(message: GooglePopupMessage) {
   if (message.status === 'success' && message.handoffCode) {
-    const result = await authStore.completeGoogleAuth(message.handoffCode)
-    await applyAuthFlowResult(result)
+    const callbackRedirect = resolveAuthRedirectTarget(message.redirectTo, redirectTo.value)
+    await router.replace({
+      path: '/auth/callback',
+      query: {
+        handoff_code: message.handoffCode,
+        ...(callbackRedirect !== '/' ? { redirect: callbackRedirect } : {}),
+      },
+    })
     return
   }
 
