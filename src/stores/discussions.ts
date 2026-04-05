@@ -21,9 +21,13 @@ import {
 } from '@/fallbacks/communityFallback'
 import {
   isServiceUnavailableError,
-  resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
+import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
+
+const DISCUSSIONS_LIST_SNAPSHOT_SCOPE = 'community/discussions'
+const DISCUSSION_DETAIL_SNAPSHOT_SCOPE = 'community/discussion'
+const DISCUSSION_COMMENTS_SNAPSHOT_SCOPE = 'community/discussion-comments'
 
 export const useDiscussionsStore = defineStore('discussions', () => {
   const items = ref<Discussion[]>([])
@@ -34,7 +38,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const source = ref<PublicPageDataSource>('live')
-  const fallbackReason = ref<string | null>(null)
 
   // 当前筛选/排序
   const currentCategory = ref<DiscussionCategory | undefined>(undefined)
@@ -118,13 +121,23 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       total.value = res.total
       totalPages.value = res.total_pages
       source.value = 'live'
-      fallbackReason.value = null
+      await setPublicSnapshot(DISCUSSIONS_LIST_SNAPSHOT_SCOPE, params, res)
       return true
     } catch (err) {
       if (controller.signal.aborted || requestToken !== fetchDiscussionsToken) return false
 
       if (isServiceUnavailableError(err)) {
-        const fallbackRes = getFallbackDiscussions(params)
+        const params: ListDiscussionsParams = {
+          page: page.value,
+          page_size: pageSize.value,
+          category: currentCategory.value,
+          sort: currentSort.value,
+        }
+        const cachedRes = await getPublicSnapshot<PaginatedApiResponse<Discussion>>(
+          DISCUSSIONS_LIST_SNAPSHOT_SCOPE,
+          params
+        )
+        const fallbackRes = cachedRes ?? getFallbackDiscussions(params)
 
         if (reset) {
           items.value = fallbackRes.items
@@ -136,8 +149,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
         total.value = fallbackRes.total
         totalPages.value = fallbackRes.total_pages
-        source.value = 'fallback'
-        fallbackReason.value = resolvePublicFallbackReason(err)
+        source.value = cachedRes ? 'cached' : 'fallback'
         error.value = null
         return true
       }
@@ -186,17 +198,22 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       if (signal?.aborted || requestToken !== fetchDiscussionToken) return null
       currentDiscussion.value = discussion
       source.value = 'live'
-      fallbackReason.value = null
+      await setPublicSnapshot(DISCUSSION_DETAIL_SNAPSHOT_SCOPE, { id }, discussion)
       return currentDiscussion.value
     } catch (err) {
       if (signal?.aborted || isAbortError(err) || requestToken !== fetchDiscussionToken) return null
 
       if (isServiceUnavailableError(err)) {
-        const fallbackDiscussion = getFallbackDiscussionById(id)
+        const cachedDiscussion = await getPublicSnapshot<Discussion>(
+          DISCUSSION_DETAIL_SNAPSHOT_SCOPE,
+          {
+            id,
+          }
+        )
+        const fallbackDiscussion = cachedDiscussion ?? getFallbackDiscussionById(id)
         if (fallbackDiscussion) {
           currentDiscussion.value = fallbackDiscussion
-          source.value = 'fallback'
-          fallbackReason.value = resolvePublicFallbackReason(err)
+          source.value = cachedDiscussion ? 'cached' : 'fallback'
           error.value = null
           return currentDiscussion.value
         }
@@ -230,19 +247,16 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     try {
       if (reset) commentsPage.value = 1
 
-      const res = await discussionService.getComments(
-        discussionId,
-        {
-          page: commentsPage.value,
-          page_size: 20,
-          sort: 'newest',
-          preload_replies: 3,
-        },
-        {
-          signal: controller.signal,
-          skipErrorToast: true,
-        }
-      )
+      const params = {
+        page: commentsPage.value,
+        page_size: 20,
+        sort: 'newest' as const,
+        preload_replies: 3,
+      }
+      const res = await discussionService.getComments(discussionId, params, {
+        signal: controller.signal,
+        skipErrorToast: true,
+      })
       if (controller.signal.aborted || requestToken !== fetchCommentsToken) return false
 
       if (reset) {
@@ -256,16 +270,31 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       commentsTotal.value = res.total
       commentsTotalPages.value = res.total_pages
       source.value = 'live'
-      fallbackReason.value = null
+      await setPublicSnapshot(
+        DISCUSSION_COMMENTS_SNAPSHOT_SCOPE,
+        { id: discussionId, page: params.page, page_size: params.page_size },
+        res
+      )
       return true
     } catch (err) {
       if (controller.signal.aborted || requestToken !== fetchCommentsToken) return false
 
       if (isServiceUnavailableError(err)) {
-        const fallbackRes = getFallbackDiscussionComments(discussionId, {
+        const snapshotParams = {
+          id: discussionId,
           page: commentsPage.value,
           page_size: 20,
-        })
+        }
+        const cachedRes = await getPublicSnapshot<PaginatedApiResponse<DiscussionComment>>(
+          DISCUSSION_COMMENTS_SNAPSHOT_SCOPE,
+          snapshotParams
+        )
+        const fallbackRes =
+          cachedRes ??
+          getFallbackDiscussionComments(discussionId, {
+            page: commentsPage.value,
+            page_size: 20,
+          })
 
         if (reset) {
           currentComments.value = fallbackRes.items
@@ -277,8 +306,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
         commentsTotal.value = fallbackRes.total
         commentsTotalPages.value = fallbackRes.total_pages
-        source.value = 'fallback'
-        fallbackReason.value = resolvePublicFallbackReason(err)
+        source.value = cachedRes ? 'cached' : 'fallback'
         return true
       }
 
@@ -406,7 +434,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     isLoading.value = false
     error.value = null
     source.value = 'live'
-    fallbackReason.value = null
     currentCategory.value = undefined
     currentSort.value = 'latest'
     currentDiscussion.value = null
@@ -425,7 +452,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     isLoading,
     error,
     source,
-    fallbackReason,
     hasMore,
     currentCategory,
     currentSort,

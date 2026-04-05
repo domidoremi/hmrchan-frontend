@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 
 const { mockApiClient } = vi.hoisted(() => ({
   mockApiClient: {
     get: vi.fn(),
   },
 }))
-const { mockShouldUsePreviewHomepageFallback } = vi.hoisted(() => ({
-  mockShouldUsePreviewHomepageFallback: vi.fn(() => false),
+const { mockGetPublicSnapshot, mockSetPublicSnapshot } = vi.hoisted(() => ({
+  mockGetPublicSnapshot: vi.fn(),
+  mockSetPublicSnapshot: vi.fn(),
 }))
 
 vi.mock('../client', async () => {
@@ -18,14 +20,10 @@ vi.mock('../client', async () => {
   }
 })
 
-vi.mock('@/utils/runtimeHost', async () => {
-  const actual = await vi.importActual<typeof import('@/utils/runtimeHost')>('@/utils/runtimeHost')
-
-  return {
-    ...actual,
-    shouldUsePreviewHomepageFallback: mockShouldUsePreviewHomepageFallback,
-  }
-})
+vi.mock('@/utils/cache', () => ({
+  getPublicSnapshot: mockGetPublicSnapshot,
+  setPublicSnapshot: mockSetPublicSnapshot,
+}))
 
 import { homeService } from '../homeService'
 
@@ -42,18 +40,8 @@ const buildAuthor = (overrides: Record<string, unknown> = {}) => ({
 describe('homeService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockShouldUsePreviewHomepageFallback.mockReturnValue(false)
-  })
-
-  it('uses direct fallback data on Pages preview hosts without calling the API', async () => {
-    mockShouldUsePreviewHomepageFallback.mockReturnValue(true)
-
-    const result = await homeService.loadHomepageBootstrap()
-
-    expect(result.source).toBe('fallback')
-    expect(result.reason).toBeNull()
-    expect(result.payload.version).toBe('home.v1.fallback')
-    expect(mockApiClient.get).not.toHaveBeenCalled()
+    mockGetPublicSnapshot.mockResolvedValue(undefined)
+    mockSetPublicSnapshot.mockResolvedValue(undefined)
   })
 
   it('normalizes aggregate preview and community trend payloads', async () => {
@@ -286,6 +274,7 @@ describe('homeService', () => {
     const result = await homeService.loadHomepageBootstrap()
 
     expect(result.source).toBe('support')
+    expect(mockSetPublicSnapshot).toHaveBeenCalledTimes(1)
     expect(result.payload.portal.items.find((item) => item.key === 'schedule')?.count).toBe(1)
     expect(result.payload.portal.items.find((item) => item.key === 'community')?.count).toBe(1)
     expect(result.payload.trends.schedules).toEqual([
@@ -304,5 +293,19 @@ describe('homeService', () => {
         }),
       }),
     ])
+  })
+
+  it('prefers cached homepage snapshots before static fallback when live data is unavailable', async () => {
+    const cachedPayload = {
+      ...buildHomepageBootstrapFallback(),
+      version: 'home.v1.cached',
+    }
+    mockGetPublicSnapshot.mockResolvedValueOnce(cachedPayload)
+    mockApiClient.get.mockRejectedValueOnce(new Error('aggregate unavailable'))
+
+    const result = await homeService.loadHomepageBootstrap()
+
+    expect(result.source).toBe('cached')
+    expect(result.payload.version).toBe('home.v1.cached')
   })
 })

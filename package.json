@@ -47,6 +47,7 @@
     "sitemap:preview": "node scripts/generate-sitemap.js --dry-run",
     "icons:generate": "node scripts/generate-icons.js",
     "screenshots:generate": "bun run scripts/generate-screenshots.ts",
+    "fallbacks:refresh": "node scripts/refresh-public-snapshots.mjs",
     "audit": "bun run audit:repo && bun run audit:deps",
     "audit:repo": "bun run scripts/audit/index.ts",
     "audit:deps": "bun audit",

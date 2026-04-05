@@ -6,7 +6,7 @@ import {
 } from './publicVisibility'
 import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import { isServiceUnavailableError } from '@/fallbacks/publicPageFallback'
-import { shouldUsePreviewHomepageFallback } from '@/utils/runtimeHost'
+import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 
 export interface HomeImageAsset {
   url: string
@@ -262,9 +262,11 @@ export interface HomeApiResult<T> {
 }
 
 export interface HomeBootstrapResult extends HomeApiResult<HomeAggregateResponse> {
-  source: 'aggregate' | 'support' | 'fallback'
+  source: 'aggregate' | 'support' | 'cached' | 'fallback'
   reason?: string | null
 }
+
+const HOME_BOOTSTRAP_SNAPSHOT_SCOPE = 'home/bootstrap'
 
 function collectHomeHeaders(config?: RequestConfig) {
   const meta = {
@@ -751,18 +753,33 @@ export const homeService = {
   },
 
   async loadHomepageBootstrap(config?: RequestConfig): Promise<HomeBootstrapResult> {
-    if (shouldUsePreviewHomepageFallback()) {
+    const cachedSnapshot = await getPublicSnapshot<HomeAggregateResponse>(
+      HOME_BOOTSTRAP_SNAPSHOT_SCOPE
+    )
+
+    const buildUnavailableResult = (reason: string | null): HomeBootstrapResult => {
+      if (cachedSnapshot) {
+        return {
+          payload: cachedSnapshot,
+          visibility: DEFAULT_PUBLIC_VISIBILITY_SCOPE,
+          etag: null,
+          source: 'cached',
+          reason,
+        }
+      }
+
       return {
         payload: buildHomepageBootstrapFallback(),
         visibility: DEFAULT_PUBLIC_VISIBILITY_SCOPE,
         etag: null,
         source: 'fallback',
-        reason: null,
+        reason,
       }
     }
 
     try {
       const result = await this.getHome(config)
+      await setPublicSnapshot(HOME_BOOTSTRAP_SNAPSHOT_SCOPE, {}, result.payload)
       return {
         ...result,
         source: 'aggregate',
@@ -770,13 +787,7 @@ export const homeService = {
       }
     } catch (aggregateError) {
       if (isServiceUnavailableError(aggregateError)) {
-        return {
-          payload: buildHomepageBootstrapFallback(),
-          visibility: DEFAULT_PUBLIC_VISIBILITY_SCOPE,
-          etag: null,
-          source: 'fallback',
-          reason: resolveBootstrapFallbackReason(aggregateError),
-        }
+        return buildUnavailableResult(resolveBootstrapFallbackReason(aggregateError))
       }
 
       const [
@@ -803,24 +814,21 @@ export const homeService = {
         scheduleHighlightsResult.status !== 'fulfilled' ||
         communityHighlightsResult.status !== 'fulfilled'
       ) {
-        return {
-          payload: buildHomepageBootstrapFallback(),
-          visibility: DEFAULT_PUBLIC_VISIBILITY_SCOPE,
-          etag: null,
-          source: 'fallback',
-          reason: resolveBootstrapFallbackReason(aggregateError),
-        }
+        return buildUnavailableResult(resolveBootstrapFallbackReason(aggregateError))
       }
 
+      const payload = buildAggregateFromSupport({
+        featured: featuredResult.value.payload,
+        storyDeck: storyDeckResult.value.payload,
+        latestTextPosts: latestTextPostsResult.value.payload,
+        trends: trendsResult.value.payload,
+        schedules: scheduleHighlightsResult.value.payload,
+        community: communityHighlightsResult.value.payload,
+      })
+      await setPublicSnapshot(HOME_BOOTSTRAP_SNAPSHOT_SCOPE, {}, payload)
+
       return {
-        payload: buildAggregateFromSupport({
-          featured: featuredResult.value.payload,
-          storyDeck: storyDeckResult.value.payload,
-          latestTextPosts: latestTextPostsResult.value.payload,
-          trends: trendsResult.value.payload,
-          schedules: scheduleHighlightsResult.value.payload,
-          community: communityHighlightsResult.value.payload,
-        }),
+        payload,
         visibility:
           featuredResult.value.visibility ??
           storyDeckResult.value.visibility ??

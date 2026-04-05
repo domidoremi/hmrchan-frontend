@@ -28,12 +28,6 @@
         </template>
       </PageHeroShell>
 
-      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
-        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
-        <p>{{ $t('home.preview.desc') }}</p>
-        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
-      </div>
-
       <h2 class="sr-only">{{ $t('nav.authors') }}</h2>
 
       <StateIndicator
@@ -91,14 +85,12 @@ import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } fro
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorListItem, ApiError } from '@/api'
-import { authorCache } from '@/utils/cache'
+import { authorCache, getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
-import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { getFallbackAuthors } from '@/fallbacks/authorsFallback'
 import {
   isServiceUnavailableError,
-  resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
 import ControlButton from '@/components/appearance/ControlButton.vue'
@@ -119,12 +111,7 @@ const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
-const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
-const showPreviewNotice = computed(
-  () =>
-    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
-)
 
 const page = ref(1)
 const total = ref(0)
@@ -139,6 +126,7 @@ const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
 let hasPrefetchedAuthorDetailPage = false
 let fetchAuthorsController: AbortController | null = null
 let fetchAuthorsToken = 0
+const AUTHORS_LIST_SNAPSHOT_SCOPE = 'authors/list'
 
 function abortFetchAuthors() {
   fetchAuthorsController?.abort()
@@ -199,18 +187,21 @@ async function fetchAuthors(reset = true): Promise<boolean> {
     }
     total.value = res.total
     dataSource.value = 'live'
-    fallbackReason.value = null
+    await setPublicSnapshot(AUTHORS_LIST_SNAPSHOT_SCOPE, params, res)
 
     return true
   } catch (err) {
     if (controller.signal.aborted || requestToken !== fetchAuthorsToken) return false
 
     if (isServiceUnavailableError(err) && authors.value.length === 0) {
-      const fallbackResult = getFallbackAuthors(params)
+      const cachedSnapshot = await getPublicSnapshot<{ items: AuthorListItem[]; total: number }>(
+        AUTHORS_LIST_SNAPSHOT_SCOPE,
+        params
+      )
+      const fallbackResult = cachedSnapshot ?? getFallbackAuthors(params)
       authors.value = reset ? fallbackResult.items : [...authors.value, ...fallbackResult.items]
       total.value = fallbackResult.total
-      dataSource.value = 'fallback'
-      fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+      dataSource.value = cachedSnapshot ? 'cached' : 'fallback'
       error.value = null
       return true
     }

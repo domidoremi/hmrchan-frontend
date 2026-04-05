@@ -62,16 +62,6 @@
               </div>
             </div>
 
-            <div
-              v-if="showPreviewNotice"
-              class="hero-preview glass-card"
-              :style="noGlassBackdropStyle"
-            >
-              <span class="hero-preview__label">{{ $t('home.preview.label') }}</span>
-              <p>{{ $t('home.preview.desc') }}</p>
-              <span v-if="error" class="hero-preview__detail">{{ error }}</span>
-            </div>
-
             <div class="hero-actions">
               <Button size="lg" variant="primary" class="hero-btn" @click="goToExplore">
                 <AnimatedIcon name="explore" :fallback-icon="Compass" size="md" />
@@ -1137,7 +1127,7 @@ const homeScheduleHighlights = ref<HomeScheduleHighlight[]>(
 const homeCommunityHighlights = ref<HomeCommunityHighlight[]>(
   initialHomeAggregate.trends.community ?? []
 )
-const homeDataSource = ref<'idle' | 'aggregate' | 'support' | 'fallback'>('idle')
+const homeDataSource = ref<'idle' | 'aggregate' | 'support' | 'cached' | 'fallback'>('idle')
 const failedHomeMediaUrls = ref<Set<string>>(new Set())
 
 type HomeSectionInstance = {
@@ -1198,7 +1188,6 @@ const {
   primaryScheduleHighlights,
   quickFilters,
   scheduleFallbackCard,
-  showPreviewNotice,
   spotlightMediaCards,
   spotlightTextCards,
   storyCardCount,
@@ -1210,7 +1199,6 @@ const {
   homeAggregate,
   allPosts,
   homeDataSource,
-  error,
   total,
   homeScheduleHighlights,
   homeCommunityHighlights,
@@ -1909,7 +1897,7 @@ function abortHomeRequest() {
 
 function applyHomeAggregate(
   payload: HomeAggregateResponse,
-  source: 'aggregate' | 'support' | 'fallback'
+  source: 'aggregate' | 'support' | 'cached' | 'fallback'
 ) {
   homeAggregate.value = payload
   homeDataSource.value = source
@@ -1938,9 +1926,9 @@ function hasPendingHomeSupportRefresh(targets: HomeSupportRefreshTargets): boole
 
 function resolveHomeSupportRefreshTargets(
   payload: HomeAggregateResponse,
-  source: 'aggregate' | 'support' | 'fallback'
+  source: 'aggregate' | 'support' | 'cached' | 'fallback'
 ): HomeSupportRefreshTargets {
-  if (source === 'support' || source === 'fallback') {
+  if (source === 'support' || source === 'cached' || source === 'fallback') {
     return createEmptyHomeSupportRefreshTargets()
   }
 
@@ -2038,8 +2026,7 @@ async function fetchHomeData(): Promise<boolean> {
 
     applyHomeAggregate(result.payload, result.source)
     total.value = Math.max(total.value, result.payload.story_deck.total ?? 0)
-    error.value =
-      result.source === 'fallback' ? (result.reason ?? t('error.serviceUnavailable')) : null
+    error.value = null
 
     const refreshTargets = resolveHomeSupportRefreshTargets(result.payload, result.source)
     if (hasPendingHomeSupportRefresh(refreshTargets)) {
@@ -2047,7 +2034,7 @@ async function fetchHomeData(): Promise<boolean> {
       runHomeSupportRefresh()
     }
     return true
-  } catch (err) {
+  } catch {
     if (controller.signal.aborted) return false
 
     const fallbackPayload = buildHomepageBootstrapFallback()
@@ -2056,7 +2043,7 @@ async function fetchHomeData(): Promise<boolean> {
       total.value,
       fallbackPayload.story_deck.total ?? HOME_FALLBACK_POSTS.length
     )
-    error.value = err instanceof Error ? err.message : t('common.error')
+    error.value = null
     return false
   } finally {
     if (homeRequestController === controller) {

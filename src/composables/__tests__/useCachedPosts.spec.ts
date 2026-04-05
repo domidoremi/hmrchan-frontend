@@ -98,7 +98,7 @@ describe('useCachedPosts', () => {
       expect(state.value.error?.message).toBe('String error')
     })
 
-    it('should not set error when network fails but cache exists', async () => {
+    it('should fall back to cached data when network fails but cache exists', async () => {
       const cachedData = [{ id: '1', title: 'Cached' }]
       const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
 
@@ -110,8 +110,13 @@ describe('useCachedPosts', () => {
 
       const { load, state } = useCachedPostList(mockFetch)
 
-      await expect(load()).rejects.toThrow('Network error')
+      await expect(load()).resolves.toMatchObject({
+        data: cachedData,
+        total: 1,
+        fromCache: true,
+      })
       expect(state.value.error).toBeNull()
+      expect(state.value.source).toBe('cache')
     })
 
     it('should call clearCache correctly', () => {
@@ -185,7 +190,7 @@ describe('useCachedPosts', () => {
       expect(state.value.error?.message).toBe('Network error')
     })
 
-    it('should not set error when network fails but cache exists', async () => {
+    it('should fall back to cached post when network fails but cache exists', async () => {
       const cachedPost = { id: '1', title: 'Cached Post' }
       const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
 
@@ -193,8 +198,12 @@ describe('useCachedPosts', () => {
 
       const { load, state } = useCachedPost(mockFetch)
 
-      await expect(load('1')).rejects.toThrow('Network error')
+      await expect(load('1')).resolves.toMatchObject({
+        data: cachedPost,
+        fromCache: true,
+      })
       expect(state.value.error).toBeNull()
+      expect(state.value.source).toBe('cache')
     })
 
     it('should invalidate post cache', async () => {

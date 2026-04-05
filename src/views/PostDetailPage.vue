@@ -29,12 +29,6 @@
     </button>
 
     <section ref="stageRef" class="post-stage">
-      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
-        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
-        <p>{{ $t('home.preview.desc') }}</p>
-        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
-      </div>
-
       <StateIndicator
         v-if="error && !isUsingFallback"
         variant="error"
@@ -380,7 +374,6 @@ import {
 import { getFallbackPostDetailById } from '@/fallbacks/postFallback'
 import {
   isServiceUnavailableError,
-  resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
 import { resolveThumbnailSrc, resolveThumbnailSrcset } from '@/utils/thumbnailPresentation'
@@ -391,7 +384,6 @@ import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 import { applyPageMeta } from '@/utils/pageMeta'
-import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import {
   buildActiveMediaElementStyle,
   buildActiveMediaViewerStyle,
@@ -443,12 +435,7 @@ const error = ref<string | null>(null)
 const detailFetched = ref(false)
 let fetchPostToken = 0
 const dataSource = ref<PublicPageDataSource>('live')
-const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
-const showPreviewNotice = computed(
-  () =>
-    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
-)
 
 const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailResponse>(
   postService.getPost,
@@ -1042,27 +1029,11 @@ async function fetchPost(signal?: AbortSignal) {
       schedulePostViewTracking(currentPostId, requestToken)
 
       // 后台刷新：缓存来自列表页时不含 media_files，需要网络请求补全
-      void loadCachedPost(currentPostId, signal ? { signal } : undefined)
-        .then(() => {
-          if (signal?.aborted || requestToken !== fetchPostToken) return
-          detailFetched.value = true
-          dataSource.value = 'live'
-          fallbackReason.value = null
-        })
-        .catch((err) => {
-          if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
-          if (isServiceUnavailableError(err)) {
-            const fallbackPost = getFallbackPostDetailById(currentPostId)
-            if (fallbackPost) {
-              post.value = fallbackPost
-              dataSource.value = 'fallback'
-              fallbackReason.value =
-                resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
-              syncPostMeta(fallbackPost)
-            }
-          }
-          detailFetched.value = true
-        })
+      void loadCachedPost(currentPostId, signal ? { signal } : undefined).then((result) => {
+        if (signal?.aborted || requestToken !== fetchPostToken) return
+        detailFetched.value = true
+        dataSource.value = result.fromCache ? 'cached' : 'live'
+      })
       return
     }
 
@@ -1078,8 +1049,7 @@ async function fetchPost(signal?: AbortSignal) {
     syncNavigationContext()
 
     syncPostMeta(post.value)
-    dataSource.value = 'live'
-    fallbackReason.value = null
+    dataSource.value = res.fromCache ? 'cached' : 'live'
 
     schedulePostViewTracking(currentPostId, requestToken)
   } catch (err) {
@@ -1093,7 +1063,6 @@ async function fetchPost(signal?: AbortSignal) {
         activeMediaIndex.value = 0
         isMediaLoaded.value = true
         dataSource.value = 'fallback'
-        fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
         error.value = null
         syncNavigationContext()
         syncPostMeta(fallbackPost)

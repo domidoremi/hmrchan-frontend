@@ -62,7 +62,7 @@ async function loadWithCache<T, P>(
   options: UseCachedPostsOptions,
   requestConfig?: CachedLoadConfig
 ): Promise<LoadResult<T>> {
-  const { revalidate = true, onUpdate } = options
+  const { revalidate = true, onStale, onUpdate } = options
 
   state.value.error = null
 
@@ -115,9 +115,17 @@ async function loadWithCache<T, P>(
     }
   } catch (err) {
     // 如果有缓存，网络失败不算错误（降级策略）
-    if (!cached) {
-      state.value.error = toError(err)
+    if (cached) {
+      state.value.source = 'cache'
+      state.value.error = null
+      onStale?.()
+      return {
+        data: dataRef.value,
+        total: totalRef?.value,
+        fromCache: true,
+      }
     }
+    state.value.error = toError(err)
     throw err
   } finally {
     state.value.loading = false
