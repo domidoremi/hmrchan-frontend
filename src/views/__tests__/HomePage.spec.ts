@@ -117,6 +117,7 @@ vi.mock('@/utils/modernAPIs', () => ({
   scheduleTask: mocks.scheduleTask,
   createResizeObserver: mocks.createResizeObserver,
   createVisibilityObserver: mocks.createVisibilityObserver,
+  deepClone: <T>(value: T) => structuredClone(value),
 }))
 
 vi.mock('@/utils/postNavigation', () => ({
