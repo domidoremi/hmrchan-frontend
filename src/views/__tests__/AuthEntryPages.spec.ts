@@ -319,8 +319,13 @@ describe('Auth entry pages', () => {
 
     await flushPromises()
 
-    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('popup-handoff')
-    expect(testState.routerReplace).toHaveBeenCalledWith('/feed')
+    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(testState.routerReplace).toHaveBeenCalledWith({
+      path: '/auth/callback',
+      query: {
+        handoff_code: 'popup-handoff',
+      },
+    })
   })
 
   it('surfaces login popup fallback without probing refresh on popup timeout', async () => {
