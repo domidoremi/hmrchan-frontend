@@ -239,7 +239,8 @@
       "codeLabel": "验证器或一次性验证码",
       "backupCodeLabel": "备份码",
       "passkeyHint": "使用当前设备或浏览器中已保存的 Passkey。",
-      "passkeyAction": "使用 Passkey 继续"
+      "passkeyAction": "使用 Passkey 继续",
+      "googlePopupRecoveryHint": "如果 Google 弹窗没有在这里完成，请改为当前页继续。"
     }
   },
   "video": {
@@ -854,8 +855,10 @@
       "backendNoticeBody": "持久化收藏、提醒订阅和日程提及能力需要后端 API 配合后才能真正上线。",
       "eventPage": "活动页面",
       "buyTicket": "购票",
-      "source": "来源"
-    }
+      "source": "来源",
+      "notFoundDescription": "未找到该日程内容。你可以返回日历，或稍后重试。"
+    },
+    "dateJumpLabel": "跳转到日期"
   },
   "uploader": {
     "select": "选择文件",

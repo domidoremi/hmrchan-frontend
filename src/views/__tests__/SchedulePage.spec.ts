@@ -149,7 +149,8 @@ describe('SchedulePage', () => {
     expect(wrapper.find('.schedule-detail-shell').exists()).toBe(true)
     expect(wrapper.find('.schedule-detail-article__title').text()).toContain('Morning live')
     expect(wrapper.text()).toContain('schedule.detail.aboutTitle')
-    expect(wrapper.find('.schedule-detail-note').exists()).toBe(true)
+    expect(wrapper.find('.detail-links').exists()).toBe(true)
+    expect(wrapper.find('[data-testid=\"state-indicator\"]').exists()).toBe(false)
   })
 
   it('returns to /schedule when the detail rail is closed', async () => {
@@ -159,5 +160,34 @@ describe('SchedulePage', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.name).toBe('schedule')
+  })
+
+  it('ignores foreign route params outside the schedule detail route', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        {
+          path: '/post/:id',
+          name: 'post-detail',
+          component: SchedulePage,
+        },
+      ],
+    })
+
+    await router.push('/post/event-1')
+    await router.isReady()
+
+    shallowMount(SchedulePage, {
+      global: {
+        plugins: [router],
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(scheduleApi.getById).not.toHaveBeenCalled()
   })
 })

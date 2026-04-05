@@ -550,7 +550,7 @@
                 </RouterLink>
                 <div class="trends-list">
                   <RouterLink
-                    v-for="author in trendingAuthors"
+                    v-for="author in secondaryTrendingAuthors"
                     :key="`trend-author-${author.key}`"
                     :to="author.link"
                     class="trend-author"
@@ -575,6 +575,13 @@
                     </div>
                   </RouterLink>
                 </div>
+                <RouterLink
+                  v-if="hiddenTrendingAuthorCount > 0"
+                  to="/authors"
+                  class="trends-link trends-link--footer"
+                >
+                  {{ $t('home.trends.authorsAction') }} · +{{ hiddenTrendingAuthorCount }}
+                </RouterLink>
               </div>
               <div v-else class="trends-empty">{{ $t('home.trends.authorsEmpty') }}</div>
             </div>
@@ -817,6 +824,7 @@
           @pointermove="handleBubbleStagePointerMove"
           @pointerleave="handleBubbleStagePointerLeave"
         >
+          <canvas ref="bubbleCanvasRef" class="bubble-stage__canvas" aria-hidden="true" />
           <div
             v-if="isLoading && bubbleItems.length === 0"
             class="bubble-empty glass-card"
@@ -1142,6 +1150,7 @@ type HomeSupportRefreshTargets = {
 // DOM refs
 const postsSectionRef = useTemplateRef<HomeSectionInstance>('postsSectionRef')
 const bubbleStageRef = useTemplateRef<HTMLElement>('bubbleStageRef')
+const bubbleCanvasRef = useTemplateRef<HTMLCanvasElement>('bubbleCanvasRef')
 const featuredSectionRef = useTemplateRef<HomeSectionInstance>('featuredSectionRef')
 const storyDeckRef = useTemplateRef<HomeSectionInstance>('storyDeckRef')
 const homeQuickNavAnchors = homeSectionAnchors
@@ -1207,6 +1216,24 @@ const {
   translate: t,
   locale,
 })
+
+const secondaryTrendingAuthors = computed(() => {
+  const secondary = trendingAuthors.value.slice(1)
+
+  if (bubbleLayoutTier.value === 'mobile') {
+    return secondary.slice(0, 1)
+  }
+
+  if (bubbleLayoutTier.value === 'tablet') {
+    return secondary.slice(0, 2)
+  }
+
+  return secondary.slice(0, 3)
+})
+
+const hiddenTrendingAuthorCount = computed(() =>
+  Math.max(trendingAuthors.value.length - 1 - secondaryTrendingAuthors.value.length, 0)
+)
 
 function formatScheduleHighlightMeta(item: HomeScheduleHighlight | null | undefined): string {
   return formatScheduleHighlightMetaValue(item, locale.value)
@@ -1348,6 +1375,7 @@ function observeBubbleStageLayout() {
 
   disconnectBubbleStageLayoutObserver()
   refreshBubbleLayoutTier()
+  resizeBubbleCanvasScene()
 
   if (!bubbleStageRef.value) return
 
@@ -1356,14 +1384,160 @@ function observeBubbleStageLayout() {
       if (!(entry.target instanceof HTMLElement)) continue
       bubbleLayoutTier.value = resolveBubbleLayoutTier(Math.round(entry.contentRect.width))
       scheduleBubbleMotionMeasurement()
+      resizeBubbleCanvasScene()
     }
   })
 
   bubbleStageResizeObserver?.observe(bubbleStageRef.value)
   scheduleBubbleMotionMeasurement()
+  startBubbleCanvasScene()
 }
 
 const isBubbleInteractiveTier = computed(() => bubbleLayoutTier.value !== 'mobile')
+
+function resolveBubbleCanvasOrbCount(): number {
+  if (bubbleLayoutTier.value === 'mobile') return 5
+  if (bubbleLayoutTier.value === 'tablet') return 8
+  return 11
+}
+
+function seedBubbleCanvasOrbs(width: number, height: number) {
+  const count = resolveBubbleCanvasOrbCount()
+  bubbleCanvasOrbs = Array.from({ length: count }, (_, index) => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    radius: Math.min(width, height) * (0.08 + Math.random() * 0.12),
+    driftX: (Math.random() - 0.5) * (bubbleLayoutTier.value === 'mobile' ? 0.5 : 0.85),
+    driftY: (Math.random() - 0.5) * (bubbleLayoutTier.value === 'mobile' ? 0.4 : 0.75),
+    alpha: 0.08 + Math.random() * 0.12,
+    phase: Math.random() * Math.PI * 2,
+    phaseSpeed: 0.2 + Math.random() * 0.35,
+    hueMix: index % 2 === 0 ? 1 : -1,
+  }))
+}
+
+function resizeBubbleCanvasScene() {
+  if (typeof window === 'undefined') return
+
+  const canvas = bubbleCanvasRef.value
+  const stage = bubbleStageRef.value
+  if (!canvas || !stage) return
+
+  const rect = stage.getBoundingClientRect()
+  const width = Math.max(Math.round(rect.width), 1)
+  const height = Math.max(Math.round(rect.height), 1)
+  const dpr = Math.min(window.devicePixelRatio || 1, 2)
+
+  canvas.width = Math.max(1, Math.round(width * dpr))
+  canvas.height = Math.max(1, Math.round(height * dpr))
+  canvas.style.width = `${width}px`
+  canvas.style.height = `${height}px`
+
+  if (bubbleCanvasOrbs.length !== resolveBubbleCanvasOrbCount()) {
+    seedBubbleCanvasOrbs(width, height)
+  } else {
+    bubbleCanvasOrbs = bubbleCanvasOrbs.map((orb) => ({
+      ...orb,
+      x: clamp(orb.x, 0, width),
+      y: clamp(orb.y, 0, height),
+      radius: Math.min(orb.radius, Math.min(width, height) * 0.24),
+    }))
+  }
+}
+
+function stopBubbleCanvasScene() {
+  if (typeof window !== 'undefined' && bubbleCanvasFrame !== null) {
+    window.cancelAnimationFrame(bubbleCanvasFrame)
+  }
+  bubbleCanvasFrame = null
+  bubbleCanvasLastTimestamp = null
+}
+
+function renderBubbleCanvasFrame(timestamp: number) {
+  const canvas = bubbleCanvasRef.value
+  const stage = bubbleStageRef.value
+  if (typeof window === 'undefined' || !canvas || !stage) {
+    stopBubbleCanvasScene()
+    return
+  }
+
+  if (bubbleCanvasOrbs.length === 0) {
+    resizeBubbleCanvasScene()
+  }
+
+  const rect = stage.getBoundingClientRect()
+  const context = canvas.getContext('2d')
+  if (!context) {
+    stopBubbleCanvasScene()
+    return
+  }
+
+  const deltaMs =
+    bubbleCanvasLastTimestamp === null ? 16 : Math.min(timestamp - bubbleCanvasLastTimestamp, 34)
+  bubbleCanvasLastTimestamp = timestamp
+  const width = Math.max(rect.width, 1)
+  const height = Math.max(rect.height, 1)
+  const dpr = Math.min(window.devicePixelRatio || 1, 2)
+  const pointerX =
+    pointerStagePosition.value.x === null ? width * 0.5 : pointerStagePosition.value.x
+  const pointerY =
+    pointerStagePosition.value.y === null ? height * 0.5 : pointerStagePosition.value.y
+  const reducedMotion = !shouldAnimate.value
+
+  context.setTransform(dpr, 0, 0, dpr, 0, 0)
+  context.clearRect(0, 0, width, height)
+  context.globalCompositeOperation = 'source-over'
+
+  const mistGradient = context.createRadialGradient(
+    pointerX,
+    pointerY,
+    0,
+    pointerX,
+    pointerY,
+    width * 0.55
+  )
+  mistGradient.addColorStop(0, 'rgba(167, 139, 250, 0.14)')
+  mistGradient.addColorStop(0.5, 'rgba(96, 165, 250, 0.08)')
+  mistGradient.addColorStop(1, 'rgba(15, 23, 42, 0)')
+  context.fillStyle = mistGradient
+  context.fillRect(0, 0, width, height)
+
+  for (const orb of bubbleCanvasOrbs) {
+    const motionFactor = reducedMotion ? 0.15 : 1
+    orb.phase += (deltaMs / 1000) * orb.phaseSpeed * motionFactor
+    orb.x = (orb.x + orb.driftX * motionFactor + width) % width
+    orb.y = (orb.y + orb.driftY * motionFactor + height) % height
+
+    const pulse = 0.92 + Math.sin(orb.phase) * 0.08
+    const parallaxX = (pointerX / width - 0.5) * 24 * orb.hueMix
+    const parallaxY = (pointerY / height - 0.5) * 16
+    const x = orb.x + parallaxX
+    const y = orb.y + parallaxY
+    const radius = orb.radius * pulse
+    const gradient = context.createRadialGradient(x, y, 0, x, y, radius)
+    gradient.addColorStop(
+      0,
+      `rgba(${orb.hueMix > 0 ? '147, 197, 253' : '244, 114, 182'}, ${orb.alpha})`
+    )
+    gradient.addColorStop(
+      0.55,
+      `rgba(${orb.hueMix > 0 ? '59, 130, 246' : '236, 72, 153'}, ${orb.alpha * 0.44})`
+    )
+    gradient.addColorStop(1, 'rgba(15, 23, 42, 0)')
+    context.fillStyle = gradient
+    context.beginPath()
+    context.arc(x, y, radius, 0, Math.PI * 2)
+    context.fill()
+  }
+
+  bubbleCanvasFrame = window.requestAnimationFrame(renderBubbleCanvasFrame)
+}
+
+function startBubbleCanvasScene() {
+  if (typeof window === 'undefined' || bubbleCanvasFrame !== null || !bubbleCanvasRef.value) return
+  resizeBubbleCanvasScene()
+  bubbleCanvasFrame = window.requestAnimationFrame(renderBubbleCanvasFrame)
+}
 
 function clearBubbleMotionMeasureFrame() {
   if (typeof window === 'undefined' || bubbleMotionMeasureFrame === null) return
@@ -1519,17 +1693,20 @@ function updateBubbleStagePointerPosition(event: PointerEvent) {
 function handleBubbleStagePointerEnter(event: PointerEvent) {
   pointerInsideBubbleStage.value = true
   updateBubbleStagePointerPosition(event)
+  syncBubbleMotionLoop()
 }
 
 function handleBubbleStagePointerMove(event: PointerEvent) {
   pointerInsideBubbleStage.value = true
   updateBubbleStagePointerPosition(event)
+  syncBubbleMotionLoop()
 }
 
 function handleBubbleStagePointerLeave() {
   pointerInsideBubbleStage.value = false
   pointerOverBubbleId.value = null
   clearHoveredBubble(undefined, 'pointer')
+  syncBubbleMotionLoop()
 }
 
 function handleBubblePointerEnter(bubbleId: string, event: PointerEvent) {
@@ -1537,6 +1714,7 @@ function handleBubblePointerEnter(bubbleId: string, event: PointerEvent) {
   pointerOverBubbleId.value = normalizeText(bubbleId) || null
   updateBubbleStagePointerPosition(event)
   setHoveredBubble(bubbleId, 'pointer')
+  syncBubbleMotionLoop()
 }
 
 function handleBubblePointerLeave(bubbleId: string) {
@@ -1545,6 +1723,7 @@ function handleBubblePointerLeave(bubbleId: string) {
     pointerOverBubbleId.value = null
   }
   clearHoveredBubble(bubbleId, 'pointer')
+  syncBubbleMotionLoop()
 }
 
 function handleBubbleFocus(bubbleId: string) {
@@ -1622,7 +1801,8 @@ function shouldRunBubbleMotionLoop(): boolean {
     bubbleItems.value.length > 0 &&
     shouldAnimate.value &&
     bubbleStageRef.value !== null &&
-    bubbleAnchorMetricsMap.size >= bubbleItems.value.length
+    bubbleAnchorMetricsMap.size >= bubbleItems.value.length &&
+    (hasActiveBubble.value || pointerInsideBubbleStage.value || bubbleMotionPointerStrength > 0.001)
   )
 }
 
@@ -1736,6 +1916,20 @@ const bubbleElementMap = new Map<string, HTMLButtonElement>()
 const bubbleAnchorMetricsMap = new Map<string, BubbleAnchorMetrics>()
 const bubbleFrameStateMap = new Map<string, BubbleFrameState>()
 const bubbleStageMetrics = ref<BubbleStageMetrics | null>(null)
+type BubbleCanvasOrb = {
+  x: number
+  y: number
+  radius: number
+  driftX: number
+  driftY: number
+  alpha: number
+  phase: number
+  phaseSpeed: number
+  hueMix: number
+}
+let bubbleCanvasFrame: number | null = null
+let bubbleCanvasOrbs: BubbleCanvasOrb[] = []
+let bubbleCanvasLastTimestamp: number | null = null
 let sceneObservedSizes = new WeakMap<HTMLElement, { width: number; height: number }>()
 const scheduleSceneRefreshFromResize = throttleRAF(() => {
   scheduleSceneSetup()
@@ -1793,11 +1987,11 @@ function isCompactHomeViewport(): boolean {
 }
 
 function shouldUseHomeSectionBlendEffects(): boolean {
-  return false
+  return typeof window !== 'undefined' && shouldAnimate.value && window.innerWidth >= 768
 }
 
 function shouldUseHomeScrollScrubScenes(): boolean {
-  return false
+  return shouldUseHomeSectionBlendEffects()
 }
 
 const homePageMotionStyle = computed<Record<string, string>>(() => {
@@ -1887,6 +2081,7 @@ onDeactivated(() => {
   disconnectBubbleStageLayoutObserver()
   clearBubbleMotionMeasureFrame()
   stopBubbleMotionLoop()
+  stopBubbleCanvasScene()
 })
 let homeRequestController: AbortController | null = null
 
@@ -2637,6 +2832,7 @@ function setHoveredBubble(bubbleId: string, source: 'pointer' | 'focus' = 'point
   if (!nextId) return
   hoveredBubbleId.value = nextId
   hoveredBubbleSource.value = source
+  syncBubbleMotionLoop()
 }
 
 function clearHoveredBubble(bubbleId?: string | null, source: 'pointer' | 'focus' | 'all' = 'all') {
@@ -2651,6 +2847,7 @@ function clearHoveredBubble(bubbleId?: string | null, source: 'pointer' | 'focus
   if (!bubbleId) {
     hoveredBubbleId.value = null
     hoveredBubbleSource.value = null
+    syncBubbleMotionLoop()
     return
   }
 
@@ -2658,6 +2855,7 @@ function clearHoveredBubble(bubbleId?: string | null, source: 'pointer' | 'focus
   if (hoveredBubbleId.value === nextId) {
     hoveredBubbleId.value = null
     hoveredBubbleSource.value = null
+    syncBubbleMotionLoop()
   }
 }
 
@@ -2772,6 +2970,7 @@ onBeforeUnmount(() => {
   disconnectBubbleStageLayoutObserver()
   clearBubbleMotionMeasureFrame()
   stopBubbleMotionLoop()
+  stopBubbleCanvasScene()
   bubbleElementMap.clear()
   bubbleAnchorMetricsMap.clear()
 })
@@ -4003,6 +4202,10 @@ onBeforeUnmount(() => {
   color: var(--color-text-primary);
   border-color: var(--home-panel-border-strong);
   background: var(--home-panel-muted-strong);
+}
+
+.trends-link--footer {
+  justify-self: flex-start;
 }
 
 .trends-list {
@@ -5401,12 +5604,15 @@ onBeforeUnmount(() => {
 
 .trends-authors-shell {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 0.625rem;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  grid-template-areas:
+    'highlight list'
+    'footer footer';
+  gap: 0.75rem;
   min-inline-size: 0;
   min-block-size: 0;
-  align-items: start;
-  align-content: start;
+  align-items: stretch;
+  align-content: stretch;
   overflow: hidden;
 }
 
@@ -5442,6 +5648,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
   grid-auto-rows: minmax(0, auto);
+  grid-area: list;
   min-inline-size: 0;
   align-content: start;
   gap: 0.625rem;
@@ -5462,6 +5669,7 @@ onBeforeUnmount(() => {
 }
 
 .trends-authors-highlight {
+  grid-area: highlight;
   margin-top: 0;
 }
 
@@ -5475,7 +5683,7 @@ onBeforeUnmount(() => {
   gap: 0.75rem;
   align-items: center;
   padding: 0.8125rem 0.875rem;
-  min-block-size: auto;
+  min-block-size: 100%;
   align-self: start;
   border-radius: var(--home-card-radius);
   color: var(--color-text-primary);
@@ -5804,6 +6012,7 @@ onBeforeUnmount(() => {
 }
 
 .bubble-stage {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-rows: repeat(6, minmax(0, 1fr));
@@ -5828,6 +6037,20 @@ onBeforeUnmount(() => {
   box-shadow: var(--home-panel-shadow);
   isolation: isolate;
   overflow: clip;
+}
+
+.bubble-stage__canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bubble-stage > :not(.bubble-stage__canvas) {
+  position: relative;
+  z-index: 1;
 }
 
 .bubble-stage--tablet {
@@ -6299,6 +6522,28 @@ onBeforeUnmount(() => {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 32%),
     radial-gradient(circle at 14% 82%, rgba(var(--home-blush-rgb), 0.08), transparent 38%);
+  pointer-events: none;
+}
+
+.media-slice__sticky::after {
+  content: '';
+  position: absolute;
+  inset-inline: 1rem;
+  inset-block-end: -0.85rem;
+  block-size: 1rem;
+  border-radius: 0 0 calc(var(--home-shell-radius) * 0.92) calc(var(--home-shell-radius) * 0.92);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.16), rgba(15, 23, 42, 0.04)),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.2),
+      transparent 18%,
+      transparent 82%,
+      rgba(15, 23, 42, 0.16)
+    );
+  transform: translate3d(0, 0, -0.25rem);
+  transform-origin: center top;
+  filter: blur(0.08rem);
   pointer-events: none;
 }
 
@@ -7032,6 +7277,18 @@ onBeforeUnmount(() => {
     min-block-size: 0;
   }
 
+  .trends-authors-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'highlight'
+      'list'
+      'footer';
+  }
+
+  .trends-card--authors .trends-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .trends-list > :nth-child(n + 4),
   .schedule-highlight-list > :nth-child(n + 3) {
     display: none;
@@ -7754,6 +8011,14 @@ onBeforeUnmount(() => {
 
   .trends-card__header {
     align-items: flex-start;
+  }
+
+  .trends-authors-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'highlight'
+      'list'
+      'footer';
   }
 
   .trends-list > :nth-child(n + 3) {

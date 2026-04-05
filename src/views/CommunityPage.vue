@@ -4,7 +4,6 @@
       <!-- Header -->
       <PageHeroShell class="community-hero" bare>
         <template #heading>
-          <span class="page-hero-shell__eyebrow">{{ $t('nav.community') }}</span>
           <div>
             <h1 class="page-hero-shell__title">{{ $t('community.title') }}</h1>
             <p class="page-hero-shell__subtitle">{{ $t('community.subtitle') }}</p>
@@ -13,7 +12,7 @@
 
         <template #actions>
           <div class="community-hero__actions">
-            <div class="discussion-search page-input-shell">
+            <div class="discussion-search page-input-shell page-input-shell--comfortable">
               <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
               <input
                 v-model="searchQuery"
@@ -47,7 +46,7 @@
           </div>
         </template>
 
-        <PageToolbar v-if="!searchQuery" class="community-tabs">
+        <PageToolbar v-if="!searchQuery" class="community-tabs page-toolbar-shell--comfortable">
           <ControlButton
             v-for="tab in tabs"
             :key="tab.id"
@@ -63,7 +62,7 @@
         </PageToolbar>
 
         <template #meta>
-          <PageMetaRow v-if="!searchQuery" class="community-hero__meta">
+          <PageMetaRow v-if="!searchQuery" class="community-hero__meta page-meta-row--comfortable">
             <PageMetaChip>
               <strong>{{ $t('community.recentDiscussions') }}</strong>
               {{ $t('community.guidePoint1') }}
@@ -287,7 +286,7 @@
             </article>
           </div>
           <StateIndicator
-            v-else-if="hotTopicsError && !isUsingHotFallback"
+            v-else-if="hotTopicsError && !isUsingHotFallback && hotTopics.length === 0"
             variant="error"
             :description="hotTopicsError"
             @action="fetchHotTopics"
@@ -304,9 +303,9 @@
               class="topic-card page-list-card"
               role="button"
               tabindex="0"
-              @click="goToDiscussion(topic.id)"
-              @keydown.enter.prevent="goToDiscussion(topic.id)"
-              @keydown.space.prevent="goToDiscussion(topic.id)"
+              @click="goToHotTopic(topic.route)"
+              @keydown.enter.prevent="goToHotTopic(topic.route)"
+              @keydown.space.prevent="goToHotTopic(topic.route)"
             >
               <div class="topic-rank">#{{ index + 1 }}</div>
               <div class="topic-content">
@@ -314,9 +313,9 @@
                 <div class="topic-meta">
                   <span class="topic-count">
                     <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="sm" />
-                    {{ topic.comments_count }}
+                    {{ topic.commentsCount }}
                   </span>
-                  <span class="topic-views">{{ topic.view_count }} {{ $t('post.views') }}</span>
+                  <span class="topic-views">{{ topic.viewCount }} {{ $t('post.views') }}</span>
                 </div>
               </div>
             </article>
@@ -345,7 +344,7 @@ import { storeToRefs } from 'pinia'
 import { MessageSquare, Flame, HelpCircle, Search, X } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useDiscussionsStore } from '@/stores'
-import { discussionService, type Discussion, ApiError } from '@/api'
+import { discussionService, communityService, type Discussion, ApiError } from '@/api'
 import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { formatRelativeTime } from '@/utils/date'
 import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
@@ -399,10 +398,18 @@ const searchSource = ref<PublicPageDataSource>('live')
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let searchRequestToken = 0
 
+type HotTopicCard = {
+  id: string
+  title: string
+  commentsCount: number
+  viewCount: number
+  route: string
+}
+
 // Hot topics (local state)
 const isLoadingHot = ref(false)
 const hotTopicsError = ref<string | null>(null)
-const hotTopics = ref<Discussion[]>([])
+const hotTopics = ref<HotTopicCard[]>([])
 const hotTopicsSource = ref<PublicPageDataSource>('live')
 let hotTopicsController: AbortController | null = null
 let hotTopicsRequestToken = 0
@@ -448,6 +455,10 @@ function goToDiscussion(discussionId: string) {
   router.push(`/community/discussions/${discussionId}`)
 }
 
+function goToHotTopic(routePath: string) {
+  router.push(routePath)
+}
+
 function goToLogin() {
   router.push('/login')
 }
@@ -474,20 +485,22 @@ async function fetchHotTopics() {
   hotTopicsError.value = null
 
   try {
-    const res = await discussionService.list(
-      {
-        page: 1,
-        page_size: 6,
-        sort_by: 'comments_count',
-        sort_order: 'desc',
-      },
-      {
-        signal: controller.signal,
-        skipErrorToast: true,
-      }
-    )
+    const res = await communityService.getTrending('7d', 1, 6, {
+      signal: controller.signal,
+      skipErrorToast: true,
+    })
     if (controller.signal.aborted || requestToken !== hotTopicsRequestToken) return
-    hotTopics.value = res.items.slice(0, 6)
+    hotTopics.value = res.items.slice(0, 6).map((topic) => ({
+      id: topic.id || topic.post_id,
+      title: topic.title || topic.post_title || t('community.hotTopics'),
+      commentsCount: topic.comment_count,
+      viewCount: topic.participant_count ?? topic.comment_count,
+      route: topic.post_id
+        ? `/post/${topic.post_id}`
+        : topic.id
+          ? `/community/discussions/${topic.id}`
+          : '/community',
+    }))
     hotTopicsSource.value = 'live'
     await setPublicSnapshot(COMMUNITY_HOT_TOPICS_SNAPSHOT_SCOPE, { limit: 6 }, hotTopics.value)
   } catch (err) {
@@ -498,16 +511,24 @@ async function fetchHotTopics() {
     ) {
       return
     }
-    if (isServiceUnavailableError(err)) {
-      const cachedTopics = await getPublicSnapshot<Discussion[]>(
-        COMMUNITY_HOT_TOPICS_SNAPSHOT_SCOPE,
-        {
-          limit: 6,
-        }
-      )
-      hotTopics.value = cachedTopics ?? getFallbackHotTopics(6)
-      hotTopicsSource.value = cachedTopics ? 'cached' : 'fallback'
-      hotTopicsError.value = null
+    const cachedTopics = await getPublicSnapshot<HotTopicCard[]>(
+      COMMUNITY_HOT_TOPICS_SNAPSHOT_SCOPE,
+      {
+        limit: 6,
+      }
+    )
+    hotTopics.value =
+      cachedTopics ??
+      getFallbackHotTopics(6).map((topic) => ({
+        id: topic.id,
+        title: topic.title,
+        commentsCount: topic.comments_count,
+        viewCount: topic.view_count,
+        route: `/community/discussions/${topic.id}`,
+      }))
+    hotTopicsSource.value = cachedTopics ? 'cached' : 'fallback'
+    hotTopicsError.value = null
+    if (hotTopics.value.length > 0 || isServiceUnavailableError(err)) {
       return
     }
     if (err instanceof ApiError) {

@@ -4,7 +4,7 @@
  * 提供社区相关的 API 调用
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
 import type { Comment } from '@/types'
 
 // ========== 类型定义 ==========
@@ -62,12 +62,13 @@ export const communityService = {
   async getTrending(
     timeRange: TimeRange = '7d',
     page = 1,
-    pageSize = 20
+    pageSize = 20,
+    config?: RequestConfig
   ): Promise<PaginatedApiResponse<HotTopicItem>> {
     const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 30
     const result = await apiClient.get<
       { hot_topics: HotTopicItem[] } | { items: HotTopicItem[] } | HotTopicItem[]
-    >(`/community/hot?limit=${pageSize}&days=${days}`)
+    >(`/community/hot?limit=${pageSize}&days=${days}`, config)
 
     let items: HotTopicItem[]
     if (Array.isArray(result)) {
