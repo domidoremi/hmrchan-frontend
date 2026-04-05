@@ -109,12 +109,6 @@
         </Transition>
       </PageToolbar>
 
-      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
-        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
-        <p>{{ $t('home.preview.desc') }}</p>
-        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
-      </div>
-
       <section class="planner-shell schedule-panel schedule-panel--planner">
         <div class="planner-shell__head">
           <div class="planner-shell__copy">
@@ -653,11 +647,10 @@ import { useScheduleStore } from '@/stores/schedule'
 import { useToastStore } from '@/stores'
 import { ApiError } from '@/api'
 import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/fallbacks/scheduleFallback'
+import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 import { applyPageMeta } from '@/utils/pageMeta'
-import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import {
   isServiceUnavailableError,
-  resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
 import ControlButton from '@/components/appearance/ControlButton.vue'
@@ -680,12 +673,7 @@ const events = ref<ScheduleCalendarItem[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const eventsSource = ref<PublicPageDataSource>('live')
-const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => eventsSource.value === 'fallback')
-const showPreviewNotice = computed(
-  () =>
-    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
-)
 const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth())
 const activeCategory = ref<ScheduleCategory | 'all'>('all')
@@ -703,6 +691,9 @@ const routeScheduleId = computed(() => {
   const value = route.params['id']
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 })
+
+const SCHEDULE_CALENDAR_SNAPSHOT_SCOPE = 'schedule/calendar'
+const SCHEDULE_DETAIL_SNAPSHOT_SCOPE = 'schedule/detail'
 
 // 触摸手势
 let touchStartX = 0
@@ -1201,16 +1192,32 @@ async function loadDetail(eventId: string) {
   detailLoading.value = true
   detailEvent.value = { id: eventId } as ScheduleResponse
   try {
-    detailEvent.value = await scheduleService.getById(eventId, { skipErrorToast: true })
+    const liveDetail = await scheduleService.getById(eventId, { skipErrorToast: true })
+    await setPublicSnapshot(SCHEDULE_DETAIL_SNAPSHOT_SCOPE, { id: eventId }, liveDetail)
+    detailEvent.value = liveDetail
+    eventsSource.value = 'live'
     syncScheduleDetailMeta(detailEvent.value)
     syncSelectedDayWithDetail(detailEvent.value)
   } catch (err) {
     if (isServiceUnavailableError(err)) {
+      const cachedDetail = await getPublicSnapshot<ScheduleResponse>(
+        SCHEDULE_DETAIL_SNAPSHOT_SCOPE,
+        {
+          id: eventId,
+        }
+      )
+      if (cachedDetail) {
+        detailEvent.value = cachedDetail
+        eventsSource.value = 'cached'
+        syncScheduleDetailMeta(cachedDetail)
+        syncSelectedDayWithDetail(cachedDetail)
+        return
+      }
+
       const fallbackDetail = getFallbackScheduleById(eventId)
       if (fallbackDetail) {
         detailEvent.value = fallbackDetail
         eventsSource.value = 'fallback'
-        fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
         syncScheduleDetailMeta(fallbackDetail)
         syncSelectedDayWithDetail(fallbackDetail)
         return
@@ -1391,14 +1398,14 @@ async function fetchEvents(signal?: AbortSignal) {
   const fetchId = ++latestFetchId
   isLoading.value = true
   error.value = null
+  const start = new Date(currentYear.value, currentMonth.value - 1, 1).toISOString()
+  const end = new Date(currentYear.value, currentMonth.value + 2, 0).toISOString()
   try {
-    const start = new Date(currentYear.value, currentMonth.value - 1, 1).toISOString()
-    const end = new Date(currentYear.value, currentMonth.value + 2, 0).toISOString()
     const result = await scheduleService.calendar({ start, end }, { signal })
     if (signal?.aborted || fetchId !== latestFetchId) return
     events.value = result
     eventsSource.value = 'live'
-    fallbackReason.value = null
+    await setPublicSnapshot(SCHEDULE_CALENDAR_SNAPSHOT_SCOPE, { start, end }, result)
     if (!selectedDay.value && plannerView.value !== 'month') {
       selectedDay.value = buildCalendarDay(new Date())
     }
@@ -1408,13 +1415,18 @@ async function fetchEvents(signal?: AbortSignal) {
     if (err instanceof ApiError && err.status === 404) {
       events.value = []
       eventsSource.value = 'live'
-      fallbackReason.value = null
     } else if (isServiceUnavailableError(err)) {
-      const start = new Date(currentYear.value, currentMonth.value - 1, 1).toISOString()
-      const end = new Date(currentYear.value, currentMonth.value + 2, 0).toISOString()
-      events.value = getFallbackScheduleCalendar({ start, end })
-      eventsSource.value = 'fallback'
-      fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+      const cachedEvents = await getPublicSnapshot<ScheduleCalendarItem[]>(
+        SCHEDULE_CALENDAR_SNAPSHOT_SCOPE,
+        { start, end }
+      )
+      if (cachedEvents) {
+        events.value = cachedEvents
+        eventsSource.value = 'cached'
+      } else {
+        events.value = getFallbackScheduleCalendar({ start, end })
+        eventsSource.value = 'fallback'
+      }
       error.value = null
       if (!selectedDay.value && plannerView.value !== 'month') {
         selectedDay.value = buildCalendarDay(new Date())

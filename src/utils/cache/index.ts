@@ -14,6 +14,12 @@ import { idbClear, STORES } from './idb'
 export { registerServiceWorker, unregisterServiceWorker } from './swRegister'
 export { postCache, type CachedPost, type CachedPostList } from './postCache'
 export { authorCache, type CachedAuthor, type CachedAuthorList } from './authorCache'
+export {
+  getPublicSnapshot,
+  setPublicSnapshot,
+  deletePublicSnapshot,
+  type PublicSnapshotRecord,
+} from './publicSnapshotCache'
 export { memoryCache }
 export { idbClear, STORES }
 export { cacheStats } from './cacheStats'

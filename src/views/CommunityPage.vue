@@ -80,12 +80,6 @@
         </template>
       </PageHeroShell>
 
-      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
-        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
-        <p>{{ $t('home.preview.desc') }}</p>
-        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
-      </div>
-
       <!-- Community Guide Dialog -->
       <Dialog v-model:isOpen="showGuide" :title="$t('community.guideTitle')" size="sm">
         <div class="guide-dialog-body">
@@ -354,13 +348,12 @@ import { useAuthStore, useDiscussionsStore } from '@/stores'
 import { discussionService, type Discussion, ApiError } from '@/api'
 import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { formatRelativeTime } from '@/utils/date'
-import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
+import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { getFallbackHotTopics, searchFallbackDiscussions } from '@/fallbacks/communityFallback'
 import {
   isServiceUnavailableError,
-  resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
 import Button from '@/components/ui/Button.vue'
@@ -403,7 +396,6 @@ const searchResults = ref<Discussion[]>([])
 const isSearching = ref(false)
 const searchError = ref<string | null>(null)
 const searchSource = ref<PublicPageDataSource>('live')
-const searchFallbackReason = ref<string | null>(null)
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let searchRequestToken = 0
 
@@ -412,7 +404,6 @@ const isLoadingHot = ref(false)
 const hotTopicsError = ref<string | null>(null)
 const hotTopics = ref<Discussion[]>([])
 const hotTopicsSource = ref<PublicPageDataSource>('live')
-const hotTopicsFallbackReason = ref<string | null>(null)
 let hotTopicsController: AbortController | null = null
 let hotTopicsRequestToken = 0
 
@@ -429,16 +420,8 @@ const tabs = computed(() => [
 ])
 const isUsingSearchFallback = computed(() => searchSource.value === 'fallback')
 const isUsingHotFallback = computed(() => hotTopicsSource.value === 'fallback')
-const fallbackReason = computed(
-  () =>
-    searchFallbackReason.value || hotTopicsFallbackReason.value || discStore.fallbackReason || null
-)
-const showPreviewNotice = computed(
-  () =>
-    Boolean(fallbackReason.value) &&
-    (isUsingRecentFallback.value || isUsingSearchFallback.value || isUsingHotFallback.value) &&
-    shouldExposeFallbackPreviewNotice()
-)
+const COMMUNITY_HOT_TOPICS_SNAPSHOT_SCOPE = 'community/hot-topics'
+const COMMUNITY_SEARCH_SNAPSHOT_SCOPE = 'community/search'
 
 function switchTab(tabId: string) {
   activeTab.value = tabId
@@ -506,7 +489,7 @@ async function fetchHotTopics() {
     if (controller.signal.aborted || requestToken !== hotTopicsRequestToken) return
     hotTopics.value = res.items.slice(0, 6)
     hotTopicsSource.value = 'live'
-    hotTopicsFallbackReason.value = null
+    await setPublicSnapshot(COMMUNITY_HOT_TOPICS_SNAPSHOT_SCOPE, { limit: 6 }, hotTopics.value)
   } catch (err) {
     if (
       controller.signal.aborted ||
@@ -516,10 +499,14 @@ async function fetchHotTopics() {
       return
     }
     if (isServiceUnavailableError(err)) {
-      hotTopics.value = getFallbackHotTopics(6)
-      hotTopicsSource.value = 'fallback'
-      hotTopicsFallbackReason.value =
-        resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+      const cachedTopics = await getPublicSnapshot<Discussion[]>(
+        COMMUNITY_HOT_TOPICS_SNAPSHOT_SCOPE,
+        {
+          limit: 6,
+        }
+      )
+      hotTopics.value = cachedTopics ?? getFallbackHotTopics(6)
+      hotTopicsSource.value = cachedTopics ? 'cached' : 'fallback'
       hotTopicsError.value = null
       return
     }
@@ -544,7 +531,6 @@ function clearSearch() {
   isSearching.value = false
   searchError.value = null
   searchSource.value = 'live'
-  searchFallbackReason.value = null
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
 }
 
@@ -574,7 +560,7 @@ async function searchDiscussions(q: string, signal?: AbortSignal, requestToken?:
     if (signal?.aborted || token !== searchRequestToken) return
     searchResults.value = res.items
     searchSource.value = 'live'
-    searchFallbackReason.value = null
+    await setPublicSnapshot(COMMUNITY_SEARCH_SNAPSHOT_SCOPE, { q }, res.items)
   } catch (err: unknown) {
     if (
       signal?.aborted ||
@@ -584,10 +570,12 @@ async function searchDiscussions(q: string, signal?: AbortSignal, requestToken?:
       return
     }
     if (isServiceUnavailableError(err)) {
+      const cachedResults = await getPublicSnapshot<Discussion[]>(COMMUNITY_SEARCH_SNAPSHOT_SCOPE, {
+        q,
+      })
       const fallbackRes = searchFallbackDiscussions(q, { page: 1, page_size: 20 })
-      searchResults.value = fallbackRes.items
-      searchSource.value = 'fallback'
-      searchFallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+      searchResults.value = cachedResults ?? fallbackRes.items
+      searchSource.value = cachedResults ? 'cached' : 'fallback'
       searchError.value = null
       return
     }
@@ -613,7 +601,6 @@ watch(
       isSearching.value = false
       searchError.value = null
       searchSource.value = 'live'
-      searchFallbackReason.value = null
       return
     }
 

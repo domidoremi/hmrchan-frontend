@@ -1,8 +1,15 @@
 import type { PostDetailResponse, PostListItem } from '@/api/postService'
-import { EXPLORE_FALLBACK_POSTS } from './exploreFallback'
-import { HOME_FALLBACK_POSTS } from './homepageFallback'
+import {
+  STATIC_EXPLORE_POSTS,
+  STATIC_HOME_POSTS,
+  STATIC_POST_DETAILS,
+} from './generated/publicSnapshots'
+import { clonePublicSnapshot } from './publicPageFallback'
 
-const FALLBACK_POSTS: PostListItem[] = [...HOME_FALLBACK_POSTS, ...EXPLORE_FALLBACK_POSTS]
+const FALLBACK_POSTS: PostListItem[] = [
+  ...clonePublicSnapshot(STATIC_HOME_POSTS),
+  ...clonePublicSnapshot(STATIC_EXPLORE_POSTS),
+]
 
 function uniquePosts(posts: PostListItem[]): PostListItem[] {
   const seen = new Set<string>()
@@ -15,21 +22,12 @@ function uniquePosts(posts: PostListItem[]): PostListItem[] {
 
 const UNIQUE_FALLBACK_POSTS = uniquePosts(FALLBACK_POSTS)
 
-function toPostDetail(post: PostListItem): PostDetailResponse {
-  const authorOtherPosts = UNIQUE_FALLBACK_POSTS.filter(
-    (candidate) => candidate.author_id === post.author_id && candidate.id !== post.id
-  )
-    .slice(0, 6)
-    .map((candidate) => ({
-      id: candidate.id,
-      platform: candidate.platform,
-      post_type: candidate.post_type,
-      title: candidate.title ?? null,
-      post_url: candidate.post_url,
-      published_at: candidate.published_at ?? null,
-      view_count: candidate.view_count,
-      like_count: candidate.like_count,
-    }))
+export function getFallbackPostDetailById(postId: string): PostDetailResponse | null {
+  const detail = STATIC_POST_DETAILS[postId]
+  if (detail) return clonePublicSnapshot(detail)
+
+  const post = UNIQUE_FALLBACK_POSTS.find((item) => item.id === postId)
+  if (!post) return null
 
   return {
     id: post.id,
@@ -46,7 +44,7 @@ function toPostDetail(post: PostListItem): PostDetailResponse {
     view_count: post.view_count,
     like_count: post.like_count,
     comment_count: post.comment_count,
-    media_count: post.media_count ?? (post.thumbnail_url ? 1 : 0),
+    media_count: post.media_count ?? 0,
     duration: post.duration ?? null,
     published_at: post.published_at ?? undefined,
     created_at: post.created_at ?? post.published_at ?? new Date().toISOString(),
@@ -59,11 +57,6 @@ function toPostDetail(post: PostListItem): PostDetailResponse {
     post_type: post.post_type ?? undefined,
     media_type: null,
     language: null,
-    author_other_posts: authorOtherPosts,
+    author_other_posts: [],
   }
-}
-
-export function getFallbackPostDetailById(postId: string): PostDetailResponse | null {
-  const post = UNIQUE_FALLBACK_POSTS.find((item) => item.id === postId)
-  return post ? toPostDetail(post) : null
 }

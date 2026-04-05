@@ -50,13 +50,13 @@ vi.mock('@/fallbacks/publicPageFallback', () => ({
   resolvePublicFallbackReason: vi.fn(() => null),
 }))
 
-vi.mock('@/utils/pageMeta', () => ({
-  applyPageMeta: vi.fn(),
+vi.mock('@/utils/cache', () => ({
+  getPublicSnapshot: vi.fn(() => Promise.resolve(undefined)),
+  setPublicSnapshot: vi.fn(() => Promise.resolve()),
 }))
 
-vi.mock('@/utils/runtimeHost', () => ({
-  shouldExposeFallbackPreviewNotice: vi.fn(() => false),
-  getPreferredPreviewLocale: vi.fn(() => null),
+vi.mock('@/utils/pageMeta', () => ({
+  applyPageMeta: vi.fn(),
 }))
 
 vi.mock('@/components/ui/StateIndicator.vue', () => ({
