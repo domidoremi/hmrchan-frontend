@@ -120,6 +120,13 @@
     box-shadow 220ms var(--ease-out);
 }
 
+.page-input-shell--comfortable {
+  min-inline-size: min(100%, 18rem);
+  padding-inline: clamp(1rem, 1.8vw, 1.2rem);
+  padding-block: clamp(0.4rem, 0.9vw, 0.55rem);
+  gap: clamp(0.625rem, 1.1vw, 0.85rem);
+}
+
 .page-input-shell:focus-within {
   background: var(--page-control-bg-hover);
   border-color: var(--page-control-border-strong);

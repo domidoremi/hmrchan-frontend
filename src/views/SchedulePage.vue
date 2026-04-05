@@ -5,7 +5,6 @@
     <div class="container">
       <PageHeroShell class="schedule-hero" bare>
         <template #heading>
-          <span class="page-hero-shell__eyebrow">{{ $t('nav.schedule') }}</span>
           <div class="schedule-hero__copy">
             <h1 class="page-hero-shell__title">{{ $t('schedule.title') }}</h1>
             <p class="page-hero-shell__subtitle">{{ $t('schedule.subtitle') }}</p>
@@ -13,8 +12,11 @@
         </template>
 
         <template #actions>
-          <div class="schedule-hero__actions">
-            <ControlGroup class="planner-view-switch" :aria-label="$t('schedule.plannerTitle')">
+          <div class="schedule-hero__actions page-actions page-actions--comfortable">
+            <ControlGroup
+              class="planner-view-switch page-control-group-shell--comfortable"
+              :aria-label="$t('schedule.plannerTitle')"
+            >
               <ControlButton
                 v-for="view in plannerViews"
                 :key="view.value"
@@ -26,7 +28,7 @@
               </ControlButton>
             </ControlGroup>
             <ControlGroup
-              class="category-filters"
+              class="category-filters page-control-group-shell--comfortable"
               role="radiogroup"
               :aria-label="$t('schedule.filterLabel')"
             >
@@ -50,7 +52,7 @@
         </template>
 
         <template #meta>
-          <PageMetaRow class="schedule-hero__meta">
+          <PageMetaRow class="schedule-hero__meta page-meta-row--comfortable">
             <PageMetaChip>
               <strong>{{ monthLabel }}</strong>
               {{ $t('schedule.goToday') }}
@@ -68,7 +70,7 @@
       </PageHeroShell>
 
       <!-- 月份导航 -->
-      <PageToolbar class="month-nav">
+      <PageToolbar class="month-nav page-toolbar-shell--comfortable">
         <ControlButton
           class="month-nav-btn"
           size="square"
@@ -107,13 +109,22 @@
             <span>{{ $t('schedule.today') }}</span>
           </ControlButton>
         </Transition>
+        <label class="schedule-date-jump">
+          <span class="sr-only">{{ $t('schedule.dateJumpLabel') }}</span>
+          <input
+            :value="dateJumpValue"
+            type="date"
+            class="schedule-date-jump__input"
+            :aria-label="$t('schedule.dateJumpLabel')"
+            @input="handleDateJumpInput"
+          />
+        </label>
       </PageToolbar>
 
       <section class="planner-shell schedule-panel schedule-panel--planner">
         <div class="planner-shell__head">
           <div class="planner-shell__copy">
             <p class="planner-shell__eyebrow">{{ $t('schedule.plannerTitle') }}</p>
-            <h2 class="planner-shell__title">{{ $t('schedule.plannerSubtitle') }}</h2>
           </div>
           <span class="paper-chip">{{ activeCategoryLabel }}</span>
         </div>
@@ -140,6 +151,9 @@
             </span>
             <span v-if="day.events[0]" class="planner-week-day__event">
               {{ day.events[0].title }}
+            </span>
+            <span v-if="day.events.length > 1" class="planner-week-day__overflow">
+              +{{ day.events.length - 1 }}
             </span>
           </button>
         </div>
@@ -549,7 +563,7 @@
                 {{ $t('schedule.detail.linksTitle') }}
               </h3>
 
-              <div class="detail-links">
+              <div class="detail-links page-control-group-shell--comfortable">
                 <ControlButton
                   v-if="detailEvent.event_url"
                   :tag="'a'"
@@ -594,21 +608,22 @@
                 </ControlButton>
               </div>
             </section>
-
-            <section class="schedule-detail-note">
-              <div class="schedule-detail-note__icon" aria-hidden="true">
-                <Info :size="16" />
-              </div>
-              <div class="schedule-detail-note__copy">
-                <p class="schedule-detail-note__title">
-                  {{ $t('schedule.detail.backendNoticeTitle') }}
-                </p>
-                <p class="schedule-detail-note__body">
-                  {{ $t('schedule.detail.backendNoticeBody') }}
-                </p>
-              </div>
-            </section>
           </article>
+
+          <StateIndicator
+            v-else-if="detailStatus === 'not-found'"
+            variant="not-found"
+            :title="$t('common.notFound')"
+            :description="$t('schedule.detail.notFoundDescription')"
+            show-action
+            @action="retryDetail"
+          />
+          <StateIndicator
+            v-else-if="detailStatus === 'error'"
+            variant="error"
+            :description="detailError || $t('common.error')"
+            @action="retryDetail"
+          />
         </aside>
       </div>
     </div>
@@ -625,7 +640,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
-  Info,
   Link2,
   MapPin,
   ExternalLink,
@@ -686,8 +700,11 @@ const monthTransition = ref<'month-slide-left' | 'month-slide-right'>('month-sli
 // 详情弹窗
 const detailEvent = ref<ScheduleResponse | null>(null)
 const detailLoading = ref(false)
+const detailStatus = ref<'idle' | 'ready' | 'not-found' | 'error'>('idle')
+const detailError = ref<string | null>(null)
 let latestFetchId = 0
 const routeScheduleId = computed(() => {
+  if (route.name !== 'schedule-detail') return null
   const value = route.params['id']
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 })
@@ -787,7 +804,7 @@ const eventsByDate = computed(() => {
 })
 
 function getEventsForDate(date: Date): ScheduleCalendarItem[] {
-  const dateStr = date.toISOString().slice(0, 10)
+  const dateStr = formatCalendarDateKey(date)
   return eventsByDate.value.get(dateStr) ?? []
 }
 
@@ -873,7 +890,7 @@ function buildCalendarDay(date: Date): CalendarDay {
     today.getDate() === normalized.getDate()
 
   return {
-    key: normalized.toISOString().slice(0, 10),
+    key: formatCalendarDateKey(normalized),
     date: normalized.getDate(),
     fullDate: normalized,
     currentMonth: normalized.getMonth() === currentMonth.value,
@@ -902,7 +919,15 @@ const plannerPeriodLabel = computed(() => {
   const last = weekDays.value[weekDays.value.length - 1]
   if (!first || !last) return monthLabel.value
 
-  return `${formatEventDate(first.fullDate.toISOString())} - ${formatEventDate(last.fullDate.toISOString())}`
+  return `${formatCalendarDateLabel(first.fullDate)} - ${formatCalendarDateLabel(last.fullDate)}`
+})
+const dateJumpValue = computed(() => {
+  const target =
+    plannerView.value === 'month'
+      ? new Date(currentYear.value, currentMonth.value, 1)
+      : plannerAnchorDate.value
+
+  return formatCalendarDateKey(target)
 })
 
 const upcomingEvents = computed(() => {
@@ -1005,6 +1030,12 @@ function onTouchEnd(e: TouchEvent) {
 }
 
 // ========== 操作 ==========
+function jumpToDate(date: Date) {
+  currentYear.value = date.getFullYear()
+  currentMonth.value = date.getMonth()
+  selectedDay.value = buildCalendarDay(date)
+}
+
 function prevMonth() {
   if (plannerView.value !== 'month') {
     const offsetDays = plannerView.value === 'week' ? -7 : -1
@@ -1013,9 +1044,7 @@ function prevMonth() {
       plannerAnchorDate.value.getMonth(),
       plannerAnchorDate.value.getDate() + offsetDays
     )
-    currentYear.value = target.getFullYear()
-    currentMonth.value = target.getMonth()
-    selectedDay.value = buildCalendarDay(target)
+    jumpToDate(target)
     return
   }
 
@@ -1037,9 +1066,7 @@ function nextMonth() {
       plannerAnchorDate.value.getMonth(),
       plannerAnchorDate.value.getDate() + offsetDays
     )
-    currentYear.value = target.getFullYear()
-    currentMonth.value = target.getMonth()
-    selectedDay.value = buildCalendarDay(target)
+    jumpToDate(target)
     return
   }
 
@@ -1060,9 +1087,7 @@ function goToday() {
   } else {
     monthTransition.value = 'month-slide-left'
   }
-  currentYear.value = now.getFullYear()
-  currentMonth.value = now.getMonth()
-  selectedDay.value = buildCalendarDay(now)
+  jumpToDate(now)
 }
 
 function setCategory(cat: ScheduleCategory | 'all') {
@@ -1093,9 +1118,33 @@ function selectPlannerDay(day: CalendarDay) {
   selectedDay.value = buildCalendarDay(day.fullDate)
 }
 
+function handleDateJumpInput(event: Event) {
+  const value = (event.target as HTMLInputElement | null)?.value
+  if (!value) return
+
+  const parsed = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return
+
+  jumpToDate(parsed)
+}
+
 function formatWeekdayLabel(date: Date): string {
   return date.toLocaleDateString(locale.value === 'zh-CN' ? 'zh-CN' : locale.value, {
     weekday: 'short',
+  })
+}
+
+function formatCalendarDateKey(date: Date): string {
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function formatCalendarDateLabel(date: Date): string {
+  return date.toLocaleDateString(locale.value, {
+    month: 'short',
+    day: 'numeric',
   })
 }
 
@@ -1112,7 +1161,7 @@ function formatEventDate(dateStr: string): string {
 function resolveCalendarDay(dateStr: string): CalendarDay | null {
   const targetDate = dateStr.slice(0, 10)
   return (
-    calendarDays.value.find((day) => day.fullDate.toISOString().slice(0, 10) === targetDate) ?? null
+    calendarDays.value.find((day) => formatCalendarDateKey(day.fullDate) === targetDate) ?? null
   )
 }
 
@@ -1190,11 +1239,14 @@ const canShareDetail = computed(
 
 async function loadDetail(eventId: string) {
   detailLoading.value = true
+  detailStatus.value = 'idle'
+  detailError.value = null
   detailEvent.value = { id: eventId } as ScheduleResponse
   try {
     const liveDetail = await scheduleService.getById(eventId, { skipErrorToast: true })
     await setPublicSnapshot(SCHEDULE_DETAIL_SNAPSHOT_SCOPE, { id: eventId }, liveDetail)
     detailEvent.value = liveDetail
+    detailStatus.value = 'ready'
     eventsSource.value = 'live'
     syncScheduleDetailMeta(detailEvent.value)
     syncSelectedDayWithDetail(detailEvent.value)
@@ -1208,6 +1260,7 @@ async function loadDetail(eventId: string) {
       )
       if (cachedDetail) {
         detailEvent.value = cachedDetail
+        detailStatus.value = 'ready'
         eventsSource.value = 'cached'
         syncScheduleDetailMeta(cachedDetail)
         syncSelectedDayWithDetail(cachedDetail)
@@ -1217,6 +1270,7 @@ async function loadDetail(eventId: string) {
       const fallbackDetail = getFallbackScheduleById(eventId)
       if (fallbackDetail) {
         detailEvent.value = fallbackDetail
+        detailStatus.value = 'ready'
         eventsSource.value = 'fallback'
         syncScheduleDetailMeta(fallbackDetail)
         syncSelectedDayWithDetail(fallbackDetail)
@@ -1224,8 +1278,11 @@ async function loadDetail(eventId: string) {
       }
     }
     detailEvent.value = null
-    if (routeScheduleId.value === eventId) {
-      void router.replace({ name: 'schedule' })
+    if (err instanceof ApiError && err.status === 404) {
+      detailStatus.value = 'not-found'
+    } else {
+      detailStatus.value = 'error'
+      detailError.value = err instanceof ApiError ? err.message : t('common.error')
     }
   } finally {
     detailLoading.value = false
@@ -1243,9 +1300,16 @@ async function openDetail(eventId: string) {
 
 function closeDetail() {
   detailEvent.value = null
+  detailStatus.value = 'idle'
+  detailError.value = null
   if (routeScheduleId.value) {
     void router.replace({ name: 'schedule' })
   }
+}
+
+function retryDetail() {
+  if (!routeScheduleId.value) return
+  void loadDetail(routeScheduleId.value)
 }
 
 async function copyDetailLink() {
@@ -1470,6 +1534,8 @@ watch(
     if (!nextId) {
       detailEvent.value = null
       detailLoading.value = false
+      detailStatus.value = 'idle'
+      detailError.value = null
       return
     }
 
@@ -1606,6 +1672,26 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+.schedule-date-jump {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: min(100%, 11rem);
+  margin-inline-start: auto;
+}
+
+.schedule-date-jump__input {
+  inline-size: 100%;
+  min-block-size: var(--ui-control-height-sm);
+  padding-inline: 0.9rem;
+  padding-block: 0.45rem;
+  border: 0.0625rem solid var(--planner-surface-border, var(--color-border));
+  border-radius: var(--appearance-radius-control-sm);
+  background: color-mix(in srgb, var(--page-shell-control-bg) 92%, transparent);
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
 .planner-shell {
   --planner-surface-radius: clamp(1rem, 1.6vw, 1.35rem);
   --planner-surface-bg: color-mix(
@@ -1651,12 +1737,6 @@ onMounted(() => {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--surface-paper-ink-soft);
-}
-
-.planner-shell__title {
-  margin: 0;
-  font-size: clamp(1.1rem, 0.95rem + 0.45vw, 1.4rem);
-  color: var(--surface-paper-ink);
 }
 
 .planner-shell .page-control,
@@ -1745,6 +1825,17 @@ onMounted(() => {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.planner-week-day__overflow {
+  align-self: flex-start;
+  padding-inline: 0.55rem;
+  padding-block: 0.2rem;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--planner-surface-bg-strong) 88%, transparent);
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
 }
 
 .planner-day-focus {
@@ -2181,10 +2272,6 @@ onMounted(() => {
   .schedule-detail-actions {
     grid-template-columns: 1fr;
   }
-
-  .schedule-detail-note {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ========== 可点击事件卡片 ========== */
@@ -2255,8 +2342,7 @@ onMounted(() => {
 }
 
 .schedule-detail-article__header,
-.schedule-detail-section,
-.schedule-detail-note {
+.schedule-detail-section {
   display: grid;
   gap: var(--spacing-3);
 }
@@ -2495,54 +2581,6 @@ onMounted(() => {
 .detail-link-btn--ticket:hover {
   border-color: rgba(245, 158, 11, 0.26);
   color: #f59e0b;
-}
-
-.schedule-detail-note {
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: var(--appearance-surface-gap-sm);
-  padding: var(--appearance-surface-padding-md);
-  border: 0.0625rem dashed var(--surface-minimal-border, var(--color-border));
-  border-radius: var(--appearance-radius-rich-block);
-  background: color-mix(
-    in srgb,
-    var(--surface-minimal-panel, var(--color-surface)) 86%,
-    var(--surface-minimal-muted, var(--color-surface-variant)) 14%
-  );
-}
-
-.schedule-detail-note__icon {
-  inline-size: 2rem;
-  block-size: 2rem;
-  display: inline-grid;
-  place-items: center;
-  border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
-  border-radius: var(--appearance-radius-control-sm);
-  color: var(--surface-minimal-text, var(--color-text-primary));
-}
-
-.schedule-detail-note__copy,
-.schedule-detail-note__title,
-.schedule-detail-note__body {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.schedule-detail-note__title,
-.schedule-detail-note__body {
-  margin: 0;
-}
-
-.schedule-detail-note__title {
-  color: var(--surface-minimal-text, var(--color-text-primary));
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-}
-
-.schedule-detail-note__body {
-  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
-  font-size: var(--text-xs);
-  line-height: 1.6;
 }
 
 /* ========== Reduced Motion ========== */

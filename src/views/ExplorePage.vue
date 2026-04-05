@@ -6,16 +6,15 @@
     <div class="container">
       <PageHeroShell class="explore-hero" bare>
         <template #heading>
-          <span class="page-hero-shell__eyebrow">{{ $t('nav.explore') }}</span>
           <div class="page-hero-shell__title-row">
             <h1 class="page-hero-shell__title">{{ $t('explore.title') }}</h1>
-            <span class="page-hero-shell__badge">{{ total }} {{ $t('search.tab.posts') }}</span>
+            <span class="page-hero-shell__badge">{{ heroBadgeLabel }}</span>
           </div>
           <p class="page-hero-shell__subtitle">{{ $t('explore.subtitle') }}</p>
         </template>
 
         <template #actions>
-          <div class="page-actions">
+          <div class="page-actions page-actions--comfortable">
             <ControlButton
               class="search-trigger"
               :aria-label="$t('search.title')"
@@ -34,18 +33,26 @@
         </template>
 
         <template #meta>
-          <PageMetaRow>
+          <PageMetaRow class="page-meta-row--comfortable">
             <PageMetaChip>
-              <strong>{{ total }}</strong>
+              <strong>{{ visiblePosts.length }}</strong>
               <span>{{ $t('search.tab.posts') }}</span>
             </PageMetaChip>
-            <PageMetaChip>{{ $t('explore.sortBy') }}</PageMetaChip>
-            <PageMetaChip>{{ $t('explore.platformFilter') }}</PageMetaChip>
+            <PageMetaChip>{{ currentSortLabel }}</PageMetaChip>
+            <PageMetaChip>{{ currentPlatformLabel }}</PageMetaChip>
           </PageMetaRow>
         </template>
 
-        <PageToolbar class="filters-row" role="group" :aria-label="$t('explore.filters')">
-          <ControlGroup class="filters" role="group" :aria-label="$t('explore.sortBy')">
+        <PageToolbar
+          class="filters-row page-toolbar-shell--comfortable"
+          role="group"
+          :aria-label="$t('explore.filters')"
+        >
+          <ControlGroup
+            class="filters page-control-group-shell--comfortable"
+            role="group"
+            :aria-label="$t('explore.sortBy')"
+          >
             <ControlButton
               v-for="sort in sortOptions"
               :key="sort.value"
@@ -59,7 +66,7 @@
           </ControlGroup>
 
           <ControlGroup
-            class="platform-filters"
+            class="platform-filters page-control-group-shell--comfortable"
             justify="end"
             role="group"
             :aria-label="$t('explore.platformFilter')"
@@ -133,7 +140,7 @@
           <LoadMoreSection
             v-if="posts.length > 0"
             :count="visiblePosts.length"
-            :total="total"
+            :total="loadMoreTotal"
             :has-more="hasMoreForUi"
             :loading="isLoadingMore"
             :sentinel-ref="setSentinelRef"
@@ -280,7 +287,14 @@ const {
   initialColumnCount: calculateColumnCount(),
 })
 
-const hasMore = computed(() => posts.value.length < total.value)
+const hasKnownTotal = computed(() => total.value > 0)
+const hasMore = computed(() => {
+  if (hasKnownTotal.value) {
+    return posts.value.length < total.value
+  }
+
+  return lastPageSize.value >= pageSize.value
+})
 
 // 骨架屏列数和每列数量 - 与真实 masonry 布局保持一致，避免 CLS
 const skeletonColumnCount = computed(() => columnCount.value)
@@ -304,9 +318,30 @@ const {
 })
 
 const lastVisibleCount = ref(0)
+const lastPageSize = ref(0)
 let isActive = true
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
+const currentSortLabel = computed(
+  () =>
+    sortOptions.value.find((option) => option.value === currentSort.value)?.label ??
+    t('explore.newest')
+)
+const currentPlatformLabel = computed(
+  () =>
+    platformOptions.value.find((option) => option.value === currentPlatform.value)?.label ??
+    t('explore.allPlatforms')
+)
+const heroBadgeLabel = computed(() => {
+  if (visiblePosts.value.length > 0) {
+    return `${visiblePosts.value.length} ${t('search.tab.posts')}`
+  }
+
+  return currentPlatformLabel.value
+})
+const loadMoreTotal = computed(() =>
+  hasKnownTotal.value ? total.value : Math.max(visiblePosts.value.length, posts.value.length, 1)
+)
 
 function schedulePlatformBackgroundMount() {
   if (typeof window === 'undefined') {
@@ -451,6 +486,7 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       requestSignal ? { signal: requestSignal } : undefined
     )
     const items = result.data as PostListItem[]
+    lastPageSize.value = items.length
 
     if (requestSignal?.aborted || requestToken !== fetchPostsToken) {
       return false
@@ -490,6 +526,7 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       dataSource.value = 'fallback'
       error.value = null
       total.value = fallbackResult.total
+      lastPageSize.value = fallbackResult.items.length
 
       if (reset) {
         posts.value = fallbackResult.items

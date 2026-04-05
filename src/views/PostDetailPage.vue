@@ -291,7 +291,7 @@
           :aria-label="t('post.content')"
           @click.self="closeTextModal"
         >
-          <div class="post-text-panel" tabindex="-1">
+          <div ref="textModalPanelRef" class="post-text-panel" tabindex="-1">
             <header class="post-text-header">
               <h3 class="post-text-title">{{ t('post.content') }}</h3>
               <button type="button" class="post-text-close" @click="closeTextModal">
@@ -462,6 +462,7 @@ const allowAdjacentMediaPreload = ref(false)
 
 const stageRef = useTemplateRef<HTMLElement>('stageRef')
 const commentsSectionRef = useTemplateRef<HTMLElement>('commentsSectionRef')
+const textModalPanelRef = useTemplateRef<HTMLElement>('textModalPanelRef')
 const navigationContext = ref<PostNavigationContext | null>(null)
 let commentsObserver: IntersectionObserver | null = null
 let stageListenersAttached = false
@@ -504,6 +505,7 @@ const lightboxInitialIndex = ref(0)
 
 // Long text → open in overlay modal for comfortable reading
 const isTextModalOpen = ref(false)
+const textModalReturnFocus = ref<HTMLElement | null>(null)
 const shouldShowReadFullText = computed(() =>
   computeShouldShowReadFullText(detailDescription.value)
 )
@@ -1158,14 +1160,21 @@ watch(
 
 watch(
   isTextModalOpen,
-  (open) => {
+  async (open) => {
     if (typeof window === 'undefined') return
     if (open) {
+      textModalReturnFocus.value =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null
       lockBodyScroll()
       window.addEventListener('keydown', onTextModalKeydown)
+      await nextTick()
+      textModalPanelRef.value?.focus({ preventScroll: true })
     } else {
       unlockBodyScroll()
       window.removeEventListener('keydown', onTextModalKeydown)
+      await nextTick()
+      textModalReturnFocus.value?.focus({ preventScroll: true })
+      textModalReturnFocus.value = null
     }
   },
   { immediate: true }
@@ -1472,10 +1481,10 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-3);
   padding: var(--spacing-2) var(--spacing-4);
-  background: var(--glass-bg-strong);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid var(--glass-border);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
 }
 
 .post-topbar__back {

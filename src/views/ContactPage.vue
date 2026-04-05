@@ -3,7 +3,6 @@
     <div class="container">
       <PageHeroShell tag="section" class="contact-hero">
         <template #heading>
-          <span class="page-hero-shell__eyebrow">{{ $t('contact.title') }}</span>
           <div class="contact-hero__copy">
             <h1 class="page-hero-shell__title">{{ $t('contact.title') }}</h1>
             <p class="page-hero-shell__subtitle">{{ $t('contact.subtitle') }}</p>

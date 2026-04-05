@@ -239,7 +239,8 @@
       "codeLabel": "Authenticator or one-time code",
       "backupCodeLabel": "Backup code",
       "passkeyHint": "Use a saved passkey on this device or browser.",
-      "passkeyAction": "Continue with passkey"
+      "passkeyAction": "Continue with passkey",
+      "googlePopupRecoveryHint": "If the Google pop-up does not finish here, continue in this tab."
     }
   },
   "video": {
@@ -854,8 +855,10 @@
       "backendNoticeBody": "Persistent bookmarks, reminders, and schedule mention features need backend APIs before they can be shipped here.",
       "eventPage": "Event Page",
       "buyTicket": "Buy Ticket",
-      "source": "Source"
-    }
+      "source": "Source",
+      "notFoundDescription": "This schedule item could not be found. You can return to the calendar or try again."
+    },
+    "dateJumpLabel": "Jump to date"
   },
   "uploader": {
     "select": "Choose files",

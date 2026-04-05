@@ -191,6 +191,14 @@ export const useCommentsStore = defineStore('comments', () => {
             ...(signal ? { signal } : {}),
             skipErrorToast: true,
           })
+        } else if (err instanceof ApiError && err.status === 404) {
+          data = {
+            items: [],
+            page: 1,
+            page_size: 0,
+            total: 0,
+            total_pages: 0,
+          }
         } else {
           throw err
         }
