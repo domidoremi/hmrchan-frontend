@@ -584,7 +584,6 @@ function shouldUsePopupBridge(): boolean {
 
   if (!hasCallbackPayload) return false
   if (typeof window !== 'undefined' && window.opener) return true
-  if (pendingRequest?.mode === 'popup') return true
   return Boolean(resolveGoogleAuthPopupRequestIdFromWindowName())
 }
 
