@@ -80,7 +80,6 @@
               <RouterLink class="auth-forgot" to="/forgot-password">{{
                 $t('auth.forgotPassword')
               }}</RouterLink>
-              <span>{{ $t('auth.loginHint') }}</span>
             </div>
           </div>
 
@@ -100,7 +99,6 @@
                 <AuthProviderButton
                   action="google"
                   :label="$t('auth.googleLoginButton')"
-                  :hint="$t('auth.googleLoginHint')"
                   :loading="googleProviderBusy"
                   :icon="IconGoogle"
                   @click="handleGoogleContinue"
@@ -117,19 +115,50 @@
           <AuthProviderButton
             action="google"
             :label="$t('auth.googleLoginButton')"
-            :hint="$t('auth.googleLoginHint')"
             :loading="googleProviderBusy"
             :icon="IconGoogle"
             @click="handleGoogleContinue"
           />
 
-          <div v-if="googlePopupState === 'waiting'" class="auth-inline-state">
+          <div
+            v-if="googlePopupState === 'waiting' || googlePopupState === 'recovery'"
+            class="auth-inline-state"
+            :class="{ 'auth-inline-state--warning': googlePopupState === 'recovery' }"
+          >
             <div class="auth-inline-state__icon" aria-hidden="true">
-              <LoaderCircle :size="16" class="auth-inline-spin" />
+              <LoaderCircle
+                v-if="googlePopupState === 'waiting'"
+                :size="16"
+                class="auth-inline-spin"
+              />
+              <CircleAlert v-else :size="16" />
             </div>
             <div class="auth-inline-state__content">
-              <p class="auth-restore__title">{{ $t('auth.googlePopupWaitingTitle') }}</p>
-              <p class="auth-inline-state__copy">{{ $t('auth.googlePopupWaitingHint') }}</p>
+              <p class="auth-restore__title">
+                {{
+                  googlePopupState === 'recovery'
+                    ? $t('auth.googlePopupFallbackTitle')
+                    : $t('auth.googlePopupWaitingTitle')
+                }}
+              </p>
+              <p class="auth-inline-state__copy">
+                {{
+                  googlePopupState === 'recovery'
+                    ? $t('auth.googlePopupRecoveryHint')
+                    : $t('auth.googlePopupWaitingHint')
+                }}
+              </p>
+              <div v-if="googlePopupState === 'recovery'" class="auth-inline-state__actions">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  full-width
+                  :loading="isLoading"
+                  @click="continueGoogleInCurrentPage"
+                >
+                  {{ $t('auth.googlePopupFallbackAction') }}
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -368,6 +397,7 @@ const nextRedirectTarget = ref('/')
 const googlePopupState = ref<GooglePopupState>('idle')
 const googlePopupErrorKey = ref('')
 let googlePopupDispose: (() => void) | null = null
+let googlePopupRecoveryTimer: ReturnType<typeof setTimeout> | null = null
 
 const restoreIdentifier = ref('')
 const restorePassword = ref('')
@@ -490,11 +520,27 @@ function setGooglePopupStatus(state: GooglePopupState, errorKey = '') {
   googlePopupErrorKey.value = errorKey
 }
 
+function clearGooglePopupRecoveryTimer() {
+  if (!googlePopupRecoveryTimer) return
+  clearTimeout(googlePopupRecoveryTimer)
+  googlePopupRecoveryTimer = null
+}
+
+function armGooglePopupRecovery() {
+  clearGooglePopupRecoveryTimer()
+  googlePopupRecoveryTimer = setTimeout(() => {
+    if (googlePopupState.value === 'waiting') {
+      setGooglePopupStatus('recovery', 'auth.googlePopupRecoveryHint')
+    }
+  }, 12000)
+}
+
 function clearGooglePopupListener() {
   if (googlePopupDispose) {
     googlePopupDispose()
     googlePopupDispose = null
   }
+  clearGooglePopupRecoveryTimer()
 }
 
 function resetGooglePopupState() {
@@ -697,6 +743,7 @@ async function handleGooglePopupResult(message: GooglePopupMessage) {
 }
 
 async function continueGoogleInCurrentPage() {
+  clearGooglePopupListener()
   setGooglePopupStatus('handling')
   const result = await authStore.startGoogleAuth('login', redirectTo.value)
 
@@ -730,9 +777,11 @@ async function handleGoogleContinue() {
     timeoutMs: 4 * 60 * 1000,
   })
   googlePopupDispose = pendingPopup.dispose
+  armGooglePopupRecovery()
 
   const message = await pendingPopup.promise
   googlePopupDispose = null
+  clearGooglePopupRecoveryTimer()
   setGooglePopupStatus('handling')
   await handleGooglePopupResult(message)
 }

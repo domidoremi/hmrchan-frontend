@@ -239,7 +239,8 @@
       "codeLabel": "驗證器或一次性驗證碼",
       "backupCodeLabel": "備份碼",
       "passkeyHint": "使用目前裝置或瀏覽器中已儲存的 Passkey。",
-      "passkeyAction": "使用 Passkey 繼續"
+      "passkeyAction": "使用 Passkey 繼續",
+      "googlePopupRecoveryHint": "如果 Google 彈窗未能在這裡完成，請改為目前頁面繼續。"
     }
   },
   "video": {
@@ -854,8 +855,10 @@
       "backendNoticeBody": "持久化收藏、提醒訂閱與日程提及能力需要後端 API 配合後才能真正上線。",
       "eventPage": "活動頁面",
       "buyTicket": "購票",
-      "source": "來源"
-    }
+      "source": "來源",
+      "notFoundDescription": "找不到這筆日程內容。你可以返回日曆，或稍後再試。"
+    },
+    "dateJumpLabel": "跳至日期"
   },
   "uploader": {
     "select": "選擇檔案",

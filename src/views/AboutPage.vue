@@ -2,15 +2,14 @@
   <div class="about-page">
     <div class="container">
       <!-- 页面标题 -->
-      <PageHeroShell class="about-hero">
+      <PageHeroShell class="about-hero page-hero-shell--comfortable">
         <template #heading>
-          <span class="page-hero-shell__eyebrow">{{ $t('nav.about') }}</span>
           <h1 class="page-hero-shell__title gradient-text">{{ $t('about.title') }}</h1>
           <p class="page-hero-shell__subtitle">{{ $t('about.subtitle') }}</p>
         </template>
 
         <template #meta>
-          <PageMetaRow>
+          <PageMetaRow class="page-meta-row--comfortable">
             <PageMetaChip>{{ $t('about.links.title') }}</PageMetaChip>
             <PageMetaChip>{{ $t('about.features.title') }}</PageMetaChip>
             <PageMetaChip>{{ $t('about.tech.title') }}</PageMetaChip>
@@ -544,10 +543,6 @@ const { techStack } = useAboutData()
 
 .about-hero .page-hero-shell__heading {
   justify-items: center;
-}
-
-.about-hero .page-hero-shell__eyebrow {
-  align-self: center;
 }
 
 .about-hero .page-hero-shell__meta {

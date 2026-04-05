@@ -24,7 +24,7 @@ describe('schedule locale messages', () => {
         },
       })
 
-      expect(() => i18n.global.t('schedule.detail.backendNoticeBody')).not.toThrow()
+      expect(() => i18n.global.t('schedule.detail.notFoundDescription')).not.toThrow()
     })
   }
 })

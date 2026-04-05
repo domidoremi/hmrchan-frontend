@@ -3,7 +3,6 @@
     <div class="container">
       <PageHeroShell class="search-header search-hero">
         <template #heading>
-          <span class="page-hero-shell__eyebrow">{{ $t('search.title') }}</span>
           <div class="page-hero-shell__title-row search-header-top">
             <ControlButton
               class="back-btn"

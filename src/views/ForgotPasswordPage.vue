@@ -2,11 +2,7 @@
   <div class="auth-page auth-page--forgot">
     <AuthEntryShell
       :title="emailSent ? $t('email.resetEmailSent') : $t('email.forgotPasswordTitle')"
-      :subtitle="
-        emailSent
-          ? $t('email.resetEmailSentHint', { email: maskedEmail })
-          : $t('email.forgotPasswordHint')
-      "
+      :subtitle="emailSent ? '' : $t('email.forgotPasswordHint')"
       :show-tabs="false"
       split
       @back="handleBack"
@@ -16,7 +12,6 @@
           <div class="status-icon status-icon--success">
             <Mail :size="24" />
           </div>
-          <p class="auth-helper">{{ $t('email.resetEmailSentHint', { email: maskedEmail }) }}</p>
           <div class="action-group">
             <Button variant="ghost" full-width :disabled="resendCooldown > 0" @click="handleSubmit">
               {{

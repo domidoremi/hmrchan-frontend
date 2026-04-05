@@ -8,7 +8,14 @@ import { createSecureMessageHandler, getTrustedFrontendOrigins } from '@/utils/s
 
 export type GoogleAuthIntent = 'login' | 'register'
 export type GoogleAuthMode = 'popup' | 'redirect'
-export type GooglePopupState = 'idle' | 'opening' | 'waiting' | 'blocked' | 'handling' | 'error'
+export type GooglePopupState =
+  | 'idle'
+  | 'opening'
+  | 'waiting'
+  | 'recovery'
+  | 'blocked'
+  | 'handling'
+  | 'error'
 
 export interface GooglePopupMessage {
   type: 'google-auth-result'

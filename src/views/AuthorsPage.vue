@@ -3,10 +3,9 @@
     <div class="container">
       <PageHeroShell class="authors-hero" bare>
         <template #heading>
-          <span class="page-hero-shell__eyebrow">{{ $t('nav.authors') }}</span>
           <div class="page-hero-shell__title-row">
             <h1 class="page-hero-shell__title">{{ $t('nav.authors') }}</h1>
-            <span class="page-hero-shell__badge">{{ total }}</span>
+            <span v-if="heroBadgeLabel" class="page-hero-shell__badge">{{ heroBadgeLabel }}</span>
           </div>
           <p class="page-hero-shell__subtitle">{{ $t('authors.subtitle') }}</p>
         </template>
@@ -19,9 +18,9 @@
         </template>
 
         <template #meta>
-          <PageMetaRow>
+          <PageMetaRow class="page-meta-row--comfortable">
             <PageMetaChip>
-              <strong>{{ total }}</strong>
+              <strong>{{ authors.length }}</strong>
               <span>{{ $t('nav.authors') }}</span>
             </PageMetaChip>
           </PageMetaRow>
@@ -66,7 +65,7 @@
           <LoadMoreSection
             v-if="authors.length > 0"
             :count="authors.length"
-            :total="total"
+            :total="loadMoreTotal"
             :has-more="hasMore"
             :loading="isLoadingMore"
             :sentinel-ref="setSentinelRef"
@@ -116,9 +115,23 @@ const isUsingFallback = computed(() => dataSource.value === 'fallback')
 const page = ref(1)
 const total = ref(0)
 const pageSize = 24
+const lastPageSize = ref(0)
 const isPageActive = ref(true)
 
-const hasMore = computed(() => authors.value.length < total.value)
+const hasKnownTotal = computed(() => total.value > 0)
+const hasMore = computed(() => {
+  if (hasKnownTotal.value) {
+    return authors.value.length < total.value
+  }
+
+  return lastPageSize.value >= pageSize
+})
+const heroBadgeLabel = computed(() =>
+  authors.value.length > 0 ? String(authors.value.length) : ''
+)
+const loadMoreTotal = computed(() =>
+  hasKnownTotal.value ? total.value : Math.max(authors.value.length, 1)
+)
 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
@@ -186,6 +199,7 @@ async function fetchAuthors(reset = true): Promise<boolean> {
       authors.value.push(...res.items)
     }
     total.value = res.total
+    lastPageSize.value = res.items.length
     dataSource.value = 'live'
     await setPublicSnapshot(AUTHORS_LIST_SNAPSHOT_SCOPE, params, res)
 
@@ -201,6 +215,7 @@ async function fetchAuthors(reset = true): Promise<boolean> {
       const fallbackResult = cachedSnapshot ?? getFallbackAuthors(params)
       authors.value = reset ? fallbackResult.items : [...authors.value, ...fallbackResult.items]
       total.value = fallbackResult.total
+      lastPageSize.value = fallbackResult.items.length
       dataSource.value = cachedSnapshot ? 'cached' : 'fallback'
       error.value = null
       return true

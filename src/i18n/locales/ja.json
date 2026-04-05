@@ -239,7 +239,8 @@
       "codeLabel": "認証アプリまたはワンタイムコード",
       "backupCodeLabel": "バックアップコード",
       "passkeyHint": "この端末やブラウザに保存されたパスキーを使用します。",
-      "passkeyAction": "パスキーで続行"
+      "passkeyAction": "パスキーで続行",
+      "googlePopupRecoveryHint": "Google ポップアップで完了しない場合は、このページで続行してください。"
     }
   },
   "video": {
@@ -854,8 +855,10 @@
       "backendNoticeBody": "永続的なお気に入り、リマインダー登録、予定メンション機能はバックエンド API が必要です。",
       "eventPage": "イベントページ",
       "buyTicket": "チケット購入",
-      "source": "ソース"
-    }
+      "source": "ソース",
+      "notFoundDescription": "この予定は見つかりませんでした。カレンダーに戻るか、もう一度お試しください。"
+    },
+    "dateJumpLabel": "日付へ移動"
   },
   "uploader": {
     "select": "ファイルを選択",
