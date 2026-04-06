@@ -301,7 +301,7 @@ async function handleShowReplies() {
     const requestToken = ++fetchRepliesToken
     isLoadingReplies.value = true
     try {
-      const result = await commentsStore.fetchReplies(props.comment.id, 1, props.postId, {
+      const result = await commentsStore.fetchReplies(props.comment.id, props.postId, {
         signal: controller.signal,
       })
       if (controller.signal.aborted || requestToken !== fetchRepliesToken) return

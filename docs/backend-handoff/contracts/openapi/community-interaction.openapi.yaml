@@ -38,15 +38,56 @@ paths:
     patch: { tags: [favorites], security: [ { bearerAuth: [] } ], parameters: [ { $ref: "#/components/parameters/PathID" } ], requestBody: { $ref: "#/components/requestBodies/JsonMergePatch" }, responses: { "200": { description: OK }, "426": { $ref: "#/components/responses/UpgradeRequired" } } }
     delete: { tags: [favorites], security: [ { bearerAuth: [] } ], parameters: [ { $ref: "#/components/parameters/PathID" } ], responses: { "204": { description: No Content }, "426": { $ref: "#/components/responses/UpgradeRequired" } } }
   /api/v1/community/stats: { get: { tags: [community], responses: { "200": { description: OK } } } }
-  /api/v1/community/latest: { get: { tags: [community], parameters: [ { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" } ], responses: { "200": { description: Cursor collection } } } }
-  /api/v1/community/hot: { get: { tags: [community], parameters: [ { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" } ], responses: { "200": { description: Cursor collection } } } }
+  /api/v1/community/latest:
+    get:
+      tags: [community]
+      description: |
+        Latest public community comments. Uses the canonical cursor collection wire shape
+        `{ items, next_cursor, has_more }` and never returns `total`.
+        Identity/profile or content-card enrichment failures degrade to partial or empty items with `200`;
+        only the main comment query returns `500`.
+      parameters: [ { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" } ]
+      responses:
+        "200": { description: Cursor collection }
+        "400": { description: Invalid cursor }
+        "500": { description: Comment query failed }
+  /api/v1/community/hot:
+    get:
+      tags: [community]
+      description: |
+        Hot public posts ranked by recent community comment count.
+        Ordered by `comment_count DESC, post_uuid DESC` and returned as the canonical
+        cursor collection `{ items, next_cursor, has_more }`.
+        Item fields are `post_id`, `comment_count`, `platform`, and optional `title`.
+        This endpoint does not return `hot_topics` or `total`.
+        Content-card enrichment failures degrade to partial or empty items with `200`;
+        only the aggregate query returns `500`.
+      parameters: [ { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" }, { $ref: "#/components/parameters/CommunityDays" } ]
+      responses:
+        "200": { description: Cursor collection }
+        "400": { description: Invalid cursor or invalid days }
+        "500": { description: Aggregate query failed }
   /api/v1/community/feed: { get: { tags: [community], parameters: [ { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" } ], responses: { "200": { description: Cursor collection } } } }
   /api/v1/community/my-comments: { get: { tags: [community], security: [ { bearerAuth: [] } ], parameters: [ { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" } ], responses: { "200": { description: Cursor collection }, "426": { $ref: "#/components/responses/UpgradeRequired" } } } }
   /api/v1/community/my-likes: { get: { tags: [community], security: [ { bearerAuth: [] } ], parameters: [ { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" } ], responses: { "200": { description: Cursor collection }, "426": { $ref: "#/components/responses/UpgradeRequired" } } } }
   /api/v1/community/favorites: { get: { tags: [community], security: [ { bearerAuth: [] } ], parameters: [ { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" } ], responses: { "200": { description: Cursor collection }, "426": { $ref: "#/components/responses/UpgradeRequired" } } } }
   /api/v1/community/summary: { get: { tags: [community], security: [ { bearerAuth: [] } ], responses: { "200": { description: Summary }, "426": { $ref: "#/components/responses/UpgradeRequired" } } } }
   /api/v1/posts/{id}/comments:
-    get: { tags: [comments], parameters: [ { $ref: "#/components/parameters/PathID" }, { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" } ], responses: { "200": { description: Cursor collection } } }
+    get:
+      tags: [comments]
+      description: |
+        Strict cursor collection for post comments. Only `limit`, `cursor`, and `sort`
+        are supported. Legacy page-based params such as `page` and `page_size` are rejected with `400`.
+        Semantics are fixed:
+        - missing post or missing content card => `404`
+        - content service unavailable => `503`
+        - existing post with no comments => `200` empty cursor collection
+      parameters: [ { $ref: "#/components/parameters/PathID" }, { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" }, { $ref: "#/components/parameters/CommentSort" } ]
+      responses:
+        "200": { description: Cursor collection }
+        "400": { description: Invalid post ID, invalid cursor, or legacy page-based pagination params }
+        "404": { description: Post or required content card not found }
+        "503": { description: Content service unavailable }
     post: { tags: [comments], security: [ { bearerAuth: [] } ], parameters: [ { $ref: "#/components/parameters/PathID" } ], responses: { "201": { description: Created }, "426": { $ref: "#/components/responses/UpgradeRequired" } } }
   /api/v1/comments/{id}: { patch: { tags: [comments], security: [ { bearerAuth: [] } ], parameters: [ { $ref: "#/components/parameters/PathID" } ], requestBody: { $ref: "#/components/requestBodies/JsonMergePatch" }, responses: { "200": { description: OK }, "426": { $ref: "#/components/responses/UpgradeRequired" } } }, delete: { tags: [comments], security: [ { bearerAuth: [] } ], parameters: [ { $ref: "#/components/parameters/PathID" } ], responses: { "204": { description: No Content }, "426": { $ref: "#/components/responses/UpgradeRequired" } } } }
   /api/v1/comments/{id}/replies: { get: { tags: [comments], parameters: [ { $ref: "#/components/parameters/PathID" }, { $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" } ], responses: { "200": { description: Cursor collection } } } }
@@ -148,6 +189,8 @@ components:
     PostID: { name: post_id, in: path, required: true, schema: { type: string } }
     Limit: { name: limit, in: query, schema: { type: integer } }
     Cursor: { name: cursor, in: query, schema: { type: string } }
+    CommunityDays: { name: days, in: query, schema: { type: integer, default: 7, minimum: 1, maximum: 90 } }
+    CommentSort: { name: sort, in: query, schema: { type: string, enum: [newest, oldest, popular], default: popular } }
     InboxLimit: { name: limit, in: query, schema: { type: integer, default: 20, maximum: 50 } }
     InboxCategory: { name: category, in: query, schema: { type: string, enum: [interaction, security, system] } }
     InboxStatus: { name: status, in: query, schema: { type: string, enum: [all, unread, archived] } }

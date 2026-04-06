@@ -4,7 +4,7 @@
  * 提供用户关注、拉黑等关系管理的 API 调用
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, type CursorCollectionResponse } from './client'
 
 // ========== 类型定义 ==========
 
@@ -47,6 +47,20 @@ export interface UserPublicProfile {
   relation?: UserRelation
 }
 
+export interface RelationSummaryCounts {
+  followers?: number | null
+  following?: number | null
+  blocked?: number | null
+}
+
+function buildCursorQuery(options: { limit?: number; cursor?: string | null } = {}) {
+  const params = new URLSearchParams({
+    limit: String(options.limit ?? 20),
+  })
+  if (options.cursor) params.set('cursor', options.cursor)
+  return params
+}
+
 // ========== 用户关系服务 ==========
 
 export const userRelationsService = {
@@ -67,18 +81,22 @@ export const userRelationsService = {
   /**
    * 获取当前用户粉丝列表
    */
-  async getFollowers(page = 1, pageSize = 20): Promise<PaginatedApiResponse<UserListItem>> {
-    return apiClient.get<PaginatedApiResponse<UserListItem>>(
-      `/relations/followers?page=${page}&page_size=${pageSize}`
+  async getFollowers(
+    options: { limit?: number; cursor?: string | null } = {}
+  ): Promise<CursorCollectionResponse<UserListItem>> {
+    return apiClient.get<CursorCollectionResponse<UserListItem>>(
+      `/relations/followers?${buildCursorQuery(options).toString()}`
     )
   },
 
   /**
    * 获取当前用户关注列表
    */
-  async getFollowing(page = 1, pageSize = 20): Promise<PaginatedApiResponse<UserListItem>> {
-    return apiClient.get<PaginatedApiResponse<UserListItem>>(
-      `/relations/following?page=${page}&page_size=${pageSize}`
+  async getFollowing(
+    options: { limit?: number; cursor?: string | null } = {}
+  ): Promise<CursorCollectionResponse<UserListItem>> {
+    return apiClient.get<CursorCollectionResponse<UserListItem>>(
+      `/relations/following?${buildCursorQuery(options).toString()}`
     )
   },
 
@@ -99,10 +117,16 @@ export const userRelationsService = {
   /**
    * 获取我拉黑的用户列表
    */
-  async getBlockedUsers(page = 1, pageSize = 20): Promise<PaginatedApiResponse<UserListItem>> {
-    return apiClient.get<PaginatedApiResponse<UserListItem>>(
-      `/relations/blocked?page=${page}&page_size=${pageSize}`
+  async getBlockedUsers(
+    options: { limit?: number; cursor?: string | null } = {}
+  ): Promise<CursorCollectionResponse<UserListItem>> {
+    return apiClient.get<CursorCollectionResponse<UserListItem>>(
+      `/relations/blocked?${buildCursorQuery(options).toString()}`
     )
+  },
+
+  async getSummary(): Promise<Record<string, unknown>> {
+    return apiClient.get<Record<string, unknown>>('/relations/summary')
   },
 
   /**

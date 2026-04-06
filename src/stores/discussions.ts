@@ -10,14 +10,16 @@ import {
   discussionService,
   type Discussion,
   type DiscussionComment,
+  type DiscussionCommentListResponse,
   type ListDiscussionsParams,
   type DiscussionCategory,
 } from '@/api/discussionService'
-import type { PaginatedApiResponse, RequestConfig } from '@/api/client'
+import { normalizeDiscussionsSummaryCount } from '@/api/summaryCounts'
+import type { RequestConfig } from '@/api/client'
 import {
   getFallbackDiscussionById,
-  getFallbackDiscussionComments,
-  getFallbackDiscussions,
+  getFallbackDiscussionCommentsCursor,
+  getFallbackDiscussionsCursor,
 } from '@/fallbacks/communityFallback'
 import {
   isServiceUnavailableError,
@@ -31,10 +33,9 @@ const DISCUSSION_COMMENTS_SNAPSHOT_SCOPE = 'community/discussion-comments'
 
 export const useDiscussionsStore = defineStore('discussions', () => {
   const items = ref<Discussion[]>([])
-  const total = ref(0)
-  const page = ref(1)
+  const total = ref<number | null>(null)
+  const nextCursor = ref<string | null>(null)
   const pageSize = ref(20)
-  const totalPages = ref(0)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const source = ref<PublicPageDataSource>('live')
@@ -46,10 +47,10 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   // 当前查看的讨论详情
   const currentDiscussion = ref<Discussion | null>(null)
   const currentComments = ref<DiscussionComment[]>([])
-  const commentsPage = ref(1)
   const commentsTotal = ref(0)
-  const commentsTotalPages = ref(0)
+  const commentsNextCursor = ref<string | null>(null)
   const commentsLoading = ref(false)
+  const hasMoreCommentsState = ref(false)
   let fetchDiscussionController: AbortController | null = null
   let fetchDiscussionToken = 0
   let fetchDiscussionsController: AbortController | null = null
@@ -57,8 +58,9 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   let fetchCommentsController: AbortController | null = null
   let fetchCommentsToken = 0
 
-  const hasMore = computed(() => page.value < totalPages.value)
-  const hasMoreComments = computed(() => commentsPage.value < commentsTotalPages.value)
+  const hasMoreState = ref(false)
+  const hasMore = computed(() => hasMoreState.value)
+  const hasMoreComments = computed(() => hasMoreCommentsState.value)
 
   function abortFetchDiscussions() {
     fetchDiscussionsController?.abort()
@@ -95,16 +97,14 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     error.value = null
 
     try {
-      if (reset) page.value = 1
-
       const params: ListDiscussionsParams = {
-        page: page.value,
-        page_size: pageSize.value,
+        limit: pageSize.value,
+        cursor: reset ? null : nextCursor.value,
         category: currentCategory.value,
         sort: currentSort.value,
       }
 
-      const res: PaginatedApiResponse<Discussion> = await discussionService.list(params, {
+      const res = await discussionService.list(params, {
         signal: controller.signal,
         skipErrorToast: true,
       })
@@ -118,26 +118,30 @@ export const useDiscussionsStore = defineStore('discussions', () => {
         items.value = [...items.value, ...newItems]
       }
 
-      total.value = res.total
-      totalPages.value = res.total_pages
+      nextCursor.value = res.next_cursor ?? null
+      hasMoreState.value = Boolean(res.has_more && res.next_cursor)
       source.value = 'live'
       await setPublicSnapshot(DISCUSSIONS_LIST_SNAPSHOT_SCOPE, params, res)
+      if (reset) {
+        void refreshSummary()
+      }
       return true
     } catch (err) {
       if (controller.signal.aborted || requestToken !== fetchDiscussionsToken) return false
 
       if (isServiceUnavailableError(err)) {
         const params: ListDiscussionsParams = {
-          page: page.value,
-          page_size: pageSize.value,
+          limit: pageSize.value,
+          cursor: reset ? null : nextCursor.value,
           category: currentCategory.value,
           sort: currentSort.value,
         }
-        const cachedRes = await getPublicSnapshot<PaginatedApiResponse<Discussion>>(
-          DISCUSSIONS_LIST_SNAPSHOT_SCOPE,
-          params
-        )
-        const fallbackRes = cachedRes ?? getFallbackDiscussions(params)
+        const cachedRes = await getPublicSnapshot<{
+          items: Discussion[]
+          next_cursor?: string | null
+          has_more: boolean
+        }>(DISCUSSIONS_LIST_SNAPSHOT_SCOPE, params)
+        const fallbackRes = cachedRes ?? getFallbackDiscussionsCursor(params)
 
         if (reset) {
           items.value = fallbackRes.items
@@ -147,8 +151,8 @@ export const useDiscussionsStore = defineStore('discussions', () => {
           items.value = [...items.value, ...newItems]
         }
 
-        total.value = fallbackRes.total
-        totalPages.value = fallbackRes.total_pages
+        nextCursor.value = fallbackRes.next_cursor ?? null
+        hasMoreState.value = Boolean(fallbackRes.has_more && fallbackRes.next_cursor)
         source.value = cachedRes ? 'cached' : 'fallback'
         error.value = null
         return true
@@ -168,13 +172,16 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
   async function loadMore(): Promise<boolean> {
     if (!hasMore.value || isLoading.value) return false
-    const nextPage = page.value + 1
-    page.value = nextPage
-    const ok = await fetchDiscussions()
-    if (!ok) {
-      page.value = nextPage - 1
+    return fetchDiscussions(false)
+  }
+
+  async function refreshSummary(): Promise<void> {
+    try {
+      const summary = await discussionService.getSummary({ skipErrorToast: true })
+      total.value = normalizeDiscussionsSummaryCount(summary)
+    } catch {
+      total.value = items.value.length > 0 ? items.value.length : null
     }
-    return ok
   }
 
   async function fetchDiscussion(id: string, config?: RequestConfig) {
@@ -245,11 +252,9 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     commentsLoading.value = true
 
     try {
-      if (reset) commentsPage.value = 1
-
       const params = {
-        page: commentsPage.value,
-        page_size: 20,
+        limit: 20,
+        cursor: reset ? null : commentsNextCursor.value,
         sort: 'newest' as const,
         preload_replies: 3,
       }
@@ -267,12 +272,13 @@ export const useDiscussionsStore = defineStore('discussions', () => {
         currentComments.value = [...currentComments.value, ...newItems]
       }
 
-      commentsTotal.value = res.total
-      commentsTotalPages.value = res.total_pages
+      commentsTotal.value = currentComments.value.length
+      commentsNextCursor.value = res.next_cursor ?? null
+      hasMoreCommentsState.value = Boolean(res.has_more && res.next_cursor)
       source.value = 'live'
       await setPublicSnapshot(
         DISCUSSION_COMMENTS_SNAPSHOT_SCOPE,
-        { id: discussionId, page: params.page, page_size: params.page_size },
+        { id: discussionId, cursor: params.cursor, limit: params.limit },
         res
       )
       return true
@@ -282,18 +288,18 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       if (isServiceUnavailableError(err)) {
         const snapshotParams = {
           id: discussionId,
-          page: commentsPage.value,
-          page_size: 20,
+          cursor: reset ? null : commentsNextCursor.value,
+          limit: 20,
         }
-        const cachedRes = await getPublicSnapshot<PaginatedApiResponse<DiscussionComment>>(
+        const cachedRes = await getPublicSnapshot<DiscussionCommentListResponse>(
           DISCUSSION_COMMENTS_SNAPSHOT_SCOPE,
           snapshotParams
         )
-        const fallbackRes =
+        const fallbackRes: DiscussionCommentListResponse =
           cachedRes ??
-          getFallbackDiscussionComments(discussionId, {
-            page: commentsPage.value,
-            page_size: 20,
+          getFallbackDiscussionCommentsCursor(discussionId, {
+            limit: 20,
+            cursor: reset ? null : commentsNextCursor.value,
           })
 
         if (reset) {
@@ -304,8 +310,9 @@ export const useDiscussionsStore = defineStore('discussions', () => {
           currentComments.value = [...currentComments.value, ...newItems]
         }
 
-        commentsTotal.value = fallbackRes.total
-        commentsTotalPages.value = fallbackRes.total_pages
+        commentsTotal.value = currentComments.value.length
+        commentsNextCursor.value = fallbackRes.next_cursor ?? null
+        hasMoreCommentsState.value = Boolean(fallbackRes.has_more && fallbackRes.next_cursor)
         source.value = cachedRes ? 'cached' : 'fallback'
         return true
       }
@@ -323,13 +330,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
   async function loadMoreComments(discussionId: string): Promise<boolean> {
     if (!hasMoreComments.value || commentsLoading.value) return false
-    const nextPage = commentsPage.value + 1
-    commentsPage.value = nextPage
-    const ok = await fetchComments(discussionId)
-    if (!ok) {
-      commentsPage.value = nextPage - 1
-    }
-    return ok
+    return fetchComments(discussionId)
   }
 
   async function likeDiscussion(discussionId: string) {
@@ -428,9 +429,9 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     abortFetchDiscussions()
     abortFetchComments()
     items.value = []
-    total.value = 0
-    page.value = 1
-    totalPages.value = 0
+    total.value = null
+    nextCursor.value = null
+    hasMoreState.value = false
     isLoading.value = false
     error.value = null
     source.value = 'live'
@@ -438,17 +439,16 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     currentSort.value = 'latest'
     currentDiscussion.value = null
     currentComments.value = []
-    commentsPage.value = 1
     commentsTotal.value = 0
-    commentsTotalPages.value = 0
+    commentsNextCursor.value = null
     commentsLoading.value = false
+    hasMoreCommentsState.value = false
   }
 
   return {
     items,
     total,
-    page,
-    totalPages,
+    nextCursor,
     isLoading,
     error,
     source,

@@ -2,7 +2,7 @@
  * Favorites Service - 收藏相关 API
  */
 
-import { apiClient, ApiError, type PaginatedApiResponse, type RequestConfig } from './client'
+import { apiClient, ApiError, type CursorCollectionResponse, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -57,8 +57,8 @@ export interface FavoriteTagStats {
 }
 
 export interface ListFavoritesParams {
-  page?: number
-  page_size?: number
+  limit?: number
+  cursor?: string | null
   folder_name?: string
   tag?: string
   tags?: string[]
@@ -101,15 +101,18 @@ export const favoriteService = {
   async list(
     params: ListFavoritesParams = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<FavoriteResponse>> {
+  ): Promise<CursorCollectionResponse<FavoriteResponse>> {
     const buildQuery = (override?: Partial<ListFavoritesParams>) => {
       const merged = { ...params, ...override }
       const query = new URLSearchParams({
-        page: String(merged.page ?? 1),
-        page_size: String(merged.page_size ?? 20),
+        limit: String(merged.limit ?? 20),
         include_post: 'true',
         thumbnail_quality: merged.thumbnail_quality ?? 'medium',
       })
+
+      if (merged.cursor) {
+        query.set('cursor', merged.cursor)
+      }
 
       if (merged.folder_name) {
         query.set('folder', merged.folder_name)
@@ -135,7 +138,7 @@ export const favoriteService = {
     const query = buildQuery()
 
     try {
-      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(
+      return await apiClient.get<CursorCollectionResponse<FavoriteResponse>>(
         `/favorites?${query}`,
         config
       )
@@ -150,7 +153,7 @@ export const favoriteService = {
       }
 
       const fallbackQuery = buildQuery({ sort_by: undefined, sort_order: undefined })
-      return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(
+      return apiClient.get<CursorCollectionResponse<FavoriteResponse>>(
         `/favorites?${fallbackQuery}`,
         config
       )
@@ -185,11 +188,11 @@ export const favoriteService = {
    * 文档未定义 /favorites/post/:postId，统一通过收藏列表定位后删除
    */
   async removeByPostId(postId: string): Promise<void> {
-    let page = 1
-    const pageSize = 100
+    let cursor: string | null = null
+    const limit = 100
 
     while (true) {
-      const list = await this.list({ page, page_size: pageSize })
+      const list = await this.list({ limit, cursor })
       const favorite = list.items.find(
         (item) => item.post_id === postId || item.post?.id === postId
       )
@@ -199,13 +202,13 @@ export const favoriteService = {
         return
       }
 
-      const totalPages =
-        list.total_pages ||
-        (typeof list.total === 'number' && list.total > 0 ? Math.ceil(list.total / pageSize) : 1)
-
-      if (page >= totalPages || !list.items.length) return
-      page += 1
+      if (!list.has_more || !list.next_cursor || list.items.length === 0) return
+      cursor = list.next_cursor
     }
+  },
+
+  async getSummary(config?: RequestConfig): Promise<Record<string, unknown>> {
+    return apiClient.get<Record<string, unknown>>('/favorites/summary', config)
   },
 
   /**

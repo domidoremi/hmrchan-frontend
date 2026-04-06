@@ -49,13 +49,20 @@ import {
 import { applyRequestSecurityHeaders } from './client/request-security'
 import type {
   ApiResponse,
+  CursorCollectionResponse,
   PaginatedApiResponse,
   PaginatedApiResponseWithLimit,
   RequestConfig,
 } from './client/types'
 
 export { ApiError }
-export type { ApiResponse, PaginatedApiResponse, PaginatedApiResponseWithLimit, RequestConfig }
+export type {
+  ApiResponse,
+  CursorCollectionResponse,
+  PaginatedApiResponse,
+  PaginatedApiResponseWithLimit,
+  RequestConfig,
+}
 
 interface RefreshResponse {
   access_token: string

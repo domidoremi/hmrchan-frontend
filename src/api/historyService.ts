@@ -9,17 +9,17 @@
  * - DELETE /api/v1/history/search/:id — 删除单条
  * - DELETE /api/v1/history/search — 清空
  * - POST /api/v1/history/browsing — 记录浏览历史
- * - GET  /api/v1/history/browsing — 浏览历史列表 (limit/offset 分页)
+ * - GET  /api/v1/history/browsing — 浏览历史列表 (limit/cursor 分页)
  * - DELETE /api/v1/history/browsing/:id — 删除单条
  * - DELETE /api/v1/history/browsing — 清空
  * - DELETE /api/v1/history/all — 清空全部
  * - GET  /api/v1/history/stats — 统计
- * - GET  /api/v1/history/my-comments — 我的评论 (page/page_size 分页)
- * - GET  /api/v1/history/my-likes — 我的点赞 (page/page_size 分页)
- * - GET  /api/v1/history/my-comment-favorites — 我的评论收藏 (page/page_size 分页)
+ * - GET  /api/v1/history/my-comments — 我的评论 (limit/cursor 分页)
+ * - GET  /api/v1/history/my-likes — 我的点赞 (limit/cursor 分页)
+ * - GET  /api/v1/history/my-comment-favorites — 我的评论收藏 (limit/cursor 分页)
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -60,10 +60,11 @@ export interface BrowsingHistoryItem {
   view_duration?: number
 }
 
-/** GET /history/browsing 响应（limit/offset 分页） */
+/** GET /history/browsing 响应（limit/cursor 分页） */
 export interface BrowsingHistoryListResponse {
   items: BrowsingHistoryItem[]
-  total: number
+  next_cursor?: string | null
+  has_more: boolean
 }
 
 export interface HistoryStats {
@@ -121,6 +122,25 @@ export interface MyCommentFavoriteItem {
   created_at?: string
   author_username?: string
   post_uuid?: string
+}
+
+export interface HistoryCursorOptions {
+  limit?: number
+  cursor?: string | null
+}
+
+function buildCursorQuery(
+  options: HistoryCursorOptions = {},
+  extras: Record<string, string | undefined> = {}
+): URLSearchParams {
+  const params = new URLSearchParams({
+    limit: String(options.limit ?? 20),
+  })
+  if (options.cursor) params.set('cursor', options.cursor)
+  for (const [key, value] of Object.entries(extras)) {
+    if (value) params.set(key, value)
+  }
+  return params
 }
 
 // ========== 历史记录服务 ==========
@@ -217,21 +237,21 @@ export const historyService = {
    * GET /api/v1/history/browsing
    */
   async getBrowsingHistory(
-    limit = 20,
-    offset = 0,
-    options?: {
+    options: HistoryCursorOptions & {
       content_type?: BrowsingContentType
       include_preview?: boolean
-    }
+    } = {},
+    config?: RequestConfig
   ): Promise<BrowsingHistoryListResponse> {
-    const params = new URLSearchParams({
-      limit: String(limit),
-      offset: String(offset),
+    const params = buildCursorQuery(options, {
+      content_type: options.content_type,
+      include_preview: options.include_preview ? 'true' : undefined,
     })
-    if (options?.content_type) params.set('content_type', options.content_type)
-    if (options?.include_preview) params.set('include_preview', 'true')
 
-    return apiClient.get<BrowsingHistoryListResponse>(`/history/browsing?${params.toString()}`)
+    return apiClient.get<BrowsingHistoryListResponse>(
+      `/history/browsing?${params.toString()}`,
+      config
+    )
   },
 
   /**
@@ -268,6 +288,10 @@ export const historyService = {
     return apiClient.get<HistoryStats>('/history/stats')
   },
 
+  async getSummary(config?: RequestConfig): Promise<Record<string, unknown>> {
+    return apiClient.get<Record<string, unknown>>('/history/summary', config)
+  },
+
   // ========== 我的互动历史 ==========
 
   /**
@@ -275,11 +299,12 @@ export const historyService = {
    * GET /api/v1/history/my-comments
    */
   async getMyComments(
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<MyCommentHistoryItem>> {
-    return apiClient.get<PaginatedApiResponse<MyCommentHistoryItem>>(
-      `/history/my-comments?page=${page}&page_size=${pageSize}`
+    options: HistoryCursorOptions = {},
+    config?: RequestConfig
+  ): Promise<CursorCollectionResponse<MyCommentHistoryItem>> {
+    return apiClient.get<CursorCollectionResponse<MyCommentHistoryItem>>(
+      `/history/my-comments?${buildCursorQuery(options).toString()}`,
+      config
     )
   },
 
@@ -287,9 +312,13 @@ export const historyService = {
    * 获取我的点赞历史
    * GET /api/v1/history/my-likes
    */
-  async getMyLikes(page = 1, pageSize = 20): Promise<PaginatedApiResponse<MyLikeHistoryItem>> {
-    return apiClient.get<PaginatedApiResponse<MyLikeHistoryItem>>(
-      `/history/my-likes?page=${page}&page_size=${pageSize}`
+  async getMyLikes(
+    options: HistoryCursorOptions = {},
+    config?: RequestConfig
+  ): Promise<CursorCollectionResponse<MyLikeHistoryItem>> {
+    return apiClient.get<CursorCollectionResponse<MyLikeHistoryItem>>(
+      `/history/my-likes?${buildCursorQuery(options).toString()}`,
+      config
     )
   },
 
@@ -298,11 +327,12 @@ export const historyService = {
    * GET /api/v1/history/my-comment-favorites
    */
   async getMyCommentFavorites(
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<MyCommentFavoriteItem>> {
-    return apiClient.get<PaginatedApiResponse<MyCommentFavoriteItem>>(
-      `/history/my-comment-favorites?page=${page}&page_size=${pageSize}`
+    options: HistoryCursorOptions = {},
+    config?: RequestConfig
+  ): Promise<CursorCollectionResponse<MyCommentFavoriteItem>> {
+    return apiClient.get<CursorCollectionResponse<MyCommentFavoriteItem>>(
+      `/history/my-comment-favorites?${buildCursorQuery(options).toString()}`,
+      config
     )
   },
 }

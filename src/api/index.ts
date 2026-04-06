@@ -7,6 +7,7 @@ export {
   ApiError,
   type RequestConfig,
   type ApiResponse,
+  type CursorCollectionResponse,
   type PaginatedApiResponse,
 } from './client'
 export {
