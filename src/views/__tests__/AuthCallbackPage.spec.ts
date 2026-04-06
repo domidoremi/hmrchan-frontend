@@ -199,7 +199,7 @@ describe('AuthCallbackPage', () => {
         redirectTo: '/profile',
         intent: 'login',
       }),
-      'http://127.0.0.1:4173'
+      window.location.origin
     )
     expect(localStorage.getItem('__momi_google_auth_popup_result__')).toContain('popup-handoff')
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
