@@ -108,14 +108,12 @@ const { isAuthenticated } = storeToRefs(authStore)
 const { t } = useI18n()
 
 const comments = ref<DiscussionComment[]>([])
-const total = ref(0)
-const totalPages = ref(0)
-const page = ref(1)
+const nextCursor = ref<string | null>(null)
+const hasMoreState = ref(false)
 const pageSize = 20
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
-const hasNext = ref(false)
 let latestFetchId = 0
 let fetchCommentsController: AbortController | null = null
 
@@ -123,16 +121,8 @@ const currentSort = ref<'newest' | 'oldest' | 'popular'>('newest')
 const currentFilter = ref<'all' | 'author' | 'admin'>('all')
 const preloadReplies = ref('2')
 
-const commentsCount = computed(() => total.value || comments.value.length)
-const hasMore = computed(() => {
-  if (totalPages.value > 0) {
-    return page.value < totalPages.value
-  }
-  if (typeof total.value === 'number' && total.value > 0) {
-    return comments.value.length < total.value
-  }
-  return hasNext.value
-})
+const commentsCount = computed(() => comments.value.length)
+const hasMore = computed(() => hasMoreState.value)
 
 function sortPinnedFirst(items: DiscussionComment[]) {
   const pinned = items.filter((item) => item.is_pinned)
@@ -241,7 +231,8 @@ async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolea
 
   if (reset) {
     isLoading.value = true
-    page.value = 1
+    nextCursor.value = null
+    hasMoreState.value = false
   } else {
     if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
@@ -253,8 +244,8 @@ async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolea
     const res = await discussionService.getComments(
       props.discussionId,
       {
-        page: page.value,
-        page_size: pageSize,
+        limit: pageSize,
+        cursor: reset ? null : nextCursor.value,
         sort: currentSort.value,
         filter: resolveFilterParam(),
         preload_replies: Number(preloadReplies.value),
@@ -273,17 +264,8 @@ async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolea
     } else {
       comments.value = sortPinnedFirst([...comments.value, ...items])
     }
-
-    if (reset) {
-      total.value = res.total ?? 0
-      totalPages.value = res.total_pages ?? 0
-    } else {
-      total.value = res.total ?? total.value
-      totalPages.value = res.total_pages ?? totalPages.value
-    }
-    hasNext.value =
-      Boolean((res as unknown as { has_next?: boolean; has_more?: boolean }).has_next) ||
-      Boolean((res as unknown as { has_more?: boolean }).has_more)
+    nextCursor.value = res.next_cursor ?? null
+    hasMoreState.value = Boolean(res.has_more && res.next_cursor)
     return true
   } catch (err) {
     if (requestSignal?.aborted || isAbortError(err) || fetchId !== latestFetchId) return false
@@ -309,17 +291,12 @@ async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolea
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  const nextPage = page.value + 1
-  page.value = nextPage
   const ok = await fetchComments(false)
-  if (!ok) {
-    page.value = nextPage - 1
-  }
+  if (!ok) return
 }
 
 function handleCommentAdded(newComment: DiscussionComment) {
   comments.value = sortPinnedFirst([newComment, ...comments.value])
-  total.value = total.value + 1
 }
 
 function handlePinnedUpdated() {
@@ -349,13 +326,9 @@ function handleReplySubmitted(payload: { parentId: string; comment: DiscussionCo
 }
 
 function handleDeleted(commentId: string) {
-  const removedTopLevel = comments.value.some((item) => String(item.id) === String(commentId))
   const updated = removeNestedComment(comments.value, String(commentId))
   if (updated.removedCount === 0) return
   comments.value = sortPinnedFirst(updated.items)
-  if (removedTopLevel) {
-    total.value = Math.max(0, total.value - 1)
-  }
 }
 
 function handleLikeUpdated(payload: { commentId: string; isLiked: boolean; likeCount: number }) {

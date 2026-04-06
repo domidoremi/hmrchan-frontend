@@ -43,10 +43,20 @@ export interface CreateCommentRequest {
 
 export interface CommentListResponse {
   items: Comment[]
-  total: number
-  page: number
-  page_size: number
-  total_pages: number
+  next_cursor?: string | null
+  has_more: boolean
+}
+
+export interface GetPostCommentsOptions {
+  limit?: number
+  cursor?: string | null
+  sort?: 'newest' | 'oldest' | 'popular'
+  preload_replies?: number
+}
+
+export interface GetCommentRepliesOptions {
+  limit?: number
+  cursor?: string | null
 }
 
 export interface CommentThreadResponse {
@@ -75,22 +85,20 @@ export const commentService = {
    */
   async getPostComments(
     postId: string,
-    page = 1,
-    pageSize = 20,
-    options?: {
-      sort?: 'newest' | 'oldest' | 'popular'
-      preload_replies?: number
-    }
+    options: GetPostCommentsOptions = {},
+    config?: RequestConfig
   ): Promise<CommentListResponse> {
-    const params = new URLSearchParams({
-      page: String(page),
-      page_size: String(pageSize),
-    })
+    const params = new URLSearchParams()
+    params.set('limit', String(options.limit ?? 20))
+    if (options.cursor) params.set('cursor', options.cursor)
     if (options?.sort) params.set('sort', options.sort)
     if (options?.preload_replies != null) {
       params.set('preload_replies', String(options.preload_replies))
     }
-    return apiClient.get<CommentListResponse>(`/posts/${postId}/comments?${params.toString()}`)
+    return apiClient.get<CommentListResponse>(
+      `/posts/${postId}/comments?${params.toString()}`,
+      config
+    )
   },
 
   /**
@@ -204,12 +212,14 @@ export const commentService = {
    */
   async getCommentReplies(
     commentId: string,
-    page = 1,
-    pageSize = 20,
+    options: GetCommentRepliesOptions = {},
     config?: RequestConfig
   ): Promise<CommentListResponse> {
+    const params = new URLSearchParams()
+    params.set('limit', String(options.limit ?? 20))
+    if (options.cursor) params.set('cursor', options.cursor)
     return apiClient.get<CommentListResponse>(
-      `/comments/${commentId}/replies?page=${page}&page_size=${pageSize}`,
+      `/comments/${commentId}/replies?${params.toString()}`,
       config
     )
   },

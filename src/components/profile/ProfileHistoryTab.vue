@@ -1,6 +1,6 @@
 <template>
   <div class="history-tab">
-    <ProfileTabHeader :title="$t('profile.tabs.history')" :count="total">
+    <ProfileTabHeader :title="$t('profile.tabs.history')" :count="displayTotal">
       <template #actions>
         <Button v-if="history.length > 0" variant="ghost" size="sm" @click="clearHistory">
           <Trash2 :size="14" />
@@ -79,7 +79,7 @@
       <LoadMoreSection
         v-if="hasMore"
         :count="history.length"
-        :total="total"
+        :total="displayTotal"
         :has-more="hasMore"
         :loading="isLoadingMore"
         @load-more="loadMore"
@@ -103,7 +103,8 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Clock, Trash2 } from '@lucide/vue'
 import { useToastStore } from '@/stores'
-import { apiClient, ApiError } from '@/api'
+import { apiClient, ApiError, historyService, type BrowsingHistoryItem } from '@/api'
+import { normalizeHistorySummaryCounts } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
@@ -115,22 +116,8 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
-interface ApiHistoryItem {
-  id: number
-  content_type: string
-  content_uuid: string
-  source: string
-  duration_seconds: number | null
-  created_at: string
-  content_preview: {
-    title?: string
-    thumbnail_url?: string | null
-    author_name?: string
-  } | null
-}
-
 interface HistoryItem {
-  id: number
+  id: string | number
   post_uuid: string
   post: {
     uuid: string
@@ -146,18 +133,29 @@ interface HistoryGroup {
   items: HistoryItem[]
 }
 
-function transformHistoryItem(item: ApiHistoryItem): HistoryItem {
-  const authorName = item.content_preview?.author_name
+function transformHistoryItem(
+  item: BrowsingHistoryItem & {
+    content_preview?: {
+      title?: string
+      thumbnail_url?: string | null
+      author_name?: string
+    } | null
+  }
+): HistoryItem {
+  const previewTitle = item.content_preview?.title ?? item.post_title
+  const previewThumb = item.content_preview?.thumbnail_url ?? item.post_thumbnail_url
+  const authorName = item.content_preview?.author_name ?? item.author_name
+  const contentUuid = item.content_uuid ?? item.post_id ?? ''
   return {
     id: item.id,
-    post_uuid: item.content_uuid,
+    post_uuid: contentUuid,
     post: {
-      uuid: item.content_uuid,
-      title: item.content_preview?.title || t('profile.unknownPost'),
-      thumbnail_url: item.content_preview?.thumbnail_url || null,
+      uuid: contentUuid,
+      title: previewTitle || t('profile.unknownPost'),
+      thumbnail_url: previewThumb || null,
       ...(authorName ? { author_name: authorName } : {}),
     },
-    viewed_at: item.created_at,
+    viewed_at: item.created_at ?? item.viewed_at ?? '',
   }
 }
 
@@ -169,14 +167,16 @@ const history = ref<HistoryItem[]>([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
-const page = ref(1)
-const total = ref(0)
+const nextCursor = ref<string | null>(null)
+const total = ref<number | null>(null)
 const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
 const showClearDialog = ref(false)
 let historyController: AbortController | null = null
 let historyRequestToken = 0
 
-const hasMore = computed(() => history.value.length < total.value)
+const hasMoreState = ref(false)
+const hasMore = computed(() => hasMoreState.value)
+const displayTotal = computed(() => total.value ?? (history.value.length || undefined))
 
 const groupedHistory = computed<HistoryGroup[]>(() => {
   const now = new Date()
@@ -214,7 +214,7 @@ async function fetchHistory(reset = true): Promise<boolean> {
     historyController?.abort()
     historyController = null
     isLoading.value = true
-    page.value = 1
+    nextCursor.value = null
   } else {
     if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
@@ -225,25 +225,31 @@ async function fetchHistory(reset = true): Promise<boolean> {
   const requestToken = ++historyRequestToken
 
   try {
-    const res = await apiClient.get<{
-      items: ApiHistoryItem[]
-      total: number
-      page: number
-      page_size: number
-      has_more: boolean
-    }>(`/history/browsing?page=${page.value}&page_size=${pageSize.value}`, {
-      signal: controller.signal,
-      skipErrorToast: true,
-    })
+    const res = await historyService.getBrowsingHistory(
+      {
+        limit: pageSize.value,
+        cursor: reset ? null : nextCursor.value,
+        include_preview: true,
+      },
+      {
+        signal: controller.signal,
+        skipErrorToast: true,
+      }
+    )
     if (controller.signal.aborted || requestToken !== historyRequestToken) return false
 
     const transformedItems = (Array.isArray(res.items) ? res.items : []).map(transformHistoryItem)
     if (reset) {
       history.value = transformedItems
     } else {
-      history.value.push(...transformedItems)
+      const existingIds = new Set(history.value.map((item) => String(item.id)))
+      history.value.push(...transformedItems.filter((item) => !existingIds.has(String(item.id))))
     }
-    total.value = res.total
+    nextCursor.value = res.next_cursor ?? null
+    hasMoreState.value = Boolean(res.has_more && res.next_cursor)
+    if (reset) {
+      void refreshHistorySummary()
+    }
     return true
   } catch (err) {
     if (controller.signal.aborted || requestToken !== historyRequestToken) return false
@@ -264,11 +270,19 @@ async function fetchHistory(reset = true): Promise<boolean> {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  const nextPage = page.value + 1
-  page.value = nextPage
-  const ok = await fetchHistory(false)
-  if (!ok) {
-    page.value = nextPage - 1
+  await fetchHistory(false)
+}
+
+async function refreshHistorySummary() {
+  try {
+    const stats = await historyService.getStats()
+    total.value = normalizeHistorySummaryCounts(stats).history
+    if (total.value === null) {
+      const summary = await historyService.getSummary()
+      total.value = normalizeHistorySummaryCounts(summary).history
+    }
+  } catch {
+    total.value = history.value.length > 0 ? history.value.length : null
   }
 }
 
@@ -281,6 +295,8 @@ async function confirmClearHistory() {
     await apiClient.delete('/history/browsing')
     history.value = []
     total.value = 0
+    nextCursor.value = null
+    hasMoreState.value = false
     toastStore.success(t('profile.historyCleared'))
   } catch (err) {
     toastStore.error(err instanceof ApiError ? err.message : t('common.error'))

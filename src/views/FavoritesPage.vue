@@ -11,7 +11,7 @@
           <PageMetaRow v-if="isAuthenticated">
             <PageMetaChip>
               <span v-if="isLoading" class="spinner spinner-sm" />
-              <span>{{ $t('favorites.totalCount', { count: total }) }}</span>
+              <span>{{ $t('favorites.totalCount', { count: total ?? 0 }) }}</span>
             </PageMetaChip>
           </PageMetaRow>
         </template>
@@ -266,7 +266,7 @@ const folders = computed(() => favStore.folders)
 const tags = computed(() => favStore.tags)
 const isLoading = computed(() => favStore.isLoading)
 const error = computed(() => (favStore.error ? t(favStore.error) : null))
-const total = computed(() => favStore.total)
+const total = computed(() => favStore.total ?? (favStore.items.length || undefined))
 const hasMore = computed(() => favStore.hasMore)
 const isLoadingMore = computed(() => favStore.isLoading && favStore.items.length > 0)
 const preferredPageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })

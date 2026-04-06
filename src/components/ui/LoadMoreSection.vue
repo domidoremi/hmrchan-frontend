@@ -79,7 +79,7 @@ import { resolveLoadMoreMetrics } from '@/components/ui/loadMoreMetrics'
 
 interface Props {
   count: number
-  total: number
+  total?: number
   hasMore: boolean
   loading?: boolean
   sentinelRef?: (el: HTMLElement | null) => void

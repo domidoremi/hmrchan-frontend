@@ -8,7 +8,7 @@
  * - 讨论评论（支持嵌套回复）
  */
 
-import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
+import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -91,8 +91,8 @@ export interface CreateCommentRequest {
 }
 
 export interface ListDiscussionsParams {
-  page?: number
-  page_size?: number
+  limit?: number
+  cursor?: string | null
   category?: DiscussionCategory
   tag?: string
   sort?: 'latest' | 'popular' | 'active'
@@ -111,12 +111,31 @@ export interface ListDiscussionCommentsParams {
   filter?: 'author' | 'admin'
 }
 
+export interface GetDiscussionCommentsOptions {
+  limit?: number
+  cursor?: string | null
+  sort?: 'newest' | 'oldest' | 'popular'
+  sort_by?: 'newest' | 'oldest' | 'popular' | 'created_at' | 'like_count'
+  preload_replies?: number
+  author_only?: boolean
+  admin_only?: boolean
+  filter?: 'author' | 'admin'
+}
+
 export interface DiscussionCommentThreadResponse {
   discussion_id: string
   thread: DiscussionComment[]
   depth: number
   // 兼容旧字段
   root_comment?: DiscussionComment
+}
+
+export type DiscussionListResponse = CursorCollectionResponse<Discussion>
+export type DiscussionCommentListResponse = CursorCollectionResponse<DiscussionComment>
+
+export interface GetDiscussionCommentRepliesOptions {
+  limit?: number
+  cursor?: string | null
 }
 
 const toNumber = (value: unknown, fallback = 0) => {
@@ -205,14 +224,35 @@ function normalizeDiscussionComment(raw: unknown): DiscussionComment {
   }
 }
 
-function normalizePaginated<T, R>(
-  response: PaginatedApiResponse<T>,
+function normalizeCursorCollection<T, R>(
+  response: { items?: T[]; next_cursor?: string | null; has_more?: boolean },
   mapper: (item: T) => R
-): PaginatedApiResponse<R> {
+): CursorCollectionResponse<R> {
   return {
-    ...response,
     items: (response.items || []).map((item) => mapper(item)),
+    next_cursor: response.next_cursor ?? null,
+    has_more: Boolean(response.has_more),
   }
+}
+
+function buildCursorQuery(
+  params: Pick<ListDiscussionsParams, 'limit' | 'cursor'> &
+    Record<string, string | null | undefined>
+): URLSearchParams {
+  const query = new URLSearchParams({
+    limit: String(params.limit ?? 20),
+  })
+
+  if (params.cursor) query.set('cursor', params.cursor)
+
+  for (const [key, value] of Object.entries(params)) {
+    if (key === 'limit' || key === 'cursor') continue
+    if (typeof value === 'string' && value) {
+      query.set(key, value)
+    }
+  }
+
+  return query
 }
 
 // ========== 讨论服务 ==========
@@ -224,22 +264,22 @@ export const discussionService = {
   async list(
     params: ListDiscussionsParams = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<Discussion>> {
-    const query = new URLSearchParams({
-      page: String(params.page ?? 1),
-      page_size: String(params.page_size ?? 20),
+  ): Promise<DiscussionListResponse> {
+    const query = buildCursorQuery({
+      limit: params.limit,
+      cursor: params.cursor,
+      category: params.category,
+      tag: params.tag,
+      sort: params.sort,
+      sort_by: params.sort_by,
+      sort_order: params.sort_order,
     })
 
-    if (params.category) query.set('category', params.category)
-    if (params.tag) query.set('tag', params.tag)
-    if (params.sort) query.set('sort', params.sort)
-    if (params.sort_by) query.set('sort_by', params.sort_by)
-    if (params.sort_order) query.set('sort_order', params.sort_order)
-    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
+    const data = await apiClient.get<DiscussionListResponse>(
       `/discussions?${query.toString()}`,
       config
     )
-    return normalizePaginated(data, normalizeDiscussion)
+    return normalizeCursorCollection(data, normalizeDiscussion)
   },
 
   /**
@@ -314,13 +354,12 @@ export const discussionService = {
    */
   async getComments(
     discussionId: string,
-    params: ListDiscussionCommentsParams = {},
+    params: GetDiscussionCommentsOptions = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<DiscussionComment>> {
-    const query = new URLSearchParams({
-      page: String(params.page ?? 1),
-      page_size: String(params.page_size ?? 20),
-    })
+  ): Promise<DiscussionCommentListResponse> {
+    const query = new URLSearchParams()
+    query.set('limit', String(params.limit ?? 20))
+    if (params.cursor) query.set('cursor', params.cursor)
 
     if (params.sort) query.set('sort', params.sort)
     if (params.sort_by) query.set('sort_by', params.sort_by)
@@ -335,11 +374,11 @@ export const discussionService = {
       if (params.admin_only) query.set('admin_only', 'true')
     }
 
-    const data = await apiClient.get<PaginatedApiResponse<DiscussionComment>>(
+    const data = await apiClient.get<DiscussionCommentListResponse>(
       `/discussions/${discussionId}/comments?${query.toString()}`,
       config
     )
-    return normalizePaginated(data, normalizeDiscussionComment)
+    return normalizeCursorCollection(data, normalizeDiscussionComment)
   },
 
   /**
@@ -358,15 +397,18 @@ export const discussionService = {
    */
   async getCommentReplies(
     commentId: string,
-    page = 1,
-    pageSize = 20,
+    options: GetDiscussionCommentRepliesOptions = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<DiscussionComment>> {
-    const data = await apiClient.get<PaginatedApiResponse<DiscussionComment>>(
-      `/discussions/comments/${commentId}/replies?page=${page}&page_size=${pageSize}`,
+  ): Promise<DiscussionCommentListResponse> {
+    const params = new URLSearchParams()
+    params.set('limit', String(options.limit ?? 20))
+    if (options.cursor) params.set('cursor', options.cursor)
+
+    const data = await apiClient.get<DiscussionCommentListResponse>(
+      `/discussions/comments/${commentId}/replies?${params.toString()}`,
       config
     )
-    return normalizePaginated(data, normalizeDiscussionComment)
+    return normalizeCursorCollection(data, normalizeDiscussionComment)
   },
 
   /**
@@ -465,21 +507,29 @@ export const discussionService = {
   /**
    * 获取我发起的讨论
    */
-  async getMyDiscussions(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Discussion>> {
-    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
-      `/discussions/my?page=${page}&page_size=${pageSize}`
+  async getMyDiscussions(
+    options: { limit?: number; cursor?: string | null } = {},
+    config?: RequestConfig
+  ): Promise<DiscussionListResponse> {
+    const data = await apiClient.get<DiscussionListResponse>(
+      `/discussions/my?${buildCursorQuery(options).toString()}`,
+      config
     )
-    return normalizePaginated(data, normalizeDiscussion)
+    return normalizeCursorCollection(data, normalizeDiscussion)
   },
 
   /**
    * 获取我的讨论评论
    */
-  async getMyComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<DiscussionComment>> {
-    const data = await apiClient.get<PaginatedApiResponse<DiscussionComment>>(
-      `/discussions/my-comments?page=${page}&page_size=${pageSize}`
+  async getMyComments(
+    options: { limit?: number; cursor?: string | null } = {},
+    config?: RequestConfig
+  ): Promise<DiscussionCommentListResponse> {
+    const data = await apiClient.get<DiscussionCommentListResponse>(
+      `/discussions/my-comments?${buildCursorQuery(options).toString()}`,
+      config
     )
-    return normalizePaginated(data, normalizeDiscussionComment)
+    return normalizeCursorCollection(data, normalizeDiscussionComment)
   },
 
   // ========== 帖子搜索 (用于 @帖子 引用) ==========
@@ -501,21 +551,28 @@ export const discussionService = {
    */
   async search(
     q: string,
-    params: { page?: number; page_size?: number; category?: DiscussionCategory } = {},
+    params: { limit?: number; cursor?: string | null; category?: DiscussionCategory } = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<Discussion>> {
-    const query = new URLSearchParams({
-      q,
-      page: String(params.page ?? 1),
-      page_size: String(params.page_size ?? 20),
+  ): Promise<DiscussionListResponse> {
+    const query = buildCursorQuery({
+      limit: params.limit,
+      cursor: params.cursor,
+      category: params.category,
     })
-    if (params.category) query.set('category', params.category)
+    query.set('q', q)
 
-    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
+    const data = await apiClient.get<DiscussionListResponse>(
       `/discussions/search?${query.toString()}`,
       config
     )
-    return normalizePaginated(data, normalizeDiscussion)
+    return normalizeCursorCollection(data, normalizeDiscussion)
+  },
+
+  /**
+   * 获取讨论 summary
+   */
+  async getSummary(config?: RequestConfig): Promise<Record<string, unknown>> {
+    return apiClient.get<Record<string, unknown>>('/discussions/summary', config)
   },
 
   // ========== 评论线索链 ==========

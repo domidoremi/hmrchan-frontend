@@ -4,7 +4,7 @@
  * 提供社区相关的 API 调用
  */
 
-import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
+import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import type { Comment } from '@/types'
 
 // ========== 类型定义 ==========
@@ -20,16 +20,10 @@ export interface DiscussionItem {
 }
 
 export interface HotTopicItem {
-  comment_count: number
   post_id: string
-  title?: string | null
+  comment_count: number
   platform: string
-  // 兼容旧字段
-  id?: string
-  post_title?: string
-  post_thumbnail_url?: string | null
-  participant_count?: number
-  trending_score?: number
+  title?: string | null
 }
 
 export interface CommunityStats {
@@ -43,86 +37,145 @@ export interface CommunityStats {
 
 export type TimeRange = '24h' | '7d' | '30d' | 'all'
 
+export type HotTopicListResponse = CursorCollectionResponse<HotTopicItem>
+export type CommunityLatestResponse = CursorCollectionResponse<Comment>
+export type CommunityFeedResponse = CursorCollectionResponse<DiscussionItem>
+
+export interface CursorCollectionOptions {
+  limit?: number
+  cursor?: string | null
+}
+
+function buildCursorQuery(options: CursorCollectionOptions = {}): URLSearchParams {
+  const query = new URLSearchParams({
+    limit: String(options.limit ?? 20),
+  })
+
+  if (options.cursor) {
+    query.set('cursor', options.cursor)
+  }
+
+  return query
+}
+
+const toNumber = (value: unknown, fallback = 0): number => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const toString = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value
+  if (value === null || value === undefined) return fallback
+  return String(value)
+}
+
+function normalizeCursorCollection<T, R>(
+  response: CursorCollectionResponse<T>,
+  mapper: (item: T) => R
+): CursorCollectionResponse<R> {
+  return {
+    items: (response.items || []).map((item) => mapper(item)),
+    next_cursor: response.next_cursor ?? null,
+    has_more: Boolean(response.has_more),
+  }
+}
+
+function normalizeHotTopicItem(raw: unknown): HotTopicItem {
+  const data = (raw || {}) as Record<string, unknown>
+  return {
+    post_id: toString(data.post_id ?? data.id ?? ''),
+    comment_count: toNumber(data.comment_count),
+    platform: toString(data.platform, 'unknown'),
+    title: (data.title as string | null | undefined) ?? null,
+  }
+}
+
 // ========== 社区服务 ==========
 
 export const communityService = {
   /**
    * 获取社区动态流
    */
-  async getFeed(page = 1, pageSize = 20): Promise<PaginatedApiResponse<DiscussionItem>> {
-    return apiClient.get<PaginatedApiResponse<DiscussionItem>>(
-      `/community/feed?page=${page}&page_size=${pageSize}`
+  async getFeed(
+    options: CursorCollectionOptions = {},
+    config?: RequestConfig
+  ): Promise<CommunityFeedResponse> {
+    return apiClient.get<CommunityFeedResponse>(
+      `/community/feed?${buildCursorQuery(options).toString()}`,
+      config
     )
   },
 
   /**
    * 获取热门内容
-   * GET /api/v1/community/hot → { hot_topics: [...] }
+   * GET /api/v1/community/hot → cursor collection
    */
   async getTrending(
     timeRange: TimeRange = '7d',
-    page = 1,
-    pageSize = 20,
+    options: CursorCollectionOptions = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<HotTopicItem>> {
+  ): Promise<HotTopicListResponse> {
     const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 30
-    const result = await apiClient.get<
-      { hot_topics: HotTopicItem[] } | { items: HotTopicItem[] } | HotTopicItem[]
-    >(`/community/hot?limit=${pageSize}&days=${days}`, config)
+    const query = buildCursorQuery(options)
+    query.set('days', String(days))
 
-    let items: HotTopicItem[]
-    if (Array.isArray(result)) {
-      items = result
-    } else if ('hot_topics' in result && Array.isArray(result.hot_topics)) {
-      items = result.hot_topics
-    } else if ('items' in result && Array.isArray(result.items)) {
-      items = result.items
-    } else {
-      items = []
-    }
+    const result = await apiClient.get<HotTopicListResponse>(
+      `/community/hot?${query.toString()}`,
+      config
+    )
 
-    return {
-      items,
-      total: items.length,
-      page,
-      page_size: pageSize,
-      total_pages: 1,
-    }
+    return normalizeCursorCollection(result, normalizeHotTopicItem)
   },
 
   /**
    * 获取最新评论
    */
-  async getRecentComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Comment>> {
-    return apiClient.get<PaginatedApiResponse<Comment>>(
-      `/community/latest?page=${page}&page_size=${pageSize}`
+  async getRecentComments(
+    options: CursorCollectionOptions = {},
+    config?: RequestConfig
+  ): Promise<CommunityLatestResponse> {
+    return apiClient.get<CommunityLatestResponse>(
+      `/community/latest?${buildCursorQuery(options).toString()}`,
+      config
     )
   },
 
   /**
    * 获取我的评论
    */
-  async getMyComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Comment>> {
-    return apiClient.get<PaginatedApiResponse<Comment>>(
-      `/community/my-comments?page=${page}&page_size=${pageSize}`
+  async getMyComments(
+    options: CursorCollectionOptions = {},
+    config?: RequestConfig
+  ): Promise<CursorCollectionResponse<Comment>> {
+    return apiClient.get<CursorCollectionResponse<Comment>>(
+      `/community/my-comments?${buildCursorQuery(options).toString()}`,
+      config
     )
   },
 
   /**
    * 获取收藏的评论
    */
-  async getFavoriteComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Comment>> {
-    return apiClient.get<PaginatedApiResponse<Comment>>(
-      `/community/favorites?page=${page}&page_size=${pageSize}`
+  async getFavoriteComments(
+    options: CursorCollectionOptions = {},
+    config?: RequestConfig
+  ): Promise<CursorCollectionResponse<Comment>> {
+    return apiClient.get<CursorCollectionResponse<Comment>>(
+      `/community/favorites?${buildCursorQuery(options).toString()}`,
+      config
     )
   },
 
   /**
    * 获取我的点赞
    */
-  async getMyLikes(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Comment>> {
-    return apiClient.get<PaginatedApiResponse<Comment>>(
-      `/community/my-likes?page=${page}&page_size=${pageSize}`
+  async getMyLikes(
+    options: CursorCollectionOptions = {},
+    config?: RequestConfig
+  ): Promise<CursorCollectionResponse<Comment>> {
+    return apiClient.get<CursorCollectionResponse<Comment>>(
+      `/community/my-likes?${buildCursorQuery(options).toString()}`,
+      config
     )
   },
 
@@ -131,5 +184,12 @@ export const communityService = {
    */
   async getStats(): Promise<CommunityStats> {
     return apiClient.get<CommunityStats>('/community/stats')
+  },
+
+  /**
+   * 获取社区 summary
+   */
+  async getSummary(config?: RequestConfig): Promise<Record<string, unknown>> {
+    return apiClient.get<Record<string, unknown>>('/community/summary', config)
   },
 }

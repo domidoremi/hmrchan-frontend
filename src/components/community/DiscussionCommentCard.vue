@@ -272,6 +272,9 @@ const showMenu = ref(false)
 const showReplyForm = ref(false)
 const showReplies = ref(false)
 const isLoadingReplies = ref(false)
+const repliesNextCursor = ref<string | null>(null)
+const repliesCursorReady = ref(false)
+const hasMoreRepliesState = ref(false)
 const showDeleteDialog = ref(false)
 const showReportDialog = ref(false)
 const isSubmittingReport = ref(false)
@@ -288,7 +291,12 @@ const canShowNestedReplies = computed(() => currentDepth.value < MAX_NESTING_DEP
 
 const likeCount = computed(() => props.comment.like_count ?? props.comment.likes_count ?? 0)
 const replyCount = computed(() => props.comment.reply_count ?? props.comment.replies_count ?? 0)
-const hasMoreReplies = computed(() => (props.comment.replies?.length || 0) < replyCount.value)
+const hasMoreReplies = computed(() => {
+  if (repliesCursorReady.value) {
+    return hasMoreRepliesState.value
+  }
+  return (props.comment.replies?.length || 0) < replyCount.value
+})
 
 const replyParentId = computed(() => {
   return props.rootId || String(props.comment.id)
@@ -405,33 +413,40 @@ function handleReplySubmitted(newComment: DiscussionComment) {
 }
 
 async function handleShowReplies() {
-  if (!props.comment.replies || props.comment.replies.length === 0) {
-    await loadReplies(1)
+  const loadedReplies = props.comment.replies?.length || 0
+  if (loadedReplies === 0 || (loadedReplies < replyCount.value && !repliesCursorReady.value)) {
+    await loadReplies()
   }
   showReplies.value = true
 }
 
-async function loadReplies(page: number) {
+async function loadReplies(options: { cursor?: string | null; append?: boolean } = {}) {
   abortFetchReplies()
   const controller = new AbortController()
   fetchRepliesController = controller
   const requestToken = ++fetchRepliesToken
   isLoadingReplies.value = true
   try {
+    const append = Boolean(options.append)
     const res = await discussionService.getCommentReplies(
       String(props.comment.id),
-      page,
-      repliesPageSize,
+      {
+        limit: repliesPageSize,
+        cursor: options.cursor ?? null,
+      },
       {
         signal: controller.signal,
         skipErrorToast: true,
       }
     )
     if (controller.signal.aborted || requestToken !== fetchRepliesToken) return
+    repliesNextCursor.value = res.next_cursor ?? null
+    repliesCursorReady.value = true
+    hasMoreRepliesState.value = Boolean(res.has_more && res.next_cursor)
     discussionCommentTreeContext?.onRepliesLoaded({
       commentId: String(props.comment.id),
       replies: res.items,
-      append: page > 1,
+      append,
     })
   } catch (err) {
     if (controller.signal.aborted || isAbortError(err) || requestToken !== fetchRepliesToken) return
@@ -451,9 +466,11 @@ async function loadReplies(page: number) {
 }
 
 async function loadMoreReplies() {
-  const loadedCount = props.comment.replies?.length || 0
-  const nextPage = Math.floor(loadedCount / repliesPageSize) + 1
-  await loadReplies(nextPage)
+  if (!hasMoreReplies.value || !repliesNextCursor.value) return
+  await loadReplies({
+    cursor: repliesNextCursor.value,
+    append: true,
+  })
 }
 
 function handleDelete() {

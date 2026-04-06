@@ -1,6 +1,6 @@
 <template>
   <div class="likes-tab">
-    <ProfileTabHeader :title="$t('profile.tabs.likes')" :count="total" />
+    <ProfileTabHeader :title="$t('profile.tabs.likes')" :count="displayTotal" />
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLikes" />
 
@@ -79,7 +79,7 @@
       <LoadMoreSection
         v-if="hasMore"
         :count="comments.length"
-        :total="total"
+        :total="displayTotal"
         :has-more="hasMore"
         :loading="isLoadingMore"
         @load-more="loadMore"
@@ -102,7 +102,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, MessageCircle, HeartOff } from '@lucide/vue'
-import { apiClient, ApiError } from '@/api'
+import { apiClient, ApiError, historyService, type MyLikeHistoryItem } from '@/api'
+import { normalizeHistorySummaryCounts } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
@@ -115,14 +116,25 @@ import { defineAsyncComponent } from 'vue'
 const ConfirmDialog = defineAsyncComponent(() => import('@/components/ui/ConfirmDialog.vue'))
 
 interface LikedComment {
-  id: number
-  uuid: string
+  id: string | number
   content: string
   post_uuid: string
   post_title?: string
   like_count: number
   reply_count?: number
   created_at: string
+}
+
+function normalizeLikedComment(item: MyLikeHistoryItem): LikedComment {
+  return {
+    id: item.id ?? item.comment_id,
+    content: item.content ?? item.comment_content ?? '',
+    post_uuid: item.post_uuid ?? item.post_id ?? '',
+    post_title: item.post_title,
+    like_count: item.like_count ?? 0,
+    reply_count: item.reply_count,
+    created_at: item.created_at ?? item.liked_at,
+  }
 }
 
 const router = useRouter()
@@ -136,13 +148,15 @@ const pendingUnlikeComment = ref<LikedComment | null>(null)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
-const page = ref(1)
-const total = ref(0)
+const nextCursor = ref<string | null>(null)
+const total = ref<number | null>(null)
 const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
 let likesController: AbortController | null = null
 let likesRequestToken = 0
 
-const hasMore = computed(() => comments.value.length < total.value)
+const hasMoreState = ref(false)
+const hasMore = computed(() => hasMoreState.value)
+const displayTotal = computed(() => total.value ?? (comments.value.length || undefined))
 
 function abortLikesRequest() {
   likesController?.abort()
@@ -153,7 +167,7 @@ async function fetchLikes(reset = true): Promise<boolean> {
   if (reset) {
     abortLikesRequest()
     isLoading.value = true
-    page.value = 1
+    nextCursor.value = null
   } else {
     if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
@@ -164,25 +178,30 @@ async function fetchLikes(reset = true): Promise<boolean> {
   const requestToken = ++likesRequestToken
 
   try {
-    const res = await apiClient.get<{
-      items: LikedComment[]
-      total: number
-      page: number
-      page_size: number
-      has_more: boolean
-    }>(`/history/my-likes?page=${page.value}&page_size=${pageSize.value}`, {
-      signal: controller.signal,
-      skipErrorToast: true,
-    })
+    const res = await historyService.getMyLikes(
+      {
+        limit: pageSize.value,
+        cursor: reset ? null : nextCursor.value,
+      },
+      {
+        signal: controller.signal,
+        skipErrorToast: true,
+      }
+    )
     if (controller.signal.aborted || requestToken !== likesRequestToken) return false
-    const nextItems = Array.isArray(res.items) ? res.items : []
+    const nextItems = (Array.isArray(res.items) ? res.items : []).map(normalizeLikedComment)
 
     if (reset) {
       comments.value = nextItems
     } else {
-      comments.value.push(...nextItems)
+      const existingIds = new Set(comments.value.map((comment) => String(comment.id)))
+      comments.value.push(...nextItems.filter((comment) => !existingIds.has(String(comment.id))))
     }
-    total.value = res.total
+    nextCursor.value = res.next_cursor ?? null
+    hasMoreState.value = Boolean(res.has_more && res.next_cursor)
+    if (reset) {
+      void refreshLikesSummary()
+    }
     return true
   } catch (err) {
     if (controller.signal.aborted || requestToken !== likesRequestToken) return false
@@ -203,11 +222,20 @@ async function fetchLikes(reset = true): Promise<boolean> {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  const nextPage = page.value + 1
-  page.value = nextPage
-  const ok = await fetchLikes(false)
-  if (!ok) {
-    page.value = nextPage - 1
+  await fetchLikes(false)
+}
+
+async function refreshLikesSummary() {
+  try {
+    const summary = await historyService.getSummary()
+    const counts = normalizeHistorySummaryCounts(summary)
+    total.value = counts.likes
+    if (total.value === null) {
+      const stats = await historyService.getStats()
+      total.value = normalizeHistorySummaryCounts(stats).likes
+    }
+  } catch {
+    total.value = comments.value.length > 0 ? comments.value.length : null
   }
 }
 
@@ -248,7 +276,9 @@ async function confirmUnlike() {
   try {
     await apiClient.delete(`/comments/${comment.id}/like`)
     comments.value = comments.value.filter((c) => c.id !== comment.id)
-    total.value = Math.max(0, total.value - 1)
+    if (typeof total.value === 'number') {
+      total.value = Math.max(0, total.value - 1)
+    }
     toastStore.success(t('profile.unlikeSuccess'))
   } catch (err) {
     toastStore.error(err instanceof ApiError ? err.message : t('common.error'))

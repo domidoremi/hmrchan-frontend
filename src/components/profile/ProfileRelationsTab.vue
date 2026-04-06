@@ -1,6 +1,6 @@
 <template>
   <div class="relations-tab">
-    <ProfileTabHeader :title="tabTitle" :count="total" />
+    <ProfileTabHeader :title="tabTitle" :count="displayTotal" />
 
     <StateIndicator
       v-if="error"
@@ -75,7 +75,7 @@
       <LoadMoreSection
         v-if="hasMore"
         :count="users.length"
-        :total="total"
+        :total="displayTotal"
         :has-more="hasMore"
         :loading="isLoadingMore"
         @load-more="loadMore"
@@ -90,6 +90,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { ApiError, userRelationsService, type UserListItem } from '@/api'
+import { normalizeRelationsSummaryCounts } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { useAuthStore, useToastStore } from '@/stores'
@@ -113,8 +114,8 @@ const toastStore = useToastStore()
 const { user } = storeToRefs(authStore)
 
 const users = ref<UserListItem[]>([])
-const page = ref(1)
-const total = ref(0)
+const nextCursor = ref<string | null>(null)
+const total = ref<number | null>(null)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
@@ -122,7 +123,9 @@ const actionUserId = ref<string | null>(null)
 
 const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
 const currentUserId = computed(() => user.value?.id ?? '')
-const hasMore = computed(() => users.value.length < total.value)
+const hasMoreState = ref(false)
+const hasMore = computed(() => hasMoreState.value)
+const displayTotal = computed(() => total.value ?? (users.value.length || undefined))
 
 const tabTitle = computed(() => {
   switch (props.mode) {
@@ -164,7 +167,7 @@ const actionLabel = computed(() => {
 async function fetchRelations(reset = true): Promise<boolean> {
   if (reset) {
     isLoading.value = true
-    page.value = 1
+    nextCursor.value = null
   } else {
     if (isLoading.value || isLoadingMore.value) return false
     isLoadingMore.value = true
@@ -175,18 +178,32 @@ async function fetchRelations(reset = true): Promise<boolean> {
   try {
     const response =
       props.mode === 'followers'
-        ? await userRelationsService.getFollowers(page.value, pageSize.value)
+        ? await userRelationsService.getFollowers({
+            limit: pageSize.value,
+            cursor: reset ? null : nextCursor.value,
+          })
         : props.mode === 'following'
-          ? await userRelationsService.getFollowing(page.value, pageSize.value)
-          : await userRelationsService.getBlockedUsers(page.value, pageSize.value)
+          ? await userRelationsService.getFollowing({
+              limit: pageSize.value,
+              cursor: reset ? null : nextCursor.value,
+            })
+          : await userRelationsService.getBlockedUsers({
+              limit: pageSize.value,
+              cursor: reset ? null : nextCursor.value,
+            })
     const nextItems = Array.isArray(response.items) ? response.items : []
 
     if (reset) {
       users.value = nextItems
     } else {
-      users.value.push(...nextItems)
+      const existingIds = new Set(users.value.map((item) => item.id))
+      users.value.push(...nextItems.filter((item) => !existingIds.has(item.id)))
     }
-    total.value = response.total
+    nextCursor.value = response.next_cursor ?? null
+    hasMoreState.value = Boolean(response.has_more && response.next_cursor)
+    if (reset) {
+      void refreshRelationsSummary()
+    }
     return true
   } catch (err) {
     if (users.value.length === 0) {
@@ -201,11 +218,21 @@ async function fetchRelations(reset = true): Promise<boolean> {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  const nextPage = page.value + 1
-  page.value = nextPage
-  const ok = await fetchRelations(false)
-  if (!ok) {
-    page.value = nextPage - 1
+  await fetchRelations(false)
+}
+
+async function refreshRelationsSummary() {
+  try {
+    const summary = await userRelationsService.getSummary()
+    const counts = normalizeRelationsSummaryCounts(summary)
+    total.value =
+      props.mode === 'followers'
+        ? counts.followers
+        : props.mode === 'following'
+          ? counts.following
+          : counts.blocked
+  } catch {
+    total.value = users.value.length > 0 ? users.value.length : null
   }
 }
 
@@ -225,12 +252,16 @@ async function handleRelationAction(target: UserListItem) {
     if (props.mode === 'following') {
       await userRelationsService.unfollowUser(target.id)
       users.value = users.value.filter((item) => item.id !== target.id)
-      total.value = Math.max(0, total.value - 1)
+      if (typeof total.value === 'number') {
+        total.value = Math.max(0, total.value - 1)
+      }
       toastStore.success(t('profile.unfollowSuccess'))
     } else if (props.mode === 'blocked') {
       await userRelationsService.unblockUser(target.id)
       users.value = users.value.filter((item) => item.id !== target.id)
-      total.value = Math.max(0, total.value - 1)
+      if (typeof total.value === 'number') {
+        total.value = Math.max(0, total.value - 1)
+      }
       toastStore.success(t('profile.unblockSuccess'))
     }
   } catch (err) {

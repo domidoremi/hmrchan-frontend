@@ -6,7 +6,7 @@ import { ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
 import type { Comment, CommentAttachment, CommentFormData } from '@/types'
 import { sanitizeComment, validateComment, commentRateLimiter } from '@/utils/security'
-import { apiClient, ApiError, type PaginatedApiResponse, type RequestConfig } from '@/api'
+import { apiClient, ApiError, type CommentListResponse, type RequestConfig } from '@/api'
 
 /** 最多缓存多少个帖子的评论，超限时 FIFO 淘汰最早的 */
 const MAX_CACHED_POSTS = 20
@@ -176,17 +176,17 @@ export const useCommentsStore = defineStore('comments', () => {
 
     try {
       const baseUrl = `/posts/${postId}/comments`
-      let data: PaginatedApiResponse<Comment>
+      let data: CommentListResponse
 
       try {
-        data = await apiClient.get<PaginatedApiResponse<Comment>>(baseUrl, {
+        data = await apiClient.get<CommentListResponse>(baseUrl, {
           ...config,
           ...(signal ? { signal } : {}),
           skipErrorToast: true,
         })
       } catch (err) {
         if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
-          data = await apiClient.get<PaginatedApiResponse<Comment>>(`${baseUrl}?sort=${sort}`, {
+          data = await apiClient.get<CommentListResponse>(`${baseUrl}?sort=${sort}`, {
             ...config,
             ...(signal ? { signal } : {}),
             skipErrorToast: true,
@@ -194,10 +194,8 @@ export const useCommentsStore = defineStore('comments', () => {
         } else if (err instanceof ApiError && err.status === 404) {
           data = {
             items: [],
-            page: 1,
-            page_size: 0,
-            total: 0,
-            total_pages: 0,
+            next_cursor: null,
+            has_more: false,
           }
         } else {
           throw err
@@ -237,17 +235,12 @@ export const useCommentsStore = defineStore('comments', () => {
   }
 
   // 获取评论回复
-  async function fetchReplies(
-    commentId: string,
-    page = 1,
-    postId?: string,
-    config?: RequestConfig
-  ) {
+  async function fetchReplies(commentId: string, postId?: string, config?: RequestConfig) {
     // 如果调用方提供了 postId，直接使用，避免遍历查找
     if (postId) {
       const postComments = comments.value.get(postId)
       if (postComments && findComment(postComments, commentId)) {
-        return fetchRepliesForPost(postId, commentId, page, config)
+        return fetchRepliesForPost(postId, commentId, config)
       }
     }
 
@@ -255,7 +248,7 @@ export const useCommentsStore = defineStore('comments', () => {
     for (const [pId, pComments] of comments.value.entries()) {
       const found = findComment(pComments, commentId)
       if (found) {
-        return fetchRepliesForPost(pId, commentId, page, config)
+        return fetchRepliesForPost(pId, commentId, config)
       }
     }
 
@@ -263,12 +256,7 @@ export const useCommentsStore = defineStore('comments', () => {
   }
 
   // 内部专用：已知 postId 的回复获取
-  async function fetchRepliesForPost(
-    postId: string,
-    commentId: string,
-    page = 1,
-    config?: RequestConfig
-  ) {
+  async function fetchRepliesForPost(postId: string, commentId: string, config?: RequestConfig) {
     const requestKey = buildRepliesRequestKey(postId, String(commentId))
     const externalSignal = config?.signal
 
@@ -286,10 +274,14 @@ export const useCommentsStore = defineStore('comments', () => {
 
     try {
       const { commentService } = await import('@/api/commentService')
-      const data = await commentService.getCommentReplies(commentId, page, 20, {
-        ...config,
-        ...(signal ? { signal } : {}),
-      })
+      const data = await commentService.getCommentReplies(
+        commentId,
+        { limit: 20 },
+        {
+          ...config,
+          ...(signal ? { signal } : {}),
+        }
+      )
 
       if (signal?.aborted || requestToken !== fetchRepliesTokens.get(requestKey)) {
         return { success: false, error: 'aborted' as const }

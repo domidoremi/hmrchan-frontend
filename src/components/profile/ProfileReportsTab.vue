@@ -2,7 +2,7 @@
   <div class="reports-tab">
     <div class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.reports') }}</h2>
-      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
+      <span v-if="displayTotal" class="item-count profile-item-count">{{ displayTotal }}</span>
     </div>
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchReports" />
@@ -66,7 +66,7 @@
       <LoadMoreSection
         v-if="hasMore"
         :count="reports.length"
-        :total="total"
+        :total="displayTotal"
         :has-more="hasMore"
         :loading="isLoadingMore"
         @load-more="loadMore"
@@ -79,6 +79,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ApiError, reportService, type ReportItem, type ReportTargetType } from '@/api'
+import { normalizeReportsSummaryCount } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -91,13 +92,15 @@ const reports = ref<ReportItem[]>([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
-const page = ref(1)
-const total = ref(0)
+const nextCursor = ref<string | null>(null)
+const total = ref<number | null>(null)
 const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
 let reportsController: AbortController | null = null
 let reportsRequestToken = 0
 
-const hasMore = computed(() => reports.value.length < total.value)
+const hasMoreState = ref(false)
+const hasMore = computed(() => hasMoreState.value)
+const displayTotal = computed(() => total.value ?? (reports.value.length || undefined))
 
 function abortReportsRequest() {
   reportsController?.abort()
@@ -108,7 +111,7 @@ async function fetchReports(reset = true): Promise<boolean> {
   if (reset) {
     abortReportsRequest()
     isLoading.value = true
-    page.value = 1
+    nextCursor.value = null
   } else {
     if (isLoading.value || isLoadingMore.value) return false
     isLoadingMore.value = true
@@ -120,19 +123,30 @@ async function fetchReports(reset = true): Promise<boolean> {
   const requestToken = ++reportsRequestToken
 
   try {
-    const response = await reportService.getMyReports(page.value, pageSize.value, {
-      signal: controller.signal,
-      skipErrorToast: true,
-    })
+    const response = await reportService.getMyReports(
+      {
+        limit: pageSize.value,
+        cursor: reset ? null : nextCursor.value,
+      },
+      {
+        signal: controller.signal,
+        skipErrorToast: true,
+      }
+    )
     const nextItems = Array.isArray(response.items) ? response.items : []
     if (controller.signal.aborted || requestToken !== reportsRequestToken) return false
 
     if (reset) {
       reports.value = nextItems
     } else {
-      reports.value.push(...nextItems)
+      const existingIds = new Set(reports.value.map((report) => report.id))
+      reports.value.push(...nextItems.filter((report) => !existingIds.has(report.id)))
     }
-    total.value = response.total
+    nextCursor.value = response.next_cursor ?? null
+    hasMoreState.value = Boolean(response.has_more && response.next_cursor)
+    if (reset) {
+      void refreshReportsSummary()
+    }
     return true
   } catch (err) {
     if (controller.signal.aborted || requestToken !== reportsRequestToken) return false
@@ -153,11 +167,15 @@ async function fetchReports(reset = true): Promise<boolean> {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  const nextPage = page.value + 1
-  page.value = nextPage
-  const ok = await fetchReports(false)
-  if (!ok) {
-    page.value = nextPage - 1
+  await fetchReports(false)
+}
+
+async function refreshReportsSummary() {
+  try {
+    const summary = await reportService.getSummary({ skipErrorToast: true })
+    total.value = normalizeReportsSummaryCount(summary)
+  } catch {
+    total.value = reports.value.length > 0 ? reports.value.length : null
   }
 }
 

@@ -5,7 +5,7 @@
  * 合约端点: /reports
  */
 
-import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
+import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -45,13 +45,21 @@ export const reportService = {
    * 获取我的举报记录（需认证）
    */
   async getMyReports(
-    page = 1,
-    pageSize = 20,
+    options: { limit?: number; cursor?: string | null } = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<ReportItem>> {
-    return apiClient.get<PaginatedApiResponse<ReportItem>>(
-      `/reports/my?page=${page}&page_size=${pageSize}`,
+  ): Promise<CursorCollectionResponse<ReportItem>> {
+    const params = new URLSearchParams({
+      limit: String(options.limit ?? 20),
+    })
+    if (options.cursor) params.set('cursor', options.cursor)
+
+    return apiClient.get<CursorCollectionResponse<ReportItem>>(
+      `/reports/my?${params.toString()}`,
       config
     )
+  },
+
+  async getSummary(config?: RequestConfig): Promise<Record<string, unknown>> {
+    return apiClient.get<Record<string, unknown>>('/reports/summary', config)
   },
 }
