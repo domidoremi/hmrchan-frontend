@@ -105,8 +105,8 @@ describe('resolveHtmlDocument', () => {
       shellEyebrow: '404 <missing>',
       shellTitle: 'Page "not found"',
       shellBody: 'Try another route & keep browsing.',
-      shellSummary: ['Missing route & fallback'],
-      shellStats: [{ label: 'Robots', value: 'No index' }],
+      shellSummary: ['Missing route & keep browsing'],
+      shellStats: [{ label: 'Status', value: 'Unavailable' }],
       shellLinks: [{ href: '/explore', label: 'Explore' }],
       structuredData: [],
       shellVariant: 'default',
@@ -118,7 +118,7 @@ describe('resolveHtmlDocument', () => {
     expect(shell).toContain('404 &lt;missing&gt;')
     expect(shell).toContain('Page &quot;not found&quot;')
     expect(shell).toContain('Try another route &amp; keep browsing.')
-    expect(shell).toContain('Missing route &amp; fallback')
+    expect(shell).toContain('Missing route &amp; keep browsing')
     expect(shell).toContain('href="/explore"')
   })
 
@@ -129,7 +129,10 @@ describe('resolveHtmlDocument', () => {
     expect(homeConfig.shellVariant).toBe('home')
     expect(shell).toContain('data-prerender-shell-variant="home"')
     expect(shell).toContain('data-prerender-shell-content="true"')
-    expect(shell).toContain('Quick bridge')
+    expect(shell).toContain('Start here')
+    expect(shell).toContain('Find today’s standout posts, creators, and conversations')
+    expect(shell).not.toContain('Quick bridge')
+    expect(shell).not.toContain('client takeover')
   })
 
   it('renders JSON-LD payloads for structured public pages', () => {
@@ -152,6 +155,7 @@ describe('resolveHtmlDocument', () => {
     expect(shell).toContain('Private reporting')
     expect(shell).not.toContain('partnership requests')
     expect(shell).not.toContain('private security reporting')
+    expect(shell).not.toContain('首包')
   })
 })
 
