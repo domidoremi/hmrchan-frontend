@@ -907,6 +907,7 @@ onBeforeUnmount(() => {
 
 .filters {
   flex: 1 1 auto;
+  align-items: stretch;
 }
 
 .filter-btn {
@@ -928,11 +929,13 @@ onBeforeUnmount(() => {
 
 .platform-filters {
   justify-content: flex-end;
+  align-items: stretch;
 }
 
 .platform-btn {
   justify-content: flex-start;
   min-inline-size: max-content;
+  flex: 0 1 auto;
 }
 
 .platform-label {

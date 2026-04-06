@@ -310,10 +310,12 @@
   align-self: flex-start;
   gap: var(--ui-control-gap, var(--appearance-control-gap));
   min-block-size: var(--ui-control-height-sm);
-  min-inline-size: var(--ui-control-compact-min-inline-size);
+  min-inline-size: max(var(--ui-control-compact-min-inline-size), 4.9rem);
   max-inline-size: 100%;
-  padding-inline: max(var(--ui-control-padding-x-sm), 0.9rem);
-  padding-block: max(var(--ui-control-padding-y-sm), 0.3rem);
+  padding-top: max(var(--ui-control-padding-y-sm), 0.38rem);
+  padding-right: max(var(--ui-control-padding-x-sm), 1rem);
+  padding-bottom: max(var(--ui-control-padding-y-sm), 0.38rem);
+  padding-left: max(var(--ui-control-padding-x-sm), 1rem);
   border-radius: var(--appearance-radius-control-sm);
   border: 0.0625rem solid var(--page-shell-control-border);
   background: var(--page-shell-control-bg);
