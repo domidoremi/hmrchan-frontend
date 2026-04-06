@@ -410,7 +410,7 @@
       }
     },
     "hero": {
-      "title": "Discover creator moments worth saving today",
+      "title": "Find today’s standout posts, creators, and conversations",
       "subtitle": "Collect the posts, creators, and schedules you love in one place.",
       "badge": "Discover Amazing Content",
       "highlights": {
@@ -521,13 +521,13 @@
       "label": "Quick Filters"
     },
     "preview": {
-      "label": "Preview Mode",
-      "desc": "Live content is temporarily unavailable, so curated sample posts keep the homepage layout and pacing intact."
+      "label": "Today’s picks",
+      "desc": "Browse a hand-picked set of posts, creators, and routes from the homepage."
     },
     "storyMerge": {
       "kicker": "Keep Scrolling",
-      "title": "Let the last card ease into the footer",
-      "subtitle": "Before the brand footer fully arrives, offer one bridge layer back to explore, creators, schedules, and community."
+      "title": "Keep browsing from today’s final picks",
+      "subtitle": "Jump back to explore, creators, schedules, or community whenever you want another starting point."
     },
     "latestSubtitle": "A feed that keeps moving",
     "latestAction": "View All"

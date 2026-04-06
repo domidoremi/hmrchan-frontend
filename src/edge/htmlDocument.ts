@@ -191,12 +191,12 @@ export function createNotFoundDocument(canonicalPath: string): HtmlDocumentConfi
       status: 404,
       robots: 'noindex, nofollow',
       shellSummary: [
-        'The requested public page is missing or no longer available.',
-        'Try a discovery route instead of reloading a broken deep link.',
+        'The page you opened is no longer available.',
+        'Head back to the main sections to keep browsing public content.',
       ],
       shellStats: [
-        { label: 'Fallback', value: 'Real 404 response' },
-        { label: 'Robots', value: 'No index' },
+        { label: 'Status', value: 'Unavailable' },
+        { label: 'Next stop', value: 'Home or Explore' },
       ],
       shellLinks: [
         { href: '/', label: 'Home' },
@@ -217,17 +217,17 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       '/',
       'Home',
       description,
-      'MomiChan · Curated homepage',
-      'Discover creator moments worth saving today',
-      '精选内容、作者趋势、日程和社区入口会在客户端接管后继续填充；服务端首包先提供完整页面语义、摘要模块和可抓取标题。',
+      'MomiChan',
+      'Find today’s standout posts, creators, and conversations',
+      '从首页开始浏览精选内容、趋势作者、近期日程和社区讨论，快速进入今天最值得停留的内容。',
       {
         shellSummary: [
-          'Start from the curated homepage, then jump into explore, authors, schedule, and community.',
-          'The app shell hands off to Vue after first paint, but search engines already receive a meaningful document.',
+          'Start with a hand-picked overview of what people are saving, reading, and discussing today.',
+          'Jump into explore, authors, schedule, and community whenever you want to go deeper.',
         ],
         shellStats: [
-          { label: 'Rendering mode', value: 'Static prerender + client takeover' },
-          { label: 'Public coverage', value: 'Home / Explore / Authors / Schedule' },
+          { label: 'Open now', value: 'Explore / Authors / Schedule' },
+          { label: 'Also inside', value: 'Community discussions' },
         ],
         shellLinks: createPrimaryPublicLinks(),
         shellVariant: 'home',
@@ -246,17 +246,17 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       path,
       'Explore',
       description,
-      'Explore public content',
-      'Browse the latest public posts',
-      '探索页会在客户端接管后载入列表与筛选条件，服务端首包先提供真实标题、描述、首屏摘要与内容骨架。',
+      'Explore',
+      'Browse fresh posts, tags, and creator updates',
+      '按平台、主题和作者继续浏览公开内容，快速找到今天的新帖子与值得追踪的动态。',
       {
         shellSummary: [
-          'Public posts are grouped for fast discovery before interactive filters finish booting.',
-          'Use this route to continue into detail pages that now receive richer edge-generated metadata.',
+          'Move through recent picks, rising tags, and creator activity from one place.',
+          'Open any post to continue into the full public detail view.',
         ],
         shellStats: [
-          { label: 'Route type', value: 'Collection page' },
-          { label: 'First response', value: 'Prerendered HTML' },
+          { label: 'Browse', value: 'Posts and tags' },
+          { label: 'Best for', value: 'Daily discovery' },
         ],
         shellLinks: [
           { href: '/', label: 'Home' },
@@ -276,17 +276,17 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       path,
       'Authors',
       description,
-      'Creator directory',
-      'Meet the creators behind today’s updates',
-      '作者页会在客户端接管后载入作者列表和详情摘要，服务端首包提供基础目录语义和可抓取入口。',
+      'Authors',
+      'Meet the creators behind today’s favorite updates',
+      '查看公开创作者列表，继续进入作者主页、简介和相关内容，找到你想长期关注的声音。',
       {
         shellSummary: [
-          'Creator profiles link to public author pages with richer edge-rendered summaries and real metadata.',
-          'Use the directory to move from aggregate discovery into creator-specific browsing.',
+          'Browse creator profiles, then move into each author’s public page.',
+          'Use the directory when you want to follow people instead of individual posts.',
         ],
         shellStats: [
-          { label: 'Route type', value: 'Collection page' },
-          { label: 'Primary goal', value: 'Creator discovery' },
+          { label: 'Browse', value: 'Creators and profiles' },
+          { label: 'Best for', value: 'Following new voices' },
         ],
         shellLinks: [
           { href: '/', label: 'Home' },
@@ -305,12 +305,12 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       path,
       'Search',
       '按关键词、作者或标签检索公开内容，快速定位想看的帖子与创作者。',
-      'Search public content',
+      'Search',
       'Search posts, tags, and creators',
-      '搜索页首包提供语义化标题与说明，客户端接管后再加载搜索建议与结果。',
+      '输入关键词、作者名或标签，快速定位你想继续阅读、收藏或分享的公开内容。',
       {
         shellSummary: [
-          'Search intent is preserved in the document shell before live suggestions and results load.',
+          'Use search when you already know the topic, creator, or keyword you want to find.',
         ],
         shellLinks: [
           { href: '/', label: 'Home' },
@@ -325,12 +325,12 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       path,
       'Community',
       '浏览公开社区讨论、热点话题与参与中的交流内容。',
-      'Community discussions',
+      'Community',
       'Join the latest public discussions',
-      '社区页首包先输出真实文档语义，客户端接管后再补全讨论列表与互动数据。',
+      '浏览热门话题、最新讨论和持续升温的交流内容，看看大家正在聊什么。',
       {
         shellSummary: [
-          'Public discussions stay linkable and indexable even before the interactive timeline is ready.',
+          'Open a discussion to read the thread, check tags, and follow the latest replies.',
         ],
         shellLinks: [
           { href: '/', label: 'Home' },
@@ -345,13 +345,11 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       path,
       'Schedule',
       '查看公开日程、直播与活动提醒，快速进入近期值得关注的安排。',
-      'Upcoming schedule',
+      'Schedule',
       'Stay on top of the latest schedule updates',
-      '日程页首包先提供可抓取的说明文本，客户端随后补全完整时间线。',
+      '查看近期公开活动、直播与值得留意的时间安排，快速进入你关心的那一天。',
       {
-        shellSummary: [
-          'Upcoming public schedule entries remain discoverable through the server-rendered document shell.',
-        ],
+        shellSummary: ['Open a schedule entry to read the event details, links, and public notes.'],
         shellLinks: [
           { href: '/', label: 'Home' },
           { href: '/community', label: 'Community' },
@@ -366,11 +364,11 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       'Schedule detail',
       '浏览公开日程详情与活动安排。',
       'Schedule detail',
-      'Schedule detail is loading',
-      '服务端首包先输出日程详情的文档语义，客户端接管后继续填充活动内容。',
+      'View event details and schedule notes',
+      '查看活动时间、相关链接和公开说明，了解这场安排是否值得加入你的关注列表。',
       {
         shellSummary: [
-          'The edge layer can upgrade this shell with event timing, venue details, and structured data.',
+          'Return to the main schedule if you want to compare nearby dates and upcoming entries.',
         ],
         shellLinks: [
           { href: '/schedule', label: 'Schedule' },
@@ -386,12 +384,12 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       path,
       'About',
       description,
-      'About the project',
-      'A fan hub built for discovery and fast browsing',
-      '关于页在服务端首包直接输出真实标题、项目介绍和结构化文档语义，客户端接管后维持完整交互。',
+      'About',
+      'Learn what MomiChan is built to help you discover',
+      '了解 MomiChan 如何整理公开内容、作者与讨论入口，帮助你更快找到想继续关注的内容。',
       {
         shellSummary: [
-          'The project keeps the Vue + Pinia + Cloudflare Pages stack and strengthens the document layer incrementally.',
+          'Read the overview if you want the product story, the browsing focus, and the main public sections in one place.',
         ],
         shellLinks: [
           { href: '/', label: 'Home' },
@@ -410,12 +408,10 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       'Discussion detail',
       '浏览公开社区讨论详情与参与中的交流内容。',
       'Discussion detail',
-      'Discussion detail is loading',
-      '服务端首包先输出讨论页文档语义，客户端接管后继续填充讨论内容。',
+      'Read the discussion and follow the conversation',
+      '进入讨论详情，查看主题、回复和相关公开内容，继续追踪大家的交流。',
       {
-        shellSummary: [
-          'The edge layer can upgrade this shell with public discussion content, tags, and engagement metrics.',
-        ],
+        shellSummary: ['Return to community to keep browsing more topics and active threads.'],
         shellLinks: [
           { href: '/community', label: 'Community' },
           { href: '/', label: 'Home' },
@@ -432,7 +428,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       description,
       'Contact',
       'Send a message or share feedback',
-      '联系页首包聚焦于普通用户可理解的联系入口，只保留简洁的私密提交通道提示。',
+      '通过联系页面发送问题、建议或内容反馈，我们会在看到后尽快处理。',
       {
         shellSummary: [
           'Use the contact form for questions, suggestions, corrections, or anything you want to tell us.',
@@ -455,7 +451,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       '登录以访问收藏、通知和个人设置。',
       'Authentication',
       'Sign in to access your personal space',
-      '登录页属于身份相关页面，不应被搜索引擎收录。',
+      '登录后即可继续查看收藏、通知和个人设置。',
       { robots: 'noindex, nofollow' }
     )
   }
@@ -467,7 +463,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       'Google 快捷登录回跳与登录接续页面。',
       'Authentication',
       'Authentication callback',
-      '该页面仅用于第三方快捷登录完成后的站内接续，不应被搜索引擎收录。',
+      '请稍候，我们正在完成你的登录。',
       { robots: 'noindex, nofollow' }
     )
   }
@@ -487,7 +483,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       '个人空间、收藏、通知和偏好设置页面。',
       'Private area',
       'Private account area',
-      '该页面属于登录后区域，服务端首包保留真实路由语义，但不应被搜索引擎收录。',
+      '在这里查看你的收藏、通知、偏好设置和个人资料。',
       { robots: 'noindex, nofollow' }
     )
   }
@@ -499,7 +495,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       '注册账号以同步收藏、通知和偏好设置。',
       'Authentication',
       'Create an account for synced favorites and preferences',
-      '注册页属于身份相关页面，不应被搜索引擎收录。',
+      '创建账号后即可同步收藏、通知和偏好设置。',
       { robots: 'noindex, nofollow' }
     )
   }
@@ -511,7 +507,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       '账号验证与安全流程页面。',
       'Account security',
       'Secure your account',
-      '这是账号安全流程页面，不应被搜索引擎收录。',
+      '通过这些步骤完成账号验证、密码重置或邮箱确认。',
       { robots: 'noindex, nofollow' }
     )
   }
@@ -521,15 +517,15 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     return createDocumentConfig(
       path,
       'Post detail',
-      '浏览公开帖子详情、媒体内容与关联信息；客户端接管后会继续补全正文与互动数据。',
+      '浏览公开帖子详情、媒体内容与关联信息。',
       'Post detail',
-      'Post detail is loading',
-      '服务端首包先输出帖子详情骨架、摘要信息与真实 canonical，客户端接管后继续填充帖子正文、媒体和评论。',
+      'Read the post, media, and related public details',
+      '进入帖子详情，查看正文、媒体内容和相关讨论，继续浏览这条内容背后的更多信息。',
       {
         ogType: 'article',
         shellSummary: [
-          'The edge layer can upgrade this shell with live public metadata when upstream detail data is available.',
-          'If upstream returns 404, this route now responds with a real 404 status instead of a soft shell.',
+          'Use the surrounding links to continue into the author page or back to the public feed.',
+          'If the post is no longer available, you can keep browsing from explore or authors.',
         ],
         shellLinks: [
           { href: '/explore', label: 'Explore' },
@@ -546,12 +542,12 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       'Author detail',
       '浏览创作者公开主页、头像、简介与相关公开内容。',
       'Author profile',
-      'Author profile is loading',
-      '服务端首包先输出作者页文档语义、摘要信息和真实 canonical，客户端接管后继续填充作者公开资料与内容。',
+      'Explore this creator’s public profile and posts',
+      '查看作者简介、公开动态和相关内容，继续进入这位创作者的公开主页。',
       {
         ogType: 'article',
         shellSummary: [
-          'The edge layer can upgrade this shell with public profile data, follower metrics, and recent post context.',
+          'Move back to the authors list or continue into explore to find more creators and posts.',
         ],
         shellLinks: [
           { href: '/authors', label: 'Authors' },
@@ -637,7 +633,6 @@ function renderShellVisual(config: HtmlDocumentConfig): string {
     return `
       <figure style="margin:0;display:grid;gap:10px;padding:14px;border-radius:24px;background:rgba(15,23,42,0.92);box-shadow:0 18px 40px rgba(15,23,42,0.16);min-height:220px;">
         <img src="${escapeHtml(config.ogImage)}" alt="${escapeHtml(config.shellTitle)}" loading="eager" decoding="async" style="width:100%;height:100%;min-height:220px;object-fit:cover;border-radius:18px;" />
-        <figcaption style="color:rgba(255,255,255,0.82);font:500 12px/1.4 ui-sans-serif,system-ui;">Public preview selected for social cards and edge-rendered first response.</figcaption>
       </figure>
     `
   }
@@ -723,9 +718,9 @@ function renderHomePrerenderShell(config: HtmlDocumentConfig): string {
           <aside style="display:grid;gap:16px;align-content:center;">
             <section style="display:grid;gap:14px;padding:24px;border-radius:28px;background:linear-gradient(160deg,rgba(255,255,255,0.98),rgba(240,249,255,0.92));border:1px solid rgba(96,165,250,0.18);box-shadow:0 28px 56px -34px rgba(37,99,235,0.28);">
               <div style="display:grid;gap:8px;">
-                <span style="font:600 12px/1.2 ui-sans-serif,system-ui;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">Quick bridge</span>
+                <span style="font:600 12px/1.2 ui-sans-serif,system-ui;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">Start here</span>
                 <strong style="font:700 24px/1.15 ui-sans-serif,system-ui;color:#0f172a;">Explore today’s picks, authors, schedule, and community.</strong>
-                <p style="margin:0;font:400 14px/1.7 ui-sans-serif,system-ui;color:#475569;">首页首包先给出可抓取的精选摘要与公开入口，完整内容会在客户端接管后继续填充，不再出现独立说明卡片般的首屏闪现。</p>
+                <p style="margin:0;font:400 14px/1.7 ui-sans-serif,system-ui;color:#475569;">打开你最感兴趣的公开入口，继续浏览值得收藏的帖子、作者和讨论。</p>
               </div>
               ${statsMarkup}
             </section>
