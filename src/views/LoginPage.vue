@@ -163,6 +163,43 @@
           </div>
 
           <div
+            v-else-if="showGoogleClientChallenge"
+            class="auth-inline-state auth-inline-state--warning"
+          >
+            <div class="auth-inline-state__icon" aria-hidden="true">
+              <CircleAlert :size="16" />
+            </div>
+            <div class="auth-inline-state__content">
+              <p class="auth-restore__title">{{ $t('auth.verifyTitle') }}</p>
+              <p class="auth-inline-state__copy">{{ $t('auth.clientChallengeHint') }}</p>
+
+              <div v-if="resolvedGoogleClientChallengeSiteKey" class="turnstile-block">
+                <div class="turnstile-header">
+                  <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+                  <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+                </div>
+                <TurnstileWidget
+                  ref="googleClientChallengeRef"
+                  :site-key="resolvedGoogleClientChallengeSiteKey"
+                  action="google-exchange"
+                  size="compact"
+                  @verify="handleGoogleClientChallengeVerify"
+                  @expire="handleGoogleClientChallengeExpire"
+                  @error="handleTurnstileError"
+                />
+              </div>
+
+              <p v-else class="auth-inline-state__copy">{{ $t('auth.clientChallengeLoading') }}</p>
+              <p v-if="googleClientChallengeError" class="field-error">
+                {{ googleClientChallengeError }}
+              </p>
+              <p v-if="googleClientChallengeDetail" class="auth-inline-state__copy">
+                {{ googleClientChallengeDetail }}
+              </p>
+            </div>
+          </div>
+
+          <div
             v-else-if="googlePopupState === 'blocked' || googlePopupState === 'error'"
             class="auth-inline-state"
             :class="
@@ -341,6 +378,8 @@ import {
   mapGooglePopupError,
   openGoogleAuthPopup,
   prefersGoogleAuthPopup,
+  prepareGoogleAuthHandoff,
+  resolveGoogleAuthSecurityError,
   waitForGooglePopupResult,
   type GooglePopupMessage,
   type GooglePopupState,
@@ -348,6 +387,7 @@ import {
 import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
+import { clientSecurityService } from '@/api/clientSecurityService'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
@@ -396,6 +436,11 @@ const mfaError = ref('')
 const nextRedirectTarget = ref('/')
 const googlePopupState = ref<GooglePopupState>('idle')
 const googlePopupErrorKey = ref('')
+const pendingGoogleHandoffCode = ref('')
+const googleClientChallengeSiteKey = ref('')
+const googleClientChallengeError = ref('')
+const googleClientChallengeDetail = ref('')
+const isGoogleClientChallengeSubmitting = ref(false)
 let googlePopupDispose: (() => void) | null = null
 let googlePopupRecoveryTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -406,6 +451,7 @@ const isRestoringAccount = ref(false)
 const showRestorePanel = ref(false)
 
 const credentialsTurnstileRef = useTemplateRef<{ reset: () => void }>('credentialsTurnstileRef')
+const googleClientChallengeRef = useTemplateRef<{ reset: () => void }>('googleClientChallengeRef')
 const riskTurnstileRef = useTemplateRef<{ reset: () => void }>('riskTurnstileRef')
 const credentialsTurnstileToken = ref<string | null>(null)
 const credentialsTurnstileIssuedAt = ref<number | null>(null)
@@ -436,6 +482,12 @@ const showCredentialsTurnstile = computed(
 )
 const googlePopupErrorMessage = computed(() =>
   googlePopupErrorKey.value ? t(googlePopupErrorKey.value) : ''
+)
+const resolvedGoogleClientChallengeSiteKey = computed(
+  () => googleClientChallengeSiteKey.value || turnstileSiteKey.value
+)
+const showGoogleClientChallenge = computed(
+  () => googlePopupState.value === 'handling' && Boolean(pendingGoogleHandoffCode.value)
 )
 const pageTitle = computed(() => {
   switch (step.value) {
@@ -515,6 +567,15 @@ function clearInlineErrors() {
   mfaError.value = ''
 }
 
+function resetGoogleClientChallengeState() {
+  pendingGoogleHandoffCode.value = ''
+  googleClientChallengeSiteKey.value = ''
+  googleClientChallengeError.value = ''
+  googleClientChallengeDetail.value = ''
+  isGoogleClientChallengeSubmitting.value = false
+  googleClientChallengeRef.value?.reset()
+}
+
 function setGooglePopupStatus(state: GooglePopupState, errorKey = '') {
   googlePopupState.value = state
   googlePopupErrorKey.value = errorKey
@@ -546,6 +607,7 @@ function clearGooglePopupListener() {
 function resetGooglePopupState() {
   clearGooglePopupListener()
   setGooglePopupStatus('idle')
+  resetGoogleClientChallengeState()
 }
 
 function getPrimaryFallbackRedirect(): string {
@@ -720,20 +782,38 @@ async function handleMfaResolved(result: AuthFlowResult) {
 
 async function handleGooglePopupResult(message: GooglePopupMessage) {
   if (message.status === 'success' && message.handoffCode) {
-    const callbackRedirect = resolveAuthRedirectTarget(
+    nextRedirectTarget.value = resolveAuthRedirectTarget(
       message.redirectTo,
       getPrimaryFallbackRedirect()
     )
-    await router.replace({
-      path: '/auth/callback',
-      query: {
-        handoff_code: message.handoffCode,
-        ...(callbackRedirect !== '/' ? { redirect: callbackRedirect } : {}),
-      },
-    })
+    pendingGoogleHandoffCode.value = message.handoffCode
+    googleClientChallengeError.value = ''
+    googleClientChallengeDetail.value = ''
+
+    const handoffPreparation = await prepareGoogleAuthHandoff(
+      message.handoffCode,
+      turnstileSiteKey.value.trim()
+    )
+
+    if (handoffPreparation.status === 'challenge-required') {
+      googleClientChallengeSiteKey.value = handoffPreparation.siteKey
+      setGooglePopupStatus('handling')
+      return
+    }
+
+    if (handoffPreparation.status === 'error') {
+      resetGoogleClientChallengeState()
+      setGooglePopupStatus('error', handoffPreparation.messageKey)
+      credentialsError.value = t(handoffPreparation.messageKey)
+      return
+    }
+
+    const result = await authStore.completeGoogleAuth(handoffPreparation.handoffCode)
+    await applyAuthFlowResult(result)
     return
   }
 
+  resetGoogleClientChallengeState()
   const errorKey = mapGooglePopupError(message.error)
   setGooglePopupStatus(
     message.error === 'popup_blocked' || message.error === 'popup_closed' ? 'blocked' : 'error',
@@ -742,8 +822,42 @@ async function handleGooglePopupResult(message: GooglePopupMessage) {
   credentialsError.value = t(errorKey)
 }
 
+function handleGoogleClientChallengeExpire() {
+  googleClientChallengeError.value = t('auth.error.turnstileRequired')
+  googleClientChallengeDetail.value = ''
+}
+
+async function handleGoogleClientChallengeVerify(token: string) {
+  if (isGoogleClientChallengeSubmitting.value) return
+
+  isGoogleClientChallengeSubmitting.value = true
+  googleClientChallengeError.value = ''
+  googleClientChallengeDetail.value = ''
+
+  try {
+    await clientSecurityService.verify(token)
+
+    if (!pendingGoogleHandoffCode.value.trim()) {
+      setGooglePopupStatus('error', 'auth.error.callbackMissingHandoffCode')
+      credentialsError.value = t('auth.error.callbackMissingHandoffCode')
+      return
+    }
+
+    const result = await authStore.completeGoogleAuth(pendingGoogleHandoffCode.value.trim())
+    await applyAuthFlowResult(result)
+  } catch (error) {
+    const resolvedError = resolveGoogleAuthSecurityError(error)
+    googleClientChallengeError.value = t(resolvedError.messageKey)
+    googleClientChallengeDetail.value = resolvedError.detail
+    googleClientChallengeRef.value?.reset()
+  } finally {
+    isGoogleClientChallengeSubmitting.value = false
+  }
+}
+
 async function continueGoogleInCurrentPage() {
   clearGooglePopupListener()
+  resetGoogleClientChallengeState()
   setGooglePopupStatus('handling')
   const result = await authStore.startGoogleAuth('login', redirectTo.value)
 
