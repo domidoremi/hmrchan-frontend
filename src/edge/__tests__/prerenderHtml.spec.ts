@@ -32,7 +32,9 @@ describe('createPrerenderedHtml', () => {
     expect(html).toContain('<title>Home · MomiChan</title>')
     expect(html).toContain('data-prerender-shell-variant="home"')
     expect(html).toContain('data-prerender-shell-content="true"')
-    expect(html).toContain('Quick bridge')
+    expect(html).toContain('Start here')
+    expect(html).toContain('Find today’s standout posts, creators, and conversations')
+    expect(html).not.toContain('Quick bridge')
   })
 
   it('rewrites public route metadata and shell markup', () => {
@@ -45,9 +47,10 @@ describe('createPrerenderedHtml', () => {
     expect(html).toContain('rel="canonical" href="https://momichan.xyz/explore"')
     expect(html).toContain('property="og:url" content="https://momichan.xyz/explore"')
     expect(html).toContain('data-prerender-shell="true"')
-    expect(html).toContain('Browse the latest public posts')
+    expect(html).toContain('Browse fresh posts, tags, and creator updates')
     expect(html).toContain('data-prerender-structured-data="true"')
     expect(html).toContain('"@type":"CollectionPage"')
+    expect(html).not.toContain('Rendering mode')
   })
 
   it('rewrites 404 documents as noindex shells', () => {
