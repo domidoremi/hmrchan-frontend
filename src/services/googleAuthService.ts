@@ -1,10 +1,18 @@
-import { apiClient } from '@/api/client'
-import type {
-  AuthResponse,
-  MfaRequiredResponse,
-  RiskVerificationChallengeResponse,
+import {
+  authService,
+  type AuthResponse,
+  type MfaRequiredResponse,
+  type RiskVerificationChallengeResponse,
 } from '@/api/authService'
-import { createSecureMessageHandler, getTrustedFrontendOrigins } from '@/utils/security'
+import { clientSecurityService } from '@/api/clientSecurityService'
+import { ApiError, apiClient } from '@/api/client'
+import {
+  createSecureMessageHandler,
+  getTrustedFrontendOrigins,
+  resolveTrustedFrontendTargetOrigin,
+  safePostMessage,
+} from '@/utils/security'
+import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
 
 export type GoogleAuthIntent = 'login' | 'register'
 export type GoogleAuthMode = 'popup' | 'redirect'
@@ -52,6 +60,44 @@ type GooglePopupRelayEnvelope = {
   payload: GooglePopupMessage
 }
 
+export type GooglePopupBridgeOptions = {
+  search?: string
+  windowName?: string
+  opener?: Window | null
+  pendingRequest?: PendingGoogleAuthRequest | null
+  targetOrigin?: string
+}
+
+export type GooglePopupBridgeResult =
+  | {
+      handled: true
+      message: GooglePopupMessage
+    }
+  | {
+      handled: false
+      message?: undefined
+    }
+
+export type GoogleAuthSecurityError = {
+  messageKey: string
+  detail: string
+  code?: string
+}
+
+export type GoogleAuthHandoffPreparationResult =
+  | {
+      status: 'ready'
+      handoffCode: string
+    }
+  | {
+      status: 'challenge-required'
+      handoffCode: string
+      siteKey: string
+    }
+  | ({
+      status: 'error'
+    } & GoogleAuthSecurityError)
+
 function createGoogleAuthRequestId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
@@ -64,6 +110,16 @@ function buildGooglePopupWindowName(requestId: string): string {
   return `${GOOGLE_AUTH_POPUP_NAME_PREFIX}:${requestId}`
 }
 
+function readGoogleAuthCallbackPayload(
+  search: string = typeof window !== 'undefined' ? window.location.search : ''
+): { handoffCode: string; error: string } {
+  const params = new URLSearchParams(search)
+  return {
+    handoffCode: params.get('handoff_code')?.trim() ?? '',
+    error: params.get('error')?.trim() ?? '',
+  }
+}
+
 export function resolveGoogleAuthPopupRequestIdFromWindowName(name?: string): string | null {
   const candidate = (name ?? (typeof window !== 'undefined' ? window.name : '')).trim()
   const prefix = `${GOOGLE_AUTH_POPUP_NAME_PREFIX}:`
@@ -74,6 +130,23 @@ export function resolveGoogleAuthPopupRequestIdFromWindowName(name?: string): st
 
   const requestId = candidate.slice(prefix.length).trim()
   return requestId || null
+}
+
+export function isGoogleAuthPopupCandidate(
+  options: Pick<GooglePopupBridgeOptions, 'windowName' | 'opener' | 'pendingRequest'> = {}
+): boolean {
+  const pendingRequest =
+    options.pendingRequest === undefined ? getPendingGoogleAuthRequest() : options.pendingRequest
+  const opener =
+    options.opener === undefined
+      ? typeof window !== 'undefined'
+        ? window.opener
+        : null
+      : options.opener
+
+  if (opener) return true
+  if (resolveGoogleAuthPopupRequestIdFromWindowName(options.windowName)) return true
+  return pendingRequest?.mode === 'popup'
 }
 
 function isGooglePopupRelayEnvelope(value: unknown): value is GooglePopupRelayEnvelope {
@@ -219,6 +292,73 @@ export function clearPendingGoogleAuthRequest(): void {
     sessionStorage.removeItem(GOOGLE_AUTH_REQUEST_STORAGE_KEY)
   } catch {
     // ignore storage errors
+  }
+}
+
+export function resolveGooglePopupBridgeMessage(
+  options: Pick<
+    GooglePopupBridgeOptions,
+    'search' | 'windowName' | 'opener' | 'pendingRequest'
+  > = {}
+): GooglePopupMessage | null {
+  const { handoffCode, error } = readGoogleAuthCallbackPayload(options.search)
+  if (!handoffCode && !error) {
+    return null
+  }
+
+  const pendingRequest =
+    options.pendingRequest === undefined ? getPendingGoogleAuthRequest() : options.pendingRequest
+  if (!isGoogleAuthPopupCandidate({ ...options, pendingRequest })) {
+    return null
+  }
+
+  const requestId =
+    pendingRequest?.requestId || resolveGoogleAuthPopupRequestIdFromWindowName(options.windowName)
+
+  if (handoffCode) {
+    return {
+      type: 'google-auth-result',
+      requestId: requestId || undefined,
+      status: 'success',
+      handoffCode,
+      redirectTo: pendingRequest?.redirectTo,
+      intent: pendingRequest?.intent,
+    }
+  }
+
+  return {
+    type: 'google-auth-result',
+    requestId: requestId || undefined,
+    status: 'error',
+    error: error || 'missing_handoff_code',
+    redirectTo: pendingRequest?.redirectTo,
+    intent: pendingRequest?.intent,
+  }
+}
+
+export function bridgeGooglePopupResult(
+  options: GooglePopupBridgeOptions = {}
+): GooglePopupBridgeResult {
+  const message = resolveGooglePopupBridgeMessage(options)
+  if (!message) {
+    return { handled: false }
+  }
+
+  publishGooglePopupResult(message)
+
+  const opener =
+    options.opener === undefined
+      ? typeof window !== 'undefined'
+        ? window.opener
+        : null
+      : options.opener
+  if (opener) {
+    safePostMessage(opener, message, options.targetOrigin || resolveTrustedFrontendTargetOrigin())
+  }
+
+  return {
+    handled: true,
+    message,
   }
 }
 
@@ -390,6 +530,131 @@ export function waitForGooglePopupResult(
   return {
     promise,
     dispose: cleanup,
+  }
+}
+
+export function resolveGoogleAuthSecurityError(error: unknown): GoogleAuthSecurityError {
+  const apiError = error instanceof ApiError ? error : null
+  const detail = error instanceof Error ? error.message : ''
+
+  switch (apiError?.code) {
+    case 'CHALLENGE_REQUIRED':
+    case 'TURNSTILE_REQUIRED':
+    case 'TURNSTILE_TOKEN_MISSING':
+      return {
+        messageKey: 'auth.error.turnstileRequired',
+        detail,
+        code: apiError.code,
+      }
+    case 'TURNSTILE_FAILED':
+    case 'TURNSTILE_VERIFICATION_FAILED':
+      return {
+        messageKey: 'auth.error.turnstileFailed',
+        detail,
+        code: apiError.code,
+      }
+    case 'REQUEST_SIGNATURE_REQUIRED':
+    case 'INVALID_SIGNATURE':
+      return {
+        messageKey: 'error.server.invalidSignature',
+        detail,
+        code: apiError.code,
+      }
+    case 'INVALID_CLIENT_TOKEN':
+      return {
+        messageKey: 'error.server.invalidClientToken',
+        detail,
+        code: apiError.code,
+      }
+    case 'CLIENT_TOKEN_EXPIRED':
+      return {
+        messageKey: 'error.server.clientTokenExpired',
+        detail,
+        code: apiError.code,
+      }
+    case 'REQUEST_TIMESTAMP_INVALID':
+      return {
+        messageKey: 'error.server.invalidTimestamp',
+        detail,
+        code: apiError.code,
+      }
+    case 'REQUEST_EXPIRED':
+      return {
+        messageKey: 'error.server.requestExpired',
+        detail,
+        code: apiError.code,
+      }
+    case 'REQUEST_ORIGIN_NOT_AUTHORIZED':
+      return {
+        messageKey: 'error.server.requestOriginNotAuthorized',
+        detail,
+        code: apiError.code,
+      }
+    default:
+      return {
+        messageKey:
+          error instanceof Error
+            ? getTurnstileErrorMessageKey(error)
+            : 'auth.error.turnstileFailed',
+        detail,
+        code: apiError?.code,
+      }
+  }
+}
+
+export async function prepareGoogleAuthHandoff(
+  handoffCode: string,
+  fallbackSiteKey = ''
+): Promise<GoogleAuthHandoffPreparationResult> {
+  const normalizedHandoffCode = handoffCode.trim()
+  if (!normalizedHandoffCode) {
+    return {
+      status: 'error',
+      messageKey: 'auth.error.callbackMissingHandoffCode',
+      detail: '',
+    }
+  }
+
+  let resolvedSiteKey = fallbackSiteKey.trim()
+
+  try {
+    const config = await authService.getTurnstileConfig()
+    if (config.enabled) {
+      resolvedSiteKey = config.site_key?.trim() || resolvedSiteKey
+    }
+  } catch {
+    // keep fallback site key when config probe fails
+  }
+
+  try {
+    const initResponse = await clientSecurityService.init(false, { promptChallenge: false })
+    if (initResponse.challenge_required) {
+      const siteKey = initResponse.turnstile_site_key?.trim() || resolvedSiteKey
+
+      if (!siteKey) {
+        return {
+          status: 'error',
+          messageKey: 'auth.error.turnstileFailed',
+          detail: 'Missing Turnstile site key for Google auth challenge.',
+        }
+      }
+
+      return {
+        status: 'challenge-required',
+        handoffCode: normalizedHandoffCode,
+        siteKey,
+      }
+    }
+
+    return {
+      status: 'ready',
+      handoffCode: normalizedHandoffCode,
+    }
+  } catch (error) {
+    return {
+      status: 'error',
+      ...resolveGoogleAuthSecurityError(error),
+    }
   }
 }
 

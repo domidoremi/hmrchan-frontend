@@ -179,21 +179,21 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { AlertCircle } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
-import { ApiError, authService } from '@/api'
+import { authService } from '@/api'
 import { clientSecurityService } from '@/api/clientSecurityService'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
 import {
+  bridgeGooglePopupResult,
   getPendingGoogleAuthRequest,
-  publishGooglePopupResult,
-  resolveGoogleAuthPopupRequestIdFromWindowName,
+  prepareGoogleAuthHandoff,
+  resolveGooglePopupBridgeMessage,
+  resolveGoogleAuthSecurityError,
   startGoogleAuthRedirect,
-  type GooglePopupMessage,
 } from '@/services/googleAuthService'
 import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
-import { resolveTrustedFrontendTargetOrigin, safePostMessage } from '@/utils/security'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
@@ -323,62 +323,10 @@ function handleTurnstileError(error?: Error) {
 }
 
 function resolveSecurityStepError(error: unknown): { message: string; detail: string } {
-  const apiError = error instanceof ApiError ? error : null
-  const detail = error instanceof Error ? error.message : ''
-
-  switch (apiError?.code) {
-    case 'CHALLENGE_REQUIRED':
-    case 'TURNSTILE_REQUIRED':
-    case 'TURNSTILE_TOKEN_MISSING':
-      return {
-        message: t('auth.error.turnstileRequired'),
-        detail,
-      }
-    case 'TURNSTILE_FAILED':
-    case 'TURNSTILE_VERIFICATION_FAILED':
-      return {
-        message: t('auth.error.turnstileFailed'),
-        detail,
-      }
-    case 'REQUEST_SIGNATURE_REQUIRED':
-    case 'INVALID_SIGNATURE':
-      return {
-        message: t('error.server.invalidSignature'),
-        detail,
-      }
-    case 'INVALID_CLIENT_TOKEN':
-      return {
-        message: t('error.server.invalidClientToken'),
-        detail,
-      }
-    case 'CLIENT_TOKEN_EXPIRED':
-      return {
-        message: t('error.server.clientTokenExpired'),
-        detail,
-      }
-    case 'REQUEST_TIMESTAMP_INVALID':
-      return {
-        message: t('error.server.invalidTimestamp'),
-        detail,
-      }
-    case 'REQUEST_EXPIRED':
-      return {
-        message: t('error.server.requestExpired'),
-        detail,
-      }
-    case 'REQUEST_ORIGIN_NOT_AUTHORIZED':
-      return {
-        message: t('error.server.requestOriginNotAuthorized'),
-        detail,
-      }
-    default:
-      return {
-        message:
-          error instanceof Error
-            ? t(getTurnstileErrorMessageKey(error))
-            : t('auth.error.turnstileFailed'),
-        detail,
-      }
+  const resolved = resolveGoogleAuthSecurityError(error)
+  return {
+    message: t(resolved.messageKey),
+    detail: resolved.detail,
   }
 }
 
@@ -550,41 +498,8 @@ async function handleMfaResolved(result: AuthFlowResult) {
   await applyCallbackResult(result)
 }
 
-function buildPopupBridgeMessage(): GooglePopupMessage {
-  const popupRequestId =
-    pendingRequest?.requestId || resolveGoogleAuthPopupRequestIdFromWindowName()
-  const handoffCode =
-    typeof route.query['handoff_code'] === 'string' ? route.query['handoff_code'].trim() : ''
-  const error = typeof route.query['error'] === 'string' ? route.query['error'].trim() : ''
-
-  if (handoffCode) {
-    return {
-      type: 'google-auth-result',
-      requestId: popupRequestId || undefined,
-      status: 'success',
-      handoffCode,
-      redirectTo: pendingRequest?.redirectTo,
-      intent: pendingRequest?.intent,
-    }
-  }
-
-  return {
-    type: 'google-auth-result',
-    requestId: popupRequestId || undefined,
-    status: 'error',
-    error: error || 'missing_handoff_code',
-    redirectTo: pendingRequest?.redirectTo,
-    intent: pendingRequest?.intent,
-  }
-}
-
 function shouldUsePopupBridge(): boolean {
-  const hasCallbackPayload =
-    typeof route.query['handoff_code'] === 'string' || typeof route.query['error'] === 'string'
-
-  if (!hasCallbackPayload) return false
-  if (typeof window !== 'undefined' && window.opener) return true
-  return Boolean(resolveGoogleAuthPopupRequestIdFromWindowName())
+  return resolveGooglePopupBridgeMessage({ pendingRequest }) !== null
 }
 
 async function runPopupBridge(): Promise<boolean> {
@@ -592,12 +507,7 @@ async function runPopupBridge(): Promise<boolean> {
 
   isPopupBridgeMode.value = true
   popupBridgeState.value = 'posting'
-  const popupMessage = buildPopupBridgeMessage()
-
-  publishGooglePopupResult(popupMessage)
-  if (window.opener) {
-    safePostMessage(window.opener, popupMessage, resolveTrustedFrontendTargetOrigin())
-  }
+  bridgeGooglePopupResult({ pendingRequest })
 
   window.setTimeout(() => {
     window.close()
@@ -638,20 +548,21 @@ async function runInitialExchange() {
   }
 
   pendingGoogleHandoffCode.value = handoffCode.trim()
+  const resolvedSiteKey = await preloadTurnstileSiteKey()
+  const handoffPreparation = await prepareGoogleAuthHandoff(
+    pendingGoogleHandoffCode.value,
+    resolvedSiteKey
+  )
 
-  try {
-    const resolvedSiteKey = await preloadTurnstileSiteKey()
-    const initResponse = await clientSecurityService.init(false, { promptChallenge: false })
+  if (handoffPreparation.status === 'challenge-required') {
+    enterClientChallengeStep(handoffPreparation.siteKey)
+    return
+  }
 
-    if (initResponse.challenge_required) {
-      enterClientChallengeStep(initResponse.turnstile_site_key || resolvedSiteKey)
-      return
-    }
-  } catch (error) {
+  if (handoffPreparation.status === 'error') {
     currentStep.value = 'error'
-    const resolvedError = resolveSecurityStepError(error)
-    errorMessage.value = resolvedError.message
-    errorDetail.value = resolvedError.detail
+    errorMessage.value = t(handoffPreparation.messageKey)
+    errorDetail.value = handoffPreparation.detail
     return
   }
 
