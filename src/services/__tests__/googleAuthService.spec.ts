@@ -5,6 +5,7 @@ import {
   clearPendingGoogleAuthRequest,
   getPendingGoogleAuthRequest,
   openGoogleAuthPopup,
+  openGoogleAuthPopupFlow,
   prefersGoogleAuthPopup,
   publishGooglePopupResult,
   resolveGooglePopupBridgeMessage,
@@ -183,6 +184,47 @@ describe('googleAuthService', () => {
     )
   })
 
+  it('arms popup listeners before opening the popup so fast callbacks are not lost', async () => {
+    const popup = {
+      closed: false,
+      close: vi.fn(),
+      focus: vi.fn(),
+    } as unknown as Window
+
+    vi.spyOn(window, 'open').mockImplementation(() => {
+      const requestId = getPendingGoogleAuthRequest()?.requestId
+
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          origin: window.location.origin,
+          data: {
+            type: 'google-auth-result',
+            requestId,
+            status: 'success',
+            handoffCode: 'handoff-fast-return',
+          },
+        })
+      )
+
+      return popup
+    })
+
+    const result = openGoogleAuthPopupFlow('login', '/library')
+
+    expect(result.status).toBe('opened')
+    if (result.status !== 'opened') {
+      return
+    }
+
+    await expect(result.promise).resolves.toEqual(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        status: 'success',
+        handoffCode: 'handoff-fast-return',
+      })
+    )
+  })
+
   it('prefers popup on desktop-like environments', () => {
     expect(prefersGoogleAuthPopup()).toBe(true)
   })
@@ -276,6 +318,31 @@ describe('googleAuthService', () => {
         requestId: 'relay-request',
         status: 'success',
         handoffCode: 'relay-handoff',
+      })
+    )
+  })
+
+  it('replays the latest stored popup relay result for late subscribers', async () => {
+    const popup = {
+      close: vi.fn(),
+      focus: vi.fn(),
+    } as unknown as Window
+
+    publishGooglePopupResult({
+      type: 'google-auth-result',
+      requestId: 'stored-request',
+      status: 'success',
+      handoffCode: 'stored-handoff',
+    })
+
+    const pending = waitForGooglePopupResult(popup, { requestId: 'stored-request' })
+
+    await expect(pending.promise).resolves.toEqual(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        requestId: 'stored-request',
+        status: 'success',
+        handoffCode: 'stored-handoff',
       })
     )
   })

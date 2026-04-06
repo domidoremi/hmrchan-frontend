@@ -376,11 +376,10 @@ import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
 import {
   mapGooglePopupError,
-  openGoogleAuthPopup,
+  openGoogleAuthPopupFlow,
   prefersGoogleAuthPopup,
   prepareGoogleAuthHandoff,
   resolveGoogleAuthSecurityError,
-  waitForGooglePopupResult,
   type GooglePopupMessage,
   type GooglePopupState,
 } from '@/services/googleAuthService'
@@ -443,6 +442,8 @@ const googleClientChallengeDetail = ref('')
 const isGoogleClientChallengeSubmitting = ref(false)
 let googlePopupDispose: (() => void) | null = null
 let googlePopupRecoveryTimer: ReturnType<typeof setTimeout> | null = null
+let activeGooglePopupWindow: Window | null = null
+let googlePopupFlowToken = 0
 
 const restoreIdentifier = ref('')
 const restorePassword = ref('')
@@ -475,7 +476,9 @@ const isPasswordLoginUnavailable = computed(
   () => credentialsErrorCode.value === 'password_login_unavailable'
 )
 const googleProviderBusy = computed(
-  () => ['opening', 'waiting', 'handling'].includes(googlePopupState.value) || isLoading.value
+  () =>
+    ['opening', 'waiting', 'recovery', 'handling'].includes(googlePopupState.value) ||
+    isLoading.value
 )
 const showCredentialsTurnstile = computed(
   () => turnstileEnabled.value && requiresCredentialsTurnstile.value
@@ -587,21 +590,44 @@ function clearGooglePopupRecoveryTimer() {
   googlePopupRecoveryTimer = null
 }
 
-function armGooglePopupRecovery() {
+function closeActiveGooglePopupWindow() {
+  const popup = activeGooglePopupWindow
+  activeGooglePopupWindow = null
+
+  if (!popup) return
+
+  try {
+    if (!popup.closed) {
+      popup.close()
+    }
+  } catch {
+    // ignore close failures
+  }
+}
+
+function armGooglePopupRecovery(flowToken: number) {
   clearGooglePopupRecoveryTimer()
   googlePopupRecoveryTimer = setTimeout(() => {
-    if (googlePopupState.value === 'waiting') {
-      setGooglePopupStatus('recovery', 'auth.googlePopupRecoveryHint')
+    if (flowToken === googlePopupFlowToken && googlePopupState.value === 'waiting') {
+      void continueGoogleInCurrentPage({ closePopup: true })
     }
   }, 12000)
 }
 
-function clearGooglePopupListener() {
+function clearGooglePopupListener(options: { closePopup?: boolean; invalidate?: boolean } = {}) {
+  if (options.invalidate !== false) {
+    googlePopupFlowToken += 1
+  }
   if (googlePopupDispose) {
     googlePopupDispose()
     googlePopupDispose = null
   }
   clearGooglePopupRecoveryTimer()
+  if (options.closePopup) {
+    closeActiveGooglePopupWindow()
+    return
+  }
+  activeGooglePopupWindow = null
 }
 
 function resetGooglePopupState() {
@@ -855,8 +881,10 @@ async function handleGoogleClientChallengeVerify(token: string) {
   }
 }
 
-async function continueGoogleInCurrentPage() {
-  clearGooglePopupListener()
+async function continueGoogleInCurrentPage(options: { closePopup?: boolean } = {}) {
+  clearGooglePopupListener({
+    closePopup: options.closePopup ?? false,
+  })
   resetGoogleClientChallengeState()
   setGooglePopupStatus('handling')
   const result = await authStore.startGoogleAuth('login', redirectTo.value)
@@ -871,33 +899,41 @@ async function handleGoogleContinue() {
   if (googleProviderBusy.value) return
 
   clearInlineErrors()
+  resetGoogleClientChallengeState()
 
   if (!prefersGoogleAuthPopup()) {
     await continueGoogleInCurrentPage()
     return
   }
 
+  clearGooglePopupListener({ closePopup: true })
   setGooglePopupStatus('opening')
-  const popupResult = openGoogleAuthPopup('login', redirectTo.value)
+  const popupResult = openGoogleAuthPopupFlow('login', redirectTo.value, {
+    timeoutMs: 4 * 60 * 1000,
+  })
 
   if (popupResult.status === 'blocked') {
     setGooglePopupStatus('blocked', 'auth.error.googlePopupBlocked')
     return
   }
 
+  const flowToken = ++googlePopupFlowToken
+  activeGooglePopupWindow = popupResult.popup
+  googlePopupDispose = popupResult.dispose
   setGooglePopupStatus('waiting')
-  const pendingPopup = waitForGooglePopupResult(popupResult.popup, {
-    requestId: popupResult.requestId,
-    timeoutMs: 4 * 60 * 1000,
-  })
-  googlePopupDispose = pendingPopup.dispose
-  armGooglePopupRecovery()
+  armGooglePopupRecovery(flowToken)
 
-  const message = await pendingPopup.promise
-  googlePopupDispose = null
-  clearGooglePopupRecoveryTimer()
-  setGooglePopupStatus('handling')
-  await handleGooglePopupResult(message)
+  void popupResult.promise.then(async (message) => {
+    if (flowToken !== googlePopupFlowToken) {
+      return
+    }
+
+    googlePopupDispose = null
+    clearGooglePopupRecoveryTimer()
+    activeGooglePopupWindow = null
+    setGooglePopupStatus('handling')
+    await handleGooglePopupResult(message)
+  })
 }
 
 function buildLoginQueryWithoutRestore() {
@@ -964,7 +1000,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  clearGooglePopupListener()
+  clearGooglePopupListener({ closePopup: true })
 })
 </script>
 
