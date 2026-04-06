@@ -298,41 +298,56 @@
   justify-content: flex-end;
 }
 
-.page-actions--comfortable,
-.page-meta-row--comfortable,
-.page-control-group-shell--comfortable,
-.page-input-shell--comfortable,
-.page-toolbar-shell--comfortable {
-  padding: clamp(0.625rem, 1.2vw, 0.9rem);
+.page-actions.page-actions--comfortable,
+.page-meta-row.page-meta-row--comfortable,
+.page-control-group-shell.page-control-group-shell--comfortable,
+.page-input-shell.page-input-shell--comfortable,
+.page-toolbar-shell.page-toolbar-shell--comfortable {
+  box-sizing: border-box;
+  padding-inline: clamp(0.8rem, 1.5vw, 1.05rem);
+  padding-block: clamp(0.7rem, 1.2vw, 0.92rem);
   border: 0.0625rem solid color-mix(in srgb, var(--page-shell-surface-border) 72%, transparent);
   border-radius: var(--appearance-radius-panel);
   background: color-mix(in srgb, var(--page-shell-surface-bg-strong) 90%, transparent);
 }
 
-.page-actions--comfortable,
-.page-meta-row--comfortable,
-.page-control-group-shell--comfortable {
+.page-actions.page-actions--comfortable,
+.page-meta-row.page-meta-row--comfortable,
+.page-control-group-shell.page-control-group-shell--comfortable {
   gap: clamp(0.625rem, 1.1vw, 0.9rem);
 }
 
-.page-actions--comfortable > *,
-.page-meta-row--comfortable > *,
-.page-control-group-shell--comfortable > *,
-.page-toolbar-shell--comfortable > * {
+.page-actions.page-actions--comfortable > *,
+.page-meta-row.page-meta-row--comfortable > *,
+.page-control-group-shell.page-control-group-shell--comfortable > *,
+.page-toolbar-shell.page-toolbar-shell--comfortable > * {
   min-inline-size: 0;
   max-inline-size: 100%;
 }
 
-.page-meta-row--comfortable {
+.page-meta-row.page-meta-row--comfortable {
   align-items: stretch;
 }
 
-.page-toolbar-shell--comfortable {
+.page-toolbar-shell.page-toolbar-shell--comfortable {
   gap: clamp(0.75rem, 1.35vw, 1rem);
+}
+
+.page-toolbar-shell.page-toolbar-shell--comfortable > .page-control-group-shell {
+  box-sizing: border-box;
+  min-block-size: 100%;
+}
+
+.page-toolbar-shell.page-toolbar-shell--comfortable
+  > .page-control-group-shell.page-control-group-shell--comfortable {
+  padding-inline: clamp(0.55rem, 1vw, 0.78rem);
+  padding-block: clamp(0.5rem, 0.9vw, 0.68rem);
 }
 
 .page-control {
   box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -340,8 +355,10 @@
   min-block-size: var(--ui-control-height-md);
   min-inline-size: var(--ui-control-min-inline-size);
   max-inline-size: 100%;
-  padding-inline: var(--ui-control-padding-x-md);
-  padding-block: var(--ui-control-padding-y-md);
+  padding-top: var(--ui-control-padding-y-md);
+  padding-right: var(--ui-control-padding-x-md);
+  padding-bottom: var(--ui-control-padding-y-md);
+  padding-left: var(--ui-control-padding-x-md);
   border: 0.0625rem solid var(--page-shell-control-border);
   border-radius: var(--appearance-radius-control-md);
   background: var(--page-shell-control-bg);
@@ -386,20 +403,29 @@
   box-shadow: none;
 }
 
-.page-control--compact {
+.page-control.page-control--compact {
   min-block-size: var(--ui-control-height-sm);
-  min-inline-size: var(--ui-control-compact-min-inline-size);
-  padding-inline: max(var(--ui-control-padding-x-sm), 0.95rem);
-  padding-block: max(var(--ui-control-padding-y-sm), 0.3rem);
+  min-inline-size: max(var(--ui-control-compact-min-inline-size), 4.9rem);
+  gap: clamp(0.42rem, 0.75vw, 0.58rem);
+  padding-top: max(var(--ui-control-padding-y-sm), 0.38rem);
+  padding-right: max(var(--ui-control-padding-x-sm), 1rem);
+  padding-bottom: max(var(--ui-control-padding-y-sm), 0.38rem);
+  padding-left: max(var(--ui-control-padding-x-sm), 1rem);
   border-radius: var(--appearance-radius-control-sm);
   font-size: var(--text-xs);
+}
+
+.page-control.page-control--compact .page-control__label,
+.page-control.page-control--compact .page-control__icon,
+.page-control.page-control--compact .page-control__meta {
+  min-inline-size: 0;
 }
 
 .page-control--square,
 .page-control--icon-only {
   min-inline-size: var(--ui-action-size);
   block-size: var(--ui-action-size);
-  padding-inline: 0;
+  padding: 0;
   border-radius: var(--appearance-radius-control-sm);
 }
 
