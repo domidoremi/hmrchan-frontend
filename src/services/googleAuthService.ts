@@ -57,8 +57,27 @@ const GOOGLE_AUTH_POPUP_HEIGHT = 42
 const GOOGLE_AUTH_START_PATH = '/api/v1/auth/google/start'
 type GooglePopupRelayEnvelope = {
   id: string
+  publishedAt: number
   payload: GooglePopupMessage
 }
+
+type GooglePopupWaitOptions = {
+  timeoutMs?: number
+  requestId?: string
+  resolvePopup?: () => Window | null
+}
+
+export type GooglePopupFlowResult =
+  | {
+      status: 'opened'
+      popup: Window
+      requestId: string
+      promise: Promise<GooglePopupMessage>
+      dispose: () => void
+    }
+  | {
+      status: 'blocked'
+    }
 
 export type GooglePopupBridgeOptions = {
   search?: string
@@ -206,11 +225,47 @@ function subscribeToGooglePopupRelay(
   }
 }
 
+function readGooglePopupRelayEnvelope(): GooglePopupRelayEnvelope | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  try {
+    const raw = localStorage.getItem(GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY)
+    if (!raw) return null
+
+    const parsed = JSON.parse(raw) as Partial<GooglePopupRelayEnvelope>
+    if (
+      typeof parsed.id !== 'string' ||
+      typeof parsed.publishedAt !== 'number' ||
+      !isGooglePopupMessage(parsed.payload)
+    ) {
+      return null
+    }
+
+    return {
+      id: parsed.id,
+      publishedAt: parsed.publishedAt,
+      payload: parsed.payload,
+    }
+  } catch {
+    return null
+  }
+}
+
+function readStoredGooglePopupResult(expectedRequestId?: string): GooglePopupMessage | null {
+  const envelope = readGooglePopupRelayEnvelope()
+  if (!envelope) return null
+  if (!shouldAcceptGooglePopupMessage(envelope.payload, expectedRequestId)) return null
+  return envelope.payload
+}
+
 export function publishGooglePopupResult(message: GooglePopupMessage): void {
   if (typeof window === 'undefined') return
 
   const envelope: GooglePopupRelayEnvelope = {
     id: createGoogleAuthRequestId(),
+    publishedAt: Date.now(),
     payload: message,
   }
 
@@ -450,6 +505,7 @@ export function openGoogleAuthPopup(
   )
 
   if (!popup) {
+    clearPendingGoogleAuthRequest()
     return { status: 'blocked' }
   }
 
@@ -462,10 +518,10 @@ export function openGoogleAuthPopup(
   return { status: 'opened', popup, requestId: request.requestId }
 }
 
-export function waitForGooglePopupResult(
-  popup: Window,
-  options?: { timeoutMs?: number; requestId?: string }
-): { promise: Promise<GooglePopupMessage>; dispose: () => void } {
+function createGooglePopupWaitHandle(options?: GooglePopupWaitOptions): {
+  promise: Promise<GooglePopupMessage>
+  dispose: () => void
+} {
   let isSettled = false
   let timeoutId: number | null = null
   let removeMessageHandler: (() => void) | null = null
@@ -509,10 +565,16 @@ export function waitForGooglePopupResult(
       options?.requestId
     )
 
+    const storedResult = readStoredGooglePopupResult(options?.requestId)
+    if (storedResult) {
+      settle(storedResult)
+      return
+    }
+
     if (options?.timeoutMs) {
       timeoutId = window.setTimeout(() => {
         try {
-          popup.close()
+          options.resolvePopup?.()?.close()
         } catch {
           // ignore close failures
         }
@@ -530,6 +592,57 @@ export function waitForGooglePopupResult(
   return {
     promise,
     dispose: cleanup,
+  }
+}
+
+export function waitForGooglePopupResult(
+  popup: Window,
+  options?: { timeoutMs?: number; requestId?: string }
+): { promise: Promise<GooglePopupMessage>; dispose: () => void } {
+  return createGooglePopupWaitHandle({
+    ...options,
+    resolvePopup: () => popup,
+  })
+}
+
+export function openGoogleAuthPopupFlow(
+  intent: GoogleAuthIntent,
+  returnTo: string,
+  options?: { timeoutMs?: number }
+): GooglePopupFlowResult {
+  const request = persistPendingGoogleAuthRequest(intent, returnTo, 'popup')
+  let popup: Window | null = null
+
+  const pending = createGooglePopupWaitHandle({
+    requestId: request.requestId,
+    timeoutMs: options?.timeoutMs,
+    resolvePopup: () => popup,
+  })
+
+  popup = window.open(
+    buildGoogleStartUrl(intent, request.redirectTo),
+    buildGooglePopupWindowName(request.requestId),
+    buildPopupFeatures()
+  )
+
+  if (!popup) {
+    pending.dispose()
+    clearPendingGoogleAuthRequest()
+    return { status: 'blocked' }
+  }
+
+  try {
+    popup.focus()
+  } catch {
+    // ignore focus failures
+  }
+
+  return {
+    status: 'opened',
+    popup,
+    requestId: request.requestId,
+    promise: pending.promise,
+    dispose: pending.dispose,
   }
 }
 

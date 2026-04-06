@@ -352,7 +352,7 @@ describe('Auth entry pages', () => {
     expect(testState.routerReplace).toHaveBeenCalledWith('/feed')
   })
 
-  it('surfaces login popup fallback without probing refresh on popup timeout', async () => {
+  it('automatically switches login popup auth back to current-page flow after 12 seconds', async () => {
     vi.useFakeTimers()
     testState.route.query = { redirect: '/feed' }
 
@@ -386,16 +386,15 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    vi.advanceTimersByTime(4 * 60 * 1000)
+    vi.advanceTimersByTime(12_000)
     await flushPromises()
 
-    expect(testState.authStore.fetchCurrentUser).not.toHaveBeenCalled()
+    expect(testState.authStore.startGoogleAuth).toHaveBeenCalledWith('login', '/feed')
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('auth.error.googlePopupClosed')
-    expect(wrapper.text()).toContain('auth.googlePopupFallbackAction')
+    expect(wrapper.text()).not.toContain('auth.error.googlePopupClosed')
   })
 
-  it('surfaces register popup fallback without probing refresh on popup timeout', async () => {
+  it('automatically switches register popup auth back to current-page flow after 12 seconds', async () => {
     vi.useFakeTimers()
     testState.route.query = { redirect: '/welcome' }
 
@@ -429,12 +428,11 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    vi.advanceTimersByTime(4 * 60 * 1000)
+    vi.advanceTimersByTime(12_000)
     await flushPromises()
 
-    expect(testState.authStore.fetchCurrentUser).not.toHaveBeenCalled()
+    expect(testState.authStore.startGoogleAuth).toHaveBeenCalledWith('register', '/welcome')
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('auth.error.googlePopupClosed')
-    expect(wrapper.text()).toContain('auth.googlePopupFallbackAction')
+    expect(wrapper.text()).not.toContain('auth.error.googlePopupClosed')
   })
 })

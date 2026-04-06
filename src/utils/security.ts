@@ -364,27 +364,47 @@ function normalizeMessageOrigin(origin: string): string {
   return origin.trim().replace(/\/+$/, '')
 }
 
-export function getTrustedFrontendOrigins(): string[] {
-  if (import.meta.env.PROD) {
-    return [PRIMARY_FRONTEND_MESSAGE_ORIGIN]
+function resolveRuntimeFrontendOrigin(): string | null {
+  if (typeof window === 'undefined' || !window.location.origin) {
+    return null
   }
 
-  const origins = new Set<string>()
+  const origin = normalizeMessageOrigin(window.location.origin)
+  return origin || null
+}
+
+export function getTrustedFrontendOrigins(): string[] {
+  const origins = new Set<string>([PRIMARY_FRONTEND_MESSAGE_ORIGIN])
+  const runtimeOrigin = resolveRuntimeFrontendOrigin()
+
+  if (import.meta.env.PROD) {
+    if (runtimeOrigin) {
+      origins.add(runtimeOrigin)
+    }
+
+    return Array.from(origins)
+  }
+
   const configuredOrigin = normalizeMessageOrigin(import.meta.env.VITE_FRONTEND_ORIGIN ?? '')
   if (configuredOrigin) {
     origins.add(configuredOrigin)
   }
-  if (typeof window !== 'undefined' && window.location.origin) {
-    origins.add(normalizeMessageOrigin(window.location.origin))
+  if (runtimeOrigin) {
+    origins.add(runtimeOrigin)
   }
-  if (origins.size === 0) {
-    origins.add(PRIMARY_FRONTEND_MESSAGE_ORIGIN)
-  }
+
   return Array.from(origins)
 }
 
 export function resolveTrustedFrontendTargetOrigin(): string {
-  return getTrustedFrontendOrigins()[0] ?? PRIMARY_FRONTEND_MESSAGE_ORIGIN
+  const runtimeOrigin = resolveRuntimeFrontendOrigin()
+  const trustedOrigins = getTrustedFrontendOrigins()
+
+  if (runtimeOrigin && trustedOrigins.includes(runtimeOrigin)) {
+    return runtimeOrigin
+  }
+
+  return trustedOrigins[0] ?? PRIMARY_FRONTEND_MESSAGE_ORIGIN
 }
 
 export type MessageHandler<T = unknown> = (data: T, event: MessageEvent) => void
