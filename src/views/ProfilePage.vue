@@ -224,7 +224,7 @@ const currentTabProps = computed(() => {
 const stats = computed(() => [
   {
     key: 'favorites' as const,
-    value: favStore.total || undefined,
+    value: favStore.total ?? (favStore.items.length || undefined),
     label: t('profile.tabs.favorites'),
   },
   { key: 'comments' as const, value: undefined, label: t('profile.tabs.comments') },

@@ -38,6 +38,12 @@ export interface PaginatedApiResponseWithLimit<T> extends PaginatedApiResponse<T
   total_limit?: number
 }
 
+export interface CursorCollectionResponse<T> {
+  items: T[]
+  next_cursor?: string | null
+  has_more: boolean
+}
+
 export type ApiEnvelope<T = unknown> = {
   success?: boolean
   data?: T

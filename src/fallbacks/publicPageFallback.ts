@@ -1,4 +1,4 @@
-import { ApiError, type PaginatedApiResponse } from '@/api/client'
+import { ApiError, type CursorCollectionResponse, type PaginatedApiResponse } from '@/api/client'
 import { deepClone } from '@/utils/modernAPIs'
 
 export const PUBLIC_FALLBACK_PREFIX = '__public_fallback__'
@@ -62,6 +62,32 @@ export function paginateFallbackItems<T>(
     total_pages: totalPages,
     has_next: totalPages > 0 && safePage < totalPages,
     has_prev: totalPages > 0 && safePage > 1,
+  }
+}
+
+function parseCursorOffset(cursor: string | null | undefined): number {
+  if (!cursor) return 0
+  const parsed = Number(cursor)
+  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0
+}
+
+export function cursorPaginateFallbackItems<T>(
+  items: readonly T[],
+  options: {
+    limit?: number
+    cursor?: string | null
+  } = {}
+): CursorCollectionResponse<T> {
+  const safeLimit = Number.isFinite(options.limit) ? Math.max(1, Math.trunc(options.limit!)) : 20
+  const start = parseCursorOffset(options.cursor)
+  const nextItems = items.slice(start, start + safeLimit)
+  const nextOffset = start + nextItems.length
+  const hasMore = nextOffset < items.length
+
+  return {
+    items: nextItems,
+    next_cursor: hasMore ? String(nextOffset) : null,
+    has_more: hasMore,
   }
 }
 

@@ -1,13 +1,18 @@
 import type {
+  GetDiscussionCommentsOptions,
   Discussion,
   DiscussionComment,
   DiscussionCategory,
-  ListDiscussionCommentsParams,
+  GetDiscussionCommentRepliesOptions,
   ListDiscussionsParams,
 } from '@/api/discussionService'
-import type { PaginatedApiResponse } from '@/api'
+import type { CursorCollectionResponse, PaginatedApiResponse } from '@/api'
 import { STATIC_DISCUSSION_COMMENTS, STATIC_DISCUSSIONS } from './generated/publicSnapshots'
-import { clonePublicSnapshot, paginateFallbackItems } from './publicPageFallback'
+import {
+  clonePublicSnapshot,
+  cursorPaginateFallbackItems,
+  paginateFallbackItems,
+} from './publicPageFallback'
 
 export const COMMUNITY_FALLBACK_DISCUSSIONS: Discussion[] = clonePublicSnapshot(STATIC_DISCUSSIONS)
 export const COMMUNITY_FALLBACK_COMMENTS: Record<string, DiscussionComment[]> = clonePublicSnapshot(
@@ -73,6 +78,53 @@ export function searchFallbackDiscussions(
   )
 }
 
+export function getFallbackDiscussionsCursor(
+  params: {
+    limit?: number
+    cursor?: string | null
+    category?: DiscussionCategory
+    tag?: string
+    sort?: ListDiscussionsParams['sort']
+  } = {}
+): CursorCollectionResponse<Discussion> {
+  let items = COMMUNITY_FALLBACK_DISCUSSIONS.filter((item) => {
+    if (params.category && item.category !== params.category) return false
+    if (params.tag && !item.tags.includes(params.tag)) return false
+    return true
+  })
+
+  items = sortDiscussions(items, params.sort ?? 'latest')
+
+  return cursorPaginateFallbackItems(items, {
+    limit: params.limit,
+    cursor: params.cursor,
+  })
+}
+
+export function searchFallbackDiscussionsCursor(
+  query: string,
+  params: {
+    limit?: number
+    cursor?: string | null
+    category?: DiscussionCategory
+  } = {}
+): CursorCollectionResponse<Discussion> {
+  const needle = query.trim().toLowerCase()
+  const filtered = COMMUNITY_FALLBACK_DISCUSSIONS.filter((item) => {
+    if (params.category && item.category !== params.category) return false
+    if (!needle) return true
+
+    return [item.title, item.content, item.author.username, ...item.tags].some((value) =>
+      value.toLowerCase().includes(needle)
+    )
+  })
+
+  return cursorPaginateFallbackItems(sortDiscussions(filtered, 'active'), {
+    limit: params.limit,
+    cursor: params.cursor,
+  })
+}
+
 export function getFallbackHotTopics(limit = 6): Discussion[] {
   return [...COMMUNITY_FALLBACK_DISCUSSIONS]
     .sort((left, right) => {
@@ -90,8 +142,22 @@ export function getFallbackDiscussionById(discussionId: string): Discussion | nu
 
 export function getFallbackDiscussionComments(
   discussionId: string,
-  params: ListDiscussionCommentsParams = {}
+  params: {
+    page?: number
+    page_size?: number
+  } = {}
 ): PaginatedApiResponse<DiscussionComment> {
   const items = COMMUNITY_FALLBACK_COMMENTS[discussionId] ?? []
   return paginateFallbackItems(items, params.page ?? 1, params.page_size ?? 20)
+}
+
+export function getFallbackDiscussionCommentsCursor(
+  discussionId: string,
+  params: GetDiscussionCommentsOptions | GetDiscussionCommentRepliesOptions = {}
+): CursorCollectionResponse<DiscussionComment> {
+  const items = COMMUNITY_FALLBACK_COMMENTS[discussionId] ?? []
+  return cursorPaginateFallbackItems(items, {
+    limit: params.limit,
+    cursor: params.cursor,
+  })
 }

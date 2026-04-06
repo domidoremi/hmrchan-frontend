@@ -441,7 +441,7 @@ export async function prefetchPostDetail(
         })
 
     if (options.includeComments) {
-      await Promise.all([postPromise, commentService.getPostComments(postId, 1, 20)])
+      await Promise.all([postPromise, commentService.getPostComments(postId, { limit: 20 })])
     } else {
       await postPromise
     }

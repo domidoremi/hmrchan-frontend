@@ -13,7 +13,7 @@ import {
   type FavoriteTagStats,
   type ListFavoritesParams,
 } from '@/api/favoriteService'
-import type { PaginatedApiResponse } from '@/api/client'
+import { normalizeFavoritesSummaryCount } from '@/api/summaryCounts'
 import { useSettingsStore } from '@/stores/settings'
 import { resolvePreferredPageSize } from '@/composables/usePreferredPageSize'
 
@@ -22,8 +22,8 @@ export const useFavoritesStore = defineStore('favorites', () => {
   const items = ref<FavoriteResponse[]>([])
   const folders = ref<FavoriteFolder[]>([])
   const tags = ref<FavoriteTagStats[]>([])
-  const total = ref(0)
-  const page = ref(1)
+  const total = ref<number | null>(null)
+  const nextCursor = ref<string | null>(null)
   const pageSize = computed(() =>
     resolvePreferredPageSize(settingsStore.settings.postsPerPage, {
       fallback: 20,
@@ -31,7 +31,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
       max: 100,
     })
   )
-  const totalPages = ref(0)
+  const hasMoreState = ref(false)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -46,7 +46,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
   let fetchFavoritesController: AbortController | null = null
   let fetchFavoritesToken = 0
 
-  const hasMore = computed(() => page.value < totalPages.value)
+  const hasMore = computed(() => hasMoreState.value)
 
   function abortFetchFavorites() {
     fetchFavoritesController?.abort()
@@ -68,18 +68,16 @@ export const useFavoritesStore = defineStore('favorites', () => {
     error.value = null
 
     try {
-      if (reset) page.value = 1
-
       const params: ListFavoritesParams = {
-        page: page.value,
-        page_size: pageSize.value,
+        limit: pageSize.value,
+        cursor: reset ? null : nextCursor.value,
         folder_name: currentFolder.value,
         tag: currentTag.value,
         sort_by: currentSort.value,
         sort_order: currentSortOrder.value,
       }
 
-      const res: PaginatedApiResponse<FavoriteResponse> = await favoriteService.list(params, {
+      const res = await favoriteService.list(params, {
         signal: controller.signal,
         skipErrorToast: true,
       })
@@ -93,8 +91,11 @@ export const useFavoritesStore = defineStore('favorites', () => {
         items.value = [...items.value, ...newItems]
       }
 
-      total.value = res.total
-      totalPages.value = res.total_pages
+      nextCursor.value = res.next_cursor ?? null
+      hasMoreState.value = Boolean(res.has_more && res.next_cursor)
+      if (reset) {
+        void refreshSummary()
+      }
       return true
     } catch {
       if (controller.signal.aborted || requestToken !== fetchFavoritesToken) return false
@@ -112,13 +113,16 @@ export const useFavoritesStore = defineStore('favorites', () => {
 
   async function loadMore(): Promise<boolean> {
     if (!hasMore.value || isLoading.value) return false
-    const nextPage = page.value + 1
-    page.value = nextPage
-    const ok = await fetchFavorites()
-    if (!ok) {
-      page.value = nextPage - 1
+    return fetchFavorites(false)
+  }
+
+  async function refreshSummary(): Promise<void> {
+    try {
+      const summary = await favoriteService.getSummary({ skipErrorToast: true })
+      total.value = normalizeFavoritesSummaryCount(summary)
+    } catch {
+      total.value = items.value.length > 0 ? items.value.length : null
     }
-    return ok
   }
 
   async function fetchFolders() {
@@ -155,7 +159,9 @@ export const useFavoritesStore = defineStore('favorites', () => {
     try {
       const res = await favoriteService.create(postId, options)
       items.value.unshift(res)
-      total.value++
+      if (typeof total.value === 'number') {
+        total.value += 1
+      }
       checkedPosts.value.set(postId, true)
       return { success: true, data: res }
     } catch {
@@ -168,7 +174,9 @@ export const useFavoritesStore = defineStore('favorites', () => {
       const item = items.value.find((f) => f.id === favoriteId)
       await favoriteService.remove(favoriteId)
       items.value = items.value.filter((f) => f.id !== favoriteId)
-      total.value = Math.max(0, total.value - 1)
+      if (typeof total.value === 'number') {
+        total.value = Math.max(0, total.value - 1)
+      }
       if (item) {
         checkedPosts.value.set(item.post_id, false)
       }
@@ -182,7 +190,9 @@ export const useFavoritesStore = defineStore('favorites', () => {
     try {
       await favoriteService.removeByPostId(postId)
       items.value = items.value.filter((f) => f.post_id !== postId)
-      total.value = Math.max(0, total.value - 1)
+      if (typeof total.value === 'number') {
+        total.value = Math.max(0, total.value - 1)
+      }
       checkedPosts.value.set(postId, false)
       return { success: true }
     } catch {
@@ -222,9 +232,9 @@ export const useFavoritesStore = defineStore('favorites', () => {
     items.value = []
     folders.value = []
     tags.value = []
-    total.value = 0
-    page.value = 1
-    totalPages.value = 0
+    total.value = null
+    nextCursor.value = null
+    hasMoreState.value = false
     isLoading.value = false
     error.value = null
     checkedPosts.value.clear()
@@ -245,8 +255,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
     folders,
     tags,
     total,
-    page,
-    totalPages,
+    nextCursor,
     isLoading,
     error,
     hasMore,

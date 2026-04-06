@@ -33,6 +33,43 @@
 - 不返回 `total`
 - badge / summary / stats 走独立 summary endpoint
 
+## 已确认公开读契约
+
+### `GET /api/v1/community/latest`
+
+- cursor collection；仅接受 `limit`、`cursor`
+- 返回体固定为 `items + next_cursor + has_more`
+- 不返回 `total`
+- 评论主查询失败才返回 `500`
+- 身份资料 / 内容卡片补全失败时降级为部分结果或空集合，仍返回 `200`
+
+### `GET /api/v1/community/hot`
+
+- cursor collection；仅接受 `limit`、`cursor`、`days`
+- 返回体固定为 `items + next_cursor + has_more`
+- 不再使用旧 `{ hot_topics: [...] }` 形状
+- 不返回 `total`
+- 排序与游标固定为 `comment_count DESC, post_uuid DESC`
+- `items[]` 字段为：
+  - `post_id`
+  - `comment_count`
+  - `platform`
+  - 可选 `title`
+- 主聚合查询失败返回 `500`
+- 内容卡片补全失败或部分缺失时只降级为部分结果 / 空集合，不返回 `500`
+
+### `GET /api/v1/posts/:id/comments`
+
+- 严格 cursor collection；仅接受 `limit`、`cursor`、`sort`
+- `sort` 支持 `newest | oldest | popular`
+- 返回体固定为 `items + next_cursor + has_more`
+- 不返回 `total`
+- 旧 `page` / `page_size` / 其他 page-based legacy 分页参数会返回 `400`
+- 语义固定为：
+  - 帖子不存在或内容卡片缺失：`404`
+  - 内容服务不可用：`503`
+  - 帖子存在但无评论：`200`，`items=[]`，`has_more=false`
+
 ## 当前 summary endpoints
 
 - `GET /api/v1/favorites/summary`

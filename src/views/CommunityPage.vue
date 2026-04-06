@@ -134,6 +134,16 @@
               </div>
             </div>
           </article>
+
+          <LoadMoreSection
+            v-if="searchResults.length > 0"
+            :count="searchResults.length"
+            :total="undefined"
+            :has-more="searchHasMore"
+            :loading="isSearchingMore"
+            :sentinel-ref="setSentinelRef"
+            @load-more="loadMore"
+          />
         </div>
       </section>
 
@@ -257,7 +267,7 @@
             <LoadMoreSection
               v-if="discussions.length > 0"
               :count="discussions.length"
-              :total="total"
+              :total="total ?? undefined"
               :has-more="hasMore"
               :loading="isLoadingMore"
               :sentinel-ref="setSentinelRef"
@@ -315,7 +325,7 @@
                     <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="sm" />
                     {{ topic.commentsCount }}
                   </span>
-                  <span class="topic-views">{{ topic.viewCount }} {{ $t('post.views') }}</span>
+                  <span class="topic-platform">{{ topic.platformLabel }}</span>
                 </div>
               </div>
             </article>
@@ -350,7 +360,10 @@ import { formatRelativeTime } from '@/utils/date'
 import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
-import { getFallbackHotTopics, searchFallbackDiscussions } from '@/fallbacks/communityFallback'
+import {
+  getFallbackHotTopics,
+  searchFallbackDiscussionsCursor,
+} from '@/fallbacks/communityFallback'
 import {
   isServiceUnavailableError,
   type PublicPageDataSource,
@@ -393,8 +406,11 @@ const isUsingRecentFallback = computed(() => discStore.source === 'fallback')
 const searchQuery = ref('')
 const searchResults = ref<Discussion[]>([])
 const isSearching = ref(false)
+const isSearchingMore = ref(false)
 const searchError = ref<string | null>(null)
 const searchSource = ref<PublicPageDataSource>('live')
+const searchNextCursor = ref<string | null>(null)
+const searchHasMore = ref(false)
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let searchRequestToken = 0
 
@@ -402,7 +418,7 @@ type HotTopicCard = {
   id: string
   title: string
   commentsCount: number
-  viewCount: number
+  platformLabel: string
   route: string
 }
 
@@ -472,6 +488,10 @@ async function fetchDiscussions(): Promise<boolean> {
 }
 
 async function loadMore(): Promise<boolean> {
+  if (searchQuery.value.trim()) {
+    if (!searchHasMore.value || isSearching.value || isSearchingMore.value) return false
+    return searchDiscussions(searchQuery.value.trim(), undefined, undefined, false)
+  }
   if (!hasMore.value || isLoading.value) return false
   return discStore.loadMore()
 }
@@ -485,21 +505,21 @@ async function fetchHotTopics() {
   hotTopicsError.value = null
 
   try {
-    const res = await communityService.getTrending('7d', 1, 6, {
-      signal: controller.signal,
-      skipErrorToast: true,
-    })
+    const res = await communityService.getTrending(
+      '7d',
+      { limit: 6 },
+      {
+        signal: controller.signal,
+        skipErrorToast: true,
+      }
+    )
     if (controller.signal.aborted || requestToken !== hotTopicsRequestToken) return
     hotTopics.value = res.items.slice(0, 6).map((topic) => ({
-      id: topic.id || topic.post_id,
-      title: topic.title || topic.post_title || t('community.hotTopics'),
+      id: topic.post_id,
+      title: topic.title || t('community.hotTopics'),
       commentsCount: topic.comment_count,
-      viewCount: topic.participant_count ?? topic.comment_count,
-      route: topic.post_id
-        ? `/post/${topic.post_id}`
-        : topic.id
-          ? `/community/discussions/${topic.id}`
-          : '/community',
+      platformLabel: topic.platform,
+      route: topic.post_id ? `/post/${topic.post_id}` : '/community',
     }))
     hotTopicsSource.value = 'live'
     await setPublicSnapshot(COMMUNITY_HOT_TOPICS_SNAPSHOT_SCOPE, { limit: 6 }, hotTopics.value)
@@ -523,8 +543,10 @@ async function fetchHotTopics() {
         id: topic.id,
         title: topic.title,
         commentsCount: topic.comments_count,
-        viewCount: topic.view_count,
-        route: `/community/discussions/${topic.id}`,
+        platformLabel: topic.category,
+        route: topic.referenced_post?.id
+          ? `/post/${topic.referenced_post.id}`
+          : `/community/discussions/${topic.id}`,
       }))
     hotTopicsSource.value = cachedTopics ? 'cached' : 'fallback'
     hotTopicsError.value = null
@@ -550,8 +572,11 @@ function clearSearch() {
   searchQuery.value = ''
   searchResults.value = []
   isSearching.value = false
+  isSearchingMore.value = false
   searchError.value = null
   searchSource.value = 'live'
+  searchNextCursor.value = null
+  searchHasMore.value = false
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
 }
 
@@ -562,26 +587,53 @@ function cleanupCommunityTransientState() {
   }
   searchRequestToken += 1
   isSearching.value = false
+  isSearchingMore.value = false
+  searchNextCursor.value = null
+  searchHasMore.value = false
   hotTopicsRequestToken += 1
   hotTopicsController?.abort()
   hotTopicsController = null
   isLoadingHot.value = false
 }
 
-async function searchDiscussions(q: string, signal?: AbortSignal, requestToken?: number) {
+async function searchDiscussions(
+  q: string,
+  signal?: AbortSignal,
+  requestToken?: number,
+  reset = true
+) {
   const token = requestToken ?? ++searchRequestToken
-  isSearching.value = true
-  searchError.value = null
+  const requestCursor = reset ? null : searchNextCursor.value
+  if (reset) {
+    isSearching.value = true
+    searchError.value = null
+  } else {
+    isSearchingMore.value = true
+  }
   try {
     const res = await discussionService.search(
       q,
-      { page: 1, page_size: 20 },
+      { limit: 20, cursor: requestCursor },
       signal ? { signal } : undefined
     )
     if (signal?.aborted || token !== searchRequestToken) return
-    searchResults.value = res.items
+    if (reset) {
+      searchResults.value = res.items
+    } else {
+      const existingIds = new Set(searchResults.value.map((item) => item.id))
+      searchResults.value = [
+        ...searchResults.value,
+        ...res.items.filter((item) => !existingIds.has(item.id)),
+      ]
+    }
     searchSource.value = 'live'
-    await setPublicSnapshot(COMMUNITY_SEARCH_SNAPSHOT_SCOPE, { q }, res.items)
+    searchNextCursor.value = res.next_cursor ?? null
+    searchHasMore.value = Boolean(res.has_more && res.next_cursor)
+    await setPublicSnapshot(
+      COMMUNITY_SEARCH_SNAPSHOT_SCOPE,
+      { q, cursor: requestCursor, limit: 20 },
+      res
+    )
   } catch (err: unknown) {
     if (
       signal?.aborted ||
@@ -591,12 +643,29 @@ async function searchDiscussions(q: string, signal?: AbortSignal, requestToken?:
       return
     }
     if (isServiceUnavailableError(err)) {
-      const cachedResults = await getPublicSnapshot<Discussion[]>(COMMUNITY_SEARCH_SNAPSHOT_SCOPE, {
-        q,
+      const snapshotKey = { q, cursor: requestCursor, limit: 20 }
+      const cachedResults = await getPublicSnapshot<{
+        items: Discussion[]
+        next_cursor?: string | null
+        has_more: boolean
+      }>(COMMUNITY_SEARCH_SNAPSHOT_SCOPE, snapshotKey)
+      const fallbackRes = searchFallbackDiscussionsCursor(q, {
+        limit: 20,
+        cursor: requestCursor,
       })
-      const fallbackRes = searchFallbackDiscussions(q, { page: 1, page_size: 20 })
-      searchResults.value = cachedResults ?? fallbackRes.items
+      const resolved = cachedResults ?? fallbackRes
+      if (reset) {
+        searchResults.value = resolved.items
+      } else {
+        const existingIds = new Set(searchResults.value.map((item) => item.id))
+        searchResults.value = [
+          ...searchResults.value,
+          ...resolved.items.filter((item) => !existingIds.has(item.id)),
+        ]
+      }
       searchSource.value = cachedResults ? 'cached' : 'fallback'
+      searchNextCursor.value = resolved.next_cursor ?? null
+      searchHasMore.value = Boolean(resolved.has_more && resolved.next_cursor)
       searchError.value = null
       return
     }
@@ -604,6 +673,7 @@ async function searchDiscussions(q: string, signal?: AbortSignal, requestToken?:
   } finally {
     if (token === searchRequestToken) {
       isSearching.value = false
+      isSearchingMore.value = false
     }
   }
 }
@@ -620,8 +690,11 @@ watch(
       searchRequestToken += 1
       searchResults.value = []
       isSearching.value = false
+      isSearchingMore.value = false
       searchError.value = null
       searchSource.value = 'live'
+      searchNextCursor.value = null
+      searchHasMore.value = false
       return
     }
 
@@ -646,10 +719,15 @@ useInfiniteScroll(sentinelRef, loadMore, {
   rootMargin: '800px',
   enabled: () =>
     isPageActive.value &&
-    activeTab.value === 'recent' &&
-    hasMore.value &&
-    !isLoading.value &&
-    !isLoadingMore.value,
+    ((searchQuery.value.trim() &&
+      searchHasMore.value &&
+      !isSearching.value &&
+      !isSearchingMore.value) ||
+      (!searchQuery.value.trim() &&
+        activeTab.value === 'recent' &&
+        hasMore.value &&
+        !isLoading.value &&
+        !isLoadingMore.value)),
 })
 
 onMounted(() => {
@@ -1089,8 +1167,9 @@ onUnmounted(() => {
   gap: var(--spacing-1);
 }
 
-.topic-views {
+.topic-platform {
   color: var(--color-text-tertiary);
+  text-transform: capitalize;
 }
 
 .my-comments-list,

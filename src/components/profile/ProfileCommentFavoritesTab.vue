@@ -1,6 +1,6 @@
 <template>
   <div class="comment-favorites-tab">
-    <ProfileTabHeader :title="$t('profile.tabs.commentFavorites')" :count="total" />
+    <ProfileTabHeader :title="$t('profile.tabs.commentFavorites')" :count="displayTotal" />
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchFavorites" />
 
@@ -82,7 +82,7 @@
       <LoadMoreSection
         v-if="hasMore"
         :count="items.length"
-        :total="total"
+        :total="displayTotal"
         :has-more="hasMore"
         :loading="isLoadingMore"
         @load-more="loadMore"
@@ -105,8 +105,8 @@ import { ref, computed, onMounted, onUnmounted, defineAsyncComponent, watch } fr
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, Bookmark, BookmarkMinus } from '@lucide/vue'
-import { apiClient, ApiError } from '@/api'
-import type { MyCommentFavoriteItem } from '@/api'
+import { apiClient, ApiError, historyService, type MyCommentFavoriteItem } from '@/api'
+import { normalizeHistorySummaryCounts } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
@@ -128,13 +128,15 @@ const pendingUnfavoriteItem = ref<MyCommentFavoriteItem | null>(null)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
-const page = ref(1)
-const total = ref(0)
+const nextCursor = ref<string | null>(null)
+const total = ref<number | null>(null)
 const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
 let commentFavoritesController: AbortController | null = null
 let commentFavoritesRequestToken = 0
 
-const hasMore = computed(() => items.value.length < total.value)
+const hasMoreState = ref(false)
+const hasMore = computed(() => hasMoreState.value)
+const displayTotal = computed(() => total.value ?? (items.value.length || undefined))
 
 function abortCommentFavoritesRequest() {
   commentFavoritesController?.abort()
@@ -145,7 +147,7 @@ async function fetchFavorites(reset = true): Promise<boolean> {
   if (reset) {
     abortCommentFavoritesRequest()
     isLoading.value = true
-    page.value = 1
+    nextCursor.value = null
   } else {
     if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
@@ -156,25 +158,30 @@ async function fetchFavorites(reset = true): Promise<boolean> {
   const requestToken = ++commentFavoritesRequestToken
 
   try {
-    const res = await apiClient.get<{
-      items: MyCommentFavoriteItem[]
-      total: number
-      page: number
-      page_size: number
-      has_more: boolean
-    }>(`/history/my-comment-favorites?page=${page.value}&page_size=${pageSize.value}`, {
-      signal: controller.signal,
-      skipErrorToast: true,
-    })
+    const res = await historyService.getMyCommentFavorites(
+      {
+        limit: pageSize.value,
+        cursor: reset ? null : nextCursor.value,
+      },
+      {
+        signal: controller.signal,
+        skipErrorToast: true,
+      }
+    )
     if (controller.signal.aborted || requestToken !== commentFavoritesRequestToken) return false
     const nextItems = Array.isArray(res.items) ? res.items : []
 
     if (reset) {
       items.value = nextItems
     } else {
-      items.value.push(...nextItems)
+      const existingIds = new Set(items.value.map((item) => String(item.id)))
+      items.value.push(...nextItems.filter((item) => !existingIds.has(String(item.id))))
     }
-    total.value = res.total
+    nextCursor.value = res.next_cursor ?? null
+    hasMoreState.value = Boolean(res.has_more && res.next_cursor)
+    if (reset) {
+      void refreshCommentFavoritesSummary()
+    }
     return true
   } catch (err) {
     if (controller.signal.aborted || requestToken !== commentFavoritesRequestToken) return false
@@ -195,11 +202,20 @@ async function fetchFavorites(reset = true): Promise<boolean> {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  const nextPage = page.value + 1
-  page.value = nextPage
-  const ok = await fetchFavorites(false)
-  if (!ok) {
-    page.value = nextPage - 1
+  await fetchFavorites(false)
+}
+
+async function refreshCommentFavoritesSummary() {
+  try {
+    const summary = await historyService.getSummary()
+    const counts = normalizeHistorySummaryCounts(summary)
+    total.value = counts.commentFavorites
+    if (total.value === null) {
+      const stats = await historyService.getStats()
+      total.value = normalizeHistorySummaryCounts(stats).commentFavorites
+    }
+  } catch {
+    total.value = items.value.length > 0 ? items.value.length : null
   }
 }
 
@@ -240,7 +256,9 @@ async function confirmUnfavorite() {
   try {
     await apiClient.delete(`/comments/${item.id}/favorite`)
     items.value = items.value.filter((c) => c.id !== item.id)
-    total.value = Math.max(0, total.value - 1)
+    if (typeof total.value === 'number') {
+      total.value = Math.max(0, total.value - 1)
+    }
     toastStore.success(t('profile.unfavoriteSuccess'))
   } catch (err) {
     toastStore.error(err instanceof ApiError ? err.message : t('common.error'))
