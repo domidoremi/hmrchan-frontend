@@ -42,6 +42,10 @@ const testState = vi.hoisted(() => ({
     siteKey: '',
     enabled: false,
   },
+  googleAuth: {
+    prepareGoogleAuthHandoff: vi.fn(),
+    resolveGoogleAuthSecurityError: vi.fn(),
+  },
 }))
 
 vi.mock('vue-router', () => ({
@@ -123,6 +127,18 @@ vi.mock('@/composables/useTurnstileConfig', async () => {
   }
 })
 
+vi.mock('@/services/googleAuthService', async () => {
+  const actual = await vi.importActual<typeof import('@/services/googleAuthService')>(
+    '@/services/googleAuthService'
+  )
+
+  return {
+    ...actual,
+    prepareGoogleAuthHandoff: testState.googleAuth.prepareGoogleAuthHandoff,
+    resolveGoogleAuthSecurityError: testState.googleAuth.resolveGoogleAuthSecurityError,
+  }
+})
+
 const globalConfig = {
   mocks: {
     $t: (key: string) => key,
@@ -178,6 +194,18 @@ describe('Auth entry pages', () => {
     testState.toastStore.warning.mockReset()
     testState.turnstile.siteKey = ''
     testState.turnstile.enabled = false
+    testState.googleAuth.prepareGoogleAuthHandoff.mockReset()
+    testState.googleAuth.prepareGoogleAuthHandoff.mockImplementation(
+      async (handoffCode: string) => ({
+        status: 'ready',
+        handoffCode,
+      })
+    )
+    testState.googleAuth.resolveGoogleAuthSecurityError.mockReset()
+    testState.googleAuth.resolveGoogleAuthSecurityError.mockReturnValue({
+      messageKey: 'auth.error.turnstileFailed',
+      detail: 'turnstile failed',
+    })
   })
 
   afterEach(() => {
@@ -319,13 +347,9 @@ describe('Auth entry pages', () => {
 
     await flushPromises()
 
-    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
-    expect(testState.routerReplace).toHaveBeenCalledWith({
-      path: '/auth/callback',
-      query: {
-        handoff_code: 'popup-handoff',
-      },
-    })
+    expect(testState.googleAuth.prepareGoogleAuthHandoff).toHaveBeenCalledWith('popup-handoff', '')
+    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('popup-handoff')
+    expect(testState.routerReplace).toHaveBeenCalledWith('/feed')
   })
 
   it('surfaces login popup fallback without probing refresh on popup timeout', async () => {

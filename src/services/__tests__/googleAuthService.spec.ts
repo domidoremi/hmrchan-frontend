@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  bridgeGooglePopupResult,
   clearPendingGoogleAuthRequest,
   getPendingGoogleAuthRequest,
   openGoogleAuthPopup,
   prefersGoogleAuthPopup,
   publishGooglePopupResult,
+  resolveGooglePopupBridgeMessage,
   startGoogleAuthRedirect,
   waitForGooglePopupResult,
 } from '../googleAuthService'
@@ -92,6 +94,65 @@ describe('googleAuthService', () => {
     const result = openGoogleAuthPopup('register', '/')
 
     expect(result).toEqual({ status: 'blocked' })
+  })
+
+  it('builds a popup bridge message from raw query params on any popup route', () => {
+    const message = resolveGooglePopupBridgeMessage({
+      search: '?handoff_code=handoff-any-route',
+      pendingRequest: {
+        requestId: 'popup-request-1',
+        mode: 'popup',
+        intent: 'login',
+        redirectTo: '/profile',
+        createdAt: Date.now(),
+      },
+    })
+
+    expect(message).toEqual({
+      type: 'google-auth-result',
+      requestId: 'popup-request-1',
+      status: 'success',
+      handoffCode: 'handoff-any-route',
+      redirectTo: '/profile',
+      intent: 'login',
+    })
+  })
+
+  it('bridges popup results before app mount when the popup lands on the wrong route', () => {
+    const postMessage = vi.fn()
+
+    const bridge = bridgeGooglePopupResult({
+      search: '?error=access_denied',
+      opener: { postMessage } as unknown as Window,
+      pendingRequest: {
+        requestId: 'popup-request-2',
+        mode: 'popup',
+        intent: 'register',
+        redirectTo: '/welcome',
+        createdAt: Date.now(),
+      },
+    })
+
+    expect(bridge).toEqual({
+      handled: true,
+      message: {
+        type: 'google-auth-result',
+        requestId: 'popup-request-2',
+        status: 'error',
+        error: 'access_denied',
+        redirectTo: '/welcome',
+        intent: 'register',
+      },
+    })
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'google-auth-result',
+        requestId: 'popup-request-2',
+        status: 'error',
+        error: 'access_denied',
+      }),
+      window.location.origin
+    )
   })
 
   it('opens Google auth through the site proxy instead of the API origin', () => {

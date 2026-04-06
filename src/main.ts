@@ -25,6 +25,7 @@ import {
 } from './utils/analyticsConsent'
 import { reportClientError, reportClientEvent } from './utils/clientReporter'
 import vClickOutside from './directives/clickOutside'
+import { bridgeGooglePopupResult } from './services/googleAuthService'
 
 // 生产环境控制台保护（防止 Self-XSS 攻击）
 import { initConsoleGuard } from './utils/consoleGuard'
@@ -56,6 +57,134 @@ if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     disposeConsoleFilter()
   })
+}
+
+const EARLY_GOOGLE_POPUP_CLOSE_DELAY_MS = 320
+const EARLY_GOOGLE_POPUP_MANUAL_CLOSE_HINT_DELAY_MS = 1000
+
+function resolveEarlyGooglePopupCopy(): { title: string; body: string; action: string } {
+  const locale = typeof navigator !== 'undefined' ? navigator.language.trim().toLowerCase() : 'en'
+
+  if (locale.startsWith('zh-cn') || locale.startsWith('zh-hans')) {
+    return {
+      title: 'Google 登录完成',
+      body: '此窗口即将自动关闭。如未关闭，可手动关闭后返回原窗口继续。',
+      action: '关闭窗口',
+    }
+  }
+
+  if (locale.startsWith('zh-tw') || locale.startsWith('zh-hk') || locale.startsWith('zh-hant')) {
+    return {
+      title: 'Google 登入已完成',
+      body: '此視窗即將自動關閉。若未關閉，請手動關閉後返回原頁面繼續。',
+      action: '關閉視窗',
+    }
+  }
+
+  if (locale.startsWith('ja')) {
+    return {
+      title: 'Google ログインが完了しました',
+      body: 'このウィンドウは自動で閉じるはずです。閉じない場合は手動で閉じて元のタブに戻ってください。',
+      action: 'ウィンドウを閉じる',
+    }
+  }
+
+  return {
+    title: 'Google sign-in complete',
+    body: 'This window should close automatically. If it stays open, close it and return to the original tab.',
+    action: 'Close window',
+  }
+}
+
+function renderEarlyGooglePopupFallback(): void {
+  if (typeof document === 'undefined') return
+
+  const copy = resolveEarlyGooglePopupCopy()
+  const mountTarget = document.getElementById('app-root') ?? document.body
+  if (!mountTarget) return
+
+  mountTarget.innerHTML = ''
+
+  const shell = document.createElement('div')
+  shell.setAttribute(
+    'style',
+    [
+      'min-height:100vh',
+      'display:flex',
+      'align-items:center',
+      'justify-content:center',
+      'padding:2rem',
+      'background:#0b1117',
+      'color:#f3f7fb',
+      'font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
+    ].join(';')
+  )
+
+  const card = document.createElement('div')
+  card.setAttribute(
+    'style',
+    [
+      'width:min(28rem,100%)',
+      'padding:1.5rem',
+      'border:0.0625rem solid rgba(255,255,255,0.12)',
+      'border-radius:1rem',
+      'background:rgba(12,18,26,0.92)',
+      'box-shadow:0 1rem 3rem rgba(0,0,0,0.32)',
+      'text-align:center',
+    ].join(';')
+  )
+
+  const title = document.createElement('p')
+  title.textContent = copy.title
+  title.setAttribute('style', 'margin:0 0 0.75rem;font-size:1rem;font-weight:600;')
+
+  const body = document.createElement('p')
+  body.textContent = copy.body
+  body.setAttribute(
+    'style',
+    'margin:0;color:rgba(243,247,251,0.76);font-size:0.9375rem;line-height:1.5;'
+  )
+
+  const action = document.createElement('button')
+  action.type = 'button'
+  action.textContent = copy.action
+  action.hidden = true
+  action.setAttribute(
+    'style',
+    [
+      'margin-top:1rem',
+      'padding:0.75rem 1rem',
+      'border:0',
+      'border-radius:999rem',
+      'background:#f3f7fb',
+      'color:#0b1117',
+      'font:inherit',
+      'cursor:pointer',
+    ].join(';')
+  )
+  action.addEventListener('click', () => {
+    window.close()
+  })
+
+  card.append(title, body, action)
+  shell.append(card)
+  mountTarget.append(shell)
+
+  window.setTimeout(() => {
+    action.hidden = false
+  }, EARLY_GOOGLE_POPUP_MANUAL_CLOSE_HINT_DELAY_MS)
+}
+
+const earlyGooglePopupBridge = bridgeGooglePopupResult()
+if (earlyGooglePopupBridge.handled) {
+  if (typeof window !== 'undefined') {
+    window.setTimeout(() => {
+      window.close()
+    }, EARLY_GOOGLE_POPUP_CLOSE_DELAY_MS)
+  }
+
+  renderEarlyGooglePopupFallback()
+  await new Promise<void>(() => undefined)
 }
 
 const app = createApp(App)

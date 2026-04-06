@@ -6,7 +6,6 @@ import AuthCallbackPage from '../AuthCallbackPage.vue'
 const testState = vi.hoisted(() => ({
   route: { query: {} as Record<string, unknown> },
   routerReplace: vi.fn(),
-  publishGooglePopupResult: vi.fn(),
   api: {
     authService: {
       getTurnstileConfig: vi.fn(),
@@ -100,7 +99,6 @@ vi.mock('@/services/googleAuthService', async () => {
   return {
     ...actual,
     getPendingGoogleAuthRequest: () => testState.pendingGoogleAuthRequest,
-    publishGooglePopupResult: testState.publishGooglePopupResult,
   }
 })
 
@@ -135,6 +133,7 @@ describe('AuthCallbackPage', () => {
       writable: true,
     })
     testState.route.query = { handoff_code: 'popup-handoff' }
+    window.history.replaceState({}, '', '/auth/callback?handoff_code=popup-handoff')
     testState.routerReplace.mockReset()
     testState.api.authService.getTurnstileConfig.mockReset()
     testState.api.clientSecurityService.init.mockReset()
@@ -162,9 +161,9 @@ describe('AuthCallbackPage', () => {
     }
     testState.authStore.completeGoogleAuth = vi.fn()
     testState.authStore.verifyRiskLogin = vi.fn()
-    testState.publishGooglePopupResult.mockReset()
     testState.toastStore.success.mockReset()
     testState.toastStore.error.mockReset()
+    localStorage.clear()
     vi.useFakeTimers()
   })
 
@@ -202,14 +201,7 @@ describe('AuthCallbackPage', () => {
       }),
       'http://127.0.0.1:4173'
     )
-    expect(testState.publishGooglePopupResult).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'google-auth-result',
-        requestId: 'popup-request-1',
-        status: 'success',
-        handoffCode: 'popup-handoff',
-      })
-    )
+    expect(localStorage.getItem('__momi_google_auth_popup_result__')).toContain('popup-handoff')
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
     expect(closeSpy).toHaveBeenCalled()
   })
@@ -240,13 +232,7 @@ describe('AuthCallbackPage', () => {
       }),
       window.location.origin
     )
-    expect(testState.publishGooglePopupResult).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'google-auth-result',
-        status: 'success',
-        handoffCode: 'popup-handoff',
-      })
-    )
+    expect(localStorage.getItem('__momi_google_auth_popup_result__')).toContain('popup-handoff')
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
     expect(closeSpy).toHaveBeenCalled()
   })
@@ -271,20 +257,14 @@ describe('AuthCallbackPage', () => {
     await flushPromises()
     vi.advanceTimersByTime(400)
 
-    expect(testState.publishGooglePopupResult).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'google-auth-result',
-        requestId: 'popup-request-1',
-        status: 'success',
-        handoffCode: 'popup-handoff',
-      })
-    )
+    expect(localStorage.getItem('__momi_google_auth_popup_result__')).toContain('popup-handoff')
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
     expect(closeSpy).toHaveBeenCalled()
   })
 
   it('does not call google exchange when callback contains an OAuth error', async () => {
     testState.route.query = { error: 'access_denied' }
+    window.history.replaceState({}, '', '/auth/callback?error=access_denied')
     testState.pendingGoogleAuthRequest = {
       requestId: 'redirect-error-1',
       mode: 'redirect',
@@ -309,6 +289,7 @@ describe('AuthCallbackPage', () => {
 
   it('continues full-page exchange when the pending auth mode is redirect', async () => {
     testState.route.query = { handoff_code: 'redirect-handoff' }
+    window.history.replaceState({}, '', '/auth/callback?handoff_code=redirect-handoff')
     testState.pendingGoogleAuthRequest = {
       requestId: 'redirect-request-1',
       mode: 'redirect',
@@ -335,7 +316,7 @@ describe('AuthCallbackPage', () => {
 
     await flushPromises()
 
-    expect(testState.publishGooglePopupResult).not.toHaveBeenCalled()
+    expect(localStorage.getItem('__momi_google_auth_popup_result__')).toBeNull()
     expect(testState.api.authService.getTurnstileConfig).toHaveBeenCalledTimes(1)
     expect(testState.api.clientSecurityService.init).toHaveBeenCalledWith(false, {
       promptChallenge: false,
@@ -345,6 +326,7 @@ describe('AuthCallbackPage', () => {
 
   it('shows an inline client challenge step before exchange when client init requires verification', async () => {
     testState.route.query = { handoff_code: 'redirect-handoff' }
+    window.history.replaceState({}, '', '/auth/callback?handoff_code=redirect-handoff')
     testState.pendingGoogleAuthRequest = {
       requestId: 'redirect-request-1',
       mode: 'redirect',
@@ -376,6 +358,7 @@ describe('AuthCallbackPage', () => {
 
   it('verifies the inline client challenge before exchanging the Google handoff', async () => {
     testState.route.query = { handoff_code: 'redirect-handoff' }
+    window.history.replaceState({}, '', '/auth/callback?handoff_code=redirect-handoff')
     testState.pendingGoogleAuthRequest = {
       requestId: 'redirect-request-1',
       mode: 'redirect',
