@@ -513,4 +513,128 @@ describe('Auth entry pages', () => {
     expect(wrapper.text()).toContain('auth.error.googleLoginFailed')
     expect(wrapper.text()).toContain('Failed to complete Google login')
   })
+
+  it('exits the login Google challenge state when the handoff has expired', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+    )
+    vi.spyOn(window, 'open').mockReturnValue({
+      closed: false,
+      focus: vi.fn(),
+      close: vi.fn(),
+    } as unknown as Window)
+
+    testState.googleAuth.prepareGoogleAuthHandoff.mockResolvedValueOnce({
+      status: 'challenge-required',
+      handoffCode: 'popup-handoff',
+      siteKey: 'site-key',
+    })
+    testState.authStore.completeGoogleAuth = vi.fn().mockResolvedValue({
+      status: 'error',
+      error: 'auth.error.googleLoginExpired',
+      code: 'invalid_google_handoff',
+      detail: 'Invalid or expired Google handoff code',
+    })
+
+    const wrapper = mount(LoginPage, {
+      global: globalConfig,
+    })
+
+    const googleButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('auth.googleLoginButton'))
+
+    await googleButton!.trigger('click')
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        origin: window.location.origin,
+        data: {
+          type: 'google-auth-result',
+          status: 'success',
+          handoffCode: 'popup-handoff',
+        },
+      })
+    )
+    await flushPromises()
+
+    const turnstileWidgets = wrapper.findAllComponents({ name: 'TurnstileWidget' })
+    turnstileWidgets.at(-1)!.vm.$emit('verify', 'verified-token')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('auth.error.googleLoginExpired')
+    expect(wrapper.text()).not.toContain('auth.clientChallengeHint')
+  })
+
+  it('exits the register Google challenge state when the handoff has expired', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+    )
+    vi.spyOn(window, 'open').mockReturnValue({
+      closed: false,
+      focus: vi.fn(),
+      close: vi.fn(),
+    } as unknown as Window)
+
+    testState.googleAuth.prepareGoogleAuthHandoff.mockResolvedValueOnce({
+      status: 'challenge-required',
+      handoffCode: 'popup-handoff',
+      siteKey: 'site-key',
+    })
+    testState.authStore.completeGoogleAuth = vi.fn().mockResolvedValue({
+      status: 'error',
+      error: 'auth.error.googleLoginExpired',
+      code: 'invalid_google_handoff',
+      detail: 'Invalid or expired Google handoff code',
+    })
+
+    const wrapper = mount(RegisterPage, {
+      global: globalConfig,
+    })
+
+    const googleButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('auth.googleRegisterButton'))
+
+    await googleButton!.trigger('click')
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        origin: window.location.origin,
+        data: {
+          type: 'google-auth-result',
+          status: 'success',
+          handoffCode: 'popup-handoff',
+        },
+      })
+    )
+    await flushPromises()
+
+    const turnstileWidgets = wrapper.findAllComponents({ name: 'TurnstileWidget' })
+    turnstileWidgets.at(-1)!.vm.$emit('verify', 'verified-token')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('auth.error.googleLoginExpired')
+    expect(wrapper.text()).not.toContain('auth.clientChallengeHint')
+  })
 })
