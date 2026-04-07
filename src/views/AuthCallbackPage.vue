@@ -43,8 +43,6 @@
           class="auth-form"
         >
           <div class="auth-card auth-card--stack auth-callback-card">
-            <p class="auth-helper">{{ $t('auth.clientChallengeHint') }}</p>
-
             <div v-if="resolvedClientChallengeSiteKey" class="turnstile-block">
               <div class="turnstile-header">
                 <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
@@ -284,7 +282,7 @@ const pageSubtitle = computed(() => {
 
   switch (currentStep.value) {
     case 'client-challenge':
-      return t('auth.clientChallengeHint')
+      return ''
     case 'risk-verification':
       return t('auth.riskVerificationHint')
     case 'mfa':

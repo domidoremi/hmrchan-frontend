@@ -171,7 +171,6 @@
             </div>
             <div class="auth-inline-state__content">
               <p class="auth-restore__title">{{ $t('auth.verifyTitle') }}</p>
-              <p class="auth-inline-state__copy">{{ $t('auth.clientChallengeHint') }}</p>
 
               <div v-if="resolvedGoogleClientChallengeSiteKey" class="turnstile-block">
                 <div class="turnstile-header">

@@ -2,7 +2,6 @@
   <Dialog
     :is-open="isOpen"
     :title="$t('auth.verifyTitle')"
-    :description="$t('auth.clientChallengeHint')"
     size="sm"
     allow-overflow
     @update:isOpen="handleDialogToggle"

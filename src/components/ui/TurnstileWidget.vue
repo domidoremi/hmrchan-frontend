@@ -349,18 +349,26 @@ defineExpose({
 
 <style scoped>
 .turnstile-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 0;
+  display: grid;
+  place-items: center;
+  inline-size: min(100%, clamp(18rem, 88vw, 20rem));
+  min-inline-size: 0;
+  margin-inline: auto;
+  padding-inline: clamp(0.2rem, 0.8vw, 0.4rem);
+  min-block-size: 0;
 }
 
 .turnstile-container--normal {
-  min-height: 4.0625rem;
+  min-block-size: clamp(4.35rem, 6vw, 4.9rem);
 }
 
 .turnstile-container--compact {
-  min-height: 3.25rem;
+  min-block-size: clamp(4rem, 5vw, 4.45rem);
+}
+
+.turnstile-container :deep(iframe),
+.turnstile-container :deep(div) {
+  max-inline-size: 100%;
+  margin-inline: auto;
 }
 </style>
