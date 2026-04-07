@@ -120,7 +120,7 @@
     "riskVerificationCode": "メール確認コード",
     "riskVerificationCodePlaceholder": "6桁のメール確認コードを入力",
     "riskVerificationExpiresIn": "このコードは {seconds} 秒後に失効します",
-    "clientChallengeHint": "この操作を続けるには、人間確認を完了してこのクライアントの信頼レベルを引き上げてください。",
+    "clientChallengeHint": "",
     "clientChallengeLoading": "セキュリティ確認を準備しています…",
     "backToLogin": "ログインに戻る",
     "verifyButton": "認証する",
