@@ -120,7 +120,7 @@
     "riskVerificationCode": "邮箱验证码",
     "riskVerificationCodePlaceholder": "输入 6 位邮箱验证码",
     "riskVerificationExpiresIn": "验证码将在 {seconds} 秒后失效",
-    "clientChallengeHint": "为了继续当前操作，请先完成人机验证并提升当前客户端的信任等级。",
+    "clientChallengeHint": "",
     "clientChallengeLoading": "正在准备安全验证，请稍候…",
     "backToLogin": "返回登录",
     "verifyButton": "验证",

@@ -352,7 +352,8 @@ describe('AuthCallbackPage', () => {
     await flushPromises()
 
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('auth.clientChallengeHint')
+    expect(wrapper.text()).not.toContain('auth.clientChallengeHint')
+    expect(wrapper.text()).toContain('auth.verifyTitle')
     expect(wrapper.find('.turnstile-widget-stub').exists()).toBe(true)
   })
 

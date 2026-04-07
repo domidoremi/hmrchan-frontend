@@ -196,7 +196,7 @@
     "riskVerificationCode": "信箱驗證碼",
     "riskVerificationCodePlaceholder": "輸入 6 位信箱驗證碼",
     "riskVerificationExpiresIn": "驗證碼將在 {seconds} 秒後失效",
-    "clientChallengeHint": "為了繼續目前操作，請先完成人機驗證並提升目前裝置的信任等級。",
+    "clientChallengeHint": "",
     "clientChallengeLoading": "正在準備安全驗證，請稍候…",
     "stepUp": {
       "title": "請確認是你本人",

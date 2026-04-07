@@ -120,7 +120,7 @@
     "riskVerificationCode": "Email Verification Code",
     "riskVerificationCodePlaceholder": "Enter 6-digit email code",
     "riskVerificationExpiresIn": "This code expires in {seconds} seconds",
-    "clientChallengeHint": "Please complete the verification to continue this action and raise the trust level of this client.",
+    "clientChallengeHint": "",
     "clientChallengeLoading": "Preparing the security verification…",
     "backToLogin": "Back to login",
     "verifyButton": "Verify",
