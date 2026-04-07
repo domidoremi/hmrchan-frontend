@@ -148,7 +148,7 @@
                     : $t('auth.googlePopupWaitingHint')
                 }}
               </p>
-              <div v-if="googlePopupState === 'recovery'" class="auth-inline-state__actions">
+              <div class="auth-inline-state__actions">
                 <Button
                   type="button"
                   variant="ghost"
@@ -441,7 +441,6 @@ const googleClientChallengeError = ref('')
 const googleClientChallengeDetail = ref('')
 const isGoogleClientChallengeSubmitting = ref(false)
 let googlePopupDispose: (() => void) | null = null
-let googlePopupRecoveryTimer: ReturnType<typeof setTimeout> | null = null
 let activeGooglePopupWindow: Window | null = null
 let googlePopupFlowToken = 0
 
@@ -596,12 +595,6 @@ function setGooglePopupStatus(state: GooglePopupState, errorKey = '') {
   googlePopupErrorKey.value = errorKey
 }
 
-function clearGooglePopupRecoveryTimer() {
-  if (!googlePopupRecoveryTimer) return
-  clearTimeout(googlePopupRecoveryTimer)
-  googlePopupRecoveryTimer = null
-}
-
 function closeActiveGooglePopupWindow() {
   const popup = activeGooglePopupWindow
   activeGooglePopupWindow = null
@@ -617,15 +610,6 @@ function closeActiveGooglePopupWindow() {
   }
 }
 
-function armGooglePopupRecovery(flowToken: number) {
-  clearGooglePopupRecoveryTimer()
-  googlePopupRecoveryTimer = setTimeout(() => {
-    if (flowToken === googlePopupFlowToken && googlePopupState.value === 'waiting') {
-      void continueGoogleInCurrentPage({ closePopup: true })
-    }
-  }, 12000)
-}
-
 function clearGooglePopupListener(options: { closePopup?: boolean; invalidate?: boolean } = {}) {
   if (options.invalidate !== false) {
     googlePopupFlowToken += 1
@@ -634,7 +618,6 @@ function clearGooglePopupListener(options: { closePopup?: boolean; invalidate?: 
     googlePopupDispose()
     googlePopupDispose = null
   }
-  clearGooglePopupRecoveryTimer()
   if (options.closePopup) {
     closeActiveGooglePopupWindow()
     return
@@ -944,7 +927,6 @@ async function handleGoogleContinue() {
   activeGooglePopupWindow = popupResult.popup
   googlePopupDispose = popupResult.dispose
   setGooglePopupStatus('waiting')
-  armGooglePopupRecovery(flowToken)
 
   void popupResult.promise.then(async (message) => {
     if (flowToken !== googlePopupFlowToken) {
@@ -952,7 +934,6 @@ async function handleGoogleContinue() {
     }
 
     googlePopupDispose = null
-    clearGooglePopupRecoveryTimer()
     activeGooglePopupWindow = null
     setGooglePopupStatus('handling')
     await handleGooglePopupResult(message)
