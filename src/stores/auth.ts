@@ -554,6 +554,13 @@ export const useAuthStore = defineStore('auth', () => {
       case 'google_exchange_failed':
       case 'invalid_google_identity':
       case 'handoff_failed':
+      case 'google_identity_resolution_failed':
+      case 'google_login_completion_failed':
+      case 'google_email_unverified':
+        return 'auth.error.googleLoginFailed'
+      case 'invalid_google_handoff':
+        return 'auth.error.googleLoginExpired'
+      case 'invalid_google_target':
         return 'auth.error.googleLoginFailed'
       case 'USER_1101':
       case 'USER_EXISTS':
@@ -587,6 +594,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     switch (detail) {
       case 'invalid or expired google handoff code':
+        return 'auth.error.googleLoginExpired'
+      case 'invalid google handoff code':
         return 'auth.error.googleLoginExpired'
       case 'invalid or expired google link token':
         return 'auth.error.googleLinkExpired'

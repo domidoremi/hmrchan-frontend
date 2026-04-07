@@ -133,6 +133,11 @@ function isRecoverableVerifyError(error: unknown): error is ApiError {
     return false
   }
 
+  const normalizedCode = error.code?.toUpperCase()
+  if (normalizedCode === 'INVALID_CLIENT_TOKEN' || normalizedCode === 'CLIENT_TOKEN_EXPIRED') {
+    return true
+  }
+
   const rawMessage =
     typeof error.details?.rawMessage === 'string' ? error.details.rawMessage.toLowerCase() : ''
 
