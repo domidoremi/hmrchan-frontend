@@ -38,6 +38,9 @@ const testState = vi.hoisted(() => ({
       restoreAccount: vi.fn(),
     },
   },
+  clientSecurity: {
+    verify: vi.fn(),
+  },
   turnstile: {
     siteKey: '',
     enabled: false,
@@ -103,6 +106,12 @@ vi.mock('@/api', () => ({
       this.status = status
       this.code = code
     }
+  },
+}))
+
+vi.mock('@/api/clientSecurityService', () => ({
+  clientSecurityService: {
+    verify: testState.clientSecurity.verify,
   },
 }))
 
@@ -188,6 +197,11 @@ describe('Auth entry pages', () => {
 
     testState.api.authService.sendRegistrationCode.mockReset()
     testState.api.userService.restoreAccount.mockReset()
+    testState.clientSecurity.verify.mockReset()
+    testState.clientSecurity.verify.mockResolvedValue({
+      success: true,
+      trust_level: 'basic',
+    })
 
     testState.toastStore.success.mockReset()
     testState.toastStore.error.mockReset()
@@ -434,5 +448,69 @@ describe('Auth entry pages', () => {
     expect(testState.authStore.startGoogleAuth).toHaveBeenCalledWith('register', '/welcome')
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
     expect(wrapper.text()).not.toContain('auth.error.googlePopupClosed')
+  })
+
+  it('keeps Google challenge errors visible on the login page after verify succeeds but exchange fails', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+    )
+    vi.spyOn(window, 'open').mockReturnValue({
+      closed: false,
+      focus: vi.fn(),
+      close: vi.fn(),
+    } as unknown as Window)
+
+    testState.googleAuth.prepareGoogleAuthHandoff.mockResolvedValueOnce({
+      status: 'challenge-required',
+      handoffCode: 'popup-handoff',
+      siteKey: 'site-key',
+    })
+    testState.authStore.completeGoogleAuth = vi.fn().mockResolvedValue({
+      status: 'error',
+      error: 'auth.error.googleLoginFailed',
+      code: 'google_login_completion_failed',
+      detail: 'Failed to complete Google login',
+    })
+
+    const wrapper = mount(LoginPage, {
+      global: globalConfig,
+    })
+
+    const googleButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('auth.googleLoginButton'))
+
+    await googleButton!.trigger('click')
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        origin: window.location.origin,
+        data: {
+          type: 'google-auth-result',
+          status: 'success',
+          handoffCode: 'popup-handoff',
+        },
+      })
+    )
+    await flushPromises()
+
+    const turnstileWidgets = wrapper.findAllComponents({ name: 'TurnstileWidget' })
+    turnstileWidgets.at(-1)!.vm.$emit('verify', 'verified-token')
+    await flushPromises()
+
+    expect(testState.clientSecurity.verify).toHaveBeenCalledWith('verified-token')
+    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('popup-handoff')
+    expect(wrapper.text()).toContain('auth.error.googleLoginFailed')
+    expect(wrapper.text()).toContain('Failed to complete Google login')
   })
 })

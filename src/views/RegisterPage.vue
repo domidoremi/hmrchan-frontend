@@ -950,6 +950,11 @@ async function handleGoogleClientChallengeVerify(token: string) {
     }
 
     const result = await authStore.completeGoogleAuth(pendingGoogleHandoffCode.value.trim())
+    if (result.status === 'error') {
+      googleClientChallengeError.value = t(result.error)
+      googleClientChallengeDetail.value = result.detail || ''
+      return
+    }
     await applyAuthFlowResult(result)
   } catch (error) {
     const resolvedError = resolveGoogleAuthSecurityError(error)
