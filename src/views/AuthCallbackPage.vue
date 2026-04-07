@@ -339,6 +339,24 @@ function clearInlineErrors() {
   errorDetail.value = ''
 }
 
+function clearPendingGoogleHandoff() {
+  pendingGoogleHandoffCode.value = ''
+  clientChallengeSiteKey.value = ''
+  clientChallengeTurnstileRef.value?.reset?.()
+}
+
+function isExpiredGoogleHandoffResult(
+  result: Extract<AuthFlowResult, { status: 'error' }>
+): boolean {
+  const detail = result.detail?.trim().toLowerCase() ?? ''
+  return (
+    result.error === 'auth.error.googleLoginExpired' ||
+    result.code === 'invalid_google_handoff' ||
+    detail === 'invalid or expired google handoff code' ||
+    detail === 'invalid google handoff code'
+  )
+}
+
 function enterClientChallengeStep(siteKey?: string | null) {
   const resolvedSiteKey =
     siteKey?.trim() || turnstileSiteKey.value.trim() || clientChallengeSiteKey.value.trim()
@@ -391,7 +409,7 @@ async function handleClientChallengeVerify(token: string) {
     const resolvedError = resolveSecurityStepError(error)
     clientChallengeError.value = resolvedError.message
     clientChallengeDetail.value = resolvedError.detail
-    clientChallengeTurnstileRef.value?.reset()
+    clientChallengeTurnstileRef.value?.reset?.()
   } finally {
     isClientChallengeSubmitting.value = false
   }
@@ -432,6 +450,13 @@ async function applyCallbackResult(result: AuthFlowResult) {
       )
       return
     case 'error':
+      if (isExpiredGoogleHandoffResult(result)) {
+        clearPendingGoogleHandoff()
+        currentStep.value = 'error'
+        errorMessage.value = t('auth.error.googleLoginExpired')
+        errorDetail.value = result.detail || ''
+        return
+      }
       if (currentStep.value === 'risk-verification') {
         riskError.value = t(result.error)
       } else if (currentStep.value === 'mfa') {

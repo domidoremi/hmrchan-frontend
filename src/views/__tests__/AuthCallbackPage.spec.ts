@@ -395,4 +395,44 @@ describe('AuthCallbackPage', () => {
     expect(testState.api.clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
     expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('redirect-handoff')
   })
+
+  it('exits the callback client challenge step when the Google handoff has expired', async () => {
+    testState.route.query = { handoff_code: 'redirect-handoff' }
+    window.history.replaceState({}, '', '/auth/callback?handoff_code=redirect-handoff')
+    testState.pendingGoogleAuthRequest = {
+      requestId: 'redirect-request-1',
+      mode: 'redirect',
+      intent: 'login',
+      redirectTo: '/profile',
+      createdAt: Date.now(),
+    }
+    testState.api.clientSecurityService.init.mockResolvedValueOnce({
+      trust_level: 'untrusted',
+      challenge_required: true,
+      turnstile_site_key: 'site-key',
+    })
+    testState.authStore.completeGoogleAuth = vi.fn().mockResolvedValue({
+      status: 'error',
+      error: 'auth.error.googleLoginExpired',
+      code: 'invalid_google_handoff',
+      detail: 'Invalid or expired Google handoff code',
+    })
+
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: undefined,
+    })
+
+    const wrapper = mount(AuthCallbackPage, {
+      global: globalConfig,
+    })
+
+    await flushPromises()
+    await wrapper.findComponent({ name: 'TurnstileWidget' }).vm.$emit('verify', 'turnstile-token')
+    await flushPromises()
+
+    expect(testState.api.clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(wrapper.text()).toContain('auth.error.googleLoginExpired')
+    expect(wrapper.text()).not.toContain('auth.clientChallengeHint')
+  })
 })
