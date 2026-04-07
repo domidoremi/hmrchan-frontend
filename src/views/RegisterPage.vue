@@ -630,13 +630,25 @@ function clearInlineErrors() {
   mfaError.value = ''
 }
 
+function isExpiredGoogleHandoffResult(
+  result: Extract<AuthFlowResult, { status: 'error' }>
+): boolean {
+  const detail = result.detail?.trim().toLowerCase() ?? ''
+  return (
+    result.error === 'auth.error.googleLoginExpired' ||
+    result.code === 'invalid_google_handoff' ||
+    detail === 'invalid or expired google handoff code' ||
+    detail === 'invalid google handoff code'
+  )
+}
+
 function resetGoogleClientChallengeState() {
   pendingGoogleHandoffCode.value = ''
   googleClientChallengeSiteKey.value = ''
   googleClientChallengeError.value = ''
   googleClientChallengeDetail.value = ''
   isGoogleClientChallengeSubmitting.value = false
-  googleClientChallengeRef.value?.reset()
+  googleClientChallengeRef.value?.reset?.()
 }
 
 function setGooglePopupStatus(state: GooglePopupState, errorKey = '') {
@@ -951,6 +963,11 @@ async function handleGoogleClientChallengeVerify(token: string) {
 
     const result = await authStore.completeGoogleAuth(pendingGoogleHandoffCode.value.trim())
     if (result.status === 'error') {
+      if (isExpiredGoogleHandoffResult(result)) {
+        resetGoogleClientChallengeState()
+        setGooglePopupStatus('error', 'auth.error.googleLoginExpired')
+        return
+      }
       googleClientChallengeError.value = t(result.error)
       googleClientChallengeDetail.value = result.detail || ''
       return
@@ -960,7 +977,7 @@ async function handleGoogleClientChallengeVerify(token: string) {
     const resolvedError = resolveGoogleAuthSecurityError(error)
     googleClientChallengeError.value = t(resolvedError.messageKey)
     googleClientChallengeDetail.value = resolvedError.detail
-    googleClientChallengeRef.value?.reset()
+    googleClientChallengeRef.value?.reset?.()
   } finally {
     isGoogleClientChallengeSubmitting.value = false
   }
