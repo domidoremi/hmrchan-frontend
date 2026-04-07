@@ -420,32 +420,4 @@ describe('googleAuthService', () => {
     )
     expect(popup.close).toHaveBeenCalled()
   })
-
-  it('settles when the popup is manually closed before timeout', async () => {
-    vi.useFakeTimers()
-
-    const popup = {
-      close: vi.fn(),
-      focus: vi.fn(),
-      closed: false,
-    } as { close: () => void; focus: () => void; closed: boolean }
-
-    const pending = waitForGooglePopupResult(popup as unknown as Window, {
-      requestId: 'manual-close-request',
-      timeoutMs: 10_000,
-    })
-
-    popup.closed = true
-    vi.advanceTimersByTime(500)
-
-    await expect(pending.promise).resolves.toEqual(
-      expect.objectContaining({
-        type: 'google-auth-result',
-        requestId: 'manual-close-request',
-        status: 'error',
-        error: 'popup_closed',
-      })
-    )
-    expect(popup.close).not.toHaveBeenCalled()
-  })
 })

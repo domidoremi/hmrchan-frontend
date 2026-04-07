@@ -524,7 +524,6 @@ function createGooglePopupWaitHandle(options?: GooglePopupWaitOptions): {
 } {
   let isSettled = false
   let timeoutId: number | null = null
-  let closePollId: number | null = null
   let removeMessageHandler: (() => void) | null = null
   let removeRelayHandler: (() => void) | null = null
 
@@ -540,10 +539,6 @@ function createGooglePopupWaitHandle(options?: GooglePopupWaitOptions): {
     if (timeoutId !== null) {
       window.clearTimeout(timeoutId)
       timeoutId = null
-    }
-    if (closePollId !== null) {
-      window.clearInterval(closePollId)
-      closePollId = null
     }
   }
 
@@ -575,24 +570,6 @@ function createGooglePopupWaitHandle(options?: GooglePopupWaitOptions): {
       settle(storedResult)
       return
     }
-
-    closePollId = window.setInterval(() => {
-      const popup = options?.resolvePopup?.()
-      if (!popup) return
-
-      try {
-        if (!popup.closed) return
-      } catch {
-        return
-      }
-
-      settle({
-        type: 'google-auth-result',
-        requestId: options?.requestId,
-        status: 'error',
-        error: 'popup_closed',
-      })
-    }, 500)
 
     if (options?.timeoutMs) {
       timeoutId = window.setTimeout(() => {
