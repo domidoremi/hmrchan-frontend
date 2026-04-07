@@ -244,4 +244,35 @@ describe('clientSecurityService', () => {
       })
     )
   })
+
+  it('re-initializes once when verify fails with INVALID_CLIENT_TOKEN code', async () => {
+    mockApiClient.post
+      .mockRejectedValueOnce(new MockApiError('Invalid client token', 400, 'INVALID_CLIENT_TOKEN'))
+      .mockResolvedValueOnce({
+        client_token: 'reissued-token',
+        client_secret: 'reissued-secret',
+        trust_level: 'untrusted',
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        trust_level: 'basic',
+      })
+
+    const result = await clientSecurityService.verify('turnstile-token')
+
+    expect(result).toEqual({
+      success: true,
+      trust_level: 'basic',
+    })
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(
+      2,
+      '/client/init',
+      expect.objectContaining({
+        force_reissue: true,
+      }),
+      expect.objectContaining({
+        skipSecurity: true,
+      })
+    )
+  })
 })

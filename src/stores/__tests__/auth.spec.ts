@@ -319,8 +319,11 @@ describe('auth store', () => {
     const store = useAuthStore()
 
     vi.mocked(exchangeGoogleHandoff).mockRejectedValueOnce(
-      new ApiError('Google handoff expired', 401, undefined, {
-        detail: 'Invalid or expired Google handoff code',
+      new ApiError('Google handoff expired', 401, 'invalid_google_handoff', {
+        detail: {
+          code: 'invalid_google_handoff',
+          message: 'Invalid or expired Google handoff code',
+        },
       })
     )
 
@@ -331,6 +334,30 @@ describe('auth store', () => {
         status: 'error',
         error: 'auth.error.googleLoginExpired',
         detail: 'Invalid or expired Google handoff code',
+      })
+    )
+  })
+
+  it('keeps typed Google exchange 5xx failures inside Google auth semantics', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(exchangeGoogleHandoff).mockRejectedValueOnce(
+      new ApiError('Google login completion failed', 500, 'google_login_completion_failed', {
+        detail: {
+          code: 'google_login_completion_failed',
+          message: 'Failed to complete Google login',
+        },
+      })
+    )
+
+    const result = await store.completeGoogleAuth('retryable-handoff')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'error',
+        error: 'auth.error.googleLoginFailed',
+        code: 'google_login_completion_failed',
+        detail: 'Failed to complete Google login',
       })
     )
   })
