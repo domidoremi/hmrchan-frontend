@@ -1,4 +1,5 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '@/api'
@@ -168,7 +169,11 @@ const globalConfig = {
 }
 
 describe('Auth entry pages', () => {
+  enableAutoUnmount(afterEach)
+
   beforeEach(() => {
+    window.localStorage.clear()
+    window.sessionStorage.clear()
     testState.route.query = {}
     testState.routerReplace.mockReset()
     testState.routerBack.mockReset()
@@ -366,14 +371,15 @@ describe('Auth entry pages', () => {
     expect(testState.routerReplace).toHaveBeenCalledWith('/feed')
   })
 
-  it('automatically switches login popup auth back to current-page flow after 12 seconds', async () => {
+  it('keeps login popup auth waiting after 30 seconds without switching to current-page flow', async () => {
     vi.useFakeTimers()
     testState.route.query = { redirect: '/feed' }
 
     const popup = {
+      closed: false,
       focus: vi.fn(),
       close: vi.fn(),
-    } as { focus: () => void; close: () => void }
+    } as { closed: boolean; focus: () => void; close: () => void }
 
     vi.stubGlobal(
       'matchMedia',
@@ -400,22 +406,24 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    vi.advanceTimersByTime(12_000)
+    vi.advanceTimersByTime(30_000)
     await flushPromises()
 
-    expect(testState.authStore.startGoogleAuth).toHaveBeenCalledWith('login', '/feed')
+    expect(testState.authStore.startGoogleAuth).not.toHaveBeenCalled()
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
-    expect(wrapper.text()).not.toContain('auth.error.googlePopupClosed')
+    expect(popup.close).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('auth.googlePopupWaitingTitle')
   })
 
-  it('automatically switches register popup auth back to current-page flow after 12 seconds', async () => {
+  it('keeps register popup auth waiting after 30 seconds without switching to current-page flow', async () => {
     vi.useFakeTimers()
     testState.route.query = { redirect: '/welcome' }
 
     const popup = {
+      closed: false,
       focus: vi.fn(),
       close: vi.fn(),
-    } as { focus: () => void; close: () => void }
+    } as { closed: boolean; focus: () => void; close: () => void }
 
     vi.stubGlobal(
       'matchMedia',
@@ -442,12 +450,58 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    vi.advanceTimersByTime(12_000)
+    vi.advanceTimersByTime(30_000)
     await flushPromises()
 
-    expect(testState.authStore.startGoogleAuth).toHaveBeenCalledWith('register', '/welcome')
+    expect(testState.authStore.startGoogleAuth).not.toHaveBeenCalled()
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
-    expect(wrapper.text()).not.toContain('auth.error.googlePopupClosed')
+    expect(popup.close).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('auth.googlePopupWaitingTitle')
+  })
+
+  it('allows manually continuing login Google auth while popup is still waiting', async () => {
+    testState.route.query = { redirect: '/feed' }
+
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+    )
+    vi.spyOn(window, 'open').mockReturnValue({
+      closed: false,
+      focus: vi.fn(),
+      close: vi.fn(),
+    } as unknown as Window)
+
+    const wrapper = mount(LoginPage, {
+      global: globalConfig,
+    })
+
+    const googleButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('auth.googleLoginButton'))
+
+    await googleButton!.trigger('click')
+    await flushPromises()
+
+    const continueButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('auth.googlePopupFallbackAction'))
+
+    expect(continueButton).toBeDefined()
+
+    await continueButton!.trigger('click')
+    await flushPromises()
+
+    expect(testState.authStore.startGoogleAuth).toHaveBeenCalledWith('login', '/feed')
   })
 
   it('keeps Google challenge errors visible on the login page after verify succeeds but exchange fails', async () => {
@@ -503,8 +557,10 @@ describe('Auth entry pages', () => {
       })
     )
     await flushPromises()
+    await nextTick()
 
     const turnstileWidgets = wrapper.findAllComponents({ name: 'TurnstileWidget' })
+    expect(turnstileWidgets.length).toBeGreaterThan(0)
     turnstileWidgets.at(-1)!.vm.$emit('verify', 'verified-token')
     await flushPromises()
 
@@ -567,8 +623,10 @@ describe('Auth entry pages', () => {
       })
     )
     await flushPromises()
+    await nextTick()
 
     const turnstileWidgets = wrapper.findAllComponents({ name: 'TurnstileWidget' })
+    expect(turnstileWidgets.length).toBeGreaterThan(0)
     turnstileWidgets.at(-1)!.vm.$emit('verify', 'verified-token')
     await flushPromises()
 
@@ -629,8 +687,10 @@ describe('Auth entry pages', () => {
       })
     )
     await flushPromises()
+    await nextTick()
 
     const turnstileWidgets = wrapper.findAllComponents({ name: 'TurnstileWidget' })
+    expect(turnstileWidgets.length).toBeGreaterThan(0)
     turnstileWidgets.at(-1)!.vm.$emit('verify', 'verified-token')
     await flushPromises()
 
