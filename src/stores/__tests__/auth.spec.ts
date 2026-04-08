@@ -87,6 +87,7 @@ import {
   exchangeGoogleHandoff,
   startGoogleAuth,
 } from '@/services/googleAuthService'
+import { reportClientEvent } from '@/utils/clientReporter'
 import { useAuthStore, type AuthUser } from '../auth'
 
 function createAccessToken(overrides: Record<string, unknown> = {}): string {
@@ -358,6 +359,48 @@ describe('auth store', () => {
         error: 'auth.error.googleLoginFailed',
         code: 'google_login_completion_failed',
         detail: 'Failed to complete Google login',
+      })
+    )
+    expect(reportClientEvent).toHaveBeenCalledWith(
+      'google.exchange.typed_failure',
+      expect.objectContaining({
+        status: 500,
+        code: 'google_login_completion_failed',
+      }),
+      expect.objectContaining({
+        category: 'security',
+        severity: 'error',
+      })
+    )
+  })
+
+  it('keeps legacy untyped Google exchange 500 failures inside Google auth semantics', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(exchangeGoogleHandoff).mockRejectedValueOnce(
+      new ApiError('Failed to complete login', 500, undefined, {
+        detail: 'Failed to complete login',
+      })
+    )
+
+    const result = await store.completeGoogleAuth('legacy-handoff')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'error',
+        error: 'auth.error.googleLoginFailed',
+        detail: 'Failed to complete login',
+      })
+    )
+    expect(reportClientEvent).toHaveBeenCalledWith(
+      'google.exchange.legacy_untyped_500',
+      expect.objectContaining({
+        status: 500,
+        detail: 'Failed to complete login',
+      }),
+      expect.objectContaining({
+        category: 'security',
+        severity: 'error',
       })
     )
   })

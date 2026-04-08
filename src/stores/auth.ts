@@ -22,6 +22,7 @@ import {
 } from '@/services/googleAuthService'
 import { getDeviceInfo } from '@/utils/device'
 import { createAuthSessionController } from '@/services/authSessionController'
+import { reportClientEvent } from '@/utils/clientReporter'
 
 // 用户类型（与 API 响应匹配）
 export type AuthUser = UserResponse
@@ -278,6 +279,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       return await resolveAuthFlowResponse(response)
     } catch (err) {
+      if (err instanceof ApiError) {
+        reportGoogleExchangeFailure(err)
+      }
       const errorResult = mapApiError(err, {
         defaultError: 'auth.error.googleLoginFailed',
         invalidStatusCodes: [400, 401, 403, 422],
@@ -486,9 +490,11 @@ export const useAuthStore = defineStore('auth', () => {
       ? (detailErrorKey ??
         (preferCodeMapping && codeMappedError
           ? codeMappedError
-          : invalidStatusCodes.includes(apiError.status)
+          : preferCodeMapping && apiError.status >= 500
             ? defaultError
-            : getAuthErrorKey(apiError.status, apiError.code)))
+            : invalidStatusCodes.includes(apiError.status)
+              ? defaultError
+              : getAuthErrorKey(apiError.status, apiError.code)))
       : defaultError
 
     return {
@@ -601,9 +607,47 @@ export const useAuthStore = defineStore('auth', () => {
         return 'auth.error.googleLinkExpired'
       case 'invalid or expired verification code':
         return 'auth.error.googleVerificationCodeInvalid'
+      case 'failed to complete login':
+      case 'failed to complete google login':
+      case 'failed to resolve google identity':
+        return 'auth.error.googleLoginFailed'
       default:
         return null
     }
+  }
+
+  function reportGoogleExchangeFailure(apiError: ApiError): void {
+    const detail = extractApiErrorDetail(apiError) ?? ''
+
+    if (!apiError.code && apiError.status >= 500) {
+      reportClientEvent(
+        'google.exchange.legacy_untyped_500',
+        {
+          status: apiError.status,
+          detail,
+        },
+        {
+          category: 'security',
+          severity: 'error',
+          requiresAnalyticsConsent: false,
+        }
+      )
+      return
+    }
+
+    reportClientEvent(
+      'google.exchange.typed_failure',
+      {
+        status: apiError.status,
+        code: apiError.code ?? null,
+        detail,
+      },
+      {
+        category: 'security',
+        severity: apiError.status >= 500 ? 'error' : 'warn',
+        requiresAnalyticsConsent: false,
+      }
+    )
   }
 
   function extractApiErrorDetail(apiError: ApiError | null): string | undefined {
