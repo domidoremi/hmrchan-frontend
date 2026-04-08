@@ -198,6 +198,16 @@ function stripResponseHeaders(headers: Headers, path: string): void {
 }
 
 function shouldBypassVPCForRequest(path: string, request: Request): boolean {
+  const normalizedPath = resolveUpstreamPath(path)
+
+  if (
+    normalizedPath === 'v1/client/init' ||
+    normalizedPath === 'v1/client/verify' ||
+    normalizedPath === 'v1/auth/google/exchange'
+  ) {
+    return true
+  }
+
   return shouldPreserveBrowserRedirect(path, request)
 }
 

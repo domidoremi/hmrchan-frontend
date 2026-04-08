@@ -216,6 +216,75 @@ describe('functions/api proxy', () => {
     )
   })
 
+  it.each([
+    [
+      'client init',
+      'https://momichan.xyz/api/v1/client/init',
+      ['v1', 'client', 'init'],
+      'POST',
+      JSON.stringify({ client_fingerprint: 'device-1' }),
+    ],
+    [
+      'client verify',
+      'https://momichan.xyz/api/v1/client/verify',
+      ['v1', 'client', 'verify'],
+      'POST',
+      JSON.stringify({ turnstile_token: 'token-1' }),
+    ],
+    [
+      'google exchange',
+      'https://momichan.xyz/api/v1/auth/google/exchange',
+      ['v1', 'auth', 'google', 'exchange'],
+      'POST',
+      JSON.stringify({ handoff_code: 'handoff-1' }),
+    ],
+  ])(
+    'bypasses VPC for %s so auth traffic stays on the public API upstream',
+    async (_, url, path, method, body) => {
+      const publicFetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+      )
+      vi.stubGlobal('fetch', publicFetch)
+
+      const vpcFetch = vi.fn().mockResolvedValue(
+        new Response('should not be used', {
+          status: 500,
+        })
+      )
+
+      const response = await onRequest({
+        request: new Request(url, {
+          method,
+          body,
+          headers: {
+            Origin: 'https://momichan.xyz',
+            'Content-Type': 'application/json',
+          },
+        }),
+        env: {
+          API_BASE_URL: BACKEND_ORIGIN,
+          VPC_API_ORIGIN: 'http://nginx',
+          VPC_SERVICE: {
+            fetch: vpcFetch,
+          },
+        },
+        params: {
+          path,
+        },
+      })
+
+      expect(vpcFetch).not.toHaveBeenCalled()
+      expect(publicFetch).toHaveBeenCalledTimes(1)
+      expect(publicFetch.mock.calls[0]?.[0]).toBe(`${BACKEND_ORIGIN}/api/${path.join('/')}`)
+      expect(response.status).toBe(200)
+    }
+  )
+
   it('rewrites auth callback redirects from the api origin back to the site origin', async () => {
     const publicFetch = vi.fn().mockResolvedValue(
       new Response(null, {

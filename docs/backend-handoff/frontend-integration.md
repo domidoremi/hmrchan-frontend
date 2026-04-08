@@ -10,6 +10,7 @@ Split-only 架构切换后的前端联调补充说明见：
 - `docs/frontend-security-handoff.md`
 - `docs/frontend-joint-checklist.md`
 - `docs/frontend-qa-checklist.md`
+- `docs/google-auth-prod-troubleshooting-checklist.md`
 
 后端规范、按域契约与 OpenAPI artifact 的真相源已迁移到：
 
@@ -42,7 +43,28 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
 
 不要把前端页面 `https://momichan.xyz/auth/callback` 填到 Google Console；它只是后端二跳目标。
 
-### 3.1 已退役 Host
+### 3.1 主站同源 API proxy 与 Google / client auth 链路
+
+主站前端当前通过同源 `/api/v1/*` 代理访问后端；但以下路径在生产默认应**直走 `API_BASE_URL` 对应的 public API upstream**，不再优先走 VPC/internal upstream：
+
+- `/api/v1/client/init`
+- `/api/v1/client/verify`
+- `/api/v1/auth/google/start`
+- `/api/v1/auth/google/callback`
+- `/api/v1/auth/google/exchange`
+
+这是有意的止血策略，用于避免主站同源代理命中陈旧 VPC/internal upstream，导致：
+
+- `challenge_required=true` 但首轮 `client_token` 为空
+- `google/exchange` 仍返回旧 `{"detail":"Failed to complete login"}` 语义
+
+若 `momichan.xyz/api/v1/*` 与 `api.momichan.xyz/api/v1/*` 行为不一致，优先排查：
+
+- Pages Function API proxy 的 upstream 选择
+- `API_BASE_URL` 与 VPC upstream 是否指向不同版本后端
+- VPC/internal upstream 是否仍残留旧实例
+
+### 3.2 已退役 Host
 
 以下 host 不应再被前端调用：
 
@@ -150,6 +172,11 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
 - 生成短期 `handoff_code`
 - `302` 到主站前端 callback 页面
 
+实现约束补充：
+
+- `google_oauth_state` 与 `google_handoff` 属于一次性交接态，生产环境必须落共享存储（Redis）
+- 生产环境不得再静默回退到单实例内存存储，否则 callback / exchange 跨实例时会出现伪过期 `handoff_code`
+
 前端 callback 页面固定目标：
 
 - `https://momichan.xyz/auth/callback?handoff_code=...`
@@ -171,7 +198,8 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
    - 先完成当前安全链路初始化：
      - `GET /api/v1/auth/turnstile-config`
      - `POST /api/v1/client/init`
-   - 然后调用一次 `POST /api/v1/auth/google/exchange`
+     - 若 `challenge_required=true`，该响应必须同时返回可立即用于后续 `client/verify` 的 `client_token`
+     - 然后调用一次 `POST /api/v1/auth/google/exchange`
 3. 若既无 `error` 也无 `handoff_code`
    - 视为非法 callback
    - 显示 Google 登录失败页，不进入邮箱密码登录逻辑
@@ -256,22 +284,26 @@ Google Console 中 `已授权的重新导向 URI` 也固定只能填写：
 
 - 显示“Google 登录已失效/已过期，请重新发起”
 - 提供“重试 Google 登录 / 返回登录页”
+- 若该错误发生在 popup / callback 的 client challenge 之后，前端也必须**退出** Security check / `auth.verifyTitle` 视图
 - **不得显示**：
   - “Invalid email or password”
   - 任何邮箱密码登录失败提示
   - 与本地登录表单复用的错误文案
+  - `Security check` / `安全验证` 标题或 `auth.clientChallengeHint`
 
-2026-03-30 live 观测：
+运行态排查口径：
 
-- 当前正式站点在无效 `handoff_code` 下，会先执行 `turnstile-config -> client/init -> google/exchange`
-- 后端返回仍是预期 `401`
-- 但前端次级文案仍错误显示为 `Invalid email or password`
-- 当前前端还会弹出 `Security check` 对话框；这不应属于 Google handoff 失效语义
+- callback 已成功创建 handoff，但 exchange 紧接着返回 `invalid_google_handoff` 时，优先检查：
+  - Redis 是否在对应时段发生 `Set/Get` 失败
+  - callback 与 exchange 是否命中不同实例
+  - authflow 日志里的 `authflow_backend` 是否出现 `local`
+- 若链路表现为 `challenge_required -> verify success -> invalid_handoff`，前端正确语义仍是“Google 登录已失效”，不是 Security check 失败
 
 补充规则：
 
 - 旧 Authentik 时代的身份记录不会被视为 Google 直连绑定
 - 旧 `/api/auth/google/*` 路径已退役，当前应直接视为 `404`
+- popup 等待期间前端不再依赖跨源 `window.closed` 轮询判断窗口关闭；应只依赖 callback relay、timeout 或用户显式继续
 
 ## 7. 本地邮箱登录 / 注册契约
 

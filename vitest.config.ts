@@ -97,8 +97,11 @@ export default defineConfig({
     /** Setup files for global test configuration */
     setupFiles: ['vitest.setup.ts'],
 
-    /** 并发运行测试 */
-    pool: 'threads',
+    /**
+     * Windows + Bun 下 threads worker 会在无交互终端里启动失败。
+     * 改用 forks，保证 Codex/CI/后台终端都能稳定执行同一条测试命令。
+     */
+    pool: 'forks',
 
     /** 启用快照测试 */
     snapshotFormat: {

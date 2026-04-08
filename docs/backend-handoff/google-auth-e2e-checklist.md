@@ -6,6 +6,15 @@
 
 `/api/v1/auth/google/start` → Google → `/api/v1/auth/google/callback` → `/auth/callback?handoff_code=...` → `client/init` → `/api/v1/auth/google/exchange`
 
+线上故障定位与生产排查请同步参考：
+
+- `google-auth-prod-troubleshooting-checklist.md`
+
+补充固定口径：
+
+- 主站同源 `/api/v1/client/*` 与 `/api/v1/auth/google/*` 在生产默认应直走 public API upstream
+- 这些路径不应优先命中 VPC/internal upstream，否则容易出现“主站 API 仍旧、`api.momichan.xyz` 已新”的版本漂移
+
 ## 0. 生产真相源与发布后 smoke
 
 生产 Docker Compose / `.env` 必须固定为：
