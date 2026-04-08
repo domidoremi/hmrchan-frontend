@@ -35,9 +35,12 @@ const badgeClass = computed(() => [
   align-items: center;
   justify-content: center;
   gap: var(--spacing-1);
+  min-inline-size: 0;
   font-weight: var(--font-medium);
   border-radius: var(--ui-radius-badge, var(--radius-full));
   white-space: nowrap;
+  line-height: var(--appearance-ui-line-height);
+  text-align: center;
   transition-property: color, background-color, border-color;
   transition-duration: 150ms;
   transition-timing-function: var(--ease-out);
@@ -45,20 +48,23 @@ const badgeClass = computed(() => [
 
 /* Sizes */
 .ui-badge--sm {
-  height: 1.25rem;
-  padding: 0 0.375rem;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.5625rem);
+  padding-block: max(0.1875rem, calc(var(--ui-control-padding-y-sm) - 0.1875rem));
+  padding-inline: max(0.625rem, calc(var(--appearance-chip-padding-inline) * 0.66));
   font-size: 0.625rem;
 }
 
 .ui-badge--default {
-  height: 1.375rem;
-  padding: 0 0.625rem;
+  min-block-size: var(--appearance-chip-min-block-size);
+  padding-block: max(0.25rem, calc(var(--ui-control-padding-y-sm) - 0.125rem));
+  padding-inline: max(0.8125rem, calc(var(--appearance-chip-padding-inline) * 0.82));
   font-size: var(--text-xs);
 }
 
 .ui-badge--lg {
-  height: 1.625rem;
-  padding: 0 0.75rem;
+  min-block-size: calc(var(--appearance-chip-min-block-size) + 0.25rem);
+  padding-block: max(0.3125rem, var(--ui-control-padding-y-sm));
+  padding-inline: max(0.9375rem, calc(var(--appearance-chip-padding-inline) * 0.96));
   font-size: var(--text-sm);
 }
 

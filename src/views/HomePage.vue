@@ -3419,17 +3419,18 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  gap: 0.4rem;
-  min-block-size: 2.125rem;
+  gap: 0.5rem;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.375rem);
   max-inline-size: 100%;
-  padding: 0.5rem 0.8rem;
+  padding-block: max(0.4375rem, calc(var(--ui-control-padding-y-sm) - 0.0625rem));
+  padding-inline: max(0.875rem, calc(var(--appearance-chip-padding-inline) * 0.82));
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--home-panel-muted) 88%, transparent);
   border: 0.0625rem solid color-mix(in srgb, var(--home-panel-border) 88%, transparent);
   box-shadow: none;
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  line-height: 1.25;
+  line-height: var(--appearance-ui-line-height);
   color: var(--color-text-secondary);
   text-decoration: none;
   transition:

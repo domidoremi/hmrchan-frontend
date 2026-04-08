@@ -478,8 +478,9 @@ defineExpose({
 .search-input-wrapper {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-3);
+  gap: var(--spacing-3);
+  padding-block: max(0.5rem, var(--ui-control-padding-y-sm));
+  padding-inline: max(0.875rem, var(--ui-control-padding-x-sm));
   background: var(--search-surface-bg);
   border: 1px solid var(--search-surface-border);
   border-radius: var(--ui-radius-input, var(--radius-lg));
@@ -511,6 +512,7 @@ defineExpose({
   border: none;
   background: transparent;
   font-size: var(--text-sm);
+  line-height: var(--appearance-ui-line-height);
   color: var(--color-text);
   outline: none;
 }
@@ -550,7 +552,7 @@ defineExpose({
   justify-content: center;
   gap: var(--spacing-1);
   min-inline-size: var(--ui-control-min-inline-size);
-  min-block-size: var(--ui-control-height-sm);
+  min-block-size: calc(var(--ui-control-height-sm) + 0.125rem);
   padding-inline: var(--ui-control-padding-x-sm);
   padding-block: var(--ui-control-padding-y-sm);
   border-radius: var(--ui-radius-button, var(--radius-md));
@@ -590,12 +592,13 @@ defineExpose({
 
 @media (max-width: 640px) {
   .search-input-wrapper {
-    gap: var(--spacing-1);
-    padding-inline: var(--spacing-2);
+    gap: var(--spacing-2);
+    padding-inline: max(0.75rem, var(--spacing-2));
   }
 
   .search-submit-btn {
-    padding-inline: var(--spacing-1);
+    min-inline-size: calc(var(--ui-control-height-sm) + 0.125rem);
+    padding-inline: 0.625rem;
   }
 }
 
@@ -627,7 +630,7 @@ defineExpose({
 }
 
 .dropdown-section {
-  padding: var(--spacing-2);
+  padding: max(var(--spacing-2), calc(var(--appearance-surface-padding-sm) - 0.125rem));
 }
 
 .dropdown-section + .dropdown-section {
@@ -638,7 +641,8 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-2);
+  padding-block: 0.625rem;
+  padding-inline: 0.75rem;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
   text-transform: uppercase;
@@ -677,7 +681,8 @@ defineExpose({
   align-items: center;
   gap: var(--spacing-2);
   width: 100%;
-  padding: var(--spacing-2) var(--spacing-3);
+  padding-block: 0.625rem;
+  padding-inline: 0.875rem;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   text-align: left;
