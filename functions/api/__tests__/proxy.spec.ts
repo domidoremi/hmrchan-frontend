@@ -66,6 +66,7 @@ describe('functions/api proxy', () => {
     expect(publicFetch.mock.calls[0]?.[0]).toBe(`${BACKEND_ORIGIN}/api/v1/posts?page=2`)
     expect(response.status).toBe(200)
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://momichan.xyz')
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public-fallback')
   })
 
   it('preserves upstream Set-Cookie headers for auth refresh-cookie flows', async () => {
@@ -169,6 +170,7 @@ describe('functions/api proxy', () => {
     )
     expect(response.headers.get('Cross-Origin-Opener-Policy')).toBe('unsafe-none')
     expect(response.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin')
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
   })
 
   it('bypasses VPC for google auth redirects so the browser redirect path stays intact', async () => {
@@ -214,6 +216,7 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('Location')).toContain(
       encodeURIComponent(`${BACKEND_ORIGIN}/api/v1/auth/google/callback`)
     )
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
   })
 
   it.each([
@@ -282,8 +285,42 @@ describe('functions/api proxy', () => {
       expect(publicFetch).toHaveBeenCalledTimes(1)
       expect(publicFetch.mock.calls[0]?.[0]).toBe(`${BACKEND_ORIGIN}/api/${path.join('/')}`)
       expect(response.status).toBe(200)
+      expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
     }
   )
+
+  it('preserves auth diagnostic headers from upstream responses', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Auth-Chain-Version': '2026-04-09.google-auth-v1',
+        },
+      })
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/api/v1/auth/google/exchange', {
+        method: 'POST',
+        body: JSON.stringify({ handoff_code: 'handoff-1' }),
+        headers: {
+          Origin: 'https://momichan.xyz',
+          'Content-Type': 'application/json',
+        },
+      }),
+      env: {
+        API_BASE_URL: BACKEND_ORIGIN,
+      },
+      params: {
+        path: ['v1', 'auth', 'google', 'exchange'],
+      },
+    })
+
+    expect(response.headers.get('X-Auth-Chain-Version')).toBe('2026-04-09.google-auth-v1')
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
+  })
 
   it('rewrites auth callback redirects from the api origin back to the site origin', async () => {
     const publicFetch = vi.fn().mockResolvedValue(

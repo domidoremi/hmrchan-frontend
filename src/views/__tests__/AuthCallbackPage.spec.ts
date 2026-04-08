@@ -337,6 +337,7 @@ describe('AuthCallbackPage', () => {
     testState.api.clientSecurityService.init.mockResolvedValueOnce({
       trust_level: 'untrusted',
       challenge_required: true,
+      client_token: 'challenge-token',
       turnstile_site_key: 'site-key',
     })
 
@@ -370,6 +371,7 @@ describe('AuthCallbackPage', () => {
     testState.api.clientSecurityService.init.mockResolvedValueOnce({
       trust_level: 'untrusted',
       challenge_required: true,
+      client_token: 'challenge-token',
       turnstile_site_key: 'site-key',
     })
     testState.authStore.completeGoogleAuth = vi.fn().mockResolvedValue({
@@ -393,7 +395,9 @@ describe('AuthCallbackPage', () => {
     await wrapper.findComponent({ name: 'TurnstileWidget' }).vm.$emit('verify', 'turnstile-token')
     await flushPromises()
 
-    expect(testState.api.clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(testState.api.clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token', {
+      diagnosticsContext: 'google-auth',
+    })
     expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('redirect-handoff')
   })
 
@@ -410,6 +414,7 @@ describe('AuthCallbackPage', () => {
     testState.api.clientSecurityService.init.mockResolvedValueOnce({
       trust_level: 'untrusted',
       challenge_required: true,
+      client_token: 'challenge-token',
       turnstile_site_key: 'site-key',
     })
     testState.authStore.completeGoogleAuth = vi.fn().mockResolvedValue({
@@ -432,7 +437,9 @@ describe('AuthCallbackPage', () => {
     await wrapper.findComponent({ name: 'TurnstileWidget' }).vm.$emit('verify', 'turnstile-token')
     await flushPromises()
 
-    expect(testState.api.clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(testState.api.clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token', {
+      diagnosticsContext: 'google-auth',
+    })
     expect(wrapper.text()).toContain('auth.error.googleLoginExpired')
     expect(wrapper.text()).not.toContain('auth.clientChallengeHint')
   })

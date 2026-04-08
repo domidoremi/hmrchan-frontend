@@ -38,7 +38,7 @@ interface ForwardRequestOptions {
 
 interface UpstreamFetchResult {
   response: Response
-  usedVpc: boolean
+  source: 'vpc' | 'public' | 'public-fallback'
 }
 
 const ALLOWED_ORIGINS = [
@@ -318,16 +318,20 @@ async function forwardToUpstream(options: ForwardRequestOptions): Promise<Upstre
     try {
       return {
         response: await fetchViaVPC(options),
-        usedVpc: true,
+        source: 'vpc',
       }
     } catch (error) {
       console.error('[API Proxy] VPC fetch failed, falling back to public:', error)
+      return {
+        response: await fetchViaPublic(options),
+        source: 'public-fallback',
+      }
     }
   }
 
   return {
     response: await fetchViaPublic(options),
-    usedVpc: false,
+    source: 'public',
   }
 }
 
@@ -400,6 +404,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
         new Headers(upstream.response.headers)
       )
       stripResponseHeaders(redirectHeaders, compactPath)
+      redirectHeaders.set('X-Proxy-Upstream-Source', upstream.source)
 
       const location = upstream.response.headers.get('Location')
       if (location) {
@@ -423,6 +428,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     stripResponseHeaders(responseHeaders, compactPath)
     responseHeaders.delete('content-encoding')
     responseHeaders.delete('transfer-encoding')
+    responseHeaders.set('X-Proxy-Upstream-Source', upstream.source)
 
     const apiVersion = extractApiVersion(compactPath)
     if (apiVersion) {

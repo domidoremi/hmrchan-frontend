@@ -935,7 +935,7 @@ async function handleGoogleClientChallengeVerify(token: string) {
   googleClientChallengeDetail.value = ''
 
   try {
-    await clientSecurityService.verify(token)
+    await clientSecurityService.verify(token, { diagnosticsContext: 'google-auth' })
 
     if (!pendingGoogleHandoffCode.value.trim()) {
       setGooglePopupStatus('error', 'auth.error.callbackMissingHandoffCode')

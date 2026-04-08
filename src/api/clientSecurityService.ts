@@ -16,6 +16,7 @@ import type { RequestConfig } from './client'
 import { getDeviceFingerprint } from '@/utils/fingerprint'
 import { getScreenResolution, getTimezone } from '@/utils/device'
 import { getRandomHex } from '@/utils/crypto'
+import { reportClientEvent } from '@/utils/clientReporter'
 
 // ========== 类型定义 ==========
 
@@ -48,6 +49,10 @@ export interface ClientVerifyResponse {
   trust_level: ClientTrustLevel
   message?: string
   expires_at?: string
+}
+
+export interface ClientVerifyOptions {
+  diagnosticsContext?: 'google-auth'
 }
 
 export interface ClientStatusResponse {
@@ -268,7 +273,10 @@ export const clientSecurityService = {
   /**
    * Turnstile 验证（提升信任等级到 basic）
    */
-  async verify(turnstileToken: string): Promise<ClientVerifyResponse> {
+  async verify(
+    turnstileToken: string,
+    options: ClientVerifyOptions = {}
+  ): Promise<ClientVerifyResponse> {
     try {
       return await apiClient.post<ClientVerifyResponse>(
         '/client/verify',
@@ -279,11 +287,26 @@ export const clientSecurityService = {
       if (isRecoverableVerifyError(error)) {
         await this.init(true, { promptChallenge: false })
         if (clientSecurityManager.getClientToken()) {
-          return apiClient.post<ClientVerifyResponse>(
+          const result = await apiClient.post<ClientVerifyResponse>(
             '/client/verify',
             { turnstile_token: turnstileToken },
             publicClientConfig
           )
+          if (options.diagnosticsContext === 'google-auth') {
+            reportClientEvent(
+              'google.challenge.verify_reinit_recovered',
+              {
+                errorCode: error.code ?? null,
+                recoveredTrustLevel: result.trust_level,
+              },
+              {
+                category: 'security',
+                severity: 'warn',
+                requiresAnalyticsConsent: false,
+              }
+            )
+          }
+          return result
         }
       }
       throw error

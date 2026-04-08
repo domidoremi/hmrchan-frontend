@@ -390,7 +390,7 @@ async function handleClientChallengeVerify(token: string) {
   clientChallengeDetail.value = ''
 
   try {
-    await clientSecurityService.verify(token)
+    await clientSecurityService.verify(token, { diagnosticsContext: 'google-auth' })
 
     if (!pendingGoogleHandoffCode.value.trim()) {
       currentStep.value = 'error'

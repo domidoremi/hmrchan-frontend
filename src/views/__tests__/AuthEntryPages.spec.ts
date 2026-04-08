@@ -564,7 +564,9 @@ describe('Auth entry pages', () => {
     turnstileWidgets.at(-1)!.vm.$emit('verify', 'verified-token')
     await flushPromises()
 
-    expect(testState.clientSecurity.verify).toHaveBeenCalledWith('verified-token')
+    expect(testState.clientSecurity.verify).toHaveBeenCalledWith('verified-token', {
+      diagnosticsContext: 'google-auth',
+    })
     expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('popup-handoff')
     expect(wrapper.text()).toContain('auth.error.googleLoginFailed')
     expect(wrapper.text()).toContain('Failed to complete Google login')

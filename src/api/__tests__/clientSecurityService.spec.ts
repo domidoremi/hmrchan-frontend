@@ -10,6 +10,7 @@ const {
   mockGetTimezone,
   mockGetRandomHex,
   mockHmacSha256,
+  mockReportClientEvent,
 } = vi.hoisted(() => ({
   MockApiError: class ApiError extends Error {
     status: number
@@ -34,6 +35,7 @@ const {
   mockGetTimezone: vi.fn(() => 'Asia/Tokyo'),
   mockGetRandomHex: vi.fn(() => 'nonce-1234'),
   mockHmacSha256: vi.fn(),
+  mockReportClientEvent: vi.fn(),
 }))
 
 vi.mock('../client', () => ({
@@ -59,6 +61,10 @@ vi.mock('@/utils/crypto', () => ({
   hmacSha256: mockHmacSha256,
 }))
 
+vi.mock('@/utils/clientReporter', () => ({
+  reportClientEvent: mockReportClientEvent,
+}))
+
 import { clientSecurityManager, clientSecurityService } from '../clientSecurityService'
 
 describe('clientSecurityService', () => {
@@ -75,6 +81,7 @@ describe('clientSecurityService', () => {
       trust_level: 'basic',
       challenge_required: false,
     })
+    mockReportClientEvent.mockReset()
 
     Object.defineProperty(window.navigator, 'platform', {
       value: 'Win32',
@@ -218,7 +225,9 @@ describe('clientSecurityService', () => {
         trust_level: 'basic',
       })
 
-    const result = await clientSecurityService.verify('turnstile-token')
+    const result = await clientSecurityService.verify('turnstile-token', {
+      diagnosticsContext: 'google-auth',
+    })
 
     expect(result).toEqual({
       success: true,
@@ -241,6 +250,17 @@ describe('clientSecurityService', () => {
       expect.objectContaining({
         skipAuth: true,
         skipErrorToast: true,
+      })
+    )
+    expect(mockReportClientEvent).toHaveBeenCalledWith(
+      'google.challenge.verify_reinit_recovered',
+      expect.objectContaining({
+        errorCode: null,
+        recoveredTrustLevel: 'basic',
+      }),
+      expect.objectContaining({
+        category: 'security',
+        severity: 'warn',
       })
     )
   })
