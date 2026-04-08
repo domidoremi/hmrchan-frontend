@@ -162,6 +162,12 @@ export const clientSecurityManager = {
     return getStoredCredentials()?.client_secret ?? null
   },
 
+  /** 请求签名所需凭证是否齐全 */
+  hasRequestIntegrityCredentials(): boolean {
+    const stored = getStoredCredentials()
+    return Boolean(stored?.client_token && stored.client_secret)
+  },
+
   /** 获取设备指纹（用于请求头） */
   getFingerprint: getDeviceFingerprint,
 
@@ -331,6 +337,31 @@ export const clientSecurityService = {
         .finally(() => {
           ensureInitPromise = null
         })
+    }
+
+    await ensureInitPromise
+  },
+
+  /**
+   * 确保请求签名所需的 client_token + client_secret 齐全。
+   * 若静默 init 仍未返回可签名凭证，则自动 force reissue 一次。
+   */
+  async ensureRequestIntegrityCredentials(): Promise<void> {
+    if (clientSecurityManager.hasRequestIntegrityCredentials()) return
+    if (!ensureInitPromise) {
+      ensureInitPromise = (async () => {
+        await this.init(false, { promptChallenge: false })
+        if (clientSecurityManager.hasRequestIntegrityCredentials()) {
+          return
+        }
+
+        await this.init(true, { promptChallenge: false })
+        if (!clientSecurityManager.hasRequestIntegrityCredentials()) {
+          throw new Error('Missing client signing credentials')
+        }
+      })().finally(() => {
+        ensureInitPromise = null
+      })
     }
 
     await ensureInitPromise

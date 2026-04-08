@@ -154,6 +154,47 @@ describe('clientSecurityService', () => {
     expect(clientSecurityManager.isInitialized()).toBe(true)
   })
 
+  it('force reissues once when request integrity still lacks signing credentials after silent init', async () => {
+    mockApiClient.post
+      .mockResolvedValueOnce({
+        client_token: '',
+        trust_level: 'basic',
+        challenge_required: false,
+      })
+      .mockResolvedValueOnce({
+        client_token: 'reissued-token',
+        client_secret: 'reissued-secret',
+        trust_level: 'basic',
+        challenge_required: false,
+      })
+
+    await clientSecurityService.ensureRequestIntegrityCredentials()
+
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(
+      1,
+      '/client/init',
+      expect.not.objectContaining({
+        force_reissue: true,
+      }),
+      expect.objectContaining({
+        skipSecurity: true,
+      })
+    )
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(
+      2,
+      '/client/init',
+      expect.objectContaining({
+        force_reissue: true,
+      }),
+      expect.objectContaining({
+        skipSecurity: true,
+      })
+    )
+    expect(clientSecurityManager.hasRequestIntegrityCredentials()).toBe(true)
+    expect(clientSecurityManager.getClientToken()).toBe('reissued-token')
+    expect(clientSecurityManager.getClientSecret()).toBe('reissued-secret')
+  })
+
   it('deduplicates concurrent init requests', async () => {
     let resolveInit:
       | ((value: { client_token: string; client_secret: string; trust_level: 'untrusted' }) => void)
