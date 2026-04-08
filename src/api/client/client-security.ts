@@ -226,8 +226,8 @@ export async function attachClientSecurityHeaders(
   const { clientSecurityService, clientSecurityManager } = await import('../clientSecurityService')
 
   const requiresIntegrity = shouldRequireRequestSignature(method, url, hadToken)
-  if (requiresIntegrity && !clientSecurityManager.isInitialized()) {
-    await clientSecurityService.ensureInitialized()
+  if (requiresIntegrity && !clientSecurityManager.hasRequestIntegrityCredentials()) {
+    await clientSecurityService.ensureRequestIntegrityCredentials()
   }
 
   const clientToken = clientSecurityManager.getClientToken()
