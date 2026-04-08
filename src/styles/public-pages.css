@@ -91,9 +91,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-inline-size: 1.4rem;
-  min-height: 1.4rem;
-  padding-inline: 0.4rem;
+  min-inline-size: 1.625rem;
+  min-block-size: 1.625rem;
+  padding-inline: 0.5rem;
   border-radius: var(--radius-full);
   background: rgba(var(--color-primary-rgb), 0.12);
   color: currentColor;
@@ -108,8 +108,8 @@
   min-block-size: var(--ui-control-height-md);
   min-inline-size: min(100%, var(--ui-control-min-inline-size));
   max-inline-size: 100%;
-  padding-block: max(0.25rem, var(--ui-control-padding-y-sm));
-  padding-inline: max(var(--ui-control-padding-x-sm), 0.9rem);
+  padding-block: max(0.4375rem, var(--ui-control-padding-y-sm));
+  padding-inline: max(var(--ui-control-padding-x-sm), 1rem);
   border-radius: var(--appearance-radius-control-md);
   border: 0.0625rem solid var(--page-shell-control-border);
   background: var(--page-shell-control-bg);
@@ -122,8 +122,8 @@
 
 .page-input-shell--comfortable {
   min-inline-size: min(100%, 18rem);
-  padding-inline: clamp(1rem, 1.8vw, 1.2rem);
-  padding-block: clamp(0.4rem, 0.9vw, 0.55rem);
+  padding-inline: clamp(1.0625rem, 1.8vw, 1.25rem);
+  padding-block: clamp(0.5rem, 0.95vw, 0.625rem);
   gap: clamp(0.625rem, 1.1vw, 0.85rem);
 }
 
@@ -137,8 +137,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-inline-size: 1.875rem;
-  min-block-size: 1.875rem;
+  min-inline-size: max(1.875rem, calc(var(--ui-control-height-sm) - 0.25rem));
+  min-block-size: max(1.875rem, calc(var(--ui-control-height-sm) - 0.25rem));
   border-radius: var(--appearance-radius-control-sm);
   border: 0.0625rem solid transparent;
   background: transparent;
@@ -312,10 +312,8 @@
   min-block-size: var(--ui-control-height-sm);
   min-inline-size: max(var(--ui-control-compact-min-inline-size), 4.9rem);
   max-inline-size: 100%;
-  padding-top: max(var(--ui-control-padding-y-sm), 0.38rem);
-  padding-right: max(var(--ui-control-padding-x-sm), 1rem);
-  padding-bottom: max(var(--ui-control-padding-y-sm), 0.38rem);
-  padding-left: max(var(--ui-control-padding-x-sm), 1rem);
+  padding-block: max(var(--ui-control-padding-y-sm), 0.4375rem);
+  padding-inline: max(var(--ui-control-padding-x-sm), 1.0625rem);
   border-radius: var(--appearance-radius-control-sm);
   border: 0.0625rem solid var(--page-shell-control-border);
   background: var(--page-shell-control-bg);
@@ -341,8 +339,8 @@
   min-inline-size: 0;
   max-inline-size: 100%;
   min-block-size: var(--appearance-chip-min-block-size);
-  padding-inline: max(var(--appearance-chip-padding-inline), 0.95rem);
-  padding-block: 0.35rem;
+  padding-inline: max(var(--appearance-chip-padding-inline), 1rem);
+  padding-block: max(0.4375rem, calc(var(--ui-control-padding-y-sm) - 0.0625rem));
   border-radius: var(--appearance-radius-chip);
   border: 0.0625rem solid var(--page-shell-control-border);
   background: var(--page-shell-control-bg);
@@ -377,7 +375,7 @@
 .ui-pill {
   min-block-size: var(--appearance-chip-min-block-size);
   min-inline-size: auto;
-  padding-inline: max(var(--appearance-chip-padding-inline), 0.9rem);
+  padding-inline: max(var(--appearance-chip-padding-inline), 1rem);
   box-shadow: none;
 }
 

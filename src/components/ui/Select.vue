@@ -57,6 +57,8 @@ function handleChange(event: Event) {
 <style scoped>
 .ui-select {
   width: 100%;
+  box-sizing: border-box;
+  min-block-size: var(--ui-control-height-md);
   border-radius: var(--ui-radius-input, var(--radius));
   border: 1px solid var(--glass-border);
   background:
@@ -64,6 +66,7 @@ function handleChange(event: Event) {
     var(--glass-bg-light);
   color: var(--color-foreground);
   font-size: var(--text-sm);
+  line-height: var(--appearance-ui-line-height);
   appearance: none;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
   transition-property: border-color, box-shadow, background-color;
@@ -73,8 +76,8 @@ function handleChange(event: Event) {
     linear-gradient(45deg, transparent 50%, var(--color-muted-foreground) 50%),
     linear-gradient(135deg, var(--color-muted-foreground) 50%, transparent 50%);
   background-position:
-    calc(100% - 18px) 50%,
-    calc(100% - 13px) 50%;
+    calc(100% - 1.125rem) 50%,
+    calc(100% - 0.8125rem) 50%;
   background-size: 0.375rem 0.375rem;
   background-repeat: no-repeat;
 }
@@ -99,19 +102,22 @@ function handleChange(event: Event) {
 }
 
 .ui-select--sm {
-  height: var(--ui-control-height-sm);
-  padding: 0 calc(var(--ui-control-padding-x-sm) + 1.25rem) 0 var(--ui-control-padding-x-sm);
+  min-block-size: var(--ui-control-height-sm);
+  padding-block: max(0.375rem, calc(var(--ui-control-padding-y-sm) - 0.125rem));
+  padding-inline: var(--ui-control-padding-x-sm) calc(var(--ui-control-padding-x-sm) + 1.5rem);
   font-size: var(--text-xs);
 }
 
 .ui-select--default {
-  height: var(--ui-control-height-md);
-  padding: 0 calc(var(--ui-control-padding-x-md) + 1.25rem) 0 var(--ui-control-padding-x-md);
+  min-block-size: var(--ui-control-height-md);
+  padding-block: max(0.5rem, calc(var(--ui-control-padding-y-md) - 0.125rem));
+  padding-inline: var(--ui-control-padding-x-md) calc(var(--ui-control-padding-x-md) + 1.5rem);
 }
 
 .ui-select--lg {
-  height: var(--ui-control-height-lg);
-  padding: 0 calc(var(--ui-control-padding-x-lg) + 1.25rem) 0 var(--ui-control-padding-x-lg);
+  min-block-size: var(--ui-control-height-lg);
+  padding-block: max(0.625rem, calc(var(--ui-control-padding-y-lg) - 0.125rem));
+  padding-inline: var(--ui-control-padding-x-lg) calc(var(--ui-control-padding-x-lg) + 1.5rem);
   font-size: var(--text-base);
 }
 

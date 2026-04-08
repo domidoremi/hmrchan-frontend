@@ -1143,7 +1143,8 @@ onUnmounted(() => {
   gap: clamp(0.75rem, 2vw, 1.5rem);
   inline-size: 100%;
   min-inline-size: 0;
-  padding: 0.35rem clamp(0.4rem, 1.4vw, 0.75rem);
+  padding-block: max(0.4375rem, calc(var(--ui-control-padding-y-sm) - 0.0625rem));
+  padding-inline: clamp(0.625rem, 1.4vw, 0.875rem);
   border: 0.0625rem solid var(--nav-shell-border);
   border-radius: 999rem;
   background: transparent;
@@ -1231,14 +1232,15 @@ onUnmounted(() => {
 .nav-search-shell__input {
   inline-size: clamp(11rem, 18vw, 14rem);
   min-inline-size: 0;
-  min-block-size: 2.5rem;
-  padding-inline: 0.95rem;
+  min-block-size: calc(var(--ui-control-height-sm) + 0.125rem);
+  padding-block: max(0.4375rem, calc(var(--ui-control-padding-y-sm) - 0.0625rem));
+  padding-inline: 0.95rem 1.125rem;
   border: 0.0625rem solid color-mix(in srgb, var(--nav-action-border) 78%, transparent);
   border-radius: var(--ui-compat-pill-radius, var(--radius-full));
   background: color-mix(in srgb, var(--nav-action-bg-hover) 72%, transparent);
   color: var(--color-text-primary);
   font-size: var(--text-sm);
-  line-height: 1;
+  line-height: var(--appearance-ui-line-height);
   outline: none;
 }
 

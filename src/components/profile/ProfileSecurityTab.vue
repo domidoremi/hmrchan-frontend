@@ -174,10 +174,15 @@ onMounted(() => {
 }
 
 .item-count {
-  padding: 0.125rem 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.625rem);
+  padding-block: max(0.25rem, calc(var(--ui-control-padding-y-sm) - 0.1875rem));
+  padding-inline: max(0.75rem, calc(var(--appearance-chip-padding-inline) * 0.74));
   background: rgba(var(--color-primary-rgb), 0.08);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
+  line-height: var(--appearance-ui-line-height);
   color: var(--color-primary);
   font-weight: var(--font-medium);
 }
@@ -297,12 +302,17 @@ onMounted(() => {
 }
 
 .activity-status {
-  padding: 0.125rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.75rem);
+  padding-block: 0.1875rem;
+  padding-inline: max(0.6875rem, calc(var(--appearance-chip-padding-inline) * 0.68));
   border-radius: var(--radius-full);
   background: rgba(var(--color-success-rgb), 0.12);
   color: var(--color-success);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
+  line-height: var(--appearance-ui-line-height);
   white-space: nowrap;
 }
 

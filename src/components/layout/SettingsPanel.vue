@@ -1099,8 +1099,8 @@ function resetVideoSettings() {
   --settings-shell-border: var(--ui-compat-border);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: var(--spacing-3);
-  padding: var(--spacing-2);
+  gap: var(--appearance-surface-gap-sm);
+  padding: var(--appearance-surface-padding-sm);
   min-inline-size: 0;
   inline-size: 100%;
   max-inline-size: min(100%, 24rem);
@@ -1110,8 +1110,8 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact {
-  padding: var(--spacing-2);
-  gap: var(--spacing-2);
+  padding: 0.75rem;
+  gap: 0.75rem;
   min-inline-size: min(100%, 13.5rem);
   inline-size: min(100%, 22rem);
   max-inline-size: min(100%, 22rem);
@@ -1123,7 +1123,7 @@ function resetVideoSettings() {
 
 .settings-panel--embedded {
   padding: 0;
-  gap: var(--spacing-4);
+  gap: var(--appearance-surface-gap-md);
   max-inline-size: none;
   max-block-size: none;
   background: transparent;
@@ -1133,7 +1133,7 @@ function resetVideoSettings() {
 
 .settings-panel__body {
   display: grid;
-  gap: var(--spacing-3);
+  gap: var(--appearance-surface-gap-sm);
   min-block-size: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -1163,8 +1163,9 @@ function resetVideoSettings() {
 /* ========== Header ========== */
 .settings-header {
   display: grid;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-2) var(--spacing-1);
+  gap: 0.75rem;
+  padding-block: 0.875rem 0.625rem;
+  padding-inline: 0.875rem;
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
@@ -1188,7 +1189,8 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .settings-header {
-  padding: var(--spacing-2) var(--spacing-2);
+  padding-block: 0.75rem;
+  padding-inline: 0.75rem;
 }
 
 .settings-category-switcher {
@@ -1277,7 +1279,7 @@ function resetVideoSettings() {
 
 /* ========== Group ========== */
 .settings-group {
-  padding: var(--spacing-3);
+  padding: var(--appearance-surface-padding-md);
   min-inline-size: 0;
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--ui-radius-card, var(--radius-xl));
@@ -1290,7 +1292,7 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .settings-group {
-  padding: var(--spacing-3) var(--spacing-3);
+  padding: 0.9375rem;
 }
 
 .settings-group-header {
@@ -1338,8 +1340,9 @@ function resetVideoSettings() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3) var(--spacing-2);
+  gap: 0.75rem;
+  padding-block: 0.875rem;
+  padding-inline: 0.75rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
@@ -1352,8 +1355,9 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .theme-btn {
-  padding: var(--spacing-2) var(--spacing-1);
-  gap: var(--spacing-1);
+  padding-block: 0.75rem;
+  padding-inline: 0.625rem;
+  gap: 0.5rem;
 }
 
 .theme-btn:hover {
@@ -1487,7 +1491,8 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-3);
+  padding-block: 0.625rem;
+  padding-inline: 0.875rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-full);
@@ -1502,7 +1507,8 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .lang-btn {
-  padding: var(--spacing-1) var(--spacing-2);
+  padding-block: 0.5rem;
+  padding-inline: 0.75rem;
   font-size: var(--text-xs);
 }
 
@@ -1541,7 +1547,7 @@ function resetVideoSettings() {
   justify-content: space-between;
   gap: var(--spacing-3);
   width: 100%;
-  padding: var(--spacing-3);
+  padding: 0.9375rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
@@ -1660,7 +1666,7 @@ function resetVideoSettings() {
   align-items: center;
   gap: var(--spacing-3);
   width: 100%;
-  padding: var(--spacing-3);
+  padding: 0.9375rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
@@ -1675,7 +1681,7 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .link-btn {
-  padding: var(--spacing-2);
+  padding: 0.75rem;
 }
 
 .link-btn:hover {
@@ -1756,7 +1762,8 @@ function resetVideoSettings() {
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-1);
-  padding: var(--spacing-2) var(--spacing-1);
+  padding-block: 0.625rem;
+  padding-inline: 0.625rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
@@ -1768,7 +1775,8 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .bg-effect-btn {
-  padding: var(--spacing-1) var(--spacing-1);
+  padding-block: 0.5rem;
+  padding-inline: 0.5625rem;
 }
 
 .bg-effect-btn:hover {
@@ -1801,7 +1809,7 @@ function resetVideoSettings() {
 
 /* ========== Slider Group ========== */
 .slider-group {
-  padding: var(--spacing-2) 0 0;
+  padding-block-start: 0.75rem;
   min-inline-size: 0;
 }
 
@@ -1936,7 +1944,7 @@ function resetVideoSettings() {
 
   .toggle-btn {
     gap: var(--spacing-2);
-    padding: var(--spacing-2);
+    padding: 0.75rem;
   }
 
   .toggle-btn-content {

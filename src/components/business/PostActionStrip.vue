@@ -237,9 +237,12 @@ async function sharePost() {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.25rem 0.625rem;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.75rem);
+  padding-block: 0.25rem;
+  padding-inline: max(0.75rem, calc(var(--appearance-chip-padding-inline) * 0.72));
   border-radius: var(--radius-full);
   font-size: 0.6875rem;
+  line-height: var(--appearance-ui-line-height);
   color: var(--action-text);
   background: var(--action-pill-bg);
   border: 1px solid var(--action-pill-border);
@@ -294,6 +297,7 @@ async function sharePost() {
 }
 
 .post-action-strip--compact .subtitles-pill {
-  padding: 0.1875rem 0.5rem;
+  padding-block: 0.1875rem;
+  padding-inline: max(0.625rem, calc(var(--appearance-chip-padding-inline) * 0.64));
 }
 </style>

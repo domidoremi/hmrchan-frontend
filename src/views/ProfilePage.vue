@@ -401,8 +401,8 @@ onMounted(() => {
 .profile-quick-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
-  padding: 0.375rem;
+  gap: max(0.5rem, calc(var(--appearance-surface-gap-sm) - 0.25rem));
+  padding: max(0.5rem, calc(var(--appearance-surface-padding-sm) - 0.25rem));
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--ui-compat-panel-radius);
   background: var(--ui-compat-surface-base);
@@ -426,16 +426,17 @@ onMounted(() => {
 
 .quick-nav-badge {
   margin-inline-start: auto;
-  min-width: 1.25rem;
-  height: 1.25rem;
+  min-inline-size: 1.5rem;
+  min-block-size: 1.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0.375rem;
+  padding-inline: 0.4375rem;
   background: var(--color-error);
   color: var(--color-white);
   font-size: 0.625rem;
   font-weight: var(--font-bold);
+  line-height: var(--appearance-ui-line-height);
   border-radius: var(--radius-full);
 }
 
@@ -516,16 +517,16 @@ onMounted(() => {
 }
 
 .tab-bar.page-toolbar-shell {
-  padding: 0.1875rem;
+  padding: max(0.3125rem, calc(var(--appearance-surface-padding-sm) - 0.5rem));
 }
 
 .tab-bar__group {
   flex-wrap: nowrap;
-  gap: 0.125rem;
+  gap: 0.25rem;
   inline-size: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  scroll-padding-inline: 0.1875rem;
+  scroll-padding-inline: 0.3125rem;
   scrollbar-width: none;
 }
 
