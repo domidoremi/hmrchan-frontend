@@ -13,6 +13,7 @@ import {
   safePostMessage,
 } from '@/utils/security'
 import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
+import { reportClientEvent } from '@/utils/clientReporter'
 
 export type GoogleAuthIntent = 'login' | 'register'
 export type GoogleAuthMode = 'popup' | 'redirect'
@@ -740,7 +741,29 @@ export async function prepareGoogleAuthHandoff(
   }
 
   try {
-    const initResponse = await clientSecurityService.init(false, { promptChallenge: false })
+    let initResponse = await clientSecurityService.init(false, { promptChallenge: false })
+    resolvedSiteKey = initResponse.turnstile_site_key?.trim() || resolvedSiteKey
+
+    if (
+      initResponse.challenge_required &&
+      (!initResponse.client_token || !initResponse.client_token.trim())
+    ) {
+      reportClientEvent(
+        'google.challenge.init_missing_client_token',
+        {
+          challengeRequired: true,
+          hadFallbackSiteKey: Boolean(resolvedSiteKey),
+        },
+        {
+          category: 'security',
+          severity: 'warn',
+          requiresAnalyticsConsent: false,
+        }
+      )
+      initResponse = await clientSecurityService.init(true, { promptChallenge: false })
+      resolvedSiteKey = initResponse.turnstile_site_key?.trim() || resolvedSiteKey
+    }
+
     if (initResponse.challenge_required) {
       const siteKey = initResponse.turnstile_site_key?.trim() || resolvedSiteKey
 
@@ -749,6 +772,14 @@ export async function prepareGoogleAuthHandoff(
           status: 'error',
           messageKey: 'auth.error.turnstileFailed',
           detail: 'Missing Turnstile site key for Google auth challenge.',
+        }
+      }
+
+      if (!initResponse.client_token?.trim()) {
+        return {
+          status: 'error',
+          messageKey: 'error.server.invalidClientToken',
+          detail: 'Missing client token for Google auth challenge.',
         }
       }
 

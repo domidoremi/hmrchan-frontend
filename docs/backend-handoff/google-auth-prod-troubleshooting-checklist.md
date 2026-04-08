@@ -465,6 +465,8 @@
 
 - `X-Request-ID`
 - `X-Client-Reinit-Required`
+- `X-Auth-Chain-Version`
+- `X-Proxy-Upstream-Source`
 - 其他与结构化错误或客户端恢复相关的头
 
 #### 判定

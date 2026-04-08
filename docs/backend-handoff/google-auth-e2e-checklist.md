@@ -29,6 +29,10 @@ Google Console 中 `已授权的重新导向 URI` 也必须填写：
 发布后至少执行以下 smoke：
 
 - `GET /api/v1/auth/google/start?...`，断言 Google `redirect_uri` 精确等于 `https://api.momichan.xyz/api/v1/auth/google/callback`
+- `POST /api/v1/client/init` 在 `challenge_required=true` 时必须返回非空 `client_token`
+- `POST /api/v1/client/verify` 对失效 token 必须返回 `INVALID_CLIENT_TOKEN` / `CLIENT_TOKEN_EXPIRED`，并带 `X-Client-Reinit-Required: true`
+- `POST /api/v1/auth/google/exchange` 不得再返回裸 `{"detail":"Failed to complete login"}`
+- 同源主站与 API 域都要核对 `X-Auth-Chain-Version`、`X-Proxy-Upstream-Source` 与响应语义一致
 - `GET /api/v1/auth/google/callback?error=access_denied`，断言 `302` 到 `https://momichan.xyz/auth/callback?error=access_denied`
 - 旧 `/api/auth/google/*` 路径应直接 `404`
 
