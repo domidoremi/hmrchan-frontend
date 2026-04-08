@@ -670,7 +670,9 @@ function handleClick() {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.3125rem 0.625rem;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.6875rem);
+  padding-block: max(0.25rem, calc(var(--ui-control-padding-y-sm) - 0.1875rem));
+  padding-inline: max(0.75rem, calc(var(--appearance-chip-padding-inline) * 0.72));
   border-radius: var(--radius-full);
   background: rgba(15, 23, 42, 0.68);
   backdrop-filter: blur(0.75rem);
@@ -679,6 +681,7 @@ function handleClick() {
   font-size: 0.6875rem;
   font-weight: var(--font-semibold);
   letter-spacing: 0.02em;
+  line-height: var(--appearance-ui-line-height);
   transition:
     transform var(--transition-fast),
     background var(--transition-fast);
@@ -721,11 +724,14 @@ function handleClick() {
   display: flex;
   align-items: center;
   gap: 0.1875rem;
-  padding: 0.1875rem 0.5rem;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.8125rem);
+  padding-block: 0.1875rem;
+  padding-inline: max(0.625rem, calc(var(--appearance-chip-padding-inline) * 0.6));
   border-radius: var(--radius-full);
   font-size: 0.6875rem;
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
+  line-height: var(--appearance-ui-line-height);
   color: #fff;
   background: rgba(15, 23, 42, 0.72);
   backdrop-filter: blur(0.375rem);
@@ -741,11 +747,14 @@ function handleClick() {
   display: inline-flex;
   align-items: center;
   gap: 0.1875rem;
-  padding: 0.1875rem 0.5rem;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.8125rem);
+  padding-block: 0.1875rem;
+  padding-inline: max(0.625rem, calc(var(--appearance-chip-padding-inline) * 0.6));
   border-radius: var(--radius-full);
   font-size: 0.6875rem;
   font-weight: var(--font-medium);
   font-variant-numeric: tabular-nums;
+  line-height: var(--appearance-ui-line-height);
   color: rgba(255, 255, 255, 0.92);
   background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(0.375rem);
@@ -879,8 +888,12 @@ function handleClick() {
 .post-content {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.45rem, 0.8vw, 0.65rem);
-  padding: clamp(0.8rem, 1vw, 1rem);
+  gap: clamp(0.625rem, 0.9vw, 0.875rem);
+  padding: clamp(
+    var(--appearance-surface-padding-sm),
+    1vw + 0.25rem,
+    var(--appearance-surface-padding-md)
+  );
   border-top: 1px solid rgba(148, 163, 184, 0.08);
 }
 
@@ -920,9 +933,12 @@ function handleClick() {
 .post-tag {
   display: inline-flex;
   align-items: center;
-  padding: 0.1875rem 0.5rem;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.8125rem);
+  padding-block: 0.1875rem;
+  padding-inline: max(0.625rem, calc(var(--appearance-chip-padding-inline) * 0.6));
   border-radius: var(--radius-full);
   font-size: 0.6875rem;
+  line-height: var(--appearance-ui-line-height);
   color: var(--color-text-secondary);
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(148, 163, 184, 0.14);

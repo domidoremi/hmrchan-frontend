@@ -38,12 +38,21 @@ interface ScreenshotConfig {
   viewport: Viewport
   description: string
   waitForSelector?: string
+  visualState?: VisualState
 }
 
 interface GeneratorOptions {
   outputDir: string
   baseUrl: string
   waitAfterLoad: number
+  screenshotConfigs: ScreenshotConfig[]
+}
+
+interface VisualState {
+  preset?: string
+  colorMode?: 'light' | 'dark'
+  density?: 'compact' | 'comfortable' | 'spacious'
+  locale?: string
 }
 
 // Environment configuration with validation
@@ -51,6 +60,7 @@ function getConfig(): GeneratorOptions {
   const outputDir = process.env.SCREENSHOT_OUTPUT_DIR || 'public/screenshots'
   const baseUrl = process.env.SCREENSHOT_BASE_URL || 'http://localhost:5173'
   const waitAfterLoad = parseInt(process.env.SCREENSHOT_WAIT || '2000', 10)
+  const screenshotConfigs = expandScreenshots(SCREENSHOTS)
 
   if (isNaN(waitAfterLoad) || waitAfterLoad < 0) {
     throw new Error('SCREENSHOT_WAIT must be a positive number')
@@ -60,7 +70,62 @@ function getConfig(): GeneratorOptions {
     outputDir: resolve(process.cwd(), outputDir),
     baseUrl,
     waitAfterLoad,
+    screenshotConfigs,
   }
+}
+
+function parseCsv(value: string | undefined): string[] {
+  if (!value) return []
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function appendVariantSuffix(filename: string, suffix: string): string {
+  const lastDotIndex = filename.lastIndexOf('.')
+  if (lastDotIndex === -1) return `${filename}--${suffix}`
+  return `${filename.slice(0, lastDotIndex)}--${suffix}${filename.slice(lastDotIndex)}`
+}
+
+function expandScreenshots(baseConfigs: ScreenshotConfig[]): ScreenshotConfig[] {
+  const presets = parseCsv(process.env.SCREENSHOT_PRESETS)
+  const colorModes = parseCsv(process.env.SCREENSHOT_COLOR_MODES) as Array<'light' | 'dark'>
+  const densities = parseCsv(process.env.SCREENSHOT_DENSITIES) as Array<
+    'compact' | 'comfortable' | 'spacious'
+  >
+  const locale = process.env.SCREENSHOT_LOCALE || 'zh-CN'
+
+  const shouldExpand = presets.length > 0 || colorModes.length > 0 || densities.length > 0
+
+  if (!shouldExpand) {
+    return baseConfigs
+  }
+
+  const resolvedPresets = presets.length > 0 ? presets : ['minimal-editorial']
+  const resolvedColorModes = colorModes.length > 0 ? colorModes : ['light']
+  const resolvedDensities = densities.length > 0 ? densities : ['comfortable']
+
+  return baseConfigs.flatMap((config) =>
+    resolvedPresets.flatMap((preset) =>
+      resolvedColorModes.flatMap((colorMode) =>
+        resolvedDensities.map((density) => {
+          const suffix = [preset, colorMode, density].join('--')
+          return {
+            ...config,
+            name: appendVariantSuffix(config.name, suffix),
+            description: `${config.description} [${preset} / ${colorMode} / ${density}]`,
+            visualState: {
+              preset,
+              colorMode,
+              density,
+              locale,
+            },
+          }
+        })
+      )
+    )
+  )
 }
 
 // Screenshot configurations
@@ -189,6 +254,35 @@ async function generateScreenshot(
   try {
     await page.setViewport(viewport)
 
+    if (config.visualState) {
+      await page.evaluateOnNewDocument((visualState: VisualState) => {
+        try {
+          if (visualState.locale) {
+            window.localStorage.setItem('locale', visualState.locale)
+          }
+
+          if (visualState.colorMode) {
+            window.localStorage.setItem(
+              'theme',
+              JSON.stringify({
+                theme: visualState.colorMode,
+              })
+            )
+          }
+
+          window.localStorage.setItem(
+            'settings',
+            JSON.stringify({
+              appearancePreset: visualState.preset,
+              densityMode: visualState.density,
+            })
+          )
+        } catch {
+          // Ignore storage access issues in screenshot mode.
+        }
+      }, config.visualState)
+    }
+
     // 拦截 API 请求，返回 mock 数据
     await page.setRequestInterception(true)
     page.on('request', (request) => {
@@ -243,6 +337,24 @@ async function generateScreenshot(
     // Wait for specific selector if provided
     if (waitForSelector) {
       await page.waitForSelector(waitForSelector, { timeout: TIMEOUTS.PAGE_LOAD })
+    }
+
+    if (config.visualState) {
+      await page.waitForFunction(
+        (visualState: VisualState) => {
+          const root = document.documentElement
+          const presetMatches =
+            !visualState.preset || root.getAttribute('data-preset') === visualState.preset
+          const colorModeMatches =
+            !visualState.colorMode || root.getAttribute('data-color-mode') === visualState.colorMode
+          const densityMatches =
+            !visualState.density || root.getAttribute('data-density') === visualState.density
+
+          return presetMatches && colorModeMatches && densityMatches
+        },
+        { timeout: TIMEOUTS.PAGE_LOAD },
+        config.visualState
+      )
     }
 
     // Wait for animations and content to settle
@@ -340,7 +452,7 @@ async function main(): Promise<void> {
   }
 
   try {
-    for (const screenshotConfig of SCREENSHOTS) {
+    for (const screenshotConfig of config.screenshotConfigs) {
       try {
         await generateScreenshot(browser, screenshotConfig, config)
         results.success++

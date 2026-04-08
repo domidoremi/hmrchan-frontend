@@ -61,6 +61,7 @@ defineExpose({ el: textareaRef })
 <style scoped>
 .ui-textarea {
   width: 100%;
+  box-sizing: border-box;
   border-radius: var(--ui-radius-input, var(--radius));
   border: 1px solid var(--glass-border);
   background:
@@ -68,9 +69,10 @@ defineExpose({ el: textareaRef })
     var(--glass-bg-light);
   color: var(--color-foreground);
   font-size: var(--text-sm);
-  line-height: 1.6;
-  padding: 0.75rem var(--ui-control-padding-x-md);
-  min-height: 7.5rem;
+  line-height: max(1.6, var(--appearance-ui-line-height));
+  padding-block: max(0.6875rem, var(--ui-control-padding-y-md));
+  padding-inline: var(--ui-control-padding-x-md);
+  min-block-size: 8rem;
   resize: vertical;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
   transition-property: border-color, box-shadow, background-color;
@@ -91,14 +93,16 @@ defineExpose({ el: textareaRef })
 }
 
 .ui-textarea--sm {
-  min-height: 5rem;
-  padding: 0.5rem var(--ui-control-padding-x-sm);
+  min-block-size: 6rem;
+  padding-block: max(0.5rem, calc(var(--ui-control-padding-y-sm) + 0.0625rem));
+  padding-inline: var(--ui-control-padding-x-sm);
   font-size: var(--text-xs);
 }
 
 .ui-textarea--lg {
-  min-height: 10rem;
-  padding: 1rem var(--ui-control-padding-x-lg);
+  min-block-size: 10.5rem;
+  padding-block: max(0.875rem, calc(var(--ui-control-padding-y-lg) + 0.125rem));
+  padding-inline: var(--ui-control-padding-x-lg);
   font-size: var(--text-base);
 }
 

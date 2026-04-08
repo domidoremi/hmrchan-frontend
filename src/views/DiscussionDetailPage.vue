@@ -344,9 +344,14 @@ watch(
 
 .discussion-pin {
   font-size: var(--text-xs);
-  padding: 0.125rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.75rem);
+  padding-block: 0.1875rem;
+  padding-inline: max(0.6875rem, calc(var(--appearance-chip-padding-inline) * 0.68));
   border-radius: var(--radius-full);
   background: rgba(var(--color-primary-rgb), 0.12);
+  line-height: var(--appearance-ui-line-height);
   color: var(--color-primary);
 }
 
@@ -384,9 +389,14 @@ watch(
 .category-pill {
   margin-left: auto;
   font-size: var(--text-xs);
-  padding: 0.125rem 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.6875rem);
+  padding-block: 0.25rem;
+  padding-inline: max(0.75rem, calc(var(--appearance-chip-padding-inline) * 0.72));
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--surface-paper-bg) 80%, rgba(255, 255, 255, 0.42));
+  line-height: var(--appearance-ui-line-height);
   color: var(--surface-paper-ink-soft);
 }
 

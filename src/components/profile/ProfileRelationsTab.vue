@@ -343,12 +343,17 @@ watch(pageSize, () => {
 }
 
 .self-badge {
-  padding: 0.125rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: calc(var(--appearance-chip-min-block-size) - 0.75rem);
+  padding-block: 0.1875rem;
+  padding-inline: max(0.6875rem, calc(var(--appearance-chip-padding-inline) * 0.68));
   border-radius: var(--radius-full);
   background: rgba(var(--color-primary-rgb), 0.08);
   color: var(--color-primary);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
+  line-height: var(--appearance-ui-line-height);
 }
 
 .relation-bio {
