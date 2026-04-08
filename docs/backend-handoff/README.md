@@ -18,11 +18,13 @@
    强制安全策略、签名/来源校验、幂等键、`permission_version` 和错误码动作映射。
 7. `google-auth-e2e-checklist.md`
    Google 生产 redirect URI、callback 二跳、post-deploy smoke 和 QA 验收清单。
-8. `community-comments-cursor-rollout-checklist.md`
+8. `google-auth-prod-troubleshooting-checklist.md`
+   Google 线上失败时的前后端 / 网关 / Redis / 分发排查手册。
+9. `community-comments-cursor-rollout-checklist.md`
    `posts/:id/comments` strict cursor、`community/hot` / `latest` 修复版本的发布顺序与 smoke 清单。
-9. `contracts/README.md`
-   后端契约文档入口。
-10. `contracts/*.md` 与 `contracts/openapi/*.yaml`
+10. `contracts/README.md`
+    后端契约文档入口。
+11. `contracts/*.md` 与 `contracts/openapi/*.yaml`
     供联调或生成类型时使用的按域契约与 OpenAPI 真相源。
 
 ## 当前已同步的文件
@@ -34,6 +36,7 @@
 - `frontend-split-handoff.md`
 - `frontend-security-handoff.md`
 - `google-auth-e2e-checklist.md`
+- `google-auth-prod-troubleshooting-checklist.md`
 - `community-comments-cursor-rollout-checklist.md`
 - `contracts/README.md`
 - `contracts/identity-account-security.md`
