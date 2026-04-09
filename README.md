@@ -94,7 +94,7 @@ VITE_ANTI_TAMPER_ALLOW_DEV=false
 # 仅 strict 模式生效
 VITE_DISABLE_CONTEXT_MENU=false
 
-# Obfuscation（构建期混淆）
+# Obfuscation（构建期混淆，默认关闭）
 VITE_ENABLE_OBFUSCATION=false
 # safe | aggressive
 VITE_OBFUSCATION_PROFILE=safe
@@ -123,6 +123,7 @@ VITE_TURNSTILE_SITE_KEY=your_site_key_here
 > 前端会将指向后端的 `/api/*` 与 `/uploads/*` 绝对链接归一化为同源路径，避免泄露后端地址；建议后端返回相对路径或上述标准路径。
 > 如遇 CSP inline script 报错，建议在 Cloudflare 关闭 Rocket Loader，或保留入口脚本的 `data-cfasync="false"`。
 > 生产构建默认**不输出 sourcemap**；仅在私有排障场景下显式设置 `VITE_SOURCEMAP=hidden` 或 `VITE_SOURCEMAP=true`。
+> 生产构建默认关闭混淆；仅在明确接受兼容性与 CSP 风险时，显式设置 `VITE_ENABLE_OBFUSCATION=true` 后启用。
 > 若需要启用构建混淆，请先安装：`bun add -d javascript-obfuscator`。
 > 详细策略见：`docs/security/anti-tamper-feasibility.md`。
 
@@ -147,7 +148,7 @@ VITE_TURNSTILE_SITE_KEY=your_site_key_here
 | `VITE_ANTI_TAMPER_MODE`                       | anti-tamper 模式                         | ❌   |
 | `VITE_ANTI_TAMPER_ALLOW_DEV`                  | 开发环境强制启用 anti-tamper             | ❌   |
 | `VITE_DISABLE_CONTEXT_MENU`                   | strict 模式禁用右键                      | ❌   |
-| `VITE_ENABLE_OBFUSCATION`                     | 是否启用构建混淆                         | ❌   |
+| `VITE_ENABLE_OBFUSCATION`                     | 显式启用构建混淆（默认关闭）             | ❌   |
 | `VITE_OBFUSCATION_PROFILE`                    | 混淆强度（safe/aggressive）              | ❌   |
 | `VITE_OBFUSCATION_STRING_ARRAY`               | 字符串阵列化开关                         | ❌   |
 | `VITE_OBFUSCATION_STRING_ARRAY_ENCODING`      | 字符串编码（none/base64/rc4）            | ❌   |

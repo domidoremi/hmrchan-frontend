@@ -98,6 +98,31 @@ function normalizeProxyTarget(rawTarget: string | undefined, fallbackTarget: str
   return target.replace(/\/+$/, '')
 }
 
+const OBFUSCATED_CHUNK_PATTERNS = [
+  /^(?:auth|Auth)(?:$|[-_.]|[A-Z])/,
+  /^(?:clientSecurity|ClientSecurity)/,
+  /^(?:security|Security)/,
+  /^(?:webauthn|Webauthn)/,
+  /^(?:profile|Profile)/,
+  /^(?:settings|Settings)/,
+  /^(?:devices|Devices)/,
+  /^(?:useVideoSettings|UseVideoSettings)/,
+]
+
+function stripChunkHash(fileName: string): string {
+  const baseName = fileName.split('/').pop() ?? fileName
+  return baseName.replace(/-[A-Za-z0-9]+\.js$/, '')
+}
+
+function shouldObfuscateChunk(fileName: string): boolean {
+  if (!fileName.startsWith('assets/js/') || !fileName.endsWith('.js')) {
+    return false
+  }
+
+  const chunkName = stripChunkHash(fileName)
+  return OBFUSCATED_CHUNK_PATTERNS.some((pattern) => pattern.test(chunkName))
+}
+
 function createProxyConfig(apiTarget: string) {
   return {
     '/api': {
@@ -139,7 +164,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   }
   const isProd = mode === 'production'
   const isDev = mode === 'development'
-  const obfuscationEnabled = parseBoolEnv(env, 'VITE_ENABLE_OBFUSCATION', isProd)
+  const obfuscationEnabled = parseBoolEnv(env, 'VITE_ENABLE_OBFUSCATION', false)
   const asyncMainCss = parseBoolEnv(env, 'VITE_ASYNC_MAIN_CSS', true)
   const disablePreviewProxy = parseBoolEnv(env, 'VITE_DISABLE_PREVIEW_PROXY', false)
   const devtoolsEnabled = isDev && parseBoolEnv(env, 'VITE_ENABLE_DEVTOOLS', false)
@@ -216,7 +241,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
             obfuscationPlugin({
               enabled: obfuscationEnabled,
               profile: obfuscationProfile,
-              include: /assets\/js\/.*(auth|security|profile|settings|devices).*.js$/i,
+              // Keep obfuscation opt-in and scoped to explicit security-sensitive chunks only.
+              include: shouldObfuscateChunk,
               stringArray: obfuscationStringArray,
               stringArrayEncoding: obfuscationStringArrayEncoding,
               antiFormatting: obfuscationAntiFormatting,
