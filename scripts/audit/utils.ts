@@ -1,6 +1,6 @@
 import { spawn } from 'child_process'
 import { existsSync, readFileSync } from 'fs'
-import { dirname, resolve } from 'path'
+import { delimiter, dirname, join, resolve } from 'path'
 import type { AuditStatus } from './types'
 
 export interface CommandResult {
@@ -43,6 +43,26 @@ function getSpawnCommand(cmd: string): string {
 function getNodeCommand(): string {
   const execName = process.execPath.split(/[\\/]/).pop()?.toLowerCase() ?? ''
   if (execName.startsWith('node')) return process.execPath
+
+  const explicitNodePath =
+    process.env.npm_node_execpath || process.env.NODE || process.env.npm_execpath
+  if (explicitNodePath && existsSync(explicitNodePath)) return explicitNodePath
+
+  const pathValue = process.env.PATH || process.env.Path || ''
+  const pathEntries = pathValue.split(delimiter).filter(Boolean)
+  const extensions =
+    process.platform === 'win32'
+      ? (process.env.PATHEXT || '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean)
+      : ['']
+
+  for (const entry of pathEntries) {
+    for (const ext of extensions) {
+      const candidate =
+        process.platform === 'win32' ? join(entry, `node${ext}`) : join(entry, 'node')
+      if (existsSync(candidate)) return candidate
+    }
+  }
+
   return process.platform === 'win32' ? 'node.exe' : 'node'
 }
 
