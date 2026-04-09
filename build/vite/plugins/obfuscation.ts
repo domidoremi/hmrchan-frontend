@@ -2,11 +2,12 @@ import type { Plugin } from 'vite'
 
 type ObfuscationProfile = 'safe' | 'aggressive'
 type StringArrayEncoding = 'none' | 'base64' | 'rc4'
+type ObfuscationIncludeMatcher = RegExp | ((chunkFileName: string) => boolean)
 
 interface ObfuscationPluginOptions {
   enabled: boolean
   profile?: ObfuscationProfile
-  include?: RegExp
+  include?: ObfuscationIncludeMatcher
   stringArray?: boolean
   stringArrayEncoding?: StringArrayEncoding
   antiFormatting?: boolean
@@ -87,7 +88,7 @@ export function obfuscationPlugin(options: ObfuscationPluginOptions): Plugin {
     renderChunk(code, chunk) {
       if (!enabled || !obfuscator) return null
       if (!chunk.fileName.endsWith('.js')) return null
-      if (!include.test(chunk.fileName)) return null
+      if (!matchesInclude(include, chunk.fileName)) return null
 
       const isAggressive = profile === 'aggressive'
       const effectiveStringArray = stringArray || codeEncryption
@@ -138,4 +139,12 @@ export function obfuscationPlugin(options: ObfuscationPluginOptions): Plugin {
       }
     },
   }
+}
+
+function matchesInclude(include: ObfuscationIncludeMatcher, chunkFileName: string): boolean {
+  if (typeof include === 'function') {
+    return include(chunkFileName)
+  }
+
+  return include.test(chunkFileName)
 }

@@ -68,6 +68,11 @@ const CLOUDFLARE_PATTERNS = [
 
   // Non-passive touch listener warnings (often from third-party loaders)
   /Added non-passive event listener to a scroll-blocking 'touchstart' event/i,
+
+  // Cloudflare challenge script deprecation warnings
+  /Protected Audience API/i,
+  /StorageType\.persistent/i,
+  /Shared Storage API/i,
 ]
 
 /**
