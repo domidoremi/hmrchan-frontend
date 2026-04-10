@@ -4,6 +4,7 @@
     :class="{
       'settings-panel--compact': props.compact,
       'settings-panel--embedded': props.embedded,
+      'settings-panel--external-scroll': props.externalScroll,
     }"
   >
     <div v-if="props.showHeader" class="settings-header">
@@ -781,12 +782,14 @@ const props = withDefaults(
     compact?: boolean
     embedded?: boolean
     showHeader?: boolean
+    externalScroll?: boolean
     allowedCategories?: SettingsCategory[]
   }>(),
   {
     compact: true,
     embedded: false,
     showHeader: true,
+    externalScroll: false,
     allowedCategories: () => [],
   }
 )
@@ -1131,6 +1134,11 @@ function resetVideoSettings() {
   border-radius: 0;
 }
 
+.settings-panel--external-scroll {
+  max-block-size: none;
+  overflow: visible;
+}
+
 .settings-panel__body {
   display: grid;
   gap: var(--appearance-surface-gap-sm);
@@ -1143,6 +1151,11 @@ function resetVideoSettings() {
 }
 
 .settings-panel--embedded .settings-panel__body {
+  overflow: visible;
+  padding-block-end: 0;
+}
+
+.settings-panel--external-scroll .settings-panel__body {
   overflow: visible;
   padding-block-end: 0;
 }

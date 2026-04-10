@@ -72,22 +72,6 @@
           </button>
 
           <button
-            v-if="isMobile"
-            type="button"
-            ref="routeBtnRef"
-            class="nav-action-btn nav-action-btn--square nav-route-btn"
-            :class="{ 'nav-action-btn--active': showRouteMenu }"
-            :aria-label="$t('common.primaryNavigation')"
-            :aria-expanded="showRouteMenu"
-            aria-haspopup="dialog"
-            :aria-controls="showRouteMenu ? 'navbar-route-menu' : undefined"
-            @click="toggleRouteMenu"
-          >
-            <AnimatedIcon name="explore" :fallback-icon="Menu" size="md" :active="showRouteMenu" />
-            <span class="nav-action-btn__label">{{ $t('common.primaryNavigation') }}</span>
-          </button>
-
-          <button
             type="button"
             ref="settingsBtnRef"
             class="nav-action-btn nav-action-btn--square"
@@ -157,44 +141,6 @@
     <!-- Settings Dropdown -->
     <Transition name="dropdown">
       <div
-        v-if="showRouteMenu && isMobile"
-        id="navbar-route-menu"
-        ref="routeDropdownRef"
-        v-click-outside="{ handler: () => closeRouteMenu(), include: [routeBtnRef] }"
-        class="route-dropdown glass-dropdown"
-        role="dialog"
-        aria-modal="true"
-        :aria-label="$t('common.primaryNavigation')"
-        tabindex="-1"
-        @click.stop
-      >
-        <div class="route-dropdown__grid">
-          <RouterLink
-            v-for="item in mobileRouteItems"
-            :key="item.path"
-            :to="getNavigationLink(item)"
-            class="route-dropdown__link"
-            :class="{ 'route-dropdown__link--active': isRouteActive(item.path) }"
-            @click="closeRouteMenu()"
-            @mouseenter="prefetchMobileRoute(item.path)"
-            @focus="prefetchMobileRoute(item.path)"
-          >
-            <component :is="item.icon" class="route-dropdown__icon" aria-hidden="true" />
-            <span>{{ $t(item.i18nKey) }}</span>
-          </RouterLink>
-        </div>
-        <div class="route-dropdown__footer">
-          <RouterLink to="/about" class="route-dropdown__utility" @click="closeRouteMenu()">
-            <Info class="route-dropdown__icon" aria-hidden="true" />
-            <span>{{ $t('nav.about') }}</span>
-          </RouterLink>
-        </div>
-      </div>
-    </Transition>
-
-    <!-- Settings Dropdown -->
-    <Transition name="dropdown">
-      <div
         v-if="showSettings"
         id="navbar-settings-panel"
         ref="settingsDropdownRef"
@@ -208,7 +154,7 @@
         tabindex="-1"
         @click.stop
       >
-        <SettingsPanel @close="closeSettings()" />
+        <SettingsPanel external-scroll @close="closeSettings()" />
       </div>
     </Transition>
 
@@ -354,18 +300,7 @@ import {
 } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import {
-  Bell,
-  ChevronRight,
-  Info,
-  LogIn,
-  LogOut,
-  Menu,
-  Search,
-  Settings,
-  Smartphone,
-  User,
-} from '@lucide/vue'
+import { Bell, ChevronRight, LogIn, LogOut, Search, Settings, Smartphone, User } from '@lucide/vue'
 import { useAuthStore } from '@/stores'
 import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserDisplayName } from '@/utils/user'
@@ -374,7 +309,6 @@ import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { runWhenIdle, throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 import { resolveNavbarDropdownPosition } from '@/components/layout/navbarDropdownPosition'
-import { useNavigation } from '@/composables/useNavigation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Separator from '@/components/ui/Separator.vue'
@@ -406,16 +340,11 @@ const route = useRoute()
 const isPostDetailRoute = computed(() => route.name === 'post-detail')
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
-const { mobileNavItems, getNavigationLink } = useNavigation()
-
-const showRouteMenu = ref(false)
 const showSettings = ref(false)
 const showUserMenu = ref(false)
 const isDesktopSearchExpanded = ref(false)
 const desktopSearchQuery = ref('')
 
-const routeBtnRef = useTemplateRef<HTMLButtonElement>('routeBtnRef')
-const routeDropdownRef = useTemplateRef<HTMLDivElement>('routeDropdownRef')
 const settingsBtnRef = useTemplateRef<HTMLButtonElement>('settingsBtnRef')
 const userBtnRef = useTemplateRef<HTMLButtonElement>('userBtnRef')
 const settingsDropdownRef = useTemplateRef<HTMLDivElement>('settingsDropdownRef')
@@ -424,13 +353,6 @@ const navbarRef = useTemplateRef<HTMLElement>('navbarRef')
 const desktopSearchInputRef = useTemplateRef<HTMLInputElement>('desktopSearchInputRef')
 
 const desktopSearchInputId = 'navbar-desktop-search'
-
-useFocusTrap(routeDropdownRef, showRouteMenu, {
-  autoFocus: true,
-  restoreFocus: false,
-  initialFocus: '.route-dropdown__link',
-  onEscape: () => closeRouteMenu({ restoreFocus: true }),
-})
 
 useFocusTrap(settingsDropdownRef, showSettings, {
   autoFocus: true,
@@ -452,6 +374,7 @@ const isUserDropdownPositioned = ref(false)
 
 const isMobile = ref(false)
 const isNavbarHidden = ref(false)
+const isNavbarOverlayOpen = computed(() => showSettings.value || showUserMenu.value)
 let lastScrollY = 0
 const scrollThreshold = 100
 const hideHysteresis = 24
@@ -490,8 +413,6 @@ const userAvatarFallbackLabel = computed(() =>
 )
 
 const prefetchedPageKeys = new Set<string>()
-const mobileRouteItems = computed(() => mobileNavItems.value)
-
 function runOncePrefetch(key: string, loader: () => void) {
   if (prefetchedPageKeys.has(key)) return
   prefetchedPageKeys.add(key)
@@ -534,7 +455,6 @@ function prefetchProfileSettingsPage() {
 watch(
   () => route.fullPath,
   () => {
-    closeRouteMenu()
     closeSettings()
     closeUserMenu()
     nextTick(() => {
@@ -593,11 +513,6 @@ function goToSearch() {
   router.push('/search')
 }
 
-function isRouteActive(path: string): boolean {
-  if (path === '/') return route.path === '/'
-  return route.path === path || route.path.startsWith(path + '/')
-}
-
 function expandDesktopSearch(focusInput = true) {
   if (isMobile.value) return
   isDesktopSearchExpanded.value = true
@@ -651,24 +566,12 @@ function handleDesktopSearchEscape() {
   collapseDesktopSearch(!desktopSearchQuery.value)
 }
 
-function restoreTriggerFocus(kind: 'route' | 'settings' | 'user') {
-  if (kind === 'route') {
-    routeBtnRef.value?.focus()
-    return
-  }
+function restoreTriggerFocus(kind: 'settings' | 'user') {
   if (kind === 'settings') {
     settingsBtnRef.value?.focus()
     return
   }
   userBtnRef.value?.focus()
-}
-
-function closeRouteMenu(options: { restoreFocus?: boolean } = {}) {
-  if (!showRouteMenu.value) return
-  showRouteMenu.value = false
-  if (options.restoreFocus) {
-    nextTick(() => restoreTriggerFocus('route'))
-  }
 }
 
 function closeSettings(options: { restoreFocus?: boolean } = {}) {
@@ -691,24 +594,8 @@ function closeUserMenu(options: { restoreFocus?: boolean } = {}) {
   }
 }
 
-function toggleRouteMenu() {
-  updateIsMobile()
-  if (!isMobile.value) return
-
-  closeSettings()
-  closeUserMenu()
-
-  if (showRouteMenu.value) {
-    closeRouteMenu()
-    return
-  }
-
-  showRouteMenu.value = true
-}
-
 function toggleSettings() {
   updateIsMobile()
-  closeRouteMenu()
   closeUserMenu()
 
   if (showSettings.value) {
@@ -716,6 +603,8 @@ function toggleSettings() {
     return
   }
 
+  isNavbarHidden.value = false
+  syncNavbarVisibleHeight()
   showSettings.value = true
   isSettingsDropdownPositioned.value = isMobile.value
   settingsDropdownStyle.value = isMobile.value
@@ -730,7 +619,6 @@ function toggleSettings() {
 
 function toggleUserMenu() {
   updateIsMobile()
-  closeRouteMenu()
   closeSettings()
 
   if (showUserMenu.value) {
@@ -738,6 +626,8 @@ function toggleUserMenu() {
     return
   }
 
+  isNavbarHidden.value = false
+  syncNavbarVisibleHeight()
   showUserMenu.value = true
   isUserDropdownPositioned.value = isMobile.value
   userDropdownStyle.value = isMobile.value
@@ -759,12 +649,6 @@ function handleLogout() {
 function handleKeydown(event: KeyboardEvent) {
   if (event.key !== 'Escape') return
 
-  if (showRouteMenu.value) {
-    event.preventDefault()
-    closeRouteMenu({ restoreFocus: true })
-    return
-  }
-
   if (showUserMenu.value) {
     event.preventDefault()
     closeUserMenu({ restoreFocus: true })
@@ -781,36 +665,6 @@ function updateIsMobile() {
   isMobile.value = window.matchMedia(MOBILE_NAV_BREAKPOINT_QUERY).matches
   if (isMobile.value) {
     isDesktopSearchExpanded.value = false
-    return
-  }
-  closeRouteMenu()
-}
-
-function prefetchMobileRoute(path: string) {
-  switch (path) {
-    case '/explore':
-      prefetchExplorePage()
-      return
-    case '/authors':
-      prefetchAuthorsPage()
-      return
-    case '/favorites':
-      runOncePrefetch('favorites', () => {
-        import('@/views/FavoritesPage.vue').catch(() => {})
-      })
-      return
-    case '/community':
-      runOncePrefetch('community', () => {
-        import('@/views/CommunityPage.vue').catch(() => {})
-      })
-      return
-    case '/schedule':
-      runOncePrefetch('schedule', () => {
-        import('@/views/SchedulePage.vue').catch(() => {})
-      })
-      return
-    default:
-      return
   }
 }
 
@@ -878,11 +732,11 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
 const handleScroll = throttleRAF(() => {
   const currentScrollY = window.scrollY
   const delta = currentScrollY - lastScrollY
-  const railNavLocked = isHomeRailNavLockEnabled()
+  const visibilityLocked = isHomeRailNavLockEnabled() || isNavbarOverlayOpen.value
   const showAt = Math.max(0, scrollThreshold - showHysteresis)
   const hideAt = scrollThreshold + hideHysteresis
 
-  if (railNavLocked) {
+  if (visibilityLocked) {
     const nextHidden = false
     if (nextHidden !== isNavbarHidden.value) {
       isNavbarHidden.value = nextHidden
@@ -900,11 +754,9 @@ const handleScroll = throttleRAF(() => {
 
   let nextHidden = isNavbarHidden.value
 
-  if (railNavLocked && currentScrollY > hideAt) {
+  if (delta > 0 && currentScrollY > hideAt) {
     nextHidden = true
-  } else if (delta > 0 && currentScrollY > hideAt) {
-    nextHidden = true
-  } else if (delta < 0 && !railNavLocked) {
+  } else if (delta < 0) {
     nextHidden = false
   } else if (currentScrollY <= showAt) {
     nextHidden = false
@@ -1490,7 +1342,7 @@ onUnmounted(() => {
   --nav-dropdown-enter-scale: 0.965;
   --nav-dropdown-leave-scale: 0.985;
   transform-origin: top right;
-  inline-size: min(24rem, calc(100vw - 2rem));
+  inline-size: min(27.5rem, calc(100vw - 2rem));
   max-block-size: min(var(--app-safe-block-size), 36rem);
   transition:
     opacity var(--duration-fast) var(--ease-out),
@@ -1519,7 +1371,11 @@ onUnmounted(() => {
 }
 
 .settings-dropdown.glass-dropdown {
-  padding: clamp(0.25rem, 0.8vw, 0.375rem);
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .user-dropdown.glass-dropdown {
@@ -1708,10 +1564,11 @@ onUnmounted(() => {
 
 .user-info {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(3rem, 3.5rem) minmax(0, 1fr);
   align-items: center;
-  gap: clamp(0.875rem, 1.5vw, 1rem);
-  padding: clamp(0.875rem, 1.5vw, 1rem);
+  gap: clamp(0.75rem, 1.4vw, 0.95rem);
+  padding-block: clamp(0.875rem, 1.5vw, 1rem);
+  padding-inline: clamp(0.875rem, 1.6vw, 1.1rem);
   border: 1px solid var(--ui-compat-border);
   border-radius: calc(var(--ui-compat-panel-radius) - 0.375rem);
   background: var(--ui-compat-surface-interactive);
@@ -1724,8 +1581,8 @@ onUnmounted(() => {
 }
 
 .user-avatar-lg.ui-avatar {
-  width: clamp(3.5rem, 9vw, 4.25rem);
-  height: clamp(3.5rem, 9vw, 4.25rem);
+  width: clamp(3rem, 7vw, 3.55rem);
+  height: clamp(3rem, 7vw, 3.55rem);
   border-radius: 50%;
   border: 2px solid var(--nav-chip-border);
   background: var(--nav-muted-bg);
@@ -1779,7 +1636,7 @@ onUnmounted(() => {
 
 .user-menu-primary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr));
   gap: clamp(0.5rem, 0.9vw, 0.7rem);
   align-items: stretch;
   grid-auto-rows: auto;
@@ -1794,6 +1651,7 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-3);
   width: 100%;
+  min-inline-size: 0;
   padding: var(--spacing-3);
   border-radius: var(--ui-radius-button, var(--radius-lg));
   border: 1px solid var(--ui-compat-border);
@@ -1841,7 +1699,7 @@ onUnmounted(() => {
 }
 
 .dropdown-link-arrow {
-  margin-left: auto;
+  margin-inline-start: auto;
   color: var(--color-text-tertiary);
   opacity: 0;
   transition:
@@ -1973,7 +1831,7 @@ onUnmounted(() => {
   }
 
   .user-info {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(2.85rem, 3.25rem) minmax(0, 1fr);
   }
 }
 

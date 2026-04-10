@@ -26,12 +26,12 @@
         @focusout="handleDockSectionFocusOut('primary', $event)"
       >
         <RouterLink
-          v-for="(item, index) in primaryNavItems"
+          v-for="(item, index) in desktopPrimaryNavItems"
           :key="item.path"
           :to="getNavigationLink(item)"
           class="app-side-nav__link"
           :class="{ 'app-side-nav__link--active': isRouteActive(item.path) }"
-          :style="getDockStyle('primary', index, primaryNavItems.length)"
+          :style="getDockStyle('primary', index, desktopPrimaryNavItems.length)"
           :aria-label="$t(item.i18nKey)"
           :title="$t(item.i18nKey)"
           @mouseenter="prefetchRoute(item.path)"
@@ -73,10 +73,34 @@
       </nav>
     </div>
   </aside>
+
+  <nav
+    ref="mobileDockRef"
+    class="app-mobile-dock"
+    :class="{ 'app-mobile-dock--chromeless': props.chromeless }"
+    :aria-label="$t('common.primaryNavigation')"
+  >
+    <div class="app-mobile-dock__shell">
+      <RouterLink
+        v-for="item in mobilePrimaryNavItems"
+        :key="item.path"
+        :to="getNavigationLink(item)"
+        class="app-mobile-dock__link"
+        :class="{ 'app-mobile-dock__link--active': isRouteActive(item.path) }"
+        :aria-label="$t(item.i18nKey)"
+        :title="$t(item.i18nKey)"
+        @mouseenter="prefetchRoute(item.path)"
+        @focus="prefetchRoute(item.path)"
+      >
+        <component :is="item.icon" class="app-mobile-dock__icon" aria-hidden="true" />
+        <span class="sr-only">{{ $t(item.i18nKey) }}</span>
+      </RouterLink>
+    </div>
+  </nav>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, type Component } from 'vue'
 import { RouterLink, useRoute, type RouteLocationRaw } from 'vue-router'
 import { Info, Settings2 } from '@lucide/vue'
 import { prefetchAuthorsData, prefetchExploreData } from '@/utils/prefetch'
@@ -101,17 +125,29 @@ interface UtilityNavItem {
 
 type DockSection = 'primary' | 'utility'
 
+const MOBILE_DOCK_BREAKPOINT_QUERY = '(max-width: 960px)'
+
 const route = useRoute()
-const { desktopNavItems, getNavigationLink } = useNavigation()
+const { desktopNavItems, mobileNavItems, getNavigationLink } = useNavigation()
 
 const prefetchedRoutes = new Set<string>()
 const hoveredDockIndex = ref<Record<DockSection, number | null>>({
   primary: null,
   utility: null,
 })
+const mobileDockRef = ref<HTMLElement | null>(null)
+const isMobileDockViewport = ref(false)
 
-const primaryNavItems = computed(() =>
+let mobileDockResizeObserver: ResizeObserver | null = null
+
+const desktopPrimaryNavItems = computed(() =>
   desktopNavItems.value.filter((item) =>
+    ['/', '/explore', '/favorites', '/authors', '/community', '/schedule'].includes(item.path)
+  )
+)
+
+const mobilePrimaryNavItems = computed(() =>
+  mobileNavItems.value.filter((item) =>
     ['/', '/explore', '/favorites', '/authors', '/community', '/schedule'].includes(item.path)
   )
 )
@@ -239,6 +275,60 @@ function resetMagneticMove(event: PointerEvent) {
   target.style.setProperty('--app-side-nav-magnet-x', '0px')
   target.style.setProperty('--app-side-nav-magnet-y', '0px')
 }
+
+function syncMobileDockHeight() {
+  if (typeof document === 'undefined') return
+
+  const nextHeight =
+    isMobileDockViewport.value && mobileDockRef.value
+      ? `${Math.ceil(mobileDockRef.value.getBoundingClientRect().height)}px`
+      : '0px'
+
+  document.documentElement.style.setProperty('--mobile-nav-height', nextHeight)
+}
+
+function disconnectMobileDockObserver() {
+  mobileDockResizeObserver?.disconnect()
+  mobileDockResizeObserver = null
+}
+
+function observeMobileDock() {
+  if (typeof window === 'undefined' || !isMobileDockViewport.value || !mobileDockRef.value) {
+    disconnectMobileDockObserver()
+    syncMobileDockHeight()
+    return
+  }
+
+  disconnectMobileDockObserver()
+
+  if (typeof ResizeObserver !== 'undefined') {
+    mobileDockResizeObserver = new ResizeObserver(() => {
+      syncMobileDockHeight()
+    })
+    mobileDockResizeObserver.observe(mobileDockRef.value)
+  }
+
+  syncMobileDockHeight()
+}
+
+function syncViewportMode() {
+  if (typeof window === 'undefined') return
+  isMobileDockViewport.value = window.matchMedia(MOBILE_DOCK_BREAKPOINT_QUERY).matches
+  void nextTick(() => observeMobileDock())
+}
+
+onMounted(() => {
+  syncViewportMode()
+  window.addEventListener('resize', syncViewportMode)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', syncViewportMode)
+  disconnectMobileDockObserver()
+  if (typeof document !== 'undefined') {
+    document.documentElement.style.setProperty('--mobile-nav-height', '0px')
+  }
+})
 </script>
 
 <style scoped>
@@ -445,9 +535,96 @@ function resetMagneticMove(event: PointerEvent) {
   );
 }
 
+.app-mobile-dock {
+  display: none;
+}
+
 @media (max-width: 960px) {
   .app-side-nav {
     display: none;
+  }
+
+  .app-mobile-dock {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: calc(var(--z-sticky) + 2);
+    display: flex;
+    justify-content: center;
+    padding-inline: clamp(0.75rem, 4vw, 1rem);
+    padding-block-end: max(env(safe-area-inset-bottom, 0rem), 0.5rem);
+    padding-block-start: 0.35rem;
+    pointer-events: none;
+  }
+
+  .app-mobile-dock__shell {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    align-items: center;
+    gap: 0.375rem;
+    inline-size: min(100%, 28rem);
+    min-inline-size: 0;
+    padding: 0.5rem;
+    border: 0.0625rem solid color-mix(in srgb, var(--ui-compat-border) 70%, transparent);
+    border-radius: 999rem;
+    background: color-mix(in srgb, var(--ui-compat-surface-elevated) 82%, transparent);
+    box-shadow: var(--ui-compat-shadow-strong);
+    backdrop-filter: var(--ui-compat-backdrop);
+    -webkit-backdrop-filter: var(--ui-compat-backdrop);
+    pointer-events: auto;
+  }
+
+  .app-mobile-dock__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: 2.75rem;
+    border: 0.0625rem solid transparent;
+    border-radius: 999rem;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition:
+      transform var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .app-mobile-dock__icon {
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    transition:
+      transform var(--duration-fast) var(--ease-out),
+      filter var(--duration-fast) var(--ease-out);
+  }
+
+  .app-mobile-dock__link:hover,
+  .app-mobile-dock__link:focus-visible {
+    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--ui-compat-surface-interactive) 92%, transparent);
+    border-color: color-mix(in srgb, var(--ui-compat-border-strong) 74%, transparent);
+  }
+
+  .app-mobile-dock__link--active {
+    color: var(--color-primary);
+    background: color-mix(
+      in srgb,
+      var(--ui-compat-surface-interactive-strong) 96%,
+      rgba(var(--color-primary-rgb), 0.12)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--ui-compat-border-strong) 74%,
+      rgba(var(--color-primary-rgb), 0.18)
+    );
+    transform: translate3d(0, -0.0625rem, 0) scale(1.04);
+  }
+
+  .app-mobile-dock__link--active .app-mobile-dock__icon {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0.4rem 0.75rem rgba(var(--color-primary-rgb), 0.2));
   }
 }
 </style>

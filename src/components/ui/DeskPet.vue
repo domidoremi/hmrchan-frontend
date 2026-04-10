@@ -328,7 +328,7 @@ const rectsIntersect = (
 
 const getDefaultPlacementInsets = () => {
   const navbarRect = getVisibleRect('.navbar')
-  const mobileNavRect = getVisibleRect('.mobile-nav')
+  const mobileNavRect = getVisibleRect('.app-mobile-dock') ?? getVisibleRect('.mobile-nav')
 
   return {
     top: (navbarRect?.bottom ?? 0) + DEFAULT_PET_EDGE_GAP,

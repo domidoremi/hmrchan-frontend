@@ -1,5 +1,16 @@
 <template>
-  <nav class="home-quick-nav" :aria-label="$t('home.quickNav.ariaLabel')">
+  <nav
+    ref="navRef"
+    class="home-quick-nav"
+    :class="{ 'is-dragging': isDragging }"
+    :data-side="side"
+    :aria-label="$t('home.quickNav.ariaLabel')"
+    :style="quickNavStyle"
+    @pointerdown="handlePointerDown"
+    @pointermove="handlePointerMove"
+    @pointerup="handlePointerUp"
+    @pointercancel="handlePointerCancel"
+  >
     <button
       v-for="anchor in anchors"
       :key="anchor.id"
@@ -8,7 +19,7 @@
       :class="{ 'is-active': anchor.id === activeId }"
       :aria-label="$t(anchor.labelKey)"
       :aria-current="anchor.id === activeId ? 'location' : undefined"
-      @click="$emit('navigate', anchor.id)"
+      @click="handleNavigate(anchor.id)"
     >
       <component :is="anchor.icon" :size="18" stroke-width="1.8" aria-hidden="true" />
     </button>
@@ -16,18 +27,113 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onBeforeUnmount, ref } from 'vue'
 import type { HomeSectionAnchor } from '@/config/homeSections'
 
 defineOptions({ name: 'HomeQuickNav' })
 
-defineProps<{
+const props = defineProps<{
   anchors: readonly HomeSectionAnchor[]
   activeId: HomeSectionAnchor['id']
+  side: 'left' | 'right'
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   navigate: [target: HomeSectionAnchor['id']]
+  'update:side': [side: 'left' | 'right']
 }>()
+
+const MOBILE_BREAKPOINT_QUERY = '(max-width: 960px)'
+const DRAG_START_THRESHOLD_PX = 8
+
+const navRef = ref<HTMLElement | null>(null)
+const isDragging = ref(false)
+const dragOffsetX = ref(0)
+const activePointerId = ref<number | null>(null)
+const pointerStartX = ref(0)
+const pointerStartY = ref(0)
+const shouldSuppressClick = ref(false)
+
+const quickNavStyle = computed<Record<string, string>>(() => ({
+  '--home-quick-nav-drag-x': `${dragOffsetX.value}px`,
+}))
+
+function isMobileQuickNav(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches
+}
+
+function resetDragState() {
+  isDragging.value = false
+  dragOffsetX.value = 0
+  activePointerId.value = null
+}
+
+function handleNavigate(target: HomeSectionAnchor['id']) {
+  if (shouldSuppressClick.value) {
+    shouldSuppressClick.value = false
+    return
+  }
+
+  emit('navigate', target)
+}
+
+function handlePointerDown(event: PointerEvent) {
+  if (!isMobileQuickNav() || event.pointerType === 'mouse') return
+
+  activePointerId.value = event.pointerId
+  pointerStartX.value = event.clientX
+  pointerStartY.value = event.clientY
+  shouldSuppressClick.value = false
+  navRef.value?.setPointerCapture?.(event.pointerId)
+}
+
+function handlePointerMove(event: PointerEvent) {
+  if (activePointerId.value !== event.pointerId || !isMobileQuickNav()) return
+
+  const deltaX = event.clientX - pointerStartX.value
+  const deltaY = event.clientY - pointerStartY.value
+
+  if (!isDragging.value) {
+    if (Math.hypot(deltaX, deltaY) < DRAG_START_THRESHOLD_PX) return
+    isDragging.value = true
+    shouldSuppressClick.value = true
+  }
+
+  dragOffsetX.value = deltaX
+}
+
+function commitDrag(event: PointerEvent) {
+  if (activePointerId.value !== event.pointerId) return
+
+  const didDrag = isDragging.value
+  const nextSide =
+    typeof window !== 'undefined' && event.clientX <= window.innerWidth / 2 ? 'left' : 'right'
+
+  navRef.value?.releasePointerCapture?.(event.pointerId)
+  resetDragState()
+
+  if (didDrag && nextSide !== props.side) {
+    emit('update:side', nextSide)
+  }
+
+  if (didDrag && typeof window !== 'undefined') {
+    window.setTimeout(() => {
+      shouldSuppressClick.value = false
+    }, 0)
+  }
+}
+
+function handlePointerUp(event: PointerEvent) {
+  commitDrag(event)
+}
+
+function handlePointerCancel(event: PointerEvent) {
+  commitDrag(event)
+}
+
+onBeforeUnmount(() => {
+  resetDragState()
+})
 </script>
 
 <style scoped>
@@ -39,11 +145,13 @@ defineEmits<{
   display: grid;
   gap: 0.625rem;
   transform: translateY(-50%);
-  pointer-events: none;
+  transition:
+    inset-inline-start var(--duration-fast) var(--ease-out),
+    inset-inline-end var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .home-quick-nav__item {
-  pointer-events: auto;
   inline-size: 2.625rem;
   block-size: 2.625rem;
   display: inline-flex;
@@ -88,26 +196,35 @@ defineEmits<{
   color: rgba(255, 255, 255, 0.96);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
   .home-quick-nav {
-    inset-inline-start: 50%;
-    inset-inline-end: auto;
-    inset-block-start: auto;
-    inset-block-end: calc(env(safe-area-inset-bottom, 0rem) + 0.75rem);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    inset-block-start: 50%;
+    inset-block-end: auto;
+    display: grid;
     gap: 0.5rem;
     padding: 0.5rem;
-    inline-size: max-content;
-    max-inline-size: calc(100vw - 1rem);
-    transform: translateX(-50%);
     border: 0.0625rem solid rgba(15, 23, 42, 0.05);
     border-radius: 999rem;
     background: rgba(255, 255, 255, 0.32);
     box-shadow: 0 1.1rem 2.2rem -1.85rem rgba(15, 23, 42, 0.2);
     backdrop-filter: blur(0.5rem);
     -webkit-backdrop-filter: blur(0.5rem);
+    transform: translate3d(var(--home-quick-nav-drag-x, 0px), -50%, 0);
+    touch-action: none;
+  }
+
+  .home-quick-nav[data-side='left'] {
+    inset-inline-start: calc(env(safe-area-inset-left, 0rem) + 0.75rem);
+    inset-inline-end: auto;
+  }
+
+  .home-quick-nav[data-side='right'] {
+    inset-inline-start: auto;
+    inset-inline-end: calc(env(safe-area-inset-right, 0rem) + 0.75rem);
+  }
+
+  .home-quick-nav.is-dragging {
+    transition: none;
   }
 
   .home-quick-nav__item {
@@ -124,6 +241,7 @@ defineEmits<{
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .home-quick-nav,
   .home-quick-nav__item {
     transition: none;
   }
