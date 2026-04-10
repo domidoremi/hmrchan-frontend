@@ -238,6 +238,49 @@ describe('createAuthSessionController', () => {
     expect(state.runtimeAuthzCache.value?.expiresAt).toBeLessThanOrEqual(Date.now())
   })
 
+  it('refreshes the runtime session before trusting a fresh authz snapshot when the access token is expired', async () => {
+    const state = createState()
+    const controller = createAuthSessionController({ router, state })
+
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+    await controller.establishSession(
+      createLoginResponse({
+        access_token: createAccessToken({
+          exp: Math.floor(Date.now() / 1000) - 10,
+        }),
+      })
+    )
+
+    state.runtimeAuthzCache.value = {
+      roles: ['member'],
+      permissions: ['profile.read'],
+      version: '1',
+      expiresAt: Date.now() + 60000,
+    }
+
+    vi.clearAllMocks()
+    vi.mocked(authService.refreshToken).mockResolvedValueOnce(
+      createLoginResponse({
+        access_token: createAccessToken({
+          exp: Math.floor(Date.now() / 1000) + 3600,
+          permission_version: 2,
+        }),
+        permission_version: 2,
+      })
+    )
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(
+      createMeResponse({
+        permission_version: 2,
+      })
+    )
+
+    await expect(controller.ensureFreshAuthz('authenticated')).resolves.toBe(true)
+
+    expect(authService.refreshToken).toHaveBeenCalledTimes(1)
+    expect(authService.getCurrentUser).toHaveBeenCalledTimes(1)
+    expect(state.runtimeAuthzCache.value?.version).toBe('2')
+  })
+
   it('bootstraps the session during init and marks auth initialized', async () => {
     const state = createState()
     const controller = createAuthSessionController({ router, state })

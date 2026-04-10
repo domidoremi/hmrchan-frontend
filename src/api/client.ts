@@ -13,6 +13,7 @@ import { reportClientEvent } from '@/utils/clientReporter'
 import {
   clearAuthRuntimeSession,
   establishAuthRuntimeSession,
+  getAuthRuntimeSession,
   getRuntimeAccessToken,
 } from './client/auth-runtime'
 import {
@@ -595,11 +596,18 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
         }
       }
 
+      const runtimeSession = getAuthRuntimeSession()
       reportClientEvent(
-        'auth.session.rejected',
+        skipUnauthorizedRetry ? 'auth.session.rejected_after_refresh' : 'auth.session.rejected',
         {
           endpoint,
           method,
+          hasAccessToken: Boolean(accessToken),
+          hasRuntimeAccessToken: Boolean(runtimeSession?.accessToken),
+          accessTokenRotated: Boolean(
+            accessToken && runtimeSession?.accessToken && runtimeSession.accessToken !== accessToken
+          ),
+          permissionVersion: runtimeSession?.permissionVersion,
         },
         {
           category: 'security',

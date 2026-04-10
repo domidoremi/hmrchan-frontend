@@ -147,6 +147,7 @@ import {
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useFavoritesStore, useNotificationsStore } from '@/stores'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
+import { ensureProtectedPageReady } from '@/composables/useProtectedPageBootstrap'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import ControlGroup from '@/components/appearance/ControlGroup.vue'
 import PageToolbar from '@/components/appearance/PageToolbar.vue'
@@ -166,7 +167,7 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const favStore = useFavoritesStore()
 const notifStore = useNotificationsStore()
-const { user, isAuthenticated } = storeToRefs(authStore)
+const { user } = storeToRefs(authStore)
 
 const activeTab = ref<
   | 'favorites'
@@ -257,8 +258,10 @@ function editProfile() {
   router.push('/profile/settings#basic-info')
 }
 
-onMounted(() => {
-  if (!isAuthenticated.value) {
+onMounted(async () => {
+  const ready = await ensureProtectedPageReady(authStore, 'authenticated')
+
+  if (!ready) {
     router.push('/login')
     return
   }
