@@ -53,6 +53,9 @@
                 :site-key="resolvedClientChallengeSiteKey"
                 action="google-exchange"
                 size="compact"
+                appearance="execute"
+                execution="execute"
+                auto-execute
                 @verify="handleClientChallengeVerify"
                 @expire="handleClientChallengeExpire"
                 @error="handleClientChallengeWidgetError"
@@ -117,6 +120,9 @@
                 :site-key="turnstileSiteKey"
                 action="risk-login"
                 size="compact"
+                appearance="execute"
+                execution="execute"
+                auto-execute
                 @verify="handleRiskTurnstileVerify"
                 @expire="handleRiskTurnstileExpire"
                 @error="handleTurnstileError"
@@ -238,10 +244,15 @@ const clientChallengeSiteKey = ref('')
 const clientChallengeError = ref('')
 const clientChallengeDetail = ref('')
 const isClientChallengeSubmitting = ref(false)
-const clientChallengeTurnstileRef = useTemplateRef<{ reset: () => void }>(
+type TurnstileWidgetHandle = {
+  reset: () => void
+  execute?: () => Promise<string>
+}
+
+const clientChallengeTurnstileRef = useTemplateRef<TurnstileWidgetHandle>(
   'clientChallengeTurnstileRef'
 )
-const riskTurnstileRef = useTemplateRef<{ reset: () => void }>('riskTurnstileRef')
+const riskTurnstileRef = useTemplateRef<TurnstileWidgetHandle>('riskTurnstileRef')
 const riskTurnstileToken = ref<string | null>(null)
 const riskTurnstileIssuedAt = ref<number | null>(null)
 
@@ -318,6 +329,18 @@ function handleRiskTurnstileExpire() {
 
 function handleTurnstileError(error?: Error) {
   toastStore.error(t(getTurnstileErrorMessageKey(error)))
+}
+
+async function executeTurnstileChallenge(
+  widget: TurnstileWidgetHandle | null | undefined,
+  onToken?: (token: string) => void
+): Promise<string | null> {
+  const token = await widget?.execute?.()
+  if (token) {
+    onToken?.(token)
+    return token
+  }
+  return null
 }
 
 function resolveSecurityStepError(error: unknown): { message: string; detail: string } {
@@ -502,8 +525,14 @@ async function handleRiskVerificationSubmit() {
   }
 
   if (!isTurnstileTokenFresh(riskTurnstileToken.value, riskTurnstileIssuedAt.value)) {
-    riskError.value = t('auth.error.turnstileRequired')
-    return
+    const token = await executeTurnstileChallenge(riskTurnstileRef.value, (nextToken) => {
+      riskTurnstileToken.value = nextToken
+      riskTurnstileIssuedAt.value = Date.now()
+    })
+    if (!token) {
+      riskError.value = t('auth.error.turnstileRequired')
+      return
+    }
   }
 
   const result = await authStore.verifyRiskLogin(

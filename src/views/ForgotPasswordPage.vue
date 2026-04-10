@@ -36,6 +36,9 @@
             :site-key="turnstileSiteKey"
             action="forgot-password"
             size="compact"
+            appearance="execute"
+            execution="execute"
+            auto-execute
             @verify="handleTurnstileVerify"
             @expire="handleTurnstileExpire"
             @error="handleTurnstileError"
@@ -67,6 +70,9 @@
               :site-key="turnstileSiteKey"
               action="forgot-password"
               size="compact"
+              appearance="execute"
+              execution="execute"
+              auto-execute
               @verify="handleTurnstileVerify"
               @expire="handleTurnstileExpire"
               @error="handleTurnstileError"
@@ -121,9 +127,11 @@ let cooldownTimer: ReturnType<typeof setInterval> | null = null
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
 const requiresTurnstileChallenge = ref(false)
-const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
-  'turnstileRef'
-)
+const turnstileRef = useTemplateRef<{
+  reset: () => void
+  getResponse: () => string | undefined
+  execute?: () => Promise<string>
+}>('turnstileRef')
 const showTurnstileChallenge = computed(
   () => turnstileEnabled.value && requiresTurnstileChallenge.value
 )
@@ -179,8 +187,13 @@ async function handleSubmit() {
   }
 
   if (showTurnstileChallenge.value && !turnstileToken.value) {
-    toastStore.warning(t('auth.error.turnstileRequired'))
-    return
+    const token = await turnstileRef.value?.execute?.()
+    if (token) {
+      turnstileToken.value = token
+    } else {
+      toastStore.warning(t('auth.error.turnstileRequired'))
+      return
+    }
   }
 
   isLoading.value = true
