@@ -54,6 +54,9 @@
                 :site-key="turnstileSiteKey"
                 action="register"
                 size="compact"
+                appearance="execute"
+                execution="execute"
+                auto-execute
                 @verify="handleTurnstileVerify"
                 @expire="handleTurnstileExpire"
                 @error="handleTurnstileError"
@@ -213,6 +216,9 @@
                 :site-key="turnstileSiteKey"
                 action="register"
                 size="compact"
+                appearance="execute"
+                execution="execute"
+                auto-execute
                 @verify="handleTurnstileVerify"
                 @expire="handleTurnstileExpire"
                 @error="handleTurnstileError"
@@ -276,6 +282,9 @@
                 :site-key="turnstileSiteKey"
                 action="risk-login"
                 size="compact"
+                appearance="execute"
+                execution="execute"
+                auto-execute
                 @verify="handleRiskTurnstileVerify"
                 @expire="handleRiskTurnstileExpire"
                 @error="handleTurnstileError"
@@ -382,6 +391,9 @@
                   :site-key="resolvedGoogleClientChallengeSiteKey"
                   action="google-exchange"
                   size="compact"
+                  appearance="execute"
+                  execution="execute"
+                  auto-execute
                   @verify="handleGoogleClientChallengeVerify"
                   @expire="handleGoogleClientChallengeExpire"
                   @error="handleTurnstileError"
@@ -526,8 +538,14 @@ let googlePopupFlowToken = 0
 const codeInputRef = useTemplateRef<InstanceType<typeof EmailCodeInput>>('codeInputRef')
 const emailError = ref('')
 const serverPasswordErrors = ref<string[]>([])
-const googleClientChallengeRef = useTemplateRef<{ reset: () => void }>('googleClientChallengeRef')
-const riskTurnstileRef = useTemplateRef<{ reset: () => void }>('riskTurnstileRef')
+type TurnstileWidgetHandle = {
+  reset: () => void
+  getResponse?: () => string | undefined
+  execute?: () => Promise<string>
+}
+
+const googleClientChallengeRef = useTemplateRef<TurnstileWidgetHandle>('googleClientChallengeRef')
+const riskTurnstileRef = useTemplateRef<TurnstileWidgetHandle>('riskTurnstileRef')
 
 const passwordStrengthResult = computed(() => checkPasswordStrength(password.value))
 const passwordStrengthText = computed(() => {
@@ -543,9 +561,7 @@ const passwordStrengthText = computed(() => {
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
 const turnstileIssuedAt = ref<number | null>(null)
-const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
-  'turnstileRef'
-)
+const turnstileRef = useTemplateRef<TurnstileWidgetHandle>('turnstileRef')
 const riskTurnstileToken = ref<string | null>(null)
 const riskTurnstileIssuedAt = ref<number | null>(null)
 
@@ -772,6 +788,18 @@ function isRiskTurnstileTokenFresh() {
   if (!turnstileEnabled.value) return true
   if (!riskTurnstileToken.value || !riskTurnstileIssuedAt.value) return false
   return Date.now() - riskTurnstileIssuedAt.value < 4 * 60 * 1000
+}
+
+async function executeTurnstileChallenge(
+  widget: TurnstileWidgetHandle | null | undefined,
+  onToken?: (token: string) => void
+): Promise<string | null> {
+  const token = await widget?.execute?.()
+  if (token) {
+    onToken?.(token)
+    return token
+  }
+  return null
 }
 
 function validateRegistrationEmail(options: { showToast?: boolean } = {}) {
@@ -1035,8 +1063,14 @@ async function handleSendCode() {
   email.value = normalizedEmail
 
   if (turnstileEnabled.value && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
-    toastStore.warning(t('auth.error.turnstileRequired'))
-    return
+    const token = await executeTurnstileChallenge(turnstileRef.value, (nextToken) => {
+      turnstileToken.value = nextToken
+      turnstileIssuedAt.value = Date.now()
+    })
+    if (!token) {
+      toastStore.warning(t('auth.error.turnstileRequired'))
+      return
+    }
   }
 
   abortRegistrationCodeRequest()
@@ -1123,8 +1157,14 @@ async function handleResendCode() {
   email.value = normalizedEmail
 
   if (turnstileEnabled.value && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
-    toastStore.warning(t('auth.error.turnstileRequired'))
-    return
+    const token = await executeTurnstileChallenge(turnstileRef.value, (nextToken) => {
+      turnstileToken.value = nextToken
+      turnstileIssuedAt.value = Date.now()
+    })
+    if (!token) {
+      toastStore.warning(t('auth.error.turnstileRequired'))
+      return
+    }
   }
 
   abortRegistrationCodeRequest()
@@ -1264,8 +1304,14 @@ async function handleRegister() {
   const needsTurnstile = !hasValidRegisterToken()
   if (turnstileEnabled.value && needsTurnstile && !isTurnstileTokenFresh()) {
     forceTurnstileForRegister.value = true
-    toastStore.warning(t('auth.error.turnstileRequired'))
-    return
+    const token = await executeTurnstileChallenge(turnstileRef.value, (nextToken) => {
+      turnstileToken.value = nextToken
+      turnstileIssuedAt.value = Date.now()
+    })
+    if (!token) {
+      toastStore.warning(t('auth.error.turnstileRequired'))
+      return
+    }
   }
 
   serverPasswordErrors.value = []
@@ -1328,8 +1374,14 @@ async function handleRiskVerificationSubmit() {
   }
 
   if (turnstileEnabled.value && !isRiskTurnstileTokenFresh()) {
-    riskError.value = t('auth.error.turnstileRequired')
-    return
+    const token = await executeTurnstileChallenge(riskTurnstileRef.value, (nextToken) => {
+      riskTurnstileToken.value = nextToken
+      riskTurnstileIssuedAt.value = Date.now()
+    })
+    if (!token) {
+      riskError.value = t('auth.error.turnstileRequired')
+      return
+    }
   }
 
   const result = await authStore.verifyRiskLogin(

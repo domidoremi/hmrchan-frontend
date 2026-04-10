@@ -1,4 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { defineComponent } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import AuthCallbackPage from '../AuthCallbackPage.vue'
@@ -116,11 +117,18 @@ const globalConfig = {
     Input: {
       template: '<input />',
     },
-    TurnstileWidget: {
+    TurnstileWidget: defineComponent({
       name: 'TurnstileWidget',
       emits: ['verify', 'expire', 'error'],
+      setup(_, { expose }) {
+        expose({
+          reset: vi.fn(),
+          execute: vi.fn(),
+        })
+        return {}
+      },
       template: '<div class="turnstile-widget-stub" />',
-    },
+    }),
     AuthMfaStep: true,
   },
 }
