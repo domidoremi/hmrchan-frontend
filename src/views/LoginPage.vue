@@ -64,6 +64,9 @@
                 :site-key="turnstileSiteKey"
                 action="login"
                 size="compact"
+                appearance="execute"
+                execution="execute"
+                auto-execute
                 @verify="handleCredentialsTurnstileVerify"
                 @expire="handleCredentialsTurnstileExpire"
                 @error="handleTurnstileError"
@@ -182,6 +185,9 @@
                   :site-key="resolvedGoogleClientChallengeSiteKey"
                   action="google-exchange"
                   size="compact"
+                  appearance="execute"
+                  execution="execute"
+                  auto-execute
                   @verify="handleGoogleClientChallengeVerify"
                   @expire="handleGoogleClientChallengeExpire"
                   @error="handleTurnstileError"
@@ -268,6 +274,9 @@
                 :site-key="turnstileSiteKey"
                 action="risk-login"
                 size="compact"
+                appearance="execute"
+                execution="execute"
+                auto-execute
                 @verify="handleRiskTurnstileVerify"
                 @expire="handleRiskTurnstileExpire"
                 @error="handleTurnstileError"
@@ -449,9 +458,14 @@ const showRestorePassword = ref(false)
 const isRestoringAccount = ref(false)
 const showRestorePanel = ref(false)
 
-const credentialsTurnstileRef = useTemplateRef<{ reset: () => void }>('credentialsTurnstileRef')
-const googleClientChallengeRef = useTemplateRef<{ reset: () => void }>('googleClientChallengeRef')
-const riskTurnstileRef = useTemplateRef<{ reset: () => void }>('riskTurnstileRef')
+type TurnstileWidgetHandle = {
+  reset: () => void
+  execute?: () => Promise<string>
+}
+
+const credentialsTurnstileRef = useTemplateRef<TurnstileWidgetHandle>('credentialsTurnstileRef')
+const googleClientChallengeRef = useTemplateRef<TurnstileWidgetHandle>('googleClientChallengeRef')
+const riskTurnstileRef = useTemplateRef<TurnstileWidgetHandle>('riskTurnstileRef')
 const credentialsTurnstileToken = ref<string | null>(null)
 const credentialsTurnstileIssuedAt = ref<number | null>(null)
 const riskTurnstileToken = ref<string | null>(null)
@@ -559,6 +573,18 @@ function handleTurnstileError(error?: Error) {
     requiresCredentialsTurnstile.value = true
   }
   toastStore.error(t(getTurnstileErrorMessageKey(error)))
+}
+
+async function executeTurnstileChallenge(
+  widget: TurnstileWidgetHandle | null | undefined,
+  onToken?: (token: string) => void
+): Promise<string | null> {
+  const token = await widget?.execute?.()
+  if (token) {
+    onToken?.(token)
+    return token
+  }
+  return null
 }
 
 function clearInlineErrors() {
@@ -748,8 +774,14 @@ async function handleCredentialsSubmit() {
       turnstileEnabled.value
     )
   ) {
-    credentialsError.value = t('auth.error.turnstileRequired')
-    return
+    const token = await executeTurnstileChallenge(credentialsTurnstileRef.value, (nextToken) => {
+      credentialsTurnstileToken.value = nextToken
+      credentialsTurnstileIssuedAt.value = Date.now()
+    })
+    if (!token) {
+      credentialsError.value = t('auth.error.turnstileRequired')
+      return
+    }
   }
 
   nextRedirectTarget.value = redirectTo.value
@@ -781,8 +813,14 @@ async function handleRiskVerificationSubmit() {
       turnstileEnabled.value
     )
   ) {
-    riskError.value = t('auth.error.turnstileRequired')
-    return
+    const token = await executeTurnstileChallenge(riskTurnstileRef.value, (nextToken) => {
+      riskTurnstileToken.value = nextToken
+      riskTurnstileIssuedAt.value = Date.now()
+    })
+    if (!token) {
+      riskError.value = t('auth.error.turnstileRequired')
+      return
+    }
   }
 
   const result = await authStore.verifyRiskLogin(

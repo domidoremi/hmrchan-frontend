@@ -16,6 +16,9 @@
         ref="turnstileRef"
         :site-key="resolvedSiteKey"
         action="client_verify"
+        appearance="execute"
+        execution="execute"
+        auto-execute
         @verify="handleTurnstileVerify"
         @expire="handleTurnstileExpire"
         @error="handleTurnstileError"
@@ -71,7 +74,11 @@ const isPreparing = ref(false)
 const errorMessage = ref('')
 const errorDetail = ref('')
 
-const turnstileRef = useTemplateRef<{ reset: () => void; rerender?: () => void }>('turnstileRef')
+const turnstileRef = useTemplateRef<{
+  reset: () => void
+  rerender?: () => void
+  execute?: () => Promise<string>
+}>('turnstileRef')
 
 const isOpen = computed(() => clientChallengeState.isOpen.value)
 const resolvedSiteKey = computed(() => clientChallengeState.turnstileSiteKey.value)
