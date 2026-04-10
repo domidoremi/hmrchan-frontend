@@ -99,6 +99,7 @@ import { useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Mail } from '@lucide/vue'
 import { authService, ApiError } from '@/api'
+import { clientSecurityService } from '@/api/clientSecurityService'
 import { useToastStore } from '@/stores'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
@@ -185,6 +186,10 @@ async function handleSubmit() {
   isLoading.value = true
 
   try {
+    if (turnstileToken.value) {
+      await clientSecurityService.verify(turnstileToken.value)
+    }
+
     await authService.requestPasswordReset({
       email: email.value,
       ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),

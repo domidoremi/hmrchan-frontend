@@ -1046,6 +1046,10 @@ async function handleSendCode() {
 
   isSendingCode.value = true
   try {
+    if (turnstileToken.value) {
+      await clientSecurityService.verify(turnstileToken.value)
+    }
+
     const response = await authService.sendRegistrationCode(
       {
         email: normalizedEmail,
@@ -1130,6 +1134,10 @@ async function handleResendCode() {
 
   isSendingCode.value = true
   try {
+    if (turnstileToken.value) {
+      await clientSecurityService.verify(turnstileToken.value)
+    }
+
     const response = await authService.sendRegistrationCode(
       {
         email: normalizedEmail,

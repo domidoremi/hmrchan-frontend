@@ -8,6 +8,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { authService, ApiError, twoFactorService } from '@/api'
+import { clientSecurityService } from '@/api/clientSecurityService'
 import type {
   AuthResponse,
   MfaRequiredResponse,
@@ -142,6 +143,10 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
+      if (turnstileToken) {
+        await clientSecurityService.verify(turnstileToken)
+      }
+
       const response = await authService.register({
         username,
         email,
@@ -187,6 +192,9 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const deviceInfo = getDeviceInfo()
+      if (turnstileToken) {
+        await clientSecurityService.verify(turnstileToken)
+      }
       const response = await authService.login({
         username: usernameOrEmail,
         password,
@@ -217,6 +225,9 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const deviceInfo = getDeviceInfo()
+      if (turnstileToken) {
+        await clientSecurityService.verify(turnstileToken)
+      }
       const response = await authService.verifyRiskLogin(
         pendingToken,
         verificationCode,
