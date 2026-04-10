@@ -184,6 +184,7 @@
     "googlePopupWaitingHint": "ポップアップ内で Google ログインを完了すると、このページで続行します。",
     "googlePopupFallbackTitle": "このタブで続行",
     "googlePopupFallbackAction": "現在のページで続行",
+    "googlePopupRecoveryHint": "Google ポップアップで完了しない場合は、このページで続行してください。",
     "moreProvidersSoon": "他のログイン方法は今後対応予定です。",
     "verifyTitle": "セキュリティチェック",
     "verifyHint": "少しお待ちください",
@@ -239,8 +240,7 @@
       "codeLabel": "認証アプリまたはワンタイムコード",
       "backupCodeLabel": "バックアップコード",
       "passkeyHint": "この端末やブラウザに保存されたパスキーを使用します。",
-      "passkeyAction": "パスキーで続行",
-      "googlePopupRecoveryHint": "Google ポップアップで完了しない場合は、このページで続行してください。"
+      "passkeyAction": "パスキーで続行"
     }
   },
   "video": {

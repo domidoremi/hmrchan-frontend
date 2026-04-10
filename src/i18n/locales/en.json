@@ -184,6 +184,7 @@
     "googlePopupWaitingHint": "Finish the Google sign-in in the pop-up window to continue here.",
     "googlePopupFallbackTitle": "Continue sign-in in this tab",
     "googlePopupFallbackAction": "Continue in current page",
+    "googlePopupRecoveryHint": "If the Google pop-up does not finish here, continue in this tab.",
     "moreProvidersSoon": "More sign-in options will be supported later.",
     "verifyTitle": "Security check",
     "verifyHint": "Takes a moment",
@@ -239,8 +240,7 @@
       "codeLabel": "Authenticator or one-time code",
       "backupCodeLabel": "Backup code",
       "passkeyHint": "Use a saved passkey on this device or browser.",
-      "passkeyAction": "Continue with passkey",
-      "googlePopupRecoveryHint": "If the Google pop-up does not finish here, continue in this tab."
+      "passkeyAction": "Continue with passkey"
     }
   },
   "video": {

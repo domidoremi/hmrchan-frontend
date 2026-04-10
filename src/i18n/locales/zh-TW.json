@@ -172,6 +172,7 @@
     "googlePopupWaitingHint": "請在彈出的 Google 視窗中完成登入，完成後這裡會繼續。",
     "googlePopupFallbackTitle": "改為目前頁面繼續登入",
     "googlePopupFallbackAction": "在目前頁面繼續",
+    "googlePopupRecoveryHint": "如果 Google 彈窗未能在這裡完成，請改為目前頁面繼續。",
     "moreProvidersSoon": "更多登入方式後續支援。",
     "verifyTitle": "安全驗證",
     "verifyHint": "僅需片刻",
@@ -239,8 +240,7 @@
       "codeLabel": "驗證器或一次性驗證碼",
       "backupCodeLabel": "備份碼",
       "passkeyHint": "使用目前裝置或瀏覽器中已儲存的 Passkey。",
-      "passkeyAction": "使用 Passkey 繼續",
-      "googlePopupRecoveryHint": "如果 Google 彈窗未能在這裡完成，請改為目前頁面繼續。"
+      "passkeyAction": "使用 Passkey 繼續"
     }
   },
   "video": {
