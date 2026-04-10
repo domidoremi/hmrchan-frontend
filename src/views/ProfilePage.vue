@@ -536,7 +536,7 @@ onMounted(() => {
 
 .tab-btn {
   flex: 1 1 0;
-  min-inline-size: 0;
+  min-inline-size: max(var(--ui-control-compact-min-inline-size), 4.75rem);
   justify-content: center;
   box-shadow: none;
   background: transparent;
@@ -654,7 +654,7 @@ onMounted(() => {
 
   .tab-btn {
     flex: 0 0 auto;
-    min-inline-size: 3rem;
+    min-inline-size: max(3rem, var(--ui-control-height-sm));
     padding-inline: var(--ui-control-padding-x-sm);
     gap: var(--spacing-1);
   }

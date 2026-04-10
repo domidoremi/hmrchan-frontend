@@ -1201,8 +1201,9 @@ function resetVideoSettings() {
 
 .settings-category-switcher__item {
   min-inline-size: 0;
-  min-block-size: 2.35rem;
-  padding-inline: var(--spacing-2);
+  min-block-size: calc(var(--ui-control-height-sm) + 0.1875rem);
+  padding-block: max(0.4375rem, calc(var(--ui-control-padding-y-sm) - 0.0625rem));
+  padding-inline: max(0.75rem, var(--ui-control-padding-x-sm));
   border: 1px solid var(--settings-shell-border);
   border-radius: var(--ui-compat-control-radius);
   background: var(--settings-shell-surface);
@@ -1250,7 +1251,7 @@ function resetVideoSettings() {
 .settings-close-btn.page-control {
   min-inline-size: 2rem;
   block-size: 2rem;
-  padding: 0;
+  padding: 0.375rem;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   background: color-mix(in srgb, var(--chrome-action-bg) 46%, transparent);
@@ -1266,6 +1267,7 @@ function resetVideoSettings() {
 .settings-panel--compact .settings-close-btn.page-control {
   min-inline-size: 1.75rem;
   block-size: 1.75rem;
+  padding: 0.3125rem;
 }
 
 .settings-close-btn.page-control:hover,
@@ -1340,9 +1342,9 @@ function resetVideoSettings() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding-block: 0.875rem;
-  padding-inline: 0.75rem;
+  gap: 0.875rem;
+  padding-block: 0.9375rem;
+  padding-inline: 0.875rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
@@ -1355,9 +1357,9 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .theme-btn {
-  padding-block: 0.75rem;
-  padding-inline: 0.625rem;
-  gap: 0.5rem;
+  padding-block: 0.8125rem;
+  padding-inline: 0.75rem;
+  gap: 0.625rem;
 }
 
 .theme-btn:hover {
@@ -1491,8 +1493,8 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding-block: 0.625rem;
-  padding-inline: 0.875rem;
+  padding-block: 0.6875rem;
+  padding-inline: 0.9375rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-full);
@@ -1507,8 +1509,8 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .lang-btn {
-  padding-block: 0.5rem;
-  padding-inline: 0.75rem;
+  padding-block: 0.5625rem;
+  padding-inline: 0.8125rem;
   font-size: var(--text-xs);
 }
 
@@ -1547,7 +1549,7 @@ function resetVideoSettings() {
   justify-content: space-between;
   gap: var(--spacing-3);
   width: 100%;
-  padding: 0.9375rem;
+  padding: 1rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
@@ -1666,7 +1668,7 @@ function resetVideoSettings() {
   align-items: center;
   gap: var(--spacing-3);
   width: 100%;
-  padding: 0.9375rem;
+  padding: 1rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
@@ -1681,7 +1683,7 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .link-btn {
-  padding: 0.75rem;
+  padding: 0.8125rem;
 }
 
 .link-btn:hover {
@@ -1762,8 +1764,8 @@ function resetVideoSettings() {
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-1);
-  padding-block: 0.625rem;
-  padding-inline: 0.625rem;
+  padding-block: 0.6875rem;
+  padding-inline: 0.6875rem;
   background: var(--ui-compat-surface-interactive);
   border: 1px solid var(--ui-compat-border);
   border-radius: var(--radius-lg);
@@ -1775,8 +1777,8 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .bg-effect-btn {
-  padding-block: 0.5rem;
-  padding-inline: 0.5625rem;
+  padding-block: 0.5625rem;
+  padding-inline: 0.625rem;
 }
 
 .bg-effect-btn:hover {

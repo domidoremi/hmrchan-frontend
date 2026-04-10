@@ -122,9 +122,9 @@
 
 .page-input-shell--comfortable {
   min-inline-size: min(100%, 18rem);
-  padding-inline: clamp(1.0625rem, 1.8vw, 1.25rem);
-  padding-block: clamp(0.5rem, 0.95vw, 0.625rem);
-  gap: clamp(0.625rem, 1.1vw, 0.85rem);
+  padding-inline: clamp(1.125rem, 1.9vw, 1.3125rem);
+  padding-block: clamp(0.5625rem, 1vw, 0.6875rem);
+  gap: clamp(0.6875rem, 1.15vw, 0.9rem);
 }
 
 .page-input-shell:focus-within {
@@ -310,9 +310,9 @@
   align-self: flex-start;
   gap: var(--ui-control-gap, var(--appearance-control-gap));
   min-block-size: var(--ui-control-height-sm);
-  min-inline-size: max(var(--ui-control-compact-min-inline-size), 4.9rem);
+  min-inline-size: max(var(--ui-control-compact-min-inline-size), 4.75rem);
   max-inline-size: 100%;
-  padding-block: max(var(--ui-control-padding-y-sm), 0.4375rem);
+  padding-block: max(var(--ui-control-padding-y-sm), 0.5rem);
   padding-inline: max(var(--ui-control-padding-x-sm), 1.0625rem);
   border-radius: var(--appearance-radius-control-sm);
   border: 0.0625rem solid var(--page-shell-control-border);
@@ -339,8 +339,8 @@
   min-inline-size: 0;
   max-inline-size: 100%;
   min-block-size: var(--appearance-chip-min-block-size);
-  padding-inline: max(var(--appearance-chip-padding-inline), 1rem);
-  padding-block: max(0.4375rem, calc(var(--ui-control-padding-y-sm) - 0.0625rem));
+  padding-inline: max(var(--appearance-chip-padding-inline), 1.0625rem);
+  padding-block: max(0.5rem, calc(var(--ui-control-padding-y-sm) - 0.03125rem));
   border-radius: var(--appearance-radius-chip);
   border: 0.0625rem solid var(--page-shell-control-border);
   background: var(--page-shell-control-bg);
