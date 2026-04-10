@@ -1436,9 +1436,7 @@ onUnmounted(() => {
     max-width: 100%;
     padding-top: var(--spacing-4);
     padding-inline: var(--spacing-3);
-    padding-bottom: calc(
-      var(--spacing-10) + var(--navbar-height) + env(safe-area-inset-bottom, 0px)
-    );
+    padding-bottom: calc(var(--spacing-10) + var(--mobile-nav-height));
   }
 }
 

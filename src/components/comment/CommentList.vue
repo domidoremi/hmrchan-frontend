@@ -170,7 +170,8 @@ watch(
 }
 
 .comment-form-centered {
-  max-width: 480px;
+  inline-size: 100%;
+  max-inline-size: min(100%, 42rem);
   margin-inline: auto;
 }
 

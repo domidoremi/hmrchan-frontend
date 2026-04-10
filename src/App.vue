@@ -366,9 +366,13 @@ main.main--auth {
   background: transparent;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
+  main {
+    padding-bottom: var(--mobile-nav-height);
+  }
+
   main.main--home {
-    padding-bottom: 0;
+    padding-bottom: var(--mobile-nav-height);
   }
 }
 
@@ -395,7 +399,7 @@ main.main--auth {
   background: transparent;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
   .route-view.route-view--home {
     min-height: var(--app-safe-block-size-with-mobile-nav);
   }

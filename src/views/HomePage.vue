@@ -3,7 +3,9 @@
     <HomeQuickNav
       :anchors="homeQuickNavAnchors"
       :active-id="activeHomeSectionId"
+      :side="settings.homeQuickNavSide"
       @navigate="scrollToHomeSection"
+      @update:side="updateHomeQuickNavSide"
     />
 
     <!-- Hero + 今日入口 -->
@@ -1156,6 +1158,10 @@ const storyDeckRef = useTemplateRef<HomeSectionInstance>('storyDeckRef')
 const homeQuickNavAnchors = homeSectionAnchors
 const activeHomeSectionId = ref<HomeSectionAnchor['id']>(homeSectionAnchors[0]?.id ?? 'home-fold')
 let homeSectionObserver: IntersectionObserver | null = null
+
+function updateHomeQuickNavSide(side: 'left' | 'right') {
+  settingsStore.setHomeQuickNavSide(side)
+}
 
 const railProgress = ref(0)
 const storyProgress = ref(0)
