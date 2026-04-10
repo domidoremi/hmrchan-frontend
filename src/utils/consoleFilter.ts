@@ -30,6 +30,7 @@ const CLOUDFLARE_PATTERNS = [
   // Private Access Token
   /Private Access Token/i,
   /PAT challenge/i,
+  /Request for the Private Access Token challenge/i,
 
   // CSP 警告
   /script-src.*was not explicitly set/i,
@@ -58,6 +59,11 @@ const CLOUDFLARE_PATTERNS = [
   /cdn-cgi\/rum/i,
   /font-size:0;color:transparent/i,
   /picture-in-picture is not allowed in this document/i,
+  /Permissions policy violation: xr-spatial-tracking is not allowed in this document/i,
+
+  // Browser extension / autofill isolated-world noise
+  /Received unsupported locale 'zh'\. Falling back to 'en'\./i,
+  /unsupported locale 'zh'/i,
 
   // fetch/headers polyfill noise
   /setupReplaceUnsafeHeader\(\) should be called only once/i,
