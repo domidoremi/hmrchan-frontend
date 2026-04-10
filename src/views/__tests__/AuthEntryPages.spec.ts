@@ -1,5 +1,5 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { defineComponent, nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '@/api'
@@ -34,6 +34,7 @@ const testState = vi.hoisted(() => ({
   api: {
     authService: {
       sendRegistrationCode: vi.fn(),
+      requestPasswordReset: vi.fn(),
     },
     userService: {
       restoreAccount: vi.fn(),
@@ -154,11 +155,19 @@ const globalConfig = {
     $t: (key: string) => key,
   },
   stubs: {
-    TurnstileWidget: {
+    TurnstileWidget: defineComponent({
       name: 'TurnstileWidget',
       props: ['size'],
+      setup(_, { expose }) {
+        expose({
+          reset: vi.fn(),
+          getResponse: vi.fn(),
+          rerender: vi.fn(),
+        })
+        return {}
+      },
       template: '<div class="turnstile-widget-stub" :data-size="size" />',
-    },
+    }),
     AuthMfaStep: true,
     EmailCodeInput: {
       name: 'EmailCodeInput',
@@ -201,6 +210,7 @@ describe('Auth entry pages', () => {
     testState.authStore.finishWebAuthnLogin = vi.fn()
 
     testState.api.authService.sendRegistrationCode.mockReset()
+    testState.api.authService.requestPasswordReset.mockReset()
     testState.api.userService.restoreAccount.mockReset()
     testState.clientSecurity.verify.mockReset()
     testState.clientSecurity.verify.mockResolvedValue({
@@ -304,6 +314,43 @@ describe('Auth entry pages', () => {
     expect(wrapper.find('.turnstile-widget-stub').attributes('data-size')).toBe('compact')
   })
 
+  it('pre-verifies client trust before sending a registration code with an inline challenge token', async () => {
+    testState.turnstile.siteKey = 'site-key'
+    testState.turnstile.enabled = true
+    testState.api.authService.sendRegistrationCode.mockRejectedValueOnce(
+      new ApiError('Challenge required', 403, 'CHALLENGE_REQUIRED')
+    )
+    testState.api.authService.sendRegistrationCode.mockResolvedValueOnce({
+      message: 'sent',
+      register_token: 'register-token',
+      expires_in: 300,
+    })
+
+    const wrapper = mount(RegisterPage, {
+      global: globalConfig,
+    })
+
+    await wrapper.find('#reg-email').setValue('tester@gmail.com')
+    await wrapper.find('form.auth-form').trigger('submit.prevent')
+    await flushPromises()
+
+    const widget = wrapper.findComponent({ name: 'TurnstileWidget' })
+    widget.vm.$emit('verify', 'turnstile-token')
+    await flushPromises()
+
+    await wrapper.find('form.auth-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(testState.clientSecurity.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(testState.api.authService.sendRegistrationCode).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'tester@gmail.com',
+        turnstile_token: 'turnstile-token',
+      }),
+      expect.any(Object)
+    )
+  })
+
   it('reuses the split auth shell on forgot and reset password pages', () => {
     const forgotWrapper = mount(ForgotPasswordPage, {
       global: globalConfig,
@@ -317,6 +364,40 @@ describe('Auth entry pages', () => {
     expect(forgotWrapper.find('.auth-shell--split').exists()).toBe(true)
     expect(resetWrapper.find('.auth-shell--split').exists()).toBe(true)
     expect(resetWrapper.text()).toContain('email.resetPasswordButton')
+  })
+
+  it('pre-verifies client trust before requesting a password reset with an inline challenge token', async () => {
+    testState.turnstile.siteKey = 'site-key'
+    testState.turnstile.enabled = true
+    testState.api.authService.requestPasswordReset.mockRejectedValueOnce(
+      new ApiError('Challenge required', 403, 'CHALLENGE_REQUIRED')
+    )
+    testState.api.authService.requestPasswordReset.mockResolvedValueOnce({
+      message: 'sent',
+    })
+
+    const wrapper = mount(ForgotPasswordPage, {
+      global: globalConfig,
+    })
+
+    await wrapper.find('#email').setValue('tester@example.com')
+    await wrapper.find('form.auth-form').trigger('submit.prevent')
+    await flushPromises()
+
+    const widget = wrapper.findComponent({ name: 'TurnstileWidget' })
+    widget.vm.$emit('verify', 'turnstile-token')
+    await flushPromises()
+
+    await wrapper.find('form.auth-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(testState.clientSecurity.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(testState.api.authService.requestPasswordReset).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'tester@example.com',
+        turnstile_token: 'turnstile-token',
+      })
+    )
   })
 
   it('completes Google popup auth on the login page without leaving the current tab', async () => {
