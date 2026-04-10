@@ -460,6 +460,41 @@ defineExpose({ focus, setContent })
 }
 
 @media (max-width: 48rem) {
+  .login-prompt {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .form-content {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .prompt-actions,
+  .form-head,
+  .form-footer,
+  .form-footer__status,
+  .form-actions {
+    flex-wrap: wrap;
+  }
+
+  .form-footer {
+    align-items: center;
+  }
+
+  .comment-textarea,
+  :deep(.comment-textarea textarea),
+  :deep(.comment-textarea .ui-textarea__field) {
+    min-block-size: 6rem;
+  }
+
+  .prompt-btn,
+  .form-actions > :deep(*) {
+    inline-size: auto;
+  }
+}
+
+@media (max-width: 30rem) {
   .login-prompt,
   .form-content {
     grid-template-columns: 1fr;

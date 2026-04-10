@@ -87,6 +87,8 @@ export interface Settings {
   deskPet: DeskPetConfig
   /** 应用更新策略 */
   appUpdateStrategy: AppUpdateStrategy
+  /** 首页快捷导航在移动端吸附的侧边 */
+  homeQuickNavSide: 'left' | 'right'
 }
 
 const defaultSettings: Settings = {
@@ -128,6 +130,7 @@ const defaultSettings: Settings = {
     followSensitivity: 1,
   },
   appUpdateStrategy: 'public-idle-refresh',
+  homeQuickNavSide: 'right',
 }
 
 function createDefaultSettings(): Settings {
@@ -214,6 +217,12 @@ export const useSettingsStore = defineStore(
       }
       if (!settings.value.appUpdateStrategy) {
         settings.value.appUpdateStrategy = defaultSettings.appUpdateStrategy
+      }
+      if (
+        settings.value.homeQuickNavSide !== 'left' &&
+        settings.value.homeQuickNavSide !== 'right'
+      ) {
+        settings.value.homeQuickNavSide = defaultSettings.homeQuickNavSide
       }
 
       settings.value.mascotBackground = {
@@ -389,6 +398,10 @@ export const useSettingsStore = defineStore(
       settings.value.appUpdateStrategy = strategy
     }
 
+    function setHomeQuickNavSide(side: 'left' | 'right') {
+      settings.value.homeQuickNavSide = side
+    }
+
     function applyPreferences(preferences: UserPreferences) {
       const nextSettings = {
         ...settings.value,
@@ -476,6 +489,7 @@ export const useSettingsStore = defineStore(
       setMascotBackground,
       setDeskPet,
       setAppUpdateStrategy,
+      setHomeQuickNavSide,
       applyPreferences,
       exportPreferences,
       resetSettings,

@@ -189,8 +189,9 @@ async function createWrapper(initialPath = '/') {
           template: '<hr />',
         },
         SettingsPanel: {
+          props: ['externalScroll'],
           template:
-            '<div class="settings-panel-stub"><button type="button" class="settings-panel-focus">Settings panel</button></div>',
+            '<div class="settings-panel-stub" :data-external-scroll="String(externalScroll)"><button type="button" class="settings-panel-focus">Settings panel</button></div>',
         },
       },
     },
@@ -328,33 +329,14 @@ describe('AppNavbar', () => {
     wrapper.unmount()
   })
 
-  it('keeps brand and renders the mobile route trigger instead of the CTA', async () => {
+  it('keeps brand and omits the legacy mobile route trigger', async () => {
     stubMatchMedia(true)
     const { wrapper } = await createWrapper()
 
     expect(wrapper.find('.navbar-brand .brand-name').text()).toContain('MomiChan')
     expect(wrapper.find('.navbar-shell--actions-only').exists()).toBe(false)
     expect(wrapper.find('.navbar-cta').exists()).toBe(false)
-    expect(wrapper.find('button[aria-label="Primary navigation"]').exists()).toBe(true)
-
-    wrapper.unmount()
-  })
-
-  it('opens the mobile route menu with primary destinations', async () => {
-    stubMatchMedia(true)
-    const { wrapper } = await createWrapper()
-
-    await wrapper.get('button[aria-label="Primary navigation"]').trigger('click')
-    await nextTick()
-
-    const routeLinks = wrapper.findAll('.route-dropdown__link')
-    const labels = routeLinks.map((link) => link.text())
-
-    expect(wrapper.find('#navbar-route-menu').exists()).toBe(true)
-    expect(labels).toEqual(
-      expect.arrayContaining(['Home', 'Explore', 'Favorites', 'Authors', 'Community', 'Schedule'])
-    )
-    expect(wrapper.find('.route-dropdown__utility').text()).toContain('About')
+    expect(wrapper.find('button[aria-label="Primary navigation"]').exists()).toBe(false)
 
     wrapper.unmount()
   })
@@ -376,6 +358,37 @@ describe('AppNavbar', () => {
 
     expect(wrapper.find('#navbar-settings-panel').exists()).toBe(false)
     expect(document.activeElement).toBe(settingsButton.element)
+
+    wrapper.unmount()
+  })
+
+  it('passes external scrolling mode to the navbar settings panel', async () => {
+    const { wrapper } = await createWrapper()
+
+    await wrapper.get('button[aria-label="Settings"]').trigger('click')
+    await nextTick()
+
+    expect(
+      wrapper.find('.settings-panel-stub').attributes('data-external-scroll')
+    ).not.toBeUndefined()
+
+    wrapper.unmount()
+  })
+
+  it('keeps the navbar visible while the settings panel is open during scroll', async () => {
+    const { wrapper } = await createWrapper()
+
+    await wrapper.get('button[aria-label="Settings"]').trigger('click')
+    await nextTick()
+
+    Object.defineProperty(window, 'scrollY', {
+      configurable: true,
+      value: 240,
+    })
+    window.dispatchEvent(new Event('scroll'))
+    await nextTick()
+
+    expect(wrapper.classes()).not.toContain('navbar-hidden')
 
     wrapper.unmount()
   })

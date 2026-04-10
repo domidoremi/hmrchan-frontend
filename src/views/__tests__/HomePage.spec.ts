@@ -95,7 +95,9 @@ vi.mock('@/stores', async () => {
         settings: reactive({
           showHeroSection: true,
           enableAnimations: true,
+          homeQuickNavSide: 'right',
         }),
+        setHomeQuickNavSide: vi.fn(),
       }),
   }
 })
@@ -508,6 +510,7 @@ describe('HomePage', () => {
     expect(wrapper.find('#home-media').exists()).toBe(true)
     expect(wrapper.find('#home-footer').exists()).toBe(true)
     expect(quickNav.props('anchors')).toHaveLength(5)
+    expect(quickNav.props('side')).toBe('right')
     expect(mocks.getScheduleHighlights).toHaveBeenCalledTimes(1)
     expect(mocks.getCommunityHighlights).toHaveBeenCalledTimes(1)
   })
