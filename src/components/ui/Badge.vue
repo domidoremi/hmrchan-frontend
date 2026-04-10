@@ -49,22 +49,22 @@ const badgeClass = computed(() => [
 /* Sizes */
 .ui-badge--sm {
   min-block-size: calc(var(--appearance-chip-min-block-size) - 0.5625rem);
-  padding-block: max(0.1875rem, calc(var(--ui-control-padding-y-sm) - 0.1875rem));
-  padding-inline: max(0.625rem, calc(var(--appearance-chip-padding-inline) * 0.66));
+  padding-block: max(0.25rem, calc(var(--ui-control-padding-y-sm) - 0.125rem));
+  padding-inline: max(0.6875rem, calc(var(--appearance-chip-padding-inline) * 0.72));
   font-size: 0.625rem;
 }
 
 .ui-badge--default {
   min-block-size: var(--appearance-chip-min-block-size);
-  padding-block: max(0.25rem, calc(var(--ui-control-padding-y-sm) - 0.125rem));
-  padding-inline: max(0.8125rem, calc(var(--appearance-chip-padding-inline) * 0.82));
+  padding-block: max(0.3125rem, calc(var(--ui-control-padding-y-sm) - 0.0625rem));
+  padding-inline: max(0.875rem, calc(var(--appearance-chip-padding-inline) * 0.86));
   font-size: var(--text-xs);
 }
 
 .ui-badge--lg {
   min-block-size: calc(var(--appearance-chip-min-block-size) + 0.25rem);
-  padding-block: max(0.3125rem, var(--ui-control-padding-y-sm));
-  padding-inline: max(0.9375rem, calc(var(--appearance-chip-padding-inline) * 0.96));
+  padding-block: max(0.375rem, var(--ui-control-padding-y-sm));
+  padding-inline: max(1rem, calc(var(--appearance-chip-padding-inline) * 0.98));
   font-size: var(--text-sm);
 }
 

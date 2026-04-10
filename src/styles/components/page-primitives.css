@@ -1,17 +1,17 @@
 :root,
 #app {
-  --appearance-control-min-inline-size: 4.75rem;
-  --appearance-control-compact-min-inline-size: 4.25rem;
-  --appearance-control-gap: var(--spacing-2);
-  --appearance-chip-min-block-size: 2.375rem;
-  --appearance-chip-padding-inline: 0.95rem;
-  --appearance-chip-radius: var(--appearance-radius-chip);
-  --appearance-eyebrow-radius: var(--appearance-radius-chip);
-  --appearance-toolbar-radius: var(--appearance-radius-panel);
-  --appearance-toolbar-padding: var(--appearance-surface-padding-md);
-  --appearance-toolbar-gap: var(--appearance-surface-gap-md);
-  --appearance-hero-panel-radius: var(--appearance-radius-panel);
-  --appearance-hero-gap: var(--appearance-surface-gap-md);
+  --page-shell-control-min-inline-size: var(--appearance-control-min-inline-size);
+  --page-shell-control-compact-min-inline-size: var(--appearance-control-compact-min-inline-size);
+  --page-shell-control-gap: var(--appearance-control-gap);
+  --page-shell-chip-min-block-size: var(--appearance-chip-min-block-size);
+  --page-shell-chip-padding-inline: var(--appearance-chip-padding-inline);
+  --page-shell-chip-radius: var(--appearance-radius-chip);
+  --page-shell-eyebrow-radius: var(--appearance-radius-chip);
+  --page-shell-toolbar-radius: var(--appearance-radius-panel);
+  --page-shell-toolbar-padding: clamp(0.95rem, 1.8vw, 1.25rem);
+  --page-shell-toolbar-gap: clamp(0.95rem, 1.9vw, 1.375rem);
+  --page-shell-hero-panel-radius: var(--appearance-radius-panel);
+  --page-shell-hero-gap: var(--appearance-surface-gap-md);
   --appearance-page-control-shadow: var(--appearance-shadow-soft);
   --appearance-page-surface-shadow: var(--appearance-shadow-medium);
   --page-shell-surface-bg: color-mix(in srgb, var(--semantic-surface-base) 92%, transparent);
@@ -50,7 +50,7 @@
 
 .page-hero-shell {
   display: grid;
-  gap: var(--appearance-hero-gap);
+  gap: var(--page-shell-hero-gap);
   margin-block-end: clamp(1rem, 2vw, 1.75rem);
   padding: clamp(
     var(--appearance-surface-padding-md),
@@ -58,7 +58,7 @@
     var(--appearance-surface-padding-lg)
   );
   border: 0.0625rem solid var(--page-shell-surface-border);
-  border-radius: var(--appearance-hero-panel-radius);
+  border-radius: var(--page-shell-hero-panel-radius);
   background:
     linear-gradient(
       145deg,
@@ -161,12 +161,12 @@
   align-self: flex-start;
   inline-size: fit-content;
   max-inline-size: 100%;
-  gap: var(--appearance-control-gap);
-  min-block-size: var(--appearance-chip-min-block-size);
-  padding-inline: max(var(--appearance-chip-padding-inline), 1.05rem);
+  gap: var(--page-shell-control-gap);
+  min-block-size: var(--page-shell-chip-min-block-size);
+  padding-inline: max(var(--page-shell-chip-padding-inline), 1.05rem);
   padding-block: max(var(--ui-control-padding-y-sm), 0.375rem);
   border: 0.0625rem solid var(--page-shell-eyebrow-border);
-  border-radius: var(--appearance-eyebrow-radius);
+  border-radius: var(--page-shell-eyebrow-radius);
   background: var(--page-shell-eyebrow-bg);
   color: var(--page-shell-eyebrow-ink);
   font-size: var(--text-xs);
@@ -184,11 +184,11 @@
   align-self: center;
   inline-size: fit-content;
   max-inline-size: 100%;
-  min-block-size: var(--appearance-chip-min-block-size);
-  padding-inline: max(var(--appearance-chip-padding-inline), 1.05rem);
+  min-block-size: var(--page-shell-chip-min-block-size);
+  padding-inline: max(var(--page-shell-chip-padding-inline), 1.05rem);
   padding-block: max(var(--ui-control-padding-y-sm), 0.375rem);
   border: 0.0625rem solid var(--page-shell-control-border);
-  border-radius: var(--appearance-chip-radius);
+  border-radius: var(--page-shell-chip-radius);
   background: var(--page-shell-control-bg);
   color: var(--page-shell-control-ink);
   font-size: var(--text-xs);
@@ -210,7 +210,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--appearance-control-gap);
+  gap: var(--page-shell-control-gap);
   min-inline-size: 0;
 }
 
@@ -229,11 +229,11 @@
   inline-size: fit-content;
   max-inline-size: 100%;
   gap: 0.5rem;
-  min-block-size: var(--appearance-chip-min-block-size);
-  padding-inline: max(var(--appearance-chip-padding-inline), 1.05rem);
+  min-block-size: var(--page-shell-chip-min-block-size);
+  padding-inline: max(var(--page-shell-chip-padding-inline), 1.05rem);
   padding-block: max(var(--ui-control-padding-y-sm), 0.375rem);
   border: 0.0625rem solid var(--page-shell-control-border);
-  border-radius: var(--appearance-chip-radius);
+  border-radius: var(--page-shell-chip-radius);
   background: var(--page-shell-control-bg);
   color: var(--page-shell-control-ink);
   font-size: var(--text-sm);
@@ -259,14 +259,10 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--appearance-toolbar-gap);
-  padding: clamp(
-    var(--appearance-surface-padding-sm),
-    1.2vw + 0.45rem,
-    var(--appearance-surface-padding-md)
-  );
+  gap: var(--page-shell-toolbar-gap);
+  padding: var(--page-shell-toolbar-padding);
   border: 0.0625rem solid var(--page-shell-surface-border);
-  border-radius: var(--appearance-toolbar-radius);
+  border-radius: var(--page-shell-toolbar-radius);
   background:
     linear-gradient(
       145deg,
@@ -277,19 +273,21 @@
   box-shadow: var(--appearance-page-surface-shadow);
 }
 
-.page-toolbar-shell--balanced > * {
+.page-toolbar-shell--balanced > :where(div, section, article, header, footer, aside, nav, form) {
   min-inline-size: 0;
+  max-inline-size: 100%;
 }
 
 .page-control-group-shell {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--appearance-control-gap);
+  gap: var(--page-shell-control-gap);
   min-inline-size: 0;
 }
 
-.page-control-group-shell > * {
+.page-control-group-shell
+  > :where(div, section, article, header, footer, aside, nav, form, ul, ol, li) {
   min-inline-size: 0;
   max-inline-size: 100%;
 }
@@ -304,8 +302,8 @@
 .page-input-shell.page-input-shell--comfortable,
 .page-toolbar-shell.page-toolbar-shell--comfortable {
   box-sizing: border-box;
-  padding-inline: clamp(0.8rem, 1.5vw, 1.05rem);
-  padding-block: clamp(0.7rem, 1.2vw, 0.92rem);
+  padding-inline: clamp(0.875rem, 1.6vw, 1.125rem);
+  padding-block: clamp(0.75rem, 1.25vw, 0.98rem);
   border: 0.0625rem solid color-mix(in srgb, var(--page-shell-surface-border) 72%, transparent);
   border-radius: var(--appearance-radius-panel);
   background: color-mix(in srgb, var(--page-shell-surface-bg-strong) 90%, transparent);
@@ -317,10 +315,14 @@
   gap: clamp(0.625rem, 1.1vw, 0.9rem);
 }
 
-.page-actions.page-actions--comfortable > *,
-.page-meta-row.page-meta-row--comfortable > *,
-.page-control-group-shell.page-control-group-shell--comfortable > *,
-.page-toolbar-shell.page-toolbar-shell--comfortable > * {
+.page-actions.page-actions--comfortable
+  > :where(div, section, article, header, footer, aside, nav, form, ul, ol, li),
+.page-meta-row.page-meta-row--comfortable
+  > :where(div, section, article, header, footer, aside, nav, form, ul, ol, li),
+.page-control-group-shell.page-control-group-shell--comfortable
+  > :where(div, section, article, header, footer, aside, nav, form, ul, ol, li),
+.page-toolbar-shell.page-toolbar-shell--comfortable
+  > :where(div, section, article, header, footer, aside, nav, form, ul, ol, li) {
   min-inline-size: 0;
   max-inline-size: 100%;
 }
@@ -340,8 +342,8 @@
 
 .page-toolbar-shell.page-toolbar-shell--comfortable
   > .page-control-group-shell.page-control-group-shell--comfortable {
-  padding-inline: clamp(0.55rem, 1vw, 0.78rem);
-  padding-block: clamp(0.5rem, 0.9vw, 0.68rem);
+  padding-inline: clamp(0.7rem, 1.1vw, 0.92rem);
+  padding-block: clamp(0.5625rem, 0.95vw, 0.76rem);
 }
 
 .page-control {
@@ -351,12 +353,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--ui-control-gap, var(--appearance-control-gap));
+  gap: var(--ui-control-gap, var(--page-shell-control-gap));
   min-block-size: var(--ui-control-height-md);
-  min-inline-size: var(--ui-control-min-inline-size);
+  min-inline-size: var(--page-shell-control-min-inline-size);
   max-inline-size: 100%;
-  padding-block: max(0.5625rem, calc(var(--ui-control-padding-y-md) - 0.0625rem));
-  padding-inline: max(1rem, var(--ui-control-padding-x-md));
+  padding-block: max(0.625rem, calc(var(--ui-control-padding-y-md) - 0.03125rem));
+  padding-inline: max(1.0625rem, var(--ui-control-padding-x-md));
   border: 0.0625rem solid var(--page-shell-control-border);
   border-radius: var(--appearance-radius-control-md);
   background: var(--page-shell-control-bg);
@@ -403,10 +405,10 @@
 
 .page-control.page-control--compact {
   min-block-size: var(--ui-control-height-sm);
-  min-inline-size: max(var(--ui-control-compact-min-inline-size), 4.9rem);
+  min-inline-size: max(var(--page-shell-control-compact-min-inline-size), 4.75rem);
   gap: clamp(0.42rem, 0.75vw, 0.58rem);
-  padding-block: max(var(--ui-control-padding-y-sm), 0.4375rem);
-  padding-inline: max(var(--ui-control-padding-x-sm), 1rem);
+  padding-block: max(var(--ui-control-padding-y-sm), 0.5rem);
+  padding-inline: max(var(--ui-control-padding-x-sm), 0.9375rem);
   border-radius: var(--appearance-radius-control-sm);
   font-size: var(--text-xs);
 }

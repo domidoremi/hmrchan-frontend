@@ -1143,8 +1143,8 @@ onUnmounted(() => {
   gap: clamp(0.75rem, 2vw, 1.5rem);
   inline-size: 100%;
   min-inline-size: 0;
-  padding-block: max(0.4375rem, calc(var(--ui-control-padding-y-sm) - 0.0625rem));
-  padding-inline: clamp(0.625rem, 1.4vw, 0.875rem);
+  padding-block: max(0.5625rem, calc(var(--ui-control-padding-y-sm) - 0.03125rem));
+  padding-inline: clamp(0.75rem, 1.5vw, 1rem);
   border: 0.0625rem solid var(--nav-shell-border);
   border-radius: 999rem;
   background: transparent;
@@ -1160,7 +1160,7 @@ onUnmounted(() => {
 }
 
 .navbar--chromeless .navbar-shell {
-  padding-inline: 0;
+  padding-inline: clamp(0.25rem, 1vw, 0.5rem);
   border-color: transparent;
   background: transparent;
   box-shadow: none;
@@ -1233,8 +1233,8 @@ onUnmounted(() => {
   inline-size: clamp(11rem, 18vw, 14rem);
   min-inline-size: 0;
   min-block-size: calc(var(--ui-control-height-sm) + 0.125rem);
-  padding-block: max(0.4375rem, calc(var(--ui-control-padding-y-sm) - 0.0625rem));
-  padding-inline: 0.95rem 1.125rem;
+  padding-block: max(0.5rem, calc(var(--ui-control-padding-y-sm) - 0.03125rem));
+  padding-inline: 1rem 1.1875rem;
   border: 0.0625rem solid color-mix(in srgb, var(--nav-action-border) 78%, transparent);
   border-radius: var(--ui-compat-pill-radius, var(--radius-full));
   background: color-mix(in srgb, var(--nav-action-bg-hover) 72%, transparent);
@@ -1322,7 +1322,7 @@ onUnmounted(() => {
 
 .nav-action-btn--search {
   gap: var(--spacing-2);
-  padding-inline: 0.625rem;
+  padding-inline: 0.75rem;
 }
 
 .nav-action-btn__label {

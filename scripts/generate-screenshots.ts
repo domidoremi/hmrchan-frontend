@@ -156,6 +156,34 @@ const SCREENSHOTS: ScreenshotConfig[] = [
     description: 'Explore - Desktop',
     waitForSelector: '.post-grid',
   },
+  {
+    name: 'search-desktop.png',
+    url: '/search?q=design',
+    viewport: { width: 1920, height: 1080 },
+    description: 'Search - Desktop',
+    waitForSelector: '.search-page',
+  },
+  {
+    name: 'community-desktop.png',
+    url: '/community',
+    viewport: { width: 1920, height: 1080 },
+    description: 'Community - Desktop',
+    waitForSelector: '.community-page',
+  },
+  {
+    name: 'schedule-desktop.png',
+    url: '/schedule',
+    viewport: { width: 1920, height: 1080 },
+    description: 'Schedule - Desktop',
+    waitForSelector: '.schedule-page',
+  },
+  {
+    name: 'login-desktop.png',
+    url: '/login',
+    viewport: { width: 1440, height: 960 },
+    description: 'Login - Desktop',
+    waitForSelector: '.auth-page--login',
+  },
 ]
 
 /**
