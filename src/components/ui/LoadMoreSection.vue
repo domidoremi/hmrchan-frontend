@@ -7,14 +7,6 @@
         }}</span>
         <span class="progress-value">{{ Math.round(progressPercent) }}%</span>
       </PageMetaChip>
-      <ControlButton
-        v-if="hasMore && allowManual"
-        class="ghost-action"
-        size="compact"
-        @click="emit('load-more')"
-      >
-        {{ t('common.loadMore') }}
-      </ControlButton>
     </header>
 
     <div class="progress-track">
@@ -71,7 +63,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronDown } from '@lucide/vue'
-import ControlButton from '@/components/appearance/ControlButton.vue'
 import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -128,7 +119,6 @@ const setSentinelRef = (el: Element | null) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-3);
 }
 
 .progress-pill {
@@ -154,10 +144,6 @@ const setSentinelRef = (el: Element | null) => {
 .progress-value {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-}
-
-.ghost-action.page-control {
-  box-shadow: none;
 }
 
 .progress-track {
