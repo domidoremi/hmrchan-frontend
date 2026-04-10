@@ -9,6 +9,7 @@
 
 import puppeteer, { type Viewport } from 'puppeteer'
 import { spawn } from 'child_process'
+import { shouldIgnoreConsoleError, shouldIgnoreRequestIssue } from './lib/frontend-health'
 
 interface ScanIssue {
   type: string
@@ -217,11 +218,7 @@ async function main() {
           page.on('console', (msg) => {
             if (msg.type() === 'error') {
               const text = msg.text()
-              if (
-                !INCLUDE_API_ERRORS &&
-                text.includes('Failed to load resource') &&
-                (text.includes('503') || text.includes('/api/'))
-              ) {
+              if (shouldIgnoreConsoleError(text, INCLUDE_API_ERRORS, msg.location().url)) {
                 return
               }
               consoleErrors.add(msg.text())
@@ -229,14 +226,14 @@ async function main() {
           })
 
           page.on('requestfailed', (req) => {
-            if (!INCLUDE_API_ERRORS && req.url().includes('/api/')) return
+            if (shouldIgnoreRequestIssue(req.url(), INCLUDE_API_ERRORS)) return
             const reason = req.failure()?.errorText ?? 'unknown'
             requestFailures.add(`${req.method()} ${req.url()} (${reason})`)
           })
 
           page.on('response', (res) => {
             const status = res.status()
-            if (!INCLUDE_API_ERRORS && res.url().includes('/api/')) return
+            if (shouldIgnoreRequestIssue(res.url(), INCLUDE_API_ERRORS)) return
             if (status >= 400) {
               badResponses.add(`${status} ${res.request().method()} ${res.url()}`)
             }
