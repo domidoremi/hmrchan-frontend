@@ -308,11 +308,6 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   ): Promise<boolean> {
     if (!state.user.value) return false
 
-    const snapshot = state.runtimeAuthzCache.value
-    if (securityLevel === 'authenticated' && snapshot && snapshot.expiresAt > Date.now()) {
-      return true
-    }
-
     if (
       !getAuthRuntimeSession() ||
       isRuntimeAccessTokenExpired() ||
@@ -324,6 +319,11 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
         skipErrorToast: true,
       })
       return Boolean(refreshedUser)
+    }
+
+    const snapshot = state.runtimeAuthzCache.value
+    if (securityLevel === 'authenticated' && snapshot && snapshot.expiresAt > Date.now()) {
+      return true
     }
 
     const refreshedUser = await hydrateCurrentUser({

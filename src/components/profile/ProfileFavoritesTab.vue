@@ -106,6 +106,7 @@ import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
+import { ensureProtectedPageReady } from '@/composables/useProtectedPageBootstrap'
 import ProfileTabHeader from '@/components/profile/ProfileTabHeader.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -130,6 +131,7 @@ const preferredPageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 
 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
+let bootstrapPromise: Promise<boolean> | null = null
 
 const {
   visibleItems: visibleFavorites,
@@ -147,7 +149,30 @@ const thumbnailSizes =
 
 async function fetchFavorites(reset = true): Promise<boolean> {
   if (!isAuthenticated.value) return false
+  if (bootstrapPromise) {
+    return bootstrapPromise
+  }
   return favStore.fetchFavorites(reset)
+}
+
+async function bootstrapFavorites(reset = true): Promise<boolean> {
+  if (bootstrapPromise) {
+    return bootstrapPromise
+  }
+
+  bootstrapPromise = (async () => {
+    const ready = await ensureProtectedPageReady(authStore, 'authenticated')
+    if (!ready) {
+      favStore.$reset()
+      return false
+    }
+
+    return favStore.fetchFavorites(reset)
+  })().finally(() => {
+    bootstrapPromise = null
+  })
+
+  return bootstrapPromise
 }
 
 async function loadMore(): Promise<boolean> {
@@ -192,7 +217,7 @@ watch(
       favStore.$reset()
       return
     }
-    void fetchFavorites(favStore.items.length === 0)
+    void bootstrapFavorites(favStore.items.length === 0)
   },
   { immediate: true }
 )
