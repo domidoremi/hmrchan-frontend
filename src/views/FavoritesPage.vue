@@ -238,6 +238,7 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
+import { ensureProtectedPageReady } from '@/composables/useProtectedPageBootstrap'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
 import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
@@ -274,6 +275,9 @@ const preferredPageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
 const isPageActive = ref(true)
+const isBootstrapping = ref(false)
+const isProtectedDataReady = ref(false)
+let bootstrapPromise: Promise<boolean> | null = null
 
 const selectedFolder = ref('')
 const selectedTag = ref('')
@@ -329,12 +333,52 @@ function parseSortValue(value: typeof selectedSort.value) {
 
 async function fetchFavorites(reset = true): Promise<boolean> {
   if (!isAuthenticated.value) return false
+  if (!isProtectedDataReady.value) {
+    return bootstrapFavoritesPage(reset)
+  }
   return favStore.fetchFavorites(reset)
 }
 
 async function fetchFavoriteMetadata() {
   if (!isAuthenticated.value) return
+  if (!(await ensureFavoritesSessionReady())) return
   await Promise.allSettled([favStore.fetchFolders(), favStore.fetchTags()])
+}
+
+async function ensureFavoritesSessionReady(): Promise<boolean> {
+  const ready = await ensureProtectedPageReady(authStore, 'authenticated')
+
+  if (!ready) {
+    isProtectedDataReady.value = false
+    favStore.$reset()
+    return false
+  }
+
+  isProtectedDataReady.value = true
+  return true
+}
+
+async function bootstrapFavoritesPage(reset = true): Promise<boolean> {
+  if (bootstrapPromise) {
+    return bootstrapPromise
+  }
+
+  bootstrapPromise = (async () => {
+    isBootstrapping.value = true
+
+    const ready = await ensureFavoritesSessionReady()
+    if (!ready) {
+      return false
+    }
+
+    await Promise.allSettled([favStore.fetchFolders(), favStore.fetchTags()])
+    return favStore.fetchFavorites(reset)
+  })().finally(() => {
+    isBootstrapping.value = false
+    bootstrapPromise = null
+  })
+
+  return bootstrapPromise
 }
 
 async function loadMore(): Promise<boolean> {
@@ -429,7 +473,7 @@ function goToLogin() {
 }
 
 watch([selectedFolder, selectedTag, selectedSort], () => {
-  if (!isAuthenticated.value) return
+  if (!isAuthenticated.value || !isProtectedDataReady.value || isBootstrapping.value) return
   const sort = parseSortValue(selectedSort.value)
   favStore.setFilter({
     folder: selectedFolder.value || undefined,
@@ -443,18 +487,21 @@ watch(
   isAuthenticated,
   async (authenticated) => {
     if (!authenticated) {
+      isProtectedDataReady.value = false
       favStore.$reset()
       return
     }
 
-    await fetchFavoriteMetadata()
-    await fetchFavorites(true)
+    await bootstrapFavoritesPage(true)
   },
   { immediate: true }
 )
 
 onActivated(() => {
   isPageActive.value = true
+  if (!isAuthenticated.value || isBootstrapping.value) return
+  if (isProtectedDataReady.value && (favorites.value.length > 0 || isLoading.value)) return
+  void bootstrapFavoritesPage(favorites.value.length === 0)
 })
 
 onDeactivated(() => {
