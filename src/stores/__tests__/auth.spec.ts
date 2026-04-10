@@ -32,6 +32,12 @@ vi.mock('@/services/googleAuthService', () => ({
   clearPendingGoogleAuthRequest: vi.fn(),
 }))
 
+vi.mock('@/api/clientSecurityService', () => ({
+  clientSecurityService: {
+    verify: vi.fn(),
+  },
+}))
+
 vi.mock('@/api', () => {
   const mockLogin = vi.fn()
   const mockRegister = vi.fn()
@@ -82,6 +88,7 @@ vi.mock('@/api', () => {
 })
 
 import { ApiError, authService, twoFactorService } from '@/api'
+import { clientSecurityService } from '@/api/clientSecurityService'
 import {
   clearPendingGoogleAuthRequest,
   exchangeGoogleHandoff,
@@ -145,6 +152,10 @@ describe('auth store', () => {
     vi.clearAllMocks()
     clearAuthRuntimeSession()
     vi.useFakeTimers()
+    vi.mocked(clientSecurityService.verify).mockResolvedValue({
+      success: true,
+      trust_level: 'basic',
+    } as never)
   })
 
   afterEach(() => {
@@ -188,6 +199,29 @@ describe('auth store', () => {
     expect(authService.logout).not.toHaveBeenCalled()
   })
 
+  it('pre-verifies challenge trust before registering with a turnstile token', async () => {
+    const store = useAuthStore()
+    vi.mocked(authService.register).mockResolvedValueOnce({
+      user: createMockUser({ username: 'new-user', email: 'new@example.com' }),
+    })
+
+    await store.register(
+      'new-user',
+      'new@example.com',
+      'password123',
+      '123456',
+      undefined,
+      'turnstile-token'
+    )
+
+    expect(clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(authService.register).toHaveBeenCalledWith(
+      expect.objectContaining({
+        turnstile_token: 'turnstile-token',
+      })
+    )
+  })
+
   it('establishes an in-memory access-token session after password login succeeds', async () => {
     const store = useAuthStore()
     vi.mocked(authService.login).mockResolvedValueOnce(
@@ -223,6 +257,22 @@ describe('auth store', () => {
       })
     )
     expect(store.stepUpRequired).toBe(false)
+  })
+
+  it('pre-verifies challenge trust before password login when a turnstile token is provided', async () => {
+    const store = useAuthStore()
+    vi.mocked(authService.login).mockResolvedValueOnce(createLoginResponse())
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+
+    await store.login('tester@example.com', 'password123', 'turnstile-token')
+
+    expect(clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(authService.login).toHaveBeenCalledWith(
+      expect.objectContaining({
+        username: 'tester@example.com',
+        turnstile_token: 'turnstile-token',
+      })
+    )
   })
 
   it('returns risk verification details without establishing a session', async () => {
@@ -267,6 +317,23 @@ describe('auth store', () => {
     )
     expect(store.isAuthenticated).toBe(true)
     expect(store.runtimeAuthzCache?.version).toBe('1')
+  })
+
+  it('pre-verifies challenge trust before submitting a risk-login code with a turnstile token', async () => {
+    const store = useAuthStore()
+    vi.mocked(authService.verifyRiskLogin).mockResolvedValueOnce(createLoginResponse())
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+
+    await store.verifyRiskLogin('pending-token', '123456', 'turnstile-token')
+
+    expect(clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(authService.verifyRiskLogin).toHaveBeenCalledWith(
+      'pending-token',
+      '123456',
+      'turnstile-token',
+      'Vitest Browser',
+      'web'
+    )
   })
 
   it('starts Google auth with the requested intent and redirect target', async () => {
