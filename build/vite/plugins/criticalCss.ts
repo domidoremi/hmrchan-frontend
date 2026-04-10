@@ -24,6 +24,11 @@ interface CriticalCSSOptions {
   enableInDev?: boolean
 }
 
+const CRITICAL_LAYER_PREAMBLE =
+  '@layer reset,foundation,semantics,components,scene-roles,presets,enhancers,utilities,overrides;'
+const CRITICAL_LAYER_NAME = 'reset'
+const UNSAFE_CRITICAL_RESET_PATTERN = /\*,\*::before,\*::after\{[^}]*padding:0(?:[;}])[^}]*\}/i
+
 /**
  * 高效压缩 CSS
  * 移除注释、多余空格、冗余分号，保持最小体积
@@ -36,7 +41,7 @@ interface CriticalCSSOptions {
  * - 压缩颜色值（#ffffff → #fff）
  * - 合并重复的选择器
  */
-function minifyCSS(css: string): string {
+export function minifyCSS(css: string): string {
   return (
     css
       // 移除注释
@@ -59,6 +64,22 @@ function minifyCSS(css: string): string {
       .replace(/[^{}]+\{\}/g, '')
       .trim()
   )
+}
+
+export function validateCriticalCSS(css: string): void {
+  if (!css) {
+    throw new Error('Critical CSS is empty')
+  }
+
+  if (UNSAFE_CRITICAL_RESET_PATTERN.test(css)) {
+    throw new Error(
+      'Critical CSS contains an unsafe universal padding reset. Scope the reset or move it into layered main styles instead.'
+    )
+  }
+}
+
+export function toLayeredCriticalCSS(css: string): string {
+  return `${CRITICAL_LAYER_PREAMBLE}@layer ${CRITICAL_LAYER_NAME}{${css}}`
 }
 
 export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
@@ -100,12 +121,15 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
         // 生成 CSS hash 用于缓存验证
         cssHash = Buffer.from(rawCSS).toString('base64').slice(0, 8)
 
-        criticalCSS = minify ? minifyCSS(rawCSS) : rawCSS
+        const minifiedCSS = minify ? minifyCSS(rawCSS) : rawCSS
+
+        validateCriticalCSS(minifiedCSS)
+        criticalCSS = toLayeredCriticalCSS(minifiedCSS)
 
         if (verbose) {
-          const sizeKB = (criticalCSS.length / 1024).toFixed(2)
+          const sizeKB = (minifiedCSS.length / 1024).toFixed(2)
           const originalKB = (rawCSS.length / 1024).toFixed(2)
-          const saved = ((1 - criticalCSS.length / rawCSS.length) * 100).toFixed(1)
+          const saved = ((1 - minifiedCSS.length / rawCSS.length) * 100).toFixed(1)
 
           config.logger.info(
             `✅ Critical CSS: ${originalKB}KB → ${sizeKB}KB (${saved}% saved) [${cssHash}]`
@@ -118,6 +142,10 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
 
     transformIndexHtml(html) {
       if (!criticalCSS) return html
+
+      if (!criticalCSS.includes('@layer')) {
+        throw new Error('Critical CSS must be emitted as layered CSS')
+      }
 
       // 生成 style 标签（style-src 'unsafe-inline' 已覆盖）
       const styleTag = `<style id="critical-css" data-hash="${cssHash}">${criticalCSS}</style>`

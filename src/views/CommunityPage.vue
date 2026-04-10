@@ -814,7 +814,7 @@ onUnmounted(() => {
   }
 
   .tab-btn {
-    min-inline-size: 0;
+    min-inline-size: max(var(--ui-control-compact-min-inline-size), 4.5rem);
   }
 }
 
@@ -901,7 +901,7 @@ onUnmounted(() => {
 .tab-btn {
   flex: 1 1 0;
   text-align: center;
-  min-inline-size: 0;
+  min-inline-size: max(var(--ui-control-compact-min-inline-size), 4.75rem);
 }
 
 .community-section {

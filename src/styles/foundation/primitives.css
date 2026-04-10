@@ -84,22 +84,22 @@
     var(--locale-control-min-block-size, 2.75rem) - 0.125rem
   );
   --appearance-control-min-inline-size: 4.375rem;
-  --appearance-control-compact-min-inline-size: 3.875rem;
-  --appearance-control-padding-inline: 0.875rem;
+  --appearance-control-compact-min-inline-size: 4rem;
+  --appearance-control-padding-inline: 0.9375rem;
   --appearance-control-padding-block: max(
-    0.5rem,
-    calc(var(--spacing-2) + var(--locale-control-padding-nudge, 0rem))
+    0.5625rem,
+    calc(var(--spacing-2) + 0.0625rem + var(--locale-control-padding-nudge, 0rem))
   );
-  --appearance-surface-padding-sm: 0.75rem;
-  --appearance-surface-padding-md: 0.9375rem;
-  --appearance-surface-padding-lg: 1.375rem;
-  --appearance-surface-gap-sm: 0.75rem;
-  --appearance-surface-gap-md: 0.9375rem;
-  --appearance-surface-gap-lg: 1.375rem;
-  --appearance-chip-min-block-size: 2.375rem;
-  --appearance-chip-padding-inline: 0.95rem;
-  --appearance-toolbar-padding: clamp(0.875rem, 1.55vw, 1.0625rem);
-  --appearance-toolbar-gap: clamp(0.875rem, 1.55vw, 1.1875rem);
+  --appearance-surface-padding-sm: 0.8125rem;
+  --appearance-surface-padding-md: 1rem;
+  --appearance-surface-padding-lg: 1.5rem;
+  --appearance-surface-gap-sm: 0.8125rem;
+  --appearance-surface-gap-md: 1rem;
+  --appearance-surface-gap-lg: 1.5rem;
+  --appearance-chip-min-block-size: 2.4375rem;
+  --appearance-chip-padding-inline: 1rem;
+  --appearance-toolbar-padding: clamp(0.9375rem, 1.7vw, 1.125rem);
+  --appearance-toolbar-gap: clamp(0.9375rem, 1.7vw, 1.25rem);
   --appearance-content-max-inline-size: min(94vw, 1320px);
 }
 
