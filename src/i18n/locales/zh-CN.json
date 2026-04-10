@@ -184,6 +184,7 @@
     "googlePopupWaitingHint": "请在弹出的 Google 窗口中完成登录，完成后这里会继续。",
     "googlePopupFallbackTitle": "改为当前页继续登录",
     "googlePopupFallbackAction": "在当前页继续",
+    "googlePopupRecoveryHint": "如果 Google 弹窗没有在这里完成，请改为当前页继续。",
     "moreProvidersSoon": "更多登录方式后续支持。",
     "verifyTitle": "安全验证",
     "verifyHint": "仅需片刻",
@@ -239,8 +240,7 @@
       "codeLabel": "验证器或一次性验证码",
       "backupCodeLabel": "备份码",
       "passkeyHint": "使用当前设备或浏览器中已保存的 Passkey。",
-      "passkeyAction": "使用 Passkey 继续",
-      "googlePopupRecoveryHint": "如果 Google 弹窗没有在这里完成，请改为当前页继续。"
+      "passkeyAction": "使用 Passkey 继续"
     }
   },
   "video": {
