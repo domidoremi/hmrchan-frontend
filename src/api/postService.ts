@@ -5,6 +5,7 @@
 import {
   apiClient,
   ApiError,
+  type CursorCollectionResponse,
   type PaginatedApiResponseWithLimit,
   type RequestConfig,
 } from './client'
@@ -33,6 +34,7 @@ export type ThumbnailQuality = 'small' | 'medium' | 'large'
 export interface ListPostsParams {
   page?: number
   page_size?: number
+  cursor?: string | null
   q?: string
   platform?: string
   author_id?: string
@@ -164,6 +166,11 @@ export interface AuthorOtherPost {
   view_count?: number
   like_count?: number
 }
+
+export type PostListResponse = Partial<PaginatedApiResponseWithLimit<PostListItem>> &
+  Partial<CursorCollectionResponse<PostListItem>> & {
+    items: PostListItem[]
+  }
 
 /** 后端实际返回的文件结构 */
 interface RawFile {
@@ -305,13 +312,11 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
 }
 
 export const postService = {
-  async listPosts(
-    params: ListPostsParams = {},
-    config?: RequestConfig
-  ): Promise<PaginatedApiResponseWithLimit<PostListItem>> {
+  async listPosts(params: ListPostsParams = {}, config?: RequestConfig): Promise<PostListResponse> {
     const query = buildQuery({
-      page: params.page ?? DEFAULT_LIST_PARAMS.page,
+      page: params.cursor ? null : (params.page ?? DEFAULT_LIST_PARAMS.page),
       page_size: params.page_size ?? DEFAULT_LIST_PARAMS.page_size,
+      cursor: params.cursor,
       q: params.q,
       platform: params.platform,
       author_id: params.author_id,
@@ -327,7 +332,7 @@ export const postService = {
     })
 
     // 列表端点使用无尾斜杠路径，避免与后端签名路径规范不一致
-    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/posts${query}`, config)
+    return apiClient.get<PostListResponse>(`/posts${query}`, config)
   },
 
   async getPost(postId: string, config?: RequestConfig): Promise<PostDetailResponse> {

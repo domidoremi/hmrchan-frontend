@@ -22,6 +22,7 @@ export interface CachedPostList {
   cache_key: string
   uuids: string[] // 只存储 UUID 列表，不存储完整数据
   total: number
+  meta?: Record<string, unknown>
   cached_at: number
   etag?: string | undefined
 }
@@ -167,7 +168,10 @@ export const postCache = {
    */
   async getList(
     params: Record<string, unknown>
-  ): Promise<{ data: unknown[]; total: number; fromCache: boolean } | undefined> {
+  ): Promise<
+    | { data: unknown[]; total: number; fromCache: boolean; meta?: Record<string, unknown> }
+    | undefined
+  > {
     const startTime = performance.now()
     const cacheKey = generateCacheKey('post_list', params)
 
@@ -212,6 +216,7 @@ export const postCache = {
       data,
       total: listCache.total,
       fromCache: true,
+      meta: listCache.meta,
     }
   },
 
@@ -222,7 +227,8 @@ export const postCache = {
     params: Record<string, unknown>,
     posts: Array<{ uuid?: string; id?: string; [key: string]: unknown }>,
     total: number,
-    etag?: string
+    etag?: string,
+    meta?: Record<string, unknown>
   ): Promise<void> {
     const cacheKey = generateCacheKey('post_list', params)
 
@@ -236,6 +242,7 @@ export const postCache = {
       cache_key: cacheKey,
       uuids,
       total,
+      meta,
       cached_at: Date.now(),
       etag,
     }

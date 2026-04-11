@@ -86,6 +86,37 @@ describe('useCachedPosts', () => {
       expect(postCache.setList).toHaveBeenCalled()
     })
 
+    it('should preserve cursor pagination meta for cached list responses', async () => {
+      const mockData = [{ id: '1', title: 'Cursor Page' }]
+      const mockFetch = vi.fn().mockResolvedValue({
+        data: mockData,
+        meta: {
+          next_cursor: 'cursor-1',
+          has_more: true,
+        },
+      })
+
+      vi.mocked(postCache.getList).mockResolvedValue(undefined)
+
+      const { load } = useCachedPostList(mockFetch, { revalidate: false })
+      const result = await load({ cursor: null, page_size: 12 })
+
+      expect(result.meta).toEqual({
+        next_cursor: 'cursor-1',
+        has_more: true,
+      })
+      expect(postCache.setList).toHaveBeenCalledWith(
+        { cursor: null, page_size: 12 },
+        mockData,
+        0,
+        undefined,
+        {
+          next_cursor: 'cursor-1',
+          has_more: true,
+        }
+      )
+    })
+
     it('should handle non-Error exceptions gracefully', async () => {
       const mockFetch = vi.fn().mockRejectedValue('String error')
 
