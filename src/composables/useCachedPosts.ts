@@ -32,6 +32,7 @@ interface FetchState {
 interface LoadResult<T> {
   data: T
   total?: number | undefined
+  meta?: Record<string, unknown> | undefined
   fromCache: boolean
 }
 
@@ -53,9 +54,14 @@ function toError(err: unknown): Error {
  */
 async function loadWithCache<T, P>(
   params: P,
-  getCached: (params: P) => Promise<{ data: T; total?: number } | null>,
-  fetchFn: (params: P, config?: CachedLoadConfig) => Promise<{ data: T; total?: number }>,
-  setCache: (params: P, data: T, total?: number) => Promise<void>,
+  getCached: (
+    params: P
+  ) => Promise<{ data: T; total?: number; meta?: Record<string, unknown> } | null>,
+  fetchFn: (
+    params: P,
+    config?: CachedLoadConfig
+  ) => Promise<{ data: T; total?: number; meta?: Record<string, unknown> }>,
+  setCache: (params: P, data: T, total?: number, meta?: Record<string, unknown>) => Promise<void>,
   state: { value: FetchState },
   dataRef: { value: T },
   totalRef: { value: number } | null,
@@ -81,6 +87,7 @@ async function loadWithCache<T, P>(
       return {
         data: dataRef.value,
         total: totalRef?.value,
+        meta: cached.meta,
         fromCache: true,
       }
     }
@@ -104,13 +111,14 @@ async function loadWithCache<T, P>(
     state.value.source = 'network'
 
     // 写入缓存
-    await setCache(params, result.data, result.total)
+    await setCache(params, result.data, result.total, result.meta)
 
     onUpdate?.()
 
     return {
       data: dataRef.value,
       total: totalRef?.value,
+      meta: result.meta,
       fromCache: false,
     }
   } catch (err) {
@@ -122,6 +130,7 @@ async function loadWithCache<T, P>(
       return {
         data: dataRef.value,
         total: totalRef?.value,
+        meta: cached.meta,
         fromCache: true,
       }
     }
@@ -140,7 +149,7 @@ export function useCachedPostList<T>(
   fetchFn: (
     params: Record<string, unknown>,
     config?: CachedLoadConfig
-  ) => Promise<{ data: T[]; total: number }>,
+  ) => Promise<{ data: T[]; total?: number; meta?: Record<string, unknown> }>,
   options: UseCachedPostsOptions = {}
 ) {
   const data = shallowRef<T[]>([])
@@ -164,12 +173,18 @@ export function useCachedPostList<T>(
           return null
         }
 
-        return { data: cached.data as T[], total: cached.total }
+        return { data: cached.data as T[], total: cached.total, meta: cached.meta }
       },
       fetchFn,
-      async (p, d, t) => {
+      async (p, d, t, meta) => {
         // 使用两层缓存：查询缓存 + 帖子实体缓存
-        await postCache.setList(p, d as Array<{ uuid?: string; id?: string }>, t!)
+        await postCache.setList(
+          p,
+          d as Array<{ uuid?: string; id?: string }>,
+          t ?? 0,
+          undefined,
+          meta
+        )
       },
       state,
       data,

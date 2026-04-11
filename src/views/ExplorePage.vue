@@ -197,6 +197,11 @@ import {
   isServiceUnavailableError,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
+import {
+  buildExploreListParams,
+  extractExploreCursorState,
+  mergeUniquePostsById,
+} from '@/views/explore/exploreFeed'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
@@ -246,6 +251,8 @@ const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
+const nextCursor = ref<string | null>(null)
+const hasMoreFromCursor = ref(false)
 
 // 使用缓存感知的帖子列表加载
 const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
@@ -253,11 +260,17 @@ const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
     const result = await postService.listPosts(
       params as Parameters<typeof postService.listPosts>[0]
     )
-    return { data: result.items, total: result.total }
+    return {
+      data: result.items,
+      total: result.total,
+      meta: {
+        next_cursor: result.next_cursor ?? null,
+        has_more: Boolean(result.has_more),
+      },
+    }
   },
-  { revalidate: false } // 不自动后台更新，减少重复请求
+  { revalidate: true }
 )
-const page = ref(1)
 let fetchPostsToken = 0
 let fetchPostsController: AbortController | null = null
 
@@ -288,13 +301,7 @@ const {
 })
 
 const hasKnownTotal = computed(() => total.value > 0)
-const hasMore = computed(() => {
-  if (hasKnownTotal.value) {
-    return posts.value.length < total.value
-  }
-
-  return lastPageSize.value >= pageSize.value
-})
+const hasMore = computed(() => hasMoreFromCursor.value)
 
 // 骨架屏列数和每列数量 - 与真实 masonry 布局保持一致，避免 CLS
 const skeletonColumnCount = computed(() => columnCount.value)
@@ -318,7 +325,6 @@ const {
 })
 
 const lastVisibleCount = ref(0)
-const lastPageSize = ref(0)
 let isActive = true
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
@@ -340,7 +346,13 @@ const heroBadgeLabel = computed(() => {
   return currentPlatformLabel.value
 })
 const loadMoreTotal = computed(() =>
-  hasKnownTotal.value ? total.value : Math.max(visiblePosts.value.length, posts.value.length, 1)
+  hasKnownTotal.value
+    ? total.value
+    : Math.max(
+        visiblePosts.value.length,
+        posts.value.length + (hasMore.value ? pageSize.value : 0),
+        1
+      )
 )
 
 function schedulePlatformBackgroundMount() {
@@ -450,7 +462,9 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
   if (reset) {
     isLoading.value = true
     isLoadingMore.value = false
-    page.value = 1
+    total.value = 0
+    nextCursor.value = null
+    hasMoreFromCursor.value = false
     if (!hadData) {
       posts.value = []
     }
@@ -473,20 +487,27 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
 
   try {
     const { sort_by, sort_order } = getSortParams(currentSort.value)
-    const requestParams = {
-      page: page.value,
-      page_size: pageSize.value,
-      sort_by,
-      sort_order,
-      thumbnail_quality: getThumbnailQuality(),
+    const requestParams = buildExploreListParams({
+      cursor: reset ? null : nextCursor.value,
+      pageSize: pageSize.value,
+      sortBy: sort_by,
+      sortOrder: sort_order,
+      thumbnailQuality: getThumbnailQuality(),
       ...(platform ? { platform } : {}),
-    }
+    })
     const result = await loadCachedPosts(
       requestParams,
       requestSignal ? { signal: requestSignal } : undefined
     )
     const items = result.data as PostListItem[]
-    lastPageSize.value = items.length
+    const meta = result.meta ?? {}
+    const cursorState = extractExploreCursorState({
+      next_cursor:
+        typeof meta['next_cursor'] === 'string' || meta['next_cursor'] === null
+          ? (meta['next_cursor'] as string | null)
+          : null,
+      has_more: Boolean(meta['has_more']),
+    })
 
     if (requestSignal?.aborted || requestToken !== fetchPostsToken) {
       return false
@@ -497,8 +518,10 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
     if (reset) {
       posts.value = items
     } else {
-      posts.value.push(...items)
+      posts.value = mergeUniquePostsById(posts.value, items)
     }
+    nextCursor.value = cursorState.nextCursor
+    hasMoreFromCursor.value = cursorState.hasMore
 
     // 更新 masonry 布局（仅渲染可见部分）
     await nextTick()
@@ -515,8 +538,11 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
 
     if (isServiceUnavailableError(err)) {
       const { sort_by, sort_order } = getSortParams(currentSort.value)
+      const fallbackPage = reset
+        ? 1
+        : Math.floor(posts.value.length / Math.max(pageSize.value, 1)) + 1
       const fallbackResult = getFallbackExplorePosts({
-        page: page.value,
+        page: fallbackPage,
         page_size: pageSize.value,
         sort_by,
         sort_order,
@@ -526,12 +552,13 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       dataSource.value = 'fallback'
       error.value = null
       total.value = fallbackResult.total
-      lastPageSize.value = fallbackResult.items.length
+      nextCursor.value = null
+      hasMoreFromCursor.value = false
 
       if (reset) {
         posts.value = fallbackResult.items
       } else {
-        posts.value.push(...fallbackResult.items)
+        posts.value = mergeUniquePostsById(posts.value, fallbackResult.items)
       }
 
       await nextTick()
@@ -578,15 +605,8 @@ async function loadMore(): Promise<boolean> {
 
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
 
-  const nextPage = page.value + 1
-  page.value = nextPage
   const ok = await fetchPosts(false)
-  if (!ok) {
-    page.value = nextPage - 1
-    return false
-  }
-
-  return true
+  return ok
 }
 
 // 增加预加载距离，让内容提前加载，避免用户等待

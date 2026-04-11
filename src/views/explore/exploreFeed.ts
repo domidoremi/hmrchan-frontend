@@ -1,0 +1,63 @@
+import type {
+  ListPostsParams,
+  PostListItem,
+  PostListResponse,
+  PostSortBy,
+  SortOrder,
+  ThumbnailQuality,
+} from '@/api/postService'
+
+export interface ExploreFeedRequestOptions {
+  cursor?: string | null
+  pageSize: number
+  sortBy: PostSortBy
+  sortOrder: SortOrder
+  platform?: string
+  thumbnailQuality?: ThumbnailQuality
+}
+
+export interface ExploreCursorState {
+  nextCursor: string | null
+  hasMore: boolean
+}
+
+export function buildExploreListParams(options: ExploreFeedRequestOptions): ListPostsParams {
+  return {
+    page_size: options.pageSize,
+    cursor: options.cursor ?? null,
+    sort_by: options.sortBy,
+    sort_order: options.sortOrder,
+    thumbnail_quality: options.thumbnailQuality,
+    ...(options.platform ? { platform: options.platform } : {}),
+  }
+}
+
+export function extractExploreCursorState(
+  response: Pick<PostListResponse, 'next_cursor' | 'has_more'>
+): ExploreCursorState {
+  const nextCursor = response.next_cursor ?? null
+  return {
+    nextCursor,
+    hasMore: Boolean(response.has_more && nextCursor),
+  }
+}
+
+export function mergeUniquePostsById(
+  existing: PostListItem[],
+  incoming: PostListItem[]
+): PostListItem[] {
+  if (existing.length === 0) {
+    return incoming.slice()
+  }
+
+  const seen = new Set(existing.map((post) => post.id))
+  const merged = existing.slice()
+
+  for (const post of incoming) {
+    if (seen.has(post.id)) continue
+    seen.add(post.id)
+    merged.push(post)
+  }
+
+  return merged
+}
