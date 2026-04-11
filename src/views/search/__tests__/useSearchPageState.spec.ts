@@ -111,8 +111,8 @@ describe('useSearchPageState', () => {
     mocks.toastSuccess.mockReset()
     mocks.isAuthenticated.value = false
 
-    mocks.searchPosts.mockResolvedValue({ items: [], total: 0 })
-    mocks.searchAuthors.mockResolvedValue({ items: [], total: 0 })
+    mocks.searchPosts.mockResolvedValue({ items: [], next_cursor: null, has_more: false })
+    mocks.searchAuthors.mockResolvedValue({ items: [], next_cursor: null, has_more: false })
     mocks.listPosts.mockResolvedValue({ items: [], total: 0 })
     mocks.getSearchHistory.mockResolvedValue({ items: [] })
     mocks.getStats.mockResolvedValue({ top_searches: [] })
@@ -160,9 +160,56 @@ describe('useSearchPageState', () => {
       expect.objectContaining({
         q: 'editorial',
         sort_by: 'view_count',
+        cursor: null,
       }),
       expect.anything()
     )
+
+    wrapper.unmount()
+  })
+
+  it('loads more post search results with cursor pagination and closes hasMore when exhausted', async () => {
+    mocks.searchPosts
+      .mockResolvedValueOnce({
+        items: [{ id: 'post-1', platform: 'youtube' }],
+        next_cursor: 'cursor-2',
+        has_more: true,
+      })
+      .mockResolvedValueOnce({
+        items: [{ id: 'post-2', platform: 'tiktok' }],
+        next_cursor: null,
+        has_more: false,
+      })
+
+    let state!: ReturnType<typeof useSearchPageState>
+
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          state = useSearchPageState()
+          return () => h('div')
+        },
+      })
+    )
+
+    await flushAsync()
+
+    expect(state.results.value.map((post) => post.id)).toEqual(['post-1'])
+    expect(state.hasMore.value).toBe(true)
+
+    await state.loadMore()
+    await flushAsync()
+
+    expect(mocks.searchPosts).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        q: 'editorial',
+        cursor: 'cursor-2',
+      }),
+      expect.anything()
+    )
+    expect(state.results.value.map((post) => post.id)).toEqual(['post-1', 'post-2'])
+    expect(state.hasMore.value).toBe(false)
 
     wrapper.unmount()
   })

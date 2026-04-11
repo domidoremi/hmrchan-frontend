@@ -1,18 +1,18 @@
 import type { AuthorListItem, AuthorResponse, ListAuthorsParams } from '@/api/authorService'
-import type { PaginatedApiResponse } from '@/api'
+import type { CursorCollectionResponse } from '@/api'
 import type { PostListItem } from '@/api/postService'
 import {
   STATIC_AUTHORS,
   STATIC_AUTHOR_DETAILS,
   STATIC_AUTHOR_POSTS,
 } from './generated/publicSnapshots'
-import { clonePublicSnapshot, paginateFallbackItems } from './publicPageFallback'
+import { clonePublicSnapshot, cursorPaginateFallbackItems } from './publicPageFallback'
 
 export const AUTHORS_FALLBACK_AUTHORS: AuthorListItem[] = clonePublicSnapshot(STATIC_AUTHORS)
 
 export function getFallbackAuthors(
   params: ListAuthorsParams = {}
-): PaginatedApiResponse<AuthorListItem> {
+): CursorCollectionResponse<AuthorListItem> {
   const sortBy = params.sort_by ?? 'created_at'
   const sortOrder = params.sort_order ?? 'desc'
 
@@ -49,7 +49,10 @@ export function getFallbackAuthors(
     return sortOrder === 'asc' ? leftValue - rightValue : rightValue - leftValue
   })
 
-  return paginateFallbackItems(items, params.page ?? 1, params.page_size ?? 20)
+  return cursorPaginateFallbackItems(items, {
+    cursor: params.cursor ?? null,
+    limit: params.page_size ?? 20,
+  })
 }
 
 export function getFallbackAuthorById(authorId: string): AuthorResponse | null {
@@ -59,9 +62,14 @@ export function getFallbackAuthorById(authorId: string): AuthorResponse | null {
 
 export function getFallbackAuthorPosts(
   authorId: string,
-  page = 1,
-  pageSize = 20
-): PaginatedApiResponse<PostListItem> {
+  options: {
+    cursor?: string | null
+    page_size?: number
+  } = {}
+): CursorCollectionResponse<PostListItem> {
   const items = clonePublicSnapshot(STATIC_AUTHOR_POSTS[authorId] ?? [])
-  return paginateFallbackItems(items, page, pageSize)
+  return cursorPaginateFallbackItems(items, {
+    cursor: options.cursor ?? null,
+    limit: options.page_size ?? 20,
+  })
 }

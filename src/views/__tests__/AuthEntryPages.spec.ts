@@ -46,6 +46,7 @@ const testState = vi.hoisted(() => ({
   turnstile: {
     siteKey: '',
     enabled: false,
+    executeToken: null as string | null,
   },
   googleAuth: {
     prepareGoogleAuthHandoff: vi.fn(),
@@ -163,6 +164,7 @@ const globalConfig = {
           reset: vi.fn(),
           getResponse: vi.fn(),
           rerender: vi.fn(),
+          execute: vi.fn(async () => testState.turnstile.executeToken ?? ''),
         })
         return {}
       },
@@ -223,6 +225,7 @@ describe('Auth entry pages', () => {
     testState.toastStore.warning.mockReset()
     testState.turnstile.siteKey = ''
     testState.turnstile.enabled = false
+    testState.turnstile.executeToken = null
     testState.googleAuth.prepareGoogleAuthHandoff.mockReset()
     testState.googleAuth.prepareGoogleAuthHandoff.mockImplementation(
       async (handoffCode: string) => ({
@@ -280,7 +283,7 @@ describe('Auth entry pages', () => {
     expect(wrapper.find('.turnstile-widget-stub').attributes('data-size')).toBe('compact')
   })
 
-  it('renders the shared shell and Google provider on the register page', () => {
+  it('renders the shared shell, Google provider, and silent Turnstile mount on the register page', () => {
     testState.turnstile.siteKey = 'site-key'
     testState.turnstile.enabled = true
     const wrapper = mount(RegisterPage, {
@@ -292,34 +295,13 @@ describe('Auth entry pages', () => {
     expect(wrapper.text()).toContain('auth.googleDivider')
     expect(wrapper.text()).toContain('auth.googleRegisterButton')
     expect(wrapper.text()).toContain('nav.login')
-    expect(wrapper.find('.turnstile-widget-stub').exists()).toBe(false)
-  })
-
-  it('reveals the register Turnstile widget only after a challenge-required send-code response', async () => {
-    testState.turnstile.siteKey = 'site-key'
-    testState.turnstile.enabled = true
-    testState.api.authService.sendRegistrationCode.mockRejectedValue(
-      new ApiError('Challenge required', 403, 'CHALLENGE_REQUIRED')
-    )
-
-    const wrapper = mount(RegisterPage, {
-      global: globalConfig,
-    })
-
-    await wrapper.find('#reg-email').setValue('tester@gmail.com')
-    await wrapper.find('form.auth-form').trigger('submit.prevent')
-    await flushPromises()
-
-    expect(testState.authStore.register).not.toHaveBeenCalled()
     expect(wrapper.find('.turnstile-widget-stub').attributes('data-size')).toBe('compact')
   })
 
-  it('pre-verifies client trust before sending a registration code with an inline challenge token', async () => {
+  it('pre-verifies client trust before sending a registration code on the first attempt', async () => {
     testState.turnstile.siteKey = 'site-key'
     testState.turnstile.enabled = true
-    testState.api.authService.sendRegistrationCode.mockRejectedValueOnce(
-      new ApiError('Challenge required', 403, 'CHALLENGE_REQUIRED')
-    )
+    testState.turnstile.executeToken = 'turnstile-token'
     testState.api.authService.sendRegistrationCode.mockResolvedValueOnce({
       message: 'sent',
       register_token: 'register-token',
@@ -331,13 +313,6 @@ describe('Auth entry pages', () => {
     })
 
     await wrapper.find('#reg-email').setValue('tester@gmail.com')
-    await wrapper.find('form.auth-form').trigger('submit.prevent')
-    await flushPromises()
-
-    const widget = wrapper.findComponent({ name: 'TurnstileWidget' })
-    widget.vm.$emit('verify', 'turnstile-token')
-    await flushPromises()
-
     await wrapper.find('form.auth-form').trigger('submit.prevent')
     await flushPromises()
 

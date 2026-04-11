@@ -2,7 +2,7 @@
  * Authors Service - 作者相关 API
  */
 
-import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
+import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 import type { PostListItem } from './postService'
 
@@ -63,7 +63,7 @@ export interface AuthorRecentPost {
 }
 
 export interface ListAuthorsParams {
-  page?: number
+  cursor?: string | null
   page_size?: number
   q?: string
   platform?: string
@@ -73,14 +73,19 @@ export interface ListAuthorsParams {
   sort_order?: SortOrder
 }
 
+export interface ListAuthorPostsParams {
+  cursor?: string | null
+  page_size?: number
+}
+
 export const authorService = {
   async listAuthors(
     params: ListAuthorsParams = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<AuthorListItem>> {
+  ): Promise<CursorCollectionResponse<AuthorListItem>> {
     const query = buildQuery({
-      page: params.page ?? 1,
       page_size: params.page_size ?? 20,
+      cursor: params.cursor ?? null,
       q: params.q,
       platform: params.platform,
       is_verified: params.is_verified ?? null,
@@ -90,7 +95,7 @@ export const authorService = {
     })
 
     // 列表端点使用无尾斜杠路径，避免与后端签名路径规范不一致
-    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/authors${query}`, config)
+    return apiClient.get<CursorCollectionResponse<AuthorListItem>>(`/authors${query}`, config)
   },
 
   async getAuthor(authorId: string, config?: RequestConfig): Promise<AuthorResponse> {
@@ -99,12 +104,11 @@ export const authorService = {
 
   async listAuthorPosts(
     authorId: string,
-    page = 1,
-    pageSize = 20,
+    params: ListAuthorPostsParams = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<PostListItem>> {
-    const query = buildQuery({ page, page_size: pageSize })
-    return apiClient.get<PaginatedApiResponse<PostListItem>>(
+  ): Promise<CursorCollectionResponse<PostListItem>> {
+    const query = buildQuery({ cursor: params.cursor ?? null, page_size: params.page_size ?? 20 })
+    return apiClient.get<CursorCollectionResponse<PostListItem>>(
       `/authors/${authorId}/posts${query}`,
       config
     )

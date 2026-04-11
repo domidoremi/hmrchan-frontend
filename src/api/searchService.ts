@@ -4,12 +4,7 @@
  * 提供全站搜索相关的 API 调用
  */
 
-import {
-  apiClient,
-  type PaginatedApiResponse,
-  type PaginatedApiResponseWithLimit,
-  type RequestConfig,
-} from './client'
+import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 import type { PostListItem, ThumbnailQuality } from './postService'
 import type { AuthorListItem } from './authorService'
@@ -35,7 +30,7 @@ export interface SearchSuggestionResponse {
 
 export interface SearchPostsParams {
   q: string
-  page?: number
+  cursor?: string | null
   page_size?: number
   platform?: string
   sort_by?: 'relevance' | 'published_at' | 'view_count'
@@ -45,7 +40,7 @@ export interface SearchPostsParams {
 
 export interface SearchAuthorsParams {
   q: string
-  page?: number
+  cursor?: string | null
   page_size?: number
   platform?: string
 }
@@ -59,11 +54,11 @@ export const searchService = {
   async searchPosts(
     params: SearchPostsParams,
     config?: RequestConfig
-  ): Promise<PaginatedApiResponseWithLimit<PostListItem>> {
+  ): Promise<CursorCollectionResponse<PostListItem>> {
     const query = buildQuery({
       q: params.q,
-      page: params.page ?? 1,
       page_size: params.page_size ?? 20,
+      cursor: params.cursor ?? null,
       platform: params.platform,
       sort_by: params.sort_by === 'relevance' ? null : params.sort_by,
       sort_order:
@@ -71,10 +66,7 @@ export const searchService = {
       thumbnail_quality: params.thumbnail_quality,
     })
 
-    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(
-      `/search/posts${query}`,
-      config
-    )
+    return apiClient.get<CursorCollectionResponse<PostListItem>>(`/search/posts${query}`, config)
   },
 
   /**
@@ -83,15 +75,18 @@ export const searchService = {
   async searchAuthors(
     params: SearchAuthorsParams,
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<AuthorListItem>> {
+  ): Promise<CursorCollectionResponse<AuthorListItem>> {
     const query = buildQuery({
       q: params.q,
-      page: params.page ?? 1,
       page_size: params.page_size ?? 20,
+      cursor: params.cursor ?? null,
       platform: params.platform,
     })
 
-    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/search/authors${query}`, config)
+    return apiClient.get<CursorCollectionResponse<AuthorListItem>>(
+      `/search/authors${query}`,
+      config
+    )
   },
 
   /**

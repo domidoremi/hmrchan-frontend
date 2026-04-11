@@ -100,6 +100,11 @@ import AuthorCard from '@/components/business/AuthorCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
+import {
+  buildAuthorsListParams,
+  extractAuthorsCursorState,
+  mergeUniqueAuthorsById,
+} from '@/views/authors/authorsFeed'
 
 const router = useRouter()
 
@@ -112,25 +117,18 @@ const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
 
-const page = ref(1)
 const total = ref(0)
+const nextCursor = ref<string | null>(null)
+const hasMoreState = ref(false)
 const pageSize = 24
-const lastPageSize = ref(0)
 const isPageActive = ref(true)
 
-const hasKnownTotal = computed(() => total.value > 0)
-const hasMore = computed(() => {
-  if (hasKnownTotal.value) {
-    return authors.value.length < total.value
-  }
-
-  return lastPageSize.value >= pageSize
-})
+const hasMore = computed(() => hasMoreState.value)
 const heroBadgeLabel = computed(() =>
   authors.value.length > 0 ? String(authors.value.length) : ''
 )
 const loadMoreTotal = computed(() =>
-  hasKnownTotal.value ? total.value : Math.max(authors.value.length, 1)
+  hasMore.value ? authors.value.length + Math.max(pageSize, 1) : Math.max(authors.value.length, 1)
 )
 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
@@ -158,10 +156,11 @@ async function fetchAuthors(reset = true): Promise<boolean> {
   if (reset) {
     abortFetchAuthors()
     isLoading.value = true
-    page.value = 1
     if (!hadData) {
       authors.value = []
     }
+    nextCursor.value = null
+    hasMoreState.value = false
   } else {
     if (isLoadingMore.value) return false
     isLoadingMore.value = true
@@ -169,7 +168,10 @@ async function fetchAuthors(reset = true): Promise<boolean> {
 
   error.value = null
 
-  const params = { page: page.value, page_size: pageSize }
+  const params = buildAuthorsListParams({
+    cursor: reset ? null : nextCursor.value,
+    pageSize,
+  })
   const controller = new AbortController()
   fetchAuthorsController = controller
   const requestToken = ++fetchAuthorsToken
@@ -182,6 +184,11 @@ async function fetchAuthors(reset = true): Promise<boolean> {
       if (cached) {
         authors.value = cached.data as AuthorListItem[]
         total.value = cached.total
+        nextCursor.value =
+          typeof cached.meta?.['next_cursor'] === 'string' || cached.meta?.['next_cursor'] === null
+            ? (cached.meta['next_cursor'] as string | null)
+            : null
+        hasMoreState.value = Boolean(cached.meta?.['has_more'] && nextCursor.value)
       }
     }
 
@@ -191,15 +198,20 @@ async function fetchAuthors(reset = true): Promise<boolean> {
     })
     if (controller.signal.aborted || requestToken !== fetchAuthorsToken) return false
 
+    const cursorState = extractAuthorsCursorState(res)
     if (reset) {
       authors.value = res.items
       // 写入缓存
-      await authorCache.setList(params, res.items, res.total)
+      await authorCache.setList(params, res.items, res.items.length, undefined, {
+        next_cursor: res.next_cursor ?? null,
+        has_more: Boolean(res.has_more),
+      })
     } else {
-      authors.value.push(...res.items)
+      authors.value = mergeUniqueAuthorsById(authors.value, res.items)
     }
-    total.value = res.total
-    lastPageSize.value = res.items.length
+    total.value = authors.value.length
+    nextCursor.value = cursorState.nextCursor
+    hasMoreState.value = cursorState.hasMore
     dataSource.value = 'live'
     await setPublicSnapshot(AUTHORS_LIST_SNAPSHOT_SCOPE, params, res)
 
@@ -208,14 +220,23 @@ async function fetchAuthors(reset = true): Promise<boolean> {
     if (controller.signal.aborted || requestToken !== fetchAuthorsToken) return false
 
     if (isServiceUnavailableError(err) && authors.value.length === 0) {
-      const cachedSnapshot = await getPublicSnapshot<{ items: AuthorListItem[]; total: number }>(
-        AUTHORS_LIST_SNAPSHOT_SCOPE,
-        params
-      )
+      const cachedSnapshot = await getPublicSnapshot<{
+        items: AuthorListItem[]
+        total?: number
+        next_cursor?: string | null
+        has_more?: boolean
+      }>(AUTHORS_LIST_SNAPSHOT_SCOPE, params)
       const fallbackResult = cachedSnapshot ?? getFallbackAuthors(params)
-      authors.value = reset ? fallbackResult.items : [...authors.value, ...fallbackResult.items]
-      total.value = fallbackResult.total
-      lastPageSize.value = fallbackResult.items.length
+      const cursorState = extractAuthorsCursorState({
+        next_cursor: fallbackResult.next_cursor ?? null,
+        has_more: Boolean(fallbackResult.has_more),
+      })
+      authors.value = reset
+        ? fallbackResult.items
+        : mergeUniqueAuthorsById(authors.value, fallbackResult.items)
+      total.value = authors.value.length
+      nextCursor.value = cursorState.nextCursor
+      hasMoreState.value = cursorState.hasMore
       dataSource.value = cachedSnapshot ? 'cached' : 'fallback'
       error.value = null
       return true
@@ -244,13 +265,7 @@ async function fetchAuthors(reset = true): Promise<boolean> {
 async function loadMore(): Promise<boolean> {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
 
-  const nextPage = page.value + 1
-  page.value = nextPage
-  const ok = await fetchAuthors(false)
-  if (!ok) {
-    page.value = nextPage - 1
-  }
-  return ok
+  return fetchAuthors(false)
 }
 
 useInfiniteScroll(sentinelRef, loadMore, {
