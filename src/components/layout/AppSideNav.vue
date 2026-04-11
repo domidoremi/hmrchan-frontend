@@ -104,6 +104,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, type Component } from 
 import { RouterLink, useRoute, type RouteLocationRaw } from 'vue-router'
 import { Info, Settings2 } from '@lucide/vue'
 import { prefetchAuthorsData, prefetchExploreData } from '@/utils/prefetch'
+import { createResizeObserver } from '@/utils/modernAPIs'
 import { useNavigation } from '@/composables/useNavigation'
 import type { NavigationItem } from '@/config/navigation'
 
@@ -302,10 +303,10 @@ function observeMobileDock() {
   disconnectMobileDockObserver()
 
   if (typeof ResizeObserver !== 'undefined') {
-    mobileDockResizeObserver = new ResizeObserver(() => {
+    mobileDockResizeObserver = createResizeObserver(() => {
       syncMobileDockHeight()
     })
-    mobileDockResizeObserver.observe(mobileDockRef.value)
+    mobileDockResizeObserver?.observe(mobileDockRef.value)
   }
 
   syncMobileDockHeight()
