@@ -215,7 +215,7 @@ const debouncedSearchPosts = debounce(async (query: string) => {
     const result = await searchService.searchPosts(
       {
         q: query,
-        page: 1,
+        cursor: null,
         page_size: 5,
         sort_by: 'relevance',
         thumbnail_quality: 'small',

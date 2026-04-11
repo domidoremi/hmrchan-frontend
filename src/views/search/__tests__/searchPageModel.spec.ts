@@ -51,7 +51,7 @@ describe('searchPageModel', () => {
       computeMayHaveMoreResults({
         isAuthenticated: false,
         resultsLength: 10,
-        total: 12,
+        hasMore: true,
         searchVisibility: guestVisibility,
       })
     ).toBe(true)
@@ -60,7 +60,7 @@ describe('searchPageModel', () => {
       computeMayHaveMoreResults({
         isAuthenticated: true,
         resultsLength: 10,
-        total: 50,
+        hasMore: true,
         searchVisibility: guestVisibility,
       })
     ).toBe(false)

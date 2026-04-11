@@ -182,8 +182,7 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
       ),
       authorService.listAuthorPosts(
         targetAuthorId,
-        1,
-        24,
+        { cursor: null, page_size: 24 },
         requestSignal ? { signal: requestSignal, skipErrorToast: true } : { skipErrorToast: true }
       ),
     ])
@@ -224,7 +223,10 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
 
       const fallbackAuthor = getFallbackAuthorById(targetAuthorId)
       if (fallbackAuthor) {
-        const fallbackPosts = getFallbackAuthorPosts(targetAuthorId, 1, 24)
+        const fallbackPosts = getFallbackAuthorPosts(targetAuthorId, {
+          cursor: null,
+          page_size: 24,
+        })
         author.value = fallbackAuthor
         posts.value = fallbackPosts.items
         dataSource.value = 'fallback'

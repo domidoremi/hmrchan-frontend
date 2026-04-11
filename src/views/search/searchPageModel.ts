@@ -35,19 +35,20 @@ export function buildTopSearchQueries(
 export function computeMayHaveMoreResults(options: {
   isAuthenticated: boolean
   resultsLength: number
-  total: number
+  hasMore: boolean
   searchVisibility: PublicVisibilityScope
 }): boolean {
-  const { isAuthenticated, resultsLength, total, searchVisibility } = options
+  const { isAuthenticated, resultsLength, hasMore, searchVisibility } = options
 
   if (isAuthenticated || resultsLength === 0) return false
+  if (hasMore) return true
 
   const visibleLimit = searchVisibility.limit
   if (searchVisibility.tier === 'guest' && visibleLimit !== null) {
-    return total >= visibleLimit || resultsLength >= visibleLimit
+    return resultsLength >= visibleLimit
   }
 
-  return total > resultsLength
+  return false
 }
 
 export function buildSearchRecordKey(query: string): string {
