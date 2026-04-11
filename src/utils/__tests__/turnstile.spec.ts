@@ -49,6 +49,22 @@ describe('turnstile utils', () => {
         message: 'Human verification failed, please retry turnstile',
       })
     ).toBe(true)
+    expect(
+      isTurnstileRequiredError({
+        status: 400,
+        code: 'TURNSTILE_TOKEN_MISSING',
+        message: 'Turnstile token is required',
+      })
+    ).toBe(true)
+    expect(
+      isTurnstileRequiredError({
+        status: 400,
+        detail: {
+          code: 'TURNSTILE_TOKEN_MISSING',
+          message: 'Turnstile token is required',
+        },
+      })
+    ).toBe(true)
     expect(isTurnstileRequiredError(new Error('plain error'))).toBe(false)
   })
 })

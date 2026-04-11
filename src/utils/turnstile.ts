@@ -1,6 +1,10 @@
 export const TURNSTILE_HOSTNAME_MISMATCH_CODE = '110200'
 const TURNSTILE_RETRYABLE_ERROR_PREFIX = '600'
-const TURNSTILE_REQUIRED_CODES = new Set(['CHALLENGE_REQUIRED', 'TURNSTILE_REQUIRED'])
+const TURNSTILE_REQUIRED_CODES = new Set([
+  'CHALLENGE_REQUIRED',
+  'TURNSTILE_REQUIRED',
+  'TURNSTILE_TOKEN_MISSING',
+])
 
 export type TurnstileErrorKind =
   | 'hostname-mismatch'
@@ -98,6 +102,21 @@ function normalizeErrorText(value: unknown): string {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function collectTurnstileRequiredCodes(value: unknown): string[] {
+  if (!isRecord(value)) return []
+
+  const nestedDetail = isRecord(value['detail']) ? value['detail'] : null
+  const nestedDetails = isRecord(value['details']) ? value['details'] : null
+
+  return [value['code'], nestedDetail?.['code'], nestedDetails?.['code']]
+    .map((item) => normalizeErrorText(item).trim().toUpperCase())
+    .filter(Boolean)
+}
+
 export function isRetryableTurnstileError(error: unknown): boolean {
   const code = extractTurnstileErrorCode(error)
   return typeof code === 'string' && code.startsWith(TURNSTILE_RETRYABLE_ERROR_PREFIX)
@@ -111,23 +130,28 @@ export function isTurnstileRequiredError(error: unknown): boolean {
     code?: unknown
     message?: unknown
     details?: unknown
+    detail?: unknown
   }
 
-  const code = normalizeErrorText(apiError.code).trim().toUpperCase()
-  if (TURNSTILE_REQUIRED_CODES.has(code)) {
-    return true
+  for (const code of collectTurnstileRequiredCodes(apiError)) {
+    if (TURNSTILE_REQUIRED_CODES.has(code)) {
+      return true
+    }
   }
 
   const status = Number(apiError.status ?? 0)
+  const detailText = normalizeErrorText(apiError.detail).toLowerCase()
   const detailsText = normalizeErrorText(apiError.details).toLowerCase()
-  const message = `${normalizeErrorText(apiError.message)} ${detailsText}`.toLowerCase()
+  const message =
+    `${normalizeErrorText(apiError.message)} ${detailText} ${detailsText}`.toLowerCase()
 
   return (
-    status === 403 &&
+    (status === 400 || status === 403) &&
     (message.includes('challenge required') ||
       message.includes('human verification') ||
       message.includes('turnstile') ||
-      message.includes('verification required'))
+      message.includes('verification required') ||
+      message.includes('verification is required'))
   )
 }
 

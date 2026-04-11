@@ -403,7 +403,7 @@ export async function prefetchAuthorsData(): Promise<void> {
   await prefetchData(async () => {
     const { authorService } = await import('@/api/authorService')
     // 只预加载第一页
-    await authorService.listAuthors({ page: 1, page_size: 20 }, { skipErrorToast: true })
+    await authorService.listAuthors({ cursor: null, page_size: 20 }, { skipErrorToast: true })
   }).catch((error) => {
     reportClientError('prefetch.authors_data_failed', error, undefined, { severity: 'warn' })
   })

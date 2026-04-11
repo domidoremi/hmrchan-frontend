@@ -44,8 +44,15 @@
               <p v-if="emailError" class="field-error">{{ emailError }}</p>
             </div>
 
-            <div v-if="turnstileEnabled && forceTurnstileForSend" class="turnstile-block">
-              <div class="turnstile-header">
+            <div
+              v-if="turnstileEnabled"
+              :class="
+                forceTurnstileForSend
+                  ? 'turnstile-block'
+                  : 'turnstile-block turnstile-block--silent'
+              "
+            >
+              <div v-if="forceTurnstileForSend" class="turnstile-header">
                 <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
                 <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
               </div>
@@ -64,14 +71,7 @@
             </div>
 
             <div class="action-group">
-              <Button
-                type="submit"
-                :loading="isSendingCode"
-                :disabled="
-                  !email || (turnstileEnabled && forceTurnstileForSend && !isTurnstileTokenFresh())
-                "
-                full-width
-              >
+              <Button type="submit" :loading="isSendingCode" :disabled="!email" full-width>
                 {{ $t('auth.sendCodeButton') }}
               </Button>
             </div>
@@ -802,6 +802,28 @@ async function executeTurnstileChallenge(
   return null
 }
 
+async function ensureRegistrationTurnstileToken(): Promise<string | null> {
+  if (!turnstileEnabled.value) return null
+
+  if (isTurnstileTokenFresh() && turnstileToken.value) {
+    return turnstileToken.value
+  }
+
+  const token = await executeTurnstileChallenge(turnstileRef.value, (nextToken) => {
+    turnstileToken.value = nextToken
+    turnstileIssuedAt.value = Date.now()
+  })
+
+  if (!token) {
+    forceTurnstileForSend.value = true
+    toastStore.warning(t('auth.error.turnstileRequired'))
+    return null
+  }
+
+  forceTurnstileForSend.value = false
+  return token
+}
+
 function validateRegistrationEmail(options: { showToast?: boolean } = {}) {
   const { showToast = false } = options
   const validation = validateMainstreamEmailDomain(email.value)
@@ -1062,15 +1084,9 @@ async function handleSendCode() {
   const normalizedEmail = validation.normalizedEmail
   email.value = normalizedEmail
 
-  if (turnstileEnabled.value && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
-    const token = await executeTurnstileChallenge(turnstileRef.value, (nextToken) => {
-      turnstileToken.value = nextToken
-      turnstileIssuedAt.value = Date.now()
-    })
-    if (!token) {
-      toastStore.warning(t('auth.error.turnstileRequired'))
-      return
-    }
+  if (turnstileEnabled.value) {
+    const token = await ensureRegistrationTurnstileToken()
+    if (!token) return
   }
 
   abortRegistrationCodeRequest()
@@ -1156,15 +1172,9 @@ async function handleResendCode() {
   const normalizedEmail = validation.normalizedEmail
   email.value = normalizedEmail
 
-  if (turnstileEnabled.value && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
-    const token = await executeTurnstileChallenge(turnstileRef.value, (nextToken) => {
-      turnstileToken.value = nextToken
-      turnstileIssuedAt.value = Date.now()
-    })
-    if (!token) {
-      toastStore.warning(t('auth.error.turnstileRequired'))
-      return
-    }
+  if (turnstileEnabled.value) {
+    const token = await ensureRegistrationTurnstileToken()
+    if (!token) return
   }
 
   abortRegistrationCodeRequest()
@@ -1418,6 +1428,15 @@ onUnmounted(() => {
 <style scoped>
 .auth-inline-spin {
   animation: auth-inline-spin 0.9s linear infinite;
+}
+
+.turnstile-block--silent {
+  position: relative;
+  inline-size: 0;
+  block-size: 0;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: hidden;
 }
 
 @keyframes auth-inline-spin {

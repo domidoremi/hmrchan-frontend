@@ -61,7 +61,8 @@ export function useSearchPageState() {
   const searchStats = ref<HistoryStats | null>(null)
   const total = ref(0)
   const authorTotal = ref(0)
-  const page = ref(1)
+  const nextCursor = ref<string | null>(null)
+  const hasMoreState = ref(false)
   const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50, mobileCap: 20 })
   const discoverPageSize = computed(() => Math.min(12, Math.max(6, pageSize.value)))
   const authorPageSize = computed(() => Math.min(pageSize.value, 20))
@@ -87,7 +88,10 @@ export function useSearchPageState() {
   let authorsSearchController: AbortController | null = null
   let lastRecordedSearchKey = ''
 
-  const hasMore = computed(() => results.value.length < total.value)
+  const hasMore = computed(() => hasMoreState.value)
+  const loadMoreTotal = computed(() =>
+    hasMore.value ? results.value.length + Math.max(pageSize.value, 1) : results.value.length
+  )
   const topSearchQueries = computed(() =>
     buildTopSearchQueries(searchStats.value, searchHistory.value)
   )
@@ -96,7 +100,7 @@ export function useSearchPageState() {
     computeMayHaveMoreResults({
       isAuthenticated: isAuthenticated.value,
       resultsLength: results.value.length,
-      total: total.value,
+      hasMore: hasMore.value,
       searchVisibility: searchVisibility.value,
     })
   )
@@ -185,15 +189,16 @@ export function useSearchPageState() {
     isLoading.value = true
     isLoadingMore.value = false
     error.value = null
-    page.value = 1
+    nextCursor.value = null
+    hasMoreState.value = false
 
     try {
       const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
       const res = await searchService.searchPosts(
         {
           q: query.value,
-          page: 1,
           page_size: pageSize.value,
+          cursor: null,
           sort_by: sortBy.value,
           sort_order: sortOrder.value,
           thumbnail_quality: getThumbnailQuality(),
@@ -208,13 +213,17 @@ export function useSearchPageState() {
       )
       if (requestSignal?.aborted || requestToken !== postsRequestToken) return
       results.value = res.items
-      total.value = res.total
-      recordSearchHistory(res.total)
+      total.value = res.items.length
+      nextCursor.value = res.next_cursor ?? null
+      hasMoreState.value = Boolean(res.has_more && res.next_cursor)
+      recordSearchHistory(res.items.length)
     } catch (err) {
       if (requestSignal?.aborted || isAbortError(err) || requestToken !== postsRequestToken) return
       error.value = t('common.error')
       results.value = []
       total.value = 0
+      nextCursor.value = null
+      hasMoreState.value = false
     } finally {
       if (requestToken === postsRequestToken) {
         isLoading.value = false
@@ -235,12 +244,11 @@ export function useSearchPageState() {
     isLoadingMore.value = true
 
     try {
-      const nextPage = page.value + 1
       const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
       const res = await searchService.searchPosts(
         {
           q: query.value,
-          page: nextPage,
+          cursor: nextCursor.value,
           page_size: pageSize.value,
           sort_by: sortBy.value,
           sort_order: sortOrder.value,
@@ -255,9 +263,19 @@ export function useSearchPageState() {
         }
       )
       if (controller.signal.aborted || requestToken !== postsRequestToken) return
-      results.value.push(...res.items)
-      page.value = nextPage
-      total.value = res.total
+      const seen = new Set(results.value.map((post) => post.id))
+      const merged = results.value.slice()
+
+      for (const post of res.items) {
+        if (seen.has(post.id)) continue
+        seen.add(post.id)
+        merged.push(post)
+      }
+
+      results.value = merged
+      total.value = merged.length
+      nextCursor.value = res.next_cursor ?? null
+      hasMoreState.value = Boolean(res.has_more && res.next_cursor)
     } catch (err) {
       if (controller.signal.aborted || isAbortError(err) || requestToken !== postsRequestToken) {
         return
@@ -289,14 +307,14 @@ export function useSearchPageState() {
       const res = await searchService.searchAuthors(
         {
           q: query.value,
-          page: 1,
           page_size: authorPageSize.value,
+          cursor: null,
         },
         requestSignal ? { signal: requestSignal } : undefined
       )
       if (requestSignal?.aborted || requestToken !== authorRequestToken) return
       authors.value = res.items
-      authorTotal.value = res.total
+      authorTotal.value = res.items.length
     } catch (err) {
       if (requestSignal?.aborted || isAbortError(err) || requestToken !== authorRequestToken) return
       authorError.value = t('common.error')
@@ -447,6 +465,8 @@ export function useSearchPageState() {
       authors.value = []
       total.value = 0
       authorTotal.value = 0
+      nextCursor.value = null
+      hasMoreState.value = false
       activeTab.value = 'posts'
       void fetchDiscoverPosts(controller.signal)
       void fetchSearchInsights()
@@ -551,6 +571,7 @@ export function useSearchPageState() {
     discoverError,
     historyError,
     hasMore,
+    loadMoreTotal,
     topSearchQueries,
     mayHaveMoreResults,
     goBack,

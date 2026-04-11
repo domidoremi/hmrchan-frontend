@@ -162,7 +162,7 @@
             <LoadMoreSection
               v-if="results.length > 0"
               :count="results.length"
-              :total="total"
+              :total="loadMoreTotal"
               :has-more="hasMore"
               :loading="isLoadingMore"
               @load-more="loadMore"
@@ -484,6 +484,7 @@ const {
   discoverError,
   historyError,
   hasMore,
+  loadMoreTotal,
   topSearchQueries,
   mayHaveMoreResults,
   goBack,

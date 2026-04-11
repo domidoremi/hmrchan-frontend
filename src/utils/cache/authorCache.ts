@@ -35,6 +35,7 @@ export interface CachedAuthorList {
   cache_key: string
   data: unknown[]
   total: number
+  meta?: Record<string, unknown>
   cached_at: number
   etag?: string | undefined
 }
@@ -121,13 +122,15 @@ export const authorCache = {
     params: Record<string, unknown>,
     data: unknown[],
     total: number,
-    etag?: string
+    etag?: string,
+    meta?: Record<string, unknown>
   ): Promise<void> {
     const cacheKey = generateCacheKey('author_list', params)
     const cached: CachedAuthorList = {
       cache_key: cacheKey,
       data,
       total,
+      meta,
       cached_at: Date.now(),
       etag,
     }
