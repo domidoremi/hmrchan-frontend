@@ -186,6 +186,12 @@
     "moreProvidersSoon": "他のログイン方法は今後対応予定です。",
     "verifyTitle": "セキュリティチェック",
     "verifyHint": "少しお待ちください",
+    "turnstileStatusExecutingTitle": "セキュリティ確認を実行しています",
+    "turnstileStatusExecutingHint": "現在のリクエストのリスクとチャレンジ状態を確認しています…",
+    "turnstileStatusInteractiveTitle": "チャレンジの完了を待っています",
+    "turnstileStatusInteractiveHint": "対話式チェックが表示された場合は、ここで完了してください。",
+    "turnstileStatusVerifiedTitle": "セキュリティ確認が完了しました",
+    "turnstileStatusVerifiedHint": "確認済みです。次の手順へ進みます…",
     "stepUp": {
       "title": "本人確認をお願いします",
       "defaultDescription": "この操作は重要です。続行するには現在のパスワードを入力してください。",

@@ -44,18 +44,13 @@
               <p v-if="emailError" class="field-error">{{ emailError }}</p>
             </div>
 
-            <div
+            <AuthTurnstileStatus
               v-if="turnstileEnabled"
-              :class="
-                forceTurnstileForSend
-                  ? 'turnstile-block'
-                  : 'turnstile-block turnstile-block--silent'
+              :status="sendCodeTurnstileStatus"
+              :show-widget-frame="
+                forceTurnstileForSend || sendCodeTurnstileStatus === 'interactive_required'
               "
             >
-              <div v-if="forceTurnstileForSend" class="turnstile-header">
-                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-              </div>
               <TurnstileWidget
                 ref="turnstileRef"
                 :site-key="turnstileSiteKey"
@@ -67,11 +62,17 @@
                 @verify="handleTurnstileVerify"
                 @expire="handleTurnstileExpire"
                 @error="handleTurnstileError"
+                @status="sendCodeTurnstileStatus = $event"
               />
-            </div>
+            </AuthTurnstileStatus>
 
             <div class="action-group">
-              <Button type="submit" :loading="isSendingCode" :disabled="!email" full-width>
+              <Button
+                type="submit"
+                :loading="isSendingCode || sendCodeTurnstileStatus === 'executing'"
+                :disabled="!email || isSendCodeTurnstileBusy"
+                full-width
+              >
                 {{ $t('auth.sendCodeButton') }}
               </Button>
             </div>
@@ -206,11 +207,11 @@
               </div>
             </div>
 
-            <div v-if="showRegisterTurnstile" class="turnstile-block">
-              <div class="turnstile-header">
-                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-              </div>
+            <AuthTurnstileStatus
+              v-if="showRegisterTurnstile"
+              :status="registerTurnstileStatus"
+              :show-widget-frame="registerTurnstileStatus === 'interactive_required'"
+            >
               <TurnstileWidget
                 ref="turnstileRef"
                 :site-key="turnstileSiteKey"
@@ -222,15 +223,17 @@
                 @verify="handleTurnstileVerify"
                 @expire="handleTurnstileExpire"
                 @error="handleTurnstileError"
+                @status="registerTurnstileStatus = $event"
               />
-            </div>
+            </AuthTurnstileStatus>
 
             <div class="action-group">
               <Button
                 type="submit"
-                :loading="isLoading"
+                :loading="isLoading || registerTurnstileStatus === 'executing'"
                 :disabled="
                   verificationCode.length !== 6 ||
+                  isRegisterTurnstileBusy ||
                   (!!confirmPassword && password !== confirmPassword) ||
                   (showRegisterTurnstile && !isTurnstileTokenFresh())
                 "
@@ -272,11 +275,11 @@
 
             <p v-if="riskError" class="field-error">{{ riskError }}</p>
 
-            <div v-if="turnstileEnabled" class="turnstile-block">
-              <div class="turnstile-header">
-                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-              </div>
+            <AuthTurnstileStatus
+              v-if="turnstileEnabled"
+              :status="riskTurnstileStatus"
+              :show-widget-frame="riskTurnstileStatus === 'interactive_required'"
+            >
               <TurnstileWidget
                 ref="riskTurnstileRef"
                 :site-key="turnstileSiteKey"
@@ -288,11 +291,17 @@
                 @verify="handleRiskTurnstileVerify"
                 @expire="handleRiskTurnstileExpire"
                 @error="handleTurnstileError"
+                @status="riskTurnstileStatus = $event"
               />
-            </div>
+            </AuthTurnstileStatus>
 
             <div class="action-group">
-              <Button type="submit" full-width :loading="isLoading">
+              <Button
+                type="submit"
+                full-width
+                :loading="isLoading || riskTurnstileStatus === 'executing'"
+                :disabled="isRiskTurnstileBusy"
+              >
                 {{ $t('auth.verifyButton') }}
               </Button>
               <Button type="button" variant="ghost" full-width @click="returnToPrimaryStep">
@@ -381,11 +390,13 @@
             <div class="auth-inline-state__content">
               <p class="auth-restore__title">{{ $t('auth.verifyTitle') }}</p>
 
-              <div v-if="resolvedGoogleClientChallengeSiteKey" class="turnstile-block">
-                <div class="turnstile-header">
-                  <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                  <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-                </div>
+              <AuthTurnstileStatus
+                v-if="resolvedGoogleClientChallengeSiteKey"
+                :status="googleClientChallengeStatus"
+                :error-message="googleClientChallengeError"
+                :detail="googleClientChallengeDetail"
+                :show-widget-frame="googleClientChallengeStatus === 'interactive_required'"
+              >
                 <TurnstileWidget
                   ref="googleClientChallengeRef"
                   :site-key="resolvedGoogleClientChallengeSiteKey"
@@ -397,16 +408,11 @@
                   @verify="handleGoogleClientChallengeVerify"
                   @expire="handleGoogleClientChallengeExpire"
                   @error="handleTurnstileError"
+                  @status="googleClientChallengeStatus = $event"
                 />
-              </div>
+              </AuthTurnstileStatus>
 
               <p v-else class="auth-inline-state__copy">{{ $t('auth.clientChallengeLoading') }}</p>
-              <p v-if="googleClientChallengeError" class="field-error">
-                {{ googleClientChallengeError }}
-              </p>
-              <p v-if="googleClientChallengeDetail" class="auth-inline-state__copy">
-                {{ googleClientChallengeDetail }}
-              </p>
             </div>
           </div>
 
@@ -473,6 +479,7 @@ import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
+import AuthTurnstileStatus from '@/components/auth/AuthTurnstileStatus.vue'
 import EmailCodeInput from '@/components/ui/EmailCodeInput.vue'
 import AuthMfaStep from '@/components/auth/AuthMfaStep.vue'
 import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
@@ -482,6 +489,7 @@ import IconGoogle from '@/components/icons/IconGoogle.vue'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { validateMainstreamEmailDomain } from '@/utils/emailDomainPolicy'
 import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
+import { isTurnstileBusy, type TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
 import type { AuthFlowResult } from '@/stores/auth'
 import { clientSecurityService } from '@/api/clientSecurityService'
 
@@ -562,8 +570,12 @@ const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
 const turnstileIssuedAt = ref<number | null>(null)
 const turnstileRef = useTemplateRef<TurnstileWidgetHandle>('turnstileRef')
+const sendCodeTurnstileStatus = ref<TurnstileWidgetStatus>('idle')
+const registerTurnstileStatus = ref<TurnstileWidgetStatus>('idle')
+const googleClientChallengeStatus = ref<TurnstileWidgetStatus>('idle')
 const riskTurnstileToken = ref<string | null>(null)
 const riskTurnstileIssuedAt = ref<number | null>(null)
+const riskTurnstileStatus = ref<TurnstileWidgetStatus>('idle')
 
 const resendCooldown = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
@@ -594,6 +606,9 @@ const googleProviderBusy = computed(
 const showRegisterTurnstile = computed(
   () => turnstileEnabled.value && !hasValidRegisterToken() && forceTurnstileForRegister.value
 )
+const isSendCodeTurnstileBusy = computed(() => isTurnstileBusy(sendCodeTurnstileStatus.value))
+const isRegisterTurnstileBusy = computed(() => isTurnstileBusy(registerTurnstileStatus.value))
+const isRiskTurnstileBusy = computed(() => isTurnstileBusy(riskTurnstileStatus.value))
 const googlePopupErrorMessage = computed(() =>
   googlePopupErrorKey.value ? t(googlePopupErrorKey.value) : ''
 )
@@ -662,6 +677,7 @@ function resetGoogleClientChallengeState() {
   googleClientChallengeError.value = ''
   googleClientChallengeDetail.value = ''
   isGoogleClientChallengeSubmitting.value = false
+  googleClientChallengeStatus.value = 'idle'
   googleClientChallengeRef.value?.reset?.()
 }
 
@@ -860,6 +876,11 @@ function handleTurnstileVerify(token: string) {
 function handleTurnstileExpire() {
   turnstileToken.value = null
   turnstileIssuedAt.value = null
+  if (step.value === 'email') {
+    sendCodeTurnstileStatus.value = 'expired'
+  } else {
+    registerTurnstileStatus.value = 'expired'
+  }
 }
 
 function handleRiskTurnstileVerify(token: string) {
@@ -870,11 +891,13 @@ function handleRiskTurnstileVerify(token: string) {
 function handleRiskTurnstileExpire() {
   riskTurnstileToken.value = null
   riskTurnstileIssuedAt.value = null
+  riskTurnstileStatus.value = 'expired'
 }
 
 function resetRiskTurnstile() {
   riskTurnstileToken.value = null
   riskTurnstileIssuedAt.value = null
+  riskTurnstileStatus.value = 'idle'
   riskTurnstileRef.value?.reset()
 }
 
