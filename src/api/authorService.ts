@@ -64,7 +64,7 @@ export interface AuthorRecentPost {
 
 export interface ListAuthorsParams {
   cursor?: string | null
-  page_size?: number
+  limit?: number
   q?: string
   platform?: string
   is_verified?: boolean
@@ -75,7 +75,7 @@ export interface ListAuthorsParams {
 
 export interface ListAuthorPostsParams {
   cursor?: string | null
-  page_size?: number
+  limit?: number
 }
 
 export const authorService = {
@@ -84,7 +84,7 @@ export const authorService = {
     config?: RequestConfig
   ): Promise<CursorCollectionResponse<AuthorListItem>> {
     const query = buildQuery({
-      page_size: params.page_size ?? 20,
+      limit: params.limit ?? 20,
       cursor: params.cursor ?? null,
       q: params.q,
       platform: params.platform,
@@ -107,10 +107,16 @@ export const authorService = {
     params: ListAuthorPostsParams = {},
     config?: RequestConfig
   ): Promise<CursorCollectionResponse<PostListItem>> {
-    const query = buildQuery({ cursor: params.cursor ?? null, page_size: params.page_size ?? 20 })
-    return apiClient.get<CursorCollectionResponse<PostListItem>>(
+    const query = buildQuery({ cursor: params.cursor ?? null, limit: params.limit ?? 20 })
+    const response = await apiClient.get<CursorCollectionResponse<PostListItem>>(
       `/authors/${authorId}/posts${query}`,
       config
     )
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+    }
   },
 }

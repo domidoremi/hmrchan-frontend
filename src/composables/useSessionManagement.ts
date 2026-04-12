@@ -74,7 +74,7 @@ export function useSessionManagement() {
         skipErrorToast: true,
       })
       if (controller.signal.aborted || requestToken !== sessionsRequestToken) return
-      let devices = response.devices ?? []
+      let devices = response.items ?? []
       const hasCurrentDevice = devices.some((device) => device.is_current)
 
       if (!hasCurrentDevice) {

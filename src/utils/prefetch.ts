@@ -385,7 +385,7 @@ export async function prefetchExploreData(): Promise<void> {
   await prefetchData(async () => {
     const { postService } = await import('@/api/postService')
     // 只预加载第一页，避免并发请求过多触发 429
-    await postService.listPosts({ page: 1, page_size: 20 }, { skipErrorToast: true })
+    await postService.listPosts({ limit: 20 }, { skipErrorToast: true })
   }).catch((error) => {
     reportClientError('prefetch.explore_data_failed', error, undefined, { severity: 'warn' })
   })
@@ -403,7 +403,7 @@ export async function prefetchAuthorsData(): Promise<void> {
   await prefetchData(async () => {
     const { authorService } = await import('@/api/authorService')
     // 只预加载第一页
-    await authorService.listAuthors({ cursor: null, page_size: 20 }, { skipErrorToast: true })
+    await authorService.listAuthors({ cursor: null, limit: 20 }, { skipErrorToast: true })
   }).catch((error) => {
     reportClientError('prefetch.authors_data_failed', error, undefined, { severity: 'warn' })
   })

@@ -31,7 +31,7 @@ export interface SearchSuggestionResponse {
 export interface SearchPostsParams {
   q: string
   cursor?: string | null
-  page_size?: number
+  limit?: number
   platform?: string
   sort_by?: 'relevance' | 'published_at' | 'view_count'
   sort_order?: 'asc' | 'desc'
@@ -41,7 +41,7 @@ export interface SearchPostsParams {
 export interface SearchAuthorsParams {
   q: string
   cursor?: string | null
-  page_size?: number
+  limit?: number
   platform?: string
 }
 
@@ -57,7 +57,7 @@ export const searchService = {
   ): Promise<CursorCollectionResponse<PostListItem>> {
     const query = buildQuery({
       q: params.q,
-      page_size: params.page_size ?? 20,
+      limit: params.limit ?? 20,
       cursor: params.cursor ?? null,
       platform: params.platform,
       sort_by: params.sort_by === 'relevance' ? null : params.sort_by,
@@ -66,7 +66,16 @@ export const searchService = {
       thumbnail_quality: params.thumbnail_quality,
     })
 
-    return apiClient.get<CursorCollectionResponse<PostListItem>>(`/search/posts${query}`, config)
+    const response = await apiClient.get<CursorCollectionResponse<PostListItem>>(
+      `/search/posts${query}`,
+      config
+    )
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+    }
   },
 
   /**
@@ -78,15 +87,21 @@ export const searchService = {
   ): Promise<CursorCollectionResponse<AuthorListItem>> {
     const query = buildQuery({
       q: params.q,
-      page_size: params.page_size ?? 20,
+      limit: params.limit ?? 20,
       cursor: params.cursor ?? null,
       platform: params.platform,
     })
 
-    return apiClient.get<CursorCollectionResponse<AuthorListItem>>(
+    const response = await apiClient.get<CursorCollectionResponse<AuthorListItem>>(
       `/search/authors${query}`,
       config
     )
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+    }
   },
 
   /**

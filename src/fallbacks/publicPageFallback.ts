@@ -1,4 +1,4 @@
-import { ApiError, type CursorCollectionResponse, type PaginatedApiResponse } from '@/api/client'
+import { ApiError, type CursorCollectionResponse } from '@/api/client'
 import { deepClone } from '@/utils/modernAPIs'
 
 export const PUBLIC_FALLBACK_PREFIX = '__public_fallback__'
@@ -41,28 +41,6 @@ export function isServiceUnavailableError(error: unknown): boolean {
     message.includes('error code: 1016') ||
     message.includes('error code: 1033')
   )
-}
-
-export function paginateFallbackItems<T>(
-  items: readonly T[],
-  page = 1,
-  pageSize = 20
-): PaginatedApiResponse<T> {
-  const safePage = Number.isFinite(page) ? Math.max(1, Math.trunc(page)) : 1
-  const safePageSize = Number.isFinite(pageSize) ? Math.max(1, Math.trunc(pageSize)) : 20
-  const total = items.length
-  const totalPages = total === 0 ? 0 : Math.ceil(total / safePageSize)
-  const start = (safePage - 1) * safePageSize
-
-  return {
-    items: items.slice(start, start + safePageSize),
-    total,
-    page: safePage,
-    page_size: safePageSize,
-    total_pages: totalPages,
-    has_next: totalPages > 0 && safePage < totalPages,
-    has_prev: totalPages > 0 && safePage > 1,
-  }
 }
 
 function parseCursorOffset(cursor: string | null | undefined): number {

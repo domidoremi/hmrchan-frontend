@@ -113,20 +113,6 @@ export interface PostImage {
 }
 
 /**
- * V1 信封分页响应
- * 对应 API 返回的 pagination 字段: { page, page_size, total, total_pages }
- */
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  page_size: number
-  total_pages: number
-  has_next?: boolean
-  has_prev?: boolean
-}
-
-/**
  * API 错误响应结构（V1Envelope 错误格式）
  * 注意：运行时错误类请使用 api/client.ts 导出的 ApiError class
  */

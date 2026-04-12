@@ -47,22 +47,18 @@ describe('inboxService', () => {
     vi.mocked(clientMocks.patch).mockResolvedValueOnce({ items: [] })
 
     await inboxService.patchInboxPreferences({
-      preferences: {
-        interaction: {
-          inbox_enabled: true,
-          email_enabled: false,
-        },
+      interaction: {
+        inbox_enabled: true,
+        email_enabled: false,
       },
     })
 
     expect(clientMocks.patch).toHaveBeenCalledWith(
       '/inbox/preferences',
       {
-        preferences: {
-          interaction: {
-            inbox_enabled: true,
-            email_enabled: false,
-          },
+        interaction: {
+          inbox_enabled: true,
+          email_enabled: false,
         },
       },
       undefined

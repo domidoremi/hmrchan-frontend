@@ -38,8 +38,7 @@ export interface Device {
 }
 
 export interface DeviceListResponse {
-  devices: Device[]
-  total: number
+  items: Device[]
   current_fingerprint?: string | null
 }
 
@@ -50,10 +49,14 @@ export const deviceService = {
    * 获取设备列表
    */
   async getDevices(config?: RequestConfig): Promise<DeviceListResponse> {
-    return apiClient.get<DeviceListResponse>('/devices', {
+    const response = await apiClient.get<DeviceListResponse>('/devices', {
       ...config,
       securityPolicy: config?.securityPolicy ?? 'sensitive',
     })
+    return {
+      ...response,
+      items: response.items ?? [],
+    }
   },
 
   /** 取消当前设备信任状态 */
@@ -76,7 +79,7 @@ export const deviceService = {
    */
   async revokeDevice(deviceId: string | number): Promise<void> {
     const verificationToken = await ensureVerificationToken('revoke_sessions')
-    return apiClient.delete(`/devices/${deviceId}`, {
+    await apiClient.delete(`/devices/${deviceId}`, {
       securityPolicy: 'sensitive',
       headers: {
         'X-Verification-Token': verificationToken,
@@ -89,9 +92,9 @@ export const deviceService = {
    * DELETE /api/v1/devices → { message, success, revoked_count }
    */
   async revokeAllDevices(): Promise<{
-    message: string
-    success: boolean
-    revoked_count: number
+    message?: string
+    success?: boolean
+    revoked_count?: number
   }> {
     const verificationToken = await ensureVerificationToken('revoke_sessions')
     return apiClient.delete('/devices', {

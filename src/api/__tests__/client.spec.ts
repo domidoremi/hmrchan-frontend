@@ -243,6 +243,32 @@ describe('apiClient', () => {
       await expect(requestPromise).rejects.toBeInstanceOf(Error)
       expect(capturedSignal?.aborted).toBe(true)
     })
+
+    it('raises the hard reload gate on 426 upgrade required responses', async () => {
+      const hardReloadHandler = vi.fn()
+      window.addEventListener('app:hard-reload-required', hardReloadHandler)
+
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'CLIENT_CONTRACT_MISMATCH',
+              message: 'Upgrade required',
+            },
+          },
+          { status: 426 }
+        )
+      )
+
+      await expect(apiClient.get('/profile')).rejects.toMatchObject({
+        status: 426,
+        code: 'CLIENT_UPGRADE_REQUIRED',
+      })
+      expect(hardReloadHandler).toHaveBeenCalledTimes(1)
+
+      window.removeEventListener('app:hard-reload-required', hardReloadHandler)
+    })
   })
 
   describe('mutating requests', () => {

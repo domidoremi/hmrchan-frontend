@@ -22,8 +22,9 @@ export interface AuditActivityItem {
 }
 
 export interface AuditActivityResponse {
-  logs: AuditActivityItem[]
-  total: number
+  items: AuditActivityItem[]
+  next_cursor?: string | null
+  has_more?: boolean
 }
 
 export interface SecuritySummary {
@@ -62,9 +63,18 @@ export const auditService = {
     if (params.limit) query.set('limit', String(params.limit))
     if (params.event_type) query.set('event_type', params.event_type)
     const qs = query.toString()
-    return apiClient.get<AuditActivityResponse>(`/audit/my-activity${qs ? `?${qs}` : ''}`, {
-      skipErrorToast: true,
-    })
+    const response = await apiClient.get<AuditActivityResponse>(
+      `/audit/my-activity${qs ? `?${qs}` : ''}`,
+      {
+        skipErrorToast: true,
+      }
+    )
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+    }
   },
 
   /**
