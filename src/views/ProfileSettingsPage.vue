@@ -848,7 +848,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ProfileSettingsPage' })
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 // ... icons imports ...
@@ -1672,10 +1672,6 @@ onUnmounted(() => {
   padding: clamp(1rem, 2.6vw, 1.35rem);
 }
 
-.settings-section--embedded :deep(.settings-panel) {
-  max-inline-size: none;
-}
-
 .settings-section--danger {
   border-color: var(--ui-compat-danger-border);
   background: var(--ui-compat-surface-elevated);
@@ -2009,7 +2005,7 @@ onUnmounted(() => {
 .bio-textarea {
   resize: vertical;
   min-height: 6.25rem;
-  padding-right: var(--spacing-4) !important;
+  padding-right: var(--spacing-4);
 }
 
 .field-hint {
@@ -2495,11 +2491,6 @@ onUnmounted(() => {
     margin-bottom: var(--spacing-4);
   }
 
-  .form-group :deep(.ui-input) {
-    min-height: 3rem;
-    font-size: 1rem; /* Prevent iOS zoom */
-  }
-
   .bio-textarea {
     min-height: 7.5rem;
   }
@@ -2508,11 +2499,6 @@ onUnmounted(() => {
     flex-direction: column;
     margin-top: var(--spacing-4);
     padding-top: var(--spacing-3);
-  }
-
-  .form-actions :deep(button) {
-    width: 100%;
-    min-height: 3rem;
   }
 
   .two-factor-status-card,
@@ -2531,14 +2517,6 @@ onUnmounted(() => {
   .account-actions {
     inline-size: 100%;
     justify-content: stretch;
-  }
-
-  .two-factor-actions :deep(button) {
-    inline-size: 100%;
-  }
-
-  .account-actions :deep(button) {
-    inline-size: 100%;
   }
 
   .two-factor-setup-qr {
@@ -2562,121 +2540,5 @@ onUnmounted(() => {
   .two-factor-backup-grid {
     grid-template-columns: 1fr;
   }
-}
-</style>
-
-<style>
-/* ===== Material 3 Overrides ===== */
-#app[data-preset='material-calm'] .settings-page .settings-section,
-#app[data-preset='sketch-doodle'] .settings-page .settings-section {
-  border-radius: var(--radius-lg);
-  border-inline-start-width: 0.1875rem;
-}
-
-#app[data-preset='material-calm'] .settings-page .settings-section-icon,
-#app[data-preset='sketch-doodle'] .settings-page .settings-section-icon {
-  border-radius: var(--radius-md);
-}
-
-#app[data-preset='material-calm'] .settings-page .settings-aside-card,
-#app[data-preset='sketch-doodle'] .settings-page .settings-aside-card {
-  border-radius: var(--radius-lg);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  background: var(--profile-surface-bg);
-  box-shadow: var(--shadow-sm);
-}
-
-#app[data-preset='material-calm'] .settings-page .aside-link,
-#app[data-preset='sketch-doodle'] .settings-page .aside-link {
-  border-radius: var(--radius-sm);
-  border-inline-start-width: 0.125rem;
-}
-
-#app[data-preset='material-calm'] .settings-page .avatar-upload-btn:hover,
-#app[data-preset='sketch-doodle'] .settings-page .avatar-upload-btn:hover {
-  transform: none;
-}
-
-#app[data-preset='material-calm'] .settings-page .strength-bar,
-#app[data-preset='sketch-doodle'] .settings-page .strength-bar {
-  border-radius: calc(var(--radius-sm) / 2);
-}
-
-#app[data-preset='material-calm'] .settings-page .strength-fill,
-#app[data-preset='sketch-doodle'] .settings-page .strength-fill {
-  border-radius: calc(var(--radius-sm) / 2);
-}
-
-/* ===== Dark Theme ===== */
-[data-color-mode='dark'] .settings-page .settings-section:hover {
-  border-inline-start-color: rgba(var(--color-primary-rgb), 0.3);
-}
-
-[data-color-mode='dark'] .settings-page .settings-section-head {
-  border-bottom-color: rgba(255, 255, 255, 0.06);
-}
-
-[data-color-mode='dark'] .settings-page .form-actions {
-  border-top-color: rgba(255, 255, 255, 0.06);
-}
-
-[data-color-mode='dark'] .settings-page .avatar-preview {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-color-mode='dark'] .settings-page .input-readonly .input-with-icon {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-/* ===== Blue Theme ===== */
-#app[data-preset='gradient-narrative'][data-color-mode='light']
-  .settings-page
-  .settings-section:hover {
-  border-inline-start-color: rgba(59, 130, 246, 0.3);
-}
-
-#app[data-preset='gradient-narrative'][data-color-mode='light']
-  .settings-page
-  .settings-section-icon {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-}
-
-#app[data-preset='gradient-narrative'][data-color-mode='light']
-  .settings-page
-  .settings-section-icon--warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-}
-
-#app[data-preset='gradient-narrative'][data-color-mode='light']
-  .settings-page
-  .settings-section-icon--success {
-  background: rgba(var(--color-success-rgb, 16, 185, 129), 0.12);
-  color: var(--color-success);
-}
-
-#app[data-preset='gradient-narrative'][data-color-mode='light'] .settings-page .aside-link:hover {
-  color: #3b82f6;
-  border-inline-start-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.04);
-}
-
-#app[data-preset='gradient-narrative'][data-color-mode='light'] .settings-page .avatar-badge {
-  background: #3b82f6;
-}
-
-#app[data-preset='gradient-narrative'][data-color-mode='light']
-  .settings-page
-  .avatar-preview:hover {
-  border-color: #3b82f6;
-}
-
-/* ===== Material + Dark ===== */
-#app[data-preset='material-calm'][data-color-mode='dark'] .settings-page .settings-aside-card,
-#app[data-preset='sketch-doodle'][data-color-mode='dark'] .settings-page .settings-aside-card {
-  background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
-  border-color: rgba(255, 255, 255, 0.06);
 }
 </style>

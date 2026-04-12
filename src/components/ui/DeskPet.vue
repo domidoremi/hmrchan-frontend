@@ -1025,14 +1025,6 @@ onUnmounted(() => {
   transition: none;
 }
 
-.desk-pet--no-anim,
-.desk-pet--no-anim .desk-pet__image,
-.desk-pet--no-anim .desk-pet__zzz,
-.desk-pet--no-anim .desk-pet__particle {
-  animation: none !important;
-  transition: none !important;
-}
-
 /* ═══ 图片 ═══ */
 .desk-pet__image {
   width: 100%;
@@ -1531,6 +1523,14 @@ onUnmounted(() => {
   }
 }
 
+.desk-pet--no-anim,
+.desk-pet--no-anim .desk-pet__image,
+.desk-pet--no-anim .desk-pet__zzz,
+.desk-pet--no-anim .desk-pet__particle {
+  animation: none;
+  transition: none;
+}
+
 /* ═══ 减少动画 ═══ */
 @media (prefers-reduced-motion: reduce) {
   .desk-pet,
@@ -1561,7 +1561,7 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .desk-pet {
-    display: none !important;
+    display: none;
   }
 }
 </style>

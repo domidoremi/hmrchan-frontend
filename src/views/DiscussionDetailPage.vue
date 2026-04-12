@@ -420,11 +420,11 @@ watch(
 }
 
 .action-danger {
-  color: var(--color-error) !important;
+  color: var(--color-error);
 }
 
 .action-danger:hover {
-  background: var(--color-error-alpha) !important;
+  background: var(--color-error-alpha);
 }
 
 .discussion-content {

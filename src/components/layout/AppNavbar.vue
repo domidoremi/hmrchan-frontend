@@ -1511,57 +1511,6 @@ onUnmounted(() => {
   padding-inline: 0.875rem;
 }
 
-.settings-dropdown :deep(.settings-header),
-.settings-dropdown :deep(.settings-group),
-.user-dropdown .user-info,
-.user-dropdown .dropdown-link {
-  will-change: transform, opacity;
-}
-
-.dropdown-enter-active.settings-dropdown :deep(.settings-header),
-.dropdown-enter-active.settings-dropdown :deep(.settings-group),
-.dropdown-enter-active.user-dropdown .user-info,
-.dropdown-enter-active.user-dropdown .dropdown-link,
-.dropdown-leave-active.settings-dropdown :deep(.settings-header),
-.dropdown-leave-active.settings-dropdown :deep(.settings-group),
-.dropdown-leave-active.user-dropdown .user-info,
-.dropdown-leave-active.user-dropdown .dropdown-link {
-  transition:
-    opacity 220ms var(--ease-out),
-    transform 260ms var(--ease-out);
-}
-
-.dropdown-enter-from.settings-dropdown :deep(.settings-header),
-.dropdown-leave-to.settings-dropdown :deep(.settings-header),
-.dropdown-enter-from.user-dropdown .user-info,
-.dropdown-leave-to.user-dropdown .user-info {
-  opacity: 0;
-  transform: translate3d(0, -0.25rem, 0);
-}
-
-.dropdown-enter-from.settings-dropdown :deep(.settings-group),
-.dropdown-leave-to.settings-dropdown :deep(.settings-group),
-.dropdown-enter-from.user-dropdown .dropdown-link,
-.dropdown-leave-to.user-dropdown .dropdown-link {
-  opacity: 0;
-  transform: translate3d(0, 0.35rem, 0);
-}
-
-.dropdown-enter-active.settings-dropdown :deep(.settings-group:nth-of-type(1)),
-.dropdown-enter-active.user-dropdown .dropdown-link:nth-of-type(1) {
-  transition-delay: 24ms;
-}
-
-.dropdown-enter-active.settings-dropdown :deep(.settings-group:nth-of-type(2)),
-.dropdown-enter-active.user-dropdown .dropdown-link:nth-of-type(2) {
-  transition-delay: 48ms;
-}
-
-.dropdown-enter-active.settings-dropdown :deep(.settings-group:nth-of-type(3)),
-.dropdown-enter-active.user-dropdown .dropdown-link:nth-of-type(3) {
-  transition-delay: 72ms;
-}
-
 .user-info {
   display: grid;
   grid-template-columns: minmax(3rem, 3.5rem) minmax(0, 1fr);
@@ -1833,34 +1782,5 @@ onUnmounted(() => {
   .user-info {
     grid-template-columns: minmax(2.85rem, 3.25rem) minmax(0, 1fr);
   }
-}
-
-:global(#app[data-color-mode='dark'] .nav-action-btn--primary),
-:global([data-color-mode='dark'] .nav-action-btn--primary) {
-  background: color-mix(in srgb, var(--nav-action-bg) 78%, rgba(var(--color-primary-rgb), 0.12));
-  color: var(--color-text-primary);
-}
-
-:global(#app .navbar--chromeless.navbar--post-detail .nav-action-btn--primary),
-:global(.navbar--chromeless.navbar--post-detail .nav-action-btn--primary) {
-  background: transparent;
-  border-color: transparent;
-}
-
-:global(#app[data-color-mode='dark'] .navbar),
-:global([data-color-mode='dark'] .navbar) {
-  --nav-shell-bg: transparent;
-  --nav-shell-border: color-mix(
-    in srgb,
-    var(--chrome-surface-border) 86%,
-    rgba(255, 255, 255, 0.1)
-  );
-  --nav-shell-shadow: none;
-}
-
-:global(#app[data-preset='gradient-narrative'][data-color-mode='light'] .navbar),
-:global([data-preset='gradient-narrative'][data-color-mode='light'] .navbar) {
-  --nav-shell-bg: transparent;
-  --nav-shell-border: rgba(96, 165, 250, 0.16);
 }
 </style>

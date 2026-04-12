@@ -1880,7 +1880,7 @@ onUnmounted(() => {
   justify-content: stretch;
 }
 
-.media-item-container--viewer :deep(.vp) {
+.media-item-container--viewer > .media-viewer-item {
   inline-size: 100%;
   block-size: 100%;
 }

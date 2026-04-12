@@ -158,6 +158,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-chip-border: var(--chrome-chip-border);
   --footer-divider: var(--chrome-muted-border);
   --footer-link-hover-bg: var(--chrome-muted-bg);
+  --footer-marquee-animation: footer-marquee;
 }
 
 .footer--home {
@@ -210,7 +211,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   color: color-mix(in srgb, var(--color-text-primary) 72%, transparent);
   text-transform: uppercase;
   white-space: nowrap;
-  animation: footer-marquee 22s linear infinite;
+  animation: var(--footer-marquee-animation) 22s linear infinite;
   animation-duration: calc(22s - (var(--home-footer-marquee-speed-progress, 0) * 6s));
   animation-play-state: var(--home-footer-marquee-play-state, running);
   will-change: transform;
@@ -416,16 +417,5 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     transition: none;
     animation: none;
   }
-}
-
-:global(#app[data-animation-intensity='none'] .footer--home),
-:global([data-animation-intensity='none'] .footer--home) {
-  opacity: 1;
-  transform: none;
-}
-
-:global(#app[data-animation-intensity='none'] .footer-marquee__track),
-:global([data-animation-intensity='none'] .footer-marquee__track) {
-  animation: none;
 }
 </style>

@@ -164,16 +164,13 @@ function formatCompactCount(value: number): string {
     radial-gradient(circle at 30% 20%, rgba(var(--color-accent-rgb), 0.08), transparent 55%),
     rgba(255, 255, 255, 0.82);
   box-shadow: 0 1rem 1.8rem -1.3rem rgba(15, 23, 42, 0.45);
-}
-
-.author-avatar:deep(.ui-avatar__fallback) {
-  font-size: 1.25rem;
-  font-weight: var(--font-semibold);
-  color: var(--page-control-ink-strong);
-  background:
+  --ui-avatar-fallback-font-size: 1.25rem;
+  --ui-avatar-fallback-font-weight: var(--font-semibold);
+  --ui-avatar-fallback-color: var(--page-control-ink-strong);
+  --ui-avatar-fallback-bg:
     radial-gradient(circle at 30% 20%, rgba(var(--color-accent-rgb), 0.22), transparent 55%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 240, 0.9));
-  border: 1px solid var(--page-control-border);
+  --ui-avatar-fallback-border: 1px solid var(--page-control-border);
 }
 
 @media (min-width: 768px) {

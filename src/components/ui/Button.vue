@@ -202,7 +202,7 @@ function handleMouseLeave() {
   overflow: hidden;
   transform-origin: center;
   will-change: transform;
-  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.22);
+  box-shadow: var(--button-inner-highlight, inset 0 0.0625rem 0 rgba(255, 255, 255, 0.22));
   line-height: var(--appearance-ui-line-height);
 }
 
@@ -215,7 +215,7 @@ function handleMouseLeave() {
   pointer-events: none;
 }
 
-.btn-ripple-container :deep(.btn-ripple) {
+.btn-ripple-container .btn-ripple {
   position: absolute;
   border-radius: 50%;
   background: currentColor;
@@ -430,16 +430,11 @@ function handleMouseLeave() {
     0 0 20px rgba(var(--color-success-rgb), 0.3);
 }
 
-:global(#app[data-color-mode='dark'] .btn),
-:global([data-color-mode='dark'] .btn) {
-  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.08);
-}
-
 /* States */
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none !important;
+  transform: none;
 }
 
 .btn-loading {
