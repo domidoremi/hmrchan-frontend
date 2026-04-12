@@ -459,6 +459,7 @@ defineExpose({
 
 .turnstile-container :deep(iframe),
 .turnstile-container :deep(div) {
+  /* Third-party Turnstile DOM: retained as the only approved deep-selector exception. */
   max-inline-size: 100%;
   margin-inline: auto;
 }

@@ -199,7 +199,7 @@ function handleMouseLeave() {
   }
 
   .ui-card--hover3d {
-    transform: none !important;
+    transform: none;
   }
 }
 </style>

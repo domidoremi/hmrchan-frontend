@@ -460,32 +460,10 @@ function formatDate(dateStr: string): string {
   justify-content: center;
 }
 
-.notification-item__actions :deep(.btn) {
-  min-width: 6.5rem;
-  border-radius: 0.65rem;
-  border: 1px solid var(--profile-action-border);
-  background: var(--profile-action-bg);
-  color: var(--color-text-secondary);
-  box-shadow: none !important;
-}
-
-.notification-item__actions :deep(.btn:hover:not(:disabled)),
-.notification-item__actions :deep(.btn:focus-visible) {
-  border-color: var(--profile-action-border-strong);
-  background: var(--profile-action-bg-hover);
-  color: var(--color-text-primary);
-}
-
 .notifications-load-more {
   display: flex;
   justify-content: center;
   margin-top: var(--spacing-5);
-}
-
-.notifications-load-more :deep(.btn) {
-  min-width: 8rem;
-  border-radius: 0.7rem;
-  box-shadow: none !important;
 }
 
 @media (max-width: 768px) {
@@ -498,31 +476,5 @@ function formatDate(dateStr: string): string {
     flex-direction: row;
     justify-content: flex-end;
   }
-}
-</style>
-
-<style>
-[data-color-mode='dark'] .notifications-tab .notification-item--unread {
-  background: var(--profile-surface-bg);
-  box-shadow: inset 0.1875rem 0 0 rgba(var(--color-primary-rgb), 0.45);
-}
-
-#app .notifications-tab .notification-skeleton,
-#app .notifications-tab .notification-item {
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-#app .notifications-tab .notification-item:hover,
-#app .notifications-tab .notification-item:focus-visible {
-  box-shadow: none !important;
-}
-
-#app[data-preset='material-calm'] .notifications-tab .notification-item,
-#app[data-preset='sketch-doodle'] .notifications-tab .notification-item,
-#app[data-preset='material-calm'] .notifications-tab .notification-skeleton,
-#app[data-preset='sketch-doodle'] .notifications-tab .notification-skeleton {
-  border-radius: var(--radius-lg);
 }
 </style>

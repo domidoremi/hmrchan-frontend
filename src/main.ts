@@ -17,7 +17,6 @@ import i18n, { preloadActiveLocale } from './i18n'
 
 import 'lenis/dist/lenis.css'
 import './styles/index.css'
-import './styles/auth-compat.css'
 import {
   canTrackAnalytics,
   canTrackPerformance,
@@ -384,8 +383,6 @@ function scheduleFingerprintInit(): void {
 scheduleFingerprintInit()
 
 const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
-const enableDeferredAnimationStyles =
-  import.meta.env.VITE_ENABLE_DEFERRED_ANIMATION_STYLES !== 'false'
 
 // 公共页面首屏不再静默恢复登录态，避免 /login /register 等匿名入口主动触发
 // refresh + challenge 噪音；受保护路由仍由路由守卫按需完成初始化。
@@ -423,16 +420,6 @@ if (import.meta.hot) {
     scheduledTasksDisposed = true
   })
 }
-
-// 延迟加载纯动画样式，降低首屏 CSS 体积与未使用样式占比
-scheduleTask(
-  () => {
-    if (scheduledTasksDisposed) return
-    if (!enableDeferredAnimationStyles) return
-    import('./styles/animations.css')
-  },
-  { priority: 'background', delay: 2000 }
-)
 
 // Cloudflare Web Analytics（仅生产环境 + 配置 token 时启用）
 const CF_BEACON_TOKEN = (import.meta.env.VITE_CF_BEACON_TOKEN ?? '').trim()

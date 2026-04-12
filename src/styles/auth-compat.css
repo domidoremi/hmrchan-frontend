@@ -341,26 +341,26 @@
 }
 
 #app .auth-page .ui-input {
-  border-color: var(--auth-form-border) !important;
-  background: var(--auth-form-surface) !important;
-  color: var(--auth-text-strong) !important;
-  box-shadow: none !important;
+  border-color: var(--auth-form-border);
+  background: var(--auth-form-surface);
+  color: var(--auth-text-strong);
+  box-shadow: none;
   min-block-size: clamp(2.875rem, 4vw, 3.125rem);
 }
 
 #app .auth-page .ui-input::placeholder {
-  color: color-mix(in srgb, var(--auth-text-soft) 84%, transparent) !important;
+  color: color-mix(in srgb, var(--auth-text-soft) 84%, transparent);
 }
 
 #app .auth-page .ui-input:hover:not(:disabled):not(.ui-input--readonly) {
-  border-color: color-mix(in srgb, var(--auth-form-ring) 24%, var(--auth-form-border)) !important;
-  background: var(--auth-form-surface-strong) !important;
+  border-color: color-mix(in srgb, var(--auth-form-ring) 24%, var(--auth-form-border));
+  background: var(--auth-form-surface-strong);
 }
 
 #app .auth-page .ui-input:focus {
-  border-color: var(--auth-form-ring) !important;
-  background: var(--auth-form-surface-strong) !important;
-  box-shadow: 0 0 0 0.1875rem color-mix(in srgb, var(--auth-form-ring) 12%, transparent) !important;
+  border-color: var(--auth-form-ring);
+  background: var(--auth-form-surface-strong);
+  box-shadow: 0 0 0 0.1875rem color-mix(in srgb, var(--auth-form-ring) 12%, transparent);
 }
 
 #app .auth-page .btn {
@@ -371,8 +371,8 @@
 }
 
 #app .auth-page .btn-default {
-  background: var(--auth-accent) !important;
-  color: var(--auth-panel-bg-strong) !important;
+  background: var(--auth-accent);
+  color: var(--auth-panel-bg-strong);
 }
 
 #app .auth-page .btn-default:hover:not(:disabled) {
@@ -382,15 +382,15 @@
 #app .auth-page .btn-ghost,
 #app .auth-page .btn-outline,
 #app .auth-page .btn-secondary {
-  border-color: var(--auth-panel-border) !important;
-  background: var(--auth-form-surface) !important;
-  color: var(--auth-text-strong) !important;
+  border-color: var(--auth-panel-border);
+  background: var(--auth-form-surface);
+  color: var(--auth-text-strong);
 }
 
 #app .auth-page .btn-ghost:hover:not(:disabled),
 #app .auth-page .btn-outline:hover:not(:disabled),
 #app .auth-page .btn-secondary:hover:not(:disabled) {
-  background: var(--auth-form-surface-strong) !important;
+  background: var(--auth-form-surface-strong);
 }
 
 #app .auth-card {

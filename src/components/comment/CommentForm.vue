@@ -427,23 +427,22 @@ defineExpose({ focus, setContent })
   border: 0;
   background: transparent;
   box-shadow: none;
-}
-
-:deep(.comment-textarea textarea),
-:deep(.comment-textarea .ui-textarea__field) {
-  min-block-size: 7.25rem;
-  padding-inline: 0;
   padding-block: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
+  padding-inline: 0;
   line-height: 1.7;
   color: var(--surface-paper-ink);
 }
 
-:deep(.comment-textarea textarea::placeholder),
-:deep(.comment-textarea .ui-textarea__field::placeholder) {
+.comment-textarea::placeholder {
   color: color-mix(in srgb, var(--surface-paper-ink-soft) 84%, transparent);
+}
+
+.comment-textarea:hover:not(:disabled):not(.ui-textarea--readonly),
+.comment-textarea:focus {
+  min-block-size: 7.25rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .comment-uploader {
@@ -482,14 +481,12 @@ defineExpose({ focus, setContent })
     align-items: center;
   }
 
-  .comment-textarea,
-  :deep(.comment-textarea textarea),
-  :deep(.comment-textarea .ui-textarea__field) {
+  .comment-textarea {
     min-block-size: 6rem;
   }
 
   .prompt-btn,
-  .form-actions > :deep(*) {
+  .form-actions > * {
     inline-size: auto;
   }
 }
@@ -507,7 +504,7 @@ defineExpose({ focus, setContent })
   }
 
   .prompt-btn,
-  .form-actions > :deep(*) {
+  .form-actions > * {
     inline-size: 100%;
   }
 

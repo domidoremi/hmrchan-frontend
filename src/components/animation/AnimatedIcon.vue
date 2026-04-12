@@ -74,5 +74,7 @@ defineExpose({ play: () => {}, pause: () => {}, stop: () => {} })
 
 .animated-icon__fallback {
   pointer-events: none;
+  fill: var(--animated-icon-fallback-fill, none);
+  stroke: var(--animated-icon-fallback-stroke, currentColor);
 }
 </style>

@@ -977,11 +977,8 @@ post-meta {
   flex-shrink: 0;
   background: var(--glass-bg-subtle);
   border: 1px solid rgba(148, 163, 184, 0.16);
-}
-
-.post-author-avatar:deep(.ui-avatar__fallback) {
-  color: var(--color-text-tertiary);
-  background: transparent;
+  --ui-avatar-fallback-color: var(--color-text-tertiary);
+  --ui-avatar-fallback-bg: transparent;
 }
 
 .post-author {

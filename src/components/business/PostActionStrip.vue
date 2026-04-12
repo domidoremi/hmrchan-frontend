@@ -206,17 +206,6 @@ async function sharePost() {
 </script>
 
 <style scoped>
-:global(#app[data-color-mode='dark'] .post-action-strip) {
-  --action-text: rgba(255, 255, 255, 0.88);
-  --action-bg: rgba(255, 255, 255, 0.08);
-  --action-border: rgba(255, 255, 255, 0.16);
-  --action-hover-bg: rgba(255, 255, 255, 0.14);
-  --action-pill-bg: rgba(255, 255, 255, 0.1);
-  --action-pill-border: rgba(255, 255, 255, 0.18);
-  --action-active-text: #fff;
-  --action-active-bg: rgba(255, 255, 255, 0.18);
-  --action-active-border: rgba(255, 255, 255, 0.45);
-}
 .post-action-strip {
   display: flex;
   flex-wrap: wrap;
@@ -286,10 +275,7 @@ async function sharePost() {
   color: var(--action-active-text);
   border-color: var(--action-active-border);
   background: var(--action-active-bg);
-}
-
-.action-btn.active :deep(.animated-icon__fallback) {
-  fill: currentColor;
+  --animated-icon-fallback-fill: currentColor;
 }
 
 .post-action-strip--compact .action-btn {

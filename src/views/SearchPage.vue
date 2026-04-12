@@ -125,7 +125,12 @@
                   @click="toggleSortOrder"
                 >
                   <template #start>
-                    <AnimatedIcon name="explore" :fallback-icon="ArrowUpDown" size="sm" />
+                    <AnimatedIcon
+                      name="explore"
+                      :fallback-icon="ArrowUpDown"
+                      size="sm"
+                      class="sort-order-icon"
+                    />
                   </template>
                 </ControlButton>
               </div>
@@ -149,13 +154,14 @@
 
             <template v-else>
               <div class="posts-masonry">
-                <PostCard
+                <div
                   v-for="post in results"
                   :key="post.id"
                   v-memo="getPostMemo(post)"
-                  :post="post"
-                  @click="goToPost"
-                />
+                  class="posts-masonry__item"
+                >
+                  <PostCard :post="post" @click="goToPost" />
+                </div>
               </div>
             </template>
 
@@ -666,11 +672,11 @@ const sortOptions = computed(() => [
   flex-shrink: 0;
 }
 
-.sort-order-btn :deep(svg) {
+.sort-order-icon {
   transition: transform var(--transition-fast);
 }
 
-.sort-order-btn--asc :deep(svg) {
+.sort-order-btn--asc .sort-order-icon {
   transform: rotate(180deg);
 }
 
@@ -772,7 +778,7 @@ const sortOptions = computed(() => [
   column-gap: var(--masonry-gap);
 }
 
-.posts-masonry > :deep(*) {
+.posts-masonry__item {
   break-inside: avoid;
   margin-bottom: var(--masonry-gap);
 }

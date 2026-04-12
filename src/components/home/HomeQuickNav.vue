@@ -149,6 +149,14 @@ onBeforeUnmount(() => {
     inset-inline-start var(--duration-fast) var(--ease-out),
     inset-inline-end var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-out);
+  --quick-nav-item-border: rgba(15, 23, 42, 0.06);
+  --quick-nav-item-bg: rgba(255, 255, 255, 0.34);
+  --quick-nav-item-color: color-mix(in srgb, var(--color-text-primary) 72%, transparent);
+  --quick-nav-item-active-bg: rgba(255, 255, 255, 0.62);
+  --quick-nav-item-active-border: rgba(var(--color-primary-rgb), 0.22);
+  --quick-nav-item-active-color: var(--color-primary);
+  --quick-nav-rail-border: rgba(15, 23, 42, 0.05);
+  --quick-nav-rail-bg: rgba(255, 255, 255, 0.32);
 }
 
 .home-quick-nav__item {
@@ -157,10 +165,10 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 0.0625rem solid rgba(15, 23, 42, 0.06);
+  border: 0.0625rem solid var(--quick-nav-item-border);
   border-radius: 999rem;
-  background: rgba(255, 255, 255, 0.34);
-  color: color-mix(in srgb, var(--color-text-primary) 72%, transparent);
+  background: var(--quick-nav-item-bg);
+  color: var(--quick-nav-item-color);
   box-shadow: 0 1rem 2.25rem -1.9rem rgba(15, 23, 42, 0.18);
   backdrop-filter: blur(0.25rem);
   -webkit-backdrop-filter: blur(0.25rem);
@@ -178,22 +186,10 @@ onBeforeUnmount(() => {
 }
 
 .home-quick-nav__item.is-active {
-  background: rgba(255, 255, 255, 0.62);
-  border-color: rgba(var(--color-primary-rgb), 0.22);
-  color: var(--color-primary);
+  background: var(--quick-nav-item-active-bg);
+  border-color: var(--quick-nav-item-active-border);
+  color: var(--quick-nav-item-active-color);
   transform: scale(1.04);
-}
-
-:global([data-color-mode='dark'] .home-quick-nav__item) {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(15, 23, 42, 0.32);
-  color: rgba(248, 250, 252, 0.8);
-}
-
-:global([data-color-mode='dark'] .home-quick-nav__item.is-active) {
-  background: rgba(15, 23, 42, 0.64);
-  border-color: rgba(var(--color-primary-rgb), 0.32);
-  color: rgba(255, 255, 255, 0.96);
 }
 
 @media (max-width: 960px) {
@@ -203,9 +199,9 @@ onBeforeUnmount(() => {
     display: grid;
     gap: 0.5rem;
     padding: 0.5rem;
-    border: 0.0625rem solid rgba(15, 23, 42, 0.05);
+    border: 0.0625rem solid var(--quick-nav-rail-border);
     border-radius: 999rem;
-    background: rgba(255, 255, 255, 0.32);
+    background: var(--quick-nav-rail-bg);
     box-shadow: 0 1.1rem 2.2rem -1.85rem rgba(15, 23, 42, 0.2);
     backdrop-filter: blur(0.5rem);
     -webkit-backdrop-filter: blur(0.5rem);
@@ -232,11 +228,6 @@ onBeforeUnmount(() => {
     block-size: 2.5rem;
     background: transparent;
     box-shadow: none;
-  }
-
-  :global([data-color-mode='dark'] .home-quick-nav) {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(15, 23, 42, 0.42);
   }
 }
 

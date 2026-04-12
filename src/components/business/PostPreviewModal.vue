@@ -704,19 +704,13 @@ function openDetail() {
   --preview-text-secondary: var(--color-text-secondary);
   --preview-text-muted: var(--color-text-secondary);
   --preview-media-bg: rgba(15, 23, 42, 0.02);
+  --preview-media-backdrop-opacity: 0.75;
+  --preview-media-backdrop-filter: blur(3.75rem) saturate(1.8) brightness(0.92);
+  --preview-media-item-shadow: drop-shadow(0 0 0.75rem rgba(0, 0, 0, 0.15));
   background: var(--preview-overlay-bg);
   backdrop-filter: var(--ui-backdrop-blur);
   -webkit-backdrop-filter: var(--ui-backdrop-blur);
   will-change: opacity;
-}
-:global(#app[data-color-mode='dark'] .post-preview-overlay) {
-  --preview-control-bg: rgba(255, 255, 255, 0.08);
-  --preview-control-border: rgba(255, 255, 255, 0.12);
-  --preview-pill-bg: rgba(255, 255, 255, 0.1);
-  --preview-pill-border: rgba(255, 255, 255, 0.16);
-  --preview-text-secondary: var(--color-text-secondary);
-  --preview-text-muted: var(--color-text-secondary);
-  --preview-media-bg: rgba(255, 255, 255, 0.02);
 }
 
 .post-preview-panel {
@@ -1049,15 +1043,10 @@ function openDetail() {
   width: calc(100% + 3rem);
   height: calc(100% + 3rem);
   object-fit: cover;
-  filter: blur(3.75rem) saturate(1.8) brightness(0.92);
-  opacity: 0.75;
+  filter: var(--preview-media-backdrop-filter);
+  opacity: var(--preview-media-backdrop-opacity);
   pointer-events: none;
   z-index: 0;
-}
-
-:global([data-color-mode='dark'] .post-preview-media-backdrop) {
-  opacity: 0.65;
-  filter: blur(3.75rem) saturate(1.6) brightness(0.8);
 }
 
 .post-preview-media-item {
@@ -1070,11 +1059,7 @@ function openDetail() {
   height: auto;
   object-fit: contain;
   background: transparent;
-  filter: drop-shadow(0 0 0.75rem rgba(0, 0, 0, 0.15));
-}
-
-:global([data-color-mode='dark'] .post-preview-media-item) {
-  filter: drop-shadow(0 0 1rem rgba(255, 255, 255, 0.08));
+  filter: var(--preview-media-item-shadow);
 }
 
 .post-preview-media-video {
