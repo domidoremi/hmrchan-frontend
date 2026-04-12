@@ -63,16 +63,9 @@ const BANNED_SURFACE_TERMS: BannedSurfaceTerm[] = [
   },
 ]
 
-const RG_EXCLUDE_GLOBS = [
-  'node_modules/**',
-  'dist/**',
-  'coverage/**',
-  'output/**',
-  '.git/**',
-  'docs/backend-handoff/**',
-]
+const RG_EXCLUDE_GLOBS = ['node_modules/**', 'dist/**', 'coverage/**', 'output/**', '.git/**']
 const EXCLUDED_ROOT_DIRS = ['node_modules', 'dist', 'coverage', 'output', '.git']
-const EXCLUDED_RELATIVE_PREFIXES = ['docs/backend-handoff/']
+const EXCLUDED_RELATIVE_PREFIXES: string[] = []
 
 function normalizeRelativePath(filePath: string): string {
   return filePath.split(sep).join('/')

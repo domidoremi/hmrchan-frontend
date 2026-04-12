@@ -20,12 +20,8 @@ describe('auth-surface audit', () => {
     )
     mkdirSync(join(projectRoot, 'dist'), { recursive: true })
     writeFileSync(join(projectRoot, 'dist', 'ignored.txt'), legacyBrand, 'utf8')
-    mkdirSync(join(projectRoot, 'docs', 'backend-handoff'), { recursive: true })
-    writeFileSync(
-      join(projectRoot, 'docs', 'backend-handoff', 'handoff.md'),
-      `- 已退役术语：${legacyBrand}`,
-      'utf8'
-    )
+    mkdirSync(join(projectRoot, 'docs'), { recursive: true })
+    writeFileSync(join(projectRoot, 'docs', 'reference.md'), `- 已退役术语：${legacyBrand}`, 'utf8')
 
     const fallbackOutput = await searchTrackedFiles(
       projectRoot,
@@ -37,7 +33,7 @@ describe('auth-surface audit', () => {
 
     expect(fallbackOutput).toContain(`src/copy.ts:1:export const legacy = "${legacyCopy}";`)
     expect(fallbackOutput).toContain(`src/copy.ts:2:export const host = "${legacyHost}";`)
+    expect(fallbackOutput).toContain(`docs/reference.md:1:- 已退役术语：${legacyBrand}`)
     expect(fallbackOutput).not.toContain('dist/ignored.txt')
-    expect(fallbackOutput).not.toContain('docs/backend-handoff/handoff.md')
   })
 })

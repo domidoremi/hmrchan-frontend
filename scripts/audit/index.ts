@@ -10,7 +10,6 @@ import pwaAudit from './pwa'
 import buildArtifactAudit from './build-artifact'
 import cssAudit from './css'
 import i18nAudit from './i18n'
-import apiContractAudit from './api-contract'
 import envConfigAudit from './env-config'
 import frontendPatternsAudit from './frontend-patterns'
 import authSurfaceAudit from './auth-surface'
@@ -28,7 +27,6 @@ const modules: AuditModule[] = [
   buildArtifactAudit,
   cssAudit,
   i18nAudit,
-  apiContractAudit,
   legacyAlignmentAudit,
   envConfigAudit,
   authSurfaceAudit,
