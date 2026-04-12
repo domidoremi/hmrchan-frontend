@@ -28,7 +28,7 @@ describe('searchService', () => {
       {
         q: 'idol',
         cursor: 'cursor-1',
-        page_size: 24,
+        limit: 24,
         platform: 'youtube',
         sort_by: 'published_at',
         sort_order: 'desc',
@@ -38,7 +38,7 @@ describe('searchService', () => {
     )
 
     expect(clientMocks.get).toHaveBeenCalledWith(
-      '/search/posts?q=idol&page_size=24&cursor=cursor-1&platform=youtube&sort_by=published_at&sort_order=desc&thumbnail_quality=medium',
+      '/search/posts?q=idol&limit=24&cursor=cursor-1&platform=youtube&sort_by=published_at&sort_order=desc&thumbnail_quality=medium',
       { skipErrorToast: true }
     )
   })
@@ -54,14 +54,14 @@ describe('searchService', () => {
       {
         q: 'momo',
         cursor: 'author-cursor-1',
-        page_size: 12,
+        limit: 12,
         platform: 'twitter',
       },
       { skipErrorToast: true }
     )
 
     expect(clientMocks.get).toHaveBeenCalledWith(
-      '/search/authors?q=momo&page_size=12&cursor=author-cursor-1&platform=twitter',
+      '/search/authors?q=momo&limit=12&cursor=author-cursor-1&platform=twitter',
       { skipErrorToast: true }
     )
   })

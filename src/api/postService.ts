@@ -32,8 +32,7 @@ export type ThumbnailQuality = 'small' | 'medium' | 'large'
  * Parameters for listing posts with filtering, sorting, and pagination
  */
 export interface ListPostsParams {
-  page?: number
-  page_size?: number
+  limit?: number
   cursor?: string | null
   q?: string
   platform?: string
@@ -53,8 +52,7 @@ export interface ListPostsParams {
  * Default values for post listing parameters
  */
 const DEFAULT_LIST_PARAMS = {
-  page: 1,
-  page_size: 20,
+  limit: 20,
   sort_by: 'published_at' as PostSortBy,
   sort_order: 'desc' as SortOrder,
 } as const
@@ -314,8 +312,7 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
 export const postService = {
   async listPosts(params: ListPostsParams = {}, config?: RequestConfig): Promise<PostListResponse> {
     const query = buildQuery({
-      page: params.cursor ? null : (params.page ?? DEFAULT_LIST_PARAMS.page),
-      page_size: params.page_size ?? DEFAULT_LIST_PARAMS.page_size,
+      limit: params.limit ?? DEFAULT_LIST_PARAMS.limit,
       cursor: params.cursor,
       q: params.q,
       platform: params.platform,
@@ -332,7 +329,13 @@ export const postService = {
     })
 
     // 列表端点使用无尾斜杠路径，避免与后端签名路径规范不一致
-    return apiClient.get<PostListResponse>(`/posts${query}`, config)
+    const response = await apiClient.get<PostListResponse>(`/posts${query}`, config)
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+    }
   },
 
   async getPost(postId: string, config?: RequestConfig): Promise<PostDetailResponse> {

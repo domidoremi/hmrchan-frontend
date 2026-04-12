@@ -412,9 +412,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     try {
       await inboxService.patchInboxPreferences(
         {
-          preferences: {
-            [inboxCategory]: normalized,
-          },
+          [inboxCategory]: normalized,
         },
         {
           skipErrorToast: true,

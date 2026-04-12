@@ -192,11 +192,9 @@ describe('useNotificationsStore', () => {
     expect(inboxService.patchInboxPreferences).toHaveBeenNthCalledWith(
       1,
       {
-        preferences: {
-          interaction: {
-            inbox_enabled: true,
-            email_enabled: true,
-          },
+        interaction: {
+          inbox_enabled: true,
+          email_enabled: true,
         },
       },
       expect.objectContaining({ skipErrorToast: true })
@@ -209,11 +207,9 @@ describe('useNotificationsStore', () => {
     expect(inboxService.patchInboxPreferences).toHaveBeenNthCalledWith(
       2,
       {
-        preferences: {
-          security: {
-            inbox_enabled: false,
-            email_enabled: false,
-          },
+        security: {
+          inbox_enabled: false,
+          email_enabled: false,
         },
       },
       expect.objectContaining({ skipErrorToast: true })

@@ -101,8 +101,8 @@ export interface ListDiscussionsParams {
 }
 
 export interface ListDiscussionCommentsParams {
-  page?: number
-  page_size?: number
+  limit?: number
+  cursor?: string | null
   sort?: 'newest' | 'oldest' | 'popular'
   sort_by?: 'newest' | 'oldest' | 'popular' | 'created_at' | 'like_count'
   preload_replies?: number
@@ -539,7 +539,7 @@ export const discussionService = {
    */
   async searchPosts(query: string, limit = 10): Promise<PostReference[]> {
     const response = await apiClient.get<{ items: PostReference[] }>(
-      `/search/posts?q=${encodeURIComponent(query)}&page_size=${limit}`
+      `/search/posts?q=${encodeURIComponent(query)}&limit=${limit}`
     )
     return response.items
   },

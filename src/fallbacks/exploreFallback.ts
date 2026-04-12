@@ -1,6 +1,6 @@
 import type { ListPostsParams, PostListItem } from '@/api/postService'
 import { STATIC_EXPLORE_POSTS } from './generated/publicSnapshots'
-import { clonePublicSnapshot, paginateFallbackItems } from './publicPageFallback'
+import { clonePublicSnapshot, cursorPaginateFallbackItems } from './publicPageFallback'
 
 export const EXPLORE_FALLBACK_POSTS: PostListItem[] = clonePublicSnapshot(STATIC_EXPLORE_POSTS)
 
@@ -41,7 +41,7 @@ function getNumericSortValue(
 
 export function getFallbackExplorePosts(
   params: ListPostsParams = {}
-): ReturnType<typeof paginateFallbackItems<PostListItem>> {
+): ReturnType<typeof cursorPaginateFallbackItems<PostListItem>> {
   const sortBy = params.sort_by ?? 'published_at'
   const sortOrder = params.sort_order ?? 'desc'
 
@@ -70,7 +70,10 @@ export function getFallbackExplorePosts(
     return sortOrder === 'asc' ? leftValue - rightValue : rightValue - leftValue
   })
 
-  return paginateFallbackItems(items, params.page ?? 1, params.page_size ?? 20)
+  return cursorPaginateFallbackItems(items, {
+    cursor: params.cursor ?? null,
+    limit: params.limit ?? 20,
+  })
 }
 
 export function getFallbackExplorePostById(postId: string): PostListItem | null {

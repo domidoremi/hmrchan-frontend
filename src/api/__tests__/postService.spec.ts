@@ -34,7 +34,7 @@ describe('postService', () => {
 
     await postService.listPosts(
       {
-        page_size: 12,
+        limit: 12,
         cursor: 'cursor-0',
         sort_by: 'published_at',
         sort_order: 'desc',
@@ -44,7 +44,7 @@ describe('postService', () => {
     )
 
     expect(clientMocks.get).toHaveBeenCalledWith(
-      '/posts?page_size=12&cursor=cursor-0&platform=youtube&sort_by=published_at&sort_order=desc',
+      '/posts?limit=12&cursor=cursor-0&platform=youtube&sort_by=published_at&sort_order=desc',
       { skipErrorToast: true }
     )
   })
@@ -65,7 +65,7 @@ describe('postService', () => {
       has_more: true,
     })
 
-    await expect(postService.listPosts({ page_size: 10 })).resolves.toMatchObject({
+    await expect(postService.listPosts({ limit: 10 })).resolves.toMatchObject({
       items: [{ id: 'post-1' }],
       next_cursor: 'cursor-2',
       has_more: true,

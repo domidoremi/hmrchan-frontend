@@ -19,7 +19,7 @@ describe('exploreFeed helpers', () => {
       })
     ).toEqual({
       cursor: 'cursor-1',
-      page_size: 12,
+      limit: 12,
       sort_by: 'published_at',
       sort_order: 'desc',
       platform: 'youtube',

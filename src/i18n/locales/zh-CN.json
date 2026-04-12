@@ -162,8 +162,6 @@
       "passwordLoginUnavailable": "该账号暂不支持密码登录。",
       "googleLoginFailed": "Google 登录失败，请稍后重试。",
       "googleLoginExpired": "Google 登录已失效，请重新发起登录。",
-      "googleLinkExpired": "Google 账号关联已失效，请重新开始。",
-      "googleVerificationCodeInvalid": "Google 验证码无效或已过期。",
       "googleAccessDenied": "你已取消 Google 登录。",
       "googlePopupBlocked": "浏览器阻止了 Google 登录弹窗。",
       "googlePopupClosed": "Google 登录弹窗在完成前被关闭了。",

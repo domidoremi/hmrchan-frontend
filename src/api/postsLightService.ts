@@ -2,13 +2,13 @@
  * Posts Light Service - 轻量帖子列表 API
  */
 
-import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
+import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 import type { PostSortBy, SortOrder, ThumbnailQuality } from './postService'
 
 export interface PostsLightParams {
-  page?: number
-  page_size?: number
+  limit?: number
+  cursor?: string | null
   q?: string
   platform?: string
   author_id?: string
@@ -39,8 +39,7 @@ export interface PostLightItem {
 }
 
 const DEFAULT_PARAMS = {
-  page: 1,
-  page_size: 20,
+  limit: 20,
 } as const
 
 export const postsLightService = {
@@ -50,10 +49,10 @@ export const postsLightService = {
   async listLight(
     params: PostsLightParams = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<PostLightItem>> {
+  ): Promise<CursorCollectionResponse<PostLightItem>> {
     const query = buildQuery({
-      page: params.page ?? DEFAULT_PARAMS.page,
-      page_size: params.page_size ?? DEFAULT_PARAMS.page_size,
+      limit: params.limit ?? DEFAULT_PARAMS.limit,
+      cursor: params.cursor ?? null,
       q: params.q,
       platform: params.platform,
       author_id: params.author_id,
@@ -68,7 +67,16 @@ export const postsLightService = {
       thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
-    return apiClient.get<PaginatedApiResponse<PostLightItem>>(`/posts/light${query}`, config)
+    const response = await apiClient.get<CursorCollectionResponse<PostLightItem>>(
+      `/posts/light${query}`,
+      config
+    )
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+    }
   },
 
   /**
@@ -78,10 +86,10 @@ export const postsLightService = {
   async listMixed(
     params: PostsLightParams = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<PostLightItem>> {
+  ): Promise<CursorCollectionResponse<PostLightItem>> {
     const query = buildQuery({
-      page: params.page ?? DEFAULT_PARAMS.page,
-      page_size: params.page_size ?? DEFAULT_PARAMS.page_size,
+      limit: params.limit ?? DEFAULT_PARAMS.limit,
+      cursor: params.cursor ?? null,
       q: params.q,
       platform: params.platform,
       author_id: params.author_id,
@@ -96,6 +104,15 @@ export const postsLightService = {
       thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
-    return apiClient.get<PaginatedApiResponse<PostLightItem>>(`/posts/mixed${query}`, config)
+    const response = await apiClient.get<CursorCollectionResponse<PostLightItem>>(
+      `/posts/mixed${query}`,
+      config
+    )
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+    }
   },
 }
