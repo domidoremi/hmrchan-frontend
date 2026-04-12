@@ -214,14 +214,14 @@ export const favoriteService = {
   /**
    * 获取收藏夹列表
    */
-  async getFolders(): Promise<{ folders: FavoriteFolder[] }> {
-    return apiClient.get<{ folders: FavoriteFolder[] }>('/favorites/folders/list')
+  async getFolders(config?: RequestConfig): Promise<{ folders: FavoriteFolder[] }> {
+    return apiClient.get<{ folders: FavoriteFolder[] }>('/favorites/folders/list', config)
   },
 
   /**
    * 获取收藏标签统计
    */
-  async getTags(): Promise<FavoriteTagStats[]> {
-    return apiClient.get<FavoriteTagStats[]>('/favorites/tags/list')
+  async getTags(config?: RequestConfig): Promise<FavoriteTagStats[]> {
+    return apiClient.get<FavoriteTagStats[]>('/favorites/tags/list', config)
   },
 }
