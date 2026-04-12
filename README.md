@@ -130,7 +130,7 @@ bun run test:unit
 
 ## 相关文档
 
-- [后端联调文档](./docs/backend-handoff/README.md)
+- [后端真相源入口](./docs/backend-source-of-truth.md)
 
 ## License
 
