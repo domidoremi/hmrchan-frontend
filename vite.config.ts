@@ -63,6 +63,7 @@ function getBuildHash(): string {
 
 const BUILD_HASH = getBuildHash()
 const SW_CACHE_VERSION = getSwCacheVersion()
+const DEFAULT_CLIENT_CONTRACT_VERSION = '2026-04-13.p1'
 
 type EnvMap = Record<string, string | undefined>
 
@@ -298,7 +299,11 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       __BUILD_HASH__: JSON.stringify(BUILD_HASH),
       /** Frontend/backend lockstep contract version */
       __CLIENT_CONTRACT_VERSION__: JSON.stringify(
-        (env.VITE_CLIENT_CONTRACT_VERSION || env.CLIENT_CONTRACT_VERSION || '').trim()
+        (
+          env.VITE_CLIENT_CONTRACT_VERSION ||
+          env.CLIENT_CONTRACT_VERSION ||
+          DEFAULT_CLIENT_CONTRACT_VERSION
+        ).trim()
       ),
       /** Service Worker cache version */
       __SW_CACHE_VERSION__: JSON.stringify(SW_CACHE_VERSION),
