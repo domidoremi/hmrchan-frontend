@@ -149,8 +149,7 @@ export function useSearchPageState() {
     try {
       const res = await postService.listPosts(
         {
-          page: 1,
-          page_size: discoverPageSize.value,
+          limit: discoverPageSize.value,
           sort_by: 'published_at',
           sort_order: 'desc',
           thumbnail_quality: getThumbnailQuality(),
@@ -197,7 +196,7 @@ export function useSearchPageState() {
       const res = await searchService.searchPosts(
         {
           q: query.value,
-          page_size: pageSize.value,
+          limit: pageSize.value,
           cursor: null,
           sort_by: sortBy.value,
           sort_order: sortOrder.value,
@@ -249,7 +248,7 @@ export function useSearchPageState() {
         {
           q: query.value,
           cursor: nextCursor.value,
-          page_size: pageSize.value,
+          limit: pageSize.value,
           sort_by: sortBy.value,
           sort_order: sortOrder.value,
           thumbnail_quality: getThumbnailQuality(),
@@ -307,7 +306,7 @@ export function useSearchPageState() {
       const res = await searchService.searchAuthors(
         {
           q: query.value,
-          page_size: authorPageSize.value,
+          limit: authorPageSize.value,
           cursor: null,
         },
         requestSignal ? { signal: requestSignal } : undefined
@@ -390,7 +389,7 @@ export function useSearchPageState() {
 
     try {
       const [historyResponse, statsResponse] = await Promise.all([
-        historyService.getSearchHistory(pageSize.value, 0),
+        historyService.getSearchHistory({ limit: pageSize.value }),
         historyService.getStats(),
       ])
 

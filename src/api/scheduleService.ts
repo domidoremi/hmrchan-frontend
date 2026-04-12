@@ -2,7 +2,7 @@
  * Schedule Service - 日程/活动 API
  */
 
-import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
+import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 
 const SCHEDULE_API_ENABLED = import.meta.env.VITE_ENABLE_SCHEDULE_API !== 'false'
 
@@ -53,8 +53,8 @@ export interface ScheduleCalendarItem {
 }
 
 export interface ListSchedulesParams {
-  page?: number
-  page_size?: number
+  limit?: number
+  cursor?: string | null
   category?: ScheduleCategory
   start?: string
   end?: string
@@ -70,10 +70,10 @@ export const scheduleService = {
   async list(
     params: ListSchedulesParams = {},
     config?: RequestConfig
-  ): Promise<PaginatedApiResponse<ScheduleResponse>> {
+  ): Promise<CursorCollectionResponse<ScheduleResponse>> {
     const query = new URLSearchParams()
-    if (params.page) query.set('page', String(params.page))
-    if (params.page_size) query.set('page_size', String(params.page_size))
+    if (params.limit) query.set('limit', String(params.limit))
+    if (params.cursor) query.set('cursor', params.cursor)
     if (params.category) query.set('category', params.category)
     if (params.start) query.set('start', params.start)
     if (params.end) query.set('end', params.end)
@@ -81,10 +81,16 @@ export const scheduleService = {
       query.set('published_only', String(params.published_only))
 
     const qs = query.toString()
-    return apiClient.get<PaginatedApiResponse<ScheduleResponse>>(
+    const response = await apiClient.get<CursorCollectionResponse<ScheduleResponse>>(
       `/schedules${qs ? `?${qs}` : ''}`,
       config
     )
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+    }
   },
 
   /**

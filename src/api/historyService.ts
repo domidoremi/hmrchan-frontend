@@ -5,7 +5,7 @@
  *
  * API 端点:
  * - POST /api/v1/history/search — 记录搜索历史
- * - GET  /api/v1/history/search — 搜索历史列表 (limit/offset 分页)
+ * - GET  /api/v1/history/search — 搜索历史列表 (limit/cursor 分页)
  * - DELETE /api/v1/history/search/:id — 删除单条
  * - DELETE /api/v1/history/search — 清空
  * - POST /api/v1/history/browsing — 记录浏览历史
@@ -34,10 +34,11 @@ export interface SearchHistoryItem {
   created_at: string
 }
 
-/** GET /history/search 响应（limit/offset 分页 + suggestions） */
+/** GET /history/search 响应（limit/cursor 分页 + suggestions） */
 export interface SearchHistoryListResponse {
   items: SearchHistoryItem[]
-  total: number
+  next_cursor?: string | null
+  has_more: boolean
   suggestions: string[]
 }
 
@@ -171,21 +172,28 @@ export const historyService = {
   },
 
   /**
-   * 获取搜索历史（limit/offset 分页）
+   * 获取搜索历史（limit/cursor 分页）
    * GET /api/v1/history/search
    */
   async getSearchHistory(
-    limit = 20,
-    offset = 0,
-    searchType?: string
+    options: { limit?: number; cursor?: string | null; searchType?: string } = {}
   ): Promise<SearchHistoryListResponse> {
     const params = new URLSearchParams({
-      limit: String(limit),
-      offset: String(offset),
+      limit: String(options.limit ?? 20),
     })
-    if (searchType) params.set('search_type', searchType)
+    if (options.cursor) params.set('cursor', options.cursor)
+    if (options.searchType) params.set('search_type', options.searchType)
 
-    return apiClient.get<SearchHistoryListResponse>(`/history/search?${params.toString()}`)
+    const response = await apiClient.get<SearchHistoryListResponse>(
+      `/history/search?${params.toString()}`
+    )
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+      suggestions: response.suggestions ?? [],
+    }
   },
 
   /**
@@ -233,7 +241,7 @@ export const historyService = {
   },
 
   /**
-   * 获取浏览历史（limit/offset 分页）
+   * 获取浏览历史（limit/cursor 分页）
    * GET /api/v1/history/browsing
    */
   async getBrowsingHistory(

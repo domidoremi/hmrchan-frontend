@@ -27,7 +27,7 @@ describe('authorService', () => {
     await authorService.listAuthors(
       {
         cursor: 'cursor-1',
-        page_size: 24,
+        limit: 24,
         q: 'momo',
         platform: 'youtube',
         sort_by: 'follower_count',
@@ -37,7 +37,7 @@ describe('authorService', () => {
     )
 
     expect(clientMocks.get).toHaveBeenCalledWith(
-      '/authors?page_size=24&cursor=cursor-1&q=momo&platform=youtube&sort_by=follower_count&sort_order=desc',
+      '/authors?limit=24&cursor=cursor-1&q=momo&platform=youtube&sort_by=follower_count&sort_order=desc',
       { skipErrorToast: true }
     )
   })
@@ -53,13 +53,13 @@ describe('authorService', () => {
       'author-1',
       {
         cursor: 'post-cursor-1',
-        page_size: 18,
+        limit: 18,
       },
       { skipErrorToast: true }
     )
 
     expect(clientMocks.get).toHaveBeenCalledWith(
-      '/authors/author-1/posts?cursor=post-cursor-1&page_size=18',
+      '/authors/author-1/posts?cursor=post-cursor-1&limit=18',
       { skipErrorToast: true }
     )
   })

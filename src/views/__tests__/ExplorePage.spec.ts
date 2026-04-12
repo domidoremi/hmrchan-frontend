@@ -386,7 +386,6 @@ describe('ExplorePage', () => {
         { id: 'post-1', title: 'First post', platform: 'youtube' },
         { id: 'post-2', title: 'Second post', platform: 'twitter' },
       ],
-      total: 2,
       meta: { next_cursor: 'next-1', has_more: true },
       fromCache: false,
     })
@@ -412,7 +411,7 @@ describe('ExplorePage', () => {
     expect(wrapper.text()).toContain('explore.title')
     expect(wrapper.text()).toContain('2 search.tab.posts')
     expect(wrapper.findAll('.post-card-stub')).toHaveLength(2)
-    expect(wrapper.get('[data-testid="load-more-section"]').attributes('data-total')).toBe('2')
+    expect(wrapper.get('[data-testid="load-more-section"]').attributes('data-total')).toBe('26')
     expect(exploreMocks.loadCachedPosts).toHaveBeenCalledWith(
       expect.objectContaining({
         cursor: null,

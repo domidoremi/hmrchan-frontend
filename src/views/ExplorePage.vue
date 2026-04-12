@@ -262,7 +262,6 @@ const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
     )
     return {
       data: result.items,
-      total: result.total,
       meta: {
         next_cursor: result.next_cursor ?? null,
         has_more: Boolean(result.has_more),
@@ -300,7 +299,7 @@ const {
   initialColumnCount: calculateColumnCount(),
 })
 
-const hasKnownTotal = computed(() => total.value > 0)
+const hasKnownTotal = computed(() => false)
 const hasMore = computed(() => hasMoreFromCursor.value)
 
 // 骨架屏列数和每列数量 - 与真实 masonry 布局保持一致，避免 CLS
@@ -538,28 +537,25 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
 
     if (isServiceUnavailableError(err)) {
       const { sort_by, sort_order } = getSortParams(currentSort.value)
-      const fallbackPage = reset
-        ? 1
-        : Math.floor(posts.value.length / Math.max(pageSize.value, 1)) + 1
       const fallbackResult = getFallbackExplorePosts({
-        page: fallbackPage,
-        page_size: pageSize.value,
+        cursor: reset ? null : nextCursor.value,
+        limit: pageSize.value,
         sort_by,
         sort_order,
         ...(platform ? { platform } : {}),
       })
+      const fallbackCursorState = extractExploreCursorState(fallbackResult)
 
       dataSource.value = 'fallback'
       error.value = null
-      total.value = fallbackResult.total
-      nextCursor.value = null
-      hasMoreFromCursor.value = false
 
       if (reset) {
         posts.value = fallbackResult.items
       } else {
         posts.value = mergeUniquePostsById(posts.value, fallbackResult.items)
       }
+      nextCursor.value = fallbackCursorState.nextCursor
+      hasMoreFromCursor.value = fallbackCursorState.hasMore
 
       await nextTick()
       if (requestSignal?.aborted || requestToken !== fetchPostsToken) {

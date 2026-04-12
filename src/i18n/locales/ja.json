@@ -162,8 +162,6 @@
       "passwordLoginUnavailable": "このアカウントではパスワードログインを利用できません。",
       "googleLoginFailed": "Google ログインに失敗しました。しばらくしてからもう一度お試しください。",
       "googleLoginExpired": "Google ログインの有効期限が切れました。最初からやり直してください。",
-      "googleLinkExpired": "Google アカウント連携の有効期限が切れました。最初からやり直してください。",
-      "googleVerificationCodeInvalid": "Google の認証コードが無効か期限切れです。",
       "googleAccessDenied": "Google ログインはキャンセルされました。",
       "googlePopupBlocked": "ブラウザが Google ログイン用のポップアップをブロックしました。",
       "googlePopupClosed": "Google ログイン用のポップアップが完了前に閉じられました。",

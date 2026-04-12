@@ -59,15 +59,12 @@ export interface InboxPreferencesResponse {
 }
 
 export interface InboxPreferencesPatch {
-  preferences: Partial<
-    Record<
-      InboxCategory,
-      {
+  [key: string]:
+    | {
         inbox_enabled?: boolean
         email_enabled?: boolean
       }
-    >
-  >
+    | undefined
 }
 
 export type InboxStreamEvent =

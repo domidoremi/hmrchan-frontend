@@ -51,7 +51,7 @@ export function getFallbackAuthors(
 
   return cursorPaginateFallbackItems(items, {
     cursor: params.cursor ?? null,
-    limit: params.page_size ?? 20,
+    limit: params.limit ?? 20,
   })
 }
 
@@ -64,12 +64,12 @@ export function getFallbackAuthorPosts(
   authorId: string,
   options: {
     cursor?: string | null
-    page_size?: number
+    limit?: number
   } = {}
 ): CursorCollectionResponse<PostListItem> {
   const items = clonePublicSnapshot(STATIC_AUTHOR_POSTS[authorId] ?? [])
   return cursorPaginateFallbackItems(items, {
     cursor: options.cursor ?? null,
-    limit: options.page_size ?? 20,
+    limit: options.limit ?? 20,
   })
 }

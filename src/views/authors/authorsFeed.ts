@@ -12,7 +12,7 @@ export function buildAuthorsListParams(options: {
 }): ListAuthorsParams {
   return {
     cursor: options.cursor ?? null,
-    page_size: options.pageSize,
+    limit: options.pageSize,
   }
 }
 

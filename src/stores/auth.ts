@@ -529,7 +529,6 @@ export const useAuthStore = defineStore('auth', () => {
         return 'auth.error.tokenInvalid'
       case 'AUTH_1004':
       case 'PERMISSION_DENIED':
-      case 'admin_access_required':
         return 'auth.error.permissionDenied'
       case 'AUTH_1005':
       case 'ACCOUNT_LOCKED':
@@ -614,10 +613,6 @@ export const useAuthStore = defineStore('auth', () => {
         return 'auth.error.googleLoginExpired'
       case 'invalid google handoff code':
         return 'auth.error.googleLoginExpired'
-      case 'invalid or expired google link token':
-        return 'auth.error.googleLinkExpired'
-      case 'invalid or expired verification code':
-        return 'auth.error.googleVerificationCodeInvalid'
       case 'failed to complete login':
       case 'failed to complete google login':
       case 'failed to resolve google identity':

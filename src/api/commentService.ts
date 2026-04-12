@@ -51,7 +51,6 @@ export interface GetPostCommentsOptions {
   limit?: number
   cursor?: string | null
   sort?: 'newest' | 'oldest' | 'popular'
-  preload_replies?: number
 }
 
 export interface GetCommentRepliesOptions {
@@ -92,9 +91,6 @@ export const commentService = {
     params.set('limit', String(options.limit ?? 20))
     if (options.cursor) params.set('cursor', options.cursor)
     if (options?.sort) params.set('sort', options.sort)
-    if (options?.preload_replies != null) {
-      params.set('preload_replies', String(options.preload_replies))
-    }
     return apiClient.get<CommentListResponse>(
       `/posts/${postId}/comments?${params.toString()}`,
       config

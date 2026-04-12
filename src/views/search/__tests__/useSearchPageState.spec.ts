@@ -113,8 +113,13 @@ describe('useSearchPageState', () => {
 
     mocks.searchPosts.mockResolvedValue({ items: [], next_cursor: null, has_more: false })
     mocks.searchAuthors.mockResolvedValue({ items: [], next_cursor: null, has_more: false })
-    mocks.listPosts.mockResolvedValue({ items: [], total: 0 })
-    mocks.getSearchHistory.mockResolvedValue({ items: [] })
+    mocks.listPosts.mockResolvedValue({ items: [], next_cursor: null, has_more: false })
+    mocks.getSearchHistory.mockResolvedValue({
+      items: [],
+      next_cursor: null,
+      has_more: false,
+      suggestions: [],
+    })
     mocks.getStats.mockResolvedValue({ top_searches: [] })
     mocks.recordSearch.mockResolvedValue(undefined)
   })
@@ -161,6 +166,7 @@ describe('useSearchPageState', () => {
         q: 'editorial',
         sort_by: 'view_count',
         cursor: null,
+        limit: 20,
       }),
       expect.anything()
     )
@@ -205,6 +211,7 @@ describe('useSearchPageState', () => {
       expect.objectContaining({
         q: 'editorial',
         cursor: 'cursor-2',
+        limit: 20,
       }),
       expect.anything()
     )

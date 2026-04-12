@@ -35,7 +35,7 @@ function isClientContractSkipPath(pathname: string): boolean {
     return true
   }
 
-  return pathname.startsWith('/health/')
+  return pathname.startsWith('/health/') || pathname.startsWith('/api/v1/media/')
 }
 
 function shouldAttachContractVersion(pathname: string): boolean {

@@ -15,7 +15,7 @@ describe('authorsFeed helpers', () => {
       })
     ).toEqual({
       cursor: 'cursor-1',
-      page_size: 24,
+      limit: 24,
     })
   })
 

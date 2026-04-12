@@ -292,7 +292,68 @@ describe('AuthCallbackPage', () => {
     await flushPromises()
 
     expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(testState.api.clientSecurityService.init).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('auth.error.googleAccessDenied')
+  })
+
+  it('treats a callback without error or handoff code as invalid and does not start bootstrap', async () => {
+    testState.route.query = {}
+    window.history.replaceState({}, '', '/auth/callback')
+    testState.pendingGoogleAuthRequest = {
+      requestId: 'redirect-invalid-1',
+      mode: 'redirect',
+      intent: 'login',
+      redirectTo: '/profile',
+      createdAt: Date.now(),
+    }
+
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: undefined,
+    })
+
+    const wrapper = mount(AuthCallbackPage, {
+      global: globalConfig,
+    })
+
+    await flushPromises()
+
+    expect(testState.api.authService.getTurnstileConfig).not.toHaveBeenCalled()
+    expect(testState.api.clientSecurityService.init).not.toHaveBeenCalled()
+    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('auth.error.callbackMissingHandoffCode')
+  })
+
+  it('prioritizes callback error over handoff code and skips exchange', async () => {
+    testState.route.query = { error: 'server_error', handoff_code: 'redirect-handoff' }
+    window.history.replaceState(
+      {},
+      '',
+      '/auth/callback?error=server_error&handoff_code=redirect-handoff'
+    )
+    testState.pendingGoogleAuthRequest = {
+      requestId: 'redirect-error-2',
+      mode: 'redirect',
+      intent: 'login',
+      redirectTo: '/profile',
+      createdAt: Date.now(),
+    }
+
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: undefined,
+    })
+
+    const wrapper = mount(AuthCallbackPage, {
+      global: globalConfig,
+    })
+
+    await flushPromises()
+
+    expect(testState.api.authService.getTurnstileConfig).not.toHaveBeenCalled()
+    expect(testState.api.clientSecurityService.init).not.toHaveBeenCalled()
+    expect(testState.authStore.completeGoogleAuth).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('auth.error.googleLoginFailed')
   })
 
   it('continues full-page exchange when the pending auth mode is redirect', async () => {

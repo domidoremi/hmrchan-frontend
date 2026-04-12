@@ -23,7 +23,7 @@ export interface ExploreCursorState {
 
 export function buildExploreListParams(options: ExploreFeedRequestOptions): ListPostsParams {
   return {
-    page_size: options.pageSize,
+    limit: options.pageSize,
     cursor: options.cursor ?? null,
     sort_by: options.sortBy,
     sort_order: options.sortOrder,

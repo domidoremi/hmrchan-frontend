@@ -4,7 +4,7 @@
  * 静态数据，硬编码在后端，无需数据库
  */
 
-import { apiClient } from './client'
+import { apiClient, type CursorCollectionResponse } from './client'
 
 // ========== 类型定义 ==========
 
@@ -30,8 +30,25 @@ export const memberService = {
   /**
    * 获取全部成员资料
    */
-  async list(): Promise<MemberProfile[]> {
-    return apiClient.get<MemberProfile[]>('/members', { skipAuth: true })
+  async list(
+    options: { limit?: number; cursor?: string | null } = {}
+  ): Promise<CursorCollectionResponse<MemberProfile>> {
+    const params = new URLSearchParams()
+    if (options.limit) params.set('limit', String(options.limit))
+    if (options.cursor) params.set('cursor', options.cursor)
+    const query = params.toString()
+
+    const response = await apiClient.get<CursorCollectionResponse<MemberProfile>>(
+      `/members${query ? `?${query}` : ''}`,
+      { skipAuth: true }
+    )
+
+    return {
+      ...response,
+      items: response.items ?? [],
+      next_cursor: response.next_cursor ?? null,
+      has_more: Boolean(response.has_more),
+    }
   },
 
   /**

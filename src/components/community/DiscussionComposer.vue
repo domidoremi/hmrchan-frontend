@@ -216,7 +216,7 @@ const debouncedSearchPosts = debounce(async (query: string) => {
       {
         q: query,
         cursor: null,
-        page_size: 5,
+        limit: 5,
         sort_by: 'relevance',
         thumbnail_quality: 'small',
       },

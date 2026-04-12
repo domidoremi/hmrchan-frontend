@@ -117,7 +117,6 @@ const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
 
-const total = ref(0)
 const nextCursor = ref<string | null>(null)
 const hasMoreState = ref(false)
 const pageSize = 24
@@ -183,7 +182,6 @@ async function fetchAuthors(reset = true): Promise<boolean> {
       if (controller.signal.aborted || requestToken !== fetchAuthorsToken) return false
       if (cached) {
         authors.value = cached.data as AuthorListItem[]
-        total.value = cached.total
         nextCursor.value =
           typeof cached.meta?.['next_cursor'] === 'string' || cached.meta?.['next_cursor'] === null
             ? (cached.meta['next_cursor'] as string | null)
@@ -209,7 +207,6 @@ async function fetchAuthors(reset = true): Promise<boolean> {
     } else {
       authors.value = mergeUniqueAuthorsById(authors.value, res.items)
     }
-    total.value = authors.value.length
     nextCursor.value = cursorState.nextCursor
     hasMoreState.value = cursorState.hasMore
     dataSource.value = 'live'
@@ -234,7 +231,6 @@ async function fetchAuthors(reset = true): Promise<boolean> {
       authors.value = reset
         ? fallbackResult.items
         : mergeUniqueAuthorsById(authors.value, fallbackResult.items)
-      total.value = authors.value.length
       nextCursor.value = cursorState.nextCursor
       hasMoreState.value = cursorState.hasMore
       dataSource.value = cachedSnapshot ? 'cached' : 'fallback'

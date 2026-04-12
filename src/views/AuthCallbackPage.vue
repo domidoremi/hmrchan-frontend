@@ -587,15 +587,24 @@ async function runInitialExchange() {
   clearInlineErrors()
   currentStep.value = 'loading'
 
+  const callbackError = typeof route.query['error'] === 'string' ? route.query['error'].trim() : ''
   const handoffCode =
     typeof route.query['handoff_code'] === 'string' ? route.query['handoff_code'] : ''
-  if (!handoffCode.trim()) {
+  if (callbackError) {
     currentStep.value = 'error'
     errorMessage.value = t(
-      route.query['error'] === 'access_denied'
+      callbackError === 'access_denied'
         ? 'auth.error.googleAccessDenied'
-        : 'auth.error.callbackMissingHandoffCode'
+        : 'auth.error.googleLoginFailed'
     )
+    errorDetail.value = callbackError
+    return
+  }
+
+  if (!handoffCode.trim()) {
+    currentStep.value = 'error'
+    errorMessage.value = t('auth.error.callbackMissingHandoffCode')
+    errorDetail.value = 'Invalid Google callback: missing handoff_code and error.'
     return
   }
 

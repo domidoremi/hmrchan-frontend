@@ -150,8 +150,6 @@
       "passwordLoginUnavailable": "此帳號暫不支援密碼登入。",
       "googleLoginFailed": "Google 登入失敗，請稍後重試。",
       "googleLoginExpired": "Google 登入已失效，請重新發起登入。",
-      "googleLinkExpired": "Google 帳號關聯已失效，請重新開始。",
-      "googleVerificationCodeInvalid": "Google 驗證碼無效或已過期。",
       "googleAccessDenied": "你已取消 Google 登入。",
       "googlePopupBlocked": "瀏覽器阻擋了 Google 登入視窗。",
       "googlePopupClosed": "Google 登入視窗在完成前已被關閉。",
