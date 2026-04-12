@@ -313,6 +313,8 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Separator from '@/components/ui/Separator.vue'
 
+const NAVBAR_ROUTE_FREEZE_MS = 280
+
 const props = withDefaults(
   defineProps<{
     chromeless?: boolean
@@ -375,12 +377,14 @@ const isUserDropdownPositioned = ref(false)
 const isMobile = ref(false)
 const isNavbarHidden = ref(false)
 const isNavbarOverlayOpen = computed(() => showSettings.value || showUserMenu.value)
+const isRouteVisibilityFrozen = ref(false)
 let lastScrollY = 0
 const scrollThreshold = 100
 const hideHysteresis = 24
 const showHysteresis = 16
 const minScrollDelta = 4
 let lastToggleTime = 0
+let routeVisibilityFreezeTimer: ReturnType<typeof setTimeout> | null = null
 const MOBILE_NAV_BREAKPOINT_QUERY = '(max-width: 960px)'
 
 let navbarHeightPx = '64px'
@@ -390,11 +394,7 @@ function syncNavbarVisibleHeight() {
   const measuredHeight = navbarRef.value?.getBoundingClientRect().height
   navbarHeightPx =
     measuredHeight && Number.isFinite(measuredHeight) ? `${measuredHeight}px` : navbarHeightPx
-  // When navbar is hidden via translateY(-100%), expose 0px so fixed headers can pin to top.
-  document.documentElement.style.setProperty(
-    '--navbar-visible-height',
-    isNavbarHidden.value ? '0px' : navbarHeightPx
-  )
+  document.documentElement.style.setProperty('--navbar-visible-height', navbarHeightPx)
 }
 
 function isHomeRailNavLockEnabled(): boolean {
@@ -451,12 +451,34 @@ function prefetchProfileSettingsPage() {
   })
 }
 
+function clearRouteVisibilityFreeze() {
+  if (!routeVisibilityFreezeTimer) return
+  window.clearTimeout(routeVisibilityFreezeTimer)
+  routeVisibilityFreezeTimer = null
+}
+
+function freezeNavbarVisibilityForRouteChange() {
+  clearRouteVisibilityFreeze()
+  isRouteVisibilityFrozen.value = true
+  isNavbarHidden.value = false
+  syncNavbarVisibleHeight()
+  lastScrollY = window.scrollY
+
+  routeVisibilityFreezeTimer = window.setTimeout(() => {
+    isRouteVisibilityFrozen.value = false
+    routeVisibilityFreezeTimer = null
+    lastScrollY = window.scrollY
+    handleScroll()
+  }, NAVBAR_ROUTE_FREEZE_MS)
+}
+
 // 路由变化时关闭所有菜单
 watch(
   () => route.fullPath,
   () => {
     closeSettings()
     closeUserMenu()
+    freezeNavbarVisibilityForRouteChange()
     nextTick(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -732,7 +754,8 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
 const handleScroll = throttleRAF(() => {
   const currentScrollY = window.scrollY
   const delta = currentScrollY - lastScrollY
-  const visibilityLocked = isHomeRailNavLockEnabled() || isNavbarOverlayOpen.value
+  const visibilityLocked =
+    isHomeRailNavLockEnabled() || isNavbarOverlayOpen.value || isRouteVisibilityFrozen.value
   const showAt = Math.max(0, scrollThreshold - showHysteresis)
   const hideAt = scrollThreshold + hideHysteresis
 
@@ -884,6 +907,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  clearRouteVisibilityFreeze()
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('resize', handleResize)
