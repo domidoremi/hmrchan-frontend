@@ -110,6 +110,32 @@ function isVarDeclaration(line: string): boolean {
   return /^\s*--/.test(line)
 }
 
+function countOccurrences(source: string, token: string): number {
+  return source.split(token).length - 1
+}
+
+function isWithinReducedMotionBlock(lines: string[], currentIndex: number): boolean {
+  let braceBalance = 0
+
+  for (let i = currentIndex; i >= 0; i--) {
+    const line = lines[i]
+    braceBalance += countOccurrences(line, '}')
+    braceBalance -= countOccurrences(line, '{')
+
+    if (/@media[^{]*prefers-reduced-motion\s*:\s*reduce/i.test(line)) {
+      return braceBalance <= 0
+    }
+  }
+
+  return false
+}
+
+function isAllowedImportantLine(lines: string[], currentIndex: number, filePath: string): boolean {
+  if (isWithinReducedMotionBlock(lines, currentIndex)) return true
+
+  return /third-party|vendor|compat/i.test(filePath)
+}
+
 /** Extract all px numeric values from a CSS line */
 function extractPxValues(line: string): number[] {
   const matches = line.match(/-?\d+(?:\.\d+)?px\b/g) ?? []
@@ -149,6 +175,18 @@ function analyzeCSS(css: string, filePath: string, lineOffset: number): AuditIss
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     if (isCommentLine(line) || isVarDeclaration(line) || isAtRuleLine(line)) continue
+
+    if (line.includes('!important') && !isAllowedImportantLine(lines, i, filePath)) {
+      issues.push({
+        severity: 'error',
+        message: '!important used outside approved exceptions',
+        file: filePath,
+        line: lineOffset + i,
+        rule: 'no-important-outside-exceptions',
+        suggestion:
+          'Remove !important or confine it to reduced-motion, third-party overrides, or documented compatibility fallbacks',
+      })
+    }
 
     for (const rule of CSS_RULES) {
       if (!rule.pattern.test(line)) continue
@@ -190,6 +228,123 @@ function analyzeCSS(css: string, filePath: string, lineOffset: number): AuditIss
   return issues
 }
 
+function countStyleBlocks(content: string): { scoped: number; unscoped: number } {
+  const matches = content.matchAll(/<style(?<attrs>[^>]*)>/gi)
+  let scoped = 0
+  let unscoped = 0
+
+  for (const match of matches) {
+    const attrs = match.groups?.attrs ?? ''
+    if (/\bscoped\b/i.test(attrs)) scoped += 1
+    else unscoped += 1
+  }
+
+  return { scoped, unscoped }
+}
+
+function analyzeVueStyleArchitecture(content: string, filePath: string): AuditIssue[] {
+  const issues: AuditIssue[] = []
+  const { scoped, unscoped } = countStyleBlocks(content)
+  const styleBlocks = extractStyleBlocks(content)
+
+  if (scoped > 0 && unscoped > 0) {
+    issues.push({
+      severity: 'error',
+      message: 'Mixed scoped and unscoped <style> blocks detected',
+      file: filePath,
+      rule: 'no-mixed-style-blocks',
+      suggestion:
+        'Move global selectors into layered CSS files and keep the SFC style block scoped',
+    })
+  }
+
+  if (/^src\/views\//.test(filePath) && /:global\((?:#app|\[data-)/.test(content)) {
+    issues.push({
+      severity: 'warning',
+      message: 'View-level global theme selector detected',
+      file: filePath,
+      rule: 'no-view-global-theme-selectors',
+      suggestion: 'Move page theme selectors into layered page-system CSS',
+    })
+  }
+
+  if (/^src\/components\/ui\//.test(filePath) && /:global\((?:#app|\[data-)/.test(content)) {
+    issues.push({
+      severity: 'warning',
+      message: 'Base UI component contains page/theme global selector',
+      file: filePath,
+      rule: 'no-ui-global-theme-selectors',
+      suggestion: 'Move theme context rules into layered component CSS',
+    })
+  }
+
+  if (/^src\/(?:components|views)\//.test(filePath)) {
+    for (const block of styleBlocks) {
+      const lines = block.css.split('\n')
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        if (isCommentLine(line)) continue
+
+        if (line.includes(':global(')) {
+          issues.push({
+            severity: 'error',
+            message: 'Scoped :global selector detected in first-party SFC',
+            file: filePath,
+            line: block.startLine + i,
+            rule: 'no-first-party-global',
+            suggestion:
+              'Move app-state and theme selectors into layered CSS files under src/styles/',
+          })
+        }
+
+        if (line.includes(':deep(') && filePath !== 'src/components/ui/TurnstileWidget.vue') {
+          issues.push({
+            severity: 'error',
+            message: 'First-party :deep selector detected',
+            file: filePath,
+            line: block.startLine + i,
+            rule: 'no-first-party-deep',
+            suggestion:
+              'Expose a class or CSS variable contract instead of styling child internals',
+          })
+        }
+      }
+    }
+  }
+
+  return issues
+}
+
+async function scanStyleEntrypoints(projectRoot: string): Promise<AuditIssue[]> {
+  const issues: AuditIssue[] = []
+  const mainPath = join(projectRoot, 'src', 'main.ts')
+
+  let content = ''
+  try {
+    content = await readFile(mainPath, 'utf-8')
+  } catch {
+    return issues
+  }
+
+  const imports = [...content.matchAll(/import\s+['"](.+?\.css)['"]/g)].map((match) => match[1])
+  const disallowed = imports.filter(
+    (spec) => spec.startsWith('./styles/') && spec !== './styles/index.css'
+  )
+
+  for (const spec of disallowed) {
+    issues.push({
+      severity: 'error',
+      message: `Layer bypass style import detected: ${spec}`,
+      file: 'src/main.ts',
+      rule: 'single-style-entrypoint',
+      suggestion: 'Import project styles through src/styles/index.css only',
+    })
+  }
+
+  return issues
+}
+
 async function scanVueFiles(projectRoot: string): Promise<AuditIssue[]> {
   const issues: AuditIssue[] = []
   const srcDir = join(projectRoot, 'src')
@@ -207,6 +362,7 @@ async function scanVueFiles(projectRoot: string): Promise<AuditIssue[]> {
       }
 
       const styleBlocks = extractStyleBlocks(content)
+      issues.push(...analyzeVueStyleArchitecture(content, relPath))
       for (const block of styleBlocks) {
         issues.push(...analyzeCSS(block.css, relPath, block.startLine))
       }
@@ -261,6 +417,10 @@ const cssAudit: AuditModule = {
     // Scan .css files
     const cssIssues = await scanCSSFiles(options.projectRoot)
     allIssues.push(...cssIssues)
+
+    // Validate layered style entrypoint usage
+    const entrypointIssues = await scanStyleEntrypoints(options.projectRoot)
+    allIssues.push(...entrypointIssues)
 
     // Determine status
     const errorCount = allIssues.filter((i) => i.severity === 'error').length

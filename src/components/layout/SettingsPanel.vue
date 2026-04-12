@@ -1139,6 +1139,13 @@ function resetVideoSettings() {
   overflow: visible;
 }
 
+.settings-panel--compact.settings-panel--external-scroll {
+  min-inline-size: 0;
+  inline-size: 100%;
+  max-inline-size: none;
+  justify-self: stretch;
+}
+
 .settings-panel__body {
   display: grid;
   gap: var(--appearance-surface-gap-sm);
@@ -1170,6 +1177,10 @@ function resetVideoSettings() {
     inline-size: 100%;
     max-inline-size: min(100%, 22rem);
     max-block-size: min(var(--app-safe-block-size-with-mobile-nav), 34rem);
+  }
+
+  .settings-panel--compact.settings-panel--external-scroll {
+    max-inline-size: none;
   }
 }
 

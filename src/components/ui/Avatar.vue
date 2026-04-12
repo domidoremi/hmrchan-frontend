@@ -130,11 +130,12 @@ function handleError() {
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: calc(var(--avatar-size) * 0.4);
-  font-weight: var(--font-medium);
-  color: var(--color-muted-foreground);
-  text-transform: uppercase;
-  background: var(--color-muted);
+  font-size: var(--ui-avatar-fallback-font-size, calc(var(--avatar-size) * 0.4));
+  font-weight: var(--ui-avatar-fallback-font-weight, var(--font-medium));
+  color: var(--ui-avatar-fallback-color, var(--color-muted-foreground));
+  text-transform: var(--ui-avatar-fallback-text-transform, uppercase);
+  background: var(--ui-avatar-fallback-bg, var(--color-muted));
+  border: var(--ui-avatar-fallback-border, none);
 }
 
 .ui-avatar__icon {

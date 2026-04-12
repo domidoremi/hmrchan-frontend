@@ -928,7 +928,7 @@
 .skeleton-text {
   position: relative;
   overflow: hidden;
-  color: transparent !important;
+  color: transparent;
   user-select: none;
   pointer-events: none;
   border-radius: var(--radius-sm);

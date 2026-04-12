@@ -1,5 +1,5 @@
-@layer reset, foundation, semantics, components, scene-roles, presets, enhancers, utilities,
-  overrides;
+@layer reset, foundation, semantics, components, page-systems, scene-roles, presets,
+  enhancers, utilities, overrides;
 
 @import './base.css' layer(reset);
 @import './tokens.css' layer(foundation);
@@ -10,6 +10,15 @@
 @import './ui-compat.css' layer(semantics);
 @import './components/core.css' layer(components);
 @import './components/page-primitives.css' layer(components);
+@import './components/button-system.css' layer(components);
+@import './components/component-state-system.css' layer(components);
+@import './auth-compat.css' layer(page-systems);
+@import './public-pages.css' layer(page-systems);
+@import './profile-system.css' layer(page-systems);
+@import './page-systems/profile-page-system.css' layer(page-systems);
+@import './page-systems/home-page-system.css' layer(page-systems);
+@import './page-systems/navbar-dropdown-system.css' layer(page-systems);
+@import './animations.css' layer(page-systems);
 @import './scene-roles/core.css' layer(scene-roles);
 @import './presets/minimal-editorial.css' layer(presets);
 @import './presets/families.css' layer(presets);
@@ -17,5 +26,3 @@
 @import './utilities.css' layer(utilities);
 @import './glass.css' layer(overrides);
 @import './analog-system.css' layer(overrides);
-@import './public-pages.css' layer(overrides);
-@import './profile-system.css' layer(overrides);

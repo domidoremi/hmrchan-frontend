@@ -341,16 +341,8 @@ defineExpose({ focus, setContent })
   border: 0;
   background: transparent;
   box-shadow: none;
-}
-
-:deep(.comment-textarea textarea),
-:deep(.comment-textarea .ui-textarea__field) {
-  min-block-size: 7.25rem;
   padding-inline: 0;
   padding-block: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
   line-height: 1.7;
   color: var(--surface-paper-ink);
 }
@@ -372,7 +364,7 @@ defineExpose({ focus, setContent })
   }
 
   .prompt-btn,
-  .form-actions > :deep(*) {
+  .form-actions > .btn {
     inline-size: 100%;
   }
 

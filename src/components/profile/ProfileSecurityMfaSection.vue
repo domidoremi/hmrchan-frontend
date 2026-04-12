@@ -996,7 +996,7 @@ onMounted(() => {
     justify-content: stretch;
   }
 
-  .two-factor-actions :deep(button) {
+  .two-factor-actions > .btn {
     width: 100%;
   }
 

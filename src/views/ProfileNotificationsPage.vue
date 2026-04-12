@@ -477,34 +477,6 @@ async function handleEmailPreferenceChange(category: InboxCategory, value: boole
   --profile-action-border-strong: rgba(15, 23, 42, 0.14);
 }
 
-.notifications-page :deep(.surface-editorial),
-.notifications-page :deep(.empty-surface),
-.notifications-page :deep(.glass-surface--editorial) {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.notifications-page :deep(.sub-header__content),
-.notifications-page :deep(.sub-header .back-btn),
-.notifications-header-actions :deep(.btn),
-.notifications-filter-row :deep(.page-control) {
-  box-shadow: none;
-}
-
-.notifications-header-actions :deep(.btn) {
-  border-radius: calc(var(--profile-section-radius) - 0.1rem);
-  border: 1px solid var(--profile-action-border);
-  background: var(--profile-action-bg);
-  color: var(--color-text-secondary);
-}
-
-.notifications-header-actions :deep(.btn:hover:not(:disabled)),
-.notifications-header-actions :deep(.btn:focus-visible) {
-  border-color: var(--profile-action-border-strong);
-  background: var(--profile-action-bg-hover);
-  color: var(--color-text-primary);
-}
-
 .notifications-header-actions {
   display: flex;
   flex-wrap: wrap;
@@ -844,10 +816,6 @@ async function handleEmailPreferenceChange(category: InboxCategory, value: boole
     justify-content: stretch;
   }
 
-  .notifications-header-actions :deep(.btn) {
-    flex: 1 1 100%;
-  }
-
   .notification-preference-row {
     flex-direction: column;
     align-items: flex-start;
@@ -879,63 +847,5 @@ async function handleEmailPreferenceChange(category: InboxCategory, value: boole
     align-items: flex-start;
     gap: 0.75rem;
   }
-}
-</style>
-
-<style>
-[data-color-mode='dark'] .notifications-page {
-  --profile-surface-bg: rgba(13, 16, 22, 0.98);
-  --profile-surface-bg-soft: rgba(17, 21, 29, 0.96);
-  --profile-surface-border: rgba(255, 255, 255, 0.08);
-  --profile-surface-border-strong: rgba(255, 255, 255, 0.14);
-  --profile-surface-shadow: 0 0.9rem 1.8rem -1.4rem rgba(0, 0, 0, 0.6);
-  --profile-surface-shadow-hover: 0 1rem 2rem -1.35rem rgba(0, 0, 0, 0.64);
-  --profile-muted-bg: rgba(255, 255, 255, 0.04);
-  --profile-muted-bg-strong: rgba(255, 255, 255, 0.08);
-  --profile-muted-border: rgba(255, 255, 255, 0.08);
-  --profile-muted-border-strong: rgba(255, 255, 255, 0.14);
-  --profile-action-bg: rgba(255, 255, 255, 0.03);
-  --profile-action-bg-hover: rgba(255, 255, 255, 0.06);
-  --profile-action-border: rgba(255, 255, 255, 0.08);
-  --profile-action-border-strong: rgba(255, 255, 255, 0.14);
-}
-
-#app[data-preset='gradient-narrative'][data-color-mode='light'] .notifications-page {
-  --profile-surface-bg: rgba(255, 255, 255, 0.98);
-  --profile-surface-bg-soft: rgba(247, 250, 255, 0.96);
-  --profile-surface-border: rgba(59, 130, 246, 0.1);
-  --profile-surface-border-strong: rgba(59, 130, 246, 0.16);
-  --profile-muted-bg: rgba(59, 130, 246, 0.035);
-  --profile-muted-bg-strong: rgba(59, 130, 246, 0.06);
-  --profile-muted-border: rgba(59, 130, 246, 0.1);
-  --profile-muted-border-strong: rgba(59, 130, 246, 0.16);
-  --profile-action-bg: rgba(59, 130, 246, 0.028);
-  --profile-action-bg-hover: rgba(59, 130, 246, 0.06);
-  --profile-action-border: rgba(59, 130, 246, 0.1);
-  --profile-action-border-strong: rgba(59, 130, 246, 0.16);
-}
-
-[data-color-mode='dark'] .notifications-page .notifications-live-pill--degraded {
-  background: var(--profile-action-bg);
-}
-
-[data-color-mode='dark'] .notifications-page .notifications-feedback {
-  background: rgba(var(--color-warning-rgb, 245, 158, 11), 0.08);
-}
-
-#app[data-preset='material-calm'] .notifications-page .notification-filter-chip,
-#app[data-preset='sketch-doodle'] .notifications-page .notification-filter-chip,
-#app[data-preset='material-calm'] .notifications-page .notifications-live-pill,
-#app[data-preset='sketch-doodle'] .notifications-page .notifications-live-pill {
-  border-radius: var(--radius-md);
-}
-
-#app[data-preset='material-calm'] .notifications-page .notifications-summary-card,
-#app[data-preset='sketch-doodle'] .notifications-page .notifications-summary-card,
-#app[data-preset='material-calm'] .notifications-page .notification-preference-row,
-#app[data-preset='sketch-doodle'] .notifications-page .notification-preference-row,
-#app[data-preset='material-calm'] .notifications-page .notifications-header-actions .btn,
-#app[data-preset='sketch-doodle'] .notifications-page .notifications-header-actions .btn {
-  border-radius: var(--radius-lg);
 }
 </style>
