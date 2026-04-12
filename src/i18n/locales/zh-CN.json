@@ -186,6 +186,12 @@
     "moreProvidersSoon": "更多登录方式后续支持。",
     "verifyTitle": "安全验证",
     "verifyHint": "仅需片刻",
+    "turnstileStatusExecutingTitle": "正在进行安全验证",
+    "turnstileStatusExecutingHint": "正在检查当前请求的风险与挑战状态…",
+    "turnstileStatusInteractiveTitle": "等待挑战完成",
+    "turnstileStatusInteractiveHint": "如果出现交互式挑战，请在这里完成后继续。",
+    "turnstileStatusVerifiedTitle": "安全验证已完成",
+    "turnstileStatusVerifiedHint": "验证通过，正在继续下一步…",
     "stepUp": {
       "title": "请确认是你本人",
       "defaultDescription": "这是敏感操作，请先输入当前密码完成二次验证。",

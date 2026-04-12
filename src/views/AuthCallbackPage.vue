@@ -43,11 +43,13 @@
           class="auth-form"
         >
           <div class="auth-card auth-card--stack auth-callback-card">
-            <div v-if="resolvedClientChallengeSiteKey" class="turnstile-block">
-              <div class="turnstile-header">
-                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-              </div>
+            <AuthTurnstileStatus
+              v-if="resolvedClientChallengeSiteKey"
+              :status="clientChallengeStatus"
+              :error-message="clientChallengeError"
+              :detail="clientChallengeDetail"
+              :show-widget-frame="clientChallengeStatus === 'interactive_required'"
+            >
               <TurnstileWidget
                 ref="clientChallengeTurnstileRef"
                 :site-key="resolvedClientChallengeSiteKey"
@@ -59,12 +61,11 @@
                 @verify="handleClientChallengeVerify"
                 @expire="handleClientChallengeExpire"
                 @error="handleClientChallengeWidgetError"
+                @status="clientChallengeStatus = $event"
               />
-            </div>
+            </AuthTurnstileStatus>
 
             <p v-else class="auth-helper">{{ $t('auth.clientChallengeLoading') }}</p>
-            <p v-if="clientChallengeError" class="field-error">{{ clientChallengeError }}</p>
-            <p v-if="clientChallengeDetail" class="auth-helper">{{ clientChallengeDetail }}</p>
 
             <div class="action-group">
               <Button
@@ -110,11 +111,11 @@
 
             <p v-if="riskError" class="field-error">{{ riskError }}</p>
 
-            <div v-if="turnstileEnabled" class="turnstile-block">
-              <div class="turnstile-header">
-                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-              </div>
+            <AuthTurnstileStatus
+              v-if="turnstileEnabled"
+              :status="riskTurnstileStatus"
+              :show-widget-frame="riskTurnstileStatus === 'interactive_required'"
+            >
               <TurnstileWidget
                 ref="riskTurnstileRef"
                 :site-key="turnstileSiteKey"
@@ -126,11 +127,17 @@
                 @verify="handleRiskTurnstileVerify"
                 @expire="handleRiskTurnstileExpire"
                 @error="handleTurnstileError"
+                @status="riskTurnstileStatus = $event"
               />
-            </div>
+            </AuthTurnstileStatus>
 
             <div class="action-group">
-              <Button type="submit" full-width :loading="isLoading">
+              <Button
+                type="submit"
+                full-width
+                :loading="isLoading || riskTurnstileStatus === 'executing'"
+                :disabled="isRiskTurnstileBusy"
+              >
                 {{ $t('auth.verifyButton') }}
               </Button>
               <Button type="button" variant="ghost" full-width @click="returnToLogin">
@@ -198,9 +205,11 @@ import {
 import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
+import { isTurnstileBusy, type TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
+import AuthTurnstileStatus from '@/components/auth/AuthTurnstileStatus.vue'
 import AuthMfaStep from '@/components/auth/AuthMfaStep.vue'
 import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
 
@@ -244,6 +253,7 @@ const clientChallengeSiteKey = ref('')
 const clientChallengeError = ref('')
 const clientChallengeDetail = ref('')
 const isClientChallengeSubmitting = ref(false)
+const clientChallengeStatus = ref<TurnstileWidgetStatus>('idle')
 type TurnstileWidgetHandle = {
   reset: () => void
   execute?: () => Promise<string>
@@ -255,6 +265,7 @@ const clientChallengeTurnstileRef = useTemplateRef<TurnstileWidgetHandle>(
 const riskTurnstileRef = useTemplateRef<TurnstileWidgetHandle>('riskTurnstileRef')
 const riskTurnstileToken = ref<string | null>(null)
 const riskTurnstileIssuedAt = ref<number | null>(null)
+const riskTurnstileStatus = ref<TurnstileWidgetStatus>('idle')
 
 const pendingMfaLoginToken = ref('')
 const mfaMethods = ref<string[]>([])
@@ -266,6 +277,7 @@ const errorDetail = ref('')
 const resolvedClientChallengeSiteKey = computed(
   () => clientChallengeSiteKey.value || turnstileSiteKey.value
 )
+const isRiskTurnstileBusy = computed(() => isTurnstileBusy(riskTurnstileStatus.value))
 
 const pageTitle = computed(() => {
   if (isPopupBridgeMode.value) {
@@ -314,6 +326,7 @@ function isTurnstileTokenFresh(token: string | null, issuedAt: number | null): b
 function resetRiskTurnstile() {
   riskTurnstileToken.value = null
   riskTurnstileIssuedAt.value = null
+  riskTurnstileStatus.value = 'idle'
   riskTurnstileRef.value?.reset()
 }
 
@@ -325,6 +338,7 @@ function handleRiskTurnstileVerify(token: string) {
 function handleRiskTurnstileExpire() {
   riskTurnstileToken.value = null
   riskTurnstileIssuedAt.value = null
+  riskTurnstileStatus.value = 'expired'
 }
 
 function handleTurnstileError(error?: Error) {
@@ -363,6 +377,7 @@ function clearInlineErrors() {
 function clearPendingGoogleHandoff() {
   pendingGoogleHandoffCode.value = ''
   clientChallengeSiteKey.value = ''
+  clientChallengeStatus.value = 'idle'
   clientChallengeTurnstileRef.value?.reset?.()
 }
 
@@ -396,6 +411,7 @@ function enterClientChallengeStep(siteKey?: string | null) {
 }
 
 function handleClientChallengeExpire() {
+  clientChallengeStatus.value = 'expired'
   clientChallengeError.value = t('auth.error.turnstileRequired')
   clientChallengeDetail.value = ''
 }

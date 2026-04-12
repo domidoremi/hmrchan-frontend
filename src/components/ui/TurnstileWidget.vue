@@ -14,6 +14,7 @@ import {
   extractTurnstileErrorCode,
   TURNSTILE_HOSTNAME_MISMATCH_CODE,
 } from '@/utils/turnstile'
+import type { TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
 
 export interface TurnstileWidgetProps {
   siteKey: string
@@ -37,6 +38,7 @@ const emit = defineEmits<{
   verify: [token: string]
   expire: []
   error: [error: Error]
+  status: [status: TurnstileWidgetStatus]
 }>()
 
 const containerRef = useTemplateRef<HTMLDivElement>('containerRef')
@@ -56,6 +58,10 @@ let turnstilePollReject: ((reason?: Error) => void) | null = null
 let isReady = false
 let pendingExecutionResolve: ((token: string) => void) | null = null
 let pendingExecutionReject: ((reason?: Error) => void) | null = null
+let interactiveFallbackTimer: ReturnType<typeof setTimeout> | null = null
+const status = ref<TurnstileWidgetStatus>('idle')
+
+const INTERACTIVE_REQUIRED_DELAY_MS = 1200
 
 declare global {
   interface Window {
@@ -172,9 +178,36 @@ function resetRetryState() {
   // 保持接口稳定，但不再自动重试，避免 challenge 反复重建导致抖动和噪音。
 }
 
+function clearInteractiveFallbackTimer() {
+  if (!interactiveFallbackTimer) return
+  clearTimeout(interactiveFallbackTimer)
+  interactiveFallbackTimer = null
+}
+
+function updateStatus(nextStatus: TurnstileWidgetStatus) {
+  if (status.value === nextStatus) return
+  status.value = nextStatus
+  emit('status', nextStatus)
+}
+
+function scheduleInteractiveFallback() {
+  clearInteractiveFallbackTimer()
+
+  if (!(props.execution === 'execute' || props.appearance === 'execute')) {
+    return
+  }
+
+  interactiveFallbackTimer = window.setTimeout(() => {
+    if (pendingExecutionResolve && status.value === 'executing') {
+      updateStatus('interactive_required')
+    }
+  }, INTERACTIVE_REQUIRED_DELAY_MS)
+}
+
 function clearPendingExecution() {
   pendingExecutionResolve = null
   pendingExecutionReject = null
+  clearInteractiveFallbackTimer()
 }
 
 function rejectPendingExecution(error: Error) {
@@ -222,6 +255,7 @@ function createTurnstileConfig() {
     callback: (token: string) => {
       resetRetryState()
       logDebug('log', 'Verification successful')
+      updateStatus('verified')
       pendingExecutionResolve?.(token)
       clearPendingExecution()
       emit('verify', token)
@@ -229,6 +263,7 @@ function createTurnstileConfig() {
     'expired-callback': () => {
       resetRetryState()
       logDebug('log', 'Token expired')
+      updateStatus('expired')
       rejectPendingExecution(new Error('Turnstile token expired'))
       emit('expire')
     },
@@ -251,6 +286,7 @@ function createTurnstileConfig() {
       const error = new Error(describeTurnstileError(errorCode))
       error.name = 'TurnstileError'
       Object.assign(error, { code, kind })
+      updateStatus('error')
       rejectPendingExecution(error)
       emit('error', error)
       return true
@@ -272,6 +308,7 @@ function renderWidget() {
   try {
     logDebug('log', 'Rendering widget with siteKey:', maskSiteKey(props.siteKey))
     widgetId.value = window.turnstile!.render(containerRef.value!, createTurnstileConfig())
+    updateStatus('idle')
     logDebug('log', 'Widget rendered with ID:', widgetId.value)
     if (props.autoExecute || props.execution === 'execute') {
       void execute().catch((error) => {
@@ -281,6 +318,7 @@ function renderWidget() {
   } catch (error) {
     logDebug('error', 'Render failed:', error)
     widgetId.value = null // Ensure clean state on error
+    updateStatus('error')
     emit('error', error as Error)
   }
 }
@@ -292,6 +330,7 @@ async function rerender() {
     renderWidget()
   } catch (error) {
     logDebug('error', 'Rerender failed:', error)
+    updateStatus('error')
     emit('error', error as Error)
   }
 }
@@ -311,6 +350,7 @@ function reset() {
     resetRetryState()
     rejectPendingExecution(new Error('Turnstile reset'))
     window.turnstile.reset(widgetId.value)
+    updateStatus('idle')
     logDebug('log', 'Widget reset')
   }
 }
@@ -334,12 +374,15 @@ async function execute(): Promise<string> {
 
   const existingResponse = window.turnstile.getResponse(widgetId.value)
   if (existingResponse) {
+    updateStatus('verified')
     return existingResponse
   }
 
   return await new Promise<string>((resolve, reject) => {
     pendingExecutionResolve = resolve
     pendingExecutionReject = reject
+    updateStatus('executing')
+    scheduleInteractiveFallback()
 
     if (!window.turnstile?.execute) {
       rejectPendingExecution(new Error('Turnstile execute API is unavailable'))
@@ -378,6 +421,7 @@ onMounted(async () => {
     renderWidget()
   } catch (error) {
     logDebug('error', 'Mount failed:', error)
+    updateStatus('error')
     emit('error', error as Error)
   }
 })
@@ -402,6 +446,7 @@ onUnmounted(() => {
     mountDelayResolve()
     mountDelayResolve = null
   }
+  clearInteractiveFallbackTimer()
   resetRetryState()
   cleanupWidget()
   if (turnstileOnloadHandler && window.onTurnstileLoad === turnstileOnloadHandler) {
