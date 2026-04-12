@@ -186,6 +186,12 @@
     "moreProvidersSoon": "More sign-in options will be supported later.",
     "verifyTitle": "Security check",
     "verifyHint": "Takes a moment",
+    "turnstileStatusExecutingTitle": "Running security verification",
+    "turnstileStatusExecutingHint": "Checking the request risk and challenge state…",
+    "turnstileStatusInteractiveTitle": "Waiting for the challenge to finish",
+    "turnstileStatusInteractiveHint": "If an interactive check appears, finish it here to continue.",
+    "turnstileStatusVerifiedTitle": "Security verification completed",
+    "turnstileStatusVerifiedHint": "Verified. Continuing with the next step…",
     "stepUp": {
       "title": "Confirm it's really you",
       "defaultDescription": "This is a sensitive action. Please enter your current password to continue.",

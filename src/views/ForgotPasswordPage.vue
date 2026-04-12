@@ -26,11 +26,11 @@
           </div>
         </div>
 
-        <div v-if="showTurnstileChallenge" class="turnstile-block">
-          <div class="turnstile-header">
-            <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-            <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-          </div>
+        <AuthTurnstileStatus
+          v-if="showTurnstileChallenge"
+          :status="turnstileStatus"
+          :show-widget-frame="turnstileStatus === 'interactive_required'"
+        >
           <TurnstileWidget
             ref="turnstileRef"
             :site-key="turnstileSiteKey"
@@ -42,8 +42,9 @@
             @verify="handleTurnstileVerify"
             @expire="handleTurnstileExpire"
             @error="handleTurnstileError"
+            @status="turnstileStatus = $event"
           />
-        </div>
+        </AuthTurnstileStatus>
       </div>
 
       <form v-else class="auth-form" @submit.prevent="handleSubmit">
@@ -60,11 +61,11 @@
             />
           </div>
 
-          <div v-if="showTurnstileChallenge" class="turnstile-block">
-            <div class="turnstile-header">
-              <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-              <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-            </div>
+          <AuthTurnstileStatus
+            v-if="showTurnstileChallenge"
+            :status="turnstileStatus"
+            :show-widget-frame="turnstileStatus === 'interactive_required'"
+          >
             <TurnstileWidget
               ref="turnstileRef"
               :site-key="turnstileSiteKey"
@@ -76,11 +77,17 @@
               @verify="handleTurnstileVerify"
               @expire="handleTurnstileExpire"
               @error="handleTurnstileError"
+              @status="turnstileStatus = $event"
             />
-          </div>
+          </AuthTurnstileStatus>
 
           <div class="action-group">
-            <Button type="submit" :loading="isLoading" full-width>
+            <Button
+              type="submit"
+              :loading="isLoading || turnstileStatus === 'executing'"
+              :disabled="isTurnstileStatusBusy"
+              full-width
+            >
               {{ $t('email.sendResetLink') }}
             </Button>
           </div>
@@ -111,8 +118,10 @@ import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
+import AuthTurnstileStatus from '@/components/auth/AuthTurnstileStatus.vue'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
+import { isTurnstileBusy, type TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
 
 const { t } = useI18n()
 const toastStore = useToastStore()
@@ -126,6 +135,7 @@ let cooldownTimer: ReturnType<typeof setInterval> | null = null
 
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
+const turnstileStatus = ref<TurnstileWidgetStatus>('idle')
 const requiresTurnstileChallenge = ref(false)
 const turnstileRef = useTemplateRef<{
   reset: () => void
@@ -135,6 +145,7 @@ const turnstileRef = useTemplateRef<{
 const showTurnstileChallenge = computed(
   () => turnstileEnabled.value && requiresTurnstileChallenge.value
 )
+const isTurnstileStatusBusy = computed(() => isTurnstileBusy(turnstileStatus.value))
 
 const maskedEmail = ref('')
 
@@ -250,6 +261,7 @@ function handleTurnstileVerify(token: string) {
 function handleTurnstileExpire() {
   requiresTurnstileChallenge.value = true
   turnstileToken.value = null
+  turnstileStatus.value = 'expired'
 }
 
 function handleTurnstileError(error?: Error) {
