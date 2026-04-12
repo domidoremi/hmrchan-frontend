@@ -1,5 +1,4 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { reactive } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -13,37 +12,10 @@ const exploreMocks = vi.hoisted(() => ({
   isServiceUnavailableError: vi.fn(),
 }))
 
-vi.mock('pinia', async () => {
-  const actual = await vi.importActual<typeof import('pinia')>('pinia')
-  const vue = await vi.importActual<typeof import('vue')>('vue')
-
-  return {
-    ...actual,
-    storeToRefs: (store: Record<string, unknown>) => {
-      const refs: Record<string, unknown> = {}
-      for (const key of Object.keys(store)) {
-        if (typeof store[key] === 'function') continue
-        refs[key] = vue.toRef(store, key)
-      }
-      return refs
-    },
-  }
-})
-
-const settingsStoreState = reactive({
-  settings: reactive({
-    enableAnimations: false,
-  }),
-})
-
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
     t: (key: string) => key,
   }),
-}))
-
-vi.mock('@/stores', () => ({
-  useSettingsStore: () => settingsStoreState,
 }))
 
 vi.mock('@/api', () => {
@@ -331,16 +303,6 @@ vi.mock('@/components/appearance/PageToolbar.vue', async () => {
   }
 })
 
-vi.mock('@/components/ui/PlatformCanvas.vue', async () => {
-  const { defineComponent } = await import('vue')
-  return {
-    default: defineComponent({
-      name: 'PlatformCanvas',
-      template: '<div data-testid="platform-canvas" />',
-    }),
-  }
-})
-
 import ExplorePage from '../ExplorePage.vue'
 
 function createWrapper() {
@@ -377,7 +339,6 @@ describe('ExplorePage', () => {
     exploreMocks.getFallbackExplorePosts.mockReset()
     exploreMocks.isServiceUnavailableError.mockReset()
     exploreMocks.isServiceUnavailableError.mockReturnValue(false)
-    settingsStoreState.settings.enableAnimations = false
   })
 
   it('renders loaded posts, navigates with "/" shortcut, and refetches for filters', async () => {

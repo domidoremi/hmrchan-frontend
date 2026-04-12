@@ -1,8 +1,5 @@
 <template>
   <div class="explore-page">
-    <!-- Platform-specific animated background -->
-    <AsyncPlatformCanvas v-if="shouldRenderPlatformBg" :platform="currentPlatform" />
-
     <div class="container">
       <PageHeroShell class="explore-hero" bare>
         <template #heading>
@@ -171,13 +168,11 @@ import {
   watchPostEffect,
   watchSyncEffect,
   nextTick,
-  defineAsyncComponent,
   onWatcherCleanup,
   useTemplateRef,
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { storeToRefs } from 'pinia'
 import { Search, Globe } from '@lucide/vue'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import { postService, type PostListItem, ApiError } from '@/api'
@@ -187,7 +182,6 @@ import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
-import { useSettingsStore } from '@/stores'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { storePostNavigationContext } from '@/utils/postNavigation'
@@ -215,11 +209,8 @@ import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
 import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
 import PageToolbar from '@/components/appearance/PageToolbar.vue'
 
-const AsyncPlatformCanvas = defineAsyncComponent(() => import('@/components/ui/PlatformCanvas.vue'))
-
 const router = useRouter()
 const { t } = useI18n()
-const { settings } = storeToRefs(useSettingsStore())
 const renderDebugEnabled =
   import.meta.env.DEV &&
   typeof window !== 'undefined' &&
@@ -234,12 +225,6 @@ if (renderDebugEnabled) {
     console.debug('[render:triggered][ExplorePage]', event.type, String(event.key))
   })
 }
-
-const shouldShowPlatformBg = computed(() => settings.value.enableAnimations && !isMobile)
-const platformBgReady = ref(false)
-const PLATFORM_BG_DELAY_MS = 2600
-let platformBgTimer: number | null = null
-const shouldRenderPlatformBg = computed(() => shouldShowPlatformBg.value && platformBgReady.value)
 
 const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
 type ExplorePlatform = 'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'
@@ -353,27 +338,6 @@ const loadMoreTotal = computed(() =>
         1
       )
 )
-
-function schedulePlatformBackgroundMount() {
-  if (typeof window === 'undefined') {
-    platformBgReady.value = true
-    return
-  }
-  if (platformBgReady.value || platformBgTimer !== null) return
-  // 动画背景属于增强效果，延后加载以优先保障首屏内容渲染。
-  platformBgTimer = window.setTimeout(() => {
-    platformBgTimer = null
-    if (isActive) {
-      platformBgReady.value = true
-    }
-  }, PLATFORM_BG_DELAY_MS)
-}
-
-function clearPlatformBackgroundTimer() {
-  if (platformBgTimer === null) return
-  clearTimeout(platformBgTimer)
-  platformBgTimer = null
-}
 
 const onGlobalKeydown = (event: KeyboardEvent) => {
   if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return
@@ -794,7 +758,6 @@ onMounted(() => {
   if (masonryContainerRef.value) {
     attachResizeObserver(masonryContainerRef.value)
   }
-  schedulePlatformBackgroundMount()
 })
 
 watchPostEffect(() => {
@@ -811,7 +774,6 @@ onActivated(() => {
   if (masonryContainerRef.value) {
     attachResizeObserver(masonryContainerRef.value)
   }
-  schedulePlatformBackgroundMount()
 })
 
 onDeactivated(() => {
@@ -820,7 +782,6 @@ onDeactivated(() => {
   fetchPostsToken += 1
   isLoading.value = false
   isLoadingMore.value = false
-  clearPlatformBackgroundTimer()
   detachGlobalListeners()
   detachResizeObserver()
   handleContainerResize.cancel?.()
@@ -833,7 +794,6 @@ onBeforeUnmount(() => {
   fetchPostsToken += 1
   isLoading.value = false
   isLoadingMore.value = false
-  clearPlatformBackgroundTimer()
   detachGlobalListeners()
   detachResizeObserver()
   handleContainerResize.cancel?.()
