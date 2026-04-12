@@ -28,6 +28,7 @@
       :class="{
         'main--home': isHomeRoute,
         'main--auth': isAuthRoute,
+        'main--under-navbar': extendsContentUnderNavbar,
         'main--decorated': showBackgroundDecorations,
       }"
     >
@@ -37,6 +38,7 @@
         :class="{
           'route-view--home': isHomeRoute,
           'route-view--auth': isAuthRoute,
+          'route-view--under-navbar': extendsContentUnderNavbar,
           'route-view--decorated': showBackgroundDecorations,
         }"
       >
@@ -187,6 +189,7 @@ const showBackgroundDecorations = computed(
 // Footer only appears on key pages (configured via route meta)
 const showFooter = computed(() => Boolean(route.meta.showFooter) && !isHomeRoute.value)
 const isHomeRoute = computed(() => route.name === 'home' || route.path === '/')
+const extendsContentUnderNavbar = computed(() => Boolean(route.meta.extendContentUnderNavbar))
 const isAuthRoute = computed(() => {
   const routeName = typeof route.name === 'string' ? route.name : ''
   return (
@@ -366,6 +369,11 @@ main.main--auth {
   background: transparent;
 }
 
+main.main--under-navbar {
+  padding-top: 0;
+  background: transparent;
+}
+
 @media (max-width: 960px) {
   main {
     padding-bottom: var(--mobile-nav-height);
@@ -393,6 +401,10 @@ main.main--auth {
   min-height: 100dvh;
   background: transparent;
   overflow: visible;
+}
+
+.route-view.route-view--under-navbar {
+  background: transparent;
 }
 
 .route-view.route-view--decorated {

@@ -35,6 +35,8 @@ declare module 'vue-router' {
     viewKey?: string
     /** Preserve scroll position when navigating within the same stable view */
     preserveScrollOnIntraViewNav?: boolean
+    /** Allow page content to render directly under the navbar without shell padding/background */
+    extendContentUnderNavbar?: boolean
   }
 }
 
@@ -106,7 +108,12 @@ const routes: RouteRecordRaw[] = [
     path: '/post/:id',
     name: 'post-detail',
     component: () => import('@/views/PostDetailPage.vue'),
-    meta: { title: 'nav.postDetail', securityLevel: 'public', dataSensitivity: 'none' },
+    meta: {
+      title: 'nav.postDetail',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+      extendContentUnderNavbar: true,
+    },
   },
   {
     path: '/authors',
