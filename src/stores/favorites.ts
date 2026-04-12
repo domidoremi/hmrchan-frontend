@@ -45,12 +45,26 @@ export const useFavoritesStore = defineStore('favorites', () => {
   const currentSortOrder = ref<ListFavoritesParams['sort_order']>(undefined)
   let fetchFavoritesController: AbortController | null = null
   let fetchFavoritesToken = 0
+  let fetchFoldersController: AbortController | null = null
+  let fetchFoldersToken = 0
+  let fetchTagsController: AbortController | null = null
+  let fetchTagsToken = 0
 
   const hasMore = computed(() => hasMoreState.value)
 
   function abortFetchFavorites() {
     fetchFavoritesController?.abort()
     fetchFavoritesController = null
+  }
+
+  function abortFetchFolders() {
+    fetchFoldersController?.abort()
+    fetchFoldersController = null
+  }
+
+  function abortFetchTags() {
+    fetchTagsController?.abort()
+    fetchTagsController = null
   }
 
   async function fetchFavorites(reset = false): Promise<boolean> {
@@ -126,19 +140,48 @@ export const useFavoritesStore = defineStore('favorites', () => {
   }
 
   async function fetchFolders() {
+    abortFetchFolders()
+    const controller = new AbortController()
+    fetchFoldersController = controller
+    const requestToken = ++fetchFoldersToken
+
     try {
-      const res = await favoriteService.getFolders()
+      const res = await favoriteService.getFolders({
+        signal: controller.signal,
+        skipErrorToast: true,
+      })
+      if (controller.signal.aborted || requestToken !== fetchFoldersToken) return
       folders.value = res.folders
     } catch {
+      if (controller.signal.aborted || requestToken !== fetchFoldersToken) return
       // silent
+    } finally {
+      if (fetchFoldersController === controller) {
+        fetchFoldersController = null
+      }
     }
   }
 
   async function fetchTags() {
+    abortFetchTags()
+    const controller = new AbortController()
+    fetchTagsController = controller
+    const requestToken = ++fetchTagsToken
+
     try {
-      tags.value = await favoriteService.getTags()
+      const result = await favoriteService.getTags({
+        signal: controller.signal,
+        skipErrorToast: true,
+      })
+      if (controller.signal.aborted || requestToken !== fetchTagsToken) return
+      tags.value = result
     } catch {
+      if (controller.signal.aborted || requestToken !== fetchTagsToken) return
       // silent
+    } finally {
+      if (fetchTagsController === controller) {
+        fetchTagsController = null
+      }
     }
   }
 
@@ -229,6 +272,8 @@ export const useFavoritesStore = defineStore('favorites', () => {
 
   function $reset() {
     abortFetchFavorites()
+    abortFetchFolders()
+    abortFetchTags()
     items.value = []
     folders.value = []
     tags.value = []
