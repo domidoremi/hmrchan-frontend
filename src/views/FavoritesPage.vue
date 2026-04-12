@@ -224,7 +224,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'FavoritesPage' })
 
-import { computed, ref, watch, onActivated, onDeactivated } from 'vue'
+import { computed, ref, watch, onActivated, onDeactivated, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -277,7 +277,9 @@ const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
 const isPageActive = ref(true)
 const isBootstrapping = ref(false)
 const isProtectedDataReady = ref(false)
+const isLogoutInvalidated = ref(false)
 let bootstrapPromise: Promise<boolean> | null = null
+let bootstrapRunId = 0
 
 const selectedFolder = ref('')
 const selectedTag = ref('')
@@ -331,6 +333,28 @@ function parseSortValue(value: typeof selectedSort.value) {
   return { sort_by: 'created_at' as const, sort_order: 'desc' as const }
 }
 
+function nextBootstrapRunId(): number {
+  bootstrapRunId += 1
+  return bootstrapRunId
+}
+
+function isBootstrapRunActive(runId: number): boolean {
+  return (
+    runId === bootstrapRunId &&
+    isPageActive.value &&
+    isAuthenticated.value &&
+    !isLogoutInvalidated.value
+  )
+}
+
+function invalidateFavoritesBootstrap() {
+  nextBootstrapRunId()
+  bootstrapPromise = null
+  isBootstrapping.value = false
+  isProtectedDataReady.value = false
+  favStore.$reset()
+}
+
 async function fetchFavorites(reset = true): Promise<boolean> {
   if (!isAuthenticated.value) return false
   if (!isProtectedDataReady.value) {
@@ -341,16 +365,22 @@ async function fetchFavorites(reset = true): Promise<boolean> {
 
 async function fetchFavoriteMetadata() {
   if (!isAuthenticated.value) return
-  if (!(await ensureFavoritesSessionReady())) return
+  const runId = nextBootstrapRunId()
+  if (!(await ensureFavoritesSessionReady(runId))) return
+  if (!isBootstrapRunActive(runId)) return
   await Promise.allSettled([favStore.fetchFolders(), favStore.fetchTags()])
 }
 
-async function ensureFavoritesSessionReady(): Promise<boolean> {
+async function ensureFavoritesSessionReady(runId = bootstrapRunId): Promise<boolean> {
   const ready = await ensureProtectedPageReady(authStore, 'authenticated')
 
   if (!ready) {
     isProtectedDataReady.value = false
     favStore.$reset()
+    return false
+  }
+
+  if (!isBootstrapRunActive(runId)) {
     return false
   }
 
@@ -364,14 +394,18 @@ async function bootstrapFavoritesPage(reset = true): Promise<boolean> {
   }
 
   bootstrapPromise = (async () => {
+    const runId = nextBootstrapRunId()
     isBootstrapping.value = true
 
-    const ready = await ensureFavoritesSessionReady()
+    const ready = await ensureFavoritesSessionReady(runId)
     if (!ready) {
       return false
     }
 
     await Promise.allSettled([favStore.fetchFolders(), favStore.fetchTags()])
+    if (!isBootstrapRunActive(runId)) {
+      return false
+    }
     return favStore.fetchFavorites(reset)
   })().finally(() => {
     isBootstrapping.value = false
@@ -487,18 +521,25 @@ watch(
   isAuthenticated,
   async (authenticated) => {
     if (!authenticated) {
-      isProtectedDataReady.value = false
-      favStore.$reset()
+      isLogoutInvalidated.value = true
+      invalidateFavoritesBootstrap()
       return
     }
 
+    isLogoutInvalidated.value = false
     await bootstrapFavoritesPage(true)
   },
   { immediate: true }
 )
 
+function handleAuthLogout() {
+  isLogoutInvalidated.value = true
+  invalidateFavoritesBootstrap()
+}
+
 onActivated(() => {
   isPageActive.value = true
+  window.addEventListener('auth:logout', handleAuthLogout)
   if (!isAuthenticated.value || isBootstrapping.value) return
   if (isProtectedDataReady.value && (favorites.value.length > 0 || isLoading.value)) return
   void bootstrapFavoritesPage(favorites.value.length === 0)
@@ -506,6 +547,11 @@ onActivated(() => {
 
 onDeactivated(() => {
   isPageActive.value = false
+  window.removeEventListener('auth:logout', handleAuthLogout)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('auth:logout', handleAuthLogout)
 })
 </script>
 
