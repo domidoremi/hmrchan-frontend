@@ -1130,6 +1130,15 @@
     "followerCount": "フォロワー {count} 人",
     "followingCount": "フォロー中 {count} 人",
     "you": "あなた",
+    "overviewHint": "ここから保存済みコンテンツ、行動履歴、関係ネットワーク、アカウント安全ページへまとめて移動できます。",
+    "viewSection": "開く",
+    "manageSection": "このセクションを確認して管理します。",
+    "groups": {
+      "content": "コンテンツ",
+      "activity": "アクティビティ",
+      "network": "ネットワーク",
+      "account": "アカウントと安全"
+    },
     "notificationsSubtitle": "インタラクション・セキュリティ・システム通知をまとめて確認します。",
     "devicesSubtitle": "ログイン中のデバイスと信頼済みセッションを管理",
     "insights": {

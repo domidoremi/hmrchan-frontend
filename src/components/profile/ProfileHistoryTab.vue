@@ -1,6 +1,6 @@
 <template>
   <div class="history-tab">
-    <ProfileTabHeader :title="$t('profile.tabs.history')" :count="displayTotal">
+    <ProfileTabHeader v-if="showHeader" :title="$t('profile.tabs.history')" :count="displayTotal">
       <template #actions>
         <Button v-if="history.length > 0" variant="ghost" size="sm" @click="clearHistory">
           <Trash2 :size="14" />
@@ -37,41 +37,23 @@
           </div>
 
           <div class="group-grid">
-            <article
+            <ProfilePostPreviewCard
               v-for="(item, idx) in group.items"
               :key="item.id"
               class="history-card glass-surface--elevated"
               :style="{ '--stagger': idx }"
-              role="button"
-              tabindex="0"
-              @click="goToPost(item.post_uuid, item.post.thumbnail_url)"
-              @keydown.enter.prevent="goToPost(item.post_uuid, item.post.thumbnail_url)"
-              @keydown.space.prevent="goToPost(item.post_uuid, item.post.thumbnail_url)"
+              :preview="item.preview"
+              variant="grid"
+              :empty-label="$t('profile.unknownPost')"
+              :empty-hint="$t('profile.noHistory')"
+              @select="goToPreview"
             >
-              <div class="card-thumb">
-                <ThumbnailImage
-                  :src="item.post.thumbnail_url"
-                  :alt="item.post.title"
-                  loading="lazy"
-                  decoding="async"
-                >
-                  <template #fallback>
-                    <div class="thumb-placeholder">
-                      <Clock :size="20" />
-                    </div>
-                  </template>
-                </ThumbnailImage>
+              <template #badge>
                 <span class="card-time">
-                  {{ formatTime(item.viewed_at) }}
+                  {{ formatTime(item.viewedAt) }}
                 </span>
-              </div>
-              <div class="card-info">
-                <h3 class="card-title">{{ item.post.title }}</h3>
-                <p v-if="item.post.author_name" class="card-author">
-                  {{ item.post.author_name }}
-                </p>
-              </div>
-            </article>
+              </template>
+            </ProfilePostPreviewCard>
           </div>
         </section>
       </div>
@@ -101,69 +83,44 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Clock, Trash2 } from '@lucide/vue'
+import { Trash2 } from '@lucide/vue'
 import { useToastStore } from '@/stores'
-import { apiClient, ApiError, historyService, type BrowsingHistoryItem } from '@/api'
+import { apiClient, ApiError, historyService } from '@/api'
 import { normalizeHistorySummaryCounts } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
-import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import ProfileTabHeader from '@/components/profile/ProfileTabHeader.vue'
 import Button from '@/components/ui/Button.vue'
-import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import ProfilePostPreviewCard from '@/components/profile/ProfilePostPreviewCard.vue'
+import {
+  buildHistoryPostPreview,
+  type HistoryPreviewRecord,
+  type PostPreviewModel,
+} from '@/components/profile/postPreview'
 
-interface HistoryItem {
-  id: string | number
-  post_uuid: string
-  post: {
-    uuid: string
-    title: string
-    thumbnail_url?: string | null
-    author_name?: string
+withDefaults(
+  defineProps<{
+    showHeader?: boolean
+  }>(),
+  {
+    showHeader: true,
   }
-  viewed_at: string
-}
+)
 
 interface HistoryGroup {
   label: string
-  items: HistoryItem[]
-}
-
-function transformHistoryItem(
-  item: BrowsingHistoryItem & {
-    content_preview?: {
-      title?: string
-      thumbnail_url?: string | null
-      author_name?: string
-    } | null
-  }
-): HistoryItem {
-  const previewTitle = item.content_preview?.title ?? item.post_title
-  const previewThumb = item.content_preview?.thumbnail_url ?? item.post_thumbnail_url
-  const authorName = item.content_preview?.author_name ?? item.author_name
-  const contentUuid = item.content_uuid ?? item.post_id ?? ''
-  return {
-    id: item.id,
-    post_uuid: contentUuid,
-    post: {
-      uuid: contentUuid,
-      title: previewTitle || t('profile.unknownPost'),
-      thumbnail_url: previewThumb || null,
-      ...(authorName ? { author_name: authorName } : {}),
-    },
-    viewed_at: item.created_at ?? item.viewed_at ?? '',
-  }
+  items: HistoryPreviewRecord[]
 }
 
 const router = useRouter()
 const { t } = useI18n()
 const toastStore = useToastStore()
 
-const history = ref<HistoryItem[]>([])
+const history = ref<HistoryPreviewRecord[]>([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
@@ -184,11 +141,11 @@ const groupedHistory = computed<HistoryGroup[]>(() => {
   const yesterday = new Date(today.getTime() - 86400000)
   const weekAgo = new Date(today.getTime() - 7 * 86400000)
 
-  const groups: Record<string, HistoryItem[]> = {}
+  const groups: Record<string, HistoryPreviewRecord[]> = {}
   const order: string[] = []
 
   for (const item of history.value) {
-    const d = new Date(item.viewed_at)
+    const d = new Date(item.viewedAt)
     let label: string
     if (d >= today) {
       label = t('common.today')
@@ -238,7 +195,9 @@ async function fetchHistory(reset = true): Promise<boolean> {
     )
     if (controller.signal.aborted || requestToken !== historyRequestToken) return false
 
-    const transformedItems = (Array.isArray(res.items) ? res.items : []).map(transformHistoryItem)
+    const transformedItems = (Array.isArray(res.items) ? res.items : []).map((item) =>
+      buildHistoryPostPreview(item, t('profile.unknownPost'))
+    )
     if (reset) {
       history.value = transformedItems
     } else {
@@ -308,16 +267,9 @@ function formatTime(dateStr: string): string {
   return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
-function goToPost(postId: string, thumbnailUrl?: string | null) {
-  cachePostThumbnailPreview(postId, thumbnailUrl)
-  if (thumbnailUrl) {
-    const mediaId = extractMediaIdFromUrl(thumbnailUrl)
-    if (mediaId) {
-      router.push(`/post/${postId}?mediaId=${mediaId}`)
-      return
-    }
-  }
-  router.push(`/post/${postId}`)
+function goToPreview(preview: PostPreviewModel) {
+  cachePostThumbnailPreview(preview.postId, preview.thumbnailUrl)
+  router.push(preview.target)
 }
 
 onMounted(() => {
@@ -424,73 +376,14 @@ onUnmounted(() => {
 
 /* ===== History Card ===== */
 .history-card {
-  cursor: pointer;
-  overflow: hidden;
-  border-radius: var(--profile-section-radius);
-  border: 1px solid var(--profile-surface-border);
-  background: var(--profile-surface-bg-soft);
-  box-shadow: var(--profile-surface-shadow);
   animation: stagger-fade-in var(--duration-slow) var(--ease-out-smooth) forwards;
   animation-delay: calc(var(--stagger) * 50ms);
   opacity: 0;
-  transition:
-    transform var(--duration-fast) var(--ease-out-smooth),
-    box-shadow var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth);
-}
-
-.history-card:hover {
-  transform: var(--lift-sm);
-  box-shadow: var(--profile-surface-shadow-hover);
-  border-color: var(--profile-surface-border-strong);
-}
-
-.history-card:focus-visible {
-  outline: none;
-  transform: var(--lift-sm);
-  box-shadow:
-    var(--glass-shadow-hover),
-    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
-}
-
-/* Thumbnail */
-.card-thumb {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  overflow: hidden;
-  background: var(--profile-muted-bg);
-}
-
-.card-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--duration-slow) var(--ease-smooth);
-}
-
-.history-card:hover .card-thumb img {
-  transform: scale(1.01);
-}
-
-.history-card:focus-visible .card-thumb img {
-  transform: scale(1.01);
-}
-
-.thumb-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  background: var(--profile-muted-bg);
-  color: var(--color-text-tertiary);
 }
 
 .card-time {
-  position: absolute;
-  bottom: var(--spacing-1);
-  right: var(--spacing-1);
+  display: inline-flex;
+  align-items: center;
   padding: 0.0625rem 0.375rem;
   background: rgba(0, 0, 0, 0.6);
   color: var(--color-white);
@@ -499,30 +392,6 @@ onUnmounted(() => {
   border-radius: var(--radius-sm);
   backdrop-filter: blur(0.25rem);
   font-variant-numeric: tabular-nums;
-}
-
-/* Info */
-.card-info {
-  padding: var(--spacing-2);
-}
-
-.card-title {
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.4;
-}
-
-.card-author {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  margin: var(--spacing-1) 0 0;
 }
 
 /* ===== Responsive ===== */

@@ -1057,6 +1057,15 @@
     "followerCount": "{count} 位關注者",
     "followingCount": "已關注 {count} 人",
     "you": "你",
+    "overviewHint": "從這裡統一進入你的內容資產、互動紀錄、關係網路與帳號安全頁面。",
+    "viewSection": "進入頁面",
+    "manageSection": "查看並管理這個分區的內容。",
+    "groups": {
+      "content": "內容資產",
+      "activity": "互動紀錄",
+      "network": "關係網路",
+      "account": "帳戶與安全"
+    },
     "notificationsSubtitle": "集中查看互動、安全與系統通知。",
     "devicesSubtitle": "管理已登入裝置與信任會話。",
     "insights": {

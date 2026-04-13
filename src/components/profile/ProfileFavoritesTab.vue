@@ -1,6 +1,6 @@
 <template>
   <div class="favorites-tab">
-    <ProfileTabHeader :title="$t('profile.tabs.favorites')" :count="total" />
+    <ProfileTabHeader v-if="showHeader" :title="$t('profile.tabs.favorites')" :count="total" />
 
     <StateIndicator
       v-if="error"
@@ -30,53 +30,33 @@
       />
 
       <div v-else class="posts-masonry">
-        <article
-          v-for="fav in visibleFavorites"
-          :key="fav.id"
+        <ProfilePostPreviewCard
+          v-for="{ favorite, preview } in visibleFavoriteCards"
+          :key="favorite.id"
           class="favorite-card glass-surface--base content-auto-lg"
-          role="button"
-          tabindex="0"
-          @click="goToPost(fav.post_id, fav.post?.thumbnail_url)"
-          @keydown.enter.prevent="goToPost(fav.post_id, fav.post?.thumbnail_url)"
-          @keydown.space.prevent="goToPost(fav.post_id, fav.post?.thumbnail_url)"
+          :preview="preview"
+          :sizes="thumbnailSizes"
+          :empty-label="$t('favorites.unknownPost')"
+          :empty-hint="$t('favorites.organizeHint')"
+          @select="goToPreview"
         >
-          <div class="favorite-image">
-            <ThumbnailImage
-              :src="fav.post?.thumbnail_url"
-              :sizes="thumbnailSizes"
-              :alt="fav.post?.title"
-              responsive
-              loading="lazy"
-              decoding="async"
-            >
-              <template #fallback>
-                <div class="image-placeholder">
-                  <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
-                </div>
-              </template>
-            </ThumbnailImage>
-          </div>
-          <div class="favorite-content">
-            <h3 class="favorite-title" :title="fav.post?.title || $t('favorites.unknownPost')">
-              {{ fav.post?.title || $t('favorites.unknownPost') }}
-            </h3>
-            <p v-if="fav.post?.author_name" class="favorite-author">
-              {{ fav.post.author_name }}
-            </p>
+          <template #meta>
             <div class="favorite-meta">
-              <span class="favorite-date">{{ formatDate(fav.created_at) }}</span>
+              <span class="favorite-date">{{ formatDate(favorite.created_at) }}</span>
             </div>
-          </div>
-          <button
-            type="button"
-            class="remove-btn"
-            :title="$t('favorites.remove')"
-            :aria-label="$t('favorites.remove')"
-            @click.stop="removeFavorite(fav.id)"
-          >
-            <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
-          </button>
-        </article>
+          </template>
+          <template #actions>
+            <button
+              type="button"
+              class="remove-btn"
+              :title="$t('favorites.remove')"
+              :aria-label="$t('favorites.remove')"
+              @click.stop="removeFavorite(favorite.id)"
+            >
+              <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
+            </button>
+          </template>
+        </ProfilePostPreviewCard>
       </div>
 
       <LoadMoreSection
@@ -96,10 +76,9 @@
 import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Heart, X } from '@lucide/vue'
+import { X } from '@lucide/vue'
 import { useAuthStore, useToastStore, useFavoritesStore } from '@/stores'
 import { storeToRefs } from 'pinia'
-import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
@@ -111,8 +90,18 @@ import ProfileTabHeader from '@/components/profile/ProfileTabHeader.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
-import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import ProfilePostPreviewCard from '@/components/profile/ProfilePostPreviewCard.vue'
+import { buildFavoritePostPreview, type PostPreviewModel } from '@/components/profile/postPreview'
+
+withDefaults(
+  defineProps<{
+    showHeader?: boolean
+  }>(),
+  {
+    showHeader: true,
+  }
+)
 
 const router = useRouter()
 const { t } = useI18n()
@@ -143,6 +132,12 @@ const {
 })
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
+const visibleFavoriteCards = computed(() =>
+  visibleFavorites.value.map((favorite) => ({
+    favorite,
+    preview: buildFavoritePostPreview(favorite, t('favorites.unknownPost')),
+  }))
+)
 
 const thumbnailSizes =
   '(max-width: 500px) 100vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 25vw'
@@ -198,16 +193,9 @@ async function removeFavorite(favoriteId: string) {
   }
 }
 
-function goToPost(postId: string, thumbnailUrl?: string | null) {
-  cachePostThumbnailPreview(postId, thumbnailUrl)
-  if (thumbnailUrl) {
-    const mediaId = extractMediaIdFromUrl(thumbnailUrl)
-    if (mediaId) {
-      router.push(`/post/${postId}?mediaId=${mediaId}`)
-      return
-    }
-  }
-  router.push(`/post/${postId}`)
+function goToPreview(preview: PostPreviewModel) {
+  cachePostThumbnailPreview(preview.postId, preview.thumbnailUrl)
+  router.push(preview.target)
 }
 
 watch(
@@ -295,116 +283,6 @@ watch(
 }
 
 /* Favorite Card */
-.favorite-card {
-  position: relative;
-  cursor: pointer;
-  overflow: hidden;
-  border-radius: var(--profile-section-radius);
-  border: 1px solid var(--profile-surface-border);
-  background: var(--profile-surface-bg-soft);
-  box-shadow: var(--profile-surface-shadow);
-  transition:
-    transform var(--duration-normal) var(--ease-out-smooth),
-    box-shadow var(--duration-normal) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth);
-}
-
-.favorite-card:hover {
-  transform: var(--lift-md);
-  box-shadow: var(--profile-surface-shadow-hover);
-  border-color: var(--profile-surface-border-strong);
-}
-
-.favorite-card:focus-visible {
-  outline: none;
-  transform: var(--lift-md);
-  box-shadow:
-    var(--glass-shadow-lg),
-    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
-}
-
-.favorite-image {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  overflow: hidden;
-  background: var(--profile-muted-bg);
-}
-
-.favorite-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--duration-slow) var(--ease-smooth);
-}
-
-.favorite-card:hover .favorite-image img {
-  transform: scale(1.01);
-}
-
-.favorite-card:focus-visible .favorite-image img {
-  transform: scale(1.01);
-}
-
-.image-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: var(--color-text-tertiary);
-}
-
-/* Hover Overlay */
-.favorite-content {
-  position: absolute;
-  inset: auto 0 0;
-  padding: clamp(0.5rem, 1.5vw, 0.75rem);
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.7) 0%,
-    rgba(0, 0, 0, 0.3) 60%,
-    transparent 100%
-  );
-  color: var(--color-white);
-  opacity: 0;
-  transform: translateY(0.5rem);
-  transition:
-    opacity var(--duration-normal) var(--ease-smooth),
-    transform var(--duration-normal) var(--ease-out-smooth);
-}
-
-.favorite-card:hover .favorite-content {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.favorite-card:focus-visible .favorite-content {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.favorite-title {
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  margin: 0 0 0.125rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.35;
-  color: var(--color-white);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.favorite-author {
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0;
-}
-
 .favorite-meta {
   display: flex;
   gap: var(--spacing-2);
@@ -453,29 +331,6 @@ watch(
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .favorite-content {
-    opacity: 1;
-    transform: none;
-    position: relative;
-    background: none;
-    color: var(--color-text-primary);
-    padding: var(--spacing-2);
-  }
-
-  .favorite-title {
-    font-size: var(--text-xs);
-    color: var(--color-text-primary);
-    text-shadow: none;
-  }
-
-  .favorite-author {
-    color: var(--color-text-secondary);
-  }
-
-  .favorite-meta {
-    color: var(--color-text-tertiary);
-  }
-
   .remove-btn {
     opacity: 1;
     width: 1.5rem;

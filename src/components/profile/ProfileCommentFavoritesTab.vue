@@ -1,6 +1,10 @@
 <template>
   <div class="comment-favorites-tab">
-    <ProfileTabHeader :title="$t('profile.tabs.commentFavorites')" :count="displayTotal" />
+    <ProfileTabHeader
+      v-if="showHeader"
+      :title="$t('profile.tabs.commentFavorites')"
+      :count="displayTotal"
+    />
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchFavorites" />
 
@@ -116,6 +120,15 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 
 const ConfirmDialog = defineAsyncComponent(() => import('@/components/ui/ConfirmDialog.vue'))
+
+withDefaults(
+  defineProps<{
+    showHeader?: boolean
+  }>(),
+  {
+    showHeader: true,
+  }
+)
 
 const router = useRouter()
 const { t } = useI18n()

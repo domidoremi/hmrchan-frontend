@@ -1,6 +1,6 @@
 <template>
   <div class="security-tab">
-    <div class="tab-header">
+    <div v-if="showHeader" class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.security') }}</h2>
       <span v-if="summary" class="item-count profile-item-count">{{
         summary.security_events
@@ -119,6 +119,15 @@ import { ApiError, auditService, type AuditActivityItem, type SecuritySummary } 
 import { formatRelativeTime } from '@/utils/date'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+
+withDefaults(
+  defineProps<{
+    showHeader?: boolean
+  }>(),
+  {
+    showHeader: true,
+  }
+)
 
 const { t } = useI18n()
 

@@ -1,7 +1,7 @@
 <template>
   <div
     class="toast-viewport"
-    :class="`toast-viewport--${position}`"
+    :class="`toast-viewport--${normalizedPosition}`"
     :data-preset="settings.appearancePreset"
     :data-color-mode="resolvedTheme"
     :data-motion="motionMode"
@@ -76,7 +76,7 @@ interface Props {
     | 'bottom-center'
 }
 
-const { position = 'top-right' } = defineProps<Props>()
+const { position = 'bottom-center' } = defineProps<Props>()
 
 const toastStore = useToastStore()
 const themeStore = useThemeStore()
@@ -89,6 +89,10 @@ const { removeToast } = toastStore
 
 const pausedIds = ref(new Set<string>())
 const visibleToasts = computed(() => toasts.value.slice(0, 5))
+const normalizedPosition = computed<'bottom-center'>(() => {
+  if (!position) return 'bottom-center'
+  return 'bottom-center'
+})
 
 function getIcon(type: Toast['type']) {
   if (type === 'success') return CheckCircle2
@@ -125,45 +129,21 @@ function handleAction(toast: Toast) {
   position: fixed;
   z-index: var(--z-toast);
   pointer-events: none;
-  padding: var(--spacing-4);
-}
-
-.toast-viewport--top-right {
-  inset-block-start: 0;
-  inset-inline-end: 0;
-}
-
-.toast-viewport--top-left {
-  inset-block-start: 0;
-  inset-inline-start: 0;
-}
-
-.toast-viewport--bottom-right {
-  inset-block-end: 0;
-  inset-inline-end: 0;
-}
-
-.toast-viewport--bottom-left {
-  inset-block-end: 0;
-  inset-inline-start: 0;
-}
-
-.toast-viewport--top-center {
-  inset-block-start: 0;
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
+  inset-inline: 0;
+  display: flex;
+  justify-content: center;
+  padding-inline: var(--spacing-4);
+  padding-block-end: calc(env(safe-area-inset-bottom, 0rem) + var(--spacing-4));
 }
 
 .toast-viewport--bottom-center {
   inset-block-end: 0;
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
 }
 
 .toast-stack {
   display: grid;
-  gap: 0.75rem;
-  width: min(22rem, calc(100vw - 2rem));
+  gap: 0.875rem;
+  inline-size: min(26rem, calc(100vw - 1.5rem));
 }
 
 .toast-card {
@@ -171,15 +151,19 @@ function handleAction(toast: Toast) {
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0.75rem;
+  align-items: flex-start;
+  gap: 0.875rem;
   overflow: hidden;
-  padding-block: 0.85rem;
-  padding-inline: 0.95rem;
-  border: var(--surface-border-token);
-  border-radius: var(--ui-compat-panel-radius, var(--component-panel-radius));
-  background: var(--ui-compat-surface-elevated);
-  box-shadow: var(--ui-compat-shadow);
+  padding-block: 0.9375rem;
+  padding-inline: 1rem;
+  border: 1px solid color-mix(in srgb, var(--ui-compat-border) 72%, transparent);
+  border-radius: clamp(1rem, 2vw, 1.25rem);
+  background: color-mix(in srgb, var(--ui-compat-surface-elevated) 88%, transparent);
+  box-shadow:
+    0 1rem 2.5rem rgba(15, 23, 42, 0.16),
+    0 0.25rem 1rem rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(1rem) saturate(1.08);
+  -webkit-backdrop-filter: blur(1rem) saturate(1.08);
   pointer-events: auto;
 }
 
@@ -201,26 +185,34 @@ function handleAction(toast: Toast) {
 
 .toast-card__accent {
   position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  inline-size: 0.18rem;
-  block-size: 100%;
-  background: var(--toast-accent);
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
+  border-radius: 999rem;
+  background: color-mix(in srgb, var(--toast-accent) 86%, white 14%);
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--toast-accent) 12%, transparent);
 }
 
 .toast-card__icon {
   display: grid;
   place-items: center;
-  inline-size: 2rem;
-  block-size: 2rem;
-  border-radius: var(--ui-compat-control-radius, var(--component-control-radius));
-  color: var(--toast-accent);
-  background: color-mix(in srgb, var(--toast-accent) 12%, transparent);
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  margin-block-start: 0.125rem;
+  border-radius: 0.9rem;
+  color: color-mix(in srgb, var(--toast-accent) 82%, var(--color-text-primary) 18%);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--toast-accent) 16%, transparent),
+    color-mix(in srgb, var(--toast-accent) 9%, white 8%)
+  );
+  border: 1px solid color-mix(in srgb, var(--toast-accent) 16%, transparent);
 }
 
 .toast-card__body {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.35rem;
   min-inline-size: 0;
 }
 
@@ -231,30 +223,36 @@ function handleAction(toast: Toast) {
 }
 
 .toast-card__title {
-  font-size: var(--text-sm);
+  font-size: 0.9375rem;
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
+  line-height: 1.35;
 }
 
 .toast-card__message {
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--color-text-secondary);
 }
 
 .toast-card__action,
 .toast-card__close {
-  align-self: start;
   color: var(--color-text-tertiary);
   transition:
     color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .toast-card__action {
-  margin-block-start: 0.15rem;
+  margin-block-start: 0.1rem;
   justify-self: start;
-  font-size: var(--text-xs);
+  padding: 0.375rem 0.625rem;
+  border-radius: 999rem;
+  border: 1px solid color-mix(in srgb, var(--toast-accent) 18%, transparent);
+  background: color-mix(in srgb, var(--toast-accent) 8%, transparent);
+  font-size: 0.75rem;
   font-weight: var(--font-medium);
   color: var(--toast-accent);
 }
@@ -262,24 +260,39 @@ function handleAction(toast: Toast) {
 .toast-card__close {
   display: grid;
   place-items: center;
-  inline-size: calc(var(--component-control-min-block-size) - 0.75rem);
-  block-size: calc(var(--component-control-min-block-size) - 0.75rem);
-  border-radius: var(--ui-compat-control-radius, var(--component-control-radius));
+  align-self: start;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border: 1px solid transparent;
+  border-radius: 999rem;
 }
 
 .toast-card__close:hover,
-.toast-card__action:hover {
+.toast-card__close:focus-visible {
   color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive) 82%, transparent);
+  border-color: color-mix(in srgb, var(--ui-compat-border) 80%, transparent);
+  transform: translateY(-0.0625rem);
+}
+
+.toast-card__action:hover,
+.toast-card__action:focus-visible {
+  color: color-mix(in srgb, var(--toast-accent) 82%, var(--color-text-primary) 18%);
+  background: color-mix(in srgb, var(--toast-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--toast-accent) 28%, transparent);
 }
 
 .toast-card__progress {
   position: absolute;
   inset-block-end: 0;
-  inset-inline-start: 0;
+  inset-inline: 0;
   block-size: 0.125rem;
-  inline-size: 100%;
   transform-origin: left center;
-  background: color-mix(in srgb, var(--toast-accent) 36%, transparent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--toast-accent) 55%, transparent),
+    color-mix(in srgb, var(--toast-accent) 18%, transparent)
+  );
   animation: toast-progress linear forwards;
 }
 
@@ -298,7 +311,7 @@ function handleAction(toast: Toast) {
 .toast-slide-enter-from,
 .toast-slide-leave-to {
   opacity: 0;
-  transform: translateY(-0.5rem);
+  transform: translateY(0.875rem) scale(0.985);
 }
 
 @keyframes toast-progress {
@@ -313,12 +326,23 @@ function handleAction(toast: Toast) {
 
 @media (max-width: 40rem) {
   .toast-viewport {
-    inset-inline: 0;
     padding-inline: 0.75rem;
+    padding-block-end: calc(env(safe-area-inset-bottom, 0rem) + 0.75rem);
   }
 
   .toast-stack {
     width: min(100%, 100vw - 1.5rem);
+  }
+
+  .toast-card {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    padding-inline: 0.875rem;
+  }
+
+  .toast-card__icon {
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
   }
 }
 </style>
