@@ -7,6 +7,7 @@
  */
 
 import { ref, shallowRef } from 'vue'
+import { ApiError } from '@/api/client'
 import { postCache } from '@/utils/cache'
 
 interface UseCachedPostsOptions {
@@ -16,6 +17,8 @@ interface UseCachedPostsOptions {
   onStale?: () => void
   /** 数据更新后的回调 */
   onUpdate?: () => void
+  /** 是否允许网络错误时回退到陈旧缓存 */
+  shouldUseStaleOnError?: (error: unknown) => boolean
 }
 
 interface FetchState {
@@ -68,7 +71,7 @@ async function loadWithCache<T, P>(
   options: UseCachedPostsOptions,
   requestConfig?: CachedLoadConfig
 ): Promise<LoadResult<T>> {
-  const { revalidate = true, onStale, onUpdate } = options
+  const { revalidate = true, onStale, onUpdate, shouldUseStaleOnError } = options
 
   state.value.error = null
 
@@ -123,7 +126,8 @@ async function loadWithCache<T, P>(
     }
   } catch (err) {
     // 如果有缓存，网络失败不算错误（降级策略）
-    if (cached) {
+    const canUseStaleCache = shouldUseStaleOnError ? shouldUseStaleOnError(err) : true
+    if (cached && canUseStaleCache) {
       state.value.source = 'cache'
       state.value.error = null
       onStale?.()
@@ -252,4 +256,8 @@ export function useCachedPost<T>(
     load,
     invalidate,
   }
+}
+
+export function shouldUseStalePostDetailOnError(error: unknown): boolean {
+  return !(error instanceof ApiError && error.status === 404)
 }

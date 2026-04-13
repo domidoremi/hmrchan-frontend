@@ -363,7 +363,7 @@ import {
   getMediaThumbnailSrcset,
   getMediaThumbnailUrl,
 } from '@/utils/mediaOptimizer'
-import { useCachedPost } from '@/composables/useCachedPosts'
+import { shouldUseStalePostDetailOnError, useCachedPost } from '@/composables/useCachedPosts'
 import { trackPostView } from '@/composables/useViewTracking'
 import { postCache } from '@/utils/cache'
 import {
@@ -446,6 +446,7 @@ const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailRespo
         syncPostMeta(cachedPost.value)
       }
     },
+    shouldUseStaleOnError: shouldUseStalePostDetailOnError,
   }
 )
 
@@ -982,6 +983,12 @@ function cancelPostDetailIdleWork() {
   cancelIdlePostViewTracking = null
 }
 
+function buildNotFoundRouteParams(currentPostId: string) {
+  return {
+    pathMatch: ['post', currentPostId],
+  }
+}
+
 function schedulePostViewTracking(currentPostId: string, requestToken: number) {
   if (typeof window === 'undefined') return
   cancelIdlePostViewTracking?.()
@@ -1072,6 +1079,19 @@ async function fetchPost(signal?: AbortSignal) {
       }
     }
     if (err instanceof ApiError) {
+      if (err.status === 404) {
+        post.value = null
+        error.value = null
+        detailFetched.value = false
+        dataSource.value = 'live'
+        await router.replace({
+          name: 'not-found',
+          params: buildNotFoundRouteParams(currentPostId),
+          query: route.query,
+          hash: route.hash,
+        })
+        return
+      }
       error.value = err.message
     } else {
       error.value = t('common.error')
