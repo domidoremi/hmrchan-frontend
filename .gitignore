@@ -38,8 +38,11 @@ bun-debug.log*
 # =====================
 # Editor & IDE
 # =====================
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
+.history/
 *.suo
 *.ntvs*
 *.njsproj
@@ -113,7 +116,7 @@ lighthouse-reports/
 .tmp-lighthouse-prod/
 .tmp-lighthouse-*.json
 .lighthouse-a11y
-%SystemDrive%/
+/%SystemDrive%/
 
 # =====================
 # Package Managers
@@ -138,6 +141,11 @@ pnpm-lock.yaml
 .tmp-codex/
 tmp/
 output/
+
+# =====================
+# Local toolchain overrides
+# =====================
+.mise.local.toml
 
 # =====================
 # AI Agent Tools
