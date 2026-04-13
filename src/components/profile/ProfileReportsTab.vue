@@ -1,6 +1,6 @@
 <template>
   <div class="reports-tab">
-    <div class="tab-header">
+    <div v-if="showHeader" class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.reports') }}</h2>
       <span v-if="displayTotal" class="item-count profile-item-count">{{ displayTotal }}</span>
     </div>
@@ -84,6 +84,15 @@ import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+
+withDefaults(
+  defineProps<{
+    showHeader?: boolean
+  }>(),
+  {
+    showHeader: true,
+  }
+)
 import Skeleton from '@/components/ui/Skeleton.vue'
 
 const { t, te } = useI18n()

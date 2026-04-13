@@ -3,42 +3,40 @@
     class="discussion-comment-section surface-paper-sketch analog-dot-grid"
     :class="{ 'comment-section--guest': !isAuthenticated }"
   >
-    <header class="comment-header">
-      <div class="header-left">
-        <h3 class="comment-title">
-          <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="md" />
-          {{ $t('comment.title') }}
-          <span v-if="commentsCount > 0" class="comment-count">{{ commentsCount }}</span>
-        </h3>
-      </div>
-
-      <div class="comment-controls" v-if="comments.length > 0">
-        <div class="control-item">
-          <span class="control-label">{{ $t('comment.filterLabel') }}</span>
-          <Select v-model="currentFilter" size="sm">
-            <option value="all">{{ $t('comment.filter.all') }}</option>
-            <option value="author">{{ $t('comment.filter.author') }}</option>
-            <option value="admin">{{ $t('comment.filter.admin') }}</option>
-          </Select>
+    <CommentThreadHeader
+      :title="$t('comment.title')"
+      :count="commentsCount"
+      :subtitle="$t('comment.beFirst')"
+    >
+      <template #actions>
+        <div class="comment-controls" v-if="comments.length > 0">
+          <div class="control-item">
+            <span class="control-label">{{ $t('comment.filterLabel') }}</span>
+            <Select v-model="currentFilter" size="sm">
+              <option value="all">{{ $t('comment.filter.all') }}</option>
+              <option value="author">{{ $t('comment.filter.author') }}</option>
+              <option value="admin">{{ $t('comment.filter.admin') }}</option>
+            </Select>
+          </div>
+          <div class="control-item">
+            <span class="control-label">{{ $t('comment.sortLabel') }}</span>
+            <Select v-model="currentSort" size="sm">
+              <option value="newest">{{ $t('comment.sort.newest') }}</option>
+              <option value="popular">{{ $t('comment.sort.popular') }}</option>
+              <option value="oldest">{{ $t('comment.sort.oldest') }}</option>
+            </Select>
+          </div>
+          <div class="control-item">
+            <span class="control-label">{{ $t('comment.preloadLabel') }}</span>
+            <Select v-model="preloadReplies" size="sm">
+              <option value="0">{{ $t('comment.preloadOff') }}</option>
+              <option value="2">{{ $t('comment.preloadFew') }}</option>
+              <option value="5">{{ $t('comment.preloadMore') }}</option>
+            </Select>
+          </div>
         </div>
-        <div class="control-item">
-          <span class="control-label">{{ $t('comment.sortLabel') }}</span>
-          <Select v-model="currentSort" size="sm">
-            <option value="newest">{{ $t('comment.sort.newest') }}</option>
-            <option value="popular">{{ $t('comment.sort.popular') }}</option>
-            <option value="oldest">{{ $t('comment.sort.oldest') }}</option>
-          </Select>
-        </div>
-        <div class="control-item">
-          <span class="control-label">{{ $t('comment.preloadLabel') }}</span>
-          <Select v-model="preloadReplies" size="sm">
-            <option value="0">{{ $t('comment.preloadOff') }}</option>
-            <option value="2">{{ $t('comment.preloadFew') }}</option>
-            <option value="5">{{ $t('comment.preloadMore') }}</option>
-          </Select>
-        </div>
-      </div>
-    </header>
+      </template>
+    </CommentThreadHeader>
 
     <DiscussionCommentForm :discussion-id="discussionId" @submitted="handleCommentAdded" />
 
@@ -95,6 +93,7 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Select from '@/components/ui/Select.vue'
+import CommentThreadHeader from '@/components/comment/shared/CommentThreadHeader.vue'
 
 interface Props {
   discussionId: string
@@ -429,46 +428,16 @@ onUnmounted(() => {
 .discussion-comment-section {
   display: grid;
   gap: var(--spacing-5);
-  padding: var(--spacing-5);
+  padding: clamp(1rem, 2.5vw, 1.35rem);
   min-height: 12.5rem;
+  border-radius: clamp(1.1rem, 2vw, 1.35rem);
+  border: 1px solid color-mix(in srgb, var(--ui-compat-border) 80%, transparent);
+  background: color-mix(in srgb, var(--ui-compat-surface-elevated) 96%, transparent);
+  box-shadow: 0 1rem 2.75rem rgba(15, 23, 42, 0.06);
 }
 
 .comment-section--guest {
   background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.3));
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--spacing-4);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-}
-
-.comment-title {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-}
-
-.comment-count {
-  padding: var(--spacing-0) var(--spacing-2);
-  background: color-mix(in srgb, var(--surface-paper-bg) 74%, rgba(255, 255, 255, 0.45));
-  color: var(--surface-paper-ink);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-}
-
-[data-color-mode='dark'] .comment-count {
-  background: rgba(var(--color-primary-rgb), 0.2);
 }
 
 .comment-controls {
@@ -567,9 +536,8 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .comment-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .comment-controls {
+    width: 100%;
   }
 }
 </style>

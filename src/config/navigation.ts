@@ -59,7 +59,7 @@ export const navigationItems: NavigationItem[] = [
     prefetchFn: 'prefetchExplorePage',
   },
   {
-    path: '/favorites',
+    path: '/profile/favorites',
     i18nKey: 'nav.favorites',
     icon: Heart,
     requiresAuth: true,

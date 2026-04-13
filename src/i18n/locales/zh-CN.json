@@ -1130,6 +1130,15 @@
     "followerCount": "{count} 位关注者",
     "followingCount": "已关注 {count} 人",
     "you": "你",
+    "overviewHint": "从这里统一进入你的内容资产、互动记录、关系网络与账号安全页面。",
+    "viewSection": "进入页面",
+    "manageSection": "查看与管理该分区内容。",
+    "groups": {
+      "content": "内容资产",
+      "activity": "互动记录",
+      "network": "关系网络",
+      "account": "账户与安全"
+    },
     "notificationsSubtitle": "统一查看互动、安全与系统通知。",
     "devicesSubtitle": "管理已登录设备与信任会话。",
     "insights": {

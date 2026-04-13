@@ -143,13 +143,17 @@ let mobileDockResizeObserver: ResizeObserver | null = null
 
 const desktopPrimaryNavItems = computed(() =>
   desktopNavItems.value.filter((item) =>
-    ['/', '/explore', '/favorites', '/authors', '/community', '/schedule'].includes(item.path)
+    ['/', '/explore', '/profile/favorites', '/authors', '/community', '/schedule'].includes(
+      item.path
+    )
   )
 )
 
 const mobilePrimaryNavItems = computed(() =>
   mobileNavItems.value.filter((item) =>
-    ['/', '/explore', '/favorites', '/authors', '/community', '/schedule'].includes(item.path)
+    ['/', '/explore', '/profile/favorites', '/authors', '/community', '/schedule'].includes(
+      item.path
+    )
   )
 )
 
@@ -187,9 +191,9 @@ function prefetchRoute(path: string) {
         prefetchExploreData()
       })
       return
-    case '/favorites':
+    case '/profile/favorites':
       runOncePrefetch(path, () => {
-        import('@/views/FavoritesPage.vue').catch(() => {})
+        import('@/views/profile/ProfileSectionPage.vue').catch(() => {})
       })
       return
     case '/authors':
