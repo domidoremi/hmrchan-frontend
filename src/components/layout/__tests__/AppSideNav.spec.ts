@@ -66,7 +66,7 @@ async function createWrapper(initialPath = '/explore') {
     routes: [
       { path: '/', component: { template: '<div>home</div>' } },
       { path: '/explore', component: { template: '<div>explore</div>' } },
-      { path: '/favorites', component: { template: '<div>favorites</div>' } },
+      { path: '/profile/favorites', component: { template: '<div>favorites</div>' } },
       { path: '/authors', component: { template: '<div>authors</div>' } },
       { path: '/community', component: { template: '<div>community</div>' } },
       { path: '/schedule', component: { template: '<div>schedule</div>' } },
@@ -159,7 +159,7 @@ describe('AppSideNav', () => {
     authStoreState.user = { username: 'momo' }
     authStoreState.isAuthenticated = true
 
-    const wrapper = await createWrapper('/favorites')
+    const wrapper = await createWrapper('/profile/favorites')
     const primaryLinks = wrapper.findAll('.app-side-nav__section--primary .app-side-nav__link')
     const titles = primaryLinks.map((link) => link.attributes('title'))
 
