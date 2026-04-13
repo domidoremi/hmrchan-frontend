@@ -37,13 +37,34 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      status: ${{ steps.dep_review_outcome.outputs.status }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
 
       - name: Dependency review
+        id: dep_review
+        continue-on-error: true
         uses: actions/dependency-review-action@v4.9.0
+
+      - name: Normalize dependency review result
+        id: dep_review_outcome
+        if: always()
+        run: |
+          if [ "${{ steps.dep_review.outcome }}" = "success" ]; then
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.dep_review.outcome }}" = "failure" ]; then
+            echo "status=unsupported" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Dependency review"
+              echo
+              echo "Dependency review is not enforced for this repository because GitHub dependency review is unsupported without dependency graph and GitHub Advanced Security."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "status=${{ steps.dep_review.outcome }}" >> "$GITHUB_OUTPUT"
+          fi
 
   quality:
     runs-on: ubuntu-latest
@@ -165,7 +186,7 @@ jobs:
         shell: bash
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          DEP_REVIEW_RESULT: ${{ needs.dependency_review.result }}
+          DEP_REVIEW_RESULT: ${{ needs.dependency_review.outputs.status || needs.dependency_review.result }}
           QUALITY_RESULT: ${{ needs.quality.result }}
           COVERAGE_EXIT: ${{ needs.coverage.outputs.exit_code }}
           E2E_EXIT: ${{ needs.e2e_smoke.outputs.exit_code }}

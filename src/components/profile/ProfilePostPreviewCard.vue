@@ -11,6 +11,7 @@
     <div class="post-preview-card__media">
       <ThumbnailImage
         v-if="hasThumbnail"
+        class="post-preview-card__thumbnail"
         :src="preview.thumbnailUrl"
         :alt="preview.title"
         :sizes="sizes"
@@ -111,15 +112,15 @@ const hasThumbnail = computed(() => Boolean(props.preview.thumbnailUrl))
   background: var(--profile-muted-bg);
 }
 
-.post-preview-card__media :deep(img) {
+.post-preview-card__thumbnail {
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
   transition: transform var(--duration-slow) var(--ease-smooth);
 }
 
-.post-preview-card:hover .post-preview-card__media :deep(img),
-.post-preview-card:focus-visible .post-preview-card__media :deep(img) {
+.post-preview-card:hover .post-preview-card__thumbnail,
+.post-preview-card:focus-visible .post-preview-card__thumbnail {
   transform: scale(1.02);
 }
 
