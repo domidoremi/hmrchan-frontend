@@ -1,172 +1,173 @@
 <template>
-  <CommentItemShell
-    :id="`comment-${comment.id}`"
-    class="comment-card"
-    :author="getUserDisplayName(comment.user)"
-    :time="formatTime(comment.created_at)"
-    :avatar-src="avatarUrl"
-    :avatar-alt="getUserDisplayName(comment.user)"
-    :avatar-fallback="avatarFallbackLabel"
-    :is-reply="isReply"
-  >
-    <template #badges>
-      <Badge v-if="comment.is_thread_owner" variant="success" size="sm">
-        {{ t('comment.threadOwner') }}
-      </Badge>
-      <Badge
-        v-if="userLevelBadge"
-        :variant="comment.user.level === 'admin' ? 'destructive' : 'secondary'"
-        size="sm"
-      >
-        {{ userLevelBadge }}
-      </Badge>
-    </template>
-
-    <template #menu>
-      <div
-        v-if="showActions"
-        v-click-outside="showMenu ? closeMenu : undefined"
-        class="comment-menu"
-      >
-        <button
-          type="button"
-          class="menu-btn"
-          @click.stop="toggleMenu"
-          :aria-label="t('common.more')"
-        >
-          <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
-        </button>
-        <Transition name="dropdown">
-          <div v-if="showMenu" class="menu-dropdown surface-paper-sketch" @click.stop>
-            <button type="button" class="menu-item" @click="handleFavorite">
-              <AnimatedIcon
-                name="explore"
-                :fallback-icon="Bookmark"
-                size="sm"
-                :active="comment.is_favorited"
-              />
-              <span>{{ comment.is_favorited ? t('post.unfavorite') : t('post.favorite') }}</span>
-            </button>
-            <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
-              <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
-              <span>{{ t('common.delete') }}</span>
-            </button>
-            <button type="button" class="menu-item" @click="handleShare">
-              <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
-              <span>{{ t('comment.share') }}</span>
-            </button>
-            <button type="button" class="menu-item" @click="openReportDialog">
-              <AnimatedIcon name="sparkle" :fallback-icon="Flag" size="sm" />
-              <span>{{ t('comment.report') }}</span>
-            </button>
-          </div>
-        </Transition>
-      </div>
-    </template>
-
-    <div class="comment-content">
-      <div v-if="comment.replied_to_user" class="reply-indicator">
-        <span class="reply-icon">↩</span>
-        <span class="reply-label">{{ t('comment.replyingTo') }}</span>
-        <span class="reply-to-user">{{ getUserDisplayName(comment.replied_to_user) }}</span>
-      </div>
-      <p class="comment-copy">{{ comment.content }}</p>
-      <div v-if="commentImages.length > 0" class="comment-gallery">
-        <a
-          v-for="image in commentImages"
-          :key="image.id"
-          class="comment-gallery__item"
-          :href="image.url"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img
-            :src="image.thumbnail_url || image.url"
-            :alt="image.filename || comment.content"
-            class="comment-gallery__image"
-            loading="lazy"
-            decoding="async"
-          />
-        </a>
-      </div>
-    </div>
-
-    <template v-if="showActions" #actions>
-      <button
-        type="button"
-        class="action-btn"
-        :class="{ active: comment.is_liked }"
-        :aria-label="comment.is_liked ? t('profile.unlike') : t('post.likes')"
-        :aria-pressed="comment.is_liked"
-        :disabled="!isAuthenticated"
-        @click="handleLike"
-      >
-        <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" :active="comment.is_liked" />
-        <span>{{ t('post.likes') }}</span>
-        <span v-if="likeCount > 0" class="action-count">{{ likeCount }}</span>
-      </button>
-
-      <button
-        type="button"
-        class="action-btn"
-        :disabled="!isAuthenticated || !canReply"
-        @click="handleReply"
-      >
-        <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
-        <span>{{ t('comment.reply') }}</span>
-      </button>
-    </template>
-
-    <template #reply>
-      <Transition name="slide-down">
-        <div v-if="showReplyForm" class="reply-form-wrapper">
-          <CommentForm
-            ref="replyFormRef"
-            :post-id="postId"
-            :reply-to="depth === 0 ? String(comment.id) : String(rootId || comment.id)"
-            :reply-to-username="comment.user.username"
-            @cancel="showReplyForm = false"
-            @submitted="handleReplySubmitted"
-          />
-        </div>
-      </Transition>
-    </template>
-
-    <template
-      v-if="
-        canShowNestedReplies && (replyCount > 0 || (comment.replies && comment.replies.length > 0))
-      "
-      #replies
+  <div :id="`comment-${comment.id}`" class="comment-card">
+    <CommentItemShell
+      class="comment-card__shell"
+      :author="getUserDisplayName(comment.user)"
+      :time="formatTime(comment.created_at)"
+      :avatar-src="avatarUrl"
+      :avatar-alt="getUserDisplayName(comment.user)"
+      :avatar-fallback="avatarFallbackLabel"
+      :is-reply="isReply"
     >
-      <div class="replies-section">
-        <button
-          v-if="!showReplies"
-          type="button"
-          class="show-replies-btn"
-          :disabled="isLoadingReplies"
-          @click="handleShowReplies"
+      <template #badges>
+        <Badge v-if="comment.is_thread_owner" variant="success" size="sm">
+          {{ t('comment.threadOwner') }}
+        </Badge>
+        <Badge
+          v-if="userLevelBadge"
+          :variant="comment.user.level === 'admin' ? 'destructive' : 'secondary'"
+          size="sm"
         >
-          <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
-          <span v-if="isLoadingReplies">{{ t('common.loading') }}</span>
-          <span v-else>{{ t('comment.showReplies', { count: actualRepliesCount }) }}</span>
+          {{ userLevelBadge }}
+        </Badge>
+      </template>
+
+      <template #menu>
+        <div
+          v-if="showActions"
+          v-click-outside="showMenu ? closeMenu : undefined"
+          class="comment-menu"
+        >
+          <button
+            type="button"
+            class="menu-btn"
+            @click.stop="toggleMenu"
+            :aria-label="t('common.more')"
+          >
+            <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
+          </button>
+          <Transition name="dropdown">
+            <div v-if="showMenu" class="menu-dropdown surface-paper-sketch" @click.stop>
+              <button type="button" class="menu-item" @click="handleFavorite">
+                <AnimatedIcon
+                  name="explore"
+                  :fallback-icon="Bookmark"
+                  size="sm"
+                  :active="comment.is_favorited"
+                />
+                <span>{{ comment.is_favorited ? t('post.unfavorite') : t('post.favorite') }}</span>
+              </button>
+              <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
+                <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
+                <span>{{ t('common.delete') }}</span>
+              </button>
+              <button type="button" class="menu-item" @click="handleShare">
+                <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
+                <span>{{ t('comment.share') }}</span>
+              </button>
+              <button type="button" class="menu-item" @click="openReportDialog">
+                <AnimatedIcon name="sparkle" :fallback-icon="Flag" size="sm" />
+                <span>{{ t('comment.report') }}</span>
+              </button>
+            </div>
+          </Transition>
+        </div>
+      </template>
+
+      <div class="comment-content">
+        <div v-if="comment.replied_to_user" class="reply-indicator">
+          <span class="reply-icon">↩</span>
+          <span class="reply-label">{{ t('comment.replyingTo') }}</span>
+          <span class="reply-to-user">{{ getUserDisplayName(comment.replied_to_user) }}</span>
+        </div>
+        <p class="comment-copy">{{ comment.content }}</p>
+        <div v-if="commentImages.length > 0" class="comment-gallery">
+          <a
+            v-for="image in commentImages"
+            :key="image.id"
+            class="comment-gallery__item"
+            :href="image.url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              :src="image.thumbnail_url || image.url"
+              :alt="image.filename || comment.content"
+              class="comment-gallery__image"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+        </div>
+      </div>
+
+      <template v-if="showActions" #actions>
+        <button
+          type="button"
+          class="action-btn"
+          :class="{ active: comment.is_liked }"
+          :aria-label="comment.is_liked ? t('profile.unlike') : t('post.likes')"
+          :aria-pressed="comment.is_liked"
+          :disabled="!isAuthenticated"
+          @click="handleLike"
+        >
+          <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" :active="comment.is_liked" />
+          <span>{{ t('post.likes') }}</span>
+          <span v-if="likeCount > 0" class="action-count">{{ likeCount }}</span>
         </button>
 
+        <button
+          type="button"
+          class="action-btn"
+          :disabled="!isAuthenticated || !canReply"
+          @click="handleReply"
+        >
+          <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
+          <span>{{ t('comment.reply') }}</span>
+        </button>
+      </template>
+
+      <template #reply>
         <Transition name="slide-down">
-          <div v-if="showReplies" class="replies-list">
-            <CommentCard
-              v-for="reply in comment.replies"
-              :key="reply.id"
-              v-memo="getReplyMemo(reply)"
-              :comment="reply"
+          <div v-if="showReplyForm" class="reply-form-wrapper">
+            <CommentForm
+              ref="replyFormRef"
               :post-id="postId"
-              :is-reply="true"
-              :depth="currentDepth + 1"
-              :root-id="depth === 0 ? String(comment.id) : rootId || ''"
+              :reply-to="depth === 0 ? String(comment.id) : String(rootId || comment.id)"
+              :reply-to-username="comment.user.username"
+              @cancel="showReplyForm = false"
+              @submitted="handleReplySubmitted"
             />
           </div>
         </Transition>
-      </div>
-    </template>
+      </template>
+
+      <template
+        v-if="
+          canShowNestedReplies &&
+          (replyCount > 0 || (comment.replies && comment.replies.length > 0))
+        "
+        #replies
+      >
+        <div class="replies-section">
+          <button
+            v-if="!showReplies"
+            type="button"
+            class="show-replies-btn"
+            :disabled="isLoadingReplies"
+            @click="handleShowReplies"
+          >
+            <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
+            <span v-if="isLoadingReplies">{{ t('common.loading') }}</span>
+            <span v-else>{{ t('comment.showReplies', { count: actualRepliesCount }) }}</span>
+          </button>
+
+          <Transition name="slide-down">
+            <div v-if="showReplies" class="replies-list">
+              <CommentCard
+                v-for="reply in comment.replies"
+                :key="reply.id"
+                :comment="reply"
+                :post-id="postId"
+                :is-reply="true"
+                :depth="currentDepth + 1"
+                :root-id="depth === 0 ? String(comment.id) : rootId || ''"
+              />
+            </div>
+          </Transition>
+        </div>
+      </template>
+    </CommentItemShell>
 
     <ConfirmDialog
       v-model:is-open="showDeleteDialog"
@@ -200,7 +201,7 @@
         </Button>
       </template>
     </Dialog>
-  </CommentItemShell>
+  </div>
 </template>
 
 <script setup lang="ts" vapor>
@@ -347,17 +348,6 @@ const actualRepliesCount = computed(() => {
   const serverCount = replyCount.value
   return Math.max(localCount, serverCount)
 })
-
-function getReplyMemo(comment: Comment) {
-  return [
-    comment.id,
-    comment.updated_at ?? comment.created_at,
-    comment.likes_count ?? comment.like_count ?? 0,
-    comment.replies_count ?? comment.reply_count ?? 0,
-    Boolean(comment.is_liked),
-    Boolean(comment.is_favorited),
-  ]
-}
 
 function formatTime(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
