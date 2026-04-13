@@ -45,7 +45,6 @@
       <CommentCard
         v-for="comment in comments"
         :key="comment.id"
-        v-memo="getCommentMemo(comment)"
         :comment="comment"
         :post-id="props.postId"
       />
@@ -113,16 +112,6 @@ async function fetchComments(signal?: AbortSignal) {
 
 function changeSort(sort: 'newest' | 'oldest' | 'popular') {
   currentSort.value = sort
-}
-
-function getCommentMemo(comment: Comment) {
-  return [
-    comment.id,
-    comment.updated_at ?? comment.created_at,
-    comment.like_count ?? comment.likes_count ?? 0,
-    comment.reply_count ?? comment.replies_count ?? 0,
-    Boolean(comment.is_liked),
-  ]
 }
 
 function handleCommentAdded() {

@@ -1,160 +1,161 @@
 <template>
-  <CommentItemShell
-    :id="`comment-${comment.id}`"
-    class="discussion-comment-card"
-    :author="comment.user.username"
-    :time="formatTime(comment.created_at)"
-    :avatar-src="avatarUrl"
-    :avatar-alt="comment.user.username"
-    :avatar-fallback="avatarFallbackLabel"
-    :is-reply="isReply"
-  >
-    <template #badges>
-      <Badge v-if="isThreadOwner" variant="success" size="sm">
-        {{ $t('comment.threadOwner') }}
-      </Badge>
-      <Badge v-if="comment.is_pinned" variant="warning" size="sm">
-        {{ $t('comment.pinned') }}
-      </Badge>
-      <Badge v-if="comment.is_featured" variant="default" size="sm">
-        {{ $t('comment.featured') }}
-      </Badge>
-    </template>
-
-    <template #menu>
-      <div v-click-outside="showMenu ? closeMenu : undefined" class="comment-menu">
-        <button
-          type="button"
-          class="menu-btn"
-          @click.stop="toggleMenu"
-          :aria-label="$t('common.more')"
-        >
-          <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
-        </button>
-        <Transition name="dropdown">
-          <div v-if="showMenu" class="menu-dropdown surface-paper-sketch" @click.stop>
-            <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
-              <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
-              <span>{{ $t('common.delete') }}</span>
-            </button>
-            <button v-if="isAdmin" type="button" class="menu-item" @click="togglePin">
-              <AnimatedIcon name="sparkle" :fallback-icon="Pin" size="sm" />
-              <span>{{ comment.is_pinned ? $t('comment.unpin') : $t('comment.pin') }}</span>
-            </button>
-            <button v-if="isAdmin" type="button" class="menu-item" @click="toggleFeature">
-              <AnimatedIcon name="sparkle" :fallback-icon="Star" size="sm" />
-              <span>{{
-                comment.is_featured ? $t('comment.unfeature') : $t('comment.feature')
-              }}</span>
-            </button>
-            <button type="button" class="menu-item" @click="handleShare">
-              <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
-              <span>{{ $t('comment.share') }}</span>
-            </button>
-            <button type="button" class="menu-item" @click="openReportDialog">
-              <AnimatedIcon name="sparkle" :fallback-icon="Flag" size="sm" />
-              <span>{{ $t('comment.report') }}</span>
-            </button>
-          </div>
-        </Transition>
-      </div>
-    </template>
-
-    <div class="comment-content">
-      <p class="comment-copy">{{ comment.content }}</p>
-    </div>
-
-    <template #actions>
-      <button
-        type="button"
-        class="action-btn"
-        :class="{ active: comment.is_liked }"
-        :aria-label="comment.is_liked ? $t('profile.unlike') : $t('post.likes')"
-        :aria-pressed="comment.is_liked"
-        :disabled="!isAuthenticated"
-        @click="handleLike"
-      >
-        <AnimatedIcon
-          name="heart"
-          :fallback-icon="Heart"
-          size="sm"
-          :active="comment.is_liked ? true : false"
-        />
-        <span>{{ $t('post.likes') }}</span>
-        <span v-if="likeCount > 0" class="action-count">{{ likeCount }}</span>
-      </button>
-
-      <button
-        type="button"
-        class="action-btn"
-        :disabled="!isAuthenticated || !canReply"
-        @click="handleReply"
-      >
-        <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
-        <span>{{ $t('comment.reply') }}</span>
-      </button>
-    </template>
-
-    <template #reply>
-      <Transition name="slide-down">
-        <div v-if="showReplyForm" class="reply-form-wrapper">
-          <DiscussionCommentForm
-            ref="replyFormRef"
-            :discussion-id="discussionId"
-            :parent-id="replyParentId"
-            :reply-to-username="comment.user.username"
-            @cancel="showReplyForm = false"
-            @submitted="handleReplySubmitted"
-          />
-        </div>
-      </Transition>
-    </template>
-
-    <template
-      v-if="
-        canShowNestedReplies && (replyCount > 0 || (comment.replies && comment.replies.length > 0))
-      "
-      #replies
+  <div :id="`comment-${comment.id}`" class="discussion-comment-card">
+    <CommentItemShell
+      class="discussion-comment-card__shell"
+      :author="comment.user.username"
+      :time="formatTime(comment.created_at)"
+      :avatar-src="avatarUrl"
+      :avatar-alt="comment.user.username"
+      :avatar-fallback="avatarFallbackLabel"
+      :is-reply="isReply"
     >
-      <div class="replies-section">
+      <template #badges>
+        <Badge v-if="isThreadOwner" variant="success" size="sm">
+          {{ $t('comment.threadOwner') }}
+        </Badge>
+        <Badge v-if="comment.is_pinned" variant="warning" size="sm">
+          {{ $t('comment.pinned') }}
+        </Badge>
+        <Badge v-if="comment.is_featured" variant="default" size="sm">
+          {{ $t('comment.featured') }}
+        </Badge>
+      </template>
+
+      <template #menu>
+        <div v-click-outside="showMenu ? closeMenu : undefined" class="comment-menu">
+          <button
+            type="button"
+            class="menu-btn"
+            @click.stop="toggleMenu"
+            :aria-label="$t('common.more')"
+          >
+            <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
+          </button>
+          <Transition name="dropdown">
+            <div v-if="showMenu" class="menu-dropdown surface-paper-sketch" @click.stop>
+              <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
+                <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
+                <span>{{ $t('common.delete') }}</span>
+              </button>
+              <button v-if="isAdmin" type="button" class="menu-item" @click="togglePin">
+                <AnimatedIcon name="sparkle" :fallback-icon="Pin" size="sm" />
+                <span>{{ comment.is_pinned ? $t('comment.unpin') : $t('comment.pin') }}</span>
+              </button>
+              <button v-if="isAdmin" type="button" class="menu-item" @click="toggleFeature">
+                <AnimatedIcon name="sparkle" :fallback-icon="Star" size="sm" />
+                <span>{{
+                  comment.is_featured ? $t('comment.unfeature') : $t('comment.feature')
+                }}</span>
+              </button>
+              <button type="button" class="menu-item" @click="handleShare">
+                <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
+                <span>{{ $t('comment.share') }}</span>
+              </button>
+              <button type="button" class="menu-item" @click="openReportDialog">
+                <AnimatedIcon name="sparkle" :fallback-icon="Flag" size="sm" />
+                <span>{{ $t('comment.report') }}</span>
+              </button>
+            </div>
+          </Transition>
+        </div>
+      </template>
+
+      <div class="comment-content">
+        <p class="comment-copy">{{ comment.content }}</p>
+      </div>
+
+      <template #actions>
         <button
-          v-if="!showReplies"
           type="button"
-          class="show-replies-btn"
-          :disabled="isLoadingReplies"
-          @click="handleShowReplies"
+          class="action-btn"
+          :class="{ active: comment.is_liked }"
+          :aria-label="comment.is_liked ? $t('profile.unlike') : $t('post.likes')"
+          :aria-pressed="comment.is_liked"
+          :disabled="!isAuthenticated"
+          @click="handleLike"
         >
-          <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
-          <span v-if="isLoadingReplies">{{ $t('common.loading') }}</span>
-          <span v-else>{{ $t('comment.showReplies', { count: replyCount }) }}</span>
+          <AnimatedIcon
+            name="heart"
+            :fallback-icon="Heart"
+            size="sm"
+            :active="comment.is_liked ? true : false"
+          />
+          <span>{{ $t('post.likes') }}</span>
+          <span v-if="likeCount > 0" class="action-count">{{ likeCount }}</span>
         </button>
 
-        <Transition name="slide-down">
-          <div v-if="showReplies" class="replies-list">
-            <DiscussionCommentCard
-              v-for="reply in comment.replies"
-              :key="reply.id"
-              v-memo="getReplyMemo(reply)"
-              :comment="reply"
-              :discussion-id="discussionId"
-              v-bind="discussionAuthorId ? { discussionAuthorId } : {}"
-              :is-reply="true"
-              :depth="currentDepth + 1"
-              :root-id="rootId || String(comment.id)"
-            />
+        <button
+          type="button"
+          class="action-btn"
+          :disabled="!isAuthenticated || !canReply"
+          @click="handleReply"
+        >
+          <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
+          <span>{{ $t('comment.reply') }}</span>
+        </button>
+      </template>
 
-            <button
-              v-if="hasMoreReplies && !isLoadingReplies"
-              type="button"
-              class="load-more-replies"
-              @click="loadMoreReplies"
-            >
-              {{ $t('comment.loadMoreReplies') }}
-            </button>
+      <template #reply>
+        <Transition name="slide-down">
+          <div v-if="showReplyForm" class="reply-form-wrapper">
+            <DiscussionCommentForm
+              ref="replyFormRef"
+              :discussion-id="discussionId"
+              :parent-id="replyParentId"
+              :reply-to-username="comment.user.username"
+              @cancel="showReplyForm = false"
+              @submitted="handleReplySubmitted"
+            />
           </div>
         </Transition>
-      </div>
-    </template>
+      </template>
+
+      <template
+        v-if="
+          canShowNestedReplies &&
+          (replyCount > 0 || (comment.replies && comment.replies.length > 0))
+        "
+        #replies
+      >
+        <div class="replies-section">
+          <button
+            v-if="!showReplies"
+            type="button"
+            class="show-replies-btn"
+            :disabled="isLoadingReplies"
+            @click="handleShowReplies"
+          >
+            <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
+            <span v-if="isLoadingReplies">{{ $t('common.loading') }}</span>
+            <span v-else>{{ $t('comment.showReplies', { count: replyCount }) }}</span>
+          </button>
+
+          <Transition name="slide-down">
+            <div v-if="showReplies" class="replies-list">
+              <DiscussionCommentCard
+                v-for="reply in comment.replies"
+                :key="reply.id"
+                :comment="reply"
+                :discussion-id="discussionId"
+                v-bind="discussionAuthorId ? { discussionAuthorId } : {}"
+                :is-reply="true"
+                :depth="currentDepth + 1"
+                :root-id="rootId || String(comment.id)"
+              />
+
+              <button
+                v-if="hasMoreReplies && !isLoadingReplies"
+                type="button"
+                class="load-more-replies"
+                @click="loadMoreReplies"
+              >
+                {{ $t('comment.loadMoreReplies') }}
+              </button>
+            </div>
+          </Transition>
+        </div>
+      </template>
+    </CommentItemShell>
 
     <ConfirmDialog
       v-model:is-open="showDeleteDialog"
@@ -188,7 +189,7 @@
         </Button>
       </template>
     </Dialog>
-  </CommentItemShell>
+  </div>
 </template>
 
 <script setup lang="ts" vapor>
@@ -297,18 +298,6 @@ const canDelete = computed(() => {
   if (!user.value) return false
   return isAdmin.value || String(user.value.id) === String(props.comment.user.id)
 })
-
-function getReplyMemo(comment: DiscussionComment) {
-  return [
-    comment.id,
-    comment.updated_at ?? comment.created_at,
-    comment.like_count ?? comment.likes_count ?? 0,
-    comment.reply_count ?? comment.replies_count ?? 0,
-    Boolean(comment.is_pinned),
-    Boolean(comment.is_featured),
-    Boolean(comment.is_liked),
-  ]
-}
 
 function formatTime(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
