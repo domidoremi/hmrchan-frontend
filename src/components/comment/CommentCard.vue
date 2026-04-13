@@ -1,40 +1,52 @@
 <template>
-  <article class="comment-card surface-paper-sketch" :class="{ 'is-reply': isReply }">
-    <!-- Comment Header -->
-    <div class="comment-header">
-      <Avatar
-        :src="avatarUrl"
-        :alt="getUserDisplayName(comment.user)"
-        :fallback="avatarFallbackLabel"
-        size="custom"
-        class="comment-avatar"
-      />
-      <div class="comment-meta">
-        <span class="comment-author">{{ getUserDisplayName(comment.user) }}</span>
-        <Badge v-if="comment.is_thread_owner" variant="success" size="sm">{{
-          t('comment.threadOwner')
-        }}</Badge>
-        <Badge
-          v-if="userLevelBadge"
-          :variant="comment.user.level === 'admin' ? 'destructive' : 'secondary'"
-          size="sm"
-        >
-          {{ userLevelBadge }}
-        </Badge>
-        <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
-      </div>
+  <CommentItemShell
+    :id="`comment-${comment.id}`"
+    class="comment-card"
+    :author="getUserDisplayName(comment.user)"
+    :time="formatTime(comment.created_at)"
+    :avatar-src="avatarUrl"
+    :avatar-alt="getUserDisplayName(comment.user)"
+    :avatar-fallback="avatarFallbackLabel"
+    :is-reply="isReply"
+  >
+    <template #badges>
+      <Badge v-if="comment.is_thread_owner" variant="success" size="sm">
+        {{ t('comment.threadOwner') }}
+      </Badge>
+      <Badge
+        v-if="userLevelBadge"
+        :variant="comment.user.level === 'admin' ? 'destructive' : 'secondary'"
+        size="sm"
+      >
+        {{ userLevelBadge }}
+      </Badge>
+    </template>
 
-      <!-- More Actions Menu -->
+    <template #menu>
       <div
         v-if="showActions"
         v-click-outside="showMenu ? closeMenu : undefined"
         class="comment-menu"
       >
-        <button type="button" class="menu-btn" @click="toggleMenu" :aria-label="t('common.more')">
+        <button
+          type="button"
+          class="menu-btn"
+          @click.stop="toggleMenu"
+          :aria-label="t('common.more')"
+        >
           <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
         </button>
         <Transition name="dropdown">
           <div v-if="showMenu" class="menu-dropdown surface-paper-sketch" @click.stop>
+            <button type="button" class="menu-item" @click="handleFavorite">
+              <AnimatedIcon
+                name="explore"
+                :fallback-icon="Bookmark"
+                size="sm"
+                :active="comment.is_favorited"
+              />
+              <span>{{ comment.is_favorited ? t('post.unfavorite') : t('post.favorite') }}</span>
+            </button>
             <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
               <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
               <span>{{ t('common.delete') }}</span>
@@ -50,11 +62,9 @@
           </div>
         </Transition>
       </div>
-    </div>
+    </template>
 
-    <!-- Comment Content -->
     <div class="comment-content">
-      <!-- 回复对象标识 -->
       <div v-if="comment.replied_to_user" class="reply-indicator">
         <span class="reply-icon">↩</span>
         <span class="reply-label">{{ t('comment.replyingTo') }}</span>
@@ -81,99 +91,83 @@
       </div>
     </div>
 
-    <!-- Comment Actions -->
-    <div class="comment-actions" v-if="showActions">
+    <template v-if="showActions" #actions>
       <button
         type="button"
         class="action-btn"
         :class="{ active: comment.is_liked }"
         :aria-label="comment.is_liked ? t('profile.unlike') : t('post.likes')"
         :aria-pressed="comment.is_liked"
-        @click="handleLike"
         :disabled="!isAuthenticated"
+        @click="handleLike"
       >
         <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" :active="comment.is_liked" />
-        <span v-if="likeCount > 0">{{ likeCount }}</span>
+        <span>{{ t('post.likes') }}</span>
+        <span v-if="likeCount > 0" class="action-count">{{ likeCount }}</span>
       </button>
 
       <button
         type="button"
         class="action-btn"
-        @click="handleReply"
         :disabled="!isAuthenticated || !canReply"
+        @click="handleReply"
       >
         <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
         <span>{{ t('comment.reply') }}</span>
       </button>
+    </template>
 
-      <button
-        type="button"
-        class="action-btn"
-        :class="{ active: comment.is_favorited }"
-        :aria-label="comment.is_favorited ? t('post.unfavorite') : t('post.favorite')"
-        :aria-pressed="comment.is_favorited"
-        @click="handleFavorite"
-        :disabled="!isAuthenticated"
-      >
-        <AnimatedIcon
-          name="explore"
-          :fallback-icon="Bookmark"
-          size="sm"
-          :active="comment.is_favorited"
-        />
-      </button>
-    </div>
-
-    <!-- Reply Form -->
-    <Transition name="slide-down">
-      <div v-if="showReplyForm" class="reply-form-wrapper">
-        <CommentForm
-          ref="replyFormRef"
-          :post-id="postId"
-          :reply-to="depth === 0 ? String(comment.id) : String(rootId || comment.id)"
-          :reply-to-username="comment.user.username"
-          @cancel="showReplyForm = false"
-          @submitted="handleReplySubmitted"
-        />
-      </div>
-    </Transition>
-
-    <!-- Replies -->
-    <div
-      v-if="
-        canShowNestedReplies && (replyCount > 0 || (comment.replies && comment.replies.length > 0))
-      "
-      class="replies-section"
-    >
-      <button
-        v-if="!showReplies"
-        type="button"
-        class="show-replies-btn"
-        @click="handleShowReplies"
-        :disabled="isLoadingReplies"
-      >
-        <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
-        <span v-if="isLoadingReplies">{{ t('common.loading') }}</span>
-        <span v-else>{{ t('comment.showReplies', { count: actualRepliesCount }) }}</span>
-      </button>
-
+    <template #reply>
       <Transition name="slide-down">
-        <div v-if="showReplies" class="replies-list">
-          <CommentCard
-            v-for="reply in comment.replies"
-            :key="reply.id"
-            v-memo="getReplyMemo(reply)"
-            :comment="reply"
+        <div v-if="showReplyForm" class="reply-form-wrapper">
+          <CommentForm
+            ref="replyFormRef"
             :post-id="postId"
-            :is-reply="true"
-            :depth="currentDepth + 1"
-            :root-id="depth === 0 ? String(comment.id) : rootId || ''"
+            :reply-to="depth === 0 ? String(comment.id) : String(rootId || comment.id)"
+            :reply-to-username="comment.user.username"
+            @cancel="showReplyForm = false"
+            @submitted="handleReplySubmitted"
           />
         </div>
       </Transition>
-    </div>
+    </template>
 
-    <!-- Delete Confirmation Dialog -->
+    <template
+      v-if="
+        canShowNestedReplies && (replyCount > 0 || (comment.replies && comment.replies.length > 0))
+      "
+      #replies
+    >
+      <div class="replies-section">
+        <button
+          v-if="!showReplies"
+          type="button"
+          class="show-replies-btn"
+          :disabled="isLoadingReplies"
+          @click="handleShowReplies"
+        >
+          <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
+          <span v-if="isLoadingReplies">{{ t('common.loading') }}</span>
+          <span v-else>{{ t('comment.showReplies', { count: actualRepliesCount }) }}</span>
+        </button>
+
+        <Transition name="slide-down">
+          <div v-if="showReplies" class="replies-list">
+            <CommentCard
+              v-for="reply in comment.replies"
+              :key="reply.id"
+              v-memo="getReplyMemo(reply)"
+              :comment="reply"
+              :post-id="postId"
+              :is-reply="true"
+              :depth="currentDepth + 1"
+              :root-id="depth === 0 ? String(comment.id) : rootId || ''"
+            />
+          </div>
+        </Transition>
+      </div>
+    </template>
+
     <ConfirmDialog
       v-model:is-open="showDeleteDialog"
       :title="t('comment.confirmDeleteTitle')"
@@ -206,7 +200,7 @@
         </Button>
       </template>
     </Dialog>
-  </article>
+  </CommentItemShell>
 </template>
 
 <script setup lang="ts" vapor>
@@ -232,7 +226,6 @@ import { formatRelativeTime } from '@/utils/date'
 import { copyToClipboard } from '@/utils/modernAPIs'
 import CommentForm from './CommentForm.vue'
 import { commentTreeContextKey } from './commentTreeContext'
-import Avatar from '@/components/ui/Avatar.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Button from '@/components/ui/Button.vue'
@@ -240,18 +233,19 @@ import Textarea from '@/components/ui/Textarea.vue'
 import Select from '@/components/ui/Select.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Badge from '@/components/ui/Badge.vue'
+import CommentItemShell from '@/components/comment/shared/CommentItemShell.vue'
 
 interface Props {
   comment: Comment
   postId: string
   isReply?: boolean
   showActions?: boolean
-  depth?: number // 当前嵌套深度
-  rootId?: string // 根评论 ID，用于扁平化回复
+  depth?: number
+  rootId?: string
 }
 
-const MAX_REPLY_DEPTH = 2 // 允许回复的最大深度（0层和1层可以回复）
-const MAX_NESTING_DEPTH = 1 // 显示嵌套的最大深度（超过此深度不显示子回复，而是展平）
+const MAX_REPLY_DEPTH = 2
+const MAX_NESTING_DEPTH = 1
 
 const props = withDefaults(defineProps<Props>(), {
   isReply: false,
@@ -260,11 +254,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const currentDepth = computed(() => props.depth || 0)
-
-// 允许回复：只要深度小于最大回复深度
 const canReply = computed(() => currentDepth.value < MAX_REPLY_DEPTH)
-
-// 显示嵌套回复：只有深度小于最大嵌套深度时才渲染子组件
 const canShowNestedReplies = computed(() => currentDepth.value < MAX_NESTING_DEPTH)
 
 const { t } = useI18n()
@@ -321,9 +311,9 @@ async function handleShowReplies() {
   showReplies.value = true
 }
 
-const avatarUrl = computed(() => {
-  return getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
-})
+const avatarUrl = computed(() =>
+  getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
+)
 
 const avatarFallbackLabel = computed(() =>
   getAvatarFallbackLabel(props.comment.user.username, getUserDisplayName(props.comment.user))
@@ -349,12 +339,10 @@ const isAdmin = computed(() => {
 
 const canDelete = computed(() => {
   if (!user.value) return false
-  // 用户可以删除自己的评论，管理员/版主可以删除任何评论
   return isAdmin.value || user.value.id === props.comment.user.id
 })
 
 const actualRepliesCount = computed(() => {
-  // 优先使用本地已加载的回复数量，其次使用后端返回的计数
   const localCount = props.comment.replies?.length || 0
   const serverCount = replyCount.value
   return Math.max(localCount, serverCount)
@@ -397,6 +385,7 @@ async function handleLike() {
 }
 
 async function handleFavorite() {
+  closeMenu()
   if (!isAuthenticated.value) {
     toastStore.warning(t('comment.loginRequired'))
     return
@@ -418,7 +407,6 @@ function handleReply() {
 
   showReplyForm.value = true
   nextTick(() => {
-    // 如果是在第二层回复（depth=1），需要手动添加 @用户名
     if (props.depth > 0 && replyFormRef.value) {
       const mentionText = `@${props.comment.user.username} `
       replyFormRef.value.setContent(mentionText)
@@ -429,9 +417,7 @@ function handleReply() {
 
 function handleReplySubmitted() {
   showReplyForm.value = false
-  // 自动展开回复列表以显示新回复
   showReplies.value = true
-  // 如果是扁平化回复，实际上是回复了 Root，所以 Root 的列表应该更新
   commentTreeContext?.onReplySubmitted(props.rootId || String(props.comment.id))
 }
 
@@ -499,94 +485,7 @@ onUnmounted(() => {
 
 <style scoped>
 .comment-card {
-  display: grid;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
-}
-
-.comment-card:hover {
-  transform: translateY(-0.08rem);
-}
-
-.comment-card.is-reply {
-  margin-inline-start: var(--spacing-8);
-  padding: var(--spacing-3);
-  background: color-mix(in srgb, var(--surface-paper-bg) 62%, transparent);
-  border-inline-start: 0.125rem solid var(--surface-paper-border-strong);
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-bottom: var(--spacing-3);
-}
-
-.comment-avatar.ui-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 1rem;
-  border: 0.0625rem solid var(--surface-paper-border);
-  background: transparent;
-}
-
-.is-reply .comment-avatar.ui-avatar {
-  width: 2rem;
-  height: 2rem;
-}
-
-.comment-meta {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  flex-wrap: wrap;
-}
-
-.comment-author {
-  font-weight: var(--font-semibold);
-  color: var(--surface-paper-ink);
-  font-size: var(--text-sm);
-}
-
-.floor-badge {
-  padding: var(--spacing-0) var(--spacing-2);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
-.user-level-badge {
-  padding: var(--spacing-0) var(--spacing-2);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-}
-
-.user-level-badge.vip {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  color: white;
-}
-
-.user-level-badge.moderator {
-  background: var(--color-info);
-  color: white;
-}
-
-.user-level-badge.admin {
-  background: var(--color-error);
-  color: white;
-}
-
-.comment-time {
-  font-size: var(--text-xs);
-  color: var(--surface-paper-ink-soft);
+  width: 100%;
 }
 
 .comment-menu {
@@ -616,8 +515,9 @@ onUnmounted(() => {
   top: 100%;
   right: 0;
   margin-top: var(--spacing-1);
-  min-width: 9.5rem;
+  min-width: 10rem;
   padding: var(--spacing-1);
+  z-index: 2;
 }
 
 .menu-item {
@@ -680,7 +580,6 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-1);
   padding: var(--spacing-1) var(--spacing-2);
-  margin-bottom: var(--spacing-2);
   background: color-mix(in srgb, var(--surface-paper-bg) 86%, rgba(255, 255, 255, 0.4));
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
@@ -701,36 +600,28 @@ onUnmounted(() => {
   font-weight: var(--font-medium);
 }
 
-.reply-to {
-  color: var(--color-primary);
-  font-weight: var(--font-medium);
-}
-
-.comment-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-2);
-  padding-block-start: var(--spacing-2);
-  border-top: 0.0625rem solid var(--surface-paper-border);
-}
-
 .action-btn {
   display: flex;
   align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-2);
+  gap: 0.375rem;
+  min-block-size: 2rem;
+  padding: 0.375rem 0.75rem;
   border-radius: 999rem;
   font-size: var(--text-xs);
-  color: var(--surface-paper-ink-soft);
+  color: var(--color-text-tertiary);
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-compat-border) 72%, transparent);
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
+    border-color var(--transition-fast),
     opacity var(--transition-fast);
 }
 
 .action-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--surface-paper-bg) 86%, rgba(255, 255, 255, 0.4));
-  color: var(--surface-paper-ink);
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive) 96%, transparent);
+  color: var(--color-text-primary);
+  border-color: color-mix(in srgb, var(--ui-compat-border) 90%, transparent);
 }
 
 .action-btn:disabled {
@@ -742,13 +633,17 @@ onUnmounted(() => {
   color: var(--color-primary);
 }
 
+.action-count {
+  font-variant-numeric: tabular-nums;
+}
+
 .reply-form-wrapper {
-  margin-top: var(--spacing-4);
-  padding-left: var(--spacing-10);
+  padding-top: 0.125rem;
 }
 
 .replies-section {
-  margin-top: var(--spacing-4);
+  display: grid;
+  gap: 0.75rem;
 }
 
 .show-replies-btn {
@@ -763,14 +658,12 @@ onUnmounted(() => {
 }
 
 .show-replies-btn:hover {
-  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.4));
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive) 88%, transparent);
 }
 
 .replies-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--spacing-2);
-  margin-top: var(--spacing-2);
 }
 
 .report-form {
@@ -784,23 +677,9 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
 }
 
-/* ========== 响应式 ========== */
 @media (max-width: 768px) {
-  .comment-card.is-reply {
-    margin-inline-start: var(--spacing-4);
-  }
-
-  .reply-form-wrapper {
-    padding-left: var(--spacing-4);
-  }
-
-  .comment-actions {
-    flex-wrap: wrap;
-  }
-
   .action-btn {
-    font-size: var(--text-xs);
-    padding: var(--spacing-1);
+    padding-inline: 0.625rem;
   }
 }
 </style>

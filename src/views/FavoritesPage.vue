@@ -81,76 +81,56 @@
           />
 
           <div v-else class="posts-masonry">
-            <article
-              v-for="fav in visibleFavorites"
-              :key="fav.id"
+            <ProfilePostPreviewCard
+              v-for="{ favorite, preview } in visibleFavoriteCards"
+              :key="favorite.id"
               class="favorite-card page-list-card content-auto-lg"
-              role="button"
-              tabindex="0"
-              @click="goToPost(fav.post_id, fav.post?.thumbnail_url)"
-              @keydown.enter.prevent="goToPost(fav.post_id, fav.post?.thumbnail_url)"
-              @keydown.space.prevent="goToPost(fav.post_id, fav.post?.thumbnail_url)"
+              :preview="preview"
+              :sizes="thumbnailSizes"
+              :empty-label="$t('favorites.unknownPost')"
+              :empty-hint="$t('favorites.organizeHint')"
+              @select="goToPreview"
             >
-              <div class="favorite-image">
-                <ThumbnailImage
-                  :src="fav.post?.thumbnail_url"
-                  :sizes="thumbnailSizes"
-                  :alt="fav.post?.title"
-                  responsive
-                  loading="lazy"
-                  decoding="async"
-                >
-                  <template #fallback>
-                    <div class="image-placeholder">
-                      <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
-                    </div>
-                  </template>
-                </ThumbnailImage>
-              </div>
-              <div class="favorite-content">
-                <h3 class="favorite-title" :title="fav.post?.title || $t('favorites.unknownPost')">
-                  {{ fav.post?.title || $t('favorites.unknownPost') }}
-                </h3>
-                <p v-if="fav.post?.author_name" class="favorite-author">
-                  {{ fav.post.author_name }}
-                </p>
-                <div v-if="fav.folder_name" class="favorite-chips">
-                  <span class="favorite-chip">{{ fav.folder_name }}</span>
+              <template #meta>
+                <div v-if="favorite.folder_name" class="favorite-chips">
+                  <span class="favorite-chip">{{ favorite.folder_name }}</span>
                 </div>
-                <p v-if="fav.notes" class="favorite-note">
-                  {{ fav.notes }}
+                <p v-if="favorite.notes" class="favorite-note">
+                  {{ favorite.notes }}
                 </p>
                 <div class="favorite-meta">
-                  <span class="favorite-date">{{ formatDate(fav.created_at) }}</span>
+                  <span class="favorite-date">{{ formatDate(favorite.created_at) }}</span>
                 </div>
-              </div>
-              <div class="favorite-card-actions">
-                <ControlButton
-                  class="card-action-btn"
-                  size="square"
-                  icon-only
-                  :title="$t('common.edit')"
-                  :aria-label="$t('common.edit')"
-                  @click.stop="openFavoriteEditor(fav)"
-                >
-                  <template #start>
-                    <AnimatedIcon name="sparkle" :fallback-icon="PencilLine" size="sm" />
-                  </template>
-                </ControlButton>
-                <ControlButton
-                  class="card-action-btn card-action-btn--danger"
-                  size="square"
-                  icon-only
-                  :title="$t('favorites.remove')"
-                  :aria-label="$t('favorites.remove')"
-                  @click.stop="removeFavorite(fav.id)"
-                >
-                  <template #start>
-                    <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
-                  </template>
-                </ControlButton>
-              </div>
-            </article>
+              </template>
+              <template #actions>
+                <div class="favorite-card-actions">
+                  <ControlButton
+                    class="card-action-btn"
+                    size="square"
+                    icon-only
+                    :title="$t('common.edit')"
+                    :aria-label="$t('common.edit')"
+                    @click.stop="openFavoriteEditor(favorite)"
+                  >
+                    <template #start>
+                      <AnimatedIcon name="sparkle" :fallback-icon="PencilLine" size="sm" />
+                    </template>
+                  </ControlButton>
+                  <ControlButton
+                    class="card-action-btn card-action-btn--danger"
+                    size="square"
+                    icon-only
+                    :title="$t('favorites.remove')"
+                    :aria-label="$t('favorites.remove')"
+                    @click.stop="removeFavorite(favorite.id)"
+                  >
+                    <template #start>
+                      <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
+                    </template>
+                  </ControlButton>
+                </div>
+              </template>
+            </ProfilePostPreviewCard>
           </div>
 
           <LoadMoreSection
@@ -252,8 +232,9 @@ import Select from '@/components/ui/Select.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import Textarea from '@/components/ui/Textarea.vue'
-import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import ProfilePostPreviewCard from '@/components/profile/ProfilePostPreviewCard.vue'
+import { buildFavoritePostPreview, type PostPreviewModel } from '@/components/profile/postPreview'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -312,6 +293,12 @@ const {
 })
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
+const visibleFavoriteCards = computed(() =>
+  visibleFavorites.value.map((favorite) => ({
+    favorite,
+    preview: buildFavoritePostPreview(favorite, t('favorites.unknownPost')),
+  }))
+)
 const editingFavoriteTitle = computed(
   () => editingFavorite.value?.post?.title || t('favorites.unknownPost')
 )
@@ -495,11 +482,11 @@ async function saveFavoriteEditor() {
   }
 }
 
-function goToPost(postId: string, thumbnailUrl?: string | null) {
+function goToPreview(preview: PostPreviewModel) {
   const navigationItems = favorites.value.map((favorite) => ({ post_id: favorite.post_id }))
-  storePostNavigationContext(navigationItems, postId, 'favorites')
-  cachePostThumbnailPreview(postId, thumbnailUrl)
-  router.push(`/post/${postId}`)
+  storePostNavigationContext(navigationItems, preview.postId, 'favorites')
+  cachePostThumbnailPreview(preview.postId, preview.thumbnailUrl)
+  router.push(preview.target)
 }
 
 function goToLogin() {
@@ -676,58 +663,6 @@ onUnmounted(() => {
 
 .post-content {
   padding: var(--spacing-3);
-}
-
-.favorite-card {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.favorite-image {
-  inline-size: 100%;
-  overflow: hidden;
-  background: var(--page-control-bg);
-}
-
-.favorite-image img {
-  inline-size: 100%;
-  height: auto;
-  display: block;
-  object-fit: cover;
-}
-
-.image-placeholder {
-  inline-size: 100%;
-  aspect-ratio: 4/3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-tertiary);
-}
-
-.favorite-content {
-  display: grid;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3);
-  min-inline-size: 0;
-}
-
-.favorite-title {
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.favorite-author {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  margin: 0;
 }
 
 .favorite-chips {

@@ -1,6 +1,6 @@
 <template>
   <div class="relations-tab">
-    <ProfileTabHeader :title="tabTitle" :count="displayTotal" />
+    <ProfileTabHeader v-if="props.showHeader" :title="tabTitle" :count="displayTotal" />
 
     <StateIndicator
       v-if="error"
@@ -103,9 +103,15 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 
 type RelationMode = 'followers' | 'following' | 'blocked'
 
-const props = defineProps<{
-  mode: RelationMode
-}>()
+const props = withDefaults(
+  defineProps<{
+    mode: RelationMode
+    showHeader?: boolean
+  }>(),
+  {
+    showHeader: true,
+  }
+)
 
 const router = useRouter()
 const { t } = useI18n()

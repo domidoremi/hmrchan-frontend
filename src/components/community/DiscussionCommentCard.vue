@@ -1,31 +1,27 @@
 <template>
-  <article
+  <CommentItemShell
     :id="`comment-${comment.id}`"
-    class="discussion-comment-card surface-paper-sketch"
-    :class="{ 'is-reply': isReply }"
+    class="discussion-comment-card"
+    :author="comment.user.username"
+    :time="formatTime(comment.created_at)"
+    :avatar-src="avatarUrl"
+    :avatar-alt="comment.user.username"
+    :avatar-fallback="avatarFallbackLabel"
+    :is-reply="isReply"
   >
-    <div class="comment-header">
-      <Avatar
-        :src="avatarUrl"
-        :alt="comment.user.username"
-        :fallback="avatarFallbackLabel"
-        size="custom"
-        class="comment-avatar"
-      />
-      <div class="comment-meta">
-        <span class="comment-author">{{ comment.user.username }}</span>
-        <Badge v-if="isThreadOwner" variant="success" size="sm">{{
-          $t('comment.threadOwner')
-        }}</Badge>
-        <Badge v-if="comment.is_pinned" variant="warning" size="sm">{{
-          $t('comment.pinned')
-        }}</Badge>
-        <Badge v-if="comment.is_featured" variant="default" size="sm">{{
-          $t('comment.featured')
-        }}</Badge>
-        <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
-      </div>
+    <template #badges>
+      <Badge v-if="isThreadOwner" variant="success" size="sm">
+        {{ $t('comment.threadOwner') }}
+      </Badge>
+      <Badge v-if="comment.is_pinned" variant="warning" size="sm">
+        {{ $t('comment.pinned') }}
+      </Badge>
+      <Badge v-if="comment.is_featured" variant="default" size="sm">
+        {{ $t('comment.featured') }}
+      </Badge>
+    </template>
 
+    <template #menu>
       <div v-click-outside="showMenu ? closeMenu : undefined" class="comment-menu">
         <button
           type="button"
@@ -62,21 +58,21 @@
           </div>
         </Transition>
       </div>
-    </div>
+    </template>
 
     <div class="comment-content">
       <p class="comment-copy">{{ comment.content }}</p>
     </div>
 
-    <div class="comment-actions">
+    <template #actions>
       <button
         type="button"
         class="action-btn"
         :class="{ active: comment.is_liked }"
         :aria-label="comment.is_liked ? $t('profile.unlike') : $t('post.likes')"
         :aria-pressed="comment.is_liked"
-        @click="handleLike"
         :disabled="!isAuthenticated"
+        @click="handleLike"
       >
         <AnimatedIcon
           name="heart"
@@ -84,76 +80,81 @@
           size="sm"
           :active="comment.is_liked ? true : false"
         />
-        <span v-if="likeCount > 0">{{ likeCount }}</span>
+        <span>{{ $t('post.likes') }}</span>
+        <span v-if="likeCount > 0" class="action-count">{{ likeCount }}</span>
       </button>
 
       <button
         type="button"
         class="action-btn"
-        @click="handleReply"
         :disabled="!isAuthenticated || !canReply"
+        @click="handleReply"
       >
         <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
         <span>{{ $t('comment.reply') }}</span>
       </button>
-    </div>
+    </template>
 
-    <Transition name="slide-down">
-      <div v-if="showReplyForm" class="reply-form-wrapper">
-        <DiscussionCommentForm
-          ref="replyFormRef"
-          :discussion-id="discussionId"
-          :parent-id="replyParentId"
-          :reply-to-username="comment.user.username"
-          @cancel="showReplyForm = false"
-          @submitted="handleReplySubmitted"
-        />
-      </div>
-    </Transition>
+    <template #reply>
+      <Transition name="slide-down">
+        <div v-if="showReplyForm" class="reply-form-wrapper">
+          <DiscussionCommentForm
+            ref="replyFormRef"
+            :discussion-id="discussionId"
+            :parent-id="replyParentId"
+            :reply-to-username="comment.user.username"
+            @cancel="showReplyForm = false"
+            @submitted="handleReplySubmitted"
+          />
+        </div>
+      </Transition>
+    </template>
 
-    <div
+    <template
       v-if="
         canShowNestedReplies && (replyCount > 0 || (comment.replies && comment.replies.length > 0))
       "
-      class="replies-section"
+      #replies
     >
-      <button
-        v-if="!showReplies"
-        type="button"
-        class="show-replies-btn"
-        @click="handleShowReplies"
-        :disabled="isLoadingReplies"
-      >
-        <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
-        <span v-if="isLoadingReplies">{{ $t('common.loading') }}</span>
-        <span v-else>{{ $t('comment.showReplies', { count: replyCount }) }}</span>
-      </button>
+      <div class="replies-section">
+        <button
+          v-if="!showReplies"
+          type="button"
+          class="show-replies-btn"
+          :disabled="isLoadingReplies"
+          @click="handleShowReplies"
+        >
+          <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
+          <span v-if="isLoadingReplies">{{ $t('common.loading') }}</span>
+          <span v-else>{{ $t('comment.showReplies', { count: replyCount }) }}</span>
+        </button>
 
-      <Transition name="slide-down">
-        <div v-if="showReplies" class="replies-list">
-          <DiscussionCommentCard
-            v-for="reply in comment.replies"
-            :key="reply.id"
-            v-memo="getReplyMemo(reply)"
-            :comment="reply"
-            :discussion-id="discussionId"
-            v-bind="discussionAuthorId ? { discussionAuthorId } : {}"
-            :is-reply="true"
-            :depth="currentDepth + 1"
-            :root-id="rootId || String(comment.id)"
-          />
+        <Transition name="slide-down">
+          <div v-if="showReplies" class="replies-list">
+            <DiscussionCommentCard
+              v-for="reply in comment.replies"
+              :key="reply.id"
+              v-memo="getReplyMemo(reply)"
+              :comment="reply"
+              :discussion-id="discussionId"
+              v-bind="discussionAuthorId ? { discussionAuthorId } : {}"
+              :is-reply="true"
+              :depth="currentDepth + 1"
+              :root-id="rootId || String(comment.id)"
+            />
 
-          <button
-            v-if="hasMoreReplies && !isLoadingReplies"
-            type="button"
-            class="load-more-replies"
-            @click="loadMoreReplies"
-          >
-            {{ $t('comment.loadMoreReplies') }}
-          </button>
-        </div>
-      </Transition>
-    </div>
+            <button
+              v-if="hasMoreReplies && !isLoadingReplies"
+              type="button"
+              class="load-more-replies"
+              @click="loadMoreReplies"
+            >
+              {{ $t('comment.loadMoreReplies') }}
+            </button>
+          </div>
+        </Transition>
+      </div>
+    </template>
 
     <ConfirmDialog
       v-model:is-open="showDeleteDialog"
@@ -187,20 +188,11 @@
         </Button>
       </template>
     </Dialog>
-  </article>
+  </CommentItemShell>
 </template>
 
 <script setup lang="ts" vapor>
-import {
-  ref,
-  computed,
-  inject,
-  nextTick,
-  onUnmounted,
-  onRenderTracked,
-  onRenderTriggered,
-  useTemplateRef,
-} from 'vue'
+import { ref, computed, inject, nextTick, onUnmounted, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import {
@@ -222,7 +214,6 @@ import { formatRelativeTime } from '@/utils/date'
 import { copyToClipboard } from '@/utils/modernAPIs'
 import DiscussionCommentForm from './DiscussionCommentForm.vue'
 import { discussionCommentTreeContextKey } from './discussionCommentTreeContext'
-import Avatar from '@/components/ui/Avatar.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Button from '@/components/ui/Button.vue'
@@ -230,6 +221,7 @@ import Textarea from '@/components/ui/Textarea.vue'
 import Select from '@/components/ui/Select.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Badge from '@/components/ui/Badge.vue'
+import CommentItemShell from '@/components/comment/shared/CommentItemShell.vue'
 
 interface Props {
   comment: DiscussionComment
@@ -253,20 +245,6 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 const discussionCommentTreeContext = inject(discussionCommentTreeContextKey, null)
-const renderDebugEnabled =
-  import.meta.env.DEV &&
-  typeof window !== 'undefined' &&
-  (window as Window & { __MOMI_RENDER_DEBUG__?: boolean }).__MOMI_RENDER_DEBUG__ === true
-
-if (renderDebugEnabled) {
-  onRenderTracked((event) => {
-    console.debug('[render:tracked][DiscussionCommentCard]', event.type, String(event.key))
-  })
-
-  onRenderTriggered((event) => {
-    console.debug('[render:triggered][DiscussionCommentCard]', event.type, String(event.key))
-  })
-}
 
 const showMenu = ref(false)
 const showReplyForm = ref(false)
@@ -298,13 +276,11 @@ const hasMoreReplies = computed(() => {
   return (props.comment.replies?.length || 0) < replyCount.value
 })
 
-const replyParentId = computed(() => {
-  return props.rootId || String(props.comment.id)
-})
+const replyParentId = computed(() => props.rootId || String(props.comment.id))
 
-const avatarUrl = computed(() => {
-  return getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
-})
+const avatarUrl = computed(() =>
+  getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
+)
 
 const avatarFallbackLabel = computed(() => getAvatarFallbackLabel(props.comment.user.username))
 
@@ -589,87 +565,7 @@ onUnmounted(() => {
 
 <style scoped>
 .discussion-comment-card {
-  display: grid;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
-}
-
-.discussion-comment-card:hover {
-  transform: translateY(-0.08rem);
-}
-
-.discussion-comment-card.is-reply {
-  margin-inline-start: var(--spacing-8);
-  padding: var(--spacing-3);
-  background: color-mix(in srgb, var(--surface-paper-bg) 62%, transparent);
-  border-inline-start: 0.125rem solid var(--surface-paper-border-strong);
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-bottom: var(--spacing-3);
-}
-
-.comment-avatar.ui-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 1rem;
-  border: 0.0625rem solid var(--surface-paper-border);
-  background: transparent;
-}
-
-.is-reply .comment-avatar.ui-avatar {
-  width: 2rem;
-  height: 2rem;
-}
-
-.comment-meta {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  flex-wrap: wrap;
-}
-
-.comment-author {
-  font-weight: var(--font-semibold);
-  color: var(--surface-paper-ink);
-  font-size: var(--text-sm);
-}
-
-.comment-time {
-  font-size: var(--text-xs);
-  color: var(--surface-paper-ink-soft);
-}
-
-.comment-badge {
-  padding: var(--spacing-0) var(--spacing-2);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  background: var(--glass-bg);
-  color: var(--color-text-secondary);
-}
-
-.comment-badge.thread-owner {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
-.comment-badge.pinned {
-  background: rgba(var(--color-primary-rgb), 0.12);
-  color: var(--color-primary);
-}
-
-.comment-badge.featured {
-  background: rgba(var(--color-warning-rgb), 0.18);
-  color: var(--color-warning);
+  width: 100%;
 }
 
 .comment-menu {
@@ -738,31 +634,28 @@ onUnmounted(() => {
   word-break: break-word;
 }
 
-.comment-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-2);
-  padding-block-start: var(--spacing-2);
-  border-top: 0.0625rem solid var(--surface-paper-border);
-}
-
 .action-btn {
   display: flex;
   align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-2);
+  gap: 0.375rem;
+  min-block-size: 2rem;
+  padding: 0.375rem 0.75rem;
   border-radius: 999rem;
   font-size: var(--text-xs);
-  color: var(--surface-paper-ink-soft);
+  color: var(--color-text-tertiary);
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-compat-border) 72%, transparent);
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
+    border-color var(--transition-fast),
     opacity var(--transition-fast);
 }
 
 .action-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--surface-paper-bg) 86%, rgba(255, 255, 255, 0.4));
-  color: var(--surface-paper-ink);
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive) 96%, transparent);
+  color: var(--color-text-primary);
+  border-color: color-mix(in srgb, var(--ui-compat-border) 90%, transparent);
 }
 
 .action-btn:disabled {
@@ -774,13 +667,17 @@ onUnmounted(() => {
   color: var(--color-primary);
 }
 
+.action-count {
+  font-variant-numeric: tabular-nums;
+}
+
 .reply-form-wrapper {
-  margin-top: var(--spacing-4);
-  padding-left: var(--spacing-10);
+  padding-top: 0.125rem;
 }
 
 .replies-section {
-  margin-top: var(--spacing-4);
+  display: grid;
+  gap: 0.75rem;
 }
 
 .show-replies-btn {
@@ -795,14 +692,12 @@ onUnmounted(() => {
 }
 
 .show-replies-btn:hover {
-  background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.4));
+  background: color-mix(in srgb, var(--ui-compat-surface-interactive) 88%, transparent);
 }
 
 .replies-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--spacing-2);
-  margin-top: var(--spacing-2);
 }
 
 .load-more-replies {
@@ -824,21 +719,8 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .discussion-comment-card.is-reply {
-    margin-inline-start: var(--spacing-4);
-  }
-
-  .reply-form-wrapper {
-    padding-left: var(--spacing-4);
-  }
-
-  .comment-actions {
-    flex-wrap: wrap;
-  }
-
   .action-btn {
-    font-size: var(--text-xs);
-    padding: var(--spacing-1);
+    padding-inline: 0.625rem;
   }
 }
 </style>

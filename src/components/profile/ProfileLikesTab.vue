@@ -1,6 +1,6 @@
 <template>
   <div class="likes-tab">
-    <ProfileTabHeader :title="$t('profile.tabs.likes')" :count="displayTotal" />
+    <ProfileTabHeader v-if="showHeader" :title="$t('profile.tabs.likes')" :count="displayTotal" />
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLikes" />
 
@@ -114,6 +114,15 @@ import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
 
 const ConfirmDialog = defineAsyncComponent(() => import('@/components/ui/ConfirmDialog.vue'))
+
+withDefaults(
+  defineProps<{
+    showHeader?: boolean
+  }>(),
+  {
+    showHeader: true,
+  }
+)
 
 interface LikedComment {
   id: string | number

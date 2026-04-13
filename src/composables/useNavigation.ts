@@ -100,7 +100,7 @@ export function useNavigation() {
    * 便捷方法，用于需要认证的收藏页
    */
   const favoritesLink = computed<string | RouteLocationRaw>(() =>
-    getNavigationLink({ path: '/favorites', requiresAuth: true } as NavigationItem)
+    getNavigationLink({ path: '/profile/favorites', requiresAuth: true } as NavigationItem)
   )
 
   /**

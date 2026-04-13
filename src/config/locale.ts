@@ -51,8 +51,8 @@ export interface LocaleInteractionConfig {
   clickFeedback: 'scale' | 'ripple' | 'glow'
   /** 滚动行为: smooth / auto */
   scrollBehavior: 'smooth' | 'auto'
-  /** Toast 位置偏好 */
-  toastPosition: 'top-center' | 'top-right' | 'bottom-center'
+  /** Toast 位置偏好（当前产品统一到底部居中，保留字段仅作兼容） */
+  toastPosition: 'bottom-center'
 }
 
 /** 内容格式化偏好 */
@@ -119,7 +119,7 @@ const zhCNConfig: LocaleConfig = {
     hoverIntensity: 0.6,
     clickFeedback: 'ripple',
     scrollBehavior: 'smooth',
-    toastPosition: 'top-center',
+    toastPosition: 'bottom-center',
   },
   content: {
     dateStyle: 'relative',
@@ -166,7 +166,7 @@ const zhTWConfig: LocaleConfig = {
     hoverIntensity: 0.65,
     clickFeedback: 'ripple',
     scrollBehavior: 'smooth',
-    toastPosition: 'top-center',
+    toastPosition: 'bottom-center',
   },
   content: {
     dateStyle: 'relative',
@@ -213,7 +213,7 @@ const jaConfig: LocaleConfig = {
     hoverIntensity: 0.5,
     clickFeedback: 'glow',
     scrollBehavior: 'smooth',
-    toastPosition: 'top-center',
+    toastPosition: 'bottom-center',
   },
   content: {
     dateStyle: 'relative',
@@ -260,7 +260,7 @@ const enConfig: LocaleConfig = {
     hoverIntensity: 0.8,
     clickFeedback: 'scale',
     scrollBehavior: 'smooth',
-    toastPosition: 'top-right',
+    toastPosition: 'bottom-center',
   },
   content: {
     dateStyle: 'mixed',

@@ -68,7 +68,7 @@
 
     <!-- Toast Container -->
     <Teleport to="body">
-      <ToastContainer />
+      <ToastContainer position="bottom-center" />
     </Teleport>
 
     <ClientChallengeDialog v-if="shouldMountClientChallengeDialog" />

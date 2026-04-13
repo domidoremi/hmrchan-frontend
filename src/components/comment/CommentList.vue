@@ -3,26 +3,26 @@
     class="comment-section surface-paper-sketch analog-dot-grid"
     :class="{ 'comment-section--guest': !isAuthenticated }"
   >
-    <header class="comment-header">
-      <h3 class="comment-title">
-        <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="md" />
-        {{ t('comment.title') }}
-        <span v-if="commentsCount > 0" class="comment-count">{{ commentsCount }}</span>
-      </h3>
-
-      <ControlGroup v-if="comments.length > 0" class="comment-sort">
-        <ControlButton
-          v-for="option in sortOptions"
-          :key="option.value"
-          class="sort-btn"
-          size="compact"
-          :pressed="currentSort === option.value"
-          @click="changeSort(option.value)"
-        >
-          {{ option.label }}
-        </ControlButton>
-      </ControlGroup>
-    </header>
+    <CommentThreadHeader
+      :title="t('comment.title')"
+      :count="commentsCount"
+      :subtitle="t('comment.beFirst')"
+    >
+      <template #actions>
+        <ControlGroup v-if="comments.length > 0" class="comment-sort">
+          <ControlButton
+            v-for="option in sortOptions"
+            :key="option.value"
+            class="sort-btn"
+            size="compact"
+            :pressed="currentSort === option.value"
+            @click="changeSort(option.value)"
+          >
+            {{ option.label }}
+          </ControlButton>
+        </ControlGroup>
+      </template>
+    </CommentThreadHeader>
 
     <!-- Comment Form -->
     <div :class="{ 'comment-form-centered': !isLoading && comments.length === 0 }">
@@ -71,6 +71,7 @@ import { commentTreeContextKey } from './commentTreeContext'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import ControlGroup from '@/components/appearance/ControlGroup.vue'
+import CommentThreadHeader from '@/components/comment/shared/CommentThreadHeader.vue'
 
 interface Props {
   postId: string
@@ -161,8 +162,12 @@ watch(
 .comment-section {
   display: grid;
   gap: var(--spacing-5);
-  padding: var(--spacing-5);
+  padding: clamp(1rem, 2.5vw, 1.35rem);
   min-height: 12.5rem;
+  border-radius: clamp(1.1rem, 2vw, 1.35rem);
+  border: 1px solid color-mix(in srgb, var(--ui-compat-border) 80%, transparent);
+  background: color-mix(in srgb, var(--ui-compat-surface-elevated) 96%, transparent);
+  box-shadow: 0 1rem 2.75rem rgba(15, 23, 42, 0.06);
 }
 
 .comment-section--guest {
@@ -173,34 +178,6 @@ watch(
   inline-size: 100%;
   max-inline-size: min(100%, 42rem);
   margin-inline: auto;
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--spacing-4);
-}
-
-.comment-title {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-}
-
-.comment-count {
-  padding: var(--spacing-0) var(--spacing-2);
-  background: color-mix(in srgb, var(--surface-paper-bg) 74%, rgba(255, 255, 255, 0.45));
-  color: var(--surface-paper-ink);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-}
-
-[data-color-mode='dark'] .comment-count {
-  background: rgba(var(--color-primary-rgb), 0.2);
 }
 
 .comment-sort {

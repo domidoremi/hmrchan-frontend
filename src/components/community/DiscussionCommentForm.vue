@@ -1,81 +1,78 @@
 <template>
   <form class="discussion-comment-form" @submit.prevent="handleSubmit">
-    <div v-if="!isAuthenticated" class="login-prompt surface-paper-sketch">
-      <div class="prompt-icon-wrap">
-        <AnimatedIcon name="user" :fallback-icon="LogIn" size="lg" class="prompt-icon" />
-      </div>
-      <div class="prompt-text">
-        <h4 class="prompt-title">{{ t('comment.loginRequiredTitle') }}</h4>
-        <p class="prompt-desc">{{ t('comment.loginRequired') }}</p>
-      </div>
-      <div class="prompt-actions">
-        <Button type="button" size="sm" class="prompt-btn" @click="goToLogin">
-          {{ t('nav.login') }}
-        </Button>
-        <Button type="button" variant="ghost" size="sm" class="prompt-btn" @click="goToRegister">
-          {{ t('nav.register') }}
-        </Button>
-      </div>
-    </div>
-
-    <div v-else class="form-shell surface-paper-sketch analog-dot-grid">
-      <div class="form-content">
-        <Avatar
-          :src="userAvatar"
-          :alt="user?.username"
-          class="user-avatar"
-          size="custom"
-          :fallback="userAvatarFallbackLabel"
-        />
-
-        <div class="form-main">
-          <header class="form-head">
-            <div class="form-head__copy">
-              <strong class="form-head__title">
-                {{ props.parentId ? t('comment.reply') : t('comment.title') }}
-              </strong>
-              <span class="form-head__subtitle">
-                {{
-                  props.replyToUsername
-                    ? t('comment.replyPlaceholder', { username: props.replyToUsername })
-                    : t('comment.placeholder')
-                }}
-              </span>
-            </div>
-            <span class="char-count" :class="{ warning: content.length > maxLength * 0.9 }">
-              {{ content.length }}/{{ maxLength }}
-            </span>
-          </header>
-
-          <PlainTextToolbar :disabled="isSubmitting" @action="handleToolbarAction" />
-
-          <div class="form-editor paper-rule">
-            <Textarea
-              ref="textareaRef"
-              v-model="content"
-              class="comment-textarea"
-              :placeholder="placeholder"
-              :disabled="isSubmitting"
-              rows="4"
-              :maxlength="maxLength"
-              @update:modelValue="autoResize"
-            />
+    <CommentComposerShell
+      :authenticated="isAuthenticated"
+      :avatar-src="userAvatar"
+      :avatar-alt="user?.username"
+      :avatar-fallback="userAvatarFallbackLabel"
+      :title="props.parentId ? t('comment.reply') : t('comment.title')"
+      :subtitle="composerSubtitle"
+      :char-count="content.length"
+      :max-length="maxLength"
+    >
+      <template #guest>
+        <div class="login-prompt surface-paper-sketch">
+          <div class="prompt-icon-wrap">
+            <AnimatedIcon name="user" :fallback-icon="LogIn" size="lg" class="prompt-icon" />
           </div>
-
-          <footer class="form-footer paper-rule">
-            <span class="paper-chip">{{ t('community.mentionHint') }}</span>
-            <div class="form-actions">
-              <Button v-if="props.parentId" variant="ghost" size="sm" @click="$emit('cancel')">
-                {{ t('common.cancel') }}
-              </Button>
-              <Button type="submit" size="sm" :disabled="!canSubmit" :loading="isSubmitting">
-                {{ props.parentId ? t('comment.reply') : t('comment.submit') }}
-              </Button>
-            </div>
-          </footer>
+          <div class="prompt-text">
+            <h4 class="prompt-title">{{ t('comment.loginRequiredTitle') }}</h4>
+            <p class="prompt-desc">{{ t('comment.loginRequired') }}</p>
+          </div>
+          <div class="prompt-actions">
+            <Button type="button" size="sm" class="prompt-btn" @click="goToLogin">
+              {{ t('nav.login') }}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              class="prompt-btn"
+              @click="goToRegister"
+            >
+              {{ t('nav.register') }}
+            </Button>
+          </div>
         </div>
+      </template>
+
+      <template #toolbar>
+        <PlainTextToolbar :disabled="isSubmitting" @action="handleToolbarAction" />
+      </template>
+
+      <div class="form-editor">
+        <Textarea
+          ref="textareaRef"
+          v-model="content"
+          class="comment-textarea"
+          :placeholder="placeholder"
+          :disabled="isSubmitting"
+          rows="4"
+          :maxlength="maxLength"
+          @update:modelValue="autoResize"
+        />
       </div>
-    </div>
+
+      <template #footer>
+        <div class="form-footer">
+          <span class="composer-chip">{{ t('community.mentionHint') }}</span>
+          <div class="form-actions">
+            <Button
+              v-if="props.parentId"
+              type="button"
+              variant="ghost"
+              size="sm"
+              @click="$emit('cancel')"
+            >
+              {{ t('common.cancel') }}
+            </Button>
+            <Button type="submit" size="sm" :disabled="!canSubmit" :loading="isSubmitting">
+              {{ props.parentId ? t('comment.reply') : t('comment.submit') }}
+            </Button>
+          </div>
+        </div>
+      </template>
+    </CommentComposerShell>
   </form>
 </template>
 
@@ -91,11 +88,11 @@ import { validateComment, sanitizeComment, commentRateLimiter } from '@/utils/se
 import { useUserAvatar } from '@/composables/useUserAvatar'
 import { useUpdateBlocker } from '@/utils/app-update/updateBlockers'
 import { applyPlainTextSnippet, type PlainTextToolAction } from '@/utils/plainTextTools'
-import Avatar from '@/components/ui/Avatar.vue'
 import Button from '@/components/ui/Button.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import PlainTextToolbar from '@/components/thread/PlainTextToolbar.vue'
+import CommentComposerShell from '@/components/comment/shared/CommentComposerShell.vue'
 
 interface Props {
   discussionId: string
@@ -130,6 +127,12 @@ const placeholder = computed(() => {
   }
   return t('comment.placeholder')
 })
+
+const composerSubtitle = computed(() =>
+  props.replyToUsername
+    ? t('comment.replyPlaceholder', { username: props.replyToUsername })
+    : t('community.mentionHint')
+)
 
 const userAvatarFallbackLabel = computed(() => {
   const source = user.value?.username?.trim() || '?'
@@ -264,24 +267,20 @@ defineExpose({ focus, setContent })
   color: var(--surface-paper-ink-soft);
 }
 
-.prompt-text,
-.form-main,
-.form-head__copy {
+.prompt-text {
   display: grid;
   gap: var(--spacing-1);
   min-inline-size: 0;
 }
 
-.prompt-title,
-.form-head__title {
+.prompt-title {
   margin: 0;
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
   color: var(--surface-paper-ink);
 }
 
-.prompt-desc,
-.form-head__subtitle {
+.prompt-desc {
   margin: 0;
   font-size: var(--text-sm);
   line-height: 1.55;
@@ -295,43 +294,8 @@ defineExpose({ focus, setContent })
   gap: var(--spacing-2);
 }
 
-.form-shell {
-  padding: var(--spacing-4);
-}
-
-.form-content {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--spacing-3);
-  align-items: start;
-}
-
-.user-avatar {
-  --avatar-size: 2.75rem;
-  border: 0.0625rem solid var(--surface-paper-border);
-  border-radius: 1rem;
-}
-
-.form-head,
-.form-footer {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--spacing-3);
-}
-
-.char-count {
-  flex-shrink: 0;
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.char-count.warning {
-  color: var(--color-warning);
-}
-
 .form-editor {
-  padding-block-end: var(--spacing-3);
+  min-block-size: 7.25rem;
 }
 
 .comment-textarea {
@@ -341,19 +305,37 @@ defineExpose({ focus, setContent })
   border: 0;
   background: transparent;
   box-shadow: none;
-  padding-inline: 0;
-  padding-block: 0;
+  padding: 0;
   line-height: 1.7;
-  color: var(--surface-paper-ink);
+  color: var(--color-text-primary);
+}
+
+.comment-textarea::placeholder {
+  color: color-mix(in srgb, var(--color-text-tertiary) 82%, transparent);
 }
 
 .form-footer {
-  padding-block-start: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  width: 100%;
+}
+
+.composer-chip {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.65rem;
+  padding-inline: 0.625rem;
+  border-radius: 999rem;
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
 }
 
 @media (max-width: 48rem) {
-  .login-prompt,
-  .form-content {
+  .login-prompt {
     grid-template-columns: 1fr;
   }
 
@@ -366,10 +348,6 @@ defineExpose({ focus, setContent })
   .prompt-btn,
   .form-actions > .btn {
     inline-size: 100%;
-  }
-
-  .user-avatar {
-    justify-self: start;
   }
 }
 </style>

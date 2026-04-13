@@ -1130,6 +1130,15 @@
     "followerCount": "{count} followers",
     "followingCount": "Following {count}",
     "you": "You",
+    "overviewHint": "Use this overview to jump into your saved content, activity history, network, and account security pages.",
+    "viewSection": "Open",
+    "manageSection": "Review and manage this section.",
+    "groups": {
+      "content": "Content",
+      "activity": "Activity",
+      "network": "Network",
+      "account": "Account & Security"
+    },
     "notificationsSubtitle": "Review interaction, security, and system notifications in one place.",
     "devicesSubtitle": "Review active devices and manage trusted sessions.",
     "insights": {
