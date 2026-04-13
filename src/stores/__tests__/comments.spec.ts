@@ -128,6 +128,72 @@ describe('comments store', () => {
     expect(store.getCommentsByPostId('post-1')[0].replies?.[0].like_count).toBe(0)
   })
 
+  it('prepends a newly created top-level comment to local state after the api succeeds', async () => {
+    const store = useCommentsStore()
+
+    store.comments.set('post-1', [
+      {
+        id: 'existing-comment',
+        content: 'Existing',
+        parent_id: null,
+        like_count: 1,
+        likes_count: 1,
+        reply_count: 0,
+        replies_count: 0,
+        is_liked: false,
+        is_favorited: false,
+        created_at: '2026-04-13T00:00:00.000Z',
+        user: {
+          id: 'user-1',
+          username: 'alice',
+        },
+        replies: [],
+      },
+    ])
+
+    apiMocks.post.mockResolvedValue({
+      id: 'new-comment',
+      content: 'New comment',
+      parent_id: null,
+      like_count: 0,
+      is_liked: false,
+      is_favorited: false,
+      created_at: '2026-04-14T00:00:00.000Z',
+      updated_at: '2026-04-14T00:00:00.000Z',
+      user: {
+        id: 'user-2',
+        username: 'domi',
+      },
+    })
+
+    const result = await store.addComment('post-1', {
+      content: 'New comment',
+    })
+
+    expect(result.success).toBe(true)
+    expect(apiMocks.post).toHaveBeenCalledWith(
+      '/posts/post-1/comments',
+      {
+        content: 'New comment',
+        parent_id: null,
+        image_ids: undefined,
+      },
+      { skipErrorToast: true }
+    )
+    expect(store.getCommentsByPostId('post-1').map((comment) => comment.id)).toEqual([
+      'new-comment',
+      'existing-comment',
+    ])
+    expect(store.getCommentsByPostId('post-1')[0]).toMatchObject({
+      id: 'new-comment',
+      like_count: 0,
+      likes_count: 0,
+      reply_count: 0,
+      replies_count: 0,
+      replies: undefined,
+    })
+  })
+
   it('clears individual post caches and resets all comment state', async () => {
     const store = useCommentsStore()
 
