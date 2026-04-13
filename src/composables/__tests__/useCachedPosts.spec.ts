@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useCachedPostList, useCachedPost } from '../useCachedPosts'
+import {
+  shouldUseStalePostDetailOnError,
+  useCachedPost,
+  useCachedPostList,
+} from '../useCachedPosts'
+import { ApiError } from '@/api/client'
 import { postCache } from '@/utils/cache'
 
 vi.mock('@/utils/cache', () => ({
@@ -234,6 +239,22 @@ describe('useCachedPosts', () => {
         fromCache: true,
       })
       expect(state.value.error).toBeNull()
+      expect(state.value.source).toBe('cache')
+    })
+
+    it('should not fall back to cached post when 404 is returned', async () => {
+      const cachedPost = { id: '1', title: 'Cached Post' }
+      const notFoundError = new ApiError('Post not found', 404, 'NOT_FOUND')
+      const mockFetch = vi.fn().mockRejectedValue(notFoundError)
+
+      vi.mocked(postCache.getPostEntity).mockResolvedValue(cachedPost)
+
+      const { load, state } = useCachedPost(mockFetch, {
+        shouldUseStaleOnError: shouldUseStalePostDetailOnError,
+      })
+
+      await expect(load('1')).rejects.toBe(notFoundError)
+      expect(state.value.error).toBeInstanceOf(ApiError)
       expect(state.value.source).toBe('cache')
     })
 
