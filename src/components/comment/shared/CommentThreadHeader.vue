@@ -1,5 +1,5 @@
 <template>
-  <header class="comment-thread-header">
+  <header class="comment-thread-header" data-testid="comment-thread-header">
     <div class="comment-thread-header__main">
       <h3 class="comment-thread-header__title">
         {{ title }}
