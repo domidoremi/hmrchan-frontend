@@ -1,10 +1,10 @@
-import { shallowMount, flushPromises } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { defineComponent, ref } from 'vue'
 import PostDetailPage from '../PostDetailPage.vue'
 
-const { replaceSpy, loadCachedPostMock, MockApiError, mockedRoute } = vi.hoisted(() => {
-  class HoistedMockApiError extends Error {
+const mocks = vi.hoisted(() => {
+  class MockApiError extends Error {
     status: number
 
     constructor(message: string, status: number) {
@@ -14,17 +14,48 @@ const { replaceSpy, loadCachedPostMock, MockApiError, mockedRoute } = vi.hoisted
     }
   }
 
+  let lazyObserverCallback: (() => void) | null = null
+
   return {
+    MockApiError,
     replaceSpy: vi.fn(),
+    pushSpy: vi.fn(),
+    backSpy: vi.fn(),
     loadCachedPostMock: vi.fn(),
-    MockApiError: HoistedMockApiError,
+    getPostEntityMock: vi.fn(),
+    applyPageMetaMock: vi.fn(),
+    getFallbackPostDetailMock: vi.fn(),
+    isServiceUnavailableErrorMock: vi.fn(() => false),
+    getPostNavigationContextMock: vi.fn(() => null),
+    updatePostNavigationIndexMock: vi.fn(),
+    formatDateMock: vi.fn(() => 'Apr 14, 2026'),
+    getMediaStreamUrlMock: vi.fn((id: string) => `/media/${id}/stream`),
+    getMediaThumbnailUrlMock: vi.fn((id: string, size: string) => `/media/${id}/${size}.jpg`),
+    getMediaThumbnailSrcsetMock: vi.fn((id: string) => `/media/${id}/small.jpg 1x`),
+    resolveThumbnailSrcMock: vi.fn((url: string | null) => (url ? `${url}?resolved=1` : '')),
+    resolveThumbnailSrcsetMock: vi.fn((url: string | null) => (url ? `${url}?resolved=1 1x` : '')),
+    settingsRef: null as unknown as { value: { enableSwipeNavigation: boolean } },
     mockedRoute: {
       params: { id: '4df78e2b-4a70-4df1-8956-2e249376a336' },
       query: { from: 'profile' },
       hash: '#comments',
       path: '/post/4df78e2b-4a70-4df1-8956-2e249376a336',
     },
+    createLazyObserver: vi.fn((callback: () => void) => {
+      lazyObserverCallback = callback
+      return {
+        observe: vi.fn(),
+        disconnect: vi.fn(),
+      }
+    }),
+    triggerLazyObserver: () => {
+      lazyObserverCallback?.()
+    },
   }
+})
+
+mocks.settingsRef = ref({
+  enableSwipeNavigation: false,
 })
 
 vi.mock('pinia', () => ({
@@ -36,28 +67,31 @@ vi.mock('vue-router', async () => {
   return {
     ...actual,
     useRouter: () => ({
-      replace: replaceSpy,
-      push: vi.fn(),
-      back: vi.fn(),
+      replace: mocks.replaceSpy,
+      push: mocks.pushSpy,
+      back: mocks.backSpy,
     }),
-    useRoute: () => mockedRoute,
+    useRoute: () => mocks.mockedRoute,
   }
 })
 
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
-    t: (key: string) => key,
+    t: (key: string, params?: Record<string, unknown>) => {
+      if (key === 'post.publishedAt' && params?.date) {
+        return `${key}:${params.date}`
+      }
+      return key
+    },
   }),
 }))
 
 vi.mock('@/stores', () => ({
   useAuthStore: () => ({
-    isAuthenticated: ref(false),
+    isAuthenticated: ref(true),
   }),
   useSettingsStore: () => ({
-    settings: ref({
-      enableSwipeNavigation: false,
-    }),
+    settings: mocks.settingsRef,
   }),
 }))
 
@@ -65,20 +99,20 @@ vi.mock('@/api', () => ({
   postService: {
     getPost: vi.fn(),
   },
-  ApiError: MockApiError,
+  ApiError: mocks.MockApiError,
 }))
 
 vi.mock('@/composables/useCachedPosts', () => ({
   shouldUseStalePostDetailOnError: vi.fn(() => false),
   useCachedPost: () => ({
     data: ref(null),
-    load: loadCachedPostMock,
+    load: mocks.loadCachedPostMock,
     invalidate: vi.fn(),
   }),
 }))
 
 vi.mock('@/utils/performance', () => ({
-  createLazyObserver: vi.fn(),
+  createLazyObserver: mocks.createLazyObserver,
   preconnect: vi.fn(),
   preloadResource: vi.fn(),
   runWhenIdle: vi.fn(() => () => {}),
@@ -91,31 +125,35 @@ vi.mock('@/composables/useViewTracking', () => ({
 }))
 
 vi.mock('@/utils/postNavigation', () => ({
-  getPostNavigationContext: vi.fn(() => null),
-  updatePostNavigationIndex: vi.fn(),
+  getPostNavigationContext: (...args: unknown[]) => mocks.getPostNavigationContextMock(...args),
+  updatePostNavigationIndex: (...args: unknown[]) => mocks.updatePostNavigationIndexMock(...args),
 }))
 
 vi.mock('@/fallbacks/postFallback', () => ({
-  getFallbackPostDetailById: vi.fn(() => null),
+  getFallbackPostDetailById: (...args: unknown[]) => mocks.getFallbackPostDetailMock(...args),
 }))
 
 vi.mock('@/fallbacks/publicPageFallback', () => ({
-  isServiceUnavailableError: vi.fn(() => false),
+  isServiceUnavailableError: (...args: unknown[]) => mocks.isServiceUnavailableErrorMock(...args),
 }))
 
 vi.mock('@/utils/mediaOptimizer', () => ({
-  getMediaStreamUrl: vi.fn(() => ''),
-  getMediaThumbnailSrcset: vi.fn(() => ''),
-  getMediaThumbnailUrl: vi.fn(() => ''),
+  getMediaStreamUrl: (...args: unknown[]) => mocks.getMediaStreamUrlMock(...args),
+  getMediaThumbnailSrcset: (...args: unknown[]) => mocks.getMediaThumbnailSrcsetMock(...args),
+  getMediaThumbnailUrl: (...args: unknown[]) => mocks.getMediaThumbnailUrlMock(...args),
 }))
 
 vi.mock('@/utils/thumbnailPresentation', () => ({
-  resolveThumbnailSrc: vi.fn(() => ''),
-  resolveThumbnailSrcset: vi.fn(() => ''),
+  resolveThumbnailSrc: (...args: unknown[]) => mocks.resolveThumbnailSrcMock(...args),
+  resolveThumbnailSrcset: (...args: unknown[]) => mocks.resolveThumbnailSrcsetMock(...args),
 }))
 
 vi.mock('@/utils/pageMeta', () => ({
-  applyPageMeta: vi.fn(),
+  applyPageMeta: mocks.applyPageMetaMock,
+}))
+
+vi.mock('@/utils/date', () => ({
+  formatDate: (...args: unknown[]) => mocks.formatDateMock(...args),
 }))
 
 vi.mock('@/utils/bodyScrollLock', () => ({
@@ -125,7 +163,7 @@ vi.mock('@/utils/bodyScrollLock', () => ({
 
 vi.mock('@/utils/cache', () => ({
   postCache: {
-    getPostEntity: vi.fn().mockResolvedValue(null),
+    getPostEntity: mocks.getPostEntityMock,
   },
 }))
 
@@ -157,31 +195,480 @@ vi.mock('@/components/animation/AnimatedIcon.vue', () => ({
   },
 }))
 
+const basePost = {
+  id: '4df78e2b-4a70-4df1-8956-2e249376a336',
+  title: 'Sample post',
+  description: 'Detail body',
+  media_count: 0,
+  media_files: [],
+  thumbnail_url: null,
+  author_id: 'author-1',
+  author_name: 'alice',
+  created_at: '2026-04-14T00:00:00Z',
+  view_count: 10,
+  like_count: 2,
+  published_at: '2026-04-14T00:00:00Z',
+}
+
+function mountDetailPage(options?: {
+  commentList?: object
+  attachToBody?: boolean
+  errorHandler?: (error: unknown) => void
+}) {
+  return mount(PostDetailPage, {
+    attachTo: options?.attachToBody ? document.body : undefined,
+    global: {
+      config: options?.errorHandler
+        ? {
+            errorHandler: options.errorHandler,
+          }
+        : undefined,
+      stubs: {
+        Transition: false,
+        Suspense: false,
+        CommentList: options?.commentList ?? {
+          props: ['postId'],
+          template: '<div class="comment-list-stub">comments for {{ postId }}</div>',
+        },
+        PostActionStrip: {
+          template: '<div class="post-action-strip-stub" />',
+        },
+        MediaLightbox: {
+          props: ['isOpen'],
+          template: '<div class="media-lightbox-stub" :data-open="String(isOpen)" />',
+        },
+      },
+      mocks: {
+        $t: (key: string, params?: Record<string, unknown>) => {
+          if (key === 'post.publishedAt' && params?.date) {
+            return `${key}:${params.date}`
+          }
+          return key
+        },
+      },
+    },
+  })
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (error?: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
+const PostCommentListHarness = defineComponent({
+  name: 'PostCommentListHarness',
+  template: `
+    <section class="comment-list">
+      <form class="comment-form" @submit.prevent="submitRootSuccess">
+        <button type="submit" class="comment-submit-success">submit success</button>
+      </form>
+      <button type="button" class="comment-submit-failure" @click="submitRootFailure">
+        submit failure
+      </button>
+      <button type="button" class="reply-toggle" @click="startReply">reply</button>
+      <form v-if="showReplyForm" class="comment-form comment-form--reply" @submit.prevent="submitReplySuccess">
+        <button type="submit" class="reply-submit-success">reply success</button>
+        <button type="button" class="reply-submit-cancel" @click="cancelReply">reply cancel</button>
+      </form>
+      <div class="comment-feedback comment-feedback--success" v-if="successCount > 0">
+        success:{{ successCount }}
+      </div>
+      <div class="comment-feedback comment-feedback--error" v-if="errorCount > 0">
+        error:{{ errorCount }}
+      </div>
+      <div class="reply-thread-state">{{ replyThreadState }}</div>
+      <div class="comment-count">{{ commentsCount }}</div>
+    </section>
+  `,
+  setup() {
+    const commentsCount = ref(1)
+    const successCount = ref(0)
+    const errorCount = ref(0)
+    const showReplyForm = ref(false)
+    const replyThreadState = ref('idle')
+
+    function submitRootSuccess() {
+      commentsCount.value += 1
+      successCount.value += 1
+    }
+
+    function submitRootFailure() {
+      errorCount.value += 1
+    }
+
+    function startReply() {
+      showReplyForm.value = true
+      replyThreadState.value = 'replying'
+    }
+
+    function submitReplySuccess() {
+      successCount.value += 1
+      replyThreadState.value = 'updated'
+      showReplyForm.value = false
+    }
+
+    function cancelReply() {
+      showReplyForm.value = false
+      replyThreadState.value = 'cancelled'
+    }
+
+    return {
+      commentsCount,
+      successCount,
+      errorCount,
+      showReplyForm,
+      replyThreadState,
+      submitRootSuccess,
+      submitRootFailure,
+      startReply,
+      submitReplySuccess,
+      cancelReply,
+    }
+  },
+})
+
 describe('PostDetailPage', () => {
+  let originalIntersectionObserver: typeof window.IntersectionObserver | undefined
+
+  beforeEach(() => {
+    mocks.replaceSpy.mockReset()
+    mocks.pushSpy.mockReset()
+    mocks.backSpy.mockReset()
+    mocks.loadCachedPostMock.mockReset()
+    mocks.getPostEntityMock.mockReset()
+    mocks.applyPageMetaMock.mockReset()
+    mocks.getFallbackPostDetailMock.mockReset()
+    mocks.isServiceUnavailableErrorMock.mockReset()
+    mocks.getPostNavigationContextMock.mockReset()
+    mocks.updatePostNavigationIndexMock.mockReset()
+    mocks.formatDateMock.mockReset()
+    mocks.getMediaStreamUrlMock.mockReset()
+    mocks.getMediaThumbnailUrlMock.mockReset()
+    mocks.getMediaThumbnailSrcsetMock.mockReset()
+    mocks.resolveThumbnailSrcMock.mockReset()
+    mocks.resolveThumbnailSrcsetMock.mockReset()
+    mocks.getPostEntityMock.mockResolvedValue(null)
+    mocks.getFallbackPostDetailMock.mockReturnValue(null)
+    mocks.isServiceUnavailableErrorMock.mockReturnValue(false)
+    mocks.getPostNavigationContextMock.mockReturnValue(null)
+    mocks.formatDateMock.mockReturnValue('Apr 14, 2026')
+    mocks.getMediaStreamUrlMock.mockImplementation((id: string) => `/media/${id}/stream`)
+    mocks.getMediaThumbnailUrlMock.mockImplementation(
+      (id: string, size: string) => `/media/${id}/${size}.jpg`
+    )
+    mocks.getMediaThumbnailSrcsetMock.mockImplementation(
+      (id: string) => `/media/${id}/small.jpg 1x`
+    )
+    mocks.resolveThumbnailSrcMock.mockImplementation((url: string | null) =>
+      url ? `${url}?resolved=1` : ''
+    )
+    mocks.resolveThumbnailSrcsetMock.mockImplementation((url: string | null) =>
+      url ? `${url}?resolved=1 1x` : ''
+    )
+    mocks.settingsRef.value.enableSwipeNavigation = false
+    originalIntersectionObserver = window.IntersectionObserver
+    window.IntersectionObserver = vi.fn() as unknown as typeof window.IntersectionObserver
+  })
+
   afterEach(() => {
-    replaceSpy.mockReset()
-    loadCachedPostMock.mockReset()
+    if (originalIntersectionObserver) {
+      window.IntersectionObserver = originalIntersectionObserver
+    } else {
+      delete (window as Partial<Window>).IntersectionObserver
+    }
+    vi.clearAllMocks()
   })
 
   it('redirects to not-found when the detail request returns 404', async () => {
-    loadCachedPostMock.mockRejectedValue(new MockApiError('Post not found', 404))
+    mocks.loadCachedPostMock.mockRejectedValue(new mocks.MockApiError('Post not found', 404))
 
-    shallowMount(PostDetailPage, {
-      global: {
-        stubs: {
-          Transition: false,
-          Suspense: false,
-        },
-      },
-    })
+    mountDetailPage()
 
     await flushPromises()
 
-    expect(replaceSpy).toHaveBeenCalledWith({
+    expect(mocks.replaceSpy).toHaveBeenCalledWith({
       name: 'not-found',
-      params: { pathMatch: ['post', mockedRoute.params.id] },
-      query: mockedRoute.query,
-      hash: mockedRoute.hash,
+      params: { pathMatch: ['post', mocks.mockedRoute.params.id] },
+      query: mocks.mockedRoute.query,
+      hash: mocks.mockedRoute.hash,
     })
+  })
+
+  it('loads the comment list branch once the comments section becomes visible', async () => {
+    mocks.loadCachedPostMock.mockResolvedValue({
+      data: basePost,
+      fromCache: false,
+    })
+
+    const wrapper = mountDetailPage({ attachToBody: true })
+
+    await flushPromises()
+
+    expect(wrapper.find('.post-comments__placeholder').exists()).toBe(true)
+    mocks.triggerLazyObserver()
+    await flushPromises()
+
+    expect(wrapper.find('.comment-list-stub').exists()).toBe(true)
+    expect(wrapper.find('.comment-list-stub').text()).toContain(basePost.id)
+  })
+
+  it('keeps post comment success, reply update, and cancel flows stable once the detail comments branch is loaded', async () => {
+    const errorHandler = vi.fn()
+    mocks.loadCachedPostMock.mockResolvedValue({
+      data: basePost,
+      fromCache: false,
+    })
+
+    const wrapper = mountDetailPage({
+      attachToBody: true,
+      errorHandler,
+      commentList: PostCommentListHarness,
+    })
+
+    await flushPromises()
+    mocks.triggerLazyObserver()
+    await flushPromises()
+
+    expect(wrapper.find('.comment-form').exists()).toBe(true)
+
+    await wrapper.get('.comment-submit-success').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.comment-feedback--success').text()).toContain('1')
+    expect(wrapper.find('.comment-feedback--error').exists()).toBe(false)
+    expect(wrapper.find('.comment-count').text()).toContain('2')
+
+    await wrapper.get('.reply-toggle').trigger('click')
+    expect(wrapper.find('.comment-form--reply').exists()).toBe(true)
+
+    await wrapper.get('.reply-submit-success').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.reply-thread-state').text()).toContain('updated')
+    expect(wrapper.find('.comment-form--reply').exists()).toBe(false)
+    expect(wrapper.find('.comment-feedback--success').text()).toContain('2')
+
+    await wrapper.get('.reply-toggle').trigger('click')
+    expect(wrapper.find('.comment-form--reply').exists()).toBe(true)
+
+    await wrapper.get('.reply-submit-cancel').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.comment-form--reply').exists()).toBe(false)
+    expect(wrapper.find('.reply-thread-state').text()).toContain('cancelled')
+    expect(errorHandler).not.toHaveBeenCalled()
+  })
+
+  it('surfaces only the post comment error state when submission fails', async () => {
+    const errorHandler = vi.fn()
+    mocks.loadCachedPostMock.mockResolvedValue({
+      data: basePost,
+      fromCache: false,
+    })
+
+    const wrapper = mountDetailPage({
+      attachToBody: true,
+      errorHandler,
+      commentList: PostCommentListHarness,
+    })
+
+    await flushPromises()
+    mocks.triggerLazyObserver()
+    await flushPromises()
+
+    await wrapper.get('.comment-submit-failure').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.comment-feedback--error').text()).toContain('1')
+    expect(wrapper.find('.comment-feedback--success').exists()).toBe(false)
+    expect(errorHandler).not.toHaveBeenCalled()
+  })
+
+  it('renders fallback text detail, opens and closes the text modal, and keeps live errors hidden when fallback is active', async () => {
+    const fallbackPost = {
+      ...basePost,
+      title: 'A very long fallback title',
+      description: `${'Long fallback body '.repeat(30)}`.trim(),
+      media_count: 0,
+      media_files: [],
+      thumbnail_url: null,
+    }
+
+    mocks.isServiceUnavailableErrorMock.mockReturnValue(true)
+    mocks.getFallbackPostDetailMock.mockReturnValue(fallbackPost)
+    mocks.loadCachedPostMock.mockRejectedValue(new Error('service unavailable'))
+
+    const wrapper = mountDetailPage({ attachToBody: true })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="state-indicator"]').exists()).toBe(false)
+    expect(wrapper.find('.post-media-text-only').exists()).toBe(true)
+    expect(wrapper.find('.post-title').text()).toContain('A very long fallback title')
+    expect(wrapper.find('.post-date').text()).toContain('Apr 14, 2026')
+    expect(mocks.applyPageMetaMock).toHaveBeenCalled()
+
+    await wrapper.get('.post-description-more').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.post-text-overlay').exists()).toBe(true)
+    expect(wrapper.find('.post-text-content').text()).toContain('Long fallback body')
+  })
+
+  it('uses cached pending media state first and then refreshes into thumbnail fallback content', async () => {
+    const deferredRefresh = createDeferred<{ data: typeof basePost; fromCache: boolean }>()
+    mocks.getPostEntityMock.mockResolvedValue({
+      ...basePost,
+      media_count: 3,
+      media_files: [],
+      thumbnail_url: 'https://cdn.example.com/thumb.jpg',
+    })
+    mocks.loadCachedPostMock.mockReturnValue(deferredRefresh.promise)
+
+    const wrapper = mountDetailPage({ attachToBody: true })
+    await flushPromises()
+
+    expect(wrapper.find('.media-viewer .media-skeleton').exists()).toBe(true)
+    expect(wrapper.findAll('.thumbnail-btn--placeholder')).toHaveLength(3)
+
+    deferredRefresh.resolve({
+      data: {
+        ...basePost,
+        media_count: 0,
+        media_files: [],
+        thumbnail_url: 'https://cdn.example.com/thumb.jpg',
+      },
+      fromCache: false,
+    })
+    await flushPromises()
+
+    expect(wrapper.find('.post-image').attributes('src')).toContain('thumb.jpg?resolved=1')
+    expect(wrapper.findAll('.thumbnail-btn--placeholder')).toHaveLength(0)
+  })
+
+  it('renders loaded image galleries and routes author/back actions', async () => {
+    mocks.loadCachedPostMock.mockResolvedValue({
+      data: {
+        ...basePost,
+        media_count: 2,
+        media_files: [
+          { id: 'media-1', file_type: 'image', width: 1280, height: 720 },
+          { id: 'media-2', file_type: 'image', width: 720, height: 1280 },
+        ],
+      },
+      fromCache: false,
+    })
+
+    const wrapper = mountDetailPage({ attachToBody: true })
+    await flushPromises()
+
+    expect(wrapper.findAll('.thumbnail-btn')).toHaveLength(2)
+    expect(wrapper.find('.media-nav.next').attributes('disabled')).toBeUndefined()
+    expect(wrapper.find('.media-nav.prev').attributes('disabled')).toBeDefined()
+    expect(
+      wrapper
+        .findAll('.media-viewer-item')
+        .some((item) => item.attributes('src')?.includes('/media/media-1/large.jpg'))
+    ).toBe(true)
+    expect(wrapper.find('.media-viewer-expand').exists()).toBe(true)
+    expect(wrapper.find('.media-nav.next').attributes('disabled')).toBeUndefined()
+    expect(wrapper.find('.media-nav.prev').attributes('disabled')).toBeDefined()
+
+    await wrapper.get('.author-link').trigger('click')
+    expect(mocks.pushSpy).toHaveBeenCalledWith('/author/author-1')
+
+    await wrapper.get('.post-back-fab').trigger('click')
+    expect(mocks.backSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('supports media selection, lightbox opening, and full-text modal dismissal flows', async () => {
+    mocks.loadCachedPostMock.mockResolvedValue({
+      data: {
+        ...basePost,
+        title: 'Gallery title',
+        description: `Lead paragraph ${'detail body '.repeat(40)}`.trim(),
+        media_count: 3,
+        media_files: [
+          { id: 'media-1', file_type: 'image', width: 1280, height: 720 },
+          { id: 'media-2', file_type: 'image', width: 720, height: 1280 },
+          { id: 'media-3', file_type: 'image', width: 1280, height: 720 },
+        ],
+      },
+      fromCache: false,
+    })
+
+    const wrapper = mountDetailPage({ attachToBody: true })
+    await flushPromises()
+
+    expect(wrapper.findAll('.thumbnail-btn')).toHaveLength(3)
+
+    await wrapper.findAll('.thumbnail-btn')[1]!.trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.thumbnail-btn')[1]!.classes()).toContain('active')
+
+    await wrapper.get('.media-nav.next').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.thumbnail-btn')[2]!.classes()).toContain('active')
+
+    await wrapper.get('.media-nav.prev').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.thumbnail-btn')[1]!.classes()).toContain('active')
+
+    await wrapper.get('.media-viewer-expand').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.media-lightbox-stub').attributes('data-open')).toBe('true')
+
+    await wrapper.get('.post-description-more').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.post-text-overlay').exists()).toBe(true)
+    expect(wrapper.find('.post-text-close').exists()).toBe(true)
+  })
+
+  it('requires a second wheel gesture before navigating to the next post when swipe navigation is enabled', async () => {
+    mocks.settingsRef.value.enableSwipeNavigation = true
+    mocks.getPostNavigationContextMock.mockReturnValue({
+      ids: [basePost.id, 'post-2'],
+      index: 0,
+      source: 'search',
+    })
+    mocks.loadCachedPostMock.mockResolvedValue({
+      data: {
+        ...basePost,
+        media_count: 0,
+        media_files: [],
+      },
+      fromCache: false,
+    })
+
+    const wrapper = mountDetailPage({ attachToBody: true })
+    await flushPromises()
+
+    window.dispatchEvent(new PointerEvent('pointerdown'))
+    await flushPromises()
+
+    const stage = wrapper.get('.post-stage').element
+    const firstWheel = new WheelEvent('wheel', {
+      deltaX: 160,
+      deltaY: 0,
+      cancelable: true,
+    })
+    stage.dispatchEvent(firstWheel)
+    await flushPromises()
+
+    expect(mocks.pushSpy).not.toHaveBeenCalled()
+    expect(wrapper.find('.post-nav-hint').exists()).toBe(true)
+
+    const secondWheel = new WheelEvent('wheel', {
+      deltaX: 160,
+      deltaY: 0,
+      cancelable: true,
+    })
+    stage.dispatchEvent(secondWheel)
+    await flushPromises()
+
+    expect(mocks.pushSpy).toHaveBeenCalledWith('/post/post-2')
   })
 })
