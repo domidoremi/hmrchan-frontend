@@ -9,6 +9,17 @@ import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline/promises'
 
 import puppeteer from 'puppeteer'
+import {
+  getManualRunnerProtectedRoutes,
+  getReleaseRouteContractOverview,
+  validateReleaseRouteContract,
+} from './lib/release-route-contract.js'
+import {
+  buildRunnerPreflightChecks,
+  buildRunnerPreflightSummary,
+  renderSkippedChecks,
+  writeRunnerPreflightArtifacts,
+} from './lib/prod-regression-report.js'
 
 const DEFAULT_BASE_URL = 'https://momichan.xyz'
 const DEFAULT_SECONDARY_EMAIL_MODE = 'user-assisted'
@@ -32,10 +43,11 @@ const CHECKPOINT_TYPES = {
 }
 
 class SkipCheckError extends Error {
-  constructor(reason) {
+  constructor(reason, classification = 'coverage-gap') {
     super(reason)
     this.name = 'SkipCheckError'
     this.reason = reason
+    this.classification = classification
   }
 }
 
@@ -43,6 +55,7 @@ function parseArgs(argv) {
   const options = {
     help: false,
     headless: false,
+    preflight: false,
   }
 
   for (const arg of argv) {
@@ -52,6 +65,10 @@ function parseArgs(argv) {
     }
     if (arg === '--headless') {
       options.headless = true
+      continue
+    }
+    if (arg === '--preflight') {
+      options.preflight = true
       continue
     }
     throw new Error(`未知参数: ${arg}`)
@@ -78,6 +95,7 @@ momichan.xyz 生产深度回归 runner
   node scripts/prod-regression-runner.mjs
 
 可选参数:
+  --preflight  仅执行预检，不启动浏览器或任何 round-trip
   --headless   以 headless 模式启动浏览器（默认 false，推荐本地人工协助时保持可视）
   --help       显示帮助
 
@@ -196,7 +214,10 @@ function maskUrl(raw) {
 function getNestedValue(object, keyPath) {
   return String(keyPath)
     .split('.')
-    .reduce((current, segment) => (current && segment in current ? current[segment] : undefined), object)
+    .reduce(
+      (current, segment) => (current && segment in current ? current[segment] : undefined),
+      object
+    )
 }
 
 function loadEnglishLocale() {
@@ -211,6 +232,29 @@ function buildExpectedTitleFromKey(locale, keyPath) {
   const value = getNestedValue(locale, keyPath)
   if (!value || typeof value !== 'string') return null
   return value === SITE_NAME ? SITE_NAME : `${value} · ${SITE_NAME}`
+}
+
+function getManualRunnerRouteName(route) {
+  if (route.path === '/favorites') return 'favorites redirect accessible'
+  if (route.path === '/profile') return 'profile accessible'
+  return `${route.name} accessible`
+}
+
+function getManualRunnerPrivateRoutes(locale) {
+  return getManualRunnerProtectedRoutes()
+    .filter((route) => route.path === '/favorites' || route.path.startsWith('/profile'))
+    .map((route) => ({
+      name: getManualRunnerRouteName(route),
+      path: route.path,
+      selector: route.shellSelector,
+      expectedFinalPath: route.expectedPath ?? route.path,
+      titleKey: route.expectedTitleKey,
+      readinessSelectorsAll: route.readinessSelectorsAll,
+      readinessSelectorsAny: route.runnerReadinessSelectorsAny,
+      expectedTitleExact: route.expectedTitleKey
+        ? buildExpectedTitleFromKey(locale, route.expectedTitleKey)
+        : null,
+    }))
 }
 
 function createStrongPassword(label) {
@@ -315,18 +359,24 @@ function extractHomeCandidates(homePayload) {
   const featuredItems = homePayload?.data?.featured?.items ?? []
   const trends = homePayload?.data?.trends ?? {}
   const authorFromFeatured =
-    featuredItems.flatMap((item) => item?.related_authors ?? []).find((author) => author?.deep_link) ?? null
+    featuredItems
+      .flatMap((item) => item?.related_authors ?? [])
+      .find((author) => author?.deep_link) ?? null
   const authorFromTrends = (trends.authors ?? []).find((author) => author?.deep_link) ?? null
-  const scheduleFromTrends = (trends.schedules ?? []).find((schedule) => schedule?.deep_link || schedule?.id) ?? null
+  const scheduleFromTrends =
+    (trends.schedules ?? []).find((schedule) => schedule?.deep_link || schedule?.id) ?? null
   const featuredPost =
     featuredItems
       .flatMap((item) => [
         item?.related_posts?.[0] ?? null,
-        item?.primary_cta?.target ? { id: item.id, deep_link: item.primary_cta.target, title: item.title } : null,
+        item?.primary_cta?.target
+          ? { id: item.id, deep_link: item.primary_cta.target, title: item.title }
+          : null,
       ])
       .find((post) => post?.deep_link || post?.id) ?? null
 
-  const tagCandidate = (trends.tags ?? []).find((tag) => typeof tag?.name === 'string' && tag.name.trim()) ?? null
+  const tagCandidate =
+    (trends.tags ?? []).find((tag) => typeof tag?.name === 'string' && tag.name.trim()) ?? null
 
   return {
     featuredItems,
@@ -339,7 +389,10 @@ function extractHomeCandidates(homePayload) {
 
 async function discoverProductionEntities(baseUrl) {
   const homeUrl = new URL('/api/v1/home', baseUrl).toString()
-  const discussionUrl = new URL('/api/v1/discussions?page=1&page_size=2&sort=latest', baseUrl).toString()
+  const discussionUrl = new URL(
+    '/api/v1/discussions?page=1&page_size=2&sort=latest',
+    baseUrl
+  ).toString()
   const homePayload = await fetchJson(homeUrl, 'home API')
   const discussionPayload = await fetchJson(discussionUrl, 'discussions API')
   const candidates = extractHomeCandidates(homePayload)
@@ -350,7 +403,8 @@ async function discoverProductionEntities(baseUrl) {
     (candidates.post?.id ? `/post/${candidates.post.id}` : null)
 
   const authorPath =
-    candidates.author?.deep_link ?? (candidates.author?.id ? `/author/${candidates.author.id}` : null)
+    candidates.author?.deep_link ??
+    (candidates.author?.id ? `/author/${candidates.author.id}` : null)
 
   const schedulePath =
     candidates.schedule?.deep_link ??
@@ -385,7 +439,10 @@ async function discoverProductionEntities(baseUrl) {
           id: candidates.author?.id ?? null,
           path: authorPath,
           title:
-            candidates.author?.display_name ?? candidates.author?.name ?? candidates.author?.username ?? null,
+            candidates.author?.display_name ??
+            candidates.author?.name ??
+            candidates.author?.username ??
+            null,
         }
       : null,
     schedule: schedulePath
@@ -408,7 +465,13 @@ function startLighthouseAudit(config, state) {
   return new Promise((resolve, reject) => {
     const child = spawn(
       process.execPath,
-      [path.resolve('scripts', 'lighthouse-prod-full-audit.mjs'), '--base', config.baseUrl, '--output', config.lighthouseDir],
+      [
+        path.resolve('scripts', 'lighthouse-prod-full-audit.mjs'),
+        '--base',
+        config.baseUrl,
+        '--output',
+        config.lighthouseDir,
+      ],
       {
         cwd: process.cwd(),
         env: process.env,
@@ -545,7 +608,11 @@ function evaluateDiagnostics(diagnostics) {
 
     if (entry.kind === 'console' && entry.level === 'error') {
       const text = String(entry.text || '')
-      if (/(TypeError|ReferenceError|SyntaxError|ChunkLoadError|Failed to fetch|Cannot read|Unhandled)/i.test(text)) {
+      if (
+        /(TypeError|ReferenceError|SyntaxError|ChunkLoadError|Failed to fetch|Cannot read|Unhandled)/i.test(
+          text
+        )
+      ) {
         severe.push(`console error: ${truncate(text, 240)}`)
       } else {
         warnings.push(`console error: ${truncate(text, 180)}`)
@@ -557,11 +624,15 @@ function evaluateDiagnostics(diagnostics) {
     severe,
     warnings,
     summary: {
-      consoleErrors: diagnostics.filter((entry) => entry.kind === 'console' && entry.level === 'error').length,
+      consoleErrors: diagnostics.filter(
+        (entry) => entry.kind === 'console' && entry.level === 'error'
+      ).length,
       pageErrors: diagnostics.filter((entry) => entry.kind === 'pageerror').length,
-      api4xx: diagnostics.filter((entry) => entry.kind === 'response' && entry.status >= 400 && entry.status < 500)
+      api4xx: diagnostics.filter(
+        (entry) => entry.kind === 'response' && entry.status >= 400 && entry.status < 500
+      ).length,
+      api5xx: diagnostics.filter((entry) => entry.kind === 'response' && entry.status >= 500)
         .length,
-      api5xx: diagnostics.filter((entry) => entry.kind === 'response' && entry.status >= 500).length,
       requestFailed: diagnostics.filter((entry) => entry.kind === 'requestfailed').length,
     },
   }
@@ -588,9 +659,12 @@ async function closeQuietly(resource) {
 
 async function waitForRouteIdle(page, selector, timeout = 20_000) {
   await page.waitForSelector(selector, { timeout })
-  await page.waitForFunction(() => document.readyState === 'complete' || document.readyState === 'interactive', {
-    timeout,
-  })
+  await page.waitForFunction(
+    () => document.readyState === 'complete' || document.readyState === 'interactive',
+    {
+      timeout,
+    }
+  )
   await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => {})
 }
 
@@ -608,6 +682,45 @@ async function takeScreenshot(page, screenshotDir, fileBase) {
   const filePath = path.join(screenshotDir, fileName)
   await page.screenshot({ path: filePath, fullPage: true })
   return filePath
+}
+
+async function waitForAllSelectors(page, selectors, timeout = 12_000) {
+  const matchedSelectors = []
+  for (const selector of selectors ?? []) {
+    await page.waitForSelector(selector, { timeout })
+    matchedSelectors.push(selector)
+  }
+  return matchedSelectors
+}
+
+async function waitForAnySelector(page, selectors, timeout = 12_000) {
+  const candidates = (selectors ?? []).filter(Boolean)
+  if (candidates.length === 0) {
+    return null
+  }
+
+  await page.waitForFunction(
+    (selectorList) =>
+      selectorList.some((selector) => {
+        const element = document.querySelector(selector)
+        if (!element) return false
+        const styles = window.getComputedStyle(element)
+        return styles.display !== 'none' && styles.visibility !== 'hidden'
+      }),
+    { timeout },
+    candidates
+  )
+
+  return page.evaluate((selectorList) => {
+    return (
+      selectorList.find((selector) => {
+        const element = document.querySelector(selector)
+        if (!element) return false
+        const styles = window.getComputedStyle(element)
+        return styles.display !== 'none' && styles.visibility !== 'hidden'
+      }) ?? null
+    )
+  }, candidates)
 }
 
 function createCheckEntry(meta, state, durationMs, result) {
@@ -651,6 +764,7 @@ function createCheckEntry(meta, state, durationMs, result) {
       name: entry.name,
       reason: entry.error,
       severity: entry.severity,
+      classification: result.skipClassification ?? meta.skipClassification ?? 'coverage-gap',
     })
   }
 
@@ -666,7 +780,10 @@ async function runCheck(state, meta, fn) {
   try {
     const result = (await fn()) ?? {}
     if (result.skipReason) {
-      throw new SkipCheckError(result.skipReason)
+      throw new SkipCheckError(
+        result.skipReason,
+        result.skipClassification ?? meta.skipClassification ?? 'coverage-gap'
+      )
     }
 
     const durationMs = Date.now() - start
@@ -690,6 +807,7 @@ async function runCheck(state, meta, fn) {
       finishedAt: finishedAtIso,
       error: skip ? error.reason : summarizeError(error),
       artifacts: [],
+      skipClassification: skip ? error.classification : null,
     })
 
     console.log(`${skip ? '⏭️' : '❌'} ${label} (${durationMs}ms)`)
@@ -764,7 +882,10 @@ async function promptForUrl(rl, state, promptMessage, checkpointType) {
 
 async function promptForQaEmail(rl, state) {
   while (true) {
-    const email = await promptLine(rl, `请输入临时 QA 邮箱（用于注册/验证邮箱/忘记密码）${os.EOL}> `)
+    const email = await promptLine(
+      rl,
+      `请输入临时 QA 邮箱（用于注册/验证邮箱/忘记密码）${os.EOL}> `
+    )
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       recordCheckpoint(state, {
         type: CHECKPOINT_TYPES.qaEmail,
@@ -782,12 +903,13 @@ async function handleTurnstileIfNeeded(page, rl, state, scopeLabel) {
     return false
   }
 
-  const screenshotPath = await takeScreenshot(page, state._paths.screenshots, `${scopeLabel}-turnstile`)
-  console.log(`⚠️  检测到 Turnstile: ${screenshotPath}`)
-  await waitForEnter(
-    rl,
-    `请在浏览器中完成 ${scopeLabel} 的 Turnstile/人机验证。`
+  const screenshotPath = await takeScreenshot(
+    page,
+    state._paths.screenshots,
+    `${scopeLabel}-turnstile`
   )
+  console.log(`⚠️  检测到 Turnstile: ${screenshotPath}`)
+  await waitForEnter(rl, `请在浏览器中完成 ${scopeLabel} 的 Turnstile/人机验证。`)
   recordCheckpoint(state, {
     type: CHECKPOINT_TYPES.turnstile,
     prompt: scopeLabel,
@@ -840,7 +962,9 @@ async function maybeHandleLoginChallenges(page, rl, state, scopeLabel) {
     }
 
     if (await handleTurnstileIfNeeded(page, rl, state, `${scopeLabel}-login`)) {
-      const submitButton = await page.$('form.auth-form button[type="submit"], form.auth-form button')
+      const submitButton = await page.$(
+        'form.auth-form button[type="submit"], form.auth-form button'
+      )
       if (submitButton) {
         await submitButton.click().catch(() => {})
       }
@@ -872,7 +996,9 @@ async function loginViaUi(page, rl, state, credentials, { expectedPath, label })
 
   await handleTurnstileIfNeeded(page, rl, state, `${label}-pre-submit`)
 
-  const [submitButton] = await page.$$('form.auth-form button[type="submit"], form.auth-form button')
+  const [submitButton] = await page.$$(
+    'form.auth-form button[type="submit"], form.auth-form button'
+  )
   assert(submitButton, '未找到登录提交按钮')
   await submitButton.click()
 
@@ -896,9 +1022,11 @@ async function logoutViaNavbar(page) {
   await page.click('.nav-user-btn')
   await page.waitForSelector('.user-dropdown .dropdown-link--danger', { timeout: 10_000 })
   await page.click('.user-dropdown .dropdown-link--danger')
-  await waitForPath(page, (url) => url.pathname === '/login' || url.pathname === '/', 20_000).catch(async () => {
-    await page.waitForSelector('.login-btn', { timeout: 10_000 })
-  })
+  await waitForPath(page, (url) => url.pathname === '/login' || url.pathname === '/', 20_000).catch(
+    async () => {
+      await page.waitForSelector('.login-btn', { timeout: 10_000 })
+    }
+  )
 }
 
 async function prepareRouteEvidence(page, expected) {
@@ -922,10 +1050,16 @@ async function prepareRouteEvidence(page, expected) {
       ? new URL(expected.expectedCanonicalPath, expected.baseUrl).toString()
       : new URL(finalUrlObject.pathname, expected.baseUrl).toString()
 
-  assert(canonical === expectedCanonical, `canonical 不匹配，期望 ${expectedCanonical}，实际 ${canonical}`)
+  assert(
+    canonical === expectedCanonical,
+    `canonical 不匹配，期望 ${expectedCanonical}，实际 ${canonical}`
+  )
 
   if (expected.expectedTitleExact) {
-    assert(title === expected.expectedTitleExact, `title 不匹配，期望 "${expected.expectedTitleExact}"，实际 "${title}"`)
+    assert(
+      title === expected.expectedTitleExact,
+      `title 不匹配，期望 "${expected.expectedTitleExact}"，实际 "${title}"`
+    )
   }
 
   if (expected.expectedTitleIncludes?.length) {
@@ -977,6 +1111,8 @@ async function verifyRoute({
   baseUrl,
   pathOrUrl,
   selector,
+  readinessSelectorsAll = [],
+  readinessSelectorsAny = [],
   expectedFinalPath,
   expectedCanonicalPath,
   expectedTitleExact,
@@ -1021,13 +1157,17 @@ async function verifyRoute({
       expectedTextIncludes,
       forbiddenTextIncludes,
     })
+    const readinessAllMatched = await waitForAllSelectors(harness.page, readinessSelectorsAll)
+    const readinessAnyMatched = await waitForAnySelector(harness.page, readinessSelectorsAny)
 
     const diagnosticSummary = summarizeDiagnosticsForCheck(diagnostics)
     assertNoSevereDiagnostics(diagnostics, meta.name)
 
     const artifacts = []
     if (captureScreenshot) {
-      artifacts.push(await takeScreenshot(harness.page, state._paths.screenshots, `${meta.scope}-${meta.name}`))
+      artifacts.push(
+        await takeScreenshot(harness.page, state._paths.screenshots, `${meta.scope}-${meta.name}`)
+      )
     }
 
     state.diagnostics.push(
@@ -1044,8 +1184,9 @@ async function verifyRoute({
       artifacts,
       details: {
         selector,
-        cacheControl:
-          responseHeaders['cache-control'] ?? responseHeaders['Cache-Control'] ?? null,
+        readinessSelectorsAll: readinessAllMatched,
+        readinessSelectorMatched: readinessAnyMatched,
+        cacheControl: responseHeaders['cache-control'] ?? responseHeaders['Cache-Control'] ?? null,
       },
     }
   })
@@ -1067,7 +1208,10 @@ async function verifyProtectedGuard(state, harness, baseUrl, routePath) {
         await gotoPath(harness.page, baseUrl, routePath, '.auth-page--login')
       })
       const currentUrl = new URL(harness.page.url())
-      assert(currentUrl.pathname === '/login', `未登录访问 ${routePath} 未跳到 /login，实际 ${currentUrl.pathname}`)
+      assert(
+        currentUrl.pathname === '/login',
+        `未登录访问 ${routePath} 未跳到 /login，实际 ${currentUrl.pathname}`
+      )
       const redirect = currentUrl.searchParams.get('redirect')
       assert(redirect === routePath, `redirect 参数不匹配，期望 ${routePath}，实际 ${redirect}`)
       assertNoSevereDiagnostics(diagnostics, `guard ${routePath}`)
@@ -1106,7 +1250,10 @@ async function verifyGuestOnlyRedirect(state, harness, baseUrl, routePath) {
       })
 
       const currentUrl = new URL(harness.page.url())
-      assert(currentUrl.pathname !== routePath, `登录态访问 ${routePath} 不应停留在 guest-only 页面`)
+      assert(
+        currentUrl.pathname !== routePath,
+        `登录态访问 ${routePath} 不应停留在 guest-only 页面`
+      )
       assertNoSevereDiagnostics(diagnostics, `guest-only redirect ${routePath}`)
 
       state.diagnostics.push(
@@ -1237,11 +1384,15 @@ async function runSearchFlow(state, harness, baseUrl, discoveredPostPath, search
           await gotoPath(harness.page, baseUrl, '/search', '.search-page')
           await setInputValue(harness.page, '.search-input', term)
           await harness.page.keyboard.press('Enter')
-          await harness.page.waitForFunction(
-            (expectedTerm) => window.location.pathname === '/search' && window.location.search.includes(`q=${encodeURIComponent(expectedTerm)}`),
-            { timeout: 15_000 },
-            term
-          ).catch(() => {})
+          await harness.page
+            .waitForFunction(
+              (expectedTerm) =>
+                window.location.pathname === '/search' &&
+                window.location.search.includes(`q=${encodeURIComponent(expectedTerm)}`),
+              { timeout: 15_000 },
+              term
+            )
+            .catch(() => {})
           await harness.page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => {})
         })
 
@@ -1259,7 +1410,10 @@ async function runSearchFlow(state, harness, baseUrl, discoveredPostPath, search
           await foundPost.click()
           await waitForRouteIdle(harness.page, '.post-detail-page')
           const current = new URL(harness.page.url())
-          assert(current.pathname.startsWith('/post/'), `搜索结果未打开 post 详情，实际 ${current.pathname}`)
+          assert(
+            current.pathname.startsWith('/post/'),
+            `搜索结果未打开 post 详情，实际 ${current.pathname}`
+          )
           if (discoveredPostPath) {
             assert(
               current.pathname === discoveredPostPath,
@@ -1271,7 +1425,10 @@ async function runSearchFlow(state, harness, baseUrl, discoveredPostPath, search
           await foundAuthor.click()
           await waitForRouteIdle(harness.page, '.author-detail-page')
           const current = new URL(harness.page.url())
-          assert(current.pathname.startsWith('/author/'), `搜索结果未打开 author 详情，实际 ${current.pathname}`)
+          assert(
+            current.pathname.startsWith('/author/'),
+            `搜索结果未打开 author 详情，实际 ${current.pathname}`
+          )
         }
 
         finalEvidence = {
@@ -1285,7 +1442,11 @@ async function runSearchFlow(state, harness, baseUrl, discoveredPostPath, search
       assert(finalEvidence, '所有搜索词都未产生可点击结果')
       assertNoSevereDiagnostics(diagnosticsForReport ?? [], 'search flow')
 
-      const screenshot = await takeScreenshot(harness.page, state._paths.screenshots, 'public-search-result')
+      const screenshot = await takeScreenshot(
+        harness.page,
+        state._paths.screenshots,
+        'public-search-result'
+      )
       state.diagnostics.push(
         ...(diagnosticsForReport ?? []).map((entry) => ({
           ...entry,
@@ -1580,7 +1741,10 @@ async function runPublicRegression(state, harness, config, discovered) {
         name: 'public discussion detail',
         severity: 'P2',
       },
-      async () => ({ skipReason: '生产公开 discussions 为空，已改为验证 community empty-state / empty collection' })
+      async () => ({
+        skipReason:
+          '生产公开 discussions 为空，已改为验证 community empty-state / empty collection',
+      })
     )
   } else {
     await verifyRoute({
@@ -1622,13 +1786,35 @@ async function runPublicRegression(state, harness, config, discovered) {
     }
   }
 
-  await runSearchFlow(state, harness, config.baseUrl, discovered.post?.path ?? null, discovered.searchTerms)
+  await runSearchFlow(
+    state,
+    harness,
+    config.baseUrl,
+    discovered.post?.path ?? null,
+    discovered.searchTerms
+  )
   await verifyInvalidRouteFallback(state, harness, config.baseUrl)
   await verifyInvalidPostFallback(state, harness, config.baseUrl)
 }
 
 async function runMainAccountRegression(state, harness, config) {
-  const protectedRoutes = ['/favorites', '/profile', '/profile/settings', '/profile/devices']
+  const protectedRoutes = [
+    '/favorites',
+    '/profile',
+    '/profile/favorites',
+    '/profile/comments',
+    '/profile/likes',
+    '/profile/comment-favorites',
+    '/profile/history',
+    '/profile/reports',
+    '/profile/security-activity',
+    '/profile/followers',
+    '/profile/following',
+    '/profile/blocked',
+    '/profile/settings',
+    '/profile/notifications',
+    '/profile/devices',
+  ]
   for (const routePath of protectedRoutes) {
     await verifyProtectedGuard(state, harness, config.baseUrl, routePath)
   }
@@ -1645,18 +1831,28 @@ async function runMainAccountRegression(state, harness, config) {
     async () => {
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
         await gotoPath(harness.page, config.baseUrl, '/profile/devices', '.auth-page--login')
-        await loginViaUi(harness.page, state._rl, state, {
-          username: config.primaryUsername,
-          password: config.primaryPassword,
-        }, {
-          expectedPath: '/profile/devices',
-          label: 'main-account',
-        })
+        await loginViaUi(
+          harness.page,
+          state._rl,
+          state,
+          {
+            username: config.primaryUsername,
+            password: config.primaryPassword,
+          },
+          {
+            expectedPath: '/profile/devices',
+            label: 'main-account',
+          }
+        )
         await waitForRouteIdle(harness.page, '.devices-page')
       })
 
       assertNoSevereDiagnostics(diagnostics, 'main login redirect-back')
-      const screenshot = await takeScreenshot(harness.page, state._paths.screenshots, 'main-devices-after-login')
+      const screenshot = await takeScreenshot(
+        harness.page,
+        state._paths.screenshots,
+        'main-devices-after-login'
+      )
       state.diagnostics.push(
         ...diagnostics.map((entry) => ({
           ...entry,
@@ -1679,8 +1875,17 @@ async function runMainAccountRegression(state, harness, config) {
     const dependentChecks = [
       'guest-only redirect /login',
       'guest-only redirect /register',
-      'favorites accessible',
+      'favorites redirect accessible',
       'profile accessible',
+      'profile comments accessible',
+      'profile likes accessible',
+      'profile comment favorites accessible',
+      'profile history accessible',
+      'profile reports accessible',
+      'profile security activity accessible',
+      'profile followers accessible',
+      'profile following accessible',
+      'profile blocked accessible',
       'profile settings accessible',
       'profile notifications accessible',
       'profile devices accessible',
@@ -1698,8 +1903,9 @@ async function runMainAccountRegression(state, harness, config) {
           scope: 'main-account',
           name: checkName,
           severity: 'P2',
+          skipClassification: 'dependency',
         },
-        async () => ({ skipReason: '主账号登录失败，依赖项跳过' })
+        async () => ({ skipReason: '主账号登录失败，依赖项跳过', skipClassification: 'dependency' })
       )
     }
     return
@@ -1708,28 +1914,7 @@ async function runMainAccountRegression(state, harness, config) {
   await verifyGuestOnlyRedirect(state, harness, config.baseUrl, '/login')
   await verifyGuestOnlyRedirect(state, harness, config.baseUrl, '/register')
 
-  const privateRoutes = [
-    { name: 'favorites accessible', path: '/favorites', selector: '.favorites-page', titleKey: 'nav.favorites' },
-    { name: 'profile accessible', path: '/profile', selector: '.profile-page', titleKey: 'nav.profile' },
-    {
-      name: 'profile settings accessible',
-      path: '/profile/settings',
-      selector: '.settings-page',
-      titleKey: 'nav.profileSettings',
-    },
-    {
-      name: 'profile notifications accessible',
-      path: '/profile/notifications',
-      selector: '.notifications-page',
-      titleKey: 'profile.tabs.notifications',
-    },
-    {
-      name: 'profile devices accessible',
-      path: '/profile/devices',
-      selector: '.devices-page',
-      titleKey: 'profile.tabs.devices',
-    },
-  ]
+  const privateRoutes = getManualRunnerPrivateRoutes(state._locale)
 
   for (const route of privateRoutes) {
     await verifyRoute({
@@ -1745,9 +1930,11 @@ async function runMainAccountRegression(state, harness, config) {
       baseUrl: config.baseUrl,
       pathOrUrl: route.path,
       selector: route.selector,
-      expectedFinalPath: route.path,
-      expectedCanonicalPath: route.path,
-      expectedTitleExact: buildExpectedTitleFromKey(state._locale, route.titleKey),
+      readinessSelectorsAll: route.readinessSelectorsAll,
+      readinessSelectorsAny: route.readinessSelectorsAny,
+      expectedFinalPath: route.expectedFinalPath ?? route.path,
+      expectedCanonicalPath: route.expectedFinalPath ?? route.path,
+      expectedTitleExact: route.expectedTitleExact,
     })
   }
 
@@ -1798,19 +1985,38 @@ async function runMainAccountRegression(state, harness, config) {
       await gotoPath(harness.page, config.baseUrl, '/profile/devices', '.devices-page')
       const original = await getCurrentDeviceState(harness.page)
       const renamed = truncate(`${config.qaPrefix}-device`, 32)
+      const artifacts = [
+        await takeScreenshot(harness.page, state._paths.screenshots, 'main-device-rename-before'),
+      ]
 
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
         await renameCurrentDevice(harness.page, renamed)
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
         await waitForRouteIdle(harness.page, '.devices-page')
         const afterRename = await getCurrentDeviceState(harness.page)
-        assert(afterRename.name === renamed, `设备名未持久化，期望 ${renamed}，实际 ${afterRename.name}`)
+        assert(
+          afterRename.name === renamed,
+          `设备名未持久化，期望 ${renamed}，实际 ${afterRename.name}`
+        )
+        artifacts.push(
+          await takeScreenshot(harness.page, state._paths.screenshots, 'main-device-rename-after')
+        )
 
         await renameCurrentDevice(harness.page, original.name)
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
         await waitForRouteIdle(harness.page, '.devices-page')
         const restored = await getCurrentDeviceState(harness.page)
-        assert(restored.name === original.name, `设备名未恢复，期望 ${original.name}，实际 ${restored.name}`)
+        assert(
+          restored.name === original.name,
+          `设备名未恢复，期望 ${original.name}，实际 ${restored.name}`
+        )
+        artifacts.push(
+          await takeScreenshot(
+            harness.page,
+            state._paths.screenshots,
+            'main-device-rename-restored'
+          )
+        )
       })
 
       assertNoSevereDiagnostics(diagnostics, 'current device rename round-trip')
@@ -1833,6 +2039,7 @@ async function runMainAccountRegression(state, harness, config) {
         title: await harness.page.title(),
         canonical: await readCanonical(harness.page),
         diagnostics: summarizeDiagnosticsForCheck(diagnostics),
+        artifacts,
         details: {
           originalName: truncate(original.name, 40),
           temporaryName: renamed,
@@ -1854,19 +2061,34 @@ async function runMainAccountRegression(state, harness, config) {
       await gotoPath(harness.page, config.baseUrl, '/profile/devices', '.devices-page')
       const original = await getCurrentDeviceState(harness.page)
       const toggledState = !original.trusted
+      const artifacts = [
+        await takeScreenshot(harness.page, state._paths.screenshots, 'main-device-trust-before'),
+      ]
 
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
         await toggleCurrentDeviceTrust(harness.page, toggledState)
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
         await waitForRouteIdle(harness.page, '.devices-page')
         const afterToggle = await getCurrentDeviceState(harness.page)
-        assert(afterToggle.trusted === toggledState, `trust 状态未切换，期望 ${toggledState}，实际 ${afterToggle.trusted}`)
+        assert(
+          afterToggle.trusted === toggledState,
+          `trust 状态未切换，期望 ${toggledState}，实际 ${afterToggle.trusted}`
+        )
+        artifacts.push(
+          await takeScreenshot(harness.page, state._paths.screenshots, 'main-device-trust-after')
+        )
 
         await toggleCurrentDeviceTrust(harness.page, original.trusted)
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
         await waitForRouteIdle(harness.page, '.devices-page')
         const restored = await getCurrentDeviceState(harness.page)
-        assert(restored.trusted === original.trusted, `trust 状态未恢复，期望 ${original.trusted}，实际 ${restored.trusted}`)
+        assert(
+          restored.trusted === original.trusted,
+          `trust 状态未恢复，期望 ${original.trusted}，实际 ${restored.trusted}`
+        )
+        artifacts.push(
+          await takeScreenshot(harness.page, state._paths.screenshots, 'main-device-trust-restored')
+        )
       })
 
       assertNoSevereDiagnostics(diagnostics, 'current device trust toggle restore')
@@ -1889,6 +2111,7 @@ async function runMainAccountRegression(state, harness, config) {
         title: await harness.page.title(),
         canonical: await readCanonical(harness.page),
         diagnostics: summarizeDiagnosticsForCheck(diagnostics),
+        artifacts,
         details: {
           originalTrusted: original.trusted,
           toggledState,
@@ -1922,7 +2145,11 @@ async function runMainAccountRegression(state, harness, config) {
       })
 
       assertNoSevereDiagnostics(diagnostics, 'main logout/login loop')
-      const screenshot = await takeScreenshot(harness.page, state._paths.screenshots, 'main-profile-relogin')
+      const screenshot = await takeScreenshot(
+        harness.page,
+        state._paths.screenshots,
+        'main-profile-relogin'
+      )
       state.diagnostics.push(
         ...diagnostics.map((entry) => ({
           ...entry,
@@ -1943,7 +2170,9 @@ async function runMainAccountRegression(state, harness, config) {
 }
 
 async function runQaAccountRegression(state, harness, config, discovered) {
-  const qaEmail = process.env.QA_EMAIL ? process.env.QA_EMAIL.trim() : await promptForQaEmail(state._rl, state)
+  const qaEmail = process.env.QA_EMAIL
+    ? process.env.QA_EMAIL.trim()
+    : await promptForQaEmail(state._rl, state)
   const username = truncate(`${config.qaPrefix}-user`, 40)
   const initialPassword = createStrongPassword('QaReg')
   const resetPassword = createStrongPassword('QaReset')
@@ -1968,7 +2197,9 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         await setInputValue(harness.page, '#reg-email', qaEmail)
         await handleTurnstileIfNeeded(harness.page, state._rl, state, 'qa-register-send-code')
 
-        const sendButton = await harness.page.$('form.auth-form button[type="submit"], form.auth-form button')
+        const sendButton = await harness.page.$(
+          'form.auth-form button[type="submit"], form.auth-form button'
+        )
         assert(sendButton, '未找到注册 send code 按钮')
         await sendButton.click()
         await harness.page.waitForSelector('#reg-username', { timeout: 20_000 })
@@ -1994,7 +2225,11 @@ async function runQaAccountRegression(state, harness, config, discovered) {
       })
 
       assertNoSevereDiagnostics(diagnostics, 'qa registration')
-      const screenshot = await takeScreenshot(harness.page, state._paths.screenshots, 'qa-home-after-register')
+      const screenshot = await takeScreenshot(
+        harness.page,
+        state._paths.screenshots,
+        'qa-home-after-register'
+      )
       state.diagnostics.push(
         ...diagnostics.map((entry) => ({
           ...entry,
@@ -2108,16 +2343,23 @@ async function runQaAccountRegression(state, harness, config, discovered) {
       scope: 'qa-account',
       name: 'verify email flow',
       severity: 'P0',
-      url: new URL(`/verify-email?token=invalid&email=${encodeURIComponent(qaEmail)}`, config.baseUrl).toString(),
+      url: new URL(
+        `/verify-email?token=invalid&email=${encodeURIComponent(qaEmail)}`,
+        config.baseUrl
+      ).toString(),
     },
     async () => {
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
         const triggerUrl = `/verify-email?token=invalid&email=${encodeURIComponent(qaEmail)}`
         await gotoPath(harness.page, config.baseUrl, triggerUrl, '.auth-page')
-        await harness.page.waitForFunction(
-          () => document.body.textContent?.includes('Verify') || document.querySelector('.action-group'),
-          { timeout: 15_000 }
-        ).catch(() => {})
+        await harness.page
+          .waitForFunction(
+            () =>
+              document.body.textContent?.includes('Verify') ||
+              document.querySelector('.action-group'),
+            { timeout: 15_000 }
+          )
+          .catch(() => {})
         const resendButtons = await harness.page.$$('.action-group button')
         assert(resendButtons.length >= 2, '未找到 verify-email resend 按钮')
         await resendButtons[1].click()
@@ -2131,7 +2373,11 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         await harness.page.waitForSelector('.status-icon--success', { timeout: 20_000 })
       })
 
-      const screenshot = await takeScreenshot(harness.page, state._paths.screenshots, 'qa-verify-email-success')
+      const screenshot = await takeScreenshot(
+        harness.page,
+        state._paths.screenshots,
+        'qa-verify-email-success'
+      )
       const evaluation = evaluateDiagnostics(diagnostics)
       const severe = evaluation.severe.filter(
         (message) => !/api 400 .*\/api\/v1\/auth\/verify-email/.test(message)
@@ -2173,7 +2419,9 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         await gotoPath(harness.page, config.baseUrl, '/forgot-password', '.auth-page--forgot')
         await setInputValue(harness.page, '#email', qaEmail)
         await handleTurnstileIfNeeded(harness.page, state._rl, state, 'qa-forgot-password')
-        const submitButton = await harness.page.$('form.auth-form button[type="submit"], form.auth-form button')
+        const submitButton = await harness.page.$(
+          'form.auth-form button[type="submit"], form.auth-form button'
+        )
         assert(submitButton, '未找到 forgot-password 提交按钮')
         await submitButton.click()
         await harness.page.waitForSelector('.status-icon--success', { timeout: 20_000 })
@@ -2187,7 +2435,9 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         await gotoPath(harness.page, config.baseUrl, resetLink, '.auth-page')
         await setInputValue(harness.page, '#new_password', resetPassword)
         await setInputValue(harness.page, '#confirm_password', resetPassword)
-        const resetButton = await harness.page.$('form.auth-form button[type="submit"], form.auth-form button')
+        const resetButton = await harness.page.$(
+          'form.auth-form button[type="submit"], form.auth-form button'
+        )
         assert(resetButton, '未找到 reset-password 提交按钮')
         await resetButton.click()
         await harness.page.waitForSelector('.status-icon--success', { timeout: 20_000 })
@@ -2208,7 +2458,11 @@ async function runQaAccountRegression(state, harness, config, discovered) {
       })
 
       assertNoSevereDiagnostics(diagnostics, 'qa forgot password flow')
-      const screenshot = await takeScreenshot(harness.page, state._paths.screenshots, 'qa-home-after-reset-login')
+      const screenshot = await takeScreenshot(
+        harness.page,
+        state._paths.screenshots,
+        'qa-home-after-reset-login'
+      )
       state.diagnostics.push(
         ...diagnostics.map((entry) => ({
           ...entry,
@@ -2241,11 +2495,19 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         return { skipReason: '未发现公开 post 样本，无法执行收藏回归' }
       }
 
+      const artifacts = []
+
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
         await gotoPath(harness.page, config.baseUrl, discovered.post.path, '.post-detail-page')
         const favoriteButtonSelector = 'button.action-btn[aria-pressed]'
         await harness.page.waitForSelector(favoriteButtonSelector)
-        const currentlyFavorited = await harness.page.$eval(favoriteButtonSelector, (element) => element.getAttribute('aria-pressed') === 'true')
+        artifacts.push(
+          await takeScreenshot(harness.page, state._paths.screenshots, 'qa-favorite-before')
+        )
+        const currentlyFavorited = await harness.page.$eval(
+          favoriteButtonSelector,
+          (element) => element.getAttribute('aria-pressed') === 'true'
+        )
         if (currentlyFavorited) {
           await harness.page.click(favoriteButtonSelector)
           await harness.page.waitForFunction(
@@ -2269,32 +2531,47 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         )
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
         await waitForRouteIdle(harness.page, '.post-detail-page')
-        const persisted = await harness.page.$eval(favoriteButtonSelector, (element) => element.getAttribute('aria-pressed') === 'true')
+        const persisted = await harness.page.$eval(
+          favoriteButtonSelector,
+          (element) => element.getAttribute('aria-pressed') === 'true'
+        )
         assert(persisted, '刷新后收藏状态未保持')
+        artifacts.push(
+          await takeScreenshot(harness.page, state._paths.screenshots, 'qa-favorite-after')
+        )
 
-        await gotoPath(harness.page, config.baseUrl, '/favorites', '.favorites-page')
+        await gotoPath(
+          harness.page,
+          config.baseUrl,
+          '/favorites',
+          '[data-testid="profile-section-shell"]'
+        )
         await harness.page.waitForFunction(
           (postTitle) =>
-            [...document.querySelectorAll('.favorite-card .favorite-title')].some((element) =>
-              element.textContent?.includes(postTitle)
+            [...document.querySelectorAll('.favorite-card .post-preview-card__title')].some(
+              (element) => element.textContent?.includes(postTitle)
             ),
           { timeout: 15_000 },
           discovered.post.title
         )
 
-        const removeButtons = await harness.page.$$('.favorite-card .card-action-btn--danger')
+        const removeButtons = await harness.page.$$('.favorite-card .remove-btn')
         assert(removeButtons.length > 0, '未找到 favorites remove 按钮')
         await removeButtons[0].click()
         await harness.page.waitForNetworkIdle({ idleTime: 500, timeout: 5_000 }).catch(() => {})
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
-        await waitForRouteIdle(harness.page, '.favorites-page')
-        const stillPresent = await harness.page.evaluate((postTitle) =>
-          [...document.querySelectorAll('.favorite-card .favorite-title')].some((element) =>
-            element.textContent?.includes(postTitle)
-          ),
+        await waitForRouteIdle(harness.page, '[data-testid="profile-section-shell"]')
+        const stillPresent = await harness.page.evaluate(
+          (postTitle) =>
+            [...document.querySelectorAll('.favorite-card .post-preview-card__title')].some(
+              (element) => element.textContent?.includes(postTitle)
+            ),
           discovered.post.title
         )
         assert(!stillPresent, '收藏清理失败，favorites 中仍存在测试项目')
+        artifacts.push(
+          await takeScreenshot(harness.page, state._paths.screenshots, 'qa-favorite-restored')
+        )
       })
 
       assertNoSevereDiagnostics(diagnostics, 'favorite/unfavorite round-trip')
@@ -2304,7 +2581,6 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         restored: true,
         value: discovered.post.path,
       })
-      const screenshot = await takeScreenshot(harness.page, state._paths.screenshots, 'qa-favorites-clean')
       state.diagnostics.push(
         ...diagnostics.map((entry) => ({
           ...entry,
@@ -2318,7 +2594,7 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         title: await harness.page.title(),
         canonical: await readCanonical(harness.page),
         diagnostics: summarizeDiagnosticsForCheck(diagnostics),
-        artifacts: [screenshot],
+        artifacts,
       }
     }
   )
@@ -2336,10 +2612,14 @@ async function runQaAccountRegression(state, harness, config, discovered) {
       const discussionTitle = `${config.qaPrefix} discussion`
       const discussionBody = `${config.qaPrefix} production regression discussion body`
       const discussionTag = slugify(config.qaPrefix).slice(0, 24)
+      const artifacts = []
 
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
         await gotoPath(harness.page, config.baseUrl, '/community', '.community-page')
         await harness.page.waitForSelector('.discussion-composer', { timeout: 20_000 })
+        artifacts.push(
+          await takeScreenshot(harness.page, state._paths.screenshots, 'qa-discussion-before')
+        )
         await setInputValue(harness.page, '.composer-title-input', discussionTitle)
         await harness.page.click('.category-btn:nth-of-type(2)').catch(() => {})
         await setInputValue(harness.page, '.composer-textarea', discussionBody)
@@ -2371,6 +2651,9 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         await waitForRouteIdle(harness.page, '.discussion-detail-page')
         const createdUrl = harness.page.url()
         state.qa.createdDiscussionUrl = createdUrl
+        artifacts.push(
+          await takeScreenshot(harness.page, state._paths.screenshots, 'qa-discussion-after-create')
+        )
 
         const deleteButtons = await harness.page.$$('.discussion-actions .action-danger')
         assert(deleteButtons.length > 0, 'Discussion detail 未提供删除按钮')
@@ -2379,10 +2662,9 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         const confirmButtons = await harness.page.$$('.confirm-dialog__actions button')
         assert(confirmButtons.length >= 2, '未找到 discussion 删除确认按钮')
         await confirmButtons[confirmButtons.length - 1].click()
-        await waitForPath(
-          harness.page,
-          (url) => url.pathname === '/community',
-          20_000
+        await waitForPath(harness.page, (url) => url.pathname === '/community', 20_000)
+        artifacts.push(
+          await takeScreenshot(harness.page, state._paths.screenshots, 'qa-discussion-restored')
         )
       })
 
@@ -2396,7 +2678,6 @@ async function runQaAccountRegression(state, harness, config, discovered) {
       })
 
       assertNoSevereDiagnostics(diagnostics, 'discussion create/delete round-trip')
-      const screenshot = await takeScreenshot(harness.page, state._paths.screenshots, 'qa-community-after-delete')
       state.diagnostics.push(
         ...diagnostics.map((entry) => ({
           ...entry,
@@ -2412,8 +2693,12 @@ async function runQaAccountRegression(state, harness, config, discovered) {
           scope: 'qa-account',
           name: 'discussion edit unsupported',
           severity: 'P3',
+          skipClassification: 'capability-gap',
         },
-        async () => ({ skipReason: '当前 UI 未发现 discussion 编辑入口，按计划记录为 skipped' })
+        async () => ({
+          skipReason: '当前 UI 未发现 discussion 编辑入口，按计划记录为 skipped',
+          skipClassification: 'capability-gap',
+        })
       )
 
       return {
@@ -2421,9 +2706,11 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         title: await harness.page.title(),
         canonical: await readCanonical(harness.page),
         diagnostics: summarizeDiagnosticsForCheck(diagnostics),
-        artifacts: [screenshot],
+        artifacts,
         details: {
-          createdDiscussionUrlMasked: state.qa.createdDiscussionUrl ? maskUrl(state.qa.createdDiscussionUrl) : null,
+          createdDiscussionUrlMasked: state.qa.createdDiscussionUrl
+            ? maskUrl(state.qa.createdDiscussionUrl)
+            : null,
         },
       }
     }
@@ -2515,7 +2802,10 @@ async function runFinalRecheck(state, publicHarness, mainHarness, qaHarness, con
           await gotoPath(qaHarness.page, config.baseUrl, discovered.post.path, '.post-detail-page')
           await qaHarness.page.waitForSelector('button.action-btn[aria-pressed]')
         })
-        const isFavorited = await qaHarness.page.$eval('button.action-btn[aria-pressed]', (element) => element.getAttribute('aria-pressed') === 'true')
+        const isFavorited = await qaHarness.page.$eval(
+          'button.action-btn[aria-pressed]',
+          (element) => element.getAttribute('aria-pressed') === 'true'
+        )
         assert(!isFavorited, '收藏回滚后按钮仍显示已收藏')
         assertNoSevereDiagnostics(diagnostics, 'favorite cleanup recheck')
         state.diagnostics.push(
@@ -2552,7 +2842,9 @@ function severityRank(severity) {
 }
 
 function escapeTable(value) {
-  return String(value ?? '').replace(/\|/g, '\\|').replace(/\n/g, '<br>')
+  return String(value ?? '')
+    .replace(/\|/g, '\\|')
+    .replace(/\n/g, '<br>')
 }
 
 function renderIssuesBySeverity(issues) {
@@ -2619,7 +2911,9 @@ function renderLighthouseSummary(state) {
     if (worst.length > 0) {
       lines.push(`- ${profile} 最差页面:`)
       for (const entry of worst) {
-        lines.push(`  - ${new URL(entry.url).pathname}: performance=${entry.performance}, LCP=${entry.lcpMs ?? 'n/a'}ms`)
+        lines.push(
+          `  - ${new URL(entry.url).pathname}: performance=${entry.performance}, LCP=${entry.lcpMs ?? 'n/a'}ms`
+        )
       }
     }
   }
@@ -2632,7 +2926,11 @@ function buildMarkdownReport(state) {
   const routeRows = state.checks
     .filter((check) => ['route', 'auth', 'recheck'].includes(check.category))
     .map((check) => {
-      const pathDisplay = check.finalUrl ? new URL(check.finalUrl).pathname : check.url ? new URL(check.url).pathname : ''
+      const pathDisplay = check.finalUrl
+        ? new URL(check.finalUrl).pathname
+        : check.url
+          ? new URL(check.url).pathname
+          : ''
       return `| ${escapeTable(check.scope)} | ${escapeTable(check.name)} | ${check.status} | ${escapeTable(pathDisplay)} | ${escapeTable(check.title ?? '')} | ${escapeTable(check.canonical ?? '')} | ${escapeTable(check.error ?? '')} |`
     })
 
@@ -2664,12 +2962,20 @@ function buildMarkdownReport(state) {
     '',
     '## Failures by Severity',
     '',
-    ...renderIssuesBySeverity([...state.issues].sort((left, right) => severityRank(left.severity) - severityRank(right.severity))),
+    ...renderIssuesBySeverity(
+      [...state.issues].sort(
+        (left, right) => severityRank(left.severity) - severityRank(right.severity)
+      )
+    ),
+    '## Skipped Checks',
+    '',
+    ...renderSkippedChecks(state.skips),
     '## Checkpoints',
     '',
     ...(state.checkpoints.length > 0
       ? state.checkpoints.map(
-          (checkpoint) => `- ${checkpoint.at} · ${checkpoint.type} · ${checkpoint.responseMasked ?? 'user-assisted'}`
+          (checkpoint) =>
+            `- ${checkpoint.at} · ${checkpoint.type} · ${checkpoint.responseMasked ?? 'user-assisted'}`
         )
       : ['- 无人工协助断点记录']),
     '',
@@ -2689,8 +2995,7 @@ function buildMarkdownReport(state) {
     '',
     ...(lingeringData.length > 0
       ? lingeringData.map(
-          (item) =>
-            `- ${item.scope}: ${item.item}${item.value ? ` · ${item.value}` : ''}`
+          (item) => `- ${item.scope}: ${item.item}${item.value ? ` · ${item.value}` : ''}`
         )
       : ['- 无已知残留数据']),
     '',
@@ -2711,37 +3016,16 @@ function finalizeState(state) {
   delete state._rl
 }
 
-function validateConfig(options) {
+function buildConfig(options) {
   const timestamp = formatTimestamp()
   const baseUrl = normalizeBaseUrl(process.env.BASE_URL ?? DEFAULT_BASE_URL)
   const primaryUsername = (process.env.PRIMARY_USERNAME ?? '').trim()
   const primaryPassword = process.env.PRIMARY_PASSWORD ?? ''
-  const secondaryEmailMode = (process.env.SECONDARY_EMAIL_MODE ?? DEFAULT_SECONDARY_EMAIL_MODE).trim()
+  const secondaryEmailMode = (
+    process.env.SECONDARY_EMAIL_MODE ?? DEFAULT_SECONDARY_EMAIL_MODE
+  ).trim()
   const qaPrefix = (process.env.QA_PREFIX ?? `qa-prod-${timestamp}`).trim()
   const artifactDir = toAbsoluteArtifactDir(process.env.ARTIFACT_DIR, timestamp)
-
-  if (options.help) {
-    return {
-      baseUrl,
-      primaryUsername,
-      primaryPassword,
-      secondaryEmailMode,
-      qaPrefix,
-      artifactDir,
-      headless: options.headless,
-      timestamp,
-    }
-  }
-
-  if (!primaryUsername) {
-    throw new Error('缺少 PRIMARY_USERNAME')
-  }
-  if (!primaryPassword) {
-    throw new Error('缺少 PRIMARY_PASSWORD')
-  }
-  if (secondaryEmailMode !== DEFAULT_SECONDARY_EMAIL_MODE) {
-    throw new Error(`SECONDARY_EMAIL_MODE 必须为 ${DEFAULT_SECONDARY_EMAIL_MODE}，收到: ${secondaryEmailMode}`)
-  }
 
   return {
     baseUrl,
@@ -2757,6 +3041,63 @@ function validateConfig(options) {
   }
 }
 
+function assertRunnableConfig(config) {
+  if (!config.primaryUsername) {
+    throw new Error('缺少 PRIMARY_USERNAME')
+  }
+  if (!config.primaryPassword) {
+    throw new Error('缺少 PRIMARY_PASSWORD')
+  }
+  if (config.secondaryEmailMode !== DEFAULT_SECONDARY_EMAIL_MODE) {
+    throw new Error(
+      `SECONDARY_EMAIL_MODE 必须为 ${DEFAULT_SECONDARY_EMAIL_MODE}，收到: ${config.secondaryEmailMode}`
+    )
+  }
+}
+
+async function runPreflight(config) {
+  let artifactDirReady = false
+  let artifactDirError = null
+
+  try {
+    ensureDir(config.artifactDir)
+    ensureDir(path.join(config.artifactDir, 'diagnostics'))
+    artifactDirReady = true
+  } catch (error) {
+    artifactDirError = summarizeError(error)
+  }
+
+  const routeOverview = getReleaseRouteContractOverview()
+  const contractIssues = validateReleaseRouteContract()
+  const checks = buildRunnerPreflightChecks({
+    config,
+    artifactDirReady,
+    artifactDirError,
+    contractIssues,
+    routeOverview,
+  })
+  const summary = buildRunnerPreflightSummary({
+    config,
+    checks,
+    routeOverview,
+  })
+
+  if (!artifactDirReady) {
+    throw new Error(
+      `预检无法写入 artifact 目录 ${config.artifactDir}: ${artifactDirError ?? 'unknown error'}`
+    )
+  }
+
+  await writeRunnerPreflightArtifacts(summary)
+  console.log(`\n📦 Preflight summary: ${path.join(config.artifactDir, 'summary.json')}`)
+  console.log(`📝 Preflight report: ${path.join(config.artifactDir, 'summary.md')}`)
+  console.log(`🧾 Preflight diagnostics: ${path.join(config.artifactDir, 'diagnostics', 'preflight.json')}`)
+
+  if (summary.status !== 'passed') {
+    process.exitCode = 1
+  }
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2))
   if (options.help) {
@@ -2764,7 +3105,12 @@ async function main() {
     return
   }
 
-  const config = validateConfig(options)
+  const config = buildConfig(options)
+  if (options.preflight) {
+    await runPreflight(config)
+    return
+  }
+  assertRunnableConfig(config)
   const locale = loadEnglishLocale()
 
   const artifactPaths = {
@@ -2772,12 +3118,21 @@ async function main() {
     screenshots: path.join(config.artifactDir, 'screenshots'),
     logs: path.join(config.artifactDir, 'logs'),
     checkpoints: path.join(config.artifactDir, 'checkpoints'),
+    diagnosticsDir: path.join(config.artifactDir, 'diagnostics'),
     summary: path.join(config.artifactDir, 'summary.json'),
+    summaryMd: path.join(config.artifactDir, 'summary.md'),
     report: path.join(config.artifactDir, 'report.md'),
     diagnostics: path.join(config.artifactDir, 'diagnostics.json'),
   }
 
-  for (const dirPath of [artifactPaths.root, artifactPaths.screenshots, artifactPaths.logs, artifactPaths.checkpoints, config.lighthouseDir]) {
+  for (const dirPath of [
+    artifactPaths.root,
+    artifactPaths.screenshots,
+    artifactPaths.logs,
+    artifactPaths.checkpoints,
+    artifactPaths.diagnosticsDir,
+    config.lighthouseDir,
+  ]) {
     ensureDir(dirPath)
   }
 
@@ -2849,12 +3204,18 @@ async function main() {
   }
 
   writeJson(artifactPaths.diagnostics, state.diagnostics)
+  writeJson(path.join(artifactPaths.diagnosticsDir, 'entries.json'), state.diagnostics)
+  writeJson(path.join(artifactPaths.diagnosticsDir, 'issues.json'), state.issues)
+  writeJson(path.join(artifactPaths.diagnosticsDir, 'skips.json'), state.skips)
   finalizeState(state)
   writeJson(artifactPaths.summary, state)
-  writeText(artifactPaths.report, buildMarkdownReport(state))
+  const markdownReport = buildMarkdownReport(state)
+  writeText(artifactPaths.report, markdownReport)
+  writeText(artifactPaths.summaryMd, markdownReport)
 
   console.log(`\n📦 Summary: ${artifactPaths.summary}`)
   console.log(`📝 Report: ${artifactPaths.report}`)
+  console.log(`📝 Summary Markdown: ${artifactPaths.summaryMd}`)
   console.log(`🧾 Diagnostics: ${artifactPaths.diagnostics}`)
 
   const failedChecks = state.checks.filter((check) => check.status === 'failed')
@@ -2864,6 +3225,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`❌ 生产回归 runner 执行失败: ${error instanceof Error ? error.stack || error.message : String(error)}`)
+  console.error(
+    `❌ 生产回归 runner 执行失败: ${error instanceof Error ? error.stack || error.message : String(error)}`
+  )
   process.exit(1)
 })

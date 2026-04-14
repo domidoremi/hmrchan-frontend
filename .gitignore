@@ -76,6 +76,8 @@ coverage/
 *.lcov
 .nyc_output/
 __screenshots__/
+.e2e-smoke*/
+.frontend-health*/
 playwright-report/
 test-results/
 blob-report/

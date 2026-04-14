@@ -16,7 +16,7 @@ check_dependency_change() {
   return 1
 }
 
-check_dependency_change "package.json" || check_dependency_change "bun.lock"
+check_dependency_change "package.json" || check_dependency_change "bun.lock" || true
 
 # Check if .env.example changed
 if echo "$changed_files" | grep -q ".env.example"; then

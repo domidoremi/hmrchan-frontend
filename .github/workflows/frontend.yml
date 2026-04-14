@@ -107,8 +107,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
     timeout-minutes: 15
-    outputs:
-      exit_code: ${{ steps.coverage.outputs.exit_code }}
 
     steps:
       - name: Checkout
@@ -122,15 +120,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - id: coverage
-        name: Coverage report (non-blocking)
-        shell: bash
-        run: |
-          set +e
-          bun run test:coverage
-          status=$?
-          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
-          exit 0
+      - name: Coverage report
+        run: bun run test:coverage
 
       - name: Upload coverage artifacts
         if: always()
@@ -146,8 +137,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
     timeout-minutes: 15
-    outputs:
-      exit_code: ${{ steps.e2e.outputs.exit_code }}
 
     steps:
       - name: Checkout
@@ -161,15 +150,140 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - id: e2e
-        name: Smoke E2E (non-blocking)
-        shell: bash
+      - name: Smoke E2E
+        env:
+          # Auth smoke is required in trusted CI contexts. Fork PRs fall back to guest-only smoke
+          # because secrets are unavailable there.
+          E2E_ARTIFACT_DIR: .e2e-smoke
+          E2E_REQUIRE_AUTH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+          E2E_AUTH_LOGIN: ${{ secrets.E2E_AUTH_LOGIN }}
+          E2E_AUTH_PASSWORD: ${{ secrets.E2E_AUTH_PASSWORD }}
         run: |
-          set +e
-          bun run test:e2e
-          status=$?
-          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
-          exit 0
+          mkdir -p .e2e-smoke
+          status=0
+          bun run test:e2e || status=$?
+          if [ -f .e2e-smoke/summary.md ]; then
+            cat .e2e-smoke/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $status
+
+      - name: Upload smoke E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: e2e-smoke
+          path: |
+            .e2e-smoke/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  frontend_health:
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Frontend health smoke
+        env:
+          FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health
+        run: |
+          mkdir -p .frontend-health
+          status=0
+          bun run check:frontend 2>&1 | tee .frontend-health/report.txt || status=$?
+          if [ -f .frontend-health/summary.md ]; then
+            cat .frontend-health/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $status
+
+      - name: Upload frontend health artifacts
+        if: always()
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: frontend-health
+          path: |
+            .frontend-health/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  production_canary:
+    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+    runs-on: ubuntu-latest
+    needs:
+      - quality
+      - coverage
+      - e2e_smoke
+      - frontend_health
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Wait for Pages production rollout
+        run: sleep 180
+
+      - name: Production frontend health canary
+        env:
+          FRONTEND_HEALTH_BASE_URL: https://momichan.xyz
+          FRONTEND_HEALTH_AUTOSTART: 'false'
+          FRONTEND_HEALTH_INCLUDE_API_ERRORS: 'true'
+          FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health-prod
+        run: |
+          mkdir -p .frontend-health-prod
+          status=0
+          bun run check:frontend 2>&1 | tee .frontend-health-prod/report.txt || status=$?
+          if [ -f .frontend-health-prod/summary.md ]; then
+            cat .frontend-health-prod/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $status
+
+      - name: Production smoke canary
+        env:
+          E2E_BASE_URL: https://momichan.xyz
+          E2E_AUTOSTART: 'false'
+          E2E_ARTIFACT_DIR: .e2e-smoke-prod
+          E2E_REQUIRE_AUTH: 'true'
+          # Uses the same non-MFA, non-step-up smoke account contract as preview auth smoke.
+          E2E_AUTH_LOGIN: ${{ secrets.E2E_AUTH_LOGIN }}
+          E2E_AUTH_PASSWORD: ${{ secrets.E2E_AUTH_PASSWORD }}
+        run: |
+          mkdir -p .e2e-smoke-prod
+          status=0
+          bun run test:e2e || status=$?
+          if [ -f .e2e-smoke-prod/summary.md ]; then
+            cat .e2e-smoke-prod/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $status
+
+      - name: Upload production canary artifacts
+        if: always()
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: production-canary
+          path: |
+            .frontend-health-prod/**
+            .e2e-smoke-prod/**
+          if-no-files-found: ignore
+          retention-days: 7
 
   quality_panel:
     runs-on: ubuntu-latest
@@ -179,6 +293,7 @@ jobs:
       - quality
       - coverage
       - e2e_smoke
+      - frontend_health
     if: always()
 
     steps:
@@ -188,23 +303,10 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           DEP_REVIEW_RESULT: ${{ needs.dependency_review.outputs.status || needs.dependency_review.result }}
           QUALITY_RESULT: ${{ needs.quality.result }}
-          COVERAGE_EXIT: ${{ needs.coverage.outputs.exit_code }}
-          E2E_EXIT: ${{ needs.e2e_smoke.outputs.exit_code }}
+          COVERAGE_RESULT: ${{ needs.coverage.result }}
+          E2E_RESULT: ${{ needs.e2e_smoke.result }}
+          HEALTH_RESULT: ${{ needs.frontend_health.result }}
         run: |
-          coverage_status="warn"
-          if [ "${COVERAGE_EXIT}" = "0" ]; then
-            coverage_status="pass"
-          elif [ -z "${COVERAGE_EXIT}" ]; then
-            coverage_status="not-run"
-          fi
-
-          e2e_status="warn"
-          if [ "${E2E_EXIT}" = "0" ]; then
-            e2e_status="pass"
-          elif [ -z "${E2E_EXIT}" ]; then
-            e2e_status="not-run"
-          fi
-
           {
             echo "## Frontend quality panel"
             echo
@@ -212,9 +314,10 @@ jobs:
             echo "| --- | --- | --- |"
             echo "| Dependency review | ${DEP_REVIEW_RESULT:-not-run} | [Workflow run](${RUN_URL}) |"
             echo "| Type check / Lint / Unit tests | ${QUALITY_RESULT} | [Workflow run](${RUN_URL}) |"
-            echo "| Coverage (non-blocking) | ${coverage_status} | [Workflow run](${RUN_URL}) · artifact: \`coverage-report\` |"
-            echo "| Smoke E2E (non-blocking) | ${e2e_status} | [Workflow run](${RUN_URL}) |"
+            echo "| Coverage baseline gate | ${COVERAGE_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`coverage-report\` |"
+            echo "| Smoke E2E (guest + auth required in trusted CI) | ${E2E_RESULT} | [Workflow run](${RUN_URL}) |"
+            echo "| Frontend health smoke | ${HEALTH_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`frontend-health\` |"
             echo "| A11y / Perf nightly | scheduled | See the nightly workflow for the latest artifacts and summaries. |"
             echo
-            echo "> Coverage and smoke E2E are intentionally non-blocking while the repository is still closing historical gaps."
+            echo "> Blocking gates now cover quality, coverage baseline, smoke E2E, and preview-shell frontend health. Trusted CI contexts require auth smoke; fork PRs degrade to guest-only because secrets are unavailable. Pushes to \`main\` additionally trigger a production canary against [momichan.xyz](https://momichan.xyz). High-risk comment/profile/device/favorite changes should still run \`bun run check:release-evidence\` or at minimum \`bun run test:prod:regression --preflight\` before release, and CI-noise warnings that affect result reading must be fixed or explicitly documented."
           } >> "$GITHUB_STEP_SUMMARY"
