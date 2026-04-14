@@ -57,7 +57,7 @@
   </section>
 </template>
 
-<script setup lang="ts" vapor>
+<script setup lang="ts">
 import { ref, computed, provide, watch, onWatcherCleanup } from 'vue'
 import { MessageSquare } from '@lucide/vue'
 import { storeToRefs } from 'pinia'

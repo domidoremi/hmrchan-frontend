@@ -204,7 +204,7 @@
   </div>
 </template>
 
-<script setup lang="ts" vapor>
+<script setup lang="ts">
 import { ref, computed, inject, nextTick, onUnmounted, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
