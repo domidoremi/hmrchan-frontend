@@ -1,5 +1,9 @@
 <template>
-  <form class="discussion-comment-form" @submit.prevent="handleSubmit">
+  <form
+    class="discussion-comment-form"
+    data-testid="discussion-comment-composer"
+    @submit.prevent="handleSubmit"
+  >
     <CommentComposerShell
       :authenticated="isAuthenticated"
       :avatar-src="userAvatar"

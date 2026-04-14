@@ -119,7 +119,11 @@ const currentSort = ref<'newest' | 'oldest' | 'popular'>('newest')
 const currentFilter = ref<'all' | 'author' | 'admin'>('all')
 const preloadReplies = ref('2')
 
-const commentsCount = computed(() => comments.value.length)
+function countComments(items: DiscussionComment[]): number {
+  return items.reduce((total, item) => total + 1 + countComments(item.replies || []), 0)
+}
+
+const commentsCount = computed(() => countComments(comments.value))
 const hasMore = computed(() => hasMoreState.value)
 
 function sortPinnedFirst(items: DiscussionComment[]) {

@@ -53,7 +53,18 @@ vi.mock('../CommentCard.vue', () => ({
 vi.mock('../CommentForm.vue', () => ({
   default: {
     name: 'CommentForm',
-    template: '<form class="comment-form-stub" />',
+    emits: ['submitted'],
+    template: `
+      <form class="comment-form-stub">
+        <button
+          type="button"
+          class="comment-form-submit-stub"
+          @click="$emit('submitted')"
+        >
+          submit
+        </button>
+      </form>
+    `,
   },
 }))
 
@@ -140,5 +151,30 @@ describe('CommentList', () => {
     expect(host.querySelectorAll('.comment-card-stub')).toHaveLength(2)
     expect(host.querySelector('.comment-sort')).not.toBeNull()
     expect(host.textContent).toContain('3')
+  })
+
+  it('reflects the refreshed store state after a successful top-level comment submit', async () => {
+    fetchCommentsMock.mockImplementation(async () => {
+      commentState.isLoading = false
+      commentState.comments = [{ id: 'comment-1' }]
+      return { success: true, data: commentState.comments }
+    })
+
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(CommentList, { postId: 'post-3' })
+    app.mount(host)
+
+    await flushUi()
+
+    commentState.comments = [{ id: 'comment-new' }, { id: 'comment-1' }]
+    ;(host.querySelector('.comment-form-submit-stub') as HTMLButtonElement).click()
+    await flushUi()
+
+    const renderedIds = Array.from(host.querySelectorAll('.comment-card-stub')).map((node) =>
+      node.textContent?.trim()
+    )
+    expect(renderedIds).toEqual(['comment-new', 'comment-1'])
+    expect(host.textContent).toContain('2')
   })
 })
