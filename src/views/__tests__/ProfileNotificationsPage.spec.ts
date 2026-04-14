@@ -87,7 +87,8 @@ vi.mock('@/components/profile/ProfileSubPageHeader.vue', () => ({
 
 vi.mock('@/components/profile/ProfileNotificationsTab.vue', () => ({
   default: {
-    template: '<div class="profile-notifications-tab-stub" />',
+    template:
+      '<div class="profile-notifications-tab-stub" data-testid="profile-notifications-tab" />',
   },
 }))
 
@@ -169,6 +170,8 @@ describe('ProfileNotificationsPage', () => {
     })
 
     expect(testState.store.initialize).toHaveBeenCalledTimes(1)
+    expect(wrapper.attributes('data-testid')).toBe('profile-notifications-page')
+    expect(wrapper.find('[data-testid="profile-notifications-tab"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('99+')
     expect(wrapper.text()).toContain('profile.notificationStatus.all')
     expect(wrapper.text()).toContain('profile.notificationStatus.unread')
@@ -180,6 +183,8 @@ describe('ProfileNotificationsPage', () => {
     const wrapper = mount(ProfileNotificationsPage, {
       global: globalConfig,
     })
+
+    expect(wrapper.attributes('data-testid')).toBe('profile-notifications-page')
 
     const preferencesButton = wrapper
       .findAll('button')
@@ -202,6 +207,8 @@ describe('ProfileNotificationsPage', () => {
     const wrapper = mount(ProfileNotificationsPage, {
       global: globalConfig,
     })
+
+    expect(wrapper.find('[data-testid="profile-notifications-tab"]').exists()).toBe(true)
 
     const buttons = wrapper.findAll('button')
     const markAllReadButton = buttons.find((button) =>

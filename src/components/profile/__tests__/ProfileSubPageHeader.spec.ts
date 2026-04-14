@@ -2,14 +2,20 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 const profileHeaderMocks = vi.hoisted(() => ({
-  back: vi.fn(),
   push: vi.fn(),
+  replace: vi.fn(),
+  back: vi.fn(),
+  route: {
+    query: {} as Record<string, unknown>,
+  },
 }))
 
 vi.mock('vue-router', () => ({
+  useRoute: () => profileHeaderMocks.route,
   useRouter: () => ({
-    back: profileHeaderMocks.back,
     push: profileHeaderMocks.push,
+    replace: profileHeaderMocks.replace,
+    back: profileHeaderMocks.back,
   }),
 }))
 
@@ -63,9 +69,34 @@ function createWrapper() {
 }
 
 describe('ProfileSubPageHeader', () => {
-  it('renders header copy and routes back/profile from default actions', async () => {
-    profileHeaderMocks.back.mockReset()
+  it('uses router.back when the app has a prior in-app history entry', async () => {
     profileHeaderMocks.push.mockReset()
+    profileHeaderMocks.replace.mockReset()
+    profileHeaderMocks.back.mockReset()
+    profileHeaderMocks.route.query = {
+      returnTo: '/search?q=momo#results',
+    }
+    window.history.replaceState({ back: '/search?q=momo#results' }, '', '/profile/settings')
+
+    const wrapper = createWrapper()
+
+    await wrapper.get('.back-btn').trigger('click')
+
+    expect(profileHeaderMocks.back).toHaveBeenCalledTimes(1)
+    expect(profileHeaderMocks.replace).not.toHaveBeenCalled()
+
+    await wrapper.get('.mock-button').trigger('click')
+    expect(profileHeaderMocks.push).toHaveBeenCalledWith('/profile')
+  })
+
+  it('falls back to replace(returnTo) when there is no known in-app history entry', async () => {
+    profileHeaderMocks.push.mockReset()
+    profileHeaderMocks.replace.mockReset()
+    profileHeaderMocks.back.mockReset()
+    profileHeaderMocks.route.query = {
+      returnTo: '/search?q=momo#results',
+    }
+    window.history.replaceState({}, '', '/profile/settings')
 
     const wrapper = createWrapper()
 
@@ -75,13 +106,31 @@ describe('ProfileSubPageHeader', () => {
     expect(wrapper.text()).toContain('Changes apply immediately')
 
     await wrapper.get('.back-btn').trigger('click')
-    expect(profileHeaderMocks.back).toHaveBeenCalledTimes(1)
+    expect(profileHeaderMocks.replace).toHaveBeenCalledWith('/search?q=momo#results')
+    expect(profileHeaderMocks.back).not.toHaveBeenCalled()
 
     await wrapper.get('.mock-button').trigger('click')
     expect(profileHeaderMocks.push).toHaveBeenCalledWith('/profile')
   })
 
+  it('falls back to /profile when returnTo is missing or invalid', async () => {
+    profileHeaderMocks.push.mockReset()
+    profileHeaderMocks.replace.mockReset()
+    profileHeaderMocks.back.mockReset()
+    profileHeaderMocks.route.query = {
+      returnTo: 'https://example.com/phish',
+    }
+    window.history.replaceState({}, '', '/profile/settings')
+
+    const wrapper = createWrapper()
+
+    await wrapper.get('.back-btn').trigger('click')
+
+    expect(profileHeaderMocks.replace).toHaveBeenCalledWith('/profile')
+  })
+
   it('renders custom action slot content instead of the default profile button', () => {
+    profileHeaderMocks.route.query = {}
     const wrapper = mount(ProfileSubPageHeader, {
       props: {
         title: 'Security',

@@ -1,5 +1,5 @@
 <template>
-  <div class="comments-tab">
+  <div class="comments-tab" data-testid="profile-comments-tab">
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchComments" />
 
     <div v-else-if="isLoading && comments.length === 0" class="skeleton-timeline">

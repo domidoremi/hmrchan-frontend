@@ -97,7 +97,7 @@ function getLocationText(session: Device): string {
 </script>
 
 <template>
-  <div class="device-management">
+  <div class="device-management" data-testid="profile-devices-management">
     <div v-if="isLoading" class="device-loading">
       <div v-for="i in 3" :key="i" class="skeleton-card" />
     </div>

@@ -679,7 +679,7 @@
     "title": "コメント",
     "loginRequiredTitle": "ログインしてコメント",
     "placeholder": "コメントを書く...",
-    "replyPlaceholder": "@{username} に返信...",
+    "replyPlaceholder": "{'@'}{username} に返信...",
     "submit": "投稿",
     "reply": "返信",
     "replies": "返信",

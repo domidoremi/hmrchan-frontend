@@ -168,6 +168,19 @@ describe('AppSideNav', () => {
     expect(wrapper.find('.app-side-nav__link--active').attributes('title')).toBe('Favorites')
   })
 
+  it('keeps the utility settings link deterministic for authenticated profile navigation', async () => {
+    authStoreState.user = { username: 'momo' }
+    authStoreState.isAuthenticated = true
+
+    const wrapper = await createWrapper('/explore')
+    const utilityLinks = wrapper.findAll('.app-side-nav__section--utility .app-side-nav__link')
+    const settingsLink = utilityLinks.at(1)
+
+    expect(settingsLink?.attributes('title')).toBe('Profile Settings')
+    expect(settingsLink?.attributes('href')).toContain('/profile/settings')
+    expect(settingsLink?.attributes('href')).toContain('returnTo=/explore')
+  })
+
   it('renders the mobile floating dock with six primary routes and syncs its height', async () => {
     stubMatchMedia(true)
     const wrapper = await createWrapper('/community')

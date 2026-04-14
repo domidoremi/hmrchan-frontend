@@ -1,5 +1,5 @@
 <template>
-  <div class="security-tab">
+  <div class="security-tab" data-testid="profile-security-tab">
     <div v-if="showHeader" class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.security') }}</h2>
       <span v-if="summary" class="item-count profile-item-count">{{

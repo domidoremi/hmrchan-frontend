@@ -1,5 +1,5 @@
 <template>
-  <div class="notifications-tab">
+  <div class="notifications-tab" data-testid="profile-notifications-tab">
     <StateIndicator
       v-if="error && notifications.length === 0"
       variant="error"
