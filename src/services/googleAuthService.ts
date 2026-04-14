@@ -448,6 +448,10 @@ function buildPopupFeatures(): string {
   ].join(',')
 }
 
+let redirectToGoogleAuthStart = (url: string) => {
+  window.location.assign(url)
+}
+
 export function prefersGoogleAuthPopup(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return false
@@ -489,10 +493,20 @@ export function mapGooglePopupError(error?: string): string {
 
 export function startGoogleAuthRedirect(intent: GoogleAuthIntent, returnTo: string): void {
   const request = persistPendingGoogleAuthRequest(intent, returnTo, 'redirect')
-  window.location.assign(buildGoogleStartUrl(intent, request.redirectTo))
+  redirectToGoogleAuthStart(buildGoogleStartUrl(intent, request.redirectTo))
 }
 
 export const startGoogleAuth = startGoogleAuthRedirect
+
+export function setGoogleAuthRedirectHandlerForTesting(
+  handler: ((url: string) => void) | null
+): void {
+  redirectToGoogleAuthStart =
+    handler ??
+    ((url: string) => {
+      window.location.assign(url)
+    })
+}
 
 export function openGoogleAuthPopup(
   intent: GoogleAuthIntent,

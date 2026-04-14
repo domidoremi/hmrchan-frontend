@@ -9,6 +9,7 @@ import {
   prefersGoogleAuthPopup,
   publishGooglePopupResult,
   resolveGooglePopupBridgeMessage,
+  setGoogleAuthRedirectHandlerForTesting,
   startGoogleAuthRedirect,
   waitForGooglePopupResult,
 } from '../googleAuthService'
@@ -68,6 +69,7 @@ describe('googleAuthService', () => {
 
   afterEach(() => {
     clearPendingGoogleAuthRequest()
+    setGoogleAuthRedirectHandlerForTesting(null)
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
     vi.useRealTimers()
@@ -75,11 +77,10 @@ describe('googleAuthService', () => {
   })
 
   it('stores pending auth state before redirecting', () => {
-    try {
-      startGoogleAuthRedirect('login', '/profile/settings')
-    } catch {
-      // jsdom does not implement navigation; the pending request should still be persisted
-    }
+    const redirectSpy = vi.fn()
+    setGoogleAuthRedirectHandlerForTesting(redirectSpy)
+
+    startGoogleAuthRedirect('login', '/profile/settings')
 
     expect(getPendingGoogleAuthRequest()).toEqual(
       expect.objectContaining({
@@ -87,6 +88,8 @@ describe('googleAuthService', () => {
         redirectTo: '/profile/settings',
       })
     )
+    expect(redirectSpy).toHaveBeenCalledTimes(1)
+    expect(redirectSpy).toHaveBeenCalledWith(expect.stringContaining('/api/v1/auth/google/start?'))
   })
 
   it('returns blocked when the popup cannot be opened', () => {

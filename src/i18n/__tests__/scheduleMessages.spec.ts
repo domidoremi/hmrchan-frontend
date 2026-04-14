@@ -26,5 +26,18 @@ describe('schedule locale messages', () => {
 
       expect(() => i18n.global.t('schedule.detail.notFoundDescription')).not.toThrow()
     })
+
+    it(`compiles reply placeholder copy for ${locale}`, () => {
+      const i18n = createI18n({
+        legacy: false,
+        locale,
+        messages: {
+          [locale]: messages,
+        },
+      })
+
+      expect(() => i18n.global.t('comment.replyPlaceholder', { username: 'himeri' })).not.toThrow()
+      expect(i18n.global.t('comment.replyPlaceholder', { username: 'himeri' })).toContain('@himeri')
+    })
   }
 })
