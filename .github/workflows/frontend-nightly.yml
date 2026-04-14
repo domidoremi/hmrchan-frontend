@@ -123,13 +123,34 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: PWA / E2E smoke
-        run: bun run test:e2e
+        env:
+          # Nightly requires the seeded auth smoke account unless secrets are genuinely absent.
+          E2E_ARTIFACT_DIR: .e2e-smoke-nightly
+          E2E_REQUIRE_AUTH: 'true'
+          E2E_AUTH_LOGIN: ${{ secrets.E2E_AUTH_LOGIN }}
+          E2E_AUTH_PASSWORD: ${{ secrets.E2E_AUTH_PASSWORD }}
+        run: |
+          mkdir -p .e2e-smoke-nightly
+          status=0
+          bun run test:e2e || status=$?
+          if [ -f .e2e-smoke-nightly/summary.md ]; then
+            cat .e2e-smoke-nightly/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $status
+
+      - name: Upload nightly smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: e2e-smoke-nightly
+          path: |
+            .e2e-smoke-nightly/**
+          if-no-files-found: ignore
+          retention-days: 14
 
   frontend_health:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    outputs:
-      exit_code: ${{ steps.frontend_health.outputs.exit_code }}
 
     steps:
       - name: Checkout
@@ -143,16 +164,20 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - id: frontend_health
-        name: Frontend health smoke (non-blocking)
-        shell: bash
+      - name: Production frontend health canary
+        env:
+          FRONTEND_HEALTH_BASE_URL: https://momichan.xyz
+          FRONTEND_HEALTH_AUTOSTART: 'false'
+          FRONTEND_HEALTH_INCLUDE_API_ERRORS: 'true'
+          FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health
         run: |
           mkdir -p .frontend-health
-          set +e
-          bun run check:frontend 2>&1 | tee .frontend-health/report.txt
-          status=${PIPESTATUS[0]}
-          echo "exit_code=${status}" >> "$GITHUB_OUTPUT"
-          exit 0
+          status=0
+          bun run check:frontend 2>&1 | tee .frontend-health/report.txt || status=$?
+          if [ -f .frontend-health/summary.md ]; then
+            cat .frontend-health/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $status
 
       - name: Upload frontend health artifacts
         if: always()
@@ -184,15 +209,8 @@ jobs:
           A11Y_RESULT: ${{ needs.accessibility.result }}
           PERF_RESULT: ${{ needs.performance.result }}
           PWA_RESULT: ${{ needs.pwa_smoke.result }}
-          HEALTH_EXIT: ${{ needs.frontend_health.outputs.exit_code }}
+          HEALTH_RESULT: ${{ needs.frontend_health.result }}
         run: |
-          health_status="warn"
-          if [ "${HEALTH_EXIT}" = "0" ]; then
-            health_status="pass"
-          elif [ -z "${HEALTH_EXIT}" ]; then
-            health_status="not-run"
-          fi
-
           {
             echo "## Frontend nightly panel"
             echo
@@ -201,8 +219,8 @@ jobs:
             echo "| Dependency audit | ${AUDIT_RESULT} | [Workflow run](${RUN_URL}) |"
             echo "| Accessibility audit | ${A11Y_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`lighthouse-a11y\` |"
             echo "| Performance audit | ${PERF_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`lighthouse-perf\` |"
-            echo "| PWA / E2E smoke | ${PWA_RESULT} | [Workflow run](${RUN_URL}) |"
-            echo "| Frontend health smoke (non-blocking) | ${health_status} | [Workflow run](${RUN_URL}) · artifact: \`frontend-health\` |"
+            echo "| PWA / E2E smoke (local preview shell, auth required) | ${PWA_RESULT} | [Workflow run](${RUN_URL}) |"
+            echo "| Production frontend health canary | ${HEALTH_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`frontend-health\` |"
             echo
-            echo "> Frontend health smoke is currently non-blocking because preview-based CI still reports known \`/client-report\` noise. Keep using the uploaded artifact to track regressions while the health probe is being hardened."
+            echo "> Nightly keeps E2E on the local preview shell for build-time/PWA parity, requires the seeded auth smoke account, and scans production health directly. Use \`bun run check:release-evidence\` or manual \`bun run test:prod:regression --preflight\` for high-risk write-adjacent changes, and treat tooling warnings that pollute diagnosis as defects until fixed or explicitly documented."
           } >> "$GITHUB_STEP_SUMMARY"

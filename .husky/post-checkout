@@ -19,5 +19,5 @@ if [ "$3" = "1" ]; then
     return 1
   }
   
-  check_dependency_change "package.json" || check_dependency_change "bun.lock"
+  check_dependency_change "package.json" || check_dependency_change "bun.lock" || true
 fi

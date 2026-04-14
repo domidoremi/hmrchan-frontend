@@ -59,6 +59,40 @@ cp .env.example .env.development
 
 > 不建议把生产环境地址、账号、密钥或内部流程直接写入 README。
 
+质量 / 回归脚本支持以下测试环境变量：
+
+| 变量                                      | 说明                                                           |
+| ----------------------------------------- | -------------------------------------------------------------- |
+| `E2E_BASE_URL`                            | 让 `bun run test:e2e` 直接扫指定站点，而不是本地 build+preview |
+| `E2E_AUTOSTART`                           | 设为 `false` 时，E2E 不尝试自启本地预览环境                    |
+| `E2E_ARTIFACT_DIR`                        | E2E smoke 产物目录，默认 `.e2e-smoke`                          |
+| `E2E_REQUIRE_AUTH`                        | 设为 `true` 时，缺少认证态 smoke 账号会直接失败                |
+| `E2E_AUTH_LOGIN`                          | 存在时启用登录后 smoke，使用同源 `/api/v1/auth/login` 建立会话 |
+| `E2E_AUTH_PASSWORD`                       | 登录后 smoke 对应的测试账号密码                                |
+| `E2E_SAMPLE_POST_ROUTE`                   | 指定帖子详情 smoke 用例路由                                    |
+| `E2E_SAMPLE_DISCUSSION_ROUTE`             | 指定讨论详情 smoke 用例路由                                    |
+| `FRONTEND_HEALTH_BASE_URL`                | 指定 `bun run check:frontend` 的巡检基址                       |
+| `FRONTEND_HEALTH_AUTOSTART`               | 设为 `false` 时，不自启本地 preview shell                      |
+| `FRONTEND_HEALTH_ARTIFACT_DIR`            | frontend health 产物目录，默认 `.frontend-health`              |
+| `FRONTEND_HEALTH_INCLUDE_API_ERRORS`      | 设为 `true` 时，把 API 4xx/5xx 视为阻断问题                    |
+| `FRONTEND_HEALTH_SAMPLE_POST_ROUTE`       | 指定健康检查里的帖子详情巡检路由                               |
+| `FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE` | 指定健康检查里的讨论详情巡检路由                               |
+
+认证态 smoke 账号约束：
+
+- 不启用 MFA
+- 不触发 step-up / risk verification
+- 至少具备收藏、浏览历史、profile 子页和可见评论区所需的最小真实数据
+
+本地未提供 `E2E_AUTH_*` 时，`bun run test:e2e` 只跑 guest smoke；这是正式约定，不是缺陷。
+如果同时设置 `E2E_REQUIRE_AUTH=true`，则缺少账号会直接报错并写出 smoke summary。
+
+推荐在评论区 / Profile / 设备等高风险改动发版前串行执行统一证据链：
+
+```bash
+bun run check:release-evidence
+```
+
 ## 常用脚本
 
 ```bash
@@ -80,6 +114,7 @@ bun run test:coverage
 bun run test:e2e
 bun run test:a11y
 bun run test:perf
+bun run check:release-evidence
 ```
 
 如需查看更多脚本，请查看 [`package.json`](./package.json)。
@@ -128,6 +163,35 @@ bun run test:perf
 - `VPC_API_ORIGIN` 仅在生产仍走私网 nginx / VPC service 时保留
 - `VITE_TURNSTILE_SITE_KEY` 作为机密在 Dashboard 中保留；其余 `VITE_*` 变量不是 Pages 生产必需项
 
+发布门禁约定：
+
+- PR / 普通分支阻塞检查：`quality`、`coverage`、`e2e_smoke`、`frontend_health`
+- `main` / `master` push 后追加 `production_canary`
+- `frontend-nightly` 的 `pwa_smoke` 与主 CI 复用同一套 `E2E_AUTH_*` 契约；有机密时跑 guest + auth，没有机密时自动退化为 guest
+- `frontend-nightly` 中只有 `frontend_health` 直接扫生产；`pwa_smoke` 仍跑本地 build + preview 壳层
+- 高风险改动在自动化全绿后，仍建议补跑 `bun run test:prod:regression`
+- 高风险改动在跑完整 manual regression 前，先执行 `bun run test:prod:regression --preflight`
+- 测试 / 构建依赖只做 scoped upgrade；默认不顺手升级业务运行时依赖
+- 会干扰 CI 判读的工具链提醒必须被修复，或至少登记为已知限制并收进显式白名单；不能长期作为常驻主噪音保留
+- 当前已登记的工具链已知限制只有 `baseline-browser-mapping` 的 stale-data 提醒；仓库通过 Vitest wrapper 只对白名单化的官方提醒做 suppress，不会吞掉其他测试错误
+- `test:e2e`、`production_canary`、`test:prod:regression` 共享同一份 route / selector / readiness contract，避免 smoke、canary、manual runner 各自漂移
+- 认证态 smoke 当前除了受保护路由可进入，还要求：
+  - `/favorites` 实际落到 `/profile/favorites`
+  - 帖子详情命中 `[data-testid="comment-composer"]` 和 `[data-testid="comment-thread-header"]`
+  - 讨论详情命中 `[data-testid="discussion-comment-composer"]` 和 `[data-testid="comment-thread-header"]`
+  - 受保护 Profile 子页命中稳定 section shell + tab readiness selector
+- smoke / canary / frontend health 失败时会保留：
+  - `summary.json`
+  - `summary.md`
+  - 页面失败截图
+  - 页面 HTML 快照
+- `test:prod:regression` 继续保持 manual-only：
+  - 用于评论区、Profile、设备、收藏、讨论等高风险改动发版前深回归
+  - 不接入默认 PR / canary 阻塞链
+  - `--preflight` 只做契约、凭据、artifact、route coverage 预检，不启动浏览器和 round-trip
+  - 产物会聚合到 `output/prod-regression/<timestamp>/`
+  - 重点入口包括 `summary.json`、`summary.md`、`screenshots/`、`diagnostics/`
+
 ## 开发约定
 
 - 提交信息采用 Conventional Commits
@@ -141,6 +205,7 @@ bun run test:unit
 ## 相关文档
 
 - [后端真相源入口](./docs/backend-source-of-truth.md)
+- [前端发布就绪与质量门禁](./docs/frontend-release-readiness.md)
 
 ## License
 
