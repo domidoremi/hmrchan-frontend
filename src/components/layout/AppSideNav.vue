@@ -101,12 +101,15 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, type Component } from 'vue'
+import { storeToRefs } from 'pinia'
 import { RouterLink, useRoute, type RouteLocationRaw } from 'vue-router'
 import { Info, Settings2 } from '@lucide/vue'
+import { useAuthStore } from '@/stores'
 import { prefetchAuthorsData, prefetchExploreData } from '@/utils/prefetch'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { useNavigation } from '@/composables/useNavigation'
 import type { NavigationItem } from '@/config/navigation'
+import { withProfileReturnTo } from '@/utils/profileReturnTo'
 
 const props = withDefaults(
   defineProps<{
@@ -129,6 +132,8 @@ type DockSection = 'primary' | 'utility'
 const MOBILE_DOCK_BREAKPOINT_QUERY = '(max-width: 960px)'
 
 const route = useRoute()
+const authStore = useAuthStore()
+const { isAuthenticated } = storeToRefs(authStore)
 const { desktopNavItems, mobileNavItems, getNavigationLink } = useNavigation()
 
 const prefetchedRoutes = new Set<string>()
@@ -168,7 +173,9 @@ const utilityNavItems = computed<UtilityNavItem[]>(() => [
     path: '/profile/settings',
     i18nKey: 'nav.profileSettings',
     icon: Settings2,
-    to: getNavigationLink({ path: '/profile/settings', requiresAuth: true } as NavigationItem),
+    to: isAuthenticated.value
+      ? withProfileReturnTo('/profile/settings', { returnTo: route.fullPath })
+      : getNavigationLink({ path: '/profile/settings', requiresAuth: true } as NavigationItem),
   },
 ])
 

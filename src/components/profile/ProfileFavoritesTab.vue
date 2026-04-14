@@ -1,5 +1,5 @@
 <template>
-  <div class="favorites-tab">
+  <div class="favorites-tab" data-testid="profile-favorites-tab">
     <ProfileTabHeader v-if="showHeader" :title="$t('profile.tabs.favorites')" :count="total" />
 
     <StateIndicator

@@ -1,5 +1,5 @@
 <template>
-  <div class="reports-tab">
+  <div class="reports-tab" data-testid="profile-reports-tab">
     <div v-if="showHeader" class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.reports') }}</h2>
       <span v-if="displayTotal" class="item-count profile-item-count">{{ displayTotal }}</span>

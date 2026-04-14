@@ -1,5 +1,5 @@
 <template>
-  <div class="history-tab">
+  <div class="history-tab" data-testid="profile-history-tab">
     <ProfileTabHeader v-if="showHeader" :title="$t('profile.tabs.history')" :count="displayTotal">
       <template #actions>
         <Button v-if="history.length > 0" variant="ghost" size="sm" @click="clearHistory">

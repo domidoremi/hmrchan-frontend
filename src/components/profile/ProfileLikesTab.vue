@@ -1,5 +1,5 @@
 <template>
-  <div class="likes-tab">
+  <div class="likes-tab" data-testid="profile-likes-tab">
     <ProfileTabHeader v-if="showHeader" :title="$t('profile.tabs.likes')" :count="displayTotal" />
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLikes" />

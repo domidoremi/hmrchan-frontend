@@ -1,5 +1,5 @@
 <template>
-  <div class="notifications-page profile-sub-page">
+  <div class="notifications-page profile-sub-page" data-testid="profile-notifications-page">
     <div class="container">
       <ProfileSubPageHeader
         :title="$t('profile.tabs.notifications')"

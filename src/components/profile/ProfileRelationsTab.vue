@@ -1,5 +1,9 @@
 <template>
-  <div class="relations-tab">
+  <div
+    class="relations-tab"
+    data-testid="profile-relations-tab"
+    :data-profile-relations-mode="props.mode"
+  >
     <ProfileTabHeader v-if="props.showHeader" :title="tabTitle" :count="displayTotal" />
 
     <StateIndicator

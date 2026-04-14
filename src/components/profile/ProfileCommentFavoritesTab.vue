@@ -1,5 +1,5 @@
 <template>
-  <div class="comment-favorites-tab">
+  <div class="comment-favorites-tab" data-testid="profile-comment-favorites-tab">
     <ProfileTabHeader
       v-if="showHeader"
       :title="$t('profile.tabs.commentFavorites')"

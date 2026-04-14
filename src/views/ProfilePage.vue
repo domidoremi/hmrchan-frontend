@@ -46,7 +46,7 @@
               <RouterLink
                 v-for="section in group.sections"
                 :key="section.id"
-                :to="section.route"
+                :to="withProfileReturnTo(section.route, { returnTo: route.fullPath })"
                 class="profile-nav-card"
               >
                 <div class="profile-nav-card__icon">
@@ -77,7 +77,7 @@
 defineOptions({ name: 'ProfilePage' })
 
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { Pencil } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
@@ -86,6 +86,7 @@ import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { ensureProtectedPageReady } from '@/composables/useProtectedPageBootstrap'
 import { profileSections, type ProfileSectionDefinition } from '@/config/profileSections'
 import { userService } from '@/api/userService'
+import { withProfileReturnTo } from '@/utils/profileReturnTo'
 import Avatar from '@/components/ui/Avatar.vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 
@@ -95,6 +96,7 @@ type AccountDataSummary = Awaited<ReturnType<typeof userService.getDataSummary>>
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
 const { user } = storeToRefs(authStore)
@@ -177,7 +179,9 @@ function resolveCount(section: ProfileSectionDefinition): number | null {
 }
 
 function editProfile() {
-  router.push('/profile/settings#basic-info')
+  router.push(
+    withProfileReturnTo('/profile/settings', { hash: '#basic-info', returnTo: route.fullPath })
+  )
 }
 
 async function loadProfileOverview() {

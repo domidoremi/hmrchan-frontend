@@ -135,6 +135,15 @@ const i18n = createI18n({
         settings: 'Settings',
         login: 'Login',
         profile: 'Profile',
+        logout: 'Logout',
+        profileSettings: 'Profile Settings',
+      },
+      profile: {
+        summary: 'Account summary',
+        tabs: {
+          notifications: 'Notifications',
+          devices: 'Devices',
+        },
       },
     },
   },
@@ -153,6 +162,13 @@ async function createWrapper(initialPath = '/') {
       { path: '/community', component: { template: '<div>community</div>' } },
       { path: '/schedule', component: { template: '<div>schedule</div>' } },
       { path: '/about', component: { template: '<div>about</div>' } },
+      { path: '/profile', component: { template: '<div>profile</div>' } },
+      { path: '/profile/settings', component: { template: '<div>profile settings</div>' } },
+      {
+        path: '/profile/notifications',
+        component: { template: '<div>profile notifications</div>' },
+      },
+      { path: '/profile/devices', component: { template: '<div>profile devices</div>' } },
       { path: '/login', component: { template: '<div>login</div>' } },
       { path: '/:pathMatch(.*)*', component: { template: '<div>fallback</div>' } },
     ],
@@ -492,5 +508,23 @@ describe('AppNavbar', () => {
     wrapper.unmount()
 
     expect(navbarMocks.idleTasks[0]?.cancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses deterministic profile return links inside the authenticated user menu', async () => {
+    authStoreState.isAuthenticated = true
+    authStoreState.user = { username: 'momo', email: 'momo@example.com' }
+
+    const { wrapper } = await createWrapper('/search?q=anime')
+
+    await wrapper.get('.nav-user-btn').trigger('click')
+    await nextTick()
+
+    const userMenuLinks = wrapper.findAll('#navbar-user-menu .user-menu-card')
+    const hrefs = userMenuLinks.map((link) => decodeURIComponent(link.attributes('href') ?? ''))
+
+    expect(hrefs).toContain('/profile')
+    expect(hrefs).toContain('/profile/settings?returnTo=/search?q=anime')
+    expect(hrefs).toContain('/profile/notifications?returnTo=/search?q=anime')
+    expect(hrefs).toContain('/profile/devices?returnTo=/search?q=anime')
   })
 })

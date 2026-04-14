@@ -679,7 +679,7 @@
     "title": "評論",
     "loginRequiredTitle": "登入後留言",
     "placeholder": "分享你的想法...",
-    "replyPlaceholder": "回覆 @{username}...",
+    "replyPlaceholder": "回覆 {'@'}{username}...",
     "submit": "發布",
     "reply": "回覆",
     "replies": "回覆",

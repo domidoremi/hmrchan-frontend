@@ -212,7 +212,7 @@
               />
             </RouterLink>
             <RouterLink
-              to="/profile/settings"
+              :to="profileSettingsLink"
               class="dropdown-link user-menu-card"
               role="menuitem"
               @click="showUserMenu = false"
@@ -231,7 +231,7 @@
               />
             </RouterLink>
             <RouterLink
-              to="/profile/notifications"
+              :to="profileNotificationsLink"
               class="dropdown-link user-menu-card"
               role="menuitem"
               @click="showUserMenu = false"
@@ -248,7 +248,7 @@
               />
             </RouterLink>
             <RouterLink
-              to="/profile/devices"
+              :to="profileDevicesLink"
               class="dropdown-link user-menu-card"
               role="menuitem"
               @click="showUserMenu = false"
@@ -309,6 +309,7 @@ import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { runWhenIdle, throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 import { resolveNavbarDropdownPosition } from '@/components/layout/navbarDropdownPosition'
+import { withProfileReturnTo } from '@/utils/profileReturnTo'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Separator from '@/components/ui/Separator.vue'
@@ -339,6 +340,15 @@ function prefetchSettingsPanel() {
 
 const router = useRouter()
 const route = useRoute()
+const profileSettingsLink = computed(() =>
+  withProfileReturnTo('/profile/settings', { returnTo: route.fullPath })
+)
+const profileNotificationsLink = computed(() =>
+  withProfileReturnTo('/profile/notifications', { returnTo: route.fullPath })
+)
+const profileDevicesLink = computed(() =>
+  withProfileReturnTo('/profile/devices', { returnTo: route.fullPath })
+)
 const isPostDetailRoute = computed(() => route.name === 'post-detail')
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)

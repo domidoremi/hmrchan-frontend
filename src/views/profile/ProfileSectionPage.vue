@@ -1,7 +1,13 @@
 <template>
-  <section class="profile-section-page">
+  <section
+    class="profile-section-page"
+    data-testid="profile-section-shell"
+    :data-profile-section="props.sectionId"
+  >
     <ProfileSubPageHeader :title="title" :hint="hint" />
-    <component :is="resolvedComponent" v-bind="resolvedProps" />
+    <div data-testid="profile-section-content">
+      <component :is="resolvedComponent" v-bind="resolvedProps" />
+    </div>
   </section>
 </template>
 
@@ -19,8 +25,22 @@ import ProfileRelationsTab from '@/components/profile/ProfileRelationsTab.vue'
 import ProfileReportsTab from '@/components/profile/ProfileReportsTab.vue'
 import ProfileSecurityTab from '@/components/profile/ProfileSecurityTab.vue'
 
+type RoutedProfileSectionId = Extract<
+  ProfileSectionId,
+  | 'favorites'
+  | 'comments'
+  | 'likes'
+  | 'comment-favorites'
+  | 'history'
+  | 'reports'
+  | 'security-activity'
+  | 'followers'
+  | 'following'
+  | 'blocked'
+>
+
 const props = defineProps<{
-  sectionId: ProfileSectionId
+  sectionId: RoutedProfileSectionId
 }>()
 
 const { t } = useI18n()

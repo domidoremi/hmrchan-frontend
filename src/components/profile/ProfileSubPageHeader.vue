@@ -1,5 +1,5 @@
 <template>
-  <header class="sub-header">
+  <header class="sub-header" data-testid="profile-section-header">
     <div class="sub-header__content empty-surface surface-editorial">
       <ControlButton
         class="back-btn"
@@ -31,8 +31,9 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, User } from '@lucide/vue'
+import { sanitizeProfileReturnTo, PROFILE_RETURN_FALLBACK } from '@/utils/profileReturnTo'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import Button from '@/components/ui/Button.vue'
 
@@ -45,14 +46,26 @@ defineSlots<{
   actions?: () => unknown
 }>()
 
+const route = useRoute()
 const router = useRouter()
 
+function hasKnownRouterBackEntry(): boolean {
+  const state = window.history.state as { back?: unknown } | null
+  return typeof state?.back === 'string' && state.back.startsWith('/')
+}
+
 function goBack() {
-  router.back()
+  const returnTo = sanitizeProfileReturnTo(route.query['returnTo'], PROFILE_RETURN_FALLBACK)
+  if (hasKnownRouterBackEntry()) {
+    router.back()
+    return
+  }
+
+  router.replace(returnTo)
 }
 
 function goToProfile() {
-  router.push('/profile')
+  router.push(PROFILE_RETURN_FALLBACK)
 }
 </script>
 

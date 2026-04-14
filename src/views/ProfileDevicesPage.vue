@@ -1,5 +1,5 @@
 <template>
-  <div class="devices-page profile-sub-page">
+  <div class="devices-page profile-sub-page" data-testid="profile-devices-page">
     <div class="container">
       <ProfileSubPageHeader
         :title="$t('profile.tabs.devices')"
@@ -14,7 +14,7 @@
       </ProfileSubPageHeader>
 
       <!-- Security Overview -->
-      <div class="security-strip profile-sub-page__stats">
+      <div class="security-strip profile-sub-page__stats" data-testid="profile-devices-stats">
         <div class="security-card glass-surface--elevated">
           <div class="security-icon security-icon--devices">
             <Monitor :size="16" />
