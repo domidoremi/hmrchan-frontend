@@ -12,6 +12,30 @@ export type InternalApiGatewayWorkerEnv = UpstreamRuntimeEnv & {
 export type InternalGatewayUpstreamSource = 'vpc' | 'public' | 'public-fallback'
 
 const REQUEST_HEADERS_TO_SKIP = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
+const RESPONSE_HEADERS_TO_SKIP = [
+  'connection',
+  'Connection',
+  'keep-alive',
+  'Keep-Alive',
+  'proxy-authenticate',
+  'Proxy-Authenticate',
+  'proxy-authorization',
+  'Proxy-Authorization',
+  'te',
+  'TE',
+  'trailer',
+  'Trailer',
+  'upgrade',
+  'Upgrade',
+  'proxy-connection',
+  'Proxy-Connection',
+  'content-length',
+  'Content-Length',
+  'content-encoding',
+  'Content-Encoding',
+  'transfer-encoding',
+  'Transfer-Encoding',
+]
 
 function normalizePath(path: string): string {
   return path.trim().replace(/\/+$/, '') || '/'
@@ -103,12 +127,7 @@ function withUpstreamSourceHeaders(
   path: string
 ): Response {
   const headers = new Headers(response.headers)
-  headers.delete('content-length')
-  headers.delete('Content-Length')
-  headers.delete('content-encoding')
-  headers.delete('Content-Encoding')
-  headers.delete('transfer-encoding')
-  headers.delete('Transfer-Encoding')
+  RESPONSE_HEADERS_TO_SKIP.forEach((header) => headers.delete(header))
   headers.set('X-Proxy-Upstream-Source', source)
 
   const apiVersion = extractApiVersion(path)
