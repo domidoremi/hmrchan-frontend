@@ -139,6 +139,9 @@ export function buildSmokeMarkdownSummary(summary) {
     `- Failure screenshot: ${summary.lastFailureEvidence?.screenshotPath ?? 'n/a'}`,
     `- Failure HTML snapshot: ${summary.lastFailureEvidence?.htmlSnapshotPath ?? 'n/a'}`,
     `- Preview diagnostics attached: ${summary.lastFailureEvidence?.previewDiagnostics?.length ? 'yes' : 'no'}`,
+    `- Console diagnostics attached: ${summary.lastFailureEvidence?.consoleMessages?.length ? 'yes' : 'no'}`,
+    `- Request failure diagnostics attached: ${summary.lastFailureEvidence?.requestFailures?.length ? 'yes' : 'no'}`,
+    `- HTTP error diagnostics attached: ${summary.lastFailureEvidence?.badResponses?.length ? 'yes' : 'no'}`,
     '',
     '### Auth Account Contract',
     '',
@@ -153,6 +156,30 @@ export function buildSmokeMarkdownSummary(summary) {
           '### Preview Diagnostics',
           '',
           ...summary.lastFailureEvidence.previewDiagnostics.map((line) => `- ${line}`),
+          '',
+        ]
+      : []),
+    ...(summary.lastFailureEvidence?.consoleMessages?.length
+      ? [
+          '### Browser Console Diagnostics',
+          '',
+          ...summary.lastFailureEvidence.consoleMessages.map((line) => `- ${line}`),
+          '',
+        ]
+      : []),
+    ...(summary.lastFailureEvidence?.requestFailures?.length
+      ? [
+          '### Browser Request Failures',
+          '',
+          ...summary.lastFailureEvidence.requestFailures.map((line) => `- ${line}`),
+          '',
+        ]
+      : []),
+    ...(summary.lastFailureEvidence?.badResponses?.length
+      ? [
+          '### Browser HTTP Error Responses',
+          '',
+          ...summary.lastFailureEvidence.badResponses.map((line) => `- ${line}`),
           '',
         ]
       : []),

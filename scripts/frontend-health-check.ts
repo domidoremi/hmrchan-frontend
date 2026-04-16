@@ -74,6 +74,9 @@ interface HealthFailureEvidence {
   screenshotPath: string | null
   htmlSnapshotPath: string | null
   previewDiagnostics: string[] | null
+  consoleMessages: string[] | null
+  requestFailures: string[] | null
+  badResponses: string[] | null
 }
 
 type JsonRecord = Record<string, unknown>
@@ -209,6 +212,10 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function formatError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function isGuestProtectedRedirectRoute(
   route: Pick<HealthRouteDefinition, 'mode' | 'expectedPath'>
 ): boolean {
@@ -220,6 +227,92 @@ function isGuestOnlyAuthEntryRoute(route: Pick<HealthRouteDefinition, 'mode' | '
     route.mode === 'guest' &&
     (route.path === '/login' || route.path === '/register' || route.path === '/forgot-password')
   )
+}
+
+async function clearBrowserAuditSession(page: Page, baseUrl: string): Promise<void> {
+  const cdpSession = await page.createCDPSession().catch(() => null)
+  try {
+    await cdpSession?.send('Network.clearBrowserCookies').catch(() => undefined)
+    await cdpSession?.send('Network.clearBrowserCache').catch(() => undefined)
+    await page
+      .goto(`${baseUrl}/`, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30_000,
+      })
+      .catch(() => undefined)
+    await page
+      .evaluate(async () => {
+        window.localStorage.clear()
+        window.sessionStorage.clear()
+
+        if ('caches' in window) {
+          const cacheNames = await window.caches.keys()
+          await Promise.all(cacheNames.map((cacheName) => window.caches.delete(cacheName)))
+        }
+
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          await Promise.all(registrations.map((registration) => registration.unregister()))
+        }
+      })
+      .catch(() => undefined)
+  } finally {
+    await cdpSession?.detach().catch(() => undefined)
+  }
+}
+
+async function readPageRouteState(page: Page): Promise<{
+  url: string
+  pathname: string | null
+  title: string | null
+}> {
+  const [pathname, title] = await Promise.all([
+    page.evaluate(() => window.location.pathname).catch(() => null),
+    page.title().catch(() => null),
+  ])
+  return {
+    url: page.url(),
+    pathname,
+    title,
+  }
+}
+
+async function waitForRoutePath(
+  page: Page,
+  expectedPath: string,
+  context: string,
+  timeout = 5_000
+): Promise<void> {
+  await page
+    .waitForFunction((path) => window.location.pathname === path, { timeout }, expectedPath)
+    .catch(async () => {
+      const state = await readPageRouteState(page)
+      throw new Error(
+        `${context}: expected browser path ${expectedPath}, got ${state.pathname ?? 'unknown'} (${state.url}, title: ${state.title ?? 'unknown'})`
+      )
+    })
+}
+
+async function waitForLoginShellSelector(
+  page: Page,
+  selector: string,
+  context: string,
+  timeout = 15_000
+): Promise<void> {
+  try {
+    await page.waitForSelector(selector, { timeout })
+  } catch (error) {
+    const state = await readPageRouteState(page)
+    if (state.pathname !== '/login') {
+      throw new Error(
+        `${context}: auth guard/session state drift; login route left /login before auth shell rendered, current path ${state.pathname ?? 'unknown'} (${state.url}, title: ${state.title ?? 'unknown'})`
+      )
+    }
+
+    throw new Error(
+      `${context}: LoginPage mount/runtime failure; selector ${selector} was not found on /login (title: ${state.title ?? 'unknown'}) after ${timeout}ms. Original error: ${formatError(error)}`
+    )
+  }
 }
 
 async function collectBrowserTrustHeaders(page: Page): Promise<Record<string, string>> {
@@ -381,7 +474,13 @@ async function ensureRouteReadiness(
 
 async function assertHealthRouteContract(page: Page, route: HealthRouteDefinition): Promise<void> {
   if (route.shellSelector) {
-    await page.waitForSelector(route.shellSelector, { timeout: 15_000 })
+    const expectedPath = route.expectedPath ?? route.path
+    if (expectedPath === '/login' || route.path === '/login') {
+      await waitForRoutePath(page, expectedPath, `${route.name} route`)
+      await waitForLoginShellSelector(page, route.shellSelector, `${route.name} route`)
+    } else {
+      await page.waitForSelector(route.shellSelector, { timeout: 15_000 })
+    }
   }
 
   if (route.expectedPath) {
@@ -415,7 +514,12 @@ async function captureFailureEvidence(
   route: string,
   viewport: string,
   issue: ScanIssue,
-  getPreviewDiagnostics?: (() => string[] | null) | null
+  getPreviewDiagnostics?: (() => string[] | null) | null,
+  runtimeDiagnostics?: {
+    consoleMessages?: string[]
+    requestFailures?: string[]
+    badResponses?: string[]
+  }
 ): Promise<HealthFailureEvidence> {
   await mkdir(artifactDir, { recursive: true })
 
@@ -452,15 +556,42 @@ async function captureFailureEvidence(
     screenshotPath,
     htmlSnapshotPath: typeof html === 'string' ? htmlSnapshotPath : null,
     previewDiagnostics: getPreviewDiagnostics?.() ?? null,
+    consoleMessages: runtimeDiagnostics?.consoleMessages?.slice(-20) ?? null,
+    requestFailures: runtimeDiagnostics?.requestFailures?.slice(-20) ?? null,
+    badResponses: runtimeDiagnostics?.badResponses?.slice(-20) ?? null,
   }
 }
 
 async function authenticateViaApi(
   browser: puppeteer.Browser,
   baseUrl: string,
-  credentials: { login: string; password: string }
+  credentials: { login: string; password: string },
+  options?: {
+    getPreviewDiagnostics?: (() => string[] | null) | null
+    onFailureEvidence?: (evidence: HealthFailureEvidence) => void
+  }
 ): Promise<void> {
   const page = await browser.newPage()
+  const consoleMessages: string[] = []
+  const requestFailures: string[] = []
+  const badResponses: string[] = []
+
+  page.on('console', (msg) => {
+    if (msg.type() === 'error' || msg.type() === 'warning') {
+      consoleMessages.push(`${msg.type()}: ${msg.text()}`)
+    }
+  })
+  page.on('requestfailed', (request) => {
+    requestFailures.push(
+      `${request.method()} ${request.url()} (${request.failure()?.errorText ?? 'unknown'})`
+    )
+  })
+  page.on('response', (response) => {
+    const status = response.status()
+    if (status >= 400) {
+      badResponses.push(`${status} ${response.request().method()} ${response.url()}`)
+    }
+  })
 
   try {
     const waitForLoginExit = (timeout: number) =>
@@ -666,24 +797,26 @@ async function authenticateViaApi(
         }
       }
     })
-    const openAndFillLoginForm = async (): Promise<boolean> => {
+    const openAndFillLoginForm = async (options?: { resetSession?: boolean }): Promise<boolean> => {
+      if (options?.resetSession) {
+        await clearBrowserAuditSession(page, baseUrl)
+      }
       await page.goto(`${baseUrl}/login`, {
         waitUntil: 'domcontentloaded',
         timeout: 30_000,
       })
 
+      await waitForRoutePath(page, '/login', 'frontend health auth bootstrap')
       const loginInput = await page
         .waitForSelector(loginSelector, { timeout: 20_000 })
         .catch(async (error) => {
-          const alreadyLeftLogin = await page.evaluate(
-            () =>
-              window.location.pathname !== '/login' &&
-              !window.location.pathname.startsWith('/login/')
-          )
-          if (alreadyLeftLogin) {
+          const state = await readPageRouteState(page)
+          if (state.pathname !== '/login') {
             return null
           }
-          throw error
+          throw new Error(
+            `frontend health auth bootstrap: LoginPage mount/runtime failure; selector ${loginSelector} was not found on /login (title: ${state.title ?? 'unknown'}) after 20000ms. Original error: ${formatError(error)}`
+          )
         })
       if (!loginInput) {
         return false
@@ -696,7 +829,7 @@ async function authenticateViaApi(
       return true
     }
 
-    const loginFormReady = await openAndFillLoginForm()
+    const loginFormReady = await openAndFillLoginForm({ resetSession: true })
     if (!loginFormReady) {
       await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
       return
@@ -738,6 +871,35 @@ async function authenticateViaApi(
       await waitForLoginExit(25_000)
     }
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
+  } catch (error) {
+    const state = await readPageRouteState(page).catch(() => ({
+      url: page.url(),
+      pathname: null,
+      title: null,
+    }))
+    const evidence = await captureFailureEvidence(
+      page,
+      ARTIFACT_DIR,
+      state.pathname ?? '/login',
+      'auth-bootstrap',
+      {
+        type: 'auth-bootstrap',
+        message: `认证预热失败: ${formatError(error)}`,
+        details: [
+          `url=${state.url}`,
+          `pathname=${state.pathname ?? 'unknown'}`,
+          `title=${state.title ?? 'unknown'}`,
+        ],
+      },
+      options?.getPreviewDiagnostics,
+      {
+        consoleMessages,
+        requestFailures,
+        badResponses,
+      }
+    )
+    options?.onFailureEvidence?.(evidence)
+    throw error
   } finally {
     await page.close().catch(() => undefined)
   }
@@ -759,6 +921,9 @@ function buildHealthMarkdown(summary: FrontendHealthSummary): string {
     `- First blocking issue: ${summary.firstBlockingIssue ? `${summary.firstBlockingIssue.issueType} - ${summary.firstBlockingIssue.issueMessage}` : 'none'}`,
     `- Failure screenshot: ${summary.firstBlockingIssue?.screenshotPath ?? 'n/a'}`,
     `- Failure HTML snapshot: ${summary.firstBlockingIssue?.htmlSnapshotPath ?? 'n/a'}`,
+    `- Console diagnostics attached: ${summary.firstBlockingIssue?.consoleMessages?.length ? 'yes' : 'no'}`,
+    `- Request failure diagnostics attached: ${summary.firstBlockingIssue?.requestFailures?.length ? 'yes' : 'no'}`,
+    `- HTTP error diagnostics attached: ${summary.firstBlockingIssue?.badResponses?.length ? 'yes' : 'no'}`,
     '',
     '| Route | Viewport | Issue Count | Types |',
     '| --- | --- | --- | --- |',
@@ -781,6 +946,27 @@ function buildHealthMarkdown(summary: FrontendHealthSummary): string {
   if (summary.firstBlockingIssue?.previewDiagnostics?.length) {
     lines.push('', '### Preview Diagnostics', '')
     for (const detail of summary.firstBlockingIssue.previewDiagnostics) {
+      lines.push(`- ${detail}`)
+    }
+  }
+
+  if (summary.firstBlockingIssue?.consoleMessages?.length) {
+    lines.push('', '### Browser Console Diagnostics', '')
+    for (const detail of summary.firstBlockingIssue.consoleMessages) {
+      lines.push(`- ${detail}`)
+    }
+  }
+
+  if (summary.firstBlockingIssue?.requestFailures?.length) {
+    lines.push('', '### Browser Request Failures', '')
+    for (const detail of summary.firstBlockingIssue.requestFailures) {
+      lines.push(`- ${detail}`)
+    }
+  }
+
+  if (summary.firstBlockingIssue?.badResponses?.length) {
+    lines.push('', '### Browser HTTP Error Responses', '')
+    for (const detail of summary.firstBlockingIssue.badResponses) {
       lines.push(`- ${detail}`)
     }
   }
@@ -1075,10 +1261,22 @@ async function main() {
         if (clearedRateLimitKeys > 0) {
           console.log(`🔐 Cleared ${clearedRateLimitKeys} local audit rate-limit keys`)
         }
-        await authenticateViaApi(browser, effectiveBaseUrl, {
-          login: AUTH_LOGIN,
-          password: AUTH_PASSWORD,
-        })
+        await authenticateViaApi(
+          browser,
+          effectiveBaseUrl,
+          {
+            login: AUTH_LOGIN,
+            password: AUTH_PASSWORD,
+          },
+          {
+            getPreviewDiagnostics,
+            onFailureEvidence: (evidence) => {
+              if (!firstBlockingIssue) {
+                firstBlockingIssue = evidence
+              }
+            },
+          }
+        )
       } else if (AUTH_REQUIRED) {
         throw new Error(
           `Authenticated frontend health is required, but ${authSkipReason ?? 'credentials are unavailable'}. Provide PRIMARY_USERNAME/PRIMARY_PASSWORD for the seeded smoke account. Legacy aliases E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD remain supported.`
@@ -1114,6 +1312,9 @@ async function main() {
             )
 
             try {
+              if (route.path === '/login') {
+                await clearBrowserAuditSession(page, effectiveBaseUrl)
+              }
               await page.goto(new URL(route.path, effectiveBaseUrl).toString(), {
                 waitUntil: 'domcontentloaded',
                 timeout: 60_000,
@@ -1183,7 +1384,12 @@ async function main() {
                   route.path,
                   viewport.name,
                   routeIssues[0],
-                  getPreviewDiagnostics
+                  getPreviewDiagnostics,
+                  {
+                    consoleMessages: [...consoleErrors],
+                    requestFailures: [...requestFailures],
+                    badResponses: [...badResponses],
+                  }
                 )
               }
               await page.close()
@@ -1214,7 +1420,12 @@ async function main() {
                   route.path,
                   viewport.name,
                   routeIssues[0],
-                  getPreviewDiagnostics
+                  getPreviewDiagnostics,
+                  {
+                    consoleMessages: [...consoleErrors],
+                    requestFailures: [...requestFailures],
+                    badResponses: [...badResponses],
+                  }
                 )
               }
               await page.close().catch(() => undefined)

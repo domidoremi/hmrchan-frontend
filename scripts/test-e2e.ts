@@ -73,6 +73,9 @@ type FailureEvidence = {
   screenshotPath: string | null
   htmlSnapshotPath: string | null
   previewDiagnostics: string[] | null
+  consoleMessages: string[] | null
+  requestFailures: string[] | null
+  badResponses: string[] | null
 }
 
 type JsonRecord = Record<string, unknown>
@@ -194,7 +197,12 @@ async function capturePageFailureEvidence(
   page: Page,
   artifactDir: string,
   metadata: Pick<CheckRecord, 'name' | 'path'>,
-  getPreviewDiagnostics?: (() => string[] | null) | null
+  getPreviewDiagnostics?: (() => string[] | null) | null,
+  runtimeDiagnostics?: {
+    consoleMessages?: string[]
+    requestFailures?: string[]
+    badResponses?: string[]
+  }
 ): Promise<FailureEvidence> {
   await mkdir(artifactDir, { recursive: true })
 
@@ -228,6 +236,9 @@ async function capturePageFailureEvidence(
     screenshotPath,
     htmlSnapshotPath: typeof html === 'string' ? htmlSnapshotPath : null,
     previewDiagnostics: getPreviewDiagnostics?.() ?? null,
+    consoleMessages: runtimeDiagnostics?.consoleMessages?.slice(-20) ?? null,
+    requestFailures: runtimeDiagnostics?.requestFailures?.slice(-20) ?? null,
+    badResponses: runtimeDiagnostics?.badResponses?.slice(-20) ?? null,
   }
 }
 
@@ -250,6 +261,99 @@ function markChecksSkipped(summary: SmokeSummary, checks: RouteCheck[], reason: 
 
 function isGuestProtectedRedirectCheck(check: Pick<RouteCheck, 'mode' | 'expectedPath'>): boolean {
   return check.mode === 'guest' && check.expectedPath === '/login'
+}
+
+function isGuestOnlyAuthEntryCheck(check: Pick<RouteCheck, 'mode' | 'path'>): boolean {
+  return (
+    check.mode === 'guest' &&
+    (check.path === '/login' || check.path === '/register' || check.path === '/forgot-password')
+  )
+}
+
+async function clearBrowserAuditSession(page: Page, baseUrl: string): Promise<void> {
+  const cdpSession = await page.createCDPSession().catch(() => null)
+  try {
+    await cdpSession?.send('Network.clearBrowserCookies').catch(() => undefined)
+    await cdpSession?.send('Network.clearBrowserCache').catch(() => undefined)
+    await page
+      .goto(`${baseUrl}/`, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30_000,
+      })
+      .catch(() => undefined)
+    await page
+      .evaluate(async () => {
+        window.localStorage.clear()
+        window.sessionStorage.clear()
+
+        if ('caches' in window) {
+          const cacheNames = await window.caches.keys()
+          await Promise.all(cacheNames.map((cacheName) => window.caches.delete(cacheName)))
+        }
+
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          await Promise.all(registrations.map((registration) => registration.unregister()))
+        }
+      })
+      .catch(() => undefined)
+  } finally {
+    await cdpSession?.detach().catch(() => undefined)
+  }
+}
+
+async function readPageRouteState(page: Page): Promise<{
+  url: string
+  pathname: string | null
+  title: string | null
+}> {
+  const [pathname, title] = await Promise.all([
+    page.evaluate(() => window.location.pathname).catch(() => null),
+    page.title().catch(() => null),
+  ])
+  return {
+    url: page.url(),
+    pathname,
+    title,
+  }
+}
+
+async function waitForRoutePath(
+  page: Page,
+  expectedPath: string,
+  context: string,
+  timeout = 5_000
+): Promise<void> {
+  await page
+    .waitForFunction((path) => window.location.pathname === path, { timeout }, expectedPath)
+    .catch(async () => {
+      const state = await readPageRouteState(page)
+      throw new Error(
+        `${context}: expected browser path ${expectedPath}, got ${state.pathname ?? 'unknown'} (${state.url}, title: ${state.title ?? 'unknown'})`
+      )
+    })
+}
+
+async function waitForLoginShellSelector(
+  page: Page,
+  selector: string,
+  context: string,
+  timeout = 15_000
+): Promise<void> {
+  try {
+    await page.waitForSelector(selector, { timeout })
+  } catch (error) {
+    const state = await readPageRouteState(page)
+    if (state.pathname !== '/login') {
+      throw new Error(
+        `${context}: login route left /login before auth shell rendered; current path ${state.pathname ?? 'unknown'} (${state.url}, title: ${state.title ?? 'unknown'})`
+      )
+    }
+
+    throw new Error(
+      `${context}: LoginPage mount/runtime failure; selector ${selector} was not found on /login (title: ${state.title ?? 'unknown'}) after ${timeout}ms. Original error: ${formatError(error)}`
+    )
+  }
 }
 
 async function collectBrowserTrustHeaders(page: Page): Promise<Record<string, string>> {
@@ -307,11 +411,37 @@ async function withPageFailureEvidence(
 ): Promise<void> {
   const page = await browser.newPage()
   page.setDefaultTimeout(timeout)
+  const consoleMessages: string[] = []
+  const requestFailures: string[] = []
+  const badResponses: string[] = []
+
+  page.on('console', (msg) => {
+    if (msg.type() === 'error' || msg.type() === 'warning') {
+      consoleMessages.push(`${msg.type()}: ${msg.text()}`)
+    }
+  })
+  page.on('requestfailed', (request) => {
+    requestFailures.push(
+      `${request.method()} ${request.url()} (${request.failure()?.errorText ?? 'unknown'})`
+    )
+  })
+  page.on('response', (response) => {
+    const status = response.status()
+    if (status >= 400) {
+      badResponses.push(`${status} ${response.request().method()} ${response.url()}`)
+    }
+  })
 
   try {
     await run(page)
   } catch (error) {
-    onFailure(await capturePageFailureEvidence(page, artifactDir, metadata, getPreviewDiagnostics))
+    onFailure(
+      await capturePageFailureEvidence(page, artifactDir, metadata, getPreviewDiagnostics, {
+        consoleMessages,
+        requestFailures,
+        badResponses,
+      })
+    )
     throw error
   } finally {
     await page.close().catch(() => undefined)
@@ -390,11 +520,20 @@ async function assertBrowserRoute(
     { name: check.name, path: check.path },
     onFailure,
     async (page) => {
+      if (check.path === '/login') {
+        await clearBrowserAuditSession(page, baseUrl)
+      }
+
       await page.goto(`${baseUrl}${check.path}`, {
         waitUntil: 'domcontentloaded',
       })
 
-      await page.waitForSelector(check.selector)
+      if (check.path === '/login' || check.expectedPath === '/login') {
+        await waitForRoutePath(page, check.expectedPath ?? '/login', `${check.name} route`)
+        await waitForLoginShellSelector(page, check.selector, `${check.name} route`)
+      } else {
+        await page.waitForSelector(check.selector)
+      }
       await page.waitForFunction(
         () =>
           document.title.includes('MomiChan') && document.title !== 'MomiChan - 籾山ひめり Fan Hub'
@@ -660,19 +799,23 @@ async function authenticateViaApi(
           }
         }
       })
-      const openAndFillLoginForm = async () => {
+      const openAndFillLoginForm = async (options?: { resetSession?: boolean }) => {
+        if (options?.resetSession) {
+          await clearBrowserAuditSession(page, baseUrl)
+        }
         await page.goto(`${baseUrl}/login`, {
           waitUntil: 'domcontentloaded',
         })
 
-        await page.waitForSelector(loginSelector, { timeout: 20_000 })
+        await waitForRoutePath(page, '/login', 'auth smoke login bootstrap')
+        await waitForLoginShellSelector(page, loginSelector, 'auth smoke login bootstrap', 20_000)
         await page.click(loginSelector, { clickCount: 3 })
         await page.type(loginSelector, credentials.login, { delay: 20 })
         await page.click(passwordSelector, { clickCount: 3 })
         await page.type(passwordSelector, credentials.password, { delay: 20 })
       }
 
-      await openAndFillLoginForm()
+      await openAndFillLoginForm({ resetSession: true })
 
       const submitButton = await page.$(
         'form.auth-form button[type="submit"], form.auth-form button'
@@ -723,87 +866,119 @@ async function assertAuthenticatedRoute(
   check: RouteCheck,
   artifactDir: string,
   onFailure: (evidence: FailureEvidence) => void,
-  getPreviewDiagnostics?: (() => string[] | null) | null
+  getPreviewDiagnostics?: (() => string[] | null) | null,
+  recoverAuthSession?: (() => Promise<void>) | null
 ): Promise<void> {
+  const verifyAuthenticatedRoute = async (page: Page): Promise<void> => {
+    await page.goto(`${baseUrl}${check.path}`, {
+      waitUntil: 'domcontentloaded',
+    })
+
+    const failIfSessionDrifted = async (context: string) => {
+      const state = await readPageRouteState(page)
+      if (state.pathname === '/login') {
+        throw new Error(
+          `${context}: authenticated session drift; expected ${check.path} but browser reached /login (${state.url}, title: ${state.title ?? 'unknown'})`
+        )
+      }
+    }
+
+    await page.waitForSelector('body', { timeout: 15_000 })
+    await failIfSessionDrifted(`Authenticated route ${check.name}`)
+
+    await page.waitForSelector(check.selector).catch(async (error) => {
+      await failIfSessionDrifted(`Authenticated route ${check.name}`)
+      throw error
+    })
+
+    const currentPath = await page.evaluate(() => window.location.pathname)
+    if (currentPath === '/login') {
+      throw new Error(
+        `Authenticated route ${check.name}: authenticated session drift; expected ${check.path} but browser reached /login`
+      )
+    }
+
+    if (check.expectedPath && currentPath !== check.expectedPath) {
+      throw new Error(
+        `Expected authenticated route ${check.path} to resolve to ${check.expectedPath}, got ${currentPath}`
+      )
+    }
+
+    const needsLazyReadinessScroll =
+      (check.path.startsWith('/post/') || check.path.startsWith('/community/discussions/')) &&
+      ((check.readinessSelectorsAll?.length ?? 0) > 0 ||
+        (check.readinessSelectorsAny?.length ?? 0) > 0)
+
+    if (needsLazyReadinessScroll) {
+      const readinessProbe: ReadinessProbePayload = {
+        all: check.readinessSelectorsAll ?? [],
+        any: check.readinessSelectorsAny ?? [],
+      }
+      const anchorSelectors = check.path.startsWith('/post/')
+        ? ['.post-comments']
+        : ['.discussion-comments']
+
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        const readinessAlreadyPresent = await page.evaluate(({ all, any }) => {
+          const allMatched = all.every((selector) => Boolean(document.querySelector(selector)))
+          const anyMatched =
+            any.length === 0 || any.some((selector) => Boolean(document.querySelector(selector)))
+          return allMatched && anyMatched
+        }, readinessProbe)
+
+        if (readinessAlreadyPresent) break
+
+        const reachedBottom = await page.evaluate((anchors) => {
+          const anchor = anchors
+            .map((selector) => document.querySelector(selector))
+            .find((node): node is Element => Boolean(node))
+
+          if (anchor) {
+            anchor.scrollIntoView({ block: 'center' })
+          } else {
+            const maxY = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0)
+            const nextY = Math.min(window.scrollY + Math.max(window.innerHeight * 0.9, 480), maxY)
+            window.scrollTo({ top: nextY, behavior: 'auto' })
+          }
+
+          return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4
+        }, anchorSelectors)
+
+        await new Promise((resolve) => setTimeout(resolve, reachedBottom ? 400 : 250))
+      }
+    }
+
+    for (const selector of check.readinessSelectorsAll ?? []) {
+      await page.waitForSelector(selector)
+    }
+
+    if (check.readinessSelectorsAny?.length) {
+      await page.waitForFunction(
+        (selectors) => selectors.some((selector) => Boolean(document.querySelector(selector))),
+        {},
+        check.readinessSelectorsAny
+      )
+    }
+  }
+
   await withPageFailureEvidence(
     browser,
     artifactDir,
     { name: check.name, path: check.path },
     onFailure,
     async (page) => {
-      await page.goto(`${baseUrl}${check.path}`, {
-        waitUntil: 'domcontentloaded',
-      })
-
-      await page.waitForSelector(check.selector)
-
-      const currentPath = await page.evaluate(() => window.location.pathname)
-      if (currentPath === '/login') {
-        throw new Error(
-          `Expected authenticated route ${check.path} to stay signed in, but it redirected to /login`
-        )
-      }
-
-      if (check.expectedPath && currentPath !== check.expectedPath) {
-        throw new Error(
-          `Expected authenticated route ${check.path} to resolve to ${check.expectedPath}, got ${currentPath}`
-        )
-      }
-
-      const needsLazyReadinessScroll =
-        (check.path.startsWith('/post/') || check.path.startsWith('/community/discussions/')) &&
-        ((check.readinessSelectorsAll?.length ?? 0) > 0 ||
-          (check.readinessSelectorsAny?.length ?? 0) > 0)
-
-      if (needsLazyReadinessScroll) {
-        const readinessProbe: ReadinessProbePayload = {
-          all: check.readinessSelectorsAll ?? [],
-          any: check.readinessSelectorsAny ?? [],
+      try {
+        await verifyAuthenticatedRoute(page)
+      } catch (error) {
+        if (!formatError(error).includes('authenticated session drift') || !recoverAuthSession) {
+          throw error
         }
-        const anchorSelectors = check.path.startsWith('/post/')
-          ? ['.post-comments']
-          : ['.discussion-comments']
 
-        for (let attempt = 0; attempt < 12; attempt += 1) {
-          const readinessAlreadyPresent = await page.evaluate(({ all, any }) => {
-            const allMatched = all.every((selector) => Boolean(document.querySelector(selector)))
-            const anyMatched =
-              any.length === 0 || any.some((selector) => Boolean(document.querySelector(selector)))
-            return allMatched && anyMatched
-          }, readinessProbe)
-
-          if (readinessAlreadyPresent) break
-
-          const reachedBottom = await page.evaluate((anchors) => {
-            const anchor = anchors
-              .map((selector) => document.querySelector(selector))
-              .find((node): node is Element => Boolean(node))
-
-            if (anchor) {
-              anchor.scrollIntoView({ block: 'center' })
-            } else {
-              const maxY = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0)
-              const nextY = Math.min(window.scrollY + Math.max(window.innerHeight * 0.9, 480), maxY)
-              window.scrollTo({ top: nextY, behavior: 'auto' })
-            }
-
-            return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4
-          }, anchorSelectors)
-
-          await new Promise((resolve) => setTimeout(resolve, reachedBottom ? 400 : 250))
-        }
-      }
-
-      for (const selector of check.readinessSelectorsAll ?? []) {
-        await page.waitForSelector(selector)
-      }
-
-      if (check.readinessSelectorsAny?.length) {
-        await page.waitForFunction(
-          (selectors) => selectors.some((selector) => Boolean(document.querySelector(selector))),
-          {},
-          check.readinessSelectorsAny
+        console.warn(
+          `   • Auth session drift while checking ${check.path}; re-authenticating once and retrying`
         )
+        await recoverAuthSession()
+        await verifyAuthenticatedRoute(page)
       }
     },
     getPreviewDiagnostics
@@ -981,8 +1156,13 @@ async function main(): Promise<void> {
   const skippedGuestProtectedRedirectChecks = authSmokeEnabled
     ? guestBrowserChecks.filter(isGuestProtectedRedirectCheck)
     : []
+  const skippedGuestOnlyAuthEntryChecks = authSmokeEnabled
+    ? guestBrowserChecks.filter(isGuestOnlyAuthEntryCheck)
+    : []
   const effectiveGuestBrowserChecks = authSmokeEnabled
-    ? guestBrowserChecks.filter((check) => !isGuestProtectedRedirectCheck(check))
+    ? guestBrowserChecks.filter(
+        (check) => !isGuestProtectedRedirectCheck(check) && !isGuestOnlyAuthEntryCheck(check)
+      )
     : guestBrowserChecks
   const authenticatedRouteChecks: RouteCheck[] = routeMatrix.auth.map((check) => ({
     name: check.name,
@@ -1058,12 +1238,16 @@ async function main(): Promise<void> {
     })
 
     console.log('🧭 Verifying guest browser routes...')
-    if (skippedGuestProtectedRedirectChecks.length > 0) {
+    const skippedAuthenticatedAuditGuestChecks = [
+      ...skippedGuestProtectedRedirectChecks,
+      ...skippedGuestOnlyAuthEntryChecks,
+    ]
+    if (skippedAuthenticatedAuditGuestChecks.length > 0) {
       const reason =
-        'Skipped during authenticated local audit; protected route access is verified by authenticated smoke routes.'
-      markChecksSkipped(summary, skippedGuestProtectedRedirectChecks, reason)
+        'Skipped during authenticated local audit; auth entry and protected route access are verified by authenticated smoke routes.'
+      markChecksSkipped(summary, skippedAuthenticatedAuditGuestChecks, reason)
       console.log(
-        `   • Skipping ${skippedGuestProtectedRedirectChecks.length} guest protected redirect checks in authenticated local audit`
+        `   • Skipping ${skippedAuthenticatedAuditGuestChecks.length} guest auth-entry/protected redirect checks in authenticated local audit`
       )
     }
 
@@ -1143,7 +1327,19 @@ async function main(): Promise<void> {
               check,
               artifactDir,
               recordFailureEvidence,
-              getPreviewDiagnostics
+              getPreviewDiagnostics,
+              () =>
+                authenticateViaApi(
+                  browser!,
+                  baseUrl,
+                  {
+                    login: authLogin,
+                    password: authPassword,
+                  },
+                  artifactDir,
+                  recordFailureEvidence,
+                  getPreviewDiagnostics
+                )
             )
         )
       }
