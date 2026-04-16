@@ -155,6 +155,7 @@ jobs:
         env:
           E2E_ARTIFACT_DIR: .e2e-smoke
           E2E_REQUIRE_AUTH: 'true'
+          LOCAL_AUDIT_AUTO_API_BRIDGE: 'false'
           PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
           PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
@@ -197,6 +198,7 @@ jobs:
         env:
           FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health
           FRONTEND_HEALTH_REQUIRE_AUTH: 'true'
+          LOCAL_AUDIT_AUTO_API_BRIDGE: 'false'
           PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
           PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
@@ -249,6 +251,8 @@ jobs:
           FRONTEND_HEALTH_AUTOSTART: 'false'
           FRONTEND_HEALTH_INCLUDE_API_ERRORS: 'true'
           FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health-prod
+          PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
+          PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
           mkdir -p .frontend-health-prod
           status=0

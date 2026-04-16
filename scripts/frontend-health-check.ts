@@ -189,7 +189,9 @@ const AUTH_ROUTES: HealthRouteDefinition[] = getSmokeRouteMatrix({
 }))
 const EFFECTIVE_GUEST_ROUTES =
   AUTH_LOGIN && AUTH_PASSWORD
-    ? GUEST_ROUTES.filter((route) => !isGuestProtectedRedirectRoute(route))
+    ? GUEST_ROUTES.filter(
+        (route) => !isGuestProtectedRedirectRoute(route) && !isGuestOnlyAuthEntryRoute(route)
+      )
     : GUEST_ROUTES
 
 const VIEWPORTS: Array<{ name: string; value: Viewport }> = [
@@ -211,6 +213,13 @@ function isGuestProtectedRedirectRoute(
   route: Pick<HealthRouteDefinition, 'mode' | 'expectedPath'>
 ): boolean {
   return route.mode === 'guest' && route.expectedPath === '/login'
+}
+
+function isGuestOnlyAuthEntryRoute(route: Pick<HealthRouteDefinition, 'mode' | 'path'>): boolean {
+  return (
+    route.mode === 'guest' &&
+    (route.path === '/login' || route.path === '/register' || route.path === '/forgot-password')
+  )
 }
 
 async function collectBrowserTrustHeaders(page: Page): Promise<Record<string, string>> {
@@ -657,20 +666,41 @@ async function authenticateViaApi(
         }
       }
     })
-    const openAndFillLoginForm = async () => {
+    const openAndFillLoginForm = async (): Promise<boolean> => {
       await page.goto(`${baseUrl}/login`, {
         waitUntil: 'domcontentloaded',
         timeout: 30_000,
       })
 
-      await page.waitForSelector(loginSelector, { timeout: 20_000 })
+      const loginInput = await page
+        .waitForSelector(loginSelector, { timeout: 20_000 })
+        .catch(async (error) => {
+          const alreadyLeftLogin = await page.evaluate(
+            () =>
+              window.location.pathname !== '/login' &&
+              !window.location.pathname.startsWith('/login/')
+          )
+          if (alreadyLeftLogin) {
+            return null
+          }
+          throw error
+        })
+      if (!loginInput) {
+        return false
+      }
+      await loginInput.dispose()
       await page.click(loginSelector, { clickCount: 3 })
       await page.type(loginSelector, credentials.login, { delay: 20 })
       await page.click(passwordSelector, { clickCount: 3 })
       await page.type(passwordSelector, credentials.password, { delay: 20 })
+      return true
     }
 
-    await openAndFillLoginForm()
+    const loginFormReady = await openAndFillLoginForm()
+    if (!loginFormReady) {
+      await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
+      return
+    }
 
     const submitButton = await page.$('form.auth-form button[type="submit"], form.auth-form button')
     if (!submitButton) {
@@ -1036,6 +1066,7 @@ async function main() {
 
     const healthFilterOptions = {
       baseOrigin: effectiveBaseUrl,
+      allowLocalPreviewApiNoise: Boolean(managedServer),
     }
 
     try {
