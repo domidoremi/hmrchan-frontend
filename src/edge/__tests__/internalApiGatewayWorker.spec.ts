@@ -32,6 +32,7 @@ describe('handleInternalApiGatewayRequest', () => {
       }),
       {
         API_BASE_URL: BACKEND_ORIGIN,
+        ENABLE_VPC_PROXY: 'true',
         VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
         VPC_SERVICE: {
           fetch: vpcFetch,
@@ -64,6 +65,7 @@ describe('handleInternalApiGatewayRequest', () => {
       new Request('https://momichan.xyz/api/v1/discussions/discussion-1'),
       {
         API_BASE_URL: BACKEND_ORIGIN,
+        ENABLE_VPC_PROXY: 'true',
         VPC_COMMUNITY_API_ORIGIN: 'http://community-api:8000',
         VPC_SERVICE: {
           fetch: vpcFetch,
@@ -98,6 +100,7 @@ describe('handleInternalApiGatewayRequest', () => {
       new Request('https://momichan.xyz/api/v1/posts?page=2'),
       {
         API_BASE_URL: BACKEND_ORIGIN,
+        ENABLE_VPC_PROXY: 'true',
         VPC_CONTENT_API_ORIGIN: 'http://content-api:8000',
         VPC_SERVICE: {
           fetch: vpcFetch,
@@ -130,6 +133,7 @@ describe('handleInternalApiGatewayRequest', () => {
       new Request('https://momichan.xyz/api/v1/auth/google/start?intent=login'),
       {
         API_BASE_URL: BACKEND_ORIGIN,
+        ENABLE_VPC_PROXY: 'true',
         VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
         VPC_SERVICE: {
           fetch: vpcFetch,
@@ -139,6 +143,36 @@ describe('handleInternalApiGatewayRequest', () => {
 
     expect(vpcFetch).not.toHaveBeenCalled()
     expect(publicFetch).toHaveBeenCalledTimes(1)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
+  })
+
+  it('uses the public upstream by default even when the VPC binding is present', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    const vpcFetch = vi.fn()
+
+    const response = await handleInternalApiGatewayRequest(
+      new Request('https://momichan.xyz/api/v1/home'),
+      {
+        API_BASE_URL: BACKEND_ORIGIN,
+        VPC_CONTENT_API_ORIGIN: 'http://content-api:8000',
+        VPC_SERVICE: {
+          fetch: vpcFetch,
+        },
+      }
+    )
+
+    expect(vpcFetch).not.toHaveBeenCalled()
+    expect(publicFetch).toHaveBeenCalledTimes(1)
+    expect((publicFetch.mock.calls[0]?.[0] as Request).url).toBe('https://backend.test/api/v1/home')
     expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
   })
 })
