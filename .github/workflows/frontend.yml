@@ -151,11 +151,27 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Validate controlled smoke API upstream
+        env:
+          SMOKE_API_BASE_URL: ${{ vars.SMOKE_API_BASE_URL || '' }}
+          SMOKE_IDENTITY_API_BASE_URL: ${{ vars.SMOKE_IDENTITY_API_BASE_URL || '' }}
+          SMOKE_COMMUNITY_API_BASE_URL: ${{ vars.SMOKE_COMMUNITY_API_BASE_URL || '' }}
+          SMOKE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
+        run: |
+          if [ -z "${SMOKE_API_BASE_URL}" ] && [ -z "${SMOKE_IDENTITY_API_BASE_URL}" ] && [ -z "${SMOKE_COMMUNITY_API_BASE_URL}" ] && [ -z "${SMOKE_CONTENT_API_BASE_URL}" ]; then
+            echo "::error::Protected CI smoke requires a controlled API upstream. Set repo vars SMOKE_API_BASE_URL or the split-domain variants."
+            exit 1
+          fi
+
       - name: Smoke E2E
         env:
           E2E_ARTIFACT_DIR: .e2e-smoke
           E2E_REQUIRE_AUTH: 'true'
           LOCAL_AUDIT_AUTO_API_BRIDGE: 'false'
+          VITE_API_BASE_URL: ${{ vars.SMOKE_API_BASE_URL || '' }}
+          VITE_IDENTITY_API_BASE_URL: ${{ vars.SMOKE_IDENTITY_API_BASE_URL || '' }}
+          VITE_COMMUNITY_API_BASE_URL: ${{ vars.SMOKE_COMMUNITY_API_BASE_URL || '' }}
+          VITE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
           PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
           PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
@@ -194,11 +210,27 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Validate controlled smoke API upstream
+        env:
+          SMOKE_API_BASE_URL: ${{ vars.SMOKE_API_BASE_URL || '' }}
+          SMOKE_IDENTITY_API_BASE_URL: ${{ vars.SMOKE_IDENTITY_API_BASE_URL || '' }}
+          SMOKE_COMMUNITY_API_BASE_URL: ${{ vars.SMOKE_COMMUNITY_API_BASE_URL || '' }}
+          SMOKE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
+        run: |
+          if [ -z "${SMOKE_API_BASE_URL}" ] && [ -z "${SMOKE_IDENTITY_API_BASE_URL}" ] && [ -z "${SMOKE_COMMUNITY_API_BASE_URL}" ] && [ -z "${SMOKE_CONTENT_API_BASE_URL}" ]; then
+            echo "::error::Protected frontend health requires a controlled API upstream. Set repo vars SMOKE_API_BASE_URL or the split-domain variants."
+            exit 1
+          fi
+
       - name: Frontend health smoke
         env:
           FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health
           FRONTEND_HEALTH_REQUIRE_AUTH: 'true'
           LOCAL_AUDIT_AUTO_API_BRIDGE: 'false'
+          VITE_API_BASE_URL: ${{ vars.SMOKE_API_BASE_URL || '' }}
+          VITE_IDENTITY_API_BASE_URL: ${{ vars.SMOKE_IDENTITY_API_BASE_URL || '' }}
+          VITE_COMMUNITY_API_BASE_URL: ${{ vars.SMOKE_COMMUNITY_API_BASE_URL || '' }}
+          VITE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
           PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
           PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
@@ -221,7 +253,10 @@ jobs:
           retention-days: 7
 
   production_canary:
-    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+    if: >-
+      github.event_name == 'push' &&
+      (github.ref_name == 'main' || github.ref_name == 'master') &&
+      (vars.PRODUCTION_CANARY_BASE_URL != '' || vars.PROTECTED_CANARY_BASE_URL != '')
     runs-on: ubuntu-latest
     needs:
       - quality
@@ -247,7 +282,7 @@ jobs:
 
       - name: Production frontend health canary
         env:
-          FRONTEND_HEALTH_BASE_URL: https://momichan.xyz
+          FRONTEND_HEALTH_BASE_URL: ${{ vars.PRODUCTION_CANARY_BASE_URL || vars.PROTECTED_CANARY_BASE_URL }}
           FRONTEND_HEALTH_AUTOSTART: 'false'
           FRONTEND_HEALTH_INCLUDE_API_ERRORS: 'true'
           FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health-prod
@@ -264,7 +299,7 @@ jobs:
 
       - name: Production smoke canary
         env:
-          E2E_BASE_URL: https://momichan.xyz
+          E2E_BASE_URL: ${{ vars.PRODUCTION_CANARY_BASE_URL || vars.PROTECTED_CANARY_BASE_URL }}
           E2E_AUTOSTART: 'false'
           E2E_ARTIFACT_DIR: .e2e-smoke-prod
           E2E_REQUIRE_AUTH: 'true'
@@ -324,5 +359,5 @@ jobs:
             echo "| Frontend health smoke (auth fixture required) | ${HEALTH_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`frontend-health\` |"
             echo "| A11y / Perf nightly | scheduled | See the nightly workflow for the latest artifacts and summaries. |"
             echo
-            echo "> Blocking gates now cover quality, coverage baseline, smoke E2E, and preview-shell frontend health with the shared public smoke fixture account. Pushes to \`main\` additionally trigger a production canary against [momichan.xyz](https://momichan.xyz). High-risk comment/profile/device/favorite changes should still run \`bun run check:release-evidence\` or at minimum \`bun run test:prod:regression --preflight\` before release, and CI-noise warnings that affect result reading must be fixed or explicitly documented."
+            echo "> Blocking gates now cover quality, coverage baseline, smoke E2E, and preview-shell frontend health with the shared smoke fixture account plus a controlled API upstream. Pushes to \`main\` only trigger production canary when \`PRODUCTION_CANARY_BASE_URL\` or \`PROTECTED_CANARY_BASE_URL\` is configured. High-risk comment/profile/device/favorite changes should still run \`bun run check:release-evidence\` or at minimum \`bun run test:prod:regression --preflight\` before release, and CI-noise warnings that affect result reading must be fixed or explicitly documented."
           } >> "$GITHUB_STEP_SUMMARY"

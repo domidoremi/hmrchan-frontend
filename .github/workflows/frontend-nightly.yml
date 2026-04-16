@@ -123,10 +123,27 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Validate controlled smoke API upstream
+        env:
+          SMOKE_API_BASE_URL: ${{ vars.SMOKE_API_BASE_URL || '' }}
+          SMOKE_IDENTITY_API_BASE_URL: ${{ vars.SMOKE_IDENTITY_API_BASE_URL || '' }}
+          SMOKE_COMMUNITY_API_BASE_URL: ${{ vars.SMOKE_COMMUNITY_API_BASE_URL || '' }}
+          SMOKE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
+        run: |
+          if [ -z "${SMOKE_API_BASE_URL}" ] && [ -z "${SMOKE_IDENTITY_API_BASE_URL}" ] && [ -z "${SMOKE_COMMUNITY_API_BASE_URL}" ] && [ -z "${SMOKE_CONTENT_API_BASE_URL}" ]; then
+            echo "::error::Nightly protected smoke requires a controlled API upstream. Set repo vars SMOKE_API_BASE_URL or the split-domain variants."
+            exit 1
+          fi
+
       - name: PWA / E2E smoke
         env:
           E2E_ARTIFACT_DIR: .e2e-smoke-nightly
           E2E_REQUIRE_AUTH: 'true'
+          LOCAL_AUDIT_AUTO_API_BRIDGE: 'false'
+          VITE_API_BASE_URL: ${{ vars.SMOKE_API_BASE_URL || '' }}
+          VITE_IDENTITY_API_BASE_URL: ${{ vars.SMOKE_IDENTITY_API_BASE_URL || '' }}
+          VITE_COMMUNITY_API_BASE_URL: ${{ vars.SMOKE_COMMUNITY_API_BASE_URL || '' }}
+          VITE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
           PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
           PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
@@ -149,6 +166,7 @@ jobs:
           retention-days: 14
 
   frontend_health:
+    if: ${{ vars.NIGHTLY_FRONTEND_HEALTH_BASE_URL != '' || vars.PRODUCTION_CANARY_BASE_URL != '' || vars.PROTECTED_CANARY_BASE_URL != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -166,7 +184,7 @@ jobs:
 
       - name: Production frontend health canary
         env:
-          FRONTEND_HEALTH_BASE_URL: https://momichan.xyz
+          FRONTEND_HEALTH_BASE_URL: ${{ vars.NIGHTLY_FRONTEND_HEALTH_BASE_URL || vars.PRODUCTION_CANARY_BASE_URL || vars.PROTECTED_CANARY_BASE_URL }}
           FRONTEND_HEALTH_AUTOSTART: 'false'
           FRONTEND_HEALTH_INCLUDE_API_ERRORS: 'true'
           FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health
@@ -225,5 +243,5 @@ jobs:
             echo "| PWA / E2E smoke (local preview shell, auth required) | ${PWA_RESULT} | [Workflow run](${RUN_URL}) |"
             echo "| Production frontend health canary | ${HEALTH_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`frontend-health\` |"
             echo
-            echo "> Nightly keeps E2E on the local preview shell for build-time/PWA parity, requires the seeded auth smoke account, and scans production health directly. Use \`bun run check:release-evidence\` or manual \`bun run test:prod:regression --preflight\` for high-risk write-adjacent changes, and treat tooling warnings that pollute diagnosis as defects until fixed or explicitly documented."
+            echo "> Nightly keeps E2E on the local preview shell for build-time/PWA parity, requires the seeded auth smoke account, and now expects a controlled API upstream instead of silently falling back to the public API. Production-like health only runs when \`NIGHTLY_FRONTEND_HEALTH_BASE_URL\`, \`PRODUCTION_CANARY_BASE_URL\`, or \`PROTECTED_CANARY_BASE_URL\` is configured. Use \`bun run check:release-evidence\` or manual \`bun run test:prod:regression --preflight\` for high-risk write-adjacent changes, and treat tooling warnings that pollute diagnosis as defects until fixed or explicitly documented."
           } >> "$GITHUB_STEP_SUMMARY"

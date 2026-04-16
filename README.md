@@ -67,6 +67,10 @@ cp .env.example .env.development
 | `E2E_AUTOSTART`                           | 设为 `false` 时，E2E 不尝试自启本地预览环境                                                |
 | `E2E_ARTIFACT_DIR`                        | E2E smoke 产物目录，默认 `.e2e-smoke`                                                      |
 | `E2E_REQUIRE_AUTH`                        | 默认要求认证态 smoke；仅显式设为 `false` 时才允许 guest-only                               |
+| `VITE_API_BASE_URL`                       | preview-shell / 本地 dev 的同源 `/api` 代理目标；CI 受控 smoke 可显式指向受保护 upstream   |
+| `VITE_IDENTITY_API_BASE_URL`              | split topology 下 identity 域代理目标，可选                                                |
+| `VITE_COMMUNITY_API_BASE_URL`             | split topology 下 community 域代理目标，可选                                               |
+| `VITE_CONTENT_API_BASE_URL`               | split topology 下 content 域代理目标，可选                                                 |
 | `PRIMARY_USERNAME`                        | 认证 smoke 主账号用户名，`test:e2e` / `check:frontend` / `test:prod:regression` 的首选输入 |
 | `PRIMARY_PASSWORD`                        | 认证 smoke 主账号密码                                                                      |
 | `E2E_AUTH_LOGIN`                          | 历史别名；仅在未设置 `PRIMARY_USERNAME` 时回退使用                                         |
@@ -183,11 +187,13 @@ bun run check:release-evidence
 - 若后端生产 `CLIENT_CONTRACT_VERSION` 使用独立 release hash，而不是 Pages commit SHA，必须在 Cloudflare Dashboard 显式配置同值 `VITE_CLIENT_CONTRACT_VERSION`
 - `VPC_API_ORIGIN` 仅在生产仍走私网 nginx / VPC service 时保留
 - `VITE_TURNSTILE_SITE_KEY` 作为机密在 Dashboard 中保留；其余 `VITE_*` 变量不是 Pages 生产必需项
+- 若仓库选择“不公开 API 入口”，GitHub Actions 里的 preview-shell smoke 不应再回落到 `https://api.momichan.xyz`；请在仓库 vars 中至少配置 `SMOKE_API_BASE_URL`，或按 split topology 配置 `SMOKE_IDENTITY_API_BASE_URL` / `SMOKE_COMMUNITY_API_BASE_URL` / `SMOKE_CONTENT_API_BASE_URL`
+- `main` push 的 canary 只会在配置了 `PRODUCTION_CANARY_BASE_URL` 或 `PROTECTED_CANARY_BASE_URL` 时运行；nightly 的远端 health 只会在配置了 `NIGHTLY_FRONTEND_HEALTH_BASE_URL` 或上述 canary 地址时运行
 
 发布门禁约定：
 
 - PR / 普通分支阻塞检查：`quality`、`coverage`、`e2e_smoke`、`frontend_health`
-- `main` / `master` push 后追加 `production_canary`
+- `main` / `master` push 仅在显式配置受控 canary 站点时追加 `production_canary`
 - `frontend-nightly` 的 `pwa_smoke` 与主 CI 复用同一套 public smoke fixture 契约；默认要求提供 `PRIMARY_USERNAME/PRIMARY_PASSWORD`
 - `frontend-nightly` 中只有 `frontend_health` 直接扫生产；`pwa_smoke` 仍跑本地 build + preview 壳层
 - 本地自管 preview-shell 审计现在会复用统一 preview manager；若 preview 异常退出导致 `chrome-error://chromewebdata/`，`test:e2e` / `check:frontend` 会自动重启一次并重试当前检查
