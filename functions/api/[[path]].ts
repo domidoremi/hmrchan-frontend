@@ -17,6 +17,7 @@ import {
 
 interface Env {
   API_BASE_URL?: string
+  ENABLE_INTERNAL_API_GATEWAY?: string
   VPC_API_ORIGIN?: string
   VPC_IDENTITY_API_ORIGIN?: string
   VPC_COMMUNITY_API_ORIGIN?: string
@@ -127,6 +128,11 @@ function isAllowedOrigin(origin: string | null, isDev: boolean): boolean {
 
 function normalizePath(path: string): string {
   return path.replace(/^\/+/, '').replace(/\/+$/, '')
+}
+
+function isInternalApiGatewayEnabled(env: ProxyEnv): boolean {
+  const value = env.ENABLE_INTERNAL_API_GATEWAY?.trim().toLowerCase()
+  return value === '1' || value === 'true' || value === 'yes' || value === 'on'
 }
 
 function isLegacyGoogleAuthPath(path: string): boolean {
@@ -403,7 +409,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       request,
       requestUrl,
       search: requestUrl.search,
-      internalApiGateway: env.INTERNAL_API_GATEWAY,
+      internalApiGateway: isInternalApiGatewayEnabled(env) ? env.INTERNAL_API_GATEWAY : undefined,
     })
 
     if (redirectMode === 'manual') {
