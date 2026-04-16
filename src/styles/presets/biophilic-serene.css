@@ -124,6 +124,82 @@
     --page-shell-eyebrow-bg: rgb(15 118 110 / 0.08);
     --page-shell-eyebrow-border: rgb(15 118 110 / 0.14);
     --page-shell-eyebrow-ink: var(--appearance-text-secondary);
+    --page-shell-bg: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--appearance-canvas) 80%, var(--appearance-surface-1) 20%),
+      color-mix(in srgb, var(--appearance-canvas) 68%, var(--appearance-surface-2) 32%)
+    );
+    --page-shell-backdrop: radial-gradient(
+      circle at top center,
+      rgb(var(--appearance-accent-rgb) / 0.16),
+      transparent 46%
+    );
+    --page-shell-border: var(--appearance-surface-border-token);
+    --page-shell-shadow: var(--appearance-shadow-soft);
+    --page-shell-padding-inline: clamp(1rem, 3vw, 2rem);
+    --page-shell-padding-block: clamp(1.875rem, 4.5vw, 3.5rem);
+    --page-shell-gap: clamp(1.625rem, 3.4vw, 2.75rem);
+    --page-section-bg: color-mix(in srgb, var(--appearance-surface-1) 88%, transparent);
+    --page-section-border: var(--appearance-surface-border-token);
+    --page-section-shadow: 0 1.25rem 2.6rem -2.2rem rgb(var(--appearance-accent-rgb) / 0.2);
+    --page-section-gap: clamp(1.25rem, 2.8vw, 2rem);
+    --page-hero-bg: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--appearance-surface-1) 90%, transparent),
+      color-mix(in srgb, var(--appearance-surface-2) 82%, transparent)
+    );
+    --page-hero-border: var(--appearance-surface-border-strong-token);
+    --page-hero-shadow: var(--appearance-shadow-medium);
+    --page-hero-accent: color-mix(
+      in srgb,
+      var(--appearance-accent) 20%,
+      var(--appearance-surface-1) 80%
+    );
+    --page-hero-min-block-size: clamp(18rem, 36vw, 24rem);
+    --page-panel-bg: color-mix(in srgb, var(--appearance-surface-1) 88%, transparent);
+    --page-panel-border: var(--appearance-surface-border-token);
+    --page-panel-shadow: var(--appearance-shadow-soft);
+    --page-card-bg: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--appearance-surface-1) 90%, transparent),
+      color-mix(in srgb, var(--appearance-surface-2) 84%, transparent)
+    );
+    --page-card-border: var(--appearance-surface-border-token);
+    --page-card-shadow: 0 1.5rem 2.8rem -2rem rgb(var(--appearance-accent-rgb) / 0.18);
+    --page-card-hover-transform: translate3d(0, -0.09375rem, 0);
+    --page-form-bg: color-mix(in srgb, var(--appearance-surface-1) 86%, transparent);
+    --page-form-border: var(--appearance-surface-border-token);
+    --page-form-shadow: var(--appearance-shadow-soft);
+    --page-nav-bg: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--appearance-surface-1) 88%, transparent),
+      color-mix(in srgb, var(--appearance-surface-2) 80%, transparent)
+    );
+    --page-nav-border: var(--appearance-surface-border-token);
+    --page-nav-shadow: var(--appearance-shadow-soft);
+    --page-overlay-bg: color-mix(in srgb, var(--appearance-surface-1) 90%, transparent);
+    --page-overlay-border: var(--appearance-surface-border-strong-token);
+    --page-overlay-shadow: var(--appearance-shadow-medium);
+    --page-divider-color: color-mix(in srgb, var(--appearance-border) 80%, transparent);
+    --page-accent-bg: linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--appearance-surface-2) 78%, var(--appearance-accent) 22%),
+      color-mix(in srgb, var(--appearance-surface-1) 74%, var(--appearance-accent) 26%)
+    );
+    --page-accent-border: color-mix(
+      in srgb,
+      var(--appearance-border-strong) 64%,
+      var(--appearance-accent) 36%
+    );
+    --page-accent-text: var(--appearance-text-primary);
+    --page-accent-glow: 0 0 0 0.0625rem rgb(var(--appearance-accent-rgb) / 0.12);
+    --page-motion-duration: 300ms;
+    --page-motion-distance: 0.5rem;
+    --page-motion-ease: var(--ease-spring);
+    --page-density-stack-gap: clamp(1.125rem, 2.2vw, 1.625rem);
+    --page-density-section-gap: clamp(1.75rem, 4.2vw, 3.125rem);
+    --page-density-inline-gap: 0.875rem;
+    --page-pattern-opacity: 0.44;
   }
 
   :root[data-preset='biophilic-serene'][data-color-mode='dark'],

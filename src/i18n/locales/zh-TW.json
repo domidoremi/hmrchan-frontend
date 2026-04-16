@@ -20,7 +20,8 @@
     "userProfile": "使用者資料",
     "profileSettings": "個人資料設定",
     "search": "搜尋",
-    "schedule": "日程"
+    "schedule": "日程",
+    "styleGallery": "風格畫廊"
   },
   "common": {
     "all": "全部",
@@ -301,6 +302,7 @@
     "links": "連結",
     "theme": "主題",
     "appearancePreset": "外觀預設",
+    "appearanceLead": "每種預設都會在全站同步改變節奏、材質語言、視覺重音與動效方式。",
     "light": "淺色",
     "dark": "深色",
     "auto": "跟隨系統",
@@ -347,6 +349,7 @@
     "performanceCookies": "啟用效能監測",
     "performanceCookiesDesc": "允許記錄 Web Vitals 與前端效能指標。",
     "backgroundEffect": "背景效果",
+    "ambientEffectsNote": "環境效果保留為附屬選項，其優先級始終低於目前的外觀預設。",
     "bgNone": "關閉",
     "bgRain": "雨幕",
     "bgSnow": "雪花",
@@ -375,6 +378,7 @@
     "preferencesReset": "已恢復預設偏好設定",
     "preferencesReplaced": "已完整覆蓋雲端偏好設定",
     "appearanceRuntimeFailed": "新的外觀預設載入失敗，已保留目前預設。",
+    "openStyleGallery": "開啟風格畫廊",
     "presets": {
       "minimal-editorial": "極簡編排",
       "fluent-soft": "柔和 Fluent",
@@ -394,6 +398,25 @@
       "description": "清除快取資料以釋放空間",
       "clear": "清除快取"
     }
+  },
+  "styleGallery": {
+    "eyebrow": "風格系統",
+    "title": "風格畫廊",
+    "subtitle": "在全站套用前，先從視覺簽名、密度、動效與行動端表現比較八個執行時預設。",
+    "currentPreset": "目前預設",
+    "currentMode": "目前模式",
+    "manageSettings": "管理設定",
+    "current": "目前使用中",
+    "surfaceStyle": "表面語言",
+    "motionStyle": "動效語言",
+    "densityStyle": "密度節奏",
+    "heroStyle": "Hero 風格",
+    "desktopPreview": "桌面端",
+    "mobilePreview": "行動端",
+    "influences": "吸收來源",
+    "applyPreset": "套用預設",
+    "viewSettings": "查看設定",
+    "presetApplied": "已套用 {preset}。"
   },
   "appUpdate": {
     "title": "應用更新",

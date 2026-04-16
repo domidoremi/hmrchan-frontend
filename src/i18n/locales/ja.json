@@ -20,7 +20,8 @@
     "userProfile": "ユーザープロフィール",
     "profileSettings": "プロフィール設定",
     "search": "検索",
-    "schedule": "スケジュール"
+    "schedule": "スケジュール",
+    "styleGallery": "スタイルギャラリー"
   },
   "common": {
     "all": "すべて",
@@ -301,6 +302,7 @@
     "links": "リンク",
     "theme": "テーマ",
     "appearancePreset": "外観プリセット",
+    "appearanceLead": "各プリセットは、サイト全体のリズム、素材感、強調の仕方、モーションまでまとめて切り替えます。",
     "light": "ライト",
     "dark": "ダーク",
     "auto": "自動",
@@ -348,6 +350,7 @@
     "performanceCookiesDesc": "Web Vitals とフロントエンド性能指標の記録を許可します。",
     "replacePreferences": "同期設定を完全上書き",
     "backgroundEffect": "背景エフェクト",
+    "ambientEffectsNote": "環境演出は補助オプションとして残し、主役は常に現在の外観プリセットにします。",
     "bgNone": "オフ",
     "bgRain": "雨",
     "bgSnow": "雪",
@@ -375,6 +378,7 @@
     "preferencesReset": "設定をデフォルトに戻しました",
     "preferencesReplaced": "クラウド設定を完全に上書きしました",
     "appearanceRuntimeFailed": "新しい外観プリセットを読み込めませんでした。現在のプリセットを維持しています。",
+    "openStyleGallery": "スタイルギャラリーを開く",
     "presets": {
       "minimal-editorial": "ミニマルエディトリアル",
       "fluent-soft": "フルーエントソフト",
@@ -394,6 +398,25 @@
       "description": "キャッシュデータを削除して空き容量を確保",
       "clear": "キャッシュをクリア"
     }
+  },
+  "styleGallery": {
+    "eyebrow": "外観システム",
+    "title": "スタイルギャラリー",
+    "subtitle": "サイト全体へ適用する前に、8つのランタイムプリセットを視覚シグネチャ、密度、モーション、モバイル表現で比較できます。",
+    "currentPreset": "現在のプリセット",
+    "currentMode": "現在のモード",
+    "manageSettings": "設定を開く",
+    "current": "使用中",
+    "surfaceStyle": "サーフェス",
+    "motionStyle": "モーション",
+    "densityStyle": "密度",
+    "heroStyle": "ヒーロー",
+    "desktopPreview": "デスクトップ",
+    "mobilePreview": "モバイル",
+    "influences": "参照元",
+    "applyPreset": "プリセットを適用",
+    "viewSettings": "設定を見る",
+    "presetApplied": "{preset} を適用しました。"
   },
   "appUpdate": {
     "title": "アプリ更新",

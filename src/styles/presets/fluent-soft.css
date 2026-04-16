@@ -125,6 +125,82 @@
     --page-shell-eyebrow-bg: rgb(37 99 235 / 0.08);
     --page-shell-eyebrow-border: rgb(37 99 235 / 0.16);
     --page-shell-eyebrow-ink: var(--appearance-text-secondary);
+    --page-shell-bg: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--appearance-canvas) 78%, var(--appearance-surface-1) 22%),
+      color-mix(in srgb, var(--appearance-canvas) 70%, var(--appearance-surface-2) 30%)
+    );
+    --page-shell-backdrop: radial-gradient(
+      circle at top right,
+      rgb(var(--appearance-accent-rgb) / 0.18),
+      transparent 42%
+    );
+    --page-shell-border: var(--appearance-surface-border-token);
+    --page-shell-shadow: var(--appearance-shadow-medium);
+    --page-shell-padding-inline: clamp(1rem, 3vw, 2rem);
+    --page-shell-padding-block: clamp(1.625rem, 4vw, 3rem);
+    --page-shell-gap: clamp(1.5rem, 3vw, 2.5rem);
+    --page-section-bg: color-mix(in srgb, var(--appearance-surface-1) 76%, transparent);
+    --page-section-border: var(--appearance-surface-border-token);
+    --page-section-shadow: var(--appearance-shadow-soft);
+    --page-section-gap: clamp(1.125rem, 2.4vw, 1.875rem);
+    --page-hero-bg: linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--appearance-surface-1) 88%, transparent),
+      color-mix(in srgb, var(--appearance-surface-2) 84%, transparent)
+    );
+    --page-hero-border: var(--appearance-surface-border-strong-token);
+    --page-hero-shadow: var(--appearance-shadow-medium);
+    --page-hero-accent: color-mix(
+      in srgb,
+      var(--appearance-accent) 18%,
+      var(--appearance-surface-1) 82%
+    );
+    --page-hero-min-block-size: clamp(17rem, 34vw, 23rem);
+    --page-panel-bg: color-mix(in srgb, var(--appearance-surface-1) 82%, transparent);
+    --page-panel-border: var(--appearance-surface-border-token);
+    --page-panel-shadow: var(--appearance-shadow-medium);
+    --page-card-bg: linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--appearance-surface-1) 86%, transparent),
+      color-mix(in srgb, var(--appearance-surface-2) 88%, transparent)
+    );
+    --page-card-border: var(--appearance-surface-border-token);
+    --page-card-shadow: 0 1.5rem 2.8rem -2rem rgb(var(--appearance-accent-rgb) / 0.24);
+    --page-card-hover-transform: translate3d(0, -0.125rem, 0);
+    --page-form-bg: color-mix(in srgb, var(--appearance-surface-1) 80%, transparent);
+    --page-form-border: var(--appearance-surface-border-token);
+    --page-form-shadow: var(--appearance-shadow-soft);
+    --page-nav-bg: linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--appearance-surface-1) 84%, transparent),
+      color-mix(in srgb, var(--appearance-surface-2) 82%, transparent)
+    );
+    --page-nav-border: var(--appearance-surface-border-token);
+    --page-nav-shadow: var(--appearance-shadow-soft);
+    --page-overlay-bg: color-mix(in srgb, var(--appearance-surface-1) 84%, transparent);
+    --page-overlay-border: var(--appearance-surface-border-strong-token);
+    --page-overlay-shadow: var(--appearance-shadow-strong);
+    --page-divider-color: color-mix(in srgb, var(--appearance-border) 84%, transparent);
+    --page-accent-bg: linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--appearance-surface-1) 78%, var(--appearance-accent) 22%),
+      color-mix(in srgb, var(--appearance-surface-2) 74%, var(--appearance-accent) 26%)
+    );
+    --page-accent-border: color-mix(
+      in srgb,
+      var(--appearance-border-strong) 66%,
+      var(--appearance-accent) 34%
+    );
+    --page-accent-text: var(--appearance-text-primary);
+    --page-accent-glow: 0 0 0 0.0625rem rgb(var(--appearance-accent-rgb) / 0.14);
+    --page-motion-duration: 260ms;
+    --page-motion-distance: 0.5rem;
+    --page-motion-ease: var(--ease-spring);
+    --page-density-stack-gap: clamp(1rem, 2vw, 1.5rem);
+    --page-density-section-gap: clamp(1.5rem, 3.5vw, 2.75rem);
+    --page-density-inline-gap: 0.875rem;
+    --page-pattern-opacity: 0.46;
   }
 
   :root[data-preset='fluent-soft'][data-color-mode='dark'],

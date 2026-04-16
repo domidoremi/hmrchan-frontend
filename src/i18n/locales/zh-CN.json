@@ -20,7 +20,8 @@
     "userProfile": "用户资料",
     "profileSettings": "个人资料设置",
     "search": "搜索",
-    "schedule": "日程"
+    "schedule": "日程",
+    "styleGallery": "风格画廊"
   },
   "common": {
     "all": "全部",
@@ -301,6 +302,7 @@
     "links": "链接",
     "theme": "主题",
     "appearancePreset": "外观预设",
+    "appearanceLead": "每种预设都会在全站范围内同步改变节奏、材质语言、视觉重音与动效方式。",
     "light": "浅色",
     "dark": "深色",
     "auto": "跟随系统",
@@ -348,6 +350,7 @@
     "performanceCookiesDesc": "允许记录 Web Vitals 与前端性能指标。",
     "replacePreferences": "完整覆盖同步偏好",
     "backgroundEffect": "背景效果",
+    "ambientEffectsNote": "环境效果保留为附属选项，其优先级始终低于当前外观预设。",
     "bgNone": "关闭",
     "bgRain": "雨幕",
     "bgSnow": "雪花",
@@ -375,6 +378,7 @@
     "preferencesReset": "已恢复默认偏好设置",
     "preferencesReplaced": "已完整覆盖云端偏好设置",
     "appearanceRuntimeFailed": "新外观预设加载失败，已保留当前预设。",
+    "openStyleGallery": "打开风格画廊",
     "presets": {
       "minimal-editorial": "极简编排",
       "fluent-soft": "柔和 Fluent",
@@ -394,6 +398,25 @@
       "description": "清除缓存数据以释放空间",
       "clear": "清除缓存"
     }
+  },
+  "styleGallery": {
+    "eyebrow": "风格体系",
+    "title": "风格画廊",
+    "subtitle": "在全站应用之前，先从视觉签名、密度、动效和移动端表现对比八个运行时预设。",
+    "currentPreset": "当前预设",
+    "currentMode": "当前模式",
+    "manageSettings": "管理设置",
+    "current": "当前使用中",
+    "surfaceStyle": "表面语言",
+    "motionStyle": "动效语言",
+    "densityStyle": "密度节奏",
+    "heroStyle": "Hero 风格",
+    "desktopPreview": "桌面端",
+    "mobilePreview": "移动端",
+    "influences": "吸收来源",
+    "applyPreset": "应用预设",
+    "viewSettings": "查看设置",
+    "presetApplied": "已应用 {preset}。"
   },
   "appUpdate": {
     "title": "应用更新",

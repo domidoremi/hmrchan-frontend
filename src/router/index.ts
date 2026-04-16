@@ -422,6 +422,17 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/style-gallery',
+    name: 'style-gallery',
+    component: () => import('@/views/StyleGalleryPage.vue'),
+    meta: {
+      title: 'nav.styleGallery',
+      showFooter: true,
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
+  },
+  {
     path: '/schedule',
     name: 'schedule',
     component: () => import('@/views/SchedulePage.vue'),

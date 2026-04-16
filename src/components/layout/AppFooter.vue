@@ -48,6 +48,14 @@
               <ControlButton :tag="RouterLink" to="/schedule" class="footer-link" size="compact">
                 {{ $t('nav.schedule') }}
               </ControlButton>
+              <ControlButton
+                :tag="RouterLink"
+                to="/style-gallery"
+                class="footer-link"
+                size="compact"
+              >
+                {{ $t('nav.styleGallery') }}
+              </ControlButton>
             </nav>
 
             <nav class="footer-column" :aria-label="$t('common.footerNav')">

@@ -99,12 +99,13 @@
           </div>
           <span class="settings-label">{{ $t('settings.appearancePreset') }}</span>
         </div>
-        <div class="settings-options theme-options">
+        <p class="settings-group-lead">{{ $t('settings.appearanceLead') }}</p>
+        <div class="settings-options theme-options theme-options--presets">
           <button
             v-for="opt in appearancePresetOptions"
             :key="opt.value"
             type="button"
-            class="theme-btn"
+            class="theme-btn theme-btn--preset"
             :class="{ active: settings.appearancePreset === opt.value }"
             :aria-pressed="settings.appearancePreset === opt.value"
             :disabled="isApplyingPreset"
@@ -113,13 +114,28 @@
             <div class="theme-btn-icon">
               <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
             </div>
-            <span class="theme-btn-label">{{ opt.label }}</span>
+            <div class="theme-btn-copy">
+              <span class="theme-btn-label">{{ opt.label }}</span>
+              <span class="theme-btn-summary">{{ opt.summary }}</span>
+              <span class="theme-btn-meta">{{ opt.surfaceStyle }}</span>
+            </div>
             <Transition name="check">
               <div v-if="settings.appearancePreset === opt.value" class="theme-btn-check">
                 <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
               </div>
             </Transition>
           </button>
+        </div>
+        <div class="link-list settings-gallery-links">
+          <ControlButton :tag="RouterLink" to="/style-gallery" class="link-btn" size="compact">
+            <template #start>
+              <AnimatedIcon name="explore" :fallback-icon="Layers" size="sm" />
+            </template>
+            <span class="link-btn-text">{{ $t('settings.openStyleGallery') }}</span>
+            <template #end>
+              <AnimatedIcon name="explore" :fallback-icon="ChevronRight" size="sm" />
+            </template>
+          </ControlButton>
         </div>
       </div>
 
@@ -428,13 +444,14 @@
       </div>
 
       <!-- Background Effect -->
-      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
+      <div v-show="isSettingsCategoryVisible('experience')" class="settings-group">
         <div class="settings-group-header">
           <div class="settings-group-icon">
             <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
           </div>
           <span class="settings-label">{{ $t('settings.backgroundEffect') }}</span>
         </div>
+        <p class="settings-group-note">{{ $t('settings.ambientEffectsNote') }}</p>
         <div class="settings-options bg-effect-options">
           <button
             v-for="opt in bgEffectOptions"
@@ -766,7 +783,7 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { setLocale, type SupportedLocale } from '@/i18n'
-import { getAppearancePresets } from '@/config/appearance'
+import { getAppearancePresetSpecs } from '@/config/appearance'
 import { usePreferencesSync } from '@/composables/usePreferencesSync'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import { applyAppearancePreset } from '@/services/appearanceLoader'
@@ -849,25 +866,27 @@ const themeOptions = computed(() => [
 ])
 
 const appearancePresetOptions = computed(() =>
-  getAppearancePresets().map((value) => ({
-    value,
+  getAppearancePresetSpecs().map((spec) => ({
+    value: spec.preset,
     icon:
-      value === 'fluent-soft'
+      spec.preset === 'fluent-soft'
         ? Sparkles
-        : value === 'material-calm'
+        : spec.preset === 'material-calm'
           ? Layers
-          : value === 'organic-natural'
+          : spec.preset === 'organic-natural'
             ? Sun
-            : value === 'biophilic-serene'
+            : spec.preset === 'biophilic-serene'
               ? ShieldCheck
-              : value === 'clay-playful'
+              : spec.preset === 'clay-playful'
                 ? Gauge
-                : value === 'sketch-doodle'
+                : spec.preset === 'sketch-doodle'
                   ? Smartphone
-                  : value === 'gradient-narrative'
+                  : spec.preset === 'gradient-narrative'
                     ? Monitor
                     : Palette,
-    label: t(`settings.presets.${value}`),
+    label: t(`settings.presets.${spec.preset}`),
+    summary: spec.gallerySummary,
+    surfaceStyle: spec.surfaceStyle,
   }))
 )
 const densityModeOptions = computed<{ value: DensityMode; label: string }[]>(() => [
@@ -1356,6 +1375,10 @@ function resetVideoSettings() {
   min-inline-size: 0;
 }
 
+.theme-options--presets {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .strategy-options {
   grid-template-columns: 1fr;
 }
@@ -1378,6 +1401,11 @@ function resetVideoSettings() {
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
     color var(--transition-fast);
+}
+
+.theme-btn--preset {
+  align-items: flex-start;
+  text-align: left;
 }
 
 .settings-panel--compact .theme-btn {
@@ -1414,6 +1442,13 @@ function resetVideoSettings() {
 .settings-panel--compact .theme-btn-icon {
   width: 2rem;
   height: 2rem;
+}
+
+.theme-btn-copy {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  min-inline-size: 0;
 }
 
 .theme-btn:hover .theme-btn-icon {
@@ -1463,9 +1498,32 @@ function resetVideoSettings() {
   transition: color var(--transition-fast);
 }
 
+.theme-btn--preset .theme-btn-label {
+  text-align: left;
+}
+
+.theme-btn-summary {
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--ui-compat-text-secondary);
+  text-align: left;
+}
+
+.theme-btn-meta {
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: var(--ui-compat-text-muted);
+  text-align: left;
+}
+
 .theme-btn.active .theme-btn-label {
   color: var(--color-primary);
   font-weight: var(--font-semibold);
+}
+
+.theme-btn.active .theme-btn-summary,
+.theme-btn.active .theme-btn-meta {
+  color: var(--color-text-primary);
 }
 
 .theme-btn-check {
@@ -1480,6 +1538,18 @@ function resetVideoSettings() {
   background: var(--color-primary);
   border-radius: var(--radius-full);
   color: var(--color-on-primary);
+}
+
+.settings-group-lead,
+.settings-group-note {
+  margin: 0 0 var(--spacing-3);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--ui-compat-text-secondary);
+}
+
+.settings-gallery-links {
+  padding-block-start: var(--spacing-2);
 }
 
 /* Check animation */

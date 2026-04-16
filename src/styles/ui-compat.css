@@ -1,137 +1,39 @@
 /**
  * Unified theme × UI compatibility tokens
  *
- * Shared by navbar dropdowns, profile controls, settings panels, and inline actions.
+ * This layer only bridges semantic / page-system tokens into legacy component
+ * variables. Final visible surfaces belong to preset files and page systems.
  */
 
 :root,
 #app {
-  --ui-compat-surface-base: color-mix(in srgb, var(--semantic-surface-base) 94%, transparent);
-  --ui-compat-surface-elevated: color-mix(in srgb, var(--semantic-surface-base) 98%, white 2%);
-  --ui-compat-surface-interactive: color-mix(
-    in srgb,
-    var(--semantic-surface-muted) 82%,
-    transparent
-  );
-  --ui-compat-surface-interactive-strong: color-mix(
-    in srgb,
-    var(--semantic-surface-muted) 92%,
-    white 8%
-  );
-  --ui-compat-surface-accent: rgba(var(--color-primary-rgb), 0.08);
-  --ui-compat-surface-danger: rgba(var(--color-error-rgb), 0.08);
-  --ui-compat-border: color-mix(in srgb, var(--semantic-border) 88%, transparent);
-  --ui-compat-border-strong: color-mix(
-    in srgb,
-    var(--semantic-border-strong) 84%,
-    rgba(var(--semantic-accent-rgb), 0.12)
-  );
-  --ui-compat-danger-border: rgba(var(--color-error-rgb), 0.16);
-  --ui-compat-shadow: var(--appearance-shadow-medium);
-  --ui-compat-shadow-strong: var(--appearance-shadow-strong);
-  --ui-compat-text-secondary: color-mix(in srgb, var(--semantic-text-secondary) 88%, transparent);
-  --ui-compat-text-muted: color-mix(in srgb, var(--semantic-text-tertiary) 82%, transparent);
-  --ui-compat-backdrop: none;
-  --ui-compat-control-radius: var(--appearance-radius-control-md);
-  --ui-compat-panel-radius: var(--appearance-radius-panel);
-  --ui-compat-pill-radius: var(--appearance-radius-control-lg);
-  --ui-compat-shell-border: var(--chrome-surface-border);
-  --ui-compat-shell-shadow: var(--chrome-surface-shadow);
-}
-
-:root[data-color-mode='dark'],
-#app[data-color-mode='dark'] {
-  --ui-compat-surface-base: linear-gradient(160deg, rgba(12, 16, 24, 0.96), rgba(18, 25, 38, 0.92));
-  --ui-compat-surface-elevated: linear-gradient(
-    160deg,
-    rgba(16, 22, 34, 0.98),
-    rgba(24, 32, 48, 0.94)
-  );
-  --ui-compat-surface-interactive: rgba(21, 28, 42, 0.9);
-  --ui-compat-surface-interactive-strong: rgba(29, 37, 54, 0.96);
-  --ui-compat-surface-accent: rgba(var(--color-primary-rgb), 0.14);
-  --ui-compat-surface-danger: rgba(var(--color-error-rgb), 0.14);
-  --ui-compat-border: rgba(255, 255, 255, 0.1);
-  --ui-compat-border-strong: rgba(var(--color-primary-rgb), 0.28);
-  --ui-compat-danger-border: rgba(var(--color-error-rgb), 0.24);
-  --ui-compat-shadow: 0 1.6rem 3.4rem -2rem rgba(0, 0, 0, 0.48);
-  --ui-compat-shadow-strong: 0 2rem 3.8rem -2rem rgba(0, 0, 0, 0.58);
-  --ui-compat-text-secondary: rgba(226, 232, 240, 0.86);
-  --ui-compat-text-muted: rgba(203, 213, 225, 0.72);
-}
-
-:root[data-preset='gradient-narrative'][data-color-mode='light'],
-#app[data-preset='gradient-narrative'][data-color-mode='light'] {
-  --ui-compat-surface-base: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.98),
-    rgba(239, 246, 255, 0.92)
-  );
-  --ui-compat-surface-elevated: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 1),
-    rgba(224, 242, 254, 0.94)
-  );
-  --ui-compat-surface-interactive: rgba(255, 255, 255, 0.86);
-  --ui-compat-surface-interactive-strong: rgba(239, 246, 255, 0.98);
-  --ui-compat-border: rgba(59, 130, 246, 0.16);
-  --ui-compat-border-strong: rgba(59, 130, 246, 0.26);
-  --ui-compat-shadow: 0 1.4rem 3rem -2rem rgba(37, 99, 235, 0.16);
-  --ui-compat-shadow-strong: 0 1.8rem 3.4rem -2rem rgba(37, 99, 235, 0.24);
-}
-
-:root[data-preset='fluent-soft'],
-:root[data-preset='organic-natural'],
-:root[data-preset='biophilic-serene'],
-:root[data-preset='clay-playful'],
-:root[data-preset='gradient-narrative'],
-#app[data-preset='fluent-soft'],
-#app[data-preset='organic-natural'],
-#app[data-preset='biophilic-serene'],
-#app[data-preset='clay-playful'],
-#app[data-preset='gradient-narrative'] {
-  --ui-compat-surface-base: var(--chrome-surface-bg-soft);
-  --ui-compat-surface-elevated: var(--chrome-surface-bg);
-  --ui-compat-surface-interactive: color-mix(in srgb, var(--chrome-action-bg) 92%, transparent);
-  --ui-compat-surface-interactive-strong: color-mix(
-    in srgb,
-    var(--chrome-action-bg-hover) 96%,
-    transparent
-  );
-  --ui-compat-shadow: var(--appearance-shadow-medium);
-  --ui-compat-shadow-strong: var(--appearance-shadow-strong);
-  --ui-compat-backdrop: var(--appearance-backdrop-token);
-  --ui-compat-control-radius: var(--appearance-radius-control-md);
-  --ui-compat-panel-radius: var(--appearance-radius-panel);
-  --ui-compat-pill-radius: var(--appearance-radius-control-lg);
-}
-
-:root[data-preset='material-calm'],
-:root[data-preset='sketch-doodle'],
-#app[data-preset='material-calm'],
-#app[data-preset='sketch-doodle'] {
-  --ui-compat-surface-base: color-mix(in srgb, var(--semantic-surface-base) 98%, transparent);
-  --ui-compat-surface-elevated: color-mix(
-    in srgb,
-    var(--semantic-surface-base) 96%,
-    var(--semantic-surface-muted) 4%
-  );
-  --ui-compat-surface-interactive: color-mix(
-    in srgb,
-    var(--semantic-surface-muted) 78%,
-    transparent
-  );
-  --ui-compat-surface-interactive-strong: color-mix(
-    in srgb,
-    var(--semantic-surface-muted) 88%,
-    transparent
-  );
-  --ui-compat-shadow: var(--appearance-shadow-soft);
-  --ui-compat-shadow-strong: var(--appearance-shadow-medium);
-  --ui-compat-backdrop: blur(calc(0.5rem * var(--appearance-backdrop-strength)));
-  --ui-compat-control-radius: var(--appearance-radius-control-md);
+  --ui-compat-surface-base: var(--page-panel-bg);
+  --ui-compat-surface-elevated: var(--page-overlay-bg);
+  --ui-compat-surface-interactive: var(--page-form-bg);
+  --ui-compat-surface-interactive-strong: var(--page-accent-bg);
+  --ui-compat-surface-accent: color-mix(in srgb, var(--page-accent-bg) 82%, transparent);
+  --ui-compat-surface-danger: color-mix(in srgb, var(--semantic-danger) 16%, transparent);
+  --ui-compat-border: var(--page-panel-border);
+  --ui-compat-border-strong: var(--page-accent-border);
+  --ui-compat-danger-border: color-mix(in srgb, var(--semantic-danger) 32%, transparent);
+  --ui-compat-shadow: var(--page-panel-shadow);
+  --ui-compat-shadow-strong: var(--page-overlay-shadow);
+  --ui-compat-text-secondary: var(--semantic-text-secondary);
+  --ui-compat-text-muted: var(--semantic-text-tertiary);
+  --ui-compat-backdrop: var(--backdrop-token);
+  --ui-compat-control-radius: var(--appearance-radius-md);
   --ui-compat-panel-radius: var(--appearance-radius-panel);
   --ui-compat-pill-radius: var(--appearance-radius-chip);
-  --ui-compat-shell-border: color-mix(in srgb, var(--semantic-border) 92%, transparent);
-  --ui-compat-shell-shadow: var(--appearance-shadow-soft);
+  --ui-compat-shell-border: var(--page-nav-border);
+  --ui-compat-shell-shadow: var(--page-nav-shadow);
+}
+
+:root[data-contrast='high'],
+#app[data-contrast='high'] {
+  --ui-compat-shadow: none;
+  --ui-compat-shadow-strong: none;
+  --ui-compat-border: var(--semantic-border-strong);
+  --ui-compat-border-strong: var(--semantic-border-strong);
+  --ui-compat-shell-border: var(--semantic-border-strong);
+  --ui-compat-shell-shadow: none;
 }
