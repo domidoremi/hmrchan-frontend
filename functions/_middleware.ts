@@ -14,6 +14,7 @@ import {
   resolveStructuredDataPayload,
 } from '../src/edge/htmlDocument'
 import { resolveHtmlDocumentWithEdgeData } from '../src/edge/detailDocumentResolver'
+import type { InternalApiGatewayRuntimeEnv } from '../src/edge/internalApiGateway'
 
 const CANONICAL_HOSTNAME = 'momichan.xyz'
 const CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
@@ -181,10 +182,9 @@ function isAuthRoutePath(pathname: string): boolean {
 
 export async function onRequest(
   context: EventContext<
-    {
+    InternalApiGatewayRuntimeEnv & {
       API_BASE_URL?: string
       VPC_API_ORIGIN?: string
-      VPC_SERVICE?: { fetch(input: Request): Promise<Response> }
     },
     string,
     unknown

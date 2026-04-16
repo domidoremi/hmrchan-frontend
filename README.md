@@ -181,13 +181,14 @@ bun run check:release-evidence
 生产部署约定：
 
 - 浏览器端生产默认通过同源 `/api` 访问后端，不使用 `VITE_API_BASE_URL` 改写线上 API 基址
-- Pages Functions 的 public fallback 目标通过 `API_BASE_URL` 配置；私网路径优先使用 `VPC_SERVICE` + 三域 VPC origin
+- Pages Functions 的 public fallback 目标通过 `API_BASE_URL` 配置；私网路径通过受支持的 `INTERNAL_API_GATEWAY` Service Binding 转发到内部 Worker，再由该 Worker 使用 `VPC_SERVICE` + 三域 VPC origin
 - Pages 纯文本变量最小集合为：`API_BASE_URL`、`BUN_VERSION=1.3.11`、`SKIP_DEPENDENCY_INSTALL=true`
-- Pages 私网三域上游应与后端当前 Compose 服务名对齐：
+- 内部 Worker 的私网三域上游应与后端当前 Compose 服务名对齐：
   - `VPC_IDENTITY_API_ORIGIN=http://identity-api:8000`
   - `VPC_COMMUNITY_API_ORIGIN=http://community-api:8000`
   - `VPC_CONTENT_API_ORIGIN=http://content-api:8000`
 - `VPC_API_ORIGIN` 仅作为旧配置回退，不再指向已退役的 `nginx`
+- 需要单独部署 [`workers/internal-api/wrangler.toml`](./workers/internal-api/wrangler.toml) 对应的 Worker，并让 Pages 通过 `INTERNAL_API_GATEWAY` 绑定到该 Worker；仅修改 Pages 项目变量不会自动创建这条私网链路
 - 推荐 Pages 构建命令继续显式注入 `VITE_GIT_COMMIT=$CF_PAGES_COMMIT_SHA`；若 Dashboard 未配置 `VITE_CLIENT_CONTRACT_VERSION`，构建 wrapper 只会在 Cloudflare Pages 环境中用 `CF_PAGES_COMMIT_SHA` 作为本次 rollout contract，不影响普通本地 `bun run build` 的缺契约失败语义
 - 若后端生产 `CLIENT_CONTRACT_VERSION` 使用独立 release hash，而不是 Pages commit SHA，必须在 Cloudflare Dashboard 显式配置同值 `VITE_CLIENT_CONTRACT_VERSION`
 - `VITE_TURNSTILE_SITE_KEY` 作为机密在 Dashboard 中保留；其余 `VITE_*` 变量不是 Pages 生产必需项

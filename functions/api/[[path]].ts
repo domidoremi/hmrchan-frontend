@@ -8,7 +8,11 @@
  */
 
 import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
-import { resolveConfiguredApiBaseUrl, resolveVpcOriginForPath } from '../../src/edge/upstream'
+import { resolveConfiguredApiBaseUrl } from '../../src/edge/upstream'
+import {
+  fetchViaInternalApiGateway,
+  type InternalApiGatewayRuntimeEnv,
+} from '../../src/edge/internalApiGateway'
 
 interface Env {
   API_BASE_URL?: string
@@ -16,14 +20,15 @@ interface Env {
   VPC_IDENTITY_API_ORIGIN?: string
   VPC_COMMUNITY_API_ORIGIN?: string
   VPC_CONTENT_API_ORIGIN?: string
-  VPC_SERVICE?: Fetcher
 }
+
+type ProxyEnv = Env & InternalApiGatewayRuntimeEnv
 
 type RedirectMode = 'follow' | 'manual'
 
 type CFPagesContext = {
   request: Request
-  env: Env
+  env: ProxyEnv
   params: { path?: string | string[] }
 }
 
@@ -31,17 +36,17 @@ interface ForwardRequestOptions {
   apiBaseUrl: string
   bodyBuffer: ArrayBuffer | null
   headers: Headers
+  internalApiGateway?: Fetcher
   path: string
   redirectMode: RedirectMode
   request: Request
+  requestUrl: URL
   search: string
-  vpcBinding?: Fetcher
-  vpcOrigin?: string
 }
 
 interface UpstreamFetchResult {
   response: Response
-  source: 'vpc' | 'public' | 'public-fallback'
+  source: string
 }
 
 const ALLOWED_ORIGINS = [
@@ -267,27 +272,6 @@ function cloneHeadersWithoutHopByHop(request: Request, requestUrl: URL): Headers
   return headers
 }
 
-async function fetchViaVPC(options: ForwardRequestOptions): Promise<Response> {
-  const { bodyBuffer, headers, path, redirectMode, request, search, vpcBinding, vpcOrigin } =
-    options
-  if (!vpcBinding || !vpcOrigin) {
-    throw new Error('VPC binding unavailable')
-  }
-
-  const targetUrl = `${vpcOrigin}/api/${path}${search}`
-  const init: RequestInit = {
-    method: request.method,
-    headers,
-    redirect: redirectMode,
-  }
-
-  if (request.method !== 'GET' && request.method !== 'HEAD' && bodyBuffer) {
-    init.body = bodyBuffer.slice(0)
-  }
-
-  return vpcBinding.fetch(new Request(targetUrl, init))
-}
-
 async function fetchViaPublic(options: ForwardRequestOptions): Promise<Response> {
   const { apiBaseUrl, bodyBuffer, headers, path, redirectMode, request, search } = options
   const targetUrl = `${apiBaseUrl}/api/${path}${search}`
@@ -305,16 +289,23 @@ async function fetchViaPublic(options: ForwardRequestOptions): Promise<Response>
 }
 
 async function forwardToUpstream(options: ForwardRequestOptions): Promise<UpstreamFetchResult> {
-  const { path, request, vpcBinding } = options
+  const { internalApiGateway, path, request } = options
 
-  if (vpcBinding && !shouldBypassVPCForRequest(path, request)) {
+  if (internalApiGateway && !shouldBypassVPCForRequest(path, request)) {
     try {
+      const response = await fetchViaInternalApiGateway(internalApiGateway, {
+        bodyBuffer: options.bodyBuffer,
+        headers: options.headers,
+        redirectMode: options.redirectMode,
+        request,
+        requestUrl: options.requestUrl,
+      })
       return {
-        response: await fetchViaVPC(options),
-        source: 'vpc',
+        source: response.headers.get('X-Proxy-Upstream-Source') ?? 'internal-gateway',
+        response,
       }
     } catch (error) {
-      console.error('[API Proxy] VPC fetch failed, falling back to public:', error)
+      console.error('[API Proxy] Internal gateway fetch failed, falling back to public:', error)
       return {
         response: await fetchViaPublic(options),
         source: 'public-fallback',
@@ -385,9 +376,9 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       path: compactPath,
       redirectMode,
       request,
+      requestUrl,
       search: requestUrl.search,
-      vpcBinding: env.VPC_SERVICE,
-      vpcOrigin: resolveVpcOriginForPath(`/api/${compactPath}`, env),
+      internalApiGateway: env.INTERNAL_API_GATEWAY,
     })
 
     if (redirectMode === 'manual') {
