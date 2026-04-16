@@ -31,7 +31,7 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('Vary')).toContain('Origin')
   })
 
-  it('prefers VPC service and falls back to public fetch when the VPC request fails', async () => {
+  it('prefers the internal API gateway and falls back to public fetch when the gateway request fails', async () => {
     const publicFetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -42,7 +42,7 @@ describe('functions/api proxy', () => {
     )
     vi.stubGlobal('fetch', publicFetch)
 
-    const vpcFetch = vi.fn().mockRejectedValue(new Error('vpc unavailable'))
+    const gatewayFetch = vi.fn().mockRejectedValue(new Error('gateway unavailable'))
     const response = await onRequest({
       request: new Request('https://momichan.xyz/api/v1/posts?page=2', {
         headers: {
@@ -51,9 +51,8 @@ describe('functions/api proxy', () => {
       }),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
-        VPC_CONTENT_API_ORIGIN: 'http://content-api:8000',
-        VPC_SERVICE: {
-          fetch: vpcFetch,
+        INTERNAL_API_GATEWAY: {
+          fetch: gatewayFetch,
         },
       },
       params: {
@@ -61,10 +60,10 @@ describe('functions/api proxy', () => {
       },
     })
 
-    expect(vpcFetch).toHaveBeenCalledTimes(1)
-    expect(vpcFetch.mock.calls[0]?.[0]).toBeInstanceOf(Request)
-    expect((vpcFetch.mock.calls[0]?.[0] as Request).url).toBe(
-      'http://content-api:8000/api/v1/posts?page=2'
+    expect(gatewayFetch).toHaveBeenCalledTimes(1)
+    expect(gatewayFetch.mock.calls[0]?.[0]).toBeInstanceOf(Request)
+    expect((gatewayFetch.mock.calls[0]?.[0] as Request).url).toBe(
+      'https://momichan.xyz/api/v1/posts?page=2'
     )
     expect(publicFetch).toHaveBeenCalledTimes(1)
     expect(publicFetch.mock.calls[0]?.[0]).toBe(`${BACKEND_ORIGIN}/api/v1/posts?page=2`)
@@ -191,7 +190,7 @@ describe('functions/api proxy', () => {
     )
     vi.stubGlobal('fetch', publicFetch)
 
-    const vpcFetch = vi.fn().mockResolvedValue(
+    const gatewayFetch = vi.fn().mockResolvedValue(
       new Response('should not be used', {
         status: 500,
       })
@@ -203,9 +202,8 @@ describe('functions/api proxy', () => {
       ),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
-        VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
-        VPC_SERVICE: {
-          fetch: vpcFetch,
+        INTERNAL_API_GATEWAY: {
+          fetch: gatewayFetch,
         },
       },
       params: {
@@ -213,7 +211,7 @@ describe('functions/api proxy', () => {
       },
     })
 
-    expect(vpcFetch).not.toHaveBeenCalled()
+    expect(gatewayFetch).not.toHaveBeenCalled()
     expect(publicFetch).toHaveBeenCalledTimes(1)
     expect(publicFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' })
     expect(response.status).toBe(302)
@@ -246,23 +244,17 @@ describe('functions/api proxy', () => {
       JSON.stringify({ handoff_code: 'handoff-1' }),
     ],
   ])(
-    'routes %s through the identity VPC upstream when a Pages VPC binding is available',
+    'preserves the upstream source returned by the internal gateway for %s',
     async (_, url, path, method, body) => {
-      const publicFetch = vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-      )
+      const publicFetch = vi.fn()
       vi.stubGlobal('fetch', publicFetch)
 
-      const vpcFetch = vi.fn().mockResolvedValue(
+      const gatewayFetch = vi.fn().mockResolvedValue(
         new Response(JSON.stringify({ ok: true }), {
           status: 200,
           headers: {
             'Content-Type': 'application/json',
+            'X-Proxy-Upstream-Source': 'vpc',
           },
         })
       )
@@ -278,9 +270,8 @@ describe('functions/api proxy', () => {
         }),
         env: {
           API_BASE_URL: BACKEND_ORIGIN,
-          VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
-          VPC_SERVICE: {
-            fetch: vpcFetch,
+          INTERNAL_API_GATEWAY: {
+            fetch: gatewayFetch,
           },
         },
         params: {
@@ -288,55 +279,13 @@ describe('functions/api proxy', () => {
         },
       })
 
-      expect(vpcFetch).toHaveBeenCalledTimes(1)
+      expect(gatewayFetch).toHaveBeenCalledTimes(1)
       expect(publicFetch).not.toHaveBeenCalled()
-      expect(vpcFetch.mock.calls[0]?.[0]).toBeInstanceOf(Request)
-      expect((vpcFetch.mock.calls[0]?.[0] as Request).url).toBe(
-        `http://identity-api:8000/api/${path.join('/')}`
-      )
+      expect((gatewayFetch.mock.calls[0]?.[0] as Request).url).toBe(url)
       expect(response.status).toBe(200)
       expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
     }
   )
-
-  it('routes discussion reads to the community VPC upstream', async () => {
-    const publicFetch = vi.fn()
-    vi.stubGlobal('fetch', publicFetch)
-
-    const vpcFetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-    )
-
-    const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/v1/discussions/discussion-1', {
-        headers: {
-          Origin: 'https://momichan.xyz',
-        },
-      }),
-      env: {
-        API_BASE_URL: BACKEND_ORIGIN,
-        VPC_COMMUNITY_API_ORIGIN: 'http://community-api:8000',
-        VPC_SERVICE: {
-          fetch: vpcFetch,
-        },
-      },
-      params: {
-        path: ['v1', 'discussions', 'discussion-1'],
-      },
-    })
-
-    expect(vpcFetch).toHaveBeenCalledTimes(1)
-    expect((vpcFetch.mock.calls[0]?.[0] as Request).url).toBe(
-      'http://community-api:8000/api/v1/discussions/discussion-1'
-    )
-    expect(publicFetch).not.toHaveBeenCalled()
-    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
-  })
 
   it('preserves auth diagnostic headers from upstream responses', async () => {
     const publicFetch = vi.fn().mockResolvedValue(

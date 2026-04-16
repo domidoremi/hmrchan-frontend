@@ -10,19 +10,10 @@ import {
   type HtmlDocumentShellStat,
   type HtmlStructuredData,
 } from './htmlDocument'
-import {
-  resolveConfiguredApiBaseUrl,
-  resolveVpcOriginForPath,
-  type UpstreamRuntimeEnv,
-} from './upstream'
+import { resolveConfiguredApiBaseUrl, type UpstreamRuntimeEnv } from './upstream'
+import { buildInternalGatewayUrl, type InternalApiGatewayRuntimeEnv } from './internalApiGateway'
 
-type EdgeFetcher = {
-  fetch(input: Request): Promise<Response>
-}
-
-export type EdgeRuntimeEnv = UpstreamRuntimeEnv & {
-  VPC_SERVICE?: EdgeFetcher
-}
+export type EdgeRuntimeEnv = UpstreamRuntimeEnv & InternalApiGatewayRuntimeEnv
 
 type EdgeAuthorRelatedPost = {
   id?: string | null
@@ -369,10 +360,9 @@ async function fetchEdgeJson<T>(
 
   let response: Response
 
-  if (env?.VPC_SERVICE) {
-    const vpcOrigin = resolveVpcOriginForPath(path, env)
-    response = await env.VPC_SERVICE.fetch(
-      new Request(`${vpcOrigin}${path}`, {
+  if (env?.INTERNAL_API_GATEWAY) {
+    response = await env.INTERNAL_API_GATEWAY.fetch(
+      new Request(buildInternalGatewayUrl(path), {
         method: 'GET',
         headers,
       })

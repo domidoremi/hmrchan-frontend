@@ -1,0 +1,27 @@
+name = "hmrchan-internal-api-gateway"
+main = "./index.ts"
+compatibility_date = "2024-12-09"
+
+[[env.production.vpc_services]]
+binding = "VPC_SERVICE"
+service_id = "019c954f-b5bf-7e81-aea7-fa4eb3e05cb9"
+remote = true
+
+[env.production.vars]
+API_BASE_URL = "https://api.momichan.xyz"
+VPC_IDENTITY_API_ORIGIN = "http://identity-api:8000"
+VPC_COMMUNITY_API_ORIGIN = "http://community-api:8000"
+VPC_CONTENT_API_ORIGIN = "http://content-api:8000"
+VPC_API_ORIGIN = "http://identity-api:8000"
+
+[[env.preview.vpc_services]]
+binding = "VPC_SERVICE"
+service_id = "019c954f-b5bf-7e81-aea7-fa4eb3e05cb9"
+remote = true
+
+[env.preview.vars]
+API_BASE_URL = "https://api.momichan.xyz"
+VPC_IDENTITY_API_ORIGIN = "http://identity-api:8000"
+VPC_COMMUNITY_API_ORIGIN = "http://community-api:8000"
+VPC_CONTENT_API_ORIGIN = "http://content-api:8000"
+VPC_API_ORIGIN = "http://identity-api:8000"

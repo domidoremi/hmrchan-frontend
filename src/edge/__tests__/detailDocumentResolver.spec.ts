@@ -268,4 +268,45 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     expect(config.title).toBe('Post detail · MomiChan')
     expect(config.ogImage).toBeUndefined()
   })
+
+  it('prefers the internal API gateway when edge metadata fetches run inside Pages', async () => {
+    const publicFetch = vi.fn()
+    vi.stubGlobal('fetch', publicFetch)
+
+    const gatewayFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            id: 'post-1',
+            platform: 'youtube',
+            title: 'Gateway hydrated detail',
+            description: 'Hydrated via internal worker binding.',
+            author_id: 'author-1',
+            author_name: 'MomiChan',
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    )
+
+    const config = await resolveHtmlDocumentWithEdgeData(
+      new URL('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
+      {
+        API_BASE_URL: BACKEND_ORIGIN,
+        INTERNAL_API_GATEWAY: {
+          fetch: gatewayFetch,
+        },
+      }
+    )
+
+    expect(gatewayFetch).toHaveBeenCalledTimes(1)
+    expect((gatewayFetch.mock.calls[0]?.[0] as Request).url).toBe(
+      'https://momichan.xyz/api/v1/posts/00000000-0000-4000-8000-000000000000'
+    )
+    expect(publicFetch).not.toHaveBeenCalled()
+    expect(config.title).toBe('Gateway hydrated detail · MomiChan')
+  })
 })
