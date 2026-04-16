@@ -252,6 +252,13 @@
   - `bun run test:prod:regression --preflight`
 - `test:e2e` 与 `check:frontend` 本地共享构建产物时，通过 build artifact lock 避免并发写 `dist/` 造成的 `EBUSY` 误报
 - `test:e2e`、`check:frontend`、`test:a11y`、`test:perf` 的本地 build + preview 生命周期统一收敛到 shared preview manager
+- 若发布策略选择“不公开 API 入口”，CI 的 preview-shell smoke 必须显式配置受控 upstream：
+  - 单上游：`SMOKE_API_BASE_URL`
+  - split topology：`SMOKE_IDENTITY_API_BASE_URL`、`SMOKE_COMMUNITY_API_BASE_URL`、`SMOKE_CONTENT_API_BASE_URL`
+  - 未配置时 workflow 直接失败，不再隐式回落到 `https://api.momichan.xyz`
+- 远端 canary / nightly health 只在显式配置站点时运行：
+  - `PRODUCTION_CANARY_BASE_URL` 或 `PROTECTED_CANARY_BASE_URL`
+  - 可选 nightly 覆盖：`NIGHTLY_FRONTEND_HEALTH_BASE_URL`
 - 若 preview shell 在本地审计过程中异常退出，`test:e2e` 与 `check:frontend` 会自动重启一次并重试当前路由，失败产物中附带 preview 诊断日志
 - 本地 Docker smoke 串行证据链可通过 `LOCAL_AUDIT_CLEAR_RATE_LIMITS=true` 清理 Redis `ratelimit:*`，避免 `test:e2e -> check:frontend -> preflight` 的本地限流状态互相污染；该行为仅在本地审计脚本环境中触发，不修改 CI / 生产限流门禁
 - 受保护 Profile 子页已进入 runner route matrix，至少校验：
