@@ -68,6 +68,30 @@ const RESPONSE_HEADERS_TO_STRIP = [
   'x-frame-options',
   'x-xss-protection',
 ]
+const RESPONSE_HEADERS_TO_SKIP = [
+  'connection',
+  'Connection',
+  'keep-alive',
+  'Keep-Alive',
+  'proxy-authenticate',
+  'Proxy-Authenticate',
+  'proxy-authorization',
+  'Proxy-Authorization',
+  'te',
+  'TE',
+  'trailer',
+  'Trailer',
+  'upgrade',
+  'Upgrade',
+  'proxy-connection',
+  'Proxy-Connection',
+  'content-length',
+  'Content-Length',
+  'content-encoding',
+  'Content-Encoding',
+  'transfer-encoding',
+  'Transfer-Encoding',
+]
 
 const GOOGLE_POPUP_REDIRECT_HEADERS_TO_PRESERVE = [
   'cross-origin-opener-policy',
@@ -410,12 +434,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
 
     const responseHeaders = withCorsHeaders(request, isDev, new Headers(upstream.response.headers))
     stripResponseHeaders(responseHeaders, compactPath)
-    responseHeaders.delete('content-length')
-    responseHeaders.delete('Content-Length')
-    responseHeaders.delete('content-encoding')
-    responseHeaders.delete('Content-Encoding')
-    responseHeaders.delete('transfer-encoding')
-    responseHeaders.delete('Transfer-Encoding')
+    RESPONSE_HEADERS_TO_SKIP.forEach((header) => responseHeaders.delete(header))
     responseHeaders.set('X-Proxy-Upstream-Source', upstream.source)
 
     const apiVersion = extractApiVersion(compactPath)
