@@ -51,6 +51,7 @@ describe('functions/api proxy', () => {
       }),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
+        ENABLE_INTERNAL_API_GATEWAY: 'true',
         INTERNAL_API_GATEWAY: {
           fetch: gatewayFetch,
         },
@@ -272,6 +273,7 @@ describe('functions/api proxy', () => {
         }),
         env: {
           API_BASE_URL: BACKEND_ORIGIN,
+          ENABLE_INTERNAL_API_GATEWAY: 'true',
           INTERNAL_API_GATEWAY: {
             fetch: gatewayFetch,
           },
@@ -288,6 +290,43 @@ describe('functions/api proxy', () => {
       expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
     }
   )
+
+  it('uses public upstream by default when the internal gateway binding is not explicitly enabled', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    const gatewayFetch = vi.fn()
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/api/v1/home', {
+        headers: {
+          Origin: 'https://momichan.xyz',
+        },
+      }),
+      env: {
+        API_BASE_URL: BACKEND_ORIGIN,
+        INTERNAL_API_GATEWAY: {
+          fetch: gatewayFetch,
+        },
+      },
+      params: {
+        path: ['v1', 'home'],
+      },
+    })
+
+    expect(gatewayFetch).not.toHaveBeenCalled()
+    expect(publicFetch).toHaveBeenCalledTimes(1)
+    expect(publicFetch.mock.calls[0]?.[0]).toBe(`${BACKEND_ORIGIN}/api/v1/home`)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
+  })
 
   it('preserves auth diagnostic headers from upstream responses', async () => {
     const publicFetch = vi.fn().mockResolvedValue(
