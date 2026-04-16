@@ -3,6 +3,7 @@ import {
   resolveVpcOriginForPath,
   type UpstreamRuntimeEnv,
 } from './upstream'
+import { buildBufferedResponse } from './bufferedResponse'
 import type { EdgeBindingFetcher } from './internalApiGateway'
 
 export type InternalApiGatewayWorkerEnv = UpstreamRuntimeEnv & {
@@ -121,11 +122,12 @@ async function fetchViaPublic(
   return fetch(new Request(`${apiBaseUrl}${path}${search}`, init))
 }
 
-function withUpstreamSourceHeaders(
+async function withUpstreamSourceHeaders(
   response: Response,
   source: InternalGatewayUpstreamSource,
-  path: string
-): Response {
+  path: string,
+  requestMethod: string
+): Promise<Response> {
   const headers = new Headers(response.headers)
   RESPONSE_HEADERS_TO_SKIP.forEach((header) => headers.delete(header))
   headers.set('X-Proxy-Upstream-Source', source)
@@ -135,10 +137,7 @@ function withUpstreamSourceHeaders(
     headers.set('X-API-Version', apiVersion)
   }
 
-  return new Response(response.body, {
-    status: response.status,
-    headers,
-  })
+  return buildBufferedResponse(response, headers, requestMethod)
 }
 
 function buildConfigurationError(): Response {
@@ -181,7 +180,7 @@ export async function handleInternalApiGatewayRequest(
   if (env.VPC_SERVICE && !shouldBypassVpc(path, request)) {
     try {
       const response = await fetchViaVPC(request, requestUrl, path, search, env, bodyBuffer)
-      return withUpstreamSourceHeaders(response, 'vpc', path)
+      return await withUpstreamSourceHeaders(response, 'vpc', path, request.method)
     } catch (error) {
       console.error('[Internal API Gateway] VPC fetch failed, falling back to public:', error)
       const response = await fetchViaPublic(
@@ -192,10 +191,10 @@ export async function handleInternalApiGatewayRequest(
         apiBaseUrl,
         bodyBuffer
       )
-      return withUpstreamSourceHeaders(response, 'public-fallback', path)
+      return await withUpstreamSourceHeaders(response, 'public-fallback', path, request.method)
     }
   }
 
   const response = await fetchViaPublic(request, requestUrl, path, search, apiBaseUrl, bodyBuffer)
-  return withUpstreamSourceHeaders(response, 'public', path)
+  return await withUpstreamSourceHeaders(response, 'public', path, request.method)
 }
