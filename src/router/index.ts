@@ -535,8 +535,12 @@ router.beforeEach(async (to) => {
   }
 
   const securityLevel = to.meta.securityLevel ?? (to.meta.requiresAuth ? 'authenticated' : 'public')
-  const needsAuthState = securityLevel !== 'public' || Boolean(to.meta.guestOnly)
-  const authStore = needsAuthState ? await ensureAuthStoreLoaded({ initialize: true }) : null
+  const needsProtectedAuthState = securityLevel !== 'public'
+  const authStore = needsProtectedAuthState
+    ? await ensureAuthStoreLoaded({ initialize: true })
+    : to.meta.guestOnly
+      ? await ensureAuthStoreLoaded({ initialize: false })
+      : null
   const isAuthenticated = authStore?.isAuthenticated ?? false
 
   // 需要认证的页面
