@@ -410,8 +410,12 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
 
     const responseHeaders = withCorsHeaders(request, isDev, new Headers(upstream.response.headers))
     stripResponseHeaders(responseHeaders, compactPath)
+    responseHeaders.delete('content-length')
+    responseHeaders.delete('Content-Length')
     responseHeaders.delete('content-encoding')
+    responseHeaders.delete('Content-Encoding')
     responseHeaders.delete('transfer-encoding')
+    responseHeaders.delete('Transfer-Encoding')
     responseHeaders.set('X-Proxy-Upstream-Source', upstream.source)
 
     const apiVersion = extractApiVersion(compactPath)
@@ -437,7 +441,6 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
 
     return new Response(upstream.response.body, {
       status: upstream.response.status,
-      statusText: upstream.response.statusText,
       headers: responseHeaders,
     })
   } catch (error) {
