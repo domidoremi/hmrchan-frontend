@@ -4,7 +4,7 @@
  *
  * 用法：
  *   bun run scripts/frontend-health-check.ts
- *   FRONTEND_HEALTH_BASE_URL=http://127.0.0.1:5174 bun run scripts/frontend-health-check.ts
+ *   FRONTEND_HEALTH_BASE_URL=http://localhost:5174 bun run scripts/frontend-health-check.ts
  */
 
 import puppeteer, { type Viewport, type Page } from 'puppeteer'
@@ -111,7 +111,7 @@ interface FrontendHealthSummary {
   results: RouteResult[]
 }
 
-const BASE_URL = process.env['FRONTEND_HEALTH_BASE_URL'] ?? 'http://127.0.0.1:5174'
+const BASE_URL = process.env['FRONTEND_HEALTH_BASE_URL'] ?? 'http://localhost:5174'
 const ARTIFACT_DIR = process.env['FRONTEND_HEALTH_ARTIFACT_DIR']?.trim() || '.frontend-health'
 const AUTO_START = process.env['FRONTEND_HEALTH_AUTOSTART'] !== 'false'
 const PREVIEW_PORT = Number(process.env['FRONTEND_HEALTH_PREVIEW_PORT'] ?? '4173')

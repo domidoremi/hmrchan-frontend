@@ -688,7 +688,7 @@ export class PreviewShellManager {
   constructor({
     env = process.env,
     preferredPort = 0,
-    host = '127.0.0.1',
+    host = 'localhost',
     healthPath = '/',
     startupTimeoutMs = 45_000,
     maxOutputLines = 120,
