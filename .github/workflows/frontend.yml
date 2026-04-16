@@ -159,7 +159,7 @@ jobs:
           SMOKE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
         run: |
           if [ -z "${SMOKE_API_BASE_URL}" ] && [ -z "${SMOKE_IDENTITY_API_BASE_URL}" ] && [ -z "${SMOKE_COMMUNITY_API_BASE_URL}" ] && [ -z "${SMOKE_CONTENT_API_BASE_URL}" ]; then
-            echo "::error::Protected CI smoke requires a controlled API upstream. Set repo vars SMOKE_API_BASE_URL or the split-domain variants."
+            echo "::error::Protected CI smoke requires a controlled frontend/API upstream. Set SMOKE_API_BASE_URL to the controlled site origin that serves same-origin /api (recommended), or set the split-domain API variants."
             exit 1
           fi
 
@@ -218,7 +218,7 @@ jobs:
           SMOKE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
         run: |
           if [ -z "${SMOKE_API_BASE_URL}" ] && [ -z "${SMOKE_IDENTITY_API_BASE_URL}" ] && [ -z "${SMOKE_COMMUNITY_API_BASE_URL}" ] && [ -z "${SMOKE_CONTENT_API_BASE_URL}" ]; then
-            echo "::error::Protected frontend health requires a controlled API upstream. Set repo vars SMOKE_API_BASE_URL or the split-domain variants."
+            echo "::error::Protected frontend health requires a controlled frontend/API upstream. Set SMOKE_API_BASE_URL to the controlled site origin that serves same-origin /api (recommended), or set the split-domain API variants."
             exit 1
           fi
 
@@ -359,5 +359,5 @@ jobs:
             echo "| Frontend health smoke (auth fixture required) | ${HEALTH_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`frontend-health\` |"
             echo "| A11y / Perf nightly | scheduled | See the nightly workflow for the latest artifacts and summaries. |"
             echo
-            echo "> Blocking gates now cover quality, coverage baseline, smoke E2E, and preview-shell frontend health with the shared smoke fixture account plus a controlled API upstream. Pushes to \`main\` only trigger production canary when \`PRODUCTION_CANARY_BASE_URL\` or \`PROTECTED_CANARY_BASE_URL\` is configured. High-risk comment/profile/device/favorite changes should still run \`bun run check:release-evidence\` or at minimum \`bun run test:prod:regression --preflight\` before release, and CI-noise warnings that affect result reading must be fixed or explicitly documented."
+            echo "> Blocking gates now cover quality, coverage baseline, smoke E2E, and preview-shell frontend health with the shared smoke fixture account plus a controlled frontend/API upstream. Prefer setting \`SMOKE_API_BASE_URL\` to a controlled site origin that exposes same-origin \`/api\` via Pages Functions; only fall back to split-domain API vars when that topology is intentionally direct. Pushes to \`main\` only trigger production canary when \`PRODUCTION_CANARY_BASE_URL\` or \`PROTECTED_CANARY_BASE_URL\` is configured. High-risk comment/profile/device/favorite changes should still run \`bun run check:release-evidence\` or at minimum \`bun run test:prod:regression --preflight\` before release, and CI-noise warnings that affect result reading must be fixed or explicitly documented."
           } >> "$GITHUB_STEP_SUMMARY"

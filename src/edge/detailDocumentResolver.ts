@@ -10,7 +10,11 @@ import {
   type HtmlDocumentShellStat,
   type HtmlStructuredData,
 } from './htmlDocument'
-import { resolveConfiguredApiBaseUrl, resolveVpcOrigin, type UpstreamRuntimeEnv } from './upstream'
+import {
+  resolveConfiguredApiBaseUrl,
+  resolveVpcOriginForPath,
+  type UpstreamRuntimeEnv,
+} from './upstream'
 
 type EdgeFetcher = {
   fetch(input: Request): Promise<Response>
@@ -366,7 +370,7 @@ async function fetchEdgeJson<T>(
   let response: Response
 
   if (env?.VPC_SERVICE) {
-    const vpcOrigin = resolveVpcOrigin(env)
+    const vpcOrigin = resolveVpcOriginForPath(path, env)
     response = await env.VPC_SERVICE.fetch(
       new Request(`${vpcOrigin}${path}`, {
         method: 'GET',

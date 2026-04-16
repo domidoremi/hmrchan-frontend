@@ -37,8 +37,12 @@ SKIP_DEPENDENCY_INSTALL = "true"
 # Pages Functions 运行时变量（代理目标地址）
 # 浏览器端生产默认始终通过同源 /api -> Pages Functions -> upstream 访问后端
 API_BASE_URL = "https://api.momichan.xyz"
-# VPC 模式下后端的内网地址（cloudflared tunnel 可达的 nginx 网关）
-VPC_API_ORIGIN = "http://nginx"
+# Pages Functions 在私网内按后端三域服务直连，避免依赖已退役的 nginx 单网关。
+VPC_IDENTITY_API_ORIGIN = "http://identity-api:8000"
+VPC_COMMUNITY_API_ORIGIN = "http://community-api:8000"
+VPC_CONTENT_API_ORIGIN = "http://content-api:8000"
+# 兼容未显式拆分的旧调用方；当前回落到 identity 域。
+VPC_API_ORIGIN = "http://identity-api:8000"
 
 # ============================================================================
 # Preview 环境配置
@@ -47,6 +51,15 @@ VPC_API_ORIGIN = "http://nginx"
 BUN_VERSION = "1.3.11"
 SKIP_DEPENDENCY_INSTALL = "true"
 API_BASE_URL = "https://api.momichan.xyz"
+VPC_IDENTITY_API_ORIGIN = "http://identity-api:8000"
+VPC_COMMUNITY_API_ORIGIN = "http://community-api:8000"
+VPC_CONTENT_API_ORIGIN = "http://content-api:8000"
+VPC_API_ORIGIN = "http://identity-api:8000"
+
+[[env.preview.vpc_services]]
+binding = "VPC_SERVICE"
+service_id = "019c954f-b5bf-7e81-aea7-fa4eb3e05cb9"
+remote = true
 
 # ============================================================================
 # 绑定配置（Bindings）
