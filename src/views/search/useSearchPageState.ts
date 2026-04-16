@@ -6,11 +6,10 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   DEFAULT_PUBLIC_VISIBILITY_SCOPE,
   readPublicVisibilityHeaders,
-  searchService,
-  postService,
-  type AuthorListItem,
-  type PostListItem,
-} from '@/api'
+} from '@/api/publicVisibility'
+import { searchService } from '@/api/searchService'
+import type { AuthorListItem } from '@/api/authorService'
+import { postService, type PostListItem } from '@/api/postService'
 import { historyService, type HistoryStats, type SearchHistoryItem } from '@/api/historyService'
 import { useDebouncedRef } from '@/composables/useDebouncedRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'

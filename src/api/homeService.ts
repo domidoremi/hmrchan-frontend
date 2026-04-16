@@ -4,9 +4,20 @@ import {
   readPublicVisibilityHeaders,
   type PublicVisibilityScope,
 } from './publicVisibility'
-import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import { isServiceUnavailableError } from '@/fallbacks/publicPageFallback'
 import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
+
+let homepageBootstrapFallbackPromise: Promise<HomeAggregateResponse> | null = null
+
+async function loadHomepageBootstrapFallback(): Promise<HomeAggregateResponse> {
+  if (!homepageBootstrapFallbackPromise) {
+    homepageBootstrapFallbackPromise = import('@/fallbacks/homepageBootstrapFallback').then(
+      ({ buildHomepageBootstrapFallback }) => buildHomepageBootstrapFallback()
+    )
+  }
+
+  return homepageBootstrapFallbackPromise
+}
 
 export interface HomeImageAsset {
   url: string
@@ -757,7 +768,7 @@ export const homeService = {
       HOME_BOOTSTRAP_SNAPSHOT_SCOPE
     )
 
-    const buildUnavailableResult = (reason: string | null): HomeBootstrapResult => {
+    const buildUnavailableResult = async (reason: string | null): Promise<HomeBootstrapResult> => {
       if (cachedSnapshot) {
         return {
           payload: cachedSnapshot,
@@ -769,7 +780,7 @@ export const homeService = {
       }
 
       return {
-        payload: buildHomepageBootstrapFallback(),
+        payload: await loadHomepageBootstrapFallback(),
         visibility: DEFAULT_PUBLIC_VISIBILITY_SCOPE,
         etag: null,
         source: 'fallback',

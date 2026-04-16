@@ -114,7 +114,7 @@ import PageLoading from '@/components/ui/PageLoading.vue'
 import BackToTop from '@/components/ui/BackToTop.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import { clientChallengeState } from '@/api/clientChallengeBridge'
-import { verificationDialogState } from '@/api/verificationBridge'
+import { verificationDialogState } from '@/api/verificationState'
 import { useSmoothScroll } from '@/composables/useSmoothScroll'
 
 const ParticleBackground = defineAsyncComponent(
@@ -158,7 +158,7 @@ const animationIntensity = computed(() =>
 
 // 延迟挂载装饰性组件，避免首屏抢占主线程与网络资源
 const decorationsReady = ref(false)
-const DECORATIONS_DELAY_MS = 0
+const DECORATIONS_DELAY_MS = 1200
 onMounted(() => {
   scheduleTask(
     () => {
@@ -177,11 +177,12 @@ const showParticleBackground = computed(
 )
 const showMascotBackground = computed(
   () =>
+    decorationsReady.value &&
     settings.value.enableAnimations &&
     settings.value.animationIntensity !== 'none' &&
     settings.value.mascotBackground.enabled
 )
-const showDeskPet = computed(() => settings.value.deskPet.enabled)
+const showDeskPet = computed(() => decorationsReady.value && settings.value.deskPet.enabled)
 const showBackgroundDecorations = computed(
   () => showMascotBackground.value || showParticleBackground.value
 )

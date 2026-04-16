@@ -4,7 +4,6 @@
     class="post-card glass-card glass-card--interactive"
     :class="{ 'post-card--contain': imageFit === 'contain' }"
     :data-post-id="post.id"
-    :aria-label="cardAriaLabel"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @focus="handleMouseEnter"
@@ -119,6 +118,8 @@
         </div>
       </div>
     </div>
+
+    <span v-else class="sr-only">{{ srOnlyCardLabel }}</span>
   </button>
 </template>
 
@@ -304,12 +305,7 @@ const cardTags = computed(() =>
     .slice(0, 2)
 )
 
-const cardAriaLabel = computed(() => {
-  // 卡片已渲染可见文本时，避免 aria-label 覆盖可见名称（修复 label-content-name-mismatch）
-  if (props.showContent) {
-    return undefined
-  }
-
+const srOnlyCardLabel = computed(() => {
   const actionLabel = t('post.viewDetail')
   const subject = displayTitle.value || platformLabel.value
   return subject ? `${subject} · ${actionLabel}` : actionLabel

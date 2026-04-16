@@ -33,8 +33,11 @@ interface ClientReportPayload {
 }
 
 const REPORT_ENDPOINT = '/client-report'
+const REPORTING_PREVIEW_BYPASSED =
+  import.meta.env.PROD && import.meta.env['VITE_DISABLE_PREVIEW_PROXY'] === 'true'
 const REPORTING_ENABLED =
-  import.meta.env.PROD || import.meta.env['VITE_ENABLE_CLIENT_REPORTS'] === 'true'
+  (!REPORTING_PREVIEW_BYPASSED && import.meta.env.PROD) ||
+  import.meta.env['VITE_ENABLE_CLIENT_REPORTS'] === 'true'
 
 function getRuntimeInfo() {
   if (typeof window === 'undefined') {

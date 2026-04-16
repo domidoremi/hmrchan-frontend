@@ -4,9 +4,8 @@ import {
   type HomeAggregateResponse,
   type HomeCommunityHighlight,
   type HomeScheduleHighlight,
-  type PostListItem,
-} from '@/api'
-import { HOME_FALLBACK_POSTS } from '@/fallbacks/homepageFallback'
+} from '@/api/homeService'
+import type { PostListItem } from '@/api/postService'
 import { formatRelativeTime } from '@/utils/date'
 import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 import type { ComputedRef, Ref } from 'vue'
@@ -69,8 +68,7 @@ export function useHomeViewModel(options: {
   } = options
 
   const homeSourcePosts = computed(() => {
-    if (homeDataSource.value !== 'fallback') return allPosts.value
-    return allPosts.value.length > 0 ? allPosts.value : HOME_FALLBACK_POSTS
+    return allPosts.value
   })
 
   const isUsingFallbackPosts = computed(() => homeDataSource.value === 'fallback')

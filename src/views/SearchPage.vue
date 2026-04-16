@@ -101,7 +101,7 @@
               </ControlGroup>
 
               <div v-if="activeTab === 'posts'" class="sort-controls">
-                <Select v-model="sortBy" class="sort-select">
+                <Select v-model="sortBy" class="sort-select" :aria-label="$t('search.sortBy')">
                   <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
                     {{ opt.label }}
                   </option>

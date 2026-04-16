@@ -197,6 +197,7 @@
               v-model="passkeyDeviceName"
               class="passkey-device-input"
               type="text"
+              :aria-label="$t('profile.passkeyDeviceNamePlaceholder')"
               :placeholder="$t('profile.passkeyDeviceNamePlaceholder')"
             />
             <Button

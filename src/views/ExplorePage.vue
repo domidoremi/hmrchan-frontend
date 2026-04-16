@@ -175,7 +175,8 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, Globe } from '@lucide/vue'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
-import { postService, type PostListItem, ApiError } from '@/api'
+import { ApiError } from '@/api/client'
+import { postService, type PostListItem } from '@/api/postService'
 import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
@@ -186,11 +187,7 @@ import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
-import { getFallbackExplorePosts } from '@/fallbacks/exploreFallback'
-import {
-  isServiceUnavailableError,
-  type PublicPageDataSource,
-} from '@/fallbacks/publicPageFallback'
+import type { PublicPageDataSource } from '@/fallbacks/publicPageFallback'
 import {
   buildExploreListParams,
   extractExploreCursorState,
@@ -257,6 +254,10 @@ const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
 )
 let fetchPostsToken = 0
 let fetchPostsController: AbortController | null = null
+let exploreFallbackModulePromise: Promise<typeof import('@/fallbacks/exploreFallback')> | null =
+  null
+let publicFallbackModulePromise: Promise<typeof import('@/fallbacks/publicPageFallback')> | null =
+  null
 
 // 移动端优化：减少首屏加载数量
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -409,6 +410,22 @@ function abortFetchPostsRequest() {
   fetchPostsController = null
 }
 
+function loadExploreFallbackModule() {
+  if (!exploreFallbackModulePromise) {
+    exploreFallbackModulePromise = import('@/fallbacks/exploreFallback')
+  }
+
+  return exploreFallbackModulePromise
+}
+
+function loadPublicFallbackModule() {
+  if (!publicFallbackModulePromise) {
+    publicFallbackModulePromise = import('@/fallbacks/publicPageFallback')
+  }
+
+  return publicFallbackModulePromise
+}
+
 async function fetchPosts(reset = true, signal?: AbortSignal) {
   const requestToken = ++fetchPostsToken
   const hadData = posts.value.length > 0
@@ -499,7 +516,9 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       return false
     }
 
-    if (isServiceUnavailableError(err)) {
+    const publicFallbackModule = await loadPublicFallbackModule()
+    if (publicFallbackModule.isServiceUnavailableError(err)) {
+      const { getFallbackExplorePosts } = await loadExploreFallbackModule()
       const { sort_by, sort_order } = getSortParams(currentSort.value)
       const fallbackResult = getFallbackExplorePosts({
         cursor: reset ? null : nextCursor.value,

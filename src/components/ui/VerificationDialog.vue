@@ -66,9 +66,9 @@ import { authService, ApiError } from '@/api'
 import {
   dismissVerification,
   resolveVerification,
-  verificationDialogState,
   type VerificationAction,
 } from '@/api/verificationBridge'
+import { verificationDialogState } from '@/api/verificationState'
 
 const { t, te } = useI18n()
 
