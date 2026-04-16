@@ -9,6 +9,7 @@
 
 import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
 import { resolveConfiguredApiBaseUrl } from '../../src/edge/upstream'
+import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import {
   fetchViaInternalApiGateway,
   type InternalApiGatewayRuntimeEnv,
@@ -458,10 +459,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       }
     }
 
-    return new Response(upstream.response.body, {
-      status: upstream.response.status,
-      headers: responseHeaders,
-    })
+    return await buildBufferedResponse(upstream.response, responseHeaders, request.method)
   } catch (error) {
     console.error('[API Proxy] Error:', error)
     return buildErrorResponse(

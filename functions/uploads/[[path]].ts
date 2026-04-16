@@ -6,6 +6,7 @@
  */
 
 import { resolveConfiguredApiBaseUrl } from '../../src/edge/upstream'
+import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 
 interface Env {
   API_BASE_URL?: string
@@ -58,11 +59,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     responseHeaders.delete('content-encoding')
     responseHeaders.delete('transfer-encoding')
 
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders,
-    })
+    return await buildBufferedResponse(response, responseHeaders, request.method)
   } catch (error) {
     console.error('[Uploads Proxy] Error:', error)
     return new Response('Not Found', { status: 404 })
