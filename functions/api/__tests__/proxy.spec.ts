@@ -44,9 +44,9 @@ describe('functions/api proxy', () => {
 
     const gatewayFetch = vi.fn().mockRejectedValue(new Error('gateway unavailable'))
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/v1/posts?page=2', {
+      request: new Request('https://hmrchan-frontend.pages.dev/api/v1/posts?page=2', {
         headers: {
-          Origin: 'https://momichan.xyz',
+          Origin: 'https://hmrchan-frontend.pages.dev',
         },
       }),
       env: {
@@ -68,7 +68,9 @@ describe('functions/api proxy', () => {
     expect(publicFetch).toHaveBeenCalledTimes(1)
     expect(publicFetch.mock.calls[0]?.[0]).toBe(`${BACKEND_ORIGIN}/api/v1/posts?page=2`)
     expect(response.status).toBe(200)
-    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://momichan.xyz')
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(
+      'https://hmrchan-frontend.pages.dev'
+    )
     expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public-fallback')
   })
 

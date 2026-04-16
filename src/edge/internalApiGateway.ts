@@ -24,6 +24,9 @@ export async function fetchViaInternalApiGateway(
   gateway: EdgeBindingFetcher,
   options: InternalGatewayFetchOptions
 ): Promise<Response> {
+  const internalGatewayUrl = buildInternalGatewayUrl(
+    `${options.requestUrl.pathname}${options.requestUrl.search}`
+  )
   const init: RequestInit = {
     method: options.request.method,
     headers: options.headers,
@@ -38,5 +41,5 @@ export async function fetchViaInternalApiGateway(
     init.body = options.bodyBuffer.slice(0)
   }
 
-  return gateway.fetch(new Request(options.requestUrl.toString(), init))
+  return gateway.fetch(new Request(internalGatewayUrl, init))
 }
