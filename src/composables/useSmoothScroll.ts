@@ -1,5 +1,5 @@
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
-import Lenis from 'lenis'
+import type Lenis from 'lenis'
 import type { AnimationIntensity } from '@/stores/settings'
 import { prefersReducedMotion } from '@/utils/performance'
 
@@ -14,6 +14,13 @@ interface ScrollToOptions {
 let lenis: Lenis | null = null
 let rafHandle: number | null = null
 let scrollTriggerCleanup: (() => void) | null = null
+let scrollTriggerBridgePromise: Promise<void> | null = null
+let lenisConstructorPromise: Promise<(typeof import('lenis'))['default']> | null = null
+let lenisStartPromise: Promise<void> | null = null
+let desiredMode: Exclude<SmoothScrollMode, 'disabled'> | null = null
+let startRequestId = 0
+let smoothScrollIntentBound = false
+let smoothScrollIntentCleanup: (() => void) | null = null
 let activeMode: SmoothScrollMode = 'disabled'
 
 function isMotionDisabled(
@@ -50,6 +57,62 @@ function nativeScrollTo(target: number | string | HTMLElement, options: ScrollTo
   window.scrollTo({ top: Math.max(top, 0), behavior })
 }
 
+function loadLenisConstructor(): Promise<(typeof import('lenis'))['default']> {
+  if (!lenisConstructorPromise) {
+    lenisConstructorPromise = import('lenis').then((module) => module.default)
+  }
+
+  return lenisConstructorPromise
+}
+
+function cleanupSmoothScrollIntentListeners() {
+  smoothScrollIntentCleanup?.()
+  smoothScrollIntentCleanup = null
+  smoothScrollIntentBound = false
+}
+
+function bindSmoothScrollIntentListeners() {
+  if (typeof window === 'undefined' || smoothScrollIntentBound) return
+
+  const onIntent = () => {
+    const nextMode = desiredMode
+    cleanupSmoothScrollIntentListeners()
+    if (!nextMode) return
+    void startLenis(nextMode)
+  }
+
+  const onKeydown = (event: KeyboardEvent) => {
+    if (
+      event.defaultPrevented ||
+      (event.key !== 'ArrowDown' &&
+        event.key !== 'ArrowUp' &&
+        event.key !== 'PageDown' &&
+        event.key !== 'PageUp' &&
+        event.key !== 'Home' &&
+        event.key !== 'End' &&
+        event.key !== ' ' &&
+        event.key !== 'Spacebar')
+    ) {
+      return
+    }
+
+    onIntent()
+  }
+
+  window.addEventListener('wheel', onIntent, { once: true, passive: true })
+  window.addEventListener('touchstart', onIntent, { once: true, passive: true })
+  window.addEventListener('pointerdown', onIntent, { once: true, passive: true })
+  window.addEventListener('keydown', onKeydown, { once: true })
+
+  smoothScrollIntentCleanup = () => {
+    window.removeEventListener('wheel', onIntent)
+    window.removeEventListener('touchstart', onIntent)
+    window.removeEventListener('pointerdown', onIntent)
+    window.removeEventListener('keydown', onKeydown)
+  }
+  smoothScrollIntentBound = true
+}
+
 async function bindScrollTrigger(nextLenis: Lenis) {
   if (typeof window === 'undefined') return
 
@@ -77,6 +140,29 @@ async function bindScrollTrigger(nextLenis: Lenis) {
   }
 }
 
+export async function ensureSmoothScrollTriggerBridge(): Promise<void> {
+  if (typeof window === 'undefined' || scrollTriggerCleanup) return
+
+  if (!lenis) {
+    const ready = await ensureSmoothScrollReady()
+    if (!ready || !lenis) return
+  }
+
+  if (!scrollTriggerBridgePromise) {
+    const activeLenis = lenis
+    scrollTriggerBridgePromise = bindScrollTrigger(activeLenis)
+      .catch((error) => {
+        startFallbackRafLoop(activeLenis)
+        throw error
+      })
+      .finally(() => {
+        scrollTriggerBridgePromise = null
+      })
+  }
+
+  await scrollTriggerBridgePromise
+}
+
 function startFallbackRafLoop(nextLenis: Lenis) {
   if (typeof window === 'undefined') return
 
@@ -96,10 +182,21 @@ function cancelRafLoop() {
   rafHandle = null
 }
 
-function destroyLenis() {
+function destroyLenis(
+  options: { preserveDesiredMode?: boolean; preserveRequestId?: boolean } = {}
+) {
+  if (!options.preserveRequestId) {
+    startRequestId += 1
+  }
   cancelRafLoop()
+  cleanupSmoothScrollIntentListeners()
   scrollTriggerCleanup?.()
   scrollTriggerCleanup = null
+  scrollTriggerBridgePromise = null
+  lenisStartPromise = null
+  if (!options.preserveDesiredMode) {
+    desiredMode = null
+  }
   lenis?.destroy()
   lenis = null
   activeMode = 'disabled'
@@ -108,35 +205,64 @@ function destroyLenis() {
   }
 }
 
-function startLenis(mode: Exclude<SmoothScrollMode, 'disabled'>) {
+async function startLenis(mode: Exclude<SmoothScrollMode, 'disabled'>) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
 
-  destroyLenis()
+  desiredMode = mode
 
-  const nextLenis = new Lenis({
-    autoRaf: false,
-    smoothWheel: true,
-    syncTouch: false,
-    lerp: mode === 'reduced' ? 0.16 : 0.11,
-    duration: mode === 'reduced' ? 0.9 : 1.05,
-    wheelMultiplier: mode === 'reduced' ? 0.68 : 0.8,
-    touchMultiplier: 1,
-    overscroll: false,
-    prevent: (node) =>
-      Boolean(
-        node?.closest(
-          '[data-lenis-prevent], [data-scrollable], .settings-dropdown, .user-dropdown, .settings-panel, .dialog-body, .modal-body, .dropdown-menu, .popover-content'
-        )
-      ),
-  })
+  const requestId = ++startRequestId
+  const pendingStart = (async () => {
+    const LenisConstructor = await loadLenisConstructor()
 
-  lenis = nextLenis
-  activeMode = mode
-  document.documentElement.dataset.smoothScroll = mode
-  startFallbackRafLoop(nextLenis)
-  void bindScrollTrigger(nextLenis).catch(() => {
+    if (requestId !== startRequestId || desiredMode !== mode) return
+
+    destroyLenis({ preserveDesiredMode: true, preserveRequestId: true })
+
+    if (requestId !== startRequestId || desiredMode !== mode) return
+
+    const nextLenis = new LenisConstructor({
+      autoRaf: false,
+      smoothWheel: true,
+      syncTouch: false,
+      lerp: mode === 'reduced' ? 0.16 : 0.11,
+      duration: mode === 'reduced' ? 0.9 : 1.05,
+      wheelMultiplier: mode === 'reduced' ? 0.68 : 0.8,
+      touchMultiplier: 1,
+      overscroll: false,
+      prevent: (node) =>
+        Boolean(
+          node?.closest(
+            '[data-lenis-prevent], [data-scrollable], .settings-dropdown, .user-dropdown, .settings-panel, .dialog-body, .modal-body, .dropdown-menu, .popover-content'
+          )
+        ),
+    })
+
+    lenis = nextLenis
+    activeMode = mode
+    document.documentElement.dataset.smoothScroll = mode
     startFallbackRafLoop(nextLenis)
+  })()
+
+  const startPromise = pendingStart.finally(() => {
+    if (lenisStartPromise === startPromise) {
+      lenisStartPromise = null
+    }
   })
+
+  lenisStartPromise = startPromise
+
+  await startPromise
+}
+
+async function ensureSmoothScrollReady(): Promise<boolean> {
+  if (lenis) return true
+
+  const nextMode = desiredMode
+  if (!nextMode) return false
+
+  cleanupSmoothScrollIntentListeners()
+  await (lenisStartPromise ?? startLenis(nextMode))
+  return Boolean(lenis)
 }
 
 export function scrollWithSmoothScroll(
@@ -176,7 +302,14 @@ export function useSmoothScroll(
       return
     }
 
-    startLenis(nextMode)
+    desiredMode = nextMode
+
+    if (lenis) {
+      void startLenis(nextMode)
+      return
+    }
+
+    bindSmoothScrollIntentListeners()
   }
 
   onMounted(sync)

@@ -40,11 +40,16 @@ vi.mock('vue-router', () => ({
   }),
 }))
 
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-  }),
-}))
+vi.mock('vue-i18n', async () => {
+  const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
+
+  return {
+    ...actual,
+    useI18n: () => ({
+      t: (key: string) => key,
+    }),
+  }
+})
 
 vi.mock('pinia', () => ({
   storeToRefs: (store: { isAuthenticated: { value: boolean; __v_isRef: true } }) => ({
@@ -62,13 +67,19 @@ vi.mock('@/stores', () => ({
   }),
 }))
 
-vi.mock('@/api', () => ({
+vi.mock('@/api/publicVisibility', () => ({
   DEFAULT_PUBLIC_VISIBILITY_SCOPE: { tier: 'guest', limit: null },
   readPublicVisibilityHeaders: () => ({ tier: 'guest', limit: null }),
+}))
+
+vi.mock('@/api/searchService', () => ({
   searchService: {
     searchPosts: (...args: unknown[]) => mocks.searchPosts(...args),
     searchAuthors: (...args: unknown[]) => mocks.searchAuthors(...args),
   },
+}))
+
+vi.mock('@/api/postService', () => ({
   postService: {
     listPosts: (...args: unknown[]) => mocks.listPosts(...args),
   },

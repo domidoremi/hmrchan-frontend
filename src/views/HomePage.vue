@@ -160,9 +160,9 @@
                   class="portal-card__preview-image"
                   :width="PORTAL_LEAD_IMAGE_SIZE.width"
                   :height="PORTAL_LEAD_IMAGE_SIZE.height"
-                  loading="eager"
+                  loading="lazy"
                   decoding="async"
-                  fetchpriority="high"
+                  fetchpriority="auto"
                   @error="markHomeMediaFailed(portalLeadCard.thumbnail)"
                 />
                 <div v-else class="portal-card__preview-empty">
@@ -1031,7 +1031,10 @@ import {
 } from '@/components/ui/scrollAnchorTargets'
 import { createResizeObserver, createVisibilityObserver, scheduleTask } from '@/utils/modernAPIs'
 import { homeSectionAnchors, type HomeSectionAnchor } from '@/config/homeSections'
-import { scrollWithSmoothScroll } from '@/composables/useSmoothScroll'
+import {
+  ensureSmoothScrollTriggerBridge,
+  scrollWithSmoothScroll,
+} from '@/composables/useSmoothScroll'
 
 type GsapModule = typeof import('gsap')
 type ScrollTriggerModule = typeof import('gsap/ScrollTrigger')
@@ -1048,6 +1051,7 @@ const BUBBLE_POINTER_ATTACK_MS = 220
 const BUBBLE_POINTER_RELEASE_MS = 360
 const BUBBLE_FORCE_CENTER_LERP_MS = 180
 const HOME_ENHANCEMENTS_DELAY_MS = 1200
+const HOME_SCENE_ACTIVATION_DELAY_MS = 140
 const HOME_FALLBACK_PREFIX = '__home_fallback__'
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
@@ -1313,12 +1317,12 @@ function resolveHeroCollageImageSizes(index: number): string {
     : '(min-width: 1280px) 14rem, (min-width: 768px) 44vw, 50vw'
 }
 
-function resolveHeroCollageImageLoading(index: number): 'eager' | 'lazy' {
-  return index === 0 ? 'eager' : 'lazy'
+function resolveHeroCollageImageLoading(): 'eager' | 'lazy' {
+  return 'lazy'
 }
 
-function resolveHeroCollageFetchPriority(index: number): 'high' | 'auto' {
-  return index === 0 ? 'high' : 'auto'
+function resolveHeroCollageFetchPriority(): 'high' | 'auto' {
+  return 'auto'
 }
 
 function resolveFeaturedRailImageSize(index: number): { width: number; height: number } {
@@ -1333,12 +1337,12 @@ function resolveFeaturedRailImageSizes(index: number): string {
   return '(min-width: 1280px) 18rem, (min-width: 768px) 48vw, 100vw'
 }
 
-function resolveFeaturedRailImageLoading(index: number): 'eager' | 'lazy' {
-  return index === 0 ? 'eager' : 'lazy'
+function resolveFeaturedRailImageLoading(): 'eager' | 'lazy' {
+  return 'lazy'
 }
 
-function resolveFeaturedRailFetchPriority(index: number): 'high' | 'auto' {
-  return index === 0 ? 'high' : 'auto'
+function resolveFeaturedRailFetchPriority(): 'high' | 'auto' {
+  return 'auto'
 }
 
 function resolveSectionElement(
@@ -1667,7 +1671,9 @@ function registerBubbleElement(bubbleId: string, value: Element | ComponentPubli
   if (!bubbleFrameStateMap.has(normalizedId)) {
     resetBubbleFrameStateStyle(element)
   }
-  scheduleBubbleMotionMeasurement()
+  if (bubbleEnhancementsPrimed) {
+    scheduleBubbleMotionMeasurement()
+  }
 }
 
 function measureBubbleMotionAnchors() {
@@ -1747,12 +1753,14 @@ function updateBubbleStagePointerPosition(event: PointerEvent) {
 }
 
 function handleBubbleStagePointerEnter(event: PointerEvent) {
+  activateHomeBubbleEnhancements()
   pointerInsideBubbleStage.value = true
   updateBubbleStagePointerPosition(event)
   syncBubbleMotionLoop()
 }
 
 function handleBubbleStagePointerMove(event: PointerEvent) {
+  activateHomeBubbleEnhancements()
   pointerInsideBubbleStage.value = true
   updateBubbleStagePointerPosition(event)
   syncBubbleMotionLoop()
@@ -1766,6 +1774,7 @@ function handleBubbleStagePointerLeave() {
 }
 
 function handleBubblePointerEnter(bubbleId: string, event: PointerEvent) {
+  activateHomeBubbleEnhancements()
   pointerInsideBubbleStage.value = true
   pointerOverBubbleId.value = normalizeText(bubbleId) || null
   updateBubbleStagePointerPosition(event)
@@ -1783,6 +1792,7 @@ function handleBubblePointerLeave(bubbleId: string) {
 }
 
 function handleBubbleFocus(bubbleId: string) {
+  activateHomeBubbleEnhancements()
   setHoveredBubble(bubbleId, 'focus')
 }
 
@@ -1996,6 +2006,10 @@ let viewportSceneFrame: number | null = null
 let viewportSceneTrackingBound = false
 let sceneProgressFrame: number | null = null
 let sceneProgressTrackingBound = false
+let homeDeferredEnhancementObserver: IntersectionObserver | null = null
+let homeDeferredSceneIntentBound = false
+let sceneEnhancementsPrimed = false
+let bubbleEnhancementsPrimed = false
 
 const storyTravel = computed(() => Math.max(effectiveStoryCardCount.value - 1, 0))
 const storyProgressIndex = computed(() => storyProgress.value * storyTravel.value)
@@ -2048,6 +2062,115 @@ function shouldUseHomeSectionBlendEffects(): boolean {
 
 function shouldUseHomeScrollScrubScenes(): boolean {
   return shouldUseHomeSectionBlendEffects()
+}
+
+function disconnectDeferredHomeEnhancementObserver() {
+  homeDeferredEnhancementObserver?.disconnect()
+  homeDeferredEnhancementObserver = null
+}
+
+function unbindDeferredHomeSceneIntent() {
+  if (typeof window === 'undefined' || !homeDeferredSceneIntentBound) return
+  homeDeferredSceneIntentBound = false
+  window.removeEventListener('scroll', handleDeferredHomeSceneIntent)
+  window.removeEventListener('wheel', handleDeferredHomeSceneIntent)
+  window.removeEventListener('touchstart', handleDeferredHomeSceneIntent)
+  window.removeEventListener('keydown', handleDeferredHomeSceneIntent)
+}
+
+function bindDeferredHomeSceneIntent() {
+  if (typeof window === 'undefined' || homeDeferredSceneIntentBound || sceneEnhancementsPrimed)
+    return
+  homeDeferredSceneIntentBound = true
+  window.addEventListener('scroll', handleDeferredHomeSceneIntent, { passive: true })
+  window.addEventListener('wheel', handleDeferredHomeSceneIntent, { passive: true })
+  window.addEventListener('touchstart', handleDeferredHomeSceneIntent, { passive: true })
+  window.addEventListener('keydown', handleDeferredHomeSceneIntent)
+}
+
+function maybeCleanupDeferredHomeEnhancementObserver() {
+  if (sceneEnhancementsPrimed && bubbleEnhancementsPrimed) {
+    disconnectDeferredHomeEnhancementObserver()
+  }
+}
+
+function syncBubbleRevealLifecycle() {
+  resetBubbleRevealState()
+
+  if (!bubbleEnhancementsPrimed || bubbleItems.value.length === 0) return
+
+  if (isCompactHomeViewport()) {
+    bubbleRevealPhase.value = 'revealed'
+    return
+  }
+
+  if (shouldAnimate.value) {
+    restartBubbleBurst()
+    return
+  }
+
+  bubbleRevealPhase.value = 'revealed'
+}
+
+function activateHomeSceneEnhancements(delay = HOME_SCENE_ACTIVATION_DELAY_MS) {
+  if (homeEnhancementsDisposed || sceneEnhancementsPrimed) return
+  sceneEnhancementsPrimed = true
+  unbindDeferredHomeSceneIntent()
+  setHomeSceneLifecycleEnabled(true, delay)
+  maybeCleanupDeferredHomeEnhancementObserver()
+}
+
+function activateHomeBubbleEnhancements() {
+  if (homeEnhancementsDisposed || bubbleEnhancementsPrimed) return
+  bubbleEnhancementsPrimed = true
+  syncBubbleRevealLifecycle()
+  void nextTick(() => {
+    if (homeEnhancementsDisposed || !bubbleEnhancementsPrimed) return
+    observeBubbleStageLayout()
+    scheduleBubbleMotionMeasurement()
+  })
+  maybeCleanupDeferredHomeEnhancementObserver()
+}
+
+function observeDeferredHomeEnhancements() {
+  if (typeof window === 'undefined') return
+
+  disconnectDeferredHomeEnhancementObserver()
+  bindDeferredHomeSceneIntent()
+
+  const postsElement = resolveSectionElement(postsSectionRef.value)
+
+  if (!postsElement) return
+
+  if (typeof window.IntersectionObserver !== 'function') {
+    activateHomeSceneEnhancements(0)
+    return
+  }
+
+  homeDeferredEnhancementObserver = createVisibilityObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+
+        if (postsElement && entry.target === postsElement) {
+          activateHomeSceneEnhancements(0)
+          activateHomeBubbleEnhancements()
+        }
+      }
+    },
+    {
+      threshold: [0, 0.01],
+      rootMargin: '35% 0% 35% 0%',
+    }
+  )
+
+  if (postsElement) {
+    homeDeferredEnhancementObserver.observe(postsElement)
+  }
+}
+
+function handleDeferredHomeSceneIntent() {
+  activateHomeSceneEnhancements(0)
 }
 
 const homePageMotionStyle = computed<Record<string, string>>(() => {
@@ -2114,11 +2237,16 @@ watch(isPreviewOpen, (open) => {
 })
 
 onActivated(() => {
-  setHomeSceneLifecycleEnabled(true)
   observeHomeSections()
   void nextTick(() => {
-    observeBubbleStageLayout()
-    scheduleBubbleMotionMeasurement()
+    observeDeferredHomeEnhancements()
+    if (sceneEnhancementsPrimed) {
+      setHomeSceneLifecycleEnabled(true, 0)
+    }
+    if (bubbleEnhancementsPrimed) {
+      observeBubbleStageLayout()
+      scheduleBubbleMotionMeasurement()
+    }
   })
   if (
     (homeDataSource.value === 'idle' || homeDataSource.value === 'fallback') &&
@@ -2134,6 +2262,8 @@ onDeactivated(() => {
   abortHomeSupportRefresh()
   setRailNavbarLock(false)
   disconnectHomeSectionObserver()
+  disconnectDeferredHomeEnhancementObserver()
+  unbindDeferredHomeSceneIntent()
   disconnectBubbleStageLayoutObserver()
   clearBubbleMotionMeasureFrame()
   stopBubbleMotionLoop()
@@ -2356,10 +2486,11 @@ async function ensureScrollTriggerReady(): Promise<boolean> {
   if (scrollTriggerModule && gsapModule) return true
   if (!scrollTriggerReadyPromise) {
     scrollTriggerReadyPromise = Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
-      .then(([gsapImport, scrollTriggerImport]) => {
+      .then(async ([gsapImport, scrollTriggerImport]) => {
         gsapModule = gsapImport.default
         scrollTriggerModule = scrollTriggerImport.ScrollTrigger
         gsapModule.registerPlugin(scrollTriggerModule)
+        await ensureSmoothScrollTriggerBridge().catch(() => undefined)
         return true
       })
       .catch(() => false)
@@ -2405,7 +2536,10 @@ function scheduleHomeEnhancements(delay = 1800) {
   )
 }
 
-function setHomeSceneLifecycleEnabled(enabled: boolean) {
+function setHomeSceneLifecycleEnabled(
+  enabled: boolean,
+  enhancementDelay = HOME_ENHANCEMENTS_DELAY_MS
+) {
   scenesEnabled = enabled
   setRailNavbarLock(enabled && shouldUseHomeSectionBlendEffects())
   setHomeFooterBlend(enabled && shouldUseHomeSectionBlendEffects())
@@ -2420,7 +2554,7 @@ function setHomeSceneLifecycleEnabled(enabled: boolean) {
     return
   }
 
-  scheduleHomeEnhancements()
+  scheduleHomeEnhancements(enhancementDelay)
 }
 
 function clearSceneScrollTween() {
@@ -2971,19 +3105,12 @@ watch(
     shouldAnimate,
   ],
   () => {
-    resetBubbleRevealState()
-    if (isCompactHomeViewport() && bubbleItems.value.length > 0) {
-      bubbleRevealPhase.value = 'revealed'
-    } else if (bubbleItems.value.length > 0) {
-      if (shouldAnimate.value) {
-        restartBubbleBurst()
-      } else {
-        bubbleRevealPhase.value = 'revealed'
-      }
+    syncBubbleRevealLifecycle()
+    if (bubbleEnhancementsPrimed) {
+      void nextTick(() => {
+        scheduleBubbleMotionMeasurement()
+      })
     }
-    void nextTick(() => {
-      scheduleBubbleMotionMeasurement()
-    })
     if (!scenesEnabled) return
     scheduleSceneSetup()
   },
@@ -2998,6 +3125,7 @@ watch(
     () => bubbleItems.value.map((bubble) => bubble.id).join('|'),
   ],
   () => {
+    if (!bubbleEnhancementsPrimed) return
     void nextTick(() => {
       scheduleBubbleMotionMeasurement()
     })
@@ -3007,18 +3135,16 @@ watch(
 onMounted(() => {
   homeEnhancementsDisposed = false
   void fetchHomeData()
+  observeHomeSections()
   scheduleTask(
     () => {
       if (homeEnhancementsDisposed) return
-      setHomeSceneLifecycleEnabled(true)
-      observeHomeSections()
       void nextTick(() => {
         if (homeEnhancementsDisposed) return
-        observeBubbleStageLayout()
-        scheduleBubbleMotionMeasurement()
+        observeDeferredHomeEnhancements()
       })
     },
-    { priority: 'background', delay: HOME_ENHANCEMENTS_DELAY_MS }
+    { priority: 'background', delay: HOME_SCENE_ACTIVATION_DELAY_MS }
   )
 })
 
@@ -3029,6 +3155,8 @@ onBeforeUnmount(() => {
   abortHomeSupportRefresh()
   setRailNavbarLock(false)
   disconnectHomeSectionObserver()
+  disconnectDeferredHomeEnhancementObserver()
+  unbindDeferredHomeSceneIntent()
   disconnectBubbleStageLayoutObserver()
   clearBubbleMotionMeasureFrame()
   stopBubbleMotionLoop()

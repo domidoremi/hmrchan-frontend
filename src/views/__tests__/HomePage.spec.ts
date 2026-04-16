@@ -102,7 +102,7 @@ vi.mock('@/stores', async () => {
   }
 })
 
-vi.mock('@/api', () => ({
+vi.mock('@/api/homeService', () => ({
   homeService: {
     loadHomepageBootstrap: mocks.loadHomepageBootstrap,
     getScheduleHighlights: mocks.getScheduleHighlights,

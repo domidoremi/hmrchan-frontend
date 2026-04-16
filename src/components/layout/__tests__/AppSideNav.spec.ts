@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import AppSideNav from '../AppSideNav.vue'
+import { computed } from 'vue'
 
 const MOBILE_DOCK_QUERY = '(max-width: 960px)'
 
@@ -31,6 +32,12 @@ const authStoreState = reactive({
 
 vi.mock('@/stores', () => ({
   useAuthStore: () => authStoreState,
+}))
+
+vi.mock('@/services/authSurface', () => ({
+  useAuthSurface: () => ({
+    isAuthenticated: computed(() => authStoreState.isAuthenticated),
+  }),
 }))
 
 const i18n = createI18n({

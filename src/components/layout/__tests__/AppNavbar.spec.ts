@@ -78,6 +78,14 @@ vi.mock('@/stores', () => ({
   useSettingsStore: () => settingsStoreState,
 }))
 
+vi.mock('@/services/authSurface', () => ({
+  useAuthSurface: () => ({
+    user: computed(() => authStoreState.user),
+    isAuthenticated: computed(() => authStoreState.isAuthenticated),
+  }),
+  logoutFromAuthSurface: () => authStoreState.logout(),
+}))
+
 vi.mock('@/stores/schedule', () => ({
   useScheduleStore: () => scheduleStoreState,
 }))
