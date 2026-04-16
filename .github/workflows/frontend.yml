@@ -190,6 +190,7 @@ jobs:
           name: e2e-smoke
           path: |
             .e2e-smoke/**
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
 
@@ -249,6 +250,7 @@ jobs:
           name: frontend-health
           path: |
             .frontend-health/**
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
 
@@ -322,6 +324,7 @@ jobs:
           path: |
             .frontend-health-prod/**
             .e2e-smoke-prod/**
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
 
