@@ -51,7 +51,7 @@ describe('functions/api proxy', () => {
       }),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
-        VPC_API_ORIGIN: 'http://nginx',
+        VPC_CONTENT_API_ORIGIN: 'http://content-api:8000',
         VPC_SERVICE: {
           fetch: vpcFetch,
         },
@@ -62,6 +62,10 @@ describe('functions/api proxy', () => {
     })
 
     expect(vpcFetch).toHaveBeenCalledTimes(1)
+    expect(vpcFetch.mock.calls[0]?.[0]).toBeInstanceOf(Request)
+    expect((vpcFetch.mock.calls[0]?.[0] as Request).url).toBe(
+      'http://content-api:8000/api/v1/posts?page=2'
+    )
     expect(publicFetch).toHaveBeenCalledTimes(1)
     expect(publicFetch.mock.calls[0]?.[0]).toBe(`${BACKEND_ORIGIN}/api/v1/posts?page=2`)
     expect(response.status).toBe(200)
@@ -199,7 +203,7 @@ describe('functions/api proxy', () => {
       ),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
-        VPC_API_ORIGIN: 'http://nginx',
+        VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
         VPC_SERVICE: {
           fetch: vpcFetch,
         },
@@ -242,7 +246,7 @@ describe('functions/api proxy', () => {
       JSON.stringify({ handoff_code: 'handoff-1' }),
     ],
   ])(
-    'bypasses VPC for %s so auth traffic stays on the public API upstream',
+    'routes %s through the identity VPC upstream when a Pages VPC binding is available',
     async (_, url, path, method, body) => {
       const publicFetch = vi.fn().mockResolvedValue(
         new Response(JSON.stringify({ ok: true }), {
@@ -255,8 +259,11 @@ describe('functions/api proxy', () => {
       vi.stubGlobal('fetch', publicFetch)
 
       const vpcFetch = vi.fn().mockResolvedValue(
-        new Response('should not be used', {
-          status: 500,
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
         })
       )
 
@@ -271,7 +278,7 @@ describe('functions/api proxy', () => {
         }),
         env: {
           API_BASE_URL: BACKEND_ORIGIN,
-          VPC_API_ORIGIN: 'http://nginx',
+          VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
           VPC_SERVICE: {
             fetch: vpcFetch,
           },
@@ -281,13 +288,55 @@ describe('functions/api proxy', () => {
         },
       })
 
-      expect(vpcFetch).not.toHaveBeenCalled()
-      expect(publicFetch).toHaveBeenCalledTimes(1)
-      expect(publicFetch.mock.calls[0]?.[0]).toBe(`${BACKEND_ORIGIN}/api/${path.join('/')}`)
+      expect(vpcFetch).toHaveBeenCalledTimes(1)
+      expect(publicFetch).not.toHaveBeenCalled()
+      expect(vpcFetch.mock.calls[0]?.[0]).toBeInstanceOf(Request)
+      expect((vpcFetch.mock.calls[0]?.[0] as Request).url).toBe(
+        `http://identity-api:8000/api/${path.join('/')}`
+      )
       expect(response.status).toBe(200)
-      expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
+      expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
     }
   )
+
+  it('routes discussion reads to the community VPC upstream', async () => {
+    const publicFetch = vi.fn()
+    vi.stubGlobal('fetch', publicFetch)
+
+    const vpcFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    )
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/api/v1/discussions/discussion-1', {
+        headers: {
+          Origin: 'https://momichan.xyz',
+        },
+      }),
+      env: {
+        API_BASE_URL: BACKEND_ORIGIN,
+        VPC_COMMUNITY_API_ORIGIN: 'http://community-api:8000',
+        VPC_SERVICE: {
+          fetch: vpcFetch,
+        },
+      },
+      params: {
+        path: ['v1', 'discussions', 'discussion-1'],
+      },
+    })
+
+    expect(vpcFetch).toHaveBeenCalledTimes(1)
+    expect((vpcFetch.mock.calls[0]?.[0] as Request).url).toBe(
+      'http://community-api:8000/api/v1/discussions/discussion-1'
+    )
+    expect(publicFetch).not.toHaveBeenCalled()
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
+  })
 
   it('preserves auth diagnostic headers from upstream responses', async () => {
     const publicFetch = vi.fn().mockResolvedValue(

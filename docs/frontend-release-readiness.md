@@ -254,7 +254,9 @@
 - `test:e2e`、`check:frontend`、`test:a11y`、`test:perf` 的本地 build + preview 生命周期统一收敛到 shared preview manager
 - 若发布策略选择“不公开 API 入口”，CI 的 preview-shell smoke 必须显式配置受控 upstream：
   - 单上游：`SMOKE_API_BASE_URL`
+    - 推荐填受控站点源（例如 `https://hmrchan-frontend.pages.dev` 或对应预发站点），要求该站点的同源 `/api` 已由 Pages Functions 接入后端三域服务
   - split topology：`SMOKE_IDENTITY_API_BASE_URL`、`SMOKE_COMMUNITY_API_BASE_URL`、`SMOKE_CONTENT_API_BASE_URL`
+    - 仅在刻意让 preview shell 直连受保护 API 域时使用
   - 未配置时 workflow 直接失败，不再隐式回落到 `https://api.momichan.xyz`
 - 远端 canary / nightly health 只在显式配置站点时运行：
   - `PRODUCTION_CANARY_BASE_URL` 或 `PROTECTED_CANARY_BASE_URL`

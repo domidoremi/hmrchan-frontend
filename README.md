@@ -61,29 +61,29 @@ cp .env.example .env.development
 
 质量 / 回归脚本支持以下测试环境变量：
 
-| 变量                                      | 说明                                                                                       |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `E2E_BASE_URL`                            | 让 `bun run test:e2e` 直接扫指定站点，而不是本地 build+preview                             |
-| `E2E_AUTOSTART`                           | 设为 `false` 时，E2E 不尝试自启本地预览环境                                                |
-| `E2E_ARTIFACT_DIR`                        | E2E smoke 产物目录，默认 `.e2e-smoke`                                                      |
-| `E2E_REQUIRE_AUTH`                        | 默认要求认证态 smoke；仅显式设为 `false` 时才允许 guest-only                               |
-| `VITE_API_BASE_URL`                       | preview-shell / 本地 dev 的同源 `/api` 代理目标；CI 受控 smoke 可显式指向受保护 upstream   |
-| `VITE_IDENTITY_API_BASE_URL`              | split topology 下 identity 域代理目标，可选                                                |
-| `VITE_COMMUNITY_API_BASE_URL`             | split topology 下 community 域代理目标，可选                                               |
-| `VITE_CONTENT_API_BASE_URL`               | split topology 下 content 域代理目标，可选                                                 |
-| `PRIMARY_USERNAME`                        | 认证 smoke 主账号用户名，`test:e2e` / `check:frontend` / `test:prod:regression` 的首选输入 |
-| `PRIMARY_PASSWORD`                        | 认证 smoke 主账号密码                                                                      |
-| `E2E_AUTH_LOGIN`                          | 历史别名；仅在未设置 `PRIMARY_USERNAME` 时回退使用                                         |
-| `E2E_AUTH_PASSWORD`                       | 历史别名；仅在未设置 `PRIMARY_PASSWORD` 时回退使用                                         |
-| `E2E_SAMPLE_POST_ROUTE`                   | 指定帖子详情 smoke 用例路由                                                                |
-| `E2E_SAMPLE_DISCUSSION_ROUTE`             | 指定讨论详情 smoke 用例路由                                                                |
-| `FRONTEND_HEALTH_BASE_URL`                | 指定 `bun run check:frontend` 的巡检基址                                                   |
-| `FRONTEND_HEALTH_AUTOSTART`               | 设为 `false` 时，不自启本地 preview shell                                                  |
-| `FRONTEND_HEALTH_ARTIFACT_DIR`            | frontend health 产物目录，默认 `.frontend-health`                                          |
-| `FRONTEND_HEALTH_INCLUDE_API_ERRORS`      | 设为 `true` 时，把 API 4xx/5xx 视为阻断问题                                                |
-| `FRONTEND_HEALTH_SAMPLE_POST_ROUTE`       | 指定健康检查里的帖子详情巡检路由                                                           |
-| `FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE` | 指定健康检查里的讨论详情巡检路由                                                           |
-| `LOCAL_AUDIT_CLEAR_RATE_LIMITS`           | 本地 Docker smoke 串行证据链中清理 Redis `ratelimit:*` 状态                                |
+| 变量                                      | 说明                                                                                            |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `E2E_BASE_URL`                            | 让 `bun run test:e2e` 直接扫指定站点，而不是本地 build+preview                                  |
+| `E2E_AUTOSTART`                           | 设为 `false` 时，E2E 不尝试自启本地预览环境                                                     |
+| `E2E_ARTIFACT_DIR`                        | E2E smoke 产物目录，默认 `.e2e-smoke`                                                           |
+| `E2E_REQUIRE_AUTH`                        | 默认要求认证态 smoke；仅显式设为 `false` 时才允许 guest-only                                    |
+| `VITE_API_BASE_URL`                       | preview-shell / 本地 dev 的同源 `/api` 代理目标；CI 受控 smoke 推荐指向承接同源 `/api` 的站点源 |
+| `VITE_IDENTITY_API_BASE_URL`              | split topology 下 identity 域代理目标，可选                                                     |
+| `VITE_COMMUNITY_API_BASE_URL`             | split topology 下 community 域代理目标，可选                                                    |
+| `VITE_CONTENT_API_BASE_URL`               | split topology 下 content 域代理目标，可选                                                      |
+| `PRIMARY_USERNAME`                        | 认证 smoke 主账号用户名，`test:e2e` / `check:frontend` / `test:prod:regression` 的首选输入      |
+| `PRIMARY_PASSWORD`                        | 认证 smoke 主账号密码                                                                           |
+| `E2E_AUTH_LOGIN`                          | 历史别名；仅在未设置 `PRIMARY_USERNAME` 时回退使用                                              |
+| `E2E_AUTH_PASSWORD`                       | 历史别名；仅在未设置 `PRIMARY_PASSWORD` 时回退使用                                              |
+| `E2E_SAMPLE_POST_ROUTE`                   | 指定帖子详情 smoke 用例路由                                                                     |
+| `E2E_SAMPLE_DISCUSSION_ROUTE`             | 指定讨论详情 smoke 用例路由                                                                     |
+| `FRONTEND_HEALTH_BASE_URL`                | 指定 `bun run check:frontend` 的巡检基址                                                        |
+| `FRONTEND_HEALTH_AUTOSTART`               | 设为 `false` 时，不自启本地 preview shell                                                       |
+| `FRONTEND_HEALTH_ARTIFACT_DIR`            | frontend health 产物目录，默认 `.frontend-health`                                               |
+| `FRONTEND_HEALTH_INCLUDE_API_ERRORS`      | 设为 `true` 时，把 API 4xx/5xx 视为阻断问题                                                     |
+| `FRONTEND_HEALTH_SAMPLE_POST_ROUTE`       | 指定健康检查里的帖子详情巡检路由                                                                |
+| `FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE` | 指定健康检查里的讨论详情巡检路由                                                                |
+| `LOCAL_AUDIT_CLEAR_RATE_LIMITS`           | 本地 Docker smoke 串行证据链中清理 Redis `ratelimit:*` 状态                                     |
 
 本地私有 smoke / release-evidence 推荐写入未跟踪的 `.env.smoke.local`，例如：
 
@@ -181,13 +181,17 @@ bun run check:release-evidence
 生产部署约定：
 
 - 浏览器端生产默认通过同源 `/api` 访问后端，不使用 `VITE_API_BASE_URL` 改写线上 API 基址
-- Pages Functions 的上游目标通过 `API_BASE_URL` 配置，当前生产仍兼容 `VPC_API_ORIGIN + VPC_SERVICE`
+- Pages Functions 的 public fallback 目标通过 `API_BASE_URL` 配置；私网路径优先使用 `VPC_SERVICE` + 三域 VPC origin
 - Pages 纯文本变量最小集合为：`API_BASE_URL`、`BUN_VERSION=1.3.11`、`SKIP_DEPENDENCY_INSTALL=true`
+- Pages 私网三域上游应与后端当前 Compose 服务名对齐：
+  - `VPC_IDENTITY_API_ORIGIN=http://identity-api:8000`
+  - `VPC_COMMUNITY_API_ORIGIN=http://community-api:8000`
+  - `VPC_CONTENT_API_ORIGIN=http://content-api:8000`
+- `VPC_API_ORIGIN` 仅作为旧配置回退，不再指向已退役的 `nginx`
 - 推荐 Pages 构建命令继续显式注入 `VITE_GIT_COMMIT=$CF_PAGES_COMMIT_SHA`；若 Dashboard 未配置 `VITE_CLIENT_CONTRACT_VERSION`，构建 wrapper 只会在 Cloudflare Pages 环境中用 `CF_PAGES_COMMIT_SHA` 作为本次 rollout contract，不影响普通本地 `bun run build` 的缺契约失败语义
 - 若后端生产 `CLIENT_CONTRACT_VERSION` 使用独立 release hash，而不是 Pages commit SHA，必须在 Cloudflare Dashboard 显式配置同值 `VITE_CLIENT_CONTRACT_VERSION`
-- `VPC_API_ORIGIN` 仅在生产仍走私网 nginx / VPC service 时保留
 - `VITE_TURNSTILE_SITE_KEY` 作为机密在 Dashboard 中保留；其余 `VITE_*` 变量不是 Pages 生产必需项
-- 若仓库选择“不公开 API 入口”，GitHub Actions 里的 preview-shell smoke 不应再回落到 `https://api.momichan.xyz`；请在仓库 vars 中至少配置 `SMOKE_API_BASE_URL`，或按 split topology 配置 `SMOKE_IDENTITY_API_BASE_URL` / `SMOKE_COMMUNITY_API_BASE_URL` / `SMOKE_CONTENT_API_BASE_URL`
+- 若仓库选择“不公开 API 入口”，GitHub Actions 里的 preview-shell smoke 不应再回落到 `https://api.momichan.xyz`；请在仓库 vars 中把 `SMOKE_API_BASE_URL` 指向受控站点源（推荐 `https://hmrchan-frontend.pages.dev` 或对应预发站点，要求其同源 `/api` 已由 Pages Functions 接入后端），只有在刻意直连受保护 API 拓扑时才使用 `SMOKE_IDENTITY_API_BASE_URL` / `SMOKE_COMMUNITY_API_BASE_URL` / `SMOKE_CONTENT_API_BASE_URL`
 - `main` push 的 canary 只会在配置了 `PRODUCTION_CANARY_BASE_URL` 或 `PROTECTED_CANARY_BASE_URL` 时运行；nightly 的远端 health 只会在配置了 `NIGHTLY_FRONTEND_HEALTH_BASE_URL` 或上述 canary 地址时运行
 
 发布门禁约定：

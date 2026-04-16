@@ -8,11 +8,14 @@
  */
 
 import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
-import { resolveConfiguredApiBaseUrl, resolveVpcOrigin } from '../../src/edge/upstream'
+import { resolveConfiguredApiBaseUrl, resolveVpcOriginForPath } from '../../src/edge/upstream'
 
 interface Env {
   API_BASE_URL?: string
   VPC_API_ORIGIN?: string
+  VPC_IDENTITY_API_ORIGIN?: string
+  VPC_COMMUNITY_API_ORIGIN?: string
+  VPC_CONTENT_API_ORIGIN?: string
   VPC_SERVICE?: Fetcher
 }
 
@@ -198,16 +201,6 @@ function stripResponseHeaders(headers: Headers, path: string): void {
 }
 
 function shouldBypassVPCForRequest(path: string, request: Request): boolean {
-  const normalizedPath = resolveUpstreamPath(path)
-
-  if (
-    normalizedPath === 'v1/client/init' ||
-    normalizedPath === 'v1/client/verify' ||
-    normalizedPath === 'v1/auth/google/exchange'
-  ) {
-    return true
-  }
-
   return shouldPreserveBrowserRedirect(path, request)
 }
 
@@ -394,7 +387,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       request,
       search: requestUrl.search,
       vpcBinding: env.VPC_SERVICE,
-      vpcOrigin: resolveVpcOrigin(env),
+      vpcOrigin: resolveVpcOriginForPath(`/api/${compactPath}`, env),
     })
 
     if (redirectMode === 'manual') {
