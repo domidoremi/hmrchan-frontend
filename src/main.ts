@@ -427,6 +427,22 @@ if (import.meta.hot) {
 
 const authSurface = useAuthSurface()
 
+function isAuthEntryRouteActive(): boolean {
+  const routeName = router.currentRoute.value.name
+  const normalizedRouteName = typeof routeName === 'string' ? routeName : ''
+  if (AUTH_ROUTE_NAMES.has(normalizedRouteName)) return true
+
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
+  return (
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/forgot-password' ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/verify-email') ||
+    pathname.startsWith('/auth/callback')
+  )
+}
+
 function scheduleAuthSurfaceBootstrap(): void {
   if (typeof window === 'undefined') return
 
@@ -445,6 +461,7 @@ function scheduleAuthSurfaceBootstrap(): void {
     scheduleTask(
       () => {
         if (scheduledTasksDisposed) return
+        if (isAuthEntryRouteActive()) return
         void ensureAuthStoreLoaded({ initialize: true }).catch((error) => {
           reportClientError('auth.bootstrap_failed', error, undefined, { severity: 'warn' })
         })

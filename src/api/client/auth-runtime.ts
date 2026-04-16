@@ -25,8 +25,46 @@ interface RuntimeSessionPayload {
 }
 
 const DEFAULT_REFRESH_THRESHOLD_SECONDS = 5 * 60
+const LOCAL_AUDIT_AUTH_SESSION_KEY = '__momi_local_audit_auth_session__'
+const ENABLE_LOCAL_AUDIT_AUTH_SESSION_PERSISTENCE =
+  import.meta.env.VITE_LOCAL_AUDIT_PERSIST_AUTH_SESSION === 'true'
 
 let runtimeSession: AuthRuntimeSession | null = null
+
+function readPersistedLocalAuditSession(): AuthRuntimeSession | null {
+  if (!ENABLE_LOCAL_AUDIT_AUTH_SESSION_PERSISTENCE || typeof localStorage === 'undefined') {
+    return null
+  }
+
+  try {
+    const raw = localStorage.getItem(LOCAL_AUDIT_AUTH_SESSION_KEY)
+    if (!raw) return null
+
+    const parsed = JSON.parse(raw) as AuthRuntimeSession
+    if (!parsed?.accessToken || parsed.accessTokenExpiresAt <= Date.now()) {
+      localStorage.removeItem(LOCAL_AUDIT_AUTH_SESSION_KEY)
+      return null
+    }
+
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function persistLocalAuditSession(session: AuthRuntimeSession | null): void {
+  if (!ENABLE_LOCAL_AUDIT_AUTH_SESSION_PERSISTENCE || typeof localStorage === 'undefined') return
+
+  try {
+    if (session) {
+      localStorage.setItem(LOCAL_AUDIT_AUTH_SESSION_KEY, JSON.stringify(session))
+    } else {
+      localStorage.removeItem(LOCAL_AUDIT_AUTH_SESSION_KEY)
+    }
+  } catch {
+    // Local audit persistence is best-effort only; production never enables it.
+  }
+}
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
@@ -109,6 +147,10 @@ function buildRuntimeSession(payload: RuntimeSessionPayload): AuthRuntimeSession
 }
 
 export function getAuthRuntimeSession(): AuthRuntimeSession | null {
+  if (!runtimeSession) {
+    runtimeSession = readPersistedLocalAuditSession()
+  }
+
   return runtimeSession
 }
 
@@ -118,11 +160,13 @@ export function getRuntimeAccessToken(): string | null {
 
 export function establishAuthRuntimeSession(payload: RuntimeSessionPayload): AuthRuntimeSession {
   runtimeSession = buildRuntimeSession(payload)
+  persistLocalAuditSession(runtimeSession)
   return runtimeSession
 }
 
 export function clearAuthRuntimeSession(): void {
   runtimeSession = null
+  persistLocalAuditSession(null)
 }
 
 export function touchAuthzCheck(at = Date.now()): void {
