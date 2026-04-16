@@ -4,12 +4,15 @@
  * 使用 Lighthouse 测试应用性能并生成报告
  */
 
-import { spawn } from 'child_process'
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
-import { createServer } from 'net'
 import { join } from 'path'
 import lighthouse from 'lighthouse'
 import * as chromeLauncher from 'chrome-launcher'
+import { applyLocalAuditEnvToProcess, createLocalAuditEnv } from './lib/audit-env.js'
+import { withBuildArtifactLock } from './lib/build-artifact-lock.js'
+import { PreviewShellManager, runBunTask } from './lib/preview-shell.js'
+
+applyLocalAuditEnvToProcess()
 
 const LIGHTHOUSE_REPORTS_DIR = join(process.cwd(), '.lighthouse')
 const LIGHTHOUSE_TEMP_DIR = join(LIGHTHOUSE_REPORTS_DIR, 'tmp')
@@ -29,7 +32,9 @@ interface TestConfig {
 }
 
 const AUDIT_ENV = {
-  ...process.env,
+  ...createLocalAuditEnv(process.env, {
+    includeContractFallback: true,
+  }),
   VITE_ENABLE_CLIENT_INIT: process.env['VITE_ENABLE_CLIENT_INIT'] ?? 'false',
   VITE_ENABLE_SCHEDULE_API: process.env['VITE_ENABLE_SCHEDULE_API'] ?? 'false',
   VITE_ENABLE_DATA_PREFETCH: process.env['VITE_ENABLE_DATA_PREFETCH'] ?? 'false',
@@ -42,10 +47,6 @@ function getTestUrls(port: number): TestConfig[] {
     { url: `http://localhost:${port}/explore`, name: 'explore' },
     { url: `http://localhost:${port}/search`, name: 'search' },
   ]
-}
-
-function getBunExecutable(): string {
-  return 'bun'
 }
 
 async function resolveChromePath(): Promise<string | null> {
@@ -74,148 +75,6 @@ async function resolveChromePath(): Promise<string | null> {
   }
 
   return cachedChromePathPromise
-}
-
-async function findAvailablePort(preferredPort: number): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = createServer()
-    server.unref()
-    server.once('error', reject)
-    server.listen(preferredPort, () => {
-      const address = server.address()
-      const actualPort =
-        typeof address === 'object' && address && typeof address.port === 'number'
-          ? address.port
-          : preferredPort
-      server.close((error) => {
-        if (error) reject(error)
-        else resolve(actualPort)
-      })
-    })
-  })
-}
-
-async function runBunTask(task: string): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(getBunExecutable(), ['run', task], {
-      stdio: 'inherit',
-      shell: false,
-      env: AUDIT_ENV,
-    })
-
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve()
-      } else {
-        reject(new Error(`bun run ${task} exited with code ${code}`))
-      }
-    })
-
-    child.on('error', reject)
-  })
-}
-
-/**
- * 启动开发服务器
- */
-async function terminateProcessTree(pid: number | undefined): Promise<void> {
-  if (!pid) return
-
-  if (process.platform === 'win32') {
-    await new Promise<void>((resolve) => {
-      const killer = spawn('taskkill', ['/PID', String(pid), '/T', '/F'], {
-        stdio: 'ignore',
-        shell: false,
-      })
-      killer.on('close', () => resolve())
-      killer.on('error', () => resolve())
-    })
-    return
-  }
-
-  try {
-    process.kill(pid, 'SIGTERM')
-  } catch {
-    // Ignore if already closed
-  }
-}
-
-function startPreviewServer(port: number): Promise<{ kill: () => Promise<void>; port: number }> {
-  return new Promise((resolve, reject) => {
-    console.log('🚀 Starting preview server...')
-    const server = spawn(getBunExecutable(), ['run', 'preview', '--port', String(port)], {
-      stdio: 'pipe',
-      shell: false,
-      env: AUDIT_ENV,
-    })
-
-    let resolved = false
-    let startupCheck: ReturnType<typeof setInterval> | null = null
-
-    function cleanupStartupCheck() {
-      if (startupCheck) {
-        clearInterval(startupCheck)
-        startupCheck = null
-      }
-    }
-
-    async function tryResolveWhenReady() {
-      if (resolved) return
-
-      try {
-        const response = await fetch(`http://127.0.0.1:${port}/`, {
-          redirect: 'manual',
-        })
-
-        if (response.status >= 200 && response.status < 500) {
-          resolved = true
-          cleanupStartupCheck()
-          resolve({
-            kill: () => terminateProcessTree(server.pid),
-            port,
-          })
-        }
-      } catch {
-        // preview server not ready yet
-      }
-    }
-
-    server.stdout?.on('data', (data: Buffer) => {
-      const output = data.toString()
-      process.stdout.write(output)
-    })
-
-    server.stderr?.on('data', (data: Buffer) => {
-      console.error(data.toString())
-    })
-
-    server.on('error', (error: Error) => {
-      cleanupStartupCheck()
-      if (!resolved) {
-        reject(error)
-      }
-    })
-
-    server.on('close', (code) => {
-      cleanupStartupCheck()
-      if (!resolved) {
-        reject(new Error(`Preview server exited before becoming ready (code ${code ?? 'unknown'})`))
-      }
-    })
-
-    startupCheck = setInterval(() => {
-      void tryResolveWhenReady()
-    }, 500)
-    void tryResolveWhenReady()
-
-    setTimeout(() => {
-      if (!resolved) {
-        cleanupStartupCheck()
-        void terminateProcessTree(server.pid)
-        reject(new Error(`Preview server startup timeout on port ${port}`))
-      }
-    }, 45000)
-  })
 }
 
 /**
@@ -277,19 +136,27 @@ async function main(): Promise<void> {
     mkdirSync(launcherProfileDir, { recursive: true })
   }
 
-  let previewServer: { kill: () => Promise<void>; port: number } | null = null
+  let previewServer: PreviewShellManager | null = null
   let chrome: chromeLauncher.LaunchedChrome | null = null
 
   try {
     // 先构建生产产物，再用 preview 跑 Lighthouse（更接近真实生产表现）
     console.log('🏗️ Building production bundle...')
-    await runBunTask('build')
+    await withBuildArtifactLock('vite-dist-build', () => runBunTask('build', { env: AUDIT_ENV }), {
+      onWait: () => {
+        console.log('🔒 Waiting for another build process to release the dist artifact lock...')
+      },
+    })
     console.log('✅ Build completed\n')
 
     // 启动预览服务器
-    const previewPort = await findAvailablePort(PREVIEW_SERVER_PORT)
-    previewServer = await startPreviewServer(previewPort)
-    const tests = getTestUrls(previewServer.port)
+    previewServer = new PreviewShellManager({
+      env: AUDIT_ENV,
+      preferredPort: PREVIEW_SERVER_PORT,
+      logOutput: true,
+    })
+    await previewServer.start()
+    const tests = getTestUrls(previewServer.port ?? PREVIEW_SERVER_PORT)
 
     const chromePath = await resolveChromePath()
     chrome = await chromeLauncher.launch({
@@ -327,7 +194,7 @@ async function main(): Promise<void> {
     // 关闭开发服务器
     if (previewServer) {
       console.log('\n🛑 Stopping preview server...')
-      await previewServer.kill()
+      await previewServer.stop()
     }
   }
 }

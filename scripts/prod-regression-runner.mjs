@@ -9,6 +9,7 @@ import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline/promises'
 
 import puppeteer from 'puppeteer'
+import { applyLocalAuditEnvToProcess } from './lib/audit-env.js'
 import {
   getManualRunnerProtectedRoutes,
   getReleaseRouteContractOverview,
@@ -20,6 +21,8 @@ import {
   renderSkippedChecks,
   writeRunnerPreflightArtifacts,
 } from './lib/prod-regression-report.js'
+
+applyLocalAuditEnvToProcess()
 
 const DEFAULT_BASE_URL = 'https://momichan.xyz'
 const DEFAULT_SECONDARY_EMAIL_MODE = 'user-assisted'

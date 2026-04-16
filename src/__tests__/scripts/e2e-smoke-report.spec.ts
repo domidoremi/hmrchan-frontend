@@ -4,14 +4,45 @@ import {
   buildSmokeMarkdownSummary,
   createSmokeSummary,
   getAuthSkipReason,
+  resolveAuthSmokeCredentials,
 } from '../../../scripts/lib/e2e-smoke-report.js'
 
 describe('e2e smoke report helpers', () => {
   it('reports explicit auth skip reasons', () => {
-    expect(getAuthSkipReason('', '')).toBe('E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD are not set')
-    expect(getAuthSkipReason('demo@example.com', '')).toBe('E2E_AUTH_PASSWORD is not set')
-    expect(getAuthSkipReason('', 'secret')).toBe('E2E_AUTH_LOGIN is not set')
-    expect(getAuthSkipReason('demo@example.com', 'secret')).toBeNull()
+    expect(getAuthSkipReason('', '')).toBe(
+      'PRIMARY_USERNAME/PRIMARY_PASSWORD are not set (legacy aliases E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD also supported)'
+    )
+    expect(getAuthSkipReason('demo@example.com', '', 'primary')).toBe('PRIMARY_PASSWORD is not set')
+    expect(getAuthSkipReason('', 'secret', 'primary')).toBe('PRIMARY_USERNAME is not set')
+    expect(getAuthSkipReason('demo@example.com', '', 'legacy')).toBe('E2E_AUTH_PASSWORD is not set')
+    expect(getAuthSkipReason('', 'secret', 'legacy')).toBe('E2E_AUTH_LOGIN is not set')
+    expect(getAuthSkipReason('demo@example.com', 'secret', 'primary')).toBeNull()
+  })
+
+  it('prefers primary auth credentials and keeps legacy aliases as fallback', () => {
+    expect(
+      resolveAuthSmokeCredentials({
+        PRIMARY_USERNAME: 'primary@example.com',
+        PRIMARY_PASSWORD: 'primary-secret',
+        E2E_AUTH_LOGIN: 'legacy@example.com',
+        E2E_AUTH_PASSWORD: 'legacy-secret',
+      })
+    ).toEqual({
+      login: 'primary@example.com',
+      password: 'primary-secret',
+      source: 'primary',
+    })
+
+    expect(
+      resolveAuthSmokeCredentials({
+        E2E_AUTH_LOGIN: 'legacy@example.com',
+        E2E_AUTH_PASSWORD: 'legacy-secret',
+      })
+    ).toEqual({
+      login: 'legacy@example.com',
+      password: 'legacy-secret',
+      source: 'legacy',
+    })
   })
 
   it('renders guest and auth summary rows with readiness selectors and failure evidence', () => {
@@ -66,7 +97,8 @@ describe('e2e smoke report helpers', () => {
     const summary = createSmokeSummary('.e2e-smoke', '', '')
     summary.baseUrl = 'http://localhost:4173'
     summary.authSmokeRequired = true
-    summary.authSmokeSkipReason = 'E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD are not set'
+    summary.authSmokeSkipReason =
+      'PRIMARY_USERNAME/PRIMARY_PASSWORD are not set (legacy aliases E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD also supported)'
     summary.checks.push({
       name: 'auth login bootstrap',
       kind: 'auth',
@@ -78,7 +110,9 @@ describe('e2e smoke report helpers', () => {
 
     const markdown = buildSmokeMarkdownSummary(summary)
 
-    expect(markdown).toContain('Auth smoke: skipped (E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD are not set)')
+    expect(markdown).toContain(
+      'Auth smoke: skipped (PRIMARY_USERNAME/PRIMARY_PASSWORD are not set (legacy aliases E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD also supported))'
+    )
     expect(markdown).toContain('Auth smoke required: yes')
     expect(markdown).toContain('Auth skipped routes: 1')
   })

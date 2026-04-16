@@ -1,4 +1,7 @@
 const IGNORED_OPTIONAL_ENDPOINTS = ['/client-report']
+const IGNORED_THIRD_PARTY_HEALTH_ENDPOINTS = [
+  'https://challenges.cloudflare.com/cdn-cgi/challenge-platform/',
+]
 
 interface HealthFilterOptions {
   allowLocalPreviewApiNoise?: boolean
@@ -41,6 +44,12 @@ export function isIgnoredOptionalEndpoint(urlOrText: string): boolean {
   return IGNORED_OPTIONAL_ENDPOINTS.some((path) => normalized.includes(path))
 }
 
+function isIgnoredThirdPartyHealthEndpoint(urlOrText: string): boolean {
+  const normalized = normalizeText(urlOrText)
+
+  return IGNORED_THIRD_PARTY_HEALTH_ENDPOINTS.some((prefix) => normalized.includes(prefix))
+}
+
 export function shouldIgnoreConsoleError(
   text: string,
   includeApiErrors: boolean,
@@ -56,6 +65,8 @@ export function shouldIgnoreConsoleError(
   return (
     isIgnoredOptionalEndpoint(normalized) ||
     isIgnoredOptionalEndpoint(normalizedLocation) ||
+    isIgnoredThirdPartyHealthEndpoint(normalized) ||
+    isIgnoredThirdPartyHealthEndpoint(normalizedLocation) ||
     isLocalPreviewApiNoise(text, options) ||
     isLocalPreviewApiNoise(locationUrl ?? '', options)
   )
@@ -69,5 +80,9 @@ export function shouldIgnoreRequestIssue(
   if (includeApiErrors) return false
 
   const normalized = normalizeText(url)
-  return isIgnoredOptionalEndpoint(normalized) || isLocalPreviewApiNoise(url, options)
+  return (
+    isIgnoredOptionalEndpoint(normalized) ||
+    isIgnoredThirdPartyHealthEndpoint(normalized) ||
+    isLocalPreviewApiNoise(url, options)
+  )
 }

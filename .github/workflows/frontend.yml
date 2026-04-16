@@ -27,6 +27,7 @@ env:
   CI: true
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   BUN_VERSION: 1.3.11
+  VITE_CLIENT_CONTRACT_VERSION: ${{ vars.CLIENT_CONTRACT_VERSION || 'test-contract-hash' }}
 
 defaults:
   run:
@@ -152,12 +153,10 @@ jobs:
 
       - name: Smoke E2E
         env:
-          # Auth smoke is required in trusted CI contexts. Fork PRs fall back to guest-only smoke
-          # because secrets are unavailable there.
           E2E_ARTIFACT_DIR: .e2e-smoke
-          E2E_REQUIRE_AUTH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
-          E2E_AUTH_LOGIN: ${{ secrets.E2E_AUTH_LOGIN }}
-          E2E_AUTH_PASSWORD: ${{ secrets.E2E_AUTH_PASSWORD }}
+          E2E_REQUIRE_AUTH: 'true'
+          PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
+          PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
           mkdir -p .e2e-smoke
           status=0
@@ -197,6 +196,9 @@ jobs:
       - name: Frontend health smoke
         env:
           FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health
+          FRONTEND_HEALTH_REQUIRE_AUTH: 'true'
+          PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
+          PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
           mkdir -p .frontend-health
           status=0
@@ -262,9 +264,8 @@ jobs:
           E2E_AUTOSTART: 'false'
           E2E_ARTIFACT_DIR: .e2e-smoke-prod
           E2E_REQUIRE_AUTH: 'true'
-          # Uses the same non-MFA, non-step-up smoke account contract as preview auth smoke.
-          E2E_AUTH_LOGIN: ${{ secrets.E2E_AUTH_LOGIN }}
-          E2E_AUTH_PASSWORD: ${{ secrets.E2E_AUTH_PASSWORD }}
+          PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
+          PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
           mkdir -p .e2e-smoke-prod
           status=0
@@ -315,9 +316,9 @@ jobs:
             echo "| Dependency review | ${DEP_REVIEW_RESULT:-not-run} | [Workflow run](${RUN_URL}) |"
             echo "| Type check / Lint / Unit tests | ${QUALITY_RESULT} | [Workflow run](${RUN_URL}) |"
             echo "| Coverage baseline gate | ${COVERAGE_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`coverage-report\` |"
-            echo "| Smoke E2E (guest + auth required in trusted CI) | ${E2E_RESULT} | [Workflow run](${RUN_URL}) |"
-            echo "| Frontend health smoke | ${HEALTH_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`frontend-health\` |"
+            echo "| Smoke E2E (auth fixture required) | ${E2E_RESULT} | [Workflow run](${RUN_URL}) |"
+            echo "| Frontend health smoke (auth fixture required) | ${HEALTH_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`frontend-health\` |"
             echo "| A11y / Perf nightly | scheduled | See the nightly workflow for the latest artifacts and summaries. |"
             echo
-            echo "> Blocking gates now cover quality, coverage baseline, smoke E2E, and preview-shell frontend health. Trusted CI contexts require auth smoke; fork PRs degrade to guest-only because secrets are unavailable. Pushes to \`main\` additionally trigger a production canary against [momichan.xyz](https://momichan.xyz). High-risk comment/profile/device/favorite changes should still run \`bun run check:release-evidence\` or at minimum \`bun run test:prod:regression --preflight\` before release, and CI-noise warnings that affect result reading must be fixed or explicitly documented."
+            echo "> Blocking gates now cover quality, coverage baseline, smoke E2E, and preview-shell frontend health with the shared public smoke fixture account. Pushes to \`main\` additionally trigger a production canary against [momichan.xyz](https://momichan.xyz). High-risk comment/profile/device/favorite changes should still run \`bun run check:release-evidence\` or at minimum \`bun run test:prod:regression --preflight\` before release, and CI-noise warnings that affect result reading must be fixed or explicitly documented."
           } >> "$GITHUB_STEP_SUMMARY"

@@ -17,13 +17,58 @@ export function createSmokeSummary(artifactDir, authLogin, authPassword) {
   }
 }
 
-export function getAuthSkipReason(authLogin, authPassword) {
-  if (authLogin && authPassword) return null
-  if (!authLogin && !authPassword) {
-    return 'E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD are not set'
+export function resolveAuthSmokeCredentials(env = process.env) {
+  const primaryLogin = env.PRIMARY_USERNAME?.trim() ?? ''
+  const primaryPassword = env.PRIMARY_PASSWORD ?? ''
+  if (primaryLogin || primaryPassword) {
+    return {
+      login: primaryLogin,
+      password: primaryPassword,
+      source: 'primary',
+    }
   }
-  if (!authLogin) return 'E2E_AUTH_LOGIN is not set'
-  return 'E2E_AUTH_PASSWORD is not set'
+
+  const legacyLogin = env.E2E_AUTH_LOGIN?.trim() ?? ''
+  const legacyPassword = env.E2E_AUTH_PASSWORD ?? ''
+  if (legacyLogin || legacyPassword) {
+    return {
+      login: legacyLogin,
+      password: legacyPassword,
+      source: 'legacy',
+    }
+  }
+
+  return {
+    login: '',
+    password: '',
+    source: 'none',
+  }
+}
+
+export function getAuthSkipReason(authLogin, authPassword, source = 'none') {
+  if (authLogin && authPassword) return null
+
+  if (source === 'primary') {
+    if (!authLogin && !authPassword) {
+      return 'PRIMARY_USERNAME/PRIMARY_PASSWORD are not set'
+    }
+    if (!authLogin) return 'PRIMARY_USERNAME is not set'
+    return 'PRIMARY_PASSWORD is not set'
+  }
+
+  if (source === 'legacy') {
+    if (!authLogin && !authPassword) {
+      return 'E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD are not set'
+    }
+    if (!authLogin) return 'E2E_AUTH_LOGIN is not set'
+    return 'E2E_AUTH_PASSWORD is not set'
+  }
+
+  if (!authLogin && !authPassword) {
+    return 'PRIMARY_USERNAME/PRIMARY_PASSWORD are not set (legacy aliases E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD also supported)'
+  }
+  if (!authLogin) return 'PRIMARY_USERNAME is not set'
+  return 'PRIMARY_PASSWORD is not set'
 }
 
 function groupChecks(summary, mode) {
@@ -93,6 +138,7 @@ export function buildSmokeMarkdownSummary(summary) {
     `- Last failure title: ${summary.lastFailureEvidence?.title ?? 'n/a'}`,
     `- Failure screenshot: ${summary.lastFailureEvidence?.screenshotPath ?? 'n/a'}`,
     `- Failure HTML snapshot: ${summary.lastFailureEvidence?.htmlSnapshotPath ?? 'n/a'}`,
+    `- Preview diagnostics attached: ${summary.lastFailureEvidence?.previewDiagnostics?.length ? 'yes' : 'no'}`,
     '',
     '### Auth Account Contract',
     '',
@@ -102,6 +148,14 @@ export function buildSmokeMarkdownSummary(summary) {
     '',
     renderTable(guestChecks, 'Guest Smoke'),
     renderTable(authChecks, 'Auth Smoke'),
+    ...(summary.lastFailureEvidence?.previewDiagnostics?.length
+      ? [
+          '### Preview Diagnostics',
+          '',
+          ...summary.lastFailureEvidence.previewDiagnostics.map((line) => `- ${line}`),
+          '',
+        ]
+      : []),
   ].join('\n')
 }
 

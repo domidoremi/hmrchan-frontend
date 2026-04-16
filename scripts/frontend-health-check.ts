@@ -8,13 +8,26 @@
  */
 
 import puppeteer, { type Viewport, type Page } from 'puppeteer'
-import { spawn, type ChildProcess } from 'child_process'
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
+import {
+  applyLocalAuditEnvToProcess,
+  createLocalAuditEnv,
+  resolveLocalAuditPreviewPorts,
+} from './lib/audit-env.js'
 import { shouldIgnoreConsoleError, shouldIgnoreRequestIssue } from './lib/frontend-health'
 import { withBuildArtifactLock } from './lib/build-artifact-lock.js'
+import {
+  PreviewShellManager,
+  clearLocalAuditRateLimitState,
+  grantLocalAuditClientTrust,
+  grantLocalAuditTurnstileTrust,
+  runBunTask,
+} from './lib/preview-shell.js'
 import { getSmokeRouteMatrix } from './lib/release-route-contract.js'
-import { getAuthSkipReason } from './lib/e2e-smoke-report.js'
+import { getAuthSkipReason, resolveAuthSmokeCredentials } from './lib/e2e-smoke-report.js'
+
+applyLocalAuditEnvToProcess()
 
 interface ScanIssue {
   type: string
@@ -60,6 +73,23 @@ interface HealthFailureEvidence {
   url: string | null
   screenshotPath: string | null
   htmlSnapshotPath: string | null
+  previewDiagnostics: string[] | null
+}
+
+type JsonRecord = Record<string, unknown>
+
+type CdpRequestWillBeSentEvent = {
+  requestId: string
+  request?: {
+    method?: string
+    url?: string
+    headers?: Record<string, unknown>
+  }
+}
+
+type CdpRequestWillBeSentExtraInfoEvent = {
+  requestId: string
+  headers?: Record<string, unknown>
 }
 
 interface FrontendHealthSummary {
@@ -81,25 +111,39 @@ interface FrontendHealthSummary {
 const BASE_URL = process.env['FRONTEND_HEALTH_BASE_URL'] ?? 'http://127.0.0.1:5174'
 const ARTIFACT_DIR = process.env['FRONTEND_HEALTH_ARTIFACT_DIR']?.trim() || '.frontend-health'
 const AUTO_START = process.env['FRONTEND_HEALTH_AUTOSTART'] !== 'false'
-const PREVIEW_PORT = Number(process.env['FRONTEND_HEALTH_PREVIEW_PORT'] ?? '4174')
+const PREVIEW_PORT = Number(process.env['FRONTEND_HEALTH_PREVIEW_PORT'] ?? '4173')
 const INCLUDE_API_ERRORS = process.env['FRONTEND_HEALTH_INCLUDE_API_ERRORS'] === 'true'
 const SAMPLE_POST_ROUTE =
   process.env['FRONTEND_HEALTH_SAMPLE_POST_ROUTE'] ?? '/post/6c73f45a-a7ec-481d-9bc5-9b09ee560fcc'
 const SAMPLE_DISCUSSION_ROUTE =
   process.env['FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE'] ??
   '/community/discussions/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
-const AUTH_LOGIN = process.env['E2E_AUTH_LOGIN']?.trim() ?? ''
-const AUTH_PASSWORD = process.env['E2E_AUTH_PASSWORD']?.trim() ?? ''
+const AUTH_CREDENTIALS = resolveAuthSmokeCredentials(process.env)
+const AUTH_LOGIN = AUTH_CREDENTIALS.login
+const AUTH_PASSWORD = AUTH_CREDENTIALS.password
 const AUTH_REQUIRED =
-  process.env['FRONTEND_HEALTH_REQUIRE_AUTH'] === 'true' ||
-  process.env['E2E_REQUIRE_AUTH'] === 'true'
+  (process.env['FRONTEND_HEALTH_REQUIRE_AUTH'] ?? process.env['E2E_REQUIRE_AUTH'] ?? 'true') !==
+  'false'
+const BASE_AUDIT_ENV = createLocalAuditEnv(process.env, {
+  includeContractFallback: true,
+})
+const AUDIT_ENV_HAS_AUTH = Boolean(AUTH_LOGIN && AUTH_PASSWORD)
 const AUDIT_ENV = {
-  ...process.env,
-  VITE_ENABLE_CLIENT_INIT: process.env['VITE_ENABLE_CLIENT_INIT'] ?? 'false',
-  VITE_ENABLE_SCHEDULE_API: process.env['VITE_ENABLE_SCHEDULE_API'] ?? 'false',
-  VITE_ENABLE_DATA_PREFETCH: process.env['VITE_ENABLE_DATA_PREFETCH'] ?? 'false',
-  VITE_DISABLE_PREVIEW_PROXY: process.env['VITE_DISABLE_PREVIEW_PROXY'] ?? 'true',
+  ...BASE_AUDIT_ENV,
+  VITE_ENABLE_CLIENT_INIT: AUDIT_ENV_HAS_AUTH
+    ? 'true'
+    : (BASE_AUDIT_ENV['VITE_ENABLE_CLIENT_INIT'] ?? 'false'),
+  VITE_ENABLE_SCHEDULE_API: BASE_AUDIT_ENV['VITE_ENABLE_SCHEDULE_API'] ?? 'false',
+  VITE_ENABLE_DATA_PREFETCH: BASE_AUDIT_ENV['VITE_ENABLE_DATA_PREFETCH'] ?? 'false',
+  VITE_DISABLE_PREVIEW_PROXY: AUDIT_ENV_HAS_AUTH
+    ? 'false'
+    : (BASE_AUDIT_ENV['VITE_DISABLE_PREVIEW_PROXY'] ?? 'true'),
 }
+const PREVIEW_PORT_CANDIDATES = resolveLocalAuditPreviewPorts(AUDIT_ENV, [
+  'FRONTEND_HEALTH_PREVIEW_PORTS',
+  'FRONTEND_HEALTH_PREVIEW_PORT',
+  'LOCAL_AUDIT_PREVIEW_PORTS',
+])
 
 const GUEST_ROUTES: HealthRouteDefinition[] = [
   ...getSmokeRouteMatrix({
@@ -143,6 +187,10 @@ const AUTH_ROUTES: HealthRouteDefinition[] = getSmokeRouteMatrix({
   readinessSelectorsAll: route.readinessSelectorsAll,
   readinessSelectorsAny: route.readinessSelectorsAny,
 }))
+const EFFECTIVE_GUEST_ROUTES =
+  AUTH_LOGIN && AUTH_PASSWORD
+    ? GUEST_ROUTES.filter((route) => !isGuestProtectedRedirectRoute(route))
+    : GUEST_ROUTES
 
 const VIEWPORTS: Array<{ name: string; value: Viewport }> = [
   { name: 'desktop', value: { width: 1440, height: 900 } },
@@ -163,6 +211,54 @@ function isGuestProtectedRedirectRoute(
   route: Pick<HealthRouteDefinition, 'mode' | 'expectedPath'>
 ): boolean {
   return route.mode === 'guest' && route.expectedPath === '/login'
+}
+
+async function collectBrowserTrustHeaders(page: Page): Promise<Record<string, string>> {
+  return page.evaluate(() => {
+    const nav = navigator as Navigator & {
+      userAgentData?: {
+        brands?: Array<{ brand: string; version: string }>
+        platform?: string
+      }
+    }
+    const languageCandidates = new Set<string>()
+    const languages = Array.isArray(navigator.languages) ? navigator.languages.filter(Boolean) : []
+    if (languages.length > 0) {
+      languageCandidates.add(
+        languages
+          .map((language, index) =>
+            index === 0 ? language : `${language};q=${(1 - index / 10).toFixed(1)}`
+          )
+          .join(',')
+      )
+    }
+    if (navigator.language) {
+      languageCandidates.add(navigator.language)
+      const baseLanguage = navigator.language.split('-')[0]
+      if (baseLanguage && baseLanguage !== navigator.language) {
+        languageCandidates.add(`${navigator.language},${baseLanguage};q=0.9`)
+      }
+    }
+
+    const clientHintsBrands = nav.userAgentData?.brands
+      ?.map((brand) => `"${brand.brand}";v="${brand.version}"`)
+      .join(', ')
+    const platform = nav.userAgentData?.platform ? `"${nav.userAgentData.platform}"` : ''
+
+    return {
+      'user-agent': navigator.userAgent,
+      'sec-ch-ua': clientHintsBrands ?? '',
+      'sec-ch-ua-platform': platform,
+      'accept-language': navigator.language || '',
+      'x-local-audit-candidates-accept-language': [...languageCandidates].join('\n'),
+      'x-local-audit-candidates-sec-ch-ua': clientHintsBrands ?? '',
+      'x-local-audit-candidates-sec-ch-ua-platform': platform,
+    }
+  })
+}
+
+function asJsonRecord(value: unknown): JsonRecord | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as JsonRecord) : null
 }
 
 function filterGuestProtectedRedirectNoise(
@@ -291,65 +387,6 @@ async function assertHealthRouteContract(page: Page, route: HealthRouteDefinitio
   await ensureRouteReadiness(page, route)
 }
 
-function getBunExecutable(): string {
-  return 'bun'
-}
-
-async function runBunTask(task: string): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(getBunExecutable(), ['run', task], {
-      stdio: 'inherit',
-      shell: false,
-      env: AUDIT_ENV,
-    })
-
-    child.on('close', (code) => {
-      if (code === 0) resolve()
-      else reject(new Error(`bun run ${task} exited with code ${code}`))
-    })
-    child.on('error', reject)
-  })
-}
-
-async function terminateProcessTree(pid: number | undefined): Promise<void> {
-  if (!pid) return
-
-  if (process.platform === 'win32') {
-    await new Promise<void>((resolve) => {
-      const killer = spawn('taskkill', ['/PID', String(pid), '/T', '/F'], {
-        stdio: 'ignore',
-        shell: false,
-      })
-      killer.on('close', () => resolve())
-      killer.on('error', () => resolve())
-    })
-    return
-  }
-
-  try {
-    process.kill(pid, 'SIGTERM')
-  } catch {
-    // ignore
-  }
-}
-
-async function waitForProcessExit(child: ChildProcess, timeoutMs = 10_000): Promise<void> {
-  if (child.exitCode !== null || child.killed) {
-    return
-  }
-
-  await new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, timeoutMs)
-    const finish = () => {
-      clearTimeout(timer)
-      resolve()
-    }
-
-    child.once('close', finish)
-    child.once('error', finish)
-  })
-}
-
 async function isBaseUrlReachable(url: string): Promise<boolean> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 4_000)
@@ -363,96 +400,13 @@ async function isBaseUrlReachable(url: string): Promise<boolean> {
   }
 }
 
-function startPreviewServer(
-  port: number
-): Promise<{ kill: () => Promise<void>; baseUrl: string; port: number }> {
-  return new Promise((resolve, reject) => {
-    console.log(`🚀 Starting preview server on ${port}...`)
-    const server = spawn(getBunExecutable(), ['run', 'preview', '--port', String(port)], {
-      stdio: 'ignore',
-      shell: false,
-      env: AUDIT_ENV,
-    })
-
-    let resolved = false
-    let startupCheck: ReturnType<typeof setInterval> | null = null
-    let startupTimeout: ReturnType<typeof setTimeout> | null = null
-
-    function cleanupStartupCheck() {
-      if (startupCheck) {
-        clearInterval(startupCheck)
-        startupCheck = null
-      }
-    }
-
-    function cleanupStartupTimeout() {
-      if (startupTimeout) {
-        clearTimeout(startupTimeout)
-        startupTimeout = null
-      }
-    }
-
-    async function tryResolveWhenReady() {
-      if (resolved) return
-
-      try {
-        const response = await fetch(`http://127.0.0.1:${port}/`, {
-          redirect: 'manual',
-        })
-        if (response.status >= 200 && response.status < 500) {
-          resolved = true
-          cleanupStartupCheck()
-          cleanupStartupTimeout()
-          server.unref()
-          resolve({
-            kill: async () => {
-              await terminateProcessTree(server.pid)
-              await waitForProcessExit(server)
-            },
-            baseUrl: `http://127.0.0.1:${port}`,
-            port,
-          })
-        }
-      } catch {
-        // preview server not ready yet
-      }
-    }
-
-    server.on('error', (error: Error) => {
-      cleanupStartupCheck()
-      cleanupStartupTimeout()
-      if (!resolved) reject(error)
-    })
-
-    server.on('close', (code) => {
-      cleanupStartupCheck()
-      cleanupStartupTimeout()
-      if (!resolved) {
-        reject(new Error(`Preview server exited before becoming ready (code ${code ?? 'unknown'})`))
-      }
-    })
-
-    startupCheck = setInterval(() => {
-      void tryResolveWhenReady()
-    }, 500)
-    void tryResolveWhenReady()
-
-    startupTimeout = setTimeout(() => {
-      if (!resolved) {
-        cleanupStartupCheck()
-        void terminateProcessTree(server.pid)
-        reject(new Error('Preview server startup timeout'))
-      }
-    }, 45_000)
-  })
-}
-
 async function captureFailureEvidence(
   page: Page,
   artifactDir: string,
   route: string,
   viewport: string,
-  issue: ScanIssue
+  issue: ScanIssue,
+  getPreviewDiagnostics?: (() => string[] | null) | null
 ): Promise<HealthFailureEvidence> {
   await mkdir(artifactDir, { recursive: true })
 
@@ -488,6 +442,7 @@ async function captureFailureEvidence(
     url,
     screenshotPath,
     htmlSnapshotPath: typeof html === 'string' ? htmlSnapshotPath : null,
+    previewDiagnostics: getPreviewDiagnostics?.() ?? null,
   }
 }
 
@@ -499,45 +454,260 @@ async function authenticateViaApi(
   const page = await browser.newPage()
 
   try {
-    await page.goto(`${baseUrl}/login`, {
-      waitUntil: 'domcontentloaded',
-      timeout: 30_000,
-    })
-
-    const result = await page.evaluate(async ({ login, password }) => {
-      const response = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'content-type': 'application/json',
+    const waitForLoginExit = (timeout: number) =>
+      page.waitForFunction(
+        () =>
+          window.location.pathname !== '/login' && !window.location.pathname.startsWith('/login/'),
+        { timeout }
+      )
+    const waitForClientCredentials = (timeout: number) =>
+      page.waitForFunction(
+        () => {
+          const raw = window.localStorage.getItem('momi_client_security')
+          if (!raw) return false
+          try {
+            const parsed = JSON.parse(raw) as { client_token?: unknown; client_secret?: unknown }
+            return Boolean(
+              typeof parsed.client_token === 'string' &&
+              parsed.client_token.trim() &&
+              typeof parsed.client_secret === 'string' &&
+              parsed.client_secret.trim()
+            )
+          } catch {
+            return false
+          }
         },
-        body: JSON.stringify({
-          username: login,
-          password,
-          device_name: 'Frontend Health Browser',
-          device_type: 'desktop',
-        }),
+        { timeout }
+      )
+    const forceIssueClientCredentials = async () => {
+      const result = await page.evaluate(async () => {
+        const credentialStorageKey = 'momi_client_security'
+        const fingerprintStorageKey = 'momi_device_fingerprint_v1'
+
+        const readPersistedFingerprint = (): string | null => {
+          try {
+            const raw = window.localStorage.getItem(fingerprintStorageKey)
+            if (!raw) return null
+            const parsed = JSON.parse(raw) as { value?: unknown }
+            return typeof parsed.value === 'string' && parsed.value.trim() ? parsed.value : null
+          } catch {
+            return null
+          }
+        }
+
+        const getFallbackFingerprint = async (): Promise<string> => {
+          const components = [
+            navigator.userAgent,
+            navigator.language,
+            screen.width.toString(),
+            screen.height.toString(),
+            screen.colorDepth.toString(),
+            new Date().getTimezoneOffset().toString(),
+            navigator.hardwareConcurrency?.toString() || '',
+            navigator.maxTouchPoints?.toString() || '',
+          ]
+          const fingerprintSource = components.join('|')
+
+          try {
+            const encoder = new TextEncoder()
+            const data = encoder.encode(fingerprintSource)
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+            const hashArray = Array.from(new Uint8Array(hashBuffer))
+            return hashArray
+              .map((byte) => byte.toString(16).padStart(2, '0'))
+              .join('')
+              .slice(0, 32)
+          } catch {
+            let hash = 0
+            for (let index = 0; index < fingerprintSource.length; index += 1) {
+              hash = (hash << 5) - hash + fingerprintSource.charCodeAt(index)
+              hash &= hash
+            }
+            return Math.abs(hash).toString(16).padStart(8, '0')
+          }
+        }
+
+        const clientFingerprint = readPersistedFingerprint() ?? (await getFallbackFingerprint())
+        window.localStorage.setItem(
+          fingerprintStorageKey,
+          JSON.stringify({
+            value: clientFingerprint,
+            cachedAt: Date.now(),
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            platform: navigator.platform,
+          })
+        )
+        window.localStorage.removeItem(credentialStorageKey)
+
+        const response = await fetch('/api/v1/client/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_fingerprint: clientFingerprint,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            screen_resolution: `${screen.width}x${screen.height}`,
+            platform: navigator.platform || undefined,
+            timestamp: Math.floor(Date.now() / 1000),
+            nonce: Math.random().toString(16).slice(2).padEnd(16, '0').slice(0, 16),
+            force_reissue: true,
+          }),
+        })
+
+        const rawBody = await response.text()
+        let body: JsonRecord | null = null
+        try {
+          body = asJsonRecord(rawBody ? JSON.parse(rawBody) : null)
+        } catch {
+          body = null
+        }
+
+        if (!response.ok) {
+          return {
+            ok: false,
+            status: response.status,
+            detail: body?.detail ?? body?.message ?? rawBody,
+          }
+        }
+
+        const payload = asJsonRecord(body?.data) ?? body
+        const clientToken = typeof payload?.client_token === 'string' ? payload.client_token : ''
+        const clientSecret = typeof payload?.client_secret === 'string' ? payload.client_secret : ''
+        if (!clientToken.trim() || !clientSecret.trim()) {
+          return {
+            ok: false,
+            status: response.status,
+            detail: 'client/init force_reissue did not return signing credentials',
+          }
+        }
+
+        window.localStorage.setItem(
+          credentialStorageKey,
+          JSON.stringify({
+            client_token: clientToken,
+            client_secret: clientSecret,
+          })
+        )
+
+        return {
+          ok: true,
+          status: response.status,
+          trustLevel: payload?.trust_level,
+          challengeRequired: payload?.challenge_required,
+        }
       })
 
-      let payload: unknown = null
-      try {
-        payload = await response.json()
-      } catch {
-        payload = null
+      if (!result.ok) {
+        throw new Error(
+          `Frontend health auth bootstrap failed to force issue client credentials: HTTP ${result.status} ${result.detail ?? ''}`.trim()
+        )
       }
-
-      return {
-        ok: response.ok,
-        status: response.status,
-        payload,
-      }
-    }, credentials)
-
-    if (!result.ok) {
-      throw new Error(
-        `Frontend health auth bootstrap failed with status ${result.status}: ${JSON.stringify(result.payload)}`
-      )
     }
+    const ensureClientCredentials = async () => {
+      const hasExistingCredentials = await waitForClientCredentials(10_000)
+        .then(() => true)
+        .catch(() => false)
+      if (hasExistingCredentials) {
+        return
+      }
+
+      await forceIssueClientCredentials()
+      await waitForClientCredentials(2_000)
+    }
+    const submitLoginForm = () =>
+      page.$eval('form.auth-form', (form) => {
+        ;(form as HTMLFormElement).requestSubmit()
+      })
+
+    const loginSelector = '#login-identifier'
+    const passwordSelector = '#login-password'
+    let latestLoginRequestHeaders: Record<string, string> | null = null
+    const loginRequestIds = new Set<string>()
+    const normalizeHeaders = (headers: Record<string, unknown> | undefined) =>
+      Object.fromEntries(
+        Object.entries(headers ?? {}).map(([key, value]) => [key.toLowerCase(), String(value)])
+      )
+    const cdpSession = await page.createCDPSession()
+    await cdpSession.send('Network.enable')
+    cdpSession.on('Network.requestWillBeSent', (event: CdpRequestWillBeSentEvent) => {
+      const request = event.request
+      if (request?.method === 'POST' && request.url?.includes('/api/v1/auth/login')) {
+        loginRequestIds.add(event.requestId)
+        latestLoginRequestHeaders = {
+          ...(latestLoginRequestHeaders ?? {}),
+          ...normalizeHeaders(request.headers),
+        }
+      }
+    })
+    cdpSession.on(
+      'Network.requestWillBeSentExtraInfo',
+      (event: CdpRequestWillBeSentExtraInfoEvent) => {
+        if (!loginRequestIds.has(event.requestId)) return
+        latestLoginRequestHeaders = {
+          ...(latestLoginRequestHeaders ?? {}),
+          ...normalizeHeaders(event.headers),
+        }
+      }
+    )
+    page.on('request', (request) => {
+      if (request.method() === 'POST' && request.url().includes('/api/v1/auth/login')) {
+        latestLoginRequestHeaders = {
+          ...(latestLoginRequestHeaders ?? {}),
+          ...request.headers(),
+        }
+      }
+    })
+    const openAndFillLoginForm = async () => {
+      await page.goto(`${baseUrl}/login`, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30_000,
+      })
+
+      await page.waitForSelector(loginSelector, { timeout: 20_000 })
+      await page.click(loginSelector, { clickCount: 3 })
+      await page.type(loginSelector, credentials.login, { delay: 20 })
+      await page.click(passwordSelector, { clickCount: 3 })
+      await page.type(passwordSelector, credentials.password, { delay: 20 })
+    }
+
+    await openAndFillLoginForm()
+
+    const submitButton = await page.$('form.auth-form button[type="submit"], form.auth-form button')
+    if (!submitButton) {
+      throw new Error('Frontend health auth bootstrap submit button is missing')
+    }
+    await submitLoginForm()
+
+    const loginExited = await waitForLoginExit(5_000)
+      .then(() => true)
+      .catch(() => false)
+    if (!loginExited) {
+      await ensureClientCredentials()
+      const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
+      if (trustedVisitorCount > 0) {
+        console.log(
+          `   • Granted local audit client trust for ${trustedVisitorCount} visitor key(s)`
+        )
+        const browserTrustHeaders = await collectBrowserTrustHeaders(page)
+        if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+          console.log('   • Local audit login headers:', latestLoginRequestHeaders)
+          console.log('   • Local audit browser headers:', browserTrustHeaders)
+        }
+        const trustedTurnstileCount = await grantLocalAuditTurnstileTrust(AUDIT_ENV, {
+          ...browserTrustHeaders,
+          ...(latestLoginRequestHeaders ?? {}),
+        })
+        if (trustedTurnstileCount > 0) {
+          console.log(
+            `   • Granted local audit Turnstile trust for ${trustedTurnstileCount} key(s)`
+          )
+        }
+        await openAndFillLoginForm()
+      }
+      await submitLoginForm()
+      await waitForLoginExit(25_000)
+    }
+    await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
   } finally {
     await page.close().catch(() => undefined)
   }
@@ -574,6 +744,13 @@ function buildHealthMarkdown(summary: FrontendHealthSummary): string {
   if (summary.firstBlockingIssue?.issueDetails.length) {
     lines.push('', '### First Blocking Details', '')
     for (const detail of summary.firstBlockingIssue.issueDetails) {
+      lines.push(`- ${detail}`)
+    }
+  }
+
+  if (summary.firstBlockingIssue?.previewDiagnostics?.length) {
+    lines.push('', '### Preview Diagnostics', '')
+    for (const detail of summary.firstBlockingIssue.previewDiagnostics) {
       lines.push(`- ${detail}`)
     }
   }
@@ -763,14 +940,61 @@ function collectProbeIssues(probe: RuntimeProbe): ScanIssue[] {
   return issues
 }
 
+function attachPageDiagnostics(
+  page: Page,
+  healthFilterOptions: { baseOrigin: string },
+  consoleErrors: Set<string>,
+  requestFailures: Set<string>,
+  badResponses: Set<string>
+): void {
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      const text = msg.text()
+      if (
+        shouldIgnoreConsoleError(text, INCLUDE_API_ERRORS, msg.location().url, healthFilterOptions)
+      ) {
+        return
+      }
+      const issueType = text.toLowerCase().includes('failed to load resource')
+        ? 'blocking-http-error'
+        : 'console-error'
+      consoleErrors.add(`${issueType}::${msg.text()}`)
+    }
+  })
+
+  page.on('requestfailed', (req) => {
+    if (shouldIgnoreRequestIssue(req.url(), INCLUDE_API_ERRORS, healthFilterOptions)) return
+    const reason = req.failure()?.errorText ?? 'unknown'
+    requestFailures.add(`${req.method()} ${req.url()} (${reason})`)
+  })
+
+  page.on('response', (res) => {
+    const status = res.status()
+    if (shouldIgnoreRequestIssue(res.url(), INCLUDE_API_ERRORS, healthFilterOptions)) return
+    if (status >= 400) {
+      badResponses.add(`${status} ${res.request().method()} ${res.url()}`)
+    }
+  })
+}
+
+async function shouldRecoverManagedPreview(
+  page: Page,
+  managedPreview: PreviewShellManager | null
+): Promise<boolean> {
+  if (!managedPreview) return false
+  if (page.url().startsWith('chrome-error://')) return true
+  return !(await managedPreview.isHealthy())
+}
+
 async function main() {
   let effectiveBaseUrl = BASE_URL
-  let managedServer: { kill: () => Promise<void>; baseUrl: string; port: number } | null = null
+  let managedServer: PreviewShellManager | null = null
   const results: RouteResult[] = []
   let crashed = false
   let firstBlockingIssue: HealthFailureEvidence | null = null
-  const authSkipReason = getAuthSkipReason(AUTH_LOGIN, AUTH_PASSWORD)
+  const authSkipReason = getAuthSkipReason(AUTH_LOGIN, AUTH_PASSWORD, AUTH_CREDENTIALS.source)
   const authCredentialsDetected = Boolean(AUTH_LOGIN && AUTH_PASSWORD)
+  const getPreviewDiagnostics = () => managedServer?.formatDiagnosticsLines() ?? null
 
   try {
     await mkdir(ARTIFACT_DIR, { recursive: true })
@@ -785,13 +1009,23 @@ async function main() {
 
       console.log(`⚠️ Base URL unavailable: ${BASE_URL}`)
       console.log('🏗️ Building project for preview-based health check...')
-      await withBuildArtifactLock('vite-dist-build', () => runBunTask('build'), {
-        onWait: () => {
-          console.log('🔒 Waiting for another build process to release the dist artifact lock...')
-        },
+      await withBuildArtifactLock(
+        'vite-dist-build',
+        () => runBunTask('build', { env: AUDIT_ENV }),
+        {
+          onWait: () => {
+            console.log('🔒 Waiting for another build process to release the dist artifact lock...')
+          },
+        }
+      )
+      managedServer = new PreviewShellManager({
+        env: AUDIT_ENV,
+        preferredPort: PREVIEW_PORT,
+        candidatePorts: PREVIEW_PORT_CANDIDATES,
+        allowRandomPortFallback: !(AUTH_LOGIN && AUTH_PASSWORD),
       })
-      managedServer = await startPreviewServer(PREVIEW_PORT)
-      effectiveBaseUrl = managedServer.baseUrl
+      await managedServer.start()
+      effectiveBaseUrl = managedServer.baseUrl ?? effectiveBaseUrl
     }
 
     const browser = await puppeteer.launch({
@@ -806,13 +1040,17 @@ async function main() {
 
     try {
       if (authCredentialsDetected) {
+        const clearedRateLimitKeys = await clearLocalAuditRateLimitState(AUDIT_ENV)
+        if (clearedRateLimitKeys > 0) {
+          console.log(`🔐 Cleared ${clearedRateLimitKeys} local audit rate-limit keys`)
+        }
         await authenticateViaApi(browser, effectiveBaseUrl, {
           login: AUTH_LOGIN,
           password: AUTH_PASSWORD,
         })
       } else if (AUTH_REQUIRED) {
         throw new Error(
-          `Authenticated frontend health is required, but ${authSkipReason ?? 'credentials are unavailable'}. Provide E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD for the seeded smoke account.`
+          `Authenticated frontend health is required, but ${authSkipReason ?? 'credentials are unavailable'}. Provide PRIMARY_USERNAME/PRIMARY_PASSWORD for the seeded smoke account. Legacy aliases E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD remain supported.`
         )
       } else {
         console.log(
@@ -821,139 +1059,143 @@ async function main() {
       }
 
       const routesToScan = authCredentialsDetected
-        ? [...GUEST_ROUTES, ...AUTH_ROUTES]
+        ? [...EFFECTIVE_GUEST_ROUTES, ...AUTH_ROUTES]
         : GUEST_ROUTES
 
       for (const viewport of VIEWPORTS) {
         for (const route of routesToScan) {
-          const page = await browser.newPage()
-          const issues: ScanIssue[] = []
-          const consoleErrors = new Set<string>()
-          const requestFailures = new Set<string>()
-          const badResponses = new Set<string>()
+          let routeIssues: ScanIssue[] = []
 
-          await page.setViewport(viewport.value)
+          for (let attempt = 0; attempt < (managedServer ? 2 : 1); attempt += 1) {
+            const page = await browser.newPage()
+            const issues: ScanIssue[] = []
+            const consoleErrors = new Set<string>()
+            const requestFailures = new Set<string>()
+            const badResponses = new Set<string>()
 
-          page.on('console', (msg) => {
-            if (msg.type() === 'error') {
-              const text = msg.text()
-              if (
-                shouldIgnoreConsoleError(
-                  text,
-                  INCLUDE_API_ERRORS,
-                  msg.location().url,
-                  healthFilterOptions
-                )
-              ) {
-                return
-              }
-              const issueType = text.toLowerCase().includes('failed to load resource')
-                ? 'blocking-http-error'
-                : 'console-error'
-              consoleErrors.add(`${issueType}::${msg.text()}`)
-            }
-          })
-
-          page.on('requestfailed', (req) => {
-            if (shouldIgnoreRequestIssue(req.url(), INCLUDE_API_ERRORS, healthFilterOptions)) return
-            const reason = req.failure()?.errorText ?? 'unknown'
-            requestFailures.add(`${req.method()} ${req.url()} (${reason})`)
-          })
-
-          page.on('response', (res) => {
-            const status = res.status()
-            if (shouldIgnoreRequestIssue(res.url(), INCLUDE_API_ERRORS, healthFilterOptions)) return
-            if (status >= 400) {
-              badResponses.add(`${status} ${res.request().method()} ${res.url()}`)
-            }
-          })
-
-          try {
-            await page.goto(new URL(route.path, effectiveBaseUrl).toString(), {
-              waitUntil: 'domcontentloaded',
-              timeout: 60_000,
-            })
-            await page.waitForSelector('body', { timeout: 15_000 })
-            await assertHealthRouteContract(page, route)
-            await page.waitForNetworkIdle({ idleTime: 800, timeout: 15_000 }).catch(() => {})
-            await sleep(900)
-
-            const probe = await probeRuntime(page)
-            issues.push(...collectProbeIssues(probe))
-
-            const filteredIssues = filterGuestProtectedRedirectNoise(
-              route,
-              Boolean(managedServer),
-              [...consoleErrors],
-              [...requestFailures],
-              [...badResponses]
+            await page.setViewport(viewport.value)
+            attachPageDiagnostics(
+              page,
+              healthFilterOptions,
+              consoleErrors,
+              requestFailures,
+              badResponses
             )
 
-            if (filteredIssues.consoleIssueDetails.length > 0) {
-              const blockingHttpErrors = filteredIssues.consoleIssueDetails
-                .filter((entry) => entry.startsWith('blocking-http-error::'))
-                .map((entry) => entry.replace('blocking-http-error::', ''))
-              const runtimeConsoleErrors = filteredIssues.consoleIssueDetails
-                .filter((entry) => entry.startsWith('console-error::'))
-                .map((entry) => entry.replace('console-error::', ''))
+            try {
+              await page.goto(new URL(route.path, effectiveBaseUrl).toString(), {
+                waitUntil: 'domcontentloaded',
+                timeout: 60_000,
+              })
+              await page.waitForSelector('body', { timeout: 15_000 })
+              await assertHealthRouteContract(page, route)
+              await page.waitForNetworkIdle({ idleTime: 800, timeout: 15_000 }).catch(() => {})
+              await sleep(900)
 
-              if (blockingHttpErrors.length > 0) {
+              const probe = await probeRuntime(page)
+              issues.push(...collectProbeIssues(probe))
+
+              const filteredIssues = filterGuestProtectedRedirectNoise(
+                route,
+                Boolean(managedServer),
+                [...consoleErrors],
+                [...requestFailures],
+                [...badResponses]
+              )
+
+              if (filteredIssues.consoleIssueDetails.length > 0) {
+                const blockingHttpErrors = filteredIssues.consoleIssueDetails
+                  .filter((entry) => entry.startsWith('blocking-http-error::'))
+                  .map((entry) => entry.replace('blocking-http-error::', ''))
+                const runtimeConsoleErrors = filteredIssues.consoleIssueDetails
+                  .filter((entry) => entry.startsWith('console-error::'))
+                  .map((entry) => entry.replace('console-error::', ''))
+
+                if (blockingHttpErrors.length > 0) {
+                  issues.push({
+                    type: 'blocking-http-error',
+                    message: `资源加载失败 ${blockingHttpErrors.length} 条`,
+                    details: sample(blockingHttpErrors),
+                  })
+                }
+
+                if (runtimeConsoleErrors.length > 0) {
+                  issues.push({
+                    type: 'console-error',
+                    message: `控制台运行时错误 ${runtimeConsoleErrors.length} 条`,
+                    details: sample(runtimeConsoleErrors),
+                  })
+                }
+              }
+
+              if (filteredIssues.requestFailures.length > 0) {
                 issues.push({
                   type: 'blocking-http-error',
-                  message: `资源加载失败 ${blockingHttpErrors.length} 条`,
-                  details: sample(blockingHttpErrors),
+                  message: `请求失败 ${filteredIssues.requestFailures.length} 条`,
+                  details: sample(filteredIssues.requestFailures),
                 })
               }
 
-              if (runtimeConsoleErrors.length > 0) {
+              if (filteredIssues.badResponses.length > 0) {
                 issues.push({
-                  type: 'console-error',
-                  message: `控制台运行时错误 ${runtimeConsoleErrors.length} 条`,
-                  details: sample(runtimeConsoleErrors),
+                  type: 'blocking-http-error',
+                  message: `HTTP 4xx/5xx ${filteredIssues.badResponses.length} 条`,
+                  details: sample(filteredIssues.badResponses),
                 })
               }
-            }
 
-            if (filteredIssues.requestFailures.length > 0) {
+              routeIssues = issues
+              if (!firstBlockingIssue && routeIssues.length > 0) {
+                firstBlockingIssue = await captureFailureEvidence(
+                  page,
+                  ARTIFACT_DIR,
+                  route.path,
+                  viewport.name,
+                  routeIssues[0],
+                  getPreviewDiagnostics
+                )
+              }
+              await page.close()
+              break
+            } catch (error) {
+              const recoverable =
+                attempt === 0 && (await shouldRecoverManagedPreview(page, managedServer))
+
+              if (recoverable) {
+                console.warn(
+                  `⚠️ Preview shell became unhealthy while scanning ${route.path}; restarting once and retrying...`
+                )
+                await page.close().catch(() => undefined)
+                await managedServer?.restart()
+                continue
+              }
+
+              crashed = true
               issues.push({
-                type: 'blocking-http-error',
-                message: `请求失败 ${filteredIssues.requestFailures.length} 条`,
-                details: sample(filteredIssues.requestFailures),
+                type: 'route-crash',
+                message: `页面加载失败: ${(error as Error).message}`,
               })
+              routeIssues = issues
+              if (!firstBlockingIssue && routeIssues.length > 0) {
+                firstBlockingIssue = await captureFailureEvidence(
+                  page,
+                  ARTIFACT_DIR,
+                  route.path,
+                  viewport.name,
+                  routeIssues[0],
+                  getPreviewDiagnostics
+                )
+              }
+              await page.close().catch(() => undefined)
+              break
             }
-
-            if (filteredIssues.badResponses.length > 0) {
-              issues.push({
-                type: 'blocking-http-error',
-                message: `HTTP 4xx/5xx ${filteredIssues.badResponses.length} 条`,
-                details: sample(filteredIssues.badResponses),
-              })
-            }
-          } catch (error) {
-            crashed = true
-            issues.push({
-              type: 'route-crash',
-              message: `页面加载失败: ${(error as Error).message}`,
-            })
           }
-
-          if (!firstBlockingIssue && issues.length > 0) {
-            firstBlockingIssue = await captureFailureEvidence(
-              page,
-              ARTIFACT_DIR,
-              route.path,
-              viewport.name,
-              issues[0]
-            )
-          }
-
-          await page.close()
 
           results.push({
             route: route.path,
             name: route.name,
             viewport: viewport.name,
-            issues,
+            issues: routeIssues,
           })
         }
       }
@@ -1012,6 +1254,12 @@ async function main() {
     await writeHealthArtifacts({
       artifactDir: ARTIFACT_DIR,
       baseUrl: effectiveBaseUrl,
+      authRequired: AUTH_REQUIRED,
+      authLoginPresent: Boolean(AUTH_LOGIN),
+      authPasswordPresent: Boolean(AUTH_PASSWORD),
+      authCredentialsDetected,
+      authHealthExecuted: false,
+      authHealthSkipReason: authSkipReason,
       scannedRouteViewportCount: results.length,
       issueCount,
       crashed,
@@ -1021,7 +1269,7 @@ async function main() {
     throw error
   } finally {
     if (managedServer) {
-      await managedServer.kill()
+      await managedServer.stop()
     }
   }
 }
