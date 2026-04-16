@@ -12,7 +12,7 @@
         <div class="comment-controls" v-if="comments.length > 0">
           <div class="control-item">
             <span class="control-label">{{ $t('comment.filterLabel') }}</span>
-            <Select v-model="currentFilter" size="sm">
+            <Select v-model="currentFilter" size="sm" :aria-label="$t('comment.filterLabel')">
               <option value="all">{{ $t('comment.filter.all') }}</option>
               <option value="author">{{ $t('comment.filter.author') }}</option>
               <option value="admin">{{ $t('comment.filter.admin') }}</option>
@@ -20,7 +20,7 @@
           </div>
           <div class="control-item">
             <span class="control-label">{{ $t('comment.sortLabel') }}</span>
-            <Select v-model="currentSort" size="sm">
+            <Select v-model="currentSort" size="sm" :aria-label="$t('comment.sortLabel')">
               <option value="newest">{{ $t('comment.sort.newest') }}</option>
               <option value="popular">{{ $t('comment.sort.popular') }}</option>
               <option value="oldest">{{ $t('comment.sort.oldest') }}</option>
@@ -28,7 +28,7 @@
           </div>
           <div class="control-item">
             <span class="control-label">{{ $t('comment.preloadLabel') }}</span>
-            <Select v-model="preloadReplies" size="sm">
+            <Select v-model="preloadReplies" size="sm" :aria-label="$t('comment.preloadLabel')">
               <option value="0">{{ $t('comment.preloadOff') }}</option>
               <option value="2">{{ $t('comment.preloadFew') }}</option>
               <option value="5">{{ $t('comment.preloadMore') }}</option>

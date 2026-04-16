@@ -5,8 +5,6 @@
 
 import { computed } from 'vue'
 import { useRoute, type RouteLocationRaw } from 'vue-router'
-import { storeToRefs } from 'pinia'
-import { useAuthStore } from '@/stores'
 import {
   navigationItems,
   getDesktopNavigationItems,
@@ -14,6 +12,7 @@ import {
   getIconSize,
 } from '@/config/navigation'
 import type { NavigationItem, PrefetchFunction } from '@/config/navigation'
+import { useAuthSurface } from '@/services/authSurface'
 
 // 预加载函数映射
 const prefetchFunctions: Partial<Record<PrefetchFunction, () => void>> = {}
@@ -46,8 +45,7 @@ export function executePrefetch(fnName?: PrefetchFunction) {
  */
 export function useNavigation() {
   const route = useRoute()
-  const authStore = useAuthStore()
-  const { isAuthenticated } = storeToRefs(authStore)
+  const { isAuthenticated } = useAuthSurface()
 
   // 桌面端导航项
   const desktopNavItems = computed(() => getDesktopNavigationItems(isAuthenticated.value))

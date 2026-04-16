@@ -122,6 +122,7 @@
     >
       <article
         class="rail-panel rail-panel--portal"
+        role="listitem"
         data-scroll-anchor="home-featured-portal"
         data-scroll-anchor-step="0"
       >
@@ -284,6 +285,7 @@
 
       <article
         class="rail-panel rail-panel--spotlight"
+        role="listitem"
         data-scroll-anchor="home-featured-spotlight"
         data-scroll-anchor-step="1"
       >
@@ -387,6 +389,7 @@
 
       <article
         class="rail-panel rail-panel--featured"
+        role="listitem"
         data-scroll-anchor="home-featured-featured"
         data-scroll-anchor-step="2"
       >
@@ -500,6 +503,7 @@
 
       <article
         class="rail-panel rail-panel--trends"
+        role="listitem"
         data-scroll-anchor="home-featured-trends"
         data-scroll-anchor-step="3"
       >
@@ -984,15 +988,13 @@ import {
   type HomeAggregateResponse,
   type HomeCommunityHighlight,
   type HomeScheduleHighlight,
-  type PostListItem,
-} from '@/api'
+} from '@/api/homeService'
+import type { PostListItem } from '@/api/postService'
 import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
 import { getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { isFilteredAuthor } from '@/config/filters'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
-import { HOME_FALLBACK_POSTS, isHomeFallbackPost } from '@/fallbacks/homepageFallback'
-import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import {
   type BubbleLayoutTier,
   buildHomePostsFromAggregate,
@@ -1038,14 +1040,64 @@ type ScrollTriggerInstance = InstanceType<ScrollTriggerModule['ScrollTrigger']>
 let gsapModule: GsapModule['default'] | null = null
 let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
 let scrollTriggerReadyPromise: Promise<boolean> | null = null
+let homeEnhancementsDisposed = false
 
 const SCENE_LAYOUT_REFRESH_THRESHOLD_PX = 24
 const BUBBLE_EXIT_DURATION_MS = 420
 const BUBBLE_POINTER_ATTACK_MS = 220
 const BUBBLE_POINTER_RELEASE_MS = 360
 const BUBBLE_FORCE_CENTER_LERP_MS = 180
+const HOME_ENHANCEMENTS_DELAY_MS = 1200
+const HOME_FALLBACK_PREFIX = '__home_fallback__'
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
+
+function createEmptyHomeAggregate(): HomeAggregateResponse {
+  return {
+    version: 'empty',
+    generated_at: '',
+    ttl_seconds: 0,
+    hero: {
+      editorial_card: null,
+      spotlight: null,
+      stats: [],
+      trending_tags: [],
+    },
+    portal: {
+      items: [],
+    },
+    featured: {
+      items: [],
+    },
+    trends: {
+      authors: [],
+      tags: [],
+      schedules: [],
+      community: [],
+    },
+    latest_text_posts: [],
+    story_deck: {
+      items: [],
+      total: 0,
+    },
+  }
+}
+
+let homepageBootstrapFallbackPromise: Promise<HomeAggregateResponse> | null = null
+
+async function loadHomepageBootstrapFallback(): Promise<HomeAggregateResponse> {
+  if (!homepageBootstrapFallbackPromise) {
+    homepageBootstrapFallbackPromise = import('@/fallbacks/homepageBootstrapFallback').then(
+      ({ buildHomepageBootstrapFallback }) => buildHomepageBootstrapFallback()
+    )
+  }
+
+  return homepageBootstrapFallbackPromise
+}
+
+function isHomeFallbackPost(post: Pick<PostListItem, 'id'> | null | undefined): boolean {
+  return Boolean(post?.id?.startsWith(HOME_FALLBACK_PREFIX))
+}
 
 function defineHomeAsyncComponent<T extends object>(loader: () => Promise<T>) {
   return defineAsyncComponent({
@@ -1081,10 +1133,8 @@ const noGlassBackdropStyle = Object.freeze({
   backdropFilter: 'blur(0rem)',
   WebkitBackdropFilter: 'blur(0rem)',
 }) as Readonly<Record<string, string>>
-const initialHomeAggregate = buildHomepageBootstrapFallback()
-const initialHomePosts = buildHomePostsFromAggregate(initialHomeAggregate, t).filter(
-  (post) => !isFilteredAuthor(post.author_name)
-)
+const initialHomeAggregate = createEmptyHomeAggregate()
+const initialHomePosts: PostListItem[] = []
 
 let homeSupportRefreshController: AbortController | null = null
 let pendingHomeSupportRefresh: HomeSupportRefreshTargets = {
@@ -2238,12 +2288,9 @@ async function fetchHomeData(): Promise<boolean> {
   } catch {
     if (controller.signal.aborted) return false
 
-    const fallbackPayload = buildHomepageBootstrapFallback()
+    const fallbackPayload = await loadHomepageBootstrapFallback()
     applyHomeAggregate(fallbackPayload, 'fallback')
-    total.value = Math.max(
-      total.value,
-      fallbackPayload.story_deck.total ?? HOME_FALLBACK_POSTS.length
-    )
+    total.value = Math.max(total.value, fallbackPayload.story_deck.total ?? 0)
     error.value = null
     return false
   } finally {
@@ -2958,16 +3005,25 @@ watch(
 )
 
 onMounted(() => {
-  setHomeSceneLifecycleEnabled(true)
-  observeHomeSections()
-  void nextTick(() => {
-    observeBubbleStageLayout()
-    scheduleBubbleMotionMeasurement()
-  })
+  homeEnhancementsDisposed = false
   void fetchHomeData()
+  scheduleTask(
+    () => {
+      if (homeEnhancementsDisposed) return
+      setHomeSceneLifecycleEnabled(true)
+      observeHomeSections()
+      void nextTick(() => {
+        if (homeEnhancementsDisposed) return
+        observeBubbleStageLayout()
+        scheduleBubbleMotionMeasurement()
+      })
+    },
+    { priority: 'background', delay: HOME_ENHANCEMENTS_DELAY_MS }
+  )
 })
 
 onBeforeUnmount(() => {
+  homeEnhancementsDisposed = true
   setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
   abortHomeSupportRefresh()
@@ -3395,7 +3451,7 @@ onBeforeUnmount(() => {
   font-size: var(--text-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--home-accent) 70%, var(--color-text-secondary));
+  color: color-mix(in srgb, var(--home-ink) 78%, var(--home-accent) 22%);
 }
 
 .hero-title {

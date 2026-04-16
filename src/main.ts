@@ -24,7 +24,7 @@ import {
 } from './utils/analyticsConsent'
 import { reportClientError, reportClientEvent } from './utils/clientReporter'
 import vClickOutside from './directives/clickOutside'
-import { bridgeGooglePopupResult } from './services/googleAuthService'
+import { ensureAuthStoreLoaded } from './services/authSurface'
 
 // 生产环境控制台保护（防止 Self-XSS 攻击）
 import { initConsoleGuard } from './utils/consoleGuard'
@@ -174,16 +174,32 @@ function renderEarlyGooglePopupFallback(): void {
   }, EARLY_GOOGLE_POPUP_MANUAL_CLOSE_HINT_DELAY_MS)
 }
 
-const earlyGooglePopupBridge = bridgeGooglePopupResult()
-if (earlyGooglePopupBridge.handled) {
-  if (typeof window !== 'undefined') {
-    window.setTimeout(() => {
-      window.close()
-    }, EARLY_GOOGLE_POPUP_CLOSE_DELAY_MS)
-  }
+function shouldHandleEarlyGooglePopupBridge(): boolean {
+  if (typeof window === 'undefined') return false
+  if (window.location.pathname !== '/auth/callback') return false
 
-  renderEarlyGooglePopupFallback()
-  await new Promise<void>(() => undefined)
+  const params = new URLSearchParams(window.location.search)
+  return (
+    Boolean(window.opener) ||
+    window.name.startsWith('momi-google-auth:') ||
+    params.has('handoff_code') ||
+    params.has('error')
+  )
+}
+
+if (shouldHandleEarlyGooglePopupBridge()) {
+  const { bridgeGooglePopupResult } = await import('./services/googleAuthService')
+  const earlyGooglePopupBridge = bridgeGooglePopupResult()
+  if (earlyGooglePopupBridge.handled) {
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        window.close()
+      }, EARLY_GOOGLE_POPUP_CLOSE_DELAY_MS)
+    }
+
+    renderEarlyGooglePopupFallback()
+    await new Promise<void>(() => undefined)
+  }
 }
 
 const app = createApp(App)
@@ -298,19 +314,8 @@ if (import.meta.hot) {
   })
 }
 
-// 初始化认证状态（异步：需要从安全存储解密 token）
-// 必须在 mount 前完成，确保路由守卫能正确判断认证状态
-import { useAuthStore } from './stores/auth'
-import { useSettingsStore } from './stores'
-const authStore = useAuthStore(pinia)
+import { useSettingsStore } from './stores/settings'
 const settingsStore = useSettingsStore(pinia)
-const disposeAuthListener = authStore.setupAuthListener()
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    disposeAuthListener?.()
-    authStore.cleanup?.()
-  })
-}
 
 watch(
   () => ({
@@ -387,16 +392,15 @@ const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 // 公共页面首屏不再静默恢复登录态，避免 /login /register 等匿名入口主动触发
 // refresh + challenge 噪音；受保护路由仍由路由守卫按需完成初始化。
 
-void preloadActiveLocale()
-  .catch((error) => {
-    if (import.meta.env.DEV) {
-      console.warn('[i18n] Failed to preload active locale:', error)
-    }
-    reportClientError('i18n.preload_failed', error, undefined, { severity: 'warn' })
-  })
-  .finally(() => {
-    app.mount('#app-root')
-  })
+app.mount('#app-root')
+scheduleAuthSurfaceBootstrap()
+
+void preloadActiveLocale().catch((error) => {
+  if (import.meta.env.DEV) {
+    console.warn('[i18n] Failed to preload active locale:', error)
+  }
+  reportClientError('i18n.preload_failed', error, undefined, { severity: 'warn' })
+})
 
 // 性能监控：由隐私设置动态控制
 import { disposePerformanceMonitoring, initPerformanceMonitoring } from './utils/performanceMonitor'
@@ -419,6 +423,43 @@ if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     scheduledTasksDisposed = true
   })
+}
+
+function scheduleAuthSurfaceBootstrap(): void {
+  if (typeof window === 'undefined') return
+
+  let triggered = false
+
+  const cleanup = () => {
+    window.removeEventListener('pointerdown', onIntent)
+    window.removeEventListener('keydown', onIntent)
+    window.removeEventListener('touchstart', onIntent)
+  }
+
+  const run = () => {
+    if (triggered || scheduledTasksDisposed) return
+    triggered = true
+    cleanup()
+    scheduleTask(
+      () => {
+        if (scheduledTasksDisposed) return
+        void ensureAuthStoreLoaded({ initialize: true }).catch((error) => {
+          reportClientError('auth.bootstrap_failed', error, undefined, { severity: 'warn' })
+        })
+      },
+      { priority: 'background', delay: 1500 }
+    )
+  }
+
+  const onIntent = () => {
+    run()
+  }
+
+  window.addEventListener('pointerdown', onIntent, { once: true, passive: true })
+  window.addEventListener('keydown', onIntent, { once: true })
+  window.addEventListener('touchstart', onIntent, { once: true, passive: true })
+
+  scheduleTask(run, { priority: 'background', delay: 12000 })
 }
 
 // Cloudflare Web Analytics（仅生产环境 + 配置 token 时启用）

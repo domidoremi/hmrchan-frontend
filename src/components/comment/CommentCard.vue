@@ -181,7 +181,7 @@
     <Dialog v-model:isOpen="showReportDialog" :title="t('comment.reportTitle')" size="sm">
       <div class="report-form">
         <label class="report-label">{{ t('comment.reportReasonLabel') }}</label>
-        <Select v-model="reportReason" size="sm">
+        <Select v-model="reportReason" size="sm" :aria-label="t('comment.reportReasonLabel')">
           <option value="spam">{{ t('comment.reportReason.spam') }}</option>
           <option value="harassment">{{ t('comment.reportReason.harassment') }}</option>
           <option value="inappropriate">{{ t('comment.reportReason.inappropriate') }}</option>

@@ -48,7 +48,11 @@
             </div>
 
             <div class="favorites-toolbar__controls">
-              <Select v-model="selectedFolder" class="favorites-filter">
+              <Select
+                v-model="selectedFolder"
+                class="favorites-filter"
+                :aria-label="$t('favorites.allFolders')"
+              >
                 <option value="">{{ $t('favorites.allFolders') }}</option>
                 <option
                   v-for="folder in folders"
@@ -59,14 +63,22 @@
                 </option>
               </Select>
 
-              <Select v-model="selectedTag" class="favorites-filter">
+              <Select
+                v-model="selectedTag"
+                class="favorites-filter"
+                :aria-label="$t('favorites.allTags')"
+              >
                 <option value="">{{ $t('favorites.allTags') }}</option>
                 <option v-for="tag in tags" :key="tag.tag" :value="tag.tag">
                   #{{ tag.tag }} ({{ tag.count }})
                 </option>
               </Select>
 
-              <Select v-model="selectedSort" class="favorites-filter">
+              <Select
+                v-model="selectedSort"
+                class="favorites-filter"
+                :aria-label="$t('search.sortBy')"
+              >
                 <option v-for="option in sortOptions" :key="option.value" :value="option.value">
                   {{ option.label }}
                 </option>

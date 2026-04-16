@@ -279,12 +279,13 @@
                   </div>
 
                   <div class="form-group">
-                    <label>
+                    <label for="current_email">
                       <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
                       {{ $t('email.currentEmail') }}
                     </label>
                     <div class="input-wrapper input-readonly">
                       <Input
+                        id="current_email"
                         :model-value="profile.email"
                         type="email"
                         class="input-with-icon"
@@ -414,6 +415,7 @@
                       class="sr-only"
                       tabindex="-1"
                       aria-hidden="true"
+                      :aria-label="$t('profile.username')"
                       readonly
                     />
 

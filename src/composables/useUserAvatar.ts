@@ -6,8 +6,7 @@
  */
 
 import { computed, getCurrentScope, onScopeDispose, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useAuthStore } from '@/stores'
+import { useAuthSurface } from '@/services/authSurface'
 import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 
 // 全局头像缓存（带版本号防止浏览器缓存）
@@ -46,8 +45,7 @@ export function refreshAvatarCache(): void {
  * 自动响应 authStore.user 变化
  */
 export function useUserAvatar() {
-  const authStore = useAuthStore()
-  const { user } = storeToRefs(authStore)
+  const { user } = useAuthSurface()
 
   const avatarUrl = computed(() => {
     return getUserAvatarUrl(user.value?.avatar_url)

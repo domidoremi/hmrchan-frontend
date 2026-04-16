@@ -1,7 +1,9 @@
-import { readonly, ref } from 'vue'
 import i18nInstance from '@/i18n'
 import { authService, ApiError, type VerificationTokenResponse } from './authService'
+import { closeVerificationDialog, openVerificationDialog } from './verificationState'
 import { reportClientError, reportClientEvent } from '@/utils/clientReporter'
+
+export { verificationDialogState } from './verificationState'
 
 export type VerificationAction =
   | 'delete_account'
@@ -38,9 +40,6 @@ export interface VerificationResolution {
 }
 
 const DEFAULT_TOKEN_TTL_SECONDS = 300
-
-const isOpen = ref(false)
-const currentRequest = ref<VerificationRequest | null>(null)
 
 let currentPromise: Promise<VerificationResolution | null> | null = null
 let settleCurrent: ((value: VerificationResolution | null) => void) | null = null
@@ -88,8 +87,7 @@ function normalizeVerificationResponse(
 }
 
 function cleanupVerificationState() {
-  isOpen.value = false
-  currentRequest.value = null
+  closeVerificationDialog()
   currentPromise = null
   settleCurrent = null
 }
@@ -136,11 +134,6 @@ async function verifyWithPassword(
     )
     throw error
   }
-}
-
-export const verificationDialogState = {
-  isOpen: readonly(isOpen),
-  currentRequest: readonly(currentRequest),
 }
 
 export function getCachedVerificationToken(
@@ -203,8 +196,7 @@ export function requestVerification(
     { severity: 'warn' }
   )
   if (!currentPromise) {
-    currentRequest.value = request
-    isOpen.value = true
+    openVerificationDialog(request)
     currentPromise = new Promise<VerificationResolution | null>((resolve) => {
       settleCurrent = resolve
     })

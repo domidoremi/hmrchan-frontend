@@ -299,9 +299,7 @@ import {
   useTemplateRef,
 } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { storeToRefs } from 'pinia'
 import { Bell, ChevronRight, LogIn, LogOut, Search, Settings, Smartphone, User } from '@lucide/vue'
-import { useAuthStore } from '@/stores'
 import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserDisplayName } from '@/utils/user'
 import { useFocusTrap } from '@/composables/useFocusTrap'
@@ -310,6 +308,7 @@ import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { runWhenIdle, throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 import { resolveNavbarDropdownPosition } from '@/components/layout/navbarDropdownPosition'
 import { withProfileReturnTo } from '@/utils/profileReturnTo'
+import { logoutFromAuthSurface, useAuthSurface } from '@/services/authSurface'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Separator from '@/components/ui/Separator.vue'
@@ -350,8 +349,7 @@ const profileDevicesLink = computed(() =>
   withProfileReturnTo('/profile/devices', { returnTo: route.fullPath })
 )
 const isPostDetailRoute = computed(() => route.name === 'post-detail')
-const authStore = useAuthStore()
-const { user, isAuthenticated } = storeToRefs(authStore)
+const { user, isAuthenticated } = useAuthSurface()
 const showSettings = ref(false)
 const showUserMenu = ref(false)
 const isDesktopSearchExpanded = ref(false)
@@ -672,10 +670,10 @@ function toggleUserMenu() {
   nextTick(() => updateDropdownPosition('user'))
 }
 
-function handleLogout() {
-  authStore.logout()
+async function handleLogout() {
+  await logoutFromAuthSurface()
   closeUserMenu()
-  router.push('/')
+  await router.push('/')
 }
 
 function handleKeydown(event: KeyboardEvent) {

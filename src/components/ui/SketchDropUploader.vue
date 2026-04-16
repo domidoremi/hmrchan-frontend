@@ -7,6 +7,7 @@
       :accept="accept"
       :multiple="multiple"
       :disabled="disabled"
+      :aria-label="selectLabel"
       @change="handleInputChange"
     />
 

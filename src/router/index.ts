@@ -17,6 +17,7 @@ import {
   type DataSensitivity,
   type SecurityLevel,
 } from '@/security/runtimeState'
+import { ensureAuthStoreLoaded } from '@/services/authSurface'
 import { applyPageMeta } from '@/utils/pageMeta'
 
 // 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
@@ -38,13 +39,6 @@ declare module 'vue-router' {
     /** Allow page content to render directly under the navbar without shell padding/background */
     extendContentUnderNavbar?: boolean
   }
-}
-
-// auth store 已在 main.ts 同步加载，此处直接静态导入消除 Rolldown 警告
-import { useAuthStore } from '@/stores/auth'
-
-function getAuthStore() {
-  return useAuthStore()
 }
 
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -516,15 +510,6 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach(async (to) => {
-  const authStore = getAuthStore()
-  const securityLevel = to.meta.securityLevel ?? (to.meta.requiresAuth ? 'authenticated' : 'public')
-
-  // 仅在受保护路由等待认证恢复；guestOnly 公开页不再首屏静默 refresh
-  if (securityLevel !== 'public') {
-    await authStore.ensureAuthInitialized()
-  }
-  const isAuthenticated = authStore.isAuthenticated
-
   // 帖子详情仅接受 UUID/ULID，非法参数直接转 404，避免无效请求噪音
   if (to.name === 'post-detail') {
     const postId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id
@@ -537,6 +522,11 @@ router.beforeEach(async (to) => {
       }
     }
   }
+
+  const securityLevel = to.meta.securityLevel ?? (to.meta.requiresAuth ? 'authenticated' : 'public')
+  const needsAuthState = securityLevel !== 'public' || Boolean(to.meta.guestOnly)
+  const authStore = needsAuthState ? await ensureAuthStoreLoaded({ initialize: true }) : null
+  const isAuthenticated = authStore?.isAuthenticated ?? false
 
   // 需要认证的页面
   if (to.meta.requiresAuth && !isAuthenticated) {

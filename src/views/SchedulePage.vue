@@ -29,7 +29,7 @@
             </ControlGroup>
             <ControlGroup
               class="category-filters page-control-group-shell--comfortable"
-              role="radiogroup"
+              role="group"
               :aria-label="$t('schedule.filterLabel')"
             >
               <ControlButton
@@ -38,8 +38,6 @@
                 class="schedule-filter-pill"
                 size="compact"
                 :pressed="activeCategory === cat.value"
-                role="radio"
-                :aria-checked="activeCategory === cat.value"
                 @click="setCategory(cat.value)"
               >
                 <template #start>
@@ -1736,7 +1734,7 @@ onMounted(() => {
   font-size: var(--text-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--surface-paper-ink-soft);
+  color: var(--surface-paper-ink, var(--color-text-secondary));
 }
 
 .planner-shell .page-control,
