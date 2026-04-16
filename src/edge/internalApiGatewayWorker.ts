@@ -103,6 +103,12 @@ function withUpstreamSourceHeaders(
   path: string
 ): Response {
   const headers = new Headers(response.headers)
+  headers.delete('content-length')
+  headers.delete('Content-Length')
+  headers.delete('content-encoding')
+  headers.delete('Content-Encoding')
+  headers.delete('transfer-encoding')
+  headers.delete('Transfer-Encoding')
   headers.set('X-Proxy-Upstream-Source', source)
 
   const apiVersion = extractApiVersion(path)
@@ -112,7 +118,6 @@ function withUpstreamSourceHeaders(
 
   return new Response(response.body, {
     status: response.status,
-    statusText: response.statusText,
     headers,
   })
 }
