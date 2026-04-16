@@ -12,13 +12,18 @@ const exploreMocks = vi.hoisted(() => ({
   isServiceUnavailableError: vi.fn(),
 }))
 
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-  }),
-}))
+vi.mock('vue-i18n', async () => {
+  const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
 
-vi.mock('@/api', () => {
+  return {
+    ...actual,
+    useI18n: () => ({
+      t: (key: string) => key,
+    }),
+  }
+})
+
+vi.mock('@/api/client', () => {
   class MockApiError extends Error {
     status: number
 
@@ -30,11 +35,14 @@ vi.mock('@/api', () => {
 
   return {
     ApiError: MockApiError,
-    postService: {
-      listPosts: vi.fn(),
-    },
   }
 })
+
+vi.mock('@/api/postService', () => ({
+  postService: {
+    listPosts: vi.fn(),
+  },
+}))
 
 vi.mock('@/composables/useCachedPosts', async () => {
   const { ref } = await import('vue')
@@ -423,7 +431,7 @@ describe('ExplorePage', () => {
   })
 
   it('renders an error state when loading fails outside fallback mode', async () => {
-    const { ApiError } = await import('@/api')
+    const { ApiError } = await import('@/api/client')
 
     exploreMocks.loadCachedPosts.mockRejectedValue(new ApiError(500, 'boom'))
 

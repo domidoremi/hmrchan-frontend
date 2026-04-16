@@ -222,6 +222,7 @@ const authKeepAliveExclude = ['AuthCallbackPage']
 const transitionMode = computed<'out-in' | undefined>(() =>
   transitionName.value ? 'out-in' : undefined
 )
+let initialRouteTransitionResolved = false
 
 function isAuthRouteName(routeName: string | undefined): boolean {
   return Boolean(routeName && AUTH_ROUTE_NAMES.has(routeName))
@@ -258,6 +259,12 @@ watch(
     const fromName = toRouteName(fromRouteNameValue)
     const toViewKey = toRouteViewKey(toViewKeyValue)
     const fromViewKey = toRouteViewKey(fromViewKeyValue)
+
+    if (!initialRouteTransitionResolved) {
+      initialRouteTransitionResolved = true
+      transitionName.value = ''
+      return
+    }
 
     if (toViewKey && toViewKey === fromViewKey) {
       transitionName.value = ''

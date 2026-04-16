@@ -24,7 +24,7 @@ import {
 } from './utils/analyticsConsent'
 import { reportClientError, reportClientEvent } from './utils/clientReporter'
 import vClickOutside from './directives/clickOutside'
-import { ensureAuthStoreLoaded } from './services/authSurface'
+import { ensureAuthStoreLoaded, useAuthSurface } from './services/authSurface'
 
 // 生产环境控制台保护（防止 Self-XSS 攻击）
 import { initConsoleGuard } from './utils/consoleGuard'
@@ -425,6 +425,8 @@ if (import.meta.hot) {
   })
 }
 
+const authSurface = useAuthSurface()
+
 function scheduleAuthSurfaceBootstrap(): void {
   if (typeof window === 'undefined') return
 
@@ -568,7 +570,7 @@ function cleanupPrefetchIntentListeners(): void {
 
 function triggerPrefetchPipeline(reason: 'intent' | 'fallback'): void {
   if (scheduledTasksDisposed || prefetchTaskDisposed || prefetchStarted) return
-  if (!authStore.isAuthenticated) return
+  if (!authSurface.isAuthenticated.value) return
   prefetchStarted = true
   cleanupPrefetchIntentListeners()
 
@@ -611,7 +613,7 @@ function triggerPrefetchPipeline(reason: 'intent' | 'fallback'): void {
 function setupIntentDrivenPrefetch(): void {
   if (typeof window === 'undefined') return
   if (scheduledTasksDisposed || prefetchTaskDisposed || prefetchStarted) return
-  if (!authStore.isAuthenticated) return
+  if (!authSurface.isAuthenticated.value) return
 
   cleanupPrefetchIntentListeners()
 
@@ -645,7 +647,7 @@ if (import.meta.hot) {
   })
 }
 watch(
-  () => authStore.isAuthenticated,
+  () => authSurface.isAuthenticated.value,
   (isAuthenticated) => {
     if (scheduledTasksDisposed || prefetchTaskDisposed) return
 

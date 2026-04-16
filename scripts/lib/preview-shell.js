@@ -348,24 +348,9 @@ function parseVisitorKey(key) {
   }
 }
 
-function buildTurnstileTrustKey({ ip, fingerprint }, headers) {
-  return buildTurnstileTrustKeyFromParts([
-    ip,
-    firstHeaderCandidate(headers, 'user-agent'),
-    firstHeaderCandidate(headers, 'sec-ch-ua'),
-    firstHeaderCandidate(headers, 'sec-ch-ua-platform'),
-    firstHeaderCandidate(headers, 'accept-language'),
-    fingerprint,
-  ])
-}
-
 function buildTurnstileTrustKeyFromParts(parts) {
   const raw = parts.join('|')
   return `turnstile:trust:${createHash('sha256').update(raw).digest('hex')}`
-}
-
-function firstHeaderCandidate(headers, key) {
-  return headerCandidates(headers, key)[0] ?? ''
 }
 
 function headerCandidates(headers, key) {
