@@ -38,7 +38,11 @@ describe('appearance config', () => {
       sourceDoc: 'docs/滚动叙事.txt',
       family: 'rounded',
       enhancer: 'gradient',
+      galleryTitle: 'Story Arc',
     })
+
+    expect(getAppearancePresetSpec('fluent-soft').influences).toContain('docs/可爱极简.txt')
+    expect(getAppearancePresetSpec('organic-natural').influences).toContain('docs/织物纹理.txt')
   })
 
   it('resolves scene roles from routes', () => {
@@ -48,5 +52,6 @@ describe('appearance config', () => {
       'discussion'
     )
     expect(resolveSceneRole({ name: 'home', path: '/' })).toBe('narrative')
+    expect(resolveSceneRole({ name: 'style-gallery', path: '/style-gallery' })).toBe('narrative')
   })
 })

@@ -364,6 +364,8 @@ describe('ProfileSettingsPage', () => {
     expect(wrapper.get('[data-testid="settings-panel"]').attributes('data-categories')).toBe(
       'appearance,experience'
     )
+    expect(wrapper.text()).toContain('settings.appearanceLead')
+    expect(wrapper.text()).toContain('settings.openStyleGallery')
 
     await wrapper
       .findAll('.settings-group-switcher__item')
@@ -379,6 +381,21 @@ describe('ProfileSettingsPage', () => {
     expect(profileMocks.getProfile).toHaveBeenCalledTimes(2)
     expect(profileMocks.getDeletionStatus).toHaveBeenCalledTimes(2)
     expect(profileMocks.getDataSummary).toHaveBeenCalledTimes(2)
+  })
+
+  it('opens the style gallery from the appearance callout', async () => {
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    const styleGalleryButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('settings.openStyleGallery'))
+
+    expect(styleGalleryButton).toBeTruthy()
+
+    await styleGalleryButton!.trigger('click')
+
+    expect(profileMocks.push).toHaveBeenCalledWith('/style-gallery')
   })
 
   it('saves profile updates and opens email verification flow for email change', async () => {

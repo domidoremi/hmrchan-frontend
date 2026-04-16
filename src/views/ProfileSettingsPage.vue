@@ -383,6 +383,24 @@
                   </div>
                 </div>
 
+                <div class="settings-style-gallery-callout">
+                  <div>
+                    <p class="settings-style-gallery-callout__eyebrow">
+                      {{ $t('styleGallery.eyebrow') }}
+                    </p>
+                    <p class="field-hint">{{ $t('settings.appearanceLead') }}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    @click="router.push('/style-gallery')"
+                  >
+                    <AnimatedIcon name="explore" :fallback-icon="Palette" size="sm" />
+                    {{ $t('settings.openStyleGallery') }}
+                  </Button>
+                </div>
+
                 <SettingsPanel
                   :compact="false"
                   :embedded="true"
@@ -1651,6 +1669,30 @@ onUnmounted(() => {
   color: var(--ui-compat-text-secondary);
   font-size: var(--text-xs);
   line-height: 1.45;
+}
+
+.settings-style-gallery-callout {
+  display: grid;
+  gap: 0.875rem;
+  padding: clamp(1rem, 2.4vw, 1.25rem);
+  border: 0.0625rem solid var(--ui-compat-border);
+  border-radius: var(--profile-section-radius);
+  background: var(--ui-compat-surface-elevated);
+  box-shadow: var(--ui-compat-shadow);
+}
+
+.settings-style-gallery-callout__copy {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.settings-style-gallery-callout__eyebrow {
+  margin: 0;
+  color: var(--ui-compat-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .settings-layout {

@@ -112,7 +112,18 @@ vi.mock('@/i18n', () => ({
 }))
 
 vi.mock('@/config/appearance', () => ({
-  getAppearancePresets: () => ['minimal-editorial', 'material-calm'],
+  getAppearancePresetSpecs: () => [
+    {
+      preset: 'minimal-editorial',
+      gallerySummary: 'Editorial quiet.',
+      surfaceStyle: 'Paper panels.',
+    },
+    {
+      preset: 'material-calm',
+      gallerySummary: 'Structured tonal surfaces.',
+      surfaceStyle: 'Tonal containers.',
+    },
+  ],
 }))
 
 vi.mock('@/composables/usePreferencesSync', () => ({
@@ -333,5 +344,16 @@ describe('SettingsPanel', () => {
     await flushPromises()
 
     expect(panelMocks.toastError).toHaveBeenCalledWith('settings.appearanceRuntimeFailed')
+  })
+
+  it('renders the style gallery entry point and ambient note', () => {
+    const wrapper = createWrapper({
+      embedded: true,
+      allowedCategories: ['appearance', 'experience'],
+    })
+
+    expect(wrapper.text()).toContain('settings.appearanceLead')
+    expect(wrapper.text()).toContain('settings.openStyleGallery')
+    expect(wrapper.text()).toContain('settings.ambientEffectsNote')
   })
 })

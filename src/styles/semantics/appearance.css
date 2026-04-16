@@ -59,10 +59,87 @@
   --ui-backdrop-blur: var(--backdrop-token, none);
   --ui-surface-bg: var(--semantic-surface-base);
   --ui-surface-border: var(--semantic-border);
+  --page-shell-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--appearance-canvas) 86%, var(--appearance-surface-1) 14%),
+    color-mix(in srgb, var(--appearance-canvas) 94%, var(--appearance-surface-2) 6%)
+  );
+  --page-shell-backdrop: radial-gradient(
+    circle at top right,
+    rgb(var(--appearance-accent-rgb) / 0.12),
+    transparent 42%
+  );
+  --page-shell-border: var(--appearance-surface-border-token);
+  --page-shell-shadow: var(--appearance-shadow-medium);
+  --page-shell-padding-inline: clamp(1rem, 3vw, 2rem);
+  --page-shell-padding-block: clamp(1.5rem, 4vw, 3rem);
+  --page-shell-gap: clamp(1.25rem, 3vw, 2rem);
+  --page-section-bg: transparent;
+  --page-section-border: var(--appearance-surface-border-token);
+  --page-section-shadow: none;
+  --page-section-gap: clamp(1rem, 2.2vw, 1.75rem);
+  --page-hero-bg: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--appearance-surface-1) 94%, transparent),
+    color-mix(in srgb, var(--appearance-surface-2) 84%, transparent)
+  );
+  --page-hero-border: var(--appearance-surface-border-strong-token);
+  --page-hero-shadow: var(--appearance-shadow-medium);
+  --page-hero-accent: color-mix(
+    in srgb,
+    var(--appearance-surface-2) 76%,
+    var(--appearance-accent) 24%
+  );
+  --page-hero-min-block-size: clamp(17rem, 34vw, 23rem);
+  --page-panel-bg: color-mix(in srgb, var(--appearance-surface-1) 90%, transparent);
+  --page-panel-border: var(--appearance-surface-border-token);
+  --page-panel-shadow: var(--appearance-shadow-medium);
+  --page-card-bg: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--appearance-surface-1) 92%, transparent),
+    color-mix(in srgb, var(--appearance-surface-2) 86%, transparent)
+  );
+  --page-card-border: var(--appearance-surface-border-token);
+  --page-card-shadow: var(--appearance-shadow-medium);
+  --page-card-hover-transform: translate3d(0, -0.0625rem, 0);
+  --page-form-bg: color-mix(in srgb, var(--appearance-surface-1) 88%, transparent);
+  --page-form-border: var(--appearance-surface-border-token);
+  --page-form-shadow: var(--appearance-shadow-soft);
+  --page-nav-bg: var(--chrome-shell-bg);
+  --page-nav-border: var(--chrome-shell-border);
+  --page-nav-shadow: var(--chrome-shell-shadow);
+  --page-overlay-bg: color-mix(in srgb, var(--appearance-surface-1) 94%, transparent);
+  --page-overlay-border: var(--appearance-surface-border-strong-token);
+  --page-overlay-shadow: var(--appearance-shadow-strong);
+  --page-divider-color: color-mix(in srgb, var(--appearance-border-strong) 72%, transparent);
+  --page-accent-bg: color-mix(
+    in srgb,
+    var(--appearance-surface-2) 78%,
+    var(--appearance-accent) 22%
+  );
+  --page-accent-border: color-mix(
+    in srgb,
+    var(--appearance-border-strong) 68%,
+    var(--appearance-accent) 32%
+  );
+  --page-accent-text: var(--appearance-text-primary);
+  --page-accent-glow: 0 0 0 0.0625rem rgb(var(--appearance-accent-rgb) / 0.1);
+  --page-motion-duration: 220ms;
+  --page-motion-distance: 0.375rem;
+  --page-motion-ease: var(--ease-out);
+  --page-density-stack-gap: clamp(1rem, 2vw, 1.5rem);
+  --page-density-section-gap: clamp(1.5rem, 4vw, 3rem);
+  --page-density-inline-gap: 0.75rem;
+  --page-pattern-opacity: 0.32;
 }
 
 :root[data-contrast='high'] {
   --component-card-shadow: 0 0 0 0.0625rem rgb(15 23 42 / 0.18);
   --component-control-border: var(--surface-border-strong-token);
   --ui-surface-border: var(--semantic-border-strong);
+  --page-shell-shadow: none;
+  --page-panel-shadow: none;
+  --page-card-shadow: none;
+  --page-overlay-shadow: none;
+  --page-divider-color: var(--semantic-border-strong);
 }

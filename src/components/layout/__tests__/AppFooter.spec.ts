@@ -51,6 +51,7 @@ const i18n = createI18n({
         explore: 'Explore',
         authors: 'Authors',
         schedule: 'Schedule',
+        styleGallery: 'Style Gallery',
         community: 'Community',
         contact: 'Contact',
         about: 'About',
@@ -128,5 +129,12 @@ describe('AppFooter', () => {
     expect(wrapper.find('a[href="https://github.com/domidoremi/hmrchan-frontend"]').exists()).toBe(
       true
     )
+  })
+
+  it('includes a footer entry to the style gallery', () => {
+    const wrapper = createWrapper()
+
+    expect(wrapper.find('a[href="/style-gallery"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Style Gallery')
   })
 })

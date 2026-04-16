@@ -20,7 +20,8 @@
     "userProfile": "User Profile",
     "profileSettings": "Profile Settings",
     "search": "Search",
-    "schedule": "Schedule"
+    "schedule": "Schedule",
+    "styleGallery": "Style Gallery"
   },
   "common": {
     "all": "All",
@@ -301,6 +302,7 @@
     "links": "Links",
     "theme": "Theme",
     "appearancePreset": "Appearance Preset",
+    "appearanceLead": "Each preset changes pacing, material language, emphasis, and motion across the whole site.",
     "light": "Light",
     "dark": "Dark",
     "auto": "Auto",
@@ -348,6 +350,7 @@
     "performanceCookiesDesc": "Allow Web Vitals and frontend performance metrics to be recorded.",
     "replacePreferences": "Replace synced preferences",
     "backgroundEffect": "Background",
+    "ambientEffectsNote": "Ambient effects stay optional and secondary to the active appearance preset.",
     "bgNone": "Off",
     "bgRain": "Rain",
     "bgSnow": "Snow",
@@ -375,6 +378,7 @@
     "preferencesReset": "Preferences have been reset to defaults",
     "preferencesReplaced": "Cloud preferences replaced successfully",
     "appearanceRuntimeFailed": "The new appearance preset could not be loaded. The current preset was kept.",
+    "openStyleGallery": "Open style gallery",
     "presets": {
       "minimal-editorial": "Minimal Editorial",
       "fluent-soft": "Fluent Soft",
@@ -394,6 +398,25 @@
       "description": "Clear cached data to free up space",
       "clear": "Clear Cache"
     }
+  },
+  "styleGallery": {
+    "eyebrow": "Appearance System",
+    "title": "Style Gallery",
+    "subtitle": "Compare the eight runtime presets by signature, density, motion, and mobile behavior before applying one globally.",
+    "currentPreset": "Current preset",
+    "currentMode": "Current mode",
+    "manageSettings": "Manage settings",
+    "current": "Current",
+    "surfaceStyle": "Surface",
+    "motionStyle": "Motion",
+    "densityStyle": "Density",
+    "heroStyle": "Hero",
+    "desktopPreview": "Desktop",
+    "mobilePreview": "Mobile",
+    "influences": "Influences",
+    "applyPreset": "Apply preset",
+    "viewSettings": "View settings",
+    "presetApplied": "{preset} applied."
   },
   "appUpdate": {
     "title": "App update",

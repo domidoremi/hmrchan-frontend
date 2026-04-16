@@ -1,0 +1,260 @@
+:where(
+  .search-page,
+  .explore-page,
+  .community-page,
+  .discussion-detail-page,
+  .post-detail-page,
+  .schedule-page,
+  .settings-page,
+  .about-page,
+  .contact-page,
+  .style-gallery-page,
+  .auth-page
+) {
+  position: relative;
+  isolation: isolate;
+  background: var(--page-shell-bg);
+  --page-shell-surface-bg: var(--page-panel-bg);
+  --page-shell-surface-bg-strong: var(--page-hero-bg);
+  --page-shell-surface-border: var(--page-panel-border);
+  --page-shell-surface-border-strong: var(--page-hero-border);
+  --page-shell-control-bg: var(--page-form-bg);
+  --page-shell-control-bg-hover: var(--page-accent-bg);
+  --page-shell-control-border: var(--page-form-border);
+  --page-shell-control-border-strong: var(--page-accent-border);
+  --page-shell-control-active-bg: var(--page-accent-bg);
+  --page-shell-control-active-border: var(--page-accent-border);
+  --page-shell-control-active-ink: var(--page-accent-text);
+  --page-shell-eyebrow-bg: color-mix(in srgb, var(--semantic-accent) 10%, transparent);
+  --page-shell-eyebrow-border: color-mix(in srgb, var(--semantic-accent) 18%, transparent);
+  --page-shell-eyebrow-ink: var(--page-accent-text);
+  --appearance-page-control-shadow: var(--page-form-shadow);
+  --appearance-page-surface-shadow: var(--page-panel-shadow);
+}
+
+:where(
+  .search-page,
+  .explore-page,
+  .community-page,
+  .discussion-detail-page,
+  .post-detail-page,
+  .schedule-page,
+  .settings-page,
+  .about-page,
+  .contact-page,
+  .style-gallery-page,
+  .auth-page
+)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--page-pattern-opacity);
+  background: var(--page-shell-backdrop);
+}
+
+:where(
+    .search-page,
+    .explore-page,
+    .community-page,
+    .discussion-detail-page,
+    .post-detail-page,
+    .schedule-page,
+    .settings-page,
+    .about-page,
+    .contact-page,
+    .style-gallery-page,
+    .auth-page
+  )
+  > .container {
+  position: relative;
+  z-index: 1;
+}
+
+:where(
+    .search-page,
+    .explore-page,
+    .community-page,
+    .discussion-detail-page,
+    .post-detail-page,
+    .schedule-page,
+    .settings-page,
+    .about-page,
+    .contact-page,
+    .style-gallery-page,
+    .auth-page
+  )
+  :where(
+    .glass-surface--base,
+    .glass-surface--editorial,
+    .empty-surface,
+    .page-list-card,
+    .settings-section,
+    .settings-overview,
+    .settings-aside-card,
+    .account-summary-card,
+    .account-status-card,
+    .account-count-item,
+    .two-factor-status-card,
+    .two-factor-secret-card,
+    .two-factor-backup-box,
+    .two-factor-setup-qr,
+    .auth-card,
+    .auth-shell,
+    .discussion-detail-main,
+    .discussion-detail-sidebar,
+    .post-detail-sidebar,
+    .post-detail-comments,
+    .post-detail-section,
+    .contact-main,
+    .contact-side,
+    .about-section
+  ) {
+  background: var(--page-panel-bg);
+  border: var(--page-panel-border);
+  box-shadow: var(--page-panel-shadow);
+  transition:
+    background var(--page-motion-duration) var(--page-motion-ease),
+    border-color var(--page-motion-duration) var(--page-motion-ease),
+    box-shadow var(--page-motion-duration) var(--page-motion-ease),
+    transform var(--page-motion-duration) var(--page-motion-ease);
+}
+
+:where(
+    .search-page,
+    .explore-page,
+    .community-page,
+    .discussion-detail-page,
+    .post-detail-page,
+    .schedule-page,
+    .settings-page,
+    .about-page,
+    .contact-page,
+    .style-gallery-page,
+    .auth-page
+  )
+  :where(
+    .glass-surface--base:hover,
+    .glass-surface--editorial:hover,
+    .empty-surface:hover,
+    .page-list-card:hover,
+    .settings-section:hover,
+    .settings-aside-card:hover,
+    .account-count-item:hover
+  ) {
+  transform: var(--page-card-hover-transform);
+}
+
+:where(.settings-overview, .style-gallery-hero) {
+  background: var(--page-hero-bg);
+  border: var(--page-hero-border);
+  box-shadow: var(--page-hero-shadow);
+}
+
+:where(.glass-navbar, .footer-shell.empty-surface) {
+  background: var(--page-nav-bg);
+  border: var(--page-nav-border);
+  box-shadow: var(--page-nav-shadow);
+}
+
+:where(.glass-dropdown, .sheet, .action-sheet-group) {
+  background: var(--page-overlay-bg);
+  border: var(--page-overlay-border);
+  box-shadow: var(--page-overlay-shadow);
+}
+
+:where(
+  .settings-group-switcher__item,
+  .theme-btn,
+  .lang-btn,
+  .toggle-btn,
+  .link-btn,
+  .bg-effect-btn
+) {
+  transition:
+    background var(--page-motion-duration) var(--page-motion-ease),
+    border-color var(--page-motion-duration) var(--page-motion-ease),
+    color var(--page-motion-duration) var(--page-motion-ease),
+    box-shadow var(--page-motion-duration) var(--page-motion-ease),
+    transform var(--page-motion-duration) var(--page-motion-ease);
+}
+
+:where(
+  .settings-group-switcher__item:hover,
+  .theme-btn:hover,
+  .lang-btn:hover,
+  .toggle-btn:hover,
+  .link-btn:hover,
+  .bg-effect-btn:hover
+) {
+  transform: translate3d(0, calc(var(--page-motion-distance) * -0.25), 0);
+}
+
+:where(.page-section-head, .settings-section-head, .style-gallery-card__header) {
+  margin-block-end: var(--page-section-gap);
+}
+
+:where(.page-inline-cta, .ui-pill--action, .cta-inline, .cta-secondary) {
+  background: var(--page-accent-bg);
+  border-color: var(--page-accent-border);
+  color: var(--page-accent-text);
+  box-shadow: var(--page-accent-glow);
+}
+
+:where(.page-inline-cta:hover, .ui-pill--action:hover, .cta-inline:hover, .cta-secondary:hover) {
+  transform: translate3d(0, calc(var(--page-motion-distance) * -0.2), 0);
+}
+
+:where(
+    .search-page,
+    .explore-page,
+    .community-page,
+    .discussion-detail-page,
+    .post-detail-page,
+    .schedule-page,
+    .settings-page,
+    .about-page,
+    .contact-page,
+    .style-gallery-page,
+    .auth-page
+  )
+  :where(hr, .divider, .section-divider, .settings-section + .settings-section) {
+  border-color: var(--page-divider-color);
+}
+
+@media (max-width: 48rem) {
+  :where(
+    .search-page,
+    .explore-page,
+    .community-page,
+    .discussion-detail-page,
+    .post-detail-page,
+    .schedule-page,
+    .settings-page,
+    .about-page,
+    .contact-page,
+    .style-gallery-page,
+    .auth-page
+  ) {
+    --page-shell-padding-inline: clamp(0.875rem, 4vw, 1.25rem);
+    --page-shell-padding-block: clamp(1.25rem, 5vw, 2rem);
+    --page-density-section-gap: clamp(1.25rem, 5vw, 2rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(
+    .settings-group-switcher__item,
+    .theme-btn,
+    .lang-btn,
+    .toggle-btn,
+    .link-btn,
+    .bg-effect-btn
+  ),
+  :where(.page-inline-cta, .ui-pill--action, .cta-inline, .cta-secondary),
+  :where(.glass-surface--base, .glass-surface--editorial, .empty-surface, .page-list-card) {
+    transition: none;
+    transform: none;
+  }
+}
