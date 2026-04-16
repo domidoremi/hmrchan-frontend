@@ -179,6 +179,8 @@ bun run check:release-evidence
 - 浏览器端生产默认通过同源 `/api` 访问后端，不使用 `VITE_API_BASE_URL` 改写线上 API 基址
 - Pages Functions 的上游目标通过 `API_BASE_URL` 配置，当前生产仍兼容 `VPC_API_ORIGIN + VPC_SERVICE`
 - Pages 纯文本变量最小集合为：`API_BASE_URL`、`BUN_VERSION=1.3.11`、`SKIP_DEPENDENCY_INSTALL=true`
+- 推荐 Pages 构建命令继续显式注入 `VITE_GIT_COMMIT=$CF_PAGES_COMMIT_SHA`；若 Dashboard 未配置 `VITE_CLIENT_CONTRACT_VERSION`，构建 wrapper 只会在 Cloudflare Pages 环境中用 `CF_PAGES_COMMIT_SHA` 作为本次 rollout contract，不影响普通本地 `bun run build` 的缺契约失败语义
+- 若后端生产 `CLIENT_CONTRACT_VERSION` 使用独立 release hash，而不是 Pages commit SHA，必须在 Cloudflare Dashboard 显式配置同值 `VITE_CLIENT_CONTRACT_VERSION`
 - `VPC_API_ORIGIN` 仅在生产仍走私网 nginx / VPC service 时保留
 - `VITE_TURNSTILE_SITE_KEY` 作为机密在 Dashboard 中保留；其余 `VITE_*` 变量不是 Pages 生产必需项
 

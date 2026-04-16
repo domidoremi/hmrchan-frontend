@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "dev": "node scripts/patch-lucide.mjs && vite",
-    "build": "node scripts/patch-lucide.mjs && vue-tsc --noEmit --pretty && node ./node_modules/vite/bin/vite.js build",
+    "build": "node scripts/build.mjs",
     "build:security-check": "node scripts/check-build-security.mjs",
     "preview": "vite preview",
     "postinstall": "node scripts/patch-lucide.mjs",

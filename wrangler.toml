@@ -17,6 +17,8 @@ pages_build_output_dir = "./dist"
 # 注意：Cloudflare Pages 不支持在 wrangler.toml 中配置 [build]
 # 构建命令需要在 Cloudflare Dashboard > Pages > Settings > Builds & deployments 中配置
 # 推荐构建命令：bun install --frozen-lockfile && VITE_GIT_COMMIT=$CF_PAGES_COMMIT_SHA bun run build
+# 若 Dashboard 未显式配置 VITE_CLIENT_CONTRACT_VERSION，仓库 build wrapper 仅在
+# Cloudflare Pages 环境中使用 CF_PAGES_COMMIT_SHA 作为本次 rollout contract。
 
 # ============================================================================
 # Production 环境配置
