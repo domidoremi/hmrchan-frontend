@@ -7,6 +7,7 @@ import { buildBufferedResponse } from './bufferedResponse'
 import type { EdgeBindingFetcher } from './internalApiGateway'
 
 export type InternalApiGatewayWorkerEnv = UpstreamRuntimeEnv & {
+  ENABLE_VPC_PROXY?: string
   VPC_SERVICE?: EdgeBindingFetcher
 }
 
@@ -40,6 +41,11 @@ const RESPONSE_HEADERS_TO_SKIP = [
 
 function normalizePath(path: string): string {
   return path.trim().replace(/\/+$/, '') || '/'
+}
+
+function isVpcProxyEnabled(env: InternalApiGatewayWorkerEnv): boolean {
+  const value = env.ENABLE_VPC_PROXY?.trim().toLowerCase()
+  return value === '1' || value === 'true' || value === 'yes' || value === 'on'
 }
 
 function shouldBypassVpc(pathname: string, request: Request): boolean {
@@ -177,7 +183,8 @@ export async function handleInternalApiGatewayRequest(
   const bodyBuffer =
     request.method === 'GET' || request.method === 'HEAD' ? null : await request.arrayBuffer()
 
-  if (env.VPC_SERVICE && !shouldBypassVpc(path, request)) {
+  // Keep the private VPC path opt-in until the runtime route is verified healthy in production.
+  if (isVpcProxyEnabled(env) && env.VPC_SERVICE && !shouldBypassVpc(path, request)) {
     try {
       const response = await fetchViaVPC(request, requestUrl, path, search, env, bodyBuffer)
       return await withUpstreamSourceHeaders(response, 'vpc', path, request.method)
