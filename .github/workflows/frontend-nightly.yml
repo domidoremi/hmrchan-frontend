@@ -23,6 +23,7 @@ env:
   CI: true
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   BUN_VERSION: 1.3.11
+  VITE_CLIENT_CONTRACT_VERSION: ${{ vars.CLIENT_CONTRACT_VERSION || 'test-contract-hash' }}
 
 defaults:
   run:
@@ -124,11 +125,10 @@ jobs:
 
       - name: PWA / E2E smoke
         env:
-          # Nightly requires the seeded auth smoke account unless secrets are genuinely absent.
           E2E_ARTIFACT_DIR: .e2e-smoke-nightly
           E2E_REQUIRE_AUTH: 'true'
-          E2E_AUTH_LOGIN: ${{ secrets.E2E_AUTH_LOGIN }}
-          E2E_AUTH_PASSWORD: ${{ secrets.E2E_AUTH_PASSWORD }}
+          PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
+          PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
           mkdir -p .e2e-smoke-nightly
           status=0
@@ -170,6 +170,9 @@ jobs:
           FRONTEND_HEALTH_AUTOSTART: 'false'
           FRONTEND_HEALTH_INCLUDE_API_ERRORS: 'true'
           FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health
+          FRONTEND_HEALTH_REQUIRE_AUTH: 'true'
+          PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
+          PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
         run: |
           mkdir -p .frontend-health
           status=0

@@ -42,15 +42,15 @@ cp .env.example .env.development
 
 常用变量：
 
-| 变量                           | 说明                                   |
-| ------------------------------ | -------------------------------------- |
-| `VITE_API_BASE_URL`            | 本地 Vite dev/preview proxy 的后端目标 |
-| `VITE_CLIENT_CONTRACT_VERSION` | 前后端契约版本，构建时注入请求头       |
-| `VITE_ENABLE_DEBUG`            | 是否启用调试日志                       |
-| `VITE_ENABLE_CLIENT_INIT`      | 是否执行 `/api/v1/client/init`         |
-| `VITE_ENABLE_SCHEDULE_API`     | 是否启用日程接口请求                   |
-| `VITE_ENABLE_DATA_PREFETCH`    | 是否启用后台数据预取                   |
-| `VITE_TURNSTILE_SITE_KEY`      | 人机验证站点 key（回退配置，可选）     |
+| 变量                           | 说明                                             |
+| ------------------------------ | ------------------------------------------------ |
+| `VITE_API_BASE_URL`            | 本地 Vite dev/preview proxy 的后端目标           |
+| `VITE_CLIENT_CONTRACT_VERSION` | 共享 release contract hash，生产构建必须显式注入 |
+| `VITE_ENABLE_DEBUG`            | 是否启用调试日志                                 |
+| `VITE_ENABLE_CLIENT_INIT`      | 是否执行 `/api/v1/client/init`                   |
+| `VITE_ENABLE_SCHEDULE_API`     | 是否启用日程接口请求                             |
+| `VITE_ENABLE_DATA_PREFETCH`    | 是否启用后台数据预取                             |
+| `VITE_TURNSTILE_SITE_KEY`      | 人机验证站点 key（回退配置，可选）               |
 
 其余构建、安全和实验性开关请直接参考：
 
@@ -61,22 +61,41 @@ cp .env.example .env.development
 
 质量 / 回归脚本支持以下测试环境变量：
 
-| 变量                                      | 说明                                                           |
-| ----------------------------------------- | -------------------------------------------------------------- |
-| `E2E_BASE_URL`                            | 让 `bun run test:e2e` 直接扫指定站点，而不是本地 build+preview |
-| `E2E_AUTOSTART`                           | 设为 `false` 时，E2E 不尝试自启本地预览环境                    |
-| `E2E_ARTIFACT_DIR`                        | E2E smoke 产物目录，默认 `.e2e-smoke`                          |
-| `E2E_REQUIRE_AUTH`                        | 设为 `true` 时，缺少认证态 smoke 账号会直接失败                |
-| `E2E_AUTH_LOGIN`                          | 存在时启用登录后 smoke，使用同源 `/api/v1/auth/login` 建立会话 |
-| `E2E_AUTH_PASSWORD`                       | 登录后 smoke 对应的测试账号密码                                |
-| `E2E_SAMPLE_POST_ROUTE`                   | 指定帖子详情 smoke 用例路由                                    |
-| `E2E_SAMPLE_DISCUSSION_ROUTE`             | 指定讨论详情 smoke 用例路由                                    |
-| `FRONTEND_HEALTH_BASE_URL`                | 指定 `bun run check:frontend` 的巡检基址                       |
-| `FRONTEND_HEALTH_AUTOSTART`               | 设为 `false` 时，不自启本地 preview shell                      |
-| `FRONTEND_HEALTH_ARTIFACT_DIR`            | frontend health 产物目录，默认 `.frontend-health`              |
-| `FRONTEND_HEALTH_INCLUDE_API_ERRORS`      | 设为 `true` 时，把 API 4xx/5xx 视为阻断问题                    |
-| `FRONTEND_HEALTH_SAMPLE_POST_ROUTE`       | 指定健康检查里的帖子详情巡检路由                               |
-| `FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE` | 指定健康检查里的讨论详情巡检路由                               |
+| 变量                                      | 说明                                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `E2E_BASE_URL`                            | 让 `bun run test:e2e` 直接扫指定站点，而不是本地 build+preview                             |
+| `E2E_AUTOSTART`                           | 设为 `false` 时，E2E 不尝试自启本地预览环境                                                |
+| `E2E_ARTIFACT_DIR`                        | E2E smoke 产物目录，默认 `.e2e-smoke`                                                      |
+| `E2E_REQUIRE_AUTH`                        | 默认要求认证态 smoke；仅显式设为 `false` 时才允许 guest-only                               |
+| `PRIMARY_USERNAME`                        | 认证 smoke 主账号用户名，`test:e2e` / `check:frontend` / `test:prod:regression` 的首选输入 |
+| `PRIMARY_PASSWORD`                        | 认证 smoke 主账号密码                                                                      |
+| `E2E_AUTH_LOGIN`                          | 历史别名；仅在未设置 `PRIMARY_USERNAME` 时回退使用                                         |
+| `E2E_AUTH_PASSWORD`                       | 历史别名；仅在未设置 `PRIMARY_PASSWORD` 时回退使用                                         |
+| `E2E_SAMPLE_POST_ROUTE`                   | 指定帖子详情 smoke 用例路由                                                                |
+| `E2E_SAMPLE_DISCUSSION_ROUTE`             | 指定讨论详情 smoke 用例路由                                                                |
+| `FRONTEND_HEALTH_BASE_URL`                | 指定 `bun run check:frontend` 的巡检基址                                                   |
+| `FRONTEND_HEALTH_AUTOSTART`               | 设为 `false` 时，不自启本地 preview shell                                                  |
+| `FRONTEND_HEALTH_ARTIFACT_DIR`            | frontend health 产物目录，默认 `.frontend-health`                                          |
+| `FRONTEND_HEALTH_INCLUDE_API_ERRORS`      | 设为 `true` 时，把 API 4xx/5xx 视为阻断问题                                                |
+| `FRONTEND_HEALTH_SAMPLE_POST_ROUTE`       | 指定健康检查里的帖子详情巡检路由                                                           |
+| `FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE` | 指定健康检查里的讨论详情巡检路由                                                           |
+| `LOCAL_AUDIT_CLEAR_RATE_LIMITS`           | 本地 Docker smoke 串行证据链中清理 Redis `ratelimit:*` 状态                                |
+
+本地私有 smoke / release-evidence 推荐写入未跟踪的 `.env.smoke.local`，例如：
+
+```bash
+PRIMARY_USERNAME=smoke-user
+PRIMARY_PASSWORD=smoke-password
+VITE_CLIENT_CONTRACT_VERSION=local-audit-contract
+LOCAL_AUDIT_CLEAR_RATE_LIMITS=true
+```
+
+约定：
+
+- 进程环境变量优先级高于 `.env.smoke.local`
+- `.env.smoke.local` 只用于本地私有审计，不替代 CI secrets / vars
+- `test:e2e`、`check:frontend`、`check:release-evidence`、`test:a11y`、`test:perf` 在自管 build/preview 时会自动补本地 contract fallback；这不会改变直接 `bun run build` 的严格门禁
+- 本地 Docker smoke 可开启 `LOCAL_AUDIT_CLEAR_RATE_LIMITS=true`，只清理本地 Redis `ratelimit:*`，避免串行 release evidence 前一阶段的限流状态污染后一阶段；CI / 生产限流语义不变
 
 认证态 smoke 账号约束：
 
@@ -84,8 +103,8 @@ cp .env.example .env.development
 - 不触发 step-up / risk verification
 - 至少具备收藏、浏览历史、profile 子页和可见评论区所需的最小真实数据
 
-本地未提供 `E2E_AUTH_*` 时，`bun run test:e2e` 只跑 guest smoke；这是正式约定，不是缺陷。
-如果同时设置 `E2E_REQUIRE_AUTH=true`，则缺少账号会直接报错并写出 smoke summary。
+默认推荐使用 `PRIMARY_USERNAME/PRIMARY_PASSWORD` 作为 public smoke fixture 账号；旧的 `E2E_AUTH_*` 仅作为兼容别名保留。
+默认会要求认证 smoke fixture；只有显式设置 `E2E_REQUIRE_AUTH=false` 或 `FRONTEND_HEALTH_REQUIRE_AUTH=false` 时，才允许 guest-only 本地调试。
 
 推荐在评论区 / Profile / 设备等高风险改动发版前串行执行统一证据链：
 
@@ -167,8 +186,9 @@ bun run check:release-evidence
 
 - PR / 普通分支阻塞检查：`quality`、`coverage`、`e2e_smoke`、`frontend_health`
 - `main` / `master` push 后追加 `production_canary`
-- `frontend-nightly` 的 `pwa_smoke` 与主 CI 复用同一套 `E2E_AUTH_*` 契约；有机密时跑 guest + auth，没有机密时自动退化为 guest
+- `frontend-nightly` 的 `pwa_smoke` 与主 CI 复用同一套 public smoke fixture 契约；默认要求提供 `PRIMARY_USERNAME/PRIMARY_PASSWORD`
 - `frontend-nightly` 中只有 `frontend_health` 直接扫生产；`pwa_smoke` 仍跑本地 build + preview 壳层
+- 本地自管 preview-shell 审计现在会复用统一 preview manager；若 preview 异常退出导致 `chrome-error://chromewebdata/`，`test:e2e` / `check:frontend` 会自动重启一次并重试当前检查
 - 高风险改动在自动化全绿后，仍建议补跑 `bun run test:prod:regression`
 - 高风险改动在跑完整 manual regression 前，先执行 `bun run test:prod:regression --preflight`
 - 测试 / 构建依赖只做 scoped upgrade；默认不顺手升级业务运行时依赖

@@ -63,7 +63,6 @@ function getBuildHash(): string {
 
 const BUILD_HASH = getBuildHash()
 const SW_CACHE_VERSION = getSwCacheVersion()
-const DEFAULT_CLIENT_CONTRACT_VERSION = '2026-04-13.p1'
 
 type EnvMap = Record<string, string | undefined>
 
@@ -124,31 +123,93 @@ function shouldObfuscateChunk(fileName: string): boolean {
   return OBFUSCATED_CHUNK_PATTERNS.some((pattern) => pattern.test(chunkName))
 }
 
-function createProxyConfig(apiTarget: string) {
+function createProxyRule(apiTarget: string) {
   return {
-    '/api': {
-      target: apiTarget,
-      changeOrigin: true,
-      secure: true,
-      followRedirects: true,
-      configure: (proxy: DevProxyServer) => {
-        proxy.on('proxyReq', (proxyReq, req) => {
-          normalizeProxyRequestHeaders(proxyReq, req)
-        })
-        proxy.on('proxyRes', (proxyRes) => {
-          const setCookie = proxyRes.headers['set-cookie']
-          if (setCookie && Array.isArray(setCookie)) {
-            proxyRes.headers['set-cookie'] = setCookie.map((cookie) =>
-              cookie.replace(/;\s*Secure/gi, '')
-            )
-          }
-        })
-      },
-      rewrite: (path: string) => {
-        const url = new URL(path, 'http://localhost')
-        return url.pathname + url.search
-      },
+    target: apiTarget,
+    changeOrigin: true,
+    secure: true,
+    followRedirects: true,
+    configure: (proxy: DevProxyServer) => {
+      proxy.on('proxyReq', (proxyReq, req) => {
+        normalizeProxyRequestHeaders(proxyReq, req)
+      })
+      proxy.on('proxyRes', (proxyRes) => {
+        const setCookie = proxyRes.headers['set-cookie']
+        if (setCookie && Array.isArray(setCookie)) {
+          proxyRes.headers['set-cookie'] = setCookie.map((cookie) =>
+            cookie.replace(/;\s*Secure/gi, '')
+          )
+        }
+      })
     },
+    rewrite: (path: string) => {
+      const url = new URL(path, 'http://localhost')
+      return url.pathname + url.search
+    },
+  }
+}
+
+function createUploadProxyRule(apiTarget: string) {
+  return {
+    target: apiTarget,
+    changeOrigin: true,
+    secure: true,
+    followRedirects: true,
+  }
+}
+
+function createProxyConfig(
+  apiTarget: string,
+  {
+    identityTarget = apiTarget,
+    communityTarget = apiTarget,
+    contentTarget = apiTarget,
+  }: {
+    identityTarget?: string
+    communityTarget?: string
+    contentTarget?: string
+  } = {}
+) {
+  const identityProxy = createProxyRule(identityTarget)
+  const communityProxy = createProxyRule(communityTarget)
+  const contentProxy = createProxyRule(contentTarget)
+  const defaultProxy = createProxyRule(apiTarget)
+
+  return {
+    '^/api/v1/posts/[^/]+/comments$': communityProxy,
+    '/api/v1/authors': contentProxy,
+    '/api/v1/client': identityProxy,
+    '/api/v1/auth': identityProxy,
+    '/api/v1/preferences': identityProxy,
+    '/api/v1/users/me': identityProxy,
+    '/api/v1/devices': identityProxy,
+    '/api/v1/account': identityProxy,
+    '/api/v1/2fa': identityProxy,
+    '/api/v1/email': identityProxy,
+    '/api/v1/upload/avatar': identityProxy,
+    '/api/v1/audit': identityProxy,
+    '/api/v1/media': contentProxy,
+    '/api/v1/home': contentProxy,
+    '/api/v1/posts': contentProxy,
+    '/api/v1/search': contentProxy,
+    '/api/v1/schedules': contentProxy,
+    '/api/v1/trends/summary': contentProxy,
+    '/api/v1/community/highlights': contentProxy,
+    '/api/v1/members': contentProxy,
+    '/api/v1/favorites': communityProxy,
+    '/api/v1/community': communityProxy,
+    '/api/v1/comments': communityProxy,
+    '/api/v1/comment-images': communityProxy,
+    '/api/v1/discussions': communityProxy,
+    '/api/v1/relations': communityProxy,
+    '/api/v1/history': communityProxy,
+    '/api/v1/reports': communityProxy,
+    '/api/v1/inbox': communityProxy,
+    '/api/v1/feedback': communityProxy,
+    '/api/v1/contact/send': communityProxy,
+    '/uploads/avatars': createUploadProxyRule(identityTarget),
+    '/uploads/comment_images': createUploadProxyRule(communityTarget),
+    '/api': defaultProxy,
     '/uploads': {
       target: apiTarget,
       changeOrigin: true,
@@ -165,13 +226,23 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   }
   const isProd = mode === 'production'
   const isDev = mode === 'development'
+  const clientContractVersion = (env.VITE_CLIENT_CONTRACT_VERSION ?? '').trim()
+  if (isProd && !clientContractVersion) {
+    throw new Error(
+      'VITE_CLIENT_CONTRACT_VERSION is required for production builds. Inject the shared release contract hash for this rollout.'
+    )
+  }
   const obfuscationEnabled = parseBoolEnv(env, 'VITE_ENABLE_OBFUSCATION', false)
   const asyncMainCss = parseBoolEnv(env, 'VITE_ASYNC_MAIN_CSS', true)
   const disablePreviewProxy = parseBoolEnv(env, 'VITE_DISABLE_PREVIEW_PROXY', false)
   const devtoolsEnabled = isDev && parseBoolEnv(env, 'VITE_ENABLE_DEVTOOLS', false)
   const sourcemapMode = isProd ? false : parseSourcemapEnv(env.VITE_SOURCEMAP)
   const apiProxyTarget = normalizeProxyTarget(env.VITE_API_BASE_URL, 'https://api.momichan.xyz')
-  const sharedProxyConfig = createProxyConfig(apiProxyTarget)
+  const sharedProxyConfig = createProxyConfig(apiProxyTarget, {
+    identityTarget: normalizeProxyTarget(env.VITE_IDENTITY_API_BASE_URL, apiProxyTarget),
+    communityTarget: normalizeProxyTarget(env.VITE_COMMUNITY_API_BASE_URL, apiProxyTarget),
+    contentTarget: normalizeProxyTarget(env.VITE_CONTENT_API_BASE_URL, apiProxyTarget),
+  })
   const obfuscationProfile = env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
   const obfuscationControlFlow = parseBoolEnv(env, 'VITE_OBFUSCATION_CONTROL_FLOW', false)
   const obfuscationDeadCode = parseBoolEnv(env, 'VITE_OBFUSCATION_DEAD_CODE', false)
@@ -297,14 +368,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
       /** Git commit hash */
       __BUILD_HASH__: JSON.stringify(BUILD_HASH),
-      /** Frontend/backend lockstep contract version */
-      __CLIENT_CONTRACT_VERSION__: JSON.stringify(
-        (
-          env.VITE_CLIENT_CONTRACT_VERSION ||
-          env.CLIENT_CONTRACT_VERSION ||
-          DEFAULT_CLIENT_CONTRACT_VERSION
-        ).trim()
-      ),
+      /** Shared release contract hash. Production must inject VITE_CLIENT_CONTRACT_VERSION explicitly. */
+      __CLIENT_CONTRACT_VERSION__: JSON.stringify(clientContractVersion || 'dev-local'),
       /** Service Worker cache version */
       __SW_CACHE_VERSION__: JSON.stringify(SW_CACHE_VERSION),
       /** 生产环境标识 */

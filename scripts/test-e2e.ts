@@ -1,17 +1,30 @@
 #!/usr/bin/env bun
 
-import { spawn, type ChildProcess } from 'child_process'
 import { mkdir, writeFile } from 'fs/promises'
-import { createServer } from 'net'
 import { join } from 'path'
 import puppeteer, { type Page } from 'puppeteer'
 import {
+  applyLocalAuditEnvToProcess,
+  createLocalAuditEnv,
+  resolveLocalAuditPreviewPorts,
+} from './lib/audit-env.js'
+import {
   createSmokeSummary,
   getAuthSkipReason,
+  resolveAuthSmokeCredentials,
   writeSmokeArtifacts,
 } from './lib/e2e-smoke-report.js'
 import { withBuildArtifactLock } from './lib/build-artifact-lock.js'
+import {
+  PreviewShellManager,
+  clearLocalAuditRateLimitState,
+  grantLocalAuditClientTrust,
+  grantLocalAuditTurnstileTrust,
+  runBunTask,
+} from './lib/preview-shell.js'
 import { getSmokeRouteMatrix } from './lib/release-route-contract.js'
+
+applyLocalAuditEnvToProcess()
 
 type SmokeMode = 'guest' | 'auth' | 'both'
 type CheckKind = 'static' | 'browser' | 'auth' | 'service-worker'
@@ -59,6 +72,23 @@ type FailureEvidence = {
   title: string | null
   screenshotPath: string | null
   htmlSnapshotPath: string | null
+  previewDiagnostics: string[] | null
+}
+
+type JsonRecord = Record<string, unknown>
+
+type CdpRequestWillBeSentEvent = {
+  requestId: string
+  request?: {
+    method?: string
+    url?: string
+    headers?: Record<string, unknown>
+  }
+}
+
+type CdpRequestWillBeSentExtraInfoEvent = {
+  requestId: string
+  headers?: Record<string, unknown>
 }
 
 type SmokeSummary = {
@@ -80,17 +110,29 @@ type ReadinessProbePayload = {
 }
 
 function hasAuthSmokeCredentials(env: NodeJS.ProcessEnv): boolean {
-  return Boolean(env['E2E_AUTH_LOGIN']?.trim() && env['E2E_AUTH_PASSWORD']?.trim())
+  const credentials = resolveAuthSmokeCredentials(env)
+  return Boolean(credentials.login && credentials.password)
 }
 
+const BASE_AUDIT_ENV = createLocalAuditEnv(process.env, {
+  includeContractFallback: true,
+})
+const AUDIT_ENV_HAS_AUTH = hasAuthSmokeCredentials(BASE_AUDIT_ENV)
 const AUDIT_ENV = {
-  ...process.env,
-  VITE_ENABLE_CLIENT_INIT: process.env['VITE_ENABLE_CLIENT_INIT'] ?? 'false',
-  VITE_ENABLE_DATA_PREFETCH: process.env['VITE_ENABLE_DATA_PREFETCH'] ?? 'false',
-  VITE_DISABLE_PREVIEW_PROXY:
-    process.env['VITE_DISABLE_PREVIEW_PROXY'] ??
-    (hasAuthSmokeCredentials(process.env) ? 'false' : 'true'),
+  ...BASE_AUDIT_ENV,
+  VITE_ENABLE_CLIENT_INIT: AUDIT_ENV_HAS_AUTH
+    ? 'true'
+    : (BASE_AUDIT_ENV['VITE_ENABLE_CLIENT_INIT'] ?? 'false'),
+  VITE_ENABLE_DATA_PREFETCH: BASE_AUDIT_ENV['VITE_ENABLE_DATA_PREFETCH'] ?? 'false',
+  VITE_DISABLE_PREVIEW_PROXY: AUDIT_ENV_HAS_AUTH
+    ? 'false'
+    : (BASE_AUDIT_ENV['VITE_DISABLE_PREVIEW_PROXY'] ?? 'true'),
 }
+const PREVIEW_PORT_CANDIDATES = resolveLocalAuditPreviewPorts(AUDIT_ENV, [
+  'E2E_PREVIEW_PORTS',
+  'E2E_PREVIEW_PORT',
+  'LOCAL_AUDIT_PREVIEW_PORTS',
+])
 
 const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
   {
@@ -131,10 +173,6 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
   },
 ]
 
-function getBunExecutable(): string {
-  return 'bun'
-}
-
 function normalizeBaseUrl(rawUrl: string): string {
   return rawUrl.replace(/\/$/, '')
 }
@@ -144,6 +182,10 @@ function formatError(error: unknown): string {
   return String(error)
 }
 
+function asJsonRecord(value: unknown): JsonRecord | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as JsonRecord) : null
+}
+
 function appendCheck(summary: SmokeSummary, check: CheckRecord): void {
   summary.checks.push(check)
 }
@@ -151,7 +193,8 @@ function appendCheck(summary: SmokeSummary, check: CheckRecord): void {
 async function capturePageFailureEvidence(
   page: Page,
   artifactDir: string,
-  metadata: Pick<CheckRecord, 'name' | 'path'>
+  metadata: Pick<CheckRecord, 'name' | 'path'>,
+  getPreviewDiagnostics?: (() => string[] | null) | null
 ): Promise<FailureEvidence> {
   await mkdir(artifactDir, { recursive: true })
 
@@ -184,6 +227,7 @@ async function capturePageFailureEvidence(
     title,
     screenshotPath,
     htmlSnapshotPath: typeof html === 'string' ? htmlSnapshotPath : null,
+    previewDiagnostics: getPreviewDiagnostics?.() ?? null,
   }
 }
 
@@ -204,12 +248,61 @@ function markChecksSkipped(summary: SmokeSummary, checks: RouteCheck[], reason: 
   }
 }
 
+function isGuestProtectedRedirectCheck(check: Pick<RouteCheck, 'mode' | 'expectedPath'>): boolean {
+  return check.mode === 'guest' && check.expectedPath === '/login'
+}
+
+async function collectBrowserTrustHeaders(page: Page): Promise<Record<string, string>> {
+  return page.evaluate(() => {
+    const nav = navigator as Navigator & {
+      userAgentData?: {
+        brands?: Array<{ brand: string; version: string }>
+        platform?: string
+      }
+    }
+    const languageCandidates = new Set<string>()
+    const languages = Array.isArray(navigator.languages) ? navigator.languages.filter(Boolean) : []
+    if (languages.length > 0) {
+      languageCandidates.add(
+        languages
+          .map((language, index) =>
+            index === 0 ? language : `${language};q=${(1 - index / 10).toFixed(1)}`
+          )
+          .join(',')
+      )
+    }
+    if (navigator.language) {
+      languageCandidates.add(navigator.language)
+      const baseLanguage = navigator.language.split('-')[0]
+      if (baseLanguage && baseLanguage !== navigator.language) {
+        languageCandidates.add(`${navigator.language},${baseLanguage};q=0.9`)
+      }
+    }
+
+    const clientHintsBrands = nav.userAgentData?.brands
+      ?.map((brand) => `"${brand.brand}";v="${brand.version}"`)
+      .join(', ')
+    const platform = nav.userAgentData?.platform ? `"${nav.userAgentData.platform}"` : ''
+
+    return {
+      'user-agent': navigator.userAgent,
+      'sec-ch-ua': clientHintsBrands ?? '',
+      'sec-ch-ua-platform': platform,
+      'accept-language': navigator.language || '',
+      'x-local-audit-candidates-accept-language': [...languageCandidates].join('\n'),
+      'x-local-audit-candidates-sec-ch-ua': clientHintsBrands ?? '',
+      'x-local-audit-candidates-sec-ch-ua-platform': platform,
+    }
+  })
+}
+
 async function withPageFailureEvidence(
   browser: puppeteer.Browser,
   artifactDir: string,
   metadata: Pick<CheckRecord, 'name' | 'path'>,
   onFailure: (evidence: FailureEvidence) => void,
   run: (page: Page) => Promise<void>,
+  getPreviewDiagnostics?: (() => string[] | null) | null,
   timeout = 20_000
 ): Promise<void> {
   const page = await browser.newPage()
@@ -218,7 +311,7 @@ async function withPageFailureEvidence(
   try {
     await run(page)
   } catch (error) {
-    onFailure(await capturePageFailureEvidence(page, artifactDir, metadata))
+    onFailure(await capturePageFailureEvidence(page, artifactDir, metadata, getPreviewDiagnostics))
     throw error
   } finally {
     await page.close().catch(() => undefined)
@@ -248,147 +341,6 @@ async function recordCheck(
     })
     throw error
   }
-}
-
-async function findAvailablePort(preferredPort = 0): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = createServer()
-    server.unref()
-    server.once('error', reject)
-    server.listen(preferredPort, () => {
-      const address = server.address()
-      const actualPort =
-        typeof address === 'object' && address && typeof address.port === 'number'
-          ? address.port
-          : preferredPort
-      server.close((error) => {
-        if (error) reject(error)
-        else resolve(actualPort)
-      })
-    })
-  })
-}
-
-async function runBunTask(task: string): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(getBunExecutable(), ['run', task], {
-      stdio: 'inherit',
-      shell: false,
-      env: AUDIT_ENV,
-    })
-    child.on('close', (code) => {
-      if (code === 0) resolve()
-      else reject(new Error(`bun run ${task} exited with code ${code}`))
-    })
-    child.on('error', reject)
-  })
-}
-
-async function terminateProcessTree(pid: number | undefined): Promise<void> {
-  if (!pid) return
-
-  if (process.platform === 'win32') {
-    await new Promise<void>((resolve) => {
-      const killer = spawn('taskkill', ['/PID', String(pid), '/T', '/F'], {
-        stdio: 'ignore',
-        shell: false,
-      })
-      killer.on('close', () => resolve())
-      killer.on('error', () => resolve())
-    })
-    return
-  }
-
-  try {
-    process.kill(pid, 'SIGTERM')
-  } catch {
-    // ignore
-  }
-}
-
-async function waitForProcessExit(child: ChildProcess, timeoutMs = 10_000): Promise<void> {
-  if (child.exitCode !== null || child.killed) {
-    return
-  }
-
-  await new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, timeoutMs)
-    const finish = () => {
-      clearTimeout(timer)
-      resolve()
-    }
-
-    child.once('close', finish)
-    child.once('error', finish)
-  })
-}
-
-function startPreviewServer(port: number): Promise<{ kill: () => Promise<void>; port: number }> {
-  return new Promise((resolve, reject) => {
-    const server = spawn(getBunExecutable(), ['run', 'preview', '--port', String(port)], {
-      stdio: 'ignore',
-      shell: false,
-      env: AUDIT_ENV,
-    })
-
-    let resolved = false
-    let startupCheck: ReturnType<typeof setInterval> | null = null
-
-    function cleanupStartupCheck() {
-      if (startupCheck) {
-        clearInterval(startupCheck)
-        startupCheck = null
-      }
-    }
-
-    async function tryResolveWhenReady() {
-      if (resolved) return
-      try {
-        const response = await fetch(`http://127.0.0.1:${port}/`, {
-          redirect: 'manual',
-        })
-        if (response.status >= 200 && response.status < 500) {
-          resolved = true
-          cleanupStartupCheck()
-          server.unref()
-          resolve({
-            kill: async () => {
-              await terminateProcessTree(server.pid)
-              await waitForProcessExit(server)
-            },
-            port,
-          })
-        }
-      } catch {
-        // preview server not ready yet
-      }
-    }
-
-    server.on('error', (error) => {
-      cleanupStartupCheck()
-      if (!resolved) reject(error)
-    })
-
-    server.on('close', (code) => {
-      cleanupStartupCheck()
-      if (!resolved) {
-        reject(new Error(`Preview server exited before becoming ready (code ${code ?? 'unknown'})`))
-      }
-    })
-
-    startupCheck = setInterval(() => {
-      void tryResolveWhenReady()
-    }, 500)
-    void tryResolveWhenReady()
-
-    setTimeout(() => {
-      if (!resolved) {
-        cleanupStartupCheck()
-        void terminateProcessTree(server.pid)
-        reject(new Error(`Preview server startup timeout on port ${port}`))
-      }
-    }, 45_000)
-  })
 }
 
 async function assertStaticPrerenderedRoute(
@@ -429,7 +381,8 @@ async function assertBrowserRoute(
   baseUrl: string,
   check: RouteCheck,
   artifactDir: string,
-  onFailure: (evidence: FailureEvidence) => void
+  onFailure: (evidence: FailureEvidence) => void,
+  getPreviewDiagnostics?: (() => string[] | null) | null
 ): Promise<void> {
   await withPageFailureEvidence(
     browser,
@@ -480,6 +433,7 @@ async function assertBrowserRoute(
         )
       }
     },
+    getPreviewDiagnostics,
     15_000
   )
 }
@@ -489,7 +443,8 @@ async function authenticateViaApi(
   baseUrl: string,
   credentials: { login: string; password: string },
   artifactDir: string,
-  onFailure: (evidence: FailureEvidence) => void
+  onFailure: (evidence: FailureEvidence) => void,
+  getPreviewDiagnostics?: (() => string[] | null) | null
 ): Promise<void> {
   await withPageFailureEvidence(
     browser,
@@ -497,45 +452,268 @@ async function authenticateViaApi(
     { name: 'auth login bootstrap', path: '/api/v1/auth/login' },
     onFailure,
     async (page) => {
-      await page.goto(`${baseUrl}/login`, {
-        waitUntil: 'domcontentloaded',
-      })
-
-      const result = await page.evaluate(async ({ login, password }) => {
-        const response = await fetch('/api/v1/auth/login', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'content-type': 'application/json',
+      const waitForLoginExit = (timeout: number) =>
+        page.waitForFunction(
+          () =>
+            window.location.pathname !== '/login' &&
+            !window.location.pathname.startsWith('/login/'),
+          { timeout }
+        )
+      const waitForClientCredentials = (timeout: number) =>
+        page.waitForFunction(
+          () => {
+            const raw = window.localStorage.getItem('momi_client_security')
+            if (!raw) return false
+            try {
+              const parsed = JSON.parse(raw) as {
+                client_token?: unknown
+                client_secret?: unknown
+              }
+              return Boolean(
+                typeof parsed.client_token === 'string' &&
+                parsed.client_token.trim() &&
+                typeof parsed.client_secret === 'string' &&
+                parsed.client_secret.trim()
+              )
+            } catch {
+              return false
+            }
           },
-          body: JSON.stringify({
-            username: login,
-            password,
-            device_name: 'CI Smoke Browser',
-            device_type: 'desktop',
-          }),
+          { timeout }
+        )
+      const forceIssueClientCredentials = async () => {
+        const result = await page.evaluate(async () => {
+          const credentialStorageKey = 'momi_client_security'
+          const fingerprintStorageKey = 'momi_device_fingerprint_v1'
+
+          const readPersistedFingerprint = (): string | null => {
+            try {
+              const raw = window.localStorage.getItem(fingerprintStorageKey)
+              if (!raw) return null
+              const parsed = JSON.parse(raw) as { value?: unknown }
+              return typeof parsed.value === 'string' && parsed.value.trim() ? parsed.value : null
+            } catch {
+              return null
+            }
+          }
+
+          const getFallbackFingerprint = async (): Promise<string> => {
+            const components = [
+              navigator.userAgent,
+              navigator.language,
+              screen.width.toString(),
+              screen.height.toString(),
+              screen.colorDepth.toString(),
+              new Date().getTimezoneOffset().toString(),
+              navigator.hardwareConcurrency?.toString() || '',
+              navigator.maxTouchPoints?.toString() || '',
+            ]
+            const fingerprintSource = components.join('|')
+
+            try {
+              const encoder = new TextEncoder()
+              const data = encoder.encode(fingerprintSource)
+              const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+              const hashArray = Array.from(new Uint8Array(hashBuffer))
+              return hashArray
+                .map((byte) => byte.toString(16).padStart(2, '0'))
+                .join('')
+                .slice(0, 32)
+            } catch {
+              let hash = 0
+              for (let index = 0; index < fingerprintSource.length; index += 1) {
+                hash = (hash << 5) - hash + fingerprintSource.charCodeAt(index)
+                hash &= hash
+              }
+              return Math.abs(hash).toString(16).padStart(8, '0')
+            }
+          }
+
+          const clientFingerprint = readPersistedFingerprint() ?? (await getFallbackFingerprint())
+          window.localStorage.setItem(
+            fingerprintStorageKey,
+            JSON.stringify({
+              value: clientFingerprint,
+              cachedAt: Date.now(),
+              userAgent: navigator.userAgent,
+              language: navigator.language,
+              platform: navigator.platform,
+            })
+          )
+          window.localStorage.removeItem(credentialStorageKey)
+
+          const response = await fetch('/api/v1/client/init', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              client_fingerprint: clientFingerprint,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              screen_resolution: `${screen.width}x${screen.height}`,
+              platform: navigator.platform || undefined,
+              timestamp: Math.floor(Date.now() / 1000),
+              nonce: Math.random().toString(16).slice(2).padEnd(16, '0').slice(0, 16),
+              force_reissue: true,
+            }),
+          })
+
+          const rawBody = await response.text()
+          let body: JsonRecord | null = null
+          try {
+            body = asJsonRecord(rawBody ? JSON.parse(rawBody) : null)
+          } catch {
+            body = null
+          }
+
+          if (!response.ok) {
+            return {
+              ok: false,
+              status: response.status,
+              detail: body?.detail ?? body?.message ?? rawBody,
+            }
+          }
+
+          const payload = asJsonRecord(body?.data) ?? body
+          const clientToken = typeof payload?.client_token === 'string' ? payload.client_token : ''
+          const clientSecret =
+            typeof payload?.client_secret === 'string' ? payload.client_secret : ''
+          if (!clientToken.trim() || !clientSecret.trim()) {
+            return {
+              ok: false,
+              status: response.status,
+              detail: 'client/init force_reissue did not return signing credentials',
+            }
+          }
+
+          window.localStorage.setItem(
+            credentialStorageKey,
+            JSON.stringify({
+              client_token: clientToken,
+              client_secret: clientSecret,
+            })
+          )
+
+          return {
+            ok: true,
+            status: response.status,
+            trustLevel: payload?.trust_level,
+            challengeRequired: payload?.challenge_required,
+          }
         })
 
-        let payload: unknown = null
-        try {
-          payload = await response.json()
-        } catch {
-          payload = null
+        if (!result.ok) {
+          throw new Error(
+            `Auth smoke login bootstrap failed to force issue client credentials: HTTP ${result.status} ${result.detail ?? ''}`.trim()
+          )
         }
-
-        return {
-          ok: response.ok,
-          status: response.status,
-          payload,
-        }
-      }, credentials)
-
-      if (!result.ok) {
-        throw new Error(
-          `Auth smoke login failed with status ${result.status}: ${JSON.stringify(result.payload)}`
-        )
       }
-    }
+      const ensureClientCredentials = async () => {
+        const hasExistingCredentials = await waitForClientCredentials(10_000)
+          .then(() => true)
+          .catch(() => false)
+        if (hasExistingCredentials) {
+          return
+        }
+
+        await forceIssueClientCredentials()
+        await waitForClientCredentials(2_000)
+      }
+      const submitLoginForm = () =>
+        page.$eval('form.auth-form', (form) => {
+          ;(form as HTMLFormElement).requestSubmit()
+        })
+
+      const loginSelector = '#login-identifier'
+      const passwordSelector = '#login-password'
+      let latestLoginRequestHeaders: Record<string, string> | null = null
+      const loginRequestIds = new Set<string>()
+      const normalizeHeaders = (headers: Record<string, unknown> | undefined) =>
+        Object.fromEntries(
+          Object.entries(headers ?? {}).map(([key, value]) => [key.toLowerCase(), String(value)])
+        )
+      const cdpSession = await page.createCDPSession()
+      await cdpSession.send('Network.enable')
+      cdpSession.on('Network.requestWillBeSent', (event: CdpRequestWillBeSentEvent) => {
+        const request = event.request
+        if (request?.method === 'POST' && request.url?.includes('/api/v1/auth/login')) {
+          loginRequestIds.add(event.requestId)
+          latestLoginRequestHeaders = {
+            ...(latestLoginRequestHeaders ?? {}),
+            ...normalizeHeaders(request.headers),
+          }
+        }
+      })
+      cdpSession.on(
+        'Network.requestWillBeSentExtraInfo',
+        (event: CdpRequestWillBeSentExtraInfoEvent) => {
+          if (!loginRequestIds.has(event.requestId)) return
+          latestLoginRequestHeaders = {
+            ...(latestLoginRequestHeaders ?? {}),
+            ...normalizeHeaders(event.headers),
+          }
+        }
+      )
+      page.on('request', (request) => {
+        if (request.method() === 'POST' && request.url().includes('/api/v1/auth/login')) {
+          latestLoginRequestHeaders = {
+            ...(latestLoginRequestHeaders ?? {}),
+            ...request.headers(),
+          }
+        }
+      })
+      const openAndFillLoginForm = async () => {
+        await page.goto(`${baseUrl}/login`, {
+          waitUntil: 'domcontentloaded',
+        })
+
+        await page.waitForSelector(loginSelector, { timeout: 20_000 })
+        await page.click(loginSelector, { clickCount: 3 })
+        await page.type(loginSelector, credentials.login, { delay: 20 })
+        await page.click(passwordSelector, { clickCount: 3 })
+        await page.type(passwordSelector, credentials.password, { delay: 20 })
+      }
+
+      await openAndFillLoginForm()
+
+      const submitButton = await page.$(
+        'form.auth-form button[type="submit"], form.auth-form button'
+      )
+      if (!submitButton) {
+        throw new Error('Auth smoke login submit button is missing')
+      }
+      await submitLoginForm()
+
+      const loginExited = await waitForLoginExit(5_000)
+        .then(() => true)
+        .catch(() => false)
+      if (!loginExited) {
+        await ensureClientCredentials()
+        const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
+        if (trustedVisitorCount > 0) {
+          console.log(
+            `   • Granted local audit client trust for ${trustedVisitorCount} visitor key(s)`
+          )
+          const browserTrustHeaders = await collectBrowserTrustHeaders(page)
+          if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+            console.log('   • Local audit login headers:', latestLoginRequestHeaders)
+            console.log('   • Local audit browser headers:', browserTrustHeaders)
+          }
+          const trustedTurnstileCount = await grantLocalAuditTurnstileTrust(AUDIT_ENV, {
+            ...browserTrustHeaders,
+            ...(latestLoginRequestHeaders ?? {}),
+          })
+          if (trustedTurnstileCount > 0) {
+            console.log(
+              `   • Granted local audit Turnstile trust for ${trustedTurnstileCount} key(s)`
+            )
+          }
+          await openAndFillLoginForm()
+        }
+        await submitLoginForm()
+        await waitForLoginExit(25_000)
+      }
+      await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => {})
+    },
+    getPreviewDiagnostics
   )
 }
 
@@ -544,7 +722,8 @@ async function assertAuthenticatedRoute(
   baseUrl: string,
   check: RouteCheck,
   artifactDir: string,
-  onFailure: (evidence: FailureEvidence) => void
+  onFailure: (evidence: FailureEvidence) => void,
+  getPreviewDiagnostics?: (() => string[] | null) | null
 ): Promise<void> {
   await withPageFailureEvidence(
     browser,
@@ -626,7 +805,8 @@ async function assertAuthenticatedRoute(
           check.readinessSelectorsAny
         )
       }
-    }
+    },
+    getPreviewDiagnostics
   )
 }
 
@@ -634,7 +814,8 @@ async function assertServiceWorkerLifecycle(
   browser: puppeteer.Browser,
   baseUrl: string,
   artifactDir: string,
-  onFailure: (evidence: FailureEvidence) => void
+  onFailure: (evidence: FailureEvidence) => void,
+  getPreviewDiagnostics?: (() => string[] | null) | null
 ): Promise<void> {
   await withPageFailureEvidence(
     browser,
@@ -698,8 +879,71 @@ async function assertServiceWorkerLifecycle(
         waitUntil: 'domcontentloaded',
       })
       await page.waitForSelector('.search-page')
-    }
+    },
+    getPreviewDiagnostics
   )
+}
+
+function rollbackRecoveredFailure(
+  summary: SmokeSummary,
+  metadata: Omit<CheckRecord, 'status' | 'detail'>,
+  previousFailedCheck: string | null,
+  previousFailureEvidence: FailureEvidence | null
+): void {
+  const lastCheck = summary.checks.at(-1)
+  if (lastCheck?.name === metadata.name && lastCheck.status === 'failed') {
+    summary.checks.pop()
+  }
+  summary.lastFailedCheck = previousFailedCheck
+  summary.lastFailureEvidence = previousFailureEvidence
+}
+
+async function shouldRecoverPreviewFailure(
+  previewServer: PreviewShellManager,
+  failureEvidence: FailureEvidence | null
+): Promise<boolean> {
+  if (failureEvidence?.url?.startsWith('chrome-error://')) {
+    return true
+  }
+
+  return !(await previewServer.isHealthy())
+}
+
+async function recordCheckWithPreviewRecovery(
+  summary: SmokeSummary,
+  metadata: Omit<CheckRecord, 'status' | 'detail'>,
+  previewServer: PreviewShellManager | null,
+  run: () => Promise<void>
+): Promise<void> {
+  const previousFailedCheck = summary.lastFailedCheck
+  const previousFailureEvidence = summary.lastFailureEvidence
+  let recoveryAttempted = false
+
+  while (true) {
+    try {
+      await recordCheck(summary, metadata, run)
+      return
+    } catch (error) {
+      if (!previewServer || recoveryAttempted) {
+        throw error
+      }
+
+      const recoverable = await shouldRecoverPreviewFailure(
+        previewServer,
+        summary.lastFailureEvidence
+      )
+      if (!recoverable) {
+        throw error
+      }
+
+      recoveryAttempted = true
+      rollbackRecoveredFailure(summary, metadata, previousFailedCheck, previousFailureEvidence)
+      console.warn(
+        `⚠️ Preview shell became unhealthy while checking ${metadata.name}; restarting once and retrying...`
+      )
+      await previewServer.restart()
+    }
+  }
 }
 
 async function main(): Promise<void> {
@@ -707,16 +951,17 @@ async function main(): Promise<void> {
 
   const artifactDir = process.env['E2E_ARTIFACT_DIR']?.trim() || '.e2e-smoke'
   const externalBaseUrl = process.env['E2E_BASE_URL']?.trim()
-  const authLogin = process.env['E2E_AUTH_LOGIN']?.trim() ?? ''
-  const authPassword = process.env['E2E_AUTH_PASSWORD']?.trim() ?? ''
+  const authCredentials = resolveAuthSmokeCredentials(process.env)
+  const authLogin = authCredentials.login
+  const authPassword = authCredentials.password
   const samplePostRoute =
     process.env['E2E_SAMPLE_POST_ROUTE'] ?? '/post/6c73f45a-a7ec-481d-9bc5-9b09ee560fcc'
   const sampleDiscussionRoute =
     process.env['E2E_SAMPLE_DISCUSSION_ROUTE'] ??
     '/community/discussions/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
   const authSmokeEnabled = Boolean(authLogin && authPassword)
-  const authSmokeRequired = process.env['E2E_REQUIRE_AUTH'] === 'true'
-  const authSkipReason = getAuthSkipReason(authLogin, authPassword)
+  const authSmokeRequired = process.env['E2E_REQUIRE_AUTH'] !== 'false'
+  const authSkipReason = getAuthSkipReason(authLogin, authPassword, authCredentials.source)
   const summary = createSmokeSummary(artifactDir, authLogin, authPassword)
   summary.authSmokeRequired = authSmokeRequired
   const routeMatrix = getSmokeRouteMatrix({
@@ -733,6 +978,12 @@ async function main(): Promise<void> {
     readinessSelectorsAll: check.readinessSelectorsAll,
     readinessSelectorsAny: check.readinessSelectorsAny,
   }))
+  const skippedGuestProtectedRedirectChecks = authSmokeEnabled
+    ? guestBrowserChecks.filter(isGuestProtectedRedirectCheck)
+    : []
+  const effectiveGuestBrowserChecks = authSmokeEnabled
+    ? guestBrowserChecks.filter((check) => !isGuestProtectedRedirectCheck(check))
+    : guestBrowserChecks
   const authenticatedRouteChecks: RouteCheck[] = routeMatrix.auth.map((check) => ({
     name: check.name,
     path: check.path,
@@ -747,9 +998,10 @@ async function main(): Promise<void> {
     summary.lastFailureEvidence = evidence
   }
 
-  let previewServer: { kill: () => Promise<void>; port: number } | null = null
+  let previewServer: PreviewShellManager | null = null
   let browser: puppeteer.Browser | null = null
   let runError: unknown = null
+  const getPreviewDiagnostics = () => previewServer?.formatDiagnosticsLines() ?? null
 
   console.log(`🧾 Auth smoke required: ${authSmokeRequired ? 'yes' : 'no'}`)
   console.log(`🧾 Auth credentials detected: ${authSmokeEnabled ? 'yes' : 'no'}`)
@@ -765,15 +1017,22 @@ async function main(): Promise<void> {
       console.log(`🌐 Using existing E2E base URL: ${baseUrl}`)
     } else {
       console.log('🏗️ Building production bundle...')
-      await withBuildArtifactLock('vite-dist-build', () => runBunTask('build'), {
-        onWait: () => {
-          console.log('🔒 Waiting for another build process to release the dist artifact lock...')
-        },
+      await withBuildArtifactLock(
+        'vite-dist-build',
+        () => runBunTask('build', { env: AUDIT_ENV }),
+        {
+          onWait: () => {
+            console.log('🔒 Waiting for another build process to release the dist artifact lock...')
+          },
+        }
+      )
+      previewServer = new PreviewShellManager({
+        env: AUDIT_ENV,
+        candidatePorts: PREVIEW_PORT_CANDIDATES,
+        allowRandomPortFallback: !hasAuthSmokeCredentials(AUDIT_ENV),
       })
-
-      const previewPort = await findAvailablePort(0)
-      previewServer = await startPreviewServer(previewPort)
-      baseUrl = `http://localhost:${previewServer.port}`
+      await previewServer.start()
+      baseUrl = previewServer.baseUrl ?? ''
     }
 
     summary.baseUrl = baseUrl
@@ -799,8 +1058,17 @@ async function main(): Promise<void> {
     })
 
     console.log('🧭 Verifying guest browser routes...')
-    for (const check of guestBrowserChecks) {
-      await recordCheck(
+    if (skippedGuestProtectedRedirectChecks.length > 0) {
+      const reason =
+        'Skipped during authenticated local audit; protected route access is verified by authenticated smoke routes.'
+      markChecksSkipped(summary, skippedGuestProtectedRedirectChecks, reason)
+      console.log(
+        `   • Skipping ${skippedGuestProtectedRedirectChecks.length} guest protected redirect checks in authenticated local audit`
+      )
+    }
+
+    for (const check of effectiveGuestBrowserChecks) {
+      await recordCheckWithPreviewRecovery(
         summary,
         {
           name: check.name,
@@ -812,13 +1080,26 @@ async function main(): Promise<void> {
           readinessSelectorsAny: check.readinessSelectorsAny,
           expectedPath: check.expectedPath,
         },
-        () => assertBrowserRoute(browser!, baseUrl, check, artifactDir, recordFailureEvidence)
+        previewServer,
+        () =>
+          assertBrowserRoute(
+            browser!,
+            baseUrl,
+            check,
+            artifactDir,
+            recordFailureEvidence,
+            getPreviewDiagnostics
+          )
       )
     }
 
     if (authSmokeEnabled) {
       console.log('🔐 Verifying authenticated smoke routes...')
       summary.authSmokeExecuted = true
+      const clearedRateLimitKeys = await clearLocalAuditRateLimitState(AUDIT_ENV)
+      if (clearedRateLimitKeys > 0) {
+        console.log(`   • Cleared ${clearedRateLimitKeys} local audit rate-limit keys`)
+      }
       await recordCheck(
         summary,
         {
@@ -836,12 +1117,13 @@ async function main(): Promise<void> {
               password: authPassword,
             },
             artifactDir,
-            recordFailureEvidence
+            recordFailureEvidence,
+            getPreviewDiagnostics
           )
       )
 
       for (const check of authenticatedRouteChecks) {
-        await recordCheck(
+        await recordCheckWithPreviewRecovery(
           summary,
           {
             name: check.name,
@@ -853,8 +1135,16 @@ async function main(): Promise<void> {
             readinessSelectorsAny: check.readinessSelectorsAny,
             expectedPath: check.expectedPath,
           },
+          previewServer,
           () =>
-            assertAuthenticatedRoute(browser!, baseUrl, check, artifactDir, recordFailureEvidence)
+            assertAuthenticatedRoute(
+              browser!,
+              baseUrl,
+              check,
+              artifactDir,
+              recordFailureEvidence,
+              getPreviewDiagnostics
+            )
         )
       }
     } else {
@@ -877,7 +1167,7 @@ async function main(): Promise<void> {
       )
       if (authSmokeRequired) {
         throw new Error(
-          `Authenticated smoke is required, but ${authSkipReason ?? 'credentials are unavailable'}. Provide E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD for a seeded non-MFA smoke account.`
+          `Authenticated smoke is required, but ${authSkipReason ?? 'credentials are unavailable'}. Provide PRIMARY_USERNAME/PRIMARY_PASSWORD for a seeded non-MFA smoke account. Legacy aliases E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD remain supported.`
         )
       }
     }
@@ -892,7 +1182,14 @@ async function main(): Promise<void> {
           mode: 'guest',
           path: '/',
         },
-        () => assertServiceWorkerLifecycle(browser!, baseUrl, artifactDir, recordFailureEvidence)
+        () =>
+          assertServiceWorkerLifecycle(
+            browser!,
+            baseUrl,
+            artifactDir,
+            recordFailureEvidence,
+            getPreviewDiagnostics
+          )
       )
     } else {
       appendCheck(summary, {
@@ -917,7 +1214,7 @@ async function main(): Promise<void> {
       })
     }
     if (previewServer) {
-      await previewServer.kill()
+      await previewServer.stop()
     }
 
     try {

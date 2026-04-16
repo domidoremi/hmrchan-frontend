@@ -97,9 +97,8 @@
 - `accessibility`
 - `performance`
 - `pwa_smoke`
-  - 与主 CI 复用 `E2E_AUTH_LOGIN` / `E2E_AUTH_PASSWORD`
-  - 有机密时跑 guest + auth smoke
-  - 无机密时自动退化为 guest smoke
+  - 与主 CI 复用 public smoke fixture 契约，首选 `PRIMARY_USERNAME` / `PRIMARY_PASSWORD`
+  - CI / nightly 默认仍要求有机密
   - 仍基于本地 build + preview shell，不直接扫生产
   - 同样上传 smoke summary artifact，便于区分 guest/auth 实际执行情况
 - `frontend_health`
@@ -252,6 +251,9 @@
   - `bun run check:frontend`
   - `bun run test:prod:regression --preflight`
 - `test:e2e` 与 `check:frontend` 本地共享构建产物时，通过 build artifact lock 避免并发写 `dist/` 造成的 `EBUSY` 误报
+- `test:e2e`、`check:frontend`、`test:a11y`、`test:perf` 的本地 build + preview 生命周期统一收敛到 shared preview manager
+- 若 preview shell 在本地审计过程中异常退出，`test:e2e` 与 `check:frontend` 会自动重启一次并重试当前路由，失败产物中附带 preview 诊断日志
+- 本地 Docker smoke 串行证据链可通过 `LOCAL_AUDIT_CLEAR_RATE_LIMITS=true` 清理 Redis `ratelimit:*`，避免 `test:e2e -> check:frontend -> preflight` 的本地限流状态互相污染；该行为仅在本地审计脚本环境中触发，不修改 CI / 生产限流门禁
 - 受保护 Profile 子页已进入 runner route matrix，至少校验：
   - 最终路由
   - 页面标题
@@ -266,6 +268,8 @@
 - `E2E_AUTOSTART`
 - `E2E_ARTIFACT_DIR`
 - `E2E_REQUIRE_AUTH`
+- `PRIMARY_USERNAME`
+- `PRIMARY_PASSWORD`
 - `E2E_AUTH_LOGIN`
 - `E2E_AUTH_PASSWORD`
 - `E2E_SAMPLE_POST_ROUTE`
@@ -276,20 +280,25 @@
 - `FRONTEND_HEALTH_INCLUDE_API_ERRORS`
 - `FRONTEND_HEALTH_SAMPLE_POST_ROUTE`
 - `FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE`
+- `LOCAL_AUDIT_CLEAR_RATE_LIMITS`
 
 推荐约定：
 
 - 本地自检：不传 `*_BASE_URL`，让脚本自行 build + preview
-- 认证态 smoke：传入 `E2E_AUTH_LOGIN` / `E2E_AUTH_PASSWORD`，脚本会在浏览器上下文中通过同源 `/api/v1/auth/login` 建立 refresh cookie
+- 本地私有 smoke 配置放进未跟踪的 `.env.smoke.local`，不要写进 `.env.development`
+- 认证态 smoke：优先传入 `PRIMARY_USERNAME` / `PRIMARY_PASSWORD`，脚本会在浏览器上下文中通过同源 `/api/v1/auth/login` 建立 refresh cookie
+- `E2E_AUTH_LOGIN` / `E2E_AUTH_PASSWORD` 仅作为兼容别名保留
 - 认证态 smoke 账号应满足：
   - 无 MFA
   - 不触发 step-up / risk verification
   - 至少有收藏、浏览历史、剩余受保护 profile 子页可访问数据，以及可进入评论区的真实内容
-- 本地未提供 `E2E_AUTH_*` 时，只跑 guest smoke；这是预期退化行为
-- 若 `E2E_REQUIRE_AUTH=true`，则缺少 `E2E_AUTH_*` 直接视为失败，不再允许静默退化
+- 本地未显式导出变量时，脚本会先尝试读取 `.env.smoke.local`
+- 自管 build / preview 的本地审计脚本会自动注入本地 `VITE_CLIENT_CONTRACT_VERSION` fallback；这不会改变直接 `bun run build` 必须显式注入生产契约的规则
+- 本地 Docker backend 被连续 smoke 时，推荐在 `.env.smoke.local` 中设置 `LOCAL_AUDIT_CLEAR_RATE_LIMITS=true`，让 release evidence 各阶段之间只清理本地 Redis rate-limit keys
+- 若 `E2E_REQUIRE_AUTH=true`，则缺少 `PRIMARY_*`（或兼容别名）直接视为失败，不再允许静默退化
 - auth smoke skipped 合法场景：
-  - 本地未提供 `E2E_AUTH_LOGIN`
-  - 本地未提供 `E2E_AUTH_PASSWORD`
+  - 本地未提供 `PRIMARY_USERNAME`
+  - 本地未提供 `PRIMARY_PASSWORD`
   - 两者都未提供
   - 这些情况都应在 `summary.md` 中明确写出，而不是静默跳过
 - Preview / 生产 canary：显式传入目标 URL，并把 `*_AUTOSTART=false`
