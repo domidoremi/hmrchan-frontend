@@ -174,6 +174,7 @@ jobs:
           VITE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
           PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
           PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
+          REHEARSAL_TURNSTILE_BYPASS_TOKEN: ${{ secrets.REHEARSAL_TURNSTILE_BYPASS_TOKEN || vars.REHEARSAL_TURNSTILE_BYPASS_TOKEN || '' }}
         run: |
           mkdir -p .e2e-smoke
           status=0
@@ -234,6 +235,7 @@ jobs:
           VITE_CONTENT_API_BASE_URL: ${{ vars.SMOKE_CONTENT_API_BASE_URL || '' }}
           PRIMARY_USERNAME: ${{ secrets.PRIMARY_USERNAME || secrets.E2E_AUTH_LOGIN }}
           PRIMARY_PASSWORD: ${{ secrets.PRIMARY_PASSWORD || secrets.E2E_AUTH_PASSWORD }}
+          REHEARSAL_TURNSTILE_BYPASS_TOKEN: ${{ secrets.REHEARSAL_TURNSTILE_BYPASS_TOKEN || vars.REHEARSAL_TURNSTILE_BYPASS_TOKEN || '' }}
         run: |
           mkdir -p .frontend-health
           status=0

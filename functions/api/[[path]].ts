@@ -22,6 +22,7 @@ interface Env {
   VPC_IDENTITY_API_ORIGIN?: string
   VPC_COMMUNITY_API_ORIGIN?: string
   VPC_CONTENT_API_ORIGIN?: string
+  REHEARSAL_TURNSTILE_BYPASS_TOKEN?: string
 }
 
 type ProxyEnv = Env & InternalApiGatewayRuntimeEnv
@@ -59,6 +60,7 @@ const ALLOWED_ORIGINS = [
 const DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
 
 const REQUEST_HEADERS_TO_SKIP = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
+const REHEARSAL_TURNSTILE_BYPASS_HEADER = 'X-Rehearsal-Turnstile-Bypass'
 
 const RESPONSE_HEADERS_TO_STRIP = [
   'content-security-policy',
@@ -303,6 +305,12 @@ function cloneHeadersWithoutHopByHop(request: Request, requestUrl: URL): Headers
   return headers
 }
 
+function applyRehearsalTurnstileBypassHeader(headers: Headers, env: ProxyEnv): void {
+  const token = env.REHEARSAL_TURNSTILE_BYPASS_TOKEN?.trim()
+  if (!token) return
+  headers.set(REHEARSAL_TURNSTILE_BYPASS_HEADER, token)
+}
+
 async function fetchViaPublic(options: ForwardRequestOptions): Promise<Response> {
   const { apiBaseUrl, bodyBuffer, headers, path, redirectMode, request, search } = options
   const targetUrl = `${apiBaseUrl}/api/${path}${search}`
@@ -396,6 +404,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     ? 'manual'
     : 'follow'
   const headers = cloneHeadersWithoutHopByHop(request, requestUrl)
+  applyRehearsalTurnstileBypassHeader(headers, env)
   const bodyBuffer =
     request.method === 'GET' || request.method === 'HEAD' ? null : await request.arrayBuffer()
 
