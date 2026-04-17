@@ -361,6 +361,40 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
   })
 
+  it('adds the rehearsal Turnstile bypass header when configured for public proxy requests', async () => {
+    const publicFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    )
+    vi.stubGlobal('fetch', publicFetch)
+
+    await onRequest({
+      request: new Request('https://hmrchan-frontend.pages.dev/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://hmrchan-frontend.pages.dev',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: 'demo', password: 'secret' }),
+      }),
+      env: {
+        API_BASE_URL: BACKEND_ORIGIN,
+        REHEARSAL_TURNSTILE_BYPASS_TOKEN: 'rehearsal-token',
+      },
+      params: {
+        path: ['v1', 'auth', 'login'],
+      },
+    })
+
+    const init = publicFetch.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.headers).toBeInstanceOf(Headers)
+    expect((init?.headers as Headers).get('X-Rehearsal-Turnstile-Bypass')).toBe('rehearsal-token')
+  })
+
   it('rewrites auth callback redirects from the api origin back to the site origin', async () => {
     const publicFetch = vi.fn().mockResolvedValue(
       new Response(null, {

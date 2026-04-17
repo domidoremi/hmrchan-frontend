@@ -38,8 +38,13 @@ type DevProxyServer = {
 const DEV_PROXY_BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+const REHEARSAL_TURNSTILE_BYPASS_HEADER = 'X-Rehearsal-Turnstile-Bypass'
 
-function normalizeProxyRequestHeaders(proxyReq: ClientRequest, req: IncomingMessage): void {
+function normalizeProxyRequestHeaders(
+  proxyReq: ClientRequest,
+  req: IncomingMessage,
+  rehearsalTurnstileBypassToken = ''
+): void {
   const incomingUserAgent = req.headers['user-agent']
   const normalizedUserAgent =
     typeof incomingUserAgent === 'string' && !incomingUserAgent.includes('HeadlessChrome')
@@ -47,6 +52,9 @@ function normalizeProxyRequestHeaders(proxyReq: ClientRequest, req: IncomingMess
       : DEV_PROXY_BROWSER_UA
 
   proxyReq.setHeader('user-agent', normalizedUserAgent)
+  if (rehearsalTurnstileBypassToken) {
+    proxyReq.setHeader(REHEARSAL_TURNSTILE_BYPASS_HEADER, rehearsalTurnstileBypassToken)
+  }
 }
 
 /** 构建时间戳，用于缓存破坏 */
@@ -123,7 +131,7 @@ function shouldObfuscateChunk(fileName: string): boolean {
   return OBFUSCATED_CHUNK_PATTERNS.some((pattern) => pattern.test(chunkName))
 }
 
-function createProxyRule(apiTarget: string) {
+function createProxyRule(apiTarget: string, rehearsalTurnstileBypassToken = '') {
   return {
     target: apiTarget,
     changeOrigin: true,
@@ -131,7 +139,7 @@ function createProxyRule(apiTarget: string) {
     followRedirects: true,
     configure: (proxy: DevProxyServer) => {
       proxy.on('proxyReq', (proxyReq, req) => {
-        normalizeProxyRequestHeaders(proxyReq, req)
+        normalizeProxyRequestHeaders(proxyReq, req, rehearsalTurnstileBypassToken)
       })
       proxy.on('proxyRes', (proxyRes) => {
         const setCookie = proxyRes.headers['set-cookie']
@@ -164,16 +172,18 @@ function createProxyConfig(
     identityTarget = apiTarget,
     communityTarget = apiTarget,
     contentTarget = apiTarget,
+    rehearsalTurnstileBypassToken = '',
   }: {
     identityTarget?: string
     communityTarget?: string
     contentTarget?: string
+    rehearsalTurnstileBypassToken?: string
   } = {}
 ) {
-  const identityProxy = createProxyRule(identityTarget)
-  const communityProxy = createProxyRule(communityTarget)
-  const contentProxy = createProxyRule(contentTarget)
-  const defaultProxy = createProxyRule(apiTarget)
+  const identityProxy = createProxyRule(identityTarget, rehearsalTurnstileBypassToken)
+  const communityProxy = createProxyRule(communityTarget, rehearsalTurnstileBypassToken)
+  const contentProxy = createProxyRule(contentTarget, rehearsalTurnstileBypassToken)
+  const defaultProxy = createProxyRule(apiTarget, rehearsalTurnstileBypassToken)
 
   return {
     '^/api/v1/posts/[^/]+/comments$': communityProxy,
@@ -238,10 +248,12 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   const devtoolsEnabled = isDev && parseBoolEnv(env, 'VITE_ENABLE_DEVTOOLS', false)
   const sourcemapMode = isProd ? false : parseSourcemapEnv(env.VITE_SOURCEMAP)
   const apiProxyTarget = normalizeProxyTarget(env.VITE_API_BASE_URL, 'https://api.momichan.xyz')
+  const rehearsalTurnstileBypassToken = (env.REHEARSAL_TURNSTILE_BYPASS_TOKEN ?? '').trim()
   const sharedProxyConfig = createProxyConfig(apiProxyTarget, {
     identityTarget: normalizeProxyTarget(env.VITE_IDENTITY_API_BASE_URL, apiProxyTarget),
     communityTarget: normalizeProxyTarget(env.VITE_COMMUNITY_API_BASE_URL, apiProxyTarget),
     contentTarget: normalizeProxyTarget(env.VITE_CONTENT_API_BASE_URL, apiProxyTarget),
+    rehearsalTurnstileBypassToken,
   })
   const obfuscationProfile = env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
   const obfuscationControlFlow = parseBoolEnv(env, 'VITE_OBFUSCATION_CONTROL_FLOW', false)
