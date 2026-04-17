@@ -140,6 +140,7 @@ pnpm-lock.yaml
 .cache/
 .temp/
 .tmp/
+.tmp-gh-artifacts/
 .tmp-codex/
 tmp/
 output/
@@ -193,6 +194,5 @@ scripts/config/*.tmp.json
 !public/images/expressions/55.png
 !public/images/expressions/fly.png
 
-# allow docs directory and all documents under it
-!docs/
-!docs/**
+# keep local docs workspace changes out of git noise
+docs/
