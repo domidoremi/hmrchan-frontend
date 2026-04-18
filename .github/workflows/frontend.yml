@@ -165,6 +165,8 @@ jobs:
 
       - name: Smoke E2E
         env:
+          E2E_BASE_URL: ${{ vars.SMOKE_API_BASE_URL || '' }}
+          E2E_AUTOSTART: 'false'
           E2E_ARTIFACT_DIR: .e2e-smoke
           E2E_REQUIRE_AUTH: 'true'
           LOCAL_AUDIT_AUTO_API_BRIDGE: 'false'
@@ -226,6 +228,8 @@ jobs:
 
       - name: Frontend health smoke
         env:
+          FRONTEND_HEALTH_BASE_URL: ${{ vars.SMOKE_API_BASE_URL || '' }}
+          FRONTEND_HEALTH_AUTOSTART: 'false'
           FRONTEND_HEALTH_ARTIFACT_DIR: .frontend-health
           FRONTEND_HEALTH_REQUIRE_AUTH: 'true'
           LOCAL_AUDIT_AUTO_API_BRIDGE: 'false'
