@@ -10,6 +10,8 @@
 import puppeteer, { type Viewport, type Page } from 'puppeteer'
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
+import http from 'node:http'
+import https from 'node:https'
 import {
   applyLocalAuditEnvToProcess,
   createLocalAuditEnv,
@@ -29,6 +31,13 @@ import {
   DEFAULT_SAMPLE_POST_ROUTE,
   getSmokeRouteMatrix,
 } from './lib/release-route-contract.js'
+import {
+  buildAuthBootstrapProbeSummary,
+  extractAuthBootstrapError,
+  findFatalAuthBootstrapProbe,
+  formatFatalAuthBootstrapProbe,
+  probeAuthBootstrapEndpoints,
+} from './lib/auth-bootstrap.js'
 import { ensureDetailRouteReadiness, resolveSampleDetailRoute } from './lib/detail-route-utils.js'
 import { getAuthSkipReason, resolveAuthSmokeCredentials } from './lib/e2e-smoke-report.js'
 
@@ -51,6 +60,7 @@ interface HealthRouteDefinition {
   name: string
   path: string
   mode: 'guest' | 'auth'
+  securityLevel?: 'authenticated' | 'sensitive'
   shellSelector?: string
   expectedPath?: string
   readinessSelectorsAll?: string[]
@@ -82,6 +92,15 @@ interface HealthFailureEvidence {
   consoleMessages: string[] | null
   requestFailures: string[] | null
   badResponses: string[] | null
+}
+
+type AuthBootstrapProbe = {
+  path: string
+  method: string
+  status: number
+  ok?: boolean
+  code: string | null
+  message: string | null
 }
 
 type JsonRecord = Record<string, unknown>
@@ -149,6 +168,10 @@ const AUDIT_ENV = {
     ? 'false'
     : (BASE_AUDIT_ENV['VITE_DISABLE_PREVIEW_PROXY'] ?? 'true'),
 }
+const AUTH_BOOTSTRAP_CONTRACT_VERSION =
+  AUDIT_ENV['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
+  process.env['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
+  ''
 const PREVIEW_PORT_CANDIDATES = resolveLocalAuditPreviewPorts(AUDIT_ENV, [
   'FRONTEND_HEALTH_PREVIEW_PORTS',
   'FRONTEND_HEALTH_PREVIEW_PORT',
@@ -174,6 +197,51 @@ function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+async function readAuthBootstrapPageProbe(
+  response: puppeteer.HTTPResponse | null
+): Promise<AuthBootstrapProbe | null> {
+  if (!response) return null
+  const pathname = new URL(response.url()).pathname
+  if (
+    pathname !== '/api/v1/client/init' &&
+    pathname !== '/api/v1/auth/session:resolve' &&
+    pathname !== '/api/v1/auth/login'
+  ) {
+    return null
+  }
+
+  const rawBody = await response.text().catch(() => '')
+  let parsedBody: unknown = null
+  try {
+    parsedBody = rawBody ? JSON.parse(rawBody) : null
+  } catch {
+    parsedBody = null
+  }
+
+  const errorMeta = extractAuthBootstrapError(parsedBody, rawBody)
+
+  return {
+    path: pathname,
+    method: response.request().method(),
+    status: response.status(),
+    code: errorMeta.code,
+    message: errorMeta.message ?? (rawBody.trim().length > 0 ? rawBody.trim() : null),
+  }
+}
+
+async function runAuthBootstrapPreflight(baseUrl: string): Promise<AuthBootstrapProbe[]> {
+  return probeAuthBootstrapEndpoints(baseUrl, {
+    contractVersion: AUTH_BOOTSTRAP_CONTRACT_VERSION,
+  }) as Promise<AuthBootstrapProbe[]>
+}
+
+function throwIfFatalAuthBootstrapProbe(probes: AuthBootstrapProbe[]): void {
+  const fatalProbe = findFatalAuthBootstrapProbe(probes)
+  if (!fatalProbe) return
+  const summaries = probes.map((probe) => buildAuthBootstrapProbeSummary(probe)).join(' | ')
+  throw new Error(`${formatFatalAuthBootstrapProbe(fatalProbe)} Probes: ${summaries}`)
+}
+
 function isLocalAuditOrigin(baseUrl: string): boolean {
   try {
     const hostname = new URL(baseUrl).hostname
@@ -196,10 +264,15 @@ function isGuestOnlyAuthEntryRoute(route: Pick<HealthRouteDefinition, 'mode' | '
   )
 }
 
+function isSensitiveRoute(route: Pick<HealthRouteDefinition, 'securityLevel'>): boolean {
+  return route.securityLevel === 'sensitive'
+}
+
 function toHealthRouteDefinition(route: {
   name: string
   path: string
   mode: 'guest' | 'auth'
+  securityLevel?: 'authenticated' | 'sensitive'
   shellSelector?: string
   expectedPath?: string
   readinessSelectorsAll?: string[]
@@ -209,6 +282,7 @@ function toHealthRouteDefinition(route: {
     name: route.name,
     path: route.path,
     mode: route.mode,
+    securityLevel: route.securityLevel,
     shellSelector: route.shellSelector,
     expectedPath: route.expectedPath,
     readinessSelectorsAll: route.readinessSelectorsAll,
@@ -578,6 +652,39 @@ async function assertHealthRouteContract(page: Page, route: HealthRouteDefinitio
 }
 
 async function isBaseUrlReachable(url: string): Promise<boolean> {
+  try {
+    const target = new URL(url)
+    const transport = target.protocol === 'https:' ? https : http
+    const reachable = await new Promise<boolean>((resolve) => {
+      const request = transport.request(
+        target,
+        {
+          method: 'HEAD',
+          timeout: 4_000,
+          headers: {
+            'user-agent': 'momichan-frontend-health-check/1.0',
+          },
+        },
+        (response) => {
+          response.resume()
+          resolve((response.statusCode ?? 0) >= 200 && (response.statusCode ?? 0) < 400)
+        }
+      )
+
+      request.on('timeout', () => {
+        request.destroy(new Error('timeout'))
+      })
+      request.on('error', () => resolve(false))
+      request.end()
+    })
+
+    if (reachable) {
+      return true
+    }
+  } catch {
+    // Fall back to fetch below.
+  }
+
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 4_000)
   try {
@@ -676,12 +783,22 @@ async function authenticateViaApi(
   })
 
   try {
-    const waitForLoginExit = (timeout: number) =>
-      page.waitForFunction(
-        () =>
-          window.location.pathname !== '/login' && !window.location.pathname.startsWith('/login/'),
-        { timeout }
-      )
+    const waitForLoginExit = async (timeout: number): Promise<boolean> => {
+      try {
+        await page.waitForFunction(
+          () =>
+            window.location.pathname !== '/login' &&
+            !window.location.pathname.startsWith('/login/'),
+          { timeout }
+        )
+        return true
+      } catch {
+        const currentPath = await page.evaluate(() => window.location.pathname).catch(() => null)
+        return Boolean(
+          currentPath && currentPath !== '/login' && !currentPath.startsWith('/login/')
+        )
+      }
+    }
     const waitForClientCredentials = (timeout: number) =>
       page.waitForFunction(
         () => {
@@ -841,18 +958,56 @@ async function authenticateViaApi(
       await waitForClientCredentials(2_000)
     }
     const submitLoginForm = () =>
-      page.$eval('form.auth-form', (form) => {
-        ;(form as HTMLFormElement).requestSubmit()
+      page.evaluate(() => {
+        const form = document.querySelector('form.auth-form')
+        if (!(form instanceof HTMLFormElement)) {
+          throw new Error('auth login form is missing')
+        }
+        form.requestSubmit()
       })
+    const fillInputValue = (selector: string, value: string) =>
+      page.evaluate(
+        ({ selector: nextSelector, value: nextValue }) => {
+          const input = document.querySelector(nextSelector)
+          if (!(input instanceof HTMLInputElement)) {
+            throw new Error(`input not found for selector: ${nextSelector}`)
+          }
+          input.focus()
+          input.value = ''
+          input.dispatchEvent(new Event('input', { bubbles: true }))
+          input.value = String(nextValue)
+          input.dispatchEvent(new Event('input', { bubbles: true }))
+          input.dispatchEvent(new Event('change', { bubbles: true }))
+        },
+        { selector, value }
+      )
+    const submitLoginFormAndReadProbe = async (): Promise<AuthBootstrapProbe | null> => {
+      const loginResponsePromise = page
+        .waitForResponse(
+          (response) =>
+            response.request().method() === 'POST' && response.url().includes('/api/v1/auth/login'),
+          { timeout: 10_000 }
+        )
+        .catch(() => null)
+
+      await submitLoginForm()
+      const loginResponse = await loginResponsePromise
+      return readAuthBootstrapPageProbe(loginResponse)
+    }
 
     const loginSelector = '#login-identifier'
     const passwordSelector = '#login-password'
     let latestLoginRequestHeaders: Record<string, string> | null = null
     const loginRequestIds = new Set<string>()
+    const pageAuthBootstrapProbes: AuthBootstrapProbe[] = []
+    const pendingAuthBootstrapResponses = new Set<Promise<void>>()
     const normalizeHeaders = (headers: Record<string, unknown> | undefined) =>
       Object.fromEntries(
         Object.entries(headers ?? {}).map(([key, value]) => [key.toLowerCase(), String(value)])
       )
+    const flushAuthBootstrapResponses = async () => {
+      await Promise.all([...pendingAuthBootstrapResponses])
+    }
     const cdpSession = await page.createCDPSession()
     await cdpSession.send('Network.enable')
     cdpSession.on('Network.requestWillBeSent', (event: CdpRequestWillBeSentEvent) => {
@@ -883,6 +1038,27 @@ async function authenticateViaApi(
         }
       }
     })
+    page.on('response', (response) => {
+      const pathname = new URL(response.url()).pathname
+      if (
+        pathname !== '/api/v1/client/init' &&
+        pathname !== '/api/v1/auth/session:resolve' &&
+        pathname !== '/api/v1/auth/login'
+      ) {
+        return
+      }
+
+      const tracked = (async () => {
+        const probe = await readAuthBootstrapPageProbe(response)
+        if (probe) {
+          pageAuthBootstrapProbes.push(probe)
+        }
+      })()
+      void tracked.finally(() => {
+        pendingAuthBootstrapResponses.delete(tracked)
+      })
+      pendingAuthBootstrapResponses.add(tracked)
+    })
     const openAndFillLoginForm = async (options?: { resetSession?: boolean }): Promise<boolean> => {
       if (options?.resetSession) {
         await clearBrowserAuditSession(page, baseUrl)
@@ -908,10 +1084,10 @@ async function authenticateViaApi(
         return false
       }
       await loginInput.dispose()
-      await page.click(loginSelector, { clickCount: 3 })
-      await page.type(loginSelector, credentials.login, { delay: 20 })
-      await page.click(passwordSelector, { clickCount: 3 })
-      await page.type(passwordSelector, credentials.password, { delay: 20 })
+      await flushAuthBootstrapResponses()
+      throwIfFatalAuthBootstrapProbe(pageAuthBootstrapProbes)
+      await fillInputValue(loginSelector, credentials.login)
+      await fillInputValue(passwordSelector, credentials.password)
       return true
     }
 
@@ -921,16 +1097,24 @@ async function authenticateViaApi(
       await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
       return
     }
+    const preflightProbes = await runAuthBootstrapPreflight(baseUrl)
+    throwIfFatalAuthBootstrapProbe([...pageAuthBootstrapProbes, ...preflightProbes])
 
     const submitButton = await page.$('form.auth-form button[type="submit"], form.auth-form button')
     if (!submitButton) {
       throw new Error('Frontend health auth bootstrap submit button is missing')
     }
-    await submitLoginForm()
+    const firstLoginProbe = await submitLoginFormAndReadProbe()
+    await flushAuthBootstrapResponses()
+    if (firstLoginProbe) {
+      throwIfFatalAuthBootstrapProbe([
+        ...pageAuthBootstrapProbes,
+        ...preflightProbes,
+        firstLoginProbe,
+      ])
+    }
 
     const loginExited = await waitForLoginExit(5_000)
-      .then(() => true)
-      .catch(() => false)
     if (!loginExited) {
       await ensureClientCredentials()
       const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
@@ -954,8 +1138,21 @@ async function authenticateViaApi(
         }
         await openAndFillLoginForm()
       }
-      await submitLoginForm()
-      await waitForLoginExit(25_000)
+      const secondLoginProbe = await submitLoginFormAndReadProbe()
+      await flushAuthBootstrapResponses()
+      if (secondLoginProbe) {
+        throwIfFatalAuthBootstrapProbe([
+          ...pageAuthBootstrapProbes,
+          ...preflightProbes,
+          secondLoginProbe,
+        ])
+      }
+      const loginExitedAfterTrust = await waitForLoginExit(25_000)
+      if (!loginExitedAfterTrust) {
+        throw new Error(
+          'Timed out waiting for login redirect to leave /login after trust bootstrap'
+        )
+      }
     }
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
   } catch (error) {
@@ -1245,14 +1442,54 @@ function collectProbeIssues(probe: RuntimeProbe): ScanIssue[] {
 
 function attachPageDiagnostics(
   page: Page,
-  healthFilterOptions: { baseOrigin: string },
+  route: Pick<HealthRouteDefinition, 'mode' | 'path' | 'expectedPath'>,
+  healthFilterOptions: { baseOrigin: string; managedPreview: boolean },
   consoleErrors: Set<string>,
   requestFailures: Set<string>,
   badResponses: Set<string>
 ): void {
+  const isManagedPreviewSpa404Noise = (targetUrl?: string | null): boolean => {
+    if (!healthFilterOptions.managedPreview) {
+      return false
+    }
+
+    // The local Pages-compatible preview serves some SPA navigation fallbacks
+    // with a 404 status while Vue still mounts the correct client route.
+    // Only ignore the top-level navigation URL for the route under test;
+    // asset/API 404s remain blocking.
+    const isEligibleGuestRoute =
+      isGuestProtectedRedirectRoute(route) || route.path === '/this-route-does-not-exist'
+    const isEligibleRoute = route.mode === 'auth' || isEligibleGuestRoute
+
+    const normalizedTarget = String(targetUrl ?? '').trim()
+    if (!isEligibleRoute || !normalizedTarget) {
+      return false
+    }
+
+    try {
+      const resolved = new URL(normalizedTarget, healthFilterOptions.baseOrigin)
+      const routeUrl = new URL(route.path, healthFilterOptions.baseOrigin)
+      return resolved.origin === routeUrl.origin && resolved.pathname === routeUrl.pathname
+    } catch {
+      return false
+    }
+  }
+
   page.on('console', (msg) => {
     if (msg.type() === 'error') {
       const text = msg.text()
+      if (
+        isManagedPreviewSpa404Noise(msg.location().url) ||
+        (healthFilterOptions.managedPreview &&
+          (route.mode === 'auth' ||
+            (route.mode === 'guest' &&
+              (isGuestProtectedRedirectRoute(route) ||
+                route.path === '/this-route-does-not-exist'))) &&
+          text.trim() ===
+            'Failed to load resource: the server responded with a status of 404 (Not Found)')
+      ) {
+        return
+      }
       if (
         shouldIgnoreConsoleError(text, INCLUDE_API_ERRORS, msg.location().url, healthFilterOptions)
       ) {
@@ -1266,6 +1503,7 @@ function attachPageDiagnostics(
   })
 
   page.on('requestfailed', (req) => {
+    if (isManagedPreviewSpa404Noise(req.url())) return
     if (shouldIgnoreRequestIssue(req.url(), INCLUDE_API_ERRORS, healthFilterOptions)) return
     const reason = req.failure()?.errorText ?? 'unknown'
     requestFailures.add(`${req.method()} ${req.url()} (${reason})`)
@@ -1273,6 +1511,7 @@ function attachPageDiagnostics(
 
   page.on('response', (res) => {
     const status = res.status()
+    if (status === 404 && isManagedPreviewSpa404Noise(res.url())) return
     if (shouldIgnoreRequestIssue(res.url(), INCLUDE_API_ERRORS, healthFilterOptions)) return
     if (status >= 400) {
       badResponses.add(`${status} ${res.request().method()} ${res.url()}`)
@@ -1297,6 +1536,7 @@ async function main() {
   let firstBlockingIssue: HealthFailureEvidence | null = null
   const authSkipReason = getAuthSkipReason(AUTH_LOGIN, AUTH_PASSWORD, AUTH_CREDENTIALS.source)
   const authCredentialsDetected = Boolean(AUTH_LOGIN && AUTH_PASSWORD)
+  const authHealthEnabled = AUTH_REQUIRED && authCredentialsDetected
   const getPreviewDiagnostics = () => managedServer?.formatDiagnosticsLines() ?? null
 
   try {
@@ -1341,6 +1581,7 @@ async function main() {
     const healthFilterOptions = {
       baseOrigin: effectiveBaseUrl,
       allowLocalPreviewApiNoise: Boolean(managedServer),
+      managedPreview: Boolean(managedServer),
     }
 
     try {
@@ -1413,13 +1654,13 @@ async function main() {
 
       const guestRoutes = buildGuestRoutes(resolvedSamplePostRoute, resolvedSampleDiscussionRoute)
       const authRoutes = buildAuthRoutes(resolvedSamplePostRoute, resolvedSampleDiscussionRoute)
-      const effectiveGuestRoutes = authCredentialsDetected
+      const effectiveGuestRoutes = authHealthEnabled
         ? guestRoutes.filter(
             (route) => !isGuestProtectedRedirectRoute(route) && !isGuestOnlyAuthEntryRoute(route)
           )
         : guestRoutes
 
-      if (authCredentialsDetected) {
+      if (authHealthEnabled) {
         const clearedRateLimitKeys = await clearLocalAuditRateLimitState(AUDIT_ENV)
         if (clearedRateLimitKeys > 0) {
           console.log(`🔐 Cleared ${clearedRateLimitKeys} local audit rate-limit keys`)
@@ -1440,17 +1681,24 @@ async function main() {
             },
           }
         )
+        if (isLocalAuditOrigin(effectiveBaseUrl)) {
+          const reason =
+            'sensitive route skipped during local audit because runtime integrity may be degraded and route guards intentionally redirect to /profile'
+          for (const route of authRoutes.filter(isSensitiveRoute)) {
+            skippedRouteReasons.set(route.name, reason)
+          }
+        }
       } else if (AUTH_REQUIRED) {
         throw new Error(
           `Authenticated frontend health is required, but ${authSkipReason ?? 'credentials are unavailable'}. Provide PRIMARY_USERNAME/PRIMARY_PASSWORD for the seeded smoke account. Legacy aliases E2E_AUTH_LOGIN/E2E_AUTH_PASSWORD remain supported.`
         )
       } else {
         console.log(
-          `🔐 Skipping authenticated frontend health because ${authSkipReason ?? 'credentials are unavailable'}`
+          `🔐 Skipping authenticated frontend health because ${authCredentialsDetected ? 'FRONTEND_HEALTH_REQUIRE_AUTH=false' : (authSkipReason ?? 'credentials are unavailable')}`
         )
       }
 
-      const routesToScan = authCredentialsDetected
+      const routesToScan = authHealthEnabled
         ? [...effectiveGuestRoutes, ...authRoutes]
         : guestRoutes
 
@@ -1475,6 +1723,7 @@ async function main() {
             await page.setViewport(viewport.value)
             attachPageDiagnostics(
               page,
+              route,
               healthFilterOptions,
               consoleErrors,
               requestFailures,
@@ -1502,7 +1751,7 @@ async function main() {
                     ? await page.evaluate(() => window.location.pathname).catch(() => null)
                     : null
 
-                if (route.mode !== 'auth' || currentPath !== '/login' || !authCredentialsDetected) {
+                if (route.mode !== 'auth' || currentPath !== '/login' || !authHealthEnabled) {
                   throw error
                 }
 
@@ -1527,7 +1776,7 @@ async function main() {
                 )
                 await navigateAndAssertRoute()
               }
-              await page.waitForNetworkIdle({ idleTime: 800, timeout: 15_000 }).catch(() => {})
+              await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => {})
               await sleep(900)
 
               const probe = await probeRuntime(page)
@@ -1659,8 +1908,12 @@ async function main() {
       authLoginPresent: Boolean(AUTH_LOGIN),
       authPasswordPresent: Boolean(AUTH_PASSWORD),
       authCredentialsDetected,
-      authHealthExecuted: authCredentialsDetected,
-      authHealthSkipReason: authCredentialsDetected ? null : authSkipReason,
+      authHealthExecuted: authHealthEnabled,
+      authHealthSkipReason: authHealthEnabled
+        ? null
+        : authCredentialsDetected
+          ? 'FRONTEND_HEALTH_REQUIRE_AUTH=false'
+          : authSkipReason,
       scannedRouteViewportCount: results.length,
       issueCount,
       crashed,

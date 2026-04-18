@@ -13,6 +13,7 @@ VPC_IDENTITY_API_ORIGIN = "http://identity-api:8000"
 VPC_COMMUNITY_API_ORIGIN = "http://community-api:8000"
 VPC_CONTENT_API_ORIGIN = "http://content-api:8000"
 VPC_API_ORIGIN = "http://identity-api:8000"
+ENABLE_VPC_PROXY = "true"
 
 [[env.preview.vpc_services]]
 binding = "VPC_SERVICE"
@@ -25,3 +26,4 @@ VPC_IDENTITY_API_ORIGIN = "http://identity-api:8000"
 VPC_COMMUNITY_API_ORIGIN = "http://community-api:8000"
 VPC_CONTENT_API_ORIGIN = "http://content-api:8000"
 VPC_API_ORIGIN = "http://identity-api:8000"
+ENABLE_VPC_PROXY = "true"

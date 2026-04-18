@@ -20,7 +20,6 @@ const REQUEST_INTEGRITY_EXEMPT_PATHS = new Set([
   '/metrics',
   '/api/v1/client/init',
   '/api/v1/client/verify',
-  '/api/v1/auth/turnstile-config',
   '/api/v1/auth/google/start',
   '/api/v1/auth/google/callback',
 ])

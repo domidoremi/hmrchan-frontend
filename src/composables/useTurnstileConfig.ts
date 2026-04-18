@@ -1,26 +1,12 @@
-import { computed, onMounted, ref } from 'vue'
-import { authService } from '@/api'
+import { computed, ref } from 'vue'
+
+const sharedTurnstileSiteKey = ref((import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim())
 
 export function useTurnstileConfig() {
-  const turnstileSiteKey = ref((import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim())
-  const turnstileEnabled = computed(() => turnstileSiteKey.value.length > 0)
-
-  onMounted(async () => {
-    try {
-      const config = await authService.getTurnstileConfig()
-      if (!config.enabled) {
-        turnstileSiteKey.value = ''
-        return
-      }
-
-      turnstileSiteKey.value = (config.site_key ?? '').trim()
-    } catch {
-      // 降级到环境变量配置
-    }
-  })
+  const turnstileEnabled = computed(() => sharedTurnstileSiteKey.value.length > 0)
 
   return {
-    turnstileSiteKey,
+    turnstileSiteKey: sharedTurnstileSiteKey,
     turnstileEnabled,
   }
 }

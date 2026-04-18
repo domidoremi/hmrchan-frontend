@@ -172,6 +172,23 @@ describe('apiClient', () => {
       expect(result).toEqual({ id: 1, name: 'Test' })
     })
 
+    it('does not attach the contract header to client init requests', async () => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: { client_token: 'token', client_secret: 'secret', trust_level: 'verified' },
+        })
+      )
+
+      await apiClient.post(
+        '/client/init',
+        { client_fingerprint: 'fingerprint-123' },
+        { skipAuth: true }
+      )
+
+      expect(getLastRequestInit().headers['X-Client-Contract-Version']).toBeUndefined()
+    })
+
     it('normalizes paginated array envelopes', async () => {
       mockFetch.mockResolvedValueOnce(
         jsonResponse({

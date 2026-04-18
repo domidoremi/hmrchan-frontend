@@ -190,7 +190,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { AlertCircle } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
-import { authService } from '@/api'
 import { clientSecurityService } from '@/api/clientSecurityService'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
@@ -599,17 +598,6 @@ async function runPopupBridge(): Promise<boolean> {
   return true
 }
 
-async function preloadTurnstileSiteKey(): Promise<string> {
-  try {
-    const config = await authService.getTurnstileConfig()
-    const resolvedSiteKey = config.enabled ? (config.site_key ?? '').trim() : ''
-    turnstileSiteKey.value = resolvedSiteKey
-    return resolvedSiteKey
-  } catch {
-    return turnstileSiteKey.value.trim()
-  }
-}
-
 async function runInitialExchange() {
   if (!GOOGLE_AUTH_ENABLED) {
     currentStep.value = 'error'
@@ -643,10 +631,9 @@ async function runInitialExchange() {
   }
 
   pendingGoogleHandoffCode.value = handoffCode.trim()
-  const resolvedSiteKey = await preloadTurnstileSiteKey()
   const handoffPreparation = await prepareGoogleAuthHandoff(
     pendingGoogleHandoffCode.value,
-    resolvedSiteKey
+    turnstileSiteKey.value.trim()
   )
 
   if (handoffPreparation.status === 'challenge-required') {

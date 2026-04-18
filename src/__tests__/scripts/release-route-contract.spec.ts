@@ -91,4 +91,18 @@ describe('release route contract', () => {
       '[data-testid="discussion-comment-composer"]',
     ])
   })
+
+  it('marks step-up profile routes as sensitive for local audit skip logic', () => {
+    const sensitiveRoutes = getAuthenticatedRouteDefinitions()
+      .filter((route) => route.securityLevel === 'sensitive')
+      .map((route) => route.path)
+
+    expect(sensitiveRoutes).toEqual(
+      expect.arrayContaining([
+        '/profile/security-activity',
+        '/profile/settings',
+        '/profile/devices',
+      ])
+    )
+  })
 })

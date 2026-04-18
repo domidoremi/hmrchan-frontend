@@ -386,7 +386,7 @@ describe('AuthCallbackPage', () => {
     await flushPromises()
 
     expect(localStorage.getItem('__momi_google_auth_popup_result__')).toBeNull()
-    expect(testState.api.authService.getTurnstileConfig).toHaveBeenCalledTimes(1)
+    expect(testState.api.authService.getTurnstileConfig).not.toHaveBeenCalled()
     expect(testState.api.clientSecurityService.init).toHaveBeenCalledWith(false, {
       promptChallenge: false,
     })

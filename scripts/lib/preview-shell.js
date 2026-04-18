@@ -180,9 +180,18 @@ export async function runCommandCapture(command, args, { env = process.env } = {
         return
       }
 
+      const stderrText = stderr.join('').trim()
+      const dockerUnavailable =
+        command === 'docker' &&
+        /dockerDesktopLinuxEngine|Cannot connect to the Docker daemon|failed to connect to the docker API|The system cannot find the file specified/i.test(
+          stderrText
+        )
+
       reject(
         new Error(
-          `${command} ${args.join(' ')} exited with code ${code}: ${stderr.join('').trim()}`
+          dockerUnavailable
+            ? `Docker daemon is unavailable, so the local audit API bridge cannot start. Start Docker Desktop or set LOCAL_AUDIT_AUTO_API_BRIDGE=false / provide explicit API origins before rerunning. Original error: ${stderrText}`
+            : `${command} ${args.join(' ')} exited with code ${code}: ${stderrText}`
         )
       )
     })

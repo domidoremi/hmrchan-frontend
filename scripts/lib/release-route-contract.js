@@ -1,6 +1,6 @@
 const SAMPLE_POST_ROUTE_TOKEN = '__SAMPLE_POST__'
 const SAMPLE_DISCUSSION_ROUTE_TOKEN = '__SAMPLE_DISCUSSION__'
-const DEFAULT_SAMPLE_POST_ROUTE = '/post/6c73f45a-a7ec-481d-9bc5-9b09ee560fcc'
+const DEFAULT_SAMPLE_POST_ROUTE = '/post/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
 const DEFAULT_SAMPLE_DISCUSSION_ROUTE = '/community/discussions/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
 
 export {
@@ -281,6 +281,7 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze([
     name: 'profile security activity',
     path: '/profile/security-activity',
     mode: 'auth',
+    securityLevel: 'sensitive',
     sectionId: 'security-activity',
     shellSelector: buildProfileSectionShellSelector('security-activity'),
     expectedTitleKey: 'profile.securityActivityTitle',
@@ -291,6 +292,7 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze([
     name: 'profile settings',
     path: '/profile/settings',
     mode: 'auth',
+    securityLevel: 'sensitive',
     sectionId: 'settings',
     shellSelector: '.settings-page',
     expectedTitleKey: 'nav.profileSettings',
@@ -310,6 +312,7 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze([
     name: 'profile devices',
     path: '/profile/devices',
     mode: 'auth',
+    securityLevel: 'sensitive',
     sectionId: 'devices',
     shellSelector: '[data-testid="profile-devices-page"]',
     expectedTitleKey: 'profile.tabs.devices',

@@ -11,6 +11,7 @@ import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolic
 import { resolveConfiguredApiBaseUrl, resolveVpcOriginForPath } from '../../src/edge/upstream'
 import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import {
+  buildInternalGatewayUrl,
   fetchViaInternalApiGateway,
   type InternalApiGatewayRuntimeEnv,
 } from '../../src/edge/internalApiGateway'
@@ -360,7 +361,12 @@ function extractPayloadFingerprint(payload: unknown): string | null {
 async function fetchInternalBff(env: ProxyEnv, path: string, payload: unknown): Promise<Response> {
   const origin = normalizeInternalOrigin(env)
   const secret = env.BACKEND_INTERNAL_AUTH_SHARED_SECRET?.trim()
-  if (!origin || !secret) {
+  const internalApiGateway =
+    isInternalApiGatewayEnabled(env) && env.INTERNAL_API_GATEWAY
+      ? env.INTERNAL_API_GATEWAY
+      : undefined
+
+  if ((!origin && !internalApiGateway) || !secret) {
     return jsonResponse(
       {
         error: 'BFF_NOT_CONFIGURED',
@@ -387,6 +393,16 @@ async function fetchInternalBff(env: ProxyEnv, path: string, payload: unknown): 
   const browserFingerprint = extractPayloadFingerprint(payload)
   if (browserFingerprint) {
     headers.set('X-Client-Fingerprint', browserFingerprint)
+  }
+
+  if (internalApiGateway) {
+    return internalApiGateway.fetch(
+      new Request(buildInternalGatewayUrl(path), {
+        method: 'POST',
+        headers,
+        body,
+      })
+    )
   }
 
   return fetch(`${origin}${path}`, {

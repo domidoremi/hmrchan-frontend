@@ -182,7 +182,9 @@ bun run check:release-evidence
 
 - 浏览器端生产默认通过同源 `/api` 访问后端，不使用 `VITE_API_BASE_URL` 改写线上 API 基址
 - Pages Functions 的 public fallback 目标通过 `API_BASE_URL` 配置；私网路径通过受支持的 `INTERNAL_API_GATEWAY` Service Binding 转发到内部 Worker，再由该 Worker 使用 `VPC_SERVICE` + 三域 VPC origin
-- Pages 纯文本变量最小集合为：`API_BASE_URL`、`BUN_VERSION=1.3.11`、`SKIP_DEPENDENCY_INSTALL=true`
+- Pages 纯文本变量最小集合为：`API_BASE_URL`、`BUN_VERSION=1.3.11`、`SKIP_DEPENDENCY_INSTALL=true`、`ENABLE_INTERNAL_API_GATEWAY=true`
+- BFF-first 认证在 Pages 生产与 preview 都要求配置 `BACKEND_INTERNAL_AUTH_SHARED_SECRET`，并要求存在 `INTERNAL_API_GATEWAY` Service Binding；`BACKEND_INTERNAL_ORIGIN` 仅作为调用方能直接访问 internal origin 时的 fallback，不应在 Pages 中机械填写 Docker hostname
+- 若缺少 BFF shared secret，或同时缺少可用的 `INTERNAL_API_GATEWAY` 与直连 `BACKEND_INTERNAL_ORIGIN`，`/api/v1/auth/login`、`/api/v1/auth/session:resolve` 等同源认证入口会由 Functions 显式返回 `500 BFF_NOT_CONFIGURED`
 - 内部 Worker 的私网三域上游应与后端当前 Compose 服务名对齐：
   - `VPC_IDENTITY_API_ORIGIN=http://identity-api:8000`
   - `VPC_COMMUNITY_API_ORIGIN=http://community-api:8000`
@@ -197,8 +199,13 @@ bun run check:release-evidence
 
 发布门禁约定：
 
-- PR / 普通分支阻塞检查：`quality`、`coverage`、`e2e_smoke`、`frontend_health`
-- `main` / `master` push 仅在显式配置受控 canary 站点时追加 `production_canary`
+- 默认 GitHub Actions 阻塞检查：`quality`
+- `coverage` 改为 `workflow_dispatch` 手动触发，不再占用默认 PR / push 用量
+- 重浏览器检查默认移出 GitHub 自动 workflow，改为本地或值班机手动执行：
+  - `bun run test:e2e`
+  - `bun run check:frontend`
+  - `bun run test:prod:regression --preflight`
+  - `node scripts/prod-regression-runner.mjs`
 - `frontend-nightly` 的 `pwa_smoke` 与主 CI 复用同一套 public smoke fixture 契约；默认要求提供 `PRIMARY_USERNAME/PRIMARY_PASSWORD`
 - `frontend-nightly` 中只有 `frontend_health` 直接扫生产；`pwa_smoke` 仍跑本地 build + preview 壳层
 - 本地自管 preview-shell 审计现在会复用统一 preview manager；若 preview 异常退出导致 `chrome-error://chromewebdata/`，`test:e2e` / `check:frontend` 会自动重启一次并重试当前检查
@@ -207,12 +214,17 @@ bun run check:release-evidence
 - 测试 / 构建依赖只做 scoped upgrade；默认不顺手升级业务运行时依赖
 - 会干扰 CI 判读的工具链提醒必须被修复，或至少登记为已知限制并收进显式白名单；不能长期作为常驻主噪音保留
 - 当前已登记的工具链已知限制只有 `baseline-browser-mapping` 的 stale-data 提醒；仓库通过 Vitest wrapper 只对白名单化的官方提醒做 suppress，不会吞掉其他测试错误
-- `test:e2e`、`production_canary`、`test:prod:regression` 共享同一份 route / selector / readiness contract，避免 smoke、canary、manual runner 各自漂移
+- `test:e2e`、`check:frontend`、`test:prod:regression` 共享同一份 route / selector / readiness contract，避免 smoke、health、manual runner 各自漂移
 - 认证态 smoke 当前除了受保护路由可进入，还要求：
   - `/favorites` 实际落到 `/profile/favorites`
-  - 帖子详情命中 `[data-testid="comment-composer"]` 和 `[data-testid="comment-thread-header"]`
-  - 讨论详情命中 `[data-testid="discussion-comment-composer"]` 和 `[data-testid="comment-thread-header"]`
+  - 帖子详情评论区成功挂载，且评论线程头可见；composer 仅作为增强信号
+  - 讨论详情评论区成功挂载，且评论线程头可见；composer 仅作为增强信号
   - 受保护 Profile 子页命中稳定 section shell + tab readiness selector
+- `/404/` 的真实契约按 Pages 当前行为校验：
+  - 返回 `404`
+  - 保留正确 prerender shell HTML
+  - canonical 为 `https://momichan.xyz/404`
+  - robots 为 `noindex, nofollow`
 - smoke / canary / frontend health 失败时会保留：
   - `summary.json`
   - `summary.md`

@@ -176,7 +176,11 @@ export async function handleInternalApiGatewayRequest(
   const path = requestUrl.pathname
   const search = requestUrl.search
 
-  if (!path.startsWith('/api/') && !path.startsWith('/uploads/')) {
+  if (
+    !path.startsWith('/api/') &&
+    !path.startsWith('/uploads/') &&
+    !path.startsWith('/internal/')
+  ) {
     return new Response('Not Found', { status: 404 })
   }
 
