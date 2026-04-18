@@ -45,6 +45,7 @@ type AuthFlowRiskVerificationResult = {
   status: 'risk-verification'
   pendingToken: string
   challengeType?: string
+  methods: string[]
   expiresIn?: number
   message?: string
   redirectTo?: string
@@ -81,6 +82,11 @@ type WebAuthnLoginOptionsResult =
       provider?: string
     }
   | AuthFlowErrorResult
+
+const GOOGLE_AUTH_ENABLED =
+  import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+    ? true
+    : import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 
 function isMfaPendingResponse(response: unknown): response is MfaRequiredResponse {
   return (
@@ -253,6 +259,14 @@ export const useAuthStore = defineStore('auth', () => {
     intent: GoogleAuthIntent,
     redirectTo = '/'
   ): Promise<{ status: 'success' } | AuthFlowErrorResult> {
+    if (!GOOGLE_AUTH_ENABLED) {
+      return {
+        status: 'error',
+        error: 'auth.error.googleLoginFailed',
+        code: 'google_auth_disabled',
+      }
+    }
+
     if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
     isLoading.value = true
@@ -275,6 +289,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function completeGoogleAuth(handoffCode: string): Promise<AuthFlowResult> {
+    if (!GOOGLE_AUTH_ENABLED) {
+      return {
+        status: 'error',
+        error: 'auth.error.googleLoginFailed',
+        code: 'google_auth_disabled',
+      }
+    }
+
     if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
     isLoading.value = true
@@ -432,6 +454,7 @@ export const useAuthStore = defineStore('auth', () => {
         status: 'risk-verification',
         pendingToken: response.pending_token,
         challengeType: response.challenge_type,
+        methods: Array.isArray(response.methods) ? response.methods : [],
         expiresIn: response.expires_in,
         message: response.message,
         redirectTo: response.return_to,
@@ -453,7 +476,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     const successResponse = response as Partial<AuthResponse>
-    if (!successResponse.access_token || !successResponse.user) {
+    if (!successResponse.authenticated || !successResponse.user) {
       return {
         status: 'error',
         error: 'auth.error.loginFailed',
@@ -710,6 +733,123 @@ export const useAuthStore = defineStore('auth', () => {
     completeMfaLogin,
     beginWebAuthnLogin,
     finishWebAuthnLogin,
+    async beginRiskWebAuthnLogin(pendingToken: string): Promise<WebAuthnLoginOptionsResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const response = await authService.beginRiskWebAuthnLogin(pendingToken)
+        return {
+          status: 'success',
+          ceremonyId: response.ceremony_id,
+          options: response.options,
+          methods: response.methods,
+          provider: response.provider,
+        }
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.webauthnNotEnrolled',
+          invalidStatusCodes: [400, 401, 403, 422],
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    },
+    async finishRiskWebAuthnLogin(
+      pendingToken: string,
+      ceremonyId: string,
+      credential: Record<string, unknown>
+    ): Promise<AuthFlowResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const deviceInfo = getDeviceInfo()
+        const response = await authService.finishRiskWebAuthnLogin(
+          pendingToken,
+          ceremonyId,
+          credential,
+          deviceInfo.device_name,
+          deviceInfo.device_type
+        )
+        return await resolveAuthFlowResponse(response)
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.webauthnLoginFailed',
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    },
+    async beginPasswordlessLogin(identifier?: string): Promise<WebAuthnLoginOptionsResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const normalizedIdentifier = identifier?.trim()
+        const response = await authService.beginPasswordlessLogin(
+          normalizedIdentifier
+            ? normalizedIdentifier.includes('@')
+              ? { email: normalizedIdentifier }
+              : { username: normalizedIdentifier }
+            : undefined
+        )
+        return {
+          status: 'success',
+          ceremonyId: response.ceremony_id,
+          options: response.options,
+          methods: response.methods,
+          provider: response.provider,
+        }
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.webauthnLoginFailed',
+          invalidStatusCodes: [400, 401, 403, 422, 429],
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    },
+    async finishPasswordlessLogin(
+      ceremonyId: string,
+      credential: Record<string, unknown>
+    ): Promise<AuthFlowResult> {
+      if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const deviceInfo = getDeviceInfo()
+        const response = await authService.finishPasswordlessLogin(
+          ceremonyId,
+          credential,
+          deviceInfo.device_name,
+          deviceInfo.device_type
+        )
+        return await resolveAuthFlowResponse(response)
+      } catch (err) {
+        const errorResult = mapApiError(err, {
+          defaultError: 'auth.error.webauthnLoginFailed',
+        })
+        error.value = errorResult.error
+        return errorResult
+      } finally {
+        isLoading.value = false
+      }
+    },
     register,
     logout,
     fetchCurrentUser: sessionController.fetchCurrentUser,

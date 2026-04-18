@@ -83,6 +83,16 @@
               >
                 {{ $t('auth.loginButton') }}
               </Button>
+              <Button
+                v-if="webauthnSupported"
+                type="button"
+                variant="ghost"
+                full-width
+                :loading="isLoading"
+                @click="handlePasswordlessContinue"
+              >
+                {{ $t('auth.mfa.passkeyAction') }}
+              </Button>
             </div>
 
             <div class="auth-primary-meta">
@@ -104,7 +114,7 @@
               <p class="auth-inline-state__copy">
                 {{ $t('auth.passwordLoginUnavailableHint') }}
               </p>
-              <div class="auth-inline-state__actions">
+              <div v-if="googleAuthEnabled" class="auth-inline-state__actions">
                 <AuthProviderButton
                   action="google"
                   :label="$t('auth.googleLoginButton')"
@@ -119,15 +129,17 @@
             </div>
           </div>
 
-          <AuthDivider :label="$t('auth.googleDivider')" />
+          <template v-if="googleAuthEnabled">
+            <AuthDivider :label="$t('auth.googleDivider')" />
 
-          <AuthProviderButton
-            action="google"
-            :label="$t('auth.googleLoginButton')"
-            :loading="googleProviderBusy"
-            :icon="IconGoogle"
-            @click="handleGoogleContinue"
-          />
+            <AuthProviderButton
+              action="google"
+              :label="$t('auth.googleLoginButton')"
+              :loading="googleProviderBusy"
+              :icon="IconGoogle"
+              @click="handleGoogleContinue"
+            />
+          </template>
 
           <div
             v-if="googlePopupState === 'waiting' || googlePopupState === 'recovery'"
@@ -296,6 +308,17 @@
               >
                 {{ $t('auth.verifyButton') }}
               </Button>
+              <Button
+                v-if="riskSupportsWebAuthn"
+                type="button"
+                variant="ghost"
+                full-width
+                :loading="isLoading"
+                :disabled="!webauthnSupported"
+                @click="handleRiskPasskeyContinue"
+              >
+                {{ $t('auth.mfa.passkeyAction') }}
+              </Button>
               <Button type="button" variant="ghost" full-width @click="returnToCredentials">
                 {{ $t('auth.returnToCredentials') }}
               </Button>
@@ -404,6 +427,11 @@ import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
 import { isTurnstileBusy, type TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
+import {
+  getWebAuthnAssertion,
+  isWebAuthnSupported,
+  serializePublicKeyCredential,
+} from '@/utils/webauthn'
 import { clientSecurityService } from '@/api/clientSecurityService'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
@@ -416,6 +444,10 @@ import AuthProviderButton from '@/components/auth/AuthProviderButton.vue'
 import IconGoogle from '@/components/icons/IconGoogle.vue'
 
 type Step = 'credentials' | 'risk-verification' | 'mfa'
+const GOOGLE_AUTH_ENABLED =
+  import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+    ? true
+    : import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 
 const route = useRoute()
 const router = useRouter()
@@ -444,6 +476,7 @@ const riskPendingToken = ref('')
 const riskVerificationCode = ref('')
 const riskMessage = ref('')
 const riskExpiresIn = ref<number | null>(null)
+const riskMethods = ref<string[]>([])
 const riskError = ref('')
 
 const pendingMfaLoginToken = ref('')
@@ -468,6 +501,7 @@ const restorePassword = ref('')
 const showRestorePassword = ref(false)
 const isRestoringAccount = ref(false)
 const showRestorePanel = ref(false)
+const webauthnSupported = isWebAuthnSupported()
 
 type TurnstileWidgetHandle = {
   reset: () => void
@@ -506,11 +540,13 @@ const googleProviderBusy = computed(
     ['opening', 'waiting', 'recovery', 'handling'].includes(googlePopupState.value) ||
     isLoading.value
 )
+const googleAuthEnabled = computed(() => GOOGLE_AUTH_ENABLED)
 const showCredentialsTurnstile = computed(
   () => turnstileEnabled.value && requiresCredentialsTurnstile.value
 )
 const isCredentialsTurnstileBusy = computed(() => isTurnstileBusy(credentialsTurnstileStatus.value))
 const isRiskTurnstileBusy = computed(() => isTurnstileBusy(riskTurnstileStatus.value))
+const riskSupportsWebAuthn = computed(() => riskMethods.value.includes('webauthn'))
 const googlePopupErrorMessage = computed(() =>
   googlePopupErrorKey.value ? t(googlePopupErrorKey.value) : ''
 )
@@ -687,6 +723,7 @@ function returnToCredentials() {
   riskVerificationCode.value = ''
   riskMessage.value = ''
   riskExpiresIn.value = null
+  riskMethods.value = []
   pendingMfaLoginToken.value = ''
   mfaMethods.value = []
   mfaMessage.value = ''
@@ -734,6 +771,7 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
       riskVerificationCode.value = ''
       riskMessage.value = result.message || ''
       riskExpiresIn.value = result.expiresIn ?? null
+      riskMethods.value = result.methods
       riskError.value = ''
       nextRedirectTarget.value = resolveAuthRedirectTarget(
         result.redirectTo,
@@ -855,6 +893,36 @@ async function handleRiskVerificationSubmit() {
   await applyAuthFlowResult(result)
 }
 
+async function handleRiskPasskeyContinue() {
+  if (!webauthnSupported) {
+    riskError.value = t('auth.error.webauthnUnsupported')
+    return
+  }
+
+  const optionsResult = await authStore.beginRiskWebAuthnLogin(riskPendingToken.value)
+  if (optionsResult.status === 'error') {
+    riskError.value = t(optionsResult.error)
+    return
+  }
+
+  try {
+    const assertion = await getWebAuthnAssertion(optionsResult.options)
+    if (!(assertion instanceof PublicKeyCredential)) {
+      riskError.value = t('auth.error.webauthnLoginFailed')
+      return
+    }
+
+    const result = await authStore.finishRiskWebAuthnLogin(
+      riskPendingToken.value,
+      optionsResult.ceremonyId,
+      serializePublicKeyCredential(assertion)
+    )
+    await applyAuthFlowResult(result)
+  } catch {
+    riskError.value = t('auth.error.webauthnLoginFailed')
+  }
+}
+
 async function handleMfaResolved(result: AuthFlowResult) {
   await applyAuthFlowResult(result)
 }
@@ -946,6 +1014,11 @@ async function handleGoogleClientChallengeVerify(token: string) {
 }
 
 async function continueGoogleInCurrentPage(options: { closePopup?: boolean } = {}) {
+  if (!GOOGLE_AUTH_ENABLED) {
+    credentialsError.value = t('auth.error.googleLoginFailed')
+    return
+  }
+
   clearGooglePopupListener({
     closePopup: options.closePopup ?? false,
   })
@@ -996,6 +1069,40 @@ async function handleGoogleContinue() {
     setGooglePopupStatus('handling')
     await handleGooglePopupResult(message)
   })
+}
+
+async function handlePasswordlessContinue() {
+  if (!webauthnSupported) {
+    credentialsError.value = t('auth.error.webauthnUnsupported')
+    return
+  }
+
+  clearInlineErrors()
+  resetGooglePopupState()
+
+  const optionsResult = await authStore.beginPasswordlessLogin(
+    loginIdentifier.value.trim() || undefined
+  )
+  if (optionsResult.status === 'error') {
+    credentialsError.value = t(optionsResult.error)
+    return
+  }
+
+  try {
+    const assertion = await getWebAuthnAssertion(optionsResult.options)
+    if (!(assertion instanceof PublicKeyCredential)) {
+      credentialsError.value = t('auth.error.webauthnLoginFailed')
+      return
+    }
+
+    const result = await authStore.finishPasswordlessLogin(
+      optionsResult.ceremonyId,
+      serializePublicKeyCredential(assertion)
+    )
+    await applyAuthFlowResult(result)
+  } catch {
+    credentialsError.value = t('auth.error.webauthnLoginFailed')
+  }
 }
 
 function buildLoginQueryWithoutRestore() {

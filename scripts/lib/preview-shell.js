@@ -6,22 +6,44 @@ const PREVIEW_READY_POLL_INTERVAL_MS = 500
 const LOCAL_API_BRIDGE_IMAGE = 'alpine/socat:latest'
 const LOCAL_API_BRIDGE_NETWORK = 'hmrchan-backend_hmrchan'
 const LOCAL_API_BRIDGE_SERVICES = Object.freeze({
+  gateway: {
+    envKey: 'API_BASE_URL',
+    container: 'hmrchan-caddy',
+    preferredPort: 19080,
+    targetPort: 80,
+  },
   identity: {
     envKey: 'VITE_IDENTITY_API_BASE_URL',
     container: 'hmrchan-identity-api',
     preferredPort: 19081,
+    targetPort: 8000,
   },
   community: {
     envKey: 'VITE_COMMUNITY_API_BASE_URL',
     container: 'hmrchan-community-api',
     preferredPort: 19082,
+    targetPort: 8000,
   },
   content: {
     envKey: 'VITE_CONTENT_API_BASE_URL',
     container: 'hmrchan-content-api',
     preferredPort: 19083,
+    targetPort: 8000,
   },
 })
+const WRANGLER_RUNTIME_BINDING_KEYS = Object.freeze([
+  'API_BASE_URL',
+  'BACKEND_INTERNAL_ORIGIN',
+  'BACKEND_INTERNAL_AUTH_SHARED_SECRET',
+  'ENABLE_INTERNAL_API_GATEWAY',
+  'GOOGLE_AUTH_ENABLED',
+  'REHEARSAL_TURNSTILE_BYPASS_TOKEN',
+  'VPC_API_ORIGIN',
+  'VPC_IDENTITY_API_ORIGIN',
+  'VPC_COMMUNITY_API_ORIGIN',
+  'VPC_CONTENT_API_ORIGIN',
+])
+const LOCAL_PAGES_PREVIEW_SCRIPT = 'scripts/local-pages-preview.ts'
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -42,6 +64,21 @@ function pushOutput(buffer, source, chunk, maxOutputLines) {
       buffer.shift()
     }
   }
+}
+
+function getWranglerBindingArgs(env) {
+  const args = []
+  for (const key of WRANGLER_RUNTIME_BINDING_KEYS) {
+    if (!hasTrimmedEnvValue(env, key)) {
+      continue
+    }
+    args.push('-b', `${key}=${env[key].trim()}`)
+  }
+  return args
+}
+
+function shouldUseWranglerPagesRuntime(env) {
+  return env?.LOCAL_AUDIT_USE_WRANGLER_PAGES === 'true'
 }
 
 export function getBunExecutable() {
@@ -544,9 +581,17 @@ function shouldAutoStartLocalApiBridge(env) {
 
   if (env?.LOCAL_AUDIT_AUTO_API_BRIDGE === 'false') return false
   if (env?.VITE_DISABLE_PREVIEW_PROXY === 'true') return false
-  if (!forceBridge && hasTrimmedEnvValue(env, 'VITE_API_BASE_URL')) return false
   if (
     !forceBridge &&
+    hasTrimmedEnvValue(env, 'VITE_API_BASE_URL') &&
+    hasTrimmedEnvValue(env, 'API_BASE_URL') &&
+    hasTrimmedEnvValue(env, 'BACKEND_INTERNAL_ORIGIN')
+  ) {
+    return false
+  }
+  if (
+    !forceBridge &&
+    hasTrimmedEnvValue(env, 'API_BASE_URL') &&
     hasTrimmedEnvValue(env, LOCAL_API_BRIDGE_SERVICES.identity.envKey) &&
     hasTrimmedEnvValue(env, LOCAL_API_BRIDGE_SERVICES.community.envKey) &&
     hasTrimmedEnvValue(env, LOCAL_API_BRIDGE_SERVICES.content.envKey)
@@ -582,7 +627,17 @@ export class LocalApiBridgeManager {
     for (const bridge of this.bridges) {
       patch[bridge.envKey] = bridge.baseUrl
       if (bridge.name === 'identity') {
+        patch.API_BASE_URL = bridge.baseUrl
         patch.VITE_API_BASE_URL = bridge.baseUrl
+        patch.BACKEND_INTERNAL_ORIGIN = bridge.baseUrl
+        patch.VPC_IDENTITY_API_ORIGIN = bridge.baseUrl
+        patch.VPC_API_ORIGIN = bridge.baseUrl
+      }
+      if (bridge.name === 'community') {
+        patch.VPC_COMMUNITY_API_ORIGIN = bridge.baseUrl
+      }
+      if (bridge.name === 'content') {
+        patch.VPC_CONTENT_API_ORIGIN = bridge.baseUrl
       }
     }
     return patch
@@ -639,7 +694,7 @@ export class LocalApiBridgeManager {
       `${this.host}:${port}:${port}`,
       this.image,
       `TCP-LISTEN:${port},fork,reuseaddr`,
-      `TCP:${definition.container}:8000`,
+      `TCP:${definition.container}:${definition.targetPort ?? 8000}`,
     ])
 
     const bridge = {
@@ -695,6 +750,7 @@ export class PreviewShellManager {
     logOutput = false,
     candidatePorts = [],
     allowRandomPortFallback = true,
+    serverMode = 'vite',
   } = {}) {
     this.env = env
     this.effectiveEnv = env
@@ -706,6 +762,8 @@ export class PreviewShellManager {
     this.startupTimeoutMs = startupTimeoutMs
     this.maxOutputLines = maxOutputLines
     this.logOutput = logOutput
+    this.serverMode = serverMode
+    this.runtimeHealthPath = null
     this.port = null
     this.child = null
     this.outputLines = []
@@ -740,7 +798,7 @@ export class PreviewShellManager {
     }
   }
 
-  async probe(path = this.healthPath, timeoutMs = 4_000) {
+  async probe(path = this.runtimeHealthPath ?? this.healthPath, timeoutMs = 4_000) {
     if (!this.baseUrl) {
       return {
         ok: false,
@@ -773,7 +831,7 @@ export class PreviewShellManager {
     }
   }
 
-  async isHealthy(path = this.healthPath) {
+  async isHealthy(path = this.runtimeHealthPath ?? this.healthPath) {
     if (this.exitInfo) return false
     const probe = await this.probe(path)
     return probe.ok
@@ -783,6 +841,8 @@ export class PreviewShellManager {
     const lines = [
       `preview baseUrl: ${this.baseUrl ?? 'n/a'}`,
       `preview port: ${this.port ?? 'n/a'}`,
+      `preview mode: ${this.serverMode}`,
+      `preview healthPath: ${this.runtimeHealthPath ?? this.healthPath}`,
       `preview running: ${this.child && this.child.exitCode === null ? 'yes' : 'no'}`,
     ]
 
@@ -830,16 +890,39 @@ export class PreviewShellManager {
       }
     }
 
+    const useWranglerPagesRuntime =
+      this.serverMode === 'pages' && shouldUseWranglerPagesRuntime(this.effectiveEnv)
+    const serverArgs =
+      this.serverMode === 'pages'
+        ? useWranglerPagesRuntime
+          ? [
+              'x',
+              'wrangler',
+              'pages',
+              'dev',
+              'dist',
+              '--port',
+              String(this.port),
+              '--ip',
+              this.host,
+              ...getWranglerBindingArgs(this.effectiveEnv),
+            ]
+          : getBunRunArgs(
+              LOCAL_PAGES_PREVIEW_SCRIPT,
+              '--port',
+              String(this.port),
+              '--host',
+              this.host
+            )
+        : getBunRunArgs('preview', '--port', String(this.port))
+    this.runtimeHealthPath = this.serverMode === 'pages' && !useWranglerPagesRuntime ? '/health/ready' : null
+
     let spawnError = null
-    const server = spawn(
-      getBunExecutable(),
-      getBunRunArgs('preview', '--port', String(this.port)),
-      {
+    const server = spawn(getBunExecutable(), serverArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: shouldUseShellForBunExecutable(),
       env: this.effectiveEnv,
-      }
-    )
+    })
 
     this.child = server
 

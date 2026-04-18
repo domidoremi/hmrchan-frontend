@@ -12,7 +12,6 @@ const CLIENT_CONTRACT_SKIP_PATHS = new Set([
   '/api/v1/client/init',
   '/api/v1/client/verify',
   '/api/v1/inbox/stream',
-  '/api/v1/auth/turnstile-config',
 ])
 
 const IDEMPOTENCY_REQUIRED_EXACT_PATHS = new Set([

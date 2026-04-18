@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  DEFAULT_SAMPLE_DISCUSSION_ROUTE,
+  DEFAULT_SAMPLE_POST_ROUTE,
   buildProfileSectionShellSelector,
   getAuthenticatedRouteDefinitions,
   getManualRunnerProtectedRoutes,
@@ -24,6 +26,13 @@ describe('release route contract', () => {
     expect(
       matrix.auth.some((route) => route.path === '/community/discussions/sample-discussion')
     ).toBe(true)
+  })
+
+  it('uses the repository default sample detail routes when callers omit overrides', () => {
+    const matrix = getSmokeRouteMatrix()
+
+    expect(matrix.guest.some((route) => route.path === DEFAULT_SAMPLE_POST_ROUTE)).toBe(true)
+    expect(matrix.auth.some((route) => route.path === DEFAULT_SAMPLE_DISCUSSION_ROUTE)).toBe(true)
   })
 
   it('keeps profile section routes aligned with section shell selectors', () => {
@@ -62,5 +71,24 @@ describe('release route contract', () => {
     expect(overview.authRouteCount).toBeGreaterThan(10)
     expect(overview.manualRunnerRouteCount).toBeGreaterThan(10)
     expect(overview.detailReadinessRouteCount).toBe(2)
+  })
+
+  it('keeps detail readiness aligned with lazy comments and discussion thread mounting', () => {
+    const [postRoute, discussionRoute] = getAuthenticatedRouteDefinitions().filter((route) =>
+      ['authenticated sample post', 'authenticated sample discussion'].includes(route.name)
+    )
+
+    expect(postRoute?.readinessSelectorsAll).toEqual([
+      '.post-comments',
+      '[data-testid="comment-thread-header"]',
+    ])
+    expect(postRoute?.readinessSelectorsAny).toEqual(['[data-testid="comment-composer"]'])
+    expect(discussionRoute?.readinessSelectorsAll).toEqual([
+      '.discussion-comments',
+      '[data-testid="comment-thread-header"]',
+    ])
+    expect(discussionRoute?.readinessSelectorsAny).toEqual([
+      '[data-testid="discussion-comment-composer"]',
+    ])
   })
 })

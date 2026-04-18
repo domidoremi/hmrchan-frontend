@@ -30,6 +30,14 @@ describe('normalizeAvatarUrl', () => {
     )
   })
 
+  it('drops tiktok avatar urls that cannot be proxied safely', () => {
+    expect(normalizeAvatarUrl('https://p16-sign-sg.tiktokcdn.com/avatar.jpeg')).toBeNull()
+  })
+
+  it('drops twitter avatar urls that cannot be proxied safely', () => {
+    expect(normalizeAvatarUrl('https://pbs.twimg.com/profile_images/demo/avatar.jpg')).toBeNull()
+  })
+
   it('leaves other absolute avatar urls untouched', () => {
     expect(normalizeAvatarUrl('https://cdn.example.com/avatar.jpg')).toBe(
       'https://cdn.example.com/avatar.jpg'

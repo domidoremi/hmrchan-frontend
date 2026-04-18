@@ -9,6 +9,11 @@ describe('avatarPresentation', () => {
     )
   })
 
+  it('returns undefined for blocked high-risk external avatar urls', () => {
+    expect(resolveAvatarSrc('https://p16-sign-sg.tiktokcdn.com/avatar.jpeg')).toBeUndefined()
+    expect(resolveAvatarSrc('https://pbs.twimg.com/profile_images/demo/avatar.jpg')).toBeUndefined()
+  })
+
   it('returns undefined when there is no usable avatar source', () => {
     expect(resolveAvatarSrc(null)).toBeUndefined()
     expect(resolveAvatarSrc(undefined)).toBeUndefined()

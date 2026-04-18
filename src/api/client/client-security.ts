@@ -25,7 +25,11 @@ const REQUEST_INTEGRITY_EXEMPT_PATHS = new Set([
   '/api/v1/auth/google/callback',
 ])
 
-const SENSITIVE_SIGNATURE_READ_EXACT_PATHS = new Set(['/api/v1/auth/me', '/api/v1/auth/sessions'])
+const SENSITIVE_SIGNATURE_READ_EXACT_PATHS = new Set([
+  '/api/v1/auth/me',
+  '/api/v1/auth/sessions',
+  '/api/v1/preferences',
+])
 const SENSITIVE_SIGNATURE_READ_PREFIXES = [
   '/api/v1/account/',
   '/api/v1/users/me/',

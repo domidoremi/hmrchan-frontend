@@ -327,7 +327,7 @@
       </Transition>
 
       <template #footer>
-        <template v-if="showRegistrationProgress">
+        <template v-if="showRegistrationProgress && googleAuthEnabled">
           <AuthDivider :label="$t('auth.googleDivider')" />
 
           <AuthProviderButton
@@ -495,6 +495,10 @@ import { clientSecurityService } from '@/api/clientSecurityService'
 
 type Step = 'email' | 'register' | 'risk-verification' | 'mfa'
 type RegistrationStep = 'email' | 'register'
+const GOOGLE_AUTH_ENABLED =
+  import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+    ? true
+    : import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 
 const route = useRoute()
 const router = useRouter()
@@ -603,6 +607,7 @@ const googleProviderBusy = computed(
     ['opening', 'waiting', 'recovery', 'handling'].includes(googlePopupState.value) ||
     isLoading.value
 )
+const googleAuthEnabled = computed(() => GOOGLE_AUTH_ENABLED)
 const showRegisterTurnstile = computed(
   () => turnstileEnabled.value && !hasValidRegisterToken() && forceTurnstileForRegister.value
 )
@@ -1039,6 +1044,11 @@ async function handleGoogleClientChallengeVerify(token: string) {
 }
 
 async function continueGoogleInCurrentPage(options: { closePopup?: boolean } = {}) {
+  if (!GOOGLE_AUTH_ENABLED) {
+    emailError.value = t('auth.error.googleLoginFailed')
+    return
+  }
+
   clearGooglePopupListener({
     closePopup: options.closePopup ?? false,
   })

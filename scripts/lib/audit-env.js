@@ -4,6 +4,21 @@ import path from 'node:path'
 export const LOCAL_AUDIT_ENV_FILE = '.env.smoke.local'
 export const LOCAL_AUDIT_CONTRACT_VERSION = 'local-audit-contract'
 export const LOCAL_AUDIT_PREVIEW_PORTS = Object.freeze([4173, 5173, 3000])
+const BACKEND_AUDIT_ENV_FILE_CANDIDATES = Object.freeze([
+  ['..', 'hmrchan-backend', '.env'],
+])
+const BACKEND_ENV_FALLBACK_KEYS = Object.freeze({
+  REHEARSAL_TURNSTILE_BYPASS_TOKEN: ['REHEARSAL_TURNSTILE_BYPASS_TOKEN'],
+  BACKEND_INTERNAL_AUTH_SHARED_SECRET: [
+    'BACKEND_INTERNAL_AUTH_SHARED_SECRET',
+    'INTERNAL_API_SHARED_SECRET',
+  ],
+  BACKEND_INTERNAL_ORIGIN: [
+    'BACKEND_INTERNAL_ORIGIN',
+    'VITE_IDENTITY_API_BASE_URL',
+    'INTERNAL_IDENTITY_API_BASE_URL',
+  ],
+})
 
 function hasTrimmedValue(value) {
   return typeof value === 'string' && value.trim().length > 0
@@ -75,6 +90,64 @@ export function readLocalAuditEnv({
   }
 }
 
+function readAdjacentAuditEnvFile(cwd, relativePathSegments) {
+  const filePath = path.resolve(cwd, ...relativePathSegments)
+  if (!fs.existsSync(filePath)) {
+    return {
+      filePath,
+      exists: false,
+      values: {},
+    }
+  }
+
+  return {
+    filePath,
+    exists: true,
+    values: parseAuditEnvFile(fs.readFileSync(filePath, 'utf8')),
+  }
+}
+
+function resolveBackendAuditEnv({ cwd = process.cwd() } = {}) {
+  for (const candidate of BACKEND_AUDIT_ENV_FILE_CANDIDATES) {
+    const backendEnv = readAdjacentAuditEnvFile(cwd, candidate)
+    if (backendEnv.exists) {
+      return backendEnv
+    }
+  }
+
+  const [firstCandidate] = BACKEND_AUDIT_ENV_FILE_CANDIDATES
+  return {
+    filePath: path.resolve(cwd, ...firstCandidate),
+    exists: false,
+    values: {},
+  }
+}
+
+function applyBackendAuditFallbacks(mergedEnv, { cwd = process.cwd() } = {}) {
+  const backendAuditEnv = resolveBackendAuditEnv({ cwd })
+  const backendValues = backendAuditEnv.values
+
+  for (const [targetKey, candidateKeys] of Object.entries(BACKEND_ENV_FALLBACK_KEYS)) {
+    if (hasTrimmedValue(mergedEnv[targetKey])) {
+      continue
+    }
+
+    for (const sourceKey of candidateKeys) {
+      const candidateValue =
+        sourceKey in mergedEnv && hasTrimmedValue(mergedEnv[sourceKey])
+          ? mergedEnv[sourceKey]
+          : backendValues[sourceKey]
+
+      if (hasTrimmedValue(candidateValue)) {
+        mergedEnv[targetKey] = candidateValue
+        break
+      }
+    }
+  }
+
+  return mergedEnv
+}
+
 export function createLocalAuditEnv(
   baseEnv = process.env,
   {
@@ -94,6 +167,7 @@ export function createLocalAuditEnv(
   }
 
   Object.assign(mergedEnv, overrides)
+  applyBackendAuditFallbacks(mergedEnv, { cwd })
 
   if (
     includeContractFallback &&
@@ -116,6 +190,8 @@ export function applyLocalAuditEnvToProcess({
       process.env[key] = value
     }
   }
+
+  applyBackendAuditFallbacks(process.env, { cwd })
 
   return localAuditEnv
 }

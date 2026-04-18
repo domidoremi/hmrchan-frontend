@@ -24,7 +24,12 @@ import {
   grantLocalAuditTurnstileTrust,
   runBunTask,
 } from './lib/preview-shell.js'
-import { getSmokeRouteMatrix } from './lib/release-route-contract.js'
+import {
+  DEFAULT_SAMPLE_DISCUSSION_ROUTE,
+  DEFAULT_SAMPLE_POST_ROUTE,
+  getSmokeRouteMatrix,
+} from './lib/release-route-contract.js'
+import { ensureDetailRouteReadiness, resolveSampleDetailRoute } from './lib/detail-route-utils.js'
 import { getAuthSkipReason, resolveAuthSmokeCredentials } from './lib/e2e-smoke-report.js'
 
 applyLocalAuditEnvToProcess()
@@ -116,11 +121,10 @@ const ARTIFACT_DIR = process.env['FRONTEND_HEALTH_ARTIFACT_DIR']?.trim() || '.fr
 const AUTO_START = process.env['FRONTEND_HEALTH_AUTOSTART'] !== 'false'
 const PREVIEW_PORT = Number(process.env['FRONTEND_HEALTH_PREVIEW_PORT'] ?? '4173')
 const INCLUDE_API_ERRORS = process.env['FRONTEND_HEALTH_INCLUDE_API_ERRORS'] === 'true'
-const SAMPLE_POST_ROUTE =
-  process.env['FRONTEND_HEALTH_SAMPLE_POST_ROUTE'] ?? '/post/6c73f45a-a7ec-481d-9bc5-9b09ee560fcc'
-const SAMPLE_DISCUSSION_ROUTE =
-  process.env['FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE'] ??
-  '/community/discussions/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
+const REQUESTED_SAMPLE_POST_ROUTE =
+  process.env['FRONTEND_HEALTH_SAMPLE_POST_ROUTE'] ?? DEFAULT_SAMPLE_POST_ROUTE
+const REQUESTED_SAMPLE_DISCUSSION_ROUTE =
+  process.env['FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE'] ?? DEFAULT_SAMPLE_DISCUSSION_ROUTE
 const AUTH_CREDENTIALS = resolveAuthSmokeCredentials(process.env)
 const AUTH_LOGIN = AUTH_CREDENTIALS.login
 const AUTH_PASSWORD = AUTH_CREDENTIALS.password
@@ -151,55 +155,6 @@ const PREVIEW_PORT_CANDIDATES = resolveLocalAuditPreviewPorts(AUDIT_ENV, [
   'LOCAL_AUDIT_PREVIEW_PORTS',
 ])
 
-const GUEST_ROUTES: HealthRouteDefinition[] = [
-  ...getSmokeRouteMatrix({
-    samplePostRoute: SAMPLE_POST_ROUTE,
-    sampleDiscussionRoute: SAMPLE_DISCUSSION_ROUTE,
-  }).guest.map((route) => ({
-    name: route.name,
-    path: route.path,
-    mode: route.mode,
-    shellSelector: route.shellSelector,
-    expectedPath: route.expectedPath,
-    readinessSelectorsAll: route.readinessSelectorsAll,
-    readinessSelectorsAny: route.readinessSelectorsAny,
-  })),
-  { name: 'schedule route', path: '/schedule', mode: 'guest', shellSelector: '.schedule-page' },
-  { name: 'about route', path: '/about', mode: 'guest' },
-  { name: 'contact route', path: '/contact', mode: 'guest' },
-  {
-    name: 'register route',
-    path: '/register',
-    mode: 'guest',
-    shellSelector: '.auth-page--register',
-  },
-  {
-    name: 'forgot password route',
-    path: '/forgot-password',
-    mode: 'guest',
-    shellSelector: '.auth-page--forgot',
-  },
-]
-
-const AUTH_ROUTES: HealthRouteDefinition[] = getSmokeRouteMatrix({
-  samplePostRoute: SAMPLE_POST_ROUTE,
-  sampleDiscussionRoute: SAMPLE_DISCUSSION_ROUTE,
-}).auth.map((route) => ({
-  name: route.name,
-  path: route.path,
-  mode: route.mode,
-  shellSelector: route.shellSelector,
-  expectedPath: route.expectedPath,
-  readinessSelectorsAll: route.readinessSelectorsAll,
-  readinessSelectorsAny: route.readinessSelectorsAny,
-}))
-const EFFECTIVE_GUEST_ROUTES =
-  AUTH_LOGIN && AUTH_PASSWORD
-    ? GUEST_ROUTES.filter(
-        (route) => !isGuestProtectedRedirectRoute(route) && !isGuestOnlyAuthEntryRoute(route)
-      )
-    : GUEST_ROUTES
-
 const VIEWPORTS: Array<{ name: string; value: Viewport }> = [
   { name: 'desktop', value: { width: 1440, height: 900 } },
   { name: 'mobile', value: { width: 390, height: 844, isMobile: true, hasTouch: true } },
@@ -219,6 +174,15 @@ function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+function isLocalAuditOrigin(baseUrl: string): boolean {
+  try {
+    const hostname = new URL(baseUrl).hostname
+    return hostname === '127.0.0.1' || hostname === 'localhost'
+  } catch {
+    return false
+  }
+}
+
 function isGuestProtectedRedirectRoute(
   route: Pick<HealthRouteDefinition, 'mode' | 'expectedPath'>
 ): boolean {
@@ -230,6 +194,72 @@ function isGuestOnlyAuthEntryRoute(route: Pick<HealthRouteDefinition, 'mode' | '
     route.mode === 'guest' &&
     (route.path === '/login' || route.path === '/register' || route.path === '/forgot-password')
   )
+}
+
+function toHealthRouteDefinition(route: {
+  name: string
+  path: string
+  mode: 'guest' | 'auth'
+  shellSelector?: string
+  expectedPath?: string
+  readinessSelectorsAll?: string[]
+  readinessSelectorsAny?: string[]
+}): HealthRouteDefinition {
+  return {
+    name: route.name,
+    path: route.path,
+    mode: route.mode,
+    shellSelector: route.shellSelector,
+    expectedPath: route.expectedPath,
+    readinessSelectorsAll: route.readinessSelectorsAll,
+    readinessSelectorsAny: route.readinessSelectorsAny,
+  }
+}
+
+function buildGuestRoutes(
+  samplePostRoute: string,
+  sampleDiscussionRoute: string
+): HealthRouteDefinition[] {
+  return [
+    ...getSmokeRouteMatrix({
+      samplePostRoute,
+      sampleDiscussionRoute,
+    }).guest.map(toHealthRouteDefinition),
+    { name: 'schedule route', path: '/schedule', mode: 'guest', shellSelector: '.schedule-page' },
+    { name: 'about route', path: '/about', mode: 'guest' },
+    { name: 'contact route', path: '/contact', mode: 'guest' },
+    {
+      name: 'register route',
+      path: '/register',
+      mode: 'guest',
+      shellSelector: '.auth-page--register',
+    },
+    {
+      name: 'forgot password route',
+      path: '/forgot-password',
+      mode: 'guest',
+      shellSelector: '.auth-page--forgot',
+    },
+  ]
+}
+
+function buildAuthRoutes(
+  samplePostRoute: string,
+  sampleDiscussionRoute: string
+): HealthRouteDefinition[] {
+  return getSmokeRouteMatrix({
+    samplePostRoute,
+    sampleDiscussionRoute,
+  }).auth.map(toHealthRouteDefinition)
+}
+
+function skipRouteResult(route: HealthRouteDefinition, viewport: string): RouteResult {
+  return {
+    route: route.path,
+    name: `${route.name} (skipped)`,
+    viewport,
+    issues: [],
+  }
 }
 
 async function clearBrowserAuditSession(page: Page, baseUrl: string): Promise<void> {
@@ -362,8 +392,114 @@ async function collectBrowserTrustHeaders(page: Page): Promise<Record<string, st
   })
 }
 
-function asJsonRecord(value: unknown): JsonRecord | null {
-  return value && typeof value === 'object' && !Array.isArray(value) ? (value as JsonRecord) : null
+async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<boolean> {
+  if (!isLocalAuditOrigin(baseUrl)) {
+    return false
+  }
+
+  await clearBrowserAuditSession(page, baseUrl)
+  await page.goto(`${baseUrl}/`, {
+    waitUntil: 'domcontentloaded',
+    timeout: 30_000,
+  })
+
+  const result = await page.evaluate(async () => {
+    const credentialStorageKey = 'momi_client_security'
+    const fingerprintStorageKey = 'momi_device_fingerprint_v1'
+
+    const readPersistedFingerprint = (): string | null => {
+      try {
+        const raw = window.localStorage.getItem(fingerprintStorageKey)
+        if (!raw) return null
+        const parsed = JSON.parse(raw) as { value?: unknown }
+        return typeof parsed.value === 'string' && parsed.value.trim() ? parsed.value : null
+      } catch {
+        return null
+      }
+    }
+
+    const getFallbackFingerprint = async (): Promise<string> => {
+      const components = [
+        navigator.userAgent,
+        navigator.language,
+        screen.width.toString(),
+        screen.height.toString(),
+        screen.colorDepth.toString(),
+        new Date().getTimezoneOffset().toString(),
+        navigator.hardwareConcurrency?.toString() || '',
+        navigator.maxTouchPoints?.toString() || '',
+      ]
+      const fingerprintSource = components.join('|')
+
+      try {
+        const encoder = new TextEncoder()
+        const data = encoder.encode(fingerprintSource)
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+        const hashArray = Array.from(new Uint8Array(hashBuffer))
+        return hashArray
+          .map((byte) => byte.toString(16).padStart(2, '0'))
+          .join('')
+          .slice(0, 32)
+      } catch {
+        let hash = 0
+        for (let index = 0; index < fingerprintSource.length; index += 1) {
+          hash = (hash << 5) - hash + fingerprintSource.charCodeAt(index)
+          hash &= hash
+        }
+        return Math.abs(hash).toString(16).padStart(8, '0')
+      }
+    }
+
+    const clientFingerprint = readPersistedFingerprint() ?? (await getFallbackFingerprint())
+    window.localStorage.setItem(
+      fingerprintStorageKey,
+      JSON.stringify({
+        value: clientFingerprint,
+        cachedAt: Date.now(),
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: navigator.platform,
+      })
+    )
+    window.localStorage.removeItem(credentialStorageKey)
+
+    const response = await fetch('/api/v1/client/init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_fingerprint: clientFingerprint,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        screen_resolution: `${screen.width}x${screen.height}`,
+        platform: navigator.platform || undefined,
+        timestamp: Math.floor(Date.now() / 1000),
+        nonce: Math.random().toString(16).slice(2).padEnd(16, '0').slice(0, 16),
+        force_reissue: true,
+      }),
+    })
+
+    return response.ok
+  })
+
+  if (!result) {
+    return false
+  }
+
+  const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
+  if (trustedVisitorCount <= 0) {
+    return false
+  }
+
+  const trustedTurnstileCount = await grantLocalAuditTurnstileTrust(
+    AUDIT_ENV,
+    await collectBrowserTrustHeaders(page)
+  )
+
+  console.log(`🔐 Prewarmed local audit client trust for ${trustedVisitorCount} visitor key(s)`)
+  if (trustedTurnstileCount > 0) {
+    console.log(`🔐 Prewarmed local audit Turnstile trust for ${trustedTurnstileCount} key(s)`)
+  }
+
+  return true
 }
 
 function filterGuestProtectedRedirectNoise(
@@ -415,64 +551,7 @@ async function ensureRouteReadiness(
   page: Page,
   route: Pick<HealthRouteDefinition, 'path' | 'readinessSelectorsAll' | 'readinessSelectorsAny'>
 ): Promise<void> {
-  const readinessSelectorsAll = route.readinessSelectorsAll ?? []
-  const readinessSelectorsAny = route.readinessSelectorsAny ?? []
-  const needsLazyReadinessScroll =
-    (route.path.startsWith('/post/') || route.path.startsWith('/community/discussions/')) &&
-    (readinessSelectorsAll.length > 0 || readinessSelectorsAny.length > 0)
-
-  if (needsLazyReadinessScroll) {
-    const anchorSelectors = route.path.startsWith('/post/')
-      ? ['.post-comments']
-      : ['.discussion-comments']
-
-    for (let attempt = 0; attempt < 12; attempt += 1) {
-      const ready = await page.evaluate(
-        ({ all, any }) => {
-          const allMatched = all.every((selector) => Boolean(document.querySelector(selector)))
-          const anyMatched =
-            any.length === 0 || any.some((selector) => Boolean(document.querySelector(selector)))
-          return allMatched && anyMatched
-        },
-        {
-          all: readinessSelectorsAll,
-          any: readinessSelectorsAny,
-        }
-      )
-
-      if (ready) break
-
-      const reachedBottom = await page.evaluate((anchors) => {
-        const anchor = anchors
-          .map((selector) => document.querySelector(selector))
-          .find((node): node is Element => Boolean(node))
-
-        if (anchor) {
-          anchor.scrollIntoView({ block: 'center' })
-        } else {
-          const maxY = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0)
-          const nextY = Math.min(window.scrollY + Math.max(window.innerHeight * 0.9, 480), maxY)
-          window.scrollTo({ top: nextY, behavior: 'auto' })
-        }
-
-        return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4
-      }, anchorSelectors)
-
-      await sleep(reachedBottom ? 400 : 250)
-    }
-  }
-
-  for (const selector of readinessSelectorsAll) {
-    await page.waitForSelector(selector, { timeout: 15_000 })
-  }
-
-  if (readinessSelectorsAny.length) {
-    await page.waitForFunction(
-      (selectors) => selectors.some((selector) => Boolean(document.querySelector(selector))),
-      { timeout: 15_000 },
-      readinessSelectorsAny
-    )
-  }
+  await ensureDetailRouteReadiness(page, route, { timeout: 15_000 })
 }
 
 async function assertHealthRouteContract(page: Page, route: HealthRouteDefinition): Promise<void> {
@@ -626,6 +705,10 @@ async function authenticateViaApi(
       const result = await page.evaluate(async () => {
         const credentialStorageKey = 'momi_client_security'
         const fingerprintStorageKey = 'momi_device_fingerprint_v1'
+        const asJsonRecord = (value: unknown): Record<string, unknown> | null =>
+          value && typeof value === 'object' && !Array.isArray(value)
+            ? (value as Record<string, unknown>)
+            : null
 
         const readPersistedFingerprint = (): string | null => {
           try {
@@ -832,7 +915,8 @@ async function authenticateViaApi(
       return true
     }
 
-    const loginFormReady = await openAndFillLoginForm({ resetSession: true })
+    const prewarmedLocalTrust = await prewarmLocalAuditTrust(page, baseUrl)
+    const loginFormReady = await openAndFillLoginForm({ resetSession: !prewarmedLocalTrust })
     if (!loginFormReady) {
       await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
       return
@@ -1242,6 +1326,7 @@ async function main() {
         preferredPort: PREVIEW_PORT,
         candidatePorts: PREVIEW_PORT_CANDIDATES,
         allowRandomPortFallback: !(AUTH_LOGIN && AUTH_PASSWORD),
+        serverMode: 'pages',
       })
       await managedServer.start()
       effectiveBaseUrl = managedServer.baseUrl ?? effectiveBaseUrl
@@ -1259,6 +1344,81 @@ async function main() {
     }
 
     try {
+      const sampleRouteProbePage = await browser.newPage()
+      const skippedRouteReasons = new Map<string, string>()
+      let resolvedSamplePostRoute = DEFAULT_SAMPLE_POST_ROUTE
+      let resolvedSampleDiscussionRoute = DEFAULT_SAMPLE_DISCUSSION_ROUTE
+
+      try {
+        const postResolution = await resolveSampleDetailRoute(
+          sampleRouteProbePage,
+          effectiveBaseUrl,
+          {
+            label: 'sample post route',
+            requestedRoute: REQUESTED_SAMPLE_POST_ROUTE,
+            fallbackRoute: DEFAULT_SAMPLE_POST_ROUTE,
+            shellSelector: '.post-detail-page',
+            readinessSelectorsAll: ['.post-comments'],
+          }
+        )
+        const discussionResolution = await resolveSampleDetailRoute(
+          sampleRouteProbePage,
+          effectiveBaseUrl,
+          {
+            label: 'sample discussion route',
+            requestedRoute: REQUESTED_SAMPLE_DISCUSSION_ROUTE,
+            fallbackRoute: DEFAULT_SAMPLE_DISCUSSION_ROUTE,
+            shellSelector: '.discussion-detail-page',
+            readinessSelectorsAll: ['.discussion-comments'],
+          }
+        )
+
+        if (postResolution.route) {
+          resolvedSamplePostRoute = postResolution.route
+          if (
+            REQUESTED_SAMPLE_POST_ROUTE !== resolvedSamplePostRoute &&
+            REQUESTED_SAMPLE_POST_ROUTE !== DEFAULT_SAMPLE_POST_ROUTE
+          ) {
+            console.warn(
+              `⚠️ FRONTEND_HEALTH_SAMPLE_POST_ROUTE 无效，已回退到 ${resolvedSamplePostRoute}`
+            )
+          }
+        } else if (postResolution.skipReason) {
+          skippedRouteReasons.set('sample post route', postResolution.skipReason)
+          skippedRouteReasons.set('authenticated sample post', postResolution.skipReason)
+          console.warn(`⚠️ ${postResolution.skipReason}`)
+        }
+
+        if (discussionResolution.route) {
+          resolvedSampleDiscussionRoute = discussionResolution.route
+          if (
+            REQUESTED_SAMPLE_DISCUSSION_ROUTE !== resolvedSampleDiscussionRoute &&
+            REQUESTED_SAMPLE_DISCUSSION_ROUTE !== DEFAULT_SAMPLE_DISCUSSION_ROUTE
+          ) {
+            console.warn(
+              `⚠️ FRONTEND_HEALTH_SAMPLE_DISCUSSION_ROUTE 无效，已回退到 ${resolvedSampleDiscussionRoute}`
+            )
+          }
+        } else if (discussionResolution.skipReason) {
+          skippedRouteReasons.set('sample discussion route', discussionResolution.skipReason)
+          skippedRouteReasons.set(
+            'authenticated sample discussion',
+            discussionResolution.skipReason
+          )
+          console.warn(`⚠️ ${discussionResolution.skipReason}`)
+        }
+      } finally {
+        await sampleRouteProbePage.close().catch(() => undefined)
+      }
+
+      const guestRoutes = buildGuestRoutes(resolvedSamplePostRoute, resolvedSampleDiscussionRoute)
+      const authRoutes = buildAuthRoutes(resolvedSamplePostRoute, resolvedSampleDiscussionRoute)
+      const effectiveGuestRoutes = authCredentialsDetected
+        ? guestRoutes.filter(
+            (route) => !isGuestProtectedRedirectRoute(route) && !isGuestOnlyAuthEntryRoute(route)
+          )
+        : guestRoutes
+
       if (authCredentialsDetected) {
         const clearedRateLimitKeys = await clearLocalAuditRateLimitState(AUDIT_ENV)
         if (clearedRateLimitKeys > 0) {
@@ -1291,11 +1451,18 @@ async function main() {
       }
 
       const routesToScan = authCredentialsDetected
-        ? [...EFFECTIVE_GUEST_ROUTES, ...AUTH_ROUTES]
-        : GUEST_ROUTES
+        ? [...effectiveGuestRoutes, ...authRoutes]
+        : guestRoutes
 
       for (const viewport of VIEWPORTS) {
         for (const route of routesToScan) {
+          const skipReason = skippedRouteReasons.get(route.name)
+          if (skipReason) {
+            console.log(`⏭️ Skipping ${route.name} (${route.path}): ${skipReason}`)
+            results.push(skipRouteResult(route, viewport.name))
+            continue
+          }
+
           let routeIssues: ScanIssue[] = []
 
           for (let attempt = 0; attempt < (managedServer ? 2 : 1); attempt += 1) {
@@ -1315,15 +1482,51 @@ async function main() {
             )
 
             try {
-              if (route.path === '/login') {
-                await clearBrowserAuditSession(page, effectiveBaseUrl)
+              const navigateAndAssertRoute = async () => {
+                if (route.path === '/login') {
+                  await clearBrowserAuditSession(page, effectiveBaseUrl)
+                }
+                await page.goto(new URL(route.path, effectiveBaseUrl).toString(), {
+                  waitUntil: 'domcontentloaded',
+                  timeout: 60_000,
+                })
+                await page.waitForSelector('body', { timeout: 15_000 })
+                await assertHealthRouteContract(page, route)
               }
-              await page.goto(new URL(route.path, effectiveBaseUrl).toString(), {
-                waitUntil: 'domcontentloaded',
-                timeout: 60_000,
-              })
-              await page.waitForSelector('body', { timeout: 15_000 })
-              await assertHealthRouteContract(page, route)
+
+              try {
+                await navigateAndAssertRoute()
+              } catch (error) {
+                const currentPath =
+                  route.mode === 'auth'
+                    ? await page.evaluate(() => window.location.pathname).catch(() => null)
+                    : null
+
+                if (route.mode !== 'auth' || currentPath !== '/login' || !authCredentialsDetected) {
+                  throw error
+                }
+
+                console.warn(
+                  `⚠️ Auth session drift while scanning ${route.path}; re-authenticating once and retrying...`
+                )
+                await authenticateViaApi(
+                  browser,
+                  effectiveBaseUrl,
+                  {
+                    login: AUTH_LOGIN,
+                    password: AUTH_PASSWORD,
+                  },
+                  {
+                    getPreviewDiagnostics,
+                    onFailureEvidence: (evidence) => {
+                      if (!firstBlockingIssue) {
+                        firstBlockingIssue = evidence
+                      }
+                    },
+                  }
+                )
+                await navigateAndAssertRoute()
+              }
               await page.waitForNetworkIdle({ idleTime: 800, timeout: 15_000 }).catch(() => {})
               await sleep(900)
 

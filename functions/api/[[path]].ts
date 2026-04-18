@@ -8,7 +8,7 @@
  */
 
 import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
-import { resolveConfiguredApiBaseUrl } from '../../src/edge/upstream'
+import { resolveConfiguredApiBaseUrl, resolveVpcOriginForPath } from '../../src/edge/upstream'
 import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import {
   fetchViaInternalApiGateway,
@@ -17,7 +17,10 @@ import {
 
 interface Env {
   API_BASE_URL?: string
+  BACKEND_INTERNAL_ORIGIN?: string
+  BACKEND_INTERNAL_AUTH_SHARED_SECRET?: string
   ENABLE_INTERNAL_API_GATEWAY?: string
+  GOOGLE_AUTH_ENABLED?: string
   VPC_API_ORIGIN?: string
   VPC_IDENTITY_API_ORIGIN?: string
   VPC_COMMUNITY_API_ORIGIN?: string
@@ -38,6 +41,7 @@ type CFPagesContext = {
 interface ForwardRequestOptions {
   apiBaseUrl: string
   bodyBuffer: ArrayBuffer | null
+  env: ProxyEnv
   headers: Headers
   internalApiGateway?: Fetcher
   path: string
@@ -50,6 +54,27 @@ interface ForwardRequestOptions {
 interface UpstreamFetchResult {
   response: Response
   source: string
+}
+
+interface BffSessionMaterial {
+  access_token: string
+  refresh_token: string
+  token_type?: string
+  expires_in?: number
+  refresh_threshold?: number
+  permission_version?: number | string
+  session_id?: string
+  session_realm?: string
+  user?: Record<string, unknown>
+  return_to?: string
+}
+
+type SessionSummaryResponse = {
+  authenticated: boolean
+  user?: Record<string, unknown>
+  session_expires_at?: string | null
+  permission_version?: number | string
+  return_to?: string
 }
 
 const ALLOWED_ORIGINS = [
@@ -101,6 +126,17 @@ const GOOGLE_POPUP_REDIRECT_HEADERS_TO_PRESERVE = [
   'cross-origin-opener-policy',
   'cross-origin-resource-policy',
 ]
+const BFF_ACCESS_COOKIE_NAME = '__Host-momi_bff_at'
+const BFF_REFRESH_COOKIE_NAME = '__Host-momi_bff_rt'
+const AUTH_SESSION_RESOLVE_FACADE_PATH = `v1/auth/${'session:resolve'}`
+const BFF_COOKIE_PATH = 'Path=/; HttpOnly; Secure; SameSite=Lax'
+const DEFAULT_REFRESH_COOKIE_MAX_AGE = 14 * 24 * 60 * 60
+const PROXY_REFRESH_SKEW_SECONDS = 60
+const BFF_AUTH_RETRY_REQUIRED_HEADER = 'X-Bff-Auth-Retry-Required'
+const BFF_AUTH_RETRY_REASON_HEADER = 'X-Bff-Auth-Retry-Reason'
+const textEncoder = new TextEncoder()
+
+type JsonRecord = Record<string, unknown>
 
 function appendVary(headers: Headers, value: string): void {
   const current = headers.get('Vary')
@@ -118,6 +154,438 @@ function appendVary(headers: Headers, value: string): void {
     values.push(value)
     headers.set('Vary', values.join(', '))
   }
+}
+
+function unwrapApiEnvelope<T>(payload: T): T {
+  if (!payload || typeof payload !== 'object') return payload
+  const envelope = payload as { data?: unknown }
+  return (envelope.data as T | undefined) ?? payload
+}
+
+function jsonResponse(payload: unknown, status = 200, headers?: HeadersInit): Response {
+  const responseHeaders = new Headers(headers)
+  if (!responseHeaders.has('Content-Type')) {
+    responseHeaders.set('Content-Type', 'application/json')
+  }
+
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: responseHeaders,
+  })
+}
+
+function isJsonRecord(value: unknown): value is JsonRecord {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function getCookieValue(request: Request, name: string): string | null {
+  const raw = request.headers.get('Cookie')
+  if (!raw) return null
+
+  for (const part of raw.split(';')) {
+    const [rawName, ...valueParts] = part.trim().split('=')
+    if (rawName !== name) continue
+    return decodeURIComponent(valueParts.join('='))
+  }
+
+  return null
+}
+
+function normalizeInternalOrigin(env: ProxyEnv): string | null {
+  return env.BACKEND_INTERNAL_ORIGIN?.trim().replace(/\/+$/, '') || null
+}
+
+function isGoogleAuthEnabled(env: ProxyEnv): boolean {
+  const value = env.GOOGLE_AUTH_ENABLED?.trim().toLowerCase()
+  return value === '1' || value === 'true' || value === 'yes' || value === 'on'
+}
+
+function isSessionMaterial(payload: unknown): payload is BffSessionMaterial {
+  if (!payload || typeof payload !== 'object') return false
+  const candidate = payload as Partial<BffSessionMaterial>
+  return (
+    typeof candidate.access_token === 'string' &&
+    candidate.access_token.length > 0 &&
+    typeof candidate.refresh_token === 'string' &&
+    candidate.refresh_token.length > 0
+  )
+}
+
+function parseJwtPayload(token: string): Record<string, unknown> | null {
+  const [, payloadSegment] = token.split('.')
+  if (!payloadSegment) return null
+
+  try {
+    const normalized = payloadSegment.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    const binary = atob(padded)
+    return JSON.parse(binary) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+function getTokenExpiresAt(token: string, fallbackExpiresIn?: number): number | null {
+  const payload = parseJwtPayload(token)
+  if (typeof payload?.exp === 'number' && Number.isFinite(payload.exp)) {
+    return payload.exp * 1000
+  }
+
+  if (typeof fallbackExpiresIn === 'number' && Number.isFinite(fallbackExpiresIn)) {
+    return Date.now() + fallbackExpiresIn * 1000
+  }
+
+  return null
+}
+
+function isAccessTokenNearExpiry(token: string): boolean {
+  const expiresAt = getTokenExpiresAt(token)
+  if (!expiresAt) return false
+  return expiresAt - Date.now() <= PROXY_REFRESH_SKEW_SECONDS * 1000
+}
+
+function formatSetCookie(name: string, value: string, maxAge: number): string {
+  return `${name}=${encodeURIComponent(value)}; Max-Age=${Math.max(0, Math.floor(maxAge))}; ${BFF_COOKIE_PATH}`
+}
+
+function appendSessionCookies(headers: Headers, material: BffSessionMaterial): void {
+  const accessMaxAge =
+    Math.max(
+      1,
+      Math.floor(
+        ((getTokenExpiresAt(material.access_token, material.expires_in) ?? Date.now()) -
+          Date.now()) /
+          1000
+      )
+    ) || 1
+  const refreshMaxAge = Math.max(
+    1,
+    Math.floor(
+      ((getTokenExpiresAt(material.refresh_token) ??
+        Date.now() + DEFAULT_REFRESH_COOKIE_MAX_AGE * 1000) -
+        Date.now()) /
+        1000
+    )
+  )
+
+  headers.append(
+    'Set-Cookie',
+    formatSetCookie(BFF_ACCESS_COOKIE_NAME, material.access_token, accessMaxAge)
+  )
+  headers.append(
+    'Set-Cookie',
+    formatSetCookie(BFF_REFRESH_COOKIE_NAME, material.refresh_token, refreshMaxAge)
+  )
+}
+
+function appendClearedSessionCookies(headers: Headers): void {
+  headers.append('Set-Cookie', formatSetCookie(BFF_ACCESS_COOKIE_NAME, '', 0))
+  headers.append('Set-Cookie', formatSetCookie(BFF_REFRESH_COOKIE_NAME, '', 0))
+}
+
+async function sha256Hex(bodyBytes: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', bodyBytes)
+  return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, '0')).join('')
+}
+
+async function hmacSha256Hex(secret: string, payload: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const signature = await crypto.subtle.sign('HMAC', key, textEncoder.encode(payload))
+  return [...new Uint8Array(signature)].map((value) => value.toString(16).padStart(2, '0')).join('')
+}
+
+async function readJsonBody(bodyBuffer: ArrayBuffer | null): Promise<unknown> {
+  if (!bodyBuffer || bodyBuffer.byteLength === 0) {
+    return null
+  }
+
+  const raw = new TextDecoder().decode(bodyBuffer)
+  return raw.trim().length > 0 ? JSON.parse(raw) : null
+}
+
+function normalizeBrowserFingerprint(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+}
+
+function extractBrowserFingerprint(request: Request, payload?: unknown): string | null {
+  if (isJsonRecord(payload)) {
+    const clientFingerprint = normalizeBrowserFingerprint(payload.client_fingerprint)
+    if (clientFingerprint) return clientFingerprint
+
+    const compatibilityFingerprint = normalizeBrowserFingerprint(payload.fingerprint)
+    if (compatibilityFingerprint) return compatibilityFingerprint
+  }
+
+  return normalizeBrowserFingerprint(request.headers.get('X-Client-Fingerprint'))
+}
+
+function withBrowserFingerprint(payload: unknown, fingerprint: string | null): unknown {
+  if (!fingerprint) {
+    return payload
+  }
+
+  if (!isJsonRecord(payload)) {
+    return {
+      client_fingerprint: fingerprint,
+    }
+  }
+
+  if (normalizeBrowserFingerprint(payload.client_fingerprint) === fingerprint) {
+    return payload
+  }
+
+  return {
+    ...payload,
+    client_fingerprint: fingerprint,
+  }
+}
+
+function extractPayloadFingerprint(payload: unknown): string | null {
+  if (!isJsonRecord(payload)) {
+    return null
+  }
+
+  return (
+    normalizeBrowserFingerprint(payload.client_fingerprint) ??
+    normalizeBrowserFingerprint(payload.fingerprint)
+  )
+}
+
+async function fetchInternalBff(env: ProxyEnv, path: string, payload: unknown): Promise<Response> {
+  const origin = normalizeInternalOrigin(env)
+  const secret = env.BACKEND_INTERNAL_AUTH_SHARED_SECRET?.trim()
+  if (!origin || !secret) {
+    return jsonResponse(
+      {
+        error: 'BFF_NOT_CONFIGURED',
+        message: 'Internal BFF origin or shared secret is not configured.',
+      },
+      500
+    )
+  }
+
+  const body = payload == null ? '' : JSON.stringify(payload)
+  const bodyBytes = textEncoder.encode(body)
+  const timestamp = new Date().toISOString()
+  const bodyHash = await sha256Hex(bodyBytes)
+  const signaturePayload = ['POST', path, timestamp, bodyHash].join('\n')
+  const signature = await hmacSha256Hex(secret, signaturePayload)
+
+  const headers = new Headers({
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'X-Internal-Service': 'bff',
+    'X-Internal-Timestamp': timestamp,
+    'X-Internal-Signature': signature,
+  })
+  const browserFingerprint = extractPayloadFingerprint(payload)
+  if (browserFingerprint) {
+    headers.set('X-Client-Fingerprint', browserFingerprint)
+  }
+
+  return fetch(`${origin}${path}`, {
+    method: 'POST',
+    headers,
+    body,
+  })
+}
+
+async function copyResponse(response: Response, headers?: Headers): Promise<Response> {
+  const body = await response.arrayBuffer()
+  return new Response(body, {
+    status: response.status,
+    headers: headers ?? response.headers,
+  })
+}
+
+async function fetchCurrentUserFromBackend(
+  apiBaseUrl: string,
+  accessToken: string
+): Promise<Record<string, unknown> | null> {
+  const response = await fetch(`${apiBaseUrl}/api/v1/auth/me`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) return null
+  const payload = unwrapApiEnvelope(await response.json())
+  return payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null
+}
+
+async function buildSessionSummary(
+  apiBaseUrl: string,
+  material: BffSessionMaterial
+): Promise<SessionSummaryResponse> {
+  const user =
+    (await fetchCurrentUserFromBackend(apiBaseUrl, material.access_token)) ??
+    (material.user && typeof material.user === 'object' ? material.user : undefined)
+
+  return {
+    authenticated: true,
+    user,
+    session_expires_at:
+      getTokenExpiresAt(material.access_token, material.expires_in) != null
+        ? new Date(
+            getTokenExpiresAt(material.access_token, material.expires_in) as number
+          ).toISOString()
+        : null,
+    permission_version: material.permission_version,
+    ...(typeof material.return_to === 'string' && material.return_to
+      ? { return_to: material.return_to }
+      : {}),
+  }
+}
+
+async function handleInternalAuthResult(
+  response: Response,
+  apiBaseUrl: string,
+  responseHeaders?: Headers
+): Promise<Response> {
+  if (!response.ok) {
+    return copyResponse(response, responseHeaders)
+  }
+
+  const rawPayload = await response.json()
+  const payload = unwrapApiEnvelope(rawPayload)
+  if (!isSessionMaterial(payload)) {
+    return jsonResponse(payload, response.status, responseHeaders)
+  }
+
+  const headers = new Headers(responseHeaders)
+  appendSessionCookies(headers, payload)
+  const sessionSummary = await buildSessionSummary(apiBaseUrl, payload)
+  return jsonResponse(sessionSummary, response.status, headers)
+}
+
+function isBrowserAuthFacadePath(path: string): boolean {
+  return [
+    'v1/auth/login',
+    'v1/auth/logout',
+    'v1/auth/refresh',
+    AUTH_SESSION_RESOLVE_FACADE_PATH,
+    'v1/auth/verify-risk-login',
+    'v1/auth/risk-login/webauthn/options',
+    'v1/auth/risk-login/webauthn/verify',
+    'v1/auth/passwordless/options',
+    'v1/auth/passwordless/verify',
+    'v1/2fa/verify-login',
+    'v1/2fa/webauthn/authenticate/options',
+    'v1/2fa/webauthn/authenticate/verify',
+  ].includes(path)
+}
+
+function isGoogleAuthPath(path: string): boolean {
+  return (
+    path === 'v1/auth/google/start' ||
+    path === 'v1/auth/google/callback' ||
+    path.startsWith('v1/auth/google/')
+  )
+}
+
+async function refreshBffSession(
+  env: ProxyEnv,
+  refreshToken: string,
+  fingerprint: string | null
+): Promise<BffSessionMaterial | null> {
+  const response = await fetchInternalBff(
+    env,
+    '/internal/v1/auth/bff/refresh',
+    withBrowserFingerprint(
+      {
+        refresh_token: refreshToken,
+      },
+      fingerprint
+    )
+  )
+
+  if (!response.ok) {
+    return null
+  }
+
+  const payload = unwrapApiEnvelope(await response.json())
+  return isSessionMaterial(payload) ? payload : null
+}
+
+async function resolveSessionFromCookies(
+  request: Request,
+  env: ProxyEnv,
+  apiBaseUrl: string
+): Promise<Response> {
+  const responseHeaders = new Headers()
+  let accessToken = getCookieValue(request, BFF_ACCESS_COOKIE_NAME)
+  const refreshToken = getCookieValue(request, BFF_REFRESH_COOKIE_NAME)
+  const fingerprint = extractBrowserFingerprint(request)
+
+  if ((!accessToken || isAccessTokenNearExpiry(accessToken)) && refreshToken) {
+    const refreshed = await refreshBffSession(env, refreshToken, fingerprint)
+    if (refreshed) {
+      appendSessionCookies(responseHeaders, refreshed)
+      accessToken = refreshed.access_token
+    }
+  }
+
+  if (!accessToken) {
+    appendClearedSessionCookies(responseHeaders)
+    return jsonResponse({ authenticated: false }, 200, responseHeaders)
+  }
+
+  let resolveResponse = await fetchInternalBff(env, '/internal/v1/auth/bff/session:resolve', {
+    access_token: accessToken,
+    ...(fingerprint ? { client_fingerprint: fingerprint } : {}),
+  })
+
+  if (resolveResponse.status === 401 && refreshToken) {
+    const refreshed = await refreshBffSession(env, refreshToken, fingerprint)
+    if (refreshed) {
+      appendSessionCookies(responseHeaders, refreshed)
+      accessToken = refreshed.access_token
+      resolveResponse = await fetchInternalBff(env, '/internal/v1/auth/bff/session:resolve', {
+        access_token: accessToken,
+        ...(fingerprint ? { client_fingerprint: fingerprint } : {}),
+      })
+    }
+  }
+
+  if (resolveResponse.status === 401) {
+    appendClearedSessionCookies(responseHeaders)
+    return jsonResponse({ authenticated: false }, 200, responseHeaders)
+  }
+
+  if (!resolveResponse.ok) {
+    return copyResponse(resolveResponse, responseHeaders)
+  }
+
+  const payload = unwrapApiEnvelope(await resolveResponse.json()) as {
+    user?: Record<string, unknown>
+    principal?: { permission_version?: number | string }
+  }
+  const user =
+    (await fetchCurrentUserFromBackend(apiBaseUrl, accessToken)) ??
+    (payload?.user && typeof payload.user === 'object' ? payload.user : undefined)
+
+  const summary: SessionSummaryResponse = {
+    authenticated: true,
+    user,
+    session_expires_at:
+      getTokenExpiresAt(accessToken) != null
+        ? new Date(getTokenExpiresAt(accessToken) as number).toISOString()
+        : null,
+    permission_version:
+      typeof payload?.principal === 'object' && payload.principal
+        ? payload.principal.permission_version
+        : undefined,
+  }
+
+  return jsonResponse(summary, 200, responseHeaders)
 }
 
 function isAllowedOrigin(origin: string | null, isDev: boolean): boolean {
@@ -311,9 +779,17 @@ function applyRehearsalTurnstileBypassHeader(headers: Headers, env: ProxyEnv): v
   headers.set(REHEARSAL_TURNSTILE_BYPASS_HEADER, token)
 }
 
+function requiresBrowserSignatureReplay(headers: Headers): boolean {
+  return headers.has('X-Signature') || headers.has('X-Nonce')
+}
+
 async function fetchViaPublic(options: ForwardRequestOptions): Promise<Response> {
-  const { apiBaseUrl, bodyBuffer, headers, path, redirectMode, request, search } = options
-  const targetUrl = `${apiBaseUrl}/api/${path}${search}`
+  const { apiBaseUrl, bodyBuffer, env, headers, path, redirectMode, request, search } = options
+  const targetOrigin =
+    env.VPC_IDENTITY_API_ORIGIN || env.VPC_COMMUNITY_API_ORIGIN || env.VPC_CONTENT_API_ORIGIN
+      ? resolveVpcOriginForPath(`/api/${path}`, env)
+      : apiBaseUrl
+  const targetUrl = `${targetOrigin}/api/${path}${search}`
   const init: RequestInit = {
     method: request.method,
     headers,
@@ -327,6 +803,163 @@ async function fetchViaPublic(options: ForwardRequestOptions): Promise<Response>
   return fetch(targetUrl, init)
 }
 
+async function handleBrowserAuthFacade(
+  request: Request,
+  env: ProxyEnv,
+  apiBaseUrl: string,
+  compactPath: string,
+  bodyBuffer: ArrayBuffer | null
+): Promise<Response | null> {
+  if (isGoogleAuthPath(compactPath)) {
+    if (isGoogleAuthEnabled(env)) {
+      return jsonResponse(
+        {
+          error: 'GOOGLE_AUTH_NOT_READY',
+          message: 'Google auth BFF flow is not yet available.',
+        },
+        503
+      )
+    }
+
+    return jsonResponse(
+      {
+        error: 'GOOGLE_AUTH_DISABLED',
+        message: 'Google login is temporarily unavailable.',
+      },
+      503
+    )
+  }
+
+  if (!isBrowserAuthFacadePath(compactPath)) {
+    return null
+  }
+
+  if (request.method !== 'POST') {
+    return jsonResponse(
+      {
+        error: 'METHOD_NOT_ALLOWED',
+        message: 'This auth endpoint only supports POST.',
+      },
+      405
+    )
+  }
+
+  const body = await readJsonBody(bodyBuffer)
+  const fingerprint = extractBrowserFingerprint(request, body)
+
+  switch (compactPath) {
+    case 'v1/auth/login': {
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/login',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+    case 'v1/auth/verify-risk-login': {
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/risk/verify-email',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+    case 'v1/auth/risk-login/webauthn/options': {
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/risk/webauthn/options',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+    case 'v1/auth/risk-login/webauthn/verify': {
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/risk/webauthn/verify',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+    case 'v1/2fa/verify-login': {
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/mfa/totp-or-backup',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+    case 'v1/2fa/webauthn/authenticate/options': {
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/mfa/webauthn/options',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+    case 'v1/2fa/webauthn/authenticate/verify': {
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/mfa/webauthn/verify',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+    case 'v1/auth/passwordless/options': {
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/passwordless/options',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+    case 'v1/auth/passwordless/verify': {
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/passwordless/verify',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+    case AUTH_SESSION_RESOLVE_FACADE_PATH:
+      return resolveSessionFromCookies(request, env, apiBaseUrl)
+    case 'v1/auth/refresh': {
+      const responseHeaders = new Headers()
+      const refreshToken = getCookieValue(request, BFF_REFRESH_COOKIE_NAME)
+      if (!refreshToken) {
+        appendClearedSessionCookies(responseHeaders)
+        return jsonResponse({ authenticated: false }, 401, responseHeaders)
+      }
+
+      const refreshed = await refreshBffSession(env, refreshToken, fingerprint)
+      if (!refreshed) {
+        appendClearedSessionCookies(responseHeaders)
+        return jsonResponse({ authenticated: false }, 401, responseHeaders)
+      }
+
+      appendSessionCookies(responseHeaders, refreshed)
+      const summary = await buildSessionSummary(apiBaseUrl, refreshed)
+      return jsonResponse(summary, 200, responseHeaders)
+    }
+    case 'v1/auth/logout': {
+      const accessToken = getCookieValue(request, BFF_ACCESS_COOKIE_NAME)
+      const refreshToken = getCookieValue(request, BFF_REFRESH_COOKIE_NAME)
+      const response = await fetchInternalBff(env, '/internal/v1/auth/bff/logout', {
+        access_token: accessToken ?? '',
+        refresh_token: refreshToken ?? '',
+        ...(fingerprint ? { client_fingerprint: fingerprint } : {}),
+      })
+      const headers = new Headers()
+      appendClearedSessionCookies(headers)
+      if (!response.ok) {
+        return copyResponse(response, headers)
+      }
+      return jsonResponse({ success: true }, 200, headers)
+    }
+    default:
+      return null
+  }
+}
+
 async function forwardToUpstream(options: ForwardRequestOptions): Promise<UpstreamFetchResult> {
   const { internalApiGateway, path, request } = options
 
@@ -334,6 +967,7 @@ async function forwardToUpstream(options: ForwardRequestOptions): Promise<Upstre
     try {
       const response = await fetchViaInternalApiGateway(internalApiGateway, {
         bodyBuffer: options.bodyBuffer,
+        env: options.env,
         headers: options.headers,
         redirectMode: options.redirectMode,
         request,
@@ -400,6 +1034,23 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     )
   }
   const compactPath = resolveUpstreamPath(normalizedPath)
+  const handledBrowserAuthResponse = await handleBrowserAuthFacade(
+    request,
+    env,
+    apiBaseUrl,
+    compactPath,
+    request.method === 'GET' || request.method === 'HEAD'
+      ? null
+      : await request.clone().arrayBuffer()
+  )
+  if (handledBrowserAuthResponse) {
+    const headers = withCorsHeaders(request, isDev, new Headers(handledBrowserAuthResponse.headers))
+    return new Response(await handledBrowserAuthResponse.arrayBuffer(), {
+      status: handledBrowserAuthResponse.status,
+      headers,
+    })
+  }
+
   const redirectMode: RedirectMode = shouldPreserveBrowserRedirect(normalizedPath, request)
     ? 'manual'
     : 'follow'
@@ -408,10 +1059,30 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   const bodyBuffer =
     request.method === 'GET' || request.method === 'HEAD' ? null : await request.arrayBuffer()
 
+  const refreshToken = getCookieValue(request, BFF_REFRESH_COOKIE_NAME)
+  let accessToken = getCookieValue(request, BFF_ACCESS_COOKIE_NAME)
+  let refreshedBeforeForward = false
+  const bffCookieHeaders = new Headers()
+  const requestRequiresBrowserRetry = requiresBrowserSignatureReplay(headers)
+
+  if ((!accessToken || isAccessTokenNearExpiry(accessToken)) && refreshToken) {
+    const refreshed = await refreshBffSession(env, refreshToken, extractBrowserFingerprint(request))
+    if (refreshed) {
+      appendSessionCookies(bffCookieHeaders, refreshed)
+      accessToken = refreshed.access_token
+      refreshedBeforeForward = true
+    }
+  }
+
+  if (accessToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${accessToken}`)
+  }
+
   try {
-    const upstream = await forwardToUpstream({
+    let upstream = await forwardToUpstream({
       apiBaseUrl,
       bodyBuffer,
+      env,
       headers,
       path: compactPath,
       redirectMode,
@@ -421,6 +1092,36 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       internalApiGateway: isInternalApiGatewayEnabled(env) ? env.INTERNAL_API_GATEWAY : undefined,
     })
 
+    if (upstream.response.status === 401 && refreshToken && !refreshedBeforeForward) {
+      const refreshed = await refreshBffSession(
+        env,
+        refreshToken,
+        extractBrowserFingerprint(request)
+      )
+      if (refreshed) {
+        appendSessionCookies(bffCookieHeaders, refreshed)
+        if (!requestRequiresBrowserRetry) {
+          headers.set('Authorization', `Bearer ${refreshed.access_token}`)
+          upstream = await forwardToUpstream({
+            apiBaseUrl,
+            bodyBuffer,
+            env,
+            headers,
+            path: compactPath,
+            redirectMode,
+            request,
+            requestUrl,
+            search: requestUrl.search,
+            internalApiGateway: isInternalApiGatewayEnabled(env)
+              ? env.INTERNAL_API_GATEWAY
+              : undefined,
+          })
+        }
+      } else {
+        appendClearedSessionCookies(bffCookieHeaders)
+      }
+    }
+
     if (redirectMode === 'manual') {
       const redirectHeaders = withCorsHeaders(
         request,
@@ -429,6 +1130,11 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       )
       stripResponseHeaders(redirectHeaders, compactPath)
       redirectHeaders.set('X-Proxy-Upstream-Source', upstream.source)
+      for (const [key, value] of bffCookieHeaders.entries()) {
+        if (key.toLowerCase() === 'set-cookie') {
+          redirectHeaders.append(key, value)
+        }
+      }
 
       const location = upstream.response.headers.get('Location')
       if (location) {
@@ -452,6 +1158,20 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     stripResponseHeaders(responseHeaders, compactPath)
     RESPONSE_HEADERS_TO_SKIP.forEach((header) => responseHeaders.delete(header))
     responseHeaders.set('X-Proxy-Upstream-Source', upstream.source)
+    if (
+      upstream.response.status === 401 &&
+      refreshToken &&
+      !refreshedBeforeForward &&
+      requestRequiresBrowserRetry
+    ) {
+      responseHeaders.set(BFF_AUTH_RETRY_REQUIRED_HEADER, 'true')
+      responseHeaders.set(BFF_AUTH_RETRY_REASON_HEADER, 'signed-request-refresh')
+    }
+    for (const [key, value] of bffCookieHeaders.entries()) {
+      if (key.toLowerCase() === 'set-cookie') {
+        responseHeaders.append(key, value)
+      }
+    }
 
     const apiVersion = extractApiVersion(compactPath)
     if (apiVersion) {
