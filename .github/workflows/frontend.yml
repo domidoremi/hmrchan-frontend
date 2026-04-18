@@ -163,6 +163,94 @@ jobs:
             exit 1
           fi
 
+      - name: Wait for controlled smoke site rollout
+        if: >-
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'master') &&
+          vars.SMOKE_API_BASE_URL != ''
+        env:
+          SMOKE_BASE_URL: ${{ vars.SMOKE_API_BASE_URL }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          node <<'EOF'
+          const baseUrl = process.env.SMOKE_BASE_URL?.trim()
+          const expectedCommit = process.env.EXPECTED_COMMIT?.trim()
+
+          if (!baseUrl || !expectedCommit) {
+            process.exit(0)
+          }
+
+          const pollIntervalMs = 15_000
+          const timeoutMs = 10 * 60_000
+          const deadline = Date.now() + timeoutMs
+
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+          async function fetchText(url) {
+            const response = await fetch(url, {
+              redirect: 'follow',
+              headers: {
+                'Cache-Control': 'no-cache',
+                Pragma: 'no-cache',
+              },
+            })
+
+            if (!response.ok) {
+              throw new Error(`${response.status} ${response.statusText} for ${url}`)
+            }
+
+            return response.text()
+          }
+
+          async function resolveCommitStatus() {
+            const pageUrl = new URL(baseUrl)
+            pageUrl.searchParams.set('__smoke_rollout_probe', Date.now().toString())
+
+            const html = await fetchText(pageUrl.toString())
+            const moduleMatch = html.match(/<script[^>]+type="module"[^>]+src="([^"]+index-[^"]+\.js)"/i)
+            if (!moduleMatch?.[1]) {
+              throw new Error('index module script not found in controlled smoke site HTML')
+            }
+
+            const moduleUrl = new URL(moduleMatch[1], baseUrl)
+            moduleUrl.searchParams.set('__smoke_rollout_probe', Date.now().toString())
+            const js = await fetchText(moduleUrl.toString())
+            const observedCommitMatch = js.match(/VITE_GIT_COMMIT:`([^`]+)`/)
+            const observedCommit = observedCommitMatch?.[1] ?? null
+            const ready =
+              observedCommit === expectedCommit ||
+              observedCommit === expectedCommit.slice(0, 12) ||
+              js.includes(expectedCommit)
+
+            return {
+              moduleUrl: moduleUrl.toString(),
+              observedCommit,
+              ready,
+            }
+          }
+
+          let lastStatus = 'unknown'
+
+          while (Date.now() < deadline) {
+            try {
+              const status = await resolveCommitStatus()
+              lastStatus = `observed ${status.observedCommit ?? 'unknown'} via ${status.moduleUrl}`
+              if (status.ready) {
+                console.log(`Controlled smoke site is serving ${expectedCommit} via ${status.moduleUrl}`)
+                process.exit(0)
+              }
+            } catch (error) {
+              lastStatus = error instanceof Error ? error.message : String(error)
+            }
+
+            console.log(`Waiting for controlled smoke site rollout: expected ${expectedCommit}; ${lastStatus}`)
+            await sleep(pollIntervalMs)
+          }
+
+          console.error(`Timed out waiting for controlled smoke site rollout at ${baseUrl}: ${lastStatus}`)
+          process.exit(1)
+          EOF
+
       - name: Smoke E2E
         env:
           E2E_BASE_URL: ${{ vars.SMOKE_API_BASE_URL || '' }}
@@ -225,6 +313,94 @@ jobs:
             echo "::error::Protected frontend health requires a controlled frontend/API upstream. Set SMOKE_API_BASE_URL to the controlled site origin that serves same-origin /api (recommended), or set the split-domain API variants."
             exit 1
           fi
+
+      - name: Wait for controlled smoke site rollout
+        if: >-
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'master') &&
+          vars.SMOKE_API_BASE_URL != ''
+        env:
+          SMOKE_BASE_URL: ${{ vars.SMOKE_API_BASE_URL }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          node <<'EOF'
+          const baseUrl = process.env.SMOKE_BASE_URL?.trim()
+          const expectedCommit = process.env.EXPECTED_COMMIT?.trim()
+
+          if (!baseUrl || !expectedCommit) {
+            process.exit(0)
+          }
+
+          const pollIntervalMs = 15_000
+          const timeoutMs = 10 * 60_000
+          const deadline = Date.now() + timeoutMs
+
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+          async function fetchText(url) {
+            const response = await fetch(url, {
+              redirect: 'follow',
+              headers: {
+                'Cache-Control': 'no-cache',
+                Pragma: 'no-cache',
+              },
+            })
+
+            if (!response.ok) {
+              throw new Error(`${response.status} ${response.statusText} for ${url}`)
+            }
+
+            return response.text()
+          }
+
+          async function resolveCommitStatus() {
+            const pageUrl = new URL(baseUrl)
+            pageUrl.searchParams.set('__smoke_rollout_probe', Date.now().toString())
+
+            const html = await fetchText(pageUrl.toString())
+            const moduleMatch = html.match(/<script[^>]+type="module"[^>]+src="([^"]+index-[^"]+\.js)"/i)
+            if (!moduleMatch?.[1]) {
+              throw new Error('index module script not found in controlled smoke site HTML')
+            }
+
+            const moduleUrl = new URL(moduleMatch[1], baseUrl)
+            moduleUrl.searchParams.set('__smoke_rollout_probe', Date.now().toString())
+            const js = await fetchText(moduleUrl.toString())
+            const observedCommitMatch = js.match(/VITE_GIT_COMMIT:`([^`]+)`/)
+            const observedCommit = observedCommitMatch?.[1] ?? null
+            const ready =
+              observedCommit === expectedCommit ||
+              observedCommit === expectedCommit.slice(0, 12) ||
+              js.includes(expectedCommit)
+
+            return {
+              moduleUrl: moduleUrl.toString(),
+              observedCommit,
+              ready,
+            }
+          }
+
+          let lastStatus = 'unknown'
+
+          while (Date.now() < deadline) {
+            try {
+              const status = await resolveCommitStatus()
+              lastStatus = `observed ${status.observedCommit ?? 'unknown'} via ${status.moduleUrl}`
+              if (status.ready) {
+                console.log(`Controlled smoke site is serving ${expectedCommit} via ${status.moduleUrl}`)
+                process.exit(0)
+              }
+            } catch (error) {
+              lastStatus = error instanceof Error ? error.message : String(error)
+            }
+
+            console.log(`Waiting for controlled smoke site rollout: expected ${expectedCommit}; ${lastStatus}`)
+            await sleep(pollIntervalMs)
+          }
+
+          console.error(`Timed out waiting for controlled smoke site rollout at ${baseUrl}: ${lastStatus}`)
+          process.exit(1)
+          EOF
 
       - name: Frontend health smoke
         env:
