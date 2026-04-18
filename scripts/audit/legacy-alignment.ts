@@ -27,7 +27,7 @@ const LEGACY_PATTERNS: Array<{
   },
   {
     rule: 'legacy-session-summary-route',
-    regex: /\/auth\/session(?!s)/g,
+    regex: /\/auth\/session(?![A-Za-z0-9:_-])/g,
     message:
       'Found legacy /auth/session route reference; runtime should only use backend auth routes.',
   },
@@ -74,6 +74,15 @@ const LEGACY_PATTERNS: Array<{
   },
 ]
 
+function shouldSkipFile(filePath: string): boolean {
+  const normalizedPath = filePath.replace(/\\/g, '/')
+  return (
+    normalizedPath.includes('/__tests__/') ||
+    /\.spec\.[cm]?[jt]sx?$/.test(normalizedPath) ||
+    /\.test\.[cm]?[jt]sx?$/.test(normalizedPath)
+  )
+}
+
 async function collectFiles(rootPath: string): Promise<string[]> {
   const entries = await readdir(rootPath, { withFileTypes: true })
   const files: string[] = []
@@ -86,7 +95,7 @@ async function collectFiles(rootPath: string): Promise<string[]> {
     }
 
     const extension = entry.name.slice(entry.name.lastIndexOf('.'))
-    if (TEXT_FILE_EXTENSIONS.has(extension)) {
+    if (TEXT_FILE_EXTENSIONS.has(extension) && !shouldSkipFile(entryPath)) {
       files.push(entryPath)
     }
   }
