@@ -7,6 +7,8 @@
 import { apiClient, ApiError } from './client'
 import type { RequestConfig } from './client'
 
+const AUTH_SESSION_RESOLVE_PATH = `/auth/${'session:resolve'}`
+
 export interface LoginRequest {
   username: string
   password: string
@@ -57,31 +59,22 @@ export interface UserResponse {
   updated_at?: string
 }
 
-export interface TokenResponseBase {
-  access_token: string
-  token_type: string
-  expires_in: number
-  refresh_threshold: number
-  permission_version: number
-}
-
-export interface LoginResponse extends TokenResponseBase {
+export interface SessionSummaryResponse {
+  authenticated: true
   user: UserResponse
+  session_expires_at?: string | null
+  permission_version?: number | string
   return_to?: string
   _securityWarning?: 'high' | 'medium' | 'low'
 }
 
-export type AuthResponse = LoginResponse
+export type AuthResponse = SessionSummaryResponse
 
 export interface MeResponse extends UserResponse {
   permission_version: number
   auth_source: string
   identity_provider: string
   linked_providers: string[]
-}
-
-export interface HeartbeatResponse extends TokenResponseBase {
-  server_time?: string
 }
 
 export interface RegisterResponse {
@@ -102,6 +95,7 @@ export interface RiskVerificationChallengeResponse {
   requires_risk_verification: true
   pending_token: string
   challenge_type?: string
+  methods?: string[]
   expires_in?: number
   message?: string
   return_to?: string
@@ -166,6 +160,15 @@ export interface VerificationTokenResponse {
   message?: string
 }
 
+export interface WebAuthnAuthenticationOptionsResponse {
+  ceremony_id: string
+  options: Record<string, unknown>
+  methods?: string[]
+  provider?: string
+  discoverable?: boolean
+  session_realm?: string
+}
+
 export const authService = {
   async login(credentials: LoginRequest): Promise<AuthLoginFlowResponse> {
     let securityWarning: AuthResponse['_securityWarning']
@@ -215,6 +218,17 @@ export const authService = {
       skipAuth: true,
       skipErrorToast: true,
     })
+  },
+
+  async resolveSession(): Promise<AuthResponse | { authenticated: false }> {
+    return apiClient.post<AuthResponse | { authenticated: false }>(
+      AUTH_SESSION_RESOLVE_PATH,
+      null,
+      {
+        skipAuth: true,
+        skipErrorToast: true,
+      }
+    )
   },
 
   async getCurrentUser(config?: RequestConfig): Promise<MeResponse> {
@@ -460,11 +474,77 @@ export const authService = {
     )
   },
 
-  async heartbeat(): Promise<HeartbeatResponse> {
-    return apiClient.post('/auth/heartbeat', null, {
-      skipAuth: true,
-      skipErrorToast: true,
-    })
+  async beginRiskWebAuthnLogin(
+    pendingToken: string
+  ): Promise<WebAuthnAuthenticationOptionsResponse> {
+    return apiClient.post<WebAuthnAuthenticationOptionsResponse>(
+      '/auth/risk-login/webauthn/options',
+      {
+        pending_token: pendingToken,
+      },
+      {
+        skipAuth: true,
+        skipErrorToast: true,
+      }
+    )
+  },
+
+  async finishRiskWebAuthnLogin(
+    pendingToken: string,
+    ceremonyId: string,
+    credential: Record<string, unknown>,
+    deviceName?: string,
+    deviceType?: string
+  ): Promise<AuthResponse | MfaRequiredResponse> {
+    return apiClient.post<AuthResponse | MfaRequiredResponse>(
+      '/auth/risk-login/webauthn/verify',
+      {
+        pending_token: pendingToken,
+        ceremony_id: ceremonyId,
+        credential,
+        ...(deviceName ? { device_name: deviceName } : {}),
+        ...(deviceType ? { device_type: deviceType } : {}),
+      },
+      {
+        skipAuth: true,
+        skipErrorToast: true,
+      }
+    )
+  },
+
+  async beginPasswordlessLogin(identifier?: {
+    username?: string
+    email?: string
+  }): Promise<WebAuthnAuthenticationOptionsResponse> {
+    return apiClient.post<WebAuthnAuthenticationOptionsResponse>(
+      '/auth/passwordless/options',
+      identifier ?? {},
+      {
+        skipAuth: true,
+        skipErrorToast: true,
+      }
+    )
+  },
+
+  async finishPasswordlessLogin(
+    ceremonyId: string,
+    credential: Record<string, unknown>,
+    deviceName?: string,
+    deviceType?: string
+  ): Promise<AuthResponse> {
+    return apiClient.post<AuthResponse>(
+      '/auth/passwordless/verify',
+      {
+        ceremony_id: ceremonyId,
+        credential,
+        ...(deviceName ? { device_name: deviceName } : {}),
+        ...(deviceType ? { device_type: deviceType } : {}),
+      },
+      {
+        skipAuth: true,
+        skipErrorToast: true,
+      }
+    )
   },
 
   async getSessions(): Promise<{

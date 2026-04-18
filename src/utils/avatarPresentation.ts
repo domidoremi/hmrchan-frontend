@@ -1,7 +1,7 @@
 import { normalizeAvatarUrl } from '@/api/userService'
 
 export function resolveAvatarSrc(avatarUrl: string | null | undefined): string | undefined {
-  return normalizeAvatarUrl(avatarUrl || undefined) || avatarUrl || undefined
+  return normalizeAvatarUrl(avatarUrl || undefined) || undefined
 }
 
 export function getAvatarFallbackLabel(...candidates: Array<string | null | undefined>): string {

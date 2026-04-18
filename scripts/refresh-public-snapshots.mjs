@@ -21,8 +21,20 @@ const AUTHOR_PAGE_SIZE = 24
 const AUTHOR_POST_PAGE_SIZE = 24
 const SCHEDULE_PAGE_SIZE = 40
 const SCHEDULE_WINDOW_DAYS = 90
+const SNAPSHOT_AVATAR_FIELDS = new Set([
+  'avatar_url',
+  'author_avatar_url',
+  'original_author_avatar_url',
+])
+const BLOCKED_AVATAR_HOST_SUFFIXES = ['tiktokcdn.com', 'tiktokcdn-us.com', 'twimg.com']
+const BLOCKED_AVATAR_HOSTS = new Set(['pbs.twimg.com'])
 
 const assetCache = new Map()
+const publicSnapshotContractVersion = safeString(
+  process.env.PUBLIC_SNAPSHOT_CONTRACT_VERSION ||
+    process.env.VITE_CLIENT_CONTRACT_VERSION ||
+    process.env.LOCAL_AUDIT_CONTRACT_VERSION
+)
 
 function unwrapEnvelope(payload) {
   return payload && typeof payload === 'object' && 'data' in payload ? payload.data : payload
@@ -60,11 +72,17 @@ function extensionFromContentType(contentType, fallbackUrl = '') {
 
 async function fetchJson(relativePath) {
   const url = `${apiBaseUrl}${relativePath}`
+  const headers = {
+    accept: 'application/json',
+    'user-agent': 'hmrchan-frontend-snapshot-refresh/1.0',
+  }
+
+  if (publicSnapshotContractVersion) {
+    headers['X-Client-Contract-Version'] = publicSnapshotContractVersion
+  }
+
   const response = await fetch(url, {
-    headers: {
-      accept: 'application/json',
-      'user-agent': 'hmrchan-frontend-snapshot-refresh/1.0',
-    },
+    headers,
   })
 
   if (!response.ok) {
@@ -75,14 +93,38 @@ async function fetchJson(relativePath) {
   return unwrapEnvelope(json)
 }
 
-async function downloadSnapshotAsset(sourceUrl, relativeFilePath) {
+function isBlockedAvatarHost(hostname) {
+  const normalized = safeString(hostname).trim().toLowerCase()
+  if (!normalized) return false
+  if (BLOCKED_AVATAR_HOSTS.has(normalized)) return true
+  return BLOCKED_AVATAR_HOST_SUFFIXES.some(
+    (suffix) => normalized === suffix || normalized.endsWith(`.${suffix}`)
+  )
+}
+
+function normalizeYoutubeAvatarUrl(sourceUrl) {
+  if (!sourceUrl) return null
+
+  try {
+    const parsed = new URL(sourceUrl, siteOrigin)
+    const isYoutubeThumbnail = parsed.hostname === 'i.ytimg.com'
+    const isMaxResVariant = /\/vi\/[^/]+\/maxresdefault\.jpg$/i.test(parsed.pathname)
+
+    if (isYoutubeThumbnail && isMaxResVariant) {
+      parsed.pathname = parsed.pathname.replace(/maxresdefault\.jpg$/i, 'hqdefault.jpg')
+      return parsed.toString()
+    }
+  } catch {
+    return sourceUrl
+  }
+
+  return sourceUrl
+}
+
+async function downloadBinaryAsset(sourceUrl, relativeFilePath, fallbackValue = sourceUrl) {
   if (!sourceUrl) return sourceUrl
 
   const absoluteUrl = new URL(sourceUrl, siteOrigin).toString()
-  const parsedUrl = new URL(absoluteUrl)
-  if (!parsedUrl.pathname.startsWith('/api/v1/media/')) {
-    return sourceUrl
-  }
 
   if (assetCache.has(absoluteUrl)) {
     return assetCache.get(absoluteUrl)
@@ -97,8 +139,8 @@ async function downloadSnapshotAsset(sourceUrl, relativeFilePath) {
 
   if (!response.ok) {
     console.warn(`[snapshot] failed to download asset ${absoluteUrl}: ${response.status}`)
-    assetCache.set(absoluteUrl, sourceUrl)
-    return sourceUrl
+    assetCache.set(absoluteUrl, fallbackValue)
+    return fallbackValue
   }
 
   const ext = extensionFromContentType(response.headers.get('content-type'), absoluteUrl)
@@ -110,6 +152,77 @@ async function downloadSnapshotAsset(sourceUrl, relativeFilePath) {
   const publicPath = `/${path.relative(path.join(repoRoot, 'public'), filePath).replace(/\\/g, '/')}`
   assetCache.set(absoluteUrl, publicPath)
   return publicPath
+}
+
+async function downloadSnapshotAsset(sourceUrl, relativeFilePath) {
+  if (!sourceUrl) return sourceUrl
+
+  const absoluteUrl = new URL(sourceUrl, siteOrigin).toString()
+  const parsedUrl = new URL(absoluteUrl)
+  if (
+    !parsedUrl.pathname.startsWith('/api/v1/media/') &&
+    !parsedUrl.pathname.startsWith('/uploads/')
+  ) {
+    return sourceUrl
+  }
+
+  return downloadBinaryAsset(sourceUrl, relativeFilePath, sourceUrl)
+}
+
+async function localizeAvatarUrl(sourceUrl, relativeFilePath) {
+  if (!sourceUrl) return null
+
+  const normalizedUrl = normalizeYoutubeAvatarUrl(sourceUrl)
+  if (!normalizedUrl) return null
+
+  try {
+    const parsedUrl = new URL(normalizedUrl, siteOrigin)
+    const isSnapshotAsset =
+      parsedUrl.pathname.startsWith('/api/v1/media/') || parsedUrl.pathname.startsWith('/uploads/')
+    const isYoutubeAvatar = parsedUrl.hostname === 'i.ytimg.com'
+
+    if (isSnapshotAsset) {
+      return downloadBinaryAsset(normalizedUrl, relativeFilePath, null)
+    }
+
+    if (isBlockedAvatarHost(parsedUrl.hostname)) {
+      return null
+    }
+
+    if (isYoutubeAvatar) {
+      return downloadBinaryAsset(normalizedUrl, relativeFilePath, null)
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+async function sanitizeSnapshotAvatarFields(value, keyPath = 'root') {
+  if (Array.isArray(value)) {
+    await Promise.all(
+      value.map((item, index) => sanitizeSnapshotAvatarFields(item, `${keyPath}-${index}`))
+    )
+    return
+  }
+
+  if (!value || typeof value !== 'object') {
+    return
+  }
+
+  const entries = Object.entries(value)
+  for (const [key, currentValue] of entries) {
+    if (SNAPSHOT_AVATAR_FIELDS.has(key)) {
+      value[key] =
+        typeof currentValue === 'string'
+          ? await localizeAvatarUrl(currentValue, `avatars/${toSlug(`${keyPath}-${key}`)}`)
+          : null
+      continue
+    }
+
+    await sanitizeSnapshotAvatarFields(currentValue, `${keyPath}-${key}`)
+  }
 }
 
 async function localizeImageAsset(image, key) {
@@ -361,7 +474,7 @@ async function buildSnapshots() {
     }
   }
 
-  return {
+  const snapshots = {
     generatedAt: new Date().toISOString(),
     homeAggregate,
     homePosts,
@@ -375,6 +488,10 @@ async function buildSnapshots() {
     discussions,
     discussionComments,
   }
+
+  await sanitizeSnapshotAvatarFields(snapshots)
+
+  return snapshots
 }
 
 function renderModule(data) {

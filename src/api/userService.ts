@@ -71,6 +71,18 @@ export interface ExportAccountDataResult {
   filename?: string | null
 }
 
+const BLOCKED_AVATAR_HOST_SUFFIXES = ['tiktokcdn.com', 'tiktokcdn-us.com', 'twimg.com']
+const BLOCKED_AVATAR_HOSTS = new Set(['pbs.twimg.com'])
+
+function isBlockedExternalAvatarHost(hostname: string): boolean {
+  const normalized = hostname.trim().toLowerCase()
+  if (!normalized) return false
+  if (BLOCKED_AVATAR_HOSTS.has(normalized)) return true
+  return BLOCKED_AVATAR_HOST_SUFFIXES.some(
+    (suffix) => normalized === suffix || normalized.endsWith(`.${suffix}`)
+  )
+}
+
 async function buildExportAccountBlob(response: Response): Promise<Blob> {
   const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
 
@@ -106,6 +118,10 @@ export function normalizeAvatarUrl(url: string | null | undefined): string | nul
 
   try {
     const parsed = new URL(resolved)
+    if (isBlockedExternalAvatarHost(parsed.hostname)) {
+      return null
+    }
+
     const isYoutubeThumbnail = parsed.hostname === 'i.ytimg.com'
     const isMaxResVariant = /\/vi\/[^/]+\/maxresdefault\.jpg$/i.test(parsed.pathname)
 

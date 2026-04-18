@@ -30,7 +30,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         },
         related_authors: [
           {
-            avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+            avatar_url: null,
             deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
             display_name: '籾山ひめり',
             id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -41,7 +41,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         related_posts: [
           {
             author: {
-              avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+              avatar_url: null,
               deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
               display_name: '籾山ひめり',
               id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -137,7 +137,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         },
         related_authors: [
           {
-            avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+            avatar_url: null,
             deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
             display_name: '籾山ひめり',
             id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -148,7 +148,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         related_posts: [
           {
             author: {
-              avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+              avatar_url: null,
               deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
               display_name: '籾山ひめり',
               id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -239,7 +239,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         },
         related_authors: [
           {
-            avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+            avatar_url: null,
             deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
             display_name: '籾山ひめり',
             id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -250,7 +250,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         related_posts: [
           {
             author: {
-              avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+              avatar_url: null,
               deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
               display_name: '籾山ひめり',
               id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -343,7 +343,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         },
         related_authors: [
           {
-            avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+            avatar_url: null,
             deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
             display_name: '籾山ひめり',
             id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -354,7 +354,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         related_posts: [
           {
             author: {
-              avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+              avatar_url: null,
               deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
               display_name: '籾山ひめり',
               id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -417,7 +417,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
   hero: {
     editorial_card: {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -434,7 +434,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     spotlight: {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -528,7 +528,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
   latest_text_posts: [
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -546,7 +546,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -575,7 +575,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -599,7 +599,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -617,7 +617,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -641,7 +641,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -658,7 +658,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -675,7 +675,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -693,7 +693,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -711,7 +711,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     },
     {
       author: {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -781,8 +781,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
     items: [
       {
         author: {
-          avatar_url:
-            'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+          avatar_url: null,
           deep_link: '/author/a385c6a8-b39c-4b86-820b-710e8d358432',
           display_name: '籾山ひめり🛼',
           id: 'a385c6a8-b39c-4b86-820b-710e8d358432',
@@ -806,7 +805,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
       },
       {
         author: {
-          avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+          avatar_url: null,
           deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
           display_name: '籾山ひめり',
           id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -829,7 +828,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
       },
       {
         author: {
-          avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+          avatar_url: null,
           deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
           display_name: '籾山ひめり',
           id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -854,7 +853,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
       },
       {
         author: {
-          avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+          avatar_url: null,
           deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
           display_name: '籾山ひめり',
           id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -879,7 +878,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
       },
       {
         author: {
-          avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+          avatar_url: null,
           deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
           display_name: '籾山ひめり',
           id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -910,7 +909,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
   trends: {
     authors: [
       {
-        avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+        avatar_url: null,
         deep_link: '/author/e10368cf-779e-4253-8b37-c2ce493a4106',
         display_name: '籾山ひめり',
         engagement_score: 58912,
@@ -918,8 +917,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         post_count: 43,
       },
       {
-        avatar_url:
-          'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+        avatar_url: null,
         deep_link: '/author/a385c6a8-b39c-4b86-820b-710e8d358432',
         display_name: '籾山ひめり🛼',
         engagement_score: 1162,
@@ -927,7 +925,7 @@ export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = {
         post_count: 4,
       },
       {
-        avatar_url: 'https://i.ytimg.com/vi/oQwoIdNcqhM/maxresdefault.jpg',
+        avatar_url: null,
         deep_link: '/author/6e688605-7527-49b2-9dd7-5eb63fcb05fa',
         display_name: '高嶺のなでしこ Official',
         engagement_score: 119,
@@ -1081,7 +1079,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     view_count: 592,
     description: '🌸\n\n #ひめんしょん。',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1106,7 +1104,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     description:
       'RT @takanenofficial: 🎤出演情報🎤\n\n『 IDOL SUMMER JUNGLE GOLDEN 』\n\n#高嶺のなでしこ の出演が決定🐈‍⬛🌸\n\n📅5月2日(土) / 5月3日(日)\n📍お台場R地区\n※出演日程は後日発表となります。\n\n🎫先行抽選(~4/13(月)23:59)\nhttps://ticketdive.com/event/samajan_golden\n\n今年のゴールデンウィークも\n野外フェスで盛り上がりましょう❤️‍🔥\n\n@samajan_idol \n#サマジャン #サマジャンゴールデン \n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1131,7 +1129,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     description:
       'TOKYO FM『#たかねこナイト 🐈‍⬛ 』と\n『#可憐なアイボリー のカレアイ放送局🐘🤍』のコラボ放送が決定しました🌸\n\n📅4月14日(火)\n⏰27:00~27:30\n\n#永尾梨央 さんと\n【リーダー × キャプテン コンビ】でスペシャル対談🎤💙💙✨\n青㌠でのお話楽しみです！！ドキドキッ💓\n\n🎧http://radiko.jp/r_seasons/48677\n\n💌https://www.tfm.co.jp/f/takanenonadeshiko/message\n質問、メッセージもぜひお待ちしてます✨️\n\n@PodcastsMs_jp',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1156,7 +1154,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     description:
       'RT @takanenofficial: 💛お知らせ💙\n\n城月菜央、籾山ひめりがモデルを務める\n『MagiaCharm × アニメ「NEEDY GIRL OVERDOSE」』の\nPOP UP SHOPが本日よりスタート！🛒\n\n🗓️4/3(金)~4/19(日)\n📍SHIBUYA 109\n\n🛒ONLINE SHOP & ZOZOTOWN\nhttps://www.magiacharm.com/\n🗓️4/20(月)~販売開始\n\nぜひお越しください🪄\n\n@magia_charm \n#magiacharm #ニディガ \n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1178,7 +1176,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     view_count: 4099,
     description: '髪切る時ほぼ同じオーダーしかしてない😂\n\nhttps://vt.tiktok.com/ZSHBKvrFQ/',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1202,7 +1200,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     description:
       '本日のイベントが開催時間中の荒天が予想されるため、中止になりました🙇‍♂️\n\n今日を楽しみにしてくださってた方、準備してくれてた方ごめんね😭😭😭\n\n私達もとっても楽しみにしてたので、寂しいけど、次会えるのを楽しみにしてます✨️',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1226,7 +1224,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     description:
       '【公演中止のお知らせ】\n\n本日 #高嶺のなでしこ 出演予定の\n『「イベレコ×高嶺のなでしこ」のDREAMランタン by 関電工 』\nにつきまして\n開催時間中の荒天が予想されるため、開催中止となりました。\n\n詳細は以下をご一読いただけますと幸いでございます。\n\n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1248,8 +1246,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     view_count: 252,
     description: 'ライブでは封印してて、おろした時だけ解放される姫カット🫶🏻🪄︎︎✨',
     author_username: '6506424015615115265',
-    author_avatar_url:
-      'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1271,7 +1268,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     view_count: 2783,
     description: '保存した？？💙\n\n #ひめんしょん。',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1296,7 +1293,7 @@ export const STATIC_HOME_POSTS: PostListItem[] = [
     description:
       'なお、ひめりがモデルを務める\n『MagiaCharm × アニメ「NEEDY GIRL OVERDOSE」』のPOP UP SHOPが本日よりスタート🛒💛💙\n\n🗓️4/3(金)~4/19(日)\n📍SHIBUYA 109\n\n🛒ONLINE SHOP & ZOZOTOWN\n🗓️4/20(月)~販売開始\n\n店内に大きく飾っていただいてるので、ぜひ見に行ってみてね🥹💕🪄\n\n#magiacharm #ニディガ \n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
 ]
@@ -1321,7 +1318,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     view_count: 592,
     description: '🌸\n\n #ひめんしょん。',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1346,7 +1343,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       'RT @takanenofficial: 🎤出演情報🎤\n\n『 IDOL SUMMER JUNGLE GOLDEN 』\n\n#高嶺のなでしこ の出演が決定🐈‍⬛🌸\n\n📅5月2日(土) / 5月3日(日)\n📍お台場R地区\n※出演日程は後日発表となります。\n\n🎫先行抽選(~4/13(月)23:59)\nhttps://ticketdive.com/event/samajan_golden\n\n今年のゴールデンウィークも\n野外フェスで盛り上がりましょう❤️‍🔥\n\n@samajan_idol \n#サマジャン #サマジャンゴールデン \n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1371,7 +1368,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       'TOKYO FM『#たかねこナイト 🐈‍⬛ 』と\n『#可憐なアイボリー のカレアイ放送局🐘🤍』のコラボ放送が決定しました🌸\n\n📅4月14日(火)\n⏰27:00~27:30\n\n#永尾梨央 さんと\n【リーダー × キャプテン コンビ】でスペシャル対談🎤💙💙✨\n青㌠でのお話楽しみです！！ドキドキッ💓\n\n🎧http://radiko.jp/r_seasons/48677\n\n💌https://www.tfm.co.jp/f/takanenonadeshiko/message\n質問、メッセージもぜひお待ちしてます✨️\n\n@PodcastsMs_jp',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1396,7 +1393,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       'RT @takanenofficial: 💛お知らせ💙\n\n城月菜央、籾山ひめりがモデルを務める\n『MagiaCharm × アニメ「NEEDY GIRL OVERDOSE」』の\nPOP UP SHOPが本日よりスタート！🛒\n\n🗓️4/3(金)~4/19(日)\n📍SHIBUYA 109\n\n🛒ONLINE SHOP & ZOZOTOWN\nhttps://www.magiacharm.com/\n🗓️4/20(月)~販売開始\n\nぜひお越しください🪄\n\n@magia_charm \n#magiacharm #ニディガ \n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1418,7 +1415,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     view_count: 4099,
     description: '髪切る時ほぼ同じオーダーしかしてない😂\n\nhttps://vt.tiktok.com/ZSHBKvrFQ/',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1442,7 +1439,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       '本日のイベントが開催時間中の荒天が予想されるため、中止になりました🙇‍♂️\n\n今日を楽しみにしてくださってた方、準備してくれてた方ごめんね😭😭😭\n\n私達もとっても楽しみにしてたので、寂しいけど、次会えるのを楽しみにしてます✨️',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1466,7 +1463,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       '【公演中止のお知らせ】\n\n本日 #高嶺のなでしこ 出演予定の\n『「イベレコ×高嶺のなでしこ」のDREAMランタン by 関電工 』\nにつきまして\n開催時間中の荒天が予想されるため、開催中止となりました。\n\n詳細は以下をご一読いただけますと幸いでございます。\n\n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1488,8 +1485,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     view_count: 252,
     description: 'ライブでは封印してて、おろした時だけ解放される姫カット🫶🏻🪄︎︎✨',
     author_username: '6506424015615115265',
-    author_avatar_url:
-      'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1511,7 +1507,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     view_count: 2783,
     description: '保存した？？💙\n\n #ひめんしょん。',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1536,7 +1532,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       'なお、ひめりがモデルを務める\n『MagiaCharm × アニメ「NEEDY GIRL OVERDOSE」』のPOP UP SHOPが本日よりスタート🛒💛💙\n\n🗓️4/3(金)~4/19(日)\n📍SHIBUYA 109\n\n🛒ONLINE SHOP & ZOZOTOWN\n🗓️4/20(月)~販売開始\n\n店内に大きく飾っていただいてるので、ぜひ見に行ってみてね🥹💕🪄\n\n#magiacharm #ニディガ \n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1560,7 +1556,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       '5000Cheer！ほんとにほんとにありがとうございます😭😭😭\n\nみんなのおかげで、【コラボバッテリー270個が街中】に投下決定✨️✨️✨️\n\nやばい！嬉しすぎる🥹💕💕💕💕\n\n #たかねこ満開計画 🌸',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1585,7 +1581,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       'RT @cheerspo_kouhou: 🐈‍⬛ #たかねこ満開計画 💐\n\n／\n🎉㊗️5000チア㊗️🎉\n＼\n\n5日で5000チア到達⁉️\nこれは事件を通り越して伝説では…😭✨\n\nみんなの強い想いで\n街にコラボバッテリー270個投下🔋\n決定です✌️🔥\n\nチアスポから感謝を込めてサプライズ🎁\nを来週発表する予定です\n\nこのまま歴史を更新し続けよう💖\n\n#高嶺のなでしこ × #CheerSPOT\n\n🗓️3/29〜5/10\nhttps://www.cheerspot.com/artist/2036991186559348737\n\n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1610,7 +1606,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       '🐈‍⬛ #たかねこ満開計画 💐\n\n／\n\nプロジェクト開始から5日で\n合計【5,000】Cheer! 達成🎉🎉\n\n＼\n\n皆さんのCheer! により\nコラボバッテリー270個が街中に投下決定！🎊\n\n大きな #たかねこ の花が\n日本全国、そして台湾に広がっています🌸✨\n\n🔗https://takanenonadeshiko.jp/takanenonadeshiko-cheerspot/\n\n来週はとあるお知らせも…？🎁\nお楽しみに🪄\n\n@cheerspo_kouhou \n#高嶺のなでしこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1635,7 +1631,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       '💛お知らせ💙\n\n城月菜央、籾山ひめりがモデルを務める\n『MagiaCharm × アニメ「NEEDY GIRL OVERDOSE」』の\nPOP UP SHOPが本日よりスタート！🛒\n\n🗓️4/3(金)~4/19(日)\n📍SHIBUYA 109\n\n🛒ONLINE SHOP & ZOZOTOWN\nhttps://www.magiacharm.com/\n🗓️4/20(月)~販売開始\n\nぜひお越しください🪄\n\n@magia_charm \n#magiacharm #ニディガ \n#たかねこ',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1657,7 +1653,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     view_count: 5031,
     description: '髪とぅやんとぅやんにしてもらいました\n✨️\n\nhttps://vt.tiktok.com/ZSHhpsvCY/',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1682,7 +1678,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       '📻お知らせ📻\n\nTOKYO FM\n#高嶺のなでしこ ラジオ定期公演\n『#たかねこナイト 』🐈‍⬛\n\n『#可憐なアイボリー のカレアイ放送局』\nとのコラボ放送🐘🤍\n\n可憐なアイボリー (@Karennaivory )\n永尾梨央 (@Kareai_rio )さんの\n出演が決定💙\n\n📅4月14日(火)\n⏰27:00~27:30\n\n#永尾梨央 さんと #籾山ひめり の\nリーダー × キャプテンコンビでスペシャル対談🎤✨\nお楽しみに🌸\n\n🎧radiko\nhttps://radiko.jp/r_seasons/48677\n\n2人への質問・メッセージはこちら！💌\nhttps://www.tfm.co.jp/f/takanenonadeshiko/message\n\n@PodcastsMs_jp\n#カレラジ #カレアイ\n#たかねこ #HoneyWorks',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1706,7 +1702,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       'えぇ！！！めっちゃ嬉しいよぉ😭😭😭\nさあら〜🥹💎🤍\n書いてくれてありがとう✨✨✨✨\n\n指先まですごすぎる…😳',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1728,8 +1724,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     view_count: 456,
     description: '美容院行ってきたヨ✂️',
     author_username: '6506424015615115265',
-    author_avatar_url:
-      'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1751,7 +1746,7 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     view_count: 5389,
     description: 'わたしだけみててね🪽\n\n #magiacharm  #ニディガ  #ひめんしょん。',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
   {
@@ -1776,14 +1771,14 @@ export const STATIC_EXPLORE_POSTS: PostListItem[] = [
     description:
       '𝜗𝜚Magia Charm ×アニメ｢NEEDY GIRL OVERDOSE ｣𝜗𝜚\n\n明日からSHIBUYA109にて \nPOP UP SHOPがスタート🪽\n\n🎀4/3(fri)～4/19(sun)\n\n可愛いアイテムたくさんなので、\nぜひげっちゅしてね🛍💕\n\n #ニディガ  #magiacharm  #ひめんしょん。',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     tags: [],
   },
 ]
 
 export const STATIC_AUTHORS: AuthorListItem[] = [
   {
-    avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    avatar_url: null,
     display_name: '籾山ひめり',
     follower_count: 49807,
     id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
@@ -1794,7 +1789,7 @@ export const STATIC_AUTHORS: AuthorListItem[] = [
     username: 'himeri_momiyama',
   },
   {
-    avatar_url: 'https://i.ytimg.com/vi/oQwoIdNcqhM/maxresdefault.jpg',
+    avatar_url: null,
     display_name: '高嶺のなでしこ Official',
     follower_count: 216000,
     id: '6e688605-7527-49b2-9dd7-5eb63fcb05fa',
@@ -1805,8 +1800,7 @@ export const STATIC_AUTHORS: AuthorListItem[] = [
     username: 'official_takaneko',
   },
   {
-    avatar_url:
-      'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+    avatar_url: null,
     display_name: '籾山ひめり🛼',
     follower_count: 0,
     id: 'a385c6a8-b39c-4b86-820b-710e8d358432',
@@ -1821,7 +1815,7 @@ export const STATIC_AUTHORS: AuthorListItem[] = [
 
 export const STATIC_AUTHOR_DETAILS: Record<string, AuthorResponse> = {
   'e10368cf-779e-4253-8b37-c2ce493a4106': {
-    avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    avatar_url: null,
     bio: 'HoneyWorksサウンドプロデュース #高嶺のなでしこ(@takanenofficial)22歳／キャプテン／青色💙#ひめんしょん。 🎤5/6(日)東京国際フォーラム TikTok▷https://www.tiktok.com/@momichan_hime?_t=8cFP2GGYGJu&_r=',
     created_at: '2026-02-08T03:00:15.984703Z',
     display_name: '籾山ひめり',
@@ -1946,7 +1940,7 @@ export const STATIC_AUTHOR_DETAILS: Record<string, AuthorResponse> = {
     username: 'himeri_momiyama',
   },
   '6e688605-7527-49b2-9dd7-5eb63fcb05fa': {
-    avatar_url: 'https://i.ytimg.com/vi/oQwoIdNcqhM/maxresdefault.jpg',
+    avatar_url: null,
     bio: '2026年3月21日に行われた、\n高嶺のなでしこ Live Tour - Bouquet of 9 Flowers - 福岡公演のダイジェストを公開 🍲💐\n\nー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー\n\n高嶺のなでしこ Live Tour - Bouquet of 9 Flowers –💐💭\nhttps://takanenonadeshiko.jp/p4626/\n\n🌏 in Taipei 一般販売中!!\nhttps://tickets.funone.io/activity/activity_detail/perfumeprod0418\n\n✈️ in Seoul 一般販売中!!\nhttp://to.livet.one/TAKANEKO2026\n\n🎼 FINAL公演 一般販売中!!\nイープラス：https://eplus.jp/takanenonadeshiko/\nローソンチケット：https://l-tike.com/takanenonadeshiko/\nチケットぴあ：https://w.pia.jp/t/takanenonadeshiko/\n\nー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー\n\n高嶺のなでしこ 1st ALBUM 「見上げるたびに、恋をする。」\n2025年12月17日(水) リリース！\nhttps://www.jvcmusic.co.jp/takaneko/special/\n\nー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー\n\n✿高嶺のなでしこ Official \nYouTube：https://www.youtube.com/@official_takaneko\nX：https://x.com/takanenofficial\nTikTok：https://www.tiktok.com/@takanenofficial\nInstagram：https://www.instagram.com/takanenofficial\nHP：http://takanenonadeshiko.jp/\nBeReal：https://bere.al/takanenocial\n\n✿Member\n💛城月菜央（KIZUKI NAO）\nTikTok：https://www.tiktok.com/@nao_kizuki\nInstagram：https://www.instagram.com/nao_kizuki_\nX：https://x.com/nao_kizuki\n\n🩵涼海 すう（SUZUMI SU）\nTikTok：https://www.tiktok.com/@suu._.suu\nInstagram：https://www.instagram.com/su_suzumi_\nX：https://x.com/su_suzumi_\n\n🩷橋本桃呼（HASHIMOTO MOMOKO）\nTikTok：https://www.tiktok.com/@momoko_hashimoto\nInstagram：https://www.instagram.com/momoko__3628\nX：https://x.com/momokohashimoto\n\n🤍葉月紗蘭（HAZUKI SAARA）\nTikTok：https://www.tiktok.com/@saara_hazuki\nInstagram：https://www.instagram.com/saara_hazuki\nX：https://x.com/saara_hazuki\n\n🧡東山 恵里沙（HIGASHIYAMA ERISA）\nTikTok：https://www.tiktok.com/@erisahigasiyama\nInstagram：https://www.instagram.com/erisa_higashiyama\nX：https://x.com/erisahigasiyama\n\n💜日向端ひな（HINAHATA HINA）\nTikTok：https://www.tiktok.com/@hinatam_18\nInstagram：https://www.instagram.com/hinatama18\nX：https://x.com/hina_hinahata\n\n❤️星谷美来（HOSHITANI MIKURU）\nTikTok：https://www.tiktok.com/@mikurun33\nInstagram：https://www.instagram.com/mikuru_1106\nX：https://x.com/Mikuru_hositani\n\n🎀松本ももな（MATSUMOTO MOMONA）\nTikTok：https://www.tiktok.com/@momona.1012\nInstagram：https://www.instagram.com/momona.1012\nX：https://x.com/momonamatsumoto\n\n💙籾山ひめり（MOMIYAMA HIMERI）\nTikTok：https://www.tiktok.com/@momichan_hime\nInstagram：https://www.instagram.com/momichan_hime\nX：https://x.com/himeri_momiyama\n\nー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー✿ー・ー\n\n\nサウンドプロデュースはクリエイターユニットHoneyWorksが担当。\n\n✿HoneyWorks Official X\nhttps://x.com/HoneyWorks_828\n\n✿ビクターエンターテインメント HP\nhttps://www.jvcmusic.co.jp/-/Artist/A028511.html\n\n\n\n©TWIN PLANET/INCS TOENTER\n無断での動画の複製・転載・転用を禁じます。',
     created_at: '2026-02-08T03:00:04.384704Z',
     display_name: '高嶺のなでしこ Official',
@@ -1974,8 +1968,7 @@ export const STATIC_AUTHOR_DETAILS: Record<string, AuthorResponse> = {
     username: 'official_takaneko',
   },
   'a385c6a8-b39c-4b86-820b-710e8d358432': {
-    avatar_url:
-      'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+    avatar_url: null,
     bio: 'ライブでは封印してて、おろした時だけ解放される姫カット🫶🏻🪄︎︎✨',
     created_at: '2026-02-08T03:00:01.047791Z',
     display_name: '籾山ひめり🛼',
@@ -2056,7 +2049,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 592,
       description: '🌸\n\n #ひめんしょん。',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2080,7 +2073,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         'RT @takanenofficial: 🎤出演情報🎤\n\n『 IDOL SUMMER JUNGLE GOLDEN 』\n\n#高嶺のなでしこ の出演が決定🐈‍⬛🌸\n\n📅5月2日(土) / 5月3日(日)\n📍お台場R地区\n※出演日程は後日発表となります。\n\n🎫先行抽選(~4/13(月)23:59)\nhttps://ticketdive.com/event/samajan_golden\n\n今年のゴールデンウィークも\n野外フェスで盛り上がりましょう❤️‍🔥\n\n@samajan_idol \n#サマジャン #サマジャンゴールデン \n#たかねこ',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2104,7 +2097,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         'TOKYO FM『#たかねこナイト 🐈‍⬛ 』と\n『#可憐なアイボリー のカレアイ放送局🐘🤍』のコラボ放送が決定しました🌸\n\n📅4月14日(火)\n⏰27:00~27:30\n\n#永尾梨央 さんと\n【リーダー × キャプテン コンビ】でスペシャル対談🎤💙💙✨\n青㌠でのお話楽しみです！！ドキドキッ💓\n\n🎧http://radiko.jp/r_seasons/48677\n\n💌https://www.tfm.co.jp/f/takanenonadeshiko/message\n質問、メッセージもぜひお待ちしてます✨️\n\n@PodcastsMs_jp',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2128,7 +2121,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         'RT @takanenofficial: 💛お知らせ💙\n\n城月菜央、籾山ひめりがモデルを務める\n『MagiaCharm × アニメ「NEEDY GIRL OVERDOSE」』の\nPOP UP SHOPが本日よりスタート！🛒\n\n🗓️4/3(金)~4/19(日)\n📍SHIBUYA 109\n\n🛒ONLINE SHOP & ZOZOTOWN\nhttps://www.magiacharm.com/\n🗓️4/20(月)~販売開始\n\nぜひお越しください🪄\n\n@magia_charm \n#magiacharm #ニディガ \n#たかねこ',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2148,7 +2141,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 4099,
       description: '髪切る時ほぼ同じオーダーしかしてない😂\n\nhttps://vt.tiktok.com/ZSHBKvrFQ/',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2171,7 +2164,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         '本日のイベントが開催時間中の荒天が予想されるため、中止になりました🙇‍♂️\n\n今日を楽しみにしてくださってた方、準備してくれてた方ごめんね😭😭😭\n\n私達もとっても楽しみにしてたので、寂しいけど、次会えるのを楽しみにしてます✨️',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2194,7 +2187,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         '【公演中止のお知らせ】\n\n本日 #高嶺のなでしこ 出演予定の\n『「イベレコ×高嶺のなでしこ」のDREAMランタン by 関電工 』\nにつきまして\n開催時間中の荒天が予想されるため、開催中止となりました。\n\n詳細は以下をご一読いただけますと幸いでございます。\n\n#たかねこ',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2215,7 +2208,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 2783,
       description: '保存した？？💙\n\n #ひめんしょん。',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2239,7 +2232,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         'なお、ひめりがモデルを務める\n『MagiaCharm × アニメ「NEEDY GIRL OVERDOSE」』のPOP UP SHOPが本日よりスタート🛒💛💙\n\n🗓️4/3(金)~4/19(日)\n📍SHIBUYA 109\n\n🛒ONLINE SHOP & ZOZOTOWN\n🗓️4/20(月)~販売開始\n\n店内に大きく飾っていただいてるので、ぜひ見に行ってみてね🥹💕🪄\n\n#magiacharm #ニディガ \n#たかねこ',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2262,7 +2255,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         '5000Cheer！ほんとにほんとにありがとうございます😭😭😭\n\nみんなのおかげで、【コラボバッテリー270個が街中】に投下決定✨️✨️✨️\n\nやばい！嬉しすぎる🥹💕💕💕💕\n\n #たかねこ満開計画 🌸',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2286,7 +2279,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         'RT @cheerspo_kouhou: 🐈‍⬛ #たかねこ満開計画 💐\n\n／\n🎉㊗️5000チア㊗️🎉\n＼\n\n5日で5000チア到達⁉️\nこれは事件を通り越して伝説では…😭✨\n\nみんなの強い想いで\n街にコラボバッテリー270個投下🔋\n決定です✌️🔥\n\nチアスポから感謝を込めてサプライズ🎁\nを来週発表する予定です\n\nこのまま歴史を更新し続けよう💖\n\n#高嶺のなでしこ × #CheerSPOT\n\n🗓️3/29〜5/10\nhttps://www.cheerspot.com/artist/2036991186559348737\n\n#たかねこ',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2309,7 +2302,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         '🐈‍⬛ #たかねこ満開計画 💐\n\n／\n\nプロジェクト開始から5日で\n合計【5,000】Cheer! 達成🎉🎉\n\n＼\n\n皆さんのCheer! により\nコラボバッテリー270個が街中に投下決定！🎊\n\n大きな #たかねこ の花が\n日本全国、そして台湾に広がっています🌸✨\n\n🔗https://takanenonadeshiko.jp/takanenonadeshiko-cheerspot/\n\n来週はとあるお知らせも…？🎁\nお楽しみに🪄\n\n@cheerspo_kouhou \n#高嶺のなでしこ',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2333,7 +2326,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         '💛お知らせ💙\n\n城月菜央、籾山ひめりがモデルを務める\n『MagiaCharm × アニメ「NEEDY GIRL OVERDOSE」』の\nPOP UP SHOPが本日よりスタート！🛒\n\n🗓️4/3(金)~4/19(日)\n📍SHIBUYA 109\n\n🛒ONLINE SHOP & ZOZOTOWN\nhttps://www.magiacharm.com/\n🗓️4/20(月)~販売開始\n\nぜひお越しください🪄\n\n@magia_charm \n#magiacharm #ニディガ \n#たかねこ',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2353,7 +2346,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 5031,
       description: '髪とぅやんとぅやんにしてもらいました\n✨️\n\nhttps://vt.tiktok.com/ZSHhpsvCY/',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2377,7 +2370,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         '📻お知らせ📻\n\nTOKYO FM\n#高嶺のなでしこ ラジオ定期公演\n『#たかねこナイト 』🐈‍⬛\n\n『#可憐なアイボリー のカレアイ放送局』\nとのコラボ放送🐘🤍\n\n可憐なアイボリー (@Karennaivory )\n永尾梨央 (@Kareai_rio )さんの\n出演が決定💙\n\n📅4月14日(火)\n⏰27:00~27:30\n\n#永尾梨央 さんと #籾山ひめり の\nリーダー × キャプテンコンビでスペシャル対談🎤✨\nお楽しみに🌸\n\n🎧radiko\nhttps://radiko.jp/r_seasons/48677\n\n2人への質問・メッセージはこちら！💌\nhttps://www.tfm.co.jp/f/takanenonadeshiko/message\n\n@PodcastsMs_jp\n#カレラジ #カレアイ\n#たかねこ #HoneyWorks',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2400,7 +2393,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         'えぇ！！！めっちゃ嬉しいよぉ😭😭😭\nさあら〜🥹💎🤍\n書いてくれてありがとう✨✨✨✨\n\n指先まですごすぎる…😳',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2421,7 +2414,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 5389,
       description: 'わたしだけみててね🪽\n\n #magiacharm  #ニディガ  #ひめんしょん。',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2445,7 +2438,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         '𝜗𝜚Magia Charm ×アニメ｢NEEDY GIRL OVERDOSE ｣𝜗𝜚\n\n明日からSHIBUYA109にて \nPOP UP SHOPがスタート🪽\n\n🎀4/3(fri)～4/19(sun)\n\n可愛いアイテムたくさんなので、\nぜひげっちゅしてね🛍💕\n\n #ニディガ  #magiacharm  #ひめんしょん。',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2469,7 +2462,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 0,
       description: null,
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2492,7 +2485,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       description:
         'えぇ！！！！😳✨✨✨\n\n毎日たくさんのCheer!ほんとにほんとに、ありがとうございます😭😭😭\n「Cheer!したよ🌸」って報告がとっても嬉しいです🥹💕\n\n感謝の気持ちでいっぱいだよぉ！！\n\n#たかねこ満開計画',
       author_username: 'himeri_momiyama',
-      author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+      author_avatar_url: null,
       tags: [],
     },
   ],
@@ -2517,7 +2510,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 411,
       description: null,
       author_username: 'official_takaneko',
-      author_avatar_url: 'https://i.ytimg.com/vi/oQwoIdNcqhM/maxresdefault.jpg',
+      author_avatar_url: null,
       tags: [],
     },
   ],
@@ -2540,8 +2533,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 252,
       description: 'ライブでは封印してて、おろした時だけ解放される姫カット🫶🏻🪄︎︎✨',
       author_username: '6506424015615115265',
-      author_avatar_url:
-        'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2562,8 +2554,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 456,
       description: '美容院行ってきたヨ✂️',
       author_username: '6506424015615115265',
-      author_avatar_url:
-        'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2585,8 +2576,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 1191,
       description: null,
       author_username: '6506424015615115265',
-      author_avatar_url:
-        'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+      author_avatar_url: null,
       tags: [],
     },
     {
@@ -2608,8 +2598,7 @@ export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = {
       view_count: 632,
       description: null,
       author_username: '6506424015615115265',
-      author_avatar_url:
-        'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+      author_avatar_url: null,
       tags: [],
     },
   ],
@@ -2626,7 +2615,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 592,
     like_count: 113,
     comment_count: 13,
@@ -2713,7 +2702,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 0,
     like_count: 0,
     comment_count: 0,
@@ -2725,8 +2714,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     original_author_id: 'e905c314-e1be-40cd-8f3c-13c0452b3bd6',
     original_author_name: '高嶺のなでしこ',
     original_author_username: 'takanenofficial',
-    original_author_avatar_url:
-      'https://pbs.twimg.com/profile_images/1576002816367562752/8TYkfCfs.jpg',
+    original_author_avatar_url: null,
     media_files: [],
     tags: [],
     post_type: 'tweet',
@@ -2800,7 +2788,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 2480,
     like_count: 99,
     comment_count: 1,
@@ -2886,7 +2874,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 0,
     like_count: 0,
     comment_count: 0,
@@ -2898,8 +2886,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     original_author_id: 'e905c314-e1be-40cd-8f3c-13c0452b3bd6',
     original_author_name: '高嶺のなでしこ',
     original_author_username: 'takanenofficial',
-    original_author_avatar_url:
-      'https://pbs.twimg.com/profile_images/1576002816367562752/8TYkfCfs.jpg',
+    original_author_avatar_url: null,
     media_files: [],
     tags: [],
     post_type: 'tweet',
@@ -2971,7 +2958,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 4099,
     like_count: 516,
     comment_count: 12,
@@ -3058,7 +3045,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 3241,
     like_count: 157,
     comment_count: 6,
@@ -3144,7 +3131,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 42435,
     like_count: 218,
     comment_count: 2,
@@ -3228,8 +3215,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'a385c6a8-b39c-4b86-820b-710e8d358432',
     author_name: '籾山ひめり🛼',
     author_username: '6506424015615115265',
-    author_avatar_url:
-      'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+    author_avatar_url: null,
     view_count: 252,
     like_count: 79,
     comment_count: 9,
@@ -3290,7 +3276,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 2783,
     like_count: 381,
     comment_count: 29,
@@ -3376,7 +3362,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 5478,
     like_count: 280,
     comment_count: 4,
@@ -3462,7 +3448,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 3582,
     like_count: 166,
     comment_count: 2,
@@ -3548,7 +3534,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 0,
     like_count: 0,
     comment_count: 0,
@@ -3560,8 +3546,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     original_author_id: '8fe599cf-68b8-42dc-a047-9a00b27fcf64',
     original_author_name: 'CheerSPOT 「チアスポ.ᐟ」',
     original_author_username: 'cheerspo_kouhou',
-    original_author_avatar_url:
-      'https://pbs.twimg.com/profile_images/2006496434305277952/xMKzuCFI.jpg',
+    original_author_avatar_url: null,
     media_files: [],
     tags: [],
     post_type: 'tweet',
@@ -3635,7 +3620,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 25051,
     like_count: 291,
     comment_count: 2,
@@ -3721,7 +3706,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 18185,
     like_count: 344,
     comment_count: 1,
@@ -3805,7 +3790,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 5031,
     like_count: 572,
     comment_count: 13,
@@ -3891,7 +3876,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 30428,
     like_count: 344,
     comment_count: 1,
@@ -3977,7 +3962,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 2763,
     like_count: 165,
     comment_count: 0,
@@ -4061,8 +4046,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'a385c6a8-b39c-4b86-820b-710e8d358432',
     author_name: '籾山ひめり🛼',
     author_username: '6506424015615115265',
-    author_avatar_url:
-      'https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIDQ0nChAGzIwI88OIA3iiA33BHk6AzJfy3Qu~tplv-tiktokx-origin.image?dr=14575&x-expires=1775466000&x-signature=1ZBTZpesE6H1GOf8VqPOxLqmFPI%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my',
+    author_avatar_url: null,
     view_count: 456,
     like_count: 155,
     comment_count: 9,
@@ -4123,7 +4107,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 5389,
     like_count: 694,
     comment_count: 28,
@@ -4209,7 +4193,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 3550,
     like_count: 312,
     comment_count: 1,
@@ -4295,7 +4279,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 4125,
     like_count: 219,
     comment_count: 2,
@@ -4379,7 +4363,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 3072,
     like_count: 244,
     comment_count: 10,
@@ -4463,7 +4447,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 488,
     like_count: 76,
     comment_count: 21,
@@ -4549,7 +4533,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 4559,
     like_count: 229,
     comment_count: 2,
@@ -4635,7 +4619,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 2987,
     like_count: 173,
     comment_count: 12,
@@ -4719,7 +4703,7 @@ export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = {
     author_id: 'e10368cf-779e-4253-8b37-c2ce493a4106',
     author_name: '籾山ひめり',
     author_username: 'himeri_momiyama',
-    author_avatar_url: 'https://pbs.twimg.com/profile_images/2022651628558700544/nlGidGJ_.jpg',
+    author_avatar_url: null,
     view_count: 2960,
     like_count: 158,
     comment_count: 0,

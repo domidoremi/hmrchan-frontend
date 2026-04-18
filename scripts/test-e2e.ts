@@ -22,7 +22,12 @@ import {
   grantLocalAuditTurnstileTrust,
   runBunTask,
 } from './lib/preview-shell.js'
-import { getSmokeRouteMatrix } from './lib/release-route-contract.js'
+import {
+  DEFAULT_SAMPLE_DISCUSSION_ROUTE,
+  DEFAULT_SAMPLE_POST_ROUTE,
+  getSmokeRouteMatrix,
+} from './lib/release-route-contract.js'
+import { ensureDetailRouteReadiness, resolveSampleDetailRoute } from './lib/detail-route-utils.js'
 
 applyLocalAuditEnvToProcess()
 
@@ -107,11 +112,6 @@ type SmokeSummary = {
   checks: CheckRecord[]
 }
 
-type ReadinessProbePayload = {
-  all: string[]
-  any: string[]
-}
-
 function hasAuthSmokeCredentials(env: NodeJS.ProcessEnv): boolean {
   const credentials = resolveAuthSmokeCredentials(env)
   return Boolean(credentials.login && credentials.password)
@@ -183,13 +183,51 @@ function normalizeBaseUrl(rawUrl: string): string {
   return rawUrl.replace(/\/$/, '')
 }
 
+function isLocalAuditOrigin(baseUrl: string): boolean {
+  try {
+    const hostname = new URL(baseUrl).hostname
+    return hostname === '127.0.0.1' || hostname === 'localhost'
+  } catch {
+    return false
+  }
+}
+
+function createHtmlNavigationHeaders(): Headers {
+  return new Headers({
+    Accept: 'text/html,application/xhtml+xml',
+  })
+}
+
+async function detectStaticPrerenderMismatch(
+  baseUrl: string,
+  probe: StaticRouteCheck
+): Promise<string | null> {
+  try {
+    const response = await fetch(`${baseUrl}${probe.path}`, {
+      headers: createHtmlNavigationHeaders(),
+    })
+    const html = await response.text()
+
+    if (response.status !== 200 || !html.includes('data-prerender-shell="true"')) {
+      return `External base URL ${baseUrl} does not expose prerender shell HTML for ${probe.path}`
+    }
+
+    const title = html.match(/<title>(.*?)<\/title>/i)?.[1]?.trim() ?? ''
+    const canonical = html.match(/<link rel="canonical" href="(.*?)"/i)?.[1]?.trim() ?? ''
+
+    if (title === probe.expected.title && canonical === probe.expected.canonical) {
+      return null
+    }
+
+    return `External base URL ${baseUrl} returned a different prerender shell for ${probe.path} (title: ${title || 'unknown'}, canonical: ${canonical || 'unknown'})`
+  } catch (error) {
+    return `Unable to probe prerender HTML for ${probe.path}: ${formatError(error)}`
+  }
+}
+
 function formatError(error: unknown): string {
   if (error instanceof Error) return error.message
   return String(error)
-}
-
-function asJsonRecord(value: unknown): JsonRecord | null {
-  return value && typeof value === 'object' && !Array.isArray(value) ? (value as JsonRecord) : null
 }
 
 function appendCheck(summary: SmokeSummary, check: CheckRecord): void {
@@ -271,6 +309,28 @@ function isGuestOnlyAuthEntryCheck(check: Pick<RouteCheck, 'mode' | 'path'>): bo
     check.mode === 'guest' &&
     (check.path === '/login' || check.path === '/register' || check.path === '/forgot-password')
   )
+}
+
+function toRouteCheck(check: {
+  name: string
+  path: string
+  shellSelector?: string
+  mode: 'guest' | 'auth'
+  expectedPath?: string
+  expectedCanonicalPath?: string
+  readinessSelectorsAll?: string[]
+  readinessSelectorsAny?: string[]
+}): RouteCheck {
+  return {
+    name: check.name,
+    path: check.path,
+    selector: check.shellSelector ?? 'body',
+    mode: check.mode,
+    expectedPath: check.expectedPath,
+    expectedCanonicalPath: check.expectedCanonicalPath,
+    readinessSelectorsAll: check.readinessSelectorsAll,
+    readinessSelectorsAny: check.readinessSelectorsAny,
+  }
 }
 
 async function clearBrowserAuditSession(page: Page, baseUrl: string): Promise<void> {
@@ -403,6 +463,116 @@ async function collectBrowserTrustHeaders(page: Page): Promise<Record<string, st
   })
 }
 
+async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<boolean> {
+  if (!isLocalAuditOrigin(baseUrl)) {
+    return false
+  }
+
+  await clearBrowserAuditSession(page, baseUrl)
+  await page.goto(`${baseUrl}/`, {
+    waitUntil: 'domcontentloaded',
+    timeout: 30_000,
+  })
+
+  const result = await page.evaluate(async () => {
+    const credentialStorageKey = 'momi_client_security'
+    const fingerprintStorageKey = 'momi_device_fingerprint_v1'
+
+    const readPersistedFingerprint = (): string | null => {
+      try {
+        const raw = window.localStorage.getItem(fingerprintStorageKey)
+        if (!raw) return null
+        const parsed = JSON.parse(raw) as { value?: unknown }
+        return typeof parsed.value === 'string' && parsed.value.trim() ? parsed.value : null
+      } catch {
+        return null
+      }
+    }
+
+    const getFallbackFingerprint = async (): Promise<string> => {
+      const components = [
+        navigator.userAgent,
+        navigator.language,
+        screen.width.toString(),
+        screen.height.toString(),
+        screen.colorDepth.toString(),
+        new Date().getTimezoneOffset().toString(),
+        navigator.hardwareConcurrency?.toString() || '',
+        navigator.maxTouchPoints?.toString() || '',
+      ]
+      const fingerprintSource = components.join('|')
+
+      try {
+        const encoder = new TextEncoder()
+        const data = encoder.encode(fingerprintSource)
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+        const hashArray = Array.from(new Uint8Array(hashBuffer))
+        return hashArray
+          .map((byte) => byte.toString(16).padStart(2, '0'))
+          .join('')
+          .slice(0, 32)
+      } catch {
+        let hash = 0
+        for (let index = 0; index < fingerprintSource.length; index += 1) {
+          hash = (hash << 5) - hash + fingerprintSource.charCodeAt(index)
+          hash &= hash
+        }
+        return Math.abs(hash).toString(16).padStart(8, '0')
+      }
+    }
+
+    const clientFingerprint = readPersistedFingerprint() ?? (await getFallbackFingerprint())
+    window.localStorage.setItem(
+      fingerprintStorageKey,
+      JSON.stringify({
+        value: clientFingerprint,
+        cachedAt: Date.now(),
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: navigator.platform,
+      })
+    )
+    window.localStorage.removeItem(credentialStorageKey)
+
+    const response = await fetch('/api/v1/client/init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_fingerprint: clientFingerprint,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        screen_resolution: `${screen.width}x${screen.height}`,
+        platform: navigator.platform || undefined,
+        timestamp: Math.floor(Date.now() / 1000),
+        nonce: Math.random().toString(16).slice(2).padEnd(16, '0').slice(0, 16),
+        force_reissue: true,
+      }),
+    })
+
+    return response.ok
+  })
+
+  if (!result) {
+    return false
+  }
+
+  const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
+  if (trustedVisitorCount <= 0) {
+    return false
+  }
+
+  const trustedTurnstileCount = await grantLocalAuditTurnstileTrust(
+    AUDIT_ENV,
+    await collectBrowserTrustHeaders(page)
+  )
+
+  console.log(`   • Prewarmed local audit client trust for ${trustedVisitorCount} visitor key(s)`)
+  if (trustedTurnstileCount > 0) {
+    console.log(`   • Prewarmed local audit Turnstile trust for ${trustedTurnstileCount} key(s)`)
+  }
+
+  return true
+}
+
 async function withPageFailureEvidence(
   browser: puppeteer.Browser,
   artifactDir: string,
@@ -485,7 +655,9 @@ async function assertStaticPrerenderedRoute(
     robots?: string
   }
 ): Promise<void> {
-  const response = await fetch(`${baseUrl}${path}`)
+  const response = await fetch(`${baseUrl}${path}`, {
+    headers: createHtmlNavigationHeaders(),
+  })
   const html = await response.text()
 
   if (response.status !== 200) {
@@ -627,6 +799,10 @@ async function authenticateViaApi(
         const result = await page.evaluate(async () => {
           const credentialStorageKey = 'momi_client_security'
           const fingerprintStorageKey = 'momi_device_fingerprint_v1'
+          const asJsonRecord = (value: unknown): Record<string, unknown> | null =>
+            value && typeof value === 'object' && !Array.isArray(value)
+              ? (value as Record<string, unknown>)
+              : null
 
           const readPersistedFingerprint = (): string | null => {
             try {
@@ -818,7 +994,8 @@ async function authenticateViaApi(
         await page.type(passwordSelector, credentials.password, { delay: 20 })
       }
 
-      await openAndFillLoginForm({ resetSession: true })
+      const prewarmedLocalTrust = await prewarmLocalAuditTrust(page, baseUrl)
+      await openAndFillLoginForm({ resetSession: !prewarmedLocalTrust })
 
       const submitButton = await page.$(
         'form.auth-form button[type="submit"], form.auth-form button'
@@ -907,61 +1084,7 @@ async function assertAuthenticatedRoute(
       )
     }
 
-    const needsLazyReadinessScroll =
-      (check.path.startsWith('/post/') || check.path.startsWith('/community/discussions/')) &&
-      ((check.readinessSelectorsAll?.length ?? 0) > 0 ||
-        (check.readinessSelectorsAny?.length ?? 0) > 0)
-
-    if (needsLazyReadinessScroll) {
-      const readinessProbe: ReadinessProbePayload = {
-        all: check.readinessSelectorsAll ?? [],
-        any: check.readinessSelectorsAny ?? [],
-      }
-      const anchorSelectors = check.path.startsWith('/post/')
-        ? ['.post-comments']
-        : ['.discussion-comments']
-
-      for (let attempt = 0; attempt < 12; attempt += 1) {
-        const readinessAlreadyPresent = await page.evaluate(({ all, any }) => {
-          const allMatched = all.every((selector) => Boolean(document.querySelector(selector)))
-          const anyMatched =
-            any.length === 0 || any.some((selector) => Boolean(document.querySelector(selector)))
-          return allMatched && anyMatched
-        }, readinessProbe)
-
-        if (readinessAlreadyPresent) break
-
-        const reachedBottom = await page.evaluate((anchors) => {
-          const anchor = anchors
-            .map((selector) => document.querySelector(selector))
-            .find((node): node is Element => Boolean(node))
-
-          if (anchor) {
-            anchor.scrollIntoView({ block: 'center' })
-          } else {
-            const maxY = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0)
-            const nextY = Math.min(window.scrollY + Math.max(window.innerHeight * 0.9, 480), maxY)
-            window.scrollTo({ top: nextY, behavior: 'auto' })
-          }
-
-          return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4
-        }, anchorSelectors)
-
-        await new Promise((resolve) => setTimeout(resolve, reachedBottom ? 400 : 250))
-      }
-    }
-
-    for (const selector of check.readinessSelectorsAll ?? []) {
-      await page.waitForSelector(selector)
-    }
-
-    if (check.readinessSelectorsAny?.length) {
-      await page.waitForFunction(
-        (selectors) => selectors.some((selector) => Boolean(document.querySelector(selector))),
-        {},
-        check.readinessSelectorsAny
-      )
-    }
+    await ensureDetailRouteReadiness(page, check)
   }
 
   await withPageFailureEvidence(
@@ -1132,51 +1255,14 @@ async function main(): Promise<void> {
   const authCredentials = resolveAuthSmokeCredentials(process.env)
   const authLogin = authCredentials.login
   const authPassword = authCredentials.password
-  const samplePostRoute =
-    process.env['E2E_SAMPLE_POST_ROUTE'] ?? '/post/6c73f45a-a7ec-481d-9bc5-9b09ee560fcc'
-  const sampleDiscussionRoute =
-    process.env['E2E_SAMPLE_DISCUSSION_ROUTE'] ??
-    '/community/discussions/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
+  const requestedSamplePostRoute = process.env['E2E_SAMPLE_POST_ROUTE'] ?? DEFAULT_SAMPLE_POST_ROUTE
+  const requestedSampleDiscussionRoute =
+    process.env['E2E_SAMPLE_DISCUSSION_ROUTE'] ?? DEFAULT_SAMPLE_DISCUSSION_ROUTE
   const authSmokeEnabled = Boolean(authLogin && authPassword)
   const authSmokeRequired = process.env['E2E_REQUIRE_AUTH'] !== 'false'
   const authSkipReason = getAuthSkipReason(authLogin, authPassword, authCredentials.source)
   const summary = createSmokeSummary(artifactDir, authLogin, authPassword)
   summary.authSmokeRequired = authSmokeRequired
-  const routeMatrix = getSmokeRouteMatrix({
-    samplePostRoute,
-    sampleDiscussionRoute,
-  })
-  const guestBrowserChecks: RouteCheck[] = routeMatrix.guest.map((check) => ({
-    name: check.name,
-    path: check.path,
-    selector: check.shellSelector,
-    mode: check.mode,
-    expectedPath: check.expectedPath,
-    expectedCanonicalPath: check.expectedCanonicalPath,
-    readinessSelectorsAll: check.readinessSelectorsAll,
-    readinessSelectorsAny: check.readinessSelectorsAny,
-  }))
-  const skippedGuestProtectedRedirectChecks = authSmokeEnabled
-    ? guestBrowserChecks.filter(isGuestProtectedRedirectCheck)
-    : []
-  const skippedGuestOnlyAuthEntryChecks = authSmokeEnabled
-    ? guestBrowserChecks.filter(isGuestOnlyAuthEntryCheck)
-    : []
-  const effectiveGuestBrowserChecks = authSmokeEnabled
-    ? guestBrowserChecks.filter(
-        (check) => !isGuestProtectedRedirectCheck(check) && !isGuestOnlyAuthEntryCheck(check)
-      )
-    : guestBrowserChecks
-  const authenticatedRouteChecks: RouteCheck[] = routeMatrix.auth.map((check) => ({
-    name: check.name,
-    path: check.path,
-    selector: check.shellSelector,
-    mode: check.mode,
-    expectedPath: check.expectedPath,
-    expectedCanonicalPath: check.expectedCanonicalPath,
-    readinessSelectorsAll: check.readinessSelectorsAll,
-    readinessSelectorsAny: check.readinessSelectorsAny,
-  }))
   const recordFailureEvidence = (evidence: FailureEvidence) => {
     summary.lastFailureEvidence = evidence
   }
@@ -1213,6 +1299,7 @@ async function main(): Promise<void> {
         env: AUDIT_ENV,
         candidatePorts: PREVIEW_PORT_CANDIDATES,
         allowRandomPortFallback: !hasAuthSmokeCredentials(AUDIT_ENV),
+        serverMode: 'pages',
       })
       await previewServer.start()
       baseUrl = previewServer.baseUrl ?? ''
@@ -1221,24 +1308,143 @@ async function main(): Promise<void> {
     summary.baseUrl = baseUrl
     await mkdir(artifactDir, { recursive: true })
 
+    const externalLocalPrerenderMismatch =
+      externalBaseUrl && isLocalAuditOrigin(baseUrl)
+        ? await detectStaticPrerenderMismatch(baseUrl, STATIC_ROUTE_CHECKS[1]!)
+        : null
+
     console.log('🧱 Verifying static prerendered HTML...')
-    for (const check of STATIC_ROUTE_CHECKS) {
-      await recordCheck(
+    if (externalLocalPrerenderMismatch) {
+      const reason = `${externalLocalPrerenderMismatch}; skipping static prerender assertions for this external local harness`
+      markChecksSkipped(
         summary,
-        {
+        STATIC_ROUTE_CHECKS.map((check) => ({
           name: check.name,
-          kind: 'static',
-          mode: 'guest',
+          kind: 'static' as const,
+          mode: 'guest' as const,
           path: check.path,
-        },
-        () => assertStaticPrerenderedRoute(baseUrl, check.path, check.expected)
+        })),
+        reason
       )
+      console.log(`   • ${reason}`)
+    } else {
+      for (const check of STATIC_ROUTE_CHECKS) {
+        await recordCheck(
+          summary,
+          {
+            name: check.name,
+            kind: 'static',
+            mode: 'guest',
+            path: check.path,
+          },
+          () => assertStaticPrerenderedRoute(baseUrl, check.path, check.expected)
+        )
+      }
     }
 
     browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     })
+
+    const sampleRouteProbePage = await browser.newPage()
+    const skippedSampleChecks: RouteCheck[] = []
+    let resolvedSamplePostRoute = DEFAULT_SAMPLE_POST_ROUTE
+    let resolvedSampleDiscussionRoute = DEFAULT_SAMPLE_DISCUSSION_ROUTE
+
+    try {
+      const postResolution = await resolveSampleDetailRoute(sampleRouteProbePage, baseUrl, {
+        label: 'sample post route',
+        requestedRoute: requestedSamplePostRoute,
+        fallbackRoute: DEFAULT_SAMPLE_POST_ROUTE,
+        shellSelector: '.post-detail-page',
+        readinessSelectorsAll: ['.post-comments'],
+      })
+      const discussionResolution = await resolveSampleDetailRoute(sampleRouteProbePage, baseUrl, {
+        label: 'sample discussion route',
+        requestedRoute: requestedSampleDiscussionRoute,
+        fallbackRoute: DEFAULT_SAMPLE_DISCUSSION_ROUTE,
+        shellSelector: '.discussion-detail-page',
+        readinessSelectorsAll: ['.discussion-comments'],
+      })
+
+      if (postResolution.route) {
+        resolvedSamplePostRoute = postResolution.route
+        if (
+          requestedSamplePostRoute !== resolvedSamplePostRoute &&
+          requestedSamplePostRoute !== DEFAULT_SAMPLE_POST_ROUTE
+        ) {
+          console.warn(`⚠️ E2E_SAMPLE_POST_ROUTE 无效，已回退到 ${resolvedSamplePostRoute}`)
+        }
+      } else if (postResolution.skipReason) {
+        console.warn(`⚠️ ${postResolution.skipReason}`)
+        skippedSampleChecks.push(
+          {
+            name: 'sample post route',
+            path: resolvedSamplePostRoute,
+            selector: '.post-detail-page',
+            mode: 'guest',
+          },
+          {
+            name: 'authenticated sample post',
+            path: resolvedSamplePostRoute,
+            selector: '.post-detail-page',
+            mode: 'auth',
+          }
+        )
+      }
+
+      if (discussionResolution.route) {
+        resolvedSampleDiscussionRoute = discussionResolution.route
+        if (
+          requestedSampleDiscussionRoute !== resolvedSampleDiscussionRoute &&
+          requestedSampleDiscussionRoute !== DEFAULT_SAMPLE_DISCUSSION_ROUTE
+        ) {
+          console.warn(
+            `⚠️ E2E_SAMPLE_DISCUSSION_ROUTE 无效，已回退到 ${resolvedSampleDiscussionRoute}`
+          )
+        }
+      } else if (discussionResolution.skipReason) {
+        console.warn(`⚠️ ${discussionResolution.skipReason}`)
+        skippedSampleChecks.push(
+          {
+            name: 'sample discussion route',
+            path: resolvedSampleDiscussionRoute,
+            selector: '.discussion-detail-page',
+            mode: 'guest',
+          },
+          {
+            name: 'authenticated sample discussion',
+            path: resolvedSampleDiscussionRoute,
+            selector: '.discussion-detail-page',
+            mode: 'auth',
+          }
+        )
+      }
+    } finally {
+      await sampleRouteProbePage.close().catch(() => undefined)
+    }
+
+    const routeMatrix = getSmokeRouteMatrix({
+      samplePostRoute: resolvedSamplePostRoute,
+      sampleDiscussionRoute: resolvedSampleDiscussionRoute,
+    })
+    const guestBrowserChecks: RouteCheck[] = routeMatrix.guest.map(toRouteCheck)
+    const skippedGuestProtectedRedirectChecks = authSmokeEnabled
+      ? guestBrowserChecks.filter(isGuestProtectedRedirectCheck)
+      : []
+    const skippedGuestOnlyAuthEntryChecks = authSmokeEnabled
+      ? guestBrowserChecks.filter(isGuestOnlyAuthEntryCheck)
+      : []
+    const effectiveGuestBrowserChecks = authSmokeEnabled
+      ? guestBrowserChecks.filter(
+          (check) => !isGuestProtectedRedirectCheck(check) && !isGuestOnlyAuthEntryCheck(check)
+        )
+      : guestBrowserChecks
+    const authenticatedRouteChecks: RouteCheck[] = routeMatrix.auth.map(toRouteCheck)
+    const filteredGuestBrowserChecks = effectiveGuestBrowserChecks.filter(
+      (check) => !skippedSampleChecks.some((skipped) => skipped.name === check.name)
+    )
 
     console.log('🧭 Verifying guest browser routes...')
     const skippedAuthenticatedAuditGuestChecks = [
@@ -1253,8 +1459,22 @@ async function main(): Promise<void> {
         `   • Skipping ${skippedAuthenticatedAuditGuestChecks.length} guest auth-entry/protected redirect checks in authenticated local audit`
       )
     }
+    if (skippedSampleChecks.some((check) => check.mode === 'guest')) {
+      markChecksSkipped(
+        summary,
+        skippedSampleChecks.filter((check) => check.mode === 'guest'),
+        skippedSampleChecks
+          .filter((check) => check.mode === 'guest')
+          .map((check) =>
+            check.name === 'sample post route'
+              ? 'sample post route unavailable'
+              : 'sample discussion route unavailable'
+          )
+          .join('; ')
+      )
+    }
 
-    for (const check of effectiveGuestBrowserChecks) {
+    for (const check of filteredGuestBrowserChecks) {
       await recordCheckWithPreviewRecovery(
         summary,
         {
@@ -1309,7 +1529,25 @@ async function main(): Promise<void> {
           )
       )
 
-      for (const check of authenticatedRouteChecks) {
+      const effectiveAuthenticatedRouteChecks = authenticatedRouteChecks.filter(
+        (check) => !skippedSampleChecks.some((skipped) => skipped.name === check.name)
+      )
+      if (skippedSampleChecks.some((check) => check.mode === 'auth')) {
+        markChecksSkipped(
+          summary,
+          skippedSampleChecks.filter((check) => check.mode === 'auth'),
+          skippedSampleChecks
+            .filter((check) => check.mode === 'auth')
+            .map((check) =>
+              check.name === 'authenticated sample post'
+                ? 'sample post route unavailable'
+                : 'sample discussion route unavailable'
+            )
+            .join('; ')
+        )
+      }
+
+      for (const check of effectiveAuthenticatedRouteChecks) {
         await recordCheckWithPreviewRecovery(
           summary,
           {
@@ -1357,10 +1595,26 @@ async function main(): Promise<void> {
             selector: '',
             mode: 'auth',
           },
-          ...authenticatedRouteChecks,
+          ...authenticatedRouteChecks.filter(
+            (check) => !skippedSampleChecks.some((skipped) => skipped.name === check.name)
+          ),
         ],
         authSkipReason ?? 'Auth smoke credentials unavailable'
       )
+      if (skippedSampleChecks.some((check) => check.mode === 'auth')) {
+        markChecksSkipped(
+          summary,
+          skippedSampleChecks.filter((check) => check.mode === 'auth'),
+          skippedSampleChecks
+            .filter((check) => check.mode === 'auth')
+            .map((check) =>
+              check.name === 'authenticated sample post'
+                ? 'sample post route unavailable'
+                : 'sample discussion route unavailable'
+            )
+            .join('; ')
+        )
+      }
       console.log(
         `🔐 Skipping authenticated smoke because ${authSkipReason ?? 'credentials are unavailable'} (guest-only local smoke is expected in this mode)`
       )

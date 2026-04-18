@@ -260,6 +260,11 @@ function createDeferred<T>() {
   return { promise, resolve, reject }
 }
 
+async function flushAnimationFrame() {
+  await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+  await flushPromises()
+}
+
 const PostCommentListHarness = defineComponent({
   name: 'PostCommentListHarness',
   template: `
@@ -412,6 +417,37 @@ describe('PostDetailPage', () => {
     expect(wrapper.find('.post-comments__placeholder').exists()).toBe(true)
     mocks.triggerLazyObserver()
     await flushPromises()
+
+    expect(wrapper.find('.comment-list-stub').exists()).toBe(true)
+    expect(wrapper.find('.comment-list-stub').text()).toContain(basePost.id)
+  })
+
+  it('loads the comment list branch after programmatic scroll brings the comments section into view', async () => {
+    mocks.loadCachedPostMock.mockResolvedValue({
+      data: basePost,
+      fromCache: false,
+    })
+
+    const wrapper = mountDetailPage({ attachToBody: true })
+    await flushPromises()
+
+    const commentsSection = wrapper.get('.post-comments').element as HTMLElement
+    vi.spyOn(commentsSection, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 720,
+      top: 720,
+      bottom: 980,
+      left: 0,
+      right: 960,
+      width: 960,
+      height: 260,
+      toJSON: () => ({}),
+    } as DOMRect)
+
+    expect(wrapper.find('.comment-list-stub').exists()).toBe(false)
+
+    window.dispatchEvent(new Event('scroll'))
+    await flushAnimationFrame()
 
     expect(wrapper.find('.comment-list-stub').exists()).toBe(true)
     expect(wrapper.find('.comment-list-stub').text()).toContain(basePost.id)

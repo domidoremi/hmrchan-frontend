@@ -10,12 +10,7 @@
  */
 
 import { reportClientEvent } from '@/utils/clientReporter'
-import {
-  clearAuthRuntimeSession,
-  establishAuthRuntimeSession,
-  getAuthRuntimeSession,
-  getRuntimeAccessToken,
-} from './client/auth-runtime'
+import { clearAuthRuntimeSession, getAuthRuntimeSession } from './client/auth-runtime'
 import {
   ApiError,
   extractApiErrorMeta,
@@ -40,7 +35,6 @@ import {
 import { buildMultipartRequestBody } from './client/multipart'
 import {
   REQUEST_TIMEOUT,
-  REFRESH_TIMEOUT,
   buildCacheKey,
   buildRequestUrl,
   fetchWithTransportGuards,
@@ -65,17 +59,8 @@ export type {
   RequestConfig,
 }
 
-interface RefreshResponse {
-  access_token: string
-  token_type: string
-  expires_in: number
-  refresh_threshold: number
-  permission_version: number | string
-}
-
 const textEncoder = new TextEncoder()
 const inflightRequests = new Map<string, Promise<unknown>>()
-let authRefreshPromise: Promise<boolean> | null = null
 
 async function fetchWithTimeout(
   url: string,
@@ -117,7 +102,7 @@ async function fetchWithTimeout(
 }
 
 function dispatchLogout(reason: 'auth_failed' | 'permission_version_stale' = 'auth_failed'): void {
-  const hadSession = Boolean(getRuntimeAccessToken())
+  const hadSession = Boolean(getAuthRuntimeSession())
   clearAuthRuntimeSession()
   if (typeof window !== 'undefined' && hadSession) {
     window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason } }))
@@ -133,6 +118,10 @@ function isClientUpgradeRequired(response: Response): boolean {
     response.status === 426 ||
     response.headers.get('X-Client-Upgrade-Required')?.toLowerCase() === 'true'
   )
+}
+
+function shouldRetryAfterBffRefresh(response: Response): boolean {
+  return response.headers.get('X-Bff-Auth-Retry-Required')?.toLowerCase() === 'true'
 }
 
 function triggerHardReloadGate(): never {
@@ -240,74 +229,6 @@ async function retryAfterClientReinit<T>(
     ...config,
     skipClientReinitRetry: true,
   })
-}
-
-async function retryAfterAuthRefresh(): Promise<boolean> {
-  if (authRefreshPromise) {
-    return authRefreshPromise
-  }
-
-  authRefreshPromise = (async () => {
-    try {
-      const refreshed = await request<RefreshResponse>('/auth/refresh', {
-        method: 'POST',
-        skipAuth: true,
-        skipErrorToast: true,
-        timeout: REFRESH_TIMEOUT,
-        skipUnauthorizedRetry: true,
-        skipChallengeRetry: true,
-        skipVerificationRetry: true,
-      })
-
-      establishAuthRuntimeSession(refreshed)
-      return true
-    } catch (error) {
-      if (error instanceof ApiError) {
-        if (error.code === 'PERMISSION_VERSION_STALE' || error.status === 401) {
-          dispatchLogout(
-            error.code === 'PERMISSION_VERSION_STALE' ? 'permission_version_stale' : 'auth_failed'
-          )
-          return false
-        }
-
-        if (error.status === 0 || error.status === 408) {
-          reportClientEvent(
-            'auth.session.refresh_transport_failed',
-            {
-              status: error.status,
-            },
-            {
-              category: 'security',
-              requiresAnalyticsConsent: false,
-              severity: 'warn',
-            }
-          )
-          dispatchLogout('auth_failed')
-          return false
-        }
-      }
-
-      if (!(error instanceof ApiError)) {
-        reportClientEvent(
-          'auth.session.refresh_transport_failed',
-          {},
-          {
-            category: 'security',
-            requiresAnalyticsConsent: false,
-            severity: 'warn',
-          }
-        )
-        dispatchLogout('auth_failed')
-        return false
-      }
-
-      throw error
-    } finally {
-      authRefreshPromise = null
-    }
-  })()
-
-  return authRefreshPromise
 }
 
 async function handleForbiddenResponse<T>(options: {
@@ -458,9 +379,9 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     verificationAction,
     verificationResourceId,
     skipVerificationRetry = false,
+    skipUnauthorizedRetry = false,
     headers: customHeaders = {},
     body,
-    skipUnauthorizedRetry = false,
     skipClientReinitRetry = false,
     skipClientSignatureRetry = false,
     ...fetchConfig
@@ -470,7 +391,6 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   const url = buildRequestUrl(endpoint, baseUrl)
   const requestHeaders: Record<string, string> = { ...(customHeaders as Record<string, string>) }
   const serializedBody = await serializeRequestBody(body)
-  const accessToken = !skipAuth ? getRuntimeAccessToken() : null
   const requestId = applyRequestSecurityHeaders(requestHeaders, method, url, config)
 
   if (serializedBody.contentType && !requestHeaders['Content-Type']) {
@@ -486,16 +406,12 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     requestHeaders['Content-Type'] = 'application/json'
   }
 
-  if (accessToken) {
-    requestHeaders['Authorization'] = `Bearer ${accessToken}`
-  }
-
   if (!skipSecurity) {
     try {
       await attachClientSecurityHeaders(requestHeaders, {
         method,
         url,
-        hadToken: Boolean(accessToken),
+        hadToken: false,
         bodyBytes: serializedBody.bodyBytes,
       })
     } catch (error) {
@@ -516,24 +432,12 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   }
 
   try {
-    let response = await fetchWithTimeout(url, requestInit, timeout, true)
+    const response = await fetchWithTimeout(url, requestInit, timeout, true)
 
     if (response.status === 429) {
       const retryAfter = response.headers.get('Retry-After')
       const waitSeconds = retryAfter ? Math.min(parseInt(retryAfter, 10) || 5, 60) : 5
-      const waitMs = waitSeconds * 1000
-      setRateLimitCooldown(waitMs)
-
-      if (skipErrorToast) {
-        await handleErrorResponse(response, skipErrorToast)
-      }
-
-      await new Promise<void>((resolve) => setTimeout(resolve, waitMs))
-      response = await fetchWithTimeout(url, requestInit, timeout, true)
-
-      if (!response.ok) {
-        await handleErrorResponse(response, skipErrorToast)
-      }
+      setRateLimitCooldown(waitSeconds * 1000)
     }
 
     if (isClientUpgradeRequired(response)) {
@@ -573,40 +477,25 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       await handleErrorResponse(response, skipErrorToast)
     }
 
+    if (
+      response.status === 401 &&
+      !skipAuth &&
+      shouldRetryAfterBffRefresh(response) &&
+      !skipUnauthorizedRetry
+    ) {
+      return request<T>(endpoint, {
+        ...config,
+        skipUnauthorizedRetry: true,
+      })
+    }
+
     if (response.status === 401 && !skipAuth) {
-      if (!skipUnauthorizedRetry) {
-        const refreshedToken = getRuntimeAccessToken()
-        if (accessToken && refreshedToken && refreshedToken !== accessToken) {
-          return request<T>(endpoint, {
-            ...config,
-            skipUnauthorizedRetry: true,
-            skipClientReinitRetry,
-            skipClientSignatureRetry,
-          })
-        }
-
-        const refreshed = await retryAfterAuthRefresh()
-        if (refreshed) {
-          return request<T>(endpoint, {
-            ...config,
-            skipUnauthorizedRetry: true,
-            skipClientReinitRetry,
-            skipClientSignatureRetry,
-          })
-        }
-      }
-
       const runtimeSession = getAuthRuntimeSession()
       reportClientEvent(
-        skipUnauthorizedRetry ? 'auth.session.rejected_after_refresh' : 'auth.session.rejected',
+        'auth.session.rejected',
         {
           endpoint,
           method,
-          hasAccessToken: Boolean(accessToken),
-          hasRuntimeAccessToken: Boolean(runtimeSession?.accessToken),
-          accessTokenRotated: Boolean(
-            accessToken && runtimeSession?.accessToken && runtimeSession.accessToken !== accessToken
-          ),
           permissionVersion: runtimeSession?.permissionVersion,
         },
         {

@@ -98,19 +98,13 @@ function getLastRequestInit(): RequestInit & { headers: Record<string, string> }
   }
 }
 
-function createAccessToken(overrides: Record<string, unknown> = {}): string {
-  const payload = {
-    exp: Math.floor(Date.now() / 1000) + 3600,
+function establishRuntimeSession(permissionVersion = 1): void {
+  establishAuthRuntimeSession({
+    permission_version: permissionVersion,
+    session_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
     permissions: ['profile.read'],
-    permission_version: 1,
-    ...overrides,
-  }
-
-  return [
-    Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url'),
-    Buffer.from(JSON.stringify(payload)).toString('base64url'),
-    'signature',
-  ].join('.')
+    identity_provider: 'local',
+  })
 }
 
 describe('ApiError', () => {
@@ -137,6 +131,7 @@ describe('ApiError', () => {
 describe('apiClient', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockFetch.mockReset()
     localStorageMock.clear()
     clearCsrfCookie()
     clearAuthRuntimeSession()
@@ -442,12 +437,7 @@ describe('apiClient', () => {
     it('dispatches auth:logout on authenticated 401 responses', async () => {
       const logoutHandler = vi.fn()
       window.addEventListener('auth:logout', logoutHandler)
-      establishAuthRuntimeSession({
-        access_token: createAccessToken(),
-        expires_in: 3600,
-        refresh_threshold: 300,
-        permission_version: 1,
-      })
+      establishRuntimeSession()
       mockFetch
         .mockResolvedValueOnce(jsonResponse({ detail: 'Unauthorized' }, { status: 401 }))
         .mockResolvedValueOnce(jsonResponse({ detail: 'Unauthorized' }, { status: 401 }))
@@ -461,74 +451,40 @@ describe('apiClient', () => {
       window.removeEventListener('auth:logout', logoutHandler)
     })
 
-    it('uses a single refresh request for concurrent 401 responses', async () => {
-      establishAuthRuntimeSession({
-        access_token: createAccessToken(),
-        expires_in: 3600,
-        refresh_threshold: 300,
-        permission_version: 1,
-      })
+    it('rebuilds client security headers and retries once after proxy refreshes cookies on 401', async () => {
+      establishRuntimeSession()
 
-      let profileAttempts = 0
-      let settingsAttempts = 0
-      let refreshAttempts = 0
+      mockFetch
+        .mockResolvedValueOnce(
+          jsonResponse(
+            { error: 'UNAUTHORIZED', message: 'Unauthorized' },
+            {
+              status: 401,
+              headers: {
+                'X-Bff-Auth-Retry-Required': 'true',
+              },
+            }
+          )
+        )
+        .mockResolvedValueOnce(jsonResponse({ ok: true }))
 
-      mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
-        const url = String(input)
+      await expect(apiClient.get('/auth/me')).resolves.toEqual({ ok: true })
 
-        if (url.endsWith('/api/v1/profile')) {
-          profileAttempts += 1
-          if (profileAttempts === 1) {
-            return jsonResponse({ detail: 'Unauthorized' }, { status: 401 })
-          }
-          return jsonResponse({ success: true, data: { profile: true } })
-        }
+      expect(mockFetch).toHaveBeenCalledTimes(2)
 
-        if (url.endsWith('/api/v1/settings')) {
-          settingsAttempts += 1
-          if (settingsAttempts === 1) {
-            return jsonResponse({ detail: 'Unauthorized' }, { status: 401 })
-          }
-          return jsonResponse({ success: true, data: { settings: true } })
-        }
+      const firstInit = mockFetch.mock.calls[0]?.[1] as RequestInit
+      const secondInit = mockFetch.mock.calls[1]?.[1] as RequestInit
+      const firstHeaders = firstInit.headers as Record<string, string>
+      const secondHeaders = secondInit.headers as Record<string, string>
 
-        if (url.endsWith('/api/v1/auth/refresh')) {
-          refreshAttempts += 1
-          await new Promise((resolve) => setTimeout(resolve, 25))
-          return jsonResponse({
-            access_token: createAccessToken({ permission_version: 2 }),
-            token_type: 'bearer',
-            expires_in: 3600,
-            refresh_threshold: 300,
-            permission_version: 2,
-          })
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      })
-
-      const [profile, settings] = await Promise.all([
-        apiClient.get('/profile'),
-        apiClient.get('/settings'),
-      ])
-
-      expect(profile).toEqual({ profile: true })
-      expect(settings).toEqual({ settings: true })
-      expect(refreshAttempts).toBe(1)
-      expect(profileAttempts).toBe(2)
-      expect(settingsAttempts).toBe(2)
+      expect(firstHeaders['X-Request-Id']).toBeTruthy()
+      expect(secondHeaders['X-Request-Id']).toBeTruthy()
+      expect(secondHeaders['X-Request-Id']).not.toBe(firstHeaders['X-Request-Id'])
+      expect(secondHeaders['X-Client-Fingerprint']).toBe('fingerprint-123')
     })
 
-    it('logs out when refresh transport fails', async () => {
-      const logoutHandler = vi.fn()
-      window.addEventListener('auth:logout', logoutHandler)
-
-      establishAuthRuntimeSession({
-        access_token: createAccessToken(),
-        expires_in: 3600,
-        refresh_threshold: 300,
-        permission_version: 1,
-      })
+    it('does not attempt browser-side refresh when concurrent requests return 401', async () => {
+      establishRuntimeSession()
 
       mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
         const url = String(input)
@@ -537,8 +493,43 @@ describe('apiClient', () => {
           return jsonResponse({ detail: 'Unauthorized' }, { status: 401 })
         }
 
-        if (url.endsWith('/api/v1/auth/refresh')) {
-          throw new DOMException('Aborted', 'AbortError')
+        if (url.endsWith('/api/v1/settings')) {
+          return jsonResponse({ detail: 'Unauthorized' }, { status: 401 })
+        }
+
+        throw new Error(`Unexpected URL: ${url}`)
+      })
+
+      const logoutHandler = vi.fn()
+      window.addEventListener('auth:logout', logoutHandler)
+
+      const results = await Promise.allSettled([
+        apiClient.get('/profile'),
+        apiClient.get('/settings'),
+      ])
+      const requestedUrls = mockFetch.mock.calls.map(([input]) => String(input))
+
+      expect(results).toHaveLength(2)
+      expect(results.every((result) => result.status === 'rejected')).toBe(true)
+      expect(requestedUrls.filter((url) => url.endsWith('/api/v1/profile'))).toHaveLength(1)
+      expect(requestedUrls.filter((url) => url.endsWith('/api/v1/settings'))).toHaveLength(1)
+      expect(requestedUrls.some((url) => url.endsWith('/api/v1/auth/refresh'))).toBe(false)
+      expect(logoutHandler).toHaveBeenCalledTimes(1)
+
+      window.removeEventListener('auth:logout', logoutHandler)
+    })
+
+    it('does not fall back to a refresh transport after a 401', async () => {
+      const logoutHandler = vi.fn()
+      window.addEventListener('auth:logout', logoutHandler)
+
+      establishRuntimeSession()
+
+      mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = String(input)
+
+        if (url.endsWith('/api/v1/profile')) {
+          return jsonResponse({ detail: 'Unauthorized' }, { status: 401 })
         }
 
         throw new Error(`Unexpected URL: ${url}`)
@@ -550,6 +541,44 @@ describe('apiClient', () => {
       expect(logoutHandler.mock.calls[0]?.[0]).toMatchObject({
         detail: { reason: 'auth_failed' },
       })
+
+      window.removeEventListener('auth:logout', logoutHandler)
+    })
+
+    it('does not retry more than once after proxy refreshes cookies on 401', async () => {
+      const logoutHandler = vi.fn()
+      window.addEventListener('auth:logout', logoutHandler)
+
+      establishRuntimeSession()
+
+      mockFetch
+        .mockResolvedValueOnce(
+          jsonResponse(
+            { error: 'UNAUTHORIZED', message: 'Unauthorized' },
+            {
+              status: 401,
+              headers: {
+                'X-Bff-Auth-Retry-Required': 'true',
+              },
+            }
+          )
+        )
+        .mockResolvedValueOnce(
+          jsonResponse(
+            { error: 'UNAUTHORIZED', message: 'Unauthorized' },
+            {
+              status: 401,
+              headers: {
+                'X-Bff-Auth-Retry-Required': 'true',
+              },
+            }
+          )
+        )
+
+      await expect(apiClient.get('/auth/me')).rejects.toThrow(ApiError)
+
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(logoutHandler).toHaveBeenCalledTimes(1)
 
       window.removeEventListener('auth:logout', logoutHandler)
     })

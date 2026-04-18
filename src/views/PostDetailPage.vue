@@ -466,6 +466,7 @@ const commentsSectionRef = useTemplateRef<HTMLElement>('commentsSectionRef')
 const textModalPanelRef = useTemplateRef<HTMLElement>('textModalPanelRef')
 const navigationContext = ref<PostNavigationContext | null>(null)
 let commentsObserver: IntersectionObserver | null = null
+let detachCommentsFallbackListeners: (() => void) | null = null
 let stageListenersAttached = false
 let stageListenersWanted = false
 let clearPendingStageListenerArming: (() => void) | null = null
@@ -774,10 +775,62 @@ function disconnectCommentsObserver() {
   commentsObserver = null
 }
 
+const checkCommentsVisibility = throttleRAF(() => {
+  if (typeof window === 'undefined' || shouldLoadComments.value) return
+
+  const section = commentsSectionRef.value
+  if (!section) return
+
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
+  if (viewportHeight <= 0) return
+
+  const rect = section.getBoundingClientRect()
+  const hasMeasuredBox = rect.height > 0 || rect.width > 0 || rect.bottom > rect.top
+  if (!hasMeasuredBox) return
+  const preloadMargin = Math.max(Math.min(viewportHeight * 0.35, 320), 160)
+  const isNearViewport = rect.top <= viewportHeight + preloadMargin && rect.bottom >= -preloadMargin
+
+  if (isNearViewport) {
+    loadCommentsWhenVisible()
+  }
+})
+
+function stopCommentsFallbackListeners() {
+  detachCommentsFallbackListeners?.()
+  detachCommentsFallbackListeners = null
+  checkCommentsVisibility.cancel?.()
+}
+
+function startCommentsFallbackListeners() {
+  if (
+    typeof window === 'undefined' ||
+    shouldLoadComments.value ||
+    detachCommentsFallbackListeners
+  ) {
+    checkCommentsVisibility()
+    return
+  }
+
+  const onViewportChange = () => {
+    checkCommentsVisibility()
+  }
+
+  window.addEventListener('scroll', onViewportChange, { passive: true })
+  window.addEventListener('resize', onViewportChange, { passive: true })
+
+  detachCommentsFallbackListeners = () => {
+    window.removeEventListener('scroll', onViewportChange)
+    window.removeEventListener('resize', onViewportChange)
+  }
+
+  checkCommentsVisibility()
+}
+
 function loadCommentsWhenVisible() {
   if (shouldLoadComments.value) return
   shouldLoadComments.value = true
   disconnectCommentsObserver()
+  stopCommentsFallbackListeners()
 }
 
 function observeCommentsSection() {
@@ -786,19 +839,17 @@ function observeCommentsSection() {
   const section = commentsSectionRef.value
   if (!section) return
 
-  if (!('IntersectionObserver' in window)) {
-    loadCommentsWhenVisible()
-    return
-  }
-
+  startCommentsFallbackListeners()
   disconnectCommentsObserver()
-  commentsObserver = createLazyObserver(
-    () => {
-      loadCommentsWhenVisible()
-    },
-    { rootMargin: '320px 0px' }
-  )
-  commentsObserver.observe(section)
+  if ('IntersectionObserver' in window) {
+    commentsObserver = createLazyObserver(
+      () => {
+        loadCommentsWhenVisible()
+      },
+      { rootMargin: '320px 0px' }
+    )
+    commentsObserver.observe(section)
+  }
 }
 
 function showPeek(direction: 'left' | 'right') {
@@ -1011,6 +1062,7 @@ async function fetchPost(signal?: AbortSignal) {
   shouldLoadComments.value = false
   allowAdjacentMediaPreload.value = false
   disconnectCommentsObserver()
+  stopCommentsFallbackListeners()
 
   // 从 sessionStorage 获取缓存的缩略图
   const cachedThumb = sessionStorage.getItem(`post-thumbnail-${currentPostId}`)
@@ -1140,6 +1192,7 @@ watch(postId, (nextId, prevId) => {
   shouldLoadComments.value = false
   allowAdjacentMediaPreload.value = false
   disconnectCommentsObserver()
+  stopCommentsFallbackListeners()
   syncNavigationContext()
   void fetchPost(controller.signal)
 })
@@ -1286,6 +1339,8 @@ onDeactivated(() => {
   isTextModalOpen.value = false
   cancelPostDetailIdleWork()
   detachStageListeners()
+  disconnectCommentsObserver()
+  stopCommentsFallbackListeners()
   unlockBodyScroll()
   if (typeof window !== 'undefined') window.removeEventListener('keydown', onTextModalKeydown)
 })
@@ -1299,6 +1354,7 @@ onUnmounted(() => {
   detachStageListeners()
   stopAutoPlay()
   disconnectCommentsObserver()
+  stopCommentsFallbackListeners()
   unlockBodyScroll()
   if (typeof window !== 'undefined') window.removeEventListener('keydown', onTextModalKeydown)
 

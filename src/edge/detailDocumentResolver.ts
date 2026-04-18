@@ -10,7 +10,11 @@ import {
   type HtmlDocumentShellStat,
   type HtmlStructuredData,
 } from './htmlDocument'
-import { resolveConfiguredApiBaseUrl, type UpstreamRuntimeEnv } from './upstream'
+import {
+  resolveConfiguredApiBaseUrl,
+  resolveVpcOriginForPath,
+  type UpstreamRuntimeEnv,
+} from './upstream'
 import { buildInternalGatewayUrl, type InternalApiGatewayRuntimeEnv } from './internalApiGateway'
 
 export type EdgeRuntimeEnv = UpstreamRuntimeEnv & InternalApiGatewayRuntimeEnv
@@ -345,14 +349,16 @@ async function fetchEdgeJson<T>(
   path: string
 ): Promise<{ status: number; data: T | null }> {
   const baseUrl = resolveConfiguredApiBaseUrl(env)
-  if (!baseUrl) {
+  const fallbackOrigin = resolveVpcOriginForPath(path, env)
+  const targetOrigin = baseUrl || fallbackOrigin
+  if (!targetOrigin) {
     return {
       status: 503,
       data: null,
     }
   }
 
-  const targetUrl = `${baseUrl}${path}`
+  const targetUrl = `${targetOrigin}${path}`
   const headers = new Headers({
     Accept: 'application/json',
     'X-MomiChan-Edge-Metadata': 'true',

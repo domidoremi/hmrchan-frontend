@@ -1,18 +1,9 @@
 import type { Ref } from 'vue'
-import {
-  authService,
-  ApiError,
-  type AuthResponse,
-  type HeartbeatResponse,
-  type MeResponse,
-  type UserResponse,
-} from '@/api'
+import { authService, ApiError, type AuthResponse, type MeResponse, type UserResponse } from '@/api'
 import {
   clearAuthRuntimeSession,
   establishAuthRuntimeSession,
   getAuthRuntimeSession,
-  isRuntimeAccessTokenExpired,
-  isRuntimeAccessTokenNearRefreshThreshold,
   touchAuthzCheck,
   updateRuntimePermissionVersion,
 } from '@/api/client/auth-runtime'
@@ -20,7 +11,6 @@ import { clearStoredAuthSource, setStoredAuthSource } from '@/utils/authSource'
 import { reportClientEvent } from '@/utils/clientReporter'
 
 const DEFAULT_AUTHZ_TTL_MS = 60 * 1000
-const DEFAULT_HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000
 
 interface RouterLike {
   push: (to: string) => unknown
@@ -66,11 +56,6 @@ function getCurrentLocationPath(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}` || '/'
 }
 
-function resolveSessionExpiresAt(): string | null {
-  const runtimeSession = getAuthRuntimeSession()
-  return runtimeSession ? new Date(runtimeSession.accessTokenExpiresAt).toISOString() : null
-}
-
 function buildRuntimeAuthzCache(
   user: UserResponse | null,
   securityLevel: 'authenticated' | 'sensitive' = 'authenticated'
@@ -92,11 +77,9 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
 }) {
   const { router, state } = options
   let initPromise: Promise<void> | null = null
-  let heartbeatTimer: ReturnType<typeof setTimeout> | null = null
   let authLogoutHandler: ((to?: Event) => void) | null = null
   let authzVersionHandler: ((to?: Event) => void) | null = null
   let riskModeHandler: ((to?: Event) => void) | null = null
-  let heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL_MS
 
   function syncAuthSource(user?: UserResponse | null): void {
     if (user?.auth_source) {
@@ -111,13 +94,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     securityLevel: 'authenticated' | 'sensitive' = 'authenticated'
   ): void {
     state.runtimeAuthzCache.value = buildRuntimeAuthzCache(state.user.value, securityLevel)
-    state.sessionExpiresAt.value = resolveSessionExpiresAt()
-
-    const runtimeSession = getAuthRuntimeSession()
-    heartbeatInterval = Math.max(
-      30000,
-      (runtimeSession?.refreshThresholdSeconds ?? DEFAULT_HEARTBEAT_INTERVAL_MS / 1000) * 1000
-    )
+    state.sessionExpiresAt.value = getAuthRuntimeSession()?.sessionExpiresAt ?? null
   }
 
   function applyCurrentUser(
@@ -125,7 +102,6 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     options: {
       securityLevel?: 'authenticated' | 'sensitive'
       stepUpRequired?: boolean
-      startHeartbeat?: boolean
     } = {}
   ): void {
     state.user.value = user as TUser
@@ -133,10 +109,6 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     state.stepUpRequired.value = options.stepUpRequired ?? state.stepUpRequired.value
     syncAuthSource(state.user.value)
     touchAuthzCheck()
-
-    if (options.startHeartbeat) {
-      startHeartbeat()
-    }
   }
 
   function invalidateAuthz(reason?: string): void {
@@ -155,11 +127,10 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   }
 
   function suspendSession(): void {
-    stopHeartbeat()
+    // BFF-first mode no longer keeps a client-side heartbeat timer.
   }
 
   function clearSession(options: { navigateToLogin?: boolean } = {}): void {
-    suspendSession()
     state.user.value = null
     state.runtimeAuthzCache.value = null
     state.sessionExpiresAt.value = null
@@ -215,55 +186,17 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     }
   }
 
-  async function refreshSession(
-    options: {
-      clearOnAuthError?: boolean
-      securityLevel?: 'authenticated' | 'sensitive'
-      skipErrorToast?: boolean
-    } = {}
-  ): Promise<TUser | null> {
-    const {
-      clearOnAuthError = true,
-      securityLevel = 'authenticated',
-      skipErrorToast = true,
-    } = options
-
-    try {
-      const response = await authService.refreshToken()
-      establishAuthRuntimeSession(response)
-      updateStateFromRuntimeSession(securityLevel)
-      state.user.value = {
-        ...response.user,
-        auth_source: response.user.auth_source ?? 'session',
-      } as TUser
-      syncAuthSource(state.user.value)
-      const currentUser = await hydrateCurrentUser({
-        clearOnAuthError,
-        securityLevel,
-        skipErrorToast,
-      })
-
-      if (currentUser) {
-        startHeartbeat()
-      }
-
-      return currentUser
-    } catch (error) {
-      if (clearOnAuthError && error instanceof ApiError && error.status === 401) {
-        clearSession()
-        return null
-      }
-
-      if (isAbortError(error)) {
-        return state.user.value
-      }
-
-      throw error
-    }
-  }
-
   async function establishSession(response: AuthResponse) {
-    establishAuthRuntimeSession(response)
+    establishAuthRuntimeSession({
+      permission_version: response.permission_version,
+      session_expires_at: response.session_expires_at,
+      identity_provider: response.user.identity_provider,
+      user: {
+        is_admin: response.user.is_admin,
+        identity_provider: response.user.identity_provider,
+      },
+    })
+
     applyCurrentUser(
       {
         ...response.user,
@@ -272,7 +205,6 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       {
         securityLevel: 'authenticated',
         stepUpRequired: false,
-        startHeartbeat: true,
       }
     )
 
@@ -283,17 +215,31 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
         skipErrorToast: true,
       })
     } catch {
-      // keep login payload as the fallback user snapshot
+      // Keep the session summary as the fallback user snapshot.
     }
   }
 
+  async function resolveSessionSummary(): Promise<AuthResponse | null> {
+    const result = await authService.resolveSession()
+    if (!('authenticated' in result) || !result.authenticated) {
+      clearSession()
+      return null
+    }
+
+    await establishSession(result)
+    return result
+  }
+
   async function fetchCurrentUser(clearOnAuthError = true): Promise<TUser | null> {
-    if (!getAuthRuntimeSession() || isRuntimeAccessTokenExpired()) {
-      return refreshSession({
-        clearOnAuthError,
-        securityLevel: 'authenticated',
-        skipErrorToast: true,
-      })
+    let restoredSession = false
+    if (!getAuthRuntimeSession()) {
+      const summary = await resolveSessionSummary()
+      if (!summary) return null
+      restoredSession = true
+    }
+
+    if (restoredSession) {
+      return state.user.value
     }
 
     return hydrateCurrentUser({
@@ -307,19 +253,6 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     securityLevel: 'authenticated' | 'sensitive' = 'authenticated'
   ): Promise<boolean> {
     if (!state.user.value) return false
-
-    if (
-      !getAuthRuntimeSession() ||
-      isRuntimeAccessTokenExpired() ||
-      (securityLevel === 'sensitive' && isRuntimeAccessTokenNearRefreshThreshold())
-    ) {
-      const refreshedUser = await refreshSession({
-        clearOnAuthError: true,
-        securityLevel,
-        skipErrorToast: true,
-      })
-      return Boolean(refreshedUser)
-    }
 
     const snapshot = state.runtimeAuthzCache.value
     if (securityLevel === 'authenticated' && snapshot && snapshot.expiresAt > Date.now()) {
@@ -336,14 +269,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
 
   async function initAuth() {
     try {
-      const currentUser = await refreshSession({
-        clearOnAuthError: false,
-        securityLevel: 'authenticated',
-        skipErrorToast: true,
-      })
-      if (currentUser) {
-        startHeartbeat()
-      }
+      await resolveSessionSummary()
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         clearSession()
@@ -440,66 +366,12 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     }
   }
 
-  function applyHeartbeatResponse(response: HeartbeatResponse): void {
-    establishAuthRuntimeSession(response)
-    updateStateFromRuntimeSession('authenticated')
-    if (state.user.value) {
-      touchAuthzCheck()
-      state.runtimeAuthzCache.value = buildRuntimeAuthzCache(state.user.value, 'authenticated')
-    }
-  }
-
   function startHeartbeat() {
-    if (heartbeatTimer) return
-
-    const scheduleNext = () => {
-      heartbeatTimer = setTimeout(async () => {
-        heartbeatTimer = null
-
-        try {
-          const response = await authService.heartbeat()
-          applyHeartbeatResponse(response)
-          scheduleNext()
-          return
-        } catch (error) {
-          if (isAbortError(error)) {
-            return
-          }
-
-          if (error instanceof ApiError && error.status === 401) {
-            const redirectTo = getCurrentLocationPath()
-            clearSession()
-            if (typeof window !== 'undefined' && !isAuthBoundaryPath(window.location.pathname)) {
-              navigateToLoginWithRedirect(redirectTo)
-              return
-            }
-
-            router.push('/login')
-            return
-          }
-
-          reportClientEvent(
-            'auth.session.heartbeat_failed',
-            {
-              status: error instanceof ApiError ? error.status : undefined,
-            },
-            {
-              category: 'security',
-              requiresAnalyticsConsent: false,
-              severity: 'warn',
-            }
-          )
-        }
-      }, heartbeatInterval)
-    }
-
-    scheduleNext()
+    // Intentionally disabled in BFF-first mode.
   }
 
   function stopHeartbeat() {
-    if (!heartbeatTimer) return
-    clearTimeout(heartbeatTimer)
-    heartbeatTimer = null
+    // Intentionally disabled in BFF-first mode.
   }
 
   function cleanup() {

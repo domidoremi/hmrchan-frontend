@@ -1,7 +1,14 @@
 const SAMPLE_POST_ROUTE_TOKEN = '__SAMPLE_POST__'
 const SAMPLE_DISCUSSION_ROUTE_TOKEN = '__SAMPLE_DISCUSSION__'
+const DEFAULT_SAMPLE_POST_ROUTE = '/post/6c73f45a-a7ec-481d-9bc5-9b09ee560fcc'
+const DEFAULT_SAMPLE_DISCUSSION_ROUTE = '/community/discussions/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
 
-export { SAMPLE_DISCUSSION_ROUTE_TOKEN, SAMPLE_POST_ROUTE_TOKEN }
+export {
+  DEFAULT_SAMPLE_DISCUSSION_ROUTE,
+  DEFAULT_SAMPLE_POST_ROUTE,
+  SAMPLE_DISCUSSION_ROUTE_TOKEN,
+  SAMPLE_POST_ROUTE_TOKEN,
+}
 
 export function buildProfileSectionShellSelector(sectionId) {
   return `[data-testid="profile-section-shell"][data-profile-section="${sectionId}"]`
@@ -314,7 +321,8 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze([
     path: SAMPLE_POST_ROUTE_TOKEN,
     mode: 'auth',
     shellSelector: '.post-detail-page',
-    readinessSelectorsAll: ['[data-testid="comment-composer"]', '[data-testid="comment-thread-header"]'],
+    readinessSelectorsAll: ['.post-comments', '[data-testid="comment-thread-header"]'],
+    readinessSelectorsAny: ['[data-testid="comment-composer"]'],
     includeInManualRunner: false,
   },
   {
@@ -322,10 +330,8 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze([
     path: SAMPLE_DISCUSSION_ROUTE_TOKEN,
     mode: 'auth',
     shellSelector: '.discussion-detail-page',
-    readinessSelectorsAll: [
-      '[data-testid="discussion-comment-composer"]',
-      '[data-testid="comment-thread-header"]',
-    ],
+    readinessSelectorsAll: ['.discussion-comments', '[data-testid="comment-thread-header"]'],
+    readinessSelectorsAny: ['[data-testid="discussion-comment-composer"]'],
     includeInManualRunner: false,
   },
 ])
@@ -348,7 +354,10 @@ function resolveRoutePath(route, samplePostRoute, sampleDiscussionRoute) {
   return route.path
 }
 
-export function getSmokeRouteMatrix({ samplePostRoute, sampleDiscussionRoute }) {
+export function getSmokeRouteMatrix({
+  samplePostRoute = DEFAULT_SAMPLE_POST_ROUTE,
+  sampleDiscussionRoute = DEFAULT_SAMPLE_DISCUSSION_ROUTE,
+} = {}) {
   const resolve = (route) => ({
     ...route,
     path: resolveRoutePath(route, samplePostRoute, sampleDiscussionRoute),

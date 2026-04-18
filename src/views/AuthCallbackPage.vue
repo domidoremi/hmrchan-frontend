@@ -215,6 +215,10 @@ import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
 
 type CallbackStep = 'loading' | 'client-challenge' | 'risk-verification' | 'mfa' | 'error'
 type PopupBridgeState = 'posting' | 'manual-close'
+const GOOGLE_AUTH_ENABLED =
+  import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+    ? true
+    : import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 
 const POPUP_BRIDGE_CLOSE_DELAY_MS = 320
 const POPUP_BRIDGE_MANUAL_CLOSE_HINT_DELAY_MS = 1000
@@ -527,6 +531,13 @@ function closePopupWindow() {
 }
 
 async function retryGoogleAuth() {
+  if (!GOOGLE_AUTH_ENABLED) {
+    currentStep.value = 'error'
+    errorMessage.value = t('auth.error.googleLoginFailed')
+    errorDetail.value = 'Google login is temporarily unavailable.'
+    return
+  }
+
   const intent = pendingRequest?.intent || 'login'
   const redirect = resolveAuthRedirectTarget(pendingRequest?.redirectTo, nextRedirectTarget.value)
   startGoogleAuthRedirect(intent, redirect)
@@ -600,6 +611,13 @@ async function preloadTurnstileSiteKey(): Promise<string> {
 }
 
 async function runInitialExchange() {
+  if (!GOOGLE_AUTH_ENABLED) {
+    currentStep.value = 'error'
+    errorMessage.value = t('auth.error.googleLoginFailed')
+    errorDetail.value = 'Google login is temporarily unavailable.'
+    return
+  }
+
   clearInlineErrors()
   currentStep.value = 'loading'
 
