@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { loadEnv } from 'vite'
 import { resolveProductionContractEnv } from './lib/production-contract-env.js'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -23,7 +24,11 @@ function runNodeScript(scriptPath, args = [], env = process.env) {
   }
 }
 
-const contract = resolveProductionContractEnv(process.env)
+const productionEnv = {
+  ...process.env,
+  ...loadEnv('production', rootDir, ''),
+}
+const contract = resolveProductionContractEnv(productionEnv)
 
 if (contract.injected) {
   console.log(
