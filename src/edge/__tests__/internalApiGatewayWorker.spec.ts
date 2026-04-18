@@ -48,6 +48,46 @@ describe('handleInternalApiGatewayRequest', () => {
     expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
   })
 
+  it('routes internal BFF auth calls through the identity VPC origin', async () => {
+    const publicFetch = vi.fn()
+    vi.stubGlobal('fetch', publicFetch)
+
+    const vpcFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    )
+
+    const response = await handleInternalApiGatewayRequest(
+      new Request('https://momichan.xyz/internal/v1/auth/bff/login', {
+        method: 'POST',
+        body: JSON.stringify({ username: 'tester@example.com' }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Internal-Service': 'bff',
+        },
+      }),
+      {
+        API_BASE_URL: BACKEND_ORIGIN,
+        ENABLE_VPC_PROXY: 'true',
+        VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
+        VPC_SERVICE: {
+          fetch: vpcFetch,
+        },
+      }
+    )
+
+    expect(vpcFetch).toHaveBeenCalledTimes(1)
+    expect((vpcFetch.mock.calls[0]?.[0] as Request).url).toBe(
+      'http://identity-api:8000/internal/v1/auth/bff/login'
+    )
+    expect(publicFetch).not.toHaveBeenCalled()
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
+  })
+
   it('routes discussion reads through the community VPC origin', async () => {
     const publicFetch = vi.fn()
     vi.stubGlobal('fetch', publicFetch)

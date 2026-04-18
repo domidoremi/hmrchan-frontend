@@ -44,4 +44,39 @@ describe('production contract env resolver', () => {
     expect(result.injected).toBe(true)
     expect(result.env.VITE_CLIENT_CONTRACT_VERSION).toBe('vite-git-sha')
   })
+
+  it('strips production-incompatible client audit env and forces safe debug flags', () => {
+    const result = resolveProductionContractEnv({
+      CF_PAGES: '1',
+      CF_PAGES_COMMIT_SHA: 'pages-commit-sha',
+      VITE_API_BASE_URL: 'https://api.momichan.xyz',
+      VITE_IDENTITY_API_BASE_URL: 'http://127.0.0.1:19081',
+      VITE_COMMUNITY_API_BASE_URL: 'http://127.0.0.1:19082',
+      VITE_CONTENT_API_BASE_URL: 'http://127.0.0.1:19083',
+      VITE_LOCAL_AUDIT_PERSIST_AUTH_SESSION: 'true',
+      VITE_ENABLE_DEBUG: 'true',
+      VITE_ENABLE_DEVTOOLS: 'true',
+    })
+
+    expect(result.env.VITE_CLIENT_CONTRACT_VERSION).toBe('pages-commit-sha')
+    expect(result.env.VITE_API_BASE_URL).toBeUndefined()
+    expect(result.env.VITE_IDENTITY_API_BASE_URL).toBeUndefined()
+    expect(result.env.VITE_COMMUNITY_API_BASE_URL).toBeUndefined()
+    expect(result.env.VITE_CONTENT_API_BASE_URL).toBeUndefined()
+    expect(result.env.VITE_LOCAL_AUDIT_PERSIST_AUTH_SESSION).toBeUndefined()
+    expect(result.env.VITE_ENABLE_DEBUG).toBe('false')
+    expect(result.env.VITE_ENABLE_DEVTOOLS).toBe('false')
+    expect(result.sanitized?.strippedKeys).toEqual(
+      expect.arrayContaining([
+        'VITE_API_BASE_URL',
+        'VITE_IDENTITY_API_BASE_URL',
+        'VITE_COMMUNITY_API_BASE_URL',
+        'VITE_CONTENT_API_BASE_URL',
+        'VITE_LOCAL_AUDIT_PERSIST_AUTH_SESSION',
+      ])
+    )
+    expect(result.sanitized?.forcedKeys).toEqual(
+      expect.arrayContaining(['VITE_ENABLE_DEBUG', 'VITE_ENABLE_DEVTOOLS'])
+    )
+  })
 })

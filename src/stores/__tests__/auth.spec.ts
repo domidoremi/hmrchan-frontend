@@ -259,4 +259,39 @@ describe('auth store', () => {
     expect(store.runtimeAuthzCache).toBeNull()
     expect(mockRouterPush).toHaveBeenCalledWith('/login')
   })
+
+  it('maps BFF deployment failures to a service availability error', async () => {
+    const store = useAuthStore()
+    vi.mocked(authService.login).mockRejectedValueOnce(
+      new ApiError(
+        'Internal BFF origin or shared secret is not configured.',
+        500,
+        'BFF_NOT_CONFIGURED'
+      )
+    )
+
+    const result = await store.login('tester@example.com', 'password123')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'error',
+        error: 'error.serviceUnavailable',
+        code: 'BFF_NOT_CONFIGURED',
+      })
+    )
+  })
+
+  it('maps untyped 500 auth failures to a server error message key', async () => {
+    const store = useAuthStore()
+    vi.mocked(authService.login).mockRejectedValueOnce(new ApiError('backend exploded', 500))
+
+    const result = await store.login('tester@example.com', 'password123')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'error',
+        error: 'error.server.internalError',
+      })
+    )
+  })
 })

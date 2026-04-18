@@ -1,5 +1,4 @@
 import {
-  authService,
   type AuthResponse,
   type MfaRequiredResponse,
   type RiskVerificationChallengeResponse,
@@ -744,15 +743,6 @@ export async function prepareGoogleAuthHandoff(
   }
 
   let resolvedSiteKey = fallbackSiteKey.trim()
-
-  try {
-    const config = await authService.getTurnstileConfig()
-    if (config.enabled) {
-      resolvedSiteKey = config.site_key?.trim() || resolvedSiteKey
-    }
-  } catch {
-    // keep fallback site key when config probe fails
-  }
 
   try {
     let initResponse = await clientSecurityService.init(false, { promptChallenge: false })

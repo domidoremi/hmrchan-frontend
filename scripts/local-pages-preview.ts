@@ -6,6 +6,7 @@ import { onRequest as onApiRequest } from '../functions/api/[[path]].ts'
 import { onRequest as onClientReportRequest } from '../functions/client-report.ts'
 import { onRequest as onCspReportRequest } from '../functions/csp-report.ts'
 import { onRequest as onUploadsRequest } from '../functions/uploads/[[path]].ts'
+import { resolveHtmlDocument, SITE_ORIGIN } from '../src/edge/htmlDocument.ts'
 import { createLocalAuditEnv } from './lib/audit-env.js'
 
 type RouteContext = {
@@ -108,22 +109,43 @@ function resolveStaticFilePath(pathname: string): string | null {
   return null
 }
 
-function resolveHtmlFallbackPath(pathname: string): string {
+function resolveStaticFileStatus(pathname: string): number {
+  return pathname === '/404' || pathname === '/404/' ? 404 : 200
+}
+
+function resolveHtmlFallbackPath(pathname: string): { filePath: string; status: number } {
+  const documentConfig = resolveHtmlDocument(new URL(pathname, SITE_ORIGIN))
+  if (documentConfig.status === 404) {
+    return {
+      filePath: resolve(distDir, join('404', 'index.html')),
+      status: 404,
+    }
+  }
+
   const normalizedPath =
     pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname
   const mapped = FALLBACK_HTML_FILES.get(pathname) ?? FALLBACK_HTML_FILES.get(normalizedPath)
   if (mapped) {
-    return resolve(distDir, mapped)
+    return {
+      filePath: resolve(distDir, mapped),
+      status: 200,
+    }
   }
 
   if (normalizedPath !== '/' && !extname(normalizedPath)) {
     const directPage = resolve(distDir, `${normalizedPath.slice(1)}.html`)
     if (existsSync(directPage) && statSync(directPage).isFile()) {
-      return directPage
+      return {
+        filePath: directPage,
+        status: 200,
+      }
     }
   }
 
-  return resolve(distDir, 'index.html')
+  return {
+    filePath: resolve(distDir, 'index.html'),
+    status: 200,
+  }
 }
 
 function getMimeType(filePath: string): string {
@@ -229,13 +251,13 @@ function rewriteResponseForLocalCookies(response: Response): Response {
   })
 }
 
-async function serveStaticFile(filePath: string): Promise<Response> {
+async function serveStaticFile(filePath: string, status = 200): Promise<Response> {
   const file = Bun.file(filePath)
   const headers = new Headers({
     'Content-Type': file.type || getMimeType(filePath),
   })
   return new Response(file, {
-    status: 200,
+    status,
     headers,
   })
 }
@@ -307,7 +329,7 @@ async function handleRequest(request: Request, env: NodeJS.ProcessEnv): Promise<
 
   const staticFilePath = resolveStaticFilePath(pathname)
   if (staticFilePath) {
-    return serveStaticFile(staticFilePath)
+    return serveStaticFile(staticFilePath, resolveStaticFileStatus(pathname))
   }
 
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -338,7 +360,8 @@ async function handleRequest(request: Request, env: NodeJS.ProcessEnv): Promise<
     })
   }
 
-  return serveStaticFile(resolveHtmlFallbackPath(pathname))
+  const fallback = resolveHtmlFallbackPath(pathname)
+  return serveStaticFile(fallback.filePath, fallback.status)
 }
 
 const options = parseArgs(Bun.argv.slice(2))

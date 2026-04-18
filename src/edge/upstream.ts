@@ -54,6 +54,7 @@ export function resolveUpstreamDomain(path: string): UpstreamDomain {
   }
 
   if (
+    normalizedPath.startsWith('/internal/v1/auth/') ||
     normalizedPath.startsWith('/api/v1/client') ||
     normalizedPath.startsWith('/api/v1/auth') ||
     normalizedPath.startsWith('/api/v1/preferences') ||

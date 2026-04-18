@@ -294,13 +294,6 @@ export const authService = {
     )
   },
 
-  async getTurnstileConfig(): Promise<{ enabled: boolean; site_key: string | null }> {
-    return apiClient.get('/auth/turnstile-config', {
-      skipAuth: true,
-      skipErrorToast: true,
-    })
-  },
-
   async sendRegistrationCode(
     data: SendRegistrationCodeRequest,
     config?: RequestConfig

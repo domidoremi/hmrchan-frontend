@@ -27,6 +27,13 @@ import {
   DEFAULT_SAMPLE_POST_ROUTE,
   getSmokeRouteMatrix,
 } from './lib/release-route-contract.js'
+import {
+  buildAuthBootstrapProbeSummary,
+  extractAuthBootstrapError,
+  findFatalAuthBootstrapProbe,
+  formatFatalAuthBootstrapProbe,
+  probeAuthBootstrapEndpoints,
+} from './lib/auth-bootstrap.js'
 import { ensureDetailRouteReadiness, resolveSampleDetailRoute } from './lib/detail-route-utils.js'
 
 applyLocalAuditEnvToProcess()
@@ -50,6 +57,7 @@ type RouteCheck = {
   path: string
   selector: string
   mode: Extract<SmokeMode, 'guest' | 'auth'>
+  securityLevel?: 'authenticated' | 'sensitive'
   expectedPath?: string
   expectedCanonicalPath?: string
   readinessSelectorsAll?: string[]
@@ -112,6 +120,15 @@ type SmokeSummary = {
   checks: CheckRecord[]
 }
 
+type AuthBootstrapProbe = {
+  path: string
+  method: string
+  status: number
+  ok?: boolean
+  code: string | null
+  message: string | null
+}
+
 function hasAuthSmokeCredentials(env: NodeJS.ProcessEnv): boolean {
   const credentials = resolveAuthSmokeCredentials(env)
   return Boolean(credentials.login && credentials.password)
@@ -134,6 +151,10 @@ const AUDIT_ENV = {
     ? 'false'
     : (BASE_AUDIT_ENV['VITE_DISABLE_PREVIEW_PROXY'] ?? 'true'),
 }
+const AUTH_BOOTSTRAP_CONTRACT_VERSION =
+  AUDIT_ENV['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
+  process.env['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
+  ''
 const PREVIEW_PORT_CANDIDATES = resolveLocalAuditPreviewPorts(AUDIT_ENV, [
   'E2E_PREVIEW_PORTS',
   'E2E_PREVIEW_PORT',
@@ -208,7 +229,8 @@ async function detectStaticPrerenderMismatch(
     })
     const html = await response.text()
 
-    if (response.status !== 200 || !html.includes('data-prerender-shell="true"')) {
+    const expectedStatus = probe.path === '/404/' ? 404 : 200
+    if (response.status !== expectedStatus || !html.includes('data-prerender-shell="true"')) {
       return `External base URL ${baseUrl} does not expose prerender shell HTML for ${probe.path}`
     }
 
@@ -228,6 +250,51 @@ async function detectStaticPrerenderMismatch(
 function formatError(error: unknown): string {
   if (error instanceof Error) return error.message
   return String(error)
+}
+
+async function readAuthBootstrapPageProbe(
+  response: puppeteer.HTTPResponse | null
+): Promise<AuthBootstrapProbe | null> {
+  if (!response) return null
+  const pathname = new URL(response.url()).pathname
+  if (
+    pathname !== '/api/v1/client/init' &&
+    pathname !== '/api/v1/auth/session:resolve' &&
+    pathname !== '/api/v1/auth/login'
+  ) {
+    return null
+  }
+
+  const rawBody = await response.text().catch(() => '')
+  let parsedBody: unknown = null
+  try {
+    parsedBody = rawBody ? JSON.parse(rawBody) : null
+  } catch {
+    parsedBody = null
+  }
+
+  const errorMeta = extractAuthBootstrapError(parsedBody, rawBody)
+
+  return {
+    path: pathname,
+    method: response.request().method(),
+    status: response.status(),
+    code: errorMeta.code,
+    message: errorMeta.message ?? (rawBody.trim().length > 0 ? rawBody.trim() : null),
+  }
+}
+
+async function runAuthBootstrapPreflight(baseUrl: string): Promise<AuthBootstrapProbe[]> {
+  return probeAuthBootstrapEndpoints(baseUrl, {
+    contractVersion: AUTH_BOOTSTRAP_CONTRACT_VERSION,
+  }) as Promise<AuthBootstrapProbe[]>
+}
+
+function throwIfFatalAuthBootstrapProbe(probes: AuthBootstrapProbe[]): void {
+  const fatalProbe = findFatalAuthBootstrapProbe(probes)
+  if (!fatalProbe) return
+  const summaries = probes.map((probe) => buildAuthBootstrapProbeSummary(probe)).join(' | ')
+  throw new Error(`${formatFatalAuthBootstrapProbe(fatalProbe)} Probes: ${summaries}`)
 }
 
 function appendCheck(summary: SmokeSummary, check: CheckRecord): void {
@@ -311,11 +378,16 @@ function isGuestOnlyAuthEntryCheck(check: Pick<RouteCheck, 'mode' | 'path'>): bo
   )
 }
 
+function isSensitiveRouteCheck(check: Pick<RouteCheck, 'securityLevel'>): boolean {
+  return check.securityLevel === 'sensitive'
+}
+
 function toRouteCheck(check: {
   name: string
   path: string
   shellSelector?: string
   mode: 'guest' | 'auth'
+  securityLevel?: 'authenticated' | 'sensitive'
   expectedPath?: string
   expectedCanonicalPath?: string
   readinessSelectorsAll?: string[]
@@ -326,6 +398,7 @@ function toRouteCheck(check: {
     path: check.path,
     selector: check.shellSelector ?? 'body',
     mode: check.mode,
+    securityLevel: check.securityLevel,
     expectedPath: check.expectedPath,
     expectedCanonicalPath: check.expectedCanonicalPath,
     readinessSelectorsAll: check.readinessSelectorsAll,
@@ -659,9 +732,12 @@ async function assertStaticPrerenderedRoute(
     headers: createHtmlNavigationHeaders(),
   })
   const html = await response.text()
+  const expectedStatus = path === '/404/' ? 404 : 200
 
-  if (response.status !== 200) {
-    throw new Error(`Expected prerendered route ${path} to return 200, got ${response.status}`)
+  if (response.status !== expectedStatus) {
+    throw new Error(
+      `Expected prerendered route ${path} to return ${expectedStatus}, got ${response.status}`
+    )
   }
 
   if (!html.includes(`<title>${expected.title}</title>`)) {
@@ -766,13 +842,22 @@ async function authenticateViaApi(
     { name: 'auth login bootstrap', path: '/api/v1/auth/login' },
     onFailure,
     async (page) => {
-      const waitForLoginExit = (timeout: number) =>
-        page.waitForFunction(
-          () =>
-            window.location.pathname !== '/login' &&
-            !window.location.pathname.startsWith('/login/'),
-          { timeout }
-        )
+      const waitForLoginExit = async (timeout: number): Promise<boolean> => {
+        try {
+          await page.waitForFunction(
+            () =>
+              window.location.pathname !== '/login' &&
+              !window.location.pathname.startsWith('/login/'),
+            { timeout }
+          )
+          return true
+        } catch {
+          const currentPath = await page.evaluate(() => window.location.pathname).catch(() => null)
+          return Boolean(
+            currentPath && currentPath !== '/login' && !currentPath.startsWith('/login/')
+          )
+        }
+      }
       const waitForClientCredentials = (timeout: number) =>
         page.waitForFunction(
           () => {
@@ -936,18 +1021,57 @@ async function authenticateViaApi(
         await waitForClientCredentials(2_000)
       }
       const submitLoginForm = () =>
-        page.$eval('form.auth-form', (form) => {
-          ;(form as HTMLFormElement).requestSubmit()
+        page.evaluate(() => {
+          const form = document.querySelector('form.auth-form')
+          if (!(form instanceof HTMLFormElement)) {
+            throw new Error('auth login form is missing')
+          }
+          form.requestSubmit()
         })
+      const fillInputValue = (selector: string, value: string) =>
+        page.evaluate(
+          ({ selector: nextSelector, value: nextValue }) => {
+            const input = document.querySelector(nextSelector)
+            if (!(input instanceof HTMLInputElement)) {
+              throw new Error(`input not found for selector: ${nextSelector}`)
+            }
+            input.focus()
+            input.value = ''
+            input.dispatchEvent(new Event('input', { bubbles: true }))
+            input.value = String(nextValue)
+            input.dispatchEvent(new Event('input', { bubbles: true }))
+            input.dispatchEvent(new Event('change', { bubbles: true }))
+          },
+          { selector, value }
+        )
+      const submitLoginFormAndReadProbe = async (): Promise<AuthBootstrapProbe | null> => {
+        const loginResponsePromise = page
+          .waitForResponse(
+            (response) =>
+              response.request().method() === 'POST' &&
+              response.url().includes('/api/v1/auth/login'),
+            { timeout: 10_000 }
+          )
+          .catch(() => null)
+
+        await submitLoginForm()
+        const loginResponse = await loginResponsePromise
+        return readAuthBootstrapPageProbe(loginResponse)
+      }
 
       const loginSelector = '#login-identifier'
       const passwordSelector = '#login-password'
       let latestLoginRequestHeaders: Record<string, string> | null = null
       const loginRequestIds = new Set<string>()
+      const pageAuthBootstrapProbes: AuthBootstrapProbe[] = []
+      const pendingAuthBootstrapResponses = new Set<Promise<void>>()
       const normalizeHeaders = (headers: Record<string, unknown> | undefined) =>
         Object.fromEntries(
           Object.entries(headers ?? {}).map(([key, value]) => [key.toLowerCase(), String(value)])
         )
+      const flushAuthBootstrapResponses = async () => {
+        await Promise.all([...pendingAuthBootstrapResponses])
+      }
       const cdpSession = await page.createCDPSession()
       await cdpSession.send('Network.enable')
       cdpSession.on('Network.requestWillBeSent', (event: CdpRequestWillBeSentEvent) => {
@@ -978,6 +1102,27 @@ async function authenticateViaApi(
           }
         }
       })
+      page.on('response', (response) => {
+        const pathname = new URL(response.url()).pathname
+        if (
+          pathname !== '/api/v1/client/init' &&
+          pathname !== '/api/v1/auth/session:resolve' &&
+          pathname !== '/api/v1/auth/login'
+        ) {
+          return
+        }
+
+        const tracked = (async () => {
+          const probe = await readAuthBootstrapPageProbe(response)
+          if (probe) {
+            pageAuthBootstrapProbes.push(probe)
+          }
+        })()
+        void tracked.finally(() => {
+          pendingAuthBootstrapResponses.delete(tracked)
+        })
+        pendingAuthBootstrapResponses.add(tracked)
+      })
       const openAndFillLoginForm = async (options?: { resetSession?: boolean }) => {
         if (options?.resetSession) {
           await clearBrowserAuditSession(page, baseUrl)
@@ -988,14 +1133,16 @@ async function authenticateViaApi(
 
         await waitForRoutePath(page, '/login', 'auth smoke login bootstrap')
         await waitForLoginShellSelector(page, loginSelector, 'auth smoke login bootstrap', 20_000)
-        await page.click(loginSelector, { clickCount: 3 })
-        await page.type(loginSelector, credentials.login, { delay: 20 })
-        await page.click(passwordSelector, { clickCount: 3 })
-        await page.type(passwordSelector, credentials.password, { delay: 20 })
+        await flushAuthBootstrapResponses()
+        throwIfFatalAuthBootstrapProbe(pageAuthBootstrapProbes)
+        await fillInputValue(loginSelector, credentials.login)
+        await fillInputValue(passwordSelector, credentials.password)
       }
 
       const prewarmedLocalTrust = await prewarmLocalAuditTrust(page, baseUrl)
       await openAndFillLoginForm({ resetSession: !prewarmedLocalTrust })
+      const preflightProbes = await runAuthBootstrapPreflight(baseUrl)
+      throwIfFatalAuthBootstrapProbe([...pageAuthBootstrapProbes, ...preflightProbes])
 
       const submitButton = await page.$(
         'form.auth-form button[type="submit"], form.auth-form button'
@@ -1003,11 +1150,17 @@ async function authenticateViaApi(
       if (!submitButton) {
         throw new Error('Auth smoke login submit button is missing')
       }
-      await submitLoginForm()
+      const firstLoginProbe = await submitLoginFormAndReadProbe()
+      await flushAuthBootstrapResponses()
+      if (firstLoginProbe) {
+        throwIfFatalAuthBootstrapProbe([
+          ...pageAuthBootstrapProbes,
+          ...preflightProbes,
+          firstLoginProbe,
+        ])
+      }
 
       const loginExited = await waitForLoginExit(5_000)
-        .then(() => true)
-        .catch(() => false)
       if (!loginExited) {
         await ensureClientCredentials()
         const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
@@ -1031,8 +1184,21 @@ async function authenticateViaApi(
           }
           await openAndFillLoginForm()
         }
-        await submitLoginForm()
-        await waitForLoginExit(25_000)
+        const secondLoginProbe = await submitLoginFormAndReadProbe()
+        await flushAuthBootstrapResponses()
+        if (secondLoginProbe) {
+          throwIfFatalAuthBootstrapProbe([
+            ...pageAuthBootstrapProbes,
+            ...preflightProbes,
+            secondLoginProbe,
+          ])
+        }
+        const loginExitedAfterTrust = await waitForLoginExit(25_000)
+        if (!loginExitedAfterTrust) {
+          throw new Error(
+            'Timed out waiting for login redirect to leave /login after trust bootstrap'
+          )
+        }
       }
       await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => {})
     },
@@ -1258,8 +1424,8 @@ async function main(): Promise<void> {
   const requestedSamplePostRoute = process.env['E2E_SAMPLE_POST_ROUTE'] ?? DEFAULT_SAMPLE_POST_ROUTE
   const requestedSampleDiscussionRoute =
     process.env['E2E_SAMPLE_DISCUSSION_ROUTE'] ?? DEFAULT_SAMPLE_DISCUSSION_ROUTE
-  const authSmokeEnabled = Boolean(authLogin && authPassword)
   const authSmokeRequired = process.env['E2E_REQUIRE_AUTH'] !== 'false'
+  const authSmokeEnabled = authSmokeRequired && Boolean(authLogin && authPassword)
   const authSkipReason = getAuthSkipReason(authLogin, authPassword, authCredentials.source)
   const summary = createSmokeSummary(artifactDir, authLogin, authPassword)
   summary.authSmokeRequired = authSmokeRequired
@@ -1273,7 +1439,7 @@ async function main(): Promise<void> {
   const getPreviewDiagnostics = () => previewServer?.formatDiagnosticsLines() ?? null
 
   console.log(`🧾 Auth smoke required: ${authSmokeRequired ? 'yes' : 'no'}`)
-  console.log(`🧾 Auth credentials detected: ${authSmokeEnabled ? 'yes' : 'no'}`)
+  console.log(`🧾 Auth credentials detected: ${authLogin && authPassword ? 'yes' : 'no'}`)
   if (authSkipReason) {
     console.log(`🧾 Auth smoke skip reason (if applicable): ${authSkipReason}`)
   }
@@ -1530,7 +1696,15 @@ async function main(): Promise<void> {
       )
 
       const effectiveAuthenticatedRouteChecks = authenticatedRouteChecks.filter(
-        (check) => !skippedSampleChecks.some((skipped) => skipped.name === check.name)
+        (check) =>
+          !skippedSampleChecks.some((skipped) => skipped.name === check.name) &&
+          !(isLocalAuditOrigin(baseUrl) && isSensitiveRouteCheck(check))
+      )
+      const skippedSensitiveLocalAuditChecks = authenticatedRouteChecks.filter(
+        (check) =>
+          !skippedSampleChecks.some((skipped) => skipped.name === check.name) &&
+          isLocalAuditOrigin(baseUrl) &&
+          isSensitiveRouteCheck(check)
       )
       if (skippedSampleChecks.some((check) => check.mode === 'auth')) {
         markChecksSkipped(
@@ -1544,6 +1718,14 @@ async function main(): Promise<void> {
                 : 'sample discussion route unavailable'
             )
             .join('; ')
+        )
+      }
+      if (skippedSensitiveLocalAuditChecks.length > 0) {
+        const reason =
+          'Skipped during local audit: sensitive routes intentionally redirect to /profile when runtime integrity is degraded; production regression covers sensitive route access.'
+        markChecksSkipped(summary, skippedSensitiveLocalAuditChecks, reason)
+        console.log(
+          `   • Skipping ${skippedSensitiveLocalAuditChecks.length} sensitive auth route(s) in local audit`
         )
       }
 
@@ -1585,7 +1767,7 @@ async function main(): Promise<void> {
         )
       }
     } else {
-      summary.authSmokeSkipReason = authSkipReason
+      summary.authSmokeSkipReason = authSmokeRequired ? authSkipReason : 'E2E_REQUIRE_AUTH=false'
       markChecksSkipped(
         summary,
         [
@@ -1599,7 +1781,9 @@ async function main(): Promise<void> {
             (check) => !skippedSampleChecks.some((skipped) => skipped.name === check.name)
           ),
         ],
-        authSkipReason ?? 'Auth smoke credentials unavailable'
+        authSmokeRequired
+          ? (authSkipReason ?? 'Auth smoke credentials unavailable')
+          : 'E2E_REQUIRE_AUTH=false'
       )
       if (skippedSampleChecks.some((check) => check.mode === 'auth')) {
         markChecksSkipped(
@@ -1616,7 +1800,7 @@ async function main(): Promise<void> {
         )
       }
       console.log(
-        `🔐 Skipping authenticated smoke because ${authSkipReason ?? 'credentials are unavailable'} (guest-only local smoke is expected in this mode)`
+        `🔐 Skipping authenticated smoke because ${authSmokeRequired ? (authSkipReason ?? 'credentials are unavailable') : 'E2E_REQUIRE_AUTH=false'} (guest-only local smoke is expected in this mode)`
       )
       if (authSmokeRequired) {
         throw new Error(

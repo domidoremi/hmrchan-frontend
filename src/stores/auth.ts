@@ -579,6 +579,11 @@ export const useAuthStore = defineStore('auth', () => {
         return 'error.server.requestExpired'
       case 'REQUEST_ORIGIN_NOT_AUTHORIZED':
         return 'error.server.requestOriginNotAuthorized'
+      case 'BFF_NOT_CONFIGURED':
+        return 'error.serviceUnavailable'
+      case 'CLIENT_UPGRADE_REQUIRED':
+      case 'CLIENT_CONTRACT_MISMATCH':
+        return 'error.serviceUnavailable'
       case 'password_login_unavailable':
         return 'auth.error.passwordLoginUnavailable'
       case 'invalid_mfa_code':
@@ -622,6 +627,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (status === 409) return 'auth.error.emailExists'
     if (status === 422) return 'auth.error.validationError'
     if (status === 429) return 'auth.error.tooManyRequests'
+    if (status === 500) return 'error.server.internalError'
+    if (status >= 500) return 'error.serviceUnavailable'
     return 'auth.error.unknown'
   }
 

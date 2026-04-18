@@ -223,6 +223,74 @@ describe('functions/api proxy', () => {
     expect(cookies.some((value) => value.includes('__Host-momi_bff_rt='))).toBe(true)
   })
 
+  it('can call internal BFF auth through the internal API gateway binding without a direct origin', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-17T07:00:00.000Z'))
+
+    const loginBody = { username: 'tester@example.com', password: 'password123' }
+    const fingerprint = 'fingerprint-123'
+    const material = createSessionMaterial()
+    const user = createUser()
+    const gatewayFetch = vi.fn(async (request: Request) => {
+      expect(request.url).toBe(`${ORIGIN}/internal/v1/auth/bff/login`)
+      expect(request.method).toBe('POST')
+      await expect(request.json()).resolves.toEqual({
+        ...loginBody,
+        client_fingerprint: fingerprint,
+      })
+      expect(request.headers.get('X-Internal-Service')).toBe('bff')
+      expect(request.headers.get('X-Internal-Timestamp')).toBe('2026-04-17T07:00:00.000Z')
+      expect(request.headers.get('X-Internal-Signature')).toBeTruthy()
+      expect(request.headers.get('X-Client-Fingerprint')).toBe(fingerprint)
+      return apiEnvelope(material)
+    })
+
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url === `${BACKEND_ORIGIN}/api/v1/auth/me`) {
+        expect(init?.headers).toEqual(
+          expect.objectContaining({
+            Authorization: `Bearer ${material.access_token}`,
+          })
+        )
+        return apiEnvelope(user)
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/login`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+          'X-Client-Fingerprint': fingerprint,
+        },
+        body: JSON.stringify(loginBody),
+        path: ['v1', 'auth', 'login'],
+        env: {
+          BACKEND_INTERNAL_ORIGIN: undefined,
+          ENABLE_INTERNAL_API_GATEWAY: 'true',
+          INTERNAL_API_GATEWAY: {
+            fetch: gatewayFetch,
+          },
+        },
+      })
+    )
+
+    expect(gatewayFetch).toHaveBeenCalledTimes(1)
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      authenticated: true,
+      user,
+      permission_version: 1,
+    })
+  })
+
   it('refreshes the session via the internal BFF and rewrites cookies', async () => {
     const refreshed = createSessionMaterial({ permission_version: 3 })
     const user = createUser({ permission_version: 3 })

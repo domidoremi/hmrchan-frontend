@@ -39,6 +39,22 @@ if (contract.injected) {
   )
 }
 
+if (contract.sanitized?.strippedKeys?.length) {
+  console.log(
+    `[build] Stripped production-incompatible client env keys: ${contract.sanitized.strippedKeys.join(
+      ', '
+    )}.`
+  )
+}
+
+if (contract.sanitized?.forcedKeys?.length) {
+  console.log(
+    `[build] Forced production-safe client env values for: ${contract.sanitized.forcedKeys.join(
+      ', '
+    )}.`
+  )
+}
+
 runNodeScript(path.join(rootDir, 'scripts/patch-lucide.mjs'), [], contract.env)
 runNodeScript(
   path.join(rootDir, 'node_modules/vue-tsc/bin/vue-tsc.js'),
