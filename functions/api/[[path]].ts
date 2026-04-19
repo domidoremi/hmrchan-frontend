@@ -175,6 +175,38 @@ function jsonResponse(payload: unknown, status = 200, headers?: HeadersInit): Re
   })
 }
 
+function appendSetCookieHeaders(source: Headers, target: Headers): void {
+  const headersWithSetCookie = source as Headers & {
+    getSetCookie?: () => string[]
+  }
+
+  if (typeof headersWithSetCookie.getSetCookie === 'function') {
+    for (const cookie of headersWithSetCookie.getSetCookie()) {
+      target.append('Set-Cookie', cookie)
+    }
+    return
+  }
+
+  const rawSetCookie = source.get('Set-Cookie')
+  if (rawSetCookie) {
+    target.append('Set-Cookie', rawSetCookie)
+  }
+}
+
+function cloneResponseHeaders(source: Headers, seed?: HeadersInit): Headers {
+  const headers = new Headers(seed)
+
+  for (const [key, value] of source.entries()) {
+    if (key.toLowerCase() === 'set-cookie') {
+      continue
+    }
+    headers.append(key, value)
+  }
+
+  appendSetCookieHeaders(source, headers)
+  return headers
+}
+
 function isJsonRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
@@ -414,7 +446,7 @@ async function fetchInternalBff(env: ProxyEnv, path: string, payload: unknown): 
 
 async function copyResponse(response: Response, headers?: Headers): Promise<Response> {
   const body = await response.arrayBuffer()
-  const responseHeaders = headers ? new Headers(headers) : new Headers(response.headers)
+  const responseHeaders = cloneResponseHeaders(response.headers, headers)
   RESPONSE_HEADERS_TO_SKIP.forEach((header) => responseHeaders.delete(header))
   return new Response(body, {
     status: response.status,
@@ -1059,7 +1091,11 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       : await request.clone().arrayBuffer()
   )
   if (handledBrowserAuthResponse) {
-    const headers = withCorsHeaders(request, isDev, new Headers(handledBrowserAuthResponse.headers))
+    const headers = withCorsHeaders(
+      request,
+      isDev,
+      cloneResponseHeaders(handledBrowserAuthResponse.headers)
+    )
     RESPONSE_HEADERS_TO_SKIP.forEach((header) => headers.delete(header))
     headers.set('X-Proxy-Upstream-Domain', 'identity')
     return new Response(await handledBrowserAuthResponse.arrayBuffer(), {
