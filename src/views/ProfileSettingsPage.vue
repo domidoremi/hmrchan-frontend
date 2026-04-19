@@ -117,9 +117,9 @@
                     <div class="avatar-section">
                       <div class="avatar-wrapper">
                         <img
-                          v-if="profile.avatar_url"
+                          v-if="profileAvatarPreviewUrl"
                           class="avatar-preview"
-                          :src="normalizeAvatarUrl(profile.avatar_url) || profile.avatar_url"
+                          :src="profileAvatarPreviewUrl"
                           :alt="profile.username"
                         />
                         <div v-else class="avatar-preview avatar-placeholder">
@@ -957,6 +957,7 @@ const showConfirmPassword = ref(false)
 const showEmailPassword = ref(false)
 let profileFetchController: AbortController | null = null
 let profileFetchToken = 0
+const profileAvatarPreviewUrl = computed(() => normalizeAvatarUrl(profile.value?.avatar_url))
 
 function passwordToggleLabel(visible: boolean): string {
   return buildPasswordToggleLabel({
