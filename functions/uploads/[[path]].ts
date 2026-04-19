@@ -10,6 +10,7 @@ import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 
 interface Env {
   API_BASE_URL?: string
+  STORAGE_PUBLIC_BASE_URL?: string
 }
 
 type CFPagesContext = {
@@ -20,6 +21,22 @@ type CFPagesContext = {
 
 export async function onRequest(context: CFPagesContext): Promise<Response> {
   const { request, env, params } = context
+  const path = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
+
+  if (path.startsWith('avatars/')) {
+    const storagePublicBaseUrl = env.STORAGE_PUBLIC_BASE_URL?.trim().replace(/\/+$/, '')
+    if (!storagePublicBaseUrl) {
+      return new Response('Legacy avatar compatibility is not configured', { status: 503 })
+    }
+
+    return new Response(null, {
+      status: 307,
+      headers: {
+        Location: `${storagePublicBaseUrl}/uploads/${path}`,
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      },
+    })
+  }
 
   // 获取后端地址
   const apiBaseUrl = resolveConfiguredApiBaseUrl(env)
@@ -28,7 +45,6 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   }
 
   // 构建目标 URL
-  const path = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
   const targetUrl = `${apiBaseUrl}/uploads/${path}`
 
   // 复制请求头

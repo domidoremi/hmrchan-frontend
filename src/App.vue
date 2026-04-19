@@ -106,6 +106,7 @@ import { useSettingsStore } from '@/stores'
 import { useAppearanceRuntime } from '@/composables/useAppearanceRuntime'
 import { useLocaleConfig } from '@/composables/useLocaleConfig'
 import { usePreferencesSync } from '@/composables/usePreferencesSync'
+import { isAuthRouteName } from '@/config/authRouteNames'
 import { scheduleTask } from '@/utils/modernAPIs'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppSideNav from '@/components/layout/AppSideNav.vue'
@@ -210,23 +211,11 @@ const shouldMountVerificationDialog = computed(
 
 // Page transition name
 const transitionName = ref('')
-const AUTH_ROUTE_NAMES = new Set([
-  'login',
-  'register',
-  'forgot-password',
-  'reset-password',
-  'verify-email',
-  'auth-callback',
-])
 const authKeepAliveExclude = ['AuthCallbackPage']
 const transitionMode = computed<'out-in' | undefined>(() =>
   transitionName.value ? 'out-in' : undefined
 )
 let initialRouteTransitionResolved = false
-
-function isAuthRouteName(routeName: string | undefined): boolean {
-  return Boolean(routeName && AUTH_ROUTE_NAMES.has(routeName))
-}
 
 function toRouteName(routeName: unknown): string | undefined {
   return typeof routeName === 'string' ? routeName : undefined

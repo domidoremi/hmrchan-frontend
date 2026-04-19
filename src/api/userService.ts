@@ -73,6 +73,7 @@ export interface ExportAccountDataResult {
 
 const BLOCKED_AVATAR_HOST_SUFFIXES = ['tiktokcdn.com', 'tiktokcdn-us.com', 'twimg.com']
 const BLOCKED_AVATAR_HOSTS = new Set(['pbs.twimg.com'])
+const RETIRED_LEGACY_AVATAR_PATH_PREFIXES = ['/uploads/avatars/', '/uploads/comment_images/']
 
 function isBlockedExternalAvatarHost(hostname: string): boolean {
   const normalized = hostname.trim().toLowerCase()
@@ -99,18 +100,24 @@ async function buildExportAccountBlob(response: Response): Promise<Blob> {
   })
 }
 
+function isRetiredLegacyAvatarPath(value: string): boolean {
+  return RETIRED_LEGACY_AVATAR_PATH_PREFIXES.some((prefix) => value.startsWith(prefix))
+}
+
 /**
  * 规范化头像 URL
- * 将后端返回的相对路径转换为可访问的 URL
  *
- * 后端返回格式: /uploads/avatars/xxx.jpg
- * 通过 Cloudflare Pages 代理访问: /uploads/avatars/xxx.jpg
- * 代理会再转发到后端 uploads 服务
+ * 当前现役 contract 只接受 storage-backed public URL。
+ * 历史 `/uploads/*` 相对路径已退役，前端不再继续消费它们。
  */
 export function normalizeAvatarUrl(url: string | null | undefined): string | null {
   if (!url) return null
   const normalized = normalizeToProxyPath(url)
   const resolved = normalized ?? url
+
+  if (isRetiredLegacyAvatarPath(resolved)) {
+    return null
+  }
 
   if (!/^https?:\/\//i.test(resolved)) {
     return resolved

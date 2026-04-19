@@ -489,12 +489,20 @@ describe('functions/api proxy', () => {
     )
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({
-      authenticated: true,
-      user,
-      session_expires_at: new Date((Math.floor(Date.now() / 1000) + 3600) * 1000).toISOString(),
-      permission_version: 7,
-    })
+    const payload = await response.json()
+    expect(payload).toEqual(
+      expect.objectContaining({
+        authenticated: true,
+        user,
+        permission_version: 7,
+      })
+    )
+    expect(typeof payload.session_expires_at).toBe('string')
+    const sessionExpiresAt = Date.parse(payload.session_expires_at)
+    const expectedLowerBound = Date.now() + 59 * 60 * 1000
+    const expectedUpperBound = Date.now() + 61 * 60 * 1000
+    expect(sessionExpiresAt).toBeGreaterThanOrEqual(expectedLowerBound)
+    expect(sessionExpiresAt).toBeLessThanOrEqual(expectedUpperBound)
 
     const cookies = getSetCookies(response)
     expect(cookies.some((value) => value.includes('__Host-momi_bff_at='))).toBe(true)
@@ -521,6 +529,66 @@ describe('functions/api proxy', () => {
     expect(response.status).toBe(200)
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${BACKEND_ORIGIN}/api/v1/posts?page=2`)
     expect((requestInit.headers as Headers).get('Authorization')).toBe(`Bearer ${accessToken}`)
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+  })
+
+  it('keeps Pages public fallback pinned to API_BASE_URL even when VPC origins are present in env', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ ok: true }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/home`,
+        headers: {
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'home'],
+        env: {
+          VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
+          VPC_COMMUNITY_API_ORIGIN: 'http://community-api:8000',
+          VPC_CONTENT_API_ORIGIN: 'http://content-api:8000',
+        },
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${BACKEND_ORIGIN}/api/v1/home`)
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+  })
+
+  it('preserves internal gateway upstream diagnostics for content reads', async () => {
+    const gatewayFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Proxy-Upstream-Source': 'vpc',
+          'X-Proxy-Upstream-Domain': 'content',
+          'X-Service-Name': 'content-api',
+        },
+      })
+    )
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/home/story-deck?limit=5`,
+        headers: {
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'home', 'story-deck'],
+        env: {
+          ENABLE_INTERNAL_API_GATEWAY: 'true',
+          INTERNAL_API_GATEWAY: {
+            fetch: gatewayFetch,
+          },
+        },
+      })
+    )
+
+    expect(gatewayFetch).toHaveBeenCalledTimes(1)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+    expect(response.headers.get('X-Service-Name')).toBe('content-api')
   })
 
   it('refreshes once and replays once when the upstream responds with 401', async () => {

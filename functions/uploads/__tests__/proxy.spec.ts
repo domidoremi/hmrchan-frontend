@@ -9,6 +9,31 @@ describe('functions/uploads proxy', () => {
     vi.restoreAllMocks()
   })
 
+  it('redirects retired avatar URLs to the storage-backed public URL', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/uploads/avatars/avatar.png'),
+      env: {
+        API_BASE_URL: BACKEND_ORIGIN,
+        STORAGE_PUBLIC_BASE_URL: 'https://cdn.momichan.xyz',
+      },
+      params: {
+        path: ['avatars', 'avatar.png'],
+      },
+    })
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(response.status).toBe(307)
+    expect(response.headers.get('Location')).toBe(
+      'https://cdn.momichan.xyz/uploads/avatars/avatar.png'
+    )
+    expect(response.headers.get('Cache-Control')).toBe(
+      'public, max-age=3600, stale-while-revalidate=86400'
+    )
+  })
+
   it('proxies uploads and assigns long-lived cache headers on success', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response('avatar-bytes', {
@@ -57,5 +82,24 @@ describe('functions/uploads proxy', () => {
 
     expect(response.status).toBe(404)
     await expect(response.text()).resolves.toBe('Not Found')
+  })
+
+  it('returns 503 for avatar compatibility when the storage public base URL is missing', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/uploads/avatars/avatar.png'),
+      env: {
+        API_BASE_URL: BACKEND_ORIGIN,
+      },
+      params: {
+        path: ['avatars', 'avatar.png'],
+      },
+    })
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(response.status).toBe(503)
+    await expect(response.text()).resolves.toBe('Legacy avatar compatibility is not configured')
   })
 })

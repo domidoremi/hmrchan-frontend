@@ -183,6 +183,7 @@ bun run check:release-evidence
 - 浏览器端生产默认通过同源 `/api` 访问后端，不使用 `VITE_API_BASE_URL` 改写线上 API 基址
 - Pages Functions 的 public fallback 目标通过 `API_BASE_URL` 配置；私网路径通过受支持的 `INTERNAL_API_GATEWAY` Service Binding 转发到内部 Worker，再由该 Worker 使用 `VPC_SERVICE` + 三域 VPC origin
 - Pages 纯文本变量最小集合为：`API_BASE_URL`、`BUN_VERSION=1.3.11`、`SKIP_DEPENDENCY_INSTALL=true`、`ENABLE_INTERNAL_API_GATEWAY=true`
+- 若主站仍需兼容历史头像链接 `/uploads/avatars/*`，还必须在 Pages / Functions 运行时配置 `STORAGE_PUBLIC_BASE_URL`；兼容层只做 edge redirect，现役头像 contract 仍然是 storage-backed public URL
 - BFF-first 认证在 Pages 生产与 preview 都要求配置 `BACKEND_INTERNAL_AUTH_SHARED_SECRET`，并要求存在 `INTERNAL_API_GATEWAY` Service Binding；`BACKEND_INTERNAL_ORIGIN` 仅作为调用方能直接访问 internal origin 时的 fallback，不应在 Pages 中机械填写 Docker hostname
 - `INTERNAL_API_GATEWAY` 必须绑定到实际部署出的环境 Worker：production 绑定 `hmrchan-internal-api-gateway-production`，preview 绑定 `hmrchan-internal-api-gateway-preview`；不要绑定到未带环境后缀、没有 VPC 配置的 base Worker
 - 若缺少 BFF shared secret，或同时缺少可用的 `INTERNAL_API_GATEWAY` 与直连 `BACKEND_INTERNAL_ORIGIN`，`/api/v1/auth/login`、`/api/v1/auth/session:resolve` 等同源认证入口会由 Functions 显式返回 `500 BFF_NOT_CONFIGURED`
@@ -192,6 +193,7 @@ bun run check:release-evidence
   - `VPC_CONTENT_API_ORIGIN=http://content-api:8000`
 - `VPC_API_ORIGIN` 仅作为旧配置回退，不再指向已退役的 `nginx`
 - 需要单独部署 [`workers/internal-api/wrangler.toml`](./workers/internal-api/wrangler.toml) 对应的 Worker，并让 Pages 通过 `INTERNAL_API_GATEWAY` 绑定到该 Worker；仅修改 Pages 项目变量不会自动创建这条私网链路
+- 同域 façade 排障时，优先检查响应头 `X-Service-Name`、`X-Proxy-Upstream-Source`、`X-Proxy-Upstream-Domain`；若内容或社区读面落到 `identity-api`，先修 façade 分流，不要通过放宽身份签名策略掩盖
 - 推荐 Pages 构建命令继续显式注入 `VITE_GIT_COMMIT=$CF_PAGES_COMMIT_SHA`；若 Dashboard 未配置 `VITE_CLIENT_CONTRACT_VERSION`，构建 wrapper 只会在 Cloudflare Pages 环境中用 `CF_PAGES_COMMIT_SHA` 作为本次 rollout contract，不影响普通本地 `bun run build` 的缺契约失败语义
 - 若后端生产 `CLIENT_CONTRACT_VERSION` 使用独立 release hash，而不是 Pages commit SHA，必须在 Cloudflare Dashboard 显式配置同值 `VITE_CLIENT_CONTRACT_VERSION`
 - `VITE_TURNSTILE_SITE_KEY` 作为机密在 Dashboard 中保留；其余 `VITE_*` 变量不是 Pages 生产必需项

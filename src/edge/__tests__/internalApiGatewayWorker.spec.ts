@@ -121,6 +121,73 @@ describe('handleInternalApiGatewayRequest', () => {
     expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
   })
 
+  it.each([
+    ['/api/v1/home', 'http://content-api:8000/api/v1/home', 'content'],
+    ['/api/v1/home/featured', 'http://content-api:8000/api/v1/home/featured', 'content'],
+    [
+      '/api/v1/home/story-deck?limit=5',
+      'http://content-api:8000/api/v1/home/story-deck?limit=5',
+      'content',
+    ],
+    [
+      '/api/v1/posts/text/latest?limit=10',
+      'http://content-api:8000/api/v1/posts/text/latest?limit=10',
+      'content',
+    ],
+    [
+      '/api/v1/trends/summary?window=7d',
+      'http://content-api:8000/api/v1/trends/summary?window=7d',
+      'content',
+    ],
+    [
+      '/api/v1/schedules/highlights?limit=6',
+      'http://content-api:8000/api/v1/schedules/highlights?limit=6',
+      'content',
+    ],
+    [
+      '/api/v1/community/highlights?limit=6',
+      'http://content-api:8000/api/v1/community/highlights?limit=6',
+      'content',
+    ],
+    ['/api/v1/posts?limit=20', 'http://content-api:8000/api/v1/posts?limit=20', 'content'],
+    ['/api/v1/authors?limit=20', 'http://content-api:8000/api/v1/authors?limit=20', 'content'],
+    ['/api/v1/inbox/summary', 'http://community-api:8000/api/v1/inbox/summary', 'community'],
+    ['/api/v1/client/init', 'http://identity-api:8000/api/v1/client/init', 'identity'],
+  ])('routes %s to the expected VPC upstream', async (pathname, expectedUrl, expectedDomain) => {
+    const publicFetch = vi.fn()
+    vi.stubGlobal('fetch', publicFetch)
+
+    const vpcFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Name': `${expectedDomain}-api`,
+        },
+      })
+    )
+
+    const response = await handleInternalApiGatewayRequest(
+      new Request(`https://momichan.xyz${pathname}`),
+      {
+        API_BASE_URL: BACKEND_ORIGIN,
+        ENABLE_VPC_PROXY: 'true',
+        VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
+        VPC_COMMUNITY_API_ORIGIN: 'http://community-api:8000',
+        VPC_CONTENT_API_ORIGIN: 'http://content-api:8000',
+        VPC_SERVICE: {
+          fetch: vpcFetch,
+        },
+      }
+    )
+
+    expect(vpcFetch).toHaveBeenCalledTimes(1)
+    expect((vpcFetch.mock.calls[0]?.[0] as Request).url).toBe(expectedUrl)
+    expect(publicFetch).not.toHaveBeenCalled()
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe(expectedDomain)
+  })
+
   it('falls back to public upstream when the VPC binding fails', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
 

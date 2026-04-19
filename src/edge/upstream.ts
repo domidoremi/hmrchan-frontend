@@ -42,6 +42,10 @@ function normalizeApiPath(path: string): string {
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`
 }
 
+function matchesPathPrefix(path: string, prefix: string): boolean {
+  return path === prefix || path.startsWith(`${prefix}/`)
+}
+
 export function resolveUpstreamDomain(path: string): UpstreamDomain {
   const normalizedPath = normalizeApiPath(path)
 
@@ -54,35 +58,35 @@ export function resolveUpstreamDomain(path: string): UpstreamDomain {
   }
 
   if (
-    normalizedPath.startsWith('/internal/v1/auth/') ||
-    normalizedPath.startsWith('/api/v1/client') ||
-    normalizedPath.startsWith('/api/v1/auth') ||
-    normalizedPath.startsWith('/api/v1/preferences') ||
-    normalizedPath.startsWith('/api/v1/users/me') ||
-    normalizedPath.startsWith('/api/v1/devices') ||
-    normalizedPath.startsWith('/api/v1/account') ||
-    normalizedPath.startsWith('/api/v1/2fa') ||
-    normalizedPath.startsWith('/api/v1/email') ||
-    normalizedPath.startsWith('/api/v1/upload/avatar') ||
-    normalizedPath.startsWith('/api/v1/audit') ||
-    normalizedPath.startsWith('/uploads/avatars')
+    matchesPathPrefix(normalizedPath, '/internal/v1/auth') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/client') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/auth') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/preferences') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/users/me') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/devices') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/account') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/2fa') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/email') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/upload/avatar') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/audit') ||
+    matchesPathPrefix(normalizedPath, '/uploads/avatars')
   ) {
     return 'identity'
   }
 
   if (
-    normalizedPath.startsWith('/api/v1/favorites') ||
-    normalizedPath.startsWith('/api/v1/community') ||
-    normalizedPath.startsWith('/api/v1/comments') ||
-    normalizedPath.startsWith('/api/v1/comment-images') ||
-    normalizedPath.startsWith('/api/v1/discussions') ||
-    normalizedPath.startsWith('/api/v1/relations') ||
-    normalizedPath.startsWith('/api/v1/history') ||
-    normalizedPath.startsWith('/api/v1/reports') ||
-    normalizedPath.startsWith('/api/v1/inbox') ||
-    normalizedPath.startsWith('/api/v1/feedback') ||
-    normalizedPath.startsWith('/api/v1/contact/send') ||
-    normalizedPath.startsWith('/uploads/comment_images')
+    matchesPathPrefix(normalizedPath, '/api/v1/favorites') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/community') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/comments') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/comment-images') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/discussions') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/relations') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/history') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/reports') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/inbox') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/feedback') ||
+    matchesPathPrefix(normalizedPath, '/api/v1/contact/send') ||
+    matchesPathPrefix(normalizedPath, '/uploads/comment_images')
   ) {
     return 'community'
   }
