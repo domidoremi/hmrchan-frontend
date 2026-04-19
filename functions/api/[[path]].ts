@@ -1063,6 +1063,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   )
   if (handledBrowserAuthResponse) {
     const headers = withCorsHeaders(request, isDev, new Headers(handledBrowserAuthResponse.headers))
+    RESPONSE_HEADERS_TO_SKIP.forEach((header) => headers.delete(header))
     return new Response(await handledBrowserAuthResponse.arrayBuffer(), {
       status: handledBrowserAuthResponse.status,
       headers,
