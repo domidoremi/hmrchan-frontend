@@ -8,7 +8,7 @@
  */
 
 import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
-import { resolveConfiguredApiBaseUrl, resolveVpcOriginForPath } from '../../src/edge/upstream'
+import { resolveConfiguredApiBaseUrl, resolveUpstreamDomain } from '../../src/edge/upstream'
 import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import {
   buildInternalGatewayUrl,
@@ -802,12 +802,8 @@ function requiresBrowserSignatureReplay(headers: Headers): boolean {
 }
 
 async function fetchViaPublic(options: ForwardRequestOptions): Promise<Response> {
-  const { apiBaseUrl, bodyBuffer, env, headers, path, redirectMode, request, search } = options
-  const targetOrigin =
-    env.VPC_IDENTITY_API_ORIGIN || env.VPC_COMMUNITY_API_ORIGIN || env.VPC_CONTENT_API_ORIGIN
-      ? resolveVpcOriginForPath(`/api/${path}`, env)
-      : apiBaseUrl
-  const targetUrl = `${targetOrigin}/api/${path}${search}`
+  const { apiBaseUrl, bodyBuffer, headers, path, redirectMode, request, search } = options
+  const targetUrl = `${apiBaseUrl}/api/${path}${search}`
   const init: RequestInit = {
     method: request.method,
     headers,
@@ -1039,6 +1035,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   }
 
   const requestUrl = new URL(request.url)
+  const upstreamDomain = resolveUpstreamDomain(requestUrl.pathname)
   const pathSegments = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
   const hasTrailingSlash = requestUrl.pathname.endsWith('/')
   const normalizedPath = pathSegments + (hasTrailingSlash && !pathSegments.endsWith('/') ? '/' : '')
@@ -1064,6 +1061,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   if (handledBrowserAuthResponse) {
     const headers = withCorsHeaders(request, isDev, new Headers(handledBrowserAuthResponse.headers))
     RESPONSE_HEADERS_TO_SKIP.forEach((header) => headers.delete(header))
+    headers.set('X-Proxy-Upstream-Domain', 'identity')
     return new Response(await handledBrowserAuthResponse.arrayBuffer(), {
       status: handledBrowserAuthResponse.status,
       headers,
@@ -1149,6 +1147,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       )
       stripResponseHeaders(redirectHeaders, compactPath)
       redirectHeaders.set('X-Proxy-Upstream-Source', upstream.source)
+      redirectHeaders.set('X-Proxy-Upstream-Domain', upstreamDomain)
       for (const [key, value] of bffCookieHeaders.entries()) {
         if (key.toLowerCase() === 'set-cookie') {
           redirectHeaders.append(key, value)
@@ -1177,6 +1176,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     stripResponseHeaders(responseHeaders, compactPath)
     RESPONSE_HEADERS_TO_SKIP.forEach((header) => responseHeaders.delete(header))
     responseHeaders.set('X-Proxy-Upstream-Source', upstream.source)
+    responseHeaders.set('X-Proxy-Upstream-Domain', upstreamDomain)
     if (
       upstream.response.status === 401 &&
       refreshToken &&

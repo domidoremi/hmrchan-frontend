@@ -20,8 +20,8 @@ describe('normalizeAvatarUrl', () => {
     vi.clearAllMocks()
   })
 
-  it('keeps proxied relative avatar paths accessible', () => {
-    expect(normalizeAvatarUrl('/uploads/avatars/test.jpg')).toBe('/uploads/avatars/test.jpg')
+  it('drops retired legacy relative avatar paths', () => {
+    expect(normalizeAvatarUrl('/uploads/avatars/test.jpg')).toBeNull()
   })
 
   it('falls back YouTube maxres avatars to hqdefault before request', () => {

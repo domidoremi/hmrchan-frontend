@@ -22,6 +22,7 @@ import {
   canTrackPerformance,
   updateAnalyticsConsent,
 } from './utils/analyticsConsent'
+import { AUTH_ROUTE_NAMES } from './config/authRouteNames'
 import { reportClientError, reportClientEvent } from './utils/clientReporter'
 import vClickOutside from './directives/clickOutside'
 import { ensureAuthStoreLoaded, useAuthSurface } from './services/authSurface'

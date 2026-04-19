@@ -1,5 +1,6 @@
 import {
   resolveConfiguredApiBaseUrl,
+  resolveUpstreamDomain,
   resolveVpcOriginForPath,
   type UpstreamRuntimeEnv,
 } from './upstream'
@@ -141,6 +142,7 @@ async function withUpstreamSourceHeaders(
   const headers = new Headers(response.headers)
   RESPONSE_HEADERS_TO_SKIP.forEach((header) => headers.delete(header))
   headers.set('X-Proxy-Upstream-Source', source)
+  headers.set('X-Proxy-Upstream-Domain', resolveUpstreamDomain(path))
 
   const apiVersion = extractApiVersion(path)
   if (apiVersion) {

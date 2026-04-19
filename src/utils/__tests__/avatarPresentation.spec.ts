@@ -3,7 +3,7 @@ import { getAvatarFallbackLabel, resolveAvatarSrc } from '../avatarPresentation'
 
 describe('avatarPresentation', () => {
   it('normalizes avatar urls through the shared helper', () => {
-    expect(resolveAvatarSrc('/uploads/avatars/test.jpg')).toBe('/uploads/avatars/test.jpg')
+    expect(resolveAvatarSrc('/uploads/avatars/test.jpg')).toBeUndefined()
     expect(resolveAvatarSrc('https://i.ytimg.com/vi/demo/maxresdefault.jpg')).toBe(
       'https://i.ytimg.com/vi/demo/hqdefault.jpg'
     )
