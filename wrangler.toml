@@ -127,7 +127,3 @@ service = "hmrchan-internal-api-gateway-preview"
 # --- Analytics Engine ---
 # [[env.production.analytics_engine_datasets]]
 # binding = "ANALYTICS"
-[observability]
-[observability.logs]
-enabled = true
-invocation_logs = true
