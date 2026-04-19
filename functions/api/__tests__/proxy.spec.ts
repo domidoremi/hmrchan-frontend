@@ -291,6 +291,59 @@ describe('functions/api proxy', () => {
     })
   })
 
+  it('propagates internal gateway VPC errors for auth facades without crashing the Pages runtime', async () => {
+    const gatewayFetch = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          error: 'VPC_UPSTREAM_UNAVAILABLE',
+          message: 'Internal API gateway could not reach the private upstream.',
+          detail: 'ProxyError: destination_unavailable',
+        }),
+        {
+          status: 502,
+          headers: {
+            'Content-Type': 'application/json',
+            Connection: 'keep-alive',
+            'X-Proxy-Upstream-Source': 'vpc-error',
+          },
+        }
+      )
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/login`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+          'X-Client-Fingerprint': 'manual-check',
+        },
+        body: JSON.stringify({
+          username: 'invalid-smoke-user',
+          password: 'invalid-smoke-password',
+        }),
+        path: ['v1', 'auth', 'login'],
+        env: {
+          BACKEND_INTERNAL_ORIGIN: undefined,
+          ENABLE_INTERNAL_API_GATEWAY: 'true',
+          INTERNAL_API_GATEWAY: {
+            fetch: gatewayFetch,
+          },
+        },
+      })
+    )
+
+    expect(response.status).toBe(502)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc-error')
+    expect(response.headers.get('Connection')).toBeNull()
+    await expect(response.json()).resolves.toEqual({
+      error: 'VPC_UPSTREAM_UNAVAILABLE',
+      message: 'Internal API gateway could not reach the private upstream.',
+      detail: 'ProxyError: destination_unavailable',
+    })
+  })
+
   it('refreshes the session via the internal BFF and rewrites cookies', async () => {
     const refreshed = createSessionMaterial({ permission_version: 3 })
     const user = createUser({ permission_version: 3 })

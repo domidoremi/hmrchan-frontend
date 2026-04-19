@@ -414,9 +414,11 @@ async function fetchInternalBff(env: ProxyEnv, path: string, payload: unknown): 
 
 async function copyResponse(response: Response, headers?: Headers): Promise<Response> {
   const body = await response.arrayBuffer()
+  const responseHeaders = headers ? new Headers(headers) : new Headers(response.headers)
+  RESPONSE_HEADERS_TO_SKIP.forEach((header) => responseHeaders.delete(header))
   return new Response(body, {
     status: response.status,
-    headers: headers ?? response.headers,
+    headers: responseHeaders,
   })
 }
 
