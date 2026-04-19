@@ -574,6 +574,7 @@ async function resolveSessionFromCookies(
   let accessToken = getCookieValue(request, BFF_ACCESS_COOKIE_NAME)
   const refreshToken = getCookieValue(request, BFF_REFRESH_COOKIE_NAME)
   const fingerprint = extractBrowserFingerprint(request)
+  const hasSessionCookies = Boolean(accessToken || refreshToken)
 
   if ((!accessToken || isAccessTokenNearExpiry(accessToken)) && refreshToken) {
     const refreshed = await refreshBffSession(env, refreshToken, fingerprint)
@@ -584,7 +585,9 @@ async function resolveSessionFromCookies(
   }
 
   if (!accessToken) {
-    appendClearedSessionCookies(responseHeaders)
+    if (hasSessionCookies) {
+      appendClearedSessionCookies(responseHeaders)
+    }
     return jsonResponse({ authenticated: false }, 200, responseHeaders)
   }
 
