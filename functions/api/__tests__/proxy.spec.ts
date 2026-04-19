@@ -431,10 +431,7 @@ describe('functions/api proxy', () => {
     expect(mockFetch).not.toHaveBeenCalled()
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({ authenticated: false })
-
-    const cookies = getSetCookies(response)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_at=; Max-Age=0'))).toBe(true)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_rt=; Max-Age=0'))).toBe(true)
+    expect(getSetCookies(response)).toEqual([])
   })
 
   it('resolves a session from refresh-cookie material and returns a session summary', async () => {
