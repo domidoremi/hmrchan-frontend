@@ -28,7 +28,7 @@ pages_build_output_dir = "./dist"
 # 再由该 Worker 负责 VPC/private upstream 访问。
 [[env.production.services]]
 binding = "INTERNAL_API_GATEWAY"
-service = "hmrchan-internal-api-gateway"
+service = "hmrchan-internal-api-gateway-production"
 
 [env.production.vars]
 # 仅使用 Bun：显式指定 Bun 版本并禁用自动 npm 依赖安装
@@ -50,8 +50,7 @@ ENABLE_INTERNAL_API_GATEWAY = "true"
 
 [[env.preview.services]]
 binding = "INTERNAL_API_GATEWAY"
-service = "hmrchan-internal-api-gateway"
-environment = "preview"
+service = "hmrchan-internal-api-gateway-preview"
 
 # ============================================================================
 # 绑定配置（Bindings）

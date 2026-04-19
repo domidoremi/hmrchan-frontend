@@ -11,7 +11,7 @@ export type InternalApiGatewayWorkerEnv = UpstreamRuntimeEnv & {
   VPC_SERVICE?: EdgeBindingFetcher
 }
 
-export type InternalGatewayUpstreamSource = 'vpc' | 'public' | 'public-fallback'
+export type InternalGatewayUpstreamSource = 'vpc' | 'public' | 'public-fallback' | 'vpc-error'
 
 const REQUEST_HEADERS_TO_SKIP = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
 const RESPONSE_HEADERS_TO_SKIP = [
@@ -53,6 +53,10 @@ function shouldBypassVpc(pathname: string, request: Request): boolean {
 
   const normalized = normalizePath(pathname).toLowerCase()
   return normalized === '/api/v1/auth/google/start' || normalized === '/api/v1/auth/google/callback'
+}
+
+function requiresPrivateVpc(pathname: string): boolean {
+  return pathname.startsWith('/internal/')
 }
 
 function extractApiVersion(path: string): string | null {
@@ -163,6 +167,25 @@ function buildConfigurationError(): Response {
   )
 }
 
+function buildVpcUpstreamError(error: unknown): Response {
+  const message = error instanceof Error ? error.message : String(error)
+  return new Response(
+    JSON.stringify({
+      error: 'VPC_UPSTREAM_UNAVAILABLE',
+      message: 'Internal API gateway could not reach the private upstream.',
+      detail: message,
+    }),
+    {
+      status: 502,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        'X-Proxy-Upstream-Source': 'vpc-error',
+      },
+    }
+  )
+}
+
 export async function handleInternalApiGatewayRequest(
   request: Request,
   env: InternalApiGatewayWorkerEnv
@@ -193,6 +216,11 @@ export async function handleInternalApiGatewayRequest(
       const response = await fetchViaVPC(request, requestUrl, path, search, env, bodyBuffer)
       return await withUpstreamSourceHeaders(response, 'vpc', path, request.method)
     } catch (error) {
+      if (requiresPrivateVpc(path)) {
+        console.error('[Internal API Gateway] VPC fetch failed for private internal path:', error)
+        return buildVpcUpstreamError(error)
+      }
+
       console.error('[Internal API Gateway] VPC fetch failed, falling back to public:', error)
       const response = await fetchViaPublic(
         request,

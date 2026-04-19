@@ -156,6 +156,41 @@ describe('handleInternalApiGatewayRequest', () => {
     expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public-fallback')
   })
 
+  it('does not fall back to public upstream for private internal BFF calls', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const publicFetch = vi.fn()
+    vi.stubGlobal('fetch', publicFetch)
+
+    const vpcFetch = vi.fn().mockRejectedValue(new Error('vpc unavailable'))
+
+    const response = await handleInternalApiGatewayRequest(
+      new Request('https://momichan.xyz/internal/v1/auth/bff/login', {
+        method: 'POST',
+        body: JSON.stringify({ username: 'tester@example.com' }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        API_BASE_URL: BACKEND_ORIGIN,
+        ENABLE_VPC_PROXY: 'true',
+        VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
+        VPC_SERVICE: {
+          fetch: vpcFetch,
+        },
+      }
+    )
+
+    expect(vpcFetch).toHaveBeenCalledTimes(1)
+    expect(publicFetch).not.toHaveBeenCalled()
+    expect(response.status).toBe(502)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc-error')
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'VPC_UPSTREAM_UNAVAILABLE',
+    })
+  })
+
   it('bypasses VPC for google auth browser redirects', async () => {
     const publicFetch = vi.fn().mockResolvedValue(
       new Response(null, {
