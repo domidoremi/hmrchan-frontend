@@ -184,6 +184,7 @@ bun run check:release-evidence
 - Pages Functions 的 public fallback 目标通过 `API_BASE_URL` 配置；私网路径通过受支持的 `INTERNAL_API_GATEWAY` Service Binding 转发到内部 Worker，再由该 Worker 使用 `VPC_SERVICE` + 三域 VPC origin
 - Pages 纯文本变量最小集合为：`API_BASE_URL`、`BUN_VERSION=1.3.11`、`SKIP_DEPENDENCY_INSTALL=true`、`ENABLE_INTERNAL_API_GATEWAY=true`
 - BFF-first 认证在 Pages 生产与 preview 都要求配置 `BACKEND_INTERNAL_AUTH_SHARED_SECRET`，并要求存在 `INTERNAL_API_GATEWAY` Service Binding；`BACKEND_INTERNAL_ORIGIN` 仅作为调用方能直接访问 internal origin 时的 fallback，不应在 Pages 中机械填写 Docker hostname
+- `INTERNAL_API_GATEWAY` 必须绑定到实际部署出的环境 Worker：production 绑定 `hmrchan-internal-api-gateway-production`，preview 绑定 `hmrchan-internal-api-gateway-preview`；不要绑定到未带环境后缀、没有 VPC 配置的 base Worker
 - 若缺少 BFF shared secret，或同时缺少可用的 `INTERNAL_API_GATEWAY` 与直连 `BACKEND_INTERNAL_ORIGIN`，`/api/v1/auth/login`、`/api/v1/auth/session:resolve` 等同源认证入口会由 Functions 显式返回 `500 BFF_NOT_CONFIGURED`
 - 内部 Worker 的私网三域上游应与后端当前 Compose 服务名对齐：
   - `VPC_IDENTITY_API_ORIGIN=http://identity-api:8000`
