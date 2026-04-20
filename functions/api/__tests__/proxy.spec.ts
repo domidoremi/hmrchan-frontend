@@ -344,6 +344,79 @@ describe('functions/api proxy', () => {
     })
   })
 
+  it.each([
+    [
+      '/api/v1/auth/passwordless/options',
+      ['v1', 'auth', 'passwordless', 'options'],
+      '/internal/v1/auth/bff/passwordless/options',
+    ],
+    [
+      '/api/v1/auth/passwordless/verify',
+      ['v1', 'auth', 'passwordless', 'verify'],
+      '/internal/v1/auth/bff/passwordless/verify',
+    ],
+    [
+      '/api/v1/auth/risk-login/webauthn/options',
+      ['v1', 'auth', 'risk-login', 'webauthn', 'options'],
+      '/internal/v1/auth/bff/risk/webauthn/options',
+    ],
+    [
+      '/api/v1/auth/risk-login/webauthn/verify',
+      ['v1', 'auth', 'risk-login', 'webauthn', 'verify'],
+      '/internal/v1/auth/bff/risk/webauthn/verify',
+    ],
+    [
+      '/api/v1/2fa/webauthn/authenticate/options',
+      ['v1', '2fa', 'webauthn', 'authenticate', 'options'],
+      '/internal/v1/auth/bff/mfa/webauthn/options',
+    ],
+    [
+      '/api/v1/2fa/webauthn/authenticate/verify',
+      ['v1', '2fa', 'webauthn', 'authenticate', 'verify'],
+      '/internal/v1/auth/bff/mfa/webauthn/verify',
+    ],
+  ])('routes passkey facade %s to the internal BFF path', async (urlPath, path, internalPath) => {
+    mockFetch.mockResolvedValueOnce(apiEnvelope({ ceremony_id: 'ceremony-1', ok: true }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}${urlPath}`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+          'X-Client-Fingerprint': 'fingerprint-123',
+        },
+        body: JSON.stringify({ ceremony_id: 'ceremony-1' }),
+        path,
+      })
+    )
+
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${INTERNAL_ORIGIN}${internalPath}`)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('identity')
+  })
+
+  it('does not expose internal API paths through the public Pages facade', async () => {
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/internal/v1/auth/bff/passwordless/options`,
+        method: 'POST',
+        headers: { Origin: ORIGIN },
+        body: JSON.stringify({}),
+        path: ['internal', 'v1', 'auth', 'bff', 'passwordless', 'options'],
+      })
+    )
+
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({
+      error: 'NOT_FOUND',
+      message: 'Internal API paths are not exposed on the public frontend facade.',
+    })
+  })
+
   it('refreshes the session via the internal BFF and rewrites cookies', async () => {
     const refreshed = createSessionMaterial({ permission_version: 3 })
     const user = createUser({ permission_version: 3 })

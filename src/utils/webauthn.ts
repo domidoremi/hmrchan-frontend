@@ -70,6 +70,11 @@ function mapRequestOptions(
   }
 }
 
+type WebAuthnAssertionRequestOptions = {
+  conditional?: boolean
+  signal?: AbortSignal
+}
+
 function serializeCredentialFallback(credential: PublicKeyCredential): PublicKeyCredentialJSON {
   const response = credential.response
 
@@ -107,6 +112,25 @@ export function isWebAuthnSupported(): boolean {
   return typeof window !== 'undefined' && !!window.PublicKeyCredential && !!navigator.credentials
 }
 
+export async function isConditionalMediationAvailable(): Promise<boolean> {
+  if (!isWebAuthnSupported()) {
+    return false
+  }
+
+  const credentialConstructor = window.PublicKeyCredential as typeof PublicKeyCredential & {
+    isConditionalMediationAvailable?: () => Promise<boolean>
+  }
+  if (typeof credentialConstructor.isConditionalMediationAvailable !== 'function') {
+    return false
+  }
+
+  try {
+    return await credentialConstructor.isConditionalMediationAvailable()
+  } catch {
+    return false
+  }
+}
+
 export async function createWebAuthnCredential(
   options: PublicKeyCredentialCreationOptionsJSON
 ): Promise<Credential | null> {
@@ -114,9 +138,20 @@ export async function createWebAuthnCredential(
 }
 
 export async function getWebAuthnAssertion(
-  options: PublicKeyCredentialRequestOptionsJSON
+  options: PublicKeyCredentialRequestOptionsJSON,
+  requestOptions: WebAuthnAssertionRequestOptions = {}
 ): Promise<Credential | null> {
-  return navigator.credentials.get(mapRequestOptions(options))
+  const mappedOptions = mapRequestOptions(options) as CredentialRequestOptions & {
+    mediation?: CredentialMediationRequirement | 'conditional'
+    signal?: AbortSignal
+  }
+  if (requestOptions.conditional) {
+    mappedOptions.mediation = 'conditional'
+  }
+  if (requestOptions.signal) {
+    mappedOptions.signal = requestOptions.signal
+  }
+  return navigator.credentials.get(mappedOptions)
 }
 
 export function serializePublicKeyCredential(
