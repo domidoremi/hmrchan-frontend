@@ -71,6 +71,9 @@ describe('release route contract', () => {
     expect(overview.authRouteCount).toBeGreaterThan(10)
     expect(overview.manualRunnerRouteCount).toBeGreaterThan(10)
     expect(overview.detailReadinessRouteCount).toBe(2)
+    expect(overview.productionReportRouteCount).toBeGreaterThan(10)
+    expect(overview.riskTagCounts['authenticated']).toBeGreaterThan(10)
+    expect(overview.riskTagCounts['public']).toBeGreaterThan(5)
   })
 
   it('keeps detail readiness aligned with lazy comments and discussion thread mounting', () => {
@@ -104,5 +107,22 @@ describe('release route contract', () => {
         '/profile/devices',
       ])
     )
+  })
+
+  it('attaches risk tags and production-report flags to shared route definitions', () => {
+    const guestRoute = getSmokeRouteMatrix().guest.find((route) => route.path === '/')
+    const sensitiveAuthRoute = getAuthenticatedRouteDefinitions().find(
+      (route) => route.path === '/profile/devices'
+    )
+    const detailRoute = getAuthenticatedRouteDefinitions().find(
+      (route) => route.name === 'authenticated sample post'
+    )
+
+    expect(guestRoute?.riskTags).toEqual(expect.arrayContaining(['public', 'seo-critical']))
+    expect(sensitiveAuthRoute?.riskTags).toEqual(
+      expect.arrayContaining(['authenticated', 'sensitive', 'edge-critical'])
+    )
+    expect(sensitiveAuthRoute?.includeInProductionReport).toBe(true)
+    expect(detailRoute?.includeInProductionReport).toBe(false)
   })
 })

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { resolveProductionContractEnv } from '../../../scripts/lib/production-contract-env.js'
+import {
+  getProductionContractEnvPolicy,
+  resolveProductionContractEnv,
+  validateProductionContractEnvPolicy,
+} from '../../../scripts/lib/production-contract-env.js'
 
 describe('production contract env resolver', () => {
   it('preserves an explicit production contract version', () => {
@@ -78,5 +82,23 @@ describe('production contract env resolver', () => {
     expect(result.sanitized?.forcedKeys).toEqual(
       expect.arrayContaining(['VITE_ENABLE_DEBUG', 'VITE_ENABLE_DEVTOOLS'])
     )
+  })
+
+  it('exposes a stable production env policy contract for release validation', () => {
+    const policy = getProductionContractEnvPolicy()
+
+    expect(validateProductionContractEnvPolicy()).toEqual([])
+    expect(policy.stripClientEnvKeys).toEqual(
+      expect.arrayContaining([
+        'VITE_API_BASE_URL',
+        'VITE_IDENTITY_API_BASE_URL',
+        'VITE_COMMUNITY_API_BASE_URL',
+        'VITE_CONTENT_API_BASE_URL',
+      ])
+    )
+    expect(policy.forceClientEnv).toMatchObject({
+      VITE_ENABLE_DEBUG: 'false',
+      VITE_ENABLE_DEVTOOLS: 'false',
+    })
   })
 })

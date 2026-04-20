@@ -37,6 +37,11 @@ const FORCE_SAFE_PRODUCTION_CLIENT_ENV = Object.freeze({
   VITE_ENABLE_DEVTOOLS: 'false',
 })
 
+const PRODUCTION_CONTRACT_ENV_POLICY = Object.freeze({
+  stripClientEnvKeys: STRIP_PRODUCTION_CLIENT_ENV_KEYS,
+  forceClientEnv: FORCE_SAFE_PRODUCTION_CLIENT_ENV,
+})
+
 function sanitizeProductionClientEnv(baseEnv) {
   const env = { ...baseEnv }
   const strippedKeys = []
@@ -67,6 +72,56 @@ function sanitizeProductionClientEnv(baseEnv) {
     strippedKeys,
     forcedKeys,
   }
+}
+
+export function getProductionContractEnvPolicy() {
+  return {
+    stripClientEnvKeys: [...PRODUCTION_CONTRACT_ENV_POLICY.stripClientEnvKeys],
+    forceClientEnv: { ...PRODUCTION_CONTRACT_ENV_POLICY.forceClientEnv },
+  }
+}
+
+export function validateProductionContractEnvPolicy() {
+  const issues = []
+  const policy = getProductionContractEnvPolicy()
+
+  if (policy.stripClientEnvKeys.length === 0) {
+    issues.push({
+      code: 'missing-strip-client-env-keys',
+      message: 'Production contract env policy must strip at least one incompatible client env key.',
+    })
+  }
+
+  if (Object.keys(policy.forceClientEnv).length === 0) {
+    issues.push({
+      code: 'missing-force-client-env',
+      message: 'Production contract env policy must force at least one safe production client env value.',
+    })
+  }
+
+  if (policy.forceClientEnv.VITE_ENABLE_DEBUG !== 'false') {
+    issues.push({
+      code: 'unsafe-debug-flag',
+      message: 'Production contract env policy must force VITE_ENABLE_DEBUG=false.',
+    })
+  }
+
+  if (policy.forceClientEnv.VITE_ENABLE_DEVTOOLS !== 'false') {
+    issues.push({
+      code: 'unsafe-devtools-flag',
+      message: 'Production contract env policy must force VITE_ENABLE_DEVTOOLS=false.',
+    })
+  }
+
+  const overlappingKeys = policy.stripClientEnvKeys.filter((key) => key in policy.forceClientEnv)
+  if (overlappingKeys.length > 0) {
+    issues.push({
+      code: 'overlapping-production-env-policy',
+      message: `Production contract env policy cannot strip and force the same keys: ${overlappingKeys.join(', ')}`,
+    })
+  }
+
+  return issues
 }
 
 export function resolveProductionContractEnv(baseEnv = process.env) {

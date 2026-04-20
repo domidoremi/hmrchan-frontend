@@ -2,6 +2,39 @@ function isRecord(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
+const AUTH_BOOTSTRAP_CLIENT_FINGERPRINT = 'auth-bootstrap-probe'
+const AUTH_BOOTSTRAP_PROBE_DEFINITIONS = Object.freeze([
+  Object.freeze({
+    name: 'client-init',
+    path: '/api/v1/client/init',
+    method: 'POST',
+    attachContract: false,
+    body: Object.freeze({
+      client_fingerprint: AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
+    }),
+  }),
+  Object.freeze({
+    name: 'session-resolve',
+    path: '/api/v1/auth/session:resolve',
+    method: 'POST',
+    attachContract: true,
+    body: Object.freeze({
+      client_fingerprint: AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
+    }),
+  }),
+  Object.freeze({
+    name: 'login',
+    path: '/api/v1/auth/login',
+    method: 'POST',
+    attachContract: true,
+    body: Object.freeze({
+      username: 'invalid-smoke-user',
+      password: 'invalid-smoke-password',
+      client_fingerprint: AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
+    }),
+  }),
+])
+
 function pickNonEmptyString(...values) {
   for (const value of values) {
     if (typeof value === 'string' && value.trim().length > 0) {
@@ -158,6 +191,57 @@ export function formatFatalAuthBootstrapProbe(probe) {
   }
 }
 
+export function getAuthBootstrapProbeDefinitions() {
+  return AUTH_BOOTSTRAP_PROBE_DEFINITIONS.map((probe) => ({
+    ...probe,
+    body: probe.body ? { ...probe.body } : null,
+  }))
+}
+
+export function validateAuthBootstrapContract() {
+  const issues = []
+  const definitions = getAuthBootstrapProbeDefinitions()
+  const requiredPaths = new Map([
+    ['/api/v1/client/init', { method: 'POST', attachContract: false }],
+    ['/api/v1/auth/session:resolve', { method: 'POST', attachContract: true }],
+    ['/api/v1/auth/login', { method: 'POST', attachContract: true }],
+  ])
+
+  for (const [path, expectation] of requiredPaths.entries()) {
+    const probe = definitions.find((entry) => entry.path === path)
+    if (!probe) {
+      issues.push({
+        code: 'missing-auth-bootstrap-probe',
+        message: `Missing auth bootstrap probe for ${path}`,
+      })
+      continue
+    }
+
+    if (probe.method !== expectation.method) {
+      issues.push({
+        code: 'auth-bootstrap-method-mismatch',
+        message: `${path} should use ${expectation.method}, got ${probe.method}`,
+      })
+    }
+
+    if (Boolean(probe.attachContract) !== expectation.attachContract) {
+      issues.push({
+        code: 'auth-bootstrap-contract-mismatch',
+        message: `${path} should ${expectation.attachContract ? 'attach' : 'skip'} the client contract header`,
+      })
+    }
+
+    if (!isRecord(probe.body) || probe.body.client_fingerprint !== AUTH_BOOTSTRAP_CLIENT_FINGERPRINT) {
+      issues.push({
+        code: 'auth-bootstrap-fingerprint-mismatch',
+        message: `${path} must send a stable client_fingerprint probe payload`,
+      })
+    }
+  }
+
+  return issues
+}
+
 export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
   const headers = new Headers({
     Accept: 'application/json',
@@ -172,10 +256,13 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
     headers.set('X-Client-Contract-Version', contractVersion)
   }
 
+  const requestBody =
+    probe.body == null || typeof probe.body === 'string' ? probe.body ?? null : JSON.stringify(probe.body)
+
   const response = await fetch(new URL(probe.path, baseUrl).toString(), {
     method: probe.method,
     headers,
-    body: probe.body ?? null,
+    body: requestBody,
   })
 
   const rawBody = await response.text()
@@ -200,26 +287,9 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
 }
 
 export async function probeAuthBootstrapEndpoints(baseUrl, options = {}) {
-  return Promise.all([
-    probeAuthBootstrapEndpoint(
-      baseUrl,
-      {
-        path: '/api/v1/client/init',
-        method: 'POST',
-        attachContract: false,
-        body: JSON.stringify({
-          client_fingerprint: 'auth-bootstrap-probe',
-        }),
-      },
-      options
-    ),
-    probeAuthBootstrapEndpoint(
-      baseUrl,
-      {
-        path: '/api/v1/auth/session:resolve',
-        method: 'POST',
-      },
-      options
-    ),
-  ])
+  return Promise.all(
+    getAuthBootstrapProbeDefinitions().map((probe) =>
+      probeAuthBootstrapEndpoint(baseUrl, probe, options)
+    )
+  )
 }

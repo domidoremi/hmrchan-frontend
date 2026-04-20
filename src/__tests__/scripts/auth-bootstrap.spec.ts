@@ -6,6 +6,8 @@ import {
   extractAuthBootstrapError,
   findFatalAuthBootstrapProbe,
   formatFatalAuthBootstrapProbe,
+  getAuthBootstrapProbeDefinitions,
+  validateAuthBootstrapContract,
 } from '../../../scripts/lib/auth-bootstrap.js'
 
 describe('auth bootstrap helpers', () => {
@@ -152,5 +154,32 @@ describe('auth bootstrap helpers', () => {
     expect(formatFatalAuthBootstrapProbe(fatalProbe!)).toContain(
       'API upstream is unavailable at the edge'
     )
+  })
+
+  it('keeps the auth bootstrap probe contract aligned with public auth warmup endpoints', () => {
+    const definitions = getAuthBootstrapProbeDefinitions()
+
+    expect(validateAuthBootstrapContract()).toEqual([])
+    expect(definitions.map((probe) => probe.path)).toEqual([
+      '/api/v1/client/init',
+      '/api/v1/auth/session:resolve',
+      '/api/v1/auth/login',
+    ])
+    expect(definitions[0]).toMatchObject({
+      method: 'POST',
+      attachContract: false,
+      body: {
+        client_fingerprint: 'auth-bootstrap-probe',
+      },
+    })
+    expect(definitions[2]).toMatchObject({
+      method: 'POST',
+      attachContract: true,
+      body: {
+        username: 'invalid-smoke-user',
+        password: 'invalid-smoke-password',
+        client_fingerprint: 'auth-bootstrap-probe',
+      },
+    })
   })
 })

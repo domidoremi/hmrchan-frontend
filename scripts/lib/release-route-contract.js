@@ -3,6 +3,39 @@ const SAMPLE_DISCUSSION_ROUTE_TOKEN = '__SAMPLE_DISCUSSION__'
 const DEFAULT_SAMPLE_POST_ROUTE = '/post/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
 const DEFAULT_SAMPLE_DISCUSSION_ROUTE = '/community/discussions/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
 
+const SEO_CRITICAL_PATHS = new Set([
+  '/',
+  '/explore',
+  '/authors',
+  '/community',
+  '/search',
+  '/login',
+  SAMPLE_POST_ROUTE_TOKEN,
+  SAMPLE_DISCUSSION_ROUTE_TOKEN,
+  '/this-route-does-not-exist',
+])
+
+const EDGE_CRITICAL_PATHS = new Set([
+  '/login',
+  '/profile',
+  '/favorites',
+  '/profile/favorites',
+  '/profile/comments',
+  '/profile/likes',
+  '/profile/comment-favorites',
+  '/profile/history',
+  '/profile/reports',
+  '/profile/followers',
+  '/profile/following',
+  '/profile/blocked',
+  '/profile/security-activity',
+  '/profile/settings',
+  '/profile/notifications',
+  '/profile/devices',
+  SAMPLE_POST_ROUTE_TOKEN,
+  SAMPLE_DISCUSSION_ROUTE_TOKEN,
+])
+
 export {
   DEFAULT_SAMPLE_DISCUSSION_ROUTE,
   DEFAULT_SAMPLE_POST_ROUTE,
@@ -12,6 +45,40 @@ export {
 
 export function buildProfileSectionShellSelector(sectionId) {
   return `[data-testid="profile-section-shell"][data-profile-section="${sectionId}"]`
+}
+
+function sortUniqueStrings(values) {
+  return [...new Set(values.filter((value) => typeof value === 'string' && value.length > 0))].sort()
+}
+
+function hasEdgeCriticalBehavior(route) {
+  return Boolean(route.expectedPath) || EDGE_CRITICAL_PATHS.has(route.path)
+}
+
+function attachRouteContractMetadata(route) {
+  const modeTag = route.mode === 'auth' ? 'authenticated' : 'public'
+  const riskTags = [modeTag, ...(route.riskTags ?? [])]
+
+  if (route.securityLevel === 'sensitive') {
+    riskTags.push('sensitive')
+  }
+
+  if (SEO_CRITICAL_PATHS.has(route.path)) {
+    riskTags.push('seo-critical')
+  }
+
+  if (hasEdgeCriticalBehavior(route)) {
+    riskTags.push('edge-critical')
+  }
+
+  const includeInProductionReport =
+    route.includeInProductionReport ?? (route.mode === 'auth' && route.includeInManualRunner !== false)
+
+  return Object.freeze({
+    ...route,
+    riskTags: Object.freeze(sortUniqueStrings(riskTags)),
+    includeInProductionReport,
+  })
 }
 
 const GUEST_BROWSER_ROUTE_DEFINITIONS = Object.freeze([
@@ -159,7 +226,7 @@ const GUEST_BROWSER_ROUTE_DEFINITIONS = Object.freeze([
     mode: 'guest',
     shellSelector: '.not-found-page',
   },
-])
+].map(attachRouteContractMetadata))
 
 const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze([
   {
@@ -337,14 +404,20 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze([
     readinessSelectorsAny: ['[data-testid="discussion-comment-composer"]'],
     includeInManualRunner: false,
   },
-])
+].map(attachRouteContractMetadata))
 
 export function getGuestBrowserRouteDefinitions() {
-  return GUEST_BROWSER_ROUTE_DEFINITIONS.map((route) => ({ ...route }))
+  return GUEST_BROWSER_ROUTE_DEFINITIONS.map((route) => ({
+    ...route,
+    riskTags: [...route.riskTags],
+  }))
 }
 
 export function getAuthenticatedRouteDefinitions() {
-  return AUTHENTICATED_ROUTE_DEFINITIONS.map((route) => ({ ...route }))
+  return AUTHENTICATED_ROUTE_DEFINITIONS.map((route) => ({
+    ...route,
+    riskTags: [...route.riskTags],
+  }))
 }
 
 function resolveRoutePath(route, samplePostRoute, sampleDiscussionRoute) {
@@ -379,11 +452,19 @@ export function getManualRunnerProtectedRoutes() {
 export function getReleaseRouteContractOverview() {
   const guest = getGuestBrowserRouteDefinitions()
   const auth = getAuthenticatedRouteDefinitions()
+  const allRoutes = [...guest, ...auth]
   const manualRunner = getManualRunnerProtectedRoutes()
   const profileRoutes = auth.filter((route) => route.path === '/favorites' || route.path.startsWith('/profile'))
   const detailReadinessRoutes = auth.filter(
     (route) =>
       route.path === SAMPLE_POST_ROUTE_TOKEN || route.path === SAMPLE_DISCUSSION_ROUTE_TOKEN
+  )
+  const productionReportRoutes = allRoutes.filter((route) => route.includeInProductionReport)
+  const riskTagCounts = Object.fromEntries(
+    sortUniqueStrings(allRoutes.flatMap((route) => route.riskTags)).map((tag) => [
+      tag,
+      allRoutes.filter((route) => route.riskTags.includes(tag)).length,
+    ])
   )
 
   return {
@@ -392,15 +473,20 @@ export function getReleaseRouteContractOverview() {
     manualRunnerRouteCount: manualRunner.length,
     profileRouteCount: profileRoutes.length,
     detailReadinessRouteCount: detailReadinessRoutes.length,
+    productionReportRouteCount: productionReportRoutes.length,
+    riskTagCounts,
     manualRunnerRouteNames: manualRunner.map((route) => route.name),
     profileRouteNames: profileRoutes.map((route) => route.name),
     detailReadinessRouteNames: detailReadinessRoutes.map((route) => route.name),
+    productionReportRouteNames: productionReportRoutes.map((route) => route.name),
   }
 }
 
 export function validateReleaseRouteContract() {
   const issues = []
+  const guestRoutes = getGuestBrowserRouteDefinitions()
   const authRoutes = getAuthenticatedRouteDefinitions()
+  const allRoutes = [...guestRoutes, ...authRoutes]
   const favoritesRedirects = authRoutes.filter((route) => route.path === '/favorites')
   const profileSectionRoutes = authRoutes.filter((route) => route.sectionId)
   const detailRoutes = authRoutes.filter(
@@ -451,6 +537,22 @@ export function validateReleaseRouteContract() {
       issues.push({
         code: 'missing-detail-readiness',
         message: `${route.name} must declare at least one readiness selector`,
+      })
+    }
+  }
+
+  for (const route of allRoutes) {
+    if (!Array.isArray(route.riskTags) || route.riskTags.length === 0) {
+      issues.push({
+        code: 'missing-risk-tags',
+        message: `${route.name} must declare at least one risk tag`,
+      })
+    }
+
+    if (typeof route.includeInProductionReport !== 'boolean') {
+      issues.push({
+        code: 'missing-production-report-flag',
+        message: `${route.name} must declare includeInProductionReport as a boolean`,
       })
     }
   }

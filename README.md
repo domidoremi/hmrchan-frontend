@@ -40,6 +40,7 @@ bun run build
 bun run preview
 bun run type-check
 bun run test:unit
+bun run validate:release --mode local
 ```
 
 更多脚本和环境变量请查看：
@@ -51,6 +52,7 @@ bun run test:unit
 ## 文档说明
 
 - 认证唯一正文位于 `G:\Project\hmrchan\AUTHENTICATION.md`
+- 交付验证流程位于 [VALIDATION.md](/G:/Project/hmrchan/hmrchan-frontend/VALIDATION.md)
 - 本仓库内的 `docs/` 目录继续维护非认证类文档
 
 ## License
