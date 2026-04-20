@@ -860,23 +860,38 @@ async function handleBrowserAuthFacade(
   bodyBuffer: ArrayBuffer | null
 ): Promise<Response | null> {
   if (isGoogleAuthPath(compactPath)) {
-    if (isGoogleAuthEnabled(env)) {
+    if (!isGoogleAuthEnabled(env)) {
       return jsonResponse(
         {
-          error: 'GOOGLE_AUTH_NOT_READY',
-          message: 'Google auth BFF flow is not yet available.',
+          error: 'GOOGLE_AUTH_DISABLED',
+          message: 'Google login is temporarily unavailable.',
         },
         503
       )
     }
 
-    return jsonResponse(
-      {
-        error: 'GOOGLE_AUTH_DISABLED',
-        message: 'Google login is temporarily unavailable.',
-      },
-      503
-    )
+    if (compactPath === 'v1/auth/google/exchange') {
+      if (request.method !== 'POST') {
+        return jsonResponse(
+          {
+            error: 'METHOD_NOT_ALLOWED',
+            message: 'This auth endpoint only supports POST.',
+          },
+          405
+        )
+      }
+
+      const body = await readJsonBody(bodyBuffer)
+      const fingerprint = extractBrowserFingerprint(request, body)
+      const response = await fetchInternalBff(
+        env,
+        '/internal/v1/auth/bff/google-exchange',
+        withBrowserFingerprint(body, fingerprint)
+      )
+      return handleInternalAuthResult(response, apiBaseUrl)
+    }
+
+    return null
   }
 
   if (!isBrowserAuthFacadePath(compactPath)) {
