@@ -182,12 +182,16 @@ bun run check:release-evidence
 
 - 浏览器端生产默认通过同源 `/api` 访问后端，不使用 `VITE_API_BASE_URL` 改写线上 API 基址
 - Pages Functions 的 public fallback 目标通过 `API_BASE_URL` 配置；私网路径通过受支持的 `INTERNAL_API_GATEWAY` Service Binding 转发到内部 Worker，再由该 Worker 使用 `VPC_SERVICE` + 三域 VPC origin
-- Pages 纯文本变量最小集合为：`API_BASE_URL`、`BUN_VERSION=1.3.11`、`SKIP_DEPENDENCY_INSTALL=true`、`ENABLE_INTERNAL_API_GATEWAY=true`
+- Pages 纯文本变量最小集合为：`API_BASE_URL`、`BUN_VERSION=1.3.11`、`SKIP_DEPENDENCY_INSTALL=true`、`ENABLE_INTERNAL_API_GATEWAY=true`、`GOOGLE_AUTH_ENABLED=true`
 - `STORAGE_PUBLIC_BASE_URL` 仅用于 edge 兼容层兜底历史 `/uploads/avatars/*` 链接；该兼容层不是现役 contract，也不代表前端可以继续生成或依赖 `/uploads/*` URL
 - 头像与评论图片的现役公开地址只认 storage-backed public URL；若线上仍出现 `/uploads/*` 请求，应视为待清理的存量引用，而不是可继续扩散的接入方式
 - BFF-first 认证在 Pages 生产与 preview 都要求配置 `BACKEND_INTERNAL_AUTH_SHARED_SECRET`，并要求存在 `INTERNAL_API_GATEWAY` Service Binding；`BACKEND_INTERNAL_ORIGIN` 仅作为调用方能直接访问 internal origin 时的 fallback，不应在 Pages 中机械填写 Docker hostname
 - `INTERNAL_API_GATEWAY` 必须绑定到实际部署出的环境 Worker：production 绑定 `hmrchan-internal-api-gateway-production`，preview 绑定 `hmrchan-internal-api-gateway-preview`；不要绑定到未带环境后缀、没有 VPC 配置的 base Worker
 - 若缺少 BFF shared secret，或同时缺少可用的 `INTERNAL_API_GATEWAY` 与直连 `BACKEND_INTERNAL_ORIGIN`，`/api/v1/auth/login`、`/api/v1/auth/session:resolve` 等同源认证入口会由 Functions 显式返回 `500 BFF_NOT_CONFIGURED`
+- Google 登录入口由同源 `/api/v1/auth/google/start` 发起，`/auth/callback` 在前端页面完成 handoff；若生产需要展示 Google 登录 / 注册按钮，Cloudflare Pages 构建环境必须显式配置 `VITE_GOOGLE_AUTH_ENABLED=true`
+- Passkey / WebAuthn 继续采用 BFF-first：浏览器只调用同源 `/api/v1/auth/passwordless/options|verify`、`/api/v1/auth/risk-login/webauthn/options|verify`、`/api/v1/2fa/webauthn/authenticate/options|verify` façade；它们只是一层 edge contract，不代表 backend 恢复了 browser-direct public WebAuthn 登录面
+- Passkey 注册与管理的前端真相源是 `GET /api/v1/2fa/status`；`webauthn_credentials` 现在固定包含 `id`、`device_name`、`created_at`、`last_used_at`、`transports`、`discoverable`、`backup_eligible`、`backup_state`、`authenticator_attachment`
+- WebAuthn `rp_id` / `origin` 必须以最终用户访问域名为准；Pages 自定义域、`pages.dev` 预发域与本地 dev 的 Passkey 行为要分别按各自访问域验证
 - 内部 Worker 的私网三域上游应与后端当前 Compose 服务名对齐：
   - `VPC_IDENTITY_API_ORIGIN=http://identity-api:8000`
   - `VPC_COMMUNITY_API_ORIGIN=http://community-api:8000`

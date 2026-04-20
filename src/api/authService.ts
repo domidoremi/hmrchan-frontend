@@ -1,7 +1,8 @@
 /**
  * Authentication Service - 认证服务
  *
- * 直接消费后端 /api/v1/auth/* 真相源。
+ * 通过同源 /api/v1/auth/* facade 消费现役认证能力；
+ * 浏览器侧不直接调用 internal BFF。
  */
 
 import { apiClient, ApiError } from './client'

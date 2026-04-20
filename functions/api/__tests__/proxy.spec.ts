@@ -344,6 +344,79 @@ describe('functions/api proxy', () => {
     })
   })
 
+  it.each([
+    [
+      '/api/v1/auth/passwordless/options',
+      ['v1', 'auth', 'passwordless', 'options'],
+      '/internal/v1/auth/bff/passwordless/options',
+    ],
+    [
+      '/api/v1/auth/passwordless/verify',
+      ['v1', 'auth', 'passwordless', 'verify'],
+      '/internal/v1/auth/bff/passwordless/verify',
+    ],
+    [
+      '/api/v1/auth/risk-login/webauthn/options',
+      ['v1', 'auth', 'risk-login', 'webauthn', 'options'],
+      '/internal/v1/auth/bff/risk/webauthn/options',
+    ],
+    [
+      '/api/v1/auth/risk-login/webauthn/verify',
+      ['v1', 'auth', 'risk-login', 'webauthn', 'verify'],
+      '/internal/v1/auth/bff/risk/webauthn/verify',
+    ],
+    [
+      '/api/v1/2fa/webauthn/authenticate/options',
+      ['v1', '2fa', 'webauthn', 'authenticate', 'options'],
+      '/internal/v1/auth/bff/mfa/webauthn/options',
+    ],
+    [
+      '/api/v1/2fa/webauthn/authenticate/verify',
+      ['v1', '2fa', 'webauthn', 'authenticate', 'verify'],
+      '/internal/v1/auth/bff/mfa/webauthn/verify',
+    ],
+  ])('routes passkey facade %s to the internal BFF path', async (urlPath, path, internalPath) => {
+    mockFetch.mockResolvedValueOnce(apiEnvelope({ ceremony_id: 'ceremony-1', ok: true }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}${urlPath}`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+          'X-Client-Fingerprint': 'fingerprint-123',
+        },
+        body: JSON.stringify({ ceremony_id: 'ceremony-1' }),
+        path,
+      })
+    )
+
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${INTERNAL_ORIGIN}${internalPath}`)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('identity')
+  })
+
+  it('does not expose internal API paths through the public Pages facade', async () => {
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/internal/v1/auth/bff/passwordless/options`,
+        method: 'POST',
+        headers: { Origin: ORIGIN },
+        body: JSON.stringify({}),
+        path: ['internal', 'v1', 'auth', 'bff', 'passwordless', 'options'],
+      })
+    )
+
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({
+      error: 'NOT_FOUND',
+      message: 'Internal API paths are not exposed on the public frontend facade.',
+    })
+  })
+
   it('refreshes the session via the internal BFF and rewrites cookies', async () => {
     const refreshed = createSessionMaterial({ permission_version: 3 })
     const user = createUser({ permission_version: 3 })
@@ -739,6 +812,108 @@ describe('functions/api proxy', () => {
       error: 'GOOGLE_AUTH_DISABLED',
       message: 'Google login is temporarily unavailable.',
     })
+  })
+
+  it('forwards enabled Google start requests to the public auth upstream', async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === `${BACKEND_ORIGIN}/api/v1/auth/google/start?intent=login&return_to=%2Fprofile`) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: `${BACKEND_ORIGIN}/api/v1/auth/google/callback?code=test-code&state=test-state`,
+          },
+        })
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/google/start?intent=login&return_to=%2Fprofile`,
+        headers: { Origin: ORIGIN },
+        env: { GOOGLE_AUTH_ENABLED: 'true' },
+        path: ['v1', 'auth', 'google', 'start'],
+      })
+    )
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toBe(
+      `${ORIGIN}/api/v1/auth/google/callback?code=test-code&state=test-state`
+    )
+  })
+
+  it('routes enabled Google exchange through internal BFF and returns a session summary with cookies', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-17T07:00:00.000Z'))
+
+    const exchangeBody = { handoff_code: 'handoff-123' }
+    const fingerprint = 'fingerprint-123'
+    const material = createSessionMaterial({
+      user: {
+        id: 'user-1',
+        email: 'tester@example.com',
+        username: 'tester',
+        identity_provider: 'google',
+      },
+    })
+    const user = createUser({
+      identity_provider: 'google',
+      linked_providers: ['google'],
+    })
+
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url === `${INTERNAL_ORIGIN}/internal/v1/auth/bff/google-exchange`) {
+        expect(init?.body).toBe(
+          JSON.stringify({
+            ...exchangeBody,
+            client_fingerprint: fingerprint,
+          })
+        )
+        return apiEnvelope(material)
+      }
+
+      if (url === `${BACKEND_ORIGIN}/api/v1/auth/me`) {
+        expect(init?.headers).toEqual(
+          expect.objectContaining({
+            Authorization: `Bearer ${material.access_token}`,
+          })
+        )
+        return apiEnvelope(user)
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/google/exchange`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+          'X-Client-Fingerprint': fingerprint,
+        },
+        body: JSON.stringify(exchangeBody),
+        env: { GOOGLE_AUTH_ENABLED: 'true' },
+        path: ['v1', 'auth', 'google', 'exchange'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      authenticated: true,
+      user,
+      session_expires_at: new Date((Math.floor(Date.now() / 1000) + 3600) * 1000).toISOString(),
+      permission_version: 1,
+    })
+
+    const cookies = getSetCookies(response)
+    expect(cookies.some((value) => value.includes('__Host-momi_bff_at='))).toBe(true)
+    expect(cookies.some((value) => value.includes('__Host-momi_bff_rt='))).toBe(true)
   })
 
   it.each([
