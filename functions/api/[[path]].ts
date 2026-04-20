@@ -1099,6 +1099,15 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     )
   }
   const compactPath = resolveUpstreamPath(normalizedPath)
+  if (compactPath === 'internal' || compactPath.startsWith('internal/')) {
+    return buildErrorResponse(
+      request,
+      isDev,
+      404,
+      'NOT_FOUND',
+      'Internal API paths are not exposed on the public frontend facade.'
+    )
+  }
   const handledBrowserAuthResponse = await handleBrowserAuthFacade(
     request,
     env,

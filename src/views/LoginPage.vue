@@ -23,7 +23,7 @@
                 v-model="loginIdentifier"
                 type="text"
                 :placeholder="$t('auth.usernameOrEmailPlaceholder')"
-                autocomplete="username"
+                autocomplete="username webauthn"
                 required
               />
             </div>
@@ -93,6 +93,9 @@
               >
                 {{ $t('auth.mfa.passkeyAction') }}
               </Button>
+              <p v-if="conditionalPasskeyAvailable" class="auth-helper auth-helper--compact">
+                {{ $t('auth.passkeyAutofillHint') }}
+              </p>
             </div>
 
             <div class="auth-primary-meta">
@@ -411,7 +414,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { CircleAlert, Eye, EyeOff, LoaderCircle } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
-import { userService, ApiError } from '@/api'
+import { userService, twoFactorService, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
 import {
@@ -429,6 +432,7 @@ import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
 import { isTurnstileBusy, type TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
 import {
   getWebAuthnAssertion,
+  isConditionalMediationAvailable,
   isWebAuthnSupported,
   serializePublicKeyCredential,
 } from '@/utils/webauthn'
@@ -502,6 +506,10 @@ const showRestorePassword = ref(false)
 const isRestoringAccount = ref(false)
 const showRestorePanel = ref(false)
 const webauthnSupported = isWebAuthnSupported()
+const conditionalPasskeyAvailable = ref(false)
+let conditionalPasskeyAbortController: AbortController | null = null
+let conditionalPasskeyStarted = false
+const PASSKEY_RECOMMENDATION_STORAGE_KEY = 'hmrchan:passkey-recommendation-dismissed:v1'
 
 type TurnstileWidgetHandle = {
   reset: () => void
@@ -756,6 +764,7 @@ async function finalizeSuccessfulLogin(result: Extract<AuthFlowResult, { status:
   }
 
   await router.replace(resolveAuthRedirectTarget(result.redirectTo, getPrimaryFallbackRedirect()))
+  void maybePromptPasskeyEnrollment()
 }
 
 async function applyAuthFlowResult(result: AuthFlowResult) {
@@ -817,6 +826,7 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
 async function handleCredentialsSubmit() {
   if (isLoading.value) return
 
+  stopConditionalPasskeyAutofill()
   clearInlineErrors()
   resetGooglePopupState()
 
@@ -1035,6 +1045,7 @@ async function continueGoogleInCurrentPage(options: { closePopup?: boolean } = {
 async function handleGoogleContinue() {
   if (googleProviderBusy.value) return
 
+  stopConditionalPasskeyAutofill()
   clearInlineErrors()
   resetGoogleClientChallengeState()
 
@@ -1077,6 +1088,7 @@ async function handlePasswordlessContinue() {
     return
   }
 
+  stopConditionalPasskeyAutofill()
   clearInlineErrors()
   resetGooglePopupState()
 
@@ -1102,6 +1114,86 @@ async function handlePasswordlessContinue() {
     await applyAuthFlowResult(result)
   } catch {
     credentialsError.value = t('auth.error.webauthnLoginFailed')
+  }
+}
+
+function stopConditionalPasskeyAutofill() {
+  conditionalPasskeyAbortController?.abort()
+  conditionalPasskeyAbortController = null
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
+}
+
+async function initializeConditionalPasskeyAutofill() {
+  if (conditionalPasskeyStarted || !webauthnSupported || isAuthenticated.value) {
+    return
+  }
+
+  conditionalPasskeyStarted = true
+  conditionalPasskeyAvailable.value = await isConditionalMediationAvailable()
+  if (!conditionalPasskeyAvailable.value) {
+    return
+  }
+
+  const abortController = new AbortController()
+  conditionalPasskeyAbortController = abortController
+
+  try {
+    const optionsResult = await authStore.beginPasswordlessLogin()
+    if (optionsResult.status === 'error' || abortController.signal.aborted) {
+      return
+    }
+
+    const assertion = await getWebAuthnAssertion(optionsResult.options, {
+      conditional: true,
+      signal: abortController.signal,
+    })
+    if (!(assertion instanceof PublicKeyCredential) || abortController.signal.aborted) {
+      return
+    }
+
+    const result = await authStore.finishPasswordlessLogin(
+      optionsResult.ceremonyId,
+      serializePublicKeyCredential(assertion)
+    )
+    if (!abortController.signal.aborted) {
+      await applyAuthFlowResult(result)
+    }
+  } catch (error) {
+    if (!isAbortError(error)) {
+      credentialsError.value = t('auth.error.webauthnLoginFailed')
+    }
+  } finally {
+    if (conditionalPasskeyAbortController === abortController) {
+      conditionalPasskeyAbortController = null
+    }
+  }
+}
+
+async function maybePromptPasskeyEnrollment() {
+  if (!webauthnSupported) return
+  if (localStorage.getItem(PASSKEY_RECOMMENDATION_STORAGE_KEY) === 'dismissed') return
+
+  try {
+    const status = await twoFactorService.getStatus()
+    if (status.webauthn_credentials?.length) {
+      localStorage.setItem(PASSKEY_RECOMMENDATION_STORAGE_KEY, 'dismissed')
+      return
+    }
+    localStorage.setItem(PASSKEY_RECOMMENDATION_STORAGE_KEY, 'dismissed')
+    toastStore.info(t('auth.passkeyRecommendation.message'), 12000, {
+      title: t('auth.passkeyRecommendation.title'),
+      action: {
+        label: t('auth.passkeyRecommendation.action'),
+        onClick: () => {
+          void router.push('/profile/security')
+        },
+      },
+    })
+  } catch {
+    // Recommendation is best-effort and must not block login.
   }
 }
 
@@ -1166,9 +1258,11 @@ if (isAuthenticated.value) {
 onMounted(() => {
   void import('@/views/RegisterPage.vue').catch(() => {})
   void import('@/views/ForgotPasswordPage.vue').catch(() => {})
+  void initializeConditionalPasskeyAutofill()
 })
 
 onUnmounted(() => {
+  stopConditionalPasskeyAutofill()
   clearGooglePopupListener({ closePopup: true })
 })
 </script>
@@ -1176,6 +1270,11 @@ onUnmounted(() => {
 <style scoped>
 .auth-inline-spin {
   animation: auth-inline-spin 0.9s linear infinite;
+}
+
+.auth-helper--compact {
+  margin: 0;
+  text-align: center;
 }
 
 @keyframes auth-inline-spin {

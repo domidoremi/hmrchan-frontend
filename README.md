@@ -189,6 +189,9 @@ bun run check:release-evidence
 - `INTERNAL_API_GATEWAY` 必须绑定到实际部署出的环境 Worker：production 绑定 `hmrchan-internal-api-gateway-production`，preview 绑定 `hmrchan-internal-api-gateway-preview`；不要绑定到未带环境后缀、没有 VPC 配置的 base Worker
 - 若缺少 BFF shared secret，或同时缺少可用的 `INTERNAL_API_GATEWAY` 与直连 `BACKEND_INTERNAL_ORIGIN`，`/api/v1/auth/login`、`/api/v1/auth/session:resolve` 等同源认证入口会由 Functions 显式返回 `500 BFF_NOT_CONFIGURED`
 - Google 登录入口由同源 `/api/v1/auth/google/start` 发起，`/auth/callback` 在前端页面完成 handoff；若生产需要展示 Google 登录 / 注册按钮，Cloudflare Pages 构建环境必须显式配置 `VITE_GOOGLE_AUTH_ENABLED=true`
+- Passkey / WebAuthn 继续采用 BFF-first：浏览器只调用同源 `/api/v1/auth/passwordless/options|verify`、`/api/v1/auth/risk-login/webauthn/options|verify`、`/api/v1/2fa/webauthn/authenticate/options|verify` façade；它们只是一层 edge contract，不代表 backend 恢复了 browser-direct public WebAuthn 登录面
+- Passkey 注册与管理的前端真相源是 `GET /api/v1/2fa/status`；`webauthn_credentials` 现在固定包含 `id`、`device_name`、`created_at`、`last_used_at`、`transports`、`discoverable`、`backup_eligible`、`backup_state`、`authenticator_attachment`
+- WebAuthn `rp_id` / `origin` 必须以最终用户访问域名为准；Pages 自定义域、`pages.dev` 预发域与本地 dev 的 Passkey 行为要分别按各自访问域验证
 - 内部 Worker 的私网三域上游应与后端当前 Compose 服务名对齐：
   - `VPC_IDENTITY_API_ORIGIN=http://identity-api:8000`
   - `VPC_COMMUNITY_API_ORIGIN=http://community-api:8000`

@@ -226,6 +226,57 @@
             <span class="passkey-item__meta">
               {{ $t('profile.passkeyLastUsed') }}: {{ formatDateTime(credential.last_used_at) }}
             </span>
+            <div class="passkey-item__details">
+              <span class="passkey-item__meta">
+                {{ $t('profile.passkeyDiscoverable') }}:
+                {{ formatBoolean(credential.discoverable) }}
+              </span>
+              <span class="passkey-item__meta">
+                {{ $t('profile.passkeyBackedUp') }}:
+                {{ formatBoolean(credential.backup_state) }}
+              </span>
+              <span class="passkey-item__meta">
+                {{ $t('profile.passkeyBackupEligible') }}:
+                {{ formatBoolean(credential.backup_eligible) }}
+              </span>
+              <span class="passkey-item__meta">
+                {{ $t('profile.passkeyAttachment') }}:
+                {{ formatAuthenticatorAttachment(credential.authenticator_attachment) }}
+              </span>
+              <span class="passkey-item__meta">
+                {{ $t('profile.passkeyTransports') }}:
+                {{ formatPasskeyTransports(credential.transports) }}
+              </span>
+            </div>
+            <div class="passkey-item__actions">
+              <Input
+                class="passkey-rename-input"
+                type="text"
+                :aria-label="$t('profile.passkeyRenamePlaceholder')"
+                :placeholder="$t('profile.passkeyRenamePlaceholder')"
+                :value="passkeyDraftName(credential)"
+                @input="updatePasskeyDraftName(credential.id, $event)"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                :loading="passkeyBusyId === credential.id"
+                :disabled="!canRenamePasskey(credential)"
+                @click="handleRenamePasskey(credential)"
+              >
+                {{ $t('common.save') }}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="danger"
+                :loading="passkeyBusyId === credential.id"
+                @click="handleDeletePasskey(credential)"
+              >
+                {{ $t('common.delete') }}
+              </Button>
+            </div>
           </article>
         </div>
         <p v-else class="field-hint">{{ $t('profile.passkeyEmpty') }}</p>
@@ -314,7 +365,13 @@ import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import { type UserProfile, type UserResponse, twoFactorService, ApiError } from '@/api'
+import {
+  type UserProfile,
+  type UserResponse,
+  type WebAuthnCredentialSummary,
+  twoFactorService,
+  ApiError,
+} from '@/api'
 import { useToastStore } from '@/stores'
 import {
   createWebAuthnCredential,
@@ -353,6 +410,8 @@ const disablePassword = ref('')
 const recoveryCode = ref('')
 const recoveryPassword = ref('')
 const passkeyDeviceName = ref('')
+const passkeyDraftNames = ref<Record<string, string>>({})
+const passkeyBusyId = ref<string | null>(null)
 
 const normalizedIdentityProvider = computed(() => {
   const provider = props.profile?.identity_provider ?? props.authUser?.identity_provider
@@ -508,12 +567,54 @@ function formatDateTime(value?: string | null): string {
   }
 }
 
+function formatBoolean(value?: boolean | null): string {
+  if (value === true) return t('common.yes')
+  if (value === false) return t('common.no')
+  return t('common.notFound')
+}
+
+function formatAuthenticatorAttachment(value?: string | null): string {
+  if (!value) return t('common.notFound')
+  return value === 'platform'
+    ? t('profile.passkeyAttachmentPlatform')
+    : t('profile.passkeyAttachmentCrossPlatform')
+}
+
+function formatPasskeyTransports(value?: string[] | null): string {
+  if (!value?.length) return t('common.notFound')
+  return value.join(', ')
+}
+
+function passkeyDraftName(credential: WebAuthnCredentialSummary): string {
+  return passkeyDraftNames.value[credential.id] ?? credential.device_name ?? ''
+}
+
+function updatePasskeyDraftName(id: string, event: Event) {
+  passkeyDraftNames.value = {
+    ...passkeyDraftNames.value,
+    [id]: (event.target as HTMLInputElement | null)?.value ?? '',
+  }
+}
+
+function canRenamePasskey(credential: WebAuthnCredentialSummary): boolean {
+  const draft = passkeyDraftName(credential).trim()
+  return Boolean(draft) && draft !== (credential.device_name ?? '')
+}
+
 async function fetchStatus() {
   isRefreshingStatus.value = true
   statusError.value = ''
 
   try {
     status.value = await twoFactorService.getStatus()
+    for (const credential of status.value.webauthn_credentials ?? []) {
+      if (passkeyDraftNames.value[credential.id] === undefined) {
+        passkeyDraftNames.value = {
+          ...passkeyDraftNames.value,
+          [credential.id]: credential.device_name ?? '',
+        }
+      }
+    }
     if (status.value?.totp_pending_setup) {
       showTotpSetup.value = true
     }
@@ -521,6 +622,46 @@ async function fetchStatus() {
     statusError.value = error instanceof ApiError ? error.message : t('common.error')
   } finally {
     isRefreshingStatus.value = false
+  }
+}
+
+async function handleRenamePasskey(credential: WebAuthnCredentialSummary) {
+  const nextName = passkeyDraftName(credential).trim()
+  if (!nextName || nextName === (credential.device_name ?? '')) return
+
+  passkeyBusyId.value = credential.id
+  statusError.value = ''
+
+  try {
+    await twoFactorService.updateWebAuthnCredential(credential.id, nextName)
+    toastStore.success(t('profile.passkeyRenameSuccess'))
+    await fetchStatus()
+  } catch (error) {
+    toastStore.error(error instanceof ApiError ? error.message : t('common.error'))
+  } finally {
+    passkeyBusyId.value = null
+  }
+}
+
+async function handleDeletePasskey(credential: WebAuthnCredentialSummary) {
+  if (!window.confirm(t('profile.passkeyDeleteConfirm'))) {
+    return
+  }
+
+  passkeyBusyId.value = credential.id
+  statusError.value = ''
+
+  try {
+    await twoFactorService.deleteWebAuthnCredential(credential.id)
+    const remainingDrafts = { ...passkeyDraftNames.value }
+    delete remainingDrafts[credential.id]
+    passkeyDraftNames.value = remainingDrafts
+    toastStore.success(t('profile.passkeyDeleteSuccess'))
+    await fetchStatus()
+  } catch (error) {
+    toastStore.error(error instanceof ApiError ? error.message : t('common.error'))
+  } finally {
+    passkeyBusyId.value = null
   }
 }
 
@@ -959,12 +1100,27 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.72);
 }
 
+.passkey-item__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.875rem;
+}
+
+.passkey-item__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.375rem;
+}
+
 .passkey-item__name {
   color: var(--color-text-primary, #0f172a);
   font-size: var(--text-sm, 0.92rem);
 }
 
-.passkey-device-input {
+.passkey-device-input,
+.passkey-rename-input {
   min-width: min(16rem, 100%);
 }
 
@@ -1003,6 +1159,10 @@ onMounted(() => {
 
   .passkey-device-input {
     min-width: 100%;
+  }
+
+  .passkey-item__actions {
+    grid-template-columns: 1fr;
   }
 }
 </style>
