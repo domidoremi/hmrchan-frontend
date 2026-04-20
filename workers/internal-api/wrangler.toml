@@ -9,10 +9,10 @@ remote = true
 
 [env.production.vars]
 API_BASE_URL = "https://api.momichan.xyz"
-VPC_IDENTITY_API_ORIGIN = "http://identity-api:8000"
-VPC_COMMUNITY_API_ORIGIN = "http://community-api:8000"
-VPC_CONTENT_API_ORIGIN = "http://content-api:8000"
-VPC_API_ORIGIN = "http://identity-api:8000"
+VPC_IDENTITY_API_ORIGIN = "http://caddy:80"
+VPC_COMMUNITY_API_ORIGIN = "http://caddy:80"
+VPC_CONTENT_API_ORIGIN = "http://caddy:80"
+VPC_API_ORIGIN = "http://caddy:80"
 ENABLE_VPC_PROXY = "true"
 
 [[env.preview.vpc_services]]
@@ -22,8 +22,8 @@ remote = true
 
 [env.preview.vars]
 API_BASE_URL = "https://api.momichan.xyz"
-VPC_IDENTITY_API_ORIGIN = "http://identity-api:8000"
-VPC_COMMUNITY_API_ORIGIN = "http://community-api:8000"
-VPC_CONTENT_API_ORIGIN = "http://content-api:8000"
-VPC_API_ORIGIN = "http://identity-api:8000"
+VPC_IDENTITY_API_ORIGIN = "http://caddy:80"
+VPC_COMMUNITY_API_ORIGIN = "http://caddy:80"
+VPC_CONTENT_API_ORIGIN = "http://caddy:80"
+VPC_API_ORIGIN = "http://caddy:80"
 ENABLE_VPC_PROXY = "true"

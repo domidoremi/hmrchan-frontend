@@ -344,6 +344,101 @@ describe('functions/api proxy', () => {
     })
   })
 
+  it('returns a structured 502 when login upstream responds with a non-JSON 2xx body', async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+
+      if (url === `${INTERNAL_ORIGIN}/internal/v1/auth/bff/login`) {
+        return new Response('forbidden', {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+          },
+        })
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/login`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: 'invalid-smoke-user',
+          password: 'invalid-smoke-password',
+        }),
+        path: ['v1', 'auth', 'login'],
+      })
+    )
+
+    expect(response.status).toBe(502)
+    await expect(response.json()).resolves.toEqual({
+      error: 'AUTH_UPSTREAM_INVALID_RESPONSE',
+      message: 'Auth upstream returned an invalid JSON response.',
+      route: 'v1/auth/login',
+    })
+  })
+
+  it('falls back to session material when auth/me responds with a non-JSON 2xx body', async () => {
+    const material = createSessionMaterial({
+      user: createUser({
+        auth_source: 'bff-session',
+      }),
+    })
+
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url === `${INTERNAL_ORIGIN}/internal/v1/auth/bff/login`) {
+        return apiEnvelope(material)
+      }
+
+      if (url === `${BACKEND_ORIGIN}/api/v1/auth/me`) {
+        expect(init?.headers).toEqual(
+          expect.objectContaining({
+            Authorization: `Bearer ${material.access_token}`,
+          })
+        )
+        return new Response('temporary-upstream-shape', {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+          },
+        })
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/login`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: 'tester@example.com',
+          password: 'password123',
+        }),
+        path: ['v1', 'auth', 'login'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      authenticated: true,
+      user: material.user,
+      permission_version: 1,
+    })
+  })
+
   it.each([
     [
       '/api/v1/auth/passwordless/options',

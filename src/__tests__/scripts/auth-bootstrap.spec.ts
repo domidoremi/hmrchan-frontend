@@ -27,6 +27,17 @@ describe('auth bootstrap helpers', () => {
         message: 'Contract mismatch',
       },
     })
+
+    expect(
+      extractAuthBootstrapError({
+        error: 'GOOGLE_AUTH_DISABLED',
+        message: 'Google login is temporarily unavailable.',
+      })
+    ).toEqual({
+      code: 'GOOGLE_AUTH_DISABLED',
+      message: 'Google login is temporarily unavailable.',
+      detail: null,
+    })
   })
 
   it('extracts a tunnel-unavailable diagnostic from HTML edge failures', () => {
@@ -95,6 +106,32 @@ describe('auth bootstrap helpers', () => {
         status: 503,
       })
     ).toBe('login-5xx')
+
+    expect(
+      classifyAuthBootstrapProbe({
+        path: '/api/v1/auth/passwordless/options',
+        method: 'POST',
+        status: 403,
+      })
+    ).toBe('passwordless-forbidden')
+
+    expect(
+      classifyAuthBootstrapProbe({
+        path: '/api/v1/auth/google/start?intent=login&return_to=%2F',
+        method: 'GET',
+        status: 404,
+      })
+    ).toBe('google-start-missing')
+
+    expect(
+      classifyAuthBootstrapProbe({
+        path: '/api/v1/auth/google/start?intent=login&return_to=%2F',
+        method: 'GET',
+        status: 503,
+        code: 'GOOGLE_AUTH_DISABLED',
+        message: 'Google login is temporarily unavailable.',
+      })
+    ).toBeNull()
   })
 
   it('finds and formats the first fatal auth bootstrap probe', () => {
@@ -164,6 +201,8 @@ describe('auth bootstrap helpers', () => {
       '/api/v1/client/init',
       '/api/v1/auth/session:resolve',
       '/api/v1/auth/login',
+      '/api/v1/auth/passwordless/options',
+      '/api/v1/auth/google/start?intent=login&return_to=%2F',
     ])
     expect(definitions[0]).toMatchObject({
       method: 'POST',
@@ -180,6 +219,18 @@ describe('auth bootstrap helpers', () => {
         password: 'invalid-smoke-password',
         client_fingerprint: 'auth-bootstrap-probe',
       },
+    })
+    expect(definitions[3]).toMatchObject({
+      method: 'POST',
+      attachContract: true,
+      body: {
+        client_fingerprint: 'auth-bootstrap-probe',
+      },
+    })
+    expect(definitions[4]).toMatchObject({
+      method: 'GET',
+      attachContract: false,
+      redirect: 'manual',
     })
   })
 })
