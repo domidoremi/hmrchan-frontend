@@ -1,4 +1,4 @@
-import { normalizeAvatarUrl } from '@/api/userService'
+import { normalizeAvatarUrl } from './avatarUrl'
 
 export function resolveAvatarSrc(avatarUrl: string | null | undefined): string | undefined {
   return normalizeAvatarUrl(avatarUrl || undefined) || undefined

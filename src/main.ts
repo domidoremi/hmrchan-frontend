@@ -22,7 +22,6 @@ import {
   canTrackPerformance,
   updateAnalyticsConsent,
 } from './utils/analyticsConsent'
-import { AUTH_ROUTE_NAMES } from './config/authRouteNames'
 import { reportClientError, reportClientEvent } from './utils/clientReporter'
 import vClickOutside from './directives/clickOutside'
 import { ensureAuthStoreLoaded, useAuthSurface } from './services/authSurface'
@@ -427,11 +426,19 @@ if (import.meta.hot) {
 }
 
 const authSurface = useAuthSurface()
+const AUTH_ENTRY_ROUTE_NAMES = new Set([
+  'login',
+  'register',
+  'forgot-password',
+  'reset-password',
+  'verify-email',
+  'auth-callback',
+])
 
 function isAuthEntryRouteActive(): boolean {
   const routeName = router.currentRoute.value.name
   const normalizedRouteName = typeof routeName === 'string' ? routeName : ''
-  if (AUTH_ROUTE_NAMES.has(normalizedRouteName)) return true
+  if (AUTH_ENTRY_ROUTE_NAMES.has(normalizedRouteName)) return true
 
   const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
   return (

@@ -101,11 +101,16 @@ describe('createAuthSessionController', () => {
     const state = createState()
     const controller = createAuthSessionController({ router, state })
 
-    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(
+      createMeResponse({
+        avatar_url: 'https://momichan.xyz/uploads/avatars/legacy-avatar.jpg',
+      })
+    )
 
     await controller.establishSession(createSessionSummary())
 
     expect(state.user.value).toEqual(expect.objectContaining({ email: 'tester@example.com' }))
+    expect(state.user.value?.avatar_url).toBeUndefined()
     expect(state.runtimeAuthzCache.value).toEqual(
       expect.objectContaining({
         roles: [],

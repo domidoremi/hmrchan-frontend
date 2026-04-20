@@ -1,8 +1,9 @@
 /**
  * Cloudflare Pages Function - Uploads 代理
  *
- * 将 /uploads/* 请求代理到后端服务器
- * 用于访问需要认证的用户头像等上传文件
+ * `/uploads/*` 仅保留为 edge 兼容层。
+ * 现役公开资源 contract 已迁移到 storage-backed public URL，
+ * 因此前端不应再主动生成或依赖这些旧路径。
  */
 
 import { resolveConfiguredApiBaseUrl } from '../../src/edge/upstream'
@@ -26,7 +27,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   if (path.startsWith('avatars/')) {
     const storagePublicBaseUrl = env.STORAGE_PUBLIC_BASE_URL?.trim().replace(/\/+$/, '')
     if (!storagePublicBaseUrl) {
-      return new Response('Legacy avatar compatibility is not configured', { status: 503 })
+      return new Response('Retired avatar URL compatibility is not configured', { status: 503 })
     }
 
     return new Response(null, {
@@ -38,7 +39,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     })
   }
 
-  // 获取后端地址
+  // Non-avatar upload paths are still proxied for legacy compatibility.
   const apiBaseUrl = resolveConfiguredApiBaseUrl(env)
   if (!apiBaseUrl) {
     return new Response('Uploads proxy is not configured', { status: 500 })

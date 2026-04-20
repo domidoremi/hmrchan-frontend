@@ -69,6 +69,8 @@ export function resolveUpstreamDomain(path: string): UpstreamDomain {
     matchesPathPrefix(normalizedPath, '/api/v1/email') ||
     matchesPathPrefix(normalizedPath, '/api/v1/upload/avatar') ||
     matchesPathPrefix(normalizedPath, '/api/v1/audit') ||
+    // Retired public avatar URLs are still edge-routed for compatibility only.
+    // They are not part of the active frontend/backend contract.
     matchesPathPrefix(normalizedPath, '/uploads/avatars')
   ) {
     return 'identity'
@@ -86,6 +88,8 @@ export function resolveUpstreamDomain(path: string): UpstreamDomain {
     matchesPathPrefix(normalizedPath, '/api/v1/inbox') ||
     matchesPathPrefix(normalizedPath, '/api/v1/feedback') ||
     matchesPathPrefix(normalizedPath, '/api/v1/contact/send') ||
+    // Retired public comment image URLs are still edge-routed for compatibility only.
+    // They are not part of the active frontend/backend contract.
     matchesPathPrefix(normalizedPath, '/uploads/comment_images')
   ) {
     return 'community'
