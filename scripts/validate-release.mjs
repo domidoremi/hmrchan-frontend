@@ -48,7 +48,7 @@ function formatTimestamp(date = new Date()) {
 
 function parseArgs(argv) {
   const options = {
-    mode: 'candidate',
+    mode: 'local',
     help: false,
     artifactDir: process.env.ARTIFACT_DIR?.trim() || '',
   }
