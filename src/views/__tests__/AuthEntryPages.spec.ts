@@ -25,11 +25,14 @@ const testState = vi.hoisted(() => ({
     completeMfaLogin: vi.fn(),
     beginWebAuthnLogin: vi.fn(),
     finishWebAuthnLogin: vi.fn(),
+    beginPasswordlessLogin: vi.fn(),
+    finishPasswordlessLogin: vi.fn(),
   },
   toastStore: {
     success: vi.fn(),
     error: vi.fn(),
     warning: vi.fn(),
+    info: vi.fn(),
   },
   api: {
     authService: {
@@ -38,6 +41,9 @@ const testState = vi.hoisted(() => ({
     },
     userService: {
       restoreAccount: vi.fn(),
+    },
+    twoFactorService: {
+      getStatus: vi.fn(),
     },
   },
   clientSecurity: {
@@ -100,6 +106,7 @@ vi.mock('@/stores', async () => {
 vi.mock('@/api', () => ({
   authService: testState.api.authService,
   userService: testState.api.userService,
+  twoFactorService: testState.api.twoFactorService,
   ApiError: class ApiError extends Error {
     status: number
     code?: string
@@ -210,10 +217,24 @@ describe('Auth entry pages', () => {
     testState.authStore.completeMfaLogin = vi.fn()
     testState.authStore.beginWebAuthnLogin = vi.fn()
     testState.authStore.finishWebAuthnLogin = vi.fn()
+    testState.authStore.beginPasswordlessLogin = vi.fn().mockResolvedValue({
+      status: 'error',
+      error: 'auth.error.webauthnLoginFailed',
+    })
+    testState.authStore.finishPasswordlessLogin = vi.fn()
 
     testState.api.authService.sendRegistrationCode.mockReset()
     testState.api.authService.requestPasswordReset.mockReset()
     testState.api.userService.restoreAccount.mockReset()
+    testState.api.twoFactorService.getStatus.mockReset()
+    testState.api.twoFactorService.getStatus.mockResolvedValue({
+      enabled: false,
+      totp_enabled: false,
+      totp_pending_setup: false,
+      has_backup_codes: false,
+      methods: [],
+      webauthn_credentials: [],
+    })
     testState.clientSecurity.verify.mockReset()
     testState.clientSecurity.verify.mockResolvedValue({
       success: true,
@@ -223,6 +244,7 @@ describe('Auth entry pages', () => {
     testState.toastStore.success.mockReset()
     testState.toastStore.error.mockReset()
     testState.toastStore.warning.mockReset()
+    testState.toastStore.info.mockReset()
     testState.turnstile.siteKey = ''
     testState.turnstile.enabled = false
     testState.turnstile.executeToken = null

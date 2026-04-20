@@ -55,6 +55,11 @@ export interface TwoFactorVerifyResponse {
 export interface WebAuthnCredentialSummary {
   id: string
   device_name?: string | null
+  transports?: string[] | null
+  discoverable: boolean
+  backup_eligible?: boolean | null
+  backup_state?: boolean | null
+  authenticator_attachment?: string | null
   last_used_at?: string | null
   created_at?: string | null
 }
@@ -245,6 +250,42 @@ export const twoFactorService = {
       },
       {
         skipAuth: true,
+        skipErrorToast: true,
+      }
+    )
+  },
+
+  async updateWebAuthnCredential(
+    id: string,
+    deviceName: string
+  ): Promise<WebAuthnCredentialSummary> {
+    const verificationToken = await ensureVerificationToken('update_security_settings', {
+      resourceId: id,
+    })
+    return apiClient.patch<WebAuthnCredentialSummary>(
+      `/2fa/webauthn/credentials/${encodeURIComponent(id)}`,
+      { device_name: deviceName },
+      {
+        securityPolicy: 'sensitive',
+        headers: {
+          'X-Verification-Token': verificationToken,
+        },
+        skipErrorToast: true,
+      }
+    )
+  },
+
+  async deleteWebAuthnCredential(id: string): Promise<{ success: boolean }> {
+    const verificationToken = await ensureVerificationToken('remove_webauthn_credential', {
+      resourceId: id,
+    })
+    return apiClient.delete<{ success: boolean }>(
+      `/2fa/webauthn/credentials/${encodeURIComponent(id)}`,
+      {
+        securityPolicy: 'sensitive',
+        headers: {
+          'X-Verification-Token': verificationToken,
+        },
         skipErrorToast: true,
       }
     )
