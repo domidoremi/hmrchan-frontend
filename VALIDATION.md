@@ -1,7 +1,7 @@
 # Validation Flow
 
 本仓库的交付验证以 `validate:release` 为唯一主入口。  
-GitHub Actions 可以保留为镜像检查，但不作为“是否可交付”的最终真相源。
+仓库已移除 GitHub Actions；是否可交付只由本地统一 runner 判定。
 
 ## 统一入口
 
@@ -12,18 +12,26 @@ bun run validate:release --mode candidate
 bun run validate:release --mode production
 ```
 
-- 默认模式是 `candidate`
+- 默认模式是 `local`
 - artifact 默认输出到 `output/validation/<timestamp>/`
 - 统一摘要固定输出：
   - `summary.json`
   - `summary.md`
   - `stages/*.json`
 
+## 本地真相源
+
+- `pre-commit` 继续只做最小化格式化与暂存检查
+- `pre-push` 固定执行 `bun run validate:release --mode local`
+- 候选发布前必须手动执行 `bun run validate:release --mode candidate`
+- `main` 部署后必须手动执行 `bun run validate:release --mode production`
+- 不允许用零散命令口头替代统一 runner；runner 失败即视为失败
+
 ## 阶段定义
 
 ### `local`
 
-用于本地候选构建阻断，只跑本地硬门禁：
+用于日常开发和推送前阻断，只跑本地硬门禁：
 
 1. 合同自检
 2. 本地静态门禁
@@ -31,7 +39,7 @@ bun run validate:release --mode production
 
 ### `candidate`
 
-用于发布前候选验证：
+用于受控站点候选验证：
 
 1. 合同自检
 2. 本地静态门禁
@@ -39,10 +47,7 @@ bun run validate:release --mode production
 4. 受控站点门禁
 5. 生产预检
 
-说明：
-
-- `candidate` 成功只表示候选验证完成
-- 由于未执行生产深回归，最终状态会记为 `incomplete`
+说明：`candidate` 成功只表示候选验证完成；由于未执行生产深回归，最终状态会记为 `incomplete`
 
 ### `production`
 
@@ -113,7 +118,7 @@ runner 会根据本次交付命中的文件范围自动生成风险摘要，重�
 日常开发：
 
 ```bash
-bun run validate:release --mode local
+bun run validate:release
 ```
 
 候选发布前：
@@ -133,3 +138,10 @@ PRIMARY_PASSWORD=... \
 SECONDARY_EMAIL_MODE=user-assisted \
 bun run validate:release --mode production
 ```
+
+## 验收规则
+
+- `local` 通过：说明本地静态与浏览器硬门禁通过，但交付仍未完成
+- `candidate` 通过：说明受控站点验证通过，但交付仍未完成
+- `production` 通过：才代表本次 `main` 交付验收完成
+- 任一阶段失败，或必需阶段未执行，统一结论都是失败或未完成，不能人工口头放行

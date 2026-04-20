@@ -37,45 +37,16 @@ if ! git diff --quiet; then
   exit 1
 fi
 
-# Type check (cannot auto-fix)
-echo "📝 类型检查..."
-run_node_tool node_modules/vue-tsc/bin/vue-tsc.js --noEmit --pretty
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ 类型检查失败，请手动修复 TypeScript 错误后再推送"
-  exit 1
-fi
-
-# Strict lint check (ensure no warnings)
-echo "🔍 严格代码规范检查..."
-run_node_tool node_modules/eslint/bin/eslint.js . --ext .vue,.ts,.tsx --max-warnings=0
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ 代码规范检查失败（存在警告或错误）"
-  echo "💡 提示：大部分问题应该已自动修复，请检查剩余问题"
-  exit 1
-fi
-
-# Format check (ensure all files are formatted)
-echo "✨ 验证代码格式..."
-run_node_tool node_modules/prettier/bin/prettier.cjs --check src/
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ 代码格式验证失败"
-  echo "💡 提示：这不应该发生，请重新运行 'bun run format'"
-  exit 1
-fi
-
-# Unit tests
-echo "🧪 运行单元测试..."
+# Unified local release validation
+echo "🚦 运行统一本地发布门禁..."
 if resolve_bun_bin; then
-  run_bun run test:unit
+  run_bun run validate:release --mode local
 else
-  run_node_tool node_modules/vitest/vitest.mjs run --passWithNoTests
+  run_node_tool scripts/validate-release.mjs --mode local
 fi
 if [ $? -ne 0 ]; then
   echo ""
-  echo "❌ 单元测试失败，请修复测试后再推送"
+  echo "❌ 本地统一发布门禁失败，请根据 validate:release 输出修复后再推送"
   exit 1
 fi
 
