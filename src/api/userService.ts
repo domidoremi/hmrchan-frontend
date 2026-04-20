@@ -7,7 +7,7 @@
 import { apiClient, type RequestConfig } from './client'
 import { normalizeResponse } from './client/error-mapping'
 import { ensureVerificationToken } from './verificationBridge'
-import { normalizeToProxyPath } from '@/utils/url'
+export { normalizeAvatarUrl } from '@/utils/avatarUrl'
 
 // ========== 类型定义 ==========
 
@@ -71,19 +71,6 @@ export interface ExportAccountDataResult {
   filename?: string | null
 }
 
-const BLOCKED_AVATAR_HOST_SUFFIXES = ['tiktokcdn.com', 'tiktokcdn-us.com', 'twimg.com']
-const BLOCKED_AVATAR_HOSTS = new Set(['pbs.twimg.com'])
-const RETIRED_LEGACY_AVATAR_PATH_PREFIXES = ['/uploads/avatars/', '/uploads/comment_images/']
-
-function isBlockedExternalAvatarHost(hostname: string): boolean {
-  const normalized = hostname.trim().toLowerCase()
-  if (!normalized) return false
-  if (BLOCKED_AVATAR_HOSTS.has(normalized)) return true
-  return BLOCKED_AVATAR_HOST_SUFFIXES.some(
-    (suffix) => normalized === suffix || normalized.endsWith(`.${suffix}`)
-  )
-}
-
 async function buildExportAccountBlob(response: Response): Promise<Blob> {
   const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
 
@@ -98,52 +85,6 @@ async function buildExportAccountBlob(response: Response): Promise<Blob> {
   return new Blob([serializedPayload], {
     type: 'application/json;charset=utf-8',
   })
-}
-
-function isRetiredLegacyAvatarPath(value: string): boolean {
-  return RETIRED_LEGACY_AVATAR_PATH_PREFIXES.some((prefix) => value.startsWith(prefix))
-}
-
-/**
- * 规范化头像 URL
- *
- * 当前现役 contract 只接受 storage-backed public URL。
- * 历史 `/uploads/*` 相对路径已退役，前端不再继续消费它们。
- */
-export function normalizeAvatarUrl(url: string | null | undefined): string | null {
-  if (!url) return null
-  const normalized = normalizeToProxyPath(url)
-  const resolved = normalized ?? url
-
-  if (isRetiredLegacyAvatarPath(resolved)) {
-    return null
-  }
-
-  if (!/^https?:\/\//i.test(resolved)) {
-    return resolved
-  }
-
-  try {
-    const parsed = new URL(resolved)
-    if (isBlockedExternalAvatarHost(parsed.hostname)) {
-      return null
-    }
-
-    const isYoutubeThumbnail = parsed.hostname === 'i.ytimg.com'
-    const isMaxResVariant = /\/vi\/[^/]+\/maxresdefault\.jpg$/i.test(parsed.pathname)
-
-    // `maxresdefault.jpg` is missing for a subset of YouTube videos and
-    // produces noisy network errors in Lighthouse. Fall back to the more
-    // widely available `hqdefault.jpg` before the request starts.
-    if (isYoutubeThumbnail && isMaxResVariant) {
-      parsed.pathname = parsed.pathname.replace(/maxresdefault\.jpg$/i, 'hqdefault.jpg')
-      return parsed.toString()
-    }
-  } catch {
-    return resolved
-  }
-
-  return resolved
 }
 
 // 用户名更新限制

@@ -8,6 +8,7 @@ import {
   updateRuntimePermissionVersion,
 } from '@/api/client/auth-runtime'
 import { clearStoredAuthSource, setStoredAuthSource } from '@/utils/authSource'
+import { normalizeAvatarUrl } from '@/utils/avatarUrl'
 import { reportClientEvent } from '@/utils/clientReporter'
 
 const DEFAULT_AUTHZ_TTL_MS = 60 * 1000
@@ -71,6 +72,13 @@ function buildRuntimeAuthzCache(
   }
 }
 
+function normalizeUserSnapshot<TUser extends UserResponse>(user: TUser): TUser {
+  return {
+    ...user,
+    avatar_url: normalizeAvatarUrl(user.avatar_url) ?? undefined,
+  }
+}
+
 export function createAuthSessionController<TUser extends UserResponse>(options: {
   router: RouterLike
   state: AuthSessionState<TUser>
@@ -104,7 +112,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       stepUpRequired?: boolean
     } = {}
   ): void {
-    state.user.value = user as TUser
+    state.user.value = normalizeUserSnapshot(user as TUser)
     updateStateFromRuntimeSession(options.securityLevel)
     state.stepUpRequired.value = options.stepUpRequired ?? state.stepUpRequired.value
     syncAuthSource(state.user.value)

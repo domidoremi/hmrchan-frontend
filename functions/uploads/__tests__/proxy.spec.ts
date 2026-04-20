@@ -9,7 +9,7 @@ describe('functions/uploads proxy', () => {
     vi.restoreAllMocks()
   })
 
-  it('redirects retired avatar URLs to the storage-backed public URL', async () => {
+  it('redirects retired avatar URLs through the compatibility layer to the storage-backed public URL', async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
 
@@ -84,7 +84,7 @@ describe('functions/uploads proxy', () => {
     await expect(response.text()).resolves.toBe('Not Found')
   })
 
-  it('returns 503 for avatar compatibility when the storage public base URL is missing', async () => {
+  it('returns 503 when retired avatar URL compatibility is not configured', async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
 
@@ -100,6 +100,8 @@ describe('functions/uploads proxy', () => {
 
     expect(fetchMock).not.toHaveBeenCalled()
     expect(response.status).toBe(503)
-    await expect(response.text()).resolves.toBe('Legacy avatar compatibility is not configured')
+    await expect(response.text()).resolves.toBe(
+      'Retired avatar URL compatibility is not configured'
+    )
   })
 })
