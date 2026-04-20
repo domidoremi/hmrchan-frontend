@@ -33,6 +33,22 @@ const AUTH_BOOTSTRAP_PROBE_DEFINITIONS = Object.freeze([
       client_fingerprint: AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
     }),
   }),
+  Object.freeze({
+    name: 'passwordless-options',
+    path: '/api/v1/auth/passwordless/options',
+    method: 'POST',
+    attachContract: true,
+    body: Object.freeze({
+      client_fingerprint: AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
+    }),
+  }),
+  Object.freeze({
+    name: 'google-start',
+    path: '/api/v1/auth/google/start?intent=login&return_to=%2F',
+    method: 'GET',
+    attachContract: false,
+    redirect: 'manual',
+  }),
 ])
 
 function pickNonEmptyString(...values) {
@@ -93,6 +109,7 @@ export function extractAuthBootstrapError(payload, rawBody = '') {
   return {
     code: pickNonEmptyString(
       payload.code,
+      typeof payload.error === 'string' ? payload.error : null,
       detail?.code,
       error?.code,
       details?.code,
@@ -153,6 +170,30 @@ export function classifyAuthBootstrapProbe(probe) {
     return 'login-5xx'
   }
 
+  if (probe.path === '/api/v1/auth/passwordless/options' && probe.status === 403) {
+    return 'passwordless-forbidden'
+  }
+
+  if (probe.path === '/api/v1/auth/passwordless/options' && probe.status >= 500) {
+    return 'passwordless-5xx'
+  }
+
+  if (probe.path.startsWith('/api/v1/auth/google/start') && probe.status === 404) {
+    return 'google-start-missing'
+  }
+
+  if (
+    probe.path.startsWith('/api/v1/auth/google/start') &&
+    probe.status === 503 &&
+    probe.code === 'GOOGLE_AUTH_DISABLED'
+  ) {
+    return null
+  }
+
+  if (probe.path.startsWith('/api/v1/auth/google/start') && probe.status >= 500) {
+    return 'google-start-5xx'
+  }
+
   return null
 }
 
@@ -186,6 +227,14 @@ export function formatFatalAuthBootstrapProbe(probe) {
       return `Auth bootstrap blocked because session resolve returned an upstream 5xx (${summary}).`
     case 'login-5xx':
       return `Auth bootstrap blocked because login returned an upstream 5xx (${summary}).`
+    case 'passwordless-forbidden':
+      return `Auth bootstrap blocked because passwordless/options returned a raw forbidden response instead of an app-level payload (${summary}).`
+    case 'passwordless-5xx':
+      return `Auth bootstrap blocked because passwordless/options returned an upstream 5xx (${summary}).`
+    case 'google-start-missing':
+      return `Auth bootstrap blocked because Google start is missing from the published auth surface (${summary}).`
+    case 'google-start-5xx':
+      return `Auth bootstrap blocked because Google start returned an upstream 5xx (${summary}).`
     default:
       return `Auth bootstrap failed (${summary}).`
   }
@@ -205,6 +254,11 @@ export function validateAuthBootstrapContract() {
     ['/api/v1/client/init', { method: 'POST', attachContract: false }],
     ['/api/v1/auth/session:resolve', { method: 'POST', attachContract: true }],
     ['/api/v1/auth/login', { method: 'POST', attachContract: true }],
+    ['/api/v1/auth/passwordless/options', { method: 'POST', attachContract: true }],
+    [
+      '/api/v1/auth/google/start?intent=login&return_to=%2F',
+      { method: 'GET', attachContract: false, redirect: 'manual' },
+    ],
   ])
 
   for (const [path, expectation] of requiredPaths.entries()) {
@@ -231,10 +285,20 @@ export function validateAuthBootstrapContract() {
       })
     }
 
-    if (!isRecord(probe.body) || probe.body.client_fingerprint !== AUTH_BOOTSTRAP_CLIENT_FINGERPRINT) {
+    if (
+      !('redirect' in expectation) &&
+      (!isRecord(probe.body) || probe.body.client_fingerprint !== AUTH_BOOTSTRAP_CLIENT_FINGERPRINT)
+    ) {
       issues.push({
         code: 'auth-bootstrap-fingerprint-mismatch',
         message: `${path} must send a stable client_fingerprint probe payload`,
+      })
+    }
+
+    if ('redirect' in expectation && probe.redirect !== expectation.redirect) {
+      issues.push({
+        code: 'auth-bootstrap-redirect-mismatch',
+        message: `${path} should use redirect=${expectation.redirect}`,
       })
     }
   }
@@ -263,6 +327,7 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
     method: probe.method,
     headers,
     body: requestBody,
+    redirect: probe.redirect ?? 'follow',
   })
 
   const rawBody = await response.text()

@@ -3,8 +3,8 @@
  *
  * 作用：
  * - 将同源 /api/v1/* 请求转发到后端
+ * - 为浏览器 auth facade 路径补 internal BFF 签名、BFF cookie 与 session summary
  * - 保留上游 Set-Cookie、Google redirect rewrite、媒体缓存策略
- * - 不再承担 BFF 会话、CSRF、timestamp、session summary 等职责
  */
 
 import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
@@ -454,21 +454,78 @@ async function copyResponse(response: Response, headers?: Headers): Promise<Resp
   })
 }
 
+function buildFallbackSessionSummary(material: BffSessionMaterial): SessionSummaryResponse {
+  return {
+    authenticated: true,
+    user: material.user && typeof material.user === 'object' ? material.user : undefined,
+    session_expires_at:
+      getTokenExpiresAt(material.access_token, material.expires_in) != null
+        ? new Date(
+            getTokenExpiresAt(material.access_token, material.expires_in) as number
+          ).toISOString()
+        : null,
+    permission_version: material.permission_version,
+    ...(typeof material.return_to === 'string' && material.return_to
+      ? { return_to: material.return_to }
+      : {}),
+  }
+}
+
+function buildInvalidAuthUpstreamResponse(
+  route: string,
+  message: string,
+  upstreamHeaders?: Headers,
+  responseHeaders?: Headers
+): Response {
+  const headers = upstreamHeaders
+    ? cloneResponseHeaders(upstreamHeaders, responseHeaders)
+    : new Headers(responseHeaders)
+  RESPONSE_HEADERS_TO_SKIP.forEach((header) => headers.delete(header))
+  headers.set('Content-Type', 'application/json')
+
+  return jsonResponse(
+    {
+      error: 'AUTH_UPSTREAM_INVALID_RESPONSE',
+      message,
+      route,
+    },
+    502,
+    headers
+  )
+}
+
 async function fetchCurrentUserFromBackend(
   apiBaseUrl: string,
   accessToken: string
 ): Promise<Record<string, unknown> | null> {
-  const response = await fetch(`${apiBaseUrl}/api/v1/auth/me`, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-  })
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/v1/auth/me`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
 
-  if (!response.ok) return null
-  const payload = unwrapApiEnvelope(await response.json())
-  return payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null
+    if (!response.ok) return null
+
+    const rawPayload = await response.text()
+    if (!rawPayload.trim()) {
+      return null
+    }
+
+    let parsedPayload: unknown = null
+    try {
+      parsedPayload = JSON.parse(rawPayload)
+    } catch {
+      return null
+    }
+
+    const payload = unwrapApiEnvelope(parsedPayload)
+    return payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
 }
 
 async function buildSessionSummary(
@@ -498,21 +555,50 @@ async function buildSessionSummary(
 async function handleInternalAuthResult(
   response: Response,
   apiBaseUrl: string,
-  responseHeaders?: Headers
+  responseHeaders?: Headers,
+  options?: {
+    requireSessionMaterial?: boolean
+    route?: string
+  }
 ): Promise<Response> {
   if (!response.ok) {
     return copyResponse(response, responseHeaders)
   }
 
-  const rawPayload = await response.json()
+  let rawPayload: unknown
+  try {
+    rawPayload = await response.json()
+  } catch {
+    return buildInvalidAuthUpstreamResponse(
+      options?.route ?? 'unknown',
+      'Auth upstream returned an invalid JSON response.',
+      response.headers,
+      responseHeaders
+    )
+  }
+
   const payload = unwrapApiEnvelope(rawPayload)
+  if (options?.requireSessionMaterial && !isSessionMaterial(payload)) {
+    return buildInvalidAuthUpstreamResponse(
+      options.route ?? 'unknown',
+      'Auth upstream returned an unexpected success payload.',
+      response.headers,
+      responseHeaders
+    )
+  }
+
   if (!isSessionMaterial(payload)) {
     return jsonResponse(payload, response.status, responseHeaders)
   }
 
   const headers = new Headers(responseHeaders)
   appendSessionCookies(headers, payload)
-  const sessionSummary = await buildSessionSummary(apiBaseUrl, payload)
+  let sessionSummary = buildFallbackSessionSummary(payload)
+  try {
+    sessionSummary = await buildSessionSummary(apiBaseUrl, payload)
+  } catch {
+    sessionSummary = buildFallbackSessionSummary(payload)
+  }
   return jsonResponse(sessionSummary, response.status, headers)
 }
 
@@ -888,7 +974,10 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/google-exchange',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        requireSessionMaterial: true,
+        route: compactPath,
+      })
     }
 
     return null
@@ -918,7 +1007,10 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/login',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        requireSessionMaterial: true,
+        route: compactPath,
+      })
     }
     case 'v1/auth/verify-risk-login': {
       const response = await fetchInternalBff(
@@ -926,7 +1018,9 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/risk/verify-email',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        route: compactPath,
+      })
     }
     case 'v1/auth/risk-login/webauthn/options': {
       const response = await fetchInternalBff(
@@ -934,7 +1028,9 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/risk/webauthn/options',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        route: compactPath,
+      })
     }
     case 'v1/auth/risk-login/webauthn/verify': {
       const response = await fetchInternalBff(
@@ -942,7 +1038,9 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/risk/webauthn/verify',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        route: compactPath,
+      })
     }
     case 'v1/2fa/verify-login': {
       const response = await fetchInternalBff(
@@ -950,7 +1048,9 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/mfa/totp-or-backup',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        route: compactPath,
+      })
     }
     case 'v1/2fa/webauthn/authenticate/options': {
       const response = await fetchInternalBff(
@@ -958,7 +1058,9 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/mfa/webauthn/options',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        route: compactPath,
+      })
     }
     case 'v1/2fa/webauthn/authenticate/verify': {
       const response = await fetchInternalBff(
@@ -966,7 +1068,9 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/mfa/webauthn/verify',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        route: compactPath,
+      })
     }
     case 'v1/auth/passwordless/options': {
       const response = await fetchInternalBff(
@@ -974,7 +1078,9 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/passwordless/options',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        route: compactPath,
+      })
     }
     case 'v1/auth/passwordless/verify': {
       const response = await fetchInternalBff(
@@ -982,7 +1088,9 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/passwordless/verify',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl)
+      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+        route: compactPath,
+      })
     }
     case AUTH_SESSION_RESOLVE_FACADE_PATH:
       return resolveSessionFromCookies(request, env, apiBaseUrl)
