@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, apiClient } from '../client'
 import { clearAuthRuntimeSession, establishAuthRuntimeSession } from '../client/auth-runtime'
+import * as clientSecurityModule from '../client/client-security'
 
 const mockGetDeviceFingerprint = vi.hoisted(() => vi.fn(async () => 'fingerprint-123'))
 const mockClientSecurity = vi.hoisted(() => ({
   ensureInitialized: vi.fn(() => Promise.resolve()),
+  ensureRequestIntegrityCredentials: vi.fn(() => Promise.resolve()),
   init: vi.fn(() => Promise.resolve({ trust_level: 'untrusted' })),
+  hasRequestIntegrityCredentials: vi.fn(() => false),
   isInitialized: vi.fn(() => false),
   getClientToken: vi.fn(() => null),
   getClientSecret: vi.fn(() => null),
@@ -61,9 +64,11 @@ vi.mock('../verificationBridge', () => ({
 vi.mock('../clientSecurityService', () => ({
   clientSecurityService: {
     ensureInitialized: mockClientSecurity.ensureInitialized,
+    ensureRequestIntegrityCredentials: mockClientSecurity.ensureRequestIntegrityCredentials,
     init: mockClientSecurity.init,
   },
   clientSecurityManager: {
+    hasRequestIntegrityCredentials: mockClientSecurity.hasRequestIntegrityCredentials,
     isInitialized: mockClientSecurity.isInitialized,
     getClientToken: mockClientSecurity.getClientToken,
     getClientSecret: mockClientSecurity.getClientSecret,
@@ -137,7 +142,9 @@ describe('apiClient', () => {
     clearAuthRuntimeSession()
     mockGetDeviceFingerprint.mockResolvedValue('fingerprint-123')
     mockClientSecurity.ensureInitialized.mockResolvedValue(undefined)
+    mockClientSecurity.ensureRequestIntegrityCredentials.mockResolvedValue(undefined)
     mockClientSecurity.init.mockResolvedValue({ trust_level: 'untrusted' })
+    mockClientSecurity.hasRequestIntegrityCredentials.mockReturnValue(false)
     mockClientSecurity.isInitialized.mockReturnValue(false)
     mockClientSecurity.getClientToken.mockReturnValue(null)
     mockClientSecurity.getClientSecret.mockReturnValue(null)
@@ -187,6 +194,23 @@ describe('apiClient', () => {
       )
 
       expect(getLastRequestInit().headers['X-Client-Contract-Version']).toBeUndefined()
+    })
+
+    it('passes runtime auth context into client security headers for authenticated GET requests', async () => {
+      establishRuntimeSession()
+      const attachSecurityHeadersSpy = vi.spyOn(clientSecurityModule, 'attachClientSecurityHeaders')
+      mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { ok: true } }))
+
+      await apiClient.get('/posts')
+
+      expect(attachSecurityHeadersSpy).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({
+          method: 'GET',
+          url: '/api/v1/posts',
+          hadToken: true,
+        })
+      )
     })
 
     it('normalizes paginated array envelopes', async () => {
