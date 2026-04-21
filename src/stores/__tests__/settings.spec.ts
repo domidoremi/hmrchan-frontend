@@ -93,9 +93,9 @@ describe('Settings Store', () => {
     const store = useSettingsStore()
 
     expect(store.settings.appearancePreset).toBe('minimal-editorial')
-    expect(store.settings.densityMode).toBe('comfortable')
-    expect(store.settings.contrastMode).toBe('normal')
-    expect(store.settings.textureLevel).toBe('subtle')
+    expect('densityMode' in store.settings).toBe(false)
+    expect('contrastMode' in store.settings).toBe(false)
+    expect('textureLevel' in store.settings).toBe(false)
     expect(store.settings.backgroundEffect.type).toBe('none')
     expect(store.settings.mascotBackground.enabled).toBe(false)
     expect(store.settings.deskPet.enabled).toBe(false)
@@ -151,5 +151,23 @@ describe('Settings Store', () => {
 
     expect(store.settings.appearancePreset).toBe('minimal-editorial')
     expect('uiStyle' in store.settings).toBe(false)
+  })
+
+  it('ignores legacy density, contrast, and texture snapshots during hydration', async () => {
+    const store = useSettingsStore()
+    const legacySnapshot = store.settings as typeof store.settings & {
+      densityMode?: string
+      contrastMode?: string
+      textureLevel?: string
+    }
+
+    legacySnapshot.densityMode = 'compact'
+    legacySnapshot.contrastMode = 'high'
+    legacySnapshot.textureLevel = 'rich'
+    await nextTick()
+
+    expect('densityMode' in store.settings).toBe(false)
+    expect('contrastMode' in store.settings).toBe(false)
+    expect('textureLevel' in store.settings).toBe(false)
   })
 })

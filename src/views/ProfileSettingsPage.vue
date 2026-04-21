@@ -262,111 +262,6 @@
                     </div>
                   </section>
                 </form>
-
-                <!-- Change Email Section -->
-                <section
-                  id="email-section"
-                  class="settings-section glass-surface--editorial email-section"
-                >
-                  <div class="settings-section-head">
-                    <div class="settings-section-icon">
-                      <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
-                    </div>
-                    <div>
-                      <h2 class="settings-section-title">{{ $t('email.changeEmailTitle') }}</h2>
-                      <p class="settings-section-desc">{{ $t('email.changeEmailHint') }}</p>
-                    </div>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="current_email">
-                      <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
-                      {{ $t('email.currentEmail') }}
-                    </label>
-                    <div class="input-wrapper input-readonly">
-                      <Input
-                        id="current_email"
-                        :model-value="profile.email"
-                        type="email"
-                        class="input-with-icon"
-                        autocomplete="email"
-                        disabled
-                        readonly
-                      />
-                      <AnimatedIcon
-                        name="sparkle"
-                        :fallback-icon="Lock"
-                        size="sm"
-                        class="input-icon-right"
-                      />
-                    </div>
-                  </div>
-
-                  <form @submit.prevent="handleChangeEmail">
-                    <div class="form-group">
-                      <label for="new_email">
-                        <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
-                        {{ $t('email.newEmail') }}
-                      </label>
-                      <div class="input-wrapper">
-                        <Input
-                          id="new_email"
-                          v-model="emailForm.new_email"
-                          type="email"
-                          class="input-with-icon"
-                          :placeholder="$t('email.newEmailPlaceholder')"
-                          autocomplete="email"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div class="form-group">
-                      <label for="email_password">
-                        <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-                        {{ $t('email.confirmWithPassword') }}
-                      </label>
-                      <div class="input-wrapper">
-                        <Input
-                          id="email_password"
-                          v-model="emailForm.password"
-                          :type="showEmailPassword ? 'text' : 'password'"
-                          class="input-with-icon"
-                          autocomplete="current-password"
-                          required
-                        />
-                        <button
-                          type="button"
-                          class="password-toggle"
-                          :aria-label="passwordToggleLabel(showEmailPassword)"
-                          :aria-pressed="showEmailPassword"
-                          @click="showEmailPassword = !showEmailPassword"
-                        >
-                          <AnimatedIcon
-                            v-if="showEmailPassword"
-                            name="explore"
-                            :fallback-icon="EyeOff"
-                            size="sm"
-                          />
-                          <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                        </button>
-                      </div>
-                      <p class="field-hint">{{ $t('email.changeEmailVerifyHint') }}</p>
-                    </div>
-
-                    <div class="form-actions">
-                      <Button
-                        type="submit"
-                        variant="secondary"
-                        :disabled="isChangingEmail || !canChangeEmail"
-                      >
-                        <span v-if="isChangingEmail" class="spinner spinner-sm" />
-                        <AnimatedIcon v-else name="explore" :fallback-icon="Mail" size="sm" />
-                        {{ $t('email.changeEmailButton') }}
-                      </Button>
-                    </div>
-                  </form>
-                </section>
               </div>
 
               <section
@@ -383,24 +278,6 @@
                   </div>
                 </div>
 
-                <div class="settings-style-gallery-callout">
-                  <div>
-                    <p class="settings-style-gallery-callout__eyebrow">
-                      {{ $t('styleGallery.eyebrow') }}
-                    </p>
-                    <p class="field-hint">{{ $t('settings.appearanceLead') }}</p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    @click="router.push('/style-gallery')"
-                  >
-                    <AnimatedIcon name="explore" :fallback-icon="Palette" size="sm" />
-                    {{ $t('settings.openStyleGallery') }}
-                  </Button>
-                </div>
-
                 <SettingsPanel
                   :compact="false"
                   :embedded="true"
@@ -408,252 +285,6 @@
                   :allowed-categories="appearanceSettingsCategories"
                 />
               </section>
-
-              <div v-show="activeSettingsGroup === 'security'" class="settings-group-panel">
-                <!-- Password Section -->
-                <section
-                  id="password-section"
-                  class="settings-section glass-surface--editorial password-section"
-                >
-                  <div class="settings-section-head">
-                    <div class="settings-section-icon settings-section-icon--warning">
-                      <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-                    </div>
-                    <div>
-                      <h2 class="settings-section-title">{{ $t('profile.changePassword') }}</h2>
-                      <p class="settings-section-desc">{{ $t('profile.passwordHint') }}</p>
-                    </div>
-                  </div>
-                  <form @submit.prevent="changePassword">
-                    <!-- Hidden username for password managers -->
-                    <input
-                      type="text"
-                      :value="profile?.username"
-                      autocomplete="username"
-                      class="sr-only"
-                      tabindex="-1"
-                      aria-hidden="true"
-                      :aria-label="$t('profile.username')"
-                      readonly
-                    />
-
-                    <div class="form-group">
-                      <label for="current_password">
-                        <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-                        {{ $t('profile.currentPassword') }}
-                      </label>
-                      <div class="input-wrapper">
-                        <Input
-                          id="current_password"
-                          v-model="passwordForm.current_password"
-                          :type="showCurrentPassword ? 'text' : 'password'"
-                          class="input-with-icon"
-                          autocomplete="current-password"
-                          required
-                        />
-                        <button
-                          type="button"
-                          class="password-toggle"
-                          :aria-label="passwordToggleLabel(showCurrentPassword)"
-                          :aria-pressed="showCurrentPassword"
-                          @click="showCurrentPassword = !showCurrentPassword"
-                        >
-                          <AnimatedIcon
-                            v-if="showCurrentPassword"
-                            name="explore"
-                            :fallback-icon="EyeOff"
-                            size="sm"
-                          />
-                          <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="form-group">
-                      <label for="new_password">
-                        <AnimatedIcon name="sparkle" :fallback-icon="Lock" size="sm" />
-                        {{ $t('profile.newPassword') }}
-                      </label>
-                      <div class="input-wrapper">
-                        <Input
-                          id="new_password"
-                          v-model="passwordForm.new_password"
-                          :type="showNewPassword ? 'text' : 'password'"
-                          class="input-with-icon"
-                          autocomplete="new-password"
-                          minlength="8"
-                          required
-                        />
-                        <button
-                          type="button"
-                          class="password-toggle"
-                          :aria-label="passwordToggleLabel(showNewPassword)"
-                          :aria-pressed="showNewPassword"
-                          @click="showNewPassword = !showNewPassword"
-                        >
-                          <AnimatedIcon
-                            v-if="showNewPassword"
-                            name="explore"
-                            :fallback-icon="EyeOff"
-                            size="sm"
-                          />
-                          <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                        </button>
-                      </div>
-                      <!-- Password Strength Indicator -->
-                      <div v-if="passwordForm.new_password" class="password-strength">
-                        <div class="strength-bar">
-                          <div
-                            class="strength-fill"
-                            :class="passwordStrengthClass"
-                            :style="{ width: `${passwordStrength * 25}%` }"
-                          />
-                        </div>
-                        <span class="strength-text" :class="passwordStrengthClass">
-                          {{ passwordStrengthText }}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div class="form-group">
-                      <label for="confirm_password">
-                        <AnimatedIcon name="sparkle" :fallback-icon="CheckCircle" size="sm" />
-                        {{ $t('profile.confirmPassword') }}
-                      </label>
-                      <div class="input-wrapper">
-                        <Input
-                          id="confirm_password"
-                          v-model="passwordForm.confirm_password"
-                          :type="showConfirmPassword ? 'text' : 'password'"
-                          class="input-with-icon"
-                          :error="Boolean(passwordForm.confirm_password && !passwordsMatch)"
-                          autocomplete="new-password"
-                          required
-                        />
-                        <button
-                          type="button"
-                          class="password-toggle"
-                          :aria-label="passwordToggleLabel(showConfirmPassword)"
-                          :aria-pressed="showConfirmPassword"
-                          @click="showConfirmPassword = !showConfirmPassword"
-                        >
-                          <AnimatedIcon
-                            v-if="showConfirmPassword"
-                            name="explore"
-                            :fallback-icon="EyeOff"
-                            size="sm"
-                          />
-                          <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                        </button>
-                      </div>
-                      <p
-                        v-if="passwordForm.confirm_password && !passwordsMatch"
-                        class="field-error"
-                      >
-                        {{ $t('profile.passwordMismatch') }}
-                      </p>
-                    </div>
-
-                    <div class="form-actions">
-                      <Button
-                        type="submit"
-                        variant="secondary"
-                        :disabled="isChangingPassword || !canChangePassword"
-                      >
-                        <span v-if="isChangingPassword" class="spinner spinner-sm" />
-                        <AnimatedIcon v-else name="sparkle" :fallback-icon="Shield" size="sm" />
-                        {{ $t('profile.changePassword') }}
-                      </Button>
-                    </div>
-                  </form>
-                </section>
-
-                <ProfileSecurityMfaSection :profile="profile" :auth-user="authStore.user" />
-
-                <section class="settings-section settings-section--danger glass-surface--editorial">
-                  <div class="settings-section-head">
-                    <div class="settings-section-icon settings-section-icon--warning">
-                      <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
-                    </div>
-                    <div>
-                      <h2 class="settings-section-title">{{ $t('profile.accountToolsTitle') }}</h2>
-                      <p class="settings-section-desc">{{ $t('profile.accountToolsHint') }}</p>
-                    </div>
-                  </div>
-
-                  <div class="account-status-card">
-                    <div class="account-status-copy">
-                      <p class="two-factor-status-label">{{ $t('profile.accountStatusLabel') }}</p>
-                      <p class="two-factor-status-value">
-                        {{
-                          isDeletionStatusLoading
-                            ? $t('common.loading')
-                            : deletionStatus?.is_deleted
-                              ? $t('profile.accountDeletionPending')
-                              : $t('profile.accountActive')
-                        }}
-                      </p>
-                      <p class="field-hint">
-                        {{
-                          isDeletionStatusLoading
-                            ? $t('profile.accountStatusLoadingHint')
-                            : deletionStatus?.is_deleted
-                              ? $t('profile.accountDeletionPendingHint', {
-                                  days: deletionStatus.days_remaining ?? 0,
-                                })
-                              : $t('profile.accountActiveHint')
-                        }}
-                      </p>
-                    </div>
-
-                    <div class="account-actions">
-                      <Button
-                        v-if="deletionStatus?.is_deleted && deletionStatus.can_restore"
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        @click="openRestoreAccountFlow"
-                      >
-                        <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
-                        {{ $t('profile.restoreAccountAction') }}
-                      </Button>
-                      <Button
-                        v-else
-                        type="button"
-                        variant="danger"
-                        size="sm"
-                        :disabled="isDeletionStatusLoading"
-                        @click="openDeleteAccountDialog"
-                      >
-                        <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
-                        {{ $t('profile.deleteAccountAction') }}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div v-if="deletionStatus?.is_deleted" class="account-danger-box">
-                    <div class="account-meta-grid">
-                      <div v-if="deletionStatus.deleted_at" class="account-meta-item">
-                        <span class="account-meta-label">{{ $t('profile.accountDeletedAt') }}</span>
-                        <span class="account-meta-value">{{
-                          formatDateTime(deletionStatus.deleted_at)
-                        }}</span>
-                      </div>
-                      <div v-if="deletionStatus.permanent_delete_at" class="account-meta-item">
-                        <span class="account-meta-label">{{
-                          $t('profile.accountPermanentDeleteAt')
-                        }}</span>
-                        <span class="account-meta-value">{{
-                          formatDateTime(deletionStatus.permanent_delete_at)
-                        }}</span>
-                      </div>
-                    </div>
-                    <p class="field-hint">
-                      {{ $t('profile.deleteAccountHint') }}
-                    </p>
-                  </div>
-                </section>
-              </div>
 
               <div v-show="activeSettingsGroup === 'privacy'" class="settings-group-panel">
                 <section
@@ -726,6 +357,26 @@
                       >
                         <AnimatedIcon name="explore" :fallback-icon="Download" size="sm" />
                         {{ $t('profile.exportDataAction') }}
+                      </Button>
+                      <Button
+                        v-if="deletionStatus?.is_deleted"
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        @click="openRestoreAccountFlow"
+                      >
+                        <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
+                        {{ $t('profile.restoreAccountAction') }}
+                      </Button>
+                      <Button
+                        v-else
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        @click="openDeleteAccountDialog"
+                      >
+                        <AnimatedIcon name="explore" :fallback-icon="Trash2" size="sm" />
+                        {{ $t('profile.deleteAccountAction') }}
                       </Button>
                     </div>
                   </div>
@@ -809,19 +460,6 @@
       />
     </Teleport>
 
-    <!-- Email Verify Dialog -->
-    <EmailVerifyDialog
-      :is-open="showEmailVerify"
-      :action="emailVerifyAction"
-      :email="profile?.email ?? ''"
-      :target-email="emailVerifyTarget"
-      :password="emailVerifyPassword"
-      :verification-token="emailVerificationToken"
-      :new-password="emailVerifyNewPassword"
-      @close="handleEmailVerifyClose"
-      @verified="handleEmailVerified"
-    />
-
     <Dialog
       :is-open="showDeleteAccountDialog"
       :title="$t('profile.deleteAccountConfirmTitle')"
@@ -878,16 +516,9 @@ import {
   FileText,
   AtSign,
   Lock,
-  Key,
-  Eye,
-  EyeOff,
-  Shield,
   Save,
-  CheckCircle,
   RefreshCw,
-  Mail,
   Download,
-  RotateCcw,
   Trash2,
   Palette,
 } from '@lucide/vue'
@@ -895,16 +526,7 @@ import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/a
 import { useAuthStore, useToastStore } from '@/stores'
 import type { UploadQueueItem } from '@/types'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
-import { checkPasswordStrength } from '@/utils/crypto'
-import { ensureVerificationToken, isVerificationCancelledError } from '@/api/verificationBridge'
-import {
-  buildPasswordToggleLabel,
-  getPasswordStrengthClass,
-  getPasswordStrengthScore,
-  isEmailChangeAllowed,
-  isPasswordChangeAllowed,
-  passwordsMatch as checkPasswordsMatch,
-} from './profile-settings/profileSettingsModel'
+import { isVerificationCancelledError } from '@/api/verificationBridge'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
@@ -913,28 +535,23 @@ import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
-import ProfileSecurityMfaSection from '@/components/profile/ProfileSecurityMfaSection.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import SettingsPanel from '@/components/layout/SettingsPanel.vue'
 import SketchDropUploader from '@/components/ui/SketchDropUploader.vue'
 
 // 动态导入大型组件以减少初始包体积
 const ImageCropper = defineAsyncComponent(() => import('@/components/ui/ImageCropper.vue'))
-const EmailVerifyDialog = defineAsyncComponent(
-  () => import('@/components/ui/EmailVerifyDialog.vue')
-)
 
 const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
-const activeSettingsGroup = ref<'account' | 'appearance' | 'privacy' | 'security'>('account')
+const activeSettingsGroup = ref<'account' | 'appearance' | 'privacy'>('account')
 
 const profile = ref<UserProfile | null>(null)
 // ... refs ...
 const isLoading = ref(false)
 const isSaving = ref(false)
-const isChangingPassword = ref(false)
 const error = ref<string | null>(null)
 const isDeletionStatusLoading = ref(false)
 const isExportingData = ref(false)
@@ -949,31 +566,9 @@ const showCropper = ref(false)
 const cropImageSrc = ref('')
 const avatarUploadItems = ref<UploadQueueItem[]>([])
 const avatarUploaderRef = useTemplateRef<{ clear: () => void }>('avatarUploaderRef')
-
-// Password visibility toggles
-const showCurrentPassword = ref(false)
-const showNewPassword = ref(false)
-const showConfirmPassword = ref(false)
-const showEmailPassword = ref(false)
 let profileFetchController: AbortController | null = null
 let profileFetchToken = 0
 const profileAvatarPreviewUrl = computed(() => normalizeAvatarUrl(profile.value?.avatar_url))
-
-function passwordToggleLabel(visible: boolean): string {
-  return buildPasswordToggleLabel({
-    visible,
-    showLabel: t('common.show'),
-    hideLabel: t('common.hide'),
-    fieldLabel: t('auth.password'),
-  })
-}
-
-// Change email
-const isChangingEmail = ref(false)
-const emailForm = ref({
-  new_email: '',
-  password: '',
-})
 const showDeleteAccountDialog = ref(false)
 const deleteAccountReason = ref('')
 type AccountDeletionStatus = Awaited<ReturnType<typeof userService.getDeletionStatus>>
@@ -1010,13 +605,6 @@ const settingsDashboardGroups = computed(() => [
     description: t('profile.accountToolsHint'),
     icon: Download,
     iconName: 'explore',
-  },
-  {
-    id: 'security' as const,
-    title: t('profile.tabs.security'),
-    description: t('profile.twoFactorHint'),
-    icon: Shield,
-    iconName: 'sparkle',
   },
 ])
 const dataSummaryItems = computed(() => {
@@ -1056,93 +644,11 @@ const dataSummaryItems = computed(() => {
   ]
 })
 
-const canChangeEmail = computed(() =>
-  isEmailChangeAllowed({
-    currentEmail: profile.value?.email,
-    nextEmail: emailForm.value.new_email,
-    password: emailForm.value.password,
-  })
-)
-
-// Email verification code dialog
-const showEmailVerify = ref(false)
-const emailVerifyAction = ref('')
-const emailVerificationToken = ref('')
-// 'change_email' | 'change_password'
-type PendingAction = 'change_email' | 'change_password'
-const pendingAction = ref<PendingAction | null>(null)
-
-const emailVerifyTarget = computed(() => {
-  if (pendingAction.value === 'change_email') {
-    return emailForm.value.new_email
-  }
-  return undefined
-})
-
-const emailVerifyPassword = computed(() => {
-  if (pendingAction.value === 'change_password') {
-    return passwordForm.value.current_password
-  }
-  if (pendingAction.value === 'change_email') {
-    return emailForm.value.password
-  }
-  return undefined
-})
-
-const emailVerifyNewPassword = computed(() => {
-  if (pendingAction.value === 'change_password') {
-    return passwordForm.value.new_password
-  }
-  return undefined
-})
-
 const form = ref({
   username: '',
   full_name: '',
   bio: '',
 })
-
-const passwordForm = ref({
-  current_password: '',
-  new_password: '',
-  confirm_password: '',
-})
-
-// ... password strength computed ...
-const passwordStrengthResult = computed(() => {
-  return checkPasswordStrength(passwordForm.value.new_password)
-})
-
-const passwordStrength = computed(() =>
-  getPasswordStrengthScore(passwordStrengthResult.value.level)
-)
-
-const passwordStrengthClass = computed(() =>
-  getPasswordStrengthClass(passwordStrengthResult.value.level)
-)
-
-const passwordStrengthText = computed(() => {
-  const { level } = passwordStrengthResult.value
-  const textMap = {
-    weak: t('profile.passwordWeak'),
-    fair: t('profile.passwordFair'),
-    good: t('profile.passwordGood'),
-    strong: t('profile.passwordStrong'),
-  }
-  return textMap[level]
-})
-
-const passwordsMatch = computed(() =>
-  checkPasswordsMatch(passwordForm.value.new_password, passwordForm.value.confirm_password)
-)
-
-const canChangePassword = computed(() =>
-  isPasswordChangeAllowed({
-    currentPassword: passwordForm.value.current_password,
-    nextPassword: passwordForm.value.new_password,
-    confirmPassword: passwordForm.value.confirm_password,
-  })
-)
 
 const normalizedIdentityProvider = computed(() => {
   const provider = profile.value?.identity_provider ?? authStore.user?.identity_provider
@@ -1349,92 +855,6 @@ async function confirmDeleteAccount() {
 function formatDateTime(value?: string | null) {
   if (!value) return '—'
   return new Date(value).toLocaleString()
-}
-
-async function changePassword() {
-  if (isChangingPassword.value) return
-
-  if (passwordForm.value.new_password !== passwordForm.value.confirm_password) {
-    toastStore.error(t('profile.passwordMismatch'))
-    return
-  }
-
-  if (passwordForm.value.new_password.length < 8) {
-    toastStore.error(t('profile.passwordTooShort'))
-    return
-  }
-
-  isChangingPassword.value = true
-  try {
-    emailVerificationToken.value = await ensureVerificationToken('change_password', {
-      password: passwordForm.value.current_password,
-    })
-    pendingAction.value = 'change_password'
-    emailVerifyAction.value = 'change_password'
-    showEmailVerify.value = true
-  } catch (err) {
-    if (isVerificationCancelledError(err)) return
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isChangingPassword.value = false
-  }
-}
-
-async function handleChangeEmail() {
-  if (!canChangeEmail.value) return
-
-  isChangingEmail.value = true
-  try {
-    emailVerificationToken.value = await ensureVerificationToken('change_email', {
-      password: emailForm.value.password,
-    })
-    pendingAction.value = 'change_email'
-    emailVerifyAction.value = 'change_email'
-    showEmailVerify.value = true
-  } catch (err) {
-    if (isVerificationCancelledError(err)) return
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isChangingEmail.value = false
-  }
-}
-
-function handleEmailVerifyClose() {
-  showEmailVerify.value = false
-  pendingAction.value = null
-  emailVerifyAction.value = ''
-  emailVerificationToken.value = ''
-}
-
-/** Called when email OTP verification succeeds */
-async function handleEmailVerified() {
-  showEmailVerify.value = false
-
-  if (pendingAction.value === 'change_email') {
-    // 邮箱已在 verifyEmailCode 中完成更换
-    toastStore.success(t('email.changeEmailSuccess'))
-    emailForm.value = { new_email: '', password: '' }
-    await fetchProfile()
-  } else if (pendingAction.value === 'change_password') {
-    // 密码已在 verifyEmailCode 中完成修改
-    toastStore.success(t('profile.passwordChanged'))
-    passwordForm.value = {
-      current_password: '',
-      new_password: '',
-      confirm_password: '',
-    }
-  }
-  pendingAction.value = null
-  emailVerifyAction.value = ''
-  emailVerificationToken.value = ''
 }
 
 // 头像上传限制
@@ -1670,30 +1090,6 @@ onUnmounted(() => {
   color: var(--ui-compat-text-secondary);
   font-size: var(--text-xs);
   line-height: 1.45;
-}
-
-.settings-style-gallery-callout {
-  display: grid;
-  gap: 0.875rem;
-  padding: clamp(1rem, 2.4vw, 1.25rem);
-  border: 0.0625rem solid var(--ui-compat-border);
-  border-radius: var(--profile-section-radius);
-  background: var(--ui-compat-surface-elevated);
-  box-shadow: var(--ui-compat-shadow);
-}
-
-.settings-style-gallery-callout__copy {
-  display: grid;
-  gap: 0.375rem;
-}
-
-.settings-style-gallery-callout__eyebrow {
-  margin: 0;
-  color: var(--ui-compat-text-muted);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .settings-layout {
@@ -2082,96 +1478,6 @@ onUnmounted(() => {
   color: var(--color-warning, #f59e0b);
 }
 
-/* Password Toggle */
-.password-toggle {
-  position: absolute;
-  right: var(--spacing-3);
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  background: var(--profile-action-bg);
-  border: 1px solid var(--profile-action-border);
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  border-radius: var(--radius-md);
-  transition:
-    background var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth),
-    color var(--duration-fast) var(--ease-smooth),
-    transform var(--duration-fast) var(--ease-bounce-soft);
-}
-
-.password-toggle:hover {
-  color: var(--color-primary);
-  background: var(--profile-action-bg-hover);
-  border-color: var(--profile-action-border-strong);
-}
-
-/* Password Strength */
-.password-strength {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-top: var(--spacing-2);
-}
-
-.strength-bar {
-  flex: 1;
-  height: 0.25rem;
-  background: var(--glass-bg-light);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.strength-fill {
-  height: 100%;
-  border-radius: var(--radius-full);
-  transition:
-    width var(--transition-base),
-    background-color var(--transition-base);
-}
-
-.strength-fill.strength-weak {
-  background: var(--color-error);
-}
-
-.strength-fill.strength-fair {
-  background: var(--color-warning, #f59e0b);
-}
-
-.strength-fill.strength-good {
-  background: var(--color-info, #3b82f6);
-}
-
-.strength-fill.strength-strong {
-  background: var(--color-success);
-}
-
-.strength-text {
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-}
-
-.strength-text.strength-weak {
-  color: var(--color-error);
-}
-
-.strength-text.strength-fair {
-  color: var(--color-warning, #f59e0b);
-}
-
-.strength-text.strength-good {
-  color: var(--color-info, #3b82f6);
-}
-
-.strength-text.strength-strong {
-  color: var(--color-success);
-}
-
 /* Form Actions */
 .form-actions {
   display: flex;
@@ -2180,11 +1486,6 @@ onUnmounted(() => {
   margin-top: var(--spacing-6);
   padding-top: var(--spacing-4);
   border-top: 1px solid var(--profile-muted-border);
-}
-
-/* Two-Factor Authentication */
-.two-factor-section {
-  overflow: hidden;
 }
 
 .two-factor-status-card {
@@ -2220,131 +1521,6 @@ onUnmounted(() => {
   font-size: clamp(var(--text-base), 2vw, var(--text-lg));
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-}
-
-.two-factor-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.75rem;
-}
-
-.two-factor-setup {
-  display: grid;
-  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
-  gap: clamp(1rem, 3vw, 1.5rem);
-  margin-top: var(--spacing-5);
-  align-items: start;
-}
-
-.two-factor-setup-qr {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(0.875rem, 2vw, 1.125rem);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--profile-muted-border);
-  background: var(--profile-muted-bg);
-}
-
-.two-factor-qr-image {
-  inline-size: min(100%, 13rem);
-  aspect-ratio: 1;
-  object-fit: contain;
-  border-radius: var(--radius-lg);
-  background: #fff;
-  padding: 0.75rem;
-  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04);
-}
-
-.two-factor-setup-details {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-width: 0;
-}
-
-.two-factor-secret-card {
-  display: grid;
-  gap: 0.75rem;
-  padding: clamp(0.875rem, 2vw, 1rem);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--profile-muted-border);
-  background: var(--profile-muted-bg);
-}
-
-.two-factor-secret-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.two-factor-secret-value {
-  display: block;
-  padding: 0.75rem 0.875rem;
-  border-radius: var(--radius-md);
-  background: var(--profile-action-bg);
-  border: 1px solid var(--profile-action-border);
-  color: var(--color-text-primary);
-  font-size: var(--text-sm);
-  overflow-wrap: anywhere;
-}
-
-.two-factor-backup-box {
-  display: grid;
-  gap: 0.875rem;
-  padding: clamp(0.875rem, 2vw, 1rem);
-  border-radius: var(--radius-lg);
-  border: 1px dashed rgba(var(--color-primary-rgb), 0.22);
-  background: var(--profile-muted-bg);
-}
-
-.two-factor-backup-box--saved {
-  margin-top: var(--spacing-5);
-  border-color: rgba(var(--color-success-rgb, 16, 185, 129), 0.28);
-  background: rgba(var(--color-success-rgb, 16, 185, 129), 0.05);
-}
-
-.two-factor-backup-box--dialog {
-  padding: 0;
-  border: none;
-  background: transparent;
-}
-
-.two-factor-backup-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.two-factor-backup-header h3 {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-}
-
-.two-factor-backup-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 0.75rem;
-}
-
-.two-factor-backup-code {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.75rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--profile-action-border);
-  background: var(--profile-action-bg);
-  color: var(--color-text-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  font-variant-numeric: tabular-nums;
 }
 
 .report-form {
@@ -2547,26 +1723,14 @@ onUnmounted(() => {
   }
 
   .two-factor-status-card,
-  .account-status-card,
-  .two-factor-backup-header,
-  .two-factor-setup {
+  .account-status-card {
     grid-template-columns: 1fr;
     flex-direction: column;
-  }
-
-  .two-factor-actions {
-    inline-size: 100%;
-    justify-content: stretch;
   }
 
   .account-actions {
     inline-size: 100%;
     justify-content: stretch;
-  }
-
-  .two-factor-setup-qr {
-    inline-size: min(100%, 16rem);
-    margin-inline: auto;
   }
 }
 
@@ -2580,10 +1744,6 @@ onUnmounted(() => {
   .avatar-badge {
     width: 1.5rem;
     height: 1.5rem;
-  }
-
-  .two-factor-backup-grid {
-    grid-template-columns: 1fr;
   }
 }
 </style>

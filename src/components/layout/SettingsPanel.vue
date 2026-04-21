@@ -100,109 +100,7 @@
           <span class="settings-label">{{ $t('settings.appearancePreset') }}</span>
         </div>
         <p class="settings-group-lead">{{ $t('settings.appearanceLead') }}</p>
-        <div class="settings-options theme-options theme-options--presets">
-          <button
-            v-for="opt in appearancePresetOptions"
-            :key="opt.value"
-            type="button"
-            class="theme-btn theme-btn--preset"
-            :class="{ active: settings.appearancePreset === opt.value }"
-            :aria-pressed="settings.appearancePreset === opt.value"
-            :disabled="isApplyingPreset"
-            @click="setAppearancePresetOption(opt.value)"
-          >
-            <div class="theme-btn-icon">
-              <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
-            </div>
-            <div class="theme-btn-copy">
-              <span class="theme-btn-label">{{ opt.label }}</span>
-              <span class="theme-btn-summary">{{ opt.summary }}</span>
-              <span class="theme-btn-meta">{{ opt.surfaceStyle }}</span>
-            </div>
-            <Transition name="check">
-              <div v-if="settings.appearancePreset === opt.value" class="theme-btn-check">
-                <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
-              </div>
-            </Transition>
-          </button>
-        </div>
-        <div class="link-list settings-gallery-links">
-          <ControlButton :tag="RouterLink" to="/style-gallery" class="link-btn" size="compact">
-            <template #start>
-              <AnimatedIcon name="explore" :fallback-icon="Layers" size="sm" />
-            </template>
-            <span class="link-btn-text">{{ $t('settings.openStyleGallery') }}</span>
-            <template #end>
-              <AnimatedIcon name="explore" :fallback-icon="ChevronRight" size="sm" />
-            </template>
-          </ControlButton>
-        </div>
-      </div>
-
-      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
-        <div class="settings-group-header">
-          <div class="settings-group-icon">
-            <AnimatedIcon name="explore" :fallback-icon="Gauge" size="sm" />
-          </div>
-          <span class="settings-label">{{ $t('settings.density') }}</span>
-        </div>
-        <div class="settings-options bg-effect-options">
-          <button
-            v-for="opt in densityModeOptions"
-            :key="opt.value"
-            type="button"
-            class="bg-effect-btn"
-            :class="{ active: settings.densityMode === opt.value }"
-            :aria-pressed="settings.densityMode === opt.value"
-            @click="settingsStore.setDensityMode(opt.value)"
-          >
-            <span class="bg-effect-label">{{ opt.label }}</span>
-          </button>
-        </div>
-      </div>
-
-      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
-        <div class="settings-group-header">
-          <div class="settings-group-icon">
-            <AnimatedIcon name="sparkle" :fallback-icon="ShieldCheck" size="sm" />
-          </div>
-          <span class="settings-label">{{ $t('settings.contrast') }}</span>
-        </div>
-        <div class="settings-options bg-effect-options">
-          <button
-            v-for="opt in contrastModeOptions"
-            :key="opt.value"
-            type="button"
-            class="bg-effect-btn"
-            :class="{ active: settings.contrastMode === opt.value }"
-            :aria-pressed="settings.contrastMode === opt.value"
-            @click="settingsStore.setContrastMode(opt.value)"
-          >
-            <span class="bg-effect-label">{{ opt.label }}</span>
-          </button>
-        </div>
-      </div>
-
-      <div v-show="isSettingsCategoryVisible('appearance')" class="settings-group">
-        <div class="settings-group-header">
-          <div class="settings-group-icon">
-            <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
-          </div>
-          <span class="settings-label">{{ $t('settings.texture') }}</span>
-        </div>
-        <div class="settings-options bg-effect-options">
-          <button
-            v-for="opt in textureLevelOptions"
-            :key="opt.value"
-            type="button"
-            class="bg-effect-btn"
-            :class="{ active: settings.textureLevel === opt.value }"
-            :aria-pressed="settings.textureLevel === opt.value"
-            @click="settingsStore.setTextureLevel(opt.value)"
-          >
-            <span class="bg-effect-label">{{ opt.label }}</span>
-          </button>
-        </div>
+        <AppearancePresetPicker />
       </div>
 
       <!-- Language -->
@@ -783,13 +681,12 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { setLocale, type SupportedLocale } from '@/i18n'
-import { getAppearancePresetSpecs } from '@/config/appearance'
 import { usePreferencesSync } from '@/composables/usePreferencesSync'
 import { useVideoSettings } from '@/composables/useVideoSettings'
-import { applyAppearancePreset } from '@/services/appearanceLoader'
-import type { AppearancePreset, ContrastMode, DensityMode, TextureLevel, Theme } from '@/types'
+import type { Theme } from '@/types'
 import type { AnimationIntensity, AppUpdateStrategy, ParticleEffectType } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import AppearancePresetPicker from '@/components/appearance/AppearancePresetPicker.vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 
 type SettingsCategory = 'appearance' | 'experience' | 'privacy' | 'system'
@@ -822,9 +719,8 @@ const { resetSettings: resetVideoPlayerSettings } = useVideoSettings()
 const { isSavingPreferences, resetPreferences, replacePreferences } = usePreferencesSync()
 
 const { isAuthenticated } = storeToRefs(authStore)
-const { theme, resolvedTheme } = storeToRefs(themeStore)
+const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
-const isApplyingPreset = ref(false)
 const visibleSettingsCategories = computed<{ id: SettingsCategory; label: string }[]>(() => {
   const allCategories = [
     { id: 'appearance' as SettingsCategory, label: t('settings.categoryAppearance') },
@@ -863,45 +759,6 @@ const themeOptions = computed(() => [
   { value: 'light' as Theme, icon: Sun, label: t('settings.light') },
   { value: 'dark' as Theme, icon: Moon, label: t('settings.dark') },
   { value: 'auto' as Theme, icon: Monitor, label: t('settings.auto') },
-])
-
-const appearancePresetOptions = computed(() =>
-  getAppearancePresetSpecs().map((spec) => ({
-    value: spec.preset,
-    icon:
-      spec.preset === 'fluent-soft'
-        ? Sparkles
-        : spec.preset === 'material-calm'
-          ? Layers
-          : spec.preset === 'organic-natural'
-            ? Sun
-            : spec.preset === 'biophilic-serene'
-              ? ShieldCheck
-              : spec.preset === 'clay-playful'
-                ? Gauge
-                : spec.preset === 'sketch-doodle'
-                  ? Smartphone
-                  : spec.preset === 'gradient-narrative'
-                    ? Monitor
-                    : Palette,
-    label: t(`settings.presets.${spec.preset}`),
-    summary: spec.gallerySummary,
-    surfaceStyle: spec.surfaceStyle,
-  }))
-)
-const densityModeOptions = computed<{ value: DensityMode; label: string }[]>(() => [
-  { value: 'compact', label: t('settings.densityCompact') },
-  { value: 'comfortable', label: t('settings.densityComfortable') },
-  { value: 'spacious', label: t('settings.densitySpacious') },
-])
-const contrastModeOptions = computed<{ value: ContrastMode; label: string }[]>(() => [
-  { value: 'normal', label: t('settings.contrastNormal') },
-  { value: 'high', label: t('settings.contrastHigh') },
-])
-const textureLevelOptions = computed<{ value: TextureLevel; label: string }[]>(() => [
-  { value: 'off', label: t('settings.textureOff') },
-  { value: 'subtle', label: t('settings.textureSubtle') },
-  { value: 'rich', label: t('settings.textureRich') },
 ])
 const animationIntensityOptions = computed<{ value: AnimationIntensity; label: string }[]>(() => [
   { value: 'none', label: t('settings.animationNone') },
@@ -964,19 +821,6 @@ function isSettingsCategoryVisible(category: SettingsCategory) {
 
 function setTheme(value: Theme) {
   themeStore.setTheme(value)
-}
-
-async function setAppearancePresetOption(value: AppearancePreset) {
-  if (settings.value.appearancePreset === value || isApplyingPreset.value) return
-
-  isApplyingPreset.value = true
-  const applied = await applyAppearancePreset(value, resolvedTheme.value)
-  if (applied) {
-    settingsStore.setAppearancePreset(value)
-  } else {
-    toastStore.error(t('settings.appearanceRuntimeFailed'))
-  }
-  isApplyingPreset.value = false
 }
 
 async function changeLocale(code: SupportedLocale) {

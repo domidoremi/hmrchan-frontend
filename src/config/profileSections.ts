@@ -8,7 +8,6 @@ import {
   MessageSquare,
   Settings,
   Shield,
-  Smartphone,
   ThumbsUp,
   UserMinus,
   UserPlus,
@@ -22,13 +21,12 @@ export type ProfileSectionId =
   | 'comment-favorites'
   | 'history'
   | 'reports'
-  | 'security-activity'
   | 'followers'
   | 'following'
   | 'blocked'
+  | 'security'
   | 'settings'
   | 'notifications'
-  | 'devices'
 
 export type ProfileSectionGroup = 'content' | 'activity' | 'network' | 'account'
 
@@ -93,10 +91,10 @@ export const profileSections: ProfileSectionDefinition[] = [
     countKey: 'reports',
   },
   {
-    id: 'security-activity',
-    route: '/profile/security-activity',
-    labelKey: 'profile.securityActivityTitle',
-    hintKey: 'profile.securityActivityHint',
+    id: 'security',
+    route: '/profile/security',
+    labelKey: 'profile.securityHubTitle',
+    hintKey: 'profile.securityHubHint',
     group: 'account',
     icon: Shield,
   },
@@ -138,13 +136,6 @@ export const profileSections: ProfileSectionDefinition[] = [
     group: 'account',
     icon: Bell,
     countKey: 'notifications',
-  },
-  {
-    id: 'devices',
-    route: '/profile/devices',
-    labelKey: 'profile.tabs.devices',
-    group: 'account',
-    icon: Smartphone,
   },
 ]
 

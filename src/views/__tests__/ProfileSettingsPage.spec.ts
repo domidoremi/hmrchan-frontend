@@ -364,8 +364,7 @@ describe('ProfileSettingsPage', () => {
     expect(wrapper.get('[data-testid="settings-panel"]').attributes('data-categories')).toBe(
       'appearance,experience'
     )
-    expect(wrapper.text()).toContain('settings.appearanceLead')
-    expect(wrapper.text()).toContain('settings.openStyleGallery')
+    expect(wrapper.text()).not.toContain('settings.openStyleGallery')
 
     await wrapper
       .findAll('.settings-group-switcher__item')
@@ -383,22 +382,7 @@ describe('ProfileSettingsPage', () => {
     expect(profileMocks.getDataSummary).toHaveBeenCalledTimes(2)
   })
 
-  it('opens the style gallery from the appearance callout', async () => {
-    const wrapper = createWrapper()
-    await flushPromises()
-
-    const styleGalleryButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('settings.openStyleGallery'))
-
-    expect(styleGalleryButton).toBeTruthy()
-
-    await styleGalleryButton!.trigger('click')
-
-    expect(profileMocks.push).toHaveBeenCalledWith('/style-gallery')
-  })
-
-  it('saves profile updates and opens email verification flow for email change', async () => {
+  it('saves profile updates without keeping security workflows on the settings page', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
@@ -414,18 +398,8 @@ describe('ProfileSettingsPage', () => {
       bio: 'Updated bio',
     })
     expect(toastStoreState.success).toHaveBeenCalledWith('profile.updateSuccess')
-
-    const forms = wrapper.findAll('form')
-    const emailForm = forms[1]
-    const emailInputs = emailForm.findAll('input')
-    await emailInputs[0].setValue('new@example.com')
-    await emailInputs[1].setValue('current-password')
-    await emailForm.trigger('submit')
-    await flushPromises()
-
-    expect(profileMocks.ensureVerificationToken).toHaveBeenCalledWith('change_email', {
-      password: 'current-password',
-    })
-    expect(toastStoreState.error).not.toHaveBeenCalled()
+    expect(wrapper.text()).not.toContain('email.changeEmailTitle')
+    expect(wrapper.text()).not.toContain('profile.changePassword')
+    expect(profileMocks.ensureVerificationToken).not.toHaveBeenCalled()
   })
 })

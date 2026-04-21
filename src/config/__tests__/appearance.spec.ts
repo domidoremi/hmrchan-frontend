@@ -52,6 +52,8 @@ describe('appearance config', () => {
       'discussion'
     )
     expect(resolveSceneRole({ name: 'home', path: '/' })).toBe('narrative')
-    expect(resolveSceneRole({ name: 'style-gallery', path: '/style-gallery' })).toBe('narrative')
+    expect(resolveSceneRole({ name: 'profile-security', path: '/profile/security' })).toBe(
+      'editorial'
+    )
   })
 })

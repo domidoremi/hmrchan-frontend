@@ -43,7 +43,7 @@ const ROUTES = [
   '/profile',
   '/profile/settings',
   '/profile/notifications',
-  '/profile/devices',
+  '/profile/security',
   '/login',
   '/register',
   '/forgot-password',

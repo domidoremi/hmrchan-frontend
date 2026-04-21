@@ -37,9 +37,11 @@ describe('release route contract', () => {
 
   it('keeps profile section routes aligned with section shell selectors', () => {
     const standaloneProfilePages = new Set([
+      '/profile/security',
+      '/profile/security-activity',
+      '/profile/devices',
       '/profile/settings',
       '/profile/notifications',
-      '/profile/devices',
     ])
     const routes = getAuthenticatedRouteDefinitions().filter((route) => route.sectionId)
 
@@ -101,12 +103,19 @@ describe('release route contract', () => {
       .map((route) => route.path)
 
     expect(sensitiveRoutes).toEqual(
-      expect.arrayContaining([
-        '/profile/security-activity',
-        '/profile/settings',
-        '/profile/devices',
-      ])
+      expect.arrayContaining(['/profile/security', '/profile/settings'])
     )
+  })
+
+  it('treats legacy devices and security-activity paths as security-center redirects', () => {
+    const authRoutes = getAuthenticatedRouteDefinitions()
+    const legacyDevices = authRoutes.find((route) => route.path === '/profile/devices')
+    const legacyActivity = authRoutes.find((route) => route.path === '/profile/security-activity')
+    const securityRoute = authRoutes.find((route) => route.path === '/profile/security')
+
+    expect(securityRoute?.shellSelector).toBe('[data-testid="profile-security-page"]')
+    expect(legacyDevices?.expectedPath).toBe('/profile/security#devices')
+    expect(legacyActivity?.expectedPath).toBe('/profile/security#activity')
   })
 
   it('attaches risk tags and production-report flags to shared route definitions', () => {

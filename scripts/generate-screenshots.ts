@@ -51,7 +51,6 @@ interface GeneratorOptions {
 interface VisualState {
   preset?: string
   colorMode?: 'light' | 'dark'
-  density?: 'compact' | 'comfortable' | 'spacious'
   locale?: string
 }
 
@@ -91,12 +90,9 @@ function appendVariantSuffix(filename: string, suffix: string): string {
 function expandScreenshots(baseConfigs: ScreenshotConfig[]): ScreenshotConfig[] {
   const presets = parseCsv(process.env.SCREENSHOT_PRESETS)
   const colorModes = parseCsv(process.env.SCREENSHOT_COLOR_MODES) as Array<'light' | 'dark'>
-  const densities = parseCsv(process.env.SCREENSHOT_DENSITIES) as Array<
-    'compact' | 'comfortable' | 'spacious'
-  >
   const locale = process.env.SCREENSHOT_LOCALE || 'zh-CN'
 
-  const shouldExpand = presets.length > 0 || colorModes.length > 0 || densities.length > 0
+  const shouldExpand = presets.length > 0 || colorModes.length > 0
 
   if (!shouldExpand) {
     return baseConfigs
@@ -104,26 +100,22 @@ function expandScreenshots(baseConfigs: ScreenshotConfig[]): ScreenshotConfig[] 
 
   const resolvedPresets = presets.length > 0 ? presets : ['minimal-editorial']
   const resolvedColorModes = colorModes.length > 0 ? colorModes : ['light']
-  const resolvedDensities = densities.length > 0 ? densities : ['comfortable']
 
   return baseConfigs.flatMap((config) =>
     resolvedPresets.flatMap((preset) =>
-      resolvedColorModes.flatMap((colorMode) =>
-        resolvedDensities.map((density) => {
-          const suffix = [preset, colorMode, density].join('--')
-          return {
-            ...config,
-            name: appendVariantSuffix(config.name, suffix),
-            description: `${config.description} [${preset} / ${colorMode} / ${density}]`,
-            visualState: {
-              preset,
-              colorMode,
-              density,
-              locale,
-            },
-          }
-        })
-      )
+      resolvedColorModes.map((colorMode) => {
+        const suffix = [preset, colorMode].join('--')
+        return {
+          ...config,
+          name: appendVariantSuffix(config.name, suffix),
+          description: `${config.description} [${preset} / ${colorMode}]`,
+          visualState: {
+            preset,
+            colorMode,
+            locale,
+          },
+        }
+      })
     )
   )
 }
@@ -302,7 +294,6 @@ async function generateScreenshot(
             'settings',
             JSON.stringify({
               appearancePreset: visualState.preset,
-              densityMode: visualState.density,
             })
           )
         } catch {
@@ -375,10 +366,8 @@ async function generateScreenshot(
             !visualState.preset || root.getAttribute('data-preset') === visualState.preset
           const colorModeMatches =
             !visualState.colorMode || root.getAttribute('data-color-mode') === visualState.colorMode
-          const densityMatches =
-            !visualState.density || root.getAttribute('data-density') === visualState.density
 
-          return presetMatches && colorModeMatches && densityMatches
+          return presetMatches && colorModeMatches
         },
         { timeout: TIMEOUTS.PAGE_LOAD },
         config.visualState

@@ -23,7 +23,6 @@ import ProfileHistoryTab from '@/components/profile/ProfileHistoryTab.vue'
 import ProfileLikesTab from '@/components/profile/ProfileLikesTab.vue'
 import ProfileRelationsTab from '@/components/profile/ProfileRelationsTab.vue'
 import ProfileReportsTab from '@/components/profile/ProfileReportsTab.vue'
-import ProfileSecurityTab from '@/components/profile/ProfileSecurityTab.vue'
 
 type RoutedProfileSectionId = Extract<
   ProfileSectionId,
@@ -33,7 +32,6 @@ type RoutedProfileSectionId = Extract<
   | 'comment-favorites'
   | 'history'
   | 'reports'
-  | 'security-activity'
   | 'followers'
   | 'following'
   | 'blocked'
@@ -63,8 +61,6 @@ const resolvedComponent = computed(() => {
       return ProfileHistoryTab
     case 'reports':
       return ProfileReportsTab
-    case 'security-activity':
-      return ProfileSecurityTab
     case 'followers':
     case 'following':
     case 'blocked':

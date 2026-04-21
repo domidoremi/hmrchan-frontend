@@ -8,7 +8,6 @@
   .settings-page,
   .about-page,
   .contact-page,
-  .style-gallery-page,
   .auth-page
 ) {
   position: relative;
@@ -42,7 +41,6 @@
   .settings-page,
   .about-page,
   .contact-page,
-  .style-gallery-page,
   .auth-page
 )::before {
   content: '';
@@ -64,7 +62,6 @@
     .settings-page,
     .about-page,
     .contact-page,
-    .style-gallery-page,
     .auth-page
   )
   > .container {
@@ -82,7 +79,6 @@
     .settings-page,
     .about-page,
     .contact-page,
-    .style-gallery-page,
     .auth-page
   )
   :where(
@@ -131,7 +127,6 @@
     .settings-page,
     .about-page,
     .contact-page,
-    .style-gallery-page,
     .auth-page
   )
   :where(
@@ -146,7 +141,7 @@
   transform: var(--page-card-hover-transform);
 }
 
-:where(.settings-overview, .style-gallery-hero) {
+:where(.settings-overview) {
   background: var(--page-hero-bg);
   border: var(--page-hero-border);
   box-shadow: var(--page-hero-shadow);
@@ -191,7 +186,7 @@
   transform: translate3d(0, calc(var(--page-motion-distance) * -0.25), 0);
 }
 
-:where(.page-section-head, .settings-section-head, .style-gallery-card__header) {
+:where(.page-section-head, .settings-section-head) {
   margin-block-end: var(--page-section-gap);
 }
 
@@ -216,7 +211,6 @@
     .settings-page,
     .about-page,
     .contact-page,
-    .style-gallery-page,
     .auth-page
   )
   :where(hr, .divider, .section-divider, .settings-section + .settings-section) {
@@ -234,7 +228,6 @@
     .settings-page,
     .about-page,
     .contact-page,
-    .style-gallery-page,
     .auth-page
   ) {
     --page-shell-padding-inline: clamp(0.875rem, 4vw, 1.25rem);

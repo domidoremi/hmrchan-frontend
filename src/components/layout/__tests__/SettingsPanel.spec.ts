@@ -42,9 +42,6 @@ const themeStoreState = reactive({
 const settingsStoreState = reactive({
   settings: reactive({
     appearancePreset: 'minimal-editorial',
-    densityMode: 'comfortable',
-    contrastMode: 'normal',
-    textureLevel: 'subtle',
     showHeroSection: true,
     enableAnimations: true,
     enableSwipeNavigation: true,
@@ -83,9 +80,6 @@ const settingsStoreState = reactive({
   setPerformanceCookiesEnabled: vi.fn(),
   setBackgroundEffect: vi.fn(),
   setAnimationIntensity: vi.fn(),
-  setDensityMode: vi.fn(),
-  setContrastMode: vi.fn(),
-  setTextureLevel: vi.fn(),
   setMascotBackground: vi.fn(),
   setDeskPet: vi.fn(),
 })
@@ -214,9 +208,6 @@ describe('SettingsPanel', () => {
       'setPerformanceCookiesEnabled',
       'setBackgroundEffect',
       'setAnimationIntensity',
-      'setDensityMode',
-      'setContrastMode',
-      'setTextureLevel',
       'setMascotBackground',
       'setDeskPet',
     ] as const) {
@@ -229,9 +220,6 @@ describe('SettingsPanel', () => {
 
     Object.assign(settingsStoreState.settings, {
       appearancePreset: 'minimal-editorial',
-      densityMode: 'comfortable',
-      contrastMode: 'normal',
-      textureLevel: 'subtle',
       showHeroSection: true,
       enableAnimations: true,
       enableSwipeNavigation: true,
@@ -346,14 +334,17 @@ describe('SettingsPanel', () => {
     expect(panelMocks.toastError).toHaveBeenCalledWith('settings.appearanceRuntimeFailed')
   })
 
-  it('renders the style gallery entry point and ambient note', () => {
+  it('removes deprecated style-gallery, density, contrast, and texture controls', () => {
     const wrapper = createWrapper({
       embedded: true,
       allowedCategories: ['appearance', 'experience'],
     })
 
     expect(wrapper.text()).toContain('settings.appearanceLead')
-    expect(wrapper.text()).toContain('settings.openStyleGallery')
     expect(wrapper.text()).toContain('settings.ambientEffectsNote')
+    expect(wrapper.text()).not.toContain('settings.openStyleGallery')
+    expect(wrapper.text()).not.toContain('settings.density')
+    expect(wrapper.text()).not.toContain('settings.contrast')
+    expect(wrapper.text()).not.toContain('settings.texture')
   })
 })
