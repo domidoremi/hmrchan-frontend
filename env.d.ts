@@ -13,6 +13,10 @@ interface ImportMetaEnv {
   readonly VITE_APP_DESCRIPTION?: string
   /** Turnstile 站点密钥 */
   readonly VITE_TURNSTILE_SITE_KEY?: string
+  /** 是否显式启用 Cloudflare Browser Insights beacon */
+  readonly VITE_ENABLE_CF_BEACON?: string
+  /** Cloudflare Browser Insights token */
+  readonly VITE_CF_BEACON_TOKEN?: string
   /** 启用 DevTools */
   readonly VITE_ENABLE_DEVTOOLS?: string
   /** Anti-tamper 模式：off|warn|balanced|strict */

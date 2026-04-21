@@ -491,9 +491,11 @@ function scheduleAuthSurfaceBootstrap(): void {
 
 // Cloudflare Web Analytics（仅生产环境 + 配置 token 时启用）
 const CF_BEACON_TOKEN = (import.meta.env.VITE_CF_BEACON_TOKEN ?? '').trim()
+const CF_BEACON_ENABLED = import.meta.env.VITE_ENABLE_CF_BEACON === 'true'
 
 function initCloudflareAnalytics(): void {
   if (!import.meta.env.PROD) return
+  if (!CF_BEACON_ENABLED) return
   if (!CF_BEACON_TOKEN) return
   if (typeof document === 'undefined') return
   if (!shouldEnableCloudflareAnalytics()) return
