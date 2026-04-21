@@ -11,7 +11,6 @@ const routedSections = profileSections.filter((section) =>
     'comment-favorites',
     'history',
     'reports',
-    'security-activity',
     'followers',
     'following',
     'blocked',
@@ -69,12 +68,6 @@ vi.mock('@/components/profile/ProfileReportsTab.vue', () => ({
     template: '<div class="profile-reports-tab-stub">reports:{{ showHeader }}</div>',
   },
 }))
-vi.mock('@/components/profile/ProfileSecurityTab.vue', () => ({
-  default: {
-    props: ['showHeader'],
-    template: '<div class="profile-security-tab-stub">security:{{ showHeader }}</div>',
-  },
-}))
 vi.mock('@/components/profile/ProfileRelationsTab.vue', () => ({
   default: {
     props: ['mode', 'showHeader'],
@@ -111,7 +104,6 @@ describe('ProfileSectionPage', () => {
           'comment-favorites': '.profile-comment-favorites-tab-stub',
           history: '.profile-history-tab-stub',
           reports: '.profile-reports-tab-stub',
-          'security-activity': '.profile-security-tab-stub',
         }[sectionId]
 
     expect(expectedStubClass).toBeTruthy()

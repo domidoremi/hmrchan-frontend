@@ -5,7 +5,7 @@
 import { ref, computed, nextTick } from 'vue'
 import { defineStore } from 'pinia'
 import type { UserPreferences } from '@/api/preferencesService'
-import type { AppearancePreset, ContrastMode, DensityMode, MotionMode, TextureLevel } from '@/types'
+import type { AppearancePreset, MotionMode } from '@/types'
 import { DEFAULT_APPEARANCE_PRESET, normalizeAppearancePreset } from '@/config/appearance'
 
 export type AnimationIntensity = 'none' | 'reduced' | 'normal' | 'full'
@@ -73,12 +73,6 @@ export interface Settings {
   postDetailViewMode: 'stream' | 'data'
   /** 外观预设 */
   appearancePreset: AppearancePreset
-  /** 用户显式密度偏好 */
-  densityMode: DensityMode
-  /** 用户显式对比度偏好 */
-  contrastMode: ContrastMode
-  /** 装饰纹理强度 */
-  textureLevel: TextureLevel
   /** 全局背景粒子效果 */
   backgroundEffect: ParticleEffectConfig
   /** 吉祥物飞行背景 */
@@ -106,9 +100,6 @@ const defaultSettings: Settings = {
   animationIntensity: 'normal',
   postDetailViewMode: 'stream',
   appearancePreset: DEFAULT_APPEARANCE_PRESET,
-  densityMode: 'comfortable',
-  contrastMode: 'normal',
-  textureLevel: 'subtle',
   backgroundEffect: {
     type: 'none',
     density: 0.5,
@@ -151,6 +142,9 @@ function normalizePrivacySettings(target: Settings): void {
 
 type SettingsHydrationSnapshot = Settings & {
   uiStyle?: LegacyUiStyleSnapshot
+  densityMode?: string
+  contrastMode?: string
+  textureLevel?: string
 }
 
 function resolvePresetFromLegacyUiStyle(style: LegacyUiStyleSnapshot): AppearancePreset {
@@ -165,16 +159,18 @@ function normalizeAppearanceSettings(target: SettingsHydrationSnapshot): void {
     legacyUiStyle && normalizedPreset === DEFAULT_APPEARANCE_PRESET
       ? resolvePresetFromLegacyUiStyle(legacyUiStyle)
       : normalizedPreset
-  target.densityMode = ['compact', 'comfortable', 'spacious'].includes(target.densityMode)
-    ? target.densityMode
-    : 'comfortable'
-  target.contrastMode = target.contrastMode === 'high' ? 'high' : 'normal'
-  target.textureLevel = ['off', 'subtle', 'rich'].includes(target.textureLevel)
-    ? target.textureLevel
-    : 'subtle'
 
   if ('uiStyle' in target) {
     delete target.uiStyle
+  }
+  if ('densityMode' in target) {
+    delete target.densityMode
+  }
+  if ('contrastMode' in target) {
+    delete target.contrastMode
+  }
+  if ('textureLevel' in target) {
+    delete target.textureLevel
   }
 }
 
@@ -189,9 +185,6 @@ export const useSettingsStore = defineStore(
     nextTick(() => {
       if (!settings.value.appearancePreset)
         settings.value.appearancePreset = DEFAULT_APPEARANCE_PRESET
-      if (!settings.value.densityMode) settings.value.densityMode = 'comfortable'
-      if (!settings.value.contrastMode) settings.value.contrastMode = 'normal'
-      if (!settings.value.textureLevel) settings.value.textureLevel = 'subtle'
       if (settings.value.cookieConsent === undefined) settings.value.cookieConsent = null
       if (settings.value.analyticsEnabled === undefined) settings.value.analyticsEnabled = false
       if (settings.value.functionalCookiesEnabled === undefined) {
@@ -331,18 +324,6 @@ export const useSettingsStore = defineStore(
       settings.value.appearancePreset = normalizeAppearancePreset(preset)
     }
 
-    function setDensityMode(mode: DensityMode) {
-      settings.value.densityMode = mode
-    }
-
-    function setContrastMode(mode: ContrastMode) {
-      settings.value.contrastMode = mode
-    }
-
-    function setTextureLevel(level: TextureLevel) {
-      settings.value.textureLevel = level
-    }
-
     function setCookieConsent(value: boolean | null) {
       settings.value.cookieConsent = value
       normalizePrivacySettings(settings.value)
@@ -479,9 +460,6 @@ export const useSettingsStore = defineStore(
       toggleSetting,
       setAnimationIntensity,
       setAppearancePreset,
-      setDensityMode,
-      setContrastMode,
-      setTextureLevel,
       setCookieConsent,
       setAnalyticsEnabled,
       setPerformanceCookiesEnabled,

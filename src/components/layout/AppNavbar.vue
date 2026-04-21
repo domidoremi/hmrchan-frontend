@@ -248,15 +248,15 @@
               />
             </RouterLink>
             <RouterLink
-              :to="profileDevicesLink"
+              :to="profileSecurityLink"
               class="dropdown-link user-menu-card"
               role="menuitem"
               @click="showUserMenu = false"
             >
               <div class="dropdown-link-icon user-menu-card__icon">
-                <AnimatedIcon name="explore" :fallback-icon="Smartphone" size="sm" />
+                <AnimatedIcon name="explore" :fallback-icon="Shield" size="sm" />
               </div>
-              <span class="user-menu-card__label">{{ $t('profile.tabs.devices') }}</span>
+              <span class="user-menu-card__label">{{ $t('profile.securityHubTitle') }}</span>
               <AnimatedIcon
                 name="explore"
                 :fallback-icon="ChevronRight"
@@ -299,7 +299,7 @@ import {
   useTemplateRef,
 } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { Bell, ChevronRight, LogIn, LogOut, Search, Settings, Smartphone, User } from '@lucide/vue'
+import { Bell, ChevronRight, LogIn, LogOut, Search, Settings, Shield, User } from '@lucide/vue'
 import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserDisplayName } from '@/utils/user'
 import { useFocusTrap } from '@/composables/useFocusTrap'
@@ -345,8 +345,8 @@ const profileSettingsLink = computed(() =>
 const profileNotificationsLink = computed(() =>
   withProfileReturnTo('/profile/notifications', { returnTo: route.fullPath })
 )
-const profileDevicesLink = computed(() =>
-  withProfileReturnTo('/profile/devices', { returnTo: route.fullPath })
+const profileSecurityLink = computed(() =>
+  withProfileReturnTo('/profile/security', { returnTo: route.fullPath })
 )
 const isPostDetailRoute = computed(() => route.name === 'post-detail')
 const { user, isAuthenticated } = useAuthSurface()

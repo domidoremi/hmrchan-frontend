@@ -51,7 +51,6 @@ const i18n = createI18n({
         explore: 'Explore',
         authors: 'Authors',
         schedule: 'Schedule',
-        styleGallery: 'Style Gallery',
         community: 'Community',
         contact: 'Contact',
         about: 'About',
@@ -131,10 +130,10 @@ describe('AppFooter', () => {
     )
   })
 
-  it('includes a footer entry to the style gallery', () => {
+  it('does not include the removed style gallery entry', () => {
     const wrapper = createWrapper()
 
-    expect(wrapper.find('a[href="/style-gallery"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Style Gallery')
+    expect(wrapper.find('a[href="/style-gallery"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Style Gallery')
   })
 })

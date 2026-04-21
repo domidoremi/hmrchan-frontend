@@ -473,7 +473,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     path === '/profile' ||
     path === '/profile/settings' ||
     path === '/profile/notifications' ||
-    path === '/profile/devices' ||
+    path === '/profile/security' ||
     path === '/settings/profile' ||
     /^\/users\/[^/]+$/.test(path)
   ) {

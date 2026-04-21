@@ -5,7 +5,6 @@
     :data-preset="settings.appearancePreset"
     :data-color-mode="resolvedTheme"
     :data-motion="motionMode"
-    :data-contrast="settings.contrastMode"
     data-scene-role="utility"
   >
     <TransitionGroup name="toast-slide" tag="div" class="toast-stack">

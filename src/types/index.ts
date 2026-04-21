@@ -17,13 +17,7 @@ export type AppearancePreset =
   | 'sketch-doodle'
   | 'gradient-narrative'
 
-export type DensityMode = 'compact' | 'comfortable' | 'spacious'
-
 export type MotionMode = 'none' | 'reduced' | 'standard' | 'expressive'
-
-export type ContrastMode = 'normal' | 'high'
-
-export type TextureLevel = 'off' | 'subtle' | 'rich'
 
 export type SceneRole =
   | 'editorial'
@@ -39,11 +33,8 @@ export type Locale = 'en' | 'zh-CN' | 'zh-TW' | 'ja'
 export interface AppearanceContext {
   preset: AppearancePreset
   sceneRole: SceneRole
-  density: DensityMode
   colorMode: ColorMode
   motion: MotionMode
-  contrast: ContrastMode
-  texture: TextureLevel
   locale: Locale
 }
 

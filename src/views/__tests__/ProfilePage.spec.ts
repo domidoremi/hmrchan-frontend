@@ -160,7 +160,15 @@ describe('ProfilePage', () => {
 
     const links = wrapper.findAllComponents(RouterLinkStub)
     const linkTargets = links.map((link) => link.props('to'))
-    expect(linkTargets).toEqual(groupedProfileSectionRoutes)
+    expect(linkTargets).toEqual(
+      expect.arrayContaining([
+        {
+          path: '/profile/security',
+          query: { returnTo: '/profile' },
+        },
+        ...groupedProfileSectionRoutes,
+      ])
+    )
     expect(linkTargets).toContainEqual({
       path: '/profile/settings',
       query: { returnTo: '/profile' },
@@ -170,13 +178,18 @@ describe('ProfilePage', () => {
       query: { returnTo: '/profile' },
     })
     expect(linkTargets).toContainEqual({
-      path: '/profile/devices',
-      query: { returnTo: '/profile' },
-    })
-    expect(linkTargets).toContainEqual({
       path: '/profile/favorites',
       query: { returnTo: '/profile' },
     })
+    expect(linkTargets).not.toContainEqual({
+      path: '/profile/devices',
+      query: { returnTo: '/profile' },
+    })
+    expect(linkTargets).not.toContainEqual({
+      path: '/profile/security-activity',
+      query: { returnTo: '/profile' },
+    })
+    expect(wrapper.text()).toContain('profile.securityHubTitle')
   })
 
   it('redirects to login when protected bootstrap fails and routes edit button to profile settings', async () => {

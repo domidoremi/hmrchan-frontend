@@ -1810,13 +1810,12 @@ async function runMainAccountRegression(state, harness, config) {
     '/profile/comment-favorites',
     '/profile/history',
     '/profile/reports',
-    '/profile/security-activity',
+    '/profile/security',
     '/profile/followers',
     '/profile/following',
     '/profile/blocked',
     '/profile/settings',
     '/profile/notifications',
-    '/profile/devices',
   ]
   for (const routePath of protectedRoutes) {
     await verifyProtectedGuard(state, harness, config.baseUrl, routePath)
@@ -1829,11 +1828,11 @@ async function runMainAccountRegression(state, harness, config) {
       scope: 'main-account',
       name: 'login redirect-back',
       severity: 'P0',
-      url: new URL('/profile/devices', config.baseUrl).toString(),
+      url: new URL('/profile/security', config.baseUrl).toString(),
     },
     async () => {
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
-        await gotoPath(harness.page, config.baseUrl, '/profile/devices', '.auth-page--login')
+        await gotoPath(harness.page, config.baseUrl, '/profile/security', '.auth-page--login')
         await loginViaUi(
           harness.page,
           state._rl,
@@ -1843,18 +1842,18 @@ async function runMainAccountRegression(state, harness, config) {
             password: config.primaryPassword,
           },
           {
-            expectedPath: '/profile/devices',
+            expectedPath: '/profile/security',
             label: 'main-account',
           }
         )
-        await waitForRouteIdle(harness.page, '.devices-page')
+        await waitForRouteIdle(harness.page, '[data-testid="profile-security-page"]')
       })
 
       assertNoSevereDiagnostics(diagnostics, 'main login redirect-back')
       const screenshot = await takeScreenshot(
         harness.page,
         state._paths.screenshots,
-        'main-devices-after-login'
+        'main-security-after-login'
       )
       state.diagnostics.push(
         ...diagnostics.map((entry) => ({
@@ -1982,10 +1981,15 @@ async function runMainAccountRegression(state, harness, config) {
       scope: 'main-account',
       name: 'current device rename round-trip',
       severity: 'P2',
-      url: new URL('/profile/devices', config.baseUrl).toString(),
+      url: new URL('/profile/security', config.baseUrl).toString(),
     },
     async () => {
-      await gotoPath(harness.page, config.baseUrl, '/profile/devices', '.devices-page')
+      await gotoPath(
+        harness.page,
+        config.baseUrl,
+        '/profile/security',
+        '[data-testid="profile-security-page"]'
+      )
       const original = await getCurrentDeviceState(harness.page)
       const renamed = truncate(`${config.qaPrefix}-device`, 32)
       const artifacts = [
@@ -1995,7 +1999,7 @@ async function runMainAccountRegression(state, harness, config) {
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
         await renameCurrentDevice(harness.page, renamed)
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
-        await waitForRouteIdle(harness.page, '.devices-page')
+        await waitForRouteIdle(harness.page, '[data-testid="profile-security-page"]')
         const afterRename = await getCurrentDeviceState(harness.page)
         assert(
           afterRename.name === renamed,
@@ -2007,7 +2011,7 @@ async function runMainAccountRegression(state, harness, config) {
 
         await renameCurrentDevice(harness.page, original.name)
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
-        await waitForRouteIdle(harness.page, '.devices-page')
+        await waitForRouteIdle(harness.page, '[data-testid="profile-security-page"]')
         const restored = await getCurrentDeviceState(harness.page)
         assert(
           restored.name === original.name,
@@ -2058,10 +2062,15 @@ async function runMainAccountRegression(state, harness, config) {
       scope: 'main-account',
       name: 'current device trust toggle restore',
       severity: 'P2',
-      url: new URL('/profile/devices', config.baseUrl).toString(),
+      url: new URL('/profile/security', config.baseUrl).toString(),
     },
     async () => {
-      await gotoPath(harness.page, config.baseUrl, '/profile/devices', '.devices-page')
+      await gotoPath(
+        harness.page,
+        config.baseUrl,
+        '/profile/security',
+        '[data-testid="profile-security-page"]'
+      )
       const original = await getCurrentDeviceState(harness.page)
       const toggledState = !original.trusted
       const artifacts = [
@@ -2071,7 +2080,7 @@ async function runMainAccountRegression(state, harness, config) {
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
         await toggleCurrentDeviceTrust(harness.page, toggledState)
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
-        await waitForRouteIdle(harness.page, '.devices-page')
+        await waitForRouteIdle(harness.page, '[data-testid="profile-security-page"]')
         const afterToggle = await getCurrentDeviceState(harness.page)
         assert(
           afterToggle.trusted === toggledState,
@@ -2083,7 +2092,7 @@ async function runMainAccountRegression(state, harness, config) {
 
         await toggleCurrentDeviceTrust(harness.page, original.trusted)
         await harness.page.reload({ waitUntil: 'domcontentloaded' })
-        await waitForRouteIdle(harness.page, '.devices-page')
+        await waitForRouteIdle(harness.page, '[data-testid="profile-security-page"]')
         const restored = await getCurrentDeviceState(harness.page)
         assert(
           restored.trusted === original.trusted,
@@ -2134,7 +2143,12 @@ async function runMainAccountRegression(state, harness, config) {
     },
     async () => {
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
-        await gotoPath(harness.page, config.baseUrl, '/profile/devices', '.devices-page')
+        await gotoPath(
+          harness.page,
+          config.baseUrl,
+          '/profile/security',
+          '[data-testid="profile-security-page"]'
+        )
         await logoutViaNavbar(harness.page)
         await gotoPath(harness.page, config.baseUrl, '/login', '.auth-page--login')
         await loginViaUi(
@@ -3094,7 +3108,9 @@ async function runPreflight(config) {
   await writeRunnerPreflightArtifacts(summary)
   console.log(`\n📦 Preflight summary: ${path.join(config.artifactDir, 'summary.json')}`)
   console.log(`📝 Preflight report: ${path.join(config.artifactDir, 'summary.md')}`)
-  console.log(`🧾 Preflight diagnostics: ${path.join(config.artifactDir, 'diagnostics', 'preflight.json')}`)
+  console.log(
+    `🧾 Preflight diagnostics: ${path.join(config.artifactDir, 'diagnostics', 'preflight.json')}`
+  )
 
   if (summary.status !== 'passed') {
     process.exitCode = 1

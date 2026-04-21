@@ -34,6 +34,21 @@
               <strong class="summary-card__value">{{ item.value }}</strong>
             </article>
           </div>
+
+          <RouterLink
+            v-if="securitySection"
+            :to="withProfileReturnTo(securitySection.route, { returnTo: route.fullPath })"
+            class="profile-security-entry"
+          >
+            <div class="profile-security-entry__icon">
+              <Shield :size="22" />
+            </div>
+            <div class="profile-security-entry__copy">
+              <p>{{ $t('profile.securityHubTitle') }}</p>
+              <span>{{ $t('profile.securityHubHint') }}</span>
+            </div>
+            <strong>{{ $t('profile.viewSection') }}</strong>
+          </RouterLink>
         </div>
 
         <div class="profile-groups">
@@ -79,7 +94,7 @@ defineOptions({ name: 'ProfilePage' })
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Pencil } from '@lucide/vue'
+import { Pencil, Shield } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useNotificationsStore } from '@/stores'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
@@ -136,6 +151,10 @@ const summaryItems = computed(() => {
   ]
 })
 
+const securitySection = computed(
+  () => profileSections.find((section) => section.id === 'security') ?? null
+)
+
 const groupedSections = computed(() => {
   const groups: Array<{
     id: 'content' | 'activity' | 'network' | 'account'
@@ -160,7 +179,9 @@ const groupedSections = computed(() => {
     {
       id: 'account',
       title: t('profile.groups.account'),
-      sections: profileSections.filter((section) => section.group === 'account'),
+      sections: profileSections.filter(
+        (section) => section.group === 'account' && section.id !== 'security'
+      ),
     },
   ]
 
@@ -303,6 +324,53 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
   gap: var(--spacing-3);
+}
+
+.profile-security-entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: clamp(0.875rem, 2vw, 1.15rem);
+  align-items: center;
+  padding: clamp(1rem, 2.4vw, 1.25rem);
+  border-radius: var(--profile-section-radius);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.28);
+  background:
+    radial-gradient(circle at 8% 18%, rgba(var(--color-primary-rgb), 0.18), transparent 34%),
+    var(--ui-compat-surface-elevated);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: var(--profile-surface-shadow);
+}
+
+.profile-security-entry__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  color: var(--color-primary);
+  border: 1px solid var(--ui-compat-border);
+  background: var(--ui-compat-surface-interactive);
+}
+
+.profile-security-entry__copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.profile-security-entry__copy p,
+.profile-security-entry__copy span {
+  margin: 0;
+}
+
+.profile-security-entry__copy p,
+.profile-security-entry strong {
+  color: var(--color-text-primary);
+}
+
+.profile-security-entry__copy span {
+  color: var(--ui-compat-text-secondary);
 }
 
 .summary-card {

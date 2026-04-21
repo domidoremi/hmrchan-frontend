@@ -196,11 +196,24 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'security',
+        name: 'profile-security',
+        component: () => import('@/views/ProfileSecurityPage.vue'),
+        meta: {
+          title: 'profile.securityHubTitle',
+          securityLevel: 'sensitive',
+          dataSensitivity: 'security',
+        },
+      },
+      {
         path: 'devices',
         name: 'profile-devices',
-        component: () => import('@/views/ProfileDevicesPage.vue'),
+        redirect: {
+          name: 'profile-security',
+          hash: '#devices',
+        },
         meta: {
-          title: 'profile.tabs.devices',
+          title: 'profile.securityHubTitle',
           securityLevel: 'sensitive',
           dataSensitivity: 'security',
         },
@@ -284,10 +297,12 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'security-activity',
         name: 'profile-security-activity',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
-        props: { sectionId: 'security-activity' },
+        redirect: {
+          name: 'profile-security',
+          hash: '#activity',
+        },
         meta: {
-          title: 'profile.securityActivityTitle',
+          title: 'profile.securityHubTitle',
           securityLevel: 'sensitive',
           dataSensitivity: 'security',
         },
@@ -417,17 +432,6 @@ const routes: RouteRecordRaw[] = [
       title: 'nav.contact',
       showFooter: true,
       appUpdateMode: 'prompt',
-      securityLevel: 'public',
-      dataSensitivity: 'none',
-    },
-  },
-  {
-    path: '/style-gallery',
-    name: 'style-gallery',
-    component: () => import('@/views/StyleGalleryPage.vue'),
-    meta: {
-      title: 'nav.styleGallery',
-      showFooter: true,
       securityLevel: 'public',
       dataSensitivity: 'none',
     },

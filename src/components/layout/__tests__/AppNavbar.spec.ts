@@ -148,9 +148,9 @@ const i18n = createI18n({
       },
       profile: {
         summary: 'Account summary',
+        securityHubTitle: 'Security Center',
         tabs: {
           notifications: 'Notifications',
-          devices: 'Devices',
         },
       },
     },
@@ -176,7 +176,7 @@ async function createWrapper(initialPath = '/') {
         path: '/profile/notifications',
         component: { template: '<div>profile notifications</div>' },
       },
-      { path: '/profile/devices', component: { template: '<div>profile devices</div>' } },
+      { path: '/profile/security', component: { template: '<div>profile security</div>' } },
       { path: '/login', component: { template: '<div>login</div>' } },
       { path: '/:pathMatch(.*)*', component: { template: '<div>fallback</div>' } },
     ],
@@ -533,6 +533,6 @@ describe('AppNavbar', () => {
     expect(hrefs).toContain('/profile')
     expect(hrefs).toContain('/profile/settings?returnTo=/search?q=anime')
     expect(hrefs).toContain('/profile/notifications?returnTo=/search?q=anime')
-    expect(hrefs).toContain('/profile/devices?returnTo=/search?q=anime')
+    expect(hrefs).toContain('/profile/security?returnTo=/search?q=anime')
   })
 })

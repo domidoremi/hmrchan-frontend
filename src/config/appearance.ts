@@ -207,7 +207,7 @@ const ENHANCED_PRESETS = new Set<AppearancePreset>([
   'gradient-narrative',
 ])
 
-const NARRATIVE_ROUTE_NAMES = new Set(['home', 'about', 'contact', 'style-gallery'])
+const NARRATIVE_ROUTE_NAMES = new Set(['home', 'about', 'contact'])
 const PRODUCTIVITY_ROUTE_NAMES = new Set(['schedule', 'schedule-detail'])
 const DISCUSSION_ROUTE_NAMES = new Set(['community', 'discussion-detail'])
 const EDITORIAL_ROUTE_NAMES = new Set([
@@ -219,6 +219,7 @@ const EDITORIAL_ROUTE_NAMES = new Set([
   'auth-callback',
   'profile',
   'profile-notifications',
+  'profile-security',
   'profile-settings',
   'profile-devices',
 ])
@@ -289,11 +290,7 @@ export function resolveSceneRole(route: {
     return 'editorial'
   }
 
-  if (
-    routePath.startsWith('/style-gallery') ||
-    routePath.startsWith('/about') ||
-    routePath.startsWith('/contact')
-  ) {
+  if (routePath.startsWith('/about') || routePath.startsWith('/contact')) {
     return 'narrative'
   }
 

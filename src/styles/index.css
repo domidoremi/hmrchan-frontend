@@ -19,7 +19,6 @@
 @import './page-systems/home-page-system.css' layer(page-systems);
 @import './page-systems/navbar-dropdown-system.css' layer(page-systems);
 @import './page-systems/site-experience-system.css' layer(page-systems);
-@import './page-systems/style-gallery-page-system.css' layer(page-systems);
 @import './animations.css' layer(page-systems);
 @import './scene-roles/core.css' layer(scene-roles);
 @import './presets/minimal-editorial.css' layer(presets);

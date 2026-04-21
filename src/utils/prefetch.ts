@@ -294,9 +294,9 @@ const ROUTE_CONFIG = {
     path: '/profile/notifications',
     importFn: () => import('@/views/ProfileNotificationsPage.vue'),
   },
-  'profile-devices': {
-    path: '/profile/devices',
-    importFn: () => import('@/views/ProfileDevicesPage.vue'),
+  'profile-security': {
+    path: '/profile/security',
+    importFn: () => import('@/views/ProfileSecurityPage.vue'),
   },
   'profile-favorites': {
     path: '/profile/favorites',
