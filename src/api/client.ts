@@ -391,6 +391,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   const url = buildRequestUrl(endpoint, baseUrl)
   const requestHeaders: Record<string, string> = { ...(customHeaders as Record<string, string>) }
   const serializedBody = await serializeRequestBody(body)
+  const hasAuthContext = Boolean(getAuthRuntimeSession())
   const requestId = applyRequestSecurityHeaders(requestHeaders, method, url, config)
 
   if (serializedBody.contentType && !requestHeaders['Content-Type']) {
@@ -411,7 +412,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       await attachClientSecurityHeaders(requestHeaders, {
         method,
         url,
-        hadToken: false,
+        hadToken: hasAuthContext,
         bodyBytes: serializedBody.bodyBytes,
       })
     } catch (error) {
