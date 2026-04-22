@@ -89,8 +89,6 @@ vi.mock('../DiscussionCommentCard.vue', () => ({
           replies: Array<Record<string, unknown>>
           append: boolean
         }) => void
-        onPinUpdated?: (payload: { commentId: string; isPinned: boolean }) => void
-        onFeatureUpdated?: (payload: { commentId: string; isFeatured: boolean }) => void
         onReplySubmitted?: (payload: { parentId: string; comment: Record<string, unknown> }) => void
       } | null
 
@@ -101,8 +99,6 @@ vi.mock('../DiscussionCommentCard.vue', () => ({
         class="discussion-comment-card-stub"
         :data-id="String(props.comment.id)"
         :data-liked="String(props.comment.is_liked ?? false)"
-        :data-pinned="String(props.comment.is_pinned ?? false)"
-        :data-featured="String(props.comment.is_featured ?? false)"
         :data-replies="String((props.comment.replies || []).length)"
       >
         {{ props.comment.id }}
@@ -163,26 +159,6 @@ vi.mock('../DiscussionCommentCard.vue', () => ({
         >
           replies
         </button>
-        <button
-          type="button"
-          class="pin-btn"
-          @click="context?.onPinUpdated?.({
-            commentId: String(props.comment.id),
-            isPinned: true
-          })"
-        >
-          pin
-        </button>
-        <button
-          type="button"
-          class="feature-btn"
-          @click="context?.onFeatureUpdated?.({
-            commentId: String(props.comment.id),
-            isFeatured: true
-          })"
-        >
-          feature
-        </button>
       </article>
     `,
   },
@@ -215,33 +191,12 @@ vi.mock('@/components/ui/StateIndicator.vue', () => ({
   },
 }))
 
-vi.mock('@/components/ui/Select.vue', () => ({
-  default: {
-    name: 'Select',
-    props: ['modelValue'],
-    emits: ['update:modelValue'],
-    template: `
-      <select
-        class="select-stub"
-        :value="modelValue"
-        @change="$emit('update:modelValue', $event.target.value)"
-      >
-        <slot />
-      </select>
-    `,
-  },
-}))
-
 vi.mock('@/components/comment/shared/CommentThreadHeader.vue', () => ({
   default: {
     name: 'CommentThreadHeader',
     props: ['title', 'count', 'subtitle'],
-    template: `
-      <header class="thread-header-stub">
-        <span class="thread-count">{{ count }}</span>
-        <slot name="actions" />
-      </header>
-    `,
+    template:
+      '<header class="thread-header-stub"><span class="thread-count">{{ count }}</span></header>',
   },
 }))
 
@@ -307,7 +262,14 @@ describe('DiscussionCommentList', () => {
 
     await flushUi()
 
-    expect(state.getCommentsMock).toHaveBeenCalled()
+    expect(state.getCommentsMock).toHaveBeenCalledWith(
+      'discussion-1',
+      {
+        limit: 20,
+        cursor: null,
+      },
+      expect.any(Object)
+    )
     expect(wrapper.find('.empty-state').exists()).toBe(true)
     expect(wrapper.find('.comments-list').exists()).toBe(false)
   })
@@ -332,57 +294,15 @@ describe('DiscussionCommentList', () => {
     expect(wrapper.findAll('.discussion-comment-card-stub')).toHaveLength(1)
   })
 
-  it('passes sort, filter, and preload parameters back through reactive refetches', async () => {
-    state.getCommentsMock.mockResolvedValue({
-      items: [makeComment()],
-      next_cursor: null,
-      has_more: false,
-    })
-
-    const wrapper = mountDiscussionCommentList('discussion-3')
-
-    await flushUi()
-    const selects = wrapper.findAll('.select-stub')
-    await selects[0]!.setValue('author')
-    await flushUi()
-    await selects[1]!.setValue('oldest')
-    await flushUi()
-    await selects[2]!.setValue('5')
-    await flushUi()
-
-    expect(state.getCommentsMock).toHaveBeenLastCalledWith(
-      'discussion-3',
-      expect.objectContaining({
-        sort: 'oldest',
-        filter: 'author',
-        preload_replies: 5,
-      }),
-      expect.any(Object)
-    )
-  })
-
-  it('counts nested discussion replies in the thread header total', async () => {
-    state.getCommentsMock.mockResolvedValue({
-      items: [makeComment()],
-      next_cursor: null,
-      has_more: false,
-    })
-
-    const wrapper = mountDiscussionCommentList('discussion-count')
-    await flushUi()
-
-    expect(wrapper.find('.thread-count').text()).toBe('2')
-  })
-
-  it('appends paginated comments through load-more and keeps pinned items first', async () => {
+  it('appends paginated comments through load-more using canonical cursor params only', async () => {
     state.getCommentsMock
       .mockResolvedValueOnce({
-        items: [makeComment({ id: 'comment-a', is_pinned: false, replies: [] })],
+        items: [makeComment({ id: 'comment-a', replies: [] })],
         next_cursor: 'cursor-2',
         has_more: true,
       })
       .mockResolvedValueOnce({
-        items: [makeComment({ id: 'comment-b', is_pinned: true, replies: [] })],
+        items: [makeComment({ id: 'comment-b', replies: [] })],
         next_cursor: null,
         has_more: false,
       })
@@ -390,19 +310,26 @@ describe('DiscussionCommentList', () => {
     const wrapper = mountDiscussionCommentList('discussion-4')
 
     await flushUi()
-    expect(wrapper.find('.load-more-btn').exists()).toBe(true)
-
     await wrapper.find('.load-more-btn').trigger('click')
     await flushUi()
+
+    expect(state.getCommentsMock).toHaveBeenNthCalledWith(
+      2,
+      'discussion-4',
+      {
+        limit: 20,
+        cursor: 'cursor-2',
+      },
+      expect.any(Object)
+    )
 
     const ids = wrapper
       .findAll('.discussion-comment-card-stub')
       .map((card) => card.attributes('data-id'))
-    expect(ids).toEqual(['comment-b', 'comment-a'])
-    expect(wrapper.find('.load-more-btn').exists()).toBe(false)
+    expect(ids).toEqual(['comment-a', 'comment-b'])
   })
 
-  it('patches replies, likes, pinning, featuring, and deletions through the provided thread context', async () => {
+  it('patches replies, likes, deletions, and prepends new root comments through the provided thread context', async () => {
     state.getCommentsMock.mockResolvedValue({
       items: [
         makeComment(),
@@ -432,34 +359,20 @@ describe('DiscussionCommentList', () => {
     expect(firstCard.attributes('data-replies')).toBe('2')
 
     await secondCard.find('.like-btn').trigger('click')
-    await secondCard.find('.feature-btn').trigger('click')
-    await secondCard.find('.pin-btn').trigger('click')
     await flushUi()
+    expect(secondCard.attributes('data-liked')).toBe('true')
 
-    const reordered = wrapper.findAll('.discussion-comment-card-stub')
-    expect(reordered[0]!.attributes('data-id')).toBe('discussion-comment-2')
-    expect(reordered[0]!.attributes('data-liked')).toBe('true')
-    expect(reordered[0]!.attributes('data-featured')).toBe('true')
-    expect(reordered[0]!.attributes('data-pinned')).toBe('true')
-  })
-
-  it('prepends a newly submitted root discussion comment to the rendered thread', async () => {
-    state.getCommentsMock.mockResolvedValue({
-      items: [makeComment()],
-      next_cursor: null,
-      has_more: false,
-    })
-
-    const wrapper = mountDiscussionCommentList('discussion-6')
-
-    await flushUi()
     await wrapper.find('.discussion-comment-form-submit-stub').trigger('click')
     await flushUi()
 
     const renderedIds = wrapper
       .findAll('.discussion-comment-card-stub')
       .map((node) => node.attributes('data-id'))
-    expect(renderedIds).toEqual(['discussion-comment-new', 'discussion-comment-1'])
-    expect(wrapper.find('.thread-count').text()).toBe('3')
+    expect(renderedIds).toEqual([
+      'discussion-comment-new',
+      'discussion-comment-1',
+      'discussion-comment-2',
+    ])
+    expect(wrapper.find('.thread-count').text()).toBe('5')
   })
 })

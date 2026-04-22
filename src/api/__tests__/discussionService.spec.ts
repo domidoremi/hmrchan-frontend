@@ -34,14 +34,12 @@ describe('discussionService', () => {
       {
         limit: 24,
         cursor: 'discussion-cursor-1',
-        category: 'general',
-        sort: 'popular',
       },
       { skipErrorToast: true }
     )
 
     expect(clientMocks.get).toHaveBeenCalledWith(
-      '/discussions?limit=24&cursor=discussion-cursor-1&category=general&sort=popular',
+      '/discussions?limit=24&cursor=discussion-cursor-1',
       { skipErrorToast: true }
     )
   })
@@ -58,13 +56,12 @@ describe('discussionService', () => {
       {
         limit: 12,
         cursor: 'search-cursor-1',
-        category: 'general',
       },
       { skipErrorToast: true }
     )
 
     expect(clientMocks.get).toHaveBeenCalledWith(
-      '/discussions/search?limit=12&cursor=search-cursor-1&category=general&q=idol',
+      '/discussions/search?limit=12&cursor=search-cursor-1&q=idol',
       { skipErrorToast: true }
     )
   })
@@ -122,15 +119,12 @@ describe('discussionService', () => {
       {
         limit: 30,
         cursor: 'comment-cursor-1',
-        sort: 'popular',
-        filter: 'author',
-        preload_replies: 2,
       },
       { skipErrorToast: true }
     )
 
     expect(clientMocks.get).toHaveBeenCalledWith(
-      '/discussions/discussion-1/comments?limit=30&cursor=comment-cursor-1&sort=popular&preload_replies=2&filter=author',
+      '/discussions/discussion-1/comments?limit=30&cursor=comment-cursor-1',
       { skipErrorToast: true }
     )
   })

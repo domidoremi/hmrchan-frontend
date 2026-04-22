@@ -37,16 +37,6 @@
                 <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
                 <span>{{ $t('common.delete') }}</span>
               </button>
-              <button v-if="isAdmin" type="button" class="menu-item" @click="togglePin">
-                <AnimatedIcon name="sparkle" :fallback-icon="Pin" size="sm" />
-                <span>{{ comment.is_pinned ? $t('comment.unpin') : $t('comment.pin') }}</span>
-              </button>
-              <button v-if="isAdmin" type="button" class="menu-item" @click="toggleFeature">
-                <AnimatedIcon name="sparkle" :fallback-icon="Star" size="sm" />
-                <span>{{
-                  comment.is_featured ? $t('comment.unfeature') : $t('comment.feature')
-                }}</span>
-              </button>
               <button type="button" class="menu-item" @click="handleShare">
                 <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
                 <span>{{ $t('comment.share') }}</span>
@@ -204,8 +194,6 @@ import {
   Share2,
   Flag,
   ChevronDown,
-  Pin,
-  Star,
 } from '@lucide/vue'
 import { useAuthStore, useToastStore } from '@/stores'
 import { discussionService, type DiscussionComment, ApiError } from '@/api'
@@ -493,57 +481,6 @@ async function submitReport() {
     }
   } finally {
     isSubmittingReport.value = false
-  }
-}
-
-async function togglePin() {
-  closeMenu()
-  try {
-    if (props.comment.is_pinned) {
-      await discussionService.unpinComment(String(props.comment.id))
-      discussionCommentTreeContext?.onPinUpdated({
-        commentId: String(props.comment.id),
-        isPinned: false,
-      })
-    } else {
-      await discussionService.pinComment(String(props.comment.id))
-      discussionCommentTreeContext?.onPinUpdated({
-        commentId: String(props.comment.id),
-        isPinned: true,
-      })
-    }
-    discussionCommentTreeContext?.onPinnedUpdated()
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  }
-}
-
-async function toggleFeature() {
-  closeMenu()
-  try {
-    if (props.comment.is_featured) {
-      await discussionService.unfeatureComment(String(props.comment.id))
-      discussionCommentTreeContext?.onFeatureUpdated({
-        commentId: String(props.comment.id),
-        isFeatured: false,
-      })
-    } else {
-      await discussionService.featureComment(String(props.comment.id))
-      discussionCommentTreeContext?.onFeatureUpdated({
-        commentId: String(props.comment.id),
-        isFeatured: true,
-      })
-    }
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
   }
 }
 

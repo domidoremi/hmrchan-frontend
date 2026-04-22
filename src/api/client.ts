@@ -404,7 +404,8 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     !requestHeaders['Content-Type'] &&
     ['POST', 'PUT', 'PATCH'].includes(method)
   ) {
-    requestHeaders['Content-Type'] = 'application/json'
+    requestHeaders['Content-Type'] =
+      method === 'PATCH' ? 'application/merge-patch+json' : 'application/json'
   }
 
   if (!skipSecurity) {
@@ -446,6 +447,10 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     }
 
     const errorMeta = response.ok ? null : await readErrorMeta(response)
+
+    if (!response.ok && errorMeta?.code === 'CLIENT_CONTRACT_MISMATCH') {
+      triggerHardReloadGate()
+    }
 
     if (
       !response.ok &&

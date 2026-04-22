@@ -803,16 +803,7 @@ async function exportAccountData() {
 
   isExportingData.value = true
   try {
-    const { blob, filename } = await userService.exportData()
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download =
-      filename || `hmrchan-account-export-${new Date().toISOString().slice(0, 10)}.json`
-    document.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
-    URL.revokeObjectURL(url)
+    await userService.exportData()
     toastStore.success(t('profile.exportDataSuccess'))
   } catch (err) {
     if (isVerificationCancelledError(err)) return
@@ -835,11 +826,7 @@ async function confirmDeleteAccount() {
     showDeleteAccountDialog.value = false
     deleteAccountReason.value = ''
     toastStore.success(t('profile.deleteAccountSuccess'))
-    await authStore.logout()
-    await router.replace({
-      name: 'login',
-      query: buildRestoreAccountQuery(true),
-    })
+    await Promise.allSettled([fetchDeletionStatus(), fetchDataSummary({ silent: true })])
   } catch (err) {
     if (isVerificationCancelledError(err)) return
     if (err instanceof ApiError) {

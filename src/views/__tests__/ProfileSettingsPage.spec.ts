@@ -402,4 +402,49 @@ describe('ProfileSettingsPage', () => {
     expect(wrapper.text()).not.toContain('profile.changePassword')
     expect(profileMocks.ensureVerificationToken).not.toHaveBeenCalled()
   })
+
+  it('treats export and delete as accepted async account operations', async () => {
+    profileMocks.exportData.mockResolvedValue(undefined)
+    profileMocks.deleteAccount.mockResolvedValue(undefined)
+
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    await wrapper
+      .findAll('.settings-group-switcher__item')
+      .find((item) => item.text().includes('settings.categoryPrivacy'))!
+      .trigger('click')
+    await flushPromises()
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('profile.exportDataAction'))
+    await exportButton!.trigger('click')
+    await flushPromises()
+
+    expect(profileMocks.exportData).toHaveBeenCalledTimes(1)
+    expect(toastStoreState.success).toHaveBeenCalledWith('profile.exportDataSuccess')
+    expect(authStoreState.logout).not.toHaveBeenCalled()
+
+    const deleteActionButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('profile.deleteAccountAction'))
+    await deleteActionButton!.trigger('click')
+    await flushPromises()
+
+    const dialogTextareas = wrapper.findAll('textarea')
+    await dialogTextareas.at(-1)!.setValue('cleanup')
+
+    const dialogButtons = wrapper
+      .findAll('button')
+      .filter((button) => button.text().includes('profile.deleteAccountAction'))
+    await dialogButtons.at(-1)!.trigger('click')
+    await flushPromises()
+
+    expect(profileMocks.deleteAccount).toHaveBeenCalledWith('cleanup')
+    expect(authStoreState.logout).not.toHaveBeenCalled()
+    expect(profileMocks.getDeletionStatus).toHaveBeenCalledTimes(2)
+    expect(profileMocks.getDataSummary).toHaveBeenCalledTimes(2)
+    expect(profileMocks.replace).not.toHaveBeenCalled()
+  })
 })
