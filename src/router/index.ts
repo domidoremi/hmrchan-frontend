@@ -19,6 +19,7 @@ import {
 } from '@/security/runtimeState'
 import { ensureAuthStoreLoaded } from '@/services/authSurface'
 import { applyPageMeta } from '@/utils/pageMeta'
+import { buildSensitiveReauthRedirect, isSensitiveReauthLoginRoute } from './sensitiveReauth'
 
 // 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
 declare module 'vue-router' {
@@ -568,7 +569,7 @@ router.beforeEach(async (to) => {
     }
 
     if (getRiskMode() === 'degraded') {
-      return { path: '/profile' }
+      return buildSensitiveReauthRedirect(to)
     }
 
     const allowed = await authStore.ensureFreshAuthz('sensitive')
@@ -581,7 +582,7 @@ router.beforeEach(async (to) => {
   }
 
   // 仅游客可访问的页面（登录、注册）
-  if (to.meta.guestOnly && isAuthenticated) {
+  if (to.meta.guestOnly && isAuthenticated && !isSensitiveReauthLoginRoute(to)) {
     return '/'
   }
 

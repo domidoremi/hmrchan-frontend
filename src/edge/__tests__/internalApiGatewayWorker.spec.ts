@@ -152,6 +152,11 @@ describe('handleInternalApiGatewayRequest', () => {
     ['/api/v1/posts?limit=20', 'http://content-api:8000/api/v1/posts?limit=20', 'content'],
     ['/api/v1/authors?limit=20', 'http://content-api:8000/api/v1/authors?limit=20', 'content'],
     ['/api/v1/inbox/summary', 'http://community-api:8000/api/v1/inbox/summary', 'community'],
+    [
+      '/api/v1/users/6ea6823c-7a9a-4cfc-ac85-d141adb00610/public-profile',
+      'http://community-api:8000/api/v1/users/6ea6823c-7a9a-4cfc-ac85-d141adb00610/public-profile',
+      'community',
+    ],
     ['/api/v1/client/init', 'http://identity-api:8000/api/v1/client/init', 'identity'],
   ])('routes %s to the expected VPC upstream', async (pathname, expectedUrl, expectedDomain) => {
     const publicFetch = vi.fn()
