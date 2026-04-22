@@ -511,7 +511,7 @@ export const authService = {
     email?: string
   }): Promise<WebAuthnAuthenticationOptionsResponse> {
     return apiClient.post<WebAuthnAuthenticationOptionsResponse>(
-      '/auth/passwordless/options',
+      '/auth/passkeys/login/options',
       identifier ?? {},
       {
         skipAuth: true,
@@ -527,7 +527,7 @@ export const authService = {
     deviceType?: string
   ): Promise<AuthResponse> {
     return apiClient.post<AuthResponse>(
-      '/auth/passwordless/verify',
+      '/auth/passkeys/login/verify',
       {
         ceremony_id: ceremonyId,
         credential,

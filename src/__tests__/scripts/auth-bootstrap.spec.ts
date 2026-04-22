@@ -109,11 +109,21 @@ describe('auth bootstrap helpers', () => {
 
     expect(
       classifyAuthBootstrapProbe({
-        path: '/api/v1/auth/passwordless/options',
+        path: '/api/v1/auth/passkeys/login/options',
         method: 'POST',
         status: 403,
       })
-    ).toBe('passwordless-forbidden')
+    ).toBe('passkeys-login-forbidden')
+
+    expect(
+      classifyAuthBootstrapProbe({
+        path: '/api/v1/auth/passkeys/login/options',
+        method: 'POST',
+        status: 503,
+        code: 'SIGNATURE_VERIFIER_UNAVAILABLE',
+        message: 'Request integrity verification unavailable',
+      })
+    ).toBeNull()
 
     expect(
       classifyAuthBootstrapProbe({
@@ -201,7 +211,7 @@ describe('auth bootstrap helpers', () => {
       '/api/v1/client/init',
       '/api/v1/auth/session:resolve',
       '/api/v1/auth/login',
-      '/api/v1/auth/passwordless/options',
+      '/api/v1/auth/passkeys/login/options',
       '/api/v1/auth/google/start?intent=login&return_to=%2F',
     ])
     expect(definitions[0]).toMatchObject({
