@@ -441,16 +441,6 @@ describe('functions/api proxy', () => {
 
   it.each([
     [
-      '/api/v1/auth/passwordless/options',
-      ['v1', 'auth', 'passwordless', 'options'],
-      '/internal/v1/auth/bff/passwordless/options',
-    ],
-    [
-      '/api/v1/auth/passwordless/verify',
-      ['v1', 'auth', 'passwordless', 'verify'],
-      '/internal/v1/auth/bff/passwordless/verify',
-    ],
-    [
       '/api/v1/auth/risk-login/webauthn/options',
       ['v1', 'auth', 'risk-login', 'webauthn', 'options'],
       '/internal/v1/auth/bff/risk/webauthn/options',
@@ -470,28 +460,60 @@ describe('functions/api proxy', () => {
       ['v1', '2fa', 'webauthn', 'authenticate', 'verify'],
       '/internal/v1/auth/bff/mfa/webauthn/verify',
     ],
-  ])('routes passkey facade %s to the internal BFF path', async (urlPath, path, internalPath) => {
-    mockFetch.mockResolvedValueOnce(apiEnvelope({ ceremony_id: 'ceremony-1', ok: true }))
+  ])(
+    'routes internal auth facade %s to the internal BFF path',
+    async (urlPath, path, internalPath) => {
+      mockFetch.mockResolvedValueOnce(apiEnvelope({ ceremony_id: 'ceremony-1', ok: true }))
 
-    const response = await onRequest(
-      makeContext({
-        url: `${ORIGIN}${urlPath}`,
-        method: 'POST',
-        headers: {
-          Origin: ORIGIN,
-          'Content-Type': 'application/json',
-          'X-Client-Fingerprint': 'fingerprint-123',
-        },
-        body: JSON.stringify({ ceremony_id: 'ceremony-1' }),
-        path,
-      })
-    )
+      const response = await onRequest(
+        makeContext({
+          url: `${ORIGIN}${urlPath}`,
+          method: 'POST',
+          headers: {
+            Origin: ORIGIN,
+            'Content-Type': 'application/json',
+            'X-Client-Fingerprint': 'fingerprint-123',
+          },
+          body: JSON.stringify({ ceremony_id: 'ceremony-1' }),
+          path,
+        })
+      )
 
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${INTERNAL_ORIGIN}${internalPath}`)
-    expect(response.status).toBe(200)
-    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('identity')
-  })
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${INTERNAL_ORIGIN}${internalPath}`)
+      expect(response.status).toBe(200)
+      expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('identity')
+    }
+  )
+
+  it.each([
+    ['/api/v1/auth/passkeys/login/options', ['v1', 'auth', 'passkeys', 'login', 'options']],
+    ['/api/v1/auth/passkeys/login/verify', ['v1', 'auth', 'passkeys', 'login', 'verify']],
+  ])(
+    'proxies public passkey login contract %s to the backend identity surface',
+    async (urlPath, path) => {
+      mockFetch.mockResolvedValueOnce(apiEnvelope({ ceremony_id: 'ceremony-1', ok: true }))
+
+      const response = await onRequest(
+        makeContext({
+          url: `${ORIGIN}${urlPath}`,
+          method: 'POST',
+          headers: {
+            Origin: ORIGIN,
+            'Content-Type': 'application/json',
+            'X-Client-Fingerprint': 'fingerprint-123',
+          },
+          body: JSON.stringify({ ceremony_id: 'ceremony-1' }),
+          path,
+        })
+      )
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${BACKEND_ORIGIN}${urlPath}`)
+      expect(response.status).toBe(200)
+      expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('identity')
+    }
+  )
 
   it('does not expose internal API paths through the public Pages facade', async () => {
     const response = await onRequest(

@@ -611,8 +611,6 @@ function isBrowserAuthFacadePath(path: string): boolean {
     'v1/auth/verify-risk-login',
     'v1/auth/risk-login/webauthn/options',
     'v1/auth/risk-login/webauthn/verify',
-    'v1/auth/passwordless/options',
-    'v1/auth/passwordless/verify',
     'v1/2fa/verify-login',
     'v1/2fa/webauthn/authenticate/options',
     'v1/2fa/webauthn/authenticate/verify',
@@ -1066,26 +1064,6 @@ async function handleBrowserAuthFacade(
       const response = await fetchInternalBff(
         env,
         '/internal/v1/auth/bff/mfa/webauthn/verify',
-        withBrowserFingerprint(body, fingerprint)
-      )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
-        route: compactPath,
-      })
-    }
-    case 'v1/auth/passwordless/options': {
-      const response = await fetchInternalBff(
-        env,
-        '/internal/v1/auth/bff/passwordless/options',
-        withBrowserFingerprint(body, fingerprint)
-      )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
-        route: compactPath,
-      })
-    }
-    case 'v1/auth/passwordless/verify': {
-      const response = await fetchInternalBff(
-        env,
-        '/internal/v1/auth/bff/passwordless/verify',
         withBrowserFingerprint(body, fingerprint)
       )
       return handleInternalAuthResult(response, apiBaseUrl, undefined, {

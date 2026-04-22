@@ -3,6 +3,7 @@ function isRecord(value) {
 }
 
 const AUTH_BOOTSTRAP_CLIENT_FINGERPRINT = 'auth-bootstrap-probe'
+const textEncoder = new TextEncoder()
 const AUTH_BOOTSTRAP_PROBE_DEFINITIONS = Object.freeze([
   Object.freeze({
     name: 'client-init',
@@ -34,8 +35,8 @@ const AUTH_BOOTSTRAP_PROBE_DEFINITIONS = Object.freeze([
     }),
   }),
   Object.freeze({
-    name: 'passwordless-options',
-    path: '/api/v1/auth/passwordless/options',
+    name: 'passkeys-login-options',
+    path: '/api/v1/auth/passkeys/login/options',
     method: 'POST',
     attachContract: true,
     body: Object.freeze({
@@ -90,6 +91,98 @@ function summarizeRawBody(rawBody) {
   }
 
   return trimmed.length > 240 ? `${trimmed.slice(0, 237)}...` : trimmed
+}
+
+function canonicalizeQuery(search) {
+  const raw = search.startsWith('?') ? search.slice(1) : search
+  if (!raw) return ''
+
+  const params = new URLSearchParams(raw)
+  params.sort()
+  return params.toString()
+}
+
+async function sha256Hex(bytes) {
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function hmacSha256Hex(secret, payload) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const signature = await crypto.subtle.sign('HMAC', key, textEncoder.encode(payload))
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+function getRandomHex(length) {
+  const bytes = new Uint8Array(Math.ceil(length / 2))
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, length)
+}
+
+function extractBootstrapClientCredentials(payload) {
+  const envelope = isRecord(payload?.data) ? payload.data : payload
+  if (!isRecord(envelope)) {
+    return null
+  }
+
+  const clientToken =
+    typeof envelope.client_token === 'string' && envelope.client_token.trim()
+      ? envelope.client_token.trim()
+      : null
+  const clientSecret =
+    typeof envelope.client_secret === 'string' && envelope.client_secret.trim()
+      ? envelope.client_secret.trim()
+      : null
+
+  if (!clientToken || !clientSecret) {
+    return null
+  }
+
+  return {
+    clientToken,
+    clientSecret,
+  }
+}
+
+async function attachProbeSignatureHeaders(headers, baseUrl, probe, requestBody, credentials) {
+  if (!credentials?.clientToken || !credentials?.clientSecret) {
+    return
+  }
+
+  const parsedUrl = new URL(probe.path, baseUrl)
+  const method = probe.method.toUpperCase()
+  if (method === 'GET' || parsedUrl.pathname === '/api/v1/client/init') {
+    return
+  }
+
+  const bodyBytes = requestBody ? textEncoder.encode(requestBody) : new Uint8Array()
+  const timestamp = Math.floor(Date.now() / 1000)
+  const nonce = getRandomHex(32)
+  const contentHash = await sha256Hex(bodyBytes)
+  const payload = [
+    method,
+    parsedUrl.pathname,
+    canonicalizeQuery(parsedUrl.search),
+    contentHash.toLowerCase(),
+    String(timestamp),
+    nonce,
+    credentials.clientToken,
+  ].join('|')
+
+  headers.set('X-Client-Token', credentials.clientToken)
+  headers.set('X-Timestamp', String(timestamp))
+  headers.set('X-Nonce', nonce)
+  headers.set('X-Content-SHA256', contentHash)
+  headers.set('X-Signature-Version', '2')
+  headers.set('X-Signature', await hmacSha256Hex(credentials.clientSecret, payload))
 }
 
 export function extractAuthBootstrapError(payload, rawBody = '') {
@@ -170,12 +263,20 @@ export function classifyAuthBootstrapProbe(probe) {
     return 'login-5xx'
   }
 
-  if (probe.path === '/api/v1/auth/passwordless/options' && probe.status === 403) {
-    return 'passwordless-forbidden'
+  if (probe.path === '/api/v1/auth/passkeys/login/options' && probe.status === 403) {
+    return 'passkeys-login-forbidden'
   }
 
-  if (probe.path === '/api/v1/auth/passwordless/options' && probe.status >= 500) {
-    return 'passwordless-5xx'
+  if (
+    probe.path === '/api/v1/auth/passkeys/login/options' &&
+    probe.status === 503 &&
+    probe.code === 'SIGNATURE_VERIFIER_UNAVAILABLE'
+  ) {
+    return null
+  }
+
+  if (probe.path === '/api/v1/auth/passkeys/login/options' && probe.status >= 500) {
+    return 'passkeys-login-5xx'
   }
 
   if (probe.path.startsWith('/api/v1/auth/google/start') && probe.status === 404) {
@@ -227,10 +328,10 @@ export function formatFatalAuthBootstrapProbe(probe) {
       return `Auth bootstrap blocked because session resolve returned an upstream 5xx (${summary}).`
     case 'login-5xx':
       return `Auth bootstrap blocked because login returned an upstream 5xx (${summary}).`
-    case 'passwordless-forbidden':
-      return `Auth bootstrap blocked because passwordless/options returned a raw forbidden response instead of an app-level payload (${summary}).`
-    case 'passwordless-5xx':
-      return `Auth bootstrap blocked because passwordless/options returned an upstream 5xx (${summary}).`
+    case 'passkeys-login-forbidden':
+      return `Auth bootstrap blocked because passkeys/login/options returned a raw forbidden response instead of an app-level payload (${summary}).`
+    case 'passkeys-login-5xx':
+      return `Auth bootstrap blocked because passkeys/login/options returned an upstream 5xx (${summary}).`
     case 'google-start-missing':
       return `Auth bootstrap blocked because Google start is missing from the published auth surface (${summary}).`
     case 'google-start-5xx':
@@ -254,7 +355,7 @@ export function validateAuthBootstrapContract() {
     ['/api/v1/client/init', { method: 'POST', attachContract: false }],
     ['/api/v1/auth/session:resolve', { method: 'POST', attachContract: true }],
     ['/api/v1/auth/login', { method: 'POST', attachContract: true }],
-    ['/api/v1/auth/passwordless/options', { method: 'POST', attachContract: true }],
+    ['/api/v1/auth/passkeys/login/options', { method: 'POST', attachContract: true }],
     [
       '/api/v1/auth/google/start?intent=login&return_to=%2F',
       { method: 'GET', attachContract: false, redirect: 'manual' },
@@ -310,6 +411,7 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
   const headers = new Headers({
     Accept: 'application/json',
   })
+  headers.set('X-Client-Fingerprint', options.clientFingerprint ?? AUTH_BOOTSTRAP_CLIENT_FINGERPRINT)
 
   if (probe.method !== 'GET') {
     headers.set('Content-Type', 'application/json')
@@ -322,6 +424,8 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
 
   const requestBody =
     probe.body == null || typeof probe.body === 'string' ? probe.body ?? null : JSON.stringify(probe.body)
+
+  await attachProbeSignatureHeaders(headers, baseUrl, probe, requestBody, options.clientCredentials)
 
   const response = await fetch(new URL(probe.path, baseUrl).toString(), {
     method: probe.method,
@@ -352,9 +456,22 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
 }
 
 export async function probeAuthBootstrapEndpoints(baseUrl, options = {}) {
-  return Promise.all(
-    getAuthBootstrapProbeDefinitions().map((probe) =>
-      probeAuthBootstrapEndpoint(baseUrl, probe, options)
-    )
-  )
+  const probes = getAuthBootstrapProbeDefinitions()
+  const results = []
+  let clientCredentials = options.clientCredentials ?? null
+
+  for (const probe of probes) {
+    const result = await probeAuthBootstrapEndpoint(baseUrl, probe, {
+      ...options,
+      clientFingerprint: options.clientFingerprint ?? AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
+      clientCredentials,
+    })
+    results.push(result)
+
+    if (probe.path === '/api/v1/client/init') {
+      clientCredentials = extractBootstrapClientCredentials(result.body)
+    }
+  }
+
+  return results
 }
