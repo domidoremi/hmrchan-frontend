@@ -64,20 +64,8 @@
               </span>
             </div>
 
-            <!-- Admin / Owner Actions -->
-            <div v-if="canDelete || isAdmin" class="discussion-actions">
+            <div v-if="canDelete" class="discussion-actions">
               <Button
-                v-if="isAdmin"
-                variant="ghost"
-                size="sm"
-                @click="handleTogglePin"
-                :disabled="isPinning"
-              >
-                <AnimatedIcon name="sparkle" :fallback-icon="Pin" size="sm" />
-                {{ discussion.is_pinned ? $t('community.unpin') : $t('community.pin') }}
-              </Button>
-              <Button
-                v-if="canDelete"
                 variant="ghost"
                 size="sm"
                 class="action-danger"
@@ -128,7 +116,7 @@ import { ref, computed, watch, onWatcherCleanup } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Eye, MessageSquare, Trash2, Pin } from '@lucide/vue'
+import { ArrowLeft, Eye, MessageSquare, Trash2 } from '@lucide/vue'
 import { useAuthStore, useToastStore, useDiscussionsStore } from '@/stores'
 import { discussionService, ApiError } from '@/api'
 import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
@@ -156,7 +144,6 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
-const isPinning = ref(false)
 let fetchDiscussionToken = 0
 const isUsingFallback = computed(() => discStore.source === 'fallback')
 const resolvedDiscussionAuthorAvatarSrc = computed(() =>
@@ -237,28 +224,6 @@ async function handleDeleteDiscussion() {
     }
   } finally {
     isDeleting.value = false
-  }
-}
-
-async function handleTogglePin() {
-  if (!discussion.value || isPinning.value) return
-  isPinning.value = true
-  try {
-    if (discussion.value.is_pinned) {
-      await discussionService.unpin(discussion.value.id)
-      discStore.updateDiscussionLocally(discussion.value.id, { is_pinned: false })
-    } else {
-      await discussionService.pin(discussion.value.id)
-      discStore.updateDiscussionLocally(discussion.value.id, { is_pinned: true })
-    }
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isPinning.value = false
   }
 }
 

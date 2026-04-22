@@ -12,7 +12,6 @@ import {
   type DiscussionComment,
   type DiscussionCommentListResponse,
   type ListDiscussionsParams,
-  type DiscussionCategory,
 } from '@/api/discussionService'
 import { normalizeDiscussionsSummaryCount } from '@/api/summaryCounts'
 import type { RequestConfig } from '@/api/client'
@@ -39,10 +38,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const source = ref<PublicPageDataSource>('live')
-
-  // 当前筛选/排序
-  const currentCategory = ref<DiscussionCategory | undefined>(undefined)
-  const currentSort = ref<ListDiscussionsParams['sort']>('latest')
 
   // 当前查看的讨论详情
   const currentDiscussion = ref<Discussion | null>(null)
@@ -100,8 +95,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       const params: ListDiscussionsParams = {
         limit: pageSize.value,
         cursor: reset ? null : nextCursor.value,
-        category: currentCategory.value,
-        sort: currentSort.value,
       }
 
       const res = await discussionService.list(params, {
@@ -133,8 +126,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
         const params: ListDiscussionsParams = {
           limit: pageSize.value,
           cursor: reset ? null : nextCursor.value,
-          category: currentCategory.value,
-          sort: currentSort.value,
         }
         const cachedRes = await getPublicSnapshot<{
           items: Discussion[]
@@ -255,8 +246,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       const params = {
         limit: 20,
         cursor: reset ? null : commentsNextCursor.value,
-        sort: 'newest' as const,
-        preload_replies: 3,
       }
       const res = await discussionService.getComments(discussionId, params, {
         signal: controller.signal,
@@ -391,12 +380,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     }
   }
 
-  function setFilter(category?: DiscussionCategory, sort?: ListDiscussionsParams['sort']) {
-    currentCategory.value = category
-    if (sort) currentSort.value = sort
-    void fetchDiscussions(true)
-  }
-
   function updateDiscussionLocally(id: string, patch: Partial<Discussion>) {
     const idx = items.value.findIndex((d) => d.id === id)
     if (idx !== -1) {
@@ -435,8 +418,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     isLoading.value = false
     error.value = null
     source.value = 'live'
-    currentCategory.value = undefined
-    currentSort.value = 'latest'
     currentDiscussion.value = null
     currentComments.value = []
     commentsTotal.value = 0
@@ -453,8 +434,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     error,
     source,
     hasMore,
-    currentCategory,
-    currentSort,
     currentDiscussion,
     currentComments,
     commentsTotal,
@@ -469,7 +448,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     unlikeDiscussion,
     likeComment,
     unlikeComment,
-    setFilter,
     updateDiscussionLocally,
     $reset,
   }

@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('../client', () => ({
   apiClient: {
     post: vi.fn(),
-    response: vi.fn(),
   },
 }))
 
@@ -69,32 +68,18 @@ describe('normalizeAvatarUrl', () => {
     )
   })
 
-  it('converts JSON export envelopes into downloadable JSON blobs', async () => {
+  it('starts asynchronous account exports with a verification header', async () => {
     vi.mocked(ensureVerificationToken).mockResolvedValueOnce('export-token')
-    vi.mocked(apiClient.response).mockResolvedValueOnce({
-      headers: new Headers({
-        'Content-Type': 'application/json; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="user_data.json"',
-      }),
-      json: vi.fn().mockResolvedValue({
-        success: true,
-        data: { profile: { username: 'momichan' } },
-      }),
-    } as unknown as Response)
+    vi.mocked(apiClient.post).mockResolvedValueOnce(undefined)
 
-    const result = await userService.exportData()
+    await userService.exportData()
 
     expect(ensureVerificationToken).toHaveBeenCalledWith('export_data')
-    expect(apiClient.response).toHaveBeenCalledWith('/account/export-data', {
-      method: 'POST',
+    expect(apiClient.post).toHaveBeenCalledWith('/account/export-data', null, {
       headers: {
         'X-Verification-Token': 'export-token',
       },
       verificationAction: 'export_data',
     })
-    expect(result.filename).toBe('user_data.json')
-    await expect(result.blob.text()).resolves.toBe(
-      JSON.stringify({ profile: { username: 'momichan' } }, null, 2)
-    )
   })
 })

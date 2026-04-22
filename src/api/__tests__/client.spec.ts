@@ -363,6 +363,9 @@ describe('apiClient', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify({ name: 'Patched' }),
+          headers: expect.objectContaining({
+            'Content-Type': 'application/merge-patch+json',
+          }),
         })
       )
 
@@ -381,6 +384,32 @@ describe('apiClient', () => {
       mockFetch.mockResolvedValueOnce(jsonResponse({ detail: 'Not found' }, { status: 404 }))
 
       await expect(apiClient.get('/not-found')).rejects.toThrow(ApiError)
+    })
+
+    it('raises the hard reload gate when the backend reports CLIENT_CONTRACT_MISMATCH', async () => {
+      const hardReloadHandler = vi.fn()
+      window.addEventListener('app:hard-reload-required', hardReloadHandler)
+
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'CLIENT_CONTRACT_MISMATCH',
+              message: 'Contract mismatch',
+            },
+          },
+          { status: 409 }
+        )
+      )
+
+      await expect(apiClient.get('/profile')).rejects.toMatchObject({
+        status: 426,
+        code: 'CLIENT_UPGRADE_REQUIRED',
+      })
+      expect(hardReloadHandler).toHaveBeenCalledTimes(1)
+
+      window.removeEventListener('app:hard-reload-required', hardReloadHandler)
     })
 
     it('throws ApiError for 500 responses', async () => {

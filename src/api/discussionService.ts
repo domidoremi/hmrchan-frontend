@@ -93,33 +93,16 @@ export interface CreateCommentRequest {
 export interface ListDiscussionsParams {
   limit?: number
   cursor?: string | null
-  category?: DiscussionCategory
-  tag?: string
-  sort?: 'latest' | 'popular' | 'active'
-  sort_by?: 'created_at' | 'updated_at' | 'like_count' | 'comments_count' | 'view_count'
-  sort_order?: 'asc' | 'desc'
 }
 
 export interface ListDiscussionCommentsParams {
   limit?: number
   cursor?: string | null
-  sort?: 'newest' | 'oldest' | 'popular'
-  sort_by?: 'newest' | 'oldest' | 'popular' | 'created_at' | 'like_count'
-  preload_replies?: number
-  author_only?: boolean
-  admin_only?: boolean
-  filter?: 'author' | 'admin'
 }
 
 export interface GetDiscussionCommentsOptions {
   limit?: number
   cursor?: string | null
-  sort?: 'newest' | 'oldest' | 'popular'
-  sort_by?: 'newest' | 'oldest' | 'popular' | 'created_at' | 'like_count'
-  preload_replies?: number
-  author_only?: boolean
-  admin_only?: boolean
-  filter?: 'author' | 'admin'
 }
 
 export interface DiscussionCommentThreadResponse {
@@ -235,22 +218,12 @@ function normalizeCursorCollection<T, R>(
   }
 }
 
-function buildCursorQuery(
-  params: Pick<ListDiscussionsParams, 'limit' | 'cursor'> &
-    Record<string, string | null | undefined>
-): URLSearchParams {
+function buildCursorQuery(params: { limit?: number; cursor?: string | null }): URLSearchParams {
   const query = new URLSearchParams({
     limit: String(params.limit ?? 20),
   })
 
   if (params.cursor) query.set('cursor', params.cursor)
-
-  for (const [key, value] of Object.entries(params)) {
-    if (key === 'limit' || key === 'cursor') continue
-    if (typeof value === 'string' && value) {
-      query.set(key, value)
-    }
-  }
 
   return query
 }
@@ -265,15 +238,7 @@ export const discussionService = {
     params: ListDiscussionsParams = {},
     config?: RequestConfig
   ): Promise<DiscussionListResponse> {
-    const query = buildCursorQuery({
-      limit: params.limit,
-      cursor: params.cursor,
-      category: params.category,
-      tag: params.tag,
-      sort: params.sort,
-      sort_by: params.sort_by,
-      sort_order: params.sort_order,
-    })
+    const query = buildCursorQuery(params)
 
     const data = await apiClient.get<DiscussionListResponse>(
       `/discussions?${query.toString()}`,
@@ -329,24 +294,6 @@ export const discussionService = {
     return apiClient.delete(`/discussions/${discussionId}/like`)
   },
 
-  /**
-   * 置顶讨论（管理员）
-   */
-  async pin(discussionId: string): Promise<void> {
-    await apiClient.post(`/discussions/${discussionId}/pin`, null, {
-      verificationAction: 'admin_operation',
-    })
-  },
-
-  /**
-   * 取消置顶讨论（管理员）
-   */
-  async unpin(discussionId: string): Promise<void> {
-    await apiClient.delete(`/discussions/${discussionId}/pin`, {
-      verificationAction: 'admin_operation',
-    })
-  },
-
   // ========== 讨论评论 ==========
 
   /**
@@ -357,22 +304,7 @@ export const discussionService = {
     params: GetDiscussionCommentsOptions = {},
     config?: RequestConfig
   ): Promise<DiscussionCommentListResponse> {
-    const query = new URLSearchParams()
-    query.set('limit', String(params.limit ?? 20))
-    if (params.cursor) query.set('cursor', params.cursor)
-
-    if (params.sort) query.set('sort', params.sort)
-    if (params.sort_by) query.set('sort_by', params.sort_by)
-    if (typeof params.preload_replies === 'number') {
-      query.set('preload_replies', String(params.preload_replies))
-    }
-
-    if (params.filter) {
-      query.set('filter', params.filter)
-    } else {
-      if (params.author_only) query.set('author_only', 'true')
-      if (params.admin_only) query.set('admin_only', 'true')
-    }
+    const query = buildCursorQuery(params)
 
     const data = await apiClient.get<DiscussionCommentListResponse>(
       `/discussions/${discussionId}/comments?${query.toString()}`,
@@ -466,42 +398,6 @@ export const discussionService = {
     )
   },
 
-  /**
-   * 置顶评论（管理员）
-   */
-  async pinComment(commentId: string): Promise<void> {
-    await apiClient.post(`/discussions/comments/${commentId}/pin`, null, {
-      verificationAction: 'admin_operation',
-    })
-  },
-
-  /**
-   * 取消置顶评论（管理员）
-   */
-  async unpinComment(commentId: string): Promise<void> {
-    await apiClient.delete(`/discussions/comments/${commentId}/pin`, {
-      verificationAction: 'admin_operation',
-    })
-  },
-
-  /**
-   * 精选评论（管理员）
-   */
-  async featureComment(commentId: string): Promise<void> {
-    await apiClient.post(`/discussions/comments/${commentId}/feature`, null, {
-      verificationAction: 'admin_operation',
-    })
-  },
-
-  /**
-   * 取消精选评论（管理员）
-   */
-  async unfeatureComment(commentId: string): Promise<void> {
-    await apiClient.delete(`/discussions/comments/${commentId}/feature`, {
-      verificationAction: 'admin_operation',
-    })
-  },
-
   // ========== 用户中心 ==========
 
   /**
@@ -551,14 +447,10 @@ export const discussionService = {
    */
   async search(
     q: string,
-    params: { limit?: number; cursor?: string | null; category?: DiscussionCategory } = {},
+    params: { limit?: number; cursor?: string | null } = {},
     config?: RequestConfig
   ): Promise<DiscussionListResponse> {
-    const query = buildCursorQuery({
-      limit: params.limit,
-      cursor: params.cursor,
-      category: params.category,
-    })
+    const query = buildCursorQuery(params)
     query.set('q', q)
 
     const data = await apiClient.get<DiscussionListResponse>(

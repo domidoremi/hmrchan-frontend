@@ -7,36 +7,7 @@
       :title="$t('comment.title')"
       :count="commentsCount"
       :subtitle="$t('comment.beFirst')"
-    >
-      <template #actions>
-        <div class="comment-controls" v-if="comments.length > 0">
-          <div class="control-item">
-            <span class="control-label">{{ $t('comment.filterLabel') }}</span>
-            <Select v-model="currentFilter" size="sm" :aria-label="$t('comment.filterLabel')">
-              <option value="all">{{ $t('comment.filter.all') }}</option>
-              <option value="author">{{ $t('comment.filter.author') }}</option>
-              <option value="admin">{{ $t('comment.filter.admin') }}</option>
-            </Select>
-          </div>
-          <div class="control-item">
-            <span class="control-label">{{ $t('comment.sortLabel') }}</span>
-            <Select v-model="currentSort" size="sm" :aria-label="$t('comment.sortLabel')">
-              <option value="newest">{{ $t('comment.sort.newest') }}</option>
-              <option value="popular">{{ $t('comment.sort.popular') }}</option>
-              <option value="oldest">{{ $t('comment.sort.oldest') }}</option>
-            </Select>
-          </div>
-          <div class="control-item">
-            <span class="control-label">{{ $t('comment.preloadLabel') }}</span>
-            <Select v-model="preloadReplies" size="sm" :aria-label="$t('comment.preloadLabel')">
-              <option value="0">{{ $t('comment.preloadOff') }}</option>
-              <option value="2">{{ $t('comment.preloadFew') }}</option>
-              <option value="5">{{ $t('comment.preloadMore') }}</option>
-            </Select>
-          </div>
-        </div>
-      </template>
-    </CommentThreadHeader>
+    />
 
     <DiscussionCommentForm :discussion-id="discussionId" @submitted="handleCommentAdded" />
 
@@ -91,7 +62,6 @@ import { discussionCommentTreeContextKey } from './discussionCommentTreeContext'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
-import Select from '@/components/ui/Select.vue'
 import CommentThreadHeader from '@/components/comment/shared/CommentThreadHeader.vue'
 
 interface Props {
@@ -114,10 +84,6 @@ const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 let latestFetchId = 0
 let fetchCommentsController: AbortController | null = null
-
-const currentSort = ref<'newest' | 'oldest' | 'popular'>('newest')
-const currentFilter = ref<'all' | 'author' | 'admin'>('all')
-const preloadReplies = ref('2')
 
 function countComments(items: DiscussionComment[]): number {
   return items.reduce((total, item) => total + 1 + countComments(item.replies || []), 0)
@@ -190,12 +156,6 @@ function removeNestedComment(
   return { items, removedCount }
 }
 
-function resolveFilterParam() {
-  if (currentFilter.value === 'author') return 'author'
-  if (currentFilter.value === 'admin') return 'admin'
-  return undefined
-}
-
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException
     ? err.name === 'AbortError'
@@ -236,9 +196,6 @@ async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolea
       {
         limit: pageSize,
         cursor: reset ? null : nextCursor.value,
-        sort: currentSort.value,
-        filter: resolveFilterParam(),
-        preload_replies: Number(preloadReplies.value),
       },
       {
         skipErrorToast: true,
@@ -287,10 +244,6 @@ async function loadMore() {
 
 function handleCommentAdded(newComment: DiscussionComment) {
   comments.value = sortPinnedFirst([newComment, ...comments.value])
-}
-
-function handlePinnedUpdated() {
-  comments.value = sortPinnedFirst([...comments.value])
 }
 
 function handleReplySubmitted(payload: { parentId: string; comment: DiscussionComment }) {
@@ -361,34 +314,11 @@ function handleRepliesLoaded(payload: {
   }
 }
 
-function handlePinUpdated(payload: { commentId: string; isPinned: boolean }) {
-  const patched = patchCommentById(comments.value, payload.commentId, (item) => ({
-    ...item,
-    is_pinned: payload.isPinned,
-  }))
-  if (patched.updated) {
-    comments.value = sortPinnedFirst(patched.items)
-  }
-}
-
-function handleFeatureUpdated(payload: { commentId: string; isFeatured: boolean }) {
-  const patched = patchCommentById(comments.value, payload.commentId, (item) => ({
-    ...item,
-    is_featured: payload.isFeatured,
-  }))
-  if (patched.updated) {
-    comments.value = patched.items
-  }
-}
-
 provide(discussionCommentTreeContextKey, {
   onDeleted: handleDeleted,
   onReplySubmitted: handleReplySubmitted,
-  onPinnedUpdated: handlePinnedUpdated,
   onLikeUpdated: handleLikeUpdated,
   onRepliesLoaded: handleRepliesLoaded,
-  onPinUpdated: handlePinUpdated,
-  onFeatureUpdated: handleFeatureUpdated,
 })
 
 watch(
@@ -400,12 +330,6 @@ watch(
   },
   { immediate: true }
 )
-
-watch([currentSort, currentFilter, preloadReplies], () => {
-  const controller = new AbortController()
-  void fetchComments(true, controller.signal)
-  onWatcherCleanup(() => controller.abort())
-})
 
 onUnmounted(() => {
   latestFetchId += 1
@@ -429,25 +353,6 @@ onUnmounted(() => {
 
 .comment-section--guest {
   background: color-mix(in srgb, var(--surface-paper-bg) 84%, rgba(255, 255, 255, 0.3));
-}
-
-.comment-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-3);
-  align-items: center;
-}
-
-.control-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.control-label {
-  white-space: nowrap;
 }
 
 .loading-state {
@@ -524,11 +429,5 @@ onUnmounted(() => {
   margin-top: var(--spacing-4);
   inline-size: 100%;
   justify-content: center;
-}
-
-@media (max-width: 768px) {
-  .comment-controls {
-    width: 100%;
-  }
 }
 </style>

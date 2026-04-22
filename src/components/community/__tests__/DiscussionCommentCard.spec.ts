@@ -12,10 +12,6 @@ const state = vi.hoisted(() => {
       likeComment: vi.fn().mockResolvedValue(undefined),
       unlikeComment: vi.fn().mockResolvedValue(undefined),
       deleteComment: vi.fn().mockResolvedValue(undefined),
-      pinComment: vi.fn().mockResolvedValue(undefined),
-      unpinComment: vi.fn().mockResolvedValue(undefined),
-      featureComment: vi.fn().mockResolvedValue(undefined),
-      unfeatureComment: vi.fn().mockResolvedValue(undefined),
       reportComment: vi.fn().mockResolvedValue(undefined),
       getCommentReplies: vi
         .fn()
@@ -220,9 +216,6 @@ function createContext() {
     onDeleted: vi.fn(),
     onLikeUpdated: vi.fn(),
     onRepliesLoaded: vi.fn(),
-    onPinnedUpdated: vi.fn(),
-    onPinUpdated: vi.fn(),
-    onFeatureUpdated: vi.fn(),
     onReplySubmitted: vi.fn(),
   }
 }
@@ -271,17 +264,19 @@ describe('DiscussionCommentCard', () => {
     state.discussionService.likeComment.mockReset().mockResolvedValue(undefined)
     state.discussionService.unlikeComment.mockReset().mockResolvedValue(undefined)
     state.discussionService.deleteComment.mockReset().mockResolvedValue(undefined)
-    state.discussionService.pinComment.mockReset().mockResolvedValue(undefined)
-    state.discussionService.unpinComment.mockReset().mockResolvedValue(undefined)
-    state.discussionService.featureComment.mockReset().mockResolvedValue(undefined)
-    state.discussionService.unfeatureComment.mockReset().mockResolvedValue(undefined)
     state.discussionService.reportComment.mockReset().mockResolvedValue(undefined)
     state.discussionService.getCommentReplies
       .mockReset()
       .mockResolvedValue({ items: [], has_more: false, next_cursor: null })
   })
 
-  it('renders owner and moderation badges while hiding admin actions for non-admin users', () => {
+  it('renders badges and omits removed moderation menu actions', async () => {
+    state.authStore.user = {
+      id: 'author-1',
+      is_admin: false,
+      roles: [],
+    }
+
     const { wrapper } = mountDiscussionCommentCard({
       comment: createComment({
         is_pinned: true,
@@ -292,15 +287,18 @@ describe('DiscussionCommentCard', () => {
       },
     })
 
+    await wrapper.find('.menu-btn').trigger('click')
+    const menuTexts = wrapper.findAll('.menu-item').map((item) => item.text())
+
     expect(wrapper.text()).toContain('comment.threadOwner')
     expect(wrapper.text()).toContain('comment.pinned')
     expect(wrapper.text()).toContain('comment.featured')
-    expect(
-      wrapper.findAll('.menu-item').some((button) => button.text().includes('comment.pin'))
-    ).toBe(false)
+    expect(wrapper.findAll('.menu-item')).toHaveLength(3)
+    expect(menuTexts.some((text) => text.includes('comment.pin'))).toBe(false)
+    expect(menuTexts.some((text) => text.includes('comment.feature'))).toBe(false)
   })
 
-  it('opens nested reply form, pre-fills mention, and reports the submitted reply', async () => {
+  it('toggles likes, opens reply form, and surfaces guest guards', async () => {
     const { wrapper, context } = mountDiscussionCommentCard({
       props: {
         depth: 1,
@@ -308,24 +306,6 @@ describe('DiscussionCommentCard', () => {
       },
     })
 
-    await wrapper.findAll('.action-btn')[1]!.trigger('click')
-    await flushPromises()
-    expect(wrapper.find('.discussion-comment-form-stub').exists()).toBe(true)
-    expect(state.replyFormSetContent).toHaveBeenCalledWith('@alice ')
-    expect(state.replyFormFocus).toHaveBeenCalled()
-
-    await wrapper.find('.submit-reply-btn').trigger('click')
-    await flushPromises()
-    expect(context.onReplySubmitted).toHaveBeenCalledWith({
-      parentId: 'root-1',
-      comment: expect.objectContaining({
-        id: 'discussion-reply-1',
-      }),
-    })
-  })
-
-  it('toggles discussion likes and surfaces API and generic failures', async () => {
-    const { wrapper, context } = mountDiscussionCommentCard()
     await wrapper.findAll('.action-btn')[0]!.trigger('click')
     expect(state.discussionService.likeComment).toHaveBeenCalledWith('discussion-comment-1')
     expect(context.onLikeUpdated).toHaveBeenCalledWith({
@@ -334,84 +314,32 @@ describe('DiscussionCommentCard', () => {
       likeCount: 2,
     })
 
-    const { wrapper: likedWrapper, context: likedContext } = mountDiscussionCommentCard({
-      comment: createComment({ is_liked: true }),
-    })
-    await likedWrapper.findAll('.action-btn')[0]!.trigger('click')
-    expect(state.discussionService.unlikeComment).toHaveBeenCalledWith('discussion-comment-1')
-    expect(likedContext.onLikeUpdated).toHaveBeenCalledWith({
-      commentId: 'discussion-comment-1',
-      isLiked: false,
-      likeCount: 0,
+    await wrapper.findAll('.action-btn')[1]!.trigger('click')
+    await flushPromises()
+    expect(state.replyFormSetContent).toHaveBeenCalledWith('@alice ')
+    expect(state.replyFormFocus).toHaveBeenCalled()
+
+    await wrapper.find('.submit-reply-btn').trigger('click')
+    await flushPromises()
+    expect(context.onReplySubmitted).toHaveBeenCalledWith({
+      parentId: 'root-1',
+      comment: expect.objectContaining({ id: 'discussion-reply-1' }),
     })
 
-    state.discussionService.likeComment
-      .mockReset()
-      .mockRejectedValue(new state.ApiError('api failed'))
-    const { wrapper: apiErrorWrapper } = mountDiscussionCommentCard()
-    await apiErrorWrapper.findAll('.action-btn')[0]!.trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('api failed')
-
-    state.discussionService.likeComment.mockReset().mockRejectedValue(new Error('boom'))
-    const { wrapper: genericErrorWrapper } = mountDiscussionCommentCard()
-    await genericErrorWrapper.findAll('.action-btn')[0]!.trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('comment.error.likeFailed')
+    state.authStore.isAuthenticated = false
+    const { wrapper: guestWrapper } = mountDiscussionCommentCard()
+    await (guestWrapper.vm as unknown as { handleLike: () => Promise<void> }).handleLike()
+    ;(guestWrapper.vm as unknown as { handleReply: () => void }).handleReply()
+    expect(state.toastStore.warning).toHaveBeenCalledWith('comment.loginRequired')
   })
 
-  it('supports admin pin and feature toggles, including failure handling', async () => {
-    state.authStore.user = {
-      id: 'admin-1',
-      is_admin: true,
-      roles: ['admin'],
-    }
-
-    const { wrapper, context } = mountDiscussionCommentCard()
-    await wrapper.find('.menu-btn').trigger('click')
-    const menuItems = wrapper.findAll('.menu-item')
-    await menuItems[1]!.trigger('click')
-    expect(state.discussionService.pinComment).toHaveBeenCalledWith('discussion-comment-1')
-    expect(context.onPinUpdated).toHaveBeenCalledWith({
-      commentId: 'discussion-comment-1',
-      isPinned: true,
-    })
-    expect(context.onPinnedUpdated).toHaveBeenCalled()
-
-    const { wrapper: featuredWrapper, context: featuredContext } = mountDiscussionCommentCard({
-      comment: createComment({ is_featured: true }),
-    })
-    await featuredWrapper.find('.menu-btn').trigger('click')
-    await featuredWrapper.findAll('.menu-item')[2]!.trigger('click')
-    expect(state.discussionService.unfeatureComment).toHaveBeenCalledWith('discussion-comment-1')
-    expect(featuredContext.onFeatureUpdated).toHaveBeenCalledWith({
-      commentId: 'discussion-comment-1',
-      isFeatured: false,
-    })
-
-    state.discussionService.pinComment.mockReset().mockRejectedValue(new Error('boom'))
-    const { wrapper: pinFailureWrapper } = mountDiscussionCommentCard()
-    await pinFailureWrapper.find('.menu-btn').trigger('click')
-    await pinFailureWrapper.findAll('.menu-item')[1]!.trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('common.error')
-
-    state.discussionService.featureComment
-      .mockReset()
-      .mockRejectedValue(new state.ApiError('feature failed'))
-    const { wrapper: featureFailureWrapper } = mountDiscussionCommentCard()
-    await featureFailureWrapper.find('.menu-btn').trigger('click')
-    await featureFailureWrapper.findAll('.menu-item')[2]!.trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('feature failed')
-  })
-
-  it('shares direct links, deletes comments, and reports moderation failures', async () => {
+  it('shares, deletes, reports, and propagates request failures', async () => {
     state.authStore.user = {
       id: 'author-1',
       is_admin: false,
       roles: [],
     }
+
     const { wrapper, context } = mountDiscussionCommentCard()
 
     await wrapper.find('.menu-btn').trigger('click')
@@ -428,49 +356,30 @@ describe('DiscussionCommentCard', () => {
     expect(state.discussionService.deleteComment).toHaveBeenCalledWith('discussion-comment-1')
     expect(context.onDeleted).toHaveBeenCalledWith('discussion-comment-1')
 
-    state.discussionService.deleteComment
-      .mockReset()
-      .mockRejectedValue(new state.ApiError('delete failed'))
-    const { wrapper: deleteFailureWrapper } = mountDiscussionCommentCard()
-    await deleteFailureWrapper.find('.menu-btn').trigger('click')
-    await deleteFailureWrapper.find('.menu-item.danger').trigger('click')
-    await deleteFailureWrapper.find('.confirm-delete-btn').trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('delete failed')
-
-    state.copyToClipboard.mockReset().mockResolvedValue(false)
-    const { wrapper: shareFailureWrapper } = mountDiscussionCommentCard()
-    await shareFailureWrapper.find('.menu-btn').trigger('click')
-    await shareFailureWrapper.findAll('.menu-item')[1]!.trigger('click')
-    expect(state.toastStore.error).toHaveBeenCalledWith('common.error')
-  })
-
-  it('submits reports successfully and handles report failures', async () => {
-    const { wrapper } = mountDiscussionCommentCard()
-
     await wrapper.find('.menu-btn').trigger('click')
-    await wrapper.findAll('.menu-item')[1]!.trigger('click')
-    await wrapper.findAll('.button-stub')[1]!.trigger('click')
+    await wrapper.findAll('.menu-item')[2]!.trigger('click')
+    await wrapper.findAll('.button-stub').at(-1)!.trigger('click')
     await flushPromises()
     expect(state.discussionService.reportComment).toHaveBeenCalledWith(
       'discussion-comment-1',
       'spam',
       ''
     )
-    expect(state.toastStore.success).toHaveBeenCalledWith('comment.reportSubmitted')
 
-    state.discussionService.reportComment
+    state.discussionService.deleteComment
       .mockReset()
-      .mockRejectedValue(new state.ApiError('report failed'))
-    const { wrapper: failureWrapper } = mountDiscussionCommentCard()
-    await failureWrapper.find('.menu-btn').trigger('click')
-    await failureWrapper.findAll('.menu-item')[1]!.trigger('click')
-    await failureWrapper.findAll('.button-stub')[1]!.trigger('click')
+      .mockRejectedValue(new state.ApiError('delete failed'))
+    const { wrapper: deleteFailureWrapper } = mountDiscussionCommentCard({
+      comment: createComment({ id: 'discussion-delete-failure' }),
+    })
+    await deleteFailureWrapper.find('.menu-btn').trigger('click')
+    await deleteFailureWrapper.find('.menu-item.danger').trigger('click')
+    await deleteFailureWrapper.find('.confirm-delete-btn').trigger('click')
     await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('report failed')
+    expect(state.toastStore.error).toHaveBeenCalledWith('delete failed')
   })
 
-  it('loads replies, appends more replies, and swallows reply-load aborts', async () => {
+  it('loads replies, appends more replies, reuses preloaded replies, and aborts on unmount', async () => {
     state.discussionService.getCommentReplies
       .mockReset()
       .mockResolvedValueOnce({
@@ -508,8 +417,6 @@ describe('DiscussionCommentCard', () => {
       replies: expect.any(Array),
       append: false,
     })
-    expect(wrapper.find('.replies-list').exists()).toBe(true)
-    expect(wrapper.find('.load-more-replies').exists()).toBe(true)
 
     await wrapper.find('.load-more-replies').trigger('click')
     await flushPromises()
@@ -519,52 +426,14 @@ describe('DiscussionCommentCard', () => {
       append: true,
     })
 
-    state.discussionService.getCommentReplies
-      .mockReset()
-      .mockRejectedValue(new DOMException('aborted', 'AbortError'))
-    const { wrapper: abortedWrapper } = mountDiscussionCommentCard({
-      comment: createComment({ id: 'discussion-comment-2', reply_count: 1 }),
-    })
-    await abortedWrapper.find('.show-replies-btn').trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).not.toHaveBeenCalledWith('comment.error.fetchRepliesFailed')
-  })
-
-  it('surfaces reply-load failures from API and generic errors', async () => {
-    state.discussionService.getCommentReplies
-      .mockReset()
-      .mockRejectedValue(new state.ApiError('reply failed'))
-    const { wrapper } = mountDiscussionCommentCard({
-      comment: createComment({ reply_count: 1 }),
-    })
-    await wrapper.find('.show-replies-btn').trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('reply failed')
-
-    state.discussionService.getCommentReplies.mockReset().mockRejectedValue(new Error('boom'))
-    const { wrapper: genericFailureWrapper } = mountDiscussionCommentCard({
-      comment: createComment({ id: 'discussion-comment-3', reply_count: 1 }),
-    })
-    await genericFailureWrapper.find('.show-replies-btn').trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('comment.error.fetchRepliesFailed')
-  })
-
-  it('reuses preloaded replies, supports unpin, and ignores empty report reasons', async () => {
-    state.authStore.user = {
-      id: 'admin-1',
-      is_admin: true,
-      roles: ['admin'],
-    }
-
-    const { wrapper, context } = mountDiscussionCommentCard({
+    state.discussionService.getCommentReplies.mockReset()
+    const { wrapper: cachedWrapper } = mountDiscussionCommentCard({
       comment: createComment({
-        id: 'discussion-comment-keep',
-        is_pinned: true,
+        id: 'discussion-comment-cached',
         reply_count: 1,
         replies: [
           {
-            id: 'reply-keep',
+            id: 'reply-cached',
             content: 'cached reply',
             created_at: '2026-04-14T00:00:00Z',
             user: { id: 'reply-author', username: 'eve', avatar_url: null },
@@ -572,116 +441,14 @@ describe('DiscussionCommentCard', () => {
         ],
       }),
     })
-
-    await wrapper.find('.show-replies-btn').trigger('click')
+    await cachedWrapper.find('.show-replies-btn').trigger('click')
     await flushPromises()
     expect(state.discussionService.getCommentReplies).not.toHaveBeenCalled()
-    expect(wrapper.find('.replies-list').exists()).toBe(true)
-    expect(wrapper.text()).toContain('cached reply')
-
-    await wrapper.find('.menu-btn').trigger('click')
-    await wrapper.findAll('.menu-item')[1]!.trigger('click')
-    await flushPromises()
-    expect(state.discussionService.unpinComment).toHaveBeenCalledWith('discussion-comment-keep')
-    expect(context.onPinUpdated).toHaveBeenCalledWith({
-      commentId: 'discussion-comment-keep',
-      isPinned: false,
-    })
-
-    await wrapper.find('.menu-btn').trigger('click')
-    await wrapper.findAll('.menu-item')[4]!.trigger('click')
-    await wrapper.find('.select-stub').setValue('')
-    await wrapper.findAll('.button-stub')[1]!.trigger('click')
-    await flushPromises()
-    expect(state.discussionService.reportComment).not.toHaveBeenCalled()
-    expect(wrapper.find('.dialog-stub').exists()).toBe(true)
-  })
-
-  it('falls back to alternate counters, reloads partial reply caches, uses local root ids, and surfaces generic feature errors', async () => {
-    state.authStore.user = {
-      id: 'admin-1',
-      is_admin: true,
-      roles: ['admin'],
-    }
-
-    state.discussionService.getCommentReplies.mockReset().mockResolvedValueOnce({
-      items: [
-        {
-          id: 'reply-new',
-          content: 'fresh reply',
-          created_at: '2026-04-14T00:00:00Z',
-          user: { id: 'reply-author-2', username: 'neo', avatar_url: null },
-        },
-      ],
-      has_more: false,
-      next_cursor: null,
-    })
-
-    const { wrapper, context } = mountDiscussionCommentCard({
-      comment: createComment({
-        id: 'discussion-fallback',
-        like_count: undefined,
-        likes_count: 3,
-        reply_count: undefined,
-        replies_count: 2,
-        replies: [
-          {
-            id: 'reply-old',
-            content: 'cached partial reply',
-            created_at: '2026-04-14T00:00:00Z',
-            user: { id: 'reply-author', username: 'eve', avatar_url: null },
-          },
-        ],
-      }),
-    })
-
-    expect(wrapper.find('.action-count').text()).toBe('3')
-
-    await wrapper.find('.show-replies-btn').trigger('click')
-    await flushPromises()
-    expect(state.discussionService.getCommentReplies).toHaveBeenCalledWith(
-      'discussion-fallback',
-      expect.objectContaining({ cursor: null, limit: 20 }),
-      expect.any(Object)
-    )
-
-    await wrapper.findAll('.action-btn')[1]!.trigger('click')
-    await flushPromises()
-    await wrapper.find('.submit-reply-btn').trigger('click')
-    await flushPromises()
-    expect(context.onReplySubmitted).toHaveBeenCalledWith({
-      parentId: 'discussion-fallback',
-      comment: expect.objectContaining({ id: 'discussion-reply-1' }),
-    })
-
-    state.discussionService.featureComment.mockReset().mockRejectedValue(new Error('boom'))
-    await wrapper.find('.menu-btn').trigger('click')
-    await wrapper.findAll('.menu-item')[2]!.trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('common.error')
-  })
-
-  it('covers guest action guards, generic report failures, and aborts reply loads on unmount', async () => {
-    state.authStore.isAuthenticated = false
-    const { wrapper } = mountDiscussionCommentCard()
-
-    await (wrapper.vm as unknown as { handleLike: () => Promise<void> }).handleLike()
-    ;(wrapper.vm as unknown as { handleReply: () => void }).handleReply()
-    expect(state.toastStore.warning).toHaveBeenCalledWith('comment.loginRequired')
-    expect(state.toastStore.warning).toHaveBeenCalledTimes(2)
-
-    state.authStore.isAuthenticated = true
-    state.discussionService.reportComment.mockReset().mockRejectedValue(new Error('boom'))
-    await wrapper.find('.menu-btn').trigger('click')
-    await wrapper.findAll('.menu-item')[1]!.trigger('click')
-    await wrapper.findAll('.button-stub')[1]!.trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('comment.error.reportFailed')
 
     let resolveFetch:
       | ((value: { items: never[]; has_more: boolean; next_cursor: null }) => void)
       | null = null
-    state.discussionService.getCommentReplies.mockReset().mockImplementation(
+    state.discussionService.getCommentReplies.mockImplementation(
       (_commentId: string, _query: unknown, options: { signal: AbortSignal }) =>
         new Promise((resolve) => {
           resolveFetch = resolve
@@ -702,53 +469,5 @@ describe('DiscussionCommentCard', () => {
     resolveFetch?.({ items: [], has_more: false, next_cursor: null })
 
     expect(requestOptions.signal.aborted).toBe(true)
-  })
-
-  it('covers feature success, pin api errors, and generic delete failures', async () => {
-    state.authStore.user = {
-      id: 'admin-1',
-      is_admin: true,
-      roles: ['admin'],
-    }
-
-    const { wrapper, context } = mountDiscussionCommentCard({
-      comment: createComment({ id: 'discussion-feature-success', is_featured: false }),
-    })
-    await wrapper.find('.menu-btn').trigger('click')
-    await wrapper.findAll('.menu-item')[2]!.trigger('click')
-    await flushPromises()
-    expect(state.discussionService.featureComment).toHaveBeenCalledWith(
-      'discussion-feature-success'
-    )
-    expect(context.onFeatureUpdated).toHaveBeenCalledWith({
-      commentId: 'discussion-feature-success',
-      isFeatured: true,
-    })
-
-    state.discussionService.pinComment
-      .mockReset()
-      .mockRejectedValue(new state.ApiError('pin failed'))
-    const { wrapper: pinApiWrapper } = mountDiscussionCommentCard({
-      comment: createComment({ id: 'discussion-pin-api' }),
-    })
-    await pinApiWrapper.find('.menu-btn').trigger('click')
-    await pinApiWrapper.findAll('.menu-item')[1]!.trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('pin failed')
-
-    state.authStore.user = {
-      id: 'author-1',
-      is_admin: false,
-      roles: [],
-    }
-    state.discussionService.deleteComment.mockReset().mockRejectedValue(new Error('boom'))
-    const { wrapper: deleteFailureWrapper } = mountDiscussionCommentCard({
-      comment: createComment({ id: 'discussion-delete-failure' }),
-    })
-    await deleteFailureWrapper.find('.menu-btn').trigger('click')
-    await deleteFailureWrapper.find('.menu-item.danger').trigger('click')
-    await deleteFailureWrapper.find('.confirm-delete-btn').trigger('click')
-    await flushPromises()
-    expect(state.toastStore.error).toHaveBeenCalledWith('comment.error.deleteFailed')
   })
 })

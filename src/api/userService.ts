@@ -5,7 +5,6 @@
  */
 
 import { apiClient, type RequestConfig } from './client'
-import { normalizeResponse } from './client/error-mapping'
 import { ensureVerificationToken } from './verificationBridge'
 export { normalizeAvatarUrl } from '@/utils/avatarUrl'
 
@@ -64,27 +63,6 @@ export interface AvatarUploadResponse {
   content_type?: string
   hash?: string
   uploaded_at?: string
-}
-
-export interface ExportAccountDataResult {
-  blob: Blob
-  filename?: string | null
-}
-
-async function buildExportAccountBlob(response: Response): Promise<Blob> {
-  const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
-
-  if (!contentType.includes('application/json')) {
-    return response.blob()
-  }
-
-  const payload = normalizeResponse<unknown>(await response.json())
-  const serializedPayload =
-    typeof payload === 'string' ? payload : JSON.stringify(payload ?? {}, null, 2)
-
-  return new Blob([serializedPayload], {
-    type: 'application/json;charset=utf-8',
-  })
 }
 
 // 用户名更新限制
@@ -175,36 +153,16 @@ export const userService = {
   },
 
   /**
-   * 导出用户数据（JSON 下载）
+   * 导出用户数据（异步导出任务）
    */
-  async exportData(): Promise<ExportAccountDataResult> {
+  async exportData(): Promise<void> {
     const verificationToken = await ensureVerificationToken('export_data')
-    const response = await apiClient.response('/account/export-data', {
-      method: 'POST',
+    await apiClient.post('/account/export-data', null, {
       headers: {
         'X-Verification-Token': verificationToken,
       },
       verificationAction: 'export_data',
     })
-    const blob = await buildExportAccountBlob(response)
-    const contentDisposition = response.headers.get('Content-Disposition')
-    const filenameMatch =
-      contentDisposition?.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i) ?? null
-    const rawFilename = (filenameMatch?.[1] || filenameMatch?.[2] || '').trim()
-    let filename: string | null = null
-
-    if (rawFilename) {
-      try {
-        filename = decodeURIComponent(rawFilename)
-      } catch {
-        filename = rawFilename
-      }
-    }
-
-    return {
-      blob,
-      filename,
-    }
   },
 
   /**
