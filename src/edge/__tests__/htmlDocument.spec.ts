@@ -35,6 +35,23 @@ describe('resolveHtmlDocument', () => {
     const loginConfig = resolveHtmlDocument(new URL('https://momichan.xyz/login'))
     const authCallbackConfig = resolveHtmlDocument(new URL('https://momichan.xyz/auth/callback'))
     const favoritesConfig = resolveHtmlDocument(new URL('https://momichan.xyz/favorites'))
+    const privateProfilePaths = [
+      '/profile',
+      '/profile/favorites',
+      '/profile/comments',
+      '/profile/likes',
+      '/profile/comment-favorites',
+      '/profile/history',
+      '/profile/reports',
+      '/profile/followers',
+      '/profile/following',
+      '/profile/blocked',
+      '/profile/notifications',
+      '/profile/security',
+      '/profile/security-activity',
+      '/profile/devices',
+      '/profile/settings',
+    ]
 
     expect(loginConfig.status).toBe(200)
     expect(loginConfig.robots).toBe('noindex, nofollow')
@@ -47,6 +64,14 @@ describe('resolveHtmlDocument', () => {
     expect(favoritesConfig.status).toBe(200)
     expect(favoritesConfig.robots).toBe('noindex, nofollow')
     expect(favoritesConfig.title).toBe('Account area · MomiChan')
+
+    for (const privatePath of privateProfilePaths) {
+      const config = resolveHtmlDocument(new URL(`https://momichan.xyz${privatePath}`))
+
+      expect(config.status).toBe(200)
+      expect(config.robots).toBe('noindex, nofollow')
+      expect(config.title).toBe('Account area · MomiChan')
+    }
   })
 
   it('returns article metadata for valid detail routes', () => {

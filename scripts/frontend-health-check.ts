@@ -1683,7 +1683,7 @@ async function main() {
         )
         if (isLocalAuditOrigin(effectiveBaseUrl)) {
           const reason =
-            'sensitive route skipped during local audit because runtime integrity may be degraded and route guards intentionally redirect to /profile'
+            'sensitive route skipped during local audit because runtime integrity may be degraded and route guards require explicit re-authentication'
           for (const route of authRoutes.filter(isSensitiveRoute)) {
             skippedRouteReasons.set(route.name, reason)
           }

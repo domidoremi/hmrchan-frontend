@@ -46,6 +46,10 @@ function matchesPathPrefix(path: string, prefix: string): boolean {
   return path === prefix || path.startsWith(`${prefix}/`)
 }
 
+function isAuthenticatedUserPublicProfilePath(path: string): boolean {
+  return /^\/api\/v1\/users\/[^/]+\/public-profile\/?$/i.test(path)
+}
+
 export function resolveUpstreamDomain(path: string): UpstreamDomain {
   const normalizedPath = normalizeApiPath(path)
 
@@ -83,6 +87,7 @@ export function resolveUpstreamDomain(path: string): UpstreamDomain {
     matchesPathPrefix(normalizedPath, '/api/v1/comment-images') ||
     matchesPathPrefix(normalizedPath, '/api/v1/discussions') ||
     matchesPathPrefix(normalizedPath, '/api/v1/relations') ||
+    isAuthenticatedUserPublicProfilePath(normalizedPath) ||
     matchesPathPrefix(normalizedPath, '/api/v1/history') ||
     matchesPathPrefix(normalizedPath, '/api/v1/reports') ||
     matchesPathPrefix(normalizedPath, '/api/v1/inbox') ||

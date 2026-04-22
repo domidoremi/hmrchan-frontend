@@ -471,9 +471,20 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
   if (
     path === '/favorites' ||
     path === '/profile' ||
+    path === '/profile/favorites' ||
+    path === '/profile/comments' ||
+    path === '/profile/likes' ||
+    path === '/profile/comment-favorites' ||
+    path === '/profile/history' ||
+    path === '/profile/reports' ||
+    path === '/profile/followers' ||
+    path === '/profile/following' ||
+    path === '/profile/blocked' ||
     path === '/profile/settings' ||
     path === '/profile/notifications' ||
     path === '/profile/security' ||
+    path === '/profile/security-activity' ||
+    path === '/profile/devices' ||
     path === '/settings/profile' ||
     /^\/users\/[^/]+$/.test(path)
   ) {

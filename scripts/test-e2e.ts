@@ -1722,7 +1722,7 @@ async function main(): Promise<void> {
       }
       if (skippedSensitiveLocalAuditChecks.length > 0) {
         const reason =
-          'Skipped during local audit: sensitive routes intentionally redirect to /profile when runtime integrity is degraded; production regression covers sensitive route access.'
+          'Skipped during local audit: sensitive routes require explicit re-authentication when runtime integrity is degraded; production regression covers sensitive route access.'
         markChecksSkipped(summary, skippedSensitiveLocalAuditChecks, reason)
         console.log(
           `   • Skipping ${skippedSensitiveLocalAuditChecks.length} sensitive auth route(s) in local audit`

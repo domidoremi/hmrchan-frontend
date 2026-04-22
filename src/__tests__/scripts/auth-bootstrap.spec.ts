@@ -1,3 +1,7 @@
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { dirname, join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -9,6 +13,25 @@ import {
   getAuthBootstrapProbeDefinitions,
   validateAuthBootstrapContract,
 } from '../../../scripts/lib/auth-bootstrap.js'
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
+
+function listFiles(root: string): string[] {
+  const files: string[] = []
+
+  for (const entry of readdirSync(root)) {
+    const path = join(root, entry)
+    const stat = statSync(path)
+    if (stat.isDirectory()) {
+      if (entry === 'node_modules' || entry === 'dist') continue
+      files.push(...listFiles(path))
+      continue
+    }
+    files.push(path)
+  }
+
+  return files
+}
 
 describe('auth bootstrap helpers', () => {
   it('extracts error codes and messages from nested payloads', () => {
@@ -243,5 +266,19 @@ describe('auth bootstrap helpers', () => {
       attachContract: false,
       redirect: 'manual',
     })
+  })
+
+  it('does not reference the retired public passwordless options facade', () => {
+    const legacyPublicPath = ['/api/v1/auth', 'passwordless', 'options'].join('/')
+    const offenders = ['src', 'functions', 'scripts']
+      .map((path) => join(repoRoot, path))
+      .flatMap(listFiles)
+      .filter((path) => /\.(?:ts|tsx|vue|js|mjs|cjs)$/.test(path))
+      .flatMap((path) => {
+        const content = readFileSync(path, 'utf8')
+        return content.includes(legacyPublicPath) ? [relative(repoRoot, path)] : []
+      })
+
+    expect(offenders).toEqual([])
   })
 })

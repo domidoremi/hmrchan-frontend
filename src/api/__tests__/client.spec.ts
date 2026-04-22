@@ -213,6 +213,30 @@ describe('apiClient', () => {
       )
     })
 
+    it('passes runtime auth context for authenticated relation-domain public profile reads', async () => {
+      establishRuntimeSession()
+      const attachSecurityHeadersSpy = vi.spyOn(clientSecurityModule, 'attachClientSecurityHeaders')
+      mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'user-2' } }))
+
+      await apiClient.get('/users/user-2/public-profile')
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/v1/users/user-2/public-profile',
+        expect.objectContaining({
+          method: 'GET',
+          credentials: 'include',
+        })
+      )
+      expect(attachSecurityHeadersSpy).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({
+          method: 'GET',
+          url: '/api/v1/users/user-2/public-profile',
+          hadToken: true,
+        })
+      )
+    })
+
     it('normalizes paginated array envelopes', async () => {
       mockFetch.mockResolvedValueOnce(
         jsonResponse({
