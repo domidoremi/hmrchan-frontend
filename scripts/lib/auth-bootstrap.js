@@ -186,6 +186,20 @@ async function attachProbeSignatureHeaders(headers, baseUrl, probe, requestBody,
   headers.set('X-Signature', await hmacSha256Hex(credentials.clientSecret, payload))
 }
 
+function attachProbeBrowserContextHeaders(headers, baseUrl, probe) {
+  if (probe.method.toUpperCase() === 'GET') {
+    return
+  }
+
+  const origin = new URL(baseUrl).origin
+  const parsedUrl = new URL(probe.path, baseUrl)
+  headers.set('Origin', origin)
+
+  if (parsedUrl.pathname.startsWith('/api/v1/auth/')) {
+    headers.set('Referer', `${origin}/`)
+  }
+}
+
 export function extractAuthBootstrapError(payload, rawBody = '') {
   if (!isRecord(payload)) {
     const summarizedBody = summarizeRawBody(rawBody)
@@ -426,6 +440,7 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
   const requestBody =
     probe.body == null || typeof probe.body === 'string' ? probe.body ?? null : JSON.stringify(probe.body)
 
+  attachProbeBrowserContextHeaders(headers, baseUrl, probe)
   await attachProbeSignatureHeaders(headers, baseUrl, probe, requestBody, options.clientCredentials)
 
   const response = await fetch(new URL(probe.path, baseUrl).toString(), {
