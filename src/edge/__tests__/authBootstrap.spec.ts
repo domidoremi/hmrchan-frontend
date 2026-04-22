@@ -122,6 +122,8 @@ describe('auth bootstrap probes', () => {
     expect(fetchMock).toHaveBeenCalledTimes(5)
     expect(passkeyLoginHeaders?.get('X-Client-Token')).toBe('token-1')
     expect(passkeyLoginHeaders?.get('X-Client-Fingerprint')).toBe('auth-bootstrap-probe')
+    expect(passkeyLoginHeaders?.get('Origin')).toBe('https://momichan.xyz')
+    expect(passkeyLoginHeaders?.get('Referer')).toBe('https://momichan.xyz/')
     expect(passkeyLoginHeaders?.get('X-Signature-Version')).toBe('2')
     expect(passkeyLoginHeaders?.get('X-Signature')).toBeTruthy()
   })
