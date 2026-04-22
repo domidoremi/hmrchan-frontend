@@ -20,6 +20,10 @@ describe('auth bootstrap probes', () => {
     expect(pathMap.get('/api/v1/client/init')).toMatchObject({
       method: 'POST',
       attachContract: false,
+      body: {
+        client_fingerprint: 'auth-bootstrap-probe',
+        force_reissue: true,
+      },
     })
     expect(pathMap.get('/api/v1/auth/session:resolve')).toMatchObject({
       method: 'POST',

@@ -219,6 +219,7 @@ describe('auth bootstrap helpers', () => {
       attachContract: false,
       body: {
         client_fingerprint: 'auth-bootstrap-probe',
+        force_reissue: true,
       },
     })
     expect(definitions[2]).toMatchObject({

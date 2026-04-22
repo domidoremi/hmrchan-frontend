@@ -12,6 +12,7 @@ const AUTH_BOOTSTRAP_PROBE_DEFINITIONS = Object.freeze([
     attachContract: false,
     body: Object.freeze({
       client_fingerprint: AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
+      force_reissue: true,
     }),
   }),
   Object.freeze({
