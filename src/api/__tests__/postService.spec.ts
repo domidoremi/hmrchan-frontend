@@ -36,17 +36,13 @@ describe('postService', () => {
       {
         limit: 12,
         cursor: 'cursor-0',
-        sort_by: 'published_at',
-        sort_order: 'desc',
-        platform: 'youtube',
       },
       { skipErrorToast: true }
     )
 
-    expect(clientMocks.get).toHaveBeenCalledWith(
-      '/posts?limit=12&cursor=cursor-0&platform=youtube&sort_by=published_at&sort_order=desc',
-      { skipErrorToast: true }
-    )
+    expect(clientMocks.get).toHaveBeenCalledWith('/posts?limit=12&cursor=cursor-0', {
+      skipErrorToast: true,
+    })
   })
 
   it('preserves cursor pagination fields from the normalized post list response', async () => {

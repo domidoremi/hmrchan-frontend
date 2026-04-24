@@ -32,7 +32,6 @@
           <PageMetaRow v-if="!query">
             <PageMetaChip>{{ $t('search.tips.keyword') }}</PageMetaChip>
             <PageMetaChip>{{ $t('search.tips.author') }}</PageMetaChip>
-            <PageMetaChip>{{ $t('search.tips.platform') }}</PageMetaChip>
           </PageMetaRow>
         </template>
       </PageHeroShell>
@@ -77,64 +76,6 @@
                 </template>
               </ControlButton>
             </ControlGroup>
-
-            <div class="filter-options">
-              <ControlGroup v-if="activeTab === 'posts'" class="platform-filters" justify="end">
-                <ControlButton
-                  v-for="platform in platformOptions"
-                  :key="platform.value"
-                  class="platform-btn"
-                  size="compact"
-                  :pressed="currentPlatform === platform.value"
-                  @click="currentPlatform = platform.value"
-                >
-                  <template #start>
-                    <AnimatedIcon
-                      :name="platform.value === 'all' ? 'explore' : 'sparkle'"
-                      :fallback-icon="platform.icon"
-                      size="sm"
-                      :active="currentPlatform === platform.value"
-                    />
-                  </template>
-                  <span class="platform-label">{{ platform.label }}</span>
-                </ControlButton>
-              </ControlGroup>
-
-              <div v-if="activeTab === 'posts'" class="sort-controls">
-                <Select v-model="sortBy" class="sort-select" :aria-label="$t('search.sortBy')">
-                  <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
-                    {{ opt.label }}
-                  </option>
-                </Select>
-                <ControlButton
-                  class="sort-order-btn"
-                  :class="{ 'sort-order-btn--asc': sortOrder === 'asc' }"
-                  size="square"
-                  icon-only
-                  :pressed="sortOrder === 'asc'"
-                  :aria-label="
-                    sortOrder === 'desc'
-                      ? $t('search.sort.descending')
-                      : $t('search.sort.ascending')
-                  "
-                  :title="
-                    sortOrder === 'desc'
-                      ? $t('search.sort.descending')
-                      : $t('search.sort.ascending')
-                  "
-                  @click="toggleSortOrder"
-                >
-                  <template #start>
-                    <AnimatedIcon
-                      name="explore"
-                      :fallback-icon="ArrowUpDown"
-                      size="sm"
-                      class="sort-order-icon"
-                    />
-                  </template>
-                </ControlButton>
-              </div>
-            </div>
           </div>
         </PageToolbar>
 
@@ -233,7 +174,6 @@
             <ul>
               <li>{{ $t('search.tips.keyword') }}</li>
               <li>{{ $t('search.tips.author') }}</li>
-              <li>{{ $t('search.tips.platform') }}</li>
             </ul>
           </div>
         </div>
@@ -436,16 +376,13 @@ import { useI18n } from 'vue-i18n'
 import {
   FileText,
   User,
-  Globe,
   LogIn,
-  ArrowUpDown,
   ArrowLeft,
   RotateCcw,
   History,
   BarChart3,
   Trash2,
 } from '@lucide/vue'
-import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import AuthorCard from '@/components/business/AuthorCard.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
@@ -456,21 +393,16 @@ import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
 import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
 import PageToolbar from '@/components/appearance/PageToolbar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
-import Select from '@/components/ui/Select.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import { useSearchPageState } from './search/useSearchPageState'
-import type { SearchPlatformFilter, SearchSortBy } from './search/searchPageModel'
 
 const { t } = useI18n()
 const {
   query,
   activeTab,
-  sortBy,
-  sortOrder,
-  currentPlatform,
   isAuthenticated,
   results,
   discoverPosts,
@@ -494,7 +426,6 @@ const {
   topSearchQueries,
   mayHaveMoreResults,
   goBack,
-  toggleSortOrder,
   fetchDiscoverPosts,
   search,
   searchAuthors,
@@ -519,36 +450,6 @@ const tabIcons = {
 const tabs = computed(() => [
   { id: 'posts' as const, label: t('search.tab.posts'), icon: tabIcons.posts },
   { id: 'authors' as const, label: t('search.tab.authors'), icon: tabIcons.authors },
-])
-
-const platformIcons = {
-  all: markRaw(Globe),
-  youtube: markRaw(IconYoutube),
-  tiktok: markRaw(IconTiktok),
-  twitter: markRaw(IconX),
-  instagram: markRaw(IconInstagram),
-} as const
-
-const platformOptions = computed(() => [
-  {
-    value: 'all' as SearchPlatformFilter,
-    label: t('explore.allPlatforms'),
-    icon: platformIcons.all,
-  },
-  { value: 'youtube' as SearchPlatformFilter, label: 'YouTube', icon: platformIcons.youtube },
-  { value: 'tiktok' as SearchPlatformFilter, label: 'TikTok', icon: platformIcons.tiktok },
-  { value: 'twitter' as SearchPlatformFilter, label: 'X', icon: platformIcons.twitter },
-  {
-    value: 'instagram' as SearchPlatformFilter,
-    label: 'Instagram',
-    icon: platformIcons.instagram,
-  },
-])
-
-const sortOptions = computed(() => [
-  { value: 'relevance' as SearchSortBy, label: t('search.sort.relevance') },
-  { value: 'published_at' as SearchSortBy, label: t('search.sort.date') },
-  { value: 'view_count' as SearchSortBy, label: t('search.sort.views') },
 ])
 </script>
 
@@ -630,54 +531,6 @@ const sortOptions = computed(() => [
 
 .tab-count {
   flex-shrink: 0;
-}
-
-.filter-options {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  flex-wrap: wrap;
-}
-
-.platform-filters {
-  justify-content: flex-end;
-}
-
-.platform-btn {
-  justify-content: flex-start;
-  min-inline-size: max-content;
-}
-
-.platform-label {
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .platform-label {
-    display: inline;
-  }
-}
-
-.sort-select {
-  min-inline-size: 11.25rem;
-}
-
-.sort-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-}
-
-.sort-order-btn {
-  flex-shrink: 0;
-}
-
-.sort-order-icon {
-  transition: transform var(--transition-fast);
-}
-
-.sort-order-btn--asc .sort-order-icon {
-  transform: rotate(180deg);
 }
 
 .login-hint {
@@ -1190,35 +1043,6 @@ const sortOptions = computed(() => [
   .filter-tab {
     flex: 1 1 0;
     justify-content: center;
-    min-inline-size: 0;
-  }
-
-  .filter-options {
-    inline-size: 100%;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .platform-filters {
-    display: grid;
-    inline-size: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .platform-btn {
-    justify-content: center;
-  }
-
-  .platform-label {
-    display: inline;
-  }
-
-  .sort-controls {
-    inline-size: 100%;
-  }
-
-  .sort-select {
-    flex: 1;
     min-inline-size: 0;
   }
 

@@ -41,8 +41,6 @@ export const useFavoritesStore = defineStore('favorites', () => {
   // 当前筛选条件
   const currentFolder = ref<string | undefined>(undefined)
   const currentTag = ref<string | undefined>(undefined)
-  const currentSort = ref<ListFavoritesParams['sort_by']>(undefined)
-  const currentSortOrder = ref<ListFavoritesParams['sort_order']>(undefined)
   let fetchFavoritesController: AbortController | null = null
   let fetchFavoritesToken = 0
   let fetchFoldersController: AbortController | null = null
@@ -87,8 +85,6 @@ export const useFavoritesStore = defineStore('favorites', () => {
         cursor: reset ? null : nextCursor.value,
         folder_name: currentFolder.value,
         tag: currentTag.value,
-        sort_by: currentSort.value,
-        sort_order: currentSortOrder.value,
       }
 
       const res = await favoriteService.list(params, {
@@ -257,16 +253,9 @@ export const useFavoritesStore = defineStore('favorites', () => {
     }
   }
 
-  function setFilter(options: {
-    folder?: string
-    tag?: string
-    sort_by?: ListFavoritesParams['sort_by']
-    sort_order?: ListFavoritesParams['sort_order']
-  }) {
+  function setFilter(options: { folder?: string; tag?: string }) {
     currentFolder.value = options.folder
     currentTag.value = options.tag
-    currentSort.value = options.sort_by
-    currentSortOrder.value = options.sort_order
     void fetchFavorites(true)
   }
 
@@ -285,8 +274,6 @@ export const useFavoritesStore = defineStore('favorites', () => {
     checkedPosts.value.clear()
     currentFolder.value = undefined
     currentTag.value = undefined
-    currentSort.value = undefined
-    currentSortOrder.value = undefined
   }
 
   watch(pageSize, (nextPageSize, previousPageSize) => {

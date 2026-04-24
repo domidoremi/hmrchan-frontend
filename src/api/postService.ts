@@ -2,31 +2,8 @@
  * Posts Service - 帖子相关 API
  */
 
-import {
-  apiClient,
-  ApiError,
-  type CursorCollectionResponse,
-  type PaginatedApiResponseWithLimit,
-  type RequestConfig,
-} from './client'
+import { apiClient, ApiError, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
-
-export type SortOrder = 'asc' | 'desc'
-
-export type PostSortBy =
-  | 'published_at'
-  | 'scraped_at'
-  | 'view_count'
-  | 'like_count'
-  | 'comment_count'
-
-/**
- * Thumbnail quality levels for optimized image loading
- * - small: Low resolution for previews/thumbnails
- * - medium: Balanced quality for grid views
- * - large: High resolution for detail views
- */
-export type ThumbnailQuality = 'small' | 'medium' | 'large'
 
 /**
  * Parameters for listing posts with filtering, sorting, and pagination
@@ -34,18 +11,6 @@ export type ThumbnailQuality = 'small' | 'medium' | 'large'
 export interface ListPostsParams {
   limit?: number
   cursor?: string | null
-  q?: string
-  platform?: string
-  author_id?: string
-  has_media?: boolean
-  published_after?: string
-  published_before?: string
-  min_views?: number
-  min_likes?: number
-  sort_by?: PostSortBy
-  sort_order?: SortOrder
-  per_platform_limit?: number
-  thumbnail_quality?: ThumbnailQuality
 }
 
 /**
@@ -53,8 +18,6 @@ export interface ListPostsParams {
  */
 const DEFAULT_LIST_PARAMS = {
   limit: 20,
-  sort_by: 'published_at' as PostSortBy,
-  sort_order: 'desc' as SortOrder,
 } as const
 
 export interface PostListItem {
@@ -165,10 +128,9 @@ export interface AuthorOtherPost {
   like_count?: number
 }
 
-export type PostListResponse = Partial<PaginatedApiResponseWithLimit<PostListItem>> &
-  Partial<CursorCollectionResponse<PostListItem>> & {
-    items: PostListItem[]
-  }
+export type PostListResponse = CursorCollectionResponse<PostListItem> & {
+  items: PostListItem[]
+}
 
 /** 后端实际返回的文件结构 */
 interface RawFile {
@@ -314,18 +276,6 @@ export const postService = {
     const query = buildQuery({
       limit: params.limit ?? DEFAULT_LIST_PARAMS.limit,
       cursor: params.cursor,
-      q: params.q,
-      platform: params.platform,
-      author_id: params.author_id,
-      has_media: params.has_media ?? null,
-      published_after: params.published_after,
-      published_before: params.published_before,
-      min_views: params.min_views ?? null,
-      min_likes: params.min_likes ?? null,
-      sort_by: params.sort_by ?? DEFAULT_LIST_PARAMS.sort_by,
-      sort_order: params.sort_order ?? DEFAULT_LIST_PARAMS.sort_order,
-      per_platform_limit: params.per_platform_limit ?? null,
-      thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
     // 列表端点使用无尾斜杠路径，避免与后端签名路径规范不一致

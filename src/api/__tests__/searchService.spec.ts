@@ -29,18 +29,13 @@ describe('searchService', () => {
         q: 'idol',
         cursor: 'cursor-1',
         limit: 24,
-        platform: 'youtube',
-        sort_by: 'published_at',
-        sort_order: 'desc',
-        thumbnail_quality: 'medium',
       },
       { skipErrorToast: true }
     )
 
-    expect(clientMocks.get).toHaveBeenCalledWith(
-      '/search/posts?q=idol&limit=24&cursor=cursor-1&platform=youtube&sort_by=published_at&sort_order=desc&thumbnail_quality=medium',
-      { skipErrorToast: true }
-    )
+    expect(clientMocks.get).toHaveBeenCalledWith('/search/posts?q=idol&limit=24&cursor=cursor-1', {
+      skipErrorToast: true,
+    })
   })
 
   it('builds cursor-based author search queries', async () => {
@@ -55,14 +50,23 @@ describe('searchService', () => {
         q: 'momo',
         cursor: 'author-cursor-1',
         limit: 12,
-        platform: 'twitter',
       },
       { skipErrorToast: true }
     )
 
     expect(clientMocks.get).toHaveBeenCalledWith(
-      '/search/authors?q=momo&limit=12&cursor=author-cursor-1&platform=twitter',
+      '/search/authors?q=momo&limit=12&cursor=author-cursor-1',
       { skipErrorToast: true }
     )
+  })
+
+  it('requests suggestions with only the documented query parameter', async () => {
+    vi.mocked(clientMocks.get).mockResolvedValueOnce([])
+
+    await searchService.getSuggestions('idol', 8, { skipErrorToast: true })
+
+    expect(clientMocks.get).toHaveBeenCalledWith('/search/suggestions?q=idol', {
+      skipErrorToast: true,
+    })
   })
 })

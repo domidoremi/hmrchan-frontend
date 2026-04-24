@@ -2,7 +2,7 @@
  * Favorites Service - 收藏相关 API
  */
 
-import { apiClient, ApiError, type CursorCollectionResponse, type RequestConfig } from './client'
+import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -62,11 +62,6 @@ export interface ListFavoritesParams {
   folder_name?: string
   tag?: string
   tags?: string[]
-  platform?: string
-  sort_by?: 'created_at' | 'updated_at' | undefined
-  sort_order?: 'asc' | 'desc' | undefined
-  include_post?: boolean
-  thumbnail_quality?: string
 }
 
 // ========== 收藏服务 ==========
@@ -102,62 +97,28 @@ export const favoriteService = {
     params: ListFavoritesParams = {},
     config?: RequestConfig
   ): Promise<CursorCollectionResponse<FavoriteResponse>> {
-    const buildQuery = (override?: Partial<ListFavoritesParams>) => {
-      const merged = { ...params, ...override }
-      const query = new URLSearchParams({
-        limit: String(merged.limit ?? 20),
-        include_post: 'true',
-        thumbnail_quality: merged.thumbnail_quality ?? 'medium',
-      })
+    const query = new URLSearchParams({
+      limit: String(params.limit ?? 20),
+    })
 
-      if (merged.cursor) {
-        query.set('cursor', merged.cursor)
-      }
-
-      if (merged.folder_name) {
-        query.set('folder', merged.folder_name)
-      }
-      if (merged.tag) {
-        query.set('tag', merged.tag)
-      } else if (merged.tags?.length) {
-        query.set('tag', merged.tags[0]!)
-      }
-      if (merged.platform) {
-        query.set('platform', merged.platform)
-      }
-      if (merged.sort_by) {
-        query.set('sort_by', merged.sort_by)
-      }
-      if (merged.sort_order) {
-        query.set('sort_order', merged.sort_order)
-      }
-
-      return query.toString()
+    if (params.cursor) {
+      query.set('cursor', params.cursor)
     }
 
-    const query = buildQuery()
-
-    try {
-      return await apiClient.get<CursorCollectionResponse<FavoriteResponse>>(
-        `/favorites?${query}`,
-        config
-      )
-    } catch (error) {
-      const shouldRetry =
-        error instanceof ApiError &&
-        (error.status === 422 || error.status >= 500) &&
-        (params.sort_by || params.sort_order)
-
-      if (!shouldRetry) {
-        throw error
-      }
-
-      const fallbackQuery = buildQuery({ sort_by: undefined, sort_order: undefined })
-      return apiClient.get<CursorCollectionResponse<FavoriteResponse>>(
-        `/favorites?${fallbackQuery}`,
-        config
-      )
+    if (params.folder_name) {
+      query.set('folder', params.folder_name)
     }
+
+    if (params.tag) {
+      query.set('tag', params.tag)
+    } else if (params.tags?.length) {
+      query.set('tag', params.tags[0]!)
+    }
+
+    return apiClient.get<CursorCollectionResponse<FavoriteResponse>>(
+      `/favorites?${query.toString()}`,
+      config
+    )
   },
 
   /**

@@ -448,6 +448,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function clearLocalSession(options: { navigateToLogin?: boolean } = {}) {
+    clearPendingGoogleAuthRequest()
+    sessionController.clearSession(options)
+    error.value = null
+  }
+
   async function resolveAuthFlowResponse(response: unknown): Promise<AuthFlowResult> {
     if (isRiskVerificationPendingResponse(response)) {
       return {
@@ -859,6 +865,7 @@ export const useAuthStore = defineStore('auth', () => {
     },
     register,
     logout,
+    clearLocalSession,
     fetchCurrentUser: sessionController.fetchCurrentUser,
     initAuth: sessionController.initAuth,
     ensureAuthInitialized: sessionController.ensureAuthInitialized,

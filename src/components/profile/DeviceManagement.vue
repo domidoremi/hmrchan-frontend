@@ -45,7 +45,7 @@ onMounted(() => {
   }
 })
 
-async function saveDeviceName(sessionId: string | number) {
+async function saveDeviceName(sessionId: string) {
   const success = await updateDeviceName(sessionId, editingDeviceName.value)
   if (success) {
     cancelEditing()

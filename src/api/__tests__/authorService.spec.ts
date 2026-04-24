@@ -28,18 +28,13 @@ describe('authorService', () => {
       {
         cursor: 'cursor-1',
         limit: 24,
-        q: 'momo',
-        platform: 'youtube',
-        sort_by: 'follower_count',
-        sort_order: 'desc',
       },
       { skipErrorToast: true }
     )
 
-    expect(clientMocks.get).toHaveBeenCalledWith(
-      '/authors?limit=24&cursor=cursor-1&q=momo&platform=youtube&sort_by=follower_count&sort_order=desc',
-      { skipErrorToast: true }
-    )
+    expect(clientMocks.get).toHaveBeenCalledWith('/authors?limit=24&cursor=cursor-1', {
+      skipErrorToast: true,
+    })
   })
 
   it('builds cursor-based author post queries', async () => {

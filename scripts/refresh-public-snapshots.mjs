@@ -253,10 +253,12 @@ async function buildSnapshots() {
   const [homeAggregateRaw, postsPageRaw, authorsPageRaw, schedulesPageRaw, discussionsPageRaw] =
     await Promise.all([
       fetchJson('/home'),
-      fetchJson(`/posts?page=1&page_size=${MAX_EXPLORE_POSTS}`),
-      fetchJson(`/authors?page=1&page_size=${AUTHOR_PAGE_SIZE}`),
-      fetchJson(`/schedules?page=1&page_size=${SCHEDULE_PAGE_SIZE}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`),
-      fetchJson('/discussions?page=1&page_size=20'),
+      fetchJson(`/posts?limit=${MAX_EXPLORE_POSTS}`),
+      fetchJson(`/authors?limit=${AUTHOR_PAGE_SIZE}`),
+      fetchJson(
+        `/schedules?limit=${SCHEDULE_PAGE_SIZE}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+      ),
+      fetchJson('/discussions?limit=20'),
     ])
 
   const authors = Array.isArray(authorsPageRaw?.items) ? authorsPageRaw.items : []
@@ -266,7 +268,7 @@ async function buildSnapshots() {
     authors.map(async (author) => {
       const [detail, posts] = await Promise.all([
         fetchJson(`/authors/${author.id}`),
-        fetchJson(`/authors/${author.id}/posts?page=1&page_size=${AUTHOR_POST_PAGE_SIZE}`),
+        fetchJson(`/authors/${author.id}/posts?limit=${AUTHOR_POST_PAGE_SIZE}`),
       ])
       return [author.id, { detail, posts: Array.isArray(posts?.items) ? posts.items : [] }]
     })
@@ -464,7 +466,7 @@ async function buildSnapshots() {
   for (const discussion of discussions) {
     try {
       const commentsPayload = await fetchJson(
-        `/discussions/${discussion.id}/comments?page=1&page_size=20&sort=newest&preload_replies=3`
+        `/discussions/${discussion.id}/comments?limit=20&sort=newest`
       )
       discussionComments[discussion.id] = Array.isArray(commentsPayload?.items)
         ? commentsPayload.items

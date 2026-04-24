@@ -8,7 +8,6 @@ export {
   type RequestConfig,
   type ApiResponse,
   type CursorCollectionResponse,
-  type PaginatedApiResponse,
 } from './client'
 export {
   authService,
@@ -34,6 +33,12 @@ export {
   type SendRegistrationCodeRequest,
   type SendRegistrationCodeResponse,
   type VerificationTokenResponse,
+  type PasskeyRecoveryStartRequest,
+  type PasskeyRecoveryVerifyRequest,
+  type PasskeyRecoveryVerifyResponse,
+  type PasskeyRecoveryStatus,
+  type RecoveryPasskeyRegistrationRequest,
+  type RecoveryPasskeyRegistrationOptionsResponse,
 } from './authService'
 export {
   postService,

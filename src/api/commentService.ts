@@ -37,7 +37,7 @@ export interface CommentImageUploadResponse {
 
 export interface CreateCommentRequest {
   content: string
-  parent_id?: number | null
+  parent_id?: string | null
   image_ids?: string[]
 }
 

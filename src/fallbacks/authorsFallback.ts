@@ -13,43 +13,7 @@ export const AUTHORS_FALLBACK_AUTHORS: AuthorListItem[] = clonePublicSnapshot(ST
 export function getFallbackAuthors(
   params: ListAuthorsParams = {}
 ): CursorCollectionResponse<AuthorListItem> {
-  const sortBy = params.sort_by ?? 'created_at'
-  const sortOrder = params.sort_order ?? 'desc'
-
-  let items = AUTHORS_FALLBACK_AUTHORS.filter((item) => {
-    if (params.platform && item.platform !== params.platform) return false
-    if (params.is_verified !== undefined && item.is_verified !== params.is_verified) return false
-    if (typeof params.min_followers === 'number') {
-      if ((item.follower_count ?? 0) < params.min_followers) return false
-    }
-    if (params.q) {
-      const query = params.q.trim().toLowerCase()
-      const haystack = [item.display_name, item.username, item.description, item.platform]
-        .join(' ')
-        .toLowerCase()
-      if (!haystack.includes(query)) return false
-    }
-    return true
-  })
-
-  items = [...items].sort((left, right) => {
-    const leftValue =
-      sortBy === 'follower_count'
-        ? (left.follower_count ?? 0)
-        : sortBy === 'post_count'
-          ? (left.post_count ?? 0)
-          : Date.parse(left.created_at ?? '') || 0
-    const rightValue =
-      sortBy === 'follower_count'
-        ? (right.follower_count ?? 0)
-        : sortBy === 'post_count'
-          ? (right.post_count ?? 0)
-          : Date.parse(right.created_at ?? '') || 0
-
-    return sortOrder === 'asc' ? leftValue - rightValue : rightValue - leftValue
-  })
-
-  return cursorPaginateFallbackItems(items, {
+  return cursorPaginateFallbackItems(AUTHORS_FALLBACK_AUTHORS, {
     cursor: params.cursor ?? null,
     limit: params.limit ?? 20,
   })

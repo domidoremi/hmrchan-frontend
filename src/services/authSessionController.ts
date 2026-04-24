@@ -45,7 +45,9 @@ function isAuthBoundaryPath(path: string): boolean {
     path === '/forgot-password' ||
     path === '/reset-password' ||
     path === '/verify-email' ||
-    path === '/auth/callback'
+    path === '/auth/callback' ||
+    path === '/auth/passkeys/recovery' ||
+    path.startsWith('/auth/passkeys/recovery/')
   )
 }
 

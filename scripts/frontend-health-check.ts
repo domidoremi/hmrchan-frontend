@@ -595,29 +595,10 @@ function filterGuestProtectedRedirectNoise(
     }
   }
 
-  const ignoredRefreshResponse = badResponses.some((entry) =>
-    entry.includes('/api/v1/auth/refresh')
-  )
-  const ignoredRefreshFailure = requestFailures.some((entry) =>
-    entry.includes('/api/v1/auth/refresh')
-  )
-  const shouldIgnoreGenericRefreshConsole = ignoredRefreshResponse || ignoredRefreshFailure
-
   return {
-    consoleIssueDetails: consoleIssueDetails.filter((entry) => {
-      if (entry.includes('/api/v1/auth/refresh')) return false
-      if (
-        shouldIgnoreGenericRefreshConsole &&
-        entry.startsWith('blocking-http-error::') &&
-        entry.replace('blocking-http-error::', '').trim() ===
-          'Failed to load resource: the server responded with a status of 404 (Not Found)'
-      ) {
-        return false
-      }
-      return true
-    }),
-    requestFailures: requestFailures.filter((entry) => !entry.includes('/api/v1/auth/refresh')),
-    badResponses: badResponses.filter((entry) => !entry.includes('/api/v1/auth/refresh')),
+    consoleIssueDetails,
+    requestFailures,
+    badResponses,
   }
 }
 

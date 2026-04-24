@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import type { AuthorListItem, PublicVisibilityScope } from '@/api'
 import type { HistoryStats, SearchHistoryItem } from '@/api/historyService'
@@ -10,8 +10,6 @@ import {
   computeMayHaveMoreResults,
   getAuthorMemo,
   getPostMemo,
-  getThumbnailQuality,
-  shufflePosts,
 } from '../searchPageModel'
 
 describe('searchPageModel', () => {
@@ -68,16 +66,11 @@ describe('searchPageModel', () => {
 
   it('builds normalized search history payloads', () => {
     expect(buildSearchRecordKey('  Himeri LIVE  ')).toBe('himeri live')
-    expect(buildSearchHistoryFilters('posts', 'view_count', 'asc', 'youtube')).toEqual({
+    expect(buildSearchHistoryFilters('posts')).toEqual({
       tab: 'posts',
-      sort_by: 'view_count',
-      sort_order: 'asc',
-      platform: 'youtube',
     })
-    expect(buildSearchHistoryFilters('authors', 'relevance', 'desc', 'all')).toEqual({
+    expect(buildSearchHistoryFilters('authors')).toEqual({
       tab: 'authors',
-      sort_by: 'relevance',
-      sort_order: 'desc',
     })
   })
 
@@ -105,20 +98,5 @@ describe('searchPageModel', () => {
         created_at: '2026-03-01T00:00:00Z',
       } as AuthorListItem)
     ).toEqual(['author-1', '2026-03-01T00:00:00Z', 8, 99, 'avatar.webp', 'Momi Chan'])
-  })
-
-  it('keeps shuffled discover posts immutable and chooses thumbnail quality by viewport', () => {
-    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
-    const source = [{ id: '1' }, { id: '2' }, { id: '3' }] as never[]
-
-    const shuffled = shufflePosts(source)
-
-    expect(source.map((item) => item.id)).toEqual(['1', '2', '3'])
-    expect(shuffled).toHaveLength(3)
-    expect(shuffled.map((item) => item.id)).not.toEqual(source.map((item) => item.id))
-    expect(getThumbnailQuality(390)).toBe('medium')
-    expect(getThumbnailQuality(1280)).toBe('large')
-
-    randomSpy.mockRestore()
   })
 })

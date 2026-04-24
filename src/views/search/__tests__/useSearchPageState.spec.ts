@@ -158,7 +158,7 @@ describe('useSearchPageState', () => {
     vi.useRealTimers()
   })
 
-  it('does not trigger an extra initial search from the debounced control key', async () => {
+  it('runs the initial post search once for a query route', async () => {
     let state!: ReturnType<typeof useSearchPageState>
 
     const wrapper = mount(
@@ -172,29 +172,9 @@ describe('useSearchPageState', () => {
 
     await flushAsync()
     expect(mocks.searchPosts).toHaveBeenCalledTimes(1)
-
-    vi.advanceTimersByTime(200)
-    await flushAsync()
-    expect(mocks.searchPosts).toHaveBeenCalledTimes(1)
-
-    mocks.searchPosts.mockClear()
-
-    state.sortBy.value = 'published_at'
-    state.sortBy.value = 'view_count'
-    await flushAsync()
-
-    vi.advanceTimersByTime(119)
-    await flushAsync()
-    expect(mocks.searchPosts).not.toHaveBeenCalled()
-
-    vi.advanceTimersByTime(1)
-    await flushAsync()
-
-    expect(mocks.searchPosts).toHaveBeenCalledTimes(1)
     expect(mocks.searchPosts).toHaveBeenLastCalledWith(
       expect.objectContaining({
         q: 'editorial',
-        sort_by: 'view_count',
         cursor: null,
         limit: 20,
       }),
@@ -202,6 +182,7 @@ describe('useSearchPageState', () => {
     )
 
     wrapper.unmount()
+    void state
   })
 
   it('loads more post search results with cursor pagination and closes hasMore when exhausted', async () => {
@@ -284,16 +265,7 @@ describe('useSearchPageState', () => {
 
     await flushAsync()
 
-    expect(mocks.recordSearch).toHaveBeenCalledWith(
-      'editorial',
-      'posts',
-      1,
-      expect.objectContaining({
-        tab: 'posts',
-        sort_by: 'relevance',
-        sort_order: 'desc',
-      })
-    )
+    expect(mocks.recordSearch).toHaveBeenCalledWith('editorial', 'posts', 1, { tab: 'posts' })
 
     mocks.recordSearch.mockClear()
     await state.search()
@@ -323,10 +295,6 @@ describe('useSearchPageState', () => {
 
     state.goBack()
     expect(mocks.routerBack).toHaveBeenCalledTimes(1)
-
-    expect(state.sortOrder.value).toBe('desc')
-    state.toggleSortOrder()
-    expect(state.sortOrder.value).toBe('asc')
 
     wrapper.unmount()
   })

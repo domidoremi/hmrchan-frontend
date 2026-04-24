@@ -534,31 +534,7 @@ describe('functions/api proxy', () => {
     })
   })
 
-  it('refreshes the session via the internal BFF and rewrites cookies', async () => {
-    const refreshed = createSessionMaterial({ permission_version: 3 })
-    const user = createUser({ permission_version: 3 })
-    const fingerprint = 'fingerprint-123'
-
-    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input)
-
-      if (url === `${INTERNAL_ORIGIN}/internal/v1/auth/bff/refresh`) {
-        expect(init?.body).toBe(
-          JSON.stringify({
-            refresh_token: 'refresh-cookie-token',
-            client_fingerprint: fingerprint,
-          })
-        )
-        return apiEnvelope(refreshed)
-      }
-
-      if (url === `${BACKEND_ORIGIN}/api/v1/auth/me`) {
-        return apiEnvelope(user)
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    })
-
+  it('returns 404 for the retired auth refresh facade path', async () => {
     const response = await onRequest(
       makeContext({
         url: `${ORIGIN}/api/v1/auth/refresh`,
@@ -566,23 +542,19 @@ describe('functions/api proxy', () => {
         headers: {
           Origin: ORIGIN,
           Cookie: '__Host-momi_bff_rt=refresh-cookie-token',
-          'X-Client-Fingerprint': fingerprint,
+          'X-Client-Fingerprint': 'fingerprint-123',
         },
         path: ['v1', 'auth', 'refresh'],
       })
     )
 
-    expect(response.status).toBe(200)
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(response.status).toBe(404)
     await expect(response.json()).resolves.toEqual({
-      authenticated: true,
-      user,
-      session_expires_at: new Date((Math.floor(Date.now() / 1000) + 3600) * 1000).toISOString(),
-      permission_version: 3,
+      error: 'NOT_FOUND',
+      message:
+        'This legacy auth path is retired. Resolve browser sessions through /api/v1/auth/session:resolve.',
     })
-
-    const cookies = getSetCookies(response)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_at='))).toBe(true)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_rt='))).toBe(true)
   })
 
   it('clears BFF cookies on logout', async () => {

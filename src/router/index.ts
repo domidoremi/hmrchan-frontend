@@ -18,6 +18,7 @@ import {
   type SecurityLevel,
 } from '@/security/runtimeState'
 import { ensureAuthStoreLoaded } from '@/services/authSurface'
+import { isContractResourceId } from '@/utils/contractResourceId'
 import { applyPageMeta } from '@/utils/pageMeta'
 import { buildSensitiveReauthRedirect, isSensitiveReauthLoginRoute } from './sensitiveReauth'
 
@@ -40,18 +41,6 @@ declare module 'vue-router' {
     /** Allow page content to render directly under the navbar without shell padding/background */
     extendContentUnderNavbar?: boolean
   }
-}
-
-const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
-
-function isValidPostRouteId(value: unknown): value is string {
-  if (typeof value !== 'string') return false
-  const id = value.trim()
-  if (!id) return false
-  const lower = id.toLowerCase()
-  if (lower === 'undefined' || lower === 'null' || lower === 'nan') return false
-  return UUID_LIKE_RE.test(id) || ULID_RE.test(id)
 }
 
 function toNotFoundParams(path: string): { pathMatch: string[] } {
@@ -379,6 +368,30 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/auth/passkeys/recovery',
+    name: 'passkey-recovery',
+    component: () => import('@/views/PasskeyRecoveryPage.vue'),
+    meta: {
+      title: 'auth.passkeyRecovery.title',
+      guestOnly: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
+  },
+  {
+    path: '/auth/passkeys/recovery/:id',
+    name: 'passkey-recovery-detail',
+    component: () => import('@/views/PasskeyRecoveryStatusPage.vue'),
+    meta: {
+      title: 'auth.passkeyRecovery.statusTitle',
+      guestOnly: true,
+      appUpdateMode: 'prompt',
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
+  },
+  {
     path: '/register',
     name: 'register',
     component: () => import('@/views/RegisterPage.vue'),
@@ -526,10 +539,16 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach(async (to) => {
-  // 帖子详情仅接受 UUID/ULID，非法参数直接转 404，避免无效请求噪音
-  if (to.name === 'post-detail') {
-    const postId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id
-    if (!isValidPostRouteId(postId)) {
+  const guardedResourceRoutes = new Set([
+    'post-detail',
+    'author-detail',
+    'discussion-detail',
+    'user-public-profile',
+    'passkey-recovery-detail',
+  ])
+  if (typeof to.name === 'string' && guardedResourceRoutes.has(to.name)) {
+    const resourceId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id
+    if (!isContractResourceId(resourceId)) {
       return {
         name: 'not-found',
         params: toNotFoundParams(to.path),
