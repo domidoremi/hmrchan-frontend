@@ -3,6 +3,7 @@ function isRecord(value) {
 }
 
 const AUTH_BOOTSTRAP_CLIENT_FINGERPRINT = 'auth-bootstrap-probe'
+const AUTH_BOOTSTRAP_REQUEST_TIMEOUT_MS = 10_000
 const textEncoder = new TextEncoder()
 const AUTH_BOOTSTRAP_PROBE_DEFINITIONS = Object.freeze([
   Object.freeze({
@@ -249,8 +250,16 @@ export function classifyAuthBootstrapProbe(probe) {
     return 'upstream-tunnel-unavailable'
   }
 
+  if (probe.code === 'UPSTREAM_TIMEOUT' || probe.code === 'UPSTREAM_UNREACHABLE') {
+    return 'upstream-unreachable'
+  }
+
   if (probe.path === '/api/v1/client/init' && probe.status === 404) {
     return 'client-init-missing'
+  }
+
+  if (probe.path === '/api/v1/client/init' && probe.status >= 500) {
+    return 'client-init-5xx'
   }
 
   if (
@@ -333,8 +342,12 @@ export function formatFatalAuthBootstrapProbe(probe) {
   switch (probe.kind) {
     case 'upstream-tunnel-unavailable':
       return `Auth bootstrap blocked because the API upstream is unavailable at the edge (Cloudflare Tunnel 1033) (${summary}).`
+    case 'upstream-unreachable':
+      return `Auth bootstrap blocked because the API upstream is unreachable from the local preview (${summary}).`
     case 'client-init-missing':
       return `Auth bootstrap blocked: controlled site is missing the live public route for client init (${summary}).`
+    case 'client-init-5xx':
+      return `Auth bootstrap blocked because client init returned an upstream 5xx (${summary}).`
     case 'client-contract-mismatch':
       return `Auth bootstrap blocked by client contract mismatch (${summary}).`
     case 'bff-not-configured':
@@ -443,14 +456,39 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
   attachProbeBrowserContextHeaders(headers, baseUrl, probe)
   await attachProbeSignatureHeaders(headers, baseUrl, probe, requestBody, options.clientCredentials)
 
-  const response = await fetch(new URL(probe.path, baseUrl).toString(), {
-    method: probe.method,
-    headers,
-    body: requestBody,
-    redirect: probe.redirect ?? 'follow',
-  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), AUTH_BOOTSTRAP_REQUEST_TIMEOUT_MS)
+  let response
+  let rawBody = ''
+  try {
+    response = await fetch(new URL(probe.path, baseUrl).toString(), {
+      method: probe.method,
+      headers,
+      body: requestBody,
+      redirect: probe.redirect ?? 'follow',
+      signal: controller.signal,
+    })
 
-  const rawBody = await response.text()
+    rawBody = await response.text()
+  } catch (error) {
+    clearTimeout(timer)
+    return {
+      path: probe.path,
+      method: probe.method,
+      status: 503,
+      ok: false,
+      code: error instanceof Error && error.name === 'AbortError' ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_UNREACHABLE',
+      message:
+        error instanceof Error && error.name === 'AbortError'
+          ? `Auth bootstrap probe timed out after ${AUTH_BOOTSTRAP_REQUEST_TIMEOUT_MS}ms`
+          : error instanceof Error
+            ? error.message
+            : String(error),
+      body: null,
+    }
+  } finally {
+    clearTimeout(timer)
+  }
   let parsedBody = null
   try {
     parsedBody = rawBody ? JSON.parse(rawBody) : null

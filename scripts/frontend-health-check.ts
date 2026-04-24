@@ -40,6 +40,10 @@ import {
 } from './lib/auth-bootstrap.js'
 import { ensureDetailRouteReadiness, resolveSampleDetailRoute } from './lib/detail-route-utils.js'
 import { getAuthSkipReason, resolveAuthSmokeCredentials } from './lib/e2e-smoke-report.js'
+import {
+  ensureLocalAuditSmokeAccount,
+  shouldEnsureLocalAuditSmokeAccount,
+} from './lib/local-audit-smoke-account.js'
 
 applyLocalAuditEnvToProcess()
 
@@ -240,6 +244,20 @@ function throwIfFatalAuthBootstrapProbe(probes: AuthBootstrapProbe[]): void {
   if (!fatalProbe) return
   const summaries = probes.map((probe) => buildAuthBootstrapProbeSummary(probe)).join(' | ')
   throw new Error(`${formatFatalAuthBootstrapProbe(fatalProbe)} Probes: ${summaries}`)
+}
+
+function logPreviewDiagnostics(
+  diagnostics: string[] | null | undefined,
+  label = 'preview diagnostics'
+): void {
+  if (!diagnostics || diagnostics.length === 0) {
+    return
+  }
+
+  console.log(`🧾 ${label}:`)
+  for (const line of diagnostics) {
+    console.log(`   • ${line}`)
+  }
 }
 
 function isLocalAuditOrigin(baseUrl: string): boolean {
@@ -1553,11 +1571,40 @@ async function main() {
       effectiveBaseUrl = managedServer.baseUrl ?? effectiveBaseUrl
     }
 
+    console.log('🌐 Launching headless browser...')
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
       executablePath: process.env['PUPPETEER_EXECUTABLE_PATH'],
     })
+    console.log('🌐 Headless browser ready')
+
+    if (
+      shouldEnsureLocalAuditSmokeAccount(effectiveBaseUrl, {
+        login: AUTH_LOGIN,
+        password: AUTH_PASSWORD,
+      })
+    ) {
+      const ensuredAccount = ensureLocalAuditSmokeAccount(AUDIT_ENV, effectiveBaseUrl, {
+        login: AUTH_LOGIN,
+        password: AUTH_PASSWORD,
+      })
+      if (ensuredAccount.ensured) {
+        console.log(
+          `🔐 Ensured local audit smoke account ${ensuredAccount.username} (${ensuredAccount.email})`
+        )
+      } else if (ensuredAccount.skipped) {
+        console.warn(`⚠️ Skipped local audit smoke account ensure: ${ensuredAccount.reason}`)
+      }
+    }
+
+    const authBootstrapProbes = await runAuthBootstrapPreflight(effectiveBaseUrl)
+    try {
+      throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
+    } catch (error) {
+      logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
+      throw error
+    }
 
     const healthFilterOptions = {
       baseOrigin: effectiveBaseUrl,

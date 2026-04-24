@@ -91,6 +91,16 @@ describe('auth bootstrap helpers', () => {
       classifyAuthBootstrapProbe({
         path: '/api/v1/client/init',
         method: 'POST',
+        status: 503,
+        code: 'UPSTREAM_UNREACHABLE',
+        message: 'connect ECONNREFUSED 127.0.0.1:19081',
+      })
+    ).toBe('upstream-unreachable')
+
+    expect(
+      classifyAuthBootstrapProbe({
+        path: '/api/v1/client/init',
+        method: 'POST',
         status: 404,
       })
     ).toBe('client-init-missing')
@@ -103,6 +113,15 @@ describe('auth bootstrap helpers', () => {
         code: null,
       })
     ).toBe('client-contract-mismatch')
+
+    expect(
+      classifyAuthBootstrapProbe({
+        path: '/api/v1/client/init',
+        method: 'POST',
+        status: 500,
+        code: 'SERVICE_UNAVAILABLE',
+      })
+    ).toBe('client-init-5xx')
 
     expect(
       classifyAuthBootstrapProbe({
@@ -223,6 +242,54 @@ describe('auth bootstrap helpers', () => {
     })
     expect(formatFatalAuthBootstrapProbe(fatalProbe!)).toContain(
       'API upstream is unavailable at the edge'
+    )
+  })
+
+  it('formats local upstream reachability failures as bootstrap blockers', () => {
+    const fatalProbe = findFatalAuthBootstrapProbe([
+      {
+        path: '/api/v1/client/init',
+        method: 'POST',
+        status: 503,
+        code: 'UPSTREAM_UNREACHABLE',
+        message: 'connect ECONNREFUSED 127.0.0.1:19081',
+      },
+    ])
+
+    expect(fatalProbe).toEqual({
+      path: '/api/v1/client/init',
+      method: 'POST',
+      status: 503,
+      code: 'UPSTREAM_UNREACHABLE',
+      message: 'connect ECONNREFUSED 127.0.0.1:19081',
+      kind: 'upstream-unreachable',
+    })
+    expect(formatFatalAuthBootstrapProbe(fatalProbe!)).toContain(
+      'API upstream is unreachable from the local preview'
+    )
+  })
+
+  it('formats client-init upstream 5xx failures as bootstrap blockers', () => {
+    const fatalProbe = findFatalAuthBootstrapProbe([
+      {
+        path: '/api/v1/client/init',
+        method: 'POST',
+        status: 500,
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Unable to process request. Please try again later.',
+      },
+    ])
+
+    expect(fatalProbe).toEqual({
+      path: '/api/v1/client/init',
+      method: 'POST',
+      status: 500,
+      code: 'SERVICE_UNAVAILABLE',
+      message: 'Unable to process request. Please try again later.',
+      kind: 'client-init-5xx',
+    })
+    expect(formatFatalAuthBootstrapProbe(fatalProbe!)).toContain(
+      'client init returned an upstream 5xx'
     )
   })
 
