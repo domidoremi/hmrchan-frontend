@@ -35,6 +35,10 @@ import {
   probeAuthBootstrapEndpoints,
 } from './lib/auth-bootstrap.js'
 import { ensureDetailRouteReadiness, resolveSampleDetailRoute } from './lib/detail-route-utils.js'
+import {
+  ensureLocalAuditSmokeAccount,
+  shouldEnsureLocalAuditSmokeAccount,
+} from './lib/local-audit-smoke-account.js'
 
 applyLocalAuditEnvToProcess()
 
@@ -297,6 +301,20 @@ function throwIfFatalAuthBootstrapProbe(probes: AuthBootstrapProbe[]): void {
   throw new Error(`${formatFatalAuthBootstrapProbe(fatalProbe)} Probes: ${summaries}`)
 }
 
+function logPreviewDiagnostics(
+  diagnostics: string[] | null | undefined,
+  label = 'preview diagnostics'
+): void {
+  if (!diagnostics || diagnostics.length === 0) {
+    return
+  }
+
+  console.log(`🧾 ${label}:`)
+  for (const line of diagnostics) {
+    console.log(`   • ${line}`)
+  }
+}
+
 function appendCheck(summary: SmokeSummary, check: CheckRecord): void {
   summary.checks.push(check)
 }
@@ -541,6 +559,10 @@ async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<bool
     return false
   }
 
+  if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+    console.log('   • Debug: prewarm local audit trust start')
+  }
+
   await clearBrowserAuditSession(page, baseUrl)
   await page.goto(`${baseUrl}/`, {
     waitUntil: 'domcontentloaded',
@@ -625,11 +647,17 @@ async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<bool
   })
 
   if (!result) {
+    if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+      console.log('   • Debug: prewarm client/init did not return ok')
+    }
     return false
   }
 
   const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
   if (trustedVisitorCount <= 0) {
+    if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+      console.log('   • Debug: prewarm client trust grant found no visitor keys')
+    }
     return false
   }
 
@@ -641,6 +669,10 @@ async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<bool
   console.log(`   • Prewarmed local audit client trust for ${trustedVisitorCount} visitor key(s)`)
   if (trustedTurnstileCount > 0) {
     console.log(`   • Prewarmed local audit Turnstile trust for ${trustedTurnstileCount} key(s)`)
+  }
+
+  if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+    console.log('   • Debug: prewarm local audit trust complete')
   }
 
   return true
@@ -858,6 +890,20 @@ async function authenticateViaApi(
           )
         }
       }
+      const readLoginState = async () =>
+        page
+          .evaluate(() => ({
+            pathname: window.location.pathname,
+            title: document.title,
+            hasLoginForm: Boolean(document.querySelector('form.auth-form')),
+            hasRiskForm: Boolean(document.querySelector('#risk-code')),
+            hasMfaStep: Boolean(document.querySelector('.auth-2fa-back')),
+            errorText:
+              document.querySelector('.field-error')?.textContent?.trim() ??
+              document.querySelector('.auth-inline-state__copy')?.textContent?.trim() ??
+              '',
+          }))
+          .catch(() => null)
       const waitForClientCredentials = (timeout: number) =>
         page.waitForFunction(
           () => {
@@ -1124,6 +1170,9 @@ async function authenticateViaApi(
         pendingAuthBootstrapResponses.add(tracked)
       })
       const openAndFillLoginForm = async (options?: { resetSession?: boolean }) => {
+        if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+          console.log('   • Debug: open login form', options ?? null)
+        }
         if (options?.resetSession) {
           await clearBrowserAuditSession(page, baseUrl)
         }
@@ -1137,11 +1186,23 @@ async function authenticateViaApi(
         throwIfFatalAuthBootstrapProbe(pageAuthBootstrapProbes)
         await fillInputValue(loginSelector, credentials.login)
         await fillInputValue(passwordSelector, credentials.password)
+        if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+          console.log('   • Debug: login form filled')
+        }
       }
 
+      if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+        console.log('   • Debug: auth bootstrap start')
+      }
       const prewarmedLocalTrust = await prewarmLocalAuditTrust(page, baseUrl)
+      if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+        console.log('   • Debug: prewarm result', prewarmedLocalTrust)
+      }
       await openAndFillLoginForm({ resetSession: !prewarmedLocalTrust })
       const preflightProbes = await runAuthBootstrapPreflight(baseUrl)
+      if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+        console.log('   • Debug: preflight probes', preflightProbes)
+      }
       throwIfFatalAuthBootstrapProbe([...pageAuthBootstrapProbes, ...preflightProbes])
 
       const submitButton = await page.$(
@@ -1152,6 +1213,10 @@ async function authenticateViaApi(
       }
       const firstLoginProbe = await submitLoginFormAndReadProbe()
       await flushAuthBootstrapResponses()
+      if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+        console.log('   • First login probe:', firstLoginProbe)
+        console.log('   • First login state:', await readLoginState())
+      }
       if (firstLoginProbe) {
         throwIfFatalAuthBootstrapProbe([
           ...pageAuthBootstrapProbes,
@@ -1161,8 +1226,14 @@ async function authenticateViaApi(
       }
 
       const loginExited = await waitForLoginExit(5_000)
+      if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+        console.log('   • Debug: login exited after first submit', loginExited)
+      }
       if (!loginExited) {
         await ensureClientCredentials()
+        if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+          console.log('   • Debug: ensured client credentials')
+        }
         const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
         if (trustedVisitorCount > 0) {
           console.log(
@@ -1186,6 +1257,10 @@ async function authenticateViaApi(
         }
         const secondLoginProbe = await submitLoginFormAndReadProbe()
         await flushAuthBootstrapResponses()
+        if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+          console.log('   • Second login probe:', secondLoginProbe)
+          console.log('   • Second login state:', await readLoginState())
+        }
         if (secondLoginProbe) {
           throwIfFatalAuthBootstrapProbe([
             ...pageAuthBootstrapProbes,
@@ -1194,13 +1269,22 @@ async function authenticateViaApi(
           ])
         }
         const loginExitedAfterTrust = await waitForLoginExit(25_000)
+        if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+          console.log('   • Debug: login exited after trust retry', loginExitedAfterTrust)
+        }
         if (!loginExitedAfterTrust) {
+          if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+            console.log('   • Timed out login state:', await readLoginState())
+          }
           throw new Error(
             'Timed out waiting for login redirect to leave /login after trust bootstrap'
           )
         }
       }
       await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => {})
+      if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+        console.log('   • Post-login state:', await readLoginState())
+      }
     },
     getPreviewDiagnostics
   )
@@ -1474,10 +1558,37 @@ async function main(): Promise<void> {
     summary.baseUrl = baseUrl
     await mkdir(artifactDir, { recursive: true })
 
+    if (
+      shouldEnsureLocalAuditSmokeAccount(baseUrl, {
+        login: authLogin,
+        password: authPassword,
+      })
+    ) {
+      const ensuredAccount = ensureLocalAuditSmokeAccount(AUDIT_ENV, baseUrl, {
+        login: authLogin,
+        password: authPassword,
+      })
+      if (ensuredAccount.ensured) {
+        console.log(
+          `🔐 Ensured local audit smoke account ${ensuredAccount.username} (${ensuredAccount.email})`
+        )
+      } else if (ensuredAccount.skipped) {
+        console.warn(`⚠️ Skipped local audit smoke account ensure: ${ensuredAccount.reason}`)
+      }
+    }
+
     const externalLocalPrerenderMismatch =
       externalBaseUrl && isLocalAuditOrigin(baseUrl)
         ? await detectStaticPrerenderMismatch(baseUrl, STATIC_ROUTE_CHECKS[1]!)
         : null
+
+    const authBootstrapProbes = await runAuthBootstrapPreflight(baseUrl)
+    try {
+      throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
+    } catch (error) {
+      logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
+      throw error
+    }
 
     console.log('🧱 Verifying static prerendered HTML...')
     if (externalLocalPrerenderMismatch) {
@@ -1508,10 +1619,12 @@ async function main(): Promise<void> {
       }
     }
 
+    console.log('🌐 Launching headless browser...')
     browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     })
+    console.log('🌐 Headless browser ready')
 
     const sampleRouteProbePage = await browser.newPage()
     const skippedSampleChecks: RouteCheck[] = []

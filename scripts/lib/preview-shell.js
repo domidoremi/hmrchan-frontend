@@ -5,6 +5,7 @@ import { createServer as createNetServer } from 'node:net'
 const PREVIEW_READY_POLL_INTERVAL_MS = 500
 const LOCAL_API_BRIDGE_IMAGE = 'alpine/socat:latest'
 const LOCAL_API_BRIDGE_NETWORK = 'hmrchan-backend_hmrchan'
+const DEFAULT_COMMAND_TIMEOUT_MS = 20_000
 const LOCAL_API_BRIDGE_SERVICES = Object.freeze({
   gateway: {
     envKey: 'API_BASE_URL',
@@ -101,12 +102,12 @@ function getBunRunArgs(...args) {
   return ['--no-env-file', 'run', ...args]
 }
 
-export async function findAvailablePort(preferredPort = 0) {
+export async function findAvailablePort(preferredPort = 0, host = '127.0.0.1') {
   return new Promise((resolve, reject) => {
     const server = createNetServer()
     server.unref()
     server.once('error', reject)
-    server.listen(preferredPort, () => {
+    server.listen(preferredPort, host, () => {
       const address = server.address()
       const actualPort =
         typeof address === 'object' && address && typeof address.port === 'number'
@@ -122,7 +123,7 @@ export async function findAvailablePort(preferredPort = 0) {
 
 export async function findAvailablePortFromCandidates(
   candidatePorts = [],
-  { allowRandomFallback = true } = {}
+  { allowRandomFallback = true, host = '127.0.0.1' } = {}
 ) {
   for (const candidatePort of candidatePorts) {
     const port = Number(candidatePort)
@@ -131,14 +132,14 @@ export async function findAvailablePortFromCandidates(
     }
 
     try {
-      return await findAvailablePort(port)
+      return await findAvailablePort(port, host)
     } catch {
       // Try the next known-safe local origin before falling back.
     }
   }
 
   if (allowRandomFallback) {
-    return findAvailablePort(0)
+    return findAvailablePort(0, host)
   }
 
   throw new Error(
@@ -172,9 +173,25 @@ export async function runCommandCapture(command, args, { env = process.env } = {
 
     const stdout = []
     const stderr = []
+    let timedOut = false
+    const timer = setTimeout(() => {
+      timedOut = true
+      child.kill('SIGTERM')
+    }, DEFAULT_COMMAND_TIMEOUT_MS)
     child.stdout?.on('data', (chunk) => stdout.push(chunk.toString()))
     child.stderr?.on('data', (chunk) => stderr.push(chunk.toString()))
     child.on('close', (code) => {
+      clearTimeout(timer)
+      if (timedOut) {
+        reject(
+          new Error(
+            `${command} ${args.join(' ')} timed out after ${DEFAULT_COMMAND_TIMEOUT_MS}ms. ` +
+              'Local audit Docker dependencies are unavailable or unresponsive.'
+          )
+        )
+        return
+      }
+
       if (code === 0) {
         resolve(stdout.join('').trim())
         return
@@ -195,7 +212,10 @@ export async function runCommandCapture(command, args, { env = process.env } = {
         )
       )
     })
-    child.on('error', reject)
+    child.on('error', (error) => {
+      clearTimeout(timer)
+      reject(error)
+    })
   })
 }
 
@@ -585,6 +605,32 @@ function hasTrimmedEnvValue(env, key) {
   return typeof env?.[key] === 'string' && env[key].trim().length > 0
 }
 
+function hasConfiguredLocalApiOrigins(env) {
+  return (
+    hasTrimmedEnvValue(env, 'BACKEND_INTERNAL_ORIGIN') &&
+    hasTrimmedEnvValue(env, LOCAL_API_BRIDGE_SERVICES.identity.envKey) &&
+    hasTrimmedEnvValue(env, LOCAL_API_BRIDGE_SERVICES.community.envKey) &&
+    hasTrimmedEnvValue(env, LOCAL_API_BRIDGE_SERVICES.content.envKey)
+  )
+}
+
+function buildConfiguredLocalApiOriginPatch(env) {
+  const identityOrigin = env?.[LOCAL_API_BRIDGE_SERVICES.identity.envKey]?.trim()
+  const communityOrigin = env?.[LOCAL_API_BRIDGE_SERVICES.community.envKey]?.trim()
+  const contentOrigin = env?.[LOCAL_API_BRIDGE_SERVICES.content.envKey]?.trim()
+  const internalOrigin = env?.BACKEND_INTERNAL_ORIGIN?.trim() || identityOrigin
+
+  return {
+    API_BASE_URL: identityOrigin,
+    VITE_API_BASE_URL: identityOrigin,
+    BACKEND_INTERNAL_ORIGIN: internalOrigin,
+    VPC_API_ORIGIN: identityOrigin,
+    VPC_IDENTITY_API_ORIGIN: identityOrigin,
+    VPC_COMMUNITY_API_ORIGIN: communityOrigin,
+    VPC_CONTENT_API_ORIGIN: contentOrigin,
+  }
+}
+
 function shouldAutoStartLocalApiBridge(env) {
   const forceBridge = env?.LOCAL_AUDIT_AUTO_API_BRIDGE === 'true'
 
@@ -726,6 +772,7 @@ export class LocalApiBridgeManager {
     }
 
     try {
+      await runCommandCapture('docker', ['info'], { env: this.env })
       for (const [name, definition] of Object.entries(LOCAL_API_BRIDGE_SERVICES)) {
         await this.startBridge(name, definition)
       }
@@ -752,7 +799,7 @@ export class PreviewShellManager {
   constructor({
     env = process.env,
     preferredPort = 0,
-    host = 'localhost',
+    host = '127.0.0.1',
     healthPath = '/',
     startupTimeoutMs = 45_000,
     maxOutputLines = 120,
@@ -792,9 +839,10 @@ export class PreviewShellManager {
       if (this.candidatePorts.length > 0) {
         this.port = await findAvailablePortFromCandidates(this.candidatePorts, {
           allowRandomFallback: this.allowRandomPortFallback,
+          host: this.host,
         })
       } else {
-        this.port = await findAvailablePort(this.preferredPort)
+        this.port = await findAvailablePort(this.preferredPort, this.host)
       }
     }
   }
@@ -891,11 +939,28 @@ export class PreviewShellManager {
 
     this.effectiveEnv = this.env
     if (shouldAutoStartLocalApiBridge(this.env)) {
-      this.localApiBridge = new LocalApiBridgeManager({ env: this.env })
-      await this.localApiBridge.start()
-      this.effectiveEnv = {
-        ...this.env,
-        ...this.localApiBridge.envPatch,
+      try {
+        this.localApiBridge = new LocalApiBridgeManager({ env: this.env })
+        await this.localApiBridge.start()
+        this.effectiveEnv = {
+          ...this.env,
+          ...this.localApiBridge.envPatch,
+        }
+      } catch (error) {
+        const canUseConfiguredOrigins = hasConfiguredLocalApiOrigins(this.env)
+        if (!canUseConfiguredOrigins) {
+          throw error
+        }
+
+        this.localApiBridge = null
+        this.effectiveEnv = {
+          ...this.env,
+          ...buildConfiguredLocalApiOriginPatch(this.env),
+        }
+        const message = error instanceof Error ? error.message : String(error)
+        this.outputLines.push(
+          `[${new Date().toISOString()}] stderr: Local API bridge unavailable, falling back to configured origins: ${message}`
+        )
       }
     }
 

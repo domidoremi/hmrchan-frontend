@@ -110,7 +110,10 @@ export E2E_AUTH_LOGIN=legacy@example.com
       ).toMatchObject({
         REHEARSAL_TURNSTILE_BYPASS_TOKEN: 'test-bypass-token',
         BACKEND_INTERNAL_AUTH_SHARED_SECRET: 'test-internal-secret',
+        API_BASE_URL: 'http://127.0.0.1:19081',
         BACKEND_INTERNAL_ORIGIN: 'http://127.0.0.1:19081',
+        VPC_API_ORIGIN: 'http://127.0.0.1:19081',
+        VPC_IDENTITY_API_ORIGIN: 'http://127.0.0.1:19081',
       })
     } finally {
       rmSync(tempRoot, { recursive: true, force: true })
@@ -140,6 +143,8 @@ export E2E_AUTH_LOGIN=legacy@example.com
         createLocalAuditEnv(
           {
             VITE_IDENTITY_API_BASE_URL: 'http://127.0.0.1:29081',
+            VITE_COMMUNITY_API_BASE_URL: 'http://127.0.0.1:29082',
+            VITE_CONTENT_API_BASE_URL: 'http://127.0.0.1:29083',
           },
           {
             cwd: frontendDir,
@@ -152,7 +157,12 @@ export E2E_AUTH_LOGIN=legacy@example.com
       ).toMatchObject({
         REHEARSAL_TURNSTILE_BYPASS_TOKEN: 'explicit-bypass-token',
         BACKEND_INTERNAL_AUTH_SHARED_SECRET: 'explicit-internal-secret',
+        API_BASE_URL: 'http://127.0.0.1:29081',
         BACKEND_INTERNAL_ORIGIN: 'http://127.0.0.1:29081',
+        VPC_API_ORIGIN: 'http://127.0.0.1:29081',
+        VPC_IDENTITY_API_ORIGIN: 'http://127.0.0.1:29081',
+        VPC_COMMUNITY_API_ORIGIN: 'http://127.0.0.1:29082',
+        VPC_CONTENT_API_ORIGIN: 'http://127.0.0.1:29083',
       })
     } finally {
       rmSync(tempRoot, { recursive: true, force: true })
