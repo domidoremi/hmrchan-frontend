@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { EventEmitter } from 'node:events'
 
 import { PreviewShellManager } from '../../../scripts/lib/preview-shell.js'
 
@@ -25,7 +26,30 @@ describe('preview shell local bridge fallback', () => {
       preferredPort: 0,
       serverMode: 'pages',
       startupTimeoutMs: 10_000,
+      localApiBridgeFactory: () => ({
+        envPatch: {},
+        async start() {
+          throw new Error('docker info timed out after 20000ms')
+        },
+        async stop() {},
+      }),
+      serverSpawner: () => {
+        const child = new EventEmitter() as EventEmitter & {
+          pid: number
+          exitCode: number | null
+          killed: boolean
+          stdout: EventEmitter
+          stderr: EventEmitter
+        }
+        child.pid = 0
+        child.exitCode = null
+        child.killed = true
+        child.stdout = new EventEmitter()
+        child.stderr = new EventEmitter()
+        return child
+      },
     })
+    manager.probe = async () => ({ ok: true, status: 200 })
 
     await manager.start()
 

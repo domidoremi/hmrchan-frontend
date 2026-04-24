@@ -35,7 +35,9 @@ import {
   buildAuthBootstrapProbeSummary,
   extractAuthBootstrapError,
   findFatalAuthBootstrapProbe,
+  findLocalAuditEnvironmentBlockedProbe,
   formatFatalAuthBootstrapProbe,
+  formatLocalAuditEnvironmentBlockedProbe,
   probeAuthBootstrapEndpoints,
 } from './lib/auth-bootstrap.js'
 import { ensureDetailRouteReadiness, resolveSampleDetailRoute } from './lib/detail-route-utils.js'
@@ -240,6 +242,14 @@ async function runAuthBootstrapPreflight(baseUrl: string): Promise<AuthBootstrap
 }
 
 function throwIfFatalAuthBootstrapProbe(probes: AuthBootstrapProbe[]): void {
+  const localEnvironmentProbe = findLocalAuditEnvironmentBlockedProbe(probes)
+  if (localEnvironmentProbe) {
+    const summaries = probes.map((probe) => buildAuthBootstrapProbeSummary(probe)).join(' | ')
+    throw new Error(
+      `${formatLocalAuditEnvironmentBlockedProbe(localEnvironmentProbe)} Probes: ${summaries}`
+    )
+  }
+
   const fatalProbe = findFatalAuthBootstrapProbe(probes)
   if (!fatalProbe) return
   const summaries = probes.map((probe) => buildAuthBootstrapProbeSummary(probe)).join(' | ')

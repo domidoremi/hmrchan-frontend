@@ -31,7 +31,9 @@ import {
   buildAuthBootstrapProbeSummary,
   extractAuthBootstrapError,
   findFatalAuthBootstrapProbe,
+  findLocalAuditEnvironmentBlockedProbe,
   formatFatalAuthBootstrapProbe,
+  formatLocalAuditEnvironmentBlockedProbe,
   probeAuthBootstrapEndpoints,
 } from './lib/auth-bootstrap.js'
 import { ensureDetailRouteReadiness, resolveSampleDetailRoute } from './lib/detail-route-utils.js'
@@ -45,6 +47,11 @@ applyLocalAuditEnvToProcess()
 type SmokeMode = 'guest' | 'auth' | 'both'
 type CheckKind = 'static' | 'browser' | 'auth' | 'service-worker'
 type CheckStatus = 'passed' | 'failed' | 'skipped'
+type SmokeFailureKind =
+  | 'environment-blocked'
+  | 'auth-contract-failed'
+  | 'ui-timeout'
+  | 'browser-crash'
 
 type StaticRouteCheck = {
   name: string
@@ -120,6 +127,7 @@ type SmokeSummary = {
   authSmokeExecuted: boolean
   authSmokeSkipReason: string | null
   lastFailedCheck: string | null
+  failureKind: SmokeFailureKind | null
   lastFailureEvidence: FailureEvidence | null
   checks: CheckRecord[]
 }
@@ -295,6 +303,14 @@ async function runAuthBootstrapPreflight(baseUrl: string): Promise<AuthBootstrap
 }
 
 function throwIfFatalAuthBootstrapProbe(probes: AuthBootstrapProbe[]): void {
+  const localEnvironmentProbe = findLocalAuditEnvironmentBlockedProbe(probes)
+  if (localEnvironmentProbe) {
+    const summaries = probes.map((probe) => buildAuthBootstrapProbeSummary(probe)).join(' | ')
+    throw new Error(
+      `${formatLocalAuditEnvironmentBlockedProbe(localEnvironmentProbe)} Probes: ${summaries}`
+    )
+  }
+
   const fatalProbe = findFatalAuthBootstrapProbe(probes)
   if (!fatalProbe) return
   const summaries = probes.map((probe) => buildAuthBootstrapProbeSummary(probe)).join(' | ')
@@ -313,6 +329,41 @@ function logPreviewDiagnostics(
   for (const line of diagnostics) {
     console.log(`   • ${line}`)
   }
+}
+
+function classifySmokeFailure(error: unknown, evidence: FailureEvidence | null): SmokeFailureKind {
+  const errorText = formatError(error)
+  const diagnostics = [
+    errorText,
+    ...(evidence?.previewDiagnostics ?? []),
+    ...(evidence?.consoleMessages ?? []),
+    ...(evidence?.requestFailures ?? []),
+    ...(evidence?.badResponses ?? []),
+  ].join('\n')
+
+  if (
+    /UPSTREAM_TIMEOUT|UPSTREAM_UNREACHABLE|Local audit environment blocked|Docker\/local backend|net::ERR_ABORTED/i.test(
+      diagnostics
+    )
+  ) {
+    return 'environment-blocked'
+  }
+
+  if (
+    /passkeys\/login\/options|client init|session resolve|Google start|contract mismatch|SIGNATURE_VERIFIER_UNAVAILABLE/i.test(
+      diagnostics
+    )
+  ) {
+    return 'auth-contract-failed'
+  }
+
+  if (
+    /chrome-error:\/\/|Target closed|browser has disconnected|Protocol error/i.test(diagnostics)
+  ) {
+    return 'browser-crash'
+  }
+
+  return 'ui-timeout'
 }
 
 function appendCheck(summary: SmokeSummary, check: CheckRecord): void {
@@ -554,24 +605,18 @@ async function collectBrowserTrustHeaders(page: Page): Promise<Record<string, st
   })
 }
 
-async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<boolean> {
-  if (!isLocalAuditOrigin(baseUrl)) {
-    return false
-  }
-
-  if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
-    console.log('   • Debug: prewarm local audit trust start')
-  }
-
+async function runLocalAuditTrustPrewarm(page: Page, baseUrl: string): Promise<boolean> {
   await clearBrowserAuditSession(page, baseUrl)
   await page.goto(`${baseUrl}/`, {
     waitUntil: 'domcontentloaded',
-    timeout: 30_000,
+    timeout: 15_000,
   })
 
   const result = await page.evaluate(async () => {
     const credentialStorageKey = 'momi_client_security'
     const fingerprintStorageKey = 'momi_device_fingerprint_v1'
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), 10_000)
 
     const readPersistedFingerprint = (): string | null => {
       try {
@@ -629,21 +674,28 @@ async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<bool
     )
     window.localStorage.removeItem(credentialStorageKey)
 
-    const response = await fetch('/api/v1/client/init', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_fingerprint: clientFingerprint,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        screen_resolution: `${screen.width}x${screen.height}`,
-        platform: navigator.platform || undefined,
-        timestamp: Math.floor(Date.now() / 1000),
-        nonce: Math.random().toString(16).slice(2).padEnd(16, '0').slice(0, 16),
-        force_reissue: true,
-      }),
-    })
+    try {
+      const response = await fetch('/api/v1/client/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          client_fingerprint: clientFingerprint,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          screen_resolution: `${screen.width}x${screen.height}`,
+          platform: navigator.platform || undefined,
+          timestamp: Math.floor(Date.now() / 1000),
+          nonce: Math.random().toString(16).slice(2).padEnd(16, '0').slice(0, 16),
+          force_reissue: true,
+        }),
+      })
 
-    return response.ok
+      return response.ok
+    } catch {
+      return false
+    } finally {
+      window.clearTimeout(timeoutId)
+    }
   })
 
   if (!result) {
@@ -678,16 +730,42 @@ async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<bool
   return true
 }
 
+async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<boolean> {
+  if (!isLocalAuditOrigin(baseUrl)) {
+    return false
+  }
+
+  if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+    console.log('   • Debug: prewarm local audit trust start')
+  }
+
+  try {
+    return await withTimeout(
+      runLocalAuditTrustPrewarm(page, baseUrl),
+      20_000,
+      'local audit prewarm'
+    )
+  } catch (error) {
+    if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
+      console.log('   • Debug: prewarm local audit trust timed out or failed', error)
+    }
+    return false
+  }
+}
+
 async function withPageFailureEvidence(
-  browser: puppeteer.Browser,
+  browser: puppeteer.Browser | null,
   artifactDir: string,
   metadata: Pick<CheckRecord, 'name' | 'path'>,
   onFailure: (evidence: FailureEvidence) => void,
   run: (page: Page) => Promise<void>,
   getPreviewDiagnostics?: (() => string[] | null) | null,
-  timeout = 20_000
+  timeout = 20_000,
+  existingPage?: Page | null,
+  keepCreatedPageOpen = false
 ): Promise<void> {
-  const page = await browser.newPage()
+  const page = existingPage ?? (await browser!.newPage())
+  let completed = false
   page.setDefaultTimeout(timeout)
   const consoleMessages: string[] = []
   const requestFailures: string[] = []
@@ -712,6 +790,7 @@ async function withPageFailureEvidence(
 
   try {
     await run(page)
+    completed = true
   } catch (error) {
     onFailure(
       await capturePageFailureEvidence(page, artifactDir, metadata, getPreviewDiagnostics, {
@@ -722,7 +801,28 @@ async function withPageFailureEvidence(
     )
     throw error
   } finally {
-    await page.close().catch(() => undefined)
+    if (!existingPage && !(keepCreatedPageOpen && completed)) {
+      await page.close().catch(() => undefined)
+    }
+  }
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error(label + ' timed out after ' + timeoutMs + 'ms')),
+          timeoutMs
+        )
+      }),
+    ])
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
   }
 }
 
@@ -742,6 +842,7 @@ async function recordCheck(
     })
   } catch (error) {
     summary.lastFailedCheck = metadata.name
+    summary.failureKind = classifySmokeFailure(error, summary.lastFailureEvidence)
     appendCheck(summary, {
       ...metadata,
       status: 'failed',
@@ -866,14 +967,17 @@ async function authenticateViaApi(
   credentials: { login: string; password: string },
   artifactDir: string,
   onFailure: (evidence: FailureEvidence) => void,
-  getPreviewDiagnostics?: (() => string[] | null) | null
-): Promise<void> {
+  getPreviewDiagnostics?: (() => string[] | null) | null,
+  existingPage?: Page | null
+): Promise<Page | null> {
+  let authenticatedPage: Page | null = null
   await withPageFailureEvidence(
     browser,
     artifactDir,
     { name: 'auth login bootstrap', path: '/api/v1/auth/login' },
     onFailure,
     async (page) => {
+      authenticatedPage = page
       const waitForLoginExit = async (timeout: number): Promise<boolean> => {
         try {
           await page.waitForFunction(
@@ -1050,21 +1154,30 @@ async function authenticateViaApi(
         })
 
         if (!result.ok) {
-          throw new Error(
-            `Auth smoke login bootstrap failed to force issue client credentials: HTTP ${result.status} ${result.detail ?? ''}`.trim()
+          console.warn(
+            `⚠️ Auth smoke login bootstrap could not force issue client credentials: HTTP ${result.status} ${result.detail ?? ''}`.trim()
           )
+          return false
         }
+
+        return true
       }
       const ensureClientCredentials = async () => {
         const hasExistingCredentials = await waitForClientCredentials(10_000)
           .then(() => true)
           .catch(() => false)
         if (hasExistingCredentials) {
-          return
+          return true
         }
 
-        await forceIssueClientCredentials()
-        await waitForClientCredentials(2_000)
+        const issuedCredentials = await forceIssueClientCredentials()
+        if (!issuedCredentials) {
+          return false
+        }
+
+        return waitForClientCredentials(2_000)
+          .then(() => true)
+          .catch(() => false)
       }
       const submitLoginForm = () =>
         page.evaluate(() => {
@@ -1074,22 +1187,19 @@ async function authenticateViaApi(
           }
           form.requestSubmit()
         })
-      const fillInputValue = (selector: string, value: string) =>
-        page.evaluate(
-          ({ selector: nextSelector, value: nextValue }) => {
-            const input = document.querySelector(nextSelector)
-            if (!(input instanceof HTMLInputElement)) {
-              throw new Error(`input not found for selector: ${nextSelector}`)
-            }
-            input.focus()
-            input.value = ''
-            input.dispatchEvent(new Event('input', { bubbles: true }))
-            input.value = String(nextValue)
-            input.dispatchEvent(new Event('input', { bubbles: true }))
-            input.dispatchEvent(new Event('change', { bubbles: true }))
-          },
-          { selector, value }
-        )
+      const fillInputValue = async (selector: string, value: string) => {
+        await page.waitForSelector(selector, { timeout: 10_000 })
+        await page.click(selector, { clickCount: 3 })
+        await page.keyboard.press('Backspace')
+        await page.type(selector, value)
+        await page.evaluate((nextSelector) => {
+          const input = document.querySelector(nextSelector)
+          if (!(input instanceof HTMLInputElement)) {
+            throw new Error(`input not found for selector: ${nextSelector}`)
+          }
+          input.dispatchEvent(new Event('change', { bubbles: true }))
+        }, selector)
+      }
       const submitLoginFormAndReadProbe = async (): Promise<AuthBootstrapProbe | null> => {
         const loginResponsePromise = page
           .waitForResponse(
@@ -1194,7 +1304,10 @@ async function authenticateViaApi(
       if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
         console.log('   • Debug: auth bootstrap start')
       }
-      const prewarmedLocalTrust = await prewarmLocalAuditTrust(page, baseUrl)
+      const shouldPrewarmLocalTrust = AUDIT_ENV.LOCAL_AUDIT_PREWARM_CLIENT_TRUST === 'true'
+      const prewarmedLocalTrust = shouldPrewarmLocalTrust
+        ? await prewarmLocalAuditTrust(page, baseUrl)
+        : false
       if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
         console.log('   • Debug: prewarm result', prewarmedLocalTrust)
       }
@@ -1230,9 +1343,9 @@ async function authenticateViaApi(
         console.log('   • Debug: login exited after first submit', loginExited)
       }
       if (!loginExited) {
-        await ensureClientCredentials()
+        const ensuredClientCredentials = await ensureClientCredentials()
         if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
-          console.log('   • Debug: ensured client credentials')
+          console.log('   • Debug: ensured client credentials', ensuredClientCredentials)
         }
         const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
         if (trustedVisitorCount > 0) {
@@ -1286,8 +1399,12 @@ async function authenticateViaApi(
         console.log('   • Post-login state:', await readLoginState())
       }
     },
-    getPreviewDiagnostics
+    getPreviewDiagnostics,
+    20_000,
+    existingPage,
+    !existingPage
   )
+  return existingPage ? null : authenticatedPage
 }
 
 async function assertAuthenticatedRoute(
@@ -1297,7 +1414,8 @@ async function assertAuthenticatedRoute(
   artifactDir: string,
   onFailure: (evidence: FailureEvidence) => void,
   getPreviewDiagnostics?: (() => string[] | null) | null,
-  recoverAuthSession?: (() => Promise<void>) | null
+  recoverAuthSession?: (() => Promise<void>) | null,
+  existingPage?: Page | null
 ): Promise<void> {
   const verifyAuthenticatedRoute = async (page: Page): Promise<void> => {
     await page.goto(`${baseUrl}${check.path}`, {
@@ -1357,7 +1475,9 @@ async function assertAuthenticatedRoute(
         await verifyAuthenticatedRoute(page)
       }
     },
-    getPreviewDiagnostics
+    getPreviewDiagnostics,
+    20_000,
+    existingPage
   )
 }
 
@@ -1786,6 +1906,7 @@ async function main(): Promise<void> {
       if (clearedRateLimitKeys > 0) {
         console.log(`   • Cleared ${clearedRateLimitKeys} local audit rate-limit keys`)
       }
+      let authenticatedSmokePage: Page | null = null
       await recordCheck(
         summary,
         {
@@ -1794,8 +1915,8 @@ async function main(): Promise<void> {
           mode: 'auth',
           path: '/api/v1/auth/login',
         },
-        () =>
-          authenticateViaApi(
+        async () => {
+          authenticatedSmokePage = await authenticateViaApi(
             browser!,
             baseUrl,
             {
@@ -1806,6 +1927,7 @@ async function main(): Promise<void> {
             recordFailureEvidence,
             getPreviewDiagnostics
           )
+        }
       )
 
       const effectiveAuthenticatedRouteChecks = authenticatedRouteChecks.filter(
@@ -1842,42 +1964,48 @@ async function main(): Promise<void> {
         )
       }
 
-      for (const check of effectiveAuthenticatedRouteChecks) {
-        await recordCheckWithPreviewRecovery(
-          summary,
-          {
-            name: check.name,
-            kind: 'auth',
-            mode: 'auth',
-            path: check.path,
-            selector: check.selector,
-            readinessSelectorsAll: check.readinessSelectorsAll,
-            readinessSelectorsAny: check.readinessSelectorsAny,
-            expectedPath: check.expectedPath,
-          },
-          previewServer,
-          () =>
-            assertAuthenticatedRoute(
-              browser!,
-              baseUrl,
-              check,
-              artifactDir,
-              recordFailureEvidence,
-              getPreviewDiagnostics,
-              () =>
-                authenticateViaApi(
-                  browser!,
-                  baseUrl,
-                  {
-                    login: authLogin,
-                    password: authPassword,
-                  },
-                  artifactDir,
-                  recordFailureEvidence,
-                  getPreviewDiagnostics
-                )
-            )
-        )
+      try {
+        for (const check of effectiveAuthenticatedRouteChecks) {
+          await recordCheckWithPreviewRecovery(
+            summary,
+            {
+              name: check.name,
+              kind: 'auth',
+              mode: 'auth',
+              path: check.path,
+              selector: check.selector,
+              readinessSelectorsAll: check.readinessSelectorsAll,
+              readinessSelectorsAny: check.readinessSelectorsAny,
+              expectedPath: check.expectedPath,
+            },
+            previewServer,
+            () =>
+              assertAuthenticatedRoute(
+                browser!,
+                baseUrl,
+                check,
+                artifactDir,
+                recordFailureEvidence,
+                getPreviewDiagnostics,
+                () =>
+                  authenticateViaApi(
+                    browser!,
+                    baseUrl,
+                    {
+                      login: authLogin,
+                      password: authPassword,
+                    },
+                    artifactDir,
+                    recordFailureEvidence,
+                    getPreviewDiagnostics,
+                    authenticatedSmokePage
+                  ).then(() => undefined),
+                authenticatedSmokePage
+              )
+          )
+        }
+      } finally {
+        await authenticatedSmokePage?.close().catch(() => undefined)
       }
     } else {
       summary.authSmokeSkipReason = authSmokeRequired ? authSkipReason : 'E2E_REQUIRE_AUTH=false'
@@ -1956,25 +2084,34 @@ async function main(): Promise<void> {
     console.log('\n✅ Minimal E2E checks passed')
   } catch (error) {
     runError = error
+    if (!summary.failureKind) {
+      summary.failureKind = classifySmokeFailure(error, summary.lastFailureEvidence)
+    }
     console.error('\n❌ Minimal E2E checks failed:', error)
   } finally {
-    if (browser) {
-      await browser.close().catch(() => {
-        // ignore
-      })
-    }
-    if (previewServer) {
-      await previewServer.stop()
-    }
-
     try {
       await writeSmokeArtifacts(summary)
-      console.log(`🧾 Wrote smoke summary to ${summary.artifactDir}`)
+      console.log('🧾 Wrote smoke summary to ' + summary.artifactDir)
     } catch (artifactError) {
       console.error('Failed to write smoke artifacts:', artifactError)
       if (!runError) {
         runError = artifactError
       }
+    }
+
+    if (browser) {
+      await withTimeout(
+        browser.close().catch(() => {
+          // ignore
+        }),
+        5_000,
+        'browser.close'
+      ).catch((cleanupError) => console.warn('⚠️ Browser cleanup timed out:', cleanupError))
+    }
+    if (previewServer) {
+      await withTimeout(previewServer.stop(), 10_000, 'previewServer.stop').catch((cleanupError) =>
+        console.warn('⚠️ Preview cleanup timed out:', cleanupError)
+      )
     }
   }
 
