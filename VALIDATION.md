@@ -18,6 +18,7 @@ bun run validate:release --mode production
   - `summary.json`
   - `summary.md`
   - `stages/*.json`
+- Windows 环境下 runner 会通过共享命令执行器解析 `bun.exe` / `bun.cmd`；若需要固定 Bun 路径，可设置 `BUN_EXECUTABLE`
 
 ## 本地真相源
 
@@ -92,6 +93,18 @@ bun run validate:release --mode production
   - 验证本身成功，但尚未完成生产深回归
   - 常见于 `local` / `candidate`
 
+## 本地环境阻塞
+
+本地浏览器门禁依赖 Docker Desktop、本地后端栈和 local audit bridge。若这些依赖不可用，`check:frontend` / `test:e2e` 会把 `UPSTREAM_TIMEOUT`、`UPSTREAM_UNREACHABLE` 等探针结果报告为 local audit environment blocked，而不是误报为后端契约变更。
+
+恢复环境后必须补跑：
+
+```bash
+bun run check:frontend
+bun run test:e2e
+bun run validate:release --mode local
+```
+
 ## 合同与自动演进
 
 这套流程不会依赖人工维护 checklist，而是从仓库真相源自动派生：
@@ -102,9 +115,13 @@ bun run validate:release --mode production
   - [scripts/lib/auth-bootstrap.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/auth-bootstrap.js)
 - 生产 contract/version 与 Pages 安全环境约束：
   - [scripts/lib/production-contract-env.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/production-contract-env.js)
+- 前端 auth surface 与 UUIDv7 public ID 守卫：
+  - [scripts/lib/frontend-contract-audit.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/frontend-contract-audit.js)
 - 统一 runner 编排与变更影响分类：
   - [scripts/validate-release.mjs](/G:/Project/hmrchan/hmrchan-frontend/scripts/validate-release.mjs)
   - [scripts/lib/validate-release.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/validate-release.js)
+
+UUIDv7 hard cutover 后，前端公开资源 ID 只能使用 UUIDv7 字符串；新增或修改 `src/api`、路由详情页、fallback snapshot、Service Worker cache key 时，必须同步相关类型守卫、测试和 release contract audit。
 
 runner 会根据本次交付命中的文件范围自动生成风险摘要，重点关注：
 

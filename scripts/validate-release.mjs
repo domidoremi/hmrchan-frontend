@@ -3,7 +3,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import { execFileSync, spawn } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 
 import { createLocalAuditEnv } from './lib/audit-env.js'
 import {
@@ -19,6 +19,7 @@ import {
   resolveProductionContractEnv,
   validateProductionContractEnvPolicy,
 } from './lib/production-contract-env.js'
+import { validateFrontendContractAudit } from './lib/frontend-contract-audit.js'
 import {
   getReleaseRouteContractOverview,
   validateReleaseRouteContract,
@@ -32,6 +33,14 @@ import {
   isValidationMode,
   resolveValidationArtifactDir,
 } from './lib/validate-release.js'
+import { CommandRunError, runCommand } from './lib/command-runner.js'
+
+const STATIC_GATE_COMMAND_TIMEOUT_MS = Number(
+  process.env.VALIDATION_STATIC_COMMAND_TIMEOUT_MS ?? 10 * 60 * 1000
+)
+const BROWSER_GATE_COMMAND_TIMEOUT_MS = Number(
+  process.env.VALIDATION_BROWSER_COMMAND_TIMEOUT_MS ?? 3 * 60 * 1000
+)
 
 function formatTimestamp(date = new Date()) {
   const pad = (value) => String(value).padStart(2, '0')
@@ -183,25 +192,56 @@ async function writeJson(filePath, payload) {
   await writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8')
 }
 
-async function runCommand(command, env) {
-  return new Promise((resolve, reject) => {
-    const [bin, ...args] = command
-    const child = spawn(bin, args, {
-      cwd: process.cwd(),
-      env,
-      stdio: 'inherit',
-      shell: false,
-    })
+function slugifyCommand(command) {
+  return command
+    .join('-')
+    .replace(/[^a-z0-9._-]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+}
 
-    child.on('error', reject)
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve()
-        return
+function buildCommandArtifactDir(stageRecord, command, index) {
+  return path.join(
+    stageRecord.artifactDir,
+    'commands',
+    `${String(index + 1).padStart(2, '0')}-${slugifyCommand(command)}`
+  )
+}
+
+async function runStageCommands(stageRecord, commands, env, options = {}) {
+  const results = []
+  for (let index = 0; index < commands.length; index += 1) {
+    const command = commands[index]
+    const artifactDir = buildCommandArtifactDir(stageRecord, command, index)
+    try {
+      const result = await runCommand(command, {
+        env,
+        timeoutMs: options.timeoutMs,
+        artifactDir,
+      })
+      results.push({
+        command: command.join(' '),
+        status: result.status,
+        artifactDir,
+      })
+    } catch (error) {
+      const result = {
+        command: command.join(' '),
+        status: error instanceof CommandRunError ? error.status : 'failed',
+        reason: error instanceof Error ? error.message : String(error),
+        artifactDir,
+        timedOut: error instanceof CommandRunError ? error.timedOut : false,
+        exitCode: error instanceof CommandRunError ? error.exitCode : null,
+        signal: error instanceof CommandRunError ? error.signal : null,
       }
-      reject(new Error(`${command.join(' ')} exited with code ${code ?? 'unknown'}`))
-    })
-  })
+      results.push(result)
+      const stageError = new Error(result.reason)
+      stageError.commandResult = result
+      stageError.commandResults = results
+      throw stageError
+    }
+  }
+  return results
 }
 
 function buildStageRecord(stage, artifactDir, target = null) {
@@ -229,7 +269,9 @@ function finalizeStage(stageRecord, patch) {
     ...patch,
     completedAt,
     durationMs:
-      stageRecord.startedAt == null ? 0 : new Date(completedAt).getTime() - new Date(stageRecord.startedAt).getTime(),
+      stageRecord.startedAt == null
+        ? 0
+        : new Date(completedAt).getTime() - new Date(stageRecord.startedAt).getTime(),
   }
 }
 
@@ -237,12 +279,19 @@ async function runContractSelfCheckStage(stageRecord) {
   const routeIssues = validateReleaseRouteContract()
   const authBootstrapIssues = validateAuthBootstrapContract()
   const productionEnvIssues = validateProductionContractEnvPolicy()
-  const issues = [...routeIssues, ...authBootstrapIssues, ...productionEnvIssues]
+  const frontendContractIssues = validateFrontendContractAudit(process.cwd())
+  const issues = [
+    ...routeIssues,
+    ...authBootstrapIssues,
+    ...productionEnvIssues,
+    ...frontendContractIssues,
+  ]
   const details = {
     routeOverview: getReleaseRouteContractOverview(),
     authBootstrapProbes: getAuthBootstrapProbeDefinitions(),
     productionEnvPolicy: getProductionContractEnvPolicy(),
     productionContractPreview: resolveProductionContractEnv(process.env),
+    frontendContractAudit: frontendContractIssues,
     issues,
   }
 
@@ -274,14 +323,14 @@ async function runStaticGateStage(stageRecord) {
     ['bun', 'run', 'build:security-check'],
   ]
 
-  for (const command of commands) {
-    await runCommand(command, env)
-  }
+  const commandResults = await runStageCommands(stageRecord, commands, env, {
+    timeoutMs: STATIC_GATE_COMMAND_TIMEOUT_MS,
+  })
 
   return finalizeStage(stageRecord, {
     status: 'passed',
     reason: 'Static release gates passed.',
-    commands: commands.map((command) => command.join(' ')),
+    commands: commandResults,
   })
 }
 
@@ -302,14 +351,14 @@ async function runLocalBrowserGateStage(stageRecord) {
     ['bun', 'run', 'check:frontend'],
   ]
 
-  for (const command of commands) {
-    await runCommand(command, env)
-  }
+  const commandResults = await runStageCommands(stageRecord, commands, env, {
+    timeoutMs: BROWSER_GATE_COMMAND_TIMEOUT_MS,
+  })
 
   return finalizeStage(stageRecord, {
     status: 'passed',
     reason: 'Local browser smoke and frontend health passed.',
-    commands: commands.map((command) => command.join(' ')),
+    commands: commandResults,
     details: {
       e2eArtifactDir,
       frontendHealthArtifactDir: healthArtifactDir,
@@ -366,9 +415,7 @@ async function runControlledSiteGateStage(stageRecord, controlledBaseUrl) {
     ['bun', 'run', 'check:frontend'],
   ]
 
-  for (const command of commands) {
-    await runCommand(command, env)
-  }
+  await runStageCommands(stageRecord, commands, env, { timeoutMs: BROWSER_GATE_COMMAND_TIMEOUT_MS })
 
   await writeJson(path.join(stageRecord.artifactDir, 'stage.json'), details)
   return finalizeStage(stageRecord, {
@@ -387,7 +434,10 @@ async function runProductionPreflightStage(stageRecord, baseUrl) {
     SECONDARY_EMAIL_MODE: process.env.SECONDARY_EMAIL_MODE?.trim() || 'user-assisted',
   }
   const command = ['bun', 'run', 'test:prod:regression', '--preflight']
-  await runCommand(command, env)
+  await runCommand(command, {
+    env,
+    artifactDir: buildCommandArtifactDir(stageRecord, command, 0),
+  })
 
   return finalizeStage(stageRecord, {
     status: 'passed',
@@ -404,7 +454,10 @@ async function runProductionRegressionStage(stageRecord, baseUrl) {
     SECONDARY_EMAIL_MODE: process.env.SECONDARY_EMAIL_MODE?.trim() || 'user-assisted',
   }
   const command = ['node', 'scripts/prod-regression-runner.mjs']
-  await runCommand(command, env)
+  await runCommand(command, {
+    env,
+    artifactDir: buildCommandArtifactDir(stageRecord, command, 0),
+  })
 
   return finalizeStage(stageRecord, {
     status: 'passed',
@@ -425,6 +478,46 @@ async function writeValidationArtifacts(summary) {
   for (const stage of summary.stages) {
     await writeJson(path.join(summary.artifactDir, 'stages', `${stage.id}.json`), stage)
   }
+}
+
+function finalizeBlockedStages(stageRecords) {
+  const failedStage = stageRecords.find((stage) => stage.selected && stage.status === 'failed')
+  if (!failedStage) return stageRecords
+
+  return stageRecords.map((stage) => {
+    if (!stage.selected || stage.status !== 'pending') return stage
+    return {
+      ...stage,
+      status: 'skipped',
+      reason: `Blocked by ${failedStage.id}`,
+    }
+  })
+}
+
+function buildSummaryFromState({
+  options,
+  artifactDir,
+  git,
+  baseUrl,
+  controlledBaseUrl,
+  changeSummary,
+  stageRecords,
+}) {
+  return buildValidationSummary({
+    mode: options.mode,
+    artifactDir,
+    git: {
+      branch: git.branch,
+      commitSha: git.commitSha,
+      diffRange: git.diffRange,
+    },
+    targets: {
+      baseUrl,
+      controlledBaseUrl,
+    },
+    changeSummary,
+    stages: finalizeBlockedStages(stageRecords),
+  })
 }
 
 async function main() {
@@ -455,103 +548,120 @@ async function main() {
     )
   )
 
-  for (let index = 0; index < stageRecords.length; index += 1) {
-    const stageRecord = stageRecords[index]
-    if (!stageRecord.selected) {
-      continue
-    }
-
-    console.log(`\n=== ${stageRecord.name} (${stageRecord.id}) ===`)
-    stageRecords[index] = {
-      ...stageRecord,
-      startedAt: new Date().toISOString(),
-      status: 'running',
-    }
-
+  let summary = null
+  let writingSummary = false
+  const writeCurrentSummary = async (reason = null) => {
+    if (writingSummary) return
+    writingSummary = true
     try {
-      switch (stageRecord.id) {
-        case 'stage-0-contract-self-check':
-          stageRecords[index] = await runContractSelfCheckStage(stageRecords[index])
-          break
-        case 'stage-1-local-static':
-          stageRecords[index] = await runStaticGateStage(stageRecords[index])
-          break
-        case 'stage-2-local-browser':
-          stageRecords[index] = await runLocalBrowserGateStage(stageRecords[index])
-          break
-        case 'stage-3-controlled-site':
-          if (!controlledBaseUrl) {
-            stageRecords[index] = finalizeStage(stageRecords[index], {
-              status: 'failed',
-              reason: 'CONTROLLED_BASE_URL is required for candidate and production validation modes.',
-            })
-            break
-          }
-          stageRecords[index] = await runControlledSiteGateStage(stageRecords[index], controlledBaseUrl)
-          break
-        case 'stage-4-production-preflight':
-          stageRecords[index] = await runProductionPreflightStage(stageRecords[index], baseUrl)
-          break
-        case 'stage-5-production-regression':
-          stageRecords[index] = await runProductionRegressionStage(stageRecords[index], baseUrl)
-          break
-        default:
-          stageRecords[index] = finalizeStage(stageRecords[index], {
+      if (reason) {
+        const runningStageIndex = stageRecords.findIndex((stage) => stage.status === 'running')
+        if (runningStageIndex >= 0) {
+          stageRecords[runningStageIndex] = finalizeStage(stageRecords[runningStageIndex], {
             status: 'failed',
-            reason: `Unhandled validation stage: ${stageRecord.id}`,
+            reason,
           })
-          break
+        }
       }
-    } catch (error) {
-      stageRecords[index] = finalizeStage(stageRecords[index], {
-        status: 'failed',
-        reason: error instanceof Error ? error.message : String(error),
+      summary = buildSummaryFromState({
+        options,
+        artifactDir,
+        git,
+        baseUrl,
+        controlledBaseUrl,
+        changeSummary,
+        stageRecords,
       })
-    }
-
-    if (stageRecords[index].status === 'failed') {
-      break
+      await writeValidationArtifacts(summary)
+      console.log(`\nValidation summary written to ${path.join(artifactDir, 'summary.md')}`)
+      console.log(`Validation status: ${summary.status}`)
+    } finally {
+      writingSummary = false
     }
   }
+  const handleTermination = (signal) => {
+    void writeCurrentSummary(`Release validation runner received ${signal}`).finally(() => {
+      process.exit(1)
+    })
+  }
+  process.once('SIGINT', handleTermination)
+  process.once('SIGTERM', handleTermination)
 
-  const failedStage = stageRecords.find((stage) => stage.selected && stage.status === 'failed')
-  if (failedStage) {
+  try {
     for (let index = 0; index < stageRecords.length; index += 1) {
-      const stage = stageRecords[index]
-      if (!stage.selected || stage.status !== 'pending') {
+      const stageRecord = stageRecords[index]
+      if (!stageRecord.selected) {
         continue
       }
+
+      console.log(`\n=== ${stageRecord.name} (${stageRecord.id}) ===`)
       stageRecords[index] = {
-        ...stage,
-        status: 'skipped',
-        reason: `Blocked by ${failedStage.id}`,
+        ...stageRecord,
+        startedAt: new Date().toISOString(),
+        status: 'running',
+      }
+
+      try {
+        switch (stageRecord.id) {
+          case 'stage-0-contract-self-check':
+            stageRecords[index] = await runContractSelfCheckStage(stageRecords[index])
+            break
+          case 'stage-1-local-static':
+            stageRecords[index] = await runStaticGateStage(stageRecords[index])
+            break
+          case 'stage-2-local-browser':
+            stageRecords[index] = await runLocalBrowserGateStage(stageRecords[index])
+            break
+          case 'stage-3-controlled-site':
+            if (!controlledBaseUrl) {
+              stageRecords[index] = finalizeStage(stageRecords[index], {
+                status: 'failed',
+                reason:
+                  'CONTROLLED_BASE_URL is required for candidate and production validation modes.',
+              })
+              break
+            }
+            stageRecords[index] = await runControlledSiteGateStage(
+              stageRecords[index],
+              controlledBaseUrl
+            )
+            break
+          case 'stage-4-production-preflight':
+            stageRecords[index] = await runProductionPreflightStage(stageRecords[index], baseUrl)
+            break
+          case 'stage-5-production-regression':
+            stageRecords[index] = await runProductionRegressionStage(stageRecords[index], baseUrl)
+            break
+          default:
+            stageRecords[index] = finalizeStage(stageRecords[index], {
+              status: 'failed',
+              reason: `Unhandled validation stage: ${stageRecord.id}`,
+            })
+            break
+        }
+      } catch (error) {
+        stageRecords[index] = finalizeStage(stageRecords[index], {
+          status: 'failed',
+          reason: error instanceof Error ? error.message : String(error),
+          commands: error?.commandResults ?? stageRecords[index].commands,
+          details: {
+            ...stageRecords[index].details,
+            failedCommand: error?.commandResult ?? null,
+          },
+        })
+      }
+
+      if (stageRecords[index].status === 'failed') {
+        break
       }
     }
-  }
-
-  const summary = buildValidationSummary({
-    mode: options.mode,
-    artifactDir,
-    git: {
-      branch: git.branch,
-      commitSha: git.commitSha,
-      diffRange: git.diffRange,
-    },
-    targets: {
-      baseUrl,
-      controlledBaseUrl,
-    },
-    changeSummary,
-    stages: stageRecords,
-  })
-
-  await writeValidationArtifacts(summary)
-
-  console.log(`\nValidation summary written to ${path.join(artifactDir, 'summary.md')}`)
-  console.log(`Validation status: ${summary.status}`)
-
-  if (summary.status === 'failed') {
-    process.exitCode = 1
+  } finally {
+    process.off('SIGINT', handleTermination)
+    process.off('SIGTERM', handleTermination)
+    await writeCurrentSummary()
+    if (summary?.status === 'failed') {
+      process.exitCode = 1
+    }
   }
 }
 

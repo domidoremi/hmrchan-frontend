@@ -2,10 +2,13 @@ import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { createServer as createNetServer } from 'node:net'
 
+import { buildSpawnCommand, getBunExecutable, getBunRunArgs } from './command-runner.js'
+
 const PREVIEW_READY_POLL_INTERVAL_MS = 500
 const LOCAL_API_BRIDGE_IMAGE = 'alpine/socat:latest'
 const LOCAL_API_BRIDGE_NETWORK = 'hmrchan-backend_hmrchan'
 const DEFAULT_COMMAND_TIMEOUT_MS = 20_000
+const CLEANUP_COMMAND_TIMEOUT_MS = 5_000
 const LOCAL_API_BRIDGE_SERVICES = Object.freeze({
   gateway: {
     envKey: 'API_BASE_URL',
@@ -82,26 +85,6 @@ function shouldUseWranglerPagesRuntime(env) {
   return env?.LOCAL_AUDIT_USE_WRANGLER_PAGES === 'true'
 }
 
-export function getBunExecutable() {
-  if (process.env['BUN_EXECUTABLE']?.trim()) {
-    return process.env['BUN_EXECUTABLE'].trim()
-  }
-
-  if (process.versions?.bun && process.execPath) {
-    return process.execPath
-  }
-
-  return 'bun'
-}
-
-function shouldUseShellForBunExecutable() {
-  return process.platform === 'win32' && !process.versions?.bun
-}
-
-function getBunRunArgs(...args) {
-  return ['--no-env-file', 'run', ...args]
-}
-
 export async function findAvailablePort(preferredPort = 0, host = '127.0.0.1') {
   return new Promise((resolve, reject) => {
     const server = createNetServer()
@@ -149,9 +132,10 @@ export async function findAvailablePortFromCandidates(
 
 export async function runBunTask(task, { env = process.env, stdio = 'inherit' } = {}) {
   await new Promise((resolve, reject) => {
-    const child = spawn(getBunExecutable(), getBunRunArgs(task), {
+    const command = buildSpawnCommand(getBunExecutable(), getBunRunArgs(task))
+    const child = spawn(command.command, command.args, {
       stdio,
-      shell: shouldUseShellForBunExecutable(),
+      shell: command.shell,
       env,
     })
 
@@ -161,6 +145,20 @@ export async function runBunTask(task, { env = process.env, stdio = 'inherit' } 
     })
     child.on('error', reject)
   })
+}
+
+function runDetachedCleanupCommand(command, args, { env = process.env } = {}) {
+  try {
+    const child = spawn(command, args, {
+      stdio: 'ignore',
+      shell: false,
+      env,
+      detached: true,
+    })
+    child.unref?.()
+  } catch {
+    // Best-effort cleanup must never block validation teardown.
+  }
 }
 
 export async function runCommandCapture(command, args, { env = process.env } = {}) {
@@ -234,12 +232,7 @@ function shouldClearLocalAuditRateLimits(env) {
   return env?.LOCAL_AUDIT_CLEAR_RATE_LIMITS === 'true' || shouldAutoStartLocalApiBridge(env)
 }
 
-async function scanRedisKeys({
-  redisContainer,
-  redisPassword,
-  redisDb,
-  pattern,
-}) {
+async function scanRedisKeys({ redisContainer, redisPassword, redisDb, pattern }) {
   const output = await runCommandCapture('docker', [
     'exec',
     redisContainer,
@@ -259,13 +252,7 @@ async function scanRedisKeys({
     .filter(Boolean)
 }
 
-async function deleteRedisKeys({
-  redisContainer,
-  redisPassword,
-  redisDb,
-  keys,
-  batchSize = 100,
-}) {
+async function deleteRedisKeys({ redisContainer, redisPassword, redisDb, keys, batchSize = 100 }) {
   let deleted = 0
   for (let index = 0; index < keys.length; index += batchSize) {
     const batch = keys.slice(index, index + batchSize)
@@ -449,11 +436,7 @@ function defaultHeaderCandidates(headers, key) {
   }
 
   if (key === 'accept-language') {
-    return [
-      'en-US,en;q=0.9',
-      'zh-CN,zh;q=0.9',
-      'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
-    ]
+    return ['en-US,en;q=0.9', 'zh-CN,zh;q=0.9', 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7']
   }
 
   if (key === 'sec-ch-ua-platform') {
@@ -571,8 +554,15 @@ export async function terminateProcessTree(pid) {
         stdio: 'ignore',
         shell: false,
       })
-      killer.on('close', () => resolve())
-      killer.on('error', () => resolve())
+      const timer = setTimeout(resolve, CLEANUP_COMMAND_TIMEOUT_MS)
+      timer.unref?.()
+      killer.unref?.()
+      const finish = () => {
+        clearTimeout(timer)
+        resolve()
+      }
+      killer.on('close', finish)
+      killer.on('error', finish)
     })
     return
   }
@@ -591,6 +581,8 @@ export async function waitForProcessExit(child, timeoutMs = 10_000) {
 
   await new Promise((resolve) => {
     const timer = setTimeout(resolve, timeoutMs)
+    timer.unref?.()
+    child.unref?.()
     const finish = () => {
       clearTimeout(timer)
       resolve()
@@ -787,11 +779,10 @@ export class LocalApiBridgeManager {
     const bridges = [...this.bridges].reverse()
     this.bridges = []
 
-    await Promise.all(
-      bridges.map((bridge) =>
-        runCommandCapture('docker', ['rm', '-f', bridge.containerName]).catch(() => undefined)
-      )
-    )
+    for (const bridge of bridges) {
+      runDetachedCleanupCommand('docker', ['rm', '-f', bridge.containerName], { env: this.env })
+    }
+    await wait(250)
   }
 }
 
@@ -807,6 +798,8 @@ export class PreviewShellManager {
     candidatePorts = [],
     allowRandomPortFallback = true,
     serverMode = 'vite',
+    localApiBridgeFactory = (env) => new LocalApiBridgeManager({ env }),
+    serverSpawner = spawn,
   } = {}) {
     this.env = env
     this.effectiveEnv = env
@@ -819,6 +812,8 @@ export class PreviewShellManager {
     this.maxOutputLines = maxOutputLines
     this.logOutput = logOutput
     this.serverMode = serverMode
+    this.localApiBridgeFactory = localApiBridgeFactory
+    this.serverSpawner = serverSpawner
     this.runtimeHealthPath = null
     this.port = null
     this.child = null
@@ -940,7 +935,7 @@ export class PreviewShellManager {
     this.effectiveEnv = this.env
     if (shouldAutoStartLocalApiBridge(this.env)) {
       try {
-        this.localApiBridge = new LocalApiBridgeManager({ env: this.env })
+        this.localApiBridge = this.localApiBridgeFactory(this.env)
         await this.localApiBridge.start()
         this.effectiveEnv = {
           ...this.env,
@@ -989,12 +984,14 @@ export class PreviewShellManager {
               this.host
             )
         : getBunRunArgs('preview', '--port', String(this.port))
-    this.runtimeHealthPath = this.serverMode === 'pages' && !useWranglerPagesRuntime ? '/health/ready' : null
+    this.runtimeHealthPath =
+      this.serverMode === 'pages' && !useWranglerPagesRuntime ? '/health/ready' : null
 
     let spawnError = null
-    const server = spawn(getBunExecutable(), serverArgs, {
+    const command = buildSpawnCommand(getBunExecutable(), serverArgs)
+    const server = this.serverSpawner(command.command, command.args, {
       stdio: ['ignore', 'pipe', 'pipe'],
-      shell: shouldUseShellForBunExecutable(),
+      shell: command.shell,
       env: this.effectiveEnv,
     })
 
@@ -1058,8 +1055,11 @@ export class PreviewShellManager {
     }
 
     this.stopRequested = true
+    child.stdout?.destroy?.()
+    child.stderr?.destroy?.()
+    child.unref?.()
     await terminateProcessTree(child.pid)
-    await waitForProcessExit(child)
+    await waitForProcessExit(child, 2_000)
     await bridge?.stop()
   }
 

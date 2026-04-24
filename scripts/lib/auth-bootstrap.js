@@ -118,7 +118,9 @@ async function hmacSha256Hex(secret, payload) {
     ['sign']
   )
   const signature = await crypto.subtle.sign('HMAC', key, textEncoder.encode(payload))
-  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, '0')).join(
+    ''
+  )
 }
 
 function getRandomHex(length) {
@@ -264,13 +266,11 @@ export function classifyAuthBootstrapProbe(probe) {
 
   if (
     probe.status === 426 &&
-    (
-      probe.code === 'CLIENT_CONTRACT_MISMATCH' ||
+    (probe.code === 'CLIENT_CONTRACT_MISMATCH' ||
       probe.code === 'CLIENT_UPGRADE_REQUIRED' ||
       probe.path === '/api/v1/client/init' ||
       probe.path === '/api/v1/auth/session:resolve' ||
-      probe.path === '/api/v1/auth/login'
-    )
+      probe.path === '/api/v1/auth/login')
   ) {
     return 'client-contract-mismatch'
   }
@@ -322,7 +322,25 @@ export function classifyAuthBootstrapProbe(probe) {
   return null
 }
 
+function getProbeKey(probe) {
+  try {
+    const url = new URL(probe.path, 'https://local.invalid')
+    return `${probe.method?.toUpperCase?.() ?? 'GET'} ${url.pathname}`
+  } catch {
+    return `${probe.method?.toUpperCase?.() ?? 'GET'} ${probe.path}`
+  }
+}
+
+export function getLatestAuthBootstrapProbes(probes) {
+  const latest = new Map()
+  for (const probe of probes) {
+    latest.set(getProbeKey(probe), probe)
+  }
+  return [...latest.values()]
+}
+
 export function findFatalAuthBootstrapProbe(probes) {
+  probes = getLatestAuthBootstrapProbes(probes)
   for (const probe of probes) {
     const kind = classifyAuthBootstrapProbe(probe)
     if (kind) {
@@ -334,6 +352,26 @@ export function findFatalAuthBootstrapProbe(probes) {
   }
 
   return null
+}
+
+export function isLocalAuditEnvironmentBlockedProbe(probe) {
+  return (
+    classifyAuthBootstrapProbe(probe) === 'upstream-unreachable' &&
+    (probe.code === 'UPSTREAM_TIMEOUT' || probe.code === 'UPSTREAM_UNREACHABLE')
+  )
+}
+
+export function findLocalAuditEnvironmentBlockedProbe(probes) {
+  return (
+    getLatestAuthBootstrapProbes(probes).find((probe) =>
+      isLocalAuditEnvironmentBlockedProbe(probe)
+    ) ?? null
+  )
+}
+
+export function formatLocalAuditEnvironmentBlockedProbe(probe) {
+  const summary = buildAuthBootstrapProbeSummary(probe)
+  return `Local audit environment blocked because Docker/local backend upstream is unreachable from the preview (${summary}). Start Docker Desktop and the local backend stack, or set LOCAL_AUDIT_AUTO_API_BRIDGE=false with reachable local origins before rerunning.`
 }
 
 export function formatFatalAuthBootstrapProbe(probe) {
@@ -439,7 +477,10 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
   const headers = new Headers({
     Accept: 'application/json',
   })
-  headers.set('X-Client-Fingerprint', options.clientFingerprint ?? AUTH_BOOTSTRAP_CLIENT_FINGERPRINT)
+  headers.set(
+    'X-Client-Fingerprint',
+    options.clientFingerprint ?? AUTH_BOOTSTRAP_CLIENT_FINGERPRINT
+  )
 
   if (probe.method !== 'GET') {
     headers.set('Content-Type', 'application/json')
@@ -451,7 +492,9 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
   }
 
   const requestBody =
-    probe.body == null || typeof probe.body === 'string' ? probe.body ?? null : JSON.stringify(probe.body)
+    probe.body == null || typeof probe.body === 'string'
+      ? (probe.body ?? null)
+      : JSON.stringify(probe.body)
 
   attachProbeBrowserContextHeaders(headers, baseUrl, probe)
   await attachProbeSignatureHeaders(headers, baseUrl, probe, requestBody, options.clientCredentials)
@@ -477,7 +520,10 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
       method: probe.method,
       status: 503,
       ok: false,
-      code: error instanceof Error && error.name === 'AbortError' ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_UNREACHABLE',
+      code:
+        error instanceof Error && error.name === 'AbortError'
+          ? 'UPSTREAM_TIMEOUT'
+          : 'UPSTREAM_UNREACHABLE',
       message:
         error instanceof Error && error.name === 'AbortError'
           ? `Auth bootstrap probe timed out after ${AUTH_BOOTSTRAP_REQUEST_TIMEOUT_MS}ms`

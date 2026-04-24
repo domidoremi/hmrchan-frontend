@@ -9,7 +9,10 @@ import {
   classifyAuthBootstrapProbe,
   extractAuthBootstrapError,
   findFatalAuthBootstrapProbe,
+  getLatestAuthBootstrapProbes,
+  findLocalAuditEnvironmentBlockedProbe,
   formatFatalAuthBootstrapProbe,
+  formatLocalAuditEnvironmentBlockedProbe,
   getAuthBootstrapProbeDefinitions,
   validateAuthBootstrapContract,
 } from '../../../scripts/lib/auth-bootstrap.js'
@@ -186,6 +189,43 @@ describe('auth bootstrap helpers', () => {
     ).toBeNull()
   })
 
+  it('uses the latest probe per endpoint when classifying local audit blockers', () => {
+    const probes = [
+      {
+        path: '/api/v1/client/init',
+        method: 'POST',
+        status: 503,
+        code: 'UPSTREAM_TIMEOUT',
+        message: 'timed out',
+      },
+      {
+        path: '/api/v1/client/init',
+        method: 'POST',
+        status: 200,
+        code: null,
+        message: null,
+      },
+      {
+        path: '/api/v1/auth/login',
+        method: 'POST',
+        status: 401,
+        code: null,
+        message: 'Incorrect username or password',
+      },
+      {
+        path: '/api/v1/auth/passkeys/login/options',
+        method: 'POST',
+        status: 503,
+        code: 'SIGNATURE_VERIFIER_UNAVAILABLE',
+        message: 'Request integrity verification unavailable',
+      },
+    ]
+
+    expect(getLatestAuthBootstrapProbes(probes)).toHaveLength(3)
+    expect(findLocalAuditEnvironmentBlockedProbe(probes)).toBeNull()
+    expect(findFatalAuthBootstrapProbe(probes)).toBeNull()
+  })
+
   it('finds and formats the first fatal auth bootstrap probe', () => {
     const fatalProbe = findFatalAuthBootstrapProbe([
       {
@@ -266,6 +306,26 @@ describe('auth bootstrap helpers', () => {
     })
     expect(formatFatalAuthBootstrapProbe(fatalProbe!)).toContain(
       'API upstream is unreachable from the local preview'
+    )
+  })
+
+  it('formats local audit upstream timeouts as environment blockers', () => {
+    const blockedProbe = findLocalAuditEnvironmentBlockedProbe([
+      {
+        path: '/api/v1/client/init',
+        method: 'POST',
+        status: 503,
+        code: 'UPSTREAM_TIMEOUT',
+        message: 'Auth bootstrap probe timed out after 10000ms',
+      },
+    ])
+
+    expect(blockedProbe).toMatchObject({
+      path: '/api/v1/client/init',
+      code: 'UPSTREAM_TIMEOUT',
+    })
+    expect(formatLocalAuditEnvironmentBlockedProbe(blockedProbe!)).toContain(
+      'Local audit environment blocked because Docker/local backend upstream is unreachable'
     )
   })
 

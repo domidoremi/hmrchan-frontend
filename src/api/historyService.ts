@@ -20,6 +20,7 @@
  */
 
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
+import type { PublicResourceId } from '@/types/publicId'
 
 // ========== 类型定义 ==========
 
@@ -76,7 +77,7 @@ export interface HistoryStats {
 }
 
 export interface MyCommentHistoryItem {
-  id: string | number
+  id: PublicResourceId
   content: string
   like_count: number
   reply_count: number
@@ -92,14 +93,14 @@ export interface MyCommentHistoryItem {
 }
 
 export interface MyLikeHistoryItem {
-  comment_id: number
+  comment_id: PublicResourceId
   liked_at: string
   comment_content?: string
   comment_author?: string
   post_id?: string
   post_title?: string
   // 兼容旧字段
-  id?: string | number
+  id?: PublicResourceId
   uuid?: string
   content?: string
   like_count?: number
@@ -109,14 +110,14 @@ export interface MyLikeHistoryItem {
 }
 
 export interface MyCommentFavoriteItem {
-  comment_id: number
+  comment_id: PublicResourceId
   favorited_at: string
   comment_content?: string
   comment_author?: string
   post_id?: string
   post_title?: string
   // 兼容旧字段
-  id?: string | number
+  id?: PublicResourceId
   uuid?: string
   content?: string
   likes_count?: number

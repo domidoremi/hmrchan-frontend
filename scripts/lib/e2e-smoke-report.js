@@ -12,6 +12,7 @@ export function createSmokeSummary(artifactDir, authLogin, authPassword) {
     authSmokeExecuted: false,
     authSmokeSkipReason: null,
     lastFailedCheck: null,
+    failureKind: null,
     lastFailureEvidence: null,
     checks: [],
   }
@@ -134,6 +135,7 @@ export function buildSmokeMarkdownSummary(summary) {
     `- Auth smoke: ${summary.authSmokeExecuted ? `${authPassed}/${authChecks.length} passed${authFailed ? `, ${authFailed} failed` : ''}` : `skipped (${summary.authSmokeSkipReason ?? 'credentials unavailable'})`}`,
     `- Auth skipped routes: ${summary.authSmokeExecuted ? '0' : String(authSkipped)}`,
     `- Last failed check: ${summary.lastFailedCheck ?? 'none'}`,
+    `- Failure kind: ${summary.failureKind ?? 'none'}`,
     `- Last failure path: ${summary.lastFailureEvidence?.pathname ?? summary.lastFailureEvidence?.route ?? 'none'}`,
     `- Last failure title: ${summary.lastFailureEvidence?.title ?? 'n/a'}`,
     `- Failure screenshot: ${summary.lastFailureEvidence?.screenshotPath ?? 'n/a'}`,

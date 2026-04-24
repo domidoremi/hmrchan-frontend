@@ -7,11 +7,12 @@
 
 import { apiClient, type RequestConfig } from './client'
 import { ensureVerificationToken } from './verificationBridge'
+import { assertUuidV7String, type PublicResourceId } from '@/types/publicId'
 
 // ========== 请求/响应类型 ==========
 
 export interface Device {
-  id: string
+  id: PublicResourceId
   fingerprint?: string | null
   device_name?: string | null
   device_type: 'desktop' | 'mobile' | 'tablet'
@@ -60,8 +61,10 @@ export const deviceService = {
   },
 
   /** 取消当前设备信任状态 */
-  async untrustDevice(deviceId: string): Promise<{ success: boolean }> {
-    return apiClient.post('/devices/untrust', { device_id: deviceId })
+  async untrustDevice(deviceId: PublicResourceId): Promise<{ success: boolean }> {
+    return apiClient.post('/devices/untrust', {
+      device_id: assertUuidV7String(deviceId, 'device id'),
+    })
   },
 
   /**
@@ -77,9 +80,10 @@ export const deviceService = {
   /**
    * 注销指定设备
    */
-  async revokeDevice(deviceId: string): Promise<void> {
+  async revokeDevice(deviceId: PublicResourceId): Promise<void> {
+    const publicDeviceId = assertUuidV7String(deviceId, 'device id')
     const verificationToken = await ensureVerificationToken('revoke_sessions')
-    await apiClient.delete(`/devices/${deviceId}`, {
+    await apiClient.delete(`/devices/${publicDeviceId}`, {
       securityPolicy: 'sensitive',
       headers: {
         'X-Verification-Token': verificationToken,
@@ -108,10 +112,10 @@ export const deviceService = {
   /**
    * 仅允许将当前设备标记为 trusted
    */
-  async trustDevice(deviceId: string): Promise<{ success: boolean }> {
+  async trustDevice(deviceId: PublicResourceId): Promise<{ success: boolean }> {
     return apiClient.post(
       '/devices/trust',
-      { device_id: deviceId },
+      { device_id: assertUuidV7String(deviceId, 'device id') },
       {
         securityPolicy: 'sensitive',
         verificationAction: 'update_security_settings',
@@ -122,11 +126,14 @@ export const deviceService = {
   /**
    * 更新设备名称
    */
-  async updateDeviceName(deviceId: string, deviceName: string): Promise<{ success: boolean }> {
+  async updateDeviceName(
+    deviceId: PublicResourceId,
+    deviceName: string
+  ): Promise<{ success: boolean }> {
     return apiClient.post(
       '/devices/rename',
       {
-        device_id: deviceId,
+        device_id: assertUuidV7String(deviceId, 'device id'),
         device_name: deviceName,
       },
       {
