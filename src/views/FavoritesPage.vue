@@ -73,16 +73,6 @@
                   #{{ tag.tag }} ({{ tag.count }})
                 </option>
               </Select>
-
-              <Select
-                v-model="selectedSort"
-                class="favorites-filter"
-                :aria-label="$t('search.sortBy')"
-              >
-                <option v-for="option in sortOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </Select>
             </div>
           </PageToolbar>
 
@@ -276,9 +266,6 @@ let bootstrapRunId = 0
 
 const selectedFolder = ref('')
 const selectedTag = ref('')
-const selectedSort = ref<'created_desc' | 'created_asc' | 'updated_desc' | 'updated_asc'>(
-  'created_desc'
-)
 const showEditDialog = ref(false)
 const isLoadingFavoriteDetail = ref(false)
 const isSavingFavoriteMeta = ref(false)
@@ -287,13 +274,6 @@ const favoriteForm = ref({
   folderName: '',
   notes: '',
 })
-
-const sortOptions = computed(() => [
-  { value: 'created_desc' as const, label: t('favorites.sortNewest') },
-  { value: 'created_asc' as const, label: t('favorites.sortOldest') },
-  { value: 'updated_desc' as const, label: t('favorites.sortUpdated') },
-  { value: 'updated_asc' as const, label: t('favorites.sortUpdatedAsc') },
-])
 
 const {
   visibleItems: visibleFavorites,
@@ -318,19 +298,6 @@ const editingFavoriteTags = computed(() => editingFavorite.value?.tags ?? [])
 
 const thumbnailSizes =
   '(max-width: 500px) 100vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 25vw'
-
-function parseSortValue(value: typeof selectedSort.value) {
-  if (value === 'created_asc') {
-    return { sort_by: 'created_at' as const, sort_order: 'asc' as const }
-  }
-  if (value === 'updated_desc') {
-    return { sort_by: 'updated_at' as const, sort_order: 'desc' as const }
-  }
-  if (value === 'updated_asc') {
-    return { sort_by: 'updated_at' as const, sort_order: 'asc' as const }
-  }
-  return { sort_by: 'created_at' as const, sort_order: 'desc' as const }
-}
 
 function nextBootstrapRunId(): number {
   bootstrapRunId += 1
@@ -505,14 +472,11 @@ function goToLogin() {
   router.push('/login')
 }
 
-watch([selectedFolder, selectedTag, selectedSort], () => {
+watch([selectedFolder, selectedTag], () => {
   if (!isAuthenticated.value || !isProtectedDataReady.value || isBootstrapping.value) return
-  const sort = parseSortValue(selectedSort.value)
   favStore.setFilter({
     folder: selectedFolder.value || undefined,
     tag: selectedTag.value || undefined,
-    sort_by: sort.sort_by,
-    sort_order: sort.sort_order,
   })
 })
 
@@ -608,7 +572,7 @@ onUnmounted(() => {
 
 @media (min-width: 768px) {
   .favorites-toolbar__controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

@@ -4,23 +4,10 @@
 
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
-import type { PostSortBy, SortOrder, ThumbnailQuality } from './postService'
 
 export interface PostsLightParams {
   limit?: number
   cursor?: string | null
-  q?: string
-  platform?: string
-  author_id?: string
-  has_media?: boolean
-  published_after?: string
-  published_before?: string
-  min_views?: number
-  min_likes?: number
-  sort_by?: PostSortBy
-  sort_order?: SortOrder
-  per_platform_limit?: number
-  thumbnail_quality?: ThumbnailQuality
 }
 
 export interface PostLightItem {
@@ -53,18 +40,6 @@ export const postsLightService = {
     const query = buildQuery({
       limit: params.limit ?? DEFAULT_PARAMS.limit,
       cursor: params.cursor ?? null,
-      q: params.q,
-      platform: params.platform,
-      author_id: params.author_id,
-      has_media: params.has_media ?? null,
-      published_after: params.published_after,
-      published_before: params.published_before,
-      min_views: params.min_views ?? null,
-      min_likes: params.min_likes ?? null,
-      sort_by: params.sort_by,
-      sort_order: params.sort_order,
-      per_platform_limit: params.per_platform_limit ?? null,
-      thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
     const response = await apiClient.get<CursorCollectionResponse<PostLightItem>>(
@@ -90,18 +65,6 @@ export const postsLightService = {
     const query = buildQuery({
       limit: params.limit ?? DEFAULT_PARAMS.limit,
       cursor: params.cursor ?? null,
-      q: params.q,
-      platform: params.platform,
-      author_id: params.author_id,
-      has_media: params.has_media ?? null,
-      published_after: params.published_after,
-      published_before: params.published_before,
-      min_views: params.min_views ?? null,
-      min_likes: params.min_likes ?? null,
-      sort_by: params.sort_by,
-      sort_order: params.sort_order,
-      per_platform: params.per_platform_limit ?? null,
-      thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
     const response = await apiClient.get<CursorCollectionResponse<PostLightItem>>(

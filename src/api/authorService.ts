@@ -6,8 +6,6 @@ import { apiClient, type CursorCollectionResponse, type RequestConfig } from './
 import { buildQuery } from '@/utils/queryBuilder'
 import type { PostListItem } from './postService'
 
-export type SortOrder = 'asc' | 'desc'
-
 export interface AuthorListItem {
   id: string
   platform: string
@@ -65,12 +63,6 @@ export interface AuthorRecentPost {
 export interface ListAuthorsParams {
   cursor?: string | null
   limit?: number
-  q?: string
-  platform?: string
-  is_verified?: boolean
-  min_followers?: number
-  sort_by?: string
-  sort_order?: SortOrder
 }
 
 export interface ListAuthorPostsParams {
@@ -86,12 +78,6 @@ export const authorService = {
     const query = buildQuery({
       limit: params.limit ?? 20,
       cursor: params.cursor ?? null,
-      q: params.q,
-      platform: params.platform,
-      is_verified: params.is_verified ?? null,
-      min_followers: params.min_followers ?? null,
-      sort_by: params.sort_by ?? 'created_at',
-      sort_order: params.sort_order ?? 'desc',
     })
 
     // 列表端点使用无尾斜杠路径，避免与后端签名路径规范不一致

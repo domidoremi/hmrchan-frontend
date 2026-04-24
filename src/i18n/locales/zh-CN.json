@@ -253,6 +253,32 @@
       "backupCodeLabel": "备份码",
       "passkeyHint": "使用当前设备或浏览器中已保存的 Passkey。",
       "passkeyAction": "使用 Passkey 继续"
+    },
+    "passkeyRecovery": {
+      "title": "恢复账户访问",
+      "subtitle": "先申请恢复验证码，再完成身份校验后添加新的 Passkey。",
+      "verifyTitle": "校验恢复请求",
+      "verifyHint": "输入邮箱验证码；如果账户仍支持密码登录，也请一并确认密码。",
+      "emailLabel": "恢复邮箱",
+      "codeLabel": "恢复验证码",
+      "passwordLabel": "当前密码",
+      "passwordHint": "仅当该账户已经不再支持密码登录时，才留空此字段。",
+      "sendCodeAction": "发送恢复验证码",
+      "verifyAction": "校验恢复请求",
+      "codeSent": "恢复验证码已发送，请继续完成校验。",
+      "statusTitle": "恢复状态",
+      "statusSubtitle": "此页面会按后端 contract 读取当前恢复工作流状态。",
+      "statusLabel": "工作流状态",
+      "approvalLabel": "审批状态",
+      "cooldownLabel": "冷却截止时间",
+      "expiresLabel": "过期时间",
+      "readyHint": "当前设备上的恢复流程已通过，可以立即注册新的 Passkey。",
+      "pendingHint": "恢复流程暂未进入可注册状态，请在审批或冷却状态变化后刷新。",
+      "refreshAction": "刷新状态",
+      "registerAction": "注册新的 Passkey",
+      "registerSuccess": "Passkey 恢复已完成，请使用新的 Passkey 重新登录。",
+      "deviceNameLabel": "Passkey 设备名称",
+      "loginHint": "已经恢复访问？"
     }
   },
   "video": {

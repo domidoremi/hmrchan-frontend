@@ -349,7 +349,7 @@ describe('ExplorePage', () => {
     exploreMocks.isServiceUnavailableError.mockReturnValue(false)
   })
 
-  it('renders loaded posts, navigates with "/" shortcut, and refetches for filters', async () => {
+  it('renders loaded posts, navigates with "/" shortcut, and requests cursor-based explore data', async () => {
     exploreMocks.loadCachedPosts.mockResolvedValue({
       data: [
         { id: 'post-1', title: 'First post', platform: 'youtube' },
@@ -382,40 +382,10 @@ describe('ExplorePage', () => {
     expect(wrapper.findAll('.post-card-stub')).toHaveLength(2)
     expect(wrapper.get('[data-testid="load-more-section"]').attributes('data-total')).toBe('26')
     expect(exploreMocks.loadCachedPosts).toHaveBeenCalledWith(
-      expect.objectContaining({
+      {
         cursor: null,
         pageSize: 24,
-        sortBy: 'published_at',
-        sortOrder: 'desc',
-        thumbnailQuality: 'large',
-      }),
-      expect.any(Object)
-    )
-
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('explore.popular'))!
-      .trigger('click')
-    await flushPromises()
-
-    expect(exploreMocks.loadCachedPosts).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        sortBy: 'like_count',
-        sortOrder: 'desc',
-      }),
-      expect.any(Object)
-    )
-
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('YouTube'))!
-      .trigger('click')
-    await flushPromises()
-
-    expect(exploreMocks.loadCachedPosts).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        platform: 'youtube',
-      }),
+      },
       expect.any(Object)
     )
 

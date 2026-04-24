@@ -6,7 +6,7 @@
 
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
-import type { PostListItem, ThumbnailQuality } from './postService'
+import type { PostListItem } from './postService'
 import type { AuthorListItem } from './authorService'
 
 // ========== 类型定义 ==========
@@ -32,17 +32,12 @@ export interface SearchPostsParams {
   q: string
   cursor?: string | null
   limit?: number
-  platform?: string
-  sort_by?: 'relevance' | 'published_at' | 'view_count'
-  sort_order?: 'asc' | 'desc'
-  thumbnail_quality?: ThumbnailQuality
 }
 
 export interface SearchAuthorsParams {
   q: string
   cursor?: string | null
   limit?: number
-  platform?: string
 }
 
 // ========== 搜索服务 ==========
@@ -59,11 +54,6 @@ export const searchService = {
       q: params.q,
       limit: params.limit ?? 20,
       cursor: params.cursor ?? null,
-      platform: params.platform,
-      sort_by: params.sort_by === 'relevance' ? null : params.sort_by,
-      sort_order:
-        params.sort_by && params.sort_by !== 'relevance' ? (params.sort_order ?? 'desc') : null,
-      thumbnail_quality: params.thumbnail_quality,
     })
 
     const response = await apiClient.get<CursorCollectionResponse<PostListItem>>(
@@ -89,7 +79,6 @@ export const searchService = {
       q: params.q,
       limit: params.limit ?? 20,
       cursor: params.cursor ?? null,
-      platform: params.platform,
     })
 
     const response = await apiClient.get<CursorCollectionResponse<AuthorListItem>>(
@@ -107,12 +96,12 @@ export const searchService = {
   /**
    * 获取搜索建议
    */
-  async getSuggestions(q: string, limit = 10, config?: RequestConfig): Promise<SearchSuggestion[]> {
+  async getSuggestions(q: string, config?: RequestConfig): Promise<SearchSuggestion[]> {
     if (!q.trim() || q.trim().length < 2) {
       return []
     }
     const result = await apiClient.get<SearchSuggestion[] | SearchSuggestionResponse>(
-      `/search/suggestions?q=${encodeURIComponent(q)}&limit=${limit}`,
+      `/search/suggestions?q=${encodeURIComponent(q)}`,
       {
         skipErrorToast: true,
         ...config,

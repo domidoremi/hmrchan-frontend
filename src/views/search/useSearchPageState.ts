@@ -11,7 +11,6 @@ import { searchService } from '@/api/searchService'
 import type { AuthorListItem } from '@/api/authorService'
 import { postService, type PostListItem } from '@/api/postService'
 import { historyService, type HistoryStats, type SearchHistoryItem } from '@/api/historyService'
-import { useDebouncedRef } from '@/composables/useDebouncedRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useAuthStore, useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
@@ -25,12 +24,7 @@ import {
   computeMayHaveMoreResults,
   getAuthorMemo,
   getPostMemo,
-  getThumbnailQuality,
   isAbortError,
-  shufflePosts,
-  type SearchPlatformFilter,
-  type SearchSortBy,
-  type SearchSortOrder,
   type SearchTabId,
 } from './searchPageModel'
 
@@ -44,14 +38,6 @@ export function useSearchPageState() {
 
   const query = computed(() => (route.query['q'] as string) || '')
   const activeTab = ref<SearchTabId>('posts')
-  const sortBy = ref<SearchSortBy>('relevance')
-  const sortOrder = ref<SearchSortOrder>('desc')
-  const currentPlatform = ref<SearchPlatformFilter>('all')
-  const searchControlKey = computed(
-    () => `${sortBy.value}|${sortOrder.value}|${currentPlatform.value}`
-  )
-  const { debounced: debouncedSearchControlKey, cancel: cancelSearchControlDebounce } =
-    useDebouncedRef(searchControlKey, 120)
 
   const results = ref<PostListItem[]>([])
   const discoverPosts = ref<PostListItem[]>([])
@@ -108,10 +94,6 @@ export function useSearchPageState() {
     router.back()
   }
 
-  function toggleSortOrder() {
-    sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
-  }
-
   function abortDiscoverRequest() {
     discoverController?.abort()
     discoverController = null
@@ -149,14 +131,11 @@ export function useSearchPageState() {
       const res = await postService.listPosts(
         {
           limit: discoverPageSize.value,
-          sort_by: 'published_at',
-          sort_order: 'desc',
-          thumbnail_quality: getThumbnailQuality(),
         },
         requestSignal ? { signal: requestSignal } : undefined
       )
       if (requestSignal?.aborted || requestToken !== discoverRequestToken) return
-      discoverPosts.value = shufflePosts(res.items)
+      discoverPosts.value = res.items
     } catch (err) {
       if (requestSignal?.aborted || isAbortError(err) || requestToken !== discoverRequestToken) {
         return
@@ -191,16 +170,11 @@ export function useSearchPageState() {
     hasMoreState.value = false
 
     try {
-      const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
       const res = await searchService.searchPosts(
         {
           q: query.value,
           limit: pageSize.value,
           cursor: null,
-          sort_by: sortBy.value,
-          sort_order: sortOrder.value,
-          thumbnail_quality: getThumbnailQuality(),
-          ...(platform && { platform }),
         },
         {
           ...(requestSignal ? { signal: requestSignal } : undefined),
@@ -242,16 +216,11 @@ export function useSearchPageState() {
     isLoadingMore.value = true
 
     try {
-      const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
       const res = await searchService.searchPosts(
         {
           q: query.value,
           cursor: nextCursor.value,
           limit: pageSize.value,
-          sort_by: sortBy.value,
-          sort_order: sortOrder.value,
-          thumbnail_quality: getThumbnailQuality(),
-          ...(platform && { platform }),
         },
         {
           signal: controller.signal,
@@ -365,12 +334,7 @@ export function useSearchPageState() {
         query.value.trim(),
         activeTab.value,
         resultCount,
-        buildSearchHistoryFilters(
-          activeTab.value,
-          sortBy.value,
-          sortOrder.value,
-          currentPlatform.value
-        )
+        buildSearchHistoryFilters(activeTab.value)
       )
       .catch(() => {
         if (lastRecordedSearchKey === normalizedQuery) {
@@ -471,14 +435,6 @@ export function useSearchPageState() {
     }
   })
 
-  watch(debouncedSearchControlKey, () => {
-    const controller = new AbortController()
-    onWatcherCleanup(() => controller.abort())
-    if (query.value) {
-      void search(controller.signal)
-    }
-  })
-
   watch(activeTab, (tab) => {
     const controller = new AbortController()
     onWatcherCleanup(() => controller.abort())
@@ -529,7 +485,6 @@ export function useSearchPageState() {
   })
 
   onBeforeUnmount(() => {
-    cancelSearchControlDebounce()
     postsRequestToken += 1
     authorRequestToken += 1
     discoverRequestToken += 1
@@ -547,9 +502,6 @@ export function useSearchPageState() {
   return {
     query,
     activeTab,
-    sortBy,
-    sortOrder,
-    currentPlatform,
     isAuthenticated,
     results,
     discoverPosts,
@@ -573,7 +525,6 @@ export function useSearchPageState() {
     topSearchQueries,
     mayHaveMoreResults,
     goBack,
-    toggleSortOrder,
     fetchDiscoverPosts,
     search,
     searchAuthors,

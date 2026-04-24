@@ -42,7 +42,7 @@ describe('useCachedPosts', () => {
       })
 
       const { load } = useCachedPostList(mockFetch, { revalidate: false })
-      const result = await load({ page: 1 })
+      const result = await load({ limit: 20, cursor: null })
 
       expect(result.fromCache).toBe(true)
       expect(result.data).toEqual(mockData)
@@ -58,10 +58,10 @@ describe('useCachedPosts', () => {
       const { load, state } = useCachedPostList(mockFetch)
 
       expect(state.value.loading).toBe(false)
-      const result = await load({ page: 1 })
+      const result = await load({ limit: 20, cursor: null })
 
       expect(result.fromCache).toBe(false)
-      expect(mockFetch).toHaveBeenCalledWith({ page: 1 })
+      expect(mockFetch).toHaveBeenCalledWith({ limit: 20, cursor: null })
       expect(postCache.setList).toHaveBeenCalled()
     })
 
@@ -80,14 +80,14 @@ describe('useCachedPosts', () => {
       })
 
       const { load, data, total } = useCachedPostList(mockFetch, { revalidate: true })
-      const result = await load({ page: 1 })
+      const result = await load({ limit: 20, cursor: null })
 
       // Should return fresh data after revalidation
       expect(result.fromCache).toBe(false)
       expect(result.data).toEqual(freshData)
       expect(data.value).toEqual(freshData)
       expect(total.value).toBe(2)
-      expect(mockFetch).toHaveBeenCalledWith({ page: 1 })
+      expect(mockFetch).toHaveBeenCalledWith({ limit: 20, cursor: null })
       expect(postCache.setList).toHaveBeenCalled()
     })
 
@@ -104,14 +104,14 @@ describe('useCachedPosts', () => {
       vi.mocked(postCache.getList).mockResolvedValue(undefined)
 
       const { load } = useCachedPostList(mockFetch, { revalidate: false })
-      const result = await load({ cursor: null, page_size: 12 })
+      const result = await load({ cursor: null, limit: 12 })
 
       expect(result.meta).toEqual({
         next_cursor: 'cursor-1',
         has_more: true,
       })
       expect(postCache.setList).toHaveBeenCalledWith(
-        { cursor: null, page_size: 12 },
+        { cursor: null, limit: 12 },
         mockData,
         0,
         undefined,

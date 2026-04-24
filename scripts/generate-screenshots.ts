@@ -320,10 +320,8 @@ async function generateScreenshot(
           contentType: 'application/json',
           body: JSON.stringify({
             items: generateMockPosts(12),
-            total: 100,
-            page: 1,
-            page_size: 12,
-            total_pages: 9,
+            next_cursor: null,
+            has_more: false,
           }),
         })
       } else if (url.includes('/authors')) {
@@ -332,10 +330,8 @@ async function generateScreenshot(
           contentType: 'application/json',
           body: JSON.stringify({
             items: generateMockAuthors(8),
-            total: 50,
-            page: 1,
-            page_size: 8,
-            total_pages: 7,
+            next_cursor: null,
+            has_more: false,
           }),
         })
       } else {

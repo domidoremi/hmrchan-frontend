@@ -12,18 +12,10 @@ describe('exploreFeed helpers', () => {
       buildExploreListParams({
         cursor: 'cursor-1',
         pageSize: 12,
-        sortBy: 'published_at',
-        sortOrder: 'desc',
-        platform: 'youtube',
-        thumbnailQuality: 'medium',
       })
     ).toEqual({
       cursor: 'cursor-1',
       limit: 12,
-      sort_by: 'published_at',
-      sort_order: 'desc',
-      platform: 'youtube',
-      thumbnail_quality: 'medium',
     })
   })
 

@@ -1,19 +1,8 @@
-import type {
-  ListPostsParams,
-  PostListItem,
-  PostListResponse,
-  PostSortBy,
-  SortOrder,
-  ThumbnailQuality,
-} from '@/api/postService'
+import type { ListPostsParams, PostListItem, PostListResponse } from '@/api/postService'
 
 export interface ExploreFeedRequestOptions {
   cursor?: string | null
   pageSize: number
-  sortBy: PostSortBy
-  sortOrder: SortOrder
-  platform?: string
-  thumbnailQuality?: ThumbnailQuality
 }
 
 export interface ExploreCursorState {
@@ -25,10 +14,6 @@ export function buildExploreListParams(options: ExploreFeedRequestOptions): List
   return {
     limit: options.pageSize,
     cursor: options.cursor ?? null,
-    sort_by: options.sortBy,
-    sort_order: options.sortOrder,
-    thumbnail_quality: options.thumbnailQuality,
-    ...(options.platform ? { platform: options.platform } : {}),
   }
 }
 

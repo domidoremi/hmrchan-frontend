@@ -3,7 +3,7 @@
  *
  * 统一负责：
  * - 同源 /api/v1/* 请求基线
- * - 内存 access token 注入与 401 单飞 refresh
+ * - BFF cookie 会话传输与 401 单次重试门禁
  * - request-integrity V2
  * - challenge / verification / client re-init / contract gate
  * - multipart 自组装上传
@@ -42,22 +42,10 @@ import {
   setRateLimitCooldown,
 } from './client/transport'
 import { applyRequestSecurityHeaders } from './client/request-security'
-import type {
-  ApiResponse,
-  CursorCollectionResponse,
-  PaginatedApiResponse,
-  PaginatedApiResponseWithLimit,
-  RequestConfig,
-} from './client/types'
+import type { ApiResponse, CursorCollectionResponse, RequestConfig } from './client/types'
 
 export { ApiError }
-export type {
-  ApiResponse,
-  CursorCollectionResponse,
-  PaginatedApiResponse,
-  PaginatedApiResponseWithLimit,
-  RequestConfig,
-}
+export type { ApiResponse, CursorCollectionResponse, RequestConfig }
 
 const textEncoder = new TextEncoder()
 const inflightRequests = new Map<string, Promise<unknown>>()

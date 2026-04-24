@@ -253,6 +253,32 @@
       "backupCodeLabel": "備份碼",
       "passkeyHint": "使用目前裝置或瀏覽器中已儲存的 Passkey。",
       "passkeyAction": "使用 Passkey 繼續"
+    },
+    "passkeyRecovery": {
+      "title": "恢復帳號存取",
+      "subtitle": "先申請恢復驗證碼，再完成身分確認後新增新的 Passkey。",
+      "verifyTitle": "驗證恢復請求",
+      "verifyHint": "輸入電子郵件驗證碼；如果帳號仍支援密碼登入，也請一併確認密碼。",
+      "emailLabel": "恢復用電子郵件",
+      "codeLabel": "恢復驗證碼",
+      "passwordLabel": "目前密碼",
+      "passwordHint": "只有在該帳號已不再支援密碼登入時，才留空此欄位。",
+      "sendCodeAction": "發送恢復驗證碼",
+      "verifyAction": "驗證恢復請求",
+      "codeSent": "恢復驗證碼已送出，請繼續完成驗證。",
+      "statusTitle": "恢復狀態",
+      "statusSubtitle": "此頁面會依照後端 contract 讀取目前的恢復工作流程狀態。",
+      "statusLabel": "工作流程狀態",
+      "approvalLabel": "審批狀態",
+      "cooldownLabel": "冷卻截止時間",
+      "expiresLabel": "到期時間",
+      "readyHint": "此裝置上的恢復流程已通過，可以立即註冊新的 Passkey。",
+      "pendingHint": "恢復流程尚未進入可註冊狀態，請在審批或冷卻狀態變更後重新整理。",
+      "refreshAction": "重新整理狀態",
+      "registerAction": "註冊新的 Passkey",
+      "registerSuccess": "Passkey 恢復已完成，請使用新的 Passkey 重新登入。",
+      "deviceNameLabel": "Passkey 裝置名稱",
+      "loginHint": "已經恢復存取？"
     }
   },
   "video": {

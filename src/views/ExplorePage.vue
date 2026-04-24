@@ -35,55 +35,8 @@
               <strong>{{ visiblePosts.length }}</strong>
               <span>{{ $t('search.tab.posts') }}</span>
             </PageMetaChip>
-            <PageMetaChip>{{ currentSortLabel }}</PageMetaChip>
-            <PageMetaChip>{{ currentPlatformLabel }}</PageMetaChip>
           </PageMetaRow>
         </template>
-
-        <PageToolbar
-          class="filters-row page-toolbar-shell--comfortable"
-          role="group"
-          :aria-label="$t('explore.filters')"
-        >
-          <ControlGroup
-            class="filters page-control-group-shell--comfortable"
-            role="group"
-            :aria-label="$t('explore.sortBy')"
-          >
-            <ControlButton
-              v-for="sort in sortOptions"
-              :key="sort.value"
-              class="filter-btn"
-              :pressed="currentSort === sort.value"
-              :aria-label="sort.label"
-              @click="currentSort = sort.value"
-            >
-              {{ sort.label }}
-            </ControlButton>
-          </ControlGroup>
-
-          <ControlGroup
-            class="platform-filters page-control-group-shell--comfortable"
-            justify="end"
-            role="group"
-            :aria-label="$t('explore.platformFilter')"
-          >
-            <ControlButton
-              v-for="platform in platformOptions"
-              :key="platform.value"
-              class="platform-btn"
-              size="compact"
-              :pressed="currentPlatform === platform.value"
-              :aria-label="platform.label"
-              @click="currentPlatform = platform.value"
-            >
-              <template #start>
-                <AnimatedIcon name="explore" :fallback-icon="platform.icon" size="sm" />
-              </template>
-              <span class="platform-label">{{ platform.label }}</span>
-            </ControlButton>
-          </ControlGroup>
-        </PageToolbar>
       </PageHeroShell>
 
       <h2 class="sr-only">{{ $t('search.tab.posts') }}</h2>
@@ -157,7 +110,6 @@ defineOptions({ name: 'ExplorePage' })
 import {
   ref,
   computed,
-  markRaw,
   onMounted,
   onBeforeUnmount,
   onActivated,
@@ -173,8 +125,7 @@ import {
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Search, Globe } from '@lucide/vue'
-import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
+import { Search } from '@lucide/vue'
 import { ApiError } from '@/api/client'
 import { postService, type PostListItem } from '@/api/postService'
 import { useCachedPostList } from '@/composables/useCachedPosts'
@@ -200,11 +151,9 @@ import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import NextPostFab from '@/components/ui/NextPostFab.vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
-import ControlGroup from '@/components/appearance/ControlGroup.vue'
 import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
 import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
 import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
-import PageToolbar from '@/components/appearance/PageToolbar.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -222,10 +171,6 @@ if (renderDebugEnabled) {
     console.debug('[render:triggered][ExplorePage]', event.type, String(event.key))
   })
 }
-
-const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
-type ExplorePlatform = 'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'
-const currentPlatform = ref<ExplorePlatform>('all')
 
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
@@ -313,22 +258,12 @@ const lastVisibleCount = ref(0)
 let isActive = true
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
-const currentSortLabel = computed(
-  () =>
-    sortOptions.value.find((option) => option.value === currentSort.value)?.label ??
-    t('explore.newest')
-)
-const currentPlatformLabel = computed(
-  () =>
-    platformOptions.value.find((option) => option.value === currentPlatform.value)?.label ??
-    t('explore.allPlatforms')
-)
 const heroBadgeLabel = computed(() => {
   if (visiblePosts.value.length > 0) {
     return `${visiblePosts.value.length} ${t('search.tab.posts')}`
   }
 
-  return currentPlatformLabel.value
+  return t('search.tab.posts')
 })
 const loadMoreTotal = computed(() =>
   hasKnownTotal.value
@@ -355,28 +290,6 @@ const onGlobalKeydown = (event: KeyboardEvent) => {
   goToSearch()
 }
 
-const sortOptions = computed(() => [
-  { value: 'newest' as const, label: t('explore.newest') },
-  { value: 'popular' as const, label: t('explore.popular') },
-  { value: 'trending' as const, label: t('explore.trending') },
-])
-const platformIcons = {
-  all: markRaw(Globe),
-  youtube: markRaw(IconYoutube),
-  tiktok: markRaw(IconTiktok),
-  twitter: markRaw(IconX),
-  instagram: markRaw(IconInstagram),
-} as const
-
-// 品牌 SVG 图标
-const platformOptions = computed(() => [
-  { value: 'all' as const, label: t('explore.allPlatforms'), icon: platformIcons.all },
-  { value: 'youtube' as const, label: 'YouTube', icon: platformIcons.youtube },
-  { value: 'tiktok' as const, label: 'TikTok', icon: platformIcons.tiktok },
-  { value: 'twitter' as const, label: 'X', icon: platformIcons.twitter },
-  { value: 'instagram' as const, label: 'Instagram', icon: platformIcons.instagram },
-])
-
 function goToPost(postId: string, thumbnailSrc: string | null) {
   storePostNavigationContext(posts.value, postId, 'explore')
   cachePostThumbnailPreview(postId, thumbnailSrc)
@@ -385,18 +298,6 @@ function goToPost(postId: string, thumbnailSrc: string | null) {
 
 function goToSearch() {
   router.push({ name: 'search' })
-}
-
-function getSortParams(sort: 'newest' | 'popular' | 'trending') {
-  switch (sort) {
-    case 'popular':
-      return { sort_by: 'like_count' as const, sort_order: 'desc' as const }
-    case 'trending':
-      return { sort_by: 'view_count' as const, sort_order: 'desc' as const }
-    case 'newest':
-    default:
-      return { sort_by: 'published_at' as const, sort_order: 'desc' as const }
-  }
 }
 
 function isAbortError(err: unknown): boolean {
@@ -455,25 +356,10 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
 
   error.value = null
 
-  // 根据屏幕尺寸选择缩略图质量
-  const getThumbnailQuality = () => {
-    if (typeof window === 'undefined') return 'medium'
-    const width = window.innerWidth
-    if (width < 640) return 'medium'
-    return 'large'
-  }
-
-  const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
-
   try {
-    const { sort_by, sort_order } = getSortParams(currentSort.value)
     const requestParams = buildExploreListParams({
       cursor: reset ? null : nextCursor.value,
       pageSize: pageSize.value,
-      sortBy: sort_by,
-      sortOrder: sort_order,
-      thumbnailQuality: getThumbnailQuality(),
-      ...(platform ? { platform } : {}),
     })
     const result = await loadCachedPosts(
       requestParams,
@@ -519,13 +405,9 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
     const publicFallbackModule = await loadPublicFallbackModule()
     if (publicFallbackModule.isServiceUnavailableError(err)) {
       const { getFallbackExplorePosts } = await loadExploreFallbackModule()
-      const { sort_by, sort_order } = getSortParams(currentSort.value)
       const fallbackResult = getFallbackExplorePosts({
         cursor: reset ? null : nextCursor.value,
         limit: pageSize.value,
-        sort_by,
-        sort_order,
-        ...(platform ? { platform } : {}),
       })
       const fallbackCursorState = extractExploreCursorState(fallbackResult)
 
@@ -548,13 +430,7 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       return true
     }
 
-    // 筛选时，即使有旧数据也要显示错误
-    if (posts.value.length === 0 || platform) {
-      if (reset && platform) {
-        // 清空旧数据，显示错误状态
-        posts.value = []
-        total.value = 0
-      }
+    if (posts.value.length === 0) {
       if (err instanceof ApiError) {
         error.value = err.message
       } else {
@@ -733,18 +609,6 @@ const handleCardHeightChange = throttleRAF(() => {
   // 只有在需要重新平衡时才调用 redistribute
 })
 
-watch(currentSort, () => {
-  const controller = new AbortController()
-  onWatcherCleanup(() => controller.abort())
-  void fetchPosts(true, controller.signal)
-})
-
-watch(currentPlatform, () => {
-  const controller = new AbortController()
-  onWatcherCleanup(() => controller.abort())
-  void fetchPosts(true, controller.signal)
-})
-
 watch(pageSize, () => {
   const controller = new AbortController()
   onWatcherCleanup(() => controller.abort())
@@ -753,9 +617,6 @@ watch(pageSize, () => {
 })
 
 watchSyncEffect(() => {
-  // 切换筛选时同步清理错误态，避免旧错误闪烁到新请求周期。
-  void currentSort.value
-  void currentPlatform.value
   error.value = null
 })
 
@@ -900,47 +761,8 @@ onBeforeUnmount(() => {
   color: var(--semantic-text-tertiary);
 }
 
-.filters {
-  flex: 1 1 auto;
-  align-items: stretch;
-}
-
-.filter-btn {
-  white-space: nowrap;
-}
-
-.filters-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-3);
-  margin-bottom: 0;
-}
-
 .explore-hero .page-actions {
   flex-wrap: wrap;
-}
-
-.platform-filters {
-  justify-content: flex-end;
-  align-items: stretch;
-}
-
-.platform-btn {
-  justify-content: flex-start;
-  min-inline-size: max-content;
-  flex: 0 1 auto;
-}
-
-.platform-label {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .platform-label {
-    display: inline;
-  }
 }
 
 /* ========== JS Masonry 布局 - 避免 CLS ========== */

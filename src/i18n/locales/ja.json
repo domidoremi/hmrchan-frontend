@@ -253,6 +253,32 @@
       "backupCodeLabel": "バックアップコード",
       "passkeyHint": "この端末やブラウザに保存されたパスキーを使用します。",
       "passkeyAction": "パスキーで続行"
+    },
+    "passkeyRecovery": {
+      "title": "アカウントアクセスを回復",
+      "subtitle": "回復コードを受け取り、本人確認を完了してから新しいパスキーを追加します。",
+      "verifyTitle": "回復リクエストを確認",
+      "verifyHint": "メールコードを入力し、パスワードログインがまだ有効ならパスワードも確認してください。",
+      "emailLabel": "回復メールアドレス",
+      "codeLabel": "回復コード",
+      "passwordLabel": "現在のパスワード",
+      "passwordHint": "このアカウントでパスワードログインが使えない場合のみ空欄にしてください。",
+      "sendCodeAction": "回復コードを送信",
+      "verifyAction": "回復リクエストを確認",
+      "codeSent": "回復コードを送信しました。続けて確認を完了してください。",
+      "statusTitle": "回復ステータス",
+      "statusSubtitle": "この画面はバックエンド contract の永続的な回復状態を読み取ります。",
+      "statusLabel": "ワークフローステータス",
+      "approvalLabel": "承認ステータス",
+      "cooldownLabel": "クールダウン終了",
+      "expiresLabel": "有効期限",
+      "readyHint": "この端末では回復が承認されました。今すぐ新しいパスキーを登録できます。",
+      "pendingHint": "まだ登録可能な状態ではありません。承認またはクールダウンが変わったら更新してください。",
+      "refreshAction": "状態を更新",
+      "registerAction": "新しいパスキーを登録",
+      "registerSuccess": "パスキー回復が完了しました。新しいパスキーで再度サインインしてください。",
+      "deviceNameLabel": "パスキー端末名",
+      "loginHint": "アクセスを回復済みですか？"
     }
   },
   "video": {

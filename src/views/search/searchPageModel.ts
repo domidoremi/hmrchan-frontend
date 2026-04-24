@@ -2,9 +2,6 @@ import type { AuthorListItem, PostListItem, PublicVisibilityScope } from '@/api'
 import type { HistoryStats, SearchHistoryItem } from '@/api/historyService'
 
 export type SearchTabId = 'posts' | 'authors'
-export type SearchSortBy = 'relevance' | 'published_at' | 'view_count'
-export type SearchSortOrder = 'asc' | 'desc'
-export type SearchPlatformFilter = 'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'
 
 export interface SearchQueryCount {
   query: string
@@ -55,40 +52,10 @@ export function buildSearchRecordKey(query: string): string {
   return query.trim().toLowerCase()
 }
 
-export function buildSearchHistoryFilters(
-  activeTab: SearchTabId,
-  sortBy: SearchSortBy,
-  sortOrder: SearchSortOrder,
-  currentPlatform: SearchPlatformFilter
-): Record<string, unknown> {
-  const filters: Record<string, unknown> = {
+export function buildSearchHistoryFilters(activeTab: SearchTabId): Record<string, unknown> {
+  return {
     tab: activeTab,
-    sort_by: sortBy,
-    sort_order: sortOrder,
   }
-
-  if (currentPlatform !== 'all') {
-    filters['platform'] = currentPlatform
-  }
-
-  return filters
-}
-
-export function shufflePosts(items: PostListItem[]): PostListItem[] {
-  const copy = [...items]
-
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[copy[i], copy[j]] = [copy[j], copy[i]]
-  }
-
-  return copy
-}
-
-export function getThumbnailQuality(viewportWidth?: number): 'medium' | 'large' {
-  const width = viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 0)
-  if (width < 640) return 'medium'
-  return 'large'
 }
 
 export function isAbortError(err: unknown): boolean {

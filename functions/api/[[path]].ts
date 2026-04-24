@@ -606,7 +606,6 @@ function isBrowserAuthFacadePath(path: string): boolean {
   return [
     'v1/auth/login',
     'v1/auth/logout',
-    'v1/auth/refresh',
     AUTH_SESSION_RESOLVE_FACADE_PATH,
     'v1/auth/verify-risk-login',
     'v1/auth/risk-login/webauthn/options',
@@ -1072,24 +1071,6 @@ async function handleBrowserAuthFacade(
     }
     case AUTH_SESSION_RESOLVE_FACADE_PATH:
       return resolveSessionFromCookies(request, env, apiBaseUrl)
-    case 'v1/auth/refresh': {
-      const responseHeaders = new Headers()
-      const refreshToken = getCookieValue(request, BFF_REFRESH_COOKIE_NAME)
-      if (!refreshToken) {
-        appendClearedSessionCookies(responseHeaders)
-        return jsonResponse({ authenticated: false }, 401, responseHeaders)
-      }
-
-      const refreshed = await refreshBffSession(env, refreshToken, fingerprint)
-      if (!refreshed) {
-        appendClearedSessionCookies(responseHeaders)
-        return jsonResponse({ authenticated: false }, 401, responseHeaders)
-      }
-
-      appendSessionCookies(responseHeaders, refreshed)
-      const summary = await buildSessionSummary(apiBaseUrl, refreshed)
-      return jsonResponse(summary, 200, responseHeaders)
-    }
     case 'v1/auth/logout': {
       const accessToken = getCookieValue(request, BFF_ACCESS_COOKIE_NAME)
       const refreshToken = getCookieValue(request, BFF_REFRESH_COOKIE_NAME)
@@ -1192,6 +1173,15 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       404,
       'NOT_FOUND',
       'Internal API paths are not exposed on the public frontend facade.'
+    )
+  }
+  if (compactPath === 'v1/auth/refresh') {
+    return buildErrorResponse(
+      request,
+      isDev,
+      404,
+      'NOT_FOUND',
+      'This legacy auth path is retired. Resolve browser sessions through /api/v1/auth/session:resolve.'
     )
   }
   const handledBrowserAuthResponse = await handleBrowserAuthFacade(

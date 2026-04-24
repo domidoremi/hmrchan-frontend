@@ -170,6 +170,44 @@ export interface WebAuthnAuthenticationOptionsResponse {
   session_realm?: string
 }
 
+export interface PasskeyRecoveryStartRequest {
+  email: string
+  turnstile_token?: string
+}
+
+export interface PasskeyRecoveryVerifyRequest {
+  email: string
+  verification_code: string
+  password?: string
+}
+
+export interface PasskeyRecoveryVerifyResponse {
+  recovery_id: string
+  approval_required?: boolean
+  approval_status?: string | null
+  cooldown_until?: string | null
+  expires_at?: string | null
+}
+
+export interface PasskeyRecoveryStatus {
+  recovery_id?: string
+  status: string
+  approval_status?: string | null
+  cooldown_until?: string | null
+  expires_at?: string | null
+  can_register: boolean
+}
+
+export interface RecoveryPasskeyRegistrationRequest {
+  recovery_id: string
+  device_name?: string
+}
+
+export interface RecoveryPasskeyRegistrationOptionsResponse {
+  ceremony_id: string
+  options: Record<string, unknown>
+}
+
 export const authService = {
   async login(credentials: LoginRequest): Promise<AuthLoginFlowResponse> {
     let securityWarning: AuthResponse['_securityWarning']
@@ -212,13 +250,6 @@ export const authService = {
     } catch {
       // ignore logout failures, local state still clears
     }
-  },
-
-  async refreshToken(): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>('/auth/refresh', null, {
-      skipAuth: true,
-      skipErrorToast: true,
-    })
   },
 
   async resolveSession(): Promise<AuthResponse | { authenticated: false }> {
@@ -541,9 +572,70 @@ export const authService = {
     )
   },
 
+  async startPasskeyRecovery(
+    data: PasskeyRecoveryStartRequest
+  ): Promise<{ success?: boolean; message?: string }> {
+    return apiClient.post('/auth/passkeys/recovery/start', data, {
+      skipAuth: true,
+      skipErrorToast: true,
+      skipChallengeRetry: true,
+    })
+  },
+
+  async verifyPasskeyRecovery(
+    data: PasskeyRecoveryVerifyRequest
+  ): Promise<PasskeyRecoveryVerifyResponse> {
+    return apiClient.post<PasskeyRecoveryVerifyResponse>('/auth/passkeys/recovery/verify', data, {
+      skipAuth: true,
+      skipErrorToast: true,
+      skipChallengeRetry: true,
+    })
+  },
+
+  async getPasskeyRecoveryStatus(recoveryId: string): Promise<PasskeyRecoveryStatus> {
+    return apiClient.get<PasskeyRecoveryStatus>(`/auth/passkeys/recovery/${recoveryId}/status`, {
+      skipAuth: true,
+      skipErrorToast: true,
+    })
+  },
+
+  async beginRecoveryPasskeyRegistration(
+    data: RecoveryPasskeyRegistrationRequest
+  ): Promise<RecoveryPasskeyRegistrationOptionsResponse> {
+    return apiClient.post<RecoveryPasskeyRegistrationOptionsResponse>(
+      '/auth/passkeys/recovery/register/options',
+      data,
+      {
+        skipAuth: true,
+        skipErrorToast: true,
+      }
+    )
+  },
+
+  async finishRecoveryPasskeyRegistration(
+    recoveryId: string,
+    ceremonyId: string,
+    credential: Record<string, unknown>,
+    deviceName?: string
+  ): Promise<{ success?: boolean; message?: string }> {
+    return apiClient.post(
+      '/auth/passkeys/recovery/register/verify',
+      {
+        recovery_id: recoveryId,
+        ceremony_id: ceremonyId,
+        credential,
+        ...(deviceName ? { device_name: deviceName } : {}),
+      },
+      {
+        skipAuth: true,
+        skipErrorToast: true,
+      }
+    )
+  },
+
   async getSessions(): Promise<{
     sessions: Array<{
-      id: string | number
+      id: string
       device_name?: string
       device_type?: string
       ip_address?: string
@@ -558,7 +650,7 @@ export const authService = {
     })
   },
 
-  async revokeSession(sessionId: string | number): Promise<void> {
+  async revokeSession(sessionId: string): Promise<void> {
     return apiClient.delete(`/auth/sessions/${sessionId}`, {
       securityPolicy: 'sensitive',
       verificationAction: 'revoke_sessions',

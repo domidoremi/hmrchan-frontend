@@ -392,10 +392,7 @@ function extractHomeCandidates(homePayload) {
 
 async function discoverProductionEntities(baseUrl) {
   const homeUrl = new URL('/api/v1/home', baseUrl).toString()
-  const discussionUrl = new URL(
-    '/api/v1/discussions?page=1&page_size=2&sort=latest',
-    baseUrl
-  ).toString()
+  const discussionUrl = new URL('/api/v1/discussions?limit=2', baseUrl).toString()
   const homePayload = await fetchJson(homeUrl, 'home API')
   const discussionPayload = await fetchJson(discussionUrl, 'discussions API')
   const candidates = extractHomeCandidates(homePayload)

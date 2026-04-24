@@ -253,6 +253,32 @@
       "backupCodeLabel": "Backup code",
       "passkeyHint": "Use a saved passkey on this device or browser.",
       "passkeyAction": "Continue with passkey"
+    },
+    "passkeyRecovery": {
+      "title": "Recover account access",
+      "subtitle": "Request a recovery code and verify your identity before adding a new passkey.",
+      "verifyTitle": "Verify recovery request",
+      "verifyHint": "Enter the email code and confirm the account if a password is still available.",
+      "emailLabel": "Recovery email",
+      "codeLabel": "Recovery code",
+      "passwordLabel": "Current password",
+      "passwordHint": "Leave this blank only if the account no longer supports password sign-in.",
+      "sendCodeAction": "Send recovery code",
+      "verifyAction": "Verify recovery request",
+      "codeSent": "Recovery code sent. Continue with the verification step.",
+      "statusTitle": "Recovery status",
+      "statusSubtitle": "This page reads the durable recovery workflow state from the backend contract.",
+      "statusLabel": "Workflow status",
+      "approvalLabel": "Approval status",
+      "cooldownLabel": "Cooldown until",
+      "expiresLabel": "Expires at",
+      "readyHint": "Recovery is approved on this device. You can register a replacement passkey now.",
+      "pendingHint": "Recovery is not ready for registration yet. Refresh after approval or cooldown changes.",
+      "refreshAction": "Refresh status",
+      "registerAction": "Register replacement passkey",
+      "registerSuccess": "Passkey recovery completed. Please sign in again with your new passkey.",
+      "deviceNameLabel": "Passkey device name",
+      "loginHint": "Already recovered access?"
     }
   },
   "video": {

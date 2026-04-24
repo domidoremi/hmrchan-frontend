@@ -11,7 +11,7 @@ import { ensureVerificationToken } from './verificationBridge'
 // ========== 请求/响应类型 ==========
 
 export interface Device {
-  id: string | number
+  id: string
   fingerprint?: string | null
   device_name?: string | null
   device_type: 'desktop' | 'mobile' | 'tablet'
@@ -60,8 +60,8 @@ export const deviceService = {
   },
 
   /** 取消当前设备信任状态 */
-  async untrustDevice(): Promise<{ success: boolean }> {
-    return apiClient.post('/devices/untrust', {})
+  async untrustDevice(deviceId: string): Promise<{ success: boolean }> {
+    return apiClient.post('/devices/untrust', { device_id: deviceId })
   },
 
   /**
@@ -77,7 +77,7 @@ export const deviceService = {
   /**
    * 注销指定设备
    */
-  async revokeDevice(deviceId: string | number): Promise<void> {
+  async revokeDevice(deviceId: string): Promise<void> {
     const verificationToken = await ensureVerificationToken('revoke_sessions')
     await apiClient.delete(`/devices/${deviceId}`, {
       securityPolicy: 'sensitive',
@@ -108,10 +108,10 @@ export const deviceService = {
   /**
    * 仅允许将当前设备标记为 trusted
    */
-  async trustDevice(): Promise<{ success: boolean }> {
+  async trustDevice(deviceId: string): Promise<{ success: boolean }> {
     return apiClient.post(
       '/devices/trust',
-      {},
+      { device_id: deviceId },
       {
         securityPolicy: 'sensitive',
         verificationAction: 'update_security_settings',
@@ -122,10 +122,7 @@ export const deviceService = {
   /**
    * 更新设备名称
    */
-  async updateDeviceName(
-    deviceId: string | number,
-    deviceName: string
-  ): Promise<{ success: boolean }> {
+  async updateDeviceName(deviceId: string, deviceName: string): Promise<{ success: boolean }> {
     return apiClient.post(
       '/devices/rename',
       {

@@ -136,9 +136,6 @@ function createSearchState(overrides: Partial<SearchState> = {}) {
   return {
     query: ref('') as Ref<string>,
     activeTab: ref<'posts' | 'authors'>('posts'),
-    sortBy: ref('relevance'),
-    sortOrder: ref<'asc' | 'desc'>('desc'),
-    currentPlatform: ref('all'),
     isAuthenticated: ref(false),
     results: ref<Array<Record<string, unknown>>>([]),
     discoverPosts: ref<Array<Record<string, unknown>>>([]),
@@ -162,7 +159,6 @@ function createSearchState(overrides: Partial<SearchState> = {}) {
     topSearchQueries: ref<Array<{ query: string; count: number }>>([]),
     mayHaveMoreResults: ref(false),
     goBack: vi.fn(),
-    toggleSortOrder: vi.fn(),
     fetchDiscoverPosts: vi.fn(),
     search: vi.fn(),
     searchAuthors: vi.fn(),
@@ -266,9 +262,6 @@ describe('SearchPage', () => {
 
     await wrapper.find('.back-btn').trigger('click')
     expect(mocks.state.goBack).toHaveBeenCalledTimes(1)
-
-    await wrapper.find('.sort-order-btn').trigger('click')
-    expect(mocks.state.toggleSortOrder).toHaveBeenCalledTimes(1)
 
     await wrapper.find('.load-more-stub').trigger('click')
     expect(mocks.state.loadMore).toHaveBeenCalledTimes(1)
