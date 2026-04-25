@@ -15,6 +15,7 @@ export interface RequestConfig extends RequestInit {
   skipUnauthorizedRetry?: boolean
   skipClientReinitRetry?: boolean
   skipClientSignatureRetry?: boolean
+  skipAuthLogoutOnUnauthorized?: boolean
 }
 
 export interface ApiResponse<T = unknown> {

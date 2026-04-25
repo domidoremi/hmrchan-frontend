@@ -174,6 +174,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     try {
       const me = await authService.getCurrentUser({
         securityPolicy: securityLevel === 'sensitive' ? 'sensitive' : 'default',
+        skipAuthLogoutOnUnauthorized: securityLevel === 'sensitive',
         skipErrorToast,
       })
 
@@ -351,7 +352,14 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       invalidateAuthz('permissions-version-changed')
     }
 
-    riskModeHandler = () => {
+    riskModeHandler = (event?: Event) => {
+      const riskMode =
+        (event as CustomEvent<{ riskMode?: string }> | undefined)?.detail?.riskMode ?? 'degraded'
+      if (riskMode !== 'degraded') {
+        state.stepUpRequired.value = false
+        return
+      }
+
       state.stepUpRequired.value = true
       invalidateAuthz('risk-mode-degraded')
     }

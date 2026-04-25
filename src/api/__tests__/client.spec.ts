@@ -329,6 +329,24 @@ describe('apiClient', () => {
 
       window.removeEventListener('app:hard-reload-required', hardReloadHandler)
     })
+
+    it('can suppress global logout dispatch for sensitive auth probes', async () => {
+      establishRuntimeSession()
+      const logoutHandler = vi.fn()
+      window.addEventListener('auth:logout', logoutHandler)
+      mockFetch.mockResolvedValueOnce(jsonResponse({ detail: 'Step-up required' }, { status: 401 }))
+
+      await expect(
+        apiClient.get('/auth/me', {
+          skipAuthLogoutOnUnauthorized: true,
+        })
+      ).rejects.toMatchObject({
+        status: 401,
+      })
+
+      expect(logoutHandler).not.toHaveBeenCalled()
+      window.removeEventListener('auth:logout', logoutHandler)
+    })
   })
 
   describe('mutating requests', () => {

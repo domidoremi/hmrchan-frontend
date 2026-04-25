@@ -531,6 +531,7 @@ const redirectTo = computed(() => {
   const candidate = typeof route.query['redirect'] === 'string' ? route.query['redirect'] : null
   return resolveAuthRedirectTarget(candidate, '/')
 })
+const isSensitiveReauth = computed(() => route.query['reauth'] === 'sensitive')
 
 const canRestoreAccount = computed(
   () => Boolean(restoreIdentifier.value.trim()) && Boolean(restorePassword.value)
@@ -1251,7 +1252,7 @@ watch(
   { immediate: true }
 )
 
-if (isAuthenticated.value) {
+if (isAuthenticated.value && !isSensitiveReauth.value) {
   void router.replace(redirectTo.value)
 }
 

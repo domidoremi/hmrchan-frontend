@@ -24,6 +24,7 @@ import {
 import { getDeviceInfo } from '@/utils/device'
 import { createAuthSessionController } from '@/services/authSessionController'
 import { reportClientEvent } from '@/utils/clientReporter'
+import { resetRiskMode } from '@/security/runtimeState'
 
 // 用户类型（与 API 响应匹配）
 export type AuthUser = UserResponse
@@ -489,6 +490,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
     await establishSession(successResponse as AuthResponse)
+    resetRiskMode()
     clearPendingGoogleAuthRequest()
 
     return {

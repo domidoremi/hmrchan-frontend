@@ -9,6 +9,7 @@ import {
   startGoogleAuth,
 } from '@/services/googleAuthService'
 import { clearAuthRuntimeSession } from '@/api/client/auth-runtime'
+import { enterRiskMode, getRiskMode } from '@/security/runtimeState'
 
 const mockRouterPush = vi.hoisted(() => vi.fn())
 const mockGetDeviceInfo = vi.hoisted(() =>
@@ -108,6 +109,7 @@ describe('auth store', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     clearAuthRuntimeSession()
+    enterRiskMode('test-reset')
     vi.mocked(authService.getCurrentUser).mockResolvedValue(createMeResponse())
   })
 
@@ -122,6 +124,7 @@ describe('auth store', () => {
     const store = useAuthStore()
     vi.mocked(authService.login).mockResolvedValueOnce(createSessionSummary())
 
+    expect(getRiskMode()).toBe('degraded')
     const result = await store.login('tester@example.com', 'password123')
 
     expect(result).toEqual(
@@ -133,6 +136,7 @@ describe('auth store', () => {
     expect(store.user).toEqual(expect.objectContaining({ email: 'tester@example.com' }))
     expect(store.sessionExpiresAt).toBe('2026-04-18T00:00:00.000Z')
     expect(store.runtimeAuthzCache?.version).toBe('1')
+    expect(getRiskMode()).toBe('normal')
   })
 
   it('returns risk verification details without establishing a session', async () => {

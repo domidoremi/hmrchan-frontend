@@ -368,6 +368,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     verificationResourceId,
     skipVerificationRetry = false,
     skipUnauthorizedRetry = false,
+    skipAuthLogoutOnUnauthorized = false,
     headers: customHeaders = {},
     body,
     skipClientReinitRetry = false,
@@ -483,7 +484,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       })
     }
 
-    if (response.status === 401 && !skipAuth) {
+    if (response.status === 401 && !skipAuth && !skipAuthLogoutOnUnauthorized) {
       const runtimeSession = getAuthRuntimeSession()
       reportClientEvent(
         'auth.session.rejected',
