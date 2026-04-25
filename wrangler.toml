@@ -39,6 +39,7 @@ SKIP_DEPENDENCY_INSTALL = "true"
 API_BASE_URL = "https://api.momichan.xyz"
 ENABLE_INTERNAL_API_GATEWAY = "true"
 GOOGLE_AUTH_ENABLED = "true"
+VITE_CLIENT_CONTRACT_VERSION = "2026-04-13.p1"
 
 # ============================================================================
 # Preview 环境配置
@@ -49,6 +50,7 @@ SKIP_DEPENDENCY_INSTALL = "true"
 API_BASE_URL = "https://api.momichan.xyz"
 ENABLE_INTERNAL_API_GATEWAY = "true"
 GOOGLE_AUTH_ENABLED = "true"
+VITE_CLIENT_CONTRACT_VERSION = "2026-04-13.p1"
 
 [[env.preview.services]]
 binding = "INTERNAL_API_GATEWAY"

@@ -209,6 +209,7 @@
       "title": "請確認是你本人",
       "defaultDescription": "這是敏感操作，請先輸入目前密碼完成二次驗證。",
       "invalidPassword": "密碼驗證失敗，請重新輸入後再試。",
+      "sessionExpired": "登入狀態已失效，請重新登入後再試。",
       "reasons": {
         "updateSecuritySettings": "修改兩步驗證等安全設定前，需要先完成一次密碼確認。",
         "revokeSessions": "撤銷裝置或工作階段前，需要先完成一次密碼確認。",

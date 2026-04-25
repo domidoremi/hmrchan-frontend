@@ -383,6 +383,33 @@ describe('apiClient', () => {
       expect(logoutHandler).not.toHaveBeenCalled()
       window.removeEventListener('auth:logout', logoutHandler)
     })
+
+    it('dispatches logout for step-up verification 401 responses caused by a missing session', async () => {
+      establishRuntimeSession()
+      const logoutHandler = vi.fn()
+      window.addEventListener('auth:logout', logoutHandler)
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse({ detail: 'Not authenticated' }, { status: 401 })
+      )
+
+      await expect(
+        apiClient.post(
+          '/auth/verify-identity',
+          { password: 'current-password', action: 'update_security_settings' },
+          {
+            securityPolicy: 'sensitive',
+            skipUnauthorizedRetry: true,
+            skipAuthLogoutOnUnauthorized: true,
+            skipErrorToast: true,
+          }
+        )
+      ).rejects.toMatchObject({
+        status: 401,
+      })
+
+      expect(logoutHandler).toHaveBeenCalledTimes(1)
+      window.removeEventListener('auth:logout', logoutHandler)
+    })
   })
 
   describe('mutating requests', () => {

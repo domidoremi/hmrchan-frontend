@@ -198,6 +198,7 @@
       "title": "请确认是你本人",
       "defaultDescription": "这是敏感操作，请先输入当前密码完成二次验证。",
       "invalidPassword": "密码验证失败，请重新输入后再试。",
+      "sessionExpired": "登录状态已失效，请重新登录后再试。",
       "reasons": {
         "updateSecuritySettings": "修改两步验证等安全设置前，需要先完成一次密码确认。",
         "revokeSessions": "撤销设备或会话前，需要先完成一次密码确认。",

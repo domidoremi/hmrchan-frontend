@@ -118,6 +118,7 @@ function makeContext(options: {
       API_BASE_URL: BACKEND_ORIGIN,
       BACKEND_INTERNAL_ORIGIN: INTERNAL_ORIGIN,
       BACKEND_INTERNAL_AUTH_SHARED_SECRET: INTERNAL_SECRET,
+      VITE_CLIENT_CONTRACT_VERSION: '2026-04-13.p1',
       ...options.env,
     },
     params: {
@@ -175,6 +176,7 @@ describe('functions/api proxy', () => {
         expect(init?.headers).toEqual(
           expect.objectContaining({
             Authorization: `Bearer ${material.access_token}`,
+            'X-Client-Contract-Version': '2026-04-13.p1',
           })
         )
         return apiEnvelope(user)
@@ -252,6 +254,7 @@ describe('functions/api proxy', () => {
         expect(init?.headers).toEqual(
           expect.objectContaining({
             Authorization: `Bearer ${material.access_token}`,
+            'X-Client-Contract-Version': '2026-04-13.p1',
           })
         )
         return apiEnvelope(user)
@@ -447,6 +450,7 @@ describe('functions/api proxy', () => {
         expect(init?.headers).toEqual(
           expect.objectContaining({
             Authorization: `Bearer ${material.access_token}`,
+            'X-Client-Contract-Version': '2026-04-13.p1',
           })
         )
         return new Response('temporary-upstream-shape', {
@@ -673,6 +677,12 @@ describe('functions/api proxy', () => {
       }
 
       if (url === `${BACKEND_ORIGIN}/api/v1/auth/me`) {
+        expect(init?.headers).toEqual(
+          expect.objectContaining({
+            Authorization: `Bearer ${refreshed.access_token}`,
+            'X-Client-Contract-Version': '2026-04-13.p1',
+          })
+        )
         return apiEnvelope(user)
       }
 
@@ -1014,6 +1024,7 @@ describe('functions/api proxy', () => {
         expect(init?.headers).toEqual(
           expect.objectContaining({
             Authorization: `Bearer ${material.access_token}`,
+            'X-Client-Contract-Version': '2026-04-13.p1',
           })
         )
         return apiEnvelope(user)
