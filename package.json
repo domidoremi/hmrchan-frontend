@@ -24,6 +24,7 @@
     "test:unit:watch": "node scripts/patch-lucide.mjs && node scripts/run-vitest.mjs",
     "test:coverage": "node scripts/patch-lucide.mjs && node scripts/run-vitest.mjs run --coverage --maxWorkers=1",
     "test:e2e": "bun run scripts/test-e2e.ts",
+    "test:functional-chain:local": "bun run scripts/test-functional-chain-local.ts",
     "validate:release": "node scripts/validate-release.mjs",
     "validate:release:local": "node scripts/validate-release.mjs --mode local",
     "validate:release:local:quiet": "node scripts/validate-release.mjs --mode local --quiet",

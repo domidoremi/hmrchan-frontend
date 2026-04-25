@@ -116,6 +116,31 @@ bun run test:e2e
 bun run validate:release --mode local
 ```
 
+## 本地功能链账号矩阵
+
+账号矩阵是显式低输出门禁，不属于默认 `pre-push` / `validate:release:local`。它用于验证本地后端、Pages facade 与浏览器 session 行为是否能跑通，不替代统一 release runner。
+
+```bash
+PRIMARY_USERNAME='<primary-user>' \
+PRIMARY_PASSWORD='<primary-password>' \
+PEER_USERNAME='<peer-user>' \
+PEER_PASSWORD='<peer-password>' \
+ADMIN_USERNAME='<admin-user>' \
+ADMIN_PASSWORD='<admin-password>' \
+LOCKED_USERNAME='<locked-user>' \
+LOCKED_PASSWORD='<locked-password>' \
+DISABLED_USERNAME='<disabled-user>' \
+DISABLED_PASSWORD='<disabled-password>' \
+bun run test:functional-chain:local
+```
+
+- 目标入口固定为同源 facade：`POST /api/v1/auth/login`
+- 账号与密码只允许通过环境变量传入，不写入仓库、不生成 tracked `.env`；上方示例必须保留占位符，不提交本机真实测试账号
+- artifact 输出到 `output/functional-chain/<timestamp>/summary.json` 和 `summary.md`
+- `FUNCTIONAL_CHAIN_BASE_URL` 可指向已启动的本地前端；未设置时脚本会 build 并启动本地 Pages preview
+- Docker、本地后端栈或 local audit bridge 不可用时，结果必须记录为 `environment-blocked`，不能当作通过
+- 当前矩阵只覆盖登录、`/auth/session:resolve`、session 隔离、403 locked/inactive 与错误密码；评论/点赞/通知等双用户深链应作为后续独立批次
+
 ## 合同与自动演进
 
 这套流程不会依赖人工维护 checklist，而是从仓库真相源自动派生：
