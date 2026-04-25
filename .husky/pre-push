@@ -4,51 +4,21 @@
 echo "🔍 运行推送前检查..."
 echo ""
 
-# Auto-fix: Format code
-echo "💅 自动格式化代码..."
-run_node_tool node_modules/prettier/bin/prettier.cjs --write src/
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "⚠️  代码格式化失败，但继续检查..."
-fi
-
-# Auto-fix: Lint code
-echo "🔧 自动修复代码规范问题..."
-run_node_tool node_modules/eslint/bin/eslint.js . --fix --cache
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "⚠️  部分代码规范问题无法自动修复，但继续检查..."
-fi
-
-# Check if auto-fix created changes
-if ! git diff --quiet; then
-  echo ""
-  echo "📝 检测到自动修复的更改："
-  git diff --stat
-  echo ""
-  echo "💡 提示：代码已自动格式化和修复，请检查更改并重新提交"
-  echo ""
-  echo "建议操作："
-  echo "  1. 查看更改: git diff"
-  echo "  2. 暂存更改: git add ."
-  echo "  3. 修正提交: git commit --amend --no-edit"
-  echo "  4. 重新推送: git push"
-  echo ""
-  exit 1
-fi
-
-# Unified local release validation
-echo "🚦 运行统一本地发布门禁..."
+# Medium-load pre-push validation
+echo "🚦 运行中负载推送门禁..."
 if resolve_bun_bin; then
-  run_bun run validate:release --mode local
+  run_bun run validate:release --mode prepush --quiet
 else
-  run_node_tool scripts/validate-release.mjs --mode local
+  run_node_tool scripts/validate-release.mjs --mode prepush --quiet
 fi
 if [ $? -ne 0 ]; then
   echo ""
-  echo "❌ 本地统一发布门禁失败，请根据 validate:release 输出修复后再推送"
+  echo "❌ 中负载推送门禁失败，请根据 validate:release 输出修复后再推送"
   exit 1
 fi
+
+echo ""
+echo "ℹ️  pre-push 不运行 Docker/browser full release gate。发布前请显式执行：bun run validate:release --mode local"
 
 echo ""
 echo "✅ 所有检查通过，准备推送..."

@@ -115,12 +115,13 @@ function printHelp() {
 
 Usage:
   bun run validate:release
+  bun run validate:release --mode prepush
   bun run validate:release --mode local
   bun run validate:release --mode candidate
   bun run validate:release --mode production
 
 Options:
-  --mode <local|candidate|production>
+  --mode <prepush|local|candidate|production>
   --artifact-dir <path>
   --quiet              capture child command output to artifacts and print stage summaries only
   --help

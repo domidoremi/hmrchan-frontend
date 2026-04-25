@@ -1,19 +1,19 @@
 import path from 'node:path'
 
-export const VALIDATION_MODES = Object.freeze(['local', 'candidate', 'production'])
+export const VALIDATION_MODES = Object.freeze(['prepush', 'local', 'candidate', 'production'])
 
 const VALIDATION_STAGE_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'stage-0-contract-self-check',
     order: 0,
     name: '合同自检',
-    requiredModes: Object.freeze(['local', 'candidate', 'production']),
+    requiredModes: Object.freeze(['prepush', 'local', 'candidate', 'production']),
   }),
   Object.freeze({
     id: 'stage-1-local-static',
     order: 1,
     name: '本地静态门禁',
-    requiredModes: Object.freeze(['local', 'candidate', 'production']),
+    requiredModes: Object.freeze(['prepush', 'local', 'candidate', 'production']),
   }),
   Object.freeze({
     id: 'stage-2-local-browser',
@@ -88,7 +88,9 @@ const CHANGE_FOCUS_RULES = Object.freeze([
 ])
 
 function normalizeFilePath(filePath) {
-  return String(filePath ?? '').replace(/\\/g, '/').replace(/^\.\/+/, '')
+  return String(filePath ?? '')
+    .replace(/\\/g, '/')
+    .replace(/^\.\/+/, '')
 }
 
 function samplePaths(paths, max = 8) {
@@ -124,7 +126,9 @@ export function buildValidationStageArtifactDir(rootArtifactDir, stageId) {
 }
 
 export function classifyValidationChanges(changedFiles) {
-  const normalizedFiles = [...new Set((changedFiles ?? []).map(normalizeFilePath).filter(Boolean))].sort()
+  const normalizedFiles = [
+    ...new Set((changedFiles ?? []).map(normalizeFilePath).filter(Boolean)),
+  ].sort()
   const matchedAreas = CHANGE_FOCUS_RULES.map((rule) => ({
     id: rule.id,
     label: rule.label,
@@ -164,14 +168,7 @@ function findUnresolvedSelectedStage(stages) {
   )
 }
 
-export function buildValidationSummary({
-  mode,
-  artifactDir,
-  git,
-  targets,
-  changeSummary,
-  stages,
-}) {
+export function buildValidationSummary({ mode, artifactDir, git, targets, changeSummary, stages }) {
   const failedStage = findFailedStage(stages)
   const unexpectedSkip = findUnexpectedSkip(stages)
   const unresolvedStage = findUnresolvedSelectedStage(stages)
@@ -181,7 +178,7 @@ export function buildValidationSummary({
 
   if (failedStage || unexpectedSkip || unresolvedStage) {
     status = 'failed'
-  } else if (mode === 'production') {
+  } else if (mode === 'prepush' || mode === 'production') {
     status = 'passed'
   }
 
@@ -198,7 +195,7 @@ export function buildValidationSummary({
     } else {
       blockingReason = 'Selected release stage failed.'
     }
-  } else if (mode !== 'production') {
+  } else if (mode !== 'prepush' && mode !== 'production') {
     blockingReason = 'Production deep regression did not run in this validation mode.'
   }
 
