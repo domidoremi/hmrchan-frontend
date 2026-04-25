@@ -63,6 +63,7 @@ import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Input from '@/components/ui/Input.vue'
 import { authService, ApiError } from '@/api'
+import { clearAuthRuntimeSession } from '@/api/client/auth-runtime'
 import {
   dismissVerification,
   resolveVerification,
@@ -90,6 +91,27 @@ const actionReasonKeyMap: Record<string, string> = {
   change_password: 'auth.stepUp.reasons.changePassword',
   manage_api_keys: 'auth.stepUp.reasons.manageApiKeys',
   admin_operation: 'auth.stepUp.reasons.adminOperation',
+}
+
+function isUnauthenticatedStepUpError(error: ApiError): boolean {
+  const rawMessage =
+    typeof error.details?.rawMessage === 'string' ? error.details.rawMessage : error.message
+  const normalized = rawMessage.trim().toLowerCase()
+
+  return (
+    error.code === 'UNAUTHENTICATED' ||
+    error.code === 'NOT_AUTHENTICATED' ||
+    normalized.includes('not authenticated') ||
+    normalized.includes('please login') ||
+    normalized.includes('请先登录') ||
+    normalized.includes('請先登入') ||
+    normalized.includes('認証が必要です')
+  )
+}
+
+function dispatchSessionRejected(): void {
+  clearAuthRuntimeSession()
+  window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason: 'auth_failed' } }))
 }
 
 const dialogTitle = computed(() => currentRequest.value?.title || t('auth.stepUp.title'))
@@ -161,7 +183,12 @@ async function submitVerification() {
     })
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
-      errorMessage.value = t('auth.stepUp.invalidPassword')
+      if (isUnauthenticatedStepUpError(error)) {
+        dispatchSessionRejected()
+        errorMessage.value = t('auth.stepUp.sessionExpired')
+      } else {
+        errorMessage.value = t('auth.stepUp.invalidPassword')
+      }
     } else {
       errorMessage.value = error instanceof ApiError ? error.message : t('common.error')
     }

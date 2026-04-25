@@ -20,6 +20,7 @@ interface Env {
   API_BASE_URL?: string
   BACKEND_INTERNAL_ORIGIN?: string
   BACKEND_INTERNAL_AUTH_SHARED_SECRET?: string
+  VITE_CLIENT_CONTRACT_VERSION?: string
   ENABLE_INTERNAL_API_GATEWAY?: string
   GOOGLE_AUTH_ENABLED?: string
   VPC_API_ORIGIN?: string
@@ -495,15 +496,19 @@ function buildInvalidAuthUpstreamResponse(
 }
 
 async function fetchCurrentUserFromBackend(
+  env: ProxyEnv,
   apiBaseUrl: string,
   accessToken: string
 ): Promise<Record<string, unknown> | null> {
+  const clientContractVersion = env.VITE_CLIENT_CONTRACT_VERSION?.trim()
+
   try {
     const response = await fetch(`${apiBaseUrl}/api/v1/auth/me`, {
       method: 'GET',
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${accessToken}`,
+        ...(clientContractVersion ? { 'X-Client-Contract-Version': clientContractVersion } : {}),
       },
     })
 
@@ -529,11 +534,12 @@ async function fetchCurrentUserFromBackend(
 }
 
 async function buildSessionSummary(
+  env: ProxyEnv,
   apiBaseUrl: string,
   material: BffSessionMaterial
 ): Promise<SessionSummaryResponse> {
   const user =
-    (await fetchCurrentUserFromBackend(apiBaseUrl, material.access_token)) ??
+    (await fetchCurrentUserFromBackend(env, apiBaseUrl, material.access_token)) ??
     (material.user && typeof material.user === 'object' ? material.user : undefined)
 
   return {
@@ -553,6 +559,7 @@ async function buildSessionSummary(
 }
 
 async function handleInternalAuthResult(
+  env: ProxyEnv,
   response: Response,
   apiBaseUrl: string,
   responseHeaders?: Headers,
@@ -595,7 +602,7 @@ async function handleInternalAuthResult(
   appendSessionCookies(headers, payload)
   let sessionSummary = buildFallbackSessionSummary(payload)
   try {
-    sessionSummary = await buildSessionSummary(apiBaseUrl, payload)
+    sessionSummary = await buildSessionSummary(env, apiBaseUrl, payload)
   } catch {
     sessionSummary = buildFallbackSessionSummary(payload)
   }
@@ -705,7 +712,7 @@ async function resolveSessionFromCookies(
     principal?: { permission_version?: number | string }
   }
   const user =
-    (await fetchCurrentUserFromBackend(apiBaseUrl, accessToken)) ??
+    (await fetchCurrentUserFromBackend(env, apiBaseUrl, accessToken)) ??
     (payload?.user && typeof payload.user === 'object' ? payload.user : undefined)
 
   const summary: SessionSummaryResponse = {
@@ -971,7 +978,7 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/google-exchange',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+      return handleInternalAuthResult(env, response, apiBaseUrl, undefined, {
         requireSessionMaterial: true,
         route: compactPath,
       })
@@ -1004,7 +1011,7 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/login',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+      return handleInternalAuthResult(env, response, apiBaseUrl, undefined, {
         requireSessionMaterial: true,
         route: compactPath,
       })
@@ -1015,7 +1022,7 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/risk/verify-email',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+      return handleInternalAuthResult(env, response, apiBaseUrl, undefined, {
         route: compactPath,
       })
     }
@@ -1025,7 +1032,7 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/risk/webauthn/options',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+      return handleInternalAuthResult(env, response, apiBaseUrl, undefined, {
         route: compactPath,
       })
     }
@@ -1035,7 +1042,7 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/risk/webauthn/verify',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+      return handleInternalAuthResult(env, response, apiBaseUrl, undefined, {
         route: compactPath,
       })
     }
@@ -1045,7 +1052,7 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/mfa/totp-or-backup',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+      return handleInternalAuthResult(env, response, apiBaseUrl, undefined, {
         route: compactPath,
       })
     }
@@ -1055,7 +1062,7 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/mfa/webauthn/options',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+      return handleInternalAuthResult(env, response, apiBaseUrl, undefined, {
         route: compactPath,
       })
     }
@@ -1065,7 +1072,7 @@ async function handleBrowserAuthFacade(
         '/internal/v1/auth/bff/mfa/webauthn/verify',
         withBrowserFingerprint(body, fingerprint)
       )
-      return handleInternalAuthResult(response, apiBaseUrl, undefined, {
+      return handleInternalAuthResult(env, response, apiBaseUrl, undefined, {
         route: compactPath,
       })
     }

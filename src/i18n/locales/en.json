@@ -198,6 +198,7 @@
       "title": "Confirm it's really you",
       "defaultDescription": "This is a sensitive action. Please enter your current password to continue.",
       "invalidPassword": "Password verification failed. Please try again.",
+      "sessionExpired": "Your session has expired. Please sign in again.",
       "reasons": {
         "updateSecuritySettings": "Please confirm your password before changing security settings such as two-factor authentication.",
         "revokeSessions": "Please confirm your password before revoking devices or sessions.",

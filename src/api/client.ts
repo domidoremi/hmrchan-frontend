@@ -112,6 +112,31 @@ function shouldRetryAfterBffRefresh(response: Response): boolean {
   return response.headers.get('X-Bff-Auth-Retry-Required')?.toLowerCase() === 'true'
 }
 
+function isMissingAuthSessionError(errorMeta: { code?: string; message: string } | null): boolean {
+  const normalizedCode = errorMeta?.code?.trim().toUpperCase()
+  if (
+    normalizedCode &&
+    ['UNAUTHENTICATED', 'NOT_AUTHENTICATED', 'TOKEN_EXPIRED', 'TOKEN_INVALID'].includes(
+      normalizedCode
+    )
+  ) {
+    return true
+  }
+
+  const normalizedMessage = errorMeta?.message.trim().toLowerCase()
+  if (!normalizedMessage) return false
+
+  return [
+    'not authenticated',
+    'unauthorized',
+    'please login',
+    'please login first',
+    '请先登录',
+    '請先登入',
+    '認証が必要です',
+  ].some((message) => normalizedMessage.includes(message))
+}
+
 function triggerHardReloadGate(): never {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('app:hard-reload-required'))
@@ -484,7 +509,11 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       })
     }
 
-    if (response.status === 401 && !skipAuth && !skipAuthLogoutOnUnauthorized) {
+    if (
+      response.status === 401 &&
+      !skipAuth &&
+      (!skipAuthLogoutOnUnauthorized || isMissingAuthSessionError(errorMeta))
+    ) {
       const runtimeSession = getAuthRuntimeSession()
       reportClientEvent(
         'auth.session.rejected',

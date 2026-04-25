@@ -100,6 +100,22 @@ function createVerificationFailedError(action: VerificationAction, resourceId?: 
   })
 }
 
+function isUnauthenticatedVerificationError(error: ApiError): boolean {
+  const rawMessage =
+    typeof error.details?.rawMessage === 'string' ? error.details.rawMessage : error.message
+  const normalized = rawMessage.trim().toLowerCase()
+
+  return (
+    error.code === 'UNAUTHENTICATED' ||
+    error.code === 'NOT_AUTHENTICATED' ||
+    normalized.includes('not authenticated') ||
+    normalized.includes('please login') ||
+    normalized.includes('请先登录') ||
+    normalized.includes('請先登入') ||
+    normalized.includes('認証が必要です')
+  )
+}
+
 async function verifyWithPassword(
   action: VerificationAction,
   password: string,
@@ -118,6 +134,9 @@ async function verifyWithPassword(
     return result
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
+      if (isUnauthenticatedVerificationError(error)) {
+        throw error
+      }
       reportClientError(
         'verification.password_rejected',
         error,
