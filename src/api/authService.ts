@@ -297,6 +297,8 @@ export const authService = {
       {
         ...config,
         securityPolicy: config?.securityPolicy ?? 'sensitive',
+        skipUnauthorizedRetry: true,
+        skipAuthLogoutOnUnauthorized: true,
         skipErrorToast: config?.skipErrorToast ?? true,
       }
     )
