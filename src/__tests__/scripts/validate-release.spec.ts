@@ -143,4 +143,31 @@ describe('validate release helpers', () => {
 
     expect(artifactDir.replace(/\\/g, '/')).toContain('/output/validation/20260420-010203')
   })
+
+  it('marks unresolved running stages as blocking failures', () => {
+    const summary = buildValidationSummary({
+      mode: 'local',
+      artifactDir: '/tmp/validation',
+      git: { branch: 'main', commitSha: 'sha', diffRange: 'HEAD~1..HEAD' },
+      targets: {
+        baseUrl: 'https://momichan.xyz',
+        controlledBaseUrl: null,
+      },
+      changeSummary: classifyValidationChanges([]),
+      stages: [
+        {
+          id: 'stage-2-local-browser',
+          order: 2,
+          name: '本地浏览器门禁',
+          selected: true,
+          status: 'running',
+          reason: null,
+        },
+      ],
+    })
+
+    expect(summary.status).toBe('failed')
+    expect(summary.blockingStageId).toBe('stage-2-local-browser')
+    expect(summary.blockingReason).toContain('did not complete')
+  })
 })

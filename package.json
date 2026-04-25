@@ -26,6 +26,7 @@
     "test:e2e": "bun run scripts/test-e2e.ts",
     "validate:release": "node scripts/validate-release.mjs",
     "validate:release:local": "node scripts/validate-release.mjs --mode local",
+    "validate:release:local:quiet": "node scripts/validate-release.mjs --mode local --quiet",
     "validate:release:candidate": "node scripts/validate-release.mjs --mode candidate",
     "validate:release:production": "node scripts/validate-release.mjs --mode production",
     "check:release-evidence": "node scripts/release-evidence.mjs",

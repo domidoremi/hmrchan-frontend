@@ -8,6 +8,8 @@
 ```bash
 bun run validate:release
 bun run validate:release --mode local
+bun run validate:release --mode local --quiet
+bun run validate:release:local:quiet
 bun run validate:release --mode candidate
 bun run validate:release --mode production
 ```
@@ -19,6 +21,7 @@ bun run validate:release --mode production
   - `summary.md`
   - `stages/*.json`
 - Windows 环境下 runner 会通过共享命令执行器解析 `bun.exe` / `bun.cmd`；若需要固定 Bun 路径，可设置 `BUN_EXECUTABLE`
+- `--quiet` 只降低控制台输出，不降低验证强度；子命令 stdout/stderr 仍写入每个 command artifact 的 `stdout.tail.log` / `stderr.tail.log`
 
 ## 本地真相源
 
@@ -97,6 +100,14 @@ bun run validate:release --mode production
 
 本地浏览器门禁依赖 Docker Desktop、本地后端栈和 local audit bridge。若这些依赖不可用，`check:frontend` / `test:e2e` 会把 `UPSTREAM_TIMEOUT`、`UPSTREAM_UNREACHABLE` 等探针结果报告为 local audit environment blocked，而不是误报为后端契约变更。
 
+在 Codex、远程终端或其他容易被大日志拖垮的非交互环境中，优先使用低输出入口：
+
+```bash
+bun run validate:release --mode local --quiet
+```
+
+这不会跳过 Docker、本地后端、local audit bridge、Puppeteer/Chrome 或任何 release stage。若环境不可用，结果仍必须失败，并且只能作为“环境阻塞可诊断、summary 可落盘”的验收信号；不能把 fallback 或 environment-blocked 视为正式发布通过。
+
 恢复环境后必须补跑：
 
 ```bash
@@ -121,7 +132,7 @@ bun run validate:release --mode local
   - [scripts/validate-release.mjs](/G:/Project/hmrchan/hmrchan-frontend/scripts/validate-release.mjs)
   - [scripts/lib/validate-release.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/validate-release.js)
 
-UUIDv7 hard cutover 后，前端公开资源 ID 只能使用 UUIDv7 字符串；新增或修改 `src/api`、路由详情页、fallback snapshot、Service Worker cache key 时，必须同步相关类型守卫、测试和 release contract audit。
+UUIDv7 hard cutover 后，前端公开资源 ID 只能使用 UUIDv7 字符串；新增或修改 `src/api`、路由详情页、fallback snapshot、Service Worker cache key 时，必须同步相关类型守卫、测试和 release contract audit。当前静态审计会阻断缺失 route/cache guard 的改动；checked-in generated fallback snapshot 不允许包含旧 v4 或 numeric public ID。`bun run fallbacks:refresh` 在写入 generated snapshot 前会拒绝非 UUIDv7 public ID，因此刷新必须连接到已完成 UUIDv7 cutover 的后端/API 环境。
 
 runner 会根据本次交付命中的文件范围自动生成风险摘要，重点关注：
 

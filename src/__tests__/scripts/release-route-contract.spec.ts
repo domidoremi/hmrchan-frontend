@@ -83,6 +83,8 @@ describe('release route contract', () => {
       ['authenticated sample post', 'authenticated sample discussion'].includes(route.name)
     )
 
+    expect(postRoute?.sampleDataPolicy).toBe('data-dependent')
+    expect(discussionRoute?.sampleDataPolicy).toBe('data-dependent')
     expect(postRoute?.readinessSelectorsAll).toEqual([
       '.post-comments',
       '[data-testid="comment-thread-header"]',

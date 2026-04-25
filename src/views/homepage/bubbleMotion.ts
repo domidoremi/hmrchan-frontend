@@ -438,6 +438,6 @@ export function computeBubbleFrameState(options: {
     shadowShiftX: pxToRem(clampedOffset.x * profile.shadowWeight),
     shadowShiftY: pxToRem(clampedOffset.y * profile.shadowWeight),
     isDisplaced: isDisplaced || normalizedDisplacement > 0.08,
-    isUnderPressure: isUnderPressure || normalizedDisplacement > 0.1,
+    isUnderPressure,
   }
 }

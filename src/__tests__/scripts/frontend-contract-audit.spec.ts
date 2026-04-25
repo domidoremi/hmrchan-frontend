@@ -12,47 +12,242 @@ function writeFixture(root: string, relativePath: string, contents: string): voi
   writeFileSync(filePath, contents, 'utf8')
 }
 
+function createRoot(): string {
+  return path.join(
+    tmpdir(),
+    `hmrchan-contract-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  )
+}
+
+function writeAlignedContractFixtures(root: string): void {
+  writeFixture(
+    root,
+    'src/api/authService.ts',
+    `
+const AUTH_SESSION_RESOLVE_PATH = '/auth/session:resolve'
+export interface WebAuthnAuthenticationOptionsResponse { ceremony_id: string; options: Record<string, unknown> }
+export interface PasskeyRecoveryStartRequest { email: string }
+export interface PasskeyRecoveryVerifyRequest { verification_code: string }
+export interface PasskeyRecoveryVerifyResponse { recovery_id: string }
+export interface RecoveryPasskeyRegistrationRequest { recovery_id: string }
+export const authService = {
+  resolveSession: () => apiClient.post(AUTH_SESSION_RESOLVE_PATH, null),
+  beginPasswordlessLogin: () => apiClient.post('/auth/passkeys/login/options', {}),
+  finishPasswordlessLogin: (ceremonyId, credential) => apiClient.post('/auth/passkeys/login/verify', { ceremony_id: ceremonyId, credential }),
+  startPasskeyRecovery: (data) => apiClient.post('/auth/passkeys/recovery/start', data),
+  verifyPasskeyRecovery: (data) => apiClient.post('/auth/passkeys/recovery/verify', data),
+  getPasskeyRecoveryStatus: (recoveryId) => apiClient.get(\`/auth/passkeys/recovery/\${recoveryId}/status\`),
+  beginRecoveryPasskeyRegistration: (data) => apiClient.post('/auth/passkeys/recovery/register/options', data),
+  finishRecoveryPasskeyRegistration: (recoveryId, ceremonyId, credential) => apiClient.post('/auth/passkeys/recovery/register/verify', { recovery_id: recoveryId, ceremony_id: ceremonyId, credential }),
+}
+`
+  )
+  writeFixture(
+    root,
+    'src/api/twoFactorService.ts',
+    `
+export const twoFactorService = {
+  getStatus: () => apiClient.get('/2fa/status'),
+  setup: () => apiClient.post('/2fa/setup', null),
+  verify: (code) => apiClient.post('/2fa/verify', { code }),
+  disable: () => apiClient.post('/2fa/disable', null),
+  beginWebAuthnRegistration: () => apiClient.post('/2fa/webauthn/register/options', {}),
+  finishWebAuthnRegistration: (ceremonyId, credential) => apiClient.post('/2fa/webauthn/register/verify', { ceremony_id: ceremonyId, credential }),
+}
+`
+  )
+  writeFixture(
+    root,
+    'src/api/clientSecurityService.ts',
+    `
+export interface ClientInitRequest { client_fingerprint: string }
+export const clientSecurityService = {
+  init: () => apiClient.post('/client/init', { client_fingerprint: 'fixture' }),
+}
+`
+  )
+  writeFixture(
+    root,
+    'src/services/googleAuthService.ts',
+    `
+const GOOGLE_AUTH_START_PATH = '/api/v1/auth/google/start'
+function buildGoogleStartUrl(intent, returnTo) {
+  const url = new URL(GOOGLE_AUTH_START_PATH, window.location.origin)
+  url.searchParams.set('intent', intent)
+  url.searchParams.set('return_to', returnTo)
+  return url.toString()
+}
+export function openGoogleAuthPopup(intent, returnTo) {
+  return window.open(buildGoogleStartUrl(intent, returnTo))
+}
+`
+  )
+  writeFixture(
+    root,
+    'functions/api/[[path]].ts',
+    `
+const AUTH_SESSION_RESOLVE_FACADE_PATH = \`v1/auth/\${'session:resolve'}\`
+fetchInternalBff(env, '/internal/v1/auth/bff/session:resolve')
+`
+  )
+  writeFixture(
+    root,
+    'scripts/lib/auth-bootstrap.js',
+    `
+const probes = [
+  { path: '/api/v1/client/init', method: 'POST', body: { client_fingerprint: 'auth-bootstrap-probe' } },
+  { path: '/api/v1/auth/session:resolve', method: 'POST', body: { client_fingerprint: 'auth-bootstrap-probe' } },
+  { path: '/api/v1/auth/passkeys/login/options', method: 'POST', body: { client_fingerprint: 'auth-bootstrap-probe' } },
+  { path: '/api/v1/auth/google/start?intent=login&return_to=%2F', method: 'GET' },
+]
+`
+  )
+  writeFixture(
+    root,
+    'src/api/favoriteService.ts',
+    'type Good = PublicResourceId\nassertUuidV7String(postId)'
+  )
+  writeFixture(root, 'src/api/historyService.ts', 'type Good = PublicResourceId')
+  writeFixture(root, 'src/api/deviceService.ts', 'assertUuidV7String(deviceId)')
+  writeFixture(
+    root,
+    'src/router/index.ts',
+    `
+const guardedResourceRoutes = new Set(['post-detail', 'author-detail', 'discussion-detail', 'user-public-profile', 'passkey-recovery-detail'])
+if (!isContractResourceId(resourceId)) return { name: 'not-found' }
+`
+  )
+  writeFixture(
+    root,
+    'scripts/lib/release-route-contract.js',
+    `
+const DEFAULT_SAMPLE_POST_ROUTE = '/post/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10'
+const DEFAULT_SAMPLE_DISCUSSION_ROUTE = '/community/discussions/018f7da0-0c13-7c5f-a3b2-50d09d31a100'
+`
+  )
+  writeFixture(
+    root,
+    'src/utils/cache/config.ts',
+    "export const UUIDV7_CUTOVER_EPOCH = 'uuidv7-cutover-2026-04'"
+  )
+  writeFixture(
+    root,
+    'src/utils/cache/publicSnapshotCache.ts',
+    "import { UUIDV7_CUTOVER_EPOCH } from './config'\nString(UUIDV7_CUTOVER_EPOCH)"
+  )
+  writeFixture(
+    root,
+    'src/fallbacks/generated/publicSnapshots.ts',
+    "export const publicSnapshots = [{ id: '018f7da0-0c13-7c5f-a3b2-50d09d31a100', target: '/post/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10' }]"
+  )
+}
+
 describe('frontend contract audit', () => {
+  it('passes aligned auth methods and UUIDv7 public ID entrypoints', () => {
+    const root = createRoot()
+    writeAlignedContractFixtures(root)
+
+    expect(validateFrontendContractAudit(root)).toEqual([])
+  })
+
   it('flags numeric public IDs in guarded API services', () => {
-    const root = path.join(tmpdir(), `hmrchan-contract-${Date.now()}`)
-    for (const file of [
-      'src/api/authService.ts',
-      'src/api/twoFactorService.ts',
-      'src/api/clientSecurityService.ts',
-      'src/services/googleAuthService.ts',
-      'functions/api/[[path]].ts',
-      'scripts/lib/auth-bootstrap.js',
-    ]) {
-      writeFixture(
-        root,
-        file,
-        [
-          '/api/v1/client/init',
-          '/api/v1/auth/session:resolve',
-          '/api/v1/auth/google/start',
-          '/api/v1/auth/passkeys/login/options',
-          '/api/v1/auth/passkeys/login/verify',
-          '/api/v1/auth/passkeys/recovery/start',
-          '/api/v1/auth/passkeys/recovery/verify',
-          '/api/v1/auth/passkeys/recovery/${id}/status',
-          '/api/v1/auth/passkeys/recovery/register/options',
-          '/api/v1/auth/passkeys/recovery/register/verify',
-          '/api/v1/2fa/status',
-          '/api/v1/2fa/setup',
-          '/api/v1/2fa/verify',
-          '/api/v1/2fa/disable',
-          '/api/v1/2fa/webauthn/register/options',
-          '/api/v1/2fa/webauthn/register/verify',
-        ].join('\n')
-      )
-    }
+    const root = createRoot()
+    writeAlignedContractFixtures(root)
     writeFixture(root, 'src/api/favoriteService.ts', 'type Bad = { id: string | number }')
-    writeFixture(root, 'src/api/historyService.ts', 'type Good = PublicResourceId')
-    writeFixture(root, 'src/api/deviceService.ts', 'assertUuidV7String(deviceId)')
 
     expect(validateFrontendContractAudit(root)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: 'numeric-public-id-contract-drift' }),
+      ])
+    )
+  })
+
+  it('flags auth method drift', () => {
+    const root = createRoot()
+    writeAlignedContractFixtures(root)
+    writeFixture(
+      root,
+      'src/api/authService.ts',
+      `
+const AUTH_SESSION_RESOLVE_PATH = '/auth/session:resolve'
+export interface PasskeyRecoveryStartRequest { email: string }
+export interface PasskeyRecoveryVerifyRequest { verification_code: string }
+export interface PasskeyRecoveryVerifyResponse { recovery_id: string }
+export interface RecoveryPasskeyRegistrationRequest { recovery_id: string }
+export const authService = {
+  resolveSession: () => apiClient.post(AUTH_SESSION_RESOLVE_PATH, null),
+  beginPasswordlessLogin: () => apiClient.get('/auth/passkeys/login/options'),
+  finishPasswordlessLogin: (ceremonyId, credential) => apiClient.post('/auth/passkeys/login/verify', { ceremony_id: ceremonyId, credential }),
+  startPasskeyRecovery: (data) => apiClient.post('/auth/passkeys/recovery/start', data),
+  verifyPasskeyRecovery: (data) => apiClient.post('/auth/passkeys/recovery/verify', data),
+  getPasskeyRecoveryStatus: (recoveryId) => apiClient.get(\`/auth/passkeys/recovery/\${recoveryId}/status\`),
+  beginRecoveryPasskeyRegistration: (data) => apiClient.post('/auth/passkeys/recovery/register/options', data),
+  finishRecoveryPasskeyRegistration: (recoveryId, ceremonyId, credential) => apiClient.post('/auth/passkeys/recovery/register/verify', { recovery_id: recoveryId, ceremony_id: ceremonyId, credential }),
+}
+`
+    )
+
+    expect(validateFrontendContractAudit(root)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'auth-contract-method-drift' })])
+    )
+  })
+
+  it('flags critical auth field drift', () => {
+    const root = createRoot()
+    writeAlignedContractFixtures(root)
+    writeFixture(
+      root,
+      'src/api/authService.ts',
+      `
+const AUTH_SESSION_RESOLVE_PATH = '/auth/session:resolve'
+export interface PasskeyRecoveryStartRequest { email: string }
+export interface PasskeyRecoveryVerifyRequest { verification_code: string }
+export interface PasskeyRecoveryVerifyResponse { recovery_id: string }
+export interface RecoveryPasskeyRegistrationRequest { recovery_id: string }
+export const authService = {
+  resolveSession: () => apiClient.post(AUTH_SESSION_RESOLVE_PATH, null),
+  beginPasswordlessLogin: () => apiClient.post('/auth/passkeys/login/options', {}),
+  finishPasswordlessLogin: (ceremonyId) => apiClient.post('/auth/passkeys/login/verify', { ceremony_id: ceremonyId }),
+  startPasskeyRecovery: (data) => apiClient.post('/auth/passkeys/recovery/start', data),
+  verifyPasskeyRecovery: (data) => apiClient.post('/auth/passkeys/recovery/verify', data),
+  getPasskeyRecoveryStatus: (recoveryId) => apiClient.get(\`/auth/passkeys/recovery/\${recoveryId}/status\`),
+  beginRecoveryPasskeyRegistration: (data) => apiClient.post('/auth/passkeys/recovery/register/options', data),
+  finishRecoveryPasskeyRegistration: (recoveryId, ceremonyId, credential) => apiClient.post('/auth/passkeys/recovery/register/verify', { recovery_id: recoveryId, ceremony_id: ceremonyId, credential }),
+}
+`
+    )
+
+    expect(validateFrontendContractAudit(root)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'missing-auth-contract-field' })])
+    )
+  })
+
+  it('flags missing route and cache cutover guards', () => {
+    const root = createRoot()
+    writeAlignedContractFixtures(root)
+    writeFixture(root, 'src/router/index.ts', "path: '/post/:id'")
+    writeFixture(root, 'src/utils/cache/config.ts', "export const CACHE_VERSION = 'v3'")
+
+    expect(validateFrontendContractAudit(root)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'missing-route-public-id-guard' }),
+        expect.objectContaining({ code: 'missing-cache-uuidv7-cutover-epoch' }),
+      ])
+    )
+  })
+
+  it('blocks generated v4 snapshots', () => {
+    const root = createRoot()
+    writeAlignedContractFixtures(root)
+    writeFixture(
+      root,
+      'src/fallbacks/generated/publicSnapshots.ts',
+      "export const publicSnapshots = [{ id: 'dd8173a9-7ecc-4ecb-a362-0286d0eee53c', target: '/post/dd8173a9-7ecc-4ecb-a362-0286d0eee53c' }]"
+    )
+
+    expect(validateFrontendContractAudit(root)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'stale-public-snapshot-id-contract' }),
       ])
     )
   })

@@ -384,8 +384,13 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     padding-bottom: calc(env(safe-area-inset-bottom, 0rem) + var(--spacing-6));
   }
 
+  .footer-marquee {
+    display: none;
+  }
+
   .footer-marquee__track {
-    font-size: clamp(1.1rem, 6vw, 1.8rem);
+    gap: clamp(0.75rem, 4vw, 1.25rem);
+    font-size: clamp(1rem, 5vw, 1.35rem);
   }
 
   .footer-main,

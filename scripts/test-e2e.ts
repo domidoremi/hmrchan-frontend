@@ -1750,6 +1750,8 @@ async function main(): Promise<void> {
     const skippedSampleChecks: RouteCheck[] = []
     let resolvedSamplePostRoute = DEFAULT_SAMPLE_POST_ROUTE
     let resolvedSampleDiscussionRoute = DEFAULT_SAMPLE_DISCUSSION_ROUTE
+    let samplePostSkipReason = 'sample post route unavailable'
+    let sampleDiscussionSkipReason = 'sample discussion route unavailable'
 
     try {
       const postResolution = await resolveSampleDetailRoute(sampleRouteProbePage, baseUrl, {
@@ -1758,6 +1760,7 @@ async function main(): Promise<void> {
         fallbackRoute: DEFAULT_SAMPLE_POST_ROUTE,
         shellSelector: '.post-detail-page',
         readinessSelectorsAll: ['.post-comments'],
+        dataDependent: true,
       })
       const discussionResolution = await resolveSampleDetailRoute(sampleRouteProbePage, baseUrl, {
         label: 'sample discussion route',
@@ -1765,6 +1768,7 @@ async function main(): Promise<void> {
         fallbackRoute: DEFAULT_SAMPLE_DISCUSSION_ROUTE,
         shellSelector: '.discussion-detail-page',
         readinessSelectorsAll: ['.discussion-comments'],
+        dataDependent: true,
       })
 
       if (postResolution.route) {
@@ -1776,6 +1780,7 @@ async function main(): Promise<void> {
           console.warn(`⚠️ E2E_SAMPLE_POST_ROUTE 无效，已回退到 ${resolvedSamplePostRoute}`)
         }
       } else if (postResolution.skipReason) {
+        samplePostSkipReason = postResolution.skipReason
         console.warn(`⚠️ ${postResolution.skipReason}`)
         skippedSampleChecks.push(
           {
@@ -1804,6 +1809,7 @@ async function main(): Promise<void> {
           )
         }
       } else if (discussionResolution.skipReason) {
+        sampleDiscussionSkipReason = discussionResolution.skipReason
         console.warn(`⚠️ ${discussionResolution.skipReason}`)
         skippedSampleChecks.push(
           {
@@ -1865,9 +1871,7 @@ async function main(): Promise<void> {
         skippedSampleChecks
           .filter((check) => check.mode === 'guest')
           .map((check) =>
-            check.name === 'sample post route'
-              ? 'sample post route unavailable'
-              : 'sample discussion route unavailable'
+            check.name === 'sample post route' ? samplePostSkipReason : sampleDiscussionSkipReason
           )
           .join('; ')
       )
@@ -1949,8 +1953,8 @@ async function main(): Promise<void> {
             .filter((check) => check.mode === 'auth')
             .map((check) =>
               check.name === 'authenticated sample post'
-                ? 'sample post route unavailable'
-                : 'sample discussion route unavailable'
+                ? samplePostSkipReason
+                : sampleDiscussionSkipReason
             )
             .join('; ')
         )
@@ -2034,8 +2038,8 @@ async function main(): Promise<void> {
             .filter((check) => check.mode === 'auth')
             .map((check) =>
               check.name === 'authenticated sample post'
-                ? 'sample post route unavailable'
-                : 'sample discussion route unavailable'
+                ? samplePostSkipReason
+                : sampleDiscussionSkipReason
             )
             .join('; ')
         )

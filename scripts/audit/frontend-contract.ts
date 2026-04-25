@@ -8,7 +8,7 @@ const frontendContractAudit: AuditModule = {
     const start = Date.now()
     const issues = validateFrontendContractAudit(options.projectRoot).map(
       (issue): AuditIssue => ({
-        severity: 'error',
+        severity: issue.severity ?? 'error',
         message: issue.message,
         file: issue.file,
         rule: issue.code,
@@ -19,7 +19,8 @@ const frontendContractAudit: AuditModule = {
       })
     )
 
-    const status: AuditStatus = issues.length > 0 ? 'fail' : 'pass'
+    const hasErrors = issues.some((issue) => issue.severity === 'error')
+    const status: AuditStatus = hasErrors ? 'fail' : issues.length > 0 ? 'warn' : 'pass'
 
     return {
       module: 'frontend-contract',

@@ -16,6 +16,14 @@ function getDetailRouteAnchorSelectors(path) {
   return []
 }
 
+function createSampleDetailSkipReason(label, classification, lastFailure) {
+  const suffix =
+    classification === 'data-dependent'
+      ? 'sample data is unavailable or no longer maps to a live public UUIDv7 resource'
+      : lastFailure
+  return `${label} unavailable (${classification}): ${suffix}; last probe: ${lastFailure}`
+}
+
 export async function ensureDetailRouteReadiness(page, route, options = {}) {
   const readinessSelectorsAll = route.readinessSelectorsAll ?? []
   const readinessSelectorsAny = route.readinessSelectorsAny ?? []
@@ -106,6 +114,14 @@ export async function resolveSampleDetailRoute(page, baseUrl, config) {
 
       if (state.notFound) {
         lastFailure = `${candidate} resolved to not-found`
+        if (config.dataDependent !== false) {
+          return {
+            route: null,
+            source: null,
+            classification: 'data-dependent',
+            skipReason: createSampleDetailSkipReason(config.label, 'data-dependent', lastFailure),
+          }
+        }
         continue
       }
 
@@ -154,6 +170,11 @@ export async function resolveSampleDetailRoute(page, baseUrl, config) {
   return {
     route: null,
     source: null,
-    skipReason: `${config.label} unavailable: ${lastFailure}`,
+    classification: config.dataDependent === false ? 'unavailable' : 'data-dependent',
+    skipReason: createSampleDetailSkipReason(
+      config.label,
+      config.dataDependent === false ? 'unavailable' : 'data-dependent',
+      lastFailure
+    ),
   }
 }

@@ -34,6 +34,9 @@ describe('resolveHtmlDocument', () => {
   it('marks auth and private routes as noindex', () => {
     const loginConfig = resolveHtmlDocument(new URL('https://momichan.xyz/login'))
     const authCallbackConfig = resolveHtmlDocument(new URL('https://momichan.xyz/auth/callback'))
+    const passkeyRecoveryConfig = resolveHtmlDocument(
+      new URL('https://momichan.xyz/auth/passkeys/recovery')
+    )
     const favoritesConfig = resolveHtmlDocument(new URL('https://momichan.xyz/favorites'))
     const privateProfilePaths = [
       '/profile',
@@ -60,6 +63,10 @@ describe('resolveHtmlDocument', () => {
     expect(authCallbackConfig.status).toBe(200)
     expect(authCallbackConfig.robots).toBe('noindex, nofollow')
     expect(authCallbackConfig.title).toBe('Authentication callback · MomiChan')
+
+    expect(passkeyRecoveryConfig.status).toBe(200)
+    expect(passkeyRecoveryConfig.robots).toBe('noindex, nofollow')
+    expect(passkeyRecoveryConfig.title).toBe('Account security · MomiChan')
 
     expect(favoritesConfig.status).toBe(200)
     expect(favoritesConfig.robots).toBe('noindex, nofollow')

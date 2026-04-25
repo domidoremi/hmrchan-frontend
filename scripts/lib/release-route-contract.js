@@ -1,8 +1,8 @@
 const SAMPLE_POST_ROUTE_TOKEN = '__SAMPLE_POST__'
 const SAMPLE_DISCUSSION_ROUTE_TOKEN = '__SAMPLE_DISCUSSION__'
-const DEFAULT_SAMPLE_POST_ROUTE = '/post/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
+const DEFAULT_SAMPLE_POST_ROUTE = '/post/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10'
 const DEFAULT_SAMPLE_DISCUSSION_ROUTE =
-  '/community/discussions/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
+  '/community/discussions/018f7da0-0c13-7c5f-a3b2-50d09d31a100'
 
 const SEO_CRITICAL_PATHS = new Set([
   '/',
@@ -104,12 +104,14 @@ const GUEST_BROWSER_ROUTE_DEFINITIONS = Object.freeze(
       path: SAMPLE_POST_ROUTE_TOKEN,
       mode: 'guest',
       shellSelector: '.post-detail-page',
+      sampleDataPolicy: 'data-dependent',
     },
     {
       name: 'sample discussion route',
       path: SAMPLE_DISCUSSION_ROUTE_TOKEN,
       mode: 'guest',
       shellSelector: '.discussion-detail-page',
+      sampleDataPolicy: 'data-dependent',
     },
     {
       name: 'profile redirect to login',
@@ -492,6 +494,7 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze(
       readinessSelectorsAll: ['.post-comments', '[data-testid="comment-thread-header"]'],
       readinessSelectorsAny: ['[data-testid="comment-composer"]'],
       includeInManualRunner: false,
+      sampleDataPolicy: 'data-dependent',
     },
     {
       name: 'authenticated sample discussion',
@@ -501,6 +504,7 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze(
       readinessSelectorsAll: ['.discussion-comments', '[data-testid="comment-thread-header"]'],
       readinessSelectorsAny: ['[data-testid="discussion-comment-composer"]'],
       includeInManualRunner: false,
+      sampleDataPolicy: 'data-dependent',
     },
   ].map(attachRouteContractMetadata)
 )

@@ -4,7 +4,7 @@
  */
 
 import { idbDelete, idbGet, idbPruneByIndex, idbSet, STORES } from './idb'
-import { CACHE_LIMITS, CACHE_TTL, generateCacheKey } from './config'
+import { CACHE_LIMITS, CACHE_TTL, UUIDV7_CUTOVER_EPOCH, generateCacheKey } from './config'
 import { memoryCache } from './memoryCache'
 import { deepClone } from '@/utils/modernAPIs'
 
@@ -27,7 +27,7 @@ function schedulePublicSnapshotPrune(): void {
 }
 
 function buildSnapshotKey(scope: string, params: Record<string, unknown> = {}): string {
-  return generateCacheKey(`public_snapshot:${scope}`, params)
+  return generateCacheKey(`public_snapshot:${UUIDV7_CUTOVER_EPOCH}:${scope}`, params)
 }
 
 function cloneSnapshotData<T>(value: T): T {

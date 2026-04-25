@@ -194,40 +194,8 @@ onBeforeUnmount(() => {
 
 @media (max-width: 960px) {
   .home-quick-nav {
-    inset-block-start: 50%;
-    inset-block-end: auto;
-    display: grid;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border: 0.0625rem solid var(--quick-nav-rail-border);
-    border-radius: 999rem;
-    background: var(--quick-nav-rail-bg);
-    box-shadow: 0 1.1rem 2.2rem -1.85rem rgba(15, 23, 42, 0.2);
-    backdrop-filter: blur(0.5rem);
-    -webkit-backdrop-filter: blur(0.5rem);
-    transform: translate3d(var(--home-quick-nav-drag-x, 0px), -50%, 0);
-    touch-action: none;
-  }
-
-  .home-quick-nav[data-side='left'] {
-    inset-inline-start: calc(env(safe-area-inset-left, 0rem) + 0.75rem);
-    inset-inline-end: auto;
-  }
-
-  .home-quick-nav[data-side='right'] {
-    inset-inline-start: auto;
-    inset-inline-end: calc(env(safe-area-inset-right, 0rem) + 0.75rem);
-  }
-
-  .home-quick-nav.is-dragging {
-    transition: none;
-  }
-
-  .home-quick-nav__item {
-    inline-size: 2.5rem;
-    block-size: 2.5rem;
-    background: transparent;
-    box-shadow: none;
+    display: none;
+    pointer-events: none;
   }
 }
 
