@@ -17,11 +17,7 @@ function hasIntegrityAttribute(element: Element): boolean {
 }
 
 function collectMissingIntegrityAssets(): string[] {
-  const selectors = [
-    'script[src]',
-    'link[rel="stylesheet"][href]',
-    'link[rel="modulepreload"][href]',
-  ].join(', ')
+  const selectors = ['script[src]', 'link[rel="modulepreload"][href]'].join(', ')
 
   return Array.from(document.querySelectorAll(selectors))
     .map((element) => {

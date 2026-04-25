@@ -204,6 +204,7 @@ describe('createAuthSessionController', () => {
     expect(authService.getCurrentUser).toHaveBeenCalledWith(
       expect.objectContaining({
         securityPolicy: 'sensitive',
+        skipAuthLogoutOnUnauthorized: true,
         skipErrorToast: true,
       })
     )
@@ -274,6 +275,34 @@ describe('createAuthSessionController', () => {
     window.dispatchEvent(new CustomEvent('security:risk-mode-changed'))
     expect(state.runtimeAuthzCache.value).toBeNull()
     expect(state.stepUpRequired.value).toBe(true)
+
+    cleanup()
+    controller.cleanup()
+  })
+
+  it('clears step-up state when risk mode returns to normal', () => {
+    const state = createState()
+    state.user.value = createUser()
+    state.runtimeAuthzCache.value = {
+      roles: ['member'],
+      permissions: [],
+      version: '1',
+      expiresAt: Date.now() + 60000,
+    }
+    state.stepUpRequired.value = true
+    const controller = createAuthSessionController({ router, state })
+    const cleanup = controller.setupAuthListener()
+
+    window.dispatchEvent(
+      new CustomEvent('security:risk-mode-changed', { detail: { riskMode: 'normal' } })
+    )
+
+    expect(state.stepUpRequired.value).toBe(false)
+    expect(state.runtimeAuthzCache.value).toEqual(
+      expect.objectContaining({
+        version: '1',
+      })
+    )
 
     cleanup()
     controller.cleanup()

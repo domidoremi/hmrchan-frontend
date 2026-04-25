@@ -305,6 +305,17 @@ describe('Auth entry pages', () => {
     expect(wrapper.find('.turnstile-widget-stub').attributes('data-size')).toBe('compact')
   })
 
+  it('keeps the sensitive reauth login form mounted for already authenticated users', () => {
+    testState.route.query = { redirect: '/profile/security', reauth: 'sensitive' }
+    testState.authStore.isAuthenticated = true
+
+    mount(LoginPage, {
+      global: globalConfig,
+    })
+
+    expect(testState.routerReplace).not.toHaveBeenCalled()
+  })
+
   it('renders the shared shell, Google provider, and silent Turnstile mount on the register page', () => {
     testState.turnstile.siteKey = 'site-key'
     testState.turnstile.enabled = true
