@@ -347,6 +347,42 @@ describe('apiClient', () => {
       expect(logoutHandler).not.toHaveBeenCalled()
       window.removeEventListener('auth:logout', logoutHandler)
     })
+
+    it('does not retry or dispatch logout for handled step-up verification 401 responses', async () => {
+      establishRuntimeSession()
+      const logoutHandler = vi.fn()
+      window.addEventListener('auth:logout', logoutHandler)
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse(
+          { detail: 'Password verification failed' },
+          {
+            status: 401,
+            headers: {
+              'X-Bff-Auth-Retry-Required': 'true',
+            },
+          }
+        )
+      )
+
+      await expect(
+        apiClient.post(
+          '/auth/verify-identity',
+          { password: 'wrong-password', action: 'update_security_settings' },
+          {
+            securityPolicy: 'sensitive',
+            skipUnauthorizedRetry: true,
+            skipAuthLogoutOnUnauthorized: true,
+            skipErrorToast: true,
+          }
+        )
+      ).rejects.toMatchObject({
+        status: 401,
+      })
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      expect(logoutHandler).not.toHaveBeenCalled()
+      window.removeEventListener('auth:logout', logoutHandler)
+    })
   })
 
   describe('mutating requests', () => {
