@@ -384,6 +384,51 @@ describe('functions/api proxy', () => {
     })
   })
 
+  it.each([
+    ['locked account', 'ACCOUNT_LOCKED'],
+    ['inactive account', 'ACCOUNT_INACTIVE'],
+  ])('does not write BFF session cookies when login rejects a %s', async (_label, code) => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+
+      if (url === `${INTERNAL_ORIGIN}/internal/v1/auth/bff/login`) {
+        return jsonResponse(
+          {
+            code,
+            message: 'Account cannot sign in.',
+          },
+          { status: 403 }
+        )
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/login`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+          'X-Client-Fingerprint': 'manual-check',
+        },
+        body: JSON.stringify({
+          username: 'blocked-user',
+          password: 'password123',
+        }),
+        path: ['v1', 'auth', 'login'],
+      })
+    )
+
+    expect(response.status).toBe(403)
+    expect(getSetCookies(response)).toEqual([])
+    await expect(response.json()).resolves.toEqual({
+      code,
+      message: 'Account cannot sign in.',
+    })
+  })
+
   it('falls back to session material when auth/me responds with a non-JSON 2xx body', async () => {
     const material = createSessionMaterial({
       user: createUser({
