@@ -4,12 +4,13 @@
 echo "🔍 运行推送前检查..."
 echo ""
 
-# Medium-load pre-push validation
-echo "🚦 运行中负载推送门禁..."
+# Medium-load pre-push validation. This intentionally excludes build, full unit,
+# Docker, browser, and local audit gates.
+echo "🚦 运行中负载 Hook 门禁..."
 if resolve_bun_bin; then
-  run_bun run validate:release --mode prepush --quiet
+  run_bun run validate:release --mode hook --quiet
 else
-  run_node_tool scripts/validate-release.mjs --mode prepush --quiet
+  run_node_tool scripts/validate-release.mjs --mode hook --quiet
 fi
 if [ $? -ne 0 ]; then
   echo ""
@@ -18,7 +19,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "ℹ️  pre-push 不运行 Docker/browser full release gate。发布前请显式执行：bun run validate:release --mode local"
+echo "ℹ️  pre-push 不运行 build/full unit/Docker/browser gate。发布前请显式执行：bun run validate:release --mode local"
 
 echo ""
 echo "✅ 所有检查通过，准备推送..."

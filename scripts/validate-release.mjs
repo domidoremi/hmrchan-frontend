@@ -115,13 +115,15 @@ function printHelp() {
 
 Usage:
   bun run validate:release
+  bun run validate:release --mode hook
   bun run validate:release --mode prepush
+  bun run validate:release --mode prepush-full
   bun run validate:release --mode local
   bun run validate:release --mode candidate
   bun run validate:release --mode production
 
 Options:
-  --mode <prepush|local|candidate|production>
+  --mode <hook|prepush|prepush-full|local|candidate|production>
   --artifact-dir <path>
   --quiet              capture child command output to artifacts and print stage summaries only
   --help
@@ -346,6 +348,36 @@ async function runStaticGateStage(stageRecord) {
   return finalizeStage(stageRecord, {
     status: 'passed',
     reason: 'Static release gates passed.',
+    commands: commandResults,
+  })
+}
+
+async function runHookStaticGateStage(stageRecord) {
+  const env = { ...process.env }
+  const commands = [
+    ['bun', 'run', 'format:check'],
+    ['bun', 'run', 'type-check'],
+    ['bun', 'run', 'lint:strict'],
+    [
+      'node',
+      'scripts/run-vitest.mjs',
+      'run',
+      'src/__tests__/scripts/validate-release.spec.ts',
+      'src/__tests__/scripts/command-runner.spec.ts',
+      'src/__tests__/scripts/frontend-contract-audit.spec.ts',
+      'src/__tests__/scripts/release-route-contract.spec.ts',
+      '--reporter=default',
+    ],
+  ]
+
+  const commandResults = await runStageCommands(stageRecord, commands, env, {
+    timeoutMs: STATIC_GATE_COMMAND_TIMEOUT_MS,
+    quiet: stageRecord.quiet,
+  })
+
+  return finalizeStage(stageRecord, {
+    status: 'passed',
+    reason: 'Hook static gates passed without build, full unit suite, Docker, or browser gates.',
     commands: commandResults,
   })
 }
@@ -628,6 +660,9 @@ async function main() {
         switch (stageRecord.id) {
           case 'stage-0-contract-self-check':
             stageRecords[index] = await runContractSelfCheckStage(stageRecords[index])
+            break
+          case 'stage-1-hook-static':
+            stageRecords[index] = await runHookStaticGateStage(stageRecords[index])
             break
           case 'stage-1-local-static':
             stageRecords[index] = await runStaticGateStage(stageRecords[index])

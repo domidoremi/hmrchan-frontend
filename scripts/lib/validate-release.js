@@ -1,41 +1,61 @@
 import path from 'node:path'
 
-export const VALIDATION_MODES = Object.freeze(['prepush', 'local', 'candidate', 'production'])
+export const VALIDATION_MODES = Object.freeze([
+  'hook',
+  'prepush',
+  'prepush-full',
+  'local',
+  'candidate',
+  'production',
+])
 
 const VALIDATION_STAGE_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'stage-0-contract-self-check',
     order: 0,
     name: '合同自检',
-    requiredModes: Object.freeze(['prepush', 'local', 'candidate', 'production']),
+    requiredModes: Object.freeze([
+      'hook',
+      'prepush',
+      'prepush-full',
+      'local',
+      'candidate',
+      'production',
+    ]),
+  }),
+  Object.freeze({
+    id: 'stage-1-hook-static',
+    order: 1,
+    name: 'Hook 中负载静态门禁',
+    requiredModes: Object.freeze(['hook', 'prepush']),
   }),
   Object.freeze({
     id: 'stage-1-local-static',
-    order: 1,
-    name: '本地静态门禁',
-    requiredModes: Object.freeze(['prepush', 'local', 'candidate', 'production']),
+    order: 2,
+    name: '完整本地静态门禁',
+    requiredModes: Object.freeze(['prepush-full', 'local', 'candidate', 'production']),
   }),
   Object.freeze({
     id: 'stage-2-local-browser',
-    order: 2,
+    order: 3,
     name: '本地浏览器门禁',
     requiredModes: Object.freeze(['local', 'candidate', 'production']),
   }),
   Object.freeze({
     id: 'stage-3-controlled-site',
-    order: 3,
+    order: 4,
     name: '受控站点门禁',
     requiredModes: Object.freeze(['candidate', 'production']),
   }),
   Object.freeze({
     id: 'stage-4-production-preflight',
-    order: 4,
+    order: 5,
     name: '生产预检',
     requiredModes: Object.freeze(['candidate', 'production']),
   }),
   Object.freeze({
     id: 'stage-5-production-regression',
-    order: 5,
+    order: 6,
     name: '生产深回归',
     requiredModes: Object.freeze(['production']),
   }),
@@ -178,7 +198,7 @@ export function buildValidationSummary({ mode, artifactDir, git, targets, change
 
   if (failedStage || unexpectedSkip || unresolvedStage) {
     status = 'failed'
-  } else if (mode === 'prepush' || mode === 'production') {
+  } else if (['hook', 'prepush', 'prepush-full', 'production'].includes(mode)) {
     status = 'passed'
   }
 
@@ -195,7 +215,7 @@ export function buildValidationSummary({ mode, artifactDir, git, targets, change
     } else {
       blockingReason = 'Selected release stage failed.'
     }
-  } else if (mode !== 'prepush' && mode !== 'production') {
+  } else if (!['hook', 'prepush', 'prepush-full', 'production'].includes(mode)) {
     blockingReason = 'Production deep regression did not run in this validation mode.'
   }
 

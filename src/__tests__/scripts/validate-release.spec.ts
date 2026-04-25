@@ -9,12 +9,22 @@ import {
 
 describe('validate release helpers', () => {
   it('builds the expected stage plan for each validation mode', () => {
+    const hookPlan = getValidationStagePlan('hook')
     const prepushPlan = getValidationStagePlan('prepush')
+    const prepushFullPlan = getValidationStagePlan('prepush-full')
     const localPlan = getValidationStagePlan('local')
     const candidatePlan = getValidationStagePlan('candidate')
     const productionPlan = getValidationStagePlan('production')
 
+    expect(hookPlan.filter((stage) => stage.selected).map((stage) => stage.id)).toEqual([
+      'stage-0-contract-self-check',
+      'stage-1-hook-static',
+    ])
     expect(prepushPlan.filter((stage) => stage.selected).map((stage) => stage.id)).toEqual([
+      'stage-0-contract-self-check',
+      'stage-1-hook-static',
+    ])
+    expect(prepushFullPlan.filter((stage) => stage.selected).map((stage) => stage.id)).toEqual([
       'stage-0-contract-self-check',
       'stage-1-local-static',
     ])
@@ -57,8 +67,8 @@ describe('validate release helpers', () => {
     expect(summary.hasValidationContractChanges).toBe(true)
   })
 
-  it('marks prepush and production validation as passed when selected stages pass', () => {
-    const commonStages = [
+  it('marks hook, prepush-full, and production validation as passed when selected stages pass', () => {
+    const hookStages = [
       {
         id: 'stage-0-contract-self-check',
         order: 0,
@@ -68,18 +78,29 @@ describe('validate release helpers', () => {
         reason: null,
       },
       {
-        id: 'stage-1-local-static',
+        id: 'stage-1-hook-static',
         order: 1,
-        name: '本地静态门禁',
+        name: 'Hook 中负载静态门禁',
+        selected: true,
+        status: 'passed',
+        reason: null,
+      },
+    ]
+    const fullStaticStages = [
+      hookStages[0],
+      {
+        id: 'stage-1-local-static',
+        order: 2,
+        name: '完整本地静态门禁',
         selected: true,
         status: 'passed',
         reason: null,
       },
     ]
 
-    const prepushSummary = buildValidationSummary({
-      mode: 'prepush',
-      artifactDir: '/tmp/validation-prepush',
+    const hookSummary = buildValidationSummary({
+      mode: 'hook',
+      artifactDir: '/tmp/validation-hook',
       git: {
         branch: 'feature/demo',
         commitSha: 'abc123',
@@ -90,7 +111,22 @@ describe('validate release helpers', () => {
         controlledBaseUrl: null,
       },
       changeSummary: classifyValidationChanges([]),
-      stages: commonStages,
+      stages: hookStages,
+    })
+    const prepushFullSummary = buildValidationSummary({
+      mode: 'prepush-full',
+      artifactDir: '/tmp/validation-prepush-full',
+      git: {
+        branch: 'feature/demo',
+        commitSha: 'abc123',
+        diffRange: 'origin/main...HEAD',
+      },
+      targets: {
+        baseUrl: 'https://momichan.xyz',
+        controlledBaseUrl: null,
+      },
+      changeSummary: classifyValidationChanges([]),
+      stages: fullStaticStages,
     })
     const candidateSummary = buildValidationSummary({
       mode: 'candidate',
@@ -105,7 +141,7 @@ describe('validate release helpers', () => {
         controlledBaseUrl: 'https://controlled.example.com',
       },
       changeSummary: classifyValidationChanges([]),
-      stages: commonStages,
+      stages: fullStaticStages,
     })
     const productionSummary = buildValidationSummary({
       mode: 'production',
@@ -120,11 +156,13 @@ describe('validate release helpers', () => {
         controlledBaseUrl: 'https://controlled.example.com',
       },
       changeSummary: classifyValidationChanges([]),
-      stages: commonStages,
+      stages: fullStaticStages,
     })
 
-    expect(prepushSummary.status).toBe('passed')
-    expect(prepushSummary.blockingReason).toBeNull()
+    expect(hookSummary.status).toBe('passed')
+    expect(hookSummary.blockingReason).toBeNull()
+    expect(prepushFullSummary.status).toBe('passed')
+    expect(prepushFullSummary.blockingReason).toBeNull()
     expect(candidateSummary.status).toBe('incomplete')
     expect(candidateSummary.blockingReason).toContain('Production deep regression')
     expect(productionSummary.status).toBe('passed')
