@@ -3175,9 +3175,7 @@ onBeforeUnmount(() => {
     var(--navbar-visible-height, var(--navbar-height, 4rem))
   );
   --home-safe-block-size: calc(100dvh - var(--home-navbar-stable-height));
-  --home-safe-block-size-mobile: calc(
-    100dvh - var(--home-navbar-stable-height) - env(safe-area-inset-bottom, 0rem)
-  );
+  --home-safe-block-size-mobile: 100dvh;
   --home-stage-safe-top: calc(var(--home-navbar-stable-height) + clamp(0.35rem, 1.2vw, 0.9rem));
   --home-stage-safe-bottom: clamp(1.5rem, 4vw, 2.75rem);
   --home-stage-chrome-height: clamp(2.25rem, 3.2vw, 2.85rem);
@@ -7388,7 +7386,7 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .home-page {
     --home-safe-block-size: var(--home-safe-block-size-mobile);
-    --home-stage-safe-bottom: clamp(0.9rem, 2vw, 1.25rem);
+    --home-stage-safe-bottom: calc(var(--mobile-nav-height, 0px) + clamp(0.9rem, 2vw, 1.25rem));
     --home-screen-transition-ms: 0ms;
   }
 
@@ -7403,15 +7401,20 @@ onBeforeUnmount(() => {
   }
 
   .hero {
+    box-sizing: border-box;
     min-block-size: var(--home-safe-block-size-mobile);
     padding-block: max(var(--home-stage-safe-top), clamp(0.75rem, 3vw, 1.1rem))
-      calc(env(safe-area-inset-bottom, 0rem) + clamp(1rem, 4vw, 1.35rem));
+      var(--home-stage-safe-bottom);
   }
 
   .hero-layout {
     grid-template-columns: minmax(0, 1fr);
-    min-block-size: calc(
-      var(--home-safe-block-size-mobile) - var(--home-stage-safe-top) - clamp(1rem, 4vw, 1.35rem)
+    min-block-size: max(
+      0rem,
+      calc(
+        var(--home-safe-block-size-mobile) - var(--home-stage-safe-top) -
+          var(--home-stage-safe-bottom)
+      )
     );
     align-items: center;
     align-content: center;
@@ -7700,6 +7703,12 @@ onBeforeUnmount(() => {
     padding-block: 0.5rem 1.25rem;
     perspective: 16rem;
     perspective-origin: 50% 22%;
+  }
+
+  .media-empty {
+    inline-size: min(100%, 22rem);
+    min-block-size: clamp(12rem, 42dvh, 20rem);
+    margin-inline: auto;
   }
 
   .rail-panel--portal .portal-grid > .portal-card--primary {

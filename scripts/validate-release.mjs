@@ -60,6 +60,7 @@ function parseArgs(argv) {
     mode: 'local',
     help: false,
     artifactDir: process.env.ARTIFACT_DIR?.trim() || '',
+    quiet: process.env.VALIDATION_QUIET === '1',
   }
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -94,6 +95,10 @@ function parseArgs(argv) {
       options.artifactDir = arg.slice('--artifact-dir='.length)
       continue
     }
+    if (arg === '--quiet') {
+      options.quiet = true
+      continue
+    }
 
     throw new Error(`Unknown argument: ${arg}`)
   }
@@ -117,6 +122,7 @@ Usage:
 Options:
   --mode <local|candidate|production>
   --artifact-dir <path>
+  --quiet              capture child command output to artifacts and print stage summaries only
   --help
 `)
 }
@@ -213,11 +219,15 @@ async function runStageCommands(stageRecord, commands, env, options = {}) {
   for (let index = 0; index < commands.length; index += 1) {
     const command = commands[index]
     const artifactDir = buildCommandArtifactDir(stageRecord, command, index)
+    if (options.quiet) {
+      console.log(`  → ${command.join(' ')} (artifacts: ${artifactDir})`)
+    }
     try {
       const result = await runCommand(command, {
         env,
         timeoutMs: options.timeoutMs,
         artifactDir,
+        stdio: options.quiet ? 'pipe' : 'inherit',
       })
       results.push({
         command: command.join(' '),
@@ -297,17 +307,21 @@ async function runContractSelfCheckStage(stageRecord) {
 
   await writeJson(path.join(stageRecord.artifactDir, 'stage.json'), details)
 
-  if (issues.length > 0) {
+  const blockingIssues = issues.filter((issue) => issue.severity !== 'warning')
+  if (blockingIssues.length > 0) {
     return finalizeStage(stageRecord, {
       status: 'failed',
-      reason: issues.map((issue) => issue.message).join(' | '),
+      reason: blockingIssues.map((issue) => issue.message).join(' | '),
       details,
     })
   }
 
   return finalizeStage(stageRecord, {
     status: 'passed',
-    reason: 'Route contract, auth bootstrap probes, and production env policy validated.',
+    reason:
+      issues.length > 0
+        ? 'Route contract, auth bootstrap probes, and production env policy validated with non-blocking warnings.'
+        : 'Route contract, auth bootstrap probes, and production env policy validated.',
     details,
   })
 }
@@ -325,6 +339,7 @@ async function runStaticGateStage(stageRecord) {
 
   const commandResults = await runStageCommands(stageRecord, commands, env, {
     timeoutMs: STATIC_GATE_COMMAND_TIMEOUT_MS,
+    quiet: stageRecord.quiet,
   })
 
   return finalizeStage(stageRecord, {
@@ -353,6 +368,7 @@ async function runLocalBrowserGateStage(stageRecord) {
 
   const commandResults = await runStageCommands(stageRecord, commands, env, {
     timeoutMs: BROWSER_GATE_COMMAND_TIMEOUT_MS,
+    quiet: stageRecord.quiet,
   })
 
   return finalizeStage(stageRecord, {
@@ -415,13 +431,16 @@ async function runControlledSiteGateStage(stageRecord, controlledBaseUrl) {
     ['bun', 'run', 'check:frontend'],
   ]
 
-  await runStageCommands(stageRecord, commands, env, { timeoutMs: BROWSER_GATE_COMMAND_TIMEOUT_MS })
+  const commandResults = await runStageCommands(stageRecord, commands, env, {
+    timeoutMs: BROWSER_GATE_COMMAND_TIMEOUT_MS,
+    quiet: stageRecord.quiet,
+  })
 
   await writeJson(path.join(stageRecord.artifactDir, 'stage.json'), details)
   return finalizeStage(stageRecord, {
     status: 'passed',
     reason: 'Controlled site auth bootstrap probe, route smoke, and frontend health passed.',
-    commands: commands.map((command) => command.join(' ')),
+    commands: commandResults,
     details,
   })
 }
@@ -437,6 +456,7 @@ async function runProductionPreflightStage(stageRecord, baseUrl) {
   await runCommand(command, {
     env,
     artifactDir: buildCommandArtifactDir(stageRecord, command, 0),
+    stdio: stageRecord.quiet ? 'pipe' : 'inherit',
   })
 
   return finalizeStage(stageRecord, {
@@ -457,6 +477,7 @@ async function runProductionRegressionStage(stageRecord, baseUrl) {
   await runCommand(command, {
     env,
     artifactDir: buildCommandArtifactDir(stageRecord, command, 0),
+    stdio: stageRecord.quiet ? 'pipe' : 'inherit',
   })
 
   return finalizeStage(stageRecord, {
@@ -540,13 +561,14 @@ async function main() {
   const baseUrl = (process.env.BASE_URL?.trim() || 'https://momichan.xyz').replace(/\/$/, '')
   const controlledBaseUrl = process.env.CONTROLLED_BASE_URL?.trim()?.replace(/\/$/, '') || null
 
-  const stageRecords = stagePlan.map((stage) =>
-    buildStageRecord(
+  const stageRecords = stagePlan.map((stage) => ({
+    ...buildStageRecord(
       stage,
       buildValidationStageArtifactDir(artifactDir, stage.id),
       stage.id === 'stage-3-controlled-site' ? controlledBaseUrl : baseUrl
-    )
-  )
+    ),
+    quiet: options.quiet,
+  }))
 
   let summary = null
   let writingSummary = false
@@ -650,6 +672,8 @@ async function main() {
           },
         })
       }
+
+      console.log(`  ${stageRecords[index].status}: ${stageRecords[index].reason ?? 'completed'}`)
 
       if (stageRecords[index].status === 'failed') {
         break

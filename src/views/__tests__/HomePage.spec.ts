@@ -3,7 +3,12 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
+import type {
+  HomeAggregateResponse,
+  HomeAuthorBrief,
+  HomeCommunityHighlight,
+  HomeScheduleHighlight,
+} from '@/api/homeService'
 import { resolvePreviewablePostLink } from '@/views/homepage/homeModel'
 
 function createRect(x: number, y: number, width: number, height: number): DOMRect {
@@ -303,20 +308,229 @@ const i18n = createI18n({
   },
 })
 
+const TEST_AUTHOR: HomeAuthorBrief = {
+  id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a001',
+  display_name: 'Fixture Author',
+  username: 'fixture-author',
+  avatar_url: null,
+  profile_url: null,
+  deep_link: '/authors/fixture-author',
+}
+
+const TEST_SCHEDULE_HIGHLIGHTS: HomeScheduleHighlight[] = [
+  {
+    id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a101',
+    title: 'Fixture stream',
+    category: 'live',
+    start_date: '2026-03-20T12:00:00.000Z',
+    end_date: null,
+    is_all_day: false,
+    author: TEST_AUTHOR,
+    badge: 'Live',
+    deep_link: '/schedule',
+  },
+]
+
+const TEST_COMMUNITY_HIGHLIGHTS: HomeCommunityHighlight[] = [
+  {
+    discussion_id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a201',
+    title: 'Fixture discussion',
+    excerpt: 'Fixture discussion excerpt',
+    comment_count: 3,
+    participant_count: 2,
+    updated_at: '2026-03-20T12:30:00.000Z',
+    deep_link: '/discussion/0195fe30-6f9d-7f31-9e6f-c9a5c478a201',
+    author: TEST_AUTHOR,
+  },
+]
+
+function buildHomepageFixtureAggregate(): HomeAggregateResponse {
+  return {
+    version: 'home-test-uuidv7',
+    generated_at: '2026-03-20T00:00:00.000Z',
+    ttl_seconds: 60,
+    hero: {
+      editorial_card: null,
+      spotlight: {
+        post_id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a301',
+        title: 'Fixture spotlight',
+        summary: 'Fixture spotlight summary',
+        author: TEST_AUTHOR,
+        primary_tag: {
+          name: 'spotlight',
+          display_text: '#spotlight',
+          deep_link: '/search?q=spotlight',
+        },
+        image: null,
+        deep_link: '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a301',
+      },
+      stats: [
+        {
+          key: 'updates',
+          label: 'Updates',
+          value: 4,
+          display_value: '4',
+          hint: 'Fixture updates',
+        },
+        {
+          key: 'authors',
+          label: 'Authors',
+          value: 1,
+          display_value: '1',
+          hint: 'Fixture authors',
+        },
+        {
+          key: 'tags',
+          label: 'Tags',
+          value: 2,
+          display_value: '2',
+          hint: 'Fixture tags',
+        },
+      ],
+      trending_tags: [
+        {
+          name: 'fixture',
+          display_text: '#fixture',
+          post_count: 2,
+          growth_rate: null,
+          deep_link: '/search?q=fixture',
+        },
+      ],
+    },
+    portal: {
+      items: [
+        {
+          key: 'schedule',
+          title: 'Schedule',
+          description: 'Fixture schedule portal',
+          count: TEST_SCHEDULE_HIGHLIGHTS.length,
+          display_count: String(TEST_SCHEDULE_HIGHLIGHTS.length),
+          icon: 'calendar',
+          accent: 'blue',
+          deep_link: '/schedule',
+        },
+        {
+          key: 'community',
+          title: 'Community',
+          description: 'Fixture community portal',
+          count: TEST_COMMUNITY_HIGHLIGHTS.length,
+          display_count: String(TEST_COMMUNITY_HIGHLIGHTS.length),
+          icon: 'message-square',
+          accent: 'violet',
+          deep_link: '/community',
+        },
+      ],
+    },
+    featured: {
+      items: [
+        {
+          id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a401',
+          kind: 'story',
+          kicker: 'story',
+          title: 'Fixture featured',
+          subtitle: 'Fixture subtitle',
+          summary: 'Fixture featured summary',
+          cover: null,
+          accent: null,
+          primary_cta: {
+            label: 'Open',
+            type: 'link',
+            target: '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a401',
+          },
+          secondary_cta: null,
+          related_posts: [
+            {
+              post_id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a401',
+              title: 'Fixture related',
+              summary: 'Fixture related summary',
+              author: TEST_AUTHOR,
+              published_at: '2026-03-20T08:00:00.000Z',
+              deep_link: '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a401',
+            },
+          ],
+          related_authors: [TEST_AUTHOR],
+        },
+      ],
+    },
+    trends: {
+      authors: [
+        {
+          id: TEST_AUTHOR.id,
+          display_name: TEST_AUTHOR.display_name,
+          avatar_url: TEST_AUTHOR.avatar_url,
+          post_count: 4,
+          engagement_score: 10,
+          deep_link: TEST_AUTHOR.deep_link,
+        },
+      ],
+      tags: [
+        {
+          name: 'fixture',
+          display_text: '#fixture',
+          post_count: 2,
+          growth_rate: null,
+          deep_link: '/search?q=fixture',
+        },
+      ],
+      schedules: structuredClone(TEST_SCHEDULE_HIGHLIGHTS),
+      community: structuredClone(TEST_COMMUNITY_HIGHLIGHTS),
+    },
+    latest_text_posts: Array.from({ length: 5 }, (_, index) => {
+      const id = `0195fe30-6f9d-7f31-9e6f-c9a5c478a5${String(index).padStart(2, '0')}`
+      return {
+        rank: index + 1,
+        post_id: id,
+        excerpt: `Fixture bubble text ${index + 1}`,
+        author: TEST_AUTHOR,
+        published_at: `2026-03-20T0${index}:00:00.000Z`,
+        time_hint: `${index + 1}h ago`,
+        tags: [
+          {
+            name: 'fixture',
+            display_text: '#fixture',
+            deep_link: '/search?q=fixture',
+          },
+        ],
+        deep_link: `/post/${id}`,
+      }
+    }),
+    story_deck: {
+      items: [
+        {
+          rank: 1,
+          post_id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a601',
+          eyebrow: '#story',
+          title: 'Fixture story',
+          summary: 'Fixture story summary',
+          image: null,
+          author: TEST_AUTHOR,
+          published_at: '2026-03-20T07:00:00.000Z',
+          meta: 'Story meta',
+          deep_link: '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a601',
+        },
+      ],
+      total: 1,
+    },
+  }
+}
+
 function buildInteractiveAggregate() {
-  const aggregate = structuredClone(buildHomepageBootstrapFallback())
+  const aggregate = buildHomepageFixtureAggregate()
   aggregate.latest_text_posts = aggregate.latest_text_posts.map((item, index) => ({
     ...item,
-    post_id: `interactive-post-${index + 1}`,
-    deep_link: `/post/interactive-post-${index + 1}`,
+    post_id: `0195fe30-6f9d-7f31-9e6f-c9a5c478a6${String(index + 1).padStart(2, '0')}`,
+    deep_link: `/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a6${String(index + 1).padStart(2, '0')}`,
   }))
   const leadBubble = aggregate.latest_text_posts[0]
   if (leadBubble) {
+    const nextId = `0195fe30-6f9d-7f31-9e6f-c9a5c478a6${String(
+      aggregate.latest_text_posts.length + 1
+    ).padStart(2, '0')}`
     aggregate.latest_text_posts.push({
       ...leadBubble,
-      post_id: `interactive-post-${aggregate.latest_text_posts.length + 1}`,
-      deep_link: `/post/interactive-post-${aggregate.latest_text_posts.length + 1}`,
-      content: `${leadBubble.content} · encore`,
+      post_id: nextId,
+      deep_link: `/post/${nextId}`,
+      excerpt: `${leadBubble.excerpt} · encore`,
     })
   }
   return aggregate
@@ -426,7 +640,7 @@ describe('HomePage', () => {
     })
     mocks.getScheduleHighlights.mockResolvedValue({
       payload: {
-        items: buildHomepageBootstrapFallback().trends.schedules,
+        items: structuredClone(TEST_SCHEDULE_HIGHLIGHTS),
         generated_at: '2026-03-20T00:00:00.000Z',
       },
       visibility: 'public',
@@ -434,7 +648,7 @@ describe('HomePage', () => {
     })
     mocks.getCommunityHighlights.mockResolvedValue({
       payload: {
-        items: buildHomepageBootstrapFallback().trends.community,
+        items: structuredClone(TEST_COMMUNITY_HIGHLIGHTS),
         generated_at: '2026-03-20T00:00:00.000Z',
       },
       visibility: 'public',
@@ -615,7 +829,7 @@ describe('HomePage', () => {
     await flushPromises()
     expect(firstBubble.element.style.getPropertyValue('--bubble-live-x')).toBe(activeOffset)
 
-    await settleHomeMotion(256)
+    await settleHomeMotion(640)
     expect(firstBubble.classes()).not.toContain('is-under-pressure')
   })
 

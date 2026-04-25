@@ -1638,6 +1638,7 @@ async function main() {
             fallbackRoute: DEFAULT_SAMPLE_POST_ROUTE,
             shellSelector: '.post-detail-page',
             readinessSelectorsAll: ['.post-comments'],
+            dataDependent: true,
           }
         )
         const discussionResolution = await resolveSampleDetailRoute(
@@ -1649,6 +1650,7 @@ async function main() {
             fallbackRoute: DEFAULT_SAMPLE_DISCUSSION_ROUTE,
             shellSelector: '.discussion-detail-page',
             readinessSelectorsAll: ['.discussion-comments'],
+            dataDependent: true,
           }
         )
 

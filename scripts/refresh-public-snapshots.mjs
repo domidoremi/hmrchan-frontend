@@ -4,6 +4,8 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { assertPublicSnapshotIdContract } from './lib/public-snapshot-contract.js'
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const repoRoot = path.resolve(__dirname, '..')
@@ -534,6 +536,7 @@ export const STATIC_DISCUSSION_COMMENTS: Record<string, DiscussionComment[]> = $
 
 async function main() {
   const snapshots = await buildSnapshots()
+  assertPublicSnapshotIdContract(snapshots, { sourceName: 'refreshed public snapshots' })
   await mkdir(path.dirname(generatedModulePath), { recursive: true })
   await writeFile(generatedModulePath, renderModule(snapshots), 'utf8')
   console.log(`[snapshot] wrote ${path.relative(repoRoot, generatedModulePath)}`)

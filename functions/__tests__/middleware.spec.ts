@@ -218,6 +218,43 @@ describe('functions/_middleware', () => {
     expect(html).toMatch(/nonce="[A-Za-z0-9+/=]+"/)
   })
 
+  it('treats passkey recovery as a public auth SPA route instead of a 404 document', async () => {
+    resolveHtmlDocumentWithEdgeData.mockResolvedValue({
+      status: 200,
+      title: 'Account security · MomiChan',
+      description: 'passkey recovery',
+      robots: 'noindex, nofollow',
+      ogType: 'website',
+      canonicalPath: '/auth/passkeys/recovery',
+      ogImage: null,
+      shellTitle: 'Secure your account',
+    })
+
+    const { onRequest } = await import('../_middleware')
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/auth/passkeys/recovery'),
+      env: {},
+      next: () =>
+        Promise.resolve(
+          new MockResponse(
+            '<!doctype html><html><head><title>App</title></head><body><div id="app-root"></div></body></html>',
+            {
+              headers: { 'content-type': 'text/html; charset=utf-8' },
+              status: 200,
+            }
+          )
+        ),
+    } as never)
+
+    expect(response.status).toBe(200)
+    expect(response.statusText).toBe('OK')
+    expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate')
+    expect(resolveHtmlDocumentWithEdgeData).toHaveBeenCalledWith(
+      new URL('https://momichan.xyz/auth/passkeys/recovery'),
+      {}
+    )
+  })
+
   it('passes through non-html responses unchanged', async () => {
     resolveHtmlDocumentWithEdgeData.mockResolvedValue({
       status: 200,

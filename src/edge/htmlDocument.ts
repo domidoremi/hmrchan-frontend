@@ -511,7 +511,12 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     )
   }
 
-  if (path === '/forgot-password' || path === '/reset-password' || path === '/verify-email') {
+  if (
+    path === '/forgot-password' ||
+    path === '/reset-password' ||
+    path === '/verify-email' ||
+    path === '/auth/passkeys/recovery'
+  ) {
     return createDocumentConfig(
       path,
       'Account security',

@@ -62,7 +62,8 @@ export const CACHE_LIMITS = {
 // 缓存版本（用于 SW 缓存命名）
 // ============================================
 
-export const CACHE_VERSION = 'v3'
+export const UUIDV7_CUTOVER_EPOCH = 'uuidv7-cutover-2026-04'
+export const CACHE_VERSION = `v3-${UUIDV7_CUTOVER_EPOCH}`
 
 export const CACHE_NAMES = {
   STATIC: `hmrchan-static-${CACHE_VERSION}`,
