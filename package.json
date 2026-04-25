@@ -26,6 +26,7 @@
     "test:e2e": "bun run scripts/test-e2e.ts",
     "test:functional-chain:local": "bun run scripts/test-functional-chain-local.ts",
     "validate:release": "node scripts/validate-release.mjs",
+    "validate:release:prepush": "node scripts/validate-release.mjs --mode prepush --quiet",
     "validate:release:local": "node scripts/validate-release.mjs --mode local",
     "validate:release:local:quiet": "node scripts/validate-release.mjs --mode local --quiet",
     "validate:release:candidate": "node scripts/validate-release.mjs --mode candidate",

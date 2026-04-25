@@ -7,6 +7,8 @@
 
 ```bash
 bun run validate:release
+bun run validate:release --mode prepush
+bun run validate:release:prepush
 bun run validate:release --mode local
 bun run validate:release --mode local --quiet
 bun run validate:release:local:quiet
@@ -15,6 +17,7 @@ bun run validate:release --mode production
 ```
 
 - 默认模式是 `local`
+- `prepush` 是默认 Git hook 使用的中负载门禁，只跑合同自检和本地静态门禁，不启动 Docker/browser gate
 - artifact 默认输出到 `output/validation/<timestamp>/`
 - 统一摘要固定输出：
   - `summary.json`
@@ -26,16 +29,26 @@ bun run validate:release --mode production
 ## 本地真相源
 
 - `pre-commit` 继续只做最小化格式化与暂存检查
-- `pre-push` 固定执行 `bun run validate:release --mode local`
+- `pre-push` 固定执行 `bun run validate:release --mode prepush --quiet`；hook 不自动改写工作树，不运行全仓库 `prettier --write` / `eslint --fix`
+- `local` 是完整本地 release gate；必须显式运行，不再由默认 `pre-push` 自动触发
 - 候选发布前必须手动执行 `bun run validate:release --mode candidate`
 - `main` 部署后必须手动执行 `bun run validate:release --mode production`
-- 不允许用零散命令口头替代统一 runner；runner 失败即视为失败
+- 不允许用零散命令口头替代统一 runner；对应模式的 runner 失败即视为失败
 
 ## 阶段定义
 
+### `prepush`
+
+用于默认 Git 推送前阻断，目标是中负载、可常规运行，不启动 Docker、本地浏览器、Pages preview 或 local audit bridge：
+
+1. 合同自检
+2. 本地静态门禁
+
+说明：`prepush` 成功会记录为 `passed`，只表示代码通过推送前中负载门禁，不等价于完整发布验证通过。
+
 ### `local`
 
-用于日常开发和推送前阻断，只跑本地硬门禁：
+用于完整本地发布验证，需要显式执行：
 
 1. 合同自检
 2. 本地静态门禁
@@ -103,10 +116,11 @@ bun run validate:release --mode production
 在 Codex、远程终端或其他容易被大日志拖垮的非交互环境中，优先使用低输出入口：
 
 ```bash
+bun run validate:release --mode prepush --quiet
 bun run validate:release --mode local --quiet
 ```
 
-这不会跳过 Docker、本地后端、local audit bridge、Puppeteer/Chrome 或任何 release stage。若环境不可用，结果仍必须失败，并且只能作为“环境阻塞可诊断、summary 可落盘”的验收信号；不能把 fallback 或 environment-blocked 视为正式发布通过。
+`prepush` 不运行 Docker、本地后端、local audit bridge、Puppeteer/Chrome；它只验证推送前中负载硬门禁。`local --quiet` 不会跳过 Docker、本地后端、local audit bridge、Puppeteer/Chrome 或任何 local release stage，只降低控制台输出。若环境不可用，`local` 结果仍必须失败，并且只能作为“环境阻塞可诊断、summary 可落盘”的验收信号；不能把 fallback 或 environment-blocked 视为正式发布通过。
 
 恢复环境后必须补跑：
 

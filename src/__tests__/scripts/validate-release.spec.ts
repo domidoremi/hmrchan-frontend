@@ -9,10 +9,15 @@ import {
 
 describe('validate release helpers', () => {
   it('builds the expected stage plan for each validation mode', () => {
+    const prepushPlan = getValidationStagePlan('prepush')
     const localPlan = getValidationStagePlan('local')
     const candidatePlan = getValidationStagePlan('candidate')
     const productionPlan = getValidationStagePlan('production')
 
+    expect(prepushPlan.filter((stage) => stage.selected).map((stage) => stage.id)).toEqual([
+      'stage-0-contract-self-check',
+      'stage-1-local-static',
+    ])
     expect(localPlan.filter((stage) => stage.selected).map((stage) => stage.id)).toEqual([
       'stage-0-contract-self-check',
       'stage-1-local-static',
@@ -52,7 +57,7 @@ describe('validate release helpers', () => {
     expect(summary.hasValidationContractChanges).toBe(true)
   })
 
-  it('marks non-production validation as incomplete and production validation as passed', () => {
+  it('marks prepush and production validation as passed when selected stages pass', () => {
     const commonStages = [
       {
         id: 'stage-0-contract-self-check',
@@ -72,6 +77,21 @@ describe('validate release helpers', () => {
       },
     ]
 
+    const prepushSummary = buildValidationSummary({
+      mode: 'prepush',
+      artifactDir: '/tmp/validation-prepush',
+      git: {
+        branch: 'feature/demo',
+        commitSha: 'abc123',
+        diffRange: 'origin/main...HEAD',
+      },
+      targets: {
+        baseUrl: 'https://momichan.xyz',
+        controlledBaseUrl: null,
+      },
+      changeSummary: classifyValidationChanges([]),
+      stages: commonStages,
+    })
     const candidateSummary = buildValidationSummary({
       mode: 'candidate',
       artifactDir: '/tmp/validation-candidate',
@@ -103,6 +123,8 @@ describe('validate release helpers', () => {
       stages: commonStages,
     })
 
+    expect(prepushSummary.status).toBe('passed')
+    expect(prepushSummary.blockingReason).toBeNull()
     expect(candidateSummary.status).toBe('incomplete')
     expect(candidateSummary.blockingReason).toContain('Production deep regression')
     expect(productionSummary.status).toBe('passed')
