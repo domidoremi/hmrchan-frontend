@@ -17,6 +17,8 @@ import { normalizeFavoritesSummaryCount } from '@/api/summaryCounts'
 import { useSettingsStore } from '@/stores/settings'
 import { resolvePreferredPageSize } from '@/composables/usePreferredPageSize'
 
+const CHECKED_POST_CACHE_LIMIT = 300
+
 export const useFavoritesStore = defineStore('favorites', () => {
   const settingsStore = useSettingsStore()
   const items = ref<FavoriteResponse[]>([])
@@ -63,6 +65,19 @@ export const useFavoritesStore = defineStore('favorites', () => {
   function abortFetchTags() {
     fetchTagsController?.abort()
     fetchTagsController = null
+  }
+
+  function rememberCheckedPost(postId: string, value: boolean): void {
+    const cache = checkedPosts.value
+    if (cache.has(postId)) {
+      cache.delete(postId)
+    } else if (cache.size >= CHECKED_POST_CACHE_LIMIT) {
+      const oldestKey = cache.keys().next().value
+      if (oldestKey !== undefined) {
+        cache.delete(oldestKey)
+      }
+    }
+    cache.set(postId, value)
   }
 
   async function fetchFavorites(reset = false): Promise<boolean> {
@@ -187,7 +202,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
 
     try {
       const res = await favoriteService.check(postId)
-      checkedPosts.value.set(postId, res.is_favorited)
+      rememberCheckedPost(postId, res.is_favorited)
       return res.is_favorited
     } catch {
       return false
@@ -201,7 +216,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
       if (typeof total.value === 'number') {
         total.value += 1
       }
-      checkedPosts.value.set(postId, true)
+      rememberCheckedPost(postId, true)
       return { success: true, data: res }
     } catch {
       return { success: false, error: 'favorite.error.addFailed' }
@@ -217,7 +232,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
         total.value = Math.max(0, total.value - 1)
       }
       if (item) {
-        checkedPosts.value.set(item.post_id, false)
+        rememberCheckedPost(item.post_id, false)
       }
       return { success: true }
     } catch {
@@ -232,7 +247,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
       if (typeof total.value === 'number') {
         total.value = Math.max(0, total.value - 1)
       }
-      checkedPosts.value.set(postId, false)
+      rememberCheckedPost(postId, false)
       return { success: true }
     } catch {
       return { success: false, error: 'favorite.error.removeFailed' }
