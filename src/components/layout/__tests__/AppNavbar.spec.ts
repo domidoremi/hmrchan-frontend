@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, reactive } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
@@ -19,6 +21,11 @@ vi.mock('@/components/ui/Avatar.vue', () => ({
 }))
 
 import AppNavbar from '../AppNavbar.vue'
+
+const appNavbarSource = readFileSync(
+  resolve(process.cwd(), 'src/components/layout/AppNavbar.vue'),
+  'utf8'
+)
 
 const MOBILE_NAV_QUERY = '(max-width: 960px)'
 const navbarMocks = vi.hoisted(() => {
@@ -358,6 +365,8 @@ describe('AppNavbar', () => {
     const { wrapper } = await createWrapper()
 
     expect(wrapper.find('.navbar-brand .brand-name').text()).toContain('MomiChan')
+    expect(appNavbarSource).toContain('min-block-size: var(--ui-action-size, 2.75rem)')
+    expect(appNavbarSource).toContain('inline-size: var(--ui-action-size, 2.75rem)')
     expect(wrapper.find('.navbar-shell--actions-only').exists()).toBe(false)
     expect(wrapper.find('.navbar-cta').exists()).toBe(false)
     expect(wrapper.find('button[aria-label="Primary navigation"]').exists()).toBe(false)

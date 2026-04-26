@@ -159,12 +159,15 @@ const setSentinelRef = (el: Element | null) => {
   background: var(--gradient-primary);
   border-radius: inherit;
   position: relative;
+  overflow: hidden;
   transition: width var(--duration-slow) var(--ease-out);
 }
 
 .progress-glow {
   position: absolute;
-  inset: 0;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 40%;
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -177,14 +180,14 @@ const setSentinelRef = (el: Element | null) => {
 @keyframes progressShine {
   0% {
     opacity: 0;
-    transform: translateX(-30%);
+    transform: translateX(0);
   }
   50% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateX(30%);
+    transform: translateX(150%);
   }
 }
 
