@@ -118,6 +118,7 @@ watch(
 // 情绪粒子
 const particles = ref<{ id: number; emoji: string; x: number; y: number }[]>([])
 let particleId = 0
+const particleTimers = new Map<number, ReturnType<typeof setTimeout>>()
 
 const spawnParticles = (emoji: string, count = 3) => {
   for (let i = 0; i < count; i++) {
@@ -128,10 +129,19 @@ const spawnParticles = (emoji: string, count = 3) => {
       x: (Math.random() - 0.5) * 40,
       y: -Math.random() * 10,
     })
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      particleTimers.delete(id)
       particles.value = particles.value.filter((p) => p.id !== id)
     }, 1000)
+    particleTimers.set(id, timer)
   }
+}
+
+function clearParticleTimers() {
+  for (const timer of particleTimers.values()) {
+    clearTimeout(timer)
+  }
+  particleTimers.clear()
 }
 
 // 右键菜单
@@ -142,16 +152,38 @@ const contextMenuPos = ref({ x: 0, y: 0 })
 const displayedImage = ref(stateImageMap[PetState.IDLE])
 const imageReady = ref(true)
 const currentImage = computed(() => stateImageMap[currentState.value])
+let pendingImage: HTMLImageElement | null = null
+let imageReadyFrame: number | null = null
+
+function clearPendingImageLoad() {
+  if (pendingImage) {
+    pendingImage.onload = null
+    pendingImage.onerror = null
+    pendingImage = null
+  }
+  if (imageReadyFrame !== null) {
+    cancelAnimationFrame(imageReadyFrame)
+    imageReadyFrame = null
+  }
+}
 
 watch(currentImage, (newSrc) => {
   if (newSrc === displayedImage.value) return
+  clearPendingImageLoad()
   imageReady.value = false
   const img = new Image()
+  pendingImage = img
   img.onload = () => {
+    if (pendingImage !== img) return
+    pendingImage = null
     displayedImage.value = newSrc
-    requestAnimationFrame(() => {
+    imageReadyFrame = requestAnimationFrame(() => {
+      imageReadyFrame = null
       imageReady.value = true
     })
+  }
+  img.onerror = () => {
+    if (pendingImage === img) pendingImage = null
   }
   img.src = newSrc
 })
@@ -188,11 +220,14 @@ let randomIdleBehaviorTimer: ReturnType<typeof setTimeout> | null = null
 let peekReturnTimer: ReturnType<typeof setTimeout> | null = null
 let heroIntroTimer: ReturnType<typeof setTimeout> | null = null
 let heroReactionUnlockTimer: ReturnType<typeof setTimeout> | null = null
+let dragStateTimer: ReturnType<typeof setTimeout> | null = null
+let greetingTimer: ReturnType<typeof setTimeout> | null = null
 let pointerTrackRaf: number | null = null
 let movementRaf: number | null = null
 let movementToken = 0
 let hasPlayedHeroIntro = false
 let heroReactionLocked = false
+let isDisposed = false
 
 const petStyle = computed<Record<string, string>>(() => ({
   left: `${position.value.x}px`,
@@ -809,7 +844,9 @@ const handleDragMove = (e: MouseEvent | TouchEvent) => {
     hasMoved.value = true
     if (currentState.value === PetState.SLEEP) {
       currentState.value = PetState.WAKE
-      setTimeout(() => {
+      if (dragStateTimer) clearTimeout(dragStateTimer)
+      dragStateTimer = setTimeout(() => {
+        dragStateTimer = null
         currentState.value = PetState.DRAG
       }, 300)
     } else {
@@ -829,6 +866,10 @@ const handleDragMove = (e: MouseEvent | TouchEvent) => {
 const handleDragEnd = () => {
   const wasDragging = hasMoved.value
   isDragging.value = false
+  if (dragStateTimer) {
+    clearTimeout(dragStateTimer)
+    dragStateTimer = null
+  }
   document.removeEventListener('mousemove', handleDragMove)
   document.removeEventListener('mouseup', handleDragEnd)
   document.removeEventListener('touchmove', handleDragMove)
@@ -867,6 +908,7 @@ const handleGlobalClick = (e: MouseEvent) => {
 
 // ─── 生命周期 ───
 onMounted(() => {
+  isDisposed = false
   scheduleAuxImagePreload()
   initPosition()
   resetIdleTimer()
@@ -881,18 +923,28 @@ onMounted(() => {
 
   // 首次加载时间问候
   nextTick(() => {
-    setTimeout(() => {
+    if (isDisposed) return
+    greetingTimer = setTimeout(() => {
+      greetingTimer = null
+      if (isDisposed) return
       showBubble(getTimeGreeting(), 3000)
     }, 800)
   })
 })
 
 onUnmounted(() => {
+  isDisposed = true
   stopMovement()
   if (pointerTrackRaf !== null) cancelAnimationFrame(pointerTrackRaf)
+  pointerTrackRaf = null
+  clearPendingImageLoad()
+  clearParticleTimers()
+  particles.value = []
   if (delayedPreloadTimer) clearTimeout(delayedPreloadTimer)
   if (idleTimer) clearTimeout(idleTimer)
   if (stateResetTimer) clearTimeout(stateResetTimer)
+  if (dragStateTimer) clearTimeout(dragStateTimer)
+  if (greetingTimer) clearTimeout(greetingTimer)
   if (clickResetTimer) clearTimeout(clickResetTimer)
   if (randomIdleBehaviorTimer) clearTimeout(randomIdleBehaviorTimer)
   if (speechTimer) clearTimeout(speechTimer)

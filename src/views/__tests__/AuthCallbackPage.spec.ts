@@ -270,6 +270,27 @@ describe('AuthCallbackPage', () => {
     expect(closeSpy).toHaveBeenCalled()
   })
 
+  it('clears popup bridge timers when the callback page unmounts', async () => {
+    const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => undefined)
+    const clearTimeoutSpy = vi.spyOn(window, 'clearTimeout')
+
+    Object.defineProperty(window, 'opener', {
+      configurable: true,
+      value: { postMessage: vi.fn() },
+    })
+
+    const wrapper = mount(AuthCallbackPage, {
+      global: globalConfig,
+    })
+
+    await flushPromises()
+    wrapper.unmount()
+    vi.advanceTimersByTime(1000)
+
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(2)
+    expect(closeSpy).not.toHaveBeenCalled()
+  })
+
   it('does not call google exchange when callback contains an OAuth error', async () => {
     testState.route.query = { error: 'access_denied' }
     window.history.replaceState({}, '', '/auth/callback?error=access_denied')

@@ -185,7 +185,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'AuthCallbackPage' })
 
-import { computed, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { AlertCircle } from '@lucide/vue'
@@ -257,6 +257,8 @@ const clientChallengeError = ref('')
 const clientChallengeDetail = ref('')
 const isClientChallengeSubmitting = ref(false)
 const clientChallengeStatus = ref<TurnstileWidgetStatus>('idle')
+let popupBridgeCloseTimer: ReturnType<typeof window.setTimeout> | null = null
+let popupBridgeManualHintTimer: ReturnType<typeof window.setTimeout> | null = null
 type TurnstileWidgetHandle = {
   reset: () => void
   execute?: () => Promise<string>
@@ -529,6 +531,17 @@ function closePopupWindow() {
   window.close()
 }
 
+function clearPopupBridgeTimers() {
+  if (popupBridgeCloseTimer) {
+    window.clearTimeout(popupBridgeCloseTimer)
+    popupBridgeCloseTimer = null
+  }
+  if (popupBridgeManualHintTimer) {
+    window.clearTimeout(popupBridgeManualHintTimer)
+    popupBridgeManualHintTimer = null
+  }
+}
+
 async function retryGoogleAuth() {
   if (!GOOGLE_AUTH_ENABLED) {
     currentStep.value = 'error'
@@ -586,12 +599,15 @@ async function runPopupBridge(): Promise<boolean> {
   isPopupBridgeMode.value = true
   popupBridgeState.value = 'posting'
   bridgeGooglePopupResult({ pendingRequest })
+  clearPopupBridgeTimers()
 
-  window.setTimeout(() => {
+  popupBridgeCloseTimer = window.setTimeout(() => {
+    popupBridgeCloseTimer = null
     window.close()
   }, POPUP_BRIDGE_CLOSE_DELAY_MS)
 
-  window.setTimeout(() => {
+  popupBridgeManualHintTimer = window.setTimeout(() => {
+    popupBridgeManualHintTimer = null
     popupBridgeState.value = 'manual-close'
   }, POPUP_BRIDGE_MANUAL_CLOSE_HINT_DELAY_MS)
 
@@ -658,6 +674,10 @@ onMounted(async () => {
   }
 
   void runInitialExchange()
+})
+
+onUnmounted(() => {
+  clearPopupBridgeTimers()
 })
 </script>
 
