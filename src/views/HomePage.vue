@@ -2039,12 +2039,20 @@ const featuredSceneStyle = computed(() => ({
   '--rail-slide-count': String(Math.max(railSlideCount.value, 1)),
 }))
 
-const railTrackStyle = computed(() => ({
-  transform: `translate3d(-${
-    clamp(railProgress.value) *
-    ((Math.max(railSlideCount.value, 1) - 1) * (100 / Math.max(railSlideCount.value, 1)))
-  }%, 0, 0)`,
-}))
+const railTrackStyle = computed(() => {
+  if (isCompactHomeViewport()) {
+    return {
+      transform: 'none',
+    }
+  }
+
+  return {
+    transform: `translate3d(-${
+      clamp(railProgress.value) *
+      ((Math.max(railSlideCount.value, 1) - 1) * (100 / Math.max(railSlideCount.value, 1)))
+    }%, 0, 0)`,
+  }
+})
 
 const storySceneStyle = computed(() => ({
   '--story-card-count': String(Math.max(effectiveStoryCardCount.value, 1)),
