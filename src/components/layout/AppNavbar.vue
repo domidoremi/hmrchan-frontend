@@ -1056,6 +1056,8 @@ onUnmounted(() => {
   align-items: center;
   flex: 0 1 auto;
   min-inline-size: 0;
+  min-block-size: var(--ui-action-size, 2.75rem);
+  padding-inline: 0.25rem;
   text-decoration: none;
 }
 
@@ -1161,8 +1163,8 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-inline-size: var(--ui-action-size, 2.5rem);
-  block-size: var(--ui-action-size, 2.5rem);
+  min-inline-size: var(--ui-action-size, 2.75rem);
+  block-size: var(--ui-action-size, 2.75rem);
   padding-inline: var(--spacing-3);
   border-radius: var(--ui-radius-button, var(--radius-lg));
   border: 1px solid var(--nav-action-border);
@@ -1762,7 +1764,8 @@ onUnmounted(() => {
   }
 
   .nav-action-btn {
-    inline-size: var(--ui-action-size, 2.5rem);
+    inline-size: var(--ui-action-size, 2.75rem);
+    block-size: var(--ui-action-size, 2.75rem);
     padding-inline: 0;
     transform: none;
   }

@@ -136,6 +136,12 @@ const DEFAULT_REFRESH_COOKIE_MAX_AGE = 14 * 24 * 60 * 60
 const PROXY_REFRESH_SKEW_SECONDS = 60
 const BFF_AUTH_RETRY_REQUIRED_HEADER = 'X-Bff-Auth-Retry-Required'
 const BFF_AUTH_RETRY_REASON_HEADER = 'X-Bff-Auth-Retry-Reason'
+const MEDIA_THUMBNAIL_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Media unavailable">
+  <rect width="400" height="400" rx="32" fill="#f1f5f9"/>
+  <path d="M96 282l66-76 46 52 32-36 64 60H96z" fill="#cbd5e1"/>
+  <circle cx="260" cy="136" r="34" fill="#e2e8f0"/>
+  <rect x="72" y="72" width="256" height="256" rx="28" fill="none" stroke="#cbd5e1" stroke-width="16"/>
+</svg>`
 const textEncoder = new TextEncoder()
 
 type JsonRecord = Record<string, unknown>
@@ -771,6 +777,30 @@ function extractApiVersion(path: string): string | null {
   return versionSegment ? versionSegment.toLowerCase() : null
 }
 
+function isMediaThumbnailRequest(path: string, method: string): boolean {
+  return (
+    (method === 'GET' || method === 'HEAD') &&
+    /(?:^|\/)v\d+\/media\/[^/]+\/thumbnail(?:$|[/?#])/i.test(path)
+  )
+}
+
+function buildMediaThumbnailPlaceholderResponse(request: Request, isDev: boolean): Response {
+  const headers = withCorsHeaders(
+    request,
+    isDev,
+    new Headers({
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+      'Content-Type': 'image/svg+xml; charset=utf-8',
+      'X-MomiChan-Media-Fallback': 'thumbnail-placeholder',
+    })
+  )
+
+  return new Response(request.method === 'HEAD' ? null : MEDIA_THUMBNAIL_PLACEHOLDER_SVG, {
+    status: 200,
+    headers,
+  })
+}
+
 function handleCORS(request: Request, isDev: boolean): Response {
   const origin = request.headers.get('Origin')
   const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
@@ -1341,6 +1371,16 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     const apiVersion = extractApiVersion(compactPath)
     if (apiVersion) {
       responseHeaders.set('X-API-Version', apiVersion)
+    }
+
+    if (upstream.response.status === 404 && isMediaThumbnailRequest(compactPath, request.method)) {
+      const fallbackResponse = buildMediaThumbnailPlaceholderResponse(request, isDev)
+      fallbackResponse.headers.set('X-Proxy-Upstream-Source', upstream.source)
+      fallbackResponse.headers.set('X-Proxy-Upstream-Domain', upstreamDomain)
+      if (apiVersion) {
+        fallbackResponse.headers.set('X-API-Version', apiVersion)
+      }
+      return fallbackResponse
     }
 
     const mediaCacheControl = resolveMediaCacheControl({

@@ -509,6 +509,7 @@ defineExpose({
 .search-input {
   flex: 1;
   min-inline-size: 0;
+  min-block-size: 2.75rem;
   border: none;
   background: transparent;
   font-size: var(--text-sm);

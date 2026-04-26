@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { getMediaThumbnailSrcset, getThumbnailSrcset } from '../mediaOptimizer'
+import { getMediaThumbnailSrcset, getThumbnailSrcset, isMediaThumbnailUrl } from '../mediaOptimizer'
 
 describe('mediaOptimizer srcset helpers', () => {
   beforeAll(() => {
@@ -29,5 +29,11 @@ describe('mediaOptimizer srcset helpers', () => {
     expect(srcset).toContain(`/media/${mediaId}/thumbnail?size=small`)
     expect(srcset).toContain(`/media/${mediaId}/thumbnail?size=medium`)
     expect(srcset).toContain(`/media/${mediaId}/thumbnail?size=large`)
+  })
+
+  it('detects proxied media thumbnail urls', () => {
+    expect(isMediaThumbnailUrl('/api/v1/media/media-123/thumbnail?size=medium')).toBe(true)
+    expect(isMediaThumbnailUrl('https://momichan.xyz/api/v1/media/media-123/stream')).toBe(false)
+    expect(isMediaThumbnailUrl('/api/v1/posts')).toBe(false)
   })
 })

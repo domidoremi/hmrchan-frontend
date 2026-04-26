@@ -1,6 +1,6 @@
 <template>
   <img
-    v-if="resolvedSrc"
+    v-if="shouldRenderImage"
     v-bind="attrs"
     :src="resolvedSrc"
     :srcset="resolvedSrcset"
@@ -9,6 +9,7 @@
     :loading="loading"
     :decoding="decoding"
     :fetchpriority="fetchPriority"
+    @error="handleImageError"
   />
   <slot v-else name="fallback" />
 </template>
@@ -19,7 +20,7 @@ defineOptions({
   inheritAttrs: false,
 })
 
-import { computed, useAttrs } from 'vue'
+import { computed, ref, useAttrs, watch } from 'vue'
 import type { MediaThumbnailSize } from '@/utils/mediaOptimizer'
 import { resolveThumbnailSrc, resolveThumbnailSrcset } from '@/utils/thumbnailPresentation'
 
@@ -46,10 +47,24 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const attrs = useAttrs()
+const failedSrc = ref<string | null>(null)
 
 const resolvedSrc = computed(() => resolveThumbnailSrc(props.src, props.size))
 const resolvedSrcset = computed(() =>
-  props.responsive ? resolveThumbnailSrcset(props.src) : undefined
+  props.responsive && !failedSrc.value ? resolveThumbnailSrcset(props.src) : undefined
 )
 const resolvedSizes = computed(() => (props.responsive ? props.sizes || undefined : undefined))
+const shouldRenderImage = computed(() =>
+  Boolean(resolvedSrc.value && resolvedSrc.value !== failedSrc.value)
+)
+
+watch(resolvedSrc, (nextSrc) => {
+  if (nextSrc !== failedSrc.value) {
+    failedSrc.value = null
+  }
+})
+
+function handleImageError() {
+  failedSrc.value = resolvedSrc.value ?? null
+}
 </script>

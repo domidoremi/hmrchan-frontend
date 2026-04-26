@@ -404,7 +404,7 @@
 }
 
 .page-control.page-control--compact {
-  min-block-size: var(--ui-control-height-sm);
+  min-block-size: max(var(--ui-control-height-sm), 2.75rem);
   min-inline-size: max(var(--page-shell-control-compact-min-inline-size), 4.75rem);
   gap: clamp(0.42rem, 0.75vw, 0.58rem);
   padding-block: max(var(--ui-control-padding-y-sm), 0.5rem);
@@ -421,8 +421,8 @@
 
 .page-control--square,
 .page-control--icon-only {
-  min-inline-size: var(--ui-action-size);
-  block-size: var(--ui-action-size);
+  min-inline-size: max(var(--ui-action-size), 2.75rem);
+  block-size: max(var(--ui-action-size), 2.75rem);
   padding: 0;
   border-radius: var(--appearance-radius-control-sm);
 }

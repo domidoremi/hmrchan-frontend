@@ -1622,7 +1622,10 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
   min-inline-size: 0;
+  max-inline-size: 100%;
 }
 
 .schedule-hero__meta {
@@ -1631,6 +1634,8 @@ onMounted(() => {
 
 .category-filters {
   justify-content: flex-end;
+  min-inline-size: 0;
+  max-inline-size: 100%;
 }
 
 .schedule-filter-pill {
@@ -1642,6 +1647,8 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: var(--spacing-2);
   justify-content: flex-end;
+  min-inline-size: 0;
+  max-inline-size: 100%;
 }
 
 /* ========== 月份导航 ========== */
@@ -2221,10 +2228,27 @@ onMounted(() => {
     flex-direction: column;
   }
 
-  .planner-view-switch,
+  .schedule-hero__actions {
+    inline-size: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+
   .planner-shell__head,
   .planner-insights {
     grid-template-columns: 1fr;
+  }
+
+  .planner-view-switch {
+    inline-size: 100%;
+    justify-content: flex-start;
+  }
+
+  .planner-view-switch .page-control {
+    flex: 1 1 0;
+    min-inline-size: 0;
   }
 
   .planner-week-grid {

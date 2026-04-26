@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
@@ -7,6 +9,10 @@ import SearchBar from '../SearchBar.vue'
 const push = vi.fn()
 const route = { query: {} as Record<string, unknown> }
 const getSuggestions = vi.fn()
+const searchBarSource = readFileSync(
+  resolve(process.cwd(), 'src/components/business/SearchBar.vue'),
+  'utf8'
+)
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push }),
@@ -107,5 +113,10 @@ describe('SearchBar', () => {
     )
 
     wrapper.unmount()
+  })
+
+  it('keeps the search input at a mobile-friendly tap height', () => {
+    expect(searchBarSource).toContain('.search-input')
+    expect(searchBarSource).toContain('min-block-size: 2.75rem')
   })
 })

@@ -769,6 +769,45 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
   })
 
+  it('serves a placeholder image for missing media thumbnails to avoid browser resource errors', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ detail: 'missing media' }, { status: 404 }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/media/media-404/thumbnail?size=medium&format=webp`,
+        headers: {
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'media', 'media-404', 'thumbnail'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toContain('image/svg+xml')
+    expect(response.headers.get('X-MomiChan-Media-Fallback')).toBe('thumbnail-placeholder')
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+    await expect(response.text()).resolves.toContain('<svg')
+  })
+
+  it('serves an empty placeholder response body for HEAD thumbnail misses', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ detail: 'missing media' }, { status: 404 }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/media/media-404/thumbnail?size=medium&format=webp`,
+        method: 'HEAD',
+        headers: {
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'media', 'media-404', 'thumbnail'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toContain('image/svg+xml')
+    await expect(response.text()).resolves.toBe('')
+  })
+
   it('preserves internal gateway upstream diagnostics for content reads', async () => {
     const gatewayFetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), {

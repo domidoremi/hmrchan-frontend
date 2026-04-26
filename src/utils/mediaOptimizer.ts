@@ -226,3 +226,9 @@ export function getThumbnailSrcset(thumbnailUrl?: string | null): string | null 
   if (!mediaId) return null
   return getMediaThumbnailSrcset(mediaId)
 }
+
+export function isMediaThumbnailUrl(url?: string | null): boolean {
+  if (!url) return false
+  const normalized = normalizeToProxyPath(url) ?? url
+  return /\/api\/v1\/media\/[^/]+\/thumbnail(?:$|[?#])/i.test(normalized)
+}

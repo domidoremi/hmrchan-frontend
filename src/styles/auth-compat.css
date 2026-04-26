@@ -319,8 +319,8 @@
 #app .password-toggle {
   position: absolute;
   inset-inline-end: 0.6rem;
-  inline-size: 2.15rem;
-  block-size: 2.15rem;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
   display: inline-grid;
   place-items: center;
   padding: 0;
@@ -627,6 +627,9 @@
 #app .resend-btn,
 #app .change-email-btn,
 #app .auth-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
   font-size: var(--text-sm);
 }
 
@@ -959,6 +962,11 @@
 @media (prefers-reduced-motion: reduce) {
   #app .auth-shell__back,
   #app .password-toggle,
+  #app .auth-forgot,
+  #app .auth-link-button,
+  #app .resend-btn,
+  #app .change-email-btn,
+  #app .auth-link,
   #app .step-fade-enter-active,
   #app .step-fade-leave-active,
   #app .btn-default:hover:not(:disabled) {

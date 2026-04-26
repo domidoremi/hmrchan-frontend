@@ -43,4 +43,20 @@ describe('ThumbnailImage', () => {
     expect(wrapper.find('img').exists()).toBe(false)
     expect(wrapper.get('.thumb-fallback').text()).toBe('fallback')
   })
+
+  it('renders fallback slot after a thumbnail fails to load', async () => {
+    const wrapper = mount(ThumbnailImage, {
+      props: {
+        src: '/api/v1/media/missing-media/thumbnail?size=medium',
+      },
+      slots: {
+        fallback: '<div class="thumb-fallback">fallback</div>',
+      },
+    })
+
+    await wrapper.get('img').trigger('error')
+
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.get('.thumb-fallback').text()).toBe('fallback')
+  })
 })
