@@ -137,6 +137,13 @@ describe('auth store', () => {
     expect(store.sessionExpiresAt).toBe('2026-04-18T00:00:00.000Z')
     expect(store.runtimeAuthzCache?.version).toBe('1')
     expect(getRiskMode()).toBe('normal')
+    expect(authService.login).toHaveBeenCalledWith(
+      expect.objectContaining({
+        username: 'tester@example.com',
+        email: 'tester@example.com',
+        password: 'password123',
+      })
+    )
   })
 
   it('returns risk verification details without establishing a session', async () => {
@@ -249,6 +256,25 @@ describe('auth store', () => {
     await store.login('tester@example.com', 'password123', 'turnstile-token')
 
     expect(clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
+  })
+
+  it('keeps username-only logins free of the email compatibility field', async () => {
+    const store = useAuthStore()
+    vi.mocked(authService.login).mockResolvedValueOnce(createSessionSummary())
+
+    await store.login('local-smoke-main', 'password123')
+
+    expect(authService.login).toHaveBeenCalledWith(
+      expect.objectContaining({
+        username: 'local-smoke-main',
+        password: 'password123',
+      })
+    )
+    expect(authService.login).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        email: expect.anything(),
+      })
+    )
   })
 
   it('clears in-memory authz on logout', async () => {

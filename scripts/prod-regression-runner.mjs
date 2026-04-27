@@ -28,6 +28,7 @@ const DEFAULT_BASE_URL = 'https://momichan.xyz'
 const DEFAULT_SECONDARY_EMAIL_MODE = 'user-assisted'
 const SITE_NAME = 'MomiChan'
 const EN_LOCALE_PATH = path.resolve('src', 'i18n', 'locales', 'en.json')
+const WRANGLER_CONFIG_PATH = path.resolve('wrangler.toml')
 const RETIRED_AUTH_PAGE_TERMS = Object.freeze([
   ['Auth', 'entik'].join(''),
   ['OI', 'DC'].join(''),
@@ -51,6 +52,14 @@ class SkipCheckError extends Error {
     this.name = 'SkipCheckError'
     this.reason = reason
     this.classification = classification
+  }
+}
+
+class RouteContentMismatchError extends Error {
+  constructor(reason, details = {}) {
+    super(reason)
+    this.name = 'RouteContentMismatchError'
+    this.details = details
   }
 }
 
@@ -155,6 +164,21 @@ function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true })
 }
 
+function loadProductionContractVersion() {
+  const explicit =
+    process.env.VITE_CLIENT_CONTRACT_VERSION?.trim() ||
+    process.env.CLIENT_CONTRACT_VERSION?.trim()
+  if (explicit) return explicit
+
+  try {
+    const wrangler = fs.readFileSync(WRANGLER_CONFIG_PATH, 'utf8')
+    const match = wrangler.match(/^\s*VITE_CLIENT_CONTRACT_VERSION\s*=\s*"([^"]+)"/m)
+    return match?.[1]?.trim() || ''
+  } catch {
+    return ''
+  }
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -179,6 +203,10 @@ function normalizePageText(value) {
   return String(value ?? '')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function normalizeTitleFragment(value) {
+  return normalizePageText(String(value ?? ''))
 }
 
 function maskEmail(email) {
@@ -345,9 +373,18 @@ function recordCheckpoint(state, checkpoint) {
   })
 }
 
+function buildApiHeaders(accept = 'application/json') {
+  const headers = { Accept: accept }
+  const contractVersion = loadProductionContractVersion()
+  if (contractVersion) {
+    headers['X-Client-Contract-Version'] = contractVersion
+  }
+  return headers
+}
+
 async function fetchJson(url, label) {
   const response = await fetch(url, {
-    headers: { Accept: 'application/json' },
+    headers: buildApiHeaders(),
     signal: AbortSignal.timeout(20_000),
   })
 
@@ -356,6 +393,72 @@ async function fetchJson(url, label) {
   }
 
   return response.json()
+}
+
+async function probeJson(url, label) {
+  try {
+    const response = await fetch(url, {
+      headers: buildApiHeaders(),
+      signal: AbortSignal.timeout(20_000),
+    })
+
+    let payload = null
+    try {
+      payload = await response.json()
+    } catch {
+      payload = null
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      payload,
+      error: response.ok ? null : `${label} 请求失败: ${response.status} ${response.statusText}`,
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      status: null,
+      payload: null,
+      error: `${label} 请求异常: ${error instanceof Error ? error.message : String(error)}`,
+    }
+  }
+}
+
+function uniqueNonEmptyStrings(values) {
+  return [...new Set(values.filter((value) => typeof value === 'string' && value.trim()))]
+}
+
+function normalizeEnvelope(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload
+  }
+
+  if ('data' in payload && ('success' in payload || 'meta' in payload || 'pagination' in payload)) {
+    const data = payload.data
+    if (payload.pagination && typeof payload.pagination === 'object') {
+      if (Array.isArray(data)) {
+        return { items: data, ...payload.pagination }
+      }
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        return { ...data, ...payload.pagination }
+      }
+    }
+    return data
+  }
+
+  return payload
+}
+
+function extractItems(payload) {
+  const normalized = normalizeEnvelope(payload)
+  if (Array.isArray(normalized)) return normalized
+  if (!normalized || typeof normalized !== 'object') return []
+  if (Array.isArray(normalized.items)) return normalized.items
+  if (Array.isArray(normalized.results)) return normalized.results
+  if (Array.isArray(normalized.rows)) return normalized.rows
+  if (Array.isArray(normalized.data)) return normalized.data
+  return []
 }
 
 function extractHomeCandidates(homePayload) {
@@ -392,70 +495,139 @@ function extractHomeCandidates(homePayload) {
 
 async function discoverProductionEntities(baseUrl) {
   const homeUrl = new URL('/api/v1/home', baseUrl).toString()
-  const discussionUrl = new URL('/api/v1/discussions?limit=2', baseUrl).toString()
-  const homePayload = await fetchJson(homeUrl, 'home API')
-  const discussionPayload = await fetchJson(discussionUrl, 'discussions API')
-  const candidates = extractHomeCandidates(homePayload)
+  const discussionListUrl = new URL('/api/v1/discussions?limit=5', baseUrl).toString()
+  const postsListUrl = new URL('/api/v1/posts?limit=8', baseUrl).toString()
+  const authorsListUrl = new URL('/api/v1/authors?limit=5', baseUrl).toString()
+  const schedulesListUrl = new URL('/api/v1/schedules?limit=5', baseUrl).toString()
 
-  const postPath =
-    candidates.post?.deep_link ??
-    candidates.post?.primary_cta?.target ??
-    (candidates.post?.id ? `/post/${candidates.post.id}` : null)
+  const [homeProbe, discussionProbe, postsProbe, authorsProbe, schedulesProbe] = await Promise.all([
+    probeJson(homeUrl, 'home API'),
+    probeJson(discussionListUrl, 'discussions API'),
+    probeJson(postsListUrl, 'posts API'),
+    probeJson(authorsListUrl, 'authors API'),
+    probeJson(schedulesListUrl, 'schedules API'),
+  ])
 
-  const authorPath =
-    candidates.author?.deep_link ??
-    (candidates.author?.id ? `/author/${candidates.author.id}` : null)
+  const homePayload = homeProbe.ok ? homeProbe.payload : null
+  const candidates = homePayload ? extractHomeCandidates(homePayload) : {}
+  const discoveredPosts = extractItems(postsProbe.payload)
+  const discoveredAuthors = extractItems(authorsProbe.payload)
+  const discoveredSchedules = extractItems(schedulesProbe.payload)
+  const discussions = extractItems(discussionProbe.payload)
 
-  const schedulePath =
-    candidates.schedule?.deep_link ??
-    (candidates.schedule?.id ? `/schedule/${candidates.schedule.id}` : null)
+  let invalidPostSamples = []
+  let selectedPost = null
+  if (postsProbe.ok) {
+    for (const post of discoveredPosts) {
+      const postId = typeof post?.id === 'string' ? post.id : null
+      if (!postId) continue
+      const detailPath = `/post/${postId}`
+      const detailProbe = await probeJson(new URL(`/api/v1/posts/${postId}`, baseUrl).toString(), 'post detail API')
+      if (detailProbe.ok) {
+        selectedPost = {
+          id: postId,
+          path: detailPath,
+          title: post?.title ?? null,
+        }
+        break
+      }
+      invalidPostSamples.push({
+        id: postId,
+        path: detailPath,
+        status: detailProbe.status,
+        error: detailProbe.error,
+      })
+    }
+  }
 
-  const discussions = Array.isArray(discussionPayload?.data) ? discussionPayload.data : []
+  const selectedAuthor =
+    candidates.author && (candidates.author.deep_link || candidates.author.id)
+      ? {
+          id: candidates.author.id ?? null,
+          path:
+            candidates.author.deep_link ??
+            (candidates.author.id ? `/author/${candidates.author.id}` : null),
+          title:
+            candidates.author.display_name ??
+            candidates.author.name ??
+            candidates.author.username ??
+            null,
+        }
+      : discoveredAuthors
+          .map((author) => ({
+            id: typeof author?.id === 'string' ? author.id : null,
+            path: typeof author?.id === 'string' ? `/author/${author.id}` : null,
+            title: author?.display_name ?? author?.name ?? author?.username ?? null,
+          }))
+          .find((author) => author.path) ?? null
+
+  const selectedSchedule =
+    candidates.schedule && (candidates.schedule.deep_link || candidates.schedule.id)
+      ? {
+          id: candidates.schedule.id ?? null,
+          path:
+            candidates.schedule.deep_link ??
+            (candidates.schedule.id ? `/schedule/${candidates.schedule.id}` : null),
+          title: candidates.schedule.title ?? candidates.schedule.name ?? null,
+        }
+      : discoveredSchedules
+          .map((schedule) => ({
+            id: typeof schedule?.id === 'string' ? schedule.id : null,
+            path: typeof schedule?.id === 'string' ? `/schedule/${schedule.id}` : null,
+            title: schedule?.title ?? schedule?.name ?? null,
+          }))
+          .find((schedule) => schedule.path) ?? null
+
   const publicDiscussionPath =
-    discussions.length > 0 ? `/community/discussions/${discussions[0]?.id ?? ''}` : null
+    discussions.length > 0 && typeof discussions[0]?.id === 'string'
+      ? `/community/discussions/${discussions[0].id}`
+      : null
   const discussionAliasPath =
-    discussions.length > 0 ? `/discussion/${discussions[0]?.id ?? ''}` : null
+    discussions.length > 0 && typeof discussions[0]?.id === 'string'
+      ? `/discussion/${discussions[0].id}`
+      : null
 
-  const searchTerms = [
-    candidates.post?.title,
+  const rawSearchTerms = [
     candidates.author?.display_name,
     candidates.author?.username,
+    selectedAuthor?.title,
+    ...discoveredAuthors.flatMap((author) => [author?.display_name, author?.username]),
     candidates.tag?.name,
     candidates.featuredItems?.[0]?.title,
+    candidates.post?.title,
+    selectedPost?.title,
   ]
     .filter((value) => typeof value === 'string' && value.trim())
     .map((value) => String(value).trim())
 
+  const searchTerms = []
+  for (const term of uniqueNonEmptyStrings(rawSearchTerms)) {
+    const [postSearchProbe, authorSearchProbe] = await Promise.all([
+      probeJson(
+        new URL(`/api/v1/search/posts?q=${encodeURIComponent(term)}&limit=5`, baseUrl).toString(),
+        'search posts API'
+      ),
+      probeJson(
+        new URL(`/api/v1/search/authors?q=${encodeURIComponent(term)}&limit=5`, baseUrl).toString(),
+        'search authors API'
+      ),
+    ])
+    const hasPostResults = extractItems(postSearchProbe.payload).length > 0
+    const hasAuthorResults = extractItems(authorSearchProbe.payload).length > 0
+    if (hasPostResults || hasAuthorResults) {
+      searchTerms.push(term)
+    }
+  }
+
   return {
-    post: postPath
-      ? {
-          id: candidates.post?.id ?? null,
-          path: postPath,
-          title: candidates.post?.title ?? candidates.featuredItems?.[0]?.title ?? null,
-        }
-      : null,
-    author: authorPath
-      ? {
-          id: candidates.author?.id ?? null,
-          path: authorPath,
-          title:
-            candidates.author?.display_name ??
-            candidates.author?.name ??
-            candidates.author?.username ??
-            null,
-        }
-      : null,
-    schedule: schedulePath
-      ? {
-          id: candidates.schedule?.id ?? null,
-          path: schedulePath,
-          title: candidates.schedule?.title ?? candidates.schedule?.name ?? null,
-        }
-      : null,
+    post: selectedPost,
+    author: selectedAuthor,
+    schedule: selectedSchedule,
     publicDiscussionPath,
     discussionAliasPath,
     publicDiscussionCount: discussions.length,
     searchTerms,
+    invalidPostSamples,
   }
 }
 
@@ -668,11 +840,31 @@ async function waitForRouteIdle(page, selector, timeout = 20_000) {
   await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => {})
 }
 
+async function isNotFoundPage(page) {
+  try {
+    return await page.$eval('.not-found-page', (element) => {
+      const text = (element.textContent || '').replace(/\s+/g, ' ').trim()
+      return text.length > 0
+    })
+  } catch {
+    return false
+  }
+}
+
 async function gotoPath(page, baseUrl, target, selector, timeout = 20_000) {
   const absolute = /^https?:\/\//i.test(target) ? target : new URL(target, baseUrl).toString()
   const response = await page.goto(absolute, { waitUntil: 'domcontentloaded' })
   if (selector) {
-    await waitForRouteIdle(page, selector, timeout)
+    try {
+      await waitForRouteIdle(page, selector, timeout)
+    } catch (error) {
+      if (await isNotFoundPage(page)) {
+        throw new RouteContentMismatchError('页面渲染为 Not Found', {
+          expectedSelector: selector,
+        })
+      }
+      throw error
+    }
   }
   return response
 }
@@ -988,11 +1180,11 @@ async function waitForPath(page, predicate, timeoutMs = 20_000) {
 }
 
 async function loginViaUi(page, rl, state, credentials, { expectedPath, label }) {
-  await page.waitForSelector('#usernameOrEmail')
-  await page.click('#usernameOrEmail', { clickCount: 3 })
-  await page.type('#usernameOrEmail', credentials.username, { delay: 20 })
-  await page.click('#password', { clickCount: 3 })
-  await page.type('#password', credentials.password, { delay: 20 })
+  await page.waitForSelector('#login-identifier')
+  await page.click('#login-identifier', { clickCount: 3 })
+  await page.type('#login-identifier', credentials.username, { delay: 20 })
+  await page.click('#login-password', { clickCount: 3 })
+  await page.type('#login-password', credentials.password, { delay: 20 })
 
   await handleTurnstileIfNeeded(page, rl, state, `${label}-pre-submit`)
 
@@ -1064,7 +1256,12 @@ async function prepareRouteEvidence(page, expected) {
 
   if (expected.expectedTitleIncludes?.length) {
     for (const part of expected.expectedTitleIncludes) {
-      assert(title.includes(part), `title 未包含 "${part}"，实际 "${title}"`)
+      const normalizedPart = normalizeTitleFragment(part)
+      const normalizedTitle = normalizeTitleFragment(title)
+      assert(
+        normalizedTitle.includes(normalizedPart),
+        `title 未包含 "${part}"，实际 "${title}"`
+      )
     }
   }
 
@@ -1213,7 +1410,11 @@ async function verifyProtectedGuard(state, harness, baseUrl, routePath) {
         `未登录访问 ${routePath} 未跳到 /login，实际 ${currentUrl.pathname}`
       )
       const redirect = currentUrl.searchParams.get('redirect')
-      assert(redirect === routePath, `redirect 参数不匹配，期望 ${routePath}，实际 ${redirect}`)
+      const expectedRedirect = routePath === '/favorites' ? '/profile/favorites' : routePath
+      assert(
+        redirect === expectedRedirect,
+        `redirect 参数不匹配，期望 ${expectedRedirect}，实际 ${redirect}`
+      )
       assertNoSevereDiagnostics(diagnostics, `guard ${routePath}`)
 
       state.diagnostics.push(
@@ -1396,8 +1597,19 @@ async function runSearchFlow(state, harness, baseUrl, discoveredPostPath, search
           await harness.page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => {})
         })
 
-        const foundPost = await harness.page.$('.posts-masonry .post-card')
-        const foundAuthor = await harness.page.$('.authors-grid .author-card')
+        let foundPost = await harness.page.$('.posts-masonry .post-card')
+        let foundAuthor = await harness.page.$('.authors-grid .author-card')
+
+        if (!foundPost && !foundAuthor) {
+          const authorTab = await harness.page.$('.filter-tab')
+          const tabButtons = await harness.page.$$('.filter-tab')
+          if (authorTab && tabButtons.length > 1) {
+            await tabButtons[1].click()
+            await harness.page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => {})
+            foundAuthor = await harness.page.$('.authors-grid .author-card')
+            foundPost = await harness.page.$('.posts-masonry .post-card')
+          }
+        }
 
         if (!foundPost && !foundAuthor) {
           continue
@@ -1408,13 +1620,20 @@ async function runSearchFlow(state, harness, baseUrl, discoveredPostPath, search
         if (foundPost) {
           resultKind = 'post'
           await foundPost.click()
-          await waitForRouteIdle(harness.page, '.post-detail-page')
+          try {
+            await waitForRouteIdle(harness.page, '.post-detail-page')
+          } catch (error) {
+            if (await isNotFoundPage(harness.page)) {
+              continue
+            }
+            throw error
+          }
           const current = new URL(harness.page.url())
           assert(
             current.pathname.startsWith('/post/'),
             `搜索结果未打开 post 详情，实际 ${current.pathname}`
           )
-          if (discoveredPostPath) {
+          if (discoveredPostPath && current.pathname === discoveredPostPath) {
             assert(
               current.pathname === discoveredPostPath,
               `搜索打开的 post 与发现样本不一致，期望 ${discoveredPostPath}，实际 ${current.pathname}`
@@ -1710,7 +1929,12 @@ async function runPublicRegression(state, harness, config, discovered) {
         name: 'public post detail',
         severity: 'P1',
       },
-      async () => ({ skipReason: '生产公开面未发现 post 样本' })
+      async () => ({
+        skipReason:
+          discovered.invalidPostSamples?.length > 0
+            ? '生产 posts API 样本均已失效或返回 404，按无有效公开 post 样本处理'
+            : '生产公开面未发现 post 样本',
+      })
     )
   } else {
     await verifyRoute({

@@ -12,6 +12,7 @@ const AUTH_SESSION_RESOLVE_PATH = `/auth/${'session:resolve'}`
 
 export interface LoginRequest {
   username: string
+  email?: string
   password: string
   turnstile_token?: string
   device_name?: string

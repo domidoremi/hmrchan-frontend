@@ -60,12 +60,12 @@ describe('searchService', () => {
     )
   })
 
-  it('requests suggestions with only the documented query parameter', async () => {
+  it('requests suggestions with query, optional limit, and request config', async () => {
     vi.mocked(clientMocks.get).mockResolvedValueOnce([])
 
-    await searchService.getSuggestions('idol', 8, { skipErrorToast: true })
+    await searchService.getSuggestions('idol', { limit: 8, skipErrorToast: true })
 
-    expect(clientMocks.get).toHaveBeenCalledWith('/search/suggestions?q=idol', {
+    expect(clientMocks.get).toHaveBeenCalledWith('/search/suggestions?q=idol&limit=8', {
       skipErrorToast: true,
     })
   })
