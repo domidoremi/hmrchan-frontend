@@ -1052,6 +1052,7 @@ const BUBBLE_POINTER_RELEASE_MS = 360
 const BUBBLE_FORCE_CENTER_LERP_MS = 180
 const HOME_ENHANCEMENTS_DELAY_MS = 1200
 const HOME_SCENE_ACTIVATION_DELAY_MS = 140
+const HOME_LIGHTWEIGHT_VIEWPORT_MAX_WIDTH = 1024
 const HOME_FALLBACK_PREFIX = '__home_fallback__'
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
@@ -1155,9 +1156,7 @@ const isPreviewOpen = ref(false)
 const previewPostId = ref<string | null>(null)
 const previewThumbnailSrc = ref<string | null>(null)
 const previewPost = ref<PostListItem | null>(null)
-const shouldMountHomepagePreviewController = computed(
-  () => isPreviewOpen.value || Boolean(previewPostId.value)
-)
+const shouldMountHomepagePreviewController = computed(() => isPreviewOpen.value)
 const hoveredBubbleId = ref<string | null>(null)
 const hoveredBubbleSource = ref<'pointer' | 'focus' | null>(null)
 const selectedBubbleId = computed(() =>
@@ -1435,7 +1434,11 @@ function observeBubbleStageLayout() {
 
   disconnectBubbleStageLayoutObserver()
   refreshBubbleLayoutTier()
-  resizeBubbleCanvasScene()
+  if (shouldUseHomeBubbleCanvasScene()) {
+    resizeBubbleCanvasScene()
+  } else {
+    stopBubbleCanvasScene()
+  }
 
   if (!bubbleStageRef.value) return
 
@@ -1444,13 +1447,19 @@ function observeBubbleStageLayout() {
       if (!(entry.target instanceof HTMLElement)) continue
       bubbleLayoutTier.value = resolveBubbleLayoutTier(Math.round(entry.contentRect.width))
       scheduleBubbleMotionMeasurement()
-      resizeBubbleCanvasScene()
+      if (shouldUseHomeBubbleCanvasScene()) {
+        resizeBubbleCanvasScene()
+      } else {
+        stopBubbleCanvasScene()
+      }
     }
   })
 
   bubbleStageResizeObserver?.observe(bubbleStageRef.value)
   scheduleBubbleMotionMeasurement()
-  startBubbleCanvasScene()
+  if (shouldUseHomeBubbleCanvasScene()) {
+    startBubbleCanvasScene()
+  }
 }
 
 const isBubbleInteractiveTier = computed(() => bubbleLayoutTier.value !== 'mobile')
@@ -1594,7 +1603,13 @@ function renderBubbleCanvasFrame(timestamp: number) {
 }
 
 function startBubbleCanvasScene() {
-  if (typeof window === 'undefined' || bubbleCanvasFrame !== null || !bubbleCanvasRef.value) return
+  if (
+    typeof window === 'undefined' ||
+    bubbleCanvasFrame !== null ||
+    !bubbleCanvasRef.value ||
+    !shouldUseHomeBubbleCanvasScene()
+  )
+    return
   resizeBubbleCanvasScene()
   bubbleCanvasFrame = window.requestAnimationFrame(renderBubbleCanvasFrame)
 }
@@ -1863,6 +1878,7 @@ function buildBubblePointerState(): BubblePointerState {
 function shouldRunBubbleMotionLoop(): boolean {
   return (
     typeof window !== 'undefined' &&
+    !isLightweightHomeViewport() &&
     bubbleRevealPhase.value === 'revealed' &&
     bubbleItems.value.length > 0 &&
     shouldAnimate.value &&
@@ -2064,12 +2080,20 @@ function isCompactHomeViewport(): boolean {
   return typeof window !== 'undefined' && window.innerWidth <= 768
 }
 
+function isLightweightHomeViewport(): boolean {
+  return typeof window !== 'undefined' && window.innerWidth <= HOME_LIGHTWEIGHT_VIEWPORT_MAX_WIDTH
+}
+
 function shouldUseHomeSectionBlendEffects(): boolean {
-  return typeof window !== 'undefined' && shouldAnimate.value && window.innerWidth >= 768
+  return typeof window !== 'undefined' && shouldAnimate.value && !isLightweightHomeViewport()
 }
 
 function shouldUseHomeScrollScrubScenes(): boolean {
   return shouldUseHomeSectionBlendEffects()
+}
+
+function shouldUseHomeBubbleCanvasScene(): boolean {
+  return typeof window !== 'undefined' && shouldAnimate.value && !isLightweightHomeViewport()
 }
 
 function disconnectDeferredHomeEnhancementObserver() {
@@ -2107,7 +2131,7 @@ function syncBubbleRevealLifecycle() {
 
   if (!bubbleEnhancementsPrimed || bubbleItems.value.length === 0) return
 
-  if (isCompactHomeViewport()) {
+  if (isLightweightHomeViewport()) {
     bubbleRevealPhase.value = 'revealed'
     return
   }
@@ -2124,6 +2148,11 @@ function activateHomeSceneEnhancements(delay = HOME_SCENE_ACTIVATION_DELAY_MS) {
   if (homeEnhancementsDisposed || sceneEnhancementsPrimed) return
   sceneEnhancementsPrimed = true
   unbindDeferredHomeSceneIntent()
+  if (isLightweightHomeViewport()) {
+    setHomeSceneLifecycleEnabled(false)
+    maybeCleanupDeferredHomeEnhancementObserver()
+    return
+  }
   setHomeSceneLifecycleEnabled(true, delay)
   maybeCleanupDeferredHomeEnhancementObserver()
 }
@@ -2144,14 +2173,19 @@ function observeDeferredHomeEnhancements() {
   if (typeof window === 'undefined') return
 
   disconnectDeferredHomeEnhancementObserver()
-  bindDeferredHomeSceneIntent()
+  if (!isLightweightHomeViewport()) {
+    bindDeferredHomeSceneIntent()
+  }
 
   const postsElement = resolveSectionElement(postsSectionRef.value)
 
   if (!postsElement) return
 
   if (typeof window.IntersectionObserver !== 'function') {
-    activateHomeSceneEnhancements(0)
+    if (!isLightweightHomeViewport()) {
+      activateHomeSceneEnhancements(0)
+    }
+    activateHomeBubbleEnhancements()
     return
   }
 
@@ -2161,7 +2195,9 @@ function observeDeferredHomeEnhancements() {
         if (!entry.isIntersecting) continue
 
         if (postsElement && entry.target === postsElement) {
-          activateHomeSceneEnhancements(0)
+          if (!isLightweightHomeViewport()) {
+            activateHomeSceneEnhancements(0)
+          }
           activateHomeBubbleEnhancements()
         }
       }
@@ -2241,6 +2277,9 @@ watchSyncEffect(() => {
 watch(isPreviewOpen, (open) => {
   if (!open) {
     clearHoveredBubble(undefined, 'all')
+    previewPostId.value = null
+    previewThumbnailSrc.value = null
+    previewPost.value = null
   }
 })
 
@@ -3787,7 +3826,10 @@ onBeforeUnmount(() => {
 
 .hero-tags__label {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(
+    --home-readable-muted,
+    color-mix(in srgb, var(--color-text-secondary) 86%, var(--color-text-primary))
+  );
 }
 
 .hero-tag-list {
@@ -3836,7 +3878,10 @@ onBeforeUnmount(() => {
 
 .hero-stat__label {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(
+    --home-readable-muted,
+    color-mix(in srgb, var(--color-text-secondary) 86%, var(--color-text-primary))
+  );
 }
 
 .hero-stat__value {

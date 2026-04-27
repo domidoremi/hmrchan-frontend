@@ -26,10 +26,7 @@ import { createAggregateAnalysis, mergeRunSummaries } from './lib/lighthouse-pro
 
 const ALLOWED_PROFILES = new Set(['mobile', 'desktop', 'both'])
 const ENV_CHROME_PATH =
-  process.env.LIGHTHOUSE_CHROMIUM_PATH ||
-  process.env.CHROME_PATH ||
-  process.env.CHROME_BIN ||
-  null
+  process.env.LIGHTHOUSE_CHROMIUM_PATH || process.env.CHROME_PATH || process.env.CHROME_BIN || null
 let cachedChromePathPromise = null
 
 function parseArgs(argv) {
@@ -127,7 +124,10 @@ function averageMetrics(entries) {
     seo: average(entries.map((entry) => entry.seo)),
     fcpMs: average(entries.map((entry) => entry.fcpMs)),
     lcpMs: average(entries.map((entry) => entry.lcpMs)),
-    cls: average(entries.map((entry) => entry.cls), 3),
+    cls: average(
+      entries.map((entry) => entry.cls),
+      3
+    ),
     tbtMs: average(entries.map((entry) => entry.tbtMs)),
     requestCount: average(entries.map((entry) => entry.requestCount)),
     transferSizeBytes: average(entries.map((entry) => entry.transferSizeBytes)),
@@ -313,12 +313,20 @@ function createAnalysis(summary) {
           .join('；')}`
       )
     }
+    if ((summary.coverage.rejectedFallbacks ?? []).length > 0) {
+      lines.push(
+        `- 已剔除失效详情样本：${summary.coverage.rejectedFallbacks
+          .map(
+            (item) =>
+              `${item.pageType}: ${item.status ?? item.error ?? 'unknown'} ${item.probeUrl ?? item.url}`
+          )
+          .join('；')}`
+      )
+    }
   }
   if ((summary.excluded ?? []).length > 0) {
     lines.push(
-      `- 排除路径：${summary.excluded
-        .map((entry) => new URL(entry.url).pathname)
-        .join('，')}`
+      `- 排除路径：${summary.excluded.map((entry) => new URL(entry.url).pathname).join('，')}`
     )
   }
 
@@ -357,7 +365,9 @@ function createAnalysis(summary) {
 
   lines.push('')
   lines.push('## 3. 按 pageType + profile 分组统计')
-  for (const [key, entries] of [...grouped.entries()].sort((left, right) => left[0].localeCompare(right[0]))) {
+  for (const [key, entries] of [...grouped.entries()].sort((left, right) =>
+    left[0].localeCompare(right[0])
+  )) {
     const [pageType, profile] = key.split('::')
     const metrics = averageMetrics(entries)
     lines.push(
@@ -430,7 +440,9 @@ function createAnalysis(summary) {
   lines.push('## 6. P0 / P1 / P2 整改建议')
   lines.push('- P0：优先处理首页与帖子详情的首屏资源、LCP 媒体与主线程阻塞。')
   lines.push('- P1：清理跨页面未使用的 JavaScript / CSS，并降低共享预取对匿名落地页的干扰。')
-  lines.push('- P2：针对 CLS 与 Best Practices 低分页面补齐稳定占位，并排查第三方脚本或浏览器环境告警。')
+  lines.push(
+    '- P2：针对 CLS 与 Best Practices 低分页面补齐稳定占位，并排查第三方脚本或浏览器环境告警。'
+  )
 
   if (failed.length > 0) {
     lines.push('')
@@ -479,7 +491,9 @@ async function runAuditWithRetry(url, profile, outputDir) {
 
     try {
       const runnerResult = await runSingleAudit(url, profile, chrome.port)
-      const reports = Array.isArray(runnerResult.report) ? runnerResult.report : [runnerResult.report]
+      const reports = Array.isArray(runnerResult.report)
+        ? runnerResult.report
+        : [runnerResult.report]
       const jsonReport = reports[1] ?? '{}'
       const lhr = JSON.parse(jsonReport)
 
@@ -549,7 +563,10 @@ function combineProfileSummaries(runId, runDir, summaries) {
   const profiles = summaries.flatMap((summary) => summary.profiles ?? [])
   const results = summaries
     .flatMap((summary) => summary.results ?? [])
-    .sort((left, right) => left.url.localeCompare(right.url) || left.profile.localeCompare(right.profile))
+    .sort(
+      (left, right) =>
+        left.url.localeCompare(right.url) || left.profile.localeCompare(right.profile)
+    )
 
   const combined = {
     generatedAt: new Date().toISOString(),
@@ -558,7 +575,9 @@ function combineProfileSummaries(runId, runDir, summaries) {
     profiles: [...new Set(profiles)],
     urlCount: new Set(results.map((entry) => entry.url)).size,
     coverage: summaries.find((summary) => summary.coverage)?.coverage ?? null,
-    excluded: summaries.find((summary) => Array.isArray(summary.excluded) && summary.excluded.length > 0)?.excluded ?? [],
+    excluded:
+      summaries.find((summary) => Array.isArray(summary.excluded) && summary.excluded.length > 0)
+        ?.excluded ?? [],
     results,
   }
 
@@ -579,12 +598,34 @@ async function executeRun({ base, manifestPath, outputDir, runNumber }) {
   await Promise.all([
     runNodeScript(
       path.resolve('scripts', 'lighthouse-prod-audit.mjs'),
-      ['--base', base, '--profile', 'mobile', '--urls-file', manifestPath, '--output', mobileDir, '--run-id', runId],
+      [
+        '--base',
+        base,
+        '--profile',
+        'mobile',
+        '--urls-file',
+        manifestPath,
+        '--output',
+        mobileDir,
+        '--run-id',
+        runId,
+      ],
       `[${runId} mobile]`
     ),
     runNodeScript(
       path.resolve('scripts', 'lighthouse-prod-audit.mjs'),
-      ['--base', base, '--profile', 'desktop', '--urls-file', manifestPath, '--output', desktopDir, '--run-id', runId],
+      [
+        '--base',
+        base,
+        '--profile',
+        'desktop',
+        '--urls-file',
+        manifestPath,
+        '--output',
+        desktopDir,
+        '--run-id',
+        runId,
+      ],
       `[${runId} desktop]`
     ),
   ])
@@ -619,6 +660,13 @@ async function executeOrchestratedAudit(options) {
     console.warn(
       `⚠️ 详情样本存在缺口：${manifest.coverage.gaps
         .map((gap) => `${gap.pageType} 缺 ${gap.missing}`)
+        .join('，')}`
+    )
+  }
+  if ((manifest.coverage.rejectedFallbacks ?? []).length > 0) {
+    console.warn(
+      `⚠️ 已剔除失效详情样本：${manifest.coverage.rejectedFallbacks
+        .map((item) => `${item.pageType} ${item.status ?? item.error ?? 'unknown'}`)
         .join('，')}`
     )
   }
@@ -681,21 +729,28 @@ async function executeSingleRunAudit(options) {
   }
 
   for (const profile of profiles) {
-    console.log(`\n🚀 开始执行 ${profile} 档 Lighthouse${options.runId ? ` (${options.runId})` : ''}...`)
+    console.log(
+      `\n🚀 开始执行 ${profile} 档 Lighthouse${options.runId ? ` (${options.runId})` : ''}...`
+    )
     for (const target of targets) {
       const slug = toSlug(target.url)
       console.log(`📊 ${profile} -> ${target.url}`)
 
       try {
         const runnerResult = await runAuditWithRetry(target.url, profile, outputDir)
-        const reports = Array.isArray(runnerResult.report) ? runnerResult.report : [runnerResult.report]
+        const reports = Array.isArray(runnerResult.report)
+          ? runnerResult.report
+          : [runnerResult.report]
         const htmlReport = reports[0] ?? ''
         const jsonReport = reports[1] ?? '{}'
         fs.writeFileSync(path.join(rawDir, `${profile}-${slug}.html`), htmlReport)
         fs.writeFileSync(path.join(rawDir, `${profile}-${slug}.json`), jsonReport)
 
         const lhr = JSON.parse(jsonReport)
-        if (lhr.runtimeError?.code === 'NO_NAVSTART' && lhr.categories?.performance?.score === null) {
+        if (
+          lhr.runtimeError?.code === 'NO_NAVSTART' &&
+          lhr.categories?.performance?.score === null
+        ) {
           summary.results.push(
             createErrorEntry(
               target,

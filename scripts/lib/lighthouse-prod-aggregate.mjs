@@ -40,7 +40,9 @@ function summarizeOpportunities(entries) {
 }
 
 function valueRange(values) {
-  const numbers = values.filter((value) => value !== null && value !== undefined && Number.isFinite(value))
+  const numbers = values.filter(
+    (value) => value !== null && value !== undefined && Number.isFinite(value)
+  )
   if (numbers.length < 2) return 0
   return Math.max(...numbers) - Math.min(...numbers)
 }
@@ -137,8 +139,9 @@ function createAggregateEntry({ url, profile, runs, sampleEntry, manifestLookup,
     ...metadata,
     finalDisplayedUrl: sampleEntry?.finalDisplayedUrl ?? null,
     runtimeError:
-      runs.map((run) => run.runtimeError).find((value) => typeof value === 'string' && value.length > 0) ??
-      null,
+      runs
+        .map((run) => run.runtimeError)
+        .find((value) => typeof value === 'string' && value.length > 0) ?? null,
     warnings: uniqueStrings(runs.flatMap((run) => run.warnings ?? [])),
     runs,
     error:
@@ -165,9 +168,7 @@ function createAggregateEntry({ url, profile, runs, sampleEntry, manifestLookup,
     requestCount: median(successfulRuns.map((run) => run.requestCount)),
     transferSizeBytes: median(successfulRuns.map((run) => run.transferSizeBytes)),
     opportunities: summarizeOpportunities(
-      successfulRuns
-        .map((run) => sourceEntries.get(run.run) ?? null)
-        .filter(Boolean)
+      successfulRuns.map((run) => sourceEntries.get(run.run) ?? null).filter(Boolean)
     ),
   }
 }
@@ -213,10 +214,8 @@ export function mergeRunSummaries({ runSummaries, manifest = null }) {
   const results = []
 
   for (const bucket of keyToEntries.values()) {
-    const sampleEntry =
-      manifestLookup.get(bucket.url) ??
-      [...bucket.entriesByRun.values()].find(Boolean) ??
-      {
+    const sampleEntry = manifestLookup.get(bucket.url) ??
+      [...bucket.entriesByRun.values()].find(Boolean) ?? {
         url: bucket.url,
         pageType: pageTypeForUrl(bucket.url),
       }
@@ -266,7 +265,10 @@ function averageMetrics(entries) {
     seo: average(entries.map((entry) => entry.seo)),
     fcpMs: average(entries.map((entry) => entry.fcpMs)),
     lcpMs: average(entries.map((entry) => entry.lcpMs)),
-    cls: average(entries.map((entry) => entry.cls), 3),
+    cls: average(
+      entries.map((entry) => entry.cls),
+      3
+    ),
     tbtMs: average(entries.map((entry) => entry.tbtMs)),
     requestCount: average(entries.map((entry) => entry.requestCount)),
     transferSizeBytes: average(entries.map((entry) => entry.transferSizeBytes)),
@@ -338,12 +340,20 @@ export function createAggregateAnalysis(summary) {
     } else {
       lines.push('- 详情样本配额：author 2 / post 3 / discussion 1 / schedule 1 已满足')
     }
+    if ((summary.coverage.rejectedFallbacks ?? []).length > 0) {
+      lines.push(
+        `- 已剔除失效详情样本：${summary.coverage.rejectedFallbacks
+          .map(
+            (item) =>
+              `${item.pageType}: ${item.status ?? item.error ?? 'unknown'} ${item.probeUrl ?? item.url}`
+          )
+          .join('；')}`
+      )
+    }
   }
   if ((summary.excluded ?? []).length > 0) {
     lines.push(
-      `- 排除路径：${summary.excluded
-        .map((entry) => new URL(entry.url).pathname)
-        .join('，')}`
+      `- 排除路径：${summary.excluded.map((entry) => new URL(entry.url).pathname).join('，')}`
     )
   }
   lines.push('')
@@ -402,7 +412,9 @@ export function createAggregateAnalysis(summary) {
 
   lines.push('')
   lines.push('## 3. 按 pageType + profile 分组统计')
-  for (const [key, entries] of [...grouped.entries()].sort((left, right) => left[0].localeCompare(right[0]))) {
+  for (const [key, entries] of [...grouped.entries()].sort((left, right) =>
+    left[0].localeCompare(right[0])
+  )) {
     const [pageType, profile] = key.split('::')
     const metrics = averageMetrics(entries)
     lines.push(
@@ -478,15 +490,21 @@ export function createAggregateAnalysis(summary) {
           .join('，')}。相关结果应与内容页问题分开判断。`
       )
     } else {
-      lines.push('- 未捕获明确的 challenge/verification 信号，但认证页仍单独观察，不并入内容页共性结论。')
+      lines.push(
+        '- 未捕获明确的 challenge/verification 信号，但认证页仍单独观察，不并入内容页共性结论。'
+      )
     }
   }
 
   lines.push('')
   lines.push('## 6. P0 / P1 / P2 整改建议')
-  lines.push('- P0：先处理首页、帖子详情页和其他 LCP 最慢页面的首屏资源，重点优化首屏图片、关键 CSS、模块预加载与 hydration 阻塞。')
+  lines.push(
+    '- P0：先处理首页、帖子详情页和其他 LCP 最慢页面的首屏资源，重点优化首屏图片、关键 CSS、模块预加载与 hydration 阻塞。'
+  )
   lines.push('- P1：清理跨页面未使用的 JavaScript / CSS，降低首页、列表页与认证页公共包体积。')
-  lines.push('- P2：针对 CLS 与 Best Practices 低分页面补稳定占位，并单独排查第三方脚本或浏览器控制台告警。')
+  lines.push(
+    '- P2：针对 CLS 与 Best Practices 低分页面补稳定占位，并单独排查第三方脚本或浏览器控制台告警。'
+  )
 
   const failed = summary.results.filter((entry) => entry.error)
   if (failed.length > 0) {
