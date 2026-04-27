@@ -368,10 +368,11 @@ import { trackPostView } from '@/composables/useViewTracking'
 import { postCache } from '@/utils/cache'
 import {
   getPostNavigationContext,
+  getPostNavigationSummary,
   updatePostNavigationIndex,
   type PostNavigationContext,
 } from '@/utils/postNavigation'
-import { getFallbackPostDetailById } from '@/fallbacks/postFallback'
+import { buildFallbackPostDetail, getFallbackPostDetailById } from '@/fallbacks/postFallback'
 import {
   isServiceUnavailableError,
   type PublicPageDataSource,
@@ -1050,6 +1051,33 @@ function schedulePostViewTracking(currentPostId: string, requestToken: number) {
   }, 1500)
 }
 
+function applyFallbackPost(postDetail: PostDetailResponse) {
+  hintPostMedia(postDetail)
+  post.value = postDetail
+  detailFetched.value = true
+  activeMediaIndex.value = 0
+  isMediaLoaded.value = true
+  dataSource.value = 'fallback'
+  error.value = null
+  syncNavigationContext()
+  syncPostMeta(postDetail)
+}
+
+function resolveFallbackPostDetail(currentPostId: string, err: unknown): PostDetailResponse | null {
+  if (err instanceof ApiError && err.status === 404) {
+    const navigationSummary = getPostNavigationSummary(currentPostId)
+    if (navigationSummary) {
+      return buildFallbackPostDetail(navigationSummary)
+    }
+  }
+
+  if (isServiceUnavailableError(err)) {
+    return getFallbackPostDetailById(currentPostId)
+  }
+
+  return null
+}
+
 async function fetchPost(signal?: AbortSignal) {
   if (!postId.value || postId.value === 'undefined') return
 
@@ -1090,11 +1118,19 @@ async function fetchPost(signal?: AbortSignal) {
       schedulePostViewTracking(currentPostId, requestToken)
 
       // 后台刷新：缓存来自列表页时不含 media_files，需要网络请求补全
-      void loadCachedPost(currentPostId, signal ? { signal } : undefined).then((result) => {
-        if (signal?.aborted || requestToken !== fetchPostToken) return
-        detailFetched.value = true
-        dataSource.value = result.fromCache ? 'cached' : 'live'
-      })
+      void loadCachedPost(currentPostId, signal ? { signal } : undefined)
+        .then((result) => {
+          if (signal?.aborted || requestToken !== fetchPostToken) return
+          detailFetched.value = true
+          dataSource.value = result.fromCache ? 'cached' : 'live'
+        })
+        .catch((err) => {
+          if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
+          const fallbackPost = resolveFallbackPostDetail(currentPostId, err)
+          if (fallbackPost) {
+            applyFallbackPost(fallbackPost)
+          }
+        })
       return
     }
 
@@ -1115,20 +1151,10 @@ async function fetchPost(signal?: AbortSignal) {
     schedulePostViewTracking(currentPostId, requestToken)
   } catch (err) {
     if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
-    if (isServiceUnavailableError(err)) {
-      const fallbackPost = getFallbackPostDetailById(currentPostId)
-      if (fallbackPost) {
-        hintPostMedia(fallbackPost)
-        post.value = fallbackPost
-        detailFetched.value = true
-        activeMediaIndex.value = 0
-        isMediaLoaded.value = true
-        dataSource.value = 'fallback'
-        error.value = null
-        syncNavigationContext()
-        syncPostMeta(fallbackPost)
-        return
-      }
+    const fallbackPost = resolveFallbackPostDetail(currentPostId, err)
+    if (fallbackPost) {
+      applyFallbackPost(fallbackPost)
+      return
     }
     if (err instanceof ApiError) {
       if (err.status === 404) {

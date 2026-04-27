@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => {
     getFallbackPostDetailMock: vi.fn(),
     isServiceUnavailableErrorMock: vi.fn(() => false),
     getPostNavigationContextMock: vi.fn(() => null),
+    getPostNavigationSummaryMock: vi.fn(() => null),
     updatePostNavigationIndexMock: vi.fn(),
     formatDateMock: vi.fn(() => 'Apr 14, 2026'),
     getMediaStreamUrlMock: vi.fn((id: string) => `/media/${id}/stream`),
@@ -126,11 +127,47 @@ vi.mock('@/composables/useViewTracking', () => ({
 
 vi.mock('@/utils/postNavigation', () => ({
   getPostNavigationContext: (...args: unknown[]) => mocks.getPostNavigationContextMock(...args),
+  getPostNavigationSummary: (...args: unknown[]) => mocks.getPostNavigationSummaryMock(...args),
   updatePostNavigationIndex: (...args: unknown[]) => mocks.updatePostNavigationIndexMock(...args),
 }))
 
 vi.mock('@/fallbacks/postFallback', () => ({
   getFallbackPostDetailById: (...args: unknown[]) => mocks.getFallbackPostDetailMock(...args),
+  buildFallbackPostDetail: (post: {
+    id: string
+    platform?: string
+    title?: string | null
+    content?: string | null
+    description?: string
+    thumbnail_url?: string | null
+    media_count?: number
+    view_count?: number
+    like_count?: number
+    comment_count?: number
+    author_id?: string | null
+    author_name?: string | null
+    published_at?: string | null
+    created_at?: string
+  }) => ({
+    id: post.id,
+    platform: post.platform ?? 'unknown',
+    title: post.title ?? undefined,
+    description: post.description ?? post.content ?? post.title ?? undefined,
+    thumbnail_url: post.thumbnail_url ?? null,
+    author_id: post.author_id ?? undefined,
+    author_name: post.author_name ?? undefined,
+    view_count: post.view_count ?? 0,
+    like_count: post.like_count ?? 0,
+    comment_count: post.comment_count ?? 0,
+    media_count: post.media_count ?? 0,
+    created_at: post.created_at ?? post.published_at ?? '2026-04-14T00:00:00Z',
+    published_at: post.published_at ?? undefined,
+    media_files: [],
+    tags: [],
+    media_type: null,
+    language: null,
+    author_other_posts: [],
+  }),
 }))
 
 vi.mock('@/fallbacks/publicPageFallback', () => ({
@@ -350,6 +387,7 @@ describe('PostDetailPage', () => {
     mocks.getFallbackPostDetailMock.mockReset()
     mocks.isServiceUnavailableErrorMock.mockReset()
     mocks.getPostNavigationContextMock.mockReset()
+    mocks.getPostNavigationSummaryMock.mockReset()
     mocks.updatePostNavigationIndexMock.mockReset()
     mocks.formatDateMock.mockReset()
     mocks.getMediaStreamUrlMock.mockReset()
@@ -361,6 +399,7 @@ describe('PostDetailPage', () => {
     mocks.getFallbackPostDetailMock.mockReturnValue(null)
     mocks.isServiceUnavailableErrorMock.mockReturnValue(false)
     mocks.getPostNavigationContextMock.mockReturnValue(null)
+    mocks.getPostNavigationSummaryMock.mockReturnValue(null)
     mocks.formatDateMock.mockReturnValue('Apr 14, 2026')
     mocks.getMediaStreamUrlMock.mockImplementation((id: string) => `/media/${id}/stream`)
     mocks.getMediaThumbnailUrlMock.mockImplementation(
@@ -402,6 +441,33 @@ describe('PostDetailPage', () => {
       query: mocks.mockedRoute.query,
       hash: mocks.mockedRoute.hash,
     })
+  })
+
+  it('renders a synthesized fallback when the detail request returns 404 but navigation summary exists', async () => {
+    mocks.getPostNavigationSummaryMock.mockReturnValue({
+      id: basePost.id,
+      platform: 'twitter',
+      title: 'List summary title',
+      content: 'List summary content',
+      thumbnail_url: 'https://cdn.example.com/list-thumb.jpg',
+      media_count: 1,
+      view_count: 99,
+      like_count: 12,
+      comment_count: 7,
+      author_name: 'summary author',
+      author_id: 'author-1',
+      published_at: '2026-04-14T00:00:00Z',
+      created_at: '2026-04-14T00:00:00Z',
+    })
+    mocks.loadCachedPostMock.mockRejectedValue(new mocks.MockApiError('Post not found', 404))
+
+    const wrapper = mountDetailPage({ attachToBody: true })
+    await flushPromises()
+
+    expect(mocks.replaceSpy).not.toHaveBeenCalled()
+    expect(wrapper.find('.post-title').text()).toContain('List summary title')
+    expect(wrapper.find('.post-description').text()).toContain('List summary content')
+    expect(wrapper.find('.post-image').attributes('src')).toContain('list-thumb.jpg?resolved=1')
   })
 
   it('loads the comment list branch once the comments section becomes visible', async () => {

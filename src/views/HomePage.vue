@@ -3138,7 +3138,13 @@ function openDetailFromPreview(postId: string) {
     void router.push('/explore')
     return
   }
-  storePostNavigationContext(homeSourcePosts.value, postId, 'home')
+  const previewSummary =
+    previewPost.value && previewPost.value.id === postId ? [previewPost.value] : []
+  const navigationContextPosts =
+    previewSummary.length > 0
+      ? [...previewSummary, ...homeSourcePosts.value.filter((item) => item.id !== postId)]
+      : homeSourcePosts.value
+  storePostNavigationContext(navigationContextPosts, postId, 'home')
   cachePostThumbnailPreview(postId, previewThumbnailSrc.value)
   isPreviewOpen.value = false
   router.push(`/post/${postId}`)

@@ -236,8 +236,9 @@ import {
 } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X } from '@lucide/vue'
-import { postService, type PostDetailResponse, type PostListItem } from '@/api'
+import { postService, type PostDetailResponse, type PostListItem, ApiError } from '@/api'
 import { useCachedPost } from '@/composables/useCachedPosts'
+import { buildFallbackPostDetail } from '@/fallbacks/postFallback'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import { getMediaStreamUrl, getMediaThumbnailUrl } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
@@ -431,6 +432,11 @@ function abortReloadRequest() {
   reloadSeq += 1
 }
 
+function getInitialFallbackPost(postId: string): PostDetailResponse | null {
+  if (!props.initialPost || props.initialPost.id !== postId) return null
+  return buildFallbackPostDetail(props.initialPost)
+}
+
 async function reload() {
   const id = props.postId
   if (!props.isOpen || !id) return
@@ -460,6 +466,14 @@ async function reload() {
     post.value = res.data
   } catch (e) {
     if (controller.signal.aborted || isAbortError(e) || seq !== reloadSeq) return
+    if (e instanceof ApiError && e.status === 404) {
+      const fallbackPost = getInitialFallbackPost(id)
+      if (fallbackPost) {
+        post.value = fallbackPost
+        loadError.value = null
+        return
+      }
+    }
     post.value = null
     loadError.value = e instanceof Error ? e.message : t('common.error')
   } finally {
