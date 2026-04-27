@@ -11,6 +11,7 @@ import type {
   HomeTagBrief,
   PostListItem,
 } from '@/api'
+import { getContractResourceId } from '@/utils/contractResourceId'
 import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import { formatRelativeTime } from '@/utils/date'
 
@@ -531,6 +532,25 @@ export function resolvePostIdFromLink(link: string | null | undefined): string |
   return match?.[1] ?? null
 }
 
+export function resolvePreviewablePostLink(
+  link: string | null | undefined,
+  fallbackId: string | null | undefined
+): string {
+  const postId = resolvePostIdFromLink(link)
+  if (postId) {
+    const publicPostId = getContractResourceId(postId)
+    return publicPostId ? `/post/${publicPostId}` : '/explore'
+  }
+
+  const fallback = normalizeText(fallbackId)
+  if (fallback) {
+    const publicPostId = getContractResourceId(fallback)
+    return publicPostId ? `/post/${publicPostId}` : '/explore'
+  }
+
+  return resolvePostLink(link, fallbackId)
+}
+
 export function resolvePostLink(
   link: string | null | undefined,
   fallbackId: string | null | undefined
@@ -538,20 +558,9 @@ export function resolvePostLink(
   const value = normalizeText(link)
   if (value) return value
   const fallback = normalizeText(fallbackId)
-  return fallback ? `/post/${fallback}` : '/explore'
-}
-
-export function resolvePreviewablePostLink(
-  link: string | null | undefined,
-  fallbackId: string | null | undefined
-): string {
-  const postIdFromLink = resolvePostIdFromLink(link)
-  if (postIdFromLink) return `/post/${postIdFromLink}`
-
-  const fallback = normalizeText(fallbackId)
-  if (fallback) return `/post/${fallback}`
-
-  return resolvePostLink(link, fallbackId)
+  if (!fallback) return '/explore'
+  const publicPostId = getContractResourceId(fallback)
+  return publicPostId ? `/post/${publicPostId}` : '/explore'
 }
 
 export function normalizePlatform(value: string | null | undefined, fallback = 'story'): string {
