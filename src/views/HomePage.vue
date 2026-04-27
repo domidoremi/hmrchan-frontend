@@ -993,6 +993,7 @@ import type { PostListItem } from '@/api/postService'
 import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
 import { getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { isFilteredAuthor } from '@/config/filters'
+import { getContractResourceId } from '@/utils/contractResourceId'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import {
@@ -3138,6 +3139,12 @@ function openDetailFromPreview(postId: string) {
     void router.push('/explore')
     return
   }
+  const publicPostId = getContractResourceId(postId)
+  if (!publicPostId) {
+    isPreviewOpen.value = false
+    void router.push('/explore')
+    return
+  }
   const previewSummary =
     previewPost.value && previewPost.value.id === postId ? [previewPost.value] : []
   const navigationContextPosts =
@@ -3147,7 +3154,7 @@ function openDetailFromPreview(postId: string) {
   storePostNavigationContext(navigationContextPosts, postId, 'home')
   cachePostThumbnailPreview(postId, previewThumbnailSrc.value)
   isPreviewOpen.value = false
-  router.push(`/post/${postId}`)
+  router.push(`/post/${publicPostId}`)
 }
 
 watch(

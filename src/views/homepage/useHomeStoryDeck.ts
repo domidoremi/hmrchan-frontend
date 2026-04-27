@@ -56,7 +56,7 @@ export function useHomeStoryDeck(options: {
         excerpt: formatStoryExcerpt(post, translate),
         author,
         time: post.published_at ? formatRelativeTime(post.published_at, translate) : '',
-        detailLink: `/post/${post.id}`,
+        detailLink: resolvePostLink(null, post.id),
       }
     })
   })

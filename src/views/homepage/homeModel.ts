@@ -556,7 +556,14 @@ export function resolvePostLink(
   fallbackId: string | null | undefined
 ): string {
   const value = normalizeText(link)
-  if (value) return value
+  if (value) {
+    const postId = resolvePostIdFromLink(value)
+    if (postId) {
+      const publicPostId = getContractResourceId(postId)
+      return publicPostId ? `/post/${publicPostId}` : '/explore'
+    }
+    return value
+  }
   const fallback = normalizeText(fallbackId)
   if (!fallback) return '/explore'
   const publicPostId = getContractResourceId(fallback)
