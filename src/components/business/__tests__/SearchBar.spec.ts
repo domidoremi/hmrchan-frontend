@@ -108,8 +108,7 @@ describe('SearchBar', () => {
     expect(getSuggestions).toHaveBeenCalledTimes(1)
     expect(getSuggestions).toHaveBeenCalledWith(
       'editorial',
-      10,
-      expect.objectContaining({ skipErrorToast: true })
+      expect.objectContaining({ limit: 10, skipErrorToast: true })
     )
 
     wrapper.unmount()

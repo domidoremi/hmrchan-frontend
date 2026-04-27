@@ -28,6 +28,10 @@ export interface SearchSuggestionResponse {
   results: SearchSuggestion[]
 }
 
+export interface SearchSuggestionsConfig extends RequestConfig {
+  limit?: number
+}
+
 export interface SearchPostsParams {
   q: string
   cursor?: string | null
@@ -96,15 +100,16 @@ export const searchService = {
   /**
    * 获取搜索建议
    */
-  async getSuggestions(q: string, config?: RequestConfig): Promise<SearchSuggestion[]> {
+  async getSuggestions(q: string, config?: SearchSuggestionsConfig): Promise<SearchSuggestion[]> {
     if (!q.trim() || q.trim().length < 2) {
       return []
     }
+    const { limit, ...requestConfig } = config ?? {}
     const result = await apiClient.get<SearchSuggestion[] | SearchSuggestionResponse>(
-      `/search/suggestions?q=${encodeURIComponent(q)}`,
+      `/search/suggestions?q=${encodeURIComponent(q)}${typeof limit === 'number' ? `&limit=${limit}` : ''}`,
       {
         skipErrorToast: true,
-        ...config,
+        ...requestConfig,
       }
     )
 

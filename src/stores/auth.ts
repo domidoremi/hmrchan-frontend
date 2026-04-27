@@ -204,6 +204,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       const response = await authService.login({
         username: usernameOrEmail,
+        ...(usernameOrEmail.includes('@') ? { email: usernameOrEmail } : {}),
         password,
         device_name: deviceInfo.device_name,
         device_type: deviceInfo.device_type,

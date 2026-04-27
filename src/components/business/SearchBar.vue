@@ -299,7 +299,8 @@ async function fetchSuggestions(q: string) {
   const requestToken = ++suggestionRequestToken
   isLoading.value = true
   try {
-    const result = await searchService.getSuggestions(normalizedQuery, 10, {
+    const result = await searchService.getSuggestions(normalizedQuery, {
+      limit: 10,
       signal: controller.signal,
       skipErrorToast: true,
     })
