@@ -876,8 +876,11 @@ describe('HomePage', () => {
 
   it('sanitizes upstream non-post deep links back into the post detail flow', () => {
     expect(
-      resolvePreviewablePostLink('/schedule/177885f6-814d-4661-9b08-1bde93b0568a', 'post-bubble-1')
-    ).toBe('/post/post-bubble-1')
+      resolvePreviewablePostLink(
+        '/schedule/177885f6-814d-4661-9b08-1bde93b0568a',
+        '0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e'
+      )
+    ).toBe('/post/0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e')
   })
 
   it('refreshes only the missing support block when aggregate data leaves one block empty', async () => {

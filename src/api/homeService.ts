@@ -566,7 +566,7 @@ function buildAggregateFromSupport(data: {
     hero: {
       editorial_card: editorial
         ? {
-            post_id: editorial.post_id,
+            post_id: getContractResourceId(editorial.post_id),
             title: editorial.author?.display_name || editorial.excerpt,
             text: editorial.excerpt,
             author: editorial.author,
@@ -579,10 +579,12 @@ function buildAggregateFromSupport(data: {
       spotlight: spotlight
         ? {
             post_id:
-              spotlight.related_posts?.[0]?.post_id ??
-              spotlight.related_posts?.[0]?.id ??
-              spotlight.primary_cta?.target.replace(/^\/post\//, '') ??
-              null,
+              getContractResourceId(
+                spotlight.related_posts?.[0]?.post_id ??
+                  spotlight.related_posts?.[0]?.id ??
+                  spotlight.primary_cta?.target.replace(/^\/post\//, '') ??
+                  null
+              ) ?? null,
             title: spotlight.title,
             summary: spotlight.summary || spotlight.subtitle,
             author: spotlightAuthor,
