@@ -10,6 +10,7 @@ import {
   type HtmlDocumentShellStat,
   type HtmlStructuredData,
 } from './htmlDocument'
+import { getContractResourceId } from '@/utils/contractResourceId'
 import {
   resolveConfiguredApiBaseUrl,
   resolveVpcOriginForPath,
@@ -151,6 +152,10 @@ function normalizeText(value: unknown): string {
 function normalizeIdentifier(value: unknown): string {
   if (value === null || value === undefined) return ''
   return String(value).trim()
+}
+
+function normalizePublicPostIdentifier(value: unknown): string {
+  return getContractResourceId(normalizeIdentifier(value)) ?? ''
 }
 
 function normalizeNumber(value: unknown): number | null {
@@ -500,7 +505,7 @@ function buildPostShellLinks(post: EdgePostDetail): HtmlDocumentShellLink[] {
   const links: HtmlDocumentShellLink[] = []
   const authorId = normalizeIdentifier(post.author_id)
   const authorName = normalizeText(post.author_name) || normalizeText(post.author_username)
-  const related = post.author_other_posts?.find((item) => normalizeIdentifier(item.id))
+  const related = post.author_other_posts?.find((item) => normalizePublicPostIdentifier(item.id))
 
   if (authorId) {
     links.push({
@@ -509,9 +514,10 @@ function buildPostShellLinks(post: EdgePostDetail): HtmlDocumentShellLink[] {
     })
   }
 
-  if (related?.id) {
+  const relatedPostId = normalizePublicPostIdentifier(related?.id)
+  if (relatedPostId) {
     links.push({
-      href: `/post/${normalizeIdentifier(related.id)}`,
+      href: `/post/${relatedPostId}`,
       label: 'Latest related post',
     })
   }
@@ -667,10 +673,11 @@ function buildAuthorShellStats(author: EdgeAuthorDetail): HtmlDocumentShellStat[
 
 function buildAuthorShellLinks(author: EdgeAuthorDetail): HtmlDocumentShellLink[] {
   const links: HtmlDocumentShellLink[] = []
-  const recentPost = author.recent_posts?.find((item) => normalizeIdentifier(item.id))
+  const recentPost = author.recent_posts?.find((item) => normalizePublicPostIdentifier(item.id))
 
-  if (recentPost?.id) {
-    links.push({ href: `/post/${normalizeIdentifier(recentPost.id)}`, label: 'Recent post' })
+  const recentPostId = normalizePublicPostIdentifier(recentPost?.id)
+  if (recentPostId) {
+    links.push({ href: `/post/${recentPostId}`, label: 'Recent post' })
   }
 
   links.push({ href: '/authors', label: 'Authors' })
