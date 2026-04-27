@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createRouter, createMemoryHistory } from 'vue-router'
 
 const securityPageState = vi.hoisted(() => ({
   sessions: [
@@ -20,11 +21,26 @@ const securityPageState = vi.hoisted(() => ({
     created_at: '2026-04-01T00:00:00.000Z',
     identity_provider: 'local',
   }),
+  getMySecuritySummary: vi.fn().mockResolvedValue({
+    total_logins: 12,
+    failed_logins: 1,
+    password_changes: 1,
+    new_devices: 2,
+    security_events: 4,
+    last_login: '2026-04-28T00:00:00.000Z',
+    last_password_change: '2026-04-21T00:00:00.000Z',
+  }),
   authUser: {
     username: 'domi',
     email: 'domi@example.com',
     identity_provider: 'local',
   },
+}))
+
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+  }),
 }))
 
 vi.mock('@/composables/useSessionManagement', () => ({
@@ -102,6 +118,9 @@ vi.mock('@/api', () => {
 
   return {
     ApiError: MockApiError,
+    auditService: {
+      getMySecuritySummary: securityPageState.getMySecuritySummary,
+    },
     userService: {
       getProfile: securityPageState.getProfile,
     },
@@ -116,16 +135,31 @@ vi.mock('@/stores', () => ({
 
 import ProfileSecurityPage from '../ProfileSecurityPage.vue'
 
+function createTestRouter(initialPath = '/profile/security') {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/profile/security', component: ProfileSecurityPage }],
+  })
+
+  return router
+    .push(initialPath)
+    .then(() => router.isReady())
+    .then(() => router)
+}
+
 describe('ProfileSecurityPage', () => {
   beforeEach(() => {
     securityPageState.fetchSessions.mockClear()
     securityPageState.revokeAllOthers.mockClear()
     securityPageState.getProfile.mockClear()
+    securityPageState.getMySecuritySummary.mockClear()
   })
 
-  it('renders credentials, mfa, devices, and activity sections in one security center', async () => {
+  it('renders the security console with overview entries and a default credentials workspace', async () => {
+    const router = await createTestRouter()
     const wrapper = mount(ProfileSecurityPage, {
       global: {
+        plugins: [router],
         mocks: {
           $t: (key: string) => key,
         },
@@ -142,21 +176,21 @@ describe('ProfileSecurityPage', () => {
 
     expect(wrapper.get('[data-testid="profile-security-page"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('profile.securityHubTitle')
-    expect(wrapper.find('[data-testid="profile-security-credentials"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="profile-security-mfa"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="profile-security-devices"]').attributes('data-count')).toBe(
-      '2'
+    expect(wrapper.findAll('.security-entry')).toHaveLength(4)
+    expect(wrapper.find('[data-testid="profile-security-workspace"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="profile-security-credentials-panel"]').isVisible()).toBe(
+      true
     )
-    expect(
-      wrapper.find('[data-testid="profile-security-activity"]').attributes('data-header')
-    ).toBe('false')
+    expect(wrapper.find('[data-testid="profile-security-credentials"]').exists()).toBe(true)
     expect(securityPageState.fetchSessions).toHaveBeenCalledTimes(1)
     expect(securityPageState.getProfile).toHaveBeenCalledTimes(1)
   })
 
-  it('keeps the revoke-all action wired from the security center devices section', async () => {
+  it('opens the devices workspace and keeps revoke-all wired', async () => {
+    const router = await createTestRouter('/profile/security#devices')
     const wrapper = mount(ProfileSecurityPage, {
       global: {
+        plugins: [router],
         mocks: {
           $t: (key: string) => key,
         },
@@ -170,8 +204,47 @@ describe('ProfileSecurityPage', () => {
     })
 
     await flushPromises()
-    await wrapper.findAll('button').at(-1)?.trigger('click')
+
+    expect(wrapper.find('[data-testid="profile-security-devices-section"]').isVisible()).toBe(true)
+    expect(wrapper.find('[data-testid="profile-security-devices"]').attributes('data-count')).toBe(
+      '2'
+    )
+
+    const revokeButton = wrapper
+      .findAll('button')
+      .find((node) => node.text().includes('devices.revokeAll'))
+
+    await revokeButton?.trigger('click')
 
     expect(securityPageState.revokeAllOthers).toHaveBeenCalledTimes(1)
+  })
+
+  it('switches workspace when activity hash is requested', async () => {
+    const router = await createTestRouter('/profile/security#activity')
+    const wrapper = mount(ProfileSecurityPage, {
+      global: {
+        plugins: [router],
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: {
+          Shield: true,
+          ShieldAlert: true,
+          Monitor: true,
+          History: true,
+          RefreshCw: true,
+          Fingerprint: true,
+          Mail: true,
+          ChevronRight: true,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="profile-security-activity-section"]').isVisible()).toBe(true)
+    expect(
+      wrapper.find('[data-testid="profile-security-activity"]').attributes('data-header')
+    ).toBe('false')
   })
 })
