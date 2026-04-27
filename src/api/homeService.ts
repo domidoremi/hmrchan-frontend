@@ -5,6 +5,7 @@ import {
   type PublicVisibilityScope,
 } from './publicVisibility'
 import { isServiceUnavailableError } from '@/fallbacks/publicPageFallback'
+import { getContractResourceId } from '@/utils/contractResourceId'
 import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 
 let homepageBootstrapFallbackPromise: Promise<HomeAggregateResponse> | null = null
@@ -310,6 +311,12 @@ function buildQuery(params: Record<string, string | number | null | undefined>):
 function normalizeHomeLink(link: string | null | undefined): string {
   const value = String(link ?? '').trim()
   if (!value) return ''
+  if (value.startsWith('/post/')) {
+    const parsed = value.match(/^\/post\/([^/?#]+)(.*)$/i)
+    if (!parsed) return ''
+    const publicPostId = getContractResourceId(parsed[1])
+    return publicPostId ? `/post/${publicPostId}${parsed[2] ?? ''}` : ''
+  }
   if (value.startsWith('/discussion/')) {
     return value
   }

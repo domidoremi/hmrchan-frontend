@@ -308,4 +308,132 @@ describe('homeService', () => {
     expect(result.source).toBe('cached')
     expect(result.payload.version).toBe('home.v1.cached')
   })
+
+  it('drops retired v4 post deep links from home payloads while preserving non-post links', async () => {
+    const retiredPostId = 'dd8173a9-7ecc-4ecb-a362-0286d0eee53c'
+    const validAuthorId = '0195fe30-6f9d-7f31-9e6f-c9a5c478a001'
+    mockApiClient.get.mockResolvedValueOnce({
+      version: 'home.v1',
+      generated_at: '2026-03-13T12:00:00Z',
+      hero: {
+        editorial_card: {
+          post_id: retiredPostId,
+          title: 'Retired Post',
+          text: 'Legacy post still referenced',
+          author: buildAuthor(),
+          tags: [],
+          deep_link: `/post/${retiredPostId}`,
+        },
+        spotlight: {
+          post_id: retiredPostId,
+          title: 'Legacy Spotlight',
+          summary: 'Should be blocked',
+          author: buildAuthor(),
+          primary_tag: null,
+          image: null,
+          deep_link: `/post/${retiredPostId}`,
+        },
+        stats: [],
+        trending_tags: [],
+      },
+      portal: {
+        items: [
+          {
+            key: 'community',
+            title: 'Community',
+            description: 'Recent discussions',
+            count: 1,
+            display_count: '1',
+            icon: 'message-circle',
+            accent: 'coral',
+            deep_link: '/community',
+            preview: {
+              title: 'Safe discussion',
+              summary: 'Still allowed',
+              meta: '1h ago',
+              deep_link: '/discussion/discussion-1',
+              author: {
+                ...buildAuthor({
+                  id: validAuthorId,
+                  deep_link: `/author/${validAuthorId}`,
+                }),
+              },
+            },
+          },
+        ],
+      },
+      featured: {
+        items: [
+          {
+            id: 'feature-1',
+            kind: 'hero',
+            kicker: 'Legacy',
+            title: 'Legacy Feature',
+            subtitle: 'Should drop post links',
+            summary: 'summary',
+            primary_cta: {
+              label: 'Open post',
+              type: 'post',
+              target: `/post/${retiredPostId}`,
+            },
+            secondary_cta: {
+              label: 'Open author',
+              type: 'author',
+              target: `/author/${validAuthorId}`,
+            },
+            related_posts: [
+              {
+                id: retiredPostId,
+                post_id: retiredPostId,
+                title: 'Retired related post',
+                deep_link: `/post/${retiredPostId}`,
+              },
+            ],
+            related_authors: [],
+          },
+        ],
+      },
+      trends: {
+        authors: [],
+        tags: [],
+        schedules: [],
+        community: [],
+      },
+      latest_text_posts: [
+        {
+          rank: 1,
+          post_id: retiredPostId,
+          excerpt: 'Legacy post excerpt',
+          author: buildAuthor(),
+          tags: [],
+          deep_link: `/post/${retiredPostId}`,
+        },
+      ],
+      story_deck: {
+        items: [
+          {
+            rank: 1,
+            post_id: retiredPostId,
+            eyebrow: 'Legacy',
+            title: 'Legacy deck post',
+            summary: 'Should not stay routable',
+            author: buildAuthor(),
+            deep_link: `/post/${retiredPostId}`,
+          },
+        ],
+        total: 1,
+      },
+    })
+
+    const result = await homeService.getHome()
+
+    expect(result.payload.hero.editorial_card?.deep_link).toBe('')
+    expect(result.payload.hero.spotlight?.deep_link).toBe('')
+    expect(result.payload.featured.items[0]?.primary_cta?.target).toBe('')
+    expect(result.payload.featured.items[0]?.secondary_cta?.target).toBe(`/author/${validAuthorId}`)
+    expect(result.payload.featured.items[0]?.related_posts?.[0]?.deep_link).toBe('')
+    expect(result.payload.latest_text_posts[0]?.deep_link).toBe('')
+    expect(result.payload.story_deck.items[0]?.deep_link).toBe('')
+    expect(result.payload.portal.items[0]?.preview?.deep_link).toBe('/discussion/discussion-1')
+  })
 })
