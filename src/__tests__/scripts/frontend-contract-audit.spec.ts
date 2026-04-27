@@ -127,6 +127,17 @@ const DEFAULT_SAMPLE_DISCUSSION_ROUTE = '/community/discussions/018f7da0-0c13-7c
   )
   writeFixture(
     root,
+    'scripts/config/lighthouse-prod-urls.json',
+    JSON.stringify(
+      {
+        entries: ['https://momichan.xyz/', 'https://momichan.xyz/explore'],
+      },
+      null,
+      2
+    )
+  )
+  writeFixture(
+    root,
     'src/utils/cache/config.ts',
     "export const UUIDV7_CUTOVER_EPOCH = 'uuidv7-cutover-2026-04'"
   )
@@ -139,6 +150,35 @@ const DEFAULT_SAMPLE_DISCUSSION_ROUTE = '/community/discussions/018f7da0-0c13-7c
     root,
     'src/fallbacks/generated/publicSnapshots.ts',
     "export const publicSnapshots = [{ id: '018f7da0-0c13-7c5f-a3b2-50d09d31a100', target: '/post/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10' }]"
+  )
+  writeFixture(
+    root,
+    'src/api/homeService.ts',
+    `
+import { getContractResourceId } from '@/utils/contractResourceId'
+function normalizeHomeLink(value) {
+  if (value.startsWith('/post/')) {
+    const parsed = value.match(/^\\/post\\/([^/?#]+)(.*)$/i)
+    const publicPostId = getContractResourceId(parsed?.[1])
+    return publicPostId ? \`/post/\${publicPostId}\${parsed?.[2] ?? ''}\` : ''
+  }
+  return value
+}
+`
+  )
+  writeFixture(
+    root,
+    'src/edge/detailDocumentResolver.ts',
+    `
+import { getContractResourceId } from '@/utils/contractResourceId'
+function normalizePublicPostIdentifier(value) {
+  return getContractResourceId(String(value ?? '').trim()) ?? ''
+}
+const links = [
+  { label: 'Latest related post', href: '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a001' },
+  { label: 'Recent post', href: '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a001' },
+]
+`
   )
 }
 
@@ -248,6 +288,40 @@ export const authService = {
     expect(validateFrontendContractAudit(root)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: 'stale-public-snapshot-id-contract' }),
+      ])
+    )
+  })
+
+  it('flags stale lighthouse fallback URLs and missing runtime post-link normalization', () => {
+    const root = createRoot()
+    writeAlignedContractFixtures(root)
+    writeFixture(
+      root,
+      'scripts/config/lighthouse-prod-urls.json',
+      JSON.stringify(
+        {
+          entries: ['https://momichan.xyz/post/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'],
+        },
+        null,
+        2
+      )
+    )
+    writeFixture(
+      root,
+      'src/api/homeService.ts',
+      'function normalizeHomeLink(value) { return value }'
+    )
+    writeFixture(
+      root,
+      'src/edge/detailDocumentResolver.ts',
+      'function normalizeIdentifier(value) { return String(value) }'
+    )
+
+    expect(validateFrontendContractAudit(root)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'stale-lighthouse-fallback-public-id-contract' }),
+        expect.objectContaining({ code: 'missing-home-deeplink-uuidv7-normalization' }),
+        expect.objectContaining({ code: 'missing-edge-post-link-uuidv7-normalization' }),
       ])
     )
   })
