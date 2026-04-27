@@ -4,15 +4,40 @@ import { createI18n } from 'vue-i18n'
 import PostPreviewModal from '../PostPreviewModal.vue'
 import type { PostListItem } from '@/api'
 
+const previewModalMocks = vi.hoisted(() => {
+  class MockApiError extends Error {
+    status: number
+
+    constructor(message: string, status: number) {
+      super(message)
+      this.status = status
+      this.name = 'ApiError'
+    }
+  }
+
+  return {
+    loadMock: vi.fn(),
+    MockApiError,
+  }
+})
+
 vi.mock('@/composables/useCachedPosts', () => ({
   useCachedPost: () => ({
-    load: vi.fn(),
+    load: previewModalMocks.loadMock,
   }),
 }))
 
 vi.mock('@/utils/prefetch', () => ({
   prefetchPostDetail: vi.fn(),
 }))
+
+vi.mock('@/api', async () => {
+  const actual = await vi.importActual<typeof import('@/api')>('@/api')
+  return {
+    ...actual,
+    ApiError: previewModalMocks.MockApiError,
+  }
+})
 
 const i18n = createI18n({
   legacy: false,
@@ -52,12 +77,12 @@ function createInitialPost(overrides: Partial<PostListItem> = {}): PostListItem 
   }
 }
 
-function createWrapper(initialPost: PostListItem) {
+function createWrapper(initialPost: PostListItem, postId: string | null = null) {
   return mount(PostPreviewModal, {
     attachTo: document.body,
     props: {
       isOpen: true,
-      postId: null,
+      postId,
       initialPost,
       initialThumbnailSrc: initialPost.thumbnail_url,
     },
@@ -75,7 +100,25 @@ function createWrapper(initialPost: PostListItem) {
 }
 
 describe('PostPreviewModal', () => {
+  it('keeps rendering the initial summary when detail fetch returns 404', async () => {
+    previewModalMocks.loadMock.mockRejectedValueOnce(
+      new previewModalMocks.MockApiError('Post not found', 404)
+    )
+
+    const wrapper = createWrapper(createInitialPost(), 'post-1')
+
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(wrapper.find('.post-preview-error').exists()).toBe(false)
+    expect(wrapper.find('.post-preview-heading').text()).toContain('Test post')
+    expect(wrapper.find('.post-preview-text').text()).toContain('Preview content')
+
+    wrapper.unmount()
+  })
+
   it('renders media section when thumbnail is available (even if media_count is 0)', () => {
+    previewModalMocks.loadMock.mockReset()
     const wrapper = createWrapper(
       createInitialPost({
         media_count: 0,
@@ -93,6 +136,7 @@ describe('PostPreviewModal', () => {
   })
 
   it('keeps media section when media exists and thumbnail is used as placeholder', () => {
+    previewModalMocks.loadMock.mockReset()
     const wrapper = createWrapper(
       createInitialPost({
         media_count: 2,

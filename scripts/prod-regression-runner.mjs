@@ -382,19 +382,6 @@ function buildApiHeaders(accept = 'application/json') {
   return headers
 }
 
-async function fetchJson(url, label) {
-  const response = await fetch(url, {
-    headers: buildApiHeaders(),
-    signal: AbortSignal.timeout(20_000),
-  })
-
-  if (!response.ok) {
-    throw new Error(`${label} 请求失败: ${response.status} ${response.statusText}`)
-  }
-
-  return response.json()
-}
-
 async function probeJson(url, label) {
   try {
     const response = await fetch(url, {

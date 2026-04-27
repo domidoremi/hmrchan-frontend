@@ -22,13 +22,7 @@ function uniquePosts(posts: PostListItem[]): PostListItem[] {
 
 const UNIQUE_FALLBACK_POSTS = uniquePosts(FALLBACK_POSTS)
 
-export function getFallbackPostDetailById(postId: string): PostDetailResponse | null {
-  const detail = STATIC_POST_DETAILS[postId]
-  if (detail) return clonePublicSnapshot(detail)
-
-  const post = UNIQUE_FALLBACK_POSTS.find((item) => item.id === postId)
-  if (!post) return null
-
+export function buildFallbackPostDetail(post: PostListItem): PostDetailResponse {
   return {
     id: post.id,
     platform: post.platform,
@@ -59,4 +53,14 @@ export function getFallbackPostDetailById(postId: string): PostDetailResponse | 
     language: null,
     author_other_posts: [],
   }
+}
+
+export function getFallbackPostDetailById(postId: string): PostDetailResponse | null {
+  const detail = STATIC_POST_DETAILS[postId]
+  if (detail) return clonePublicSnapshot(detail)
+
+  const post = UNIQUE_FALLBACK_POSTS.find((item) => item.id === postId)
+  if (!post) return null
+
+  return buildFallbackPostDetail(post)
 }
