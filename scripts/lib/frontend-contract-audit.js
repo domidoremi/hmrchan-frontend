@@ -21,7 +21,11 @@ const AUTH_CONTRACT_ENDPOINTS = Object.freeze([
     path: '/api/v1/auth/session:resolve',
     method: 'POST',
     aliases: Object.freeze(['/auth/session:resolve']),
-    files: Object.freeze(['src/api/authService.ts', 'functions/api/[[path]].ts', 'scripts/lib/auth-bootstrap.js']),
+    files: Object.freeze([
+      'src/api/authService.ts',
+      'functions/api/[[path]].ts',
+      'scripts/lib/auth-bootstrap.js',
+    ]),
     methodFiles: Object.freeze(['src/api/authService.ts']),
   }),
   Object.freeze({
@@ -137,8 +141,11 @@ const PUBLIC_ID_GUARD_FILES = Object.freeze([
 const PUBLIC_ID_ENTRYPOINT_FILES = Object.freeze([
   'src/router/index.ts',
   'scripts/lib/release-route-contract.js',
+  'scripts/config/lighthouse-prod-urls.json',
   'src/utils/cache/config.ts',
   'src/utils/cache/publicSnapshotCache.ts',
+  'src/api/homeService.ts',
+  'src/edge/detailDocumentResolver.ts',
 ])
 
 function readProjectFile(projectRoot, relativePath) {
@@ -165,8 +172,7 @@ function hasEndpointReference(contentsByFile, endpoint) {
           Boolean(dynamicSuffix) &&
           contents.includes(dynamicPrefix) &&
           contents.includes(dynamicSuffix)) ||
-        (token.includes('${id}') &&
-          contents.includes(token.replace('${id}', '${recoveryId}'))) ||
+        (token.includes('${id}') && contents.includes(token.replace('${id}', '${recoveryId}'))) ||
         (token.includes('${id}') &&
           contents.includes(token.replace('${id}', '${encodeURIComponent(id)}')))
     )
@@ -199,7 +205,10 @@ function hasEndpointMethod(contentsByFile, endpoint) {
         while (prefix && searchFrom < contents.length) {
           const tokenIndex = contents.indexOf(prefix, searchFrom)
           if (tokenIndex < 0) return false
-          const suffixWindow = contents.slice(tokenIndex, Math.min(contents.length, tokenIndex + 260))
+          const suffixWindow = contents.slice(
+            tokenIndex,
+            Math.min(contents.length, tokenIndex + 260)
+          )
           if (suffixWindow.includes(suffix)) {
             const nearbyPrefix = contents.slice(Math.max(0, tokenIndex - 200), tokenIndex)
             if (getNearestApiClientMethod(nearbyPrefix) === method) {
@@ -240,7 +249,10 @@ function hasTokenNearEndpoint(contents, endpoint, token) {
     while (searchToken && searchFrom < contents.length) {
       const tokenIndex = contents.indexOf(searchToken, searchFrom)
       if (tokenIndex < 0) return false
-      const callWindow = contents.slice(Math.max(0, tokenIndex - 120), Math.min(contents.length, tokenIndex + 520))
+      const callWindow = contents.slice(
+        Math.max(0, tokenIndex - 120),
+        Math.min(contents.length, tokenIndex + 520)
+      )
       if (callWindow.includes(token)) {
         return true
       }
@@ -300,14 +312,18 @@ function validatePublicIdEntrypoints(projectRoot, issues) {
     })
   }
 
-  const routeContractContents = readProjectFile(projectRoot, 'scripts/lib/release-route-contract.js')
+  const routeContractContents = readProjectFile(
+    projectRoot,
+    'scripts/lib/release-route-contract.js'
+  )
   if (
     hasRetiredPublicIdInText(routeContractContents) ||
     hasNumericPublicDetailRouteInText(routeContractContents)
   ) {
     issues.push({
       code: 'stale-release-route-id-contract',
-      message: 'Release route contract still contains numeric or retired v4 public detail route IDs',
+      message:
+        'Release route contract still contains numeric or retired v4 public detail route IDs',
       file: 'scripts/lib/release-route-contract.js',
     })
   }
@@ -322,7 +338,10 @@ function validatePublicIdEntrypoints(projectRoot, issues) {
     })
   }
 
-  const snapshotCacheContents = readProjectFile(projectRoot, 'src/utils/cache/publicSnapshotCache.ts')
+  const snapshotCacheContents = readProjectFile(
+    projectRoot,
+    'src/utils/cache/publicSnapshotCache.ts'
+  )
   if (!snapshotCacheContents.includes('UUIDV7_CUTOVER_EPOCH')) {
     issues.push({
       code: 'missing-public-snapshot-cache-cutover-epoch',
@@ -332,13 +351,58 @@ function validatePublicIdEntrypoints(projectRoot, issues) {
     })
   }
 
-  const generatedSnapshots = readProjectFile(projectRoot, 'src/fallbacks/generated/publicSnapshots.ts')
+  const generatedSnapshots = readProjectFile(
+    projectRoot,
+    'src/fallbacks/generated/publicSnapshots.ts'
+  )
   const snapshotContractIssues = findPublicSnapshotIdContractIssuesFromText(generatedSnapshots)
   if (snapshotContractIssues.length > 0) {
     issues.push({
       code: 'stale-public-snapshot-id-contract',
       message: `Generated public snapshots contain retired public IDs and must be refreshed for UUIDv7 cutover (${summarizePublicSnapshotContractIssues(snapshotContractIssues)})`,
       file: 'src/fallbacks/generated/publicSnapshots.ts',
+    })
+  }
+
+  const lighthouseFallbackContents = readProjectFile(
+    projectRoot,
+    'scripts/config/lighthouse-prod-urls.json'
+  )
+  const lighthouseFallbackIssues = findPublicSnapshotIdContractIssuesFromText(
+    lighthouseFallbackContents
+  )
+  if (lighthouseFallbackIssues.length > 0) {
+    issues.push({
+      code: 'stale-lighthouse-fallback-public-id-contract',
+      message: `Lighthouse production fallback URL manifest still contains retired public IDs (${summarizePublicSnapshotContractIssues(lighthouseFallbackIssues)})`,
+      file: 'scripts/config/lighthouse-prod-urls.json',
+    })
+  }
+
+  const homeServiceContents = readProjectFile(projectRoot, 'src/api/homeService.ts')
+  if (
+    !homeServiceContents.includes('getContractResourceId') ||
+    !homeServiceContents.includes("if (value.startsWith('/post/'))")
+  ) {
+    issues.push({
+      code: 'missing-home-deeplink-uuidv7-normalization',
+      message:
+        'Home/discovery deep_link normalization must reject retired /post/{uuidv4} targets before RouterLink/router.push consume them',
+      file: 'src/api/homeService.ts',
+    })
+  }
+
+  const edgeContents = readProjectFile(projectRoot, 'src/edge/detailDocumentResolver.ts')
+  if (
+    !edgeContents.includes('normalizePublicPostIdentifier') ||
+    !edgeContents.includes("label: 'Latest related post'") ||
+    !edgeContents.includes("label: 'Recent post'")
+  ) {
+    issues.push({
+      code: 'missing-edge-post-link-uuidv7-normalization',
+      message:
+        'Edge detail document resolver must only emit /post/{uuidv7} shell links for related or recent posts after cutover',
+      file: 'src/edge/detailDocumentResolver.ts',
     })
   }
 }

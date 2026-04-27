@@ -68,6 +68,7 @@ function parseArgs(argv) {
     help: false,
     headless: false,
     preflight: false,
+    legacyPostAuditOnly: false,
   }
 
   for (const arg of argv) {
@@ -81,6 +82,10 @@ function parseArgs(argv) {
     }
     if (arg === '--preflight') {
       options.preflight = true
+      continue
+    }
+    if (arg === '--legacy-post-audit-only') {
+      options.legacyPostAuditOnly = true
       continue
     }
     throw new Error(`未知参数: ${arg}`)
@@ -108,6 +113,7 @@ momichan.xyz 生产深度回归 runner
 
 可选参数:
   --preflight  仅执行预检，不启动浏览器或任何 round-trip
+  --legacy-post-audit-only  仅执行 legacy /post/{uuid} 生产审计，不要求主账号登录凭据
   --headless   以 headless 模式启动浏览器（默认 false，推荐本地人工协助时保持可视）
   --help       显示帮助
 
@@ -118,6 +124,11 @@ momichan.xyz 生产深度回归 runner
   SECONDARY_EMAIL_MODE    必须为 user-assisted
   ARTIFACT_DIR            默认 output/prod-regression/<timestamp>
   QA_PREFIX               默认 qa-prod-<timestamp>
+
+legacy post 审计输入:
+  UUIDV7_LEGACY_POST_AUDIT_INPUT 或 LEGACY_POST_AUDIT_INPUT
+  - 可指向 snapshot scanner 产物 JSON
+  - 未提供时会退回到当前公开 posts API 中已失效样本
 
 运行时人工协助暂停点:
   - 注册验证码
@@ -166,8 +177,7 @@ function ensureDir(dirPath) {
 
 function loadProductionContractVersion() {
   const explicit =
-    process.env.VITE_CLIENT_CONTRACT_VERSION?.trim() ||
-    process.env.CLIENT_CONTRACT_VERSION?.trim()
+    process.env.VITE_CLIENT_CONTRACT_VERSION?.trim() || process.env.CLIENT_CONTRACT_VERSION?.trim()
   if (explicit) return explicit
 
   try {
@@ -382,6 +392,74 @@ function buildApiHeaders(accept = 'application/json') {
   return headers
 }
 
+function loadJsonFileIfExists(filePath) {
+  if (!filePath) return null
+  const resolved = path.resolve(filePath)
+  if (!fs.existsSync(resolved)) return null
+  return JSON.parse(fs.readFileSync(resolved, 'utf8'))
+}
+
+function normalizeLegacyPostAuditInput(rawInput) {
+  if (Array.isArray(rawInput)) {
+    const legacyPosts = rawInput
+      .map((item) => {
+        const uuid = typeof item?.uuid === 'string' ? item.uuid.trim().toLowerCase() : ''
+        if (!uuid) return null
+        return {
+          uuid,
+          sources: Array.isArray(item.sources) ? item.sources : [],
+        }
+      })
+      .filter(Boolean)
+    const sourceAttribution = legacyPosts.flatMap((item) =>
+      item.sources.map((source) => ({
+        ...source,
+        uuid: item.uuid,
+      }))
+    )
+    return {
+      legacyPosts,
+      sourceAttribution,
+      stats: null,
+    }
+  }
+
+  if (!rawInput || typeof rawInput !== 'object') {
+    return {
+      legacyPosts: [],
+      sourceAttribution: [],
+      stats: null,
+    }
+  }
+
+  const sourceAttribution = Array.isArray(rawInput.legacy_post_source_attribution)
+    ? rawInput.legacy_post_source_attribution
+    : Array.isArray(rawInput.sourceAttribution)
+      ? rawInput.sourceAttribution
+      : []
+  const uuidCounts = new Map()
+  for (const item of sourceAttribution) {
+    if (typeof item?.uuid !== 'string' || !item.uuid.trim()) continue
+    const normalized = item.uuid.trim().toLowerCase()
+    uuidCounts.set(normalized, (uuidCounts.get(normalized) ?? 0) + 1)
+  }
+  const legacyPosts = [...uuidCounts.keys()].map((uuid) => ({
+    uuid,
+    sources: sourceAttribution.filter(
+      (item) =>
+        String(item?.uuid ?? '')
+          .trim()
+          .toLowerCase() === uuid
+    ),
+  }))
+
+  return {
+    legacyPosts,
+    sourceAttribution,
+    stats: rawInput.summary ?? null,
+  }
+}
+
 async function probeJson(url, label) {
   try {
     const response = await fetch(url, {
@@ -407,6 +485,30 @@ async function probeJson(url, label) {
       ok: false,
       status: null,
       payload: null,
+      error: `${label} 请求异常: ${error instanceof Error ? error.message : String(error)}`,
+    }
+  }
+}
+
+async function probeText(url, label) {
+  try {
+    const response = await fetch(url, {
+      headers: buildApiHeaders('text/html,application/xhtml+xml,text/plain;q=0.8,*/*;q=0.5'),
+      signal: AbortSignal.timeout(20_000),
+    })
+
+    const text = await response.text()
+    return {
+      ok: response.ok,
+      status: response.status,
+      body: text,
+      error: response.ok ? null : `${label} 请求失败: ${response.status} ${response.statusText}`,
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      status: null,
+      body: '',
       error: `${label} 请求异常: ${error instanceof Error ? error.message : String(error)}`,
     }
   }
@@ -509,7 +611,10 @@ async function discoverProductionEntities(baseUrl) {
       const postId = typeof post?.id === 'string' ? post.id : null
       if (!postId) continue
       const detailPath = `/post/${postId}`
-      const detailProbe = await probeJson(new URL(`/api/v1/posts/${postId}`, baseUrl).toString(), 'post detail API')
+      const detailProbe = await probeJson(
+        new URL(`/api/v1/posts/${postId}`, baseUrl).toString(),
+        'post detail API'
+      )
       if (detailProbe.ok) {
         selectedPost = {
           id: postId,
@@ -540,13 +645,13 @@ async function discoverProductionEntities(baseUrl) {
             candidates.author.username ??
             null,
         }
-      : discoveredAuthors
+      : (discoveredAuthors
           .map((author) => ({
             id: typeof author?.id === 'string' ? author.id : null,
             path: typeof author?.id === 'string' ? `/author/${author.id}` : null,
             title: author?.display_name ?? author?.name ?? author?.username ?? null,
           }))
-          .find((author) => author.path) ?? null
+          .find((author) => author.path) ?? null)
 
   const selectedSchedule =
     candidates.schedule && (candidates.schedule.deep_link || candidates.schedule.id)
@@ -557,13 +662,13 @@ async function discoverProductionEntities(baseUrl) {
             (candidates.schedule.id ? `/schedule/${candidates.schedule.id}` : null),
           title: candidates.schedule.title ?? candidates.schedule.name ?? null,
         }
-      : discoveredSchedules
+      : (discoveredSchedules
           .map((schedule) => ({
             id: typeof schedule?.id === 'string' ? schedule.id : null,
             path: typeof schedule?.id === 'string' ? `/schedule/${schedule.id}` : null,
             title: schedule?.title ?? schedule?.name ?? null,
           }))
-          .find((schedule) => schedule.path) ?? null
+          .find((schedule) => schedule.path) ?? null)
 
   const publicDiscussionPath =
     discussions.length > 0 && typeof discussions[0]?.id === 'string'
@@ -616,6 +721,169 @@ async function discoverProductionEntities(baseUrl) {
     searchTerms,
     invalidPostSamples,
   }
+}
+
+async function runLegacyPostDetailAudit(state, config, discovered) {
+  const reportDir = path.resolve('build', 'reports', 'uuidv7-prod-post-audit')
+  ensureDir(reportDir)
+
+  const inputFile =
+    process.env.UUIDV7_LEGACY_POST_AUDIT_INPUT?.trim() ||
+    process.env.LEGACY_POST_AUDIT_INPUT?.trim() ||
+    ''
+  const inputPayload = normalizeLegacyPostAuditInput(loadJsonFileIfExists(inputFile))
+  const sourceAttribution = inputPayload.sourceAttribution
+  const selectedPosts =
+    inputPayload.legacyPosts.length > 0
+      ? inputPayload.legacyPosts
+      : (discovered.invalidPostSamples ?? []).map((item) => ({
+          uuid: String(item.id ?? '')
+            .trim()
+            .toLowerCase(),
+          sources: [
+            {
+              source_category: 'release-audit-source',
+              source_table: 'prod-regression',
+              source_column: 'discoveries.invalidPostSamples',
+              uuid: String(item.id ?? '')
+                .trim()
+                .toLowerCase(),
+            },
+          ],
+        }))
+
+  const summary = {
+    generatedAt: new Date().toISOString(),
+    baseUrl: config.baseUrl,
+    inputFile: inputFile || null,
+    snapshotSummary: inputPayload.stats,
+    totals: {
+      legacyPosts: selectedPosts.length,
+      sourceAttributionRows: sourceAttribution.length,
+      invalidSamples: 0,
+      page404: 0,
+      page200Api404: 0,
+      page200Api200: 0,
+    },
+    bySource: {},
+  }
+
+  const sampleRows = []
+  for (const entry of selectedPosts) {
+    const uuid = entry.uuid
+    const pageUrl = new URL(`/post/${uuid}`, config.baseUrl).toString()
+    const apiUrl = new URL(`/api/v1/posts/${uuid}`, config.baseUrl).toString()
+    const [pageProbe, apiProbe] = await Promise.all([
+      probeText(pageUrl, 'legacy post page'),
+      probeJson(apiUrl, 'legacy post detail API'),
+    ])
+
+    let statusLabel = 'page+api-ok'
+    if (pageProbe.status === 404 || !pageProbe.ok) {
+      statusLabel = 'page-404'
+      summary.totals.page404 += 1
+    } else if (!apiProbe.ok || apiProbe.status === 404) {
+      statusLabel = 'page-200-api-404'
+      summary.totals.page200Api404 += 1
+    } else {
+      summary.totals.page200Api200 += 1
+    }
+    if (statusLabel !== 'page+api-ok') {
+      summary.totals.invalidSamples += 1
+    }
+
+    const attributedSources =
+      entry.sources?.length > 0
+        ? entry.sources
+        : sourceAttribution.filter(
+            (item) =>
+              String(item?.uuid ?? '')
+                .trim()
+                .toLowerCase() === uuid
+          )
+    const sourceCategories =
+      attributedSources.length > 0
+        ? [...new Set(attributedSources.map((item) => item.source_category || 'unknown'))]
+        : ['release-audit-source']
+
+    for (const sourceCategory of sourceCategories) {
+      const bucket = (summary.bySource[sourceCategory] ??= {
+        total: 0,
+        invalid: 0,
+        page404: 0,
+        page200Api404: 0,
+        page200Api200: 0,
+      })
+      bucket.total += 1
+      if (statusLabel !== 'page+api-ok') bucket.invalid += 1
+      if (statusLabel === 'page-404') bucket.page404 += 1
+      if (statusLabel === 'page-200-api-404') bucket.page200Api404 += 1
+      if (statusLabel === 'page+api-ok') bucket.page200Api200 += 1
+    }
+
+    sampleRows.push({
+      uuid,
+      source: sourceCategories,
+      source_attribution: attributedSources,
+      page_url: pageUrl,
+      api_url: apiUrl,
+      page_status: pageProbe.status,
+      api_status: apiProbe.status,
+      page_ok: pageProbe.ok,
+      api_ok: apiProbe.ok,
+      status: statusLabel,
+      page_error: pageProbe.error,
+      api_error: apiProbe.error,
+    })
+  }
+
+  writeJson(path.join(reportDir, 'summary.json'), summary)
+  writeJson(path.join(reportDir, 'legacy-post-samples.json'), sampleRows)
+  writeJson(path.join(reportDir, 'source-attribution.json'), sourceAttribution)
+  writeText(
+    path.join(reportDir, 'summary.md'),
+    [
+      '# UUIDv7 Legacy Post Detail Audit',
+      '',
+      `- Base URL: ${config.baseUrl}`,
+      `- Input file: ${inputFile || 'none'}`,
+      `- Legacy post samples: ${summary.totals.legacyPosts}`,
+      `- Invalid samples: ${summary.totals.invalidSamples}`,
+      `- Page 404: ${summary.totals.page404}`,
+      `- Page 200 + API 404: ${summary.totals.page200Api404}`,
+      `- Page 200 + API 200: ${summary.totals.page200Api200}`,
+      '',
+      '## Source Breakdown',
+      '',
+      ...Object.entries(summary.bySource).map(
+        ([source, counts]) =>
+          `- ${source}: total=${counts.total}, invalid=${counts.invalid}, page404=${counts.page404}, page200+api404=${counts.page200Api404}, page200+api200=${counts.page200Api200}`
+      ),
+      ...(Object.keys(summary.bySource).length === 0
+        ? ['- No attributed snapshot sources supplied.']
+        : []),
+    ].join('\n')
+  )
+
+  await runCheck(
+    state,
+    {
+      category: 'production-audit',
+      scope: 'public',
+      name: 'legacy post detail audit',
+      severity: summary.totals.invalidSamples > 0 ? 'P1' : 'P2',
+      url: inputFile ? path.resolve(inputFile) : null,
+    },
+    async () => ({
+      details: summary,
+      artifacts: [
+        path.join(reportDir, 'summary.json'),
+        path.join(reportDir, 'legacy-post-samples.json'),
+        path.join(reportDir, 'source-attribution.json'),
+        path.join(reportDir, 'summary.md'),
+      ],
+    })
+  )
 }
 
 function startLighthouseAudit(config, state) {
@@ -1245,10 +1513,7 @@ async function prepareRouteEvidence(page, expected) {
     for (const part of expected.expectedTitleIncludes) {
       const normalizedPart = normalizeTitleFragment(part)
       const normalizedTitle = normalizeTitleFragment(title)
-      assert(
-        normalizedTitle.includes(normalizedPart),
-        `title 未包含 "${part}"，实际 "${title}"`
-      )
+      assert(normalizedTitle.includes(normalizedPart), `title 未包含 "${part}"，实际 "${title}"`)
     }
   }
 
@@ -3337,6 +3602,34 @@ async function main() {
     await runPreflight(config)
     return
   }
+  if (options.legacyPostAuditOnly) {
+    ensureDir(config.artifactDir)
+    ensureDir(path.join(config.artifactDir, 'diagnostics'))
+    const state = createState(config)
+    const discovered = await discoverProductionEntities(config.baseUrl)
+    state.discoveries = discovered
+    await runLegacyPostDetailAudit(state, config, discovered)
+    finalizeState(state)
+    const summaryPath = path.join(config.artifactDir, 'summary.json')
+    const summaryMdPath = path.join(config.artifactDir, 'summary.md')
+    writeJson(summaryPath, state)
+    writeText(
+      summaryMdPath,
+      [
+        '# momichan.xyz legacy post detail audit',
+        '',
+        `- Base URL: ${config.baseUrl}`,
+        `- Audit report: ${path.resolve('build', 'reports', 'uuidv7-prod-post-audit', 'summary.json')}`,
+        `- Input file: ${process.env.UUIDV7_LEGACY_POST_AUDIT_INPUT?.trim() || process.env.LEGACY_POST_AUDIT_INPUT?.trim() || 'none'}`,
+      ].join('\n')
+    )
+    console.log(`\n📦 Summary: ${summaryPath}`)
+    console.log(`📝 Summary Markdown: ${summaryMdPath}`)
+    console.log(
+      `🧾 Legacy post audit: ${path.resolve('build', 'reports', 'uuidv7-prod-post-audit', 'summary.json')}`
+    )
+    return
+  }
   assertRunnableConfig(config)
   const locale = loadEnglishLocale()
 
@@ -3414,6 +3707,7 @@ async function main() {
   const qaHarness = await createPageHarness(qaContext, new URL(config.baseUrl).origin)
 
   try {
+    await runLegacyPostDetailAudit(state, config, discovered)
     await runPublicRegression(state, publicHarness, config, discovered)
     await runMainAccountRegression(state, mainHarness, config)
     await runQaAccountRegression(state, qaHarness, config, discovered)
