@@ -165,12 +165,35 @@ function mergeManifestEntry(existing, incoming) {
   }
 }
 
+function resolveAuditContractVersion() {
+  const explicit =
+    process.env.VITE_CLIENT_CONTRACT_VERSION?.trim() || process.env.CLIENT_CONTRACT_VERSION?.trim()
+  if (explicit) return explicit
+
+  try {
+    const wrangler = fs.readFileSync('wrangler.toml', 'utf8')
+    const match = wrangler.match(/^\s*VITE_CLIENT_CONTRACT_VERSION\s*=\s*"([^"]+)"/m)
+    return match?.[1]?.trim() ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function buildAuditHeaders(accept) {
+  const headers = {
+    Accept: accept,
+    'User-Agent': 'hmrchan-lighthouse-audit/1.0',
+  }
+  const contractVersion = resolveAuditContractVersion()
+  if (contractVersion) {
+    headers['X-Client-Contract-Version'] = contractVersion
+  }
+  return headers
+}
+
 async function fetchText(url, fetchImpl) {
   const response = await fetchImpl(url, {
-    headers: {
-      Accept: 'text/plain,application/xml,text/xml;q=0.9,*/*;q=0.8',
-      'User-Agent': 'hmrchan-lighthouse-audit/1.0',
-    },
+    headers: buildAuditHeaders('text/plain,application/xml,text/xml;q=0.9,*/*;q=0.8'),
   })
 
   if (!response.ok) {
@@ -182,10 +205,7 @@ async function fetchText(url, fetchImpl) {
 
 async function fetchJson(url, fetchImpl) {
   const response = await fetchImpl(url, {
-    headers: {
-      Accept: 'application/json,text/plain;q=0.8,*/*;q=0.5',
-      'User-Agent': 'hmrchan-lighthouse-audit/1.0',
-    },
+    headers: buildAuditHeaders('application/json,text/plain;q=0.8,*/*;q=0.5'),
   })
 
   if (!response.ok) {
@@ -193,6 +213,99 @@ async function fetchJson(url, fetchImpl) {
   }
 
   return response.json()
+}
+
+async function probeAuditUrl(
+  url,
+  fetchImpl,
+  {
+    accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    methods = ['HEAD', 'GET'],
+  } = {}
+) {
+  const headers = buildAuditHeaders(accept)
+  let lastResult = {
+    ok: false,
+    status: null,
+    method: null,
+    error: null,
+  }
+
+  for (const method of methods) {
+    try {
+      const response = await fetchImpl(url, {
+        method,
+        headers,
+        redirect: 'follow',
+      })
+      lastResult = {
+        ok: response.ok,
+        status: response.status,
+        method,
+        error: null,
+      }
+
+      if (response.ok) return lastResult
+      if (method === 'HEAD' && [405, 501].includes(response.status)) continue
+      return lastResult
+    } catch (err) {
+      lastResult = {
+        ok: false,
+        status: null,
+        method,
+        error: err instanceof Error ? err.message : String(err),
+      }
+    }
+  }
+
+  return lastResult
+}
+
+function resolveDetailApiUrl(targetUrl, base) {
+  const url = new URL(targetUrl)
+  const segments = normalizePathname(url.pathname).split('/').filter(Boolean)
+  const id = segments.at(-1)
+  if (!id) return null
+
+  const pageType = pageTypeForUrl(targetUrl)
+  const encodedId = encodeURIComponent(id)
+  switch (pageType) {
+    case 'author-detail':
+      return `${base}/api/v1/authors/${encodedId}`
+    case 'post-detail':
+      return `${base}/api/v1/posts/${encodedId}`
+    case 'discussion-detail':
+      return `${base}/api/v1/discussions/${encodedId}`
+    case 'schedule-detail':
+      return `${base}/api/v1/schedules/${encodedId}`
+    default:
+      return null
+  }
+}
+
+async function probeDetailDataUrl(entry, fetchImpl, base) {
+  const detailApiUrl = resolveDetailApiUrl(entry.url, base)
+  if (!detailApiUrl) {
+    return {
+      ok: true,
+      url: entry.url,
+      phase: 'page',
+      status: null,
+      method: null,
+      error: null,
+    }
+  }
+
+  const probe = await probeAuditUrl(detailApiUrl, fetchImpl, {
+    accept: 'application/json,text/plain;q=0.8,*/*;q=0.5',
+    methods: ['GET'],
+  })
+
+  return {
+    ...probe,
+    url: detailApiUrl,
+    phase: 'detail-api',
+  }
 }
 
 async function discoverEntityIds(fetchImpl, options) {
@@ -204,7 +317,6 @@ async function discoverEntityIds(fetchImpl, options) {
     const id = options.idSelector(item)
     if (typeof id !== 'string' || id.trim().length === 0) continue
     ids.push(id.trim())
-    if (ids.length >= options.limit) break
   }
 
   return ids
@@ -280,6 +392,7 @@ export async function discoverAuditTargets({
       detailTargets: { ...DETAIL_PAGE_TARGETS },
       gaps: [],
       sourceFailures: [],
+      rejectedFallbacks: [],
       includedByPageType: {},
       indexedCount: 0,
       robotsDisallowedCount: 0,
@@ -301,12 +414,17 @@ export async function discoverAuditTargets({
 
   if (sitemapResult.status === 'fulfilled') {
     sitemapUrls = uniqueByUrl(
-      parseSitemapXml(sitemapResult.value).map((url) => ({ url: toAbsoluteAuditUrl(url, normalizedBase) }))
+      parseSitemapXml(sitemapResult.value).map((url) => ({
+        url: toAbsoluteAuditUrl(url, normalizedBase),
+      }))
     ).map((entry) => entry.url)
   } else {
     manifest.coverage.sourceFailures.push({
       source: 'sitemap',
-      error: sitemapResult.reason instanceof Error ? sitemapResult.reason.message : String(sitemapResult.reason),
+      error:
+        sitemapResult.reason instanceof Error
+          ? sitemapResult.reason.message
+          : String(sitemapResult.reason),
     })
   }
 
@@ -315,11 +433,31 @@ export async function discoverAuditTargets({
   } else {
     manifest.coverage.sourceFailures.push({
       source: 'robots',
-      error: robotsResult.reason instanceof Error ? robotsResult.reason.message : String(robotsResult.reason),
+      error:
+        robotsResult.reason instanceof Error
+          ? robotsResult.reason.message
+          : String(robotsResult.reason),
     })
   }
 
   const sitemapSet = new Set(sitemapUrls)
+
+  const rejectDetailSample = (entry, probe, source) => {
+    manifest.coverage.rejectedFallbacks.push({
+      url: entry.url,
+      pageType: entry.pageType,
+      source,
+      status: probe.status,
+      method: probe.method,
+      error: probe.error,
+      phase: probe.phase ?? 'page',
+      probeUrl: probe.url ?? entry.url,
+      reason:
+        probe.phase === 'detail-api'
+          ? '详情 API 存活校验未通过，未纳入 Lighthouse manifest。'
+          : '回退详情 URL 存活校验未通过，未纳入 Lighthouse manifest。',
+    })
+  }
 
   const addEntry = (entryLike) => {
     const normalized = normalizeManifestEntry(entryLike, normalizedBase)
@@ -424,17 +562,26 @@ export async function discoverAuditTargets({
     const required = DETAIL_PAGE_TARGETS[plan.pageType]
 
     if (result.status === 'fulfilled') {
-      for (const [slot, id] of result.value.entries()) {
+      for (const id of result.value) {
+        const currentCount = [...entryMap.values()].filter(
+          (entry) => entry.pageType === plan.pageType
+        ).length
+        if (currentCount >= required) break
+
         const url = toAbsoluteAuditUrl(plan.toUrl(id), normalizedBase)
-        addEntry(
-          createBaseEntry(url, {
-            pageType: plan.pageType,
-            discoverySource: plan.source,
-            indexedInSitemap: sitemapSet.has(url),
-            robotsDisallowed: isRobotsDisallowed(url, robotsRules),
-            selectionReason: buildSelectionReason(plan.pageType, plan.source, slot, required),
-          })
-        )
+        const entry = createBaseEntry(url, {
+          pageType: plan.pageType,
+          discoverySource: plan.source,
+          indexedInSitemap: sitemapSet.has(url),
+          robotsDisallowed: isRobotsDisallowed(url, robotsRules),
+          selectionReason: buildSelectionReason(plan.pageType, plan.source, currentCount, required),
+        })
+        const probe = await probeDetailDataUrl(entry, fetchImpl, normalizedBase)
+        if (!probe.ok) {
+          rejectDetailSample(entry, probe, plan.source)
+          continue
+        }
+        addEntry(entry)
       }
     } else {
       manifest.coverage.sourceFailures.push({
@@ -443,13 +590,14 @@ export async function discoverAuditTargets({
       })
     }
 
-    let currentCount = [...entryMap.values()].filter((entry) => entry.pageType === plan.pageType).length
+    let currentCount = [...entryMap.values()].filter(
+      (entry) => entry.pageType === plan.pageType
+    ).length
     const bucket = fallbackBuckets.get(plan.pageType) ?? []
 
     for (const candidate of bucket) {
       if (currentCount >= required) break
-
-      const added = addEntry({
+      const entry = {
         ...candidate,
         discoverySource: candidate.discoverySource ?? 'fallback-urls-file',
         selectionReason:
@@ -459,7 +607,23 @@ export async function discoverAuditTargets({
         robotsDisallowed: Boolean(
           candidate.robotsDisallowed || isRobotsDisallowed(candidate.url, robotsRules)
         ),
-      })
+      }
+      const pageProbe = await probeAuditUrl(entry.url, fetchImpl)
+      if (!pageProbe.ok) {
+        rejectDetailSample(
+          entry,
+          { ...pageProbe, url: entry.url, phase: 'page' },
+          entry.discoverySource
+        )
+        continue
+      }
+      const detailProbe = await probeDetailDataUrl(entry, fetchImpl, normalizedBase)
+      if (!detailProbe.ok) {
+        rejectDetailSample(entry, detailProbe, entry.discoverySource)
+        continue
+      }
+
+      const added = addEntry(entry)
 
       if (added) currentCount += 1
     }

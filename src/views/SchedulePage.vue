@@ -610,6 +610,7 @@
 
           <StateIndicator
             v-else-if="detailStatus === 'not-found'"
+            class="schedule-detail-state"
             variant="not-found"
             :title="$t('common.notFound')"
             :description="$t('schedule.detail.notFoundDescription')"
@@ -618,6 +619,7 @@
           />
           <StateIndicator
             v-else-if="detailStatus === 'error'"
+            class="schedule-detail-state"
             variant="error"
             :description="detailError || $t('common.error')"
             @action="retryDetail"
@@ -2220,6 +2222,7 @@ onMounted(() => {
 
   .schedule-detail-shell {
     position: static;
+    min-block-size: clamp(24rem, 48vh, 34rem);
   }
 }
 
@@ -2304,6 +2307,12 @@ onMounted(() => {
   .schedule-detail-actions {
     grid-template-columns: 1fr;
   }
+
+  .schedule-detail-shell,
+  .detail-loading,
+  .schedule-detail-state {
+    min-block-size: 22rem;
+  }
 }
 
 /* ========== 可点击事件卡片 ========== */
@@ -2339,13 +2348,24 @@ onMounted(() => {
 .schedule-detail-shell {
   position: sticky;
   top: calc(var(--navbar-visible-height, var(--navbar-height, 4rem)) + 1rem);
+  min-block-size: clamp(28rem, 58vh, 42rem);
   padding: clamp(1rem, 2vw, 1.5rem);
+  contain: layout paint;
 }
 
 .schedule-detail-article,
 .detail-loading {
   display: grid;
   gap: var(--spacing-3);
+}
+
+.detail-loading,
+.schedule-detail-state {
+  min-block-size: clamp(22rem, 42vh, 32rem);
+}
+
+.detail-loading {
+  align-content: start;
 }
 
 .detail-skeleton {

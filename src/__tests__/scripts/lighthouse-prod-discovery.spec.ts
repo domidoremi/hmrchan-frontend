@@ -18,6 +18,15 @@ function createJsonResponse(body: unknown) {
   }
 }
 
+function createStatusResponse(status: number) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    text: async () => '',
+    json: async () => ({}),
+  }
+}
+
 describe('discoverAuditTargets', () => {
   it('combines sitemap, whitelist, api samples, and exclusion rules into a manifest', async () => {
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -40,6 +49,8 @@ describe('discoverAuditTargets', () => {
       Disallow: /verify-email
     `
 
+    const liveDetailPattern =
+      /\/api\/v1\/(?:authors|posts|discussions|schedules)\/(?:author-\d+|post-\d+|discussion-\d+|schedule-\d+)$/
     const fetchImpl = async (url: string) => {
       if (url.endsWith('/sitemap.xml')) return createTextResponse(sitemap)
       if (url.endsWith('/robots.txt')) return createTextResponse(robots)
@@ -57,6 +68,7 @@ describe('discoverAuditTargets', () => {
       if (url.includes('/api/v1/schedules')) {
         return createJsonResponse({ items: [{ id: 'schedule-1' }] })
       }
+      if (liveDetailPattern.test(url)) return createJsonResponse({ id: url.split('/').pop() })
 
       throw new Error(`Unexpected URL: ${url}`)
     }
@@ -120,13 +132,26 @@ describe('discoverAuditTargets', () => {
   })
 
   it('uses fallback entries when live detail discovery cannot satisfy quotas', async () => {
-    const fetchImpl = async (url: string) => {
+    const fetchImpl = async (url: string, init?: RequestInit) => {
       if (url.endsWith('/sitemap.xml')) return createTextResponse('<urlset></urlset>')
       if (url.endsWith('/robots.txt')) return createTextResponse('User-agent: *\nAllow: /')
       if (url.includes('/api/v1/authors')) return createJsonResponse({ items: [] })
+      if (url.endsWith('/api/v1/posts/post-1')) return createJsonResponse({ id: 'post-1' })
       if (url.includes('/api/v1/posts')) return createJsonResponse({ items: [{ id: 'post-1' }] })
       if (url.includes('/api/v1/discussions')) return createJsonResponse({ items: [] })
       if (url.includes('/api/v1/schedules')) return createJsonResponse({ items: [] })
+      if (url.endsWith('/api/v1/authors/fallback-author-a')) {
+        return createJsonResponse({ id: 'fallback-author-a' })
+      }
+      if (url.endsWith('/api/v1/authors/fallback-author-b')) {
+        return createJsonResponse({ id: 'fallback-author-b' })
+      }
+      if (url.endsWith('/api/v1/discussions/fallback-discussion')) {
+        return createJsonResponse({ id: 'fallback-discussion' })
+      }
+      if (init?.method === 'HEAD') {
+        return createStatusResponse(200)
+      }
       throw new Error(`Unexpected URL: ${url}`)
     }
 
@@ -160,6 +185,48 @@ describe('discoverAuditTargets', () => {
         expect.objectContaining({ pageType: 'schedule-detail', missing: 1 }),
         expect.objectContaining({ pageType: 'post-detail', missing: 2 }),
       ])
+    )
+    expect(manifest.coverage.rejectedFallbacks).toEqual([])
+  })
+
+  it('rejects unreachable fallback detail URLs before they enter the manifest', async () => {
+    const fetchImpl = async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/sitemap.xml')) return createTextResponse('<urlset></urlset>')
+      if (url.endsWith('/robots.txt')) return createTextResponse('User-agent: *\nAllow: /')
+      if (url.includes('/api/v1/authors')) return createJsonResponse({ items: [] })
+      if (url.includes('/api/v1/posts')) return createJsonResponse({ items: [] })
+      if (url.includes('/api/v1/discussions')) return createJsonResponse({ items: [] })
+      if (url.endsWith('/api/v1/schedules/stale-sample')) return createStatusResponse(404)
+      if (url.includes('/api/v1/schedules')) return createJsonResponse({ items: [] })
+      if (init?.method === 'HEAD' && url.endsWith('/schedule/stale-sample')) {
+        return createStatusResponse(200)
+      }
+      if (init?.method === 'HEAD') return createStatusResponse(200)
+      throw new Error(`Unexpected URL: ${url}`)
+    }
+
+    const manifest = await discoverAuditTargets({
+      base: 'https://momichan.xyz',
+      fetchImpl: fetchImpl as typeof fetch,
+      fallbackEntries: [
+        { url: 'https://momichan.xyz/schedule/stale-sample', pageType: 'schedule-detail' },
+      ],
+    })
+
+    expect(manifest.entries.map((entry) => entry.url)).not.toContain(
+      'https://momichan.xyz/schedule/stale-sample'
+    )
+    expect(manifest.coverage.rejectedFallbacks).toEqual([
+      expect.objectContaining({
+        url: 'https://momichan.xyz/schedule/stale-sample',
+        pageType: 'schedule-detail',
+        status: 404,
+        phase: 'detail-api',
+        probeUrl: 'https://momichan.xyz/api/v1/schedules/stale-sample',
+      }),
+    ])
+    expect(manifest.coverage.gaps).toEqual(
+      expect.arrayContaining([expect.objectContaining({ pageType: 'schedule-detail', missing: 1 })])
     )
   })
 })

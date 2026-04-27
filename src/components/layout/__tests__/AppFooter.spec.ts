@@ -110,6 +110,15 @@ describe('AppFooter', () => {
     expect(wrapper.text()).toContain('Contact')
   })
 
+  it('keeps the decorative brand mark out of the accessible brand name', () => {
+    const wrapper = createWrapper()
+    const brandLink = wrapper.find('.brand-logo')
+
+    expect(brandLink.attributes('aria-label')).toBe('MomiChan')
+    expect(wrapper.find('.brand-logo__mark').attributes('aria-hidden')).toBe('true')
+    expect(wrapper.find('.brand-logo__name').text()).toBe('MomiChan')
+  })
+
   it('binds the home variant shell to homepage surface tokens', () => {
     const wrapper = createWrapper('home')
     const style = wrapper.find('.footer-shell').attributes('style')

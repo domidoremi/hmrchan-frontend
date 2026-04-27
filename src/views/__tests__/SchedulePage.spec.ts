@@ -2,6 +2,7 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import { ApiError } from '@/api'
 
 import SchedulePage from '../SchedulePage.vue'
 
@@ -160,6 +161,17 @@ describe('SchedulePage', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.name).toBe('schedule')
+  })
+
+  it('keeps a stable detail shell and avoids toast noise for missing detail routes', async () => {
+    scheduleApi.getById.mockRejectedValueOnce(new ApiError('not found', 404, 'NOT_FOUND'))
+
+    const { wrapper } = await mountSchedule('/schedule/missing-event')
+
+    expect(wrapper.find('.schedule-detail-shell').exists()).toBe(true)
+    expect(wrapper.find('.schedule-detail-state').exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'StateIndicator' }).exists()).toBe(true)
+    expect(toastStore.error).not.toHaveBeenCalled()
   })
 
   it('ignores foreign route params outside the schedule detail route', async () => {

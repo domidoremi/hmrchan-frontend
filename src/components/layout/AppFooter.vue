@@ -16,7 +16,7 @@
         <div class="footer-main">
           <div class="footer-brand">
             <RouterLink to="/" class="brand-logo" :aria-label="$t('app.name')">
-              <span class="brand-logo__mark">M</span>
+              <span class="brand-logo__mark" aria-hidden="true">M</span>
               <span class="brand-logo__copy">
                 <span class="brand-logo__name">{{ $t('app.name') }}</span>
               </span>
@@ -159,6 +159,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-divider: var(--chrome-muted-border);
   --footer-link-hover-bg: var(--chrome-muted-bg);
   --footer-marquee-animation: footer-marquee;
+  --footer-marquee-ink: color-mix(in srgb, var(--color-text-primary) 88%, transparent);
 }
 
 .footer--home {
@@ -208,7 +209,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   font-size: clamp(1.35rem, 3vw, 2.5rem);
   font-weight: var(--font-semibold);
   letter-spacing: 0.04em;
-  color: color-mix(in srgb, var(--color-text-primary) 72%, transparent);
+  color: var(--footer-marquee-ink);
   text-transform: uppercase;
   white-space: nowrap;
   animation: var(--footer-marquee-animation) 22s linear infinite;
@@ -407,6 +408,18 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 
   .footer-bottom__meta {
     margin-inline-start: 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .footer--home {
+    transform: none;
+    transition: opacity 180ms cubic-bezier(0.2, 0.84, 0.24, 1);
+  }
+
+  .footer--home .footer-marquee__track {
+    animation: none;
+    will-change: auto;
   }
 }
 

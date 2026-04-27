@@ -103,7 +103,10 @@ function combineProfileSummaries(runId, runDir, summaries) {
   const profiles = summaries.flatMap((summary) => summary.profiles ?? [])
   const results = summaries
     .flatMap((summary) => summary.results ?? [])
-    .sort((left, right) => left.url.localeCompare(right.url) || left.profile.localeCompare(right.profile))
+    .sort(
+      (left, right) =>
+        left.url.localeCompare(right.url) || left.profile.localeCompare(right.profile)
+    )
 
   const combined = {
     generatedAt: new Date().toISOString(),
@@ -131,12 +134,34 @@ async function executeRun({ base, manifestPath, outputDir, runNumber }) {
   await Promise.all([
     runNodeScript(
       path.resolve('scripts', 'lighthouse-prod-audit.mjs'),
-      ['--base', base, '--profile', 'mobile', '--urls-file', manifestPath, '--output', mobileDir, '--run-id', runId],
+      [
+        '--base',
+        base,
+        '--profile',
+        'mobile',
+        '--urls-file',
+        manifestPath,
+        '--output',
+        mobileDir,
+        '--run-id',
+        runId,
+      ],
       `[${runId} mobile]`
     ),
     runNodeScript(
       path.resolve('scripts', 'lighthouse-prod-audit.mjs'),
-      ['--base', base, '--profile', 'desktop', '--urls-file', manifestPath, '--output', desktopDir, '--run-id', runId],
+      [
+        '--base',
+        base,
+        '--profile',
+        'desktop',
+        '--urls-file',
+        manifestPath,
+        '--output',
+        desktopDir,
+        '--run-id',
+        runId,
+      ],
       `[${runId} desktop]`
     ),
   ])
@@ -173,6 +198,13 @@ async function main() {
     console.warn(
       `⚠️ 详情样本存在缺口：${manifest.coverage.gaps
         .map((gap) => `${gap.pageType} 缺 ${gap.missing}`)
+        .join('，')}`
+    )
+  }
+  if ((manifest.coverage.rejectedFallbacks ?? []).length > 0) {
+    console.warn(
+      `⚠️ 已剔除失效详情样本：${manifest.coverage.rejectedFallbacks
+        .map((item) => `${item.pageType} ${item.status ?? item.error ?? 'unknown'}`)
         .join('，')}`
     )
   }

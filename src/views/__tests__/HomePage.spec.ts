@@ -656,12 +656,15 @@ describe('HomePage', () => {
     })
 
     vi.stubGlobal('scrollTo', vi.fn())
-    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      return window.setTimeout(() => {
-        nextRafTimestamp += 16
-        callback(nextRafTimestamp)
-      }, 16) as unknown as number
-    })
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn((callback: FrameRequestCallback) => {
+        return window.setTimeout(() => {
+          nextRafTimestamp += 16
+          callback(nextRafTimestamp)
+        }, 16) as unknown as number
+      })
+    )
     vi.stubGlobal('cancelAnimationFrame', (handle: number) => {
       window.clearTimeout(handle)
     })
@@ -780,6 +783,7 @@ describe('HomePage', () => {
   })
 
   it('applies pointer pressure to nearby bubbles when the cursor moves inside the bubble stage', async () => {
+    setViewport(1280, 900)
     const wrapper = await mountHomePage()
     await flushPromises()
     await settleHomeMotion(128)
@@ -805,6 +809,7 @@ describe('HomePage', () => {
   })
 
   it('settles pressure motion instead of snapping immediately when the pointer leaves the stage', async () => {
+    setViewport(1280, 900)
     const wrapper = await mountHomePage()
     await flushPromises()
     await settleHomeMotion(128)
@@ -831,6 +836,42 @@ describe('HomePage', () => {
 
     await settleHomeMotion(640)
     expect(firstBubble.classes()).not.toContain('is-under-pressure')
+  })
+
+  it('keeps tablet and mobile home viewports on the lightweight path', async () => {
+    setViewport(820, 1180)
+    const visibilityObserver = {
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+    }
+    let deferredCallback:
+      | ((entries: Array<{ isIntersecting: boolean; target: Element }>) => void)
+      | null = null
+    mocks.createVisibilityObserver.mockImplementation((callback) => {
+      deferredCallback = callback as typeof deferredCallback
+      return visibilityObserver
+    })
+
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    const scheduledEnhancement = mocks.scheduleTask.mock.calls.find(
+      ([, options]) => (options as { delay?: number } | undefined)?.delay === 140
+    )
+    expect(scheduledEnhancement).toBeTruthy()
+    const [runEnhancement] = scheduledEnhancement!
+    ;(runEnhancement as () => void)()
+    await flushPromises()
+
+    expect(window.requestAnimationFrame).not.toHaveBeenCalled()
+    expect(window.document.documentElement.dataset.homeRailNavLock).toBeUndefined()
+
+    const postsElement = wrapper.find('#home-posts').element
+    deferredCallback?.([{ isIntersecting: true, target: postsElement }])
+    await flushPromises()
+
+    expect(window.requestAnimationFrame).not.toHaveBeenCalled()
+    expect(window.document.documentElement.dataset.homeRailNavLock).toBeUndefined()
   })
 
   it('sanitizes upstream non-post deep links back into the post detail flow', () => {
