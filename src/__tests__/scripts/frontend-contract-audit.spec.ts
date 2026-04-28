@@ -173,7 +173,7 @@ function normalizeHomeLink(value) {
     root,
     'src/edge/detailDocumentResolver.ts',
     `
-import { getContractResourceId } from '@/utils/contractResourceId'
+import { getContractResourceId } from '../utils/contractResourceId'
 function normalizePublicPostIdentifier(value) {
   return getContractResourceId(String(value ?? '').trim()) ?? ''
 }
@@ -326,6 +326,29 @@ export const authService = {
         expect.objectContaining({ code: 'missing-home-deeplink-uuidv7-normalization' }),
         expect.objectContaining({ code: 'missing-edge-post-link-uuidv7-normalization' }),
       ])
+    )
+  })
+
+  it('flags Vite alias imports from edge runtime modules consumed by Pages Functions', () => {
+    const root = createRoot()
+    writeAlignedContractFixtures(root)
+    writeFixture(
+      root,
+      'src/edge/detailDocumentResolver.ts',
+      `
+import { getContractResourceId } from '@/utils/contractResourceId'
+function normalizePublicPostIdentifier(value) {
+  return getContractResourceId(String(value ?? '').trim()) ?? ''
+}
+const links = [
+  { label: 'Latest related post', href: '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a001' },
+  { label: 'Recent post', href: '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a001' },
+]
+`
+    )
+
+    expect(validateFrontendContractAudit(root)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'edge-runtime-alias-import' })])
     )
   })
 })
