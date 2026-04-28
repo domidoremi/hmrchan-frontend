@@ -16,4 +16,15 @@ describe('SchedulePage mobile styles', () => {
     expect(schedulePageSource).toContain('.planner-view-switch .page-control')
     expect(schedulePageSource).toContain('flex: 1 1 0')
   })
+
+  it('reserves stable space for detail content to reduce route hydration layout shift', () => {
+    expect(schedulePageSource).toContain('.schedule-detail-shell')
+    expect(schedulePageSource).toContain('overflow-anchor: none')
+    expect(schedulePageSource).toContain(
+      'grid-template-rows: minmax(10rem, auto) auto minmax(7.5rem, auto) minmax(8rem, auto) auto'
+    )
+    expect(schedulePageSource).toContain('min-block-size: 10rem')
+    expect(schedulePageSource).toContain('min-block-size: 7.5rem')
+    expect(schedulePageSource).toContain('min-block-size: 8rem')
+  })
 })

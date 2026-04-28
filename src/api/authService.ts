@@ -9,6 +9,52 @@ import { apiClient, ApiError } from './client'
 import type { RequestConfig } from './client'
 
 const AUTH_SESSION_RESOLVE_PATH = `/auth/${'session:resolve'}`
+const PASSKEY_OPTIONS_COOLDOWN_MS = 10_000
+
+const passkeyOptionsCooldowns = new Map<string, number>()
+
+function passkeyOptionsCooldownKey(scope: string, identifier?: unknown): string {
+  return `${scope}:${JSON.stringify(identifier ?? {})}`
+}
+
+function assertPasskeyOptionsCooldown(scope: string, identifier?: unknown): void {
+  const key = passkeyOptionsCooldownKey(scope, identifier)
+  const retryAt = passkeyOptionsCooldowns.get(key) ?? 0
+  if (retryAt > Date.now()) {
+    throw new ApiError(
+      'Too many passkey option requests. Please try again shortly.',
+      429,
+      'RATE_LIMITED'
+    )
+  }
+}
+
+function markPasskeyOptionsRateLimit(scope: string, identifier?: unknown): void {
+  passkeyOptionsCooldowns.set(
+    passkeyOptionsCooldownKey(scope, identifier),
+    Date.now() + PASSKEY_OPTIONS_COOLDOWN_MS
+  )
+}
+
+async function requestPasskeyOptions<T>(
+  scope: string,
+  path: string,
+  payload: Record<string, unknown>,
+  identifier?: unknown
+): Promise<T> {
+  assertPasskeyOptionsCooldown(scope, identifier)
+  try {
+    return await apiClient.post<T>(path, payload, {
+      skipAuth: true,
+      skipErrorToast: true,
+    })
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 429) {
+      markPasskeyOptionsRateLimit(scope, identifier)
+    }
+    throw error
+  }
+}
 
 export interface LoginRequest {
   username: string
@@ -505,15 +551,13 @@ export const authService = {
   async beginRiskWebAuthnLogin(
     pendingToken: string
   ): Promise<WebAuthnAuthenticationOptionsResponse> {
-    return apiClient.post<WebAuthnAuthenticationOptionsResponse>(
+    return requestPasskeyOptions<WebAuthnAuthenticationOptionsResponse>(
+      'risk-login',
       '/auth/risk-login/webauthn/options',
       {
         pending_token: pendingToken,
       },
-      {
-        skipAuth: true,
-        skipErrorToast: true,
-      }
+      pendingToken
     )
   },
 
@@ -544,13 +588,11 @@ export const authService = {
     username?: string
     email?: string
   }): Promise<WebAuthnAuthenticationOptionsResponse> {
-    return apiClient.post<WebAuthnAuthenticationOptionsResponse>(
+    return requestPasskeyOptions<WebAuthnAuthenticationOptionsResponse>(
+      'passwordless-login',
       '/auth/passkeys/login/options',
       identifier ?? {},
-      {
-        skipAuth: true,
-        skipErrorToast: true,
-      }
+      identifier ?? {}
     )
   },
 

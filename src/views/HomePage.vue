@@ -434,9 +434,9 @@
                     class="featured-rail-card__image"
                     :width="resolveFeaturedRailImageSize(index).width"
                     :height="resolveFeaturedRailImageSize(index).height"
-                    :loading="resolveFeaturedRailImageLoading(index)"
+                    :loading="resolveFeaturedRailImageLoading()"
                     decoding="async"
-                    :fetchpriority="resolveFeaturedRailFetchPriority(index)"
+                    :fetchpriority="resolveFeaturedRailFetchPriority()"
                     @error="markHomeMediaFailed(card.thumbnail)"
                   />
                   <div v-else class="featured-rail-card__placeholder">
@@ -1317,12 +1317,12 @@ function resolveHeroCollageImageSizes(index: number): string {
     : '(min-width: 1280px) 14rem, (min-width: 768px) 44vw, 50vw'
 }
 
-function resolveHeroCollageImageLoading(): 'eager' | 'lazy' {
-  return 'lazy'
+function resolveHeroCollageImageLoading(index: number): 'eager' | 'lazy' {
+  return index === 0 ? 'eager' : 'lazy'
 }
 
-function resolveHeroCollageFetchPriority(): 'high' | 'auto' {
-  return 'auto'
+function resolveHeroCollageFetchPriority(index: number): 'high' | 'auto' {
+  return index === 0 ? 'high' : 'auto'
 }
 
 function resolveFeaturedRailImageSize(index: number): { width: number; height: number } {
@@ -7462,12 +7462,19 @@ onBeforeUnmount(() => {
 
   .hero,
   .rail-stage,
-  .posts--bubble > .container,
-  .story-stage {
+  .posts--bubble > .container {
     opacity: 1;
     transform: none;
     filter: none;
     will-change: auto;
+  }
+
+  .story-stage {
+    opacity: var(--home-story-opacity, 1);
+    transform: translate3d(0, var(--home-story-y, 0rem), 0) scale(var(--home-story-scale, 1));
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+    filter: none;
   }
 
   .hero {
@@ -7767,12 +7774,15 @@ onBeforeUnmount(() => {
     gap: 0.75rem;
     padding-block: calc(var(--home-stage-safe-top) + 0.625rem)
       calc(0.75rem + var(--home-stage-safe-bottom));
+    perspective: 16rem;
+    perspective-origin: 50% 22%;
   }
 
   .media-slice-list {
     padding-block: 0.5rem 1.25rem;
     perspective: 16rem;
     perspective-origin: 50% 22%;
+    transform-style: preserve-3d;
   }
 
   .media-empty {

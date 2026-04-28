@@ -229,4 +229,49 @@ describe('discoverAuditTargets', () => {
       expect.arrayContaining([expect.objectContaining({ pageType: 'schedule-detail', missing: 1 })])
     )
   })
+
+  it('rejects legacy UUIDv4 post samples before probing detail APIs', async () => {
+    const legacyPostId = '4df78e2b-4a70-4df1-8956-2e249376a336'
+    const strictPostId = '0195fe30-6f9d-7f31-9e6f-c9a5c478a001'
+    const probedUrls: string[] = []
+
+    const fetchImpl = async (url: string) => {
+      probedUrls.push(url)
+      if (url.endsWith('/sitemap.xml')) return createTextResponse('<urlset></urlset>')
+      if (url.endsWith('/robots.txt')) return createTextResponse('User-agent: *\nAllow: /')
+      if (url.includes('/api/v1/authors')) return createJsonResponse({ items: [] })
+      if (url.endsWith(`/api/v1/posts/${strictPostId}`)) {
+        return createJsonResponse({ id: strictPostId })
+      }
+      if (url.endsWith('/api/v1/posts?limit=10')) {
+        return createJsonResponse({ items: [{ id: legacyPostId }, { id: strictPostId }] })
+      }
+      if (url.includes('/api/v1/discussions')) return createJsonResponse({ items: [] })
+      if (url.includes('/api/v1/schedules')) return createJsonResponse({ items: [] })
+      throw new Error(`Unexpected URL: ${url}`)
+    }
+
+    const manifest = await discoverAuditTargets({
+      base: 'https://momichan.xyz',
+      fallbackEntries: [],
+      fetchImpl: fetchImpl as typeof fetch,
+    })
+
+    expect(manifest.entries.map((entry) => entry.url)).toContain(
+      `https://momichan.xyz/post/${strictPostId}`
+    )
+    expect(manifest.entries.map((entry) => entry.url)).not.toContain(
+      `https://momichan.xyz/post/${legacyPostId}`
+    )
+    expect(probedUrls).not.toContain(`https://momichan.xyz/api/v1/posts/${legacyPostId}`)
+    expect(manifest.coverage.rejectedFallbacks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          url: `https://momichan.xyz/post/${legacyPostId}`,
+          pageType: 'post-detail',
+          phase: 'strict-uuidv7-contract',
+        }),
+      ])
+    )
+  })
 })

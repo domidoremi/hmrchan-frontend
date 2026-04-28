@@ -173,7 +173,7 @@
   /* 16px */
   --radius-2xl: 1.5rem;
   /* 24px */
-  --radius-full: 9999px;
+  --radius-full: 999rem;
 
   /* shadcn/ui style radius */
   --radius: 0.5rem;
@@ -235,9 +235,9 @@
   --glass-border: rgba(255, 255, 255, 0.35);
   --glass-border-strong: rgba(255, 255, 255, 0.55);
   --glass-border-subtle: rgba(255, 255, 255, 0.18);
-  --glass-blur: blur(16px);
-  --glass-blur-strong: blur(24px);
-  --glass-blur-light: blur(8px);
+  --glass-blur: blur(1rem);
+  --glass-blur-strong: blur(1.5rem);
+  --glass-blur-light: blur(0.5rem);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
   --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
   --glass-glow: 0 0 24px rgba(var(--color-primary-rgb), 0.3);
@@ -258,12 +258,12 @@
   --glass-border-light: rgba(255, 255, 255, 0.4);
   --glass-border-medium: rgba(255, 255, 255, 0.25);
 
-  /* 模糊值 (raw px) */
-  --blur-xs: 4px;
-  --blur-sm: 8px;
-  --blur-md: 12px;
-  --blur-lg: 20px;
-  --blur-xl: 40px;
+  /* 模糊值 */
+  --blur-xs: 0.25rem;
+  --blur-sm: 0.5rem;
+  --blur-md: 0.75rem;
+  --blur-lg: 1.25rem;
+  --blur-xl: 2.5rem;
 
   /* 渐变背景 - 简约单色微妙渐变 */
   --gradient-primary: linear-gradient(
@@ -320,8 +320,8 @@
 
   /* 悬停抬升 / 按压效果 */
   --lift-sm: translateY(-2px);
-  --lift-md: translateY(-4px);
-  --lift-lg: translateY(-8px);
+  --lift-md: translateY(-0.25rem);
+  --lift-lg: translateY(-0.5rem);
   --press-sm: scale(0.98);
   --press-md: scale(0.96);
 
@@ -340,14 +340,14 @@
   --micro-duration-sm: 150ms;
   --micro-duration-md: 250ms;
   --micro-duration-lg: 400ms;
-  --perspective-near: 800px;
-  --perspective-normal: 1000px;
-  --perspective-far: 1500px;
+  --perspective-near: 50rem;
+  --perspective-normal: 62.5rem;
+  --perspective-far: 93.75rem;
   --tilt-max: 8deg;
   --tilt-scale: 1.02;
   --ripple-duration: 600ms;
   --ripple-opacity: 0.3;
-  --enter-distance: 30px;
+  --enter-distance: 1.875rem;
   --enter-scale: 0.95;
   --stagger-delay: 80ms;
 
@@ -512,9 +512,9 @@
   --glass-border: rgba(59, 130, 246, 0.15);
   --glass-border-strong: rgba(59, 130, 246, 0.3);
   --glass-border-subtle: rgba(59, 130, 246, 0.06);
-  --glass-blur: blur(16px);
-  --glass-blur-strong: blur(24px);
-  --glass-blur-light: blur(8px);
+  --glass-blur: blur(1rem);
+  --glass-blur-strong: blur(1.5rem);
+  --glass-blur-light: blur(0.5rem);
   --glass-glow: 0 0 20px rgba(59, 130, 246, 0.15);
   --glass-glow-accent: 0 0 20px rgba(99, 102, 241, 0.15);
   --glass-shadow: 0 8px 32px rgba(59, 130, 246, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
@@ -653,9 +653,9 @@
   --glass-border: rgba(255, 255, 255, 0.06);
   --glass-border-strong: rgba(255, 255, 255, 0.12);
   --glass-border-subtle: rgba(255, 255, 255, 0.03);
-  --glass-blur: blur(20px);
-  --glass-blur-strong: blur(32px);
-  --glass-blur-light: blur(12px);
+  --glass-blur: blur(1.25rem);
+  --glass-blur-strong: blur(2rem);
+  --glass-blur-light: blur(0.75rem);
   --glass-shadow:
     0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -738,9 +738,9 @@
 /* ========== Mobile Backdrop-Filter Degradation ========== */
 @media (max-width: 768px) {
   :root {
-    --glass-blur: blur(8px);
-    --glass-blur-strong: blur(12px);
-    --glass-blur-light: blur(4px);
+    --glass-blur: blur(0.5rem);
+    --glass-blur-strong: blur(0.75rem);
+    --glass-blur-light: blur(0.25rem);
   }
 }
 

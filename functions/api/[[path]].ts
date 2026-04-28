@@ -214,6 +214,19 @@ function cloneResponseHeaders(source: Headers, seed?: HeadersInit): Headers {
   return headers
 }
 
+function cloneResponseHeadersWithoutCookies(source: Headers, seed?: HeadersInit): Headers {
+  const headers = new Headers(seed)
+
+  for (const [key, value] of source.entries()) {
+    if (key.toLowerCase() === 'set-cookie') {
+      continue
+    }
+    headers.append(key, value)
+  }
+
+  return headers
+}
+
 function isJsonRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
@@ -248,6 +261,15 @@ function isSessionMaterial(payload: unknown): payload is BffSessionMaterial {
     candidate.access_token.length > 0 &&
     typeof candidate.refresh_token === 'string' &&
     candidate.refresh_token.length > 0
+  )
+}
+
+function isAuthChallengePayload(payload: unknown): boolean {
+  if (!isJsonRecord(payload)) return false
+
+  return (
+    (payload.requires_risk_verification === true && typeof payload.pending_token === 'string') ||
+    (payload.requires_mfa === true && typeof payload.pending_mfa_login_token === 'string')
   )
 }
 
@@ -592,6 +614,13 @@ async function handleInternalAuthResult(
 
   const payload = unwrapApiEnvelope(rawPayload)
   if (options?.requireSessionMaterial && !isSessionMaterial(payload)) {
+    if (isAuthChallengePayload(payload)) {
+      const headers = cloneResponseHeadersWithoutCookies(response.headers, responseHeaders)
+      RESPONSE_HEADERS_TO_SKIP.forEach((header) => headers.delete(header))
+      headers.set('Content-Type', 'application/json')
+      return jsonResponse(payload, response.status, headers)
+    }
+
     return buildInvalidAuthUpstreamResponse(
       options.route ?? 'unknown',
       'Auth upstream returned an unexpected success payload.',
