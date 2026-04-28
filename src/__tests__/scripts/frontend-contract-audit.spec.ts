@@ -30,9 +30,12 @@ export interface PasskeyRecoveryStartRequest { email: string }
 export interface PasskeyRecoveryVerifyRequest { verification_code: string }
 export interface PasskeyRecoveryVerifyResponse { recovery_id: string }
 export interface RecoveryPasskeyRegistrationRequest { recovery_id: string }
+async function requestPasskeyOptions(path, payload) {
+  return apiClient.post(path, payload, { skipAuth: true, skipErrorToast: true })
+}
 export const authService = {
   resolveSession: () => apiClient.post(AUTH_SESSION_RESOLVE_PATH, null),
-  beginPasswordlessLogin: () => apiClient.post('/auth/passkeys/login/options', {}),
+  beginPasswordlessLogin: () => requestPasskeyOptions('/auth/passkeys/login/options', {}),
   finishPasswordlessLogin: (ceremonyId, credential) => apiClient.post('/auth/passkeys/login/verify', { ceremony_id: ceremonyId, credential }),
   startPasskeyRecovery: (data) => apiClient.post('/auth/passkeys/recovery/start', data),
   verifyPasskeyRecovery: (data) => apiClient.post('/auth/passkeys/recovery/verify', data),
