@@ -4,6 +4,7 @@ import { defineComponent, ref } from 'vue'
 import PostDetailPage from '../PostDetailPage.vue'
 
 const mocks = vi.hoisted(() => {
+  const DEFAULT_POST_ID = '0195fe30-6f9d-7f31-9e6f-c9a5c478a336'
   class MockApiError extends Error {
     status: number
 
@@ -37,10 +38,10 @@ const mocks = vi.hoisted(() => {
     resolveThumbnailSrcsetMock: vi.fn((url: string | null) => (url ? `${url}?resolved=1 1x` : '')),
     settingsRef: null as unknown as { value: { enableSwipeNavigation: boolean } },
     mockedRoute: {
-      params: { id: '0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e' },
+      params: { id: DEFAULT_POST_ID },
       query: { from: 'profile' },
       hash: '#comments',
-      path: '/post/0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e',
+      path: `/post/${DEFAULT_POST_ID}`,
     },
     createLazyObserver: vi.fn((callback: () => void) => {
       lazyObserverCallback = callback
@@ -233,7 +234,7 @@ vi.mock('@/components/animation/AnimatedIcon.vue', () => ({
 }))
 
 const basePost = {
-  id: '0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e',
+  id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a336',
   title: 'Sample post',
   description: 'Detail body',
   media_count: 0,
@@ -378,6 +379,10 @@ describe('PostDetailPage', () => {
   let originalIntersectionObserver: typeof window.IntersectionObserver | undefined
 
   beforeEach(() => {
+    mocks.mockedRoute.params.id = '0195fe30-6f9d-7f31-9e6f-c9a5c478a336'
+    mocks.mockedRoute.path = '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a336'
+    mocks.mockedRoute.query = { from: 'profile' }
+    mocks.mockedRoute.hash = '#comments'
     mocks.replaceSpy.mockReset()
     mocks.pushSpy.mockReset()
     mocks.backSpy.mockReset()
@@ -396,6 +401,10 @@ describe('PostDetailPage', () => {
     mocks.resolveThumbnailSrcMock.mockReset()
     mocks.resolveThumbnailSrcsetMock.mockReset()
     mocks.getPostEntityMock.mockResolvedValue(null)
+    mocks.loadCachedPostMock.mockResolvedValue({
+      data: basePost,
+      fromCache: false,
+    })
     mocks.getFallbackPostDetailMock.mockReturnValue(null)
     mocks.isServiceUnavailableErrorMock.mockReturnValue(false)
     mocks.getPostNavigationContextMock.mockReturnValue(null)
@@ -441,6 +450,22 @@ describe('PostDetailPage', () => {
       query: mocks.mockedRoute.query,
       hash: mocks.mockedRoute.hash,
     })
+  })
+
+  it('redirects invalid placeholder route ids to not-found instead of explore', async () => {
+    mocks.mockedRoute.params.id = 'undefined'
+    mocks.mockedRoute.path = '/post/undefined'
+
+    mountDetailPage()
+    await flushPromises()
+
+    expect(mocks.replaceSpy).toHaveBeenCalledWith({
+      name: 'not-found',
+      params: { pathMatch: ['post', 'undefined'] },
+      query: mocks.mockedRoute.query,
+      hash: mocks.mockedRoute.hash,
+    })
+    expect(mocks.loadCachedPostMock).not.toHaveBeenCalled()
   })
 
   it('renders a synthesized fallback when the detail request returns 404 but navigation summary exists', async () => {

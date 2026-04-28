@@ -1080,11 +1080,16 @@ function resolveFallbackPostDetail(currentPostId: string, err: unknown): PostDet
 }
 
 async function fetchPost(signal?: AbortSignal) {
-  if (!postId.value || postId.value === 'undefined') return
+  if (!postId.value) return
   if (!getContractResourceId(postId.value)) {
     error.value = null
     isLoading.value = false
-    await router.replace({ path: '/explore' })
+    await router.replace({
+      name: 'not-found',
+      params: buildNotFoundRouteParams(postId.value),
+      query: route.query,
+      hash: route.hash,
+    })
     return
   }
 

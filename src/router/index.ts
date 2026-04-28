@@ -98,14 +98,6 @@ const routes: RouteRecordRaw[] = [
       dataSensitivity: 'none',
       extendContentUnderNavbar: true,
     },
-    beforeEnter: (to, _, next) => {
-      const id = to.params['id'] as string | undefined
-      if (id && isContractResourceId(id)) {
-        next()
-      } else {
-        next({ path: '/explore' })
-      }
-    },
   },
   {
     path: '/authors',
@@ -556,7 +548,8 @@ router.beforeEach(async (to) => {
   ])
   if (typeof to.name === 'string' && guardedResourceRoutes.has(to.name)) {
     const resourceId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id
-    if (!isContractResourceId(resourceId)) {
+    const isValidResourceId = isContractResourceId(resourceId)
+    if (!isValidResourceId) {
       return {
         name: 'not-found',
         params: toNotFoundParams(to.path),

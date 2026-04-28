@@ -559,6 +559,20 @@
     padding-block: calc(var(--home-stage-safe-top) + 0.625rem)
       calc(0.75rem + var(--home-stage-safe-bottom));
   }
+
+  .home-page .media-slice {
+    inset-inline: 0;
+    filter: none;
+    transform-origin: 50% 100%;
+    transform: translate3d(
+        calc(var(--story-translate-x, 0rem) * 0.45),
+        calc(var(--story-translate-y, 0rem) * 0.68),
+        calc(var(--story-translate-z, 0rem) * 0.45)
+      )
+      rotateX(calc(var(--story-rotate-x, 0deg) * 0.55))
+      rotateY(calc(var(--story-rotate-y, 0deg) * 0.55))
+      rotateZ(calc(var(--story-rotate-z, 0deg) * 0.35)) scale(var(--story-scale, 1));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
