@@ -2082,7 +2082,11 @@ function isCompactHomeViewport(): boolean {
 }
 
 function isLightweightHomeViewport(): boolean {
-  return typeof window !== 'undefined' && window.innerWidth <= HOME_LIGHTWEIGHT_VIEWPORT_MAX_WIDTH
+  return (
+    typeof window !== 'undefined' &&
+    window.innerWidth > 768 &&
+    window.innerWidth <= HOME_LIGHTWEIGHT_VIEWPORT_MAX_WIDTH
+  )
 }
 
 function shouldUseHomeSectionBlendEffects(): boolean {
@@ -3139,8 +3143,8 @@ function openDetailFromPreview(postId: string) {
     void router.push('/explore')
     return
   }
-  const publicPostId = getContractResourceId(postId)
-  if (!publicPostId) {
+  const detailPostId = getContractResourceId(postId)
+  if (!detailPostId) {
     isPreviewOpen.value = false
     void router.push('/explore')
     return
@@ -3154,7 +3158,7 @@ function openDetailFromPreview(postId: string) {
   storePostNavigationContext(navigationContextPosts, postId, 'home')
   cachePostThumbnailPreview(postId, previewThumbnailSrc.value)
   isPreviewOpen.value = false
-  router.push(`/post/${publicPostId}`)
+  router.push(`/post/${detailPostId}`)
 }
 
 watch(
@@ -8213,8 +8217,14 @@ onBeforeUnmount(() => {
     inset-inline: 0;
     filter: none;
     transform-origin: 50% 100%;
-    transform: translate3d(0, calc(var(--story-translate-y, 0rem) * 0.68), 0)
-      scale(var(--story-scale, 1));
+    transform: translate3d(
+        calc(var(--story-translate-x, 0rem) * 0.45),
+        calc(var(--story-translate-y, 0rem) * 0.68),
+        calc(var(--story-translate-z, 0rem) * 0.45)
+      )
+      rotateX(calc(var(--story-rotate-x, 0deg) * 0.55))
+      rotateY(calc(var(--story-rotate-y, 0deg) * 0.55))
+      rotateZ(calc(var(--story-rotate-z, 0deg) * 0.35)) scale(var(--story-scale, 1));
   }
 
   .media-slice:not(.is-active) {

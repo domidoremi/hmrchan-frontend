@@ -45,6 +45,8 @@ const CHECKPOINT_TYPES = {
   forgotPasswordLink: 'forgot-password-link',
   qaEmail: 'qa-email',
 }
+const UUID_V4_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const UUID_V7_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 class SkipCheckError extends Error {
   constructor(reason, classification = 'coverage-gap') {
@@ -52,6 +54,14 @@ class SkipCheckError extends Error {
     this.name = 'SkipCheckError'
     this.reason = reason
     this.classification = classification
+  }
+}
+
+class CheckFailureError extends Error {
+  constructor(message, payload = {}) {
+    super(message)
+    this.name = 'CheckFailureError'
+    Object.assign(this, payload)
   }
 }
 
@@ -125,10 +135,10 @@ momichan.xyz 生产深度回归 runner
   ARTIFACT_DIR            默认 output/prod-regression/<timestamp>
   QA_PREFIX               默认 qa-prod-<timestamp>
 
-legacy post 审计输入:
+legacy post residual 输入:
   UUIDV7_LEGACY_POST_AUDIT_INPUT 或 LEGACY_POST_AUDIT_INPUT
   - 可指向 snapshot scanner 产物 JSON
-  - 未提供时会退回到当前公开 posts API 中已失效样本
+  - 未提供时会退回到当前公开 API discovery 中仍暴露的 legacy UUIDv4 post 证据
 
 运行时人工协助暂停点:
   - 注册验证码
@@ -399,6 +409,14 @@ function loadJsonFileIfExists(filePath) {
   return JSON.parse(fs.readFileSync(resolved, 'utf8'))
 }
 
+function isUuidV4(value) {
+  return UUID_V4_RE.test(String(value ?? '').trim())
+}
+
+function isUuidV7(value) {
+  return UUID_V7_RE.test(String(value ?? '').trim())
+}
+
 function normalizeLegacyPostAuditInput(rawInput) {
   if (Array.isArray(rawInput)) {
     const legacyPosts = rawInput
@@ -458,6 +476,60 @@ function normalizeLegacyPostAuditInput(rawInput) {
     sourceAttribution,
     stats: rawInput.summary ?? null,
   }
+}
+
+function collectLegacyPostResidualsFromPayload(payload, sourceTable) {
+  const entries = []
+  const seen = new Set()
+  const linkKeys = new Set(['deep_link', 'post_url', 'target', 'href', 'url', 'path'])
+  const idKeys = new Set(['post_id', 'post_uuid'])
+
+  const pushEntry = (uuid, sourceCategory, sourceColumn) => {
+    const normalized = String(uuid ?? '')
+      .trim()
+      .toLowerCase()
+    if (!normalized) return
+    const key = `${normalized}|${sourceCategory}|${sourceTable}|${sourceColumn}`
+    if (seen.has(key)) return
+    seen.add(key)
+    entries.push({
+      uuid: normalized,
+      source_category: sourceCategory,
+      source_table: sourceTable,
+      source_column: sourceColumn,
+    })
+  }
+
+  const visit = (value, trail = []) => {
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => visit(item, [...trail, `[${index}]`]))
+      return
+    }
+    if (value && typeof value === 'object') {
+      for (const [key, nested] of Object.entries(value)) {
+        visit(nested, [...trail, key])
+      }
+      return
+    }
+    if (typeof value !== 'string') return
+
+    const currentKey = trail[trail.length - 1] ?? ''
+    const sourceColumn = trail.join('.')
+    if (idKeys.has(currentKey) && isUuidV4(value)) {
+      pushEntry(value, 'api-public-id', sourceColumn)
+    }
+    if (linkKeys.has(currentKey)) {
+      for (const match of value.matchAll(/\/post\/([0-9a-f-]{36})/gi)) {
+        const candidate = match[1]
+        if (isUuidV4(candidate)) {
+          pushEntry(candidate, 'api-public-link', sourceColumn)
+        }
+      }
+    }
+  }
+
+  visit(payload)
+  return entries
 }
 
 async function probeJson(url, label) {
@@ -604,12 +676,28 @@ async function discoverProductionEntities(baseUrl) {
   const discoveredSchedules = extractItems(schedulesProbe.payload)
   const discussions = extractItems(discussionProbe.payload)
 
+  const legacyPostResiduals = [
+    ...collectLegacyPostResidualsFromPayload(homePayload, 'home-api'),
+    ...collectLegacyPostResidualsFromPayload(postsProbe.payload, 'posts-api'),
+  ]
   let invalidPostSamples = []
   let selectedPost = null
   if (postsProbe.ok) {
-    for (const post of discoveredPosts) {
+    for (const [index, post] of discoveredPosts.entries()) {
       const postId = typeof post?.id === 'string' ? post.id : null
       if (!postId) continue
+      if (isUuidV4(postId)) {
+        legacyPostResiduals.push({
+          uuid: postId.trim().toLowerCase(),
+          source_category: 'api-public-id',
+          source_table: 'posts-api',
+          source_column: `items[${index}].id`,
+        })
+        continue
+      }
+      if (!isUuidV7(postId)) {
+        continue
+      }
       const detailPath = `/post/${postId}`
       const detailProbe = await probeJson(
         new URL(`/api/v1/posts/${postId}`, baseUrl).toString(),
@@ -720,11 +808,12 @@ async function discoverProductionEntities(baseUrl) {
     publicDiscussionCount: discussions.length,
     searchTerms,
     invalidPostSamples,
+    legacyPostResiduals,
   }
 }
 
 async function runLegacyPostDetailAudit(state, config, discovered) {
-  const reportDir = path.resolve('build', 'reports', 'uuidv7-prod-post-audit')
+  const reportDir = path.resolve('build', 'reports', 'uuidv7-prod-post-residuals')
   ensureDir(reportDir)
 
   const inputFile =
@@ -732,25 +821,19 @@ async function runLegacyPostDetailAudit(state, config, discovered) {
     process.env.LEGACY_POST_AUDIT_INPUT?.trim() ||
     ''
   const inputPayload = normalizeLegacyPostAuditInput(loadJsonFileIfExists(inputFile))
-  const sourceAttribution = inputPayload.sourceAttribution
-  const selectedPosts =
-    inputPayload.legacyPosts.length > 0
-      ? inputPayload.legacyPosts
-      : (discovered.invalidPostSamples ?? []).map((item) => ({
-          uuid: String(item.id ?? '')
-            .trim()
-            .toLowerCase(),
-          sources: [
-            {
-              source_category: 'release-audit-source',
-              source_table: 'prod-regression',
-              source_column: 'discoveries.invalidPostSamples',
-              uuid: String(item.id ?? '')
-                .trim()
-                .toLowerCase(),
-            },
-          ],
-        }))
+  const discoveredAttribution = Array.isArray(discovered.legacyPostResiduals)
+    ? discovered.legacyPostResiduals
+    : []
+  const sourceAttribution = [...inputPayload.sourceAttribution, ...discoveredAttribution]
+  const postsByUuid = new Map()
+  for (const item of sourceAttribution) {
+    const uuid = typeof item?.uuid === 'string' ? item.uuid.trim().toLowerCase() : ''
+    if (!uuid) continue
+    const entry = postsByUuid.get(uuid) ?? { uuid, sources: [] }
+    entry.sources.push(item)
+    postsByUuid.set(uuid, entry)
+  }
+  const selectedPosts = [...postsByUuid.values()]
 
   const summary = {
     generatedAt: new Date().toISOString(),
@@ -760,7 +843,7 @@ async function runLegacyPostDetailAudit(state, config, discovered) {
     totals: {
       legacyPosts: selectedPosts.length,
       sourceAttributionRows: sourceAttribution.length,
-      invalidSamples: 0,
+      residualBlockers: selectedPosts.length,
       page404: 0,
       page200Api404: 0,
       page200Api200: 0,
@@ -787,9 +870,6 @@ async function runLegacyPostDetailAudit(state, config, discovered) {
       summary.totals.page200Api404 += 1
     } else {
       summary.totals.page200Api200 += 1
-    }
-    if (statusLabel !== 'page+api-ok') {
-      summary.totals.invalidSamples += 1
     }
 
     const attributedSources =
@@ -838,17 +918,17 @@ async function runLegacyPostDetailAudit(state, config, discovered) {
   }
 
   writeJson(path.join(reportDir, 'summary.json'), summary)
-  writeJson(path.join(reportDir, 'legacy-post-samples.json'), sampleRows)
+  writeJson(path.join(reportDir, 'legacy-post-residuals.json'), sampleRows)
   writeJson(path.join(reportDir, 'source-attribution.json'), sourceAttribution)
   writeText(
     path.join(reportDir, 'summary.md'),
     [
-      '# UUIDv7 Legacy Post Detail Audit',
+      '# UUIDv7 Legacy Post Residual Blocker',
       '',
       `- Base URL: ${config.baseUrl}`,
       `- Input file: ${inputFile || 'none'}`,
-      `- Legacy post samples: ${summary.totals.legacyPosts}`,
-      `- Invalid samples: ${summary.totals.invalidSamples}`,
+      `- Legacy post residuals: ${summary.totals.legacyPosts}`,
+      `- Residual blockers: ${summary.totals.residualBlockers}`,
       `- Page 404: ${summary.totals.page404}`,
       `- Page 200 + API 404: ${summary.totals.page200Api404}`,
       `- Page 200 + API 200: ${summary.totals.page200Api200}`,
@@ -870,19 +950,31 @@ async function runLegacyPostDetailAudit(state, config, discovered) {
     {
       category: 'production-audit',
       scope: 'public',
-      name: 'legacy post detail audit',
-      severity: summary.totals.invalidSamples > 0 ? 'P1' : 'P2',
+      name: 'legacy post residual blocker',
+      severity: 'P0',
       url: inputFile ? path.resolve(inputFile) : null,
     },
-    async () => ({
-      details: summary,
-      artifacts: [
+    async () => {
+      const artifacts = [
         path.join(reportDir, 'summary.json'),
-        path.join(reportDir, 'legacy-post-samples.json'),
+        path.join(reportDir, 'legacy-post-residuals.json'),
         path.join(reportDir, 'source-attribution.json'),
         path.join(reportDir, 'summary.md'),
-      ],
-    })
+      ]
+      if (summary.totals.residualBlockers > 0) {
+        throw new CheckFailureError(
+          `发现 ${summary.totals.residualBlockers} 个 legacy UUIDv4 post residual；strict-v7 hard cutover blocked`,
+          {
+            details: summary,
+            artifacts,
+          }
+        )
+      }
+      return {
+        details: summary,
+        artifacts,
+      }
+    }
   )
 }
 
@@ -1248,12 +1340,19 @@ async function runCheck(state, meta, fn) {
     const durationMs = Date.now() - start
     const finishedAtIso = new Date().toISOString()
     const skip = error instanceof SkipCheckError
+    const failureDetails =
+      !skip && error && typeof error === 'object' && 'details' in error ? error.details : null
+    const failureArtifacts =
+      !skip && error && typeof error === 'object' && Array.isArray(error.artifacts)
+        ? error.artifacts
+        : []
     const entry = createCheckEntry(meta, state, durationMs, {
       status: skip ? 'skipped' : 'failed',
       startedAt: startedAtIso,
       finishedAt: finishedAtIso,
+      details: failureDetails,
       error: skip ? error.reason : summarizeError(error),
-      artifacts: [],
+      artifacts: failureArtifacts,
       skipClassification: skip ? error.classification : null,
     })
 
@@ -3616,17 +3715,17 @@ async function main() {
     writeText(
       summaryMdPath,
       [
-        '# momichan.xyz legacy post detail audit',
+        '# momichan.xyz legacy post residual blocker',
         '',
         `- Base URL: ${config.baseUrl}`,
-        `- Audit report: ${path.resolve('build', 'reports', 'uuidv7-prod-post-audit', 'summary.json')}`,
+        `- Residual report: ${path.resolve('build', 'reports', 'uuidv7-prod-post-residuals', 'summary.json')}`,
         `- Input file: ${process.env.UUIDV7_LEGACY_POST_AUDIT_INPUT?.trim() || process.env.LEGACY_POST_AUDIT_INPUT?.trim() || 'none'}`,
       ].join('\n')
     )
     console.log(`\n📦 Summary: ${summaryPath}`)
     console.log(`📝 Summary Markdown: ${summaryMdPath}`)
     console.log(
-      `🧾 Legacy post audit: ${path.resolve('build', 'reports', 'uuidv7-prod-post-audit', 'summary.json')}`
+      `🧾 Legacy post residual report: ${path.resolve('build', 'reports', 'uuidv7-prod-post-residuals', 'summary.json')}`
     )
     return
   }

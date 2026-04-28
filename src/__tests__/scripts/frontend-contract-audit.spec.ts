@@ -139,7 +139,7 @@ const DEFAULT_SAMPLE_DISCUSSION_ROUTE = '/community/discussions/018f7da0-0c13-7c
   writeFixture(
     root,
     'src/utils/cache/config.ts',
-    "export const UUIDV7_CUTOVER_EPOCH = 'uuidv7-cutover-2026-04'"
+    "export const UUIDV7_CUTOVER_EPOCH = 'uuidv7-hard-cutover-2026-04-28'"
   )
   writeFixture(
     root,

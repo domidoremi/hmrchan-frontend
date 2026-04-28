@@ -538,14 +538,14 @@ export function resolvePreviewablePostLink(
 ): string {
   const postId = resolvePostIdFromLink(link)
   if (postId) {
-    const publicPostId = getContractResourceId(postId)
-    return publicPostId ? `/post/${publicPostId}` : '/explore'
+    const detailPostId = getContractResourceId(postId)
+    return detailPostId ? `/post/${detailPostId}` : '/explore'
   }
 
   const fallback = normalizeText(fallbackId)
   if (fallback) {
-    const publicPostId = getContractResourceId(fallback)
-    return publicPostId ? `/post/${publicPostId}` : '/explore'
+    const detailPostId = getContractResourceId(fallback)
+    return detailPostId ? `/post/${detailPostId}` : '/explore'
   }
 
   return resolvePostLink(link, fallbackId)
@@ -559,15 +559,15 @@ export function resolvePostLink(
   if (value) {
     const postId = resolvePostIdFromLink(value)
     if (postId) {
-      const publicPostId = getContractResourceId(postId)
-      return publicPostId ? `/post/${publicPostId}` : '/explore'
+      const detailPostId = getContractResourceId(postId)
+      return detailPostId ? `/post/${detailPostId}` : '/explore'
     }
     return value
   }
   const fallback = normalizeText(fallbackId)
   if (!fallback) return '/explore'
-  const publicPostId = getContractResourceId(fallback)
-  return publicPostId ? `/post/${publicPostId}` : '/explore'
+  const detailPostId = getContractResourceId(fallback)
+  return detailPostId ? `/post/${detailPostId}` : '/explore'
 }
 
 export function normalizePlatform(value: string | null | undefined, fallback = 'story'): string {

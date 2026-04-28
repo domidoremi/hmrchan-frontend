@@ -165,6 +165,11 @@ function createSectionModuleStub(name: string) {
   return async () => {
     const { computed, defineComponent, ref } = await import('vue')
 
+    const sectionTemplate =
+      name === 'StoryDeckSection'
+        ? '<section ref="element" class="media-slices home-screen" :class="sectionClasses"><div class="container story-stage"><slot /></div></section>'
+        : '<section ref="element" :class="sectionClasses"><slot /></section>'
+
     return {
       default: defineComponent({
         name,
@@ -183,7 +188,7 @@ function createSectionModuleStub(name: string) {
           expose({ element })
           return { element, sectionClasses }
         },
-        template: '<section ref="element" :class="sectionClasses"><slot /></section>',
+        template: sectionTemplate,
       }),
     }
   }
@@ -838,7 +843,7 @@ describe('HomePage', () => {
     expect(firstBubble.classes()).not.toContain('is-under-pressure')
   })
 
-  it('keeps tablet and mobile home viewports on the lightweight path', async () => {
+  it('keeps tablet viewports on the lightweight path', async () => {
     setViewport(820, 1180)
     const visibilityObserver = {
       observe: vi.fn(),
@@ -874,6 +879,44 @@ describe('HomePage', () => {
     expect(window.document.documentElement.dataset.homeRailNavLock).toBeUndefined()
   })
 
+  it('allows mobile viewports to prime home scene motion once posts enter view', async () => {
+    setViewport(760, 900)
+    const visibilityObserver = {
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+    }
+    let deferredCallback:
+      | ((entries: Array<{ isIntersecting: boolean; target: Element }>) => void)
+      | null = null
+    mocks.createVisibilityObserver.mockImplementation((callback) => {
+      deferredCallback = callback as typeof deferredCallback
+      return visibilityObserver
+    })
+
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    const scheduledEnhancement = mocks.scheduleTask.mock.calls.find(
+      ([, options]) => (options as { delay?: number } | undefined)?.delay === 140
+    )
+    expect(scheduledEnhancement).toBeTruthy()
+
+    const [runEnhancement] = scheduledEnhancement!
+    ;(runEnhancement as () => void)()
+    await flushPromises()
+
+    const postsElement = wrapper.find('#home-posts').element
+    deferredCallback?.([{ isIntersecting: true, target: postsElement }])
+    await flushPromises()
+
+    expect(window.document.documentElement.dataset.homeRailNavLock).toBeUndefined()
+    expect(
+      mocks.scheduleTask.mock.calls.some(
+        ([, options]) => (options as { delay?: number } | undefined)?.delay === 140
+      )
+    ).toBe(true)
+  })
+
   it('sanitizes upstream non-post deep links back into the post detail flow', () => {
     expect(
       resolvePreviewablePostLink(
@@ -881,6 +924,15 @@ describe('HomePage', () => {
         '0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e'
       )
     ).toBe('/post/0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e')
+  })
+
+  it('drops legacy v4 post links from detail fallback flows after hard cutover', () => {
+    expect(
+      resolvePreviewablePostLink(
+        '/post/4df78e2b-4a70-4df1-8956-2e249376a336',
+        '4df78e2b-4a70-4df1-8956-2e249376a336'
+      )
+    ).toBe('/explore')
   })
 
   it('refreshes only the missing support block when aggregate data leaves one block empty', async () => {
