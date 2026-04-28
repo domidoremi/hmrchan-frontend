@@ -10,7 +10,7 @@ import {
   type HtmlDocumentShellStat,
   type HtmlStructuredData,
 } from './htmlDocument'
-import { getContractResourceId } from '@/utils/contractResourceId'
+import { getContractResourceId } from '../utils/contractResourceId'
 import {
   resolveConfiguredApiBaseUrl,
   resolveVpcOriginForPath,

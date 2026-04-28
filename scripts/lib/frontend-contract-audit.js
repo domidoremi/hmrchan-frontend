@@ -419,6 +419,15 @@ function validatePublicIdEntrypoints(projectRoot, issues) {
       file: 'src/edge/detailDocumentResolver.ts',
     })
   }
+
+  if (edgeContents.includes("from '@/") || edgeContents.includes('from "@/')) {
+    issues.push({
+      code: 'edge-runtime-alias-import',
+      message:
+        'Edge runtime modules imported by Pages Functions must use relative imports because the Cloudflare Functions bundler does not resolve the Vite @ alias',
+      file: 'src/edge/detailDocumentResolver.ts',
+    })
+  }
 }
 
 export function validateFrontendContractAudit(projectRoot = process.cwd()) {

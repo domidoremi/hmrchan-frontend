@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveHtmlDocumentWithEdgeData } from '@/edge/detailDocumentResolver'
 
 const BACKEND_ORIGIN = 'https://backend.test'
+const SAMPLE_POST_ID = '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10'
+const SAMPLE_RELATED_POST_ID = '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a11'
+const SAMPLE_REFERENCED_POST_ID = '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a12'
 
 describe('resolveHtmlDocumentWithEdgeData', () => {
   afterEach(() => {
@@ -38,7 +41,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
               published_at: '2026-03-14T12:34:56Z',
               author_other_posts: [
                 {
-                  id: 'post-2',
+                  id: SAMPLE_RELATED_POST_ID,
                   title: 'Encore behind-the-scenes clips',
                 },
               ],
@@ -53,7 +56,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
+      new URL(`https://momichan.xyz/post/${SAMPLE_POST_ID}`),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -99,7 +102,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
               post_count: 321,
               recent_posts: [
                 {
-                  id: 'post-9',
+                  id: SAMPLE_RELATED_POST_ID,
                   title: 'Weekly update digest',
                 },
               ],
@@ -124,7 +127,9 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     expect(config.shellEyebrow).toContain('Verified creator')
     expect(config.shellBody).toContain('recent posts')
     expect(config.shellSummary.some((item) => item.includes('45.8K followers'))).toBe(true)
-    expect(config.shellLinks.some((link) => link.href === '/post/post-9')).toBe(true)
+    expect(config.shellLinks.some((link) => link.href === `/post/${SAMPLE_RELATED_POST_ID}`)).toBe(
+      true
+    )
     expect(config.ogImage).toBe('https://cdn.example.com/author-1.jpg')
     expect(config.structuredData.some((entry) => entry['@type'] === 'ProfilePage')).toBe(true)
   })
@@ -147,7 +152,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
                 avatar_url: 'https://cdn.example.com/editor-momo.jpg',
               },
               referenced_post: {
-                id: 'post-11',
+                id: SAMPLE_REFERENCED_POST_ID,
                 title: 'Homepage motion study',
                 thumbnail_url: 'https://cdn.example.com/discussion-ref.jpg',
               },
@@ -178,7 +183,9 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     expect(config.canonicalPath).toBe('/community/discussions/discussion-1')
     expect(config.shellEyebrow).toBe('Pinned discussion · Feedback')
     expect(config.shellSummary.some((item) => item.includes('2.9K views'))).toBe(true)
-    expect(config.shellLinks.some((link) => link.href === '/post/post-11')).toBe(true)
+    expect(
+      config.shellLinks.some((link) => link.href === `/post/${SAMPLE_REFERENCED_POST_ID}`)
+    ).toBe(true)
     expect(config.ogImage).toBe('https://cdn.example.com/discussion-ref.jpg')
     expect(config.structuredData[0]).toMatchObject({
       '@type': 'DiscussionForumPosting',
@@ -247,7 +254,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
+      new URL(`https://momichan.xyz/post/${SAMPLE_POST_ID}`),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -260,7 +267,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
+      new URL(`https://momichan.xyz/post/${SAMPLE_POST_ID}`),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -293,7 +300,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
+      new URL(`https://momichan.xyz/post/${SAMPLE_POST_ID}`),
       {
         API_BASE_URL: BACKEND_ORIGIN,
         INTERNAL_API_GATEWAY: {
@@ -304,7 +311,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
 
     expect(gatewayFetch).toHaveBeenCalledTimes(1)
     expect((gatewayFetch.mock.calls[0]?.[0] as Request).url).toBe(
-      'https://momichan.xyz/api/v1/posts/00000000-0000-4000-8000-000000000000'
+      `https://momichan.xyz/api/v1/posts/${SAMPLE_POST_ID}`
     )
     expect(publicFetch).not.toHaveBeenCalled()
     expect(config.title).toBe('Gateway hydrated detail · MomiChan')
