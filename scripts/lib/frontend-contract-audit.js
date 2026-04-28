@@ -211,7 +211,7 @@ function hasEndpointMethod(contentsByFile, endpoint) {
           )
           if (suffixWindow.includes(suffix)) {
             const nearbyPrefix = contents.slice(Math.max(0, tokenIndex - 200), tokenIndex)
-            if (getNearestApiClientMethod(nearbyPrefix) === method) {
+            if (getNearestEndpointMethod(nearbyPrefix) === method) {
               return true
             }
           }
@@ -225,7 +225,7 @@ function hasEndpointMethod(contentsByFile, endpoint) {
         const tokenIndex = contents.indexOf(token, searchFrom)
         if (tokenIndex < 0) return false
         const nearbyPrefix = contents.slice(Math.max(0, tokenIndex - 200), tokenIndex)
-        if (getNearestApiClientMethod(nearbyPrefix) === method) {
+        if (getNearestEndpointMethod(nearbyPrefix) === method) {
           return true
         }
         searchFrom = tokenIndex + token.length
@@ -238,6 +238,20 @@ function hasEndpointMethod(contentsByFile, endpoint) {
 function getNearestApiClientMethod(prefix) {
   const matches = [...prefix.matchAll(/apiClient\.(get|post|put|patch|delete)\b/g)]
   return matches.at(-1)?.[1] ?? null
+}
+
+function getNearestEndpointMethod(prefix) {
+  const apiClientMethod = getNearestApiClientMethod(prefix)
+  if (apiClientMethod) {
+    return apiClientMethod
+  }
+
+  const wrapperMatches = [...prefix.matchAll(/\brequestPasskeyOptions(?:<[^>]+>)?\s*\(/g)]
+  if (wrapperMatches.length > 0) {
+    return 'post'
+  }
+
+  return null
 }
 
 function hasTokenNearEndpoint(contents, endpoint, token) {
