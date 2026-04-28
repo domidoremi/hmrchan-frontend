@@ -1423,8 +1423,8 @@ onBeforeUnmount(() => {
   --vp-accent: var(--color-primary);
   --vp-accent-rgb: var(--color-primary-rgb);
   --vp-btn-size: 2.25rem;
-  --vp-progress-h: 3px;
-  --vp-progress-h-active: 5px;
+  --vp-progress-h: 0.1875rem;
+  --vp-progress-h-active: 0.3125rem;
 
   position: relative;
   width: 100%;
@@ -1631,7 +1631,7 @@ onBeforeUnmount(() => {
 .vp__group {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 0.125rem;
   min-width: 0;
 }
 
@@ -1691,7 +1691,7 @@ onBeforeUnmount(() => {
 .vp__time {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 0.125rem;
   font-size: 0.8125rem;
   color: var(--vp-ctrl-text);
   font-variant-numeric: tabular-nums;
@@ -1704,7 +1704,7 @@ onBeforeUnmount(() => {
 }
 .vp__time-sep {
   opacity: 0.4;
-  padding: 0 1px;
+  padding-inline: 0.0625rem;
 }
 .vp__time-total {
   opacity: 0.65;
@@ -1735,7 +1735,7 @@ onBeforeUnmount(() => {
 /* --- Shared slider --- */
 .vp__slider {
   width: 100%;
-  height: 3px;
+  height: 0.1875rem;
   -webkit-appearance: none;
   appearance: none;
   background: rgba(255, 255, 255, 0.2);
@@ -2075,11 +2075,11 @@ onBeforeUnmount(() => {
 
 .vp__align-group {
   display: flex;
-  gap: 2px;
+  gap: 0.125rem;
   margin-top: var(--spacing-1);
   background: rgba(255, 255, 255, 0.06);
   border-radius: var(--ui-radius-button, var(--radius-lg));
-  padding: 2px;
+  padding: 0.125rem;
 }
 
 .vp__btn--align {
@@ -2260,8 +2260,8 @@ onBeforeUnmount(() => {
   }
 
   .vp__progress {
-    --vp-progress-h: 3px;
-    --vp-progress-h-active: 6px;
+    --vp-progress-h: 0.1875rem;
+    --vp-progress-h-active: 0.375rem;
     height: 1.75rem;
   }
 

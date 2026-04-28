@@ -168,6 +168,29 @@ describe('auth store', () => {
     expect(store.user).toBeNull()
   })
 
+  it('returns MFA challenge details without treating login as failed', async () => {
+    const store = useAuthStore()
+    vi.mocked(authService.login).mockResolvedValueOnce({
+      requires_mfa: true,
+      pending_mfa_login_token: 'pending-mfa-token',
+      methods: ['totp', 'webauthn'],
+      expires_in: 300,
+      message: 'mfa',
+    })
+
+    const result = await store.login('tester@example.com', 'password123')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'mfa',
+        pendingMfaLoginToken: 'pending-mfa-token',
+        methods: ['totp', 'webauthn'],
+      })
+    )
+    expect(store.user).toBeNull()
+    expect(store.error).toBeNull()
+  })
+
   it('completes a risk-verified login as a session-summary flow', async () => {
     const store = useAuthStore()
     vi.mocked(authService.verifyRiskLogin).mockResolvedValueOnce(createSessionSummary())

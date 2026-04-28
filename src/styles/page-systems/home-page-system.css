@@ -478,12 +478,19 @@
   }
 
   .home-page .rail-stage,
-  .home-page .posts--bubble > .container,
-  .home-page .story-stage {
+  .home-page .posts--bubble > .container {
     opacity: 1;
     transform: none;
     filter: none;
     will-change: auto;
+  }
+
+  .home-page .story-stage {
+    opacity: var(--home-story-opacity, 1);
+    transform: translate3d(0, var(--home-story-y, 0rem), 0) scale(var(--home-story-scale, 1));
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+    filter: none;
   }
 
   .home-page .hero-layout {
@@ -558,6 +565,8 @@
     gap: 0.75rem;
     padding-block: calc(var(--home-stage-safe-top) + 0.625rem)
       calc(0.75rem + var(--home-stage-safe-bottom));
+    perspective: 16rem;
+    perspective-origin: 50% 22%;
   }
 
   .home-page .media-slice {

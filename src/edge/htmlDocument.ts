@@ -584,12 +584,12 @@ function renderShellSummary(summary: string[]): string {
   if (!summary.length) return ''
 
   return `
-    <ul style="display:grid;gap:10px;margin:0;padding:0;list-style:none;">
+    <ul style="display:grid;gap:0.625rem;margin:0;padding:0;list-style:none;">
       ${summary
         .map(
           (item) => `
-            <li style="display:flex;gap:10px;align-items:flex-start;color:#334155;font:500 14px/1.6 ui-sans-serif,system-ui;">
-              <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;background:rgba(37,99,235,0.12);color:#2563eb;font:700 11px/1 ui-sans-serif,system-ui;flex:none;">&bull;</span>
+            <li style="display:flex;gap:0.625rem;align-items:flex-start;color:#334155;font:500 0.875rem/1.6 ui-sans-serif,system-ui;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:1.25rem;height:1.25rem;border-radius:999rem;background:rgba(37,99,235,0.12);color:#2563eb;font:700 0.6875rem/1 ui-sans-serif,system-ui;flex:none;">&bull;</span>
               <span>${escapeHtml(item)}</span>
             </li>
           `
@@ -603,11 +603,11 @@ function renderShellLinks(links: HtmlDocumentShellLink[]): string {
   if (!links.length) return ''
 
   return `
-    <nav aria-label="Public route shortcuts" style="display:flex;flex-wrap:wrap;gap:10px;">
+    <nav aria-label="Public route shortcuts" style="display:flex;flex-wrap:wrap;gap:0.625rem;">
       ${links
         .map(
           (link) => `
-            <a href="${escapeHtml(link.href)}" style="display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:999px;background:rgba(15,23,42,0.05);border:1px solid rgba(15,23,42,0.08);color:#0f172a;text-decoration:none;font:600 13px/1.2 ui-sans-serif,system-ui;">
+            <a href="${escapeHtml(link.href)}" style="display:inline-flex;align-items:center;justify-content:center;padding:0.625rem 0.875rem;border-radius:999rem;background:rgba(15,23,42,0.05);border:1px solid rgba(15,23,42,0.08);color:#0f172a;text-decoration:none;font:600 0.8125rem/1.2 ui-sans-serif,system-ui;">
               ${escapeHtml(link.label)}
             </a>
           `
@@ -620,22 +620,22 @@ function renderShellLinks(links: HtmlDocumentShellLink[]): string {
 function renderShellStats(stats: HtmlDocumentShellStat[]): string {
   if (!stats.length) {
     return `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
-        <div style="min-height:104px;border-radius:20px;background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(14,165,233,0.08));border:1px solid rgba(37,99,235,0.12);"></div>
-        <div style="min-height:104px;border-radius:20px;background:linear-gradient(135deg,rgba(16,185,129,0.10),rgba(59,130,246,0.08));border:1px solid rgba(15,23,42,0.06);"></div>
-        <div style="min-height:104px;border-radius:20px;background:linear-gradient(135deg,rgba(249,115,22,0.10),rgba(244,114,182,0.08));border:1px solid rgba(15,23,42,0.06);"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(9.375rem,1fr));gap:0.75rem;">
+        <div style="min-height:6.5rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(14,165,233,0.08));border:1px solid rgba(37,99,235,0.12);"></div>
+        <div style="min-height:6.5rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(16,185,129,0.10),rgba(59,130,246,0.08));border:1px solid rgba(15,23,42,0.06);"></div>
+        <div style="min-height:6.5rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(249,115,22,0.10),rgba(244,114,182,0.08));border:1px solid rgba(15,23,42,0.06);"></div>
       </div>
     `
   }
 
   return `
-    <dl style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0;">
+    <dl style="display:grid;grid-template-columns:repeat(auto-fit,minmax(9.375rem,1fr));gap:0.75rem;margin:0;">
       ${stats
         .map(
           (stat) => `
-            <div style="display:grid;gap:8px;padding:16px;border-radius:20px;background:rgba(255,255,255,0.88);border:1px solid rgba(15,23,42,0.08);box-shadow:0 16px 32px rgba(15,23,42,0.06);">
-              <dt style="margin:0;color:#64748b;font:600 12px/1.2 ui-sans-serif,system-ui;text-transform:uppercase;letter-spacing:0.08em;">${escapeHtml(stat.label)}</dt>
-              <dd style="margin:0;color:#020617;font:700 18px/1.3 ui-sans-serif,system-ui;">${escapeHtml(stat.value)}</dd>
+            <div style="display:grid;gap:0.5rem;padding:1rem;border-radius:1.25rem;background:rgba(255,255,255,0.88);border:1px solid rgba(15,23,42,0.08);box-shadow:0 16px 32px rgba(15,23,42,0.06);">
+              <dt style="margin:0;color:#64748b;font:600 0.75rem/1.2 ui-sans-serif,system-ui;text-transform:uppercase;letter-spacing:0.08em;">${escapeHtml(stat.label)}</dt>
+              <dd style="margin:0;color:#020617;font:700 1.125rem/1.3 ui-sans-serif,system-ui;">${escapeHtml(stat.value)}</dd>
             </div>
           `
         )
@@ -647,18 +647,18 @@ function renderShellStats(stats: HtmlDocumentShellStat[]): string {
 function renderShellVisual(config: HtmlDocumentConfig): string {
   if (config.ogImage) {
     return `
-      <figure style="margin:0;display:grid;gap:10px;padding:14px;border-radius:24px;background:rgba(15,23,42,0.92);box-shadow:0 18px 40px rgba(15,23,42,0.16);min-height:220px;">
-        <img src="${escapeHtml(config.ogImage)}" alt="${escapeHtml(config.shellTitle)}" loading="eager" decoding="async" style="width:100%;height:100%;min-height:220px;object-fit:cover;border-radius:18px;" />
+      <figure style="margin:0;display:grid;gap:0.625rem;padding:0.875rem;border-radius:1.5rem;background:rgba(15,23,42,0.92);box-shadow:0 18px 40px rgba(15,23,42,0.16);min-height:13.75rem;">
+        <img src="${escapeHtml(config.ogImage)}" alt="${escapeHtml(config.shellTitle)}" loading="eager" decoding="async" style="width:100%;height:100%;min-height:13.75rem;object-fit:cover;border-radius:1.125rem;" />
       </figure>
     `
   }
 
   return `
-    <div style="display:grid;gap:12px;">
-      <div style="min-height:160px;border-radius:24px;background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 55%,#38bdf8 100%);box-shadow:0 20px 44px rgba(37,99,235,0.18);"></div>
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
-        <div style="min-height:94px;border-radius:20px;background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(14,165,233,0.08));border:1px solid rgba(37,99,235,0.12);"></div>
-        <div style="min-height:94px;border-radius:20px;background:linear-gradient(135deg,rgba(249,115,22,0.10),rgba(244,114,182,0.08));border:1px solid rgba(15,23,42,0.06);"></div>
+    <div style="display:grid;gap:0.75rem;">
+      <div style="min-height:10rem;border-radius:1.5rem;background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 55%,#38bdf8 100%);box-shadow:0 20px 44px rgba(37,99,235,0.18);"></div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0.75rem;">
+        <div style="min-height:5.875rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(14,165,233,0.08));border:1px solid rgba(37,99,235,0.12);"></div>
+        <div style="min-height:5.875rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(249,115,22,0.10),rgba(244,114,182,0.08));border:1px solid rgba(15,23,42,0.06);"></div>
       </div>
     </div>
   `
@@ -694,17 +694,17 @@ function renderDefaultPrerenderShell(config: HtmlDocumentConfig): string {
   const visualMarkup = renderShellVisual(config)
 
   return `
-    <section data-prerender-shell="true" data-prerender-shell-variant="default" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:32px 20px;background:linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);color:#0f172a;">
-      <div data-prerender-shell-content="true" style="width:min(100%,1120px);display:grid;gap:24px;">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start;">
-          <article style="display:grid;gap:16px;padding:28px;border-radius:28px;background:rgba(255,255,255,0.90);border:1px solid rgba(15,23,42,0.08);box-shadow:0 20px 52px rgba(15,23,42,0.08);">
-            <span style="display:inline-flex;width:max-content;padding:6px 10px;border-radius:999px;background:rgba(37,99,235,0.08);color:${accent};font:600 12px/1.2 ui-sans-serif,system-ui;">${escapeHtml(config.shellEyebrow)}</span>
-            <h1 style="margin:0;font:700 clamp(32px,5vw,56px)/1.05 ui-sans-serif,system-ui;color:#020617;">${escapeHtml(config.shellTitle)}</h1>
-            <p style="margin:0;max-width:68ch;font:400 16px/1.8 ui-sans-serif,system-ui;color:#334155;">${escapeHtml(config.shellBody)}</p>
+    <section data-prerender-shell="true" data-prerender-shell-variant="default" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:2rem 1.25rem;background:linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);color:#0f172a;">
+      <div data-prerender-shell-content="true" style="width:min(100%,70rem);display:grid;gap:1.5rem;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(18.75rem,1fr));gap:1.25rem;align-items:start;">
+          <article style="display:grid;gap:1rem;padding:1.75rem;border-radius:1.75rem;background:rgba(255,255,255,0.90);border:1px solid rgba(15,23,42,0.08);box-shadow:0 20px 52px rgba(15,23,42,0.08);">
+            <span style="display:inline-flex;width:max-content;padding:0.375rem 0.625rem;border-radius:999rem;background:rgba(37,99,235,0.08);color:${accent};font:600 0.75rem/1.2 ui-sans-serif,system-ui;">${escapeHtml(config.shellEyebrow)}</span>
+            <h1 style="margin:0;font:700 clamp(2rem,5vw,3.5rem)/1.05 ui-sans-serif,system-ui;color:#020617;">${escapeHtml(config.shellTitle)}</h1>
+            <p style="margin:0;max-width:68ch;font:400 1rem/1.8 ui-sans-serif,system-ui;color:#334155;">${escapeHtml(config.shellBody)}</p>
             ${summaryMarkup}
             ${linksMarkup}
           </article>
-          <aside style="display:grid;gap:16px;">
+          <aside style="display:grid;gap:1rem;">
             ${visualMarkup}
             ${statsMarkup}
           </aside>
@@ -720,23 +720,23 @@ function renderHomePrerenderShell(config: HtmlDocumentConfig): string {
   const statsMarkup = renderShellStats(config.shellStats)
 
   return `
-    <section data-prerender-shell="true" data-prerender-shell-variant="home" style="position:relative;min-height:100dvh;padding:96px 20px 40px;background:radial-gradient(circle at top left,rgba(147,197,253,0.34) 0%,transparent 34%),radial-gradient(circle at top right,rgba(129,140,248,0.24) 0%,transparent 28%),radial-gradient(circle at 50% 18%,rgba(186,230,253,0.32) 0%,transparent 26%),linear-gradient(180deg,rgba(240,249,255,0.98) 0%,rgba(239,246,255,0.96) 52%,#eff6ff 100%);color:#0f172a;overflow:hidden;">
+    <section data-prerender-shell="true" data-prerender-shell-variant="home" style="position:relative;min-height:100dvh;padding:6rem 1.25rem 2.5rem;background:radial-gradient(circle at top left,rgba(147,197,253,0.34) 0%,transparent 34%),radial-gradient(circle at top right,rgba(129,140,248,0.24) 0%,transparent 28%),radial-gradient(circle at 50% 18%,rgba(186,230,253,0.32) 0%,transparent 26%),linear-gradient(180deg,rgba(240,249,255,0.98) 0%,rgba(239,246,255,0.96) 52%,#eff6ff 100%);color:#0f172a;overflow:hidden;">
       <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 16% 16%,rgba(255,255,255,0.62) 0%,transparent 38%),radial-gradient(circle at 82% 24%,rgba(96,165,250,0.18) 0%,transparent 32%);opacity:0.9;"></div>
-      <div style="position:relative;width:min(100%,1160px);margin:0 auto;display:grid;gap:24px;">
-        <div data-prerender-shell-content="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;align-items:center;">
-          <article style="display:grid;gap:16px;align-content:center;min-height:min(36rem,calc(100dvh - 136px));padding:clamp(24px,4vw,40px) 0;">
-            <span style="display:inline-flex;width:max-content;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.72);border:1px solid rgba(59,130,246,0.12);box-shadow:0 12px 24px rgba(37,99,235,0.08);color:#2563eb;font:600 12px/1.2 ui-sans-serif,system-ui;">${escapeHtml(config.shellEyebrow)}</span>
-            <h1 style="margin:0;max-width:14ch;font:700 clamp(40px,6vw,64px)/1.02 ui-sans-serif,system-ui;color:#0f172a;letter-spacing:-0.03em;text-wrap:balance;">${escapeHtml(config.shellTitle)}</h1>
-            <p style="margin:0;max-width:62ch;font:400 16px/1.8 ui-sans-serif,system-ui;color:#334155;">${escapeHtml(config.shellBody)}</p>
+      <div style="position:relative;width:min(100%,72.5rem);margin:0 auto;display:grid;gap:1.5rem;">
+        <div data-prerender-shell-content="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(18.75rem,1fr));gap:1.5rem;align-items:center;">
+          <article style="display:grid;gap:1rem;align-content:center;min-height:min(36rem,calc(100dvh - 8.5rem));padding:clamp(1.5rem,4vw,2.5rem) 0;">
+            <span style="display:inline-flex;width:max-content;padding:0.5rem 0.75rem;border-radius:999rem;background:rgba(255,255,255,0.72);border:1px solid rgba(59,130,246,0.12);box-shadow:0 12px 24px rgba(37,99,235,0.08);color:#2563eb;font:600 0.75rem/1.2 ui-sans-serif,system-ui;">${escapeHtml(config.shellEyebrow)}</span>
+            <h1 style="margin:0;max-width:14ch;font:700 clamp(2.5rem,6vw,4rem)/1.02 ui-sans-serif,system-ui;color:#0f172a;letter-spacing:-0.03em;text-wrap:balance;">${escapeHtml(config.shellTitle)}</h1>
+            <p style="margin:0;max-width:62ch;font:400 1rem/1.8 ui-sans-serif,system-ui;color:#334155;">${escapeHtml(config.shellBody)}</p>
             ${summaryMarkup}
             ${linksMarkup}
           </article>
-          <aside style="display:grid;gap:16px;align-content:center;">
-            <section style="display:grid;gap:14px;padding:24px;border-radius:28px;background:linear-gradient(160deg,rgba(255,255,255,0.98),rgba(240,249,255,0.92));border:1px solid rgba(96,165,250,0.18);box-shadow:0 28px 56px -34px rgba(37,99,235,0.28);">
-              <div style="display:grid;gap:8px;">
-                <span style="font:600 12px/1.2 ui-sans-serif,system-ui;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">Start here</span>
-                <strong style="font:700 24px/1.15 ui-sans-serif,system-ui;color:#0f172a;">Explore today’s picks, authors, schedule, and community.</strong>
-                <p style="margin:0;font:400 14px/1.7 ui-sans-serif,system-ui;color:#475569;">打开你最感兴趣的公开入口，继续浏览值得收藏的帖子、作者和讨论。</p>
+          <aside style="display:grid;gap:1rem;align-content:center;">
+            <section style="display:grid;gap:0.875rem;padding:1.5rem;border-radius:1.75rem;background:linear-gradient(160deg,rgba(255,255,255,0.98),rgba(240,249,255,0.92));border:1px solid rgba(96,165,250,0.18);box-shadow:0 28px 56px -34px rgba(37,99,235,0.28);">
+              <div style="display:grid;gap:0.5rem;">
+                <span style="font:600 0.75rem/1.2 ui-sans-serif,system-ui;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">Start here</span>
+                <strong style="font:700 1.5rem/1.15 ui-sans-serif,system-ui;color:#0f172a;">Explore today’s picks, authors, schedule, and community.</strong>
+                <p style="margin:0;font:400 0.875rem/1.7 ui-sans-serif,system-ui;color:#475569;">打开你最感兴趣的公开入口，继续浏览值得收藏的帖子、作者和讨论。</p>
               </div>
               ${statsMarkup}
             </section>

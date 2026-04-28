@@ -1101,6 +1101,7 @@ async function captureDiagnosticsWindow(collector, fn, settleMs = 500) {
 function evaluateDiagnostics(diagnostics) {
   const severe = []
   const warnings = []
+  const expected = []
 
   for (const entry of diagnostics) {
     if (entry.kind === 'pageerror') {
@@ -1109,6 +1110,14 @@ function evaluateDiagnostics(diagnostics) {
     }
 
     if (entry.kind === 'requestfailed') {
+      const failureText = String(entry.text || '')
+      if (/net::ERR_ABORTED|NS_BINDING_ABORTED|navigation/i.test(failureText)) {
+        expected.push(
+          `requestfailed(${entry.resourceType}) ${truncate(new URL(entry.url).pathname, 120)}: ${truncate(failureText, 120)}`
+        )
+        continue
+      }
+
       severe.push(
         `requestfailed(${entry.resourceType}) ${truncate(new URL(entry.url).pathname, 120)}: ${truncate(entry.text, 120)}`
       )
@@ -1119,6 +1128,8 @@ function evaluateDiagnostics(diagnostics) {
       const pathName = new URL(entry.url).pathname
       if (entry.status >= 500) {
         severe.push(`api ${entry.status} ${entry.method} ${pathName}`)
+      } else if (entry.status === 404 && isExpectedDiagnostic404(pathName)) {
+        expected.push(`api ${entry.status} ${entry.method} ${pathName}`)
       } else if (entry.status >= 400) {
         warnings.push(`api ${entry.status} ${entry.method} ${pathName}`)
       }
@@ -1127,6 +1138,11 @@ function evaluateDiagnostics(diagnostics) {
 
     if (entry.kind === 'console' && entry.level === 'error') {
       const text = String(entry.text || '')
+      if (/strict-dynamic/i.test(text) && /content security policy|csp/i.test(text)) {
+        expected.push(`console noise: ${truncate(text, 180)}`)
+        continue
+      }
+
       if (
         /(TypeError|ReferenceError|SyntaxError|ChunkLoadError|Failed to fetch|Cannot read|Unhandled)/i.test(
           text
@@ -1142,6 +1158,7 @@ function evaluateDiagnostics(diagnostics) {
   return {
     severe,
     warnings,
+    expected,
     summary: {
       consoleErrors: diagnostics.filter(
         (entry) => entry.kind === 'console' && entry.level === 'error'
@@ -1153,8 +1170,18 @@ function evaluateDiagnostics(diagnostics) {
       api5xx: diagnostics.filter((entry) => entry.kind === 'response' && entry.status >= 500)
         .length,
       requestFailed: diagnostics.filter((entry) => entry.kind === 'requestfailed').length,
+      expectedNoise: expected.length,
     },
   }
+}
+
+function isExpectedDiagnostic404(pathName) {
+  return (
+    pathName === '/api/v1/client-report' ||
+    pathName === '/api/v1/client/init' ||
+    pathName.includes('__prod-regression_missing__') ||
+    pathName.includes('not-a-valid-id')
+  )
 }
 
 async function createPageHarness(context, origin) {

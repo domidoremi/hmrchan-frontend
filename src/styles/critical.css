@@ -36,7 +36,7 @@
   --glass-bg-light: rgba(255, 255, 255, 0.5);
   --glass-bg-strong: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-blur: blur(12px);
+  --glass-blur: blur(0.75rem);
 
   /* 间距 */
   --spacing-1: 0.25rem;
@@ -50,7 +50,7 @@
   --radius-lg: 0.75rem;
 
   /* 布局 */
-  --navbar-height: 64px;
+  --navbar-height: 4rem;
   --mobile-nav-height: 0rem;
   --navbar-visible-height: var(--navbar-height);
   --app-safe-block-size: calc(100dvh - var(--navbar-visible-height));

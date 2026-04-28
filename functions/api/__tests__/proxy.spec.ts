@@ -388,6 +388,116 @@ describe('functions/api proxy', () => {
   })
 
   it.each([
+    [
+      'risk verification',
+      {
+        requires_risk_verification: true,
+        pending_token: 'pending-risk-token',
+        challenge_type: 'email',
+        methods: ['email', 'webauthn'],
+        expires_in: 300,
+        message: 'High-risk login requires email verification',
+      },
+    ],
+    [
+      'MFA',
+      {
+        requires_mfa: true,
+        pending_mfa_login_token: 'pending-mfa-token',
+        methods: ['totp', 'webauthn'],
+        expires_in: 300,
+        message: 'MFA required',
+      },
+    ],
+  ])('passes through login %s challenges without writing BFF cookies', async (_label, payload) => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+
+      if (url === `${INTERNAL_ORIGIN}/internal/v1/auth/bff/login`) {
+        return apiEnvelope(payload, {
+          headers: {
+            'X-Security-Warning': 'high',
+            'Set-Cookie': '__Host-momi_bff_at=should-not-leak; Path=/; HttpOnly; Secure',
+          },
+        })
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/login`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+          'X-Client-Fingerprint': 'manual-check',
+        },
+        body: JSON.stringify({
+          username: 'challenge-user',
+          password: 'password123',
+        }),
+        path: ['v1', 'auth', 'login'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(getSetCookies(response)).toEqual([])
+    expect(response.headers.get('X-Security-Warning')).toBe('high')
+    await expect(response.json()).resolves.toEqual(payload)
+  })
+
+  it('passes through Google exchange MFA challenges without writing BFF cookies', async () => {
+    const payload = {
+      requires_mfa: true,
+      pending_mfa_login_token: 'pending-google-mfa-token',
+      methods: ['totp'],
+      expires_in: 300,
+      message: 'MFA required',
+    }
+
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+
+      if (url === `${INTERNAL_ORIGIN}/internal/v1/auth/bff/google-exchange`) {
+        return apiEnvelope(payload, {
+          headers: {
+            'X-Security-Warning': 'medium',
+            'Set-Cookie': '__Host-momi_bff_rt=should-not-leak; Path=/; HttpOnly; Secure',
+          },
+        })
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/google/exchange`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+          'X-Client-Fingerprint': 'manual-check',
+        },
+        body: JSON.stringify({
+          handoff_code: 'google-handoff',
+        }),
+        env: {
+          GOOGLE_AUTH_ENABLED: 'true',
+        },
+        path: ['v1', 'auth', 'google', 'exchange'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(getSetCookies(response)).toEqual([])
+    expect(response.headers.get('X-Security-Warning')).toBe('medium')
+    await expect(response.json()).resolves.toEqual(payload)
+  })
+
+  it.each([
     ['locked account', 'ACCOUNT_LOCKED'],
     ['inactive account', 'ACCOUNT_INACTIVE'],
   ])('does not write BFF session cookies when login rejects a %s', async (_label, code) => {

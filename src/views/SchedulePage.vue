@@ -2351,12 +2351,17 @@ onMounted(() => {
   min-block-size: clamp(28rem, 58vh, 42rem);
   padding: clamp(1rem, 2vw, 1.5rem);
   contain: layout paint;
+  overflow-anchor: none;
 }
 
 .schedule-detail-article,
 .detail-loading {
   display: grid;
   gap: var(--spacing-3);
+}
+
+.schedule-detail-article {
+  grid-template-rows: minmax(10rem, auto) auto minmax(7.5rem, auto) minmax(8rem, auto) auto;
 }
 
 .detail-loading,
@@ -2389,14 +2394,15 @@ onMounted(() => {
   height: 3rem;
 }
 
-.schedule-detail-article {
-  gap: var(--spacing-5);
-}
-
 .schedule-detail-article__header,
 .schedule-detail-section {
   display: grid;
   gap: var(--spacing-3);
+}
+
+.schedule-detail-article__header {
+  min-block-size: 10rem;
+  align-content: start;
 }
 
 .schedule-detail-article__topline {
@@ -2446,6 +2452,8 @@ onMounted(() => {
 .schedule-detail-facts {
   display: grid;
   gap: var(--spacing-3);
+  min-block-size: 7.5rem;
+  align-content: start;
 }
 
 .schedule-detail-fact {
@@ -2478,6 +2486,11 @@ onMounted(() => {
 .schedule-detail-section__title {
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
+}
+
+.schedule-detail-section {
+  min-block-size: 8rem;
+  align-content: start;
 }
 
 .detail-meta {

@@ -15,6 +15,18 @@ import {
   toAbsoluteAuditUrl,
 } from './lighthouse-prod-shared.mjs'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const UUID_V7_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function isUuid(value) {
+  return typeof value === 'string' && UUID_RE.test(value)
+}
+
+function isUuidV7(value) {
+  return typeof value === 'string' && UUID_V7_RE.test(value)
+}
+
 function stripInlineComment(line) {
   const index = line.indexOf('#')
   return index === -1 ? line.trim() : line.slice(0, index).trim()
@@ -459,6 +471,20 @@ export async function discoverAuditTargets({
     })
   }
 
+  const rejectInvalidPostSample = (entry, source, reason) => {
+    manifest.coverage.rejectedFallbacks.push({
+      url: entry.url,
+      pageType: entry.pageType,
+      source,
+      status: null,
+      method: null,
+      error: null,
+      phase: 'strict-uuidv7-contract',
+      probeUrl: entry.url,
+      reason,
+    })
+  }
+
   const addEntry = (entryLike) => {
     const normalized = normalizeManifestEntry(entryLike, normalizedBase)
 
@@ -576,6 +602,14 @@ export async function discoverAuditTargets({
           robotsDisallowed: isRobotsDisallowed(url, robotsRules),
           selectionReason: buildSelectionReason(plan.pageType, plan.source, currentCount, required),
         })
+        if (plan.pageType === 'post-detail' && isUuid(id) && !isUuidV7(id)) {
+          rejectInvalidPostSample(
+            entry,
+            plan.source,
+            'Legacy UUIDv4 post residual blocked by strict UUIDv7 discovery contract.'
+          )
+          continue
+        }
         const probe = await probeDetailDataUrl(entry, fetchImpl, normalizedBase)
         if (!probe.ok) {
           rejectDetailSample(entry, probe, plan.source)
