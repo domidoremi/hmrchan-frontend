@@ -354,6 +354,7 @@ import {
   warmDecodedImage,
 } from '@/utils/performance'
 import { formatDate } from '@/utils/date'
+import { getContractResourceId } from '@/utils/contractResourceId'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, Maximize2 } from '@lucide/vue'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
@@ -1080,6 +1081,12 @@ function resolveFallbackPostDetail(currentPostId: string, err: unknown): PostDet
 
 async function fetchPost(signal?: AbortSignal) {
   if (!postId.value || postId.value === 'undefined') return
+  if (!getContractResourceId(postId.value)) {
+    error.value = null
+    isLoading.value = false
+    await router.replace({ path: '/explore' })
+    return
+  }
 
   const requestToken = ++fetchPostToken
   const currentPostId = postId.value

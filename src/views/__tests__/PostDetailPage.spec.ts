@@ -37,10 +37,10 @@ const mocks = vi.hoisted(() => {
     resolveThumbnailSrcsetMock: vi.fn((url: string | null) => (url ? `${url}?resolved=1 1x` : '')),
     settingsRef: null as unknown as { value: { enableSwipeNavigation: boolean } },
     mockedRoute: {
-      params: { id: '4df78e2b-4a70-4df1-8956-2e249376a336' },
+      params: { id: '0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e' },
       query: { from: 'profile' },
       hash: '#comments',
-      path: '/post/4df78e2b-4a70-4df1-8956-2e249376a336',
+      path: '/post/0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e',
     },
     createLazyObserver: vi.fn((callback: () => void) => {
       lazyObserverCallback = callback
@@ -233,7 +233,7 @@ vi.mock('@/components/animation/AnimatedIcon.vue', () => ({
 }))
 
 const basePost = {
-  id: '4df78e2b-4a70-4df1-8956-2e249376a336',
+  id: '0196a7b2-c4d0-7a3e-b9f1-5e2d4a6c8b0e',
   title: 'Sample post',
   description: 'Detail body',
   media_count: 0,

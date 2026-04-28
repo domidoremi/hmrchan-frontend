@@ -98,6 +98,14 @@ const routes: RouteRecordRaw[] = [
       dataSensitivity: 'none',
       extendContentUnderNavbar: true,
     },
+    beforeEnter: (to, _, next) => {
+      const id = to.params['id'] as string | undefined
+      if (id && isContractResourceId(id)) {
+        next()
+      } else {
+        next({ path: '/explore' })
+      }
+    },
   },
   {
     path: '/authors',
