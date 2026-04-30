@@ -576,13 +576,13 @@
     filter: none;
     transform-origin: 50% 100%;
     transform: translate3d(
-        calc(var(--story-translate-x, 0rem) * 0.45),
-        calc(var(--story-translate-y, 0rem) * 0.68),
-        calc(var(--story-translate-z, 0rem) * 0.45)
+        calc(var(--story-translate-x, 0rem) * 0.78),
+        calc(var(--story-translate-y, 0rem) * 0.9),
+        calc(var(--story-translate-z, 0rem) * 0.8)
       )
-      rotateX(calc(var(--story-rotate-x, 0deg) * 0.55))
-      rotateY(calc(var(--story-rotate-y, 0deg) * 0.55))
-      rotateZ(calc(var(--story-rotate-z, 0deg) * 0.35)) scale(var(--story-scale, 1));
+      rotateX(calc(var(--story-rotate-x, 0deg) * 0.78))
+      rotateY(calc(var(--story-rotate-y, 0deg) * 0.82))
+      rotateZ(calc(var(--story-rotate-z, 0deg) * 0.58)) scale(var(--story-scale, 1));
   }
 }
 

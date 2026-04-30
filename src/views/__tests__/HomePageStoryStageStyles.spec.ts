@@ -11,7 +11,7 @@ const homePageSystemSource = readFileSync(
 
 function mobileRuleFor(source: string, selector: string): string {
   const mobileSource = mobileMediaBlock(source)
-  const selectorIndex = mobileSource.indexOf(selector)
+  const selectorIndex = findSelectorIndex(mobileSource, selector)
   expect(selectorIndex).toBeGreaterThanOrEqual(0)
 
   const blockStart = mobileSource.indexOf('{', selectorIndex)
@@ -34,7 +34,7 @@ function mobileRuleFor(source: string, selector: string): string {
 
 function lastMobileRuleFor(source: string, selector: string): string {
   const mobileSource = mobileMediaBlock(source)
-  const selectorIndex = mobileSource.lastIndexOf(selector)
+  const selectorIndex = findLastSelectorIndex(mobileSource, selector)
   expect(selectorIndex).toBeGreaterThanOrEqual(0)
 
   const blockStart = mobileSource.indexOf('{', selectorIndex)
@@ -57,8 +57,30 @@ function lastMobileRuleFor(source: string, selector: string): string {
 
 function maybeMobileRuleFor(source: string, selector: string): string | null {
   const mobileSource = mobileMediaBlock(source)
-  if (!mobileSource.includes(selector)) return null
+  if (findSelectorIndex(mobileSource, selector) < 0) return null
   return mobileRuleFor(source, selector)
+}
+
+function findSelectorIndex(source: string, selector: string): number {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = new RegExp(`(^|\\n)[^\\n{}]*${escapedSelector}(?![-\\w])[^\\n{}]*\\{`, 'm').exec(
+    source
+  )
+  if (!match || typeof match.index !== 'number') return -1
+  return match.index + match[1].length
+}
+
+function findLastSelectorIndex(source: string, selector: string): number {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(^|\\n)[^\\n{}]*${escapedSelector}(?![-\\w])[^\\n{}]*\\{`, 'gm')
+  let match: RegExpExecArray | null = null
+  let lastIndex = -1
+
+  for (match = regex.exec(source); match; match = regex.exec(source)) {
+    lastIndex = match.index + match[1].length
+  }
+
+  return lastIndex
 }
 
 function mobileMediaBlock(source: string): string {
@@ -108,14 +130,45 @@ describe('HomePage story-stage styles', () => {
 
   it('lets the smallest bubble stage collapse into a flowing single-column stack', () => {
     expect(homePageSource).toContain('@media (max-width: 768px)')
-    expect(homePageSource).toContain('grid-template-columns: minmax(0, 1fr)')
-    expect(homePageSource).toContain('grid-auto-rows: auto')
+    expect(homePageSource).toContain('display: flex')
+    expect(homePageSource).toContain('flex-direction: column')
+    expect(homePageSource).toContain('align-items: stretch')
     expect(homePageSource).toContain('overflow: visible')
-    expect(homePageSource).toContain('grid-column: 1 / -1')
+    expect(homePageSource).toContain('flex: 0 0 auto')
     expect(homePageSource).toContain('align-self: start')
-    expect(homePageSource).toContain('min-block-size: clamp(6rem, 12dvh, 7rem)')
+    expect(homePageSource).toContain('gap: 0.875rem')
+    expect(homePageSource).toContain('min-block-size: clamp(6.5rem, 14dvh, 7.75rem)')
     expect(homePageSource).toContain('@media (max-width: 560px)')
     expect(homePageSource).toContain('min-block-size: auto')
+
+    const floatRule = mobileRuleFor(homePageSource, '.bubble-stage--mobile .latest-bubble__float')
+    expect(floatRule).toContain('var(--bubble-live-x, 0rem) * 0.5')
+    expect(floatRule).toContain('var(--bubble-live-y, 0rem) * 0.18')
+    expect(floatRule).not.toContain('--bubble-nudge-y')
+  })
+
+  it('stacks mobile featured rail cards on content-sized rows so media and copy do not overlap', () => {
+    const mobileSource = mobileMediaBlock(homePageSource)
+
+    expect(mobileSource).toContain('.featured-rail-card--lead,')
+    expect(mobileSource).toContain('grid-template-rows: auto auto')
+    expect(mobileSource).toContain('align-content: start')
+
+    const bodyRule = mobileRuleFor(homePageSource, '.featured-rail-card__body')
+    expect(bodyRule).toContain('block-size: auto')
+    expect(bodyRule).toContain('align-self: start')
+    expect(bodyRule).toContain('overflow: visible')
+  })
+
+  it('keeps the mobile story deck on a perceptible 3D transform scale instead of flattening it', () => {
+    const componentSliceRule = mobileRuleFor(homePageSource, '.media-slice')
+    const sharedSliceRule = mobileRuleFor(homePageSystemSource, '.home-page .media-slice')
+
+    for (const rule of [componentSliceRule, sharedSliceRule]) {
+      expect(rule).toContain('* 0.78')
+      expect(rule).toContain('* 0.82')
+      expect(rule).toContain('* 0.58')
+    }
   })
 
   it('keeps shared mobile story-stage rules content-first instead of forcing rigid height', () => {
