@@ -43,4 +43,18 @@ describe('buildStoryCardMotion', () => {
     expect(motion['--story-copy-opacity']).not.toBe('0')
     expect(motion['--story-translate-y']).toContain('calc(')
   })
+
+  it('pushes stacked cards deeper into a pinned deck instead of keeping the layer offsets too flat', () => {
+    const motion = buildStoryCardMotion({
+      index: 2,
+      storyProgressIndex: 0,
+      storyCardCount: 5,
+      storyMergeProgress: 0,
+      storyFooterFade: 0,
+    })
+
+    expect(motion['--story-translate-z']).toContain('-')
+    expect(Number.parseFloat(motion['--story-scale'])).toBeLessThan(0.95)
+    expect(Number.parseFloat(motion['--story-copy-opacity'])).toBeLessThan(0.8)
+  })
 })

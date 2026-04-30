@@ -158,7 +158,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-chip-border: var(--chrome-chip-border);
   --footer-divider: var(--chrome-muted-border);
   --footer-link-hover-bg: var(--chrome-muted-bg);
-  --footer-marquee-animation: footer-marquee;
   --footer-marquee-ink: color-mix(in srgb, var(--color-text-primary) 88%, transparent);
 }
 
@@ -204,6 +203,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 .footer-marquee__track {
   display: inline-flex;
   min-inline-size: max-content;
+  flex-shrink: 0;
   gap: clamp(1.25rem, 2.4vw, 1.75rem);
   padding-block: 0.625rem;
   font-size: clamp(1.35rem, 3vw, 2.5rem);
@@ -212,7 +212,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   color: var(--footer-marquee-ink);
   text-transform: uppercase;
   white-space: nowrap;
-  animation: var(--footer-marquee-animation) 22s linear infinite;
+  animation: footer-marquee 22s linear infinite;
   animation-duration: calc(22s - (var(--home-footer-marquee-speed-progress, 0) * 6s));
   animation-play-state: var(--home-footer-marquee-play-state, running);
   will-change: transform;
@@ -385,10 +385,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     padding-bottom: calc(env(safe-area-inset-bottom, 0rem) + var(--spacing-6));
   }
 
-  .footer-marquee {
-    display: none;
-  }
-
   .footer-marquee__track {
     gap: clamp(0.75rem, 4vw, 1.25rem);
     font-size: clamp(1rem, 5vw, 1.35rem);
@@ -415,11 +411,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   .footer--home {
     transform: none;
     transition: opacity 180ms cubic-bezier(0.2, 0.84, 0.24, 1);
-  }
-
-  .footer--home .footer-marquee__track {
-    animation: none;
-    will-change: auto;
   }
 }
 

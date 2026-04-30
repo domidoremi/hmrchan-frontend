@@ -2253,22 +2253,22 @@ const homePageMotionStyle = computed<Record<string, string>>(() => {
   const storyOutro = viewportSceneBlend.value.storyFooter
 
   return {
-    '--home-hero-opacity': String(clamp(1 - heroExit * 0.08, 0.92, 1)),
-    '--home-hero-scale': String(clamp(1 - heroExit * 0.01, 0.992, 1)),
-    '--home-hero-y': `${(-0.85 * heroExit).toFixed(4)}rem`,
-    '--home-hero-blur': `${(heroExit * 0.08).toFixed(4)}rem`,
-    '--home-rail-opacity': String(clamp(0.9 + railEnter * 0.1 - railExit * 0.06, 0.88, 1)),
-    '--home-rail-scale': String(clamp(0.988 + railEnter * 0.012 - railExit * 0.008, 0.978, 1)),
-    '--home-rail-y': `${((1 - railEnter) * 0.95 - railExit * 0.32).toFixed(4)}rem`,
-    '--home-rail-blur': `${((1 - railEnter) * 0.1 + railExit * 0.05).toFixed(4)}rem`,
-    '--home-posts-opacity': String(clamp(0.9 + postsEnter * 0.1 - postsExit * 0.06, 0.88, 1)),
-    '--home-posts-scale': String(clamp(0.988 + postsEnter * 0.012 - postsExit * 0.008, 0.978, 1)),
-    '--home-posts-y': `${((1 - postsEnter) * 0.9 - postsExit * 0.28).toFixed(4)}rem`,
-    '--home-posts-blur': `${((1 - postsEnter) * 0.09 + postsExit * 0.05).toFixed(4)}rem`,
-    '--home-story-opacity': String(clamp(0.92 + storyEnter * 0.08 - storyOutro * 0.08, 0.86, 1)),
-    '--home-story-scale': String(clamp(0.99 + storyEnter * 0.01 - storyOutro * 0.008, 0.98, 1)),
-    '--home-story-y': `${((1 - storyEnter) * 0.82 - storyOutro * 0.26).toFixed(4)}rem`,
-    '--home-story-blur': `${((1 - storyEnter) * 0.08 + storyOutro * 0.05).toFixed(4)}rem`,
+    '--home-hero-opacity': String(clamp(1 - heroExit * 0.14, 0.86, 1)),
+    '--home-hero-scale': String(clamp(1 - heroExit * 0.022, 0.972, 1)),
+    '--home-hero-y': `${(-1.45 * heroExit).toFixed(4)}rem`,
+    '--home-hero-blur': `${(heroExit * 0.14).toFixed(4)}rem`,
+    '--home-rail-opacity': String(clamp(0.82 + railEnter * 0.18 - railExit * 0.12, 0.76, 1)),
+    '--home-rail-scale': String(clamp(0.974 + railEnter * 0.026 - railExit * 0.018, 0.95, 1)),
+    '--home-rail-y': `${((1 - railEnter) * 1.45 - railExit * 0.62).toFixed(4)}rem`,
+    '--home-rail-blur': `${((1 - railEnter) * 0.18 + railExit * 0.09).toFixed(4)}rem`,
+    '--home-posts-opacity': String(clamp(0.82 + postsEnter * 0.18 - postsExit * 0.12, 0.76, 1)),
+    '--home-posts-scale': String(clamp(0.974 + postsEnter * 0.026 - postsExit * 0.018, 0.952, 1)),
+    '--home-posts-y': `${((1 - postsEnter) * 1.28 - postsExit * 0.56).toFixed(4)}rem`,
+    '--home-posts-blur': `${((1 - postsEnter) * 0.16 + postsExit * 0.09).toFixed(4)}rem`,
+    '--home-story-opacity': String(clamp(0.84 + storyEnter * 0.16 - storyOutro * 0.14, 0.72, 1)),
+    '--home-story-scale': String(clamp(0.968 + storyEnter * 0.024 - storyOutro * 0.018, 0.94, 1)),
+    '--home-story-y': `${((1 - storyEnter) * 1.18 - storyOutro * 0.48).toFixed(4)}rem`,
+    '--home-story-blur': `${((1 - storyEnter) * 0.14 + storyOutro * 0.08).toFixed(4)}rem`,
   }
 })
 
@@ -6360,9 +6360,9 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   gap: 0;
-  padding-block: clamp(1.6rem, 3vw, 2rem) clamp(2.35rem, 4vw, 3.1rem);
-  perspective: clamp(20rem, 32vw, 34rem);
-  perspective-origin: 48% 36%;
+  padding-block: clamp(1.8rem, 3.6vw, 2.35rem) clamp(2.7rem, 5vw, 3.8rem);
+  perspective: clamp(24rem, 40vw, 42rem);
+  perspective-origin: 50% 24%;
   transform-style: preserve-3d;
   isolation: isolate;
   overflow: clip;
@@ -6490,8 +6490,8 @@ onBeforeUnmount(() => {
 
 .media-slice {
   position: absolute;
-  inset-block: clamp(0.45rem, 0.9vw, 0.75rem);
-  inset-inline: clamp(0.75rem, 1.4vw, 1rem);
+  inset-block: clamp(0.3rem, 0.8vw, 0.68rem);
+  inset-inline: clamp(0.6rem, 1.25vw, 0.9rem);
   block-size: 100%;
   min-height: 0;
   display: grid;
@@ -6534,8 +6534,8 @@ onBeforeUnmount(() => {
   margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.74fr);
-  gap: clamp(0.95rem, 1.8vw, 1.45rem);
-  padding: clamp(1rem, 2vw, 1.5rem);
+  gap: clamp(1rem, 1.9vw, 1.5rem);
+  padding: clamp(1rem, 2vw, 1.55rem);
   justify-items: stretch;
   align-items: center;
   overflow: clip;
@@ -6555,7 +6555,8 @@ onBeforeUnmount(() => {
   isolation: isolate;
   transform-style: preserve-3d;
   transform: translate3d(0, 0, var(--story-card-lift, 0rem))
-    rotateY(calc(var(--story-rotate-y, 0deg) * -0.14));
+    rotateY(calc(var(--story-rotate-y, 0deg) * -0.18))
+    rotateX(calc(var(--story-rotate-x, 0deg) * 0.08));
   transform-origin: var(--story-origin-inline, 50%) var(--story-origin-block, 86%);
 }
 
@@ -6619,7 +6620,7 @@ onBeforeUnmount(() => {
   transform: translate3d(0, var(--story-visual-y, 0rem), calc(var(--story-card-lift, 0rem) * 0.5))
     scale(var(--story-visual-scale, 1));
   transform-origin: 50% 100%;
-  will-change: transform;
+  will-change: transform, opacity;
 }
 
 .media-slice__copy {
@@ -6837,15 +6838,15 @@ onBeforeUnmount(() => {
   }
 
   to {
-    opacity: 0.34;
-    transform: translate3d(0, -3rem, 0) scale(0.96);
+    opacity: 0.18;
+    transform: translate3d(0, -4.5rem, 0) scale(0.935);
   }
 }
 
 @keyframes homeScreenEnterRise {
   from {
-    opacity: 0.4;
-    transform: translate3d(0, 3rem, 0) scale(0.97);
+    opacity: 0.18;
+    transform: translate3d(0, 4rem, 0) scale(0.94);
   }
 
   to {
@@ -6856,8 +6857,8 @@ onBeforeUnmount(() => {
 
 @keyframes homeScreenEnterBloom {
   from {
-    opacity: 0.36;
-    transform: translate3d(0, 1.6rem, 0) scale(0.96);
+    opacity: 0.2;
+    transform: translate3d(0, 2.4rem, 0) scale(0.935);
   }
 
   to {
@@ -6873,8 +6874,8 @@ onBeforeUnmount(() => {
   }
 
   to {
-    opacity: 0.32;
-    transform: translate3d(0, -1rem, 0) scale(0.94);
+    opacity: 0.16;
+    transform: translate3d(0, -1.5rem, 0) scale(0.9);
   }
 }
 
@@ -6885,8 +6886,8 @@ onBeforeUnmount(() => {
   }
 
   to {
-    opacity: 0.84;
-    transform: translate3d(0, -0.6rem, 0) scale(0.992);
+    opacity: 0.72;
+    transform: translate3d(0, -1rem, 0) scale(0.982);
   }
 }
 
