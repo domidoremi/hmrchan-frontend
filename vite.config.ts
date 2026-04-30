@@ -106,6 +106,13 @@ function normalizeProxyTarget(rawTarget: string | undefined, fallbackTarget: str
   return target.replace(/\/+$/, '')
 }
 
+function resolveDevHost(rawHost: string | undefined): string | true {
+  const value = rawHost?.trim()
+  if (!value) return '127.0.0.1'
+  if (value.toLowerCase() === 'true') return true
+  return value
+}
+
 const OBFUSCATED_CHUNK_PATTERNS = [
   /^(?:auth|Auth)(?:$|[-_.]|[A-Z])/,
   /^(?:clientSecurity|ClientSecurity)/,
@@ -614,8 +621,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
      */
     server: {
       port: 5173,
-      host: true,
-      strictPort: false,
+      host: resolveDevHost(env.VITE_DEV_HOST),
+      strictPort: true,
 
       /** 文件预热 - 预加载关键文件加速首次访问 */
       warmup: {
