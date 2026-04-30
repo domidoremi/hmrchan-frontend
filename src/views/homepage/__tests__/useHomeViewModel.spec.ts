@@ -357,6 +357,8 @@ describe('useHomeViewModel', () => {
     expect(viewModel.bubbleItems.value[0]?.style['--bubble-justify-self']).not.toBe(
       desktopJustifySelf
     )
+    expect(viewModel.bubbleItems.value[0]?.style['--bubble-nudge-x']).toBe('0rem')
+    expect(viewModel.bubbleItems.value[0]?.style['--bubble-nudge-y']).toBe('0rem')
     expect(viewModel.bubbleItems.value[0]?.motionProfile).toBeDefined()
     expect(viewModel.bubbleItems.value[0]?.slotKey).toContain('mobile')
   })

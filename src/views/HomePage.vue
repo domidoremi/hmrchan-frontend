@@ -7985,9 +7985,13 @@ onBeforeUnmount(() => {
     min-block-size: 0;
     padding: 0.75rem;
     gap: 0.625rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: start;
   }
 
   .featured-rail-card__media {
+    inline-size: 100%;
     min-block-size: clamp(8.5rem, 20dvh, 10rem);
   }
 
@@ -8009,6 +8013,9 @@ onBeforeUnmount(() => {
   .featured-rail-card__body {
     gap: 0.375rem;
     padding: 0;
+    block-size: auto;
+    align-self: start;
+    overflow: visible;
   }
 
   .featured-rail-card__title {
@@ -8209,23 +8216,39 @@ onBeforeUnmount(() => {
   }
 
   .bubble-stage {
-    gap: 0.625rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.875rem;
     padding: 0.625rem;
     block-size: auto;
     min-block-size: 0;
     max-block-size: none;
     overflow: visible;
-    grid-template-columns: minmax(0, 1fr);
-    grid-auto-rows: auto;
     align-content: start;
   }
 
+  .bubble-stage--mobile {
+    gap: 0.875rem;
+    padding: 0.75rem 0.625rem 0.875rem;
+  }
+
   .latest-bubble {
+    display: block;
     inline-size: 100%;
-    grid-column: 1 / -1;
-    grid-row: auto;
     justify-self: stretch;
     align-self: start;
+    flex: 0 0 auto;
+  }
+
+  .bubble-stage--mobile .latest-bubble__float {
+    block-size: auto;
+    transform: translate3d(
+        calc(var(--bubble-live-x, 0rem) * 0.5),
+        calc(var(--bubble-live-y, 0rem) * 0.18),
+        0
+      )
+      rotate(calc(var(--bubble-live-rotate, 0deg) * 0.35));
   }
 
   .latest-bubble__inner {
@@ -8235,6 +8258,10 @@ onBeforeUnmount(() => {
     padding: 0.75rem 0.8125rem;
     border-radius: 1.125rem;
     gap: 0.375rem;
+  }
+
+  .bubble-stage--mobile .latest-bubble__inner {
+    min-block-size: clamp(6.5rem, 14dvh, 7.75rem);
   }
 
   .latest-bubble__text {
@@ -8253,9 +8280,10 @@ onBeforeUnmount(() => {
 
   .media-slice-list {
     inline-size: 100%;
-    padding-block: 0.375rem 0.875rem;
-    perspective: 14rem;
-    perspective-origin: 50% 18%;
+    padding-block: 0.5rem 1rem;
+    perspective: 12rem;
+    perspective-origin: 50% 22%;
+    transform-style: preserve-3d;
   }
 
   .media-slice {
@@ -8263,13 +8291,13 @@ onBeforeUnmount(() => {
     filter: none;
     transform-origin: 50% 100%;
     transform: translate3d(
-        calc(var(--story-translate-x, 0rem) * 0.45),
-        calc(var(--story-translate-y, 0rem) * 0.68),
-        calc(var(--story-translate-z, 0rem) * 0.45)
+        calc(var(--story-translate-x, 0rem) * 0.78),
+        calc(var(--story-translate-y, 0rem) * 0.9),
+        calc(var(--story-translate-z, 0rem) * 0.8)
       )
-      rotateX(calc(var(--story-rotate-x, 0deg) * 0.55))
-      rotateY(calc(var(--story-rotate-y, 0deg) * 0.55))
-      rotateZ(calc(var(--story-rotate-z, 0deg) * 0.35)) scale(var(--story-scale, 1));
+      rotateX(calc(var(--story-rotate-x, 0deg) * 0.78))
+      rotateY(calc(var(--story-rotate-y, 0deg) * 0.82))
+      rotateZ(calc(var(--story-rotate-z, 0deg) * 0.58)) scale(var(--story-scale, 1));
   }
 
   .media-slice:not(.is-active) {
@@ -8293,6 +8321,7 @@ onBeforeUnmount(() => {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.75rem;
     padding: 0.75rem;
+    transform-style: preserve-3d;
   }
 
   .media-slice__visual {
