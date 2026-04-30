@@ -60,4 +60,14 @@ describe('bodyScrollLock', () => {
     expect(document.body.style.paddingRight).toBe('4px')
     expect(window.scrollTo).toHaveBeenCalledWith(0, 180)
   })
+
+  it('can release a lock without restoring the previous scroll offset', () => {
+    lockBodyScroll({ preserveScrollY: false })
+
+    unlockBodyScroll()
+
+    expect(document.documentElement.style.overflow).toBe('')
+    expect(document.body.style.position).toBe('')
+    expect(window.scrollTo).not.toHaveBeenCalled()
+  })
 })

@@ -872,9 +872,7 @@ const { techStack } = useAboutData()
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
   margin-top: 0.125rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .link-arrow {
@@ -943,6 +941,7 @@ const { techStack } = useAboutData()
   justify-content: space-between;
   margin-bottom: var(--spacing-3);
   gap: var(--spacing-2);
+  flex-wrap: wrap;
 }
 
 .tech-name {
@@ -961,7 +960,8 @@ const { techStack } = useAboutData()
   background: rgba(var(--color-primary-rgb), 0.1);
   border: 1px solid rgba(var(--color-primary-rgb), 0.16);
   border-radius: var(--radius-full);
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
 }
 
 .tech-description {

@@ -10,17 +10,22 @@ interface ScrollLockSnapshot {
   htmlOverflow: string
   htmlOverscrollBehavior: string
   scrollY: number
+  preserveScrollY: boolean
 }
 
 let lockCount = 0
 let snapshot: ScrollLockSnapshot | null = null
+
+type ScrollLockOptions = {
+  preserveScrollY?: boolean
+}
 
 function getScrollY(): number {
   if (typeof window === 'undefined' || typeof document === 'undefined') return 0
   return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0
 }
 
-export function lockBodyScroll(): void {
+export function lockBodyScroll(options: ScrollLockOptions = {}): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
 
   const body = document.body
@@ -42,6 +47,7 @@ export function lockBodyScroll(): void {
       htmlOverflow: html.style.overflow,
       htmlOverscrollBehavior: html.style.overscrollBehavior,
       scrollY: getScrollY(),
+      preserveScrollY: options.preserveScrollY ?? true,
     }
 
     html.style.overflow = 'hidden'
@@ -83,6 +89,9 @@ export function unlockBodyScroll(): void {
   html.style.overflow = snapshot.htmlOverflow
   html.style.overscrollBehavior = snapshot.htmlOverscrollBehavior
 
+  const shouldRestoreScroll = snapshot.preserveScrollY
   snapshot = null
-  window.scrollTo(0, restoreScrollY)
+  if (shouldRestoreScroll) {
+    window.scrollTo(0, restoreScrollY)
+  }
 }

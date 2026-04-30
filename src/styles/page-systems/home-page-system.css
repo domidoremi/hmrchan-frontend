@@ -377,7 +377,8 @@
   inline-size: min(100%, var(--home-story-stage-max-inline));
   max-inline-size: var(--home-story-stage-max-inline);
   margin-inline: auto;
-  block-size: var(--home-safe-block-size);
+  block-size: auto;
+  min-block-size: var(--home-safe-block-size);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(0.95rem, 1.8vw, 1.25rem);
@@ -560,11 +561,12 @@
   }
 
   .home-page .story-stage {
-    block-size: var(--home-safe-block-size);
+    block-size: auto;
     min-block-size: var(--home-safe-block-size);
     gap: 0.75rem;
     padding-block: calc(var(--home-stage-safe-top) + 0.625rem)
       calc(0.75rem + var(--home-stage-safe-bottom));
+    transform-style: preserve-3d;
     perspective: 16rem;
     perspective-origin: 50% 22%;
   }

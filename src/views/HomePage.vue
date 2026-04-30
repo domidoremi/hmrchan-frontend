@@ -6080,16 +6080,15 @@ onBeforeUnmount(() => {
   position: relative;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(6.75rem, auto);
   align-items: stretch;
   align-content: stretch;
   justify-items: stretch;
   gap: clamp(0.7rem, 1vw, 0.95rem);
   padding: clamp(1rem, 1.8vw, 1.3rem);
   margin-top: 0;
-  block-size: 100%;
-  min-block-size: 0;
-  max-block-size: 100%;
+  block-size: auto;
+  min-block-size: clamp(24rem, 52dvh, 34rem);
   align-self: stretch;
   contain: layout paint;
   border-radius: var(--home-shell-radius);
@@ -6120,12 +6119,12 @@ onBeforeUnmount(() => {
 
 .bubble-stage--tablet {
   grid-template-columns: repeat(8, minmax(0, 1fr));
-  grid-template-rows: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(6.5rem, auto);
 }
 
 .bubble-stage--mobile {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(5.9rem, auto);
   gap: clamp(0.55rem, 1vw, 0.75rem);
   padding: clamp(0.625rem, 1.4vw, 0.875rem);
 }
@@ -6319,7 +6318,8 @@ onBeforeUnmount(() => {
 .story-stage {
   position: sticky;
   inset-block-start: 0;
-  block-size: var(--home-safe-block-size);
+  block-size: auto;
+  min-block-size: var(--home-safe-block-size);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(0.95rem, 1.8vw, 1.25rem);
@@ -6355,8 +6355,8 @@ onBeforeUnmount(() => {
 
 .media-slice-list {
   position: relative;
-  block-size: 100%;
-  min-block-size: 0;
+  block-size: auto;
+  min-block-size: 100%;
   display: grid;
   place-items: center;
   gap: 0;
@@ -6920,6 +6920,35 @@ onBeforeUnmount(() => {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .story-stage {
+    position: relative;
+    inset-block-start: auto;
+  }
+
+  .media-slice-list {
+    padding-block-end: clamp(2rem, 4vw, 3rem);
+  }
+
+  .media-slice {
+    position: relative;
+    inset: auto;
+    block-size: auto;
+    min-block-size: 0;
+    overflow: visible;
+    margin-block-end: 1rem;
+    opacity: 1;
+    filter: none;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  .media-slice__sticky {
+    block-size: auto;
+    max-block-size: none;
+    min-block-size: clamp(22rem, 42dvh, 28rem);
+    transform: none;
+  }
+
   .hero-spotlight-stack {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: none;
@@ -7256,6 +7285,7 @@ onBeforeUnmount(() => {
   .bubble-stage {
     gap: clamp(0.55rem, 1vw, 0.75rem);
     padding: clamp(0.625rem, 1.2vw, 0.875rem);
+    min-block-size: clamp(22rem, 48dvh, 30rem);
   }
 
   .latest-bubble {
@@ -7724,7 +7754,7 @@ onBeforeUnmount(() => {
   }
 
   .bubble-stage {
-    min-block-size: 0;
+    min-block-size: clamp(20rem, 44dvh, 26rem);
   }
 
   .story-merge-panel {
@@ -7769,7 +7799,7 @@ onBeforeUnmount(() => {
   }
 
   .story-stage {
-    block-size: var(--home-safe-block-size);
+    block-size: auto;
     min-block-size: var(--home-safe-block-size);
     gap: 0.75rem;
     padding-block: calc(var(--home-stage-safe-top) + 0.625rem)
@@ -8181,21 +8211,26 @@ onBeforeUnmount(() => {
   .bubble-stage {
     gap: 0.625rem;
     padding: 0.625rem;
-    block-size: 100%;
+    block-size: auto;
     min-block-size: 0;
-    max-block-size: 100%;
-    overflow: clip;
+    max-block-size: none;
+    overflow: visible;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    align-content: start;
   }
 
   .latest-bubble {
     inline-size: 100%;
+    grid-column: 1 / -1;
+    grid-row: auto;
     justify-self: stretch;
-    align-self: stretch;
+    align-self: start;
   }
 
   .latest-bubble__inner {
-    block-size: 100%;
-    min-block-size: 0;
+    block-size: auto;
+    min-block-size: clamp(6rem, 12dvh, 7rem);
     grid-template-rows: minmax(0, 1fr) auto;
     padding: 0.75rem 0.8125rem;
     border-radius: 1.125rem;
@@ -8344,7 +8379,7 @@ onBeforeUnmount(() => {
   }
 
   .bubble-stage {
-    min-block-size: 0;
+    min-block-size: auto;
   }
 }
 

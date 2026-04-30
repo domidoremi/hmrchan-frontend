@@ -119,83 +119,189 @@
         </label>
       </PageToolbar>
 
-      <section class="planner-shell schedule-panel schedule-panel--planner">
-        <div class="planner-shell__head">
-          <div class="planner-shell__copy">
-            <p class="planner-shell__eyebrow">{{ $t('schedule.plannerTitle') }}</p>
-          </div>
-          <span class="paper-chip">{{ activeCategoryLabel }}</span>
-        </div>
-
-        <div v-if="plannerView === 'week'" class="planner-week-grid">
-          <button
-            v-for="day in weekDays"
-            :key="day.key"
-            type="button"
-            class="planner-week-day"
-            :class="{
-              'is-selected': selectedDay?.key === day.key,
-              'is-today': day.isToday,
-              'has-events': day.events.length > 0,
-            }"
-            @click="selectPlannerDay(day)"
-          >
-            <span class="planner-week-day__label">
-              {{ formatWeekdayLabel(day.fullDate) }}
-            </span>
-            <strong class="planner-week-day__date">{{ day.date }}</strong>
-            <span class="planner-week-day__count">
-              {{ day.events.length }} {{ $t('schedule.eventsCount') }}
-            </span>
-            <span v-if="day.events[0]" class="planner-week-day__event">
-              {{ day.events[0].title }}
-            </span>
-            <span v-if="day.events.length > 1" class="planner-week-day__overflow">
-              +{{ day.events.length - 1 }}
-            </span>
-          </button>
-        </div>
-
-        <div v-else-if="plannerView === 'day'" class="planner-day-focus paper-rule">
-          <strong class="planner-day-focus__title">{{
-            selectedDayLabel || plannerPeriodLabel
-          }}</strong>
-          <p class="planner-day-focus__summary">
-            {{
-              selectedDayEvents.length > 0
-                ? `${selectedDayEvents.length} ${$t('schedule.eventsCount')}`
-                : $t('schedule.noEvents')
-            }}
-          </p>
-        </div>
-
-        <div class="planner-insights">
-          <article class="planner-insight">
-            <span class="planner-insight__label">{{ $t('schedule.insights.focus') }}</span>
-            <strong class="planner-insight__value">
-              {{ highlightedEvent?.title || $t('schedule.insights.empty') }}
-            </strong>
-          </article>
-          <article class="planner-insight">
-            <span class="planner-insight__label">{{ $t('schedule.insights.next') }}</span>
-            <strong class="planner-insight__value">
-              {{ nextHighlightLabel }}
-            </strong>
-          </article>
-          <article class="planner-insight">
-            <span class="planner-insight__label">{{ $t('schedule.insights.distribution') }}</span>
-            <div class="planner-insight__chips">
-              <span
-                v-for="item in categoryBreakdown"
-                :key="item.category"
-                class="paper-chip"
-                :style="{ '--paper-chip-accent': getCategoryColor(item.category) }"
-              >
-                {{ $t(`schedule.categories.${item.category}`) }} · {{ item.count }}
-              </span>
+      <section class="schedule-overview">
+        <section class="agenda-shell schedule-panel content-auto-lg">
+          <div class="agenda-shell__head page-section-head page-section-head--stage">
+            <div class="page-section-copy">
+              <p class="page-section-kicker">{{ monthLabel }}</p>
+              <h2 class="page-section-title">{{ $t('schedule.upcoming') }}</h2>
+              <p class="page-section-subtitle">{{ agendaSummaryLabel }}</p>
             </div>
-          </article>
-        </div>
+
+            <div class="agenda-shell__actions">
+              <ControlButton
+                class="agenda-shell__action"
+                size="compact"
+                @click="jumpToAgendaDate('today')"
+              >
+                <template #start>
+                  <CalendarCheck :size="14" />
+                </template>
+                <span>{{ $t('schedule.today') }}</span>
+              </ControlButton>
+              <ControlButton
+                v-if="nextAgendaDateLabel"
+                class="agenda-shell__action"
+                size="compact"
+                @click="jumpToAgendaDate('next')"
+              >
+                <template #start>
+                  <ChevronRight :size="14" />
+                </template>
+                <span>{{ nextAgendaDateLabel }}</span>
+              </ControlButton>
+            </div>
+          </div>
+
+          <div class="agenda-strip">
+            <article class="agenda-spotlight agenda-spotlight--primary">
+              <span class="agenda-spotlight__label">{{ $t('schedule.today') }}</span>
+              <strong class="agenda-spotlight__value">{{ todayAgendaTitle }}</strong>
+              <span class="agenda-spotlight__meta">{{ todayAgendaMeta }}</span>
+            </article>
+            <article class="agenda-spotlight">
+              <span class="agenda-spotlight__label">{{ $t('schedule.insights.next') }}</span>
+              <strong class="agenda-spotlight__value">{{ nextAgendaTitle }}</strong>
+              <span class="agenda-spotlight__meta">{{ nextAgendaMeta }}</span>
+            </article>
+            <article class="agenda-spotlight">
+              <span class="agenda-spotlight__label">{{ $t('schedule.filterLabel') }}</span>
+              <strong class="agenda-spotlight__value">{{ activeCategoryLabel }}</strong>
+              <span class="agenda-spotlight__meta"
+                >{{ upcomingEvents.length }} {{ $t('schedule.eventsCount') }}</span
+              >
+            </article>
+          </div>
+
+          <StateIndicator
+            v-if="upcomingEvents.length === 0 && !isLoading"
+            variant="empty"
+            :description="$t('schedule.noUpcoming')"
+          />
+
+          <div v-else class="events-list agenda-events-list">
+            <article
+              v-for="evt in upcomingEvents"
+              :key="evt.id"
+              class="event-card page-list-card"
+              role="button"
+              tabindex="0"
+              @click="openDetail(evt.id)"
+              @keydown.enter.prevent="openDetail(evt.id)"
+              @keydown.space.prevent="openDetail(evt.id)"
+            >
+              <div
+                class="event-category-bar"
+                :style="{ background: getCategoryColor(evt.category) }"
+              />
+              <div class="event-body">
+                <div class="event-header">
+                  <span
+                    class="event-badge"
+                    :style="{
+                      background: getCategoryColor(evt.category) + '16',
+                      color: getCategoryColor(evt.category),
+                    }"
+                  >
+                    {{ $t(`schedule.categories.${evt.category}`) }}
+                  </span>
+                  <span class="event-time">
+                    {{ formatEventDateTime(evt.start, evt.allDay) }}
+                  </span>
+                </div>
+                <h3 class="event-title">{{ evt.title }}</h3>
+                <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
+                <div v-if="evt.venue" class="event-venue">
+                  <MapPin :size="14" />
+                  <span>{{ evt.venue }}</span>
+                </div>
+                <div class="event-card-hint">
+                  <ChevronRight :size="14" />
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="planner-shell schedule-panel schedule-panel--planner">
+          <div class="planner-shell__head">
+            <div class="planner-shell__copy">
+              <p class="planner-shell__eyebrow">{{ $t('schedule.plannerTitle') }}</p>
+              <p class="planner-shell__summary">{{ plannerSummaryLabel }}</p>
+            </div>
+            <span class="paper-chip">{{ activeCategoryLabel }}</span>
+          </div>
+
+          <div v-if="plannerView === 'week'" class="planner-week-grid">
+            <button
+              v-for="day in weekDays"
+              :key="day.key"
+              type="button"
+              class="planner-week-day"
+              :class="{
+                'is-selected': selectedDay?.key === day.key,
+                'is-today': day.isToday,
+                'has-events': day.events.length > 0,
+              }"
+              @click="selectPlannerDay(day)"
+            >
+              <span class="planner-week-day__label">
+                {{ formatWeekdayLabel(day.fullDate) }}
+              </span>
+              <strong class="planner-week-day__date">{{ day.date }}</strong>
+              <span class="planner-week-day__count">
+                {{ day.events.length }} {{ $t('schedule.eventsCount') }}
+              </span>
+              <span v-if="day.events[0]" class="planner-week-day__event">
+                {{ day.events[0].title }}
+              </span>
+              <span v-if="day.events.length > 1" class="planner-week-day__overflow">
+                +{{ day.events.length - 1 }}
+              </span>
+            </button>
+          </div>
+
+          <div v-else-if="plannerView === 'day'" class="planner-day-focus paper-rule">
+            <strong class="planner-day-focus__title">{{
+              selectedDayLabel || plannerPeriodLabel
+            }}</strong>
+            <p class="planner-day-focus__summary">
+              {{
+                selectedDayEvents.length > 0
+                  ? `${selectedDayEvents.length} ${$t('schedule.eventsCount')}`
+                  : $t('schedule.noEvents')
+              }}
+            </p>
+          </div>
+
+          <div class="planner-insights">
+            <article class="planner-insight">
+              <span class="planner-insight__label">{{ $t('schedule.insights.focus') }}</span>
+              <strong class="planner-insight__value">
+                {{ highlightedEvent?.title || $t('schedule.insights.empty') }}
+              </strong>
+            </article>
+            <article class="planner-insight">
+              <span class="planner-insight__label">{{ $t('schedule.insights.next') }}</span>
+              <strong class="planner-insight__value">
+                {{ nextHighlightLabel }}
+              </strong>
+            </article>
+            <article class="planner-insight">
+              <span class="planner-insight__label">{{ $t('schedule.insights.distribution') }}</span>
+              <div class="planner-insight__chips">
+                <span
+                  v-for="item in categoryBreakdown"
+                  :key="item.category"
+                  class="paper-chip"
+                  :style="{ '--paper-chip-accent': getCategoryColor(item.category) }"
+                >
+                  {{ $t(`schedule.categories.${item.category}`) }} · {{ item.count }}
+                </span>
+              </div>
+            </article>
+          </div>
+        </section>
       </section>
 
       <!-- 日历网格 -->
@@ -344,62 +450,6 @@
               </div>
             </section>
           </Transition>
-
-          <section
-            v-if="plannerView === 'month' && !selectedDay"
-            class="upcoming-section schedule-panel content-auto-lg"
-          >
-            <div class="page-section-head">
-              <div class="page-section-copy">
-                <p class="page-section-kicker">{{ monthLabel }}</p>
-                <h2 class="page-section-title">{{ $t('schedule.upcoming') }}</h2>
-                <p class="page-section-subtitle">{{ $t('schedule.subtitle') }}</p>
-              </div>
-            </div>
-            <StateIndicator
-              v-if="upcomingEvents.length === 0 && !isLoading"
-              variant="empty"
-              :description="$t('schedule.noUpcoming')"
-            />
-            <div v-else class="events-list">
-              <article
-                v-for="evt in upcomingEvents"
-                :key="evt.id"
-                class="event-card page-list-card"
-                role="button"
-                tabindex="0"
-                @click="openDetail(evt.id)"
-                @keydown.enter.prevent="openDetail(evt.id)"
-                @keydown.space.prevent="openDetail(evt.id)"
-              >
-                <div
-                  class="event-category-bar"
-                  :style="{ background: getCategoryColor(evt.category) }"
-                />
-                <div class="event-body">
-                  <div class="event-header">
-                    <span
-                      class="event-badge"
-                      :style="{
-                        background: getCategoryColor(evt.category) + '16',
-                        color: getCategoryColor(evt.category),
-                      }"
-                    >
-                      {{ $t(`schedule.categories.${evt.category}`) }}
-                    </span>
-                    <span class="event-time">
-                      {{ formatEventDate(evt.start) }}
-                    </span>
-                  </div>
-                  <h3 class="event-title">{{ evt.title }}</h3>
-                  <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
-                  <div class="event-card-hint">
-                    <ChevronRight :size="14" />
-                  </div>
-                </div>
-              </article>
-            </div>
-          </section>
         </div>
 
         <aside
@@ -938,6 +988,67 @@ const upcomingEvents = computed(() => {
     .slice(0, 10)
 })
 
+const todayEvents = computed(() => {
+  const todayKey = formatCalendarDateKey(new Date())
+  return filteredEvents.value
+    .filter((event) => event.start.slice(0, 10) === todayKey)
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+})
+
+const agendaSummaryLabel = computed(() => {
+  if (todayEvents.value.length > 0) {
+    return `${todayEvents.value.length} ${t('schedule.eventsCount')} · ${activeCategoryLabel.value}`
+  }
+  if (upcomingEvents.value.length > 0) {
+    return `${upcomingEvents.value.length} ${t('schedule.eventsCount')} · ${nextHighlightLabel.value}`
+  }
+  return t('schedule.noUpcoming')
+})
+
+const plannerSummaryLabel = computed(() => {
+  if (plannerView.value === 'month') {
+    return `${monthLabel.value} · ${activeCategoryLabel.value}`
+  }
+  if (selectedDay.value) {
+    return `${selectedDayLabel.value} · ${
+      selectedDayEvents.value.length > 0
+        ? `${selectedDayEvents.value.length} ${t('schedule.eventsCount')}`
+        : t('schedule.noEvents')
+    }`
+  }
+  return plannerPeriodLabel.value
+})
+
+const todayAgendaTitle = computed(() => {
+  if (todayEvents.value[0]) return todayEvents.value[0].title
+  return t('schedule.noEvents')
+})
+
+const todayAgendaMeta = computed(() => {
+  if (todayEvents.value[0]) {
+    return formatEventDateTime(todayEvents.value[0].start, todayEvents.value[0].allDay)
+  }
+  return activeCategoryLabel.value
+})
+
+const nextAgendaTitle = computed(() => {
+  if (upcomingEvents.value[0]) return upcomingEvents.value[0].title
+  return t('schedule.insights.empty')
+})
+
+const nextAgendaMeta = computed(() => {
+  if (upcomingEvents.value[0]) {
+    return formatEventDateTime(upcomingEvents.value[0].start, upcomingEvents.value[0].allDay)
+  }
+  return monthLabel.value
+})
+
+const nextAgendaDateLabel = computed(() => {
+  const event = upcomingEvents.value[0]
+  if (!event) return ''
+  return formatEventDate(event.start)
+})
+
 const highlightedEvent = computed(
   () => selectedDayEvents.value[0] ?? upcomingEvents.value[0] ?? null
 )
@@ -1049,7 +1160,6 @@ function prevMonth() {
   }
 
   monthTransition.value = 'month-slide-right'
-  selectedDay.value = null
   if (currentMonth.value === 0) {
     currentMonth.value = 11
     currentYear.value--
@@ -1071,7 +1181,6 @@ function nextMonth() {
   }
 
   monthTransition.value = 'month-slide-left'
-  selectedDay.value = null
   if (currentMonth.value === 11) {
     currentMonth.value = 0
     currentYear.value++
@@ -1092,10 +1201,6 @@ function goToday() {
 
 function setCategory(cat: ScheduleCategory | 'all') {
   activeCategory.value = cat
-  if (plannerView.value === 'month') {
-    selectedDay.value = null
-    return
-  }
   selectedDay.value = buildCalendarDay(plannerAnchorDate.value)
 }
 
@@ -1156,6 +1261,28 @@ function formatEventTime(dateStr: string): string {
 function formatEventDate(dateStr: string): string {
   const d = new Date(dateStr)
   return d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
+}
+
+function formatEventDateTime(dateStr: string, allDay: boolean): string {
+  if (allDay) {
+    return `${formatEventDate(dateStr)} · ${t('schedule.allDay')}`
+  }
+
+  return `${formatEventDate(dateStr)} · ${formatEventTime(dateStr)}`
+}
+
+function jumpToAgendaDate(target: 'today' | 'next') {
+  const targetDate =
+    target === 'today'
+      ? new Date()
+      : upcomingEvents.value[0]
+        ? new Date(upcomingEvents.value[0].start)
+        : null
+
+  if (!targetDate || Number.isNaN(targetDate.getTime())) return
+
+  jumpToDate(targetDate)
+  plannerView.value = 'week'
 }
 
 function resolveCalendarDay(dateStr: string): CalendarDay | null {
@@ -1545,8 +1672,7 @@ watch(
   { immediate: true }
 )
 
-watch(plannerView, (nextView) => {
-  if (nextView === 'month') return
+watch(plannerView, () => {
   if (!selectedDay.value) {
     selectedDay.value = buildCalendarDay(new Date())
   }
@@ -1609,6 +1735,14 @@ onMounted(() => {
   gap: var(--spacing-6);
 }
 
+.schedule-overview {
+  display: grid;
+  grid-template-columns: minmax(0, minmax(22rem, 0.9fr)) minmax(0, 1.1fr);
+  gap: var(--spacing-6);
+  margin-block-end: var(--spacing-6);
+  align-items: start;
+}
+
 .schedule-workspace--detail {
   grid-template-columns: minmax(0, 1.3fr) minmax(20rem, 0.92fr);
   align-items: start;
@@ -1634,14 +1768,94 @@ onMounted(() => {
   margin-top: 0.25rem;
 }
 
+.agenda-shell {
+  display: grid;
+  gap: var(--spacing-4);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  min-inline-size: 0;
+}
+
+.agenda-shell__head {
+  margin-block-end: 0;
+}
+
+.agenda-shell__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+  min-inline-size: 0;
+}
+
+.agenda-shell__action {
+  flex: 0 1 auto;
+}
+
+.agenda-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-3);
+}
+
+.agenda-spotlight {
+  display: grid;
+  gap: 0.35rem;
+  min-inline-size: 0;
+  padding: 0.95rem;
+  border-radius: var(--planner-surface-radius, var(--ui-radius-card, var(--radius-xl)));
+  border: 0.0625rem solid
+    var(--planner-surface-border, var(--surface-minimal-border, var(--color-border)));
+  background: var(--planner-surface-bg, var(--surface-minimal-panel, var(--color-surface)));
+}
+
+.agenda-spotlight--primary {
+  background: var(
+    --planner-surface-bg-strong,
+    var(--surface-minimal-muted, var(--color-surface-variant))
+  );
+}
+
+.agenda-spotlight__label {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
+}
+
+.agenda-spotlight__value {
+  color: var(--surface-minimal-text, var(--color-text-primary));
+  font-size: clamp(1rem, 1rem + 0.25vw, 1.2rem);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.agenda-spotlight__meta {
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.agenda-events-list {
+  max-block-size: min(46rem, 100%);
+  overflow: auto;
+  padding-inline-end: 0.125rem;
+}
+
 .category-filters {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   min-inline-size: 0;
   max-inline-size: 100%;
 }
 
 .schedule-filter-pill {
-  white-space: nowrap;
+  min-inline-size: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .planner-view-switch {
@@ -1736,6 +1950,13 @@ onMounted(() => {
 .planner-shell__head {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
+}
+
+.planner-shell__summary {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--surface-minimal-text-muted, var(--color-text-secondary));
 }
 
 .planner-shell__eyebrow {
@@ -2179,18 +2400,6 @@ onMounted(() => {
   text-decoration: underline;
 }
 
-/* ========== 即将到来 ========== */
-.upcoming-section {
-  margin-bottom: 0;
-  padding: clamp(1rem, 2vw, 1.5rem);
-}
-
-.schedule-section-title {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-4);
-}
-
 /* ========== 过渡动画 ========== */
 .slide-fade-enter-active {
   transition:
@@ -2216,6 +2425,7 @@ onMounted(() => {
 
 /* ========== 响应式 ========== */
 @media (max-width: 64rem) {
+  .schedule-overview,
   .schedule-workspace--detail {
     grid-template-columns: 1fr;
   }
@@ -2239,9 +2449,19 @@ onMounted(() => {
     overflow: hidden;
   }
 
+  .schedule-overview,
+  .agenda-strip,
   .planner-shell__head,
   .planner-insights {
     grid-template-columns: 1fr;
+  }
+
+  .agenda-shell__actions {
+    justify-content: stretch;
+  }
+
+  .agenda-shell__action {
+    flex: 1 1 100%;
   }
 
   .planner-view-switch {
@@ -2260,7 +2480,7 @@ onMounted(() => {
 
   .schedule-panel,
   .day-events,
-  .upcoming-section,
+  .agenda-shell,
   .calendar-wrapper,
   .schedule-detail-shell {
     padding: 1rem;
@@ -2284,24 +2504,27 @@ onMounted(() => {
     height: 0.25rem;
   }
 
-  .category-filters {
+  .category-filters.page-control-group-shell.page-control-group-shell--comfortable {
     justify-content: flex-start;
     inline-size: 100%;
     max-inline-size: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    scroll-padding-inline: var(--spacing-2);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-2);
+    align-items: stretch;
+    overflow: visible;
   }
 
-  .category-filters::-webkit-scrollbar {
-    display: none;
+  .category-filters.page-control-group-shell.page-control-group-shell--comfortable > * {
+    min-inline-size: 0;
   }
 
-  .schedule-filter-pill {
-    flex: 0 0 auto;
-    white-space: nowrap;
+  .schedule-filter-pill.page-control {
+    flex: 1 1 100%;
+    inline-size: 100%;
+    min-inline-size: 0;
+    justify-content: center;
+    white-space: normal;
   }
 
   .schedule-detail-actions {
@@ -2312,6 +2535,11 @@ onMounted(() => {
   .detail-loading,
   .schedule-detail-state {
     min-block-size: 22rem;
+  }
+
+  .agenda-events-list {
+    max-block-size: none;
+    overflow: visible;
   }
 }
 

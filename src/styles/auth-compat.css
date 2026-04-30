@@ -263,6 +263,7 @@
 #app .auth-form {
   display: grid;
   gap: var(--appearance-surface-gap-sm);
+  min-inline-size: 0;
 }
 
 #app .form-group {
@@ -531,6 +532,7 @@
 #app .auth-inline-state__actions {
   display: grid;
   gap: 0.45rem;
+  min-inline-size: 0;
 }
 
 #app .turnstile-header,
@@ -892,6 +894,14 @@
     padding-inline: 2.875rem;
   }
 
+  #app .auth-inline-state {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #app .auth-inline-state__icon {
+    justify-self: start;
+  }
+
   #app .auth-title {
     font-size: clamp(1.35rem, 1.05rem + 0.9vw, 1.75rem);
   }
@@ -916,12 +926,17 @@
 @media (max-height: 52rem) {
   #app .auth-page {
     padding: 0.625rem;
+    place-items: start center;
   }
 
   #app .auth-shell,
   #app .auth-card {
     gap: 0.875rem;
     padding: 1rem;
+  }
+
+  #app .auth-shell {
+    align-self: start;
   }
 
   #app .auth-shell__header,

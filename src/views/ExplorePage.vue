@@ -728,11 +728,14 @@ onBeforeUnmount(() => {
 .page-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-3);
+  min-inline-size: 0;
 }
 
 .search-trigger {
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-inline-size: 0;
 }
 
 .search-trigger-text {
@@ -770,6 +773,8 @@ onBeforeUnmount(() => {
   --masonry-gap: var(--spacing-3);
 
   display: flex;
+  align-items: flex-start;
+  flex-wrap: nowrap;
   gap: var(--masonry-gap);
   inline-size: 100%;
   margin-block-start: clamp(0.25rem, 0.8vw, 0.6rem);
@@ -781,6 +786,16 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: var(--masonry-gap);
   min-width: 0; /* 防止 flex 子项溢出 */
+}
+
+@media (max-width: 767px) {
+  .posts-masonry-js {
+    flex-direction: column;
+  }
+
+  .masonry-column {
+    inline-size: 100%;
+  }
 }
 
 /* 响应式间距调整 */

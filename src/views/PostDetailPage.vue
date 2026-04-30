@@ -1514,7 +1514,7 @@ onUnmounted(() => {
   min-height: calc(100svh - var(--navbar-height));
   min-height: calc(100dvh - var(--navbar-height));
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: var(--post-vert-pad) var(--post-gutter) var(--spacing-6);
   overflow: visible;
@@ -2138,6 +2138,7 @@ onUnmounted(() => {
   align-self: start;
   min-width: 0;
   max-width: 100%;
+  min-inline-size: 0;
   padding: var(--spacing-4);
   background: var(--post-panel-bg);
   border-left: 1px solid var(--post-panel-border);
@@ -2157,7 +2158,8 @@ onUnmounted(() => {
 
   .media-viewer {
     width: 100%;
-    max-height: min(60svh, 36rem);
+    min-height: clamp(15rem, 44dvh, 24rem);
+    max-height: min(56svh, 32rem);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
@@ -2234,7 +2236,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--spacing-2);
   padding-bottom: var(--spacing-2);
-  min-block-size: 8.5rem;
+  min-block-size: 0;
   border-bottom: 1px solid var(--post-panel-border);
 }
 
@@ -2276,7 +2278,7 @@ onUnmounted(() => {
 
 .post-description-block {
   min-width: 0;
-  min-block-size: 10rem;
+  min-block-size: 0;
 }
 
 .post-description {
@@ -2327,7 +2329,7 @@ onUnmounted(() => {
 
 .post-text-panel {
   width: min(75ch, calc(100vw - 2 * var(--spacing-4)));
-  height: min(82svh, calc(100dvh - 2 * var(--spacing-4)));
+  max-height: min(82svh, calc(100dvh - 2 * var(--spacing-4)));
   border-radius: var(--radius-xl);
   overflow: hidden;
   border: 1px solid var(--post-modal-border);
