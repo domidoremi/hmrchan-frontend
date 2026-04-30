@@ -28,6 +28,49 @@
             </div>
           </div>
 
+          <div class="profile-command-grid">
+            <RouterLink
+              :to="
+                withProfileReturnTo('/profile/favorites', {
+                  returnTo: route.fullPath,
+                })
+              "
+              class="profile-command-card"
+            >
+              <span class="profile-command-card__eyebrow">{{ $t('profile.tabs.favorites') }}</span>
+              <strong class="profile-command-card__title">{{ primaryContentCard.title }}</strong>
+              <p class="profile-command-card__text">{{ primaryContentCard.hint }}</p>
+            </RouterLink>
+
+            <RouterLink
+              v-if="securitySection"
+              :to="withProfileReturnTo(securitySection.route, { returnTo: route.fullPath })"
+              class="profile-command-card profile-command-card--security"
+            >
+              <span class="profile-command-card__eyebrow">{{
+                $t('profile.securityHubTitle')
+              }}</span>
+              <strong class="profile-command-card__title">{{
+                $t('profile.securityHubTitle')
+              }}</strong>
+              <p class="profile-command-card__text">{{ $t('profile.securityHubHint') }}</p>
+            </RouterLink>
+
+            <div class="profile-command-list">
+              <RouterLink
+                v-for="section in frequentSections"
+                :key="section.id"
+                :to="withProfileReturnTo(section.route, { returnTo: route.fullPath })"
+                class="profile-command-link"
+              >
+                <span class="profile-command-link__label">{{ $t(section.labelKey) }}</span>
+                <span v-if="resolveCount(section) !== null" class="profile-command-link__count">
+                  {{ resolveCount(section) }}
+                </span>
+              </RouterLink>
+            </div>
+          </div>
+
           <div class="profile-overview__summary">
             <article v-for="item in summaryItems" :key="item.key" class="summary-card">
               <span class="summary-card__label">{{ item.label }}</span>
@@ -154,6 +197,15 @@ const summaryItems = computed(() => {
 const securitySection = computed(
   () => profileSections.find((section) => section.id === 'security') ?? null
 )
+const frequentSections = computed(() =>
+  profileSections.filter((section) =>
+    ['favorites', 'history', 'notifications', 'settings'].includes(section.id)
+  )
+)
+const primaryContentCard = computed(() => ({
+  title: t('profile.tabs.favorites'),
+  hint: t('favorites.organizeHint'),
+}))
 
 const groupedSections = computed(() => {
   const groups: Array<{
@@ -324,6 +376,95 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
   gap: var(--spacing-3);
+}
+
+.profile-command-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--spacing-3);
+}
+
+.profile-command-card {
+  display: grid;
+  gap: var(--spacing-2);
+  min-inline-size: 0;
+  padding: clamp(1rem, 2vw, 1.25rem);
+  border-radius: 1rem;
+  border: 1px solid var(--profile-surface-border);
+  background: color-mix(in srgb, var(--profile-surface-bg-soft) 94%, transparent);
+  color: inherit;
+  text-decoration: none;
+}
+
+.profile-command-card--security {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(var(--color-primary-rgb), 0.14), transparent 34%),
+    color-mix(in srgb, var(--profile-surface-bg-soft) 96%, transparent);
+}
+
+.profile-command-card__eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.profile-command-card__title {
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+}
+
+.profile-command-card__title,
+.profile-command-card__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.profile-command-card__text {
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.profile-command-list {
+  display: grid;
+  gap: var(--spacing-2);
+}
+
+.profile-command-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  min-inline-size: 0;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid var(--profile-surface-border);
+  background: color-mix(in srgb, var(--profile-surface-bg-soft) 92%, transparent);
+  color: inherit;
+  text-decoration: none;
+}
+
+.profile-command-link__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+.profile-command-link__count {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+  padding-inline: 0.5rem;
+  border-radius: 999rem;
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
 }
 
 .profile-security-entry {
@@ -514,6 +655,10 @@ onMounted(() => {
   .profile-nav-card__cta {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .profile-command-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

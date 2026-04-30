@@ -91,6 +91,64 @@
         </div>
       </Dialog>
 
+      <section v-if="!searchQuery" class="community-priority-grid content-auto-lg">
+        <article class="community-priority-card surface-editorial">
+          <div class="community-priority-card__copy">
+            <span class="community-priority-card__eyebrow">
+              {{ isAuthenticated ? $t('community.newDiscussion') : $t('nav.login') }}
+            </span>
+            <h2 class="community-priority-card__title">
+              {{ isAuthenticated ? $t('community.newDiscussion') : $t('community.loginToPost') }}
+            </h2>
+            <p class="community-priority-card__text">
+              {{ isAuthenticated ? $t('community.guideDescription') : $t('community.guidePoint1') }}
+            </p>
+          </div>
+
+          <div class="community-priority-card__actions">
+            <Button v-if="isAuthenticated" @click="scrollToComposer">
+              {{ $t('community.newDiscussion') }}
+            </Button>
+            <template v-else>
+              <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
+              <ControlButton size="compact" @click="goToExplore">
+                {{ $t('nav.explore') }}
+              </ControlButton>
+            </template>
+          </div>
+        </article>
+
+        <article class="community-priority-card page-list-card">
+          <div class="community-priority-card__copy">
+            <span class="community-priority-card__eyebrow">{{
+              $t('community.recentDiscussions')
+            }}</span>
+            <h2 class="community-priority-card__title">{{ recentLeadTitle }}</h2>
+            <p class="community-priority-card__text">{{ recentLeadBody }}</p>
+          </div>
+          <p class="community-priority-card__meta">{{ recentLeadMeta }}</p>
+          <div class="community-priority-card__actions">
+            <ControlButton size="compact" active @click="focusRecentDiscussions">
+              {{ $t('community.recentDiscussions') }}
+            </ControlButton>
+          </div>
+        </article>
+
+        <article class="community-priority-card page-list-card">
+          <div class="community-priority-card__copy">
+            <span class="community-priority-card__eyebrow">{{ $t('community.hotTopics') }}</span>
+            <h2 class="community-priority-card__title">{{ hotLeadTitle }}</h2>
+            <p class="community-priority-card__text">{{ hotLeadBody }}</p>
+          </div>
+          <p class="community-priority-card__meta">{{ hotLeadMeta }}</p>
+          <div class="community-priority-card__actions">
+            <ControlButton size="compact" @click="focusHotTopics">
+              {{ $t('community.hotTopics') }}
+            </ControlButton>
+          </div>
+        </article>
+      </section>
+
       <!-- Search Results -->
       <section v-if="searchQuery" class="community-section">
         <h2 class="sr-only">{{ $t('community.searchPlaceholder') }}</h2>
@@ -149,11 +207,9 @@
 
       <template v-if="!searchQuery">
         <!-- Discussion Composer -->
-        <DiscussionComposer
-          v-if="isAuthenticated"
-          class="composer-section"
-          @created="handleDiscussionCreated"
-        />
+        <div v-if="isAuthenticated" ref="composerSectionRef" class="composer-section">
+          <DiscussionComposer @created="handleDiscussionCreated" />
+        </div>
         <div v-else class="login-prompt surface-editorial">
           <div class="login-prompt__content">
             <p class="login-prompt__title">{{ $t('community.loginToPost') }}</p>
@@ -172,7 +228,11 @@
         </div>
 
         <!-- Recent Discussions -->
-        <section v-if="activeTab === 'recent'" class="community-section content-auto-xl">
+        <section
+          v-if="activeTab === 'recent'"
+          ref="recentSectionRef"
+          class="community-section content-auto-xl"
+        >
           <div class="page-section-head">
             <div class="page-section-copy">
               <p class="page-section-kicker">{{ $t('nav.community') }}</p>
@@ -277,7 +337,11 @@
         </section>
 
         <!-- Hot Topics -->
-        <section v-if="activeTab === 'hot'" class="community-section content-auto-xl">
+        <section
+          v-if="activeTab === 'hot'"
+          ref="hotSectionRef"
+          class="community-section content-auto-xl"
+        >
           <div class="page-section-head">
             <div class="page-section-copy">
               <p class="page-section-kicker">{{ $t('community.guideTitle') }}</p>
@@ -348,6 +412,7 @@ import {
   onDeactivated,
   watch,
   onWatcherCleanup,
+  nextTick,
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -429,6 +494,9 @@ const hotTopics = ref<HotTopicCard[]>([])
 const hotTopicsSource = ref<PublicPageDataSource>('live')
 let hotTopicsController: AbortController | null = null
 let hotTopicsRequestToken = 0
+const composerSectionRef = ref<HTMLElement | null>(null)
+const recentSectionRef = ref<HTMLElement | null>(null)
+const hotSectionRef = ref<HTMLElement | null>(null)
 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
@@ -445,6 +513,40 @@ const isUsingSearchFallback = computed(() => searchSource.value === 'fallback')
 const isUsingHotFallback = computed(() => hotTopicsSource.value === 'fallback')
 const COMMUNITY_HOT_TOPICS_SNAPSHOT_SCOPE = 'community/hot-topics'
 const COMMUNITY_SEARCH_SNAPSHOT_SCOPE = 'community/search'
+const recentLeadDiscussion = computed(() => discussions.value[0] ?? null)
+const hotLeadTopic = computed(() => hotTopics.value[0] ?? null)
+const recentLeadTitle = computed(
+  () => recentLeadDiscussion.value?.title || t('community.recentDiscussions')
+)
+const recentLeadBody = computed(
+  () => recentLeadDiscussion.value?.content || t('community.guidePoint1')
+)
+const recentLeadMeta = computed(() => {
+  const discussion = recentLeadDiscussion.value
+  if (!discussion) {
+    return total.value ? `${total.value}` : t('community.guidePoint1')
+  }
+
+  return [discussion.author.username, formatTime(discussion.updated_at || discussion.created_at)]
+    .filter(Boolean)
+    .join(' · ')
+})
+const hotLeadTitle = computed(() => hotLeadTopic.value?.title || t('community.hotTopics'))
+const hotLeadBody = computed(() => {
+  if (hotLeadTopic.value) {
+    return hotLeadTopic.value.platformLabel || t('community.guidePoint2')
+  }
+  if (isLoadingHot.value) {
+    return t('community.guidePoint2')
+  }
+  return hotTopics.value.length === 0 ? t('community.noHotTopics') : t('community.guidePoint2')
+})
+const hotLeadMeta = computed(() => {
+  if (hotLeadTopic.value) {
+    return `${hotLeadTopic.value.commentsCount}`
+  }
+  return hotTopics.value.length > 0 ? `${hotTopics.value.length}` : t('community.guidePoint3')
+})
 
 function switchTab(tabId: string) {
   activeTab.value = tabId
@@ -481,6 +583,30 @@ function goToLogin() {
 
 function goToExplore() {
   router.push('/explore')
+}
+
+function scrollToElement(target: HTMLElement | null) {
+  target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+async function scrollToComposer() {
+  await nextTick()
+  scrollToElement(composerSectionRef.value)
+}
+
+async function focusRecentDiscussions() {
+  activeTab.value = 'recent'
+  await nextTick()
+  scrollToElement(recentSectionRef.value)
+}
+
+async function focusHotTopics() {
+  activeTab.value = 'hot'
+  if (hotTopics.value.length === 0) {
+    await fetchHotTopics()
+  }
+  await nextTick()
+  scrollToElement(hotSectionRef.value)
 }
 
 async function fetchDiscussions(): Promise<boolean> {
@@ -734,12 +860,18 @@ onMounted(() => {
   if (discStore.items.length === 0) {
     void discStore.fetchDiscussions(true)
   }
+  if (hotTopics.value.length === 0) {
+    void fetchHotTopics()
+  }
 })
 
 onActivated(() => {
   isPageActive.value = true
   if (activeTab.value === 'recent' && discStore.items.length === 0) {
     void discStore.fetchDiscussions(true)
+  }
+  if (hotTopics.value.length === 0) {
+    void fetchHotTopics()
   }
 })
 
@@ -796,16 +928,76 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+.community-priority-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+}
+
+.community-priority-card {
+  display: grid;
+  gap: var(--spacing-3);
+  min-inline-size: 0;
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+.community-priority-card__copy {
+  display: grid;
+  gap: var(--spacing-2);
+  min-inline-size: 0;
+}
+
+.community-priority-card__eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.community-priority-card__title {
+  margin: 0;
+  font-size: clamp(1.05rem, 1vw + 0.9rem, 1.35rem);
+  line-height: 1.25;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.community-priority-card__text,
+.community-priority-card__meta {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.community-priority-card__meta {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.community-priority-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
 @media (max-width: 640px) {
   .community-hero__actions {
     inline-size: 100%;
-    justify-content: space-between;
-    flex-wrap: nowrap;
+    justify-content: stretch;
+    flex-wrap: wrap;
   }
 
   .discussion-search {
     inline-size: 100%;
     max-inline-size: none;
+  }
+
+  .guide-trigger {
+    justify-self: start;
   }
 
   .community-tabs {
@@ -1189,6 +1381,14 @@ onUnmounted(() => {
 }
 
 @media (max-width: 640px) {
+  .community-priority-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .community-priority-card__actions > * {
+    flex: 1 1 100%;
+  }
+
   .discussion-thumbnail {
     inline-size: 3.75rem;
     block-size: 3.75rem;

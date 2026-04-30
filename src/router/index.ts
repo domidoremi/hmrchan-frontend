@@ -58,10 +58,24 @@ function shouldPreserveIntraViewNavigation(
   to: RouteLocationNormalized,
   from: RouteLocationNormalized
 ): boolean {
+  if (to.fullPath === from.fullPath) {
+    return true
+  }
+
   const toViewKey = resolveViewKey(to)
   if (!toViewKey || toViewKey !== resolveViewKey(from)) return false
 
   return Boolean(to.meta.preserveScrollOnIntraViewNav || from.meta.preserveScrollOnIntraViewNav)
+}
+
+export function shouldPreserveScrollForNavigation(
+  to: Pick<RouteLocationNormalized, 'fullPath' | 'meta'>,
+  from: Pick<RouteLocationNormalized, 'fullPath' | 'meta'>
+): boolean {
+  return shouldPreserveIntraViewNavigation(
+    to as RouteLocationNormalized,
+    from as RouteLocationNormalized
+  )
 }
 
 const routes: RouteRecordRaw[] = [
@@ -69,7 +83,14 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'home',
     component: () => import('@/views/HomePage.vue'),
-    meta: { title: 'nav.home', showFooter: true, securityLevel: 'public', dataSensitivity: 'none' },
+    meta: {
+      title: 'nav.home',
+      showFooter: true,
+      viewKey: 'home',
+      preserveScrollOnIntraViewNav: true,
+      securityLevel: 'public',
+      dataSensitivity: 'none',
+    },
   },
   {
     path: '/explore',

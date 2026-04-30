@@ -648,6 +648,7 @@ onMounted(() => {
 .security-console {
   display: grid;
   gap: clamp(1rem, 2.6vw, 1.5rem);
+  min-inline-size: 0;
 }
 
 .security-console__overview {
@@ -660,6 +661,7 @@ onMounted(() => {
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 1rem;
+  min-inline-size: 0;
   padding: clamp(1rem, 2.5vw, 1.25rem);
   border-radius: var(--profile-section-radius);
   border: 1px solid var(--profile-surface-border);
@@ -701,6 +703,7 @@ onMounted(() => {
 .security-entry__copy {
   display: grid;
   gap: 0.5rem;
+  min-inline-size: 0;
 }
 
 .security-entry__copy h2,
@@ -717,6 +720,7 @@ onMounted(() => {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   line-height: 1.65;
+  overflow-wrap: anywhere;
 }
 
 .security-entry__footer {
@@ -724,11 +728,14 @@ onMounted(() => {
   align-items: flex-end;
   justify-content: space-between;
   gap: 0.75rem;
+  min-inline-size: 0;
+  flex-wrap: wrap;
 }
 
 .security-entry__meta {
   display: grid;
   gap: 0.2rem;
+  min-inline-size: 0;
 }
 
 .security-entry__meta-value {
@@ -750,6 +757,7 @@ onMounted(() => {
 .security-workspace {
   display: grid;
   gap: clamp(1rem, 2.4vw, 1.5rem);
+  min-inline-size: 0;
   padding: clamp(1rem, 3vw, 1.5rem);
   border-radius: var(--profile-section-radius);
   border: 1px solid var(--profile-surface-border);
@@ -762,6 +770,7 @@ onMounted(() => {
 .security-workspace__toolbar {
   display: grid;
   gap: 1rem;
+  min-inline-size: 0;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--profile-muted-border);
 }
@@ -769,6 +778,7 @@ onMounted(() => {
 .security-workspace__summary {
   display: grid;
   gap: 0.35rem;
+  min-inline-size: 0;
 }
 
 .security-workspace__summary h2,
@@ -786,18 +796,22 @@ onMounted(() => {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   line-height: 1.65;
+  overflow-wrap: anywhere;
 }
 
 .security-workspace__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  min-inline-size: 0;
 }
 
 .security-workspace__chip {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
   padding: 0.625rem 0.875rem;
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.08);
@@ -823,22 +837,26 @@ onMounted(() => {
 .security-workspace__body {
   display: grid;
   gap: 1rem;
+  min-inline-size: 0;
 }
 
 .security-panel {
   display: grid;
   gap: 1rem;
+  min-inline-size: 0;
 }
 
 .security-section-actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   margin-block-end: var(--spacing-4);
 }
 
 .settings-section {
   position: relative;
   z-index: 1;
+  min-inline-size: 0;
   padding: clamp(1rem, 3vw, 1.5rem);
   border-radius: var(--profile-section-radius);
   border: 1px solid var(--profile-surface-border);
@@ -851,6 +869,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
+  min-inline-size: 0;
+  flex-wrap: wrap;
   margin-bottom: var(--spacing-5);
   padding-bottom: var(--spacing-3);
   border-bottom: 1px solid var(--profile-muted-border);
@@ -877,16 +897,22 @@ onMounted(() => {
   margin: 0;
   font-size: clamp(var(--text-base), 2vw, var(--text-lg));
   font-weight: var(--font-semibold);
+  overflow-wrap: anywhere;
 }
 
 .settings-section-desc {
   margin: 0;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1100px) {
   .security-console__overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .security-command__stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -902,12 +928,28 @@ onMounted(() => {
     flex-direction: column;
   }
 
+  .security-workspace__chip {
+    flex: 1 1 calc(50% - 0.75rem);
+    justify-content: center;
+  }
+
+  .security-entry__cta,
+  .security-entry__meta-value {
+    overflow-wrap: anywhere;
+  }
+
   .security-section-actions {
     justify-content: stretch;
   }
 
   .security-section-actions :deep(.btn) {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .security-workspace__chip {
+    flex-basis: 100%;
   }
 }
 </style>

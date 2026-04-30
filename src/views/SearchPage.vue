@@ -508,7 +508,7 @@ const tabs = computed(() => [
 }
 
 .search-overview {
-  align-items: center;
+  align-items: stretch;
 }
 
 .search-filters {
@@ -519,14 +519,16 @@ const tabs = computed(() => [
   margin-bottom: 0;
   flex-wrap: wrap;
   flex: 1;
+  min-inline-size: 0;
 }
 
 .filter-tabs {
   flex: 1 1 auto;
+  min-inline-size: 0;
 }
 
 .filter-tab {
-  white-space: nowrap;
+  min-inline-size: 0;
 }
 
 .tab-count {
@@ -536,6 +538,7 @@ const tabs = computed(() => [
 .login-hint {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-4);
   padding: var(--spacing-4);
   margin-top: var(--spacing-6);
@@ -553,19 +556,23 @@ const tabs = computed(() => [
   align-items: center;
   justify-content: space-between;
   flex: 1;
+  min-inline-size: 0;
   gap: var(--spacing-4);
   flex-wrap: wrap;
 }
 
 .login-hint-text {
   margin: 0;
+  flex: 1 1 16rem;
+  min-inline-size: 0;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .login-hint-btn {
   flex-shrink: 0;
-  white-space: nowrap;
+  min-inline-size: min(100%, 10rem);
 }
 
 .login-hint-btn.page-control {
@@ -803,7 +810,8 @@ const tabs = computed(() => [
 }
 
 .search-history-action {
-  white-space: nowrap;
+  min-inline-size: 0;
+  white-space: normal;
 }
 
 .search-history-layout {
@@ -882,9 +890,7 @@ const tabs = computed(() => [
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .search-history-item__meta {
@@ -1041,9 +1047,35 @@ const tabs = computed(() => [
   }
 
   .filter-tab {
-    flex: 1 1 0;
+    flex: 1 1 12rem;
     justify-content: center;
     min-inline-size: 0;
+  }
+
+  .login-hint {
+    align-items: stretch;
+  }
+
+  .search-history-actions {
+    inline-size: 100%;
+  }
+
+  .search-history-action {
+    flex: 1 1 12rem;
+    justify-content: center;
+  }
+
+  .login-hint-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .login-hint-btn {
+    inline-size: 100%;
+  }
+
+  .discover-header {
+    align-items: stretch;
   }
 
   .search-history-stats {
@@ -1053,7 +1085,19 @@ const tabs = computed(() => [
 
 @media (max-width: 640px) {
   .filter-tab {
-    flex-basis: calc(50% - (var(--spacing-1) / 2));
+    flex-basis: 100%;
+  }
+
+  .search-history-action {
+    flex-basis: 100%;
+  }
+
+  .search-history-item {
+    align-items: flex-start;
+  }
+
+  .search-history-item__delete {
+    flex-shrink: 0;
   }
 }
 

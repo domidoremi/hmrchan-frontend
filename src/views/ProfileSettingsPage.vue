@@ -940,6 +940,7 @@ onUnmounted(() => {
 .settings-dashboard {
   display: grid;
   gap: clamp(1rem, 2.6vw, 1.5rem);
+  min-inline-size: 0;
 }
 
 .settings-overview {
@@ -988,7 +989,7 @@ onUnmounted(() => {
 .settings-overview__meta-item {
   display: grid;
   gap: 0.35rem;
-  min-width: 0;
+  min-inline-size: 0;
   padding: clamp(0.875rem, 2vw, 1rem);
   border-radius: var(--ui-compat-control-radius);
   border: 1px solid var(--ui-compat-border);
@@ -1001,10 +1002,8 @@ onUnmounted(() => {
 }
 
 .settings-overview__meta-value {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
   color: var(--color-text-primary);
 }
 
@@ -1082,6 +1081,7 @@ onUnmounted(() => {
 .settings-layout {
   display: grid;
   gap: clamp(1rem, 3vw, 1.5rem);
+  min-inline-size: 0;
 }
 
 .settings-main {
@@ -1175,10 +1175,8 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   font-weight: var(--font-medium);
   text-align: right;
-  max-width: 10rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
 }
 
 /* Skeleton Loading */
@@ -1186,7 +1184,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: clamp(1rem, 3vw, 1.5rem);
-  max-width: min(90vw, 60rem);
+  inline-size: 100%;
+  max-inline-size: 100%;
 }
 
 .skeleton-header {
@@ -1196,6 +1195,7 @@ onUnmounted(() => {
 .skeleton-avatar-section {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: clamp(1rem, 3vw, 1.5rem);
 }
 
@@ -1216,7 +1216,9 @@ onUnmounted(() => {
   padding: clamp(1rem, 3vw, 1.5rem);
   position: relative;
   z-index: 1;
-  max-width: min(90vw, 55rem);
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
   border-radius: var(--profile-section-radius);
   border: 1px solid var(--profile-surface-border);
   border-inline-start-width: 0.1875rem;
@@ -1239,9 +1241,16 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
+  min-inline-size: 0;
+  flex-wrap: wrap;
   margin-bottom: var(--spacing-5);
   padding-bottom: var(--spacing-3);
   border-bottom: 1px solid var(--profile-muted-border);
+}
+
+.settings-section-head > div:last-child {
+  min-inline-size: 0;
+  flex: 1 1 14rem;
 }
 
 .settings-section-icon {
@@ -1275,18 +1284,21 @@ onUnmounted(() => {
   font-size: clamp(var(--text-base), 2vw, var(--text-lg));
   font-weight: var(--font-semibold);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .settings-section-desc {
   margin: 0;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
+  overflow-wrap: anywhere;
 }
 
 /* Avatar Section */
 .avatar-section {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: clamp(1rem, 3vw, 1.5rem);
 }
 
@@ -1341,11 +1353,14 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+  min-inline-size: min(100%, 14rem);
+  flex: 1 1 16rem;
 }
 
 .avatar-meta {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-2);
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
@@ -1390,7 +1405,11 @@ onUnmounted(() => {
 
 /* Form Styles */
 .settings-form {
-  max-width: min(90vw, 60rem);
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.25rem);
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
 }
 
 .form-group {
@@ -1400,6 +1419,7 @@ onUnmounted(() => {
 .form-group label {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-2);
   font-weight: var(--font-medium);
   margin-bottom: var(--spacing-2);
@@ -1446,6 +1466,8 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
   margin-top: var(--spacing-2);
 }
 
@@ -1469,6 +1491,7 @@ onUnmounted(() => {
 .form-actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: var(--spacing-3);
   margin-top: var(--spacing-6);
   padding-top: var(--spacing-4);
@@ -1548,6 +1571,7 @@ onUnmounted(() => {
 .account-summary-card {
   display: grid;
   gap: 1rem;
+  min-inline-size: 0;
   padding: clamp(0.875rem, 2vw, 1.125rem);
   border: 1px solid var(--profile-muted-border);
   border-radius: var(--radius-lg);
@@ -1567,6 +1591,7 @@ onUnmounted(() => {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.75rem;
+  min-inline-size: 0;
 }
 
 .account-count-grid {
@@ -1613,6 +1638,7 @@ onUnmounted(() => {
 .account-meta-item {
   display: grid;
   gap: 0.25rem;
+  min-inline-size: 0;
 }
 
 .account-meta-label {
@@ -1685,12 +1711,17 @@ onUnmounted(() => {
   }
 
   .avatar-info {
-    width: 100%;
+    inline-size: 100%;
+    min-inline-size: 0;
     align-items: center;
   }
 
+  .avatar-meta {
+    justify-content: center;
+  }
+
   .avatar-upload-btn {
-    width: 100%;
+    inline-size: 100%;
     justify-content: center;
     padding: var(--spacing-3) var(--spacing-4);
   }
@@ -1719,6 +1750,14 @@ onUnmounted(() => {
     inline-size: 100%;
     justify-content: stretch;
   }
+
+  .account-actions > * {
+    flex: 1 1 100%;
+  }
+
+  .meta-value {
+    text-align: left;
+  }
 }
 
 /* Small Mobile */
@@ -1731,6 +1770,18 @@ onUnmounted(() => {
   .avatar-badge {
     width: 1.5rem;
     height: 1.5rem;
+  }
+
+  .settings-page {
+    padding-top: 0.875rem;
+  }
+
+  .settings-group-switcher__item {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-group-switcher__icon {
+    justify-self: start;
   }
 }
 </style>

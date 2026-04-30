@@ -278,6 +278,7 @@ const sheetRef = useTemplateRef<HTMLElement>('sheetRef')
 
 const sheetDragY = ref(0)
 const isSheetDragging = ref(false)
+const returnFocusTarget = ref<HTMLElement | null>(null)
 
 const sheetDragStyle = computed<Record<string, string>>(() => {
   return { '--sheet-drag-y': `${sheetDragY.value}px` }
@@ -500,7 +501,12 @@ watch(
 
     activeMediaIndex.value = 0
 
-    void nextTick(() => panelRef.value?.focus())
+    if (typeof document !== 'undefined') {
+      returnFocusTarget.value =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null
+    }
+
+    void nextTick(() => panelRef.value?.focus({ preventScroll: true }))
 
     if (!id) {
       abortReloadRequest()
@@ -536,7 +542,7 @@ watch(
         window.history.pushState({ ...(window.history.state ?? {}), [HISTORY_MODAL_KEY]: true }, '')
       }
 
-      lockBodyScroll()
+      lockBodyScroll({ preserveScrollY: true })
       window.addEventListener('keydown', onKeydown)
       window.addEventListener('popstate', onPopState)
     } else {
@@ -550,6 +556,10 @@ watch(
       unlockBodyScroll()
       window.removeEventListener('keydown', onKeydown)
       window.removeEventListener('popstate', onPopState)
+      void nextTick(() => {
+        returnFocusTarget.value?.focus({ preventScroll: true })
+        returnFocusTarget.value = null
+      })
 
       // If the modal was closed by popstate, reset the flag.
       if (isClosingFromPopState) {
@@ -564,6 +574,7 @@ onBeforeUnmount(() => {
   abortReloadRequest()
   unlockBodyScroll()
   clearLoadingTimer()
+  returnFocusTarget.value = null
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', onKeydown)
     window.removeEventListener('popstate', onPopState)

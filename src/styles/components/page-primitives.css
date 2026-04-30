@@ -471,12 +471,27 @@
 
 @media (max-width: 768px) {
   .page-hero-shell__header {
+    flex-direction: column;
+    align-items: stretch;
     flex-wrap: wrap;
+  }
+
+  .page-hero-shell__heading {
+    max-inline-size: none;
   }
 
   .page-hero-shell__actions {
     inline-size: 100%;
     justify-content: flex-start;
+    align-items: stretch;
+  }
+
+  .page-toolbar-shell {
+    align-items: stretch;
+  }
+
+  .page-toolbar-shell > :where(div, section, article, header, footer, aside, nav, form) {
+    flex: 1 1 100%;
   }
 
   .page-toolbar-shell {

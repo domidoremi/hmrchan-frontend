@@ -157,6 +157,11 @@ describe('ProfilePage', () => {
     expect(summaryCards).toHaveLength(4)
     expect(wrapper.text()).toContain('5')
     expect(wrapper.text()).toContain('11')
+    expect(wrapper.find('.profile-command-grid').exists()).toBe(true)
+    expect(wrapper.findAll('.profile-command-link').length).toBeGreaterThanOrEqual(4)
+    expect(wrapper.find('.profile-command-card--security').text()).toContain(
+      'profile.securityHubTitle'
+    )
 
     const links = wrapper.findAllComponents(RouterLinkStub)
     const linkTargets = links.map((link) => link.props('to'))

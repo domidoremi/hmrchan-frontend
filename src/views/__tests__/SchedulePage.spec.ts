@@ -102,6 +102,9 @@ async function mountSchedule(path = '/schedule/event-1') {
 
 describe('SchedulePage', () => {
   beforeEach(() => {
+    const futureStart = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    const futureEnd = new Date(futureStart.getTime() + 90 * 60 * 1000)
+
     scheduleApi.calendar.mockReset()
     scheduleApi.getById.mockReset()
     toastStore.success.mockReset()
@@ -111,8 +114,8 @@ describe('SchedulePage', () => {
       {
         id: 'event-1',
         title: 'Morning live',
-        start: '2026-03-30T10:00:00Z',
-        end: '2026-03-30T11:30:00Z',
+        start: futureStart.toISOString(),
+        end: futureEnd.toISOString(),
         allDay: false,
         category: 'live',
         venue: 'Tokyo Dome City Hall',
@@ -125,8 +128,8 @@ describe('SchedulePage', () => {
       title: 'Morning live',
       description: 'Line one\nLine two',
       category: 'live',
-      start_date: '2026-03-30T10:00:00Z',
-      end_date: '2026-03-30T11:30:00Z',
+      start_date: futureStart.toISOString(),
+      end_date: futureEnd.toISOString(),
       is_all_day: false,
       venue: 'Tokyo Dome City Hall',
       venue_address: '1-3-61 Koraku, Tokyo',
@@ -152,6 +155,16 @@ describe('SchedulePage', () => {
     expect(wrapper.text()).toContain('schedule.detail.aboutTitle')
     expect(wrapper.find('.detail-links').exists()).toBe(true)
     expect(wrapper.find('[data-testid=\"state-indicator\"]').exists()).toBe(false)
+  })
+
+  it('shows the agenda and planner shells together on the main schedule route', async () => {
+    const { wrapper } = await mountSchedule('/schedule')
+
+    expect(wrapper.find('.schedule-overview').exists()).toBe(true)
+    expect(wrapper.find('.agenda-shell').exists()).toBe(true)
+    expect(wrapper.find('.planner-shell').exists()).toBe(true)
+    expect(wrapper.findAll('.agenda-spotlight')).toHaveLength(3)
+    expect(wrapper.find('.agenda-events-list').exists()).toBe(true)
   })
 
   it('returns to /schedule when the detail rail is closed', async () => {

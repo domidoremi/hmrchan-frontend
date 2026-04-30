@@ -100,6 +100,29 @@ function createWrapper(initialPost: PostListItem, postId: string | null = null) 
 }
 
 describe('PostPreviewModal', () => {
+  it('restores focus without requesting scroll when the preview closes', async () => {
+    previewModalMocks.loadMock.mockReset()
+    const trigger = document.createElement('button')
+    trigger.type = 'button'
+    document.body.appendChild(trigger)
+    const triggerFocus = vi.spyOn(trigger, 'focus')
+    trigger.focus()
+    triggerFocus.mockClear()
+
+    const wrapper = createWrapper(createInitialPost(), 'post-1')
+    await Promise.resolve()
+    await Promise.resolve()
+
+    await wrapper.setProps({ isOpen: false })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(triggerFocus).toHaveBeenLastCalledWith({ preventScroll: true })
+
+    wrapper.unmount()
+    trigger.remove()
+  })
+
   it('keeps rendering the initial summary when detail fetch returns 404', async () => {
     previewModalMocks.loadMock.mockRejectedValueOnce(
       new previewModalMocks.MockApiError('Post not found', 404)
