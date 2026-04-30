@@ -57,7 +57,7 @@ interface VisualState {
 // Environment configuration with validation
 function getConfig(): GeneratorOptions {
   const outputDir = process.env.SCREENSHOT_OUTPUT_DIR || 'public/screenshots'
-  const baseUrl = process.env.SCREENSHOT_BASE_URL || 'http://localhost:5173'
+  const baseUrl = process.env.SCREENSHOT_BASE_URL || 'http://127.0.0.1:5173'
   const waitAfterLoad = parseInt(process.env.SCREENSHOT_WAIT || '2000', 10)
   const screenshotConfigs = expandScreenshots(SCREENSHOTS)
 

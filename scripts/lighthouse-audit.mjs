@@ -10,7 +10,7 @@ import fs from 'fs'
 import path from 'path'
 
 const TARGET_URLS = process.argv.slice(2)
-const DEFAULT_URL = 'http://localhost:5173'
+const DEFAULT_URL = 'http://127.0.0.1:5173'
 
 async function runLighthouse() {
   const urls = TARGET_URLS.length > 0 ? TARGET_URLS : [DEFAULT_URL]

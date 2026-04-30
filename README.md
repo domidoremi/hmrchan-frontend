@@ -30,7 +30,9 @@ cp .env.example .env.development
 bun run dev
 ```
 
-默认开发地址：`http://localhost:5173`
+默认开发地址：`http://127.0.0.1:5173`
+
+如果本机还有别的框架也占用 `localhost:5173`，请优先使用 `127.0.0.1`。本仓库的 `bun run dev` 现在会在检测到 `localhost` 被其他应用占用时直接报错，避免出现 `__WS_TOKEN__ is not defined` 这类串站假故障。
 
 ## 常用脚本
 
