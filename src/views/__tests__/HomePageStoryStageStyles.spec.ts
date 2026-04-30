@@ -178,4 +178,11 @@ describe('HomePage story-stage styles', () => {
     expect(storyRule).toContain('perspective: 16rem')
     expect(storyRule).toContain('transform-style: preserve-3d')
   })
+
+  it('keeps the desktop story deck on a stronger stacked perspective instead of a nearly flat slice list', () => {
+    expect(homePageSource).toContain('.media-slice-list {')
+    expect(homePageSource).toContain('perspective: clamp(24rem, 40vw, 42rem);')
+    expect(homePageSource).toContain('perspective-origin: 50% 24%;')
+    expect(homePageSource).toContain('rotateY(calc(var(--story-rotate-y, 0deg) * -0.18))')
+  })
 })

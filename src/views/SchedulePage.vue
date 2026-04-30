@@ -2309,6 +2309,7 @@ onMounted(() => {
 
 .event-card {
   display: flex;
+  flex-shrink: 0;
   overflow: hidden;
   min-inline-size: 0;
   border: 0.0625rem solid var(--surface-minimal-border, var(--color-border));
@@ -2329,7 +2330,9 @@ onMounted(() => {
   flex: 1;
   padding: var(--appearance-surface-padding-md);
   min-inline-size: 0;
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: max(0.625rem, calc(var(--appearance-surface-gap-sm) - 0.125rem));
 }
 
@@ -2363,27 +2366,35 @@ onMounted(() => {
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
   margin: 0;
+  inline-size: 100%;
   color: var(--surface-minimal-text, var(--color-text-primary));
+  overflow-wrap: anywhere;
 }
 
 .event-desc {
   font-size: var(--text-sm);
   color: var(--surface-minimal-text-muted, var(--color-text-secondary));
   margin: 0;
+  inline-size: 100%;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .event-venue {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-1);
   font-size: var(--text-xs);
   color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
   margin: 0;
+  inline-size: 100%;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
 }
 
 .event-link {
@@ -2562,6 +2573,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  align-self: stretch;
   color: var(--surface-minimal-text-soft, var(--color-text-tertiary));
   opacity: 0;
   transition: opacity 0.15s ease;
