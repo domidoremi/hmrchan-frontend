@@ -1,7 +1,7 @@
 const DEFAULT_DEV_PORT = 5173
 const DEFAULT_DEV_HOST = '127.0.0.1'
 const PROBE_TIMEOUT_MS = 1500
-const CURRENT_APP_MARKERS = ['id="app-root"', '/icons/sitting-32.webp', 'MomiChan']
+const CURRENT_APP_MARKERS = ['id="app-root"', '/manifest.json', 'hmrchan frontend reset']
 const FOREIGN_APP_MARKERS = ['<!--app-context-->', '__WS_TOKEN__', 'vite-plugin-uni']
 
 function createAbortSignal(timeoutMs) {
@@ -181,4 +181,3 @@ export function buildViteArgs(argv, { host = DEFAULT_DEV_HOST, strictPort = true
 
   return nextArgs
 }
-

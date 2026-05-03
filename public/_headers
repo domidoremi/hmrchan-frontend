@@ -1,37 +1,21 @@
-# Cloudflare Pages HTTP headers
-
-# HTML 页面 - 短缓存，便于快速更新
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
 
-# 主入口（index.html）
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
 
-# security.txt - 短缓存，便于快速更新披露策略
-/.well-known/security.txt
-  Cache-Control: public, max-age=3600, must-revalidate
-  X-Robots-Tag: noindex
-
-# JavaScript 与 CSS 打包产物 - 长缓存（带哈希）
 /assets/*.js
   Cache-Control: public, max-age=31536000, immutable
 
 /assets/*.css
   Cache-Control: public, max-age=31536000, immutable
 
-# 图片资源
-/assets/*.(png|jpg|jpeg|gif|svg|webp|avif)
-  Cache-Control: public, max-age=31536000, immutable
-
-# 字体文件
-/assets/*.(woff|woff2|ttf|otf)
-  Cache-Control: public, max-age=31536000, immutable
-
-# Service Worker - 禁止缓存
 /sw.js
   Cache-Control: no-cache, no-store, must-revalidate
 
-# Favicon
 /favicon.ico
   Cache-Control: public, max-age=31536000, immutable
+
+/.well-known/security.txt
+  Cache-Control: public, max-age=3600, must-revalidate
+  X-Robots-Tag: noindex

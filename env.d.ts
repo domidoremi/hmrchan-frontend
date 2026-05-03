@@ -66,6 +66,11 @@ declare module '*.vue' {
   export default component
 }
 
+declare module '*?raw' {
+  const content: string
+  export default content
+}
+
 declare module 'javascript-obfuscator' {
   const JavaScriptObfuscator: {
     obfuscate: (

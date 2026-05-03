@@ -199,6 +199,21 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`))
+    }, timeoutMs)
+  })
+
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
+
 function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -1100,7 +1115,10 @@ async function authenticateViaApi(
       return true
     }
 
-    const prewarmedLocalTrust = await prewarmLocalAuditTrust(page, baseUrl)
+    const shouldPrewarmLocalTrust = AUDIT_ENV.LOCAL_AUDIT_PREWARM_CLIENT_TRUST === 'true'
+    const prewarmedLocalTrust = shouldPrewarmLocalTrust
+      ? await prewarmLocalAuditTrust(page, baseUrl)
+      : false
     const loginFormReady = await openAndFillLoginForm({ resetSession: !prewarmedLocalTrust })
     if (!loginFormReady) {
       await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
@@ -1540,6 +1558,7 @@ async function shouldRecoverManagedPreview(
 async function main() {
   let effectiveBaseUrl = BASE_URL
   let managedServer: PreviewShellManager | null = null
+  let browser: puppeteer.Browser | null = null
   const results: RouteResult[] = []
   let crashed = false
   let firstBlockingIssue: HealthFailureEvidence | null = null
@@ -1547,6 +1566,44 @@ async function main() {
   const authCredentialsDetected = Boolean(AUTH_LOGIN && AUTH_PASSWORD)
   const authHealthEnabled = AUTH_REQUIRED && authCredentialsDetected
   const getPreviewDiagnostics = () => managedServer?.formatDiagnosticsLines() ?? null
+  let cleanupRequested = false
+  let terminationHandled = false
+
+  const cleanupResources = async () => {
+    if (cleanupRequested) return
+    cleanupRequested = true
+
+    const activeBrowser = browser
+    browser = null
+    if (activeBrowser) {
+      await withTimeout(
+        activeBrowser.close().catch(() => undefined),
+        5_000,
+        'browser.close'
+      ).catch((cleanupError) => console.warn('⚠️ Browser cleanup timed out:', cleanupError))
+    }
+
+    const activeManagedServer = managedServer
+    managedServer = null
+    if (activeManagedServer) {
+      await withTimeout(activeManagedServer.stop(), 10_000, 'managedServer.stop').catch(
+        (cleanupError) => console.warn('⚠️ Preview cleanup timed out:', cleanupError)
+      )
+    }
+  }
+
+  const handleTermination = (signal: NodeJS.Signals) => {
+    if (terminationHandled) return
+    terminationHandled = true
+    crashed = true
+    void cleanupResources().finally(() => {
+      console.warn(`⚠️ Frontend health check interrupted by ${signal}`)
+      process.exit(1)
+    })
+  }
+
+  process.once('SIGINT', handleTermination)
+  process.once('SIGTERM', handleTermination)
 
   try {
     await mkdir(ARTIFACT_DIR, { recursive: true })
@@ -1582,7 +1639,7 @@ async function main() {
     }
 
     console.log('🌐 Launching headless browser...')
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
       executablePath: process.env['PUPPETEER_EXECUTABLE_PATH'],
@@ -1608,12 +1665,27 @@ async function main() {
       }
     }
 
+    if (isLocalAuditOrigin(effectiveBaseUrl)) {
+      const clearedRateLimitKeys = await clearLocalAuditRateLimitState(AUDIT_ENV)
+      if (clearedRateLimitKeys > 0) {
+        console.log(
+          `🔐 Cleared ${clearedRateLimitKeys} local audit rate-limit keys before auth bootstrap preflight`
+        )
+      }
+    }
+
     const authBootstrapProbes = await runAuthBootstrapPreflight(effectiveBaseUrl)
     try {
       throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
     } catch (error) {
-      logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
-      throw error
+      if (AUTH_REQUIRED) {
+        logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
+        throw error
+      }
+
+      console.warn(
+        `⚠️ Auth bootstrap preflight degraded in guest-only frontend health; continuing public route scan. ${formatError(error)}`
+      )
     }
 
     const healthFilterOptions = {
@@ -1636,6 +1708,8 @@ async function main() {
             label: 'sample post route',
             requestedRoute: REQUESTED_SAMPLE_POST_ROUTE,
             fallbackRoute: DEFAULT_SAMPLE_POST_ROUTE,
+            discoveryPath: '/explore',
+            detailKind: 'post',
             shellSelector: '.post-detail-page',
             readinessSelectorsAll: ['.post-comments'],
             dataDependent: true,
@@ -1648,6 +1722,8 @@ async function main() {
             label: 'sample discussion route',
             requestedRoute: REQUESTED_SAMPLE_DISCUSSION_ROUTE,
             fallbackRoute: DEFAULT_SAMPLE_DISCUSSION_ROUTE,
+            discoveryPath: '/community',
+            detailKind: 'discussion',
             shellSelector: '.discussion-detail-page',
             readinessSelectorsAll: ['.discussion-comments'],
             dataDependent: true,
@@ -1937,7 +2013,15 @@ async function main() {
         }
       }
     } finally {
-      await browser.close()
+      const activeBrowser = browser
+      browser = null
+      if (activeBrowser) {
+        await withTimeout(
+          activeBrowser.close().catch(() => undefined),
+          5_000,
+          'browser.close'
+        ).catch((cleanupError) => console.warn('⚠️ Browser cleanup timed out:', cleanupError))
+      }
     }
 
     const issueCount = results.reduce((sum, item) => sum + item.issues.length, 0)
@@ -2009,9 +2093,9 @@ async function main() {
     }).catch(() => undefined)
     throw error
   } finally {
-    if (managedServer) {
-      await managedServer.stop()
-    }
+    process.off('SIGINT', handleTermination)
+    process.off('SIGTERM', handleTermination)
+    await cleanupResources()
   }
 }
 

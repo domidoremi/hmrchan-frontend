@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 
 const distDir = resolve(process.cwd(), 'dist')
 const htmlPath = join(distDir, 'index.html')
@@ -40,15 +40,19 @@ if (mapFiles.length > 0) {
   process.exit(1)
 }
 
-const html = readFileSync(htmlPath, 'utf8')
-const assetTags = [
-  ...html.matchAll(/<script\b[^>]*src="(\/assets\/[^"]+)"[^>]*>/g),
-  ...html.matchAll(/<link\b[^>]*href="(\/assets\/[^"]+)"[^>]*>/g),
-]
+const htmlFiles = walk(distDir).filter((file) => file.toLowerCase().endsWith('.html'))
+const missingIntegrity = htmlFiles.flatMap((file) => {
+  const html = readFileSync(file, 'utf8')
+  const assetTags = [
+    ...html.matchAll(/<script\b[^>]*src="(\/assets\/[^"]+)"[^>]*>/g),
+    ...html.matchAll(/<link\b[^>]*href="(\/assets\/[^"]+)"[^>]*>/g),
+  ]
 
-const missingIntegrity = assetTags
-  .map((match) => match[0])
-  .filter((tag) => !/\sintegrity="/.test(tag))
+  return assetTags
+    .map((match) => match[0])
+    .filter((tag) => !/\sintegrity="/.test(tag))
+    .map((tag) => `${relative(distDir, file)} :: ${tag}`)
+})
 
 if (missingIntegrity.length > 0) {
   console.error('[build-security] Missing SRI integrity attribute on built asset tags:')

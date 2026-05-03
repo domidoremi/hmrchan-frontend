@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { createServer as createNetServer } from 'node:net'
 
-import { buildSpawnCommand, getBunExecutable, getBunRunArgs } from './command-runner.js'
+import { buildSpawnCommand, getBunExecutable, getBunRuntimeArgs } from './command-runner.js'
 
 const PREVIEW_READY_POLL_INTERVAL_MS = 500
 const LOCAL_API_BRIDGE_IMAGE = 'alpine/socat:latest'
@@ -132,7 +132,14 @@ export async function findAvailablePortFromCandidates(
 
 export async function runBunTask(task, { env = process.env, stdio = 'inherit' } = {}) {
   await new Promise((resolve, reject) => {
-    const command = buildSpawnCommand(getBunExecutable(), getBunRunArgs(task))
+    const command = buildSpawnCommand(
+      getBunExecutable({ env }),
+      getBunRuntimeArgs({
+        env,
+        includeRunSubcommand: true,
+        runArgs: [task],
+      })
+    )
     const child = spawn(command.command, command.args, {
       stdio,
       shell: command.shell,
@@ -610,16 +617,18 @@ function buildConfiguredLocalApiOriginPatch(env) {
   const identityOrigin = env?.[LOCAL_API_BRIDGE_SERVICES.identity.envKey]?.trim()
   const communityOrigin = env?.[LOCAL_API_BRIDGE_SERVICES.community.envKey]?.trim()
   const contentOrigin = env?.[LOCAL_API_BRIDGE_SERVICES.content.envKey]?.trim()
+  const publicOrigin = env?.API_BASE_URL?.trim() || identityOrigin
   const internalOrigin = env?.BACKEND_INTERNAL_ORIGIN?.trim() || identityOrigin
 
   return {
-    API_BASE_URL: identityOrigin,
-    VITE_API_BASE_URL: identityOrigin,
+    API_BASE_URL: publicOrigin,
+    VITE_API_BASE_URL: publicOrigin,
     BACKEND_INTERNAL_ORIGIN: internalOrigin,
-    VPC_API_ORIGIN: identityOrigin,
+    VPC_API_ORIGIN: publicOrigin,
     VPC_IDENTITY_API_ORIGIN: identityOrigin,
     VPC_COMMUNITY_API_ORIGIN: communityOrigin,
     VPC_CONTENT_API_ORIGIN: contentOrigin,
+    ENABLE_INTERNAL_API_GATEWAY: 'true',
   }
 }
 
@@ -673,12 +682,14 @@ export class LocalApiBridgeManager {
     const patch = {}
     for (const bridge of this.bridges) {
       patch[bridge.envKey] = bridge.baseUrl
-      if (bridge.name === 'identity') {
+      if (bridge.name === 'gateway') {
         patch.API_BASE_URL = bridge.baseUrl
         patch.VITE_API_BASE_URL = bridge.baseUrl
+        patch.VPC_API_ORIGIN = bridge.baseUrl
+      }
+      if (bridge.name === 'identity') {
         patch.BACKEND_INTERNAL_ORIGIN = bridge.baseUrl
         patch.VPC_IDENTITY_API_ORIGIN = bridge.baseUrl
-        patch.VPC_API_ORIGIN = bridge.baseUrl
       }
       if (bridge.name === 'community') {
         patch.VPC_COMMUNITY_API_ORIGIN = bridge.baseUrl
@@ -686,6 +697,9 @@ export class LocalApiBridgeManager {
       if (bridge.name === 'content') {
         patch.VPC_CONTENT_API_ORIGIN = bridge.baseUrl
       }
+    }
+    if (patch.VPC_IDENTITY_API_ORIGIN && patch.VPC_COMMUNITY_API_ORIGIN && patch.VPC_CONTENT_API_ORIGIN) {
+      patch.ENABLE_INTERNAL_API_GATEWAY = 'true'
     }
     return patch
   }
@@ -976,19 +990,27 @@ export class PreviewShellManager {
               this.host,
               ...getWranglerBindingArgs(this.effectiveEnv),
             ]
-          : getBunRunArgs(
-              LOCAL_PAGES_PREVIEW_SCRIPT,
-              '--port',
-              String(this.port),
-              '--host',
-              this.host
-            )
-        : getBunRunArgs('preview', '--port', String(this.port))
+          : getBunRuntimeArgs({
+              env: this.effectiveEnv,
+              includeRunSubcommand: true,
+              runArgs: [
+                LOCAL_PAGES_PREVIEW_SCRIPT,
+                '--port',
+                String(this.port),
+                '--host',
+                this.host,
+              ],
+            })
+        : getBunRuntimeArgs({
+            env: this.effectiveEnv,
+            includeRunSubcommand: true,
+            runArgs: ['preview', '--port', String(this.port)],
+          })
     this.runtimeHealthPath =
       this.serverMode === 'pages' && !useWranglerPagesRuntime ? '/health/ready' : null
 
     let spawnError = null
-    const command = buildSpawnCommand(getBunExecutable(), serverArgs)
+    const command = buildSpawnCommand(getBunExecutable({ env: this.effectiveEnv }), serverArgs)
     const server = this.serverSpawner(command.command, command.args, {
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: command.shell,

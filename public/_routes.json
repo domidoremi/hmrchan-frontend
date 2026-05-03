@@ -5,8 +5,6 @@
     "/.well-known/*",
     "/assets/*",
     "/icons/*",
-    "/images/*",
-    "/screenshots/*",
     "/favicon.ico",
     "/manifest.json",
     "/robots.txt",

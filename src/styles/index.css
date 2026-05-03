@@ -1,29 +1,52 @@
-@layer reset, foundation, semantics, components, page-systems, scene-roles, presets,
-  enhancers, utilities, overrides;
+@import url('/brand-appart/assets/css/google-fonts.css');
+@import url('/brand-appart/assets/css/brand-appart-shared.css');
 
-@import './base.css' layer(reset);
-@import './tokens.css' layer(foundation);
-@import './foundation/primitives.css' layer(foundation);
-@import './locale.css' layer(semantics);
-@import './semantics/appearance.css' layer(semantics);
-@import './chrome-system.css' layer(semantics);
-@import './ui-compat.css' layer(semantics);
-@import './components/core.css' layer(components);
-@import './components/page-primitives.css' layer(components);
-@import './components/button-system.css' layer(components);
-@import './components/component-state-system.css' layer(components);
-@import './auth-compat.css' layer(page-systems);
-@import './public-pages.css' layer(page-systems);
-@import './profile-system.css' layer(page-systems);
-@import './page-systems/profile-page-system.css' layer(page-systems);
-@import './page-systems/home-page-system.css' layer(page-systems);
-@import './page-systems/navbar-dropdown-system.css' layer(page-systems);
-@import './page-systems/site-experience-system.css' layer(page-systems);
-@import './animations.css' layer(page-systems);
-@import './scene-roles/core.css' layer(scene-roles);
-@import './presets/minimal-editorial.css' layer(presets);
-@import './presets/families.css' layer(presets);
-@import './utilities/appearance.css' layer(utilities);
-@import './utilities.css' layer(utilities);
-@import './glass.css' layer(overrides);
-@import './analog-system.css' layer(overrides);
+html,
+body,
+#app-root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #fbf9ef;
+  color: #171412;
+}
+
+#app-root,
+.brand-raw-page {
+  min-height: 100%;
+}
+
+.brand-local-vimeo-loop {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--ratio, 16 / 9);
+  transform: translate(-50%, -50%);
+  opacity: 1;
+}
+
+.brand-local-vimeo-loop video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.brand-local-vimeo-loop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.form-block-wrapper .brand-fillout-frame {
+  display: block;
+  width: 100%;
+  min-height: 46rem;
+  border: 0;
+  background: transparent;
+}

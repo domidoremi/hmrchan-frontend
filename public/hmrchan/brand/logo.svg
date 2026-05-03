@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" role="img" aria-labelledby="title desc">
+  <title id="title">HMRChan</title>
+  <desc id="desc">HMRChan wordmark with signal mark.</desc>
+  <rect width="160" height="160" rx="42" fill="#181511" />
+  <path
+    fill="#F7F3E8"
+    d="M34 46h24v28h52V46h24v68h-24V90H58v24H34V46Zm39 15 10-15 10 15-10 14-10-14Zm-10 47 20-28 20 28H63Z"
+  />
+  <circle cx="126" cy="34" r="13" fill="#FF6B35" />
+  <text
+    x="196"
+    y="104"
+    fill="#181511"
+    font-family="IBM Plex Mono, Roboto, monospace"
+    font-size="70"
+    font-weight="900"
+    letter-spacing="-5"
+  >
+    HMRChan
+  </text>
+</svg>

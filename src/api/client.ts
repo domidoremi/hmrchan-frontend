@@ -1,687 +1,117 @@
-/**
- * API Client - HTTP 请求客户端
- *
- * 统一负责：
- * - 同源 /api/v1/* 请求基线
- * - BFF cookie 会话传输与 401 单次重试门禁
- * - request-integrity V2
- * - challenge / verification / client re-init / contract gate
- * - multipart 自组装上传
- */
-
-import { reportClientEvent } from '@/utils/clientReporter'
-import { clearAuthRuntimeSession, getAuthRuntimeSession } from './client/auth-runtime'
-import {
-  ApiError,
-  extractApiErrorMeta,
-  handleErrorResponse,
-  handleTransportError,
-} from './client/error-mapping'
-import {
-  attachClientSecurityHeaders,
-  isCredentialRefreshInProgress,
-  isSignatureErrorResponse,
-  onCredentialsRefreshFailed,
-  onCredentialsRefreshed,
-  refreshClientSecurityCredentials,
-  setCredentialRefreshInProgress,
-  subscribeCredentialRefresh,
-} from './client/client-security'
-import {
-  extractChallengeSiteKey,
-  isAccessRestrictedMessage,
-  withVerificationToken,
-} from './client/challenge-verification'
-import { buildMultipartRequestBody } from './client/multipart'
-import {
-  REQUEST_TIMEOUT,
-  buildCacheKey,
-  buildRequestUrl,
-  fetchWithTransportGuards,
-  parseSuccessfulResponse,
-  setRateLimitCooldown,
-} from './client/transport'
-import { applyRequestSecurityHeaders } from './client/request-security'
-import type { ApiResponse, CursorCollectionResponse, RequestConfig } from './client/types'
-
-export { ApiError }
-export type { ApiResponse, CursorCollectionResponse, RequestConfig }
-
-const textEncoder = new TextEncoder()
-const inflightRequests = new Map<string, Promise<unknown>>()
-
-async function fetchWithTimeout(
-  url: string,
-  init: RequestInit,
-  timeout: number,
-  useTransportGuards = false
-): Promise<Response> {
-  const timeoutController = new AbortController()
-  const externalSignal = init.signal
-  const timeoutId = setTimeout(() => timeoutController.abort(), timeout)
-
-  const forwardAbort = () => {
-    timeoutController.abort()
-  }
-
-  if (externalSignal) {
-    if (externalSignal.aborted) {
-      timeoutController.abort()
-    } else {
-      externalSignal.addEventListener('abort', forwardAbort, { once: true })
-    }
-  }
-
-  try {
-    const requestInit = {
-      ...init,
-      signal: timeoutController.signal,
-    }
-
-    return useTransportGuards
-      ? await fetchWithTransportGuards(url, requestInit)
-      : await fetch(url, requestInit)
-  } finally {
-    clearTimeout(timeoutId)
-    if (externalSignal) {
-      externalSignal.removeEventListener('abort', forwardAbort)
-    }
-  }
-}
-
-function dispatchLogout(reason: 'auth_failed' | 'permission_version_stale' = 'auth_failed'): void {
-  const hadSession = Boolean(getAuthRuntimeSession())
-  clearAuthRuntimeSession()
-  if (typeof window !== 'undefined' && hadSession) {
-    window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason } }))
-  }
-}
-
-function isClientReinitRequired(response: Response): boolean {
-  return response.headers.get('X-Client-Reinit-Required')?.toLowerCase() === 'true'
-}
-
-function isClientUpgradeRequired(response: Response): boolean {
-  return (
-    response.status === 426 ||
-    response.headers.get('X-Client-Upgrade-Required')?.toLowerCase() === 'true'
-  )
-}
-
-function shouldRetryAfterBffRefresh(response: Response): boolean {
-  return response.headers.get('X-Bff-Auth-Retry-Required')?.toLowerCase() === 'true'
-}
-
-function isMissingAuthSessionError(errorMeta: { code?: string; message: string } | null): boolean {
-  const normalizedCode = errorMeta?.code?.trim().toUpperCase()
-  if (
-    normalizedCode &&
-    ['UNAUTHENTICATED', 'NOT_AUTHENTICATED', 'TOKEN_EXPIRED', 'TOKEN_INVALID'].includes(
-      normalizedCode
-    )
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code?: string,
+    readonly details?: unknown
   ) {
-    return true
+    super(message)
+    this.name = 'ApiError'
   }
-
-  const normalizedMessage = errorMeta?.message.trim().toLowerCase()
-  if (!normalizedMessage) return false
-
-  return [
-    'not authenticated',
-    'unauthorized',
-    'please login',
-    'please login first',
-    '请先登录',
-    '請先登入',
-    '認証が必要です',
-  ].some((message) => normalizedMessage.includes(message))
 }
 
-function triggerHardReloadGate(): never {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('app:hard-reload-required'))
-
-    const isTest = import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
-    if (!isTest) {
-      window.setTimeout(() => {
-        window.location.reload()
-      }, 0)
-    }
-  }
-
-  throw new ApiError('Client upgrade required', 426, 'CLIENT_UPGRADE_REQUIRED')
+export interface RequestConfig extends RequestInit {
+  skipAuth?: boolean
+  skipErrorToast?: boolean
 }
 
-async function readErrorMeta(response: Response): Promise<{ code?: string; message: string }> {
+type JsonRecord = Record<string, unknown>
+
+function isRecord(value: unknown): value is JsonRecord {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function unwrapEnvelope<T>(payload: unknown): T {
+  if (isRecord(payload) && 'data' in payload) {
+    return payload.data as T
+  }
+
+  return payload as T
+}
+
+async function parseResponsePayload(response: Response): Promise<unknown> {
+  const raw = await response.text()
+  if (!raw.trim()) return null
+
+  const contentType = response.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) {
+    return raw
+  }
+
   try {
-    const body = await response.clone().json()
-    return extractApiErrorMeta(body)
+    return JSON.parse(raw) as unknown
   } catch {
-    return { message: '' }
+    return raw
   }
 }
 
-async function serializeRequestBody(body: BodyInit | null | undefined): Promise<{
-  body: BodyInit | null
-  bodyBytes: Uint8Array
-  contentType?: string
-}> {
-  if (body == null) {
-    return {
-      body: null,
-      bodyBytes: new Uint8Array(),
-    }
-  }
-
-  if (body instanceof FormData) {
-    const multipart = await buildMultipartRequestBody(body)
-    return {
-      body: multipart.body,
-      bodyBytes: multipart.body,
-      contentType: multipart.contentType,
-    }
-  }
-
-  if (typeof body === 'string') {
-    const bytes = textEncoder.encode(body)
-    return {
-      body,
-      bodyBytes: bytes,
-    }
-  }
-
-  if (body instanceof URLSearchParams) {
-    const encoded = body.toString()
-    return {
-      body: encoded,
-      bodyBytes: textEncoder.encode(encoded),
-      contentType: 'application/x-www-form-urlencoded;charset=UTF-8',
-    }
-  }
-
-  if (body instanceof Blob) {
-    const bytes = new Uint8Array(await body.arrayBuffer())
-    return {
-      body,
-      bodyBytes: bytes,
-      contentType: body.type || undefined,
-    }
-  }
-
-  if (body instanceof ArrayBuffer) {
-    const bytes = new Uint8Array(body)
-    return {
-      body: bytes,
-      bodyBytes: bytes,
-    }
-  }
-
-  if (ArrayBuffer.isView(body)) {
-    const bytes = new Uint8Array(
-      body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength)
-    )
-    return {
-      body: bytes,
-      bodyBytes: bytes,
-    }
-  }
-
-  throw new TypeError('Unsupported request body type')
+function resolveErrorMessage(payload: unknown, fallback: string): string {
+  if (!isRecord(payload)) return fallback
+  const message = payload.message ?? payload.error ?? payload.detail
+  return typeof message === 'string' && message.trim() ? message : fallback
 }
 
-async function retryAfterClientReinit<T>(
-  endpoint: string,
-  config: RequestConfig,
-  shouldRetry: boolean
-): Promise<T | null> {
-  if (!shouldRetry) return null
-
-  const { clientSecurityService } = await import('./clientSecurityService')
-  await clientSecurityService.init(true, { promptChallenge: false })
-  return request<T>(endpoint, {
-    ...config,
-    skipClientReinitRetry: true,
-  })
+function resolveErrorCode(payload: unknown): string | undefined {
+  if (!isRecord(payload)) return undefined
+  const code = payload.code ?? payload.error
+  return typeof code === 'string' && code.trim() ? code : undefined
 }
 
-async function handleForbiddenResponse<T>(options: {
-  endpoint: string
-  config: RequestConfig
-  response: Response
-  method: string
-  body: BodyInit | null | undefined
-  skipErrorToast: boolean
-  verificationAction?: string
-  verificationResourceId?: string
-  skipChallengeRetry?: boolean
-  skipVerificationRetry?: boolean
-}): Promise<T> {
-  const {
-    endpoint,
-    config,
-    response,
-    method,
-    body,
-    skipErrorToast,
-    verificationAction,
-    verificationResourceId,
-    skipChallengeRetry = false,
-    skipVerificationRetry = false,
-  } = options
+class ApiClient {
+  constructor(private readonly baseUrl = '/api/v1') {}
 
-  try {
-    const errorBody = await response.clone().json()
-    const { code: errorCode, message: errorMessage } = extractApiErrorMeta(errorBody)
-    const verificationRequired =
-      response.headers.get('X-Verification-Required')?.toLowerCase() === 'true'
-
-    if (errorCode?.toUpperCase() === 'CHALLENGE_REQUIRED') {
-      const siteKey = extractChallengeSiteKey(errorBody)
-      window.dispatchEvent(
-        new CustomEvent('client:challenge-required', {
-          detail: { turnstile_site_key: siteKey },
-        })
-      )
-
-      reportClientEvent(
-        'client.challenge.prompted',
-        {
-          endpoint,
-          method,
-          hasSiteKey: Boolean(siteKey),
-        },
-        { severity: 'warn' }
-      )
-
-      if (!skipChallengeRetry) {
-        const { requestClientChallenge } = await import('./clientChallengeBridge')
-        const verified = await requestClientChallenge(siteKey)
-
-        if (verified) {
-          return request<T>(endpoint, {
-            ...config,
-            skipChallengeRetry: true,
-          })
-        }
-      }
-
-      throw new ApiError(errorMessage || 'Challenge required', 403, 'CHALLENGE_REQUIRED', {
-        turnstile_site_key: siteKey,
-      })
+  async request<T>(path: string, config: RequestConfig = {}): Promise<T> {
+    const headers = new Headers(config.headers)
+    const hasBody = config.body !== undefined && config.body !== null
+    if (hasBody && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json')
+    }
+    if (!headers.has('Accept')) {
+      headers.set('Accept', 'application/json')
     }
 
-    if (verificationRequired && verificationAction && !skipVerificationRetry) {
-      const { ensureVerificationToken } = await import('./verificationBridge')
-      const verificationToken = await ensureVerificationToken(verificationAction, {
-        resourceId: verificationResourceId,
-      })
-      const { body: retryBody, headers: retryHeaders } = withVerificationToken(
-        method,
-        body,
-        config.headers ?? {},
-        verificationToken
-      )
-
-      return request<T>(endpoint, {
-        ...config,
-        body: retryBody,
-        headers: retryHeaders,
-        skipVerificationRetry: true,
-      })
-    }
-
-    if (isSignatureErrorResponse(errorCode, errorMessage) && !config.skipClientSignatureRetry) {
-      if (!isCredentialRefreshInProgress()) {
-        setCredentialRefreshInProgress(true)
-        try {
-          await refreshClientSecurityCredentials()
-          setCredentialRefreshInProgress(false)
-          onCredentialsRefreshed()
-          return request<T>(endpoint, {
-            ...config,
-            skipClientSignatureRetry: true,
-          })
-        } catch (initError) {
-          setCredentialRefreshInProgress(false)
-          const refreshError =
-            initError instanceof Error ? initError : new Error('Credential refresh failed')
-          onCredentialsRefreshFailed(refreshError)
-        }
-      } else {
-        await new Promise<void>((resolve, reject) => {
-          subscribeCredentialRefresh(resolve, reject)
-        })
-        return request<T>(endpoint, {
-          ...config,
-          skipClientSignatureRetry: true,
-        })
-      }
-    }
-
-    if (isAccessRestrictedMessage(errorMessage)) {
-      window.dispatchEvent(new CustomEvent('client:access-restricted'))
-      reportClientEvent(
-        'client.access_restricted',
-        {
-          endpoint,
-          method,
-        },
-        { severity: 'warn' }
-      )
-      throw new ApiError(errorMessage ?? 'Access temporarily restricted', 403, 'ACCESS_RESTRICTED')
-    }
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error
-    }
-  }
-
-  await handleErrorResponse(response, skipErrorToast)
-}
-
-async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-  const {
-    timeout = REQUEST_TIMEOUT,
-    skipAuth = false,
-    skipErrorToast = false,
-    responseType = 'json',
-    skipSecurity = false,
-    baseUrl,
-    onResponseHeaders,
-    skipChallengeRetry = false,
-    verificationAction,
-    verificationResourceId,
-    skipVerificationRetry = false,
-    skipUnauthorizedRetry = false,
-    skipAuthLogoutOnUnauthorized = false,
-    headers: customHeaders = {},
-    body,
-    skipClientReinitRetry = false,
-    skipClientSignatureRetry = false,
-    ...fetchConfig
-  } = config
-
-  const method = fetchConfig.method?.toUpperCase() || 'GET'
-  const url = buildRequestUrl(endpoint, baseUrl)
-  const requestHeaders: Record<string, string> = { ...(customHeaders as Record<string, string>) }
-  const serializedBody = await serializeRequestBody(body)
-  const hasAuthContext = Boolean(getAuthRuntimeSession())
-  const requestId = applyRequestSecurityHeaders(requestHeaders, method, url, config)
-
-  if (serializedBody.contentType && !requestHeaders['Content-Type']) {
-    requestHeaders['Content-Type'] = serializedBody.contentType
-  }
-
-  if (
-    serializedBody.body &&
-    !serializedBody.contentType &&
-    !requestHeaders['Content-Type'] &&
-    ['POST', 'PUT', 'PATCH'].includes(method)
-  ) {
-    requestHeaders['Content-Type'] =
-      method === 'PATCH' ? 'application/merge-patch+json' : 'application/json'
-  }
-
-  if (!skipSecurity) {
-    try {
-      await attachClientSecurityHeaders(requestHeaders, {
-        method,
-        url,
-        hadToken: hasAuthContext,
-        bodyBytes: serializedBody.bodyBytes,
-      })
-    } catch (error) {
-      if (error instanceof ApiError && error.code === 'CHALLENGE_REQUIRED') {
-        reportClientEvent('client.challenge.required', { endpoint, method }, { severity: 'warn' })
-      }
-
-      throw error
-    }
-  }
-
-  const requestInit: RequestInit = {
-    ...fetchConfig,
-    method,
-    body: serializedBody.body,
-    headers: requestHeaders,
-    credentials: 'include',
-  }
-
-  try {
-    const response = await fetchWithTimeout(url, requestInit, timeout, true)
-
-    if (response.status === 429) {
-      const retryAfter = response.headers.get('Retry-After')
-      const waitSeconds = retryAfter ? Math.min(parseInt(retryAfter, 10) || 5, 60) : 5
-      setRateLimitCooldown(waitSeconds * 1000)
-    }
-
-    if (isClientUpgradeRequired(response)) {
-      triggerHardReloadGate()
-    }
-
-    const errorMeta = response.ok ? null : await readErrorMeta(response)
-
-    if (!response.ok && errorMeta?.code === 'CLIENT_CONTRACT_MISMATCH') {
-      triggerHardReloadGate()
-    }
-
-    if (
-      !response.ok &&
-      isClientReinitRequired(response) &&
-      errorMeta?.code !== 'PERMISSION_VERSION_STALE'
-    ) {
-      const retried = await retryAfterClientReinit<T>(
-        endpoint,
-        {
-          ...config,
-          headers: requestHeaders,
-          body,
-          skipClientSignatureRetry,
-        },
-        !skipClientReinitRetry
-      )
-
-      if (retried !== null) {
-        return retried
-      }
-    }
-
-    if (response.status === 304) {
-      onResponseHeaders?.(response.headers)
-      return parseSuccessfulResponse<T>(response, responseType)
-    }
-
-    if (!response.ok && errorMeta?.code === 'PERMISSION_VERSION_STALE') {
-      dispatchLogout('permission_version_stale')
-      await handleErrorResponse(response, skipErrorToast)
-    }
-
-    if (
-      response.status === 401 &&
-      !skipAuth &&
-      shouldRetryAfterBffRefresh(response) &&
-      !skipUnauthorizedRetry
-    ) {
-      return request<T>(endpoint, {
-        ...config,
-        skipUnauthorizedRetry: true,
-      })
-    }
-
-    if (
-      response.status === 401 &&
-      !skipAuth &&
-      (!skipAuthLogoutOnUnauthorized || isMissingAuthSessionError(errorMeta))
-    ) {
-      const runtimeSession = getAuthRuntimeSession()
-      reportClientEvent(
-        'auth.session.rejected',
-        {
-          endpoint,
-          method,
-          permissionVersion: runtimeSession?.permissionVersion,
-        },
-        {
-          category: 'security',
-          requestId,
-          requiresAnalyticsConsent: false,
-          severity: 'warn',
-        }
-      )
-      dispatchLogout('auth_failed')
-      await handleErrorResponse(response, skipErrorToast)
-    }
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      ...config,
+      headers,
+      credentials: 'include',
+    })
+    const payload = await parseResponsePayload(response)
 
     if (!response.ok) {
-      if (response.status === 403) {
-        return handleForbiddenResponse<T>({
-          endpoint,
-          config: {
-            ...config,
-            headers: requestHeaders,
-            body,
-            skipClientSignatureRetry,
-            skipClientReinitRetry,
-          },
-          response,
-          method,
-          body,
-          skipErrorToast,
-          verificationAction,
-          verificationResourceId,
-          skipChallengeRetry,
-          skipVerificationRetry,
-        })
-      }
-
-      await handleErrorResponse(response, skipErrorToast)
+      throw new ApiError(
+        resolveErrorMessage(payload, `Request failed with status ${response.status}`),
+        response.status,
+        resolveErrorCode(payload),
+        payload
+      )
     }
 
-    onResponseHeaders?.(response.headers)
-    return parseSuccessfulResponse<T>(response, responseType)
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error
-    }
+    return unwrapEnvelope<T>(payload)
+  }
 
-    reportClientEvent(
-      'client.request.transport_failed',
-      {
-        endpoint,
-        method,
-      },
-      {
-        category: 'security',
-        requestId,
-        requiresAnalyticsConsent: false,
-        severity: 'warn',
-      }
-    )
-    return handleTransportError(error, skipErrorToast)
+  get<T>(path: string, config?: RequestConfig): Promise<T> {
+    return this.request<T>(path, { ...config, method: 'GET' })
+  }
+
+  post<T>(path: string, payload?: unknown, config?: RequestConfig): Promise<T> {
+    return this.request<T>(path, {
+      ...config,
+      method: 'POST',
+      body: payload === undefined ? undefined : JSON.stringify(payload),
+    })
+  }
+
+  patch<T>(path: string, payload?: unknown, config?: RequestConfig): Promise<T> {
+    return this.request<T>(path, {
+      ...config,
+      method: 'PATCH',
+      body: payload === undefined ? undefined : JSON.stringify(payload),
+    })
+  }
+
+  delete<T>(path: string, config?: RequestConfig): Promise<T> {
+    return this.request<T>(path, { ...config, method: 'DELETE' })
   }
 }
 
-export const apiClient = {
-  request<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-    return request<T>(endpoint, config)
-  },
-
-  get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-    const { skipAuth = false, baseUrl, ...restConfig } = config || {}
-    const url = buildRequestUrl(endpoint, baseUrl)
-    const cacheKey = buildCacheKey('GET', url)
-    const inflight = inflightRequests.get(cacheKey) as Promise<T> | undefined
-
-    if (inflight) {
-      return inflight
-    }
-
-    const promise = request<T>(endpoint, {
-      ...restConfig,
-      skipAuth,
-      baseUrl,
-      method: 'GET',
-    }).finally(() => {
-      inflightRequests.delete(cacheKey)
-    })
-
-    inflightRequests.set(cacheKey, promise)
-    return promise
-  },
-
-  post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
-    const body = data !== undefined ? ((data as BodyInit) ?? null) : null
-
-    return request<T>(endpoint, {
-      ...config,
-      method: 'POST',
-      body:
-        body instanceof FormData ||
-        body instanceof Blob ||
-        body instanceof URLSearchParams ||
-        typeof body === 'string' ||
-        body == null
-          ? body
-          : JSON.stringify(body),
-    })
-  },
-
-  put<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
-    return request<T>(endpoint, {
-      ...config,
-      method: 'PUT',
-      body:
-        data instanceof FormData ||
-        data instanceof Blob ||
-        data instanceof URLSearchParams ||
-        typeof data === 'string' ||
-        data == null
-          ? (data as BodyInit | null | undefined)
-          : JSON.stringify(data),
-    })
-  },
-
-  patch<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
-    return request<T>(endpoint, {
-      ...config,
-      method: 'PATCH',
-      body:
-        data instanceof FormData ||
-        data instanceof Blob ||
-        data instanceof URLSearchParams ||
-        typeof data === 'string' ||
-        data == null
-          ? (data as BodyInit | null | undefined)
-          : JSON.stringify(data),
-    })
-  },
-
-  delete<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-    return request<T>(endpoint, { ...config, method: 'DELETE' })
-  },
-
-  text(endpoint: string, config?: RequestConfig): Promise<string> {
-    return request<string>(endpoint, {
-      ...config,
-      method: config?.method ?? 'GET',
-      responseType: 'text',
-    })
-  },
-
-  blob(endpoint: string, config?: RequestConfig): Promise<Blob> {
-    return request<Blob>(endpoint, {
-      ...config,
-      method: config?.method ?? 'GET',
-      responseType: 'blob',
-    })
-  },
-
-  response(endpoint: string, config?: RequestConfig): Promise<Response> {
-    return request<Response>(endpoint, {
-      ...config,
-      method: config?.method ?? 'GET',
-      responseType: 'response',
-    })
-  },
-}
+export const apiClient = new ApiClient()

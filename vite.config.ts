@@ -243,7 +243,19 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   }
   const isProd = mode === 'production'
   const isDev = mode === 'development'
+  const aggressiveDevOptimization = isDev
+    ? parseBoolEnv(env, 'VITE_ENABLE_AGGRESSIVE_DEV_OPTIMIZATION', false)
+    : false
+  const lightweightDevtoolsShim = isDev
+    ? parseBoolEnv(env, 'VITE_ENABLE_VUE_PACKAGE_DEVTOOLS', false) === false
+    : false
+  const productionEnv = isProd ? env : loadEnv('production', process.cwd(), '')
   const clientContractVersion = (env.VITE_CLIENT_CONTRACT_VERSION ?? '').trim()
+  const fallbackClientContractVersion = isDev
+    ? (productionEnv.VITE_CLIENT_CONTRACT_VERSION ?? '').trim()
+    : ''
+  const resolvedClientContractVersion =
+    clientContractVersion || fallbackClientContractVersion || 'dev-local'
   if (isProd && !clientContractVersion) {
     throw new Error(
       'VITE_CLIENT_CONTRACT_VERSION is required for production builds. Inject the shared release contract hash for this rollout.'
@@ -280,6 +292,16 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   const devtoolsPlugins = devtoolsEnabled
     ? [(await import('vite-plugin-vue-devtools')).default()]
     : []
+
+  const resolveAlias: Record<string, string> = {
+    '@': fileURLToPath(new URL('./src', import.meta.url)),
+  }
+
+  if (lightweightDevtoolsShim) {
+    resolveAlias['@vue/devtools-api'] = fileURLToPath(
+      new URL('./src/shims/vueDevtoolsApi.ts', import.meta.url)
+    )
+  }
 
   return {
     /**
@@ -326,8 +348,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
         ? [
             criticalCSSPlugin(),
             serviceWorkerBuildPlugin(),
-            sriPlugin(),
             staticPrerenderPlugin(),
+            sriPlugin(),
             ...(asyncMainCss ? [asyncCssPlugin()] : []),
             obfuscationPlugin({
               enabled: obfuscationEnabled,
@@ -373,9 +395,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
      * 路径解析配置
      */
     resolve: {
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-      },
+      alias: resolveAlias,
     },
 
     /**
@@ -387,8 +407,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
       /** Git commit hash */
       __BUILD_HASH__: JSON.stringify(BUILD_HASH),
-      /** Shared release contract hash. Production must inject VITE_CLIENT_CONTRACT_VERSION explicitly. */
-      __CLIENT_CONTRACT_VERSION__: JSON.stringify(clientContractVersion || 'dev-local'),
+      /** Shared release contract hash. Dev falls back to the tracked production contract when unset. */
+      __CLIENT_CONTRACT_VERSION__: JSON.stringify(resolvedClientContractVersion),
       /** Service Worker cache version */
       __SW_CACHE_VERSION__: JSON.stringify(SW_CACHE_VERSION),
       /** 生产环境标识 */
@@ -409,36 +429,56 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
      * - 排除按需加载的大型库，避免不必要的预构建
      * - 精确指定扫描入口，减少扫描时间
      */
-    optimizeDeps: {
-      /**
-       * 需要预构建的核心依赖
-       * 这些依赖在应用启动时就会被使用，预构建可以提升性能
-       */
-      include: [
-        'vue',
-        'vue-router',
-        'pinia',
-        'pinia-plugin-persistedstate',
-        'vue-i18n',
-        // 关键优化：预构建 @lucide/vue 避免 1500+ 个单独请求
-        '@lucide/vue',
-      ],
+    optimizeDeps: aggressiveDevOptimization
+      ? {
+          /**
+           * 需要预构建的核心依赖
+           * 这些依赖在应用启动时就会被使用，预构建可以提升性能
+           */
+          include: [
+            'vue',
+            'vue-router',
+            'pinia',
+            'pinia-plugin-persistedstate',
+            'vue-i18n',
+            '@lucide/vue',
+          ],
 
-      /**
-       * 排除预构建的依赖
-       * 这些依赖按需加载，不需要预构建
-       */
-      exclude: ['vite-plugin-vue-devtools', 'gsap'],
+          /**
+           * 排除预构建的依赖
+           * 这些依赖按需加载，不需要预构建
+           */
+          exclude: ['vite-plugin-vue-devtools', 'gsap'],
 
-      /** 是否强制重新预构建 */
-      force: false,
+          /** 是否强制重新预构建 */
+          force: false,
 
-      /** 依赖扫描入口 */
-      entries: ['./src/main.ts', './src/views/HomePage.vue'],
+          /** 依赖扫描入口 */
+          entries: ['./src/main.entry.ts'],
 
-      /** 立即启动，不等待扫描完成 */
-      holdUntilCrawlEnd: false,
-    },
+          /** 立即启动，不等待扫描完成 */
+          holdUntilCrawlEnd: false,
+        }
+      : {
+          /**
+           * 本地开发默认禁用依赖预构建：
+           * 仅预构建明确白名单里的核心依赖，避免全量扫描首页链路导致内存暴涨。
+           */
+          include: [
+            'vue',
+            'vue-router',
+            'pinia',
+            'pinia-plugin-persistedstate',
+            'vue-i18n',
+            '@intlify/core-base',
+            '@intlify/shared',
+            '@lucide/vue',
+          ],
+          exclude: ['vite-plugin-vue-devtools', 'gsap', '@vue/devtools-api'],
+          entries: ['./src/main.entry.ts'],
+          noDiscovery: true,
+          holdUntilCrawlEnd: false,
+        },
 
     /**
      * Oxc 配置 (Vite 8 默认使用 Oxc 替代 esbuild)
@@ -537,7 +577,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
        */
       rolldownOptions: {
         /** 外部依赖（不打包） */
-        external: ['@/views/ComponentsShowcase.vue'],
+        external: [],
 
         /** Tree-shaking 配置 */
         treeshake: {
@@ -625,17 +665,13 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       strictPort: true,
 
       /** 文件预热 - 预加载关键文件加速首次访问 */
-      warmup: {
-        clientFiles: [
-          './src/main.ts',
-          './src/App.vue',
-          './src/views/HomePage.vue',
-          './src/views/ExplorePage.vue',
-          './src/components/layout/AppNavbar.vue',
-          './src/stores/auth.ts',
-          './src/stores/theme.ts',
-        ],
-      },
+      ...(aggressiveDevOptimization
+        ? {
+            warmup: {
+              clientFiles: ['./src/main.entry.ts', './src/App.vue', './src/views/HomePage.vue'],
+            },
+          }
+        : {}),
 
       /** 启用 CORS */
       cors: true,
@@ -647,7 +683,11 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
         deny: ['.env', '.env.*', '*.pem', '*.key'],
       },
 
-      preTransformRequests: true,
+      watch: {
+        ignored: ['**/output/**', '**/.playwright-cli/**'],
+      },
+
+      preTransformRequests: aggressiveDevOptimization,
 
       /** API 代理 */
       proxy: sharedProxyConfig,
@@ -690,8 +730,9 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
     experimental: {
       /** 启用渲染内置 HTML */
       renderBuiltUrl: (filename: string) => {
-        // 对于关键资源使用相对路径
-        if (filename.includes('critical') || filename.includes('main')) {
+        // 仅将显式 critical 资源保持为相对路径，避免入口 JS 依赖的主样式表
+        // 在 /assets/js/*.js 上下文中被错误解析为 /assets/js/assets/css/*.css。
+        if (filename.includes('critical')) {
           return `./${filename}`
         }
         return `/${filename}`

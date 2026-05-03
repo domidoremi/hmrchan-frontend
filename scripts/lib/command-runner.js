@@ -135,6 +135,23 @@ export function getBunRunArgs(...args) {
   return ['--no-env-file', 'run', ...args]
 }
 
+export function getBunRuntimeArgs({
+  env = process.env,
+  includeRunSubcommand = false,
+  runArgs = [],
+} = {}) {
+  const runtimeArgs = ['--no-env-file']
+  if (env.LOCAL_AUDIT_BUN_SMOL === 'true') {
+    runtimeArgs.push('--smol')
+  }
+
+  if (includeRunSubcommand) {
+    runtimeArgs.push('run', ...runArgs)
+  }
+
+  return runtimeArgs
+}
+
 function pushOutput(lines, chunk, maxLines = 400) {
   const text = chunk.toString()
   for (const line of text.split(/\r?\n/)) {

@@ -1,9 +1,0 @@
-/**
- * Shared button theme bridge.
- * Page and theme context should live in global CSS, not inside the SFC.
- */
-
-#app[data-color-mode='dark'] .btn,
-[data-color-mode='dark'] .btn {
-  --button-inner-highlight: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.08);
-}

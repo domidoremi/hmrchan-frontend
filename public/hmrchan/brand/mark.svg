@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">HMRChan mark</title>
+  <desc id="desc">A minimal circular HMRChan signal mark.</desc>
+  <rect width="128" height="128" rx="34" fill="#181511" />
+  <path
+    fill="#F7F3E8"
+    d="M26 36h18v22h40V36h18v56H84V72H44v20H26V36Zm30 11 8-11 8 11-8 11-8-11Zm-8 38 16-22 16 22H48Z"
+  />
+  <circle cx="101" cy="27" r="10" fill="#FF6B35" />
+</svg>

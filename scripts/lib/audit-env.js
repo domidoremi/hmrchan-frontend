@@ -4,6 +4,8 @@ import path from 'node:path'
 export const LOCAL_AUDIT_ENV_FILE = '.env.smoke.local'
 export const LOCAL_AUDIT_CONTRACT_VERSION = 'local-audit-contract'
 export const LOCAL_AUDIT_PREVIEW_PORTS = Object.freeze([4173, 5173, 3000])
+export const DEFAULT_LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB = 4096
+export const DEFAULT_LOCAL_AUDIT_BUN_SMOL = 'true'
 const BACKEND_AUDIT_ENV_FILE_CANDIDATES = Object.freeze([
   ['..', 'hmrchan-backend', '.env'],
 ])
@@ -47,9 +49,24 @@ function hasTrimmedValue(value) {
   return typeof value === 'string' && value.trim().length > 0
 }
 
+function parseNonNegativeInteger(rawValue) {
+  const parsed = Number.parseInt(String(rawValue).trim(), 10)
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
+}
+
 function parsePortNumber(rawValue) {
   const parsed = Number.parseInt(String(rawValue).trim(), 10)
   return Number.isInteger(parsed) && parsed > 0 && parsed <= 65535 ? parsed : null
+}
+
+function hasNodeMemoryLimit(nodeOptions) {
+  return /(?:^|\s)--max[-_]old[-_]space[-_]size(?:=|\s)\d+/i.test(String(nodeOptions ?? ''))
+}
+
+function appendNodeOptions(existingOptions, additions) {
+  const tokens = [String(existingOptions ?? '').trim(), ...additions.map((value) => String(value).trim())]
+    .filter(Boolean)
+  return tokens.join(' ').trim()
 }
 
 function unquoteValue(rawValue) {
@@ -171,6 +188,28 @@ function applyBackendAuditFallbacks(mergedEnv, { cwd = process.cwd() } = {}) {
   return mergedEnv
 }
 
+function applyLocalAuditResourceDefaults(mergedEnv) {
+  if (!hasTrimmedValue(mergedEnv.LOCAL_AUDIT_BUN_SMOL)) {
+    mergedEnv.LOCAL_AUDIT_BUN_SMOL = DEFAULT_LOCAL_AUDIT_BUN_SMOL
+  }
+
+  const explicitNodeBudgetMb = parseNonNegativeInteger(mergedEnv.LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB)
+  const nodeBudgetMb =
+    explicitNodeBudgetMb ?? DEFAULT_LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB
+
+  if (!hasTrimmedValue(mergedEnv.LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB)) {
+    mergedEnv.LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB = String(nodeBudgetMb)
+  }
+
+  if (nodeBudgetMb > 0 && !hasNodeMemoryLimit(mergedEnv.NODE_OPTIONS)) {
+    mergedEnv.NODE_OPTIONS = appendNodeOptions(mergedEnv.NODE_OPTIONS, [
+      `--max-old-space-size=${nodeBudgetMb}`,
+    ])
+  }
+
+  return mergedEnv
+}
+
 export function createLocalAuditEnv(
   baseEnv = process.env,
   {
@@ -199,7 +238,7 @@ export function createLocalAuditEnv(
     mergedEnv.VITE_CLIENT_CONTRACT_VERSION = LOCAL_AUDIT_CONTRACT_VERSION
   }
 
-  return mergedEnv
+  return applyLocalAuditResourceDefaults(mergedEnv)
 }
 
 export function applyLocalAuditEnvToProcess({
@@ -215,6 +254,7 @@ export function applyLocalAuditEnvToProcess({
   }
 
   applyBackendAuditFallbacks(process.env, { cwd })
+  applyLocalAuditResourceDefaults(process.env)
 
   return localAuditEnv
 }

@@ -1,75 +1,14 @@
 <template>
-  <div class="not-found-page">
-    <div class="content">
-      <h1 class="error-code gradient-text">404</h1>
-      <h2 class="error-title">{{ $t('error.notFound') }}</h2>
-      <p class="error-message">{{ $t('error.notFoundMessage') }}</p>
-      <Button @click="goHome">
-        <AnimatedIcon name="home" :fallback-icon="Home" size="sm" />
-        {{ $t('error.goHome') }}
-      </Button>
-    </div>
-  </div>
+  <section class="hmr-page-hero">
+    <p class="hmr-kicker">404</p>
+    <h1>{{ t('error.notFound') }}</h1>
+    <RouterLink class="hmr-cta hmr-cta--dark" to="/">{{ t('error.home') }}</RouterLink>
+  </section>
 </template>
 
 <script setup lang="ts">
-defineOptions({ name: 'NotFoundPage' })
+import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
-import { useRouter } from 'vue-router'
-import { Home } from '@lucide/vue'
-import Button from '@/components/ui/Button.vue'
-import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-
-const router = useRouter()
-
-function goHome() {
-  router.push('/')
-}
+const { t } = useI18n({ useScope: 'global' })
 </script>
-
-<style scoped>
-.not-found-page {
-  min-height: var(--app-safe-block-size);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: var(--spacing-3);
-}
-
-.error-code {
-  font-size: 5rem;
-  font-weight: var(--font-bold);
-  line-height: 1;
-  margin-bottom: var(--spacing-3);
-}
-
-@media (min-width: 640px) {
-  .error-code {
-    font-size: 6.25rem;
-  }
-}
-
-.error-title {
-  font-size: var(--text-xl);
-  margin-bottom: var(--spacing-2);
-}
-
-@media (min-width: 640px) {
-  .error-title {
-    font-size: var(--text-2xl);
-  }
-}
-
-.error-message {
-  color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-4);
-  font-size: var(--text-sm);
-}
-
-@media (max-width: 768px) {
-  .not-found-page {
-    min-height: var(--app-safe-block-size-with-mobile-nav);
-  }
-}
-</style>

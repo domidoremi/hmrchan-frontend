@@ -1641,6 +1641,46 @@ async function main(): Promise<void> {
   let browser: puppeteer.Browser | null = null
   let runError: unknown = null
   const getPreviewDiagnostics = () => previewServer?.formatDiagnosticsLines() ?? null
+  let cleanupRequested = false
+  let terminationHandled = false
+
+  const cleanupResources = async () => {
+    if (cleanupRequested) return
+    cleanupRequested = true
+
+    const activeBrowser = browser
+    browser = null
+    if (activeBrowser) {
+      await withTimeout(
+        activeBrowser.close().catch(() => {
+          // ignore
+        }),
+        5_000,
+        'browser.close'
+      ).catch((cleanupError) => console.warn('⚠️ Browser cleanup timed out:', cleanupError))
+    }
+
+    const activePreviewServer = previewServer
+    previewServer = null
+    if (activePreviewServer) {
+      await withTimeout(activePreviewServer.stop(), 10_000, 'previewServer.stop').catch(
+        (cleanupError) => console.warn('⚠️ Preview cleanup timed out:', cleanupError)
+      )
+    }
+  }
+
+  const handleTermination = (signal: NodeJS.Signals) => {
+    if (terminationHandled) return
+    terminationHandled = true
+    runError = runError ?? new Error(`Minimal E2E checks interrupted by ${signal}`)
+    void cleanupResources().finally(() => {
+      console.warn(`⚠️ Minimal E2E checks interrupted by ${signal}`)
+      process.exit(1)
+    })
+  }
+
+  process.once('SIGINT', handleTermination)
+  process.once('SIGTERM', handleTermination)
 
   console.log(`🧾 Auth smoke required: ${authSmokeRequired ? 'yes' : 'no'}`)
   console.log(`🧾 Auth credentials detected: ${authLogin && authPassword ? 'yes' : 'no'}`)
@@ -1706,8 +1746,18 @@ async function main(): Promise<void> {
     try {
       throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
     } catch (error) {
+      if (!authSmokeRequired) {
+        console.warn(
+          `⚠️ Auth bootstrap preflight degraded in guest-only smoke; continuing public route checks. ${formatError(error)}`
+        )
+      } else {
+        logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
+        throw error
+      }
+    }
+
+    if (authSmokeRequired) {
       logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
-      throw error
     }
 
     console.log('🧱 Verifying static prerendered HTML...')
@@ -1758,6 +1808,8 @@ async function main(): Promise<void> {
         label: 'sample post route',
         requestedRoute: requestedSamplePostRoute,
         fallbackRoute: DEFAULT_SAMPLE_POST_ROUTE,
+        discoveryPath: '/explore',
+        detailKind: 'post',
         shellSelector: '.post-detail-page',
         readinessSelectorsAll: ['.post-comments'],
         dataDependent: true,
@@ -1766,6 +1818,8 @@ async function main(): Promise<void> {
         label: 'sample discussion route',
         requestedRoute: requestedSampleDiscussionRoute,
         fallbackRoute: DEFAULT_SAMPLE_DISCUSSION_ROUTE,
+        discoveryPath: '/community',
+        detailKind: 'discussion',
         shellSelector: '.discussion-detail-page',
         readinessSelectorsAll: ['.discussion-comments'],
         dataDependent: true,
@@ -2093,6 +2147,8 @@ async function main(): Promise<void> {
     }
     console.error('\n❌ Minimal E2E checks failed:', error)
   } finally {
+    process.off('SIGINT', handleTermination)
+    process.off('SIGTERM', handleTermination)
     try {
       await writeSmokeArtifacts(summary)
       console.log('🧾 Wrote smoke summary to ' + summary.artifactDir)
@@ -2103,20 +2159,7 @@ async function main(): Promise<void> {
       }
     }
 
-    if (browser) {
-      await withTimeout(
-        browser.close().catch(() => {
-          // ignore
-        }),
-        5_000,
-        'browser.close'
-      ).catch((cleanupError) => console.warn('⚠️ Browser cleanup timed out:', cleanupError))
-    }
-    if (previewServer) {
-      await withTimeout(previewServer.stop(), 10_000, 'previewServer.stop').catch((cleanupError) =>
-        console.warn('⚠️ Preview cleanup timed out:', cleanupError)
-      )
-    }
+    await cleanupResources()
   }
 
   if (runError) {
