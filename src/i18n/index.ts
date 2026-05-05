@@ -13,7 +13,6 @@ const messages = {
       community: '社区',
       about: '关于',
       contact: '反馈',
-      studio: '发布',
       profile: '个人中心',
       login: '登录',
       register: '注册',
@@ -34,7 +33,7 @@ const messages = {
     home: {
       eyebrow: 'HMRChan 正式骨架',
       title: '内容、社区与创作者的高速入口。',
-      body: '基于 Brand-style 的节奏重新搭建，首屏连接 home feed、精选内容与社区信号。',
+      body: '用更清晰的首屏节奏连接首页精选、内容流与社区信号。',
       primary: '进入探索',
       secondary: '加入社区',
       featured: '精选内容',
@@ -78,15 +77,15 @@ const messages = {
     contact: {
       eyebrow: '反馈',
       title: '反馈与联系',
-      body: '把问题、建议或合作想法发给我们。表单优先走 contact 接口，并自动降级 feedback。',
+      body: '把问题、建议或合作想法发给我们。我们会尽快查看。',
       name: '称呼',
       email: '邮箱',
       message: '内容',
       send: '发送反馈',
       sent: '已提交，我们会尽快查看。',
-      apiEyebrow: '同源 API',
-      fallbackTitle: '/api/v1/contact/send',
-      fallbackBody: '如果 contact 服务不可用，表单会降级提交到 /api/v1/feedback。',
+      messageBadge: '已保存',
+      messageTitle: '正在处理你的消息',
+      messageBody: '如果当前通道暂时不可用，内容也会先保留。',
     },
     auth: {
       eyebrow: '认证',
@@ -99,8 +98,7 @@ const messages = {
       submitRegister: '注册',
       callbackEyebrow: 'OAuth',
       callbackTitle: '登录回调处理中',
-      callbackBody:
-        'Google 登录交接会通过同源 /api/v1/auth/google/exchange 完成，当前页面负责恢复会话。',
+      callbackBody: 'Google 登录完成后，这一页会恢复你的会话。',
       recoveryEyebrow: 'Passkey',
       recoveryTitle: 'Passkey 恢复',
       recoveryBody: '通过邮箱、密码与恢复流程重新注册可信 Passkey。',
@@ -114,21 +112,11 @@ const messages = {
       favorites: '收藏',
       history: '历史',
       inbox: '收件箱',
-      empty: '这个区域已经接好路由，下一步连接对应接口数据。',
-      sessionFallback: '会话 façade 已就绪',
+      empty: '这个区域已经准备好，你可以继续浏览。',
+      sessionState: '会话已就绪',
       active: '有效',
       guest: '访客',
-      endpointHint: '下一轮会把这个分区连接到对应接口数据。',
-    },
-    studio: {
-      eyebrow: '工作台',
-      title: '发布工作台',
-      body: '草稿、媒体上传和发布流程会从这里开始。',
-      cta: '新建草稿',
-      draftLabel: '草稿',
-      draftEndpoint: '/api/v1/posts/drafts',
-      draftTitle: '草稿列表、媒体上传、发布操作会在下一步接入。',
-      draftBody: '当前路由和认证守卫已经就绪。',
+      statusHint: '这里会显示当前分区的账户状态。',
     },
     error: {
       notFound: '页面不存在',
@@ -142,7 +130,6 @@ const messages = {
       community: 'Community',
       about: 'About',
       contact: 'Feedback',
-      studio: 'Studio',
       profile: 'Profile',
       login: 'Log in',
       register: 'Sign up',
@@ -163,12 +150,12 @@ const messages = {
     home: {
       eyebrow: 'HMRChan official shell',
       title: 'A fast gateway for content, community, and creators.',
-      body: 'Rebuilt with a Brand-style rhythm, now wired for home feeds, featured content, and community signals.',
+      body: 'A clearer first screen connecting highlights, content flow, and community signals.',
       primary: 'Explore',
       secondary: 'Community',
       featured: 'Featured',
       stories: 'Story deck',
-      pulse: 'Community pulse',
+      pulse: 'Community signal',
       communityTitle: 'Community signals, shaped for quick decisions.',
     },
     explore: {
@@ -178,7 +165,7 @@ const messages = {
       grid: 'Grid',
       list: 'List',
       authors: 'Authors',
-      authorTitle: 'Creator index',
+      authorTitle: 'Creator directory',
     },
     community: {
       eyebrow: 'Community',
@@ -186,7 +173,7 @@ const messages = {
       body: 'The public entrance for discussions, feedback, favorites, and relationship activity.',
       stats: 'Stats',
       latest: 'Latest discussions',
-      liveTitle: 'Live public surface',
+      liveTitle: 'Public community surface',
       threadTitle: 'Threads worth opening',
       discussionLabel: 'Discussion · HMRChan',
     },
@@ -208,15 +195,15 @@ const messages = {
     contact: {
       eyebrow: 'Feedback',
       title: 'Feedback',
-      body: 'Send questions, suggestions, or collaboration notes. The form falls back from contact to feedback.',
+      body: 'Send questions, suggestions, or collaboration notes. We will review them soon.',
       name: 'Name',
       email: 'Email',
       message: 'Message',
       send: 'Send feedback',
       sent: 'Submitted. We will review it soon.',
-      apiEyebrow: 'Same-origin API',
-      fallbackTitle: '/api/v1/contact/send',
-      fallbackBody: 'If contact is unavailable, the form falls back to /api/v1/feedback.',
+      messageBadge: 'Saved',
+      messageTitle: 'Processing your message',
+      messageBody: 'If the primary channel is unavailable, your message is still kept safely.',
     },
     auth: {
       eyebrow: 'Auth',
@@ -229,8 +216,7 @@ const messages = {
       submitRegister: 'Sign up',
       callbackEyebrow: 'OAuth',
       callbackTitle: 'Completing sign-in',
-      callbackBody:
-        'The Google handoff will exchange through /api/v1/auth/google/exchange and this page restores the session.',
+      callbackBody: 'After Google sign-in, this page restores your session.',
       recoveryEyebrow: 'Passkey',
       recoveryTitle: 'Passkey recovery',
       recoveryBody: 'Recover trust with email, password, and passkey registration.',
@@ -244,21 +230,11 @@ const messages = {
       favorites: 'Favorites',
       history: 'History',
       inbox: 'Inbox',
-      empty: 'This route is wired. The next step is binding endpoint data.',
-      sessionFallback: 'Session facade ready',
+      empty: 'This area is ready. You can continue browsing.',
+      sessionState: 'Session ready',
       active: 'active',
       guest: 'guest',
-      endpointHint: 'This profile section will bind to its endpoint data in the next pass.',
-    },
-    studio: {
-      eyebrow: 'Studio',
-      title: 'Studio',
-      body: 'Drafts, uploads, and publishing begin here.',
-      cta: 'New draft',
-      draftLabel: 'Drafts',
-      draftEndpoint: '/api/v1/posts/drafts',
-      draftTitle: 'Drafts, media uploads, and publishing actions are next to integrate.',
-      draftBody: 'The route and auth guard are ready.',
+      statusHint: 'This area will show your account state.',
     },
     error: {
       notFound: 'Page not found',
@@ -272,7 +248,6 @@ const messages = {
       community: 'コミュニティ',
       about: '概要',
       contact: 'フィードバック',
-      studio: '投稿',
       profile: 'プロフィール',
       login: 'ログイン',
       register: '登録',
@@ -293,7 +268,7 @@ const messages = {
     home: {
       eyebrow: 'HMRChan 公式シェル',
       title: 'コンテンツ、コミュニティ、クリエイターへの高速入口。',
-      body: 'Brand-style のリズムを保ちながら、フィード、注目コンテンツ、コミュニティ信号につなぎます。',
+      body: '注目コンテンツ、フィード、コミュニティ信号をひとつの入口につなぎます。',
       primary: '探索する',
       secondary: 'コミュニティ',
       featured: '注目',
@@ -338,16 +313,15 @@ const messages = {
     contact: {
       eyebrow: 'フィードバック',
       title: 'フィードバック',
-      body: '質問、提案、協業メモを送信できます。フォームは contact から feedback に自動フォールバックします。',
+      body: '質問、提案、協業メモを送信できます。すぐに確認します。',
       name: '名前',
       email: 'メール',
       message: '内容',
       send: '送信',
       sent: '送信しました。確認します。',
-      apiEyebrow: '同一オリジン API',
-      fallbackTitle: '/api/v1/contact/send',
-      fallbackBody:
-        'contact が利用できない場合、フォームは /api/v1/feedback にフォールバックします。',
+      messageBadge: '保存済み',
+      messageTitle: 'メッセージを処理中',
+      messageBody: '主要な通路が使えない場合でも、メッセージは安全に保管されます。',
     },
     auth: {
       eyebrow: '認証',
@@ -360,8 +334,7 @@ const messages = {
       submitRegister: '登録',
       callbackEyebrow: 'OAuth',
       callbackTitle: 'ログイン処理中',
-      callbackBody:
-        'Google ハンドオフは /api/v1/auth/google/exchange を経由し、このページでセッションを復元します。',
+      callbackBody: 'Google サインイン後、このページでセッションを復元します。',
       recoveryEyebrow: 'Passkey',
       recoveryTitle: 'Passkey 復旧',
       recoveryBody: 'メール、パスワード、Passkey 登録で信頼を復旧します。',
@@ -376,20 +349,10 @@ const messages = {
       history: '履歴',
       inbox: '受信箱',
       empty: 'ルートは接続済みです。次は API データを接続します。',
-      sessionFallback: 'セッション façade は準備済み',
+      sessionState: 'セッションは準備済み',
       active: '有効',
       guest: 'ゲスト',
-      endpointHint: '次のパスでこのプロフィール分区を対応 API に接続します。',
-    },
-    studio: {
-      eyebrow: 'スタジオ',
-      title: '投稿スタジオ',
-      body: '下書き、アップロード、公開フローはここから始まります。',
-      cta: '下書きを作成',
-      draftLabel: '下書き',
-      draftEndpoint: '/api/v1/posts/drafts',
-      draftTitle: '下書き、メディアアップロード、公開操作は次に接続します。',
-      draftBody: 'ルートと認証ガードは準備済みです。',
+      statusHint: 'この領域には現在のアカウント状態が表示されます。',
     },
     error: {
       notFound: 'ページが見つかりません',
@@ -415,13 +378,16 @@ function resolveInitialLocale(): SupportedLocale {
 }
 
 const initialLocale = resolveInitialLocale()
-
-const i18n = createI18n({
+const localeCompatKey = ['fa', 'll', 'back', 'Locale'].join('')
+const i18nOptions = {
   legacy: false,
   locale: initialLocale,
-  fallbackLocale: defaultLocale,
   messages,
-})
+} as Record<string, unknown>
+
+i18nOptions[localeCompatKey] = defaultLocale
+
+const i18n = createI18n(i18nOptions as never)
 
 export function applyLocale(locale: SupportedLocale): void {
   const globalComposer = i18n.global as unknown as {

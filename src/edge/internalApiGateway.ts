@@ -1,8 +1,8 @@
-import { SITE_ORIGIN } from './htmlDocument'
-
 export type EdgeBindingFetcher = {
   fetch(input: Request): Promise<Response>
 }
+
+const INTERNAL_GATEWAY_ORIGIN = 'https://momichan.xyz'
 
 export type InternalApiGatewayRuntimeEnv = {
   INTERNAL_API_GATEWAY?: EdgeBindingFetcher
@@ -17,7 +17,7 @@ interface InternalGatewayFetchOptions {
 }
 
 export function buildInternalGatewayUrl(path: string): string {
-  return new URL(path, SITE_ORIGIN).toString()
+  return new URL(path, INTERNAL_GATEWAY_ORIGIN).toString()
 }
 
 export async function fetchViaInternalApiGateway(

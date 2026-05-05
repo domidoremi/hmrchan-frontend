@@ -1,93 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.brandappart.com</loc>
+    <loc>https://hmrchan.local/</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/works</loc>
+    <loc>https://hmrchan.local/explore</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/about</loc>
+    <loc>https://hmrchan.local/community</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/start-a-project</loc>
+    <loc>https://hmrchan.local/schedule</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/join-us</loc>
+    <loc>https://hmrchan.local/settings</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/thank-you</loc>
+    <loc>https://hmrchan.local/login</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/work/bricks</loc>
+    <loc>https://hmrchan.local/register</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/work/decla-fr</loc>
+    <loc>https://hmrchan.local/about</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/work/dermis</loc>
+    <loc>https://hmrchan.local/contact</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/work/forbes</loc>
+    <loc>https://hmrchan.local/join-us</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/work/gostan</loc>
+    <loc>https://hmrchan.local/thank-you</loc>
   </url>
   <url>
-    <loc>https://www.brandappart.com/work/incard</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/jalao</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/jaws-group</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/mekaa</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/notez-nous</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/novo</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/olea</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/onlycard</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/qonnect</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/reecall</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/robinsur</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/sound-experience</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/sowbeez</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/stables</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/trends</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/varzii</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/very-mountain</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/voodoo</loc>
-  </url>
-  <url>
-    <loc>https://www.brandappart.com/work/we-are</loc>
+    <loc>https://hmrchan.local/auth/passkey-recovery</loc>
   </url>
 </urlset>

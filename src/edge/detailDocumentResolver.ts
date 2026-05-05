@@ -20,6 +20,8 @@ import { buildInternalGatewayUrl, type InternalApiGatewayRuntimeEnv } from './in
 
 export type EdgeRuntimeEnv = UpstreamRuntimeEnv & InternalApiGatewayRuntimeEnv
 
+const SITE_NAME = 'HMRChan'
+
 type EdgeAuthorRelatedPost = {
   id?: string | null
   platform?: string | null
@@ -366,7 +368,7 @@ async function fetchEdgeJson<T>(
   const targetUrl = `${targetOrigin}${path}`
   const headers = new Headers({
     Accept: 'application/json',
-    'X-MomiChan-Edge-Metadata': 'true',
+    'X-HMRChan-Edge-Metadata': 'true',
   })
 
   let response: Response
@@ -423,7 +425,7 @@ function buildPostMetaDescription(post: EdgePostDetail): string {
     author ? `Browse a public ${platform} post from ${author}` : `Browse a public ${platform} post`,
     primaryTag ? `tagged #${primaryTag}` : '',
     metrics,
-    'on MomiChan.',
+    `on ${SITE_NAME}.`,
   ]
 
   return truncate(pieces.filter(Boolean).join(' '), 160)
@@ -509,7 +511,7 @@ function buildPostShellLinks(post: EdgePostDetail): HtmlDocumentShellLink[] {
 
   if (authorId) {
     links.push({
-      href: `/author/${authorId}`,
+      href: `/profile/${authorId}`,
       label: authorName ? `${authorName} profile` : 'Author profile',
     })
   }
@@ -517,13 +519,13 @@ function buildPostShellLinks(post: EdgePostDetail): HtmlDocumentShellLink[] {
   const relatedPostId = normalizePublicPostIdentifier(related?.id)
   if (relatedPostId) {
     links.push({
-      href: `/post/${relatedPostId}`,
+      href: `/posts/${relatedPostId}`,
       label: 'Latest related post',
     })
   }
 
   links.push({ href: '/explore', label: 'Explore' })
-  links.push({ href: '/authors', label: 'Authors' })
+  links.push({ href: '/community', label: 'Community' })
 
   return dedupeLinks(links).slice(0, 4)
 }
@@ -570,13 +572,13 @@ function buildPostStructuredData(
         ? compactRecord({
             '@type': 'Person',
             name: authorName,
-            url: authorId ? new URL(`/author/${authorId}`, SITE_ORIGIN).toString() : undefined,
+            url: authorId ? new URL(`/profile/${authorId}`, SITE_ORIGIN).toString() : undefined,
             image: normalizeText(post.author_avatar_url) || undefined,
           })
         : undefined,
       publisher: {
         '@type': 'Organization',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
         logo: {
           '@type': 'ImageObject',
@@ -586,7 +588,7 @@ function buildPostStructuredData(
       interactionStatistic: interactionStatistic.length ? interactionStatistic : undefined,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
       },
     }),
@@ -609,7 +611,7 @@ function buildAuthorMetaDescription(author: EdgeAuthorDetail): string {
     .join(' · ')
 
   return truncate(
-    [name, `is a public ${platform} creator on MomiChan.`, stats].filter(Boolean).join(' '),
+    [name, `is a public ${platform} creator on ${SITE_NAME}.`, stats].filter(Boolean).join(' '),
     160
   )
 }
@@ -677,11 +679,11 @@ function buildAuthorShellLinks(author: EdgeAuthorDetail): HtmlDocumentShellLink[
 
   const recentPostId = normalizePublicPostIdentifier(recentPost?.id)
   if (recentPostId) {
-    links.push({ href: `/post/${recentPostId}`, label: 'Recent post' })
+    links.push({ href: `/posts/${recentPostId}`, label: 'Recent post' })
   }
 
-  links.push({ href: '/authors', label: 'Authors' })
   links.push({ href: '/explore', label: 'Explore' })
+  links.push({ href: '/community', label: 'Community' })
   links.push({ href: '/', label: 'Home' })
 
   return dedupeLinks(links).slice(0, 4)
@@ -722,7 +724,7 @@ function buildAuthorStructuredData(
     compactRecord({
       '@context': 'https://schema.org',
       '@type': 'ProfilePage',
-      name: `${name} · MomiChan`,
+      name: `${name} · ${SITE_NAME}`,
       url: pageUrl,
       description: metaDescription,
       mainEntity: compactRecord({
@@ -733,7 +735,7 @@ function buildAuthorStructuredData(
       }),
       isPartOf: {
         '@type': 'WebSite',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
       },
     }),
@@ -860,7 +862,7 @@ function buildDiscussionShellLinks(discussion: EdgeDiscussionDetail): HtmlDocume
   )
 
   if (referencedPostId) {
-    links.push({ href: `/post/${referencedPostId}`, label: 'Referenced post' })
+    links.push({ href: `/posts/${referencedPostId}`, label: 'Referenced post' })
   }
 
   links.push({ href: '/community', label: 'Community' })
@@ -913,7 +915,7 @@ function buildDiscussionStructuredData(
         : undefined,
       publisher: {
         '@type': 'Organization',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
         logo: {
           '@type': 'ImageObject',
@@ -925,7 +927,7 @@ function buildDiscussionStructuredData(
             '@type': 'CreativeWork',
             name: referencedPostTitle,
             url: referencedPostId
-              ? new URL(`/post/${referencedPostId}`, SITE_ORIGIN).toString()
+              ? new URL(`/posts/${referencedPostId}`, SITE_ORIGIN).toString()
               : undefined,
           })
         : undefined,
@@ -933,7 +935,7 @@ function buildDiscussionStructuredData(
       commentCount: resolveDiscussionCommentCount(discussion) ?? undefined,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
       },
     }),
@@ -978,7 +980,7 @@ function buildScheduleMetaDescription(schedule: EdgeScheduleDetail): string {
       category,
       scheduleWindow,
       venue ? `Venue: ${venue}` : '',
-      'Public schedule detail on MomiChan.',
+      `Public schedule detail on ${SITE_NAME}.`,
     ]
       .filter(Boolean)
       .join(' · '),
@@ -1033,7 +1035,7 @@ function buildScheduleShellLinks(schedule: EdgeScheduleDetail): HtmlDocumentShel
   const links: HtmlDocumentShellLink[] = []
   const authorId = normalizeIdentifier(schedule.author?.id)
 
-  if (authorId) links.push({ href: `/author/${authorId}`, label: 'Related author' })
+  if (authorId) links.push({ href: `/profile/${authorId}`, label: 'Related profile' })
 
   links.push({ href: '/schedule', label: 'Schedule' })
   links.push({ href: '/community', label: 'Community' })
@@ -1092,7 +1094,7 @@ function buildScheduleStructuredData(
       about: shellBody,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
       },
     }),
@@ -1100,7 +1102,7 @@ function buildScheduleStructuredData(
 }
 
 function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocumentConfig {
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+  const fallback = resolveHtmlDocument(new URL(path, SITE_ORIGIN))
   const titleCandidate =
     normalizeText(post.title) ||
     normalizeText(post.description) ||
@@ -1120,7 +1122,7 @@ function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocum
 
   return {
     ...fallback,
-    title: `${truncate(titleCandidate, 68)} · MomiChan`,
+    title: `${truncate(titleCandidate, 68)} · ${SITE_NAME}`,
     description: metaDescription,
     canonicalPath: path,
     ogType: 'article',
@@ -1137,7 +1139,7 @@ function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocum
 }
 
 function buildDynamicAuthorDocument(path: string, author: EdgeAuthorDetail): HtmlDocumentConfig {
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+  const fallback = resolveHtmlDocument(new URL(path, SITE_ORIGIN))
   const username = normalizeText(author.username)
   const displayName = normalizeText(author.display_name)
   const name = displayName || `@${username}`
@@ -1148,7 +1150,7 @@ function buildDynamicAuthorDocument(path: string, author: EdgeAuthorDetail): Htm
 
   return {
     ...fallback,
-    title: `${truncate(titleLabel, 68)} · MomiChan`,
+    title: `${truncate(titleLabel, 68)} · ${SITE_NAME}`,
     description: metaDescription,
     canonicalPath: path,
     ogType: 'article',
@@ -1167,7 +1169,7 @@ function buildDynamicDiscussionDocument(
   path: string,
   discussion: EdgeDiscussionDetail
 ): HtmlDocumentConfig {
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+  const fallback = resolveHtmlDocument(new URL(path, SITE_ORIGIN))
   const canonicalPath = resolveDiscussionCanonicalPath(path, discussion)
   const titleCandidate = normalizeText(discussion.title) || 'Discussion detail'
   const metaDescription = buildDiscussionMetaDescription(discussion)
@@ -1178,7 +1180,7 @@ function buildDynamicDiscussionDocument(
 
   return {
     ...fallback,
-    title: `${truncate(titleCandidate, 68)} · MomiChan`,
+    title: `${truncate(titleCandidate, 68)} · ${SITE_NAME}`,
     description: metaDescription,
     canonicalPath,
     ogType: 'article',
@@ -1202,7 +1204,7 @@ function buildDynamicScheduleDocument(
   path: string,
   schedule: EdgeScheduleDetail
 ): HtmlDocumentConfig {
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+  const fallback = resolveHtmlDocument(new URL(path, SITE_ORIGIN))
   const scheduleId = resolveScheduleId(schedule, path.split('/').filter(Boolean).at(-1) ?? '')
   const canonicalPath = `/schedule/${scheduleId}`
   const titleCandidate = normalizeText(schedule.title) || 'Schedule detail'
@@ -1213,7 +1215,7 @@ function buildDynamicScheduleDocument(
 
   return {
     ...fallback,
-    title: `${truncate(titleCandidate, 68)} · MomiChan`,
+    title: `${truncate(titleCandidate, 68)} · ${SITE_NAME}`,
     description: metaDescription,
     canonicalPath,
     ogType: 'article',
@@ -1238,10 +1240,10 @@ export async function resolveHtmlDocumentWithEdgeData(
   env?: EdgeRuntimeEnv
 ): Promise<HtmlDocumentConfig> {
   const normalizedPath = normalizeDocumentPath(url.pathname)
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${normalizedPath}`))
+  const fallback = resolveHtmlDocument(new URL(normalizedPath, SITE_ORIGIN))
   const path = normalizedPath
 
-  const postMatch = path.match(/^\/post\/([^/]+)$/)
+  const postMatch = path.match(/^\/posts\/([^/]+)$/)
   if (postMatch?.[1]) {
     try {
       const result = await fetchEdgeJson<EdgePostDetail>(env, `/api/v1/posts/${postMatch[1]}`)
@@ -1253,7 +1255,7 @@ export async function resolveHtmlDocumentWithEdgeData(
     }
   }
 
-  const authorMatch = path.match(/^\/author\/([^/]+)$/)
+  const authorMatch = path.match(/^\/profile\/([^/]+)$/)
   if (authorMatch?.[1]) {
     try {
       const result = await fetchEdgeJson<EdgeAuthorDetail>(env, `/api/v1/authors/${authorMatch[1]}`)

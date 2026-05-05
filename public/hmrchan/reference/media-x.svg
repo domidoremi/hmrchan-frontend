@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-label="X thread media preview">
+  <rect width="1200" height="1500" fill="#171412"/>
+  <path d="M160 190h880L690 718l370 592H828L574 900l-270 410H150l350-532L160 190z" fill="#fbf9ef" opacity=".9"/>
+  <path d="M310 310l560 880" stroke="#ff7722" stroke-width="70" stroke-linecap="round" opacity=".82"/>
+  <circle cx="930" cy="240" r="120" fill="#3d2fa9" opacity=".72"/>
+  <text x="120" y="1360" fill="#fbf9ef" font-family="Arial, sans-serif" font-size="92" font-weight="900">THREAD</text>
+</svg>

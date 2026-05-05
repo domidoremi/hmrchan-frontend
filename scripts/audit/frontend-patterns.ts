@@ -41,7 +41,7 @@ const ALLOWED_INTERSECTION_OBSERVER = new Set([
   'src/composables/useInfiniteScroll.ts',
   'src/utils/performance.ts',
   'src/utils/modernAPIs.ts',
-  'src/views/ResetLandingPage.vue',
+  'src/hmr/composables/useHmrInViewReveal.ts',
   'src/views/PostDetailPage.vue',
 ])
 

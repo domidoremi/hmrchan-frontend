@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-label="TikTok media preview">
+  <rect width="1200" height="1500" fill="#171412"/>
+  <circle cx="350" cy="370" r="190" fill="#ff3c34" opacity=".82"/>
+  <circle cx="820" cy="460" r="210" fill="#3d2fa9" opacity=".82"/>
+  <circle cx="620" cy="1010" r="260" fill="#ff7722" opacity=".76"/>
+  <path d="M660 260v620a165 165 0 1 1-92-148V510h350V260z" fill="#fbf9ef"/>
+  <text x="130" y="1340" fill="#fbf9ef" font-family="Arial, sans-serif" font-size="94" font-weight="900">TIKTOK</text>
+</svg>

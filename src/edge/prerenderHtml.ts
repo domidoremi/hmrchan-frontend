@@ -11,12 +11,18 @@ import {
 export const STATIC_PRERENDER_ROUTES = [
   '/',
   '/explore',
-  '/authors',
-  '/search',
   '/community',
   '/schedule',
+  '/settings',
+  '/login',
+  '/register',
+  '/auth/callback',
+  '/auth/passkey-recovery',
+  '/profile',
   '/about',
   '/contact',
+  '/join-us',
+  '/thank-you',
 ] as const
 
 function escapeHtml(value: string): string {

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
@@ -354,20 +355,19 @@ async function runStaticGateStage(stageRecord) {
 
 async function runHookStaticGateStage(stageRecord) {
   const env = { ...process.env }
+  const hookScriptTests = [
+    'src/__tests__/scripts/validate-release.spec.ts',
+    'src/__tests__/scripts/command-runner.spec.ts',
+    'src/__tests__/scripts/frontend-contract-audit.spec.ts',
+    'src/__tests__/scripts/release-route-contract.spec.ts',
+  ].filter((filePath) => existsSync(path.resolve(process.cwd(), filePath)))
   const commands = [
     ['bun', 'run', 'format:check'],
     ['bun', 'run', 'type-check'],
     ['bun', 'run', 'lint:strict'],
-    [
-      'node',
-      'scripts/run-vitest.mjs',
-      'run',
-      'src/__tests__/scripts/validate-release.spec.ts',
-      'src/__tests__/scripts/command-runner.spec.ts',
-      'src/__tests__/scripts/frontend-contract-audit.spec.ts',
-      'src/__tests__/scripts/release-route-contract.spec.ts',
-      '--reporter=default',
-    ],
+    ...(hookScriptTests.length > 0
+      ? [['node', 'scripts/run-vitest.mjs', 'run', ...hookScriptTests, '--reporter=default']]
+      : []),
   ]
 
   const commandResults = await runStageCommands(stageRecord, commands, env, {

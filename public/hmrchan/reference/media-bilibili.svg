@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-label="Bilibili media preview">
+  <rect width="1200" height="1500" fill="#fbf9ef"/>
+  <rect x="120" y="230" width="960" height="760" rx="82" fill="#3d2fa9"/>
+  <path d="M380 230l-92-126M820 230l92-126" stroke="#171412" stroke-width="44" stroke-linecap="round"/>
+  <circle cx="430" cy="610" r="70" fill="#fbf9ef"/>
+  <circle cx="770" cy="610" r="70" fill="#fbf9ef"/>
+  <rect x="370" y="800" width="460" height="44" rx="22" fill="#fbf9ef"/>
+  <rect x="180" y="1110" width="840" height="58" rx="29" fill="#171412" opacity=".86"/>
+  <text x="130" y="1340" fill="#171412" font-family="Arial, sans-serif" font-size="90" font-weight="900">BILIBILI</text>
+</svg>

@@ -1,107 +1,132 @@
 import type { RouteRecordRaw } from 'vue-router'
 
-import { isBrandWorkSlug } from '@/brand-appart/content/pageSources'
+import type { HmrPublicPageKey } from '@/hmr/types'
 
 declare module 'vue-router' {
   interface RouteMeta {
-    mirrorPath?: string
-  }
-}
-
-function mirrorProps(path: string) {
-  return {
-    mirrorPath: path,
-    requestedPath: path,
-    notFound: path === '/404',
+    pageKey?: HmrPublicPageKey
+    navKey?: HmrPublicPageKey
+    isPanel?: boolean
+    requiresAuth?: boolean
   }
 }
 
 export const appRoutes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('@/brand-appart/layout/BrandAppartSiteLayout.vue'),
+    component: () => import('@/layouts/HmrSiteShell.vue'),
     children: [
       {
         path: '',
-        name: 'brand-home',
-        component: () => import('@/brand-appart/components/BrandRawPage.vue'),
-        props: mirrorProps('/'),
-        meta: { mirrorPath: '/' },
+        name: 'hmr-home',
+        component: () => import('@/views/HomePage.vue'),
+        meta: { pageKey: 'home', navKey: 'home' },
       },
       {
-        path: 'works',
-        name: 'brand-works',
-        component: () => import('@/brand-appart/components/BrandRawPage.vue'),
-        props: mirrorProps('/works'),
-        meta: { mirrorPath: '/works' },
+        path: 'explore',
+        name: 'hmr-explore',
+        component: () => import('@/views/ExplorePage.vue'),
+        meta: { pageKey: 'explore', navKey: 'explore' },
+      },
+      {
+        path: 'community',
+        name: 'hmr-community',
+        component: () => import('@/views/CommunityPage.vue'),
+        meta: { pageKey: 'community', navKey: 'community' },
+      },
+      {
+        path: 'schedule',
+        name: 'hmr-schedule',
+        component: () => import('@/views/SchedulePage.vue'),
+        meta: { pageKey: 'schedule', navKey: 'schedule' },
+      },
+      {
+        path: 'settings',
+        name: 'hmr-settings',
+        component: () => import('@/views/SettingsPage.vue'),
+        meta: { pageKey: 'settings', navKey: 'settings', isPanel: true },
+      },
+      {
+        path: 'login',
+        name: 'hmr-login',
+        component: () => import('@/views/LoginPage.vue'),
+        meta: { pageKey: 'login', isPanel: true },
+      },
+      {
+        path: 'register',
+        name: 'hmr-register',
+        component: () => import('@/views/RegisterPage.vue'),
+        meta: { pageKey: 'register', isPanel: true },
+      },
+      {
+        path: 'auth/callback',
+        name: 'hmr-auth-callback',
+        component: () => import('@/views/AuthCallbackPage.vue'),
+        meta: { pageKey: 'auth-callback', isPanel: true },
+      },
+      {
+        path: 'auth/passkey-recovery',
+        name: 'hmr-passkey-recovery',
+        component: () => import('@/views/PasskeyRecoveryPage.vue'),
+        meta: { pageKey: 'passkey-recovery', isPanel: true },
+      },
+      {
+        path: 'passkey-recovery',
+        redirect: '/auth/passkey-recovery',
+      },
+      {
+        path: 'profile',
+        name: 'hmr-profile',
+        component: () => import('@/views/ProfilePage.vue'),
+        props: () => ({
+          section: 'overview',
+        }),
+        meta: { pageKey: 'profile', isPanel: true, requiresAuth: true },
+      },
+      {
+        path: 'profile/:section',
+        name: 'hmr-profile-section',
+        component: () => import('@/views/ProfilePage.vue'),
+        props: (to) => ({
+          section: typeof to.params.section === 'string' ? to.params.section : 'overview',
+        }),
+        meta: { pageKey: 'profile', isPanel: true, requiresAuth: true },
       },
       {
         path: 'about',
-        name: 'brand-about',
-        component: () => import('@/brand-appart/components/BrandRawPage.vue'),
-        props: mirrorProps('/about'),
-        meta: { mirrorPath: '/about' },
-      },
-      {
-        path: 'start-a-project',
-        name: 'brand-start-a-project',
-        component: () => import('@/brand-appart/components/BrandRawPage.vue'),
-        props: mirrorProps('/start-a-project'),
-        meta: { mirrorPath: '/start-a-project' },
+        name: 'hmr-about',
+        component: () => import('@/views/AboutPage.vue'),
+        meta: { pageKey: 'about' },
       },
       {
         path: 'contact',
-        name: 'brand-contact',
-        component: () => import('@/brand-appart/components/BrandRawPage.vue'),
-        props: mirrorProps('/contact'),
-        meta: { mirrorPath: '/contact' },
+        name: 'hmr-contact',
+        component: () => import('@/views/ContactPage.vue'),
+        meta: { pageKey: 'contact' },
       },
       {
         path: 'join-us',
-        name: 'brand-join-us',
-        component: () => import('@/brand-appart/components/BrandRawPage.vue'),
-        props: mirrorProps('/join-us'),
-        meta: { mirrorPath: '/join-us' },
+        name: 'hmr-join-us',
+        component: () => import('@/views/JoinUsPage.vue'),
+        meta: { pageKey: 'join' },
       },
       {
         path: 'thank-you',
-        name: 'brand-thank-you',
-        component: () => import('@/brand-appart/components/BrandRawPage.vue'),
-        props: mirrorProps('/thank-you'),
-        meta: { mirrorPath: '/thank-you' },
+        name: 'hmr-thank-you',
+        component: () => import('@/views/ThankYouPage.vue'),
+        meta: { pageKey: 'thanks', isPanel: true },
       },
       {
-        path: 'work/:slug',
-        name: 'brand-work-detail',
-        component: () => import('@/brand-appart/components/BrandRawPage.vue'),
-        props: (to) => {
-          const slug = Array.isArray(to.params.slug) ? to.params.slug[0] : to.params.slug
-
-          if (!slug || !isBrandWorkSlug(slug)) {
-            return {
-              mirrorPath: '/404',
-              requestedPath: to.path,
-              notFound: true,
-            }
-          }
-
-          return {
-            mirrorPath: `/work/${slug}`,
-            requestedPath: to.path,
-            notFound: false,
-          }
-        },
+        path: 'posts/:id',
+        name: 'hmr-post-detail',
+        component: () => import('@/views/PostDetailPage.vue'),
+        meta: { pageKey: 'post', navKey: 'explore' },
       },
       {
         path: ':pathMatch(.*)*',
-        name: 'brand-not-found',
-        component: () => import('@/brand-appart/components/BrandRawPage.vue'),
-        props: (to) => ({
-          mirrorPath: '/404',
-          requestedPath: to.path,
-          notFound: true,
-        }),
-        meta: { mirrorPath: '/404' },
+        name: 'hmr-not-found',
+        component: () => import('@/views/NotFoundPage.vue'),
+        meta: { pageKey: 'not-found' },
       },
     ],
   },

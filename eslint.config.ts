@@ -30,7 +30,6 @@ export default defineConfigWithVueTs(
       '**/dist-ssr/**',
       '**/coverage/**',
       '**/output/**',
-      '**/public/brand-appart/assets/js/**',
       '**/.wrangler/**',
       '**/.claude/**',
       '**/.agent/**',

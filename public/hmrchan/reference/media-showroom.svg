@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-label="Showroom media preview">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3d2fa9"/>
+      <stop offset="1" stop-color="#171412"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1500" fill="url(#bg)"/>
+  <path d="M120 880c160-210 310-315 480-315s320 105 480 315v310H120z" fill="#fbf9ef" opacity=".18"/>
+  <circle cx="600" cy="440" r="175" fill="#ffc765"/>
+  <rect x="185" y="1010" width="830" height="70" rx="35" fill="#fbf9ef" opacity=".68"/>
+  <rect x="250" y="1118" width="700" height="42" rx="21" fill="#fbf9ef" opacity=".34"/>
+  <text x="130" y="1340" fill="#fbf9ef" font-family="Arial, sans-serif" font-size="82" font-weight="900">SHOWROOM</text>
+</svg>

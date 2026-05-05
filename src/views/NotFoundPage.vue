@@ -1,8 +1,20 @@
 <template>
-  <section class="hmr-page-hero">
-    <p class="hmr-kicker">404</p>
-    <h1>{{ t('error.notFound') }}</h1>
-    <RouterLink class="hmr-cta hmr-cta--dark" to="/">{{ t('error.home') }}</RouterLink>
+  <section class="hmr-panel-hero">
+    <div class="hmr-container">
+      <p class="hmr-kicker">404</p>
+      <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('error.notFound') }}</h1>
+      <p class="hmr-body">这个路径暂时没有内容。</p>
+      <div class="hmr-actions">
+        <RouterLink class="hmr-cta" to="/">{{ t('error.home') }}</RouterLink>
+        <RouterLink class="hmr-text-link" to="/explore">查看探索</RouterLink>
+      </div>
+      <div class="hmr-page-tags" aria-label="Available routes">
+        <span>/</span>
+        <span>/explore</span>
+        <span>/community</span>
+        <span>/schedule</span>
+      </div>
+    </div>
   </section>
 </template>
 

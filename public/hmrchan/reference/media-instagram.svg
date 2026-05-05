@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-label="Instagram media preview">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffc765"/>
+      <stop offset=".52" stop-color="#ff3c34"/>
+      <stop offset="1" stop-color="#3d2fa9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1500" fill="url(#bg)"/>
+  <rect x="120" y="126" width="450" height="520" rx="50" fill="#fbf9ef" opacity=".32"/>
+  <rect x="630" y="126" width="450" height="520" rx="50" fill="#fbf9ef" opacity=".18"/>
+  <rect x="120" y="704" width="450" height="520" rx="50" fill="#fbf9ef" opacity=".2"/>
+  <rect x="630" y="704" width="450" height="520" rx="50" fill="#fbf9ef" opacity=".36"/>
+  <circle cx="345" cy="386" r="98" fill="#171412" opacity=".32"/>
+  <circle cx="855" cy="964" r="98" fill="#171412" opacity=".28"/>
+  <text x="120" y="1360" fill="#fbf9ef" font-family="Arial, sans-serif" font-size="82" font-weight="900">INSTAGRAM</text>
+</svg>

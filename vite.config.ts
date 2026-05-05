@@ -39,6 +39,45 @@ const DEV_PROXY_BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 const REHEARSAL_TURNSTILE_BYPASS_HEADER = 'X-Rehearsal-Turnstile-Bypass'
+const DEV_PROXY_HOST_COOKIE_EQUIVALENTS = new Map<string, string>([
+  ['__Host-momi_bff_at', 'momi_bff_at'],
+  ['__Host-momi_bff_rt', 'momi_bff_rt'],
+  ['__Host-momi_origin_csrf', 'momi_origin_csrf'],
+])
+const DEV_PROXY_LOCAL_COOKIE_EQUIVALENTS = new Map<string, string>(
+  [...DEV_PROXY_HOST_COOKIE_EQUIVALENTS.entries()].map(([hostName, localName]) => [
+    localName,
+    hostName,
+  ])
+)
+
+function rewriteDevProxyIncomingCookieHeader(value: string | string[] | undefined): string | null {
+  const raw = Array.isArray(value) ? value.join('; ') : value
+  if (!raw) return null
+
+  const rewritten = raw
+    .split(';')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .map((segment) => {
+      const [name, ...rest] = segment.split('=')
+      const mappedName = DEV_PROXY_LOCAL_COOKIE_EQUIVALENTS.get(name) ?? name
+      return `${mappedName}=${rest.join('=')}`
+    })
+    .join('; ')
+
+  return rewritten || null
+}
+
+function rewriteDevProxyOutgoingSetCookie(cookie: string): string {
+  let rewritten = cookie.replace(/;\s*Secure/gi, '')
+
+  for (const [hostName, localName] of DEV_PROXY_HOST_COOKIE_EQUIVALENTS.entries()) {
+    rewritten = rewritten.replace(new RegExp(`^${hostName}=`), `${localName}=`)
+  }
+
+  return rewritten
+}
 
 function normalizeProxyRequestHeaders(
   proxyReq: ClientRequest,
@@ -52,6 +91,10 @@ function normalizeProxyRequestHeaders(
       : DEV_PROXY_BROWSER_UA
 
   proxyReq.setHeader('user-agent', normalizedUserAgent)
+  const rewrittenCookie = rewriteDevProxyIncomingCookieHeader(req.headers.cookie)
+  if (rewrittenCookie) {
+    proxyReq.setHeader('cookie', rewrittenCookie)
+  }
   if (rehearsalTurnstileBypassToken) {
     proxyReq.setHeader(REHEARSAL_TURNSTILE_BYPASS_HEADER, rehearsalTurnstileBypassToken)
   }
@@ -151,9 +194,7 @@ function createProxyRule(apiTarget: string, rehearsalTurnstileBypassToken = '') 
       proxy.on('proxyRes', (proxyRes) => {
         const setCookie = proxyRes.headers['set-cookie']
         if (setCookie && Array.isArray(setCookie)) {
-          proxyRes.headers['set-cookie'] = setCookie.map((cookie) =>
-            cookie.replace(/;\s*Secure/gi, '')
-          )
+          proxyRes.headers['set-cookie'] = setCookie.map(rewriteDevProxyOutgoingSetCookie)
         }
       })
     },

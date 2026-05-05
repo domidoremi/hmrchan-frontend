@@ -1,22 +1,22 @@
 {
-  "name": "Brand Appart",
-  "short_name": "Brand Appart",
-  "description": "Brand Appart live site local mirror.",
+  "name": "HMRChan",
+  "short_name": "HMRChan",
+  "description": "HMRChan public content discovery, community, schedule, and creator signal surface.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fbf9ef",
   "theme_color": "#fbf9ef",
   "icons": [
     {
-      "src": "/brand-appart/assets/images/favicon.png",
+      "src": "/hmrchan/brand/mark.svg",
       "sizes": "any",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/brand-appart/assets/images/favicon.png",
+      "src": "/hmrchan/brand/mark.svg",
       "sizes": "any",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "maskable"
     }
   ]

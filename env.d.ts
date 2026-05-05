@@ -47,6 +47,10 @@ interface ImportMetaEnv {
   readonly VITE_OBFUSCATION_DEAD_CODE?: string
   /** 日志级别 */
   readonly VITE_LOG_LEVEL?: string
+  /** 是否显式启用真实 API。默认启用；仅 false 时关闭。 */
+  readonly VITE_HMRCHAN_ENABLE_API?: string
+  /** 是否强制使用本地 fallback 内容，供离线视觉调试使用。 */
+  readonly VITE_HMRCHAN_FORCE_FALLBACK?: string
 }
 
 interface ImportMeta {
@@ -58,6 +62,7 @@ declare const __BUILD_TIME__: string
 declare const __BUILD_HASH__: string
 declare const __PROD__: boolean
 declare const __DEV__: boolean
+declare const __CLIENT_CONTRACT_VERSION__: string
 declare const __SW_CACHE_VERSION__: string
 
 declare module '*.vue' {
