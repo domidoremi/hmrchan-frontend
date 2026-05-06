@@ -4,10 +4,9 @@
       <div class="hmr-container hmr-page-hero-container">
         <p class="hmr-kicker">探索</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>
+          <span>媒体</span>
           <span>探索</span>
-          <span>全平台帖子。</span>
         </h1>
-        <p class="hmr-body">浏览 YouTube、Instagram、X、TikTok、Showroom 等平台的公开帖子。</p>
         <div class="hmr-page-tags" aria-label="Search suggestions">
           <button
             v-for="item in content.suggestions"
@@ -22,8 +21,8 @@
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
-          empty-title="没有找到匹配内容。"
-          empty-body="换一个关键词或平台再试。"
+          empty-title="暂无内容"
+          empty-body="换个筛选再试"
           @retry="refreshExplore"
         />
       </div>
@@ -33,8 +32,8 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-works-header">
           <div class="hmr-works-header-main">
-            <p class="hmr-kicker">全平台</p>
-            <h2 class="hmr-section-title">媒体卡片优先。</h2>
+            <p class="hmr-kicker">All media</p>
+            <h2 class="hmr-section-title">全部帖子</h2>
             <form class="hmr-data-toolbar" @submit.prevent="refreshExplore">
               <label>
                 <span>搜索</span>
@@ -60,6 +59,23 @@
                   <option value="view_count">浏览</option>
                   <option value="like_count">点赞</option>
                   <option value="comment_count">评论</option>
+                </select>
+              </label>
+              <label>
+                <span>类型</span>
+                <select v-model="contentKind">
+                  <option value="all">全部</option>
+                  <option value="media">含媒体</option>
+                  <option value="text">纯文本</option>
+                </select>
+              </label>
+              <label>
+                <span>时长</span>
+                <select v-model="durationRange">
+                  <option value="all">全部</option>
+                  <option value="short">短视频</option>
+                  <option value="medium">中等</option>
+                  <option value="long">长内容</option>
                 </select>
               </label>
               <button class="hmr-status-button" type="submit">刷新</button>
@@ -98,7 +114,7 @@
         </div>
 
         <div
-          v-if="pageState !== 'empty'"
+          v-if="!isFilteredEmpty"
           :class="
             viewMode === 'grid'
               ? 'hmr-featured-grid hmr-featured-grid--cinematic'
@@ -106,7 +122,7 @@
           "
         >
           <HmrPostCard
-            v-for="(post, index) in posts"
+            v-for="(post, index) in visiblePosts"
             :key="`explore-post-${post.id}-${index}`"
             :post="post"
             :index="index"
@@ -118,8 +134,8 @@
 
         <div v-else class="hmr-empty-panel">
           <p class="hmr-kicker">暂无内容</p>
-          <h3>没有找到匹配内容。</h3>
-          <p>换一个关键词、平台或排序方式再试一次。</p>
+          <h3>没有匹配内容</h3>
+          <p>清空筛选再看</p>
           <button class="hmr-cta" type="button" @click="clearFilters">清空筛选</button>
         </div>
 
@@ -142,7 +158,7 @@
           <div class="hmr-media-ribbon hmr-media-ribbon--floating" aria-hidden="true">
             <div class="hmr-media-ribbon-track">
               <div
-                v-for="(post, index) in posts.slice(0, 6)"
+                v-for="(post, index) in visiblePosts.slice(0, 6)"
                 :key="`explore-sweep-a-${post.id}-${index}`"
                 class="hmr-media-ribbon-card"
                 :style="cardStyle(index)"
@@ -150,7 +166,7 @@
                 <strong>{{ post.tag }}<br />{{ glyphFor(post, index) }}</strong>
               </div>
               <div
-                v-for="(post, index) in posts.slice(0, 6)"
+                v-for="(post, index) in visiblePosts.slice(0, 6)"
                 :key="`explore-sweep-b-${post.id}-${index}`"
                 class="hmr-media-ribbon-card"
                 :style="cardStyle(index + 6)"
@@ -172,9 +188,8 @@
     <section class="hmr-section" data-hmr-reveal>
       <div class="hmr-sticky-split">
         <div class="hmr-sticky-copy">
-          <p class="hmr-kicker">创作者</p>
-          <h2 class="hmr-section-title">跟着作者继续看。</h2>
-          <p class="hmr-body">作者、平台和内容方向一起组成探索入口。</p>
+          <p class="hmr-kicker">Authors</p>
+          <h2 class="hmr-section-title">作者</h2>
         </div>
         <div class="hmr-author-strip">
           <article v-for="author in content.authors" :key="author.id" class="hmr-author-chip">
@@ -206,6 +221,8 @@ const viewMode = ref<'grid' | 'list'>('grid')
 const query = ref('')
 const platform = ref('all')
 const sortBy = ref('published_at')
+const contentKind = ref<'all' | 'media' | 'text'>('all')
+const durationRange = ref<'all' | 'short' | 'medium' | 'long'>('all')
 const pageState = ref<HmrPageState>('idle')
 const content = ref<HmrExploreContent>({
   posts: seedPosts,
@@ -237,11 +254,31 @@ const posts = computed(() => {
   const source = content.value.posts.length ? content.value.posts : seedPosts
   return source.filter((post): post is HmrPost => Boolean(post))
 })
+const visiblePosts = computed(() =>
+  posts.value.filter((post) => {
+    const hasMedia = Boolean(post.mediaUrl) || Boolean(post.hasMedia) || (post.mediaCount ?? 0) > 0
+    const duration = post.durationSec ?? 0
+    const matchesKind =
+      contentKind.value === 'all' ||
+      (contentKind.value === 'media' && hasMedia) ||
+      (contentKind.value === 'text' && !hasMedia)
+    const matchesDuration =
+      durationRange.value === 'all' ||
+      (durationRange.value === 'short' && duration > 0 && duration <= 60) ||
+      (durationRange.value === 'medium' && duration > 60 && duration <= 600) ||
+      (durationRange.value === 'long' && duration > 600)
+
+    return matchesKind && matchesDuration
+  })
+)
+const isFilteredEmpty = computed(
+  () => pageState.value === 'empty' || visiblePosts.value.length === 0
+)
 const platformOptions = computed(() => {
   if (content.value.platforms.length) return content.value.platforms
 
   const counts = new Map<string, number>()
-  for (const post of posts.value) {
+  for (const post of visiblePosts.value.length ? visiblePosts.value : posts.value) {
     const key = post.platform?.trim().toLowerCase() || 'hmrchan'
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
@@ -280,7 +317,7 @@ function platformName(value?: string): string {
     pixiv: 'Pixiv',
     showroom: 'Showroom',
     tiktok: 'TikTok',
-    twitter: 'Twitter',
+    twitter: 'X',
     x: 'X',
     youtube: 'YouTube',
     instagram: 'Instagram',
@@ -332,6 +369,8 @@ function clearFilters(): void {
   query.value = ''
   platform.value = 'all'
   sortBy.value = 'published_at'
+  contentKind.value = 'all'
+  durationRange.value = 'all'
   void refreshExplore()
 }
 

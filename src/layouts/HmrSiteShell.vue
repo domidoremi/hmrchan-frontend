@@ -113,9 +113,9 @@
     <footer class="hmr-footer" data-hmr-reveal>
       <div class="hmr-container hmr-footer-container">
         <div class="hmr-footer-content">
-          <h2 data-hmr-text-reveal>让每一次刷新都有价值。</h2>
+          <h2 data-hmr-text-reveal>HMRChan</h2>
           <RouterLink class="hmr-text-link hmr-text-link--light" to="/contact">
-            24 小时内给你回应
+            联系我们
           </RouterLink>
         </div>
         <div class="hmr-footer-bottom">

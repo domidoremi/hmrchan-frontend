@@ -34,6 +34,9 @@ export interface HmrPost {
   postType?: string
   postUrl?: string
   commentCount?: number
+  durationSec?: number
+  fileCount?: number
+  hasMedia?: boolean
   likeCount?: number
   mediaCount?: number
   viewCount?: number
@@ -159,6 +162,21 @@ function pickOptionalString(record: JsonRecord, keys: string[]): string | undefi
   return undefined
 }
 
+function pickNestedOptionalString(
+  record: JsonRecord,
+  candidates: Array<[string, string[]]>
+): string | undefined {
+  for (const [parentKey, childKeys] of candidates) {
+    const nested = record[parentKey]
+    if (!isRecord(nested)) continue
+
+    const value = pickOptionalString(nested, childKeys)
+    if (value) return value
+  }
+
+  return undefined
+}
+
 function pickNumber(record: JsonRecord, keys: string[], fallback = 0): number {
   for (const key of keys) {
     const value = record[key]
@@ -183,13 +201,27 @@ function extractRecord(payload: unknown, keys: string[]): JsonRecord {
   return payload
 }
 
+function unwrapApiPayload(payload: unknown): unknown {
+  if (!isRecord(payload)) return payload
+
+  const nested = payload.data ?? payload.result ?? payload.payload
+  if (Array.isArray(nested) || isRecord(nested)) return nested
+
+  return payload
+}
+
 function extractList(payload: unknown, keys: string[]): unknown[] {
-  if (Array.isArray(payload)) return payload
-  if (!isRecord(payload)) return []
+  const unwrapped = unwrapApiPayload(payload)
+  if (Array.isArray(unwrapped)) return unwrapped
+  if (!isRecord(unwrapped)) return []
 
   for (const key of keys) {
-    const value = payload[key]
+    const value = unwrapped[key]
     if (Array.isArray(value)) return value
+    if (isRecord(value)) {
+      const nestedItems = extractList(value, ['items', 'posts', 'results', 'featured', 'stories'])
+      if (nestedItems.length) return nestedItems
+    }
   }
 
   return []
@@ -201,8 +233,9 @@ function extractCursorCollection<T>(
   mapper: (value: unknown, index: number) => T,
   fallback: T[]
 ): HmrCursorCollection<T> {
-  const items = extractList(payload, keys)
-  const record = isRecord(payload) ? payload : {}
+  const unwrapped = unwrapApiPayload(payload)
+  const items = extractList(unwrapped, keys)
+  const record = isRecord(unwrapped) ? unwrapped : {}
   const nextCursor = pickOptionalString(record, ['next_cursor', 'nextCursor'])
   const hasMoreValue = record.has_more ?? record.hasMore
 
@@ -365,28 +398,34 @@ function isLikelyUuid(value: string): boolean {
 function mapPost(value: unknown, index: number): HmrPost {
   const record = isRecord(value) ? value : {}
   const fallbackPost = fallbackPosts[index] ?? fallbackPosts[0]
-  const id = pickString(record, ['id', 'post_id', 'slug'], `demo-${index + 1}`)
+  const id = pickString(record, ['id', 'post_id', 'postId', 'slug'], `demo-${index + 1}`)
   const title = pickString(
     record,
-    ['title', 'headline', 'name'],
+    ['title', 'headline', 'name', 'display_text'],
     fallbackPost?.title ?? '今日精选内容'
   )
   const excerpt = pickString(
     record,
-    ['excerpt', 'summary', 'description', 'body_preview', 'content'],
+    ['excerpt', 'summary', 'subtitle', 'description', 'body_preview', 'content', 'text'],
     fallbackPost?.excerpt ?? '来自 HMRChan 的最新精选内容。'
   )
   const authorRecord = isRecord(record.author) ? record.author : {}
-  const mediaUrl = pickOptionalString(record, [
-    'thumbnail_url',
-    'thumbnailUrl',
-    'cover_url',
-    'coverUrl',
-    'media_url',
-    'mediaUrl',
-    'image_url',
-    'imageUrl',
-  ])
+  const mediaUrl =
+    pickOptionalString(record, [
+      'thumbnail_url',
+      'thumbnailUrl',
+      'cover_url',
+      'coverUrl',
+      'media_url',
+      'mediaUrl',
+      'image_url',
+      'imageUrl',
+    ]) ??
+    pickNestedOptionalString(record, [
+      ['cover', ['thumbnail_url', 'thumbnailUrl', 'url', 'image_url', 'imageUrl']],
+      ['image', ['thumbnail_url', 'thumbnailUrl', 'url', 'image_url', 'imageUrl']],
+      ['thumbnail', ['thumbnail_url', 'thumbnailUrl', 'url', 'image_url', 'imageUrl']],
+    ])
 
   const post: HmrPost = {
     id,
@@ -394,30 +433,49 @@ function mapPost(value: unknown, index: number): HmrPost {
     excerpt,
     authorName: pickString(
       record,
-      ['author_name', 'username'],
-      pickString(authorRecord, ['name', 'username'], 'HMRChan')
+      ['author_name', 'username', 'eyebrow'],
+      pickString(authorRecord, ['display_name', 'name', 'username'], 'HMRChan')
     ),
-    tag: pickString(record, ['category', 'tag', 'type', 'platform'], fallbackPost?.tag ?? '精选'),
-    createdAt: pickString(record, ['created_at', 'published_at', 'updated_at'], 'Just now'),
+    tag: pickString(
+      record,
+      ['category', 'tag', 'type', 'platform', 'kicker'],
+      fallbackPost?.tag ?? '精选'
+    ),
+    createdAt: pickString(
+      record,
+      ['created_at', 'published_at', 'updated_at', 'meta', 'time_hint'],
+      'Just now'
+    ),
     statsLabel: pickString(record, ['stats_label', 'metric'], fallbackPost?.statsLabel ?? '实时'),
   }
-  const platform = pickOptionalString(record, ['platform'])
+  const platform = pickOptionalString(record, ['platform', 'kicker'])
   const platformPostId = pickOptionalString(record, ['platform_post_id', 'platformPostId'])
-  const postType = pickOptionalString(record, ['post_type', 'postType', 'media_type'])
+  const postType = pickOptionalString(record, [
+    'post_type',
+    'postType',
+    'media_type',
+    'content_type',
+  ])
   const postUrl = pickOptionalString(record, ['post_url', 'url'])
   const commentCount = pickNumber(record, ['comment_count', 'comments'])
+  const durationSec = pickNumber(record, ['duration_sec', 'durationSec', 'duration'])
+  const fileCount = pickNumber(record, ['file_count', 'fileCount'])
   const likeCount = pickNumber(record, ['community_like_count', 'like_count', 'likes'])
   const viewCount = pickNumber(record, ['view_count', 'views'])
-  const mediaCount = pickNumber(record, ['media_count', 'file_count'])
+  const mediaCount = Math.max(pickNumber(record, ['media_count', 'mediaCount']), fileCount)
+  const hasMedia = Boolean(mediaUrl) || mediaCount > 0 || fileCount > 0
 
   if (mediaUrl) {
     post.mediaUrl = mediaUrl
   }
-  if (platform) post.platform = platform
+  if (platform) post.platform = platform.toLowerCase()
   if (platformPostId) post.platformPostId = platformPostId
   if (postType) post.postType = postType
   if (postUrl) post.postUrl = postUrl
   if (commentCount) post.commentCount = commentCount
+  if (durationSec) post.durationSec = durationSec
+  if (fileCount) post.fileCount = fileCount
+  if (hasMedia) post.hasMedia = true
   if (likeCount) post.likeCount = likeCount
   if (viewCount) post.viewCount = viewCount
   if (mediaCount) post.mediaCount = mediaCount
@@ -755,7 +813,8 @@ function mapHomeContent(
   storyDeck: unknown,
   community: unknown,
   trends: unknown,
-  scheduleHighlights: unknown
+  scheduleHighlights: unknown,
+  publicPosts: unknown
 ): HmrHomeContent {
   const homeFeatured = extractList(home, ['featured', 'posts', 'items'])
   const featuredList = extractList(featured, ['featured', 'posts', 'items'])
@@ -763,10 +822,17 @@ function mapHomeContent(
   const communityList = extractList(community, ['highlights', 'items', 'discussions'])
   const trendList = extractList(trends, ['trends', 'items', 'summary', 'highlights'])
   const scheduleList = extractList(scheduleHighlights, ['highlights', 'schedules', 'items'])
+  const publicPostList = extractList(publicPosts, ['items', 'posts', 'results'])
+  const primaryFeatured = publicPostList.length
+    ? publicPostList
+    : featuredList.length
+      ? featuredList
+      : homeFeatured
+  const primaryStory = storyList.length ? storyList : primaryFeatured
 
   return {
-    featured: (featuredList.length ? featuredList : homeFeatured).map(mapPost).slice(0, 6),
-    storyDeck: (storyList.length ? storyList : fallbackPosts).map(mapPost).slice(0, 4),
+    featured: (primaryFeatured.length ? primaryFeatured : fallbackPosts).map(mapPost).slice(0, 6),
+    storyDeck: (primaryStory.length ? primaryStory : fallbackPosts).map(mapPost).slice(0, 4),
     highlights: (communityList.length ? communityList : fallbackCommunity)
       .map(mapCommunityItem)
       .slice(0, 3),
@@ -785,8 +851,9 @@ export async function loadHomeContentResource(): Promise<HmrAsyncResource<HmrHom
     readEndpointResult<unknown>('/community/highlights'),
     readEndpointResult<unknown>('/trends/summary'),
     readEndpointResult<unknown>('/schedules/highlights'),
+    readEndpointResult<unknown>('/posts?limit=10'),
   ])
-  const [home, featured, storyDeck, community, trends, scheduleHighlights] = results
+  const [home, featured, storyDeck, community, trends, scheduleHighlights, publicPosts] = results
   const status = combineEndpointResults(results)
 
   return makeResource(
@@ -796,7 +863,8 @@ export async function loadHomeContentResource(): Promise<HmrAsyncResource<HmrHom
       storyDeck?.data,
       community?.data,
       trends?.data,
-      scheduleHighlights?.data
+      scheduleHighlights?.data,
+      publicPosts?.data
     ),
     status
   )

@@ -2,7 +2,14 @@
   <component
     :is="linkTo ? RouterLink : 'article'"
     class="hmr-project-card hmr-post-card"
-    :class="[`hmr-post-card--${variant}`, { 'is-linked': Boolean(linkTo) }]"
+    :class="[
+      `hmr-post-card--${variant}`,
+      {
+        'hmr-post-card--generated-poster': !hasRealPoster,
+        'hmr-post-card--real-poster': hasRealPoster,
+        'is-linked': Boolean(linkTo),
+      },
+    ]"
     :data-platform="platformKey"
     :style="cardVisualStyle"
     v-bind="linkAttrs"
@@ -19,7 +26,7 @@
       <div class="hmr-post-card__badge-row" aria-hidden="true">
         <span class="hmr-post-card__badge">{{ platformLabel }}</span>
         <span class="hmr-post-card__badge hmr-post-card__badge--solid">
-          {{ post.postType ?? post.tag }}
+          {{ mediaKindLabel }}
         </span>
       </div>
       <div class="hmr-post-card__stats" aria-hidden="true">
@@ -35,7 +42,7 @@
       <p class="hmr-meta hmr-post-card__meta">
         <span>{{ post.authorName }}</span>
         <span>{{ post.createdAt }}</span>
-        <span>{{ post.tag }}</span>
+        <span>{{ metaTypeLabel }}</span>
       </p>
       <h3 class="hmr-card-title">{{ post.title }}</h3>
       <p v-if="showExcerpt" class="hmr-body hmr-post-card__excerpt">{{ post.excerpt }}</p>
@@ -74,6 +81,7 @@ const palette = {
   bilibili: ['#ff3c34', '#3d2fa9'],
   instagram: ['#ff7722', '#ff3c34'],
   tiktok: ['#171412', '#3d2fa9'],
+  twitter: ['#171412', '#ff7722'],
   showroom: ['#3d2fa9', '#ffc765'],
   youtube: ['#ff3c34', '#ff7722'],
   x: ['#171412', '#ff7722'],
@@ -85,6 +93,7 @@ const platformLabelMap: Record<string, string> = {
   instagram: 'Instagram',
   showroom: 'Showroom',
   tiktok: 'TikTok',
+  twitter: 'X',
   x: 'X',
   youtube: 'YouTube',
   hmrchan: 'HMRChan',
@@ -110,13 +119,29 @@ const cardVisualStyle = computed(() => ({
   '--hmr-card-start': colorSet.value[0],
   '--hmr-card-end': colorSet.value[1],
 }))
+const hasRealPoster = computed(() => {
+  const value = props.post.mediaUrl?.trim()
+  return Boolean(value) && !value?.startsWith('/hmrchan/reference/') && !value?.startsWith('data:')
+})
 const posterUrl = computed(() => props.post.mediaUrl ?? buildPosterDataUrl())
+const mediaKindLabel = computed(() => {
+  if (typeof props.post.durationSec === 'number' && props.post.durationSec > 0) {
+    return formatDuration(props.post.durationSec)
+  }
+  if (props.post.hasMedia || (props.post.mediaCount ?? 0) > 0 || (props.post.fileCount ?? 0) > 0) {
+    const count = props.post.mediaCount ?? props.post.fileCount
+    return count && count > 1 ? `${count} media` : 'media'
+  }
+  return props.post.postType ?? 'text'
+})
+const metaTypeLabel = computed(() => (hasRealPoster.value ? props.post.tag : 'text'))
 const platformMark = computed(() => {
   const marks: Record<string, string> = {
     bilibili: 'BV',
     instagram: 'IG',
     showroom: 'SR',
     tiktok: 'TT',
+    twitter: 'X',
     x: 'X',
     youtube: 'YT',
   }
@@ -129,6 +154,7 @@ const platformGlyph = computed(() => {
     instagram: '◇',
     showroom: 'LIVE',
     tiktok: '♪',
+    twitter: '×',
     x: '×',
     youtube: '▶',
   }
@@ -148,6 +174,9 @@ const audienceLabel = computed(() => {
   if (typeof props.post.commentCount === 'number' && props.post.commentCount > 0) {
     return `${formatCompact(props.post.commentCount)} 讨论`
   }
+  if (typeof props.post.durationSec === 'number' && props.post.durationSec > 0) {
+    return formatDuration(props.post.durationSec)
+  }
   if (typeof props.post.mediaCount === 'number' && props.post.mediaCount > 0) {
     return `${props.post.mediaCount} 媒体`
   }
@@ -160,7 +189,6 @@ const showFooter = computed(() => props.showFooter && props.variant !== 'compact
 
 function buildPosterDataUrl(): string {
   const [start, end] = colorSet.value
-  const title = escapeXml(props.post.title)
   const author = escapeXml(props.post.authorName)
   const platform = escapeXml(platformLabel.value)
   const tag = escapeXml(props.post.tag)
@@ -168,7 +196,7 @@ function buildPosterDataUrl(): string {
   const mark = escapeXml(platformMark.value)
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-labelledby="t d">
-      <title id="t">${title}</title>
+      <title id="t">${platform} media preview</title>
       <desc id="d">${platform} preview for ${author}</desc>
       <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -214,6 +242,20 @@ function formatCompact(value: number): string {
   if (value >= 1000000) return `${(value / 1000000).toFixed(1).replace(/\.0$/, '')}M`
   if (value >= 1000) return `${(value / 1000).toFixed(1).replace(/\.0$/, '')}K`
   return String(value)
+}
+
+function formatDuration(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds))
+  const minutes = Math.floor(safeSeconds / 60)
+  const rest = safeSeconds % 60
+
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60)
+    const hourMinutes = minutes % 60
+    return `${hours}:${String(hourMinutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`
+  }
+
+  return `${minutes}:${String(rest).padStart(2, '0')}`
 }
 
 function escapeXml(value: string): string {
