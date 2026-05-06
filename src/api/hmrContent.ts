@@ -31,6 +31,9 @@ export interface HmrPost {
   statsLabel: string
   platform?: string
   platformPostId?: string
+  relationshipType?: 'original' | 'repost' | 'self_repost' | 'quote' | 'self_quote' | string
+  repostOfPlatformPostId?: string
+  canonicalDisplayKey?: string
   postType?: string
   postUrl?: string
   commentCount?: number
@@ -450,6 +453,19 @@ function mapPost(value: unknown, index: number): HmrPost {
   }
   const platform = pickOptionalString(record, ['platform', 'kicker'])
   const platformPostId = pickOptionalString(record, ['platform_post_id', 'platformPostId'])
+  const relationshipType = pickOptionalString(record, ['relationship_type', 'relationshipType'])
+  const repostOfPlatformPostId = pickOptionalString(record, [
+    'repost_of_platform_post_id',
+    'repostOfPlatformPostId',
+    'retweet_id',
+    'retweetId',
+    'retweeted_platform_post_id',
+    'retweetedPlatformPostId',
+  ])
+  const canonicalDisplayKey = pickOptionalString(record, [
+    'canonical_display_key',
+    'canonicalDisplayKey',
+  ])
   const postType = pickOptionalString(record, [
     'post_type',
     'postType',
@@ -470,6 +486,9 @@ function mapPost(value: unknown, index: number): HmrPost {
   }
   if (platform) post.platform = platform.toLowerCase()
   if (platformPostId) post.platformPostId = platformPostId
+  if (relationshipType) post.relationshipType = relationshipType
+  if (repostOfPlatformPostId) post.repostOfPlatformPostId = repostOfPlatformPostId
+  if (canonicalDisplayKey) post.canonicalDisplayKey = canonicalDisplayKey
   if (postType) post.postType = postType
   if (postUrl) post.postUrl = postUrl
   if (commentCount) post.commentCount = commentCount
@@ -481,6 +500,45 @@ function mapPost(value: unknown, index: number): HmrPost {
   if (mediaCount) post.mediaCount = mediaCount
 
   return post
+}
+
+function postDisplayKey(post: HmrPost): string {
+  const canonical = post.canonicalDisplayKey?.trim()
+  if (canonical) return canonical.toLowerCase()
+
+  const platform = normalizePlatformId(post.platform)
+  const relationship = post.relationshipType?.trim().toLowerCase()
+  const isCollapsibleRepost = relationship === 'repost' || relationship === 'self_repost'
+  const platformPostId = (
+    isCollapsibleRepost ? (post.repostOfPlatformPostId ?? post.platformPostId) : post.platformPostId
+  )?.trim()
+  if (platform && platformPostId) return `${platform}:${platformPostId}`
+  return post.id
+}
+
+function isCollapsiblePost(post: HmrPost): boolean {
+  const relationship = post.relationshipType?.trim().toLowerCase()
+  return relationship === 'repost' || relationship === 'self_repost'
+}
+
+function dedupePosts(posts: HmrPost[]): HmrPost[] {
+  const byKey = new Map<string, HmrPost>()
+
+  for (const post of posts) {
+    const key = postDisplayKey(post)
+    const existing = byKey.get(key)
+
+    if (!existing) {
+      byKey.set(key, post)
+      continue
+    }
+
+    if (isCollapsiblePost(existing) && !isCollapsiblePost(post)) {
+      byKey.set(key, post)
+    }
+  }
+
+  return Array.from(byKey.values())
 }
 
 function mapAuthor(value: unknown, index: number): HmrAuthor {
@@ -831,8 +889,13 @@ function mapHomeContent(
   const primaryStory = storyList.length ? storyList : primaryFeatured
 
   return {
-    featured: (primaryFeatured.length ? primaryFeatured : fallbackPosts).map(mapPost).slice(0, 6),
-    storyDeck: (primaryStory.length ? primaryStory : fallbackPosts).map(mapPost).slice(0, 4),
+    featured: dedupePosts(
+      (primaryFeatured.length ? primaryFeatured : fallbackPosts).map(mapPost)
+    ).slice(0, 6),
+    storyDeck: dedupePosts((primaryStory.length ? primaryStory : fallbackPosts).map(mapPost)).slice(
+      0,
+      4
+    ),
     highlights: (communityList.length ? communityList : fallbackCommunity)
       .map(mapCommunityItem)
       .slice(0, 3),
@@ -887,7 +950,9 @@ function buildExplorePostsEndpoint(options: HmrExploreLoadOptions): string {
   const params = new URLSearchParams()
   params.set('limit', String(options.limit ?? 12))
   if (options.cursor) params.set('cursor', options.cursor)
-  if (options.platform && options.platform !== 'all') params.set('platform', options.platform)
+  if (options.platform && options.platform !== 'all') {
+    params.set('platform', platformIdForApi(options.platform))
+  }
 
   if (query) {
     params.set('q', query)
@@ -911,8 +976,11 @@ function platformLabel(platform: string): string {
   const labels: Record<string, string> = {
     all: '全部平台',
     bilibili: 'Bilibili',
+    instagram: 'Instagram',
     pixiv: 'Pixiv',
-    twitter: 'Twitter',
+    showroom: 'Showroom',
+    tiktok: 'TikTok',
+    twitter: 'X',
     x: 'X',
     youtube: 'YouTube',
     niconico: 'Niconico',
@@ -924,17 +992,33 @@ function platformLabel(platform: string): string {
 }
 
 function summarizePlatforms(posts: HmrPost[], activePlatform: string): HmrPlatformSummary[] {
+  const preferredPlatforms = ['x', 'showroom', 'instagram', 'tiktok', 'youtube']
   const counts = new Map<string, number>()
   for (const post of posts) {
-    const key = post.platform?.trim().toLowerCase() || 'hmrchan'
+    const key = normalizePlatformId(post.platform)
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
 
-  if (activePlatform && activePlatform !== 'all' && !counts.has(activePlatform)) {
-    counts.set(activePlatform, 0)
+  for (const platform of preferredPlatforms) {
+    if (!counts.has(platform)) counts.set(platform, 0)
   }
 
+  const normalizedActivePlatform = normalizePlatformId(activePlatform)
+  if (
+    normalizedActivePlatform &&
+    normalizedActivePlatform !== 'all' &&
+    !counts.has(normalizedActivePlatform)
+  ) {
+    counts.set(normalizedActivePlatform, 0)
+  }
+
+  const preferredSummaries = preferredPlatforms.map((id) => ({
+    id,
+    label: platformLabel(id),
+    count: counts.get(id) ?? 0,
+  }))
   const summaries = Array.from(counts.entries())
+    .filter(([id]) => !preferredPlatforms.includes(id))
     .sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))
     .map(([id, count]) => ({ id, label: platformLabel(id), count }))
 
@@ -944,8 +1028,18 @@ function summarizePlatforms(posts: HmrPost[], activePlatform: string): HmrPlatfo
       label: '全部平台',
       count: posts.length,
     },
+    ...preferredSummaries,
     ...summaries,
   ]
+}
+
+function normalizePlatformId(value?: string): string {
+  const normalized = value?.trim().toLowerCase() || 'hmrchan'
+  return normalized === 'twitter' ? 'x' : normalized
+}
+
+function platformIdForApi(value: string): string {
+  return normalizePlatformId(value) === 'x' ? 'twitter' : value
 }
 
 function mapExploreContent(
@@ -977,7 +1071,7 @@ function mapExploreContent(
     .map(mapSuggestion)
     .slice(0, 8)
   const selectedPosts = publicPosts.items.length ? publicPosts : mixedPosts
-  const selectedItems = selectedPosts.items.slice(0, options.limit ?? 12)
+  const selectedItems = dedupePosts(selectedPosts.items).slice(0, options.limit ?? 12)
   const activePlatform = options.platform && options.platform !== 'all' ? options.platform : 'all'
 
   return {
@@ -1092,7 +1186,7 @@ function mapPostDetailContent(
     const post = mapPost({ ...fallbackPost, id }, 0)
     return {
       post,
-      relatedPosts: fallbackPosts,
+      relatedPosts: dedupePosts(fallbackPosts),
       comments: fallbackCommunity,
       media: [],
     }
@@ -1103,10 +1197,13 @@ function mapPostDetailContent(
   const files = extractList(record, ['files', 'media', 'attachments'])
   const commentItems = extractList(commentsPayload, ['items', 'comments', 'results'])
   const related = extractList(record, ['author_other_posts', 'related_posts', 'related'])
+  const relatedPosts = dedupePosts((related.length ? related : fallbackPosts).map(mapPost)).filter(
+    (item) => postDisplayKey(item) !== postDisplayKey(post) && item.id !== post.id
+  )
 
   return {
     post,
-    relatedPosts: (related.length ? related : fallbackPosts).map(mapPost).slice(0, 6),
+    relatedPosts: relatedPosts.slice(0, 6),
     comments: (commentItems.length ? commentItems : fallbackCommunity)
       .map(mapCommunityItem)
       .slice(0, 6),

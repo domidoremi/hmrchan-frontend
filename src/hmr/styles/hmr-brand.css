@@ -454,6 +454,10 @@ svg {
   transform: scale(1.08) translateX(0.1em);
 }
 
+.hmr-primary-nav-link.is-active:hover {
+  background: var(--hmr-base);
+}
+
 .hmr-primary-nav-link:focus-visible {
   background: var(--hmr-base);
   box-shadow:
@@ -478,6 +482,31 @@ svg {
 .hmr-primary-nav-link.is-active .hmr-nav-dot {
   opacity: 1;
   transform: translateY(0);
+}
+
+.hmr-primary-nav-link.router-link-active:not(.is-active),
+.hmr-primary-nav-link.router-link-exact-active:not(.is-active) {
+  background: rgb(0 0 0 / 5%);
+  box-shadow: none;
+  color: var(--hmr-base);
+  transform: none;
+}
+
+.hmr-primary-nav-link.router-link-active:not(.is-active)::before,
+.hmr-primary-nav-link.router-link-exact-active:not(.is-active)::before {
+  opacity: 0;
+  transform: scale(0.86);
+}
+
+.hmr-primary-nav-link.router-link-active:not(.is-active) .hmr-nav-icon,
+.hmr-primary-nav-link.router-link-exact-active:not(.is-active) .hmr-nav-icon {
+  color: var(--hmr-grey);
+}
+
+.hmr-primary-nav-link.router-link-active:not(.is-active) .hmr-nav-dot,
+.hmr-primary-nav-link.router-link-exact-active:not(.is-active) .hmr-nav-dot {
+  opacity: 0;
+  transform: translateY(0.38em);
 }
 
 .hmr-mobile-header {
@@ -1663,6 +1692,10 @@ svg {
   transition: transform 500ms var(--hmr-ease);
 }
 
+.hmr-post-card .hmr-project-glyph {
+  display: none;
+}
+
 .hmr-project-footer {
   position: absolute;
   inset: auto 0 0 auto;
@@ -1979,9 +2012,10 @@ svg {
 .hmr-platform-showcase-card strong {
   display: -webkit-box;
   overflow: hidden;
-  line-height: 1.18;
-  padding-block: 0.08em 0.12em;
+  line-height: 1.26;
+  padding-block: 0.08em 0.2em;
   overflow-wrap: anywhere;
+  text-shadow: none;
   -webkit-box-orient: vertical;
 }
 
@@ -2946,6 +2980,34 @@ svg {
   max-inline-size: min(100%, 52em);
 }
 
+.hmr-data-toolbar--explore {
+  position: relative;
+  grid-template-columns: minmax(16em, 1.35fr) repeat(4, minmax(7.5em, 0.78fr)) auto;
+  gap: 0.35em;
+  align-items: stretch;
+  max-inline-size: min(100%, 72em);
+  padding: 0.42em;
+  border: 1px solid rgb(var(--hmr-base-rgb) / 16%);
+  border-radius: 999em;
+  background: rgb(251 249 239 / 74%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 42%),
+    0 1.6em 3em rgb(var(--hmr-base-rgb) / 8%);
+  -webkit-backdrop-filter: blur(1.5rem);
+  backdrop-filter: blur(1.5rem);
+}
+
+.hmr-data-toolbar--explore::before {
+  position: absolute;
+  inset: 0.25em;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 8% 50%, rgb(255 119 34 / 15%), transparent 22%),
+    radial-gradient(circle at 78% 50%, rgb(61 47 169 / 10%), transparent 24%);
+  content: '';
+}
+
 .hmr-data-toolbar label {
   display: grid;
   gap: 0.4em;
@@ -2954,6 +3016,31 @@ svg {
   font-size: 0.72em;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.hmr-data-toolbar--explore label {
+  position: relative;
+  min-inline-size: 0;
+  gap: 0.28em;
+  justify-content: stretch;
+  padding: 0.72em 0.9em 0.7em;
+  border-inline-end: 1px solid rgb(var(--hmr-base-rgb) / 10%);
+  border-radius: 999em;
+  color: rgb(var(--hmr-base-rgb) / 58%);
+  transition:
+    background-color 220ms var(--hmr-ease),
+    color 220ms var(--hmr-ease),
+    transform 220ms var(--hmr-ease);
+}
+
+.hmr-data-toolbar--explore label:focus-within {
+  background: var(--hmr-base);
+  color: var(--hmr-bg);
+  transform: translateY(-0.08em);
+}
+
+.hmr-data-toolbar--explore label:focus-within span {
+  color: rgb(251 249 239 / 68%);
 }
 
 .hmr-data-toolbar input,
@@ -2965,6 +3052,52 @@ svg {
   border-radius: var(--hmr-radius-min);
   background: var(--hmr-bg);
   color: var(--hmr-base);
+}
+
+.hmr-data-toolbar--explore input,
+.hmr-data-toolbar--explore select {
+  min-block-size: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--hmr-font-display);
+  font-size: 1.03rem;
+  font-weight: 900;
+  line-height: 1.18;
+  outline: 0;
+}
+
+.hmr-data-toolbar--explore input::placeholder {
+  color: rgb(var(--hmr-base-rgb) / 38%);
+}
+
+.hmr-data-toolbar--explore label:focus-within input::placeholder {
+  color: rgb(251 249 239 / 46%);
+}
+
+.hmr-data-toolbar--explore select {
+  padding-inline-end: 1.35em;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentcolor 50%),
+    linear-gradient(135deg, currentcolor 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.7em) 54%,
+    calc(100% - 0.38em) 54%;
+  background-size:
+    0.34em 0.34em,
+    0.34em 0.34em;
+  background-repeat: no-repeat;
+}
+
+.hmr-data-toolbar--explore .hmr-status-button {
+  min-block-size: 100%;
+  align-self: stretch;
+  padding-inline: 1.35em;
+  border-color: var(--hmr-base);
+  border-radius: 999em;
 }
 
 .hmr-empty-panel {
@@ -3499,6 +3632,11 @@ svg {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .hmr-data-toolbar--explore {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-radius: var(--hmr-radius);
+  }
+
   .hmr-split,
   .hmr-sticky-split,
   .hmr-form-layout,
@@ -3862,6 +4000,7 @@ svg {
   .hmr-signal-grid,
   .hmr-platform-showcase,
   .hmr-data-toolbar,
+  .hmr-data-toolbar--explore,
   .hmr-platform-strip,
   .hmr-projects-list .hmr-project-card,
   .hmr-list-row,
@@ -3871,6 +4010,17 @@ svg {
   .hmr-form-layout,
   .hmr-profile {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hmr-data-toolbar--explore {
+    gap: 0.2rem;
+    border-radius: 1.35rem;
+  }
+
+  .hmr-data-toolbar--explore label {
+    border-inline-end: 0;
+    border-block-end: 1px solid rgb(var(--hmr-base-rgb) / 9%);
+    border-radius: 1rem;
   }
 
   .hmr-page-state-block {

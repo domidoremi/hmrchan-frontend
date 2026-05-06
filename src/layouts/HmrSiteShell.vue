@@ -181,8 +181,19 @@ const primaryNav: HmrNavItem[] = [
 ]
 
 const activeNavKey = computed(() => {
+  if (route.name === 'hmr-home' || route.path === '/') return 'home'
+
   const navKey = route.meta.navKey
-  return typeof navKey === 'string' ? navKey : null
+  if (
+    navKey === 'explore' ||
+    navKey === 'community' ||
+    navKey === 'schedule' ||
+    navKey === 'settings'
+  ) {
+    return navKey
+  }
+
+  return null
 })
 
 const loginTarget = computed(() => ({

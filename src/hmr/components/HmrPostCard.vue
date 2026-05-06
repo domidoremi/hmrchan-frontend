@@ -35,7 +35,6 @@
       </div>
       <span class="hmr-post-card__platform-mark" aria-hidden="true">{{ platformMark }}</span>
       <span class="hmr-post-card__play" aria-hidden="true"><span></span></span>
-      <span class="hmr-project-glyph">{{ platformGlyph }}</span>
     </div>
 
     <div class="hmr-project-info hmr-post-card__content">
@@ -147,19 +146,6 @@ const platformMark = computed(() => {
   }
 
   return marks[platformKey.value] ?? 'HMR'
-})
-const platformGlyph = computed(() => {
-  const glyphs: Record<string, string> = {
-    bilibili: '▶',
-    instagram: '◇',
-    showroom: 'LIVE',
-    tiktok: '♪',
-    twitter: '×',
-    x: '×',
-    youtube: '▶',
-  }
-
-  return glyphs[platformKey.value] ?? 'H'
 })
 const metricLabel = computed(() => {
   if (typeof props.post.viewCount === 'number' && props.post.viewCount > 0) {

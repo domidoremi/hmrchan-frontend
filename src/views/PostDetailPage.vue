@@ -119,6 +119,8 @@
             :key="`detail-b-${item.id}-${index}`"
             class="hmr-media-ribbon-card"
             :to="`/posts/${item.id}`"
+            aria-hidden="true"
+            tabindex="-1"
           >
             <strong>{{ item.tag }}<br />{{ index + 1 }}</strong>
           </RouterLink>

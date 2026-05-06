@@ -34,12 +34,15 @@
           <div class="hmr-works-header-main">
             <p class="hmr-kicker">全部媒体</p>
             <h2 class="hmr-section-title">全部帖子</h2>
-            <form class="hmr-data-toolbar" @submit.prevent="refreshExplore">
-              <label>
+            <form
+              class="hmr-data-toolbar hmr-data-toolbar--explore"
+              @submit.prevent="refreshExplore"
+            >
+              <label class="hmr-data-field hmr-data-field--search">
                 <span>搜索</span>
                 <input v-model="query" placeholder="标题、作者、话题" />
               </label>
-              <label>
+              <label class="hmr-data-field">
                 <span>平台</span>
                 <select v-model="platform">
                   <option
@@ -51,7 +54,7 @@
                   </option>
                 </select>
               </label>
-              <label>
+              <label class="hmr-data-field">
                 <span>排序</span>
                 <select v-model="sortBy">
                   <option value="published_at">发布时间</option>
@@ -61,7 +64,7 @@
                   <option value="comment_count">评论</option>
                 </select>
               </label>
-              <label>
+              <label class="hmr-data-field">
                 <span>类型</span>
                 <select v-model="contentKind">
                   <option value="all">全部</option>
@@ -69,7 +72,7 @@
                   <option value="text">纯文本</option>
                 </select>
               </label>
-              <label>
+              <label class="hmr-data-field">
                 <span>时长</span>
                 <select v-model="durationRange">
                   <option value="all">全部</option>
