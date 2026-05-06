@@ -32,7 +32,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-works-header">
           <div class="hmr-works-header-main">
-            <p class="hmr-kicker">All media</p>
+            <p class="hmr-kicker">全部媒体</p>
             <h2 class="hmr-section-title">全部帖子</h2>
             <form class="hmr-data-toolbar" @submit.prevent="refreshExplore">
               <label>
@@ -188,7 +188,7 @@
     <section class="hmr-section" data-hmr-reveal>
       <div class="hmr-sticky-split">
         <div class="hmr-sticky-copy">
-          <p class="hmr-kicker">Authors</p>
+          <p class="hmr-kicker">作者</p>
           <h2 class="hmr-section-title">作者</h2>
         </div>
         <div class="hmr-author-strip">

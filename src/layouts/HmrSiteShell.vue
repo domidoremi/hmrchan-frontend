@@ -15,30 +15,40 @@
           <RouterLink
             v-for="item in primaryNav"
             :key="item.key"
-            class="hmr-primary-nav-link"
-            :class="{ 'is-active': activeNavKey === item.key }"
             :to="item.to"
-            @click="closeMenu"
+            custom
+            v-slot="{ href, navigate }"
           >
-            <span class="hmr-nav-inner">
-              <span class="hmr-nav-icon" :data-hmr-icon="item.icon" aria-hidden="true"></span>
-              <span class="hmr-nav-label">{{ item.label }}</span>
-              <span class="hmr-nav-dot" aria-hidden="true"></span>
-            </span>
+            <a
+              class="hmr-primary-nav-link"
+              :class="{ 'is-active': activeNavKey === item.key }"
+              :href="href"
+              :aria-current="activeNavKey === item.key ? 'page' : undefined"
+              @click="handleNavClick($event, navigate)"
+            >
+              <span class="hmr-nav-inner">
+                <span class="hmr-nav-icon" :data-hmr-icon="item.icon" aria-hidden="true"></span>
+                <span class="hmr-nav-label">{{ item.label }}</span>
+                <span class="hmr-nav-dot" aria-hidden="true"></span>
+              </span>
+            </a>
           </RouterLink>
         </nav>
 
-        <RouterLink
-          class="hmr-primary-nav-link hmr-primary-nav-link--settings"
-          :class="{ 'is-active': activeNavKey === 'settings' }"
-          to="/settings"
-          @click="closeMenu"
-        >
-          <span class="hmr-nav-inner">
-            <span class="hmr-nav-icon" data-hmr-icon="settings" aria-hidden="true"></span>
-            <span class="hmr-nav-label">设置</span>
-            <span class="hmr-nav-dot" aria-hidden="true"></span>
-          </span>
+        <RouterLink to="/settings" custom v-slot="{ href, navigate }">
+          <a
+            class="hmr-primary-nav-link hmr-primary-nav-link--settings"
+            :class="{ 'is-active': activeNavKey === 'settings' }"
+            :href="href"
+            :aria-current="activeNavKey === 'settings' ? 'page' : undefined"
+            @click="handleNavClick($event, navigate)"
+          >
+            <span class="hmr-nav-inner">
+              <span class="hmr-nav-icon" data-hmr-icon="settings" aria-hidden="true"></span>
+              <span class="hmr-nav-label">设置</span>
+              <span class="hmr-nav-dot" aria-hidden="true"></span>
+            </span>
+          </a>
         </RouterLink>
 
         <div class="hmr-mobile-header">
@@ -191,6 +201,11 @@ function closeMenu(): void {
 
 function toggleMenu(): void {
   menuOpen.value = !menuOpen.value
+}
+
+function handleNavClick(event: MouseEvent, navigate: (event?: MouseEvent) => void): void {
+  navigate(event)
+  closeMenu()
 }
 
 watch(

@@ -32,8 +32,8 @@
       <div class="hmr-sticky-split">
         <div class="hmr-sticky-copy">
           <p class="hmr-kicker">账户状态</p>
-          <h2 class="hmr-section-title">个人页也是一条内容流。</h2>
-          <p class="hmr-body">收藏、历史、收件箱和安全状态都在同一处恢复。</p>
+          <h2 class="hmr-section-title">个人内容</h2>
+          <p class="hmr-body">收藏、历史、收件箱和安全状态集中展示。</p>
         </div>
 
         <div class="hmr-story-stack">
@@ -123,13 +123,13 @@ const sectionIntro = computed(() => {
     case 'security':
       return '管理 Passkey、2FA、设备会话和敏感操作验证。'
     case 'preferences':
-      return '把主题、语言、通知和内容密度收束到个人偏好。'
+      return '管理主题、语言、通知和内容密度。'
     case 'favorites':
       return '收藏内容会在这里形成可回看的个人索引。'
     case 'history':
-      return '浏览、阅读和互动历史会在这里串成时间线。'
+      return '浏览、阅读和互动历史会在这里展示。'
     case 'inbox':
-      return '评论、回复、系统通知和审核结果会进入收件箱。'
+      return '评论、回复、系统通知和审核结果会进入这里。'
     default:
       return t('profile.empty')
   }
@@ -137,19 +137,19 @@ const sectionIntro = computed(() => {
 
 const sectionCards = computed(() => [
   {
-    kicker: 'Session',
-    title: auth.isAuthenticated ? '已恢复当前会话' : '等待登录',
+    kicker: '会话',
+    title: auth.isAuthenticated ? '当前会话' : '等待登录',
     body: auth.sessionExpiresAt ? `有效期至 ${auth.sessionExpiresAt}` : t('profile.sessionState'),
   },
   {
-    kicker: 'Identity',
+    kicker: '身份',
     title: auth.user?.id ?? 'guest',
-    body: auth.user?.email ?? '登录后显示邮箱与个人资料。',
+    body: auth.user?.email ?? '登录后显示邮箱和个人资料。',
   },
   ...(content.value.security
     ? [
         {
-          kicker: 'Security',
+          kicker: '安全',
           title: `${content.value.security.passkeys} Passkey`,
           body: content.value.security.twoFactorEnabled ? '2FA 已启用。' : '2FA 尚未启用。',
         },
@@ -158,8 +158,8 @@ const sectionCards = computed(() => [
   ...(content.value.inbox
     ? [
         {
-          kicker: 'Inbox',
-          title: `${content.value.inbox.unreadCount} unread`,
+          kicker: '收件箱',
+          title: `${content.value.inbox.unreadCount} 未读`,
           body: content.value.inbox.latestLabel,
         },
       ]
@@ -172,11 +172,11 @@ const sectionStateTitle = computed(() => {
   if (resource.value.error?.kind === 'unauthorized') return '登录后继续。'
   if (resource.value.error?.kind === 'refresh-needed') return '请刷新页面后重新查看。'
   if (resource.value.error) return '个人页刷新失败。'
-  return '个人内容已准备好。'
+  return '个人内容已就绪。'
 })
 
 const sectionStateBody = computed(() => {
-  if (state.value === 'loading') return '收藏、历史、收件箱和安全状态正在恢复。'
+  if (state.value === 'loading') return '正在加载收藏、历史、收件箱和安全状态。'
   if (state.value === 'empty') return '切换到其他分区，或稍后再打开。'
   if (resource.value.error?.kind === 'unauthorized') return '登录后就可以查看完整个人状态。'
   if (resource.value.error) return '稍后再试，页面会保留当前内容。'

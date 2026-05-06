@@ -4,7 +4,7 @@
       <div class="hmr-container">
         <p class="hmr-kicker">{{ t('community.eyebrow') }}</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('community.title') }}</h1>
-        <p class="hmr-body">热帖、回复、反馈和最新动态集中在这里。</p>
+        <p class="hmr-body">查看热门讨论、最新回复和社区反馈。</p>
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
@@ -20,7 +20,7 @@
         <div class="hmr-sticky-copy">
           <p class="hmr-kicker">{{ t('community.stats') }}</p>
           <h2 class="hmr-section-title">{{ t('community.liveTitle') }}</h2>
-          <p class="hmr-body">每条讨论都要能回到内容、作者或下一次回应。</p>
+          <p class="hmr-body">每条讨论都能回到原内容和作者。</p>
         </div>
         <div class="hmr-story-stack">
           <article v-for="item in content.stats" :key="item.id" class="hmr-story-block">
@@ -36,7 +36,7 @@
       <div class="hmr-section-head">
         <p class="hmr-kicker">社区现场</p>
         <h2 class="hmr-section-title">讨论正在发生。</h2>
-        <p class="hmr-body">热门回应、最新评论和反馈入口一起组成社区现场。</p>
+        <p class="hmr-body">热门回应和最新评论会在这里聚合。</p>
       </div>
       <div class="hmr-media-ribbon" aria-hidden="true">
         <div class="hmr-media-ribbon-track">

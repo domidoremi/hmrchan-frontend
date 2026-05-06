@@ -4,7 +4,7 @@
       <aside class="hmr-auth-story" data-hmr-reveal>
         <p class="hmr-kicker">注册</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('auth.registerTitle') }}</h1>
-        <p class="hmr-body">创建账号后，你可以继续使用个人资料、收藏和提醒功能。</p>
+        <p class="hmr-body">创建账号后可以使用个人资料、收藏和提醒。</p>
         <div class="hmr-auth-orbit" aria-hidden="true">
           <span>创建</span>
           <span>验证</span>
@@ -13,12 +13,12 @@
         <div class="hmr-story-stack" aria-label="Registration flow">
           <article class="hmr-story-block">
             <p class="hmr-kicker">01 / 创建</p>
-            <strong>创建身份。</strong>
+            <strong>创建账号</strong>
             <span>用户名、邮箱和密码先建立 HMRChan 账户。</span>
           </article>
           <article class="hmr-story-block">
             <p class="hmr-kicker">02 / 验证</p>
-            <strong>验证码可选。</strong>
+            <strong>验证码可选</strong>
             <span>填写后会一并校验，不填写也可以继续。</span>
           </article>
         </div>

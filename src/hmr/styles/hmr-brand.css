@@ -44,6 +44,7 @@
   --hmr-base-rgb: 23 20 18;
   --hmr-white: #ffffff;
   --hmr-grey: #8e827c;
+  --hmr-text-muted: #675c56;
   --hmr-muted: #cabcb5;
   --hmr-surface: #f2f0e7;
   --hmr-surface-strong: #ebe9df;
@@ -429,8 +430,7 @@ svg {
   transform: translateY(-0.08em) rotate(-4deg);
 }
 
-.hmr-primary-nav-link:not(:hover):not(:focus-visible):not(.is-active):not(.router-link-active)
-  .hmr-nav-icon {
+.hmr-primary-nav-link:not(:hover):not(:focus-visible):not(.is-active) .hmr-nav-icon {
   opacity: 0.62;
 }
 
@@ -447,8 +447,7 @@ svg {
 }
 
 .hmr-primary-nav-link:hover,
-.hmr-primary-nav-link.is-active,
-.hmr-primary-nav-link.router-link-active {
+.hmr-primary-nav-link.is-active {
   background: var(--hmr-base);
   box-shadow: 0 0.75em 1.6em rgb(var(--hmr-base-rgb) / 16%);
   color: var(--hmr-bg);
@@ -466,20 +465,17 @@ svg {
 
 .hmr-primary-nav-link:hover::before,
 .hmr-primary-nav-link:focus-visible::before,
-.hmr-primary-nav-link.is-active::before,
-.hmr-primary-nav-link.router-link-active::before {
+.hmr-primary-nav-link.is-active::before {
   opacity: 1;
   transform: scale(1);
 }
 
 .hmr-primary-nav-link:hover .hmr-nav-icon,
-.hmr-primary-nav-link.is-active .hmr-nav-icon,
-.hmr-primary-nav-link.router-link-active .hmr-nav-icon {
+.hmr-primary-nav-link.is-active .hmr-nav-icon {
   color: var(--hmr-bg);
 }
 
-.hmr-primary-nav-link.is-active .hmr-nav-dot,
-.hmr-primary-nav-link.router-link-active .hmr-nav-dot {
+.hmr-primary-nav-link.is-active .hmr-nav-dot {
   opacity: 1;
   transform: translateY(0);
 }
@@ -717,7 +713,7 @@ svg {
   font-size: 0.875em;
   font-weight: 700;
   letter-spacing: 0.02em;
-  line-height: 1.2;
+  line-height: 1.32;
   text-transform: uppercase;
 }
 
@@ -729,9 +725,9 @@ svg {
   margin: 0;
   font-family: var(--hmr-font-display);
   font-weight: 900;
-  letter-spacing: -0.08em;
-  line-height: 1.02;
-  padding-block: 0.08em 0.12em;
+  letter-spacing: -0.055em;
+  line-height: 1.08;
+  padding-block: 0.12em 0.16em;
   text-transform: uppercase;
 }
 
@@ -739,25 +735,25 @@ svg {
   inline-size: 8.65em;
   max-inline-size: 100%;
   font-size: clamp(4.6rem, 7.8vw, 7em);
-  letter-spacing: -0.05em;
-  line-height: 1.02;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
 }
 
 .hmr-page-title {
   max-inline-size: 8.5em;
   font-size: clamp(4.5rem, 12vw, 10.5em);
-  line-height: 1.02;
+  line-height: 1.08;
 }
 
 .hmr-section-title {
   max-inline-size: 8.5em;
   font-size: clamp(3.25rem, 8vw, 7em);
-  line-height: 1.02;
+  line-height: 1.08;
 }
 
 .hmr-card-title {
   font-size: clamp(1.8rem, 3vw, 2.4em);
-  line-height: 1.1;
+  line-height: 1.16;
 }
 
 .hmr-body,
@@ -767,10 +763,10 @@ svg {
 .hmr-profile-panel > p {
   max-inline-size: 32em;
   margin: 0;
-  color: var(--hmr-grey);
+  color: var(--hmr-text-muted);
   font-size: 1.05em;
-  line-height: 1.52;
-  padding-block: 0.08em;
+  line-height: 1.68;
+  padding-block: 0.12em;
 }
 
 .hmr-actions {
@@ -1439,19 +1435,21 @@ svg {
 
 .hmr-home-index-row span,
 .hmr-home-index-row em {
-  color: var(--hmr-grey);
+  color: var(--hmr-text-muted);
   font-family: var(--hmr-font-mono);
   font-size: 0.78em;
   font-style: normal;
   font-weight: 700;
+  line-height: 1.35;
   text-transform: uppercase;
 }
 
 .hmr-home-index-row strong {
   font-family: var(--hmr-font-display);
   font-size: clamp(1.7rem, 4vw, 3.6em);
-  letter-spacing: -0.06em;
-  line-height: 1;
+  letter-spacing: -0.045em;
+  line-height: 1.14;
+  padding-block: 0.08em 0.12em;
   text-transform: uppercase;
 }
 
@@ -1981,7 +1979,8 @@ svg {
 .hmr-platform-showcase-card strong {
   display: -webkit-box;
   overflow: hidden;
-  line-height: 1.12;
+  line-height: 1.18;
+  padding-block: 0.08em 0.12em;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
 }
@@ -1994,6 +1993,8 @@ svg {
   max-inline-size: 24em;
   display: -webkit-box;
   overflow: hidden;
+  color: var(--hmr-text-muted);
+  line-height: 1.58;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
@@ -2292,16 +2293,17 @@ svg {
   font-family: var(--hmr-font-display);
   font-size: clamp(2.5rem, 7vw, 5.6em);
   font-weight: 900;
-  letter-spacing: -0.08em;
-  line-height: 1.02;
-  padding-block: 0.08em 0.12em;
+  letter-spacing: -0.055em;
+  line-height: 1.1;
+  padding-block: 0.12em 0.16em;
   text-transform: uppercase;
 }
 
 .hmr-story-block span {
   max-inline-size: 32em;
-  color: var(--hmr-grey);
+  color: var(--hmr-text-muted);
   font-size: 1.05em;
+  line-height: 1.62;
 }
 
 .hmr-split {
@@ -2351,22 +2353,24 @@ svg {
   font-family: var(--hmr-font-display);
   font-size: clamp(1.45rem, 3vw, 2.35em);
   font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 1.08;
-  padding-block: 0.06em 0.08em;
+  letter-spacing: -0.045em;
+  line-height: 1.16;
+  padding-block: 0.1em 0.12em;
   text-transform: uppercase;
 }
 
 .hmr-list-row span {
-  color: var(--hmr-grey);
+  color: var(--hmr-text-muted);
+  line-height: 1.58;
 }
 
 .hmr-list-row em {
-  color: var(--hmr-grey);
+  color: var(--hmr-text-muted);
   font-family: var(--hmr-font-mono);
   font-size: 0.8em;
   font-style: normal;
   font-weight: 700;
+  line-height: 1.35;
   text-transform: uppercase;
 }
 
@@ -2504,7 +2508,8 @@ svg {
   font-size: clamp(3.8rem, 4.45vw, 4em);
   font-weight: 900;
   letter-spacing: -0.05em;
-  line-height: 0.9;
+  line-height: 1.04;
+  padding-block: 0.12em 0.16em;
   text-transform: uppercase;
 }
 
@@ -2883,14 +2888,16 @@ svg {
   font-family: var(--hmr-font-display);
   font-size: 1.2em;
   font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 0.98;
+  letter-spacing: -0.035em;
+  line-height: 1.18;
+  padding-block: 0.08em;
   text-transform: uppercase;
 }
 
 .hmr-page-state-block span {
-  color: var(--hmr-grey);
+  color: var(--hmr-text-muted);
   font-size: 0.85em;
+  line-height: 1.45;
 }
 
 .hmr-page-state-block.is-loading {
@@ -3266,13 +3273,15 @@ svg {
 .hmr-mini-panel strong {
   font-family: var(--hmr-font-display);
   font-size: 1.35em;
-  letter-spacing: -0.05em;
-  line-height: 0.98;
+  letter-spacing: -0.04em;
+  line-height: 1.16;
+  padding-block: 0.08em 0.1em;
   text-transform: uppercase;
 }
 
 .hmr-mini-panel span {
-  color: var(--hmr-grey);
+  color: var(--hmr-text-muted);
+  line-height: 1.55;
 }
 
 .hmr-settings-panel {
@@ -3370,7 +3379,7 @@ svg {
 .hmr-footer h2 {
   max-inline-size: 9em;
   font-size: clamp(4rem, 10vw, 8.5em);
-  line-height: 0.94;
+  line-height: 1.04;
 }
 
 .hmr-footer-bottom {
@@ -3647,8 +3656,7 @@ svg {
   }
 
   .hmr-primary-nav-link:hover,
-  .hmr-primary-nav-link.is-active,
-  .hmr-primary-nav-link.router-link-active {
+  .hmr-primary-nav-link.is-active {
     background: transparent;
     box-shadow: none;
     transform: translateY(-0.08rem);

@@ -29,13 +29,13 @@
       <div class="hmr-sticky-split">
         <div class="hmr-sticky-copy">
           <p class="hmr-kicker">内容上下文</p>
-          <h2 class="hmr-section-title">来源、媒体和回应都在这里。</h2>
+          <h2 class="hmr-section-title">来源与回应</h2>
         </div>
         <div class="hmr-story-stack">
           <article class="hmr-story-block">
             <p class="hmr-kicker">来源</p>
             <strong>{{ post.platform ?? 'HMRChan' }}</strong>
-            <span>{{ post.postUrl ?? '这条内容来自 HMRChan 内容流。' }}</span>
+            <span>{{ post.postUrl ?? '这条内容来自 HMRChan。' }}</span>
           </article>
           <article class="hmr-story-block">
             <p class="hmr-kicker">互动</p>
@@ -53,7 +53,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
           <p class="hmr-kicker">媒体</p>
-          <h2 class="hmr-section-title">媒体先被看见。</h2>
+          <h2 class="hmr-section-title">媒体附件</h2>
         </div>
         <div class="hmr-signal-grid hmr-media-grid">
           <a
@@ -87,7 +87,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
           <p class="hmr-kicker">评论</p>
-          <h2 class="hmr-section-title">回应会继续生长。</h2>
+          <h2 class="hmr-section-title">评论预览</h2>
         </div>
         <div class="hmr-list">
           <article v-for="item in detail.comments" :key="item.id" class="hmr-list-row">
@@ -102,7 +102,7 @@
     <section class="hmr-dark-stage hmr-dark-stage--media" data-hmr-reveal>
       <div class="hmr-section-head">
         <p class="hmr-kicker">相关内容</p>
-        <h2 class="hmr-section-title">继续打开下一条。</h2>
+        <h2 class="hmr-section-title">继续浏览</h2>
       </div>
       <div class="hmr-media-ribbon" aria-hidden="true">
         <div class="hmr-media-ribbon-track">

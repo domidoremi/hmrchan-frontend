@@ -7,7 +7,7 @@
           <span>关于</span>
           <span>HMRChan。</span>
         </h1>
-        <p class="hmr-body">把多平台内容、社区回应和个人收藏收进一个清楚的入口。</p>
+        <p class="hmr-body">把多平台内容、社区回应和个人收藏放进一个入口。</p>
       </div>
     </header>
 
@@ -35,17 +35,17 @@
           <article class="hmr-story-block">
             <p class="hmr-kicker">目标</p>
             <strong>内容不是瀑布。</strong>
-            <span>让发现、讨论、收藏和发布都回到清楚路径。</span>
+            <span>让发现、讨论、收藏和发布都有明确路径。</span>
           </article>
           <article class="hmr-story-block">
             <p class="hmr-kicker">入口</p>
             <strong>入口必须稳定。</strong>
-            <span>首页、探索、社区和日程是稳定入口；个人页和设置承接真实状态。</span>
+            <span>首页、探索、社区和日程保持稳定；个人页承接账号内容。</span>
           </article>
           <article class="hmr-story-block">
             <p class="hmr-kicker">节奏</p>
             <strong>刷新要有节奏。</strong>
-            <span>日程和反馈把内容推进到下一轮。</span>
+            <span>日程和反馈帮助内容持续更新。</span>
           </article>
         </div>
       </div>
@@ -55,7 +55,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
           <p class="hmr-kicker">内容生态</p>
-          <h2 class="hmr-section-title">四个产品域构成完整体验。</h2>
+          <h2 class="hmr-section-title">四个区域组成 HMRChan。</h2>
         </div>
         <div class="hmr-signal-grid">
           <article v-for="item in systemMap" :key="item.title" class="hmr-mini-panel">
@@ -70,8 +70,8 @@
     <section class="hmr-dark-stage hmr-dark-stage--media" data-hmr-reveal>
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
-          <p class="hmr-kicker">团队循环</p>
-          <h2 class="hmr-section-title">内容、社区、发布、反馈互相牵引。</h2>
+          <p class="hmr-kicker">团队协作</p>
+          <h2 class="hmr-section-title">内容、社区、日程、反馈互相连接。</h2>
         </div>
         <div class="hmr-media-ribbon" aria-hidden="true">
           <div class="hmr-media-ribbon-track">
@@ -121,7 +121,7 @@ const principles = [
   { index: '01', title: '上下文优先', body: '让用户知道内容从哪里来、为什么值得打开。' },
   { index: '02', title: '尊重创作', body: '保护作者信息、引用来源和社区讨论秩序。' },
   { index: '03', title: '减少噪音', body: '把重复提醒和低价值卡片压到最低。' },
-  { index: '04', title: '持续刷新', body: '用日程和反馈让内容进入下一轮循环。' },
+  { index: '04', title: '持续刷新', body: '用日程和反馈保持内容更新。' },
 ]
 const systemMap = [
   {
@@ -137,12 +137,12 @@ const systemMap = [
   {
     metric: 'Auth',
     title: '身份安全',
-    body: '登录、注册、Google、Passkey 和 2FA 构成身份安全闭环。',
+    body: '登录、注册、Google、Passkey 和 2FA 保护账号安全。',
   },
   {
-    metric: 'Schedule',
+    metric: '日程',
     title: '发布日程',
-    body: '日程列表、日历聚合和亮点组成内容发布节奏。',
+    body: '日程列表、日历聚合和亮点显示发布安排。',
   },
 ]
 const colorPairs = [

@@ -4,7 +4,7 @@
       <aside class="hmr-auth-story" data-hmr-reveal>
         <p class="hmr-kicker">登录</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('auth.loginTitle') }}</h1>
-        <p class="hmr-body">登录后继续查看收藏、历史、回复提醒和个人安全状态。</p>
+        <p class="hmr-body">登录后查看收藏、历史、回复提醒和安全状态。</p>
         <div class="hmr-auth-orbit" aria-hidden="true">
           <span>内容</span>
           <span>个人</span>
@@ -13,13 +13,13 @@
         <div class="hmr-story-stack" aria-label="Login benefits">
           <article class="hmr-story-block">
             <p class="hmr-kicker">01 / 内容</p>
-            <strong>恢复你的内容流。</strong>
-            <span>继续追踪收藏、历史、回复和推荐入口。</span>
+            <strong>恢复内容</strong>
+            <span>继续查看收藏、历史和回复。</span>
           </article>
           <article class="hmr-story-block">
             <p class="hmr-kicker">02 / 安全</p>
-            <strong>保留安全闭环。</strong>
-            <span>账号密码、Google 登录和 Passkey 恢复都在同一处完成。</span>
+            <strong>保护账号</strong>
+            <span>支持密码、Google 登录和 Passkey 恢复。</span>
           </article>
         </div>
       </aside>

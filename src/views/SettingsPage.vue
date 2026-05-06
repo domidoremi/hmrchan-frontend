@@ -4,8 +4,8 @@
       <div class="hmr-auth-layout hmr-form-layout--wide">
         <aside class="hmr-auth-story" data-hmr-reveal>
           <p class="hmr-kicker">设置</p>
-          <h1 class="hmr-page-title" data-hmr-text-reveal>设置中枢。</h1>
-          <p class="hmr-body">主题、账户、安全和反馈都从这里进入。</p>
+          <h1 class="hmr-page-title" data-hmr-text-reveal>设置</h1>
+          <p class="hmr-body">管理主题、账户、安全和反馈入口。</p>
           <div class="hmr-story-stack">
             <article v-for="item in settingsStories" :key="item.title" class="hmr-story-block">
               <p class="hmr-kicker">{{ item.kicker }}</p>
@@ -60,7 +60,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
           <p class="hmr-kicker">账户索引</p>
-          <h2 class="hmr-section-title">每个状态都有落点。</h2>
+          <h2 class="hmr-section-title">账户状态</h2>
         </div>
         <div class="hmr-signal-grid hmr-settings-grid">
           <article v-for="item in settingsDeck" :key="item.id" class="hmr-mini-panel">
@@ -113,17 +113,17 @@ const settingsDeck = computed(() => [
 const settingsStories = [
   {
     kicker: '01 / 账户',
-    title: '身份入口保持清楚。',
+    title: '账户入口',
     body: '个人页、安全状态、Passkey 和退出动作都在同一个面板里。',
   },
   {
     kicker: '02 / 偏好',
-    title: '界面状态即时生效。',
+    title: '界面偏好',
     body: '主题、语言和内容密度会逐步同步到个人偏好。',
   },
   {
     kicker: '03 / 支持',
-    title: '反馈直接进入联系页。',
+    title: '反馈入口',
     body: '账号问题、内容建议和社区反馈共用同一个提交入口。',
   },
 ]

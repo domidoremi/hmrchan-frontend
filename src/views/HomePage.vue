@@ -59,7 +59,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-works-header">
           <div class="hmr-works-header-main">
-            <p class="hmr-kicker">Now</p>
+            <p class="hmr-kicker">最新</p>
             <h2 class="hmr-section-title">最新媒体</h2>
           </div>
           <RouterLink class="hmr-text-link" to="/explore">全部</RouterLink>
@@ -78,7 +78,7 @@
 
         <div class="hmr-signal-grid hmr-signal-grid--home" data-hmr-reveal>
           <article v-if="pageState === 'loading'" class="hmr-mini-panel hmr-mini-panel--state">
-            <p class="hmr-kicker">Loading</p>
+            <p class="hmr-kicker">加载中</p>
             <strong>更新中</strong>
           </article>
           <article v-for="trend in content.trends" :key="trend.title" class="hmr-mini-panel">
@@ -92,7 +92,7 @@
     <section class="hmr-section hmr-section--tight hmr-home-stream" data-hmr-reveal>
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head hmr-section-head--wide">
-          <p class="hmr-kicker">Feed</p>
+          <p class="hmr-kicker">内容流</p>
           <h2 class="hmr-section-title">平台媒体</h2>
         </div>
         <div class="hmr-projects-list hmr-home-stream-list">
@@ -113,7 +113,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-home-index-layout">
           <div class="hmr-home-index-copy">
-            <p class="hmr-kicker">Index</p>
+            <p class="hmr-kicker">索引</p>
             <h2 class="hmr-section-title">快速入口</h2>
           </div>
           <div class="hmr-home-index-board">
@@ -135,7 +135,7 @@
     <section class="hmr-section" data-hmr-reveal>
       <div class="hmr-sticky-split">
         <div class="hmr-sticky-copy">
-          <p class="hmr-kicker">Routes</p>
+          <p class="hmr-kicker">导航</p>
           <h2 class="hmr-section-title">入口</h2>
         </div>
         <div class="hmr-story-stack">
@@ -205,7 +205,7 @@ const heroSeedPost = seedPosts[0] ?? {
 const marqueeItems = ['YouTube', 'Instagram', 'X', 'TikTok', 'Showroom', 'Bilibili']
 const storyBlocks = [
   {
-    kicker: '01 / Home',
+    kicker: '01 / 首页',
     title: '首页',
     body: '最新媒体入口',
   },
@@ -215,12 +215,12 @@ const storyBlocks = [
     body: '全平台内容',
   },
   {
-    kicker: '03 / Community',
+    kicker: '03 / 社区',
     title: '社区',
     body: '讨论与回复',
   },
   {
-    kicker: '04 / Schedule',
+    kicker: '04 / 日程',
     title: '日程',
     body: '发布窗口',
   },

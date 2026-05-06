@@ -2,9 +2,9 @@
   <div class="hmr-route-page hmr-route-page--schedule">
     <header class="hmr-page-hero">
       <div class="hmr-container hmr-page-hero-container">
-        <p class="hmr-kicker">Schedule</p>
+        <p class="hmr-kicker">日程</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>日程与发布节奏。</h1>
-        <p class="hmr-body">把内容准备、社区讨论和发布窗口排进一条清晰的时间线。</p>
+        <p class="hmr-body">查看内容准备、讨论和发布窗口。</p>
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
@@ -20,7 +20,7 @@
         <div class="hmr-sticky-copy">
           <p class="hmr-kicker">时间线</p>
           <h2 class="hmr-section-title">一天三个关键窗口。</h2>
-          <p class="hmr-body">巡检、讨论、发布，每个窗口都服务下一轮内容。</p>
+          <p class="hmr-body">巡检、讨论和发布安排集中展示。</p>
         </div>
         <div class="hmr-story-stack">
           <article v-for="item in content.items" :key="item.id" class="hmr-story-block">
@@ -36,7 +36,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
           <p class="hmr-kicker">发布地图</p>
-          <h2 class="hmr-section-title">下一轮内容正在排队。</h2>
+          <h2 class="hmr-section-title">待发布内容正在排队。</h2>
         </div>
         <div class="hmr-media-ribbon" aria-hidden="true">
           <div class="hmr-media-ribbon-track">
@@ -68,7 +68,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
           <p class="hmr-kicker">日历聚合</p>
-          <h2 class="hmr-section-title">从时间线回到现场。</h2>
+          <h2 class="hmr-section-title">按时间查看内容。</h2>
         </div>
         <div class="hmr-list">
           <article v-for="item in content.calendar" :key="item.id" class="hmr-list-row">
