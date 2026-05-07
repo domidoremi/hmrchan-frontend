@@ -1,13 +1,14 @@
 <template>
   <div class="hmr-route-page hmr-route-page--community">
-    <header class="hmr-page-hero">
+    <header class="hmr-page-hero hmr-page-hero--community">
       <div class="hmr-container">
-        <p class="hmr-kicker">{{ t('community.eyebrow') }}</p>
-        <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('community.title') }}</h1>
-        <p class="hmr-body">查看热门讨论、最新回复和社区反馈。</p>
+        <p class="hmr-kicker">社区</p>
+        <h1 class="hmr-page-title" data-hmr-text-reveal>讨论现场</h1>
+        <p class="hmr-body">快速找到热门讨论、最新回复和可以继续参与的内容。</p>
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
+          :error="resource.error"
           empty-title="暂时没有讨论。"
           empty-body="稍后回来，或从探索页打开一条内容。"
           @retry="refreshCommunity"
@@ -15,96 +16,104 @@
       </div>
     </header>
 
-    <section class="hmr-section" data-hmr-reveal>
-      <div class="hmr-sticky-split">
-        <div class="hmr-sticky-copy">
-          <p class="hmr-kicker">{{ t('community.stats') }}</p>
-          <h2 class="hmr-section-title">{{ t('community.liveTitle') }}</h2>
-          <p class="hmr-body">每条讨论都能回到原内容和作者。</p>
-        </div>
-        <div class="hmr-story-stack">
-          <article v-for="item in content.stats" :key="item.id" class="hmr-story-block">
-            <p class="hmr-kicker">{{ item.metric }}</p>
-            <strong>{{ item.title }}</strong>
-            <span>{{ item.excerpt }}</span>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="hmr-dark-stage hmr-dark-stage--media" data-hmr-reveal>
-      <div class="hmr-section-head">
-        <p class="hmr-kicker">社区现场</p>
-        <h2 class="hmr-section-title">讨论正在发生。</h2>
-        <p class="hmr-body">热门回应和最新评论会在这里聚合。</p>
-      </div>
-      <div class="hmr-media-ribbon" aria-hidden="true">
-        <div class="hmr-media-ribbon-track">
-          <div
-            v-for="(item, index) in visibleThreads"
-            :key="`community-ribbon-a-${item.id}`"
-            class="hmr-media-ribbon-card"
-            :style="cardStyle(index)"
-          >
-            <strong>{{ item.metric }}<br />{{ item.title.slice(0, 2) }}</strong>
-          </div>
-          <div
-            v-for="(item, index) in visibleThreads"
-            :key="`community-ribbon-b-${item.id}`"
-            class="hmr-media-ribbon-card"
-            :style="cardStyle(index + visibleThreads.length)"
-          >
-            <strong>{{ item.metric }}<br />{{ item.title.slice(0, 2) }}</strong>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="hmr-section" data-hmr-reveal>
+    <section class="hmr-section hmr-section--tight" data-hmr-reveal>
       <div class="hmr-container hmr-container--large">
-        <div class="hmr-section-head">
-          <p class="hmr-kicker">讨论索引</p>
-          <h2 class="hmr-section-title">选择一个讨论继续。</h2>
+        <div class="hmr-community-board">
+          <aside class="hmr-community-sidebar">
+            <p class="hmr-kicker">频道</p>
+            <button
+              v-for="item in discussionTabs"
+              :key="item.id"
+              class="hmr-community-tab"
+              :class="{ 'is-active': activeTab === item.id }"
+              type="button"
+              @click="activeTab = item.id"
+            >
+              <span>{{ item.label }}</span>
+              <em>{{ item.count }}</em>
+            </button>
+          </aside>
+
+          <main class="hmr-community-main" aria-label="讨论列表">
+            <div class="hmr-community-main-head">
+              <div>
+                <p class="hmr-kicker">{{ activeTabLabel }}</p>
+                <h2 class="hmr-section-title">选择一个话题继续。</h2>
+              </div>
+              <RouterLink class="hmr-text-link" to="/explore">从内容进入</RouterLink>
+            </div>
+
+            <div class="hmr-discussion-list">
+              <RouterLink
+                v-for="(item, index) in visibleThreads"
+                :key="item.id"
+                class="hmr-discussion-row"
+                :to="threadTarget(item)"
+              >
+                <span class="hmr-discussion-index">{{ String(index + 1).padStart(2, '0') }}</span>
+                <div>
+                  <strong>{{ item.title }}</strong>
+                  <p>{{ item.excerpt }}</p>
+                </div>
+                <em>{{ item.metric }}</em>
+              </RouterLink>
+            </div>
+          </main>
+
+          <aside class="hmr-community-aside">
+            <div class="hmr-community-stat-card" v-for="item in content.stats" :key="item.id">
+              <span>{{ item.metric }}</span>
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.excerpt }}</p>
+            </div>
+          </aside>
         </div>
-        <div class="hmr-platform-strip hmr-platform-strip--center" aria-label="Discussion filters">
-          <button
-            v-for="item in discussionTabs"
-            :key="item.id"
-            class="hmr-platform-chip"
-            :class="{ 'is-active': activeTab === item.id }"
-            type="button"
-            @click="activeTab = item.id"
-          >
-            <span>{{ item.label }}</span>
-            <em>{{ item.count }}</em>
-          </button>
-        </div>
-        <div class="hmr-list">
-          <RouterLink
-            v-for="item in visibleThreads"
-            :key="item.id"
-            class="hmr-list-row"
-            :to="threadTarget(item)"
-          >
-            <strong>{{ item.title }}</strong>
-            <span>{{ item.excerpt }}</span>
-            <em>{{ item.metric }}</em>
+      </div>
+    </section>
+
+    <section class="hmr-dark-stage hmr-dark-stage--community" data-hmr-reveal>
+      <div class="hmr-container hmr-container--large">
+        <div class="hmr-section-head hmr-section-head--split">
+          <div>
+            <p class="hmr-kicker">热门回应</p>
+            <h2 class="hmr-section-title">正在升温。</h2>
+          </div>
+          <RouterLink class="hmr-text-link hmr-text-link--light" to="/contact">
+            提交反馈
           </RouterLink>
         </div>
-        <div class="hmr-signal-grid hmr-community-grid">
-          <article
-            v-for="item in content.feed.slice(0, 3)"
-            :key="`feed-${item.id}`"
-            class="hmr-mini-panel"
+
+        <div class="hmr-community-hot-grid">
+          <RouterLink
+            v-for="item in hotThreads"
+            :key="item.id"
+            class="hmr-community-hot-card"
+            :to="threadTarget(item)"
           >
-            <p class="hmr-kicker">{{ item.metric }}</p>
+            <span>{{ item.metric }}</span>
             <strong>{{ item.title }}</strong>
-            <span>{{ item.excerpt }}</span>
-          </article>
+            <p>{{ item.excerpt }}</p>
+          </RouterLink>
         </div>
-        <div class="hmr-action-row hmr-action-row--center">
-          <RouterLink class="hmr-cta" to="/contact">提交反馈</RouterLink>
-          <RouterLink class="hmr-text-link" to="/explore">从内容进入讨论</RouterLink>
+      </div>
+    </section>
+
+    <section class="hmr-section hmr-section--tight" data-hmr-reveal>
+      <div class="hmr-container hmr-container--large">
+        <div class="hmr-section-head hmr-section-head--split">
+          <div>
+            <p class="hmr-kicker">最新动态</p>
+            <h2 class="hmr-section-title">刚刚发生。</h2>
+          </div>
+          <RouterLink class="hmr-cta" to="/contact">提交话题</RouterLink>
+        </div>
+
+        <div class="hmr-community-feed-grid">
+          <article v-for="item in content.feed.slice(0, 6)" :key="`feed-${item.id}`">
+            <span>{{ item.metric }}</span>
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.excerpt }}</p>
+          </article>
         </div>
       </div>
     </section>
@@ -114,7 +123,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 
 import {
   seedCommunity,
@@ -124,7 +132,8 @@ import {
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 
-const { t } = useI18n({ useScope: 'global' })
+type CommunityTab = 'discussions' | 'hot' | 'latest' | 'feed'
+
 const content = ref<HmrCommunityContent>({
   stats: seedCommunity,
   discussions: seedCommunity,
@@ -132,7 +141,7 @@ const content = ref<HmrCommunityContent>({
   latest: seedCommunity,
   feed: seedCommunity,
 })
-const activeTab = ref<'discussions' | 'hot' | 'latest' | 'feed'>('discussions')
+const activeTab = ref<CommunityTab>('discussions')
 const pageState = ref<HmrPageState>('idle')
 const resource = ref<HmrAsyncResource<HmrCommunityContent>>({
   state: 'idle',
@@ -156,6 +165,12 @@ const discussionTabs = computed(() => [
   { id: 'latest' as const, label: '最新', count: content.value.latest.length },
   { id: 'feed' as const, label: '动态', count: content.value.feed.length },
 ])
+const activeTabLabel = computed(
+  () => discussionTabs.value.find((item) => item.id === activeTab.value)?.label ?? '讨论'
+)
+const hotThreads = computed(() =>
+  (content.value.hot.length ? content.value.hot : content.value.discussions).slice(0, 4)
+)
 
 async function refreshCommunity(): Promise<void> {
   pageState.value = 'loading'
@@ -175,18 +190,4 @@ function threadTarget(item: HmrCommunityContent['discussions'][number]): string 
 onMounted(() => {
   void refreshCommunity()
 })
-
-const colorPairs = [
-  ['#ff7722', '#3d2fa9'],
-  ['#ff3c34', '#ffc765'],
-  ['#171412', '#ff7722'],
-]
-
-function cardStyle(index: number): Record<string, string> {
-  const pair = colorPairs[index % colorPairs.length] ?? colorPairs[0]
-  return {
-    '--hmr-card-start': pair?.[0] ?? '#ff7722',
-    '--hmr-card-end': pair?.[1] ?? '#3d2fa9',
-  }
-}
 </script>
