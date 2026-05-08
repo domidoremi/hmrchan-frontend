@@ -2,13 +2,13 @@
   <div class="hmr-route-page hmr-route-page--community">
     <header class="hmr-page-hero hmr-page-hero--community">
       <div class="hmr-container">
-        <p class="hmr-kicker">社区</p>
-        <h1 class="hmr-page-title" data-hmr-text-reveal>讨论现场</h1>
+        <p class="hmr-kicker">{{ t('community.eyebrow') }}</p>
+        <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('community.title') }}</h1>
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
           :error="resource.error"
-          empty-title="暂时没有讨论。"
+          :retry-label="t('explore.loadMore')"
           @retry="refreshCommunity"
         />
       </div>
@@ -18,7 +18,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-community-board">
           <aside class="hmr-community-sidebar">
-            <p class="hmr-kicker">频道</p>
+            <p class="hmr-kicker">{{ t('community.channels') }}</p>
             <button
               v-for="item in discussionTabs"
               :key="item.id"
@@ -36,9 +36,11 @@
             <div class="hmr-community-main-head">
               <div>
                 <p class="hmr-kicker">{{ activeTabLabel }}</p>
-                <h2 class="hmr-section-title">选择一个话题继续。</h2>
+                <h2 class="hmr-section-title">{{ t('community.topicTitle') }}</h2>
               </div>
-              <RouterLink class="hmr-text-link" to="/explore">从内容进入</RouterLink>
+              <RouterLink class="hmr-text-link" to="/explore">
+                {{ t('community.openFromContent') }}
+              </RouterLink>
             </div>
 
             <div class="hmr-discussion-list">
@@ -73,11 +75,11 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head hmr-section-head--split">
           <div>
-            <p class="hmr-kicker">热门回应</p>
-            <h2 class="hmr-section-title">正在升温。</h2>
+            <p class="hmr-kicker">{{ t('community.hotTitle') }}</p>
+            <h2 class="hmr-section-title">{{ t('community.risingTitle') }}</h2>
           </div>
           <RouterLink class="hmr-text-link hmr-text-link--light" to="/contact">
-            提交反馈
+            {{ t('community.submitFeedback') }}
           </RouterLink>
         </div>
 
@@ -100,10 +102,10 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head hmr-section-head--split">
           <div>
-            <p class="hmr-kicker">最新动态</p>
-            <h2 class="hmr-section-title">刚刚发生。</h2>
+            <p class="hmr-kicker">{{ t('community.latestTitle') }}</p>
+            <h2 class="hmr-section-title">{{ t('community.threadTitle') }}</h2>
           </div>
-          <RouterLink class="hmr-cta" to="/contact">提交话题</RouterLink>
+          <RouterLink class="hmr-cta" to="/contact">{{ t('community.submitTopic') }}</RouterLink>
         </div>
 
         <div class="hmr-community-feed-grid">
@@ -120,11 +122,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 
 import { loadCommunityContentResource, type HmrCommunityContent } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
+import { readOrCreatePublicSnapshot } from '@/utils/cache/publicSnapshotCache'
 
 type CommunityTab = 'discussions' | 'hot' | 'latest' | 'feed'
 
@@ -136,6 +140,7 @@ const content = ref<HmrCommunityContent>({
   feed: [],
 })
 const activeTab = ref<CommunityTab>('discussions')
+const { t } = useI18n()
 const pageState = ref<HmrPageState>('idle')
 const resource = ref<HmrAsyncResource<HmrCommunityContent>>({
   state: 'idle',
@@ -150,10 +155,14 @@ const visibleThreads = computed(() => {
   return byTab.length ? byTab : content.value.discussions.length ? content.value.discussions : []
 })
 const discussionTabs = computed(() => [
-  { id: 'discussions' as const, label: '全部讨论', count: content.value.discussions.length },
-  { id: 'hot' as const, label: '热门', count: content.value.hot.length },
-  { id: 'latest' as const, label: '最新', count: content.value.latest.length },
-  { id: 'feed' as const, label: '动态', count: content.value.feed.length },
+  {
+    id: 'discussions' as const,
+    label: t('community.allDiscussions'),
+    count: content.value.discussions.length,
+  },
+  { id: 'hot' as const, label: t('community.hot'), count: content.value.hot.length },
+  { id: 'latest' as const, label: t('community.latest'), count: content.value.latest.length },
+  { id: 'feed' as const, label: t('community.feed'), count: content.value.feed.length },
 ])
 const activeTabLabel = computed(
   () => discussionTabs.value.find((item) => item.id === activeTab.value)?.label ?? '讨论'
@@ -164,7 +173,11 @@ const hotThreads = computed(() =>
 
 async function refreshCommunity(): Promise<void> {
   pageState.value = 'loading'
-  const nextResource = await loadCommunityContentResource()
+  const nextResource = await readOrCreatePublicSnapshot(
+    'hmr:community',
+    loadCommunityContentResource,
+    'short'
+  )
   resource.value = nextResource
   content.value = nextResource.data
   pageState.value =

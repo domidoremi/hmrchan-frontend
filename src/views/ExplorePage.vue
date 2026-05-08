@@ -2,10 +2,9 @@
   <div class="hmr-route-page hmr-route-page--explore">
     <header class="hmr-page-hero hmr-page-hero--works">
       <div class="hmr-container hmr-page-hero-container">
-        <p class="hmr-kicker">探索</p>
+        <p class="hmr-kicker">{{ t('explore.eyebrow') }}</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>
-          <span>媒体</span>
-          <span>探索</span>
+          <span>{{ t('explore.title') }}</span>
         </h1>
         <div class="hmr-page-tags" aria-label="Search suggestions">
           <button
@@ -25,18 +24,18 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-works-header">
           <div class="hmr-works-header-main">
-            <p class="hmr-kicker">全部媒体</p>
-            <h2 class="hmr-section-title">全部帖子</h2>
+            <p class="hmr-kicker">{{ t('explore.allMedia') }}</p>
+            <h2 class="hmr-section-title">{{ t('explore.allPosts') }}</h2>
             <form
               class="hmr-data-toolbar hmr-data-toolbar--explore"
               @submit.prevent="refreshExplore"
             >
               <label class="hmr-data-field hmr-data-field--search">
-                <span>搜索</span>
-                <input v-model="query" placeholder="标题、作者、话题" />
+                <span>{{ t('explore.search') }}</span>
+                <input v-model="query" :placeholder="t('explore.searchPlaceholder')" />
               </label>
               <label class="hmr-data-field">
-                <span>平台</span>
+                <span>{{ t('explore.platform') }}</span>
                 <select v-model="platform">
                   <option
                     v-for="item in platformOptions"
@@ -48,33 +47,33 @@
                 </select>
               </label>
               <label class="hmr-data-field">
-                <span>排序</span>
+                <span>{{ t('explore.sort') }}</span>
                 <select v-model="sortBy">
-                  <option value="published_at">发布时间</option>
-                  <option value="scraped_at">抓取时间</option>
-                  <option value="view_count">浏览</option>
-                  <option value="like_count">点赞</option>
-                  <option value="comment_count">评论</option>
+                  <option value="published_at">{{ t('explore.sortPublished') }}</option>
+                  <option value="scraped_at">{{ t('explore.sortScraped') }}</option>
+                  <option value="view_count">{{ t('explore.sortViews') }}</option>
+                  <option value="like_count">{{ t('explore.sortLikes') }}</option>
+                  <option value="comment_count">{{ t('explore.sortComments') }}</option>
                 </select>
               </label>
               <label class="hmr-data-field">
-                <span>类型</span>
+                <span>{{ t('explore.type') }}</span>
                 <select v-model="contentKind">
-                  <option value="all">全部</option>
-                  <option value="media">含媒体</option>
-                  <option value="text">纯文本</option>
+                  <option value="all">{{ t('explore.kindAll') }}</option>
+                  <option value="media">{{ t('explore.kindMedia') }}</option>
+                  <option value="text">{{ t('explore.kindText') }}</option>
                 </select>
               </label>
               <label class="hmr-data-field">
-                <span>时长</span>
+                <span>{{ t('explore.duration') }}</span>
                 <select v-model="durationRange">
-                  <option value="all">全部</option>
-                  <option value="short">短视频</option>
-                  <option value="medium">中等</option>
-                  <option value="long">长内容</option>
+                  <option value="all">{{ t('explore.durationAll') }}</option>
+                  <option value="short">{{ t('explore.durationShort') }}</option>
+                  <option value="medium">{{ t('explore.durationMedium') }}</option>
+                  <option value="long">{{ t('explore.durationLong') }}</option>
                 </select>
               </label>
-              <button class="hmr-status-button" type="submit">应用</button>
+              <button class="hmr-status-button" type="submit">{{ t('explore.apply') }}</button>
             </form>
           </div>
           <div class="hmr-view-tools" aria-label="探索视图">
@@ -83,14 +82,14 @@
               type="button"
               @click="viewMode = 'grid'"
             >
-              网格
+              {{ t('explore.grid') }}
             </button>
             <button
               :class="{ 'is-active': viewMode === 'list' }"
               type="button"
               @click="viewMode = 'list'"
             >
-              列表
+              {{ t('explore.list') }}
             </button>
           </div>
         </div>
@@ -136,9 +135,11 @@
           <div v-for="item in 6" :key="item" class="hmr-media-skeleton"></div>
         </div>
 
-        <div v-else class="hmr-empty-panel">
-          <h3>暂无内容</h3>
-          <button class="hmr-cta" type="button" @click="clearFilters">清空筛选</button>
+        <div v-else class="hmr-empty-panel" aria-label="No matching posts">
+          <span aria-hidden="true"></span>
+          <button class="hmr-cta" type="button" @click="clearFilters">
+            {{ t('explore.clear') }}
+          </button>
         </div>
 
         <div class="hmr-load-more">
@@ -148,7 +149,7 @@
             :disabled="pageState === 'loading' || !content.hasMore"
             @click="loadMore"
           >
-            {{ content.hasMore ? '加载更多' : '没有更多' }}
+            {{ content.hasMore ? t('explore.loadMore') : t('explore.end') }}
           </button>
         </div>
       </div>
@@ -160,7 +161,7 @@
           <div class="hmr-media-ribbon hmr-media-ribbon--floating" aria-hidden="true">
             <div class="hmr-media-ribbon-track">
               <div
-                v-for="(post, index) in visiblePosts.slice(0, 6)"
+                v-for="(post, index) in balancedRibbonPosts"
                 :key="`explore-sweep-a-${post.id}-${index}`"
                 class="hmr-media-ribbon-card"
                 :style="cardStyle(index)"
@@ -168,7 +169,7 @@
                 <strong>{{ post.tag }}<br />{{ glyphFor(post, index) }}</strong>
               </div>
               <div
-                v-for="(post, index) in visiblePosts.slice(0, 6)"
+                v-for="(post, index) in balancedRibbonPosts"
                 :key="`explore-sweep-b-${post.id}-${index}`"
                 class="hmr-media-ribbon-card"
                 :style="cardStyle(index + 6)"
@@ -190,8 +191,8 @@
     <section class="hmr-section" data-hmr-reveal>
       <div class="hmr-sticky-split">
         <div class="hmr-sticky-copy">
-          <p class="hmr-kicker">作者</p>
-          <h2 class="hmr-section-title">作者</h2>
+          <p class="hmr-kicker">{{ t('explore.authors') }}</p>
+          <h2 class="hmr-section-title">{{ t('explore.authorTitle') }}</h2>
         </div>
         <div class="hmr-author-strip">
           <article v-for="author in content.authors" :key="author.id" class="hmr-author-chip">
@@ -207,6 +208,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import {
   seedAuthors,
@@ -217,7 +219,9 @@ import {
 } from '@/api/hmrContent'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
+import { readOrCreatePublicSnapshot } from '@/utils/cache/publicSnapshotCache'
 
+const { t } = useI18n()
 const viewMode = ref<'grid' | 'list'>('grid')
 const query = ref('')
 const platform = ref('all')
@@ -256,6 +260,7 @@ const posts = computed(() => {
 })
 const visiblePosts = computed(() =>
   posts.value.filter((post) => {
+    if (!post.id || !post.title.trim()) return false
     const hasMedia = Boolean(post.mediaUrl) || Boolean(post.hasMedia) || (post.mediaCount ?? 0) > 0
     const duration = post.durationSec ?? 0
     const matchesKind =
@@ -271,6 +276,27 @@ const visiblePosts = computed(() =>
     return matchesKind && matchesDuration
   })
 )
+const balancedRibbonPosts = computed(() => {
+  const grouped = new Map<string, HmrPost[]>()
+  for (const post of visiblePosts.value) {
+    const key = normalizePlatform(post.platform)
+    if (!MOMICHAN_PLATFORMS.includes(key as (typeof MOMICHAN_PLATFORMS)[number])) continue
+    const bucket = grouped.get(key) ?? []
+    bucket.push(post)
+    grouped.set(key, bucket)
+  }
+
+  const result: HmrPost[] = []
+  for (let index = 0; result.length < 8 && index < 8; index += 1) {
+    for (const platformId of MOMICHAN_PLATFORMS) {
+      const nextPost = grouped.get(platformId)?.[index]
+      if (nextPost) result.push(nextPost)
+      if (result.length >= 8) break
+    }
+  }
+
+  return result
+})
 const isFilteredEmpty = computed(
   () => pageState.value === 'empty' || visiblePosts.value.length === 0
 )
@@ -337,7 +363,13 @@ function cardStyle(index: number): Record<string, string> {
 
 async function refreshExplore(): Promise<void> {
   pageState.value = 'loading'
-  const nextResource = await loadExploreContentResource(activeOptions())
+  const options = activeOptions()
+  const cacheKey = `hmr:explore:${JSON.stringify(options)}:${contentKind.value}:${durationRange.value}`
+  const nextResource = await readOrCreatePublicSnapshot(
+    cacheKey,
+    () => loadExploreContentResource(options),
+    'short'
+  )
   resource.value = nextResource
   content.value = nextResource.data
   pageState.value = nextResource.data.posts.length ? 'ready' : 'empty'

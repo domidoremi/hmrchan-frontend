@@ -15,8 +15,6 @@
           :loading="state === 'loading'"
           :empty="state === 'empty'"
           :error="resource.error"
-          :title="sectionStateTitle"
-          :body="sectionStateBody"
           @retry="loadSection"
         />
         <div class="hmr-action-row">
@@ -165,23 +163,6 @@ const sectionCards = computed(() => [
       ]
     : []),
 ])
-
-const sectionStateTitle = computed(() => {
-  if (state.value === 'loading') return '正在整理个人信息。'
-  if (state.value === 'empty') return '暂时没有更多内容。'
-  if (resource.value.error?.kind === 'unauthorized') return '登录后继续。'
-  if (resource.value.error?.kind === 'refresh-needed') return '请刷新页面后重新查看。'
-  if (resource.value.error) return '个人页刷新失败。'
-  return '个人内容已就绪。'
-})
-
-const sectionStateBody = computed(() => {
-  if (state.value === 'loading') return '正在加载收藏、历史、收件箱和安全状态。'
-  if (state.value === 'empty') return '切换到其他分区，或稍后再打开。'
-  if (resource.value.error?.kind === 'unauthorized') return '登录后就可以查看完整个人状态。'
-  if (resource.value.error) return '稍后再试，页面会保留当前内容。'
-  return '继续查看收藏、历史、收件箱和安全信息。'
-})
 
 async function loadSection(): Promise<void> {
   state.value = 'loading'

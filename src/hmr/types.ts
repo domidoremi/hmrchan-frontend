@@ -112,6 +112,24 @@ export type HmrPageState = 'idle' | 'loading' | 'ready' | 'empty' | 'error'
 
 export type HmrDataSource = 'api' | 'local'
 
+export type HmrWarmRouteKey = 'home' | 'explore' | 'community' | 'schedule' | 'post'
+
+export type HmrCacheTtlPreset = 'short' | 'medium' | 'long'
+
+export interface HmrCachedSnapshot<T> {
+  value: T
+  expiresAt: number
+  writtenAt: number
+}
+
+export type HmrScheduleViewMode = 'day' | 'week' | 'month'
+
+export interface HmrResponsiveMediaSource {
+  src: string
+  srcset?: string
+  sizes?: string
+}
+
 export type HmrApiErrorKind =
   | 'unauthorized'
   | 'refresh-needed'

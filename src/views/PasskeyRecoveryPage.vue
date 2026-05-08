@@ -31,7 +31,15 @@
           <span>邮箱验证码</span>
           <input v-model="verificationCode" required autocomplete="one-time-code" />
         </label>
-        <p v-if="auth.passkeyRecovery" class="hmr-auth-status">{{ recoveryStatusCopy }}</p>
+        <div
+          v-if="auth.passkeyRecovery"
+          class="hmr-auth-status hmr-auth-status--dots"
+          aria-hidden="true"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
         <p v-if="auth.error" class="hmr-form-error">{{ auth.error || t('auth.error') }}</p>
         <button class="hmr-cta" type="submit" :disabled="auth.isLoading">
           {{ recoveryStep === 'start' ? '开始恢复' : '验证恢复请求' }}
@@ -64,16 +72,6 @@ const email = ref('')
 const password = ref('')
 const verificationCode = ref('')
 const recoveryStep = computed(() => (auth.passkeyRecovery?.id ? 'verify' : 'start'))
-const recoveryStatusCopy = computed(() => {
-  if (!auth.passkeyRecovery) return ''
-  if (auth.passkeyRecovery.canRegister || auth.passkeyRecovery.status === 'ready') {
-    return '恢复验证已通过，可以继续注册新的 Passkey。'
-  }
-  if (auth.passkeyRecovery.status === 'blocked') return '恢复暂时受限，请稍后再试。'
-  if (auth.passkeyRecovery.status === 'cooldown') return '恢复请求需要等待片刻。'
-  return '恢复请求已创建，请继续完成验证。'
-})
-
 async function submit(): Promise<void> {
   const payload = {
     email: email.value,

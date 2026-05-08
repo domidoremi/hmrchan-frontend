@@ -18,6 +18,8 @@
       <img
         class="hmr-post-card__poster"
         :src="posterUrl"
+        :srcset="posterSrcset"
+        :sizes="posterSizes"
         :alt="post.title"
         loading="lazy"
         decoding="async"
@@ -39,7 +41,9 @@
       </div>
       <span class="hmr-post-card__platform-mark" :style="platformMarkStyle" aria-hidden="true">
       </span>
-      <span class="hmr-post-card__play" aria-hidden="true"><span></span></span>
+      <span v-if="hasMediaContent" class="hmr-post-card__play" aria-hidden="true">
+        <span></span>
+      </span>
     </div>
 
     <div class="hmr-project-info hmr-post-card__content">
@@ -136,6 +140,19 @@ const hasRealPoster = computed(() => {
   return Boolean(value) && !value?.startsWith('/hmrchan/reference/') && !value?.startsWith('data:')
 })
 const posterUrl = computed(() => props.post.mediaUrl ?? buildPosterDataUrl())
+const posterSrcset = computed(() => {
+  if (!props.post.mediaUrl) return undefined
+  return [
+    `${withThumbnailQuality(props.post.mediaUrl, 'medium')} 640w`,
+    `${withThumbnailQuality(props.post.mediaUrl, 'large')} 960w`,
+    `${withThumbnailQuality(props.post.mediaUrl, 'xlarge')} 1440w`,
+  ].join(', ')
+})
+const posterSizes = computed(() => {
+  if (props.variant === 'hero') return '(min-width: 48em) 44vw, 92vw'
+  if (props.variant === 'list') return '(min-width: 48em) 18rem, 92vw'
+  return '(min-width: 64em) 31vw, (min-width: 48em) 45vw, 92vw'
+})
 const hasMediaContent = computed(
   () =>
     props.post.hasMedia ||
@@ -248,6 +265,20 @@ function formatCompact(value: number): string {
   if (value >= 1000000) return `${(value / 1000000).toFixed(1).replace(/\.0$/, '')}M`
   if (value >= 1000) return `${(value / 1000).toFixed(1).replace(/\.0$/, '')}K`
   return String(value)
+}
+
+function withThumbnailQuality(value: string, size: 'medium' | 'large' | 'xlarge'): string {
+  try {
+    const url = new URL(value, window.location.origin)
+    if (url.pathname.includes('/thumbnail')) {
+      url.searchParams.set('size', size)
+      return url.toString()
+    }
+  } catch {
+    return value
+  }
+
+  return value
 }
 
 function formatDuration(seconds: number): string {

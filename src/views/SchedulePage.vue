@@ -2,13 +2,13 @@
   <div class="hmr-route-page hmr-route-page--schedule">
     <header class="hmr-page-hero hmr-page-hero--schedule">
       <div class="hmr-container hmr-page-hero-container">
-        <p class="hmr-kicker">日程</p>
-        <h1 class="hmr-page-title" data-hmr-text-reveal>活动与演出日历</h1>
+        <p class="hmr-kicker">{{ t('schedule.eyebrow') }}</p>
+        <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('schedule.title') }}</h1>
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
           :error="resource.error"
-          empty-title="暂时没有日程。"
+          :retry-label="t('explore.loadMore')"
           @retry="refreshSchedule"
         />
       </div>
@@ -18,8 +18,8 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head hmr-section-head--split">
           <div>
-            <p class="hmr-kicker">日期</p>
-            <h2 class="hmr-section-title">先选一天。</h2>
+            <p class="hmr-kicker">{{ t('schedule.date') }}</p>
+            <h2 class="hmr-section-title">{{ t('schedule.dateTitle') }}</h2>
           </div>
           <div class="hmr-schedule-filter-row" aria-label="日程筛选">
             <button
@@ -46,16 +46,47 @@
           >
             <span>{{ day.weekday }}</span>
             <strong>{{ day.day }}</strong>
-            <em>{{ day.count ? `${day.count} 项` : '暂无' }}</em>
+            <em>{{
+              day.count ? `${day.count} ${t('schedule.itemCount')}` : t('schedule.noItems')
+            }}</em>
+          </button>
+        </div>
+
+        <div class="hmr-schedule-month-tools" aria-label="Month navigation">
+          <button type="button" :aria-label="t('schedule.previousMonth')" @click="shiftMonth(-1)">
+            <span></span>
+          </button>
+          <strong>{{ selectedMonthLabel }}</strong>
+          <button type="button" :aria-label="t('schedule.nextMonth')" @click="shiftMonth(1)">
+            <span></span>
+          </button>
+        </div>
+
+        <div v-if="activeFilter === 'month'" class="hmr-schedule-month-grid">
+          <button
+            v-for="day in monthDays"
+            :key="`month-${day.key}`"
+            class="hmr-schedule-month-cell"
+            :class="{
+              'is-today': day.isToday,
+              'is-active': selectedDayKey === day.key,
+              'is-outside': !day.inMonth,
+              'is-empty': day.count === 0,
+            }"
+            type="button"
+            @click="selectedDayKey = day.key"
+          >
+            <span>{{ day.day }}</span>
+            <em>{{ day.count }}</em>
           </button>
         </div>
 
         <div class="hmr-schedule-board">
           <aside class="hmr-schedule-day-summary">
-            <p class="hmr-kicker">当前选择</p>
+            <p class="hmr-kicker">{{ t('schedule.selected') }}</p>
             <strong>{{ selectedDayLabel }}</strong>
-            <span>{{ selectedDayEvents.length ? selectedSummary : '这一天暂时没有安排。' }}</span>
-            <RouterLink class="hmr-text-link" to="/contact">补充活动线索</RouterLink>
+            <span>{{ selectedDayEvents.length ? selectedSummary : t('schedule.emptyDay') }}</span>
+            <RouterLink class="hmr-text-link" to="/contact">{{ t('schedule.clue') }}</RouterLink>
           </aside>
 
           <div class="hmr-schedule-event-list">
@@ -71,12 +102,13 @@
                 <strong>{{ item.title }}</strong>
                 <span>{{ item.description }}</span>
               </div>
-              <em>{{ item.isPerformance ? '演出/直播' : '安排' }}</em>
+              <em>{{
+                item.isPerformance ? t('schedule.performance') : t('schedule.arrangement')
+              }}</em>
             </article>
 
             <div v-if="!selectedDayEvents.length" class="hmr-schedule-empty">
-              <strong>这一天没有活动。</strong>
-              <span>切换到有数量标记的日期，或查看本周全部安排。</span>
+              <span aria-hidden="true"></span>
             </div>
           </div>
         </div>
@@ -86,8 +118,8 @@
     <section class="hmr-dark-stage hmr-dark-stage--schedule" data-hmr-reveal>
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
-          <p class="hmr-kicker">即将发生</p>
-          <h2 class="hmr-section-title">接下来三个窗口。</h2>
+          <p class="hmr-kicker">{{ t('schedule.upcoming') }}</p>
+          <h2 class="hmr-section-title">{{ t('schedule.nextWindow') }}</h2>
         </div>
         <div class="hmr-schedule-highlight-grid">
           <article v-for="item in upcomingEvents.slice(0, 3)" :key="item.id">
@@ -97,7 +129,7 @@
           </article>
         </div>
         <RouterLink class="hmr-text-link hmr-text-link--light" to="/explore">
-          查看相关内容
+          {{ t('schedule.related') }}
         </RouterLink>
       </div>
     </section>
@@ -105,8 +137,8 @@
     <section class="hmr-section hmr-section--tight" data-hmr-reveal>
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
-          <p class="hmr-kicker">本周</p>
-          <h2 class="hmr-section-title">按天浏览。</h2>
+          <p class="hmr-kicker">{{ t('schedule.weekTitle') }}</p>
+          <h2 class="hmr-section-title">{{ t('schedule.dateTitle') }}</h2>
         </div>
         <div class="hmr-schedule-week-list">
           <article v-for="day in populatedDays" :key="day.key" class="hmr-schedule-week-row">
@@ -129,13 +161,20 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 
 import { loadScheduleContentResource, type HmrScheduleContent } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
-import type { HmrAsyncResource, HmrPageState, HmrScheduleItem } from '@/hmr/types'
+import type {
+  HmrAsyncResource,
+  HmrPageState,
+  HmrScheduleItem,
+  HmrScheduleViewMode,
+} from '@/hmr/types'
+import { readOrCreatePublicSnapshot } from '@/utils/cache/publicSnapshotCache'
 
-type ScheduleFilter = 'all' | 'today' | 'week' | 'performance'
+type ScheduleFilter = 'all' | 'today' | HmrScheduleViewMode | 'performance'
 
 interface HmrScheduleEvent extends HmrScheduleItem {
   dateKey: string
@@ -161,13 +200,16 @@ const resource = ref<HmrAsyncResource<HmrScheduleContent>>({
 })
 const activeFilter = ref<ScheduleFilter>('all')
 const selectedDayKey = ref(formatDateKey(new Date()))
+const selectedMonth = ref(startOfMonth(new Date()))
+const { locale, t } = useI18n()
 
-const filterOptions: Array<{ id: ScheduleFilter; label: string }> = [
-  { id: 'all', label: '全部' },
-  { id: 'today', label: '今天' },
-  { id: 'week', label: '本周' },
-  { id: 'performance', label: '演出/直播' },
-]
+const filterOptions = computed<Array<{ id: ScheduleFilter; label: string }>>(() => [
+  { id: 'all', label: t('schedule.all') },
+  { id: 'today', label: t('schedule.today') },
+  { id: 'week', label: t('schedule.week') },
+  { id: 'month', label: t('schedule.month') },
+  { id: 'performance', label: t('schedule.performance') },
+])
 
 const normalizedEvents = computed(() =>
   content.value.items
@@ -177,12 +219,16 @@ const normalizedEvents = computed(() =>
 const filteredEvents = computed(() => {
   const todayKey = formatDateKey(new Date())
   const weekKeys = new Set(makeDayWindow(new Date(), 7).map((item) => item.key))
+  const monthKey = formatMonthKey(selectedMonth.value)
 
   if (activeFilter.value === 'today') {
     return normalizedEvents.value.filter((item) => item.dateKey === todayKey)
   }
   if (activeFilter.value === 'week') {
     return normalizedEvents.value.filter((item) => weekKeys.has(item.dateKey))
+  }
+  if (activeFilter.value === 'month') {
+    return normalizedEvents.value.filter((item) => item.dateKey.startsWith(monthKey))
   }
   if (activeFilter.value === 'performance') {
     return normalizedEvents.value.filter((item) => item.isPerformance)
@@ -205,9 +251,16 @@ const selectedDay = computed(
 const selectedDayLabel = computed(() => selectedDay.value?.label ?? '今天')
 const selectedSummary = computed(
   () =>
-    `${selectedDayEvents.value.length} 个安排，最早 ${selectedDayEvents.value[0]?.timeLabel ?? '待定'}`
+    `${selectedDayEvents.value.length} ${t('schedule.itemCount')} · ${selectedDayEvents.value[0]?.timeLabel ?? t('schedule.noItems')}`
 )
 const upcomingEvents = computed(() => filteredEvents.value.slice(0, 6))
+const selectedMonthLabel = computed(() => formatMonthLabel(selectedMonth.value))
+const monthDays = computed(() =>
+  makeMonthGrid(selectedMonth.value).map((day) => ({
+    ...day,
+    count: filteredEvents.value.filter((item) => item.dateKey === day.key).length,
+  }))
+)
 const populatedDays = computed(() =>
   dayOptions.value
     .map((day) => ({
@@ -219,7 +272,11 @@ const populatedDays = computed(() =>
 
 async function refreshSchedule(): Promise<void> {
   pageState.value = 'loading'
-  const nextResource = await loadScheduleContentResource()
+  const nextResource = await readOrCreatePublicSnapshot(
+    'hmr:schedule',
+    loadScheduleContentResource,
+    'short'
+  )
   resource.value = nextResource
   content.value = nextResource.data
   pageState.value = nextResource.data.items.length ? 'ready' : 'empty'
@@ -228,6 +285,7 @@ async function refreshSchedule(): Promise<void> {
 function setFilter(filter: ScheduleFilter): void {
   activeFilter.value = filter
   if (filter === 'today') selectedDayKey.value = formatDateKey(new Date())
+  if (filter === 'month') selectedMonth.value = startOfMonth(new Date(selectedDayKey.value))
 }
 
 function normalizeScheduleEvent(item: HmrScheduleItem, index: number): HmrScheduleEvent {
@@ -276,7 +334,31 @@ function makeDayWindow(
       key: formatDateKey(date),
       label: formatDayLabel(date),
       weekday: formatWeekday(date),
-      day: new Intl.DateTimeFormat('zh-CN', { day: '2-digit' }).format(date),
+      day: new Intl.DateTimeFormat(locale.value, { day: '2-digit' }).format(date),
+    }
+  })
+}
+
+function makeMonthGrid(monthDate: Date): Array<{
+  key: string
+  day: string
+  isToday: boolean
+  inMonth: boolean
+}> {
+  const monthStart = startOfMonth(monthDate)
+  const gridStart = new Date(monthStart)
+  gridStart.setDate(monthStart.getDate() - monthStart.getDay())
+  const todayKey = formatDateKey(new Date())
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart)
+    date.setDate(gridStart.getDate() + index)
+    const key = formatDateKey(date)
+    return {
+      key,
+      day: new Intl.DateTimeFormat(locale.value, { day: 'numeric' }).format(date),
+      isToday: key === todayKey,
+      inMonth: date.getMonth() === monthStart.getMonth(),
     }
   })
 }
@@ -289,24 +371,49 @@ function formatDateKey(date: Date): string {
 }
 
 function formatDayLabel(date: Date): string {
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat(locale.value, {
     month: 'long',
     day: 'numeric',
   }).format(date)
 }
 
 function formatWeekday(date: Date): string {
-  return new Intl.DateTimeFormat('zh-CN', { weekday: 'short' }).format(date)
+  return new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(date)
 }
 
 function formatTimeLabel(raw: string, date: Date): string {
   const timeMatch = raw.match(/(\d{1,2}):(\d{2})/)
   if (timeMatch) return `${timeMatch[1]?.padStart(2, '0')}:${timeMatch[2]}`
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat(locale.value, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   }).format(date)
+}
+
+function formatMonthKey(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
+
+function formatMonthLabel(date: Date): string {
+  return new Intl.DateTimeFormat(locale.value, {
+    year: 'numeric',
+    month: 'long',
+  }).format(date)
+}
+
+function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
+function shiftMonth(offset: number): void {
+  const nextMonth = new Date(selectedMonth.value)
+  nextMonth.setMonth(nextMonth.getMonth() + offset)
+  selectedMonth.value = startOfMonth(nextMonth)
+  selectedDayKey.value = formatDateKey(selectedMonth.value)
+  activeFilter.value = 'month'
 }
 
 watch(

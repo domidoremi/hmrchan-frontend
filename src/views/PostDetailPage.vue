@@ -18,8 +18,6 @@
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
           :error="resource.error"
-          empty-title="内容暂时不可用。"
-          empty-body="返回探索页重新打开，或稍后再试。"
           @retry="loadPost"
         />
       </div>

@@ -218,18 +218,12 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
     description:
       'MomiChan brings content discovery, community discussion, schedules, and creator signals into one fast public surface.',
     shellEyebrow: 'MomiChan',
-    shellTitle: '让每一次内容刷新都有方向。',
-    shellBody: '从首页进入精选内容、社区讨论、日程节奏和创作者信号，快速找到今天值得停留的内容。',
+    shellTitle: 'MomiChan',
+    shellBody: '',
     options: {
       shellVariant: 'home',
-      shellSummary: [
-        'Start with a curated overview of posts, discussions, and upcoming moments.',
-        'Jump into explore, community, or schedule whenever you want to go deeper.',
-      ],
-      shellStats: [
-        { label: 'Open now', value: 'Explore / Community / Schedule' },
-        { label: 'Also inside', value: 'Creator signals' },
-      ],
+      shellSummary: [],
+      shellStats: [],
       shellLinks: createPrimaryPublicLinks(),
       structuredData: [
         createWebsiteStructuredData(),
@@ -462,87 +456,6 @@ export function resolveCanonicalUrl(config: HtmlDocumentConfig): string {
   return new URL(config.canonicalPath, SITE_ORIGIN).toString()
 }
 
-function renderShellSummary(summary: string[]): string {
-  if (!summary.length) return ''
-
-  return `
-    <ul style="display:grid;gap:0.625rem;margin:0;padding:0;list-style:none;">
-      ${summary
-        .map(
-          (item) => `
-            <li style="display:flex;gap:0.625rem;align-items:flex-start;color:#504d46;font:500 0.875rem/1.6 'HMR Sans',sans-serif;">
-              <span style="display:inline-flex;align-items:center;justify-content:center;width:1.25rem;height:1.25rem;border-radius:999rem;background:#181511;color:#f7f3e8;font:700 0.6875rem/1 'HMR Plex Mono',monospace;flex:none;">&bull;</span>
-              <span>${escapeHtml(item)}</span>
-            </li>
-          `
-        )
-        .join('')}
-    </ul>
-  `
-}
-
-function renderShellLinks(links: HtmlDocumentShellLink[]): string {
-  if (!links.length) return ''
-
-  return `
-    <nav aria-label="Public route shortcuts" style="display:flex;flex-wrap:wrap;gap:0.625rem;">
-      ${links
-        .map(
-          (link) => `
-            <a href="${escapeHtml(link.href)}" style="display:inline-flex;align-items:center;justify-content:center;padding:0.625rem 0.875rem;border-radius:999rem;background:#181511;color:#f7f3e8;text-decoration:none;font:700 0.8125rem/1.2 'HMR Plex Mono',monospace;text-transform:uppercase;">
-              ${escapeHtml(link.label)}
-            </a>
-          `
-        )
-        .join('')}
-    </nav>
-  `
-}
-
-function renderShellStats(stats: HtmlDocumentShellStat[]): string {
-  const resolvedStats = stats.length
-    ? stats
-    : [
-        { label: 'Mode', value: 'Public' },
-        { label: 'Surface', value: 'MomiChan' },
-      ]
-
-  return `
-    <dl style="display:grid;grid-template-columns:repeat(auto-fit,minmax(9.375rem,1fr));gap:0.75rem;margin:0;">
-      ${resolvedStats
-        .map(
-          (stat) => `
-            <div style="display:grid;gap:0.5rem;padding:1rem;border-radius:1.25rem;background:rgba(255,255,255,0.74);border:1px solid rgba(24,21,17,0.1);">
-              <dt style="margin:0;color:#757167;font:700 0.75rem/1.2 'HMR Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">${escapeHtml(stat.label)}</dt>
-              <dd style="margin:0;color:#181511;font:900 1.125rem/1.3 'HMR Sans',sans-serif;">${escapeHtml(stat.value)}</dd>
-            </div>
-          `
-        )
-        .join('')}
-    </dl>
-  `
-}
-
-function renderShellVisual(config: HtmlDocumentConfig): string {
-  if (config.ogImage) {
-    return `
-      <figure style="margin:0;display:grid;gap:0.625rem;padding:0.875rem;border-radius:1.5rem;background:#181511;min-height:13.75rem;">
-        <img src="${escapeHtml(config.ogImage)}" alt="${escapeHtml(config.shellTitle)}" loading="eager" decoding="async" style="width:100%;height:100%;min-height:13.75rem;object-fit:cover;border-radius:1.125rem;" />
-      </figure>
-    `
-  }
-
-  return `
-    <div style="display:grid;gap:0.75rem;">
-      <div style="min-height:10rem;border-radius:1.5rem;background:linear-gradient(135deg,#181511 0%,#f15f2a 56%,#f7f3e8 100%);"></div>
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0.75rem;">
-        <div style="min-height:5.875rem;border-radius:1.25rem;background:#e9e1cf;border:1px solid rgba(24,21,17,0.08);"></div>
-        <div style="min-height:5.875rem;border-radius:1.25rem;background:#181511;border:1px solid rgba(24,21,17,0.08);"></div>
-      </div>
-    </div>
-  `
-}
-
 function serializeStructuredData(payload: unknown): string {
   return JSON.stringify(payload)
     .replaceAll('<', '\\u003c')
@@ -565,64 +478,36 @@ export function renderStructuredDataScript(config: HtmlDocumentConfig): string {
   return `<script type="application/ld+json" data-prerender-structured-data="true">${payload}</script>`
 }
 
-function renderDefaultPrerenderShell(config: HtmlDocumentConfig): string {
-  const summaryMarkup = renderShellSummary(config.shellSummary)
-  const linksMarkup = renderShellLinks(config.shellLinks)
-  const statsMarkup = renderShellStats(config.shellStats)
-  const visualMarkup = renderShellVisual(config)
-
+function renderPrerenderLoaderShell(config: HtmlDocumentConfig): string {
   return `
-    <section data-prerender-shell="true" data-prerender-shell-variant="default" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:2rem 1.25rem;background:#f7f3e8;color:#181511;">
-      <div data-prerender-shell-content="true" style="width:min(100%,70rem);display:grid;gap:1.5rem;">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(18.75rem,1fr));gap:1.25rem;align-items:start;">
-          <article style="display:grid;gap:1rem;padding:1.75rem;border-radius:1.75rem;background:rgba(255,255,255,0.68);border:1px solid rgba(24,21,17,0.1);">
-            <span style="display:inline-flex;width:max-content;padding:0.375rem 0.625rem;border-radius:999rem;background:#181511;color:#f7f3e8;font:700 0.75rem/1.2 'HMR Plex Mono',monospace;text-transform:uppercase;">${escapeHtml(config.shellEyebrow)}</span>
-            <h1 style="margin:0;font:900 clamp(2rem,5vw,3.5rem)/0.95 'HMR Sans',sans-serif;color:#181511;text-transform:uppercase;letter-spacing:-0.05em;">${escapeHtml(config.shellTitle)}</h1>
-            <p style="margin:0;max-width:68ch;font:500 1rem/1.8 'HMR Sans',sans-serif;color:#504d46;">${escapeHtml(config.shellBody)}</p>
-            ${summaryMarkup}
-            ${linksMarkup}
-          </article>
-          <aside style="display:grid;gap:1rem;">
-            ${visualMarkup}
-            ${statsMarkup}
-          </aside>
-        </div>
+    <section data-prerender-shell="true" data-prerender-shell-variant="${escapeHtml(config.shellVariant)}" aria-label="${SITE_NAME}" style="position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;min-height:100dvh;background:#171412;color:#fbf9ef;overflow:hidden;">
+      <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(circle at 18% 22%,rgba(255,119,34,0.2),transparent 24rem),radial-gradient(circle at 78% 72%,rgba(61,47,169,0.26),transparent 26rem);"></div>
+      <div data-prerender-shell-content="true" aria-hidden="true" style="position:relative;display:grid;inline-size:clamp(8.5rem,15vw,13.5rem);aspect-ratio:1;place-items:center;border-radius:50%;">
+        <svg viewBox="0 0 120 120" role="presentation" focusable="false" style="position:absolute;inset:0;inline-size:100%;block-size:100%;transform:rotate(-90deg);">
+          <circle cx="60" cy="60" r="45" fill="none" stroke="rgba(251,249,239,0.16)" stroke-width="3"></circle>
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#ff7722" stroke-width="3" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="92"></circle>
+        </svg>
+        <span style="display:grid;inline-size:48%;aspect-ratio:1;place-items:center;border-radius:50%;background:#3d2fa9;box-shadow:0 2rem 6rem rgba(0,0,0,0.36);">
+          <img src="/icons/sitting-192.webp" alt="" decoding="async" fetchpriority="high" style="inline-size:88%;block-size:88%;object-fit:contain;" />
+        </span>
+      </div>
+      <div aria-hidden="true" style="position:absolute;inset-inline:6vw;inset-block-end:7vh;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0.75rem;opacity:0.16;">
+        <i style="block-size:0.55rem;border-radius:999rem;background:#fbf9ef;"></i>
+        <i style="block-size:0.55rem;border-radius:999rem;background:#fbf9ef;"></i>
+        <i style="block-size:0.55rem;border-radius:999rem;background:#ff7722;"></i>
+        <i style="block-size:0.55rem;border-radius:999rem;background:#fbf9ef;"></i>
+        <i style="block-size:0.55rem;border-radius:999rem;background:#fbf9ef;"></i>
       </div>
     </section>
   `
 }
 
-function renderHomePrerenderShell(config: HtmlDocumentConfig): string {
-  const summaryMarkup = renderShellSummary(config.shellSummary)
-  const linksMarkup = renderShellLinks(config.shellLinks)
-  const statsMarkup = renderShellStats(config.shellStats)
+function renderDefaultPrerenderShell(config: HtmlDocumentConfig): string {
+  return renderPrerenderLoaderShell(config)
+}
 
-  return `
-    <section data-prerender-shell="true" data-prerender-shell-variant="home" style="position:relative;min-height:100dvh;padding:6rem 1.25rem 2.5rem;background:#f7f3e8;color:#181511;overflow:hidden;">
-      <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 16% 16%,rgba(241,95,42,0.2) 0%,transparent 34%),radial-gradient(circle at 82% 24%,rgba(24,21,17,0.1) 0%,transparent 30%);"></div>
-      <div style="position:relative;width:min(100%,72.5rem);margin:0 auto;display:grid;gap:1.5rem;">
-        <div data-prerender-shell-content="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(18.75rem,1fr));gap:1.5rem;align-items:center;">
-          <article style="display:grid;gap:1rem;align-content:center;min-height:min(36rem,calc(100dvh - 8.5rem));padding:clamp(1.5rem,4vw,2.5rem) 0;">
-            <span style="display:inline-flex;width:max-content;padding:0.5rem 0.75rem;border-radius:999rem;background:#181511;color:#f7f3e8;font:700 0.75rem/1.2 'HMR Plex Mono',monospace;text-transform:uppercase;">${escapeHtml(config.shellEyebrow)}</span>
-            <h1 style="margin:0;max-width:15ch;font:900 clamp(2.5rem,7vw,5.25rem)/0.88 'HMR Sans',sans-serif;color:#181511;letter-spacing:-0.07em;text-transform:uppercase;text-wrap:balance;">${escapeHtml(config.shellTitle)}</h1>
-            <p style="margin:0;max-width:62ch;font:500 1rem/1.8 'HMR Sans',sans-serif;color:#504d46;">${escapeHtml(config.shellBody)}</p>
-            ${summaryMarkup}
-            ${linksMarkup}
-          </article>
-          <aside style="display:grid;gap:1rem;align-content:center;">
-            <section style="display:grid;gap:0.875rem;padding:1.5rem;border-radius:1.75rem;background:rgba(255,255,255,0.68);border:1px solid rgba(24,21,17,0.1);">
-              <div style="display:grid;gap:0.5rem;">
-                <span style="font:700 0.75rem/1.2 'HMR Plex Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;color:#757167;">Start here</span>
-                <strong style="font:900 1.5rem/1.15 'HMR Sans',sans-serif;color:#181511;">Explore today’s picks, community, schedule, and creator signals.</strong>
-                <p style="margin:0;font:500 0.875rem/1.7 'HMR Sans',sans-serif;color:#504d46;">打开你最感兴趣的公开入口，继续浏览值得收藏的帖子、讨论和日程。</p>
-              </div>
-              ${statsMarkup}
-            </section>
-          </aside>
-        </div>
-      </div>
-    </section>
-  `
+function renderHomePrerenderShell(config: HtmlDocumentConfig): string {
+  return renderPrerenderLoaderShell(config)
 }
 
 export function renderPrerenderShell(config: HtmlDocumentConfig): string {

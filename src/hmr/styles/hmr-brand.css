@@ -162,6 +162,204 @@ svg {
   min-block-size: 100dvh;
 }
 
+.hmr-preloader-backdrop,
+.hmr-preloader,
+.hmr-preloader-revealer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hmr-preloader-backdrop {
+  z-index: 190;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.25rem, 4vw, 4rem);
+  background:
+    radial-gradient(circle at 16% 22%, rgb(255 119 34 / 16%), transparent 22rem),
+    radial-gradient(circle at 80% 72%, rgb(61 47 169 / 16%), transparent 24rem), var(--hmr-bg);
+  color: rgb(var(--hmr-base-rgb) / 28%);
+  overflow: hidden;
+}
+
+.hmr-preloader-backdrop-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(0.5rem, 2vw, 1.5rem);
+  align-items: start;
+}
+
+.hmr-preloader-backdrop-row--bottom {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: end;
+}
+
+.hmr-preloader-backdrop-row span {
+  display: block;
+  inline-size: clamp(2.75rem, 9vw, 8rem);
+  aspect-ratio: 1.8;
+  overflow: hidden;
+  border: 1px solid rgb(var(--hmr-base-rgb) / 10%);
+  border-radius: 999em;
+  background:
+    radial-gradient(circle at 30% 50%, rgb(255 119 34 / 18%), transparent 32%),
+    rgb(var(--hmr-base-rgb) / 3%);
+  font-family: var(--hmr-font-display);
+  font-size: clamp(4rem, 14vw, 14rem);
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  line-height: 0.78;
+  opacity: 0;
+  transform: translateY(120%);
+  will-change: opacity, transform;
+}
+
+.hmr-preloader {
+  z-index: 210;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 50%, rgb(61 47 169 / 16%), transparent 16rem), var(--hmr-base);
+  color: var(--hmr-bg);
+  pointer-events: auto;
+  will-change: clip-path, transform;
+}
+
+.hmr-preloader::before,
+.hmr-preloader::after {
+  position: absolute;
+  display: block;
+  inline-size: min(44vw, 28rem);
+  aspect-ratio: 1;
+  border: 1px solid rgb(251 249 239 / 8%);
+  border-radius: 50%;
+  content: '';
+}
+
+.hmr-preloader::before {
+  inset-block-start: 12%;
+  inset-inline-start: 12%;
+}
+
+.hmr-preloader::after {
+  inset-block-end: 9%;
+  inset-inline-end: 10%;
+  border-color: rgb(255 119 34 / 18%);
+}
+
+.hmr-preloader-button {
+  position: relative;
+  display: grid;
+  inline-size: clamp(8.75rem, 15vw, 13.5rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--hmr-bg);
+  cursor: wait;
+  overflow: visible;
+  pointer-events: auto;
+  transition:
+    filter 240ms var(--hmr-ease),
+    transform 360ms var(--hmr-ease);
+  will-change: transform;
+}
+
+.hmr-preloader.is-ready .hmr-preloader-button {
+  cursor: pointer;
+}
+
+.hmr-preloader.is-ready .hmr-preloader-button:hover {
+  filter: drop-shadow(0 1.4rem 2.5rem rgb(255 119 34 / 28%));
+  transform: scale(1.04);
+}
+
+.hmr-preloader-button:disabled {
+  cursor: wait;
+}
+
+.hmr-preloader-button:focus-visible {
+  outline: 0.16rem solid var(--hmr-orange);
+  outline-offset: 0.7rem;
+}
+
+.hmr-preloader-logo,
+.hmr-preloader-label,
+.hmr-preloader-svg {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.hmr-preloader-logo {
+  inline-size: 48%;
+  block-size: 48%;
+  margin: auto;
+  border-radius: 50%;
+  background: var(--hmr-purple);
+  box-shadow: 0 1.8rem 5rem rgb(0 0 0 / 34%);
+  overflow: hidden;
+  will-change: opacity, transform;
+}
+
+.hmr-preloader-logo img {
+  inline-size: 92%;
+  block-size: 92%;
+  object-fit: contain;
+}
+
+.hmr-preloader-label {
+  inline-size: 1.1rem;
+  aspect-ratio: 1;
+  margin: auto;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--hmr-bg);
+  box-shadow:
+    -1.25rem 0 0 rgb(251 249 239 / 42%),
+    1.25rem 0 0 rgb(251 249 239 / 42%);
+  will-change: opacity, transform;
+}
+
+.hmr-preloader-label--outro {
+  background: var(--hmr-orange);
+  box-shadow:
+    -1.25rem 0 0 rgb(255 119 34 / 34%),
+    1.25rem 0 0 rgb(255 119 34 / 34%);
+}
+
+.hmr-preloader-svg svg {
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.hmr-preloader-track,
+.hmr-preloader-progress {
+  fill: none;
+  stroke-width: 2.25;
+}
+
+.hmr-preloader-track {
+  stroke: rgb(251 249 239 / 16%);
+}
+
+.hmr-preloader-progress {
+  stroke: var(--hmr-orange);
+  stroke-linecap: round;
+  will-change: stroke-dashoffset;
+}
+
+.hmr-preloader-revealer {
+  z-index: 200;
+  background: var(--hmr-bg);
+  will-change: clip-path;
+}
+
 .hmr-sr-only,
 .hmr-skip-link {
   position: fixed;
@@ -535,31 +733,6 @@ svg {
 .hmr-primary-nav-link.is-active .hmr-nav-dot {
   opacity: 1;
   transform: translateY(0);
-}
-
-.hmr-primary-nav-link.router-link-active:not(.is-active),
-.hmr-primary-nav-link.router-link-exact-active:not(.is-active) {
-  background: rgb(0 0 0 / 5%);
-  box-shadow: none;
-  color: var(--hmr-base);
-  transform: none;
-}
-
-.hmr-primary-nav-link.router-link-active:not(.is-active)::before,
-.hmr-primary-nav-link.router-link-exact-active:not(.is-active)::before {
-  opacity: 0;
-  transform: scale(0.86);
-}
-
-.hmr-primary-nav-link.router-link-active:not(.is-active) .hmr-nav-icon,
-.hmr-primary-nav-link.router-link-exact-active:not(.is-active) .hmr-nav-icon {
-  color: var(--hmr-grey);
-}
-
-.hmr-primary-nav-link.router-link-active:not(.is-active) .hmr-nav-dot,
-.hmr-primary-nav-link.router-link-exact-active:not(.is-active) .hmr-nav-dot {
-  opacity: 0;
-  transform: translateY(0.38em);
 }
 
 .hmr-mobile-header {
@@ -2802,15 +2975,40 @@ svg {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1em;
+  min-inline-size: 0;
   text-align: start;
 }
 
 .hmr-author-chip {
   display: grid;
   gap: 0.9em;
+  min-inline-size: 0;
   padding: 1.2em;
   border-radius: var(--hmr-radius);
   background: var(--hmr-surface);
+}
+
+.hmr-author-chip .hmr-card-title,
+.hmr-author-chip .hmr-body {
+  min-inline-size: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.hmr-author-chip .hmr-card-title {
+  display: -webkit-box;
+  line-height: 1.08;
+  padding-block: 0.08em 0.14em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.hmr-author-chip .hmr-body {
+  display: -webkit-box;
+  color: var(--hmr-text-muted);
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .hmr-avatar {
@@ -3087,6 +3285,29 @@ svg {
   text-transform: uppercase;
 }
 
+.hmr-auth-status--dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.hmr-auth-status--dots span {
+  display: block;
+  inline-size: 0.62rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--hmr-base);
+  opacity: 0.24;
+  animation: hmr-state-dot 920ms var(--hmr-ease) infinite alternate;
+}
+
+.hmr-auth-status--dots span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.hmr-auth-status--dots span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
 .hmr-page-state-block {
   display: flex;
   inline-size: min(100%, 36em);
@@ -3106,6 +3327,29 @@ svg {
 .hmr-page-state-block > div {
   display: grid;
   gap: 0.22em;
+}
+
+.hmr-page-state-mark {
+  grid-template-columns: repeat(3, 0.72rem);
+  align-items: center;
+}
+
+.hmr-page-state-mark span {
+  display: block;
+  inline-size: 0.72rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--hmr-base);
+  opacity: 0.22;
+  animation: hmr-state-dot 920ms var(--hmr-ease) infinite alternate;
+}
+
+.hmr-page-state-mark span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.hmr-page-state-mark span:nth-child(3) {
+  animation-delay: 240ms;
 }
 
 .hmr-page-state-block strong {
@@ -3235,6 +3479,7 @@ svg {
     0 1.6em 3em rgb(var(--hmr-base-rgb) / 8%);
   -webkit-backdrop-filter: blur(1.5rem);
   backdrop-filter: blur(1.5rem);
+  overflow: clip;
 }
 
 .hmr-data-toolbar--explore::before {
@@ -3310,6 +3555,11 @@ svg {
   outline: 0;
 }
 
+.hmr-data-toolbar--explore select option {
+  background: var(--hmr-bg);
+  color: var(--hmr-base);
+}
+
 .hmr-data-toolbar--explore input::placeholder {
   color: rgb(var(--hmr-base-rgb) / 38%);
 }
@@ -3353,13 +3603,15 @@ svg {
   text-align: start;
 }
 
-.hmr-empty-panel h3 {
-  margin: 0;
-  font-family: var(--hmr-font-display);
-  font-size: clamp(2rem, 5vw, 4em);
-  letter-spacing: -0.07em;
-  line-height: 0.85;
-  text-transform: uppercase;
+.hmr-empty-panel > span {
+  display: block;
+  inline-size: min(100%, 22rem);
+  block-size: 8rem;
+  border-radius: var(--hmr-radius);
+  background:
+    radial-gradient(circle at 22% 50%, rgb(255 119 34 / 28%), transparent 24%),
+    linear-gradient(90deg, rgb(var(--hmr-base-rgb) / 8%), transparent);
+  animation: hmr-pulse 1.2s var(--hmr-ease) infinite alternate;
 }
 
 .hmr-empty-panel p {
@@ -4050,7 +4302,127 @@ svg {
   font-size: clamp(2.4rem, 5vw, 4.8rem);
   font-weight: 900;
   letter-spacing: -0.07em;
-  line-height: 0.86;
+  line-height: 1;
+  padding-block: 0.06em;
+}
+
+.hmr-schedule-month-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block: -0.75rem 1rem;
+  padding: 0.65rem;
+  border: 1px solid var(--hmr-line);
+  border-radius: 999em;
+  background: rgb(255 255 255 / 34%);
+}
+
+.hmr-schedule-month-tools strong {
+  font-family: var(--hmr-font-display);
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+}
+
+.hmr-schedule-month-tools button {
+  display: grid;
+  inline-size: 2.75rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid var(--hmr-line);
+  border-radius: 50%;
+  background: var(--hmr-base);
+  color: var(--hmr-bg);
+  cursor: pointer;
+  transition:
+    background-color 220ms var(--hmr-ease),
+    transform 220ms var(--hmr-ease);
+}
+
+.hmr-schedule-month-tools button:hover {
+  background: var(--hmr-orange);
+  transform: translateY(-0.12rem);
+}
+
+.hmr-schedule-month-tools button span {
+  inline-size: 0.62rem;
+  aspect-ratio: 1;
+  border-block-start: 0.14rem solid currentcolor;
+  border-inline-start: 0.14rem solid currentcolor;
+}
+
+.hmr-schedule-month-tools button:first-child span {
+  transform: rotate(-45deg) translate(0.08rem, 0.08rem);
+}
+
+.hmr-schedule-month-tools button:last-child span {
+  transform: rotate(135deg) translate(0.08rem, 0.08rem);
+}
+
+.hmr-schedule-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-block: 1rem 2rem;
+}
+
+.hmr-schedule-month-cell {
+  display: grid;
+  min-block-size: 5.8rem;
+  align-content: space-between;
+  padding: 0.75rem;
+  border: 1px solid var(--hmr-line);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 34%);
+  color: var(--hmr-base);
+  cursor: pointer;
+  text-align: start;
+  transition:
+    background-color 220ms var(--hmr-ease),
+    color 220ms var(--hmr-ease),
+    opacity 220ms var(--hmr-ease),
+    transform 220ms var(--hmr-ease);
+}
+
+.hmr-schedule-month-cell:hover,
+.hmr-schedule-month-cell.is-active {
+  background: var(--hmr-base);
+  color: var(--hmr-bg);
+  transform: translateY(-0.12rem);
+}
+
+.hmr-schedule-month-cell.is-today {
+  border-color: var(--hmr-orange);
+}
+
+.hmr-schedule-month-cell.is-outside {
+  opacity: 0.36;
+}
+
+.hmr-schedule-month-cell em,
+.hmr-schedule-month-cell span {
+  font-family: var(--hmr-font-mono);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.hmr-schedule-month-cell em {
+  justify-self: end;
+  min-inline-size: 1.6rem;
+  padding: 0.24rem 0.4rem;
+  border-radius: 999em;
+  background: rgb(var(--hmr-base-rgb) / 8%);
+  text-align: center;
+}
+
+.hmr-schedule-month-cell:hover em,
+.hmr-schedule-month-cell.is-active em {
+  background: var(--hmr-orange);
+  color: var(--hmr-base);
 }
 
 .hmr-schedule-board {
@@ -4063,12 +4435,25 @@ svg {
 .hmr-schedule-day-summary,
 .hmr-schedule-empty {
   display: grid;
+  min-block-size: 10rem;
+  align-content: center;
+  justify-items: center;
   gap: 0.9rem;
-  align-content: start;
   padding: 1.25rem;
   border: 1px solid var(--hmr-line);
   border-radius: var(--hmr-radius);
   background: rgb(255 255 255 / 34%);
+}
+
+.hmr-schedule-empty > span {
+  display: block;
+  inline-size: min(100%, 14rem);
+  block-size: 4.5rem;
+  border-radius: 999em;
+  background:
+    radial-gradient(circle at 22% 50%, rgb(255 119 34 / 26%), transparent 22%),
+    linear-gradient(90deg, rgb(var(--hmr-base-rgb) / 8%), transparent);
+  animation: hmr-pulse 1.2s var(--hmr-ease) infinite alternate;
 }
 
 .hmr-schedule-day-summary strong,
@@ -4636,6 +5021,18 @@ svg {
   }
 }
 
+@keyframes hmr-state-dot {
+  from {
+    opacity: 0.18;
+    transform: translateY(0.18rem);
+  }
+
+  to {
+    opacity: 0.72;
+    transform: translateY(-0.12rem);
+  }
+}
+
 @media (max-width: 991px) {
   .hmr-featured-grid,
   .hmr-author-strip,
@@ -4708,6 +5105,23 @@ svg {
 @media (max-width: 767px) {
   :root {
     --hmr-container: 30em;
+  }
+
+  .hmr-preloader-backdrop {
+    padding: 1.5rem;
+  }
+
+  .hmr-preloader-backdrop-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hmr-preloader-backdrop-row--bottom {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hmr-preloader-backdrop-row span {
+    font-size: clamp(3rem, 22vw, 6rem);
+    opacity: 0.18;
   }
 
   body {
@@ -5201,6 +5615,10 @@ svg {
   .hmr-schedule-date-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-block: 1.5rem;
+  }
+
+  .hmr-schedule-month-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .hmr-schedule-date-card {

@@ -117,6 +117,7 @@ import { RouterLink } from 'vue-router'
 import { loadHomeContentResource, type HmrHomeContent, type HmrPost } from '@/api/hmrContent'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
+import { readOrCreatePublicSnapshot } from '@/utils/cache/publicSnapshotCache'
 
 const content = ref<HmrHomeContent>({
   featured: [],
@@ -148,7 +149,11 @@ async function refreshHome(): Promise<void> {
     ...resource.value,
     state: 'loading',
   }
-  const nextResource = await loadHomeContentResource()
+  const nextResource = await readOrCreatePublicSnapshot(
+    'hmr:home',
+    loadHomeContentResource,
+    'short'
+  )
   resource.value = nextResource
   content.value = nextResource.data
   pageState.value =
