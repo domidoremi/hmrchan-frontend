@@ -1,14 +1,13 @@
 <template>
   <div class="hmr-site" :style="scrollProgressStyle">
-    <a class="hmr-skip-link" href="#hmr-main">Skip to content</a>
+    <a class="hmr-skip-link" href="#hmr-main" aria-label="Skip to content"></a>
 
     <header class="hmr-site-header" :class="{ 'is-menu-open': menuOpen }">
       <div class="hmr-header-inner">
-        <RouterLink class="hmr-brand-link" to="/" aria-label="HMRChan home" @click="closeMenu">
+        <RouterLink class="hmr-brand-link" to="/" aria-label="MomiChan home" @click="closeMenu">
           <span class="hmr-brand-bg">
-            <img class="hmr-brand-mark" src="/hmrchan/brand/mark.svg" alt="" />
+            <img class="hmr-brand-mark" :src="brandMarkUrl" alt="" />
           </span>
-          <span class="hmr-sr-only">HMRChan</span>
         </RouterLink>
 
         <nav class="hmr-primary-nav" aria-label="Primary navigation">
@@ -23,12 +22,13 @@
               class="hmr-primary-nav-link"
               :class="{ 'is-active': activeNavKey === item.key }"
               :href="href"
+              :aria-label="item.label"
               :aria-current="activeNavKey === item.key ? 'page' : undefined"
               @click="handleNavClick($event, navigate)"
             >
               <span class="hmr-nav-inner">
                 <span class="hmr-nav-icon" :data-hmr-icon="item.icon" aria-hidden="true"></span>
-                <span class="hmr-nav-label">{{ item.label }}</span>
+                <span class="hmr-nav-label" :data-label="item.label" aria-hidden="true"></span>
                 <span class="hmr-nav-dot" aria-hidden="true"></span>
               </span>
             </a>
@@ -40,31 +40,32 @@
             class="hmr-primary-nav-link hmr-primary-nav-link--settings"
             :class="{ 'is-active': activeNavKey === 'settings' }"
             :href="href"
+            aria-label="设置"
             :aria-current="activeNavKey === 'settings' ? 'page' : undefined"
             @click="handleNavClick($event, navigate)"
           >
             <span class="hmr-nav-inner">
               <span class="hmr-nav-icon" data-hmr-icon="settings" aria-hidden="true"></span>
-              <span class="hmr-nav-label">设置</span>
+              <span class="hmr-nav-label" data-label="设置" aria-hidden="true"></span>
               <span class="hmr-nav-dot" aria-hidden="true"></span>
             </span>
           </a>
         </RouterLink>
 
         <div class="hmr-mobile-header">
-          <RouterLink class="hmr-mobile-brand" to="/" aria-label="HMRChan home" @click="closeMenu">
-            <img class="hmr-mobile-brand-logo" src="/hmrchan/brand/logo.svg" alt="HMRChan" />
+          <RouterLink class="hmr-mobile-brand" to="/" aria-label="MomiChan home" @click="closeMenu">
+            <img class="hmr-mobile-brand-logo" :src="brandMarkUrl" alt="MomiChan" />
           </RouterLink>
           <span class="hmr-mobile-locale">ZH</span>
           <button
             class="hmr-menu-button"
             type="button"
+            :aria-label="menuOpen ? 'Close menu' : 'Open menu'"
             :aria-expanded="menuOpen"
             @click="toggleMenu"
           >
             <span></span>
             <span></span>
-            <span class="hmr-sr-only">Toggle menu</span>
           </button>
         </div>
 
@@ -90,7 +91,7 @@
         </div>
 
         <div class="hmr-current-time" aria-label="Current time">
-          <span>Taipei</span>
+          <span>{{ timeZoneLabel }}</span>
           <time :datetime="currentTime">{{ currentTime }}</time>
         </div>
 
@@ -123,24 +124,24 @@
     <footer class="hmr-footer" data-hmr-reveal>
       <div class="hmr-container hmr-footer-container">
         <div class="hmr-footer-content">
-          <h2 data-hmr-text-reveal>HMRChan</h2>
+          <h2 data-hmr-text-reveal>MomiChan</h2>
           <RouterLink class="hmr-text-link hmr-text-link--light" to="/contact">
             联系我们
           </RouterLink>
         </div>
         <div class="hmr-footer-bottom">
-          <img class="hmr-footer-logo" src="/hmrchan/brand/logo.svg" alt="HMRChan" />
+          <img class="hmr-footer-logo" :src="brandMarkUrl" alt="MomiChan" />
           <nav class="hmr-footer-nav" aria-label="Footer navigation">
             <RouterLink to="/explore">探索</RouterLink>
             <RouterLink to="/community">社区</RouterLink>
             <RouterLink to="/about">关于</RouterLink>
             <RouterLink to="/contact">联系</RouterLink>
           </nav>
-          <p>©{{ currentYear }} HMRChan</p>
+          <p>©{{ currentYear }} MomiChan</p>
         </div>
       </div>
       <div class="hmr-footer-keys" aria-hidden="true">
-        <img v-for="index in 7" :key="index" src="/hmrchan/brand/mark.svg" alt="" />
+        <img v-for="index in 7" :key="index" :src="brandMarkUrl" alt="" />
       </div>
     </footer>
   </div>
@@ -163,12 +164,13 @@ const theme = useThemeStore()
 const menuOpen = ref(false)
 const pageTransitionKey = computed(() => route.fullPath)
 const { auth, authDisplay } = useHmrAuthDisplay()
-const { currentTime } = useHmrCurrentTime()
+const { currentTime, timeZoneLabel } = useHmrCurrentTime()
 const { progress } = useHmrScrollProgress()
 const scrollProgressStyle = computed(() => ({
   '--hmr-scroll-progress': progress.value.toString(),
 }))
 const currentYear = new Date().getFullYear()
+const brandMarkUrl = new URL('/icons/sitting-192.webp', window.location.origin).toString()
 
 useHmrInViewReveal()
 useHmrTextReveal()

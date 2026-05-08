@@ -20,7 +20,7 @@ import { buildInternalGatewayUrl, type InternalApiGatewayRuntimeEnv } from './in
 
 export type EdgeRuntimeEnv = UpstreamRuntimeEnv & InternalApiGatewayRuntimeEnv
 
-const SITE_NAME = 'HMRChan'
+const SITE_NAME = 'MomiChan'
 
 type EdgeAuthorRelatedPost = {
   id?: string | null
@@ -193,7 +193,7 @@ function formatPlatform(platform: string): string {
     x: 'X',
     instagram: 'Instagram',
     tiktok: 'TikTok',
-    bilibili: 'Bilibili',
+    showroom: 'Showroom',
     text: 'Text',
     story: 'Story',
   }
@@ -368,7 +368,7 @@ async function fetchEdgeJson<T>(
   const targetUrl = `${targetOrigin}${path}`
   const headers = new Headers({
     Accept: 'application/json',
-    'X-HMRChan-Edge-Metadata': 'true',
+    'X-MomiChan-Edge-Metadata': 'true',
   })
 
   let response: Response

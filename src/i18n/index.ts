@@ -25,13 +25,13 @@ const messages = {
       darkMode: '黑',
       lightMode: '白',
       language: '语言',
-      footerTitle: '加入 HMRChan',
+      footerTitle: '加入 MomiChan',
       footerBody: '浏览精选、参与讨论，或把你的草稿发布到社区。',
       footerCta: '开始发布',
       footerExplore: '探索社区',
     },
     home: {
-      eyebrow: 'HMRChan',
+      eyebrow: 'MomiChan',
       title: '内容、社区与创作者的高速入口。',
       body: '用更清晰的首屏节奏连接首页精选、内容流与社区信号。',
       primary: '进入探索',
@@ -58,7 +58,7 @@ const messages = {
       latest: '最新讨论',
       liveTitle: '社区概览',
       threadTitle: '值得打开的讨论',
-      discussionLabel: '讨论 · HMRChan',
+      discussionLabel: '讨论 · MomiChan',
     },
     post: {
       back: '返回探索',
@@ -68,7 +68,7 @@ const messages = {
     about: {
       eyebrow: '关于',
       principles: '原则',
-      title: '关于 HMRChan',
+      title: '关于 MomiChan',
       body: '一个围绕内容发现、创作者主页、社区讨论和个人知识流构建的轻量产品。',
       ruleTitle: '社区规则',
       ruleBody: '少一点噪音，多一点上下文；尊重创作，保护账户安全。',
@@ -89,7 +89,7 @@ const messages = {
     },
     auth: {
       eyebrow: '认证',
-      loginTitle: '登录 HMRChan',
+      loginTitle: '登录 MomiChan',
       registerTitle: '创建账号',
       username: '用户名或邮箱',
       email: '邮箱',
@@ -142,13 +142,13 @@ const messages = {
       darkMode: 'Dark',
       lightMode: 'Light',
       language: 'Language',
-      footerTitle: 'Join the next HMRChan loop',
+      footerTitle: 'Join the next MomiChan loop',
       footerBody: 'Browse highlights, join discussions, or publish a draft to the community.',
       footerCta: 'Start publishing',
       footerExplore: 'Explore community',
     },
     home: {
-      eyebrow: 'HMRChan official shell',
+      eyebrow: 'MomiChan official shell',
       title: 'A fast gateway for content, community, and creators.',
       body: 'A clearer first screen connecting highlights, content flow, and community signals.',
       primary: 'Explore',
@@ -175,7 +175,7 @@ const messages = {
       latest: 'Latest discussions',
       liveTitle: 'Public community surface',
       threadTitle: 'Threads worth opening',
-      discussionLabel: 'Discussion · HMRChan',
+      discussionLabel: 'Discussion · MomiChan',
     },
     post: {
       back: 'Back to explore',
@@ -185,7 +185,7 @@ const messages = {
     about: {
       eyebrow: 'About',
       principles: 'Principles',
-      title: 'About HMRChan',
+      title: 'About MomiChan',
       body: 'A lightweight product for content discovery, creator profiles, community discussions, and personal knowledge loops.',
       ruleTitle: 'Community rules',
       ruleBody: 'Less noise, more context. Respect creators and keep accounts safe.',
@@ -207,7 +207,7 @@ const messages = {
     },
     auth: {
       eyebrow: 'Auth',
-      loginTitle: 'Log in to HMRChan',
+      loginTitle: 'Log in to MomiChan',
       registerTitle: 'Create account',
       username: 'Username or email',
       email: 'Email',
@@ -238,7 +238,7 @@ const messages = {
     },
     error: {
       notFound: 'Page not found',
-      home: 'HMRChan Home',
+      home: 'MomiChan Home',
     },
   },
   'ja-JP': {
@@ -260,13 +260,13 @@ const messages = {
       darkMode: '黒',
       lightMode: '白',
       language: '言語',
-      footerTitle: 'HMRChan の次のループへ',
+      footerTitle: 'MomiChan の次のループへ',
       footerBody: 'ハイライトを読み、議論に参加し、下書きをコミュニティへ公開しましょう。',
       footerCta: '投稿を始める',
       footerExplore: 'コミュニティを見る',
     },
     home: {
-      eyebrow: 'HMRChan 公式シェル',
+      eyebrow: 'MomiChan 公式シェル',
       title: 'コンテンツ、コミュニティ、クリエイターへの高速入口。',
       body: '注目コンテンツ、フィード、コミュニティ信号をひとつの入口につなぎます。',
       primary: '探索する',
@@ -293,7 +293,7 @@ const messages = {
       latest: '最新の議論',
       liveTitle: 'リアルタイム公開面',
       threadTitle: '開く価値のある議論',
-      discussionLabel: '議論 · HMRChan',
+      discussionLabel: '議論 · MomiChan',
     },
     post: {
       back: '探索へ戻る',
@@ -303,7 +303,7 @@ const messages = {
     about: {
       eyebrow: '概要',
       principles: '原則',
-      title: 'HMRChan について',
+      title: 'MomiChan について',
       body: 'コンテンツ発見、作者プロフィール、コミュニティ議論、個人の知識ループのための軽量プロダクトです。',
       ruleTitle: 'コミュニティルール',
       ruleBody: 'ノイズを減らし、文脈を増やす。創作を尊重し、アカウントを守ります。',
@@ -325,7 +325,7 @@ const messages = {
     },
     auth: {
       eyebrow: '認証',
-      loginTitle: 'HMRChan にログイン',
+      loginTitle: 'MomiChan にログイン',
       registerTitle: 'アカウント作成',
       username: 'ユーザー名またはメール',
       email: 'メール',
@@ -356,7 +356,7 @@ const messages = {
     },
     error: {
       notFound: 'ページが見つかりません',
-      home: 'HMRChan ホーム',
+      home: 'MomiChan ホーム',
     },
   },
 }

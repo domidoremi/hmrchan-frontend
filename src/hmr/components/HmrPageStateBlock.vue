@@ -9,12 +9,22 @@
     }"
     aria-live="polite"
   >
-    <div>
+    <div v-if="loading" class="hmr-page-state-skeleton" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div v-else>
       <p class="hmr-kicker">{{ eyebrowCopy }}</p>
       <strong>{{ titleCopy }}</strong>
-      <span>{{ bodyCopy }}</span>
+      <span v-if="bodyCopy">{{ bodyCopy }}</span>
     </div>
-    <button v-if="canRetry" class="hmr-status-button" type="button" @click="emit('retry')">
+    <button
+      v-if="!loading && canRetry"
+      class="hmr-status-button"
+      type="button"
+      @click="emit('retry')"
+    >
       {{ retryLabel }}
     </button>
   </aside>
@@ -51,16 +61,16 @@ const props = withDefaults(
     error: null,
     title: '',
     body: '',
-    loadingTitle: '正在更新内容。',
-    loadingBody: '请稍等，页面会自动刷新。',
+    loadingTitle: '',
+    loadingBody: '',
     emptyTitle: '暂时没有内容。',
-    emptyBody: '换个筛选条件，或稍后再回来看看。',
+    emptyBody: '',
     errorTitle: '刷新失败。',
-    errorBody: '网络或服务暂时不稳定，请稍后再试。',
+    errorBody: '稍后再试。',
     retryLabel: '重新加载',
     showWhenReady: false,
     showRetry: true,
-    loadingTag: '更新中',
+    loadingTag: '',
     emptyTag: '暂无内容',
     errorTag: '需要重试',
   }

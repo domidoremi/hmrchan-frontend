@@ -13,6 +13,19 @@ import type {
 
 type JsonRecord = Record<string, unknown>
 
+export const MOMICHAN_PLATFORMS = ['youtube', 'instagram', 'x', 'tiktok', 'showroom'] as const
+
+type MomiChanPlatform = (typeof MOMICHAN_PLATFORMS)[number]
+
+const platformLabels: Record<MomiChanPlatform | 'all', string> = {
+  all: '全部平台',
+  instagram: 'Instagram',
+  showroom: 'Showroom',
+  tiktok: 'TikTok',
+  x: 'X',
+  youtube: 'YouTube',
+}
+
 interface EndpointResult<T> {
   data: T | null
   error: HmrApiErrorState | null
@@ -193,6 +206,38 @@ function pickNumber(record: JsonRecord, keys: string[], fallback = 0): number {
   return fallback
 }
 
+function cleanPostText(value: string): string {
+  return value
+    .replace(/RT\s+@\w+:\s*/gi, '')
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/[#＃][\p{L}\p{N}_-]+/gu, '')
+    .replace(/[@＠][\w_]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function trimText(value: string, maxLength: number): string {
+  const normalized = cleanPostText(value)
+  if (normalized.length <= maxLength) return normalized
+  return `${normalized.slice(0, maxLength).trimEnd()}…`
+}
+
+function formatDisplayDate(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return '刚刚'
+
+  const parsed = new Date(trimmed)
+  if (!Number.isFinite(parsed.getTime())) return trimmed
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(parsed)
+}
+
 function extractRecord(payload: unknown, keys: string[]): JsonRecord {
   if (!isRecord(payload)) return {}
 
@@ -234,7 +279,7 @@ function extractCursorCollection<T>(
   payload: unknown,
   keys: string[],
   mapper: (value: unknown, index: number) => T,
-  fallback: T[]
+  fallback: T[] = []
 ): HmrCursorCollection<T> {
   const unwrapped = unwrapApiPayload(payload)
   const items = extractList(unwrapped, keys)
@@ -401,17 +446,32 @@ function isLikelyUuid(value: string): boolean {
 function mapPost(value: unknown, index: number): HmrPost {
   const record = isRecord(value) ? value : {}
   const fallbackPost = fallbackPosts[index] ?? fallbackPosts[0]
-  const id = pickString(record, ['id', 'post_id', 'postId', 'slug'], `demo-${index + 1}`)
-  const title = pickString(
+  const id = pickString(record, ['id', 'post_id', 'postId', 'slug'], `post-${index + 1}`)
+  const rawTitle =
+    pickOptionalString(record, ['title', 'headline', 'name']) ??
+    pickOptionalString(record, ['display_text', 'text', 'content', 'body']) ??
+    fallbackPost?.title ??
+    '未命名内容'
+  const rawExcerpt =
+    pickOptionalString(record, [
+      'excerpt',
+      'summary',
+      'subtitle',
+      'description',
+      'body_preview',
+      'content',
+      'text',
+      'display_text',
+    ]) ??
+    fallbackPost?.excerpt ??
+    ''
+  const rawCreatedAt = pickString(
     record,
-    ['title', 'headline', 'name', 'display_text'],
-    fallbackPost?.title ?? '今日精选内容'
+    ['created_at', 'published_at', 'updated_at', 'meta', 'time_hint'],
+    fallbackPost?.createdAt ?? '刚刚'
   )
-  const excerpt = pickString(
-    record,
-    ['excerpt', 'summary', 'subtitle', 'description', 'body_preview', 'content', 'text'],
-    fallbackPost?.excerpt ?? '来自 HMRChan 的最新精选内容。'
-  )
+  const title = trimText(rawTitle, 34) || fallbackPost?.title || '未命名内容'
+  const excerpt = trimText(rawExcerpt, 96) || fallbackPost?.excerpt || ''
   const authorRecord = isRecord(record.author) ? record.author : {}
   const mediaUrl =
     pickOptionalString(record, [
@@ -437,18 +497,14 @@ function mapPost(value: unknown, index: number): HmrPost {
     authorName: pickString(
       record,
       ['author_name', 'username', 'eyebrow'],
-      pickString(authorRecord, ['display_name', 'name', 'username'], 'HMRChan')
+      pickString(authorRecord, ['display_name', 'name', 'username'], 'MomiChan')
     ),
     tag: pickString(
       record,
       ['category', 'tag', 'type', 'platform', 'kicker'],
       fallbackPost?.tag ?? '精选'
     ),
-    createdAt: pickString(
-      record,
-      ['created_at', 'published_at', 'updated_at', 'meta', 'time_hint'],
-      'Just now'
-    ),
+    createdAt: formatDisplayDate(rawCreatedAt),
     statsLabel: pickString(record, ['stats_label', 'metric'], fallbackPost?.statsLabel ?? '实时'),
   }
   const platform = pickOptionalString(record, ['platform', 'kicker'])
@@ -551,11 +607,7 @@ function mapAuthor(value: unknown, index: number): HmrAuthor {
       ['name', 'username', 'display_name'],
       fallbackAuthors[index]?.name ?? '创作者'
     ),
-    bio: pickString(
-      record,
-      ['bio', 'description'],
-      fallbackAuthors[index]?.bio ?? '围绕 HMRChan 内容循环整理重点。'
-    ),
+    bio: pickString(record, ['bio', 'description'], fallbackAuthors[index]?.bio ?? ''),
   }
 
   if (avatarUrl) {
@@ -608,11 +660,7 @@ function mapTrend(value: unknown, index: number): HmrTrendSummary {
   return {
     title: pickString(record, ['title', 'label', 'name'], fallback?.title ?? '趋势信号'),
     metric: pickString(record, ['metric', 'value', 'count'], fallback?.metric ?? '实时'),
-    body: pickString(
-      record,
-      ['body', 'excerpt', 'summary', 'description'],
-      fallback?.body ?? '来自当前 HMRChan 循环的动态。'
-    ),
+    body: pickString(record, ['body', 'excerpt', 'summary', 'description'], fallback?.body ?? ''),
   }
 }
 
@@ -634,7 +682,7 @@ function mapScheduleItem(value: unknown, index: number): HmrScheduleItem {
     description: pickString(
       record,
       ['description', 'excerpt', 'summary', 'body'],
-      fallback?.description ?? '一个已安排好的 HMRChan 内容节点。'
+      fallback?.description ?? ''
     ),
   }
 }
@@ -659,121 +707,10 @@ function mapMediaItem(value: unknown, index: number): HmrMediaItem {
 function mapSuggestion(value: unknown, index: number): string {
   if (typeof value === 'string' && value.trim()) return value
   const record = isRecord(value) ? value : {}
-  return pickString(
-    record,
-    ['query', 'text', 'title', 'label'],
-    fallbackSuggestions[index] ?? 'HMRChan 内容'
-  )
+  return pickString(record, ['query', 'text', 'title', 'label'], fallbackSuggestions[index] ?? '')
 }
 
-export const fallbackPosts: HmrPost[] = [
-  {
-    id: 'youtube-live-cut',
-    title: '深夜剪辑回放',
-    excerpt: '一段来自直播切片的高能片段，评论区正在补时间轴。',
-    authorName: '夜航剪辑组',
-    tag: 'YouTube',
-    createdAt: '18 分钟前',
-    statsLabel: '12.8K 播放',
-    platform: 'youtube',
-    platformPostId: 'yt-2409-loop',
-    postType: 'video',
-    postUrl: 'https://www.youtube.com/',
-    commentCount: 128,
-    likeCount: 2480,
-    mediaCount: 1,
-    viewCount: 12800,
-    mediaUrl: '/hmrchan/reference/media-youtube.svg',
-  },
-  {
-    id: 'instagram-cosplay-set',
-    title: '棚拍九宫格',
-    excerpt: '摄影师发布的新图组，社区正在整理服装与道具信息。',
-    authorName: '镜头仓库',
-    tag: 'Instagram',
-    createdAt: '41 分钟前',
-    statsLabel: '3.4K 喜欢',
-    platform: 'instagram',
-    platformPostId: 'ig-8842-grid',
-    postType: 'gallery',
-    postUrl: 'https://www.instagram.com/',
-    commentCount: 64,
-    likeCount: 3400,
-    mediaCount: 9,
-    mediaUrl: '/hmrchan/reference/media-instagram.svg',
-  },
-  {
-    id: 'x-thread-watch',
-    title: '凌晨热帖追踪',
-    excerpt: '一条 X 长帖引发二创讨论，精选回复已经进入社区索引。',
-    authorName: '趋势观察员',
-    tag: 'X',
-    createdAt: '1 小时前',
-    statsLabel: '842 转发',
-    platform: 'x',
-    platformPostId: 'x-773-thread',
-    postType: 'thread',
-    postUrl: 'https://x.com/',
-    commentCount: 93,
-    likeCount: 1900,
-    mediaCount: 4,
-    viewCount: 42000,
-    mediaUrl: '/hmrchan/reference/media-x.svg',
-  },
-  {
-    id: 'tiktok-motion-loop',
-    title: '舞台动作循环',
-    excerpt: '15 秒动作素材被剪成三种节奏，适合快速浏览和收藏。',
-    authorName: '动作资料室',
-    tag: 'TikTok',
-    createdAt: '2 小时前',
-    statsLabel: '56K 浏览',
-    platform: 'tiktok',
-    platformPostId: 'tt-1102-loop',
-    postType: 'short-video',
-    postUrl: 'https://www.tiktok.com/',
-    commentCount: 217,
-    likeCount: 7600,
-    mediaCount: 1,
-    viewCount: 56000,
-    mediaUrl: '/hmrchan/reference/media-tiktok.svg',
-  },
-  {
-    id: 'showroom-aftertalk',
-    title: 'Showroom 后台谈话',
-    excerpt: '直播后的问答片段，粉丝正在补充角色与时间节点。',
-    authorName: '直播档案员',
-    tag: 'Showroom',
-    createdAt: '今天',
-    statsLabel: '34 条回应',
-    platform: 'showroom',
-    platformPostId: 'sr-552-room',
-    postType: 'live-archive',
-    postUrl: 'https://www.showroom-live.com/',
-    commentCount: 34,
-    likeCount: 520,
-    mediaCount: 2,
-    viewCount: 6100,
-    mediaUrl: '/hmrchan/reference/media-showroom.svg',
-  },
-  {
-    id: 'bilibili-stage-notes',
-    title: '舞台笔记合集',
-    excerpt: 'Bilibili 投稿里的镜头、字幕与弹幕重点已经被整理出来。',
-    authorName: '弹幕记录员',
-    tag: 'Bilibili',
-    createdAt: '昨天',
-    statsLabel: '7.2K 播放',
-    platform: 'bilibili',
-    platformPostId: 'bv-demo-stage',
-    postType: 'video',
-    commentCount: 89,
-    likeCount: 1420,
-    mediaCount: 1,
-    viewCount: 7200,
-    mediaUrl: '/hmrchan/reference/media-bilibili.svg',
-  },
-]
+export const fallbackPosts: HmrPost[] = []
 
 export const fallbackAuthors: HmrAuthor[] = [
   { id: 'editorial', name: '编辑部', bio: '负责精选内容、趋势和首页叙事。' },
@@ -781,68 +718,11 @@ export const fallbackAuthors: HmrAuthor[] = [
   { id: 'creators', name: '创作者', bio: '发布内容、草稿和媒体故事的成员。' },
 ]
 
-export const fallbackCommunity: HmrCommunityItem[] = [
-  {
-    id: 'hot',
-    title: '直播切片时间轴补完',
-    excerpt: '社区正在标注高能片段、字幕和补充来源。',
-    metric: '128 回复',
-  },
-  {
-    id: 'latest',
-    title: 'TikTok 动作循环二创',
-    excerpt: '最新回复集中在动作拆解、BGM 和二创授权。',
-    metric: '新回应',
-  },
-  {
-    id: 'feedback',
-    title: 'Showroom 后台谈话整理',
-    excerpt: '粉丝正在补充问答顺序、角色名和时间节点。',
-    metric: '34 条',
-  },
-]
+export const fallbackCommunity: HmrCommunityItem[] = []
 
-export const fallbackTrends: HmrTrendSummary[] = [
-  {
-    title: '精选更新',
-    metric: '24h',
-    body: '首页聚合今日值得打开的内容、作者与社区回声。',
-  },
-  {
-    title: '讨论升温',
-    metric: '实时',
-    body: '社区热帖和最新回应会成为下一轮探索入口。',
-  },
-  {
-    title: '发布节奏',
-    metric: 'Next',
-    body: '日程亮点帮助创作者安排内容巡检、讨论推进和发布窗口。',
-  },
-]
+export const fallbackTrends: HmrTrendSummary[] = []
 
-export const fallbackScheduleItems: HmrScheduleItem[] = [
-  {
-    id: 'morning-scan',
-    time: '09:00',
-    phase: '巡检',
-    title: '内容巡检',
-    description: '查看精选、作者更新和社区反馈，确定今日主线。',
-  },
-  {
-    id: 'noon-thread',
-    time: '13:30',
-    phase: '讨论',
-    title: '讨论推进',
-    description: '把高价值回复、收藏和分支话题整理成可继续参与的上下文。',
-  },
-  {
-    id: 'evening-publish',
-    time: '20:00',
-    phase: '发布',
-    title: '发布窗口',
-    description: '集中处理草稿、媒体和发布动作，让内容进入下一轮流动。',
-  },
-]
+export const fallbackScheduleItems: HmrScheduleItem[] = []
 
 export const fallbackSuggestions = [
   'YouTube 切片',
@@ -850,7 +730,6 @@ export const fallbackSuggestions = [
   'X 热帖',
   'TikTok 短视频',
   'Showroom 直播',
-  '舞台笔记',
 ]
 
 export const seedPosts = fallbackPosts
@@ -889,20 +768,11 @@ function mapHomeContent(
   const primaryStory = storyList.length ? storyList : primaryFeatured
 
   return {
-    featured: dedupePosts(
-      (primaryFeatured.length ? primaryFeatured : fallbackPosts).map(mapPost)
-    ).slice(0, 6),
-    storyDeck: dedupePosts((primaryStory.length ? primaryStory : fallbackPosts).map(mapPost)).slice(
-      0,
-      4
-    ),
-    highlights: (communityList.length ? communityList : fallbackCommunity)
-      .map(mapCommunityItem)
-      .slice(0, 3),
-    trends: (trendList.length ? trendList : fallbackTrends).map(mapTrend).slice(0, 4),
-    scheduleHighlights: (scheduleList.length ? scheduleList : fallbackScheduleItems)
-      .map(mapScheduleItem)
-      .slice(0, 3),
+    featured: dedupePosts(primaryFeatured.map(mapPost)).slice(0, 6),
+    storyDeck: dedupePosts(primaryStory.map(mapPost)).slice(0, 4),
+    highlights: communityList.map(mapCommunityItem).slice(0, 3),
+    trends: trendList.map(mapTrend).slice(0, 4),
+    scheduleHighlights: scheduleList.map(mapScheduleItem).slice(0, 3),
   }
 }
 
@@ -971,35 +841,21 @@ function buildExploreSuggestionsEndpoint(query: string): string {
 }
 
 function platformLabel(platform: string): string {
-  const normalized = platform.trim()
-  if (!normalized) return 'HMRChan'
-  const labels: Record<string, string> = {
-    all: '全部平台',
-    bilibili: 'Bilibili',
-    instagram: 'Instagram',
-    pixiv: 'Pixiv',
-    showroom: 'Showroom',
-    tiktok: 'TikTok',
-    twitter: 'X',
-    x: 'X',
-    youtube: 'YouTube',
-    niconico: 'Niconico',
-    manual: '手动收录',
-    hmrchan: 'HMRChan',
-  }
+  const normalized = normalizePlatformId(platform)
+  if (!normalized) return 'MomiChan'
 
-  return labels[normalized.toLowerCase()] ?? normalized.replace(/[-_]/g, ' ')
+  return platformLabels[normalized as MomiChanPlatform | 'all'] ?? normalized.replace(/[-_]/g, ' ')
 }
 
 function summarizePlatforms(posts: HmrPost[], activePlatform: string): HmrPlatformSummary[] {
-  const preferredPlatforms = ['x', 'showroom', 'instagram', 'tiktok', 'youtube']
   const counts = new Map<string, number>()
   for (const post of posts) {
     const key = normalizePlatformId(post.platform)
+    if (!isMomiChanPlatform(key)) continue
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
 
-  for (const platform of preferredPlatforms) {
+  for (const platform of MOMICHAN_PLATFORMS) {
     if (!counts.has(platform)) counts.set(platform, 0)
   }
 
@@ -1007,20 +863,17 @@ function summarizePlatforms(posts: HmrPost[], activePlatform: string): HmrPlatfo
   if (
     normalizedActivePlatform &&
     normalizedActivePlatform !== 'all' &&
+    isMomiChanPlatform(normalizedActivePlatform) &&
     !counts.has(normalizedActivePlatform)
   ) {
     counts.set(normalizedActivePlatform, 0)
   }
 
-  const preferredSummaries = preferredPlatforms.map((id) => ({
+  const platformSummaries = MOMICHAN_PLATFORMS.map((id) => ({
     id,
     label: platformLabel(id),
     count: counts.get(id) ?? 0,
   }))
-  const summaries = Array.from(counts.entries())
-    .filter(([id]) => !preferredPlatforms.includes(id))
-    .sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))
-    .map(([id, count]) => ({ id, label: platformLabel(id), count }))
 
   return [
     {
@@ -1028,18 +881,21 @@ function summarizePlatforms(posts: HmrPost[], activePlatform: string): HmrPlatfo
       label: '全部平台',
       count: posts.length,
     },
-    ...preferredSummaries,
-    ...summaries,
+    ...platformSummaries,
   ]
 }
 
 function normalizePlatformId(value?: string): string {
-  const normalized = value?.trim().toLowerCase() || 'hmrchan'
+  const normalized = value?.trim().toLowerCase() || ''
   return normalized === 'twitter' ? 'x' : normalized
 }
 
 function platformIdForApi(value: string): string {
   return normalizePlatformId(value) === 'x' ? 'twitter' : value
+}
+
+function isMomiChanPlatform(value: string): value is MomiChanPlatform {
+  return (MOMICHAN_PLATFORMS as readonly string[]).includes(value)
 }
 
 function mapExploreContent(
@@ -1049,18 +905,8 @@ function mapExploreContent(
   suggestions: unknown,
   options: HmrExploreLoadOptions
 ): HmrExploreContent {
-  const mixedPosts = extractCursorCollection(
-    mixed,
-    ['posts', 'items', 'results'],
-    mapPost,
-    fallbackPosts
-  )
-  const publicPosts = extractCursorCollection(
-    posts,
-    ['posts', 'items', 'results'],
-    mapPost,
-    fallbackPosts
-  )
+  const mixedPosts = extractCursorCollection(mixed, ['posts', 'items', 'results'], mapPost, [])
+  const publicPosts = extractCursorCollection(posts, ['posts', 'items', 'results'], mapPost, [])
   const authorItems = extractCursorCollection(
     authors,
     ['authors', 'items', 'results'],
@@ -1071,13 +917,15 @@ function mapExploreContent(
     .map(mapSuggestion)
     .slice(0, 8)
   const selectedPosts = publicPosts.items.length ? publicPosts : mixedPosts
-  const selectedItems = dedupePosts(selectedPosts.items).slice(0, options.limit ?? 12)
+  const selectedItems = dedupePosts(selectedPosts.items)
+    .filter((post) => isMomiChanPlatform(normalizePlatformId(post.platform)))
+    .slice(0, options.limit ?? 12)
   const activePlatform = options.platform && options.platform !== 'all' ? options.platform : 'all'
 
   return {
     posts: selectedItems,
     authors: authorItems.items.slice(0, 6),
-    suggestions: suggestionItems.length ? suggestionItems : fallbackSuggestions,
+    suggestions: suggestionItems.filter(Boolean),
     platforms: summarizePlatforms(selectedItems, activePlatform),
     nextCursor: selectedPosts.nextCursor,
     hasMore: selectedPosts.hasMore,
@@ -1124,19 +972,15 @@ function mapCommunityContent(
   const hotList = extractList(hot, ['items', 'posts', 'discussions'])
   const feedList = extractList(feed, ['items', 'posts', 'discussions'])
   const discussionList = extractList(discussions, ['items', 'discussions', 'results'])
-  const discussionSource = discussionList.length
-    ? discussionList
-    : hotList.length
-      ? hotList
-      : fallbackCommunity
+  const discussionSource = discussionList.length ? discussionList : hotList.length ? hotList : []
   const discussionItems = discussionSource.map(mapCommunityItem).slice(0, 8)
 
   return {
-    stats: (statsList.length ? statsList : fallbackCommunity).map(mapCommunityItem).slice(0, 3),
+    stats: statsList.map(mapCommunityItem).slice(0, 3),
     discussions: discussionItems,
     hot: hotList.length ? hotList.map(mapCommunityItem).slice(0, 8) : discussionItems,
     latest: latestList.length ? latestList.map(mapCommunityItem).slice(0, 8) : discussionItems,
-    feed: (feedList.length ? feedList : fallbackCommunity).map(mapCommunityItem).slice(0, 8),
+    feed: feedList.map(mapCommunityItem).slice(0, 8),
   }
 }
 
@@ -1172,22 +1016,18 @@ function mapPostDetailContent(
   commentsPayload: unknown
 ): HmrPostDetailContent {
   if (!payload) {
-    const fallbackPost = fallbackPosts.find((item) => item.id === id) ??
-      fallbackPosts[0] ?? {
-        id: 'signal-room',
-        title: '今日精选内容',
-        excerpt: '来自 HMRChan 的最新精选内容。',
-        authorName: 'HMRChan',
-        tag: 'Signal',
-        createdAt: '刚刚',
-        statsLabel: '实时',
-      }
-
-    const post = mapPost({ ...fallbackPost, id }, 0)
     return {
-      post,
-      relatedPosts: dedupePosts(fallbackPosts),
-      comments: fallbackCommunity,
+      post: {
+        id,
+        title: '内容暂时不可用',
+        excerpt: '',
+        authorName: 'MomiChan',
+        tag: '',
+        createdAt: '',
+        statsLabel: '',
+      },
+      relatedPosts: [],
+      comments: [],
       media: [],
     }
   }
@@ -1197,16 +1037,17 @@ function mapPostDetailContent(
   const files = extractList(record, ['files', 'media', 'attachments'])
   const commentItems = extractList(commentsPayload, ['items', 'comments', 'results'])
   const related = extractList(record, ['author_other_posts', 'related_posts', 'related'])
-  const relatedPosts = dedupePosts((related.length ? related : fallbackPosts).map(mapPost)).filter(
-    (item) => postDisplayKey(item) !== postDisplayKey(post) && item.id !== post.id
+  const relatedPosts = dedupePosts(related.map(mapPost)).filter(
+    (item) =>
+      isMomiChanPlatform(normalizePlatformId(item.platform)) &&
+      postDisplayKey(item) !== postDisplayKey(post) &&
+      item.id !== post.id
   )
 
   return {
     post,
     relatedPosts: relatedPosts.slice(0, 6),
-    comments: (commentItems.length ? commentItems : fallbackCommunity)
-      .map(mapCommunityItem)
-      .slice(0, 6),
+    comments: commentItems.map(mapCommunityItem).slice(0, 6),
     media: files.map(mapMediaItem).slice(0, 6),
   }
 }
@@ -1250,15 +1091,9 @@ function mapScheduleContent(
   const highlightItems = extractList(highlights, ['items', 'highlights', 'schedules'])
 
   return {
-    items: (scheduleItems.length ? scheduleItems : fallbackScheduleItems)
-      .map(mapScheduleItem)
-      .slice(0, 12),
-    calendar: (calendarItems.length ? calendarItems : fallbackCommunity)
-      .map(mapCommunityItem)
-      .slice(0, 7),
-    highlights: (highlightItems.length ? highlightItems : fallbackScheduleItems)
-      .map(mapScheduleItem)
-      .slice(0, 5),
+    items: scheduleItems.map(mapScheduleItem).slice(0, 12),
+    calendar: calendarItems.map(mapCommunityItem).slice(0, 7),
+    highlights: highlightItems.map(mapScheduleItem).slice(0, 5),
   }
 }
 
@@ -1457,7 +1292,7 @@ async function mapProfileSectionContent(
     summary: [
       makeSummaryItem(
         'identity',
-        pickString(meRecord, ['username', 'full_name', 'email'], 'HMRChan member'),
+        pickString(meRecord, ['username', 'full_name', 'email'], 'MomiChan member'),
         pickString(profileRecord, ['bio', 'description'], '当前会话由登录状态恢复。'),
         pickString(meRecord, ['id'], 'session')
       ),
@@ -1526,7 +1361,7 @@ function mapSettingsContent(
   return {
     account: [
       makeSummaryItem('profile', '个人资料', '管理头像、简介和显示名称。', '/profile'),
-      makeSummaryItem('feedback', '反馈通道', '把产品建议和账号问题提交给 HMRChan。', '/contact'),
+      makeSummaryItem('feedback', '反馈通道', '发送产品建议和账号问题。', '/contact'),
     ],
     security: [
       ...mapProfileRows(twoFactor, [

@@ -57,7 +57,6 @@
           <div class="hmr-detail-source-card">
             <p class="hmr-kicker">互动</p>
             <strong>{{ interactionLabel }}</strong>
-            <span>评论、媒体和相关内容会在下方继续展开。</span>
             <RouterLink class="hmr-text-link" to="/community">进入讨论</RouterLink>
           </div>
         </aside>
@@ -100,8 +99,7 @@
         </div>
 
         <div v-else class="hmr-detail-empty">
-          <strong>这条内容暂时没有媒体附件。</strong>
-          <span>仍可以查看正文、来源、互动数据和评论入口。</span>
+          <strong>暂无媒体附件</strong>
         </div>
       </div>
     </section>
@@ -154,8 +152,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import {
-  seedCommunity,
-  seedPosts,
   loadPostDetailContentResource,
   type HmrPost,
   type HmrPostDetailContent,
@@ -164,20 +160,20 @@ import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 
 const route = useRoute()
-const seedPost: HmrPost = seedPosts[0] ?? {
+const seedPost: HmrPost = {
   id: 'signal-room',
-  title: '今日精选内容',
-  excerpt: '来自 HMRChan 的最新精选内容。',
-  authorName: 'HMRChan',
-  tag: '精选',
-  createdAt: '刚刚',
-  statsLabel: '实时',
+  title: '内容加载中',
+  excerpt: '',
+  authorName: 'MomiChan',
+  tag: '',
+  createdAt: '',
+  statsLabel: '',
 }
 const post = ref<HmrPost>(seedPost)
 const detail = ref<HmrPostDetailContent>({
   post: seedPost,
-  relatedPosts: seedPosts,
-  comments: seedCommunity,
+  relatedPosts: [],
+  comments: [],
   media: [],
 })
 const pageState = ref<HmrPageState>('idle')
@@ -191,7 +187,6 @@ const resource = ref<HmrAsyncResource<HmrPostDetailContent>>({
 })
 
 const palette: Record<string, [string, string]> = {
-  bilibili: ['#ff3c34', '#3d2fa9'],
   instagram: ['#ff7722', '#ff3c34'],
   showroom: ['#3d2fa9', '#ffc765'],
   tiktok: ['#171412', '#3d2fa9'],
@@ -202,25 +197,23 @@ const palette: Record<string, [string, string]> = {
 }
 
 const platformLabels: Record<string, string> = {
-  bilibili: 'Bilibili',
   instagram: 'Instagram',
   showroom: 'Showroom',
   tiktok: 'TikTok',
   twitter: 'X',
   x: 'X',
   youtube: 'YouTube',
-  default: 'HMRChan',
+  default: 'MomiChan',
 }
 
 const platformMarks: Record<string, string> = {
-  bilibili: 'BV',
   instagram: 'IG',
   showroom: 'SR',
   tiktok: 'TT',
   twitter: 'X',
   x: 'X',
   youtube: 'YT',
-  default: 'HMR',
+  default: 'M',
 }
 
 const platformKey = computed(() => post.value.platform?.trim().toLowerCase() || 'default')
@@ -239,9 +232,7 @@ const sourceUrl = computed(() => {
   if (!url || url === '#') return ''
   return url
 })
-const sourceDescription = computed(() =>
-  sourceUrl.value ? sourceUrl.value : '这条内容来自 HMRChan 的公共内容流。'
-)
+const sourceDescription = computed(() => (sourceUrl.value ? sourceUrl.value : platformLabel.value))
 const commentsPreview = computed(() => detail.value.comments.slice(0, 5))
 const interactionLabel = computed(
   () =>

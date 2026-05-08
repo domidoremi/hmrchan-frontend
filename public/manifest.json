@@ -1,23 +1,52 @@
 {
-  "name": "HMRChan",
-  "short_name": "HMRChan",
-  "description": "HMRChan public content discovery, community, schedule, and creator signal surface.",
-  "start_url": "/",
+  "name": "MomiChan - Momiyama Himeri Fan Hub",
+  "short_name": "MomiChan",
+  "description": "Browse Momiyama Himeri updates from YouTube, X, TikTok, Showroom, and Instagram with offline support.",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#fbf9ef",
-  "theme_color": "#fbf9ef",
+  "theme_color": "#4b8cff",
+  "orientation": "portrait-primary",
+  "categories": ["entertainment", "social", "lifestyle"],
+  "lang": "zh",
+  "dir": "ltr",
   "icons": [
     {
-      "src": "/hmrchan/brand/mark.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/sitting-32.webp",
+      "sizes": "32x32",
+      "type": "image/webp",
       "purpose": "any"
     },
     {
-      "src": "/hmrchan/brand/mark.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/sitting-96.webp",
+      "sizes": "96x96",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/sitting-192.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/sitting-512.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/sitting-192.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/sitting-512.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "scope": "/"
 }

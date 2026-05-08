@@ -45,7 +45,7 @@
             </RouterLink>
             <RouterLink to="/contact">
               <span>反馈</span>
-              <strong>联系 HMRChan</strong>
+              <strong>联系 MomiChan</strong>
             </RouterLink>
             <button type="button" :disabled="auth.isLoading" @click="logout">
               <span>会话</span>

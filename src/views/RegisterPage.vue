@@ -14,7 +14,7 @@
           <article class="hmr-story-block">
             <p class="hmr-kicker">01 / 创建</p>
             <strong>创建账号</strong>
-            <span>用户名、邮箱和密码先建立 HMRChan 账户。</span>
+            <span>用户名、邮箱和密码会建立 MomiChan 账户。</span>
           </article>
           <article class="hmr-story-block">
             <p class="hmr-kicker">02 / 验证</p>

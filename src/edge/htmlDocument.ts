@@ -1,6 +1,6 @@
-const SITE_NAME = 'HMRChan'
-export const SITE_ORIGIN = 'https://hmrchan.local'
-export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/hmrchan/brand/og.svg`
+const SITE_NAME = 'MomiChan'
+export const SITE_ORIGIN = 'https://momichan.xyz'
+export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/icons/sitting-512.webp`
 
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
@@ -188,7 +188,7 @@ export function createNotFoundDocument(canonicalPath: string): HtmlDocumentConfi
   return createDocumentConfig(
     normalizeDocumentPath(canonicalPath),
     'Page not found',
-    '这个地址没有对应的 HMRChan 公开页面。请返回首页继续浏览。',
+    '这个地址没有对应的 MomiChan 公开页面。请返回首页继续浏览。',
     '404',
     'Page not found',
     '这个地址暂时没有公开内容。你可以返回首页、探索页或社区继续浏览。',
@@ -197,7 +197,7 @@ export function createNotFoundDocument(canonicalPath: string): HtmlDocumentConfi
       robots: 'noindex, nofollow',
       shellSummary: [
         'The page you opened is no longer available.',
-        'Head back to a public HMRChan section to keep browsing.',
+        'Head back to a public MomiChan section to keep browsing.',
       ],
       shellStats: [
         { label: 'Status', value: 'Unavailable' },
@@ -214,10 +214,10 @@ export function createNotFoundDocument(canonicalPath: string): HtmlDocumentConfi
 
 const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
   '/': {
-    pageTitle: 'HMRChan',
+    pageTitle: 'MomiChan',
     description:
-      'HMRChan brings content discovery, community discussion, schedules, and creator signals into one fast public surface.',
-    shellEyebrow: 'HMRChan',
+      'MomiChan brings content discovery, community discussion, schedules, and creator signals into one fast public surface.',
+    shellEyebrow: 'MomiChan',
     shellTitle: '让每一次内容刷新都有方向。',
     shellBody: '从首页进入精选内容、社区讨论、日程节奏和创作者信号，快速找到今天值得停留的内容。',
     options: {
@@ -237,8 +237,8 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
         createWebPageStructuredData(
           'WebPage',
           '/',
-          'HMRChan',
-          'HMRChan brings content discovery, community discussion, schedules, and creator signals into one fast public surface.'
+          'MomiChan',
+          'MomiChan brings content discovery, community discussion, schedules, and creator signals into one fast public surface.'
         ),
       ],
     },
@@ -298,15 +298,15 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
   },
   '/settings': {
     pageTitle: 'Settings',
-    description: '管理 HMRChan 的账号偏好、通知与显示设置。',
+    description: '管理 MomiChan 的账号偏好、通知与显示设置。',
     shellEyebrow: 'Settings',
-    shellTitle: 'Adjust your HMRChan workspace',
+    shellTitle: 'Adjust your MomiChan workspace',
     shellBody: '在设置页管理显示偏好、账号入口和通知节奏。',
     options: { robots: 'noindex, nofollow' },
   },
   '/login': {
     pageTitle: 'Login',
-    description: '登录 HMRChan 以访问收藏、通知和个人设置。',
+    description: '登录 MomiChan 以访问收藏、通知和个人设置。',
     shellEyebrow: 'Authentication',
     shellTitle: 'Sign in to access your personal space',
     shellBody: '登录后即可继续查看收藏、通知和个人设置。',
@@ -314,7 +314,7 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
   },
   '/register': {
     pageTitle: 'Register',
-    description: '注册 HMRChan 账号以同步收藏、通知和偏好设置。',
+    description: '注册 MomiChan 账号以同步收藏、通知和偏好设置。',
     shellEyebrow: 'Authentication',
     shellTitle: 'Create an account for synced favorites and preferences',
     shellBody: '创建账号后即可同步收藏、通知和偏好设置。',
@@ -322,19 +322,19 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
   },
   '/profile': {
     pageTitle: 'Profile',
-    description: '查看 HMRChan 个人资料、收藏和账号状态。',
+    description: '查看 MomiChan 个人资料、收藏和账号状态。',
     shellEyebrow: 'Profile',
-    shellTitle: 'Your HMRChan profile',
+    shellTitle: 'Your MomiChan profile',
     shellBody: '进入个人页查看收藏、通知、偏好设置和个人资料。',
     options: { robots: 'noindex, nofollow' },
   },
   '/about': {
     pageTitle: 'About',
-    description: '了解 HMRChan 的定位、内容组织方式和社区节奏。',
+    description: '了解 MomiChan 的定位、内容组织方式和社区节奏。',
     shellEyebrow: 'About',
-    shellTitle: 'Learn what HMRChan is built to help you discover',
+    shellTitle: 'Learn what MomiChan is built to help you discover',
     shellBody:
-      '了解 HMRChan 如何整理公开内容、创作者信号与讨论入口，帮助你更快找到想继续关注的内容。',
+      '了解 MomiChan 如何整理公开内容、创作者信号与讨论入口，帮助你更快找到想继续关注的内容。',
     type: 'AboutPage',
     options: {
       shellSummary: [
@@ -348,7 +348,7 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
   },
   '/contact': {
     pageTitle: 'Contact',
-    description: '发送 HMRChan 留言、使用问题或建议反馈，我们会尽快查看。',
+    description: '发送 MomiChan 留言、使用问题或建议反馈，我们会尽快查看。',
     shellEyebrow: 'Contact',
     shellTitle: 'Send a message or share feedback',
     shellBody: '通过联系页面发送问题、建议或内容反馈，我们会在看到后尽快处理。',
@@ -366,10 +366,10 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
   },
   '/join-us': {
     pageTitle: 'Join us',
-    description: '加入 HMRChan，参与讨论、发布内容并同步你的创作节奏。',
+    description: '加入 MomiChan，参与讨论、发布内容并同步你的创作节奏。',
     shellEyebrow: 'Join',
-    shellTitle: 'Join the next HMRChan loop',
-    shellBody: '创建账号、参与讨论、发布内容，把你的创作放进 HMRChan 的公共流动里。',
+    shellTitle: 'Join the next MomiChan loop',
+    shellBody: '创建账号、参与讨论、发布内容，把你的创作放进 MomiChan 的公共流动里。',
     options: {
       shellLinks: [
         { href: '/register', label: 'Register' },
@@ -379,10 +379,10 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
   },
   '/thank-you': {
     pageTitle: 'Thank you',
-    description: '你的 HMRChan 反馈已经提交。',
+    description: '你的 MomiChan 反馈已经提交。',
     shellEyebrow: 'Thanks',
     shellTitle: 'Thank you for the signal',
-    shellBody: '你的反馈已经进入 HMRChan 队列，我们会尽快查看。',
+    shellBody: '你的反馈已经进入 MomiChan 队列，我们会尽快查看。',
     options: {
       robots: 'noindex, nofollow',
       shellLinks: [
@@ -437,7 +437,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     return createDocumentConfig(
       path,
       'Post detail',
-      '浏览 HMRChan 公开帖子详情、媒体内容与关联信息。',
+      '浏览 MomiChan 公开帖子详情、媒体内容与关联信息。',
       'Post detail',
       'Read the post, media, and related public details',
       '进入帖子详情，查看正文、媒体内容和相关讨论，继续浏览这条内容背后的更多信息。',
@@ -504,7 +504,7 @@ function renderShellStats(stats: HtmlDocumentShellStat[]): string {
     ? stats
     : [
         { label: 'Mode', value: 'Public' },
-        { label: 'Surface', value: 'HMRChan' },
+        { label: 'Surface', value: 'MomiChan' },
       ]
 
   return `

@@ -23,17 +23,22 @@
         decoding="async"
       />
       <div class="hmr-post-card__shade" aria-hidden="true"></div>
-      <div class="hmr-post-card__badge-row" aria-hidden="true">
-        <span class="hmr-post-card__badge">{{ platformLabel }}</span>
-        <span class="hmr-post-card__badge hmr-post-card__badge--solid">
-          {{ mediaKindLabel }}
+      <div
+        class="hmr-post-card__badge-row"
+        :style="badgeStyle"
+        :aria-label="`${platformLabel} ${mediaKindLabel}`"
+        aria-hidden="true"
+      >
+        <span class="hmr-post-card__badge"></span>
+        <span v-if="hasMediaContent" class="hmr-post-card__badge hmr-post-card__badge--solid">
         </span>
       </div>
-      <div class="hmr-post-card__stats" aria-hidden="true">
-        <span>{{ metricLabel }}</span>
-        <span>{{ audienceLabel }}</span>
+      <div class="hmr-post-card__stats" :style="statsStyle" aria-hidden="true">
+        <span></span>
+        <span></span>
       </div>
-      <span class="hmr-post-card__platform-mark" aria-hidden="true">{{ platformMark }}</span>
+      <span class="hmr-post-card__platform-mark" :style="platformMarkStyle" aria-hidden="true">
+      </span>
       <span class="hmr-post-card__play" aria-hidden="true"><span></span></span>
     </div>
 
@@ -41,7 +46,6 @@
       <p class="hmr-meta hmr-post-card__meta">
         <span>{{ post.authorName }}</span>
         <span>{{ post.createdAt }}</span>
-        <span>{{ metaTypeLabel }}</span>
       </p>
       <h3 class="hmr-card-title">{{ post.title }}</h3>
       <p v-if="showExcerpt" class="hmr-body hmr-post-card__excerpt">{{ post.excerpt }}</p>
@@ -77,7 +81,6 @@ const props = withDefaults(
 )
 
 const palette = {
-  bilibili: ['#ff3c34', '#3d2fa9'],
   instagram: ['#ff7722', '#ff3c34'],
   tiktok: ['#171412', '#3d2fa9'],
   twitter: ['#171412', '#ff7722'],
@@ -88,14 +91,13 @@ const palette = {
 } as const
 
 const platformLabelMap: Record<string, string> = {
-  bilibili: 'Bilibili',
   instagram: 'Instagram',
   showroom: 'Showroom',
   tiktok: 'TikTok',
   twitter: 'X',
   x: 'X',
   youtube: 'YouTube',
-  hmrchan: 'HMRChan',
+  default: 'MomiChan',
 }
 
 const linkTo = computed(() => props.to ?? `/posts/${props.post.id}`)
@@ -109,7 +111,7 @@ const linkAttrs = computed(() =>
 
 const platformKey = computed(() => props.post.platform?.trim().toLowerCase() || 'default')
 const platformLabel = computed(
-  () => platformLabelMap[platformKey.value] ?? platformLabelMap.default ?? 'HMRChan'
+  () => platformLabelMap[platformKey.value] ?? platformLabelMap.default ?? 'MomiChan'
 )
 const colorSet = computed(
   () => palette[platformKey.value as keyof typeof palette] ?? palette.default
@@ -118,25 +120,41 @@ const cardVisualStyle = computed(() => ({
   '--hmr-card-start': colorSet.value[0],
   '--hmr-card-end': colorSet.value[1],
 }))
+const badgeStyle = computed(() => ({
+  '--hmr-badge-platform': `"${escapeCssContent(platformLabel.value)}"`,
+  '--hmr-badge-kind': `"${escapeCssContent(mediaKindLabel.value)}"`,
+}))
+const statsStyle = computed(() => ({
+  '--hmr-stat-primary': `"${escapeCssContent(metricLabel.value)}"`,
+  '--hmr-stat-secondary': `"${escapeCssContent(audienceLabel.value)}"`,
+}))
+const platformMarkStyle = computed(() => ({
+  '--hmr-platform-mark': `"${escapeCssContent(platformMark.value)}"`,
+}))
 const hasRealPoster = computed(() => {
   const value = props.post.mediaUrl?.trim()
   return Boolean(value) && !value?.startsWith('/hmrchan/reference/') && !value?.startsWith('data:')
 })
 const posterUrl = computed(() => props.post.mediaUrl ?? buildPosterDataUrl())
+const hasMediaContent = computed(
+  () =>
+    props.post.hasMedia ||
+    (props.post.mediaCount ?? 0) > 0 ||
+    (props.post.fileCount ?? 0) > 0 ||
+    typeof props.post.durationSec === 'number'
+)
 const mediaKindLabel = computed(() => {
   if (typeof props.post.durationSec === 'number' && props.post.durationSec > 0) {
     return formatDuration(props.post.durationSec)
   }
-  if (props.post.hasMedia || (props.post.mediaCount ?? 0) > 0 || (props.post.fileCount ?? 0) > 0) {
+  if (hasMediaContent.value) {
     const count = props.post.mediaCount ?? props.post.fileCount
-    return count && count > 1 ? `${count} media` : 'media'
+    return count && count > 1 ? `${count} 媒体` : '媒体'
   }
-  return props.post.postType ?? 'text'
+  return ''
 })
-const metaTypeLabel = computed(() => (hasRealPoster.value ? props.post.tag : 'text'))
 const platformMark = computed(() => {
   const marks: Record<string, string> = {
-    bilibili: 'BV',
     instagram: 'IG',
     showroom: 'SR',
     tiktok: 'TT',
@@ -145,7 +163,7 @@ const platformMark = computed(() => {
     youtube: 'YT',
   }
 
-  return marks[platformKey.value] ?? 'HMR'
+  return marks[platformKey.value] ?? 'M'
 })
 const metricLabel = computed(() => {
   if (typeof props.post.viewCount === 'number' && props.post.viewCount > 0) {
@@ -168,8 +186,10 @@ const audienceLabel = computed(() => {
   }
   return props.post.createdAt
 })
-const footerMetric = computed(
-  () => props.post.platformPostId ?? props.post.postUrl ?? props.post.createdAt
+const footerMetric = computed(() =>
+  typeof props.post.commentCount === 'number' && props.post.commentCount > 0
+    ? `${formatCompact(props.post.commentCount)} 讨论`
+    : props.post.statsLabel
 )
 const showFooter = computed(() => props.showFooter && props.variant !== 'compact')
 
@@ -251,5 +271,9 @@ function escapeXml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&apos;')
+}
+
+function escapeCssContent(value: string): string {
+  return value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')
 }
 </script>

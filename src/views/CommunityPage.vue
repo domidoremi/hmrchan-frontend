@@ -4,13 +4,11 @@
       <div class="hmr-container">
         <p class="hmr-kicker">社区</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>讨论现场</h1>
-        <p class="hmr-body">快速找到热门讨论、最新回复和可以继续参与的内容。</p>
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
           :error="resource.error"
           empty-title="暂时没有讨论。"
-          empty-body="稍后回来，或从探索页打开一条内容。"
           @retry="refreshCommunity"
         />
       </div>
@@ -124,22 +122,18 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import {
-  seedCommunity,
-  loadCommunityContentResource,
-  type HmrCommunityContent,
-} from '@/api/hmrContent'
+import { loadCommunityContentResource, type HmrCommunityContent } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 
 type CommunityTab = 'discussions' | 'hot' | 'latest' | 'feed'
 
 const content = ref<HmrCommunityContent>({
-  stats: seedCommunity,
-  discussions: seedCommunity,
-  hot: seedCommunity,
-  latest: seedCommunity,
-  feed: seedCommunity,
+  stats: [],
+  discussions: [],
+  hot: [],
+  latest: [],
+  feed: [],
 })
 const activeTab = ref<CommunityTab>('discussions')
 const pageState = ref<HmrPageState>('idle')
@@ -153,11 +147,7 @@ const resource = ref<HmrAsyncResource<HmrCommunityContent>>({
 })
 const visibleThreads = computed(() => {
   const byTab = content.value[activeTab.value]
-  return byTab.length
-    ? byTab
-    : content.value.discussions.length
-      ? content.value.discussions
-      : seedCommunity
+  return byTab.length ? byTab : content.value.discussions.length ? content.value.discussions : []
 })
 const discussionTabs = computed(() => [
   { id: 'discussions' as const, label: '全部讨论', count: content.value.discussions.length },

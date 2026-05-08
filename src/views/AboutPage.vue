@@ -5,7 +5,7 @@
         <p class="hmr-kicker">关于</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>
           <span>关于</span>
-          <span>HMRChan。</span>
+          <span>MomiChan。</span>
         </h1>
         <p class="hmr-body">把多平台内容、社区回应和个人收藏放进一个入口。</p>
       </div>
@@ -13,7 +13,7 @@
 
     <section class="hmr-cinema-section hmr-cinema-section--about" data-hmr-reveal data-hmr-scroll>
       <div class="hmr-cinema-sticky">
-        <div class="hmr-cinema-frame" aria-label="HMRChan team tornado">
+        <div class="hmr-cinema-frame" aria-label="MomiChan team tornado">
           <div class="hmr-cinema-orbit hmr-cinema-orbit--team" aria-hidden="true">
             <span v-for="item in tornadoItems" :key="item">{{ item }}</span>
           </div>
@@ -55,7 +55,7 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
           <p class="hmr-kicker">内容生态</p>
-          <h2 class="hmr-section-title">四个区域组成 HMRChan。</h2>
+          <h2 class="hmr-section-title">四个区域组成 MomiChan。</h2>
         </div>
         <div class="hmr-signal-grid">
           <article v-for="item in systemMap" :key="item.title" class="hmr-mini-panel">

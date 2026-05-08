@@ -57,7 +57,7 @@ const PREVIEW_MEMBER: AuthUser = {
   username: 'hmr_preview',
   email: 'preview@hmrchan.local',
   full_name: 'HMR Preview',
-  avatar_url: '/hmrchan/brand/mark.svg',
+  avatar_url: '/icons/sitting-192.webp',
   roles: ['preview'],
 }
 
@@ -167,7 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
   const passkeyRecovery = ref<HmrPasskeyRecoveryStatus | null>(null)
 
   const isAuthenticated = computed(() => Boolean(user.value))
-  const displayName = computed(() => user.value?.full_name || user.value?.username || 'HMRChan')
+  const displayName = computed(() => user.value?.full_name || user.value?.username || 'MomiChan')
   const avatarUrl = computed(() => user.value?.avatar_url)
 
   function applySession(summary: SessionSummary | null): void {

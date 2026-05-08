@@ -18,13 +18,6 @@
             {{ item }}
           </button>
         </div>
-        <HmrPageStateBlock
-          :loading="pageState === 'loading'"
-          :empty="pageState === 'empty'"
-          empty-title="暂无内容"
-          empty-body="换个筛选再试"
-          @retry="refreshExplore"
-        />
       </div>
     </header>
 
@@ -81,7 +74,7 @@
                   <option value="long">长内容</option>
                 </select>
               </label>
-              <button class="hmr-status-button" type="submit">刷新</button>
+              <button class="hmr-status-button" type="submit">应用</button>
             </form>
           </div>
           <div class="hmr-view-tools" aria-label="探索视图">
@@ -135,10 +128,16 @@
           />
         </div>
 
+        <div
+          v-else-if="pageState === 'loading'"
+          class="hmr-featured-grid hmr-featured-grid--cinematic"
+          aria-hidden="true"
+        >
+          <div v-for="item in 6" :key="item" class="hmr-media-skeleton"></div>
+        </div>
+
         <div v-else class="hmr-empty-panel">
-          <p class="hmr-kicker">暂无内容</p>
-          <h3>没有匹配内容</h3>
-          <p>清空筛选再看</p>
+          <h3>暂无内容</h3>
           <button class="hmr-cta" type="button" @click="clearFilters">清空筛选</button>
         </div>
 
@@ -211,12 +210,11 @@ import { computed, onMounted, ref } from 'vue'
 
 import {
   seedAuthors,
-  seedPosts,
+  MOMICHAN_PLATFORMS,
   loadExploreContentResource,
   type HmrExploreContent,
   type HmrPost,
 } from '@/api/hmrContent'
-import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 
@@ -228,7 +226,7 @@ const contentKind = ref<'all' | 'media' | 'text'>('all')
 const durationRange = ref<'all' | 'short' | 'medium' | 'long'>('all')
 const pageState = ref<HmrPageState>('idle')
 const content = ref<HmrExploreContent>({
-  posts: seedPosts,
+  posts: [],
   authors: seedAuthors,
   suggestions: [],
   platforms: [],
@@ -254,8 +252,7 @@ const colorPairs = [
 ]
 
 const posts = computed(() => {
-  const source = content.value.posts.length ? content.value.posts : seedPosts
-  return source.filter((post): post is HmrPost => Boolean(post))
+  return content.value.posts.filter((post): post is HmrPost => Boolean(post))
 })
 const visiblePosts = computed(() =>
   posts.value.filter((post) => {
@@ -282,16 +279,17 @@ const platformOptions = computed(() => {
 
   const counts = new Map<string, number>()
   for (const post of visiblePosts.value.length ? visiblePosts.value : posts.value) {
-    const key = post.platform?.trim().toLowerCase() || 'hmrchan'
+    const key = normalizePlatform(post.platform)
+    if (!MOMICHAN_PLATFORMS.includes(key as (typeof MOMICHAN_PLATFORMS)[number])) continue
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
 
   return [
     { id: 'all', label: '全部平台', count: posts.value.length },
-    ...Array.from(counts.entries()).map(([id, count]) => ({
+    ...MOMICHAN_PLATFORMS.map((id) => ({
       id,
       label: platformName(id),
-      count,
+      count: counts.get(id) ?? 0,
     })),
   ]
 })
@@ -311,13 +309,8 @@ function glyphFor(post: HmrPost, index: number): string {
 }
 
 function platformName(value?: string): string {
-  const normalized = value?.trim().toLowerCase() || 'hmrchan'
+  const normalized = normalizePlatform(value)
   const labels: Record<string, string> = {
-    bilibili: 'Bilibili',
-    hmrchan: 'HMRChan',
-    manual: '手动收录',
-    niconico: 'Niconico',
-    pixiv: 'Pixiv',
     showroom: 'Showroom',
     tiktok: 'TikTok',
     twitter: 'X',
@@ -327,6 +320,11 @@ function platformName(value?: string): string {
   }
 
   return labels[normalized] ?? normalized.replace(/[-_]/g, ' ')
+}
+
+function normalizePlatform(value?: string): string {
+  const normalized = value?.trim().toLowerCase() ?? ''
+  return normalized === 'twitter' ? 'x' : normalized
 }
 
 function cardStyle(index: number): Record<string, string> {

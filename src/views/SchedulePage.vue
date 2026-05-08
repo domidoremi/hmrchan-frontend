@@ -4,13 +4,11 @@
       <div class="hmr-container hmr-page-hero-container">
         <p class="hmr-kicker">日程</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>活动与演出日历</h1>
-        <p class="hmr-body">按日期查看直播、演出、发布和社区整理窗口。</p>
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
           :error="resource.error"
           empty-title="暂时没有日程。"
-          empty-body="稍后回来，或先去探索页查看新内容。"
           @retry="refreshSchedule"
         />
       </div>
@@ -133,12 +131,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import {
-  seedCommunity,
-  seedScheduleItems,
-  loadScheduleContentResource,
-  type HmrScheduleContent,
-} from '@/api/hmrContent'
+import { loadScheduleContentResource, type HmrScheduleContent } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState, HmrScheduleItem } from '@/hmr/types'
 
@@ -153,9 +146,9 @@ interface HmrScheduleEvent extends HmrScheduleItem {
 }
 
 const content = ref<HmrScheduleContent>({
-  items: seedScheduleItems,
-  calendar: seedCommunity,
-  highlights: seedScheduleItems,
+  items: [],
+  calendar: [],
+  highlights: [],
 })
 const pageState = ref<HmrPageState>('idle')
 const resource = ref<HmrAsyncResource<HmrScheduleContent>>({

@@ -3,7 +3,7 @@
     <header class="hmr-page-hero">
       <div class="hmr-container">
         <p class="hmr-kicker">加入</p>
-        <h1 class="hmr-page-title" data-hmr-text-reveal>加入 HMRChan。</h1>
+        <h1 class="hmr-page-title" data-hmr-text-reveal>加入 MomiChan。</h1>
         <p class="hmr-body">创建账号，参与讨论，保存你关注的内容。</p>
         <div class="hmr-actions">
           <RouterLink class="hmr-cta" to="/register">注册</RouterLink>
@@ -64,7 +64,7 @@
         </aside>
         <div class="hmr-panel">
           <p class="hmr-kicker">下一步</p>
-          <h2 class="hmr-card-title">进入 HMRChan</h2>
+          <h2 class="hmr-card-title">进入 MomiChan</h2>
           <p class="hmr-body">同步收藏、历史、收件箱和安全状态。</p>
           <div class="hmr-action-row">
             <RouterLink class="hmr-cta" to="/register">注册账号</RouterLink>

@@ -9,5 +9,5 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', () => {
-  // Intentionally empty for the first HMRChan product shell.
+  // Intentionally empty for the first MomiChan product shell.
 })
