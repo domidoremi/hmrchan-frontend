@@ -2928,6 +2928,8 @@ svg {
 }
 
 .hmr-view-tools button {
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
   padding: 0.72em 0.9em 0.62em;
   border: 0;
   border-radius: 999em;
@@ -3432,7 +3434,8 @@ svg {
 
 .hmr-status-button {
   display: inline-flex;
-  min-block-size: 2.75em;
+  min-inline-size: 2.75rem;
+  min-block-size: max(2.75em, 2.75rem);
   align-items: center;
   justify-content: center;
   padding: 0.75em 0.9em 0.65em;
@@ -5107,6 +5110,10 @@ svg {
     --hmr-container: 30em;
   }
 
+  html {
+    overflow-x: clip;
+  }
+
   .hmr-preloader-backdrop {
     padding: 1.5rem;
   }
@@ -5129,8 +5136,12 @@ svg {
   }
 
   .hmr-site-header {
+    inset-inline: 0;
+    inline-size: auto;
+    max-inline-size: 100%;
     block-size: auto;
     padding: 1.25rem;
+    overflow: clip;
   }
 
   .hmr-header-inner {
@@ -5649,12 +5660,143 @@ svg {
 }
 
 @media (max-width: 479px) {
+  .hmr-route-page--explore .hmr-page-hero {
+    padding-block: 4.5rem 1.25rem;
+  }
+
+  .hmr-route-page--explore .hmr-section--tight {
+    padding-block-start: 2rem;
+  }
+
+  .hmr-route-page--explore .hmr-works-header {
+    position: relative;
+  }
+
+  .hmr-route-page--explore .hmr-view-tools {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    margin: 0;
+  }
+
+  .hmr-route-page--contact .hmr-contact-hero {
+    gap: 1.5rem;
+    padding-block: 6rem 3rem;
+  }
+
+  .hmr-page-title,
+  .hmr-contact-title {
+    max-inline-size: min(100%, 5.8em);
+    font-size: clamp(3rem, 15vw, 5rem);
+    overflow-wrap: anywhere;
+  }
+
+  .hmr-reveal-mask {
+    max-inline-size: 100%;
+  }
+
+  .hmr-media-ribbon {
+    margin-inline: -1.25rem;
+    inline-size: calc(100% + 2.5rem);
+  }
+
+  .hmr-media-ribbon-track {
+    min-inline-size: 100%;
+    gap: 0.75rem;
+  }
+
+  .hmr-media-ribbon-card {
+    inline-size: min(72vw, 17rem);
+    flex: 0 0 auto;
+    transform: none;
+  }
+
+  .hmr-footer-keys {
+    inset-inline: 0;
+    overflow: hidden;
+  }
+
+  .hmr-footer-keys img {
+    inline-size: clamp(6.5rem, 28vw, 9rem);
+    margin-inline: -2.5rem;
+  }
+
   .hmr-primary-nav-link {
     inline-size: 3.9rem;
+    min-block-size: 3.9rem;
   }
 
   .hmr-mobile-brand {
     inline-size: 8.5rem;
+  }
+
+  .hmr-cta,
+  .hmr-auth-provider {
+    min-block-size: 2.75rem;
+  }
+
+  .hmr-text-link,
+  .hmr-footer-nav a {
+    min-block-size: 2.75rem;
+    align-items: center;
+  }
+
+  .hmr-form input,
+  .hmr-form textarea,
+  .hmr-data-toolbar input,
+  .hmr-data-toolbar select {
+    min-block-size: 2.75rem;
+  }
+
+  .hmr-data-toolbar--explore input,
+  .hmr-data-toolbar--explore select {
+    min-block-size: 2.75rem;
+  }
+
+  .hmr-data-toolbar--explore label {
+    min-block-size: 4.2rem;
+  }
+
+  .hmr-route-page--explore .hmr-data-toolbar--explore {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .hmr-route-page--explore .hmr-data-field--search,
+  .hmr-route-page--explore .hmr-data-toolbar--explore .hmr-status-button {
+    grid-column: 1 / -1;
+  }
+
+  .hmr-route-page--explore .hmr-data-toolbar--explore .hmr-status-button {
+    min-block-size: 2.75rem;
+  }
+
+  .hmr-route-page--explore .hmr-data-toolbar--explore label {
+    min-block-size: 3.9rem;
+    padding: 0.6rem 0.7rem;
+  }
+
+  .hmr-route-page--contact .hmr-contact-hero-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-block-size: auto;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .hmr-route-page--contact .hmr-contact-hero-form .hmr-kicker,
+  .hmr-route-page--contact .hmr-contact-hero-form label:nth-of-type(3),
+  .hmr-route-page--contact .hmr-contact-hero-form .hmr-form-error {
+    grid-column: 1 / -1;
+  }
+
+  .hmr-route-page--contact .hmr-contact-hero-form textarea {
+    block-size: 5rem;
+    min-block-size: 5rem;
+  }
+
+  .hmr-route-page--contact .hmr-contact-hero-form .hmr-cta {
+    inline-size: 100%;
+    align-self: end;
   }
 
   .hmr-container,

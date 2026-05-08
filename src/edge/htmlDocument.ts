@@ -314,6 +314,22 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
     shellBody: '创建账号后即可同步收藏、通知和偏好设置。',
     options: { robots: 'noindex, nofollow' },
   },
+  '/auth/passkey-recovery': {
+    pageTitle: 'Passkey recovery',
+    description: '恢复 MomiChan Passkey 登录能力并重新保护账号。',
+    shellEyebrow: 'Passkey',
+    shellTitle: 'Recover Passkey access',
+    shellBody: '通过邮箱、密码与恢复流程重新注册可信 Passkey。',
+    options: { robots: 'noindex, nofollow' },
+  },
+  '/auth/callback': {
+    pageTitle: 'Auth callback',
+    description: '处理 MomiChan 第三方登录回调并恢复账号会话。',
+    shellEyebrow: 'Authentication',
+    shellTitle: 'Complete your sign-in callback',
+    shellBody: '正在处理登录回调。如果缺少回调参数，页面会提示你回到登录页重新开始。',
+    options: { robots: 'noindex, nofollow' },
+  },
   '/profile': {
     pageTitle: 'Profile',
     description: '查看 MomiChan 个人资料、收藏和账号状态。',

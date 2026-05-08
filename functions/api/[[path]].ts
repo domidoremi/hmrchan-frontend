@@ -136,6 +136,9 @@ const DEFAULT_REFRESH_COOKIE_MAX_AGE = 14 * 24 * 60 * 60
 const PROXY_REFRESH_SKEW_SECONDS = 60
 const BFF_AUTH_RETRY_REQUIRED_HEADER = 'X-Bff-Auth-Retry-Required'
 const BFF_AUTH_RETRY_REASON_HEADER = 'X-Bff-Auth-Retry-Reason'
+const ACCESS_TEMPORARILY_RESTRICTED_CODE = 'ACCESS_TEMPORARILY_RESTRICTED'
+const AUTOMATED_ACCESS_NOT_PERMITTED_CODE = 'AUTOMATED_ACCESS_NOT_PERMITTED'
+const PUBLIC_READ_PROXY_USER_AGENT = 'MomiChan-Frontend-Proxy/1.0'
 const MEDIA_THUMBNAIL_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Media unavailable">
   <rect width="400" height="400" rx="32" fill="#f1f5f9"/>
   <path d="M96 282l66-76 46 52 32-36 64 60H96z" fill="#cbd5e1"/>
@@ -985,6 +988,99 @@ function requiresBrowserSignatureReplay(headers: Headers): boolean {
   return headers.has('X-Signature') || headers.has('X-Nonce')
 }
 
+function isAnonymousPublicRead(path: string, request: Request): boolean {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return false
+  if (
+    getCookieValue(request, BFF_ACCESS_COOKIE_NAME) ||
+    getCookieValue(request, BFF_REFRESH_COOKIE_NAME)
+  ) {
+    return false
+  }
+
+  const normalizedPath = resolveUpstreamPath(path)
+  const apiPath = normalizedPath.startsWith('v')
+    ? `/api/${normalizedPath}`
+    : `/api/${normalizedPath}`
+  const domain = resolveUpstreamDomain(apiPath)
+  if (domain === 'identity') return false
+
+  return (
+    isMediaThumbnailRequest(normalizedPath, request.method) ||
+    normalizedPath === 'v1/home' ||
+    normalizedPath.startsWith('v1/home/') ||
+    normalizedPath === 'v1/posts' ||
+    normalizedPath.startsWith('v1/posts/') ||
+    normalizedPath === 'v1/authors' ||
+    normalizedPath.startsWith('v1/authors/') ||
+    normalizedPath === 'v1/search/suggestions' ||
+    normalizedPath.startsWith('v1/search/') ||
+    normalizedPath === 'v1/trends/summary' ||
+    normalizedPath === 'v1/schedules' ||
+    normalizedPath.startsWith('v1/schedules/') ||
+    normalizedPath === 'v1/community/highlights' ||
+    normalizedPath === 'v1/community/latest' ||
+    normalizedPath === 'v1/community/hot' ||
+    normalizedPath === 'v1/community/feed' ||
+    normalizedPath === 'v1/community/stats' ||
+    normalizedPath === 'v1/discussions' ||
+    normalizedPath.startsWith('v1/discussions/')
+  )
+}
+
+function cloneHeadersForAnonymousPublicReplay(headers: Headers): Headers {
+  const replayHeaders = new Headers(headers)
+  const userAgent = headers.get('User-Agent')?.trim()
+  replayHeaders.delete('Authorization')
+  replayHeaders.delete('Cookie')
+  replayHeaders.delete('cookie')
+  replayHeaders.delete('Origin')
+  replayHeaders.delete('Referer')
+  replayHeaders.delete('Sec-CH-UA')
+  replayHeaders.delete('Sec-CH-UA-Mobile')
+  replayHeaders.delete('Sec-CH-UA-Platform')
+  replayHeaders.delete('Sec-Fetch-Dest')
+  replayHeaders.delete('Sec-Fetch-Mode')
+  replayHeaders.delete('Sec-Fetch-Site')
+  replayHeaders.delete('X-Client-Fingerprint')
+  replayHeaders.delete('X-Client-Token')
+  replayHeaders.delete('X-Nonce')
+  replayHeaders.delete('X-Signature')
+  replayHeaders.delete('X-Timestamp')
+
+  if (userAgent) {
+    replayHeaders.set('User-Agent', userAgent.replace(/HeadlessChrome/gi, 'Chrome'))
+  } else {
+    replayHeaders.set('User-Agent', PUBLIC_READ_PROXY_USER_AGENT)
+  }
+
+  return replayHeaders
+}
+
+function isAnonymousPublicReplayableAccessErrorCode(code: unknown): boolean {
+  return code === ACCESS_TEMPORARILY_RESTRICTED_CODE || code === AUTOMATED_ACCESS_NOT_PERMITTED_CODE
+}
+
+async function isReplayableAnonymousPublicAccessRestriction(response: Response): Promise<boolean> {
+  if (response.status !== 403) return false
+
+  const contentType = response.headers.get('Content-Type') ?? ''
+  if (!contentType.includes('application/json')) return false
+
+  try {
+    const payload = (await response.clone().json()) as unknown
+    if (!isJsonRecord(payload)) return false
+
+    const nestedError = payload.error
+    if (isJsonRecord(nestedError)) {
+      return isAnonymousPublicReplayableAccessErrorCode(nestedError.code)
+    }
+
+    return isAnonymousPublicReplayableAccessErrorCode(payload.code)
+  } catch {
+    return false
+  }
+}
+
 async function fetchViaPublic(options: ForwardRequestOptions): Promise<Response> {
   const { apiBaseUrl, bodyBuffer, headers, path, redirectMode, request, search } = options
   const targetUrl = `${apiBaseUrl}/api/${path}${search}`
@@ -1189,6 +1285,46 @@ async function forwardToUpstream(options: ForwardRequestOptions): Promise<Upstre
   }
 }
 
+async function replayAnonymousPublicReadWithoutBrowserContext(
+  options: ForwardRequestOptions
+): Promise<UpstreamFetchResult> {
+  const replayHeaders = cloneHeadersForAnonymousPublicReplay(options.headers)
+
+  if (options.internalApiGateway && !shouldBypassVPCForRequest(options.path, options.request)) {
+    try {
+      const response = await fetchViaInternalApiGateway(options.internalApiGateway, {
+        bodyBuffer: options.bodyBuffer,
+        env: options.env,
+        headers: replayHeaders,
+        redirectMode: options.redirectMode,
+        request: options.request,
+        requestUrl: options.requestUrl,
+      })
+
+      if (!(await isReplayableAnonymousPublicAccessRestriction(response))) {
+        return {
+          response,
+          source: response.headers.get('X-Proxy-Upstream-Source') ?? 'internal-gateway',
+        }
+      }
+    } catch (error) {
+      console.error(
+        '[API Proxy] Internal gateway anonymous public replay failed, falling back to public:',
+        error
+      )
+    }
+  }
+
+  return {
+    response: await fetchViaPublic({
+      ...options,
+      headers: replayHeaders,
+      internalApiGateway: undefined,
+    }),
+    source: 'public-anonymous-replay',
+  }
+}
+
 function withCorsHeaders(request: Request, isDev: boolean, headers: Headers): Headers {
   const origin = request.headers.get('Origin')
   const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
@@ -1301,18 +1437,34 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   }
 
   try {
-    let upstream = await forwardToUpstream({
+    const anonymousPublicRead = isAnonymousPublicRead(compactPath, request)
+    const upstreamHeaders = anonymousPublicRead
+      ? cloneHeadersForAnonymousPublicReplay(headers)
+      : headers
+    const upstreamOptions: ForwardRequestOptions = {
       apiBaseUrl,
       bodyBuffer,
       env,
-      headers,
+      headers: upstreamHeaders,
       path: compactPath,
       redirectMode,
       request,
       requestUrl,
       search: requestUrl.search,
       internalApiGateway: isInternalApiGatewayEnabled(env) ? env.INTERNAL_API_GATEWAY : undefined,
-    })
+    }
+
+    let upstream = await forwardToUpstream(upstreamOptions)
+
+    if (
+      anonymousPublicRead &&
+      (await isReplayableAnonymousPublicAccessRestriction(upstream.response))
+    ) {
+      const replay = await replayAnonymousPublicReadWithoutBrowserContext(upstreamOptions)
+      if (replay.response.ok) {
+        upstream = replay
+      }
+    }
 
     if (upstream.response.status === 401 && refreshToken && !refreshedBeforeForward) {
       const refreshed = await refreshBffSession(
@@ -1324,20 +1476,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
         appendSessionCookies(bffCookieHeaders, refreshed)
         if (!requestRequiresBrowserRetry) {
           headers.set('Authorization', `Bearer ${refreshed.access_token}`)
-          upstream = await forwardToUpstream({
-            apiBaseUrl,
-            bodyBuffer,
-            env,
-            headers,
-            path: compactPath,
-            redirectMode,
-            request,
-            requestUrl,
-            search: requestUrl.search,
-            internalApiGateway: isInternalApiGatewayEnabled(env)
-              ? env.INTERNAL_API_GATEWAY
-              : undefined,
-          })
+          upstream = await forwardToUpstream(upstreamOptions)
         }
       } else {
         appendClearedSessionCookies(bffCookieHeaders)
@@ -1402,7 +1541,12 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       responseHeaders.set('X-API-Version', apiVersion)
     }
 
-    if (upstream.response.status === 404 && isMediaThumbnailRequest(compactPath, request.method)) {
+    if (
+      (upstream.response.status === 404 ||
+        (isMediaThumbnailRequest(compactPath, request.method) &&
+          (await isReplayableAnonymousPublicAccessRestriction(upstream.response)))) &&
+      isMediaThumbnailRequest(compactPath, request.method)
+    ) {
       const fallbackResponse = buildMediaThumbnailPlaceholderResponse(request, isDev)
       fallbackResponse.headers.set('X-Proxy-Upstream-Source', upstream.source)
       fallbackResponse.headers.set('X-Proxy-Upstream-Domain', upstreamDomain)

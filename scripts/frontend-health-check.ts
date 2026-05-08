@@ -142,6 +142,7 @@ interface FrontendHealthSummary {
 }
 
 const BASE_URL = process.env['FRONTEND_HEALTH_BASE_URL'] ?? 'http://localhost:5174'
+const HAS_EXPLICIT_BASE_URL = Boolean(process.env['FRONTEND_HEALTH_BASE_URL']?.trim())
 const ARTIFACT_DIR = process.env['FRONTEND_HEALTH_ARTIFACT_DIR']?.trim() || '.frontend-health'
 const AUTO_START = process.env['FRONTEND_HEALTH_AUTOSTART'] !== 'false'
 const PREVIEW_PORT = Number(process.env['FRONTEND_HEALTH_PREVIEW_PORT'] ?? '4173')
@@ -394,6 +395,7 @@ async function clearBrowserAuditSession(page: Page, baseUrl: string): Promise<vo
       .evaluate(async () => {
         window.localStorage.clear()
         window.sessionStorage.clear()
+        window.localStorage.setItem('hmr.qa.skipPreloader', 'true')
 
         if ('caches' in window) {
           const cacheNames = await window.caches.keys()
@@ -721,6 +723,24 @@ async function isBaseUrlReachable(url: string): Promise<boolean> {
   }
 }
 
+async function isCompatibleFrontendBaseUrl(url: string): Promise<boolean> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'text/html,application/xhtml+xml',
+        'user-agent': 'momichan-frontend-health-check/1.0',
+      },
+      redirect: 'manual',
+    })
+    if (response.status < 200 || response.status >= 400) return false
+
+    const html = await response.text()
+    return html.includes('data-prerender-shell="true"') && html.includes('MomiChan')
+  } catch {
+    return false
+  }
+}
+
 async function captureFailureEvidence(
   page: Page,
   artifactDir: string,
@@ -983,7 +1003,7 @@ async function authenticateViaApi(
     }
     const submitLoginForm = () =>
       page.evaluate(() => {
-        const form = document.querySelector('form.auth-form')
+        const form = document.querySelector('form.hmr-form')
         if (!(form instanceof HTMLFormElement)) {
           throw new Error('auth login form is missing')
         }
@@ -1019,8 +1039,8 @@ async function authenticateViaApi(
       return readAuthBootstrapPageProbe(loginResponse)
     }
 
-    const loginSelector = '#login-identifier'
-    const passwordSelector = '#login-password'
+    const loginSelector = 'input[autocomplete="username"]'
+    const passwordSelector = 'input[autocomplete="current-password"]'
     let latestLoginRequestHeaders: Record<string, string> | null = null
     const loginRequestIds = new Set<string>()
     const pageAuthBootstrapProbes: AuthBootstrapProbe[] = []
@@ -1093,6 +1113,7 @@ async function authenticateViaApi(
       })
 
       await waitForRoutePath(page, '/login', 'frontend health auth bootstrap')
+      await page.waitForSelector('form.hmr-form', { timeout: 20_000 })
       const loginInput = await page
         .waitForSelector(loginSelector, { timeout: 20_000 })
         .catch(async (error) => {
@@ -1127,7 +1148,7 @@ async function authenticateViaApi(
     const preflightProbes = await runAuthBootstrapPreflight(baseUrl)
     throwIfFatalAuthBootstrapProbe([...pageAuthBootstrapProbes, ...preflightProbes])
 
-    const submitButton = await page.$('form.auth-form button[type="submit"], form.auth-form button')
+    const submitButton = await page.$('form.hmr-form button[type="submit"], form.hmr-form button')
     if (!submitButton) {
       throw new Error('Frontend health auth bootstrap submit button is missing')
     }
@@ -1609,14 +1630,22 @@ async function main() {
     await mkdir(ARTIFACT_DIR, { recursive: true })
 
     const reachable = await isBaseUrlReachable(BASE_URL)
-    if (!reachable) {
+    const compatible =
+      reachable && (HAS_EXPLICIT_BASE_URL || (await isCompatibleFrontendBaseUrl(BASE_URL)))
+    if (!compatible) {
       if (!AUTO_START) {
         throw new Error(
-          `Cannot reach ${BASE_URL}. Start a local server or set FRONTEND_HEALTH_AUTOSTART=true.`
+          reachable
+            ? `${BASE_URL} is reachable but does not look like this MomiChan frontend. Set FRONTEND_HEALTH_BASE_URL explicitly or free the default port.`
+            : `Cannot reach ${BASE_URL}. Start a local server or set FRONTEND_HEALTH_AUTOSTART=true.`
         )
       }
 
-      console.log(`⚠️ Base URL unavailable: ${BASE_URL}`)
+      console.log(
+        reachable
+          ? `⚠️ Base URL does not match this frontend: ${BASE_URL}`
+          : `⚠️ Base URL unavailable: ${BASE_URL}`
+      )
       console.log('🏗️ Building project for preview-based health check...')
       await withBuildArtifactLock(
         'vite-dist-build',

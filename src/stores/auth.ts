@@ -63,6 +63,9 @@ const PREVIEW_MEMBER: AuthUser = {
 
 function normalizeError(error: unknown): string {
   if (error instanceof ApiError) {
+    if (error.code === 'CHALLENGE_REQUIRED') {
+      return '请先完成人机验证后再继续。'
+    }
     if (error.status === 401 || error.status === 403) return '账号或密码不正确，请重试。'
     if (error.status === 409) return '账号已存在，请直接登录。'
     if (error.status === 426 || error.code === 'CLIENT_CONTRACT_MISMATCH') {

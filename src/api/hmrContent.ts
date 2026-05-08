@@ -354,14 +354,6 @@ function toApiErrorState(error: unknown, path: string): HmrApiErrorState {
   }
 }
 
-function makeLocalApiError(kind: HmrApiErrorKind, message: string, path: string): HmrApiErrorState {
-  return {
-    kind,
-    message,
-    path,
-  }
-}
-
 function makeResource<T>(
   data: T,
   options: {
@@ -408,7 +400,10 @@ function combineEndpointResults(results: EndpointResult<unknown>[]): {
   }
 }
 
-async function readEndpointResult<T>(path: string): Promise<EndpointResult<T>> {
+async function readEndpointResult<T>(
+  path: string,
+  options: { skipAuth?: boolean } = {}
+): Promise<EndpointResult<T>> {
   if (shouldUseFallbackContent()) {
     return {
       data: null,
@@ -424,7 +419,7 @@ async function readEndpointResult<T>(path: string): Promise<EndpointResult<T>> {
 
   try {
     return {
-      data: await apiClient.get<T>(path),
+      data: await apiClient.get<T>(path, { skipAuth: options.skipAuth === true }),
       error: null,
       source: 'api',
       path,
@@ -437,10 +432,6 @@ async function readEndpointResult<T>(path: string): Promise<EndpointResult<T>> {
       path,
     }
   }
-}
-
-function isLikelyUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 }
 
 function mapPost(value: unknown, index: number): HmrPost {
@@ -778,13 +769,13 @@ function mapHomeContent(
 
 export async function loadHomeContentResource(): Promise<HmrAsyncResource<HmrHomeContent>> {
   const results = await Promise.all([
-    readEndpointResult<unknown>('/home'),
-    readEndpointResult<unknown>('/home/featured'),
-    readEndpointResult<unknown>('/home/story-deck'),
-    readEndpointResult<unknown>('/community/highlights'),
-    readEndpointResult<unknown>('/trends/summary'),
-    readEndpointResult<unknown>('/schedules/highlights'),
-    readEndpointResult<unknown>('/posts?limit=10'),
+    readEndpointResult<unknown>('/home', { skipAuth: true }),
+    readEndpointResult<unknown>('/home/featured', { skipAuth: true }),
+    readEndpointResult<unknown>('/home/story-deck', { skipAuth: true }),
+    readEndpointResult<unknown>('/community/highlights', { skipAuth: true }),
+    readEndpointResult<unknown>('/trends/summary', { skipAuth: true }),
+    readEndpointResult<unknown>('/schedules/highlights', { skipAuth: true }),
+    readEndpointResult<unknown>('/posts?limit=10', { skipAuth: true }),
   ])
   const [home, featured, storyDeck, community, trends, scheduleHighlights, publicPosts] = results
   const status = combineEndpointResults(results)
@@ -940,10 +931,12 @@ export async function loadExploreContentResource(
   const postsEndpoint = buildExplorePostsEndpoint(options)
   const suggestionQuery = options.query?.trim() ?? ''
   const [mixed, posts, authors, suggestions] = await Promise.all([
-    readEndpointResult<unknown>('/posts/mixed?limit=6'),
-    readEndpointResult<unknown>(postsEndpoint),
-    readEndpointResult<unknown>('/authors?limit=6'),
-    readEndpointResult<unknown>(buildExploreSuggestionsEndpoint(suggestionQuery)),
+    readEndpointResult<unknown>('/posts/mixed?limit=6', { skipAuth: true }),
+    readEndpointResult<unknown>(postsEndpoint, { skipAuth: true }),
+    readEndpointResult<unknown>('/authors?limit=6', { skipAuth: true }),
+    readEndpointResult<unknown>(buildExploreSuggestionsEndpoint(suggestionQuery), {
+      skipAuth: true,
+    }),
   ])
   const results = [mixed, posts, authors, suggestions]
   const status = combineEndpointResults(results)
@@ -988,11 +981,11 @@ export async function loadCommunityContentResource(): Promise<
   HmrAsyncResource<HmrCommunityContent>
 > {
   const results = await Promise.all([
-    readEndpointResult<unknown>('/community/stats'),
-    readEndpointResult<unknown>('/community/latest'),
-    readEndpointResult<unknown>('/community/hot'),
-    readEndpointResult<unknown>('/community/feed'),
-    readEndpointResult<unknown>('/discussions'),
+    readEndpointResult<unknown>('/community/stats', { skipAuth: true }),
+    readEndpointResult<unknown>('/community/latest', { skipAuth: true }),
+    readEndpointResult<unknown>('/community/hot', { skipAuth: true }),
+    readEndpointResult<unknown>('/community/feed', { skipAuth: true }),
+    readEndpointResult<unknown>('/discussions', { skipAuth: true }),
   ])
   const [stats, latest, hot, feed, discussions] = results
 
@@ -1056,18 +1049,11 @@ export async function loadPostDetailContentResource(
   id: string
 ): Promise<HmrAsyncResource<HmrPostDetailContent>> {
   const normalizedId = id.trim() || 'signal-room'
-  if (!isLikelyUuid(normalizedId)) {
-    const endpoint = `/posts/${encodeURIComponent(normalizedId)}`
-    return makeResource(mapPostDetailContent(normalizedId, null, null), {
-      source: 'local',
-      error: makeLocalApiError('not-found', '当前内容暂时无法打开。', endpoint),
-      paths: [endpoint, `${endpoint}/comments`],
-    })
-  }
-
   const results = await Promise.all([
-    readEndpointResult<unknown>(`/posts/${encodeURIComponent(normalizedId)}`),
-    readEndpointResult<unknown>(`/posts/${encodeURIComponent(normalizedId)}/comments`),
+    readEndpointResult<unknown>(`/posts/${encodeURIComponent(normalizedId)}`, { skipAuth: true }),
+    readEndpointResult<unknown>(`/posts/${encodeURIComponent(normalizedId)}/comments`, {
+      skipAuth: true,
+    }),
   ])
   const [post, comments] = results
 
@@ -1099,9 +1085,9 @@ function mapScheduleContent(
 
 export async function loadScheduleContentResource(): Promise<HmrAsyncResource<HmrScheduleContent>> {
   const results = await Promise.all([
-    readEndpointResult<unknown>('/schedules'),
-    readEndpointResult<unknown>('/schedules/calendar'),
-    readEndpointResult<unknown>('/schedules/highlights'),
+    readEndpointResult<unknown>('/schedules', { skipAuth: true }),
+    readEndpointResult<unknown>('/schedules/calendar', { skipAuth: true }),
+    readEndpointResult<unknown>('/schedules/highlights', { skipAuth: true }),
   ])
   const [schedules, calendar, highlights] = results
 

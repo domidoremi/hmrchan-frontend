@@ -27,6 +27,7 @@ const AUTH_ROUTE_PATHS = new Set([
   '/reset-password',
   '/verify-email',
   '/auth/callback',
+  '/auth/passkey-recovery',
   '/auth/passkeys/recovery',
 ])
 const HTML_CORS_HEADERS = [

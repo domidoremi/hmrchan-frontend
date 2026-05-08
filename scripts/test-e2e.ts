@@ -490,6 +490,7 @@ async function clearBrowserAuditSession(page: Page, baseUrl: string): Promise<vo
       .evaluate(async () => {
         window.localStorage.clear()
         window.sessionStorage.clear()
+        window.localStorage.setItem('hmr.qa.skipPreloader', 'true')
 
         if ('caches' in window) {
           const cacheNames = await window.caches.keys()
@@ -999,7 +1000,7 @@ async function authenticateViaApi(
           .evaluate(() => ({
             pathname: window.location.pathname,
             title: document.title,
-            hasLoginForm: Boolean(document.querySelector('form.auth-form')),
+            hasLoginForm: Boolean(document.querySelector('form.hmr-form')),
             hasRiskForm: Boolean(document.querySelector('#risk-code')),
             hasMfaStep: Boolean(document.querySelector('.auth-2fa-back')),
             errorText:
@@ -1181,7 +1182,7 @@ async function authenticateViaApi(
       }
       const submitLoginForm = () =>
         page.evaluate(() => {
-          const form = document.querySelector('form.auth-form')
+          const form = document.querySelector('form.hmr-form')
           if (!(form instanceof HTMLFormElement)) {
             throw new Error('auth login form is missing')
           }
@@ -1215,8 +1216,8 @@ async function authenticateViaApi(
         return readAuthBootstrapPageProbe(loginResponse)
       }
 
-      const loginSelector = '#login-identifier'
-      const passwordSelector = '#login-password'
+      const loginSelector = 'input[autocomplete="username"]'
+      const passwordSelector = 'input[autocomplete="current-password"]'
       let latestLoginRequestHeaders: Record<string, string> | null = null
       const loginRequestIds = new Set<string>()
       const pageAuthBootstrapProbes: AuthBootstrapProbe[] = []
@@ -1291,6 +1292,7 @@ async function authenticateViaApi(
         })
 
         await waitForRoutePath(page, '/login', 'auth smoke login bootstrap')
+        await waitForLoginShellSelector(page, 'form.hmr-form', 'auth smoke login bootstrap', 20_000)
         await waitForLoginShellSelector(page, loginSelector, 'auth smoke login bootstrap', 20_000)
         await flushAuthBootstrapResponses()
         throwIfFatalAuthBootstrapProbe(pageAuthBootstrapProbes)
@@ -1318,9 +1320,7 @@ async function authenticateViaApi(
       }
       throwIfFatalAuthBootstrapProbe([...pageAuthBootstrapProbes, ...preflightProbes])
 
-      const submitButton = await page.$(
-        'form.auth-form button[type="submit"], form.auth-form button'
-      )
+      const submitButton = await page.$('form.hmr-form button[type="submit"], form.hmr-form button')
       if (!submitButton) {
         throw new Error('Auth smoke login submit button is missing')
       }

@@ -244,6 +244,29 @@ export function buildAuthBootstrapProbeSummary(probe) {
   return `${probe.method} ${probe.path} -> HTTP ${probe.status}${codePart}${messagePart}`.trim()
 }
 
+function isChallengeRequiredPayload(payload) {
+  if (!isRecord(payload)) return false
+  if (payload.challenge_required === true || payload.code === 'CHALLENGE_REQUIRED') {
+    return true
+  }
+
+  const error = isRecord(payload.error) ? payload.error : null
+  const detail = isRecord(payload.detail) ? payload.detail : null
+  const details = isRecord(payload.details) ? payload.details : null
+  return (
+    error?.challenge_required === true ||
+    detail?.challenge_required === true ||
+    details?.challenge_required === true ||
+    error?.code === 'CHALLENGE_REQUIRED' ||
+    detail?.code === 'CHALLENGE_REQUIRED' ||
+    details?.code === 'CHALLENGE_REQUIRED'
+  )
+}
+
+export function isAuthBootstrapChallengeRequiredPayload(payload) {
+  return isChallengeRequiredPayload(payload)
+}
+
 export function classifyAuthBootstrapProbe(probe) {
   if (
     probe.code === 'UPSTREAM_TUNNEL_UNAVAILABLE' ||
@@ -287,7 +310,11 @@ export function classifyAuthBootstrapProbe(probe) {
     return 'login-5xx'
   }
 
-  if (probe.path === '/api/v1/auth/passkeys/login/options' && probe.status === 403) {
+  if (
+    probe.path === '/api/v1/auth/passkeys/login/options' &&
+    probe.status === 403 &&
+    !isChallengeRequiredPayload(probe.body)
+  ) {
     return 'passkeys-login-forbidden'
   }
 

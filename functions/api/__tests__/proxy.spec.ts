@@ -347,6 +347,55 @@ describe('functions/api proxy', () => {
     })
   })
 
+  it('strips browser challenge headers before forwarding anonymous public reads through the internal gateway', async () => {
+    const gatewayFetch = vi
+      .fn<[{ fetch(request: Request): Promise<Response> }['fetch']]>()
+      .mockResolvedValueOnce(
+        apiEnvelope(
+          { items: [] },
+          {
+            headers: {
+              'X-Proxy-Upstream-Source': 'vpc',
+            },
+          }
+        )
+      )
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/home`,
+        headers: {
+          Origin: ORIGIN,
+          Referer: `${ORIGIN}/`,
+          'Sec-CH-UA': '"HeadlessChrome";v="147"',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-origin',
+          'User-Agent': 'HeadlessChrome',
+        },
+        path: ['v1', 'home'],
+        env: {
+          ENABLE_INTERNAL_API_GATEWAY: 'true',
+          INTERNAL_API_GATEWAY: {
+            fetch: gatewayFetch,
+          },
+        },
+      })
+    )
+
+    const internalRequest = gatewayFetch.mock.calls[0]?.[0]
+
+    expect(response.status).toBe(200)
+    expect(gatewayFetch).toHaveBeenCalledTimes(1)
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(internalRequest?.headers.has('Origin')).toBe(false)
+    expect(internalRequest?.headers.has('Referer')).toBe(false)
+    expect(internalRequest?.headers.has('Sec-CH-UA')).toBe(false)
+    expect(internalRequest?.headers.has('Sec-Fetch-Mode')).toBe(false)
+    expect(internalRequest?.headers.has('Sec-Fetch-Site')).toBe(false)
+    expect(internalRequest?.headers.get('User-Agent')).toBe('Chrome')
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
+  })
+
   it('returns a structured 502 when login upstream responds with a non-JSON 2xx body', async () => {
     mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
       const url = String(input)
@@ -879,6 +928,177 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
   })
 
+  it('replays anonymous public reads without browser challenge headers when upstream temporarily restricts browser-origin requests', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'ACCESS_TEMPORARILY_RESTRICTED',
+              message: 'Access temporarily restricted',
+            },
+          },
+          { status: 403 }
+        )
+      )
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { items: [] } }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/home`,
+        headers: {
+          Origin: ORIGIN,
+          Referer: `${ORIGIN}/`,
+          'Sec-CH-UA': '"HeadlessChrome";v="147"',
+          'Sec-CH-UA-Mobile': '?0',
+          'Sec-CH-UA-Platform': '"Windows"',
+          'Sec-Fetch-Site': 'same-origin',
+          'User-Agent': 'HeadlessChrome',
+          'X-Client-Fingerprint': 'browser-fingerprint',
+        },
+        path: ['v1', 'home'],
+      })
+    )
+
+    const replayInit = mockFetch.mock.calls[1]?.[1] as RequestInit
+    const replayHeaders = replayInit.headers as Headers
+
+    expect(response.status).toBe(200)
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    expect(String(mockFetch.mock.calls[1]?.[0])).toBe(`${BACKEND_ORIGIN}/api/v1/home`)
+    expect(replayHeaders.has('Origin')).toBe(false)
+    expect(replayHeaders.has('Referer')).toBe(false)
+    expect(replayHeaders.has('Sec-CH-UA')).toBe(false)
+    expect(replayHeaders.has('Sec-CH-UA-Mobile')).toBe(false)
+    expect(replayHeaders.has('Sec-CH-UA-Platform')).toBe(false)
+    expect(replayHeaders.has('Sec-Fetch-Site')).toBe(false)
+    expect(replayHeaders.get('User-Agent')).toBe('Chrome')
+    expect(replayHeaders.has('X-Client-Fingerprint')).toBe(false)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public-anonymous-replay')
+  })
+
+  it('replays anonymous public reads when the upstream blocks automated browser access', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'AUTOMATED_ACCESS_NOT_PERMITTED',
+              message: 'Automated access is not permitted',
+            },
+          },
+          { status: 403 }
+        )
+      )
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { items: [] } }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/posts?limit=10`,
+        headers: {
+          'User-Agent': 'HeadlessChrome',
+        },
+        path: ['v1', 'posts'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public-anonymous-replay')
+  })
+
+  it('replays every public page data endpoint that the browser shell prefetches', async () => {
+    const publicReads = [
+      { path: ['v1', 'home', 'featured'], search: '' },
+      { path: ['v1', 'home', 'story-deck'], search: '' },
+      { path: ['v1', 'schedules', 'highlights'], search: '' },
+      { path: ['v1', 'schedules'], search: '' },
+      { path: ['v1', 'schedules', 'calendar'], search: '' },
+      { path: ['v1', 'community', 'highlights'], search: '' },
+      { path: ['v1', 'community', 'feed'], search: '' },
+      { path: ['v1', 'community', 'latest'], search: '' },
+      { path: ['v1', 'community', 'hot'], search: '' },
+      { path: ['v1', 'community', 'stats'], search: '' },
+      { path: ['v1', 'discussions'], search: '' },
+      { path: ['v1', 'trends', 'summary'], search: '' },
+      { path: ['v1', 'search', 'suggestions'], search: '?q=' },
+      { path: ['v1', 'posts'], search: '?limit=12&sort_by=published_at' },
+      { path: ['v1', 'posts', 'mixed'], search: '?limit=6' },
+      { path: ['v1', 'authors'], search: '?limit=6' },
+    ] as const
+
+    for (const publicRead of publicReads) {
+      mockFetch.mockReset()
+      mockFetch
+        .mockResolvedValueOnce(
+          jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'ACCESS_TEMPORARILY_RESTRICTED',
+                message: 'Access temporarily restricted',
+              },
+            },
+            { status: 403 }
+          )
+        )
+        .mockResolvedValueOnce(jsonResponse({ success: true, data: { items: [] } }))
+
+      const upstreamPath = publicRead.path.join('/')
+      const response = await onRequest(
+        makeContext({
+          url: `${ORIGIN}/api/${upstreamPath}${publicRead.search}`,
+          headers: {
+            Origin: ORIGIN,
+            Referer: `${ORIGIN}/`,
+            'User-Agent': 'HeadlessChrome',
+          },
+          path: [...publicRead.path],
+        })
+      )
+
+      expect(response.status, upstreamPath).toBe(200)
+      expect(mockFetch, upstreamPath).toHaveBeenCalledTimes(2)
+      expect(String(mockFetch.mock.calls[1]?.[0]), upstreamPath).toBe(
+        `${BACKEND_ORIGIN}/api/${upstreamPath}${publicRead.search}`
+      )
+      expect(response.headers.get('X-Proxy-Upstream-Source'), upstreamPath).toBe(
+        'public-anonymous-replay'
+      )
+    }
+  })
+
+  it('does not replay authenticated or identity 403 responses as anonymous public reads', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          success: false,
+          error: {
+            code: 'ACCESS_TEMPORARILY_RESTRICTED',
+            message: 'Access temporarily restricted',
+          },
+        },
+        { status: 403 }
+      )
+    )
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/preferences`,
+        headers: {
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'preferences'],
+      })
+    )
+
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(response.status).toBe(403)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
+  })
+
   it('serves a placeholder image for missing media thumbnails to avoid browser resource errors', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({ detail: 'missing media' }, { status: 404 }))
 
@@ -896,6 +1116,90 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('Content-Type')).toContain('image/svg+xml')
     expect(response.headers.get('X-MomiChan-Media-Fallback')).toBe('thumbnail-placeholder')
     expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+    await expect(response.text()).resolves.toContain('<svg')
+  })
+
+  it('replays browser-restricted anonymous media thumbnails without browser headers', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'ACCESS_TEMPORARILY_RESTRICTED',
+              message: 'Access temporarily restricted',
+            },
+          },
+          { status: 403 }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response('image-bytes', {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/webp',
+          },
+        })
+      )
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/media/media-id/thumbnail?size=medium`,
+        headers: {
+          Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+          Referer: `${ORIGIN}/explore`,
+          'Sec-Fetch-Dest': 'image',
+          'Sec-Fetch-Mode': 'no-cors',
+          'Sec-Fetch-Site': 'same-origin',
+          'User-Agent': 'HeadlessChrome',
+        },
+        path: ['v1', 'media', 'media-id', 'thumbnail'],
+      })
+    )
+
+    const replayInit = mockFetch.mock.calls[1]?.[1] as RequestInit
+    const replayHeaders = replayInit.headers as Headers
+
+    expect(response.status).toBe(200)
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    expect(response.headers.get('Content-Type')).toBe('image/webp')
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public-anonymous-replay')
+    expect(replayHeaders.has('Referer')).toBe(false)
+    expect(replayHeaders.has('Sec-Fetch-Dest')).toBe(false)
+    expect(replayHeaders.has('Sec-Fetch-Mode')).toBe(false)
+    expect(replayHeaders.has('Sec-Fetch-Site')).toBe(false)
+    expect(replayHeaders.get('User-Agent')).toBe('Chrome')
+    await expect(response.text()).resolves.toBe('image-bytes')
+  })
+
+  it('serves a placeholder image when browser-restricted media thumbnail replay is still blocked', async () => {
+    const restricted = {
+      success: false,
+      error: {
+        code: 'ACCESS_TEMPORARILY_RESTRICTED',
+        message: 'Access temporarily restricted',
+      },
+    }
+    mockFetch
+      .mockResolvedValueOnce(jsonResponse(restricted, { status: 403 }))
+      .mockResolvedValueOnce(jsonResponse(restricted, { status: 403 }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/media/media-id/thumbnail?size=medium`,
+        headers: {
+          Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+          Referer: `${ORIGIN}/explore`,
+          'User-Agent': 'HeadlessChrome',
+        },
+        path: ['v1', 'media', 'media-id', 'thumbnail'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    expect(response.headers.get('Content-Type')).toContain('image/svg+xml')
+    expect(response.headers.get('X-MomiChan-Media-Fallback')).toBe('thumbnail-placeholder')
     await expect(response.text()).resolves.toContain('<svg')
   })
 

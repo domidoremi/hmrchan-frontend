@@ -65,7 +65,7 @@
     <header class="hmr-site-header" :class="{ 'is-menu-open': menuOpen }">
       <div class="hmr-header-inner">
         <RouterLink class="hmr-brand-link" to="/" aria-label="MomiChan home" @click="closeMenu">
-          <span class="hmr-brand-bg">
+          <span class="hmr-brand-bg" aria-hidden="true">
             <img class="hmr-brand-mark" :src="brandMarkUrl" alt="" />
           </span>
         </RouterLink>
@@ -200,7 +200,7 @@
           </RouterLink>
         </div>
         <div class="hmr-footer-bottom">
-          <img class="hmr-footer-logo" :src="brandMarkUrl" alt="MomiChan" />
+          <img class="hmr-footer-logo" :src="brandMarkUrl" alt="" aria-hidden="true" />
           <nav class="hmr-footer-nav" aria-label="Footer navigation">
             <RouterLink to="/explore">{{ t('nav.explore') }}</RouterLink>
             <RouterLink to="/community">{{ t('nav.community') }}</RouterLink>
@@ -331,6 +331,13 @@ function shouldKeepAlive(pageKey: unknown): boolean {
 
 function shouldShowPreloader(): boolean {
   if (typeof window === 'undefined') return false
+  const params = new URLSearchParams(window.location.search)
+  if (
+    params.get('skipPreloader') === '1' ||
+    window.localStorage.getItem('hmr.qa.skipPreloader') === 'true'
+  ) {
+    return false
+  }
   return window.sessionStorage.getItem(SESSION_PRELOADER_KEY) !== 'true'
 }
 

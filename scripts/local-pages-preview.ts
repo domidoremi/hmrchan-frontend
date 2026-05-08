@@ -51,6 +51,7 @@ const FALLBACK_HTML_FILES = Object.freeze(
 function parseArgs(argv: string[]) {
   const options = {
     host: '127.0.0.1',
+    idleTimeout: 60,
     port: 4173,
   }
 
@@ -68,6 +69,15 @@ function parseArgs(argv: string[]) {
       const parsed = Number.parseInt(next, 10)
       if (Number.isInteger(parsed) && parsed > 0) {
         options.port = parsed
+      }
+      index += 1
+      continue
+    }
+
+    if (token === '--idle-timeout' && typeof next === 'string') {
+      const parsed = Number.parseInt(next, 10)
+      if (Number.isInteger(parsed) && parsed > 0) {
+        options.idleTimeout = parsed
       }
       index += 1
     }
@@ -361,6 +371,13 @@ function isHtmlNavigationRequest(request: Request): boolean {
   return request.headers.get('sec-fetch-mode') === 'navigate'
 }
 
+function shouldServeHtmlFallback(request: Request): boolean {
+  if (isHtmlNavigationRequest(request)) return true
+
+  const accept = request.headers.get('accept') ?? ''
+  return !accept || accept.includes('*/*')
+}
+
 async function handleRequest(request: Request, env: LocalPreviewEnv): Promise<Response> {
   const url = new URL(request.url)
   const pathname = url.pathname
@@ -405,7 +422,7 @@ async function handleRequest(request: Request, env: LocalPreviewEnv): Promise<Re
     })
   }
 
-  if (!isHtmlNavigationRequest(request)) {
+  if (!shouldServeHtmlFallback(request)) {
     return new Response('Not Found', {
       status: 404,
       headers: {
@@ -423,6 +440,7 @@ const env = createPreviewEnv(process.env)
 
 const server = Bun.serve({
   hostname: options.host,
+  idleTimeout: options.idleTimeout,
   port: options.port,
   fetch(request) {
     return handleRequest(request, env)

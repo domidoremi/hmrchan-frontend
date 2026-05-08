@@ -108,6 +108,8 @@ class ApiClient {
   constructor(private readonly baseUrl = buildApiPath()) {}
 
   async request<T>(path: string, config: RequestConfig = {}): Promise<T> {
+    const { skipAuth = false, skipErrorToast, ...requestConfig } = config
+    void skipErrorToast
     const headers = new Headers(config.headers)
     const hasBody = config.body !== undefined && config.body !== null
     if (hasBody && !headers.has('Content-Type')) {
@@ -122,9 +124,9 @@ class ApiClient {
     }
 
     const response = await fetch(`${this.baseUrl}${path}`, {
-      ...config,
+      ...requestConfig,
       headers,
-      credentials: 'include',
+      credentials: skipAuth ? 'omit' : (requestConfig.credentials ?? 'include'),
     })
     const payload = await parseResponsePayload(response)
 

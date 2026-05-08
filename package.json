@@ -136,5 +136,21 @@
   },
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "^1.0.0-rc.17"
-  }
+  },
+  "description": "> 仅供学习与交流使用。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/domidoremi/hmrchan-frontend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/domidoremi/hmrchan-frontend/issues"
+  },
+  "homepage": "https://github.com/domidoremi/hmrchan-frontend#readme"
 }

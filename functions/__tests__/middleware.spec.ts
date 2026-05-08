@@ -221,18 +221,18 @@ describe('functions/_middleware', () => {
   it('treats passkey recovery as a public auth SPA route instead of a 404 document', async () => {
     resolveHtmlDocumentWithEdgeData.mockResolvedValue({
       status: 200,
-      title: 'Account security · MomiChan',
+      title: 'Passkey recovery · MomiChan',
       description: 'passkey recovery',
       robots: 'noindex, nofollow',
       ogType: 'website',
-      canonicalPath: '/auth/passkeys/recovery',
+      canonicalPath: '/auth/passkey-recovery',
       ogImage: null,
-      shellTitle: 'Secure your account',
+      shellTitle: 'Recover Passkey access',
     })
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/auth/passkeys/recovery'),
+      request: new Request('https://momichan.xyz/auth/passkey-recovery'),
       env: {},
       next: () =>
         Promise.resolve(
@@ -250,7 +250,44 @@ describe('functions/_middleware', () => {
     expect(response.statusText).toBe('OK')
     expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate')
     expect(resolveHtmlDocumentWithEdgeData).toHaveBeenCalledWith(
-      new URL('https://momichan.xyz/auth/passkeys/recovery'),
+      new URL('https://momichan.xyz/auth/passkey-recovery'),
+      {}
+    )
+  })
+
+  it('treats auth callback as a public auth SPA route instead of a 404 document', async () => {
+    resolveHtmlDocumentWithEdgeData.mockResolvedValue({
+      status: 200,
+      title: 'Auth callback · MomiChan',
+      description: 'auth callback',
+      robots: 'noindex, nofollow',
+      ogType: 'website',
+      canonicalPath: '/auth/callback',
+      ogImage: null,
+      shellTitle: 'Complete your sign-in callback',
+    })
+
+    const { onRequest } = await import('../_middleware')
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/auth/callback'),
+      env: {},
+      next: () =>
+        Promise.resolve(
+          new MockResponse(
+            '<!doctype html><html><head><title>App</title></head><body><div id="app-root"></div></body></html>',
+            {
+              headers: { 'content-type': 'text/html; charset=utf-8' },
+              status: 200,
+            }
+          )
+        ),
+    } as never)
+
+    expect(response.status).toBe(200)
+    expect(response.statusText).toBe('OK')
+    expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate')
+    expect(resolveHtmlDocumentWithEdgeData).toHaveBeenCalledWith(
+      new URL('https://momichan.xyz/auth/callback'),
       {}
     )
   })

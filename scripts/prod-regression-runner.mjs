@@ -1549,7 +1549,7 @@ async function fillOtpInputs(page, selector, code) {
 }
 
 async function findAuthSubmitButton(page, label) {
-  const buttons = await page.$$('form.auth-form button')
+  const buttons = await page.$$('form.hmr-form button')
   for (const button of buttons) {
     const meta = await button.evaluate((element) => ({
       type: element.getAttribute('type') || '',
@@ -1623,11 +1623,13 @@ async function waitForPath(page, predicate, timeoutMs = 20_000) {
 }
 
 async function loginViaUi(page, rl, state, credentials, { expectedPath, label }) {
-  await page.waitForSelector('#login-identifier')
-  await page.click('#login-identifier', { clickCount: 3 })
-  await page.type('#login-identifier', credentials.username, { delay: 20 })
-  await page.click('#login-password', { clickCount: 3 })
-  await page.type('#login-password', credentials.password, { delay: 20 })
+  const loginSelector = 'input[autocomplete="username"]'
+  const passwordSelector = 'input[autocomplete="current-password"]'
+  await page.waitForSelector(loginSelector)
+  await page.click(loginSelector, { clickCount: 3 })
+  await page.type(loginSelector, credentials.username, { delay: 20 })
+  await page.click(passwordSelector, { clickCount: 3 })
+  await page.type(passwordSelector, credentials.password, { delay: 20 })
 
   await handleTurnstileIfNeeded(page, rl, state, `${label}-pre-submit`)
 
@@ -2931,7 +2933,7 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         await setInputValue(harness.page, '#email', qaEmail)
         await handleTurnstileIfNeeded(harness.page, state._rl, state, 'qa-forgot-password')
         const submitButton = await harness.page.$(
-          'form.auth-form button[type="submit"], form.auth-form button'
+          'form.hmr-form button[type="submit"], form.hmr-form button'
         )
         assert(submitButton, '未找到 forgot-password 提交按钮')
         await submitButton.click()
@@ -2947,7 +2949,7 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         await setInputValue(harness.page, '#new_password', resetPassword)
         await setInputValue(harness.page, '#confirm_password', resetPassword)
         const resetButton = await harness.page.$(
-          'form.auth-form button[type="submit"], form.auth-form button'
+          'form.hmr-form button[type="submit"], form.hmr-form button'
         )
         assert(resetButton, '未找到 reset-password 提交按钮')
         await resetButton.click()
