@@ -29,7 +29,7 @@
         aria-label="Enter MomiChan"
         @click="completePreloader"
       >
-        <span class="hmr-preloader-logo" aria-hidden="true">
+        <span class="hmr-preloader-logo hmr-brand-3d" aria-hidden="true">
           <img ref="preloaderLogoRef" :src="brandMarkUrl" alt="" />
         </span>
         <span ref="preloaderLabelRef" class="hmr-preloader-label" aria-hidden="true"></span>
@@ -65,7 +65,7 @@
     <header class="hmr-site-header" :class="{ 'is-menu-open': menuOpen }">
       <div class="hmr-header-inner">
         <RouterLink class="hmr-brand-link" to="/" aria-label="MomiChan home" @click="closeMenu">
-          <span class="hmr-brand-bg" aria-hidden="true">
+          <span class="hmr-brand-bg hmr-brand-3d" aria-hidden="true">
             <img class="hmr-brand-mark" :src="brandMarkUrl" alt="" />
           </span>
         </RouterLink>
@@ -118,7 +118,10 @@
 
         <div class="hmr-mobile-header">
           <RouterLink class="hmr-mobile-brand" to="/" aria-label="MomiChan home" @click="closeMenu">
-            <img class="hmr-mobile-brand-logo" :src="brandMarkUrl" alt="MomiChan" />
+            <span class="hmr-mobile-brand-frame hmr-brand-3d" aria-hidden="true">
+              <img class="hmr-mobile-brand-logo" :src="brandMarkUrl" alt="" />
+            </span>
+            <span class="hmr-sr-only">MomiChan</span>
           </RouterLink>
           <span class="hmr-mobile-locale">{{ localeBadge }}</span>
           <button

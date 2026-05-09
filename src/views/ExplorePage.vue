@@ -261,7 +261,8 @@ const posts = computed(() => {
 const visiblePosts = computed(() =>
   posts.value.filter((post) => {
     if (!post.id || !post.title.trim()) return false
-    const hasMedia = Boolean(post.mediaUrl) || Boolean(post.hasMedia) || (post.mediaCount ?? 0) > 0
+    const hasMedia =
+      Boolean(post.mediaUrl) || Boolean(post.hasRenderableMedia) || (post.mediaCount ?? 0) > 0
     const duration = post.durationSec ?? 0
     const matchesKind =
       contentKind.value === 'all' ||

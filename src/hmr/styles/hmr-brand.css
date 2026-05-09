@@ -305,10 +305,16 @@ svg {
   will-change: opacity, transform;
 }
 
+.hmr-brand-3d {
+  transform-style: preserve-3d;
+}
+
 .hmr-preloader-logo img {
   inline-size: 92%;
   block-size: 92%;
   object-fit: contain;
+  transform: translateZ(0.6rem);
+  transform-origin: 50% 62%;
 }
 
 .hmr-preloader-label {
@@ -426,6 +432,7 @@ svg {
   border: 2px solid var(--hmr-orange);
   border-radius: 50%;
   color: var(--hmr-bg);
+  perspective: 14rem;
   pointer-events: auto;
 }
 
@@ -437,20 +444,28 @@ svg {
   justify-content: center;
   border-radius: 50%;
   background: var(--hmr-purple);
+  box-shadow: 0 0.8rem 1.8rem rgb(var(--hmr-base-rgb) / 16%);
+  transform: rotateX(0deg) rotateY(0deg) translateZ(0);
   transition:
     background-color 360ms var(--hmr-ease),
+    box-shadow 360ms var(--hmr-ease),
     transform 360ms var(--hmr-ease);
 }
 
 .hmr-brand-link:hover .hmr-brand-bg {
   background: var(--hmr-base);
-  transform: rotate(-8deg) scale(1.04);
+  box-shadow:
+    0 1.2rem 2.3rem rgb(var(--hmr-base-rgb) / 22%),
+    -0.35rem 0.45rem 0 rgb(255 119 34 / 18%);
+  transform: rotateX(10deg) rotateY(-16deg) rotateZ(-8deg) translateZ(0.35rem) scale(1.04);
 }
 
 .hmr-brand-mark {
   inline-size: 82%;
   aspect-ratio: 1;
   object-fit: contain;
+  transform: translateZ(0.45rem);
+  transform-origin: 50% 62%;
 }
 
 .hmr-primary-nav {
@@ -461,17 +476,17 @@ svg {
   display: flex;
   flex-direction: column;
   gap: 0.48em;
+  align-items: center;
   pointer-events: auto;
   transform: translateY(-50%);
 }
 
 .hmr-primary-nav-link {
   position: relative;
-  display: flex;
+  display: grid;
   inline-size: 4em;
   aspect-ratio: 1;
-  align-items: center;
-  justify-content: center;
+  place-items: center;
   border-radius: var(--hmr-radius);
   background: rgb(0 0 0 / 5%);
   color: var(--hmr-base);
@@ -507,17 +522,18 @@ svg {
   position: absolute;
   inset-block-end: 0;
   inset-inline-start: 0.5em;
+  display: grid;
+  place-items: center;
   pointer-events: auto;
 }
 
 .hmr-nav-inner {
   position: relative;
   z-index: 1;
-  display: flex;
-  min-block-size: 65%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  inline-size: 100%;
+  block-size: 100%;
+  place-items: center;
 }
 
 .hmr-nav-icon {
@@ -607,10 +623,10 @@ svg {
 .hmr-nav-label {
   position: absolute;
   inset-block-start: 50%;
-  inset-inline-start: 50%;
-  z-index: -1;
+  inset-inline-start: calc(100% + 0.5rem);
+  z-index: 2;
   min-inline-size: max-content;
-  padding: 0.65em 0.95em 0.65em 1.9em;
+  padding: 0.65em 1.05em;
   border-radius: 999em;
   background: var(--hmr-base);
   clip-path: inset(0 100% 0 0 round 999em);
@@ -622,7 +638,7 @@ svg {
   opacity: 0;
   pointer-events: none;
   text-transform: uppercase;
-  transform: translate(-0.6em, -50%) scaleX(0.78);
+  transform: translate(-0.7rem, -50%) scaleX(0.78);
   transform-origin: left center;
   transition:
     clip-path 360ms var(--hmr-ease),
@@ -641,7 +657,7 @@ svg {
 .hmr-primary-nav-link:focus-visible .hmr-nav-label {
   clip-path: inset(0 0 0 0 round 999em);
   opacity: 1;
-  transform: translate(1.65em, -50%) scaleX(1);
+  transform: translate(0, -50%) scaleX(1);
 }
 
 .hmr-primary-nav-link:hover .hmr-nav-icon,
@@ -654,13 +670,33 @@ svg {
   opacity: 0.62;
 }
 
+.hmr-primary-nav:has(.hmr-primary-nav-link:hover)
+  .hmr-primary-nav-link:not(:hover):not(:focus-visible):not(.is-active),
+.hmr-primary-nav:has(.hmr-primary-nav-link:focus-visible)
+  .hmr-primary-nav-link:not(:hover):not(:focus-visible):not(.is-active) {
+  transform: scale(0.92);
+}
+
+.hmr-primary-nav:has(.hmr-primary-nav-link:hover)
+  .hmr-primary-nav-link:not(:hover):not(:focus-visible):not(.is-active)
+  .hmr-nav-icon,
+.hmr-primary-nav:has(.hmr-primary-nav-link:focus-visible)
+  .hmr-primary-nav-link:not(:hover):not(:focus-visible):not(.is-active)
+  .hmr-nav-icon {
+  opacity: 0.42;
+  transform: scale(0.9);
+}
+
 .hmr-nav-dot {
+  position: absolute;
+  inset-block-end: 0.56em;
+  inset-inline-start: 50%;
   inline-size: 0.25em;
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--hmr-orange);
   opacity: 0;
-  transform: translateY(0.38em);
+  transform: translate(-50%, 0.38em);
   transition:
     opacity 220ms var(--hmr-ease),
     transform 220ms var(--hmr-ease);
@@ -732,7 +768,7 @@ svg {
 
 .hmr-primary-nav-link.is-active .hmr-nav-dot {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
 }
 
 .hmr-mobile-header {
@@ -751,6 +787,27 @@ svg {
 .hmr-mobile-locale,
 .hmr-menu-button {
   display: none;
+}
+
+.hmr-mobile-brand-frame {
+  display: grid;
+  inline-size: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--hmr-purple);
+  box-shadow: 0 0.75rem 1.6rem rgb(var(--hmr-base-rgb) / 14%);
+  perspective: 12rem;
+  transition:
+    background-color 320ms var(--hmr-ease),
+    box-shadow 320ms var(--hmr-ease),
+    transform 320ms var(--hmr-ease);
+}
+
+.hmr-mobile-brand:hover .hmr-mobile-brand-frame {
+  background: var(--hmr-base);
+  box-shadow: 0 1rem 2rem rgb(var(--hmr-base-rgb) / 22%);
+  transform: rotateX(8deg) rotateY(-12deg) translateZ(0.24rem);
 }
 
 .hmr-auth-actions {
@@ -3826,6 +3883,7 @@ svg {
   display: grid;
   gap: 1.15rem;
   align-content: center;
+  min-inline-size: 0;
 }
 
 .hmr-detail-back {
@@ -3865,6 +3923,7 @@ svg {
 .hmr-detail-meta-card {
   display: grid;
   gap: 0.35rem;
+  min-inline-size: 0;
   min-block-size: 6.4rem;
   align-content: end;
   padding: 1rem;
@@ -3899,6 +3958,7 @@ svg {
 .hmr-detail-cover {
   position: relative;
   display: grid;
+  min-inline-size: 0;
   min-block-size: min(68svh, 42rem);
   overflow: hidden;
   border-radius: var(--hmr-radius);
@@ -4004,6 +4064,7 @@ svg {
   inset-block-start: 6rem;
   display: grid;
   gap: 1rem;
+  min-inline-size: 0;
   align-self: start;
 }
 
@@ -4014,6 +4075,7 @@ svg {
 .hmr-community-feed-grid article {
   display: grid;
   gap: 0.7rem;
+  min-inline-size: 0;
   padding: 1.25rem;
   border: 1px solid var(--hmr-line);
   border-radius: 1.4rem;
@@ -4040,10 +4102,12 @@ svg {
   margin: 0;
   color: var(--hmr-text-muted);
   line-height: 1.58;
+  overflow-wrap: anywhere;
 }
 
 .hmr-detail-prose {
   max-inline-size: 68ch;
+  min-inline-size: 0;
 }
 
 .hmr-detail-prose h2 {
@@ -4106,6 +4170,7 @@ svg {
 .hmr-detail-media-card {
   position: relative;
   display: grid;
+  min-inline-size: 0;
   min-block-size: 22rem;
   overflow: hidden;
   align-content: end;
@@ -4181,6 +4246,7 @@ svg {
 
 .hmr-detail-related-card {
   display: grid;
+  min-inline-size: 0;
   min-block-size: 16rem;
   align-content: space-between;
   gap: 1rem;
@@ -4205,6 +4271,7 @@ svg {
   font-weight: 900;
   letter-spacing: -0.06em;
   line-height: 1.02;
+  overflow-wrap: anywhere;
 }
 
 .hmr-schedule-filter-row {
@@ -5169,12 +5236,18 @@ svg {
   }
 
   .hmr-mobile-brand {
-    display: block;
-    inline-size: min(40vw, 10rem);
+    display: grid;
+    inline-size: clamp(3.25rem, 16vw, 4.75rem);
+    aspect-ratio: 1;
+    place-items: center;
+    perspective: 12rem;
   }
 
   .hmr-mobile-brand-logo {
-    inline-size: 100%;
+    inline-size: 84%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    transform: translateZ(0.34rem);
   }
 
   .hmr-mobile-locale {
@@ -5236,6 +5309,17 @@ svg {
     -webkit-backdrop-filter: blur(2rem);
     backdrop-filter: blur(2rem);
     transform: translateX(-50%);
+  }
+
+  .hmr-primary-nav:has(.hmr-primary-nav-link:hover)
+    .hmr-primary-nav-link:not(:hover):not(:focus-visible):not(.is-active),
+  .hmr-primary-nav:has(.hmr-primary-nav-link:focus-visible)
+    .hmr-primary-nav-link:not(:hover):not(:focus-visible):not(.is-active) {
+    transform: scale(0.96);
+  }
+
+  .hmr-primary-nav .hmr-nav-label {
+    display: none;
   }
 
   .hmr-primary-nav-link {
@@ -5593,7 +5677,8 @@ svg {
 
   .hmr-detail-reader-hero {
     max-inline-size: calc(100% - 2.5rem);
-    padding-block: 7rem 3.5rem;
+    min-block-size: auto;
+    padding-block: 6.5rem 3rem;
   }
 
   .hmr-detail-title {
@@ -5610,10 +5695,11 @@ svg {
   }
 
   .hmr-detail-cover {
-    min-block-size: 32rem;
+    min-block-size: clamp(22rem, 64svh, 32rem);
   }
 
   .hmr-detail-reader-grid {
+    grid-template-columns: minmax(0, 1fr);
     max-inline-size: calc(100% - 2.5rem);
   }
 
@@ -5727,7 +5813,7 @@ svg {
   }
 
   .hmr-mobile-brand {
-    inline-size: 8.5rem;
+    inline-size: 3.5rem;
   }
 
   .hmr-cta,
@@ -5809,5 +5895,56 @@ svg {
   .hmr-profile,
   .hmr-auth-layout {
     padding-inline: 1.25rem;
+  }
+
+  .hmr-detail-reader-hero,
+  .hmr-detail-reader-grid {
+    max-inline-size: 100%;
+  }
+
+  .hmr-detail-reader-copy,
+  .hmr-detail-sidebar,
+  .hmr-detail-prose {
+    inline-size: 100%;
+  }
+
+  .hmr-detail-meta-grid {
+    max-inline-size: 100%;
+  }
+
+  .hmr-detail-source-card {
+    inline-size: 100%;
+  }
+}
+
+@media (max-height: 720px) and (min-width: 768px) {
+  .hmr-detail-reader-hero {
+    min-block-size: auto;
+    align-items: start;
+    padding-block: 6rem 4rem;
+  }
+
+  .hmr-detail-cover {
+    min-block-size: min(64svh, 34rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hmr-brand-bg,
+  .hmr-brand-mark,
+  .hmr-mobile-brand-frame,
+  .hmr-mobile-brand-logo,
+  .hmr-preloader-logo,
+  .hmr-preloader-logo img,
+  .hmr-primary-nav-link,
+  .hmr-nav-icon,
+  .hmr-nav-label {
+    transform: none;
+    transition-duration: 1ms;
+  }
+
+  .hmr-brand-link:hover .hmr-brand-bg,
+  .hmr-mobile-brand:hover .hmr-mobile-brand-frame {
+    transform: none;
   }
 }

@@ -48,11 +48,13 @@ export interface HmrPost {
   repostOfPlatformPostId?: string
   canonicalDisplayKey?: string
   postType?: string
+  mediaType?: string
   postUrl?: string
   commentCount?: number
   durationSec?: number
   fileCount?: number
   hasMedia?: boolean
+  hasRenderableMedia?: boolean
   likeCount?: number
   mediaCount?: number
   viewCount?: number
@@ -204,6 +206,52 @@ function pickNumber(record: JsonRecord, keys: string[], fallback = 0): number {
   }
 
   return fallback
+}
+
+function normalizeMediaKind(value?: string): string {
+  return (
+    value
+      ?.trim()
+      .toLowerCase()
+      .replace(/[_\s]+/g, '-') ?? ''
+  )
+}
+
+function isTextOnlyMediaKind(value?: string): boolean {
+  const normalized = normalizeMediaKind(value)
+  return (
+    normalized === 'text' ||
+    normalized === 'plain-text' ||
+    normalized === 'post' ||
+    normalized === 'tweet' ||
+    normalized === 'link' ||
+    normalized === 'url'
+  )
+}
+
+function hasRenderableMediaRecord(value: unknown): boolean {
+  const record = isRecord(value) ? value : {}
+  const mediaKind = pickOptionalString(record, ['media_type', 'mediaType', 'type', 'mime_type'])
+  if (isTextOnlyMediaKind(mediaKind)) return false
+
+  return (
+    Boolean(mediaKind) ||
+    Boolean(
+      pickOptionalString(record, [
+        'thumbnail_url',
+        'thumbnailUrl',
+        'poster_url',
+        'posterUrl',
+        'image_url',
+        'imageUrl',
+        'stream_url',
+        'streamUrl',
+        'media_url',
+        'mediaUrl',
+        'url',
+      ])
+    )
+  )
 }
 
 function cleanPostText(value: string): string {
@@ -513,20 +561,29 @@ function mapPost(value: unknown, index: number): HmrPost {
     'canonical_display_key',
     'canonicalDisplayKey',
   ])
-  const postType = pickOptionalString(record, [
-    'post_type',
-    'postType',
-    'media_type',
-    'content_type',
-  ])
+  const postType = pickOptionalString(record, ['post_type', 'postType', 'content_type'])
+  const mediaType = pickOptionalString(record, ['media_type', 'mediaType'])
   const postUrl = pickOptionalString(record, ['post_url', 'url'])
   const commentCount = pickNumber(record, ['comment_count', 'comments'])
   const durationSec = pickNumber(record, ['duration_sec', 'durationSec', 'duration'])
   const fileCount = pickNumber(record, ['file_count', 'fileCount'])
   const likeCount = pickNumber(record, ['community_like_count', 'like_count', 'likes'])
   const viewCount = pickNumber(record, ['view_count', 'views'])
-  const mediaCount = Math.max(pickNumber(record, ['media_count', 'mediaCount']), fileCount)
-  const hasMedia = Boolean(mediaUrl) || mediaCount > 0 || fileCount > 0
+  const mediaItems = extractList(record, ['files', 'media', 'attachments'])
+  const mediaItemCount = mediaItems.filter(hasRenderableMediaRecord).length
+  const declaredMediaCount = pickNumber(record, ['media_count', 'mediaCount'])
+  const declaredCount = Math.max(declaredMediaCount, fileCount)
+  const isTextOnly = isTextOnlyMediaKind(mediaType)
+  const countIndicatesRenderableMedia = declaredCount > 0 && !isTextOnly
+  const hasRenderableMedia =
+    Boolean(mediaUrl) ||
+    mediaItemCount > 0 ||
+    countIndicatesRenderableMedia ||
+    (typeof durationSec === 'number' && durationSec > 0)
+  const mediaCount = hasRenderableMedia
+    ? Math.max(declaredMediaCount, mediaItemCount, fileCount)
+    : 0
+  const hasMedia = hasRenderableMedia
 
   if (mediaUrl) {
     post.mediaUrl = mediaUrl
@@ -537,11 +594,13 @@ function mapPost(value: unknown, index: number): HmrPost {
   if (repostOfPlatformPostId) post.repostOfPlatformPostId = repostOfPlatformPostId
   if (canonicalDisplayKey) post.canonicalDisplayKey = canonicalDisplayKey
   if (postType) post.postType = postType
+  if (mediaType) post.mediaType = mediaType
   if (postUrl) post.postUrl = postUrl
   if (commentCount) post.commentCount = commentCount
   if (durationSec) post.durationSec = durationSec
   if (fileCount) post.fileCount = fileCount
   if (hasMedia) post.hasMedia = true
+  if (hasRenderableMedia) post.hasRenderableMedia = true
   if (likeCount) post.likeCount = likeCount
   if (viewCount) post.viewCount = viewCount
   if (mediaCount) post.mediaCount = mediaCount
@@ -693,6 +752,10 @@ function mapMediaItem(value: unknown, index: number): HmrMediaItem {
     ),
     mediaType: pickString(record, ['media_type', 'type', 'mime_type'], 'media'),
   }
+}
+
+function isRenderableMediaItem(item: HmrMediaItem): boolean {
+  return !isTextOnlyMediaKind(item.mediaType)
 }
 
 function mapSuggestion(value: unknown, index: number): string {
@@ -1041,7 +1104,7 @@ function mapPostDetailContent(
     post,
     relatedPosts: relatedPosts.slice(0, 6),
     comments: commentItems.map(mapCommunityItem).slice(0, 6),
-    media: files.map(mapMediaItem).slice(0, 6),
+    media: files.map(mapMediaItem).filter(isRenderableMediaItem).slice(0, 6),
   }
 }
 

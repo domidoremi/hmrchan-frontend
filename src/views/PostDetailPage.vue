@@ -224,7 +224,16 @@ const cardStyle = computed(() => {
     '--hmr-card-end': pair[1],
   }
 })
-const heroImage = computed(() => post.value.mediaUrl ?? detail.value.media[0]?.thumbnailUrl)
+const hasRenderableMedia = computed(
+  () =>
+    post.value.hasRenderableMedia ||
+    (post.value.mediaCount ?? 0) > 0 ||
+    detail.value.media.length > 0 ||
+    typeof post.value.durationSec === 'number'
+)
+const heroImage = computed(() =>
+  hasRenderableMedia.value ? (post.value.mediaUrl ?? detail.value.media[0]?.thumbnailUrl) : ''
+)
 const sourceUrl = computed(() => {
   const url = post.value.postUrl?.trim()
   if (!url || url === '#') return ''
@@ -239,15 +248,20 @@ const interactionLabel = computed(
     )} 喜欢`
 )
 const mediaLabel = computed(() => {
+  if (!hasRenderableMedia.value) return '帖子'
   const count = post.value.mediaCount ?? detail.value.media.length
   if (count > 0) return `${count} 个媒体资源`
-  return post.value.postType ?? '文本内容'
+  return post.value.postType ?? '媒体内容'
+})
+const contentTypeLabel = computed(() => {
+  if (hasRenderableMedia.value) return mediaLabel.value
+  return post.value.mediaType === 'text' ? '文本帖子' : '帖子'
 })
 const detailMetrics = computed(() => [
   { label: '平台', value: platformLabel.value },
   { label: '作者', value: post.value.authorName },
   { label: '互动', value: post.value.statsLabel },
-  { label: '媒体', value: mediaLabel.value },
+  { label: '类型', value: contentTypeLabel.value },
 ])
 
 async function loadPost(): Promise<void> {

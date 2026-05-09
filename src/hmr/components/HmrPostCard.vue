@@ -7,6 +7,7 @@
       {
         'hmr-post-card--generated-poster': !hasRealPoster,
         'hmr-post-card--real-poster': hasRealPoster,
+        'hmr-post-card--text': !hasMediaContent,
         'is-linked': Boolean(linkTo),
       },
     ]"
@@ -32,8 +33,7 @@
         aria-hidden="true"
       >
         <span class="hmr-post-card__badge"></span>
-        <span v-if="hasMediaContent" class="hmr-post-card__badge hmr-post-card__badge--solid">
-        </span>
+        <span class="hmr-post-card__badge hmr-post-card__badge--solid"></span>
       </div>
       <div class="hmr-post-card__stats" :style="statsStyle" aria-hidden="true">
         <span></span>
@@ -155,9 +155,8 @@ const posterSizes = computed(() => {
 })
 const hasMediaContent = computed(
   () =>
-    props.post.hasMedia ||
+    props.post.hasRenderableMedia ||
     (props.post.mediaCount ?? 0) > 0 ||
-    (props.post.fileCount ?? 0) > 0 ||
     typeof props.post.durationSec === 'number'
 )
 const mediaKindLabel = computed(() => {
@@ -168,7 +167,7 @@ const mediaKindLabel = computed(() => {
     const count = props.post.mediaCount ?? props.post.fileCount
     return count && count > 1 ? `${count} 媒体` : '媒体'
   }
-  return ''
+  return '帖子'
 })
 const platformMark = computed(() => {
   const marks: Record<string, string> = {
