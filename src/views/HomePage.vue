@@ -16,7 +16,9 @@
             </span>
           </div>
           <div class="hmr-actions">
-            <RouterLink class="hmr-cta" to="/explore">探索媒体</RouterLink>
+            <RouterLink class="hmr-cta hero-btn" to="/explore" data-desk-pet-anchor="hero-cta">
+              探索媒体
+            </RouterLink>
             <RouterLink class="hmr-text-link" to="/community">社区讨论</RouterLink>
           </div>
         </div>
@@ -114,10 +116,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import { loadHomeContentResource, type HmrHomeContent, type HmrPost } from '@/api/hmrContent'
+import {
+  loadExploreContentResource,
+  loadHomeContentResource,
+  loadPostDetailContentResource,
+  type HmrHomeContent,
+  type HmrPost,
+} from '@/api/hmrContent'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
-import { readOrCreatePublicSnapshot } from '@/utils/cache/publicSnapshotCache'
+import { readPublicContent } from '@/utils/cache/publicContentCache'
 
 const content = ref<HmrHomeContent>({
   featured: [],
@@ -149,11 +157,12 @@ async function refreshHome(): Promise<void> {
     ...resource.value,
     state: 'loading',
   }
-  const nextResource = await readOrCreatePublicSnapshot(
-    'hmr:home',
-    loadHomeContentResource,
-    'short'
-  )
+  const nextResource = await readPublicContent({
+    key: 'hmr:home',
+    scope: 'home',
+    strategy: 'network-first',
+    loader: loadHomeContentResource,
+  })
   resource.value = nextResource
   content.value = nextResource.data
   pageState.value =
@@ -162,6 +171,76 @@ async function refreshHome(): Promise<void> {
     nextResource.data.highlights.length
       ? 'ready'
       : 'empty'
+  scheduleHomePrewarm(nextResource.data)
+}
+
+function requestIdle(callback: () => void): void {
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(callback, { timeout: 2500 })
+    return
+  }
+  window.setTimeout(callback, 1200)
+}
+
+async function runWithConcurrency(
+  tasks: Array<() => Promise<unknown>>,
+  concurrency: number
+): Promise<void> {
+  let index = 0
+  const workers = Array.from({ length: Math.max(concurrency, 1) }, async () => {
+    while (index < tasks.length) {
+      const task = tasks[index]
+      index += 1
+      await task?.().catch(() => undefined)
+    }
+  })
+  await Promise.all(workers)
+}
+
+function collectHomeMedia(posts: HmrPost[]): string[] {
+  return posts
+    .map((post) => post.mediaUrl)
+    .filter((url): url is string => Boolean(url?.trim()))
+    .slice(0, 4)
+}
+
+function scheduleHomePrewarm(data: HmrHomeContent): void {
+  requestIdle(() => {
+    const featured = data.featured.slice(0, 2)
+    const mediaUrls = collectHomeMedia(data.featured)
+    const tasks: Array<() => Promise<unknown>> = [
+      () =>
+        readPublicContent({
+          key: 'hmr:explore:prewarm:first-page',
+          scope: 'explore',
+          strategy: 'network-first',
+          loader: () => loadExploreContentResource({ limit: 12 }),
+        }),
+      ...featured.map(
+        (post) => () =>
+          readPublicContent({
+            key: `hmr:post-detail:${post.id}`,
+            scope: 'post-detail',
+            strategy: 'stale-while-revalidate',
+            loader: () => loadPostDetailContentResource(post.id),
+          })
+      ),
+      ...mediaUrls.map(
+        (url) => () =>
+          readPublicContent({
+            key: `hmr:media:${url}`,
+            scope: 'media',
+            strategy: 'cache-first',
+            loader: async () => {
+              await fetch(url, { cache: 'force-cache', credentials: 'omit' })
+              return { url, warmedAt: Date.now() }
+            },
+          })
+      ),
+    ]
+    const isMobile = window.matchMedia('(max-width: 767px)').matches
+    void runWithConcurrency(tasks, isMobile ? 1 : 2)
+  })
 }
 
 function cssContent(value: string): string {

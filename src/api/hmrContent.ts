@@ -1016,6 +1016,25 @@ export async function loadExploreContent(
   return (await loadExploreContentResource(options)).data
 }
 
+export async function loadAuthorDetailContentResource(
+  id: string
+): Promise<HmrAsyncResource<HmrAuthor>> {
+  const normalizedId = id.trim() || 'editorial'
+  const result = await readEndpointResult<unknown>(`/authors/${encodeURIComponent(normalizedId)}`, {
+    skipAuth: true,
+  })
+
+  return makeResource(mapAuthor(result.data, 0), {
+    source: result.source,
+    error: result.error,
+    paths: [result.path],
+  })
+}
+
+export async function loadAuthorDetailContent(id: string): Promise<HmrAuthor> {
+  return (await loadAuthorDetailContentResource(id)).data
+}
+
 function mapCommunityContent(
   stats: unknown,
   latest: unknown,

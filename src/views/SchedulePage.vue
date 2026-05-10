@@ -172,7 +172,7 @@ import type {
   HmrScheduleItem,
   HmrScheduleViewMode,
 } from '@/hmr/types'
-import { readOrCreatePublicSnapshot } from '@/utils/cache/publicSnapshotCache'
+import { readPublicContent } from '@/utils/cache/publicContentCache'
 
 type ScheduleFilter = 'all' | 'today' | HmrScheduleViewMode | 'performance'
 
@@ -272,11 +272,12 @@ const populatedDays = computed(() =>
 
 async function refreshSchedule(): Promise<void> {
   pageState.value = 'loading'
-  const nextResource = await readOrCreatePublicSnapshot(
-    'hmr:schedule',
-    loadScheduleContentResource,
-    'short'
-  )
+  const nextResource = await readPublicContent({
+    key: 'hmr:schedule',
+    scope: 'schedule',
+    strategy: 'network-first',
+    loader: loadScheduleContentResource,
+  })
   resource.value = nextResource
   content.value = nextResource.data
   pageState.value = nextResource.data.items.length ? 'ready' : 'empty'

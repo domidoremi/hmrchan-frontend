@@ -67,4 +67,26 @@ describe('hmrContent post detail loading', () => {
     expect(resource.data.post.id).toBe('youtube-live-cut')
     expect(resource.data.comments).toHaveLength(1)
   })
+
+  it('fetches author detail as a public skipAuth request', async () => {
+    mockApiGet.mockResolvedValueOnce({
+      id: 'editorial',
+      name: 'Editorial',
+      bio: 'Signal desk',
+      avatar_url: '/avatar.webp',
+    })
+
+    const { loadAuthorDetailContentResource } = await import('../hmrContent')
+    const resource = await loadAuthorDetailContentResource('editorial')
+
+    expect(mockApiGet).toHaveBeenCalledWith('/authors/editorial', { skipAuth: true })
+    expect(resource.source).toBe('api')
+    expect(resource.paths).toEqual(['/authors/editorial'])
+    expect(resource.data).toEqual({
+      id: 'editorial',
+      name: 'Editorial',
+      bio: 'Signal desk',
+      avatarUrl: '/avatar.webp',
+    })
+  })
 })

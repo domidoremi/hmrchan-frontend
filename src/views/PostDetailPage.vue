@@ -156,6 +156,7 @@ import {
 } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
+import { readPublicContent } from '@/utils/cache/publicContentCache'
 
 const route = useRoute()
 const seedPost: HmrPost = {
@@ -267,7 +268,12 @@ const detailMetrics = computed(() => [
 async function loadPost(): Promise<void> {
   pageState.value = 'loading'
   const id = String(route.params.id ?? 'signal-room')
-  const nextResource = await loadPostDetailContentResource(id)
+  const nextResource = await readPublicContent({
+    key: `hmr:post-detail:${id}`,
+    scope: 'post-detail',
+    strategy: 'stale-while-revalidate',
+    loader: () => loadPostDetailContentResource(id),
+  })
   resource.value = nextResource
   detail.value = nextResource.data
   post.value = detail.value.post

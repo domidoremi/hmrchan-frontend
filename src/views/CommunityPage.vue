@@ -128,7 +128,7 @@ import { RouterLink } from 'vue-router'
 import { loadCommunityContentResource, type HmrCommunityContent } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
-import { readOrCreatePublicSnapshot } from '@/utils/cache/publicSnapshotCache'
+import { readPublicContent } from '@/utils/cache/publicContentCache'
 
 type CommunityTab = 'discussions' | 'hot' | 'latest' | 'feed'
 
@@ -173,11 +173,12 @@ const hotThreads = computed(() =>
 
 async function refreshCommunity(): Promise<void> {
   pageState.value = 'loading'
-  const nextResource = await readOrCreatePublicSnapshot(
-    'hmr:community',
-    loadCommunityContentResource,
-    'short'
-  )
+  const nextResource = await readPublicContent({
+    key: 'hmr:community',
+    scope: 'community',
+    strategy: 'network-first',
+    loader: loadCommunityContentResource,
+  })
   resource.value = nextResource
   content.value = nextResource.data
   pageState.value =

@@ -219,7 +219,7 @@ import {
 } from '@/api/hmrContent'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
-import { readOrCreatePublicSnapshot } from '@/utils/cache/publicSnapshotCache'
+import { readPublicContent } from '@/utils/cache/publicContentCache'
 
 const { t } = useI18n()
 const viewMode = ref<'grid' | 'list'>('grid')
@@ -366,11 +366,12 @@ async function refreshExplore(): Promise<void> {
   pageState.value = 'loading'
   const options = activeOptions()
   const cacheKey = `hmr:explore:${JSON.stringify(options)}:${contentKind.value}:${durationRange.value}`
-  const nextResource = await readOrCreatePublicSnapshot(
-    cacheKey,
-    () => loadExploreContentResource(options),
-    'short'
-  )
+  const nextResource = await readPublicContent({
+    key: cacheKey,
+    scope: 'explore',
+    strategy: 'network-first',
+    loader: () => loadExploreContentResource(options),
+  })
   resource.value = nextResource
   content.value = nextResource.data
   pageState.value = nextResource.data.posts.length ? 'ready' : 'empty'
@@ -380,7 +381,14 @@ async function loadMore(): Promise<void> {
   if (!content.value.hasMore || pageState.value === 'loading') return
 
   pageState.value = 'loading'
-  const nextResource = await loadExploreContentResource(activeOptions(content.value.nextCursor))
+  const options = activeOptions(content.value.nextCursor)
+  const cacheKey = `hmr:explore:${JSON.stringify(options)}:${contentKind.value}:${durationRange.value}`
+  const nextResource = await readPublicContent({
+    key: cacheKey,
+    scope: 'explore',
+    strategy: 'network-first',
+    loader: () => loadExploreContentResource(options),
+  })
   resource.value = nextResource
   content.value = {
     ...nextResource.data,
