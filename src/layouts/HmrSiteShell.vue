@@ -64,9 +64,23 @@
 
     <header class="hmr-site-header" :class="{ 'is-menu-open': menuOpen }">
       <div class="hmr-header-inner">
-        <RouterLink class="hmr-brand-link" to="/" aria-label="MomiChan home" @click="closeMenu">
-          <span class="hmr-brand-bg hmr-brand-3d" aria-hidden="true">
-            <img class="hmr-brand-mark" :src="brandMarkUrl" alt="" />
+        <RouterLink
+          class="hmr-brand-link"
+          to="/"
+          aria-label="MomiChan home"
+          @click="closeMenu"
+          @focus="pounceBrandPet"
+          @pointerdown="pounceBrandPet"
+          @pointerenter="pounceBrandPet"
+        >
+          <span
+            ref="desktopBrandPetRef"
+            class="hmr-brand-bg hmr-brand-3d hmr-brand-pet"
+            aria-hidden="true"
+          >
+            <span class="hmr-brand-pet-core">
+              <img class="hmr-brand-mark" :src="brandMarkUrl" alt="" />
+            </span>
           </span>
         </RouterLink>
 
@@ -117,9 +131,23 @@
         </RouterLink>
 
         <div class="hmr-mobile-header">
-          <RouterLink class="hmr-mobile-brand" to="/" aria-label="MomiChan home" @click="closeMenu">
-            <span class="hmr-mobile-brand-frame hmr-brand-3d" aria-hidden="true">
-              <img class="hmr-mobile-brand-logo" :src="brandMarkUrl" alt="" />
+          <RouterLink
+            class="hmr-mobile-brand"
+            to="/"
+            aria-label="MomiChan home"
+            @click="closeMenu"
+            @focus="pounceBrandPet"
+            @pointerdown="pounceBrandPet"
+            @pointerenter="pounceBrandPet"
+          >
+            <span
+              ref="mobileBrandPetRef"
+              class="hmr-mobile-brand-frame hmr-brand-3d hmr-brand-pet"
+              aria-hidden="true"
+            >
+              <span class="hmr-brand-pet-core">
+                <img class="hmr-mobile-brand-logo" :src="brandMarkUrl" alt="" />
+              </span>
             </span>
             <span class="hmr-sr-only">MomiChan</span>
           </RouterLink>
@@ -227,6 +255,7 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 import { useHmrAuthDisplay } from '@/hmr/composables/useHmrAuthDisplay'
+import { useHmrBrandPet } from '@/hmr/composables/useHmrBrandPet'
 import { useHmrCurrentTime } from '@/hmr/composables/useHmrCurrentTime'
 import { useHmrInViewReveal } from '@/hmr/composables/useHmrInViewReveal'
 import { useHmrScrollProgress } from '@/hmr/composables/useHmrScrollProgress'
@@ -259,12 +288,15 @@ const preloaderLabelRef = ref<HTMLElement | null>(null)
 const preloaderOutroLabelRef = ref<HTMLElement | null>(null)
 const preloaderProgressRef = ref<SVGCircleElement | null>(null)
 const preloaderRevealerRef = ref<HTMLElement | null>(null)
+const desktopBrandPetRef = ref<HTMLElement | null>(null)
+const mobileBrandPetRef = ref<HTMLElement | null>(null)
 let preloaderTimeline: gsap.core.Timeline | undefined
 let preloaderOutroTimeline: gsap.core.Timeline | undefined
 const pageTransitionKey = computed(() => route.fullPath)
 const { auth, authDisplay } = useHmrAuthDisplay()
 const { currentTime, timeZoneLabel } = useHmrCurrentTime()
 const { progress } = useHmrScrollProgress()
+const { pounceBrandPet } = useHmrBrandPet([desktopBrandPetRef, mobileBrandPetRef])
 const scrollProgressStyle = computed(() => ({
   '--hmr-scroll-progress': progress.value.toString(),
 }))

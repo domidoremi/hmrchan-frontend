@@ -445,19 +445,70 @@ svg {
   border-radius: 50%;
   background: var(--hmr-purple);
   box-shadow: 0 0.8rem 1.8rem rgb(var(--hmr-base-rgb) / 16%);
-  transform: rotateX(0deg) rotateY(0deg) translateZ(0);
   transition:
     background-color 360ms var(--hmr-ease),
     box-shadow 360ms var(--hmr-ease),
     transform 360ms var(--hmr-ease);
 }
 
-.hmr-brand-link:hover .hmr-brand-bg {
+.hmr-brand-pet {
+  --hmr-pet-x: 0rem;
+  --hmr-pet-y: 0rem;
+  --hmr-pet-rotate-x: 0deg;
+  --hmr-pet-rotate-y: 0deg;
+  --hmr-pet-rotate-z: 0deg;
+  --hmr-pet-hover-z: 0rem;
+  --hmr-pet-hover-rotate-x: 0deg;
+  --hmr-pet-hover-rotate-y: 0deg;
+  --hmr-pet-hover-rotate-z: 0deg;
+  --hmr-pet-hover-scale: 1;
+  --hmr-pet-look-x: 0rem;
+  --hmr-pet-look-y: 0rem;
+  --hmr-pet-scale: 1;
+
+  transform: translate3d(var(--hmr-pet-x), var(--hmr-pet-y), 0)
+    rotateX(var(--hmr-pet-hover-rotate-x)) rotateY(var(--hmr-pet-hover-rotate-y))
+    rotateZ(var(--hmr-pet-hover-rotate-z)) rotateX(var(--hmr-pet-rotate-x))
+    rotateY(var(--hmr-pet-rotate-y)) rotateZ(var(--hmr-pet-rotate-z))
+    translateZ(var(--hmr-pet-hover-z)) scale(var(--hmr-pet-scale)) scale(var(--hmr-pet-hover-scale));
+  transform-origin: 50% 62%;
+  will-change: transform;
+}
+
+.hmr-brand-pet-core {
+  display: grid;
+  inline-size: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: inherit;
+  animation: hmr-brand-pet-breathe 4.8s ease-in-out infinite;
+  transform-origin: 50% 62%;
+  will-change: transform;
+}
+
+.hmr-brand-pet.is-tracking .hmr-brand-pet-core {
+  animation-duration: 3.2s;
+}
+
+.hmr-brand-pet.is-pouncing .hmr-brand-pet-core {
+  animation: hmr-brand-pet-pounce 680ms var(--hmr-ease);
+}
+
+.hmr-brand-link:hover .hmr-brand-bg,
+.hmr-brand-link:focus-visible .hmr-brand-bg {
   background: var(--hmr-base);
   box-shadow:
     0 1.2rem 2.3rem rgb(var(--hmr-base-rgb) / 22%),
     -0.35rem 0.45rem 0 rgb(255 119 34 / 18%);
-  transform: rotateX(10deg) rotateY(-16deg) rotateZ(-8deg) translateZ(0.35rem) scale(1.04);
+}
+
+.hmr-brand-link:hover .hmr-brand-pet,
+.hmr-brand-link:focus-visible .hmr-brand-pet {
+  --hmr-pet-hover-z: 0.35rem;
+  --hmr-pet-hover-rotate-x: 10deg;
+  --hmr-pet-hover-rotate-y: -16deg;
+  --hmr-pet-hover-rotate-z: -8deg;
+  --hmr-pet-hover-scale: 1.04;
 }
 
 .hmr-brand-mark {
@@ -466,6 +517,45 @@ svg {
   object-fit: contain;
   transform: translateZ(0.45rem);
   transform-origin: 50% 62%;
+}
+
+@keyframes hmr-brand-pet-breathe {
+  0%,
+  100% {
+    transform: translate3d(var(--hmr-pet-look-x), var(--hmr-pet-look-y), 0) translateZ(0.18rem)
+      scale(1);
+  }
+
+  50% {
+    transform: translate3d(var(--hmr-pet-look-x), calc(var(--hmr-pet-look-y) - 0.05rem), 0)
+      translateZ(0.24rem) scale(1.025);
+  }
+}
+
+@keyframes hmr-brand-pet-pounce {
+  0%,
+  100% {
+    transform: translate3d(var(--hmr-pet-look-x), var(--hmr-pet-look-y), 0) translateZ(0.18rem)
+      rotate(0deg) scale(1);
+  }
+
+  28% {
+    transform: translate3d(
+        calc(var(--hmr-pet-look-x) + 0.04rem),
+        calc(var(--hmr-pet-look-y) - 0.24rem),
+        0
+      )
+      translateZ(0.5rem) rotate(-7deg) scale(1.14);
+  }
+
+  62% {
+    transform: translate3d(
+        calc(var(--hmr-pet-look-x) - 0.02rem),
+        calc(var(--hmr-pet-look-y) + 0.05rem),
+        0
+      )
+      translateZ(0.1rem) rotate(3deg) scale(0.98);
+  }
 }
 
 .hmr-primary-nav {
@@ -807,7 +897,14 @@ svg {
 .hmr-mobile-brand:hover .hmr-mobile-brand-frame {
   background: var(--hmr-base);
   box-shadow: 0 1rem 2rem rgb(var(--hmr-base-rgb) / 22%);
-  transform: rotateX(8deg) rotateY(-12deg) translateZ(0.24rem);
+}
+
+.hmr-mobile-brand:hover .hmr-brand-pet,
+.hmr-mobile-brand:focus-visible .hmr-brand-pet {
+  --hmr-pet-hover-z: 0.24rem;
+  --hmr-pet-hover-rotate-x: 8deg;
+  --hmr-pet-hover-rotate-y: -12deg;
+  --hmr-pet-hover-scale: 1.025;
 }
 
 .hmr-auth-actions {
@@ -5932,6 +6029,8 @@ svg {
 @media (prefers-reduced-motion: reduce) {
   .hmr-brand-bg,
   .hmr-brand-mark,
+  .hmr-brand-pet,
+  .hmr-brand-pet-core,
   .hmr-mobile-brand-frame,
   .hmr-mobile-brand-logo,
   .hmr-preloader-logo,
@@ -5939,11 +6038,13 @@ svg {
   .hmr-primary-nav-link,
   .hmr-nav-icon,
   .hmr-nav-label {
+    animation: none;
     transform: none;
     transition-duration: 1ms;
   }
 
   .hmr-brand-link:hover .hmr-brand-bg,
+  .hmr-brand-link:focus-visible .hmr-brand-bg,
   .hmr-mobile-brand:hover .hmr-mobile-brand-frame {
     transform: none;
   }
