@@ -14,7 +14,7 @@
           @pointermove="handleMagneticMove"
           @pointerleave="resetMagneticMove"
         >
-          <span class="app-side-nav__brand-mark">M</span>
+          <BrandPetLogo variant="rail" class="app-side-nav__brand-mark" />
           <span class="sr-only">{{ $t('app.name') }}</span>
         </RouterLink>
       </div>
@@ -109,6 +109,7 @@ import { useNavigation } from '@/composables/useNavigation'
 import type { NavigationItem } from '@/config/navigation'
 import { withProfileReturnTo } from '@/utils/profileReturnTo'
 import { useAuthSurface } from '@/services/authSurface'
+import BrandPetLogo from '@/components/brand/BrandPetLogo.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -476,16 +477,6 @@ onUnmounted(() => {
   box-shadow: none;
 }
 
-.app-side-nav__brand-mark {
-  font-size: clamp(1rem, 1.5vw, 1.125rem);
-  font-weight: var(--font-bold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    filter var(--duration-fast) var(--ease-out);
-}
-
 .app-side-nav__icon {
   inline-size: 1.125rem;
   block-size: 1.125rem;
@@ -497,8 +488,7 @@ onUnmounted(() => {
 
 .app-side-nav__brand:hover .app-side-nav__brand-mark,
 .app-side-nav__brand:focus-visible .app-side-nav__brand-mark {
-  transform: translate3d(var(--app-side-nav-magnet-x, 0px), var(--app-side-nav-magnet-y, 0px), 0)
-    scale(1.12);
+  transform: translate3d(var(--app-side-nav-magnet-x, 0px), var(--app-side-nav-magnet-y, 0px), 0);
   filter: drop-shadow(0 0.45rem 0.85rem rgba(var(--color-primary-rgb), 0.24));
 }
 

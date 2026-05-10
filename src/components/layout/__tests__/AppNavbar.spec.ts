@@ -365,6 +365,9 @@ describe('AppNavbar', () => {
     const { wrapper } = await createWrapper()
 
     expect(wrapper.find('.navbar-brand .brand-name').text()).toContain('MomiChan')
+    expect(
+      wrapper.find('.navbar-brand__logo img[src="/images/expressions/standing-sm.webp"]').exists()
+    ).toBe(true)
     expect(appNavbarSource).toContain('min-block-size: var(--ui-action-size, 2.75rem)')
     expect(appNavbarSource).toContain('inline-size: var(--ui-action-size, 2.75rem)')
     expect(wrapper.find('.navbar-shell--actions-only').exists()).toBe(false)

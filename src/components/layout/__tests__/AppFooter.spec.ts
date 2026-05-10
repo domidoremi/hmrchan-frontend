@@ -116,6 +116,9 @@ describe('AppFooter', () => {
 
     expect(brandLink.attributes('aria-label')).toBe('MomiChan')
     expect(wrapper.find('.brand-logo__mark').attributes('aria-hidden')).toBe('true')
+    expect(
+      wrapper.find('.brand-logo__mark img[src="/images/expressions/standing-sm.webp"]').exists()
+    ).toBe(true)
     expect(wrapper.find('.brand-logo__name').text()).toBe('MomiChan')
   })
 

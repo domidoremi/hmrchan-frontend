@@ -11,6 +11,7 @@
     <div class="container navbar-content">
       <div class="navbar-shell" :class="{ 'navbar-shell--actions-only': !isMobile }">
         <RouterLink v-if="isMobile" to="/" class="navbar-brand" :aria-label="$t('app.name')">
+          <BrandPetLogo variant="inline" class="navbar-brand__logo" />
           <span class="navbar-brand__meta">
             <span class="brand-name gradient-text">{{ $t('app.name') }}</span>
           </span>
@@ -310,6 +311,7 @@ import { resolveNavbarDropdownPosition } from '@/components/layout/navbarDropdow
 import { withProfileReturnTo } from '@/utils/profileReturnTo'
 import { logoutFromAuthSurface, useAuthSurface } from '@/services/authSurface'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import BrandPetLogo from '@/components/brand/BrandPetLogo.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Separator from '@/components/ui/Separator.vue'
 
@@ -1054,11 +1056,16 @@ onUnmounted(() => {
 .navbar-brand {
   display: inline-flex;
   align-items: center;
+  gap: 0.625rem;
   flex: 0 1 auto;
   min-inline-size: 0;
   min-block-size: var(--ui-action-size, 2.75rem);
-  padding-inline: 0.25rem;
+  padding-inline: 0.15rem 0.25rem;
   text-decoration: none;
+}
+
+.navbar-brand__logo {
+  --brand-pet-size: clamp(2.25rem, 7vw, 2.55rem);
 }
 
 .navbar-brand__meta {

@@ -16,7 +16,7 @@
         <div class="footer-main">
           <div class="footer-brand">
             <RouterLink to="/" class="brand-logo" :aria-label="$t('app.name')">
-              <span class="brand-logo__mark" aria-hidden="true">M</span>
+              <BrandPetLogo variant="footer" class="brand-logo__mark" />
               <span class="brand-logo__copy">
                 <span class="brand-logo__name">{{ $t('app.name') }}</span>
               </span>
@@ -96,6 +96,7 @@ import { useI18n } from 'vue-i18n'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import BrandPetLogo from '@/components/brand/BrandPetLogo.vue'
 import { IconGithub } from '@/components/icons'
 
 const props = withDefaults(
@@ -242,23 +243,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   gap: var(--spacing-3);
   text-decoration: none;
   color: var(--color-text-primary);
-}
-
-.brand-logo__mark {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
-  border-radius: var(--ui-radius-input, 1rem);
-  background:
-    linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.14) 0%, transparent 100%),
-    var(--footer-chip-bg);
-  border: 1px solid var(--footer-chip-border);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 1rem 2rem -1.5rem rgba(15, 23, 42, 0.18);
-  font-size: 1rem;
-  font-weight: var(--font-bold);
 }
 
 .brand-logo__copy {

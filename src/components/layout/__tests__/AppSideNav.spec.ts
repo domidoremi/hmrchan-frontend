@@ -156,6 +156,11 @@ describe('AppSideNav', () => {
     const wrapper = await createWrapper('/explore')
 
     expect(wrapper.find('.app-side-nav__brand').attributes('title')).toBe('MomiChan')
+    expect(
+      wrapper
+        .find('.app-side-nav__brand-mark img[src="/images/expressions/standing-sm.webp"]')
+        .exists()
+    ).toBe(true)
     expect(wrapper.find('nav[aria-label="Primary navigation"]').exists()).toBe(true)
     expect(wrapper.find('nav[aria-label="Utility navigation"]').exists()).toBe(true)
     expect(wrapper.findAll('.app-side-nav__section--primary .app-side-nav__link')).toHaveLength(5)
