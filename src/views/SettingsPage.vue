@@ -40,6 +40,35 @@
                 </option>
               </select>
             </label>
+            <button type="button" @click="toggleAnimations">
+              <span>动效</span>
+              <strong>{{ preferences.preferences.enableAnimations ? '开启' : '关闭' }}</strong>
+            </button>
+            <label class="hmr-setting-list__select">
+              <span>动效强度</span>
+              <select
+                :value="preferences.preferences.animationIntensity"
+                @change="handleAnimationIntensityChange"
+              >
+                <option value="subtle">克制</option>
+                <option value="normal">标准</option>
+                <option value="none">无</option>
+              </select>
+            </label>
+            <button type="button" @click="toggleDeskPet">
+              <span>Tidyfox 桌宠</span>
+              <strong>{{ preferences.preferences.deskPet.enabled ? '开启' : '关闭' }}</strong>
+            </button>
+            <button type="button" @click="toggleHeroInteraction">
+              <span>首屏互动</span>
+              <strong>{{
+                preferences.preferences.deskPet.autoHeroInteraction ? '自动' : '手动'
+              }}</strong>
+            </button>
+            <button type="button" :disabled="cacheClearState === 'clearing'" @click="clearCache">
+              <span>公开缓存</span>
+              <strong>{{ cacheClearLabel }}</strong>
+            </button>
             <RouterLink to="/profile">
               <span>{{ t('settings.account') }}</span>
               <strong>{{ auth.isAuthenticated ? auth.displayName : '未登录' }}</strong>
@@ -93,13 +122,17 @@ import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 import { applyLocale, type SupportedLocale, supportedLocales } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
+import { type HmrAnimationIntensity, usePreferencesStore } from '@/stores/preferences'
 import { useThemeStore } from '@/stores/theme'
+import { clearPublicContentCache } from '@/utils/cache/publicContentCache'
 
 const auth = useAuthStore()
 const theme = useThemeStore()
+const preferences = usePreferencesStore()
 const router = useRouter()
 const { locale, t } = useI18n()
 const state = ref<HmrPageState>('idle')
+const cacheClearState = ref<'idle' | 'clearing' | 'done' | 'error'>('idle')
 const content = ref<HmrSettingsContent>({
   account: seedCommunity,
   security: seedCommunity,
@@ -144,6 +177,12 @@ const settingsStories = computed(() => [
     body: t('settings.supportBody'),
   },
 ])
+const cacheClearLabel = computed(() => {
+  if (cacheClearState.value === 'clearing') return '清理中'
+  if (cacheClearState.value === 'done') return '已清理'
+  if (cacheClearState.value === 'error') return '重试'
+  return '清理'
+})
 
 async function logout(): Promise<void> {
   if (!auth.isAuthenticated) {
@@ -187,7 +226,38 @@ function handleLocaleChange(event: Event): void {
   }
 }
 
+function toggleAnimations(): void {
+  preferences.setAnimationsEnabled(!preferences.preferences.enableAnimations)
+}
+
+function handleAnimationIntensityChange(event: Event): void {
+  const value = (event.target as HTMLSelectElement).value as HmrAnimationIntensity
+  preferences.setAnimationIntensity(value)
+}
+
+function toggleDeskPet(): void {
+  preferences.setDeskPetEnabled(!preferences.preferences.deskPet.enabled)
+}
+
+function toggleHeroInteraction(): void {
+  preferences.setAutoHeroInteraction(!preferences.preferences.deskPet.autoHeroInteraction)
+}
+
+async function clearCache(): Promise<void> {
+  cacheClearState.value = 'clearing'
+  try {
+    await clearPublicContentCache()
+    cacheClearState.value = 'done'
+    window.setTimeout(() => {
+      if (cacheClearState.value === 'done') cacheClearState.value = 'idle'
+    }, 1600)
+  } catch {
+    cacheClearState.value = 'error'
+  }
+}
+
 onMounted(() => {
+  preferences.initializePreferences()
   void refreshSettings()
 })
 </script>
