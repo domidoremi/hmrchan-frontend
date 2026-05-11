@@ -17,21 +17,19 @@ describe('preferences store', () => {
     })
   })
 
-  it('normalizes old or malformed stored data without carrying desk pet fields forward', () => {
+  it('normalizes old or malformed stored data without carrying removed fields forward', () => {
     expect(
       normalizeHmrPreferences({
         enableAnimations: false,
         animationIntensity: 'loud',
-        deskPet: {
-          enabled: false,
-        },
+        autoHeroInteraction: false,
       })
     ).toEqual({
       enableAnimations: false,
     })
   })
 
-  it('persists animation preference without desk pet state', async () => {
+  it('persists only the animation preference', async () => {
     const store = usePreferencesStore()
 
     store.setAnimationsEnabled(false)

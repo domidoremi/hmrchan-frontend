@@ -18,29 +18,18 @@
       v-if="preloaderVisible"
       ref="preloaderRef"
       class="hmr-preloader"
-      :class="{ 'is-ready': preloaderReady }"
+      :class="`is-${preloaderPhase}`"
       aria-label="MomiChan loading"
+      aria-live="polite"
+      role="status"
     >
-      <button
-        ref="preloaderButtonRef"
-        class="hmr-preloader-button"
-        type="button"
-        :disabled="!preloaderReady"
-        aria-label="Enter MomiChan"
-        @focus="waveBrandPet"
-        @pointerdown="jumpBrandPet"
-        @pointerenter="waveBrandPet"
-        @click="completePreloader"
-      >
+      <div ref="preloaderOrbRef" class="hmr-preloader-orb" aria-hidden="true">
         <span ref="preloaderLogoRef" class="hmr-preloader-logo hmr-brand-3d" aria-hidden="true">
           <HmrBrandSprite :state="brandState" :static-mode="staticMode" />
         </span>
-        <span ref="preloaderLabelRef" class="hmr-preloader-label" aria-hidden="true"></span>
-        <span
-          ref="preloaderOutroLabelRef"
-          class="hmr-preloader-label hmr-preloader-label--outro"
-          aria-hidden="true"
-        ></span>
+        <span ref="preloaderHaloRef" class="hmr-preloader-halo" aria-hidden="true"></span>
+        <span ref="preloaderPulseRef" class="hmr-preloader-pulse" aria-hidden="true"></span>
+        <span ref="preloaderStatusRef" class="hmr-preloader-status" aria-hidden="true"></span>
         <span class="hmr-preloader-svg svg-strokes" aria-hidden="true">
           <svg viewBox="0 0 120 120" focusable="false">
             <circle class="hmr-preloader-track" cx="60" cy="60" r="46"></circle>
@@ -53,7 +42,7 @@
             ></circle>
           </svg>
         </span>
-      </button>
+      </div>
     </div>
 
     <div
@@ -274,11 +263,15 @@ import { useHmrCurrentTime } from '@/hmr/composables/useHmrCurrentTime'
 import { useHmrInViewReveal } from '@/hmr/composables/useHmrInViewReveal'
 import { useHmrScrollProgress } from '@/hmr/composables/useHmrScrollProgress'
 import { useHmrTextReveal } from '@/hmr/composables/useHmrTextReveal'
-import { warmHmrPriorityRoutes } from '@/hmr/runtime/hmrRouteWarmup'
+import { warmHmrPriorityRoutes, warmHmrSessionEntry } from '@/hmr/runtime/hmrRouteWarmup'
 import type { HmrNavItem, HmrPublicPageKey } from '@/hmr/types'
 import { useThemeStore } from '@/stores/theme'
 
 const SESSION_PRELOADER_KEY = 'momichan.preloader.seen'
+const PRELOADER_MIN_DURATION_MS = 2100
+const PRELOADER_MAX_WARMUP_MS = 4500
+const REDUCED_PRELOADER_MIN_DURATION_MS = 450
+const REDUCED_PRELOADER_MAX_WARMUP_MS = 1200
 const keepAliveNames = [
   'HomePage',
   'ExplorePage',
@@ -293,19 +286,23 @@ const theme = useThemeStore()
 const { locale, t } = useI18n()
 const menuOpen = ref(false)
 const preloaderVisible = ref(shouldShowPreloader())
-const preloaderReady = ref(false)
+const preloaderPhase = ref<'initial' | 'warming' | 'crossing' | 'complete' | 'exiting'>('initial')
 const preloaderRef = ref<HTMLElement | null>(null)
 const preloaderBackdropRef = ref<HTMLElement | null>(null)
-const preloaderButtonRef = ref<HTMLButtonElement | null>(null)
+const preloaderOrbRef = ref<HTMLElement | null>(null)
 const preloaderLogoRef = ref<HTMLElement | null>(null)
-const preloaderLabelRef = ref<HTMLElement | null>(null)
-const preloaderOutroLabelRef = ref<HTMLElement | null>(null)
+const preloaderHaloRef = ref<HTMLElement | null>(null)
+const preloaderPulseRef = ref<HTMLElement | null>(null)
+const preloaderStatusRef = ref<HTMLElement | null>(null)
 const preloaderProgressRef = ref<SVGCircleElement | null>(null)
 const preloaderRevealerRef = ref<HTMLElement | null>(null)
 const desktopBrandPetRef = ref<HTMLElement | null>(null)
 const mobileBrandPetRef = ref<HTMLElement | null>(null)
 let preloaderTimeline: gsap.core.Timeline | undefined
 let preloaderOutroTimeline: gsap.core.Timeline | undefined
+let preloaderStarted = false
+let preloaderCompletionTimer: number | undefined
+let preloaderExitTimer: number | undefined
 const pageTransitionKey = computed(() => route.fullPath)
 const { auth, authDisplay } = useHmrAuthDisplay()
 const { currentTime, timeZoneLabel } = useHmrCurrentTime()
@@ -403,31 +400,74 @@ function getPreloaderElements() {
   return {
     backdrop: preloaderBackdropRef.value,
     preloader: preloaderRef.value,
-    button: preloaderButtonRef.value,
+    orb: preloaderOrbRef.value,
     logo: preloaderLogoRef.value,
-    label: preloaderLabelRef.value,
-    outroLabel: preloaderOutroLabelRef.value,
+    halo: preloaderHaloRef.value,
+    pulse: preloaderPulseRef.value,
+    status: preloaderStatusRef.value,
     progress: preloaderProgressRef.value,
     revealer: preloaderRevealerRef.value,
   }
 }
 
-function setupPreloader(): void {
-  warmHmrPriorityRoutes(route.fullPath)
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
+}
+
+function clearPreloaderCompletionTimer(): void {
+  if (preloaderCompletionTimer === undefined) return
+  window.clearTimeout(preloaderCompletionTimer)
+  preloaderCompletionTimer = undefined
+}
+
+function clearPreloaderExitTimer(): void {
+  if (preloaderExitTimer === undefined) return
+  window.clearTimeout(preloaderExitTimer)
+  preloaderExitTimer = undefined
+}
+
+function finishPreloaderExit(): void {
+  clearPreloaderExitTimer()
+  markPreloaderSeen()
+  preloaderVisible.value = false
+  brandState.value = 'idle'
+}
+
+function finishPreloaderCrossing(): void {
+  if (!preloaderVisible.value || preloaderOutroTimeline) return
+  clearPreloaderCompletionTimer()
+  brandState.value = 'review'
+  preloaderPhase.value = 'complete'
+  completePreloader()
+}
+
+async function setupPreloader(): Promise<void> {
+  void warmHmrPriorityRoutes(route.fullPath)
   if (!preloaderVisible.value) return
+  if (preloaderStarted) return
+  preloaderStarted = true
 
   const elements = getPreloaderElements()
   const progress = elements.progress
-  const button = elements.button
+  const orb = elements.orb
 
-  if (!progress || !button) {
+  if (!progress || !orb) {
     markPreloaderSeen()
     preloaderVisible.value = false
     return
   }
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const minDuration = prefersReducedMotion
+    ? REDUCED_PRELOADER_MIN_DURATION_MS
+    : PRELOADER_MIN_DURATION_MS
+  const maxWarmupMs = prefersReducedMotion
+    ? REDUCED_PRELOADER_MAX_WARMUP_MS
+    : PRELOADER_MAX_WARMUP_MS
   const pathLength = progress.getTotalLength()
+  const startedAt = performance.now()
   gsap.set(progress, {
     strokeDasharray: pathLength,
     strokeDashoffset: pathLength,
@@ -438,130 +478,196 @@ function setupPreloader(): void {
   })
   gsap.set(elements.preloader, {
     clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)',
+    opacity: 1,
   })
-  gsap.set(elements.button, {
+  gsap.set(elements.orb, {
+    opacity: prefersReducedMotion ? 1 : 0,
     scale: prefersReducedMotion ? 1 : 0.86,
-    rotate: prefersReducedMotion ? 0 : -16,
+    rotate: prefersReducedMotion ? 0 : -10,
+    transformPerspective: 820,
+    transformOrigin: '50% 54%',
   })
-  gsap.set([elements.label, elements.outroLabel], {
-    yPercent: 105,
+  gsap.set(elements.logo, {
+    opacity: 1,
+    scale: prefersReducedMotion ? 0.92 : 0.78,
+    xPercent: 0,
+    yPercent: 0,
+    z: prefersReducedMotion ? 0 : -44,
+    rotateX: prefersReducedMotion ? 0 : 11,
+    rotateY: prefersReducedMotion ? 0 : -9,
+    transformPerspective: 820,
+  })
+  gsap.set([elements.halo, elements.pulse, elements.status], {
     opacity: 0,
   })
 
+  const warmupPromise = warmHmrSessionEntry({
+    path: route.fullPath,
+    resolveSession: auth.resolveSession,
+    timeoutMs: maxWarmupMs,
+  })
+
   if (prefersReducedMotion) {
+    preloaderPhase.value = 'warming'
+    await Promise.allSettled([warmupPromise, wait(minDuration)])
+    preloaderPhase.value = 'complete'
     gsap.set(progress, { strokeDashoffset: 0 })
-    gsap.set(elements.logo, { opacity: 0, scale: 0.82 })
-    gsap.set(elements.label, { yPercent: 0, opacity: 1 })
-    preloaderReady.value = true
-    markPreloaderSeen()
+    gsap.set(elements.logo, { opacity: 1, scale: 0.92, z: 0, rotateX: 0, rotateY: 0 })
+    completePreloader()
     return
   }
 
+  preloaderPhase.value = 'warming'
+  brandState.value = 'idle'
   preloaderTimeline = gsap
     .timeline({
       defaults: { ease: 'power3.out' },
-      onComplete: () => {
-        preloaderReady.value = true
-      },
     })
     .to(elements.backdrop?.querySelectorAll('span') ?? [], {
       opacity: 1,
       yPercent: 0,
       stagger: 0.035,
-      duration: 0.42,
+      duration: 0.48,
     })
     .to(
-      elements.button,
+      elements.orb,
       {
+        opacity: 1,
         scale: 1,
         rotate: 0,
-        duration: 0.9,
-        ease: 'elastic.out(1, 0.72)',
+        duration: 0.86,
+        ease: 'elastic.out(1, 0.74)',
       },
-      0.05
+      0.06
+    )
+    .to(
+      elements.logo,
+      {
+        opacity: 1,
+        scale: 0.9,
+        z: -18,
+        rotateX: 6,
+        rotateY: -4,
+        duration: 0.58,
+      },
+      0.18
+    )
+    .to(
+      [elements.halo, elements.pulse, elements.status],
+      {
+        opacity: 1,
+        duration: 0.54,
+        stagger: 0.06,
+      },
+      0.28
     )
     .to(
       progress,
       {
-        strokeDashoffset: 0,
-        duration: 1.35,
+        strokeDashoffset: pathLength * 0.42,
+        duration: 1.1,
         ease: 'power2.inOut',
-      },
-      0.14
-    )
-    .to(
-      elements.logo,
-      {
-        scale: 1.08,
-        duration: 0.52,
-        yoyo: true,
-        repeat: 1,
       },
       0.42
     )
+
+  await Promise.allSettled([warmupPromise, wait(minDuration)])
+  if (!preloaderVisible.value || preloaderOutroTimeline) return
+
+  const elapsed = performance.now() - startedAt
+  if (elapsed < minDuration) {
+    await wait(minDuration - elapsed)
+  }
+  if (!preloaderVisible.value || preloaderOutroTimeline) return
+
+  preloaderPhase.value = 'crossing'
+  brandState.value = 'jumping'
+  preloaderTimeline?.kill()
+  clearPreloaderCompletionTimer()
+  preloaderCompletionTimer = window.setTimeout(finishPreloaderCrossing, 1600)
+  preloaderTimeline = gsap
+    .timeline({
+      defaults: { ease: 'power3.out' },
+      onComplete: finishPreloaderCrossing,
+    })
+    .to(progress, {
+      strokeDashoffset: 0,
+      duration: 0.92,
+      ease: 'power2.inOut',
+    })
+    .to(
+      elements.logo,
+      {
+        scale: 1.2,
+        yPercent: -34,
+        z: 150,
+        rotateX: -18,
+        rotateY: 16,
+        duration: 0.48,
+        ease: 'back.out(1.5)',
+      },
+      '<0.04'
+    )
+    .to(elements.logo, {
+      scale: 0.94,
+      yPercent: 0,
+      z: 36,
+      rotateX: 0,
+      rotateY: 0,
+      duration: 0.46,
+      ease: 'power3.inOut',
+    })
+}
+
+function completePreloader(): void {
+  if (preloaderOutroTimeline) return
+  clearPreloaderCompletionTimer()
+
+  const elements = getPreloaderElements()
+  if (!elements.preloader || !elements.orb || !elements.revealer) {
+    preloaderPhase.value = 'exiting'
+    finishPreloaderExit()
+    return
+  }
+
+  preloaderPhase.value = 'exiting'
+  preloaderExitTimer = window.setTimeout(finishPreloaderExit, 1800)
+  preloaderOutroTimeline = gsap
+    .timeline({
+      defaults: { ease: 'power3.inOut' },
+      onComplete: finishPreloaderExit,
+    })
+    .to(elements.status, {
+      scale: 1.24,
+      opacity: 0,
+      duration: 0.24,
+    })
     .to(
       elements.logo,
       {
         opacity: 0,
-        scale: 0.78,
-        duration: 0.36,
+        scale: 1.06,
+        z: 120,
+        duration: 0.38,
       },
-      1.28
+      '<'
     )
     .to(
-      elements.label,
+      elements.orb,
       {
-        yPercent: 0,
-        opacity: 1,
-        duration: 0.48,
-      },
-      1.48
-    )
-}
-
-function completePreloader(): void {
-  if (!preloaderReady.value || preloaderOutroTimeline) return
-
-  const elements = getPreloaderElements()
-  if (!elements.preloader || !elements.button || !elements.revealer) {
-    markPreloaderSeen()
-    preloaderVisible.value = false
-    return
-  }
-
-  preloaderOutroTimeline = gsap
-    .timeline({
-      defaults: { ease: 'power3.inOut' },
-      onComplete: () => {
-        markPreloaderSeen()
-        preloaderVisible.value = false
-      },
-    })
-    .to(elements.label, {
-      yPercent: -105,
-      opacity: 0,
-      duration: 0.28,
-    })
-    .to(
-      elements.outroLabel,
-      {
-        yPercent: 0,
-        opacity: 1,
-        duration: 0.32,
+        scale: 1.16,
+        rotate: 14,
+        opacity: 0,
+        duration: 0.46,
+        ease: 'back.in(1.4)',
       },
       '<0.04'
     )
-    .to(elements.button, {
-      scale: 1.18,
-      rotate: 90,
-      duration: 0.48,
-      ease: 'back.inOut(1.6)',
-    })
     .to(
       elements.preloader,
       {
-        clipPath: 'polygon(0 0, 100% 0, 100% 0, 0 0)',
-        duration: 0.72,
+        opacity: 0,
+        duration: 0.62,
       },
       '<0.08'
     )
@@ -570,13 +676,13 @@ function completePreloader(): void {
       {
         opacity: 1,
       },
-      '>-0.08'
+      '>-0.12'
     )
     .to(
       elements.revealer,
       {
         clipPath: 'inset(0% 0% 0% 100%)',
-        duration: 0.82,
+        duration: 0.72,
       },
       '<'
     )
@@ -584,7 +690,7 @@ function completePreloader(): void {
       elements.backdrop,
       {
         opacity: 0,
-        duration: 0.58,
+        duration: 0.54,
       },
       '<'
     )
@@ -594,18 +700,22 @@ watch(
   () => route.fullPath,
   () => {
     closeMenu()
-    warmHmrPriorityRoutes(route.fullPath)
+    void warmHmrPriorityRoutes(route.fullPath)
   }
 )
 
 onMounted(() => {
   theme.initializeTheme()
-  void auth.resolveSession()
+  if (!preloaderVisible.value) {
+    void auth.resolveSession()
+  }
   void nextTick(() => setupPreloader())
 })
 
 onBeforeUnmount(() => {
   preloaderTimeline?.kill()
   preloaderOutroTimeline?.kill()
+  clearPreloaderCompletionTimer()
+  clearPreloaderExitTimer()
 })
 </script>
