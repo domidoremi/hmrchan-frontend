@@ -4,6 +4,7 @@ import {
   __resetPublicContentCacheForTests,
   clearPublicContentCache,
   getPublicCacheStats,
+  readAvailablePublicContent,
   readPublicContent,
 } from '@/utils/cache/publicContentCache'
 
@@ -83,6 +84,30 @@ describe('public content cache', () => {
     ).resolves.toEqual({ value: 1 })
     await Promise.resolve()
     expect(loader).toHaveBeenCalledTimes(2)
+  })
+
+  it('can read a stale-but-usable public entry without starting a network refresh', async () => {
+    vi.useFakeTimers()
+    const loader = vi.fn<() => Promise<{ value: number }>>().mockResolvedValue({ value: 1 })
+
+    await readPublicContent({
+      key: 'hmr:home',
+      loader,
+      scope: 'home',
+      ttl: 10,
+      staleTtl: 1000,
+    })
+    vi.advanceTimersByTime(20)
+
+    await expect(
+      readAvailablePublicContent<{ value: number }>({
+        key: 'hmr:home',
+        scope: 'home',
+        ttl: 10,
+        staleTtl: 1000,
+      })
+    ).resolves.toEqual({ value: 1 })
+    expect(loader).toHaveBeenCalledTimes(1)
   })
 
   it('does not store private/auth-shaped keys in the public cache', async () => {

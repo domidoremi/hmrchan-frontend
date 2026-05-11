@@ -195,6 +195,21 @@ describe('HmrSiteShell preloader', () => {
     expect(mocks.warmHmrSessionEntry).not.toHaveBeenCalled()
   })
 
+  it('keeps footer brand marks static and detached from global brand animation state', async () => {
+    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
+
+    const wrapper = await mountShell('/')
+    const footerSprites = wrapper.findAll('.hmr-footer .hmr-brand-sprite')
+
+    expect(footerSprites).toHaveLength(8)
+    expect(wrapper.find('.hmr-footer-logo').classes()).toContain('hmr-brand-sprite--static')
+    footerSprites.forEach((sprite) => {
+      expect(sprite.classes()).toContain('hmr-brand-sprite--static')
+      expect(sprite.classes()).not.toContain('hmr-brand-sprite--animated')
+      expect(sprite.attributes('style')).toContain('--hmr-brand-sprite-row: 0')
+    })
+  })
+
   it('bypasses the preloader with the QA query flag', async () => {
     const wrapper = await mountShell('/?skipPreloader=1')
 

@@ -224,12 +224,7 @@
           </RouterLink>
         </div>
         <div class="hmr-footer-bottom">
-          <HmrBrandSprite
-            class="hmr-footer-logo"
-            :state="brandState"
-            :static-mode="staticMode"
-            aria-hidden="true"
-          />
+          <HmrBrandSprite class="hmr-footer-logo" state="idle" static-mode aria-hidden="true" />
           <nav class="hmr-footer-nav" aria-label="Footer navigation">
             <RouterLink to="/explore">{{ t('nav.explore') }}</RouterLink>
             <RouterLink to="/community">{{ t('nav.community') }}</RouterLink>
@@ -240,12 +235,7 @@
         </div>
       </div>
       <div class="hmr-footer-keys" aria-hidden="true">
-        <HmrBrandSprite
-          v-for="index in 7"
-          :key="index"
-          :state="brandState"
-          :static-mode="staticMode"
-        />
+        <HmrBrandSprite v-for="index in 7" :key="index" state="idle" static-mode />
       </div>
     </footer>
   </div>

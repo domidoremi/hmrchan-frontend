@@ -43,7 +43,9 @@ describe('public cache service worker policy', () => {
   })
 
   it('routes public media to the media cache', () => {
-    const request = new Request('https://next.momichan.xyz/hmrchan/pets/tidyfox/spritesheet.webp')
+    const request = new Request(
+      'https://next.momichan.xyz/hmrchan/pets/tidyfox/v1/spritesheet.webp'
+    )
 
     expect(isPublicCacheableRequest(request)).toBe(true)
     expect(cacheNameForRequest(request)).toBe(PUBLIC_MEDIA_CACHE_NAME)

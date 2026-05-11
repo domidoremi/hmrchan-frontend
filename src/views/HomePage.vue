@@ -123,7 +123,7 @@ import {
 } from '@/api/hmrContent'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
-import { readPublicContent } from '@/utils/cache/publicContentCache'
+import { readAvailablePublicContent, readPublicContent } from '@/utils/cache/publicContentCache'
 
 const content = ref<HmrHomeContent>({
   featured: [],
@@ -150,17 +150,31 @@ function normalizePosts(posts: HmrPost[], count: number): HmrPost[] {
 }
 
 async function refreshHome(): Promise<void> {
-  pageState.value = 'loading'
-  resource.value = {
-    ...resource.value,
-    state: 'loading',
+  const cachedResource = await readAvailablePublicContent<HmrAsyncResource<HmrHomeContent>>({
+    key: 'hmr:home',
+    scope: 'home',
+  })
+  if (cachedResource) {
+    applyHomeResource(cachedResource)
+  } else {
+    pageState.value = 'loading'
+    resource.value = {
+      ...resource.value,
+      state: 'loading',
+    }
   }
+
   const nextResource = await readPublicContent({
     key: 'hmr:home',
     scope: 'home',
     strategy: 'network-first',
     loader: loadHomeContentResource,
   })
+  applyHomeResource(nextResource)
+  scheduleHomePrewarm(nextResource.data)
+}
+
+function applyHomeResource(nextResource: HmrAsyncResource<HmrHomeContent>): void {
   resource.value = nextResource
   content.value = nextResource.data
   pageState.value =
@@ -169,7 +183,6 @@ async function refreshHome(): Promise<void> {
     nextResource.data.highlights.length
       ? 'ready'
       : 'empty'
-  scheduleHomePrewarm(nextResource.data)
 }
 
 function requestIdle(callback: () => void): void {

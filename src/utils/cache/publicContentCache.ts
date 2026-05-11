@@ -23,6 +23,11 @@ export interface PublicContentCacheOptions<T> {
   staleTtl?: number
 }
 
+export type PublicContentCacheLookupOptions<T> = Pick<
+  PublicContentCacheOptions<T>,
+  'key' | 'scope' | 'ttl' | 'staleTtl'
+>
+
 export interface PublicContentCacheStats {
   memoryEntries: number
   hits: number
@@ -482,6 +487,22 @@ export async function readPublicContent<T>(options: PublicContentCacheOptions<T>
     )
   }
   return networkFirst(resolved.key, options.loader, resolved.ttl, resolved.staleTtl, resolved.scope)
+}
+
+export async function readAvailablePublicContent<T>(
+  options: PublicContentCacheLookupOptions<T>
+): Promise<T | null> {
+  if (!isPublicContentKeyAllowed(options.key)) {
+    stats.rejectedPrivateRequests += 1
+    return null
+  }
+
+  const resolved = resolveOptions({ ...options, loader: async () => undefined as T })
+  const cached = await readCachedEntry<T>(resolved.key)
+  if (cached && isStaleUsable(cached)) return cached.value
+
+  stats.expiredEntries += cached ? 1 : 0
+  return null
 }
 
 export async function clearPublicContentCache(): Promise<void> {

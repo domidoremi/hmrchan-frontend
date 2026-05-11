@@ -3,7 +3,7 @@
   font-family: HmrYouth;
   font-style: normal;
   font-weight: 900;
-  src: url('/hmrchan/reference/hmr-display-black.otf') format('opentype');
+  src: url('/hmrchan/reference/v1/hmr-display-black.otf') format('opentype');
 }
 
 @font-face {
@@ -11,7 +11,7 @@
   font-family: HmrNeue;
   font-style: normal;
   font-weight: 400;
-  src: url('/hmrchan/reference/hmr-sans-regular.otf') format('opentype');
+  src: url('/hmrchan/reference/v1/hmr-sans-regular.otf') format('opentype');
 }
 
 @font-face {
@@ -19,7 +19,7 @@
   font-family: HmrNeue;
   font-style: normal;
   font-weight: 600;
-  src: url('/hmrchan/reference/hmr-sans-medium.otf') format('opentype');
+  src: url('/hmrchan/reference/v1/hmr-sans-medium.otf') format('opentype');
 }
 
 @font-face {
@@ -27,7 +27,7 @@
   font-family: HmrNeue;
   font-style: normal;
   font-weight: 800;
-  src: url('/hmrchan/reference/hmr-sans-bold.otf') format('opentype');
+  src: url('/hmrchan/reference/v1/hmr-sans-bold.otf') format('opentype');
 }
 
 @font-face {
@@ -35,7 +35,7 @@
   font-family: HmrMono;
   font-style: normal;
   font-weight: 700;
-  src: url('/hmrchan/reference/hmr-mono.woff2') format('woff2');
+  src: url('/hmrchan/reference/v1/hmr-mono.woff2') format('woff2');
 }
 
 :root {
@@ -501,14 +501,24 @@ svg {
   display: block;
   inline-size: 100%;
   aspect-ratio: 12 / 13;
-  background-image: url('/hmrchan/pets/tidyfox/spritesheet.webp');
-  background-position: calc(var(--hmr-brand-sprite-frame, 0) * 100% / 7)
-    calc(var(--hmr-brand-sprite-row, 0) * 100% / 8);
+  background-image: url('/hmrchan/pets/tidyfox/v1/idle-frame.webp');
+  background-position: 50% 50%;
   background-repeat: no-repeat;
-  background-size: 800% 900%;
+  background-size: contain;
   image-rendering: auto;
   transform: translateZ(0.45rem);
   transform-origin: 50% 62%;
+  will-change: auto;
+}
+
+.hmr-brand-sprite--atlas {
+  background-image: url('/hmrchan/pets/tidyfox/v1/spritesheet.webp');
+  background-position: calc(var(--hmr-brand-sprite-frame, 0) * 100% / 7)
+    calc(var(--hmr-brand-sprite-row, 0) * 100% / 8);
+  background-size: 800% 900%;
+}
+
+.hmr-brand-sprite--animated {
   will-change: background-position, transform;
 }
 
@@ -5340,16 +5350,13 @@ svg {
 .hmr-footer-keys .hmr-brand-sprite {
   inline-size: clamp(9rem, 15vw, 16em);
   margin-inline: -2em;
-  animation: hmr-key-bounce 7s var(--hmr-ease) infinite alternate;
 }
 
 .hmr-footer-keys .hmr-brand-sprite:nth-child(2n) {
-  animation-delay: -2s;
   transform: translateY(2em) rotate(14deg);
 }
 
 .hmr-footer-keys .hmr-brand-sprite:nth-child(3n) {
-  animation-delay: -3.4s;
   transform: translateY(-1em) rotate(-12deg);
 }
 
@@ -5393,16 +5400,6 @@ svg {
 
   to {
     transform: translateY(0.8em) rotate(2deg);
-  }
-}
-
-@keyframes hmr-key-bounce {
-  from {
-    translate: 0 -0.8em;
-  }
-
-  to {
-    translate: 0 1em;
   }
 }
 
