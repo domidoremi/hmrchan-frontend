@@ -89,4 +89,46 @@ describe('hmrContent post detail loading', () => {
       avatarUrl: '/avatar.webp',
     })
   })
+
+  it('marks restricted post detail as a restricted public preview state', async () => {
+    mockApiGet.mockRejectedValueOnce(
+      new MockApiError('Automated access is not permitted', 403, 'AUTOMATED_ACCESS_NOT_PERMITTED')
+    )
+    mockApiGet.mockResolvedValueOnce({ items: [] })
+
+    const { loadPostDetailContentResource } = await import('../hmrContent')
+    const resource = await loadPostDetailContentResource('restricted-post')
+
+    expect(resource.source).toBe('local')
+    expect(resource.error?.kind).toBe('restricted')
+    expect(resource.data.viewState).toBe('restricted')
+    expect(resource.data.post.title).toContain('公开预览')
+    expect(resource.data.media).toHaveLength(0)
+    expect(resource.data.comments).toHaveLength(0)
+    expect(resource.data.relatedPosts).toHaveLength(0)
+  })
+
+  it('marks missing post detail as not found', async () => {
+    mockApiGet.mockRejectedValueOnce(new MockApiError('Not found', 404))
+    mockApiGet.mockResolvedValueOnce({ items: [] })
+
+    const { loadPostDetailContentResource } = await import('../hmrContent')
+    const resource = await loadPostDetailContentResource('missing-post')
+
+    expect(resource.error?.kind).toBe('not-found')
+    expect(resource.data.viewState).toBe('not-found')
+    expect(resource.data.post.title).toBe('内容暂时不可用')
+  })
+
+  it('keeps transient post detail failures retryable', async () => {
+    mockApiGet.mockRejectedValueOnce(new Error('fetch failed'))
+    mockApiGet.mockResolvedValueOnce({ items: [] })
+
+    const { loadPostDetailContentResource } = await import('../hmrContent')
+    const resource = await loadPostDetailContentResource('flaky-post')
+
+    expect(resource.error?.kind).toBe('network')
+    expect(resource.data.viewState).toBe('temporary-unavailable')
+    expect(resource.retry).toBeUndefined()
+  })
 })

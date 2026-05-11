@@ -132,6 +132,7 @@ export interface HmrResponsiveMediaSource {
 
 export type HmrApiErrorKind =
   | 'unauthorized'
+  | 'restricted'
   | 'refresh-needed'
   | 'not-found'
   | 'rate-limited'

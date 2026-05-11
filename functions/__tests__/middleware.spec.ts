@@ -259,6 +259,41 @@ describe('functions/_middleware', () => {
     expect(html).toMatch(/nonce="[A-Za-z0-9+/=]+"/)
   })
 
+  it('renders restricted post preview metadata when the edge resolver returns a restricted document', async () => {
+    resolveHtmlDocumentWithEdgeData.mockResolvedValue({
+      status: 200,
+      title: 'Public preview restricted · MomiChan',
+      description: 'restricted',
+      robots: 'index, follow',
+      ogType: 'article',
+      canonicalPath: '/posts/restricted-post',
+      ogImage: null,
+      shellTitle: 'This post is temporarily unavailable for public preview',
+      shellBody: '当前帖子暂不对公开访问开放，你可以稍后再试，或者继续浏览探索页和社区。',
+    })
+
+    const { onRequest } = await import('../_middleware')
+    const response = await onRequest({
+      request: new Request('https://momichan.xyz/posts/restricted-post'),
+      env: {},
+      next: () =>
+        Promise.resolve(
+          new MockResponse(
+            '<!doctype html><html><head><title>App</title><meta name="description" content="old" /><meta property="og:url" content="https://old.example" /><meta name="twitter:url" content="https://old.example" /><link rel="canonical" href="https://old.example" /></head><body><div id="app-root"></div></body></html>',
+            {
+              headers: { 'content-type': 'text/html; charset=utf-8' },
+            }
+          )
+        ),
+    } as never)
+
+    const html = await response.text()
+    expect(html).toContain('Public preview restricted · MomiChan')
+    expect(html).toContain('This post is temporarily unavailable for public preview')
+    expect(html).toContain('href="https://momichan.xyz/posts/restricted-post"')
+    expect(html).toContain('data-prerender-shell="true"')
+  })
+
   it('treats passkey recovery as a public auth SPA route instead of a 404 document', async () => {
     resolveHtmlDocumentWithEdgeData.mockResolvedValue({
       status: 200,

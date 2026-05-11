@@ -113,6 +113,7 @@ export interface HmrPostDetailContent {
   relatedPosts: HmrPost[]
   comments: HmrCommunityItem[]
   media: HmrMediaItem[]
+  viewState: 'available' | 'restricted' | 'not-found' | 'temporary-unavailable'
 }
 
 export interface HmrMediaItem {
@@ -358,7 +359,17 @@ function isPreviewMemberSession(): boolean {
 
 function classifyApiError(error: unknown): HmrApiErrorKind {
   if (error instanceof ApiError) {
-    if (error.status === 401 || error.status === 403) return 'unauthorized'
+    if (error.status === 403) {
+      if (
+        error.code === 'ACCESS_TEMPORARILY_RESTRICTED' ||
+        error.code === 'AUTOMATED_ACCESS_NOT_PERMITTED'
+      ) {
+        return 'restricted'
+      }
+
+      return 'unauthorized'
+    }
+    if (error.status === 401) return 'unauthorized'
     if (error.status === 404) return 'not-found'
     if (error.status === 426 || error.code === 'CLIENT_CONTRACT_MISMATCH') {
       return 'refresh-needed'
@@ -1104,6 +1115,7 @@ function mapPostDetailContent(
       relatedPosts: [],
       comments: [],
       media: [],
+      viewState: 'temporary-unavailable',
     }
   }
 
@@ -1124,6 +1136,7 @@ function mapPostDetailContent(
     relatedPosts: relatedPosts.slice(0, 6),
     comments: commentItems.map(mapCommunityItem).slice(0, 6),
     media: files.map(mapMediaItem).filter(isRenderableMediaItem).slice(0, 6),
+    viewState: 'available',
   }
 }
 
@@ -1138,11 +1151,30 @@ export async function loadPostDetailContentResource(
     }),
   ])
   const [post, comments] = results
+  const status = combineEndpointResults(results)
+  const data = mapPostDetailContent(normalizedId, post?.data, comments?.data)
 
-  return makeResource(
-    mapPostDetailContent(normalizedId, post?.data, comments?.data),
-    combineEndpointResults(results)
-  )
+  if (status.error?.kind === 'restricted') {
+    data.post = {
+      id: normalizedId,
+      title: '内容暂不可公开预览',
+      excerpt: '当前帖子对公开访问受限。你可以稍后重试，或继续浏览其他公开内容。',
+      authorName: 'MomiChan',
+      tag: '',
+      createdAt: '',
+      statsLabel: '公开预览受限',
+    }
+    data.relatedPosts = []
+    data.comments = []
+    data.media = []
+    data.viewState = 'restricted'
+  } else if (status.error?.kind === 'not-found') {
+    data.viewState = 'not-found'
+  } else if (status.error) {
+    data.viewState = 'temporary-unavailable'
+  }
+
+  return makeResource(data, status)
 }
 
 export async function loadPostDetailContent(id: string): Promise<HmrPostDetailContent> {

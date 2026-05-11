@@ -9,15 +9,21 @@
     }"
     aria-live="polite"
   >
-    <div v-if="loading" class="hmr-page-state-skeleton" aria-hidden="true">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-    <div v-else class="hmr-page-state-mark" aria-hidden="true">
-      <span></span>
-      <span></span>
-      <span></span>
+    <div class="hmr-page-state-body">
+      <div v-if="loading" class="hmr-page-state-skeleton" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div v-else class="hmr-page-state-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="hmr-page-state-copy">
+        <strong>{{ titleText }}</strong>
+        <span>{{ bodyText }}</span>
+      </div>
     </div>
     <button
       v-if="!loading && canRetry"
@@ -76,4 +82,18 @@ const isVisible = computed(
 )
 
 const canRetry = computed(() => props.showRetry && (props.empty || Boolean(props.error)))
+
+const titleText = computed(() => {
+  if (props.loading) return props.loadingTitle || props.title || '内容加载中'
+  if (props.error) return props.errorTitle || props.title || '内容暂时不可用'
+  if (props.empty) return props.emptyTitle || props.title || '暂无内容'
+  return props.title || ''
+})
+
+const bodyText = computed(() => {
+  if (props.loading) return props.loadingBody || props.body || '我们正在拉取最新公开内容。'
+  if (props.error) return props.errorBody || props.error.message || props.body || '稍后重试。'
+  if (props.empty) return props.emptyBody || props.body || '当前没有可显示的内容。'
+  return props.body || ''
+})
 </script>

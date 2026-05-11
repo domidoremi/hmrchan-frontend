@@ -354,7 +354,7 @@ function createInteractionStatistic(
 async function fetchEdgeJson<T>(
   env: EdgeRuntimeEnv | undefined,
   path: string
-): Promise<{ status: number; data: T | null }> {
+): Promise<{ status: number; data: T | null; errorCode?: string | null }> {
   const baseUrl = resolveConfiguredApiBaseUrl(env)
   const fallbackOrigin = resolveVpcOriginForPath(path, env)
   const targetOrigin = baseUrl || fallbackOrigin
@@ -362,6 +362,7 @@ async function fetchEdgeJson<T>(
     return {
       status: 503,
       data: null,
+      errorCode: null,
     }
   }
 
@@ -388,15 +389,30 @@ async function fetchEdgeJson<T>(
   }
 
   if (!response.ok) {
+    let errorCode: string | null = null
+    if (response.headers.get('content-type')?.includes('application/json')) {
+      try {
+        const payload = unwrapApiPayload<{
+          code?: string | null
+          error?: { code?: string | null }
+        }>(await response.clone().json())
+        errorCode = payload?.code ?? payload?.error?.code ?? null
+      } catch {
+        errorCode = null
+      }
+    }
+
     return {
       status: response.status,
       data: null,
+      errorCode,
     }
   }
 
   return {
     status: response.status,
     data: unwrapApiPayload<T>(await response.json()),
+    errorCode: null,
   }
 }
 
@@ -1248,7 +1264,38 @@ export async function resolveHtmlDocumentWithEdgeData(
     try {
       const result = await fetchEdgeJson<EdgePostDetail>(env, `/api/v1/posts/${postMatch[1]}`)
       if (result.status === 404) return createNotFoundDocument(path)
-      if (!result.data) return fallback
+      if (!result.data) {
+        if (
+          result.status === 403 &&
+          (result.errorCode === 'ACCESS_TEMPORARILY_RESTRICTED' ||
+            result.errorCode === 'AUTOMATED_ACCESS_NOT_PERMITTED')
+        ) {
+          return createDocumentConfig(
+            path,
+            'Public preview restricted',
+            '当前帖子对公开访问受限。请稍后重试或继续浏览其他公开内容。',
+            'Public preview restricted',
+            'This post is temporarily unavailable for public preview',
+            '当前帖子暂不对公开访问开放，你可以稍后再试，或者继续浏览探索页和社区。',
+            {
+              ogType: 'article',
+              shellSummary: [
+                'This post is currently restricted for public preview.',
+                'You can continue browsing other public content from Explore or Community.',
+              ],
+              shellStats: [
+                { label: 'Status', value: 'Restricted' },
+                { label: 'Next stop', value: 'Explore or Community' },
+              ],
+              shellLinks: [
+                { href: '/explore', label: 'Explore' },
+                { href: '/community', label: 'Community' },
+              ],
+            }
+          )
+        }
+        return fallback
+      }
       return buildDynamicPostDocument(path, result.data)
     } catch {
       return fallback

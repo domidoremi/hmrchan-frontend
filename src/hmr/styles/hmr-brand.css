@@ -4038,6 +4038,11 @@ svg {
     transform 420ms var(--hmr-ease);
 }
 
+.hmr-detail-cover.is-muted {
+  filter: saturate(0.76) contrast(0.96);
+  opacity: 0.88;
+}
+
 .hmr-detail-cover:hover {
   border-radius: calc(var(--hmr-radius) * 1.2);
   box-shadow: 0 2.5rem 7rem rgb(var(--hmr-base-rgb) / 22%);
@@ -4175,6 +4180,40 @@ svg {
   min-inline-size: 0;
 }
 
+.hmr-detail-reader-hero .hmr-page-state-block {
+  inline-size: min(100%, 42rem);
+}
+
+.hmr-page-state-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: center;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.hmr-page-state-copy {
+  display: grid;
+  gap: 0.18rem;
+  min-inline-size: 0;
+}
+
+.hmr-page-state-copy strong {
+  font-family: var(--hmr-font-display);
+  font-size: 1.08em;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  text-transform: none;
+}
+
+.hmr-page-state-copy span {
+  font-size: 0.88em;
+  line-height: 1.5;
+  text-transform: none;
+}
+
 .hmr-detail-prose h2 {
   margin: 0;
   font-family: var(--hmr-font-display);
@@ -4289,6 +4328,11 @@ svg {
   font-weight: 900;
   letter-spacing: -0.06em;
   line-height: 0.98;
+}
+
+.hmr-detail-empty {
+  min-block-size: 12rem;
+  align-content: center;
 }
 
 .hmr-detail-comment-list {

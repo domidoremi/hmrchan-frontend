@@ -3,9 +3,9 @@
     <header class="hmr-detail-reader-hero">
       <div class="hmr-detail-reader-copy">
         <RouterLink class="hmr-text-link hmr-detail-back" to="/explore">返回探索</RouterLink>
-        <p class="hmr-kicker">{{ platformLabel }} · {{ post.createdAt }}</p>
-        <h1 class="hmr-detail-title" data-hmr-text-reveal>{{ post.title }}</h1>
-        <p class="hmr-detail-lede">{{ post.excerpt }}</p>
+        <p class="hmr-kicker">{{ heroEyebrow }}</p>
+        <h1 class="hmr-detail-title" data-hmr-text-reveal>{{ heroTitle }}</h1>
+        <p class="hmr-detail-lede">{{ heroBody }}</p>
 
         <div class="hmr-detail-meta-grid" aria-label="内容信息">
           <div v-for="item in detailMetrics" :key="item.label" class="hmr-detail-meta-card">
@@ -18,11 +18,25 @@
           :loading="pageState === 'loading'"
           :empty="pageState === 'empty'"
           :error="resource.error"
+          :title="stateTitle"
+          :body="stateBody"
+          :loading-title="'内容加载中'"
+          :loading-body="'正在拉取帖子、评论与媒体预览。'"
+          :empty-title="'暂无可显示内容'"
+          :empty-body="'这条帖子当前没有可展示的正文或媒体。'"
+          :error-title="stateTitle"
+          :error-body="stateBody"
+          :show-retry="canRetry"
           @retry="loadPost"
         />
       </div>
 
-      <aside class="hmr-detail-cover" :style="cardStyle" data-hmr-reveal>
+      <aside
+        class="hmr-detail-cover"
+        :class="{ 'is-muted': isRestrictedState }"
+        :style="cardStyle"
+        data-hmr-reveal
+      >
         <div class="hmr-detail-cover-media">
           <img v-if="heroImage" :src="heroImage" :alt="post.title" />
           <span v-else>{{ platformMark }}</span>
@@ -34,7 +48,7 @@
       </aside>
     </header>
 
-    <section class="hmr-detail-reader-section" data-hmr-reveal>
+    <section v-if="showContentSections" class="hmr-detail-reader-section" data-hmr-reveal>
       <div class="hmr-detail-reader-grid">
         <aside class="hmr-detail-sidebar">
           <div class="hmr-detail-source-card">
@@ -71,7 +85,11 @@
       </div>
     </section>
 
-    <section class="hmr-detail-reader-section hmr-detail-reader-section--compact" data-hmr-reveal>
+    <section
+      v-if="showMediaSection"
+      class="hmr-detail-reader-section hmr-detail-reader-section--compact"
+      data-hmr-reveal
+    >
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head hmr-section-head--split">
           <div>
@@ -102,7 +120,11 @@
       </div>
     </section>
 
-    <section class="hmr-detail-reader-section hmr-detail-reader-section--compact" data-hmr-reveal>
+    <section
+      v-if="showCommunitySection"
+      class="hmr-detail-reader-section hmr-detail-reader-section--compact"
+      data-hmr-reveal
+    >
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head hmr-section-head--split">
           <div>
@@ -122,7 +144,11 @@
       </div>
     </section>
 
-    <section class="hmr-dark-stage hmr-dark-stage--detail" data-hmr-reveal>
+    <section
+      v-if="showRelatedSection"
+      class="hmr-dark-stage hmr-dark-stage--detail"
+      data-hmr-reveal
+    >
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
           <p class="hmr-kicker">继续浏览</p>
@@ -174,6 +200,7 @@ const detail = ref<HmrPostDetailContent>({
   relatedPosts: [],
   comments: [],
   media: [],
+  viewState: 'available',
 })
 const pageState = ref<HmrPageState>('idle')
 const resource = ref<HmrAsyncResource<HmrPostDetailContent>>({
@@ -258,11 +285,77 @@ const contentTypeLabel = computed(() => {
   if (hasRenderableMedia.value) return mediaLabel.value
   return post.value.mediaType === 'text' ? '文本帖子' : '帖子'
 })
+const isRestrictedState = computed(() => detail.value.viewState === 'restricted')
+const isNotFoundState = computed(() => detail.value.viewState === 'not-found')
+const isUnavailableState = computed(() => detail.value.viewState === 'temporary-unavailable')
+const isLoadingState = computed(() => pageState.value === 'loading')
+const showContentSections = computed(
+  () => pageState.value === 'ready' && detail.value.viewState === 'available'
+)
+const showMediaSection = computed(() => showContentSections.value && detail.value.media.length > 0)
+const showCommunitySection = computed(
+  () => showContentSections.value && detail.value.comments.length > 0
+)
+const showRelatedSection = computed(
+  () => showContentSections.value && detail.value.relatedPosts.length > 0
+)
+const canRetry = computed(() => isUnavailableState.value)
+const heroEyebrow = computed(() => {
+  if (isLoadingState.value) return '内容加载中 · 正在拉取公开帖子'
+  if (isRestrictedState.value) return '公开预览受限 · 该内容暂不对自动访问开放'
+  if (isNotFoundState.value) return '未找到 · 该帖子可能已被移除'
+  if (isUnavailableState.value) return '暂不可用 · 稍后可重试'
+  return `${platformLabel.value} · ${post.value.createdAt}`
+})
+const heroTitle = computed(() => {
+  if (isLoadingState.value) return '内容加载中'
+  if (isRestrictedState.value) return '这条帖子当前无法公开预览'
+  if (isNotFoundState.value) return '这条帖子不存在或已下架'
+  if (isUnavailableState.value) return '内容暂时不可用'
+  return post.value.title
+})
+const heroBody = computed(() => {
+  if (isLoadingState.value) return '正在拉取帖子正文、评论与媒体预览。'
+  if (isRestrictedState.value) {
+    return '当前访问方式被限制，页面保留导航但不会展示空的正文、媒体或评论。你可以稍后再来，或继续浏览其他公开内容。'
+  }
+  if (isNotFoundState.value) {
+    return '这条内容可能已删除、下架或切换为不可访问状态。'
+  }
+  if (isUnavailableState.value) {
+    return '内容暂时没有拉取成功。你可以点击重试，或先浏览其他帖子。'
+  }
+  return post.value.excerpt
+})
+const stateTitle = computed(() => {
+  if (isRestrictedState.value) return '公开预览受限'
+  if (isNotFoundState.value) return '未找到内容'
+  if (isUnavailableState.value) return '内容暂不可用'
+  return ''
+})
+const stateBody = computed(() => {
+  if (isRestrictedState.value) return '当前帖子对公开访问受限，系统会隐藏空白模块。'
+  if (isNotFoundState.value) return '这条帖子没有可继续显示的公开内容。'
+  if (isUnavailableState.value) return '稍后重试，通常可以恢复拉取。'
+  return ''
+})
 const detailMetrics = computed(() => [
-  { label: '平台', value: platformLabel.value },
-  { label: '作者', value: post.value.authorName },
-  { label: '互动', value: post.value.statsLabel },
-  { label: '类型', value: contentTypeLabel.value },
+  isRestrictedState.value || isNotFoundState.value || isUnavailableState.value
+    ? { label: '状态', value: stateTitle.value }
+    : { label: '平台', value: platformLabel.value },
+  isRestrictedState.value || isNotFoundState.value || isUnavailableState.value
+    ? { label: '说明', value: stateBody.value }
+    : { label: '作者', value: post.value.authorName },
+  isRestrictedState.value
+    ? { label: '后续', value: '可继续浏览探索页或社区' }
+    : isNotFoundState.value
+      ? { label: '后续', value: '返回探索继续浏览' }
+      : isUnavailableState.value
+        ? { label: '后续', value: '稍后重试即可恢复' }
+        : { label: '互动', value: post.value.statsLabel },
+  isRestrictedState.value || isNotFoundState.value || isUnavailableState.value
+    ? { label: '去向', value: 'Explore / Community' }
+    : { label: '类型', value: contentTypeLabel.value },
 ])
 
 async function loadPost(): Promise<void> {
@@ -277,7 +370,12 @@ async function loadPost(): Promise<void> {
   resource.value = nextResource
   detail.value = nextResource.data
   post.value = detail.value.post
-  pageState.value = nextResource.data.post ? 'ready' : 'empty'
+  pageState.value =
+    detail.value.viewState === 'available'
+      ? 'ready'
+      : detail.value.viewState === 'not-found'
+        ? 'empty'
+        : 'error'
 }
 
 function formatNumber(value: number): string {
