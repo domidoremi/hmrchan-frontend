@@ -6,6 +6,7 @@ const BACKEND_ORIGIN = 'https://backend.test'
 const INTERNAL_ORIGIN = 'https://internal.test'
 const INTERNAL_SECRET = 'super-secret'
 const ORIGIN = 'https://momichan.xyz'
+const NEXT_ORIGIN = 'https://next.momichan.xyz'
 const SESSION_RESOLVE_ROUTE = `/api/v1/auth/${'session:resolve'}`
 const textEncoder = new TextEncoder()
 
@@ -149,6 +150,21 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(ORIGIN)
     expect(response.headers.get('Access-Control-Allow-Credentials')).toBe('true')
     expect(response.headers.get('Vary')).toContain('Origin')
+  })
+
+  it('responds to next frontend CORS preflight requests with the next origin', async () => {
+    const response = await onRequest(
+      makeContext({
+        url: `${NEXT_ORIGIN}/api/v1/posts`,
+        method: 'OPTIONS',
+        headers: { Origin: NEXT_ORIGIN },
+        path: ['v1', 'posts'],
+      })
+    )
+
+    expect(response.status).toBe(204)
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(NEXT_ORIGIN)
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBe('true')
   })
 
   it('signs internal BFF login requests and returns a session summary with cookies', async () => {
@@ -1441,6 +1457,37 @@ describe('functions/api proxy', () => {
     )
   })
 
+  it('keeps enabled Google start redirects on the next frontend host', async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === `${BACKEND_ORIGIN}/api/v1/auth/google/start?intent=login&return_to=%2F`) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: `${BACKEND_ORIGIN}/api/v1/auth/google/callback?code=test-code&state=test-state`,
+          },
+        })
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${NEXT_ORIGIN}/api/v1/auth/google/start?intent=login&return_to=%2F`,
+        headers: { Origin: NEXT_ORIGIN },
+        env: { GOOGLE_AUTH_ENABLED: 'true' },
+        path: ['v1', 'auth', 'google', 'start'],
+      })
+    )
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(NEXT_ORIGIN)
+    expect(response.headers.get('Location')).toBe(
+      `${NEXT_ORIGIN}/api/v1/auth/google/callback?code=test-code&state=test-state`
+    )
+  })
+
   it('routes enabled Google exchange through internal BFF and returns a session summary with cookies', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-17T07:00:00.000Z'))
@@ -1512,6 +1559,57 @@ describe('functions/api proxy', () => {
     const cookies = getSetCookies(response)
     expect(cookies.some((value) => value.includes('__Host-momi_bff_at='))).toBe(true)
     expect(cookies.some((value) => value.includes('__Host-momi_bff_rt='))).toBe(true)
+  })
+
+  it('sanitizes cross-origin return targets from Google exchange session summaries', async () => {
+    const material = createSessionMaterial({
+      return_to: 'https://momichan.xyz/',
+    })
+    const user = createUser({
+      identity_provider: 'google',
+      linked_providers: ['google'],
+    })
+
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url === `${INTERNAL_ORIGIN}/internal/v1/auth/bff/google-exchange`) {
+        return apiEnvelope(material)
+      }
+
+      if (url === `${BACKEND_ORIGIN}/api/v1/auth/me`) {
+        expect(init?.headers).toEqual(
+          expect.objectContaining({
+            Authorization: `Bearer ${material.access_token}`,
+          })
+        )
+        return apiEnvelope(user)
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${NEXT_ORIGIN}/api/v1/auth/google/exchange`,
+        method: 'POST',
+        headers: {
+          Origin: NEXT_ORIGIN,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          handoff_code: 'google-handoff',
+        }),
+        env: { GOOGLE_AUTH_ENABLED: 'true' },
+        path: ['v1', 'auth', 'google', 'exchange'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      authenticated: true,
+      return_to: '/profile',
+    })
   })
 
   it.each([

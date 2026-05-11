@@ -9,20 +9,15 @@ describe('preferences store', () => {
     setActivePinia(createPinia())
   })
 
-  it('uses the v1 defaults for animations and Tidyfox', () => {
+  it('uses the simplified defaults for global animations', () => {
     const store = usePreferencesStore()
 
     expect(store.preferences).toEqual({
       enableAnimations: true,
-      animationIntensity: 'subtle',
-      deskPet: {
-        enabled: true,
-        autoHeroInteraction: true,
-      },
     })
   })
 
-  it('normalizes old or malformed stored data', () => {
+  it('normalizes old or malformed stored data without carrying desk pet fields forward', () => {
     expect(
       normalizeHmrPreferences({
         enableAnimations: false,
@@ -33,24 +28,17 @@ describe('preferences store', () => {
       })
     ).toEqual({
       enableAnimations: false,
-      animationIntensity: 'subtle',
-      deskPet: {
-        enabled: false,
-        autoHeroInteraction: true,
-      },
     })
   })
 
-  it('persists an explicit desk pet shutdown as the highest-priority preference', async () => {
+  it('persists animation preference without desk pet state', async () => {
     const store = usePreferencesStore()
 
-    store.setDeskPetEnabled(false)
+    store.setAnimationsEnabled(false)
     await Promise.resolve()
 
-    expect(JSON.parse(window.localStorage.getItem('hmr.preferences.v1') ?? '{}')).toMatchObject({
-      deskPet: {
-        enabled: false,
-      },
+    expect(JSON.parse(window.localStorage.getItem('hmr.preferences.v1') ?? '{}')).toEqual({
+      enableAnimations: false,
     })
   })
 })

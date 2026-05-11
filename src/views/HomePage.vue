@@ -16,9 +16,7 @@
             </span>
           </div>
           <div class="hmr-actions">
-            <RouterLink class="hmr-cta hero-btn" to="/explore" data-desk-pet-anchor="hero-cta">
-              探索媒体
-            </RouterLink>
+            <RouterLink class="hmr-cta" to="/explore">探索媒体</RouterLink>
             <RouterLink class="hmr-text-link" to="/community">社区讨论</RouterLink>
           </div>
         </div>

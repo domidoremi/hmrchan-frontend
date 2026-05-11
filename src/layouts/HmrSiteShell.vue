@@ -27,10 +27,13 @@
         type="button"
         :disabled="!preloaderReady"
         aria-label="Enter MomiChan"
+        @focus="waveBrandPet"
+        @pointerdown="jumpBrandPet"
+        @pointerenter="waveBrandPet"
         @click="completePreloader"
       >
-        <span class="hmr-preloader-logo hmr-brand-3d" aria-hidden="true">
-          <img ref="preloaderLogoRef" :src="brandMarkUrl" alt="" />
+        <span ref="preloaderLogoRef" class="hmr-preloader-logo hmr-brand-3d" aria-hidden="true">
+          <HmrBrandSprite :state="brandState" :static-mode="staticMode" />
         </span>
         <span ref="preloaderLabelRef" class="hmr-preloader-label" aria-hidden="true"></span>
         <span
@@ -69,17 +72,17 @@
           to="/"
           aria-label="MomiChan home"
           @click="closeMenu"
-          @focus="pounceBrandPet"
-          @pointerdown="pounceBrandPet"
-          @pointerenter="pounceBrandPet"
+          @focus="waveBrandPet"
+          @pointerdown="jumpBrandPet"
+          @pointerenter="waveBrandPet"
         >
           <span
             ref="desktopBrandPetRef"
-            class="hmr-brand-bg hmr-brand-3d hmr-brand-pet"
+            class="hmr-brand-bg hmr-brand-3d hmr-brand-mark-shell"
             aria-hidden="true"
           >
-            <span class="hmr-brand-pet-core">
-              <img class="hmr-brand-mark" :src="brandMarkUrl" alt="" />
+            <span class="hmr-brand-mark-core">
+              <HmrBrandSprite :state="brandState" :static-mode="staticMode" />
             </span>
           </span>
         </RouterLink>
@@ -136,17 +139,17 @@
             to="/"
             aria-label="MomiChan home"
             @click="closeMenu"
-            @focus="pounceBrandPet"
-            @pointerdown="pounceBrandPet"
-            @pointerenter="pounceBrandPet"
+            @focus="waveBrandPet"
+            @pointerdown="jumpBrandPet"
+            @pointerenter="waveBrandPet"
           >
             <span
               ref="mobileBrandPetRef"
-              class="hmr-mobile-brand-frame hmr-brand-3d hmr-brand-pet"
+              class="hmr-mobile-brand-frame hmr-brand-3d hmr-brand-mark-shell"
               aria-hidden="true"
             >
-              <span class="hmr-brand-pet-core">
-                <img class="hmr-mobile-brand-logo" :src="brandMarkUrl" alt="" />
+              <span class="hmr-brand-mark-core">
+                <HmrBrandSprite :state="brandState" :static-mode="staticMode" />
               </span>
             </span>
             <span class="hmr-sr-only">MomiChan</span>
@@ -231,7 +234,12 @@
           </RouterLink>
         </div>
         <div class="hmr-footer-bottom">
-          <img class="hmr-footer-logo" :src="brandMarkUrl" alt="" aria-hidden="true" />
+          <HmrBrandSprite
+            class="hmr-footer-logo"
+            :state="brandState"
+            :static-mode="staticMode"
+            aria-hidden="true"
+          />
           <nav class="hmr-footer-nav" aria-label="Footer navigation">
             <RouterLink to="/explore">{{ t('nav.explore') }}</RouterLink>
             <RouterLink to="/community">{{ t('nav.community') }}</RouterLink>
@@ -242,7 +250,12 @@
         </div>
       </div>
       <div class="hmr-footer-keys" aria-hidden="true">
-        <img v-for="index in 7" :key="index" :src="brandMarkUrl" alt="" />
+        <HmrBrandSprite
+          v-for="index in 7"
+          :key="index"
+          :state="brandState"
+          :static-mode="staticMode"
+        />
       </div>
     </footer>
   </div>
@@ -254,6 +267,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 
+import HmrBrandSprite from '@/hmr/components/HmrBrandSprite.vue'
 import { useHmrAuthDisplay } from '@/hmr/composables/useHmrAuthDisplay'
 import { useHmrBrandPet } from '@/hmr/composables/useHmrBrandPet'
 import { useHmrCurrentTime } from '@/hmr/composables/useHmrCurrentTime'
@@ -283,7 +297,7 @@ const preloaderReady = ref(false)
 const preloaderRef = ref<HTMLElement | null>(null)
 const preloaderBackdropRef = ref<HTMLElement | null>(null)
 const preloaderButtonRef = ref<HTMLButtonElement | null>(null)
-const preloaderLogoRef = ref<HTMLImageElement | null>(null)
+const preloaderLogoRef = ref<HTMLElement | null>(null)
 const preloaderLabelRef = ref<HTMLElement | null>(null)
 const preloaderOutroLabelRef = ref<HTMLElement | null>(null)
 const preloaderProgressRef = ref<SVGCircleElement | null>(null)
@@ -296,12 +310,15 @@ const pageTransitionKey = computed(() => route.fullPath)
 const { auth, authDisplay } = useHmrAuthDisplay()
 const { currentTime, timeZoneLabel } = useHmrCurrentTime()
 const { progress } = useHmrScrollProgress()
-const { pounceBrandPet } = useHmrBrandPet([desktopBrandPetRef, mobileBrandPetRef])
+const { brandState, jumpBrandPet, staticMode, waveBrandPet } = useHmrBrandPet([
+  desktopBrandPetRef,
+  mobileBrandPetRef,
+  preloaderLogoRef,
+])
 const scrollProgressStyle = computed(() => ({
   '--hmr-scroll-progress': progress.value.toString(),
 }))
 const currentYear = new Date().getFullYear()
-const brandMarkUrl = new URL('/icons/sitting-192.webp', window.location.origin).toString()
 const preloaderTopMarks = ['YT', 'IG', 'X', 'TT', 'SR']
 const preloaderBottomMarks = ['01', '02', '03', '04', '05', '06']
 

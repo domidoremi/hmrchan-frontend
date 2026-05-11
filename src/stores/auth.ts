@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { apiClient, ApiError } from '@/api/client'
 import { shouldUseApiFallback } from '@/api/runtimeFlags'
 import type { HmrAuthIntent, HmrPasskeyRecoveryStatus } from '@/hmr/types'
+import { resolveRedirectTarget } from '@/router/redirect'
 
 export interface AuthUser {
   id: string
@@ -27,6 +28,7 @@ interface RegisterResponse {
 
 interface GoogleExchangeResponse extends SessionSummary {
   redirect_to?: string
+  return_to?: string
 }
 
 interface PasskeyRecoveryStartResponse {
@@ -284,7 +286,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     const params = new URLSearchParams({
       intent,
-      return_to: returnTo,
+      return_to: resolveRedirectTarget(returnTo),
     })
     window.location.assign(`/api/v1/auth/google/start?${params.toString()}`)
   }
@@ -308,7 +310,7 @@ export const useAuthStore = defineStore('auth', () => {
       })
       applySession(response)
       isInitialized.value = true
-      return response.redirect_to ?? null
+      return resolveRedirectTarget(response.redirect_to ?? response.return_to, '/profile')
     } catch (callbackError) {
       error.value = normalizeError(callbackError)
       applySession(null)

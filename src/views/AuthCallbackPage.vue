@@ -20,15 +20,14 @@ import { computed, onMounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
+import { resolveRedirectTarget } from '@/router/redirect'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-const nextRedirect = computed(() =>
-  typeof route.query.redirect === 'string' ? route.query.redirect : '/profile'
-)
+const nextRedirect = computed(() => resolveRedirectTarget(route.query.redirect))
 const statusCopy = computed(() => auth.error ?? t('auth.callbackBody'))
 
 onMounted(async () => {
@@ -37,7 +36,7 @@ onMounted(async () => {
     await auth.resolveSession()
   }
   if (auth.isAuthenticated) {
-    await router.replace(exchangedRedirect ?? nextRedirect.value)
+    await router.replace(resolveRedirectTarget(exchangedRedirect, nextRedirect.value))
   }
 })
 </script>

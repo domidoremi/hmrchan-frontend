@@ -1,106 +1,189 @@
 <template>
   <div class="hmr-route-page hmr-route-page--settings">
-    <header class="hmr-auth-page hmr-settings-hero">
-      <div class="hmr-auth-layout hmr-form-layout--wide">
-        <aside class="hmr-auth-story" data-hmr-reveal>
-          <p class="hmr-kicker">{{ t('settings.eyebrow') }}</p>
+    <header class="hmr-settings-header">
+      <div class="hmr-container hmr-container--large">
+        <p class="hmr-kicker">{{ t('settings.eyebrow') }}</p>
+        <div class="hmr-settings-title-row">
           <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('settings.title') }}</h1>
-          <div class="hmr-story-stack">
-            <article v-for="item in settingsStories" :key="item.title" class="hmr-story-block">
-              <p class="hmr-kicker">{{ item.kicker }}</p>
-              <strong>{{ item.title }}</strong>
-              <span>{{ item.body }}</span>
-            </article>
-          </div>
-        </aside>
-
-        <article class="hmr-panel hmr-settings-panel" data-hmr-reveal>
-          <p class="hmr-kicker">{{ t('settings.account') }}</p>
-          <h2 class="hmr-card-title">
-            {{ auth.isAuthenticated ? auth.displayName : t('nav.login') }}
-          </h2>
-          <HmrPageStateBlock
-            :loading="state === 'loading'"
-            :empty="false"
-            :error="resource.error"
-            :show-when-ready="false"
-            :retry-label="t('explore.loadMore')"
-            @retry="refreshSettings"
-          />
-          <div class="hmr-setting-list">
-            <button type="button" @click="theme.toggleTheme">
-              <span>{{ t('shell.theme') }}</span>
-              <strong>{{ theme.isDark ? t('shell.darkMode') : t('shell.lightMode') }}</strong>
-            </button>
-            <label class="hmr-setting-list__select">
-              <span>{{ t('shell.language') }}</span>
-              <select :value="locale" @change="handleLocaleChange">
-                <option v-for="item in localeOptions" :key="item.id" :value="item.id">
-                  {{ item.label }}
-                </option>
-              </select>
-            </label>
-            <button type="button" @click="toggleAnimations">
-              <span>动效</span>
-              <strong>{{ preferences.preferences.enableAnimations ? '开启' : '关闭' }}</strong>
-            </button>
-            <label class="hmr-setting-list__select">
-              <span>动效强度</span>
-              <select
-                :value="preferences.preferences.animationIntensity"
-                @change="handleAnimationIntensityChange"
-              >
-                <option value="subtle">克制</option>
-                <option value="normal">标准</option>
-                <option value="none">无</option>
-              </select>
-            </label>
-            <button type="button" @click="toggleDeskPet">
-              <span>Tidyfox 桌宠</span>
-              <strong>{{ preferences.preferences.deskPet.enabled ? '开启' : '关闭' }}</strong>
-            </button>
-            <button type="button" @click="toggleHeroInteraction">
-              <span>首屏互动</span>
-              <strong>{{
-                preferences.preferences.deskPet.autoHeroInteraction ? '自动' : '手动'
-              }}</strong>
-            </button>
-            <button type="button" :disabled="cacheClearState === 'clearing'" @click="clearCache">
-              <span>公开缓存</span>
-              <strong>{{ cacheClearLabel }}</strong>
-            </button>
-            <RouterLink to="/profile">
-              <span>{{ t('settings.account') }}</span>
-              <strong>{{ auth.isAuthenticated ? auth.displayName : '未登录' }}</strong>
-            </RouterLink>
-            <RouterLink to="/auth/passkey-recovery">
-              <span>Passkey</span>
-              <strong>{{ t('settings.recovery') }}</strong>
-            </RouterLink>
-            <RouterLink to="/contact">
-              <span>{{ t('nav.contact') }}</span>
-              <strong>联系 MomiChan</strong>
-            </RouterLink>
-            <button type="button" :disabled="auth.isLoading" @click="logout">
-              <span>{{ t('settings.session') }}</span>
-              <strong>{{ auth.isAuthenticated ? t('shell.logout') : t('nav.login') }}</strong>
-            </button>
-          </div>
-        </article>
+          <p class="hmr-body">账户、安全、外观和本地数据清理集中在这里，常用操作保持在一屏内。</p>
+        </div>
       </div>
     </header>
 
-    <section class="hmr-section hmr-section--tight" data-hmr-reveal>
+    <section class="hmr-settings-workspace" data-hmr-reveal>
       <div class="hmr-container hmr-container--large">
-        <div class="hmr-section-head">
-          <p class="hmr-kicker">{{ t('settings.index') }}</p>
-          <h2 class="hmr-section-title">{{ t('settings.state') }}</h2>
-        </div>
-        <div class="hmr-signal-grid hmr-settings-grid">
-          <article v-for="item in settingsDeck" :key="item.id" class="hmr-mini-panel">
-            <p class="hmr-kicker">{{ item.metric }}</p>
-            <strong>{{ item.title }}</strong>
-            <span>{{ item.excerpt }}</span>
+        <HmrPageStateBlock
+          :loading="state === 'loading'"
+          :empty="false"
+          :error="resource.error"
+          :show-when-ready="false"
+          :retry-label="t('explore.loadMore')"
+          @retry="refreshSettings"
+        />
+
+        <div class="hmr-settings-layout">
+          <article class="hmr-settings-card hmr-settings-card--account">
+            <div>
+              <p class="hmr-kicker">账户与登录</p>
+              <h2>{{ auth.isAuthenticated ? auth.displayName : '访客模式' }}</h2>
+              <p>
+                {{
+                  auth.isAuthenticated
+                    ? '你的会话已连接，可以继续管理个人资料、收藏、历史和账号安全。'
+                    : '登录后可以同步收藏、历史、通知与安全恢复能力。'
+                }}
+              </p>
+            </div>
+            <div class="hmr-settings-action-row">
+              <RouterLink v-if="auth.isAuthenticated" class="hmr-cta" to="/profile">
+                打开个人中心
+              </RouterLink>
+              <template v-else>
+                <RouterLink class="hmr-cta" to="/login?redirect=/settings">登录</RouterLink>
+                <RouterLink class="hmr-text-link" to="/register?redirect=/settings">
+                  创建账号
+                </RouterLink>
+              </template>
+            </div>
+          </article>
+
+          <article class="hmr-settings-card">
+            <div class="hmr-settings-card-head">
+              <div>
+                <p class="hmr-kicker">安全与恢复</p>
+                <h2>登录保护</h2>
+              </div>
+              <span>{{ auth.isAuthenticated ? '已连接' : '待登录' }}</span>
+            </div>
+            <div class="hmr-settings-list">
+              <RouterLink to="/auth/passkey-recovery">
+                <span>Passkey 恢复</span>
+                <strong>重新注册可信凭据</strong>
+              </RouterLink>
+              <RouterLink
+                :to="
+                  auth.isAuthenticated ? '/profile/security' : '/login?redirect=/profile/security'
+                "
+              >
+                <span>设备与会话</span>
+                <strong>{{ auth.isAuthenticated ? '查看安全状态' : '登录后查看' }}</strong>
+              </RouterLink>
+              <RouterLink
+                :to="auth.isAuthenticated ? '/profile/inbox' : '/login?redirect=/profile/inbox'"
+              >
+                <span>邮箱与通知</span>
+                <strong>{{ auth.isAuthenticated ? '管理提醒' : '登录后管理' }}</strong>
+              </RouterLink>
+            </div>
+          </article>
+
+          <article class="hmr-settings-card hmr-settings-card--wide">
+            <div class="hmr-settings-card-head">
+              <div>
+                <p class="hmr-kicker">外观与语言</p>
+                <h2>界面偏好</h2>
+              </div>
+              <span>{{ themeLabel }}</span>
+            </div>
+            <div class="hmr-settings-controls">
+              <div class="hmr-settings-control">
+                <span>主题模式</span>
+                <div class="hmr-segmented-control" role="group" aria-label="主题模式">
+                  <button
+                    v-for="item in themeOptions"
+                    :key="item.value"
+                    type="button"
+                    :class="{ 'is-active': theme.theme === item.value }"
+                    @click="theme.setTheme(item.value)"
+                  >
+                    {{ item.label }}
+                  </button>
+                </div>
+              </div>
+              <label class="hmr-settings-control">
+                <span>{{ t('shell.language') }}</span>
+                <select :value="locale" @change="handleLocaleChange">
+                  <option v-for="item in localeOptions" :key="item.id" :value="item.id">
+                    {{ item.label }}
+                  </option>
+                </select>
+              </label>
+              <div class="hmr-settings-control">
+                <span>动效</span>
+                <button
+                  class="hmr-toggle-button"
+                  type="button"
+                  :aria-pressed="preferences.preferences.enableAnimations"
+                  @click="toggleAnimations"
+                >
+                  {{ preferences.preferences.enableAnimations ? '开启' : '关闭' }}
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article class="hmr-settings-card">
+            <div class="hmr-settings-card-head">
+              <div>
+                <p class="hmr-kicker">数据与缓存</p>
+                <h2>公开内容缓存</h2>
+              </div>
+              <span>{{ cacheClearLabel }}</span>
+            </div>
+            <p>
+              只清理公开内容的 Memory、IndexedDB 与 Service Worker
+              缓存，不影响登录态或本地账号数据。
+            </p>
+            <button
+              class="hmr-settings-button"
+              type="button"
+              :disabled="cacheClearState === 'clearing'"
+              @click="clearCache"
+            >
+              清理公开缓存
+            </button>
+          </article>
+
+          <article class="hmr-settings-card">
+            <div class="hmr-settings-card-head">
+              <div>
+                <p class="hmr-kicker">支持</p>
+                <h2>反馈与帮助</h2>
+              </div>
+              <span>联系</span>
+            </div>
+            <div class="hmr-settings-list">
+              <RouterLink to="/contact">
+                <span>{{ t('nav.contact') }}</span>
+                <strong>联系 MomiChan</strong>
+              </RouterLink>
+              <RouterLink to="/about">
+                <span>{{ t('nav.about') }}</span>
+                <strong>了解产品与规则</strong>
+              </RouterLink>
+            </div>
+          </article>
+
+          <article class="hmr-settings-card hmr-settings-card--danger">
+            <div>
+              <p class="hmr-kicker">会话</p>
+              <h2>{{ auth.isAuthenticated ? '退出当前账号' : '进入登录流程' }}</h2>
+              <p>
+                {{
+                  auth.isAuthenticated
+                    ? '退出只会结束当前浏览器会话。'
+                    : '登录后可继续访问个人内容。'
+                }}
+              </p>
+            </div>
+            <button
+              class="hmr-settings-button"
+              type="button"
+              :disabled="auth.isLoading"
+              @click="logout"
+            >
+              {{ auth.isAuthenticated ? t('shell.logout') : t('nav.login') }}
+            </button>
           </article>
         </div>
       </div>
@@ -122,8 +205,8 @@ import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 import { applyLocale, type SupportedLocale, supportedLocales } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
-import { type HmrAnimationIntensity, usePreferencesStore } from '@/stores/preferences'
-import { useThemeStore } from '@/stores/theme'
+import { usePreferencesStore } from '@/stores/preferences'
+import { type HmrTheme, useThemeStore } from '@/stores/theme'
 import { clearPublicContentCache } from '@/utils/cache/publicContentCache'
 
 const auth = useAuthStore()
@@ -146,11 +229,6 @@ const resource = ref<HmrAsyncResource<HmrSettingsContent>>({
   paths: ['/preferences', '/2fa/status', '/devices'],
   updatedAt: null,
 })
-const settingsDeck = computed(() => [
-  ...content.value.account,
-  ...content.value.security,
-  ...content.value.preferences,
-])
 const localeLabels: Record<SupportedLocale, string> = {
   'zh-CN': '简体中文',
   'en-US': 'English',
@@ -160,28 +238,20 @@ const localeOptions = supportedLocales.map((id) => ({
   id,
   label: localeLabels[id],
 }))
-const settingsStories = computed(() => [
-  {
-    kicker: '01 / 账户',
-    title: t('settings.account'),
-    body: t('settings.accountBody'),
-  },
-  {
-    kicker: '02 / 偏好',
-    title: t('settings.preferences'),
-    body: t('settings.preferencesBody'),
-  },
-  {
-    kicker: '03 / 支持',
-    title: t('settings.support'),
-    body: t('settings.supportBody'),
-  },
-])
+const themeOptions: Array<{ value: HmrTheme; label: string }> = [
+  { value: 'light', label: '浅色' },
+  { value: 'dark', label: '深色' },
+  { value: 'system', label: '跟随系统' },
+]
+const themeLabel = computed(() => {
+  if (theme.theme === 'system') return `系统 / ${theme.resolvedTheme === 'dark' ? '深色' : '浅色'}`
+  return theme.theme === 'dark' ? '深色' : '浅色'
+})
 const cacheClearLabel = computed(() => {
   if (cacheClearState.value === 'clearing') return '清理中'
   if (cacheClearState.value === 'done') return '已清理'
   if (cacheClearState.value === 'error') return '重试'
-  return '清理'
+  return '可清理'
 })
 
 async function logout(): Promise<void> {
@@ -200,11 +270,7 @@ async function refreshSettings(): Promise<void> {
       state: 'ready',
       data: content.value,
       source: 'local',
-      error: {
-        kind: 'unauthorized',
-        message: '',
-        path: '/preferences',
-      },
+      error: null,
       paths: ['/preferences', '/2fa/status', '/devices'],
       updatedAt: new Date().toISOString(),
     }
@@ -230,19 +296,6 @@ function toggleAnimations(): void {
   preferences.setAnimationsEnabled(!preferences.preferences.enableAnimations)
 }
 
-function handleAnimationIntensityChange(event: Event): void {
-  const value = (event.target as HTMLSelectElement).value as HmrAnimationIntensity
-  preferences.setAnimationIntensity(value)
-}
-
-function toggleDeskPet(): void {
-  preferences.setDeskPetEnabled(!preferences.preferences.deskPet.enabled)
-}
-
-function toggleHeroInteraction(): void {
-  preferences.setAutoHeroInteraction(!preferences.preferences.deskPet.autoHeroInteraction)
-}
-
 async function clearCache(): Promise<void> {
   cacheClearState.value = 'clearing'
   try {
@@ -258,6 +311,7 @@ async function clearCache(): Promise<void> {
 
 onMounted(() => {
   preferences.initializePreferences()
+  theme.initializeTheme()
   void refreshSettings()
 })
 </script>

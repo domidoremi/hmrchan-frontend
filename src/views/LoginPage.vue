@@ -65,6 +65,7 @@ import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
+import { resolveRedirectTarget } from '@/router/redirect'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n({ useScope: 'global' })
@@ -73,9 +74,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const username = ref('')
 const password = ref('')
-const redirectTo = computed(() =>
-  typeof route.query.redirect === 'string' ? route.query.redirect : '/profile'
-)
+const redirectTo = computed(() => resolveRedirectTarget(route.query.redirect))
 const registerTarget = computed(() => ({
   path: '/register',
   query: { redirect: redirectTo.value },

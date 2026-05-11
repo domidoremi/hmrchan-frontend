@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import { resolveRedirectTarget } from '@/router/redirect'
 import { appRoutes } from '@/router/routes'
 import { useAuthStore } from '@/stores/auth'
 import { isContractResourceId } from '@/utils/contractResourceId'
@@ -13,12 +14,6 @@ const router = createRouter({
     return { top: 0 }
   },
 })
-
-function resolveRedirectTarget(value: unknown, fallback = '/profile'): string {
-  if (typeof value !== 'string' || !value.startsWith('/')) return fallback
-  if (value.startsWith('//')) return fallback
-  return value
-}
 
 const PUBLIC_ID_DETAIL_ROUTE_NAMES = new Set([
   'hmr-post-detail',

@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const resolveHtmlDocumentWithEdgeData = vi.fn()
-const resolveCanonicalUrl = vi.fn((config: { canonicalPath: string }) => {
-  return `https://momichan.xyz${config.canonicalPath}`
+const resolveCanonicalUrlForOrigin = vi.fn((config: { canonicalPath: string }, origin: string) => {
+  return `${origin}${config.canonicalPath}`
 })
+const resolveDefaultOgImage = vi.fn((origin: string) => `${origin}/og-default.png`)
 const renderPrerenderShell = vi.fn(
   (config: { shellTitle: string }) =>
     `<section data-prerender-shell="true">${config.shellTitle}</section>`
@@ -16,7 +17,8 @@ vi.mock('../../src/edge/detailDocumentResolver', () => ({
 
 vi.mock('../../src/edge/htmlDocument', () => ({
   DEFAULT_OG_IMAGE: 'https://momichan.xyz/og-default.png',
-  resolveCanonicalUrl,
+  resolveDefaultOgImage,
+  resolveCanonicalUrlForOrigin,
   renderPrerenderShell,
   resolveStructuredDataPayload,
 }))
@@ -105,7 +107,8 @@ describe('functions/_middleware', () => {
   beforeEach(() => {
     vi.resetModules()
     resolveHtmlDocumentWithEdgeData.mockReset()
-    resolveCanonicalUrl.mockClear()
+    resolveCanonicalUrlForOrigin.mockClear()
+    resolveDefaultOgImage.mockClear()
     renderPrerenderShell.mockClear()
     resolveStructuredDataPayload.mockClear()
 
@@ -142,6 +145,44 @@ describe('functions/_middleware', () => {
     expect(response.headers.get('Strict-Transport-Security')).toBe(
       'max-age=63072000; includeSubDomains; preload'
     )
+  })
+
+  it('does not redirect next.momichan.xyz to the main frontend host', async () => {
+    resolveHtmlDocumentWithEdgeData.mockResolvedValue({
+      status: 200,
+      title: 'Login · MomiChan',
+      description: 'login',
+      robots: 'noindex, nofollow',
+      ogType: 'website',
+      canonicalPath: '/login',
+      ogImage: null,
+      shellTitle: 'Login',
+    })
+
+    const next = vi.fn(() =>
+      Promise.resolve(
+        new MockResponse(
+          '<!doctype html><html><head><title>Login</title><link rel="canonical" href="https://old.example" /><meta property="og:url" content="https://old.example" /><meta name="twitter:url" content="https://old.example" /><script src="/assets/app.js"></script></head><body><div id="app-root"></div></body></html>',
+          {
+            headers: { 'content-type': 'text/html; charset=utf-8' },
+          }
+        )
+      )
+    )
+    const { onRequest } = await import('../_middleware')
+
+    const response = await onRequest({
+      request: new Request('https://next.momichan.xyz/login?redirect=/'),
+      env: {},
+      next,
+    } as never)
+
+    expect(next).toHaveBeenCalled()
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Location')).toBeNull()
+    const html = await response.text()
+    expect(html).toContain('https://next.momichan.xyz/login')
+    expect(html).not.toContain('https://momichan.xyz/login')
   })
 
   it('applies HTML security headers, rewrites metadata, and returns the edge status', async () => {

@@ -9,7 +9,8 @@
 
 import {
   DEFAULT_OG_IMAGE,
-  resolveCanonicalUrl,
+  resolveDefaultOgImage,
+  resolveCanonicalUrlForOrigin,
   renderPrerenderShell,
   resolveStructuredDataPayload,
 } from '../src/edge/htmlDocument'
@@ -214,7 +215,8 @@ export async function onRequest(
 
   const nonce = generateNonce()
   const documentConfig = await resolveHtmlDocumentWithEdgeData(requestUrl, context.env)
-  const canonicalUrl = resolveCanonicalUrl(documentConfig)
+  const canonicalUrl = resolveCanonicalUrlForOrigin(documentConfig, requestUrl.origin)
+  const defaultOgImage = resolveDefaultOgImage(requestUrl.origin)
   const prerenderShell = renderPrerenderShell(documentConfig)
   const structuredDataPayload = resolveStructuredDataPayload(documentConfig)
 
@@ -229,14 +231,14 @@ export async function onRequest(
     .on('meta[property="og:description"]', new MetaContentHandler(documentConfig.description))
     .on(
       'meta[property="og:image"]',
-      new MetaContentHandler(documentConfig.ogImage || DEFAULT_OG_IMAGE)
+      new MetaContentHandler(documentConfig.ogImage || defaultOgImage || DEFAULT_OG_IMAGE)
     )
     .on('meta[name="twitter:title"]', new MetaContentHandler(documentConfig.title))
     .on('meta[name="twitter:description"]', new MetaContentHandler(documentConfig.description))
     .on('meta[name="twitter:url"]', new MetaContentHandler(canonicalUrl))
     .on(
       'meta[name="twitter:image"]',
-      new MetaContentHandler(documentConfig.ogImage || DEFAULT_OG_IMAGE)
+      new MetaContentHandler(documentConfig.ogImage || defaultOgImage || DEFAULT_OG_IMAGE)
     )
     .on('link[rel="canonical"]', new CanonicalHandler(canonicalUrl))
     .on(

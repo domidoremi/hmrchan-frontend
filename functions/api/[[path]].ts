@@ -82,6 +82,7 @@ type SessionSummaryResponse = {
 const ALLOWED_ORIGINS = [
   'https://momichan.xyz',
   'https://www.momichan.xyz',
+  'https://next.momichan.xyz',
   'https://himeri.momichan.xyz',
 ]
 const DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
@@ -498,7 +499,7 @@ function buildFallbackSessionSummary(material: BffSessionMaterial): SessionSumma
         : null,
     permission_version: material.permission_version,
     ...(typeof material.return_to === 'string' && material.return_to
-      ? { return_to: material.return_to }
+      ? { return_to: sanitizeSameOriginRelativePath(material.return_to) }
       : {}),
   }
 }
@@ -584,7 +585,7 @@ async function buildSessionSummary(
         : null,
     permission_version: material.permission_version,
     ...(typeof material.return_to === 'string' && material.return_to
-      ? { return_to: material.return_to }
+      ? { return_to: sanitizeSameOriginRelativePath(material.return_to) }
       : {}),
   }
 }
@@ -644,6 +645,7 @@ async function handleInternalAuthResult(
   } catch {
     sessionSummary = buildFallbackSessionSummary(payload)
   }
+  sessionSummary = sanitizeAuthSessionSummaryRedirects(sessionSummary)
   return jsonResponse(sessionSummary, response.status, headers)
 }
 
@@ -920,6 +922,23 @@ function safelyParseUrl(value: string, base?: string): URL | null {
     return base ? new URL(value, base) : new URL(value)
   } catch {
     return null
+  }
+}
+
+function sanitizeSameOriginRelativePath(value: unknown, fallback = '/profile'): string {
+  if (typeof value !== 'string' || !value.startsWith('/')) return fallback
+  if (value.startsWith('//')) return fallback
+  return value
+}
+
+function sanitizeAuthSessionSummaryRedirects(
+  summary: SessionSummaryResponse
+): SessionSummaryResponse {
+  return {
+    ...summary,
+    ...(typeof summary.return_to === 'string'
+      ? { return_to: sanitizeSameOriginRelativePath(summary.return_to) }
+      : {}),
   }
 }
 

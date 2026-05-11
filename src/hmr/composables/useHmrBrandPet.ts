@@ -1,4 +1,7 @@
-import { onBeforeUnmount, onMounted, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
+
+import type { HmrBrandSpriteState } from '@/hmr/components/HmrBrandSprite.vue'
+import { usePreferencesStore } from '@/stores/preferences'
 
 type BrandPetPointer = {
   x: number
@@ -6,9 +9,15 @@ type BrandPetPointer = {
 }
 
 export function useHmrBrandPet(petRefs: Array<Ref<HTMLElement | null>>) {
+  const preferences = usePreferencesStore()
+  const brandState = ref<HmrBrandSpriteState>('idle')
+  const reducedMotion = ref(false)
+  const staticMode = computed(() => !preferences.animationsAllowed || reducedMotion.value)
+  const cooldowns = new Map<HmrBrandSpriteState, number>()
   let animationFrame: number | undefined
   let resetTimer: number | undefined
-  let pounceTimer: number | undefined
+  let stateTimer: number | undefined
+  let idleTimer: number | undefined
   let motionQuery: MediaQueryList | undefined
   let motionQueryListener: ((event: MediaQueryListEvent) => void) | undefined
   let listenersActive = false
@@ -31,15 +40,61 @@ export function useHmrBrandPet(petRefs: Array<Ref<HTMLElement | null>>) {
     })
   }
 
+  function stopStateTimer(): void {
+    if (stateTimer === undefined) return
+    window.clearTimeout(stateTimer)
+    stateTimer = undefined
+  }
+
+  function stopIdleTimer(): void {
+    if (idleTimer === undefined) return
+    window.clearTimeout(idleTimer)
+    idleTimer = undefined
+  }
+
+  function setBrandState(
+    state: HmrBrandSpriteState,
+    duration = 900,
+    cooldown = 700,
+    fallback: HmrBrandSpriteState = 'idle'
+  ): void {
+    if (staticMode.value) {
+      brandState.value = 'idle'
+      return
+    }
+
+    const now = Date.now()
+    const nextAllowedAt = cooldowns.get(state) ?? 0
+    if (now < nextAllowedAt && brandState.value === state) return
+    cooldowns.set(state, now + cooldown)
+    stopStateTimer()
+    brandState.value = state
+    stateTimer = window.setTimeout(() => {
+      brandState.value = fallback
+      stateTimer = undefined
+    }, duration)
+  }
+
+  function scheduleIdleReview(): void {
+    stopIdleTimer()
+    if (staticMode.value) return
+
+    const delay = 26000 + Math.floor(Math.random() * 12000)
+    idleTimer = window.setTimeout(() => {
+      setBrandState('review', 1800, 12000)
+      scheduleIdleReview()
+    }, delay)
+  }
+
   function resetElement(element: HTMLElement): void {
-    element.style.setProperty('--hmr-pet-x', '0rem')
-    element.style.setProperty('--hmr-pet-y', '0rem')
-    element.style.setProperty('--hmr-pet-rotate-x', '0deg')
-    element.style.setProperty('--hmr-pet-rotate-y', '0deg')
-    element.style.setProperty('--hmr-pet-rotate-z', '0deg')
-    element.style.setProperty('--hmr-pet-scale', '1')
-    element.style.setProperty('--hmr-pet-look-x', '0rem')
-    element.style.setProperty('--hmr-pet-look-y', '0rem')
+    element.style.setProperty('--hmr-brand-x', '0rem')
+    element.style.setProperty('--hmr-brand-y', '0rem')
+    element.style.setProperty('--hmr-brand-rotate-x', '0deg')
+    element.style.setProperty('--hmr-brand-rotate-y', '0deg')
+    element.style.setProperty('--hmr-brand-rotate-z', '0deg')
+    element.style.setProperty('--hmr-brand-scale', '1')
+    element.style.setProperty('--hmr-brand-look-x', '0rem')
+    element.style.setProperty('--hmr-brand-look-y', '0rem')
     element.classList.remove('is-tracking')
   }
 
@@ -67,7 +122,7 @@ export function useHmrBrandPet(petRefs: Array<Ref<HTMLElement | null>>) {
 
   function applyFollow(): void {
     animationFrame = undefined
-    if (!pointer || motionQuery?.matches) return
+    if (!pointer || staticMode.value) return
 
     const visibleElements = getVisibleElements()
     if (visibleElements.length === 0) return
@@ -84,27 +139,33 @@ export function useHmrBrandPet(petRefs: Array<Ref<HTMLElement | null>>) {
       const distance = Math.hypot(normalizedX, normalizedY)
       const attention = clamp(1.14 - distance * 0.52, 0.28, 1)
 
-      element.style.setProperty('--hmr-pet-x', `${(normalizedX * 0.34 * attention).toFixed(3)}rem`)
-      element.style.setProperty('--hmr-pet-y', `${(normalizedY * 0.24 * attention).toFixed(3)}rem`)
       element.style.setProperty(
-        '--hmr-pet-rotate-x',
+        '--hmr-brand-x',
+        `${(normalizedX * 0.34 * attention).toFixed(3)}rem`
+      )
+      element.style.setProperty(
+        '--hmr-brand-y',
+        `${(normalizedY * 0.24 * attention).toFixed(3)}rem`
+      )
+      element.style.setProperty(
+        '--hmr-brand-rotate-x',
         `${(-normalizedY * 10 * attention).toFixed(2)}deg`
       )
       element.style.setProperty(
-        '--hmr-pet-rotate-y',
+        '--hmr-brand-rotate-y',
         `${(normalizedX * 14 * attention).toFixed(2)}deg`
       )
       element.style.setProperty(
-        '--hmr-pet-rotate-z',
+        '--hmr-brand-rotate-z',
         `${(-normalizedX * 3.5 * attention).toFixed(2)}deg`
       )
-      element.style.setProperty('--hmr-pet-scale', `${(1 + attention * 0.014).toFixed(3)}`)
+      element.style.setProperty('--hmr-brand-scale', `${(1 + attention * 0.014).toFixed(3)}`)
       element.style.setProperty(
-        '--hmr-pet-look-x',
+        '--hmr-brand-look-x',
         `${(normalizedX * 0.16 * attention).toFixed(3)}rem`
       )
       element.style.setProperty(
-        '--hmr-pet-look-y',
+        '--hmr-brand-look-y',
         `${(normalizedY * 0.12 * attention).toFixed(3)}rem`
       )
       element.classList.add('is-tracking')
@@ -112,7 +173,7 @@ export function useHmrBrandPet(petRefs: Array<Ref<HTMLElement | null>>) {
   }
 
   function handlePointerMove(event: PointerEvent): void {
-    if (motionQuery?.matches) return
+    if (staticMode.value) return
 
     pointer = { x: event.clientX, y: event.clientY }
     scheduleReset()
@@ -121,24 +182,12 @@ export function useHmrBrandPet(petRefs: Array<Ref<HTMLElement | null>>) {
     animationFrame = window.requestAnimationFrame(applyFollow)
   }
 
-  function pounceBrandPet(): void {
-    if (motionQuery?.matches) return
+  function waveBrandPet(): void {
+    setBrandState('waving', 900, 650)
+  }
 
-    const visibleElements = getVisibleElements()
-    visibleElements.forEach((element) => {
-      element.classList.remove('is-pouncing')
-      void element.offsetWidth
-      element.classList.add('is-pouncing')
-    })
-
-    if (pounceTimer !== undefined) {
-      window.clearTimeout(pounceTimer)
-    }
-    pounceTimer = window.setTimeout(() => {
-      getElements().forEach((element) => {
-        element.classList.remove('is-pouncing')
-      })
-    }, 680)
+  function jumpBrandPet(): void {
+    setBrandState('jumping', 760, 900)
   }
 
   function addListeners(): void {
@@ -160,20 +209,25 @@ export function useHmrBrandPet(petRefs: Array<Ref<HTMLElement | null>>) {
   }
 
   function setupBrandPet(): void {
+    preferences.initializePreferences()
     motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    reducedMotion.value = motionQuery.matches
     motionQueryListener = (event) => {
+      reducedMotion.value = event.matches
       if (event.matches) {
         removeListeners()
         resetBrandPet()
         return
       }
       addListeners()
+      scheduleIdleReview()
     }
     motionQuery.addEventListener('change', motionQueryListener)
 
     if (!motionQuery.matches) {
       addListeners()
     }
+    scheduleIdleReview()
   }
 
   function teardownBrandPet(): void {
@@ -181,17 +235,32 @@ export function useHmrBrandPet(petRefs: Array<Ref<HTMLElement | null>>) {
     if (motionQuery && motionQueryListener) {
       motionQuery.removeEventListener('change', motionQueryListener)
     }
-    if (pounceTimer !== undefined) {
-      window.clearTimeout(pounceTimer)
-      pounceTimer = undefined
-    }
+    stopStateTimer()
+    stopIdleTimer()
     resetBrandPet()
   }
+
+  watch(staticMode, (isStatic) => {
+    if (isStatic) {
+      brandState.value = 'idle'
+      removeListeners()
+      resetBrandPet()
+      stopStateTimer()
+      stopIdleTimer()
+      return
+    }
+
+    addListeners()
+    scheduleIdleReview()
+  })
 
   onMounted(setupBrandPet)
   onBeforeUnmount(teardownBrandPet)
 
   return {
-    pounceBrandPet,
+    brandState,
+    jumpBrandPet,
+    staticMode,
+    waveBrandPet,
   }
 }

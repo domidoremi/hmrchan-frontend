@@ -1,6 +1,7 @@
 const SITE_NAME = 'MomiChan'
 export const SITE_ORIGIN = 'https://momichan.xyz'
-export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/icons/sitting-512.webp`
+export const DEFAULT_OG_IMAGE_PATH = '/icons/sitting-512.webp'
+export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}${DEFAULT_OG_IMAGE_PATH}`
 
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
@@ -88,6 +89,22 @@ function hasContent(value: unknown): boolean {
 
 function compactRecord<T extends Record<string, unknown>>(record: T): T {
   return Object.fromEntries(Object.entries(record).filter(([, value]) => hasContent(value))) as T
+}
+
+function resolveSiteOrigin(origin = SITE_ORIGIN): string {
+  try {
+    return new URL(origin).origin
+  } catch {
+    return SITE_ORIGIN
+  }
+}
+
+function resolveAbsoluteUrl(path: string, origin = SITE_ORIGIN): string {
+  return new URL(path, resolveSiteOrigin(origin)).toString()
+}
+
+export function resolveDefaultOgImage(origin = SITE_ORIGIN): string {
+  return resolveAbsoluteUrl(DEFAULT_OG_IMAGE_PATH, origin)
 }
 
 function createOrganizationStructuredData(): HtmlStructuredData {
@@ -472,6 +489,13 @@ export function resolveCanonicalUrl(config: HtmlDocumentConfig): string {
   return new URL(config.canonicalPath, SITE_ORIGIN).toString()
 }
 
+export function resolveCanonicalUrlForOrigin(
+  config: HtmlDocumentConfig,
+  origin = SITE_ORIGIN
+): string {
+  return resolveAbsoluteUrl(config.canonicalPath, origin)
+}
+
 function serializeStructuredData(payload: unknown): string {
   return JSON.stringify(payload)
     .replaceAll('<', '\\u003c')
@@ -504,7 +528,7 @@ function renderPrerenderLoaderShell(config: HtmlDocumentConfig): string {
           <circle cx="60" cy="60" r="45" fill="none" stroke="#ff7722" stroke-width="3" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="92"></circle>
         </svg>
         <span style="display:grid;inline-size:48%;aspect-ratio:1;place-items:center;border-radius:50%;background:#3d2fa9;box-shadow:0 2rem 6rem rgba(0,0,0,0.36);">
-          <img src="/icons/sitting-192.webp" alt="" decoding="async" fetchpriority="high" style="inline-size:88%;block-size:88%;object-fit:contain;" />
+          <span aria-hidden="true" style="display:block;inline-size:100%;aspect-ratio:12/13;background-image:url('/hmrchan/pets/tidyfox/spritesheet.webp');background-repeat:no-repeat;background-size:800% 900%;background-position:0 0;"></span>
         </span>
       </div>
       <div aria-hidden="true" style="position:absolute;inset-inline:6vw;inset-block-end:7vh;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0.75rem;opacity:0.16;">
