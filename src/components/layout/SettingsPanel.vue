@@ -748,6 +748,8 @@ const deskPetConfig = computed(() => {
   return (
     settings.value.deskPet ?? {
       enabled: false,
+      autoHomeEnabled: true,
+      dismissedAutoHome: false,
       scale: 1,
       speechEnabled: true,
       autoHeroInteraction: true,
@@ -913,7 +915,11 @@ function onMascotOpacityChange(e: Event) {
 }
 
 function toggleDeskPetEnabled() {
-  settingsStore.setDeskPet({ enabled: !deskPetConfig.value.enabled })
+  const enabled = !deskPetConfig.value.enabled
+  settingsStore.setDeskPet({
+    enabled,
+    dismissedAutoHome: enabled ? false : true,
+  })
 }
 
 function toggleDeskPetSpeech() {

@@ -10,6 +10,8 @@ const testState = vi.hoisted(() => ({
       animationIntensity: 'normal',
       deskPet: {
         enabled: true,
+        autoHomeEnabled: true,
+        dismissedAutoHome: false,
         scale: 1,
         speechEnabled: true,
         autoHeroInteraction: true,
@@ -47,8 +49,11 @@ describe('DeskPet', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     testState.settingsStore.settings.deskPet.enabled = true
+    testState.settingsStore.settings.deskPet.autoHomeEnabled = true
+    testState.settingsStore.settings.deskPet.dismissedAutoHome = false
     testState.settingsStore.settings.deskPet.speechEnabled = true
     testState.settingsStore.settings.enableAnimations = true
+    testState.settingsStore.settings.animationIntensity = 'normal'
     testState.settingsStore.setDeskPet.mockReset()
     window.localStorage.clear()
   })
@@ -91,5 +96,78 @@ describe('DeskPet', () => {
     expect(documentRemoveSpy).toHaveBeenCalledWith('click', expect.any(Function))
     expect(windowRemoveSpy).toHaveBeenCalledWith('resize', expect.any(Function))
     expect(windowRemoveSpy).toHaveBeenCalledWith('scroll', expect.any(Function))
+  })
+
+  it('plays the homepage auto intro and perches near the hero CTA', async () => {
+    document.body.innerHTML =
+      '<button class="hero-btn" style="position: fixed; left: 320px; top: 260px; width: 160px; height: 44px;">Explore</button>'
+    const heroButton = document.querySelector<HTMLElement>('.hero-btn')!
+    vi.spyOn(heroButton, 'getBoundingClientRect').mockReturnValue({
+      x: 320,
+      y: 260,
+      left: 320,
+      top: 260,
+      right: 480,
+      bottom: 304,
+      width: 160,
+      height: 44,
+      toJSON: () => ({}),
+    } as DOMRect)
+
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(
+      (callback: FrameRequestCallback) => {
+        window.setTimeout(() => callback(performance.now() + 900), 16)
+        return 1
+      }
+    )
+
+    const wrapper = mount(DeskPet, {
+      attachTo: document.body,
+      props: {
+        autoHomeMode: true,
+      },
+    })
+
+    await vi.advanceTimersByTimeAsync(600)
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(20)
+    await flushPromises()
+
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--perch')
+  })
+
+  it('keeps homepage auto mode hidden after explicit close', async () => {
+    const wrapper = mount(DeskPet, {
+      attachTo: document.body,
+      props: {
+        autoHomeMode: true,
+      },
+    })
+
+    await wrapper.get('.desk-pet__close').trigger('click')
+
+    expect(testState.settingsStore.setDeskPet).toHaveBeenCalledWith({
+      enabled: false,
+      dismissedAutoHome: true,
+    })
+  })
+
+  it('does not run homepage intro when animations are disabled', async () => {
+    testState.settingsStore.settings.enableAnimations = false
+
+    document.body.innerHTML =
+      '<button class="hero-btn" style="position: fixed; left: 320px; top: 260px; width: 160px; height: 44px;">Explore</button>'
+    const wrapper = mount(DeskPet, {
+      attachTo: document.body,
+      props: {
+        autoHomeMode: true,
+      },
+    })
+
+    await vi.advanceTimersByTimeAsync(800)
+    await flushPromises()
+
+    expect(wrapper.get('.desk-pet').classes()).not.toContain('desk-pet--perch')
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--no-anim')
   })
 })

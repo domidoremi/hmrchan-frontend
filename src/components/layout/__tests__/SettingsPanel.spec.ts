@@ -64,6 +64,8 @@ const settingsStoreState = reactive({
     },
     deskPet: {
       enabled: false,
+      autoHomeEnabled: true,
+      dismissedAutoHome: false,
       scale: 1,
       speechEnabled: true,
       autoHeroInteraction: true,
@@ -242,6 +244,8 @@ describe('SettingsPanel', () => {
       },
       deskPet: {
         enabled: false,
+        autoHomeEnabled: true,
+        dismissedAutoHome: false,
         scale: 1,
         speechEnabled: true,
         autoHeroInteraction: true,

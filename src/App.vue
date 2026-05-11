@@ -92,7 +92,7 @@
     </div>
 
     <!-- Desk Pet -->
-    <DeskPet v-if="showDeskPet" />
+    <DeskPet v-if="showDeskPet" :auto-home-mode="showAutoHomeDeskPet" />
   </div>
 </template>
 
@@ -180,7 +180,19 @@ const showMascotBackground = computed(
     settings.value.animationIntensity !== 'none' &&
     settings.value.mascotBackground.enabled
 )
-const showDeskPet = computed(() => decorationsReady.value && settings.value.deskPet.enabled)
+const showAutoHomeDeskPet = computed(
+  () =>
+    decorationsReady.value &&
+    isHomeRoute.value &&
+    settings.value.enableAnimations &&
+    settings.value.animationIntensity !== 'none' &&
+    settings.value.deskPet.autoHomeEnabled &&
+    settings.value.deskPet.autoHeroInteraction &&
+    !settings.value.deskPet.dismissedAutoHome
+)
+const showDeskPet = computed(
+  () => decorationsReady.value && (settings.value.deskPet.enabled || showAutoHomeDeskPet.value)
+)
 const showBackgroundDecorations = computed(
   () => showMascotBackground.value || showParticleBackground.value
 )

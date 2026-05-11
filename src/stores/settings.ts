@@ -45,6 +45,10 @@ export interface MascotBackgroundConfig {
 export interface DeskPetConfig {
   /** 开关 */
   enabled: boolean
+  /** 首页首屏自动体验（不等同于全站桌宠常驻开关） */
+  autoHomeEnabled: boolean
+  /** 用户是否显式关闭过首页自动桌宠 */
+  dismissedAutoHome: boolean
   /** 尺寸倍率 0.8-1.5 */
   scale: number
   /** 允许气泡台词 */
@@ -115,6 +119,8 @@ const defaultSettings: Settings = {
   },
   deskPet: {
     enabled: false,
+    autoHomeEnabled: true,
+    dismissedAutoHome: false,
     scale: 1,
     speechEnabled: true,
     autoHeroInteraction: true,
@@ -369,6 +375,12 @@ export const useSettingsStore = defineStore(
       const next = {
         ...settings.value.deskPet,
         ...config,
+      }
+      if (config.enabled === true && config.dismissedAutoHome === undefined) {
+        next.dismissedAutoHome = false
+      }
+      if (config.enabled === false && config.dismissedAutoHome === undefined) {
+        next.dismissedAutoHome = true
       }
       next.scale = Math.min(1.5, Math.max(0.8, next.scale))
       next.followSensitivity = Math.min(1.8, Math.max(0.5, next.followSensitivity))

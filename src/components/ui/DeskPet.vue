@@ -3,22 +3,37 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores'
+import { prefersReducedMotion } from '@/utils/performance'
 
 const { t, tm } = useI18n()
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
 
+const props = withDefaults(
+  defineProps<{
+    autoHomeMode?: boolean
+  }>(),
+  {
+    autoHomeMode: false,
+  }
+)
+
 const defaultDeskPetSettings = {
   enabled: false,
+  autoHomeEnabled: true,
+  dismissedAutoHome: false,
   scale: 1,
   speechEnabled: true,
   autoHeroInteraction: true,
   followSensitivity: 1,
 }
 const deskPetSettings = computed(() => settings.value.deskPet ?? defaultDeskPetSettings)
-const visible = computed(() => deskPetSettings.value.enabled)
+const visible = computed(() => deskPetSettings.value.enabled || props.autoHomeMode)
 const shouldAnimate = computed(
-  () => settings.value.enableAnimations && settings.value.animationIntensity !== 'none'
+  () =>
+    settings.value.enableAnimations &&
+    settings.value.animationIntensity !== 'none' &&
+    !prefersReducedMotion()
 )
 
 // ─── 状态 ───
@@ -35,6 +50,7 @@ enum PetState {
   PAT = 'pat',
   EAT = 'eat',
   DIZZY = 'dizzy',
+  BLINK = 'blink',
   ENTER = 'enter',
   PERCH = 'perch',
   TRACK = 'track',
@@ -55,6 +71,7 @@ const stateImageMap: Record<PetState, string> = {
   [PetState.PAT]: '/images/expressions/kawaii-sm.webp',
   [PetState.EAT]: '/images/expressions/laughing-sm.webp',
   [PetState.DIZZY]: '/images/expressions/confused-sm.webp',
+  [PetState.BLINK]: '/images/expressions/standing-sm.webp',
   [PetState.ENTER]: '/images/expressions/running-sm.webp',
   [PetState.PERCH]: '/images/expressions/standing-sm.webp',
   [PetState.TRACK]: '/images/expressions/surprised-sm.webp',
@@ -202,7 +219,11 @@ const HERO_BUTTON_SELECTOR = '.hero-btn'
 const LOOK_MAX_OFFSET = 10
 const LOOK_MIN_DISTANCE = 220
 const DESK_PET_POSITION_STORAGE_KEY = 'desk-pet:last-position'
-const ENABLE_HOME_AUTO_PERCH = false
+const HERO_REACTION_COOLDOWN_MS = 1400
+const CTA_ATTENTION_COOLDOWN_MS = 4500
+const SCROLL_DIZZY_COOLDOWN_MS = 8000
+const IDLE_BEHAVIOR_MIN_MS = 6500
+const IDLE_BEHAVIOR_JITTER_MS = 6500
 const DEFAULT_POSITION_OBSTACLE_SELECTORS = [
   '.back-to-top',
   '.scroll-down-fab',
@@ -220,6 +241,7 @@ let randomIdleBehaviorTimer: ReturnType<typeof setTimeout> | null = null
 let peekReturnTimer: ReturnType<typeof setTimeout> | null = null
 let heroIntroTimer: ReturnType<typeof setTimeout> | null = null
 let heroReactionUnlockTimer: ReturnType<typeof setTimeout> | null = null
+let ctaAttentionUnlockTimer: ReturnType<typeof setTimeout> | null = null
 let dragStateTimer: ReturnType<typeof setTimeout> | null = null
 let greetingTimer: ReturnType<typeof setTimeout> | null = null
 let pointerTrackRaf: number | null = null
@@ -227,6 +249,8 @@ let movementRaf: number | null = null
 let movementToken = 0
 let hasPlayedHeroIntro = false
 let heroReactionLocked = false
+let ctaAttentionLocked = false
+let lastDizzyAt = 0
 let isDisposed = false
 
 const petStyle = computed<Record<string, string>>(() => ({
@@ -442,7 +466,16 @@ const lockHeroReaction = () => {
   heroReactionUnlockTimer = setTimeout(() => {
     heroReactionLocked = false
     heroReactionUnlockTimer = null
-  }, 900)
+  }, HERO_REACTION_COOLDOWN_MS)
+}
+
+const lockCtaAttention = () => {
+  ctaAttentionLocked = true
+  if (ctaAttentionUnlockTimer) clearTimeout(ctaAttentionUnlockTimer)
+  ctaAttentionUnlockTimer = setTimeout(() => {
+    ctaAttentionLocked = false
+    ctaAttentionUnlockTimer = null
+  }, CTA_ATTENTION_COOLDOWN_MS)
 }
 
 const stopMovement = () => {
@@ -530,6 +563,7 @@ const setLookOffsetByPointer = (clientX: number, clientY: number) => {
 }
 
 const perchOnHeroButton = async (heroBtn: HTMLElement, fromIntro = false) => {
+  if (!shouldAnimate.value && fromIntro) return
   if (!visible.value || isDragging.value || heroReactionLocked) return
   const fromState = currentState.value
   const startState = fromIntro ? PetState.ENTER : PetState.TRACK
@@ -579,7 +613,8 @@ const reactToHeroButtonClick = async (heroBtn: HTMLElement) => {
 }
 
 const playHeroIntroIfNeeded = () => {
-  if (!ENABLE_HOME_AUTO_PERCH) return
+  if (!props.autoHomeMode) return
+  if (!shouldAnimate.value) return
   if (!deskPetSettings.value.autoHeroInteraction) return
   if (hasPlayedHeroIntro || !visible.value) return
   const heroBtn = getHeroButton()
@@ -623,19 +658,25 @@ const transitionTo = (state: PetState, duration: number, afterState = PetState.I
 // ─── 随机待机行为 ───
 const scheduleRandomIdleBehavior = () => {
   if (randomIdleBehaviorTimer) clearTimeout(randomIdleBehaviorTimer)
-  const delay = 5000 + Math.random() * 7000
+  if (!shouldAnimate.value) return
+  const delay = IDLE_BEHAVIOR_MIN_MS + Math.random() * IDLE_BEHAVIOR_JITTER_MS
   randomIdleBehaviorTimer = setTimeout(() => {
     if (currentState.value !== PetState.IDLE && currentState.value !== PetState.PERCH) return
     const restState = currentState.value === PetState.PERCH ? PetState.PERCH : PetState.IDLE
-    const behaviors = [PetState.THINKING, PetState.HAPPY] as const
+    const behaviors = [PetState.BLINK, PetState.THINKING, PetState.HAPPY] as const
     const picked = behaviors[Math.floor(Math.random() * behaviors.length)]
     currentState.value = picked
-    showStateBubble(picked, 2500)
+    if (picked !== PetState.BLINK) {
+      showStateBubble(picked, 2500)
+    }
     if (picked === PetState.HAPPY) spawnParticles('✨', 2)
-    stateResetTimer = setTimeout(() => {
-      currentState.value = restState
-      scheduleRandomIdleBehavior()
-    }, 3000)
+    stateResetTimer = setTimeout(
+      () => {
+        currentState.value = restState
+        scheduleRandomIdleBehavior()
+      },
+      picked === PetState.BLINK ? 900 : 3000
+    )
   }, delay)
 }
 
@@ -661,6 +702,7 @@ let lastScrollTime = 0
 let scrollSpeedAccum = 0
 
 const handleScroll = () => {
+  if (!shouldAnimate.value) return
   const now = Date.now()
   const dt = now - lastScrollTime
   if (dt < 50) return // 节流
@@ -674,8 +716,14 @@ const handleScroll = () => {
   if (speed > 2000) scrollSpeedAccum += speed
   else scrollSpeedAccum = Math.max(0, scrollSpeedAccum - 500)
 
-  if (scrollSpeedAccum > 5000 && currentState.value === PetState.IDLE && !isDragging.value) {
+  if (
+    scrollSpeedAccum > 5000 &&
+    currentState.value === PetState.IDLE &&
+    !isDragging.value &&
+    now - lastDizzyAt > SCROLL_DIZZY_COOLDOWN_MS
+  ) {
     scrollSpeedAccum = 0
+    lastDizzyAt = now
     transitionTo(PetState.DIZZY, 2000)
     showStateBubble(PetState.DIZZY, 2000)
     spawnParticles('💫', 2)
@@ -711,7 +759,7 @@ const getRestState = () =>
 
 const hidePet = () => {
   showContextMenu.value = false
-  settingsStore.setDeskPet({ enabled: false })
+  settingsStore.setDeskPet({ enabled: false, dismissedAutoHome: true })
 }
 let hoverFallbackState: PetState = PetState.IDLE
 
@@ -906,6 +954,26 @@ const handleGlobalClick = (e: MouseEvent) => {
   resetIdleTimer()
 }
 
+const handleGlobalPointerOver = (e: PointerEvent) => {
+  if (!shouldAnimate.value) return
+  if (!deskPetSettings.value.autoHeroInteraction) return
+  if (!visible.value || isDragging.value || heroReactionLocked || ctaAttentionLocked) return
+  const heroBtn = isHeroTarget(e.target)
+  if (!(heroBtn instanceof HTMLElement)) return
+  lockCtaAttention()
+  void perchOnHeroButton(heroBtn)
+}
+
+const handleGlobalFocusIn = (e: FocusEvent) => {
+  if (!shouldAnimate.value) return
+  if (!deskPetSettings.value.autoHeroInteraction) return
+  if (!visible.value || isDragging.value || heroReactionLocked || ctaAttentionLocked) return
+  const heroBtn = isHeroTarget(e.target)
+  if (!(heroBtn instanceof HTMLElement)) return
+  lockCtaAttention()
+  void perchOnHeroButton(heroBtn)
+}
+
 // ─── 生命周期 ───
 onMounted(() => {
   isDisposed = false
@@ -918,6 +986,8 @@ onMounted(() => {
   }, 520)
   document.addEventListener('mousemove', handleGlobalMouseMove)
   document.addEventListener('click', handleGlobalClick)
+  document.addEventListener('pointerover', handleGlobalPointerOver, { passive: true })
+  document.addEventListener('focusin', handleGlobalFocusIn)
   window.addEventListener('resize', handleResize)
   window.addEventListener('scroll', handleScroll, { passive: true })
 
@@ -951,8 +1021,11 @@ onUnmounted(() => {
   if (peekReturnTimer) clearTimeout(peekReturnTimer)
   if (heroIntroTimer) clearTimeout(heroIntroTimer)
   if (heroReactionUnlockTimer) clearTimeout(heroReactionUnlockTimer)
+  if (ctaAttentionUnlockTimer) clearTimeout(ctaAttentionUnlockTimer)
   document.removeEventListener('mousemove', handleGlobalMouseMove)
   document.removeEventListener('click', handleGlobalClick)
+  document.removeEventListener('pointerover', handleGlobalPointerOver)
+  document.removeEventListener('focusin', handleGlobalFocusIn)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('scroll', handleScroll)
 })
@@ -1608,6 +1681,21 @@ onUnmounted(() => {
   .desk-pet__image {
     opacity: 1;
     transition: none;
+  }
+}
+
+.desk-pet--blink .desk-pet__image {
+  animation: desk-pet-blink 0.9s ease-in-out;
+}
+
+@keyframes desk-pet-blink {
+  0%,
+  100% {
+    transform: translate3d(var(--pet-look-x), var(--pet-look-y), 0) scaleY(1);
+  }
+  45%,
+  55% {
+    transform: translate3d(var(--pet-look-x), var(--pet-look-y), 0) scaleY(0.9);
   }
 }
 

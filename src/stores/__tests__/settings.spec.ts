@@ -99,8 +99,21 @@ describe('Settings Store', () => {
     expect(store.settings.backgroundEffect.type).toBe('none')
     expect(store.settings.mascotBackground.enabled).toBe(false)
     expect(store.settings.deskPet.enabled).toBe(false)
+    expect(store.settings.deskPet.autoHomeEnabled).toBe(true)
+    expect(store.settings.deskPet.dismissedAutoHome).toBe(false)
     expect(store.settings.appUpdateStrategy).toBe('public-idle-refresh')
     expect('uiStyle' in store.settings).toBe(false)
+  })
+
+  it('keeps explicit desk pet dismissal ahead of homepage auto mode', () => {
+    const store = useSettingsStore()
+
+    store.setDeskPet({ enabled: false })
+    expect(store.settings.deskPet.dismissedAutoHome).toBe(true)
+
+    store.setDeskPet({ enabled: true })
+    expect(store.settings.deskPet.enabled).toBe(true)
+    expect(store.settings.deskPet.dismissedAutoHome).toBe(false)
   })
 
   it('stores app update strategy locally without exporting it to backend preferences', () => {
