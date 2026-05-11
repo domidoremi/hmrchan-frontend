@@ -3,8 +3,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const exploreMocks = vi.hoisted(() => ({
-  loadCachedPosts: vi.fn(),
-  total: null as { value: number } | null,
+  getPublicPostList: vi.fn(),
   createResizeObserver: vi.fn(),
   storePostNavigationContext: vi.fn(),
   cachePostThumbnailPreview: vi.fn(),
@@ -44,20 +43,10 @@ vi.mock('@/api/postService', () => ({
   },
 }))
 
-vi.mock('@/composables/useCachedPosts', async () => {
-  const { ref } = await import('vue')
-  const total = ref(0)
-  exploreMocks.total = total
-
+vi.mock('@/utils/cache', () => {
   return {
-    useCachedPostList: () => ({
-      total,
-      load: async (...args: Parameters<typeof exploreMocks.loadCachedPosts>) => {
-        const result = await exploreMocks.loadCachedPosts(...args)
-        total.value = result.total ?? 0
-        return result
-      },
-    }),
+    getPublicPostList: (...args: Parameters<typeof exploreMocks.getPublicPostList>) =>
+      exploreMocks.getPublicPostList(...args),
   }
 })
 
@@ -335,8 +324,7 @@ describe('ExplorePage', () => {
       value: 1280,
     })
 
-    exploreMocks.total!.value = 0
-    exploreMocks.loadCachedPosts.mockReset()
+    exploreMocks.getPublicPostList.mockReset()
     exploreMocks.createResizeObserver.mockReset()
     exploreMocks.createResizeObserver.mockReturnValue({
       observe: vi.fn(),
@@ -350,13 +338,16 @@ describe('ExplorePage', () => {
   })
 
   it('renders loaded posts, navigates with "/" shortcut, and requests cursor-based explore data', async () => {
-    exploreMocks.loadCachedPosts.mockResolvedValue({
+    exploreMocks.getPublicPostList.mockResolvedValue({
       data: [
         { id: 'post-1', title: 'First post', platform: 'youtube' },
         { id: 'post-2', title: 'Second post', platform: 'twitter' },
       ],
+      total: 2,
       meta: { next_cursor: 'next-1', has_more: true },
-      fromCache: false,
+      source: 'network',
+      stale: false,
+      key: 'public-content:v1:post-list',
     })
 
     const { router } = createWrapper()
@@ -381,11 +372,12 @@ describe('ExplorePage', () => {
     expect(wrapper.text()).toContain('2 search.tab.posts')
     expect(wrapper.findAll('.post-card-stub')).toHaveLength(2)
     expect(wrapper.get('[data-testid="load-more-section"]').attributes('data-total')).toBe('26')
-    expect(exploreMocks.loadCachedPosts).toHaveBeenCalledWith(
+    expect(exploreMocks.getPublicPostList).toHaveBeenCalledWith(
       {
         cursor: null,
         pageSize: 24,
       },
+      expect.any(Function),
       expect.any(Object)
     )
 
@@ -403,7 +395,7 @@ describe('ExplorePage', () => {
   it('renders an error state when loading fails outside fallback mode', async () => {
     const { ApiError } = await import('@/api/client')
 
-    exploreMocks.loadCachedPosts.mockRejectedValue(new ApiError(500, 'boom'))
+    exploreMocks.getPublicPostList.mockRejectedValue(new ApiError(500, 'boom'))
 
     const { router } = createWrapper()
     await router.push('/explore')

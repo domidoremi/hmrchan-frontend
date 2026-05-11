@@ -20,6 +20,22 @@ export {
   deletePublicSnapshot,
   type PublicSnapshotRecord,
 } from './publicSnapshotCache'
+export {
+  getPublicAuthorDetail,
+  getPublicAuthorList,
+  getPublicPostDetail,
+  getPublicPostList,
+  isPublicCacheableUrl,
+  loadPublicSnapshotWithFallback,
+  prewarmPublicHomeContent,
+  prewarmPublicMedia,
+  shouldBypassPublicCache,
+  PUBLIC_CACHE_SCOPES,
+  type PublicCacheResult,
+  type PublicCacheSource,
+  type PublicCursorListCacheResult,
+  type PublicListCacheResult,
+} from './publicContentCache'
 export { memoryCache }
 export { idbClear, STORES }
 export { cacheStats } from './cacheStats'
@@ -45,9 +61,11 @@ export async function clearAllCaches(): Promise<{ success: boolean; message: str
     memoryCache.clear()
 
     // 2. 清理 IndexedDB
-    await idbClear(STORES.POSTS)
-    await idbClear(STORES.POST_LISTS)
-    await idbClear(STORES.META)
+    await Promise.all(
+      [STORES.POSTS, STORES.POST_LISTS, STORES.META, STORES.ACCESS_HISTORY, STORES.MEDIA_META].map(
+        (store) => idbClear(store)
+      )
+    )
 
     // 3. 清理 Service Worker 缓存
     if ('caches' in window) {
@@ -59,7 +77,13 @@ export async function clearAllCaches(): Promise<{ success: boolean; message: str
     const keysToRemove: string[] = []
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
-      if (key && (key.startsWith('cache_') || key.startsWith('post_'))) {
+      if (
+        key &&
+        (key.startsWith('cache_') ||
+          key.startsWith('post_') ||
+          key.startsWith('public-content:') ||
+          key.startsWith('desk-pet:'))
+      ) {
         keysToRemove.push(key)
       }
     }

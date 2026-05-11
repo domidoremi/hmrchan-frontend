@@ -84,6 +84,7 @@ const mocks = vi.hoisted(() => ({
   createResizeObserver: vi.fn(),
   createVisibilityObserver: vi.fn(),
   storePostNavigationContext: vi.fn(),
+  prewarmPublicHomeContent: vi.fn(),
   throttleRAF: vi.fn((fn: (...args: unknown[]) => void) => {
     const wrapped = (...args: unknown[]) => fn(...args)
     ;(wrapped as typeof wrapped & { cancel?: () => void }).cancel = vi.fn()
@@ -129,6 +130,11 @@ vi.mock('@/utils/modernAPIs', () => ({
 
 vi.mock('@/utils/postNavigation', () => ({
   storePostNavigationContext: mocks.storePostNavigationContext,
+}))
+
+vi.mock('@/utils/cache', () => ({
+  prewarmPublicHomeContent: (...args: Parameters<typeof mocks.prewarmPublicHomeContent>) =>
+    mocks.prewarmPublicHomeContent(...args),
 }))
 
 vi.mock('@/components/home/HomepagePreviewController.vue', async () => {
@@ -625,6 +631,7 @@ describe('HomePage', () => {
     mocks.createResizeObserver.mockReset()
     mocks.createVisibilityObserver.mockReset()
     mocks.storePostNavigationContext.mockReset()
+    mocks.prewarmPublicHomeContent.mockReset()
     mocks.throttleRAF.mockClear()
 
     mocks.scheduleTask.mockImplementation(() => {})

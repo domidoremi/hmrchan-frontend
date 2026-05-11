@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
   getPostComments: vi.fn(),
   getPostEntity: vi.fn(),
   setPostEntity: vi.fn(),
+  getPublicPostList: vi.fn(),
+  getPublicAuthorList: vi.fn(),
+  getPublicPostDetail: vi.fn(),
   homeViewLoaded: vi.fn(),
   exploreViewLoaded: vi.fn(),
   searchViewLoaded: vi.fn(),
@@ -58,6 +61,12 @@ vi.mock('@/utils/cache', () => ({
     setPostEntity: (...args: Parameters<typeof mocks.setPostEntity>) =>
       mocks.setPostEntity(...args),
   },
+  getPublicPostList: (...args: Parameters<typeof mocks.getPublicPostList>) =>
+    mocks.getPublicPostList(...args),
+  getPublicAuthorList: (...args: Parameters<typeof mocks.getPublicAuthorList>) =>
+    mocks.getPublicAuthorList(...args),
+  getPublicPostDetail: (...args: Parameters<typeof mocks.getPublicPostDetail>) =>
+    mocks.getPublicPostDetail(...args),
 }))
 
 vi.mock('@/views/HomePage.vue', () => {
@@ -128,6 +137,12 @@ describe('prefetch utilities', () => {
     mocks.getPostComments.mockReset()
     mocks.getPostEntity.mockReset()
     mocks.setPostEntity.mockReset()
+    mocks.getPublicPostList.mockReset()
+    mocks.getPublicPostList.mockImplementation(async (params, fetcher) => fetcher(params))
+    mocks.getPublicAuthorList.mockReset()
+    mocks.getPublicAuthorList.mockImplementation(async (params, fetcher) => fetcher(params))
+    mocks.getPublicPostDetail.mockReset()
+    mocks.getPublicPostDetail.mockImplementation(async (postId, fetcher) => fetcher(postId))
     mocks.homeViewLoaded.mockClear()
     mocks.exploreViewLoaded.mockClear()
     mocks.searchViewLoaded.mockClear()
@@ -214,7 +229,10 @@ describe('prefetch utilities', () => {
     await vi.runOnlyPendingTimersAsync()
     await flushMicrotasks()
 
-    expect(mocks.exploreData).toHaveBeenCalledWith({ limit: 20 }, { skipErrorToast: true })
+    expect(mocks.exploreData).toHaveBeenCalledWith(
+      { limit: 20, cursor: null },
+      { skipErrorToast: true }
+    )
     expect(mocks.authorsData).toHaveBeenCalledWith(
       { cursor: null, limit: 20 },
       { skipErrorToast: true }
@@ -266,7 +284,14 @@ describe('prefetch utilities', () => {
 
   it('prefetches post detail using cache when available and comments when requested', async () => {
     const cachedPost = { id: 'post-cached' }
-    mocks.getPostEntity.mockResolvedValueOnce(cachedPost).mockResolvedValueOnce(null)
+    mocks.getPublicPostDetail
+      .mockResolvedValueOnce({ data: cachedPost, source: 'cache', stale: false, key: 'cached' })
+      .mockImplementationOnce(async (postId, fetcher) => ({
+        data: await fetcher(postId),
+        source: 'network',
+        stale: false,
+        key: 'fresh',
+      }))
     mocks.getPost.mockResolvedValue({ id: 'post-fresh' })
     mocks.getPostComments.mockResolvedValue({ items: [] })
     mocks.setPostEntity.mockResolvedValue(undefined)
@@ -279,8 +304,8 @@ describe('prefetch utilities', () => {
 
     await prefetchPostDetail('post-fresh', { includeComments: true })
 
-    expect(mocks.getPost).toHaveBeenCalledWith('post-fresh')
-    expect(mocks.setPostEntity).toHaveBeenCalledWith('post-fresh', { id: 'post-fresh' })
+    expect(mocks.getPost).toHaveBeenCalledWith('post-fresh', { skipErrorToast: true })
+    expect(mocks.setPostEntity).not.toHaveBeenCalled()
     expect(mocks.getPostComments).toHaveBeenCalledWith('post-fresh', { limit: 20 })
   })
 })

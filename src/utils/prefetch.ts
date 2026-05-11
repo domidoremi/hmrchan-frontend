@@ -387,8 +387,11 @@ export async function prefetchExploreData(): Promise<void> {
 
   await prefetchData(async () => {
     const { postService } = await import('@/api/postService')
+    const { getPublicPostList } = await import('@/utils/cache')
     // 只预加载第一页，避免并发请求过多触发 429
-    await postService.listPosts({ limit: 20 }, { skipErrorToast: true })
+    await getPublicPostList({ limit: 20, cursor: null }, (params, config) =>
+      postService.listPosts(params, { ...config, skipErrorToast: true })
+    )
   }).catch((error) => {
     reportClientError('prefetch.explore_data_failed', error, undefined, { severity: 'warn' })
   })
@@ -405,8 +408,11 @@ export async function prefetchAuthorsData(): Promise<void> {
 
   await prefetchData(async () => {
     const { authorService } = await import('@/api/authorService')
+    const { getPublicAuthorList } = await import('@/utils/cache')
     // 只预加载第一页
-    await authorService.listAuthors({ cursor: null, limit: 20 }, { skipErrorToast: true })
+    await getPublicAuthorList({ cursor: null, limit: 20 }, (params, config) =>
+      authorService.listAuthors(params, { ...config, skipErrorToast: true })
+    )
   }).catch((error) => {
     reportClientError('prefetch.authors_data_failed', error, undefined, { severity: 'warn' })
   })
@@ -426,22 +432,15 @@ export async function prefetchPostDetail(
   }
 
   await prefetchData(async () => {
-    const [{ postService }, { commentService }, { postCache }] = await Promise.all([
+    const [{ postService }, { commentService }, { getPublicPostDetail }] = await Promise.all([
       import('@/api/postService'),
       import('@/api/commentService'),
       import('@/utils/cache'),
     ])
 
-    // Avoid duplicate post requests if the entity is already cached (e.g. preview modal just loaded it).
-    const cached = await postCache.getPostEntity(postId)
-
-    const postPromise = cached
-      ? Promise.resolve(cached)
-      : postService.getPost(postId).then((p) => {
-          // Write through to app-level caches so later reads are instant.
-          void postCache.setPostEntity(postId, p)
-          return p
-        })
+    const postPromise = getPublicPostDetail(postId, (id, config) =>
+      postService.getPost(id, { ...config, skipErrorToast: true })
+    )
 
     if (options.includeComments) {
       await Promise.all([postPromise, commentService.getPostComments(postId, { limit: 20 })])

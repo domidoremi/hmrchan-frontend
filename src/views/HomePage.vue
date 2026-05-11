@@ -996,6 +996,7 @@ import { isFilteredAuthor } from '@/config/filters'
 import { getContractResourceId } from '@/utils/contractResourceId'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
+import { prewarmPublicHomeContent } from '@/utils/cache'
 import {
   type BubbleLayoutTier,
   buildHomePostsFromAggregate,
@@ -2311,6 +2312,7 @@ onActivated(() => {
 onDeactivated(() => {
   setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
+  cancelPublicHomePrewarm()
   abortHomeSupportRefresh()
   setRailNavbarLock(false)
   disconnectHomeSectionObserver()
@@ -2322,10 +2324,68 @@ onDeactivated(() => {
   stopBubbleCanvasScene()
 })
 let homeRequestController: AbortController | null = null
+let homePublicPrewarmCancel: (() => void) | null = null
 
 function abortHomeRequest() {
   homeRequestController?.abort()
   homeRequestController = null
+}
+
+function cancelPublicHomePrewarm() {
+  homePublicPrewarmCancel?.()
+  homePublicPrewarmCancel = null
+}
+
+function collectHomePrewarmMedia(payload: HomeAggregateResponse): Array<string | null | undefined> {
+  return [
+    payload.hero.spotlight?.image?.thumbnail_url,
+    payload.hero.spotlight?.image?.url,
+    ...payload.featured.items.flatMap((item) => [
+      item.cover?.thumbnail_url,
+      item.cover?.url,
+      ...(item.related_posts ?? []).flatMap((post) => [
+        post.thumbnail?.thumbnail_url,
+        post.thumbnail?.url,
+        post.image?.thumbnail_url,
+        post.image?.url,
+      ]),
+    ]),
+    ...payload.story_deck.items.flatMap((item) => [item.image?.thumbnail_url, item.image?.url]),
+  ]
+}
+
+function schedulePublicHomePrewarm(payload: HomeAggregateResponse) {
+  if (typeof window === 'undefined') return
+  cancelPublicHomePrewarm()
+
+  const mediaLimit = window.innerWidth < 768 ? 2 : 6
+  const listLimit = window.innerWidth < 768 ? 8 : 20
+  const mediaUrls = collectHomePrewarmMedia(payload)
+
+  homePublicPrewarmCancel = scheduleTask(
+    () => {
+      homePublicPrewarmCancel = null
+      void prewarmPublicHomeContent({
+        explore: async () => {
+          const { postService } = await import('@/api/postService')
+          const { getPublicPostList } = await import('@/utils/cache')
+          await getPublicPostList({ limit: listLimit, cursor: null }, (params, config) =>
+            postService.listPosts(params, { ...config, skipErrorToast: true })
+          )
+        },
+        authors: async () => {
+          const { authorService } = await import('@/api/authorService')
+          const { getPublicAuthorList } = await import('@/utils/cache')
+          await getPublicAuthorList({ limit: listLimit, cursor: null }, (params, config) =>
+            authorService.listAuthors(params, { ...config, skipErrorToast: true })
+          )
+        },
+        mediaUrls,
+        mediaLimit,
+      })
+    },
+    { priority: 'background', delay: 1200 }
+  )
 }
 
 function applyHomeAggregate(
@@ -2466,6 +2526,7 @@ async function fetchHomeData(): Promise<boolean> {
       pendingHomeSupportRefresh = refreshTargets
       runHomeSupportRefresh()
     }
+    schedulePublicHomePrewarm(result.payload)
     return true
   } catch {
     if (controller.signal.aborted) return false
@@ -2474,6 +2535,7 @@ async function fetchHomeData(): Promise<boolean> {
     applyHomeAggregate(fallbackPayload, 'fallback')
     total.value = Math.max(total.value, fallbackPayload.story_deck.total ?? 0)
     error.value = null
+    schedulePublicHomePrewarm(fallbackPayload)
     return false
   } finally {
     if (homeRequestController === controller) {
@@ -3216,6 +3278,7 @@ onBeforeUnmount(() => {
   homeEnhancementsDisposed = true
   setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
+  cancelPublicHomePrewarm()
   abortHomeSupportRefresh()
   setRailNavbarLock(false)
   disconnectHomeSectionObserver()

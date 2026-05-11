@@ -54,6 +54,15 @@ const AUTH_ROUTE_PATHS = new Set([
   '/auth/callback',
 ])
 
+const PRIVATE_API_PATH_PATTERNS = [
+  /^\/api\/v1\/auth(?:\/|$)/i,
+  /^\/api\/v1\/notifications(?:\/|$)/i,
+  /^\/api\/v1\/favorites(?:\/|$)/i,
+  /^\/api\/v1\/me(?:\/|$)/i,
+  /^\/api\/v1\/profile(?:\/|$)/i,
+  /^\/api\/v1\/users\/me(?:\/|$)/i,
+] as const
+
 export const MEDIA_CACHE_CONFIG = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
   maxItems: 500,
@@ -184,6 +193,10 @@ export function isCacheableResponse(response: Response | undefined | null): resp
 }
 
 export function isCacheableApiRequest(url: URL, request: Request): boolean {
+  if (PRIVATE_API_PATH_PATTERNS.some((pattern) => pattern.test(url.pathname))) {
+    return false
+  }
+
   if (!request.headers.has('Authorization')) {
     return true
   }

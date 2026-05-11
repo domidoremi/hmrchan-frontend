@@ -9,6 +9,9 @@ interface CacheStats {
   sets: number
   deletes: number
   errors: number
+  stale: number
+  fallbacks: number
+  layers: Record<string, number>
 }
 
 interface CacheMetrics {
@@ -65,6 +68,34 @@ class CacheStatsCollector {
     if (!this.enabled) return
     this.ensureStats(cacheType)
     this.stats.get(cacheType)!.errors++
+  }
+
+  /**
+   * 记录陈旧缓存被用于兜底
+   */
+  recordStale(cacheType: string): void {
+    if (!this.enabled) return
+    this.ensureStats(cacheType)
+    this.stats.get(cacheType)!.stale++
+  }
+
+  /**
+   * 记录公开缓存回退来源
+   */
+  recordFallback(cacheType: string): void {
+    if (!this.enabled) return
+    this.ensureStats(cacheType)
+    this.stats.get(cacheType)!.fallbacks++
+  }
+
+  /**
+   * 记录命中的缓存层（memory/idb/sw/snapshot/http 等）
+   */
+  recordLayerHit(cacheType: string, layer: string): void {
+    if (!this.enabled) return
+    this.ensureStats(cacheType)
+    const stats = this.stats.get(cacheType)!
+    stats.layers[layer] = (stats.layers[layer] ?? 0) + 1
   }
 
   /**
@@ -143,6 +174,10 @@ class CacheStatsCollector {
         `Total Requests: ${stats.totalRequests} (${stats.hits} hits, ${stats.misses} misses)`
       )
       console.log(`Sets: ${stats.sets}, Deletes: ${stats.deletes}, Errors: ${stats.errors}`)
+      console.log(`Stale Uses: ${stats.stale}, Fallbacks: ${stats.fallbacks}`)
+      if (Object.keys(stats.layers).length > 0) {
+        console.log('Layers:', stats.layers)
+      }
       console.log(`Avg Response Time: ${stats.avgResponseTime}ms`)
       console.groupEnd()
     }
@@ -169,6 +204,9 @@ class CacheStatsCollector {
         sets: 0,
         deletes: 0,
         errors: 0,
+        stale: 0,
+        fallbacks: 0,
+        layers: {},
       })
     }
   }

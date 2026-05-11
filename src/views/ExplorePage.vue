@@ -128,7 +128,7 @@ import { useI18n } from 'vue-i18n'
 import { Search } from '@lucide/vue'
 import { ApiError } from '@/api/client'
 import { postService, type PostListItem } from '@/api/postService'
-import { useCachedPostList } from '@/composables/useCachedPosts'
+import { getPublicPostList } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
@@ -181,22 +181,8 @@ const isUsingFallback = computed(() => dataSource.value === 'fallback')
 const nextCursor = ref<string | null>(null)
 const hasMoreFromCursor = ref(false)
 
-// 使用缓存感知的帖子列表加载
-const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
-  async (params) => {
-    const result = await postService.listPosts(
-      params as Parameters<typeof postService.listPosts>[0]
-    )
-    return {
-      data: result.items,
-      meta: {
-        next_cursor: result.next_cursor ?? null,
-        has_more: Boolean(result.has_more),
-      },
-    }
-  },
-  { revalidate: true }
-)
+// 使用公开内容缓存编排层加载探索列表：network-first + stale/snapshot fallback
+const total = ref(0)
 let fetchPostsToken = 0
 let fetchPostsController: AbortController | null = null
 let exploreFallbackModulePromise: Promise<typeof import('@/fallbacks/exploreFallback')> | null =
@@ -361,8 +347,9 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       cursor: reset ? null : nextCursor.value,
       pageSize: pageSize.value,
     })
-    const result = await loadCachedPosts(
+    const result = await getPublicPostList(
       requestParams,
+      (params, config) => postService.listPosts(params, { ...config, skipErrorToast: true }),
       requestSignal ? { signal: requestSignal } : undefined
     )
     const items = result.data as PostListItem[]
@@ -379,7 +366,8 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       return false
     }
 
-    dataSource.value = result.fromCache ? 'cached' : 'live'
+    dataSource.value = result.source === 'network' ? 'live' : 'cached'
+    total.value = result.total
 
     if (reset) {
       posts.value = items
