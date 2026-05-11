@@ -1,13 +1,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import type { HmrBrandSpriteState } from '@/hmr/components/HmrBrandSprite.vue'
-import { usePreferencesStore } from '@/stores/preferences'
 
 export function useHmrBrandPet() {
-  const preferences = usePreferencesStore()
   const brandState = ref<HmrBrandSpriteState>('idle')
   const reducedMotion = ref(false)
-  const staticMode = computed(() => !preferences.animationsAllowed || reducedMotion.value)
+  const staticMode = computed(() => reducedMotion.value)
   const cooldowns = new Map<HmrBrandSpriteState, number>()
   let stateTimer: number | undefined
   let idleTimer: number | undefined
@@ -69,7 +67,6 @@ export function useHmrBrandPet() {
   }
 
   function setupBrandPet(): void {
-    preferences.initializePreferences()
     motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     reducedMotion.value = motionQuery.matches
     motionQueryListener = (event) => {

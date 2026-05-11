@@ -108,17 +108,6 @@
                   </option>
                 </select>
               </label>
-              <div class="hmr-settings-control">
-                <span>动效</span>
-                <button
-                  class="hmr-toggle-button"
-                  type="button"
-                  :aria-pressed="preferences.preferences.enableAnimations"
-                  @click="toggleAnimations"
-                >
-                  {{ preferences.preferences.enableAnimations ? '开启' : '关闭' }}
-                </button>
-              </div>
             </div>
           </article>
 
@@ -205,13 +194,11 @@ import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 import { applyLocale, type SupportedLocale, supportedLocales } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
-import { usePreferencesStore } from '@/stores/preferences'
 import { type HmrTheme, useThemeStore } from '@/stores/theme'
 import { clearPublicContentCache } from '@/utils/cache/publicContentCache'
 
 const auth = useAuthStore()
 const theme = useThemeStore()
-const preferences = usePreferencesStore()
 const router = useRouter()
 const { locale, t } = useI18n()
 const state = ref<HmrPageState>('idle')
@@ -292,10 +279,6 @@ function handleLocaleChange(event: Event): void {
   }
 }
 
-function toggleAnimations(): void {
-  preferences.setAnimationsEnabled(!preferences.preferences.enableAnimations)
-}
-
 async function clearCache(): Promise<void> {
   cacheClearState.value = 'clearing'
   try {
@@ -310,7 +293,6 @@ async function clearCache(): Promise<void> {
 }
 
 onMounted(() => {
-  preferences.initializePreferences()
   theme.initializeTheme()
   void refreshSettings()
 })

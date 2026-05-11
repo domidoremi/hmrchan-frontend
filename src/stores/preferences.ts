@@ -1,37 +1,19 @@
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
-export interface HmrPreferences {
-  enableAnimations: boolean
-}
+export type HmrPreferences = Record<string, never>
 
 const PREFERENCES_STORAGE_KEY = 'hmr.preferences.v1'
 
-const defaultPreferences: HmrPreferences = {
-  enableAnimations: true,
-}
+const defaultPreferences: HmrPreferences = {}
 
 function cloneDefaults(): HmrPreferences {
-  return {
-    enableAnimations: defaultPreferences.enableAnimations,
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-}
-
-function normalizeBoolean(value: unknown, fallback: boolean): boolean {
-  return typeof value === 'boolean' ? value : fallback
+  return { ...defaultPreferences }
 }
 
 export function normalizeHmrPreferences(value: unknown): HmrPreferences {
-  const next = cloneDefaults()
-  if (!isRecord(value)) return next
-
-  next.enableAnimations = normalizeBoolean(value.enableAnimations, next.enableAnimations)
-
-  return next
+  void value
+  return cloneDefaults()
 }
 
 function readStoredPreferences(): HmrPreferences {
@@ -55,7 +37,6 @@ function writeStoredPreferences(preferences: HmrPreferences): void {
 export const usePreferencesStore = defineStore('preferences', () => {
   const preferences = ref<HmrPreferences>(readStoredPreferences())
   const hasInitialized = ref(false)
-  const animationsAllowed = computed(() => preferences.value.enableAnimations)
 
   function initializePreferences(): void {
     if (hasInitialized.value) return
@@ -67,20 +48,11 @@ export const usePreferencesStore = defineStore('preferences', () => {
     preferences.value = normalizeHmrPreferences(nextPreferences)
   }
 
-  function setAnimationsEnabled(enabled: boolean): void {
-    preferences.value = {
-      ...preferences.value,
-      enableAnimations: enabled,
-    }
-  }
-
   watch(preferences, writeStoredPreferences, { deep: true })
 
   return {
     preferences,
-    animationsAllowed,
     initializePreferences,
     replacePreferences,
-    setAnimationsEnabled,
   }
 })

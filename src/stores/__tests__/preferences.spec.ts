@@ -9,12 +9,10 @@ describe('preferences store', () => {
     setActivePinia(createPinia())
   })
 
-  it('uses the simplified defaults for global animations', () => {
+  it('uses empty defaults after removing user-controlled animation preferences', () => {
     const store = usePreferencesStore()
 
-    expect(store.preferences).toEqual({
-      enableAnimations: true,
-    })
+    expect(store.preferences).toEqual({})
   })
 
   it('normalizes old or malformed stored data without carrying removed fields forward', () => {
@@ -24,19 +22,15 @@ describe('preferences store', () => {
         animationIntensity: 'loud',
         autoHeroInteraction: false,
       })
-    ).toEqual({
-      enableAnimations: false,
-    })
+    ).toEqual({})
   })
 
-  it('persists only the animation preference', async () => {
+  it('persists the normalized preference shape', async () => {
     const store = usePreferencesStore()
 
-    store.setAnimationsEnabled(false)
+    store.replacePreferences({} as never)
     await Promise.resolve()
 
-    expect(JSON.parse(window.localStorage.getItem('hmr.preferences.v1') ?? '{}')).toEqual({
-      enableAnimations: false,
-    })
+    expect(JSON.parse(window.localStorage.getItem('hmr.preferences.v1') ?? '{}')).toEqual({})
   })
 })

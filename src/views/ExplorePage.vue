@@ -108,8 +108,17 @@
           </button>
         </div>
 
+        <HmrPageStateBlock
+          v-if="nonBlockingError"
+          :error="nonBlockingError"
+          error-title="正在显示可用内容"
+          error-body="刷新最新公开内容失败，当前列表来自可用缓存或已返回的数据。"
+          retry-label="重新加载"
+          @retry="refreshExplore"
+        />
+
         <div
-          v-if="!isFilteredEmpty"
+          v-if="hasVisiblePosts"
           :class="
             viewMode === 'grid'
               ? 'hmr-featured-grid hmr-featured-grid--cinematic'
@@ -128,19 +137,24 @@
         </div>
 
         <div
-          v-else-if="pageState === 'loading'"
+          v-else-if="showLoadingSkeleton"
           class="hmr-featured-grid hmr-featured-grid--cinematic"
           aria-hidden="true"
         >
           <div v-for="item in 6" :key="item" class="hmr-media-skeleton"></div>
         </div>
 
-        <div v-else class="hmr-empty-panel" aria-label="No matching posts">
-          <span aria-hidden="true"></span>
-          <button class="hmr-cta" type="button" @click="clearFilters">
-            {{ t('explore.clear') }}
-          </button>
-        </div>
+        <HmrPageStateBlock
+          v-else
+          :empty="!blockingError"
+          :error="blockingError"
+          :empty-title="catalogStateTitle"
+          :empty-body="catalogStateBody"
+          error-title="公开内容暂时不可用"
+          error-body="最新公开内容加载失败，稍后重试或检查网络连接。"
+          :retry-label="catalogStateActionLabel"
+          @retry="handleCatalogStateAction"
+        />
 
         <div class="hmr-load-more">
           <button
@@ -217,6 +231,7 @@ import {
   type HmrExploreContent,
   type HmrPost,
 } from '@/api/hmrContent'
+import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 import { readPublicContent } from '@/utils/cache/publicContentCache'
@@ -277,6 +292,26 @@ const visiblePosts = computed(() =>
     return matchesKind && matchesDuration
   })
 )
+const hasActiveFilters = computed(
+  () =>
+    Boolean(query.value.trim()) ||
+    platform.value !== 'all' ||
+    contentKind.value !== 'all' ||
+    durationRange.value !== 'all'
+)
+const hasVisiblePosts = computed(() => visiblePosts.value.length > 0)
+const showLoadingSkeleton = computed(() => pageState.value === 'loading' && !hasVisiblePosts.value)
+const blockingError = computed(() => (hasVisiblePosts.value ? null : resource.value.error))
+const nonBlockingError = computed(() => (hasVisiblePosts.value ? resource.value.error : null))
+const catalogStateTitle = computed(() => (hasActiveFilters.value ? '筛选无结果' : '暂无公开内容'))
+const catalogStateBody = computed(() =>
+  hasActiveFilters.value
+    ? '当前条件下没有匹配的公开内容，可以清除筛选后重新浏览。'
+    : '当前没有可显示的公开帖子，稍后刷新可重新拉取最新内容。'
+)
+const catalogStateActionLabel = computed(() =>
+  hasActiveFilters.value && !blockingError.value ? t('explore.clear') : '重新加载'
+)
 const balancedRibbonPosts = computed(() => {
   const grouped = new Map<string, HmrPost[]>()
   for (const post of visiblePosts.value) {
@@ -298,9 +333,6 @@ const balancedRibbonPosts = computed(() => {
 
   return result
 })
-const isFilteredEmpty = computed(
-  () => pageState.value === 'empty' || visiblePosts.value.length === 0
-)
 const platformOptions = computed(() => {
   if (content.value.platforms.length) return content.value.platforms
 
@@ -413,6 +445,15 @@ function clearFilters(): void {
   sortBy.value = 'published_at'
   contentKind.value = 'all'
   durationRange.value = 'all'
+  void refreshExplore()
+}
+
+function handleCatalogStateAction(): void {
+  if (hasActiveFilters.value && !blockingError.value) {
+    clearFilters()
+    return
+  }
+
   void refreshExplore()
 }
 

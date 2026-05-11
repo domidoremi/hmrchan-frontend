@@ -100,10 +100,11 @@ describe('SettingsPage', () => {
     setActivePinia(createPinia())
   })
 
-  it('removes desk pet, animation intensity, and hero interaction settings', async () => {
+  it('removes user-controlled animation settings', async () => {
     const wrapper = await mountSettingsPage()
     const text = wrapper.text()
 
+    expect(text).not.toContain('动效')
     expect(text).not.toContain('动效强度')
     expect(text).not.toContain('桌宠')
     expect(text).not.toContain('首屏互动')
