@@ -1,5 +1,5 @@
 <template>
-  <div class="hmr-site" :style="scrollProgressStyle">
+  <div class="hmr-site" :class="{ 'is-preloading': preloaderVisible }" :style="scrollProgressStyle">
     <div
       v-if="preloaderVisible"
       ref="preloaderBackdropRef"
@@ -25,11 +25,12 @@
     >
       <div ref="preloaderOrbRef" class="hmr-preloader-orb" aria-hidden="true">
         <span ref="preloaderLogoRef" class="hmr-preloader-logo hmr-brand-3d" aria-hidden="true">
-          <HmrBrandSprite :state="brandState" :static-mode="staticMode" />
+          <HmrBrandSprite
+            :state="preloaderBrandState"
+            :static-mode="staticMode"
+            playback="preloader"
+          />
         </span>
-        <span ref="preloaderHaloRef" class="hmr-preloader-halo" aria-hidden="true"></span>
-        <span ref="preloaderPulseRef" class="hmr-preloader-pulse" aria-hidden="true"></span>
-        <span ref="preloaderStatusRef" class="hmr-preloader-status" aria-hidden="true"></span>
         <span class="hmr-preloader-svg svg-strokes" aria-hidden="true">
           <svg viewBox="0 0 120 120" focusable="false">
             <circle class="hmr-preloader-track" cx="60" cy="60" r="46"></circle>
@@ -256,7 +257,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 
-import HmrBrandSprite from '@/hmr/components/HmrBrandSprite.vue'
+import HmrBrandSprite, { type HmrBrandSpriteState } from '@/hmr/components/HmrBrandSprite.vue'
 import { useHmrAuthDisplay } from '@/hmr/composables/useHmrAuthDisplay'
 import { useHmrBrandPet } from '@/hmr/composables/useHmrBrandPet'
 import { useHmrCurrentTime } from '@/hmr/composables/useHmrCurrentTime'
@@ -291,13 +292,11 @@ const preloaderRef = ref<HTMLElement | null>(null)
 const preloaderBackdropRef = ref<HTMLElement | null>(null)
 const preloaderOrbRef = ref<HTMLElement | null>(null)
 const preloaderLogoRef = ref<HTMLElement | null>(null)
-const preloaderHaloRef = ref<HTMLElement | null>(null)
-const preloaderPulseRef = ref<HTMLElement | null>(null)
-const preloaderStatusRef = ref<HTMLElement | null>(null)
 const preloaderProgressRef = ref<SVGCircleElement | null>(null)
 const preloaderRevealerRef = ref<HTMLElement | null>(null)
 const desktopBrandPetRef = ref<HTMLElement | null>(null)
 const mobileBrandPetRef = ref<HTMLElement | null>(null)
+const preloaderBrandState = ref<HmrBrandSpriteState>('idle')
 let preloaderTimeline: gsap.core.Timeline | undefined
 let preloaderOutroTimeline: gsap.core.Timeline | undefined
 let preloaderStarted = false
@@ -307,11 +306,7 @@ const pageTransitionKey = computed(() => route.fullPath)
 const { auth, authDisplay } = useHmrAuthDisplay()
 const { currentTime, timeZoneLabel } = useHmrCurrentTime()
 const { progress } = useHmrScrollProgress()
-const { brandState, jumpBrandPet, staticMode, waveBrandPet } = useHmrBrandPet([
-  desktopBrandPetRef,
-  mobileBrandPetRef,
-  preloaderLogoRef,
-])
+const { brandState, jumpBrandPet, staticMode, waveBrandPet } = useHmrBrandPet()
 const scrollProgressStyle = computed(() => ({
   '--hmr-scroll-progress': progress.value.toString(),
 }))
@@ -402,9 +397,6 @@ function getPreloaderElements() {
     preloader: preloaderRef.value,
     orb: preloaderOrbRef.value,
     logo: preloaderLogoRef.value,
-    halo: preloaderHaloRef.value,
-    pulse: preloaderPulseRef.value,
-    status: preloaderStatusRef.value,
     progress: preloaderProgressRef.value,
     revealer: preloaderRevealerRef.value,
   }
@@ -432,13 +424,13 @@ function finishPreloaderExit(): void {
   clearPreloaderExitTimer()
   markPreloaderSeen()
   preloaderVisible.value = false
-  brandState.value = 'idle'
+  preloaderBrandState.value = 'idle'
 }
 
 function finishPreloaderCrossing(): void {
   if (!preloaderVisible.value || preloaderOutroTimeline) return
   clearPreloaderCompletionTimer()
-  brandState.value = 'review'
+  preloaderBrandState.value = 'review'
   preloaderPhase.value = 'complete'
   completePreloader()
 }
@@ -497,9 +489,6 @@ async function setupPreloader(): Promise<void> {
     rotateY: prefersReducedMotion ? 0 : -9,
     transformPerspective: 820,
   })
-  gsap.set([elements.halo, elements.pulse, elements.status], {
-    opacity: 0,
-  })
 
   const warmupPromise = warmHmrSessionEntry({
     path: route.fullPath,
@@ -518,7 +507,7 @@ async function setupPreloader(): Promise<void> {
   }
 
   preloaderPhase.value = 'warming'
-  brandState.value = 'idle'
+  preloaderBrandState.value = 'idle'
   preloaderTimeline = gsap
     .timeline({
       defaults: { ease: 'power3.out' },
@@ -553,15 +542,6 @@ async function setupPreloader(): Promise<void> {
       0.18
     )
     .to(
-      [elements.halo, elements.pulse, elements.status],
-      {
-        opacity: 1,
-        duration: 0.54,
-        stagger: 0.06,
-      },
-      0.28
-    )
-    .to(
       progress,
       {
         strokeDashoffset: pathLength * 0.42,
@@ -581,7 +561,7 @@ async function setupPreloader(): Promise<void> {
   if (!preloaderVisible.value || preloaderOutroTimeline) return
 
   preloaderPhase.value = 'crossing'
-  brandState.value = 'jumping'
+  preloaderBrandState.value = 'jumping'
   preloaderTimeline?.kill()
   clearPreloaderCompletionTimer()
   preloaderCompletionTimer = window.setTimeout(finishPreloaderCrossing, 1600)
@@ -636,11 +616,6 @@ function completePreloader(): void {
     .timeline({
       defaults: { ease: 'power3.inOut' },
       onComplete: finishPreloaderExit,
-    })
-    .to(elements.status, {
-      scale: 1.24,
-      opacity: 0,
-      duration: 0.24,
     })
     .to(
       elements.logo,

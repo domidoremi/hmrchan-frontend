@@ -163,10 +163,15 @@ describe('HmrSiteShell preloader', () => {
   it('automatically completes the first session preloader without a click', async () => {
     const wrapper = await mountShell('/')
     expect(wrapper.find('.hmr-preloader').exists()).toBe(true)
+    expect(wrapper.find('.hmr-site').classes()).toContain('is-preloading')
+    expect(wrapper.findAll('.hmr-preloader .hmr-brand-sprite')).toHaveLength(1)
+    expect(wrapper.find('.hmr-preloader .hmr-preloader-halo').exists()).toBe(false)
+    expect(wrapper.find('.hmr-preloader .hmr-preloader-pulse').exists()).toBe(false)
+    expect(wrapper.find('.hmr-preloader .hmr-preloader-status').exists()).toBe(false)
 
     await vi.waitFor(() => {
       expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
-    }, 5000)
+    }, 6500)
     await wrapper.vm.$nextTick()
 
     expect(mocks.warmHmrSessionEntry).toHaveBeenCalledWith(
@@ -177,6 +182,7 @@ describe('HmrSiteShell preloader', () => {
       })
     )
     expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
+    expect(wrapper.find('.hmr-site').classes()).not.toContain('is-preloading')
   })
 
   it('does not show the preloader again within the same browser session', async () => {
