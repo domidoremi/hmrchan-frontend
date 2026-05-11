@@ -1,6 +1,17 @@
 {
   "extends": "./tsconfig.app.json",
-  "include": ["src/**/__tests__/*", "src/**/*.spec.ts", "src/**/*.test.ts", "src/**/*.ts", "src/**/*.vue", "env.d.ts"],
+  "include": [
+    "src/**/__tests__/*",
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "functions/**/__tests__/*",
+    "build/vite/plugins/**/__tests__/*",
+    "build/vite/plugins/**/*.spec.ts",
+    "build/vite/plugins/**/*.ts",
+    "env.d.ts"
+  ],
   "exclude": [],
   "compilerOptions": {
     "composite": true,

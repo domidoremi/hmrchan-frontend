@@ -39,6 +39,7 @@ describe('theme store', () => {
     window.localStorage.clear()
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.removeAttribute('data-theme-mode')
+    document.documentElement.style.colorScheme = ''
     setActivePinia(createPinia())
   })
 
@@ -77,5 +78,22 @@ describe('theme store', () => {
 
     expect(window.localStorage.getItem('hmr.theme')).toBe('dark')
     expect(store.isDark).toBe(true)
+  })
+
+  it('keeps a pre-paint dark theme stable when Vue initializes', () => {
+    window.localStorage.setItem('hmr.theme', 'system')
+    document.documentElement.dataset.theme = 'dark'
+    document.documentElement.dataset.themeMode = 'system'
+    document.documentElement.style.colorScheme = 'dark'
+    mockMatchMedia(true)
+    const store = useThemeStore()
+
+    store.initializeTheme()
+
+    expect(store.theme).toBe('system')
+    expect(store.resolvedTheme).toBe('dark')
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(document.documentElement.dataset.themeMode).toBe('system')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
   })
 })

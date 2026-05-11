@@ -82,6 +82,23 @@ export function toLayeredCriticalCSS(css: string): string {
   return `${CRITICAL_LAYER_PREAMBLE}@layer ${CRITICAL_LAYER_NAME}{${css}}`
 }
 
+export function insertCriticalCSS(html: string, styleBlock: string): string {
+  const themeCriticalRegex =
+    /<style\s+[^>]*id=["']hmr-theme-critical["'][^>]*>[\s\S]*?<\/style>\s*/i
+  if (themeCriticalRegex.test(html)) {
+    return html.replace(themeCriticalRegex, (matched) => `${matched}${styleBlock}\n`)
+  }
+
+  // 优先插入到 <meta charset> 之后，避免触发 Lighthouse "charset too late"
+  const charsetMetaRegex = /<meta\s+[^>]*charset\s*=\s*["']?[^"'>\s]+["']?[^>]*>\s*/i
+  if (charsetMetaRegex.test(html)) {
+    return html.replace(charsetMetaRegex, (matched) => `${matched}${styleBlock}\n`)
+  }
+
+  // 无 charset 时，退化为插入到 <head> 最前面
+  return html.replace(/<head([^>]*)>/i, `<head$1>${styleBlock}`)
+}
+
 export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
   const {
     path: cssPath = 'src/styles/critical.css',
@@ -150,15 +167,7 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
       // 生成 style 标签（style-src 'unsafe-inline' 已覆盖）
       const styleTag = `<style id="critical-css" data-hash="${cssHash}">${criticalCSS}</style>`
       const styleBlock = `\n    ${styleTag}\n    <!-- Critical CSS inlined for FCP optimization -->`
-
-      // 优先插入到 <meta charset> 之后，避免触发 Lighthouse "charset too late"
-      const charsetMetaRegex = /<meta\s+[^>]*charset\s*=\s*["']?[^"'>\s]+["']?[^>]*>\s*/i
-      if (charsetMetaRegex.test(html)) {
-        return html.replace(charsetMetaRegex, (matched) => `${matched}${styleBlock}\n`)
-      }
-
-      // 无 charset 时，退化为插入到 <head> 最前面
-      return html.replace(/<head([^>]*)>/i, `<head$1>${styleBlock}`)
+      return insertCriticalCSS(html, styleBlock)
     },
   }
 }

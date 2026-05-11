@@ -518,40 +518,10 @@ export function renderStructuredDataScript(config: HtmlDocumentConfig): string {
   return `<script type="application/ld+json" data-prerender-structured-data="true">${payload}</script>`
 }
 
-function renderPrerenderLoaderShell(config: HtmlDocumentConfig): string {
-  return `
-    <section data-prerender-shell="true" data-prerender-shell-variant="${escapeHtml(config.shellVariant)}" aria-label="${SITE_NAME}" style="position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;min-height:100dvh;background:#171412;color:#fbf9ef;overflow:hidden;">
-      <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(circle at 18% 22%,rgba(255,119,34,0.2),transparent 24rem),radial-gradient(circle at 78% 72%,rgba(61,47,169,0.26),transparent 26rem);"></div>
-      <div data-prerender-shell-content="true" aria-hidden="true" style="position:relative;display:grid;inline-size:clamp(8.5rem,15vw,13.5rem);aspect-ratio:1;place-items:center;border-radius:50%;">
-        <svg viewBox="0 0 120 120" role="presentation" focusable="false" style="position:absolute;inset:0;inline-size:100%;block-size:100%;transform:rotate(-90deg);">
-          <circle cx="60" cy="60" r="45" fill="none" stroke="rgba(251,249,239,0.16)" stroke-width="3"></circle>
-          <circle cx="60" cy="60" r="45" fill="none" stroke="#ff7722" stroke-width="3" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="92"></circle>
-        </svg>
-        <span style="display:grid;inline-size:48%;aspect-ratio:1;place-items:center;border-radius:50%;background:#3d2fa9;box-shadow:0 2rem 6rem rgba(0,0,0,0.36);">
-          <span aria-hidden="true" style="display:block;inline-size:100%;aspect-ratio:12/13;background-image:url('/hmrchan/pets/tidyfox/spritesheet.webp');background-repeat:no-repeat;background-size:800% 900%;background-position:0 0;"></span>
-        </span>
-      </div>
-      <div aria-hidden="true" style="position:absolute;inset-inline:6vw;inset-block-end:7vh;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0.75rem;opacity:0.16;">
-        <i style="block-size:0.55rem;border-radius:999rem;background:#fbf9ef;"></i>
-        <i style="block-size:0.55rem;border-radius:999rem;background:#fbf9ef;"></i>
-        <i style="block-size:0.55rem;border-radius:999rem;background:#ff7722;"></i>
-        <i style="block-size:0.55rem;border-radius:999rem;background:#fbf9ef;"></i>
-        <i style="block-size:0.55rem;border-radius:999rem;background:#fbf9ef;"></i>
-      </div>
-    </section>
-  `
-}
-
-function renderDefaultPrerenderShell(config: HtmlDocumentConfig): string {
-  return renderPrerenderLoaderShell(config)
-}
-
-function renderHomePrerenderShell(config: HtmlDocumentConfig): string {
-  return renderPrerenderLoaderShell(config)
+function renderPrerenderMarkerShell(config: HtmlDocumentConfig): string {
+  return `<template data-prerender-shell="true" data-prerender-shell-variant="${escapeHtml(config.shellVariant)}" data-prerender-shell-title="${escapeHtml(config.shellTitle)}"></template>`
 }
 
 export function renderPrerenderShell(config: HtmlDocumentConfig): string {
-  return config.shellVariant === 'home'
-    ? renderHomePrerenderShell(config)
-    : renderDefaultPrerenderShell(config)
+  return renderPrerenderMarkerShell(config)
 }

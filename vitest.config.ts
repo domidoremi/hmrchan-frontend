@@ -100,6 +100,7 @@ export default defineConfig({
     include: [
       'src/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}',
       'functions/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}',
+      'build/vite/plugins/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}',
     ],
 
     /** Setup files for global test configuration */

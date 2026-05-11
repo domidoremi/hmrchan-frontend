@@ -7,7 +7,7 @@ const resolveCanonicalUrlForOrigin = vi.fn((config: { canonicalPath: string }, o
 const resolveDefaultOgImage = vi.fn((origin: string) => `${origin}/og-default.png`)
 const renderPrerenderShell = vi.fn(
   (config: { shellTitle: string }) =>
-    `<section data-prerender-shell="true">${config.shellTitle}</section>`
+    `<template data-prerender-shell="true" data-prerender-shell-title="${config.shellTitle}"></template>`
 )
 const resolveStructuredDataPayload = vi.fn(() => '{"@context":"https://schema.org"}')
 
@@ -254,6 +254,9 @@ describe('functions/_middleware', () => {
     expect(html).toContain('content="noindex, nofollow"')
     expect(html).toContain('href="https://momichan.xyz/missing"')
     expect(html).toContain('data-prerender-shell="true"')
+    expect(html).not.toContain('/hmrchan/pets/tidyfox/spritesheet.webp')
+    expect(html).not.toContain('prerender-shell-content')
+    expect(html).not.toContain('z-index:2147483646')
     expect(html).toContain('data-prerender-structured-data="true"')
     expect(html).toContain('application/ld+json')
     expect(html).toMatch(/nonce="[A-Za-z0-9+/=]+"/)
@@ -292,6 +295,8 @@ describe('functions/_middleware', () => {
     expect(html).toContain('This post is temporarily unavailable for public preview')
     expect(html).toContain('href="https://momichan.xyz/posts/restricted-post"')
     expect(html).toContain('data-prerender-shell="true"')
+    expect(html).toContain('data-prerender-shell-title="This post is temporarily unavailable')
+    expect(html).not.toContain('/hmrchan/pets/tidyfox/spritesheet.webp')
   })
 
   it('treats passkey recovery as a public auth SPA route instead of a 404 document', async () => {

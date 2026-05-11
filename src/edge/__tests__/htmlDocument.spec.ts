@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolveHtmlDocument } from '../htmlDocument'
+import { renderPrerenderShell, resolveHtmlDocument } from '../htmlDocument'
 
 function resolvePath(path: string) {
   return resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
@@ -24,5 +24,18 @@ describe('edge HTML document routing', () => {
     expect(documentConfig.status).toBe(404)
     expect(documentConfig.robots).toBe('noindex, nofollow')
     expect(documentConfig.canonicalPath).toBe('/__missing-route__')
+  })
+
+  it('renders an inert prerender marker instead of a visible loader shell', () => {
+    const shell = renderPrerenderShell(resolvePath('/'))
+
+    expect(shell).toContain('data-prerender-shell="true"')
+    expect(shell).toContain('data-prerender-shell-variant="home"')
+    expect(shell).toContain('data-prerender-shell-title="MomiChan"')
+    expect(shell).not.toContain('/hmrchan/pets/tidyfox/spritesheet.webp')
+    expect(shell).not.toContain('<svg')
+    expect(shell).not.toContain('<i')
+    expect(shell).not.toContain('#171412')
+    expect(shell.trim().startsWith('<template')).toBe(true)
   })
 })

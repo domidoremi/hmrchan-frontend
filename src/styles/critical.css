@@ -1,12 +1,30 @@
 html,
 body,
 #app-root {
-  min-height: 100%;
+  min-block-size: 100%;
+}
+
+html {
+  --hmr-critical-bg: #fbf9ef;
+  --hmr-critical-base: #171412;
+  background: var(--hmr-critical-bg);
+  color: var(--hmr-critical-base);
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  --hmr-critical-bg: #11100f;
+  --hmr-critical-base: #f7efe3;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
-  background: #f7f3e8;
-  color: #171412;
+  background: var(--hmr-critical-bg);
+  color: var(--hmr-critical-base);
   font-family: 'IBM Plex Mono', Roboto, monospace;
+}
+
+#app-root {
+  background: var(--hmr-critical-bg);
 }
