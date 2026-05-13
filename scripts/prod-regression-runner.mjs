@@ -704,7 +704,7 @@ async function discoverProductionEntities(baseUrl) {
       if (!isUuidV7(postId)) {
         continue
       }
-      const detailPath = `/post/${postId}`
+      const detailPath = `/posts/${postId}`
       const detailProbe = await probeJson(
         new URL(`/api/v1/posts/${postId}`, baseUrl).toString(),
         'post detail API'
@@ -732,7 +732,7 @@ async function discoverProductionEntities(baseUrl) {
           id: candidates.author.id ?? null,
           path:
             candidates.author.deep_link ??
-            (candidates.author.id ? `/author/${candidates.author.id}` : null),
+            (candidates.author.id ? `/profile/${candidates.author.id}` : null),
           title:
             candidates.author.display_name ??
             candidates.author.name ??
@@ -742,7 +742,7 @@ async function discoverProductionEntities(baseUrl) {
       : (discoveredAuthors
           .map((author) => ({
             id: typeof author?.id === 'string' ? author.id : null,
-            path: typeof author?.id === 'string' ? `/author/${author.id}` : null,
+            path: typeof author?.id === 'string' ? `/profile/${author.id}` : null,
             title: author?.display_name ?? author?.name ?? author?.username ?? null,
           }))
           .find((author) => author.path) ?? null)
@@ -2014,7 +2014,7 @@ async function runSearchFlow(state, harness, baseUrl, discoveredPostPath, search
           }
           const current = new URL(harness.page.url())
           assert(
-            current.pathname.startsWith('/post/'),
+            current.pathname.startsWith('/posts/'),
             `搜索结果未打开 post 详情，实际 ${current.pathname}`
           )
           if (discoveredPostPath && current.pathname === discoveredPostPath) {
@@ -2026,11 +2026,11 @@ async function runSearchFlow(state, harness, baseUrl, discoveredPostPath, search
         } else if (foundAuthor) {
           resultKind = 'author'
           await foundAuthor.click()
-          await waitForRouteIdle(harness.page, '.author-detail-page')
+          await waitForRouteIdle(harness.page, '.profile-page')
           const current = new URL(harness.page.url())
           assert(
-            current.pathname.startsWith('/author/'),
-            `搜索结果未打开 author 详情，实际 ${current.pathname}`
+            current.pathname.startsWith('/profile/'),
+            `搜索结果未打开 profile 详情，实际 ${current.pathname}`
           )
         }
 
@@ -2100,13 +2100,13 @@ async function verifyInvalidPostFallback(state, harness, baseUrl) {
       scope: 'public',
       name: 'invalid post param fallback',
       severity: 'P1',
-      url: new URL('/post/not-a-valid-id', baseUrl).toString(),
+      url: new URL('/posts/not-a-valid-id', baseUrl).toString(),
     },
     baseUrl,
-    pathOrUrl: '/post/not-a-valid-id',
+    pathOrUrl: '/posts/not-a-valid-id',
     selector: '.not-found-page',
-    expectedFinalPath: '/post/not-a-valid-id',
-    expectedCanonicalPath: '/post/not-a-valid-id',
+    expectedFinalPath: '/posts/not-a-valid-id',
+    expectedCanonicalPath: '/posts/not-a-valid-id',
     expectedTitleExact: `${getNestedValue(state._locale, 'error.notFound')} · ${SITE_NAME}`,
   })
 }
@@ -2127,20 +2127,6 @@ async function runPublicRegression(state, harness, config, discovered) {
       selector: '.explore-page',
       expectedFinalPath: '/explore',
       titleKey: 'nav.explore',
-    },
-    {
-      name: 'search page',
-      path: '/search',
-      selector: '.search-page',
-      expectedFinalPath: '/search',
-      titleKey: 'nav.search',
-    },
-    {
-      name: 'authors page',
-      path: '/authors',
-      selector: '.authors-page',
-      expectedFinalPath: '/authors',
-      titleKey: 'nav.authors',
     },
     {
       name: 'community page',
@@ -2190,30 +2176,6 @@ async function runPublicRegression(state, harness, config, discovered) {
       selector: '.auth-page--register',
       expectedFinalPath: '/register',
       titleKey: 'nav.register',
-      expectedCacheControlIncludes: ['no-store'],
-    },
-    {
-      name: 'forgot password',
-      path: '/forgot-password',
-      selector: '.auth-page--forgot',
-      expectedFinalPath: '/forgot-password',
-      titleKey: 'email.forgotPasswordTitle',
-      expectedCacheControlIncludes: ['no-store'],
-    },
-    {
-      name: 'reset password',
-      path: '/reset-password',
-      selector: '.auth-page',
-      expectedFinalPath: '/reset-password',
-      titleKey: 'email.resetPasswordTitle',
-      expectedCacheControlIncludes: ['no-store'],
-    },
-    {
-      name: 'verify email',
-      path: '/verify-email',
-      selector: '.auth-page',
-      expectedFinalPath: '/verify-email',
-      titleKey: 'email.verifyTitle',
       expectedCacheControlIncludes: ['no-store'],
     },
   ]
@@ -2266,7 +2228,7 @@ async function runPublicRegression(state, harness, config, discovered) {
       },
       baseUrl: config.baseUrl,
       pathOrUrl: discovered.author.path,
-      selector: '.author-detail-page',
+      selector: '.profile-page',
       expectedFinalPath: discovered.author.path,
       expectedCanonicalPath: discovered.author.path,
       expectedTitleIncludes: [discovered.author.title ?? SITE_NAME, SITE_NAME],

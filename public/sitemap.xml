@@ -1,39 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- 使用 scripts/generate-sitemap.js 生成 -->
+  
   <url>
-    <loc>https://hmrchan.local/</loc>
+    <loc>https://momichan.xyz/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1</priority>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.xyz/" />
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://momichan.xyz/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://momichan.xyz/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://momichan.xyz/" />
   </url>
   <url>
-    <loc>https://hmrchan.local/explore</loc>
+    <loc>https://momichan.xyz/explore</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://hmrchan.local/community</loc>
+    <loc>https://momichan.xyz/community</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://hmrchan.local/schedule</loc>
+    <loc>https://momichan.xyz/schedule</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://hmrchan.local/settings</loc>
+    <loc>https://momichan.xyz/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://hmrchan.local/login</loc>
-  </url>
-  <url>
-    <loc>https://hmrchan.local/register</loc>
-  </url>
-  <url>
-    <loc>https://hmrchan.local/about</loc>
-  </url>
-  <url>
-    <loc>https://hmrchan.local/contact</loc>
-  </url>
-  <url>
-    <loc>https://hmrchan.local/join-us</loc>
-  </url>
-  <url>
-    <loc>https://hmrchan.local/thank-you</loc>
-  </url>
-  <url>
-    <loc>https://hmrchan.local/auth/passkey-recovery</loc>
+    <loc>https://momichan.xyz/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>

@@ -2,15 +2,15 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-const POST_DETAIL_ROUTE_PATTERN = /^\/post\/[^/?#]+$/i
+const POST_DETAIL_ROUTE_PATTERN = /^\/posts\/[^/?#]+$/i
 const DISCUSSION_DETAIL_ROUTE_PATTERN = /^\/community\/discussions\/[^/?#]+$/i
 
 function isDetailRoutePath(path) {
-  return path.startsWith('/post/') || path.startsWith('/community/discussions/')
+  return path.startsWith('/posts/') || path.startsWith('/community/discussions/')
 }
 
 function getDetailRouteAnchorSelectors(path) {
-  if (path.startsWith('/post/')) {
+  if (path.startsWith('/posts/')) {
     return ['.post-comments']
   }
   if (path.startsWith('/community/discussions/')) {
@@ -139,7 +139,7 @@ async function discoverLiveDetailRoute(page, baseUrl, config) {
             for (const anchor of anchors) {
               const href = anchor.getAttribute('href')
               if (typeof href !== 'string' || href.length === 0) continue
-              if (kind === 'post' && /^\/post\/[^/?#]+$/i.test(href)) return href
+              if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(href)) return href
               if (kind === 'discussion' && /^\/community\/discussions\/[^/?#]+$/i.test(href)) {
                 return href
               }
@@ -157,7 +157,7 @@ async function discoverLiveDetailRoute(page, baseUrl, config) {
               .filter((value) => typeof value === 'string' && value.length > 0)
 
             for (const value of routeValues) {
-              if (kind === 'post' && /^\/post\/[^/?#]+$/i.test(value)) return value
+                if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(value)) return value
               if (kind === 'discussion' && /^\/community\/discussions\/[^/?#]+$/i.test(value)) {
                 return value
               }
@@ -173,7 +173,7 @@ async function discoverLiveDetailRoute(page, baseUrl, config) {
               .filter((value) => typeof value === 'string' && value.length > 0)
 
             for (const value of idValues) {
-              if (kind === 'post') return `/post/${value}`
+              if (kind === 'post') return `/posts/${value}`
               if (kind === 'discussion') return `/community/discussions/${value}`
             }
 
@@ -195,7 +195,7 @@ async function discoverLiveDetailRoute(page, baseUrl, config) {
       for (const anchor of anchors) {
         const href = anchor.getAttribute('href')
         if (typeof href !== 'string' || href.length === 0) continue
-        if (kind === 'post' && /^\/post\/[^/?#]+$/i.test(href)) return href
+        if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(href)) return href
         if (kind === 'discussion' && /^\/community\/discussions\/[^/?#]+$/i.test(href)) return href
       }
 
@@ -211,7 +211,7 @@ async function discoverLiveDetailRoute(page, baseUrl, config) {
         .filter((value) => typeof value === 'string' && value.length > 0)
 
       for (const value of routeValues) {
-        if (kind === 'post' && /^\/post\/[^/?#]+$/i.test(value)) return value
+        if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(value)) return value
         if (kind === 'discussion' && /^\/community\/discussions\/[^/?#]+$/i.test(value)) {
           return value
         }
@@ -227,7 +227,7 @@ async function discoverLiveDetailRoute(page, baseUrl, config) {
         .filter((value) => typeof value === 'string' && value.length > 0)
 
       for (const value of idValues) {
-        if (kind === 'post') return `/post/${value}`
+        if (kind === 'post') return `/posts/${value}`
         if (kind === 'discussion') return `/community/discussions/${value}`
       }
 

@@ -518,8 +518,55 @@ export function renderStructuredDataScript(config: HtmlDocumentConfig): string {
   return `<script type="application/ld+json" data-prerender-structured-data="true">${payload}</script>`
 }
 
+function renderPrerenderShellStats(stats: HtmlDocumentShellStat[]): string {
+  if (stats.length === 0) return ''
+  const items = stats
+    .slice(0, 3)
+    .map(
+      (item) =>
+        `<li><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong></li>`
+    )
+    .join('')
+  return `<ul class="hmr-prerender-shell__stats" aria-label="Page highlights">${items}</ul>`
+}
+
+function renderPrerenderShellLinks(links: HtmlDocumentShellLink[]): string {
+  if (links.length === 0) return ''
+  const items = links
+    .slice(0, 3)
+    .map((link) => `<a href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a>`)
+    .join('')
+  return `<nav class="hmr-prerender-shell__links" aria-label="Public navigation">${items}</nav>`
+}
+
+function renderPrerenderSummary(config: HtmlDocumentConfig): string {
+  const summary = [config.shellBody, ...config.shellSummary]
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+
+  if (summary.length === 0) return ''
+
+  return summary
+    .map((item) => `<p class="hmr-prerender-shell__summary">${escapeHtml(item)}</p>`)
+    .join('')
+}
+
 function renderPrerenderMarkerShell(config: HtmlDocumentConfig): string {
-  return `<template data-prerender-shell="true" data-prerender-shell-variant="${escapeHtml(config.shellVariant)}" data-prerender-shell-title="${escapeHtml(config.shellTitle)}"></template>`
+  const eyebrow = config.shellEyebrow.trim() || SITE_NAME
+  const title = config.shellTitle.trim() || config.title
+
+  return [
+    `<section class="hmr-prerender-shell hmr-prerender-shell--${escapeHtml(config.shellVariant)}" data-prerender-shell="true" data-prerender-shell-variant="${escapeHtml(config.shellVariant)}" data-prerender-shell-title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">`,
+    '  <div class="hmr-prerender-shell__inner">',
+    `    <p class="hmr-prerender-shell__eyebrow">${escapeHtml(eyebrow)}</p>`,
+    `    <h1 class="hmr-prerender-shell__title">${escapeHtml(title)}</h1>`,
+    `    ${renderPrerenderSummary(config)}`,
+    `    ${renderPrerenderShellStats(config.shellStats)}`,
+    `    ${renderPrerenderShellLinks(config.shellLinks)}`,
+    '  </div>',
+    '</section>',
+  ].join('')
 }
 
 export function renderPrerenderShell(config: HtmlDocumentConfig): string {

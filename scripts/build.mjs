@@ -71,3 +71,13 @@ try {
   )
 }
 runNodeScript(path.join(rootDir, 'node_modules/vite/bin/vite.js'), ['build'], contract.env)
+runNodeScript(
+  path.join(rootDir, 'scripts/generate-sitemap.js'),
+  [
+    '--output',
+    path.join('dist', 'sitemap.xml'),
+    '--robots-output',
+    path.join('dist', 'robots.txt'),
+  ],
+  contract.env
+)

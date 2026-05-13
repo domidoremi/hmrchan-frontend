@@ -16,8 +16,30 @@ import { writeFileSync } from 'fs'
 import { resolve } from 'path'
 
 const SITEMAP_PATH = resolve(process.cwd(), 'public/sitemap.xml')
-const BASE_URL = 'https://momichan.xyz'
+const ROBOTS_PATH = resolve(process.cwd(), 'public/robots.txt')
+const DEFAULT_PUBLIC_SITE_ORIGIN = 'https://momichan.xyz'
 const DRY_RUN = process.argv.includes('--dry-run')
+const outputArgIndex = process.argv.indexOf('--output')
+const robotsOutputArgIndex = process.argv.indexOf('--robots-output')
+const SITEMAP_OUTPUT_PATH =
+  outputArgIndex >= 0 && process.argv[outputArgIndex + 1]
+    ? resolve(process.cwd(), process.argv[outputArgIndex + 1])
+    : SITEMAP_PATH
+const ROBOTS_OUTPUT_PATH =
+  robotsOutputArgIndex >= 0 && process.argv[robotsOutputArgIndex + 1]
+    ? resolve(process.cwd(), process.argv[robotsOutputArgIndex + 1])
+    : ROBOTS_PATH
+
+function resolvePublicSiteOrigin() {
+  const candidate = process.env.PUBLIC_SITE_ORIGIN?.trim() || DEFAULT_PUBLIC_SITE_ORIGIN
+  try {
+    return new URL(candidate).origin
+  } catch {
+    throw new Error(`Invalid PUBLIC_SITE_ORIGIN: ${candidate}`)
+  }
+}
+
+const BASE_URL = resolvePublicSiteOrigin()
 
 // 支持的语言
 const LANGUAGES = ['zh-CN', 'zh-TW', 'ja', 'en']
@@ -37,18 +59,6 @@ const ROUTES = [
     path: '/explore',
     priority: 0.9,
     changefreq: 'daily',
-    multilang: false,
-  },
-  {
-    path: '/search',
-    priority: 0.8,
-    changefreq: 'weekly',
-    multilang: false,
-  },
-  {
-    path: '/authors',
-    priority: 0.8,
-    changefreq: 'weekly',
     multilang: false,
   },
   {
@@ -136,6 +146,10 @@ function generateSitemap() {
   return [...header, ...urlEntries, ...footer].join('\n')
 }
 
+function generateRobots() {
+  return ['User-agent: *', 'Allow: /', '', `Sitemap: ${BASE_URL}/sitemap.xml`, ''].join('\n')
+}
+
 /**
  * 验证 sitemap 格式
  * @param {string} content - sitemap XML 内容
@@ -217,21 +231,29 @@ async function main() {
     console.log(`🌐 Languages: ${LANGUAGES.join(', ')}`)
     console.log('')
 
-    // 生成 sitemap
+    // 生成 sitemap / robots
     const sitemap = generateSitemap()
+    const robots = generateRobots()
 
     // 验证
     validateSitemap(sitemap)
 
     if (DRY_RUN) {
       showPreview(sitemap)
+      console.log('')
+      console.log('Robots:')
+      console.log('─'.repeat(60))
+      console.log(robots.trimEnd())
+      console.log('─'.repeat(60))
       process.exit(0)
     }
 
     // 写入文件
-    writeFileSync(SITEMAP_PATH, sitemap, 'utf-8')
+    writeFileSync(SITEMAP_OUTPUT_PATH, sitemap, 'utf-8')
+    writeFileSync(ROBOTS_OUTPUT_PATH, robots, 'utf-8')
 
-    showSuccess(SITEMAP_PATH, sitemap.length)
+    showSuccess(SITEMAP_OUTPUT_PATH, sitemap.length)
+    console.log(`🤖 Robots output: ${ROBOTS_OUTPUT_PATH}`)
   } catch (error) {
     console.error('❌ Failed to generate sitemap:', error.message)
     process.exit(1)

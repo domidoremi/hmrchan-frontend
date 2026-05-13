@@ -26,12 +26,7 @@
         decoding="async"
       />
       <div class="hmr-post-card__shade" aria-hidden="true"></div>
-      <div
-        class="hmr-post-card__badge-row"
-        :style="badgeStyle"
-        :aria-label="`${platformLabel} ${mediaKindLabel}`"
-        aria-hidden="true"
-      >
+      <div class="hmr-post-card__badge-row" :style="badgeStyle" aria-hidden="true">
         <span class="hmr-post-card__badge"></span>
         <span class="hmr-post-card__badge hmr-post-card__badge--solid"></span>
       </div>

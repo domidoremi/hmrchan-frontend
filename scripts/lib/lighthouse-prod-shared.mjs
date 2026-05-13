@@ -10,17 +10,12 @@ export const DEFAULT_RUNS = 3
 export const STATIC_ANONYMOUS_ROUTE_PATHS = [
   '/',
   '/explore',
-  '/search',
-  '/authors',
   '/community',
   '/schedule',
   '/about',
   '/contact',
   '/login',
   '/register',
-  '/forgot-password',
-  '/reset-password',
-  '/verify-email',
 ]
 
 export const EXCLUDED_PATH_PREFIXES = ['/profile', '/users/']
@@ -32,6 +27,9 @@ export const DETAIL_PAGE_TARGETS = Object.freeze({
   'discussion-detail': 1,
   'schedule-detail': 1,
 })
+
+const UUID_V7_PATH_SEGMENT_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const PAGE_TYPE_ORDER = [
   'home',
@@ -77,22 +75,14 @@ export function pageTypeForUrl(targetUrl) {
   const pathname = normalizePathname(new URL(targetUrl).pathname)
 
   if (pathname === '/') return 'home'
-  if (
-    ['/explore', '/search', '/authors', '/community', '/schedule', '/about', '/contact'].includes(
-      pathname
-    )
-  ) {
+  if (['/explore', '/community', '/schedule', '/about', '/contact'].includes(pathname)) {
     return 'public-entry'
   }
-  if (
-    ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'].includes(
-      pathname
-    )
-  ) {
+  if (['/login', '/register'].includes(pathname)) {
     return 'anonymous-auth'
   }
-  if (pathname.startsWith('/author/')) return 'author-detail'
-  if (pathname.startsWith('/post/')) return 'post-detail'
+  if (pathname.startsWith('/profile/')) return 'author-detail'
+  if (pathname.startsWith('/posts/')) return 'post-detail'
   if (pathname.startsWith('/community/discussions/') || pathname.startsWith('/discussion/')) {
     return 'discussion-detail'
   }
@@ -104,6 +94,10 @@ export function isAuditExcludedUrl(targetUrl) {
   const pathname = normalizePathname(new URL(targetUrl).pathname)
 
   if (EXCLUDED_PATHS.has(pathname)) return true
+  if (pathname.startsWith('/profile/')) {
+    const profileId = pathname.split('/').filter(Boolean).at(1)
+    return !UUID_V7_PATH_SEGMENT_RE.test(profileId ?? '')
+  }
   return EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 }
 

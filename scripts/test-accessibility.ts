@@ -30,12 +30,10 @@ let cachedChromePathPromise: Promise<string | null> | null = null
 const ROUTES = [
   '/',
   '/explore',
-  '/search',
-  '/authors',
   '/community',
   '/community/discussions/00000000-0000-4000-8000-000000000000',
-  '/post/00000000-0000-4000-8000-000000000000',
-  '/author/sample-author',
+  '/posts/00000000-0000-7000-8000-000000000000',
+  '/profile/sample-author',
   '/schedule',
   '/about',
   '/contact',
@@ -46,9 +44,6 @@ const ROUTES = [
   '/profile/security',
   '/login',
   '/register',
-  '/forgot-password',
-  '/reset-password',
-  '/verify-email',
   '/this-route-does-not-exist',
 ]
 

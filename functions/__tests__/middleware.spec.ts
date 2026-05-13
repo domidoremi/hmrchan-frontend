@@ -7,7 +7,7 @@ const resolveCanonicalUrlForOrigin = vi.fn((config: { canonicalPath: string }, o
 const resolveDefaultOgImage = vi.fn((origin: string) => `${origin}/og-default.png`)
 const renderPrerenderShell = vi.fn(
   (config: { shellTitle: string }) =>
-    `<template data-prerender-shell="true" data-prerender-shell-title="${config.shellTitle}"></template>`
+    `<section data-prerender-shell="true" data-prerender-shell-title="${config.shellTitle}"><h1>${config.shellTitle}</h1></section>`
 )
 const resolveStructuredDataPayload = vi.fn(() => '{"@context":"https://schema.org"}')
 
@@ -296,6 +296,7 @@ describe('functions/_middleware', () => {
     expect(html).toContain('href="https://momichan.xyz/posts/restricted-post"')
     expect(html).toContain('data-prerender-shell="true"')
     expect(html).toContain('data-prerender-shell-title="This post is temporarily unavailable')
+    expect(html).toContain('<h1>This post is temporarily unavailable for public preview</h1>')
     expect(html).not.toContain('/hmrchan/pets/tidyfox/spritesheet.webp')
   })
 

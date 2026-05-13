@@ -11,16 +11,11 @@
   "entries": [
     "https://momichan.xyz/",
     "https://momichan.xyz/explore",
-    "https://momichan.xyz/search",
-    "https://momichan.xyz/authors",
     "https://momichan.xyz/community",
     "https://momichan.xyz/schedule",
     "https://momichan.xyz/about",
     "https://momichan.xyz/contact",
     "https://momichan.xyz/login",
-    "https://momichan.xyz/register",
-    "https://momichan.xyz/forgot-password",
-    "https://momichan.xyz/reset-password",
-    "https://momichan.xyz/verify-email"
+    "https://momichan.xyz/register"
   ]
 }

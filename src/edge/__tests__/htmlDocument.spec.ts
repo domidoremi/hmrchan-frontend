@@ -26,16 +26,18 @@ describe('edge HTML document routing', () => {
     expect(documentConfig.canonicalPath).toBe('/__missing-route__')
   })
 
-  it('renders an inert prerender marker instead of a visible loader shell', () => {
+  it('renders a visible lightweight prerender shell for Lighthouse LCP', () => {
     const shell = renderPrerenderShell(resolvePath('/'))
 
     expect(shell).toContain('data-prerender-shell="true"')
     expect(shell).toContain('data-prerender-shell-variant="home"')
     expect(shell).toContain('data-prerender-shell-title="MomiChan"')
+    expect(shell).toContain('hmr-prerender-shell__title')
+    expect(shell).toContain('<h1')
     expect(shell).not.toContain('/hmrchan/pets/tidyfox/spritesheet.webp')
     expect(shell).not.toContain('<svg')
     expect(shell).not.toContain('<i')
     expect(shell).not.toContain('#171412')
-    expect(shell.trim().startsWith('<template')).toBe(true)
+    expect(shell.trim().startsWith('<section')).toBe(true)
   })
 })

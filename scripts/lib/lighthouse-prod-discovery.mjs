@@ -425,11 +425,21 @@ export async function discoverAuditTargets({
   ])
 
   if (sitemapResult.status === 'fulfilled') {
-    sitemapUrls = uniqueByUrl(
+    const parsedSitemapUrls = uniqueByUrl(
       parseSitemapXml(sitemapResult.value).map((url) => ({
         url: toAbsoluteAuditUrl(url, normalizedBase),
       }))
     ).map((entry) => entry.url)
+    const baseOrigin = new URL(normalizedBase).origin
+    sitemapUrls = parsedSitemapUrls.filter((url) => {
+      if (new URL(url).origin === baseOrigin) return true
+      manifest.excluded.push({
+        url,
+        pageType: pageTypeForUrl(url),
+        reason: `生产 sitemap URL host 与审计 base 不一致，已从 ${normalizedBase} 审计中排除。`,
+      })
+      return false
+    })
   } else {
     manifest.coverage.sourceFailures.push({
       source: 'sitemap',
@@ -549,7 +559,7 @@ export async function discoverAuditTargets({
       source: 'api-authors',
       limit: DETAIL_PAGE_TARGETS['author-detail'],
       url: `${normalizedBase}/api/v1/authors?limit=10`,
-      toUrl: (id) => `${normalizedBase}/author/${id}`,
+      toUrl: (id) => `${normalizedBase}/profile/${id}`,
       idSelector: (item) => item?.id ?? item?.uuid ?? item?.author_id ?? null,
     },
     {
@@ -557,7 +567,7 @@ export async function discoverAuditTargets({
       source: 'api-posts',
       limit: DETAIL_PAGE_TARGETS['post-detail'],
       url: `${normalizedBase}/api/v1/posts?limit=10`,
-      toUrl: (id) => `${normalizedBase}/post/${id}`,
+      toUrl: (id) => `${normalizedBase}/posts/${id}`,
       idSelector: (item) => item?.id ?? item?.uuid ?? null,
     },
     {
@@ -607,6 +617,15 @@ export async function discoverAuditTargets({
             entry,
             plan.source,
             'Legacy UUIDv4 post residual blocked by strict UUIDv7 discovery contract.'
+          )
+          continue
+        }
+        const pageProbe = await probeAuditUrl(entry.url, fetchImpl)
+        if (!pageProbe.ok) {
+          rejectDetailSample(
+            entry,
+            { ...pageProbe, url: entry.url, phase: 'page' },
+            plan.source
           )
           continue
         }

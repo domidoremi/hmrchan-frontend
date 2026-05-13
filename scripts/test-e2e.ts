@@ -193,15 +193,6 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     },
   },
   {
-    name: 'authors prerender',
-    path: '/authors',
-    expected: {
-      title: 'Authors · MomiChan',
-      canonical: 'https://momichan.xyz/authors',
-      robots: 'index, follow',
-    },
-  },
-  {
     name: '404 prerender',
     path: '/404/',
     expected: {

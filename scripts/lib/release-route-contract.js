@@ -1,15 +1,13 @@
 const SAMPLE_POST_ROUTE_TOKEN = '__SAMPLE_POST__'
 const SAMPLE_DISCUSSION_ROUTE_TOKEN = '__SAMPLE_DISCUSSION__'
-const DEFAULT_SAMPLE_POST_ROUTE = '/post/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10'
+const DEFAULT_SAMPLE_POST_ROUTE = '/posts/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10'
 const DEFAULT_SAMPLE_DISCUSSION_ROUTE =
   '/community/discussions/018f7da0-0c13-7c5f-a3b2-50d09d31a100'
 
 const SEO_CRITICAL_PATHS = new Set([
   '/',
   '/explore',
-  '/authors',
   '/community',
-  '/search',
   '/login',
   SAMPLE_POST_ROUTE_TOKEN,
   SAMPLE_DISCUSSION_ROUTE_TOKEN,
@@ -90,8 +88,6 @@ const GUEST_BROWSER_ROUTE_DEFINITIONS = Object.freeze(
   [
     { name: 'home route', path: '/', mode: 'guest', shellSelector: '.home-page' },
     { name: 'explore route', path: '/explore', mode: 'guest', shellSelector: '.explore-page' },
-    { name: 'search route', path: '/search', mode: 'guest', shellSelector: '.search-page' },
-    { name: 'authors route', path: '/authors', mode: 'guest', shellSelector: '.authors-page' },
     {
       name: 'community route',
       path: '/community',

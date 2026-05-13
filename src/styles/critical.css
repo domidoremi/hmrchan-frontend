@@ -28,3 +28,90 @@ body {
 #app-root {
   background: var(--hmr-critical-bg);
 }
+
+.hmr-prerender-shell {
+  box-sizing: border-box;
+  min-block-size: 100svh;
+  padding: clamp(4rem, 10vh, 7rem) clamp(1.25rem, 5vw, 4rem);
+  background: var(--hmr-critical-bg);
+  color: var(--hmr-critical-base);
+}
+
+.hmr-prerender-shell__inner {
+  display: grid;
+  max-inline-size: 46rem;
+  min-block-size: 18rem;
+  align-content: center;
+  gap: 1rem;
+}
+
+.hmr-prerender-shell__eyebrow,
+.hmr-prerender-shell__summary,
+.hmr-prerender-shell__stats,
+.hmr-prerender-shell__links {
+  margin: 0;
+}
+
+.hmr-prerender-shell__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hmr-prerender-shell__title {
+  max-inline-size: 13ch;
+  margin: 0;
+  font-size: clamp(2.75rem, 12vw, 6.25rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.hmr-prerender-shell__summary {
+  max-inline-size: 38rem;
+  font-size: clamp(1rem, 3vw, 1.25rem);
+  line-height: 1.7;
+}
+
+.hmr-prerender-shell__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.hmr-prerender-shell__stats li,
+.hmr-prerender-shell__links a {
+  border: 1px solid rgb(23 20 18 / 16%);
+  border-radius: 999px;
+  padding: 0.65rem 0.9rem;
+}
+
+html[data-theme='dark'] .hmr-prerender-shell__stats li,
+html[data-theme='dark'] .hmr-prerender-shell__links a {
+  border-color: rgb(247 239 227 / 24%);
+}
+
+.hmr-prerender-shell__stats span {
+  display: block;
+  font-size: 0.68rem;
+  opacity: 0.68;
+}
+
+.hmr-prerender-shell__stats strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.hmr-prerender-shell__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.hmr-prerender-shell__links a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}

@@ -401,7 +401,7 @@ function validatePublicIdEntrypoints(projectRoot, issues) {
     issues.push({
       code: 'missing-home-deeplink-uuidv7-normalization',
       message:
-        'Home/discovery deep_link normalization must reject retired /post/{uuidv4} targets before RouterLink/router.push consume them',
+        'Home/discovery deep_link normalization must reject retired /post/{uuidv4} targets before RouterLink/router.push consume them and emit /posts/{uuidv7} routes',
       file: 'src/api/homeService.ts',
     })
   }
@@ -415,7 +415,7 @@ function validatePublicIdEntrypoints(projectRoot, issues) {
     issues.push({
       code: 'missing-edge-post-link-uuidv7-normalization',
       message:
-        'Edge detail document resolver must only emit /post/{uuidv7} shell links for related or recent posts after cutover',
+        'Edge detail document resolver must only emit /posts/{uuidv7} shell links for related or recent posts after cutover',
       file: 'src/edge/detailDocumentResolver.ts',
     })
   }
