@@ -6,6 +6,11 @@ import {
   getValidationStagePlan,
   resolveValidationArtifactDir,
 } from '../../../scripts/lib/validate-release.js'
+import {
+  ARTIFACT_PRESENT_VALUE,
+  ARTIFACT_REDACTED_VALUE,
+  sanitizeValidationArtifact,
+} from '../../../scripts/lib/validation-artifact-sanitizer.js'
 
 describe('validate release helpers', () => {
   it('builds the expected stage plan for each validation mode', () => {
@@ -229,5 +234,68 @@ describe('validate release helpers', () => {
     expect(summary.status).toBe('failed')
     expect(summary.blockingStageId).toBe('stage-2-local-browser')
     expect(summary.blockingReason).toContain('did not complete')
+  })
+
+  it('redacts sensitive values from release validation artifacts', () => {
+    const summary = buildValidationSummary({
+      mode: 'hook',
+      artifactDir: '/tmp/validation',
+      git: { branch: 'main', commitSha: 'sha', diffRange: 'HEAD~1..HEAD' },
+      targets: {
+        baseUrl: 'https://momichan.xyz',
+        controlledBaseUrl: null,
+      },
+      changeSummary: classifyValidationChanges([]),
+      stages: [
+        {
+          id: 'stage-0-contract-self-check',
+          order: 0,
+          name: '合同自检',
+          selected: true,
+          status: 'passed',
+          reason: null,
+          details: {
+            productionContractPreview: {
+              env: {
+                VITE_PUBLIC_LABEL: 'visible-public-value',
+                API_TOKEN: 'real-token-value',
+                primary_password: 'real-password-value',
+                COOKIE: 'real-cookie-value',
+              },
+              nested: {
+                apiKey: 'real-api-key',
+                children: [{ refreshToken: 'real-refresh-token' }],
+              },
+            },
+          },
+        },
+      ],
+    })
+
+    const sanitized = sanitizeValidationArtifact(summary) as typeof summary
+    const serialized = JSON.stringify(sanitized)
+    const envPreview = sanitized.stages[0]?.details.productionContractPreview.env
+
+    expect(serialized).not.toContain('real-token-value')
+    expect(serialized).not.toContain('real-password-value')
+    expect(serialized).not.toContain('real-cookie-value')
+    expect(serialized).not.toContain('real-api-key')
+    expect(serialized).not.toContain('real-refresh-token')
+    expect(envPreview.VITE_PUBLIC_LABEL).toMatchObject({
+      present: true,
+      sensitive: false,
+      value: ARTIFACT_PRESENT_VALUE,
+    })
+    expect(envPreview.API_TOKEN).toMatchObject({
+      present: true,
+      sensitive: true,
+      value: ARTIFACT_REDACTED_VALUE,
+    })
+    expect(sanitized.stages[0]?.details.productionContractPreview.nested.apiKey).toBe(
+      ARTIFACT_REDACTED_VALUE
+    )
+    expect(
+      sanitized.stages[0]?.details.productionContractPreview.nested.children[0].refreshToken
+    ).toBe(ARTIFACT_REDACTED_VALUE)
   })
 })

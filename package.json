@@ -34,6 +34,8 @@
     "validate:release:candidate": "node scripts/validate-release.mjs --mode candidate",
     "validate:release:production": "node scripts/validate-release.mjs --mode production",
     "check:release-evidence": "node scripts/release-evidence.mjs",
+    "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
+    "check:complexity-budget": "node scripts/check-complexity-budget.mjs",
     "test:perf": "bun run scripts/test-performance.ts",
     "test:a11y": "bun run scripts/test-accessibility.ts",
     "check:frontend": "bun run scripts/frontend-health-check.ts",

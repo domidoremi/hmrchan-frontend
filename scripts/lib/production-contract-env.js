@@ -42,6 +42,14 @@ const PRODUCTION_CONTRACT_ENV_POLICY = Object.freeze({
   forceClientEnv: FORCE_SAFE_PRODUCTION_CLIENT_ENV,
 })
 
+function shouldPreserveLocalAuditPreviewProxyFlag(baseEnv) {
+  return (
+    baseEnv.VITE_DISABLE_PREVIEW_PROXY === 'true' &&
+    (baseEnv.VITE_CLIENT_CONTRACT_VERSION === 'local-audit-contract' ||
+      baseEnv.LOCAL_AUDIT_BUILD === 'true')
+  )
+}
+
 function sanitizeProductionClientEnv(baseEnv) {
   const env = { ...baseEnv }
   const strippedKeys = []
@@ -49,6 +57,9 @@ function sanitizeProductionClientEnv(baseEnv) {
 
   for (const key of STRIP_PRODUCTION_CLIENT_ENV_KEYS) {
     if (!(key in env)) continue
+    if (key === 'VITE_DISABLE_PREVIEW_PROXY' && shouldPreserveLocalAuditPreviewProxyFlag(baseEnv)) {
+      continue
+    }
     if (!hasTrimmedValue(env[key])) {
       delete env[key]
       continue

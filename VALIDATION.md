@@ -68,7 +68,7 @@ Hook 中负载静态门禁只包含：
 1. 合同自检
 2. 完整本地静态门禁
 
-完整本地静态门禁包含 `format:check`、`type-check`、`lint:strict`、`test:unit`、`build` 和 `build:security-check`。它仍不启动 Docker/browser gate。
+完整本地静态门禁包含 `format:check`、`type-check`、`lint:strict`、`test:unit`、`build`、`build:security-check` 和 `check:bundle-budget`。它仍不启动 Docker/browser gate。
 
 ### `local`
 
@@ -135,7 +135,7 @@ Hook 中负载静态门禁只包含：
 
 ## 本地环境阻塞
 
-本地浏览器门禁依赖 Docker Desktop、本地后端栈和 local audit bridge。若这些依赖不可用，`check:frontend` / `test:e2e` 会把 `UPSTREAM_TIMEOUT`、`UPSTREAM_UNREACHABLE` 等探针结果报告为 local audit environment blocked，而不是误报为后端契约变更。
+本地浏览器门禁依赖 Docker Desktop、本地后端栈、Pages-compatible preview facade 和 local audit bridge。若这些依赖不可用，`check:frontend` / `test:e2e` 会把 `UPSTREAM_TIMEOUT`、`UPSTREAM_UNREACHABLE`、API `530`、同源 upstream unavailable、`/client-report` unavailable 等探针结果报告为 local audit environment blocked，而不是误报为后端契约变更。
 
 在 Codex、远程终端或其他容易被大日志拖垮的非交互环境中，优先使用低输出入口：
 
@@ -146,7 +146,23 @@ bun run validate:release --mode prepush-full --quiet
 bun run validate:release --mode local --quiet
 ```
 
-`hook` / `prepush` 不运行 build、全量 unit、Docker、本地后端、local audit bridge、Puppeteer/Chrome；它只验证推送前中负载硬门禁。`prepush-full --quiet` 会运行完整静态门禁，但仍不启动 Docker/browser gate。`local --quiet` 不会跳过 Docker、本地后端、local audit bridge、Puppeteer/Chrome 或任何 local release stage，只降低控制台输出。若环境不可用，`local` 结果仍必须失败，并且只能作为“环境阻塞可诊断、summary 可落盘”的验收信号；不能把 fallback 或 environment-blocked 视为正式发布通过。
+`hook` / `prepush` 不运行 build、全量 unit、Docker、本地后端、local audit bridge、Puppeteer/Chrome；它只验证推送前中负载硬门禁。`prepush-full --quiet` 会运行完整静态门禁与 bundle budget，但仍不启动 Docker/browser gate。`local --quiet` 不会跳过 Docker、本地后端、local audit bridge、Puppeteer/Chrome 或任何 local release stage，只降低控制台输出。若环境不可用，`local` 结果仍必须失败，并且只能作为“环境阻塞可诊断、summary 可落盘”的验收信号；不能把 fallback 或 environment-blocked 视为正式发布通过。
+
+## Artifact 脱敏规则
+
+`validate:release` 写入 `summary.json`、`summary.md`、`stages/*.json` 前会统一清洗 artifact payload：
+
+- `token`、`password`、`secret`、`cookie`、`key`、`auth`、`authorization`、`credential`、`jwt`、`session`、`private`、`cert`、`refresh`、`pass` 等大小写和 camelCase 变体必须写为 `[redacted]`
+- 环境变量 map 只允许记录 key 名、是否存在、是否敏感、来源与 `[present]` / `[redacted]` 占位，不得落盘真实值
+- `VITE_*` 仍按同一规则处理；客户端可见变量不等于可随意写入 artifact 的安全值
+- 嵌套对象、数组和 stage details 都必须走同一 sanitizer
+
+人工抽查最近一次验证产物时，优先看：
+
+```bash
+bun run validate:release --mode hook --quiet
+# 然后检查 output/validation/<latest>/summary.json 和 stages/*.json 是否只包含占位值
+```
 
 恢复环境后必须补跑：
 

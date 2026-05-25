@@ -84,6 +84,32 @@ describe('production contract env resolver', () => {
     )
   })
 
+  it('preserves the preview proxy bypass for local audit production builds', () => {
+    const result = resolveProductionContractEnv({
+      VITE_CLIENT_CONTRACT_VERSION: 'local-audit-contract',
+      VITE_DISABLE_PREVIEW_PROXY: 'true',
+      LOCAL_AUDIT_BUILD: 'true',
+      VITE_ENABLE_DEBUG: 'true',
+      VITE_ENABLE_DEVTOOLS: 'true',
+    })
+
+    expect(result.env.VITE_DISABLE_PREVIEW_PROXY).toBe('true')
+    expect(result.env.VITE_ENABLE_DEBUG).toBe('false')
+    expect(result.env.VITE_ENABLE_DEVTOOLS).toBe('false')
+    expect(result.sanitized?.strippedKeys).not.toContain('VITE_DISABLE_PREVIEW_PROXY')
+  })
+
+  it('still strips preview proxy bypass from ordinary Cloudflare production builds', () => {
+    const result = resolveProductionContractEnv({
+      CF_PAGES: '1',
+      CF_PAGES_COMMIT_SHA: 'pages-commit-sha',
+      VITE_DISABLE_PREVIEW_PROXY: 'true',
+    })
+
+    expect(result.env.VITE_DISABLE_PREVIEW_PROXY).toBeUndefined()
+    expect(result.sanitized?.strippedKeys).toContain('VITE_DISABLE_PREVIEW_PROXY')
+  })
+
   it('exposes a stable production env policy contract for release validation', () => {
     const policy = getProductionContractEnvPolicy()
 

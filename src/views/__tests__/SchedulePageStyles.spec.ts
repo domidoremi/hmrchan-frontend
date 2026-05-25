@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const schedulePageSource = readFileSync(
-  resolve(process.cwd(), 'src/views/SchedulePage.vue'),
+  resolve(process.cwd(), 'src/styles/page-systems/schedule-page-view.css'),
   'utf8'
 )
 

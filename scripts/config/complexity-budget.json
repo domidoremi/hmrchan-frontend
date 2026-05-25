@@ -1,0 +1,96 @@
+{
+  "softLineLimit": 1000,
+  "hardLineLimit": 1500,
+  "registeredLargeFiles": {
+    "src/components/business/PostCard.vue": {
+      "maxLines": 1023,
+      "refactorQueued": false,
+      "reason": "Existing content card surface; requires an explicit note before further growth."
+    },
+    "src/components/business/PostPreviewModal.vue": {
+      "maxLines": 1269,
+      "refactorQueued": false,
+      "reason": "Existing preview modal; requires an explicit note before further growth."
+    },
+    "src/components/layout/AppNavbar.vue": {
+      "maxLines": 1828,
+      "refactorQueued": true,
+      "reason": "Known navigation shell aggregation; keep registered until desktop/mobile behaviors are separated."
+    },
+    "src/components/layout/SettingsPanel.vue": {
+      "maxLines": 1905,
+      "refactorQueued": true,
+      "reason": "Known settings surface aggregation; keep registered until panel sections are split."
+    },
+    "src/components/profile/ProfileSecurityMfaSection.vue": {
+      "maxLines": 1168,
+      "refactorQueued": false,
+      "reason": "Existing MFA section; requires an explicit note before further growth."
+    },
+    "src/components/ui/DeskPet.vue": {
+      "maxLines": 1707,
+      "refactorQueued": true,
+      "reason": "Known interactive UI component; keep registered until animation/runtime model is separated."
+    },
+    "src/components/ui/VideoPlayer.vue": {
+      "maxLines": 1410,
+      "refactorQueued": false,
+      "reason": "Batch 2 extracted scoped CSS; remaining controls/model can be split in a later pass."
+    },
+    "src/composables/useParticleEngine.ts": {
+      "maxLines": 1016,
+      "refactorQueued": false,
+      "reason": "Existing particle runtime helper; requires an explicit note before further growth."
+    },
+    "src/edge/detailDocumentResolver.ts": {
+      "maxLines": 1300,
+      "refactorQueued": false,
+      "reason": "Existing edge rendering contract; requires an explicit note before further growth."
+    },
+    "src/views/AboutPage.vue": {
+      "maxLines": 1128,
+      "refactorQueued": false,
+      "reason": "Existing content page; requires an explicit note before further growth."
+    },
+    "src/views/CommunityPage.vue": {
+      "maxLines": 1397,
+      "refactorQueued": false,
+      "reason": "Existing large community page; requires an explicit note before further growth."
+    },
+    "src/views/HomePage.vue": {
+      "maxLines": 3297,
+      "refactorQueued": true,
+      "reason": "Batch 2 extracted scoped CSS; remaining scene/view-model logic is queued for staged extraction."
+    },
+    "src/views/LoginPage.vue": {
+      "maxLines": 1286,
+      "refactorQueued": false,
+      "reason": "Existing large auth entry page; preserve current auth flow while tracking complexity."
+    },
+    "src/views/PostDetailPage.vue": {
+      "maxLines": 2550,
+      "refactorQueued": true,
+      "reason": "Known large detail workflow; split comments, media, and action orchestration in a later pass."
+    },
+    "src/views/ProfileSettingsPage.vue": {
+      "maxLines": 1787,
+      "refactorQueued": true,
+      "reason": "Known profile settings workflow; keep registered until section state is extracted."
+    },
+    "src/views/RegisterPage.vue": {
+      "maxLines": 1480,
+      "refactorQueued": false,
+      "reason": "Existing large auth form page; requires an explicit note before further growth."
+    },
+    "src/views/SchedulePage.vue": {
+      "maxLines": 1687,
+      "refactorQueued": true,
+      "reason": "Batch 2 extracted scoped CSS; remaining filters and view state are queued for model extraction."
+    },
+    "src/views/SearchPage.vue": {
+      "maxLines": 1109,
+      "refactorQueued": false,
+      "reason": "Existing search page; requires an explicit note before further growth."
+    }
+  }
+}

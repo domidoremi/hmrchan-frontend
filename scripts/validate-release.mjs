@@ -33,6 +33,7 @@ import {
   isValidationMode,
   resolveValidationArtifactDir,
 } from './lib/validate-release.js'
+import { sanitizeValidationArtifact } from './lib/validation-artifact-sanitizer.js'
 import { CommandRunError, runCommand } from './lib/command-runner.js'
 
 const STATIC_GATE_COMMAND_TIMEOUT_MS = Number(
@@ -198,7 +199,11 @@ function resolveContractVersion() {
 
 async function writeJson(filePath, payload) {
   await mkdir(path.dirname(filePath), { recursive: true })
-  await writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8')
+  await writeFile(
+    filePath,
+    `${JSON.stringify(sanitizeValidationArtifact(payload), null, 2)}\n`,
+    'utf8'
+  )
 }
 
 function slugifyCommand(command) {
@@ -338,6 +343,7 @@ async function runStaticGateStage(stageRecord) {
     ['bun', 'run', 'test:unit'],
     ['bun', 'run', 'build'],
     ['bun', 'run', 'build:security-check'],
+    ['bun', 'run', 'check:bundle-budget'],
   ]
 
   const commandResults = await runStageCommands(stageRecord, commands, env, {

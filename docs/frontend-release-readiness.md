@@ -185,6 +185,7 @@
 - 当前已登记的上游限制：
   - `baseline-browser-mapping` 即使升级到仓库可获取的最新版本，仍可能因其上游数据发布时间超过两个月而输出 stale-data 提醒
   - 仓库通过 Vitest wrapper 仅对该官方支持的提醒注入 `BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA=true` / `BROWSERSLIST_IGNORE_OLD_DATA=true`，不扩展到其他错误类型
+  - `vue-i18n` custom message compiler 在当前 alpha/beta 依赖组合下可能输出 experimental warning；本轮登记为升级跟踪项，不扩展为通用静默白名单
 
 ## Frontend Health Classification
 
@@ -199,7 +200,8 @@
 说明：
 
 - `/client-report` 仍视为 optional telemetry noise
-- 本地 preview-shell 模式下，同源 `/api/*` 缺失 Functions 时允许降噪
+- 本地 Pages-compatible preview facade 优先提供 `/client-report` 与同源 API 行为
+- 纯 `vite preview` 或 local preview API noise 显式允许时，API `530`、`UPSTREAM_TIMEOUT`、`UPSTREAM_UNREACHABLE`、同源 upstream unavailable、`/client-report` unavailable 归类为本地环境阻塞
 - 对外部 base URL 或生产环境，API 错误不再默认忽略
 
 失败排查顺序：
@@ -268,6 +270,105 @@
   - 页面标题
   - 稳定 shell selector
   - 至少一个内容前置信号（list / empty state / stats / header）
+
+## Frontend Quality Baseline
+
+本节记录当前前端质量基线。目标是让安全、验证、复杂度、性能和 UX 状态有可执行门槛，而不是只停留在 review 建议里。
+
+### 大文件阈值
+
+- Vue / TS 单文件超过 1000 行：必须在 `scripts/config/complexity-budget.json` 登记原因和当前上限。
+- Vue / TS 单文件超过 1500 行：必须设置 `refactorQueued: true`，进入拆分队列。
+- 新增未登记超 1000 行文件，或登记文件继续超过 `maxLines`，`bun run check:complexity-budget` 必须失败。
+- 历史债务采用冻结上限治理：当前已登记的大文件可以通过，但后续增长必须显式调整配置并说明原因。
+
+当前优先拆分队列：
+
+- `src/views/HomePage.vue`
+- `src/views/SchedulePage.vue`
+- `src/views/PostDetailPage.vue`
+- `src/views/ProfileSettingsPage.vue`
+- `src/components/layout/AppNavbar.vue`
+- `src/components/layout/SettingsPanel.vue`
+- `src/components/ui/DeskPet.vue`
+
+### Bundle Budget
+
+完整静态 release gate 在 `build` 和 `build:security-check` 后运行：
+
+```bash
+bun run check:bundle-budget
+```
+
+预算配置在 `scripts/config/bundle-budget.json`。初始阈值按当前构建产物约 `+5%` 设置：
+
+| 指标 | 阈值 |
+| --- | ---: |
+| JS 总量 | 1,862,015 bytes |
+| CSS 总量 | 884,640 bytes |
+| 图片总量 | 2,953,128 bytes |
+| 最大 JS/CSS chunk | 255,923 bytes |
+| 首页首屏唯一 asset 数 | 8 |
+
+本轮已把 `HomePage.vue`、`SchedulePage.vue`、`VideoPlayer.vue` 的 scoped style 外提到独立 CSS 文件，降低单文件 review 面积，并让页面样式更容易随异步 chunk 管理。后续继续收紧预算时，应优先处理全局 `index.css`、首页 CSS、动画/装饰资源和只用少量能力却引入大体积依赖的场景。
+
+### UX 状态规范
+
+列表、搜索、作者、日程、首页区块和受保护页面应优先使用统一状态组件表达：
+
+- `loading`：被动等待，不默认展示重试按钮。
+- `empty` / `no-results`：说明当前没有数据，不暗示系统故障。
+- `error`：默认展示重试按钮。
+- `service-unavailable`：用于 API `530`、upstream unavailable、本地 preview facade 缺失或后端暂不可用，文案应指导刷新、稍后重试或查看缓存/空态。
+- `not-found`：用于资源不存在，不混用网络错误文案。
+
+错误文案避免只显示“网络错误”或“发生错误”。能明确判断服务不可用时，使用“服务暂不可用 / 稍后重试 / 刷新”这类用户可执行表达。
+
+### Artifact 脱敏
+
+验证 artifact 不得落盘真实敏感值。`validate:release` 会在写入 `summary.json`、`summary.md` 和 `stages/*.json` 前统一 sanitizer：
+
+- 敏感 key 包括 `token`、`password`、`secret`、`cookie`、`key`、`auth`、`authorization`、`credential`、`jwt`、`session`、`private`、`cert`、`refresh`、`pass` 等大小写和 camelCase 变体。
+- 环境变量 map 只保留 key 名、是否存在、是否敏感、来源和 `[present]` / `[redacted]` 占位。
+- `VITE_*` 公共变量也必须走同一规则；公共变量不是 artifact 安全豁免。
+- 嵌套对象和数组必须递归处理。
+
+### 浏览器采样
+
+核心采样视口：
+
+- Desktop: `1440x900`
+- Mobile: `390x844`
+
+核心路由：
+
+- `/`
+- `/explore`
+- `/search`
+- `/authors`
+- `/community`
+- `/schedule`
+- `/login`
+- `/profile`
+- 非法详情页
+
+验收重点：
+
+- 无前端运行时崩溃
+- 无横向溢出
+- 受保护路由正确跳转
+- loading / empty / error / service unavailable 状态清楚
+- local preview 环境阻塞与真实前端错误区分清楚
+
+### i18n Compiler Warning
+
+当前浏览器采样中可能出现 `vue-i18n` custom message compiler experimental 警告。它属于上游 alpha/beta 依赖风险，本轮不直接替换 i18n 方案。
+
+跟踪路径：
+
+- 保持警告在测试输出中可见，不把它扩展到通用静默白名单。
+- 关注 `vue-i18n` 稳定版本或 compiler API 变更。
+- 若升级会影响消息编译、动态 locale 或 bundle 体积，必须先跑核心路由浏览器采样和 i18n 相关单测。
 
 ## Script Inputs
 

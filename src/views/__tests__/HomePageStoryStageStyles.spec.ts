@@ -3,7 +3,10 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-const homePageSource = readFileSync(resolve(process.cwd(), 'src/views/HomePage.vue'), 'utf8')
+const homePageSource = readFileSync(
+  resolve(process.cwd(), 'src/styles/page-systems/home-page-view.css'),
+  'utf8'
+)
 const homePageSystemSource = readFileSync(
   resolve(process.cwd(), 'src/styles/page-systems/home-page-system.css'),
   'utf8'

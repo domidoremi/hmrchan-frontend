@@ -8,6 +8,9 @@ interface HealthFilterOptions {
   baseOrigin?: string
 }
 
+const LOCAL_PREVIEW_ENVIRONMENT_BLOCKER_PATTERN =
+  /(?:\b530\b|UPSTREAM_TIMEOUT|UPSTREAM_UNREACHABLE|upstream unavailable|upstream is unavailable|upstream returned|client-report unavailable|\/client-report)/i
+
 function normalizeText(value: string): string {
   return value.trim().toLowerCase()
 }
@@ -27,6 +30,27 @@ function isLocalPreviewApiNoise(urlOrText: string, options?: HealthFilterOptions
 
   const normalized = normalizeText(urlOrText)
   if (!normalized.includes('/api/')) return false
+
+  const baseOrigin = normalizeOrigin(options.baseOrigin)
+  if (!baseOrigin) return true
+
+  try {
+    return new URL(urlOrText).origin.toLowerCase() === baseOrigin
+  } catch {
+    return true
+  }
+}
+
+export function isLocalPreviewEnvironmentBlocker(
+  urlOrText: string,
+  options?: HealthFilterOptions
+): boolean {
+  if (!options?.allowLocalPreviewApiNoise) return false
+
+  const normalized = normalizeText(urlOrText)
+  if (!LOCAL_PREVIEW_ENVIRONMENT_BLOCKER_PATTERN.test(urlOrText)) return false
+  if (normalized.includes('/client-report')) return true
+  if (!normalized.includes('/api/') && !normalized.includes('upstream')) return false
 
   const baseOrigin = normalizeOrigin(options.baseOrigin)
   if (!baseOrigin) return true
@@ -67,6 +91,8 @@ export function shouldIgnoreConsoleError(
     isIgnoredOptionalEndpoint(normalizedLocation) ||
     isIgnoredThirdPartyHealthEndpoint(normalized) ||
     isIgnoredThirdPartyHealthEndpoint(normalizedLocation) ||
+    isLocalPreviewEnvironmentBlocker(text, options) ||
+    isLocalPreviewEnvironmentBlocker(locationUrl ?? '', options) ||
     isLocalPreviewApiNoise(text, options) ||
     isLocalPreviewApiNoise(locationUrl ?? '', options)
   )
@@ -83,6 +109,7 @@ export function shouldIgnoreRequestIssue(
   return (
     isIgnoredOptionalEndpoint(normalized) ||
     isIgnoredThirdPartyHealthEndpoint(normalized) ||
+    isLocalPreviewEnvironmentBlocker(url, options) ||
     isLocalPreviewApiNoise(url, options)
   )
 }

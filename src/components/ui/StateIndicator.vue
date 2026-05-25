@@ -14,7 +14,9 @@
 
     <div class="state-indicator__content">
       <h3 class="state-indicator__title">{{ resolvedTitle }}</h3>
-      <p v-if="description" class="state-indicator__description">{{ description }}</p>
+      <p v-if="resolvedDescription" class="state-indicator__description">
+        {{ resolvedDescription }}
+      </p>
     </div>
 
     <div v-if="shouldShowAction" class="state-indicator__actions">
@@ -34,14 +36,23 @@
 <script setup lang="ts" vapor>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, Inbox, Search, FileQuestion, RefreshCw, type LucideIcon } from '@lucide/vue'
+import {
+  AlertTriangle,
+  CloudOff,
+  FileQuestion,
+  Inbox,
+  LoaderCircle,
+  RefreshCw,
+  Search,
+  type LucideIcon,
+} from '@lucide/vue'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiStateIndicator' })
 
 interface Props {
-  variant?: 'empty' | 'error' | 'not-found' | 'no-results'
+  variant?: 'empty' | 'error' | 'loading' | 'not-found' | 'no-results' | 'service-unavailable'
   title?: string
   description?: string
   showAction?: boolean
@@ -52,6 +63,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   variant: 'empty',
   actionLoading: false,
+  showAction: undefined,
 })
 
 const emit = defineEmits<{
@@ -66,18 +78,28 @@ const resolvedTitle = computed(() => {
   const titles: Record<string, string> = {
     error: t('common.error'),
     empty: t('common.noResults'),
+    loading: t('common.loading'),
     'not-found': t('common.notFound'),
     'no-results': t('common.noResults'),
+    'service-unavailable': t('error.serviceUnavailable'),
   }
 
   return titles[props.variant] ?? t('common.noResults')
 })
 
+const resolvedDescription = computed(() => {
+  if (props.description) return props.description
+  if (props.variant === 'service-unavailable') return t('error.tryAgain')
+  return ''
+})
+
 const iconMap: Record<string, LucideIcon> = {
   error: AlertTriangle,
   empty: Inbox,
+  loading: LoaderCircle,
   'not-found': FileQuestion,
   'no-results': Search,
+  'service-unavailable': CloudOff,
 }
 
 const iconComponent = computed(() => iconMap[props.variant] ?? Inbox)
@@ -86,8 +108,10 @@ const iconName = computed(() => {
   const names: Record<string, string> = {
     error: 'sparkle',
     empty: 'explore',
+    loading: 'sparkle',
     'not-found': 'search',
     'no-results': 'search',
+    'service-unavailable': 'sparkle',
   }
 
   return names[props.variant] ?? 'sparkle'
@@ -95,7 +119,7 @@ const iconName = computed(() => {
 
 const shouldShowAction = computed(() => {
   if (props.showAction !== undefined) return props.showAction
-  return props.variant === 'error'
+  return props.variant === 'error' || props.variant === 'service-unavailable'
 })
 
 const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'))
@@ -179,27 +203,42 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
   }
 }
 
+@keyframes state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Variant: Empty / No Results */
 .state-indicator--empty .state-indicator__glow,
-.state-indicator--no-results .state-indicator__glow {
+.state-indicator--no-results .state-indicator__glow,
+.state-indicator--loading .state-indicator__glow {
   background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 70%);
 }
 
 .state-indicator--empty .state-indicator__icon,
-.state-indicator--no-results .state-indicator__icon {
+.state-indicator--no-results .state-indicator__icon,
+.state-indicator--loading .state-indicator__icon {
   color: var(--color-primary);
 }
 
+.state-indicator--loading .state-indicator__icon {
+  animation: state-spin 1.1s linear infinite;
+}
+
 /* Variant: Error */
-.state-indicator--error .state-indicator__glow {
+.state-indicator--error .state-indicator__glow,
+.state-indicator--service-unavailable .state-indicator__glow {
   background: radial-gradient(circle, rgba(var(--color-error-rgb), 0.15) 0%, transparent 70%);
 }
 
-.state-indicator--error .state-indicator__icon-wrapper {
+.state-indicator--error .state-indicator__icon-wrapper,
+.state-indicator--service-unavailable .state-indicator__icon-wrapper {
   border-color: rgba(var(--color-error-rgb), 0.2);
 }
 
-.state-indicator--error .state-indicator__icon {
+.state-indicator--error .state-indicator__icon,
+.state-indicator--service-unavailable .state-indicator__icon {
   color: var(--color-error);
 }
 
@@ -251,7 +290,8 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
 
 @media (prefers-reduced-motion: reduce) {
   .state-indicator__glow,
-  .state-indicator__icon-wrapper {
+  .state-indicator__icon-wrapper,
+  .state-indicator--loading .state-indicator__icon {
     animation: none;
   }
 }
