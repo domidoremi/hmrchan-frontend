@@ -13,6 +13,8 @@ interface ImportMetaEnv {
   readonly VITE_APP_DESCRIPTION?: string
   /** Turnstile 站点密钥 */
   readonly VITE_TURNSTILE_SITE_KEY?: string
+  /** 启用 FingerprintJS OSS 高级浏览器指纹。默认使用轻量 fallback。 */
+  readonly VITE_ENABLE_ADVANCED_FINGERPRINT?: string
   /** 是否显式启用 Cloudflare Browser Insights beacon */
   readonly VITE_ENABLE_CF_BEACON?: string
   /** Cloudflare Browser Insights token */

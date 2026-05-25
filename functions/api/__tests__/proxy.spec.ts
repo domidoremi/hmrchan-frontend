@@ -8,6 +8,7 @@ const INTERNAL_SECRET = 'super-secret'
 const ORIGIN = 'https://momichan.xyz'
 const NEXT_ORIGIN = 'https://next.momichan.xyz'
 const SESSION_RESOLVE_ROUTE = `/api/v1/auth/${'session:resolve'}`
+const CSRF_TOKEN = 'csrf-token-1'
 const textEncoder = new TextEncoder()
 
 const mockFetch = vi.fn<typeof fetch>()
@@ -108,11 +109,25 @@ function makeContext(options: {
   body?: BodyInit | null
   env?: Record<string, unknown>
   path: string[]
+  csrf?: boolean
 }) {
+  const method = options.method ?? 'GET'
+  const headers = new Headers(options.headers)
+  if (
+    options.csrf !== false &&
+    !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
+  ) {
+    headers.set('X-Origin-CSRF', CSRF_TOKEN)
+    headers.set(
+      'Cookie',
+      `${headers.get('Cookie') ? `${headers.get('Cookie')}; ` : ''}__Host-momi_origin_csrf=${CSRF_TOKEN}`
+    )
+  }
+
   return {
     request: new Request(options.url, {
-      method: options.method ?? 'GET',
-      headers: options.headers,
+      method,
+      headers,
       body: options.body,
     }),
     env: {
@@ -165,6 +180,61 @@ describe('functions/api proxy', () => {
     expect(response.status).toBe(204)
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(NEXT_ORIGIN)
     expect(response.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+  })
+
+  it('rejects arbitrary Pages preview origins unless explicitly allowed', async () => {
+    const response = await onRequest(
+      makeContext({
+        url: `https://evil.pages.dev/api/v1/posts`,
+        method: 'OPTIONS',
+        headers: { Origin: 'https://evil.pages.dev' },
+        path: ['v1', 'posts'],
+      })
+    )
+
+    expect(response.status).toBe(403)
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBeNull()
+  })
+
+  it('allows explicitly configured Pages preview origins', async () => {
+    const previewOrigin = 'https://preview.momichan.pages.dev'
+    const response = await onRequest(
+      makeContext({
+        url: `${previewOrigin}/api/v1/posts`,
+        method: 'OPTIONS',
+        headers: { Origin: previewOrigin },
+        path: ['v1', 'posts'],
+        env: {
+          ALLOWED_PREVIEW_ORIGINS: previewOrigin,
+        },
+      })
+    )
+
+    expect(response.status).toBe(204)
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(previewOrigin)
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+  })
+
+  it('rejects state-changing browser auth facades without a matching CSRF token', async () => {
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/login`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: 'tester@example.com', password: 'password123' }),
+        path: ['v1', 'auth', 'login'],
+        csrf: false,
+      })
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'CSRF_TOKEN_INVALID',
+    })
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 
   it('signs internal BFF login requests and returns a session summary with cookies', async () => {
@@ -1025,24 +1095,14 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public-anonymous-replay')
   })
 
-  it('replays every public page data endpoint that the browser shell prefetches', async () => {
+  it('replays only the minimal anonymous public page data allowlist', async () => {
     const publicReads = [
       { path: ['v1', 'home', 'featured'], search: '' },
       { path: ['v1', 'home', 'story-deck'], search: '' },
-      { path: ['v1', 'schedules', 'highlights'], search: '' },
-      { path: ['v1', 'schedules'], search: '' },
-      { path: ['v1', 'schedules', 'calendar'], search: '' },
-      { path: ['v1', 'community', 'highlights'], search: '' },
-      { path: ['v1', 'community', 'feed'], search: '' },
-      { path: ['v1', 'community', 'latest'], search: '' },
-      { path: ['v1', 'community', 'hot'], search: '' },
-      { path: ['v1', 'community', 'stats'], search: '' },
-      { path: ['v1', 'discussions'], search: '' },
       { path: ['v1', 'trends', 'summary'], search: '' },
       { path: ['v1', 'search', 'suggestions'], search: '?q=' },
       { path: ['v1', 'posts'], search: '?limit=12&sort_by=published_at' },
       { path: ['v1', 'posts', 'mixed'], search: '?limit=6' },
-      { path: ['v1', 'authors'], search: '?limit=6' },
     ] as const
 
     for (const publicRead of publicReads) {
@@ -1084,6 +1144,37 @@ describe('functions/api proxy', () => {
         'public-anonymous-replay'
       )
     }
+  })
+
+  it('does not replay public reads outside the anonymous replay allowlist', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          success: false,
+          error: {
+            code: 'ACCESS_TEMPORARILY_RESTRICTED',
+            message: 'Access temporarily restricted',
+          },
+        },
+        { status: 403 }
+      )
+    )
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/schedules/highlights?limit=6`,
+        headers: {
+          Origin: ORIGIN,
+          Referer: `${ORIGIN}/`,
+          'User-Agent': 'HeadlessChrome',
+        },
+        path: ['v1', 'schedules', 'highlights'],
+      })
+    )
+
+    expect(response.status).toBe(403)
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
   })
 
   it('does not replay authenticated or identity 403 responses as anonymous public reads', async () => {

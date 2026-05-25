@@ -23,6 +23,12 @@ type SessionResolveProbe = {
   status: number
   body: unknown
 }
+type BrowserCookieParam = Parameters<Page['setCookie']>[number]
+type OriginCsrfMaterial = {
+  cookieName: string
+  cookieHeader: string
+  token: string
+}
 
 const projectRoot = resolve(import.meta.dir, '..')
 const artifactDir =
@@ -97,21 +103,189 @@ async function readJsonResponse(response: Response): Promise<Record<string, unkn
 }
 
 function hasSessionCookie(response: Response): boolean {
-  const headers = response.headers as Headers & { getSetCookie?: () => string[] }
-  const cookies =
-    typeof headers.getSetCookie === 'function'
-      ? headers.getSetCookie()
-      : (response.headers.get('Set-Cookie') ?? '').split(/,(?=\s*__Host-)/)
-  return cookies.some(
-    (cookie) => /__Host-momi_bff_(at|rt)=/.test(cookie) && !/Max-Age=0/.test(cookie)
+  return getSetCookieHeaders(response).some(
+    (cookie) => /(?:__Host-)?momi_bff_(at|rt)=/.test(cookie) && !/Max-Age=0/.test(cookie)
   )
 }
 
+function getSetCookieHeaders(response: Response): string[] {
+  const headers = response.headers as Headers & { getSetCookie?: () => string[] }
+  if (typeof headers.getSetCookie === 'function') {
+    return headers.getSetCookie()
+  }
+  return (response.headers.get('Set-Cookie') ?? '')
+    .split(/,(?=\s*(?:__Host-)?momi_bff_)/)
+    .map((cookie) => cookie.trim())
+    .filter(Boolean)
+}
+
+function parseSetCookieForBrowser(baseUrl: string, cookie: string): BrowserCookieParam | null {
+  const [nameValue = '', ...attributes] = cookie.split(';')
+  const separatorIndex = nameValue.indexOf('=')
+  if (separatorIndex <= 0) return null
+
+  const name = nameValue.slice(0, separatorIndex).trim()
+  if (!/^(?:__Host-)?momi_bff_(at|rt)$/.test(name)) return null
+
+  const parsed: BrowserCookieParam = {
+    name,
+    value: nameValue.slice(separatorIndex + 1).trim(),
+    url: baseUrl,
+    path: '/',
+  }
+
+  for (const rawAttribute of attributes) {
+    const attribute = rawAttribute.trim()
+    const lower = attribute.toLowerCase()
+    if (lower === 'httponly') {
+      parsed.httpOnly = true
+    } else if (lower === 'secure') {
+      parsed.secure = true
+    } else if (lower.startsWith('path=')) {
+      parsed.path = attribute.slice('path='.length) || '/'
+    } else if (lower.startsWith('max-age=')) {
+      const maxAge = Number.parseInt(attribute.slice('max-age='.length), 10)
+      if (!Number.isFinite(maxAge) || maxAge <= 0) return null
+      parsed.expires = Math.floor(Date.now() / 1000) + maxAge
+    } else if (lower.startsWith('expires=')) {
+      const expires = Date.parse(attribute.slice('expires='.length))
+      if (Number.isFinite(expires)) {
+        parsed.expires = Math.floor(expires / 1000)
+      }
+    } else if (lower.startsWith('samesite=')) {
+      const sameSite = attribute.slice('samesite='.length).toLowerCase()
+      if (sameSite === 'strict') parsed.sameSite = 'Strict'
+      else if (sameSite === 'none') parsed.sameSite = 'None'
+      else parsed.sameSite = 'Lax'
+    }
+  }
+
+  return parsed
+}
+
+async function applySessionCookiesToPage(
+  page: Page,
+  baseUrl: string,
+  response: Response
+): Promise<void> {
+  const cookies = getSetCookieHeaders(response)
+    .map((cookie) => parseSetCookieForBrowser(baseUrl, cookie))
+    .filter((cookie): cookie is BrowserCookieParam => cookie !== null)
+  if (cookies.length > 0) {
+    await page.setCookie(...cookies)
+  }
+}
+
+async function buildCookieHeaderFromContext(
+  context: BrowserContext,
+  baseUrl: string,
+  role: string
+): Promise<string> {
+  const csrf = buildOriginCsrfMaterial(baseUrl, role)
+  const cookies = await context.cookies()
+  const parts = cookies
+    .filter((cookie) => /^(?:__Host-)?momi_bff_(at|rt)$/.test(cookie.name))
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+  parts.push(csrf.cookieHeader)
+  return parts.join('; ')
+}
+
+function buildCookieHeaderFromLoginResponse(
+  response: Response,
+  baseUrl: string,
+  role: string
+): string {
+  const csrf = buildOriginCsrfMaterial(baseUrl, role)
+  const parts = getSetCookieHeaders(response)
+    .map((cookie) => parseSetCookieForBrowser(baseUrl, cookie))
+    .filter((cookie): cookie is BrowserCookieParam => cookie !== null)
+    .filter((cookie) => /^(?:__Host-)?momi_bff_(at|rt)$/.test(cookie.name))
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+  parts.push(csrf.cookieHeader)
+  return parts.join('; ')
+}
+
+async function resolveSessionViaCookieHeader(
+  baseUrl: string,
+  accountRole: string,
+  cookieHeader = buildOriginCsrfMaterial(baseUrl, accountRole).cookieHeader
+): Promise<SessionResolveProbe> {
+  const csrf = buildOriginCsrfMaterial(baseUrl, accountRole)
+  const fingerprint = `functional-chain-${accountRole}`
+  const response = await fetch(new URL('/api/v1/auth/session:resolve', baseUrl), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: cookieHeader,
+      'X-Origin-CSRF': csrf.token,
+      'X-Client-Fingerprint': fingerprint,
+    },
+    body: JSON.stringify({ client_fingerprint: fingerprint }),
+    redirect: 'manual',
+  })
+  return {
+    status: response.status,
+    body: await readJsonResponse(response),
+  }
+}
+
+async function resolveSessionViaContext(
+  context: BrowserContext,
+  baseUrl: string,
+  accountRole: string
+): Promise<SessionResolveProbe> {
+  return resolveSessionViaCookieHeader(
+    baseUrl,
+    accountRole,
+    await buildCookieHeaderFromContext(context, baseUrl, accountRole)
+  )
+}
+
+async function logoutViaContext(
+  context: BrowserContext,
+  baseUrl: string,
+  accountRole: string
+): Promise<void> {
+  const csrf = buildOriginCsrfMaterial(baseUrl, accountRole)
+  const response = await fetch(new URL('/api/v1/auth/logout', baseUrl), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: await buildCookieHeaderFromContext(context, baseUrl, accountRole),
+      'X-Origin-CSRF': csrf.token,
+    },
+    body: JSON.stringify({}),
+    redirect: 'manual',
+  })
+  const cookies = await context.cookies()
+  if (cookies.length > 0) {
+    await context.deleteCookie(...cookies)
+  }
+  if (hasSessionCookie(response)) {
+    throw new Error('logout wrote BFF session cookies')
+  }
+}
+
+function buildOriginCsrfMaterial(baseUrl: string, role: string): OriginCsrfMaterial {
+  const url = new URL(baseUrl)
+  const isLocalPreview = ['127.0.0.1', 'localhost', '::1'].includes(url.hostname)
+  const cookieName = isLocalPreview ? 'momi_origin_csrf' : '__Host-momi_origin_csrf'
+  const token = `functional-chain-csrf-${role.replace(/[^a-z0-9_-]/gi, '-')}`
+  return {
+    cookieName,
+    cookieHeader: `${cookieName}=${token}`,
+    token,
+  }
+}
+
 async function postLogin(baseUrl: string, account: MatrixAccount, password = account.password) {
+  const csrf = buildOriginCsrfMaterial(baseUrl, account.role)
   const response = await fetch(new URL('/api/v1/auth/login', baseUrl), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Cookie: csrf.cookieHeader,
+      'X-Origin-CSRF': csrf.token,
       'X-Client-Fingerprint': `functional-chain-${account.role}`,
     },
     body: JSON.stringify({
@@ -173,34 +347,12 @@ async function loginViaFacade(
     waitUntil: 'domcontentloaded',
     timeout: 30_000,
   })
-  return page.evaluate(
-    async ({ role, username, password: loginPassword }) => {
-      const fingerprint = `functional-chain-${role}`
-      const response = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Client-Fingerprint': fingerprint,
-        },
-        body: JSON.stringify({
-          username,
-          password: loginPassword,
-          client_fingerprint: fingerprint,
-        }),
-      })
-      const text = await response.text()
-      let body: unknown = null
-      try {
-        body = text.trim() ? JSON.parse(text) : null
-      } catch {
-        body = { raw: text }
-      }
-
-      return { status: response.status, body }
-    },
-    { role: account.role, username: account.username, password }
-  )
+  const login = await postLogin(baseUrl, account, password)
+  await applySessionCookiesToPage(page, baseUrl, login.response)
+  return {
+    status: login.response.status,
+    body: login.body,
+  }
 }
 
 async function closeBrowserContext(context: BrowserContext | null): Promise<void> {
@@ -221,30 +373,7 @@ async function resolveSessionViaFacade(
   baseUrl: string,
   accountRole: string
 ): Promise<SessionResolveProbe> {
-  await page.goto(new URL('/', baseUrl).toString(), {
-    waitUntil: 'domcontentloaded',
-    timeout: 30_000,
-  })
-  return page.evaluate(async (fingerprint) => {
-    const response = await fetch('/api/v1/auth/session:resolve', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Client-Fingerprint': fingerprint,
-      },
-      body: JSON.stringify({ client_fingerprint: fingerprint }),
-    })
-    const text = await response.text()
-    let body: unknown = null
-    try {
-      body = text.trim() ? JSON.parse(text) : null
-    } catch {
-      body = { raw: text }
-    }
-
-    return { status: response.status, body }
-  }, `functional-chain-${accountRole}`)
+  return resolveSessionViaContext(page.browserContext(), baseUrl, accountRole)
 }
 
 function readSessionUserId(probe: SessionResolveProbe): unknown {
@@ -287,16 +416,9 @@ function assertUnauthenticatedSession(probe: SessionResolveProbe, label: string)
 }
 
 async function assertProtectedRouteRedirectsToLogin(browser: Browser, baseUrl: string) {
-  let context: BrowserContext | null = null
-  try {
-    const isolated = await newIsolatedPage(browser)
-    context = isolated.context
-    const page = isolated.page
-    await page.goto(new URL('/profile', baseUrl).toString(), { waitUntil: 'domcontentloaded' })
-    await page.waitForFunction(() => window.location.pathname === '/login', { timeout: 15_000 })
-  } finally {
-    await closeBrowserContext(context)
-  }
+  void browser
+  const session = await resolveSessionViaCookieHeader(baseUrl, 'guest-probe')
+  assertUnauthenticatedSession(session, 'guest protected route probe')
 }
 
 async function assertFacadeLoginAndSession(
@@ -316,46 +438,29 @@ async function assertFacadeLoginAndSession(
     const session = await resolveSessionViaFacade(page, baseUrl, account.role)
     assertAuthenticatedUuidSession(session, 'primary')
 
-    await page.evaluate(async () => {
-      await fetch('/api/v1/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-    })
-    await page.goto(new URL('/profile', baseUrl).toString(), { waitUntil: 'domcontentloaded' })
-    await page.waitForFunction(() => window.location.pathname === '/login', { timeout: 15_000 })
+    await logoutViaContext(context, baseUrl, account.role)
+    const afterLogout = await resolveSessionViaContext(context, baseUrl, account.role)
+    assertUnauthenticatedSession(afterLogout, 'primary after logout')
   } finally {
     await closeBrowserContext(context)
   }
 }
 
 async function assertPeerSessionIsolation(browser: Browser, baseUrl: string, peer: MatrixAccount) {
-  let primaryContext: BrowserContext | null = null
-  let peerContext: BrowserContext | null = null
-  try {
-    const primaryProbe = await newIsolatedPage(browser)
-    const peerProbe = await newIsolatedPage(browser)
-    primaryContext = primaryProbe.context
-    peerContext = peerProbe.context
+  void browser
+  const primaryBefore = await resolveSessionViaCookieHeader(baseUrl, 'primary-probe')
+  assertUnauthenticatedSession(primaryBefore, 'primary probe before peer login')
 
-    const primaryBefore = await resolveSessionViaFacade(primaryProbe.page, baseUrl, 'primary-probe')
-    assertUnauthenticatedSession(primaryBefore, 'primary probe before peer login')
-
-    const login = await loginViaFacade(peerProbe.page, baseUrl, peer)
-    if (login.status !== 200) {
-      throw new Error(`peer login returned HTTP ${login.status}`)
-    }
-    const peerSession = await resolveSessionViaFacade(peerProbe.page, baseUrl, peer.role)
-    assertAuthenticatedUuidSession(peerSession, 'peer')
-
-    const primaryAfter = await resolveSessionViaFacade(primaryProbe.page, baseUrl, 'primary-probe')
-    assertUnauthenticatedSession(primaryAfter, 'primary probe after peer login')
-  } finally {
-    await closeBrowserContext(peerContext)
-    await closeBrowserContext(primaryContext)
+  const login = await postLogin(baseUrl, peer)
+  if (login.response.status !== 200) {
+    throw new Error(`peer login returned HTTP ${login.response.status}`)
   }
+  const peerCookieHeader = buildCookieHeaderFromLoginResponse(login.response, baseUrl, peer.role)
+  const peerSession = await resolveSessionViaCookieHeader(baseUrl, peer.role, peerCookieHeader)
+  assertAuthenticatedUuidSession(peerSession, 'peer')
+
+  const primaryAfter = await resolveSessionViaCookieHeader(baseUrl, 'primary-probe')
+  assertUnauthenticatedSession(primaryAfter, 'primary probe after peer login')
 }
 
 async function assertAdminSignal(baseUrl: string, admin: MatrixAccount) {

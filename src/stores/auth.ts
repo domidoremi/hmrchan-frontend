@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { apiClient, ApiError } from '@/api/client'
+import { clientSecurityService } from '@/api/clientSecurityService'
 import { shouldUseApiFallback } from '@/api/runtimeFlags'
 import type { HmrAuthIntent, HmrPasskeyRecoveryStatus } from '@/hmr/types'
 import { resolveRedirectTarget } from '@/router/redirect'
@@ -288,7 +289,13 @@ export const useAuthStore = defineStore('auth', () => {
       intent,
       return_to: resolveRedirectTarget(returnTo),
     })
-    window.location.assign(`/api/v1/auth/google/start?${params.toString()}`)
+    const target = `/api/v1/auth/google/start?${params.toString()}`
+    void clientSecurityService
+      .init(false, { promptChallenge: false })
+      .catch(() => undefined)
+      .finally(() => {
+        window.location.assign(target)
+      })
   }
 
   async function exchangeGoogleCallback(): Promise<string | null> {

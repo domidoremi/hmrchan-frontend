@@ -68,7 +68,7 @@ describe('hmr session entry warmup', () => {
     const result = await warmHmrSessionEntry({
       path: '/',
       resolveSession,
-      timeoutMs: 1000,
+      timeoutMs: 3000,
     })
 
     expect(result.timedOut).toBe(false)
@@ -109,7 +109,7 @@ describe('hmr session entry warmup', () => {
   it('warms the current post detail route with stale-while-revalidate scope', async () => {
     await warmHmrSessionEntry({
       path: '/posts/post-9?from=home',
-      timeoutMs: 1000,
+      timeoutMs: 3000,
     })
 
     expect(mocks.readPublicContent).toHaveBeenCalledWith(

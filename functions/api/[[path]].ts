@@ -20,6 +20,7 @@ interface Env {
   API_BASE_URL?: string
   BACKEND_INTERNAL_ORIGIN?: string
   BACKEND_INTERNAL_AUTH_SHARED_SECRET?: string
+  ALLOWED_PREVIEW_ORIGINS?: string
   VITE_CLIENT_CONTRACT_VERSION?: string
   ENABLE_INTERNAL_API_GATEWAY?: string
   GOOGLE_AUTH_ENABLED?: string
@@ -86,6 +87,8 @@ const ALLOWED_ORIGINS = [
   'https://himeri.momichan.xyz',
 ]
 const DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+const CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
+const CSRF_HEADER_NAME = 'X-Origin-CSRF'
 
 const REQUEST_HEADERS_TO_SKIP = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
 const REHEARSAL_TURNSTILE_BYPASS_HEADER = 'X-Rehearsal-Turnstile-Bypass'
@@ -140,6 +143,9 @@ const BFF_AUTH_RETRY_REASON_HEADER = 'X-Bff-Auth-Retry-Reason'
 const ACCESS_TEMPORARILY_RESTRICTED_CODE = 'ACCESS_TEMPORARILY_RESTRICTED'
 const AUTOMATED_ACCESS_NOT_PERMITTED_CODE = 'AUTOMATED_ACCESS_NOT_PERMITTED'
 const PUBLIC_READ_PROXY_USER_AGENT = 'MomiChan-Frontend-Proxy/1.0'
+const ANONYMOUS_PUBLIC_REPLAY_WINDOW_MS = 60_000
+const ANONYMOUS_PUBLIC_REPLAY_LIMIT = 12
+const anonymousPublicReplayCounters = new Map<string, { windowStart: number; count: number }>()
 const MEDIA_THUMBNAIL_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Media unavailable">
   <rect width="400" height="400" rx="32" fill="#f1f5f9"/>
   <path d="M96 282l66-76 46 52 32-36 64 60H96z" fill="#cbd5e1"/>
@@ -671,6 +677,17 @@ function isGoogleAuthPath(path: string): boolean {
   )
 }
 
+function isStateChangingBrowserFacadePath(path: string, request: Request): boolean {
+  if (request.method === 'GET' || request.method === 'HEAD') return false
+  return isBrowserAuthFacadePath(path) || path === 'v1/auth/google/exchange'
+}
+
+function validateOriginCsrf(request: Request): boolean {
+  const cookieValue = getCookieValue(request, CSRF_COOKIE_NAME)?.trim()
+  const headerValue = request.headers.get(CSRF_HEADER_NAME)?.trim()
+  return Boolean(cookieValue && headerValue && cookieValue === headerValue)
+}
+
 async function refreshBffSession(
   env: ProxyEnv,
   refreshToken: string,
@@ -771,11 +788,18 @@ async function resolveSessionFromCookies(
   return jsonResponse(summary, 200, responseHeaders)
 }
 
-function isAllowedOrigin(origin: string | null, isDev: boolean): boolean {
+function parseAllowedPreviewOrigins(env: ProxyEnv): string[] {
+  return (env.ALLOWED_PREVIEW_ORIGINS ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
+
+function isAllowedOrigin(origin: string | null, isDev: boolean, env: ProxyEnv): boolean {
   if (!origin) return false
   if (ALLOWED_ORIGINS.includes(origin)) return true
   if (isDev && DEV_ORIGINS.includes(origin)) return true
-  if (origin.endsWith('.pages.dev')) return true
+  if (parseAllowedPreviewOrigins(env).includes(origin)) return true
   return false
 }
 
@@ -818,10 +842,15 @@ function isMediaThumbnailRequest(path: string, method: string): boolean {
   )
 }
 
-function buildMediaThumbnailPlaceholderResponse(request: Request, isDev: boolean): Response {
+function buildMediaThumbnailPlaceholderResponse(
+  request: Request,
+  isDev: boolean,
+  env: ProxyEnv
+): Response {
   const headers = withCorsHeaders(
     request,
     isDev,
+    env,
     new Headers({
       'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
       'Content-Type': 'image/svg+xml; charset=utf-8',
@@ -835,17 +864,27 @@ function buildMediaThumbnailPlaceholderResponse(request: Request, isDev: boolean
   })
 }
 
-function handleCORS(request: Request, isDev: boolean): Response {
+function handleCORS(request: Request, isDev: boolean, env: ProxyEnv): Response {
   const origin = request.headers.get('Origin')
-  const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
+  if (origin && !isAllowedOrigin(origin, isDev, env)) {
+    return new Response(null, {
+      status: 403,
+      headers: {
+        Vary: 'Origin',
+      },
+    })
+  }
+
   const headers = new Headers({
-    'Access-Control-Allow-Origin': allowedOrigin ?? ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature, X-Signature-Version, X-Nonce, X-Content-SHA256, X-Request-Id, X-Verification-Token, X-Client-Contract-Version, Idempotency-Key',
-    'Access-Control-Allow-Credentials': 'true',
+      'Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Origin-CSRF, X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature, X-Signature-Version, X-Nonce, X-Content-SHA256, X-Request-Id, X-Verification-Token, X-Client-Contract-Version, Idempotency-Key',
     'Access-Control-Max-Age': '86400',
   })
+  if (origin) {
+    headers.set('Access-Control-Allow-Origin', origin)
+    headers.set('Access-Control-Allow-Credentials', 'true')
+  }
   appendVary(headers, 'Origin')
 
   return new Response(null, {
@@ -857,6 +896,7 @@ function handleCORS(request: Request, isDev: boolean): Response {
 function buildErrorResponse(
   request: Request,
   isDev: boolean,
+  env: ProxyEnv,
   status: number,
   code: string,
   message: string
@@ -867,9 +907,10 @@ function buildErrorResponse(
   })
 
   const origin = request.headers.get('Origin')
-  const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
-  headers.set('Access-Control-Allow-Origin', allowedOrigin ?? ALLOWED_ORIGINS[0])
-  headers.set('Access-Control-Allow-Credentials', 'true')
+  if (origin && isAllowedOrigin(origin, isDev, env)) {
+    headers.set('Access-Control-Allow-Origin', origin)
+    headers.set('Access-Control-Allow-Credentials', 'true')
+  }
   appendVary(headers, 'Origin')
 
   return new Response(
@@ -1029,21 +1070,35 @@ function isAnonymousPublicRead(path: string, request: Request): boolean {
     normalizedPath.startsWith('v1/home/') ||
     normalizedPath === 'v1/posts' ||
     normalizedPath.startsWith('v1/posts/') ||
-    normalizedPath === 'v1/authors' ||
-    normalizedPath.startsWith('v1/authors/') ||
     normalizedPath === 'v1/search/suggestions' ||
-    normalizedPath.startsWith('v1/search/') ||
-    normalizedPath === 'v1/trends/summary' ||
-    normalizedPath === 'v1/schedules' ||
-    normalizedPath.startsWith('v1/schedules/') ||
-    normalizedPath === 'v1/community/highlights' ||
-    normalizedPath === 'v1/community/latest' ||
-    normalizedPath === 'v1/community/hot' ||
-    normalizedPath === 'v1/community/feed' ||
-    normalizedPath === 'v1/community/stats' ||
-    normalizedPath === 'v1/discussions' ||
-    normalizedPath.startsWith('v1/discussions/')
+    normalizedPath === 'v1/trends/summary'
   )
+}
+
+function isAnonymousPublicReplayRateLimited(request: Request, path: string): boolean {
+  const ip =
+    request.headers.get('CF-Connecting-IP')?.trim() ||
+    request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
+    'unknown'
+  const key = `${ip}:${resolveUpstreamPath(path)}`
+  const now = Date.now()
+  const current = anonymousPublicReplayCounters.get(key)
+
+  if (!current || now - current.windowStart >= ANONYMOUS_PUBLIC_REPLAY_WINDOW_MS) {
+    anonymousPublicReplayCounters.set(key, { windowStart: now, count: 1 })
+    return false
+  }
+
+  current.count += 1
+  if (current.count > ANONYMOUS_PUBLIC_REPLAY_LIMIT) {
+    console.warn('[API Proxy] Anonymous public replay rate limited', {
+      path: resolveUpstreamPath(path),
+      ip_hash_prefix: ip === 'unknown' ? 'unknown' : `${ip.slice(0, 3)}***`,
+    })
+    return true
+  }
+
+  return false
 }
 
 function cloneHeadersForAnonymousPublicReplay(headers: Headers): Headers {
@@ -1344,11 +1399,15 @@ async function replayAnonymousPublicReadWithoutBrowserContext(
   }
 }
 
-function withCorsHeaders(request: Request, isDev: boolean, headers: Headers): Headers {
+function withCorsHeaders(request: Request, isDev: boolean, env: ProxyEnv, headers: Headers): Headers {
   const origin = request.headers.get('Origin')
-  const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
-  headers.set('Access-Control-Allow-Origin', allowedOrigin ?? ALLOWED_ORIGINS[0])
-  headers.set('Access-Control-Allow-Credentials', 'true')
+  if (origin && isAllowedOrigin(origin, isDev, env)) {
+    headers.set('Access-Control-Allow-Origin', origin)
+    headers.set('Access-Control-Allow-Credentials', 'true')
+  } else {
+    headers.delete('Access-Control-Allow-Origin')
+    headers.delete('Access-Control-Allow-Credentials')
+  }
   appendVary(headers, 'Origin')
   return headers
 }
@@ -1359,13 +1418,14 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   const isDev = apiBaseUrl?.includes('localhost') ?? false
 
   if (request.method === 'OPTIONS') {
-    return handleCORS(request, isDev)
+    return handleCORS(request, isDev, env)
   }
 
   if (!apiBaseUrl) {
     return buildErrorResponse(
       request,
       isDev,
+      env,
       500,
       'UPSTREAM_NOT_CONFIGURED',
       'API upstream is not configured.'
@@ -1381,6 +1441,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     return buildErrorResponse(
       request,
       isDev,
+      env,
       404,
       'NOT_FOUND',
       'Legacy Google auth paths are retired. Use /api/v1/auth/google/*.'
@@ -1391,6 +1452,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     return buildErrorResponse(
       request,
       isDev,
+      env,
       404,
       'NOT_FOUND',
       'Internal API paths are not exposed on the public frontend facade.'
@@ -1400,9 +1462,20 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     return buildErrorResponse(
       request,
       isDev,
+      env,
       404,
       'NOT_FOUND',
       'This legacy auth path is retired. Resolve browser sessions through /api/v1/auth/session:resolve.'
+    )
+  }
+  if (isStateChangingBrowserFacadePath(compactPath, request) && !validateOriginCsrf(request)) {
+    return buildErrorResponse(
+      request,
+      isDev,
+      env,
+      403,
+      'CSRF_TOKEN_INVALID',
+      'Origin CSRF token is missing or invalid.'
     )
   }
   const handledBrowserAuthResponse = await handleBrowserAuthFacade(
@@ -1418,6 +1491,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     const headers = withCorsHeaders(
       request,
       isDev,
+      env,
       cloneResponseHeaders(handledBrowserAuthResponse.headers)
     )
     RESPONSE_HEADERS_TO_SKIP.forEach((header) => headers.delete(header))
@@ -1456,7 +1530,15 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   }
 
   try {
-    const anonymousPublicRead = isAnonymousPublicRead(compactPath, request)
+    const anonymousPublicReadCandidate = isAnonymousPublicRead(compactPath, request)
+    const anonymousPublicRead =
+      anonymousPublicReadCandidate && !isAnonymousPublicReplayRateLimited(request, compactPath)
+    if (anonymousPublicRead) {
+      console.info('[API Proxy] Anonymous public replay enabled', {
+        path: compactPath,
+        method: request.method,
+      })
+    }
     const upstreamHeaders = anonymousPublicRead
       ? cloneHeadersForAnonymousPublicReplay(headers)
       : headers
@@ -1506,6 +1588,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       const redirectHeaders = withCorsHeaders(
         request,
         isDev,
+        env,
         new Headers(upstream.response.headers)
       )
       stripResponseHeaders(redirectHeaders, compactPath)
@@ -1535,7 +1618,12 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       }
     }
 
-    const responseHeaders = withCorsHeaders(request, isDev, new Headers(upstream.response.headers))
+    const responseHeaders = withCorsHeaders(
+      request,
+      isDev,
+      env,
+      new Headers(upstream.response.headers)
+    )
     stripResponseHeaders(responseHeaders, compactPath)
     RESPONSE_HEADERS_TO_SKIP.forEach((header) => responseHeaders.delete(header))
     responseHeaders.set('X-Proxy-Upstream-Source', upstream.source)
@@ -1566,7 +1654,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
           (await isReplayableAnonymousPublicAccessRestriction(upstream.response)))) &&
       isMediaThumbnailRequest(compactPath, request.method)
     ) {
-      const fallbackResponse = buildMediaThumbnailPlaceholderResponse(request, isDev)
+      const fallbackResponse = buildMediaThumbnailPlaceholderResponse(request, isDev, env)
       fallbackResponse.headers.set('X-Proxy-Upstream-Source', upstream.source)
       fallbackResponse.headers.set('X-Proxy-Upstream-Domain', upstreamDomain)
       if (apiVersion) {
@@ -1597,6 +1685,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     return buildErrorResponse(
       request,
       isDev,
+      env,
       502,
       'SERVICE_UNAVAILABLE',
       'Unable to process request. Please try again later.'
