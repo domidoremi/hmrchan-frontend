@@ -9,6 +9,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { cancelIdleTask, runWhenIdle, type IdleTaskHandle } from '@/utils/performance'
 
 export type HmrBrandSpriteState = 'idle' | 'waving' | 'jumping' | 'review'
 export type HmrBrandSpritePlayback = 'brand' | 'preloader'
@@ -42,12 +43,7 @@ const props = withDefaults(
 const frame = ref(0)
 const atlasReady = ref(false)
 let animationFrame: number | undefined
-let atlasWarmup:
-  | {
-      id: number
-      type: 'idle' | 'timeout'
-    }
-  | undefined
+let atlasWarmup: IdleTaskHandle | undefined
 let lastFrameTime = 0
 
 const activeAnimation = computed(() => animations[props.state])
@@ -71,11 +67,7 @@ const spriteStyle = computed(() => ({
 
 function clearAtlasWarmup(): void {
   if (!atlasWarmup || typeof window === 'undefined') return
-  if (atlasWarmup.type === 'idle') {
-    window.cancelIdleCallback?.(atlasWarmup.id)
-  } else {
-    window.clearTimeout(atlasWarmup.id)
-  }
+  cancelIdleTask(atlasWarmup)
   atlasWarmup = undefined
 }
 
@@ -116,27 +108,13 @@ function scheduleAtlasWarmup(): void {
     return
   }
 
-  if (window.requestIdleCallback) {
-    atlasWarmup = {
-      id: window.requestIdleCallback(
-        () => {
-          atlasReady.value = true
-          atlasWarmup = undefined
-        },
-        { timeout: 3000 }
-      ),
-      type: 'idle',
-    }
-    return
-  }
-
-  atlasWarmup = {
-    id: window.setTimeout(() => {
+  atlasWarmup = runWhenIdle(
+    () => {
       atlasReady.value = true
       atlasWarmup = undefined
-    }, 1800),
-    type: 'timeout',
-  }
+    },
+    { timeout: 3000, fallbackDelay: 1800 }
+  )
 }
 
 watch(

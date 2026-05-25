@@ -15,7 +15,13 @@ const apiBaseUrl = (process.env.PUBLIC_SNAPSHOT_BASE_URL || 'https://momichan.xy
   ''
 )
 const siteOrigin = new URL(apiBaseUrl).origin
-const generatedModulePath = path.join(repoRoot, 'src', 'fallbacks', 'generated', 'publicSnapshots.ts')
+const generatedModulePath = path.join(
+  repoRoot,
+  'src',
+  'fallbacks',
+  'generated',
+  'publicSnapshots.ts'
+)
 const snapshotMediaDir = path.join(repoRoot, 'public', 'snapshot-media')
 
 const MAX_EXPLORE_POSTS = 12
@@ -47,10 +53,12 @@ function safeString(value) {
 }
 
 function toSlug(value) {
-  return safeString(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'snapshot'
+  return (
+    safeString(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'snapshot'
+  )
 }
 
 function extensionFromContentType(contentType, fallbackUrl = '') {
@@ -276,21 +284,27 @@ async function buildSnapshots() {
     })
   )
 
-  const authorDetails = Object.fromEntries(authorDetailEntries.map(([id, value]) => [id, value.detail]))
-  const authorPostsById = Object.fromEntries(authorDetailEntries.map(([id, value]) => [id, value.posts]))
+  const authorDetails = Object.fromEntries(
+    authorDetailEntries.map(([id, value]) => [id, value.detail])
+  )
+  const authorPostsById = Object.fromEntries(
+    authorDetailEntries.map(([id, value]) => [id, value.posts])
+  )
 
   const homeAggregate = structuredClone(homeAggregateRaw)
 
   const postIdSet = new Set(
     [
       ...(Array.isArray(postsPageRaw?.items) ? postsPageRaw.items.map((item) => item.id) : []),
-      ...(homeAggregate.hero?.editorial_card?.post_id ? [homeAggregate.hero.editorial_card.post_id] : []),
+      ...(homeAggregate.hero?.editorial_card?.post_id
+        ? [homeAggregate.hero.editorial_card.post_id]
+        : []),
       ...(homeAggregate.hero?.spotlight?.post_id ? [homeAggregate.hero.spotlight.post_id] : []),
-      ...((homeAggregate.latest_text_posts || []).map((item) => item.post_id)),
-      ...((homeAggregate.story_deck?.items || []).map((item) => item.post_id)),
-      ...((homeAggregate.featured?.items || []).flatMap((item) =>
+      ...(homeAggregate.latest_text_posts || []).map((item) => item.post_id),
+      ...(homeAggregate.story_deck?.items || []).map((item) => item.post_id),
+      ...(homeAggregate.featured?.items || []).flatMap((item) =>
         (item.related_posts || []).map((post) => post.post_id || post.id).filter(Boolean)
-      )),
+      ),
     ].filter(Boolean)
   )
 
@@ -320,7 +334,8 @@ async function buildSnapshots() {
         post_type: post.post_type || 'post',
         content: post.content || rawDetail.content || null,
         description: post.description || rawDetail.content || null,
-        author_username: post.author_username || author?.username || rawDetail.author?.username || undefined,
+        author_username:
+          post.author_username || author?.username || rawDetail.author?.username || undefined,
         author_avatar_url:
           post.author_avatar_url || author?.avatar_url || rawDetail.author?.avatar_url || null,
         tags: Array.isArray(rawDetail.tags) ? rawDetail.tags : [],
@@ -435,16 +450,23 @@ async function buildSnapshots() {
         const rawDetail = detailLookup.get(post.id) || {}
         const normalized = {
           ...post,
-          media_count: typeof post.media_count === 'number' ? post.media_count : post.file_count || 0,
+          media_count:
+            typeof post.media_count === 'number' ? post.media_count : post.file_count || 0,
           post_type: post.post_type || 'post',
           content: post.content || rawDetail.content || null,
           description: post.description || rawDetail.content || null,
           author_username: post.author_username || authorDetails[authorId]?.username || undefined,
           author_avatar_url:
-            post.author_avatar_url || authorDetails[authorId]?.avatar_url || rawDetail.author?.avatar_url || null,
+            post.author_avatar_url ||
+            authorDetails[authorId]?.avatar_url ||
+            rawDetail.author?.avatar_url ||
+            null,
           tags: Array.isArray(rawDetail.tags) ? rawDetail.tags : [],
         }
-        return localizePostThumbnail(normalized, `author-posts/${toSlug(authorId)}-${toSlug(post.id)}`)
+        return localizePostThumbnail(
+          normalized,
+          `author-posts/${toSlug(authorId)}-${toSlug(post.id)}`
+        )
       })
     )
   }
@@ -499,38 +521,36 @@ async function buildSnapshots() {
 }
 
 function renderModule(data) {
-  return `/* eslint-disable */
-/* AUTO-GENERATED FILE. Run \"bun run fallbacks:refresh\" to refresh snapshots. */
-
-import type { AuthorListItem, AuthorResponse } from '@/api/authorService'
-import type { Discussion, DiscussionComment } from '@/api/discussionService'
-import type { HomeAggregateResponse } from '@/api/homeService'
-import type { PostDetailResponse, PostListItem } from '@/api/postService'
-import type { ScheduleCalendarItem, ScheduleResponse } from '@/api/scheduleService'
+  return `/* AUTO-GENERATED FILE. Run \"bun run fallbacks:refresh\" to refresh snapshots. */
 
 export const PUBLIC_SNAPSHOT_GENERATED_AT = ${JSON.stringify(data.generatedAt)}
 
-export const STATIC_HOME_AGGREGATE: HomeAggregateResponse = ${JSON.stringify(data.homeAggregate, null, 2)}
+export const STATIC_HOME_AGGREGATE = ${JSON.stringify(data.homeAggregate, null, 2)}
 
-export const STATIC_HOME_POSTS: PostListItem[] = ${JSON.stringify(data.homePosts, null, 2)}
+export const STATIC_HOME_POSTS = ${JSON.stringify(data.homePosts, null, 2)}
 
-export const STATIC_EXPLORE_POSTS: PostListItem[] = ${JSON.stringify(data.explorePosts, null, 2)}
+export const STATIC_EXPLORE_POSTS = ${JSON.stringify(data.explorePosts, null, 2)}
 
-export const STATIC_AUTHORS: AuthorListItem[] = ${JSON.stringify(data.authors, null, 2)}
+export const STATIC_AUTHORS = ${JSON.stringify(data.authors, null, 2)}
 
-export const STATIC_AUTHOR_DETAILS: Record<string, AuthorResponse> = ${JSON.stringify(data.authorDetails, null, 2)}
+export const STATIC_AUTHOR_DETAILS = ${JSON.stringify(data.authorDetails, null, 2)}
 
-export const STATIC_AUTHOR_POSTS: Record<string, PostListItem[]> = ${JSON.stringify(data.authorPostsById, null, 2)}
+export const STATIC_AUTHOR_POSTS = ${JSON.stringify(data.authorPostsById, null, 2)}
 
-export const STATIC_POST_DETAILS: Record<string, PostDetailResponse> = ${JSON.stringify(data.postDetails, null, 2)}
+export const STATIC_POST_DETAILS = ${JSON.stringify(data.postDetails, null, 2)}
 
-export const STATIC_SCHEDULE_EVENTS: ScheduleCalendarItem[] = ${JSON.stringify(data.scheduleEvents, null, 2)}
+export const STATIC_SCHEDULE_EVENTS = ${JSON.stringify(data.scheduleEvents, null, 2)}
 
-export const STATIC_SCHEDULE_DETAILS: ScheduleResponse[] = ${JSON.stringify(data.scheduleDetails, null, 2)}
+export const STATIC_SCHEDULE_DETAILS = ${JSON.stringify(data.scheduleDetails, null, 2)}
 
-export const STATIC_DISCUSSIONS: Discussion[] = ${JSON.stringify(data.discussions, null, 2)}
+export const STATIC_DISCUSSIONS = ${JSON.stringify(data.discussions, null, 2)}
 
-export const STATIC_DISCUSSION_COMMENTS: Record<string, DiscussionComment[]> = ${JSON.stringify(data.discussionComments, null, 2)}
+export const STATIC_DISCUSSION_COMMENTS = ${JSON.stringify(data.discussionComments, null, 2)}
+
+export const publicSnapshots = Object.freeze({
+  generatedAt: PUBLIC_SNAPSHOT_GENERATED_AT,
+  entries: [],
+})
 `
 }
 

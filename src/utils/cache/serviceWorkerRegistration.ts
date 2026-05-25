@@ -1,3 +1,5 @@
+import { runWhenIdle } from '@/utils/performance'
+
 let registrationStarted = false
 
 export function registerPublicCacheServiceWorker(): void {
@@ -8,12 +10,5 @@ export function registerPublicCacheServiceWorker(): void {
   if (!('serviceWorker' in navigator)) return
   if (!import.meta.env.PROD) return
 
-  if (window.requestIdleCallback) {
-    window.requestIdleCallback(() => void navigator.serviceWorker.register('/sw.js'))
-    return
-  }
-
-  window.setTimeout(() => {
-    void navigator.serviceWorker.register('/sw.js')
-  }, 1200)
+  runWhenIdle(() => void navigator.serviceWorker.register('/sw.js'), { fallbackDelay: 1200 })
 }

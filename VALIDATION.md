@@ -193,11 +193,15 @@ bun run test:functional-chain:local
   - [scripts/lib/production-contract-env.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/production-contract-env.js)
 - 前端 auth surface 与 UUIDv7 public ID 守卫：
   - [scripts/lib/frontend-contract-audit.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/frontend-contract-audit.js)
+- Generated fallback snapshot 合同输入：
+  - [src/fallbacks/generated/publicSnapshots.ts](/G:/Project/hmrchan/hmrchan-frontend/src/fallbacks/generated/publicSnapshots.ts)
+  - [scripts/refresh-public-snapshots.mjs](/G:/Project/hmrchan/hmrchan-frontend/scripts/refresh-public-snapshots.mjs)
+  - [scripts/lib/public-snapshot-contract.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/public-snapshot-contract.js)
 - 统一 runner 编排与变更影响分类：
   - [scripts/validate-release.mjs](/G:/Project/hmrchan/hmrchan-frontend/scripts/validate-release.mjs)
   - [scripts/lib/validate-release.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/validate-release.js)
 
-UUIDv7 hard cutover 后，前端公开资源 ID 只能使用 UUIDv7 字符串；新增或修改 `src/api`、路由详情页、fallback snapshot、Service Worker cache key 时，必须同步相关类型守卫、测试和 release contract audit。当前静态审计会阻断缺失 route/cache guard 的改动；checked-in generated fallback snapshot 不允许包含旧 v4 或 numeric public ID。`bun run fallbacks:refresh` 在写入 generated snapshot 前会拒绝非 UUIDv7 public ID，因此刷新必须连接到已完成 UUIDv7 cutover 的后端/API 环境。
+UUIDv7 hard cutover 后，前端公开资源 ID 只能使用 UUIDv7 字符串；新增或修改 `src/api`、路由详情页、fallback snapshot、Service Worker cache key 时，必须同步相关类型守卫、测试和 release contract audit。当前静态审计会阻断缺失 route/cache guard 的改动；checked-in generated fallback snapshot 不允许包含旧 v4 或 numeric public ID。`src/fallbacks/generated/publicSnapshots.ts` 是 release contract audit 的 checked-in 输入，不能仅因页面未直接导入而删除。`bun run fallbacks:refresh` 会重写 generated snapshot，并可能写入 `public/snapshot-media/`；它在写入前会拒绝非 UUIDv7 public ID，因此刷新必须连接到已完成 UUIDv7 cutover 的后端/API 环境。
 
 runner 会根据本次交付命中的文件范围自动生成风险摘要，重点关注：
 

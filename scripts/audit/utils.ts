@@ -40,7 +40,7 @@ function getSpawnCommand(cmd: string): string {
   }
 }
 
-function getNodeCommand(): string {
+export function getNodeCommand(): string {
   const execName = process.execPath.split(/[\\/]/).pop()?.toLowerCase() ?? ''
   if (execName.startsWith('node')) return process.execPath
 

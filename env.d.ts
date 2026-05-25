@@ -1,26 +1,49 @@
 /// <reference types="vite/client" />
 
+/*
+ * Keep this list aligned with the tracked VITE_* keys in .env.example and .env.development.
+ * Some keys are consumed by browser code through import.meta.env, while others are read
+ * by Vite config or local validation scripts before bundling.
+ */
 interface ImportMetaEnv {
   /** API 基础 URL */
   readonly VITE_API_BASE_URL?: string
-  /** API 端点 */
-  readonly VITE_API_ENDPOINT?: string
-  /** API URL (代理路径) */
-  readonly VITE_API_URL?: string
-  /** 应用名称 */
-  readonly VITE_APP_NAME?: string
-  /** 应用描述 */
-  readonly VITE_APP_DESCRIPTION?: string
+  /** 身份域 API 基础 URL，用于本地 dev/preview proxy 覆盖 */
+  readonly VITE_IDENTITY_API_BASE_URL?: string
+  /** 社区域 API 基础 URL，用于本地 dev/preview proxy 覆盖 */
+  readonly VITE_COMMUNITY_API_BASE_URL?: string
+  /** 内容域 API 基础 URL，用于本地 dev/preview proxy 覆盖 */
+  readonly VITE_CONTENT_API_BASE_URL?: string
   /** Turnstile 站点密钥 */
   readonly VITE_TURNSTILE_SITE_KEY?: string
   /** 启用 FingerprintJS OSS 高级浏览器指纹。默认使用轻量 fallback。 */
   readonly VITE_ENABLE_ADVANCED_FINGERPRINT?: string
-  /** 是否显式启用 Cloudflare Browser Insights beacon */
-  readonly VITE_ENABLE_CF_BEACON?: string
-  /** Cloudflare Browser Insights token */
-  readonly VITE_CF_BEACON_TOKEN?: string
+  /** 共享 release contract hash，生产构建必须显式注入 */
+  readonly VITE_CLIENT_CONTRACT_VERSION?: string
+  /** 启用调试输出 */
+  readonly VITE_ENABLE_DEBUG?: string
   /** 启用 DevTools */
   readonly VITE_ENABLE_DEVTOOLS?: string
+  /** 启用应用启动时的 client init */
+  readonly VITE_ENABLE_CLIENT_INIT?: string
+  /** 启用日程 API 请求 */
+  readonly VITE_ENABLE_SCHEDULE_API?: string
+  /** 启用后台数据预取 */
+  readonly VITE_ENABLE_DATA_PREFETCH?: string
+  /** 延迟加载动画样式 */
+  readonly VITE_ENABLE_DEFERRED_ANIMATION_STYLES?: string
+  /** 构建 sourcemap 模式：false|true|hidden */
+  readonly VITE_SOURCEMAP?: string
+  /** 本地 dev server host 覆盖 */
+  readonly VITE_DEV_HOST?: string
+  /** 开发期是否启用更激进的 Vite 优化 */
+  readonly VITE_ENABLE_AGGRESSIVE_DEV_OPTIMIZATION?: string
+  /** 是否启用 Vue package devtools */
+  readonly VITE_ENABLE_VUE_PACKAGE_DEVTOOLS?: string
+  /** 预览服务器是否禁用 API proxy */
+  readonly VITE_DISABLE_PREVIEW_PROXY?: string
+  /** 生产构建是否异步加载主 CSS */
+  readonly VITE_ASYNC_MAIN_CSS?: string
   /** Anti-tamper 模式：off|warn|balanced|strict */
   readonly VITE_ANTI_TAMPER_MODE?: string
   /** 是否允许在开发环境启用 anti-tamper（默认 false） */

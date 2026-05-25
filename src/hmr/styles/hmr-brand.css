@@ -1016,6 +1016,7 @@ svg {
   display: flex;
   inline-size: 1em;
   block-size: 30vh;
+  block-size: 30svh;
   flex-direction: column;
   gap: 0.3em;
   align-items: center;
@@ -2658,6 +2659,7 @@ svg {
 .hmr-dark-stage {
   display: flex;
   min-block-size: 150vh;
+  min-block-size: 150svh;
   flex-direction: column;
   align-items: center;
   justify-content: center;

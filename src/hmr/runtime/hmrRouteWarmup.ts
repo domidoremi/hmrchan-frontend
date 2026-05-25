@@ -5,11 +5,12 @@ import {
   loadPostDetailContentResource,
   loadScheduleContentResource,
   type HmrHomeContent,
-  type HmrPost,
 } from '@/api/hmrContent'
 import type { HmrAsyncResource, HmrWarmRouteKey } from '@/hmr/types'
 import { readPublicContent } from '@/utils/cache/publicContentCache'
 import { registerPublicCacheServiceWorker } from '@/utils/cache/serviceWorkerRegistration'
+import { runWithConcurrency } from '@/utils/performance'
+import { collectHomeMedia } from './homeMedia'
 
 export interface HmrSessionEntryWarmupOptions {
   path: string
@@ -73,25 +74,6 @@ function postIdFromPath(path: string): string | null {
   const normalized = normalizePath(path)
   if (!normalized.startsWith('/posts/')) return null
   return decodeURIComponent(normalized.split('/')[2] ?? '').trim() || null
-}
-
-function collectHomeMedia(posts: HmrPost[]): string[] {
-  return posts
-    .map((post) => post.mediaUrl)
-    .filter((url): url is string => Boolean(url?.trim()))
-    .slice(0, 4)
-}
-
-async function runWithConcurrency(tasks: Array<() => Promise<unknown>>, concurrency: number) {
-  let index = 0
-  const workers = Array.from({ length: Math.max(concurrency, 1) }, async () => {
-    while (index < tasks.length) {
-      const task = tasks[index]
-      index += 1
-      await task?.().catch(() => undefined)
-    }
-  })
-  await Promise.all(workers)
 }
 
 function getWarmupConcurrency(): number {

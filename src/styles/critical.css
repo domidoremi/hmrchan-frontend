@@ -33,6 +33,7 @@ body {
   box-sizing: border-box;
   min-block-size: 100svh;
   padding: clamp(4rem, 10vh, 7rem) clamp(1.25rem, 5vw, 4rem);
+  padding: clamp(4rem, 10svh, 7rem) clamp(1.25rem, 5vw, 4rem);
   background: var(--hmr-critical-bg);
   color: var(--hmr-critical-base);
 }

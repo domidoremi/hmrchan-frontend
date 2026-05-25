@@ -5,8 +5,15 @@ import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } 
 
 const BASELINE_LOCALE = 'zh-CN'
 const LOCALES_DIR = 'src/i18n/locales'
+const INLINE_I18N_FILE = 'src/i18n/index.ts'
 
 type NestedRecord = { [key: string]: string | NestedRecord }
+
+interface LocaleCatalog {
+  localeMap: Map<string, Set<string>>
+  sourceKind: 'json' | 'inline'
+  sourcePath: string
+}
 
 /**
  * Recursively extract all dot-separated keys from a nested JSON object.
@@ -27,15 +34,19 @@ function extractKeys(obj: NestedRecord, prefix = ''): Set<string> {
 }
 
 /**
- * Load all locale JSON files and return a map of locale name → keys.
+ * Load locale JSON files when present, otherwise read the current inline messages map.
  */
-async function loadLocales(
-  projectRoot: string,
-): Promise<Map<string, Set<string>>> {
+async function loadLocales(projectRoot: string): Promise<LocaleCatalog> {
   const localesPath = join(projectRoot, LOCALES_DIR)
   const localeMap = new Map<string, Set<string>>()
 
-  if (!existsSync(localesPath)) return localeMap
+  if (!existsSync(localesPath)) {
+    return {
+      localeMap: await loadInlineLocales(projectRoot),
+      sourceKind: 'inline',
+      sourcePath: INLINE_I18N_FILE,
+    }
+  }
 
   const files = await readdir(localesPath)
   for (const file of files) {
@@ -51,6 +62,60 @@ async function loadLocales(
     }
   }
 
+  if (localeMap.size > 0) {
+    return { localeMap, sourceKind: 'json', sourcePath: LOCALES_DIR }
+  }
+
+  return {
+    localeMap: await loadInlineLocales(projectRoot),
+    sourceKind: 'inline',
+    sourcePath: INLINE_I18N_FILE,
+  }
+}
+
+async function loadInlineLocales(projectRoot: string): Promise<Map<string, Set<string>>> {
+  const filePath = join(projectRoot, INLINE_I18N_FILE)
+  const localeMap = new Map<string, Set<string>>()
+  if (!existsSync(filePath)) return localeMap
+
+  const lines = (await readFile(filePath, 'utf-8')).split(/\r?\n/)
+  const stack: Array<{ key: string; indent: number }> = []
+  let insideMessages = false
+
+  for (const line of lines) {
+    if (!insideMessages) {
+      if (/^const messages\s*=\s*\{\s*$/.test(line)) insideMessages = true
+      continue
+    }
+
+    if (/^\}\s*$/.test(line)) break
+
+    const match = line.match(/^(\s*)(['"]?[\w-]+['"]?)\s*:\s*(.*)$/)
+    if (!match) continue
+
+    const indent = match[1].length
+    const key = match[2].replace(/^['"]|['"]$/g, '')
+    const valueStart = match[3].trim()
+
+    while (stack.length > 0 && stack[stack.length - 1].indent >= indent) {
+      stack.pop()
+    }
+
+    if (valueStart.startsWith('{')) {
+      stack.push({ key, indent })
+      if (stack.length === 1 && !localeMap.has(key)) {
+        localeMap.set(key, new Set())
+      }
+      continue
+    }
+
+    const locale = stack[0]?.key
+    if (!locale) continue
+
+    const path = [...stack.slice(1).map((entry) => entry.key), key].join('.')
+    localeMap.get(locale)?.add(path)
+  }
+
   return localeMap
 }
 
@@ -59,7 +124,7 @@ async function loadLocales(
  */
 function compareKeys(
   baselineKeys: Set<string>,
-  localeKeys: Set<string>,
+  localeKeys: Set<string>
 ): { missing: string[]; extra: string[] } {
   const missing: string[] = []
   const extra: string[] = []
@@ -152,15 +217,20 @@ const i18nAudit: AuditModule = {
     const start = Date.now()
     const issues: AuditIssue[] = []
 
-    // 1. Load all locale files
-    const localeMap = await loadLocales(options.projectRoot)
+    // 1. Load locale keys
+    const { localeMap, sourceKind, sourcePath } = await loadLocales(options.projectRoot)
 
     if (localeMap.size === 0) {
       return {
         module: 'i18n',
         status: 'fail',
-        issues: [{ severity: 'error', message: `No locale files found in ${LOCALES_DIR}` }],
-        summary: 'No locale files found',
+        issues: [
+          {
+            severity: 'error',
+            message: `No locale files found in ${LOCALES_DIR} and no inline messages found in ${INLINE_I18N_FILE}`,
+          },
+        ],
+        summary: 'No locale messages found',
         duration: Date.now() - start,
       }
     }
@@ -173,7 +243,7 @@ const i18nAudit: AuditModule = {
         issues: [
           {
             severity: 'error',
-            message: `Baseline locale "${BASELINE_LOCALE}" not found in ${LOCALES_DIR}`,
+            message: `Baseline locale "${BASELINE_LOCALE}" not found in ${sourcePath}`,
           },
         ],
         summary: `Baseline locale ${BASELINE_LOCALE} missing`,
@@ -191,7 +261,7 @@ const i18nAudit: AuditModule = {
         issues.push({
           severity: 'error',
           message: `Missing key "${key}" in locale "${locale}"`,
-          file: `${LOCALES_DIR}/${locale}.json`,
+          file: sourceKind === 'json' ? `${LOCALES_DIR}/${locale}.json` : sourcePath,
           rule: 'missing-key',
         })
       }
@@ -200,7 +270,7 @@ const i18nAudit: AuditModule = {
         issues.push({
           severity: 'warning',
           message: `Extra key "${key}" in locale "${locale}" (not in ${BASELINE_LOCALE})`,
-          file: `${LOCALES_DIR}/${locale}.json`,
+          file: sourceKind === 'json' ? `${LOCALES_DIR}/${locale}.json` : sourcePath,
           rule: 'extra-key',
         })
       }
@@ -234,7 +304,7 @@ const i18nAudit: AuditModule = {
 
     const summary =
       status === 'pass'
-        ? 'All locale files are consistent'
+        ? 'All locale messages are consistent'
         : `Found ${errorCount} error(s) and ${warningCount} warning(s) across ${localeMap.size} locales`
 
     if (options.verbose && issues.length > 0) {

@@ -1,7 +1,8 @@
 import { readdirSync, statSync, existsSync } from 'fs'
 import { join, relative } from 'path'
+import { createLocalAuditEnv } from '../lib/audit-env.js'
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { runLocalNodeTool } from './utils'
+import { getNodeCommand, runCommand } from './utils'
 
 const CHUNK_SIZE_WARN_KB = 500
 
@@ -38,14 +39,19 @@ const buildAudit: AuditModule = {
     const issues: AuditIssue[] = []
     const distDir = join(options.projectRoot, 'dist')
 
-    // 1. Run vite build
-    const result = await runLocalNodeTool('vite', ['build'], options.projectRoot)
+    // 1. Run the project build wrapper so production contract env is applied.
+    const result = await runCommand(getNodeCommand(), ['scripts/build.mjs'], options.projectRoot, {
+      env: createLocalAuditEnv(process.env, {
+        cwd: options.projectRoot,
+        includeContractFallback: true,
+      }),
+    })
 
     if (result.exitCode !== 0) {
       const errorOutput = (result.stderr || result.stdout).slice(0, 500)
       issues.push({
         severity: 'error',
-        message: `vite build failed (exit code ${result.exitCode}): ${errorOutput}`,
+        message: `project build failed (exit code ${result.exitCode}): ${errorOutput}`,
       })
       return {
         module: 'build',
@@ -93,18 +99,18 @@ const buildAudit: AuditModule = {
         })
       }
 
-      // 4. Scan all dist files for chunk sizes
-      const allFiles = collectFiles(distDir, distDir)
+      // 4. Scan Vite-emitted JS/CSS chunks for size warnings.
+      const buildChunks = assets.filter((f) => /\.(?:css|js)$/i.test(f.name))
 
       if (options.verbose) {
-        console.log('    Build artifacts:')
-        for (const f of allFiles) {
+        console.log('    Build chunks:')
+        for (const f of buildChunks) {
           console.log(`      ${f.name} (${f.sizeKB} KB)`)
         }
       }
 
       // 5. Flag chunks exceeding threshold
-      for (const f of allFiles) {
+      for (const f of buildChunks) {
         if (f.sizeKB > CHUNK_SIZE_WARN_KB) {
           issues.push({
             severity: 'warning',

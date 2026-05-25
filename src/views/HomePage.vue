@@ -119,11 +119,12 @@ import {
   loadHomeContentResource,
   loadPostDetailContentResource,
   type HmrHomeContent,
-  type HmrPost,
 } from '@/api/hmrContent'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
+import { collectHomeMedia } from '@/hmr/runtime/homeMedia'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 import { readAvailablePublicContent, readPublicContent } from '@/utils/cache/publicContentCache'
+import { runWhenIdle, runWithConcurrency } from '@/utils/performance'
 
 const content = ref<HmrHomeContent>({
   featured: [],
@@ -185,73 +186,46 @@ function applyHomeResource(nextResource: HmrAsyncResource<HmrHomeContent>): void
       : 'empty'
 }
 
-function requestIdle(callback: () => void): void {
-  if (window.requestIdleCallback) {
-    window.requestIdleCallback(callback, { timeout: 2500 })
-    return
-  }
-  window.setTimeout(callback, 1200)
-}
-
-async function runWithConcurrency(
-  tasks: Array<() => Promise<unknown>>,
-  concurrency: number
-): Promise<void> {
-  let index = 0
-  const workers = Array.from({ length: Math.max(concurrency, 1) }, async () => {
-    while (index < tasks.length) {
-      const task = tasks[index]
-      index += 1
-      await task?.().catch(() => undefined)
-    }
-  })
-  await Promise.all(workers)
-}
-
-function collectHomeMedia(posts: HmrPost[]): string[] {
-  return posts
-    .map((post) => post.mediaUrl)
-    .filter((url): url is string => Boolean(url?.trim()))
-    .slice(0, 4)
-}
-
 function scheduleHomePrewarm(data: HmrHomeContent): void {
-  requestIdle(() => {
-    const featured = data.featured.slice(0, 2)
-    const mediaUrls = collectHomeMedia(data.featured)
-    const tasks: Array<() => Promise<unknown>> = [
-      () =>
-        readPublicContent({
-          key: 'hmr:explore:prewarm:first-page',
-          scope: 'explore',
-          strategy: 'network-first',
-          loader: () => loadExploreContentResource({ limit: 12 }),
-        }),
-      ...featured.map(
-        (post) => () =>
+  runWhenIdle(
+    () => {
+      const featured = data.featured.slice(0, 2)
+      const mediaUrls = collectHomeMedia(data.featured)
+      const tasks: Array<() => Promise<unknown>> = [
+        () =>
           readPublicContent({
-            key: `hmr:post-detail:${post.id}`,
-            scope: 'post-detail',
-            strategy: 'stale-while-revalidate',
-            loader: () => loadPostDetailContentResource(post.id),
-          })
-      ),
-      ...mediaUrls.map(
-        (url) => () =>
-          readPublicContent({
-            key: `hmr:media:${url}`,
-            scope: 'media',
-            strategy: 'cache-first',
-            loader: async () => {
-              await fetch(url, { cache: 'force-cache', credentials: 'omit' })
-              return { url, warmedAt: Date.now() }
-            },
-          })
-      ),
-    ]
-    const isMobile = window.matchMedia('(max-width: 767px)').matches
-    void runWithConcurrency(tasks, isMobile ? 1 : 2)
-  })
+            key: 'hmr:explore:prewarm:first-page',
+            scope: 'explore',
+            strategy: 'network-first',
+            loader: () => loadExploreContentResource({ limit: 12 }),
+          }),
+        ...featured.map(
+          (post) => () =>
+            readPublicContent({
+              key: `hmr:post-detail:${post.id}`,
+              scope: 'post-detail',
+              strategy: 'stale-while-revalidate',
+              loader: () => loadPostDetailContentResource(post.id),
+            })
+        ),
+        ...mediaUrls.map(
+          (url) => () =>
+            readPublicContent({
+              key: `hmr:media:${url}`,
+              scope: 'media',
+              strategy: 'cache-first',
+              loader: async () => {
+                await fetch(url, { cache: 'force-cache', credentials: 'omit' })
+                return { url, warmedAt: Date.now() }
+              },
+            })
+        ),
+      ]
+      const isMobile = window.matchMedia('(max-width: 767px)').matches
+      void runWithConcurrency(tasks, isMobile ? 1 : 2)
+    },
+    { timeout: 2500, fallbackDelay: 1200 }
+  )
 }
 
 function cssContent(value: string): string {
