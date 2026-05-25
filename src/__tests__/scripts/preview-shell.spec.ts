@@ -18,6 +18,7 @@ describe('preview shell local bridge fallback', () => {
       VITE_IDENTITY_API_BASE_URL: 'http://127.0.0.1:19081',
       VITE_COMMUNITY_API_BASE_URL: 'http://127.0.0.1:19082',
       VITE_CONTENT_API_BASE_URL: 'http://127.0.0.1:19083',
+      API_BASE_URL: 'http://127.0.0.1:19080',
       BUN_EXECUTABLE: 'bun',
     }
 
@@ -55,16 +56,17 @@ describe('preview shell local bridge fallback', () => {
 
     expect(manager.baseUrl).toBeTruthy()
     expect(manager.effectiveEnv).toMatchObject({
-      API_BASE_URL: 'http://127.0.0.1:19081',
-      VITE_API_BASE_URL: 'http://127.0.0.1:19081',
+      API_BASE_URL: 'http://127.0.0.1:19080',
+      VITE_API_BASE_URL: 'http://127.0.0.1:19080',
       BACKEND_INTERNAL_ORIGIN: 'http://127.0.0.1:19081',
-      VPC_API_ORIGIN: 'http://127.0.0.1:19081',
+      VPC_API_ORIGIN: 'http://127.0.0.1:19080',
       VPC_IDENTITY_API_ORIGIN: 'http://127.0.0.1:19081',
       VITE_IDENTITY_API_BASE_URL: 'http://127.0.0.1:19081',
       VITE_COMMUNITY_API_BASE_URL: 'http://127.0.0.1:19082',
       VITE_CONTENT_API_BASE_URL: 'http://127.0.0.1:19083',
       VPC_COMMUNITY_API_ORIGIN: 'http://127.0.0.1:19082',
       VPC_CONTENT_API_ORIGIN: 'http://127.0.0.1:19083',
+      ENABLE_INTERNAL_API_GATEWAY: 'true',
     })
     expect(manager.localApiBridge).toBeNull()
     expect(manager.formatDiagnosticsLines().join('\n')).toContain(

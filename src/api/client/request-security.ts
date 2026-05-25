@@ -23,10 +23,36 @@ const IDEMPOTENCY_REQUIRED_EXACT_PATHS = new Set([
 ])
 
 const IDEMPOTENCY_REQUIRED_PREFIXES = ['/api/v1/email/']
+const ORIGIN_CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
+const ORIGIN_CSRF_HEADER_NAME = 'X-Origin-CSRF'
 
 function isMutatingMethod(method: string): boolean {
   const upperMethod = method.toUpperCase()
   return upperMethod !== 'GET' && upperMethod !== 'HEAD'
+}
+
+function readCookieValue(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const encodedName = `${encodeURIComponent(name)}=`
+  const segments = document.cookie.split(';')
+  for (const segment of segments) {
+    const trimmed = segment.trim()
+    if (trimmed.startsWith(encodedName)) {
+      return decodeURIComponent(trimmed.slice(encodedName.length))
+    }
+  }
+  return null
+}
+
+function applyOriginCsrfHeader(headers: Record<string, string>, method: string, url: string): void {
+  if (!isMutatingMethod(method)) return
+  const parsedUrl = new URL(url, window.location.origin)
+  if (parsedUrl.origin !== window.location.origin) return
+
+  const token = readCookieValue(ORIGIN_CSRF_COOKIE_NAME)
+  if (token) {
+    headers[ORIGIN_CSRF_HEADER_NAME] = token
+  }
 }
 
 function isClientContractSkipPath(pathname: string): boolean {
@@ -64,6 +90,7 @@ export function applyRequestSecurityHeaders(
   const pathname = new URL(url, window.location.origin).pathname
 
   targetHeaders['X-Request-Id'] = requestId
+  applyOriginCsrfHeader(targetHeaders, method, url)
 
   if (shouldAttachContractVersion(pathname) && typeof __CLIENT_CONTRACT_VERSION__ === 'string') {
     const version = __CLIENT_CONTRACT_VERSION__.trim()

@@ -10,7 +10,18 @@ type FpAgent = { get: () => Promise<{ visitorId: string }> }
 let fpPromise: Promise<FpAgent> | null = null
 const FP_STORAGE_KEY = 'momi_device_fingerprint_v1'
 const FP_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const FINGERPRINTJS_OSS_COMPONENTS_VERSION = 'fingerprintjs-oss@5.2.0'
+const FALLBACK_COMPONENTS_VERSION = 'hmr-browser-fallback-v1'
 const ENABLE_ADVANCED_FINGERPRINT = import.meta.env.VITE_ENABLE_ADVANCED_FINGERPRINT === 'true'
+
+export type BrowserFingerprintSource = 'oss_browser'
+
+export interface DeviceFingerprintMetadata {
+  value: string
+  source: BrowserFingerprintSource
+  componentsVersion: string
+  generatedAt: number
+}
 
 interface PersistedFingerprint {
   value: string
@@ -18,6 +29,8 @@ interface PersistedFingerprint {
   userAgent: string
   language: string
   platform: string
+  source?: BrowserFingerprintSource
+  componentsVersion?: string
 }
 
 function isBrowserRuntime(): boolean {
@@ -28,7 +41,11 @@ function isValidFingerprint(value: unknown): value is string {
   return typeof value === 'string' && /^[a-z0-9_-]{8,128}$/i.test(value)
 }
 
-function readPersistedFingerprint(): string | null {
+function normalizeComponentsVersion(value: unknown): string {
+  return typeof value === 'string' && value.trim() ? value.trim() : FALLBACK_COMPONENTS_VERSION
+}
+
+function readPersistedFingerprint(): DeviceFingerprintMetadata | null {
   if (!isBrowserRuntime()) return null
 
   try {
@@ -46,21 +63,30 @@ function readPersistedFingerprint(): string | null {
       parsed.language === navigator.language &&
       parsed.platform === navigator.platform
 
-    return sameRuntimeEnv ? parsed.value : null
+    return sameRuntimeEnv
+      ? {
+          value: parsed.value,
+          source: 'oss_browser',
+          componentsVersion: normalizeComponentsVersion(parsed.componentsVersion),
+          generatedAt: parsed.cachedAt,
+        }
+      : null
   } catch {
     return null
   }
 }
 
-function persistFingerprint(value: string): void {
-  if (!isBrowserRuntime() || !isValidFingerprint(value)) return
+function persistFingerprint(metadata: DeviceFingerprintMetadata): void {
+  if (!isBrowserRuntime() || !isValidFingerprint(metadata.value)) return
 
   const payload: PersistedFingerprint = {
-    value,
-    cachedAt: Date.now(),
+    value: metadata.value,
+    cachedAt: metadata.generatedAt,
     userAgent: navigator.userAgent,
     language: navigator.language,
     platform: navigator.platform,
+    source: metadata.source,
+    componentsVersion: metadata.componentsVersion,
   }
 
   try {
@@ -70,7 +96,7 @@ function persistFingerprint(value: string): void {
   }
 }
 
-let cachedFingerprint: string | null = readPersistedFingerprint()
+let cachedFingerprint: DeviceFingerprintMetadata | null = readPersistedFingerprint()
 
 /**
  * 懒加载 FingerprintJS（避免阻塞首屏）
@@ -116,11 +142,11 @@ export function clearFingerprintCache() {
 }
 
 /**
- * 获取设备指纹
+ * 获取设备指纹及生成版本元数据。
  * 优先使用 FingerprintJS，失败时使用降级方案
  * 结果会被缓存以避免重复计算
  */
-export async function getDeviceFingerprint(): Promise<string> {
+export async function getDeviceFingerprintMetadata(): Promise<DeviceFingerprintMetadata> {
   // 返回缓存的指纹（如果存在）
   if (cachedFingerprint) {
     return cachedFingerprint
@@ -128,7 +154,12 @@ export async function getDeviceFingerprint(): Promise<string> {
 
   // 默认：直接使用轻量降级指纹，避免加载第三方指纹库造成长任务。
   if (!ENABLE_ADVANCED_FINGERPRINT) {
-    cachedFingerprint = await getFallbackFingerprint()
+    cachedFingerprint = {
+      value: await getFallbackFingerprint(),
+      source: 'oss_browser',
+      componentsVersion: FALLBACK_COMPONENTS_VERSION,
+      generatedAt: Date.now(),
+    }
     persistFingerprint(cachedFingerprint)
     return cachedFingerprint
   }
@@ -139,7 +170,12 @@ export async function getDeviceFingerprint(): Promise<string> {
     }
     const fp = await fpPromise
     const result = await fp.get()
-    cachedFingerprint = result.visitorId
+    cachedFingerprint = {
+      value: result.visitorId,
+      source: 'oss_browser',
+      componentsVersion: FINGERPRINTJS_OSS_COMPONENTS_VERSION,
+      generatedAt: Date.now(),
+    }
     persistFingerprint(cachedFingerprint)
     return cachedFingerprint
   } catch (error) {
@@ -149,10 +185,22 @@ export async function getDeviceFingerprint(): Promise<string> {
       console.warn('FingerprintJS failed, using fallback:', error)
     }
     // 降级方案：使用基于浏览器特征的指纹
-    cachedFingerprint = await getFallbackFingerprint()
+    cachedFingerprint = {
+      value: await getFallbackFingerprint(),
+      source: 'oss_browser',
+      componentsVersion: FALLBACK_COMPONENTS_VERSION,
+      generatedAt: Date.now(),
+    }
     persistFingerprint(cachedFingerprint)
     return cachedFingerprint
   }
+}
+
+/**
+ * 获取设备指纹
+ */
+export async function getDeviceFingerprint(): Promise<string> {
+  return (await getDeviceFingerprintMetadata()).value
 }
 
 /**

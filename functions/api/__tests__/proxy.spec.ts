@@ -7,6 +7,7 @@ const INTERNAL_ORIGIN = 'https://internal.test'
 const INTERNAL_SECRET = 'super-secret'
 const ORIGIN = 'https://momichan.xyz'
 const SESSION_RESOLVE_ROUTE = `/api/v1/auth/${'session:resolve'}`
+const CSRF_TOKEN = 'csrf-token-1'
 const textEncoder = new TextEncoder()
 
 const mockFetch = vi.fn<typeof fetch>()
@@ -107,11 +108,22 @@ function makeContext(options: {
   body?: BodyInit | null
   env?: Record<string, unknown>
   path: string[]
+  csrf?: boolean
 }) {
+  const method = options.method ?? 'GET'
+  const headers = new Headers(options.headers)
+  if (
+    options.csrf !== false &&
+    !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
+  ) {
+    headers.set('X-Origin-CSRF', CSRF_TOKEN)
+    headers.set('Cookie', `${headers.get('Cookie') ? `${headers.get('Cookie')}; ` : ''}__Host-momi_origin_csrf=${CSRF_TOKEN}`)
+  }
+
   return {
     request: new Request(options.url, {
-      method: options.method ?? 'GET',
-      headers: options.headers,
+      method,
+      headers,
       body: options.body,
     }),
     env: {
@@ -149,6 +161,61 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(ORIGIN)
     expect(response.headers.get('Access-Control-Allow-Credentials')).toBe('true')
     expect(response.headers.get('Vary')).toContain('Origin')
+  })
+
+  it('rejects arbitrary Pages preview origins unless explicitly allowed', async () => {
+    const response = await onRequest(
+      makeContext({
+        url: `https://evil.pages.dev/api/v1/posts`,
+        method: 'OPTIONS',
+        headers: { Origin: 'https://evil.pages.dev' },
+        path: ['v1', 'posts'],
+      })
+    )
+
+    expect(response.status).toBe(403)
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBeNull()
+  })
+
+  it('allows explicitly configured Pages preview origins', async () => {
+    const previewOrigin = 'https://preview.momichan.pages.dev'
+    const response = await onRequest(
+      makeContext({
+        url: `${previewOrigin}/api/v1/posts`,
+        method: 'OPTIONS',
+        headers: { Origin: previewOrigin },
+        path: ['v1', 'posts'],
+        env: {
+          ALLOWED_PREVIEW_ORIGINS: previewOrigin,
+        },
+      })
+    )
+
+    expect(response.status).toBe(204)
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(previewOrigin)
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+  })
+
+  it('rejects state-changing browser auth facades without a matching CSRF token', async () => {
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/auth/login`,
+        method: 'POST',
+        headers: {
+          Origin: ORIGIN,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: 'tester@example.com', password: 'password123' }),
+        path: ['v1', 'auth', 'login'],
+        csrf: false,
+      })
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'CSRF_TOKEN_INVALID',
+    })
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 
   it('signs internal BFF login requests and returns a session summary with cookies', async () => {

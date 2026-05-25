@@ -6,6 +6,7 @@ const {
   mockApiClient,
   mockRequestClientChallenge,
   mockGetDeviceFingerprint,
+  mockGetDeviceFingerprintMetadata,
   mockGetScreenResolution,
   mockGetTimezone,
   mockGetRandomHex,
@@ -31,6 +32,7 @@ const {
   },
   mockRequestClientChallenge: vi.fn(),
   mockGetDeviceFingerprint: vi.fn(),
+  mockGetDeviceFingerprintMetadata: vi.fn(),
   mockGetScreenResolution: vi.fn(() => '1920x1080'),
   mockGetTimezone: vi.fn(() => 'Asia/Tokyo'),
   mockGetRandomHex: vi.fn(() => 'nonce-1234'),
@@ -49,6 +51,7 @@ vi.mock('../clientChallengeBridge', () => ({
 
 vi.mock('@/utils/fingerprint', () => ({
   getDeviceFingerprint: mockGetDeviceFingerprint,
+  getDeviceFingerprintMetadata: mockGetDeviceFingerprintMetadata,
 }))
 
 vi.mock('@/utils/device', () => ({
@@ -72,6 +75,12 @@ describe('clientSecurityService', () => {
     vi.clearAllMocks()
     localStorage.clear()
     mockGetDeviceFingerprint.mockResolvedValue('fingerprint-123')
+    mockGetDeviceFingerprintMetadata.mockResolvedValue({
+      value: 'fingerprint-123',
+      source: 'oss_browser',
+      componentsVersion: 'fingerprintjs-oss@5.2.0',
+      generatedAt: 1710000000000,
+    })
     mockApiClient.post.mockResolvedValue({
       client_token: 'client-token',
       client_secret: 'client-secret',
@@ -96,6 +105,9 @@ describe('clientSecurityService', () => {
       '/client/init',
       expect.objectContaining({
         client_fingerprint: 'fingerprint-123',
+        fingerprint_source: 'oss_browser',
+        fingerprint_components_version: 'fingerprintjs-oss@5.2.0',
+        client_type: 'web',
         timezone: 'Asia/Tokyo',
         screen_resolution: '1920x1080',
         platform: 'Win32',
@@ -152,6 +164,41 @@ describe('clientSecurityService', () => {
 
     expect(clientSecurityManager.getClientToken()).toBe('token-only')
     expect(clientSecurityManager.isInitialized()).toBe(true)
+  })
+
+  it('persists canonical and risk response fields as a local summary only', async () => {
+    mockApiClient.post.mockResolvedValueOnce({
+      client_token: 'client-token',
+      client_secret: 'client-secret',
+      trust_level: 'basic',
+      canonical_fingerprint: 'canonical-123',
+      fingerprint_source: 'oss_browser',
+      fingerprint_components_version: 'fingerprintjs-oss@5.2.0',
+      client_type: 'web',
+      risk_score: 17,
+      risk_decision: 'allow',
+    })
+
+    await clientSecurityService.init()
+
+    const stored = JSON.parse(localStorage.getItem('momi_client_security') ?? '{}') as Record<
+      string,
+      unknown
+    >
+    expect(stored).toEqual(
+      expect.objectContaining({
+        client_token: 'client-token',
+        canonical_fingerprint: 'canonical-123',
+        fingerprint_source: 'oss_browser',
+        fingerprint_components_version: 'fingerprintjs-oss@5.2.0',
+        client_type: 'web',
+        risk_score: 17,
+        risk_decision: 'allow',
+        init_summary_updated_at: expect.any(Number),
+      })
+    )
+    expect(stored.client_secret).toBeUndefined()
+    expect(clientSecurityManager.getClientSecret()).toBe('client-secret')
   })
 
   it('force reissues once when request integrity still lacks signing credentials after silent init', async () => {

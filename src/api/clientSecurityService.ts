@@ -13,7 +13,7 @@
 import { ApiError, apiClient } from './client'
 import { requestClientChallenge } from './clientChallengeBridge'
 import type { RequestConfig } from './client'
-import { getDeviceFingerprint } from '@/utils/fingerprint'
+import { getDeviceFingerprint, getDeviceFingerprintMetadata } from '@/utils/fingerprint'
 import { getScreenResolution, getTimezone } from '@/utils/device'
 import { getRandomHex } from '@/utils/crypto'
 import { reportClientEvent } from '@/utils/clientReporter'
@@ -22,6 +22,9 @@ import { reportClientEvent } from '@/utils/clientReporter'
 
 export interface ClientInitRequest {
   client_fingerprint: string
+  fingerprint_source?: ClientFingerprintSource
+  fingerprint_components_version?: string
+  client_type?: ClientType
   timezone?: string
   screen_resolution?: string
   platform?: string
@@ -38,6 +41,12 @@ export interface ClientInitResponse {
   turnstile_site_key?: string
   expires_in?: number
   expires_at?: string
+  canonical_fingerprint?: string
+  fingerprint_source?: ClientFingerprintSource
+  fingerprint_components_version?: string
+  client_type?: ClientType
+  risk_score?: number
+  risk_decision?: RiskDecision
 }
 
 export interface ClientVerifyRequest {
@@ -63,6 +72,14 @@ export interface ClientStatusResponse {
 }
 
 export type ClientTrustLevel = 'untrusted' | 'basic' | 'verified'
+export type ClientFingerprintSource = 'oss_browser' | 'mobile_local' | 'unknown'
+export type ClientType = 'web' | 'mobile' | 'admin'
+export type RiskDecision =
+  | 'allow'
+  | 'challenge_turnstile'
+  | 'challenge_mfa_or_passkey'
+  | 'deny_obvious_abuse'
+  | string
 
 // ========== 安全存储 ==========
 
@@ -70,11 +87,21 @@ const STORAGE_KEY = 'momi_client_security'
 let ensureInitPromise: Promise<void> | null = null
 let initPromise: Promise<ClientInitResponse> | null = null
 let initPromiseMode: 'normal' | 'force' | null = null
+let inMemoryClientSecret: string | null = null
 
 interface StoredClientCredentials {
   client_token: string
   client_secret?: string
+  canonical_fingerprint?: string
+  fingerprint_source?: ClientFingerprintSource
+  fingerprint_components_version?: string
+  client_type?: ClientType
+  risk_score?: number
+  risk_decision?: RiskDecision
+  init_summary_updated_at?: number
 }
+
+type StoredClientSummary = Omit<StoredClientCredentials, 'client_token' | 'client_secret'>
 
 function getStoredCredentials(): StoredClientCredentials | null {
   try {
@@ -84,9 +111,29 @@ function getStoredCredentials(): StoredClientCredentials | null {
     if (typeof parsed.client_token === 'string' && parsed.client_token.trim()) {
       return {
         client_token: parsed.client_token,
-        client_secret:
-          typeof parsed.client_secret === 'string' && parsed.client_secret.trim()
-            ? parsed.client_secret
+        canonical_fingerprint:
+          typeof parsed.canonical_fingerprint === 'string' && parsed.canonical_fingerprint.trim()
+            ? parsed.canonical_fingerprint
+            : undefined,
+        fingerprint_source: normalizeFingerprintSource(parsed.fingerprint_source),
+        fingerprint_components_version:
+          typeof parsed.fingerprint_components_version === 'string' &&
+          parsed.fingerprint_components_version.trim()
+            ? parsed.fingerprint_components_version
+            : undefined,
+        client_type: normalizeClientType(parsed.client_type),
+        risk_score:
+          typeof parsed.risk_score === 'number' && Number.isFinite(parsed.risk_score)
+            ? parsed.risk_score
+            : undefined,
+        risk_decision:
+          typeof parsed.risk_decision === 'string' && parsed.risk_decision.trim()
+            ? parsed.risk_decision
+            : undefined,
+        init_summary_updated_at:
+          typeof parsed.init_summary_updated_at === 'number' &&
+          Number.isFinite(parsed.init_summary_updated_at)
+            ? parsed.init_summary_updated_at
             : undefined,
       }
     }
@@ -97,14 +144,32 @@ function getStoredCredentials(): StoredClientCredentials | null {
 }
 
 function storeCredentials(creds: StoredClientCredentials): void {
+  const nextSecret = creds.client_secret?.trim()
+  if (nextSecret) {
+    inMemoryClientSecret = nextSecret
+  }
+
+  const { client_secret: _clientSecret, ...persistedCredentials } = creds
+  void _clientSecret
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(creds))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedCredentials))
   } catch {
     // localStorage 不可用时静默失败
   }
 }
 
+function normalizeFingerprintSource(value: unknown): ClientFingerprintSource | undefined {
+  return value === 'oss_browser' || value === 'mobile_local' || value === 'unknown'
+    ? value
+    : undefined
+}
+
+function normalizeClientType(value: unknown): ClientType | undefined {
+  return value === 'web' || value === 'mobile' || value === 'admin' ? value : undefined
+}
+
 function clearCredentials(): void {
+  inMemoryClientSecret = null
   try {
     localStorage.removeItem(STORAGE_KEY)
   } catch {
@@ -112,24 +177,63 @@ function clearCredentials(): void {
   }
 }
 
+function buildStoredClientSummary(response: ClientInitResponse): StoredClientSummary {
+  const summary: StoredClientSummary = {}
+
+  if (typeof response.canonical_fingerprint === 'string' && response.canonical_fingerprint.trim()) {
+    summary.canonical_fingerprint = response.canonical_fingerprint.trim()
+  }
+  if (response.fingerprint_source) {
+    summary.fingerprint_source = response.fingerprint_source
+  }
+  if (
+    typeof response.fingerprint_components_version === 'string' &&
+    response.fingerprint_components_version.trim()
+  ) {
+    summary.fingerprint_components_version = response.fingerprint_components_version.trim()
+  }
+  if (response.client_type) {
+    summary.client_type = response.client_type
+  }
+  if (typeof response.risk_score === 'number' && Number.isFinite(response.risk_score)) {
+    summary.risk_score = response.risk_score
+  }
+  if (typeof response.risk_decision === 'string' && response.risk_decision.trim()) {
+    summary.risk_decision = response.risk_decision.trim()
+  }
+
+  if (Object.keys(summary).length > 0) {
+    summary.init_summary_updated_at = Date.now()
+  }
+
+  return summary
+}
+
 function persistInitCredentials(response: ClientInitResponse): void {
   const existing = getStoredCredentials()
   const nextClientToken = response.client_token?.trim()
   const nextClientSecret = response.client_secret?.trim()
+  const responseSummary = buildStoredClientSummary(response)
 
   if (nextClientToken) {
     const shouldReuseExistingSecret =
-      existing?.client_token === nextClientToken && existing.client_secret && !nextClientSecret
+      existing?.client_token === nextClientToken && inMemoryClientSecret && !nextClientSecret
     storeCredentials({
+      ...(existing ?? {}),
+      ...responseSummary,
       client_token: nextClientToken,
       client_secret:
-        nextClientSecret || (shouldReuseExistingSecret ? existing.client_secret : undefined),
+        nextClientSecret ||
+        (shouldReuseExistingSecret ? (inMemoryClientSecret ?? undefined) : undefined),
     })
     return
   }
 
   if (existing?.client_token) {
-    storeCredentials(existing)
+    storeCredentials({
+      ...existing,
+      ...responseSummary,
+    })
   }
 }
 
@@ -159,13 +263,13 @@ export const clientSecurityManager = {
 
   /** 获取当前 client_secret（用于签名） */
   getClientSecret(): string | null {
-    return getStoredCredentials()?.client_secret ?? null
+    return inMemoryClientSecret
   },
 
   /** 请求签名所需凭证是否齐全 */
   hasRequestIntegrityCredentials(): boolean {
     const stored = getStoredCredentials()
-    return Boolean(stored?.client_token && stored.client_secret)
+    return Boolean(stored?.client_token && inMemoryClientSecret)
   },
 
   /** 获取设备指纹（用于请求头） */
@@ -198,11 +302,14 @@ const clientInitConfig: RequestConfig = {
  * 收集客户端环境信息用于 init 请求
  */
 async function collectClientInfo(forceReissue?: boolean): Promise<ClientInitRequest> {
-  const fingerprint = await getDeviceFingerprint()
+  const fingerprint = await getDeviceFingerprintMetadata()
   const platform = navigator.platform || undefined
 
   const payload: ClientInitRequest = {
-    client_fingerprint: fingerprint,
+    client_fingerprint: fingerprint.value,
+    fingerprint_source: fingerprint.source,
+    fingerprint_components_version: fingerprint.componentsVersion,
+    client_type: 'web',
     timezone: getTimezone(),
     screen_resolution: getScreenResolution(),
     timestamp: Math.floor(Date.now() / 1000),

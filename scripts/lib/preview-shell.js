@@ -610,16 +610,18 @@ function buildConfiguredLocalApiOriginPatch(env) {
   const identityOrigin = env?.[LOCAL_API_BRIDGE_SERVICES.identity.envKey]?.trim()
   const communityOrigin = env?.[LOCAL_API_BRIDGE_SERVICES.community.envKey]?.trim()
   const contentOrigin = env?.[LOCAL_API_BRIDGE_SERVICES.content.envKey]?.trim()
+  const publicOrigin = env?.API_BASE_URL?.trim() || identityOrigin
   const internalOrigin = env?.BACKEND_INTERNAL_ORIGIN?.trim() || identityOrigin
 
   return {
-    API_BASE_URL: identityOrigin,
-    VITE_API_BASE_URL: identityOrigin,
+    API_BASE_URL: publicOrigin,
+    VITE_API_BASE_URL: publicOrigin,
     BACKEND_INTERNAL_ORIGIN: internalOrigin,
-    VPC_API_ORIGIN: identityOrigin,
+    VPC_API_ORIGIN: publicOrigin,
     VPC_IDENTITY_API_ORIGIN: identityOrigin,
     VPC_COMMUNITY_API_ORIGIN: communityOrigin,
     VPC_CONTENT_API_ORIGIN: contentOrigin,
+    ENABLE_INTERNAL_API_GATEWAY: 'true',
   }
 }
 
@@ -673,12 +675,14 @@ export class LocalApiBridgeManager {
     const patch = {}
     for (const bridge of this.bridges) {
       patch[bridge.envKey] = bridge.baseUrl
-      if (bridge.name === 'identity') {
+      if (bridge.name === 'gateway') {
         patch.API_BASE_URL = bridge.baseUrl
         patch.VITE_API_BASE_URL = bridge.baseUrl
+        patch.VPC_API_ORIGIN = bridge.baseUrl
+      }
+      if (bridge.name === 'identity') {
         patch.BACKEND_INTERNAL_ORIGIN = bridge.baseUrl
         patch.VPC_IDENTITY_API_ORIGIN = bridge.baseUrl
-        patch.VPC_API_ORIGIN = bridge.baseUrl
       }
       if (bridge.name === 'community') {
         patch.VPC_COMMUNITY_API_ORIGIN = bridge.baseUrl
@@ -686,6 +690,13 @@ export class LocalApiBridgeManager {
       if (bridge.name === 'content') {
         patch.VPC_CONTENT_API_ORIGIN = bridge.baseUrl
       }
+    }
+    if (
+      patch.VPC_IDENTITY_API_ORIGIN &&
+      patch.VPC_COMMUNITY_API_ORIGIN &&
+      patch.VPC_CONTENT_API_ORIGIN
+    ) {
+      patch.ENABLE_INTERNAL_API_GATEWAY = 'true'
     }
     return patch
   }
