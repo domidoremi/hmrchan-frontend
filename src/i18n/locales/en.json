@@ -1631,7 +1631,29 @@
       "perch": ["Nice view from here~", "I'll perch for a bit", "Guarding this button!"],
       "track": ["Oh? You're moving!", "I see you~", "(⊙o⊙)"],
       "leap": ["Jump!", "Watch this dash~", "Whoosh!"],
-      "peek": ["Peeking from here~", "Hehe, I'm hiding", "( •̀ .̫ •́ )✧"]
+      "peek": ["Peeking from here~", "Hehe, I'm hiding", "( •̀ .̫ •́ )✧"],
+      "sendingPrompt": ["Sending it along~", "Message courier mode!", "On my way!"],
+      "review": ["Let me take a look...", "Checking the trail.", "Hmm, reviewing."],
+      "failed": ["That stumbled.", "Something broke here.", "I'll flag this."],
+      "waiting": ["Waiting with you.", "Still here.", "Taking a tiny pause."],
+      "deepThinking": ["Deep thinking...", "Connecting the dots.", "Give me a moment."],
+      "retrieving": ["Fetching clues!", "Digging through the shelves.", "I found a trail."],
+      "contextCompressing": ["Packing the notes.", "Tidying the context.", "Making room."],
+      "flareScan": ["Running a second sweep!", "Scanning the edges.", "One more pass!"],
+      "toolWorking": ["Tool mode!", "Working on it.", "Let me handle that."],
+      "mcpWorking": ["Calling a helper.", "MCP route active.", "Checking the tool bridge."],
+      "skillRunning": ["Skill running!", "Using a learned trick.", "This needs a special move."],
+      "attachmentReading": ["Reading the file.", "Opening the attachment.", "Let me inspect this."],
+      "webSearching": ["Searching around!", "Following the keywords.", "Sniffing out results."],
+      "modelTesting": ["Testing the route.", "Checking the engine.", "A quick systems check."],
+      "syncingModels": ["Syncing up!", "Back in step.", "Refreshing the connection."],
+      "providerIssue": [
+        "Service looks shaky.",
+        "That endpoint needs a moment.",
+        "Something upstream blinked."
+      ],
+      "offlineWaiting": ["Offline for now.", "I'll nap until it returns.", "No signal yet."],
+      "warningRecover": ["Recovering...", "Let's try the safer path.", "I can work around this."]
     }
   }
 }

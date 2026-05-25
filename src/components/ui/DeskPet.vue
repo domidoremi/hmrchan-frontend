@@ -4,6 +4,8 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores'
 import { prefersReducedMotion } from '@/utils/performance'
+import { DESK_PET_AUX_PRELOAD_STATES, PET_STATE_IMAGE_MAP, PetState } from './desk-pet/petStates'
+import { createDeskPetWorkflowReactions } from './desk-pet/useDeskPetWorkflowReactions'
 
 const { t, tm } = useI18n()
 const settingsStore = useSettingsStore()
@@ -35,49 +37,6 @@ const shouldAnimate = computed(
     settings.value.animationIntensity !== 'none' &&
     !prefersReducedMotion()
 )
-
-// ─── 状态 ───
-enum PetState {
-  IDLE = 'idle',
-  HOVER = 'hover',
-  CLICK = 'click',
-  ANGRY = 'angry',
-  SLEEP = 'sleep',
-  WAKE = 'wake',
-  DRAG = 'drag',
-  HAPPY = 'happy',
-  THINKING = 'thinking',
-  PAT = 'pat',
-  EAT = 'eat',
-  DIZZY = 'dizzy',
-  BLINK = 'blink',
-  ENTER = 'enter',
-  PERCH = 'perch',
-  TRACK = 'track',
-  LEAP = 'leap',
-  PEEK = 'peek',
-}
-
-const stateImageMap: Record<PetState, string> = {
-  [PetState.IDLE]: '/images/expressions/sitting-sm.webp',
-  [PetState.HOVER]: '/images/expressions/confused-sm.webp',
-  [PetState.CLICK]: '/images/expressions/surprised-sm.webp',
-  [PetState.ANGRY]: '/images/expressions/angry-sm.webp',
-  [PetState.SLEEP]: '/images/expressions/sleeping-sm.webp',
-  [PetState.WAKE]: '/images/expressions/surprised-sm.webp',
-  [PetState.DRAG]: '/images/expressions/running-sm.webp',
-  [PetState.HAPPY]: '/images/expressions/happy-sm.webp',
-  [PetState.THINKING]: '/images/expressions/thinking-sm.webp',
-  [PetState.PAT]: '/images/expressions/kawaii-sm.webp',
-  [PetState.EAT]: '/images/expressions/laughing-sm.webp',
-  [PetState.DIZZY]: '/images/expressions/confused-sm.webp',
-  [PetState.BLINK]: '/images/expressions/standing-sm.webp',
-  [PetState.ENTER]: '/images/expressions/running-sm.webp',
-  [PetState.PERCH]: '/images/expressions/standing-sm.webp',
-  [PetState.TRACK]: '/images/expressions/surprised-sm.webp',
-  [PetState.LEAP]: '/images/expressions/55-sm.webp',
-  [PetState.PEEK]: '/images/expressions/22-sm.webp',
-}
 
 // 时间问候
 const getTimeGreeting = (): string => {
@@ -166,9 +125,9 @@ const showContextMenu = ref(false)
 const contextMenuPos = ref({ x: 0, y: 0 })
 
 // 图片淡入淡出
-const displayedImage = ref(stateImageMap[PetState.IDLE])
+const displayedImage = ref(PET_STATE_IMAGE_MAP[PetState.IDLE])
 const imageReady = ref(true)
-const currentImage = computed(() => stateImageMap[currentState.value])
+const currentImage = computed(() => PET_STATE_IMAGE_MAP[currentState.value])
 let pendingImage: HTMLImageElement | null = null
 let imageReadyFrame: number | null = null
 
@@ -221,6 +180,7 @@ const LOOK_MIN_DISTANCE = 220
 const DESK_PET_POSITION_STORAGE_KEY = 'desk-pet:last-position'
 const HERO_REACTION_COOLDOWN_MS = 1400
 const CTA_ATTENTION_COOLDOWN_MS = 4500
+const WORKFLOW_REACTION_COOLDOWN_MS = 1600
 const SCROLL_DIZZY_COOLDOWN_MS = 8000
 const IDLE_BEHAVIOR_MIN_MS = 6500
 const IDLE_BEHAVIOR_JITTER_MS = 6500
@@ -263,15 +223,7 @@ const petStyle = computed<Record<string, string>>(() => ({
 
 // ─── 工具函数 ───
 const preloadImages = () => {
-  const urls = new Set([
-    stateImageMap[PetState.HOVER],
-    stateImageMap[PetState.CLICK],
-    stateImageMap[PetState.SLEEP],
-    stateImageMap[PetState.HAPPY],
-    stateImageMap[PetState.PERCH],
-    stateImageMap[PetState.LEAP],
-    stateImageMap[PetState.PEEK],
-  ])
+  const urls = new Set(DESK_PET_AUX_PRELOAD_STATES.map((state) => PET_STATE_IMAGE_MAP[state]))
   for (const url of urls) {
     const img = new Image()
     img.src = url
@@ -757,6 +709,19 @@ const getRestState = () =>
     ? PetState.PERCH
     : PetState.IDLE
 
+const workflowReactions = createDeskPetWorkflowReactions({
+  cooldownMs: WORKFLOW_REACTION_COOLDOWN_MS,
+  getRestState,
+  isDragging: () => isDragging.value,
+  isPetTarget,
+  isVisible: () => visible.value,
+  resetIdleTimer,
+  shouldAnimate: () => shouldAnimate.value,
+  showStateBubble,
+  spawnParticles,
+  transitionTo,
+})
+
 const hidePet = () => {
   showContextMenu.value = false
   settingsStore.setDeskPet({ enabled: false, dismissedAutoHome: true })
@@ -988,6 +953,7 @@ onMounted(() => {
   document.addEventListener('click', handleGlobalClick)
   document.addEventListener('pointerover', handleGlobalPointerOver, { passive: true })
   document.addEventListener('focusin', handleGlobalFocusIn)
+  workflowReactions.mount()
   window.addEventListener('resize', handleResize)
   window.addEventListener('scroll', handleScroll, { passive: true })
 
@@ -1022,6 +988,7 @@ onUnmounted(() => {
   if (heroIntroTimer) clearTimeout(heroIntroTimer)
   if (heroReactionUnlockTimer) clearTimeout(heroReactionUnlockTimer)
   if (ctaAttentionUnlockTimer) clearTimeout(ctaAttentionUnlockTimer)
+  workflowReactions.cleanup()
   document.removeEventListener('mousemove', handleGlobalMouseMove)
   document.removeEventListener('click', handleGlobalClick)
   document.removeEventListener('pointerover', handleGlobalPointerOver)
