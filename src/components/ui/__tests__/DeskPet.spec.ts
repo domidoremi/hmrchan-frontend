@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { reactive, toRefs } from 'vue'
+import { nextTick, reactive, toRefs } from 'vue'
 import DeskPet from '../DeskPet.vue'
 
 const testState = vi.hoisted(() => ({
@@ -45,6 +45,21 @@ vi.mock('@/stores', () => ({
   useSettingsStore: () => reactive(testState.settingsStore),
 }))
 
+async function mountDeskPet(props: Record<string, unknown> = {}) {
+  const wrapper = mount(DeskPet, {
+    attachTo: document.body,
+    props,
+  })
+  await flushPromises()
+  return wrapper
+}
+
+async function dispatchWorkflowEvent(target: Element | Window, event: Event) {
+  target.dispatchEvent(event)
+  await nextTick()
+  await flushPromises()
+}
+
 describe('DeskPet', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -61,6 +76,7 @@ describe('DeskPet', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
+    document.body.innerHTML = ''
   })
 
   it('cleans tracked timers, animation frames, and document listeners on unmount', async () => {
@@ -94,8 +110,50 @@ describe('DeskPet', () => {
     expect(cancelAnimationFrameSpy).toHaveBeenCalled()
     expect(documentRemoveSpy).toHaveBeenCalledWith('mousemove', expect.any(Function))
     expect(documentRemoveSpy).toHaveBeenCalledWith('click', expect.any(Function))
+    expect(documentRemoveSpy).toHaveBeenCalledWith('focusin', expect.any(Function))
+    expect(documentRemoveSpy).toHaveBeenCalledWith('input', expect.any(Function))
+    expect(documentRemoveSpy).toHaveBeenCalledWith('submit', expect.any(Function))
     expect(windowRemoveSpy).toHaveBeenCalledWith('resize', expect.any(Function))
     expect(windowRemoveSpy).toHaveBeenCalledWith('scroll', expect.any(Function))
+    expect(windowRemoveSpy).toHaveBeenCalledWith('offline', expect.any(Function))
+    expect(windowRemoveSpy).toHaveBeenCalledWith('online', expect.any(Function))
+  })
+
+  it('reacts to search fields with the web searching workflow state', async () => {
+    const wrapper = await mountDeskPet()
+    const searchInput = document.createElement('input')
+    searchInput.type = 'search'
+    searchInput.setAttribute('aria-label', 'Search posts')
+    document.body.append(searchInput)
+
+    await dispatchWorkflowEvent(searchInput, new FocusEvent('focusin', { bubbles: true }))
+
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--webSearching')
+    expect(wrapper.get('.desk-pet__bubble').text()).toBe('line')
+  })
+
+  it('reacts to service unavailable state indicators as a provider issue', async () => {
+    const wrapper = await mountDeskPet()
+    const stateIndicator = document.createElement('div')
+    stateIndicator.className = 'state-indicator state-indicator--service-unavailable'
+    document.body.append(stateIndicator)
+
+    await dispatchWorkflowEvent(stateIndicator, new MouseEvent('pointerover', { bubbles: true }))
+
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--providerIssue')
+  })
+
+  it('reacts to offline and online browser events with connection workflow states', async () => {
+    const wrapper = await mountDeskPet()
+
+    await dispatchWorkflowEvent(window, new Event('offline'))
+
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--offlineWaiting')
+
+    await vi.advanceTimersByTimeAsync(1600)
+    await dispatchWorkflowEvent(window, new Event('online'))
+
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--syncingModels')
   })
 
   it('plays the homepage auto intro and perches near the hero CTA', async () => {
