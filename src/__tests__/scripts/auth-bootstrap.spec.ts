@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   buildAuthBootstrapProbeSummary,
@@ -14,10 +14,17 @@ import {
   formatFatalAuthBootstrapProbe,
   formatLocalAuditEnvironmentBlockedProbe,
   getAuthBootstrapProbeDefinitions,
+  probeAuthBootstrapEndpoint,
+  probeAuthBootstrapEndpoints,
   validateAuthBootstrapContract,
 } from '../../../scripts/lib/auth-bootstrap.js'
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 function listFiles(root: string): string[] {
   const files: string[] = []
@@ -393,6 +400,71 @@ describe('auth bootstrap helpers', () => {
       attachContract: false,
       redirect: 'manual',
     })
+  })
+
+  it('stops probing after a fatal client-init failure', async () => {
+    const fetchMock = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          code: 'UPSTREAM_UNREACHABLE',
+          message: 'connect ECONNREFUSED 127.0.0.1:19081',
+        }),
+        {
+          status: 503,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const results = await probeAuthBootstrapEndpoints('https://momichan.xyz', {
+      probeIntervalMs: 0,
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(results).toEqual([
+      expect.objectContaining({
+        path: '/api/v1/client/init',
+        method: 'POST',
+        status: 503,
+        code: 'UPSTREAM_UNREACHABLE',
+      }),
+    ])
+  })
+
+  it('does not copy successful credential payloads into probe summaries', async () => {
+    const fetchMock = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            client_token: 'probe-client-token',
+            client_secret: 'probe-client-secret',
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await probeAuthBootstrapEndpoint(
+      'https://momichan.xyz',
+      getAuthBootstrapProbeDefinitions()[0]!,
+      {
+        probeIntervalMs: 0,
+      }
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.message).toBeNull()
+    expect(buildAuthBootstrapProbeSummary(result)).not.toContain('probe-client-secret')
   })
 
   it('does not reference the retired public passwordless options facade', () => {

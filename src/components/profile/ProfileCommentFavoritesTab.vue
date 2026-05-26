@@ -109,7 +109,7 @@ import { ref, computed, onMounted, onUnmounted, defineAsyncComponent, watch } fr
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, Bookmark, BookmarkMinus } from '@lucide/vue'
-import { apiClient, ApiError, historyService, type MyCommentFavoriteItem } from '@/api'
+import { ApiError, commentService, historyService, type MyCommentFavoriteItem } from '@/api'
 import { normalizeHistorySummaryCounts } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useToastStore } from '@/stores'
@@ -267,7 +267,7 @@ async function confirmUnfavorite() {
   unfavoritingId.value = item.id
 
   try {
-    await apiClient.delete(`/comments/${item.id}/favorite`)
+    await commentService.unfavoriteComment(String(item.id))
     items.value = items.value.filter((c) => c.id !== item.id)
     if (typeof total.value === 'number') {
       total.value = Math.max(0, total.value - 1)

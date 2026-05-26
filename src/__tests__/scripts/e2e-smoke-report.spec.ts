@@ -50,6 +50,7 @@ describe('e2e smoke report helpers', () => {
     summary.baseUrl = 'https://momichan.xyz'
     summary.authSmokeRequired = true
     summary.authSmokeExecuted = true
+    summary.lastStage = 'authenticated smoke'
     summary.lastFailedCheck = 'profile comments'
     summary.lastFailureEvidence = {
       checkName: 'profile comments',
@@ -86,6 +87,7 @@ describe('e2e smoke report helpers', () => {
 
     expect(markdown).toContain('Auth smoke: 0/1 passed, 1 failed')
     expect(markdown).toContain('Auth smoke required: yes')
+    expect(markdown).toContain('Last stage: authenticated smoke')
     expect(markdown).toContain('### Auth Account Contract')
     expect(markdown).toContain('all: [data-testid="profile-comments-tab"]')
     expect(markdown).toContain('any: .timeline<br>.state-indicator')

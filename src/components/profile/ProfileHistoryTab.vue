@@ -85,7 +85,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Trash2 } from '@lucide/vue'
 import { useToastStore } from '@/stores'
-import { apiClient, ApiError, historyService } from '@/api'
+import { ApiError, historyService } from '@/api'
 import { normalizeHistorySummaryCounts } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
@@ -251,7 +251,7 @@ function clearHistory() {
 
 async function confirmClearHistory() {
   try {
-    await apiClient.delete('/history/browsing')
+    await historyService.clearBrowsingHistory()
     history.value = []
     total.value = 0
     nextCursor.value = null

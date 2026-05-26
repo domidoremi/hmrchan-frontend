@@ -1,2 +1,4 @@
+# Postman Local View workspace globals.
+# Keep shared workspace-level values here; collections/resources are registered from `.postman/resources.yaml`.
 name: Globals
 values: []

@@ -35,8 +35,8 @@ vi.mock('@/api', () => {
 
   return {
     ApiError: MockApiError,
-    apiClient: {
-      delete: state.apiDelete,
+    commentService: {
+      deleteComment: state.apiDelete,
     },
     historyService: {
       getMyComments: state.getMyComments,
@@ -169,7 +169,7 @@ describe('ProfileCommentsTab', () => {
     await invokeSetupMethod(wrapper, 'confirmDelete')
     await flushPromises()
 
-    expect(state.apiDelete).toHaveBeenCalledWith('/comments/comment-1')
+    expect(state.apiDelete).toHaveBeenCalledWith('comment-1')
     expect(wrapper.findAll('.timeline-item')).toHaveLength(0)
     expect(state.toastStore.success).toHaveBeenCalledWith('comment.deleteSuccess')
     expect(state.toastStore.error).not.toHaveBeenCalled()

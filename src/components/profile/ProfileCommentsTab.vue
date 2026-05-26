@@ -102,7 +102,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, MessageCircle, Trash2, ExternalLink } from '@lucide/vue'
-import { apiClient, ApiError, historyService, type MyCommentHistoryItem } from '@/api'
+import { ApiError, commentService, historyService, type MyCommentHistoryItem } from '@/api'
 import { normalizeHistorySummaryCounts } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useToastStore } from '@/stores'
@@ -275,7 +275,7 @@ async function confirmDelete() {
   deletingId.value = commentId
 
   try {
-    await apiClient.delete(`/comments/${commentId}`)
+    await commentService.deleteComment(commentId)
     comments.value = comments.value.filter((c) => c.id !== commentId)
     if (typeof total.value === 'number') {
       total.value = Math.max(0, total.value - 1)

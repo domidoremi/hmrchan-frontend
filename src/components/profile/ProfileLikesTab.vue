@@ -102,7 +102,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, MessageCircle, HeartOff } from '@lucide/vue'
-import { apiClient, ApiError, historyService, type MyLikeHistoryItem } from '@/api'
+import { ApiError, commentService, historyService, type MyLikeHistoryItem } from '@/api'
 import { normalizeHistorySummaryCounts } from '@/api/summaryCounts'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useToastStore } from '@/stores'
@@ -283,7 +283,7 @@ async function confirmUnlike() {
   unlikingId.value = comment.id
 
   try {
-    await apiClient.delete(`/comments/${comment.id}/like`)
+    await commentService.unlikeComment(String(comment.id))
     comments.value = comments.value.filter((c) => c.id !== comment.id)
     if (typeof total.value === 'number') {
       total.value = Math.max(0, total.value - 1)

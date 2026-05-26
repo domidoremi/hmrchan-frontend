@@ -4,6 +4,7 @@ function isRecord(value) {
 
 const AUTH_BOOTSTRAP_CLIENT_FINGERPRINT = 'auth-bootstrap-probe'
 const AUTH_BOOTSTRAP_REQUEST_TIMEOUT_MS = 10_000
+const AUTH_BOOTSTRAP_PROBE_INTERVAL_MS = 250
 const textEncoder = new TextEncoder()
 const AUTH_BOOTSTRAP_PROBE_DEFINITIONS = Object.freeze([
   Object.freeze({
@@ -369,6 +370,21 @@ export function findLocalAuditEnvironmentBlockedProbe(probes) {
   )
 }
 
+function shouldStopAuthBootstrapProbes(probe) {
+  if (probe.path !== '/api/v1/client/init') {
+    return false
+  }
+
+  return [
+    'upstream-tunnel-unavailable',
+    'upstream-unreachable',
+    'client-init-missing',
+    'client-init-5xx',
+    'client-contract-mismatch',
+    'bff-not-configured',
+  ].includes(classifyAuthBootstrapProbe(probe))
+}
+
 export function formatLocalAuditEnvironmentBlockedProbe(probe) {
   const summary = buildAuthBootstrapProbeSummary(probe)
   return `Local audit environment blocked because Docker/local backend upstream is unreachable from the preview (${summary}). Start Docker Desktop and the local backend stack, or set LOCAL_AUDIT_AUTO_API_BRIDGE=false with reachable local origins before rerunning.`
@@ -543,6 +559,7 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
   }
 
   const errorMeta = extractAuthBootstrapError(parsedBody, rawBody)
+  const fallbackMessage = rawBody.trim().length > 0 ? rawBody.trim() : null
 
   return {
     path: probe.path,
@@ -550,17 +567,22 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
     status: response.status,
     ok: response.ok,
     code: errorMeta.code,
-    message: errorMeta.message ?? (rawBody.trim().length > 0 ? rawBody.trim() : null),
+    message: response.ok ? null : (errorMeta.message ?? fallbackMessage),
     body: parsedBody,
   }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export async function probeAuthBootstrapEndpoints(baseUrl, options = {}) {
   const probes = getAuthBootstrapProbeDefinitions()
   const results = []
   let clientCredentials = options.clientCredentials ?? null
+  const probeIntervalMs = options.probeIntervalMs ?? AUTH_BOOTSTRAP_PROBE_INTERVAL_MS
 
-  for (const probe of probes) {
+  for (const [index, probe] of probes.entries()) {
     const result = await probeAuthBootstrapEndpoint(baseUrl, probe, {
       ...options,
       clientFingerprint: options.clientFingerprint ?? AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
@@ -569,7 +591,15 @@ export async function probeAuthBootstrapEndpoints(baseUrl, options = {}) {
     results.push(result)
 
     if (probe.path === '/api/v1/client/init') {
-      clientCredentials = extractBootstrapClientCredentials(result.body)
+      clientCredentials = extractBootstrapClientCredentials(result.body) ?? clientCredentials
+    }
+
+    if (shouldStopAuthBootstrapProbes(result)) {
+      break
+    }
+
+    if (probeIntervalMs > 0 && index < probes.length - 1) {
+      await sleep(probeIntervalMs)
     }
   }
 

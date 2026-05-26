@@ -91,4 +91,39 @@ describe('commentService', () => {
 
     expect(clientMocks.get).toHaveBeenCalledWith('/comments/comment-2/replies?limit=20', undefined)
   })
+
+  it('passes request config through comment mutation helpers', async () => {
+    vi.mocked(clientMocks.post).mockResolvedValue({})
+    vi.mocked(clientMocks.delete).mockResolvedValue({})
+
+    await commentService.likeComment('comment-1', { skipErrorToast: true })
+    await commentService.unlikeComment('comment-1', { skipErrorToast: true })
+    await commentService.favoriteComment('comment-1', { skipErrorToast: true })
+    await commentService.unfavoriteComment('comment-1', { skipErrorToast: true })
+    await commentService.reportComment('comment-1', 'spam', 'duplicate', {
+      skipErrorToast: true,
+    })
+
+    expect(clientMocks.post).toHaveBeenNthCalledWith(1, '/comments/comment-1/like', null, {
+      skipErrorToast: true,
+    })
+    expect(clientMocks.delete).toHaveBeenNthCalledWith(1, '/comments/comment-1/like', {
+      skipErrorToast: true,
+    })
+    expect(clientMocks.post).toHaveBeenNthCalledWith(2, '/comments/comment-1/favorite', null, {
+      skipErrorToast: true,
+    })
+    expect(clientMocks.delete).toHaveBeenNthCalledWith(2, '/comments/comment-1/favorite', {
+      skipErrorToast: true,
+    })
+    expect(clientMocks.post).toHaveBeenNthCalledWith(
+      3,
+      '/comments/comment-1/report',
+      {
+        reason: 'spam',
+        description: 'duplicate',
+      },
+      { skipErrorToast: true }
+    )
+  })
 })

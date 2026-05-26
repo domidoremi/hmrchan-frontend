@@ -126,6 +126,7 @@ type SmokeSummary = {
   authCredentialsDetected: boolean
   authSmokeExecuted: boolean
   authSmokeSkipReason: string | null
+  lastStage: string | null
   lastFailedCheck: string | null
   failureKind: SmokeFailureKind | null
   lastFailureEvidence: FailureEvidence | null
@@ -167,6 +168,7 @@ const AUTH_BOOTSTRAP_CONTRACT_VERSION =
   AUDIT_ENV['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
   process.env['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
   ''
+const E2E_HARD_TIMEOUT_MS = Number.parseInt(process.env['E2E_HARD_TIMEOUT_MS'] ?? '', 10) || 720_000
 const PREVIEW_PORT_CANDIDATES = resolveLocalAuditPreviewPorts(AUDIT_ENV, [
   'E2E_PREVIEW_PORTS',
   'E2E_PREVIEW_PORT',
@@ -292,7 +294,9 @@ async function readAuthBootstrapPageProbe(
     method: response.request().method(),
     status: response.status(),
     code: errorMeta.code,
-    message: errorMeta.message ?? (rawBody.trim().length > 0 ? rawBody.trim() : null),
+    message: response.ok()
+      ? null
+      : (errorMeta.message ?? (rawBody.trim().length > 0 ? rawBody.trim() : null)),
   }
 }
 
@@ -386,19 +390,27 @@ async function capturePageFailureEvidence(
   const screenshotPath = join(artifactDir, 'failure-last.png')
   const htmlSnapshotPath = join(artifactDir, 'failure-last.html')
 
+  const readFailureValue = async <T>(label: string, read: () => Promise<T>): Promise<T | null> => {
+    return withTimeout(Promise.resolve().then(read), 3_000, label).catch(() => null)
+  }
+
   const [title, pathname, url, html] = await Promise.all([
-    page.title().catch(() => null),
-    page.evaluate(() => window.location.pathname).catch(() => null),
+    readFailureValue('failure page title', () => page.title()),
+    readFailureValue('failure page pathname', () => page.evaluate(() => window.location.pathname)),
     Promise.resolve(page.url()).catch(() => null),
-    page.content().catch(() => null),
+    readFailureValue('failure page html', () => page.content()),
   ])
 
-  await page
-    .screenshot({
-      fullPage: true,
-      path: screenshotPath,
-    })
-    .catch(() => undefined)
+  await withTimeout(
+    Promise.resolve().then(() =>
+      page.screenshot({
+        fullPage: true,
+        path: screenshotPath,
+      })
+    ),
+    5_000,
+    'failure page screenshot'
+  ).catch(() => undefined)
 
   if (typeof html === 'string') {
     await writeFile(htmlSnapshotPath, html, 'utf8').catch(() => undefined)
@@ -802,7 +814,9 @@ async function withPageFailureEvidence(
     throw error
   } finally {
     if (!existingPage && !(keepCreatedPageOpen && completed)) {
-      await page.close().catch(() => undefined)
+      if (completed) {
+        await closePageWithTimeout(page)
+      }
     }
   }
 }
@@ -824,6 +838,20 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
       clearTimeout(timeoutId)
     }
   }
+}
+
+async function closePageWithTimeout(
+  page: Page | null | undefined,
+  label = 'page.close'
+): Promise<void> {
+  if (!page) return
+  await withTimeout(
+    page.close().catch(() => {
+      // ignore
+    }),
+    5_000,
+    label
+  ).catch((cleanupError) => console.warn(`⚠️ ${label} timed out:`, cleanupError))
 }
 
 async function recordCheck(
@@ -1633,6 +1661,10 @@ async function main(): Promise<void> {
   const authSkipReason = getAuthSkipReason(authLogin, authPassword, authCredentials.source)
   const summary = createSmokeSummary(artifactDir, authLogin, authPassword)
   summary.authSmokeRequired = authSmokeRequired
+  const setStage = (stage: string) => {
+    summary.lastStage = stage
+  }
+  setStage('startup')
   const recordFailureEvidence = (evidence: FailureEvidence) => {
     summary.lastFailureEvidence = evidence
   }
@@ -1641,6 +1673,85 @@ async function main(): Promise<void> {
   let browser: puppeteer.Browser | null = null
   let runError: unknown = null
   const getPreviewDiagnostics = () => previewServer?.formatDiagnosticsLines() ?? null
+  let cleanupRequested = false
+  let terminationHandled = false
+
+  const cleanupResources = async (forceBrowserKill = false) => {
+    if (cleanupRequested) return
+    cleanupRequested = true
+
+    const activeBrowser = browser
+    browser = null
+    if (activeBrowser) {
+      const browserProcess = activeBrowser.process()
+      if (forceBrowserKill && browserProcess) {
+        browserProcess.kill()
+      } else {
+        await withTimeout(
+          Promise.resolve().then(() =>
+            activeBrowser.close().catch(() => {
+              // ignore
+            })
+          ),
+          5_000,
+          'browser.close'
+        ).catch((cleanupError) => {
+          console.warn('⚠️ Browser cleanup timed out:', cleanupError)
+          browserProcess?.kill()
+        })
+      }
+    }
+
+    const activePreviewServer = previewServer
+    previewServer = null
+    if (activePreviewServer) {
+      await withTimeout(activePreviewServer.stop(), 10_000, 'previewServer.stop').catch(
+        (cleanupError) => console.warn('⚠️ Preview cleanup timed out:', cleanupError)
+      )
+    }
+  }
+
+  const hardTimeoutId = setTimeout(() => {
+    if (terminationHandled) return
+    terminationHandled = true
+    const timeoutError = new Error(
+      `Minimal E2E checks timed out after ${E2E_HARD_TIMEOUT_MS}ms at stage ${summary.lastStage ?? 'unknown'}`
+    )
+    runError = runError ?? timeoutError
+    summary.failureKind = summary.failureKind ?? 'ui-timeout'
+    summary.lastFailedCheck = summary.lastFailedCheck ?? 'hard timeout'
+    appendCheck(summary, {
+      name: 'hard timeout',
+      kind: 'browser',
+      mode: 'both',
+      status: 'failed',
+      detail: timeoutError.message,
+    })
+
+    void writeSmokeArtifacts(summary)
+      .catch((artifactError) => {
+        console.error('Failed to write smoke artifacts:', artifactError)
+      })
+      .finally(() =>
+        cleanupResources(true).finally(() => {
+          console.error('\n❌ Minimal E2E checks failed:', timeoutError)
+          process.exit(1)
+        })
+      )
+  }, E2E_HARD_TIMEOUT_MS)
+
+  const handleTermination = (signal: NodeJS.Signals) => {
+    if (terminationHandled) return
+    terminationHandled = true
+    runError = runError ?? new Error(`Minimal E2E checks interrupted by ${signal}`)
+    void cleanupResources(true).finally(() => {
+      console.warn(`⚠️ Minimal E2E checks interrupted by ${signal}`)
+      process.exit(1)
+    })
+  }
+
+  process.once('SIGINT', handleTermination)
+  process.once('SIGTERM', handleTermination)
 
   console.log(`🧾 Auth smoke required: ${authSmokeRequired ? 'yes' : 'no'}`)
   console.log(`🧾 Auth credentials detected: ${authLogin && authPassword ? 'yes' : 'no'}`)
@@ -1652,9 +1763,11 @@ async function main(): Promise<void> {
     let baseUrl: string
 
     if (externalBaseUrl) {
+      setStage('resolve external base URL')
       baseUrl = normalizeBaseUrl(externalBaseUrl)
       console.log(`🌐 Using existing E2E base URL: ${baseUrl}`)
     } else {
+      setStage('build production bundle')
       console.log('🏗️ Building production bundle...')
       await withBuildArtifactLock(
         'vite-dist-build',
@@ -1665,6 +1778,7 @@ async function main(): Promise<void> {
           },
         }
       )
+      setStage('start preview server')
       previewServer = new PreviewShellManager({
         env: AUDIT_ENV,
         candidatePorts: PREVIEW_PORT_CANDIDATES,
@@ -1678,6 +1792,7 @@ async function main(): Promise<void> {
     summary.baseUrl = baseUrl
     await mkdir(artifactDir, { recursive: true })
 
+    setStage('ensure local audit smoke account')
     if (
       shouldEnsureLocalAuditSmokeAccount(baseUrl, {
         login: authLogin,
@@ -1697,11 +1812,13 @@ async function main(): Promise<void> {
       }
     }
 
+    setStage('detect static prerender mismatch')
     const externalLocalPrerenderMismatch =
       externalBaseUrl && isLocalAuditOrigin(baseUrl)
         ? await detectStaticPrerenderMismatch(baseUrl, STATIC_ROUTE_CHECKS[1]!)
         : null
 
+    setStage('auth bootstrap preflight')
     const authBootstrapProbes = await runAuthBootstrapPreflight(baseUrl)
     try {
       throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
@@ -1710,6 +1827,7 @@ async function main(): Promise<void> {
       throw error
     }
 
+    setStage('static prerender checks')
     console.log('🧱 Verifying static prerendered HTML...')
     if (externalLocalPrerenderMismatch) {
       const reason = `${externalLocalPrerenderMismatch}; skipping static prerender assertions for this external local harness`
@@ -1739,6 +1857,7 @@ async function main(): Promise<void> {
       }
     }
 
+    setStage('launch browser')
     console.log('🌐 Launching headless browser...')
     browser = await puppeteer.launch({
       headless: true,
@@ -1754,6 +1873,7 @@ async function main(): Promise<void> {
     let sampleDiscussionSkipReason = 'sample discussion route unavailable'
 
     try {
+      setStage('resolve sample detail routes')
       const postResolution = await resolveSampleDetailRoute(sampleRouteProbePage, baseUrl, {
         label: 'sample post route',
         requestedRoute: requestedSamplePostRoute,
@@ -1827,9 +1947,10 @@ async function main(): Promise<void> {
         )
       }
     } finally {
-      await sampleRouteProbePage.close().catch(() => undefined)
+      await closePageWithTimeout(sampleRouteProbePage, 'sampleRouteProbePage.close')
     }
 
+    setStage('build smoke route matrix')
     const routeMatrix = getSmokeRouteMatrix({
       samplePostRoute: resolvedSamplePostRoute,
       sampleDiscussionRoute: resolvedSampleDiscussionRoute,
@@ -1851,6 +1972,7 @@ async function main(): Promise<void> {
       (check) => !skippedSampleChecks.some((skipped) => skipped.name === check.name)
     )
 
+    setStage('guest browser smoke')
     console.log('🧭 Verifying guest browser routes...')
     const skippedAuthenticatedAuditGuestChecks = [
       ...skippedGuestProtectedRedirectChecks,
@@ -1904,6 +2026,7 @@ async function main(): Promise<void> {
     }
 
     if (authSmokeEnabled) {
+      setStage('authenticated smoke')
       console.log('🔐 Verifying authenticated smoke routes...')
       summary.authSmokeExecuted = true
       const clearedRateLimitKeys = await clearLocalAuditRateLimitState(AUDIT_ENV)
@@ -2009,9 +2132,10 @@ async function main(): Promise<void> {
           )
         }
       } finally {
-        await authenticatedSmokePage?.close().catch(() => undefined)
+        await closePageWithTimeout(authenticatedSmokePage, 'authenticatedSmokePage.close')
       }
     } else {
+      setStage('authenticated smoke skipped')
       summary.authSmokeSkipReason = authSmokeRequired ? authSkipReason : 'E2E_REQUIRE_AUTH=false'
       markChecksSkipped(
         summary,
@@ -2055,6 +2179,7 @@ async function main(): Promise<void> {
     }
 
     if (!externalBaseUrl) {
+      setStage('service worker lifecycle')
       console.log('🛰️ Verifying service worker lifecycle...')
       await recordCheck(
         summary,
@@ -2074,6 +2199,7 @@ async function main(): Promise<void> {
           )
       )
     } else {
+      setStage('service worker skipped')
       appendCheck(summary, {
         name: 'service worker lifecycle',
         kind: 'service-worker',
@@ -2085,6 +2211,7 @@ async function main(): Promise<void> {
       console.log('🛰️ Skipping local service worker lifecycle audit for external base URL')
     }
 
+    setStage('completed')
     console.log('\n✅ Minimal E2E checks passed')
   } catch (error) {
     runError = error
@@ -2093,6 +2220,10 @@ async function main(): Promise<void> {
     }
     console.error('\n❌ Minimal E2E checks failed:', error)
   } finally {
+    clearTimeout(hardTimeoutId)
+    process.off('SIGINT', handleTermination)
+    process.off('SIGTERM', handleTermination)
+
     try {
       await writeSmokeArtifacts(summary)
       console.log('🧾 Wrote smoke summary to ' + summary.artifactDir)
@@ -2103,20 +2234,7 @@ async function main(): Promise<void> {
       }
     }
 
-    if (browser) {
-      await withTimeout(
-        browser.close().catch(() => {
-          // ignore
-        }),
-        5_000,
-        'browser.close'
-      ).catch((cleanupError) => console.warn('⚠️ Browser cleanup timed out:', cleanupError))
-    }
-    if (previewServer) {
-      await withTimeout(previewServer.stop(), 10_000, 'previewServer.stop').catch((cleanupError) =>
-        console.warn('⚠️ Preview cleanup timed out:', cleanupError)
-      )
-    }
+    await cleanupResources(Boolean(runError))
   }
 
   if (runError) {

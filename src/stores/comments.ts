@@ -6,7 +6,13 @@ import { ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
 import type { Comment, CommentAttachment, CommentFormData } from '@/types'
 import { sanitizeComment, validateComment, commentRateLimiter } from '@/utils/security'
-import { apiClient, ApiError, type CommentListResponse, type RequestConfig } from '@/api'
+import {
+  apiClient,
+  ApiError,
+  commentService,
+  type CommentListResponse,
+  type RequestConfig,
+} from '@/api'
 
 /** 最多缓存多少个帖子的评论，超限时 FIFO 淘汰最早的 */
 const MAX_CACHED_POSTS = 20
@@ -457,7 +463,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 点赞评论
   async function likeComment(commentId: string) {
     try {
-      await apiClient.post(`/comments/${commentId}/like`, null, { skipErrorToast: true })
+      await commentService.likeComment(commentId, { skipErrorToast: true })
 
       // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
@@ -476,7 +482,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 取消点赞
   async function unlikeComment(commentId: string) {
     try {
-      await apiClient.delete(`/comments/${commentId}/like`, { skipErrorToast: true })
+      await commentService.unlikeComment(commentId, { skipErrorToast: true })
 
       // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
@@ -495,7 +501,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 收藏评论
   async function favoriteComment(commentId: string) {
     try {
-      await apiClient.post(`/comments/${commentId}/favorite`, null, { skipErrorToast: true })
+      await commentService.favoriteComment(commentId, { skipErrorToast: true })
 
       updateCommentInAll(commentId, (comment) => {
         comment.is_favorited = true
@@ -510,7 +516,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 取消收藏评论
   async function unfavoriteComment(commentId: string) {
     try {
-      await apiClient.delete(`/comments/${commentId}/favorite`, { skipErrorToast: true })
+      await commentService.unfavoriteComment(commentId, { skipErrorToast: true })
 
       updateCommentInAll(commentId, (comment) => {
         comment.is_favorited = false
@@ -525,11 +531,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 举报评论
   async function reportComment(commentId: string, reason: string, description?: string) {
     try {
-      await apiClient.post(
-        `/comments/${commentId}/report`,
-        { reason, description },
-        { skipErrorToast: true }
-      )
+      await commentService.reportComment(commentId, reason, description, { skipErrorToast: true })
 
       return { success: true }
     } catch {

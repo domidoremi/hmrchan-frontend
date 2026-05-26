@@ -31,11 +31,9 @@ vi.mock('@/stores', () => ({
 }))
 
 vi.mock('@/api', () => ({
-  apiClient: {
-    delete: vi.fn(),
-  },
   ApiError: class MockApiError extends Error {},
   historyService: {
+    clearBrowsingHistory: vi.fn(),
     getBrowsingHistory: state.getBrowsingHistory,
     getStats: state.getStats,
     getSummary: state.getSummary,

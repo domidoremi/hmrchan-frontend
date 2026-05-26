@@ -35,8 +35,8 @@ vi.mock('@/api', () => {
 
   return {
     ApiError: MockApiError,
-    apiClient: {
-      delete: state.apiDelete,
+    commentService: {
+      unlikeComment: state.apiDelete,
     },
     historyService: {
       getMyLikes: state.getMyLikes,
@@ -171,7 +171,7 @@ describe('ProfileLikesTab', () => {
     await invokeSetupMethod(wrapper, 'confirmUnlike')
     await flushPromises()
 
-    expect(state.apiDelete).toHaveBeenCalledWith('/comments/10/like')
+    expect(state.apiDelete).toHaveBeenCalledWith('10')
     expect(wrapper.findAll('.timeline-item')).toHaveLength(0)
     expect(state.toastStore.success).toHaveBeenCalledWith('profile.unlikeSuccess')
     expect(state.toastStore.error).not.toHaveBeenCalled()

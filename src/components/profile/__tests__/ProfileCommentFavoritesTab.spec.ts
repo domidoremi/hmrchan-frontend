@@ -35,8 +35,8 @@ vi.mock('@/api', () => {
 
   return {
     ApiError: MockApiError,
-    apiClient: {
-      delete: state.apiDelete,
+    commentService: {
+      unfavoriteComment: state.apiDelete,
     },
     historyService: {
       getMyCommentFavorites: state.getMyCommentFavorites,
@@ -171,7 +171,7 @@ describe('ProfileCommentFavoritesTab', () => {
     await invokeSetupMethod(wrapper, 'confirmUnfavorite')
     await flushPromises()
 
-    expect(state.apiDelete).toHaveBeenCalledWith('/comments/fav-comment-1/favorite')
+    expect(state.apiDelete).toHaveBeenCalledWith('fav-comment-1')
     expect(wrapper.findAll('.timeline-item')).toHaveLength(0)
     expect(state.toastStore.success).toHaveBeenCalledWith('profile.unfavoriteSuccess')
     expect(state.toastStore.error).not.toHaveBeenCalled()

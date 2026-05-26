@@ -162,44 +162,47 @@ export const commentService = {
   /**
    * 点赞评论
    */
-  async likeComment(commentId: string): Promise<void> {
-    return apiClient.post(`/comments/${commentId}/like`)
+  async likeComment(commentId: string, config?: RequestConfig): Promise<void> {
+    return apiClient.post(`/comments/${commentId}/like`, null, config)
   },
 
   /**
    * 取消点赞评论
    */
-  async unlikeComment(commentId: string): Promise<void> {
-    return apiClient.delete(`/comments/${commentId}/like`)
+  async unlikeComment(commentId: string, config?: RequestConfig): Promise<void> {
+    return apiClient.delete(`/comments/${commentId}/like`, config)
   },
 
   /**
    * 收藏评论
    */
-  async favoriteComment(commentId: string): Promise<void> {
-    return apiClient.post(`/comments/${commentId}/favorite`)
+  async favoriteComment(commentId: string, config?: RequestConfig): Promise<void> {
+    return apiClient.post(`/comments/${commentId}/favorite`, null, config)
   },
 
   /**
    * 取消收藏评论
    */
-  async unfavoriteComment(commentId: string): Promise<void> {
-    return apiClient.delete(`/comments/${commentId}/favorite`)
+  async unfavoriteComment(commentId: string, config?: RequestConfig): Promise<void> {
+    return apiClient.delete(`/comments/${commentId}/favorite`, config)
   },
 
   /**
    * 举报评论
    */
-  async reportComment(commentId: string, reason: string, description?: string): Promise<void> {
+  async reportComment(
+    commentId: string,
+    reason: string,
+    description?: string,
+    config: RequestConfig = { skipErrorToast: true }
+  ): Promise<void> {
     return apiClient.post(
       `/comments/${commentId}/report`,
       {
         reason,
         description,
       },
-      {
-        skipErrorToast: true,
-      }
+      config
     )
   },
 

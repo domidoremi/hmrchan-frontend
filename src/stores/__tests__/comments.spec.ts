@@ -8,6 +8,14 @@ const apiMocks = vi.hoisted(() => ({
   delete: vi.fn(),
 }))
 
+const commentServiceMocks = vi.hoisted(() => ({
+  favoriteComment: vi.fn(),
+  likeComment: vi.fn(),
+  reportComment: vi.fn(),
+  unfavoriteComment: vi.fn(),
+  unlikeComment: vi.fn(),
+}))
+
 vi.mock('@/utils/security', () => ({
   sanitizeComment: (value: string) => value.trim(),
   validateComment: () => ({ valid: true }),
@@ -35,6 +43,7 @@ vi.mock('@/api', () => {
       post: apiMocks.post,
       delete: apiMocks.delete,
     },
+    commentService: commentServiceMocks,
   }
 })
 
@@ -44,6 +53,11 @@ describe('comments store', () => {
     apiMocks.get.mockReset()
     apiMocks.post.mockReset()
     apiMocks.delete.mockReset()
+    commentServiceMocks.favoriteComment.mockReset()
+    commentServiceMocks.likeComment.mockReset()
+    commentServiceMocks.reportComment.mockReset()
+    commentServiceMocks.unfavoriteComment.mockReset()
+    commentServiceMocks.unlikeComment.mockReset()
   })
 
   it('fetches, normalizes, and counts nested comments', async () => {
@@ -116,16 +130,60 @@ describe('comments store', () => {
       },
     ])
 
-    apiMocks.post.mockResolvedValue({})
-    apiMocks.delete.mockResolvedValue({})
+    commentServiceMocks.likeComment.mockResolvedValue(undefined)
+    commentServiceMocks.unlikeComment.mockResolvedValue(undefined)
 
     await expect(store.likeComment('reply-1')).resolves.toEqual({ success: true })
+    expect(commentServiceMocks.likeComment).toHaveBeenCalledWith('reply-1', {
+      skipErrorToast: true,
+    })
     expect(store.getCommentsByPostId('post-1')[0].replies?.[0].is_liked).toBe(true)
     expect(store.getCommentsByPostId('post-1')[0].replies?.[0].like_count).toBe(1)
 
     await expect(store.unlikeComment('reply-1')).resolves.toEqual({ success: true })
+    expect(commentServiceMocks.unlikeComment).toHaveBeenCalledWith('reply-1', {
+      skipErrorToast: true,
+    })
     expect(store.getCommentsByPostId('post-1')[0].replies?.[0].is_liked).toBe(false)
     expect(store.getCommentsByPostId('post-1')[0].replies?.[0].like_count).toBe(0)
+  })
+
+  it('delegates favorite actions and reports through the comment service', async () => {
+    const store = useCommentsStore()
+
+    store.comments.set('post-1', [
+      {
+        id: 'comment-1',
+        content: 'First',
+        is_favorited: false,
+      },
+    ])
+
+    commentServiceMocks.favoriteComment.mockResolvedValue(undefined)
+    commentServiceMocks.unfavoriteComment.mockResolvedValue(undefined)
+    commentServiceMocks.reportComment.mockResolvedValue(undefined)
+
+    await expect(store.favoriteComment('comment-1')).resolves.toEqual({ success: true })
+    expect(commentServiceMocks.favoriteComment).toHaveBeenCalledWith('comment-1', {
+      skipErrorToast: true,
+    })
+    expect(store.getCommentsByPostId('post-1')[0].is_favorited).toBe(true)
+
+    await expect(store.unfavoriteComment('comment-1')).resolves.toEqual({ success: true })
+    expect(commentServiceMocks.unfavoriteComment).toHaveBeenCalledWith('comment-1', {
+      skipErrorToast: true,
+    })
+    expect(store.getCommentsByPostId('post-1')[0].is_favorited).toBe(false)
+
+    await expect(store.reportComment('comment-1', 'spam', 'duplicate')).resolves.toEqual({
+      success: true,
+    })
+    expect(commentServiceMocks.reportComment).toHaveBeenCalledWith(
+      'comment-1',
+      'spam',
+      'duplicate',
+      { skipErrorToast: true }
+    )
   })
 
   it('prepends a newly created top-level comment to local state after the api succeeds', async () => {
