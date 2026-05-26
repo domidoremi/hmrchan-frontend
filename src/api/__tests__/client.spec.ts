@@ -61,9 +61,21 @@ function getLastHeaders(): Headers {
   return new Headers(getLastRequestInit().headers)
 }
 
+function clearDocumentCookies(): void {
+  if (typeof document === 'undefined') return
+
+  for (const cookie of document.cookie.split(';')) {
+    const name = cookie.split('=')[0]?.trim()
+    if (name) {
+      document.cookie = `${name}=; Max-Age=0; path=/`
+    }
+  }
+}
+
 describe('apiClient security headers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    clearDocumentCookies()
     mockFetch.mockReset()
     mockGetDeviceFingerprint.mockResolvedValue('fingerprint-123')
     mockRequestClientChallenge.mockResolvedValue(true)
@@ -107,6 +119,42 @@ describe('apiClient security headers', () => {
       'client-secret',
       expect.stringContaining('POST|/api/v1/auth/session:resolve|')
     )
+  })
+
+  it('attaches the local preview origin CSRF cookie alias to same-origin mutations', async () => {
+    document.cookie = 'momi_origin_csrf=local-csrf-token; path=/'
+    mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { authenticated: true } }))
+
+    await apiClient.post('/auth/session:resolve', {})
+
+    expect(getLastHeaders().get('X-Origin-CSRF')).toBe('local-csrf-token')
+  })
+
+  it('signs authenticated private GET requests that the backend protects', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'profile-1' } }))
+
+    await apiClient.get('/users/me/profile')
+
+    const headers = getLastHeaders()
+    expect(mockClientSecurity.ensureRequestIntegrityCredentials).toHaveBeenCalledTimes(1)
+    expect(headers.get('X-Client-Token')).toBe('client-token')
+    expect(headers.get('X-Signature-Version')).toBe('2')
+    expect(headers.get('X-Signature')).toBe('signature-123')
+    expect(mockCrypto.hmacSha256).toHaveBeenCalledWith(
+      'client-secret',
+      expect.stringContaining('GET|/api/v1/users/me/profile|')
+    )
+  })
+
+  it('does not force request integrity for public read routes', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { ok: true } }))
+
+    await expect(apiClient.get('/home')).resolves.toEqual({ ok: true })
+
+    const headers = getLastHeaders()
+    expect(mockClientSecurity.ensureRequestIntegrityCredentials).not.toHaveBeenCalled()
+    expect(headers.get('X-Client-Token')).toBe('client-token')
+    expect(headers.has('X-Signature')).toBe(false)
   })
 
   it('does not attach client security headers to client init itself', async () => {

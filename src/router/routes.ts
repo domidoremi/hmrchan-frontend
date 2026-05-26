@@ -75,6 +75,10 @@ export const appRoutes: RouteRecordRaw[] = [
         redirect: '/auth/passkey-recovery',
       },
       {
+        path: 'favorites',
+        redirect: '/profile/favorites',
+      },
+      {
         path: 'profile',
         name: 'hmr-profile',
         component: () => import('@/views/ProfilePage.vue'),

@@ -240,7 +240,11 @@ describe('functions/_middleware', () => {
 
     expect(response.status).toBe(404)
     expect(response.statusText).toBe('Not Found')
-    expect(response.headers.get('Content-Security-Policy')).toMatch(/script-src 'self' 'nonce-/)
+    const contentSecurityPolicy = response.headers.get('Content-Security-Policy')
+    expect(contentSecurityPolicy).toMatch(/script-src 'self' 'nonce-/)
+    expect(contentSecurityPolicy).toContain("script-src-attr 'none'")
+    expect(contentSecurityPolicy).toContain("style-src-attr 'unsafe-inline'")
+    expect(contentSecurityPolicy).not.toContain("style-src-attr 'none'")
     expect(response.headers.get('Strict-Transport-Security')).toBe(
       'max-age=63072000; includeSubDomains; preload'
     )

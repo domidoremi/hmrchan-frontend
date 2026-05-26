@@ -25,10 +25,12 @@ type LocalPreviewEnv = NodeJS.ProcessEnv & {
 
 const projectRoot = resolve(import.meta.dir, '..')
 const distDir = resolve(projectRoot, 'dist')
+const LOCAL_ORIGIN_CSRF_COOKIE_NAME = 'momi_origin_csrf'
+const LOCAL_ORIGIN_CSRF_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 const HOST_COOKIE_EQUIVALENTS = new Map<string, string>([
   ['__Host-momi_bff_at', 'momi_bff_at'],
   ['__Host-momi_bff_rt', 'momi_bff_rt'],
-  ['__Host-momi_origin_csrf', 'momi_origin_csrf'],
+  ['__Host-momi_origin_csrf', LOCAL_ORIGIN_CSRF_COOKIE_NAME],
 ])
 const LOCAL_COOKIE_EQUIVALENTS = new Map<string, string>(
   [...HOST_COOKIE_EQUIVALENTS.entries()].map(([hostName, localName]) => [localName, hostName])
@@ -90,16 +92,27 @@ function hasTrimmedEnvValue(value: string | undefined): boolean {
   return typeof value === 'string' && value.trim().length > 0
 }
 
+function isAbsoluteHttpUrl(value: string | undefined): boolean {
+  if (!hasTrimmedEnvValue(value)) return false
+
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function shouldAttachInternalApiGateway(env: NodeJS.ProcessEnv): boolean {
   if (env.ENABLE_INTERNAL_API_GATEWAY?.trim().toLowerCase() === 'false') {
     return false
   }
 
   return (
-    hasTrimmedEnvValue(env.API_BASE_URL) &&
-    hasTrimmedEnvValue(env.VPC_IDENTITY_API_ORIGIN) &&
-    hasTrimmedEnvValue(env.VPC_COMMUNITY_API_ORIGIN) &&
-    hasTrimmedEnvValue(env.VPC_CONTENT_API_ORIGIN)
+    isAbsoluteHttpUrl(env.API_BASE_URL) &&
+    isAbsoluteHttpUrl(env.VPC_IDENTITY_API_ORIGIN) &&
+    isAbsoluteHttpUrl(env.VPC_COMMUNITY_API_ORIGIN) &&
+    isAbsoluteHttpUrl(env.VPC_CONTENT_API_ORIGIN)
   )
 }
 
@@ -258,6 +271,24 @@ function getSetCookieHeaders(headers: Headers): string[] {
   return raw ? [raw] : []
 }
 
+function hasCookieHeaderValue(request: Request, cookieName: string): boolean {
+  const cookieHeader = request.headers.get('cookie') ?? ''
+  return cookieHeader.split(';').some((segment) => segment.trim().startsWith(`${cookieName}=`))
+}
+
+function toBase64Url(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '')
+}
+
+function createLocalOriginCsrfToken(): string {
+  const bytes = new Uint8Array(24)
+  crypto.getRandomValues(bytes)
+  return toBase64Url(bytes)
+}
+
 function rewriteIncomingCookieHeader(value: string | null): string | null {
   if (!value) return null
 
@@ -315,11 +346,32 @@ function rewriteResponseForLocalCookies(response: Response): Response {
   })
 }
 
-async function serveStaticFile(filePath: string, status = 200): Promise<Response> {
+function ensureLocalOriginCsrfCookie(request: Request, headers: Headers): void {
+  if (
+    hasCookieHeaderValue(request, LOCAL_ORIGIN_CSRF_COOKIE_NAME) ||
+    hasCookieHeaderValue(request, '__Host-momi_origin_csrf')
+  ) {
+    return
+  }
+
+  headers.append(
+    'Set-Cookie',
+    `${LOCAL_ORIGIN_CSRF_COOKIE_NAME}=${createLocalOriginCsrfToken()}; Path=/; SameSite=Lax; Max-Age=${LOCAL_ORIGIN_CSRF_MAX_AGE_SECONDS}`
+  )
+}
+
+async function serveStaticFile(
+  request: Request,
+  filePath: string,
+  status = 200
+): Promise<Response> {
   const file = Bun.file(filePath)
   const headers = new Headers({
     'Content-Type': file.type || getMimeType(filePath),
   })
+  if (extname(filePath).toLowerCase() === '.html') {
+    ensureLocalOriginCsrfCookie(request, headers)
+  }
   return new Response(file, {
     status,
     headers,
@@ -400,7 +452,7 @@ async function handleRequest(request: Request, env: LocalPreviewEnv): Promise<Re
 
   const staticFilePath = resolveStaticFilePath(pathname)
   if (staticFilePath) {
-    return serveStaticFile(staticFilePath, resolveStaticFileStatus(pathname))
+    return serveStaticFile(request, staticFilePath, resolveStaticFileStatus(pathname))
   }
 
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -432,7 +484,7 @@ async function handleRequest(request: Request, env: LocalPreviewEnv): Promise<Re
   }
 
   const fallback = resolveHtmlFallbackPath(pathname)
-  return serveStaticFile(fallback.filePath, fallback.status)
+  return serveStaticFile(request, fallback.filePath, fallback.status)
 }
 
 const options = parseArgs(Bun.argv.slice(2))

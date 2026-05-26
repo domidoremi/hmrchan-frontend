@@ -364,9 +364,19 @@ export const clientSecurityService = {
 
   async ensureRequestIntegrityCredentials(): Promise<void> {
     if (clientSecurityManager.hasRequestIntegrityCredentials()) return
+
+    if (ensureInitPromise) {
+      await ensureInitPromise.catch(() => undefined)
+      if (clientSecurityManager.hasRequestIntegrityCredentials()) return
+    }
+
     if (!ensureInitPromise) {
-      ensureInitPromise = (async () => {
-        await this.init(false, { promptChallenge: false })
+      const integrityInitPromise = (async () => {
+        try {
+          await this.init(false, { promptChallenge: false })
+        } catch {
+          // A force reissue below can still recover signing credentials after normal init is throttled.
+        }
         if (clientSecurityManager.hasRequestIntegrityCredentials()) {
           return
         }
@@ -375,9 +385,13 @@ export const clientSecurityService = {
         if (!clientSecurityManager.hasRequestIntegrityCredentials()) {
           throw new Error('Missing client signing credentials')
         }
-      })().finally(() => {
-        ensureInitPromise = null
+      })()
+      const trackedPromise = integrityInitPromise.finally(() => {
+        if (ensureInitPromise === trackedPromise) {
+          ensureInitPromise = null
+        }
       })
+      ensureInitPromise = trackedPromise
     }
 
     await ensureInitPromise

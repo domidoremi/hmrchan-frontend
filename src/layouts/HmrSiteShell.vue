@@ -25,11 +25,13 @@
     >
       <div ref="preloaderOrbRef" class="hmr-preloader-orb" aria-hidden="true">
         <span ref="preloaderLogoRef" class="hmr-preloader-logo hmr-brand-3d" aria-hidden="true">
-          <HmrBrandSprite
-            :state="preloaderBrandState"
-            :static-mode="staticMode"
-            playback="preloader"
-          />
+          <span ref="preloaderPetRef" class="hmr-preloader-pet hmr-brand-3d">
+            <HmrBrandSprite
+              :state="preloaderBrandState"
+              :static-mode="staticMode"
+              playback="preloader"
+            />
+          </span>
         </span>
         <span class="hmr-preloader-svg svg-strokes" aria-hidden="true">
           <svg viewBox="0 0 120 120" focusable="false">
@@ -259,7 +261,7 @@ import type { HmrNavItem, HmrPublicPageKey } from '@/hmr/types'
 import { useThemeStore } from '@/stores/theme'
 
 const SESSION_PRELOADER_KEY = 'momichan.preloader.seen'
-const PRELOADER_MIN_DURATION_MS = 2100
+const PRELOADER_MIN_DURATION_MS = 1700
 const PRELOADER_MAX_WARMUP_MS = 4500
 const REDUCED_PRELOADER_MIN_DURATION_MS = 450
 const REDUCED_PRELOADER_MAX_WARMUP_MS = 1200
@@ -282,6 +284,7 @@ const preloaderRef = ref<HTMLElement | null>(null)
 const preloaderBackdropRef = ref<HTMLElement | null>(null)
 const preloaderOrbRef = ref<HTMLElement | null>(null)
 const preloaderLogoRef = ref<HTMLElement | null>(null)
+const preloaderPetRef = ref<HTMLElement | null>(null)
 const preloaderProgressRef = ref<SVGCircleElement | null>(null)
 const preloaderRevealerRef = ref<HTMLElement | null>(null)
 const desktopBrandPetRef = ref<HTMLElement | null>(null)
@@ -387,6 +390,7 @@ function getPreloaderElements() {
     preloader: preloaderRef.value,
     orb: preloaderOrbRef.value,
     logo: preloaderLogoRef.value,
+    pet: preloaderPetRef.value,
     progress: preloaderProgressRef.value,
     revealer: preloaderRevealerRef.value,
   }
@@ -435,7 +439,7 @@ async function setupPreloader(): Promise<void> {
   const progress = elements.progress
   const orb = elements.orb
 
-  if (!progress || !orb) {
+  if (!progress || !orb || !elements.logo || !elements.pet || !elements.revealer) {
     markPreloaderSeen()
     preloaderVisible.value = false
     return
@@ -471,33 +475,44 @@ async function setupPreloader(): Promise<void> {
   })
   gsap.set(elements.logo, {
     opacity: 1,
-    scale: prefersReducedMotion ? 0.92 : 0.78,
+    scale: 1,
     xPercent: 0,
     yPercent: 0,
+    z: 0,
+    rotateX: 0,
+    rotateY: 0,
+    transformPerspective: 820,
+  })
+  gsap.set(elements.pet, {
+    opacity: 1,
+    scale: prefersReducedMotion ? 0.92 : 0.78,
     z: prefersReducedMotion ? 0 : -44,
     rotateX: prefersReducedMotion ? 0 : 11,
     rotateY: prefersReducedMotion ? 0 : -9,
     transformPerspective: 820,
   })
 
-  const warmupPromise = warmHmrSessionEntry({
+  void warmHmrSessionEntry({
     path: route.fullPath,
     resolveSession: auth.resolveSession,
     timeoutMs: maxWarmupMs,
-  })
+  }).catch(() => undefined)
 
   if (prefersReducedMotion) {
     preloaderPhase.value = 'warming'
-    await Promise.allSettled([warmupPromise, wait(minDuration)])
+    preloaderBrandState.value = 'waiting'
+    await wait(minDuration)
     preloaderPhase.value = 'complete'
+    preloaderBrandState.value = 'review'
     gsap.set(progress, { strokeDashoffset: 0 })
-    gsap.set(elements.logo, { opacity: 1, scale: 0.92, z: 0, rotateX: 0, rotateY: 0 })
+    gsap.set(elements.logo, { opacity: 1, scale: 1, z: 0, rotateX: 0, rotateY: 0 })
+    gsap.set(elements.pet, { opacity: 1, scale: 0.92, z: 0, rotateX: 0, rotateY: 0 })
     completePreloader()
     return
   }
 
   preloaderPhase.value = 'warming'
-  preloaderBrandState.value = 'idle'
+  preloaderBrandState.value = 'waiting'
   preloaderTimeline = gsap
     .timeline({
       defaults: { ease: 'power3.out' },
@@ -505,8 +520,8 @@ async function setupPreloader(): Promise<void> {
     .to(elements.backdrop?.querySelectorAll('span') ?? [], {
       opacity: 1,
       yPercent: 0,
-      stagger: 0.035,
-      duration: 0.48,
+      stagger: 0.024,
+      duration: 0.36,
     })
     .to(
       elements.orb,
@@ -514,7 +529,7 @@ async function setupPreloader(): Promise<void> {
         opacity: 1,
         scale: 1,
         rotate: 0,
-        duration: 0.86,
+        duration: 0.58,
         ease: 'elastic.out(1, 0.74)',
       },
       0.06
@@ -523,11 +538,19 @@ async function setupPreloader(): Promise<void> {
       elements.logo,
       {
         opacity: 1,
+        duration: 0.42,
+      },
+      0.18
+    )
+    .to(
+      elements.pet,
+      {
+        opacity: 1,
         scale: 0.9,
         z: -18,
         rotateX: 6,
         rotateY: -4,
-        duration: 0.58,
+        duration: 0.42,
       },
       0.18
     )
@@ -535,13 +558,20 @@ async function setupPreloader(): Promise<void> {
       progress,
       {
         strokeDashoffset: pathLength * 0.42,
-        duration: 1.1,
+        duration: 0.72,
         ease: 'power2.inOut',
       },
       0.42
     )
+    .call(
+      () => {
+        preloaderBrandState.value = 'sendingPrompt'
+      },
+      [],
+      0.84
+    )
 
-  await Promise.allSettled([warmupPromise, wait(minDuration)])
+  await wait(minDuration)
   if (!preloaderVisible.value || preloaderOutroTimeline) return
 
   const elapsed = performance.now() - startedAt
@@ -551,40 +581,47 @@ async function setupPreloader(): Promise<void> {
   if (!preloaderVisible.value || preloaderOutroTimeline) return
 
   preloaderPhase.value = 'crossing'
-  preloaderBrandState.value = 'jumping'
+  preloaderBrandState.value = 'runningRight'
   preloaderTimeline?.kill()
   clearPreloaderCompletionTimer()
-  preloaderCompletionTimer = window.setTimeout(finishPreloaderCrossing, 1600)
+  preloaderCompletionTimer = window.setTimeout(finishPreloaderCrossing, 900)
   preloaderTimeline = gsap
     .timeline({
       defaults: { ease: 'power3.out' },
       onComplete: finishPreloaderCrossing,
     })
+    .call(
+      () => {
+        preloaderBrandState.value = 'jumping'
+      },
+      [],
+      0.34
+    )
     .to(progress, {
       strokeDashoffset: 0,
-      duration: 0.92,
+      duration: 0.46,
       ease: 'power2.inOut',
     })
     .to(
-      elements.logo,
+      elements.pet,
       {
         scale: 1.2,
         yPercent: -34,
         z: 150,
         rotateX: -18,
         rotateY: 16,
-        duration: 0.48,
+        duration: 0.26,
         ease: 'back.out(1.5)',
       },
       '<0.04'
     )
-    .to(elements.logo, {
+    .to(elements.pet, {
       scale: 0.94,
       yPercent: 0,
       z: 36,
       rotateX: 0,
       rotateY: 0,
-      duration: 0.46,
+      duration: 0.24,
       ease: 'power3.inOut',
     })
 }
@@ -594,26 +631,26 @@ function completePreloader(): void {
   clearPreloaderCompletionTimer()
 
   const elements = getPreloaderElements()
-  if (!elements.preloader || !elements.orb || !elements.revealer) {
+  if (!elements.preloader || !elements.orb || !elements.revealer || !elements.pet) {
     preloaderPhase.value = 'exiting'
     finishPreloaderExit()
     return
   }
 
   preloaderPhase.value = 'exiting'
-  preloaderExitTimer = window.setTimeout(finishPreloaderExit, 1800)
+  preloaderExitTimer = window.setTimeout(finishPreloaderExit, 900)
   preloaderOutroTimeline = gsap
     .timeline({
       defaults: { ease: 'power3.inOut' },
       onComplete: finishPreloaderExit,
     })
     .to(
-      elements.logo,
+      elements.pet,
       {
         opacity: 0,
         scale: 1.06,
         z: 120,
-        duration: 0.38,
+        duration: 0.2,
       },
       '<'
     )
@@ -623,7 +660,7 @@ function completePreloader(): void {
         scale: 1.16,
         rotate: 14,
         opacity: 0,
-        duration: 0.46,
+        duration: 0.24,
         ease: 'back.in(1.4)',
       },
       '<0.04'
@@ -632,7 +669,7 @@ function completePreloader(): void {
       elements.preloader,
       {
         opacity: 0,
-        duration: 0.62,
+        duration: 0.3,
       },
       '<0.08'
     )
@@ -647,7 +684,7 @@ function completePreloader(): void {
       elements.revealer,
       {
         clipPath: 'inset(0% 0% 0% 100%)',
-        duration: 0.72,
+        duration: 0.34,
       },
       '<'
     )
@@ -655,7 +692,7 @@ function completePreloader(): void {
       elements.backdrop,
       {
         opacity: 0,
-        duration: 0.54,
+        duration: 0.28,
       },
       '<'
     )

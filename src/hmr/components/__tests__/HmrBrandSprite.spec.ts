@@ -6,13 +6,11 @@ import HmrBrandSprite from '@/hmr/components/HmrBrandSprite.vue'
 describe('HmrBrandSprite', () => {
   let rafTime = 0
   let rafCallbacks = new Map<number, FrameRequestCallback>()
-  let idleCallbacks = new Map<number, IdleRequestCallback>()
   let rafId = 0
 
   function installRafMock(): void {
     rafTime = 0
     rafCallbacks = new Map()
-    idleCallbacks = new Map()
     rafId = 0
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
       rafId += 1
@@ -21,14 +19,6 @@ describe('HmrBrandSprite', () => {
     })
     vi.stubGlobal('cancelAnimationFrame', (id: number) => {
       rafCallbacks.delete(id)
-    })
-    vi.stubGlobal('requestIdleCallback', (callback: IdleRequestCallback) => {
-      rafId += 1
-      idleCallbacks.set(rafId, callback)
-      return rafId
-    })
-    vi.stubGlobal('cancelIdleCallback', (id: number) => {
-      idleCallbacks.delete(id)
     })
   }
 
@@ -47,15 +37,23 @@ describe('HmrBrandSprite', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders the small idle frame by default without starting RAF playback', () => {
+  it('renders the Isle idle loop by default', async () => {
     const wrapper = mount(HmrBrandSprite)
 
     expect(wrapper.classes()).toContain('hmr-brand-sprite')
-    expect(wrapper.classes()).not.toContain('hmr-brand-sprite--atlas')
-    expect(wrapper.classes()).not.toContain('hmr-brand-sprite--animated')
+    expect(wrapper.classes()).toContain('hmr-brand-sprite--atlas')
+    expect(wrapper.classes()).toContain('hmr-brand-sprite--animated')
+    expect(wrapper.attributes('data-hmr-brand-state')).toBe('idle')
+    expect(wrapper.attributes('data-hmr-brand-atlas')).toBe('core')
     expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-frame: 0')
     expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-row: 0')
-    expect(rafCallbacks.size).toBe(0)
+    expect(rafCallbacks.size).toBeGreaterThan(0)
+
+    stepFrame(0)
+    stepFrame(220)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-frame: 1')
   })
 
   it('uses the waving row and advances frames when animated', async () => {
@@ -63,10 +61,11 @@ describe('HmrBrandSprite', () => {
 
     expect(wrapper.classes()).toContain('hmr-brand-sprite--atlas')
     expect(wrapper.classes()).toContain('hmr-brand-sprite--animated')
+    expect(wrapper.attributes('data-hmr-brand-state')).toBe('waving')
     expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-row: 3')
 
     stepFrame(0)
-    stepFrame(80)
+    stepFrame(180)
     await wrapper.vm.$nextTick()
 
     expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-frame: 1')
@@ -78,10 +77,20 @@ describe('HmrBrandSprite', () => {
     })
 
     stepFrame(0)
-    stepFrame(60)
+    stepFrame(140)
     await wrapper.vm.$nextTick()
 
     expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-frame: 1')
+  })
+
+  it('falls back provider-only states to the available core atlas', () => {
+    const wrapper = mount(HmrBrandSprite, { props: { state: 'webSearching' } })
+
+    expect(wrapper.classes()).toContain('hmr-brand-sprite--fallback')
+    expect(wrapper.attributes('data-hmr-brand-requested-state')).toBe('webSearching')
+    expect(wrapper.attributes('data-hmr-brand-state')).toBe('runningRight')
+    expect(wrapper.attributes('data-hmr-brand-atlas')).toBe('core')
+    expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-row: 1')
   })
 
   it('keeps a static frame when motion is disabled', () => {
@@ -90,7 +99,7 @@ describe('HmrBrandSprite', () => {
     stepFrame(1000)
 
     expect(wrapper.classes()).toContain('hmr-brand-sprite--static')
-    expect(wrapper.classes()).not.toContain('hmr-brand-sprite--atlas')
+    expect(wrapper.classes()).toContain('hmr-brand-sprite--atlas')
     expect(wrapper.classes()).not.toContain('hmr-brand-sprite--animated')
     expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-frame: 0')
     expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-row: 4')
@@ -104,14 +113,5 @@ describe('HmrBrandSprite', () => {
     wrapper.unmount()
 
     expect(rafCallbacks.size).toBe(0)
-  })
-
-  it('cancels pending atlas warmup on unmount', () => {
-    const wrapper = mount(HmrBrandSprite)
-    expect(idleCallbacks.size).toBe(1)
-
-    wrapper.unmount()
-
-    expect(idleCallbacks.size).toBe(0)
   })
 })

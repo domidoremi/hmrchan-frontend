@@ -293,8 +293,8 @@ svg {
 }
 
 .hmr-preloader-logo {
-  inline-size: 48%;
-  block-size: 48%;
+  inline-size: 54%;
+  block-size: 54%;
   margin: auto;
   border-radius: 50%;
   background: var(--hmr-purple);
@@ -304,8 +304,17 @@ svg {
   will-change: opacity, transform;
 }
 
-.hmr-preloader-logo .hmr-brand-sprite {
-  inline-size: 108%;
+.hmr-preloader-pet {
+  display: grid;
+  inline-size: 112%;
+  aspect-ratio: 12 / 13;
+  place-items: center;
+  transform-origin: 50% 62%;
+  will-change: opacity, transform;
+}
+
+.hmr-preloader-pet .hmr-brand-sprite {
+  inline-size: 100%;
 }
 
 .hmr-brand-3d {
@@ -428,23 +437,57 @@ svg {
   position: absolute;
   inset-block-start: 0;
   inset-inline-start: 0;
-  padding: 0.25em;
-  border: 2px solid var(--hmr-orange);
+  padding: 0.22em;
+  border: 2px solid rgb(255 119 34 / 82%);
   border-radius: 50%;
   color: var(--hmr-bg);
   perspective: 14rem;
   pointer-events: auto;
+  isolation: isolate;
+}
+
+.hmr-brand-link::before,
+.hmr-brand-link::after {
+  position: absolute;
+  inset: -0.38em;
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+}
+
+.hmr-brand-link::before {
+  z-index: -2;
+  background:
+    radial-gradient(circle at 36% 28%, rgb(255 119 34 / 36%), transparent 38%),
+    radial-gradient(circle at 72% 74%, rgb(61 47 169 / 28%), transparent 44%);
+  filter: blur(0.18rem);
+  opacity: 0.72;
+  transform: translateZ(-0.08rem);
+}
+
+.hmr-brand-link::after {
+  z-index: -1;
+  border: 1px solid rgb(255 119 34 / 36%);
+  opacity: 0.72;
+  transform: scale(0.84);
+  transition:
+    opacity 360ms var(--hmr-ease),
+    transform 360ms var(--hmr-ease);
 }
 
 .hmr-brand-bg {
   display: flex;
-  inline-size: 3.5em;
+  inline-size: 3.9em;
   aspect-ratio: 1;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--hmr-purple);
-  box-shadow: 0 0.8rem 1.8rem rgb(var(--hmr-base-rgb) / 16%);
+  background:
+    radial-gradient(circle at 38% 28%, rgb(255 255 255 / 20%), transparent 36%),
+    linear-gradient(145deg, var(--hmr-purple), rgb(61 47 169 / 84%));
+  box-shadow:
+    0 0.8rem 1.8rem rgb(var(--hmr-base-rgb) / 16%),
+    inset 0 0 0 1px rgb(255 255 255 / 12%);
   transition:
     background-color 360ms var(--hmr-ease),
     box-shadow 360ms var(--hmr-ease),
@@ -482,10 +525,18 @@ svg {
 
 .hmr-brand-link:hover .hmr-brand-bg,
 .hmr-brand-link:focus-visible .hmr-brand-bg {
-  background: var(--hmr-base);
+  background:
+    radial-gradient(circle at 42% 24%, rgb(255 119 34 / 26%), transparent 38%), var(--hmr-base);
   box-shadow:
     0 1.2rem 2.3rem rgb(var(--hmr-base-rgb) / 22%),
-    -0.35rem 0.45rem 0 rgb(255 119 34 / 18%);
+    -0.35rem 0.45rem 0 rgb(255 119 34 / 18%),
+    inset 0 0 0 1px rgb(251 249 239 / 14%);
+}
+
+.hmr-brand-link:hover::after,
+.hmr-brand-link:focus-visible::after {
+  opacity: 1;
+  transform: scale(1.08);
 }
 
 .hmr-brand-link:hover .hmr-brand-mark-shell,
@@ -501,10 +552,11 @@ svg {
   display: block;
   inline-size: 100%;
   aspect-ratio: 12 / 13;
-  background-image: url('/hmrchan/pets/tidyfox/v1/idle-frame.webp');
-  background-position: 50% 50%;
+  background-image: url('/hmrchan/pets/isle/v1/spritesheet.webp');
+  background-position: calc(var(--hmr-brand-sprite-frame, 0) * 100% / 7)
+    calc(var(--hmr-brand-sprite-row, 0) * 100% / 8);
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: 800% 900%;
   image-rendering: auto;
   transform: translateZ(0.45rem);
   transform-origin: 50% 62%;
@@ -512,7 +564,7 @@ svg {
 }
 
 .hmr-brand-sprite--atlas {
-  background-image: url('/hmrchan/pets/tidyfox/v1/spritesheet.webp');
+  background-image: url('/hmrchan/pets/isle/v1/spritesheet.webp');
   background-position: calc(var(--hmr-brand-sprite-frame, 0) * 100% / 7)
     calc(var(--hmr-brand-sprite-row, 0) * 100% / 8);
   background-size: 800% 900%;
@@ -6289,10 +6341,21 @@ svg {
   .hmr-preloader-logo,
   .hmr-primary-nav-link,
   .hmr-nav-icon,
-  .hmr-nav-label {
+  .hmr-nav-label,
+  [data-hmr-reveal],
+  .hmr-reveal-inner {
     animation: none;
     transform: none;
     transition-duration: 1ms;
+  }
+
+  [data-hmr-reveal],
+  .hmr-reveal-inner {
+    opacity: 1;
+  }
+
+  [data-hmr-text-reveal].hmr-text-ready .hmr-reveal-inner {
+    animation: none;
   }
 
   .hmr-brand-link:hover .hmr-brand-bg,

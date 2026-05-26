@@ -6,9 +6,7 @@ export const LOCAL_AUDIT_CONTRACT_VERSION = 'local-audit-contract'
 export const LOCAL_AUDIT_PREVIEW_PORTS = Object.freeze([4173, 5173, 3000])
 export const DEFAULT_LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB = 4096
 export const DEFAULT_LOCAL_AUDIT_BUN_SMOL = 'true'
-const BACKEND_AUDIT_ENV_FILE_CANDIDATES = Object.freeze([
-  ['..', 'hmrchan-backend', '.env'],
-])
+const BACKEND_AUDIT_ENV_FILE_CANDIDATES = Object.freeze([['..', 'hmrchan-backend', '.env']])
 const BACKEND_ENV_FALLBACK_KEYS = Object.freeze({
   REHEARSAL_TURNSTILE_BYPASS_TOKEN: ['REHEARSAL_TURNSTILE_BYPASS_TOKEN'],
   BACKEND_INTERNAL_AUTH_SHARED_SECRET: [
@@ -38,15 +36,73 @@ const BACKEND_ENV_FALLBACK_KEYS = Object.freeze({
     'VITE_IDENTITY_API_BASE_URL',
     'INTERNAL_IDENTITY_API_BASE_URL',
   ],
-  VPC_COMMUNITY_API_ORIGIN: [
-    'VPC_COMMUNITY_API_ORIGIN',
-    'VITE_COMMUNITY_API_BASE_URL',
-  ],
+  VPC_COMMUNITY_API_ORIGIN: ['VPC_COMMUNITY_API_ORIGIN', 'VITE_COMMUNITY_API_BASE_URL'],
   VPC_CONTENT_API_ORIGIN: ['VPC_CONTENT_API_ORIGIN', 'VITE_CONTENT_API_BASE_URL'],
 })
+const LOCAL_AUDIT_URL_KEYS = Object.freeze(
+  new Set([
+    'API_BASE_URL',
+    'VITE_API_BASE_URL',
+    'VITE_IDENTITY_API_BASE_URL',
+    'VITE_COMMUNITY_API_BASE_URL',
+    'VITE_CONTENT_API_BASE_URL',
+    'BACKEND_INTERNAL_ORIGIN',
+    'INTERNAL_IDENTITY_API_BASE_URL',
+    'VPC_API_ORIGIN',
+    'VPC_IDENTITY_API_ORIGIN',
+    'VPC_COMMUNITY_API_ORIGIN',
+    'VPC_CONTENT_API_ORIGIN',
+  ])
+)
+const SERVER_UPSTREAM_URL_KEYS = Object.freeze(
+  new Set([
+    'API_BASE_URL',
+    'BACKEND_INTERNAL_ORIGIN',
+    'VPC_API_ORIGIN',
+    'VPC_IDENTITY_API_ORIGIN',
+    'VPC_COMMUNITY_API_ORIGIN',
+    'VPC_CONTENT_API_ORIGIN',
+  ])
+)
 
 function hasTrimmedValue(value) {
   return typeof value === 'string' && value.trim().length > 0
+}
+
+function isAbsoluteHttpUrl(value) {
+  if (!hasTrimmedValue(value)) return false
+
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function shouldKeepBackendFallbackValue(targetKey, value) {
+  if (!hasTrimmedValue(value)) return false
+  return !SERVER_UPSTREAM_URL_KEYS.has(targetKey) || isAbsoluteHttpUrl(value)
+}
+
+function shouldUseBackendFallbackCandidate(targetKey, value) {
+  if (!hasTrimmedValue(value)) return false
+  return !SERVER_UPSTREAM_URL_KEYS.has(targetKey) || isAbsoluteHttpUrl(value)
+}
+
+function preserveAbsoluteLocalAuditUrls(mergedEnv, localAuditValues) {
+  for (const key of LOCAL_AUDIT_URL_KEYS) {
+    const localValue = localAuditValues[key]
+    if (!isAbsoluteHttpUrl(localValue)) {
+      continue
+    }
+
+    if (!isAbsoluteHttpUrl(mergedEnv[key])) {
+      mergedEnv[key] = localValue
+    }
+  }
+
+  return mergedEnv
 }
 
 function parseNonNegativeInteger(rawValue) {
@@ -64,8 +120,10 @@ function hasNodeMemoryLimit(nodeOptions) {
 }
 
 function appendNodeOptions(existingOptions, additions) {
-  const tokens = [String(existingOptions ?? '').trim(), ...additions.map((value) => String(value).trim())]
-    .filter(Boolean)
+  const tokens = [
+    String(existingOptions ?? '').trim(),
+    ...additions.map((value) => String(value).trim()),
+  ].filter(Boolean)
   return tokens.join(' ').trim()
 }
 
@@ -110,10 +168,7 @@ export function parseAuditEnvFile(content) {
   return values
 }
 
-export function readLocalAuditEnv({
-  cwd = process.cwd(),
-  fileName = LOCAL_AUDIT_ENV_FILE,
-} = {}) {
+export function readLocalAuditEnv({ cwd = process.cwd(), fileName = LOCAL_AUDIT_ENV_FILE } = {}) {
   const filePath = path.resolve(cwd, fileName)
   if (!fs.existsSync(filePath)) {
     return {
@@ -168,7 +223,7 @@ function applyBackendAuditFallbacks(mergedEnv, { cwd = process.cwd() } = {}) {
   const backendValues = backendAuditEnv.values
 
   for (const [targetKey, candidateKeys] of Object.entries(BACKEND_ENV_FALLBACK_KEYS)) {
-    if (hasTrimmedValue(mergedEnv[targetKey])) {
+    if (shouldKeepBackendFallbackValue(targetKey, mergedEnv[targetKey])) {
       continue
     }
 
@@ -178,7 +233,7 @@ function applyBackendAuditFallbacks(mergedEnv, { cwd = process.cwd() } = {}) {
           ? mergedEnv[sourceKey]
           : backendValues[sourceKey]
 
-      if (hasTrimmedValue(candidateValue)) {
+      if (shouldUseBackendFallbackCandidate(targetKey, candidateValue)) {
         mergedEnv[targetKey] = candidateValue
         break
       }
@@ -193,9 +248,10 @@ function applyLocalAuditResourceDefaults(mergedEnv) {
     mergedEnv.LOCAL_AUDIT_BUN_SMOL = DEFAULT_LOCAL_AUDIT_BUN_SMOL
   }
 
-  const explicitNodeBudgetMb = parseNonNegativeInteger(mergedEnv.LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB)
-  const nodeBudgetMb =
-    explicitNodeBudgetMb ?? DEFAULT_LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB
+  const explicitNodeBudgetMb = parseNonNegativeInteger(
+    mergedEnv.LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB
+  )
+  const nodeBudgetMb = explicitNodeBudgetMb ?? DEFAULT_LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB
 
   if (!hasTrimmedValue(mergedEnv.LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB)) {
     mergedEnv.LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB = String(nodeBudgetMb)
@@ -229,12 +285,10 @@ export function createLocalAuditEnv(
   }
 
   Object.assign(mergedEnv, overrides)
+  preserveAbsoluteLocalAuditUrls(mergedEnv, localAuditEnv.values)
   applyBackendAuditFallbacks(mergedEnv, { cwd })
 
-  if (
-    includeContractFallback &&
-    !hasTrimmedValue(mergedEnv.VITE_CLIENT_CONTRACT_VERSION)
-  ) {
+  if (includeContractFallback && !hasTrimmedValue(mergedEnv.VITE_CLIENT_CONTRACT_VERSION)) {
     mergedEnv.VITE_CLIENT_CONTRACT_VERSION = LOCAL_AUDIT_CONTRACT_VERSION
   }
 

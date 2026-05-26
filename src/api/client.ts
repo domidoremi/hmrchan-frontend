@@ -27,6 +27,7 @@ type JsonRecord = Record<string, unknown>
 const API_ROOT = ['api', 'v1'].join('/')
 const CLIENT_HEADER_NAME = ['X-Client-', 'Con', 'tract', '-Version'].join('')
 const ORIGIN_CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
+const LOCAL_ORIGIN_CSRF_COOKIE_NAME = 'momi_origin_csrf'
 const ORIGIN_CSRF_HEADER_NAME = 'X-Origin-CSRF'
 const textEncoder = new TextEncoder()
 
@@ -49,7 +50,57 @@ const SENSITIVE_SIGNATURE_READ_EXACT_PATHS = new Set([
   '/api/v1/preferences',
 ])
 
-const SENSITIVE_SIGNATURE_READ_PREFIXES = ['/api/v1/devices', '/api/v1/2fa/', '/api/v1/email/']
+const SENSITIVE_SIGNATURE_READ_PREFIXES = [
+  '/api/v1/account/',
+  '/api/v1/users/me/',
+  '/api/v1/devices',
+  '/api/v1/2fa/',
+  '/api/v1/email/',
+]
+
+const OPTIONAL_AUTH_PUBLIC_READ_EXACT_PATHS = new Set([
+  '/api/v1/home',
+  '/api/v1/home/featured',
+  '/api/v1/home/story-deck',
+  '/api/v1/posts',
+  '/api/v1/posts/light',
+  '/api/v1/posts/mixed',
+  '/api/v1/posts/text/latest',
+  '/api/v1/trends/summary',
+  '/api/v1/authors',
+  '/api/v1/search/posts',
+  '/api/v1/search/authors',
+  '/api/v1/search/suggestions',
+  '/api/v1/schedules',
+  '/api/v1/schedules/calendar',
+  '/api/v1/schedules/highlights',
+  '/api/v1/community/highlights',
+  '/api/v1/members',
+  '/api/v1/community/stats',
+  '/api/v1/community/latest',
+  '/api/v1/community/hot',
+  '/api/v1/community/feed',
+  '/api/v1/discussions',
+  '/api/v1/discussions/search',
+])
+
+const OPTIONAL_AUTH_PUBLIC_READ_EXCLUDED_EXACT_PATHS = new Set([
+  '/api/v1/discussions/my',
+  '/api/v1/discussions/my-comments',
+  '/api/v1/discussions/summary',
+])
+
+const OPTIONAL_AUTH_PUBLIC_READ_PREFIXES = [
+  '/api/v1/media/',
+  '/api/v1/posts/',
+  '/api/v1/authors/',
+  '/api/v1/schedules/',
+  '/api/v1/members/',
+  '/api/v1/favorites/check/',
+  '/api/v1/comments/',
+  '/api/v1/discussions/comments/',
+  '/api/v1/discussions/',
+]
 
 const SIGNATURE_ERROR_CODES = new Set([
   'REQUEST_SIGNATURE_REQUIRED',
@@ -203,7 +254,8 @@ function applyOriginCsrfHeader(headers: Headers, method: string, url: string): v
   const parsedUrl = new URL(url, window.location.origin)
   if (parsedUrl.origin !== window.location.origin) return
 
-  const token = readCookieValue(ORIGIN_CSRF_COOKIE_NAME)
+  const token =
+    readCookieValue(ORIGIN_CSRF_COOKIE_NAME) ?? readCookieValue(LOCAL_ORIGIN_CSRF_COOKIE_NAME)
   if (token) {
     headers.set(ORIGIN_CSRF_HEADER_NAME, token)
   }
@@ -228,7 +280,28 @@ function shouldRequireSensitiveReadSignature(pathname: string): boolean {
   )
 }
 
-function shouldRequireRequestSignature(method: string, url: string): boolean {
+function isOptionalAuthPublicReadPath(method: string, pathname: string): boolean {
+  const normalizedMethod = method.toUpperCase()
+  if (normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD') {
+    return false
+  }
+
+  if (OPTIONAL_AUTH_PUBLIC_READ_EXACT_PATHS.has(pathname)) {
+    return true
+  }
+
+  if (OPTIONAL_AUTH_PUBLIC_READ_EXCLUDED_EXACT_PATHS.has(pathname)) {
+    return false
+  }
+
+  return OPTIONAL_AUTH_PUBLIC_READ_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
+function shouldRequireRequestSignature(
+  method: string,
+  url: string,
+  options: { skipAuth?: boolean } = {}
+): boolean {
   const normalizedMethod = method.toUpperCase()
   const pathname = getPathname(url)
 
@@ -236,11 +309,19 @@ function shouldRequireRequestSignature(method: string, url: string): boolean {
     return false
   }
 
+  if (isOptionalAuthPublicReadPath(normalizedMethod, pathname)) {
+    return false
+  }
+
   if (shouldRequireSensitiveReadSignature(pathname)) {
     return true
   }
 
-  return normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD'
+  if (normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD') {
+    return true
+  }
+
+  return options.skipAuth !== true
 }
 
 async function applySignedHeaders(
@@ -251,10 +332,11 @@ async function applySignedHeaders(
     bodyBytes: Uint8Array
     clientSecret: string | null
     clientToken: string | null
+    skipAuth?: boolean
   }
 ): Promise<void> {
-  const { method, url, bodyBytes, clientSecret, clientToken } = options
-  if (!clientSecret || !clientToken || !shouldRequireRequestSignature(method, url)) {
+  const { method, url, bodyBytes, clientSecret, clientToken, skipAuth } = options
+  if (!clientSecret || !clientToken || !shouldRequireRequestSignature(method, url, { skipAuth })) {
     return
   }
 
@@ -285,11 +367,12 @@ async function attachClientSecurityHeaders(
     method: string
     url: string
     bodyBytes: Uint8Array
+    skipAuth?: boolean
   }
 ): Promise<void> {
-  const { method, url, bodyBytes } = options
+  const { method, url, bodyBytes, skipAuth } = options
   const { clientSecurityManager, clientSecurityService } = await import('./clientSecurityService')
-  const requiresIntegrity = shouldRequireRequestSignature(method, url)
+  const requiresIntegrity = shouldRequireRequestSignature(method, url, { skipAuth })
 
   if (requiresIntegrity && !clientSecurityManager.hasRequestIntegrityCredentials()) {
     await clientSecurityService.ensureRequestIntegrityCredentials()
@@ -307,6 +390,7 @@ async function attachClientSecurityHeaders(
     bodyBytes,
     clientSecret: clientSecurityManager.getClientSecret(),
     clientToken,
+    skipAuth,
   })
 }
 
@@ -482,6 +566,7 @@ class ApiClient {
         method,
         url,
         bodyBytes: serializedBody.bodyBytes,
+        skipAuth,
       })
     }
 

@@ -456,8 +456,12 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     return createStaticRouteDocument(path, staticRoute)
   }
 
+  if (path === '/favorites') {
+    return createStaticRouteDocument('/profile/favorites', STATIC_ROUTE_DOCUMENTS['/profile'])
+  }
+
   if (/^\/profile\/[^/]+$/.test(path)) {
-    return createStaticRouteDocument('/profile', STATIC_ROUTE_DOCUMENTS['/profile'])
+    return createStaticRouteDocument(path, STATIC_ROUTE_DOCUMENTS['/profile'])
   }
 
   if (/^\/posts\/[^/]+$/.test(path)) {

@@ -18,6 +18,18 @@ describe('edge HTML document routing', () => {
     }
   )
 
+  it.each([
+    ['/favorites', '/profile/favorites'],
+    ['/profile/favorites', '/profile/favorites'],
+    ['/profile/security', '/profile/security'],
+  ])('serves protected SPA route %s as a noindex document', (path, canonicalPath) => {
+    const documentConfig = resolvePath(path)
+
+    expect(documentConfig.status).toBe(200)
+    expect(documentConfig.robots).toBe('noindex, nofollow')
+    expect(documentConfig.canonicalPath).toBe(canonicalPath)
+  })
+
   it('keeps unknown routes as real 404 documents', () => {
     const documentConfig = resolvePath('/__missing-route__')
 

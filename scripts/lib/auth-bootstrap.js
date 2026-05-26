@@ -4,6 +4,9 @@ function isRecord(value) {
 
 const AUTH_BOOTSTRAP_CLIENT_FINGERPRINT = 'auth-bootstrap-probe'
 const AUTH_BOOTSTRAP_REQUEST_TIMEOUT_MS = 10_000
+const AUTH_BOOTSTRAP_PROBE_INTERVAL_MS = 250
+const ORIGIN_CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
+const ORIGIN_CSRF_HEADER_NAME = 'X-Origin-CSRF'
 const textEncoder = new TextEncoder()
 const AUTH_BOOTSTRAP_PROBE_DEFINITIONS = Object.freeze([
   Object.freeze({
@@ -131,6 +134,32 @@ function getRandomHex(length) {
     .slice(0, length)
 }
 
+function createAuthBootstrapClientFingerprint() {
+  return `${AUTH_BOOTSTRAP_CLIENT_FINGERPRINT}-${Date.now().toString(36)}-${getRandomHex(12)}`
+}
+
+function resolveProbeClientFingerprint(options) {
+  return options.clientFingerprint ?? createAuthBootstrapClientFingerprint()
+}
+
+function createProbeOriginCsrfToken(clientFingerprint) {
+  const normalizedFingerprint = String(clientFingerprint || AUTH_BOOTSTRAP_CLIENT_FINGERPRINT)
+    .replace(/[^a-z0-9_-]/gi, '-')
+    .slice(0, 80)
+  return `auth-bootstrap-csrf-${normalizedFingerprint}-${getRandomHex(12)}`
+}
+
+function resolveProbeRequestBody(probe, clientFingerprint) {
+  if (probe.body == null || typeof probe.body === 'string') {
+    return probe.body ?? null
+  }
+
+  return JSON.stringify({
+    ...probe.body,
+    client_fingerprint: clientFingerprint,
+  })
+}
+
 function extractBootstrapClientCredentials(payload) {
   const envelope = isRecord(payload?.data) ? payload.data : payload
   if (!isRecord(envelope)) {
@@ -189,6 +218,32 @@ async function attachProbeSignatureHeaders(headers, baseUrl, probe, requestBody,
   headers.set('X-Signature', await hmacSha256Hex(credentials.clientSecret, payload))
 }
 
+function shouldAttachProbeOriginCsrf(method, pathname) {
+  if (method === 'GET' || method === 'HEAD') {
+    return false
+  }
+
+  return pathname.startsWith('/api/v1/auth/') || pathname.startsWith('/api/v1/2fa/')
+}
+
+function attachProbeOriginCsrfHeaders(headers, baseUrl, probe, clientFingerprint, options) {
+  const parsedUrl = new URL(probe.path, baseUrl)
+  const method = probe.method.toUpperCase()
+  if (!shouldAttachProbeOriginCsrf(method, parsedUrl.pathname)) {
+    return
+  }
+
+  const token =
+    typeof options.originCsrfToken === 'string' && options.originCsrfToken.trim()
+      ? options.originCsrfToken.trim()
+      : createProbeOriginCsrfToken(clientFingerprint)
+  const cookie = `${ORIGIN_CSRF_COOKIE_NAME}=${encodeURIComponent(token)}`
+  const existingCookie = headers.get('Cookie')
+
+  headers.set(ORIGIN_CSRF_HEADER_NAME, token)
+  headers.set('Cookie', existingCookie ? `${existingCookie}; ${cookie}` : cookie)
+}
+
 function attachProbeBrowserContextHeaders(headers, baseUrl, probe) {
   if (probe.method.toUpperCase() === 'GET') {
     return
@@ -240,8 +295,14 @@ export function extractAuthBootstrapError(payload, rawBody = '') {
 
 export function buildAuthBootstrapProbeSummary(probe) {
   const codePart = probe.code ? ` ${probe.code}` : ''
-  const messagePart = probe.message ? ` ${probe.message}` : ''
+  const messagePart = probe.message ? ` ${sanitizeAuthBootstrapProbeMessage(probe.message)}` : ''
   return `${probe.method} ${probe.path} -> HTTP ${probe.status}${codePart}${messagePart}`.trim()
+}
+
+function sanitizeAuthBootstrapProbeMessage(message) {
+  return String(message)
+    .replace(/("(?:client_secret|client_token)"\s*:\s*)"[^"]*"/gi, '$1"[redacted]"')
+    .replace(/((?:client_secret|client_token)=)[^&\s]+/gi, '$1[redacted]')
 }
 
 function isChallengeRequiredPayload(payload) {
@@ -366,11 +427,55 @@ export function getLatestAuthBootstrapProbes(probes) {
   return [...latest.values()]
 }
 
+function isClientInitRateLimitedProbe(probe) {
+  return (
+    probe.path === '/api/v1/client/init' &&
+    probe.status === 429 &&
+    (!probe.code ||
+      probe.code === 'RATE_LIMITED' ||
+      probe.code === 'TOO_MANY_REQUESTS' ||
+      /rate limit|too many/i.test(String(probe.message ?? '')))
+  )
+}
+
+function isRequestSignatureRequiredProbe(probe) {
+  return (
+    probe.status === 403 &&
+    (probe.code === 'REQUEST_SIGNATURE_REQUIRED' ||
+      /request signature is required/i.test(String(probe.message ?? '')))
+  )
+}
+
+function shouldStopAuthBootstrapProbes(probe) {
+  if (probe.path !== '/api/v1/client/init') {
+    return false
+  }
+
+  return [
+    'upstream-tunnel-unavailable',
+    'upstream-unreachable',
+    'client-init-missing',
+    'client-init-5xx',
+    'client-contract-mismatch',
+    'bff-not-configured',
+  ].includes(classifyAuthBootstrapProbe(probe))
+}
+
 export function findFatalAuthBootstrapProbe(probes) {
-  probes = getLatestAuthBootstrapProbes(probes)
-  for (const probe of probes) {
+  const latestProbes = getLatestAuthBootstrapProbes(probes)
+  const clientInitRateLimited = latestProbes.some((probe) => isClientInitRateLimitedProbe(probe))
+
+  for (const probe of latestProbes) {
     const kind = classifyAuthBootstrapProbe(probe)
     if (kind) {
+      if (
+        kind === 'passkeys-login-forbidden' &&
+        clientInitRateLimited &&
+        isRequestSignatureRequiredProbe(probe)
+      ) {
+        continue
+      }
+
       return {
         ...probe,
         kind,
@@ -501,13 +606,11 @@ export function validateAuthBootstrapContract() {
 }
 
 export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
+  const clientFingerprint = resolveProbeClientFingerprint(options)
   const headers = new Headers({
     Accept: 'application/json',
   })
-  headers.set(
-    'X-Client-Fingerprint',
-    options.clientFingerprint ?? AUTH_BOOTSTRAP_CLIENT_FINGERPRINT
-  )
+  headers.set('X-Client-Fingerprint', clientFingerprint)
 
   if (probe.method !== 'GET') {
     headers.set('Content-Type', 'application/json')
@@ -518,12 +621,10 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
     headers.set('X-Client-Contract-Version', contractVersion)
   }
 
-  const requestBody =
-    probe.body == null || typeof probe.body === 'string'
-      ? (probe.body ?? null)
-      : JSON.stringify(probe.body)
+  const requestBody = resolveProbeRequestBody(probe, clientFingerprint)
 
   attachProbeBrowserContextHeaders(headers, baseUrl, probe)
+  attachProbeOriginCsrfHeaders(headers, baseUrl, probe, clientFingerprint, options)
   await attachProbeSignatureHeaders(headers, baseUrl, probe, requestBody, options.clientCredentials)
 
   const controller = new AbortController()
@@ -582,21 +683,35 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export async function probeAuthBootstrapEndpoints(baseUrl, options = {}) {
   const probes = getAuthBootstrapProbeDefinitions()
   const results = []
   let clientCredentials = options.clientCredentials ?? null
+  const clientFingerprint = resolveProbeClientFingerprint(options)
+  const probeIntervalMs = options.probeIntervalMs ?? AUTH_BOOTSTRAP_PROBE_INTERVAL_MS
 
-  for (const probe of probes) {
+  for (const [index, probe] of probes.entries()) {
     const result = await probeAuthBootstrapEndpoint(baseUrl, probe, {
       ...options,
-      clientFingerprint: options.clientFingerprint ?? AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
+      clientFingerprint,
       clientCredentials,
     })
     results.push(result)
 
     if (probe.path === '/api/v1/client/init') {
-      clientCredentials = extractBootstrapClientCredentials(result.body)
+      clientCredentials = extractBootstrapClientCredentials(result.body) ?? clientCredentials
+    }
+
+    if (shouldStopAuthBootstrapProbes(result)) {
+      break
+    }
+
+    if (probeIntervalMs > 0 && index < probes.length - 1) {
+      await sleep(probeIntervalMs)
     }
   }
 

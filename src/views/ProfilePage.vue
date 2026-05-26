@@ -1,8 +1,18 @@
 <template>
-  <article class="hmr-profile-page">
+  <article
+    class="hmr-profile-page"
+    data-testid="profile-section-shell"
+    :data-profile-section="activeSection"
+  >
     <header class="hmr-profile-hero">
       <aside class="hmr-profile-nav" aria-label="Profile sections">
-        <RouterLink v-for="item in sections" :key="item.section" :to="item.to">
+        <RouterLink
+          v-for="item in sections"
+          :key="item.section"
+          :to="item.to"
+          :data-testid="item.testId"
+          :aria-current="item.section === activeSection ? 'page' : undefined"
+        >
           {{ item.label }}
         </RouterLink>
       </aside>
@@ -76,6 +86,7 @@ import {
   seedCommunity,
   loadProfileSectionContentResource,
   type HmrProfileSectionContent,
+  type HmrProfileSectionKey,
 } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
@@ -84,9 +95,32 @@ const props = defineProps<{
   section: string
 }>()
 
+type ProfileNavSection = {
+  section: HmrProfileSectionKey
+  label: string
+  to: string
+  testId: string
+}
+
+const PROFILE_SECTION_KEYS = [
+  'overview',
+  'security',
+  'preferences',
+  'favorites',
+  'history',
+  'inbox',
+] as const satisfies readonly HmrProfileSectionKey[]
+
+function normalizeProfileSection(section: string): HmrProfileSectionKey {
+  return PROFILE_SECTION_KEYS.includes(section as HmrProfileSectionKey)
+    ? (section as HmrProfileSectionKey)
+    : 'overview'
+}
+
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const auth = useAuthStore()
+const activeSection = computed(() => normalizeProfileSection(props.section))
 const state = ref<HmrPageState>('idle')
 const content = ref<HmrProfileSectionContent>({
   section: 'overview',
@@ -103,13 +137,43 @@ const resource = ref<HmrAsyncResource<HmrProfileSectionContent>>({
   updatedAt: null,
 })
 
-const sections = computed(() => [
-  { section: 'overview', label: t('profile.overview'), to: '/profile' },
-  { section: 'security', label: t('profile.security'), to: '/profile/security' },
-  { section: 'preferences', label: t('profile.preferences'), to: '/profile/preferences' },
-  { section: 'favorites', label: t('profile.favorites'), to: '/profile/favorites' },
-  { section: 'history', label: t('profile.history'), to: '/profile/history' },
-  { section: 'inbox', label: t('profile.inbox'), to: '/profile/inbox' },
+const sections = computed<ProfileNavSection[]>(() => [
+  {
+    section: 'overview',
+    label: t('profile.overview'),
+    to: '/profile',
+    testId: 'profile-overview-tab',
+  },
+  {
+    section: 'security',
+    label: t('profile.security'),
+    to: '/profile/security',
+    testId: 'profile-security-tab',
+  },
+  {
+    section: 'preferences',
+    label: t('profile.preferences'),
+    to: '/profile/preferences',
+    testId: 'profile-preferences-tab',
+  },
+  {
+    section: 'favorites',
+    label: t('profile.favorites'),
+    to: '/profile/favorites',
+    testId: 'profile-favorites-tab',
+  },
+  {
+    section: 'history',
+    label: t('profile.history'),
+    to: '/profile/history',
+    testId: 'profile-history-tab',
+  },
+  {
+    section: 'inbox',
+    label: t('profile.inbox'),
+    to: '/profile/inbox',
+    testId: 'profile-inbox-tab',
+  },
 ])
 
 const currentTitle = computed(() => {
@@ -117,7 +181,7 @@ const currentTitle = computed(() => {
 })
 
 const sectionIntro = computed(() => {
-  switch (props.section) {
+  switch (activeSection.value) {
     case 'security':
       return '管理 Passkey、2FA、设备会话和敏感操作验证。'
     case 'preferences':
@@ -166,7 +230,7 @@ const sectionCards = computed(() => [
 
 async function loadSection(): Promise<void> {
   state.value = 'loading'
-  const nextResource = await loadProfileSectionContentResource(props.section)
+  const nextResource = await loadProfileSectionContentResource(activeSection.value)
   resource.value = nextResource
   content.value = nextResource.data
   state.value = content.value.rows.length || content.value.summary.length ? 'ready' : 'empty'
@@ -182,7 +246,7 @@ onMounted(() => {
 })
 
 watch(
-  () => props.section,
+  () => activeSection.value,
   () => {
     void loadSection()
   }

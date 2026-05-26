@@ -2,6 +2,17 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import type { HmrBrandSpriteState } from '@/hmr/components/HmrBrandSprite.vue'
 
+const idleShowcaseStates: Array<{
+  state: HmrBrandSpriteState
+  duration: number
+  cooldown: number
+}> = [
+  { state: 'review', duration: 1900, cooldown: 12000 },
+  { state: 'waiting', duration: 1700, cooldown: 10000 },
+  { state: 'running', duration: 1500, cooldown: 12000 },
+  { state: 'waving', duration: 1100, cooldown: 9000 },
+]
+
 export function useHmrBrandPet() {
   const brandState = ref<HmrBrandSpriteState>('idle')
   const reducedMotion = ref(false)
@@ -53,17 +64,20 @@ export function useHmrBrandPet() {
 
     const delay = 26000 + Math.floor(Math.random() * 12000)
     idleTimer = window.setTimeout(() => {
-      setBrandState('review', 1800, 12000)
+      const showcaseState =
+        idleShowcaseStates[Math.floor(Math.random() * idleShowcaseStates.length)] ??
+        idleShowcaseStates[0]
+      setBrandState(showcaseState.state, showcaseState.duration, showcaseState.cooldown)
       scheduleIdleReview()
     }, delay)
   }
 
   function waveBrandPet(): void {
-    setBrandState('waving', 900, 650)
+    setBrandState('waving', 1100, 650)
   }
 
   function jumpBrandPet(): void {
-    setBrandState('jumping', 760, 900)
+    setBrandState('jumping', 900, 900)
   }
 
   function setupBrandPet(): void {

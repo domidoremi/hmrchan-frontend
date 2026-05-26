@@ -66,6 +66,7 @@ describe('clientSecurityService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    clientSecurityManager.clear()
     mockGetDeviceFingerprint.mockResolvedValue('fingerprint-123')
     mockGetDeviceFingerprintMetadata.mockResolvedValue({
       value: 'fingerprint-123',
@@ -162,6 +163,31 @@ describe('clientSecurityService', () => {
         skipSecurity: true,
       })
     )
+  })
+
+  it('force reissues signing credentials when normal integrity init is throttled', async () => {
+    mockApiClient.post
+      .mockRejectedValueOnce(new MockApiError('Too many requests', 429, 'RATE_LIMITED'))
+      .mockResolvedValueOnce({
+        client_token: 'reissued-token',
+        client_secret: 'reissued-secret',
+        trust_level: 'basic',
+      })
+
+    await expect(clientSecurityService.ensureRequestIntegrityCredentials()).resolves.toBeUndefined()
+
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(
+      2,
+      '/client/init',
+      expect.objectContaining({
+        force_reissue: true,
+      }),
+      expect.objectContaining({
+        skipSecurity: true,
+      })
+    )
+    expect(clientSecurityManager.getClientToken()).toBe('reissued-token')
+    expect(clientSecurityManager.getClientSecret()).toBe('reissued-secret')
   })
 
   it('reinitializes once when client verify sees an expired client token', async () => {

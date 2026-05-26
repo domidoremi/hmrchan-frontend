@@ -58,7 +58,7 @@ type StaticRouteCheck = {
   path: string
   expected: {
     title: string
-    canonical: string
+    canonicalPath: string
     robots?: string
   }
 }
@@ -126,6 +126,7 @@ type SmokeSummary = {
   authCredentialsDetected: boolean
   authSmokeExecuted: boolean
   authSmokeSkipReason: string | null
+  lastStage: string | null
   lastFailedCheck: string | null
   failureKind: SmokeFailureKind | null
   lastFailureEvidence: FailureEvidence | null
@@ -139,6 +140,36 @@ type AuthBootstrapProbe = {
   ok?: boolean
   code: string | null
   message: string | null
+  body?: unknown
+}
+
+type AuthBootstrapClientCredentials = {
+  clientToken: string
+  clientSecret: string
+}
+
+function asJsonRecord(value: unknown): JsonRecord | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as JsonRecord) : null
+}
+
+function extractAuthBootstrapClientCredentials(
+  payload: unknown
+): AuthBootstrapClientCredentials | null {
+  const envelope = asJsonRecord(asJsonRecord(payload)?.data) ?? asJsonRecord(payload)
+  if (!envelope) {
+    return null
+  }
+
+  const clientToken =
+    typeof envelope.client_token === 'string' && envelope.client_token.trim()
+      ? envelope.client_token.trim()
+      : null
+  const clientSecret =
+    typeof envelope.client_secret === 'string' && envelope.client_secret.trim()
+      ? envelope.client_secret.trim()
+      : null
+
+  return clientToken && clientSecret ? { clientToken, clientSecret } : null
 }
 
 function hasAuthSmokeCredentials(env: NodeJS.ProcessEnv): boolean {
@@ -167,6 +198,8 @@ const AUTH_BOOTSTRAP_CONTRACT_VERSION =
   AUDIT_ENV['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
   process.env['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
   ''
+const E2E_HARD_TIMEOUT_MS = Number.parseInt(process.env['E2E_HARD_TIMEOUT_MS'] ?? '', 10) || 720_000
+const STATIC_PRERENDER_CANONICAL_ORIGIN = 'https://momichan.xyz'
 const PREVIEW_PORT_CANDIDATES = resolveLocalAuditPreviewPorts(AUDIT_ENV, [
   'E2E_PREVIEW_PORTS',
   'E2E_PREVIEW_PORT',
@@ -178,8 +211,8 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     name: 'home prerender',
     path: '/',
     expected: {
-      title: 'Home · MomiChan',
-      canonical: 'https://momichan.xyz/',
+      title: 'MomiChan',
+      canonicalPath: '/',
       robots: 'index, follow',
     },
   },
@@ -188,7 +221,7 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     path: '/explore',
     expected: {
       title: 'Explore · MomiChan',
-      canonical: 'https://momichan.xyz/explore',
+      canonicalPath: '/explore',
       robots: 'index, follow',
     },
   },
@@ -197,7 +230,7 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     path: '/404/',
     expected: {
       title: 'Page not found · MomiChan',
-      canonical: 'https://momichan.xyz/404',
+      canonicalPath: '/404',
       robots: 'noindex, nofollow',
     },
   },
@@ -222,6 +255,20 @@ function createHtmlNavigationHeaders(): Headers {
   })
 }
 
+function resolveExpectedCanonical(baseUrl: string, canonicalPath: string): string {
+  return new URL(canonicalPath, baseUrl).toString()
+}
+
+function resolveAllowedStaticCanonicalUrls(baseUrl: string, canonicalPath: string): Set<string> {
+  const allowed = new Set([resolveExpectedCanonical(baseUrl, canonicalPath)])
+
+  if (isLocalAuditOrigin(baseUrl)) {
+    allowed.add(resolveExpectedCanonical(STATIC_PRERENDER_CANONICAL_ORIGIN, canonicalPath))
+  }
+
+  return allowed
+}
+
 async function detectStaticPrerenderMismatch(
   baseUrl: string,
   probe: StaticRouteCheck
@@ -239,8 +286,9 @@ async function detectStaticPrerenderMismatch(
 
     const title = html.match(/<title>(.*?)<\/title>/i)?.[1]?.trim() ?? ''
     const canonical = html.match(/<link rel="canonical" href="(.*?)"/i)?.[1]?.trim() ?? ''
+    const expectedCanonical = resolveExpectedCanonical(baseUrl, probe.expected.canonicalPath)
 
-    if (title === probe.expected.title && canonical === probe.expected.canonical) {
+    if (title === probe.expected.title && canonical === expectedCanonical) {
       return null
     }
 
@@ -284,12 +332,17 @@ async function readAuthBootstrapPageProbe(
     status: response.status(),
     code: errorMeta.code,
     message: errorMeta.message ?? (rawBody.trim().length > 0 ? rawBody.trim() : null),
+    body: parsedBody,
   }
 }
 
-async function runAuthBootstrapPreflight(baseUrl: string): Promise<AuthBootstrapProbe[]> {
+async function runAuthBootstrapPreflight(
+  baseUrl: string,
+  clientCredentials?: AuthBootstrapClientCredentials | null
+): Promise<AuthBootstrapProbe[]> {
   return probeAuthBootstrapEndpoints(baseUrl, {
     contractVersion: AUTH_BOOTSTRAP_CONTRACT_VERSION,
+    clientCredentials: clientCredentials ?? undefined,
   }) as Promise<AuthBootstrapProbe[]>
 }
 
@@ -849,7 +902,7 @@ async function assertStaticPrerenderedRoute(
   path: string,
   expected: {
     title: string
-    canonical: string
+    canonicalPath: string
     robots?: string
   }
 ): Promise<void> {
@@ -869,8 +922,12 @@ async function assertStaticPrerenderedRoute(
     throw new Error(`Expected ${path} HTML to contain title ${expected.title}`)
   }
 
-  if (!html.includes(`href="${expected.canonical}"`)) {
-    throw new Error(`Expected ${path} HTML to contain canonical ${expected.canonical}`)
+  const canonical = html.match(/<link rel="canonical" href="(.*?)"/i)?.[1]?.trim() ?? ''
+  const expectedCanonicals = resolveAllowedStaticCanonicalUrls(baseUrl, expected.canonicalPath)
+  if (!canonical || !expectedCanonicals.has(canonical)) {
+    throw new Error(
+      `Expected ${path} HTML to contain canonical ${Array.from(expectedCanonicals).join(' or ')}, got ${canonical || 'missing'}`
+    )
   }
 
   if (expected.robots && !html.includes(`content="${expected.robots}"`)) {
@@ -932,10 +989,8 @@ async function assertBrowserRoute(
         el.getAttribute('href')
       )
       const expectedCanonicalPath = check.expectedCanonicalPath ?? check.path
-      if (
-        canonicalHref !==
-        `https://momichan.xyz${expectedCanonicalPath === '/' ? '/' : expectedCanonicalPath}`
-      ) {
+      const expectedCanonical = resolveExpectedCanonical(baseUrl, expectedCanonicalPath)
+      if (canonicalHref !== expectedCanonical) {
         throw new Error(`Unexpected canonical for ${check.path}: ${canonicalHref}`)
       }
 
@@ -1022,6 +1077,31 @@ async function authenticateViaApi(
           },
           { timeout }
         )
+      const readClientCredentials = async (): Promise<AuthBootstrapClientCredentials | null> =>
+        page.evaluate(() => {
+          const raw = window.localStorage.getItem('momi_client_security')
+          if (!raw) return null
+
+          try {
+            const parsed = JSON.parse(raw) as {
+              client_token?: unknown
+              client_secret?: unknown
+            }
+            const clientToken =
+              typeof parsed.client_token === 'string' ? parsed.client_token.trim() : ''
+            const clientSecret =
+              typeof parsed.client_secret === 'string' ? parsed.client_secret.trim() : ''
+
+            return clientToken && clientSecret
+              ? {
+                  clientToken,
+                  clientSecret,
+                }
+              : null
+          } catch {
+            return null
+          }
+        })
       const forceIssueClientCredentials = async () => {
         const result = await page.evaluate(async () => {
           const credentialStorageKey = 'momi_client_security'
@@ -1210,6 +1290,7 @@ async function authenticateViaApi(
       const loginSelector = 'input[autocomplete="username"]'
       const passwordSelector = 'input[autocomplete="current-password"]'
       let latestLoginRequestHeaders: Record<string, string> | null = null
+      let pageClientCredentials: AuthBootstrapClientCredentials | null = null
       const loginRequestIds = new Set<string>()
       const pageAuthBootstrapProbes: AuthBootstrapProbe[] = []
       const pendingAuthBootstrapResponses = new Set<Promise<void>>()
@@ -1264,6 +1345,10 @@ async function authenticateViaApi(
           const probe = await readAuthBootstrapPageProbe(response)
           if (probe) {
             pageAuthBootstrapProbes.push(probe)
+            if (probe.path === '/api/v1/client/init') {
+              pageClientCredentials =
+                extractAuthBootstrapClientCredentials(probe.body) ?? pageClientCredentials
+            }
           }
         })()
         void tracked.finally(() => {
@@ -1305,7 +1390,10 @@ async function authenticateViaApi(
         console.log('   • Debug: prewarm result', prewarmedLocalTrust)
       }
       await openAndFillLoginForm({ resetSession: !prewarmedLocalTrust })
-      const preflightProbes = await runAuthBootstrapPreflight(baseUrl)
+      const preflightProbes = await runAuthBootstrapPreflight(
+        baseUrl,
+        pageClientCredentials ?? (await readClientCredentials())
+      )
       if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
         console.log('   • Debug: preflight probes', preflightProbes)
       }
@@ -1624,6 +1712,10 @@ async function main(): Promise<void> {
   const authSkipReason = getAuthSkipReason(authLogin, authPassword, authCredentials.source)
   const summary = createSmokeSummary(artifactDir, authLogin, authPassword)
   summary.authSmokeRequired = authSmokeRequired
+  const setStage = (stage: string) => {
+    summary.lastStage = stage
+  }
+  setStage('startup')
   const recordFailureEvidence = (evidence: FailureEvidence) => {
     summary.lastFailureEvidence = evidence
   }
@@ -1660,6 +1752,35 @@ async function main(): Promise<void> {
     }
   }
 
+  const hardTimeoutId = setTimeout(() => {
+    if (terminationHandled) return
+    terminationHandled = true
+    const timeoutError = new Error(
+      `Minimal E2E checks timed out after ${E2E_HARD_TIMEOUT_MS}ms at stage ${summary.lastStage ?? 'unknown'}`
+    )
+    runError = runError ?? timeoutError
+    summary.failureKind = summary.failureKind ?? 'ui-timeout'
+    summary.lastFailedCheck = summary.lastFailedCheck ?? 'hard timeout'
+    appendCheck(summary, {
+      name: 'hard timeout',
+      kind: 'browser',
+      mode: 'both',
+      status: 'failed',
+      detail: timeoutError.message,
+    })
+
+    void writeSmokeArtifacts(summary)
+      .catch((artifactError) => {
+        console.error('Failed to write smoke artifacts:', artifactError)
+      })
+      .finally(() =>
+        cleanupResources().finally(() => {
+          console.error('\n❌ Minimal E2E checks failed:', timeoutError)
+          process.exit(1)
+        })
+      )
+  }, E2E_HARD_TIMEOUT_MS)
+
   const handleTermination = (signal: NodeJS.Signals) => {
     if (terminationHandled) return
     terminationHandled = true
@@ -1683,9 +1804,11 @@ async function main(): Promise<void> {
     let baseUrl: string
 
     if (externalBaseUrl) {
+      setStage('resolve external base URL')
       baseUrl = normalizeBaseUrl(externalBaseUrl)
       console.log(`🌐 Using existing E2E base URL: ${baseUrl}`)
     } else {
+      setStage('build production bundle')
       console.log('🏗️ Building production bundle...')
       await withBuildArtifactLock(
         'vite-dist-build',
@@ -1696,6 +1819,7 @@ async function main(): Promise<void> {
           },
         }
       )
+      setStage('start preview server')
       previewServer = new PreviewShellManager({
         env: AUDIT_ENV,
         candidatePorts: PREVIEW_PORT_CANDIDATES,
@@ -1709,6 +1833,7 @@ async function main(): Promise<void> {
     summary.baseUrl = baseUrl
     await mkdir(artifactDir, { recursive: true })
 
+    setStage('ensure local audit smoke account')
     if (
       shouldEnsureLocalAuditSmokeAccount(baseUrl, {
         login: authLogin,
@@ -1728,11 +1853,13 @@ async function main(): Promise<void> {
       }
     }
 
+    setStage('detect static prerender mismatch')
     const externalLocalPrerenderMismatch =
       externalBaseUrl && isLocalAuditOrigin(baseUrl)
         ? await detectStaticPrerenderMismatch(baseUrl, STATIC_ROUTE_CHECKS[1]!)
         : null
 
+    setStage('auth bootstrap preflight')
     const authBootstrapProbes = await runAuthBootstrapPreflight(baseUrl)
     try {
       throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
@@ -1751,6 +1878,7 @@ async function main(): Promise<void> {
       logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
     }
 
+    setStage('static prerender checks')
     console.log('🧱 Verifying static prerendered HTML...')
     if (externalLocalPrerenderMismatch) {
       const reason = `${externalLocalPrerenderMismatch}; skipping static prerender assertions for this external local harness`
@@ -1767,6 +1895,7 @@ async function main(): Promise<void> {
       console.log(`   • ${reason}`)
     } else {
       for (const check of STATIC_ROUTE_CHECKS) {
+        setStage(`static prerender check: ${check.name}`)
         await recordCheck(
           summary,
           {
@@ -1780,6 +1909,7 @@ async function main(): Promise<void> {
       }
     }
 
+    setStage('launch headless browser')
     console.log('🌐 Launching headless browser...')
     browser = await puppeteer.launch({
       headless: true,
@@ -1795,16 +1925,18 @@ async function main(): Promise<void> {
     let sampleDiscussionSkipReason = 'sample discussion route unavailable'
 
     try {
+      setStage('resolve sample post route')
       const postResolution = await resolveSampleDetailRoute(sampleRouteProbePage, baseUrl, {
         label: 'sample post route',
         requestedRoute: requestedSamplePostRoute,
         fallbackRoute: DEFAULT_SAMPLE_POST_ROUTE,
         discoveryPath: '/explore',
         detailKind: 'post',
-        shellSelector: '.post-detail-page',
-        readinessSelectorsAll: ['.post-comments'],
+        shellSelector: '.hmr-detail--reader',
+        readinessSelectorsAll: ['.hmr-detail-reader-hero'],
         dataDependent: true,
       })
+      setStage('resolve sample discussion route')
       const discussionResolution = await resolveSampleDetailRoute(sampleRouteProbePage, baseUrl, {
         label: 'sample discussion route',
         requestedRoute: requestedSampleDiscussionRoute,
@@ -1831,13 +1963,13 @@ async function main(): Promise<void> {
           {
             name: 'sample post route',
             path: resolvedSamplePostRoute,
-            selector: '.post-detail-page',
+            selector: '.hmr-detail--reader',
             mode: 'guest',
           },
           {
             name: 'authenticated sample post',
             path: resolvedSamplePostRoute,
-            selector: '.post-detail-page',
+            selector: '.hmr-detail--reader',
             mode: 'auth',
           }
         )
@@ -1896,6 +2028,7 @@ async function main(): Promise<void> {
       (check) => !skippedSampleChecks.some((skipped) => skipped.name === check.name)
     )
 
+    setStage('guest browser route checks')
     console.log('🧭 Verifying guest browser routes...')
     const skippedAuthenticatedAuditGuestChecks = [
       ...skippedGuestProtectedRedirectChecks,
@@ -1923,6 +2056,7 @@ async function main(): Promise<void> {
     }
 
     for (const check of filteredGuestBrowserChecks) {
+      setStage(`guest browser route: ${check.name}`)
       await recordCheckWithPreviewRecovery(
         summary,
         {
@@ -1949,6 +2083,7 @@ async function main(): Promise<void> {
     }
 
     if (authSmokeEnabled) {
+      setStage('authenticated smoke routes')
       console.log('🔐 Verifying authenticated smoke routes...')
       summary.authSmokeExecuted = true
       const clearedRateLimitKeys = await clearLocalAuditRateLimitState(AUDIT_ENV)
@@ -1965,6 +2100,7 @@ async function main(): Promise<void> {
           path: '/api/v1/auth/login',
         },
         async () => {
+          setStage('auth login bootstrap')
           authenticatedSmokePage = await authenticateViaApi(
             browser!,
             baseUrl,
@@ -2015,6 +2151,7 @@ async function main(): Promise<void> {
 
       try {
         for (const check of effectiveAuthenticatedRouteChecks) {
+          setStage(`authenticated route: ${check.name}`)
           await recordCheckWithPreviewRecovery(
             summary,
             {
@@ -2057,6 +2194,7 @@ async function main(): Promise<void> {
         await authenticatedSmokePage?.close().catch(() => undefined)
       }
     } else {
+      setStage('authenticated smoke skipped')
       summary.authSmokeSkipReason = authSmokeRequired ? authSkipReason : 'E2E_REQUIRE_AUTH=false'
       markChecksSkipped(
         summary,
@@ -2100,6 +2238,7 @@ async function main(): Promise<void> {
     }
 
     if (!externalBaseUrl) {
+      setStage('service worker lifecycle')
       console.log('🛰️ Verifying service worker lifecycle...')
       await recordCheck(
         summary,
@@ -2119,6 +2258,7 @@ async function main(): Promise<void> {
           )
       )
     } else {
+      setStage('service worker lifecycle skipped')
       appendCheck(summary, {
         name: 'service worker lifecycle',
         kind: 'service-worker',
@@ -2130,6 +2270,7 @@ async function main(): Promise<void> {
       console.log('🛰️ Skipping local service worker lifecycle audit for external base URL')
     }
 
+    setStage('completed')
     console.log('\n✅ Minimal E2E checks passed')
   } catch (error) {
     runError = error
@@ -2140,6 +2281,7 @@ async function main(): Promise<void> {
   } finally {
     process.off('SIGINT', handleTermination)
     process.off('SIGTERM', handleTermination)
+    clearTimeout(hardTimeoutId)
     try {
       await writeSmokeArtifacts(summary)
       console.log('🧾 Wrote smoke summary to ' + summary.artifactDir)
