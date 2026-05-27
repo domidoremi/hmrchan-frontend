@@ -143,6 +143,26 @@ describe('DeskPet', () => {
     expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--providerIssue')
   })
 
+  it('reacts to explicit pet state hints and knowledge workflow activity', async () => {
+    const wrapper = await mountDeskPet()
+    const memoryPanel = document.createElement('button')
+    memoryPanel.dataset.petState = 'memory-linking'
+    document.body.append(memoryPanel)
+
+    await dispatchWorkflowEvent(memoryPanel, new MouseEvent('pointerover', { bubbles: true }))
+
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--memoryLinking')
+
+    await vi.advanceTimersByTimeAsync(1600)
+    const citationPanel = document.createElement('section')
+    citationPanel.dataset.ragActivity = 'citation'
+    document.body.append(citationPanel)
+
+    await dispatchWorkflowEvent(citationPanel, new FocusEvent('focusin', { bubbles: true }))
+
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--citationReview')
+  })
+
   it('reacts to offline and online browser events with connection workflow states', async () => {
     const wrapper = await mountDeskPet()
 
@@ -154,6 +174,20 @@ describe('DeskPet', () => {
     await dispatchWorkflowEvent(window, new Event('online'))
 
     expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--syncingModels')
+  })
+
+  it('offers care actions from the context menu', async () => {
+    const wrapper = await mountDeskPet()
+
+    await wrapper.get('.desk-pet').trigger('contextmenu', { offsetX: 8, offsetY: 10 })
+    await wrapper.get('.desk-pet__menu-item:nth-of-type(3)').trigger('click')
+
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--excited')
+
+    await wrapper.get('.desk-pet').trigger('contextmenu', { offsetX: 8, offsetY: 10 })
+    await wrapper.get('.desk-pet__menu-item:nth-of-type(4)').trigger('click')
+
+    expect(wrapper.get('.desk-pet').classes()).toContain('desk-pet--focused')
   })
 
   it('plays the homepage auto intro and perches near the hero CTA', async () => {

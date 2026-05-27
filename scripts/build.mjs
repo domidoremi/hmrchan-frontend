@@ -71,3 +71,4 @@ try {
   )
 }
 runNodeScript(path.join(rootDir, 'node_modules/vite/bin/vite.js'), ['build'], contract.env)
+runNodeScript(path.join(rootDir, 'scripts/check-desk-pet-runtime-boundary.mjs'), [], contract.env)

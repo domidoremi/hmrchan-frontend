@@ -186,6 +186,7 @@ const showAutoHomeDeskPet = computed(
     isHomeRoute.value &&
     settings.value.enableAnimations &&
     settings.value.animationIntensity !== 'none' &&
+    settings.value.deskPet.enabled &&
     settings.value.deskPet.autoHomeEnabled &&
     settings.value.deskPet.autoHeroInteraction &&
     !settings.value.deskPet.dismissedAutoHome

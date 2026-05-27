@@ -1607,6 +1607,9 @@
     "menu": {
       "pat": "🤚 Pat head",
       "feed": "🐟 Feed",
+      "play": "✨ Play",
+      "focus": "◎ Focus",
+      "rest": "Zzz Rest",
       "hide": "👋 Hide pet"
     },
     "greeting": {
@@ -1640,12 +1643,39 @@
       "retrieving": ["Fetching clues!", "Digging through the shelves.", "I found a trail."],
       "contextCompressing": ["Packing the notes.", "Tidying the context.", "Making room."],
       "flareScan": ["Running a second sweep!", "Scanning the edges.", "One more pass!"],
+      "memoryLinking": ["Checking memory.", "Linking older clues.", "I have seen this before."],
+      "graphMapping": [
+        "Mapping relations.",
+        "Connecting points into paths.",
+        "The route is clearer."
+      ],
+      "citationReview": [
+        "Checking sources.",
+        "Aligning citations.",
+        "Reviewing the evidence chain."
+      ],
+      "knowledgeIndexing": [
+        "Sorting the index.",
+        "Filing new knowledge.",
+        "Adding this to the shelf."
+      ],
       "toolWorking": ["Tool mode!", "Working on it.", "Let me handle that."],
       "mcpWorking": ["Calling a helper.", "MCP route active.", "Checking the tool bridge."],
       "skillRunning": ["Skill running!", "Using a learned trick.", "This needs a special move."],
       "attachmentReading": ["Reading the file.", "Opening the attachment.", "Let me inspect this."],
       "webSearching": ["Searching around!", "Following the keywords.", "Sniffing out results."],
+      "success": ["Done!", "That went smoothly.", "Wrapped up nicely."],
       "modelTesting": ["Testing the route.", "Checking the engine.", "A quick systems check."],
+      "modelUnconfigured": [
+        "Not configured yet.",
+        "Let's connect a model first.",
+        "Missing a key."
+      ],
+      "modelUnavailable": [
+        "The model is away.",
+        "That route is closed for now.",
+        "Waiting for it to return."
+      ],
       "syncingModels": ["Syncing up!", "Back in step.", "Refreshing the connection."],
       "providerIssue": [
         "Service looks shaky.",
@@ -1653,7 +1683,14 @@
         "Something upstream blinked."
       ],
       "offlineWaiting": ["Offline for now.", "I'll nap until it returns.", "No signal yet."],
-      "warningRecover": ["Recovering...", "Let's try the safer path.", "I can work around this."]
+      "warningRecover": ["Recovering...", "Let's try the safer path.", "I can work around this."],
+      "updateCheck": ["Looking for updates.", "Checking the new build.", "Refreshing status."],
+      "hungry": ["A little hungry.", "Snack break?", "Running low on energy."],
+      "tired": ["I could use a rest.", "Getting sleepy.", "Slow is fine."],
+      "bored": ["A little bored.", "Want to browse something new?", "Waiting for a new move."],
+      "excited": ["Nice!", "Let's move!", "Fully awake now."],
+      "focused": ["Focus mode.", "Let's finish this part.", "I have the important bit."],
+      "sick": ["Not feeling great.", "Needs a little repair.", "Taking a short recovery pause."]
     }
   }
 }

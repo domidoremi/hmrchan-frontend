@@ -1,5 +1,13 @@
 <template>
-  <div class="state-indicator" :class="`state-indicator--${variant}`">
+  <div
+    class="state-indicator"
+    :class="`state-indicator--${variant}`"
+    :data-pet-state="petStateHint"
+    :data-rag-activity="ragActivityHint"
+    :data-provider-activity="providerActivityHint"
+    :data-model-status="modelStatusHint"
+    :data-update-activity="updateActivityHint"
+  >
     <div class="state-indicator__visual">
       <div class="state-indicator__glow" />
       <div class="state-indicator__icon-wrapper">
@@ -38,6 +46,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   AlertTriangle,
+  CheckCircle,
   CloudOff,
   FileQuestion,
   Inbox,
@@ -51,8 +60,22 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiStateIndicator' })
 
+type StateIndicatorVariant =
+  | 'empty'
+  | 'error'
+  | 'loading'
+  | 'not-found'
+  | 'no-results'
+  | 'service-unavailable'
+  | 'success'
+  | 'model-testing'
+  | 'model-unconfigured'
+  | 'model-unavailable'
+  | 'provider-sync'
+  | 'update-check'
+
 interface Props {
-  variant?: 'empty' | 'error' | 'loading' | 'not-found' | 'no-results' | 'service-unavailable'
+  variant?: StateIndicatorVariant
   title?: string
   description?: string
   showAction?: boolean
@@ -82,6 +105,12 @@ const resolvedTitle = computed(() => {
     'not-found': t('common.notFound'),
     'no-results': t('common.noResults'),
     'service-unavailable': t('error.serviceUnavailable'),
+    success: t('common.success'),
+    'model-testing': t('common.loading'),
+    'model-unconfigured': t('common.error'),
+    'model-unavailable': t('error.serviceUnavailable'),
+    'provider-sync': t('common.loading'),
+    'update-check': t('common.loading'),
   }
 
   return titles[props.variant] ?? t('common.noResults')
@@ -89,7 +118,9 @@ const resolvedTitle = computed(() => {
 
 const resolvedDescription = computed(() => {
   if (props.description) return props.description
-  if (props.variant === 'service-unavailable') return t('error.tryAgain')
+  if (props.variant === 'service-unavailable' || props.variant === 'model-unavailable') {
+    return t('error.tryAgain')
+  }
   return ''
 })
 
@@ -100,6 +131,12 @@ const iconMap: Record<string, LucideIcon> = {
   'not-found': FileQuestion,
   'no-results': Search,
   'service-unavailable': CloudOff,
+  success: CheckCircle,
+  'model-testing': LoaderCircle,
+  'model-unconfigured': FileQuestion,
+  'model-unavailable': CloudOff,
+  'provider-sync': LoaderCircle,
+  'update-check': LoaderCircle,
 }
 
 const iconComponent = computed(() => iconMap[props.variant] ?? Inbox)
@@ -112,6 +149,12 @@ const iconName = computed(() => {
     'not-found': 'search',
     'no-results': 'search',
     'service-unavailable': 'sparkle',
+    success: 'sparkle',
+    'model-testing': 'sparkle',
+    'model-unconfigured': 'sparkle',
+    'model-unavailable': 'sparkle',
+    'provider-sync': 'sparkle',
+    'update-check': 'sparkle',
   }
 
   return names[props.variant] ?? 'sparkle'
@@ -123,6 +166,47 @@ const shouldShowAction = computed(() => {
 })
 
 const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'))
+
+const petStateHint = computed(() => {
+  const hints: Partial<Record<StateIndicatorVariant, string>> = {
+    error: 'warningRecover',
+    empty: 'review',
+    'not-found': 'review',
+    'no-results': 'review',
+    'service-unavailable': 'providerIssue',
+    success: 'success',
+    'model-testing': 'modelTesting',
+    'model-unconfigured': 'modelUnconfigured',
+    'model-unavailable': 'modelUnavailable',
+  }
+
+  return hints[props.variant] ?? null
+})
+
+const ragActivityHint = computed(() => {
+  if (props.variant === 'loading') return 'retrieving'
+  return null
+})
+
+const providerActivityHint = computed(() => {
+  if (props.variant === 'provider-sync') return 'syncing'
+  return null
+})
+
+const modelStatusHint = computed(() => {
+  const hints: Partial<Record<StateIndicatorVariant, string>> = {
+    'model-testing': 'testing',
+    'model-unconfigured': 'unconfigured',
+    'model-unavailable': 'unavailable',
+  }
+
+  return hints[props.variant] ?? null
+})
+
+const updateActivityHint = computed(() => {
+  if (props.variant === 'update-check') return 'checking'
+  return null
+})
 </script>
 
 <style scoped>
@@ -212,47 +296,75 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
 /* Variant: Empty / No Results */
 .state-indicator--empty .state-indicator__glow,
 .state-indicator--no-results .state-indicator__glow,
-.state-indicator--loading .state-indicator__glow {
+.state-indicator--loading .state-indicator__glow,
+.state-indicator--model-testing .state-indicator__glow,
+.state-indicator--provider-sync .state-indicator__glow,
+.state-indicator--update-check .state-indicator__glow {
   background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 70%);
 }
 
 .state-indicator--empty .state-indicator__icon,
 .state-indicator--no-results .state-indicator__icon,
-.state-indicator--loading .state-indicator__icon {
+.state-indicator--loading .state-indicator__icon,
+.state-indicator--model-testing .state-indicator__icon,
+.state-indicator--provider-sync .state-indicator__icon,
+.state-indicator--update-check .state-indicator__icon {
   color: var(--color-primary);
 }
 
-.state-indicator--loading .state-indicator__icon {
+.state-indicator--loading .state-indicator__icon,
+.state-indicator--model-testing .state-indicator__icon,
+.state-indicator--provider-sync .state-indicator__icon,
+.state-indicator--update-check .state-indicator__icon {
   animation: state-spin 1.1s linear infinite;
 }
 
 /* Variant: Error */
 .state-indicator--error .state-indicator__glow,
-.state-indicator--service-unavailable .state-indicator__glow {
+.state-indicator--service-unavailable .state-indicator__glow,
+.state-indicator--model-unavailable .state-indicator__glow {
   background: radial-gradient(circle, rgba(var(--color-error-rgb), 0.15) 0%, transparent 70%);
 }
 
 .state-indicator--error .state-indicator__icon-wrapper,
-.state-indicator--service-unavailable .state-indicator__icon-wrapper {
+.state-indicator--service-unavailable .state-indicator__icon-wrapper,
+.state-indicator--model-unavailable .state-indicator__icon-wrapper {
   border-color: rgba(var(--color-error-rgb), 0.2);
 }
 
 .state-indicator--error .state-indicator__icon,
-.state-indicator--service-unavailable .state-indicator__icon {
+.state-indicator--service-unavailable .state-indicator__icon,
+.state-indicator--model-unavailable .state-indicator__icon {
   color: var(--color-error);
 }
 
 /* Variant: Not Found */
-.state-indicator--not-found .state-indicator__glow {
+.state-indicator--not-found .state-indicator__glow,
+.state-indicator--model-unconfigured .state-indicator__glow {
   background: radial-gradient(circle, rgba(var(--color-warning-rgb), 0.15) 0%, transparent 70%);
 }
 
-.state-indicator--not-found .state-indicator__icon-wrapper {
+.state-indicator--not-found .state-indicator__icon-wrapper,
+.state-indicator--model-unconfigured .state-indicator__icon-wrapper {
   border-color: rgba(var(--color-warning-rgb), 0.2);
 }
 
-.state-indicator--not-found .state-indicator__icon {
+.state-indicator--not-found .state-indicator__icon,
+.state-indicator--model-unconfigured .state-indicator__icon {
   color: var(--color-warning);
+}
+
+/* Variant: Success */
+.state-indicator--success .state-indicator__glow {
+  background: radial-gradient(circle, rgba(var(--color-success-rgb), 0.15) 0%, transparent 70%);
+}
+
+.state-indicator--success .state-indicator__icon-wrapper {
+  border-color: rgba(var(--color-success-rgb), 0.2);
+}
+
+.state-indicator--success .state-indicator__icon {
+  color: var(--color-success);
 }
 
 .state-indicator__content {
@@ -291,7 +403,10 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
 @media (prefers-reduced-motion: reduce) {
   .state-indicator__glow,
   .state-indicator__icon-wrapper,
-  .state-indicator--loading .state-indicator__icon {
+  .state-indicator--loading .state-indicator__icon,
+  .state-indicator--model-testing .state-indicator__icon,
+  .state-indicator--provider-sync .state-indicator__icon,
+  .state-indicator--update-check .state-indicator__icon {
     animation: none;
   }
 }

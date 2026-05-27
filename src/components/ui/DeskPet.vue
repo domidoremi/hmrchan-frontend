@@ -22,11 +22,11 @@ const props = withDefaults(
 
 const defaultDeskPetSettings = {
   enabled: false,
-  autoHomeEnabled: true,
+  autoHomeEnabled: false,
   dismissedAutoHome: false,
   scale: 1,
-  speechEnabled: true,
-  autoHeroInteraction: true,
+  speechEnabled: false,
+  autoHeroInteraction: false,
   followSensitivity: 1,
 }
 const deskPetSettings = computed(() => settings.value.deskPet ?? defaultDeskPetSettings)
@@ -615,13 +615,23 @@ const scheduleRandomIdleBehavior = () => {
   randomIdleBehaviorTimer = setTimeout(() => {
     if (currentState.value !== PetState.IDLE && currentState.value !== PetState.PERCH) return
     const restState = currentState.value === PetState.PERCH ? PetState.PERCH : PetState.IDLE
-    const behaviors = [PetState.BLINK, PetState.THINKING, PetState.HAPPY] as const
+    const behaviors = [
+      PetState.BLINK,
+      PetState.THINKING,
+      PetState.HAPPY,
+      PetState.BORED,
+      PetState.HUNGRY,
+      PetState.FOCUSED,
+      PetState.EXCITED,
+      PetState.TIRED,
+    ] as const
     const picked = behaviors[Math.floor(Math.random() * behaviors.length)]
     currentState.value = picked
     if (picked !== PetState.BLINK) {
       showStateBubble(picked, 2500)
     }
-    if (picked === PetState.HAPPY) spawnParticles('✨', 2)
+    if (picked === PetState.HAPPY || picked === PetState.EXCITED) spawnParticles('*', 2)
+    if (picked === PetState.HUNGRY) spawnParticles('+', 2)
     stateResetTimer = setTimeout(
       () => {
         currentState.value = restState
@@ -811,7 +821,26 @@ const menuActions = {
     showContextMenu.value = false
     transitionTo(PetState.EAT, 2000, getRestState())
     showStateBubble(PetState.EAT, 2000)
-    spawnParticles('🐟', 3)
+    spawnParticles('+', 3)
+    resetIdleTimer()
+  },
+  play() {
+    showContextMenu.value = false
+    transitionTo(PetState.EXCITED, 2000, getRestState())
+    showStateBubble(PetState.EXCITED, 2000)
+    spawnParticles('*', 3)
+    resetIdleTimer()
+  },
+  focus() {
+    showContextMenu.value = false
+    transitionTo(PetState.FOCUSED, 2400, getRestState())
+    showStateBubble(PetState.FOCUSED, 2400)
+    resetIdleTimer()
+  },
+  rest() {
+    showContextMenu.value = false
+    transitionTo(PetState.TIRED, 2200, getRestState())
+    showStateBubble(PetState.TIRED, 2200)
     resetIdleTimer()
   },
   hide() {
@@ -1081,6 +1110,15 @@ onUnmounted(() => {
           <button type="button" class="desk-pet__menu-item" @click="menuActions.feed()">
             {{ t('deskPet.menu.feed') }}
           </button>
+          <button type="button" class="desk-pet__menu-item" @click="menuActions.play()">
+            {{ t('deskPet.menu.play') }}
+          </button>
+          <button type="button" class="desk-pet__menu-item" @click="menuActions.focus()">
+            {{ t('deskPet.menu.focus') }}
+          </button>
+          <button type="button" class="desk-pet__menu-item" @click="menuActions.rest()">
+            {{ t('deskPet.menu.rest') }}
+          </button>
           <div class="desk-pet__menu-divider" />
           <button
             type="button"
@@ -1331,7 +1369,9 @@ onUnmounted(() => {
 }
 
 /* ═══ 状态动画 ═══ */
-.desk-pet--idle {
+.desk-pet--idle,
+.desk-pet--waiting,
+.desk-pet--bored {
   animation: breathe 3s ease-in-out infinite;
 }
 @keyframes breathe {
@@ -1518,7 +1558,10 @@ onUnmounted(() => {
   }
 }
 
-.desk-pet--happy {
+.desk-pet--happy,
+.desk-pet--success,
+.desk-pet--excited,
+.desk-pet--skillRunning {
   animation: happy-bounce 0.8s ease-in-out infinite;
 }
 @keyframes happy-bounce {
@@ -1534,7 +1577,13 @@ onUnmounted(() => {
   }
 }
 
-.desk-pet--thinking {
+.desk-pet--thinking,
+.desk-pet--deepThinking,
+.desk-pet--review,
+.desk-pet--contextCompressing,
+.desk-pet--memoryLinking,
+.desk-pet--citationReview,
+.desk-pet--focused {
   animation: think-sway 2s ease-in-out infinite;
 }
 @keyframes think-sway {
@@ -1563,7 +1612,8 @@ onUnmounted(() => {
   }
 }
 
-.desk-pet--eat {
+.desk-pet--eat,
+.desk-pet--hungry {
   animation: eat-chomp 0.5s ease-in-out infinite;
 }
 @keyframes eat-chomp {
@@ -1576,7 +1626,12 @@ onUnmounted(() => {
   }
 }
 
-.desk-pet--dizzy {
+.desk-pet--dizzy,
+.desk-pet--modelUnconfigured,
+.desk-pet--providerIssue,
+.desk-pet--warningRecover,
+.desk-pet--failed,
+.desk-pet--sick {
   animation: dizzy-spin 0.8s ease-in-out infinite;
 }
 @keyframes dizzy-spin {
@@ -1590,6 +1645,38 @@ onUnmounted(() => {
   75% {
     transform: rotate(-8deg);
   }
+}
+
+.desk-pet--retrieving,
+.desk-pet--knowledgeIndexing,
+.desk-pet--syncingModels,
+.desk-pet--updateCheck,
+.desk-pet--sendingPrompt,
+.desk-pet--toolWorking,
+.desk-pet--mcpWorking,
+.desk-pet--attachmentReading,
+.desk-pet--webSearching,
+.desk-pet--modelTesting,
+.desk-pet--graphMapping,
+.desk-pet--flareScan {
+  animation: work-ready 1.1s ease-in-out infinite;
+}
+
+@keyframes work-ready {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-0.18rem) scale(1.02);
+  }
+}
+
+.desk-pet--tired,
+.desk-pet--modelUnavailable,
+.desk-pet--offlineWaiting {
+  animation: sleep-breathe 4s ease-in-out infinite;
+  filter: brightness(0.88);
 }
 
 /* Zzz */
@@ -1641,7 +1728,35 @@ onUnmounted(() => {
   .desk-pet--thinking,
   .desk-pet--pat,
   .desk-pet--eat,
-  .desk-pet--dizzy {
+  .desk-pet--dizzy,
+  .desk-pet--waiting,
+  .desk-pet--deepThinking,
+  .desk-pet--review,
+  .desk-pet--contextCompressing,
+  .desk-pet--memoryLinking,
+  .desk-pet--graphMapping,
+  .desk-pet--citationReview,
+  .desk-pet--knowledgeIndexing,
+  .desk-pet--toolWorking,
+  .desk-pet--mcpWorking,
+  .desk-pet--skillRunning,
+  .desk-pet--attachmentReading,
+  .desk-pet--webSearching,
+  .desk-pet--success,
+  .desk-pet--modelTesting,
+  .desk-pet--modelUnconfigured,
+  .desk-pet--modelUnavailable,
+  .desk-pet--syncingModels,
+  .desk-pet--providerIssue,
+  .desk-pet--offlineWaiting,
+  .desk-pet--warningRecover,
+  .desk-pet--updateCheck,
+  .desk-pet--hungry,
+  .desk-pet--tired,
+  .desk-pet--bored,
+  .desk-pet--excited,
+  .desk-pet--focused,
+  .desk-pet--sick {
     animation: none;
     transition: none;
   }

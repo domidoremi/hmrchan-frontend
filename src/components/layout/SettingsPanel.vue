@@ -748,11 +748,11 @@ const deskPetConfig = computed(() => {
   return (
     settings.value.deskPet ?? {
       enabled: false,
-      autoHomeEnabled: true,
+      autoHomeEnabled: false,
       dismissedAutoHome: false,
       scale: 1,
-      speechEnabled: true,
-      autoHeroInteraction: true,
+      speechEnabled: false,
+      autoHeroInteraction: false,
       followSensitivity: 1,
     }
   )

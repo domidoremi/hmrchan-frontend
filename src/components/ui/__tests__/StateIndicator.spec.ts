@@ -11,6 +11,7 @@ vi.mock('vue-i18n', () => ({
         'common.loading': 'Loading...',
         'common.notFound': 'Not found',
         'common.retry': 'Retry',
+        'common.success': 'Success',
         'error.serviceUnavailable': 'Service unavailable',
         'error.tryAgain': 'Please try again later.',
       }
@@ -105,9 +106,29 @@ describe('StateIndicator', () => {
     expect(host.querySelector('button')?.textContent).toContain('Retry')
   })
 
-  it('disables loading icon animation when reduced motion is requested', () => {
-    expect(stateIndicatorSource).toContain(
-      '.state-indicator--loading .state-indicator__icon {\n    animation: none;'
+  it('exposes pet workflow hints for extended page states', () => {
+    const success = mountStateIndicator({ variant: 'success' }).host.querySelector(
+      '.state-indicator'
     )
+    const unavailable = mountStateIndicator({ variant: 'model-unavailable' }).host.querySelector(
+      '.state-indicator'
+    )
+    const syncing = mountStateIndicator({ variant: 'provider-sync' }).host.querySelector(
+      '.state-indicator'
+    )
+    const update = mountStateIndicator({ variant: 'update-check' }).host.querySelector(
+      '.state-indicator'
+    )
+
+    expect(success?.getAttribute('data-pet-state')).toBe('success')
+    expect(unavailable?.getAttribute('data-model-status')).toBe('unavailable')
+    expect(syncing?.getAttribute('data-provider-activity')).toBe('syncing')
+    expect(update?.getAttribute('data-update-activity')).toBe('checking')
+  })
+
+  it('disables loading icon animation when reduced motion is requested', () => {
+    expect(stateIndicatorSource).toContain('.state-indicator--loading .state-indicator__icon')
+    expect(stateIndicatorSource).toContain('.state-indicator--model-testing .state-indicator__icon')
+    expect(stateIndicatorSource).toContain('.state-indicator--update-check .state-indicator__icon')
   })
 })
