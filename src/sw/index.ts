@@ -9,6 +9,29 @@ import {
   PUBLIC_MEDIA_CACHE_NAME,
 } from '@/sw/publicCachePolicy'
 
+const NAVIGATION_FALLBACK_CACHE_NAME = PUBLIC_API_CACHE_NAME.replace(
+  'hmr-public-api-',
+  'hmr-navigation-'
+)
+const NAVIGATION_FALLBACK_URLS = ['/', '/index.html', '/404.html', '/offline.html'] as const
+const APP_SHELL_PATHS = new Set([
+  '/',
+  '/about',
+  '/auth/callback',
+  '/auth/passkey-recovery',
+  '/community',
+  '/contact',
+  '/explore',
+  '/join-us',
+  '/login',
+  '/profile',
+  '/register',
+  '/schedule',
+  '/settings',
+  '/thank-you',
+])
+const APP_SHELL_PREFIXES = ['/auth/', '/posts/', '/profile/']
+
 async function trimCache(cacheName: string): Promise<void> {
   const cache = await caches.open(cacheName)
   const keys = await cache.keys()
@@ -19,7 +42,92 @@ async function trimCache(cacheName: string): Promise<void> {
 }
 
 async function clearPublicCaches(): Promise<void> {
-  await Promise.all([caches.delete(PUBLIC_API_CACHE_NAME), caches.delete(PUBLIC_MEDIA_CACHE_NAME)])
+  await Promise.all([
+    caches.delete(PUBLIC_API_CACHE_NAME),
+    caches.delete(PUBLIC_MEDIA_CACHE_NAME),
+    caches.delete(NAVIGATION_FALLBACK_CACHE_NAME),
+  ])
+}
+
+function isNavigationRequest(request: Request): boolean {
+  return (
+    request.mode === 'navigate' ||
+    request.destination === 'document' ||
+    (request.method === 'GET' && (request.headers.get('accept') ?? '').includes('text/html'))
+  )
+}
+
+async function precacheNavigationFallbacks(): Promise<void> {
+  const cache = await caches.open(NAVIGATION_FALLBACK_CACHE_NAME)
+
+  await Promise.all(
+    NAVIGATION_FALLBACK_URLS.map(async (url) => {
+      try {
+        const response = await fetch(url, { cache: 'reload' })
+        if (response.ok || (url === '/404.html' && response.status === 404)) {
+          await cache.put(url, response)
+        }
+      } catch {
+        // Navigation fallback is best-effort; failed assets fall back to the next candidate.
+      }
+    })
+  )
+}
+
+function isAppShellPath(pathname: string): boolean {
+  return (
+    APP_SHELL_PATHS.has(pathname) ||
+    APP_SHELL_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  )
+}
+
+async function matchNavigationFallback(candidates: readonly string[]): Promise<Response | null> {
+  const cache = await caches.open(NAVIGATION_FALLBACK_CACHE_NAME)
+
+  for (const candidate of candidates) {
+    const cached = await cache.match(candidate)
+    if (cached) return cached
+  }
+
+  return null
+}
+
+async function handleNavigationRequest(request: Request): Promise<Response> {
+  const pathname = new URL(request.url).pathname
+
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      return response
+    }
+
+    if (response.status === 404) {
+      const notFoundFallback = await matchNavigationFallback([
+        '/404.html',
+        '/index.html',
+        '/',
+        '/offline.html',
+      ])
+      if (notFoundFallback) return notFoundFallback
+    }
+  } catch {
+    // Fall through to the cached navigation fallback.
+  }
+
+  const fallback = await matchNavigationFallback(
+    isAppShellPath(pathname)
+      ? ['/index.html', '/', '/offline.html']
+      : ['/404.html', '/index.html', '/', '/offline.html']
+  )
+  if (fallback) return fallback
+
+  return new Response('Offline', {
+    status: 503,
+    headers: {
+      'Cache-Control': 'no-store',
+      'Content-Type': 'text/plain; charset=utf-8',
+    },
+  })
 }
 
 async function handlePublicCacheRequest(request: Request): Promise<Response> {
@@ -46,7 +154,12 @@ async function handlePublicCacheRequest(request: Request): Promise<Response> {
 }
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(self.skipWaiting())
+  event.waitUntil(
+    (async () => {
+      await precacheNavigationFallbacks()
+      await self.skipWaiting()
+    })()
+  )
 })
 
 self.addEventListener('activate', (event) => {
@@ -61,6 +174,11 @@ self.addEventListener('message', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
+  if (isNavigationRequest(event.request)) {
+    event.respondWith(handleNavigationRequest(event.request))
+    return
+  }
+
   if (!isPublicCacheableRequest(event.request)) return
   event.respondWith(handlePublicCacheRequest(event.request))
 })

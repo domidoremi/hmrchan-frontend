@@ -1607,7 +1607,12 @@ async function assertServiceWorkerLifecycle(
       const offlineResponse = await page.goto(`${baseUrl}/offline-check`, {
         waitUntil: 'domcontentloaded',
       })
-      await page.waitForSelector('.not-found-page')
+      await page.waitForFunction(() =>
+        Boolean(
+          document.querySelector('.not-found-page') ||
+          document.querySelector('[data-prerender-shell-title="Page not found"]')
+        )
+      )
       await page.waitForFunction(() => document.title.includes('MomiChan'))
 
       if (!offlineResponse) {
@@ -1625,10 +1630,10 @@ async function assertServiceWorkerLifecycle(
       }
 
       await page.setOfflineMode(false)
-      await page.goto(`${baseUrl}/search`, {
+      await page.goto(`${baseUrl}/explore`, {
         waitUntil: 'domcontentloaded',
       })
-      await page.waitForSelector('.search-page')
+      await page.waitForSelector('.hmr-route-page--explore')
     },
     getPreviewDiagnostics
   )
