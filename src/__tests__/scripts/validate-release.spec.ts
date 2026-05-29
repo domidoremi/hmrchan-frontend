@@ -399,12 +399,15 @@ describe('validate release stage summaries', () => {
     )
   })
 
-  it('classifies service worker and manifest files as PWA runtime changes', () => {
+  it('classifies service worker, manifest, and install assets as PWA runtime changes', () => {
     const changeSummary = classifyValidationChanges([
       'src/sw/index.ts',
       'src/sw/publicCachePolicy.ts',
       'src/sw/__tests__/publicCachePolicy.spec.ts',
       'public/manifest.json',
+      'public/icons/sitting-192.webp',
+      'public/icons/apple-touch-icon-180x180.png',
+      'public/favicon.ico',
       'build/vite/plugins/serviceWorkerBuild.ts',
     ])
 
@@ -414,9 +417,12 @@ describe('validate release stage summaries', () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: 'pwa-runtime',
-          matchedCount: 5,
+          matchedCount: 8,
           matchedPaths: [
             'build/vite/plugins/serviceWorkerBuild.ts',
+            'public/favicon.ico',
+            'public/icons/apple-touch-icon-180x180.png',
+            'public/icons/sitting-192.webp',
             'public/manifest.json',
             'src/sw/__tests__/publicCachePolicy.spec.ts',
             'src/sw/index.ts',

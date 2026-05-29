@@ -95,10 +95,13 @@ const CHANGE_FOCUS_RULES = Object.freeze([
   Object.freeze({
     id: 'pwa-runtime',
     label: 'PWA/runtime cache',
-    description: 'Service worker, public cache policy, or install manifest changed.',
+    description:
+      'Service worker, public cache policy, install manifest, or install assets changed.',
     matches: (filePath) =>
       filePath.startsWith('src/sw/') ||
+      filePath.startsWith('public/icons/') ||
       filePath === 'public/manifest.json' ||
+      filePath === 'public/favicon.ico' ||
       filePath === 'build/vite/plugins/serviceWorkerBuild.ts',
   }),
   Object.freeze({
