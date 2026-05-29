@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  buildValidationMarkdownSummary,
+  buildValidationSummary,
+} from '../../../scripts/lib/validate-release.js'
+
 const execFileSyncMock = vi.hoisted(() => vi.fn())
 
 vi.mock('node:child_process', () => ({
@@ -121,6 +126,36 @@ describe('validate release git range resolution', () => {
       'src/views/HomePage.vue',
     ])
   })
+
+  it('separates committed range and local worktree changed files', async () => {
+    mockGitOutput((args) => {
+      const command = args.join(' ')
+      if (command === 'diff --name-only origin/production/next...HEAD') {
+        return 'scripts/validate-release.mjs\n'
+      }
+      if (command === 'diff --name-only') {
+        return 'src/api/client.ts\n'
+      }
+      if (command === 'diff --cached --name-only') {
+        return 'src/stores/auth.ts\n'
+      }
+      if (command === 'ls-files --others --exclude-standard') {
+        return 'src/__tests__/scripts/validate-release.spec.ts\n'
+      }
+      throw new Error(`Unexpected git command: ${command}`)
+    })
+    const { resolveCommittedChangedFiles, resolveLocalChangedFiles } =
+      await importValidateReleaseModule()
+
+    expect(resolveCommittedChangedFiles('origin/production/next...HEAD')).toEqual([
+      'scripts/validate-release.mjs',
+    ])
+    expect(resolveLocalChangedFiles()).toEqual([
+      'src/__tests__/scripts/validate-release.spec.ts',
+      'src/api/client.ts',
+      'src/stores/auth.ts',
+    ])
+  })
 })
 
 describe('validate release stage summaries', () => {
@@ -143,5 +178,43 @@ describe('validate release stage summaries', () => {
     expect(localStaticStage?.selected).toBe(false)
     expect(localStaticStage?.status).toBe('skipped')
     expect(localStaticStage?.reason).toBe('Runs only for prepush-full/local/candidate/production')
+  })
+
+  it('renders committed and local worktree changed file sections', async () => {
+    const summary = buildValidationSummary({
+      mode: 'hook',
+      artifactDir: 'output/validation/test-run',
+      git: {
+        branch: 'production/next',
+        commitSha: 'e96e270812ff2f48a9f4efb4d9db1dbd565032c2',
+        diffRange: 'origin/production/next...HEAD',
+        committedChangedFiles: ['scripts/validate-release.mjs'],
+        localChangedFiles: ['src/__tests__/scripts/validate-release.spec.ts'],
+      },
+      targets: {
+        baseUrl: 'https://momichan.xyz',
+        controlledBaseUrl: null,
+      },
+      changeSummary: {
+        changedFiles: [
+          'scripts/validate-release.mjs',
+          'src/__tests__/scripts/validate-release.spec.ts',
+        ],
+        changedFileCount: 2,
+        focusAreas: [],
+        labels: [],
+        hasValidationContractChanges: false,
+        hasEdgeChanges: false,
+        hasAuthDataFlowChanges: false,
+        hasRouteUiChanges: false,
+      },
+      stages: [],
+    })
+    const markdown = buildValidationMarkdownSummary(summary)
+
+    expect(markdown).toContain('### Committed Range')
+    expect(markdown).toContain('- scripts/validate-release.mjs')
+    expect(markdown).toContain('### Local Worktree')
+    expect(markdown).toContain('- src/__tests__/scripts/validate-release.spec.ts')
   })
 })

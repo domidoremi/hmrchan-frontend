@@ -198,10 +198,8 @@ function resolveGitDiffRange(branch) {
 
 function resolveChangedFiles(diffRange) {
   const outputs = [
-    readGitOutput(['diff', '--name-only', diffRange]),
-    readGitOutput(['diff', '--name-only']),
-    readGitOutput(['diff', '--cached', '--name-only']),
-    readGitOutput(['ls-files', '--others', '--exclude-standard']),
+    resolveCommittedChangedFiles(diffRange).join('\n'),
+    resolveLocalChangedFiles().join('\n'),
   ]
 
   return [
@@ -225,6 +223,23 @@ function resolveCommittedChangedFiles(diffRange) {
     .filter(Boolean)
 }
 
+function resolveLocalChangedFiles() {
+  const outputs = [
+    readGitOutput(['diff', '--name-only']),
+    readGitOutput(['diff', '--cached', '--name-only']),
+    readGitOutput(['ls-files', '--others', '--exclude-standard']),
+  ]
+
+  return [
+    ...new Set(
+      outputs
+        .flatMap((output) => output.split(/\r?\n/))
+        .map((line) => line.trim())
+        .filter(Boolean)
+    ),
+  ].sort()
+}
+
 function resolveGitContext() {
   const branch = readGitOutput(['rev-parse', '--abbrev-ref', 'HEAD'], 'unknown')
   const commitSha = readGitOutput(['rev-parse', 'HEAD'], 'unknown')
@@ -235,6 +250,7 @@ function resolveGitContext() {
     diffRange,
     changedFiles: resolveChangedFiles(diffRange),
     committedChangedFiles: resolveCommittedChangedFiles(diffRange),
+    localChangedFiles: resolveLocalChangedFiles(),
   }
 }
 
@@ -634,6 +650,9 @@ function buildSummaryFromState({
       branch: git.branch,
       commitSha: git.commitSha,
       diffRange: git.diffRange,
+      changedFiles: git.changedFiles,
+      committedChangedFiles: git.committedChangedFiles,
+      localChangedFiles: git.localChangedFiles,
     },
     targets: {
       baseUrl,
@@ -809,6 +828,7 @@ export {
   resolveCommittedChangedFiles,
   resolveGitContext,
   resolveGitDiffRange,
+  resolveLocalChangedFiles,
   resolveOriginHeadDiffRange,
   resolveRemoteBranchDiffRange,
   resolveTrackingDiffRange,

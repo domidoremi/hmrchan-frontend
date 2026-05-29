@@ -188,6 +188,10 @@ function findUnresolvedSelectedStage(stages) {
   )
 }
 
+function formatFileList(paths, emptyLine) {
+  return paths?.length > 0 ? paths.map((filePath) => `- ${filePath}`) : [`- ${emptyLine}`]
+}
+
 export function buildValidationSummary({ mode, artifactDir, git, targets, changeSummary, stages }) {
   const failedStage = findFailedStage(stages)
   const unexpectedSkip = findUnexpectedSkip(stages)
@@ -258,9 +262,19 @@ export function buildValidationMarkdownSummary(summary) {
   const changedFileLines =
     summary.changeSummary.changedFiles.length > 0
       ? summary.changeSummary.changedFiles.map((filePath) => `- ${filePath}`)
-      : [
-          '- No changed files detected; validation ran against the current HEAD and worktree snapshot.',
-        ]
+      : formatFileList(
+          [],
+          'No changed files detected; validation ran against the current HEAD and worktree snapshot.'
+        )
+
+  const committedChangedFileLines = formatFileList(
+    summary.git.committedChangedFiles,
+    'No committed changes detected in the resolved git range.'
+  )
+  const localChangedFileLines = formatFileList(
+    summary.git.localChangedFiles,
+    'No staged, unstaged, or untracked worktree changes detected.'
+  )
 
   return [
     '# Release Validation Summary',
@@ -289,6 +303,14 @@ export function buildValidationMarkdownSummary(summary) {
     '## Changed Files',
     '',
     ...changedFileLines,
+    '',
+    '### Committed Range',
+    '',
+    ...committedChangedFileLines,
+    '',
+    '### Local Worktree',
+    '',
+    ...localChangedFileLines,
     '',
   ].join('\n')
 }
