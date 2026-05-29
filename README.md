@@ -67,7 +67,7 @@ bun run validate:release --mode local
 - 认证唯一正文位于 `G:\Project\hmrchan\AUTHENTICATION.md`
 - 交付验证流程位于 [VALIDATION.md](/G:/Project/hmrchan/hmrchan-frontend/VALIDATION.md)
 - 本仓库交付不再依赖 GitHub Actions，统一使用本地 `validate:release` runner
-- 本仓库内的 `docs/` 目录继续维护非认证类文档
+- `docs/` 目录为本地资料区，不进入仓库提交；交付文档保留在已跟踪的根级文档中
 
 ## License
 

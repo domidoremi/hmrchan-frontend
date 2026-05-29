@@ -156,6 +156,7 @@ output/
 .agent/
 .agents/
 .claude/
+CLAUDE.md
 .codex/
 .codex-temp/
 .kiro/
