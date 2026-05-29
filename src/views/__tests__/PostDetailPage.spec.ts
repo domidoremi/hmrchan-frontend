@@ -72,7 +72,7 @@ async function mountPostDetail(path = '/posts/post-1') {
     },
   })
   await flushPromises()
-  return wrapper
+  return { wrapper, router }
 }
 
 describe('PostDetailPage', () => {
@@ -84,7 +84,7 @@ describe('PostDetailPage', () => {
   it('loads detail content through the public resource cache using the route id', async () => {
     mocks.readPublicContent.mockResolvedValue(makeResource(makeDetailContent()))
 
-    const wrapper = await mountPostDetail('/posts/post-1')
+    const { wrapper } = await mountPostDetail('/posts/post-1')
 
     expect(mocks.readPublicContent).toHaveBeenCalledWith({
       key: 'hmr:post-detail:post-1',
@@ -117,7 +117,7 @@ describe('PostDetailPage', () => {
       )
     )
 
-    const wrapper = await mountPostDetail('/posts/missing')
+    const { wrapper } = await mountPostDetail('/posts/missing')
 
     expect(wrapper.text()).toContain('未找到 · 该帖子可能已被移除')
     expect(wrapper.text()).toContain('这条帖子不存在或已下架')
@@ -147,7 +147,7 @@ describe('PostDetailPage', () => {
       )
     )
 
-    const wrapper = await mountPostDetail('/posts/post-1')
+    const { wrapper } = await mountPostDetail('/posts/post-1')
     const heroImage = wrapper.find('.hmr-detail-cover-media img')
     const mediaImage = wrapper.find('.hmr-detail-media-card img')
 
@@ -178,13 +178,39 @@ describe('PostDetailPage', () => {
       )
     )
 
-    const wrapper = await mountPostDetail('/posts/post-1')
+    const { wrapper } = await mountPostDetail('/posts/post-1')
     const mediaCard = wrapper.find('.hmr-detail-media-card')
     const mediaImage = mediaCard.find('img')
 
     expect(mediaCard.attributes('href')).toBe('/api/v1/media/media-1/thumbnail?size=large')
     expect(mediaCard.attributes('target')).toBe('_blank')
     expect(mediaImage.attributes('src')).toBe('/api/v1/media/media-1/thumbnail?size=small')
+  })
+
+  it('does not route back into the current post when an image attachment is clicked', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(
+        makeDetailContent({
+          media: [
+            {
+              id: 'media-1',
+              title: 'Attachment preview',
+              mediaType: 'image',
+              thumbnailUrl: '/api/v1/media/media-1/thumbnail?size=small',
+              streamUrl: '/api/v1/media/media-1/stream',
+            },
+          ],
+        })
+      )
+    )
+
+    const { wrapper, router } = await mountPostDetail('/posts/post-1')
+    const mediaCard = wrapper.find('.hmr-detail-media-card')
+
+    await mediaCard.trigger('click')
+
+    expect(router.currentRoute.value.fullPath).toBe('/posts/post-1')
+    expect(mediaCard.attributes('href')).toBe('/api/v1/media/media-1/thumbnail?size=large')
   })
 
   it('opens non-image attachment cards with the stream URL', async () => {
@@ -204,7 +230,7 @@ describe('PostDetailPage', () => {
       )
     )
 
-    const wrapper = await mountPostDetail('/posts/post-1')
+    const { wrapper } = await mountPostDetail('/posts/post-1')
 
     expect(wrapper.find('.hmr-detail-media-card').attributes('href')).toBe(
       '/api/v1/media/media-1/stream'
