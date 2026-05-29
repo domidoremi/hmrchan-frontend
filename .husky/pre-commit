@@ -20,7 +20,7 @@ if [ -s "$staged_code_files" ]; then
   xargs -0r git add -- < "$staged_code_files"
 fi
 
-git diff --cached --name-only --diff-filter=ACMR -z -- '*.js' '*.mjs' '*.cjs' '*.mts' '*.cts' '*.json' '*.md' '*.css' '*.scss' > "$staged_format_files"
+git diff --cached --name-only --diff-filter=ACMR -z -- '*.js' '*.mjs' '*.cjs' '*.mts' '*.cts' '*.json' '*.md' '*.css' '*.scss' '*.yml' '*.yaml' > "$staged_format_files"
 if [ -s "$staged_format_files" ]; then
   xargs -0r -- "$NODE_BIN" node_modules/prettier/bin/prettier.cjs --write < "$staged_format_files"
   xargs -0r git add -- < "$staged_format_files"
