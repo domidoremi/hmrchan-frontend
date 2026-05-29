@@ -157,7 +157,7 @@ async function discoverLiveDetailRoute(page, baseUrl, config) {
               .filter((value) => typeof value === 'string' && value.length > 0)
 
             for (const value of routeValues) {
-                if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(value)) return value
+              if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(value)) return value
               if (kind === 'discussion' && /^\/community\/discussions\/[^/?#]+$/i.test(value)) {
                 return value
               }
@@ -190,49 +190,54 @@ async function discoverLiveDetailRoute(page, baseUrl, config) {
       )
       .catch(() => undefined)
 
-    const discoveredPath = await page.evaluate((kind, selectors) => {
-      const anchors = Array.from(document.querySelectorAll('a[href]'))
-      for (const anchor of anchors) {
-        const href = anchor.getAttribute('href')
-        if (typeof href !== 'string' || href.length === 0) continue
-        if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(href)) return href
-        if (kind === 'discussion' && /^\/community\/discussions\/[^/?#]+$/i.test(href)) return href
-      }
-
-      const routeValues = selectors
-        .flatMap((selector) =>
-          Array.from(document.querySelectorAll(selector)).flatMap((element) => [
-            element.getAttribute('data-post-route'),
-            element.getAttribute('data-discussion-route'),
-            element.getAttribute('data-route'),
-            element.getAttribute('data-href'),
-          ])
-        )
-        .filter((value) => typeof value === 'string' && value.length > 0)
-
-      for (const value of routeValues) {
-        if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(value)) return value
-        if (kind === 'discussion' && /^\/community\/discussions\/[^/?#]+$/i.test(value)) {
-          return value
+    const discoveredPath = await page.evaluate(
+      (kind, selectors) => {
+        const anchors = Array.from(document.querySelectorAll('a[href]'))
+        for (const anchor of anchors) {
+          const href = anchor.getAttribute('href')
+          if (typeof href !== 'string' || href.length === 0) continue
+          if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(href)) return href
+          if (kind === 'discussion' && /^\/community\/discussions\/[^/?#]+$/i.test(href))
+            return href
         }
-      }
 
-      const idValues = selectors
-        .flatMap((selector) =>
-          Array.from(document.querySelectorAll(selector)).flatMap((element) => [
-            element.getAttribute('data-post-id'),
-            element.getAttribute('data-discussion-id'),
-          ])
-        )
-        .filter((value) => typeof value === 'string' && value.length > 0)
+        const routeValues = selectors
+          .flatMap((selector) =>
+            Array.from(document.querySelectorAll(selector)).flatMap((element) => [
+              element.getAttribute('data-post-route'),
+              element.getAttribute('data-discussion-route'),
+              element.getAttribute('data-route'),
+              element.getAttribute('data-href'),
+            ])
+          )
+          .filter((value) => typeof value === 'string' && value.length > 0)
 
-      for (const value of idValues) {
-        if (kind === 'post') return `/posts/${value}`
-        if (kind === 'discussion') return `/community/discussions/${value}`
-      }
+        for (const value of routeValues) {
+          if (kind === 'post' && /^\/posts\/[^/?#]+$/i.test(value)) return value
+          if (kind === 'discussion' && /^\/community\/discussions\/[^/?#]+$/i.test(value)) {
+            return value
+          }
+        }
 
-      return null
-    }, detailKind, discoverySelectors)
+        const idValues = selectors
+          .flatMap((selector) =>
+            Array.from(document.querySelectorAll(selector)).flatMap((element) => [
+              element.getAttribute('data-post-id'),
+              element.getAttribute('data-discussion-id'),
+            ])
+          )
+          .filter((value) => typeof value === 'string' && value.length > 0)
+
+        for (const value of idValues) {
+          if (kind === 'post') return `/posts/${value}`
+          if (kind === 'discussion') return `/community/discussions/${value}`
+        }
+
+        return null
+      },
+      detailKind,
+      discoverySelectors
+    )
 
     return typeof discoveredPath === 'string' && discoveredPath.length > 0 ? discoveredPath : null
   } catch {
@@ -310,7 +315,10 @@ export async function resolveSampleDetailRoute(page, baseUrl, config) {
         continue
       }
 
-      if ((config.readinessSelectorsAll?.length ?? 0) > 0 || (config.readinessSelectorsAny?.length ?? 0) > 0) {
+      if (
+        (config.readinessSelectorsAll?.length ?? 0) > 0 ||
+        (config.readinessSelectorsAny?.length ?? 0) > 0
+      ) {
         try {
           await ensureDetailRouteReadiness(
             page,

@@ -99,7 +99,9 @@ function resolveRunDirs(options) {
     }
   }
 
-  return LEGACY_RUN_DIRS.map((runDir) => path.resolve(runDir)).filter((runDir) => fs.existsSync(runDir))
+  return LEGACY_RUN_DIRS.map((runDir) => path.resolve(runDir)).filter((runDir) =>
+    fs.existsSync(runDir)
+  )
 }
 
 async function main() {
@@ -109,9 +111,8 @@ async function main() {
     return
   }
 
-  const { createAggregateAnalysis, mergeRunSummaries } = await import(
-    './lib/lighthouse-prod-aggregate.mjs'
-  )
+  const { createAggregateAnalysis, mergeRunSummaries } =
+    await import('./lib/lighthouse-prod-aggregate.mjs')
 
   const runDirs = resolveRunDirs(options)
   if (runDirs.length === 0) {
@@ -126,7 +127,9 @@ async function main() {
     }
   })
 
-  const manifestPath = path.resolve(options.manifest ?? path.join(options.root, 'url-manifest.json'))
+  const manifestPath = path.resolve(
+    options.manifest ?? path.join(options.root, 'url-manifest.json')
+  )
   const manifest = fs.existsSync(manifestPath) ? readJson(manifestPath) : null
   const merged = mergeRunSummaries({
     runSummaries,

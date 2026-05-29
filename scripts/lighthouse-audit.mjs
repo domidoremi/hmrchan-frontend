@@ -49,7 +49,12 @@ async function runLighthouse() {
         try {
           const parsed = new URL(url)
           const raw = `${parsed.hostname}${parsed.pathname}`
-          return raw.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'report'
+          return (
+            raw
+              .replace(/[^a-z0-9]+/gi, '-')
+              .replace(/^-+|-+$/g, '')
+              .toLowerCase() || 'report'
+          )
         } catch {
           return 'report'
         }
@@ -72,10 +77,16 @@ async function runLighthouse() {
       console.log(`🎯 SEO: ${Math.round(categories.seo.score * 100)}/100`)
 
       console.log('\n⏱️  Core Web Vitals:')
-      console.log(`   FCP (First Contentful Paint): ${audits['first-contentful-paint'].displayValue}`)
-      console.log(`   LCP (Largest Contentful Paint): ${audits['largest-contentful-paint'].displayValue}`)
+      console.log(
+        `   FCP (First Contentful Paint): ${audits['first-contentful-paint'].displayValue}`
+      )
+      console.log(
+        `   LCP (Largest Contentful Paint): ${audits['largest-contentful-paint'].displayValue}`
+      )
       console.log(`   TBT (Total Blocking Time): ${audits['total-blocking-time'].displayValue}`)
-      console.log(`   CLS (Cumulative Layout Shift): ${audits['cumulative-layout-shift'].displayValue}`)
+      console.log(
+        `   CLS (Cumulative Layout Shift): ${audits['cumulative-layout-shift'].displayValue}`
+      )
       console.log(`   SI (Speed Index): ${audits['speed-index'].displayValue}`)
 
       // 网络请求分析
@@ -132,7 +143,6 @@ async function runLighthouse() {
     }
 
     console.log(`\n✅ Reports saved to: ${reportsDir}`)
-
   } catch (error) {
     console.error('❌ Lighthouse audit failed:', error.message)
   } finally {

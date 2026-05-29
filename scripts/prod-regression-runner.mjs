@@ -1562,7 +1562,9 @@ async function findAuthSubmitButton(page, label) {
     if (meta.type.toLowerCase() === 'submit') {
       return button
     }
-    if (/(登录|注册|发送|提交|验证|重置|更新|继续|sign in|log in|submit|verify|reset)/i.test(text)) {
+    if (
+      /(登录|注册|发送|提交|验证|重置|更新|继续|sign in|log in|submit|verify|reset)/i.test(text)
+    ) {
       return button
     }
   }
@@ -1602,7 +1604,9 @@ async function maybeHandleLoginChallenges(page, rl, state, scopeLabel) {
     }
 
     if (await handleTurnstileIfNeeded(page, rl, state, `${scopeLabel}-login`)) {
-      await findAuthSubmitButton(page, '登录').then((button) => button.click()).catch(() => {})
+      await findAuthSubmitButton(page, '登录')
+        .then((button) => button.click())
+        .catch(() => {})
       continue
     }
 
@@ -3667,7 +3671,10 @@ async function main() {
   logNote(state, `BASE_URL=${config.baseUrl}`)
   logNote(state, `QA_PREFIX=${config.qaPrefix}`)
   if (config.skipLighthouse) {
-    logNote(state, `Lighthouse 已跳过（${SKIP_LIGHTHOUSE_ENV}=true），请使用 lighthouse-prod-full-audit.mjs 独立生成性能报告`)
+    logNote(
+      state,
+      `Lighthouse 已跳过（${SKIP_LIGHTHOUSE_ENV}=true），请使用 lighthouse-prod-full-audit.mjs 独立生成性能报告`
+    )
   }
 
   const discovered = await discoverProductionEntities(config.baseUrl)
@@ -3679,7 +3686,9 @@ async function main() {
         .then(() => {
           state.lighthouse.status = 'passed'
           if (fs.existsSync(state.lighthouse.summaryPath)) {
-            state.lighthouse.summary = JSON.parse(fs.readFileSync(state.lighthouse.summaryPath, 'utf8'))
+            state.lighthouse.summary = JSON.parse(
+              fs.readFileSync(state.lighthouse.summaryPath, 'utf8')
+            )
           }
         })
         .catch((error) => {

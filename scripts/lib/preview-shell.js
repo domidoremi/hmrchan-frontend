@@ -698,7 +698,11 @@ export class LocalApiBridgeManager {
         patch.VPC_CONTENT_API_ORIGIN = bridge.baseUrl
       }
     }
-    if (patch.VPC_IDENTITY_API_ORIGIN && patch.VPC_COMMUNITY_API_ORIGIN && patch.VPC_CONTENT_API_ORIGIN) {
+    if (
+      patch.VPC_IDENTITY_API_ORIGIN &&
+      patch.VPC_COMMUNITY_API_ORIGIN &&
+      patch.VPC_CONTENT_API_ORIGIN
+    ) {
       patch.ENABLE_INTERNAL_API_GATEWAY = 'true'
     }
     return patch

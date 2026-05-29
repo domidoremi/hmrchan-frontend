@@ -88,14 +88,16 @@ export function validateProductionContractEnvPolicy() {
   if (policy.stripClientEnvKeys.length === 0) {
     issues.push({
       code: 'missing-strip-client-env-keys',
-      message: 'Production contract env policy must strip at least one incompatible client env key.',
+      message:
+        'Production contract env policy must strip at least one incompatible client env key.',
     })
   }
 
   if (Object.keys(policy.forceClientEnv).length === 0) {
     issues.push({
       code: 'missing-force-client-env',
-      message: 'Production contract env policy must force at least one safe production client env value.',
+      message:
+        'Production contract env policy must force at least one safe production client env value.',
     })
   }
 

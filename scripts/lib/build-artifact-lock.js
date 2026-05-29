@@ -43,8 +43,7 @@ export async function withBuildArtifactLock(
       await mkdir(lockDir)
       break
     } catch (error) {
-      const code =
-        error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
+      const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
       if (code !== 'EEXIST') {
         throw error
       }
@@ -57,9 +56,7 @@ export async function withBuildArtifactLock(
       }
 
       if (Date.now() - startedAt > timeoutMs) {
-        throw new Error(
-          `Timed out waiting for build artifact lock "${name}" after ${timeoutMs}ms`
-        )
+        throw new Error(`Timed out waiting for build artifact lock "${name}" after ${timeoutMs}ms`)
       }
 
       await sleep(pollMs)

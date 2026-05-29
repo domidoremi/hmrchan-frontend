@@ -119,7 +119,10 @@ export function compareAuditEntries(left, right) {
 export function toSlug(targetUrl) {
   const parsed = new URL(targetUrl)
   const raw = `${parsed.hostname}${parsed.pathname === '/' ? '/home' : parsed.pathname}`
-  return raw.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase()
+  return raw
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
 }
 
 export function roundScore(score) {
@@ -143,9 +146,7 @@ export function median(values) {
 
   if (numbers.length === 0) return null
   const mid = Math.floor(numbers.length / 2)
-  return numbers.length % 2 === 1
-    ? numbers[mid]
-    : Math.round((numbers[mid - 1] + numbers[mid]) / 2)
+  return numbers.length % 2 === 1 ? numbers[mid] : Math.round((numbers[mid - 1] + numbers[mid]) / 2)
 }
 
 export function medianFloat(values, digits = 3) {

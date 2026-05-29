@@ -1,9 +1,6 @@
-const UUID_V4_SOURCE =
-  String.raw`\b[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b`
-const UUID_V7_SOURCE =
-  String.raw`^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`
-const UUID_LIKE_SOURCE =
-  String.raw`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`
+const UUID_V4_SOURCE = String.raw`\b[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b`
+const UUID_V7_SOURCE = String.raw`^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`
+const UUID_LIKE_SOURCE = String.raw`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`
 
 export const UUID_V4_RE = new RegExp(UUID_V4_SOURCE, 'i')
 export const UUID_V7_RE = new RegExp(UUID_V7_SOURCE, 'i')
@@ -27,8 +24,7 @@ const PUBLIC_ID_MAP_KEYS = new Set([
   'discussionComments',
 ])
 
-const PUBLIC_ROUTE_RE =
-  /\/(?:post|author|users|discussion|community\/discussions)\/([^/?#'"`\s]+)/g
+const PUBLIC_ROUTE_RE = /\/(?:post|author|users|discussion|community\/discussions)\/([^/?#'"`\s]+)/g
 const PUBLIC_ID_PROPERTY_RE = new RegExp(
   String.raw`\b(${[...PUBLIC_ID_KEYS].join('|')})\s*:\s*['"]([^'"]+)['"]`,
   'gi'
@@ -89,7 +85,10 @@ function scanSnapshotDataValue(value, issues, location, parentKey = '') {
     }
 
     const nextLocation = `${location}.${key}`
-    if (PUBLIC_ID_KEYS.has(key) && (typeof nestedValue === 'string' || typeof nestedValue === 'number')) {
+    if (
+      PUBLIC_ID_KEYS.has(key) &&
+      (typeof nestedValue === 'string' || typeof nestedValue === 'number')
+    ) {
       const reason = classifyPublicId(nestedValue)
       if (reason) {
         pushIssue(issues, nextLocation, nestedValue, reason)

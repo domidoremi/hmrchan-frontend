@@ -39,10 +39,7 @@ function forwardStream(stream, target) {
   })
 
   stream.on('end', () => {
-    if (
-      buffer &&
-      !KNOWN_TOOLCHAIN_NOISE.some((pattern) => pattern.test(buffer))
-    ) {
+    if (buffer && !KNOWN_TOOLCHAIN_NOISE.some((pattern) => pattern.test(buffer))) {
       target.write(buffer)
     }
   })

@@ -171,11 +171,7 @@ export function buildViteArgs(argv, { host = DEFAULT_DEV_HOST, strictPort = true
     nextArgs.push('--host', host)
   }
 
-  if (
-    strictPort &&
-    !nextArgs.includes('--strictPort') &&
-    !nextArgs.includes('--strict-port')
-  ) {
+  if (strictPort && !nextArgs.includes('--strictPort') && !nextArgs.includes('--strict-port')) {
     nextArgs.push('--strictPort')
   }
 
