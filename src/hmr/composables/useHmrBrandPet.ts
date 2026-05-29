@@ -15,6 +15,7 @@ const idleShowcaseStates: Array<{
 
 export function useHmrBrandPet() {
   const brandState = ref<HmrBrandSpriteState>('idle')
+  const atlasEnabled = ref(false)
   const reducedMotion = ref(false)
   const staticMode = computed(() => reducedMotion.value)
   const cooldowns = new Map<HmrBrandSpriteState, number>()
@@ -46,6 +47,7 @@ export function useHmrBrandPet() {
       return
     }
 
+    atlasEnabled.value = true
     const now = Date.now()
     const nextAllowedAt = cooldowns.get(state) ?? 0
     if (now < nextAllowedAt && brandState.value === state) return
@@ -115,6 +117,7 @@ export function useHmrBrandPet() {
   onBeforeUnmount(teardownBrandPet)
 
   return {
+    atlasEnabled,
     brandState,
     jumpBrandPet,
     staticMode,

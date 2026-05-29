@@ -111,11 +111,13 @@ const atlases: Record<HmrBrandSpriteAtlasId, HmrBrandSpriteAtlas> = {
 const props = withDefaults(
   defineProps<{
     state?: HmrBrandSpriteState
+    atlasEnabled?: boolean
     staticMode?: boolean
     playback?: HmrBrandSpritePlayback
   }>(),
   {
     state: 'idle',
+    atlasEnabled: false,
     staticMode: false,
     playback: 'brand',
   }
@@ -129,18 +131,21 @@ const activeAnimation = computed(() => resolveAnimation(props.state))
 const shouldAnimateFrames = computed(
   () => !props.staticMode && activeAnimation.value.row.frames > 1
 )
+const shouldUseAtlas = computed(
+  () => (shouldAnimateFrames.value && props.atlasEnabled) || props.playback === 'preloader'
+)
 const frameDuration = computed(() => {
   const playbackScale = props.playback === 'preloader' ? 1.25 : 1
   return 1000 / (activeAnimation.value.row.fps * playbackScale)
 })
 const spriteClasses = computed(() => ({
-  'hmr-brand-sprite--animated': shouldAnimateFrames.value,
-  'hmr-brand-sprite--atlas': true,
+  'hmr-brand-sprite--animated': shouldAnimateFrames.value && shouldUseAtlas.value,
+  'hmr-brand-sprite--atlas': shouldUseAtlas.value,
   'hmr-brand-sprite--static': props.staticMode,
   'hmr-brand-sprite--fallback': activeAnimation.value.usingFallback,
 }))
 const spriteStyle = computed(() => ({
-  '--hmr-brand-sprite-frame': String(frame.value),
+  '--hmr-brand-sprite-frame': shouldUseAtlas.value ? String(frame.value) : '0',
   '--hmr-brand-sprite-row': String(activeAnimation.value.row.row),
 }))
 
@@ -151,6 +156,10 @@ function stopFrames(): void {
 }
 
 function tickFrame(now: number): void {
+  if (!shouldAnimateFrames.value || !shouldUseAtlas.value) {
+    stopFrames()
+    return
+  }
   const animation = activeAnimation.value.row
   if (now - lastFrameTime >= frameDuration.value) {
     frame.value = (frame.value + 1) % animation.frames
@@ -163,7 +172,7 @@ function startFrames(): void {
   stopFrames()
   frame.value = 0
   lastFrameTime = 0
-  if (!shouldAnimateFrames.value || typeof window === 'undefined') return
+  if (!shouldAnimateFrames.value || !shouldUseAtlas.value || typeof window === 'undefined') return
 
   animationFrame = window.requestAnimationFrame((now) => {
     lastFrameTime = now
@@ -207,7 +216,7 @@ function resolveAnimation(state: HmrBrandSpriteState): ResolvedHmrBrandSpriteAni
 }
 
 watch(
-  () => [props.state, props.staticMode, props.playback] as const,
+  () => [props.state, props.atlasEnabled, props.staticMode, props.playback] as const,
   () => {
     startFrames()
   },

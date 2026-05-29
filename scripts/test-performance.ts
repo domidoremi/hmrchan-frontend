@@ -108,6 +108,8 @@ const AUDIT_ENV = {
   ...createLocalAuditEnv(process.env, {
     includeContractFallback: true,
   }),
+  VITE_HMRCHAN_ENABLE_API: process.env['VITE_HMRCHAN_ENABLE_API'] ?? 'false',
+  VITE_HMRCHAN_FORCE_FALLBACK: process.env['VITE_HMRCHAN_FORCE_FALLBACK'] ?? 'true',
   VITE_ENABLE_CLIENT_INIT: process.env['VITE_ENABLE_CLIENT_INIT'] ?? 'false',
   VITE_ENABLE_SCHEDULE_API: process.env['VITE_ENABLE_SCHEDULE_API'] ?? 'false',
   VITE_ENABLE_DATA_PREFETCH: process.env['VITE_ENABLE_DATA_PREFETCH'] ?? 'false',

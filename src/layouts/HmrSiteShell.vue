@@ -74,7 +74,11 @@
             aria-hidden="true"
           >
             <span class="hmr-brand-mark-core">
-              <HmrBrandSprite :state="brandState" :static-mode="staticMode" />
+              <HmrBrandSprite
+                :state="brandState"
+                :atlas-enabled="atlasEnabled"
+                :static-mode="staticMode"
+              />
             </span>
           </span>
         </RouterLink>
@@ -141,7 +145,11 @@
               aria-hidden="true"
             >
               <span class="hmr-brand-mark-core">
-                <HmrBrandSprite :state="brandState" :static-mode="staticMode" />
+                <HmrBrandSprite
+                  :state="brandState"
+                  :atlas-enabled="atlasEnabled"
+                  :static-mode="staticMode"
+                />
               </span>
             </span>
             <span class="hmr-sr-only">MomiChan</span>
@@ -311,7 +319,7 @@ const pageTransitionKey = computed(() => route.fullPath)
 const { auth, authDisplay } = useHmrAuthDisplay()
 const { currentTime, timeZoneLabel } = useHmrCurrentTime()
 const { progress } = useHmrScrollProgress()
-const { brandState, jumpBrandPet, staticMode, waveBrandPet } = useHmrBrandPet()
+const { atlasEnabled, brandState, jumpBrandPet, staticMode, waveBrandPet } = useHmrBrandPet()
 const scrollProgressStyle = computed(() => ({
   '--hmr-scroll-progress': progress.value.toString(),
 }))

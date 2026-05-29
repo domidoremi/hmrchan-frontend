@@ -205,9 +205,27 @@ describe('HmrSiteShell preloader', () => {
     expect(wrapper.find('.hmr-footer-logo').classes()).toContain('hmr-brand-sprite--static')
     footerSprites.forEach((sprite) => {
       expect(sprite.classes()).toContain('hmr-brand-sprite--static')
+      expect(sprite.classes()).not.toContain('hmr-brand-sprite--atlas')
       expect(sprite.classes()).not.toContain('hmr-brand-sprite--animated')
       expect(sprite.attributes('style')).toContain('--hmr-brand-sprite-row: 0')
     })
+  })
+
+  it('defers the full brand atlas until direct brand interaction', async () => {
+    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
+
+    const wrapper = await mountShell('/')
+    const brandSprite = () => wrapper.find('.hmr-brand-link .hmr-brand-sprite')
+
+    expect(brandSprite().classes()).not.toContain('hmr-brand-sprite--atlas')
+    expect(brandSprite().classes()).not.toContain('hmr-brand-sprite--animated')
+
+    await wrapper.find('.hmr-brand-link').trigger('pointerenter')
+    await wrapper.vm.$nextTick()
+
+    expect(brandSprite().classes()).toContain('hmr-brand-sprite--atlas')
+    expect(brandSprite().classes()).toContain('hmr-brand-sprite--animated')
+    expect(brandSprite().attributes('data-hmr-brand-state')).toBe('waving')
   })
 
   it('bypasses the preloader with the QA query flag', async () => {

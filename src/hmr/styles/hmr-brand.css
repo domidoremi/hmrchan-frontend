@@ -552,11 +552,10 @@ svg {
   display: block;
   inline-size: 100%;
   aspect-ratio: 12 / 13;
-  background-image: url('/hmrchan/pets/isle/v1/spritesheet.webp');
-  background-position: calc(var(--hmr-brand-sprite-frame, 0) * 100% / 7)
-    calc(var(--hmr-brand-sprite-row, 0) * 100% / 8);
+  background-image: url('/hmrchan/pets/isle/v1/static-spritesheet.webp');
+  background-position: 0 calc(var(--hmr-brand-sprite-row, 0) * 100% / 8);
   background-repeat: no-repeat;
-  background-size: 800% 900%;
+  background-size: 100% 900%;
   image-rendering: auto;
   transform: translateZ(0.45rem);
   transform-origin: 50% 62%;
