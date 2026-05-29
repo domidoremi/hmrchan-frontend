@@ -194,7 +194,5 @@ scripts/config/*.tmp.json
 !public/images/expressions/55.png
 !public/images/expressions/fly.png
 
-# keep local docs workspace changes out of git noise
+# keep docs workspace content local
 docs/
-!docs/
-!docs/frontend-analysis-and-optimization.md
