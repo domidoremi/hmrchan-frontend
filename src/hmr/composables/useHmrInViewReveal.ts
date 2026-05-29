@@ -5,27 +5,42 @@ export function useHmrInViewReveal(rootSelector = '[data-hmr-reveal]') {
   let mutationObserver: MutationObserver | undefined
   const observedTargets = new WeakSet<Element>()
 
+  function markInView(target: Element): void {
+    target.classList.add('is-inview')
+  }
+
   function observeTargets(): void {
     const targets = [...document.querySelectorAll<HTMLElement>(rootSelector)]
     targets.forEach((target) => {
       if (!observedTargets.has(target)) {
         observedTargets.add(target)
-        observer?.observe(target)
+        if (observer) {
+          observer.observe(target)
+        } else {
+          markInView(target)
+        }
       }
     })
   }
 
   onMounted(() => {
+    if (typeof window.IntersectionObserver !== 'function') {
+      observeTargets()
+      mutationObserver = new MutationObserver(observeTargets)
+      mutationObserver.observe(document.body, { childList: true, subtree: true })
+      return
+    }
+
     observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('is-inview')
+            markInView(entry.target)
             observer?.unobserve(entry.target)
           }
         })
       },
-      { threshold: 0.2 }
+      { rootMargin: '0px 0px -8% 0px', threshold: 0 }
     )
 
     observeTargets()
