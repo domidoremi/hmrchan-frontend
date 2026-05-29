@@ -103,6 +103,21 @@ describe('apiClient security headers', () => {
     expect(headers.has('X-Client-Token')).toBe(false)
   })
 
+  it('omits browser credentials for explicit anonymous public requests', async () => {
+    mockClientSecurity.getClientToken.mockReturnValue(null)
+    mockClientSecurity.getClientSecret.mockReturnValue(null)
+    mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { ok: true } }))
+
+    await expect(apiClient.get('/home', { skipAuth: true })).resolves.toEqual({ ok: true })
+
+    const requestInit = getLastRequestInit()
+    const headers = getLastHeaders()
+    expect(requestInit.credentials).toBe('omit')
+    expect(mockClientSecurity.ensureRequestIntegrityCredentials).not.toHaveBeenCalled()
+    expect(headers.has('X-Client-Token')).toBe(false)
+    expect(headers.has('X-Signature')).toBe(false)
+  })
+
   it('ensures request integrity credentials and signs auth-sensitive requests', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { authenticated: true } }))
 
