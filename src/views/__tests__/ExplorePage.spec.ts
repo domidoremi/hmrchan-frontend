@@ -116,6 +116,10 @@ const messages = {
 }
 
 async function mountExplorePage() {
+  return mountExplorePageWithStubs()
+}
+
+async function mountExplorePageWithStubs(stubs: Record<string, unknown> = defaultExploreStubs()) {
   const i18n = createI18n({
     legacy: false,
     locale: 'zh-CN',
@@ -124,17 +128,21 @@ async function mountExplorePage() {
   const wrapper = mount(ExplorePage, {
     global: {
       plugins: [i18n],
-      stubs: {
-        HmrPostCard: {
-          props: ['post', 'imageLoading', 'imageFetchPriority'],
-          template:
-            '<article class="hmr-post-card" :data-loading="imageLoading" :data-priority="imageFetchPriority">{{ post.title }}</article>',
-        },
-      },
+      stubs,
     },
   })
   await flushPromises()
   return wrapper
+}
+
+function defaultExploreStubs(): Record<string, unknown> {
+  return {
+    HmrPostCard: {
+      props: ['post', 'imageLoading', 'imageFetchPriority'],
+      template:
+        '<article class="hmr-post-card" :data-loading="imageLoading" :data-priority="imageFetchPriority">{{ post.title }}</article>',
+    },
+  }
 }
 
 describe('ExplorePage', () => {
@@ -180,6 +188,38 @@ describe('ExplorePage', () => {
 
     expect(cards.map((card) => card.attributes('data-loading'))).toEqual(['eager', 'eager', 'lazy'])
     expect(cards.map((card) => card.attributes('data-priority'))).toEqual(['high', 'high', 'auto'])
+  })
+
+  it('renders real post cards with navigable thumbnails for visible public content', async () => {
+    mockReadPublicContent.mockResolvedValue(
+      makeResource({
+        data: makeContent({
+          posts: [
+            makePost({
+              id: 'real-post',
+              title: 'Visible poster post',
+              mediaUrl: '/api/v1/media/poster/thumbnail?size=small',
+            }),
+          ],
+        }),
+      })
+    )
+
+    const wrapper = await mountExplorePageWithStubs({
+      RouterLink: {
+        props: ['to'],
+        template: '<a class="router-link-stub" :href="to"><slot /></a>',
+      },
+    })
+    const card = wrapper.find('.hmr-post-card')
+    const poster = card.find('.hmr-post-card__poster')
+
+    expect(card.attributes('href')).toBe('/posts/real-post')
+    expect(card.classes()).toContain('hmr-post-card--real-poster')
+    expect(poster.attributes('src')).toBe('/api/v1/media/poster/thumbnail?size=small')
+    expect(poster.attributes('srcset')).toContain('/api/v1/media/poster/thumbnail?size=medium')
+    expect(poster.attributes('loading')).toBe('eager')
+    expect(poster.attributes('fetchpriority')).toBe('high')
   })
 
   it('defers below-the-fold media and author sections until idle time', async () => {
