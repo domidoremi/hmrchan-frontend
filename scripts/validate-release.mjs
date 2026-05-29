@@ -440,18 +440,25 @@ async function runStaticGateStage(stageRecord) {
 }
 
 async function resolveHookScriptTests(cwd = process.cwd()) {
-  const scriptsTestDir = path.resolve(cwd, 'src/__tests__/scripts')
-  let entries
-  try {
-    entries = await readdir(scriptsTestDir, { withFileTypes: true })
-  } catch {
-    return []
+  const hookTestDirs = ['src/__tests__/scripts', 'src/sw/__tests__']
+  const testPaths = []
+
+  for (const relativeDir of hookTestDirs) {
+    let entries
+    try {
+      entries = await readdir(path.resolve(cwd, relativeDir), { withFileTypes: true })
+    } catch {
+      continue
+    }
+
+    testPaths.push(
+      ...entries
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.spec.ts'))
+        .map((entry) => path.posix.join(relativeDir, entry.name))
+    )
   }
 
-  return entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.spec.ts'))
-    .map((entry) => path.posix.join('src/__tests__/scripts', entry.name))
-    .sort((left, right) => left.localeCompare(right))
+  return testPaths.sort((left, right) => left.localeCompare(right))
 }
 
 async function runHookStaticGateStage(stageRecord) {

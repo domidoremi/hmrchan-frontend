@@ -399,14 +399,20 @@ describe('validate release stage summaries', () => {
     )
   })
 
-  it('discovers all script governance specs for the hook static gate', async () => {
+  it('discovers all lightweight governance specs for the hook static gate', async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), 'hmr-hook-script-tests-'))
     const scriptsTestDir = join(projectRoot, 'src', '__tests__', 'scripts')
-    await mkdir(scriptsTestDir, { recursive: true })
+    const swTestDir = join(projectRoot, 'src', 'sw', '__tests__')
+    await Promise.all([
+      mkdir(scriptsTestDir, { recursive: true }),
+      mkdir(swTestDir, { recursive: true }),
+    ])
     await Promise.all([
       writeFile(join(scriptsTestDir, 'security-audit.spec.ts'), ''),
       writeFile(join(scriptsTestDir, 'validate-release.spec.ts'), ''),
       writeFile(join(scriptsTestDir, 'README.md'), ''),
+      writeFile(join(swTestDir, 'index.spec.ts'), ''),
+      writeFile(join(swTestDir, 'publicCachePolicy.spec.ts'), ''),
     ])
 
     try {
@@ -415,6 +421,8 @@ describe('validate release stage summaries', () => {
       expect(await resolveHookScriptTests(projectRoot)).toEqual([
         'src/__tests__/scripts/security-audit.spec.ts',
         'src/__tests__/scripts/validate-release.spec.ts',
+        'src/sw/__tests__/index.spec.ts',
+        'src/sw/__tests__/publicCachePolicy.spec.ts',
       ])
     } finally {
       await rm(projectRoot, { recursive: true, force: true })
