@@ -36,10 +36,18 @@ async function checkManifest(options: AuditOptions): Promise<AuditIssue[]> {
   }
 
   // Verify icon files exist
-  const icons = manifest.icons as Array<{ src: string }> | undefined
-  if (Array.isArray(icons)) {
+  const icons = manifest.icons as Array<{ src?: unknown }> | undefined
+  if (Array.isArray(icons) && icons.length > 0) {
     for (const icon of icons) {
-      if (!icon.src) continue
+      if (typeof icon.src !== 'string' || icon.src.trim().length === 0) {
+        issues.push({
+          severity: 'error',
+          message: 'manifest.json icon entry missing src',
+          file: 'public/manifest.json',
+          rule: 'pwa-icons',
+        })
+        continue
+      }
       // Icon src is relative to public root (e.g. "/icons/icon-72x72.png")
       const iconPath = join(options.projectRoot, 'public', icon.src.replace(/^\//, ''))
       if (!existsSync(iconPath)) {
@@ -51,6 +59,13 @@ async function checkManifest(options: AuditOptions): Promise<AuditIssue[]> {
         })
       }
     }
+  } else {
+    issues.push({
+      severity: 'error',
+      message: 'manifest.json must declare at least one install icon',
+      file: 'public/manifest.json',
+      rule: 'pwa-icons',
+    })
   }
 
   return issues

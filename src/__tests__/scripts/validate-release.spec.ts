@@ -442,6 +442,7 @@ describe('validate release stage summaries', () => {
       mkdir(swTestDir, { recursive: true }),
     ])
     await Promise.all([
+      writeFile(join(scriptsTestDir, 'pwa-audit.spec.ts'), ''),
       writeFile(join(scriptsTestDir, 'security-audit.spec.ts'), ''),
       writeFile(join(scriptsTestDir, 'validate-release.spec.ts'), ''),
       writeFile(join(scriptsTestDir, 'README.md'), ''),
@@ -453,6 +454,7 @@ describe('validate release stage summaries', () => {
       const { resolveHookScriptTests } = await importValidateReleaseModule()
 
       expect(await resolveHookScriptTests(projectRoot)).toEqual([
+        'src/__tests__/scripts/pwa-audit.spec.ts',
         'src/__tests__/scripts/security-audit.spec.ts',
         'src/__tests__/scripts/validate-release.spec.ts',
         'src/sw/__tests__/index.spec.ts',
