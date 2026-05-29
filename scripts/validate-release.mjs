@@ -440,7 +440,7 @@ async function runStaticGateStage(stageRecord) {
 }
 
 async function resolveHookScriptTests(cwd = process.cwd()) {
-  const hookTestDirs = ['src/__tests__/scripts', 'src/sw/__tests__']
+  const hookTestDirs = ['src/__tests__/scripts', 'src/sw/__tests__', 'src/utils/cache/__tests__']
   const testPaths = []
 
   for (const relativeDir of hookTestDirs) {

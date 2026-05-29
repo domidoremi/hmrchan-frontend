@@ -441,9 +441,11 @@ describe('validate release stage summaries', () => {
     const projectRoot = await mkdtemp(join(tmpdir(), 'hmr-hook-script-tests-'))
     const scriptsTestDir = join(projectRoot, 'src', '__tests__', 'scripts')
     const swTestDir = join(projectRoot, 'src', 'sw', '__tests__')
+    const publicCacheTestDir = join(projectRoot, 'src', 'utils', 'cache', '__tests__')
     await Promise.all([
       mkdir(scriptsTestDir, { recursive: true }),
       mkdir(swTestDir, { recursive: true }),
+      mkdir(publicCacheTestDir, { recursive: true }),
     ])
     await Promise.all([
       writeFile(join(scriptsTestDir, 'pwa-audit.spec.ts'), ''),
@@ -452,6 +454,7 @@ describe('validate release stage summaries', () => {
       writeFile(join(scriptsTestDir, 'README.md'), ''),
       writeFile(join(swTestDir, 'index.spec.ts'), ''),
       writeFile(join(swTestDir, 'publicCachePolicy.spec.ts'), ''),
+      writeFile(join(publicCacheTestDir, 'publicContentCache.spec.ts'), ''),
     ])
 
     try {
@@ -463,6 +466,7 @@ describe('validate release stage summaries', () => {
         'src/__tests__/scripts/validate-release.spec.ts',
         'src/sw/__tests__/index.spec.ts',
         'src/sw/__tests__/publicCachePolicy.spec.ts',
+        'src/utils/cache/__tests__/publicContentCache.spec.ts',
       ])
     } finally {
       await rm(projectRoot, { recursive: true, force: true })
