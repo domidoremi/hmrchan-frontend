@@ -35,6 +35,8 @@ import type {
   HmrScheduleContent,
 } from './hmrContentTypes'
 
+const MEDIA_THUMBNAIL_FALLBACK = '/hmrchan/reference/media-youtube.svg'
+
 export function mapPost(value: unknown, index: number): HmrPost {
   const record = isRecord(value) ? value : {}
   const fallbackPost = fallbackPosts[index] ?? fallbackPosts[0]
@@ -122,7 +124,7 @@ export function mapPost(value: unknown, index: number): HmrPost {
   const fileCount = pickNumber(record, ['file_count', 'fileCount'])
   const likeCount = pickNumber(record, ['community_like_count', 'like_count', 'likes'])
   const viewCount = pickNumber(record, ['view_count', 'views'])
-  const mediaItems = extractList(record, ['files', 'media', 'attachments'])
+  const mediaItems = extractList(record, ['files', 'media_files', 'media', 'attachments'])
   const mediaItemCount = mediaItems.filter(hasRenderableMediaRecord).length
   const declaredMediaCount = pickNumber(record, ['media_count', 'mediaCount'])
   const declaredCount = Math.max(declaredMediaCount, fileCount)
@@ -292,19 +294,65 @@ function mapScheduleItem(value: unknown, index: number): HmrScheduleItem {
 
 function mapMediaItem(value: unknown, index: number): HmrMediaItem {
   const record = isRecord(value) ? value : {}
-  const id = pickString(record, ['id', 'media_id'], `media-${index + 1}`)
+  const mediaId = pickOptionalString(record, ['id', 'media_id', 'mediaId', 'uuid'])
+  const id = mediaId ?? `media-${index + 1}`
+  const title = pickString(
+    record,
+    ['title', 'filename', 'file_name', 'fileName', 'name'],
+    `Media ${index + 1}`
+  )
+  const mediaType = pickString(
+    record,
+    ['media_type', 'mediaType', 'file_type', 'fileType', 'mime_type', 'type'],
+    'media'
+  )
+  const streamUrl =
+    pickMediaUrl(record, [
+      'stream_url',
+      'streamUrl',
+      'download_url',
+      'downloadUrl',
+      'media_url',
+      'mediaUrl',
+      'url',
+    ]) ?? (mediaId ? buildMediaStreamUrl(mediaId) : '')
+  const thumbnailUrl =
+    pickMediaUrl(record, [
+      'thumbnail_url',
+      'thumbnailUrl',
+      'poster_url',
+      'posterUrl',
+      'image_url',
+      'imageUrl',
+    ]) ?? (mediaId ? buildMediaThumbnailUrl(mediaId) : MEDIA_THUMBNAIL_FALLBACK)
 
   return {
     id,
-    title: pickString(record, ['title', 'filename', 'name'], `Media ${index + 1}`),
-    streamUrl: pickString(record, ['stream_url', 'streamUrl', 'url'], '#'),
-    thumbnailUrl: pickString(
-      record,
-      ['thumbnail_url', 'thumbnailUrl', 'poster_url', 'posterUrl', 'image_url', 'imageUrl'],
-      '/hmrchan/reference/media-youtube.svg'
-    ),
-    mediaType: pickString(record, ['media_type', 'type', 'mime_type'], 'media'),
+    title,
+    streamUrl,
+    thumbnailUrl,
+    mediaType,
   }
+}
+
+function pickMediaUrl(record: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value !== 'string') continue
+
+    const normalized = value.trim()
+    if (normalized && normalized !== '#') return normalized
+  }
+
+  return undefined
+}
+
+function buildMediaStreamUrl(mediaId: string): string {
+  return `/api/v1/media/${encodeURIComponent(mediaId)}/stream`
+}
+
+function buildMediaThumbnailUrl(mediaId: string): string {
+  return `/api/v1/media/${encodeURIComponent(mediaId)}/thumbnail?size=small`
 }
 
 function isRenderableMediaItem(item: HmrMediaItem): boolean {
@@ -434,7 +482,7 @@ export function mapPostDetailContent(
 
   const record = extractRecord(payload, ['post', 'item', 'data'])
   const post = mapPost(record, 0)
-  const files = extractList(record, ['files', 'media', 'attachments'])
+  const files = extractList(record, ['files', 'media_files', 'media', 'attachments'])
   const commentItems = extractList(commentsPayload, ['items', 'comments', 'results'])
   const related = extractList(record, ['author_other_posts', 'related_posts', 'related'])
   const relatedPosts = dedupePosts(related.map(mapPost)).filter(

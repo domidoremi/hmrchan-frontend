@@ -114,8 +114,10 @@
             :key="item.id"
             class="hmr-detail-media-card"
             :href="item.streamUrl"
-            target="_blank"
-            rel="noreferrer"
+            :target="item.streamUrl ? '_blank' : undefined"
+            :rel="item.streamUrl ? 'noreferrer' : undefined"
+            :aria-disabled="item.streamUrl ? undefined : 'true'"
+            @click="handleMediaCardClick"
           >
             <img
               :src="item.thumbnailUrl"
@@ -265,6 +267,14 @@ const {
 
 function postId(): string {
   return normalizeHmrRouteParam(route.params.id, 'signal-room')
+}
+
+function handleMediaCardClick(event: MouseEvent): void {
+  const target = event.currentTarget instanceof HTMLAnchorElement ? event.currentTarget : null
+  const href = target?.getAttribute('href')?.trim()
+  if (!href || href === '#') {
+    event.preventDefault()
+  }
 }
 
 useHmrRouteResourceRefresh({
