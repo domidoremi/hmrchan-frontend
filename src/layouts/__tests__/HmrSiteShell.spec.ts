@@ -232,6 +232,35 @@ describe('HmrSiteShell preloader', () => {
     expect(mocks.warmHmrSessionEntry).not.toHaveBeenCalled()
   })
 
+  it('does not restart the entry preloader during same-session route changes', async () => {
+    vi.useFakeTimers()
+    const wrapper = await mountShell('/')
+
+    try {
+      await wrapper.vm.$nextTick()
+      await vi.dynamicImportSettled()
+      await vi.advanceTimersByTimeAsync(3500)
+      await vi.advanceTimersByTimeAsync(0)
+      await wrapper.vm.$nextTick()
+
+      expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
+      expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
+      expect(mocks.warmHmrSessionEntry).toHaveBeenCalledTimes(1)
+
+      await wrapper.vm.$router.push('/explore')
+      await wrapper.vm.$router.isReady()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.$route.fullPath).toBe('/explore')
+      expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
+      expect(mocks.warmHmrSessionEntry).toHaveBeenCalledTimes(1)
+      expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
+    } finally {
+      wrapper.unmount()
+      vi.useRealTimers()
+    }
+  })
+
   it('keeps footer brand marks static and detached from global brand animation state', async () => {
     window.sessionStorage.setItem('momichan.preloader.seen', 'true')
 
