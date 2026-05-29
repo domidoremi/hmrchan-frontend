@@ -48,7 +48,7 @@
     "perf:lighthouse:prod:full": "node scripts/lighthouse-prod-full-audit.mjs",
     "test:prod:regression": "node scripts/prod-regression-runner.mjs",
     "lint:strict": "node node_modules/eslint/bin/eslint.js . --ext .vue,.ts,.tsx,.js,.mjs,.cjs --max-warnings=0",
-    "format:check": "node node_modules/prettier/bin/prettier.cjs --check src/",
+    "format:check": "node node_modules/prettier/bin/prettier.cjs --check src/ package.json eslint.config.ts scripts/validate-release.mjs scripts/lib/validate-release.js scripts/release-evidence.mjs",
     "lint-staged": "node node_modules/lint-staged/bin/lint-staged.js",
     "serve:dist": "bunx serve dist -l 3000",
     "clean": "node scripts/clean.mjs",
