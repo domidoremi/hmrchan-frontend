@@ -118,7 +118,7 @@ lighthouse-reports/
 .tmp-lighthouse-prod/
 .tmp-lighthouse-*.json
 .lighthouse-a11y
-/%SystemDrive%/
+%SystemDrive%/
 
 # =====================
 # Package Managers
