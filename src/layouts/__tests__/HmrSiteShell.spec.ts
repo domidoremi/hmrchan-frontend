@@ -44,6 +44,33 @@ vi.mock('@/hmr/composables/useHmrTextReveal', () => ({
   useHmrTextReveal: vi.fn(),
 }))
 
+vi.mock('gsap', () => {
+  const createTimeline = (options?: { onComplete?: () => void }) => {
+    const timeline = {
+      call: vi.fn((callback?: () => void) => {
+        callback?.()
+        return timeline
+      }),
+      kill: vi.fn(),
+      set: vi.fn(() => timeline),
+      to: vi.fn(() => timeline),
+    }
+
+    if (options?.onComplete && typeof window !== 'undefined') {
+      window.setTimeout(options.onComplete, 0)
+    }
+
+    return timeline
+  }
+
+  return {
+    gsap: {
+      set: vi.fn(),
+      timeline: vi.fn(createTimeline),
+    },
+  }
+})
+
 function mockMatchMedia(matches: boolean) {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
@@ -161,28 +188,38 @@ describe('HmrSiteShell preloader', () => {
   })
 
   it('automatically completes the first session preloader without a click', async () => {
+    vi.useFakeTimers()
     const wrapper = await mountShell('/')
-    expect(wrapper.find('.hmr-preloader').exists()).toBe(true)
-    expect(wrapper.find('.hmr-site').classes()).toContain('is-preloading')
-    expect(wrapper.findAll('.hmr-preloader .hmr-brand-sprite')).toHaveLength(1)
-    expect(wrapper.find('.hmr-preloader .hmr-preloader-halo').exists()).toBe(false)
-    expect(wrapper.find('.hmr-preloader .hmr-preloader-pulse').exists()).toBe(false)
-    expect(wrapper.find('.hmr-preloader .hmr-preloader-status').exists()).toBe(false)
 
-    await vi.waitFor(() => {
+    try {
+      expect(wrapper.find('.hmr-preloader').exists()).toBe(true)
+      expect(wrapper.find('.hmr-site').classes()).toContain('is-preloading')
+      expect(wrapper.findAll('.hmr-preloader .hmr-brand-sprite')).toHaveLength(1)
+      expect(wrapper.find('.hmr-preloader .hmr-preloader-halo').exists()).toBe(false)
+      expect(wrapper.find('.hmr-preloader .hmr-preloader-pulse').exists()).toBe(false)
+      expect(wrapper.find('.hmr-preloader .hmr-preloader-status').exists()).toBe(false)
+
+      await wrapper.vm.$nextTick()
+      await vi.dynamicImportSettled()
+      await vi.advanceTimersByTimeAsync(0)
+      await vi.advanceTimersByTimeAsync(3500)
+      await vi.advanceTimersByTimeAsync(0)
+      await wrapper.vm.$nextTick()
+
       expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
-    }, 6500)
-    await wrapper.vm.$nextTick()
-
-    expect(mocks.warmHmrSessionEntry).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: '/',
-        resolveSession: mocks.resolveSession,
-        timeoutMs: 4500,
-      })
-    )
-    expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
-    expect(wrapper.find('.hmr-site').classes()).not.toContain('is-preloading')
+      expect(mocks.warmHmrSessionEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: '/',
+          resolveSession: mocks.resolveSession,
+          timeoutMs: 4500,
+        })
+      )
+      expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
+      expect(wrapper.find('.hmr-site').classes()).not.toContain('is-preloading')
+    } finally {
+      wrapper.unmount()
+      vi.useRealTimers()
+    }
   })
 
   it('does not show the preloader again within the same browser session', async () => {
@@ -226,6 +263,38 @@ describe('HmrSiteShell preloader', () => {
     expect(brandSprite().classes()).toContain('hmr-brand-sprite--atlas')
     expect(brandSprite().classes()).toContain('hmr-brand-sprite--animated')
     expect(brandSprite().attributes('data-hmr-brand-state')).toBe('waving')
+  })
+
+  it('defers priority route warmup until after the initial stabilization window', async () => {
+    vi.useFakeTimers()
+    const originalRequestIdleCallback = window.requestIdleCallback
+    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
+    Object.defineProperty(window, 'requestIdleCallback', {
+      configurable: true,
+      value: undefined,
+    })
+
+    const wrapper = await mountShell('/')
+
+    try {
+      expect(mocks.warmHmrPriorityRoutes).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(5999)
+      expect(mocks.warmHmrPriorityRoutes).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(1)
+      expect(mocks.warmHmrPriorityRoutes).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(3000)
+      expect(mocks.warmHmrPriorityRoutes).toHaveBeenCalledWith('/')
+    } finally {
+      wrapper.unmount()
+      Object.defineProperty(window, 'requestIdleCallback', {
+        configurable: true,
+        value: originalRequestIdleCallback,
+      })
+      vi.useRealTimers()
+    }
   })
 
   it('bypasses the preloader with the QA query flag', async () => {

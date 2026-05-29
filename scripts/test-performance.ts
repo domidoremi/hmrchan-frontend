@@ -14,6 +14,12 @@ import { PreviewShellManager, runBunTask } from './lib/preview-shell.js'
 
 const REQUESTED_AUDIT_DISABLE_PREVIEW_PROXY =
   process.env['PERF_DISABLE_PREVIEW_PROXY'] ?? process.env['LIGHTHOUSE_DISABLE_PREVIEW_PROXY']
+const REQUESTED_AUDIT_ENABLE_API =
+  process.env['PERF_HMRCHAN_ENABLE_API'] ?? process.env['LIGHTHOUSE_HMRCHAN_ENABLE_API']
+const REQUESTED_AUDIT_FORCE_FALLBACK =
+  process.env['PERF_HMRCHAN_FORCE_FALLBACK'] ?? process.env['LIGHTHOUSE_HMRCHAN_FORCE_FALLBACK']
+const REQUESTED_AUDIT_ENABLE_CLIENT_INIT =
+  process.env['PERF_ENABLE_CLIENT_INIT'] ?? process.env['LIGHTHOUSE_ENABLE_CLIENT_INIT']
 
 applyLocalAuditEnvToProcess()
 
@@ -86,6 +92,11 @@ async function probePreviewApiSurface(baseUrl: string): Promise<void> {
 
     console.log('🧭 Preview API diagnostics')
     console.log(`   VITE_DISABLE_PREVIEW_PROXY=${AUDIT_ENV.VITE_DISABLE_PREVIEW_PROXY ?? 'unset'}`)
+    console.log(`   VITE_HMRCHAN_ENABLE_API=${AUDIT_ENV.VITE_HMRCHAN_ENABLE_API ?? 'unset'}`)
+    console.log(
+      `   VITE_HMRCHAN_FORCE_FALLBACK=${AUDIT_ENV.VITE_HMRCHAN_FORCE_FALLBACK ?? 'unset'}`
+    )
+    console.log(`   VITE_ENABLE_CLIENT_INIT=${AUDIT_ENV.VITE_ENABLE_CLIENT_INIT ?? 'unset'}`)
     console.log(
       `   /api/v1/home/featured: HTTP ${response.status}, ${contentType || 'no content-type'}, ${kind}`
     )
@@ -108,9 +119,9 @@ const AUDIT_ENV = {
   ...createLocalAuditEnv(process.env, {
     includeContractFallback: true,
   }),
-  VITE_HMRCHAN_ENABLE_API: process.env['VITE_HMRCHAN_ENABLE_API'] ?? 'false',
-  VITE_HMRCHAN_FORCE_FALLBACK: process.env['VITE_HMRCHAN_FORCE_FALLBACK'] ?? 'true',
-  VITE_ENABLE_CLIENT_INIT: process.env['VITE_ENABLE_CLIENT_INIT'] ?? 'false',
+  VITE_HMRCHAN_ENABLE_API: REQUESTED_AUDIT_ENABLE_API ?? 'false',
+  VITE_HMRCHAN_FORCE_FALLBACK: REQUESTED_AUDIT_FORCE_FALLBACK ?? 'true',
+  VITE_ENABLE_CLIENT_INIT: REQUESTED_AUDIT_ENABLE_CLIENT_INIT ?? 'false',
   VITE_ENABLE_SCHEDULE_API: process.env['VITE_ENABLE_SCHEDULE_API'] ?? 'false',
   VITE_ENABLE_DATA_PREFETCH: process.env['VITE_ENABLE_DATA_PREFETCH'] ?? 'false',
   VITE_DISABLE_PREVIEW_PROXY: REQUESTED_AUDIT_DISABLE_PREVIEW_PROXY ?? 'true',

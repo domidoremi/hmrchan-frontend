@@ -278,6 +278,9 @@ const PRELOADER_MIN_DURATION_MS = 1700
 const PRELOADER_MAX_WARMUP_MS = 4500
 const REDUCED_PRELOADER_MIN_DURATION_MS = 450
 const REDUCED_PRELOADER_MAX_WARMUP_MS = 1200
+const ROUTE_WARMUP_STABILIZATION_DELAY_MS = 6000
+const ROUTE_WARMUP_IDLE_TIMEOUT_MS = 8000
+const ROUTE_WARMUP_IDLE_FALLBACK_DELAY_MS = 3000
 
 const route = useRoute()
 const theme = useThemeStore()
@@ -312,6 +315,7 @@ let gsapApi: GsapApi | undefined
 let preloaderTimeline: PreloaderTimeline | undefined
 let preloaderOutroTimeline: PreloaderTimeline | undefined
 let routeWarmupHandle: IdleTaskHandle | undefined
+let routeWarmupDelayTimer: number | undefined
 let preloaderStarted = false
 let preloaderCompletionTimer: number | undefined
 let preloaderExitTimer: number | undefined
@@ -376,13 +380,26 @@ function loadGsap(): Promise<GsapApi> {
 
 function schedulePriorityRouteWarmup(path = route.fullPath): void {
   cancelIdleTask(routeWarmupHandle)
-  routeWarmupHandle = runWhenIdle(
-    () => {
-      routeWarmupHandle = undefined
-      void warmHmrPriorityRoutes(path)
-    },
-    { timeout: 3500, fallbackDelay: 1600 }
-  )
+  clearRouteWarmupDelayTimer()
+  routeWarmupDelayTimer = window.setTimeout(() => {
+    routeWarmupDelayTimer = undefined
+    routeWarmupHandle = runWhenIdle(
+      () => {
+        routeWarmupHandle = undefined
+        void warmHmrPriorityRoutes(path)
+      },
+      {
+        timeout: ROUTE_WARMUP_IDLE_TIMEOUT_MS,
+        fallbackDelay: ROUTE_WARMUP_IDLE_FALLBACK_DELAY_MS,
+      }
+    )
+  }, ROUTE_WARMUP_STABILIZATION_DELAY_MS)
+}
+
+function clearRouteWarmupDelayTimer(): void {
+  if (routeWarmupDelayTimer === undefined) return
+  window.clearTimeout(routeWarmupDelayTimer)
+  routeWarmupDelayTimer = undefined
 }
 
 function clearPreloaderCompletionTimer(): void {
@@ -712,6 +729,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cancelIdleTask(routeWarmupHandle)
+  clearRouteWarmupDelayTimer()
   preloaderTimeline?.kill()
   preloaderOutroTimeline?.kill()
   clearPreloaderCompletionTimer()
