@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildValidationMarkdownSummary,
   buildValidationSummary,
+  classifyValidationChanges,
 } from '../../../scripts/lib/validate-release.js'
 
 const execFileSyncMock = vi.hoisted(() => vi.fn())
@@ -216,5 +217,48 @@ describe('validate release stage summaries', () => {
     expect(markdown).toContain('- scripts/validate-release.mjs')
     expect(markdown).toContain('### Local Worktree')
     expect(markdown).toContain('- src/__tests__/scripts/validate-release.spec.ts')
+  })
+
+  it('classifies hooks and package policy as delivery tooling changes', () => {
+    const changeSummary = classifyValidationChanges([
+      '.husky/commit-msg',
+      'package.json',
+      'eslint.config.ts',
+      'bun.lock',
+    ])
+
+    expect(changeSummary.labels).toContain('delivery-tooling')
+    expect(changeSummary.hasDeliveryToolingChanges).toBe(true)
+    expect(changeSummary.focusAreas).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'delivery-tooling',
+          matchedCount: 4,
+          matchedPaths: ['.husky/commit-msg', 'bun.lock', 'eslint.config.ts', 'package.json'],
+        }),
+      ])
+    )
+  })
+
+  it('classifies release runner tests as validation contract changes', () => {
+    const changeSummary = classifyValidationChanges([
+      'src/__tests__/scripts/auth-bootstrap.spec.ts',
+      'src/__tests__/scripts/validate-release.spec.ts',
+    ])
+
+    expect(changeSummary.labels).toContain('validation-contract')
+    expect(changeSummary.hasValidationContractChanges).toBe(true)
+    expect(changeSummary.focusAreas).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'validation-contract',
+          matchedCount: 2,
+          matchedPaths: [
+            'src/__tests__/scripts/auth-bootstrap.spec.ts',
+            'src/__tests__/scripts/validate-release.spec.ts',
+          ],
+        }),
+      ])
+    )
   })
 })

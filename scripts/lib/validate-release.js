@@ -102,7 +102,36 @@ const CHANGE_FOCUS_RULES = Object.freeze([
         'scripts/lib/validate-release.js',
         'scripts/validate-release.mjs',
         'scripts/release-evidence.mjs',
+        'src/__tests__/scripts/auth-bootstrap.spec.ts',
+        'src/__tests__/scripts/validate-release.spec.ts',
         'VALIDATION.md',
+      ].includes(filePath),
+  }),
+  Object.freeze({
+    id: 'delivery-tooling',
+    label: 'Delivery tooling',
+    description: 'Repository delivery hooks, package scripts, or local toolchain policy changed.',
+    matches: (filePath) =>
+      filePath.startsWith('.husky/') ||
+      filePath.startsWith('build/') ||
+      [
+        '.gitignore',
+        '.gitattributes',
+        '.npmrc',
+        '.node-version',
+        'bun.lock',
+        'eslint.config.ts',
+        'knip.json',
+        'lighthouserc.json',
+        'mise.toml',
+        'package.json',
+        'tsconfig.app.json',
+        'tsconfig.json',
+        'tsconfig.node.json',
+        'tsconfig.vitest.json',
+        'vite.config.ts',
+        'vitest.config.ts',
+        'vitest.setup.ts',
       ].includes(filePath),
   }),
 ])
@@ -171,6 +200,7 @@ export function classifyValidationChanges(changedFiles) {
     hasEdgeChanges: matchedAreas.some((area) => area.id === 'edge-infra'),
     hasAuthDataFlowChanges: matchedAreas.some((area) => area.id === 'auth-data-flow'),
     hasRouteUiChanges: matchedAreas.some((area) => area.id === 'route-ui'),
+    hasDeliveryToolingChanges: matchedAreas.some((area) => area.id === 'delivery-tooling'),
   }
 }
 
