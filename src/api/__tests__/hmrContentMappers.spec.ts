@@ -201,6 +201,39 @@ describe('hmrContentMappers post detail mapping', () => {
     ])
   })
 
+  it('derives media thumbnail and stream URLs from post detail file ids', () => {
+    const detail = mapPostDetailContent(
+      'main-post',
+      {
+        post: {
+          id: 'main-post',
+          title: 'Main Post',
+          platform: 'twitter',
+          media_type: 'image',
+          files: [
+            {
+              id: 'image-file',
+              file_name: '2026-05-28_1.jpg',
+              file_type: 'image',
+            },
+          ],
+        },
+      },
+      null
+    )
+
+    expect(detail.post.hasRenderableMedia).toBe(true)
+    expect(detail.media).toEqual([
+      {
+        id: 'image-file',
+        title: '2026-05-28_1.jpg',
+        mediaType: 'image',
+        streamUrl: '/api/v1/media/image-file/stream',
+        thumbnailUrl: '/api/v1/media/image-file/thumbnail?size=small',
+      },
+    ])
+  })
+
   it('returns a temporary unavailable detail shape when payload is empty', () => {
     expect(mapPostDetailContent('missing-post', null, null)).toEqual({
       post: {

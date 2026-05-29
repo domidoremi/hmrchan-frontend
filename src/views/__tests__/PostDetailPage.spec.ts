@@ -160,4 +160,54 @@ describe('PostDetailPage', () => {
       '/api/v1/media/attachment/thumbnail?size=medium'
     )
   })
+
+  it('opens image attachment cards with a large preview URL', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(
+        makeDetailContent({
+          media: [
+            {
+              id: 'media-1',
+              title: 'Attachment preview',
+              mediaType: 'image',
+              thumbnailUrl: '/api/v1/media/media-1/thumbnail?size=small',
+              streamUrl: '/api/v1/media/media-1/stream',
+            },
+          ],
+        })
+      )
+    )
+
+    const wrapper = await mountPostDetail('/posts/post-1')
+    const mediaCard = wrapper.find('.hmr-detail-media-card')
+    const mediaImage = mediaCard.find('img')
+
+    expect(mediaCard.attributes('href')).toBe('/api/v1/media/media-1/thumbnail?size=large')
+    expect(mediaCard.attributes('target')).toBe('_blank')
+    expect(mediaImage.attributes('src')).toBe('/api/v1/media/media-1/thumbnail?size=small')
+  })
+
+  it('opens non-image attachment cards with the stream URL', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(
+        makeDetailContent({
+          media: [
+            {
+              id: 'media-1',
+              title: 'Video preview',
+              mediaType: 'video',
+              thumbnailUrl: '/api/v1/media/media-1/thumbnail?size=small',
+              streamUrl: '/api/v1/media/media-1/stream',
+            },
+          ],
+        })
+      )
+    )
+
+    const wrapper = await mountPostDetail('/posts/post-1')
+
+    expect(wrapper.find('.hmr-detail-media-card').attributes('href')).toBe(
+      '/api/v1/media/media-1/stream'
+    )
+  })
 })

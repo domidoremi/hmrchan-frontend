@@ -113,9 +113,11 @@
             v-for="item in detail.media"
             :key="item.id"
             class="hmr-detail-media-card"
-            :href="item.streamUrl"
-            target="_blank"
-            rel="noreferrer"
+            :href="mediaCardHref(item)"
+            :target="mediaCardHref(item) ? '_blank' : undefined"
+            :rel="mediaCardHref(item) ? 'noreferrer' : undefined"
+            :aria-disabled="mediaCardHref(item) ? undefined : 'true'"
+            @click="handleMediaCardClick"
           >
             <img
               :src="item.thumbnailUrl"
@@ -193,6 +195,7 @@ import { RouterLink, useRoute } from 'vue-router'
 
 import {
   loadPostDetailContentResource,
+  type HmrMediaItem,
   type HmrPost,
   type HmrPostDetailContent,
 } from '@/api/hmrContent'
@@ -265,6 +268,35 @@ const {
 
 function postId(): string {
   return normalizeHmrRouteParam(route.params.id, 'signal-room')
+}
+
+function mediaCardHref(item: HmrMediaItem): string {
+  return item.mediaType.trim().toLowerCase() === 'image'
+    ? mediaImagePreviewUrl(item.thumbnailUrl)
+    : item.streamUrl
+}
+
+function mediaImagePreviewUrl(value: string): string {
+  if (!value) return ''
+  try {
+    const origin = typeof window === 'undefined' ? 'https://momichan.local' : window.location.origin
+    const url = new URL(value, origin)
+    if (url.pathname.includes('/thumbnail')) {
+      url.searchParams.set('size', 'large')
+      return `${url.pathname}${url.search}${url.hash}`
+    }
+  } catch {
+    return value
+  }
+  return value
+}
+
+function handleMediaCardClick(event: MouseEvent): void {
+  const target = event.currentTarget instanceof HTMLAnchorElement ? event.currentTarget : null
+  const href = target?.getAttribute('href')?.trim()
+  if (!href || href === '#') {
+    event.preventDefault()
+  }
 }
 
 useHmrRouteResourceRefresh({

@@ -76,7 +76,14 @@ export function isTextOnlyMediaKind(value?: string): boolean {
 
 export function hasRenderableMediaRecord(value: unknown): boolean {
   const record = isRecord(value) ? value : {}
-  const mediaKind = pickOptionalString(record, ['media_type', 'mediaType', 'type', 'mime_type'])
+  const mediaKind = pickOptionalString(record, [
+    'media_type',
+    'mediaType',
+    'file_type',
+    'fileType',
+    'type',
+    'mime_type',
+  ])
   if (isTextOnlyMediaKind(mediaKind)) return false
 
   return (
