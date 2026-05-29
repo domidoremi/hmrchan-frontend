@@ -420,6 +420,7 @@ async function runStaticGateStage(stageRecord) {
   const env = { ...process.env }
   const commands = [
     ['bun', 'run', 'format:check'],
+    ['bun', 'run', 'audit:light'],
     ['bun', 'run', 'type-check'],
     ['bun', 'run', 'lint:strict'],
     ['bun', 'run', 'test:unit'],
@@ -449,6 +450,7 @@ async function runHookStaticGateStage(stageRecord) {
   ].filter((filePath) => existsSync(path.resolve(process.cwd(), filePath)))
   const commands = [
     ['bun', 'run', 'format:check'],
+    ['bun', 'run', 'audit:light'],
     ['bun', 'run', 'type-check'],
     ['bun', 'run', 'lint:strict'],
     ...(hookScriptTests.length > 0
