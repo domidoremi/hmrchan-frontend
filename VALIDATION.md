@@ -21,7 +21,7 @@ bun run validate:release --mode production
 ```
 
 - 默认模式是 `local`
-- `hook` 是默认 Git hook 使用的中负载门禁，只跑合同自检、格式检查、轻量审计、类型检查、严格 lint 和验证脚本窄测
+- `hook` 是默认 Git hook 使用的中负载门禁，只跑合同自检、格式检查、轻量审计、类型检查、严格 lint 和 `src/__tests__/scripts/*.spec.ts`
 - `prepush` 是 `hook` 的兼容别名，保持同等负载
 - `prepush-full` 是显式重静态门禁，会运行完整本地静态门禁，包括轻量审计、全量 unit、build 和 build security check
 - artifact 默认输出到 `output/validation/<timestamp>/`
@@ -58,7 +58,7 @@ Hook 中负载静态门禁只包含：
 - `audit:light`
 - `type-check`
 - `lint:strict`
-- 验证 runner / command runner / frontend contract / route contract 窄测
+- `src/__tests__/scripts/*.spec.ts` 脚本治理测试
 
 说明：`hook` / `prepush` 成功会记录为 `passed`，只表示代码通过推送前中负载门禁，不等价于完整发布验证通过。
 
