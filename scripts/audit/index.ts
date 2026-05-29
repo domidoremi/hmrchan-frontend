@@ -36,18 +36,33 @@ const modules: AuditModule[] = [
 ]
 
 // --- CLI arg parsing ---
-function parseArgs(argv: string[]): { fix: boolean; verbose: boolean; only: string | null } {
+function parseArgs(argv: string[]): {
+  fix: boolean
+  verbose: boolean
+  list: boolean
+  only: string[]
+} {
   let fix = false
   let verbose = false
-  let only: string | null = null
+  let list = false
+  const only: string[] = []
 
   for (const arg of argv) {
     if (arg === '--fix') fix = true
     else if (arg === '--verbose') verbose = true
-    else if (arg.startsWith('--only=')) only = arg.slice('--only='.length)
+    else if (arg === '--list') list = true
+    else if (arg.startsWith('--only=')) {
+      only.push(
+        ...arg
+          .slice('--only='.length)
+          .split(',')
+          .map((name) => name.trim())
+          .filter(Boolean)
+      )
+    }
   }
 
-  return { fix, verbose, only }
+  return { fix, verbose, list, only }
 }
 
 // --- Report printer ---
@@ -82,7 +97,7 @@ function printReport(report: AuditReport): void {
 
 // --- Main ---
 async function main(): Promise<void> {
-  const { fix, verbose, only } = parseArgs(process.argv.slice(2))
+  const { fix, verbose, list, only } = parseArgs(process.argv.slice(2))
 
   const options: AuditOptions = {
     fix,
@@ -90,12 +105,21 @@ async function main(): Promise<void> {
     projectRoot: process.cwd(),
   }
 
-  const activeModules = only
-    ? modules.filter((m) => m.name.toLowerCase() === only.toLowerCase())
-    : modules
+  if (list) {
+    console.log(modules.map((m) => m.name).join('\n'))
+    return
+  }
 
-  if (only && activeModules.length === 0) {
-    console.error(`No module found matching "${only}"`)
+  const requestedModules = new Set(only.map((name) => name.toLowerCase()))
+  const activeModules =
+    requestedModules.size > 0
+      ? modules.filter((m) => requestedModules.has(m.name.toLowerCase()))
+      : modules
+
+  if (requestedModules.size > 0 && activeModules.length !== requestedModules.size) {
+    const matchedModuleNames = new Set(activeModules.map((m) => m.name.toLowerCase()))
+    const missingModules = [...requestedModules].filter((name) => !matchedModuleNames.has(name))
+    console.error(`No module found matching "${missingModules.join(', ')}"`)
     console.error(`Available modules: ${modules.map((m) => m.name).join(', ') || '(none)'}`)
     process.exit(1)
   }
