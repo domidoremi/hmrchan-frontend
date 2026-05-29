@@ -21,7 +21,7 @@
     "check:desk-pet-runtime-boundary": "node scripts/check-desk-pet-runtime-boundary.mjs",
     "preview": "node node_modules/vite/bin/vite.js preview",
     "postinstall": "node scripts/patch-lucide.mjs",
-    "test:unit": "node scripts/patch-lucide.mjs && node scripts/run-vitest.mjs run --passWithNoTests",
+    "test:unit": "node scripts/patch-lucide.mjs && node scripts/run-vitest.mjs run",
     "test:unit:watch": "node scripts/patch-lucide.mjs && node scripts/run-vitest.mjs",
     "test:coverage": "node scripts/patch-lucide.mjs && node scripts/run-vitest.mjs run --coverage --maxWorkers=1",
     "test:e2e": "bun run scripts/test-e2e.ts",

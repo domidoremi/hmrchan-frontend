@@ -17,6 +17,7 @@ import {
 describe('validate release helpers', () => {
   it('runs maintainability, text style, and frontend pattern checks in release static gates', () => {
     const script = readFileSync(path.join(process.cwd(), 'scripts/validate-release.mjs'), 'utf8')
+    const packageJson = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'))
     const localStaticStage = script.match(
       /async function runStaticGateStage[\s\S]*?const commandResults/
     )?.[0]
@@ -27,6 +28,7 @@ describe('validate release helpers', () => {
     const textStyleCommand = "['bun', 'run', 'audit:repo', '--only=text-style']"
     const frontendPatternCommand = "['bun', 'run', 'audit:repo', '--only=frontend-patterns']"
 
+    expect(packageJson.scripts['test:unit']).not.toContain('--passWithNoTests')
     expect(localStaticStage).toContain(complexityCommand)
     expect(localStaticStage).toContain(textStyleCommand)
     expect(localStaticStage).toContain(frontendPatternCommand)
