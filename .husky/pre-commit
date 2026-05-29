@@ -13,7 +13,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-git diff --cached --name-only --diff-filter=ACMR -z -- '*.ts' '*.tsx' '*.vue' > "$staged_code_files"
+git diff --cached --name-only --diff-filter=ACMR -z -- '*.js' '*.mjs' '*.cjs' '*.ts' '*.mts' '*.cts' '*.tsx' '*.vue' > "$staged_code_files"
 if [ -s "$staged_code_files" ]; then
   xargs -0r -- "$NODE_BIN" node_modules/eslint/bin/eslint.js --fix --cache < "$staged_code_files"
   xargs -0r -- "$NODE_BIN" node_modules/prettier/bin/prettier.cjs --write < "$staged_code_files"

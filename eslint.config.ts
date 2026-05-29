@@ -19,8 +19,8 @@ export default defineConfigWithVueTs(
   /** 应用文件检查范围配置 */
   {
     name: 'app/files-to-lint',
-    /** 指定需要检查的文件类型：TypeScript 和 Vue 文件 */
-    files: ['**/*.{ts,mts,tsx,vue}'],
+    /** 指定需要检查的文件类型：应用、脚本和 Vue 文件 */
+    files: ['**/*.{js,mjs,cjs,ts,mts,tsx,vue}'],
   },
 
   /** 全局忽略的目录：构建产物、测试覆盖率报告、AI 工具配置 */
