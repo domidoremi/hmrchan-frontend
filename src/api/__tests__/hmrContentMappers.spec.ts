@@ -223,6 +223,8 @@ describe('hmrContentMappers post detail mapping', () => {
     )
 
     expect(detail.post.hasRenderableMedia).toBe(true)
+    expect(detail.post.mediaUrl).toBeUndefined()
+    expect(detail.post.mediaCount).toBe(1)
     expect(detail.media).toEqual([
       {
         id: 'image-file',

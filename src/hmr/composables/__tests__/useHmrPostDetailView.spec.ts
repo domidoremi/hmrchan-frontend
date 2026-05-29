@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 
+import { mapPostDetailContent } from '@/api/hmrContentMappers'
 import type { HmrPostDetailContent } from '@/api/hmrContent'
 import {
   formatHmrCompactNumber,
@@ -97,6 +98,38 @@ describe('useHmrPostDetailView', () => {
       '/api/v1/media/attachment/thumbnail?size=medium'
     )
     expect(view.mediaLabel.value).toBe('2 个媒体资源')
+    expect(view.showMediaSection.value).toBe(true)
+  })
+
+  it('uses the first mapped attachment thumbnail as the hero fallback', () => {
+    const detail = ref(
+      mapPostDetailContent(
+        'post-1',
+        {
+          post: {
+            id: 'post-1',
+            title: 'File-only post',
+            excerpt: 'Loaded from file metadata',
+            platform: 'twitter',
+            files: [
+              {
+                id: 'image-file',
+                file_name: '2026-05-28_1.jpg',
+                file_type: 'image',
+              },
+            ],
+          },
+        },
+        null
+      )
+    )
+    const pageState = ref<HmrPageState>('ready')
+    const view = useHmrPostDetailView(detail, pageState)
+
+    expect(detail.value.post.mediaUrl).toBeUndefined()
+    expect(view.heroImage.value).toBe('/api/v1/media/image-file/thumbnail?size=small')
+    expect(view.heroImageSrcset.value).toContain('/api/v1/media/image-file/thumbnail?size=medium')
+    expect(view.mediaLabel.value).toBe('1 个媒体资源')
     expect(view.showMediaSection.value).toBe(true)
   })
 
