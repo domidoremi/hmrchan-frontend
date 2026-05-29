@@ -68,7 +68,8 @@ function isPublicMediaPath(pathname: string): boolean {
     pathname.startsWith('/hmrchan/reference/') ||
     pathname.startsWith('/hmrchan/pets/') ||
     pathname.startsWith('/uploads/public/') ||
-    pathname.startsWith('/api/v1/media/public/')
+    pathname.startsWith('/api/v1/media/public/') ||
+    /^\/api\/v1\/media\/[^/]+\/thumbnail$/.test(pathname)
   )
 }
 

@@ -51,6 +51,38 @@ describe('public cache service worker policy', () => {
     expect(cacheNameForRequest(request)).toBe(PUBLIC_MEDIA_CACHE_NAME)
   })
 
+  it('routes generated public media thumbnails to the media cache', () => {
+    const request = new Request(
+      'https://next.momichan.xyz/api/v1/media/019e6f16-e319-7551-94b9-08e3b49e16b3/thumbnail?size=small',
+      { credentials: 'omit' }
+    )
+
+    expect(isPublicCacheableRequest(request)).toBe(true)
+    expect(cacheNameForRequest(request)).toBe(PUBLIC_MEDIA_CACHE_NAME)
+  })
+
+  it('rejects media streams and credentialed media thumbnails', () => {
+    expect(
+      isPublicCacheableRequest(
+        new Request(
+          'https://next.momichan.xyz/api/v1/media/019e6f16-e319-7551-94b9-08e3b49e16b3/stream',
+          { credentials: 'omit' }
+        )
+      )
+    ).toBe(false)
+    expect(
+      isPublicCacheableRequest(
+        new Request(
+          'https://next.momichan.xyz/api/v1/media/019e6f16-e319-7551-94b9-08e3b49e16b3/thumbnail?size=small',
+          {
+            headers: { cookie: 'sid=1' },
+            credentials: 'omit',
+          }
+        )
+      )
+    ).toBe(false)
+  })
+
   it('rejects private or Set-Cookie responses', () => {
     expect(
       isPublicCacheableResponse(new Response('{}', { headers: { 'cache-control': 'private' } }))
