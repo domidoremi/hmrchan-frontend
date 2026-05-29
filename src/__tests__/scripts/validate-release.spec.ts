@@ -29,6 +29,7 @@ describe('validate release helpers', () => {
     const frontendPatternCommand = "['bun', 'run', 'audit:repo', '--only=frontend-patterns']"
 
     expect(packageJson.scripts['test:unit']).not.toContain('--passWithNoTests')
+    expect(packageJson.scripts['test:unit']).toContain('--maxWorkers=1')
     expect(localStaticStage).toContain(complexityCommand)
     expect(localStaticStage).toContain(textStyleCommand)
     expect(localStaticStage).toContain(frontendPatternCommand)
