@@ -25,6 +25,39 @@ async function importValidateReleaseModule() {
   return import('../../../scripts/validate-release.mjs')
 }
 
+function makeValidationSummary(
+  mode: string,
+  stages = [{ id: 'stage-0-hook-static', selected: true, status: 'passed' }]
+) {
+  return buildValidationSummary({
+    mode,
+    artifactDir: 'output/validation/test-run',
+    git: {
+      branch: 'production/next',
+      commitSha: 'e96e270812ff2f48a9f4efb4d9db1dbd565032c2',
+      diffRange: 'origin/production/next...HEAD',
+      committedChangedFiles: [],
+      localChangedFiles: [],
+    },
+    targets: {
+      baseUrl: 'https://momichan.xyz',
+      controlledBaseUrl: null,
+    },
+    changeSummary: {
+      changedFiles: [],
+      changedFileCount: 0,
+      focusAreas: [],
+      labels: [],
+      hasValidationContractChanges: false,
+      hasEdgeChanges: false,
+      hasAuthDataFlowChanges: false,
+      hasRouteUiChanges: false,
+      hasDeliveryToolingChanges: false,
+    },
+    stages,
+  })
+}
+
 function mockGitOutput(resolver: (args: string[]) => string) {
   execFileSyncMock.mockImplementation((command: string, args: string[]) => {
     expect(command).toBe('git')
@@ -166,6 +199,61 @@ describe('validate release stage summaries', () => {
   beforeEach(() => {
     vi.unstubAllEnvs()
     execFileSyncMock.mockReset()
+  })
+
+  it('marks hard-gate and production modes as passed when selected stages pass', () => {
+    for (const mode of ['hook', 'prepush', 'prepush-full', 'production']) {
+      const summary = makeValidationSummary(mode)
+
+      expect(summary.status).toBe('passed')
+      expect(summary.blockingStageId).toBeNull()
+      expect(summary.blockingReason).toBeNull()
+      expect(summary.selectedStageCount).toBe(1)
+      expect(summary.completedStageCount).toBe(1)
+    }
+  })
+
+  it('keeps local and candidate modes incomplete until production regression runs', () => {
+    for (const mode of ['local', 'candidate']) {
+      const summary = makeValidationSummary(mode)
+
+      expect(summary.status).toBe('incomplete')
+      expect(summary.blockingStageId).toBeNull()
+      expect(summary.blockingReason).toBe(
+        'Production deep regression did not run in this validation mode.'
+      )
+    }
+  })
+
+  it('marks selected failed, skipped, and unresolved stages as failed with blocking evidence', () => {
+    const blockingCases = [
+      {
+        stage: {
+          id: 'stage-failed',
+          selected: true,
+          status: 'failed',
+          reason: 'Command exited 1.',
+        },
+        blockingReason: 'Command exited 1.',
+      },
+      {
+        stage: { id: 'stage-skipped', selected: true, status: 'skipped' },
+        blockingReason: 'Selected release stage was skipped unexpectedly.',
+      },
+      {
+        stage: { id: 'stage-pending', selected: true, status: 'pending' },
+        blockingReason: 'Selected release stage did not complete.',
+      },
+    ]
+
+    for (const { stage, blockingReason } of blockingCases) {
+      const summary = makeValidationSummary('production', [stage])
+
+      expect(summary.status).toBe('failed')
+      expect(summary.blockingStageId).toBe(stage.id)
+      expect(summary.blockingReason).toBe(blockingReason)
+      expect(summary.completedStageCount).toBe(0)
+    }
   })
 
   it('marks skipped stages with the modes that execute the stage', async () => {
