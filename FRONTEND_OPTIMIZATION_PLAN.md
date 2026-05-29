@@ -2328,3 +2328,27 @@ Result:
 
 - Route security policy and router meta contract tests passed with `11` tests.
 - Auth guard decision rules are now covered as pure route policy while store loading and freshness side effects remain in the router guard.
+
+### API Transport Success Contract Coverage
+
+Changed files:
+
+- `src/api/__tests__/transport.spec.ts`
+
+Policy:
+
+- API transport URL and response contracts must be covered before changing shared transport behavior.
+- `buildRequestUrl` changes require broader API-client validation because GitNexus reports HIGH impact through `request`, `get`, and forbidden-response flows.
+- Existing relative endpoint concatenation behavior remains unchanged in this slice.
+- Cache-key formatting must remain stable as `api:{method}:{url}`.
+- Successful `204` and `304` responses must parse to `undefined`.
+- Successful `text`, `json`, `blob`, and raw `response` response types must be covered as transport contracts.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/api/__tests__/transport.spec.ts --maxWorkers=1`
+
+Result:
+
+- API transport helper tests passed with `6` tests.
+- Shared transport behavior was not changed because the candidate implementation symbols were HIGH impact; this slice strengthens the interface-management safety net first.
