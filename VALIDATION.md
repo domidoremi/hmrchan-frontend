@@ -202,16 +202,16 @@ bun run test:functional-chain:local
 这套流程不会依赖人工维护 checklist，而是从仓库真相源自动派生：
 
 - 路由与详情页 readiness：
-  - [scripts/lib/release-route-contract.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/release-route-contract.js)
+  - [scripts/lib/release-route-contract.js](/G:/Project/hmrchan/hmrchan-frontend-main/scripts/lib/release-route-contract.js)
 - 认证预热探针：
-  - [scripts/lib/auth-bootstrap.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/auth-bootstrap.js)
+  - [scripts/lib/auth-bootstrap.js](/G:/Project/hmrchan/hmrchan-frontend-main/scripts/lib/auth-bootstrap.js)
 - 生产 contract/version 与 Pages 安全环境约束：
-  - [scripts/lib/production-contract-env.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/production-contract-env.js)
+  - [scripts/lib/production-contract-env.js](/G:/Project/hmrchan/hmrchan-frontend-main/scripts/lib/production-contract-env.js)
 - 前端 auth surface 与 UUIDv7 public ID 守卫：
-  - [scripts/lib/frontend-contract-audit.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/frontend-contract-audit.js)
+  - [scripts/lib/frontend-contract-audit.js](/G:/Project/hmrchan/hmrchan-frontend-main/scripts/lib/frontend-contract-audit.js)
 - 统一 runner 编排与变更影响分类：
-  - [scripts/validate-release.mjs](/G:/Project/hmrchan/hmrchan-frontend/scripts/validate-release.mjs)
-  - [scripts/lib/validate-release.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/validate-release.js)
+  - [scripts/validate-release.mjs](/G:/Project/hmrchan/hmrchan-frontend-main/scripts/validate-release.mjs)
+  - [scripts/lib/validate-release.js](/G:/Project/hmrchan/hmrchan-frontend-main/scripts/lib/validate-release.js)
 
 UUIDv7 hard cutover 后，前端公开资源 ID 只能使用 UUIDv7 字符串；新增或修改 `src/api`、路由详情页、fallback snapshot、Service Worker cache key 时，必须同步相关类型守卫、测试和 release contract audit。当前静态审计会阻断缺失 route/cache guard 的改动；checked-in generated fallback snapshot 不允许包含旧 v4 或 numeric public ID。`bun run fallbacks:refresh` 在写入 generated snapshot 前会拒绝非 UUIDv7 public ID，因此刷新必须连接到已完成 UUIDv7 cutover 的后端/API 环境。
 

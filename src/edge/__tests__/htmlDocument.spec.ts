@@ -162,7 +162,7 @@ describe('resolveHtmlDocument', () => {
     expect(shell).toContain('data-prerender-shell-variant="home"')
     expect(shell).toContain('data-prerender-shell-content="true"')
     expect(shell).toContain('Start here')
-    expect(shell).toContain('Find today’s standout posts, creators, and conversations')
+    expect(shell).toContain('Public posts, creators, and discussions')
     expect(shell).not.toContain('Quick bridge')
     expect(shell).not.toContain('client takeover')
   })
