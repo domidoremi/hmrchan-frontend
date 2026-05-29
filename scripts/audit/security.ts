@@ -32,6 +32,29 @@ const SCAN_EXCLUDE = [
   /scripts\/audit\//,
 ]
 
+const REQUIRED_GITIGNORE_PATTERNS: Array<{ pattern: string; rule: string; label: string }> = [
+  { pattern: '.env', rule: 'gitignore-env', label: 'environment file' },
+  { pattern: '.env.local', rule: 'gitignore-env', label: 'local environment file' },
+  { pattern: '.env.*.local', rule: 'gitignore-env', label: 'mode local environment files' },
+  { pattern: 'node_modules/', rule: 'gitignore-local-boundary', label: 'dependency directory' },
+  { pattern: 'dist/', rule: 'gitignore-local-boundary', label: 'build output directory' },
+  { pattern: 'output/', rule: 'gitignore-local-boundary', label: 'validation artifact directory' },
+  { pattern: '.wrangler/', rule: 'gitignore-local-boundary', label: 'Wrangler local state' },
+  { pattern: '.agents/', rule: 'gitignore-local-boundary', label: 'local agent workspace' },
+  { pattern: '.claude/', rule: 'gitignore-local-boundary', label: 'retired agent workspace' },
+  { pattern: '.codex/', rule: 'gitignore-local-boundary', label: 'local Codex workspace' },
+  { pattern: 'CLAUDE.md', rule: 'gitignore-local-boundary', label: 'retired instruction file' },
+  { pattern: 'docs/', rule: 'gitignore-local-boundary', label: 'local documentation workspace' },
+  { pattern: 'host/', rule: 'gitignore-local-boundary', label: 'local host workspace' },
+  {
+    pattern: 'scripts/lib/__tests__/',
+    rule: 'gitignore-local-boundary',
+    label: 'local script test workspace',
+  },
+  { pattern: 'postman/', rule: 'gitignore-local-boundary', label: 'local API client workspace' },
+  { pattern: '.postman/', rule: 'gitignore-local-boundary', label: 'local Postman workspace' },
+]
+
 async function scanForSecrets(options: AuditOptions): Promise<AuditIssue[]> {
   const issues: AuditIssue[] = []
   const srcDir = join(options.projectRoot, 'src')
@@ -91,18 +114,19 @@ async function checkGitignore(options: AuditOptions): Promise<AuditIssue[]> {
 
   try {
     const content = await readFile(join(options.projectRoot, '.gitignore'), 'utf-8')
+    const lines = content
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith('#'))
 
-    const requiredPatterns = ['.env', '.env.local', '.env.*.local']
-    for (const pattern of requiredPatterns) {
-      // Check if the pattern appears as a line (not negated)
-      const lines = content.split('\n').map((l) => l.trim())
-      const found = lines.some((l) => l === pattern || l === `${pattern}/`)
+    for (const { pattern, rule, label } of REQUIRED_GITIGNORE_PATTERNS) {
+      const found = lines.some((line) => line === pattern)
       if (!found) {
         issues.push({
           severity: 'error',
-          message: `.gitignore missing entry for "${pattern}"`,
+          message: `.gitignore missing entry for ${label} "${pattern}"`,
           file: '.gitignore',
-          rule: 'gitignore-env',
+          rule,
           suggestion: `Add "${pattern}" to .gitignore`,
         })
       }
