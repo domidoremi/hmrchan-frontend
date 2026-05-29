@@ -104,10 +104,8 @@ const CHANGE_FOCUS_RULES = Object.freeze([
         'scripts/lib/validate-release.js',
         'scripts/validate-release.mjs',
         'scripts/release-evidence.mjs',
-        'src/__tests__/scripts/auth-bootstrap.spec.ts',
-        'src/__tests__/scripts/validate-release.spec.ts',
         'VALIDATION.md',
-      ].includes(filePath),
+      ].includes(filePath) || /^src\/__tests__\/scripts\/[^/]+\.spec\.ts$/.test(filePath),
   }),
   Object.freeze({
     id: 'delivery-tooling',

@@ -246,6 +246,7 @@ describe('validate release stage summaries', () => {
   it('classifies release runner tests as validation contract changes', () => {
     const changeSummary = classifyValidationChanges([
       'src/__tests__/scripts/auth-bootstrap.spec.ts',
+      'src/__tests__/scripts/security-audit.spec.ts',
       'src/__tests__/scripts/validate-release.spec.ts',
     ])
 
@@ -255,9 +256,10 @@ describe('validate release stage summaries', () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: 'validation-contract',
-          matchedCount: 2,
+          matchedCount: 3,
           matchedPaths: [
             'src/__tests__/scripts/auth-bootstrap.spec.ts',
+            'src/__tests__/scripts/security-audit.spec.ts',
             'src/__tests__/scripts/validate-release.spec.ts',
           ],
         }),
