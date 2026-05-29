@@ -13,6 +13,11 @@ type ManifestIcon = {
 type ManifestFixtureOptions = {
   icons: ManifestIcon[]
   existingIcons?: string[]
+  html?: {
+    manifestHref?: string
+    themeColorContent?: string
+    appleTouchIconHref?: string
+  }
 }
 
 function createManifest({ icons }: ManifestFixtureOptions): string {
@@ -34,6 +39,9 @@ async function createPwaFixture(options: ManifestFixtureOptions): Promise<string
   await mkdir(join(projectRoot, 'public', 'icons'), { recursive: true })
   await mkdir(join(projectRoot, 'src', 'sw'), { recursive: true })
   await mkdir(join(projectRoot, 'build', 'vite', 'plugins'), { recursive: true })
+  const manifestHref = options.html?.manifestHref ?? '/manifest.json'
+  const themeColorContent = options.html?.themeColorContent ?? '#4b8cff'
+  const appleTouchIconHref = options.html?.appleTouchIconHref ?? '/icons/sitting-192.webp'
 
   await writeFile(join(projectRoot, 'public', 'manifest.json'), createManifest(options))
   await writeFile(
@@ -42,9 +50,9 @@ async function createPwaFixture(options: ManifestFixtureOptions): Promise<string
       '<!doctype html>',
       '<html>',
       '  <head>',
-      '    <link rel="manifest" href="/manifest.json" />',
-      '    <link rel="apple-touch-icon" href="/icons/sitting-192.webp" />',
-      '    <meta name="theme-color" content="#4b8cff" />',
+      `    <link rel="manifest" href="${manifestHref}" />`,
+      `    <link rel="apple-touch-icon" href="${appleTouchIconHref}" />`,
+      `    <meta name="theme-color" content="${themeColorContent}" />`,
       '  </head>',
       '  <body><div id="app"></div></body>',
       '</html>',
@@ -149,6 +157,88 @@ describe('pwa audit manifest icon contract', () => {
           expect.objectContaining({
             rule: 'pwa-icons',
             message: 'Declared icon file not found: /icons/missing.webp',
+          }),
+        ])
+      )
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('pwa audit html install entry contract', () => {
+  it('fails when the manifest link points away from the public manifest', async () => {
+    const projectRoot = await createPwaFixture({
+      icons: [{ src: '/icons/sitting-192.webp' }],
+      existingIcons: ['/icons/sitting-192.webp'],
+      html: {
+        manifestHref: '/assets/manifest.webmanifest',
+      },
+    })
+
+    try {
+      const result = await runPwaAudit(projectRoot)
+
+      expect(result.status).toBe('fail')
+      expect(result.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            rule: 'pwa-html',
+            file: 'index.html',
+            message: 'index.html manifest link must reference /manifest.json',
+          }),
+        ])
+      )
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true })
+    }
+  })
+
+  it('fails when the theme color meta has no content', async () => {
+    const projectRoot = await createPwaFixture({
+      icons: [{ src: '/icons/sitting-192.webp' }],
+      existingIcons: ['/icons/sitting-192.webp'],
+      html: {
+        themeColorContent: '',
+      },
+    })
+
+    try {
+      const result = await runPwaAudit(projectRoot)
+
+      expect(result.status).toBe('fail')
+      expect(result.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            rule: 'pwa-html',
+            file: 'index.html',
+            message: 'index.html theme-color meta must declare content',
+          }),
+        ])
+      )
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true })
+    }
+  })
+
+  it('fails when the apple touch icon file is missing', async () => {
+    const projectRoot = await createPwaFixture({
+      icons: [{ src: '/icons/sitting-192.webp' }],
+      existingIcons: ['/icons/sitting-192.webp'],
+      html: {
+        appleTouchIconHref: '/icons/missing-apple-touch-icon.png',
+      },
+    })
+
+    try {
+      const result = await runPwaAudit(projectRoot)
+
+      expect(result.status).toBe('fail')
+      expect(result.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            rule: 'pwa-html',
+            message: 'apple-touch-icon file not found: /icons/missing-apple-touch-icon.png',
           }),
         ])
       )

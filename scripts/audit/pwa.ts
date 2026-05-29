@@ -5,6 +5,27 @@ import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } 
 
 const REQUIRED_MANIFEST_FIELDS = ['name', 'short_name', 'icons', 'start_url', 'display'] as const
 
+function getAttribute(tag: string, attribute: string): string | null {
+  const match = tag.match(new RegExp(`\\s${attribute}=["']([^"']*)["']`, 'i'))
+  return match?.[1]?.trim() || null
+}
+
+function findLinkTag(content: string, rel: string): string | null {
+  const escapedRel = rel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = content.match(
+    new RegExp(`<link\\b(?=[^>]*\\brel=["']${escapedRel}["'])[^>]*>`, 'i')
+  )
+  return match?.[0] ?? null
+}
+
+function findMetaTag(content: string, name: string): string | null {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = content.match(
+    new RegExp(`<meta\\b(?=[^>]*\\bname=["']${escapedName}["'])[^>]*>`, 'i')
+  )
+  return match?.[0] ?? null
+}
+
 async function checkManifest(options: AuditOptions): Promise<AuditIssue[]> {
   const issues: AuditIssue[] = []
   const manifestPath = join(options.projectRoot, 'public/manifest.json')
@@ -136,8 +157,8 @@ async function checkIndexHtml(options: AuditOptions): Promise<AuditIssue[]> {
     return issues
   }
 
-  // Check manifest link
-  if (!/<link[^>]+rel=["']manifest["'][^>]*>/.test(content)) {
+  const manifestTag = findLinkTag(content, 'manifest')
+  if (!manifestTag) {
     issues.push({
       severity: 'error',
       message: 'index.html missing <link rel="manifest"> tag',
@@ -145,10 +166,18 @@ async function checkIndexHtml(options: AuditOptions): Promise<AuditIssue[]> {
       rule: 'pwa-html',
       suggestion: 'Add <link rel="manifest" href="/manifest.json" />',
     })
+  } else if (getAttribute(manifestTag, 'href') !== '/manifest.json') {
+    issues.push({
+      severity: 'error',
+      message: 'index.html manifest link must reference /manifest.json',
+      file: 'index.html',
+      rule: 'pwa-html',
+      suggestion: 'Set <link rel="manifest" href="/manifest.json" />',
+    })
   }
 
-  // Check theme-color meta
-  if (!/<meta[^>]+name=["']theme-color["'][^>]*>/.test(content)) {
+  const themeColorTag = findMetaTag(content, 'theme-color')
+  if (!themeColorTag) {
     issues.push({
       severity: 'error',
       message: 'index.html missing <meta name="theme-color"> tag',
@@ -156,10 +185,18 @@ async function checkIndexHtml(options: AuditOptions): Promise<AuditIssue[]> {
       rule: 'pwa-html',
       suggestion: 'Add <meta name="theme-color" content="#8b5cf6" />',
     })
+  } else if (!getAttribute(themeColorTag, 'content')) {
+    issues.push({
+      severity: 'error',
+      message: 'index.html theme-color meta must declare content',
+      file: 'index.html',
+      rule: 'pwa-html',
+      suggestion: 'Set a non-empty theme-color content value.',
+    })
   }
 
-  // Check apple-touch-icon
-  if (!/<link[^>]+rel=["']apple-touch-icon["'][^>]*>/.test(content)) {
+  const appleTouchIconTag = findLinkTag(content, 'apple-touch-icon')
+  if (!appleTouchIconTag) {
     issues.push({
       severity: 'error',
       message: 'index.html missing <link rel="apple-touch-icon"> tag',
@@ -167,6 +204,27 @@ async function checkIndexHtml(options: AuditOptions): Promise<AuditIssue[]> {
       rule: 'pwa-html',
       suggestion: 'Add <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />',
     })
+  } else {
+    const appleTouchIconHref = getAttribute(appleTouchIconTag, 'href')
+    if (!appleTouchIconHref) {
+      issues.push({
+        severity: 'error',
+        message: 'index.html apple-touch-icon link must declare href',
+        file: 'index.html',
+        rule: 'pwa-html',
+        suggestion: 'Set apple-touch-icon href to an existing public icon.',
+      })
+    } else {
+      const iconPath = join(options.projectRoot, 'public', appleTouchIconHref.replace(/^\//, ''))
+      if (!existsSync(iconPath)) {
+        issues.push({
+          severity: 'error',
+          message: `apple-touch-icon file not found: ${appleTouchIconHref}`,
+          file: iconPath,
+          rule: 'pwa-html',
+        })
+      }
+    }
   }
 
   return issues
