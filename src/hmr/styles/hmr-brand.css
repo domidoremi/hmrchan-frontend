@@ -3669,7 +3669,7 @@ svg {
     0 1.6em 3em rgb(var(--hmr-base-rgb) / 8%);
   -webkit-backdrop-filter: blur(1.5rem);
   backdrop-filter: blur(1.5rem);
-  overflow: clip;
+  overflow: visible;
 }
 
 .hmr-data-toolbar--explore::before {
@@ -3683,7 +3683,8 @@ svg {
   content: '';
 }
 
-.hmr-data-toolbar label {
+.hmr-data-toolbar label,
+.hmr-filter-field {
   display: grid;
   gap: 0.4em;
   color: var(--hmr-grey);
@@ -3693,7 +3694,8 @@ svg {
   text-transform: uppercase;
 }
 
-.hmr-data-toolbar--explore label {
+.hmr-data-toolbar--explore label,
+.hmr-data-toolbar--explore .hmr-filter-field {
   position: relative;
   min-inline-size: 0;
   gap: 0.28em;
@@ -3708,13 +3710,17 @@ svg {
     transform 220ms var(--hmr-ease);
 }
 
-.hmr-data-toolbar--explore label:focus-within {
+.hmr-data-toolbar--explore label:focus-within,
+.hmr-data-toolbar--explore .hmr-filter-field:focus-within,
+.hmr-data-toolbar--explore .hmr-filter-field:has(.hmr-filter-select.is-open) {
   background: var(--hmr-base);
   color: var(--hmr-bg);
   transform: translateY(-0.08em);
 }
 
-.hmr-data-toolbar--explore label:focus-within span {
+.hmr-data-toolbar--explore label:focus-within span,
+.hmr-data-toolbar--explore .hmr-filter-field:focus-within > span,
+.hmr-data-toolbar--explore .hmr-filter-field:has(.hmr-filter-select.is-open) > span {
   color: rgb(251 249 239 / 68%);
 }
 
@@ -3770,6 +3776,90 @@ svg {
     0.34em 0.34em,
     0.34em 0.34em;
   background-repeat: no-repeat;
+}
+
+.hmr-filter-select {
+  position: relative;
+  min-inline-size: 0;
+}
+
+.hmr-filter-trigger {
+  display: block;
+  inline-size: 100%;
+  min-block-size: auto;
+  padding: 0;
+  padding-inline-end: 1.35em;
+  border: 0;
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, currentcolor 50%) calc(100% - 0.7em) 54% / 0.34em 0.34em
+      no-repeat,
+    linear-gradient(135deg, currentcolor 50%, transparent 50%) calc(100% - 0.38em) 54% / 0.34em
+      0.34em no-repeat;
+  color: inherit;
+  cursor: pointer;
+  font-family: var(--hmr-font-display);
+  font-size: 1.03rem;
+  font-weight: 900;
+  line-height: 1.18;
+  outline: 0;
+  overflow: hidden;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hmr-filter-menu {
+  position: absolute;
+  inset-block-start: calc(100% + 0.72rem);
+  inset-inline: -0.25rem;
+  z-index: 40;
+  display: grid;
+  gap: 0.18rem;
+  min-inline-size: max(100%, 12rem);
+  padding: 0.4rem;
+  border: 1px solid rgb(var(--hmr-base-rgb) / 16%);
+  border-radius: 1rem;
+  background: rgb(251 249 239 / 96%);
+  box-shadow: 0 1.3rem 2.8rem rgb(var(--hmr-base-rgb) / 18%);
+  -webkit-backdrop-filter: blur(1.2rem);
+  backdrop-filter: blur(1.2rem);
+}
+
+.hmr-filter-option {
+  display: flex;
+  min-block-size: 2.35rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 0.72rem;
+  background: transparent;
+  color: var(--hmr-base);
+  cursor: pointer;
+  font-family: var(--hmr-font-display);
+  font-size: 0.9rem;
+  font-weight: 850;
+  line-height: 1.15;
+  text-align: start;
+}
+
+.hmr-filter-option:hover,
+.hmr-filter-option:focus-visible,
+.hmr-filter-option.is-selected {
+  background: var(--hmr-base);
+  color: var(--hmr-bg);
+  outline: 0;
+}
+
+.hmr-filter-option em {
+  flex: 0 0 auto;
+  color: inherit;
+  font-family: var(--hmr-font-mono);
+  font-size: 0.72rem;
+  font-style: normal;
+  opacity: 0.72;
 }
 
 .hmr-data-toolbar--explore .hmr-status-button {
@@ -5935,7 +6025,8 @@ svg {
     border-radius: 1.35rem;
   }
 
-  .hmr-data-toolbar--explore label {
+  .hmr-data-toolbar--explore label,
+  .hmr-data-toolbar--explore .hmr-filter-field {
     border-inline-end: 0;
     border-block-end: 1px solid rgb(var(--hmr-base-rgb) / 9%);
     border-radius: 1rem;
@@ -6235,11 +6326,13 @@ svg {
   }
 
   .hmr-data-toolbar--explore input,
-  .hmr-data-toolbar--explore select {
+  .hmr-data-toolbar--explore select,
+  .hmr-filter-trigger {
     min-block-size: 2.75rem;
   }
 
-  .hmr-data-toolbar--explore label {
+  .hmr-data-toolbar--explore label,
+  .hmr-data-toolbar--explore .hmr-filter-field {
     min-block-size: 4.2rem;
   }
 
@@ -6257,7 +6350,8 @@ svg {
     min-block-size: 2.75rem;
   }
 
-  .hmr-route-page--explore .hmr-data-toolbar--explore label {
+  .hmr-route-page--explore .hmr-data-toolbar--explore label,
+  .hmr-route-page--explore .hmr-data-toolbar--explore .hmr-filter-field {
     min-block-size: 3.9rem;
     padding: 0.6rem 0.7rem;
   }

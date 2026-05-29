@@ -5,7 +5,7 @@
         <p class="hmr-kicker">{{ t('settings.eyebrow') }}</p>
         <div class="hmr-settings-title-row">
           <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('settings.title') }}</h1>
-          <p class="hmr-body">账户、安全、外观和本地数据清理集中在这里，常用操作保持在一屏内。</p>
+          <p class="hmr-body">管理账户、安全、外观和公开缓存。</p>
         </div>
       </div>
     </header>
@@ -29,8 +29,8 @@
               <p>
                 {{
                   auth.isAuthenticated
-                    ? '你的会话已连接，可以继续管理个人资料、收藏、历史和账号安全。'
-                    : '登录后可以同步收藏、历史、通知与安全恢复能力。'
+                    ? '已登录。个人资料、收藏、历史和账号安全可管理。'
+                    : '登录后同步收藏、历史、通知和安全恢复。'
                 }}
               </p>
             </div>
@@ -114,8 +114,7 @@
               <span>{{ cacheClearLabel }}</span>
             </div>
             <p>
-              只清理公开内容的 Memory、IndexedDB 与 Service Worker
-              缓存，不影响登录态或本地账号数据。
+              清理公开内容的 Memory、IndexedDB 与 Service Worker 缓存。保留登录态和本地账号数据。
             </p>
             <button
               class="hmr-settings-button"
