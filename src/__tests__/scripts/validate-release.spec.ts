@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 import {
   buildValidationMarkdownSummary,
@@ -304,5 +307,39 @@ describe('validate release stage summaries', () => {
         }),
       ])
     )
+  })
+
+  it('discovers all script governance specs for the hook static gate', async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'hmr-hook-script-tests-'))
+    const scriptsTestDir = join(projectRoot, 'src', '__tests__', 'scripts')
+    await mkdir(scriptsTestDir, { recursive: true })
+    await Promise.all([
+      writeFile(join(scriptsTestDir, 'security-audit.spec.ts'), ''),
+      writeFile(join(scriptsTestDir, 'validate-release.spec.ts'), ''),
+      writeFile(join(scriptsTestDir, 'README.md'), ''),
+    ])
+
+    try {
+      const { resolveHookScriptTests } = await importValidateReleaseModule()
+
+      expect(await resolveHookScriptTests(projectRoot)).toEqual([
+        'src/__tests__/scripts/security-audit.spec.ts',
+        'src/__tests__/scripts/validate-release.spec.ts',
+      ])
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true })
+    }
+  })
+
+  it('returns no hook script specs when the script test directory is absent', async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'hmr-hook-script-tests-missing-'))
+
+    try {
+      const { resolveHookScriptTests } = await importValidateReleaseModule()
+
+      expect(await resolveHookScriptTests(projectRoot)).toEqual([])
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true })
+    }
   })
 })

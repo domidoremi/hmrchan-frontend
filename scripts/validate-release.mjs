@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { execFileSync } from 'node:child_process'
@@ -440,14 +439,24 @@ async function runStaticGateStage(stageRecord) {
   })
 }
 
+async function resolveHookScriptTests(cwd = process.cwd()) {
+  const scriptsTestDir = path.resolve(cwd, 'src/__tests__/scripts')
+  let entries
+  try {
+    entries = await readdir(scriptsTestDir, { withFileTypes: true })
+  } catch {
+    return []
+  }
+
+  return entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.spec.ts'))
+    .map((entry) => path.posix.join('src/__tests__/scripts', entry.name))
+    .sort((left, right) => left.localeCompare(right))
+}
+
 async function runHookStaticGateStage(stageRecord) {
   const env = { ...process.env }
-  const hookScriptTests = [
-    'src/__tests__/scripts/validate-release.spec.ts',
-    'src/__tests__/scripts/command-runner.spec.ts',
-    'src/__tests__/scripts/frontend-contract-audit.spec.ts',
-    'src/__tests__/scripts/release-route-contract.spec.ts',
-  ].filter((filePath) => existsSync(path.resolve(process.cwd(), filePath)))
+  const hookScriptTests = await resolveHookScriptTests()
   const commands = [
     ['bun', 'run', 'format:check'],
     ['bun', 'run', 'audit:light'],
@@ -833,6 +842,7 @@ export {
   resolveLocalChangedFiles,
   resolveOriginHeadDiffRange,
   resolveRemoteBranchDiffRange,
+  resolveHookScriptTests,
   resolveTrackingDiffRange,
   buildValidationStageRecords,
   getValidationStagePlan,
