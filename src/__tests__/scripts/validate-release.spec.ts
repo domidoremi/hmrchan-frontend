@@ -93,6 +93,34 @@ describe('validate release git range resolution', () => {
 
     expect(resolveGitDiffRange('feature/local-only')).toBe('HEAD~1..HEAD')
   })
+
+  it('combines committed range, unstaged, staged, and untracked changed files', async () => {
+    mockGitOutput((args) => {
+      const command = args.join(' ')
+      if (command === 'diff --name-only origin/production/next...HEAD') {
+        return 'scripts/validate-release.mjs\nsrc/views/HomePage.vue\n'
+      }
+      if (command === 'diff --name-only') {
+        return 'src/views/HomePage.vue\nsrc/api/client.ts\n'
+      }
+      if (command === 'diff --cached --name-only') {
+        return 'src/stores/auth.ts\n'
+      }
+      if (command === 'ls-files --others --exclude-standard') {
+        return 'src/__tests__/scripts/validate-release.spec.ts\n'
+      }
+      throw new Error(`Unexpected git command: ${command}`)
+    })
+    const { resolveChangedFiles } = await importValidateReleaseModule()
+
+    expect(resolveChangedFiles('origin/production/next...HEAD')).toEqual([
+      'scripts/validate-release.mjs',
+      'src/__tests__/scripts/validate-release.spec.ts',
+      'src/api/client.ts',
+      'src/stores/auth.ts',
+      'src/views/HomePage.vue',
+    ])
+  })
 })
 
 describe('validate release stage summaries', () => {

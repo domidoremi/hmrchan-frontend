@@ -197,6 +197,24 @@ function resolveGitDiffRange(branch) {
 }
 
 function resolveChangedFiles(diffRange) {
+  const outputs = [
+    readGitOutput(['diff', '--name-only', diffRange]),
+    readGitOutput(['diff', '--name-only']),
+    readGitOutput(['diff', '--cached', '--name-only']),
+    readGitOutput(['ls-files', '--others', '--exclude-standard']),
+  ]
+
+  return [
+    ...new Set(
+      outputs
+        .flatMap((output) => output.split(/\r?\n/))
+        .map((line) => line.trim())
+        .filter(Boolean)
+    ),
+  ].sort()
+}
+
+function resolveCommittedChangedFiles(diffRange) {
   const output = readGitOutput(['diff', '--name-only', diffRange])
   if (!output) {
     return []
@@ -216,6 +234,7 @@ function resolveGitContext() {
     commitSha,
     diffRange,
     changedFiles: resolveChangedFiles(diffRange),
+    committedChangedFiles: resolveCommittedChangedFiles(diffRange),
   }
 }
 
@@ -787,6 +806,7 @@ function isDirectCliRun() {
 export {
   readGitOutput,
   resolveChangedFiles,
+  resolveCommittedChangedFiles,
   resolveGitContext,
   resolveGitDiffRange,
   resolveOriginHeadDiffRange,

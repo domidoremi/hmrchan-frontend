@@ -253,12 +253,14 @@ export function buildValidationMarkdownSummary(summary) {
           ...area.matchedPaths.map((filePath) => `- ${filePath}`),
           '',
         ])
-      : ['- No change-focused risk areas detected from the resolved git range.', '']
+      : ['- No change-focused risk areas detected from the git range or local worktree.', '']
 
   const changedFileLines =
     summary.changeSummary.changedFiles.length > 0
       ? summary.changeSummary.changedFiles.map((filePath) => `- ${filePath}`)
-      : ['- No changed files detected; validation ran against the current HEAD snapshot.']
+      : [
+          '- No changed files detected; validation ran against the current HEAD and worktree snapshot.',
+        ]
 
   return [
     '# Release Validation Summary',
