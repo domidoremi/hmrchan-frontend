@@ -352,7 +352,7 @@
     "toggleHeroSection": "Show Hero Section",
     "heroSectionDesc": "Show the hero banner on the homepage",
     "toggleAnimations": "Enable Animations",
-    "animationsDesc": "Enable smooth transitions and animations",
+    "animationsDesc": "Enable page transitions and interface animations",
     "reducedMotionNotice": "Your system has reduced motion enabled. Animations will be minimized regardless of this setting.",
     "toggleSwipeNavigation": "Swipe Navigation",
     "swipeNavigationDesc": "Swipe left or right on post detail pages to switch content",
@@ -435,14 +435,14 @@
         "fold": "Home",
         "rail": "Today",
         "posts": "Posts",
-        "media": "Picks",
+        "media": "Today",
         "footer": "Footer"
       }
     },
     "hero": {
-      "title": "Find today’s standout posts, creators, and conversations",
-      "subtitle": "Collect the posts, creators, and schedules you love in one place.",
-      "badge": "Discover Amazing Content",
+      "title": "Public posts, creators, and discussions",
+      "subtitle": "Shows latest posts, creator updates, schedules, and community entry points.",
+      "badge": "Public content",
       "highlights": {
         "multilingual": {
           "title": "Multilingual UI",
@@ -453,93 +453,93 @@
           "desc": "Animations respect your settings and reduced-motion preference."
         },
         "performance": {
-          "title": "Fast & cached",
-          "desc": "Built-in caching and optimizations for a smoother browse."
+          "title": "Performance and cache",
+          "desc": "Caches public content and reduces duplicate requests."
         }
       },
-      "kicker": "MomiChan · Creator Discovery",
-      "primaryAction": "Start Browsing",
-      "secondaryAction": "Today's Picks",
+      "kicker": "MomiChan · Public Content Index",
+      "primaryAction": "Browse Public Content",
+      "secondaryAction": "View Today",
       "trendingLabel": "Trending Today",
       "tagsEmpty": "No trending tags yet",
-      "fallbackTitle": "Featured",
-      "fallbackAuthor": "Featured Creator",
-      "editorialLabel": "Editor's note",
-      "editorialFallbackTitle": "Today's gentle pick",
-      "editorialText": "Start with {author}, then follow the next piece that makes you stay a little longer.",
-      "editorialTextWithTag": "Start with {author}, then drift into {tag} for the next save-worthy moment.",
-      "spotlightLabel": "Spotlight now",
+      "fallbackTitle": "Public content",
+      "fallbackAuthor": "Public creator",
+      "editorialLabel": "Today summary",
+      "editorialFallbackTitle": "Today content summary",
+      "editorialText": "{author} public content is included in the homepage summary.",
+      "editorialTextWithTag": "{author} and {tag} content is included in the homepage summary.",
+      "spotlightLabel": "Current focus",
       "stats": {
         "ariaLabel": "Homepage highlights",
         "updates": "Updates",
-        "updatesHint": "fresh posts in view",
+        "updatesHint": "available recent posts",
         "authors": "Authors",
-        "authorsHint": "active voices this week",
+        "authorsHint": "active creators this week",
         "tags": "Tags",
-        "tagsHint": "rising topics to follow"
+        "tagsHint": "weekly trend tags"
       }
     },
     "quickStart": {
       "title": "Quick start",
-      "subtitle": "Explore content, discover creators, save your favorites."
+      "subtitle": "Browse content, creators, favorites, and schedule entry points."
     },
     "bento": {
-      "featureTitle": "Start exploring",
-      "featureSubtitle": "Discover latest content & creators",
+      "featureTitle": "Browse entry",
+      "featureSubtitle": "Latest content and creators",
       "searchMeta": "Keywords · Tags · Creators",
       "communityMeta": "News & Discussions",
-      "authorsMeta": "Discover creators",
-      "favoritesMeta": "Revisit saved posts",
-      "favoritesMetaGuest": "Log in to save"
+      "authorsMeta": "Creator directory",
+      "favoritesMeta": "Saved posts",
+      "favoritesMetaGuest": "Log in to enable saves"
     },
     "latest": "Latest Posts",
-    "popular": "Popular",
+    "popular": "Popular Content",
     "portal": {
-      "kicker": "Today’s Entry Points",
-      "title": "Start with what’s worth seeing today",
-      "subtitle": "Picks, creators, schedule, community.",
+      "kicker": "Today Entry Points",
+      "title": "Today public entry points",
+      "subtitle": "Posts, creators, schedule, community.",
       "action": "Go Explore",
       "publicCount": "{count} public items",
       "emptyState": "No public items yet",
       "items": {
         "recommend": {
-          "title": "Today’s Picks",
-          "desc": "Editor’s selection",
-          "dynamicDesc": "Editor’s selection of {count} items"
+          "title": "Today’s Content",
+          "desc": "Editor-selected content cards",
+          "dynamicDesc": "{count} editor-selected content cards"
         },
         "authors": {
-          "title": "Hot Creators",
-          "desc": "Creators getting the most attention this week"
+          "title": "Active Creators",
+          "desc": "Creators with the highest discussion count this week"
         },
         "schedule": {
           "title": "This Week",
           "desc": "Upcoming events and live moments"
         },
         "community": {
-          "title": "Community Hot",
-          "desc": "Today’s most talked-about threads"
+          "title": "Community Threads",
+          "desc": "Today discussion and sharing list"
         }
       }
     },
     "featured": {
-      "kicker": "Editor’s Picks",
-      "title": "Today’s Picks",
-      "subtitle": "The editor’s shortlist for today.",
-      "action": "Explore More"
+      "kicker": "Editor Selection",
+      "title": "Today’s Content",
+      "subtitle": "Today editor-selected content list.",
+      "action": "Open Explore"
     },
     "trends": {
       "kicker": "This Week",
       "title": "This Week",
-      "subtitle": "Creators, tags, and schedule at a glance.",
-      "authorsTitle": "Hot Creators",
+      "subtitle": "Creator, tag, and schedule trend summary.",
+      "authorsTitle": "Active Creators",
       "tagsTitle": "Popular Tags",
       "scheduleTitle": "This Week’s Schedule",
       "authorsAction": "Browse Creators",
       "tagsAction": "Search Tags",
       "scheduleAction": "View Schedule",
-      "authorsEmpty": "No trending creators yet",
+      "authorsEmpty": "No active creators yet",
       "tagsEmpty": "No popular tags yet",
-      "authorsHint": "Creators getting the most attention this week",
+      "authorsHint": "Creators with the highest attention this week",
       "scheduleHint": "See the latest events and live sessions",
       "authorCount": "{n} updates"
     },
@@ -551,15 +551,15 @@
       "label": "Quick Filters"
     },
     "preview": {
-      "label": "Today’s picks",
-      "desc": "Browse a hand-picked set of posts, creators, and routes from the homepage."
+      "label": "Today Content",
+      "desc": "Homepage selected posts, creators, and public entry points."
     },
     "storyMerge": {
-      "kicker": "Keep Scrolling",
-      "title": "Keep browsing from today’s final picks",
-      "subtitle": "Jump back to explore, creators, schedules, or community whenever you want another starting point."
+      "kicker": "Continue",
+      "title": "Continue browsing homepage content",
+      "subtitle": "Return to explore, creators, schedule, or community entry points."
     },
-    "latestSubtitle": "A feed that keeps moving",
+    "latestSubtitle": "Continuously updated feed",
     "latestAction": "View All"
   },
   "explore": {
@@ -1383,21 +1383,21 @@
     "desc": "Browse posts, creators, schedules, and community updates in one place.",
     "rights": "All rights reserved.",
     "cta": {
-      "title1": "Ready to dive in?",
-      "title2": "Start exploring!",
-      "desc": "Discover amazing content, follow your favorite creators, and build your personal collection.",
+      "title1": "Public entry points",
+      "title2": "Account features",
+      "desc": "Browse public content, follow creators, and keep saved posts in your account.",
       "join": "Join Us",
-      "feature1": "Lightning-fast browsing",
+      "feature1": "Cached browsing",
       "feature2": "Multilingual support",
-      "feature3": "Save your favorites"
+      "feature3": "Save content"
     },
     "nav": {
       "explore": "Explore",
       "support": "Support"
     },
-    "note": "Built for daily browsing, lightweight discovery, and quick return visits.",
+    "note": "Supports daily browsing, content indexing, and quick return visits.",
     "columns": {
-      "discover": "Discover",
+      "discover": "Content",
       "community": "Community"
     }
   },
@@ -1483,9 +1483,9 @@
         "skills": "Skills: Choreography, Roller skating"
       },
       "career": "Momiyama Himeri is the captain of the Japanese idol group \"Takane no Nadeshiko\". She began her idol career in 2014 as an early member of the local Tochigi idol group \"Watarase Bridge 43\", later joined the roller skating idol group \"Spindle\", and became a member of \"Last Idol\" Someday Somewhere unit in 2017. She joined \"Takane no Nadeshiko\" in 2022 and has been serving as captain since then.",
-      "personality": "She is beloved by fans for her signature twin-tail hairstyle, cheerful personality, and excellent choreography skills. As a choreographer, she not only creates dances for her own group but also showcases her unique talent in roller skating performances.",
+      "personality": "Her public profile includes twin-tail styling, choreography work, and roller skating performance activity. As a choreographer, she creates dances for her group and participates in roller skating performances.",
       "platforms": "She is active on multiple social platforms including TikTok, Instagram, X (Twitter), and YouTube, sharing her daily life, performance activities, and creative content with fans.",
-      "purpose": "MomiChan aggregates content scattered across these platforms, making it easier for fans to keep up with her latest updates.",
+      "purpose": "MomiChan aggregates content scattered across these platforms and exposes browsing entry points by platform, time, and content type.",
       "profileTitle": "Profile",
       "aboutTitle": "About"
     },
@@ -1505,17 +1505,17 @@
     "features": {
       "title": "Core Features",
       "aggregation": "Content Aggregation",
-      "aggregationDesc": "Integrate content from multiple platforms for a seamless browsing experience",
+      "aggregationDesc": "Integrate content from multiple platforms into one browsing entry point",
       "community": "Fan Community",
       "communityDesc": "Comment, discuss, and share with fellow fans",
       "personalization": "Personalization",
-      "personalizationDesc": "Bookmark favorite content and track browsing history",
+      "personalizationDesc": "Bookmark content and track browsing history",
       "multilingual": "Multilingual",
       "multilinguralDesc": "Support for Chinese, English, and Japanese to serve global fans"
     },
     "tech": {
       "title": "Technical Implementation",
-      "description": "MomiChan is built with modern frontend technologies to ensure smooth user experience and elegant interface design.",
+      "description": "MomiChan uses a modern frontend stack for content browsing, caching, routing, and internationalization.",
       "stack": "Tech Stack",
       "vue": "Progressive JavaScript Framework",
       "typescript": "Type-safe JavaScript Superset",
@@ -1523,8 +1523,8 @@
       "pinia": "Lightweight State Management",
       "router": "Official Routing Solution",
       "i18n": "Internationalization Support",
-      "gsap": "Professional Animation Library",
-      "lucide": "Beautiful Open Source Icons"
+      "gsap": "Animation runtime",
+      "lucide": "Open source icons"
     },
     "projectInfo": {
       "title": "Project Information",
@@ -1664,7 +1664,7 @@
       "skillRunning": ["Skill running!", "Using a learned trick.", "This needs a special move."],
       "attachmentReading": ["Reading the file.", "Opening the attachment.", "Let me inspect this."],
       "webSearching": ["Searching around!", "Following the keywords.", "Sniffing out results."],
-      "success": ["Done!", "That went smoothly.", "Wrapped up nicely."],
+      "success": ["Done.", "Step complete.", "Task complete."],
       "modelTesting": ["Testing the route.", "Checking the engine.", "A quick systems check."],
       "modelUnconfigured": [
         "Not configured yet.",

@@ -211,19 +211,18 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
   const path = normalizeDocumentPath(url.pathname)
 
   if (path === '/') {
-    const description =
-      'MomiChan 首页聚合了精选内容、趋势作者、日程与社区入口，首屏即可快速发现今天值得收藏的内容。'
+    const description = 'MomiChan 首页集中显示公开内容、趋势作者、日程与社区入口。'
     return createDocumentConfig(
       '/',
       'Home',
       description,
       'MomiChan',
-      'Find today’s standout posts, creators, and conversations',
-      '从首页开始浏览精选内容、趋势作者、近期日程和社区讨论，快速进入今天最值得停留的内容。',
+      'Public posts, creators, and discussions',
+      '从首页浏览公开内容、趋势作者、近期日程和社区讨论。',
       {
         shellSummary: [
-          'Start with a hand-picked overview of what people are saving, reading, and discussing today.',
-          'Jump into explore, authors, schedule, and community whenever you want to go deeper.',
+          'Use the homepage summary to open public posts, creators, schedules, and discussions.',
+          'Open explore, authors, schedule, or community from the public entry links.',
         ],
         shellStats: [
           { label: 'Open now', value: 'Explore / Authors / Schedule' },
@@ -241,22 +240,22 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
   }
 
   if (path === '/explore') {
-    const description = '探索最新公开内容、筛选不同平台内容并继续浏览更多创作者动态。'
+    const description = '按平台、主题和时间浏览最新公开内容与作者动态。'
     return createDocumentConfig(
       path,
       'Explore',
       description,
       'Explore',
-      'Browse fresh posts, tags, and creator updates',
-      '按平台、主题和作者继续浏览公开内容，快速找到今天的新帖子与值得追踪的动态。',
+      'Browse public posts, tags, and creator updates',
+      '按平台、主题和作者浏览公开内容、最新帖子与作者动态。',
       {
         shellSummary: [
-          'Move through recent picks, rising tags, and creator activity from one place.',
+          'Move through recent posts, tags, and creator activity from one place.',
           'Open any post to continue into the full public detail view.',
         ],
         shellStats: [
           { label: 'Browse', value: 'Posts and tags' },
-          { label: 'Best for', value: 'Daily discovery' },
+          { label: 'Best for', value: 'Daily browsing' },
         ],
         shellLinks: [
           { href: '/', label: 'Home' },
@@ -277,8 +276,8 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       'Authors',
       description,
       'Authors',
-      'Meet the creators behind today’s favorite updates',
-      '查看公开创作者列表，继续进入作者主页、简介和相关内容，找到你想长期关注的声音。',
+      'Browse public creator profiles',
+      '查看公开创作者列表，并进入作者主页、简介和相关内容。',
       {
         shellSummary: [
           'Browse creator profiles, then move into each author’s public page.',
@@ -286,7 +285,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
         ],
         shellStats: [
           { label: 'Browse', value: 'Creators and profiles' },
-          { label: 'Best for', value: 'Following new voices' },
+          { label: 'Best for', value: 'Creator follow-up' },
         ],
         shellLinks: [
           { href: '/', label: 'Home' },
@@ -327,7 +326,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       '浏览公开社区讨论、热点话题与参与中的交流内容。',
       'Community',
       'Join the latest public discussions',
-      '浏览热门话题、最新讨论和持续升温的交流内容，看看大家正在聊什么。',
+      '浏览热门话题、最新讨论和活跃交流内容。',
       {
         shellSummary: [
           'Open a discussion to read the thread, check tags, and follow the latest replies.',
@@ -344,10 +343,10 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     return createDocumentConfig(
       path,
       'Schedule',
-      '查看公开日程、直播与活动提醒，快速进入近期值得关注的安排。',
+      '查看公开日程、直播与活动提醒。',
       'Schedule',
       'Stay on top of the latest schedule updates',
-      '查看近期公开活动、直播与值得留意的时间安排，快速进入你关心的那一天。',
+      '查看近期公开活动、直播与时间安排。',
       {
         shellSummary: ['Open a schedule entry to read the event details, links, and public notes.'],
         shellLinks: [
@@ -365,7 +364,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       '浏览公开日程详情与活动安排。',
       'Schedule detail',
       'View event details and schedule notes',
-      '查看活动时间、相关链接和公开说明，了解这场安排是否值得加入你的关注列表。',
+      '查看活动时间、相关链接和公开说明。',
       {
         shellSummary: [
           'Return to the main schedule if you want to compare nearby dates and upcoming entries.',
@@ -385,12 +384,10 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
       'About',
       description,
       'About',
-      'Learn what MomiChan is built to help you discover',
-      '了解 MomiChan 如何整理公开内容、作者与讨论入口，帮助你更快找到想继续关注的内容。',
+      'MomiChan product and content structure',
+      '了解 MomiChan 如何整理公开内容、作者与讨论入口。',
       {
-        shellSummary: [
-          'Read the overview if you want the product story, the browsing focus, and the main public sections in one place.',
-        ],
+        shellSummary: ['Read the overview for product scope, browsing focus, and public sections.'],
         shellLinks: [
           { href: '/', label: 'Home' },
           { href: '/contact', label: 'Contact' },
@@ -736,7 +733,7 @@ function renderHomePrerenderShell(config: HtmlDocumentConfig): string {
               <div style="display:grid;gap:0.5rem;">
                 <span style="font:600 0.75rem/1.2 ui-sans-serif,system-ui;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">Start here</span>
                 <strong style="font:700 1.5rem/1.15 ui-sans-serif,system-ui;color:#0f172a;">Explore today’s picks, authors, schedule, and community.</strong>
-                <p style="margin:0;font:400 0.875rem/1.7 ui-sans-serif,system-ui;color:#475569;">打开你最感兴趣的公开入口，继续浏览值得收藏的帖子、作者和讨论。</p>
+                <p style="margin:0;font:400 0.875rem/1.7 ui-sans-serif,system-ui;color:#475569;">打开公开入口，继续浏览帖子、作者和讨论。</p>
               </div>
               ${statsMarkup}
             </section>

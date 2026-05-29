@@ -352,7 +352,7 @@
     "toggleHeroSection": "ヒーローセクション表示",
     "heroSectionDesc": "ホームページにヒーローバナーを表示",
     "toggleAnimations": "アニメーション有効",
-    "animationsDesc": "スムーズなトランジションとアニメーションを有効化",
+    "animationsDesc": "ページ遷移とインターフェースアニメーションを有効化",
     "reducedMotionNotice": "システムでモーション軽減が有効になっています。この設定に関係なく、アニメーションは最小限に抑えられます。",
     "toggleSwipeNavigation": "スワイプナビ",
     "swipeNavigationDesc": "投稿詳細ページで左右にスワイプして切り替えます",
@@ -435,14 +435,14 @@
         "fold": "ホーム",
         "rail": "今日の入口",
         "posts": "最新",
-        "media": "おすすめ",
+        "media": "今日の内容",
         "footer": "フッター"
       }
     },
     "hero": {
-      "title": "今日見ておきたい投稿・作者・会話を見つけよう",
-      "subtitle": "好きな作品・作者・予定をひとつに集めて、追いかけやすく。",
-      "badge": "素晴らしいコンテンツを発見",
+      "title": "公開投稿、作者、議論の一覧",
+      "subtitle": "最新投稿、作者更新、予定、コミュニティ入口をまとめて表示します。",
+      "badge": "公開コンテンツ",
       "highlights": {
         "multilingual": {
           "title": "多言語UI",
@@ -453,93 +453,93 @@
           "desc": "設定と「動きを減らす」に応じてアニメーションを調整。"
         },
         "performance": {
-          "title": "高速＆キャッシュ",
-          "desc": "キャッシュと最適化で快適に閲覧。"
+          "title": "性能とキャッシュ",
+          "desc": "公開コンテンツをキャッシュし、重複リクエストを減らします。"
         }
       },
-      "kicker": "MomiChan · クリエイター発見コミュニティ",
-      "primaryAction": "見てみる",
-      "secondaryAction": "今日のおすすめ",
+      "kicker": "MomiChan · 公開コンテンツ索引",
+      "primaryAction": "公開コンテンツを見る",
+      "secondaryAction": "今日の内容を見る",
       "trendingLabel": "今日のトレンド",
       "tagsEmpty": "トレンドタグはまだありません",
-      "fallbackTitle": "注目コンテンツ",
-      "fallbackAuthor": "注目クリエイター",
-      "editorialLabel": "今日のメモ",
-      "editorialFallbackTitle": "今日のやさしいピック",
-      "editorialText": "{author} から見始めて、気になった瞬間をゆっくり辿ろう。",
-      "editorialTextWithTag": "{author} から見始めて、{tag} に流れていく今日の保存候補を見つけよう。",
-      "spotlightLabel": "いまの注目",
+      "fallbackTitle": "公開コンテンツ",
+      "fallbackAuthor": "公開作者",
+      "editorialLabel": "今日の概要",
+      "editorialFallbackTitle": "今日のコンテンツ概要",
+      "editorialText": "{author} の公開コンテンツをホーム概要に表示しています。",
+      "editorialTextWithTag": "{author} と {tag} に関連する内容をホーム概要に表示しています。",
+      "spotlightLabel": "現在の重点",
       "stats": {
         "ariaLabel": "ホームハイライト",
         "updates": "更新",
-        "updatesHint": "表示中の新着",
+        "updatesHint": "表示可能な新着",
         "authors": "作者",
-        "authorsHint": "今週動いている人",
+        "authorsHint": "今週アクティブな作者",
         "tags": "タグ",
-        "tagsHint": "追いたい話題"
+        "tagsHint": "今週のトレンドタグ"
       }
     },
     "quickStart": {
       "title": "クイックスタート",
-      "subtitle": "コンテンツを探索し、クリエイターを発見し、お気に入りを保存。"
+      "subtitle": "コンテンツ、作者、保存、予定の入口を表示します。"
     },
     "bento": {
-      "featureTitle": "探索を開始",
-      "featureSubtitle": "最新コンテンツとクリエイターを発見",
+      "featureTitle": "閲覧入口",
+      "featureSubtitle": "最新コンテンツと作者",
       "searchMeta": "キーワード · タグ · 作者",
       "communityMeta": "お知らせと議論",
-      "authorsMeta": "クリエイターを探す",
-      "favoritesMeta": "保存を見返す",
-      "favoritesMetaGuest": "ログインして保存"
+      "authorsMeta": "作者一覧",
+      "favoritesMeta": "保存一覧",
+      "favoritesMetaGuest": "ログイン後に保存を有効化"
     },
     "latest": "最新",
-    "popular": "人気",
+    "popular": "人気コンテンツ",
     "portal": {
-      "kicker": "今日の入口",
-      "title": "今日見るべき場所から始めよう",
-      "subtitle": "おすすめ、作者、予定、コミュニティへ一画面で。",
+      "kicker": "今日の公開入口",
+      "title": "今日の公開入口",
+      "subtitle": "投稿、作者、予定、コミュニティ。",
       "action": "探索へ",
       "publicCount": "公開 {count} 件",
       "emptyState": "公開中の項目はまだありません",
       "items": {
         "recommend": {
-          "title": "今日のおすすめ",
-          "desc": "編集部セレクト",
-          "dynamicDesc": "編集部セレクト {count} 件"
+          "title": "今日のコンテンツ",
+          "desc": "編集選定コンテンツカード",
+          "dynamicDesc": "編集選定コンテンツ {count} 件"
         },
         "authors": {
-          "title": "人気クリエイター",
-          "desc": "今週注目を集める作者"
+          "title": "アクティブな作者",
+          "desc": "今週の議論数が多い作者"
         },
         "schedule": {
           "title": "今週の予定",
           "desc": "近日開催のイベントや配信"
         },
         "community": {
-          "title": "コミュニティ話題",
-          "desc": "今日の人気トピック"
+          "title": "コミュニティ議論",
+          "desc": "今日の議論と共有一覧"
         }
       }
     },
     "featured": {
-      "kicker": "編集部ピックアップ",
-      "title": "今日のおすすめ",
-      "subtitle": "今日まず見てほしい編集部の一束。",
-      "action": "もっと見る"
+      "kicker": "編集選定",
+      "title": "今日のコンテンツ",
+      "subtitle": "今日の編集選定コンテンツ一覧。",
+      "action": "探索を開く"
     },
     "trends": {
       "kicker": "今週のトレンド",
       "title": "今週のトレンド",
-      "subtitle": "作者・タグ・予定の温度感をひと目で。",
-      "authorsTitle": "人気クリエイター",
+      "subtitle": "作者、タグ、予定のトレンド概要。",
+      "authorsTitle": "アクティブな作者",
       "tagsTitle": "人気タグ",
       "scheduleTitle": "今週の予定",
       "authorsAction": "作者を見る",
       "tagsAction": "タグ検索",
       "scheduleAction": "予定を見る",
-      "authorsEmpty": "注目の作者はまだありません",
+      "authorsEmpty": "アクティブな作者はまだありません",
       "tagsEmpty": "人気タグはまだありません",
-      "authorsHint": "今週いちばん注目を集める作者たち",
+      "authorsHint": "今週の注目度が高い作者",
       "scheduleHint": "最新のイベントと配信予定を見る",
       "authorCount": "{n} 件の更新"
     },
@@ -551,15 +551,15 @@
       "label": "クイックフィルター"
     },
     "preview": {
-      "label": "今日のピック",
-      "desc": "ホームの厳選した投稿・作者・公開入口から、そのまま続きを探せます。"
+      "label": "今日のコンテンツ",
+      "desc": "ホームの選定投稿、作者、公開入口。"
     },
     "storyMerge": {
-      "kicker": "さらにスクロール",
-      "title": "今日の最後のピックから次の入り口へ",
-      "subtitle": "探索、作者、予定、コミュニティへ戻って、次に見たい公開コンテンツを探せます。"
+      "kicker": "続き",
+      "title": "ホームコンテンツを続けて表示",
+      "subtitle": "探索、作者、予定、コミュニティ入口へ戻れます。"
     },
-    "latestSubtitle": "更新が続くコンテンツフロー",
+    "latestSubtitle": "継続更新されるコンテンツフロー",
     "latestAction": "すべて見る"
   },
   "explore": {
@@ -1383,21 +1383,21 @@
     "desc": "投稿、作者、予定、コミュニティ更新をひとつの場所で追えます。",
     "rights": "All rights reserved.",
     "cta": {
-      "title1": "準備はできましたか？",
-      "title2": "探索を始めよう！",
-      "desc": "素晴らしいコンテンツを発見し、お気に入りのクリエイターをフォローして、あなただけのコレクションを作りましょう。",
+      "title1": "公開入口",
+      "title2": "アカウント機能",
+      "desc": "公開コンテンツを閲覧し、作者をフォローし、保存内容をアカウントに保持します。",
       "join": "参加する",
-      "feature1": "超高速ブラウジング",
+      "feature1": "キャッシュ閲覧",
       "feature2": "多言語対応",
-      "feature3": "お気に入りを保存"
+      "feature3": "コンテンツ保存"
     },
     "nav": {
       "explore": "探索",
       "support": "サポート"
     },
-    "note": "毎日の閲覧、軽い発見、素早い再訪に合わせた設計です。",
+    "note": "日常閲覧、コンテンツ索引、素早い再訪をサポートします。",
     "columns": {
-      "discover": "見つける",
+      "discover": "コンテンツ",
       "community": "つながる"
     }
   },
@@ -1483,9 +1483,9 @@
         "skills": "特技：振付（Choreography）、ローラースケート"
       },
       "career": "籾山 ひめり は、日本のアイドルグループ「高嶺のなでしこ」のキャプテンです。2014年にアイドル活動を開始し、栃木県足利市の地元アイドルグループ「渡良瀬橋43」の初期メンバー、ローラースケートアイドルグループ「Spindle」を経て、2017年に「Last Idol」Someday Somewhere ユニットのメンバーとなりました。2022年に「高嶺のなでしこ」に加入し、現在までキャプテンを務めています。",
-      "personality": "トレードマークのハーフツインヘア、明るく元気な性格、そして優れた振付スキルでファンに愛されています。振付師として自身のグループのダンスを創作するだけでなく、ローラースケートパフォーマンスでも独自の才能を発揮しています。",
+      "personality": "公開プロフィールにはハーフツインヘア、振付活動、ローラースケートパフォーマンスの活動履歴が含まれます。振付師として自身のグループのダンスを制作し、ローラースケート関連のパフォーマンスにも参加しています。",
       "platforms": "TikTok、Instagram、X（Twitter）、YouTube など複数のSNSで活動し、日常生活やパフォーマンス活動、クリエイティブなコンテンツをファンと共有しています。",
-      "purpose": "MomiChan は、これらのプラットフォームに散らばったコンテンツを一箇所に集約し、ファンが最新情報を追いやすくします。",
+      "purpose": "MomiChan は、これらのプラットフォームに分散したコンテンツを集約し、プラットフォーム、時間、コンテンツ種別ごとの閲覧入口を提供します。",
       "profileTitle": "プロフィール",
       "aboutTitle": "紹介"
     },
@@ -1505,17 +1505,17 @@
     "features": {
       "title": "コア機能",
       "aggregation": "コンテンツ集約",
-      "aggregationDesc": "複数のプラットフォームからコンテンツを統合し、シームレスな閲覧体験を提供",
+      "aggregationDesc": "複数プラットフォームのコンテンツを統合し、単一の閲覧入口を提供",
       "community": "ファンコミュニティ",
       "communityDesc": "コメント、議論、共有で他のファンと交流",
       "personalization": "パーソナライゼーション",
-      "personalizationDesc": "お気に入りのコンテンツをブックマークし、閲覧履歴を追跡",
+      "personalizationDesc": "コンテンツをブックマークし、閲覧履歴を記録",
       "multilingual": "多言語対応",
       "multilinguralDesc": "中国語、英語、日本語をサポートし、世界中のファンにサービスを提供"
     },
     "tech": {
       "title": "技術実装",
-      "description": "MomiChan は、スムーズなユーザー体験とエレガントなインターフェースデザインを確保するため、最新のフロントエンド技術スタックで構築されています。",
+      "description": "MomiChan は、コンテンツ閲覧、キャッシュ、ルーティング、国際化を扱う最新のフロントエンド技術スタックで構築されています。",
       "stack": "技術スタック",
       "vue": "プログレッシブ JavaScript フレームワーク",
       "typescript": "型安全な JavaScript スーパーセット",
@@ -1523,8 +1523,8 @@
       "pinia": "軽量な状態管理",
       "router": "公式ルーティングソリューション",
       "i18n": "国際化サポート",
-      "gsap": "プロフェッショナルアニメーションライブラリ",
-      "lucide": "美しいオープンソースアイコン"
+      "gsap": "アニメーション実行ライブラリ",
+      "lucide": "オープンソースアイコン"
     },
     "projectInfo": {
       "title": "プロジェクト情報",
@@ -1652,7 +1652,7 @@
       "skillRunning": ["スキル実行中！", "覚えた技を使うよ。", "特別な動きが必要だね。"],
       "attachmentReading": ["ファイルを読んでるよ。", "添付を開いてみるね。", "中身を確認するね。"],
       "webSearching": ["検索してくるよ！", "キーワードを追ってる。", "結果を探すね。"],
-      "success": ["できたよ！", "今のは順調だったね。", "きれいに片付いたよ。"],
+      "success": ["完了しました。", "手順が完了しました。", "タスクが完了しました。"],
       "modelTesting": ["ルートをテスト中。", "エンジンを確認中。", "軽くシステムチェック。"],
       "modelUnconfigured": [
         "まだ設定されてないよ。",

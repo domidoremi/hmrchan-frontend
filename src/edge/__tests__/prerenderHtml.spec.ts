@@ -33,7 +33,7 @@ describe('createPrerenderedHtml', () => {
     expect(html).toContain('data-prerender-shell-variant="home"')
     expect(html).toContain('data-prerender-shell-content="true"')
     expect(html).toContain('Start here')
-    expect(html).toContain('Find today’s standout posts, creators, and conversations')
+    expect(html).toContain('Public posts, creators, and discussions')
     expect(html).not.toContain('Quick bridge')
   })
 
@@ -42,12 +42,12 @@ describe('createPrerenderedHtml', () => {
 
     expect(html).toContain('<title>Explore · MomiChan</title>')
     expect(html).toContain(
-      'name="description" content="探索最新公开内容、筛选不同平台内容并继续浏览更多创作者动态。"'
+      'name="description" content="按平台、主题和时间浏览最新公开内容与作者动态。"'
     )
     expect(html).toContain('rel="canonical" href="https://momichan.xyz/explore"')
     expect(html).toContain('property="og:url" content="https://momichan.xyz/explore"')
     expect(html).toContain('data-prerender-shell="true"')
-    expect(html).toContain('Browse fresh posts, tags, and creator updates')
+    expect(html).toContain('Browse public posts, tags, and creator updates')
     expect(html).toContain('data-prerender-structured-data="true"')
     expect(html).toContain('"@type":"CollectionPage"')
     expect(html).not.toContain('Rendering mode')

@@ -352,7 +352,7 @@
     "toggleHeroSection": "顯示首頁橫幅",
     "heroSectionDesc": "在首頁顯示橫幅區域",
     "toggleAnimations": "啟用動畫",
-    "animationsDesc": "啟用平滑過渡和動畫效果",
+    "animationsDesc": "啟用頁面過渡和介面動畫",
     "reducedMotionNotice": "您的系統已啟用減少動畫設定，無論此選項如何，動畫都將被最小化。",
     "toggleSwipeNavigation": "滑動導航",
     "swipeNavigationDesc": "在貼文詳情頁左右滑動切換內容",
@@ -435,14 +435,14 @@
         "fold": "首頁",
         "rail": "今日入口",
         "posts": "最新發布",
-        "media": "今日推薦",
+        "media": "今日內容",
         "footer": "頁腳"
       }
     },
     "hero": {
-      "title": "找到今天最值得停留的貼文、作者與討論",
-      "subtitle": "把喜歡的內容、作者與日程聚在一起，輕鬆追更與發現。",
-      "badge": "發現精彩內容",
+      "title": "公開貼文、作者與討論彙總",
+      "subtitle": "集中顯示最新內容、作者動態、日程與社群入口。",
+      "badge": "公開內容入口",
       "highlights": {
         "multilingual": {
           "title": "多語言介面",
@@ -453,22 +453,22 @@
           "desc": "動效隨設定與系統「減少動態效果」自動調整。"
         },
         "performance": {
-          "title": "極速與快取",
-          "desc": "內建快取與效能最佳化，瀏覽更順暢。"
+          "title": "效能與快取",
+          "desc": "快取公開內容並減少重複請求。"
         }
       },
-      "kicker": "MomiChan · 內容發現社群",
-      "primaryAction": "開始逛逛",
-      "secondaryAction": "看今日推薦",
+      "kicker": "MomiChan · 公開內容索引",
+      "primaryAction": "瀏覽公開內容",
+      "secondaryAction": "查看今日內容",
       "trendingLabel": "今日趨勢",
       "tagsEmpty": "暫無趨勢標籤",
-      "fallbackTitle": "精選內容",
-      "fallbackAuthor": "精選作者",
-      "editorialLabel": "今日手記",
-      "editorialFallbackTitle": "今天的溫柔推薦",
-      "editorialText": "先從 {author} 開始，再順著喜歡的內容慢慢逛下去。",
-      "editorialTextWithTag": "先從 {author} 開始，再沿著 {tag} 找到今天想收藏的瞬間。",
-      "spotlightLabel": "正在聚光",
+      "fallbackTitle": "公開內容",
+      "fallbackAuthor": "公開作者",
+      "editorialLabel": "今日摘要",
+      "editorialFallbackTitle": "今日內容摘要",
+      "editorialText": "{author} 的公開內容已列入首頁摘要。",
+      "editorialTextWithTag": "{author} 與 {tag} 相關內容已列入首頁摘要。",
+      "spotlightLabel": "目前重點",
       "stats": {
         "ariaLabel": "首頁亮點",
         "updates": "更新",
@@ -476,38 +476,38 @@
         "authors": "作者",
         "authorsHint": "本週活躍創作者",
         "tags": "標籤",
-        "tagsHint": "正在升溫的話題"
+        "tagsHint": "本週趨勢標籤"
       }
     },
     "quickStart": {
       "title": "快速開始",
-      "subtitle": "探索內容、發現創作者、收藏你喜歡的。"
+      "subtitle": "瀏覽內容、作者、收藏與日程入口。"
     },
     "bento": {
-      "featureTitle": "開始探索",
-      "featureSubtitle": "發現最新內容與創作者",
+      "featureTitle": "瀏覽入口",
+      "featureSubtitle": "最新內容與作者",
       "searchMeta": "關鍵詞 · 標籤 · 作者",
       "communityMeta": "公告與討論",
-      "authorsMeta": "發現創作者",
-      "favoritesMeta": "隨時回看收藏",
-      "favoritesMetaGuest": "登入後收藏"
+      "authorsMeta": "作者列表",
+      "favoritesMeta": "收藏列表",
+      "favoritesMetaGuest": "登入後啟用收藏"
     },
     "latest": "最新發布",
-    "popular": "熱門推薦",
+    "popular": "熱門內容",
     "portal": {
       "kicker": "今日入口",
-      "title": "今天最值得看的都在這裡",
-      "subtitle": "推薦、作者、日程、社群，一屏進入。",
+      "title": "今日公開入口",
+      "subtitle": "內容、作者、日程、社群入口。",
       "action": "進入探索",
       "items": {
         "recommend": {
-          "title": "今日推薦",
-          "desc": "編輯精選 4 張內容卡",
-          "dynamicDesc": "編輯精選 {count} 張內容卡"
+          "title": "今日內容",
+          "desc": "編輯選擇內容卡",
+          "dynamicDesc": "編輯選擇 {count} 張內容卡"
         },
         "authors": {
           "title": "熱門作者",
-          "desc": "關注本週討論最多的創作者"
+          "desc": "本週討論數最高的作者"
         },
         "schedule": {
           "title": "本週日程",
@@ -515,22 +515,22 @@
         },
         "community": {
           "title": "社群熱帖",
-          "desc": "今天最熱的討論與分享"
+          "desc": "今日討論與分享列表"
         }
       },
       "publicCount": "公開 {count} 項",
       "emptyState": "暫無公開內容"
     },
     "featured": {
-      "kicker": "編輯精選",
-      "title": "今日推薦",
-      "subtitle": "編輯部今天最想遞給你的內容。",
+      "kicker": "編輯選擇",
+      "title": "今日內容",
+      "subtitle": "今日編輯內容列表。",
       "action": "去探索"
     },
     "trends": {
       "kicker": "本週趨勢",
       "title": "本週趨勢",
-      "subtitle": "作者、標籤、日程，一眼看熱度。",
+      "subtitle": "作者、標籤、日程熱度彙總。",
       "authorsTitle": "熱門作者",
       "tagsTitle": "熱門標籤",
       "scheduleTitle": "本週日程",
@@ -539,7 +539,7 @@
       "scheduleAction": "查看日程",
       "authorsEmpty": "暫無熱門作者",
       "tagsEmpty": "暫無熱門標籤",
-      "authorsHint": "關注本週最受注意的創作者",
+      "authorsHint": "本週關注度最高的作者",
       "scheduleHint": "查看本週最新活動與直播安排",
       "authorCount": "共 {n} 則更新"
     },
@@ -551,13 +551,13 @@
       "label": "分類篩選"
     },
     "preview": {
-      "label": "今日精選",
-      "desc": "先從首頁這組精選內容開始，繼續瀏覽貼文、作者與公開入口。"
+      "label": "今日內容",
+      "desc": "首頁選擇內容、作者與公開入口。"
     },
     "storyMerge": {
       "kicker": "繼續下滑",
-      "title": "從今天最後一組精選繼續瀏覽",
-      "subtitle": "隨時回到探索、作者、日程或社群，繼續打開下一則值得停留的內容。"
+      "title": "繼續瀏覽首頁內容",
+      "subtitle": "返回探索、作者、日程或社群入口。"
     },
     "latestSubtitle": "持續更新的內容流",
     "latestAction": "查看更多"
@@ -1383,21 +1383,21 @@
     "desc": "在一個地方瀏覽貼文、創作者、日程與社群更新。",
     "rights": "保留所有權利。",
     "cta": {
-      "title1": "準備好了嗎？",
-      "title2": "開始探索吧！",
-      "desc": "發現精彩內容，關注喜愛的創作者，打造你的專屬收藏。",
+      "title1": "公開入口",
+      "title2": "帳號功能",
+      "desc": "瀏覽公開內容、關注作者，並在帳號中保留收藏。",
       "join": "加入我們",
-      "feature1": "極速瀏覽體驗",
+      "feature1": "快取瀏覽",
       "feature2": "多語言支援",
-      "feature3": "收藏喜愛內容"
+      "feature3": "收藏內容"
     },
     "nav": {
       "explore": "探索",
       "support": "支援"
     },
-    "note": "為日常瀏覽、輕量發現與快速回訪而設計。",
+    "note": "支援日常瀏覽、內容索引與快速回訪。",
     "columns": {
-      "discover": "發現",
+      "discover": "內容",
       "community": "社群"
     }
   },
@@ -1483,9 +1483,9 @@
         "skills": "特技：編舞（Choreography）、輪滑"
       },
       "career": "籾山 ひめり 是日本偶像組合「高嶺のなでしこ」的隊長。她從 2014 年開始偶像活動，曾是栃木縣足利市本地偶像組合「渡良瀬橋43」的初期成員，後加入輪滑偶像組合「Spindle」，2017 年成為「Last Idol」Someday Somewhere 小隊成員。2022 年加入「高嶺のなでしこ」並擔任隊長至今。",
-      "personality": "她以標誌性的雙馬尾髮型、活潑開朗的性格和出色的舞蹈編排能力深受粉絲喜愛。作為振付師，她不僅為自己的組合編舞，還展現了在輪滑表演方面的獨特才能。",
+      "personality": "她的公開資料包含雙馬尾造型、舞蹈編排經歷和輪滑表演經歷。作為振付師，她為自己的組合編舞，並參與輪滑相關表演。",
       "platforms": "她活躍在 TikTok、Instagram、X（Twitter）、YouTube 等多個社交平台，與粉絲分享日常生活、演出活動和創作內容。",
-      "purpose": "MomiChan 將這些分散在各個平台的內容聚合在一起，讓粉絲可以更方便地追蹤她的最新動態。",
+      "purpose": "MomiChan 聚合這些分散在各個平台的內容，並按平台、時間與內容類型提供瀏覽入口。",
       "profileTitle": "個人資料",
       "aboutTitle": "簡介"
     },
@@ -1505,17 +1505,17 @@
     "features": {
       "title": "核心功能",
       "aggregation": "內容聚合",
-      "aggregationDesc": "整合來自多個平台的內容，一站式瀏覽體驗",
+      "aggregationDesc": "整合來自多個平台的內容並提供統一瀏覽入口",
       "community": "粉絲社群",
       "communityDesc": "評論、討論、分享，與其他粉絲互動交流",
       "personalization": "個人化",
-      "personalizationDesc": "收藏喜歡的內容，追蹤瀏覽歷史",
+      "personalizationDesc": "收藏內容並記錄瀏覽歷史",
       "multilingual": "多語言",
       "multilinguralDesc": "支援中文、英文、日文，服務全球粉絲"
     },
     "tech": {
       "title": "技術實現",
-      "description": "MomiChan 採用現代化的前端技術棧建構，確保流暢的使用者體驗和優雅的介面設計。",
+      "description": "MomiChan 採用現代前端技術棧，提供內容瀏覽、快取、路由與國際化能力。",
       "stack": "技術棧",
       "vue": "漸進式 JavaScript 框架",
       "typescript": "型別安全的 JavaScript 超集",
@@ -1523,8 +1523,8 @@
       "pinia": "輕量級狀態管理",
       "router": "官方路由解決方案",
       "i18n": "國際化支援",
-      "gsap": "專業級動畫庫",
-      "lucide": "精美的開源圖示庫"
+      "gsap": "動畫執行庫",
+      "lucide": "開源圖示庫"
     },
     "projectInfo": {
       "title": "專案資訊",
@@ -1652,7 +1652,7 @@
       "skillRunning": ["技能執行中！", "用個熟練招式。", "這需要特殊動作。"],
       "attachmentReading": ["讀取檔案中。", "打開附件看看。", "讓我檢查一下。"],
       "webSearching": ["去搜尋啦！", "跟著關鍵字走。", "我來找結果。"],
-      "success": ["完成啦！", "這一步很順。", "收工，漂亮。"],
+      "success": ["已完成。", "步驟已完成。", "任務已完成。"],
       "modelTesting": ["測試路線。", "檢查引擎。", "快速系統檢查。"],
       "modelUnconfigured": ["還沒設定好。", "先接上模型吧。", "缺一把鑰匙。"],
       "modelUnavailable": ["模型現在不在線。", "這條路暫時封住了。", "等它回來。"],
