@@ -5,6 +5,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { execFileSync } from 'node:child_process'
+import { pathToFileURL } from 'node:url'
 
 import { createLocalAuditEnv } from './lib/audit-env.js'
 import {
@@ -143,23 +144,56 @@ function readGitOutput(args, fallback = '') {
   }
 }
 
+function resolveTrackingDiffRange() {
+  const upstream = readGitOutput(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'])
+  if (!upstream) {
+    return ''
+  }
+
+  return `${upstream}...HEAD`
+}
+
+function resolveRemoteBranchDiffRange(branch) {
+  if (!branch || branch === 'HEAD') {
+    return ''
+  }
+
+  const remoteBranch = `origin/${branch}`
+  const remoteBranchRef = readGitOutput(['rev-parse', '--verify', `${remoteBranch}^{commit}`])
+  if (!remoteBranchRef) {
+    return ''
+  }
+
+  return `${remoteBranch}...HEAD`
+}
+
+function resolveOriginHeadDiffRange() {
+  const originHead = readGitOutput([
+    'symbolic-ref',
+    '--quiet',
+    '--short',
+    'refs/remotes/origin/HEAD',
+  ])
+  if (!originHead) {
+    return ''
+  }
+
+  return `${originHead}...HEAD`
+}
+
 function resolveGitDiffRange(branch) {
   const explicitRange = process.env.VALIDATION_GIT_RANGE?.trim()
   if (explicitRange) {
     return explicitRange
   }
 
-  const upstreamDiff = readGitOutput(['diff', '--name-only', 'origin/main...HEAD'])
-  if (upstreamDiff.length > 0) {
-    return 'origin/main...HEAD'
-  }
-
   const currentBranch = branch || readGitOutput(['rev-parse', '--abbrev-ref', 'HEAD'], 'HEAD')
-  if (currentBranch === 'main' || currentBranch === 'master') {
-    return 'HEAD~1..HEAD'
-  }
+  const resolvedRange =
+    resolveTrackingDiffRange() ||
+    resolveRemoteBranchDiffRange(currentBranch) ||
+    resolveOriginHeadDiffRange()
 
-  return 'HEAD~1..HEAD'
+  return resolvedRange || 'HEAD~1..HEAD'
 }
 
 function resolveChangedFiles(diffRange) {
@@ -725,7 +759,28 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error('Release validation runner crashed:', error)
-  process.exit(1)
-})
+function isDirectCliRun() {
+  const entryFile = process.argv[1]
+  if (!entryFile) {
+    return false
+  }
+
+  return import.meta.url === pathToFileURL(path.resolve(entryFile)).href
+}
+
+export {
+  readGitOutput,
+  resolveChangedFiles,
+  resolveGitContext,
+  resolveGitDiffRange,
+  resolveOriginHeadDiffRange,
+  resolveRemoteBranchDiffRange,
+  resolveTrackingDiffRange,
+}
+
+if (isDirectCliRun()) {
+  main().catch((error) => {
+    console.error('Release validation runner crashed:', error)
+    process.exit(1)
+  })
+}
