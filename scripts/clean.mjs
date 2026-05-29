@@ -21,6 +21,7 @@ const STATIC_TARGETS = [
   '.playwright',
   '.tmp-playwright',
   '.tmp-codex',
+  'CLAUDE.md',
   '%SystemDrive%',
   '.codex-dev.log',
   path.join('node_modules', '.vite'),
