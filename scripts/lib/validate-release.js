@@ -93,6 +93,15 @@ const CHANGE_FOCUS_RULES = Object.freeze([
       filePath === 'public/_routes.json',
   }),
   Object.freeze({
+    id: 'pwa-runtime',
+    label: 'PWA/runtime cache',
+    description: 'Service worker, public cache policy, or install manifest changed.',
+    matches: (filePath) =>
+      filePath.startsWith('src/sw/') ||
+      filePath === 'public/manifest.json' ||
+      filePath === 'build/vite/plugins/serviceWorkerBuild.ts',
+  }),
+  Object.freeze({
     id: 'validation-contract',
     label: 'Validation contract',
     description: 'Validation contract, release runner, or policy definitions changed.',
@@ -203,6 +212,7 @@ export function classifyValidationChanges(changedFiles) {
     labels: matchedAreas.map((area) => area.id),
     hasValidationContractChanges: matchedAreas.some((area) => area.id === 'validation-contract'),
     hasEdgeChanges: matchedAreas.some((area) => area.id === 'edge-infra'),
+    hasPwaRuntimeChanges: matchedAreas.some((area) => area.id === 'pwa-runtime'),
     hasAuthDataFlowChanges: matchedAreas.some((area) => area.id === 'auth-data-flow'),
     hasRouteUiChanges: matchedAreas.some((area) => area.id === 'route-ui'),
     hasDeliveryToolingChanges: matchedAreas.some((area) => area.id === 'delivery-tooling'),

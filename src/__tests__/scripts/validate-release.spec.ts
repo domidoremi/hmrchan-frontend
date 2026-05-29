@@ -399,6 +399,34 @@ describe('validate release stage summaries', () => {
     )
   })
 
+  it('classifies service worker and manifest files as PWA runtime changes', () => {
+    const changeSummary = classifyValidationChanges([
+      'src/sw/index.ts',
+      'src/sw/publicCachePolicy.ts',
+      'src/sw/__tests__/publicCachePolicy.spec.ts',
+      'public/manifest.json',
+      'build/vite/plugins/serviceWorkerBuild.ts',
+    ])
+
+    expect(changeSummary.labels).toContain('pwa-runtime')
+    expect(changeSummary.hasPwaRuntimeChanges).toBe(true)
+    expect(changeSummary.focusAreas).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'pwa-runtime',
+          matchedCount: 5,
+          matchedPaths: [
+            'build/vite/plugins/serviceWorkerBuild.ts',
+            'public/manifest.json',
+            'src/sw/__tests__/publicCachePolicy.spec.ts',
+            'src/sw/index.ts',
+            'src/sw/publicCachePolicy.ts',
+          ],
+        }),
+      ])
+    )
+  })
+
   it('discovers all lightweight governance specs for the hook static gate', async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), 'hmr-hook-script-tests-'))
     const scriptsTestDir = join(projectRoot, 'src', '__tests__', 'scripts')
