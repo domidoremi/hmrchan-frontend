@@ -102,6 +102,7 @@ const CHANGE_FOCUS_RULES = Object.freeze([
       filePath.startsWith('public/icons/') ||
       filePath === 'public/manifest.json' ||
       filePath === 'public/favicon.ico' ||
+      filePath === 'build/vite/swCacheVersion.ts' ||
       filePath === 'build/vite/plugins/serviceWorkerBuild.ts',
   }),
   Object.freeze({
