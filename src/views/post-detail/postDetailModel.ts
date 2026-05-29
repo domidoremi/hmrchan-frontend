@@ -3,13 +3,101 @@ export interface PostDetailMediaLike {
   file_type?: string | null
   width?: number | null
   height?: number | null
+  subtitles?: unknown[] | null
 }
 
 export interface PostDetailLike {
   title?: string | null
   description?: string | null
+  published_at?: string | null
+  thumbnail_url?: string | null
   media_count?: number | null
   media_files?: PostDetailMediaLike[] | null
+}
+
+export type PostDetailMediaUrlResolver = {
+  getMediaThumbnailUrl: (mediaId: string, size: string) => string
+  getMediaThumbnailSrcset: (mediaId: string) => string | null
+  resolveThumbnailSrc: (url: string | null, size: string) => string
+  resolveThumbnailSrcset: (url: string | null) => string | null
+}
+
+export type PostDetailMediaState = {
+  activeMedia: PostDetailMediaLike | null
+  subtitlesAvailable: boolean
+  hasMultipleMedia: boolean
+  mediaCount: number
+  canGoPrevMedia: boolean
+  canGoNextMedia: boolean
+  showMediaNavButtons: boolean
+  isImageSequence: boolean
+}
+
+export type PostDetailMediaTransitionName = 'media-fade' | 'media-slide-left' | 'media-slide-right'
+
+export type PostDetailMediaStepDirection = -1 | 1
+export type PostDetailNavigationDirection = -1 | 1
+export type PostDetailNavigationHint = 'left' | 'right'
+
+export type PostDetailMediaTransition = {
+  activeMediaIndex: number
+  mediaTransitionName: PostDetailMediaTransitionName
+}
+
+export type PostDetailNotFoundRouteParams = {
+  pathMatch: string[]
+}
+
+export type PostDetailNavigationContextLike = {
+  ids: readonly string[]
+  index: number
+}
+
+export type PostDetailNavigationTarget = {
+  index: number
+  postId: string
+  transition: PostDetailNavigationHint
+}
+
+export type PostDetailPendingNavigation = {
+  direction: PostDetailNavigationDirection
+  expiresAt: number
+}
+
+export type PostDetailNavigationRequest =
+  | {
+      action: 'navigate'
+      direction: PostDetailNavigationDirection
+    }
+  | {
+      action: 'prime'
+      pending: PostDetailPendingNavigation
+      hint: PostDetailNavigationHint
+    }
+
+export type PostDetailFallbackRecovery = 'none' | 'navigation-summary' | 'static-fallback'
+
+export type PostDetailWheelState = {
+  accumulator: number
+  lastEventTime: number
+}
+
+export type PostDetailWheelIntent = {
+  direction: PostDetailNavigationDirection | null
+  state: PostDetailWheelState
+  shouldPreventDefault: boolean
+}
+
+export type PostDetailTouchPoint = {
+  x: number | null
+  y: number | null
+}
+
+export type PostDetailRectLike = {
+  top: number
+  bottom: number
+  width: number
+  height: number
 }
 
 export function buildDetailTitle(post: PostDetailLike | null | undefined): string {
@@ -45,6 +133,260 @@ export function shouldShowReadFullText(
   threshold = 280
 ): boolean {
   return (description?.length ?? 0) > threshold
+}
+
+export function buildPostDetailNotFoundRouteParams(
+  currentPostId: string
+): PostDetailNotFoundRouteParams {
+  return {
+    pathMatch: ['post', currentPostId],
+  }
+}
+
+export function resolvePostDetailFallbackRecovery({
+  notFound,
+  serviceUnavailable,
+  hasNavigationSummary,
+}: {
+  notFound: boolean
+  serviceUnavailable: boolean
+  hasNavigationSummary: boolean
+}): PostDetailFallbackRecovery {
+  if (notFound && hasNavigationSummary) return 'navigation-summary'
+  if (serviceUnavailable) return 'static-fallback'
+  return 'none'
+}
+
+export function resolvePostDetailNavigationHint(
+  direction: PostDetailNavigationDirection
+): PostDetailNavigationHint {
+  return direction > 0 ? 'left' : 'right'
+}
+
+export function resolvePostDetailNavigationTarget({
+  context,
+  currentPostId,
+  offset,
+}: {
+  context: PostDetailNavigationContextLike | null | undefined
+  currentPostId: string
+  offset: PostDetailNavigationDirection
+}): PostDetailNavigationTarget | null {
+  if (!context) return null
+
+  const nextIndex = context.index + offset
+  if (nextIndex < 0 || nextIndex >= context.ids.length) return null
+
+  const nextId = context.ids[nextIndex]
+  if (!nextId || nextId === currentPostId) return null
+
+  return {
+    index: nextIndex,
+    postId: nextId,
+    transition: resolvePostDetailNavigationHint(offset),
+  }
+}
+
+export function resolvePostDetailNavigationRequest({
+  direction,
+  pending,
+  now,
+  confirmationWindowMs = 800,
+}: {
+  direction: PostDetailNavigationDirection
+  pending: PostDetailPendingNavigation | null | undefined
+  now: number
+  confirmationWindowMs?: number
+}): PostDetailNavigationRequest {
+  if (pending && pending.direction === direction && pending.expiresAt > now) {
+    return {
+      action: 'navigate',
+      direction,
+    }
+  }
+
+  return {
+    action: 'prime',
+    pending: {
+      direction,
+      expiresAt: now + confirmationWindowMs,
+    },
+    hint: resolvePostDetailNavigationHint(direction),
+  }
+}
+
+export function resolvePostDetailWheelIntent({
+  deltaX,
+  deltaY,
+  shiftKey,
+  now,
+  state,
+  resetWindowMs = 250,
+  threshold = 110,
+}: {
+  deltaX: number
+  deltaY: number
+  shiftKey: boolean
+  now: number
+  state: PostDetailWheelState
+  resetWindowMs?: number
+  threshold?: number
+}): PostDetailWheelIntent {
+  const horizontalDelta = shiftKey && Math.abs(deltaX) < 0.1 ? deltaY : deltaX
+
+  if (Math.abs(horizontalDelta) < Math.abs(deltaY)) {
+    return {
+      direction: null,
+      state,
+      shouldPreventDefault: false,
+    }
+  }
+
+  const accumulator =
+    now - state.lastEventTime > resetWindowMs
+      ? horizontalDelta
+      : state.accumulator + horizontalDelta
+  const nextState = {
+    accumulator,
+    lastEventTime: now,
+  }
+
+  if (Math.abs(accumulator) < threshold) {
+    return {
+      direction: null,
+      state: nextState,
+      shouldPreventDefault: false,
+    }
+  }
+
+  return {
+    direction: accumulator > 0 ? 1 : -1,
+    state: {
+      accumulator: 0,
+      lastEventTime: now,
+    },
+    shouldPreventDefault: true,
+  }
+}
+
+export function resolvePostDetailTouchNavigationDirection({
+  start,
+  end,
+  threshold = 70,
+}: {
+  start: PostDetailTouchPoint
+  end: PostDetailTouchPoint
+  threshold?: number
+}): PostDetailNavigationDirection | null {
+  if (start.x === null || start.y === null || end.x === null || end.y === null) return null
+
+  const deltaX = start.x - end.x
+  const deltaY = start.y - end.y
+
+  if (Math.abs(deltaX) < threshold || Math.abs(deltaX) < Math.abs(deltaY)) return null
+  return deltaX > 0 ? 1 : -1
+}
+
+export function buildPublishedMeta(
+  post: PostDetailLike | null | undefined,
+  options: {
+    formatDate: (value: string) => string
+    translate: (key: string, params?: Record<string, unknown>) => string
+  }
+): string {
+  const publishedAt = post?.published_at
+  if (!publishedAt) return ''
+  return options.translate('post.publishedAt', { date: options.formatDate(publishedAt) })
+}
+
+export function resolvePostDetailMediaState(
+  post: PostDetailLike | null | undefined,
+  activeMediaIndex: number
+): PostDetailMediaState {
+  const mediaFiles = post?.media_files ?? []
+  const activeMedia = mediaFiles[activeMediaIndex] ?? null
+  const mediaCount = mediaFiles.length
+  const hasMultipleMedia = mediaCount > 1
+
+  return {
+    activeMedia,
+    subtitlesAvailable: Boolean(
+      activeMedia && activeMedia.file_type === 'video' && (activeMedia.subtitles?.length ?? 0) > 0
+    ),
+    hasMultipleMedia,
+    mediaCount,
+    canGoPrevMedia: activeMediaIndex > 0,
+    canGoNextMedia: activeMediaIndex + 1 < mediaCount,
+    showMediaNavButtons: hasMultipleMedia && activeMedia?.file_type !== 'video',
+    isImageSequence: mediaFiles.every((media) => media.file_type === 'image'),
+  }
+}
+
+function isValidMediaIndex(index: number, mediaCount: number): boolean {
+  return Number.isInteger(index) && index >= 0 && index < mediaCount
+}
+
+export function resolveSelectedMediaTransition(
+  requestedIndex: number,
+  activeMediaIndex: number,
+  mediaCount: number
+): PostDetailMediaTransition | null {
+  if (!isValidMediaIndex(requestedIndex, mediaCount)) return null
+  if (requestedIndex === activeMediaIndex) return null
+
+  return {
+    activeMediaIndex: requestedIndex,
+    mediaTransitionName:
+      requestedIndex > activeMediaIndex ? 'media-slide-left' : 'media-slide-right',
+  }
+}
+
+export function resolveSteppedMediaTransition(
+  activeMediaIndex: number,
+  mediaCount: number,
+  direction: PostDetailMediaStepDirection
+): PostDetailMediaTransition | null {
+  if (mediaCount <= 1 || !isValidMediaIndex(activeMediaIndex, mediaCount)) return null
+
+  const nextIndex = activeMediaIndex + direction
+  if (!isValidMediaIndex(nextIndex, mediaCount)) return null
+
+  return {
+    activeMediaIndex: nextIndex,
+    mediaTransitionName: direction > 0 ? 'media-slide-left' : 'media-slide-right',
+  }
+}
+
+export function resolveAutoAdvanceMediaTransition(
+  activeMediaIndex: number,
+  mediaCount: number
+): PostDetailMediaTransition | null {
+  if (mediaCount <= 1 || !isValidMediaIndex(activeMediaIndex, mediaCount)) return null
+
+  return {
+    activeMediaIndex: (activeMediaIndex + 1) % mediaCount,
+    mediaTransitionName: 'media-slide-left',
+  }
+}
+
+export function getCommentsPreloadMargin(viewportHeight: number): number {
+  return Math.max(Math.min(viewportHeight * 0.35, 320), 160)
+}
+
+export function shouldLoadCommentsForViewport({
+  rect,
+  viewportHeight,
+}: {
+  rect: PostDetailRectLike
+  viewportHeight: number
+}): boolean {
+  if (viewportHeight <= 0) return false
+
+  const hasMeasuredBox = rect.height > 0 || rect.width > 0 || rect.bottom > rect.top
+  if (!hasMeasuredBox) return false
+
+  const preloadMargin = getCommentsPreloadMargin(viewportHeight)
+  return rect.top <= viewportHeight + preloadMargin && rect.bottom >= -preloadMargin
 }
 
 export function resolveMediaAspectRatio(media: PostDetailMediaLike | null | undefined): number {
@@ -104,4 +446,63 @@ export function shouldShowThumbnailRail(
 
 export function getThumbnailPlaceholderCount(mediaCount?: number | null): number {
   return Math.min(Math.max(mediaCount ?? 0, 2), 6)
+}
+
+export function resolveActiveImageSource(
+  media: PostDetailMediaLike | null | undefined,
+  resolver: Pick<PostDetailMediaUrlResolver, 'getMediaThumbnailUrl'>
+): string {
+  if (!media?.id || media.file_type !== 'image') return ''
+  return resolver.getMediaThumbnailUrl(media.id, 'large')
+}
+
+export function resolveActiveImageSrcset(
+  media: PostDetailMediaLike | null | undefined,
+  resolver: Pick<PostDetailMediaUrlResolver, 'getMediaThumbnailSrcset'>
+): string | null {
+  if (!media?.id || media.file_type !== 'image') return null
+  return resolver.getMediaThumbnailSrcset(media.id)
+}
+
+export function resolveFallbackMediaSource(
+  post: PostDetailLike | null | undefined,
+  resolver: Pick<PostDetailMediaUrlResolver, 'resolveThumbnailSrc'>
+): string {
+  return resolver.resolveThumbnailSrc(post?.thumbnail_url ?? null, 'large') || ''
+}
+
+export function resolveFallbackMediaSrcset(
+  post: PostDetailLike | null | undefined,
+  resolver: Pick<PostDetailMediaUrlResolver, 'resolveThumbnailSrcset'>
+): string | null {
+  return resolver.resolveThumbnailSrcset(post?.thumbnail_url ?? null)
+}
+
+export function resolvePlaceholderSource({
+  activeMedia,
+  activeMediaIndex,
+  cachedThumbnailUrl,
+  preloadedImages,
+  getMediaThumbnailUrl,
+}: {
+  activeMedia: PostDetailMediaLike | null | undefined
+  activeMediaIndex: number
+  cachedThumbnailUrl: string | null
+  preloadedImages: ReadonlySet<string>
+  getMediaThumbnailUrl: (mediaId: string, size: string) => string
+}): string | null {
+  if (!activeMedia?.id) return cachedThumbnailUrl
+
+  const thumbUrl = getMediaThumbnailUrl(activeMedia.id, 'medium')
+  if (preloadedImages.has(thumbUrl)) return thumbUrl
+  if (activeMediaIndex === 0 && cachedThumbnailUrl) return cachedThumbnailUrl
+  return thumbUrl
+}
+
+export function getAdjacentMediaPreloadIndexes(
+  mediaCount: number,
+  activeMediaIndex: number
+): number[] {
+  if (mediaCount <= 1) return []
+  return [(activeMediaIndex + 1) % mediaCount, (activeMediaIndex - 1 + mediaCount) % mediaCount]
 }

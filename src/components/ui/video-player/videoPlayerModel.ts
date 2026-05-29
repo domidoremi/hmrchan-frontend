@@ -20,6 +20,21 @@ export interface NormalizedSubtitleTrack {
   format?: string | null | undefined
 }
 
+export const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const
+export const CONTROLS_HIDE_DELAY = 3000
+export const SEEK_STEP = 5
+export const VOLUME_STEP = 0.1
+
+export type SeekDirection = 'forward' | 'backward'
+
+export interface SeekResolution {
+  percent: number
+  time: number
+  delta: number
+  direction: SeekDirection
+  indicatorSeconds: number
+}
+
 export const SUBTITLE_COLORS = [
   { value: '#ffffff', label: 'white' },
   { value: '#ffff00', label: 'yellow' },
@@ -99,6 +114,72 @@ export function normalizeSubtitleTracks(options: {
   }, [])
 }
 
+export function isSrtTrack(track: NormalizedSubtitleTrack): boolean {
+  if (track.format?.toLowerCase() === 'srt') return true
+  return track.src.toLowerCase().endsWith('.srt')
+}
+
+export function toLocaleMatches(trackLang: string, target: string): boolean {
+  const normalizedTrackLang = trackLang.toLowerCase()
+  const normalizedTarget = target.toLowerCase()
+  if (normalizedTrackLang === normalizedTarget) return true
+  const base = normalizedTarget.split('-')[0]
+  return normalizedTrackLang === base || normalizedTrackLang.startsWith(`${base}-`)
+}
+
+export function pickDefaultSubtitle(options: {
+  tracks: NormalizedSubtitleTrack[]
+  preferredLanguage?: string | null
+  locale: string
+}): string | null {
+  const { tracks, preferredLanguage, locale } = options
+  if (!tracks.length) return null
+
+  if (preferredLanguage) {
+    const match = tracks.find((track) => toLocaleMatches(track.language, preferredLanguage))
+    if (match) return match.language
+  }
+
+  const localeMatch = tracks.find((track) => toLocaleMatches(track.language, locale))
+  if (localeMatch) return localeMatch.language
+  return tracks[0]?.language ?? null
+}
+
+export function needsFetchFallback(track: NormalizedSubtitleTrack): boolean {
+  if (track.src.includes('/subtitle?language=')) return true
+  if (isSrtTrack(track)) return true
+  return false
+}
+
+export function normalizeSubtitleFallbackText(rawText: string): string {
+  const normalized = rawText.replace(/\r+/g, '')
+  const body = normalized.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
+  return body.trimStart().startsWith('WEBVTT') ? body : `WEBVTT\n\n${body.trim()}\n`
+}
+
+export function extractCueTextHtml(text: string): string {
+  return text
+    .replace(/<[^>]+>/g, '')
+    .split('\n')
+    .filter((line) => line.trim())
+    .join('<br>')
+}
+
+export function extractActiveCueHtml(
+  cues: ArrayLike<{ text?: string }> | null | undefined
+): string {
+  if (!cues?.length) return ''
+
+  const parts: string[] = []
+  for (let index = 0; index < cues.length; index += 1) {
+    const cue = cues[index]
+    if (!cue?.text) continue
+    const clean = extractCueTextHtml(cue.text)
+    if (clean) parts.push(clean)
+  }
+  return parts.join('<br>')
+}
+
 export function getSubtitleShadowCss(preset: SubtitleShadowPreset): string {
   switch (preset) {
     case 'outline':
@@ -164,6 +245,107 @@ export function buildSubtitlePreviewStyle(options: {
     backgroundColor: hexToRgba(options.backgroundColor, options.backgroundOpacity),
     textShadow: shadowCss === 'none' ? undefined : shadowCss,
   }
+}
+
+export function clampPercent(value: number): number {
+  if (!isFinite(value)) return 0
+  return Math.min(100, Math.max(0, value))
+}
+
+export function clampUnitInterval(value: number): number {
+  if (!isFinite(value)) return 0
+  return Math.min(1, Math.max(0, value))
+}
+
+export function resolvePlayedPercent(currentTime: number, duration: number): number {
+  if (!isFinite(duration) || duration <= 0) return 0
+  return clampPercent((currentTime / duration) * 100)
+}
+
+export function resolveDisplayPercent(
+  previewPercent: number | null,
+  playedPercent: number
+): number {
+  return clampPercent(previewPercent ?? playedPercent)
+}
+
+export function resolveSeekFromUnitPercent(options: {
+  percent: number
+  duration: number
+  currentTime: number
+}): SeekResolution | null {
+  const { duration, currentTime } = options
+  if (!isFinite(duration) || duration <= 0) return null
+  const unitPercent = clampUnitInterval(options.percent)
+  const time = unitPercent * duration
+  const delta = time - currentTime
+
+  return {
+    percent: unitPercent,
+    time,
+    delta,
+    direction: delta > 0 ? 'forward' : 'backward',
+    indicatorSeconds: Math.round(Math.abs(delta)),
+  }
+}
+
+export function resolveSeekFromPoint(options: {
+  clientX: number
+  rectLeft: number
+  rectWidth: number
+  duration: number
+  currentTime: number
+}): SeekResolution | null {
+  const { rectWidth } = options
+  if (!isFinite(rectWidth) || rectWidth <= 0) return null
+  return resolveSeekFromUnitPercent({
+    percent: (options.clientX - options.rectLeft) / rectWidth,
+    duration: options.duration,
+    currentTime: options.currentTime,
+  })
+}
+
+export function resolveKeyboardSeekTime(options: {
+  key: string
+  shiftKey: boolean
+  currentTime: number
+  duration: number
+  seekStep?: number
+}): SeekResolution | null {
+  const { key, shiftKey, currentTime, duration, seekStep = SEEK_STEP } = options
+  if (!isFinite(duration) || duration <= 0) return null
+
+  const step = shiftKey ? seekStep * 3 : seekStep
+  let nextTime: number | null = null
+
+  switch (key) {
+    case 'ArrowLeft':
+      nextTime = currentTime - step
+      break
+    case 'ArrowRight':
+      nextTime = currentTime + step
+      break
+    case 'Home':
+      nextTime = 0
+      break
+    case 'End':
+      nextTime = duration
+      break
+    default:
+      return null
+  }
+
+  return resolveSeekFromUnitPercent({
+    percent: Math.max(0, Math.min(duration, nextTime)) / duration,
+    duration,
+    currentTime,
+  })
+}
+
+export function normalizeVolumeInput(rawValue: string | number): number | null {
+  const value = typeof rawValue === 'number' ? rawValue : Number.parseInt(rawValue, 10)
+  if (!isFinite(value)) return null
+  return clampUnitInterval(value / 100)
 }
 
 export function formatTime(seconds: number): string {

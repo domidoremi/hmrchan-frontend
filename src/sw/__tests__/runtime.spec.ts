@@ -64,4 +64,31 @@ describe('service worker runtime cache policy', () => {
       )
     ).toBe(true)
   })
+
+  it('rejects BFF cookie-backed private API domains without relying on Authorization headers', async () => {
+    const { isCacheableApiRequest } = await loadRuntime()
+    const privatePaths = [
+      '/api/v1/2fa/status',
+      '/api/v1/account/export-data',
+      '/api/v1/audit/my-activity',
+      '/api/v1/devices',
+      '/api/v1/email/change',
+      '/api/v1/history/search',
+      '/api/v1/inbox/messages',
+      '/api/v1/preferences',
+      '/api/v1/relations/followers',
+      '/api/v1/reports/my',
+      '/api/v1/users/me',
+      '/api/v1/users/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10/public-profile',
+    ]
+
+    for (const path of privatePaths) {
+      expect(
+        isCacheableApiRequest(
+          new URL(`https://example.test${path}`),
+          new Request(`https://example.test${path}`)
+        )
+      ).toBe(false)
+    }
+  })
 })

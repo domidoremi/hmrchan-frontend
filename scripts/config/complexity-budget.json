@@ -2,95 +2,40 @@
   "softLineLimit": 1000,
   "hardLineLimit": 1500,
   "registeredLargeFiles": {
-    "src/components/business/PostCard.vue": {
-      "maxLines": 1023,
-      "refactorQueued": false,
-      "reason": "Existing content card surface; requires an explicit note before further growth."
-    },
-    "src/components/business/PostPreviewModal.vue": {
-      "maxLines": 1269,
-      "refactorQueued": false,
-      "reason": "Existing preview modal; requires an explicit note before further growth."
-    },
-    "src/components/layout/AppNavbar.vue": {
-      "maxLines": 1828,
-      "refactorQueued": true,
-      "reason": "Known navigation shell aggregation; keep registered until desktop/mobile behaviors are separated."
-    },
-    "src/components/layout/SettingsPanel.vue": {
-      "maxLines": 1905,
-      "refactorQueued": true,
-      "reason": "Known settings surface aggregation; keep registered until panel sections are split."
-    },
-    "src/components/profile/ProfileSecurityMfaSection.vue": {
-      "maxLines": 1168,
-      "refactorQueued": false,
-      "reason": "Existing MFA section; requires an explicit note before further growth."
-    },
-    "src/components/ui/DeskPet.vue": {
-      "maxLines": 1707,
-      "refactorQueued": true,
-      "reason": "Known interactive UI component; keep registered until animation/runtime model is separated."
-    },
     "src/components/ui/VideoPlayer.vue": {
-      "maxLines": 1410,
+      "maxLines": 1360,
       "refactorQueued": false,
-      "reason": "Batch 2 extracted scoped CSS; remaining controls/model can be split in a later pass."
-    },
-    "src/composables/useParticleEngine.ts": {
-      "maxLines": 1016,
-      "refactorQueued": false,
-      "reason": "Existing particle runtime helper; requires an explicit note before further growth."
+      "reason": "Playback constants, subtitle selection helpers, progress percent, seek target, keyboard seek, volume input normalization, VTT fallback normalization, and active cue HTML extraction were extracted into the video player model; remaining controls workflow can be split in a later pass."
     },
     "src/edge/detailDocumentResolver.ts": {
       "maxLines": 1300,
       "refactorQueued": false,
       "reason": "Existing edge rendering contract; requires an explicit note before further growth."
     },
-    "src/views/AboutPage.vue": {
-      "maxLines": 1128,
-      "refactorQueued": false,
-      "reason": "Existing content page; requires an explicit note before further growth."
-    },
-    "src/views/CommunityPage.vue": {
-      "maxLines": 1397,
-      "refactorQueued": false,
-      "reason": "Existing large community page; requires an explicit note before further growth."
-    },
     "src/views/HomePage.vue": {
-      "maxLines": 3297,
+      "maxLines": 3150,
       "refactorQueued": true,
-      "reason": "Batch 2 extracted scoped CSS; remaining scene/view-model logic is queued for staged extraction."
+      "reason": "Batch 2 extracted scoped CSS; homepage image, support refresh, scene capability/progress/snap, viewport blend, motion CSS variable, rail/story scene style, footer blend, rail navbar lock, bubble reveal lifecycle, and scene layout refresh policies were moved into dedicated policy modules; remaining scene/runtime orchestration is queued for staged extraction."
     },
     "src/views/LoginPage.vue": {
-      "maxLines": 1286,
+      "maxLines": 1256,
       "refactorQueued": false,
-      "reason": "Existing large auth entry page; preserve current auth flow while tracking complexity."
+      "reason": "Login step titles, credential validation, restore-account validation, restore query cleanup, risk WebAuthn visibility, Turnstile retry predicates, Turnstile freshness, Google handoff expiry predicates, route query state, Google visual state, conditional passkey start, and back navigation intent were extracted; preserve current auth flow while tracking remaining complexity."
     },
     "src/views/PostDetailPage.vue": {
-      "maxLines": 2550,
+      "maxLines": 2508,
       "refactorQueued": true,
-      "reason": "Known large detail workflow; split comments, media, and action orchestration in a later pass."
-    },
-    "src/views/ProfileSettingsPage.vue": {
-      "maxLines": 1787,
-      "refactorQueued": true,
-      "reason": "Known profile settings workflow; keep registered until section state is extracted."
+      "reason": "Post detail title/description, published meta, media state, image sources, placeholders, media transition rules, adjacent preload indexes, not-found route params, comments viewport preload checks, adjacent post navigation gesture rules, and fallback recovery decisions were extracted; API orchestration remains queued."
     },
     "src/views/RegisterPage.vue": {
-      "maxLines": 1480,
+      "maxLines": 1427,
       "refactorQueued": false,
-      "reason": "Existing large auth form page; requires an explicit note before further growth."
+      "reason": "Register step titles, password strength text keys, email masking, progress visibility, login redirect target, form validation gates, Turnstile freshness, Google handoff expiry predicates, Google visual state, client challenge visibility, and back navigation intent were extracted; preserve current auth flow while tracking remaining complexity."
     },
     "src/views/SchedulePage.vue": {
-      "maxLines": 1687,
-      "refactorQueued": true,
-      "reason": "Batch 2 extracted scoped CSS; remaining filters and view state are queued for model extraction."
-    },
-    "src/views/SearchPage.vue": {
-      "maxLines": 1109,
+      "maxLines": 1494,
       "refactorQueued": false,
-      "reason": "Existing search page; requires an explicit note before further growth."
+      "reason": "Schedule calendar grid, event indexing, weekday labels, upcoming/today lists, category breakdown, keyboard navigation index resolution, month swipe direction, planner/month step targets, today transition direction, detail link availability, lead text, host label, same-day check, description parsing/linkification, detail recovery source decisions, and detail share/link policies were extracted; remaining detail route and API orchestration must not grow without an explicit note."
     }
   }
 }

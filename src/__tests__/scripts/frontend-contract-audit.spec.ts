@@ -116,8 +116,25 @@ const probes = [
     root,
     'src/router/index.ts',
     `
-const guardedResourceRoutes = new Set(['post-detail', 'author-detail', 'discussion-detail', 'user-public-profile', 'passkey-recovery-detail'])
-if (!isContractResourceId(resourceId)) return { name: 'not-found' }
+import { resolveInvalidContractResourceRedirect } from './routeSecurityPolicy'
+const invalidContractResourceRedirect = resolveInvalidContractResourceRedirect(to)
+if (invalidContractResourceRedirect) return invalidContractResourceRedirect
+`
+  )
+  writeFixture(
+    root,
+    'src/router/routeSecurityPolicy.ts',
+    `
+import { isContractResourceId } from '@/utils/contractResourceId'
+export const CONTRACT_RESOURCE_ROUTE_NAMES = ['post-detail', 'author-detail', 'discussion-detail', 'user-public-profile', 'passkey-recovery-detail']
+export function shouldRejectInvalidContractResourceRoute(route) {
+  if (!CONTRACT_RESOURCE_ROUTE_NAMES.includes(route.name)) return false
+  return !isContractResourceId(route.params.id)
+}
+export function resolveInvalidContractResourceRedirect(route) {
+  if (!shouldRejectInvalidContractResourceRoute(route)) return null
+  return { name: 'not-found' }
+}
 `
   )
   writeFixture(

@@ -17,12 +17,40 @@ const profileMocks = vi.hoisted(() => ({
   isVerificationCancelledError: vi.fn(() => false),
   refreshAvatarCache: vi.fn(),
   checkPasswordStrength: vi.fn(() => ({ level: 'good' })),
+  buildDataSummaryItems: vi.fn((counts?: Record<string, number> | null) =>
+    [
+      { key: 'favorites', labelKey: 'profile.dataSummaryFavorites' },
+      { key: 'comments', labelKey: 'profile.dataSummaryComments' },
+    ].map((item) => ({
+      ...item,
+      value: counts?.[item.key] ?? 0,
+    }))
+  ),
   buildPasswordToggleLabel: vi.fn(() => 'toggle password'),
+  buildRestoreAccountRouteQuery: vi.fn(() => ({ mode: 'restore', identifier: 'domi@example.com' })),
+  formatOptionalDateTime: vi.fn((value?: string | null, fallback = '') =>
+    value ? `formatted:${value}` : fallback
+  ),
   getPasswordStrengthClass: vi.fn(() => 'strength-good'),
   getPasswordStrengthScore: vi.fn(() => 3),
   isEmailChangeAllowed: vi.fn(() => true),
   isPasswordChangeAllowed: vi.fn(() => true),
   passwordsMatch: vi.fn((next: string, confirm: string) => next === confirm),
+  resolveAuthSourceSummaryKey: vi.fn((provider: string) =>
+    provider === 'google'
+      ? 'profile.authSourceGoogle'
+      : provider === 'local'
+        ? 'profile.authSourceEmail'
+        : 'profile.authSourceThirdParty'
+  ),
+  resolveIdentityProvider: vi.fn(
+    (options: { profileProvider?: string | null; authProvider?: string | null }) =>
+      (options.profileProvider ?? options.authProvider)?.trim().toLowerCase() || 'local'
+  ),
+  resolveProfileDisplayName: vi.fn(
+    (options: { fullName?: string | null; username?: string | null }) =>
+      options.fullName?.trim() || options.username || ''
+  ),
 }))
 
 const authStoreState = reactive({
@@ -97,12 +125,18 @@ vi.mock('@/api/verificationBridge', () => ({
 }))
 
 vi.mock('@/views/profile-settings/profileSettingsModel', () => ({
+  buildDataSummaryItems: profileMocks.buildDataSummaryItems,
   buildPasswordToggleLabel: profileMocks.buildPasswordToggleLabel,
+  buildRestoreAccountRouteQuery: profileMocks.buildRestoreAccountRouteQuery,
+  formatOptionalDateTime: profileMocks.formatOptionalDateTime,
   getPasswordStrengthClass: profileMocks.getPasswordStrengthClass,
   getPasswordStrengthScore: profileMocks.getPasswordStrengthScore,
   isEmailChangeAllowed: profileMocks.isEmailChangeAllowed,
   isPasswordChangeAllowed: profileMocks.isPasswordChangeAllowed,
   passwordsMatch: profileMocks.passwordsMatch,
+  resolveAuthSourceSummaryKey: profileMocks.resolveAuthSourceSummaryKey,
+  resolveIdentityProvider: profileMocks.resolveIdentityProvider,
+  resolveProfileDisplayName: profileMocks.resolveProfileDisplayName,
 }))
 
 vi.mock('@/components/ui/Button.vue', async () => {
@@ -297,8 +331,28 @@ describe('ProfileSettingsPage', () => {
     profileMocks.refreshAvatarCache.mockReset()
     profileMocks.checkPasswordStrength.mockReset()
     profileMocks.checkPasswordStrength.mockReturnValue({ level: 'good' })
+    profileMocks.buildDataSummaryItems.mockReset()
+    profileMocks.buildDataSummaryItems.mockImplementation(
+      (counts?: Record<string, number> | null) =>
+        [
+          { key: 'favorites', labelKey: 'profile.dataSummaryFavorites' },
+          { key: 'comments', labelKey: 'profile.dataSummaryComments' },
+        ].map((item) => ({
+          ...item,
+          value: counts?.[item.key] ?? 0,
+        }))
+    )
     profileMocks.buildPasswordToggleLabel.mockReset()
     profileMocks.buildPasswordToggleLabel.mockReturnValue('toggle password')
+    profileMocks.buildRestoreAccountRouteQuery.mockReset()
+    profileMocks.buildRestoreAccountRouteQuery.mockReturnValue({
+      mode: 'restore',
+      identifier: 'domi@example.com',
+    })
+    profileMocks.formatOptionalDateTime.mockReset()
+    profileMocks.formatOptionalDateTime.mockImplementation(
+      (value?: string | null, fallback = '') => (value ? `formatted:${value}` : fallback)
+    )
     profileMocks.getPasswordStrengthClass.mockReset()
     profileMocks.getPasswordStrengthClass.mockReturnValue('strength-good')
     profileMocks.getPasswordStrengthScore.mockReset()
@@ -310,6 +364,24 @@ describe('ProfileSettingsPage', () => {
     profileMocks.passwordsMatch.mockReset()
     profileMocks.passwordsMatch.mockImplementation(
       (next: string, confirm: string) => next === confirm
+    )
+    profileMocks.resolveAuthSourceSummaryKey.mockReset()
+    profileMocks.resolveAuthSourceSummaryKey.mockImplementation((provider: string) =>
+      provider === 'google'
+        ? 'profile.authSourceGoogle'
+        : provider === 'local'
+          ? 'profile.authSourceEmail'
+          : 'profile.authSourceThirdParty'
+    )
+    profileMocks.resolveIdentityProvider.mockReset()
+    profileMocks.resolveIdentityProvider.mockImplementation(
+      (options: { profileProvider?: string | null; authProvider?: string | null }) =>
+        (options.profileProvider ?? options.authProvider)?.trim().toLowerCase() || 'local'
+    )
+    profileMocks.resolveProfileDisplayName.mockReset()
+    profileMocks.resolveProfileDisplayName.mockImplementation(
+      (options: { fullName?: string | null; username?: string | null }) =>
+        options.fullName?.trim() || options.username || ''
     )
 
     toastStoreState.success.mockReset()

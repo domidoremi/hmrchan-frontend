@@ -67,7 +67,6 @@
         </template>
       </PageHeroShell>
 
-      <!-- 月份导航 -->
       <PageToolbar class="month-nav page-toolbar-shell--comfortable">
         <ControlButton
           class="month-nav-btn"
@@ -304,7 +303,6 @@
         </section>
       </section>
 
-      <!-- 日历网格 -->
       <StateIndicator
         v-if="error && !isUsingFallback"
         variant="error"
@@ -725,6 +723,48 @@ import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
 import PageToolbar from '@/components/appearance/PageToolbar.vue'
 import SafeHtml from '@/components/ui/SafeHtml.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import {
+  buildCalendarDay as buildScheduleCalendarDay,
+  buildCalendarDays,
+  buildCategoryBreakdown,
+  buildEventsByDate,
+  buildWeekDays,
+  buildScheduleDetailSharePayload,
+  canShareScheduleDetail,
+  filterScheduleEvents,
+  formatCalendarDateKey,
+  formatEventDateTimeLabel,
+  getScheduleCategoryColor,
+  getTodayScheduleEvents,
+  getUpcomingScheduleEvents,
+  hasScheduleDetailLinks,
+  isSameScheduleDate,
+  linkifyScheduleDescriptionLine,
+  parseScheduleDateJumpValue,
+  parseScheduleDescription,
+  resolveScheduleAgendaJumpTargetDate,
+  resolveScheduleAgendaSummaryLabel,
+  resolveScheduleCalendarNavigationIndex,
+  resolveScheduleDateJumpValue,
+  resolveScheduleDayAriaLabel,
+  resolveScheduleDetailHostLabel,
+  resolveScheduleDetailLead,
+  resolveScheduleDetailPermalink,
+  resolveScheduleDetailRecoverySource,
+  resolveScheduleEventMetaLabel,
+  resolveScheduleEventTitleLabel,
+  resolveScheduleMonthStep,
+  resolveScheduleMonthSwipeDirection,
+  resolveScheduleNextHighlightLabel,
+  resolveSchedulePlannerSummaryLabel,
+  resolveSchedulePlannerStepTarget,
+  resolveScheduleTodayTransition,
+  resolveScheduleWeekdays,
+  type ScheduleAgendaJumpTarget,
+  type CalendarDay,
+  type ScheduleMonthTransitionName,
+  type ScheduleDescriptionSection,
+} from './schedule/schedulePageModel'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -732,7 +772,6 @@ const router = useRouter()
 const scheduleStore = useScheduleStore()
 const toastStore = useToastStore()
 
-// ========== 状态 ==========
 const events = ref<ScheduleCalendarItem[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -745,9 +784,8 @@ const selectedDay = ref<CalendarDay | null>(null)
 const plannerView = ref<PlannerView>('week')
 const calendarRef = useTemplateRef<HTMLElement>('calendarRef')
 const detailPanelRef = useTemplateRef<HTMLElement>('detailPanelRef')
-const monthTransition = ref<'month-slide-left' | 'month-slide-right'>('month-slide-left')
+const monthTransition = ref<ScheduleMonthTransitionName>('month-slide-left')
 
-// 详情弹窗
 const detailEvent = ref<ScheduleResponse | null>(null)
 const detailLoading = ref(false)
 const detailStatus = ref<'idle' | 'ready' | 'not-found' | 'error'>('idle')
@@ -762,21 +800,8 @@ const routeScheduleId = computed(() => {
 const SCHEDULE_CALENDAR_SNAPSHOT_SCOPE = 'schedule/calendar'
 const SCHEDULE_DETAIL_SNAPSHOT_SCOPE = 'schedule/detail'
 
-// 触摸手势
 let touchStartX = 0
 let touchStartY = 0
-
-// ========== 分类配置 ==========
-const CATEGORY_COLORS: Record<string, string> = {
-  live: '#ef4444',
-  event: '#10b981',
-  release: '#06b6d4',
-  media: '#3b82f6',
-  birth: '#f59e0b',
-  other: '#22c55e',
-}
-
-const DEFAULT_COLOR = '#22c55e'
 
 const categories = [
   { value: 'all' as const, label: 'schedule.categories.all', icon: LayoutGrid },
@@ -798,25 +823,10 @@ const activeCategoryLabel = computed(() => {
 })
 
 function getCategoryColor(cat: string): string {
-  return CATEGORY_COLORS[cat] ?? DEFAULT_COLOR
+  return getScheduleCategoryColor(cat)
 }
 
-// ========== 日历计算 ==========
-interface CalendarDay {
-  key: string
-  date: number
-  fullDate: Date
-  currentMonth: boolean
-  isToday: boolean
-  events: ScheduleCalendarItem[]
-}
-
-const weekdays = computed(() => {
-  const lang = locale.value
-  if (lang === 'ja') return ['日', '月', '火', '水', '木', '金', '土']
-  if (lang === 'en') return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  return ['日', '一', '二', '三', '四', '五', '六']
-})
+const weekdays = computed(() => resolveScheduleWeekdays(locale.value))
 
 const monthLabel = computed(() => {
   const d = new Date(currentYear.value, currentMonth.value, 1)
@@ -834,86 +844,17 @@ const isCurrentMonth = computed(() => {
 })
 
 const filteredEvents = computed(() => {
-  if (activeCategory.value === 'all') return events.value
-  return events.value.filter((e) => e.category === activeCategory.value)
+  return filterScheduleEvents(events.value, activeCategory.value)
 })
 
-/** 预构建 date→events 映射，避免 O(n*m) 遍历 */
-const eventsByDate = computed(() => {
-  const map = new Map<string, ScheduleCalendarItem[]>()
-  for (const evt of filteredEvents.value) {
-    const dateStr = evt.start.slice(0, 10)
-    const arr = map.get(dateStr)
-    if (arr) {
-      arr.push(evt)
-    } else {
-      map.set(dateStr, [evt])
-    }
-  }
-  return map
-})
-
-function getEventsForDate(date: Date): ScheduleCalendarItem[] {
-  const dateStr = formatCalendarDateKey(date)
-  return eventsByDate.value.get(dateStr) ?? []
-}
+const eventsByDate = computed(() => buildEventsByDate(filteredEvents.value))
 
 const calendarDays = computed<CalendarDay[]>(() => {
-  const year = currentYear.value
-  const month = currentMonth.value
-  const firstDay = new Date(year, month, 1)
-  const startOffset = firstDay.getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const prevMonthDays = new Date(year, month, 0).getDate()
-
-  const today = new Date()
-  const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`
-
-  const days: CalendarDay[] = []
-
-  // 上月填充
-  for (let i = startOffset - 1; i >= 0; i--) {
-    const d = prevMonthDays - i
-    const fullDate = new Date(year, month - 1, d)
-    days.push({
-      key: `prev-${d}`,
-      date: d,
-      fullDate,
-      currentMonth: false,
-      isToday: false,
-      events: getEventsForDate(fullDate),
-    })
-  }
-
-  // 当月
-  for (let d = 1; d <= daysInMonth; d++) {
-    const fullDate = new Date(year, month, d)
-    const dateStr = `${year}-${month}-${d}`
-    days.push({
-      key: `cur-${d}`,
-      date: d,
-      fullDate,
-      currentMonth: true,
-      isToday: dateStr === todayStr,
-      events: getEventsForDate(fullDate),
-    })
-  }
-
-  // 下月填充至 6 行
-  const remaining = 42 - days.length
-  for (let d = 1; d <= remaining; d++) {
-    const fullDate = new Date(year, month + 1, d)
-    days.push({
-      key: `next-${d}`,
-      date: d,
-      fullDate,
-      currentMonth: false,
-      isToday: false,
-      events: getEventsForDate(fullDate),
-    })
-  }
-
-  return days
+  return buildCalendarDays({
+    year: currentYear.value,
+    month: currentMonth.value,
+    eventsByDate: eventsByDate.value,
+  })
 })
 
 const selectedDayEvents = computed(() => {
@@ -932,33 +873,19 @@ const selectedDayLabel = computed(() => {
 const plannerAnchorDate = computed(() => selectedDay.value?.fullDate ?? new Date())
 
 function buildCalendarDay(date: Date): CalendarDay {
-  const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const today = new Date()
-  const isToday =
-    today.getFullYear() === normalized.getFullYear() &&
-    today.getMonth() === normalized.getMonth() &&
-    today.getDate() === normalized.getDate()
-
-  return {
-    key: formatCalendarDateKey(normalized),
-    date: normalized.getDate(),
-    fullDate: normalized,
-    currentMonth: normalized.getMonth() === currentMonth.value,
-    isToday,
-    events: getEventsForDate(normalized),
-  }
+  return buildScheduleCalendarDay({
+    date,
+    currentMonth: currentMonth.value,
+    eventsByDate: eventsByDate.value,
+  })
 }
 
 const weekDays = computed(() => {
-  const anchor = plannerAnchorDate.value
-  const start = new Date(
-    anchor.getFullYear(),
-    anchor.getMonth(),
-    anchor.getDate() - anchor.getDay()
-  )
-  return Array.from({ length: 7 }, (_, index) =>
-    buildCalendarDay(new Date(start.getFullYear(), start.getMonth(), start.getDate() + index))
-  )
+  return buildWeekDays({
+    anchor: plannerAnchorDate.value,
+    currentMonth: currentMonth.value,
+    eventsByDate: eventsByDate.value,
+  })
 })
 
 const plannerPeriodLabel = computed(() => {
@@ -972,75 +899,74 @@ const plannerPeriodLabel = computed(() => {
   return `${formatCalendarDateLabel(first.fullDate)} - ${formatCalendarDateLabel(last.fullDate)}`
 })
 const dateJumpValue = computed(() => {
-  const target =
-    plannerView.value === 'month'
-      ? new Date(currentYear.value, currentMonth.value, 1)
-      : plannerAnchorDate.value
-
-  return formatCalendarDateKey(target)
+  return resolveScheduleDateJumpValue({
+    view: plannerView.value,
+    year: currentYear.value,
+    month: currentMonth.value,
+    anchor: plannerAnchorDate.value,
+  })
 })
 
 const upcomingEvents = computed(() => {
-  const now = new Date()
-  return filteredEvents.value
-    .filter((e) => new Date(e.start) >= now)
-    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
-    .slice(0, 10)
+  return getUpcomingScheduleEvents(filteredEvents.value)
 })
 
 const todayEvents = computed(() => {
-  const todayKey = formatCalendarDateKey(new Date())
-  return filteredEvents.value
-    .filter((event) => event.start.slice(0, 10) === todayKey)
-    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+  return getTodayScheduleEvents(filteredEvents.value)
 })
 
 const agendaSummaryLabel = computed(() => {
-  if (todayEvents.value.length > 0) {
-    return `${todayEvents.value.length} ${t('schedule.eventsCount')} · ${activeCategoryLabel.value}`
-  }
-  if (upcomingEvents.value.length > 0) {
-    return `${upcomingEvents.value.length} ${t('schedule.eventsCount')} · ${nextHighlightLabel.value}`
-  }
-  return t('schedule.noUpcoming')
+  return resolveScheduleAgendaSummaryLabel({
+    todayCount: todayEvents.value.length,
+    upcomingCount: upcomingEvents.value.length,
+    eventsCountLabel: t('schedule.eventsCount'),
+    activeCategoryLabel: activeCategoryLabel.value,
+    nextHighlightLabel: nextHighlightLabel.value,
+    noUpcomingLabel: t('schedule.noUpcoming'),
+  })
 })
 
 const plannerSummaryLabel = computed(() => {
-  if (plannerView.value === 'month') {
-    return `${monthLabel.value} · ${activeCategoryLabel.value}`
-  }
-  if (selectedDay.value) {
-    return `${selectedDayLabel.value} · ${
-      selectedDayEvents.value.length > 0
-        ? `${selectedDayEvents.value.length} ${t('schedule.eventsCount')}`
-        : t('schedule.noEvents')
-    }`
-  }
-  return plannerPeriodLabel.value
+  return resolveSchedulePlannerSummaryLabel({
+    view: plannerView.value,
+    monthLabel: monthLabel.value,
+    activeCategoryLabel: activeCategoryLabel.value,
+    selectedDayLabel: selectedDay.value ? selectedDayLabel.value : null,
+    selectedDayEventCount: selectedDayEvents.value.length,
+    eventsCountLabel: t('schedule.eventsCount'),
+    noEventsLabel: t('schedule.noEvents'),
+    plannerPeriodLabel: plannerPeriodLabel.value,
+  })
 })
 
 const todayAgendaTitle = computed(() => {
-  if (todayEvents.value[0]) return todayEvents.value[0].title
-  return t('schedule.noEvents')
+  return resolveScheduleEventTitleLabel({
+    event: todayEvents.value[0],
+    fallbackLabel: t('schedule.noEvents'),
+  })
 })
 
 const todayAgendaMeta = computed(() => {
-  if (todayEvents.value[0]) {
-    return formatEventDateTime(todayEvents.value[0].start, todayEvents.value[0].allDay)
-  }
-  return activeCategoryLabel.value
+  return resolveScheduleEventMetaLabel({
+    event: todayEvents.value[0],
+    fallbackLabel: activeCategoryLabel.value,
+    formatEvent: formatEventDateTime,
+  })
 })
 
 const nextAgendaTitle = computed(() => {
-  if (upcomingEvents.value[0]) return upcomingEvents.value[0].title
-  return t('schedule.insights.empty')
+  return resolveScheduleEventTitleLabel({
+    event: upcomingEvents.value[0],
+    fallbackLabel: t('schedule.insights.empty'),
+  })
 })
 
 const nextAgendaMeta = computed(() => {
-  if (upcomingEvents.value[0]) {
-    return formatEventDateTime(upcomingEvents.value[0].start, upcomingEvents.value[0].allDay)
-  }
-  return monthLabel.value
+  return resolveScheduleEventMetaLabel({
+    event: upcomingEvents.value[0],
+    fallbackLabel: monthLabel.value,
+    formatEvent: formatEventDateTime,
+  })
 })
 
 const nextAgendaDateLabel = computed(() => {
@@ -1055,32 +981,23 @@ const highlightedEvent = computed(
 
 const nextHighlightLabel = computed(() => {
   const event = upcomingEvents.value[0]
-  if (!event) return t('schedule.insights.empty')
-  return `${formatEventDate(event.start)} · ${event.title}`
+  return resolveScheduleNextHighlightLabel({
+    event,
+    emptyLabel: t('schedule.insights.empty'),
+    dateLabel: event ? formatEventDate(event.start) : '',
+  })
 })
 
 const categoryBreakdown = computed(() => {
-  const counts = new Map<ScheduleCategory, number>()
-  for (const event of filteredEvents.value) {
-    counts.set(event.category, (counts.get(event.category) ?? 0) + 1)
-  }
-
-  return Array.from(counts.entries())
-    .map(([category, count]) => ({ category, count }))
-    .sort((left, right) => right.count - left.count)
-    .slice(0, 4)
+  return buildCategoryBreakdown(filteredEvents.value)
 })
 
-// ========== 无障碍 ==========
 function getDayAriaLabel(day: CalendarDay): string {
-  const dateLabel = day.fullDate.toLocaleDateString(
-    locale.value === 'zh-CN' ? 'zh-CN' : locale.value,
-    { month: 'long', day: 'numeric' }
-  )
-  if (day.events.length > 0) {
-    return `${dateLabel}, ${day.events.length} ${t('schedule.eventsCount')}`
-  }
-  return dateLabel
+  return resolveScheduleDayAriaLabel({
+    day,
+    locale: locale.value,
+    eventsCountLabel: t('schedule.eventsCount'),
+  })
 }
 
 function handleCalendarKeydown(e: KeyboardEvent) {
@@ -1094,29 +1011,13 @@ function handleCalendarKeydown(e: KeyboardEvent) {
   const idx = cells.indexOf(focused as HTMLButtonElement)
   if (idx === -1) return
 
-  let next = -1
-  switch (e.key) {
-    case 'ArrowRight':
-      next = Math.min(idx + 1, cells.length - 1)
-      break
-    case 'ArrowLeft':
-      next = Math.max(idx - 1, 0)
-      break
-    case 'ArrowDown':
-      next = Math.min(idx + 7, cells.length - 1)
-      break
-    case 'ArrowUp':
-      next = Math.max(idx - 7, 0)
-      break
-    default:
-      return
-  }
+  const next = resolveScheduleCalendarNavigationIndex(e.key, idx, cells.length)
+  if (next === null) return
 
   e.preventDefault()
   cells[next]?.focus()
 }
 
-// ========== 触摸手势 ==========
 function onTouchStart(e: TouchEvent) {
   const touch = e.touches[0]
   if (!touch) return
@@ -1130,72 +1031,45 @@ function onTouchEnd(e: TouchEvent) {
   const dx = touch.clientX - touchStartX
   const dy = touch.clientY - touchStartY
 
-  // 水平滑动距离 > 60px 且大于垂直距离
-  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-    if (dx < 0) {
-      nextMonth()
-    } else {
-      prevMonth()
-    }
-  }
+  const direction = resolveScheduleMonthSwipeDirection(dx, dy)
+  if (direction === 'next') nextMonth()
+  if (direction === 'previous') prevMonth()
 }
 
-// ========== 操作 ==========
 function jumpToDate(date: Date) {
   currentYear.value = date.getFullYear()
   currentMonth.value = date.getMonth()
   selectedDay.value = buildCalendarDay(date)
 }
 
-function prevMonth() {
-  if (plannerView.value !== 'month') {
-    const offsetDays = plannerView.value === 'week' ? -7 : -1
-    const target = new Date(
-      plannerAnchorDate.value.getFullYear(),
-      plannerAnchorDate.value.getMonth(),
-      plannerAnchorDate.value.getDate() + offsetDays
-    )
+function applyScheduleStep(direction: -1 | 1) {
+  const target = resolveSchedulePlannerStepTarget(
+    plannerView.value,
+    direction,
+    plannerAnchorDate.value
+  )
+  if (target) {
     jumpToDate(target)
     return
   }
 
-  monthTransition.value = 'month-slide-right'
-  if (currentMonth.value === 0) {
-    currentMonth.value = 11
-    currentYear.value--
-  } else {
-    currentMonth.value--
-  }
+  const next = resolveScheduleMonthStep(currentYear.value, currentMonth.value, direction)
+  monthTransition.value = next.transition
+  currentYear.value = next.year
+  currentMonth.value = next.month
+}
+
+function prevMonth() {
+  applyScheduleStep(-1)
 }
 
 function nextMonth() {
-  if (plannerView.value !== 'month') {
-    const offsetDays = plannerView.value === 'week' ? 7 : 1
-    const target = new Date(
-      plannerAnchorDate.value.getFullYear(),
-      plannerAnchorDate.value.getMonth(),
-      plannerAnchorDate.value.getDate() + offsetDays
-    )
-    jumpToDate(target)
-    return
-  }
-
-  monthTransition.value = 'month-slide-left'
-  if (currentMonth.value === 11) {
-    currentMonth.value = 0
-    currentYear.value++
-  } else {
-    currentMonth.value++
-  }
+  applyScheduleStep(1)
 }
 
 function goToday() {
   const now = new Date()
-  if (now.getMonth() < currentMonth.value || now.getFullYear() < currentYear.value) {
-    monthTransition.value = 'month-slide-right'
-  } else {
-    monthTransition.value = 'month-slide-left'
-  }
+  monthTransition.value = resolveScheduleTodayTransition(currentYear.value, currentMonth.value, now)
   jumpToDate(now)
 }
 
@@ -1225,10 +1099,8 @@ function selectPlannerDay(day: CalendarDay) {
 
 function handleDateJumpInput(event: Event) {
   const value = (event.target as HTMLInputElement | null)?.value
-  if (!value) return
-
-  const parsed = new Date(`${value}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) return
+  const parsed = parseScheduleDateJumpValue(value)
+  if (!parsed) return
 
   jumpToDate(parsed)
 }
@@ -1237,13 +1109,6 @@ function formatWeekdayLabel(date: Date): string {
   return date.toLocaleDateString(locale.value === 'zh-CN' ? 'zh-CN' : locale.value, {
     weekday: 'short',
   })
-}
-
-function formatCalendarDateKey(date: Date): string {
-  const year = date.getFullYear()
-  const month = `${date.getMonth() + 1}`.padStart(2, '0')
-  const day = `${date.getDate()}`.padStart(2, '0')
-  return `${year}-${month}-${day}`
 }
 
 function formatCalendarDateLabel(date: Date): string {
@@ -1264,22 +1129,20 @@ function formatEventDate(dateStr: string): string {
 }
 
 function formatEventDateTime(dateStr: string, allDay: boolean): string {
-  if (allDay) {
-    return `${formatEventDate(dateStr)} · ${t('schedule.allDay')}`
-  }
-
-  return `${formatEventDate(dateStr)} · ${formatEventTime(dateStr)}`
+  return formatEventDateTimeLabel({
+    dateStr,
+    allDay,
+    locale: locale.value,
+    allDayLabel: t('schedule.allDay'),
+  })
 }
 
-function jumpToAgendaDate(target: 'today' | 'next') {
-  const targetDate =
-    target === 'today'
-      ? new Date()
-      : upcomingEvents.value[0]
-        ? new Date(upcomingEvents.value[0].start)
-        : null
-
-  if (!targetDate || Number.isNaN(targetDate.getTime())) return
+function jumpToAgendaDate(target: ScheduleAgendaJumpTarget) {
+  const targetDate = resolveScheduleAgendaJumpTargetDate({
+    target,
+    upcomingEvent: upcomingEvents.value[0],
+  })
+  if (!targetDate) return
 
   jumpToDate(targetDate)
   plannerView.value = 'week'
@@ -1307,62 +1170,40 @@ function syncSelectedDayWithDetail(event: ScheduleResponse | null | undefined) {
   }
 }
 
-// ========== 详情弹窗 ==========
-const hasDetailLinks = computed(() => {
-  if (!detailEvent.value) return false
-  return detailEvent.value.event_url || detailEvent.value.ticket_url || detailEvent.value.source_url
-})
+const hasDetailLinks = computed(() => hasScheduleDetailLinks(detailEvent.value))
 
 const detailPanelVisible = computed(() =>
   Boolean(routeScheduleId.value || detailLoading.value || detailEvent.value)
 )
 
-const detailLead = computed(() => {
-  const event = detailEvent.value
-  if (!event?.description) return ''
-  const firstLine = normalizeHtml(event.description)
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .find(Boolean)
-  return firstLine ?? ''
-})
+const detailLead = computed(() => resolveScheduleDetailLead(detailEvent.value))
 
-const detailHostLabel = computed(() => {
-  const event = detailEvent.value
-  if (!event) return ''
-
-  const authorLabel = event.author?.display_name || event.author?.username || ''
-  const sourceLabel = event.source_platform || ''
-
-  if (authorLabel && sourceLabel) {
-    return `${authorLabel} · ${sourceLabel}`
-  }
-
-  return authorLabel || sourceLabel
-})
+const detailHostLabel = computed(() => resolveScheduleDetailHostLabel(detailEvent.value))
 
 const detailPermalink = computed(() => {
   const eventId = detailEvent.value?.id || routeScheduleId.value
   if (!eventId) return ''
-
-  const resolved = router.resolve({
-    name: 'schedule-detail',
-    params: { id: eventId },
+  return resolveScheduleDetailPermalink({
+    href: router.resolve({ name: 'schedule-detail', params: { id: eventId } }).href,
+    origin: typeof window === 'undefined' ? null : window.location.origin,
   })
-
-  if (typeof window === 'undefined') {
-    return resolved.href
-  }
-
-  return new URL(resolved.href, window.location.origin).toString()
 })
 
-const canShareDetail = computed(
-  () =>
-    Boolean(detailEvent.value && detailPermalink.value) &&
-    typeof navigator !== 'undefined' &&
-    typeof navigator.share === 'function'
+const canShareDetail = computed(() =>
+  canShareScheduleDetail({
+    hasDetail: Boolean(detailEvent.value),
+    permalink: detailPermalink.value,
+    shareAvailable: typeof navigator !== 'undefined' && typeof navigator.share === 'function',
+  })
 )
+
+function applyReadyScheduleDetail(event: ScheduleResponse, source: PublicPageDataSource) {
+  detailEvent.value = event
+  detailStatus.value = 'ready'
+  eventsSource.value = source
+  syncScheduleDetailMeta(event)
+  syncSelectedDayWithDetail(event)
+}
 
 async function loadDetail(eventId: string) {
   detailLoading.value = true
@@ -1372,40 +1213,32 @@ async function loadDetail(eventId: string) {
   try {
     const liveDetail = await scheduleService.getById(eventId, { skipErrorToast: true })
     await setPublicSnapshot(SCHEDULE_DETAIL_SNAPSHOT_SCOPE, { id: eventId }, liveDetail)
-    detailEvent.value = liveDetail
-    detailStatus.value = 'ready'
-    eventsSource.value = 'live'
-    syncScheduleDetailMeta(detailEvent.value)
-    syncSelectedDayWithDetail(detailEvent.value)
+    applyReadyScheduleDetail(liveDetail, 'live')
   } catch (err) {
-    if (isServiceUnavailableError(err)) {
-      const cachedDetail = await getPublicSnapshot<ScheduleResponse>(
-        SCHEDULE_DETAIL_SNAPSHOT_SCOPE,
-        {
-          id: eventId,
-        }
-      )
-      if (cachedDetail) {
-        detailEvent.value = cachedDetail
-        detailStatus.value = 'ready'
-        eventsSource.value = 'cached'
-        syncScheduleDetailMeta(cachedDetail)
-        syncSelectedDayWithDetail(cachedDetail)
-        return
-      }
+    const serviceUnavailable = isServiceUnavailableError(err)
+    const cachedDetail = serviceUnavailable
+      ? await getPublicSnapshot<ScheduleResponse>(SCHEDULE_DETAIL_SNAPSHOT_SCOPE, { id: eventId })
+      : undefined
+    const fallbackDetail = serviceUnavailable ? getFallbackScheduleById(eventId) : null
+    const recoverySource = resolveScheduleDetailRecoverySource({
+      serviceUnavailable,
+      notFound: err instanceof ApiError && err.status === 404,
+      hasCachedDetail: Boolean(cachedDetail),
+      hasFallbackDetail: Boolean(fallbackDetail),
+    })
 
-      const fallbackDetail = getFallbackScheduleById(eventId)
-      if (fallbackDetail) {
-        detailEvent.value = fallbackDetail
-        detailStatus.value = 'ready'
-        eventsSource.value = 'fallback'
-        syncScheduleDetailMeta(fallbackDetail)
-        syncSelectedDayWithDetail(fallbackDetail)
-        return
-      }
+    if (recoverySource === 'cached' && cachedDetail) {
+      applyReadyScheduleDetail(cachedDetail, 'cached')
+      return
     }
+
+    if (recoverySource === 'fallback' && fallbackDetail) {
+      applyReadyScheduleDetail(fallbackDetail, 'fallback')
+      return
+    }
+
     detailEvent.value = null
-    if (err instanceof ApiError && err.status === 404) {
+    if (recoverySource === 'not-found') {
       detailStatus.value = 'not-found'
     } else {
       detailStatus.value = 'error'
@@ -1466,11 +1299,14 @@ async function shareDetail() {
   }
 
   try {
-    await navigator.share({
-      title: detailEvent.value.title,
-      text: detailLead.value || detailEvent.value.venue || undefined,
-      url: detailPermalink.value,
-    })
+    await navigator.share(
+      buildScheduleDetailSharePayload({
+        title: detailEvent.value.title,
+        lead: detailLead.value,
+        venue: detailEvent.value.venue,
+        url: detailPermalink.value,
+      })
+    )
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       return
@@ -1505,7 +1341,7 @@ function formatTimeOnly(dateStr: string): string {
 }
 
 function isSameDay(a: string, b: string): boolean {
-  return a.slice(0, 10) === b.slice(0, 10)
+  return isSameScheduleDate(a, b)
 }
 
 function syncScheduleDetailMeta(event: ScheduleResponse | null | undefined) {
@@ -1519,52 +1355,12 @@ function syncScheduleDetailMeta(event: ScheduleResponse | null | undefined) {
   })
 }
 
-// ========== 描述解析 ==========
-interface DescSection {
-  heading: string | null
-  lines: string[]
-}
-
-const parsedDescription = computed<DescSection[]>(() => {
-  const desc = detailEvent.value?.description
-  if (!desc) return []
-
-  // 按 ▼ 分段
-  const parts = desc.split(/▼/)
-  const sections: DescSection[] = []
-
-  for (let i = 0; i < parts.length; i++) {
-    const raw = normalizeHtml(parts[i] ?? '').trim()
-    if (!raw) continue
-
-    if (i === 0) {
-      // ▼ 之前的开头文本，无标题
-      sections.push({ heading: null, lines: raw.split(/\n/) })
-    } else {
-      // 第一行是标题，其余是内容
-      const lines = raw.split(/\n/)
-      const heading = (lines[0] ?? '').trim()
-      const body = lines.slice(1).join('\n').trim()
-      sections.push({
-        heading: heading || null,
-        lines: body ? body.split(/\n/) : [],
-      })
-    }
-  }
-
-  return sections
-})
-
-function normalizeHtml(text: string): string {
-  return text.replace(/<\/?br\s*\/?>/gi, '\n').replace(/&nbsp;/gi, ' ')
-}
+const parsedDescription = computed<ScheduleDescriptionSection[]>(() =>
+  parseScheduleDescription(detailEvent.value?.description)
+)
 
 function linkify(text: string): string {
-  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  return escaped.replace(
-    /(https?:\/\/[^\s<&]+)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" class="desc-link">$1</a>'
-  )
+  return linkifyScheduleDescriptionLine(text)
 }
 
 function scrollDetailPanelIntoView() {
@@ -1580,7 +1376,6 @@ function scrollDetailPanelIntoView() {
   })
 }
 
-// ========== 数据加载 ==========
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError'
 }

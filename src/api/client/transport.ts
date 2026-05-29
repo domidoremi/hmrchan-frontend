@@ -46,7 +46,7 @@ export { API_BASE_URL, REFRESH_TIMEOUT, REQUEST_TIMEOUT }
 
 export function buildRequestUrl(endpoint: string, baseUrl?: string): string {
   const effectiveBase = (baseUrl ?? API_BASE_URL).replace(/\/+$/, '')
-  return endpoint.startsWith('http') ? endpoint : `${effectiveBase}${endpoint}`
+  return /^https?:\/\//i.test(endpoint) ? endpoint : `${effectiveBase}${endpoint}`
 }
 
 export function buildCacheKey(method: string, url: string): string {

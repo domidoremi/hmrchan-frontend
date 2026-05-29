@@ -256,25 +256,27 @@ import ProfileSecurityCredentialsSection from '@/components/profile/ProfileSecur
 import ProfileSecurityMfaSection from '@/components/profile/ProfileSecurityMfaSection.vue'
 import ProfileSecurityTab from '@/components/profile/ProfileSecurityTab.vue'
 import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
+import {
+  formatOptionalIntlDateTime,
+  resolveAuthSourceSummaryLabel,
+  resolveIdentityProvider,
+  resolveProfileDisplayName,
+} from '@/views/profile-settings/profileSettingsModel'
+import {
+  buildSecurityRefreshTasks,
+  buildSecurityPanelCards,
+  formatSecurityCount,
+  getSecurityPanelHash,
+  hasSecurityRiskSignals,
+  resolveActiveSecurityPanelCard,
+  resolveLastLoginLabel,
+  resolveSecurityLoadErrorMessage,
+  resolveSecurityPanelFromHash,
+  shouldReplaceSecurityPanelHash,
+  type SecurityPanelId,
+} from '@/views/profile-security/profileSecurityPageModel'
 
 defineOptions({ name: 'ProfileSecurityPage' })
-
-type SecurityPanelId = 'credentials' | 'mfa' | 'devices' | 'activity'
-
-const PANEL_HASH_TO_ID: Record<string, SecurityPanelId> = {
-  '#credentials': 'credentials',
-  '#email': 'credentials',
-  '#mfa': 'mfa',
-  '#devices': 'devices',
-  '#activity': 'activity',
-}
-
-const PANEL_ID_TO_HASH: Record<SecurityPanelId, string> = {
-  credentials: '#credentials',
-  mfa: '#mfa',
-  devices: '#devices',
-  activity: '#activity',
-}
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -297,105 +299,85 @@ const { sessions, isLoading, otherSessionsCount, fetchSessions, revokeAllOthers 
   useSessionManagement()
 
 const normalizedIdentityProvider = computed(() => {
-  const provider = profile.value?.identity_provider ?? authStore.user?.identity_provider
-  return provider?.trim().toLowerCase() || 'local'
+  return resolveIdentityProvider({
+    profileProvider: profile.value?.identity_provider,
+    authProvider: authStore.user?.identity_provider,
+  })
 })
 
 const authSourceSummaryLabel = computed(() => {
-  if (normalizedIdentityProvider.value === 'google') {
-    return t('profile.authSourceGoogle')
-  }
-  if (normalizedIdentityProvider.value !== 'local') {
-    return authStore.user?.identity_provider?.trim() || t('profile.authSourceThirdParty')
-  }
-  return t('profile.authSourceEmail')
+  return resolveAuthSourceSummaryLabel({
+    provider: normalizedIdentityProvider.value,
+    googleLabel: t('profile.authSourceGoogle'),
+    thirdPartyLabel: t('profile.authSourceThirdParty'),
+    emailLabel: t('profile.authSourceEmail'),
+    thirdPartyProviderLabel: authStore.user?.identity_provider,
+  })
 })
 
 const securityHeadline = computed(() => {
-  const displayName = profile.value?.full_name?.trim() || profile.value?.username?.trim()
-  return displayName || t('profile.securityHubTitle')
+  return (
+    resolveProfileDisplayName({
+      fullName: profile.value?.full_name,
+      username: profile.value?.username,
+      trimUsername: true,
+    }) || t('profile.securityHubTitle')
+  )
 })
 
-const failedLoginCount = computed(() => String(securitySummary.value?.failed_logins ?? 0))
-const hasRiskSignals = computed(() => (securitySummary.value?.failed_logins ?? 0) > 0)
+const failedLoginCount = computed(() => formatSecurityCount(securitySummary.value?.failed_logins))
+const hasRiskSignals = computed(() => hasSecurityRiskSignals(securitySummary.value?.failed_logins))
 
-const sessionCountLabel = computed(() => {
-  const count = sessions.value?.length ?? 0
-  return String(count)
-})
+const sessionCountLabel = computed(() => formatSecurityCount(sessions.value?.length))
 
-const lastLoginLabel = computed(() => {
-  const value = securitySummary.value?.last_login
-  if (!value) return '—'
-  return formatDateTime(value)
-})
+const lastLoginLabel = computed(() =>
+  resolveLastLoginLabel({
+    value: securitySummary.value?.last_login,
+    fallback: '—',
+    format: formatDateTime,
+  })
+)
 
-const panelCards = computed(() => [
-  {
-    id: 'credentials' as const,
-    panelId: 'credentials',
-    hash: PANEL_ID_TO_HASH.credentials,
-    icon: Mail,
-    kicker: authSourceSummaryLabel.value,
-    title: t('profile.securityConsoleCredentialsTitle'),
-    description: t('profile.securityConsoleCredentialsHint'),
-    metaLabel: t('profile.accountSummaryEmail'),
-    metaValue: profile.value?.email || t('common.notFound'),
-  },
-  {
-    id: 'mfa' as const,
-    panelId: 'mfa',
-    hash: PANEL_ID_TO_HASH.mfa,
-    icon: Fingerprint,
-    kicker: t('profile.securityConsoleVerificationKicker'),
-    title: t('profile.securityConsoleMfaTitle'),
-    description: t('profile.securityConsoleMfaHint'),
-    metaLabel: t('profile.twoFactorSummaryLabel'),
-    metaValue: authSourceSummaryLabel.value,
-  },
-  {
-    id: 'devices' as const,
-    panelId: 'devices',
-    hash: PANEL_ID_TO_HASH.devices,
-    icon: Monitor,
-    kicker: t('profile.securityConsoleSessionsKicker'),
-    title: t('profile.securityConsoleDevicesTitle'),
-    description: t('profile.securityConsoleDevicesHint'),
-    metaLabel: t('profile.securityConsoleActiveSessionsLabel'),
-    metaValue: sessionCountLabel.value,
-  },
-  {
-    id: 'activity' as const,
-    panelId: 'activity',
-    hash: PANEL_ID_TO_HASH.activity,
-    icon: History,
-    kicker: t('profile.securityConsoleSignalsKicker'),
-    title: t('profile.securityConsoleActivityTitle'),
-    description: t('profile.securityConsoleActivityHint'),
-    metaLabel: t('profile.securityEvents'),
-    metaValue: String(securitySummary.value?.security_events ?? 0),
-  },
-])
+const panelCards = computed(() =>
+  buildSecurityPanelCards({
+    copy: {
+      credentialsKicker: authSourceSummaryLabel.value,
+      credentialsTitle: t('profile.securityConsoleCredentialsTitle'),
+      credentialsDescription: t('profile.securityConsoleCredentialsHint'),
+      credentialsMetaLabel: t('profile.accountSummaryEmail'),
+      mfaKicker: t('profile.securityConsoleVerificationKicker'),
+      mfaTitle: t('profile.securityConsoleMfaTitle'),
+      mfaDescription: t('profile.securityConsoleMfaHint'),
+      mfaMetaLabel: t('profile.twoFactorSummaryLabel'),
+      devicesKicker: t('profile.securityConsoleSessionsKicker'),
+      devicesTitle: t('profile.securityConsoleDevicesTitle'),
+      devicesDescription: t('profile.securityConsoleDevicesHint'),
+      devicesMetaLabel: t('profile.securityConsoleActiveSessionsLabel'),
+      activityKicker: t('profile.securityConsoleSignalsKicker'),
+      activityTitle: t('profile.securityConsoleActivityTitle'),
+      activityDescription: t('profile.securityConsoleActivityHint'),
+      activityMetaLabel: t('profile.securityEvents'),
+    },
+    icons: {
+      credentials: Mail,
+      mfa: Fingerprint,
+      devices: Monitor,
+      activity: History,
+    },
+    authSourceSummaryLabel: authSourceSummaryLabel.value,
+    email: profile.value?.email ?? '',
+    unavailableLabel: t('common.notFound'),
+    sessionCountLabel: sessionCountLabel.value,
+    securityEventsCount: securitySummary.value?.security_events,
+  })
+)
 
-const activePanelCard = computed(
-  () => panelCards.value.find((panel) => panel.id === activePanel.value) ?? panelCards.value[0]
+const activePanelCard = computed(() =>
+  resolveActiveSecurityPanelCard({ cards: panelCards.value, activePanel: activePanel.value })
 )
 
 function formatDateTime(value?: string | null): string {
-  if (!value) return '—'
-
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(value))
-  } catch {
-    return value
-  }
-}
-
-function resolvePanelFromHash(hash: string): SecurityPanelId {
-  return PANEL_HASH_TO_ID[hash] ?? 'credentials'
+  return formatOptionalIntlDateTime(value, { fallback: '—' })
 }
 
 function currentPanelElement(): HTMLElement | null {
@@ -413,7 +395,7 @@ function currentPanelElement(): HTMLElement | null {
 }
 
 async function syncPanelFromHash(hash: string, shouldScroll = false) {
-  activePanel.value = resolvePanelFromHash(hash)
+  activePanel.value = resolveSecurityPanelFromHash(hash)
   if (!shouldScroll) return
 
   await nextTick()
@@ -425,9 +407,8 @@ async function selectPanel(panelId: SecurityPanelId) {
     activePanel.value = panelId
   }
 
-  const nextHash = PANEL_ID_TO_HASH[panelId]
-  if (route.hash !== nextHash) {
-    await router.replace({ hash: nextHash })
+  if (shouldReplaceSecurityPanelHash({ currentHash: route.hash, panelId })) {
+    await router.replace({ hash: getSecurityPanelHash(panelId) })
   }
 
   await nextTick()
@@ -442,7 +423,11 @@ async function fetchProfile() {
     profile.value = await userService.getProfile({ skipErrorToast: true })
   } catch (err) {
     profile.value = null
-    profileError.value = err instanceof ApiError ? err.message : 'common.error'
+    profileError.value = resolveSecurityLoadErrorMessage({
+      error: err,
+      isApiError: (error): error is ApiError => error instanceof ApiError,
+      fallbackMessage: 'common.error',
+    })
   } finally {
     isProfileLoading.value = false
   }
@@ -455,12 +440,22 @@ async function fetchSecuritySummary() {
     securitySummary.value = await auditService.getMySecuritySummary(30)
   } catch (err) {
     securitySummary.value = null
-    securitySummaryError.value = err instanceof ApiError ? err.message : t('common.error')
+    securitySummaryError.value = resolveSecurityLoadErrorMessage({
+      error: err,
+      isApiError: (error): error is ApiError => error instanceof ApiError,
+      fallbackMessage: t('common.error'),
+    })
   }
 }
 
 async function refreshSecurityCenter() {
-  await Promise.allSettled([fetchProfile(), fetchSessions(), fetchSecuritySummary()])
+  await Promise.allSettled(
+    buildSecurityRefreshTasks({
+      fetchProfile,
+      fetchSessions,
+      fetchSecuritySummary,
+    })
+  )
 }
 
 watch(

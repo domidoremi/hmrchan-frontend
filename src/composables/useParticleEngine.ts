@@ -18,25 +18,17 @@ import {
   type MaybeRefOrGetter,
 } from 'vue'
 import type { ParticleEffectConfig, ParticleEffectType } from '@/stores/settings'
+import {
+  clamp,
+  clampAlpha,
+  createParticlePool,
+  getRenderScale,
+  resolveColor,
+  withAlpha,
+  type Particle,
+} from './particle-engine/model'
 
 // ==================== 粒子结构 ====================
-
-interface Particle {
-  x: number
-  y: number
-  vx: number
-  vy: number
-  size: number
-  alpha: number
-  phase: number
-  depth: number
-  rot: number
-  spin: number
-  px: number
-  py: number
-  splash: number
-  active: boolean
-}
 
 type Initializer = (p: Particle, w: number, h: number, cfg: ParticleEffectConfig) => void
 type Updater = (p: Particle, w: number, h: number, dt: number, cfg: ParticleEffectConfig) => void
@@ -49,37 +41,6 @@ type Renderer = (
 
 // 0=low, 1=mid, 2=high
 let renderQuality = 2
-
-// ==================== 主题色 ====================
-
-function defaultRainColor(theme: string): string {
-  if (theme === 'blue') return '#60a5fa'
-  return theme === 'dark' ? '#7cb5e3' : '#5b9bd5'
-}
-function defaultSnowColor(theme: string): string {
-  if (theme === 'blue') return '#dbeafe'
-  return theme === 'dark' ? '#ffffff' : '#f0f4f8'
-}
-function defaultStarColor(theme: string): string {
-  if (theme === 'blue') return '#93c5fd'
-  return theme === 'dark' ? '#fcd87a' : '#d4a017'
-}
-
-function resolveColor(
-  cfg: ParticleEffectConfig,
-  type: 'rain' | 'snow' | 'stars',
-  theme: string
-): string {
-  if (cfg.color) return cfg.color
-  switch (type) {
-    case 'rain':
-      return defaultRainColor(theme)
-    case 'snow':
-      return defaultSnowColor(theme)
-    case 'stars':
-      return defaultStarColor(theme)
-  }
-}
 
 function drawSnowflakeLite(
   ctx: CanvasRenderingContext2D,
@@ -99,46 +60,6 @@ function drawSnowflakeLite(
   ctx.moveTo(x, y - arm)
   ctx.lineTo(x, y + arm)
   ctx.stroke()
-}
-
-// ==================== 工具 ====================
-
-function withAlpha(color: string, alpha: number): string {
-  if (color.startsWith('rgba(')) {
-    return color.replace(/[\d.]+\)$/, `${alpha})`)
-  }
-  if (color.startsWith('#')) {
-    const hex =
-      color.length === 4
-        ? color[1]! + color[1]! + color[2]! + color[2]! + color[3]! + color[3]!
-        : color.slice(1, 7)
-    const r = parseInt(hex.slice(0, 2), 16)
-    const g = parseInt(hex.slice(2, 4), 16)
-    const b = parseInt(hex.slice(4, 6), 16)
-    if (isNaN(r) || isNaN(g) || isNaN(b)) return `rgba(128,128,128,${alpha})`
-    return `rgba(${r},${g},${b},${alpha})`
-  }
-  return `rgba(128,128,128,${alpha})`
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.min(Math.max(v, min), max)
-}
-
-function clampAlpha(a: number): number {
-  return Math.min(Math.max(a, 0), 1)
-}
-
-function getRenderScale(type: ParticleEffectType, intensity: string, quality: number): number {
-  let base = 1
-  if (type === 'rain') base = 0.9
-  if (type === 'snow') base = 0.85
-  if (type === 'stars') base = 0.8
-  if (intensity === 'reduced') base *= 0.92
-  if (intensity === 'full') base *= 1
-  if (quality === 1) base *= 0.9
-  if (quality === 0) base *= 0.8
-  return clamp(base, 0.6, 1)
 }
 
 // ==================== 形状绘制 ====================
@@ -572,29 +493,6 @@ const EFFECTS: Record<Exclude<ParticleEffectType, 'none'>, EffectDescriptor> = {
 
 // ==================== 对象池 ====================
 
-function createPool(capacity: number): Particle[] {
-  const pool: Particle[] = []
-  for (let i = 0; i < capacity; i++) {
-    pool.push({
-      x: 0,
-      y: 0,
-      vx: 0,
-      vy: 0,
-      size: 0,
-      alpha: 0,
-      phase: 0,
-      depth: 0,
-      rot: 0,
-      spin: 0,
-      px: 0,
-      py: 0,
-      splash: 0,
-      active: false,
-    })
-  }
-  return pool
-}
-
 // ==================== 干扰/波纹 ====================
 
 interface Disturbance {
@@ -726,7 +624,7 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     const count = getParticleCount()
 
     if (pool.length < count) {
-      pool = [...pool, ...createPool(count - pool.length)]
+      pool = [...pool, ...createParticlePool(count - pool.length)]
     }
 
     for (let i = 0; i < pool.length; i++) {

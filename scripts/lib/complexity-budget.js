@@ -75,6 +75,40 @@ export function collectComplexityMetrics({
   }
 }
 
+function buildComplexityViolationReasons({
+  registration,
+  registeredLimit,
+  lineCount,
+  softLimit,
+  hardLimit,
+  isOverHardLimit,
+}) {
+  const reasons = []
+
+  if (!registration) {
+    reasons.push({
+      code: 'unregistered-large-file',
+      message: `file exceeds softLineLimit ${softLimit} and is not registered`,
+    })
+  }
+
+  if (registration && lineCount > registeredLimit) {
+    reasons.push({
+      code: 'registered-limit-exceeded',
+      message: `file exceeds registered maxLines ${registeredLimit}`,
+    })
+  }
+
+  if (isOverHardLimit && !registration?.refactorQueued) {
+    reasons.push({
+      code: 'hard-limit-without-refactor-queue',
+      message: `file exceeds hardLineLimit ${hardLimit} and is not queued for refactor`,
+    })
+  }
+
+  return reasons
+}
+
 export function analyzeComplexityBudget(metrics, budget) {
   const softLimit = budget.softLineLimit ?? 1000
   const hardLimit = budget.hardLineLimit ?? 1500
@@ -90,8 +124,15 @@ export function analyzeComplexityBudget(metrics, budget) {
     .map((file) => {
       const registration = registered.get(file.relativePath) ?? null
       const registeredLimit = registration?.maxLines ?? softLimit
-      const isOverRegisteredLimit = file.lineCount > registeredLimit
       const isOverHardLimit = file.lineCount > hardLimit
+      const violationReasons = buildComplexityViolationReasons({
+        registration,
+        registeredLimit,
+        lineCount: file.lineCount,
+        softLimit,
+        hardLimit,
+        isOverHardLimit,
+      })
 
       return {
         path: file.relativePath,
@@ -101,10 +142,8 @@ export function analyzeComplexityBudget(metrics, budget) {
         refactorQueued: Boolean(registration?.refactorQueued),
         maxLines: registeredLimit,
         reason: registration?.reason ?? null,
-        violation:
-          !registration ||
-          isOverRegisteredLimit ||
-          (isOverHardLimit && !registration?.refactorQueued),
+        violationReasons,
+        violation: violationReasons.length > 0,
       }
     })
 
@@ -140,7 +179,12 @@ export function formatComplexityBudgetReport(result) {
   if (result.violations.length > 0) {
     lines.push('violations:')
     result.violations.forEach((file) => {
-      lines.push(`- ${file.path}: ${file.lineCount} lines exceeds registered complexity budget`)
+      const reasonCodes = file.violationReasons.map((reason) => reason.code).join(', ')
+      const reasonMessages = file.violationReasons.map((reason) => reason.message).join('; ')
+      lines.push(
+        `- ${file.path}: ${file.lineCount} lines exceeds complexity budget (${reasonCodes})`
+      )
+      lines.push(`  ${reasonMessages}`)
     })
   }
 

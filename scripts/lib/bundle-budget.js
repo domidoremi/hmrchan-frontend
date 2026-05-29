@@ -94,12 +94,21 @@ export function collectBundleBudgetMetrics({ distDir = path.resolve(process.cwd(
   }
 }
 
+const METRIC_REASON_CODES = {
+  totalJsBytes: 'total-js-budget-exceeded',
+  totalCssBytes: 'total-css-budget-exceeded',
+  totalImageBytes: 'total-image-budget-exceeded',
+  largestChunkBytes: 'largest-chunk-budget-exceeded',
+  homeInitialAssetCount: 'home-initial-asset-count-exceeded',
+}
+
 function buildViolation(metric, actual, limit) {
   return {
     metric,
     actual,
     limit,
     overBy: actual - limit,
+    reasonCode: METRIC_REASON_CODES[metric] ?? 'bundle-budget-exceeded',
   }
 }
 
@@ -163,7 +172,18 @@ export function formatBundleBudgetReport(result) {
   if (result.violations.length > 0) {
     lines.push('violations:')
     result.violations.forEach((violation) => {
-      lines.push(`- ${formatMetric(violation.metric, violation.actual, violation.limit)}`)
+      const overByText = violation.metric.endsWith('Bytes')
+        ? formatBytes(violation.overBy)
+        : String(violation.overBy)
+      lines.push(
+        `- ${formatMetric(violation.metric, violation.actual, violation.limit)} (${violation.reasonCode}; over by ${overByText})`
+      )
+      if (violation.metric === 'largestChunkBytes') {
+        lines.push(`  largestChunkPath: ${result.metrics.largestChunkPath ?? 'n/a'}`)
+      }
+      if (violation.metric === 'homeInitialAssetCount') {
+        lines.push(`  homeInitialAssetUrls: ${result.metrics.homeInitialAssetUrls.join(', ')}`)
+      }
     })
   }
 

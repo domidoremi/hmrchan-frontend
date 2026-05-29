@@ -8,9 +8,7 @@
       @update:side="updateHomeQuickNavSide"
     />
 
-    <!-- Hero + 今日入口 -->
     <section id="home-fold" class="home-fold home-screen">
-      <!-- Hero Section -->
       <HeroSection :enabled="settings.showHeroSection" :animated="shouldAnimate">
         <div class="hero-copy">
           <div class="hero-copy__left">
@@ -106,9 +104,7 @@
         </div>
       </HeroSection>
     </section>
-    <!-- /.home-fold -->
 
-    <!-- Horizontal Rail -->
     <FeaturedRailSection
       id="home-rail"
       ref="featuredSectionRef"
@@ -744,7 +740,6 @@
       </article>
     </FeaturedRailSection>
 
-    <!-- Latest Posts -->
     <LatestPostsSection
       id="home-posts"
       ref="postsSectionRef"
@@ -991,7 +986,6 @@ import {
 } from '@/api/homeService'
 import type { PostListItem } from '@/api/postService'
 import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
-import { getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { isFilteredAuthor } from '@/config/filters'
 import { getContractResourceId } from '@/utils/contractResourceId'
 import { storePostNavigationContext } from '@/utils/postNavigation'
@@ -1010,13 +1004,55 @@ import {
   resolvePreviewablePostLink,
 } from '@/views/homepage/homeModel'
 import {
+  resolveFeaturedRailFetchPriority,
+  resolveFeaturedRailImageLoading,
+  resolveFeaturedRailImageSize,
+  resolveFeaturedRailImageSizes,
+  resolveHeroCollageFetchPriority,
+  resolveHeroCollageImageDimensions,
+  resolveHeroCollageImageLoading,
+  resolveHeroCollageImageSizes,
+  resolveHomeImageSrcset,
+} from '@/views/homepage/homeImagePolicy'
+import {
+  collectHomePrewarmMedia,
+  createEmptyHomeSupportRefreshTargets,
+  hasPendingHomeSupportRefresh,
+  resolveHomeSupportRefreshTargets,
+  type HomeSupportRefreshTargets,
+} from '@/views/homepage/homeSupportPolicy'
+import {
+  buildHomeFooterBlendStyle,
+  buildHomeFeaturedSceneStyle,
+  buildHomePageMotionStyle,
+  buildHomeRailTrackStyle,
+  buildHomeSceneSnap,
+  buildHomeStorySceneStyle,
+  HOME_FOOTER_BLEND_PROPERTIES,
+  measureHomeViewportBlend,
+  resolveHomeFooterBlendProgress,
+  resolveHomeRailLockActive,
+  resolveHomeSceneCapabilities,
+  resolveHomeSceneLayoutRefresh,
+  resolveHomeSceneLayoutSize,
+  resolveHomeSceneProgress,
+  resolveHomeSceneTravelDistance,
+  type HomeSceneLayoutSize,
+} from '@/views/homepage/homeScenePolicy'
+import {
   computeBubbleFrameState,
   type BubbleAnchorMetrics,
   type BubbleFrameState,
   type BubblePointerState,
   type BubbleStageMetrics,
 } from '@/views/homepage/bubbleMotion'
-import { resolveBubbleRevealWindow } from '@/views/homepage/bubbleRevealState'
+import {
+  resolveBubbleRevealLifecycleAction,
+  resolveBubbleRevealViewportAction,
+  resolveBubbleRevealWindow,
+  type BubbleRevealLifecycleAction,
+  type BubbleRevealPhase,
+} from '@/views/homepage/bubbleRevealState'
 import { buildStoryCardMotion } from '@/views/homepage/storyDeckMotion'
 import { useHomeViewModel } from '@/views/homepage/useHomeViewModel'
 import Button from '@/components/ui/Button.vue'
@@ -1047,14 +1083,12 @@ let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
 let scrollTriggerReadyPromise: Promise<boolean> | null = null
 let homeEnhancementsDisposed = false
 
-const SCENE_LAYOUT_REFRESH_THRESHOLD_PX = 24
 const BUBBLE_EXIT_DURATION_MS = 420
 const BUBBLE_POINTER_ATTACK_MS = 220
 const BUBBLE_POINTER_RELEASE_MS = 360
 const BUBBLE_FORCE_CENTER_LERP_MS = 180
 const HOME_ENHANCEMENTS_DELAY_MS = 1200
 const HOME_SCENE_ACTIVATION_DELAY_MS = 140
-const HOME_LIGHTWEIGHT_VIEWPORT_MAX_WIDTH = 1024
 const HOME_FALLBACK_PREFIX = '__home_fallback__'
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
@@ -1149,11 +1183,9 @@ let pendingHomeSupportRefresh: HomeSupportRefreshTargets = {
   community: false,
 }
 
-// Posts state
 const posts = ref<PostListItem[]>(initialHomePosts)
 const allPosts = ref<PostListItem[]>(initialHomePosts)
 
-// Home click → preview modal
 const isPreviewOpen = ref(false)
 const previewPostId = ref<string | null>(null)
 const previewThumbnailSrc = ref<string | null>(null)
@@ -1180,7 +1212,6 @@ const pointerStagePosition = ref<{
 })
 const bubbleMotionFrameActive = ref(false)
 
-// Loading & error state
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
@@ -1199,12 +1230,6 @@ type HomeSectionInstance = {
   element: HTMLElement | null
 }
 
-type HomeSupportRefreshTargets = {
-  schedule: boolean
-  community: boolean
-}
-
-// DOM refs
 const postsSectionRef = useTemplateRef<HomeSectionInstance>('postsSectionRef')
 const bubbleStageRef = useTemplateRef<HTMLElement>('bubbleStageRef')
 const bubbleCanvasRef = useTemplateRef<HTMLCanvasElement>('bubbleCanvasRef')
@@ -1221,7 +1246,7 @@ function updateHomeQuickNavSide(side: 'left' | 'right') {
 const railProgress = ref(0)
 const storyProgress = ref(0)
 const bubbleLayoutTier = ref<BubbleLayoutTier>('desktop')
-const bubbleRevealPhase = ref<'idle' | 'arming' | 'revealed' | 'exiting'>('idle')
+const bubbleRevealPhase = ref<BubbleRevealPhase>('idle')
 const viewportSceneBlend = ref({
   heroRail: 0,
   railPosts: 0,
@@ -1302,48 +1327,6 @@ function formatScheduleHighlightMeta(item: HomeScheduleHighlight | null | undefi
 
 function formatCommunityHighlightMeta(item: HomeCommunityHighlight | null | undefined): string {
   return formatCommunityHighlightMetaValue(item, t)
-}
-
-function resolveHomeImageSrcset(url: string | null | undefined): string | null {
-  return getThumbnailSrcset(url)
-}
-
-function resolveHeroCollageImageDimensions(index: number): { width: number; height: number } {
-  return index === 0 ? { width: 1600, height: 1000 } : { width: 1000, height: 1000 }
-}
-
-function resolveHeroCollageImageSizes(index: number): string {
-  return index === 0
-    ? '(min-width: 1280px) 30rem, (min-width: 768px) 92vw, 100vw'
-    : '(min-width: 1280px) 14rem, (min-width: 768px) 44vw, 50vw'
-}
-
-function resolveHeroCollageImageLoading(index: number): 'eager' | 'lazy' {
-  return index === 0 ? 'eager' : 'lazy'
-}
-
-function resolveHeroCollageFetchPriority(index: number): 'high' | 'auto' {
-  return index === 0 ? 'high' : 'auto'
-}
-
-function resolveFeaturedRailImageSize(index: number): { width: number; height: number } {
-  if (index === 0) return { width: 880, height: 1000 }
-  if (index > 1) return { width: 1600, height: 900 }
-  return { width: 1180, height: 1000 }
-}
-
-function resolveFeaturedRailImageSizes(index: number): string {
-  if (index === 0) return '(min-width: 1280px) 22rem, (min-width: 768px) 88vw, 100vw'
-  if (index > 1) return '(min-width: 1280px) 16rem, (min-width: 768px) 42vw, 50vw'
-  return '(min-width: 1280px) 18rem, (min-width: 768px) 48vw, 100vw'
-}
-
-function resolveFeaturedRailImageLoading(): 'eager' | 'lazy' {
-  return 'lazy'
-}
-
-function resolveFeaturedRailFetchPriority(): 'high' | 'auto' {
-  return 'auto'
 }
 
 function resolveSectionElement(
@@ -2014,7 +1997,7 @@ type BubbleCanvasOrb = {
 let bubbleCanvasFrame: number | null = null
 let bubbleCanvasOrbs: BubbleCanvasOrb[] = []
 let bubbleCanvasLastTimestamp: number | null = null
-let sceneObservedSizes = new WeakMap<HTMLElement, { width: number; height: number }>()
+let sceneObservedSizes = new WeakMap<HTMLElement, HomeSceneLayoutSize>()
 const scheduleSceneRefreshFromResize = throttleRAF(() => {
   scheduleSceneSetup()
 })
@@ -2053,53 +2036,50 @@ const activeRailSlide = computed(
   () => railSlides.value[activeRailIndex.value] ?? railSlides.value[0]
 )
 
-const featuredSceneStyle = computed(() => ({
-  '--rail-slide-count': String(Math.max(railSlideCount.value, 1)),
-}))
+const featuredSceneStyle = computed(() => buildHomeFeaturedSceneStyle(railSlideCount.value))
 
-const railTrackStyle = computed(() => {
-  if (isCompactHomeViewport()) {
-    return {
-      transform: 'none',
-    }
-  }
+const railTrackStyle = computed(() =>
+  buildHomeRailTrackStyle({
+    compactViewport: isCompactHomeViewport(),
+    railProgress: railProgress.value,
+    railSlideCount: railSlideCount.value,
+  })
+)
 
-  return {
-    transform: `translate3d(-${
-      clamp(railProgress.value) *
-      ((Math.max(railSlideCount.value, 1) - 1) * (100 / Math.max(railSlideCount.value, 1)))
-    }%, 0, 0)`,
-  }
-})
+const storySceneStyle = computed(() =>
+  buildHomeStorySceneStyle({
+    storyCardCount: effectiveStoryCardCount.value,
+    storyProgress: storyProgress.value,
+    storyFooterFade: storyFooterFade.value,
+  })
+)
 
-const storySceneStyle = computed(() => ({
-  '--story-card-count': String(Math.max(effectiveStoryCardCount.value, 1)),
-  '--story-progress': String(storyProgress.value),
-  '--story-footer-fade': String(storyFooterFade.value),
-}))
+function resolveCurrentHomeSceneCapabilities() {
+  return resolveHomeSceneCapabilities({
+    hasWindow: typeof window !== 'undefined',
+    shouldAnimate: shouldAnimate.value,
+    viewportWidth: typeof window !== 'undefined' ? window.innerWidth : null,
+  })
+}
 
 function isCompactHomeViewport(): boolean {
-  return typeof window !== 'undefined' && window.innerWidth <= 768
+  return resolveCurrentHomeSceneCapabilities().isCompactViewport
 }
 
 function isLightweightHomeViewport(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    window.innerWidth > 768 &&
-    window.innerWidth <= HOME_LIGHTWEIGHT_VIEWPORT_MAX_WIDTH
-  )
+  return resolveCurrentHomeSceneCapabilities().isLightweightViewport
 }
 
 function shouldUseHomeSectionBlendEffects(): boolean {
-  return typeof window !== 'undefined' && shouldAnimate.value && !isLightweightHomeViewport()
+  return resolveCurrentHomeSceneCapabilities().useSectionBlendEffects
 }
 
 function shouldUseHomeScrollScrubScenes(): boolean {
-  return shouldUseHomeSectionBlendEffects()
+  return resolveCurrentHomeSceneCapabilities().useScrollScrubScenes
 }
 
 function shouldUseHomeBubbleCanvasScene(): boolean {
-  return typeof window !== 'undefined' && shouldAnimate.value && !isLightweightHomeViewport()
+  return resolveCurrentHomeSceneCapabilities().useBubbleCanvasScene
 }
 
 function disconnectDeferredHomeEnhancementObserver() {
@@ -2135,19 +2115,20 @@ function maybeCleanupDeferredHomeEnhancementObserver() {
 function syncBubbleRevealLifecycle() {
   resetBubbleRevealState()
 
-  if (!bubbleEnhancementsPrimed || bubbleItems.value.length === 0) return
+  applyBubbleRevealAction(
+    resolveBubbleRevealLifecycleAction({
+      primed: bubbleEnhancementsPrimed,
+      itemCount: bubbleItems.value.length,
+      lightweightViewport: isLightweightHomeViewport(),
+      shouldAnimate: shouldAnimate.value,
+    })
+  )
+}
 
-  if (isLightweightHomeViewport()) {
-    bubbleRevealPhase.value = 'revealed'
-    return
-  }
-
-  if (shouldAnimate.value) {
-    restartBubbleBurst()
-    return
-  }
-
-  bubbleRevealPhase.value = 'revealed'
+function applyBubbleRevealAction(action: BubbleRevealLifecycleAction) {
+  if (action === 'restart-burst') restartBubbleBurst()
+  if (action === 'retreat') startBubbleRetreat()
+  if (action === 'reveal') bubbleRevealPhase.value = 'revealed'
 }
 
 function activateHomeSceneEnhancements(delay = HOME_SCENE_ACTIVATION_DELAY_MS) {
@@ -2223,55 +2204,13 @@ function handleDeferredHomeSceneIntent() {
   activateHomeSceneEnhancements(0)
 }
 
-const homePageMotionStyle = computed<Record<string, string>>(() => {
-  if (isCompactHomeViewport() || !shouldUseHomeSectionBlendEffects()) {
-    return {
-      '--home-hero-opacity': '1',
-      '--home-hero-scale': '1',
-      '--home-hero-y': '0rem',
-      '--home-hero-blur': '0rem',
-      '--home-rail-opacity': '1',
-      '--home-rail-scale': '1',
-      '--home-rail-y': '0rem',
-      '--home-rail-blur': '0rem',
-      '--home-posts-opacity': '1',
-      '--home-posts-scale': '1',
-      '--home-posts-y': '0rem',
-      '--home-posts-blur': '0rem',
-      '--home-story-opacity': '1',
-      '--home-story-scale': '1',
-      '--home-story-y': '0rem',
-      '--home-story-blur': '0rem',
-    }
-  }
-
-  const heroExit = viewportSceneBlend.value.heroRail
-  const railEnter = viewportSceneBlend.value.heroRail
-  const railExit = viewportSceneBlend.value.railPosts
-  const postsEnter = viewportSceneBlend.value.railPosts
-  const postsExit = viewportSceneBlend.value.postsStory
-  const storyEnter = viewportSceneBlend.value.postsStory
-  const storyOutro = viewportSceneBlend.value.storyFooter
-
-  return {
-    '--home-hero-opacity': String(clamp(1 - heroExit * 0.14, 0.86, 1)),
-    '--home-hero-scale': String(clamp(1 - heroExit * 0.022, 0.972, 1)),
-    '--home-hero-y': `${(-1.45 * heroExit).toFixed(4)}rem`,
-    '--home-hero-blur': `${(heroExit * 0.14).toFixed(4)}rem`,
-    '--home-rail-opacity': String(clamp(0.82 + railEnter * 0.18 - railExit * 0.12, 0.76, 1)),
-    '--home-rail-scale': String(clamp(0.974 + railEnter * 0.026 - railExit * 0.018, 0.95, 1)),
-    '--home-rail-y': `${((1 - railEnter) * 1.45 - railExit * 0.62).toFixed(4)}rem`,
-    '--home-rail-blur': `${((1 - railEnter) * 0.18 + railExit * 0.09).toFixed(4)}rem`,
-    '--home-posts-opacity': String(clamp(0.82 + postsEnter * 0.18 - postsExit * 0.12, 0.76, 1)),
-    '--home-posts-scale': String(clamp(0.974 + postsEnter * 0.026 - postsExit * 0.018, 0.952, 1)),
-    '--home-posts-y': `${((1 - postsEnter) * 1.28 - postsExit * 0.56).toFixed(4)}rem`,
-    '--home-posts-blur': `${((1 - postsEnter) * 0.16 + postsExit * 0.09).toFixed(4)}rem`,
-    '--home-story-opacity': String(clamp(0.84 + storyEnter * 0.16 - storyOutro * 0.14, 0.72, 1)),
-    '--home-story-scale': String(clamp(0.968 + storyEnter * 0.024 - storyOutro * 0.018, 0.94, 1)),
-    '--home-story-y': `${((1 - storyEnter) * 1.18 - storyOutro * 0.48).toFixed(4)}rem`,
-    '--home-story-blur': `${((1 - storyEnter) * 0.14 + storyOutro * 0.08).toFixed(4)}rem`,
-  }
-})
+const homePageMotionStyle = computed<Record<string, string>>(() =>
+  buildHomePageMotionStyle({
+    compactViewport: isCompactHomeViewport(),
+    useSectionBlendEffects: shouldUseHomeSectionBlendEffects(),
+    blend: viewportSceneBlend.value,
+  })
+)
 
 watchSyncEffect(() => {
   // 确保全量加载和分页加载状态不会并存，减少 UI 状态抖动。
@@ -2336,24 +2275,6 @@ function cancelPublicHomePrewarm() {
   homePublicPrewarmCancel = null
 }
 
-function collectHomePrewarmMedia(payload: HomeAggregateResponse): Array<string | null | undefined> {
-  return [
-    payload.hero.spotlight?.image?.thumbnail_url,
-    payload.hero.spotlight?.image?.url,
-    ...payload.featured.items.flatMap((item) => [
-      item.cover?.thumbnail_url,
-      item.cover?.url,
-      ...(item.related_posts ?? []).flatMap((post) => [
-        post.thumbnail?.thumbnail_url,
-        post.thumbnail?.url,
-        post.image?.thumbnail_url,
-        post.image?.url,
-      ]),
-    ]),
-    ...payload.story_deck.items.flatMap((item) => [item.image?.thumbnail_url, item.image?.url]),
-  ]
-}
-
 function schedulePublicHomePrewarm(payload: HomeAggregateResponse) {
   if (typeof window === 'undefined') return
   cancelPublicHomePrewarm()
@@ -2404,36 +2325,6 @@ function applyHomeAggregate(
   posts.value = normalizedPosts
   allPosts.value = normalizedPosts
   total.value = normalizedPosts.length
-}
-
-function createEmptyHomeSupportRefreshTargets(): HomeSupportRefreshTargets {
-  return {
-    schedule: false,
-    community: false,
-  }
-}
-
-function hasPendingHomeSupportRefresh(targets: HomeSupportRefreshTargets): boolean {
-  return targets.schedule || targets.community
-}
-
-function resolveHomeSupportRefreshTargets(
-  payload: HomeAggregateResponse,
-  source: 'aggregate' | 'support' | 'cached' | 'fallback'
-): HomeSupportRefreshTargets {
-  if (source === 'support' || source === 'cached' || source === 'fallback') {
-    return createEmptyHomeSupportRefreshTargets()
-  }
-
-  const scheduleCount = payload.portal.items.find((item) => item.key === 'schedule')?.count ?? 0
-  const communityCount = payload.portal.items.find((item) => item.key === 'community')?.count ?? 0
-  const hasScheduleDetails = (payload.trends.schedules ?? []).length > 0
-  const hasCommunityDetails = (payload.trends.community ?? []).length > 0
-
-  return {
-    schedule: scheduleCount > 0 && !hasScheduleDetails,
-    community: communityCount > 0 && !hasCommunityDetails,
-  }
 }
 
 async function refreshHomeSupportBlocks(
@@ -2550,29 +2441,25 @@ function resolveSceneTravelDistance(element: HTMLElement | null, pinnedSelector?
   if (typeof window === 'undefined' || !element) return 1
 
   const pinnedElement = pinnedSelector ? element.querySelector<HTMLElement>(pinnedSelector) : null
-  const pinnedBlockSize = pinnedElement?.offsetHeight ?? window.innerHeight
 
-  return Math.max(element.offsetHeight - pinnedBlockSize, 1)
+  return resolveHomeSceneTravelDistance({
+    sectionHeight: element.offsetHeight,
+    pinnedHeight: pinnedElement?.offsetHeight ?? null,
+    viewportHeight: window.innerHeight,
+  })
 }
 
 function resolveSceneProgress(element: HTMLElement | null, pinnedSelector?: string): number {
   if (typeof window === 'undefined' || !element) return 0
-  const travel = resolveSceneTravelDistance(element, pinnedSelector)
-  const distance = window.scrollY - element.offsetTop
-  return clamp(distance / travel)
-}
+  const pinnedElement = pinnedSelector ? element.querySelector<HTMLElement>(pinnedSelector) : null
 
-function buildSceneSnap(stepCount: number) {
-  if (stepCount <= 1) return false
-
-  return {
-    snapTo: 1 / Math.max(stepCount - 1, 1),
-    delay: 0.12,
-    duration: { min: 0.16, max: 0.3 },
-    ease: 'power1.inOut',
-    directional: false,
-    inertia: false,
-  }
+  return resolveHomeSceneProgress({
+    sectionHeight: element.offsetHeight,
+    pinnedHeight: pinnedElement?.offsetHeight ?? null,
+    sectionTop: element.offsetTop,
+    scrollY: window.scrollY,
+    viewportHeight: window.innerHeight,
+  })
 }
 
 function syncSceneProgressFromViewport() {
@@ -2729,47 +2616,21 @@ function setRailNavbarLock(locked: boolean) {
 function setHomeFooterBlend(enabled: boolean) {
   if (typeof document === 'undefined') return
   if (!enabled) {
-    document.documentElement.style.removeProperty('--home-footer-opacity')
-    document.documentElement.style.removeProperty('--home-footer-y')
-    document.documentElement.style.removeProperty('--home-footer-scale')
-    document.documentElement.style.removeProperty('--home-footer-marquee-opacity')
-    document.documentElement.style.removeProperty('--home-footer-marquee-speed-progress')
-    document.documentElement.style.removeProperty('--home-footer-marquee-play-state')
+    for (const property of HOME_FOOTER_BLEND_PROPERTIES) {
+      document.documentElement.style.removeProperty(property)
+    }
     return
   }
 
-  document.documentElement.style.setProperty('--home-footer-opacity', '0.76')
-  document.documentElement.style.setProperty('--home-footer-y', '1.75rem')
-  document.documentElement.style.setProperty('--home-footer-scale', '0.986')
-  document.documentElement.style.setProperty('--home-footer-marquee-opacity', '0.58')
-  document.documentElement.style.setProperty('--home-footer-marquee-speed-progress', '0')
-  document.documentElement.style.setProperty('--home-footer-marquee-play-state', 'running')
+  setHomeFooterBlendProgress(0)
 }
 
 function setHomeFooterBlendProgress(progress: number) {
   if (typeof document === 'undefined') return
-  const clamped = clamp(progress)
-  document.documentElement.style.setProperty(
-    '--home-footer-opacity',
-    (0.76 + clamped * 0.24).toFixed(3)
-  )
-  document.documentElement.style.setProperty(
-    '--home-footer-y',
-    `${((1 - clamped) * 1.75).toFixed(3)}rem`
-  )
-  document.documentElement.style.setProperty(
-    '--home-footer-scale',
-    (0.986 + clamped * 0.014).toFixed(4)
-  )
-  document.documentElement.style.setProperty(
-    '--home-footer-marquee-opacity',
-    (0.58 + clamped * 0.42).toFixed(3)
-  )
-  document.documentElement.style.setProperty(
-    '--home-footer-marquee-speed-progress',
-    (clamped * 0.7).toFixed(3)
-  )
-  document.documentElement.style.setProperty('--home-footer-marquee-play-state', 'running')
+  const style = buildHomeFooterBlendStyle(progress)
+  for (const [property, value] of Object.entries(style)) {
+    document.documentElement.style.setProperty(property, value)
+  }
 }
 
 function measureViewportBlend(
@@ -2778,11 +2639,12 @@ function measureViewportBlend(
   endRatio = 0.18
 ): number {
   if (typeof window === 'undefined' || !element) return 0
-  const rect = element.getBoundingClientRect()
-  const start = window.innerHeight * startRatio
-  const end = window.innerHeight * endRatio
-  if (Math.abs(start - end) < Number.EPSILON) return 0
-  return clamp((start - rect.top) / (start - end))
+  return measureHomeViewportBlend({
+    rectTop: element.getBoundingClientRect().top,
+    viewportHeight: window.innerHeight,
+    startRatio,
+    endRatio,
+  })
 }
 
 function updateViewportSceneBlend() {
@@ -2812,7 +2674,7 @@ function updateViewportSceneBlend() {
     storyFooter: measureViewportBlend(document.getElementById('home-footer'), 1.04, 0.24),
   }
 
-  const footerBlendProgress = nextBlend.storyFooter > 0.04 ? nextBlend.storyFooter : 0
+  const footerBlendProgress = resolveHomeFooterBlendProgress(nextBlend.storyFooter)
   const postsElement = resolveSectionElement(postsSectionRef.value)
   const featuredElement = resolveSectionElement(featuredSectionRef.value)
   const bubbleRevealWindow = resolveBubbleRevealWindow(
@@ -2820,34 +2682,27 @@ function updateViewportSceneBlend() {
     window.innerHeight,
     bubbleItems.value.length
   )
-  const railLockBoundary =
-    postsElement?.offsetTop ??
-    (featuredElement?.offsetTop ?? 0) + (featuredElement?.offsetHeight ?? 0)
-  const railLockActive = window.scrollY < Math.max(railLockBoundary - window.innerHeight * 0.08, 0)
+  const railLockActive = resolveHomeRailLockActive({
+    scrollY: window.scrollY,
+    viewportHeight: window.innerHeight,
+    postsOffsetTop: postsElement?.offsetTop,
+    featuredOffsetTop: featuredElement?.offsetTop,
+    featuredHeight: featuredElement?.offsetHeight,
+  })
 
   viewportSceneBlend.value = {
     ...nextBlend,
     storyFooter: footerBlendProgress,
   }
 
-  if (bubbleRevealWindow.shouldReveal) {
-    if (
-      (bubbleRevealPhase.value === 'idle' || bubbleRevealPhase.value === 'exiting') &&
-      bubbleBurstReplayFrame === null
-    ) {
-      if (shouldAnimate.value) {
-        restartBubbleBurst()
-      } else {
-        bubbleRevealPhase.value = 'revealed'
-      }
-    }
-  } else if (
-    bubbleRevealWindow.shouldReset &&
-    bubbleRevealPhase.value === 'revealed' &&
-    bubbleBurstReplayFrame === null
-  ) {
-    startBubbleRetreat()
-  }
+  applyBubbleRevealAction(
+    resolveBubbleRevealViewportAction({
+      windowState: bubbleRevealWindow,
+      phase: bubbleRevealPhase.value,
+      shouldAnimate: shouldAnimate.value,
+      burstFramePending: bubbleBurstReplayFrame !== null,
+    })
+  )
 
   setRailNavbarLock(railLockActive)
   setHomeFooterBlendProgress(footerBlendProgress)
@@ -2990,19 +2845,12 @@ function observeSceneLayout() {
     for (const entry of entries) {
       if (!(entry.target instanceof HTMLElement)) continue
 
-      const nextSize = {
-        width: Math.round(entry.contentRect.width),
-        height: Math.round(entry.contentRect.height),
-      }
+      const nextSize = resolveHomeSceneLayoutSize(entry.contentRect)
       const previousSize = sceneObservedSizes.get(entry.target)
 
       sceneObservedSizes.set(entry.target, nextSize)
 
-      if (
-        previousSize &&
-        (Math.abs(previousSize.width - nextSize.width) >= SCENE_LAYOUT_REFRESH_THRESHOLD_PX ||
-          Math.abs(previousSize.height - nextSize.height) >= SCENE_LAYOUT_REFRESH_THRESHOLD_PX)
-      ) {
+      if (resolveHomeSceneLayoutRefresh({ previousSize, nextSize })) {
         shouldRefresh = true
       }
     }
@@ -3013,10 +2861,7 @@ function observeSceneLayout() {
   })
 
   for (const element of trackedElements) {
-    sceneObservedSizes.set(element, {
-      width: Math.round(element.getBoundingClientRect().width),
-      height: Math.round(element.getBoundingClientRect().height),
-    })
+    sceneObservedSizes.set(element, resolveHomeSceneLayoutSize(element.getBoundingClientRect()))
     sceneResizeObserver.observe(element)
   }
 }
@@ -3039,7 +2884,7 @@ async function setupSceneTriggers() {
       end: () => `+=${resolveSceneTravelDistance(featuredElement, '.rail-sticky')}`,
       invalidateOnRefresh: true,
       scrub: 0.28,
-      snap: buildSceneSnap(railSlideCount.value),
+      snap: buildHomeSceneSnap(railSlideCount.value),
       onUpdate: (self) => {
         railProgress.value = self.progress
       },
@@ -3057,7 +2902,7 @@ async function setupSceneTriggers() {
       end: () => `+=${resolveSceneTravelDistance(storyElement, '.story-stage')}`,
       invalidateOnRefresh: true,
       scrub: 0.4,
-      snap: buildSceneSnap(effectiveStoryCardCount.value),
+      snap: buildHomeSceneSnap(effectiveStoryCardCount.value),
       onUpdate: (self) => {
         storyProgress.value = self.progress
       },

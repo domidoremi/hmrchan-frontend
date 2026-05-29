@@ -55,12 +55,23 @@ const AUTH_ROUTE_PATHS = new Set([
 ])
 
 const PRIVATE_API_PATH_PATTERNS = [
+  /^\/api\/v1\/2fa(?:\/|$)/i,
+  /^\/api\/v1\/account(?:\/|$)/i,
+  /^\/api\/v1\/audit(?:\/|$)/i,
   /^\/api\/v1\/auth(?:\/|$)/i,
+  /^\/api\/v1\/devices(?:\/|$)/i,
+  /^\/api\/v1\/email(?:\/|$)/i,
   /^\/api\/v1\/notifications(?:\/|$)/i,
   /^\/api\/v1\/favorites(?:\/|$)/i,
+  /^\/api\/v1\/history(?:\/|$)/i,
+  /^\/api\/v1\/inbox(?:\/|$)/i,
   /^\/api\/v1\/me(?:\/|$)/i,
+  /^\/api\/v1\/preferences(?:\/|$)/i,
   /^\/api\/v1\/profile(?:\/|$)/i,
+  /^\/api\/v1\/relations(?:\/|$)/i,
+  /^\/api\/v1\/reports(?:\/|$)/i,
   /^\/api\/v1\/users\/me(?:\/|$)/i,
+  /^\/api\/v1\/users\/[^/]+\/public-profile(?:\/|$)/i,
 ] as const
 
 export const MEDIA_CACHE_CONFIG = {

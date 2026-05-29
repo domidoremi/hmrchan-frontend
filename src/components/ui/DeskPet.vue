@@ -4,7 +4,45 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores'
 import { prefersReducedMotion } from '@/utils/performance'
+import {
+  CTA_ATTENTION_COOLDOWN_MS,
+  DEFAULT_PET_EDGE_GAP,
+  DEFAULT_POSITION_OBSTACLE_SELECTORS,
+  DESK_PET_POSITION_STORAGE_KEY,
+  DRAG_THRESHOLD,
+  EDGE_SNAP,
+  HERO_BUTTON_SELECTOR,
+  HERO_REACTION_COOLDOWN_MS,
+  IDLE_BEHAVIOR_JITTER_MS,
+  IDLE_BEHAVIOR_MIN_MS,
+  IDLE_TIMEOUT,
+  PET_SIZE,
+  SCROLL_DIZZY_COOLDOWN_MS,
+  WORKFLOW_REACTION_COOLDOWN_MS,
+} from './desk-pet/config'
+import {
+  DEFAULT_DESK_PET_SETTINGS,
+  createDeskPetParticleBurst,
+  findClosestDeskPetElement,
+  getDeskPetCareActionPlan,
+  getDeskPetEventPosition,
+  getDeskPetGreetingKey,
+  readStoredDeskPetPosition,
+  resolveDeskPetDefaultPlacementInsets,
+  resolveDeskPetHeroPeekPosition,
+  resolveDeskPetHeroPerchPosition,
+  resolveDeskPetLookOffset,
+  resolveDeskPetRestState,
+  writeStoredDeskPetPosition,
+} from './desk-pet/interaction'
 import { DESK_PET_AUX_PRELOAD_STATES, PET_STATE_IMAGE_MAP, PetState } from './desk-pet/petStates'
+import {
+  clampDeskPetPeekPosition,
+  clampDeskPetPosition,
+  resolveDeskPetDefaultPosition,
+  snapDeskPetToEdge,
+  type DeskPetRect,
+} from './desk-pet/positioning'
 import { createDeskPetWorkflowReactions } from './desk-pet/useDeskPetWorkflowReactions'
 
 const { t, tm } = useI18n()
@@ -20,16 +58,7 @@ const props = withDefaults(
   }
 )
 
-const defaultDeskPetSettings = {
-  enabled: false,
-  autoHomeEnabled: false,
-  dismissedAutoHome: false,
-  scale: 1,
-  speechEnabled: false,
-  autoHeroInteraction: false,
-  followSensitivity: 1,
-}
-const deskPetSettings = computed(() => settings.value.deskPet ?? defaultDeskPetSettings)
+const deskPetSettings = computed(() => settings.value.deskPet ?? DEFAULT_DESK_PET_SETTINGS)
 const visible = computed(() => deskPetSettings.value.enabled || props.autoHomeMode)
 const shouldAnimate = computed(
   () =>
@@ -40,11 +69,7 @@ const shouldAnimate = computed(
 
 // 时间问候
 const getTimeGreeting = (): string => {
-  const h = new Date().getHours()
-  if (h < 6) return t('deskPet.greeting.lateNight')
-  if (h < 12) return t('deskPet.greeting.morning')
-  if (h < 18) return t('deskPet.greeting.afternoon')
-  return t('deskPet.greeting.evening')
+  return t(getDeskPetGreetingKey(new Date().getHours()))
 }
 
 const pickSpeech = (state: PetState): string => {
@@ -97,19 +122,16 @@ let particleId = 0
 const particleTimers = new Map<number, ReturnType<typeof setTimeout>>()
 
 const spawnParticles = (emoji: string, count = 3) => {
-  for (let i = 0; i < count; i++) {
-    const id = particleId++
-    particles.value.push({
-      id,
-      emoji,
-      x: (Math.random() - 0.5) * 40,
-      y: -Math.random() * 10,
-    })
+  const burst = createDeskPetParticleBurst({ emoji, count, startId: particleId })
+  particleId = burst.nextId
+
+  for (const particle of burst.particles) {
+    particles.value.push(particle)
     const timer = setTimeout(() => {
-      particleTimers.delete(id)
-      particles.value = particles.value.filter((p) => p.id !== id)
+      particleTimers.delete(particle.id)
+      particles.value = particles.value.filter((p) => p.id !== particle.id)
     }, 1000)
-    particleTimers.set(id, timer)
+    particleTimers.set(particle.id, timer)
   }
 }
 
@@ -170,31 +192,8 @@ const hasMoved = ref(false)
 const position = ref({ x: 0, y: 0 })
 const dragOffset = ref({ x: 0, y: 0 })
 const dragStartPos = ref({ x: 0, y: 0 })
-const DRAG_THRESHOLD = 5
-const PET_SIZE = 80
-const EDGE_SNAP = 20
-const DEFAULT_PET_EDGE_GAP = 16
-const HERO_BUTTON_SELECTOR = '.hero-btn'
-const LOOK_MAX_OFFSET = 10
-const LOOK_MIN_DISTANCE = 220
-const DESK_PET_POSITION_STORAGE_KEY = 'desk-pet:last-position'
-const HERO_REACTION_COOLDOWN_MS = 1400
-const CTA_ATTENTION_COOLDOWN_MS = 4500
-const WORKFLOW_REACTION_COOLDOWN_MS = 1600
-const SCROLL_DIZZY_COOLDOWN_MS = 8000
-const IDLE_BEHAVIOR_MIN_MS = 6500
-const IDLE_BEHAVIOR_JITTER_MS = 6500
-const DEFAULT_POSITION_OBSTACLE_SELECTORS = [
-  '.back-to-top',
-  '.scroll-down-fab',
-  '.next-post-fab',
-  '.toast-stack',
-  '.settings-dropdown',
-  '.user-dropdown',
-] as const
 
 // 计时器
-const IDLE_TIMEOUT = 10000
 let idleTimer: ReturnType<typeof setTimeout> | null = null
 let stateResetTimer: ReturnType<typeof setTimeout> | null = null
 let randomIdleBehaviorTimer: ReturnType<typeof setTimeout> | null = null
@@ -254,29 +253,15 @@ watch(visible, (isVisible) => {
   lookOffset.value = { x: 0, y: 0 }
 })
 
-const clampPosition = (pos: { x: number; y: number }) => ({
-  x: Math.max(-PET_SIZE / 2, Math.min(pos.x, window.innerWidth - PET_SIZE / 2)),
-  y: Math.max(0, Math.min(pos.y, window.innerHeight - PET_SIZE / 2)),
-})
+const getViewport = () => ({ width: window.innerWidth, height: window.innerHeight })
+const clampPosition = (pos: { x: number; y: number }) =>
+  clampDeskPetPosition(pos, getViewport(), PET_SIZE)
 
-const clampPeekPosition = (pos: { x: number; y: number }) => ({
-  x: Math.max(-PET_SIZE * 0.45, Math.min(pos.x, window.innerWidth - PET_SIZE * 0.55)),
-  y: Math.max(0, Math.min(pos.y, window.innerHeight - PET_SIZE * 0.8)),
-})
+const clampPeekPosition = (pos: { x: number; y: number }) =>
+  clampDeskPetPeekPosition(pos, getViewport(), PET_SIZE)
 
-// 边缘吸附
-const snapToEdge = (pos: { x: number; y: number }) => {
-  const w = window.innerWidth
-  const h = window.innerHeight
-  let { x, y } = pos
-  // 左右吸附
-  if (x < EDGE_SNAP) x = 0
-  else if (x > w - PET_SIZE - EDGE_SNAP) x = w - PET_SIZE
-  // 上下吸附
-  if (y < EDGE_SNAP) y = 0
-  else if (y > h - PET_SIZE - EDGE_SNAP) y = h - PET_SIZE
-  return { x, y }
-}
+const snapToEdge = (pos: { x: number; y: number }) =>
+  snapDeskPetToEdge(pos, getViewport(), PET_SIZE, EDGE_SNAP)
 
 const preventDefaultIfCancelable = (e: Event) => {
   if (e.cancelable) e.preventDefault()
@@ -284,38 +269,12 @@ const preventDefaultIfCancelable = (e: Event) => {
 
 const readSavedPosition = (): { x: number; y: number } | null => {
   if (typeof window === 'undefined') return null
-  try {
-    const raw = window.localStorage.getItem(DESK_PET_POSITION_STORAGE_KEY)
-    if (!raw) return null
-    const parsed: unknown = JSON.parse(raw)
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      'x' in parsed &&
-      'y' in parsed &&
-      typeof parsed.x === 'number' &&
-      Number.isFinite(parsed.x) &&
-      typeof parsed.y === 'number' &&
-      Number.isFinite(parsed.y)
-    ) {
-      return {
-        x: parsed.x,
-        y: parsed.y,
-      }
-    }
-  } catch {
-    // ignore invalid storage payload
-  }
-  return null
+  return readStoredDeskPetPosition(window.localStorage, DESK_PET_POSITION_STORAGE_KEY)
 }
 
 const savePosition = (pos: { x: number; y: number }) => {
   if (typeof window === 'undefined') return
-  try {
-    window.localStorage.setItem(DESK_PET_POSITION_STORAGE_KEY, JSON.stringify(pos))
-  } catch {
-    // ignore storage write errors
-  }
+  writeStoredDeskPetPosition(window.localStorage, DESK_PET_POSITION_STORAGE_KEY, pos)
 }
 
 const getVisibleRect = (selector: string): DOMRect | null => {
@@ -332,83 +291,36 @@ const getVisibleRect = (selector: string): DOMRect | null => {
   return rect
 }
 
-const rectsIntersect = (
-  a: { left: number; right: number; top: number; bottom: number },
-  b: { left: number; right: number; top: number; bottom: number }
-) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
-
 const getDefaultPlacementInsets = () => {
   const navbarRect = getVisibleRect('.navbar')
   const mobileNavRect = getVisibleRect('.app-mobile-dock') ?? getVisibleRect('.mobile-nav')
 
-  return {
-    top: (navbarRect?.bottom ?? 0) + DEFAULT_PET_EDGE_GAP,
-    right: DEFAULT_PET_EDGE_GAP,
-    bottom:
-      (mobileNavRect ? Math.max(0, window.innerHeight - mobileNavRect.top) : 0) +
-      DEFAULT_PET_EDGE_GAP,
-    left: DEFAULT_PET_EDGE_GAP,
-  }
+  return resolveDeskPetDefaultPlacementInsets({
+    navbarRect,
+    mobileNavRect,
+    viewportHeight: window.innerHeight,
+    edgeGap: DEFAULT_PET_EDGE_GAP,
+  })
 }
-
-const clampDefaultPlacement = (
-  pos: { x: number; y: number },
-  petSize: number,
-  insets: { top: number; right: number; bottom: number; left: number }
-) => ({
-  x: Math.max(insets.left, Math.min(pos.x, window.innerWidth - petSize - insets.right)),
-  y: Math.max(insets.top, Math.min(pos.y, window.innerHeight - petSize - insets.bottom)),
-})
 
 const getDefaultPosition = () => {
   const petSize = PET_SIZE * deskPetSettings.value.scale
   const insets = getDefaultPlacementInsets()
   const obstacleRects = DEFAULT_POSITION_OBSTACLE_SELECTORS.map(getVisibleRect).filter(
     (rect): rect is DOMRect => rect !== null
-  )
+  ) as DeskPetRect[]
 
-  const candidates = [
-    {
-      x: window.innerWidth - petSize - insets.right,
-      y: window.innerHeight - petSize - insets.bottom,
-    },
-    {
-      x: insets.left,
-      y: window.innerHeight - petSize - insets.bottom,
-    },
-    {
-      x: window.innerWidth - petSize - insets.right,
-      y: insets.top,
-    },
-    {
-      x: insets.left,
-      y: insets.top,
-    },
-  ].map((candidate) => clampDefaultPlacement(candidate, petSize, insets))
-
-  const [bestCandidate] = candidates
-    .map((candidate, index) => {
-      const petRect = {
-        left: candidate.x,
-        right: candidate.x + petSize,
-        top: candidate.y,
-        bottom: candidate.y + petSize,
-      }
-
-      const overlapCount = obstacleRects.reduce(
-        (count, rect) => count + Number(rectsIntersect(petRect, rect)),
-        0
-      )
-
-      return { candidate, overlapCount, index }
-    })
-    .sort((a, b) => a.overlapCount - b.overlapCount || a.index - b.index)
-
-  return clampPosition(bestCandidate?.candidate ?? { x: insets.left, y: insets.top })
+  return resolveDeskPetDefaultPosition({
+    viewport: getViewport(),
+    petSize,
+    boundaryPetSize: PET_SIZE,
+    insets,
+    obstacleRects,
+  })
 }
 
 const isHeroTarget = (target: EventTarget | null) =>
-  target instanceof Element && target.closest(HERO_BUTTON_SELECTOR)
+  findClosestDeskPetElement<HTMLElement>(target, HERO_BUTTON_SELECTOR)
 
 const getHeroButton = () => document.querySelector<HTMLElement>(HERO_BUTTON_SELECTOR)
 
@@ -477,41 +389,30 @@ const animateToPosition = (
 
 const getHeroPerchPosition = (heroBtn: HTMLElement) => {
   const rect = heroBtn.getBoundingClientRect()
-  return clampPosition({
-    x: rect.left + rect.width * 0.5 - PET_SIZE / 2,
-    y: rect.top - PET_SIZE * 0.56,
-  })
+  return clampPosition(resolveDeskPetHeroPerchPosition(rect))
 }
 
 const getPeekPositionFromHero = (heroBtn: HTMLElement) => {
   const rect = heroBtn.getBoundingClientRect()
-  const towardRight = rect.left + rect.width * 0.5 < window.innerWidth * 0.5
-  const x = towardRight ? window.innerWidth - PET_SIZE * 0.55 : -PET_SIZE * 0.45
-  const y = rect.top + rect.height * 0.2
-  return clampPeekPosition({ x, y })
+  return clampPeekPosition(
+    resolveDeskPetHeroPeekPosition({
+      heroRect: rect,
+      viewportWidth: window.innerWidth,
+    })
+  )
 }
 
-const isPetTarget = (target: EventTarget | null) =>
-  target instanceof Element && target.closest('.desk-pet')
+const isPetTarget = (target: EventTarget | null) => findClosestDeskPetElement(target, '.desk-pet')
 
 const setLookOffsetByPointer = (clientX: number, clientY: number) => {
-  const sensitivity = deskPetSettings.value.followSensitivity
-  const lookDistance = LOOK_MIN_DISTANCE * (1 + (sensitivity - 1) * 0.6)
-  const lookFactor = 0.8 + sensitivity * 0.4
-  const centerX = position.value.x + PET_SIZE * 0.5
-  const centerY = position.value.y + PET_SIZE * 0.5
-  const dx = clientX - centerX
-  const dy = clientY - centerY
-  const distance = Math.hypot(dx, dy)
-  if (distance > lookDistance || isDragging.value || showContextMenu.value) {
-    lookOffset.value = { x: 0, y: 0 }
-    return
-  }
-  const ratio = (lookDistance - distance) / lookDistance
-  lookOffset.value = {
-    x: Math.max(-LOOK_MAX_OFFSET, Math.min(LOOK_MAX_OFFSET, dx * 0.06 * ratio * lookFactor)),
-    y: Math.max(-LOOK_MAX_OFFSET, Math.min(LOOK_MAX_OFFSET, dy * 0.05 * ratio * lookFactor)),
-  }
+  lookOffset.value = resolveDeskPetLookOffset({
+    clientX,
+    clientY,
+    position: position.value,
+    sensitivity: deskPetSettings.value.followSensitivity,
+    isDragging: isDragging.value,
+    showContextMenu: showContextMenu.value,
+  })
 }
 
 const perchOnHeroButton = async (heroBtn: HTMLElement, fromIntro = false) => {
@@ -564,10 +465,11 @@ const reactToHeroButtonClick = async (heroBtn: HTMLElement) => {
   schedulePeekIdle()
 }
 
+const canReactToHeroTargets = () => shouldAnimate.value && deskPetSettings.value.autoHeroInteraction
+
 const playHeroIntroIfNeeded = () => {
   if (!props.autoHomeMode) return
-  if (!shouldAnimate.value) return
-  if (!deskPetSettings.value.autoHeroInteraction) return
+  if (!canReactToHeroTargets()) return
   if (hasPlayedHeroIntro || !visible.value) return
   const heroBtn = getHeroButton()
   if (!heroBtn) return
@@ -714,10 +616,7 @@ const resetIdleTimer = () => {
   }, IDLE_TIMEOUT)
 }
 
-const getRestState = () =>
-  currentState.value === PetState.PERCH || currentState.value === PetState.TRACK
-    ? PetState.PERCH
-    : PetState.IDLE
+const getRestState = () => resolveDeskPetRestState(currentState.value)
 
 const workflowReactions = createDeskPetWorkflowReactions({
   cooldownMs: WORKFLOW_REACTION_COOLDOWN_MS,
@@ -755,14 +654,6 @@ const handleMouseLeave = () => {
   resetIdleTimer()
 }
 
-const getEventPos = (e: MouseEvent | TouchEvent) => {
-  const touch = 'touches' in e ? e.touches?.[0] : null
-  return {
-    x: touch?.clientX ?? (e instanceof MouseEvent ? e.clientX : 0),
-    y: touch?.clientY ?? (e instanceof MouseEvent ? e.clientY : 0),
-  }
-}
-
 // 单击
 const handleClick = () => {
   if (hasMoved.value || showContextMenu.value) return
@@ -795,10 +686,7 @@ const handleDblClick = () => {
   // 取消单击的状态重置
   if (stateResetTimer) clearTimeout(stateResetTimer)
   clickCount.value = 0
-  transitionTo(PetState.PAT, 2000, getRestState())
-  showStateBubble(PetState.PAT, 2000)
-  spawnParticles('❤️', 4)
-  resetIdleTimer()
+  runCareAction('pat')
 }
 
 // 右键菜单
@@ -809,40 +697,21 @@ const handleContextMenu = (e: MouseEvent) => {
   contextMenuPos.value = { x: e.offsetX, y: e.offsetY }
 }
 
+const runCareAction = (action: Parameters<typeof getDeskPetCareActionPlan>[0]) => {
+  const plan = getDeskPetCareActionPlan(action)
+  showContextMenu.value = false
+  transitionTo(plan.state, plan.duration, getRestState())
+  showStateBubble(plan.state, plan.bubbleDuration)
+  if (plan.particle) spawnParticles(plan.particle.emoji, plan.particle.count)
+  resetIdleTimer()
+}
+
 const menuActions = {
-  pat() {
-    showContextMenu.value = false
-    transitionTo(PetState.PAT, 2000, getRestState())
-    showStateBubble(PetState.PAT, 2000)
-    spawnParticles('❤️', 4)
-    resetIdleTimer()
-  },
-  feed() {
-    showContextMenu.value = false
-    transitionTo(PetState.EAT, 2000, getRestState())
-    showStateBubble(PetState.EAT, 2000)
-    spawnParticles('+', 3)
-    resetIdleTimer()
-  },
-  play() {
-    showContextMenu.value = false
-    transitionTo(PetState.EXCITED, 2000, getRestState())
-    showStateBubble(PetState.EXCITED, 2000)
-    spawnParticles('*', 3)
-    resetIdleTimer()
-  },
-  focus() {
-    showContextMenu.value = false
-    transitionTo(PetState.FOCUSED, 2400, getRestState())
-    showStateBubble(PetState.FOCUSED, 2400)
-    resetIdleTimer()
-  },
-  rest() {
-    showContextMenu.value = false
-    transitionTo(PetState.TIRED, 2200, getRestState())
-    showStateBubble(PetState.TIRED, 2200)
-    resetIdleTimer()
-  },
+  pat: () => runCareAction('pat'),
+  feed: () => runCareAction('feed'),
+  play: () => runCareAction('play'),
+  focus: () => runCareAction('focus'),
+  rest: () => runCareAction('rest'),
   hide() {
     hidePet()
   },
@@ -851,8 +720,7 @@ const menuActions = {
 // ─── 拖拽 ───
 const handlePointerDown = (e: MouseEvent | TouchEvent) => {
   if (
-    e.target instanceof Element &&
-    e.target.closest('.desk-pet__close, .desk-pet__menu, .desk-pet__menu-item')
+    findClosestDeskPetElement(e.target, '.desk-pet__close, .desk-pet__menu, .desk-pet__menu-item')
   ) {
     return
   }
@@ -861,7 +729,7 @@ const handlePointerDown = (e: MouseEvent | TouchEvent) => {
     return
   }
   stopMovement()
-  const pos = getEventPos(e)
+  const pos = getDeskPetEventPosition(e)
   isDragging.value = true
   hasMoved.value = false
   dragStartPos.value = { x: pos.x, y: pos.y }
@@ -878,7 +746,7 @@ const handlePointerDown = (e: MouseEvent | TouchEvent) => {
 
 const handleDragMove = (e: MouseEvent | TouchEvent) => {
   if (!isDragging.value) return
-  const pos = getEventPos(e)
+  const pos = getDeskPetEventPosition(e)
   const dx = pos.x - dragStartPos.value.x
   const dy = pos.y - dragStartPos.value.y
 
@@ -949,8 +817,7 @@ const handleGlobalClick = (e: MouseEvent) => {
 }
 
 const handleGlobalPointerOver = (e: PointerEvent) => {
-  if (!shouldAnimate.value) return
-  if (!deskPetSettings.value.autoHeroInteraction) return
+  if (!canReactToHeroTargets()) return
   if (!visible.value || isDragging.value || heroReactionLocked || ctaAttentionLocked) return
   const heroBtn = isHeroTarget(e.target)
   if (!(heroBtn instanceof HTMLElement)) return
@@ -959,8 +826,7 @@ const handleGlobalPointerOver = (e: PointerEvent) => {
 }
 
 const handleGlobalFocusIn = (e: FocusEvent) => {
-  if (!shouldAnimate.value) return
-  if (!deskPetSettings.value.autoHeroInteraction) return
+  if (!canReactToHeroTargets()) return
   if (!visible.value || isDragging.value || heroReactionLocked || ctaAttentionLocked) return
   const heroBtn = isHeroTarget(e.target)
   if (!(heroBtn instanceof HTMLElement)) return
@@ -1132,658 +998,3 @@ onUnmounted(() => {
     </div>
   </Transition>
 </template>
-
-<style scoped>
-/* ═══ 容器 ═══ */
-.desk-pet {
-  position: fixed;
-  width: calc(clamp(3rem, 8vw, 5rem) * var(--desk-pet-scale, 1));
-  aspect-ratio: 1;
-  --desk-pet-scale: 1;
-  --pet-look-x: 0px;
-  --pet-look-y: 0px;
-  z-index: 9999;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-  will-change: transform, left, top;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.desk-pet--dragging {
-  cursor: grabbing;
-  transition: none;
-}
-
-/* ═══ 图片 ═══ */
-.desk-pet__image {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-  pointer-events: none;
-  transform: translate3d(var(--pet-look-x), var(--pet-look-y), 0);
-  opacity: 0;
-  transition:
-    opacity 0.15s ease,
-    transform 0.12s linear;
-}
-
-.desk-pet__image--ready {
-  opacity: 1;
-}
-
-.desk-pet__close {
-  position: absolute;
-  top: -0.35rem;
-  right: -0.35rem;
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 999rem;
-  border: 1px solid var(--color-divider, rgba(255, 255, 255, 0.6));
-  background: var(--color-surface, rgba(255, 255, 255, 0.92));
-  color: var(--color-text-secondary, #475569);
-  font-size: 0.78rem;
-  line-height: 1;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.92);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease,
-    color 0.2s ease;
-}
-
-.desk-pet:hover .desk-pet__close,
-.desk-pet:focus-within .desk-pet__close {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
-}
-
-.desk-pet__close:hover {
-  color: var(--color-error, #ef4444);
-}
-
-@media (hover: none) {
-  .desk-pet__close {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-
-/* ═══ 气泡 ═══ */
-.desk-pet__bubble {
-  position: absolute;
-  bottom: calc(100% + 0.25rem);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-surface, #fff);
-  color: var(--color-text-primary, #333);
-  font-size: 0.7rem;
-  line-height: 1.3;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.desk-pet__bubble::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 0.3rem solid transparent;
-  border-top-color: var(--color-surface, #fff);
-}
-
-.bubble-enter-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.bubble-leave-active {
-  transition: opacity 0.15s ease;
-}
-.bubble-enter-from {
-  opacity: 0;
-  transform: translateX(-50%) translateY(0.25rem);
-}
-.bubble-leave-to {
-  opacity: 0;
-}
-
-/* ═══ 情绪粒子 ═══ */
-.desk-pet__particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.desk-pet__particle {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  font-size: 0.85rem;
-  animation: particle-rise 1s ease-out forwards;
-  --px: 0px;
-  --py: 0px;
-}
-
-@keyframes particle-rise {
-  0% {
-    opacity: 1;
-    transform: translate(var(--px), var(--py));
-  }
-  100% {
-    opacity: 0;
-    transform: translate(calc(var(--px) * 1.5), calc(var(--py) - 2.5rem));
-  }
-}
-
-.particle-enter-active {
-  transition: opacity 0.1s ease;
-}
-.particle-leave-active {
-  transition: opacity 0.3s ease;
-}
-.particle-enter-from,
-.particle-leave-to {
-  opacity: 0;
-}
-
-/* ═══ 右键菜单 ═══ */
-.desk-pet__menu {
-  position: absolute;
-  background: var(--color-surface, #fff);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  padding: 0.25rem 0;
-  min-width: 7rem;
-  z-index: 10;
-  cursor: default;
-}
-
-.desk-pet__menu-item {
-  display: block;
-  width: 100%;
-  padding: 0.35rem 0.6rem;
-  border: none;
-  background: none;
-  font-size: 0.75rem;
-  color: var(--color-text-primary, #333);
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  white-space: nowrap;
-}
-
-.desk-pet__menu-item:hover {
-  background: var(--color-surface-2, rgba(0, 0, 0, 0.04));
-}
-
-.desk-pet__menu-item--danger {
-  color: var(--color-error, #ef4444);
-}
-
-.desk-pet__menu-divider {
-  height: 1px;
-  margin: 0.2rem 0.4rem;
-  background: var(--color-divider, #e2e8f0);
-}
-
-.menu-enter-active {
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.menu-leave-active {
-  transition: opacity 0.1s ease;
-}
-.menu-enter-from {
-  opacity: 0;
-  transform: scale(0.9);
-}
-.menu-leave-to {
-  opacity: 0;
-}
-
-/* ═══ 显示/隐藏 ═══ */
-.pet-fade-enter-active,
-.pet-fade-leave-active {
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-}
-.pet-fade-enter-from,
-.pet-fade-leave-to {
-  opacity: 0;
-  transform: scale(0.94);
-}
-
-/* ═══ 状态动画 ═══ */
-.desk-pet--idle,
-.desk-pet--waiting,
-.desk-pet--bored {
-  animation: breathe 3s ease-in-out infinite;
-}
-@keyframes breathe {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.02);
-  }
-}
-
-.desk-pet--hover {
-  animation: tilt 0.5s ease-in-out;
-}
-@keyframes tilt {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(-5deg);
-  }
-  75% {
-    transform: rotate(5deg);
-  }
-}
-
-.desk-pet--enter {
-  animation: intro-hop 0.85s cubic-bezier(0.2, 0.9, 0.25, 1.1);
-}
-@keyframes intro-hop {
-  0% {
-    transform: scale(0.98) rotate(-5deg);
-  }
-  35% {
-    transform: scale(1.06) rotate(2deg);
-  }
-  70% {
-    transform: scale(0.97) rotate(-2deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-.desk-pet--perch {
-  animation: perch-sway 2.2s ease-in-out infinite;
-}
-@keyframes perch-sway {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(-1.5deg) scale(1.01);
-  }
-  75% {
-    transform: rotate(1.5deg) scale(1.01);
-  }
-}
-
-.desk-pet--track {
-  animation: curious-pop 0.5s ease-in-out;
-}
-@keyframes curious-pop {
-  0% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(1.08);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.desk-pet--leap {
-  animation: leap-away 0.75s cubic-bezier(0.2, 0.85, 0.2, 1);
-}
-@keyframes leap-away {
-  0% {
-    transform: scale(1) rotate(0deg);
-  }
-  25% {
-    transform: scale(0.95) rotate(-5deg);
-  }
-  65% {
-    transform: scale(1.05) rotate(6deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-.desk-pet--peek {
-  animation: peek-bob 1.8s ease-in-out infinite;
-}
-@keyframes peek-bob {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(2deg);
-  }
-}
-
-.desk-pet--click {
-  animation: bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-@keyframes bounce {
-  0% {
-    transform: scale(1) rotate(0deg);
-  }
-  30% {
-    transform: scale(0.96) rotate(-2deg);
-  }
-  50% {
-    transform: scale(1.04) rotate(2deg);
-  }
-  70% {
-    transform: scale(0.98) rotate(-1deg);
-  }
-  85% {
-    transform: scale(1.02) rotate(1deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-.desk-pet--angry {
-  animation: shake 0.4s ease-in-out infinite;
-}
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0) rotate(0deg);
-  }
-  20% {
-    transform: translateX(-0.25rem) rotate(-3deg);
-  }
-  40% {
-    transform: translateX(0.25rem) rotate(3deg);
-  }
-  60% {
-    transform: translateX(-0.15rem) rotate(-2deg);
-  }
-  80% {
-    transform: translateX(0.15rem) rotate(2deg);
-  }
-}
-
-.desk-pet--sleep {
-  animation: sleep-breathe 4s ease-in-out infinite;
-  filter: brightness(0.85);
-}
-@keyframes sleep-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.98);
-  }
-}
-
-.desk-pet--wake {
-  animation: wake 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-@keyframes wake {
-  0% {
-    transform: rotate(0deg) scale(0.98);
-    filter: brightness(0.85);
-  }
-  50% {
-    transform: rotate(-5deg) scale(1.03);
-    filter: brightness(1);
-  }
-  100% {
-    transform: rotate(0deg) scale(1);
-    filter: brightness(1);
-  }
-}
-
-.desk-pet--happy,
-.desk-pet--success,
-.desk-pet--excited,
-.desk-pet--skillRunning {
-  animation: happy-bounce 0.8s ease-in-out infinite;
-}
-@keyframes happy-bounce {
-  0%,
-  100% {
-    transform: rotate(0deg) scale(1);
-  }
-  25% {
-    transform: rotate(3deg) scale(1.04);
-  }
-  75% {
-    transform: rotate(-3deg) scale(1.04);
-  }
-}
-
-.desk-pet--thinking,
-.desk-pet--deepThinking,
-.desk-pet--review,
-.desk-pet--contextCompressing,
-.desk-pet--memoryLinking,
-.desk-pet--citationReview,
-.desk-pet--focused {
-  animation: think-sway 2s ease-in-out infinite;
-}
-@keyframes think-sway {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(0.2rem);
-  }
-}
-
-.desk-pet--pat {
-  animation: pat-wiggle 0.4s ease-in-out infinite;
-}
-@keyframes pat-wiggle {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(-4deg) scale(1.02);
-  }
-  75% {
-    transform: rotate(4deg) scale(1.02);
-  }
-}
-
-.desk-pet--eat,
-.desk-pet--hungry {
-  animation: eat-chomp 0.5s ease-in-out infinite;
-}
-@keyframes eat-chomp {
-  0%,
-  100% {
-    transform: scaleY(1);
-  }
-  50% {
-    transform: scaleY(0.94);
-  }
-}
-
-.desk-pet--dizzy,
-.desk-pet--modelUnconfigured,
-.desk-pet--providerIssue,
-.desk-pet--warningRecover,
-.desk-pet--failed,
-.desk-pet--sick {
-  animation: dizzy-spin 0.8s ease-in-out infinite;
-}
-@keyframes dizzy-spin {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(8deg);
-  }
-  75% {
-    transform: rotate(-8deg);
-  }
-}
-
-.desk-pet--retrieving,
-.desk-pet--knowledgeIndexing,
-.desk-pet--syncingModels,
-.desk-pet--updateCheck,
-.desk-pet--sendingPrompt,
-.desk-pet--toolWorking,
-.desk-pet--mcpWorking,
-.desk-pet--attachmentReading,
-.desk-pet--webSearching,
-.desk-pet--modelTesting,
-.desk-pet--graphMapping,
-.desk-pet--flareScan {
-  animation: work-ready 1.1s ease-in-out infinite;
-}
-
-@keyframes work-ready {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-0.18rem) scale(1.02);
-  }
-}
-
-.desk-pet--tired,
-.desk-pet--modelUnavailable,
-.desk-pet--offlineWaiting {
-  animation: sleep-breathe 4s ease-in-out infinite;
-  filter: brightness(0.88);
-}
-
-/* Zzz */
-.desk-pet__zzz {
-  position: absolute;
-  top: -0.5rem;
-  right: -0.5rem;
-  font-size: 0.75rem;
-  font-weight: bold;
-  color: var(--text-secondary, #666);
-  animation: zzz-float 2s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes zzz-float {
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: translateY(0);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-0.5rem);
-  }
-}
-
-.desk-pet--no-anim,
-.desk-pet--no-anim .desk-pet__image,
-.desk-pet--no-anim .desk-pet__zzz,
-.desk-pet--no-anim .desk-pet__particle {
-  animation: none;
-  transition: none;
-}
-
-/* ═══ 减少动画 ═══ */
-@media (prefers-reduced-motion: reduce) {
-  .desk-pet,
-  .desk-pet--idle,
-  .desk-pet--hover,
-  .desk-pet--enter,
-  .desk-pet--perch,
-  .desk-pet--track,
-  .desk-pet--leap,
-  .desk-pet--peek,
-  .desk-pet--click,
-  .desk-pet--angry,
-  .desk-pet--sleep,
-  .desk-pet--wake,
-  .desk-pet--happy,
-  .desk-pet--thinking,
-  .desk-pet--pat,
-  .desk-pet--eat,
-  .desk-pet--dizzy,
-  .desk-pet--waiting,
-  .desk-pet--deepThinking,
-  .desk-pet--review,
-  .desk-pet--contextCompressing,
-  .desk-pet--memoryLinking,
-  .desk-pet--graphMapping,
-  .desk-pet--citationReview,
-  .desk-pet--knowledgeIndexing,
-  .desk-pet--toolWorking,
-  .desk-pet--mcpWorking,
-  .desk-pet--skillRunning,
-  .desk-pet--attachmentReading,
-  .desk-pet--webSearching,
-  .desk-pet--success,
-  .desk-pet--modelTesting,
-  .desk-pet--modelUnconfigured,
-  .desk-pet--modelUnavailable,
-  .desk-pet--syncingModels,
-  .desk-pet--providerIssue,
-  .desk-pet--offlineWaiting,
-  .desk-pet--warningRecover,
-  .desk-pet--updateCheck,
-  .desk-pet--hungry,
-  .desk-pet--tired,
-  .desk-pet--bored,
-  .desk-pet--excited,
-  .desk-pet--focused,
-  .desk-pet--sick {
-    animation: none;
-    transition: none;
-  }
-  .desk-pet__image {
-    opacity: 1;
-    transition: none;
-  }
-}
-
-.desk-pet--blink .desk-pet__image {
-  animation: desk-pet-blink 0.9s ease-in-out;
-}
-
-@keyframes desk-pet-blink {
-  0%,
-  100% {
-    transform: translate3d(var(--pet-look-x), var(--pet-look-y), 0) scaleY(1);
-  }
-  45%,
-  55% {
-    transform: translate3d(var(--pet-look-x), var(--pet-look-y), 0) scaleY(0.9);
-  }
-}
-
-@media (max-width: 768px) {
-  .desk-pet {
-    display: none;
-  }
-}
-</style>

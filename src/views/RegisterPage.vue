@@ -492,9 +492,7 @@ import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/t
 import { isTurnstileBusy, type TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
 import type { AuthFlowResult } from '@/stores/auth'
 import { clientSecurityService } from '@/api/clientSecurityService'
-
-type Step = 'email' | 'register' | 'risk-verification' | 'mfa'
-type RegistrationStep = 'email' | 'register'
+import * as registerModel from './register/registerPageModel'
 const GOOGLE_AUTH_ENABLED =
   import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
     ? true
@@ -508,8 +506,8 @@ const { t } = useI18n()
 
 const { isLoading, isAuthenticated } = storeToRefs(authStore)
 
-const step = ref<Step>('email')
-const primaryStep = ref<RegistrationStep>('email')
+const step = ref<registerModel.RegisterStep>('email')
+const primaryStep = ref<registerModel.RegistrationStep>('email')
 
 const email = ref('')
 const username = ref('')
@@ -560,15 +558,9 @@ const googleClientChallengeRef = useTemplateRef<TurnstileWidgetHandle>('googleCl
 const riskTurnstileRef = useTemplateRef<TurnstileWidgetHandle>('riskTurnstileRef')
 
 const passwordStrengthResult = computed(() => checkPasswordStrength(password.value))
-const passwordStrengthText = computed(() => {
-  const textMap: Record<string, string> = {
-    weak: t('auth.passwordWeak'),
-    fair: t('auth.passwordFair'),
-    good: t('auth.passwordGood'),
-    strong: t('auth.passwordStrong'),
-  }
-  return textMap[passwordStrengthResult.value.level]
-})
+const passwordStrengthText = computed(() =>
+  t(registerModel.resolveRegisterPasswordStrengthTextKey(passwordStrengthResult.value.level))
+)
 
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
@@ -591,21 +583,16 @@ const redirectTo = computed(() => {
   return resolveAuthRedirectTarget(redirect, '/')
 })
 
-const maskedEmail = computed(() => {
-  if (!email.value) return ''
-  const parts = email.value.split('@')
-  const local = parts[0] ?? ''
-  const domain = parts[1]
-  if (!domain) return email.value
-  const visible = local.length <= 2 ? local : local.slice(0, 2)
-  return `${visible}***@${domain}`
-})
+const maskedEmail = computed(() => registerModel.maskRegistrationEmail(email.value))
 
-const showRegistrationProgress = computed(() => step.value === 'email' || step.value === 'register')
-const googleProviderBusy = computed(
-  () =>
-    ['opening', 'waiting', 'recovery', 'handling'].includes(googlePopupState.value) ||
-    isLoading.value
+const showRegistrationProgress = computed(() =>
+  registerModel.shouldShowRegistrationProgress(step.value)
+)
+const googleProviderBusy = computed(() =>
+  registerModel.isRegisterGoogleProviderBusy({
+    popupState: googlePopupState.value,
+    isLoading: isLoading.value,
+  })
 )
 const googleAuthEnabled = computed(() => GOOGLE_AUTH_ENABLED)
 const showRegisterTurnstile = computed(
@@ -620,31 +607,14 @@ const googlePopupErrorMessage = computed(() =>
 const resolvedGoogleClientChallengeSiteKey = computed(
   () => googleClientChallengeSiteKey.value || turnstileSiteKey.value
 )
-const showGoogleClientChallenge = computed(
-  () => googlePopupState.value === 'handling' && Boolean(pendingGoogleHandoffCode.value)
+const showGoogleClientChallenge = computed(() =>
+  registerModel.shouldShowRegisterGoogleClientChallenge({
+    popupState: googlePopupState.value,
+    handoffCode: pendingGoogleHandoffCode.value,
+  })
 )
-const pageTitle = computed(() => {
-  switch (step.value) {
-    case 'risk-verification':
-      return t('auth.riskVerificationTitle')
-    case 'mfa':
-      return t('auth.mfa.title')
-    default:
-      return t('auth.registerTitle')
-  }
-})
-const pageSubtitle = computed(() => {
-  switch (step.value) {
-    case 'register':
-      return t('auth.stepRegister')
-    case 'risk-verification':
-      return t('auth.riskVerificationHint')
-    case 'mfa':
-      return t('auth.mfa.hint')
-    default:
-      return t('auth.registerSubtitle')
-  }
-})
+const pageTitle = computed(() => t(registerModel.resolveRegisterPageTitleKey(step.value)))
+const pageSubtitle = computed(() => t(registerModel.resolveRegisterPageSubtitleKey(step.value)))
 
 watch(email, () => {
   emailError.value = ''
@@ -662,18 +632,6 @@ function clearInlineErrors() {
   emailError.value = ''
   riskError.value = ''
   mfaError.value = ''
-}
-
-function isExpiredGoogleHandoffResult(
-  result: Extract<AuthFlowResult, { status: 'error' }>
-): boolean {
-  const detail = result.detail?.trim().toLowerCase() ?? ''
-  return (
-    result.error === 'auth.error.googleLoginExpired' ||
-    result.code === 'invalid_google_handoff' ||
-    detail === 'invalid or expired google handoff code' ||
-    detail === 'invalid google handoff code'
-  )
 }
 
 function resetGoogleClientChallengeState() {
@@ -754,17 +712,21 @@ function handleBack() {
     return
   }
 
-  if (step.value !== 'email') {
-    returnToPrimaryStep()
-    return
+  switch (
+    registerModel.resolveRegisterBackNavigationIntent({
+      step: step.value,
+      historyLength: window.history.length,
+    })
+  ) {
+    case 'return-to-primary':
+      returnToPrimaryStep()
+      return
+    case 'history-back':
+      router.back()
+      return
+    case 'home-replace':
+      void router.replace('/')
   }
-
-  if (window.history.length > 1) {
-    router.back()
-    return
-  }
-
-  void router.replace('/')
 }
 
 function startCooldown() {
@@ -800,9 +762,11 @@ function hasValidRegisterToken() {
 }
 
 function isTurnstileTokenFresh() {
-  if (!turnstileEnabled.value) return true
-  if (!turnstileToken.value || !turnstileIssuedAt.value) return false
-  return Date.now() - turnstileIssuedAt.value < 4 * 60 * 1000
+  return registerModel.isTurnstileTokenFresh({
+    token: turnstileToken.value,
+    issuedAt: turnstileIssuedAt.value,
+    enabled: turnstileEnabled.value,
+  })
 }
 
 function isRiskTurnstileTokenFresh() {
@@ -1023,7 +987,7 @@ async function handleGoogleClientChallengeVerify(token: string) {
 
     const result = await authStore.completeGoogleAuth(pendingGoogleHandoffCode.value.trim())
     if (result.status === 'error') {
-      if (isExpiredGoogleHandoffResult(result)) {
+      if (registerModel.isExpiredGoogleHandoffResult(result)) {
         resetGoogleClientChallengeState()
         setGooglePopupStatus('error', 'auth.error.googleLoginExpired')
         return
@@ -1311,38 +1275,25 @@ function goBackToEmail() {
 }
 
 async function handleRegister() {
-  const trimmedUsername = username.value.trim()
   const emailValidation = validateRegistrationEmail({ showToast: true })
   const normalizedEmail = emailValidation.normalizedEmail
+  const formValidation = registerModel.validateRegisterForm({
+    username: username.value,
+    emailValid: emailValidation.valid,
+    password: password.value,
+    confirmPassword: confirmPassword.value,
+    verificationCode: verificationCode.value,
+    passwordStrengthLevel: passwordStrengthResult.value.level,
+  })
 
-  if (!trimmedUsername || !password.value || !confirmPassword.value) {
-    toastStore.warning(t('auth.error.fieldsRequired'))
+  if (!formValidation.valid) {
+    if (formValidation.messageKey) {
+      toastStore.warning(t(formValidation.messageKey))
+    }
     return
   }
-  if (!emailValidation.valid) return
 
   email.value = normalizedEmail
-
-  if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
-    toastStore.warning(t('auth.error.usernameInvalid'))
-    return
-  }
-  if (password.value !== confirmPassword.value) {
-    toastStore.warning(t('auth.passwordMismatch'))
-    return
-  }
-  if (verificationCode.value.length !== 6) {
-    toastStore.warning(t('auth.error.codeRequired'))
-    return
-  }
-  if (password.value.length < 8) {
-    toastStore.warning(t('auth.error.passwordTooShort'))
-    return
-  }
-  if (passwordStrengthResult.value.level === 'weak') {
-    toastStore.warning(t('auth.error.passwordTooWeak'))
-    return
-  }
 
   const needsTurnstile = !hasValidRegisterToken()
   if (turnstileEnabled.value && needsTurnstile && !isTurnstileTokenFresh()) {
@@ -1360,7 +1311,7 @@ async function handleRegister() {
   serverPasswordErrors.value = []
 
   const result = await authStore.register(
-    trimmedUsername,
+    formValidation.trimmedUsername,
     normalizedEmail,
     password.value,
     verificationCode.value,
@@ -1372,11 +1323,7 @@ async function handleRegister() {
   if (result.success) {
     forceTurnstileForRegister.value = false
     toastStore.success(t('auth.registerSuccess'))
-    const nextLogin =
-      redirectTo.value === '/'
-        ? '/login'
-        : `/login?redirect=${encodeURIComponent(redirectTo.value)}`
-    await router.replace(nextLogin)
+    await router.replace(registerModel.resolveRegisterLoginTarget(redirectTo.value))
     return
   }
 

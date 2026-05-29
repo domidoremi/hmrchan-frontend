@@ -143,6 +143,18 @@ import { thumbnailCache } from '@/utils/thumbnailCache'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
+import {
+  formatCount,
+  formatDuration,
+  isTitleDerivedFromContent,
+  normalizeTag,
+  normalizeText,
+  resolveDisplayAuthorName,
+  resolveDisplayExcerpt,
+  resolveDisplayTitle,
+  resolvePlatformAnimation,
+  resolvePlatformLabel,
+} from './post-card/postCardModel'
 
 /**
  * 固定宽高比缓存 - 用于保持布局稳定，避免 CLS
@@ -230,67 +242,34 @@ if (renderDebugEnabled) {
   })
 }
 
-function normalizeText(input: string | null | undefined): string {
-  return String(input ?? '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
+const displayAuthorName = computed(() =>
+  resolveDisplayAuthorName({
+    authorName: props.post.author_name,
+    authorUsername: props.post.author_username,
+  })
+)
 
-function normalizeTag(input: string | null | undefined): string {
-  return String(input ?? '')
-    .replace(/^#/, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
+const titleFromContent = computed(() =>
+  isTitleDerivedFromContent({
+    title: props.post.title,
+    description: props.post.description,
+  })
+)
 
-const displayAuthorName = computed(() => {
-  const name = normalizeText(props.post.author_name)
-  if (name) return name
-  const username = normalizeText(props.post.author_username)
-  return username ? `@${username}` : ''
-})
+const displayTitle = computed(() =>
+  resolveDisplayTitle({
+    title: props.post.title,
+    description: props.post.description,
+    titleFromContent: titleFromContent.value,
+  })
+)
 
-const titleFromContent = computed(() => {
-  const title = normalizeText(props.post.title)
-  const content = normalizeText(props.post.description)
-  if (!title && content) return true
-  if (title && content && title === content) return true
-  // very short titles are often placeholders on some platforms
-  if (title.length > 0 && title.length <= 3 && content) return true
-  return false
-})
-
-const displayTitle = computed(() => {
-  const title = normalizeText(props.post.title)
-  const content = normalizeText(props.post.description)
-
-  if (!titleFromContent.value) {
-    return title || ''
-  }
-
-  // Title comes from content — extract a short snippet (first segment up to a space boundary)
-  const source = content || title
-  if (!source) return ''
-
-  // Take the first line, then truncate at a reasonable word boundary
-  const firstLine = source.split(/\n/)[0] || source
-  if (firstLine.length <= 30) return firstLine
-
-  // Find a space boundary within the first ~30 chars
-  const cutoff = firstLine.lastIndexOf(' ', 30)
-  const end = cutoff > 10 ? cutoff : 30
-  return firstLine.slice(0, end) + '…'
-})
-
-const displayExcerpt = computed(() => {
-  const content = normalizeText(props.post.description)
-  if (!content) return ''
-
-  // If title already came from content, avoid duplicating excerpt.
-  if (titleFromContent.value) return ''
-
-  return content
-})
+const displayExcerpt = computed(() =>
+  resolveDisplayExcerpt({
+    description: props.post.description,
+    titleFromContent: titleFromContent.value,
+  })
+)
 
 const cardExcerpt = computed(() => {
   if (!props.showContent) return ''
@@ -336,34 +315,11 @@ const platformIcon = computed(() => {
 })
 
 const platformAnimation = computed(() => {
-  const platform = props.post.platform?.toLowerCase()
-  const map: Record<string, string> = {
-    youtube: 'sparkle',
-    twitter: 'explore',
-    tiktok: 'explore',
-    instagram: 'heart',
-    bilibili: 'sparkle',
-    pixiv: 'heart',
-    weibo: 'explore',
-  }
-  return platform ? (map[platform] ?? 'explore') : 'explore'
+  return resolvePlatformAnimation(props.post.platform)
 })
 
 const platformLabel = computed(() => {
-  const raw = props.post.platform
-  if (!raw) return ''
-
-  const map: Record<string, string> = {
-    bilibili: 'Bilibili',
-    youtube: 'YouTube',
-    twitter: 'X',
-    instagram: 'Instagram',
-    pixiv: 'Pixiv',
-    weibo: 'Weibo',
-    tiktok: 'TikTok',
-  }
-
-  return map[raw] ?? raw.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return resolvePlatformLabel(props.post.platform)
 })
 
 const effectiveThumbnailSize = computed(() => {
@@ -514,23 +470,6 @@ watch(
   },
   { immediate: true }
 )
-
-function formatCount(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K'
-  return String(n)
-}
-
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = Math.floor(seconds % 60)
-
-  if (h > 0) {
-    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-  }
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
 
 /**
  * 格式化发布时间为相对时间或日期

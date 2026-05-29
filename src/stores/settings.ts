@@ -146,6 +146,39 @@ function normalizePrivacySettings(target: Settings): void {
   }
 }
 
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+function normalizeMascotBackgroundConfig(
+  config: Partial<MascotBackgroundConfig> | undefined
+): MascotBackgroundConfig {
+  const next = {
+    ...defaultSettings.mascotBackground,
+    ...config,
+  }
+
+  return {
+    ...next,
+    density: clampNumber(next.density, 0.4, 1.6),
+    speed: clampNumber(next.speed, 0.6, 1.8),
+    opacity: clampNumber(next.opacity, 0.3, 1),
+  }
+}
+
+function normalizeDeskPetConfig(config: Partial<DeskPetConfig> | undefined): DeskPetConfig {
+  const next = {
+    ...defaultSettings.deskPet,
+    ...config,
+  }
+
+  return {
+    ...next,
+    scale: clampNumber(next.scale, 0.8, 1.5),
+    followSensitivity: clampNumber(next.followSensitivity, 0.5, 1.8),
+  }
+}
+
 type SettingsHydrationSnapshot = Settings & {
   uiStyle?: LegacyUiStyleSnapshot
   densityMode?: string
@@ -224,33 +257,10 @@ export const useSettingsStore = defineStore(
         settings.value.homeQuickNavSide = defaultSettings.homeQuickNavSide
       }
 
-      settings.value.mascotBackground = {
-        ...defaultSettings.mascotBackground,
-        ...settings.value.mascotBackground,
-      }
-      settings.value.deskPet = {
-        ...defaultSettings.deskPet,
-        ...settings.value.deskPet,
-      }
-
-      settings.value.mascotBackground.density = Math.min(
-        1.6,
-        Math.max(0.4, settings.value.mascotBackground.density)
+      settings.value.mascotBackground = normalizeMascotBackgroundConfig(
+        settings.value.mascotBackground
       )
-      settings.value.mascotBackground.speed = Math.min(
-        1.8,
-        Math.max(0.6, settings.value.mascotBackground.speed)
-      )
-      settings.value.mascotBackground.opacity = Math.min(
-        1,
-        Math.max(0.3, settings.value.mascotBackground.opacity)
-      )
-
-      settings.value.deskPet.scale = Math.min(1.5, Math.max(0.8, settings.value.deskPet.scale))
-      settings.value.deskPet.followSensitivity = Math.min(
-        1.8,
-        Math.max(0.5, settings.value.deskPet.followSensitivity)
-      )
+      settings.value.deskPet = normalizeDeskPetConfig(settings.value.deskPet)
       settings.value.appUpdateStrategy = [
         'prompt-only',
         'public-idle-refresh',
@@ -361,14 +371,10 @@ export const useSettingsStore = defineStore(
     }
 
     function setMascotBackground(config: Partial<MascotBackgroundConfig>) {
-      const next = {
+      settings.value.mascotBackground = normalizeMascotBackgroundConfig({
         ...settings.value.mascotBackground,
         ...config,
-      }
-      next.density = Math.min(1.6, Math.max(0.4, next.density))
-      next.speed = Math.min(1.8, Math.max(0.6, next.speed))
-      next.opacity = Math.min(1, Math.max(0.3, next.opacity))
-      settings.value.mascotBackground = next
+      })
     }
 
     function setDeskPet(config: Partial<DeskPetConfig>) {
@@ -382,9 +388,7 @@ export const useSettingsStore = defineStore(
       if (config.enabled === false && config.dismissedAutoHome === undefined) {
         next.dismissedAutoHome = true
       }
-      next.scale = Math.min(1.5, Math.max(0.8, next.scale))
-      next.followSensitivity = Math.min(1.8, Math.max(0.5, next.followSensitivity))
-      settings.value.deskPet = next
+      settings.value.deskPet = normalizeDeskPetConfig(next)
     }
 
     function setAppUpdateStrategy(strategy: AppUpdateStrategy) {

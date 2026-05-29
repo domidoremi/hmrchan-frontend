@@ -1,0 +1,333 @@
+.security-mfa-panel {
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.25rem);
+}
+
+.security-mfa-panel .settings-section {
+  padding: clamp(1rem, 3vw, 1.5rem);
+  max-width: 100%;
+  border-radius: var(--profile-section-radius, 1.25rem);
+  border: 1px solid var(--profile-surface-border, rgba(15, 23, 42, 0.08));
+  border-inline-start-width: 0.1875rem;
+  background: var(--profile-surface-bg, rgba(255, 255, 255, 0.85));
+  box-shadow: var(--profile-surface-shadow, 0 20px 40px rgba(15, 23, 42, 0.08));
+}
+
+.security-mfa-panel .settings-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 0.75rem);
+  margin-bottom: var(--spacing-5, 1.25rem);
+  padding-bottom: var(--spacing-3, 0.75rem);
+  border-bottom: 1px solid var(--profile-muted-border, rgba(15, 23, 42, 0.08));
+}
+
+.security-mfa-panel .settings-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-lg, 1rem);
+  border: 1px solid var(--profile-muted-border-strong, rgba(15, 23, 42, 0.12));
+  background: var(--profile-muted-bg-strong, rgba(37, 99, 235, 0.08));
+  color: var(--color-primary);
+}
+
+.security-mfa-panel .settings-section-icon--success {
+  background: rgba(var(--color-success-rgb, 16, 185, 129), 0.12);
+  color: var(--color-success, #10b981);
+}
+
+.security-mfa-panel .settings-section-title {
+  margin: 0;
+  font-size: clamp(var(--text-base), 2vw, var(--text-lg));
+  font-weight: var(--font-semibold, 600);
+  color: var(--color-text-primary, #0f172a);
+}
+
+.security-mfa-panel .settings-section-desc,
+.security-mfa-panel .field-hint,
+.security-mfa-panel .passkey-item__meta {
+  margin: 0;
+  font-size: var(--text-sm, 0.9rem);
+  line-height: 1.6;
+  color: var(--color-text-tertiary, #64748b);
+}
+
+.security-mfa-panel .field-error {
+  margin: 0 0 1rem;
+  font-size: var(--text-sm, 0.9rem);
+  color: var(--color-error, #ef4444);
+}
+
+.security-mfa-panel .two-factor-status-card,
+.security-mfa-panel .two-factor-form-card,
+.security-mfa-panel .passkey-section {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--profile-muted-border, rgba(15, 23, 42, 0.08));
+  border-radius: var(--radius-lg, 1rem);
+  background: var(--profile-muted-bg, rgba(255, 255, 255, 0.78));
+}
+
+.security-mfa-panel .two-factor-status-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.security-mfa-panel .two-factor-status-copy,
+.security-mfa-panel .two-factor-form-card__copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.security-mfa-panel .two-factor-status-label,
+.security-mfa-panel .two-factor-secret-label {
+  margin: 0;
+  font-size: var(--text-xs, 0.78rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #64748b);
+}
+
+.security-mfa-panel .two-factor-status-value {
+  margin: 0;
+  font-size: clamp(1rem, 2vw, 1.1rem);
+  font-weight: 700;
+  color: var(--color-text-primary, #0f172a);
+}
+
+.security-mfa-panel .two-factor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.security-mfa-panel .two-factor-actions--stacked {
+  justify-content: flex-start;
+}
+
+.security-mfa-panel .account-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.875rem;
+  margin-top: 1rem;
+}
+
+.security-mfa-panel .account-meta-item {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.875rem;
+  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
+  border-radius: var(--radius-lg, 1rem);
+  background: var(--profile-action-bg, rgba(255, 255, 255, 0.72));
+}
+
+.security-mfa-panel .account-meta-label {
+  font-size: var(--text-xs, 0.78rem);
+  color: var(--color-text-tertiary, #64748b);
+}
+
+.security-mfa-panel .account-meta-value {
+  font-size: var(--text-sm, 0.92rem);
+  font-weight: 600;
+  color: var(--color-text-primary, #0f172a);
+  overflow-wrap: anywhere;
+}
+
+.security-mfa-panel .method-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 1rem;
+}
+
+.security-mfa-panel .method-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+  font-size: var(--text-xs, 0.78rem);
+  font-weight: 600;
+}
+
+.security-mfa-panel .two-factor-setup {
+  display: grid;
+  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.security-mfa-panel .two-factor-setup-qr,
+.security-mfa-panel .two-factor-setup-details,
+.security-mfa-panel .two-factor-secret-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.security-mfa-panel .two-factor-secret-card {
+  padding: 1rem;
+  border-radius: var(--radius-lg, 1rem);
+  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
+  background: var(--profile-action-bg, rgba(255, 255, 255, 0.72));
+}
+
+.security-mfa-panel .two-factor-secret-value {
+  display: block;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--radius-md, 0.75rem);
+  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
+  background: rgba(15, 23, 42, 0.03);
+  color: var(--color-text-primary, #0f172a);
+  font-size: var(--text-sm, 0.92rem);
+}
+
+.security-mfa-panel .two-factor-secret-value--wrap {
+  overflow-wrap: anywhere;
+}
+
+.security-mfa-panel .two-factor-backup-box {
+  display: grid;
+  gap: 0.875rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-lg, 1rem);
+  border: 1px dashed rgba(var(--color-success-rgb, 16, 185, 129), 0.3);
+  background: rgba(var(--color-success-rgb, 16, 185, 129), 0.06);
+}
+
+.security-mfa-panel .two-factor-backup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.security-mfa-panel .two-factor-backup-header h3 {
+  margin: 0;
+  font-size: var(--text-sm, 0.92rem);
+  font-weight: 700;
+  color: var(--color-text-primary, #0f172a);
+}
+
+.security-mfa-panel .two-factor-backup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.75rem;
+}
+
+.security-mfa-panel .two-factor-backup-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--radius-md, 0.75rem);
+  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--color-text-primary, #0f172a);
+  font-size: var(--text-sm, 0.92rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.security-mfa-panel .passkey-section {
+  margin-top: 1rem;
+}
+
+.security-mfa-panel .passkey-section__header {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.security-mfa-panel .passkey-list,
+.security-mfa-panel .two-factor-management-grid {
+  display: grid;
+  gap: 0.875rem;
+  margin-top: 1rem;
+}
+
+.security-mfa-panel .two-factor-management-grid {
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.security-mfa-panel .passkey-item {
+  display: grid;
+  gap: 0.375rem;
+  padding: 0.875rem;
+  border-radius: var(--radius-lg, 1rem);
+  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.security-mfa-panel .passkey-item__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.875rem;
+}
+
+.security-mfa-panel .passkey-item__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.375rem;
+}
+
+.security-mfa-panel .passkey-item__name {
+  color: var(--color-text-primary, #0f172a);
+  font-size: var(--text-sm, 0.92rem);
+}
+
+.security-mfa-panel .passkey-device-input,
+.security-mfa-panel .passkey-rename-input {
+  min-width: min(16rem, 100%);
+}
+
+.security-mfa-panel .auth-form,
+.security-mfa-panel .form-group {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.security-mfa-panel .form-group label {
+  font-size: var(--text-sm, 0.92rem);
+  font-weight: 600;
+  color: var(--color-text-secondary, #334155);
+}
+
+@media (max-width: 768px) {
+  .security-mfa-panel .two-factor-status-card,
+  .security-mfa-panel .two-factor-setup,
+  .security-mfa-panel .two-factor-management-grid,
+  .security-mfa-panel .two-factor-backup-header {
+    grid-template-columns: 1fr;
+  }
+
+  .security-mfa-panel .two-factor-status-card,
+  .security-mfa-panel .two-factor-backup-header {
+    align-items: stretch;
+  }
+
+  .security-mfa-panel .two-factor-actions {
+    justify-content: stretch;
+  }
+
+  .security-mfa-panel .two-factor-actions > .btn {
+    width: 100%;
+  }
+
+  .security-mfa-panel .passkey-device-input {
+    min-width: 100%;
+  }
+
+  .security-mfa-panel .passkey-item__actions {
+    grid-template-columns: 1fr;
+  }
+}

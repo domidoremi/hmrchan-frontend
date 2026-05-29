@@ -8,6 +8,24 @@ export interface BubbleRevealWindow {
   shouldReset: boolean
 }
 
+export type BubbleRevealPhase = 'idle' | 'arming' | 'revealed' | 'exiting'
+
+export type BubbleRevealLifecycleAction = 'none' | 'reset' | 'reveal' | 'restart-burst' | 'retreat'
+
+export interface BubbleRevealLifecycleInput {
+  primed: boolean
+  itemCount: number
+  lightweightViewport: boolean
+  shouldAnimate: boolean
+}
+
+export interface BubbleRevealViewportInput {
+  windowState: BubbleRevealWindow
+  phase: BubbleRevealPhase
+  shouldAnimate: boolean
+  burstFramePending: boolean
+}
+
 const ENTER_BOTTOM_RATIO = 0.28
 const ENTER_TOP_RATIO = 0.86
 const RESET_BOTTOM_RATIO = -0.18
@@ -35,4 +53,32 @@ export function resolveBubbleRevealWindow(
     shouldReveal,
     shouldReset: !stillWithinResetBand,
   }
+}
+
+export function resolveBubbleRevealLifecycleAction({
+  primed,
+  itemCount,
+  lightweightViewport,
+  shouldAnimate,
+}: BubbleRevealLifecycleInput): BubbleRevealLifecycleAction {
+  if (!primed || itemCount <= 0) return 'reset'
+  if (lightweightViewport) return 'reveal'
+  return shouldAnimate ? 'restart-burst' : 'reveal'
+}
+
+export function resolveBubbleRevealViewportAction({
+  windowState,
+  phase,
+  shouldAnimate,
+  burstFramePending,
+}: BubbleRevealViewportInput): BubbleRevealLifecycleAction {
+  if (windowState.shouldReveal && (phase === 'idle' || phase === 'exiting') && !burstFramePending) {
+    return shouldAnimate ? 'restart-burst' : 'reveal'
+  }
+
+  if (windowState.shouldReset && phase === 'revealed' && !burstFramePending) {
+    return 'retreat'
+  }
+
+  return 'none'
 }

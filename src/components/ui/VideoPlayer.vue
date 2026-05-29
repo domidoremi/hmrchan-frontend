@@ -647,11 +647,24 @@ import { apiClient } from '@/api/client'
 import {
   buildSubtitleOverlayStyle,
   buildSubtitlePreviewStyle,
+  CONTROLS_HIDE_DELAY,
+  extractActiveCueHtml,
   formatTime,
+  normalizeSubtitleFallbackText,
+  normalizeVolumeInput,
   normalizeSubtitleTracks,
+  needsFetchFallback,
+  pickDefaultSubtitle,
+  PLAYBACK_SPEEDS,
+  resolveDisplayPercent,
+  resolveKeyboardSeekTime,
+  resolvePlayedPercent,
+  resolveSeekFromPoint,
+  SEEK_STEP,
   SUBTITLE_BG_COLORS,
   SUBTITLE_COLORS,
   SUBTITLE_SHADOWS,
+  VOLUME_STEP,
   type NormalizedSubtitleTrack,
   type SubtitleTrack,
 } from './video-player/videoPlayerModel'
@@ -679,11 +692,6 @@ const emit = defineEmits<{
   ended: []
   timeupdate: [time: number]
 }>()
-
-const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
-const CONTROLS_HIDE_DELAY = 3000
-const SEEK_STEP = 5
-const VOLUME_STEP = 0.1
 
 const videoRef = useTemplateRef<HTMLVideoElement>('videoRef')
 const playerElement = useTemplateRef<HTMLElement>('playerElement')
@@ -776,15 +784,11 @@ const apiBaseUrl = computed(
 )
 
 const playedPercent = computed(() => {
-  const dur = duration.value
-  if (!isFinite(dur) || dur <= 0) return 0
-  return Math.min(100, Math.max(0, (currentTime.value / dur) * 100))
+  return resolvePlayedPercent(currentTime.value, duration.value)
 })
 
 const displayPercent = computed(() => {
-  const raw = seekPreviewPercent.value ?? playedPercent.value
-  if (!isFinite(raw)) return 0
-  return Math.min(100, Math.max(0, raw))
+  return resolveDisplayPercent(seekPreviewPercent.value, playedPercent.value)
 })
 
 const supportsPiP = computed(() => document.pictureInPictureEnabled)
@@ -797,39 +801,6 @@ const normalizedSubtitles = computed<NormalizedSubtitleTrack[]>(() =>
     overrides: subtitleOverrides.value,
   })
 )
-
-// --- Subtitle helpers ---
-
-function isSrtTrack(track: NormalizedSubtitleTrack): boolean {
-  if (track.format?.toLowerCase() === 'srt') return true
-  return track.src.toLowerCase().endsWith('.srt')
-}
-
-function toLocaleMatches(trackLang: string, target: string): boolean {
-  const n = trackLang.toLowerCase()
-  const t = target.toLowerCase()
-  if (n === t) return true
-  const base = t.split('-')[0]
-  return n === base || n.startsWith(`${base}-`)
-}
-
-function pickDefaultSubtitle(tracks: NormalizedSubtitleTrack[]) {
-  if (!tracks.length) return null
-  const preferred = videoSettings.value.subtitleLanguage
-  if (preferred) {
-    const match = tracks.find((t) => toLocaleMatches(t.language, preferred))
-    if (match) return match.language
-  }
-  const localeMatch = tracks.find((t) => toLocaleMatches(t.language, locale.value))
-  if (localeMatch) return localeMatch.language
-  return tracks[0]?.language ?? null
-}
-
-function needsFetchFallback(track: NormalizedSubtitleTrack): boolean {
-  if (track.src.includes('/subtitle?language=')) return true
-  if (isSrtTrack(track)) return true
-  return false
-}
 
 function isLocalApiTrackSource(src: string): boolean {
   try {
@@ -852,9 +823,7 @@ async function ensureVttFallback(track: NormalizedSubtitleTrack) {
           return response.text()
         })()
     if (!rawText) return
-    const normalized = rawText.replace(/\r+/g, '')
-    const body = normalized.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
-    const vttText = body.trimStart().startsWith('WEBVTT') ? body : `WEBVTT\n\n${body.trim()}\n`
+    const vttText = normalizeSubtitleFallbackText(rawText)
     const blobUrl = URL.createObjectURL(new Blob([vttText], { type: 'text/vtt' }))
     subtitleOverrides.value = { ...subtitleOverrides.value, [track.src]: blobUrl }
   } catch {
@@ -869,7 +838,11 @@ function syncSubtitleSelection(tracks: NormalizedSubtitleTrack[]) {
   }
   const current = selectedSubtitleLanguage.value
   if (current && tracks.some((t) => t.language === current)) return
-  selectedSubtitleLanguage.value = pickDefaultSubtitle(tracks)
+  selectedSubtitleLanguage.value = pickDefaultSubtitle({
+    tracks,
+    preferredLanguage: videoSettings.value.subtitleLanguage,
+    locale: locale.value,
+  })
 }
 
 function applySubtitleMode() {
@@ -899,23 +872,7 @@ function applySubtitleMode() {
 }
 
 function onCueChange() {
-  if (!activeCueTrack?.activeCues?.length) {
-    activeCueHtml.value = ''
-    return
-  }
-  const parts: string[] = []
-  for (let i = 0; i < activeCueTrack.activeCues.length; i += 1) {
-    const cue = activeCueTrack.activeCues[i] as VTTCue | undefined
-    if (!cue || !('text' in cue)) continue
-    // Strip VTT tags but keep line breaks
-    const clean = cue.text
-      .replace(/<[^>]+>/g, '')
-      .split('\n')
-      .filter((l) => l.trim())
-      .join('<br>')
-    if (clean) parts.push(clean)
-  }
-  activeCueHtml.value = parts.join('<br>')
+  activeCueHtml.value = extractActiveCueHtml(activeCueTrack?.activeCues)
 }
 
 /** Reactive style object for the custom subtitle overlay */
@@ -1051,52 +1008,43 @@ function clearSeekPending() {
 function seekFromClick(event: MouseEvent) {
   if (!videoRef.value || !event.currentTarget) return
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-  const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
-  if (duration.value <= 0) return
-  const newTime = percent * duration.value
-  const delta = newTime - currentTime.value
-  currentTime.value = newTime
-  markSeekPending(percent * 100)
-  videoRef.value.currentTime = newTime
-  if (Math.abs(delta) > 0.2) {
-    triggerSeekIndicator(delta > 0 ? 'forward' : 'backward', Math.round(Math.abs(delta)))
+  const seek = resolveSeekFromPoint({
+    clientX: event.clientX,
+    rectLeft: rect.left,
+    rectWidth: rect.width,
+    duration: duration.value,
+    currentTime: currentTime.value,
+  })
+  if (!seek) return
+  currentTime.value = seek.time
+  markSeekPending(seek.percent * 100)
+  videoRef.value.currentTime = seek.time
+  if (Math.abs(seek.delta) > 0.2) {
+    triggerSeekIndicator(seek.direction, seek.indicatorSeconds)
   }
 }
 
 function handleProgressKeydown(event: KeyboardEvent) {
   if (!videoRef.value || duration.value <= 0) return
 
-  const step = event.shiftKey ? SEEK_STEP * 3 : SEEK_STEP
-  let nextTime: number | null = null
-
-  switch (event.key) {
-    case 'ArrowLeft':
-      nextTime = currentTime.value - step
-      break
-    case 'ArrowRight':
-      nextTime = currentTime.value + step
-      break
-    case 'Home':
-      nextTime = 0
-      break
-    case 'End':
-      nextTime = duration.value
-      break
-    default:
-      return
-  }
+  const seek = resolveKeyboardSeekTime({
+    key: event.key,
+    shiftKey: event.shiftKey,
+    currentTime: currentTime.value,
+    duration: duration.value,
+    seekStep: SEEK_STEP,
+  })
+  if (!seek) return
 
   event.preventDefault()
   event.stopPropagation()
 
-  const clampedTime = Math.max(0, Math.min(duration.value, nextTime))
-  const delta = clampedTime - currentTime.value
-  currentTime.value = clampedTime
-  markSeekPending((clampedTime / duration.value) * 100)
-  videoRef.value.currentTime = clampedTime
+  currentTime.value = seek.time
+  markSeekPending(seek.percent * 100)
+  videoRef.value.currentTime = seek.time
 
-  if (Math.abs(delta) > 0.2) {
-    triggerSeekIndicator(delta > 0 ? 'forward' : 'backward', Math.round(Math.abs(delta)))
+  if (Math.abs(seek.delta) > 0.2) {
+    triggerSeekIndicator(seek.direction, seek.indicatorSeconds)
   }
 }
 
@@ -1119,15 +1067,19 @@ function updateSeek(event: MouseEvent | TouchEvent) {
   const clientX = 'touches' in event ? event.touches[0]?.clientX : (event as MouseEvent).clientX
   if (clientX === undefined) return
   if ('preventDefault' in event && isSeeking.value) event.preventDefault()
-  const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-  if (duration.value <= 0) return
-  const newTime = percent * duration.value
-  const delta = newTime - currentTime.value
-  currentTime.value = newTime
-  markSeekPending(percent * 100)
-  videoRef.value.currentTime = newTime
-  if (Math.abs(delta) > 0.2) {
-    triggerSeekIndicator(delta > 0 ? 'forward' : 'backward', Math.round(Math.abs(delta)))
+  const seek = resolveSeekFromPoint({
+    clientX,
+    rectLeft: rect.left,
+    rectWidth: rect.width,
+    duration: duration.value,
+    currentTime: currentTime.value,
+  })
+  if (!seek) return
+  currentTime.value = seek.time
+  markSeekPending(seek.percent * 100)
+  videoRef.value.currentTime = seek.time
+  if (Math.abs(seek.delta) > 0.2) {
+    triggerSeekIndicator(seek.direction, seek.indicatorSeconds)
   }
 }
 
@@ -1149,13 +1101,12 @@ function toggleMute() {
 
 function handleVolumeInput(event: Event) {
   if (!videoRef.value || !event.target) return
-  const value = parseInt((event.target as HTMLInputElement).value, 10)
-  if (isNaN(value)) return
-  const newVol = Math.max(0, Math.min(1, value / 100))
+  const newVol = normalizeVolumeInput((event.target as HTMLInputElement).value)
+  if (newVol === null) return
   videoRef.value.volume = newVol
   updateVolume(newVol)
   triggerVolumeIndicator(Math.round(newVol * 100))
-  if (value > 0) {
+  if (newVol > 0) {
     videoRef.value.muted = false
     updateMuted(false)
   }

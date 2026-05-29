@@ -446,8 +446,8 @@ import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
 import AuthDivider from '@/components/auth/AuthDivider.vue'
 import AuthProviderButton from '@/components/auth/AuthProviderButton.vue'
 import IconGoogle from '@/components/icons/IconGoogle.vue'
+import * as loginModel from './login/loginPageModel'
 
-type Step = 'credentials' | 'risk-verification' | 'mfa'
 const GOOGLE_AUTH_ENABLED =
   import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
     ? true
@@ -461,12 +461,6 @@ const { t } = useI18n()
 
 const { isAuthenticated, isLoading } = storeToRefs(authStore)
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
-const CHALLENGE_TURNSTILE_ERROR_CODES = new Set([
-  'CHALLENGE_REQUIRED',
-  'TURNSTILE_REQUIRED',
-  'TURNSTILE_TOKEN_MISSING',
-  'TURNSTILE_VERIFICATION_FAILED',
-])
 
 const loginIdentifier = ref('')
 const loginPassword = ref('')
@@ -475,7 +469,7 @@ const credentialsError = ref('')
 const credentialsErrorCode = ref('')
 const requiresCredentialsTurnstile = ref(false)
 
-const step = ref<Step>('credentials')
+const step = ref<loginModel.LoginStep>('credentials')
 const riskPendingToken = ref('')
 const riskVerificationCode = ref('')
 const riskMessage = ref('')
@@ -531,23 +525,26 @@ const redirectTo = computed(() => {
   const candidate = typeof route.query['redirect'] === 'string' ? route.query['redirect'] : null
   return resolveAuthRedirectTarget(candidate, '/')
 })
-const isSensitiveReauth = computed(() => route.query['reauth'] === 'sensitive')
+const isSensitiveReauth = computed(() => loginModel.isSensitiveLoginReauth(route.query['reauth']))
 
 const canRestoreAccount = computed(
-  () => Boolean(restoreIdentifier.value.trim()) && Boolean(restorePassword.value)
+  () =>
+    loginModel.validateRestoreAccountForm({
+      identifier: restoreIdentifier.value,
+      password: restorePassword.value,
+    }).valid
 )
 const restoreNotice = computed(() =>
-  route.query['restore_notice'] === 'deleted'
-    ? t('auth.restoreAfterDeleteNotice')
-    : t('auth.restoreHint')
+  t(loginModel.resolveRestoreNoticeKey(route.query['restore_notice']))
 )
-const isPasswordLoginUnavailable = computed(
-  () => credentialsErrorCode.value === 'password_login_unavailable'
+const isPasswordLoginUnavailable = computed(() =>
+  loginModel.isPasswordLoginUnavailable(credentialsErrorCode.value)
 )
-const googleProviderBusy = computed(
-  () =>
-    ['opening', 'waiting', 'recovery', 'handling'].includes(googlePopupState.value) ||
-    isLoading.value
+const googleProviderBusy = computed(() =>
+  loginModel.isGoogleProviderBusy({
+    popupState: googlePopupState.value,
+    isLoading: isLoading.value,
+  })
 )
 const googleAuthEnabled = computed(() => GOOGLE_AUTH_ENABLED)
 const showCredentialsTurnstile = computed(
@@ -555,46 +552,21 @@ const showCredentialsTurnstile = computed(
 )
 const isCredentialsTurnstileBusy = computed(() => isTurnstileBusy(credentialsTurnstileStatus.value))
 const isRiskTurnstileBusy = computed(() => isTurnstileBusy(riskTurnstileStatus.value))
-const riskSupportsWebAuthn = computed(() => riskMethods.value.includes('webauthn'))
+const riskSupportsWebAuthn = computed(() => loginModel.hasRiskWebAuthnMethod(riskMethods.value))
 const googlePopupErrorMessage = computed(() =>
   googlePopupErrorKey.value ? t(googlePopupErrorKey.value) : ''
 )
 const resolvedGoogleClientChallengeSiteKey = computed(
   () => googleClientChallengeSiteKey.value || turnstileSiteKey.value
 )
-const showGoogleClientChallenge = computed(
-  () => googlePopupState.value === 'handling' && Boolean(pendingGoogleHandoffCode.value)
+const showGoogleClientChallenge = computed(() =>
+  loginModel.shouldShowGoogleClientChallenge({
+    popupState: googlePopupState.value,
+    handoffCode: pendingGoogleHandoffCode.value,
+  })
 )
-const pageTitle = computed(() => {
-  switch (step.value) {
-    case 'risk-verification':
-      return t('auth.riskVerificationTitle')
-    case 'mfa':
-      return t('auth.mfa.title')
-    default:
-      return t('auth.loginTitle')
-  }
-})
-const pageSubtitle = computed(() => {
-  switch (step.value) {
-    case 'risk-verification':
-      return t('auth.riskVerificationHint')
-    case 'mfa':
-      return t('auth.mfa.hint')
-    default:
-      return t('auth.loginSubtitle')
-  }
-})
-
-function isTurnstileTokenFresh(
-  token: string | null,
-  issuedAt: number | null,
-  enabled: boolean
-): boolean {
-  if (!enabled) return true
-  if (!token || !issuedAt) return false
-  return Date.now() - issuedAt < 4 * 60 * 1000
-}
+const pageTitle = computed(() => t(loginModel.resolveLoginPageTitleKey(step.value)))
+const pageSubtitle = computed(() => t(loginModel.resolveLoginPageSubtitleKey(step.value)))
 
 function resetCredentialsTurnstile() {
   credentialsTurnstileToken.value = null
@@ -659,18 +631,6 @@ function clearInlineErrors() {
   mfaError.value = ''
 }
 
-function isExpiredGoogleHandoffResult(
-  result: Extract<AuthFlowResult, { status: 'error' }>
-): boolean {
-  const detail = result.detail?.trim().toLowerCase() ?? ''
-  return (
-    result.error === 'auth.error.googleLoginExpired' ||
-    result.code === 'invalid_google_handoff' ||
-    detail === 'invalid or expired google handoff code' ||
-    detail === 'invalid google handoff code'
-  )
-}
-
 function resetGoogleClientChallengeState() {
   pendingGoogleHandoffCode.value = ''
   googleClientChallengeSiteKey.value = ''
@@ -697,7 +657,7 @@ function closeActiveGooglePopupWindow() {
       popup.close()
     }
   } catch {
-    // ignore close failures
+    /* noop */
   }
 }
 
@@ -742,17 +702,21 @@ function returnToCredentials() {
 }
 
 function handleBack() {
-  if (step.value !== 'credentials') {
-    returnToCredentials()
-    return
+  switch (
+    loginModel.resolveLoginBackNavigationIntent({
+      step: step.value,
+      historyLength: window.history.length,
+    })
+  ) {
+    case 'return-to-credentials':
+      returnToCredentials()
+      return
+    case 'history-back':
+      router.back()
+      return
+    case 'home-replace':
+      void router.replace('/')
   }
-
-  if (window.history.length > 1) {
-    router.back()
-    return
-  }
-
-  void router.replace('/')
 }
 
 async function finalizeSuccessfulLogin(result: Extract<AuthFlowResult, { status: 'success' }>) {
@@ -807,11 +771,7 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
       } else if (step.value === 'mfa') {
         mfaError.value = t(result.error)
       } else {
-        if (
-          (result.code && CHALLENGE_TURNSTILE_ERROR_CODES.has(result.code)) ||
-          result.error === 'auth.error.turnstileRequired' ||
-          result.error === 'auth.error.turnstileFailed'
-        ) {
+        if (loginModel.shouldRequireCredentialsTurnstile(result)) {
           requiresCredentialsTurnstile.value = true
         }
         credentialsError.value = t(result.error)
@@ -831,18 +791,23 @@ async function handleCredentialsSubmit() {
   clearInlineErrors()
   resetGooglePopupState()
 
-  if (!loginIdentifier.value.trim() || !loginPassword.value) {
-    credentialsError.value = t('auth.error.fieldsRequired')
+  const validation = loginModel.validateLoginCredentials({
+    identifier: loginIdentifier.value,
+    password: loginPassword.value,
+  })
+
+  if (!validation.valid) {
+    credentialsError.value = t(validation.messageKey)
     return
   }
 
   if (
     showCredentialsTurnstile.value &&
-    !isTurnstileTokenFresh(
-      credentialsTurnstileToken.value,
-      credentialsTurnstileIssuedAt.value,
-      turnstileEnabled.value
-    )
+    !loginModel.isTurnstileTokenFresh({
+      token: credentialsTurnstileToken.value,
+      issuedAt: credentialsTurnstileIssuedAt.value,
+      enabled: turnstileEnabled.value,
+    })
   ) {
     const token = await executeTurnstileChallenge(credentialsTurnstileRef.value, (nextToken) => {
       credentialsTurnstileToken.value = nextToken
@@ -857,7 +822,7 @@ async function handleCredentialsSubmit() {
   nextRedirectTarget.value = redirectTo.value
 
   const result = await authStore.login(
-    loginIdentifier.value.trim(),
+    validation.trimmedIdentifier,
     loginPassword.value,
     credentialsTurnstileToken.value || undefined
   )
@@ -869,19 +834,20 @@ async function handleCredentialsSubmit() {
 
 async function handleRiskVerificationSubmit() {
   clearInlineErrors()
+  const code = loginModel.normalizeRiskVerificationCode(riskVerificationCode.value)
 
-  if (!riskVerificationCode.value.trim()) {
+  if (!code) {
     riskError.value = t('auth.error.codeRequired')
     return
   }
 
   if (
     turnstileEnabled.value &&
-    !isTurnstileTokenFresh(
-      riskTurnstileToken.value,
-      riskTurnstileIssuedAt.value,
-      turnstileEnabled.value
-    )
+    !loginModel.isTurnstileTokenFresh({
+      token: riskTurnstileToken.value,
+      issuedAt: riskTurnstileIssuedAt.value,
+      enabled: turnstileEnabled.value,
+    })
   ) {
     const token = await executeTurnstileChallenge(riskTurnstileRef.value, (nextToken) => {
       riskTurnstileToken.value = nextToken
@@ -895,7 +861,7 @@ async function handleRiskVerificationSubmit() {
 
   const result = await authStore.verifyRiskLogin(
     riskPendingToken.value,
-    riskVerificationCode.value.trim(),
+    code,
     riskTurnstileToken.value || undefined
   )
   if (turnstileEnabled.value) {
@@ -1003,7 +969,7 @@ async function handleGoogleClientChallengeVerify(token: string) {
 
     const result = await authStore.completeGoogleAuth(pendingGoogleHandoffCode.value.trim())
     if (result.status === 'error') {
-      if (isExpiredGoogleHandoffResult(result)) {
+      if (loginModel.isExpiredGoogleHandoffResult(result)) {
         resetGoogleClientChallengeState()
         setGooglePopupStatus('error', 'auth.error.googleLoginExpired')
         credentialsError.value = ''
@@ -1128,7 +1094,13 @@ function isAbortError(error: unknown): boolean {
 }
 
 async function initializeConditionalPasskeyAutofill() {
-  if (conditionalPasskeyStarted || !webauthnSupported || isAuthenticated.value) {
+  if (
+    !loginModel.shouldStartConditionalPasskeyAutofill({
+      started: conditionalPasskeyStarted,
+      webauthnSupported,
+      isAuthenticated: isAuthenticated.value,
+    })
+  ) {
     return
   }
 
@@ -1194,22 +1166,19 @@ async function maybePromptPasskeyEnrollment() {
       },
     })
   } catch {
-    // Recommendation is best-effort and must not block login.
+    /* noop */
   }
-}
-
-function buildLoginQueryWithoutRestore() {
-  const nextQuery = { ...route.query }
-  delete nextQuery['mode']
-  delete nextQuery['identifier']
-  delete nextQuery['restore_notice']
-  return nextQuery
 }
 
 async function handleRestoreAccount() {
   if (isRestoringAccount.value) return
 
-  if (!canRestoreAccount.value) {
+  const validation = loginModel.validateRestoreAccountForm({
+    identifier: restoreIdentifier.value,
+    password: restorePassword.value,
+  })
+
+  if (!validation.valid) {
     toastStore.warning(t('auth.error.fieldsRequired'))
     return
   }
@@ -1217,7 +1186,7 @@ async function handleRestoreAccount() {
   isRestoringAccount.value = true
   try {
     await userService.restoreAccount({
-      identifier: restoreIdentifier.value.trim(),
+      identifier: validation.trimmedIdentifier,
       password: restorePassword.value,
     })
 
@@ -1225,7 +1194,7 @@ async function handleRestoreAccount() {
     toastStore.success(t('profile.restoreAccountSuccess'))
     await router.replace({
       name: 'login',
-      query: buildLoginQueryWithoutRestore(),
+      query: loginModel.buildLoginQueryWithoutRestore(route.query),
     })
   } catch (error) {
     toastStore.error(error instanceof ApiError ? error.message : t('common.error'))
@@ -1237,7 +1206,7 @@ async function handleRestoreAccount() {
 watch(
   () => route.query['mode'],
   (mode) => {
-    showRestorePanel.value = mode === 'restore'
+    showRestorePanel.value = loginModel.shouldShowRestoreAccountPanel(mode)
   },
   { immediate: true }
 )
@@ -1245,8 +1214,9 @@ watch(
 watch(
   () => route.query['identifier'],
   (identifier) => {
-    if (typeof identifier === 'string' && identifier.trim()) {
-      restoreIdentifier.value = identifier.trim()
+    const normalizedIdentifier = loginModel.normalizeRestoreIdentifierQuery(identifier)
+    if (normalizedIdentifier) {
+      restoreIdentifier.value = normalizedIdentifier
     }
   },
   { immediate: true }

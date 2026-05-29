@@ -378,6 +378,41 @@ import {
   isWebAuthnSupported,
   serializePublicKeyCredential,
 } from '@/utils/webauthn'
+import {
+  buildBackupCodesClipboardText,
+  buildLinkedIdentityProviderLabel,
+  buildMfaBackupCodeRegenerationSuccessState,
+  buildMfaDisableSuccessState,
+  buildMfaRecoveryVerificationPayload,
+  buildPasskeyRegistrationDeviceName,
+  buildPasskeyRegistrationSuccessState,
+  buildPasskeyRenamePayload,
+  buildTotpOtpAuthUrlClipboardText,
+  buildTotpSetupCancelState,
+  buildTotpSecretClipboardText,
+  buildTotpVerificationCode,
+  buildTotpVerificationSuccessState,
+  canCopyMfaClipboardText,
+  canSubmitMfaRecoveryVerification,
+  canRenamePasskey as canRenamePasskeyWithDrafts,
+  formatAuthenticatorAttachmentLabel,
+  formatBooleanLabel,
+  formatIdentityProviderLabel,
+  formatPasskeyTransports as formatPasskeyTransportList,
+  getPasskeyDraftName,
+  localizeMfaMethod as localizeMfaMethodLabel,
+  normalizeIdentityProvider,
+  removePasskeyDraftName,
+  resolveMfaMethodSummary,
+  resolveMfaStatusHint,
+  resolveMfaStatusLabel,
+  updatePasskeyDraftNames,
+} from './securityMfaModel'
+import {
+  formatOptionalIntlDateTime,
+  resolveAuthSourceSummaryHintKey,
+  resolveAuthSourceSummaryLabel,
+} from '@/views/profile-settings/profileSettingsModel'
 
 const props = withDefaults(
   defineProps<{
@@ -413,192 +448,140 @@ const passkeyDeviceName = ref('')
 const passkeyDraftNames = ref<Record<string, string>>({})
 const passkeyBusyId = ref<string | null>(null)
 
-const normalizedIdentityProvider = computed(() => {
-  const provider = props.profile?.identity_provider ?? props.authUser?.identity_provider
-  return provider?.trim().toLowerCase() || 'local'
-})
+const normalizedIdentityProvider = computed(() =>
+  normalizeIdentityProvider(props.profile?.identity_provider, props.authUser?.identity_provider)
+)
 
 const authSourceSummaryLabel = computed(() => {
-  if (normalizedIdentityProvider.value === 'google') {
-    return t('profile.authSourceGoogle')
-  }
-
-  if (normalizedIdentityProvider.value !== 'local') {
-    return t('profile.authSourceThirdParty')
-  }
-
-  return t('profile.authSourceEmail')
+  return resolveAuthSourceSummaryLabel({
+    provider: normalizedIdentityProvider.value,
+    googleLabel: t('profile.authSourceGoogle'),
+    thirdPartyLabel: t('profile.authSourceThirdParty'),
+    emailLabel: t('profile.authSourceEmail'),
+    thirdPartyProviderLabel: props.authUser?.identity_provider,
+  })
 })
 
 const authSourceSummaryHint = computed(() => {
-  if (normalizedIdentityProvider.value === 'google') {
-    return t('profile.authSourceGoogleHint')
-  }
-
-  if (normalizedIdentityProvider.value !== 'local') {
-    return t('profile.authSourceThirdPartyHint')
-  }
-
-  return t('profile.authSourceEmailHint')
+  return t(resolveAuthSourceSummaryHintKey(normalizedIdentityProvider.value))
 })
 
 const primaryIdentityProviderLabel = computed(() => {
   const provider = props.profile?.identity_provider ?? props.authUser?.identity_provider
-  return provider ? formatIdentityProviderLabel(provider) : t('profile.identityProviderUnavailable')
+  return provider
+    ? formatIdentityProviderLabel(provider, t('profile.authSourceEmail'))
+    : t('profile.identityProviderUnavailable')
 })
 
-const linkedProvidersLabel = computed(() => {
-  const values = [
-    props.profile?.identity_provider,
-    ...(props.profile?.linked_providers ?? []),
-    props.authUser?.identity_provider,
-    ...(props.authUser?.linked_providers ?? []),
-  ]
-
-  const labels = [
-    ...new Set(
-      values
-        .filter((value): value is string => Boolean(value?.trim()))
-        .map((value) => formatIdentityProviderLabel(value))
-    ),
-  ]
-
-  return labels.length ? labels.join(', ') : t('profile.noLinkedProviders')
-})
+const linkedProvidersLabel = computed(() =>
+  buildLinkedIdentityProviderLabel({
+    providers: [
+      props.profile?.identity_provider,
+      ...(props.profile?.linked_providers ?? []),
+      props.authUser?.identity_provider,
+      ...(props.authUser?.linked_providers ?? []),
+    ],
+    emailLabel: t('profile.authSourceEmail'),
+    fallbackLabel: t('profile.noLinkedProviders'),
+  })
+)
 
 const localizedMethodList = computed(() => (status.value?.methods ?? []).map(localizeMfaMethod))
 
-const localizedMethodSummary = computed(() => {
-  if (isRefreshingStatus.value && !status.value) {
-    return t('profile.twoFactorStatusLoadingHint')
-  }
-
-  if (!status.value?.methods?.length) {
-    return t('profile.twoFactorDisabled')
-  }
-
-  return localizedMethodList.value.join(' · ')
-})
-
-const mfaStatusLabel = computed(() => {
-  if (isRefreshingStatus.value && !status.value) {
-    return t('common.loading')
-  }
-
-  if (status.value?.totp_pending_setup && !status.value?.totp_enabled) {
-    return t('profile.twoFactorSetupPending')
-  }
-
-  return status.value?.enabled ? t('profile.twoFactorEnabled') : t('profile.twoFactorDisabled')
-})
-
-const mfaStatusHint = computed(() => {
-  if (status.value?.totp_pending_setup && !status.value?.totp_enabled) {
-    return t('profile.twoFactorSetupInstructions')
-  }
-
-  if (status.value?.methods?.length) {
-    return t('profile.twoFactorEnabledHint', {
-      count: status.value.has_backup_codes ? 1 : 0,
-      methods: localizedMethodList.value.join(' · '),
-    })
-  }
-
-  return t('profile.twoFactorDisabledHint')
-})
-
-const canDisableMfa = computed(() => Boolean(disableCode.value.trim() || disablePassword.value))
-const canSubmitRecovery = computed(() =>
-  Boolean(recoveryCode.value.trim() || recoveryPassword.value)
+const localizedMethodSummary = computed(() =>
+  resolveMfaMethodSummary({
+    isLoadingInitialStatus: isRefreshingStatus.value && !status.value,
+    methods: localizedMethodList.value,
+    loadingLabel: t('profile.twoFactorStatusLoadingHint'),
+    disabledLabel: t('profile.twoFactorDisabled'),
+  })
 )
 
-function formatIdentityProviderLabel(provider: string): string {
-  const normalized = provider.trim().toLowerCase()
+const mfaStatusLabel = computed(() =>
+  resolveMfaStatusLabel({
+    isLoadingInitialStatus: isRefreshingStatus.value && !status.value,
+    isTotpPendingSetup: Boolean(status.value?.totp_pending_setup && !status.value?.totp_enabled),
+    isEnabled: Boolean(status.value?.enabled),
+    loadingLabel: t('common.loading'),
+    pendingLabel: t('profile.twoFactorSetupPending'),
+    enabledLabel: t('profile.twoFactorEnabled'),
+    disabledLabel: t('profile.twoFactorDisabled'),
+  })
+)
 
-  if (normalized === 'local') {
-    return t('profile.authSourceEmail')
-  }
+const mfaStatusHint = computed(() =>
+  resolveMfaStatusHint({
+    isTotpPendingSetup: Boolean(status.value?.totp_pending_setup && !status.value?.totp_enabled),
+    methods: localizedMethodList.value,
+    hasBackupCodes: Boolean(status.value?.has_backup_codes),
+    setupInstructionsLabel: t('profile.twoFactorSetupInstructions'),
+    enabledHint: (values) => t('profile.twoFactorEnabledHint', values),
+    disabledHint: t('profile.twoFactorDisabledHint'),
+  })
+)
 
-  const knownLabels: Record<string, string> = {
-    google: 'Google',
-    github: 'GitHub',
-    apple: 'Apple',
-    microsoft: 'Microsoft',
-    discord: 'Discord',
-  }
-
-  if (knownLabels[normalized]) {
-    return knownLabels[normalized]
-  }
-
-  return provider
-    .trim()
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(' ')
-}
+const canDisableMfa = computed(() =>
+  canSubmitMfaRecoveryVerification({
+    code: disableCode.value,
+    password: disablePassword.value,
+  })
+)
+const canSubmitRecovery = computed(() =>
+  canSubmitMfaRecoveryVerification({
+    code: recoveryCode.value,
+    password: recoveryPassword.value,
+  })
+)
 
 function localizeMfaMethod(method: string): string {
-  switch (method) {
-    case 'totp':
-      return t('profile.mfaMethodTotp')
-    case 'backup_code':
-      return t('profile.mfaMethodBackupCode')
-    case 'webauthn':
-      return t('profile.mfaMethodWebauthn')
-    default:
-      return method
-  }
+  return localizeMfaMethodLabel(method, {
+    totp: t('profile.mfaMethodTotp'),
+    backupCode: t('profile.mfaMethodBackupCode'),
+    webauthn: t('profile.mfaMethodWebauthn'),
+  })
 }
 
 function formatDateTime(value?: string | null): string {
-  if (!value) {
-    return t('common.notFound')
-  }
-
-  try {
-    return new Intl.DateTimeFormat(locale.value, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(value))
-  } catch {
-    return value
-  }
+  return formatOptionalIntlDateTime(value, {
+    fallback: t('common.notFound'),
+    locale: locale.value,
+  })
 }
 
 function formatBoolean(value?: boolean | null): string {
-  if (value === true) return t('common.yes')
-  if (value === false) return t('common.no')
-  return t('common.notFound')
+  return formatBooleanLabel(value, {
+    yes: t('common.yes'),
+    no: t('common.no'),
+    unknown: t('common.notFound'),
+  })
 }
 
 function formatAuthenticatorAttachment(value?: string | null): string {
-  if (!value) return t('common.notFound')
-  return value === 'platform'
-    ? t('profile.passkeyAttachmentPlatform')
-    : t('profile.passkeyAttachmentCrossPlatform')
+  return formatAuthenticatorAttachmentLabel(value, {
+    unknown: t('common.notFound'),
+    platform: t('profile.passkeyAttachmentPlatform'),
+    crossPlatform: t('profile.passkeyAttachmentCrossPlatform'),
+  })
 }
 
 function formatPasskeyTransports(value?: string[] | null): string {
-  if (!value?.length) return t('common.notFound')
-  return value.join(', ')
+  return formatPasskeyTransportList(value, t('common.notFound'))
 }
 
 function passkeyDraftName(credential: WebAuthnCredentialSummary): string {
-  return passkeyDraftNames.value[credential.id] ?? credential.device_name ?? ''
+  return getPasskeyDraftName(credential, passkeyDraftNames.value)
 }
 
 function updatePasskeyDraftName(id: string, event: Event) {
-  passkeyDraftNames.value = {
-    ...passkeyDraftNames.value,
-    [id]: (event.target as HTMLInputElement | null)?.value ?? '',
-  }
+  passkeyDraftNames.value = updatePasskeyDraftNames(
+    passkeyDraftNames.value,
+    id,
+    (event.target as HTMLInputElement | null)?.value ?? ''
+  )
 }
 
 function canRenamePasskey(credential: WebAuthnCredentialSummary): boolean {
-  const draft = passkeyDraftName(credential).trim()
-  return Boolean(draft) && draft !== (credential.device_name ?? '')
+  return canRenamePasskeyWithDrafts(credential, passkeyDraftNames.value)
 }
 
 async function fetchStatus() {
@@ -626,8 +609,8 @@ async function fetchStatus() {
 }
 
 async function handleRenamePasskey(credential: WebAuthnCredentialSummary) {
-  const nextName = passkeyDraftName(credential).trim()
-  if (!nextName || nextName === (credential.device_name ?? '')) return
+  const nextName = buildPasskeyRenamePayload(credential, passkeyDraftNames.value)
+  if (!nextName) return
 
   passkeyBusyId.value = credential.id
   statusError.value = ''
@@ -653,9 +636,7 @@ async function handleDeletePasskey(credential: WebAuthnCredentialSummary) {
 
   try {
     await twoFactorService.deleteWebAuthnCredential(credential.id)
-    const remainingDrafts = { ...passkeyDraftNames.value }
-    delete remainingDrafts[credential.id]
-    passkeyDraftNames.value = remainingDrafts
+    passkeyDraftNames.value = removePasskeyDraftName(passkeyDraftNames.value, credential.id)
     toastStore.success(t('profile.passkeyDeleteSuccess'))
     await fetchStatus()
   } catch (error) {
@@ -666,7 +647,7 @@ async function handleDeletePasskey(credential: WebAuthnCredentialSummary) {
 }
 
 async function copyToClipboard(text: string, successMessage: string) {
-  if (!text.trim()) return
+  if (!canCopyMfaClipboardText(text)) return
 
   try {
     await navigator.clipboard.writeText(text)
@@ -677,23 +658,34 @@ async function copyToClipboard(text: string, successMessage: string) {
 }
 
 async function copySecret() {
-  await copyToClipboard(totpSetup.value?.secret ?? '', t('profile.twoFactorCopied'))
+  await copyToClipboard(
+    buildTotpSecretClipboardText(totpSetup.value?.secret),
+    t('profile.twoFactorCopied')
+  )
 }
 
 async function copyOtpAuthUrl() {
-  await copyToClipboard(totpSetup.value?.otpauth_url ?? '', t('profile.twoFactorCopied'))
+  await copyToClipboard(
+    buildTotpOtpAuthUrlClipboardText(totpSetup.value?.otpauth_url),
+    t('profile.twoFactorCopied')
+  )
 }
 
 async function copyBackupCodes() {
-  await copyToClipboard(backupCodes.value.join('\n'), t('profile.twoFactorCopied'))
+  await copyToClipboard(
+    buildBackupCodesClipboardText(backupCodes.value),
+    t('profile.twoFactorCopied')
+  )
 }
 
 function cancelTotpSetup() {
-  showTotpSetup.value = false
-  totpVerificationCode.value = ''
-  if (!status.value?.totp_pending_setup) {
-    totpSetup.value = null
-  }
+  const nextState = buildTotpSetupCancelState({
+    setup: totpSetup.value,
+    isTotpPendingSetup: Boolean(status.value?.totp_pending_setup),
+  })
+  showTotpSetup.value = nextState.showSetup
+  totpVerificationCode.value = nextState.verificationCode
+  totpSetup.value = nextState.setup
 }
 
 async function handleSetupTotp() {
@@ -713,7 +705,7 @@ async function handleSetupTotp() {
 }
 
 async function handleVerifyTotpSetup() {
-  const code = totpVerificationCode.value.trim()
+  const code = buildTotpVerificationCode(totpVerificationCode.value)
   if (!code) {
     toastStore.warning(t('auth.error.codeRequired'))
     return
@@ -724,10 +716,11 @@ async function handleVerifyTotpSetup() {
 
   try {
     const response = await twoFactorService.verify(code)
-    backupCodes.value = response.backup_codes ?? []
-    totpVerificationCode.value = ''
-    totpSetup.value = null
-    showTotpSetup.value = false
+    const nextState = buildTotpVerificationSuccessState(response.backup_codes)
+    backupCodes.value = nextState.backupCodes
+    totpVerificationCode.value = nextState.verificationCode
+    totpSetup.value = nextState.setup
+    showTotpSetup.value = nextState.showSetup
     toastStore.success(t('profile.twoFactorSetupSuccess'))
     await fetchStatus()
   } catch (error) {
@@ -747,7 +740,7 @@ async function handleRegisterPasskey() {
   statusError.value = ''
 
   try {
-    const deviceName = passkeyDeviceName.value.trim() || undefined
+    const deviceName = buildPasskeyRegistrationDeviceName(passkeyDeviceName.value)
     const options = await twoFactorService.beginWebAuthnRegistration(deviceName)
     const credential = await createWebAuthnCredential(options.options)
     if (!(credential instanceof PublicKeyCredential)) {
@@ -760,7 +753,7 @@ async function handleRegisterPasskey() {
       deviceName
     )
 
-    passkeyDeviceName.value = ''
+    passkeyDeviceName.value = buildPasskeyRegistrationSuccessState().deviceName
     toastStore.success(t('profile.passkeyAddSuccess'))
     await fetchStatus()
   } catch (error) {
@@ -782,13 +775,15 @@ async function handleRegenerateBackupCodes() {
   statusError.value = ''
 
   try {
-    const response = await twoFactorService.regenerateBackupCodes(
-      recoveryCode.value.trim() || undefined,
-      recoveryPassword.value || undefined
-    )
-    backupCodes.value = response.backup_codes ?? []
-    recoveryCode.value = ''
-    recoveryPassword.value = ''
+    const payload = buildMfaRecoveryVerificationPayload({
+      code: recoveryCode.value,
+      password: recoveryPassword.value,
+    })
+    const response = await twoFactorService.regenerateBackupCodes(payload.code, payload.password)
+    const nextState = buildMfaBackupCodeRegenerationSuccessState(response.backup_codes)
+    backupCodes.value = nextState.backupCodes
+    recoveryCode.value = nextState.code
+    recoveryPassword.value = nextState.password
     toastStore.success(t('profile.twoFactorBackupCodesRegenerated'))
     await fetchStatus()
   } catch (error) {
@@ -808,15 +803,17 @@ async function handleDisableMfa() {
   statusError.value = ''
 
   try {
-    await twoFactorService.disable(
-      disableCode.value.trim() || undefined,
-      disablePassword.value || undefined
-    )
-    disableCode.value = ''
-    disablePassword.value = ''
-    backupCodes.value = []
-    totpSetup.value = null
-    showTotpSetup.value = false
+    const payload = buildMfaRecoveryVerificationPayload({
+      code: disableCode.value,
+      password: disablePassword.value,
+    })
+    await twoFactorService.disable(payload.code, payload.password)
+    const nextState = buildMfaDisableSuccessState()
+    disableCode.value = nextState.code
+    disablePassword.value = nextState.password
+    backupCodes.value = nextState.backupCodes
+    totpSetup.value = nextState.setup
+    showTotpSetup.value = nextState.showSetup
     toastStore.success(t('profile.twoFactorDisabledSuccess'))
     await fetchStatus()
   } catch (error) {
@@ -830,339 +827,3 @@ onMounted(() => {
   void fetchStatus()
 })
 </script>
-
-<style scoped>
-.security-mfa-panel {
-  display: grid;
-  gap: clamp(1rem, 2vw, 1.25rem);
-}
-
-.settings-section {
-  padding: clamp(1rem, 3vw, 1.5rem);
-  max-width: 100%;
-  border-radius: var(--profile-section-radius, 1.25rem);
-  border: 1px solid var(--profile-surface-border, rgba(15, 23, 42, 0.08));
-  border-inline-start-width: 0.1875rem;
-  background: var(--profile-surface-bg, rgba(255, 255, 255, 0.85));
-  box-shadow: var(--profile-surface-shadow, 0 20px 40px rgba(15, 23, 42, 0.08));
-}
-
-.settings-section-head {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3, 0.75rem);
-  margin-bottom: var(--spacing-5, 1.25rem);
-  padding-bottom: var(--spacing-3, 0.75rem);
-  border-bottom: 1px solid var(--profile-muted-border, rgba(15, 23, 42, 0.08));
-}
-
-.settings-section-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radius-lg, 1rem);
-  border: 1px solid var(--profile-muted-border-strong, rgba(15, 23, 42, 0.12));
-  background: var(--profile-muted-bg-strong, rgba(37, 99, 235, 0.08));
-  color: var(--color-primary);
-}
-
-.settings-section-icon--success {
-  background: rgba(var(--color-success-rgb, 16, 185, 129), 0.12);
-  color: var(--color-success, #10b981);
-}
-
-.settings-section-title {
-  margin: 0;
-  font-size: clamp(var(--text-base), 2vw, var(--text-lg));
-  font-weight: var(--font-semibold, 600);
-  color: var(--color-text-primary, #0f172a);
-}
-
-.settings-section-desc,
-.field-hint,
-.passkey-item__meta {
-  margin: 0;
-  font-size: var(--text-sm, 0.9rem);
-  line-height: 1.6;
-  color: var(--color-text-tertiary, #64748b);
-}
-
-.field-error {
-  margin: 0 0 1rem;
-  font-size: var(--text-sm, 0.9rem);
-  color: var(--color-error, #ef4444);
-}
-
-.two-factor-status-card,
-.two-factor-form-card,
-.passkey-section {
-  display: grid;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--profile-muted-border, rgba(15, 23, 42, 0.08));
-  border-radius: var(--radius-lg, 1rem);
-  background: var(--profile-muted-bg, rgba(255, 255, 255, 0.78));
-}
-
-.two-factor-status-card {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-}
-
-.two-factor-status-copy,
-.two-factor-form-card__copy {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.two-factor-status-label,
-.two-factor-secret-label {
-  margin: 0;
-  font-size: var(--text-xs, 0.78rem);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary, #64748b);
-}
-
-.two-factor-status-value {
-  margin: 0;
-  font-size: clamp(1rem, 2vw, 1.1rem);
-  font-weight: 700;
-  color: var(--color-text-primary, #0f172a);
-}
-
-.two-factor-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-
-.two-factor-actions--stacked {
-  justify-content: flex-start;
-}
-
-.account-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.875rem;
-  margin-top: 1rem;
-}
-
-.account-meta-item {
-  display: grid;
-  gap: 0.25rem;
-  padding: 0.875rem;
-  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
-  border-radius: var(--radius-lg, 1rem);
-  background: var(--profile-action-bg, rgba(255, 255, 255, 0.72));
-}
-
-.account-meta-label {
-  font-size: var(--text-xs, 0.78rem);
-  color: var(--color-text-tertiary, #64748b);
-}
-
-.account-meta-value {
-  font-size: var(--text-sm, 0.92rem);
-  font-weight: 600;
-  color: var(--color-text-primary, #0f172a);
-  overflow-wrap: anywhere;
-}
-
-.method-chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.625rem;
-  margin-top: 1rem;
-}
-
-.method-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.4rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
-  background: rgba(var(--color-primary-rgb), 0.08);
-  color: var(--color-primary);
-  font-size: var(--text-xs, 0.78rem);
-  font-weight: 600;
-}
-
-.two-factor-setup {
-  display: grid;
-  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.two-factor-setup-qr,
-.two-factor-setup-details,
-.two-factor-secret-card {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.two-factor-secret-card {
-  padding: 1rem;
-  border-radius: var(--radius-lg, 1rem);
-  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
-  background: var(--profile-action-bg, rgba(255, 255, 255, 0.72));
-}
-
-.two-factor-secret-value {
-  display: block;
-  padding: 0.75rem 0.875rem;
-  border-radius: var(--radius-md, 0.75rem);
-  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
-  background: rgba(15, 23, 42, 0.03);
-  color: var(--color-text-primary, #0f172a);
-  font-size: var(--text-sm, 0.92rem);
-}
-
-.two-factor-secret-value--wrap {
-  overflow-wrap: anywhere;
-}
-
-.two-factor-backup-box {
-  display: grid;
-  gap: 0.875rem;
-  margin-top: 1rem;
-  padding: 1rem;
-  border-radius: var(--radius-lg, 1rem);
-  border: 1px dashed rgba(var(--color-success-rgb, 16, 185, 129), 0.3);
-  background: rgba(var(--color-success-rgb, 16, 185, 129), 0.06);
-}
-
-.two-factor-backup-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.two-factor-backup-header h3 {
-  margin: 0;
-  font-size: var(--text-sm, 0.92rem);
-  font-weight: 700;
-  color: var(--color-text-primary, #0f172a);
-}
-
-.two-factor-backup-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  gap: 0.75rem;
-}
-
-.two-factor-backup-code {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.75rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: var(--radius-md, 0.75rem);
-  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
-  background: rgba(255, 255, 255, 0.8);
-  color: var(--color-text-primary, #0f172a);
-  font-size: var(--text-sm, 0.92rem);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.passkey-section {
-  margin-top: 1rem;
-}
-
-.passkey-section__header {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.passkey-list,
-.two-factor-management-grid {
-  display: grid;
-  gap: 0.875rem;
-  margin-top: 1rem;
-}
-
-.two-factor-management-grid {
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-}
-
-.passkey-item {
-  display: grid;
-  gap: 0.375rem;
-  padding: 0.875rem;
-  border-radius: var(--radius-lg, 1rem);
-  border: 1px solid var(--profile-action-border, rgba(15, 23, 42, 0.08));
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.passkey-item__details {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem 0.875rem;
-}
-
-.passkey-item__actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 0.5rem;
-  align-items: center;
-  margin-top: 0.375rem;
-}
-
-.passkey-item__name {
-  color: var(--color-text-primary, #0f172a);
-  font-size: var(--text-sm, 0.92rem);
-}
-
-.passkey-device-input,
-.passkey-rename-input {
-  min-width: min(16rem, 100%);
-}
-
-.auth-form,
-.form-group {
-  display: grid;
-  gap: 0.625rem;
-}
-
-.form-group label {
-  font-size: var(--text-sm, 0.92rem);
-  font-weight: 600;
-  color: var(--color-text-secondary, #334155);
-}
-
-@media (max-width: 768px) {
-  .two-factor-status-card,
-  .two-factor-setup,
-  .two-factor-management-grid,
-  .two-factor-backup-header {
-    grid-template-columns: 1fr;
-  }
-
-  .two-factor-status-card,
-  .two-factor-backup-header {
-    align-items: stretch;
-  }
-
-  .two-factor-actions {
-    justify-content: stretch;
-  }
-
-  .two-factor-actions > .btn {
-    width: 100%;
-  }
-
-  .passkey-device-input {
-    min-width: 100%;
-  }
-
-  .passkey-item__actions {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

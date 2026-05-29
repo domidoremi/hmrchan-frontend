@@ -32,7 +32,7 @@
             <Input
               id="security-current-password"
               v-model="passwordForm.current_password"
-              :type="showCurrentPassword ? 'text' : 'password'"
+              :type="resolveCredentialPasswordInputType(passwordVisibility.currentPassword)"
               class="input-with-icon"
               autocomplete="current-password"
               required
@@ -40,12 +40,12 @@
             <button
               type="button"
               class="password-toggle"
-              :aria-label="passwordToggleLabel(showCurrentPassword)"
-              :aria-pressed="showCurrentPassword"
-              @click="showCurrentPassword = !showCurrentPassword"
+              :aria-label="passwordToggleLabel(passwordVisibility.currentPassword)"
+              :aria-pressed="passwordVisibility.currentPassword"
+              @click="togglePasswordVisibility('currentPassword')"
             >
               <AnimatedIcon
-                v-if="showCurrentPassword"
+                v-if="passwordVisibility.currentPassword"
                 name="explore"
                 :fallback-icon="EyeOff"
                 size="sm"
@@ -64,7 +64,7 @@
             <Input
               id="security-new-password"
               v-model="passwordForm.new_password"
-              :type="showNewPassword ? 'text' : 'password'"
+              :type="resolveCredentialPasswordInputType(passwordVisibility.newPassword)"
               class="input-with-icon"
               autocomplete="new-password"
               minlength="8"
@@ -73,12 +73,12 @@
             <button
               type="button"
               class="password-toggle"
-              :aria-label="passwordToggleLabel(showNewPassword)"
-              :aria-pressed="showNewPassword"
-              @click="showNewPassword = !showNewPassword"
+              :aria-label="passwordToggleLabel(passwordVisibility.newPassword)"
+              :aria-pressed="passwordVisibility.newPassword"
+              @click="togglePasswordVisibility('newPassword')"
             >
               <AnimatedIcon
-                v-if="showNewPassword"
+                v-if="passwordVisibility.newPassword"
                 name="explore"
                 :fallback-icon="EyeOff"
                 size="sm"
@@ -109,7 +109,7 @@
             <Input
               id="security-confirm-password"
               v-model="passwordForm.confirm_password"
-              :type="showConfirmPassword ? 'text' : 'password'"
+              :type="resolveCredentialPasswordInputType(passwordVisibility.confirmPassword)"
               class="input-with-icon"
               :error="Boolean(passwordForm.confirm_password && !passwordsMatch)"
               autocomplete="new-password"
@@ -118,12 +118,12 @@
             <button
               type="button"
               class="password-toggle"
-              :aria-label="passwordToggleLabel(showConfirmPassword)"
-              :aria-pressed="showConfirmPassword"
-              @click="showConfirmPassword = !showConfirmPassword"
+              :aria-label="passwordToggleLabel(passwordVisibility.confirmPassword)"
+              :aria-pressed="passwordVisibility.confirmPassword"
+              @click="togglePasswordVisibility('confirmPassword')"
             >
               <AnimatedIcon
-                v-if="showConfirmPassword"
+                v-if="passwordVisibility.confirmPassword"
                 name="explore"
                 :fallback-icon="EyeOff"
                 size="sm"
@@ -152,7 +152,7 @@
       <div v-else class="provider-managed-note">
         <p class="two-factor-status-label">{{ $t('profile.loginMethodCurrentLabel') }}</p>
         <p class="two-factor-status-value">{{ authSourceSummaryLabel }}</p>
-        <p class="field-hint">{{ $t('profile.authSourceGoogleHint') }}</p>
+        <p class="field-hint">{{ authSourceSummaryHint }}</p>
       </div>
     </section>
 
@@ -214,7 +214,7 @@
             <Input
               id="security-email-password"
               v-model="emailForm.password"
-              :type="showEmailPassword ? 'text' : 'password'"
+              :type="resolveCredentialPasswordInputType(passwordVisibility.emailPassword)"
               class="input-with-icon"
               autocomplete="current-password"
               required
@@ -222,12 +222,12 @@
             <button
               type="button"
               class="password-toggle"
-              :aria-label="passwordToggleLabel(showEmailPassword)"
-              :aria-pressed="showEmailPassword"
-              @click="showEmailPassword = !showEmailPassword"
+              :aria-label="passwordToggleLabel(passwordVisibility.emailPassword)"
+              :aria-pressed="passwordVisibility.emailPassword"
+              @click="togglePasswordVisibility('emailPassword')"
             >
               <AnimatedIcon
-                v-if="showEmailPassword"
+                v-if="passwordVisibility.emailPassword"
                 name="explore"
                 :fallback-icon="EyeOff"
                 size="sm"
@@ -249,12 +249,12 @@
     </section>
 
     <EmailVerifyDialog
-      :is-open="showEmailVerify"
-      :action="emailVerifyAction"
+      :is-open="credentialVerificationDialog.isOpen"
+      :action="credentialVerificationDialog.action"
       :email="profile.email"
       :target-email="emailVerifyTarget"
       :password="emailVerifyPassword"
-      :verification-token="emailVerificationToken"
+      :verification-token="credentialVerificationDialog.verificationToken"
       :new-password="emailVerifyNewPassword"
       @close="handleEmailVerifyClose"
       @verified="handleEmailVerified"
@@ -271,12 +271,31 @@ import { ensureVerificationToken, isVerificationCancelledError } from '@/api/ver
 import { useAuthStore, useToastStore } from '@/stores'
 import { checkPasswordStrength } from '@/utils/crypto'
 import {
+  buildCredentialVerificationPayload,
+  buildCredentialVerificationDialogState,
+  buildClosedCredentialVerificationDialogState,
   buildPasswordToggleLabel,
+  canUsePasswordCredentialsFlow,
+  createCredentialEmailForm,
+  createCredentialPasswordForm,
+  createCredentialPasswordVisibilityState,
   getPasswordStrengthClass,
   getPasswordStrengthScore,
+  getPasswordStrengthTextKey,
   isEmailChangeAllowed,
   isPasswordChangeAllowed,
   passwordsMatch as checkPasswordsMatch,
+  type CredentialVerificationDialogState,
+  type CredentialPasswordVisibilityField,
+  resolveCredentialPasswordInputType,
+  resolveEmailChangeSubmitBlocker,
+  resolveCredentialVerificationSuccessOutcome,
+  resolvePasswordChangeSubmitErrorKey,
+  resolvePasswordChangeSubmitBlocker,
+  resolveAuthSourceSummaryHintKey,
+  resolveAuthSourceSummaryLabel,
+  resolveIdentityProvider,
+  toggleCredentialPasswordVisibility,
 } from '@/views/profile-settings/profileSettingsModel'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Button from '@/components/ui/Button.vue'
@@ -301,45 +320,43 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 
-const showCurrentPassword = ref(false)
-const showNewPassword = ref(false)
-const showConfirmPassword = ref(false)
-const showEmailPassword = ref(false)
 const isChangingPassword = ref(false)
 const isChangingEmail = ref(false)
 
-const passwordForm = ref({
-  current_password: '',
-  new_password: '',
-  confirm_password: '',
-})
+const passwordVisibility = ref(createCredentialPasswordVisibilityState())
+const passwordForm = ref(createCredentialPasswordForm())
 
-const emailForm = ref({
-  new_email: '',
-  password: '',
-})
+const emailForm = ref(createCredentialEmailForm())
 
-const showEmailVerify = ref(false)
-const emailVerifyAction = ref('')
-const emailVerificationToken = ref('')
-type PendingAction = 'change_email' | 'change_password'
-const pendingAction = ref<PendingAction | null>(null)
+const credentialVerificationDialog = ref(buildClosedCredentialVerificationDialogState())
+
+function applyCredentialVerificationDialogState(state: CredentialVerificationDialogState) {
+  credentialVerificationDialog.value = state
+}
 
 const normalizedIdentityProvider = computed(() => {
-  const provider = props.profile.identity_provider ?? props.authUser?.identity_provider
-  return provider?.trim().toLowerCase() || 'local'
+  return resolveIdentityProvider({
+    profileProvider: props.profile.identity_provider,
+    authProvider: props.authUser?.identity_provider,
+  })
 })
 
-const canUsePasswordFlow = computed(() => normalizedIdentityProvider.value === 'local')
+const canUsePasswordFlow = computed(() =>
+  canUsePasswordCredentialsFlow(normalizedIdentityProvider.value)
+)
 
 const authSourceSummaryLabel = computed(() => {
-  if (normalizedIdentityProvider.value === 'google') {
-    return t('profile.authSourceGoogle')
-  }
-  if (normalizedIdentityProvider.value !== 'local') {
-    return t('profile.authSourceThirdParty')
-  }
-  return t('profile.authSourceEmail')
+  return resolveAuthSourceSummaryLabel({
+    provider: normalizedIdentityProvider.value,
+    googleLabel: t('profile.authSourceGoogle'),
+    thirdPartyLabel: t('profile.authSourceThirdParty'),
+    emailLabel: t('profile.authSourceEmail'),
+    thirdPartyProviderLabel: props.authUser?.identity_provider,
+  })
+})
+
+const authSourceSummaryHint = computed(() => {
+  return t(resolveAuthSourceSummaryHintKey(normalizedIdentityProvider.value))
 })
 
 const canChangeEmail = computed(() =>
@@ -359,15 +376,9 @@ const passwordStrength = computed(() =>
 const passwordStrengthClass = computed(() =>
   getPasswordStrengthClass(passwordStrengthResult.value.level)
 )
-const passwordStrengthText = computed(() => {
-  const { level } = passwordStrengthResult.value
-  return {
-    weak: t('profile.passwordWeak'),
-    fair: t('profile.passwordFair'),
-    good: t('profile.passwordGood'),
-    strong: t('profile.passwordStrong'),
-  }[level]
-})
+const passwordStrengthText = computed(() =>
+  t(getPasswordStrengthTextKey(passwordStrengthResult.value.level))
+)
 
 const passwordsMatch = computed(() =>
   checkPasswordsMatch(passwordForm.value.new_password, passwordForm.value.confirm_password)
@@ -381,17 +392,19 @@ const canChangePassword = computed(() =>
   })
 )
 
-const emailVerifyTarget = computed(() =>
-  pendingAction.value === 'change_email' ? emailForm.value.new_email : undefined
+const credentialVerificationPayload = computed(() =>
+  buildCredentialVerificationPayload({
+    pendingAction: credentialVerificationDialog.value.pendingAction,
+    nextEmail: emailForm.value.new_email,
+    emailPassword: emailForm.value.password,
+    currentPassword: passwordForm.value.current_password,
+    nextPassword: passwordForm.value.new_password,
+  })
 )
-const emailVerifyPassword = computed(() => {
-  if (pendingAction.value === 'change_password') return passwordForm.value.current_password
-  if (pendingAction.value === 'change_email') return emailForm.value.password
-  return undefined
-})
-const emailVerifyNewPassword = computed(() =>
-  pendingAction.value === 'change_password' ? passwordForm.value.new_password : undefined
-)
+
+const emailVerifyTarget = computed(() => credentialVerificationPayload.value.targetEmail)
+const emailVerifyPassword = computed(() => credentialVerificationPayload.value.password)
+const emailVerifyNewPassword = computed(() => credentialVerificationPayload.value.newPassword)
 
 function passwordToggleLabel(visible: boolean): string {
   return buildPasswordToggleLabel({
@@ -402,26 +415,38 @@ function passwordToggleLabel(visible: boolean): string {
   })
 }
 
-async function changePassword() {
-  if (isChangingPassword.value || !canUsePasswordFlow.value) return
+function togglePasswordVisibility(field: CredentialPasswordVisibilityField) {
+  passwordVisibility.value = toggleCredentialPasswordVisibility(passwordVisibility.value, field)
+}
 
-  if (!passwordsMatch.value) {
-    toastStore.error(t('profile.passwordMismatch'))
+async function changePassword() {
+  const blocker = resolvePasswordChangeSubmitBlocker({
+    isChangingPassword: isChangingPassword.value,
+    canUsePasswordFlow: canUsePasswordFlow.value,
+    nextPassword: passwordForm.value.new_password,
+    passwordsMatch: passwordsMatch.value,
+  })
+
+  const blockerErrorKey = resolvePasswordChangeSubmitErrorKey(blocker)
+  if (blockerErrorKey) {
+    toastStore.error(t(blockerErrorKey))
     return
   }
-  if (passwordForm.value.new_password.length < 8) {
-    toastStore.error(t('profile.passwordTooShort'))
+  if (blocker) {
     return
   }
 
   isChangingPassword.value = true
   try {
-    emailVerificationToken.value = await ensureVerificationToken('change_password', {
+    const verificationToken = await ensureVerificationToken('change_password', {
       password: passwordForm.value.current_password,
     })
-    pendingAction.value = 'change_password'
-    emailVerifyAction.value = 'change_password'
-    showEmailVerify.value = true
+    applyCredentialVerificationDialogState(
+      buildCredentialVerificationDialogState({
+        action: 'change_password',
+        verificationToken,
+      })
+    )
   } catch (err) {
     if (isVerificationCancelledError(err)) return
     toastStore.error(err instanceof ApiError ? err.message : t('common.error'))
@@ -431,16 +456,23 @@ async function changePassword() {
 }
 
 async function handleChangeEmail() {
-  if (!canChangeEmail.value || isChangingEmail.value) return
+  const blocker = resolveEmailChangeSubmitBlocker({
+    isChangingEmail: isChangingEmail.value,
+    canChangeEmail: canChangeEmail.value,
+  })
+  if (blocker) return
 
   isChangingEmail.value = true
   try {
-    emailVerificationToken.value = await ensureVerificationToken('change_email', {
+    const verificationToken = await ensureVerificationToken('change_email', {
       password: emailForm.value.password,
     })
-    pendingAction.value = 'change_email'
-    emailVerifyAction.value = 'change_email'
-    showEmailVerify.value = true
+    applyCredentialVerificationDialogState(
+      buildCredentialVerificationDialogState({
+        action: 'change_email',
+        verificationToken,
+      })
+    )
   } catch (err) {
     if (isVerificationCancelledError(err)) return
     toastStore.error(err instanceof ApiError ? err.message : t('common.error'))
@@ -450,32 +482,32 @@ async function handleChangeEmail() {
 }
 
 function handleEmailVerifyClose() {
-  showEmailVerify.value = false
-  pendingAction.value = null
-  emailVerifyAction.value = ''
-  emailVerificationToken.value = ''
+  applyCredentialVerificationDialogState(buildClosedCredentialVerificationDialogState())
 }
 
 async function handleEmailVerified() {
-  showEmailVerify.value = false
+  const pendingAction = credentialVerificationDialog.value.pendingAction
+  credentialVerificationDialog.value = {
+    ...credentialVerificationDialog.value,
+    isOpen: false,
+  }
+  const outcome = resolveCredentialVerificationSuccessOutcome(pendingAction)
 
-  if (pendingAction.value === 'change_email') {
-    toastStore.success(t('email.changeEmailSuccess'))
-    emailForm.value = { new_email: '', password: '' }
+  if (outcome.successMessageKey) {
+    toastStore.success(t(outcome.successMessageKey))
+  }
+  if (outcome.resetEmailForm) {
+    emailForm.value = createCredentialEmailForm()
     emit('refreshed')
+  }
+  if (outcome.refreshProfile) {
     await authStore.fetchCurrentUser()
-  } else if (pendingAction.value === 'change_password') {
-    toastStore.success(t('profile.passwordChanged'))
-    passwordForm.value = {
-      current_password: '',
-      new_password: '',
-      confirm_password: '',
-    }
+  }
+  if (outcome.resetPasswordForm) {
+    passwordForm.value = createCredentialPasswordForm()
   }
 
-  pendingAction.value = null
-  emailVerifyAction.value = ''
-  emailVerificationToken.value = ''
+  applyCredentialVerificationDialogState(buildClosedCredentialVerificationDialogState())
 }
 </script>
 

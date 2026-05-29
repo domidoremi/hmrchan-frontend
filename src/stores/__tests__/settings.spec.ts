@@ -118,6 +118,47 @@ describe('Settings Store', () => {
     expect(store.settings.deskPet.dismissedAutoHome).toBe(false)
   })
 
+  it('clamps visual companion settings when updating runtime state', () => {
+    const store = useSettingsStore()
+
+    store.setMascotBackground({ density: 99, speed: 0.1, opacity: 2 })
+    store.setDeskPet({ scale: 5, followSensitivity: 0.1 })
+
+    expect(store.settings.mascotBackground.density).toBe(1.6)
+    expect(store.settings.mascotBackground.speed).toBe(0.6)
+    expect(store.settings.mascotBackground.opacity).toBe(1)
+    expect(store.settings.deskPet.scale).toBe(1.5)
+    expect(store.settings.deskPet.followSensitivity).toBe(0.5)
+  })
+
+  it('clamps visual companion settings from legacy hydration snapshots', async () => {
+    const store = useSettingsStore()
+
+    store.settings.mascotBackground = {
+      enabled: true,
+      density: 0,
+      speed: 99,
+      opacity: -1,
+    }
+    store.settings.deskPet = {
+      enabled: true,
+      autoHomeEnabled: true,
+      dismissedAutoHome: false,
+      scale: 0.1,
+      speechEnabled: true,
+      autoHeroInteraction: true,
+      followSensitivity: 99,
+    }
+
+    await nextTick()
+
+    expect(store.settings.mascotBackground.density).toBe(0.4)
+    expect(store.settings.mascotBackground.speed).toBe(1.8)
+    expect(store.settings.mascotBackground.opacity).toBe(0.3)
+    expect(store.settings.deskPet.scale).toBe(0.8)
+    expect(store.settings.deskPet.followSensitivity).toBe(1.8)
+  })
+
   it('stores app update strategy locally without exporting it to backend preferences', () => {
     const store = useSettingsStore()
 

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { resolveBubbleRevealWindow } from '../bubbleRevealState'
+import {
+  resolveBubbleRevealLifecycleAction,
+  resolveBubbleRevealViewportAction,
+  resolveBubbleRevealWindow,
+} from '../bubbleRevealState'
 
 describe('resolveBubbleRevealWindow', () => {
   it('arms reveal while the posts section is inside the entry window', () => {
@@ -64,5 +68,81 @@ describe('resolveBubbleRevealWindow', () => {
       shouldReveal: false,
       shouldReset: true,
     })
+  })
+
+  it('resolves initial lifecycle action from priming, viewport tier, and animation settings', () => {
+    expect(
+      resolveBubbleRevealLifecycleAction({
+        primed: false,
+        itemCount: 4,
+        lightweightViewport: false,
+        shouldAnimate: true,
+      })
+    ).toBe('reset')
+
+    expect(
+      resolveBubbleRevealLifecycleAction({
+        primed: true,
+        itemCount: 4,
+        lightweightViewport: true,
+        shouldAnimate: true,
+      })
+    ).toBe('reveal')
+
+    expect(
+      resolveBubbleRevealLifecycleAction({
+        primed: true,
+        itemCount: 4,
+        lightweightViewport: false,
+        shouldAnimate: true,
+      })
+    ).toBe('restart-burst')
+
+    expect(
+      resolveBubbleRevealLifecycleAction({
+        primed: true,
+        itemCount: 4,
+        lightweightViewport: false,
+        shouldAnimate: false,
+      })
+    ).toBe('reveal')
+  })
+
+  it('resolves viewport action without duplicating burst or retreat side effects', () => {
+    expect(
+      resolveBubbleRevealViewportAction({
+        windowState: { shouldReveal: true, shouldReset: false },
+        phase: 'idle',
+        shouldAnimate: true,
+        burstFramePending: false,
+      })
+    ).toBe('restart-burst')
+
+    expect(
+      resolveBubbleRevealViewportAction({
+        windowState: { shouldReveal: true, shouldReset: false },
+        phase: 'idle',
+        shouldAnimate: false,
+        burstFramePending: false,
+      })
+    ).toBe('reveal')
+
+    expect(
+      resolveBubbleRevealViewportAction({
+        windowState: { shouldReveal: false, shouldReset: true },
+        phase: 'revealed',
+        shouldAnimate: true,
+        burstFramePending: false,
+      })
+    ).toBe('retreat')
+
+    expect(
+      resolveBubbleRevealViewportAction({
+        windowState: { shouldReveal: true, shouldReset: false },
+        phase: 'arming',
+        shouldAnimate: true,
+        burstFramePending: true,
+      })
+    ).toBe('none')
   })
 })

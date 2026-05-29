@@ -140,6 +140,7 @@ const PUBLIC_ID_GUARD_FILES = Object.freeze([
 
 const PUBLIC_ID_ENTRYPOINT_FILES = Object.freeze([
   'src/router/index.ts',
+  'src/router/routeSecurityPolicy.ts',
   'scripts/lib/release-route-contract.js',
   'scripts/config/lighthouse-prod-urls.json',
   'src/utils/cache/config.ts',
@@ -307,6 +308,10 @@ function validateRequiredTokens(contentsByFile, endpoint, issues) {
 
 function validatePublicIdEntrypoints(projectRoot, issues) {
   const routerContents = readProjectFile(projectRoot, 'src/router/index.ts')
+  const routeSecurityPolicyContents = readProjectFile(
+    projectRoot,
+    'src/router/routeSecurityPolicy.ts'
+  )
   const guardedRouteNames = [
     'post-detail',
     'author-detail',
@@ -314,9 +319,14 @@ function validatePublicIdEntrypoints(projectRoot, issues) {
     'user-public-profile',
     'passkey-recovery-detail',
   ]
+  const routerUsesContractResourceGuard =
+    routerContents.includes('shouldRejectInvalidContractResourceRoute') ||
+    routerContents.includes('resolveInvalidContractResourceRedirect')
   if (
-    !routerContents.includes('isContractResourceId') ||
-    guardedRouteNames.some((routeName) => !routerContents.includes(`'${routeName}'`))
+    !routerUsesContractResourceGuard ||
+    !routeSecurityPolicyContents.includes('shouldRejectInvalidContractResourceRoute') ||
+    !routeSecurityPolicyContents.includes('isContractResourceId') ||
+    guardedRouteNames.some((routeName) => !routeSecurityPolicyContents.includes(`'${routeName}'`))
   ) {
     issues.push({
       code: 'missing-route-public-id-guard',

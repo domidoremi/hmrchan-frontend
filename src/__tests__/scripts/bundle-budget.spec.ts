@@ -49,6 +49,59 @@ describe('bundle budget helpers', () => {
     expect(metrics.largestChunkPath).toBe('assets/js/app.js')
     expect(result.status).toBe('failed')
     expect(result.violations.map((violation) => violation.metric)).toEqual(['totalJsBytes'])
+    expect(result.violations[0]).toEqual(
+      expect.objectContaining({
+        reasonCode: 'total-js-budget-exceeded',
+        overBy: 1,
+      })
+    )
     expect(formatBundleBudgetReport(result)).toContain('totalJsBytes')
+  })
+
+  it('reports locator details for largest chunk and home initial asset violations', () => {
+    const result = analyzeBundleBudget(
+      {
+        totalJsBytes: 100,
+        totalCssBytes: 20,
+        totalImageBytes: 30,
+        largestChunkBytes: 80,
+        largestChunkPath: 'assets/js/dashboard.js',
+        homeInitialAssetCount: 3,
+        homeInitialAssetTagCount: 4,
+        homeInitialAssetUrls: ['/assets/css/app.css', '/assets/js/app.js', '/assets/js/vendor.js'],
+        fileCounts: {
+          js: 2,
+          css: 1,
+          images: 1,
+          chunks: 3,
+          total: 4,
+        },
+      },
+      {
+        maxTotalJsBytes: 120,
+        maxTotalCssBytes: 30,
+        maxTotalImageBytes: 40,
+        maxLargestChunkBytes: 64,
+        maxHomeInitialAssetCount: 2,
+      }
+    )
+
+    expect(result.violations).toEqual([
+      expect.objectContaining({
+        metric: 'largestChunkBytes',
+        reasonCode: 'largest-chunk-budget-exceeded',
+        overBy: 16,
+      }),
+      expect.objectContaining({
+        metric: 'homeInitialAssetCount',
+        reasonCode: 'home-initial-asset-count-exceeded',
+        overBy: 1,
+      }),
+    ])
+
+    const report = formatBundleBudgetReport(result)
+
+    expect(report).toContain('largestChunkPath: assets/js/dashboard.js')
+    expect(report).toContain('homeInitialAssetUrls: /assets/css/app.css, /assets/js/app.js')
   })
 })

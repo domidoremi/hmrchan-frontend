@@ -18,8 +18,15 @@ import {
   type SecurityLevel,
 } from '@/security/runtimeState'
 import { ensureAuthStoreLoaded } from '@/services/authSurface'
-import { isContractResourceId } from '@/utils/contractResourceId'
 import { applyPageMeta } from '@/utils/pageMeta'
+import {
+  buildLoginRedirect,
+  resolveInvalidContractResourceRedirect,
+  resolveRouteAuthStoreLoadPolicy,
+  resolveRouteSecurityLevel,
+  resolveUnauthenticatedRouteRedirect,
+  shouldRedirectAuthenticatedGuestRoute,
+} from './routeSecurityPolicy'
 import { buildSensitiveReauthRedirect, isSensitiveReauthLoginRoute } from './sensitiveReauth'
 
 // 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
@@ -41,10 +48,6 @@ declare module 'vue-router' {
     /** Allow page content to render directly under the navbar without shell padding/background */
     extendContentUnderNavbar?: boolean
   }
-}
-
-function toNotFoundParams(path: string): { pathMatch: string[] } {
-  return { pathMatch: path.replace(/^\/+/, '').split('/').filter(Boolean) }
 }
 
 function resolveViewKey(route: RouteLocationNormalized): string | null {
@@ -560,70 +563,44 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach(async (to) => {
-  const guardedResourceRoutes = new Set([
-    'post-detail',
-    'author-detail',
-    'discussion-detail',
-    'user-public-profile',
-    'passkey-recovery-detail',
-  ])
-  if (typeof to.name === 'string' && guardedResourceRoutes.has(to.name)) {
-    const resourceId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id
-    const isValidResourceId = isContractResourceId(resourceId)
-    if (!isValidResourceId) {
-      return {
-        name: 'not-found',
-        params: toNotFoundParams(to.path),
-        query: to.query,
-        hash: to.hash,
-      }
-    }
-  }
+  const invalidContractResourceRedirect = resolveInvalidContractResourceRedirect(to)
+  if (invalidContractResourceRedirect) return invalidContractResourceRedirect
 
-  const securityLevel = to.meta.securityLevel ?? (to.meta.requiresAuth ? 'authenticated' : 'public')
-  const needsProtectedAuthState = securityLevel !== 'public'
-  const authStore = needsProtectedAuthState
-    ? await ensureAuthStoreLoaded({ initialize: true })
-    : to.meta.guestOnly
-      ? await ensureAuthStoreLoaded({ initialize: false })
-      : null
+  const securityLevel = resolveRouteSecurityLevel(to)
+  const authLoadPolicy = resolveRouteAuthStoreLoadPolicy(to)
+  const authStore = authLoadPolicy.load
+    ? await ensureAuthStoreLoaded({ initialize: authLoadPolicy.initialize })
+    : null
   const isAuthenticated = authStore?.isAuthenticated ?? false
 
-  // 需要认证的页面
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    return {
-      path: '/login',
-      query: { redirect: to.fullPath },
-    }
-  }
+  const unauthenticatedRedirect = resolveUnauthenticatedRouteRedirect({
+    route: to,
+    isAuthenticated,
+  })
+  if (unauthenticatedRedirect) return unauthenticatedRedirect
 
   if (securityLevel === 'authenticated' && isAuthenticated) {
     await authStore.ensureFreshAuthz('authenticated')
   }
 
   if (securityLevel === 'sensitive') {
-    if (!isAuthenticated) {
-      return {
-        path: '/login',
-        query: { redirect: to.fullPath },
-      }
-    }
-
     if (getRiskMode() === 'degraded') {
       return buildSensitiveReauthRedirect(to)
     }
 
     const allowed = await authStore.ensureFreshAuthz('sensitive')
     if (!allowed) {
-      return {
-        path: '/login',
-        query: { redirect: to.fullPath },
-      }
+      return buildLoginRedirect(to.fullPath)
     }
   }
 
-  // 仅游客可访问的页面（登录、注册）
-  if (to.meta.guestOnly && isAuthenticated && !isSensitiveReauthLoginRoute(to)) {
+  if (
+    shouldRedirectAuthenticatedGuestRoute({
+      guestOnly: to.meta.guestOnly,
+      isAuthenticated,
+      sensitiveReauthLogin: isSensitiveReauthLoginRoute(to),
+    })
+  ) {
     return '/'
   }
 

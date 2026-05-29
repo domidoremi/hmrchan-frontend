@@ -1,4 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { reactive, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -142,6 +144,15 @@ vi.mock('@/services/appearanceLoader', () => ({
 
 import SettingsPanel from '../SettingsPanel.vue'
 
+const settingsPanelSource = readFileSync(
+  resolve(process.cwd(), 'src/components/layout/SettingsPanel.vue'),
+  'utf8'
+)
+const settingsPanelStyles = readFileSync(
+  resolve(process.cwd(), 'src/styles/components/settings-panel.css'),
+  'utf8'
+)
+
 function createWrapper(props: Record<string, unknown> = {}) {
   return mount(SettingsPanel, {
     props,
@@ -253,6 +264,18 @@ describe('SettingsPanel', () => {
       },
       appUpdateStrategy: 'prompt-only',
     })
+  })
+
+  it('keeps settings panel presentation in an external scoped stylesheet', () => {
+    expect(settingsPanelSource).toContain(
+      '<style scoped src="../../styles/components/settings-panel.css"></style>'
+    )
+    expect(settingsPanelSource).not.toContain('<style scoped>\n')
+    expect(settingsPanelStyles).toContain('.settings-panel {')
+    expect(settingsPanelStyles).toContain('.settings-category-switcher {')
+    expect(settingsPanelStyles).toContain('.toggle-btn {')
+    expect(settingsPanelStyles).toContain('.reduced-motion-notice {')
+    expect(settingsPanelStyles).toContain('@media (max-width: 28rem)')
   })
 
   it('supports external scroll shell and category switching', async () => {

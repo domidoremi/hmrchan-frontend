@@ -390,11 +390,30 @@ import {
   buildActiveMediaElementStyle,
   buildActiveMediaViewerStyle,
   buildDetailDescription,
+  buildPostDetailNotFoundRouteParams,
   buildDetailTitle,
+  buildPublishedMeta,
+  getAdjacentMediaPreloadIndexes,
   getThumbnailPlaceholderCount,
   isMediaPending as computeIsMediaPending,
+  resolveActiveImageSource,
+  resolveActiveImageSrcset,
+  resolveAutoAdvanceMediaTransition,
+  resolveFallbackMediaSource,
+  resolveFallbackMediaSrcset,
+  resolvePlaceholderSource,
+  resolvePostDetailFallbackRecovery,
+  resolvePostDetailNavigationRequest,
+  resolvePostDetailNavigationTarget,
+  resolvePostDetailTouchNavigationDirection,
+  resolvePostDetailWheelIntent,
+  resolvePostDetailMediaState,
+  resolveSelectedMediaTransition,
+  resolveSteppedMediaTransition,
+  shouldLoadCommentsForViewport,
   shouldShowReadFullText as computeShouldShowReadFullText,
   shouldShowThumbnailRail as computeShouldShowThumbnailRail,
+  type PostDetailMediaTransition,
 } from './post-detail/postDetailModel'
 
 // 动态导入大型组件以减少初始包体积
@@ -517,11 +536,7 @@ const shouldShowReadFullText = computed(() =>
 const detailTitle = computed(() => buildDetailTitle(post.value))
 const detailDescription = computed(() => buildDetailDescription(post.value))
 
-const publishedMeta = computed(() => {
-  const publishedAt = post.value?.published_at
-  if (!publishedAt) return ''
-  return t('post.publishedAt', { date: formatDate(publishedAt) })
-})
+const publishedMeta = computed(() => buildPublishedMeta(post.value, { formatDate, translate: t }))
 
 function openTextModal() {
   if (!detailDescription.value) return
@@ -536,35 +551,25 @@ function onTextModalKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') closeTextModal()
 }
 
-const activeMedia = computed(() => {
-  const list = post.value?.media_files ?? []
-  return list[activeMediaIndex.value] ?? null
-})
+const mediaState = computed(() => resolvePostDetailMediaState(post.value, activeMediaIndex.value))
+const activeMedia = computed(() => mediaState.value.activeMedia)
 
 const detailMediaImageSizes =
   '(min-width: 1100px) 60rem, (min-width: 900px) calc(100vw - 31rem), 100vw'
 
-const subtitlesAvailable = computed(() => {
-  const m = activeMedia.value
-  return Boolean(m && m.file_type === 'video' && (m.subtitles?.length ?? 0) > 0)
-})
-
-const hasMultipleMedia = computed(() => (post.value?.media_files?.length ?? 0) > 1)
-const mediaCount = computed(() => post.value?.media_files?.length ?? 0)
-const canGoPrevMedia = computed(() => activeMediaIndex.value > 0)
-const canGoNextMedia = computed(() => activeMediaIndex.value + 1 < mediaCount.value)
-const showMediaNavButtons = computed(
-  () => hasMultipleMedia.value && activeMedia.value?.file_type !== 'video'
-)
+const subtitlesAvailable = computed(() => mediaState.value.subtitlesAvailable)
+const hasMultipleMedia = computed(() => mediaState.value.hasMultipleMedia)
+const mediaCount = computed(() => mediaState.value.mediaCount)
+const canGoPrevMedia = computed(() => mediaState.value.canGoPrevMedia)
+const canGoNextMedia = computed(() => mediaState.value.canGoNextMedia)
+const showMediaNavButtons = computed(() => mediaState.value.showMediaNavButtons)
 
 // 缓存来自列表页时可能没有 media_files，但 media_count > 0 表示有媒体
 // 此时应显示加载骨架而非"无媒体"占位
 // 一旦详情 API 已返回（detailFetched），不再显示骨架
 const isMediaPending = computed(() => computeIsMediaPending(post.value, detailFetched.value))
 
-const isImageSequence = computed(() =>
-  (post.value?.media_files ?? []).every((media) => media.file_type === 'image')
-)
+const isImageSequence = computed(() => mediaState.value.isImageSequence)
 
 const canSwipeNavigate = computed(() => settings.value.enableSwipeNavigation)
 
@@ -576,24 +581,20 @@ const activeMediaElementStyle = computed<Record<string, string>>(() =>
   buildActiveMediaElementStyle(activeMedia.value)
 )
 
-const activeImageSrc = computed(() => {
-  const media = activeMedia.value
-  if (!media || media.file_type !== 'image') return ''
-  return getMediaThumbnailUrl(media.id, 'large')
-})
+const activeImageSrc = computed(() =>
+  resolveActiveImageSource(activeMedia.value, { getMediaThumbnailUrl })
+)
 
-const activeImageSrcset = computed(() => {
-  const media = activeMedia.value
-  if (!media || media.file_type !== 'image') return null
-  return getMediaThumbnailSrcset(media.id)
-})
+const activeImageSrcset = computed(() =>
+  resolveActiveImageSrcset(activeMedia.value, { getMediaThumbnailSrcset })
+)
 
 const fallbackMediaSrc = computed(() => {
-  return resolveThumbnailSrc(post.value?.thumbnail_url ?? null, 'large') || ''
+  return resolveFallbackMediaSource(post.value, { resolveThumbnailSrc })
 })
 
 const fallbackMediaSrcset = computed(() =>
-  resolveThumbnailSrcset(post.value?.thumbnail_url ?? null)
+  resolveFallbackMediaSrcset(post.value, { resolveThumbnailSrcset })
 )
 
 const shouldShowThumbnailRail = computed(() =>
@@ -631,55 +632,49 @@ function hintPostMedia(postDetail: PostDetailResponse | null | undefined) {
 
 // 获取缓存的缩略图作为占位图
 const placeholderSrc = computed(() => {
-  const media = activeMedia.value
-  if (!media) return cachedThumbnailUrl.value
-
-  // 优先使用已预加载的缩略图
-  const thumbUrl = getMediaThumbnailUrl(media.id, 'medium')
-  if (preloadedImages.value.has(thumbUrl)) {
-    return thumbUrl
-  }
-
-  // 首次加载时使用从列表页传递的缩略图
-  if (activeMediaIndex.value === 0 && cachedThumbnailUrl.value) {
-    return cachedThumbnailUrl.value
-  }
-
-  return thumbUrl
+  return resolvePlaceholderSource({
+    activeMedia: activeMedia.value,
+    activeMediaIndex: activeMediaIndex.value,
+    cachedThumbnailUrl: cachedThumbnailUrl.value,
+    preloadedImages: preloadedImages.value,
+    getMediaThumbnailUrl,
+  })
 })
 
-function selectMedia(index: number) {
-  if (index === activeMediaIndex.value) return
-  pauseAutoPlay()
-  allowAdjacentMediaPreload.value = true
-  mediaTransitionName.value =
-    index > activeMediaIndex.value ? 'media-slide-left' : 'media-slide-right'
+function commitMediaTransition(
+  transition: PostDetailMediaTransition | null,
+  options: { userInitiated?: boolean } = {}
+): boolean {
+  if (!transition) return false
+  if (options.userInitiated) {
+    pauseAutoPlay()
+    allowAdjacentMediaPreload.value = true
+  }
+  mediaTransitionName.value = transition.mediaTransitionName
   isMediaLoaded.value = false
-  activeMediaIndex.value = index
+  activeMediaIndex.value = transition.activeMediaIndex
+  return true
+}
+
+function selectMedia(index: number) {
+  commitMediaTransition(
+    resolveSelectedMediaTransition(index, activeMediaIndex.value, mediaCount.value),
+    { userInitiated: true }
+  )
 }
 
 function prevMedia(): boolean {
-  const total = mediaCount.value
-  if (total <= 1) return false
-  if (!canGoPrevMedia.value) return false
-  pauseAutoPlay()
-  allowAdjacentMediaPreload.value = true
-  mediaTransitionName.value = 'media-slide-right'
-  isMediaLoaded.value = false
-  activeMediaIndex.value = Math.max(0, activeMediaIndex.value - 1)
-  return true
+  return commitMediaTransition(
+    resolveSteppedMediaTransition(activeMediaIndex.value, mediaCount.value, -1),
+    { userInitiated: true }
+  )
 }
 
 function nextMedia(): boolean {
-  const total = mediaCount.value
-  if (total <= 1) return false
-  if (!canGoNextMedia.value) return false
-  pauseAutoPlay()
-  allowAdjacentMediaPreload.value = true
-  mediaTransitionName.value = 'media-slide-left'
-  isMediaLoaded.value = false
-  activeMediaIndex.value = Math.min(total - 1, activeMediaIndex.value + 1)
-  return true
+  return commitMediaTransition(
+    resolveSteppedMediaTransition(activeMediaIndex.value, mediaCount.value, 1),
+    { userInitiated: true }
+  )
 }
 
 function onMediaLoad() {
@@ -724,11 +719,7 @@ function pauseAutoPlay() {
 }
 
 function advanceMedia() {
-  const total = post.value?.media_files?.length ?? 0
-  if (total <= 1) return
-  mediaTransitionName.value = 'media-slide-left'
-  isMediaLoaded.value = false
-  activeMediaIndex.value = (activeMediaIndex.value + 1) % total
+  commitMediaTransition(resolveAutoAdvanceMediaTransition(activeMediaIndex.value, mediaCount.value))
 }
 
 // 用户明确切换媒体后，仅预热相邻缩略图，避免详情页首屏竞争完整媒体资源。
@@ -736,11 +727,7 @@ function preloadAdjacentMedia() {
   const mediaFiles = post.value?.media_files
   if (!mediaFiles || mediaFiles.length <= 1) return
 
-  const currentIdx = activeMediaIndex.value
-  const indicesToPreload = [
-    (currentIdx + 1) % mediaFiles.length,
-    (currentIdx - 1 + mediaFiles.length) % mediaFiles.length,
-  ]
+  const indicesToPreload = getAdjacentMediaPreloadIndexes(mediaFiles.length, activeMediaIndex.value)
 
   indicesToPreload.forEach((idx) => {
     const media = mediaFiles[idx]
@@ -786,13 +773,7 @@ const checkCommentsVisibility = throttleRAF(() => {
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
   if (viewportHeight <= 0) return
 
-  const rect = section.getBoundingClientRect()
-  const hasMeasuredBox = rect.height > 0 || rect.width > 0 || rect.bottom > rect.top
-  if (!hasMeasuredBox) return
-  const preloadMargin = Math.max(Math.min(viewportHeight * 0.35, 320), 160)
-  const isNearViewport = rect.top <= viewportHeight + preloadMargin && rect.bottom >= -preloadMargin
-
-  if (isNearViewport) {
+  if (shouldLoadCommentsForViewport({ rect: section.getBoundingClientRect(), viewportHeight })) {
     loadCommentsWhenVisible()
   }
 })
@@ -870,43 +851,49 @@ function showPostNavHint(direction: 'left' | 'right') {
   }, 900)
 }
 
-function navigateToOffset(offset: number) {
+function navigateToOffset(offset: 1 | -1) {
   if (!canSwipeNavigate.value || isSwitchingPost.value) return
-  const context = navigationContext.value
-  if (!context) return
-
-  const nextIndex = context.index + offset
-  if (nextIndex < 0 || nextIndex >= context.ids.length) return
-
-  const nextId = context.ids[nextIndex]
-  if (!nextId || nextId === postId.value) return
+  const target = resolvePostDetailNavigationTarget({
+    context: navigationContext.value,
+    currentPostId: postId.value,
+    offset,
+  })
+  if (!target) return
 
   isSwitchingPost.value = true
 
   try {
-    sessionStorage.setItem('post-detail-transition', offset > 0 ? 'left' : 'right')
+    sessionStorage.setItem('post-detail-transition', target.transition)
   } catch {
     // ignore
   }
 
-  updatePostNavigationIndex(nextIndex)
-  router.push(`/post/${nextId}`)
+  updatePostNavigationIndex(target.index)
+  router.push(`/post/${target.postId}`)
 }
 
 function requestPostNavigate(direction: 1 | -1) {
   const now = Date.now()
+  const request = resolvePostDetailNavigationRequest({
+    direction,
+    pending: pendingPostNav.value,
+    now,
+  })
 
-  // Require a quick second gesture to confirm, improving tolerance against accidental swipes.
-  const pending = pendingPostNav.value
-  if (pending && pending.direction === direction && pending.expiresAt > now) {
+  if (request.action === 'navigate') {
     pendingPostNav.value = null
     navigateToOffset(direction)
     return
   }
 
-  pendingPostNav.value = { direction, expiresAt: now + 800 }
-  showPeek(direction > 0 ? 'left' : 'right')
-  showPostNavHint(direction > 0 ? 'left' : 'right')
+  pendingPostNav.value = request.pending
+  showPeek(request.hint)
+  showPostNavHint(request.hint)
+}
+
+function applyPostNavigationDirection(direction: 1 | -1) {
+  if (direction > 0 ? nextMedia() : prevMedia()) return
+  requestPostNavigate(direction)
 }
 
 function isInIgnoredInteractionArea(target: EventTarget | null): boolean {
@@ -925,32 +912,19 @@ function handleWheel(event: WheelEvent) {
   if (event.ctrlKey || event.metaKey) return
   if (isInIgnoredInteractionArea(event.target)) return
 
-  // Only respond to horizontal intent (trackpad swipe / shift+wheel)
-  const dy = event.deltaY
-  const dx = event.shiftKey && Math.abs(event.deltaX) < 0.1 ? dy : event.deltaX
-  if (Math.abs(dx) < Math.abs(dy)) return
+  const wheelIntent = resolvePostDetailWheelIntent({
+    deltaX: event.deltaX,
+    deltaY: event.deltaY,
+    shiftKey: event.shiftKey,
+    now: performance.now(),
+    state: { accumulator: wheelAccumulator.value, lastEventTime: lastWheelTime.value },
+  })
+  wheelAccumulator.value = wheelIntent.state.accumulator
+  lastWheelTime.value = wheelIntent.state.lastEventTime
 
-  const now = performance.now()
-  if (now - lastWheelTime.value > 250) {
-    wheelAccumulator.value = 0
-  }
-  lastWheelTime.value = now
-  wheelAccumulator.value += dx
-
-  if (Math.abs(wheelAccumulator.value) < 110) return
-
-  event.preventDefault()
-  const direction = wheelAccumulator.value > 0 ? 1 : -1
-  wheelAccumulator.value = 0
-
-  // Media-first: if current post has multiple media, swipe switches media before switching posts.
-  if (direction > 0) {
-    if (nextMedia()) return
-  } else {
-    if (prevMedia()) return
-  }
-
-  requestPostNavigate(direction as 1 | -1)
+  if (!wheelIntent.direction) return
+  if (wheelIntent.shouldPreventDefault) event.preventDefault()
+  applyPostNavigationDirection(wheelIntent.direction)
 }
 
 function handleTouchStart(event: TouchEvent) {
@@ -972,28 +946,19 @@ function handleTouchEnd(event: TouchEvent) {
   const startY = touchStartY.value
   if (startX === null || startY === null) return
 
-  const endX = event.changedTouches[0]?.clientX ?? startX
-  const endY = event.changedTouches[0]?.clientY ?? startY
-
-  const deltaX = startX - endX
-  const deltaY = startY - endY
-
   touchStartX.value = null
   touchStartY.value = null
 
-  // Only treat as navigation swipe when horizontal intent is clear.
-  if (Math.abs(deltaX) < 70 || Math.abs(deltaX) < Math.abs(deltaY)) return
+  const direction = resolvePostDetailTouchNavigationDirection({
+    start: { x: startX, y: startY },
+    end: {
+      x: event.changedTouches[0]?.clientX ?? startX,
+      y: event.changedTouches[0]?.clientY ?? startY,
+    },
+  })
+  if (!direction) return
 
-  const direction = deltaX > 0 ? (1 as const) : (-1 as const)
-
-  // Media-first: if current post has multiple media, swipe switches media before switching posts.
-  if (direction > 0) {
-    if (nextMedia()) return
-  } else {
-    if (prevMedia()) return
-  }
-
-  requestPostNavigate(direction)
+  applyPostNavigationDirection(direction)
 }
 
 function goBack() {
@@ -1036,12 +1001,6 @@ function cancelPostDetailIdleWork() {
   cancelIdlePostViewTracking = null
 }
 
-function buildNotFoundRouteParams(currentPostId: string) {
-  return {
-    pathMatch: ['post', currentPostId],
-  }
-}
-
 function schedulePostViewTracking(currentPostId: string, requestToken: number) {
   if (typeof window === 'undefined') return
   cancelIdlePostViewTracking?.()
@@ -1065,18 +1024,16 @@ function applyFallbackPost(postDetail: PostDetailResponse) {
 }
 
 function resolveFallbackPostDetail(currentPostId: string, err: unknown): PostDetailResponse | null {
-  if (err instanceof ApiError && err.status === 404) {
-    const navigationSummary = getPostNavigationSummary(currentPostId)
-    if (navigationSummary) {
-      return buildFallbackPostDetail(navigationSummary)
-    }
-  }
+  const navigationSummary = getPostNavigationSummary(currentPostId)
+  const recovery = resolvePostDetailFallbackRecovery({
+    notFound: err instanceof ApiError && err.status === 404,
+    serviceUnavailable: isServiceUnavailableError(err),
+    hasNavigationSummary: Boolean(navigationSummary),
+  })
 
-  if (isServiceUnavailableError(err)) {
-    return getFallbackPostDetailById(currentPostId)
-  }
-
-  return null
+  if (recovery === 'navigation-summary' && navigationSummary)
+    return buildFallbackPostDetail(navigationSummary)
+  return recovery === 'static-fallback' ? getFallbackPostDetailById(currentPostId) : null
 }
 
 async function fetchPost(signal?: AbortSignal) {
@@ -1086,7 +1043,7 @@ async function fetchPost(signal?: AbortSignal) {
     isLoading.value = false
     await router.replace({
       name: 'not-found',
-      params: buildNotFoundRouteParams(postId.value),
+      params: buildPostDetailNotFoundRouteParams(postId.value),
       query: route.query,
       hash: route.hash,
     })
@@ -1176,7 +1133,7 @@ async function fetchPost(signal?: AbortSignal) {
         dataSource.value = 'live'
         await router.replace({
           name: 'not-found',
-          params: buildNotFoundRouteParams(currentPostId),
+          params: buildPostDetailNotFoundRouteParams(currentPostId),
           query: route.query,
           hash: route.hash,
         })

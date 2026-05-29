@@ -59,8 +59,87 @@ describe('complexity budget helpers', () => {
         path: 'src/views/NewLargePage.vue',
         lineCount: 11,
         registered: false,
+        violationReasons: [
+          {
+            code: 'unregistered-large-file',
+            message: 'file exceeds softLineLimit 10 and is not registered',
+          },
+        ],
       }),
     ])
-    expect(formatComplexityBudgetReport(result)).toContain('NewLargePage.vue')
+    expect(formatComplexityBudgetReport(result)).toContain('unregistered-large-file')
+  })
+
+  it('reports registered limit and hard-limit refactor queue violations separately', () => {
+    const metrics = {
+      files: [
+        {
+          relativePath: 'src/views/GrewPastRegistration.vue',
+          lineCount: 13,
+        },
+        {
+          relativePath: 'src/views/HardLimitWithoutQueue.vue',
+          lineCount: 16,
+        },
+        {
+          relativePath: 'src/views/HardLimitWithQueue.vue',
+          lineCount: 16,
+        },
+      ],
+    }
+
+    const result = analyzeComplexityBudget(metrics, {
+      softLineLimit: 10,
+      hardLineLimit: 15,
+      registeredLargeFiles: {
+        'src/views/GrewPastRegistration.vue': {
+          maxLines: 12,
+          refactorQueued: false,
+          reason: 'grew after registration',
+        },
+        'src/views/HardLimitWithoutQueue.vue': {
+          maxLines: 20,
+          refactorQueued: false,
+          reason: 'missing queue marker',
+        },
+        'src/views/HardLimitWithQueue.vue': {
+          maxLines: 20,
+          refactorQueued: true,
+          reason: 'tracked refactor',
+        },
+      },
+    })
+
+    expect(result.status).toBe('failed')
+    expect(result.violations).toEqual([
+      expect.objectContaining({
+        path: 'src/views/GrewPastRegistration.vue',
+        violationReasons: [
+          {
+            code: 'registered-limit-exceeded',
+            message: 'file exceeds registered maxLines 12',
+          },
+        ],
+      }),
+      expect.objectContaining({
+        path: 'src/views/HardLimitWithoutQueue.vue',
+        violationReasons: [
+          {
+            code: 'hard-limit-without-refactor-queue',
+            message: 'file exceeds hardLineLimit 15 and is not queued for refactor',
+          },
+        ],
+      }),
+    ])
+
+    expect(
+      result.largeFiles.find((file) => file.path === 'src/views/HardLimitWithQueue.vue')
+    ).toEqual(
+      expect.objectContaining({
+        violation: false,
+        violationReasons: [],
+      })
+    )
+    expect(formatComplexityBudgetReport(result)).toContain('hard-limit-without-refactor-queue')
   })
 })

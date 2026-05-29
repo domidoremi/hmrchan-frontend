@@ -26,6 +26,10 @@ const appNavbarSource = readFileSync(
   resolve(process.cwd(), 'src/components/layout/AppNavbar.vue'),
   'utf8'
 )
+const appNavbarStyles = readFileSync(
+  resolve(process.cwd(), 'src/styles/components/app-navbar.css'),
+  'utf8'
+)
 
 const MOBILE_NAV_QUERY = '(max-width: 960px)'
 const navbarMocks = vi.hoisted(() => {
@@ -281,6 +285,17 @@ describe('AppNavbar', () => {
     setDocumentVisibilityState('visible')
   })
 
+  it('keeps navbar presentation in an external scoped stylesheet', () => {
+    expect(appNavbarSource).toContain(
+      '<style scoped src="../../styles/components/app-navbar.css"></style>'
+    )
+    expect(appNavbarSource).not.toContain('<style scoped>\n')
+    expect(appNavbarStyles).toContain('.navbar {')
+    expect(appNavbarStyles).toContain('.nav-action-btn {')
+    expect(appNavbarStyles).toContain('.route-dropdown {')
+    expect(appNavbarStyles).toContain('@media (max-width: 960px)')
+  })
+
   afterEach(() => {
     while (mountedWrappers.length > 0) {
       const wrapper = mountedWrappers.pop()
@@ -368,8 +383,8 @@ describe('AppNavbar', () => {
     expect(
       wrapper.find('.navbar-brand__logo img[src="/images/expressions/standing-sm.webp"]').exists()
     ).toBe(true)
-    expect(appNavbarSource).toContain('min-block-size: var(--ui-action-size, 2.75rem)')
-    expect(appNavbarSource).toContain('inline-size: var(--ui-action-size, 2.75rem)')
+    expect(appNavbarStyles).toContain('min-block-size: var(--ui-action-size, 2.75rem)')
+    expect(appNavbarStyles).toContain('inline-size: var(--ui-action-size, 2.75rem)')
     expect(wrapper.find('.navbar-shell--actions-only').exists()).toBe(false)
     expect(wrapper.find('.navbar-cta').exists()).toBe(false)
     expect(wrapper.find('button[aria-label="Primary navigation"]').exists()).toBe(false)

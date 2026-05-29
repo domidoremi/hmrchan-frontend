@@ -8,13 +8,16 @@ const pagePrimitivesSource = readFileSync(
   'utf8'
 )
 const profileSettingsSource = readFileSync(
-  resolve(process.cwd(), 'src/views/ProfileSettingsPage.vue'),
+  resolve(process.cwd(), 'src/styles/page-systems/profile-settings-page-view.css'),
   'utf8'
 )
-const searchPageSource = readFileSync(resolve(process.cwd(), 'src/views/SearchPage.vue'), 'utf8')
+const searchPageSource = readFileSync(
+  resolve(process.cwd(), 'src/styles/page-systems/search-page-view.css'),
+  'utf8'
+)
 const explorePageSource = readFileSync(resolve(process.cwd(), 'src/views/ExplorePage.vue'), 'utf8')
 const communityPageSource = readFileSync(
-  resolve(process.cwd(), 'src/views/CommunityPage.vue'),
+  resolve(process.cwd(), 'src/styles/page-systems/community-page-view.css'),
   'utf8'
 )
 const profilePageSource = readFileSync(resolve(process.cwd(), 'src/views/ProfilePage.vue'), 'utf8')
@@ -26,7 +29,10 @@ const postDetailPageSource = readFileSync(
   resolve(process.cwd(), 'src/views/PostDetailPage.vue'),
   'utf8'
 )
-const aboutPageSource = readFileSync(resolve(process.cwd(), 'src/views/AboutPage.vue'), 'utf8')
+const aboutPageSource = readFileSync(
+  resolve(process.cwd(), 'src/styles/page-systems/about-page-view.css'),
+  'utf8'
+)
 const authCompatSource = readFileSync(resolve(process.cwd(), 'src/styles/auth-compat.css'), 'utf8')
 
 describe('responsive layout contracts', () => {
