@@ -34,6 +34,66 @@ describe('hmrContent post detail loading', () => {
     mockApiGet.mockReset()
   })
 
+  it('loads public page resources as anonymous requests', async () => {
+    mockApiGet.mockResolvedValue({})
+    const {
+      loadCommunityContentResource,
+      loadExploreContentResource,
+      loadHomeContentResource,
+      loadHomePrimaryContentResource,
+      loadScheduleContentResource,
+    } = await import('../hmrContent')
+
+    const cases = [
+      {
+        load: () => loadHomeContentResource(),
+        paths: [
+          '/home',
+          '/home/featured',
+          '/home/story-deck',
+          '/community/highlights',
+          '/trends/summary',
+          '/schedules/highlights',
+          '/posts?limit=10',
+        ],
+      },
+      {
+        load: () => loadHomePrimaryContentResource(),
+        paths: ['/home/featured'],
+      },
+      {
+        load: () => loadExploreContentResource({ query: ' live ', platform: 'x', limit: 24 }),
+        paths: [
+          '/posts/mixed?limit=6',
+          '/search/posts?limit=24&platform=twitter&q=live',
+          '/authors?limit=6',
+          '/search/suggestions?q=live',
+        ],
+      },
+      {
+        load: () => loadCommunityContentResource(),
+        paths: [
+          '/community/stats',
+          '/community/latest',
+          '/community/hot',
+          '/community/feed',
+          '/discussions',
+        ],
+      },
+      {
+        load: () => loadScheduleContentResource(),
+        paths: ['/schedules', '/schedules/calendar', '/schedules/highlights'],
+      },
+    ]
+
+    for (const item of cases) {
+      mockApiGet.mockClear()
+      await item.load()
+
+      expect(mockApiGet.mock.calls).toEqual(item.paths.map((path) => [path, { skipAuth: true }]))
+    }
+  })
+
   it('fetches non-UUID post ids from the API instead of returning a local not-found state', async () => {
     mockApiGet
       .mockResolvedValueOnce({
