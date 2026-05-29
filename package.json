@@ -40,7 +40,7 @@
     "type-check": "node node_modules/vue-tsc/bin/vue-tsc.js --noEmit --pretty",
     "type-check:watch": "node node_modules/vue-tsc/bin/vue-tsc.js --noEmit --watch --pretty",
     "prepare": "node node_modules/husky/bin.js",
-    "lint": "node node_modules/eslint/bin/eslint.js . --fix --cache",
+    "lint": "node node_modules/eslint/bin/eslint.js . --fix --cache --ext .vue,.ts,.tsx,.js,.mjs,.cjs",
     "format": "node node_modules/prettier/bin/prettier.cjs --write src/ package.json eslint.config.ts scripts/validate-release.mjs scripts/lib/validate-release.js scripts/release-evidence.mjs",
     "perf:lighthouse": "node scripts/lighthouse-audit.mjs",
     "perf:lighthouse:prod": "node scripts/lighthouse-prod-audit.mjs",
