@@ -94,3 +94,26 @@ describe('validate release git range resolution', () => {
     expect(resolveGitDiffRange('feature/local-only')).toBe('HEAD~1..HEAD')
   })
 })
+
+describe('validate release stage summaries', () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs()
+    execFileSyncMock.mockReset()
+  })
+
+  it('marks skipped stages with the modes that execute the stage', async () => {
+    const { buildValidationStageRecords, getValidationStagePlan } =
+      await importValidateReleaseModule()
+
+    const records = buildValidationStageRecords({
+      stagePlan: getValidationStagePlan('hook'),
+      artifactDir: 'output/validation/test-run',
+      target: 'https://momichan.xyz',
+    })
+    const localStaticStage = records.find((stage) => stage.id === 'stage-1-local-static')
+
+    expect(localStaticStage?.selected).toBe(false)
+    expect(localStaticStage?.status).toBe('skipped')
+    expect(localStaticStage?.reason).toBe('Runs only for prepush-full/local/candidate/production')
+  })
+})

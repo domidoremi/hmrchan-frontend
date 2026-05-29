@@ -299,7 +299,7 @@ function buildStageRecord(stage, artifactDir, target = null) {
     name: stage.name,
     selected: stage.selected,
     status: stage.selected ? 'pending' : 'skipped',
-    reason: stage.selected ? null : `Not required for ${stage.requiredModes.join('/')}`,
+    reason: stage.selected ? null : `Runs only for ${stage.requiredModes.join('/')}`,
     artifactDir,
     target,
     startedAt: null,
@@ -308,6 +308,23 @@ function buildStageRecord(stage, artifactDir, target = null) {
     commands: [],
     details: {},
   }
+}
+
+function buildValidationStageRecords({
+  stagePlan,
+  artifactDir,
+  target,
+  controlledTarget = null,
+  quiet = false,
+}) {
+  return stagePlan.map((stage) => ({
+    ...buildStageRecord(
+      stage,
+      buildValidationStageArtifactDir(artifactDir, stage.id),
+      stage.id === 'stage-3-controlled-site' ? controlledTarget : target
+    ),
+    quiet,
+  }))
 }
 
 function finalizeStage(stageRecord, patch) {
@@ -628,14 +645,13 @@ async function main() {
   const baseUrl = (process.env.BASE_URL?.trim() || 'https://momichan.xyz').replace(/\/$/, '')
   const controlledBaseUrl = process.env.CONTROLLED_BASE_URL?.trim()?.replace(/\/$/, '') || null
 
-  const stageRecords = stagePlan.map((stage) => ({
-    ...buildStageRecord(
-      stage,
-      buildValidationStageArtifactDir(artifactDir, stage.id),
-      stage.id === 'stage-3-controlled-site' ? controlledBaseUrl : baseUrl
-    ),
+  const stageRecords = buildValidationStageRecords({
+    stagePlan,
+    artifactDir,
+    target: baseUrl,
+    controlledTarget: controlledBaseUrl,
     quiet: options.quiet,
-  }))
+  })
 
   let summary = null
   let writingSummary = false
@@ -776,6 +792,8 @@ export {
   resolveOriginHeadDiffRange,
   resolveRemoteBranchDiffRange,
   resolveTrackingDiffRange,
+  buildValidationStageRecords,
+  getValidationStagePlan,
 }
 
 if (isDirectCliRun()) {
