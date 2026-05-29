@@ -404,6 +404,9 @@ describe('validate release stage summaries', () => {
       'src/sw/index.ts',
       'src/sw/publicCachePolicy.ts',
       'src/sw/__tests__/publicCachePolicy.spec.ts',
+      'src/utils/cache/config.ts',
+      'src/utils/cache/publicContentCache.ts',
+      'src/utils/cache/serviceWorkerRegistration.ts',
       'public/manifest.json',
       'public/icons/sitting-192.webp',
       'public/icons/apple-touch-icon-180x180.png',
@@ -418,7 +421,7 @@ describe('validate release stage summaries', () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: 'pwa-runtime',
-          matchedCount: 9,
+          matchedCount: 12,
           matchedPaths: [
             'build/vite/plugins/serviceWorkerBuild.ts',
             'build/vite/swCacheVersion.ts',

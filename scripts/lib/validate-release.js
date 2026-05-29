@@ -99,6 +99,7 @@ const CHANGE_FOCUS_RULES = Object.freeze([
       'Service worker, public cache policy, install manifest, or install assets changed.',
     matches: (filePath) =>
       filePath.startsWith('src/sw/') ||
+      filePath.startsWith('src/utils/cache/') ||
       filePath.startsWith('public/icons/') ||
       filePath === 'public/manifest.json' ||
       filePath === 'public/favicon.ico' ||
