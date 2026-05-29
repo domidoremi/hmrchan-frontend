@@ -1,5 +1,5 @@
 import { nextTick, ref } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   hmrSettingsLocaleOptions,
@@ -77,6 +77,13 @@ describe('hmr settings workspace options', () => {
 })
 
 describe('useHmrSettingsWorkspace', () => {
+  beforeEach(() => {
+    mocks.applyLocale.mockReset()
+    mocks.clearPublicContentCache.mockReset()
+    window.localStorage.clear()
+    window.sessionStorage.clear()
+  })
+
   it('builds auth targets and derives theme/cache labels', () => {
     const { workspace } = makeWorkspace({ theme: 'system', resolvedTheme: 'dark' })
 
@@ -140,7 +147,6 @@ describe('useHmrSettingsWorkspace', () => {
 
   it('updates locale and public cache state through workspace actions', async () => {
     vi.useFakeTimers()
-    mocks.applyLocale.mockReset()
     mocks.clearPublicContentCache.mockResolvedValue(undefined)
     const { workspace } = makeWorkspace()
 
@@ -156,5 +162,26 @@ describe('useHmrSettingsWorkspace', () => {
     await nextTick()
     expect(workspace.cacheClearState.value).toBe('idle')
     vi.useRealTimers()
+  })
+
+  it('clears only public content cache without changing account storage or auth state', async () => {
+    mocks.clearPublicContentCache.mockResolvedValue(undefined)
+    window.localStorage.setItem('hmr.preview.auth', 'member')
+    window.localStorage.setItem('momi_client_security', '{"token":"client"}')
+    window.localStorage.setItem('momi_device_fingerprint_v1', '{"value":"fingerprint"}')
+    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
+    const { auth, router, workspace } = makeWorkspace({ authenticated: true })
+
+    await workspace.clearCache()
+
+    expect(mocks.clearPublicContentCache).toHaveBeenCalledOnce()
+    expect(auth.logout).not.toHaveBeenCalled()
+    expect(router.push).not.toHaveBeenCalled()
+    expect(window.localStorage.getItem('hmr.preview.auth')).toBe('member')
+    expect(window.localStorage.getItem('momi_client_security')).toBe('{"token":"client"}')
+    expect(window.localStorage.getItem('momi_device_fingerprint_v1')).toBe(
+      '{"value":"fingerprint"}'
+    )
+    expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
   })
 })
