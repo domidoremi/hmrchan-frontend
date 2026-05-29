@@ -60,6 +60,8 @@
     "fallbacks:refresh": "node scripts/refresh-public-snapshots.mjs",
     "audit": "bun run audit:repo && bun run audit:deps",
     "audit:repo": "bun run scripts/audit/index.ts",
+    "audit:list": "bun run scripts/audit/index.ts --list",
+    "audit:light": "bun run scripts/audit/index.ts --only=security,env-config,pwa,frontend-contract",
     "audit:deps": "bun audit",
     "audit:fix": "bun run scripts/audit/index.ts --fix",
     "commit:cn": "node scripts/git-commit.mjs"

@@ -42,6 +42,8 @@ bun run build
 bun run preview
 bun run type-check
 bun run test:unit
+bun run audit:light
+bun run audit:list
 bun run validate:release --mode local
 ```
 
