@@ -197,3 +197,7 @@ scripts/config/*.tmp.json
 
 # keep docs workspace content local
 docs/
+
+# keep API client workspaces local
+postman/
+.postman/
