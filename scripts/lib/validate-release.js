@@ -88,7 +88,9 @@ const CHANGE_FOCUS_RULES = Object.freeze([
       filePath.startsWith('src/edge/') ||
       filePath.startsWith('functions/') ||
       filePath.startsWith('workers/') ||
-      filePath === 'wrangler.toml',
+      filePath === 'wrangler.toml' ||
+      filePath === 'public/_headers' ||
+      filePath === 'public/_routes.json',
   }),
   Object.freeze({
     id: 'validation-contract',
@@ -114,7 +116,12 @@ const CHANGE_FOCUS_RULES = Object.freeze([
     matches: (filePath) =>
       filePath.startsWith('.husky/') ||
       filePath.startsWith('build/') ||
+      filePath.startsWith('scripts/audit/') ||
+      (filePath.startsWith('scripts/') &&
+        (filePath.endsWith('.mjs') || filePath.endsWith('.js') || filePath.endsWith('.ts'))) ||
       [
+        '.env.development',
+        '.env.example',
         '.gitignore',
         '.gitattributes',
         '.npmrc',

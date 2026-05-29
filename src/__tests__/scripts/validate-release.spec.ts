@@ -261,4 +261,48 @@ describe('validate release stage summaries', () => {
       ])
     )
   })
+
+  it('classifies env files and delivery scripts as delivery tooling changes', () => {
+    const changeSummary = classifyValidationChanges([
+      '.env.example',
+      '.env.development',
+      'scripts/build.mjs',
+      'scripts/check-build-security.mjs',
+      'scripts/audit/security.ts',
+    ])
+
+    expect(changeSummary.labels).toContain('delivery-tooling')
+    expect(changeSummary.hasDeliveryToolingChanges).toBe(true)
+    expect(changeSummary.focusAreas).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'delivery-tooling',
+          matchedCount: 5,
+          matchedPaths: [
+            '.env.development',
+            '.env.example',
+            'scripts/audit/security.ts',
+            'scripts/build.mjs',
+            'scripts/check-build-security.mjs',
+          ],
+        }),
+      ])
+    )
+  })
+
+  it('classifies Cloudflare Pages routing config as edge infrastructure changes', () => {
+    const changeSummary = classifyValidationChanges(['public/_headers', 'public/_routes.json'])
+
+    expect(changeSummary.labels).toContain('edge-infra')
+    expect(changeSummary.hasEdgeChanges).toBe(true)
+    expect(changeSummary.focusAreas).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'edge-infra',
+          matchedCount: 2,
+          matchedPaths: ['public/_headers', 'public/_routes.json'],
+        }),
+      ])
+    )
+  })
 })
