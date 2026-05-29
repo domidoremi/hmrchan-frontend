@@ -169,7 +169,7 @@
 - `node ./node_modules/vitest/vitest.mjs run --coverage --maxWorkers=1`
 - `istanbul` provider
 
-这不是最终目标值，只是 phase-1 可信基线。后续应该按模块补测试并逐步抬高。
+该值是 phase-1 可信基线，不是最终目标值。后续模块补测完成后必须逐步抬高。
 
 ## Signal Hygiene
 
@@ -183,9 +183,9 @@
   - 已登记为上游限制，并被收进显式白名单或 runbook 说明
 - 未进入白名单的 `console.error`、runtime error、blocking HTTP failure 继续视为真实失败信号
 - 当前已登记的上游限制：
-  - `baseline-browser-mapping` 即使升级到仓库可获取的最新版本，仍可能因其上游数据发布时间超过两个月而输出 stale-data 提醒
+  - `baseline-browser-mapping` 在上游数据发布时间超过两个月时输出 stale-data 提醒
   - 仓库通过 Vitest wrapper 仅对该官方支持的提醒注入 `BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA=true` / `BROWSERSLIST_IGNORE_OLD_DATA=true`，不扩展到其他错误类型
-  - `vue-i18n` custom message compiler 在当前 alpha/beta 依赖组合下可能输出 experimental warning；本轮登记为升级跟踪项，不扩展为通用静默白名单
+  - `vue-i18n` custom message compiler 在当前 alpha/beta 依赖组合下输出 experimental warning；本轮登记为升级跟踪项，不扩展为通用静默白名单
 
 ## Frontend Health Classification
 
@@ -221,7 +221,7 @@
 
 ## Manual High-Risk Verification
 
-以下改动在自动化全绿后，仍建议追加一次人工或半人工深度回归：
+以下改动在自动化全绿后，仍必须追加一次人工或半人工深度回归：
 
 - 评论区重构
 - 个人中心路由结构调整
@@ -273,7 +273,7 @@
 
 ## Frontend Quality Baseline
 
-本节记录当前前端质量基线。目标是让安全、验证、复杂度、性能和 UX 状态有可执行门槛，而不是只停留在 review 建议里。
+本节记录当前前端质量基线。安全、验证、复杂度、性能和 UX 状态必须具备可执行门槛，不能只停留在 review 备注里。
 
 ### 大文件阈值
 
@@ -362,7 +362,7 @@ bun run check:bundle-budget
 
 ### i18n Compiler Warning
 
-当前浏览器采样中可能出现 `vue-i18n` custom message compiler experimental 警告。它属于上游 alpha/beta 依赖风险，本轮不直接替换 i18n 方案。
+当前浏览器采样中出现 `vue-i18n` custom message compiler experimental 警告。它属于上游 alpha/beta 依赖风险，本轮不直接替换 i18n 方案。
 
 跟踪路径：
 

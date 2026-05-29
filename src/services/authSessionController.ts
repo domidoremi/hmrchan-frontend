@@ -200,6 +200,8 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   async function establishSession(response: AuthResponse) {
     establishAuthRuntimeSession({
       permission_version: response.permission_version,
+      permissions: response.permissions,
+      roles: response.roles ?? response.user.roles,
       session_expires_at: response.session_expires_at,
       identity_provider: response.user.identity_provider,
       user: {

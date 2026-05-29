@@ -112,6 +112,8 @@ export interface SessionSummaryResponse {
   user: UserResponse
   session_expires_at?: string | null
   permission_version?: number | string
+  permissions?: string[]
+  roles?: string[]
   return_to?: string
   _securityWarning?: 'high' | 'medium' | 'low'
 }

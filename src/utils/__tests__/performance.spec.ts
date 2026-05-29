@@ -12,6 +12,7 @@ import {
   preconnect,
   preloadResource,
   runWhenIdle,
+  scheduleDOMUpdate,
   throttleRAF,
   warmDecodedImage,
 } from '../performance'
@@ -223,6 +224,25 @@ describe('performance helpers', () => {
 
     expect(writer).toHaveBeenCalledTimes(1)
     expect(getAnimationDuration(240)).toBe(0)
+  })
+
+  it('separates synchronous DOM reads from next-frame writes', () => {
+    const frames: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+      frames.push(cb)
+      return frames.length
+    })
+    const read = vi.fn(() => ({ width: 320 }))
+    const write = vi.fn()
+
+    scheduleDOMUpdate(read, write)
+
+    expect(read).toHaveBeenCalledTimes(1)
+    expect(write).not.toHaveBeenCalled()
+
+    frames[0]?.(16)
+
+    expect(write).toHaveBeenCalledWith({ width: 320 })
   })
 })
 

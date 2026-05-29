@@ -3,8 +3,14 @@ import { describe, expect, it } from 'vitest'
 
 import PageMetaRow from '../PageMetaRow.vue'
 import PageToolbar from '../PageToolbar.vue'
+import { PageHeroShell as PageHeroShellExport, PageToolbar as PageToolbarExport } from '../index'
 
 describe('appearance layout primitives', () => {
+  it('keeps the appearance barrel exports wired', () => {
+    expect(PageHeroShellExport).toBeTruthy()
+    expect(PageToolbarExport).toBeTruthy()
+  })
+
   it('renders PageMetaRow with default tag and slot content', () => {
     const wrapper = mount(PageMetaRow, {
       slots: {

@@ -6,6 +6,8 @@ This plan covers business capability, technology stack, directory structure, com
 
 The optimization policy is incremental. Each slice must preserve current user-visible behavior, include targeted verification, and avoid broad rewrites unless the slice defines an explicit migration boundary.
 
+The current implementation is not the terminal architecture. Optimization work must protect business contracts, security invariants, data semantics, route behavior, and migration boundaries. It must not turn current file layout, private helper boundaries, incidental DOM nesting, or deep import paths into permanent architecture unless the slice explicitly promotes that surface to a public contract.
+
 ## Architecture
 
 The application is a Cloudflare Pages hosted Vue SPA with a Pages Functions BFF. The frontend must keep browser sessions cookie-backed, keep access token material out of persistent browser storage, and route all production API traffic through the same-origin `/api` facade.
@@ -20,6 +22,274 @@ Core ownership boundaries:
 - `src/sw`: offline, cache, and update runtime policy.
 - `functions` and `src/edge`: Cloudflare Pages middleware, API facade, prerender metadata, and upstream routing.
 - `scripts`: release validation, health checks, build wrappers, and audit tooling.
+
+## Architecture Mobility Target
+
+Target:
+
+- The frontend must stay replaceable at the implementation layer while preserving product behavior and release safety.
+- Tests must protect observable contracts, not incidental implementation shape.
+- Repairs must reduce coupling, extract boundaries, or record the remaining lock-in when a tactical fix is unavoidable.
+
+Execution Policy:
+
+- Contract tests may assert route outcomes, API payload normalization, cache classification, auth/session invariants, readiness selectors, accessibility behavior, and user-visible component states.
+- Contract tests must not assert private function boundaries, current SFC structure, deep import paths, styling internals, or exact DOM nesting unless those are declared as public contracts.
+- New tests around a large route file must prefer extracted model, policy, adapter, or facade modules over mounting the route to preserve internal structure.
+- Bug fixes in hotspot files must include one of these outcomes: extracted pure logic, narrowed adapter boundary, deleted duplicated path, or a residual lock-in note in the slice log.
+- Barrel exports, service facades, route policy modules, API client submodules, and cache policy modules are migration boundaries. Consumer migration must happen in focused batches after the boundary is tested.
+
+Risk Control:
+
+- A slice that only hardens the current implementation must state why no boundary extraction is included.
+- A slice that adds tests for existing behavior must classify each assertion as product contract, security invariant, data contract, accessibility contract, or temporary implementation guard.
+- Temporary implementation guards must include the replacement condition that allows the test to be deleted or rewritten.
+- High-risk areas must prefer compatibility adapters and contract tests before implementation replacement.
+
+Acceptance Criteria:
+
+- Release validation protects route, API, auth, cache, and security behavior without requiring current page/component topology to remain permanent.
+- Optimization logs classify work as `contract protection`, `architecture mobility`, `implementation hardening`, or `temporary guard`.
+- `implementation hardening` entries must include a migration note when the protected implementation is not intended as the final boundary.
+- Future architecture replacement can swap large page internals, component topology, state internals, or API implementation details while keeping the documented contracts green.
+
+## Frontend Analysis Baseline
+
+### 1. Project Overview
+
+The frontend is a Vue SPA deployed on Cloudflare Pages with Pages Functions and edge modules providing the same-origin API facade, prerender helpers, and runtime routing policy.
+
+Runtime ownership:
+
+- Public content flows include home, explore, search, post detail, author detail, schedule, community, and static information pages.
+- Authenticated flows include profile, notifications, favorites, comments, likes, history, reports, followers, following, blocked users, settings, and public user profile access.
+- Sensitive flows include profile security, profile settings, device management redirects, security activity redirects, MFA, passkey, password, email, and verification interactions.
+- Cross-cutting runtime behavior includes BFF cookie session restore, client security credentials, challenge and verification retries, service worker caching, update coordination, prefetch, analytics consent, and runtime integrity protection.
+
+The current optimization boundary is incremental. Feature delivery must preserve existing route contracts, session behavior, BFF transport behavior, and release validation gates.
+
+### 2. Technology Stack Analysis
+
+Core runtime stack:
+
+- Package manager: Bun `1.3.11`, with a checked-in `bun.lock`.
+- Node runtime policy: `>=24.11.1 <25`.
+- Framework: Vue `3.6.0-beta.12` with `@vitejs/plugin-vue`, Vue JSX, and `vaporInteropPlugin`.
+- Router and state: Vue Router `5.0.7`, Pinia `3.0.4`, and `pinia-plugin-persistedstate`.
+- Localization: `vue-i18n` `12.0.0-alpha.4`.
+- Build: Vite `8.0.14`, custom Vite plugins, Cloudflare Pages and Workers types.
+- Test and browser tooling: Vitest `5.0.0-beta.3`, Vue Test Utils, jsdom, Playwright alpha, Lighthouse, Puppeteer, Selenium.
+- Security and UX dependencies: DOMPurify, FingerprintJS, GSAP, Lenis, and Lucide Vue icons.
+
+Stack controls:
+
+- Beta or alpha framework upgrades must remain isolated from business feature changes.
+- Dependency changes must include lockfile changes and selected release validation evidence.
+- Runtime business dependency upgrades must not be coupled with audit, browser, or release-runner changes unless the slice declares that migration boundary.
+
+### 3. Directory Structure Analysis
+
+Current `src` distribution:
+
+- `src/components`: `193` files, component domains and tests.
+- `src/views`: `90` files, route-level pages, page models, and view tests.
+- `src/utils`: `78` files, shared runtime helpers, cache helpers, security helpers, and test coverage.
+- `src/api`: `62` files, service contracts, client transport modules, and API tests.
+- `src/styles`: `51` files, design tokens, page systems, presets, and layered CSS.
+- `src/composables`: `32` files, reusable view and interaction logic.
+- `src/router`: `7` files, route definitions, route policy, sensitive reauth, and tests.
+- `src/stores`: `16` files, Pinia stores and store tests.
+- `src/sw`: `10` files, service worker runtime and tests.
+- `src/edge`: `16` files, Pages edge behavior and tests.
+
+Largest current route files:
+
+- `src/views/HomePage.vue`: `107.0 KB`.
+- `src/views/PostDetailPage.vue`: `68.7 KB`.
+- `src/views/SchedulePage.vue`: `49.4 KB`.
+- `src/views/RegisterPage.vue`: `44.7 KB`.
+- `src/views/LoginPage.vue`: `39.8 KB`.
+- `src/views/ProfileSettingsPage.vue`: `32.6 KB`.
+- `src/views/CommunityPage.vue`: `30.5 KB`.
+
+Structure risk:
+
+- Route files above `50 KB` must gain extraction work before unrelated feature expansion.
+- View-owned pure logic must remain colocated under the view folder before promotion to `src/utils`.
+- Component domains must expose public barrels only after export contracts are tested.
+
+### 4. Core Capability Modules Analysis
+
+Core modules:
+
+- Public content: home, posts, authors, explore, search, schedule, community, public snapshots, and prerender metadata.
+- Auth and account: login, register, Google handoff, passwordless login, risk verification, MFA, passkeys, email verification, password reset, and BFF session recovery.
+- Profile workspace: profile overview, notifications, favorites, comments, likes, comment favorites, history, reports, relations, blocked users, settings, and security.
+- Community interaction: discussions, comments, referenced post previews, composer flows, reports, feedback, and contact.
+- Media and presentation: optimized images, media lightbox, video player, thumbnails, avatar handling, upload and crop flows.
+- Appearance and layout: presets, page shell primitives, settings panel, navbar, side nav, footer, responsive page systems, and locale density.
+- Offline and update runtime: service worker fetch handling, public content cache, offline queue, background sync, update checker, and smart prefetch.
+
+Capability controls:
+
+- Public content can optimize for cacheability and prefetch.
+- Private and sensitive flows must prefer BFF session freshness, runtime authorization cache, explicit route metadata, and no persistent access token material.
+- Edge and service worker policies must use allowlists or denylists with tests.
+
+### 5. Component Design Analysis
+
+Component distribution by domain:
+
+- `ui`: `45` Vue components, `17` tests.
+- `profile`: `15` Vue components, `15` tests.
+- `business`: `6` Vue components, `6` tests.
+- `layout`: `4` Vue components, `6` tests.
+- `appearance`: `7` Vue components, `4` tests.
+- `auth`: `7` Vue components, `2` tests.
+- `community`: `5` Vue components, `4` tests.
+- `comment`: `6` Vue components, `3` tests.
+- `home`: `6` Vue components, `2` tests.
+
+Design state:
+
+- Base UI components are mostly context-neutral and reusable.
+- Domain components have stronger coverage in `profile` and `business`; `auth`, `home`, and `comment` still have lower component-test density.
+- Appearance primitives now expose a tested barrel boundary under `src/components/appearance`.
+- Large route files still contain page orchestration, animation state, fetch coordination, and presentation glue in the same SFC in several areas.
+
+Component controls:
+
+- Page components must orchestrate route state and compose components.
+- Pure formatting, presentation policy, and interaction models must move into colocated modules when route files grow.
+- New component barrels must include export tests before consumer migration.
+
+### 6. Route And Permission Analysis
+
+Route policy:
+
+- Router meta supports `requiresAuth`, `guestOnly`, `securityLevel`, `dataSensitivity`, `appUpdateMode`, `showFooter`, `viewKey`, `preserveScrollOnIntraViewNav`, and `extendContentUnderNavbar`.
+- Public routes use `securityLevel: 'public'` and `dataSensitivity: 'none'`.
+- Profile and user routes use authenticated or sensitive metadata.
+- Sensitive routes require fresh authorization through `ensureFreshAuthz('sensitive')`.
+- Guest-only routes load auth state without initializing full session refresh and redirect authenticated users away unless sensitive reauth applies.
+- Contract-resource routes reject invalid IDs before rendering.
+
+Route controls:
+
+- Every route must keep explicit security and data sensitivity metadata or inherit it from an explicitly protected parent.
+- Sensitive route additions must include route meta tests and route guard tests.
+- Detail routes must use contract resource ID validation unless explicitly exempted.
+
+### 7. Data Request And State Management
+
+Request model:
+
+- `src/api/client.ts` is the transport entrypoint and owns timeout handling, BFF cookie credentials, request security headers, multipart serialization, inflight GET deduplication, 401 retry policy, client re-init, challenge handling, verification retry, contract mismatch hard reload, permission-version stale logout, and transport error mapping.
+- Endpoint service files own URL construction and response normalization.
+- Client security, challenge, verification, multipart, request-security, transport, and error mapping logic are split under `src/api/client`.
+
+State model:
+
+- Auth store keeps user state, loading/error state, runtime authorization cache, session expiry, and step-up state.
+- Access token material must not persist in browser storage.
+- Session recovery resolves through BFF session summary and refresh-cookie behavior.
+- Pinia persisted state is used for settings, theme, schedule, and non-sensitive preferences.
+- Privacy settings drive analytics and performance monitoring initialization.
+
+State controls:
+
+- Stores must not re-normalize API payloads already normalized by service modules.
+- Auth changes must prove runtime token absence and authorization summary recovery.
+- Private BFF-backed data must not be cached by the service worker by default.
+
+### 8. Performance Optimization Analysis
+
+Current performance controls:
+
+- Route components load through dynamic imports.
+- Global decorative layers, challenge dialogs, verification dialogs, toast container, media-heavy components, settings panel, image cropper, comment lists, and desk pet use async component boundaries where appropriate.
+- `App.vue` uses `KeepAlive` with a bounded max and route keys based on stable `viewKey`.
+- Background work uses `scheduleTask` and user-intent gates for fingerprinting, auth bootstrap, service worker registration, background sync, route prefetch, popular content prefetch, and cache cleanup.
+- Chunk load failures trigger a single-tab hard reload guard.
+- Vite build policy includes custom plugins, hashed asset naming, service worker cache version injection, SRI, critical CSS, async CSS, static prerendering, scoped obfuscation, treeshaking, and chunk budget checks.
+
+Performance risks:
+
+- Large SFCs still combine rendering, animation, fetch, and interaction state, which increases parse and maintenance cost.
+- Decorative and interactive subsystems need continued tests around scheduler boundaries, observer wrappers, and delayed mounting.
+- Prefetch policies must continue respecting auth state, duplicate request gates, and user/data-saving intent.
+
+### 9. Engineering Standards Analysis
+
+Current standards:
+
+- Release runner supports hook, prepush, prepush-full, local, candidate, and production modes.
+- Static gates include type-check, unit tests, complexity budget, frontend-pattern audit, build, security build check, and bundle budget in the appropriate modes.
+- Audit modules cover type-check, lint, build, test, security, dead code, PWA, build artifacts, CSS, i18n, legacy alignment, environment config, auth surface, frontend contract, and frontend patterns.
+- Tests are broad and colocated across API, stores, router, components, views, service worker, edge, scripts, utils, and page models.
+- Low-memory validation must prefer serial or low-worker execution.
+
+Engineering controls:
+
+- `validate:release` must remain the release evidence source.
+- Hook validation must stay lighter than local/candidate/production validation.
+- Heavy validation must not run concurrently with browser automation or duplicate dev servers on low-memory machines.
+
+### 10. Security Analysis
+
+Current security controls:
+
+- BFF cookie session model keeps browser access token material out of persistent storage.
+- API requests use same-origin `/api` production facade and `credentials: 'include'`.
+- Client security headers, request integrity, challenge, verification, client re-init, and contract mismatch behavior are centralized in the API client.
+- Sensitive route access uses fresh authorization checks and degraded risk mode redirects.
+- Runtime integrity, frame guard, console guard, console filter, analytics consent, and CSP-sensitive Turnstile behavior are explicit runtime policies.
+- DOMPurify is present for sanitized HTML surfaces, and frontend-pattern audit blocks unaudited `v-html`, raw observers, raw idle callbacks, and non-allowlisted Vapor components.
+- Service worker tests protect private API cache isolation.
+
+Security risks:
+
+- Security-sensitive chunks use optional obfuscation only when explicitly enabled; obfuscation is not a security boundary.
+- Client security credentials may persist non-secret summary fields; tests must keep secret fields excluded.
+- Any new BFF endpoint must be classified for public/private cache behavior and route sensitivity before release.
+
+### 11. Current Controls
+
+- Clear BFF-first session architecture with no persistent browser access token.
+- Route security metadata is explicit and testable.
+- API transport responsibilities are centralized and split into focused modules.
+- Validation infrastructure includes release modes, audits, budgets, and script tests.
+- Public/private cache policy is explicit and tested.
+- Component extraction has already reduced several hotspot risks through model, style, and policy modules.
+- Locale, appearance, motion, analytics consent, service worker, and update flows are treated as first-class runtime policies.
+
+### 12. Open Risk Items
+
+- `HomePage.vue` and `PostDetailPage.vue` still exceed the extraction threshold and remain high-maintenance route files.
+- Several component domains have lower direct component-test density than `profile` and `business`.
+- Some import boundaries are still deep imports even after new barrels are introduced.
+- Multiple runtime subsystems depend on global listeners, delayed tasks, and browser APIs; regressions are easy when cleanup tests are missing.
+- Test growth can accidentally preserve the current component topology, route SFC structure, and helper placement as if they were final architecture.
+- Tactical fixes increase replacement cost when they patch hotspot internals without extracting a contract or adapter boundary.
+- GitNexus and Serena MCP availability requires runtime confirmation before graph-backed blast-radius verification.
+- Beta/alpha framework and toolchain versions increase upgrade risk and require strict release evidence.
+
+### 13. Execution Queue
+
+Priority sequence:
+
+- Continue shrinking `HomePage.vue`, `PostDetailPage.vue`, and `SchedulePage.vue` through behavior-preserving extraction of pure models, interaction policies, and style files.
+- Add focused component tests to lower-density domains: `auth`, `home`, `comment`, and remaining appearance workflows.
+- Migrate consumers to tested component barrels in small batches, starting with low-risk static pages, then layout and route pages.
+- Contract tests must cover route outcomes, API normalization, auth/session invariants, cache classification, and accessibility states before asserting current internal component structure.
+- Convert bug fixes in hotspots into adapter or policy extraction work when the fix touches behavior that may survive a future architecture replacement.
+- Mark unavoidable implementation guards as temporary and state the replacement condition in the slice log.
+- Add or extend audit rules only after existing drift is fixed or explicitly allowlisted.
+- Keep API contract changes paired with service-level normalization tests and API client retry/error tests.
+- Keep route additions blocked by meta contract tests and route security policy tests.
+- Keep private API cache classification mandatory for new BFF-backed endpoints.
+- Preserve low-memory release validation by running serial Vitest slices and one heavy gate at a time.
+- Re-run GitNexus `detect_changes` when MCP transport recovers before any commit or broad production symbol edit.
 
 ## Optimization Slices
 
@@ -152,6 +422,19 @@ Acceptance evidence:
 - Each slice lists changed files, validation command, and residual risk.
 
 ## Completed Slice Log
+
+Slice log classification:
+
+- `contract protection`: protects user-visible behavior, API shape, route result, auth/session invariant, cache classification, accessibility behavior, or release evidence.
+- `architecture mobility`: extracts a model, policy, adapter, facade, barrel, or boundary that makes implementation replacement easier.
+- `implementation hardening`: fixes or tests current internals that are not yet a replacement boundary.
+- `temporary guard`: protects an implementation detail only until a declared replacement condition is met.
+
+Required slice fields:
+
+- `Classification`: one or more values from the slice log classification list.
+- `Mobility effect`: states whether the slice reduces coupling, preserves a replacement boundary, or temporarily hardens current internals.
+- `Replacement condition`: required for `implementation hardening` and `temporary guard`; states when the test, fix, or constraint can be removed or rewritten.
 
 ### SW Private API Cache Isolation
 
@@ -2331,6 +2614,19 @@ Result:
 
 ### API Transport Success Contract Coverage
 
+Classification:
+
+- `contract protection`
+
+Mobility effect:
+
+- Protects the API transport result contract before any future transport replacement.
+- Does not require the current `apiClient` internals or file structure to remain permanent.
+
+Replacement condition:
+
+- None. These assertions describe public transport semantics and remain valid across a compatible transport rewrite.
+
 Changed files:
 
 - `src/api/__tests__/transport.spec.ts`
@@ -2352,3 +2648,425 @@ Result:
 
 - API transport helper tests passed with `6` tests.
 - Shared transport behavior was not changed because the candidate implementation symbols were HIGH impact; this slice strengthens the interface-management safety net first.
+
+### API Error Mapping Contract Coverage
+
+Classification:
+
+- `contract protection`
+- `implementation hardening`
+
+Mobility effect:
+
+- Standardizes error semantics that callers depend on while fixing the current body-read fallback.
+- The test protects `ApiError` behavior and response classification, not the private parser shape.
+
+Replacement condition:
+
+- The body-read fallback guard can be rewritten when error response parsing moves behind a transport adapter, provided HTML/non-JSON upstream failures still map to standardized `ApiError` output.
+
+Changed files:
+
+- `src/api/client/error-mapping.ts`
+- `src/api/__tests__/errorMapping.spec.ts`
+
+Policy:
+
+- API error mapping must preserve standardized `ApiError` status, code, details, and localized message selection.
+- Wrapped success responses, paginated envelopes, error envelopes, validation arrays, detail-object errors, rate-limit headers, and upstream HTML tunnel failures must be covered as interface contracts.
+- `handleErrorResponse` and `readErrorBodyText` changes require focused API-client regression because GitNexus reports HIGH impact through `request`, forbidden-response, and challenge flows.
+- Non-JSON error responses must fall back to text classification without leaking native body-consumption exceptions.
+- Rate-limit errors must use the `Retry-After` header for localized retry copy and toast reporting.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/api/__tests__/client.spec.ts src/api/__tests__/transport.spec.ts src/api/__tests__/errorMapping.spec.ts --maxWorkers=1`
+
+Result:
+
+- API client, transport, and error-mapping tests passed with `39` tests.
+- Native HTML/non-JSON error responses now produce standardized `ApiError` results instead of `Response.clone` body-consumption failures.
+
+### Auth Store Runtime Authorization Summary Recovery
+
+Classification:
+
+- `contract protection`
+- `architecture mobility`
+
+Mobility effect:
+
+- Moves session-summary authorization recovery into the BFF session contract instead of requiring persistent frontend token state.
+- Keeps future auth-store replacement constrained by session semantics rather than the current Pinia implementation shape.
+
+Replacement condition:
+
+- None. The no-persistent-token and BFF session-summary semantics are security contracts.
+
+Changed files:
+
+- `src/api/authService.ts`
+- `src/services/authSessionController.ts`
+- `src/services/__tests__/authSessionController.spec.ts`
+- `src/stores/__tests__/auth.spec.ts`
+
+Policy:
+
+- Auth state remains BFF-first: browser runtime must not expose or persist an access token.
+- Session summary recovery must restore user identity, session expiry, permission version, permissions, and roles into the in-memory authorization cache when the backend provides them.
+- Role recovery must accept top-level session roles and fall back to `user.roles` when the backend returns roles inside the session user object.
+- `fetchCurrentUser` and `establishSession` changes require focused auth-store and auth-session-controller regression; GitNexus reports HIGH impact through profile security and profile settings auth recovery flows.
+- `getRuntimeAccessToken()` must continue to return `null` after session-summary recovery.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/services/__tests__/authSessionController.spec.ts src/stores/__tests__/auth.spec.ts --maxWorkers=1`
+
+Result:
+
+- Auth session controller tests passed with `10` tests.
+- Auth store tests passed with `15` tests.
+- BFF session summary recovery now preserves backend-provided authorization summaries without introducing a browser access-token state.
+
+### Performance DOM Read/Write Scheduling Contract
+
+Classification:
+
+- `contract protection`
+- `temporary guard`
+
+Mobility effect:
+
+- Protects the read/write scheduling behavior needed by current dropdown positioning without freezing AppNavbar topology.
+- The guard is intentionally attached to the shared scheduling contract instead of mounting the large layout component.
+
+Replacement condition:
+
+- Rewrite or delete the temporary guard when AppNavbar positioning migrates to a dedicated positioning adapter with its own public contract.
+
+Changed files:
+
+- `src/utils/__tests__/performance.spec.ts`
+
+Policy:
+
+- DOM position updates must read layout synchronously and write layout-dependent styles on the next animation frame.
+- `scheduleDOMUpdate` must pass the read snapshot into the deferred write without re-reading layout during the write phase.
+- `scheduleDOMUpdate` changes require focused AppNavbar positioning regression because GitNexus reports LOW impact through `updateDropdownPosition`.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/utils/__tests__/performance.spec.ts --maxWorkers=1`
+
+Result:
+
+- Performance utility tests passed with `12` tests.
+- The AppNavbar dropdown positioning primitive is now covered for read/write separation without mounting the full layout component.
+
+### Release Static Gate Complexity Budget Enforcement
+
+Classification:
+
+- `contract protection`
+
+Mobility effect:
+
+- Protects maintainability budgets at the release boundary rather than asserting current source topology.
+- Keeps future architecture replacement possible as long as the replacement stays within declared complexity limits.
+
+Replacement condition:
+
+- None. Complexity gate participation is a release contract.
+
+Changed files:
+
+- `scripts/validate-release.mjs`
+- `src/__tests__/scripts/validate-release.spec.ts`
+
+Policy:
+
+- Release static gates must enforce the same complexity budget used during local maintainability checks.
+- Hook and prepush validation must run `check:complexity-budget` before the lightweight release contract specs.
+- Full local, candidate, and production static validation must run `check:complexity-budget` after unit tests and before build/bundle gates.
+- `runStaticGateStage` and `runHookStaticGateStage` changes require focused release-helper regression; GitNexus reports LOW impact through the validation script `main` entry.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/validate-release.spec.ts --maxWorkers=1`
+
+Result:
+
+- Release validation helper tests passed with `8` tests.
+- Complexity budget checks are now part of both hook static gates and full release static gates.
+
+### Release Frontend Pattern Boundary Enforcement
+
+Classification:
+
+- `contract protection`
+- `architecture mobility`
+
+Mobility effect:
+
+- Pushes browser API usage behind shared wrappers and release audit gates so implementation can move without duplicating raw observer and idle boundaries.
+- Converts `AppearancePresetPicker` observer usage into a shared visibility boundary instead of hardening a component-local raw observer.
+
+Replacement condition:
+
+- None for the audit gate. The component implementation can be replaced when it continues to use the shared visibility boundary or a declared successor adapter.
+
+Changed files:
+
+- `scripts/validate-release.mjs`
+- `src/__tests__/scripts/validate-release.spec.ts`
+- `src/components/appearance/AppearancePresetPicker.vue`
+
+Policy:
+
+- Release static gates must run the `frontend-patterns` audit to block unaudited `v-html`, raw idle callbacks, raw observer construction, and non-allowlisted Vapor components.
+- Hook and full static validation must run `bun run audit:repo --only=frontend-patterns` after complexity budget checks and before heavier build gates.
+- Appearance preview reveal observers must use `createVisibilityObserver()` instead of direct `new IntersectionObserver()` construction.
+- `ensureObserver` and `bindPreview` changes require focused frontend-pattern regression; GitNexus reports LOW impact limited to `AppearancePresetPicker`.
+
+Validation:
+
+- `bun run audit:repo --only=frontend-patterns`
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/validate-release.spec.ts --maxWorkers=1`
+
+Result:
+
+- Frontend pattern audit passed with `0` issues.
+- Release validation helper tests passed with `8` tests.
+- Existing observer-boundary drift in `AppearancePresetPicker` was moved back to the shared modern API wrapper.
+
+### Appearance Preset Picker Component Contract Coverage
+
+Classification:
+
+- `contract protection`
+- `implementation hardening`
+
+Mobility effect:
+
+- Protects user-visible preset application outcomes and failure handling while still testing the current component entrypoint.
+- Does not make SettingsPanel integration or deep component placement the long-term boundary.
+
+Replacement condition:
+
+- Rewrite the component-level guard when appearance preset selection is moved behind a view-model or appearance command adapter; preserve active-preset no-op, failure reporting, and successful application semantics.
+
+Changed files:
+
+- `src/components/appearance/__tests__/AppearancePresetPicker.spec.ts`
+
+Policy:
+
+- Appearance preset reveal behavior must use the shared visibility observer boundary and remain covered at component level.
+- Preset application must call `applyAppearancePreset(preset, resolvedTheme)` before mutating settings state.
+- Runtime preset application failures must report `settings.appearanceRuntimeFailed` without mutating the selected preset.
+- Clicking the active preset must be a no-op.
+- `handleApplyPreset` changes require focused component regression; GitNexus reports LOW impact for the local picker behavior.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/components/appearance/__tests__/AppearancePresetPicker.spec.ts --maxWorkers=1`
+
+Result:
+
+- Appearance preset picker tests passed with `4` tests.
+- The picker now has direct component-level coverage instead of relying only on `SettingsPanel` integration coverage.
+
+### Appearance Component Barrel Boundary
+
+Classification:
+
+- `architecture mobility`
+- `contract protection`
+
+Mobility effect:
+
+- Creates a public import boundary for appearance primitives so consumers can migrate away from deep imports in small batches.
+- Keeps existing deep imports valid during migration instead of forcing a broad rewrite.
+
+Replacement condition:
+
+- None. The barrel is the intended migration boundary; exports may change only through a focused contract update.
+
+Changed files:
+
+- `src/components/appearance/index.ts`
+- `src/components/appearance/__tests__/appearancePrimitives.spec.ts`
+
+Policy:
+
+- Appearance primitives must expose a directory-level barrel like other component domains.
+- Barrel exports must include the preset picker, control primitives, and page shell primitives.
+- Existing deep imports remain valid; broad import rewrites must happen in separate focused slices.
+- The barrel must be covered by component primitive tests to prevent accidental export drift.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/components/appearance/__tests__/appearancePrimitives.spec.ts src/components/appearance/__tests__/appearanceControls.spec.ts src/components/appearance/__tests__/AppearancePresetPicker.spec.ts --maxWorkers=1`
+
+Result:
+
+- Appearance component tests passed with `10` tests.
+- The appearance component directory now has an explicit public import boundary without changing existing consumers.
+
+### Release Worktree Change Evidence Coverage
+
+Classification:
+
+- `contract protection`
+- `release verification`
+
+Mobility effect:
+
+- Release summaries now classify current worktree changes, not only the resolved committed git range.
+- Local validation evidence can be used before commit without under-reporting modified, staged, or untracked files.
+
+Replacement condition:
+
+- None. Worktree-aware change evidence is a release contract for local validation modes.
+
+Changed files:
+
+- `scripts/validate-release.mjs`
+- `src/__tests__/scripts/validate-release.spec.ts`
+
+Policy:
+
+- Release change evidence must preserve the resolved `Git Range`.
+- Changed-file classification must merge resolved git range files, staged files, unstaged files, and untracked non-ignored files.
+- Duplicate paths must be removed before release focus classification.
+- Local agent files excluded or removed by repository policy must not appear in final validation summaries.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/validate-release.spec.ts --maxWorkers=1`
+- `bun run validate:release:hook`
+
+Result:
+
+- Release validation helper tests passed with `9` tests.
+- Hook release validation passed and final summary listed current worktree focus areas for route/UI/readiness, auth/session/data flow, and validation contract changes.
+
+### Release Route Metadata Alignment Coverage
+
+Classification:
+
+- `contract protection`
+- `release verification`
+
+Mobility effect:
+
+- Release smoke and production route matrices now validate against the actual Vue Router metadata.
+- Route coverage can evolve in the release contract without silently diverging from runtime security classification.
+
+Replacement condition:
+
+- None. Release route metadata alignment is a route and permission safety contract.
+
+Changed files:
+
+- `src/__tests__/scripts/release-route-contract.spec.ts`
+
+Policy:
+
+- Authenticated release route definitions must resolve to existing Vue Router routes, except documented sample-data placeholders.
+- Authenticated release route `securityLevel` must match Vue Router `meta.securityLevel`; omitted release levels default to `authenticated`.
+- Sensitive release routes must resolve to Vue Router `dataSensitivity=security`.
+- Guest release routes that expect a login redirect must resolve to protected Vue Router routes.
+- Guest release routes that do not expect a login redirect must resolve to Vue Router `securityLevel=public` and `dataSensitivity=none`.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/release-route-contract.spec.ts --maxWorkers=1`
+
+Result:
+
+- Release route contract tests passed with `12` tests.
+- Authenticated and guest release matrices are now checked against runtime router metadata before release validation can pass.
+
+### Bundle Budget Chunk Classification
+
+Classification:
+
+- `contract protection`
+- `release verification`
+
+Mobility effect:
+
+- Separates JavaScript execution chunk risk from CSS entry chunk risk at the release gate.
+- Keeps total JS, total CSS, image, and initial-home asset budgets as delivery constraints while allowing the CSS entry boundary to be governed by its own explicit ceiling.
+
+Replacement condition:
+
+- None. Split largest-chunk classification is a release validation contract.
+
+Changed files:
+
+- `scripts/lib/bundle-budget.js`
+- `scripts/config/bundle-budget.json`
+- `src/__tests__/scripts/bundle-budget.spec.ts`
+
+Policy:
+
+- Bundle budget metrics must report aggregate largest chunk diagnostics without using that mixed JS/CSS value as the blocking gate when typed chunk ceilings exist.
+- Release bundle validation must enforce `maxLargestJsChunkBytes` for executable chunk pressure.
+- Release bundle validation must enforce `maxLargestCssChunkBytes` for CSS entry and extracted style pressure.
+- Budget violations must include stable reason codes and locator paths for JS, CSS, mixed chunk, and initial-home asset failures.
+- `collectBundleBudgetMetrics`, `analyzeBundleBudget`, and `formatBundleBudgetReport` changes require focused bundle-budget regression; GitNexus reports LOW impact limited to `scripts/check-bundle-budget.mjs`.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/bundle-budget.spec.ts --maxWorkers=1`
+- `bun run check:bundle-budget`
+
+Result:
+
+- Bundle budget helper tests passed with `4` tests.
+- Bundle budget check passed on the existing build output.
+- Current build output records `largestJsChunkBytes=180.5 KiB / 249.9 KiB` and `largestCssChunkBytes=293.9 KiB / 311.0 KiB`.
+
+### Documentation Text Style Gate
+
+Classification:
+
+- `contract protection`
+- `release verification`
+
+Mobility effect:
+
+- Converts global documentation wording rules into a repository audit boundary.
+- Keeps architecture plans, readiness docs, and asset docs aligned to implementation-oriented language before release validation passes.
+
+Replacement condition:
+
+- None. Documentation text style enforcement is a repository policy contract.
+
+Changed files:
+
+- `scripts/audit/text-style.ts`
+- `scripts/audit/index.ts`
+- `scripts/validate-release.mjs`
+- `src/__tests__/scripts/validate-release.spec.ts`
+- `docs/frontend-release-readiness.md`
+- `VALIDATION.md`
+- `public/icons/README.md`
+
+Policy:
+
+- Markdown headings must not use discussion-style labels such as `Strengths`, `Recommendations`, question headings, or equivalent Chinese labels.
+- Markdown text must not use advisory or speculative wording such as `recommend`, `suggest`, `maybe`, `perhaps`, `应该`, `建议`, or `可能`.
+- Text style audit must run in hook and full release static gates after complexity budget checks and before frontend pattern checks.
+- Existing documentation drift must be rewritten to constraints, observable state, failure behavior, and verification requirements.
+
+Validation:
+
+- `bun run audit:repo --only=text-style`
+
+Result:
+
+- Text style audit passed with `0` issues.
+- Markdown docs no longer contain the scanned advisory or speculative wording patterns outside excluded generated directories.

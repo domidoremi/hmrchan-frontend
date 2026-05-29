@@ -123,6 +123,29 @@ describe('createAuthSessionController', () => {
     expect(mockSetStoredAuthSource).toHaveBeenCalledWith('session')
   })
 
+  it('recovers authorization roles from the session-summary user fallback', async () => {
+    const state = createState()
+    const controller = createAuthSessionController({ router, state })
+
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+
+    await controller.establishSession(
+      createSessionSummary({
+        permissions: ['profile.read'],
+        user: createUser({
+          roles: ['moderator'],
+        }),
+      })
+    )
+
+    expect(state.runtimeAuthzCache.value).toEqual(
+      expect.objectContaining({
+        roles: ['moderator'],
+        permissions: ['profile.read'],
+      })
+    )
+  })
+
   it('clears session state and navigates back to login when requested', () => {
     const state = createState()
     const controller = createAuthSessionController({ router, state })

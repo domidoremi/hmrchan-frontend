@@ -1,15 +1,32 @@
 import { describe, expect, it } from 'vitest'
 
+import router from '../../../src/router'
 import {
   DEFAULT_SAMPLE_DISCUSSION_ROUTE,
   DEFAULT_SAMPLE_POST_ROUTE,
   buildProfileSectionShellSelector,
   getAuthenticatedRouteDefinitions,
+  getGuestBrowserRouteDefinitions,
   getManualRunnerProtectedRoutes,
   getReleaseRouteContractOverview,
   getSmokeRouteMatrix,
   validateReleaseRouteContract,
 } from '../../../scripts/lib/release-route-contract.js'
+
+const ROUTER_PATH_ALIAS: Record<string, string> = {
+  '/favorites': '/profile/favorites',
+}
+
+function resolveRouterMeta(path: string) {
+  const resolved = router.resolve(ROUTER_PATH_ALIAS[path] ?? path)
+  return resolved.name
+    ? {
+        name: String(resolved.name),
+        securityLevel: resolved.meta.securityLevel,
+        dataSensitivity: resolved.meta.dataSensitivity,
+      }
+    : null
+}
 
 describe('release route contract', () => {
   it('validates the shared contract without drift', () => {
@@ -107,6 +124,50 @@ describe('release route contract', () => {
     expect(sensitiveRoutes).toEqual(
       expect.arrayContaining(['/profile/security', '/profile/settings'])
     )
+  })
+
+  it('keeps release auth route security metadata aligned with Vue Router', () => {
+    const mismatches = getAuthenticatedRouteDefinitions()
+      .filter((route) => !route.path.startsWith('__'))
+      .flatMap((route) => {
+        const meta = resolveRouterMeta(route.expectedPath ?? route.path)
+        const expectedSecurityLevel = route.securityLevel ?? 'authenticated'
+        if (!meta) return [`${route.path}:missing-router-route`]
+        if (meta.securityLevel !== expectedSecurityLevel) {
+          return [`${route.path}:security:${meta.securityLevel ?? 'missing'}`]
+        }
+        if (expectedSecurityLevel === 'sensitive' && meta.dataSensitivity !== 'security') {
+          return [`${route.path}:sensitivity:${meta.dataSensitivity ?? 'missing'}`]
+        }
+        return []
+      })
+
+    expect(mismatches).toEqual([])
+  })
+
+  it('keeps release guest route security metadata aligned with Vue Router', () => {
+    const mismatches = getGuestBrowserRouteDefinitions()
+      .filter((route) => !route.path.startsWith('__'))
+      .flatMap((route) => {
+        const meta = resolveRouterMeta(route.path)
+        if (!meta) return [`${route.path}:missing-router-route`]
+
+        const expectsLoginRedirect = route.expectedPath === '/login'
+        if (expectsLoginRedirect) {
+          if (meta.securityLevel === 'public') return [`${route.path}:expected-protected-route`]
+          return []
+        }
+
+        if (meta.securityLevel !== 'public') {
+          return [`${route.path}:security:${meta.securityLevel ?? 'missing'}`]
+        }
+        if (meta.dataSensitivity !== 'none') {
+          return [`${route.path}:sensitivity:${meta.dataSensitivity ?? 'missing'}`]
+        }
+        return []
+      })
+
+    expect(mismatches).toEqual([])
   })
 
   it('treats legacy devices and security-activity paths as security-center redirects', () => {

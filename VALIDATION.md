@@ -157,11 +157,11 @@ bun run validate:release --mode local --quiet
 - `VITE_*` 仍按同一规则处理；客户端可见变量不等于可随意写入 artifact 的安全值
 - 嵌套对象、数组和 stage details 都必须走同一 sanitizer
 
-人工抽查最近一次验证产物时，优先看：
+人工抽查最近一次验证产物必须检查：
 
 ```bash
 bun run validate:release --mode hook --quiet
-# 然后检查 output/validation/<latest>/summary.json 和 stages/*.json 是否只包含占位值
+# 检查 output/validation/<latest>/summary.json 和 stages/*.json 仅包含占位值
 ```
 
 恢复环境后必须补跑：

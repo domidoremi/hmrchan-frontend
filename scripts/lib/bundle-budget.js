@@ -39,6 +39,13 @@ function normalizePathForReport(filePath, rootDir) {
   return path.relative(rootDir, filePath).replace(/\\/g, '/')
 }
 
+function findLargestFile(files) {
+  return files.toSorted((left, right) => right.size - left.size)[0] ?? {
+    relativePath: null,
+    size: 0,
+  }
+}
+
 export function countHomeInitialAssets(indexHtml) {
   const matches = [
     ...String(indexHtml ?? '').matchAll(
@@ -65,10 +72,9 @@ export function collectBundleBudgetMetrics({ distDir = path.resolve(process.cwd(
   const cssFiles = files.filter((file) => STYLE_EXTENSIONS.has(file.extension))
   const imageFiles = files.filter((file) => IMAGE_EXTENSIONS.has(file.extension))
   const chunkFiles = files.filter((file) => CHUNK_EXTENSIONS.has(file.extension))
-  const largestChunk = chunkFiles.toSorted((left, right) => right.size - left.size)[0] ?? {
-    relativePath: null,
-    size: 0,
-  }
+  const largestChunk = findLargestFile(chunkFiles)
+  const largestJsChunk = findLargestFile(jsFiles)
+  const largestCssChunk = findLargestFile(cssFiles)
   const indexHtmlPath = path.join(distDir, 'index.html')
   const homeInitialAssets = existsSync(indexHtmlPath)
     ? countHomeInitialAssets(readFileSync(indexHtmlPath, 'utf8'))
@@ -81,6 +87,10 @@ export function collectBundleBudgetMetrics({ distDir = path.resolve(process.cwd(
     totalImageBytes: imageFiles.reduce((total, file) => total + file.size, 0),
     largestChunkBytes: largestChunk.size,
     largestChunkPath: largestChunk.relativePath,
+    largestJsChunkBytes: largestJsChunk.size,
+    largestJsChunkPath: largestJsChunk.relativePath,
+    largestCssChunkBytes: largestCssChunk.size,
+    largestCssChunkPath: largestCssChunk.relativePath,
     homeInitialAssetCount: homeInitialAssets.uniqueAssetReferences,
     homeInitialAssetTagCount: homeInitialAssets.tagReferences,
     homeInitialAssetUrls: homeInitialAssets.urls,
@@ -99,6 +109,8 @@ const METRIC_REASON_CODES = {
   totalCssBytes: 'total-css-budget-exceeded',
   totalImageBytes: 'total-image-budget-exceeded',
   largestChunkBytes: 'largest-chunk-budget-exceeded',
+  largestJsChunkBytes: 'largest-js-chunk-budget-exceeded',
+  largestCssChunkBytes: 'largest-css-chunk-budget-exceeded',
   homeInitialAssetCount: 'home-initial-asset-count-exceeded',
 }
 
@@ -118,6 +130,8 @@ export function analyzeBundleBudget(metrics, budget) {
     ['totalCssBytes', metrics.totalCssBytes, budget.maxTotalCssBytes],
     ['totalImageBytes', metrics.totalImageBytes, budget.maxTotalImageBytes],
     ['largestChunkBytes', metrics.largestChunkBytes, budget.maxLargestChunkBytes],
+    ['largestJsChunkBytes', metrics.largestJsChunkBytes, budget.maxLargestJsChunkBytes],
+    ['largestCssChunkBytes', metrics.largestCssChunkBytes, budget.maxLargestCssChunkBytes],
     ['homeInitialAssetCount', metrics.homeInitialAssetCount, budget.maxHomeInitialAssetCount],
   ]
   const violations = checks
@@ -146,6 +160,13 @@ function formatMetric(metric, actual, limit) {
   return `${metric}: ${actualText} / ${limitText}`
 }
 
+function formatPath(metric, metrics) {
+  if (metric === 'largestJsChunkBytes') return metrics.largestJsChunkPath
+  if (metric === 'largestCssChunkBytes') return metrics.largestCssChunkPath
+  if (metric === 'largestChunkBytes') return metrics.largestChunkPath
+  return null
+}
+
 export function formatBundleBudgetReport(result) {
   const lines = [
     `[bundle-budget] status=${result.status}`,
@@ -163,6 +184,18 @@ export function formatBundleBudgetReport(result) {
     ),
     `largestChunkPath: ${result.metrics.largestChunkPath ?? 'n/a'}`,
     formatMetric(
+      'largestJsChunkBytes',
+      result.metrics.largestJsChunkBytes,
+      result.budget.maxLargestJsChunkBytes
+    ),
+    `largestJsChunkPath: ${result.metrics.largestJsChunkPath ?? 'n/a'}`,
+    formatMetric(
+      'largestCssChunkBytes',
+      result.metrics.largestCssChunkBytes,
+      result.budget.maxLargestCssChunkBytes
+    ),
+    `largestCssChunkPath: ${result.metrics.largestCssChunkPath ?? 'n/a'}`,
+    formatMetric(
       'homeInitialAssetCount',
       result.metrics.homeInitialAssetCount,
       result.budget.maxHomeInitialAssetCount
@@ -178,8 +211,10 @@ export function formatBundleBudgetReport(result) {
       lines.push(
         `- ${formatMetric(violation.metric, violation.actual, violation.limit)} (${violation.reasonCode}; over by ${overByText})`
       )
-      if (violation.metric === 'largestChunkBytes') {
-        lines.push(`  largestChunkPath: ${result.metrics.largestChunkPath ?? 'n/a'}`)
+      const metricPath = formatPath(violation.metric, result.metrics)
+      if (metricPath !== null) {
+        const pathMetric = violation.metric.replace(/Bytes$/, 'Path')
+        lines.push(`  ${pathMetric}: ${metricPath ?? 'n/a'}`)
       }
       if (violation.metric === 'homeInitialAssetCount') {
         lines.push(`  homeInitialAssetUrls: ${result.metrics.homeInitialAssetUrls.join(', ')}`)

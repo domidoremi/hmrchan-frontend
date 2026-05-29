@@ -50,6 +50,7 @@ import { useI18n } from 'vue-i18n'
 import { getAppearancePresetSpecs } from '@/config/appearance'
 import { useSettingsStore, useThemeStore, useToastStore } from '@/stores'
 import { applyAppearancePreset } from '@/services/appearanceLoader'
+import { createVisibilityObserver } from '@/utils/modernAPIs'
 import type { AppearancePreset } from '@/types'
 
 defineOptions({ name: 'AppearancePresetPicker' })
@@ -86,7 +87,7 @@ function ensureObserver() {
     return
   }
 
-  revealObserver = new IntersectionObserver(
+  revealObserver = createVisibilityObserver(
     (entries) => {
       for (const entry of entries) {
         if (!(entry.target instanceof HTMLElement) || !entry.isIntersecting) continue

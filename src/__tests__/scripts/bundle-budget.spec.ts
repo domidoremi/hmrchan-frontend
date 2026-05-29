@@ -47,6 +47,8 @@ describe('bundle budget helpers', () => {
     expect(metrics.totalCssBytes).toBe(60)
     expect(metrics.totalImageBytes).toBe(30)
     expect(metrics.largestChunkPath).toBe('assets/js/app.js')
+    expect(metrics.largestJsChunkPath).toBe('assets/js/app.js')
+    expect(metrics.largestCssChunkPath).toBe('assets/css/app.css')
     expect(result.status).toBe('failed')
     expect(result.violations.map((violation) => violation.metric)).toEqual(['totalJsBytes'])
     expect(result.violations[0]).toEqual(
@@ -66,6 +68,10 @@ describe('bundle budget helpers', () => {
         totalImageBytes: 30,
         largestChunkBytes: 80,
         largestChunkPath: 'assets/js/dashboard.js',
+        largestJsChunkBytes: 80,
+        largestJsChunkPath: 'assets/js/dashboard.js',
+        largestCssChunkBytes: 20,
+        largestCssChunkPath: 'assets/css/app.css',
         homeInitialAssetCount: 3,
         homeInitialAssetTagCount: 4,
         homeInitialAssetUrls: ['/assets/css/app.css', '/assets/js/app.js', '/assets/js/vendor.js'],
@@ -103,5 +109,54 @@ describe('bundle budget helpers', () => {
 
     expect(report).toContain('largestChunkPath: assets/js/dashboard.js')
     expect(report).toContain('homeInitialAssetUrls: /assets/css/app.css, /assets/js/app.js')
+  })
+
+  it('enforces separate JS and CSS largest chunk budgets', () => {
+    const result = analyzeBundleBudget(
+      {
+        totalJsBytes: 120,
+        totalCssBytes: 220,
+        totalImageBytes: 30,
+        largestChunkBytes: 140,
+        largestChunkPath: 'assets/css/index.css',
+        largestJsChunkBytes: 90,
+        largestJsChunkPath: 'assets/js/index.js',
+        largestCssChunkBytes: 140,
+        largestCssChunkPath: 'assets/css/index.css',
+        homeInitialAssetCount: 2,
+        homeInitialAssetTagCount: 2,
+        homeInitialAssetUrls: ['/assets/css/index.css', '/assets/js/index.js'],
+        fileCounts: {
+          js: 1,
+          css: 1,
+          images: 1,
+          chunks: 2,
+          total: 3,
+        },
+      },
+      {
+        maxTotalJsBytes: 200,
+        maxTotalCssBytes: 300,
+        maxTotalImageBytes: 100,
+        maxLargestJsChunkBytes: 80,
+        maxLargestCssChunkBytes: 128,
+        maxHomeInitialAssetCount: 3,
+      }
+    )
+
+    expect(result.status).toBe('failed')
+    expect(result.violations.map((violation) => violation.metric)).toEqual([
+      'largestJsChunkBytes',
+      'largestCssChunkBytes',
+    ])
+    expect(result.violations.map((violation) => violation.reasonCode)).toEqual([
+      'largest-js-chunk-budget-exceeded',
+      'largest-css-chunk-budget-exceeded',
+    ])
+
+    const report = formatBundleBudgetReport(result)
+
+    expect(report).toContain('largestJsChunkPath: assets/js/index.js')
+    expect(report).toContain('largestCssChunkPath: assets/css/index.css')
   })
 })

@@ -15,6 +15,7 @@ import frontendPatternsAudit from './frontend-patterns'
 import authSurfaceAudit from './auth-surface'
 import legacyAlignmentAudit from './legacy-alignment'
 import frontendContractAudit from './frontend-contract'
+import textStyleAudit from './text-style'
 
 // --- Module registry ---
 const modules: AuditModule[] = [
@@ -33,6 +34,7 @@ const modules: AuditModule[] = [
   authSurfaceAudit,
   frontendContractAudit,
   frontendPatternsAudit,
+  textStyleAudit,
 ]
 
 // --- CLI arg parsing ---

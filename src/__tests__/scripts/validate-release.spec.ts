@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -13,6 +15,49 @@ import {
 } from '../../../scripts/lib/validation-artifact-sanitizer.js'
 
 describe('validate release helpers', () => {
+  it('runs maintainability, text style, and frontend pattern checks in release static gates', () => {
+    const script = readFileSync(path.join(process.cwd(), 'scripts/validate-release.mjs'), 'utf8')
+    const localStaticStage = script.match(
+      /async function runStaticGateStage[\s\S]*?const commandResults/
+    )?.[0]
+    const hookStaticStage = script.match(
+      /async function runHookStaticGateStage[\s\S]*?const commandResults/
+    )?.[0]
+    const complexityCommand = "['bun', 'run', 'check:complexity-budget']"
+    const textStyleCommand = "['bun', 'run', 'audit:repo', '--only=text-style']"
+    const frontendPatternCommand = "['bun', 'run', 'audit:repo', '--only=frontend-patterns']"
+
+    expect(localStaticStage).toContain(complexityCommand)
+    expect(localStaticStage).toContain(textStyleCommand)
+    expect(localStaticStage).toContain(frontendPatternCommand)
+    expect(hookStaticStage).toContain(complexityCommand)
+    expect(hookStaticStage).toContain(textStyleCommand)
+    expect(hookStaticStage).toContain(frontendPatternCommand)
+    expect(localStaticStage?.indexOf("['bun', 'run', 'test:unit']")).toBeLessThan(
+      localStaticStage?.indexOf(complexityCommand) ?? -1
+    )
+    expect(localStaticStage?.indexOf(complexityCommand)).toBeLessThan(
+      localStaticStage?.indexOf(textStyleCommand) ?? -1
+    )
+    expect(localStaticStage?.indexOf(textStyleCommand)).toBeLessThan(
+      localStaticStage?.indexOf(frontendPatternCommand) ?? -1
+    )
+    expect(localStaticStage?.indexOf(frontendPatternCommand)).toBeLessThan(
+      localStaticStage?.indexOf("['bun', 'run', 'build']") ?? -1
+    )
+  })
+
+  it('includes worktree files in release change evidence', () => {
+    const script = readFileSync(path.join(process.cwd(), 'scripts/validate-release.mjs'), 'utf8')
+    const resolver = script.match(/function resolveChangedFiles[\s\S]*?^}/m)?.[0]
+
+    expect(resolver).toContain("readGitOutput(['diff', '--name-only', diffRange])")
+    expect(resolver).toContain("readGitOutput(['diff', '--name-only', '--staged'])")
+    expect(resolver).toContain("readGitOutput(['diff', '--name-only'])")
+    expect(resolver).toContain("readGitOutput(['ls-files', '--others', '--exclude-standard'])")
+    expect(resolver).toContain('new Set')
+  })
+
   it('builds the expected stage plan for each validation mode', () => {
     const hookPlan = getValidationStagePlan('hook')
     const prepushPlan = getValidationStagePlan('prepush')

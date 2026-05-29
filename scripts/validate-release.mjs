@@ -163,14 +163,23 @@ function resolveGitDiffRange(branch) {
 }
 
 function resolveChangedFiles(diffRange) {
-  const output = readGitOutput(['diff', '--name-only', diffRange])
-  if (!output) {
-    return []
-  }
-  return output
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+  const outputs = [
+    readGitOutput(['diff', '--name-only', diffRange]),
+    readGitOutput(['diff', '--name-only', '--staged']),
+    readGitOutput(['diff', '--name-only']),
+    readGitOutput(['ls-files', '--others', '--exclude-standard']),
+  ].filter(Boolean)
+  if (outputs.length === 0) return []
+
+  return [
+    ...new Set(
+      outputs
+        .join('\n')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+    ),
+  ].sort()
 }
 
 function resolveGitContext() {
@@ -341,6 +350,9 @@ async function runStaticGateStage(stageRecord) {
     ['bun', 'run', 'type-check'],
     ['bun', 'run', 'lint:strict'],
     ['bun', 'run', 'test:unit'],
+    ['bun', 'run', 'check:complexity-budget'],
+    ['bun', 'run', 'audit:repo', '--only=text-style'],
+    ['bun', 'run', 'audit:repo', '--only=frontend-patterns'],
     ['bun', 'run', 'build'],
     ['bun', 'run', 'build:security-check'],
     ['bun', 'run', 'check:bundle-budget'],
@@ -364,6 +376,9 @@ async function runHookStaticGateStage(stageRecord) {
     ['bun', 'run', 'format:check'],
     ['bun', 'run', 'type-check'],
     ['bun', 'run', 'lint:strict'],
+    ['bun', 'run', 'check:complexity-budget'],
+    ['bun', 'run', 'audit:repo', '--only=text-style'],
+    ['bun', 'run', 'audit:repo', '--only=frontend-patterns'],
     [
       'node',
       'scripts/run-vitest.mjs',

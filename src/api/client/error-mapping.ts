@@ -61,9 +61,8 @@ function isUpstreamServiceUnavailableMessage(value: string | undefined): boolean
 }
 
 async function readErrorBodyText(response: Response): Promise<string> {
-  const readable = typeof response.clone === 'function' ? response.clone() : response
-
   try {
+    const readable = typeof response.clone === 'function' ? response.clone() : response
     return await readable.text()
   } catch {
     return ''
@@ -145,7 +144,9 @@ export async function handleErrorResponse(
   let rawErrorMessage: string | undefined
 
   try {
-    const errorData = await response.json()
+    const errorData = await (
+      typeof response.clone === 'function' ? response.clone() : response
+    ).json()
 
     if (Array.isArray(errorData?.errors)) {
       errorDetails = { ...errorDetails, errors: errorData.errors }

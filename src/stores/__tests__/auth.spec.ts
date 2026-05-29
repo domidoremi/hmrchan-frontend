@@ -8,7 +8,7 @@ import {
   exchangeGoogleHandoff,
   startGoogleAuth,
 } from '@/services/googleAuthService'
-import { clearAuthRuntimeSession } from '@/api/client/auth-runtime'
+import { clearAuthRuntimeSession, getRuntimeAccessToken } from '@/api/client/auth-runtime'
 import { enterRiskMode, getRiskMode } from '@/security/runtimeState'
 
 const mockRouterPush = vi.hoisted(() => vi.fn())
@@ -311,6 +311,40 @@ describe('auth store', () => {
     expect(store.user).toBeNull()
     expect(store.runtimeAuthzCache).toBeNull()
     expect(mockRouterPush).toHaveBeenCalledWith('/login')
+  })
+
+  it('restores auth state from the BFF session summary without a browser access token', async () => {
+    const store = useAuthStore()
+    vi.mocked(authService.resolveSession).mockResolvedValueOnce(
+      createSessionSummary({
+        permissions: ['profile.read', 'post.write'],
+        user: createUser({
+          roles: ['moderator'],
+        }),
+        session_expires_at: '2026-05-29T00:00:00.000Z',
+        permission_version: 7,
+      })
+    )
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(
+      createMeResponse({
+        permission_version: 7,
+      })
+    )
+
+    const user = await store.fetchCurrentUser()
+
+    expect(user).toEqual(expect.objectContaining({ email: 'tester@example.com' }))
+    expect(store.user).toEqual(expect.objectContaining({ email: 'tester@example.com' }))
+    expect(store.sessionExpiresAt).toBe('2026-05-29T00:00:00.000Z')
+    expect(store.runtimeAuthzCache).toEqual(
+      expect.objectContaining({
+        permissions: ['profile.read', 'post.write'],
+        roles: ['moderator'],
+        version: '7',
+      })
+    )
+    expect(getRuntimeAccessToken()).toBeNull()
+    expect(authService.resolveSession).toHaveBeenCalledTimes(1)
   })
 
   it('maps BFF deployment failures to a service availability error', async () => {
