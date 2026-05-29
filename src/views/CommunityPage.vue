@@ -121,77 +121,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 
 import { loadCommunityContentResource, type HmrCommunityContent } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
-import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
-import { readPublicContent } from '@/utils/cache/publicContentCache'
+import { useHmrCommunityBoard } from '@/hmr/composables/useHmrCommunityBoard'
+import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
+import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
 
-type CommunityTab = 'discussions' | 'hot' | 'latest' | 'feed'
-
-const content = ref<HmrCommunityContent>({
+const initialCommunityContent: HmrCommunityContent = {
   stats: [],
   discussions: [],
   hot: [],
   latest: [],
   feed: [],
-})
-const activeTab = ref<CommunityTab>('discussions')
+}
 const { t } = useI18n()
-const pageState = ref<HmrPageState>('idle')
-const resource = ref<HmrAsyncResource<HmrCommunityContent>>({
-  state: 'idle',
-  data: content.value,
-  source: 'local',
-  error: null,
+const {
+  content,
+  pageState,
+  resource,
+  refresh: refreshCommunity,
+} = useHmrPublicContentResource<HmrCommunityContent>({
+  initialData: initialCommunityContent,
   paths: ['/community/stats', '/community/latest', '/community/hot', '/community/feed'],
-  updatedAt: null,
+  cacheKey: 'hmr:community',
+  scope: 'community',
+  strategy: 'network-first',
+  loader: loadCommunityContentResource,
+  isEmpty: (data) => data.stats.length === 0 && data.discussions.length === 0,
 })
-const visibleThreads = computed(() => {
-  const byTab = content.value[activeTab.value]
-  return byTab.length ? byTab : content.value.discussions.length ? content.value.discussions : []
-})
-const discussionTabs = computed(() => [
-  {
-    id: 'discussions' as const,
-    label: t('community.allDiscussions'),
-    count: content.value.discussions.length,
-  },
-  { id: 'hot' as const, label: t('community.hot'), count: content.value.hot.length },
-  { id: 'latest' as const, label: t('community.latest'), count: content.value.latest.length },
-  { id: 'feed' as const, label: t('community.feed'), count: content.value.feed.length },
-])
-const activeTabLabel = computed(
-  () => discussionTabs.value.find((item) => item.id === activeTab.value)?.label ?? '讨论'
-)
-const hotThreads = computed(() =>
-  (content.value.hot.length ? content.value.hot : content.value.discussions).slice(0, 4)
-)
+const { activeTab, activeTabLabel, discussionTabs, hotThreads, threadTarget, visibleThreads } =
+  useHmrCommunityBoard(content, t)
 
-async function refreshCommunity(): Promise<void> {
-  pageState.value = 'loading'
-  const nextResource = await readPublicContent({
-    key: 'hmr:community',
-    scope: 'community',
-    strategy: 'network-first',
-    loader: loadCommunityContentResource,
-  })
-  resource.value = nextResource
-  content.value = nextResource.data
-  pageState.value =
-    nextResource.data.stats.length || nextResource.data.discussions.length ? 'ready' : 'empty'
-}
-
-function threadTarget(item: HmrCommunityContent['discussions'][number]): string {
-  if (item.target) return item.target
-  if (item.id.startsWith('demo-') || item.id.startsWith('community-')) return '/community'
-  return `/posts/${item.id}`
-}
-
-onMounted(() => {
-  void refreshCommunity()
-})
+useHmrMountedResourceRefresh(refreshCommunity)
 </script>

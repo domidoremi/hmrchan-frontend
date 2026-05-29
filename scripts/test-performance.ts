@@ -4,13 +4,16 @@
  * 使用 Lighthouse 测试应用性能并生成报告
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import lighthouse from 'lighthouse'
 import * as chromeLauncher from 'chrome-launcher'
 import { applyLocalAuditEnvToProcess, createLocalAuditEnv } from './lib/audit-env.js'
 import { withBuildArtifactLock } from './lib/build-artifact-lock.js'
 import { PreviewShellManager, runBunTask } from './lib/preview-shell.js'
+
+const REQUESTED_AUDIT_DISABLE_PREVIEW_PROXY =
+  process.env['PERF_DISABLE_PREVIEW_PROXY'] ?? process.env['LIGHTHOUSE_DISABLE_PREVIEW_PROXY']
 
 applyLocalAuditEnvToProcess()
 
@@ -31,6 +34,76 @@ interface TestConfig {
   name: string
 }
 
+type PreviewApiResponseKind = 'json' | 'html-fallback' | 'empty' | 'other'
+
+function resetDirectory(path: string): void {
+  rmSync(path, { recursive: true, force: true })
+  mkdirSync(path, { recursive: true })
+}
+
+function resolveRequestedTests(tests: TestConfig[]): TestConfig[] {
+  const only = (process.env['PERF_TEST_ONLY'] ?? '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+  if (only.length === 0) return tests
+
+  const selected = tests.filter((test) => only.includes(test.name.toLowerCase()))
+  if (selected.length === 0) {
+    throw new Error(`PERF_TEST_ONLY did not match any tests: ${only.join(', ')}`)
+  }
+
+  return selected
+}
+
+function classifyPreviewApiResponse(contentType: string, body: string): PreviewApiResponseKind {
+  const normalizedContentType = contentType.toLowerCase()
+  const preview = body.trim()
+  if (!preview) return 'empty'
+  if (normalizedContentType.includes('application/json')) return 'json'
+  if (preview.startsWith('{') || preview.startsWith('[')) return 'json'
+  if (normalizedContentType.includes('text/html') || /^<!doctype\s+html/i.test(preview)) {
+    return 'html-fallback'
+  }
+  return 'other'
+}
+
+async function probePreviewApiSurface(baseUrl: string): Promise<void> {
+  const target = new URL('/api/v1/home/featured', baseUrl)
+
+  try {
+    const response = await fetch(target, {
+      headers: {
+        Accept: 'application/json',
+        'Cache-Control': 'no-store',
+      },
+      redirect: 'manual',
+    })
+    const contentType = response.headers.get('content-type') ?? ''
+    const body = await response.text()
+    const kind = classifyPreviewApiResponse(contentType, body)
+    const preview = body.trim().replace(/\s+/g, ' ').slice(0, 96)
+
+    console.log('🧭 Preview API diagnostics')
+    console.log(`   VITE_DISABLE_PREVIEW_PROXY=${AUDIT_ENV.VITE_DISABLE_PREVIEW_PROXY ?? 'unset'}`)
+    console.log(
+      `   /api/v1/home/featured: HTTP ${response.status}, ${contentType || 'no content-type'}, ${kind}`
+    )
+    if (preview) {
+      console.log(`   body preview: ${preview}`)
+    }
+    if (kind === 'html-fallback') {
+      console.warn(
+        '   Warning: preview returned the SPA HTML fallback for an API path; Lighthouse API evidence must be treated as non-live unless browser cache or service worker state explains it.'
+      )
+    }
+  } catch (error) {
+    console.warn(
+      `🧭 Preview API diagnostics failed: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
+}
+
 const AUDIT_ENV = {
   ...createLocalAuditEnv(process.env, {
     includeContractFallback: true,
@@ -38,14 +111,15 @@ const AUDIT_ENV = {
   VITE_ENABLE_CLIENT_INIT: process.env['VITE_ENABLE_CLIENT_INIT'] ?? 'false',
   VITE_ENABLE_SCHEDULE_API: process.env['VITE_ENABLE_SCHEDULE_API'] ?? 'false',
   VITE_ENABLE_DATA_PREFETCH: process.env['VITE_ENABLE_DATA_PREFETCH'] ?? 'false',
-  VITE_DISABLE_PREVIEW_PROXY: process.env['VITE_DISABLE_PREVIEW_PROXY'] ?? 'true',
+  VITE_DISABLE_PREVIEW_PROXY: REQUESTED_AUDIT_DISABLE_PREVIEW_PROXY ?? 'true',
 }
 
 function getTestUrls(port: number): TestConfig[] {
+  const steadyStateQuery = 'skipPreloader=1'
   return [
-    { url: `http://localhost:${port}/`, name: 'home' },
-    { url: `http://localhost:${port}/explore`, name: 'explore' },
-    { url: `http://localhost:${port}/search`, name: 'search' },
+    { url: `http://localhost:${port}/?${steadyStateQuery}`, name: 'home' },
+    { url: `http://localhost:${port}/explore?${steadyStateQuery}`, name: 'explore' },
+    { url: `http://localhost:${port}/search?${steadyStateQuery}`, name: 'search' },
   ]
 }
 
@@ -129,12 +203,8 @@ async function main(): Promise<void> {
   }
   const chromeProfileDir = join(LIGHTHOUSE_TEMP_DIR, 'chrome-profile')
   const launcherProfileDir = join(LIGHTHOUSE_TEMP_DIR, 'launcher-profile')
-  if (!existsSync(chromeProfileDir)) {
-    mkdirSync(chromeProfileDir, { recursive: true })
-  }
-  if (!existsSync(launcherProfileDir)) {
-    mkdirSync(launcherProfileDir, { recursive: true })
-  }
+  resetDirectory(chromeProfileDir)
+  resetDirectory(launcherProfileDir)
 
   let previewServer: PreviewShellManager | null = null
   let chrome: chromeLauncher.LaunchedChrome | null = null
@@ -156,7 +226,11 @@ async function main(): Promise<void> {
       logOutput: true,
     })
     await previewServer.start()
-    const tests = getTestUrls(previewServer.port ?? PREVIEW_SERVER_PORT)
+    if (!previewServer.baseUrl) {
+      throw new Error('Preview server started without a base URL')
+    }
+    await probePreviewApiSurface(previewServer.baseUrl)
+    const tests = resolveRequestedTests(getTestUrls(previewServer.port ?? PREVIEW_SERVER_PORT))
 
     const chromePath = await resolveChromePath()
     chrome = await chromeLauncher.launch({

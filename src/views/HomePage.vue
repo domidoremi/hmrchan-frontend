@@ -21,12 +21,14 @@
           </div>
         </div>
 
-        <div class="hmr-home-hero-media" data-hmr-reveal>
+        <div class="hmr-home-hero-media">
           <HmrPostCard
             v-if="featuredPosts[0]"
             :post="featuredPosts[0]"
             variant="hero"
             :show-footer="false"
+            image-loading="eager"
+            image-fetch-priority="high"
           />
           <div v-else class="hmr-media-skeleton hmr-media-skeleton--hero" aria-hidden="true"></div>
         </div>
@@ -111,128 +113,152 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import {
-  loadExploreContentResource,
   loadHomeContentResource,
-  loadPostDetailContentResource,
+  loadHomePrimaryContentResource,
   type HmrHomeContent,
 } from '@/api/hmrContent'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
-import { collectHomeMedia } from '@/hmr/runtime/homeMedia'
-import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
-import { readAvailablePublicContent, readPublicContent } from '@/utils/cache/publicContentCache'
-import { runWhenIdle, runWithConcurrency } from '@/utils/performance'
+import { useHmrHomeView } from '@/hmr/composables/useHmrHomeView'
+import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
+import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
+import { scheduleHomeContentPrewarm } from '@/hmr/runtime/homePrewarm'
+import { STATIC_HOME_PRERENDER_IMAGE } from '@/fallbacks/generated/homePrerenderManifest'
+import { cancelIdleTask, runWhenIdle, type IdleTaskHandle } from '@/utils/performance'
+import { readPublicContent } from '@/utils/cache/publicContentCache'
 
-const content = ref<HmrHomeContent>({
-  featured: [],
-  storyDeck: [],
+const homePrerenderPost = {
+  id: 'home-prerender-featured',
+  title: 'MomiChan',
+  excerpt: '精选媒体正在加载。',
+  authorName: 'MomiChan',
+  mediaUrl: STATIC_HOME_PRERENDER_IMAGE.href,
+  tag: '精选',
+  createdAt: '刚刚',
+  statsLabel: '实时',
+  platform: 'tiktok',
+  mediaType: 'image',
+  hasMedia: true,
+  hasRenderableMedia: true,
+  mediaCount: 1,
+}
+
+const initialHomeContent: HmrHomeContent = {
+  featured: [homePrerenderPost],
+  storyDeck: [homePrerenderPost],
   highlights: [],
   trends: [],
   scheduleHighlights: [],
-})
-const pageState = ref<HmrPageState>('idle')
-const resource = ref<HmrAsyncResource<HmrHomeContent>>({
-  state: 'idle',
-  data: content.value,
-  source: 'local',
-  error: null,
-  paths: ['/home', '/home/featured', '/community/highlights'],
-  updatedAt: null,
-})
+}
+const FULL_HOME_REFRESH_DELAY_MS = 2200
+let fullHomeRefreshDelayTimer: number | undefined
+let fullHomeRefreshHandle: IdleTaskHandle | undefined
+let fullHomeRefreshStarted = false
 
-const platformItems = ['YouTube', 'Instagram', 'X', 'TikTok', 'Showroom']
-const featuredPosts = computed(() => normalizePosts(content.value.featured, 6))
+function preservePrerenderHeroMedia(data: HmrHomeContent): HmrHomeContent {
+  const prerenderMediaUrl = homePrerenderPost.mediaUrl
+  if (!prerenderMediaUrl || data.featured.length === 0) return data
 
-function normalizePosts(posts: HmrPost[], count: number): HmrPost[] {
-  return posts.slice(0, count).filter((post): post is HmrPost => Boolean(post))
+  const [firstPost, ...restPosts] = data.featured
+  const stableFirstPost = {
+    ...firstPost,
+    mediaUrl: prerenderMediaUrl,
+  }
+  return {
+    ...data,
+    featured: [stableFirstPost, ...restPosts],
+    storyDeck:
+      data.storyDeck.length > 0
+        ? [{ ...data.storyDeck[0], mediaUrl: prerenderMediaUrl }, ...data.storyDeck.slice(1)]
+        : [stableFirstPost],
+  }
 }
 
-async function refreshHome(): Promise<void> {
-  const cachedResource = await readAvailablePublicContent<HmrAsyncResource<HmrHomeContent>>({
-    key: 'hmr:home',
-    scope: 'home',
-  })
-  if (cachedResource) {
-    applyHomeResource(cachedResource)
-  } else {
-    pageState.value = 'loading'
-    resource.value = {
-      ...resource.value,
-      state: 'loading',
+const {
+  applyResource,
+  content,
+  refresh: refreshHomePrimary,
+} = useHmrPublicContentResource<HmrHomeContent>({
+  initialData: initialHomeContent,
+  paths: ['/home', '/home/featured', '/community/highlights'],
+  cacheKey: 'hmr:home',
+  scope: 'home',
+  strategy: 'network-first',
+  loader: loadHomePrimaryContentResource,
+  readAvailableBeforeRefresh: true,
+  isEmpty: (data) =>
+    data.featured.length === 0 && data.trends.length === 0 && data.highlights.length === 0,
+  onResolved: (data, nextResource) => {
+    const stableData = preservePrerenderHeroMedia(data)
+    if (stableData !== data) {
+      applyResource({
+        ...nextResource,
+        data: stableData,
+      })
     }
+    if (data.featured.length > 0) {
+      scheduleFullHomeRefresh()
+    }
+  },
+})
+
+const { cssContent, featuredPosts, platformItems } = useHmrHomeView(content)
+
+function clearFullHomeRefreshDelay(): void {
+  if (fullHomeRefreshDelayTimer === undefined) return
+  window.clearTimeout(fullHomeRefreshDelayTimer)
+  fullHomeRefreshDelayTimer = undefined
+}
+
+function scheduleFullHomeRefresh(): void {
+  if (typeof window === 'undefined') return
+  if (fullHomeRefreshStarted || fullHomeRefreshDelayTimer !== undefined || fullHomeRefreshHandle) {
+    return
   }
 
-  const nextResource = await readPublicContent({
+  fullHomeRefreshDelayTimer = window.setTimeout(() => {
+    fullHomeRefreshDelayTimer = undefined
+    fullHomeRefreshHandle = runWhenIdle(
+      () => {
+        fullHomeRefreshHandle = undefined
+        void refreshFullHome()
+      },
+      { timeout: 4500, fallbackDelay: 2000 }
+    )
+  }, FULL_HOME_REFRESH_DELAY_MS)
+}
+
+async function refreshFullHome(): Promise<void> {
+  if (fullHomeRefreshStarted) return
+  fullHomeRefreshStarted = true
+  const fullResource = await readPublicContent({
     key: 'hmr:home',
     scope: 'home',
     strategy: 'network-first',
     loader: loadHomeContentResource,
   })
-  applyHomeResource(nextResource)
-  scheduleHomePrewarm(nextResource.data)
+  const stableFullContent = preservePrerenderHeroMedia(fullResource.data)
+  const stablePrimaryContent: HmrHomeContent = {
+    ...stableFullContent,
+    featured: content.value.featured.length ? content.value.featured : stableFullContent.featured,
+    storyDeck: content.value.storyDeck.length
+      ? content.value.storyDeck
+      : stableFullContent.storyDeck,
+  }
+  const nextResource = applyResource({
+    ...fullResource,
+    data: stablePrimaryContent,
+  })
+  scheduleHomeContentPrewarm(nextResource.data, { includeExplore: true })
 }
 
-function applyHomeResource(nextResource: HmrAsyncResource<HmrHomeContent>): void {
-  resource.value = nextResource
-  content.value = nextResource.data
-  pageState.value =
-    nextResource.data.featured.length ||
-    nextResource.data.trends.length ||
-    nextResource.data.highlights.length
-      ? 'ready'
-      : 'empty'
-}
+useHmrMountedResourceRefresh(refreshHomePrimary)
 
-function scheduleHomePrewarm(data: HmrHomeContent): void {
-  runWhenIdle(
-    () => {
-      const featured = data.featured.slice(0, 2)
-      const mediaUrls = collectHomeMedia(data.featured)
-      const tasks: Array<() => Promise<unknown>> = [
-        () =>
-          readPublicContent({
-            key: 'hmr:explore:prewarm:first-page',
-            scope: 'explore',
-            strategy: 'network-first',
-            loader: () => loadExploreContentResource({ limit: 12 }),
-          }),
-        ...featured.map(
-          (post) => () =>
-            readPublicContent({
-              key: `hmr:post-detail:${post.id}`,
-              scope: 'post-detail',
-              strategy: 'stale-while-revalidate',
-              loader: () => loadPostDetailContentResource(post.id),
-            })
-        ),
-        ...mediaUrls.map(
-          (url) => () =>
-            readPublicContent({
-              key: `hmr:media:${url}`,
-              scope: 'media',
-              strategy: 'cache-first',
-              loader: async () => {
-                await fetch(url, { cache: 'force-cache', credentials: 'omit' })
-                return { url, warmedAt: Date.now() }
-              },
-            })
-        ),
-      ]
-      const isMobile = window.matchMedia('(max-width: 767px)').matches
-      void runWithConcurrency(tasks, isMobile ? 1 : 2)
-    },
-    { timeout: 2500, fallbackDelay: 1200 }
-  )
-}
-
-function cssContent(value: string): string {
-  return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`
-}
-
-onMounted(() => {
-  void refreshHome()
+onBeforeUnmount(() => {
+  clearFullHomeRefreshDelay()
+  cancelIdleTask(fullHomeRefreshHandle)
 })
 </script>

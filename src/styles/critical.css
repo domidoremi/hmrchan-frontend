@@ -46,6 +46,31 @@ body {
   gap: 1rem;
 }
 
+.hmr-prerender-shell--home {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(1.5rem, 6vw, 4rem);
+}
+
+.hmr-prerender-shell--home .hmr-prerender-shell__inner {
+  max-inline-size: 32rem;
+}
+
+.hmr-prerender-shell__media {
+  display: grid;
+  inline-size: clamp(6rem, 18vw, 12rem);
+  aspect-ratio: 1;
+  place-items: center;
+  margin: 0;
+}
+
+.hmr-prerender-shell__media img {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
 .hmr-prerender-shell__eyebrow,
 .hmr-prerender-shell__summary,
 .hmr-prerender-shell__stats,
@@ -115,4 +140,14 @@ html[data-theme='dark'] .hmr-prerender-shell__links a {
   color: inherit;
   font-weight: 700;
   text-decoration: none;
+}
+
+@media (max-width: 720px) {
+  .hmr-prerender-shell--home {
+    grid-template-columns: 1fr;
+  }
+
+  .hmr-prerender-shell__media {
+    order: -1;
+  }
 }

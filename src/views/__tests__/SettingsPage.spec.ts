@@ -6,8 +6,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 
 import SettingsPage from '@/views/SettingsPage.vue'
 
-vi.mock('@/api/hmrContent', () => ({
-  seedCommunity: [],
+const mocks = vi.hoisted(() => ({
   loadSettingsContentResource: vi.fn(async () => ({
     state: 'ready',
     data: {
@@ -22,9 +21,23 @@ vi.mock('@/api/hmrContent', () => ({
   })),
 }))
 
+vi.mock('@/api/hmrContent', () => ({
+  seedCommunity: [],
+  loadSettingsContentResource: mocks.loadSettingsContentResource,
+}))
+
 vi.mock('@/utils/cache/publicContentCache', () => ({
   clearPublicContentCache: vi.fn(async () => undefined),
 }))
+
+function renderRouteHref(to: string | { path: string; query?: Record<string, unknown> }): string {
+  if (typeof to === 'string') return to
+
+  const redirect = to.query?.redirect
+  if (typeof redirect !== 'string') return to.path
+
+  return `${to.path}?redirect=${redirect}`
+}
 
 function mockMatchMedia(matches: boolean) {
   Object.defineProperty(window, 'matchMedia', {
@@ -86,7 +99,8 @@ async function mountSettingsPage() {
         HmrPageStateBlock: true,
         RouterLink: {
           props: ['to'],
-          template: '<a :href="typeof to === `string` ? to : to.path"><slot /></a>',
+          methods: { renderRouteHref },
+          template: '<a :href="renderRouteHref(to)"><slot /></a>',
         },
       },
     },
@@ -98,6 +112,7 @@ describe('SettingsPage', () => {
     window.localStorage.clear()
     mockMatchMedia(false)
     setActivePinia(createPinia())
+    mocks.loadSettingsContentResource.mockClear()
   })
 
   it('removes user-controlled animation settings', async () => {
@@ -118,5 +133,21 @@ describe('SettingsPage', () => {
     expect(text).toContain('深色')
     expect(text).toContain('跟随系统')
     expect(text).toContain('清理公开缓存')
+  })
+
+  it('builds guest auth links with normalized redirect targets', async () => {
+    const wrapper = await mountSettingsPage()
+    const links = wrapper.findAll('a').map((link) => link.attributes('href'))
+
+    expect(links).toContain('/login?redirect=/settings')
+    expect(links).toContain('/register?redirect=/settings')
+    expect(links).toContain('/login?redirect=/profile/security')
+    expect(links).toContain('/login?redirect=/profile/inbox')
+  })
+
+  it('keeps guest settings local without loading private resources on mount', async () => {
+    await mountSettingsPage()
+
+    expect(mocks.loadSettingsContentResource).not.toHaveBeenCalled()
   })
 })

@@ -22,6 +22,13 @@ const generatedModulePath = path.join(
   'generated',
   'publicSnapshots.ts'
 )
+const homePrerenderManifestPath = path.join(
+  repoRoot,
+  'src',
+  'fallbacks',
+  'generated',
+  'homePrerenderManifest.ts'
+)
 const snapshotMediaDir = path.join(repoRoot, 'public', 'snapshot-media')
 
 const MAX_EXPLORE_POSTS = 12
@@ -251,6 +258,45 @@ async function localizeImageAsset(image, key) {
 
 function createAuthorLookup(authors) {
   return new Map(authors.map((author) => [author.id, author]))
+}
+
+function normalizePositiveInteger(value, fallback) {
+  const number = Number(value)
+  return Number.isInteger(number) && number > 0 ? number : fallback
+}
+
+function resolveHomePrerenderImage(homeAggregate, homePosts) {
+  const featuredItem = Array.isArray(homeAggregate?.featured?.items)
+    ? homeAggregate.featured.items[0]
+    : null
+  const relatedPost = Array.isArray(featuredItem?.related_posts)
+    ? featuredItem.related_posts[0]
+    : null
+  const cover =
+    relatedPost?.image || relatedPost?.thumbnail || relatedPost?.cover || featuredItem?.cover
+  const post = homePosts.find((item) => item.thumbnail_url) ?? null
+  const href = cover?.thumbnail_url || cover?.url || post?.thumbnail_url
+
+  if (!href) {
+    return {
+      href: '/icons/sitting-192.webp',
+      srcset:
+        '/icons/sitting-96.webp 96w, /icons/sitting-180.webp 180w, /icons/sitting-192.webp 192w',
+      sizes: '(max-width: 720px) 40vw, 192px',
+      width: 192,
+      height: 192,
+      alt: '',
+    }
+  }
+
+  return {
+    href,
+    srcset: [`${href} 640w`, `${href} 960w`, `${href} 1440w`].join(', '),
+    sizes: '(min-width: 48em) 44vw, 92vw',
+    width: normalizePositiveInteger(cover?.width ?? post?.width, 960),
+    height: normalizePositiveInteger(cover?.height ?? post?.height, 960),
+    alt: safeString(cover?.alt || post?.title || ''),
+  }
 }
 
 async function buildSnapshots() {
@@ -502,6 +548,7 @@ async function buildSnapshots() {
 
   const snapshots = {
     generatedAt: new Date().toISOString(),
+    homePrerenderImage: resolveHomePrerenderImage(homeAggregate, homePosts),
     homeAggregate,
     homePosts,
     explorePosts,
@@ -554,12 +601,21 @@ export const publicSnapshots = Object.freeze({
 `
 }
 
+function renderHomePrerenderManifest(data) {
+  return `/* AUTO-GENERATED FILE. Run \"bun run fallbacks:refresh\" to refresh snapshots. */
+
+export const STATIC_HOME_PRERENDER_IMAGE = ${JSON.stringify(data.homePrerenderImage, null, 2)} as const
+`
+}
+
 async function main() {
   const snapshots = await buildSnapshots()
   assertPublicSnapshotIdContract(snapshots, { sourceName: 'refreshed public snapshots' })
   await mkdir(path.dirname(generatedModulePath), { recursive: true })
   await writeFile(generatedModulePath, renderModule(snapshots), 'utf8')
+  await writeFile(homePrerenderManifestPath, renderHomePrerenderManifest(snapshots), 'utf8')
   console.log(`[snapshot] wrote ${path.relative(repoRoot, generatedModulePath)}`)
+  console.log(`[snapshot] wrote ${path.relative(repoRoot, homePrerenderManifestPath)}`)
 }
 
 main().catch((error) => {

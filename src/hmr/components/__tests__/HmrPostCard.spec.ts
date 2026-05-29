@@ -38,4 +38,52 @@ describe('HmrPostCard', () => {
     expect(badgeRow.attributes('aria-hidden')).toBe('true')
     expect(badgeRow.attributes('aria-label')).toBeUndefined()
   })
+
+  it('defaults poster images to lazy auto priority and supports eager hero loading', () => {
+    const lazyWrapper = mount(HmrPostCard, {
+      props: {
+        post: makePost(),
+      },
+      global: {
+        stubs: {
+          RouterLink: RouterLinkStub,
+        },
+      },
+    })
+    const heroWrapper = mount(HmrPostCard, {
+      props: {
+        post: makePost(),
+        imageLoading: 'eager',
+        imageFetchPriority: 'high',
+        variant: 'hero',
+      },
+      global: {
+        stubs: {
+          RouterLink: RouterLinkStub,
+        },
+      },
+    })
+
+    expect(lazyWrapper.find('.hmr-post-card__poster').attributes('loading')).toBe('lazy')
+    expect(lazyWrapper.find('.hmr-post-card__poster').attributes('fetchpriority')).toBe('auto')
+    expect(heroWrapper.find('.hmr-post-card__poster').attributes('loading')).toBe('eager')
+    expect(heroWrapper.find('.hmr-post-card__poster').attributes('fetchpriority')).toBe('high')
+  })
+
+  it('uses shared platform visual fallback values for unknown platforms', () => {
+    const wrapper = mount(HmrPostCard, {
+      props: {
+        post: makePost({ platform: 'unknown' }),
+      },
+      global: {
+        stubs: {
+          RouterLink: RouterLinkStub,
+        },
+      },
+    })
+
+    expect(wrapper.attributes('data-platform')).toBe('default')
+    expect(wrapper.attributes('style')).toContain('--hmr-card-start: #ff7722')
+    expect(wrapper.attributes('style')).toContain('--hmr-card-end: #3d2fa9')
+  })
 })

@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import type { HmrHomeContent, HmrPost } from '@/api/hmrContent'
+import { STATIC_HOME_PRERENDER_IMAGE } from '@/fallbacks/generated/homePrerenderManifest'
 import type { HmrAsyncResource } from '@/hmr/types'
 import HomePage from '@/views/HomePage.vue'
 
 const mocks = vi.hoisted(() => ({
   loadExploreContentResource: vi.fn(),
   loadHomeContentResource: vi.fn(),
+  loadHomePrimaryContentResource: vi.fn(),
   loadPostDetailContentResource: vi.fn(),
   readAvailablePublicContent: vi.fn(),
   readPublicContent: vi.fn(),
@@ -20,6 +22,7 @@ vi.mock('@/api/hmrContent', async (importOriginal) => {
     ...actual,
     loadExploreContentResource: mocks.loadExploreContentResource,
     loadHomeContentResource: mocks.loadHomeContentResource,
+    loadHomePrimaryContentResource: mocks.loadHomePrimaryContentResource,
     loadPostDetailContentResource: mocks.loadPostDetailContentResource,
   }
 })
@@ -113,7 +116,8 @@ async function mountHomePage() {
       stubs: {
         HmrPostCard: {
           props: ['post'],
-          template: '<article class="hmr-post-card">{{ post.title }}</article>',
+          template:
+            '<article class="hmr-post-card"><span>{{ post.title }}</span><img :src="post.mediaUrl" /></article>',
         },
       },
     },
@@ -125,6 +129,7 @@ describe('HomePage', () => {
     vi.useRealTimers()
     mocks.loadExploreContentResource.mockReset()
     mocks.loadHomeContentResource.mockReset()
+    mocks.loadHomePrimaryContentResource.mockReset()
     mocks.loadPostDetailContentResource.mockReset()
     mocks.readAvailablePublicContent.mockReset()
     mocks.readPublicContent.mockReset()
@@ -171,6 +176,70 @@ describe('HomePage', () => {
     expect(wrapper.text()).toContain('Fresh post')
   })
 
+  it('defers the full home aggregation and media prewarm until after primary content resolves', async () => {
+    vi.useFakeTimers()
+    const primaryResource = makeResource(makeContent(makePost({ title: 'Primary post' })))
+    const fullResource = makeResource({
+      ...makeContent(makePost({ id: 'full', title: 'Full post' })),
+      highlights: [
+        {
+          id: 'full-discussion',
+          title: 'Full discussion',
+          excerpt: 'Full secondary signal',
+          metric: 'Hot',
+          target: '/community',
+        },
+      ],
+    })
+    const requestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
+      callback({ didTimeout: false, timeRemaining: () => 12 })
+      return 1
+    })
+    vi.stubGlobal('requestIdleCallback', requestIdleCallback)
+    vi.stubGlobal('cancelIdleCallback', vi.fn())
+    mocks.readAvailablePublicContent.mockResolvedValue(null)
+    mocks.readPublicContent.mockImplementation(
+      ({ key, loader }: { key: string; loader: () => unknown }) => {
+        if (key === 'hmr:home' && loader === mocks.loadHomeContentResource) {
+          return Promise.resolve(fullResource)
+        }
+        if (key === 'hmr:home') {
+          return Promise.resolve(primaryResource)
+        }
+        return Promise.resolve({ value: key })
+      }
+    )
+
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Primary post')
+    expect(mocks.readPublicContent).toHaveBeenCalledTimes(1)
+    expect(mocks.loadHomeContentResource).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(2200)
+    await flushPromises()
+
+    expect(requestIdleCallback).toHaveBeenCalled()
+    expect(mocks.readPublicContent).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        key: 'hmr:home',
+        scope: 'home',
+        strategy: 'network-first',
+        loader: mocks.loadHomeContentResource,
+      })
+    )
+    expect(wrapper.text()).toContain('Primary post')
+    expect(wrapper.findAll('.hmr-post-card').map((card) => card.text())).toEqual([
+      'Primary post',
+      'Primary post',
+    ])
+    expect(wrapper.text()).toContain('Full discussion')
+
+    wrapper.unmount()
+  })
+
   it('uses skeletons until network content arrives when no public cache is available', async () => {
     const freshResource = makeResource(makeContent(makePost({ title: 'Network post' })))
     const refresh = makeDeferred<HmrAsyncResource<HmrHomeContent>>()
@@ -180,12 +249,15 @@ describe('HomePage', () => {
     const wrapper = await mountHomePage()
     await flushPromises()
 
-    expect(wrapper.findAll('.hmr-media-skeleton').length).toBeGreaterThan(0)
+    expect(wrapper.text()).toContain('MomiChan')
+    expect(wrapper.find('img').attributes('src')).toBe(STATIC_HOME_PRERENDER_IMAGE.href)
+    expect(wrapper.findAll('.hmr-media-skeleton')).toHaveLength(0)
     expect(wrapper.text()).not.toContain('Network post')
 
     refresh.resolve(freshResource)
     await flushPromises()
 
     expect(wrapper.text()).toContain('Network post')
+    expect(wrapper.find('img').attributes('src')).toBe(STATIC_HOME_PRERENDER_IMAGE.href)
   })
 })

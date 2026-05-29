@@ -60,34 +60,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
+import { useHmrPasskeyRecoveryFlow } from '@/hmr/composables/useHmrPasskeyRecoveryFlow'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n({ useScope: 'global' })
 const auth = useAuthStore()
-const email = ref('')
-const password = ref('')
-const verificationCode = ref('')
-const recoveryStep = computed(() => (auth.passkeyRecovery?.id ? 'verify' : 'start'))
-async function submit(): Promise<void> {
-  const payload = {
-    email: email.value,
-    password: password.value,
-    verificationCode: verificationCode.value,
-  }
-
-  if (recoveryStep.value === 'start') {
-    await auth.startPasskeyRecovery(payload)
-    return
-  }
-
-  await auth.verifyPasskeyRecovery(payload)
-}
-
-async function pollStatus(): Promise<void> {
-  await auth.pollPasskeyRecoveryStatus()
-}
+const { email, password, pollStatus, recoveryStep, submit, verificationCode } =
+  useHmrPasskeyRecoveryFlow(auth)
 </script>

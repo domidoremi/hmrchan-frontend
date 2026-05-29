@@ -120,4 +120,17 @@ describe('hmr session entry warmup', () => {
       })
     )
   })
+
+  it('can keep entry warmup focused on shell and current route work', async () => {
+    const result = await warmHmrSessionEntry({
+      path: '/explore',
+      includeHomeBootstrap: false,
+      includeRouteChunks: false,
+      timeoutMs: 3000,
+    })
+
+    expect(result.tasks).toEqual(['service-worker', 'public-explore'])
+    expect(mocks.loadHomeContentResource).not.toHaveBeenCalled()
+    expect(mocks.loadExploreContentResource).toHaveBeenCalled()
+  })
 })

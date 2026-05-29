@@ -7,10 +7,24 @@ import type { HmrAsyncResource } from '@/hmr/types'
 import ExplorePage from '@/views/ExplorePage.vue'
 
 const mockReadPublicContent = vi.hoisted(() => vi.fn())
+const mockRunWhenIdle = vi.hoisted(() =>
+  vi.fn((callback: () => void) => {
+    callback()
+    return undefined
+  })
+)
 
 vi.mock('@/utils/cache/publicContentCache', () => ({
   readPublicContent: mockReadPublicContent,
 }))
+
+vi.mock('@/utils/performance', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/performance')>()
+  return {
+    ...actual,
+    runWhenIdle: mockRunWhenIdle,
+  }
+})
 
 vi.mock('@/api/hmrContent', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/api/hmrContent')>()
@@ -112,8 +126,9 @@ async function mountExplorePage() {
       plugins: [i18n],
       stubs: {
         HmrPostCard: {
-          props: ['post'],
-          template: '<article class="hmr-post-card">{{ post.title }}</article>',
+          props: ['post', 'imageLoading', 'imageFetchPriority'],
+          template:
+            '<article class="hmr-post-card" :data-loading="imageLoading" :data-priority="imageFetchPriority">{{ post.title }}</article>',
         },
       },
     },
@@ -125,6 +140,11 @@ async function mountExplorePage() {
 describe('ExplorePage', () => {
   beforeEach(() => {
     mockReadPublicContent.mockReset()
+    mockRunWhenIdle.mockReset()
+    mockRunWhenIdle.mockImplementation((callback: () => void) => {
+      callback()
+      return undefined
+    })
   })
 
   it('shows public posts when the resource has visible content', async () => {
@@ -140,6 +160,86 @@ describe('ExplorePage', () => {
 
     expect(wrapper.text()).toContain('YouTube live cut')
     expect(wrapper.findAll('.hmr-post-card')).toHaveLength(1)
+  })
+
+  it('prioritizes first-viewport post thumbnails', async () => {
+    mockReadPublicContent.mockResolvedValue(
+      makeResource({
+        data: makeContent({
+          posts: [
+            makePost({ id: 'post-1', title: 'First post' }),
+            makePost({ id: 'post-2', title: 'Second post' }),
+            makePost({ id: 'post-3', title: 'Third post' }),
+          ],
+        }),
+      })
+    )
+
+    const wrapper = await mountExplorePage()
+    const cards = wrapper.findAll('.hmr-post-card')
+
+    expect(cards.map((card) => card.attributes('data-loading'))).toEqual(['eager', 'eager', 'lazy'])
+    expect(cards.map((card) => card.attributes('data-priority'))).toEqual(['high', 'high', 'auto'])
+  })
+
+  it('defers below-the-fold media and author sections until idle time', async () => {
+    let idleCallback: (() => void) | undefined
+    mockRunWhenIdle.mockImplementationOnce((callback: () => void) => {
+      idleCallback = callback
+      return { id: 1, type: 'timeout' }
+    })
+    mockReadPublicContent.mockResolvedValue(
+      makeResource({
+        data: makeContent({
+          posts: [makePost()],
+          authors: [
+            {
+              id: 'author-1',
+              name: 'Momi',
+              bio: 'Creator',
+              avatarUrl: '',
+            },
+          ],
+        }),
+      })
+    )
+
+    const wrapper = await mountExplorePage()
+
+    expect(wrapper.find('.hmr-cinema-section').exists()).toBe(false)
+    expect(wrapper.find('.hmr-author-strip').exists()).toBe(false)
+
+    idleCallback?.()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.hmr-cinema-section').exists()).toBe(true)
+    expect(wrapper.find('.hmr-author-strip').exists()).toBe(true)
+  })
+
+  it('renders a compact initial post set before idle expansion', async () => {
+    let idleCallback: (() => void) | undefined
+    mockRunWhenIdle.mockImplementationOnce((callback: () => void) => {
+      idleCallback = callback
+      return { id: 1, type: 'timeout' }
+    })
+    mockReadPublicContent.mockResolvedValue(
+      makeResource({
+        data: makeContent({
+          posts: Array.from({ length: 8 }, (_, index) =>
+            makePost({ id: `post-${index + 1}`, title: `Post ${index + 1}` })
+          ),
+        }),
+      })
+    )
+
+    const wrapper = await mountExplorePage()
+
+    expect(wrapper.findAll('.hmr-post-card')).toHaveLength(6)
+
+    idleCallback?.()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAll('.hmr-post-card')).toHaveLength(8)
   })
 
   it('shows a blocking error when no content can be displayed', async () => {
@@ -194,6 +294,43 @@ describe('ExplorePage', () => {
     expect(wrapper.text()).toContain('Cached public post')
     expect(wrapper.text()).toContain('正在显示可用内容')
     expect(wrapper.text()).not.toContain('公开内容暂时不可用')
+  })
+
+  it('appends the next page when loading more public posts', async () => {
+    mockReadPublicContent
+      .mockResolvedValueOnce(
+        makeResource({
+          data: makeContent({
+            posts: [makePost({ id: 'post-1', title: 'First page post' })],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          }),
+        })
+      )
+      .mockResolvedValueOnce(
+        makeResource({
+          data: makeContent({
+            posts: [makePost({ id: 'post-2', title: 'Second page post' })],
+            nextCursor: null,
+            hasMore: false,
+          }),
+        })
+      )
+    const wrapper = await mountExplorePage()
+
+    await wrapper.find('.hmr-load-more button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('First page post')
+    expect(wrapper.text()).toContain('Second page post')
+    expect(mockReadPublicContent).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        key: 'hmr:explore:{"query":"","platform":"all","sortBy":"published_at","cursor":"cursor-2","limit":12}:all:all',
+        scope: 'explore',
+        strategy: 'network-first',
+      })
+    )
   })
 
   it('shows loading skeletons before the first resource resolves', async () => {

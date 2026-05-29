@@ -307,7 +307,10 @@ function validateRequiredTokens(contentsByFile, endpoint, issues) {
 
 function validatePublicIdEntrypoints(projectRoot, issues) {
   const routerContents = readProjectFile(projectRoot, 'src/router/index.ts')
+  const routeDefinitionContents = readProjectFile(projectRoot, 'src/router/routes.ts')
+  const routeGuardContents = readProjectFile(projectRoot, 'src/router/guards.ts')
   const guardedRouteNames = [
+    'hmr-post-detail',
     'post-detail',
     'author-detail',
     'discussion-detail',
@@ -315,14 +318,16 @@ function validatePublicIdEntrypoints(projectRoot, issues) {
     'passkey-recovery-detail',
   ]
   if (
-    !routerContents.includes('isContractResourceId') ||
-    guardedRouteNames.some((routeName) => !routerContents.includes(`'${routeName}'`))
+    !routerContents.includes('resolveHmrRouteGuard') ||
+    !routeDefinitionContents.includes("'hmr-post-detail'") ||
+    !routeGuardContents.includes('isContractResourceId') ||
+    guardedRouteNames.some((routeName) => !routeGuardContents.includes(`'${routeName}'`))
   ) {
     issues.push({
       code: 'missing-route-public-id-guard',
       message:
         'Detail routes with public ID params must reject non-UUIDv7 values before loading pages or calling APIs',
-      file: 'src/router/index.ts',
+      file: 'src/router/guards.ts',
     })
   }
 

@@ -1,19 +1,18 @@
 import {
   loadCommunityContentResource,
   loadExploreContentResource,
-  loadHomeContentResource,
   loadPostDetailContentResource,
   loadScheduleContentResource,
-  type HmrHomeContent,
 } from '@/api/hmrContent'
-import type { HmrAsyncResource, HmrWarmRouteKey } from '@/hmr/types'
+import type { HmrWarmRouteKey } from '@/hmr/types'
 import { readPublicContent } from '@/utils/cache/publicContentCache'
 import { registerPublicCacheServiceWorker } from '@/utils/cache/serviceWorkerRegistration'
-import { runWithConcurrency } from '@/utils/performance'
-import { collectHomeMedia } from './homeMedia'
+import { warmHomeBootstrap } from './homePrewarm'
 
 export interface HmrSessionEntryWarmupOptions {
   path: string
+  includeHomeBootstrap?: boolean
+  includeRouteChunks?: boolean
   resolveSession?: () => Promise<void>
   timeoutMs?: number
 }
@@ -74,49 +73,6 @@ function postIdFromPath(path: string): string | null {
   const normalized = normalizePath(path)
   if (!normalized.startsWith('/posts/')) return null
   return decodeURIComponent(normalized.split('/')[2] ?? '').trim() || null
-}
-
-function getWarmupConcurrency(): number {
-  if (typeof window === 'undefined') return 1
-  return window.matchMedia('(max-width: 767px)').matches ? 1 : 2
-}
-
-async function warmHomeBootstrap(): Promise<void> {
-  const resource = await readPublicContent<HmrAsyncResource<HmrHomeContent>>({
-    key: 'hmr:home',
-    scope: 'home',
-    strategy: 'network-first',
-    loader: loadHomeContentResource,
-  })
-  const featured = resource.data.featured.slice(0, 2)
-  const mediaUrls = collectHomeMedia(resource.data.featured)
-  const tasks: Array<() => Promise<unknown>> = [
-    ...featured.map(
-      (post) => () =>
-        readPublicContent({
-          key: `hmr:post-detail:${post.id}`,
-          scope: 'post-detail',
-          strategy: 'stale-while-revalidate',
-          loader: () => loadPostDetailContentResource(post.id),
-        })
-    ),
-    ...mediaUrls.map(
-      (url) => () =>
-        readPublicContent({
-          key: `hmr:media:${url}`,
-          scope: 'media',
-          strategy: 'cache-first',
-          loader: async () => {
-            if (typeof fetch !== 'undefined') {
-              await fetch(url, { cache: 'force-cache', credentials: 'omit' })
-            }
-            return { warmedAt: Date.now(), url }
-          },
-        })
-    ),
-  ]
-
-  await runWithConcurrency(tasks, getWarmupConcurrency())
 }
 
 function makeCurrentRouteContentTask(path: string): HmrWarmupTask | null {
@@ -189,15 +145,22 @@ function buildSessionWarmupTasks(options: HmrSessionEntryWarmupOptions): HmrWarm
       name: 'service-worker',
       run: async () => registerPublicCacheServiceWorker(),
     },
-    {
+  ]
+
+  if (options.includeRouteChunks !== false) {
+    tasks.push({
       name: 'route-chunks',
       run: () => warmHmrPriorityRoutes(options.path),
-    },
-    {
+    })
+  }
+
+  if (options.includeHomeBootstrap !== false) {
+    tasks.push({
       name: 'public-home-bootstrap',
       run: warmHomeBootstrap,
-    },
-  ]
+    })
+  }
+
   const currentRouteTask = makeCurrentRouteContentTask(options.path)
   if (currentRouteTask && currentRouteTask.name !== 'public-home-bootstrap') {
     tasks.push(currentRouteTask)

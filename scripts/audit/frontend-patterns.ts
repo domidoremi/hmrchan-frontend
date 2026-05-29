@@ -45,6 +45,13 @@ const ALLOWED_INTERSECTION_OBSERVER = new Set([
   'src/views/PostDetailPage.vue',
 ])
 
+const ALLOWED_FETCH_PRIORITY = new Set([
+  'src/edge/htmlDocument.ts',
+  'src/edge/prerenderHtml.ts',
+  'src/hmr/components/HmrPostCard.vue',
+  'src/views/PostDetailPage.vue',
+])
+
 const COMMENT_PREFIXES = ['//', '*', '/*']
 
 const LINE_RULES: BoundaryRule[] = [
@@ -100,6 +107,14 @@ const LINE_RULES: BoundaryRule[] = [
     suggestion:
       'Prefer createVisibilityObserver() or extend useInfiniteScroll() unless the file is already an audited exception',
     allowedFiles: ALLOWED_INTERSECTION_OBSERVER,
+  },
+  {
+    rule: 'no-raw-fetch-priority',
+    pattern: /\bfetchpriority\s*=/,
+    message: 'Use a shared media component prop instead of raw fetchpriority attributes',
+    suggestion:
+      'Route image priority through HmrPostCard imageFetchPriority or an audited media component wrapper',
+    allowedFiles: ALLOWED_FETCH_PRIORITY,
   },
 ]
 

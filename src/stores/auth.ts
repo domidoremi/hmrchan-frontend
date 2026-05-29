@@ -5,7 +5,7 @@ import { apiClient, ApiError } from '@/api/client'
 import { clientSecurityService } from '@/api/clientSecurityService'
 import { shouldUseApiFallback } from '@/api/runtimeFlags'
 import type { HmrAuthIntent, HmrPasskeyRecoveryStatus } from '@/hmr/types'
-import { resolveRedirectTarget } from '@/router/redirect'
+import { resolvePostAuthRedirectTarget } from '@/router/authTargets'
 
 export interface AuthUser {
   id: string
@@ -164,6 +164,14 @@ function normalizePasskeyRecoveryStatus(
   return normalized
 }
 
+export function createGoogleAuthStartPath(intent: HmrAuthIntent, returnTo = '/profile'): string {
+  const params = new URLSearchParams({
+    intent,
+    return_to: resolvePostAuthRedirectTarget(returnTo),
+  })
+  return `/api/v1/auth/google/start?${params.toString()}`
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<AuthUser | null>(null)
   const sessionExpiresAt = ref<string | null>(null)
@@ -285,11 +293,7 @@ export const useAuthStore = defineStore('auth', () => {
   function startGoogleLogin(intent: HmrAuthIntent, returnTo = '/profile'): void {
     if (typeof window === 'undefined') return
 
-    const params = new URLSearchParams({
-      intent,
-      return_to: resolveRedirectTarget(returnTo),
-    })
-    const target = `/api/v1/auth/google/start?${params.toString()}`
+    const target = createGoogleAuthStartPath(intent, returnTo)
     void clientSecurityService
       .init(false, { promptChallenge: false })
       .catch(() => undefined)
@@ -317,7 +321,7 @@ export const useAuthStore = defineStore('auth', () => {
       })
       applySession(response)
       isInitialized.value = true
-      return resolveRedirectTarget(response.redirect_to ?? response.return_to, '/profile')
+      return resolvePostAuthRedirectTarget(response.redirect_to ?? response.return_to)
     } catch (callbackError) {
       error.value = normalizeError(callbackError)
       applySession(null)

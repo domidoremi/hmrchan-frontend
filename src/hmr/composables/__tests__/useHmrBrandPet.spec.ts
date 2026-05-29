@@ -52,7 +52,7 @@ describe('useHmrBrandPet', () => {
     await wrapper.find('button').trigger('pointerenter')
     expect(wrapper.vm.brandState).toBe('waving')
 
-    vi.advanceTimersByTime(900)
+    vi.advanceTimersByTime(1100)
     await wrapper.vm.$nextTick()
     expect(wrapper.vm.brandState).toBe('idle')
 

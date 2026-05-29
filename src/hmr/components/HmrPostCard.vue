@@ -22,8 +22,9 @@
         :srcset="posterSrcset"
         :sizes="posterSizes"
         :alt="post.title"
-        loading="lazy"
+        :loading="imageLoading"
         decoding="async"
+        :fetchpriority="imageFetchPriority"
       />
       <div class="hmr-post-card__shade" aria-hidden="true"></div>
       <div class="hmr-post-card__badge-row" :style="badgeStyle" aria-hidden="true">
@@ -61,6 +62,8 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import type { HmrPost } from '@/api/hmrContent'
+import { buildThumbnailSrcset } from '@/hmr/runtime/mediaImages'
+import { resolveHmrPlatformVisual } from '@/hmr/runtime/platformVisuals'
 
 const props = withDefaults(
   defineProps<{
@@ -70,34 +73,18 @@ const props = withDefaults(
     variant?: 'hero' | 'grid' | 'list' | 'compact'
     showExcerpt?: boolean
     showFooter?: boolean
+    imageLoading?: 'eager' | 'lazy'
+    imageFetchPriority?: 'high' | 'low' | 'auto'
   }>(),
   {
     index: 0,
     variant: 'grid',
     showExcerpt: true,
     showFooter: true,
+    imageLoading: 'lazy',
+    imageFetchPriority: 'auto',
   }
 )
-
-const palette = {
-  instagram: ['#ff7722', '#ff3c34'],
-  tiktok: ['#171412', '#3d2fa9'],
-  twitter: ['#171412', '#ff7722'],
-  showroom: ['#3d2fa9', '#ffc765'],
-  youtube: ['#ff3c34', '#ff7722'],
-  x: ['#171412', '#ff7722'],
-  default: ['#ff7722', '#3d2fa9'],
-} as const
-
-const platformLabelMap: Record<string, string> = {
-  instagram: 'Instagram',
-  showroom: 'Showroom',
-  tiktok: 'TikTok',
-  twitter: 'X',
-  x: 'X',
-  youtube: 'YouTube',
-  default: 'MomiChan',
-}
 
 const linkTo = computed(() => props.to ?? `/posts/${props.post.id}`)
 const linkAttrs = computed(() =>
@@ -108,13 +95,10 @@ const linkAttrs = computed(() =>
     : {}
 )
 
-const platformKey = computed(() => props.post.platform?.trim().toLowerCase() || 'default')
-const platformLabel = computed(
-  () => platformLabelMap[platformKey.value] ?? platformLabelMap.default ?? 'MomiChan'
-)
-const colorSet = computed(
-  () => palette[platformKey.value as keyof typeof palette] ?? palette.default
-)
+const platformVisual = computed(() => resolveHmrPlatformVisual(props.post.platform))
+const platformKey = computed(() => platformVisual.value.key)
+const platformLabel = computed(() => platformVisual.value.label)
+const colorSet = computed(() => platformVisual.value.colors)
 const cardVisualStyle = computed(() => ({
   '--hmr-card-start': colorSet.value[0],
   '--hmr-card-end': colorSet.value[1],
@@ -137,11 +121,7 @@ const hasRealPoster = computed(() => {
 const posterUrl = computed(() => props.post.mediaUrl ?? buildPosterDataUrl())
 const posterSrcset = computed(() => {
   if (!props.post.mediaUrl) return undefined
-  return [
-    `${withThumbnailQuality(props.post.mediaUrl, 'medium')} 640w`,
-    `${withThumbnailQuality(props.post.mediaUrl, 'large')} 960w`,
-    `${withThumbnailQuality(props.post.mediaUrl, 'xlarge')} 1440w`,
-  ].join(', ')
+  return buildThumbnailSrcset(props.post.mediaUrl)
 })
 const posterSizes = computed(() => {
   if (props.variant === 'hero') return '(min-width: 48em) 44vw, 92vw'
@@ -164,18 +144,7 @@ const mediaKindLabel = computed(() => {
   }
   return '帖子'
 })
-const platformMark = computed(() => {
-  const marks: Record<string, string> = {
-    instagram: 'IG',
-    showroom: 'SR',
-    tiktok: 'TT',
-    twitter: 'X',
-    x: 'X',
-    youtube: 'YT',
-  }
-
-  return marks[platformKey.value] ?? 'M'
-})
+const platformMark = computed(() => platformVisual.value.mark)
 const metricLabel = computed(() => {
   if (typeof props.post.viewCount === 'number' && props.post.viewCount > 0) {
     return `${formatCompact(props.post.viewCount)} 浏览`
@@ -259,20 +228,6 @@ function formatCompact(value: number): string {
   if (value >= 1000000) return `${(value / 1000000).toFixed(1).replace(/\.0$/, '')}M`
   if (value >= 1000) return `${(value / 1000).toFixed(1).replace(/\.0$/, '')}K`
   return String(value)
-}
-
-function withThumbnailQuality(value: string, size: 'medium' | 'large' | 'xlarge'): string {
-  try {
-    const url = new URL(value, window.location.origin)
-    if (url.pathname.includes('/thumbnail')) {
-      url.searchParams.set('size', size)
-      return url.toString()
-    }
-  } catch {
-    return value
-  }
-
-  return value
 }
 
 function formatDuration(seconds: number): string {

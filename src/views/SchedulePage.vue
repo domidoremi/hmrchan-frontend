@@ -1,5 +1,5 @@
 <template>
-  <div class="hmr-route-page hmr-route-page--schedule">
+  <div class="hmr-route-page hmr-route-page--schedule schedule-page">
     <header class="hmr-page-hero hmr-page-hero--schedule">
       <div class="hmr-container hmr-page-hero-container">
         <p class="hmr-kicker">{{ t('schedule.eyebrow') }}</p>
@@ -160,274 +160,50 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 
 import { loadScheduleContentResource, type HmrScheduleContent } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
-import type {
-  HmrAsyncResource,
-  HmrPageState,
-  HmrScheduleItem,
-  HmrScheduleViewMode,
-} from '@/hmr/types'
-import { readPublicContent } from '@/utils/cache/publicContentCache'
+import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
+import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
+import { useHmrScheduleBoard } from '@/hmr/composables/useHmrScheduleBoard'
 
-type ScheduleFilter = 'all' | 'today' | HmrScheduleViewMode | 'performance'
-
-interface HmrScheduleEvent extends HmrScheduleItem {
-  dateKey: string
-  dayLabel: string
-  weekday: string
-  timeLabel: string
-  isPerformance: boolean
-}
-
-const content = ref<HmrScheduleContent>({
+const initialScheduleContent: HmrScheduleContent = {
   items: [],
   calendar: [],
   highlights: [],
-})
-const pageState = ref<HmrPageState>('idle')
-const resource = ref<HmrAsyncResource<HmrScheduleContent>>({
-  state: 'idle',
-  data: content.value,
-  source: 'local',
-  error: null,
+}
+const {
+  content,
+  pageState,
+  resource,
+  refresh: refreshSchedule,
+} = useHmrPublicContentResource<HmrScheduleContent>({
+  initialData: initialScheduleContent,
   paths: ['/schedules', '/schedules/calendar', '/schedules/highlights'],
-  updatedAt: null,
+  cacheKey: 'hmr:schedule',
+  scope: 'schedule',
+  strategy: 'network-first',
+  loader: loadScheduleContentResource,
+  isEmpty: (data) => data.items.length === 0,
 })
-const activeFilter = ref<ScheduleFilter>('all')
-const selectedDayKey = ref(formatDateKey(new Date()))
-const selectedMonth = ref(startOfMonth(new Date()))
 const { locale, t } = useI18n()
-
-const filterOptions = computed<Array<{ id: ScheduleFilter; label: string }>>(() => [
-  { id: 'all', label: t('schedule.all') },
-  { id: 'today', label: t('schedule.today') },
-  { id: 'week', label: t('schedule.week') },
-  { id: 'month', label: t('schedule.month') },
-  { id: 'performance', label: t('schedule.performance') },
-])
-
-const normalizedEvents = computed(() =>
-  content.value.items
-    .map((item, index) => normalizeScheduleEvent(item, index))
-    .sort((a, b) => a.dateKey.localeCompare(b.dateKey) || a.timeLabel.localeCompare(b.timeLabel))
-)
-const filteredEvents = computed(() => {
-  const todayKey = formatDateKey(new Date())
-  const weekKeys = new Set(makeDayWindow(new Date(), 7).map((item) => item.key))
-  const monthKey = formatMonthKey(selectedMonth.value)
-
-  if (activeFilter.value === 'today') {
-    return normalizedEvents.value.filter((item) => item.dateKey === todayKey)
-  }
-  if (activeFilter.value === 'week') {
-    return normalizedEvents.value.filter((item) => weekKeys.has(item.dateKey))
-  }
-  if (activeFilter.value === 'month') {
-    return normalizedEvents.value.filter((item) => item.dateKey.startsWith(monthKey))
-  }
-  if (activeFilter.value === 'performance') {
-    return normalizedEvents.value.filter((item) => item.isPerformance)
-  }
-
-  return normalizedEvents.value
-})
-const dayOptions = computed(() =>
-  makeDayWindow(new Date(), 7).map((day) => ({
-    ...day,
-    count: filteredEvents.value.filter((item) => item.dateKey === day.key).length,
-  }))
-)
-const selectedDayEvents = computed(() =>
-  filteredEvents.value.filter((item) => item.dateKey === selectedDayKey.value)
-)
-const selectedDay = computed(
-  () => dayOptions.value.find((item) => item.key === selectedDayKey.value) ?? dayOptions.value[0]
-)
-const selectedDayLabel = computed(() => selectedDay.value?.label ?? '今天')
-const selectedSummary = computed(
-  () =>
-    `${selectedDayEvents.value.length} ${t('schedule.itemCount')} · ${selectedDayEvents.value[0]?.timeLabel ?? t('schedule.noItems')}`
-)
-const upcomingEvents = computed(() => filteredEvents.value.slice(0, 6))
-const selectedMonthLabel = computed(() => formatMonthLabel(selectedMonth.value))
-const monthDays = computed(() =>
-  makeMonthGrid(selectedMonth.value).map((day) => ({
-    ...day,
-    count: filteredEvents.value.filter((item) => item.dateKey === day.key).length,
-  }))
-)
-const populatedDays = computed(() =>
-  dayOptions.value
-    .map((day) => ({
-      ...day,
-      events: filteredEvents.value.filter((item) => item.dateKey === day.key),
-    }))
-    .filter((day) => day.events.length)
-)
-
-async function refreshSchedule(): Promise<void> {
-  pageState.value = 'loading'
-  const nextResource = await readPublicContent({
-    key: 'hmr:schedule',
-    scope: 'schedule',
-    strategy: 'network-first',
-    loader: loadScheduleContentResource,
-  })
-  resource.value = nextResource
-  content.value = nextResource.data
-  pageState.value = nextResource.data.items.length ? 'ready' : 'empty'
-}
-
-function setFilter(filter: ScheduleFilter): void {
-  activeFilter.value = filter
-  if (filter === 'today') selectedDayKey.value = formatDateKey(new Date())
-  if (filter === 'month') selectedMonth.value = startOfMonth(new Date(selectedDayKey.value))
-}
-
-function normalizeScheduleEvent(item: HmrScheduleItem, index: number): HmrScheduleEvent {
-  const date = resolveEventDate(item, index)
-  const searchable = `${item.phase} ${item.title} ${item.description}`.toLowerCase()
-
-  return {
-    ...item,
-    dateKey: formatDateKey(date),
-    dayLabel: formatDayLabel(date),
-    weekday: formatWeekday(date),
-    timeLabel: formatTimeLabel(item.time, date),
-    isPerformance: /演出|直播|live|show|stage|performance|发布/.test(searchable),
-  }
-}
-
-function resolveEventDate(item: HmrScheduleItem, index: number): Date {
-  const raw = item.time.trim()
-  const parsed = new Date(raw)
-  const hasDate = /\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}/.test(raw)
-
-  if (hasDate && Number.isFinite(parsed.getTime())) return parsed
-
-  const date = new Date()
-  date.setDate(date.getDate() + Math.floor(index / 2))
-  const timeMatch = raw.match(/(\d{1,2}):(\d{2})/)
-  if (timeMatch) {
-    date.setHours(Number(timeMatch[1]), Number(timeMatch[2]), 0, 0)
-  }
-  return date
-}
-
-function makeDayWindow(
-  startDate: Date,
-  days: number
-): Array<{
-  key: string
-  label: string
-  weekday: string
-  day: string
-}> {
-  return Array.from({ length: days }, (_, index) => {
-    const date = new Date(startDate)
-    date.setDate(startDate.getDate() + index)
-    return {
-      key: formatDateKey(date),
-      label: formatDayLabel(date),
-      weekday: formatWeekday(date),
-      day: new Intl.DateTimeFormat(locale.value, { day: '2-digit' }).format(date),
-    }
-  })
-}
-
-function makeMonthGrid(monthDate: Date): Array<{
-  key: string
-  day: string
-  isToday: boolean
-  inMonth: boolean
-}> {
-  const monthStart = startOfMonth(monthDate)
-  const gridStart = new Date(monthStart)
-  gridStart.setDate(monthStart.getDate() - monthStart.getDay())
-  const todayKey = formatDateKey(new Date())
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(gridStart)
-    date.setDate(gridStart.getDate() + index)
-    const key = formatDateKey(date)
-    return {
-      key,
-      day: new Intl.DateTimeFormat(locale.value, { day: 'numeric' }).format(date),
-      isToday: key === todayKey,
-      inMonth: date.getMonth() === monthStart.getMonth(),
-    }
-  })
-}
-
-function formatDateKey(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function formatDayLabel(date: Date): string {
-  return new Intl.DateTimeFormat(locale.value, {
-    month: 'long',
-    day: 'numeric',
-  }).format(date)
-}
-
-function formatWeekday(date: Date): string {
-  return new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(date)
-}
-
-function formatTimeLabel(raw: string, date: Date): string {
-  const timeMatch = raw.match(/(\d{1,2}):(\d{2})/)
-  if (timeMatch) return `${timeMatch[1]?.padStart(2, '0')}:${timeMatch[2]}`
-  return new Intl.DateTimeFormat(locale.value, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date)
-}
-
-function formatMonthKey(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  return `${year}-${month}`
-}
-
-function formatMonthLabel(date: Date): string {
-  return new Intl.DateTimeFormat(locale.value, {
-    year: 'numeric',
-    month: 'long',
-  }).format(date)
-}
-
-function startOfMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
-}
-
-function shiftMonth(offset: number): void {
-  const nextMonth = new Date(selectedMonth.value)
-  nextMonth.setMonth(nextMonth.getMonth() + offset)
-  selectedMonth.value = startOfMonth(nextMonth)
-  selectedDayKey.value = formatDateKey(selectedMonth.value)
-  activeFilter.value = 'month'
-}
-
-watch(
+const {
+  activeFilter,
   dayOptions,
-  (days) => {
-    if (!days.some((day) => day.key === selectedDayKey.value)) {
-      selectedDayKey.value = days[0]?.key ?? formatDateKey(new Date())
-    }
-  },
-  { immediate: true }
-)
+  filterOptions,
+  monthDays,
+  populatedDays,
+  selectedDayEvents,
+  selectedDayKey,
+  selectedDayLabel,
+  selectedMonthLabel,
+  selectedSummary,
+  setFilter,
+  shiftMonth,
+  upcomingEvents,
+} = useHmrScheduleBoard(content, { locale, t })
 
-onMounted(() => {
-  void refreshSchedule()
-})
+useHmrMountedResourceRefresh(refreshSchedule)
 </script>

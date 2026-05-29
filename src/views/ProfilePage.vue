@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
@@ -86,169 +86,52 @@ import {
   seedCommunity,
   loadProfileSectionContentResource,
   type HmrProfileSectionContent,
-  type HmrProfileSectionKey,
 } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
-import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
+import {
+  normalizeHmrProfileSection,
+  useHmrProfileSection,
+} from '@/hmr/composables/useHmrProfileSection'
+import { useHmrPrivateContentResource } from '@/hmr/composables/useHmrPrivateContentResource'
+import { useHmrRouteResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
 
 const props = defineProps<{
   section: string
 }>()
 
-type ProfileNavSection = {
-  section: HmrProfileSectionKey
-  label: string
-  to: string
-  testId: string
-}
-
-const PROFILE_SECTION_KEYS = [
-  'overview',
-  'security',
-  'preferences',
-  'favorites',
-  'history',
-  'inbox',
-] as const satisfies readonly HmrProfileSectionKey[]
-
-function normalizeProfileSection(section: string): HmrProfileSectionKey {
-  return PROFILE_SECTION_KEYS.includes(section as HmrProfileSectionKey)
-    ? (section as HmrProfileSectionKey)
-    : 'overview'
-}
-
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const auth = useAuthStore()
-const activeSection = computed(() => normalizeProfileSection(props.section))
-const state = ref<HmrPageState>('idle')
-const content = ref<HmrProfileSectionContent>({
+const rawSection = computed(() => props.section)
+const initialProfileContent: HmrProfileSectionContent = {
   section: 'overview',
   title: '个人概览',
   summary: seedCommunity,
   rows: seedCommunity,
-})
-const resource = ref<HmrAsyncResource<HmrProfileSectionContent>>({
-  state: 'idle',
-  data: content.value,
-  source: 'local',
-  error: null,
+}
+const {
+  content,
+  pageState: state,
+  resource,
+  refresh: loadSection,
+} = useHmrPrivateContentResource<HmrProfileSectionContent>({
+  initialData: initialProfileContent,
   paths: ['/auth/me', '/users/me/profile'],
-  updatedAt: null,
+  loader: () => loadProfileSectionContentResource(normalizeHmrProfileSection(rawSection.value)),
+  isEmpty: (data) => data.rows.length === 0 && data.summary.length === 0,
 })
 
-const sections = computed<ProfileNavSection[]>(() => [
-  {
-    section: 'overview',
-    label: t('profile.overview'),
-    to: '/profile',
-    testId: 'profile-overview-tab',
-  },
-  {
-    section: 'security',
-    label: t('profile.security'),
-    to: '/profile/security',
-    testId: 'profile-security-tab',
-  },
-  {
-    section: 'preferences',
-    label: t('profile.preferences'),
-    to: '/profile/preferences',
-    testId: 'profile-preferences-tab',
-  },
-  {
-    section: 'favorites',
-    label: t('profile.favorites'),
-    to: '/profile/favorites',
-    testId: 'profile-favorites-tab',
-  },
-  {
-    section: 'history',
-    label: t('profile.history'),
-    to: '/profile/history',
-    testId: 'profile-history-tab',
-  },
-  {
-    section: 'inbox',
-    label: t('profile.inbox'),
-    to: '/profile/inbox',
-    testId: 'profile-inbox-tab',
-  },
-])
+const { activeSection, currentTitle, logout, sectionCards, sectionIntro, sections } =
+  useHmrProfileSection({
+    auth,
+    content,
+    rawSection,
+    router,
+    t,
+  })
 
-const currentTitle = computed(() => {
-  return content.value.title
+useHmrRouteResourceRefresh({
+  refresh: loadSection,
+  watchSource: () => activeSection.value,
 })
-
-const sectionIntro = computed(() => {
-  switch (activeSection.value) {
-    case 'security':
-      return '管理 Passkey、2FA、设备会话和敏感操作验证。'
-    case 'preferences':
-      return '管理主题、语言、通知和内容密度。'
-    case 'favorites':
-      return '收藏内容会在这里形成可回看的个人索引。'
-    case 'history':
-      return '浏览、阅读和互动历史会在这里展示。'
-    case 'inbox':
-      return '评论、回复、系统通知和审核结果会进入这里。'
-    default:
-      return t('profile.empty')
-  }
-})
-
-const sectionCards = computed(() => [
-  {
-    kicker: '会话',
-    title: auth.isAuthenticated ? '当前会话' : '等待登录',
-    body: auth.sessionExpiresAt ? `有效期至 ${auth.sessionExpiresAt}` : t('profile.sessionState'),
-  },
-  {
-    kicker: '身份',
-    title: auth.user?.id ?? 'guest',
-    body: auth.user?.email ?? '登录后显示邮箱和个人资料。',
-  },
-  ...(content.value.security
-    ? [
-        {
-          kicker: '安全',
-          title: `${content.value.security.passkeys} Passkey`,
-          body: content.value.security.twoFactorEnabled ? '2FA 已启用。' : '2FA 尚未启用。',
-        },
-      ]
-    : []),
-  ...(content.value.inbox
-    ? [
-        {
-          kicker: '收件箱',
-          title: `${content.value.inbox.unreadCount} 未读`,
-          body: content.value.inbox.latestLabel,
-        },
-      ]
-    : []),
-])
-
-async function loadSection(): Promise<void> {
-  state.value = 'loading'
-  const nextResource = await loadProfileSectionContentResource(activeSection.value)
-  resource.value = nextResource
-  content.value = nextResource.data
-  state.value = content.value.rows.length || content.value.summary.length ? 'ready' : 'empty'
-}
-
-async function logout(): Promise<void> {
-  await auth.logout()
-  await router.push('/login')
-}
-
-onMounted(() => {
-  void loadSection()
-})
-
-watch(
-  () => activeSection.value,
-  () => {
-    void loadSection()
-  }
-)
 </script>

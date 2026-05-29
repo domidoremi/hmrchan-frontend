@@ -39,8 +39,8 @@
                 打开个人中心
               </RouterLink>
               <template v-else>
-                <RouterLink class="hmr-cta" to="/login?redirect=/settings">登录</RouterLink>
-                <RouterLink class="hmr-text-link" to="/register?redirect=/settings">
+                <RouterLink class="hmr-cta" :to="settingsLoginTarget">登录</RouterLink>
+                <RouterLink class="hmr-text-link" :to="settingsRegisterTarget">
                   创建账号
                 </RouterLink>
               </template>
@@ -60,17 +60,11 @@
                 <span>Passkey 恢复</span>
                 <strong>重新注册可信凭据</strong>
               </RouterLink>
-              <RouterLink
-                :to="
-                  auth.isAuthenticated ? '/profile/security' : '/login?redirect=/profile/security'
-                "
-              >
+              <RouterLink :to="auth.isAuthenticated ? '/profile/security' : securityLoginTarget">
                 <span>设备与会话</span>
                 <strong>{{ auth.isAuthenticated ? '查看安全状态' : '登录后查看' }}</strong>
               </RouterLink>
-              <RouterLink
-                :to="auth.isAuthenticated ? '/profile/inbox' : '/login?redirect=/profile/inbox'"
-              >
+              <RouterLink :to="auth.isAuthenticated ? '/profile/inbox' : inboxLoginTarget">
                 <span>邮箱与通知</span>
                 <strong>{{ auth.isAuthenticated ? '管理提醒' : '登录后管理' }}</strong>
               </RouterLink>
@@ -181,7 +175,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 
@@ -191,109 +185,57 @@ import {
   type HmrSettingsContent,
 } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
-import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
-import { applyLocale, type SupportedLocale, supportedLocales } from '@/i18n'
+import { useHmrPrivateContentResource } from '@/hmr/composables/useHmrPrivateContentResource'
+import { useHmrSettingsWorkspace } from '@/hmr/composables/useHmrSettingsWorkspace'
 import { useAuthStore } from '@/stores/auth'
-import { type HmrTheme, useThemeStore } from '@/stores/theme'
-import { clearPublicContentCache } from '@/utils/cache/publicContentCache'
+import { useThemeStore } from '@/stores/theme'
 
 const auth = useAuthStore()
 const theme = useThemeStore()
 const router = useRouter()
 const { locale, t } = useI18n()
-const state = ref<HmrPageState>('idle')
-const cacheClearState = ref<'idle' | 'clearing' | 'done' | 'error'>('idle')
-const content = ref<HmrSettingsContent>({
+const initialSettingsContent: HmrSettingsContent = {
   account: seedCommunity,
   security: seedCommunity,
   preferences: seedCommunity,
-})
-const resource = ref<HmrAsyncResource<HmrSettingsContent>>({
-  state: 'idle',
-  data: content.value,
-  source: 'local',
-  error: null,
+}
+const {
+  content,
+  pageState: state,
+  resource,
+  refresh: refreshSettingsResource,
+  markReady: markSettingsReady,
+} = useHmrPrivateContentResource<HmrSettingsContent>({
+  initialData: initialSettingsContent,
   paths: ['/preferences', '/2fa/status', '/devices'],
-  updatedAt: null,
-})
-const localeLabels: Record<SupportedLocale, string> = {
-  'zh-CN': '简体中文',
-  'en-US': 'English',
-  'ja-JP': '日本語',
-}
-const localeOptions = supportedLocales.map((id) => ({
-  id,
-  label: localeLabels[id],
-}))
-const themeOptions: Array<{ value: HmrTheme; label: string }> = [
-  { value: 'light', label: '浅色' },
-  { value: 'dark', label: '深色' },
-  { value: 'system', label: '跟随系统' },
-]
-const themeLabel = computed(() => {
-  if (theme.theme === 'system') return `系统 / ${theme.resolvedTheme === 'dark' ? '深色' : '浅色'}`
-  return theme.theme === 'dark' ? '深色' : '浅色'
-})
-const cacheClearLabel = computed(() => {
-  if (cacheClearState.value === 'clearing') return '清理中'
-  if (cacheClearState.value === 'done') return '已清理'
-  if (cacheClearState.value === 'error') return '重试'
-  return '可清理'
+  loader: loadSettingsContentResource,
 })
 
-async function logout(): Promise<void> {
-  if (!auth.isAuthenticated) {
-    await router.push('/login')
-    return
-  }
-
-  await auth.logout()
-  await router.push('/login')
-}
-
-async function refreshSettings(): Promise<void> {
-  if (!auth.isAuthenticated) {
-    resource.value = {
-      state: 'ready',
-      data: content.value,
-      source: 'local',
-      error: null,
-      paths: ['/preferences', '/2fa/status', '/devices'],
-      updatedAt: new Date().toISOString(),
-    }
-    state.value = 'ready'
-    return
-  }
-
-  state.value = 'loading'
-  const nextResource = await loadSettingsContentResource()
-  resource.value = nextResource
-  content.value = nextResource.data
-  state.value = 'ready'
-}
-
-function handleLocaleChange(event: Event): void {
-  const value = (event.target as HTMLSelectElement).value as SupportedLocale
-  if (supportedLocales.includes(value)) {
-    applyLocale(value)
-  }
-}
-
-async function clearCache(): Promise<void> {
-  cacheClearState.value = 'clearing'
-  try {
-    await clearPublicContentCache()
-    cacheClearState.value = 'done'
-    window.setTimeout(() => {
-      if (cacheClearState.value === 'done') cacheClearState.value = 'idle'
-    }, 1600)
-  } catch {
-    cacheClearState.value = 'error'
-  }
-}
+const {
+  cacheClearLabel,
+  cacheClearState,
+  clearCache,
+  handleLocaleChange,
+  inboxLoginTarget,
+  initializeSettingsWorkspace,
+  localeOptions,
+  logout,
+  refreshSettings,
+  securityLoginTarget,
+  settingsLoginTarget,
+  settingsRegisterTarget,
+  themeLabel,
+  themeOptions,
+} = useHmrSettingsWorkspace({
+  auth,
+  content,
+  markSettingsReady,
+  refreshSettingsResource,
+  router,
+  theme,
+})
 
 onMounted(() => {
-  theme.initializeTheme()
-  void refreshSettings()
+  initializeSettingsWorkspace()
 })
 </script>

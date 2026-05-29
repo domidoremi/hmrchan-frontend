@@ -76,50 +76,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import {
-  seedCommunity,
-  loadSupportContent,
-  submitContactResource,
-  type HmrSupportContent,
-} from '@/api/hmrContent'
+import { useHmrContactForm } from '@/hmr/composables/useHmrContactForm'
+import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
 
 const router = useRouter()
-const submitting = ref(false)
-const sent = ref(false)
-const submitError = ref('')
-const form = reactive({
-  name: '',
-  email: '',
-  message: '',
-  topic: '',
-})
-const support = ref<HmrSupportContent>({
-  faqs: seedCommunity,
-  flows: seedCommunity,
-})
-
-async function submit(): Promise<void> {
-  submitting.value = true
-  submitError.value = ''
-  try {
-    const resource = await submitContactResource({ ...form })
-    if (!resource.data.delivered) {
-      submitError.value = '提交失败，请稍后重试。'
-      return
-    }
-    sent.value = true
+const { form, refreshSupport, sent, submit, submitError, submitting, support } = useHmrContactForm({
+  onDelivered: async () => {
     await router.push('/thank-you')
-  } catch (error) {
-    submitError.value = error instanceof Error ? error.message : '提交失败，请稍后重试。'
-  } finally {
-    submitting.value = false
-  }
-}
-
-onMounted(async () => {
-  support.value = await loadSupportContent()
+  },
 })
+
+useHmrMountedResourceRefresh(refreshSupport)
 </script>

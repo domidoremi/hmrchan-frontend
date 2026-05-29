@@ -244,7 +244,6 @@
 </template>
 
 <script setup lang="ts">
-import { gsap } from 'gsap'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
@@ -255,29 +254,39 @@ import { useHmrBrandPet } from '@/hmr/composables/useHmrBrandPet'
 import { useHmrCurrentTime } from '@/hmr/composables/useHmrCurrentTime'
 import { useHmrInViewReveal } from '@/hmr/composables/useHmrInViewReveal'
 import { useHmrScrollProgress } from '@/hmr/composables/useHmrScrollProgress'
+import { useHmrShellNavigation } from '@/hmr/composables/useHmrShellNavigation'
 import { useHmrTextReveal } from '@/hmr/composables/useHmrTextReveal'
 import { warmHmrPriorityRoutes, warmHmrSessionEntry } from '@/hmr/runtime/hmrRouteWarmup'
-import type { HmrNavItem, HmrPublicPageKey } from '@/hmr/types'
 import { useThemeStore } from '@/stores/theme'
+import { cancelIdleTask, runWhenIdle, type IdleTaskHandle } from '@/utils/performance'
+
+type GsapApi = (typeof import('gsap'))['gsap']
+type PreloaderTimeline = {
+  kill: () => void
+}
 
 const SESSION_PRELOADER_KEY = 'momichan.preloader.seen'
 const PRELOADER_MIN_DURATION_MS = 1700
 const PRELOADER_MAX_WARMUP_MS = 4500
 const REDUCED_PRELOADER_MIN_DURATION_MS = 450
 const REDUCED_PRELOADER_MAX_WARMUP_MS = 1200
-const keepAliveNames = [
-  'HomePage',
-  'ExplorePage',
-  'CommunityPage',
-  'SchedulePage',
-  'PostDetailPage',
-]
-const keepAlivePageKeys: HmrPublicPageKey[] = ['home', 'explore', 'community', 'schedule', 'post']
 
 const route = useRoute()
 const theme = useThemeStore()
-const { locale, t } = useI18n()
-const menuOpen = ref(false)
+const { t } = useI18n()
+const {
+  activeNavKey,
+  closeMenu,
+  handleNavClick,
+  keepAliveNames,
+  localeBadge,
+  loginTarget,
+  menuOpen,
+  primaryNav,
+  registerTarget,
+  shouldKeepAlive,
+  toggleMenu,
+} = useHmrShellNavigation()
 const preloaderVisible = ref(shouldShowPreloader())
 const preloaderPhase = ref<'initial' | 'warming' | 'crossing' | 'complete' | 'exiting'>('initial')
 const preloaderRef = ref<HTMLElement | null>(null)
@@ -290,8 +299,11 @@ const preloaderRevealerRef = ref<HTMLElement | null>(null)
 const desktopBrandPetRef = ref<HTMLElement | null>(null)
 const mobileBrandPetRef = ref<HTMLElement | null>(null)
 const preloaderBrandState = ref<HmrBrandSpriteState>('idle')
-let preloaderTimeline: gsap.core.Timeline | undefined
-let preloaderOutroTimeline: gsap.core.Timeline | undefined
+let gsapApiPromise: Promise<GsapApi> | undefined
+let gsapApi: GsapApi | undefined
+let preloaderTimeline: PreloaderTimeline | undefined
+let preloaderOutroTimeline: PreloaderTimeline | undefined
+let routeWarmupHandle: IdleTaskHandle | undefined
 let preloaderStarted = false
 let preloaderCompletionTimer: number | undefined
 let preloaderExitTimer: number | undefined
@@ -309,62 +321,6 @@ const preloaderBottomMarks = ['01', '02', '03', '04', '05', '06']
 
 useHmrInViewReveal()
 useHmrTextReveal()
-
-const primaryNav = computed<HmrNavItem[]>(() => [
-  { key: 'home', label: t('nav.home'), to: '/', icon: 'home' },
-  { key: 'explore', label: t('nav.explore'), to: '/explore', icon: 'explore' },
-  { key: 'community', label: t('nav.community'), to: '/community', icon: 'community' },
-  { key: 'schedule', label: t('nav.schedule'), to: '/schedule', icon: 'schedule' },
-])
-
-const localeBadge = computed(() => {
-  if (locale.value === 'ja-JP') return 'JA'
-  if (locale.value === 'en-US') return 'EN'
-  return 'ZH'
-})
-
-const activeNavKey = computed(() => {
-  if (route.name === 'hmr-home' || route.path === '/') return 'home'
-
-  const navKey = route.meta.navKey
-  if (
-    navKey === 'explore' ||
-    navKey === 'community' ||
-    navKey === 'schedule' ||
-    navKey === 'settings'
-  ) {
-    return navKey
-  }
-
-  return null
-})
-
-const loginTarget = computed(() => ({
-  path: '/login',
-  query: { redirect: route.fullPath === '/login' ? '/' : route.fullPath },
-}))
-
-const registerTarget = computed(() => ({
-  path: '/register',
-  query: { redirect: route.fullPath === '/register' ? '/' : route.fullPath },
-}))
-
-function closeMenu(): void {
-  menuOpen.value = false
-}
-
-function toggleMenu(): void {
-  menuOpen.value = !menuOpen.value
-}
-
-function handleNavClick(event: MouseEvent, navigate: (event?: MouseEvent) => void): void {
-  navigate(event)
-  closeMenu()
-}
-
-function shouldKeepAlive(pageKey: unknown): boolean {
-  return keepAlivePageKeys.includes(pageKey as HmrPublicPageKey)
-}
 
 function shouldShowPreloader(): boolean {
   if (typeof window === 'undefined') return false
@@ -402,6 +358,25 @@ function wait(ms: number): Promise<void> {
   })
 }
 
+function loadGsap(): Promise<GsapApi> {
+  gsapApiPromise ??= import('gsap').then((module) => {
+    gsapApi = module.gsap
+    return module.gsap
+  })
+  return gsapApiPromise
+}
+
+function schedulePriorityRouteWarmup(path = route.fullPath): void {
+  cancelIdleTask(routeWarmupHandle)
+  routeWarmupHandle = runWhenIdle(
+    () => {
+      routeWarmupHandle = undefined
+      void warmHmrPriorityRoutes(path)
+    },
+    { timeout: 3500, fallbackDelay: 1600 }
+  )
+}
+
 function clearPreloaderCompletionTimer(): void {
   if (preloaderCompletionTimer === undefined) return
   window.clearTimeout(preloaderCompletionTimer)
@@ -419,6 +394,7 @@ function finishPreloaderExit(): void {
   markPreloaderSeen()
   preloaderVisible.value = false
   preloaderBrandState.value = 'idle'
+  schedulePriorityRouteWarmup()
 }
 
 function finishPreloaderCrossing(): void {
@@ -430,7 +406,6 @@ function finishPreloaderCrossing(): void {
 }
 
 async function setupPreloader(): Promise<void> {
-  void warmHmrPriorityRoutes(route.fullPath)
   if (!preloaderVisible.value) return
   if (preloaderStarted) return
   preloaderStarted = true
@@ -440,6 +415,15 @@ async function setupPreloader(): Promise<void> {
   const orb = elements.orb
 
   if (!progress || !orb || !elements.logo || !elements.pet || !elements.revealer) {
+    markPreloaderSeen()
+    preloaderVisible.value = false
+    return
+  }
+
+  let gsap: GsapApi
+  try {
+    gsap = await loadGsap()
+  } catch {
     markPreloaderSeen()
     preloaderVisible.value = false
     return
@@ -494,6 +478,8 @@ async function setupPreloader(): Promise<void> {
 
   void warmHmrSessionEntry({
     path: route.fullPath,
+    includeHomeBootstrap: route.path === '/',
+    includeRouteChunks: false,
     resolveSession: auth.resolveSession,
     timeoutMs: maxWarmupMs,
   }).catch(() => undefined)
@@ -631,7 +617,8 @@ function completePreloader(): void {
   clearPreloaderCompletionTimer()
 
   const elements = getPreloaderElements()
-  if (!elements.preloader || !elements.orb || !elements.revealer || !elements.pet) {
+  const gsap = gsapApi
+  if (!gsap || !elements.preloader || !elements.orb || !elements.revealer || !elements.pet) {
     preloaderPhase.value = 'exiting'
     finishPreloaderExit()
     return
@@ -702,7 +689,7 @@ watch(
   () => route.fullPath,
   () => {
     closeMenu()
-    void warmHmrPriorityRoutes(route.fullPath)
+    schedulePriorityRouteWarmup(route.fullPath)
   }
 )
 
@@ -710,11 +697,13 @@ onMounted(() => {
   theme.initializeTheme()
   if (!preloaderVisible.value) {
     void auth.resolveSession()
+    schedulePriorityRouteWarmup()
   }
   void nextTick(() => setupPreloader())
 })
 
 onBeforeUnmount(() => {
+  cancelIdleTask(routeWarmupHandle)
   preloaderTimeline?.kill()
   preloaderOutroTimeline?.kill()
   clearPreloaderCompletionTimer()

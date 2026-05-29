@@ -196,3 +196,5 @@ scripts/config/*.tmp.json
 
 # keep local docs workspace changes out of git noise
 docs/
+!docs/
+!docs/frontend-analysis-and-optimization.md

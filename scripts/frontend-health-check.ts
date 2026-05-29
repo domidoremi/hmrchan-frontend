@@ -383,6 +383,7 @@ function skipRouteResult(route: HealthRouteDefinition, viewport: string): RouteR
 async function clearBrowserAuditSession(page: Page, baseUrl: string): Promise<void> {
   const cdpSession = await page.createCDPSession().catch(() => null)
   try {
+    await page.setBypassServiceWorker(true).catch(() => undefined)
     await cdpSession?.send('Network.clearBrowserCookies').catch(() => undefined)
     await cdpSession?.send('Network.clearBrowserCache').catch(() => undefined)
     await page
@@ -408,6 +409,16 @@ async function clearBrowserAuditSession(page: Page, baseUrl: string): Promise<vo
         }
       })
       .catch(() => undefined)
+  } finally {
+    await cdpSession?.detach().catch(() => undefined)
+  }
+}
+
+async function prepareRouteAuditNavigation(page: Page): Promise<void> {
+  await page.setBypassServiceWorker(true).catch(() => undefined)
+  const cdpSession = await page.createCDPSession().catch(() => null)
+  try {
+    await cdpSession?.send('Network.clearBrowserCache').catch(() => undefined)
   } finally {
     await cdpSession?.detach().catch(() => undefined)
   }
@@ -1877,6 +1888,7 @@ async function main() {
 
             try {
               const navigateAndAssertRoute = async () => {
+                await prepareRouteAuditNavigation(page)
                 if (route.path === '/login') {
                   await clearBrowserAuditSession(page, effectiveBaseUrl)
                 }

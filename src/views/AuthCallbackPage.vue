@@ -16,27 +16,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { resolveRedirectTarget } from '@/router/redirect'
+import { useHmrAuthCallbackFlow } from '@/hmr/composables/useHmrAuthCallbackFlow'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-const nextRedirect = computed(() => resolveRedirectTarget(route.query.redirect))
-const statusCopy = computed(() => auth.error ?? t('auth.callbackBody'))
+const { completeCallback, statusCopy } = useHmrAuthCallbackFlow({ auth, route, router, t })
 
-onMounted(async () => {
-  const exchangedRedirect = await auth.exchangeGoogleCallback()
-  if (!auth.isAuthenticated) {
-    await auth.resolveSession()
-  }
-  if (auth.isAuthenticated) {
-    await router.replace(resolveRedirectTarget(exchangedRedirect, nextRedirect.value))
-  }
+onMounted(() => {
+  void completeCallback()
 })
 </script>

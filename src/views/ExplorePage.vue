@@ -126,13 +126,15 @@
           "
         >
           <HmrPostCard
-            v-for="(post, index) in visiblePosts"
+            v-for="(post, index) in renderedPosts"
             :key="`explore-post-${post.id}-${index}`"
             :post="post"
             :index="index"
             :variant="viewMode === 'grid' ? 'grid' : 'list'"
             :to="`/posts/${post.id}`"
             :show-footer="true"
+            :image-loading="index < 2 ? 'eager' : 'lazy'"
+            :image-fetch-priority="index < 2 ? 'high' : 'auto'"
           />
         </div>
 
@@ -169,7 +171,12 @@
       </div>
     </section>
 
-    <section class="hmr-cinema-section hmr-cinema-section--compact" data-hmr-reveal data-hmr-scroll>
+    <section
+      v-if="showDeferredSections"
+      class="hmr-cinema-section hmr-cinema-section--compact"
+      data-hmr-reveal
+      data-hmr-scroll
+    >
       <div class="hmr-cinema-sticky">
         <div class="hmr-cinema-frame" aria-label="媒体预览">
           <div class="hmr-media-ribbon hmr-media-ribbon--floating" aria-hidden="true">
@@ -202,7 +209,7 @@
       </div>
     </section>
 
-    <section class="hmr-section" data-hmr-reveal>
+    <section v-if="showDeferredSections" class="hmr-section" data-hmr-reveal>
       <div class="hmr-sticky-split">
         <div class="hmr-sticky-copy">
           <p class="hmr-kicker">{{ t('explore.authors') }}</p>
@@ -221,243 +228,42 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import {
-  seedAuthors,
-  MOMICHAN_PLATFORMS,
-  loadExploreContentResource,
-  type HmrExploreContent,
-  type HmrPost,
-} from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
-import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
-import { readPublicContent } from '@/utils/cache/publicContentCache'
+import { useHmrExploreCatalog } from '@/hmr/composables/useHmrExploreCatalog'
+import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
 
 const { t } = useI18n()
-const viewMode = ref<'grid' | 'list'>('grid')
-const query = ref('')
-const platform = ref('all')
-const sortBy = ref('published_at')
-const contentKind = ref<'all' | 'media' | 'text'>('all')
-const durationRange = ref<'all' | 'short' | 'medium' | 'long'>('all')
-const pageState = ref<HmrPageState>('idle')
-const content = ref<HmrExploreContent>({
-  posts: [],
-  authors: seedAuthors,
-  suggestions: [],
-  platforms: [],
-  nextCursor: null,
-  hasMore: false,
-  activeQuery: '',
-  activePlatform: 'all',
-})
-const resource = ref<HmrAsyncResource<HmrExploreContent>>({
-  state: 'idle',
-  data: content.value,
-  source: 'local',
-  error: null,
-  paths: ['/posts/mixed', '/posts', '/authors', '/search/suggestions'],
-  updatedAt: null,
-})
+const {
+  balancedRibbonPosts,
+  blockingError,
+  cardStyle,
+  catalogStateActionLabel,
+  catalogStateBody,
+  catalogStateTitle,
+  content,
+  contentKind,
+  durationRange,
+  glyphFor,
+  handleCatalogStateAction,
+  hasVisiblePosts,
+  loadMore,
+  nonBlockingError,
+  pageState,
+  platform,
+  platformOptions,
+  query,
+  renderedPosts,
+  refreshExplore,
+  showLoadingSkeleton,
+  showDeferredSections,
+  sortBy,
+  viewMode,
+  applyPlatform,
+  applySuggestion,
+} = useHmrExploreCatalog(t)
 
-const colorPairs = [
-  ['#ff7722', '#3d2fa9'],
-  ['#3d2fa9', '#ff3c34'],
-  ['#ffc765', '#ff7722'],
-  ['#171412', '#3d2fa9'],
-]
-
-const posts = computed(() => {
-  return content.value.posts.filter((post): post is HmrPost => Boolean(post))
-})
-const visiblePosts = computed(() =>
-  posts.value.filter((post) => {
-    if (!post.id || !post.title.trim()) return false
-    const hasMedia =
-      Boolean(post.mediaUrl) || Boolean(post.hasRenderableMedia) || (post.mediaCount ?? 0) > 0
-    const duration = post.durationSec ?? 0
-    const matchesKind =
-      contentKind.value === 'all' ||
-      (contentKind.value === 'media' && hasMedia) ||
-      (contentKind.value === 'text' && !hasMedia)
-    const matchesDuration =
-      durationRange.value === 'all' ||
-      (durationRange.value === 'short' && duration > 0 && duration <= 60) ||
-      (durationRange.value === 'medium' && duration > 60 && duration <= 600) ||
-      (durationRange.value === 'long' && duration > 600)
-
-    return matchesKind && matchesDuration
-  })
-)
-const hasActiveFilters = computed(
-  () =>
-    Boolean(query.value.trim()) ||
-    platform.value !== 'all' ||
-    contentKind.value !== 'all' ||
-    durationRange.value !== 'all'
-)
-const hasVisiblePosts = computed(() => visiblePosts.value.length > 0)
-const showLoadingSkeleton = computed(() => pageState.value === 'loading' && !hasVisiblePosts.value)
-const blockingError = computed(() => (hasVisiblePosts.value ? null : resource.value.error))
-const nonBlockingError = computed(() => (hasVisiblePosts.value ? resource.value.error : null))
-const catalogStateTitle = computed(() => (hasActiveFilters.value ? '筛选无结果' : '暂无公开内容'))
-const catalogStateBody = computed(() =>
-  hasActiveFilters.value
-    ? '当前条件下没有匹配的公开内容，可以清除筛选后重新浏览。'
-    : '当前没有可显示的公开帖子，稍后刷新可重新拉取最新内容。'
-)
-const catalogStateActionLabel = computed(() =>
-  hasActiveFilters.value && !blockingError.value ? t('explore.clear') : '重新加载'
-)
-const balancedRibbonPosts = computed(() => {
-  const grouped = new Map<string, HmrPost[]>()
-  for (const post of visiblePosts.value) {
-    const key = normalizePlatform(post.platform)
-    if (!MOMICHAN_PLATFORMS.includes(key as (typeof MOMICHAN_PLATFORMS)[number])) continue
-    const bucket = grouped.get(key) ?? []
-    bucket.push(post)
-    grouped.set(key, bucket)
-  }
-
-  const result: HmrPost[] = []
-  for (let index = 0; result.length < 8 && index < 8; index += 1) {
-    for (const platformId of MOMICHAN_PLATFORMS) {
-      const nextPost = grouped.get(platformId)?.[index]
-      if (nextPost) result.push(nextPost)
-      if (result.length >= 8) break
-    }
-  }
-
-  return result
-})
-const platformOptions = computed(() => {
-  if (content.value.platforms.length) return content.value.platforms
-
-  const counts = new Map<string, number>()
-  for (const post of visiblePosts.value.length ? visiblePosts.value : posts.value) {
-    const key = normalizePlatform(post.platform)
-    if (!MOMICHAN_PLATFORMS.includes(key as (typeof MOMICHAN_PLATFORMS)[number])) continue
-    counts.set(key, (counts.get(key) ?? 0) + 1)
-  }
-
-  return [
-    { id: 'all', label: '全部平台', count: posts.value.length },
-    ...MOMICHAN_PLATFORMS.map((id) => ({
-      id,
-      label: platformName(id),
-      count: counts.get(id) ?? 0,
-    })),
-  ]
-})
-
-function activeOptions(cursor: string | null = null) {
-  return {
-    query: query.value,
-    platform: platform.value,
-    sortBy: sortBy.value,
-    cursor,
-    limit: 12,
-  }
-}
-
-function glyphFor(post: HmrPost, index: number): string {
-  return post.title.trim().slice(0, 1).toUpperCase() || String(index + 1)
-}
-
-function platformName(value?: string): string {
-  const normalized = normalizePlatform(value)
-  const labels: Record<string, string> = {
-    showroom: 'Showroom',
-    tiktok: 'TikTok',
-    twitter: 'X',
-    x: 'X',
-    youtube: 'YouTube',
-    instagram: 'Instagram',
-  }
-
-  return labels[normalized] ?? normalized.replace(/[-_]/g, ' ')
-}
-
-function normalizePlatform(value?: string): string {
-  const normalized = value?.trim().toLowerCase() ?? ''
-  return normalized === 'twitter' ? 'x' : normalized
-}
-
-function cardStyle(index: number): Record<string, string> {
-  const pair = colorPairs[index % colorPairs.length] ?? colorPairs[0]
-  return {
-    '--hmr-card-start': pair?.[0] ?? '#ff7722',
-    '--hmr-card-end': pair?.[1] ?? '#3d2fa9',
-  }
-}
-
-async function refreshExplore(): Promise<void> {
-  pageState.value = 'loading'
-  const options = activeOptions()
-  const cacheKey = `hmr:explore:${JSON.stringify(options)}:${contentKind.value}:${durationRange.value}`
-  const nextResource = await readPublicContent({
-    key: cacheKey,
-    scope: 'explore',
-    strategy: 'network-first',
-    loader: () => loadExploreContentResource(options),
-  })
-  resource.value = nextResource
-  content.value = nextResource.data
-  pageState.value = nextResource.data.posts.length ? 'ready' : 'empty'
-}
-
-async function loadMore(): Promise<void> {
-  if (!content.value.hasMore || pageState.value === 'loading') return
-
-  pageState.value = 'loading'
-  const options = activeOptions(content.value.nextCursor)
-  const cacheKey = `hmr:explore:${JSON.stringify(options)}:${contentKind.value}:${durationRange.value}`
-  const nextResource = await readPublicContent({
-    key: cacheKey,
-    scope: 'explore',
-    strategy: 'network-first',
-    loader: () => loadExploreContentResource(options),
-  })
-  resource.value = nextResource
-  content.value = {
-    ...nextResource.data,
-    posts: [...content.value.posts, ...nextResource.data.posts],
-  }
-  pageState.value = content.value.posts.length ? 'ready' : 'empty'
-}
-
-function applySuggestion(value: string): void {
-  query.value = value
-  void refreshExplore()
-}
-
-function applyPlatform(value: string): void {
-  platform.value = value
-  void refreshExplore()
-}
-
-function clearFilters(): void {
-  query.value = ''
-  platform.value = 'all'
-  sortBy.value = 'published_at'
-  contentKind.value = 'all'
-  durationRange.value = 'all'
-  void refreshExplore()
-}
-
-function handleCatalogStateAction(): void {
-  if (hasActiveFilters.value && !blockingError.value) {
-    clearFilters()
-    return
-  }
-
-  void refreshExplore()
-}
-
-onMounted(() => {
-  void refreshExplore()
-})
+useHmrMountedResourceRefresh(refreshExplore)
 </script>

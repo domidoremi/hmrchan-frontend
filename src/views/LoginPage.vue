@@ -61,34 +61,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { resolveRedirectTarget } from '@/router/redirect'
+import { useHmrAuthEntry } from '@/hmr/composables/useHmrAuthEntry'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-const username = ref('')
-const password = ref('')
-const redirectTo = computed(() => resolveRedirectTarget(route.query.redirect))
-const registerTarget = computed(() => ({
-  path: '/register',
-  query: { redirect: redirectTo.value },
-}))
-
-async function submit(): Promise<void> {
-  const success = await auth.login(username.value, password.value)
-  if (success) {
-    await router.push(redirectTo.value)
-    return
-  }
-}
-
-function startGoogle(): void {
-  auth.startGoogleLogin('login', redirectTo.value)
-}
+const {
+  password,
+  registerTarget,
+  startGoogle,
+  submitLogin: submit,
+  username,
+} = useHmrAuthEntry({ auth, mode: 'login', route, router })
 </script>

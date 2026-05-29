@@ -1,7 +1,15 @@
+import { STATIC_HOME_PRERENDER_IMAGE } from '../fallbacks/generated/homePrerenderManifest'
+
 const SITE_NAME = 'MomiChan'
 export const SITE_ORIGIN = 'https://momichan.xyz'
 export const DEFAULT_OG_IMAGE_PATH = '/icons/sitting-512.webp'
 export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}${DEFAULT_OG_IMAGE_PATH}`
+const HOME_PRERENDER_IMAGE_PATH = STATIC_HOME_PRERENDER_IMAGE.href
+const HOME_PRERENDER_IMAGE_SRCSET = STATIC_HOME_PRERENDER_IMAGE.srcset
+const HOME_PRERENDER_IMAGE_SIZES = STATIC_HOME_PRERENDER_IMAGE.sizes
+const HOME_PRERENDER_IMAGE_WIDTH = STATIC_HOME_PRERENDER_IMAGE.width
+const HOME_PRERENDER_IMAGE_HEIGHT = STATIC_HOME_PRERENDER_IMAGE.height
+const HOME_PRERENDER_IMAGE_ALT = STATIC_HOME_PRERENDER_IMAGE.alt
 
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
@@ -242,6 +250,14 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
       shellSummary: [],
       shellStats: [],
       shellLinks: createPrimaryPublicLinks(),
+      preloadImages: [
+        {
+          href: HOME_PRERENDER_IMAGE_PATH,
+          srcset: HOME_PRERENDER_IMAGE_SRCSET,
+          sizes: HOME_PRERENDER_IMAGE_SIZES,
+          fetchPriority: 'high',
+        },
+      ],
       structuredData: [
         createWebsiteStructuredData(),
         createOrganizationStructuredData(),
@@ -556,6 +572,16 @@ function renderPrerenderSummary(config: HtmlDocumentConfig): string {
     .join('')
 }
 
+function renderHomePrerenderMedia(config: HtmlDocumentConfig): string {
+  if (config.shellVariant !== 'home') return ''
+
+  return [
+    '  <figure class="hmr-prerender-shell__media" aria-hidden="true">',
+    `    <img src="${escapeHtml(HOME_PRERENDER_IMAGE_PATH)}" srcset="${escapeHtml(HOME_PRERENDER_IMAGE_SRCSET)}" sizes="${escapeHtml(HOME_PRERENDER_IMAGE_SIZES)}" width="${HOME_PRERENDER_IMAGE_WIDTH}" height="${HOME_PRERENDER_IMAGE_HEIGHT}" alt="${escapeHtml(HOME_PRERENDER_IMAGE_ALT)}" loading="eager" fetchpriority="high" decoding="async" />`,
+    '  </figure>',
+  ].join('')
+}
+
 function renderPrerenderMarkerShell(config: HtmlDocumentConfig): string {
   const eyebrow = config.shellEyebrow.trim() || SITE_NAME
   const title = config.shellTitle.trim() || config.title
@@ -569,6 +595,7 @@ function renderPrerenderMarkerShell(config: HtmlDocumentConfig): string {
     `    ${renderPrerenderShellStats(config.shellStats)}`,
     `    ${renderPrerenderShellLinks(config.shellLinks)}`,
     '  </div>',
+    renderHomePrerenderMedia(config),
     '</section>',
   ].join('')
 }
