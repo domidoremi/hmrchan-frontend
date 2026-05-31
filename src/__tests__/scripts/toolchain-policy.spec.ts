@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest'
 
 const VUE_BETA_VERSION = '3.6.0-beta.13'
 const VUE_LOCKED_PACKAGES = ['vue', '@vue/compiler-sfc', '@vue/server-renderer'] as const
+const BUN_VERSION = '1.3.11'
+const NODE_VERSION = '24.14.1'
+const NODE_ENGINE_RANGE = '>=24.11.1 <25'
 
 async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, 'utf8')) as T
@@ -20,11 +23,21 @@ describe('toolchain package policy', () => {
   it('keeps Bun and Node policy aligned with local runtime pins', async () => {
     const packageJson = await readJson<PackageJson>('package.json')
     const miseToml = await readFile('mise.toml', 'utf8')
+    const nodeVersion = (await readFile('.node-version', 'utf8')).trim()
+    const readme = await readFile('README.md', 'utf8')
+    const wranglerToml = await readFile('wrangler.toml', 'utf8')
 
-    expect(packageJson.packageManager).toBe('bun@1.3.11')
-    expect(packageJson.engines?.node).toBe('>=24.11.1 <25')
-    expect(miseToml).toContain('node = "24.14.1"')
-    expect(miseToml).toContain('bun = "1.3.11"')
+    expect(packageJson.packageManager).toBe(`bun@${BUN_VERSION}`)
+    expect(packageJson.engines?.node).toBe(NODE_ENGINE_RANGE)
+    expect(miseToml).toContain(`node = "${NODE_VERSION}"`)
+    expect(miseToml).toContain(`bun = "${BUN_VERSION}"`)
+    expect(nodeVersion).toBe(NODE_VERSION)
+    expect(readme).toContain(`Node.js \`${NODE_ENGINE_RANGE}\``)
+    expect(readme).toContain(`Bun \`${BUN_VERSION}\``)
+    expect(wranglerToml.match(/BUN_VERSION\s*=\s*"([^"]+)"/g)).toEqual([
+      `BUN_VERSION = "${BUN_VERSION}"`,
+      `BUN_VERSION = "${BUN_VERSION}"`,
+    ])
   })
 
   it('keeps Vue runtime, compiler, and server renderer on the selected beta line', async () => {

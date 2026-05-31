@@ -54,10 +54,11 @@
                     {{ selectedFilterLabel(platformFilterOptions, platform) }}
                   </button>
                   <div
-                    v-if="openFilterMenu === 'platform'"
+                    v-show="openFilterMenu === 'platform'"
                     id="hmr-filter-menu-platform"
                     class="hmr-filter-menu"
                     role="listbox"
+                    :hidden="openFilterMenu !== 'platform'"
                     aria-labelledby="hmr-filter-label-platform"
                   >
                     <button
@@ -93,10 +94,11 @@
                     {{ selectedFilterLabel(sortOptions, sortBy) }}
                   </button>
                   <div
-                    v-if="openFilterMenu === 'sort'"
+                    v-show="openFilterMenu === 'sort'"
                     id="hmr-filter-menu-sort"
                     class="hmr-filter-menu"
                     role="listbox"
+                    :hidden="openFilterMenu !== 'sort'"
                     aria-labelledby="hmr-filter-label-sort"
                   >
                     <button
@@ -131,10 +133,11 @@
                     {{ selectedFilterLabel(contentKindOptions, contentKind) }}
                   </button>
                   <div
-                    v-if="openFilterMenu === 'kind'"
+                    v-show="openFilterMenu === 'kind'"
                     id="hmr-filter-menu-kind"
                     class="hmr-filter-menu"
                     role="listbox"
+                    :hidden="openFilterMenu !== 'kind'"
                     aria-labelledby="hmr-filter-label-kind"
                   >
                     <button
@@ -172,10 +175,11 @@
                     {{ selectedFilterLabel(durationOptions, durationRange) }}
                   </button>
                   <div
-                    v-if="openFilterMenu === 'duration'"
+                    v-show="openFilterMenu === 'duration'"
                     id="hmr-filter-menu-duration"
                     class="hmr-filter-menu"
                     role="listbox"
+                    :hidden="openFilterMenu !== 'duration'"
                     aria-labelledby="hmr-filter-label-duration"
                   >
                     <button

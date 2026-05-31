@@ -190,6 +190,24 @@ describe('ExplorePage', () => {
     expect(cards.map((card) => card.attributes('data-priority'))).toEqual(['high', 'high', 'auto'])
   })
 
+  it('keeps filter menu targets mounted for aria-controls', async () => {
+    mockReadPublicContent.mockResolvedValue(makeResource())
+    const wrapper = await mountExplorePage()
+    const menuIds = ['platform', 'sort', 'kind', 'duration']
+
+    for (const id of menuIds) {
+      const trigger = wrapper.get(`#hmr-filter-value-${id}`)
+      const menu = wrapper.get(`#${trigger.attributes('aria-controls')}`)
+
+      expect(menu.exists()).toBe(true)
+      expect(menu.attributes('hidden')).toBeDefined()
+    }
+
+    await wrapper.get('#hmr-filter-value-platform').trigger('click')
+
+    expect(wrapper.get('#hmr-filter-menu-platform').attributes('hidden')).toBeUndefined()
+  })
+
   it('renders real post cards with navigable thumbnails for visible public content', async () => {
     mockReadPublicContent.mockResolvedValue(
       makeResource({

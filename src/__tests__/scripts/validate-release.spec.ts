@@ -25,6 +25,11 @@ async function importValidateReleaseModule() {
   return import('../../../scripts/validate-release.mjs')
 }
 
+async function importReleaseEvidenceModule() {
+  vi.resetModules()
+  return import('../../../scripts/release-evidence.mjs')
+}
+
 function makeValidationSummary(
   mode: string,
   stages = [{ id: 'stage-0-hook-static', selected: true, status: 'passed' }]
@@ -195,6 +200,69 @@ describe('validate release git range resolution', () => {
   })
 })
 
+describe('release evidence command policy', () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs()
+    execFileSyncMock.mockReset()
+  })
+
+  it('fails fast when candidate evidence lacks a controlled site target', async () => {
+    const { resolveReleaseEvidenceCommand, runReleaseEvidence } =
+      await importReleaseEvidenceModule()
+    const spawnProcess = vi.fn()
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    try {
+      expect(resolveReleaseEvidenceCommand({ CONTROLLED_BASE_URL: '' })).toEqual(
+        expect.objectContaining({
+          ok: false,
+          code: 'missing-controlled-base-url',
+          command: null,
+        })
+      )
+      expect(runReleaseEvidence({ env: {}, spawnProcess })).toBe(1)
+      expect(spawnProcess).not.toHaveBeenCalled()
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('CONTROLLED_BASE_URL is required')
+      )
+    } finally {
+      errorSpy.mockRestore()
+    }
+  })
+
+  it('runs candidate validation when controlled site evidence is configured', async () => {
+    const { resolveReleaseEvidenceCommand, runReleaseEvidence } =
+      await importReleaseEvidenceModule()
+    const child = {
+      on: vi.fn().mockReturnThis(),
+    }
+    const spawnProcess = vi.fn(() => child)
+    const env = { CONTROLLED_BASE_URL: 'https://controlled.example.com' }
+
+    expect(resolveReleaseEvidenceCommand(env)).toEqual(
+      expect.objectContaining({
+        ok: true,
+        command: ['node', 'scripts/validate-release.mjs', '--mode', 'candidate'],
+      })
+    )
+    expect(
+      runReleaseEvidence({ env, cwd: 'G:/Project/hmrchan/hmrchan-frontend', spawnProcess })
+    ).toBe(0)
+    expect(spawnProcess).toHaveBeenCalledWith(
+      'node',
+      ['scripts/validate-release.mjs', '--mode', 'candidate'],
+      expect.objectContaining({
+        cwd: 'G:/Project/hmrchan/hmrchan-frontend',
+        env,
+        stdio: 'inherit',
+        shell: false,
+      })
+    )
+    expect(child.on).toHaveBeenCalledWith('error', expect.any(Function))
+    expect(child.on).toHaveBeenCalledWith('close', expect.any(Function))
+  })
+})
+
 describe('validate release stage summaries', () => {
   beforeEach(() => {
     vi.unstubAllEnvs()
@@ -270,6 +338,51 @@ describe('validate release stage summaries', () => {
     expect(localStaticStage?.selected).toBe(false)
     expect(localStaticStage?.status).toBe('skipped')
     expect(localStaticStage?.reason).toBe('Runs only for prepush-full/local/candidate/production')
+  })
+
+  it('summarizes validation env artifacts without writing secret values', async () => {
+    const { buildProductionContractPreviewArtifact } = await importValidateReleaseModule()
+    const preview = buildProductionContractPreviewArtifact({
+      injected: false,
+      source: 'explicit',
+      value: 'contract-secret-sha',
+      env: {
+        CLOUDFLARE_API_TOKEN: 'cf-token-secret',
+        PRIMARY_PASSWORD: 'password-secret',
+        VITE_ENABLE_DEBUG: 'false',
+      },
+      sanitized: {
+        env: {
+          CLOUDFLARE_API_TOKEN: 'cf-token-secret',
+          PRIMARY_PASSWORD: 'password-secret',
+          VITE_ENABLE_DEBUG: 'false',
+        },
+        strippedKeys: ['VITE_API_BASE_URL'],
+        forcedKeys: ['VITE_ENABLE_DEBUG'],
+      },
+    })
+    const serialized = JSON.stringify(preview)
+
+    expect(serialized).not.toContain('cf-token-secret')
+    expect(serialized).not.toContain('password-secret')
+    expect(serialized).not.toContain('contract-secret-sha')
+    expect(preview.value).toEqual({
+      present: true,
+      length: 'contract-secret-sha'.length,
+    })
+    expect(preview.env.sensitiveKeys).toEqual(['CLOUDFLARE_API_TOKEN', 'PRIMARY_PASSWORD'])
+    expect(preview.env.values.CLOUDFLARE_API_TOKEN).toEqual({
+      present: true,
+      length: 'cf-token-secret'.length,
+      risk: 'sensitive',
+    })
+    expect(preview.env.values.VITE_ENABLE_DEBUG).toEqual({
+      present: true,
+      length: 'false'.length,
+      risk: 'standard',
+    })
+    expect(preview.sanitized.strippedKeys).toEqual(['VITE_API_BASE_URL'])
+    expect(preview.sanitized.forcedKeys).toEqual(['VITE_ENABLE_DEBUG'])
   })
 
   it('renders committed and local worktree changed file sections', async () => {

@@ -131,6 +131,57 @@ Options:
 `)
 }
 
+const SENSITIVE_ENV_KEY_PATTERN =
+  /(?:^|_)(?:AUTH|COOKIE|CREDENTIAL|KEY|PASS|PASSWORD|SECRET|SESSION|TOKEN)(?:_|$)|(?:API|ACCESS|REFRESH)_TOKEN/i
+
+function hasArtifactValue(value) {
+  return String(value ?? '').trim().length > 0
+}
+
+function summarizeArtifactScalar(value) {
+  const stringValue = String(value ?? '')
+  return {
+    present: hasArtifactValue(value),
+    length: stringValue.length,
+  }
+}
+
+function classifyArtifactEnvKey(key) {
+  return SENSITIVE_ENV_KEY_PATTERN.test(key) ? 'sensitive' : 'standard'
+}
+
+function summarizeArtifactEnv(env = {}) {
+  const keys = Object.keys(env ?? {}).sort()
+  return {
+    keyCount: keys.length,
+    keys,
+    sensitiveKeys: keys.filter((key) => classifyArtifactEnvKey(key) === 'sensitive'),
+    values: Object.fromEntries(
+      keys.map((key) => [
+        key,
+        {
+          ...summarizeArtifactScalar(env[key]),
+          risk: classifyArtifactEnvKey(key),
+        },
+      ])
+    ),
+  }
+}
+
+function buildProductionContractPreviewArtifact(contract) {
+  return {
+    injected: Boolean(contract.injected),
+    source: contract.source,
+    value: summarizeArtifactScalar(contract.value),
+    env: summarizeArtifactEnv(contract.env),
+    sanitized: {
+      strippedKeys: [...(contract.sanitized?.strippedKeys ?? [])].sort(),
+      forcedKeys: [...(contract.sanitized?.forcedKeys ?? [])].sort(),
+      env: summarizeArtifactEnv(contract.sanitized?.env),
+    },
+  }
+}
+
 function readGitOutput(args, fallback = '') {
   try {
     return execFileSync('git', args, {
@@ -389,7 +440,9 @@ async function runContractSelfCheckStage(stageRecord) {
     routeOverview: getReleaseRouteContractOverview(),
     authBootstrapProbes: getAuthBootstrapProbeDefinitions(),
     productionEnvPolicy: getProductionContractEnvPolicy(),
-    productionContractPreview: resolveProductionContractEnv(process.env),
+    productionContractPreview: buildProductionContractPreviewArtifact(
+      resolveProductionContractEnv(process.env)
+    ),
     frontendContractAudit: frontendContractIssues,
     issues,
   }
@@ -850,6 +903,7 @@ export {
   resolveOriginHeadDiffRange,
   resolveRemoteBranchDiffRange,
   resolveHookScriptTests,
+  buildProductionContractPreviewArtifact,
   resolveTrackingDiffRange,
   buildValidationStageRecords,
   getValidationStagePlan,
