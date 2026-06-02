@@ -34,6 +34,7 @@ bun-debug.log*
 .env.*.local
 !.env.example
 !.env.development
+!.env.production
 
 # =====================
 # Editor & IDE
@@ -107,6 +108,12 @@ cypress/downloads/
 worker-configuration.d.ts
 
 # =====================
+# Deployment provider state
+# =====================
+.vercel/
+.netlify/
+
+# =====================
 # Lighthouse Reports
 # =====================
 lighthouse-report.*
@@ -137,6 +144,11 @@ pnpm-lock.yaml
 # Cache & Temp
 # =====================
 *.cache
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
 .cache/
 .temp/
 .tmp/
@@ -155,16 +167,26 @@ output/
 # =====================
 .agent/
 .agents/
+.aider*
 .claude/
 .codex/
 .codex-temp/
+.continue/
+.cursor/
+.gitnexus/
 .kiro/
 .qoder/
 .qoderignore
+.roo/
+.serena/
 .windsurf/
 .mcp.json
 .skills/
 .superpowers/
+AGENTS.md
+AGENTS.local.md
+CLAUDE.md
+CLAUDE.local.md
 
 # =====================
 # Project specific generated files
