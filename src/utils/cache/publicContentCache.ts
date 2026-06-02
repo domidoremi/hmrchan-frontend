@@ -5,6 +5,7 @@ export type PublicContentCacheScope =
   | 'home'
   | 'explore'
   | 'post-detail'
+  | 'discussion-detail'
   | 'author-detail'
   | 'author-list'
   | 'community'
@@ -73,6 +74,11 @@ const scopeTtls: Record<
     staleTtl: 24 * 60 * 60_000,
     strategy: 'stale-while-revalidate',
   },
+  'discussion-detail': {
+    ttl: 5 * 60_000,
+    staleTtl: 24 * 60 * 60_000,
+    strategy: 'stale-while-revalidate',
+  },
   'author-detail': {
     ttl: 5 * 60_000,
     staleTtl: 24 * 60 * 60_000,
@@ -123,11 +129,12 @@ function resolveOptions<T>(options: PublicContentCacheOptions<T>) {
 function inferScopeFromKey(key: string): PublicContentCacheScope {
   if (key.includes('home')) return 'home'
   if (key.includes('explore')) return 'explore'
-  if (key.includes('community')) return 'community'
-  if (key.includes('schedule')) return 'schedule'
   if (key.includes('post-detail')) return 'post-detail'
+  if (key.includes('discussion-detail')) return 'discussion-detail'
   if (key.includes('author-detail')) return 'author-detail'
   if (key.includes('author-list') || key.includes('authors')) return 'author-list'
+  if (key.includes('community')) return 'community'
+  if (key.includes('schedule')) return 'schedule'
   if (key.includes('media')) return 'media'
   return 'snapshot'
 }
@@ -463,7 +470,10 @@ export async function readOrCreatePublicSnapshot<T>(
     loader,
     ttl,
     scope: inferScopeFromKey(key),
-    strategy: inferScopeFromKey(key) === 'post-detail' ? 'stale-while-revalidate' : 'network-first',
+    strategy:
+      inferScopeFromKey(key) === 'post-detail' || inferScopeFromKey(key) === 'discussion-detail'
+        ? 'stale-while-revalidate'
+        : 'network-first',
   })
 }
 

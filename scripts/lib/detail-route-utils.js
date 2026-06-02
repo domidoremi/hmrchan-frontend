@@ -27,6 +27,17 @@ function createSampleDetailSkipReason(label, classification, lastFailure) {
   return `${label} unavailable (${classification}): ${suffix}; last probe: ${lastFailure}`
 }
 
+async function waitForDetailCandidateState(page, shellSelector, timeout) {
+  await page
+    .waitForFunction(
+      (selector) =>
+        Boolean(document.querySelector(selector) || document.querySelector('.not-found-page')),
+      { timeout },
+      shellSelector
+    )
+    .catch(() => undefined)
+}
+
 export async function ensureDetailRouteReadiness(page, route, options = {}) {
   const readinessSelectorsAll = route.readinessSelectorsAll ?? []
   const readinessSelectorsAny = route.readinessSelectorsAny ?? []
@@ -272,12 +283,17 @@ export async function resolveSampleDetailRoute(page, baseUrl, config) {
         timeout: config.timeout ?? 60_000,
       })
       await page.waitForSelector('body', { timeout: config.timeout ?? 8_000 })
+      await waitForDetailCandidateState(page, config.shellSelector, config.timeout ?? 8_000)
 
       const state = await page.evaluate((shellSelector) => {
+        const shell = document.querySelector(shellSelector)
         return {
           pathname: window.location.pathname,
           title: document.title,
-          hasShell: Boolean(document.querySelector(shellSelector)),
+          hasShell: Boolean(shell),
+          hasUnavailableDetailState: Boolean(
+            shell?.querySelector('.hmr-page-state-block.is-empty, .hmr-page-state-block.is-error')
+          ),
           notFound: Boolean(document.querySelector('.not-found-page')),
         }
       }, config.shellSelector)
@@ -312,6 +328,16 @@ export async function resolveSampleDetailRoute(page, baseUrl, config) {
           continue
         }
         sawStructuralCandidateFailure = true
+        continue
+      }
+
+      if (state.hasUnavailableDetailState) {
+        lastFailure = `${candidate} resolved to detail unavailable state`
+        if (config.dataDependent !== false) {
+          sawDataDependentCandidateFailure = true
+        } else {
+          sawStructuralCandidateFailure = true
+        }
         continue
       }
 

@@ -16,10 +16,14 @@ const CLIENT_HEAD_SYNC_ROUTE_NAMES = new Set([
   'hmr-register',
   'hmr-auth-callback',
   'hmr-passkey-recovery',
+  'hmr-profile',
+  'hmr-profile-section',
   'hmr-about',
   'hmr-contact',
   'hmr-join-us',
   'hmr-thank-you',
+  'hmr-post-detail',
+  'hmr-discussion-detail',
   'hmr-not-found',
 ])
 

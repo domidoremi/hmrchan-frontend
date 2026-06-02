@@ -22,11 +22,14 @@ import {
   trimText,
 } from './hmrContentUtils'
 import type { HmrScheduleItem, HmrTrendSummary } from '@/hmr/types'
+import { isContractResourceId } from '@/utils/contractResourceId'
 import type { HmrExploreLoadOptions } from './hmrContentPlatforms'
 import type {
   HmrAuthor,
   HmrCommunityContent,
   HmrCommunityItem,
+  HmrDiscussionDetailContent,
+  HmrDiscussionRelatedPost,
   HmrExploreContent,
   HmrHomeContent,
   HmrMediaItem,
@@ -226,11 +229,11 @@ export function mapCommunityItem(value: unknown, index: number): HmrCommunityIte
   const record = isRecord(value) ? value : {}
   const id = pickString(
     record,
-    ['id', 'comment_id', 'discussion_id', 'post_id', 'slug'],
+    ['id', 'comment_id', 'discussion_id', 'discussion_uuid', 'uuid', 'post_id', 'slug'],
     `community-${index + 1}`
   )
   const postId = pickOptionalString(record, ['post_id'])
-  const discussionId = pickOptionalString(record, ['discussion_id'])
+  const discussionId = pickOptionalString(record, ['discussion_id', 'discussion_uuid'])
   const target = pickOptionalString(record, ['target', 'href', 'url'])
   const item: HmrCommunityItem = {
     id,
@@ -252,10 +255,137 @@ export function mapCommunityItem(value: unknown, index: number): HmrCommunityIte
   }
 
   if (target) item.target = target
-  else if (discussionId || id.startsWith('discussion-')) item.target = '/community'
-  else if (postId) item.target = `/posts/${postId}`
+  else if (discussionId && isContractResourceId(discussionId)) {
+    item.target = `/community/discussions/${encodeURIComponent(discussionId)}`
+  } else if (postId) item.target = `/posts/${postId}`
 
   return item
+}
+
+function mapDiscussionListItem(value: unknown, index: number): HmrCommunityItem {
+  const item = mapCommunityItem(value, index)
+  if (!item.target || item.target === '/community') {
+    item.target = isContractResourceId(item.id)
+      ? `/community/discussions/${encodeURIComponent(item.id)}`
+      : '/community'
+  }
+  return item
+}
+
+function pickBoolean(record: Record<string, unknown>, keys: string[]): boolean {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value !== 0
+    if (typeof value === 'string' && value.trim()) {
+      const normalized = value.trim().toLowerCase()
+      if (normalized === 'true' || normalized === '1') return true
+      if (normalized === 'false' || normalized === '0') return false
+    }
+  }
+
+  return false
+}
+
+function pickStringList(record: Record<string, unknown>, keys: string[]): string[] {
+  for (const key of keys) {
+    const value = record[key]
+    if (Array.isArray(value)) {
+      return value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 8)
+    }
+    if (typeof value === 'string' && value.trim()) {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 8)
+    }
+  }
+
+  return []
+}
+
+function mapDiscussionCommentItem(value: unknown, index: number): HmrCommunityItem {
+  const record = isRecord(value) ? value : {}
+  const userRecord = isRecord(record.user) ? record.user : {}
+  const replyCount = pickNumber(record, ['reply_count', 'replies'])
+  const likeCount = pickNumber(record, ['like_count', 'likes'])
+  const createdAt = pickOptionalString(record, ['created_at', 'updated_at'])
+  const metric =
+    replyCount || likeCount
+      ? `${replyCount} 回复 · ${likeCount} 喜欢`
+      : createdAt
+        ? formatDisplayDate(createdAt)
+        : '最新回应'
+
+  return {
+    id: pickString(record, ['id', 'comment_id', 'uuid'], `comment-${index + 1}`),
+    title: pickString(
+      record,
+      ['author_name', 'username', 'display_name', 'name'],
+      pickString(userRecord, ['display_name', 'name', 'username'], '社区成员')
+    ),
+    excerpt: pickString(record, ['content', 'body', 'comment', 'excerpt'], ''),
+    metric,
+  }
+}
+
+function mapDiscussionRelatedPost(
+  record: Record<string, unknown>
+): HmrDiscussionRelatedPost | undefined {
+  const referencedRecord = isRecord(record.referenced_post) ? record.referenced_post : {}
+  const id =
+    pickOptionalString(referencedRecord, ['id', 'post_id']) ??
+    pickOptionalString(record, ['referenced_post_id', 'post_id'])
+  if (!id) return undefined
+
+  const title = pickString(
+    referencedRecord,
+    ['title', 'post_title', 'name'],
+    pickString(record, ['referenced_post_title', 'post_title'], '关联内容')
+  )
+  const thumbnailUrl = pickOptionalString(referencedRecord, [
+    'thumbnail_url',
+    'thumbnailUrl',
+    'image_url',
+    'imageUrl',
+  ])
+  const authorName = pickOptionalString(referencedRecord, ['author_name', 'username'])
+  const relatedPost: HmrDiscussionRelatedPost = { id, title }
+
+  if (thumbnailUrl) relatedPost.thumbnailUrl = thumbnailUrl
+  if (authorName) relatedPost.authorName = authorName
+  return relatedPost
+}
+
+function makeDiscussionUnavailable(
+  id: string,
+  viewState: HmrDiscussionDetailContent['viewState'] = 'temporary-unavailable'
+): HmrDiscussionDetailContent {
+  return {
+    discussion: {
+      id,
+      title: '讨论暂时不可用',
+      content: '',
+      category: '讨论',
+      authorName: 'MomiChan',
+      createdAt: '',
+      updatedAt: '',
+      lastActivityAt: '',
+      tags: [],
+      viewCount: 0,
+      likeCount: 0,
+      commentCount: 0,
+      isPinned: false,
+      isClosed: false,
+    },
+    comments: [],
+    viewState,
+  }
 }
 
 function mapTrend(value: unknown, index: number): HmrTrendSummary {
@@ -446,7 +576,7 @@ export function mapCommunityContent(
   const feedList = extractList(feed, ['items', 'posts', 'discussions'])
   const discussionList = extractList(discussions, ['items', 'discussions', 'results'])
   const discussionSource = discussionList.length ? discussionList : hotList.length ? hotList : []
-  const discussionItems = discussionSource.map(mapCommunityItem).slice(0, 8)
+  const discussionItems = discussionSource.map(mapDiscussionListItem).slice(0, 8)
 
   return {
     stats: statsList.map(mapCommunityItem).slice(0, 3),
@@ -454,6 +584,61 @@ export function mapCommunityContent(
     hot: hotList.length ? hotList.map(mapCommunityItem).slice(0, 8) : discussionItems,
     latest: latestList.length ? latestList.map(mapCommunityItem).slice(0, 8) : discussionItems,
     feed: feedList.map(mapCommunityItem).slice(0, 8),
+  }
+}
+
+export function mapDiscussionDetailContent(
+  id: string,
+  payload: unknown,
+  commentsPayload: unknown
+): HmrDiscussionDetailContent {
+  if (!payload) {
+    return makeDiscussionUnavailable(id)
+  }
+
+  const record = extractRecord(payload, ['discussion', 'item', 'data'])
+  if (!Object.keys(record).length) {
+    return makeDiscussionUnavailable(id)
+  }
+
+  const userRecord = isRecord(record.user)
+    ? record.user
+    : isRecord(record.author)
+      ? record.author
+      : {}
+  const rawCreatedAt = pickString(record, ['created_at', 'published_at'], '')
+  const rawUpdatedAt = pickString(record, ['updated_at'], rawCreatedAt)
+  const rawLastActivityAt = pickString(
+    record,
+    ['last_activity_at', 'lastActivityAt'],
+    rawUpdatedAt || rawCreatedAt
+  )
+  const comments = extractList(commentsPayload, ['items', 'comments', 'results'])
+
+  return {
+    discussion: {
+      id: pickString(record, ['id', 'uuid', 'discussion_id'], id),
+      title: pickString(record, ['title', 'headline', 'name'], '未命名讨论'),
+      content: pickString(record, ['content', 'body', 'description', 'excerpt'], ''),
+      category: pickString(record, ['category', 'type', 'tag'], '讨论'),
+      authorName: pickString(
+        record,
+        ['author_name', 'username', 'display_name'],
+        pickString(userRecord, ['display_name', 'name', 'username'], '社区成员')
+      ),
+      createdAt: rawCreatedAt ? formatDisplayDate(rawCreatedAt) : '',
+      updatedAt: rawUpdatedAt ? formatDisplayDate(rawUpdatedAt) : '',
+      lastActivityAt: rawLastActivityAt ? formatDisplayDate(rawLastActivityAt) : '',
+      tags: pickStringList(record, ['tags', 'keywords']),
+      viewCount: pickNumber(record, ['view_count', 'views']),
+      likeCount: pickNumber(record, ['like_count', 'likes_count', 'likes']),
+      commentCount: pickNumber(record, ['comment_count', 'comments_count', 'comments']),
+      isPinned: pickBoolean(record, ['is_pinned', 'pinned']),
+      isClosed: pickBoolean(record, ['is_closed', 'closed']),
+    },
+    comments: comments.map(mapDiscussionCommentItem).slice(0, 12),
+    relatedPost: mapDiscussionRelatedPost(record),
+    viewState: 'available',
   }
 }
 

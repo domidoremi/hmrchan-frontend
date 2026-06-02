@@ -1939,6 +1939,7 @@ async function main(): Promise<void> {
         detailKind: 'post',
         shellSelector: '.hmr-detail--reader',
         readinessSelectorsAll: ['.hmr-detail-reader-hero'],
+        readinessSelectorsAny: ['.hmr-detail-comment-list'],
         dataDependent: true,
       })
       setStage('resolve sample discussion route')

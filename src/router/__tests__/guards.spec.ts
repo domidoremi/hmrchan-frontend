@@ -37,6 +37,11 @@ describe('blocksInvalidPublicResourceId', () => {
     expect(blocksInvalidPublicResourceId('hmr-post-detail', 'featured-post')).toBe(true)
     expect(blocksInvalidPublicResourceId('hmr-post-detail', VALID_RESOURCE_ID)).toBe(false)
   })
+
+  it('blocks hmr discussion detail routes with non-contract resource ids', () => {
+    expect(blocksInvalidPublicResourceId('hmr-discussion-detail', 'discussion-slug')).toBe(true)
+    expect(blocksInvalidPublicResourceId('hmr-discussion-detail', VALID_RESOURCE_ID)).toBe(false)
+  })
 })
 
 describe('resolveHmrRouteGuard', () => {

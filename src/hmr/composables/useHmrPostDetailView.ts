@@ -79,9 +79,7 @@ export function useHmrPostDetailView(
   const showMediaSection = computed(
     () => showContentSections.value && detail.value.media.length > 0
   )
-  const showCommunitySection = computed(
-    () => showContentSections.value && detail.value.comments.length > 0
-  )
+  const showCommunitySection = computed(() => showContentSections.value)
   const showRelatedSection = computed(
     () => showContentSections.value && detail.value.relatedPosts.length > 0
   )

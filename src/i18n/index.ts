@@ -1,9 +1,16 @@
 import { createI18n } from 'vue-i18n'
 
-export type SupportedLocale = 'zh-CN' | 'en-US' | 'ja-JP'
+import { defaultLocale, supportedLocales, type SupportedLocale } from './locales'
 
-export const supportedLocales: SupportedLocale[] = ['zh-CN', 'en-US', 'ja-JP']
-export const defaultLocale: SupportedLocale = 'zh-CN'
+export {
+  defaultLocale,
+  localeBadges,
+  localeLabels,
+  supportedLocales,
+  type SupportedLocale,
+} from './locales'
+
+type LocaleMessageCatalog = Record<string, unknown>
 
 const messages = {
   'zh-CN': {
@@ -584,7 +591,7 @@ const messages = {
       home: 'MomiChan ホーム',
     },
   },
-}
+} satisfies Record<SupportedLocale, LocaleMessageCatalog>
 
 function isSupportedLocale(value: string | null | undefined): value is SupportedLocale {
   return supportedLocales.includes(value as SupportedLocale)

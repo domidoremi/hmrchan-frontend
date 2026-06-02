@@ -92,6 +92,43 @@ async function matchNavigationFallback(candidates: readonly string[]): Promise<R
   return null
 }
 
+function createSyntheticNavigationFallback(pathname: string): Response {
+  const appShell = isAppShellPath(pathname)
+  const shellTitle = appShell ? 'MomiChan 离线' : '页面未找到'
+  const pageTitle = appShell ? 'MomiChan 离线' : '页面未找到 - MomiChan'
+  const summary = appShell
+    ? '恢复网络后继续浏览 MomiChan。'
+    : '此地址没有已缓存的公开页面。恢复网络后返回首页或探索页。'
+
+  return new Response(
+    [
+      '<!doctype html>',
+      '<html lang="zh-CN">',
+      '<head>',
+      '<meta charset="UTF-8" />',
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+      '<meta name="robots" content="noindex, nofollow" />',
+      `<title>${pageTitle}</title>`,
+      '</head>',
+      '<body>',
+      `<main class="hmr-prerender-shell" data-prerender-shell="true" data-prerender-shell-title="${shellTitle}">`,
+      `<h1>${shellTitle}</h1>`,
+      `<p>${summary}</p>`,
+      '</main>',
+      '</body>',
+      '</html>',
+      '',
+    ].join('\n'),
+    {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store',
+        'Content-Type': 'text/html; charset=utf-8',
+      },
+    }
+  )
+}
+
 async function handleNavigationRequest(request: Request): Promise<Response> {
   const pathname = new URL(request.url).pathname
 
@@ -121,13 +158,7 @@ async function handleNavigationRequest(request: Request): Promise<Response> {
   )
   if (fallback) return fallback
 
-  return new Response('Offline', {
-    status: 503,
-    headers: {
-      'Cache-Control': 'no-store',
-      'Content-Type': 'text/plain; charset=utf-8',
-    },
-  })
+  return createSyntheticNavigationFallback(pathname)
 }
 
 async function handlePublicCacheRequest(request: Request): Promise<Response> {

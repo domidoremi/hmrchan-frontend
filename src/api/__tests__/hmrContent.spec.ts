@@ -38,6 +38,7 @@ describe('hmrContent post detail loading', () => {
     mockApiGet.mockResolvedValue({})
     const {
       loadCommunityContentResource,
+      loadDiscussionDetailContentResource,
       loadExploreContentResource,
       loadHomeContentResource,
       loadHomePrimaryContentResource,
@@ -78,6 +79,13 @@ describe('hmrContent post detail loading', () => {
           '/community/hot',
           '/community/feed',
           '/discussions',
+        ],
+      },
+      {
+        load: () => loadDiscussionDetailContentResource('018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0'),
+        paths: [
+          '/discussions/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0',
+          '/discussions/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0/comments',
         ],
       },
       {
@@ -126,6 +134,117 @@ describe('hmrContent post detail loading', () => {
     expect(resource.paths).toEqual(['/posts/youtube-live-cut', '/posts/youtube-live-cut/comments'])
     expect(resource.data.post.id).toBe('youtube-live-cut')
     expect(resource.data.comments).toHaveLength(1)
+  })
+
+  it('maps public discussion list rows to discussion detail routes without rewriting post-backed rows', async () => {
+    const discussionId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0'
+    const uuidOnlyDiscussionId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f3'
+    const postId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1'
+    const commentId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f2'
+    mockApiGet.mockImplementation(async (path: string) => {
+      if (path === '/discussions') {
+        return {
+          items: [
+            {
+              id: discussionId,
+              title: 'Discussion topic',
+              content: 'Discussion body',
+              comment_count: 3,
+            },
+            {
+              uuid: uuidOnlyDiscussionId,
+              title: 'UUID-only topic',
+              content: 'UUID-only discussion body',
+              comment_count: 1,
+            },
+          ],
+        }
+      }
+      if (path === '/community/latest') {
+        return {
+          items: [
+            {
+              id: commentId,
+              content: 'Post-backed comment',
+              post_id: postId,
+              reply_count: 1,
+            },
+          ],
+        }
+      }
+      return { items: [] }
+    })
+
+    const { loadCommunityContentResource } = await import('../hmrContent')
+    const resource = await loadCommunityContentResource()
+
+    expect(resource.data.discussions[0]?.target).toBe(`/community/discussions/${discussionId}`)
+    expect(resource.data.discussions[1]?.id).toBe(uuidOnlyDiscussionId)
+    expect(resource.data.discussions[1]?.target).toBe(
+      `/community/discussions/${uuidOnlyDiscussionId}`
+    )
+    expect(resource.data.latest[0]?.id).toBe(commentId)
+    expect(resource.data.latest[0]?.target).toBe(`/posts/${postId}`)
+  })
+
+  it('loads discussion detail content with public comments', async () => {
+    const discussionId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0'
+    mockApiGet
+      .mockResolvedValueOnce({
+        id: discussionId,
+        title: 'Detail discussion',
+        content: 'Loaded discussion body',
+        category: 'general',
+        tags: ['release', 'qa'],
+        view_count: 1200,
+        like_count: 23,
+        comment_count: 2,
+        is_pinned: true,
+        created_at: '2026-05-28T00:00:00.000Z',
+        user: { username: 'thread-owner' },
+        referenced_post_id: '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1',
+      })
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f2',
+            content: 'First public reply',
+            like_count: 4,
+            reply_count: 1,
+            user: { username: 'reply-owner' },
+          },
+        ],
+      })
+
+    const { loadDiscussionDetailContentResource } = await import('../hmrContent')
+    const resource = await loadDiscussionDetailContentResource(discussionId)
+
+    expect(mockApiGet).toHaveBeenNthCalledWith(1, `/discussions/${discussionId}`, {
+      skipAuth: true,
+    })
+    expect(mockApiGet).toHaveBeenNthCalledWith(2, `/discussions/${discussionId}/comments`, {
+      skipAuth: true,
+    })
+    expect(resource.source).toBe('api')
+    expect(resource.error).toBeNull()
+    expect(resource.paths).toEqual([
+      `/discussions/${discussionId}`,
+      `/discussions/${discussionId}/comments`,
+    ])
+    expect(resource.data.viewState).toBe('available')
+    expect(resource.data.discussion).toMatchObject({
+      id: discussionId,
+      title: 'Detail discussion',
+      authorName: 'thread-owner',
+      likeCount: 23,
+      isPinned: true,
+    })
+    expect(resource.data.relatedPost?.id).toBe('018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1')
+    expect(resource.data.comments[0]).toMatchObject({
+      title: 'reply-owner',
+      excerpt: 'First public reply',
+      metric: '1 回复 · 4 喜欢',
+    })
   })
 
   it('fetches author detail as a public skipAuth request', async () => {

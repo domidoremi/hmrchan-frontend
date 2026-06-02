@@ -1,4 +1,5 @@
 import type { HmrCursorCollection } from '@/hmr/types'
+import { defaultLocale } from '@/i18n/locales'
 
 export type JsonRecord = Record<string, unknown>
 
@@ -129,7 +130,7 @@ export function formatDisplayDate(value: string): string {
   const parsed = new Date(trimmed)
   if (!Number.isFinite(parsed.getTime())) return trimmed
 
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat(defaultLocale, {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',

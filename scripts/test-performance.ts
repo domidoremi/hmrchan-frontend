@@ -4,7 +4,7 @@
  * 使用 Lighthouse 测试应用性能并生成报告
  */
 
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import lighthouse from 'lighthouse'
 import * as chromeLauncher from 'chrome-launcher'
@@ -40,7 +40,49 @@ interface TestConfig {
   name: string
 }
 
+interface CategoryBudget {
+  id: string
+  label: string
+  minScore: number
+}
+
+interface NumericBudget {
+  id: string
+  label: string
+  maxNumericValue: number
+}
+
+interface LighthouseBudgetConfig {
+  categories: CategoryBudget[]
+  metrics: NumericBudget[]
+}
+
 type PreviewApiResponseKind = 'json' | 'html-fallback' | 'empty' | 'other'
+
+const PERFORMANCE_ROUTE_TARGETS: Array<{ path: string; name: string }> = [
+  { path: '/', name: 'home' },
+  { path: '/explore', name: 'explore' },
+  { path: '/community', name: 'community' },
+  { path: '/schedule', name: 'schedule' },
+  { path: '/about', name: 'about' },
+  { path: '/contact', name: 'contact' },
+  { path: '/join-us', name: 'join-us' },
+]
+
+const CATEGORY_BUDGET_LABELS: Record<string, string> = {
+  'categories:performance': 'Performance',
+  'categories:accessibility': 'Accessibility',
+  'categories:best-practices': 'Best Practices',
+  'categories:seo': 'SEO',
+}
+
+const METRIC_BUDGET_LABELS: Record<string, string> = {
+  'first-contentful-paint': 'First Contentful Paint',
+  'largest-contentful-paint': 'Largest Contentful Paint',
+  'cumulative-layout-shift': 'Cumulative Layout Shift',
+  'total-blocking-time': 'Total Blocking Time',
+  'speed-index': 'Speed Index',
+}
 
 function resetDirectory(path: string): void {
   rmSync(path, { recursive: true, force: true })
@@ -60,6 +102,54 @@ function resolveRequestedTests(tests: TestConfig[]): TestConfig[] {
   }
 
   return selected
+}
+
+function getAssertionOptions(assertion: unknown): Record<string, unknown> | null {
+  if (!Array.isArray(assertion) || assertion.length < 2) return null
+  const [level, options] = assertion
+  if (level !== 'error' || !options || typeof options !== 'object' || Array.isArray(options)) {
+    return null
+  }
+
+  return options as Record<string, unknown>
+}
+
+function loadLighthouseBudgetConfig(): LighthouseBudgetConfig {
+  const configPath = join(process.cwd(), 'lighthouserc.json')
+  const parsed = JSON.parse(readFileSync(configPath, 'utf-8')) as {
+    ci?: {
+      assert?: {
+        assertions?: Record<string, unknown>
+      }
+    }
+  }
+  const assertions = parsed.ci?.assert?.assertions
+
+  if (!assertions) {
+    throw new Error('lighthouserc.json must define ci.assert.assertions for performance budgets')
+  }
+
+  const categories = Object.entries(CATEGORY_BUDGET_LABELS).map(([id, label]) => {
+    const options = getAssertionOptions(assertions[id])
+    const minScore = options?.minScore
+    if (typeof minScore !== 'number') {
+      throw new Error(`lighthouserc.json missing minScore budget for ${id}`)
+    }
+
+    return { id: id.replace(/^categories:/, ''), label, minScore }
+  })
+
+  const metrics = Object.entries(METRIC_BUDGET_LABELS).map(([id, label]) => {
+    const options = getAssertionOptions(assertions[id])
+    const maxNumericValue = options?.maxNumericValue
+    if (typeof maxNumericValue !== 'number') {
+      throw new Error(`lighthouserc.json missing maxNumericValue budget for ${id}`)
+    }
+
+    return { id, label, maxNumericValue }
+  })
+
+  return { categories, metrics }
 }
 
 function classifyPreviewApiResponse(contentType: string, body: string): PreviewApiResponseKind {
@@ -129,11 +219,10 @@ const AUDIT_ENV = {
 
 function getTestUrls(port: number): TestConfig[] {
   const steadyStateQuery = 'skipPreloader=1'
-  return [
-    { url: `http://localhost:${port}/?${steadyStateQuery}`, name: 'home' },
-    { url: `http://localhost:${port}/explore?${steadyStateQuery}`, name: 'explore' },
-    { url: `http://localhost:${port}/search?${steadyStateQuery}`, name: 'search' },
-  ]
+  return PERFORMANCE_ROUTE_TARGETS.map((target) => ({
+    url: `http://localhost:${port}${target.path}?${steadyStateQuery}`,
+    name: target.name,
+  }))
 }
 
 async function resolveChromePath(): Promise<string | null> {
@@ -171,10 +260,43 @@ interface LighthouseRunnerResult {
   report: string | string[]
   lhr: {
     categories: Record<string, { score: number | null }>
+    audits: Record<string, { numericValue?: number | null }>
   }
 }
 
-async function runLighthouseWithApi(url: string, name: string, chromePort: number): Promise<void> {
+function collectBudgetFailures(
+  result: LighthouseRunnerResult,
+  budgets: LighthouseBudgetConfig
+): string[] {
+  const failures: string[] = []
+
+  for (const budget of budgets.categories) {
+    const actual = result.lhr.categories[budget.id]?.score
+    if (typeof actual !== 'number' || actual < budget.minScore) {
+      failures.push(
+        `${budget.label} score ${actual === null || actual === undefined ? 'missing' : Math.round(actual * 100)} below budget ${Math.round(budget.minScore * 100)}`
+      )
+    }
+  }
+
+  for (const budget of budgets.metrics) {
+    const actual = result.lhr.audits[budget.id]?.numericValue
+    if (typeof actual !== 'number' || actual > budget.maxNumericValue) {
+      failures.push(
+        `${budget.label} ${actual === null || actual === undefined ? 'missing' : Math.round(actual)} above budget ${budget.maxNumericValue}`
+      )
+    }
+  }
+
+  return failures
+}
+
+async function runLighthouseWithApi(
+  url: string,
+  name: string,
+  chromePort: number,
+  budgets: LighthouseBudgetConfig
+): Promise<void> {
   console.log(`📊 Running Lighthouse for ${name}...`)
 
   const runnerResult = (await lighthouse(url, {
@@ -197,8 +319,25 @@ async function runLighthouseWithApi(url: string, name: string, chromePort: numbe
   writeFileSync(join(LIGHTHOUSE_REPORTS_DIR, `${name}.json`), jsonReport ?? '{}')
 
   const perfScore = Math.round((runnerResult.lhr.categories.performance?.score ?? 0) * 100)
+  const a11yScore = Math.round((runnerResult.lhr.categories.accessibility?.score ?? 0) * 100)
+  const bestPracticesScore = Math.round(
+    (runnerResult.lhr.categories['best-practices']?.score ?? 0) * 100
+  )
+  const seoScore = Math.round((runnerResult.lhr.categories.seo?.score ?? 0) * 100)
+  const budgetFailures = collectBudgetFailures(runnerResult, budgets)
+
   console.log(`✅ Lighthouse report saved: ${join(LIGHTHOUSE_REPORTS_DIR, `${name}.html`)}`)
-  console.log(`   Performance: ${perfScore}/100\n`)
+  console.log(
+    `   Performance: ${perfScore}/100, Accessibility: ${a11yScore}/100, Best Practices: ${bestPracticesScore}/100, SEO: ${seoScore}/100`
+  )
+
+  if (budgetFailures.length > 0) {
+    throw new Error(
+      `Lighthouse budgets failed for ${name}: ${budgetFailures.slice(0, 5).join('; ')}`
+    )
+  }
+
+  console.log('   Budgets: passed\n')
 }
 
 /**
@@ -244,6 +383,7 @@ async function main(): Promise<void> {
     }
     await probePreviewApiSurface(previewServer.baseUrl)
     const tests = resolveRequestedTests(getTestUrls(previewServer.port ?? PREVIEW_SERVER_PORT))
+    const budgets = loadLighthouseBudgetConfig()
 
     const chromePath = await resolveChromePath()
     chrome = await chromeLauncher.launch({
@@ -260,7 +400,7 @@ async function main(): Promise<void> {
 
     // 运行 Lighthouse 测试
     for (const { url, name } of tests) {
-      await runLighthouseWithApi(url, name, chrome.port)
+      await runLighthouseWithApi(url, name, chrome.port, budgets)
     }
 
     console.log('✅ All performance tests completed!')

@@ -35,6 +35,12 @@ export const appRoutes: RouteRecordRaw[] = [
         meta: { pageKey: 'community', navKey: 'community' },
       },
       {
+        path: 'community/discussions/:id',
+        name: 'hmr-discussion-detail',
+        component: () => import('@/views/DiscussionDetailPage.vue'),
+        meta: { pageKey: 'community', navKey: 'community' },
+      },
+      {
         path: 'schedule',
         name: 'hmr-schedule',
         component: () => import('@/views/SchedulePage.vue'),

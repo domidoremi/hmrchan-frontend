@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import type { Router } from 'vue-router'
 
 import type { SupportedLocale } from '@/i18n'
-import { applyLocale, supportedLocales } from '@/i18n'
+import { applyLocale, localeLabels, supportedLocales } from '@/i18n'
 import { createLoginRouteTarget, createRegisterRouteTarget } from '@/router/authTargets'
 import type { useAuthStore } from '@/stores/auth'
 import type { HmrTheme, useThemeStore } from '@/stores/theme'
@@ -20,12 +20,6 @@ export interface HmrSettingsWorkspaceOptions<T> {
   router: Pick<Router, 'push'>
   theme: Pick<ThemeStore, 'theme' | 'resolvedTheme' | 'setTheme' | 'initializeTheme'>
   resetDelayMs?: number
-}
-
-const localeLabels: Record<SupportedLocale, string> = {
-  'zh-CN': '简体中文',
-  'en-US': 'English',
-  'ja-JP': '日本語',
 }
 
 export const hmrSettingsThemeOptions: Array<{ value: HmrTheme; label: string }> = [

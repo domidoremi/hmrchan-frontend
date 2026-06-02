@@ -1,11 +1,36 @@
 import { describe, expect, it } from 'vitest'
 
 import { STATIC_HOME_PRERENDER_IMAGE } from '../../fallbacks/generated/homePrerenderManifest'
+import { supportedLocales } from '../../i18n/locales'
+import { appRoutes } from '../../router/routes'
 import { renderPrerenderShell, resolveHtmlDocument } from '../htmlDocument'
 import { createPrerenderedHtml } from '../prerenderHtml'
 
 function resolvePath(path: string) {
   return resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+}
+
+function resolveRepresentativeRoutePath(path: string): string {
+  if (!path) return '/'
+  return `/${path}`
+    .replace('/profile/:section', '/profile/security')
+    .replace('/posts/:id', '/posts/123')
+    .replace('/:pathMatch(.*)*', '/__missing-route__')
+}
+
+function collectNamedShellRoutes() {
+  return appRoutes.flatMap((route) =>
+    (route.children ?? [])
+      .filter((child) => typeof child.name === 'string')
+      .map((child) => ({
+        isNoindexShell:
+          child.meta?.isPanel === true ||
+          child.meta?.requiresAuth === true ||
+          child.name === 'hmr-not-found',
+        name: String(child.name),
+        path: resolveRepresentativeRoutePath(child.path),
+      }))
+  )
 }
 
 describe('edge HTML document routing', () => {
@@ -38,6 +63,45 @@ describe('edge HTML document routing', () => {
     expect(documentConfig.status).toBe(404)
     expect(documentConfig.robots).toBe('noindex, nofollow')
     expect(documentConfig.canonicalPath).toBe('/__missing-route__')
+  })
+
+  it('defines edge document status and robots policy for every named shell route', () => {
+    const namedRoutes = collectNamedShellRoutes()
+
+    expect(namedRoutes.map((route) => route.name)).toEqual([
+      'hmr-home',
+      'hmr-explore',
+      'hmr-community',
+      'hmr-discussion-detail',
+      'hmr-schedule',
+      'hmr-settings',
+      'hmr-login',
+      'hmr-register',
+      'hmr-auth-callback',
+      'hmr-passkey-recovery',
+      'hmr-profile',
+      'hmr-profile-section',
+      'hmr-about',
+      'hmr-contact',
+      'hmr-join-us',
+      'hmr-thank-you',
+      'hmr-post-detail',
+      'hmr-not-found',
+    ])
+
+    for (const route of namedRoutes) {
+      const documentConfig = resolvePath(route.path)
+
+      expect({ routeName: route.name, status: documentConfig.status }).toMatchObject({
+        status: route.name === 'hmr-not-found' ? 404 : 200,
+      })
+      expect({ routeName: route.name, robots: documentConfig.robots }).toMatchObject({
+        robots: route.isNoindexShell ? 'noindex, nofollow' : 'index, follow',
+      })
+      expect({ canonicalPath: documentConfig.canonicalPath, routeName: route.name }).toMatchObject({
+        canonicalPath: route.path,
+      })
+    }
   })
 
   it('renders a visible lightweight prerender shell for Lighthouse LCP', () => {
@@ -84,5 +148,18 @@ describe('edge HTML document routing', () => {
     expect(html).toContain('/snapshot-media/home/')
     expect(html).toContain('data-prerender-preload-image="true"')
     expect(html).toContain('fetchpriority' + '="high"')
+  })
+
+  it('binds WebSite structured data languages to the supported locale contract', () => {
+    const documentConfig = resolvePath('/')
+    const websiteStructuredData = documentConfig.structuredData.find(
+      (item) => item['@type'] === 'WebSite'
+    )
+
+    expect(websiteStructuredData).toMatchObject({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      inLanguage: supportedLocales,
+    })
   })
 })

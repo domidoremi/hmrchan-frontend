@@ -3,6 +3,7 @@ import { buildExplorePostsEndpoint, buildExploreSuggestionsEndpoint } from './hm
 import {
   mapAuthor,
   mapCommunityContent,
+  mapDiscussionDetailContent,
   mapExploreContent,
   mapHomeContent,
   mapPostDetailContent,
@@ -18,6 +19,7 @@ import type { HmrAsyncResource } from '@/hmr/types'
 import type {
   HmrAuthor,
   HmrCommunityContent,
+  HmrDiscussionDetailContent,
   HmrExploreContent,
   HmrHomeContent,
   HmrPost,
@@ -60,6 +62,9 @@ export type {
   HmrAuthor,
   HmrCommunityContent,
   HmrCommunityItem,
+  HmrDiscussionDetail,
+  HmrDiscussionDetailContent,
+  HmrDiscussionRelatedPost,
   HmrExploreContent,
   HmrHomeContent,
   HmrMediaItem,
@@ -182,6 +187,56 @@ export async function loadCommunityContentResource(): Promise<
 
 export async function loadCommunityContent(): Promise<HmrCommunityContent> {
   return (await loadCommunityContentResource()).data
+}
+
+export async function loadDiscussionDetailContentResource(
+  id: string
+): Promise<HmrAsyncResource<HmrDiscussionDetailContent>> {
+  const normalizedId = id.trim() || 'discussion'
+  const results = await Promise.all([
+    readEndpointResult<unknown>(`/discussions/${encodeURIComponent(normalizedId)}`, {
+      skipAuth: true,
+    }),
+    readEndpointResult<unknown>(`/discussions/${encodeURIComponent(normalizedId)}/comments`, {
+      skipAuth: true,
+    }),
+  ])
+  const [discussion, comments] = results
+  const status = combineEndpointResults(results)
+  const data = mapDiscussionDetailContent(normalizedId, discussion?.data, comments?.data)
+
+  if (status.error?.kind === 'restricted') {
+    data.discussion = {
+      id: normalizedId,
+      title: '讨论暂不可公开预览',
+      content: '当前讨论对公开访问受限。你可以稍后重试，或继续浏览其他公开讨论。',
+      category: '讨论',
+      authorName: 'MomiChan',
+      createdAt: '',
+      updatedAt: '',
+      lastActivityAt: '',
+      tags: [],
+      viewCount: 0,
+      likeCount: 0,
+      commentCount: 0,
+      isPinned: false,
+      isClosed: false,
+    }
+    data.comments = []
+    data.relatedPost = undefined
+    data.viewState = 'restricted'
+  } else if (status.error?.kind === 'not-found') {
+    data.discussion.title = '讨论不存在或已下架'
+    data.viewState = 'not-found'
+  } else if (status.error) {
+    data.viewState = 'temporary-unavailable'
+  }
+
+  return makeResource(data, status)
+}
+
+export async function loadDiscussionDetailContent(id: string): Promise<HmrDiscussionDetailContent> {
+  return (await loadDiscussionDetailContentResource(id)).data
 }
 
 export async function loadPostDetail(id: string): Promise<HmrPost> {

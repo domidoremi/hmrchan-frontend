@@ -80,6 +80,37 @@ export interface HmrCommunityContent {
   feed: HmrCommunityItem[]
 }
 
+export interface HmrDiscussionDetailContent {
+  discussion: HmrDiscussionDetail
+  comments: HmrCommunityItem[]
+  relatedPost?: HmrDiscussionRelatedPost
+  viewState: 'available' | 'restricted' | 'not-found' | 'temporary-unavailable'
+}
+
+export interface HmrDiscussionDetail {
+  id: string
+  title: string
+  content: string
+  category: string
+  authorName: string
+  createdAt: string
+  updatedAt: string
+  lastActivityAt: string
+  tags: string[]
+  viewCount: number
+  likeCount: number
+  commentCount: number
+  isPinned: boolean
+  isClosed: boolean
+}
+
+export interface HmrDiscussionRelatedPost {
+  id: string
+  title: string
+  thumbnailUrl?: string
+  authorName?: string
+}
+
 export interface HmrPostDetailContent {
   post: HmrPost
   relatedPosts: HmrPost[]

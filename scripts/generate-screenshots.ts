@@ -19,6 +19,8 @@ import puppeteer, { type Browser, type Viewport } from 'puppeteer'
 import { existsSync, mkdirSync } from 'fs'
 import { resolve } from 'path'
 
+import { defaultLocale } from '../src/i18n/locales'
+
 // Constants
 const TIMEOUTS = {
   PAGE_LOAD: 30_000,
@@ -90,7 +92,7 @@ function appendVariantSuffix(filename: string, suffix: string): string {
 function expandScreenshots(baseConfigs: ScreenshotConfig[]): ScreenshotConfig[] {
   const presets = parseCsv(process.env.SCREENSHOT_PRESETS)
   const colorModes = parseCsv(process.env.SCREENSHOT_COLOR_MODES) as Array<'light' | 'dark'>
-  const locale = process.env.SCREENSHOT_LOCALE || 'zh-CN'
+  const locale = process.env.SCREENSHOT_LOCALE || defaultLocale
 
   const shouldExpand = presets.length > 0 || colorModes.length > 0
 

@@ -1,14 +1,14 @@
 {
   "name": "MomiChan - Momiyama Himeri Fan Hub",
   "short_name": "MomiChan",
-  "description": "Browse Momiyama Himeri updates from YouTube, X, TikTok, Showroom, and Instagram with offline support.",
+  "description": "浏览来自 YouTube、X、TikTok、Showroom 和 Instagram 的桃山日女梨公开更新。",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#fbf9ef",
   "theme_color": "#4b8cff",
   "orientation": "portrait-primary",
   "categories": ["entertainment", "social", "lifestyle"],
-  "lang": "zh",
+  "lang": "zh-CN",
   "dir": "ltr",
   "icons": [
     {

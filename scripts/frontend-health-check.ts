@@ -1750,8 +1750,9 @@ async function main() {
             fallbackRoute: DEFAULT_SAMPLE_POST_ROUTE,
             discoveryPath: '/explore',
             detailKind: 'post',
-            shellSelector: '.post-detail-page',
-            readinessSelectorsAll: ['.post-comments'],
+            shellSelector: '.hmr-detail--reader',
+            readinessSelectorsAll: ['.hmr-detail-reader-hero'],
+            readinessSelectorsAny: ['.hmr-detail-comment-list'],
             dataDependent: true,
           }
         )

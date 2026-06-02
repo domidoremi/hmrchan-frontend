@@ -15,8 +15,17 @@ async function readJson<T>(path: string): Promise<T> {
 type PackageJson = {
   packageManager?: string
   engines?: Record<string, string>
+  scripts?: Record<string, string>
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
+}
+
+type LighthouseConfig = {
+  ci?: {
+    collect?: {
+      url?: string[]
+    }
+  }
 }
 
 describe('toolchain package policy', () => {
@@ -55,5 +64,27 @@ describe('toolchain package policy', () => {
       expect(declaredPackages[packageName]).toBe(VUE_BETA_VERSION)
       expect(rootWorkspaceLock).toContain(`"${packageName}": "${VUE_BETA_VERSION}"`)
     }
+  })
+
+  it('keeps the light audit gate aligned with frontend release contracts', async () => {
+    const packageJson = await readJson<PackageJson>('package.json')
+
+    expect(packageJson.scripts?.['audit:light']).toBe(
+      'bun run scripts/audit/index.ts --only=security,env-config,pwa,i18n,frontend-contract'
+    )
+  })
+
+  it('keeps Lighthouse CI route sampling aligned with indexed public routes', async () => {
+    const lighthouseConfig = await readJson<LighthouseConfig>('lighthouserc.json')
+
+    expect(lighthouseConfig.ci?.collect?.url).toEqual([
+      'http://127.0.0.1:5173/',
+      'http://127.0.0.1:5173/explore',
+      'http://127.0.0.1:5173/community',
+      'http://127.0.0.1:5173/schedule',
+      'http://127.0.0.1:5173/about',
+      'http://127.0.0.1:5173/contact',
+      'http://127.0.0.1:5173/join-us',
+    ])
   })
 })

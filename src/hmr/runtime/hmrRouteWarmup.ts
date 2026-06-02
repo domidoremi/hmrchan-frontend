@@ -1,5 +1,6 @@
 import {
   loadCommunityContentResource,
+  loadDiscussionDetailContentResource,
   loadExploreContentResource,
   loadPostDetailContentResource,
   loadScheduleContentResource,
@@ -34,6 +35,7 @@ const warmRouteLoaders: Record<HmrWarmRouteKey, (path: string) => Promise<unknow
   home: () => import('@/views/HomePage.vue'),
   explore: () => import('@/views/ExplorePage.vue'),
   community: () => import('@/views/CommunityPage.vue'),
+  discussion: () => import('@/views/DiscussionDetailPage.vue'),
   schedule: () => import('@/views/SchedulePage.vue'),
   post: () => import('@/views/PostDetailPage.vue'),
 }
@@ -41,6 +43,7 @@ const warmRouteLoaders: Record<HmrWarmRouteKey, (path: string) => Promise<unknow
 function routeKeyFromPath(path: string): HmrWarmRouteKey | null {
   if (path === '/') return 'home'
   if (path.startsWith('/explore')) return 'explore'
+  if (path.startsWith('/community/discussions/')) return 'discussion'
   if (path.startsWith('/community')) return 'community'
   if (path.startsWith('/schedule')) return 'schedule'
   if (path.startsWith('/posts/')) return 'post'
@@ -75,6 +78,12 @@ function postIdFromPath(path: string): string | null {
   return decodeURIComponent(normalized.split('/')[2] ?? '').trim() || null
 }
 
+function discussionIdFromPath(path: string): string | null {
+  const normalized = normalizePath(path)
+  if (!normalized.startsWith('/community/discussions/')) return null
+  return decodeURIComponent(normalized.split('/')[3] ?? '').trim() || null
+}
+
 function makeCurrentRouteContentTask(path: string): HmrWarmupTask | null {
   const normalized = normalizePath(path)
   if (normalized === '/') {
@@ -92,6 +101,20 @@ function makeCurrentRouteContentTask(path: string): HmrWarmupTask | null {
           scope: 'explore',
           strategy: 'network-first',
           loader: () => loadExploreContentResource({ limit: 12 }),
+        })
+      },
+    }
+  }
+  const discussionId = discussionIdFromPath(normalized)
+  if (discussionId) {
+    return {
+      name: 'public-discussion-detail',
+      run: async () => {
+        await readPublicContent({
+          key: `hmr:discussion-detail:${discussionId}`,
+          scope: 'discussion-detail',
+          strategy: 'stale-while-revalidate',
+          loader: () => loadDiscussionDetailContentResource(discussionId),
         })
       },
     }

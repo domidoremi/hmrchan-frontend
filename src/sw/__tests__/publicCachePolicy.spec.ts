@@ -18,6 +18,22 @@ describe('public cache service worker policy', () => {
     expect(cacheNameForRequest(request)).toBe(PUBLIC_API_CACHE_NAME)
   })
 
+  it('allows public discussion detail and comment API GET requests without credentials', () => {
+    const detailRequest = new Request(
+      'https://next.momichan.xyz/api/v1/discussions/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0',
+      { credentials: 'omit' }
+    )
+    const commentsRequest = new Request(
+      'https://next.momichan.xyz/api/v1/discussions/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0/comments',
+      { credentials: 'omit' }
+    )
+
+    expect(isPublicCacheableRequest(detailRequest)).toBe(true)
+    expect(cacheNameForRequest(detailRequest)).toBe(PUBLIC_API_CACHE_NAME)
+    expect(isPublicCacheableRequest(commentsRequest)).toBe(true)
+    expect(cacheNameForRequest(commentsRequest)).toBe(PUBLIC_API_CACHE_NAME)
+  })
+
   it('rejects auth, private, cookie, and authorization requests', () => {
     expect(
       isPublicCacheableRequest(

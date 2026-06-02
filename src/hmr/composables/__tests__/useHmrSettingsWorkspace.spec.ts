@@ -6,6 +6,7 @@ import {
   hmrSettingsThemeOptions,
   useHmrSettingsWorkspace,
 } from '@/hmr/composables/useHmrSettingsWorkspace'
+import { localeLabels, supportedLocales } from '@/i18n/locales'
 
 const mocks = vi.hoisted(() => ({
   applyLocale: vi.fn(),
@@ -72,7 +73,12 @@ function makeWorkspace(options: SettingsFixtureOptions = {}) {
 describe('hmr settings workspace options', () => {
   it('exposes stable theme and locale option sets', () => {
     expect(hmrSettingsThemeOptions.map((item) => item.value)).toEqual(['light', 'dark', 'system'])
-    expect(hmrSettingsLocaleOptions.map((item) => item.id)).toEqual(['zh-CN', 'en-US', 'ja-JP'])
+    expect(hmrSettingsLocaleOptions).toEqual(
+      supportedLocales.map((id) => ({
+        id,
+        label: localeLabels[id],
+      }))
+    )
   })
 })
 

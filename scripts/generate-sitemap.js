@@ -12,11 +12,12 @@
  *   node scripts/generate-sitemap.js [--dry-run]
  */
 
-import { writeFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 
 const SITEMAP_PATH = resolve(process.cwd(), 'public/sitemap.xml')
 const ROBOTS_PATH = resolve(process.cwd(), 'public/robots.txt')
+const I18N_SOURCE_PATH = resolve(process.cwd(), 'src/i18n/locales.ts')
 const DEFAULT_PUBLIC_SITE_ORIGIN = 'https://momichan.xyz'
 const DRY_RUN = process.argv.includes('--dry-run')
 const outputArgIndex = process.argv.indexOf('--output')
@@ -41,8 +42,21 @@ function resolvePublicSiteOrigin() {
 
 const BASE_URL = resolvePublicSiteOrigin()
 
-// 支持的语言
-const LANGUAGES = ['zh-CN', 'zh-TW', 'ja', 'en']
+function resolveSupportedLocales() {
+  const content = readFileSync(I18N_SOURCE_PATH, 'utf-8')
+  const match = content.match(
+    /export\s+const\s+supportedLocales(?:\s*:\s*[^=]+)?\s*=\s*\[([\s\S]*?)\]/
+  )
+  const locales = match?.[1]?.match(/['"]([^'"]+)['"]/g)?.map((item) => item.slice(1, -1)) ?? []
+
+  if (locales.length === 0) {
+    throw new Error('Cannot resolve supportedLocales from src/i18n/locales.ts')
+  }
+
+  return locales
+}
+
+const LANGUAGES = resolveSupportedLocales()
 
 /**
  * 可被搜索引擎索引的公开路由。
@@ -53,37 +67,36 @@ const ROUTES = [
     path: '/',
     priority: 1.0,
     changefreq: 'daily',
-    multilang: true,
   },
   {
     path: '/explore',
     priority: 0.9,
     changefreq: 'daily',
-    multilang: false,
   },
   {
     path: '/community',
     priority: 0.7,
     changefreq: 'daily',
-    multilang: false,
   },
   {
     path: '/schedule',
     priority: 0.8,
     changefreq: 'weekly',
-    multilang: false,
   },
   {
     path: '/about',
     priority: 0.6,
     changefreq: 'monthly',
-    multilang: false,
   },
   {
     path: '/contact',
     priority: 0.5,
     changefreq: 'monthly',
-    multilang: false,
+  },
+  {
+    path: '/join-us',
+    priority: 0.6,
+    changefreq: 'monthly',
   },
 ]
 
@@ -93,27 +106,21 @@ const ROUTES = [
  * @param {string} route.path - 路由路径
  * @param {number} route.priority - SEO 优先级 (0.0-1.0)
  * @param {string} route.changefreq - 更新频率
- * @param {boolean} route.multilang - 是否支持多语言
- * @param {string} lastmod - 最后修改日期 (ISO 格式)
  * @returns {string} XML 格式的 URL 条目
  */
-function generateUrlEntry(route, lastmod) {
+function generateUrlEntry(route) {
   const loc = `${BASE_URL}${route.path}`
   const parts = [
     '  <url>',
     `    <loc>${loc}</loc>`,
-    `    <lastmod>${lastmod}</lastmod>`,
     `    <changefreq>${route.changefreq}</changefreq>`,
     `    <priority>${route.priority}</priority>`,
   ]
 
-  // 添加多语言支持
-  if (route.multilang) {
-    const langLinks = LANGUAGES.map(
-      (lang) => `    <xhtml:link rel="alternate" hreflang="${lang}" href="${loc}" />`
-    )
-    parts.push(...langLinks)
-  }
+  const langLinks = LANGUAGES.map(
+    (lang) => `    <xhtml:link rel="alternate" hreflang="${lang}" href="${loc}" />`
+  )
+  parts.push(...langLinks)
 
   parts.push('  </url>')
 
@@ -125,25 +132,21 @@ function generateUrlEntry(route, lastmod) {
  * @returns {string} 完整的 sitemap XML 内容
  */
 function generateSitemap() {
-  const timestamp = new Date().toISOString()
-  const lastmod = timestamp.split('T')[0]
-
   const header = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
     '        xmlns:xhtml="http://www.w3.org/1999/xhtml"',
     '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
     '  ',
-    `  <!-- 自动生成于 ${timestamp} -->`,
     '  <!-- 使用 scripts/generate-sitemap.js 生成 -->',
     '  ',
   ]
 
-  const urlEntries = ROUTES.map((route) => generateUrlEntry(route, lastmod))
+  const urlEntries = ROUTES.map((route) => generateUrlEntry(route))
 
   const footer = ['</urlset>']
 
-  return [...header, ...urlEntries, ...footer].join('\n')
+  return `${[...header, ...urlEntries, ...footer].join('\n')}\n`
 }
 
 function generateRobots() {
@@ -213,11 +216,6 @@ function showSuccess(path, size) {
   console.log(`✅ Sitemap generated successfully`)
   console.log(`📁 Output: ${path}`)
   console.log(`📊 Size: ${(size / 1024).toFixed(2)} KB`)
-  console.log('')
-  console.log('💡 Next steps:')
-  console.log('  1. Verify sitemap: https://www.xml-sitemaps.com/validate-xml-sitemap.html')
-  console.log('  2. Submit to Google: https://search.google.com/search-console')
-  console.log('  3. Submit to Bing: https://www.bing.com/webmasters')
 }
 
 /**

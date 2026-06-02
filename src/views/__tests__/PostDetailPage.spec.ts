@@ -97,6 +97,9 @@ describe('PostDetailPage', () => {
     expect(mocks.loadPostDetailContentResource).toHaveBeenCalledExactlyOnceWith('post-1')
     expect(wrapper.text()).toContain('Loaded post')
     expect(wrapper.text()).toContain('Loaded public summary')
+    expect(wrapper.find('.post-comments').exists()).toBe(true)
+    expect(wrapper.find('.hmr-detail-comment-list').exists()).toBe(true)
+    expect(wrapper.text()).toContain('暂无公开评论')
   })
 
   it('maps not-found detail resources to the empty page state', async () => {

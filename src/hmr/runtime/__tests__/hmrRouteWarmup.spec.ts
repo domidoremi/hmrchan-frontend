@@ -24,6 +24,9 @@ const mocks = vi.hoisted(() => ({
   })),
   loadExploreContentResource: vi.fn(async () => ({ data: { posts: [] } })),
   loadCommunityContentResource: vi.fn(async () => ({ data: { discussions: [] } })),
+  loadDiscussionDetailContentResource: vi.fn(async () => ({
+    data: { discussion: { id: 'discussion-1' } },
+  })),
   loadPostDetailContentResource: vi.fn(async () => ({ data: { post: { id: 'post-1' } } })),
   loadScheduleContentResource: vi.fn(async () => ({ data: { items: [] } })),
 }))
@@ -38,6 +41,7 @@ vi.mock('@/utils/cache/publicContentCache', () => ({
 
 vi.mock('@/api/hmrContent', () => ({
   loadCommunityContentResource: mocks.loadCommunityContentResource,
+  loadDiscussionDetailContentResource: mocks.loadDiscussionDetailContentResource,
   loadExploreContentResource: mocks.loadExploreContentResource,
   loadHomeContentResource: mocks.loadHomeContentResource,
   loadPostDetailContentResource: mocks.loadPostDetailContentResource,
@@ -119,6 +123,24 @@ describe('hmr session entry warmup', () => {
         strategy: 'stale-while-revalidate',
       })
     )
+  })
+
+  it('warms the current discussion detail route with stale-while-revalidate scope', async () => {
+    const discussionId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0'
+
+    await warmHmrSessionEntry({
+      path: `/community/discussions/${discussionId}?from=community`,
+      timeoutMs: 3000,
+    })
+
+    expect(mocks.readPublicContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: `hmr:discussion-detail:${discussionId}`,
+        scope: 'discussion-detail',
+        strategy: 'stale-while-revalidate',
+      })
+    )
+    expect(mocks.loadDiscussionDetailContentResource).toHaveBeenCalledWith(discussionId)
   })
 
   it('can keep entry warmup focused on shell and current route work', async () => {

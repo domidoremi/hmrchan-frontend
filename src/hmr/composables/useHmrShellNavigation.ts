@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 import type { HmrNavItem, HmrPublicPageKey } from '@/hmr/types'
+import { defaultLocale, localeBadges, supportedLocales, type SupportedLocale } from '@/i18n/locales'
 import { createLoginRouteTarget, createRegisterRouteTarget } from '@/router/authTargets'
 
 type HmrShellNavKey = 'home' | 'explore' | 'community' | 'schedule' | 'settings'
@@ -47,9 +48,11 @@ export function useHmrShellNavigation() {
   ])
 
   const localeBadge = computed(() => {
-    if (locale.value === 'ja-JP') return 'JA'
-    if (locale.value === 'en-US') return 'EN'
-    return 'ZH'
+    const currentLocale = supportedLocales.includes(locale.value as SupportedLocale)
+      ? (locale.value as SupportedLocale)
+      : defaultLocale
+
+    return localeBadges[currentLocale]
   })
 
   const activeNavKey = computed<HmrShellNavKey | null>(() => {

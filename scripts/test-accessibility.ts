@@ -31,7 +31,7 @@ const ROUTES = [
   '/',
   '/explore',
   '/community',
-  '/community/discussions/00000000-0000-4000-8000-000000000000',
+  '/community/discussions/00000000-0000-7000-8000-000000000000',
   '/posts/00000000-0000-7000-8000-000000000000',
   '/profile/sample-author',
   '/schedule',

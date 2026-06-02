@@ -141,7 +141,7 @@
 
     <section
       v-if="showCommunitySection"
-      class="hmr-detail-reader-section hmr-detail-reader-section--compact"
+      class="hmr-detail-reader-section hmr-detail-reader-section--compact post-comments"
       data-hmr-reveal
     >
       <div class="hmr-container hmr-container--large">
@@ -159,6 +159,9 @@
             <strong>{{ item.title }}</strong>
             <p>{{ item.excerpt }}</p>
           </article>
+          <div v-if="commentsPreview.length === 0" class="hmr-detail-empty">
+            <strong>暂无公开评论</strong>
+          </div>
         </div>
       </div>
     </section>

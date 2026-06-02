@@ -308,7 +308,7 @@ describe('HmrSiteShell preloader', () => {
     try {
       expect(mocks.warmHmrPriorityRoutes).not.toHaveBeenCalled()
 
-      await vi.advanceTimersByTimeAsync(5999)
+      await vi.advanceTimersByTimeAsync(8999)
       expect(mocks.warmHmrPriorityRoutes).not.toHaveBeenCalled()
 
       await vi.advanceTimersByTimeAsync(1)

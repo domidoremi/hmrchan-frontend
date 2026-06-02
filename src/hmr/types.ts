@@ -112,7 +112,7 @@ export type HmrPageState = 'idle' | 'loading' | 'ready' | 'empty' | 'error'
 
 export type HmrDataSource = 'api' | 'local'
 
-export type HmrWarmRouteKey = 'home' | 'explore' | 'community' | 'schedule' | 'post'
+export type HmrWarmRouteKey = 'home' | 'explore' | 'community' | 'discussion' | 'schedule' | 'post'
 
 export type HmrCacheTtlPreset = 'short' | 'medium' | 'long'
 

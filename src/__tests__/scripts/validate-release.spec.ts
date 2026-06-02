@@ -55,6 +55,8 @@ function makeValidationSummary(
       labels: [],
       hasValidationContractChanges: false,
       hasEdgeChanges: false,
+      hasPwaRuntimeChanges: false,
+      hasI18nSeoChanges: false,
       hasAuthDataFlowChanges: false,
       hasRouteUiChanges: false,
       hasDeliveryToolingChanges: false,
@@ -269,8 +271,8 @@ describe('validate release stage summaries', () => {
     execFileSyncMock.mockReset()
   })
 
-  it('marks hard-gate and production modes as passed when selected stages pass', () => {
-    for (const mode of ['hook', 'prepush', 'prepush-full', 'production']) {
+  it('marks complete local gate modes as passed when selected stages pass', () => {
+    for (const mode of ['hook', 'prepush', 'prepush-full', 'local', 'production']) {
       const summary = makeValidationSummary(mode)
 
       expect(summary.status).toBe('passed')
@@ -281,16 +283,14 @@ describe('validate release stage summaries', () => {
     }
   })
 
-  it('keeps local and candidate modes incomplete until production regression runs', () => {
-    for (const mode of ['local', 'candidate']) {
-      const summary = makeValidationSummary(mode)
+  it('keeps candidate mode incomplete until controlled-site evidence runs', () => {
+    const summary = makeValidationSummary('candidate')
 
-      expect(summary.status).toBe('incomplete')
-      expect(summary.blockingStageId).toBeNull()
-      expect(summary.blockingReason).toBe(
-        'Production deep regression did not run in this validation mode.'
-      )
-    }
+    expect(summary.status).toBe('incomplete')
+    expect(summary.blockingStageId).toBeNull()
+    expect(summary.blockingReason).toBe(
+      'Production deep regression did not run in this validation mode.'
+    )
   })
 
   it('marks selected failed, skipped, and unresolved stages as failed with blocking evidence', () => {
@@ -550,6 +550,65 @@ describe('validate release stage summaries', () => {
     )
   })
 
+  it('classifies locale contract and static SEO document changes', () => {
+    const changeSummary = classifyValidationChanges([
+      'src/i18n/index.ts',
+      'src/i18n/locales.ts',
+      'index.html',
+      'public/offline.html',
+      'public/sitemap.xml',
+    ])
+
+    expect(changeSummary.labels).toContain('i18n-seo')
+    expect(changeSummary.hasI18nSeoChanges).toBe(true)
+    expect(changeSummary.focusAreas).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'i18n-seo',
+          matchedCount: 5,
+          matchedPaths: [
+            'index.html',
+            'public/offline.html',
+            'public/sitemap.xml',
+            'src/i18n/index.ts',
+            'src/i18n/locales.ts',
+          ],
+        }),
+      ])
+    )
+  })
+
+  it('runs full static unit validation with a single Vitest worker', async () => {
+    const { buildStaticGateCommands } = await importValidateReleaseModule()
+
+    expect(buildStaticGateCommands()).toContainEqual([
+      'bun',
+      'run',
+      'test:unit',
+      '--',
+      '--maxWorkers=1',
+    ])
+  })
+
+  it('runs hook governance specs with a single Vitest worker', async () => {
+    const { buildHookStaticGateCommands } = await importValidateReleaseModule()
+
+    expect(
+      buildHookStaticGateCommands([
+        'src/__tests__/scripts/pwa-audit.spec.ts',
+        'src/sw/__tests__/publicCachePolicy.spec.ts',
+      ])
+    ).toContainEqual([
+      'node',
+      'scripts/run-vitest.mjs',
+      'run',
+      'src/__tests__/scripts/pwa-audit.spec.ts',
+      'src/sw/__tests__/publicCachePolicy.spec.ts',
+      '--reporter=default',
+      '--maxWorkers=1',
+    ])
+  })
+
   it('discovers all lightweight governance specs for the hook static gate', async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), 'hmr-hook-script-tests-'))
     const scriptsTestDir = join(projectRoot, 'src', '__tests__', 'scripts')
@@ -561,6 +620,7 @@ describe('validate release stage summaries', () => {
       mkdir(publicCacheTestDir, { recursive: true }),
     ])
     await Promise.all([
+      writeFile(join(scriptsTestDir, 'i18n-audit.spec.ts'), ''),
       writeFile(join(scriptsTestDir, 'pwa-audit.spec.ts'), ''),
       writeFile(join(scriptsTestDir, 'security-audit.spec.ts'), ''),
       writeFile(join(scriptsTestDir, 'validate-release.spec.ts'), ''),
@@ -574,6 +634,7 @@ describe('validate release stage summaries', () => {
       const { resolveHookScriptTests } = await importValidateReleaseModule()
 
       expect(await resolveHookScriptTests(projectRoot)).toEqual([
+        'src/__tests__/scripts/i18n-audit.spec.ts',
         'src/__tests__/scripts/pwa-audit.spec.ts',
         'src/__tests__/scripts/security-audit.spec.ts',
         'src/__tests__/scripts/validate-release.spec.ts',

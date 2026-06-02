@@ -468,17 +468,21 @@ async function runContractSelfCheckStage(stageRecord) {
   })
 }
 
-async function runStaticGateStage(stageRecord) {
-  const env = { ...process.env }
-  const commands = [
+function buildStaticGateCommands() {
+  return [
     ['bun', 'run', 'format:check'],
     ['bun', 'run', 'audit:light'],
     ['bun', 'run', 'type-check'],
     ['bun', 'run', 'lint:strict'],
-    ['bun', 'run', 'test:unit'],
+    ['bun', 'run', 'test:unit', '--', '--maxWorkers=1'],
     ['bun', 'run', 'build'],
     ['bun', 'run', 'build:security-check'],
   ]
+}
+
+async function runStaticGateStage(stageRecord) {
+  const env = { ...process.env }
+  const commands = buildStaticGateCommands()
 
   const commandResults = await runStageCommands(stageRecord, commands, env, {
     timeoutMs: STATIC_GATE_COMMAND_TIMEOUT_MS,
@@ -517,15 +521,7 @@ async function resolveHookScriptTests(cwd = process.cwd()) {
 async function runHookStaticGateStage(stageRecord) {
   const env = { ...process.env }
   const hookScriptTests = await resolveHookScriptTests()
-  const commands = [
-    ['bun', 'run', 'format:check'],
-    ['bun', 'run', 'audit:light'],
-    ['bun', 'run', 'type-check'],
-    ['bun', 'run', 'lint:strict'],
-    ...(hookScriptTests.length > 0
-      ? [['node', 'scripts/run-vitest.mjs', 'run', ...hookScriptTests, '--reporter=default']]
-      : []),
-  ]
+  const commands = buildHookStaticGateCommands(hookScriptTests)
 
   const commandResults = await runStageCommands(stageRecord, commands, env, {
     timeoutMs: STATIC_GATE_COMMAND_TIMEOUT_MS,
@@ -537,6 +533,27 @@ async function runHookStaticGateStage(stageRecord) {
     reason: 'Hook static gates passed without build, full unit suite, Docker, or browser gates.',
     commands: commandResults,
   })
+}
+
+function buildHookStaticGateCommands(hookScriptTests) {
+  return [
+    ['bun', 'run', 'format:check'],
+    ['bun', 'run', 'audit:light'],
+    ['bun', 'run', 'type-check'],
+    ['bun', 'run', 'lint:strict'],
+    ...(hookScriptTests.length > 0
+      ? [
+          [
+            'node',
+            'scripts/run-vitest.mjs',
+            'run',
+            ...hookScriptTests,
+            '--reporter=default',
+            '--maxWorkers=1',
+          ],
+        ]
+      : []),
+  ]
 }
 
 async function runLocalBrowserGateStage(stageRecord) {
@@ -903,6 +920,8 @@ export {
   resolveOriginHeadDiffRange,
   resolveRemoteBranchDiffRange,
   resolveHookScriptTests,
+  buildStaticGateCommands,
+  buildHookStaticGateCommands,
   buildProductionContractPreviewArtifact,
   resolveTrackingDiffRange,
   buildValidationStageRecords,

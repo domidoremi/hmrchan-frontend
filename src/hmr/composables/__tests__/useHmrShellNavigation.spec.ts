@@ -5,6 +5,7 @@ import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from 'vue-router'
 
 import { useHmrShellNavigation } from '@/hmr/composables/useHmrShellNavigation'
+import { localeBadges } from '@/i18n/locales'
 
 function makeI18n(locale = 'zh-CN') {
   return createI18n({
@@ -120,7 +121,7 @@ describe('useHmrShellNavigation', () => {
       'Community',
       'Schedule',
     ])
-    expect(navigation.localeBadge.value).toBe('EN')
+    expect(navigation.localeBadge.value).toBe(localeBadges['en-US'])
     expect(navigation.keepAliveNames).toEqual([
       'HomePage',
       'ExplorePage',

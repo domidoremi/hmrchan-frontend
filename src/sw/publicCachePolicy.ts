@@ -59,7 +59,9 @@ function isPublicApiPath(pathname: string): boolean {
     apiPath === '/community/latest' ||
     apiPath === '/community/hot' ||
     apiPath === '/community/feed' ||
-    apiPath === '/discussions'
+    apiPath === '/discussions' ||
+    /^\/discussions\/[^/]+$/.test(apiPath) ||
+    /^\/discussions\/[^/]+\/comments$/.test(apiPath)
   )
 }
 

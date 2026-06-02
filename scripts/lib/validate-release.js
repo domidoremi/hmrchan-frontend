@@ -107,6 +107,16 @@ const CHANGE_FOCUS_RULES = Object.freeze([
       filePath === 'build/vite/plugins/serviceWorkerBuild.ts',
   }),
   Object.freeze({
+    id: 'i18n-seo',
+    label: 'I18n/SEO metadata',
+    description: 'Locale contract, static document language, sitemap, or SEO metadata changed.',
+    matches: (filePath) =>
+      filePath.startsWith('src/i18n/') ||
+      filePath === 'index.html' ||
+      filePath === 'public/offline.html' ||
+      filePath === 'public/sitemap.xml',
+  }),
+  Object.freeze({
     id: 'validation-contract',
     label: 'Validation contract',
     description: 'Validation contract, release runner, or policy definitions changed.',
@@ -218,6 +228,7 @@ export function classifyValidationChanges(changedFiles) {
     hasValidationContractChanges: matchedAreas.some((area) => area.id === 'validation-contract'),
     hasEdgeChanges: matchedAreas.some((area) => area.id === 'edge-infra'),
     hasPwaRuntimeChanges: matchedAreas.some((area) => area.id === 'pwa-runtime'),
+    hasI18nSeoChanges: matchedAreas.some((area) => area.id === 'i18n-seo'),
     hasAuthDataFlowChanges: matchedAreas.some((area) => area.id === 'auth-data-flow'),
     hasRouteUiChanges: matchedAreas.some((area) => area.id === 'route-ui'),
     hasDeliveryToolingChanges: matchedAreas.some((area) => area.id === 'delivery-tooling'),
@@ -252,7 +263,7 @@ export function buildValidationSummary({ mode, artifactDir, git, targets, change
 
   if (failedStage || unexpectedSkip || unresolvedStage) {
     status = 'failed'
-  } else if (['hook', 'prepush', 'prepush-full', 'production'].includes(mode)) {
+  } else if (['hook', 'prepush', 'prepush-full', 'local', 'production'].includes(mode)) {
     status = 'passed'
   }
 
@@ -269,7 +280,7 @@ export function buildValidationSummary({ mode, artifactDir, git, targets, change
     } else {
       blockingReason = 'Selected release stage failed.'
     }
-  } else if (!['hook', 'prepush', 'prepush-full', 'production'].includes(mode)) {
+  } else if (!['hook', 'prepush', 'prepush-full', 'local', 'production'].includes(mode)) {
     blockingReason = 'Production deep regression did not run in this validation mode.'
   }
 

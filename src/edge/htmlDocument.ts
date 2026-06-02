@@ -1,4 +1,5 @@
 import { STATIC_HOME_PRERENDER_IMAGE } from '../fallbacks/generated/homePrerenderManifest'
+import { supportedLocales } from '../i18n/locales'
 
 const SITE_NAME = 'MomiChan'
 export const SITE_ORIGIN = 'https://momichan.xyz'
@@ -154,7 +155,7 @@ function createWebsiteStructuredData(): HtmlStructuredData {
     '@type': 'WebSite',
     name: SITE_NAME,
     url: SITE_ORIGIN,
-    inLanguage: ['zh-CN', 'en', 'ja'],
+    inLanguage: supportedLocales,
   }
 }
 
@@ -497,6 +498,28 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
         shellLinks: [
           { href: '/explore', label: 'Explore' },
           { href: '/', label: 'Home' },
+        ],
+      }
+    )
+  }
+
+  if (/^\/community\/discussions\/[^/]+$/.test(path)) {
+    return createDocumentConfig(
+      path,
+      'Discussion detail',
+      '浏览 MomiChan 公开讨论详情、标签与最新回应。',
+      'Discussion',
+      'Read the public discussion thread',
+      '进入讨论详情，查看主题正文、互动状态、关联内容与最新回应。',
+      {
+        ogType: 'article',
+        shellSummary: [
+          'Use the surrounding links to return to community or continue browsing public content.',
+          'If the discussion is no longer available, you can keep browsing from community.',
+        ],
+        shellLinks: [
+          { href: '/community', label: 'Community' },
+          { href: '/explore', label: 'Explore' },
         ],
       }
     )

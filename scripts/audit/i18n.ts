@@ -3,9 +3,9 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
 
-const BASELINE_LOCALE = 'zh-CN'
 const LOCALES_DIR = 'src/i18n/locales'
 const INLINE_I18N_FILE = 'src/i18n/index.ts'
+const LOCALE_CONTRACT_FILE = 'src/i18n/locales.ts'
 
 type NestedRecord = { [key: string]: string | NestedRecord }
 
@@ -13,6 +13,12 @@ interface LocaleCatalog {
   localeMap: Map<string, Set<string>>
   sourceKind: 'json' | 'inline'
   sourcePath: string
+}
+
+interface LocaleContract {
+  defaultLocale: string | null
+  supportedLocales: string[]
+  issues: AuditIssue[]
 }
 
 /**
@@ -139,6 +145,106 @@ function compareKeys(
   return { missing: missing.sort(), extra: extra.sort() }
 }
 
+function getDefaultLocaleDeclaration(content: string): string | null {
+  const match = content.match(
+    /export\s+const\s+defaultLocale(?:\s*:\s*[^=]+)?\s*=\s*['"]([^'"]+)['"]/
+  )
+  return match?.[1]?.trim() || null
+}
+
+function getSupportedLocalesDeclaration(content: string): string[] {
+  const match = content.match(
+    /export\s+const\s+supportedLocales(?:\s*:\s*[^=]+)?\s*=\s*\[([\s\S]*?)\]/
+  )
+  return match?.[1]?.match(/['"]([^'"]+)['"]/g)?.map((item) => item.slice(1, -1)) ?? []
+}
+
+async function loadLocaleContract(projectRoot: string): Promise<LocaleContract> {
+  const contractPath = join(projectRoot, LOCALE_CONTRACT_FILE)
+
+  try {
+    const content = await readFile(contractPath, 'utf-8')
+    const defaultLocale = getDefaultLocaleDeclaration(content)
+    const supportedLocales = getSupportedLocalesDeclaration(content)
+    const issues: AuditIssue[] = []
+
+    if (!defaultLocale) {
+      issues.push({
+        severity: 'error',
+        message: 'Cannot resolve defaultLocale from src/i18n/locales.ts',
+        file: LOCALE_CONTRACT_FILE,
+        rule: 'locale-contract-source',
+      })
+    }
+
+    if (supportedLocales.length === 0) {
+      issues.push({
+        severity: 'error',
+        message: 'Cannot resolve supportedLocales from src/i18n/locales.ts',
+        file: LOCALE_CONTRACT_FILE,
+        rule: 'locale-contract-source',
+      })
+    }
+
+    return { defaultLocale, supportedLocales, issues }
+  } catch {
+    return {
+      defaultLocale: null,
+      supportedLocales: [],
+      issues: [
+        {
+          severity: 'error',
+          message: 'Cannot read locale contract from src/i18n/locales.ts',
+          file: LOCALE_CONTRACT_FILE,
+          rule: 'locale-contract-source',
+        },
+      ],
+    }
+  }
+}
+
+function validateLocaleContract(
+  contract: LocaleContract,
+  localeMap: Map<string, Set<string>>,
+  sourcePath: string
+): AuditIssue[] {
+  const issues = [...contract.issues]
+  const { defaultLocale, supportedLocales } = contract
+
+  if (defaultLocale && supportedLocales.length > 0 && !supportedLocales.includes(defaultLocale)) {
+    issues.push({
+      severity: 'error',
+      message: `defaultLocale must be included in supportedLocales: ${defaultLocale}`,
+      file: LOCALE_CONTRACT_FILE,
+      rule: 'locale-contract',
+    })
+  }
+
+  for (const locale of supportedLocales) {
+    if (!localeMap.has(locale)) {
+      issues.push({
+        severity: 'error',
+        message: `Supported locale "${locale}" has no message catalog in ${sourcePath}`,
+        file: sourcePath,
+        rule: 'locale-contract',
+      })
+    }
+  }
+
+  for (const locale of localeMap.keys()) {
+    if (supportedLocales.length > 0 && !supportedLocales.includes(locale)) {
+      issues.push({
+        severity: 'error',
+        message: `Locale messages contain unsupported locale "${locale}"`,
+        file: sourcePath,
+        rule: 'locale-contract',
+      })
+    }
+  }
+
+  return issues
+}
+
 /**
  * Recursively find all .vue files under a directory.
  */
@@ -219,6 +325,7 @@ const i18nAudit: AuditModule = {
 
     // 1. Load locale keys
     const { localeMap, sourceKind, sourcePath } = await loadLocales(options.projectRoot)
+    const localeContract = await loadLocaleContract(options.projectRoot)
 
     if (localeMap.size === 0) {
       return {
@@ -235,25 +342,39 @@ const i18nAudit: AuditModule = {
       }
     }
 
-    const baselineKeys = localeMap.get(BASELINE_LOCALE)
+    issues.push(...validateLocaleContract(localeContract, localeMap, sourcePath))
+
+    const baselineLocale = localeContract.defaultLocale
+    if (!baselineLocale) {
+      return {
+        module: 'i18n',
+        status: 'fail',
+        issues,
+        summary: 'Default locale contract missing',
+        duration: Date.now() - start,
+      }
+    }
+
+    const baselineKeys = localeMap.get(baselineLocale)
     if (!baselineKeys) {
       return {
         module: 'i18n',
         status: 'fail',
         issues: [
+          ...issues,
           {
             severity: 'error',
-            message: `Baseline locale "${BASELINE_LOCALE}" not found in ${sourcePath}`,
+            message: `Default locale "${baselineLocale}" not found in ${sourcePath}`,
           },
         ],
-        summary: `Baseline locale ${BASELINE_LOCALE} missing`,
+        summary: `Default locale ${baselineLocale} missing`,
         duration: Date.now() - start,
       }
     }
 
     // 2. Compare each locale against baseline
     for (const [locale, keys] of localeMap) {
-      if (locale === BASELINE_LOCALE) continue
+      if (locale === baselineLocale) continue
 
       const { missing, extra } = compareKeys(baselineKeys, keys)
 
@@ -269,7 +390,7 @@ const i18nAudit: AuditModule = {
       for (const key of extra) {
         issues.push({
           severity: 'warning',
-          message: `Extra key "${key}" in locale "${locale}" (not in ${BASELINE_LOCALE})`,
+          message: `Extra key "${key}" in locale "${locale}" (not in ${baselineLocale})`,
           file: sourceKind === 'json' ? `${LOCALES_DIR}/${locale}.json` : sourcePath,
           rule: 'extra-key',
         })

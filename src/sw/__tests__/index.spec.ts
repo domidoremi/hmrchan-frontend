@@ -4,12 +4,15 @@ import { PUBLIC_API_CACHE_NAME, PUBLIC_MEDIA_CACHE_NAME } from '@/sw/publicCache
 
 type ServiceWorkerListener = (event: {
   data?: unknown
+  request?: Request
+  respondWith?: (promise: Promise<Response>) => void
   waitUntil: (promise: Promise<unknown>) => void
 }) => void
 
-function createServiceWorkerHarness() {
+function createServiceWorkerHarness(options: { navigationFallback?: Response | null } = {}) {
   const listeners = new Map<string, ServiceWorkerListener[]>()
   const deletedCacheNames: string[] = []
+  const cacheMatch = vi.fn(async () => options.navigationFallback ?? null)
 
   const swGlobal = {
     addEventListener: vi.fn((type: string, listener: ServiceWorkerListener) => {
@@ -33,7 +36,12 @@ function createServiceWorkerHarness() {
       'hmr-account-data-test',
       'hmr-private-media-test',
     ]),
-    open: vi.fn(),
+    open: vi.fn(async () => ({
+      keys: vi.fn(async () => []),
+      match: cacheMatch,
+      put: vi.fn(async () => undefined),
+      delete: vi.fn(async () => true),
+    })),
   }
 
   vi.stubGlobal('self', swGlobal)
@@ -54,6 +62,24 @@ function createServiceWorkerHarness() {
 
       return waitUntil
     },
+    async dispatchFetch(request: Request) {
+      let responsePromise: Promise<Response> | undefined
+      const respondWith = vi.fn((promise: Promise<Response>) => {
+        responsePromise = Promise.resolve(promise)
+      })
+      const waitUntil = vi.fn()
+
+      for (const listener of listeners.get('fetch') ?? []) {
+        listener({ request, respondWith, waitUntil })
+      }
+
+      if (!responsePromise) {
+        throw new Error('Fetch event was not handled')
+      }
+
+      return responsePromise
+    },
+    cacheMatch,
     deletedCacheNames,
   }
 }
@@ -90,5 +116,30 @@ describe('service worker public cache clearing', () => {
 
     expect(waitUntil).not.toHaveBeenCalled()
     expect(harness.deletedCacheNames).toEqual([])
+  })
+
+  it('returns a synthetic not-found document when navigation fallback cache is empty offline', async () => {
+    const harness = createServiceWorkerHarness()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline')
+      })
+    )
+
+    await import('@/sw/index')
+
+    const response = await harness.dispatchFetch(
+      new Request('https://momichan.xyz/offline-check', {
+        headers: { accept: 'text/html' },
+      })
+    )
+    const html = await response.text()
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8')
+    expect(html).toContain('<title>页面未找到 - MomiChan</title>')
+    expect(html).toContain('data-prerender-shell-title="页面未找到"')
+    expect(harness.cacheMatch).toHaveBeenCalled()
   })
 })
