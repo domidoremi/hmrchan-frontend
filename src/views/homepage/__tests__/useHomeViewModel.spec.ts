@@ -273,6 +273,10 @@ describe('useHomeViewModel', () => {
     expect(viewModel.featuredRailCards.value.length).toBeGreaterThan(0)
     expect(viewModel.portalRecommendLink.value).toBe('/explore')
     expect(viewModel.heroEditorialVisible.value).toBe(true)
+    expect(viewModel.formatScheduleHighlightMeta(aggregate.trends.schedules[0])).toContain('Mar')
+    expect(viewModel.formatScheduleHighlightMeta(null)).toBe('')
+    expect(viewModel.formatCommunityHighlightMeta(aggregate.trends.community[0])).toContain('3 ·')
+    expect(viewModel.formatCommunityHighlightMeta(null)).toBe('')
   })
 
   it('suppresses the preview notice outside fallback mode', async () => {
@@ -327,6 +331,62 @@ describe('useHomeViewModel', () => {
     expect(viewModel.bubbleItems.value[0]?.motionProfile.driftPeriodMs).toBeGreaterThan(0)
     expect(viewModel.trendingAuthors.value.length).toBeGreaterThan(0)
     expect(viewModel.spotlightTextCards.value.length).toBeGreaterThan(0)
+  })
+
+  it('caps secondary trending authors by layout tier', async () => {
+    const aggregate = buildHomepageViewModelFixture()
+    const baselineAuthor = aggregate.trends.authors[0]
+    aggregate.trends.authors = Array.from({ length: 5 }, (_, index) => ({
+      ...baselineAuthor,
+      id: `0195fe30-6f9d-7f31-9e6f-c9a5c478b${String(index).padStart(2, '0')}`,
+      display_name: `Fixture author ${index + 1}`,
+      post_count: index + 1,
+      engagement_score: 10 - index,
+      deep_link: `/authors/fixture-author-${index + 1}`,
+    }))
+    const allPosts = ref(buildHomePostsFromAggregate(aggregate, t))
+    const bubbleLayoutTier = ref<'desktop' | 'tablet' | 'mobile'>('desktop')
+
+    const viewModel = useHomeViewModel({
+      homeAggregate: ref(aggregate),
+      allPosts,
+      homeDataSource: ref<'aggregate'>('aggregate'),
+      total: ref(allPosts.value.length),
+      homeScheduleHighlights: ref(aggregate.trends.schedules),
+      homeCommunityHighlights: ref(aggregate.trends.community),
+      shouldAnimate: computed(() => false),
+      bubbleLayoutTier,
+      translate: t,
+      locale: ref('en-US'),
+    })
+
+    await nextTick()
+
+    expect(viewModel.trendingAuthors.value).toHaveLength(4)
+    expect(viewModel.leadingTrendingAuthor.value?.name).toBe('Fixture author 1')
+    expect(viewModel.secondaryTrendingAuthors.value.map((author) => author.name)).toEqual([
+      'Fixture author 2',
+      'Fixture author 3',
+      'Fixture author 4',
+    ])
+    expect(viewModel.hiddenTrendingAuthorCount.value).toBe(0)
+
+    bubbleLayoutTier.value = 'tablet'
+    await nextTick()
+
+    expect(viewModel.secondaryTrendingAuthors.value.map((author) => author.name)).toEqual([
+      'Fixture author 2',
+      'Fixture author 3',
+    ])
+    expect(viewModel.hiddenTrendingAuthorCount.value).toBe(1)
+
+    bubbleLayoutTier.value = 'mobile'
+    await nextTick()
+
+    expect(viewModel.secondaryTrendingAuthors.value.map((author) => author.name)).toEqual([
+      'Fixture author 2',
+    ])
+    expect(viewModel.hiddenTrendingAuthorCount.value).toBe(2)
   })
 
   it('switches bubble slot styles when the layout tier changes', async () => {

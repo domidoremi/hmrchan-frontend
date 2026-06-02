@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  PUBLIC_SNAPSHOT_GENERATED_AT,
   STATIC_AUTHOR_DETAILS,
   STATIC_AUTHOR_POSTS,
   STATIC_AUTHORS,
@@ -76,5 +77,42 @@ describe('publicSnapshots', () => {
     expect(serialized).not.toContain('tiktokcdn')
     expect(serialized).not.toContain('twimg.com')
     expect(serialized).not.toContain('pbs.twimg.com')
+  })
+
+  it('keeps checked-in snapshots in the explicit UUIDv7 cutover empty state', () => {
+    expect(PUBLIC_SNAPSHOT_GENERATED_AT).toBe('2026-04-25T04:30:00.000Z')
+    expect(STATIC_HOME_AGGREGATE).toMatchObject({
+      version: 'uuidv7-cutover-empty',
+      ttl_seconds: 0,
+      latest_text_posts: [],
+      story_deck: {
+        items: [],
+        total: 0,
+      },
+    })
+    expect(STATIC_HOME_AGGREGATE.hero).toEqual({
+      editorial_card: null,
+      spotlight: null,
+      stats: [],
+      trending_tags: [],
+    })
+    expect(STATIC_HOME_AGGREGATE.portal.items).toEqual([])
+    expect(STATIC_HOME_AGGREGATE.featured.items).toEqual([])
+    expect(STATIC_HOME_AGGREGATE.trends).toEqual({
+      authors: [],
+      tags: [],
+      schedules: [],
+      community: [],
+    })
+    expect(STATIC_HOME_POSTS).toEqual([])
+    expect(STATIC_EXPLORE_POSTS).toEqual([])
+    expect(STATIC_AUTHORS).toEqual([])
+    expect(STATIC_AUTHOR_DETAILS).toEqual({})
+    expect(STATIC_AUTHOR_POSTS).toEqual({})
+    expect(STATIC_POST_DETAILS).toEqual({})
+    expect(STATIC_SCHEDULE_EVENTS).toEqual([])
+    expect(STATIC_SCHEDULE_DETAILS).toEqual([])
+    expect(STATIC_DISCUSSIONS).toEqual([])
+    expect(STATIC_DISCUSSION_COMMENTS).toEqual({})
   })
 })

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queueStore = new Map<string, Record<string, unknown>>()
 const syncRegister = vi.fn()
@@ -54,6 +54,10 @@ describe('offlineQueue', () => {
     })
   })
 
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('stores offline actions and requests background sync when supported', async () => {
     const id = await addOfflineAction('favorite', 'post-1', { source: 'test' })
 
@@ -68,6 +72,29 @@ describe('offlineQueue', () => {
       status: 'pending',
     })
     expect(syncRegister).toHaveBeenCalledWith('sync-offline-actions')
+  })
+
+  it('keeps duplicate same-resource actions when they are queued in the same millisecond', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1717214400000)
+
+    const firstId = await addOfflineAction('favorite', 'post-duplicate')
+    const secondId = await addOfflineAction('favorite', 'post-duplicate')
+
+    expect(firstId).not.toBe(secondId)
+    await expect(getPendingActions()).resolves.toMatchObject([
+      {
+        id: firstId,
+        type: 'favorite',
+        resourceId: 'post-duplicate',
+        status: 'pending',
+      },
+      {
+        id: secondId,
+        type: 'favorite',
+        resourceId: 'post-duplicate',
+        status: 'pending',
+      },
+    ])
   })
 
   it('updates queue status, tracks retries, and cleans up exhausted items', async () => {

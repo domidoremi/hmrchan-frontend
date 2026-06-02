@@ -92,6 +92,7 @@ export E2E_AUTH_LOGIN=legacy@example.com
       writeFileSync(
         path.join(backendDir, '.env'),
         [
+          'CLIENT_CONTRACT_VERSION=2026-04-13.p1',
           'REHEARSAL_TURNSTILE_BYPASS_TOKEN=test-bypass-token',
           'INTERNAL_API_SHARED_SECRET=test-internal-secret',
           'INTERNAL_IDENTITY_API_BASE_URL=http://127.0.0.1:19081',
@@ -108,6 +109,7 @@ export E2E_AUTH_LOGIN=legacy@example.com
           }
         )
       ).toMatchObject({
+        VITE_CLIENT_CONTRACT_VERSION: '2026-04-13.p1',
         REHEARSAL_TURNSTILE_BYPASS_TOKEN: 'test-bypass-token',
         BACKEND_INTERNAL_AUTH_SHARED_SECRET: 'test-internal-secret',
         API_BASE_URL: 'http://127.0.0.1:19081',
@@ -131,6 +133,7 @@ export E2E_AUTH_LOGIN=legacy@example.com
       writeFileSync(
         path.join(backendDir, '.env'),
         [
+          'CLIENT_CONTRACT_VERSION=backend-contract',
           'REHEARSAL_TURNSTILE_BYPASS_TOKEN=backend-bypass-token',
           'INTERNAL_API_SHARED_SECRET=backend-internal-secret',
           'INTERNAL_IDENTITY_API_BASE_URL=http://127.0.0.1:19081',
@@ -142,6 +145,7 @@ export E2E_AUTH_LOGIN=legacy@example.com
       expect(
         createLocalAuditEnv(
           {
+            VITE_CLIENT_CONTRACT_VERSION: 'explicit-contract',
             VITE_IDENTITY_API_BASE_URL: 'http://127.0.0.1:29081',
             VITE_COMMUNITY_API_BASE_URL: 'http://127.0.0.1:29082',
             VITE_CONTENT_API_BASE_URL: 'http://127.0.0.1:29083',
@@ -155,6 +159,7 @@ export E2E_AUTH_LOGIN=legacy@example.com
           }
         )
       ).toMatchObject({
+        VITE_CLIENT_CONTRACT_VERSION: 'explicit-contract',
         REHEARSAL_TURNSTILE_BYPASS_TOKEN: 'explicit-bypass-token',
         BACKEND_INTERNAL_AUTH_SHARED_SECRET: 'explicit-internal-secret',
         API_BASE_URL: 'http://127.0.0.1:29081',

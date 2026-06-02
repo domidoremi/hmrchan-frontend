@@ -17,6 +17,16 @@ interface OfflineAction {
 
 const QUEUE_STORE = STORES.OFFLINE_QUEUE
 const MAX_RETRY = 3
+let fallbackIdSequence = 0
+
+function createOfflineActionId(type: OfflineAction['type'], resourceId: string): string {
+  const timestamp = Date.now()
+  const suffix =
+    globalThis.crypto?.randomUUID?.() ??
+    `${timestamp}-${(fallbackIdSequence = (fallbackIdSequence + 1) % Number.MAX_SAFE_INTEGER)}`
+
+  return `${type}-${resourceId}-${timestamp}-${suffix}`
+}
 
 /**
  * 添加离线操作到队列
@@ -26,7 +36,7 @@ export async function addOfflineAction(
   resourceId: string,
   data?: Record<string, unknown>
 ): Promise<string> {
-  const id = `${type}-${resourceId}-${Date.now()}`
+  const id = createOfflineActionId(type, resourceId)
 
   const action: OfflineAction = {
     id,

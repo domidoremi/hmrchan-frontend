@@ -996,8 +996,6 @@ import {
   buildHomePostsFromAggregate,
   clamp,
   formatHomeAuthorName,
-  formatCommunityHighlightMeta as formatCommunityHighlightMetaValue,
-  formatScheduleHighlightMeta as formatScheduleHighlightMetaValue,
   normalizeText,
   resolveBubbleLayoutTier,
   resolvePostIdFromLink,
@@ -1260,6 +1258,8 @@ const {
   communityHighlightPreview,
   featuredRailCards,
   featuredRailPosts,
+  formatCommunityHighlightMeta,
+  formatScheduleHighlightMeta,
   heroEditorialCard,
   heroEditorialSupportText,
   heroEditorialText,
@@ -1271,6 +1271,7 @@ const {
   heroTags,
   homeSourcePosts,
   isUsingFallbackPosts,
+  hiddenTrendingAuthorCount,
   leadingTrendingAuthor,
   portalLeadCard,
   portalLeadEyebrow,
@@ -1283,6 +1284,7 @@ const {
   primaryScheduleHighlights,
   quickFilters,
   scheduleFallbackCard,
+  secondaryTrendingAuthors,
   spotlightMediaCards,
   spotlightTextCards,
   storyCardCount,
@@ -1302,32 +1304,6 @@ const {
   translate: t,
   locale,
 })
-
-const secondaryTrendingAuthors = computed(() => {
-  const secondary = trendingAuthors.value.slice(1)
-
-  if (bubbleLayoutTier.value === 'mobile') {
-    return secondary.slice(0, 1)
-  }
-
-  if (bubbleLayoutTier.value === 'tablet') {
-    return secondary.slice(0, 2)
-  }
-
-  return secondary.slice(0, 3)
-})
-
-const hiddenTrendingAuthorCount = computed(() =>
-  Math.max(trendingAuthors.value.length - 1 - secondaryTrendingAuthors.value.length, 0)
-)
-
-function formatScheduleHighlightMeta(item: HomeScheduleHighlight | null | undefined): string {
-  return formatScheduleHighlightMetaValue(item, locale.value)
-}
-
-function formatCommunityHighlightMeta(item: HomeCommunityHighlight | null | undefined): string {
-  return formatCommunityHighlightMetaValue(item, t)
-}
 
 function resolveSectionElement(
   section: HomeSectionInstance | null | undefined

@@ -16,10 +16,10 @@ import {
   type BubbleLayoutTier,
   formatAuthorName,
   formatBubbleText,
-  formatCommunityHighlightMeta,
+  formatCommunityHighlightMeta as formatCommunityHighlightMetaValue,
   formatHomeAuthorName,
   formatMetricValue,
-  formatScheduleHighlightMeta,
+  formatScheduleHighlightMeta as formatScheduleHighlightMetaValue,
   formatScheduleHighlightText,
   getPortalCardAvailabilityLabel,
   getPortalItemCountSummary,
@@ -166,6 +166,22 @@ export function useHomeViewModel(options: {
   })
 
   const leadingTrendingAuthor = computed(() => trendingAuthors.value[0] ?? null)
+  const secondaryTrendingAuthors = computed(() => {
+    const secondary = trendingAuthors.value.slice(1)
+
+    if (bubbleLayoutTier.value === 'mobile') {
+      return secondary.slice(0, 1)
+    }
+
+    if (bubbleLayoutTier.value === 'tablet') {
+      return secondary.slice(0, 2)
+    }
+
+    return secondary.slice(0, 3)
+  })
+  const hiddenTrendingAuthorCount = computed(() =>
+    Math.max(trendingAuthors.value.length - 1 - secondaryTrendingAuthors.value.length, 0)
+  )
   const textPosts = computed(() => homeSourcePosts.value.filter((post) => isTextPost(post)))
   const mediaPosts = computed(() => homeSourcePosts.value.filter((post) => isMediaPost(post)))
 
@@ -392,6 +408,10 @@ export function useHomeViewModel(options: {
 
   const communityHighlightPreview = computed(() => resolvedCommunityHighlights.value[0] ?? null)
   const primaryScheduleHighlights = computed(() => resolvedScheduleHighlights.value.slice(0, 2))
+  const formatScheduleHighlightMeta = (item: HomeScheduleHighlight | null | undefined): string =>
+    formatScheduleHighlightMetaValue(item, locale.value)
+  const formatCommunityHighlightMeta = (item: HomeCommunityHighlight | null | undefined): string =>
+    formatCommunityHighlightMetaValue(item, translate)
 
   const scheduleFallbackCard = computed(() => {
     const scheduleItem = portalItemMap.value.get('schedule')
@@ -415,7 +435,7 @@ export function useHomeViewModel(options: {
         label: translate('nav.community'),
         title: community.title,
         text: community.excerpt,
-        meta: formatCommunityHighlightMeta(community, translate),
+        meta: formatCommunityHighlightMeta(community),
         to: community.deep_link || '/community',
       }
     }
@@ -480,7 +500,7 @@ export function useHomeViewModel(options: {
             : translate('home.portal.items.schedule.desc')),
         noteMeta:
           normalizeText(schedulePreview?.meta) ||
-          formatScheduleHighlightMeta(firstSchedule, locale.value) ||
+          formatScheduleHighlightMeta(firstSchedule) ||
           getPortalItemCountSummary(scheduleItem, translate) ||
           translate('home.trends.scheduleAction'),
       },
@@ -510,7 +530,7 @@ export function useHomeViewModel(options: {
           translate('home.portal.items.community.desc'),
         noteMeta:
           normalizeText(communityPreview?.meta) ||
-          formatCommunityHighlightMeta(firstCommunity, translate) ||
+          formatCommunityHighlightMeta(firstCommunity) ||
           getPortalItemCountSummary(communityItem, translate) ||
           translate('nav.community'),
       },
@@ -645,6 +665,9 @@ export function useHomeViewModel(options: {
     featuredRailCards,
     featuredRailPostIds,
     featuredRailPosts,
+    formatCommunityHighlightMeta,
+    formatScheduleHighlightMeta,
+    hiddenTrendingAuthorCount,
     homeSourcePosts,
     isUsingFallbackPosts,
     leadingTrendingAuthor,
@@ -662,6 +685,7 @@ export function useHomeViewModel(options: {
     resolvedCommunityHighlights,
     resolvedScheduleHighlights,
     scheduleFallbackCard,
+    secondaryTrendingAuthors,
     spotlightMediaCards,
     spotlightTextCards,
     storyCardCount,

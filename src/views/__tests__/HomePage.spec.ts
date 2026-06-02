@@ -305,6 +305,8 @@ const i18n = createI18n({
         },
         trends: {
           authorsTitle: 'Hot Creators',
+          authorsAction: 'View creators',
+          authorCount: '{n} posts',
         },
       },
       common: {
@@ -584,6 +586,29 @@ function buildAggregateNeedingCommunityRefreshOnly() {
   return aggregate
 }
 
+function buildAggregateWithTrendingAuthors() {
+  const aggregate = buildInteractiveAggregate()
+  const baselineAuthor = aggregate.trends.authors[0] ?? {
+    id: TEST_AUTHOR.id,
+    display_name: TEST_AUTHOR.display_name,
+    avatar_url: TEST_AUTHOR.avatar_url,
+    post_count: 4,
+    engagement_score: 10,
+    deep_link: TEST_AUTHOR.deep_link,
+  }
+
+  aggregate.trends.authors = Array.from({ length: 5 }, (_, index) => ({
+    ...baselineAuthor,
+    id: `0195fe30-6f9d-7f31-9e6f-c9a5c478b${String(index).padStart(2, '0')}`,
+    display_name: `Fixture creator ${index + 1}`,
+    post_count: index + 1,
+    engagement_score: 10 - index,
+    deep_link: `/authors/fixture-creator-${index + 1}`,
+  }))
+
+  return aggregate
+}
+
 async function mountHomePage() {
   const { default: HomePage } = await import('../HomePage.vue')
   const router = createRouter({
@@ -750,6 +775,28 @@ describe('HomePage', () => {
 
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
+  })
+
+  it('binds trending author slots to the homepage view model', async () => {
+    mocks.loadHomepageBootstrap.mockResolvedValueOnce({
+      payload: buildAggregateWithTrendingAuthors(),
+      visibility: 'public',
+      etag: null,
+      source: 'aggregate',
+      reason: null,
+    })
+
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    expect(wrapper.find('.trends-authors-highlight__title').text()).toBe('Fixture creator 1')
+    expect(wrapper.findAll('.trend-author__name').map((author) => author.text())).toEqual([
+      'Fixture creator 2',
+      'Fixture creator 3',
+      'Fixture creator 4',
+    ])
+    expect(wrapper.find('.trends-link--footer').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Fixture creator 5')
   })
 
   it('adds hover-active and persistent-selected states to latest-text bubbles', async () => {
