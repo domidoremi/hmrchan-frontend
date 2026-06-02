@@ -159,6 +159,8 @@ output/
 CLAUDE.md
 .codex/
 .codex-temp/
+.gitnexus/
+.husky/_/
 .kiro/
 .qoder/
 .qoderignore
