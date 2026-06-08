@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
@@ -7,14 +7,19 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import RegisterPage from '@/views/RegisterPage.vue'
 
 const mocks = vi.hoisted(() => ({
+  authState: {
+    error: null as string | null,
+    isLoading: false,
+  },
+  register: vi.fn(async () => false),
   startGoogleLogin: vi.fn(),
 }))
 
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
-    error: null,
-    isLoading: false,
-    register: vi.fn(async () => false),
+    error: mocks.authState.error,
+    isLoading: mocks.authState.isLoading,
+    register: mocks.register,
     startGoogleLogin: mocks.startGoogleLogin,
   }),
 }))
@@ -67,6 +72,10 @@ async function mountRegisterPage(path = '/register') {
 describe('RegisterPage', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    mocks.authState.error = null
+    mocks.authState.isLoading = false
+    mocks.register.mockReset()
+    mocks.register.mockResolvedValue(false)
     mocks.startGoogleLogin.mockReset()
   })
 
@@ -82,5 +91,37 @@ describe('RegisterPage', () => {
     await wrapper.find('.hmr-auth-provider').trigger('click')
 
     expect(mocks.startGoogleLogin).toHaveBeenCalledExactlyOnceWith('register', '/profile')
+  })
+
+  it('submits register form fields including the optional verification code', async () => {
+    const wrapper = await mountRegisterPage()
+
+    await wrapper.find('input[autocomplete="username"]').setValue('momi_user')
+    await wrapper.find('input[autocomplete="email"]').setValue('momi@example.com')
+    await wrapper.find('input[autocomplete="new-password"]').setValue('secret-pass')
+    await wrapper.find('input[autocomplete="one-time-code"]').setValue('246810')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(mocks.register).toHaveBeenCalledExactlyOnceWith(
+      'momi_user',
+      'momi@example.com',
+      'secret-pass',
+      '246810'
+    )
+  })
+
+  it('routes successful registration to login with the safe redirect target', async () => {
+    mocks.register.mockResolvedValueOnce(true)
+    const wrapper = await mountRegisterPage('/register?redirect=/account/profile')
+
+    await wrapper.find('input[autocomplete="username"]').setValue('momi_user')
+    await wrapper.find('input[autocomplete="email"]').setValue('momi@example.com')
+    await wrapper.find('input[autocomplete="new-password"]').setValue('secret-pass')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.vm.$route.path).toBe('/login')
+    expect(wrapper.vm.$route.query.redirect).toBe('/account/profile')
   })
 })
