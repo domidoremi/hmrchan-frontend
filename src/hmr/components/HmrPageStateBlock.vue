@@ -8,6 +8,8 @@
       'is-error': Boolean(error),
     }"
     aria-live="polite"
+    data-hmr-page-state-block="true"
+    :data-hmr-page-state="stateName"
   >
     <div class="hmr-page-state-body">
       <div v-if="loading" class="hmr-page-state-skeleton" aria-hidden="true">
@@ -82,6 +84,13 @@ const isVisible = computed(
 )
 
 const canRetry = computed(() => props.showRetry && (props.empty || Boolean(props.error)))
+
+const stateName = computed(() => {
+  if (props.loading) return 'loading'
+  if (props.error) return 'error'
+  if (props.empty) return 'empty'
+  return 'ready'
+})
 
 const titleText = computed(() => {
   if (props.loading) return props.loadingTitle || props.title || '内容加载中'

@@ -121,6 +121,88 @@ describe('ProfilePage', () => {
     expect(wrapper.text()).toContain('Profile row')
   })
 
+  it('renders favorites profile index with stable section selectors', async () => {
+    mocks.loadProfileSectionContentResource.mockResolvedValue(
+      makeResource(
+        makeProfileContent({
+          section: 'favorites',
+          title: '收藏索引',
+          summary: [
+            {
+              id: 'saved-posts',
+              title: '已收藏',
+              excerpt: '可回看的公开内容',
+              metric: '2',
+            },
+          ],
+          rows: [
+            {
+              id: 'favorite-1',
+              title: 'Saved post',
+              excerpt: 'Saved public summary',
+              metric: 'YouTube',
+            },
+          ],
+        })
+      )
+    )
+
+    const wrapper = await mountProfilePage('favorites')
+
+    expect(mocks.loadProfileSectionContentResource).toHaveBeenCalledExactlyOnceWith('favorites')
+    expect(wrapper.get('[data-testid="profile-section-shell"]').attributes()).toMatchObject({
+      'data-profile-section': 'favorites',
+    })
+    expect(wrapper.get('[data-testid="profile-favorites-tab"]').attributes('aria-current')).toBe(
+      'page'
+    )
+    expect(wrapper.text()).toContain('收藏索引')
+    expect(wrapper.text()).toContain('Saved post')
+    expect(wrapper.text()).toContain('Saved public summary')
+  })
+
+  it('renders inbox notifications with stable section selectors and unread state', async () => {
+    mocks.loadProfileSectionContentResource.mockResolvedValue(
+      makeResource(
+        makeProfileContent({
+          section: 'inbox',
+          title: '收件箱',
+          summary: [
+            {
+              id: 'unread',
+              title: '未读消息',
+              excerpt: '评论、回复、系统通知和审核结果。',
+              metric: '2',
+            },
+          ],
+          rows: [
+            {
+              id: 'message-1',
+              title: '评论回复',
+              excerpt: '你的公开评论收到新回复',
+              metric: 'unread',
+            },
+          ],
+          inbox: {
+            unreadCount: 2,
+            latestLabel: '刚刚',
+          },
+        })
+      )
+    )
+
+    const wrapper = await mountProfilePage('inbox')
+
+    expect(mocks.loadProfileSectionContentResource).toHaveBeenCalledExactlyOnceWith('inbox')
+    expect(wrapper.get('[data-testid="profile-section-shell"]').attributes()).toMatchObject({
+      'data-profile-section': 'inbox',
+    })
+    expect(wrapper.get('[data-testid="profile-inbox-tab"]').attributes('aria-current')).toBe('page')
+    expect(wrapper.text()).toContain('收件箱')
+    expect(wrapper.text()).toContain('2 未读')
+    expect(wrapper.text()).toContain('评论回复')
+  })
+
   it('normalizes unknown profile sections to overview', async () => {
     mocks.loadProfileSectionContentResource.mockResolvedValue(makeResource(makeProfileContent()))
 

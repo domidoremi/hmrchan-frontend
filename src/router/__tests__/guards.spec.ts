@@ -57,20 +57,43 @@ describe('resolveHmrRouteGuard', () => {
     expect(auth.resolveSession).toHaveBeenCalledOnce()
   })
 
-  it('redirects invalid legacy public resource ids to not found', async () => {
+  it.each([
+    ['legacy author detail', 'author-detail', 'bad-id'],
+    ['hmr post detail', 'hmr-post-detail', 'featured-post'],
+    ['hmr discussion detail', 'hmr-discussion-detail', 'discussion-slug'],
+  ])('redirects invalid %s public resource ids to not found', async (_label, name, id) => {
     const auth = makeAuth()
 
     await expect(
       resolveHmrRouteGuard(
         makeRoute({
-          name: 'author-detail',
-          params: { id: 'bad-id' },
+          name,
+          params: { id },
         }),
         auth
       )
     ).resolves.toEqual({
       name: 'hmr-not-found',
     })
+  })
+
+  it.each([
+    ['hmr-post-detail', `/posts/${VALID_RESOURCE_ID}`],
+    ['hmr-discussion-detail', `/community/discussions/${VALID_RESOURCE_ID}`],
+  ])('allows valid %s public resource ids', async (name, path) => {
+    const auth = makeAuth(false)
+
+    await expect(
+      resolveHmrRouteGuard(
+        makeRoute({
+          fullPath: path,
+          name,
+          params: { id: VALID_RESOURCE_ID },
+          path,
+        }),
+        auth
+      )
+    ).resolves.toBe(true)
   })
 
   it('redirects unauthenticated protected routes to login with the original path', async () => {

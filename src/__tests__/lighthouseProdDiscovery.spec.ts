@@ -79,6 +79,7 @@ describe('Lighthouse production discovery', () => {
 
     const urls = manifest.entries.map((entry) => entry.url)
 
+    expect(urls).toContain('https://next.momichan.xyz/join-us')
     expect(urls).toContain('https://next.momichan.xyz/posts/019e1463-bc76-7bf7-8266-2a8316ab3d2c')
     expect(urls).toContain('https://next.momichan.xyz/profile/019dcf17-91e8-76cc-8a3a-e89b1666bf94')
     expect(urls).toContain(
@@ -94,5 +95,36 @@ describe('Lighthouse production discovery', () => {
     expect(urls).not.toContain('https://next.momichan.xyz/authors')
     expect(urls).not.toContain('https://next.momichan.xyz/forgot-password')
     expect(urls.some((url) => url.includes('hmrchan.local'))).toBe(false)
+  })
+
+  it('keeps the fallback URL manifest aligned with route and detail target policy', async () => {
+    const {
+      DEFAULT_BASE,
+      DETAIL_PAGE_TARGETS,
+      STATIC_ANONYMOUS_ROUTE_PATHS,
+      readUrlManifestDocument,
+    } = await import('../../scripts/lib/lighthouse-prod-shared.mjs')
+
+    const manifest = readUrlManifestDocument(
+      'scripts/config/lighthouse-prod-urls.json',
+      DEFAULT_BASE
+    )
+    const manifestPaths = manifest.entries.map((entry) => new URL(entry.url).pathname)
+
+    expect(manifest.base).toBe(DEFAULT_BASE)
+    expect(manifest.coverage?.staticAnonymousRoutes).toEqual(STATIC_ANONYMOUS_ROUTE_PATHS)
+    expect(manifest.coverage?.detailTargets).toEqual(DETAIL_PAGE_TARGETS)
+    expect(manifestPaths).toEqual(expect.arrayContaining(STATIC_ANONYMOUS_ROUTE_PATHS))
+    expect(manifestPaths).not.toContain('/thank-you')
+    expect(manifestPaths).not.toContain('/profile')
+
+    expect(manifest.notes).toEqual(
+      expect.objectContaining({
+        authorDetail: expect.stringContaining('explicit gap'),
+        postDetail: expect.stringContaining('explicit gap'),
+        discussionDetail: expect.stringContaining('explicit gap'),
+        scheduleDetail: expect.stringContaining('explicit gap'),
+      })
+    )
   })
 })

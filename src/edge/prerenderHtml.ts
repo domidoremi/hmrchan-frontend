@@ -18,12 +18,19 @@ export const STATIC_PRERENDER_ROUTES = [
   '/register',
   '/auth/callback',
   '/auth/passkey-recovery',
+  '/passkey-recovery',
   '/profile',
   '/about',
   '/contact',
   '/join-us',
   '/thank-you',
 ] as const
+
+const STATIC_PRERENDER_DOCUMENT_PATH_ALIASES: Partial<
+  Record<(typeof STATIC_PRERENDER_ROUTES)[number], string>
+> = {
+  '/passkey-recovery': '/auth/passkey-recovery',
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -139,7 +146,13 @@ function replacePreloadImageLinks(html: string, links: string): string {
     return clearedHtml
   }
 
-  return clearedHtml.replace('</head>', `  ${links}\n  </head>`)
+  const preloadBlock = `  ${links}\n`
+  const firstModuleScript = /<script\s+[^>]*type=["']module["'][^>]*>/i
+  if (firstModuleScript.test(clearedHtml)) {
+    return clearedHtml.replace(firstModuleScript, (matched) => `${preloadBlock}    ${matched}`)
+  }
+
+  return clearedHtml.replace('</head>', `${preloadBlock}  </head>`)
 }
 
 export function applyPrerenderDocument(
@@ -176,6 +189,8 @@ export function applyPrerenderDocument(
 }
 
 export function createPrerenderedHtml(html: string, path: string): string {
-  const documentConfig = resolveHtmlDocument(new URL(path, SITE_ORIGIN))
+  const documentPath =
+    STATIC_PRERENDER_DOCUMENT_PATH_ALIASES[path as (typeof STATIC_PRERENDER_ROUTES)[number]] ?? path
+  const documentConfig = resolveHtmlDocument(new URL(documentPath, SITE_ORIGIN))
   return applyPrerenderDocument(html, documentConfig)
 }

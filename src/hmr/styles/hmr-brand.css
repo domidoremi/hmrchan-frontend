@@ -3610,6 +3610,8 @@ svg {
 }
 
 .hmr-media-skeleton--hero {
+  inline-size: 100%;
+  max-inline-size: 100%;
   min-block-size: 42em;
   aspect-ratio: 0.82;
 }
@@ -5935,6 +5937,7 @@ svg {
   }
 
   .hmr-home-hero-media .hmr-project-media,
+  .hmr-media-skeleton--hero,
   .hmr-post-card--hero .hmr-project-media {
     min-block-size: 26rem;
     aspect-ratio: 0.82;

@@ -1,11 +1,37 @@
-import { readFile } from 'fs/promises'
+import { readFile, readdir, stat } from 'fs/promises'
 import { existsSync } from 'fs'
-import { join } from 'path'
+import { join, relative } from 'path'
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
 
 const REQUIRED_MANIFEST_FIELDS = ['name', 'short_name', 'icons', 'start_url', 'display'] as const
 const I18N_LOCALE_CONTRACT_FILE = 'src/i18n/locales.ts'
 const SITEMAP_GENERATOR_FILE = 'scripts/generate-sitemap.js'
+const PUBLIC_ASSET_BUDGETS = [
+  {
+    label: 'PWA icon',
+    root: 'public/icons',
+    extensions: ['.png', '.webp'],
+    maxBytes: 320 * 1024,
+  },
+  {
+    label: 'HMRChan font',
+    root: 'public/hmrchan/reference',
+    extensions: ['.otf', '.woff', '.woff2'],
+    maxBytes: 160 * 1024,
+  },
+  {
+    label: 'HMRChan sprite',
+    root: 'public/hmrchan/pets',
+    extensions: ['.png', '.webp'],
+    maxBytes: 2 * 1024 * 1024,
+  },
+  {
+    label: 'snapshot media',
+    root: 'public/snapshot-media',
+    extensions: ['.jpg', '.jpeg', '.png', '.webp'],
+    maxBytes: 64 * 1024,
+  },
+] as const
 const REQUIRED_INDEXED_SITEMAP_PATHS = [
   '/',
   '/explore',
@@ -31,6 +57,50 @@ const SITE_ORIGIN = 'https://momichan.xyz'
 function getAttribute(tag: string, attribute: string): string | null {
   const match = tag.match(new RegExp(`\\s${attribute}=["']([^"']*)["']`, 'i'))
   return match?.[1]?.trim() || null
+}
+
+function isNodeErrorCode(error: unknown, code: string): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === code
+  )
+}
+
+function formatAssetSize(bytes: number): string {
+  const kib = bytes / 1024
+  return Number.isInteger(kib) ? `${kib} KiB` : `${kib.toFixed(1)} KiB`
+}
+
+function toRepoPath(options: AuditOptions, filePath: string): string {
+  return relative(options.projectRoot, filePath).replace(/\\/g, '/')
+}
+
+async function listFilesRecursive(rootPath: string): Promise<string[]> {
+  let entries: Awaited<ReturnType<typeof readdir>>
+  try {
+    entries = await readdir(rootPath, { withFileTypes: true })
+  } catch (error) {
+    if (isNodeErrorCode(error, 'ENOENT')) return []
+    throw error
+  }
+
+  const files: string[] = []
+  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    const entryPath = join(rootPath, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...(await listFilesRecursive(entryPath)))
+    } else if (entry.isFile()) {
+      files.push(entryPath)
+    }
+  }
+  return files
+}
+
+function matchesAssetExtensions(filePath: string, extensions: readonly string[]): boolean {
+  const normalizedPath = filePath.replace(/\\/g, '/').toLowerCase()
+  return extensions.some((extension) => normalizedPath.endsWith(extension))
 }
 
 function findLinkTag(content: string, rel: string): string | null {
@@ -320,6 +390,32 @@ async function checkManifest(
       file: 'public/manifest.json',
       rule: 'pwa-icons',
     })
+  }
+
+  return issues
+}
+
+async function checkPublicAssetBudgets(options: AuditOptions): Promise<AuditIssue[]> {
+  const issues: AuditIssue[] = []
+
+  for (const budget of PUBLIC_ASSET_BUDGETS) {
+    const rootPath = join(options.projectRoot, budget.root)
+    const assetPaths = await listFilesRecursive(rootPath)
+    for (const assetPath of assetPaths) {
+      if (!matchesAssetExtensions(assetPath, budget.extensions)) continue
+
+      const assetStat = await stat(assetPath)
+      if (assetStat.size <= budget.maxBytes) continue
+
+      const repoPath = toRepoPath(options, assetPath)
+      issues.push({
+        severity: 'error',
+        message: `${budget.label} exceeds ${formatAssetSize(budget.maxBytes)} budget: ${repoPath} is ${formatAssetSize(assetStat.size)}`,
+        file: repoPath,
+        rule: 'pwa-asset-budget',
+        suggestion: `Compress or split ${repoPath} before shipping.`,
+      })
+    }
   }
 
   return issues
@@ -649,6 +745,9 @@ const pwaAudit: AuditModule = {
 
     const manifestIssues = await checkManifest(options, defaultAppLocale)
     allIssues.push(...manifestIssues)
+
+    const assetBudgetIssues = await checkPublicAssetBudgets(options)
+    allIssues.push(...assetBudgetIssues)
 
     const swIssues = await checkServiceWorker(options)
     allIssues.push(...swIssues)

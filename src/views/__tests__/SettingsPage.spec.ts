@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
+import { useAuthStore } from '@/stores/auth'
 import SettingsPage from '@/views/SettingsPage.vue'
 
 const mocks = vi.hoisted(() => ({
@@ -50,7 +51,7 @@ function mockMatchMedia(matches: boolean) {
   })
 }
 
-async function mountSettingsPage() {
+async function mountSettingsPage(options: { authenticated?: boolean } = {}) {
   const i18n = createI18n({
     legacy: false,
     locale: 'zh-CN',
@@ -92,9 +93,20 @@ async function mountSettingsPage() {
   await router.push('/settings')
   await router.isReady()
 
+  const pinia = createPinia()
+  setActivePinia(pinia)
+  if (options.authenticated) {
+    const auth = useAuthStore()
+    auth.user = {
+      id: 'user-1',
+      username: 'member',
+      email: 'user@example.test',
+    }
+  }
+
   return mount(SettingsPage, {
     global: {
-      plugins: [createPinia(), i18n, router],
+      plugins: [pinia, i18n, router],
       stubs: {
         HmrPageStateBlock: true,
         RouterLink: {
@@ -143,6 +155,14 @@ describe('SettingsPage', () => {
     expect(links).toContain('/register?redirect=/settings')
     expect(links).toContain('/login?redirect=/profile/security')
     expect(links).toContain('/login?redirect=/profile/inbox')
+  })
+
+  it('links authenticated notification settings directly to the profile inbox', async () => {
+    const wrapper = await mountSettingsPage({ authenticated: true })
+    const links = wrapper.findAll('a').map((link) => link.attributes('href'))
+
+    expect(links).toContain('/profile/inbox')
+    expect(links).not.toContain('/login?redirect=/profile/inbox')
   })
 
   it('keeps guest settings local without loading private resources on mount', async () => {

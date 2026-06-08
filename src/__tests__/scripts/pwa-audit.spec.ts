@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
@@ -8,6 +8,11 @@ import pwaAudit from '../../../scripts/audit/pwa'
 
 type ManifestIcon = {
   src?: string
+}
+
+type AssetFixture = {
+  path: string
+  bytes: number
 }
 
 const indexedSitemapPaths = [
@@ -42,6 +47,7 @@ type ManifestFixtureOptions = {
     themeColorContent?: string
     appleTouchIconHref?: string
   }
+  assets?: AssetFixture[]
 }
 
 function createManifest({ icons, manifestLang = 'zh-CN' }: ManifestFixtureOptions): string {
@@ -169,6 +175,12 @@ async function createPwaFixture(options: ManifestFixtureOptions): Promise<string
     await writeFile(join(projectRoot, 'public', icon.replace(/^\//, '')), '')
   }
 
+  for (const asset of options.assets ?? []) {
+    const assetPath = join(projectRoot, asset.path)
+    await mkdir(dirname(assetPath), { recursive: true })
+    await writeFile(assetPath, Buffer.alloc(asset.bytes))
+  }
+
   return projectRoot
 }
 
@@ -253,6 +265,74 @@ describe('pwa audit manifest icon contract', () => {
           expect.objectContaining({
             rule: 'pwa-icons',
             message: 'Declared icon file not found: /icons/missing.webp',
+          }),
+        ])
+      )
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('pwa audit public asset budget contract', () => {
+  it('passes when budgeted public assets stay under their limits', async () => {
+    const projectRoot = await createPwaFixture({
+      icons: [{ src: '/icons/sitting-192.webp' }],
+      existingIcons: ['/icons/sitting-192.webp'],
+      assets: [
+        { path: 'public/hmrchan/reference/v1/hmr-test.woff2', bytes: 160 * 1024 },
+        { path: 'public/hmrchan/pets/isle/v1/spritesheet.webp', bytes: 2 * 1024 * 1024 },
+        { path: 'public/snapshot-media/home/test.webp', bytes: 64 * 1024 },
+      ],
+    })
+
+    try {
+      const result = await runPwaAudit(projectRoot)
+
+      expect(result.status).toBe('pass')
+      expect(result.issues).toEqual([])
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true })
+    }
+  })
+
+  it('fails when public asset categories exceed their budgets', async () => {
+    const projectRoot = await createPwaFixture({
+      icons: [{ src: '/icons/sitting-192.webp' }],
+      existingIcons: ['/icons/sitting-192.webp'],
+      assets: [
+        { path: 'public/icons/oversized-icon.png', bytes: 320 * 1024 + 1 },
+        { path: 'public/hmrchan/reference/v1/oversized-font.woff2', bytes: 160 * 1024 + 1 },
+        { path: 'public/hmrchan/pets/isle/v1/oversized-sprite.webp', bytes: 2 * 1024 * 1024 + 1 },
+        { path: 'public/snapshot-media/home/oversized-snapshot.webp', bytes: 64 * 1024 + 1 },
+      ],
+    })
+
+    try {
+      const result = await runPwaAudit(projectRoot)
+
+      expect(result.status).toBe('fail')
+      expect(result.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            rule: 'pwa-asset-budget',
+            file: 'public/icons/oversized-icon.png',
+            message: expect.stringContaining('PWA icon exceeds 320 KiB budget'),
+          }),
+          expect.objectContaining({
+            rule: 'pwa-asset-budget',
+            file: 'public/hmrchan/reference/v1/oversized-font.woff2',
+            message: expect.stringContaining('HMRChan font exceeds 160 KiB budget'),
+          }),
+          expect.objectContaining({
+            rule: 'pwa-asset-budget',
+            file: 'public/hmrchan/pets/isle/v1/oversized-sprite.webp',
+            message: expect.stringContaining('HMRChan sprite exceeds 2048 KiB budget'),
+          }),
+          expect.objectContaining({
+            rule: 'pwa-asset-budget',
+            file: 'public/snapshot-media/home/oversized-snapshot.webp',
+            message: expect.stringContaining('snapshot media exceeds 64 KiB budget'),
           }),
         ])
       )

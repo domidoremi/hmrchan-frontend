@@ -191,14 +191,6 @@ function resolveStaticFileStatus(pathname: string): number {
 }
 
 function resolveHtmlFallbackPath(pathname: string): { filePath: string; status: number } {
-  const documentConfig = resolveHtmlDocument(new URL(pathname, SITE_ORIGIN))
-  if (documentConfig.status === 404) {
-    return {
-      filePath: resolve(distDir, join('404', 'index.html')),
-      status: 404,
-    }
-  }
-
   const normalizedPath =
     pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname
   const mapped = FALLBACK_HTML_FILES.get(pathname) ?? FALLBACK_HTML_FILES.get(normalizedPath)
@@ -216,6 +208,14 @@ function resolveHtmlFallbackPath(pathname: string): { filePath: string; status: 
         filePath: directPage,
         status: 200,
       }
+    }
+  }
+
+  const documentConfig = resolveHtmlDocument(new URL(pathname, SITE_ORIGIN))
+  if (documentConfig.status === 404) {
+    return {
+      filePath: resolve(distDir, join('404', 'index.html')),
+      status: 404,
     }
   }
 

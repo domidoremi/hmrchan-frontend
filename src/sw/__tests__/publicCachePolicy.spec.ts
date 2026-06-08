@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  cacheLimitForName,
   cacheNameForRequest,
   isPublicCacheableRequest,
   isPublicCacheableResponse,
+  PUBLIC_API_CACHE_LIMIT,
   PUBLIC_API_CACHE_NAME,
+  PUBLIC_MEDIA_CACHE_LIMIT,
   PUBLIC_MEDIA_CACHE_NAME,
 } from '@/sw/publicCachePolicy'
 
@@ -58,6 +61,28 @@ describe('public cache service worker policy', () => {
     ).toBe(false)
   })
 
+  it('rejects non-GET, no-store, and credentialed public API requests', () => {
+    expect(
+      isPublicCacheableRequest(
+        new Request('https://next.momichan.xyz/api/v1/posts', {
+          credentials: 'omit',
+          method: 'POST',
+        })
+      )
+    ).toBe(false)
+    expect(
+      isPublicCacheableRequest(
+        new Request('https://next.momichan.xyz/api/v1/posts', {
+          cache: 'no-store',
+          credentials: 'omit',
+        })
+      )
+    ).toBe(false)
+    expect(isPublicCacheableRequest(new Request('https://next.momichan.xyz/api/v1/posts'))).toBe(
+      false
+    )
+  })
+
   it('routes public media to the media cache', () => {
     const request = new Request(
       'https://next.momichan.xyz/hmrchan/pets/tidyfox/v1/spritesheet.webp'
@@ -99,12 +124,21 @@ describe('public cache service worker policy', () => {
     ).toBe(false)
   })
 
-  it('rejects private or Set-Cookie responses', () => {
+  it('rejects non-OK, private, no-store, or Set-Cookie responses', () => {
+    expect(isPublicCacheableResponse(new Response('{}', { status: 503 }))).toBe(false)
     expect(
       isPublicCacheableResponse(new Response('{}', { headers: { 'cache-control': 'private' } }))
     ).toBe(false)
     expect(
+      isPublicCacheableResponse(new Response('{}', { headers: { 'cache-control': 'no-store' } }))
+    ).toBe(false)
+    expect(
       isPublicCacheableResponse(new Response('{}', { headers: { 'set-cookie': 'x=1' } }))
     ).toBe(false)
+  })
+
+  it('keeps cache limits separated by cache family', () => {
+    expect(cacheLimitForName(PUBLIC_API_CACHE_NAME)).toBe(PUBLIC_API_CACHE_LIMIT)
+    expect(cacheLimitForName(PUBLIC_MEDIA_CACHE_NAME)).toBe(PUBLIC_MEDIA_CACHE_LIMIT)
   })
 })

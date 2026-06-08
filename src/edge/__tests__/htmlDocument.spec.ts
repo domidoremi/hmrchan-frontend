@@ -4,7 +4,7 @@ import { STATIC_HOME_PRERENDER_IMAGE } from '../../fallbacks/generated/homePrere
 import { supportedLocales } from '../../i18n/locales'
 import { appRoutes } from '../../router/routes'
 import { renderPrerenderShell, resolveHtmlDocument } from '../htmlDocument'
-import { createPrerenderedHtml } from '../prerenderHtml'
+import { STATIC_PRERENDER_ROUTES, createPrerenderedHtml } from '../prerenderHtml'
 
 function resolvePath(path: string) {
   return resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
@@ -136,9 +136,12 @@ describe('edge HTML document routing', () => {
 
   it('emits a discoverable image preload for the home prerender document', () => {
     const html = createPrerenderedHtml(
-      '<html><head><title>App</title></head><body><div id="app-root"></div></body></html>',
+      '<html><head><title>App</title><script type="module" src="/assets/app.js"></script></head><body><div id="app-root"></div></body></html>',
       '/'
     )
+
+    const preloadIndex = html.indexOf('data-prerender-preload-image="true"')
+    const moduleScriptIndex = html.indexOf('<script type="module"')
 
     expect(html).toContain('rel="preload"')
     expect(html).toContain('as="image"')
@@ -148,6 +151,21 @@ describe('edge HTML document routing', () => {
     expect(html).toContain('/snapshot-media/home/')
     expect(html).toContain('data-prerender-preload-image="true"')
     expect(html).toContain('fetchpriority' + '="high"')
+    expect(preloadIndex).toBeGreaterThanOrEqual(0)
+    expect(preloadIndex).toBeLessThan(moduleScriptIndex)
+  })
+
+  it('generates a canonical prerender document for the legacy passkey recovery redirect', () => {
+    const html = createPrerenderedHtml(
+      '<html><head><title>App</title><link rel="canonical" href="https://momichan.xyz/" /></head><body><div id="app-root"></div></body></html>',
+      '/passkey-recovery'
+    )
+
+    expect(STATIC_PRERENDER_ROUTES).toContain('/passkey-recovery')
+    expect(html).toContain('<title>Passkey recovery · MomiChan</title>')
+    expect(html).toContain('href="https://momichan.xyz/auth/passkey-recovery"')
+    expect(html).toContain('data-prerender-shell-title="Recover Passkey access"')
+    expect(html).not.toContain('data-prerender-shell-title="Page not found"')
   })
 
   it('binds WebSite structured data languages to the supported locale contract', () => {

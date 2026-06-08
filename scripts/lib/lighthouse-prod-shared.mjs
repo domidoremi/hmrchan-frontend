@@ -14,6 +14,7 @@ export const STATIC_ANONYMOUS_ROUTE_PATHS = [
   '/schedule',
   '/about',
   '/contact',
+  '/join-us',
   '/login',
   '/register',
 ]

@@ -316,6 +316,9 @@ describe('ExplorePage', () => {
 
     expect(wrapper.text()).toContain('公开内容暂时不可用')
     expect(wrapper.text()).toContain('最新公开内容加载失败')
+    expect(
+      wrapper.get('[data-hmr-page-state-block="true"]').attributes('data-hmr-page-state')
+    ).toBe('error')
   })
 
   it('distinguishes an empty public catalog from filtered empty results', async () => {
@@ -323,6 +326,9 @@ describe('ExplorePage', () => {
     const wrapper = await mountExplorePage()
 
     expect(wrapper.text()).toContain('暂无公开内容')
+    expect(
+      wrapper.get('[data-hmr-page-state-block="true"]').attributes('data-hmr-page-state')
+    ).toBe('empty')
 
     await wrapper.find('input').setValue('missing term')
     await wrapper.find('form').trigger('submit')

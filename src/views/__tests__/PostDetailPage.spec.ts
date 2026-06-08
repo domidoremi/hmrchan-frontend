@@ -102,6 +102,31 @@ describe('PostDetailPage', () => {
     expect(wrapper.text()).toContain('暂无公开评论')
   })
 
+  it('keeps a stable comments readiness anchor when public comments are present', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(
+        makeDetailContent({
+          comments: [
+            {
+              id: 'comment-1',
+              title: 'reply-owner',
+              excerpt: 'First public reply',
+              metric: '1 回复 · 4 喜欢',
+            },
+          ],
+        })
+      )
+    )
+
+    const { wrapper } = await mountPostDetail('/posts/post-1')
+
+    expect(wrapper.find('.post-comments').exists()).toBe(true)
+    expect(wrapper.find('.hmr-detail-comment-list').exists()).toBe(true)
+    expect(wrapper.findAll('.hmr-detail-comment')).toHaveLength(1)
+    expect(wrapper.text()).toContain('First public reply')
+    expect(wrapper.text()).not.toContain('暂无公开评论')
+  })
+
   it('maps not-found detail resources to the empty page state', async () => {
     mocks.readPublicContent.mockResolvedValue(
       makeResource(
@@ -125,6 +150,9 @@ describe('PostDetailPage', () => {
     expect(wrapper.text()).toContain('未找到 · 该帖子可能已被移除')
     expect(wrapper.text()).toContain('这条帖子不存在或已下架')
     expect(wrapper.text()).toContain('未找到内容')
+    expect(
+      wrapper.get('[data-hmr-page-state-block="true"]').attributes('data-hmr-page-state')
+    ).toBe('empty')
   })
 
   it('prioritizes the hero image and lazily loads attachment thumbnails', async () => {

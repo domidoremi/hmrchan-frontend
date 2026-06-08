@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
+import { localeBadges, supportedLocales, type SupportedLocale } from '@/i18n/locales'
 import HmrSiteShell from '@/layouts/HmrSiteShell.vue'
 
 const mocks = vi.hoisted(() => ({
@@ -89,32 +90,68 @@ function mockPreloaderProgressGeometry() {
   })
 }
 
-function makeI18n() {
+const shellMessages = {
+  'zh-CN': {
+    nav: {
+      about: '关于',
+      community: '社区',
+      contact: '反馈',
+      explore: '探索',
+      home: '首页',
+      login: '登录',
+      register: '注册',
+      schedule: '日程',
+    },
+    shell: {
+      footerContact: '联系',
+      settings: '设置',
+    },
+  },
+  'en-US': {
+    nav: {
+      about: 'About',
+      community: 'Community',
+      contact: 'Feedback',
+      explore: 'Explore',
+      home: 'Home',
+      login: 'Log in',
+      register: 'Sign up',
+      schedule: 'Schedule',
+    },
+    shell: {
+      footerContact: 'Contact',
+      settings: 'Settings',
+    },
+  },
+  'ja-JP': {
+    nav: {
+      about: '概要',
+      community: 'コミュニティ',
+      contact: 'フィードバック',
+      explore: '探索',
+      home: 'ホーム',
+      login: 'ログイン',
+      register: '登録',
+      schedule: '予定',
+    },
+    shell: {
+      footerContact: 'お問い合わせ',
+      settings: '設定',
+    },
+  },
+} satisfies Record<SupportedLocale, Record<string, Record<string, string>>>
+
+const shellPrimaryNavKeys = ['home', 'explore', 'community', 'schedule'] as const
+
+function makeI18n(locale: SupportedLocale = 'zh-CN') {
   return createI18n({
     legacy: false,
-    locale: 'zh-CN',
-    messages: {
-      'zh-CN': {
-        nav: {
-          about: '关于',
-          community: '社区',
-          contact: '反馈',
-          explore: '探索',
-          home: '首页',
-          login: '登录',
-          register: '注册',
-          schedule: '日程',
-        },
-        shell: {
-          footerContact: '联系',
-          settings: '设置',
-        },
-      },
-    },
+    locale,
+    messages: shellMessages,
   })
 }
 
-async function mountShell(path = '/') {
+async function mountShell(path = '/', locale: SupportedLocale = 'zh-CN') {
   window.history.pushState({}, '', path)
   const router = createRouter({
     history: createMemoryHistory(),
@@ -167,7 +204,7 @@ async function mountShell(path = '/') {
   return mount(HmrSiteShell, {
     attachTo: document.body,
     global: {
-      plugins: [createPinia(), makeI18n(), router],
+      plugins: [createPinia(), makeI18n(locale), router],
       stubs: {
         Transition: false,
       },
@@ -185,6 +222,46 @@ describe('HmrSiteShell preloader', () => {
     setActivePinia(createPinia())
     mockMatchMedia(false)
     mockPreloaderProgressGeometry()
+  })
+
+  it.each(supportedLocales)('renders compact shell navigation labels for %s', async (locale) => {
+    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
+
+    const wrapper = await mountShell('/', locale)
+
+    try {
+      const expectedPrimaryLabels = shellPrimaryNavKeys.map((key) => shellMessages[locale].nav[key])
+
+      expect(wrapper.find('.hmr-mobile-locale').text()).toBe(localeBadges[locale])
+      expect(wrapper.find('.hmr-mobile-locale').text()).toHaveLength(2)
+
+      const primaryNavLinks = wrapper.findAll('.hmr-primary-nav .hmr-primary-nav-link')
+      expect(primaryNavLinks).toHaveLength(expectedPrimaryLabels.length)
+      expect(primaryNavLinks.map((link) => link.attributes('aria-label'))).toEqual(
+        expectedPrimaryLabels
+      )
+      expect(
+        primaryNavLinks.map((link) => link.find('.hmr-nav-label').attributes('data-label'))
+      ).toEqual(expectedPrimaryLabels)
+
+      const settingsLink = wrapper.find('.hmr-primary-nav-link--settings')
+      expect(settingsLink.attributes('aria-label')).toBe(shellMessages[locale].shell.settings)
+      expect(settingsLink.find('.hmr-nav-label').attributes('data-label')).toBe(
+        shellMessages[locale].shell.settings
+      )
+
+      const visibleShellLabels = [
+        ...expectedPrimaryLabels,
+        shellMessages[locale].shell.settings,
+        shellMessages[locale].nav.login,
+        shellMessages[locale].nav.register,
+      ]
+      expect(
+        visibleShellLabels.every((label) => label.trim().length > 0 && label.length <= 16)
+      ).toBe(true)
+    } finally {
+      wrapper.unmount()
+    }
   })
 
   it('automatically completes the first session preloader without a click', async () => {
