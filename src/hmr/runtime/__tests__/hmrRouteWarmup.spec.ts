@@ -48,6 +48,15 @@ vi.mock('@/api/hmrContent', () => ({
   loadScheduleContentResource: mocks.loadScheduleContentResource,
 }))
 
+vi.mock('@/views/HomePage.vue', () => ({ default: { name: 'MockHomePage' } }))
+vi.mock('@/views/ExplorePage.vue', () => ({ default: { name: 'MockExplorePage' } }))
+vi.mock('@/views/CommunityPage.vue', () => ({ default: { name: 'MockCommunityPage' } }))
+vi.mock('@/views/DiscussionDetailPage.vue', () => ({
+  default: { name: 'MockDiscussionDetailPage' },
+}))
+vi.mock('@/views/SchedulePage.vue', () => ({ default: { name: 'MockSchedulePage' } }))
+vi.mock('@/views/PostDetailPage.vue', () => ({ default: { name: 'MockPostDetailPage' } }))
+
 describe('hmr session entry warmup', () => {
   beforeEach(() => {
     vi.useRealTimers()
