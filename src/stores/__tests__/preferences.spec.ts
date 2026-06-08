@@ -1,10 +1,11 @@
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { normalizeHmrPreferences, usePreferencesStore } from '@/stores/preferences'
 
 describe('preferences store', () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     window.localStorage.clear()
     setActivePinia(createPinia())
   })
@@ -23,6 +24,39 @@ describe('preferences store', () => {
         autoHeroInteraction: false,
       })
     ).toEqual({})
+  })
+
+  it('falls back to empty defaults when stored preferences are not parseable', () => {
+    window.localStorage.setItem('hmr.preferences.v1', '{not-json')
+
+    const store = usePreferencesStore()
+
+    expect(store.preferences).toEqual({})
+  })
+
+  it('normalizes stored legacy preferences during startup', () => {
+    window.localStorage.setItem(
+      'hmr.preferences.v1',
+      JSON.stringify({
+        animationIntensity: 'loud',
+        autoHeroInteraction: false,
+        enableAnimations: false,
+      })
+    )
+
+    const store = usePreferencesStore()
+
+    expect(store.preferences).toEqual({})
+  })
+
+  it('initializes stored preferences only once after creation', () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem')
+    const store = usePreferencesStore()
+
+    store.initializePreferences()
+    store.initializePreferences()
+
+    expect(getItem).toHaveBeenCalledTimes(2)
   })
 
   it('persists the normalized preference shape', async () => {
