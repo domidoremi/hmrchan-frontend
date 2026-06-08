@@ -407,7 +407,7 @@ async function main(): Promise<void> {
     console.log(`📁 Reports saved in: ${LIGHTHOUSE_REPORTS_DIR}`)
   } catch (error) {
     console.error('❌ Performance testing failed:', error)
-    process.exit(1)
+    process.exitCode = 1
   } finally {
     if (chrome) {
       try {

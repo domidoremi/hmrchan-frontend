@@ -9,6 +9,7 @@ const LOCAL_API_BRIDGE_IMAGE = 'alpine/socat:latest'
 const LOCAL_API_BRIDGE_NETWORK = 'hmrchan-backend_hmrchan'
 const DEFAULT_COMMAND_TIMEOUT_MS = 20_000
 const CLEANUP_COMMAND_TIMEOUT_MS = 5_000
+const PREVIEW_PORT_CLEANUP_SETTLE_MS = 750
 const LOCAL_API_BRIDGE_SERVICES = Object.freeze({
   gateway: {
     envKey: 'API_BASE_URL',
@@ -562,8 +563,6 @@ export async function terminateProcessTree(pid) {
         shell: false,
       })
       const timer = setTimeout(resolve, CLEANUP_COMMAND_TIMEOUT_MS)
-      timer.unref?.()
-      killer.unref?.()
       const finish = () => {
         clearTimeout(timer)
         resolve()
@@ -581,6 +580,28 @@ export async function terminateProcessTree(pid) {
   }
 }
 
+export async function isProcessRunning(pid) {
+  if (!pid) return false
+
+  if (process.platform === 'win32') {
+    const output = await runCommandCapture('tasklist', [
+      '/FI',
+      `PID eq ${pid}`,
+      '/FO',
+      'CSV',
+      '/NH',
+    ])
+    return output.includes(`"${pid}"`)
+  }
+
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function waitForProcessExit(child, timeoutMs = 10_000) {
   if (!child || child.exitCode !== null || child.killed) {
     return
@@ -588,8 +609,6 @@ export async function waitForProcessExit(child, timeoutMs = 10_000) {
 
   await new Promise((resolve) => {
     const timer = setTimeout(resolve, timeoutMs)
-    timer.unref?.()
-    child.unref?.()
     const finish = () => {
       clearTimeout(timer)
       resolve()
@@ -598,6 +617,61 @@ export async function waitForProcessExit(child, timeoutMs = 10_000) {
     child.once('close', finish)
     child.once('error', finish)
   })
+}
+
+export async function waitForPidExit(pid, timeoutMs = 10_000, pollIntervalMs = 250) {
+  if (!pid) return true
+
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (!(await isProcessRunning(pid))) {
+      return true
+    }
+    await wait(pollIntervalMs)
+  }
+
+  return !(await isProcessRunning(pid))
+}
+
+export function parseListeningProcessIdsFromNetstat(output, port) {
+  if (!port) return []
+
+  const portSuffix = `:${port}`
+  const pids = new Set()
+  for (const line of output.split(/\r?\n/)) {
+    const fields = line.trim().split(/\s+/)
+    if (fields.length < 5 || !/^TCP$/i.test(fields[0]) || !/^LISTENING$/i.test(fields[3])) {
+      continue
+    }
+
+    const localAddress = fields[1]
+    const pid = Number.parseInt(fields[4], 10)
+    if (
+      Number.isInteger(pid) &&
+      pid > 0 &&
+      (localAddress.endsWith(portSuffix) || localAddress.endsWith(`]${portSuffix}`))
+    ) {
+      pids.add(pid)
+    }
+  }
+
+  return [...pids]
+}
+
+export async function findProcessIdsListeningOnPort(port) {
+  if (!port || process.platform !== 'win32') return []
+
+  const output = await runCommandCapture('netstat', ['-ano', '-p', 'tcp']).catch(() => '')
+  return parseListeningProcessIdsFromNetstat(output, port)
+}
+
+export async function terminateProcessesListeningOnPort(port) {
+  const pids = await findProcessIdsListeningOnPort(port)
+  for (const pid of pids) {
+    if (pid === process.pid) continue
+    await terminateProcessTree(pid)
+    await waitForPidExit(pid, 5_000)
+  }
 }
 
 function hasTrimmedEnvValue(env, key) {
@@ -1083,9 +1157,16 @@ export class PreviewShellManager {
     this.stopRequested = true
     child.stdout?.destroy?.()
     child.stderr?.destroy?.()
-    child.unref?.()
     await terminateProcessTree(child.pid)
     await waitForProcessExit(child, 2_000)
+    child.unref?.()
+    if (child.pid && (await isProcessRunning(child.pid))) {
+      await terminateProcessTree(child.pid)
+      await waitForPidExit(child.pid, 5_000)
+    }
+    await terminateProcessesListeningOnPort(this.port)
+    await wait(PREVIEW_PORT_CLEANUP_SETTLE_MS)
+    await terminateProcessesListeningOnPort(this.port)
     await bridge?.stop()
   }
 

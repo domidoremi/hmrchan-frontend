@@ -8,7 +8,6 @@ import {
 import type { HmrWarmRouteKey } from '@/hmr/types'
 import { readPublicContent } from '@/utils/cache/publicContentCache'
 import { registerPublicCacheServiceWorker } from '@/utils/cache/serviceWorkerRegistration'
-import { warmHomeBootstrap } from './homePrewarm'
 
 export interface HmrSessionEntryWarmupOptions {
   path: string
@@ -68,6 +67,11 @@ export async function warmHmrPriorityRoutes(currentPath: string): Promise<void> 
   )
 }
 
+async function warmHomeBootstrapTask(): Promise<void> {
+  const { warmHomeBootstrap } = await import('./homePrewarm')
+  await warmHomeBootstrap()
+}
+
 function normalizePath(path: string): string {
   return path.split('#')[0]?.split('?')[0] || '/'
 }
@@ -89,7 +93,7 @@ function makeCurrentRouteContentTask(path: string): HmrWarmupTask | null {
   if (normalized === '/') {
     return {
       name: 'public-home-bootstrap',
-      run: warmHomeBootstrap,
+      run: warmHomeBootstrapTask,
     }
   }
   if (normalized.startsWith('/explore')) {
@@ -180,7 +184,7 @@ function buildSessionWarmupTasks(options: HmrSessionEntryWarmupOptions): HmrWarm
   if (options.includeHomeBootstrap !== false) {
     tasks.push({
       name: 'public-home-bootstrap',
-      run: warmHomeBootstrap,
+      run: warmHomeBootstrapTask,
     })
   }
 

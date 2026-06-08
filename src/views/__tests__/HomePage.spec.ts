@@ -14,6 +14,9 @@ const mocks = vi.hoisted(() => ({
   loadPostDetailContentResource: vi.fn(),
   readAvailablePublicContent: vi.fn(),
   readPublicContent: vi.fn(),
+  renderHmrPostCard: vi.fn(),
+  scheduleHomeContentPrewarm: vi.fn(),
+  shouldUseApiFallback: vi.fn(() => false),
 }))
 
 vi.mock('@/api/hmrContent', async (importOriginal) => {
@@ -30,6 +33,26 @@ vi.mock('@/api/hmrContent', async (importOriginal) => {
 vi.mock('@/utils/cache/publicContentCache', () => ({
   readAvailablePublicContent: mocks.readAvailablePublicContent,
   readPublicContent: mocks.readPublicContent,
+}))
+
+vi.mock('@/api/runtimeFlags', () => ({
+  shouldUseApiFallback: mocks.shouldUseApiFallback,
+}))
+
+vi.mock('@/hmr/components/HmrPostCard.vue', () => ({
+  default: {
+    name: 'HmrPostCard',
+    props: ['post'],
+    created() {
+      mocks.renderHmrPostCard()
+    },
+    template:
+      '<article class="hmr-post-card"><span>{{ post.title }}</span><img :src="post.mediaUrl" /></article>',
+  },
+}))
+
+vi.mock('@/hmr/runtime/homePrewarm', () => ({
+  scheduleHomeContentPrewarm: mocks.scheduleHomeContentPrewarm,
 }))
 
 function makePost(overrides: Partial<HmrPost> = {}): HmrPost {
@@ -113,13 +136,6 @@ async function mountHomePage() {
   return mount(HomePage, {
     global: {
       plugins: [router],
-      stubs: {
-        HmrPostCard: {
-          props: ['post'],
-          template:
-            '<article class="hmr-post-card"><span>{{ post.title }}</span><img :src="post.mediaUrl" /></article>',
-        },
-      },
     },
   })
 }
@@ -133,6 +149,10 @@ describe('HomePage', () => {
     mocks.loadPostDetailContentResource.mockReset()
     mocks.readAvailablePublicContent.mockReset()
     mocks.readPublicContent.mockReset()
+    mocks.renderHmrPostCard.mockReset()
+    mocks.scheduleHomeContentPrewarm.mockReset()
+    mocks.shouldUseApiFallback.mockReset()
+    mocks.shouldUseApiFallback.mockReturnValue(false)
     vi.stubGlobal('requestIdleCallback', vi.fn())
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
@@ -231,11 +251,79 @@ describe('HomePage', () => {
       })
     )
     expect(wrapper.text()).toContain('Primary post')
-    expect(wrapper.findAll('.hmr-post-card').map((card) => card.text())).toEqual([
-      'Primary post',
-      'Primary post',
-    ])
+    expect(wrapper.findAll('.hmr-post-card').map((card) => card.text())).toEqual(['Primary post'])
     expect(wrapper.text()).toContain('Full discussion')
+    expect(mocks.scheduleHomeContentPrewarm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        highlights: fullResource.data.highlights,
+      }),
+      { includeExplore: true }
+    )
+
+    wrapper.unmount()
+  })
+
+  it('keeps the hero post out of the secondary featured grid', async () => {
+    const posts = [
+      makePost({ id: 'hero', title: 'Hero post' }),
+      makePost({ id: 'second', title: 'Second post' }),
+      makePost({ id: 'third', title: 'Third post' }),
+      makePost({ id: 'fourth', title: 'Fourth post' }),
+      makePost({ id: 'fifth', title: 'Fifth post' }),
+      makePost({ id: 'sixth', title: 'Sixth post' }),
+    ]
+    const primaryResource = makeResource({
+      ...makeContent(posts[0]!),
+      featured: posts,
+    })
+    mocks.readAvailablePublicContent.mockResolvedValue(null)
+    mocks.readPublicContent.mockResolvedValue(primaryResource)
+
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    expect(wrapper.findAll('.hmr-post-card').map((card) => card.text())).toEqual([
+      'Hero post',
+      'Second post',
+      'Third post',
+      'Fourth post',
+      'Fifth post',
+    ])
+
+    wrapper.unmount()
+  })
+
+  it('skips home refresh work in fallback-only runtime mode', async () => {
+    vi.useFakeTimers()
+    mocks.shouldUseApiFallback.mockReturnValue(true)
+    const primaryResource = makeResource(makeContent(makePost({ title: 'Fallback primary post' })))
+    const requestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
+      callback({ didTimeout: false, timeRemaining: () => 12 })
+      return 1
+    })
+    vi.stubGlobal('requestIdleCallback', requestIdleCallback)
+    vi.stubGlobal('cancelIdleCallback', vi.fn())
+    mocks.readAvailablePublicContent.mockResolvedValue(null)
+    mocks.readPublicContent.mockResolvedValue(primaryResource)
+
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('MomiChan')
+    expect(wrapper.text()).not.toContain('Fallback primary post')
+    expect(wrapper.find('.hmr-home-static-hero-card').exists()).toBe(true)
+    expect(mocks.readAvailablePublicContent).not.toHaveBeenCalled()
+    expect(mocks.readPublicContent).not.toHaveBeenCalled()
+    expect(mocks.loadHomePrimaryContentResource).not.toHaveBeenCalled()
+    expect(mocks.renderHmrPostCard).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(5000)
+    await flushPromises()
+
+    expect(requestIdleCallback).not.toHaveBeenCalled()
+    expect(mocks.loadHomeContentResource).not.toHaveBeenCalled()
+    expect(mocks.readPublicContent).not.toHaveBeenCalled()
+    expect(mocks.scheduleHomeContentPrewarm).not.toHaveBeenCalled()
 
     wrapper.unmount()
   })
@@ -250,6 +338,7 @@ describe('HomePage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('MomiChan')
+    expect(wrapper.find('.hmr-home-static-hero-card').exists()).toBe(true)
     expect(wrapper.find('img').attributes('src')).toBe(STATIC_HOME_PRERENDER_IMAGE.href)
     expect(wrapper.findAll('.hmr-media-skeleton')).toHaveLength(0)
     expect(wrapper.text()).not.toContain('Network post')
@@ -258,6 +347,7 @@ describe('HomePage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Network post')
+    expect(wrapper.find('.hmr-home-static-hero-card').exists()).toBe(false)
     expect(wrapper.find('img').attributes('src')).toBe(STATIC_HOME_PRERENDER_IMAGE.href)
   })
 })

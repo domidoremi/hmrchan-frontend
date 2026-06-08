@@ -22,9 +22,59 @@
         </div>
 
         <div class="hmr-home-hero-media">
+          <RouterLink
+            v-if="shouldRenderStaticHeroCard && heroPost"
+            class="hmr-project-card hmr-post-card hmr-post-card--hero hmr-post-card--real-poster is-linked hmr-home-static-hero-card"
+            to="/explore"
+            data-platform="tiktok"
+            :style="staticHeroCardStyle"
+          >
+            <div class="hmr-project-media hmr-post-card__visual">
+              <img
+                class="hmr-post-card__poster"
+                :src="STATIC_HOME_PRERENDER_IMAGE.href"
+                :srcset="STATIC_HOME_PRERENDER_IMAGE.srcset"
+                :sizes="STATIC_HOME_PRERENDER_IMAGE.sizes"
+                :alt="heroPost.title"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+              />
+              <div class="hmr-post-card__shade" aria-hidden="true"></div>
+              <div
+                class="hmr-post-card__badge-row"
+                :style="staticHeroBadgeStyle"
+                aria-hidden="true"
+              >
+                <span class="hmr-post-card__badge"></span>
+                <span class="hmr-post-card__badge hmr-post-card__badge--solid"></span>
+              </div>
+              <div class="hmr-post-card__stats" :style="staticHeroStatsStyle" aria-hidden="true">
+                <span></span>
+                <span></span>
+              </div>
+              <span
+                class="hmr-post-card__platform-mark"
+                :style="staticHeroPlatformMarkStyle"
+                aria-hidden="true"
+              >
+              </span>
+              <span class="hmr-post-card__play" aria-hidden="true">
+                <span></span>
+              </span>
+            </div>
+            <div class="hmr-project-info hmr-post-card__content">
+              <p class="hmr-meta hmr-post-card__meta">
+                <span>{{ heroPost.authorName }}</span>
+                <span>{{ heroPost.createdAt }}</span>
+              </p>
+              <h3 class="hmr-card-title">{{ heroPost.title }}</h3>
+              <p class="hmr-body hmr-post-card__excerpt">{{ heroPost.excerpt }}</p>
+            </div>
+          </RouterLink>
           <HmrPostCard
-            v-if="featuredPosts[0]"
-            :post="featuredPosts[0]"
+            v-else-if="heroPost"
+            :post="heroPost"
             variant="hero"
             :show-footer="false"
             image-loading="eager"
@@ -47,7 +97,7 @@
 
         <div v-if="featuredPosts.length" class="hmr-featured-grid hmr-featured-grid--cinematic">
           <HmrPostCard
-            v-for="(post, index) in featuredPosts.slice(0, 4)"
+            v-for="(post, index) in secondaryFeaturedPosts"
             :key="`featured-${post.id}-${index}`"
             :post="post"
             :index="index"
@@ -113,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import {
@@ -121,15 +171,17 @@ import {
   loadHomePrimaryContentResource,
   type HmrHomeContent,
 } from '@/api/hmrContent'
-import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
+import { shouldUseApiFallback } from '@/api/runtimeFlags'
 import { useHmrHomeView } from '@/hmr/composables/useHmrHomeView'
 import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
 import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
-import { scheduleHomeContentPrewarm } from '@/hmr/runtime/homePrewarm'
 import { STATIC_HOME_PRERENDER_IMAGE } from '@/fallbacks/generated/homePrerenderManifest'
 import { cancelIdleTask, runWhenIdle, type IdleTaskHandle } from '@/utils/performance'
 import { readPublicContent } from '@/utils/cache/publicContentCache'
 
+const HmrPostCard = defineAsyncComponent(
+  async () => (await import('@/hmr/components/HmrPostCard.vue')).default
+)
 const homePrerenderPost = {
   id: 'home-prerender-featured',
   title: 'MomiChan',
@@ -206,6 +258,24 @@ const {
 })
 
 const { cssContent, featuredPosts, platformItems } = useHmrHomeView(content)
+const heroPost = computed(() => featuredPosts.value[0])
+const secondaryFeaturedPosts = computed(() => featuredPosts.value.slice(1, 5))
+const shouldRenderStaticHeroCard = computed(() => heroPost.value?.id === homePrerenderPost.id)
+const staticHeroCardStyle = {
+  '--hmr-card-start': '#171412',
+  '--hmr-card-end': '#3d2fa9',
+}
+const staticHeroBadgeStyle = {
+  '--hmr-badge-platform': '"TikTok"',
+  '--hmr-badge-kind': '"媒体"',
+}
+const staticHeroStatsStyle = {
+  '--hmr-stat-primary': '"实时"',
+  '--hmr-stat-secondary': '"刚刚"',
+}
+const staticHeroPlatformMarkStyle = {
+  '--hmr-platform-mark': '"TT"',
+}
 
 function clearFullHomeRefreshDelay(): void {
   if (fullHomeRefreshDelayTimer === undefined) return
@@ -215,6 +285,7 @@ function clearFullHomeRefreshDelay(): void {
 
 function scheduleFullHomeRefresh(): void {
   if (typeof window === 'undefined') return
+  if (shouldUseApiFallback()) return
   if (fullHomeRefreshStarted || fullHomeRefreshDelayTimer !== undefined || fullHomeRefreshHandle) {
     return
   }
@@ -252,10 +323,16 @@ async function refreshFullHome(): Promise<void> {
     ...fullResource,
     data: stablePrimaryContent,
   })
+  const { scheduleHomeContentPrewarm } = await import('@/hmr/runtime/homePrewarm')
   scheduleHomeContentPrewarm(nextResource.data, { includeExplore: true })
 }
 
-useHmrMountedResourceRefresh(refreshHomePrimary)
+function refreshHomePrimaryWhenApiEnabled(): Promise<unknown> | void {
+  if (shouldUseApiFallback()) return
+  return refreshHomePrimary()
+}
+
+useHmrMountedResourceRefresh(refreshHomePrimaryWhenApiEnabled)
 
 onBeforeUnmount(() => {
   clearFullHomeRefreshDelay()

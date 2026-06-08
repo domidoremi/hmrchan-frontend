@@ -578,7 +578,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
        * 模块预加载配置
        * 关闭 polyfill 以减小体积
        */
-      modulePreload: false,
+      modulePreload: { polyfill: false },
 
       /** chunk 大小警告阈值（KB） */
       chunkSizeWarningLimit: 500,
