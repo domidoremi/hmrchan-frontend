@@ -9,10 +9,44 @@ type ServiceWorkerListener = (event: {
   waitUntil: (promise: Promise<unknown>) => void
 }) => void
 
-function createServiceWorkerHarness(options: { navigationFallback?: Response | null } = {}) {
+function cacheRequestKey(request: unknown): string {
+  const raw =
+    typeof request === 'string'
+      ? request
+      : request instanceof Request
+        ? request.url
+        : request instanceof URL
+          ? request.href
+          : String(request)
+
+  try {
+    const url = new URL(raw, 'https://momichan.xyz')
+    return `${url.pathname}${url.search}`
+  } catch {
+    return raw
+  }
+}
+
+function createServiceWorkerHarness(
+  options: {
+    cacheMatches?: Record<string, Response | null>
+    navigationFallback?: Response | null
+  } = {}
+) {
   const listeners = new Map<string, ServiceWorkerListener[]>()
   const deletedCacheNames: string[] = []
-  const cacheMatch = vi.fn(async () => options.navigationFallback ?? null)
+  const cacheMatchKeys: string[] = []
+  const cacheMatch = vi.fn(async (request: unknown) => {
+    const key = cacheRequestKey(request)
+    cacheMatchKeys.push(key)
+
+    const cacheMatches = options.cacheMatches ?? {}
+    const response = Object.prototype.hasOwnProperty.call(cacheMatches, key)
+      ? cacheMatches[key]
+      : (options.navigationFallback ?? null)
+
+    return response?.clone() ?? null
+  })
 
   const swGlobal = {
     addEventListener: vi.fn((type: string, listener: ServiceWorkerListener) => {
@@ -80,6 +114,8 @@ function createServiceWorkerHarness(options: { navigationFallback?: Response | n
       return responsePromise
     },
     cacheMatch,
+    cacheMatchKeys,
+    cachesMock,
     deletedCacheNames,
   }
 }
@@ -141,5 +177,61 @@ describe('service worker public cache clearing', () => {
     expect(html).toContain('<title>页面未找到 - MomiChan</title>')
     expect(html).toContain('data-prerender-shell-title="页面未找到"')
     expect(harness.cacheMatch).toHaveBeenCalled()
+  })
+
+  it('uses the app shell navigation fallback before not-found fallback while offline', async () => {
+    const harness = createServiceWorkerHarness({
+      cacheMatches: {
+        '/404.html': new Response('<main>not-found-cache</main>', {
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        }),
+        '/index.html': new Response('<main data-shell="app">app-shell-cache</main>', {
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        }),
+      },
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline')
+      })
+    )
+
+    await import('@/sw/index')
+
+    const response = await harness.dispatchFetch(
+      new Request('https://momichan.xyz/profile/favorites', {
+        headers: { accept: 'text/html' },
+      })
+    )
+    const html = await response.text()
+
+    expect(response.status).toBe(200)
+    expect(html).toContain('app-shell-cache')
+    expect(html).not.toContain('not-found-cache')
+    expect(harness.cacheMatchKeys).toEqual(['/index.html'])
+  })
+
+  it('serves cached public media without a network request', async () => {
+    const harness = createServiceWorkerHarness({
+      cacheMatches: {
+        '/hmrchan/reference/card.png': new Response('cached-media', {
+          headers: { 'Content-Type': 'image/png' },
+        }),
+      },
+    })
+    const fetchMock = vi.fn(async () => new Response('network-media'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await import('@/sw/index')
+
+    const response = await harness.dispatchFetch(
+      new Request('https://momichan.xyz/hmrchan/reference/card.png')
+    )
+
+    expect(await response.text()).toBe('cached-media')
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(harness.cachesMock.open).toHaveBeenCalledWith(PUBLIC_MEDIA_CACHE_NAME)
+    expect(harness.cacheMatchKeys).toEqual(['/hmrchan/reference/card.png'])
   })
 })
