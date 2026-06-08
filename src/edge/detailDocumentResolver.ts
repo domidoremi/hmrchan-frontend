@@ -1251,6 +1251,35 @@ function buildDynamicScheduleDocument(
   }
 }
 
+function buildRestrictedPostDocument(path: string): HtmlDocumentConfig {
+  const fallback = resolveHtmlDocument(new URL(path, SITE_ORIGIN))
+
+  return {
+    ...fallback,
+    title: `Public preview restricted · ${SITE_NAME}`,
+    description: '当前帖子对公开访问受限。请稍后重试或继续浏览其他公开内容。',
+    canonicalPath: path,
+    ogType: 'article',
+    shellEyebrow: 'Public preview restricted',
+    shellTitle: 'This post is temporarily unavailable for public preview',
+    shellBody: '当前帖子暂不对公开访问开放，你可以稍后再试，或者继续浏览探索页和社区。',
+    shellSummary: [
+      'This post is currently restricted for public preview.',
+      'You can continue browsing other public content from Explore or Community.',
+    ],
+    shellStats: [
+      { label: 'Status', value: 'Restricted' },
+      { label: 'Next stop', value: 'Explore or Community' },
+    ],
+    shellLinks: [
+      { href: '/explore', label: 'Explore' },
+      { href: '/community', label: 'Community' },
+    ],
+    structuredData: [],
+    preloadImages: [],
+  }
+}
+
 export async function resolveHtmlDocumentWithEdgeData(
   url: URL,
   env?: EdgeRuntimeEnv
@@ -1270,29 +1299,7 @@ export async function resolveHtmlDocumentWithEdgeData(
           (result.errorCode === 'ACCESS_TEMPORARILY_RESTRICTED' ||
             result.errorCode === 'AUTOMATED_ACCESS_NOT_PERMITTED')
         ) {
-          return createDocumentConfig(
-            path,
-            'Public preview restricted',
-            '当前帖子对公开访问受限。请稍后重试或继续浏览其他公开内容。',
-            'Public preview restricted',
-            'This post is temporarily unavailable for public preview',
-            '当前帖子暂不对公开访问开放，你可以稍后再试，或者继续浏览探索页和社区。',
-            {
-              ogType: 'article',
-              shellSummary: [
-                'This post is currently restricted for public preview.',
-                'You can continue browsing other public content from Explore or Community.',
-              ],
-              shellStats: [
-                { label: 'Status', value: 'Restricted' },
-                { label: 'Next stop', value: 'Explore or Community' },
-              ],
-              shellLinks: [
-                { href: '/explore', label: 'Explore' },
-                { href: '/community', label: 'Community' },
-              ],
-            }
-          )
+          return buildRestrictedPostDocument(path)
         }
         return fallback
       }
