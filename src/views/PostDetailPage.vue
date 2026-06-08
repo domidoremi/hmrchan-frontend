@@ -1459,6 +1459,8 @@ onUnmounted(() => {
 
 .post-stage {
   position: relative;
+  box-sizing: border-box;
+  inline-size: 100%;
   min-height: calc(100svh - var(--navbar-height));
   min-height: calc(100dvh - var(--navbar-height));
   display: flex;
@@ -1748,7 +1750,11 @@ onUnmounted(() => {
 }
 
 .post-shell {
-  width: min(100%, var(--container-max));
+  box-sizing: border-box;
+  flex: 0 1 var(--container-max);
+  inline-size: min(100%, var(--container-max));
+  max-inline-size: var(--container-max);
+  min-inline-size: 0;
   margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr);

@@ -109,9 +109,16 @@ describe('responsive layout contracts', () => {
     expect(profileSecurityPageSource).toContain('overflow-wrap: anywhere')
   })
 
-  it('keeps post detail aligned to the top with less rigid panel and modal heights', () => {
+  it('keeps post detail top-aligned while centering the shell inside the stage', () => {
     expect(postDetailPageSource).toContain('.post-stage {')
     expect(postDetailPageSource).toContain('align-items: flex-start')
+    expect(postDetailPageSource).toContain('justify-content: center')
+    expect(postDetailPageSource).toContain('inline-size: 100%')
+    expect(postDetailPageSource).toContain('.post-shell {')
+    expect(postDetailPageSource).toContain('flex: 0 1 var(--container-max)')
+    expect(postDetailPageSource).toContain('inline-size: min(100%, var(--container-max))')
+    expect(postDetailPageSource).toContain('max-inline-size: var(--container-max)')
+    expect(postDetailPageSource).toContain('min-inline-size: 0')
     expect(postDetailPageSource).toContain('.post-header {')
     expect(postDetailPageSource).toContain('min-block-size: 0')
     expect(postDetailPageSource).toContain('.post-text-panel {')
