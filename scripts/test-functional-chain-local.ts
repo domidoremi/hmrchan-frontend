@@ -10,11 +10,20 @@ import {
   appendFunctionalChainCheck,
   createFunctionalChainSummary,
   finalizeFunctionalChainSummary,
-  isUuidString,
   resolveFunctionalChainAccounts,
   validateFunctionalChainAccounts,
   writeFunctionalChainArtifacts,
 } from './lib/functional-chain-matrix.js'
+import {
+  assertAuthenticatedUuidSession,
+  assertUnauthenticatedSession,
+  buildCookieHeaderFromCookieRecords,
+  buildCookieHeaderFromSetCookieHeaders,
+  buildOriginCsrfMaterial,
+  getBffSessionSetCookieHeaders,
+  hasSessionSetCookie,
+  parseBffSessionCookieForBrowser,
+} from './lib/functional-chain-session.js'
 
 type MatrixAccount = ReturnType<typeof resolveFunctionalChainAccounts>[number]
 type MatrixSummary = ReturnType<typeof createFunctionalChainSummary>
@@ -24,11 +33,6 @@ type SessionResolveProbe = {
   body: unknown
 }
 type BrowserCookieParam = Parameters<Page['setCookie']>[number]
-type OriginCsrfMaterial = {
-  cookieName: string
-  cookieHeader: string
-  token: string
-}
 
 const projectRoot = resolve(import.meta.dir, '..')
 const artifactDir =
@@ -103,64 +107,15 @@ async function readJsonResponse(response: Response): Promise<Record<string, unkn
 }
 
 function hasSessionCookie(response: Response): boolean {
-  return getSetCookieHeaders(response).some(
-    (cookie) => /(?:__Host-)?momi_bff_(at|rt)=/.test(cookie) && !/Max-Age=0/.test(cookie)
-  )
+  return hasSessionSetCookie(getSetCookieHeaders(response))
 }
 
 function getSetCookieHeaders(response: Response): string[] {
-  const headers = response.headers as Headers & { getSetCookie?: () => string[] }
-  if (typeof headers.getSetCookie === 'function') {
-    return headers.getSetCookie()
-  }
-  return (response.headers.get('Set-Cookie') ?? '')
-    .split(/,(?=\s*(?:__Host-)?momi_bff_)/)
-    .map((cookie) => cookie.trim())
-    .filter(Boolean)
+  return getBffSessionSetCookieHeaders(response.headers)
 }
 
 function parseSetCookieForBrowser(baseUrl: string, cookie: string): BrowserCookieParam | null {
-  const [nameValue = '', ...attributes] = cookie.split(';')
-  const separatorIndex = nameValue.indexOf('=')
-  if (separatorIndex <= 0) return null
-
-  const name = nameValue.slice(0, separatorIndex).trim()
-  if (!/^(?:__Host-)?momi_bff_(at|rt)$/.test(name)) return null
-
-  const parsed: BrowserCookieParam = {
-    name,
-    value: nameValue.slice(separatorIndex + 1).trim(),
-    url: baseUrl,
-    path: '/',
-  }
-
-  for (const rawAttribute of attributes) {
-    const attribute = rawAttribute.trim()
-    const lower = attribute.toLowerCase()
-    if (lower === 'httponly') {
-      parsed.httpOnly = true
-    } else if (lower === 'secure') {
-      parsed.secure = true
-    } else if (lower.startsWith('path=')) {
-      parsed.path = attribute.slice('path='.length) || '/'
-    } else if (lower.startsWith('max-age=')) {
-      const maxAge = Number.parseInt(attribute.slice('max-age='.length), 10)
-      if (!Number.isFinite(maxAge) || maxAge <= 0) return null
-      parsed.expires = Math.floor(Date.now() / 1000) + maxAge
-    } else if (lower.startsWith('expires=')) {
-      const expires = Date.parse(attribute.slice('expires='.length))
-      if (Number.isFinite(expires)) {
-        parsed.expires = Math.floor(expires / 1000)
-      }
-    } else if (lower.startsWith('samesite=')) {
-      const sameSite = attribute.slice('samesite='.length).toLowerCase()
-      if (sameSite === 'strict') parsed.sameSite = 'Strict'
-      else if (sameSite === 'none') parsed.sameSite = 'None'
-      else parsed.sameSite = 'Lax'
-    }
-  }
-
-  return parsed
+  return parseBffSessionCookieForBrowser(baseUrl, cookie) as BrowserCookieParam | null
 }
 
 async function applySessionCookiesToPage(
@@ -181,13 +136,8 @@ async function buildCookieHeaderFromContext(
   baseUrl: string,
   role: string
 ): Promise<string> {
-  const csrf = buildOriginCsrfMaterial(baseUrl, role)
   const cookies = await context.cookies()
-  const parts = cookies
-    .filter((cookie) => /^(?:__Host-)?momi_bff_(at|rt)$/.test(cookie.name))
-    .map((cookie) => `${cookie.name}=${cookie.value}`)
-  parts.push(csrf.cookieHeader)
-  return parts.join('; ')
+  return buildCookieHeaderFromCookieRecords(baseUrl, role, cookies)
 }
 
 function buildCookieHeaderFromLoginResponse(
@@ -195,14 +145,7 @@ function buildCookieHeaderFromLoginResponse(
   baseUrl: string,
   role: string
 ): string {
-  const csrf = buildOriginCsrfMaterial(baseUrl, role)
-  const parts = getSetCookieHeaders(response)
-    .map((cookie) => parseSetCookieForBrowser(baseUrl, cookie))
-    .filter((cookie): cookie is BrowserCookieParam => cookie !== null)
-    .filter((cookie) => /^(?:__Host-)?momi_bff_(at|rt)$/.test(cookie.name))
-    .map((cookie) => `${cookie.name}=${cookie.value}`)
-  parts.push(csrf.cookieHeader)
-  return parts.join('; ')
+  return buildCookieHeaderFromSetCookieHeaders(getSetCookieHeaders(response), baseUrl, role)
 }
 
 async function resolveSessionViaCookieHeader(
@@ -263,18 +206,6 @@ async function logoutViaContext(
   }
   if (hasSessionCookie(response)) {
     throw new Error('logout wrote BFF session cookies')
-  }
-}
-
-function buildOriginCsrfMaterial(baseUrl: string, role: string): OriginCsrfMaterial {
-  const url = new URL(baseUrl)
-  const isLocalPreview = ['127.0.0.1', 'localhost', '::1'].includes(url.hostname)
-  const cookieName = isLocalPreview ? 'momi_origin_csrf' : '__Host-momi_origin_csrf'
-  const token = `functional-chain-csrf-${role.replace(/[^a-z0-9_-]/gi, '-')}`
-  return {
-    cookieName,
-    cookieHeader: `${cookieName}=${token}`,
-    token,
   }
 }
 
@@ -374,45 +305,6 @@ async function resolveSessionViaFacade(
   accountRole: string
 ): Promise<SessionResolveProbe> {
   return resolveSessionViaContext(page.browserContext(), baseUrl, accountRole)
-}
-
-function readSessionUserId(probe: SessionResolveProbe): unknown {
-  const body = probe.body as {
-    authenticated?: unknown
-    user?: { id?: unknown }
-    data?: { authenticated?: unknown; user?: { id?: unknown } }
-  } | null
-  return body?.user?.id ?? body?.data?.user?.id
-}
-
-function assertAuthenticatedUuidSession(probe: SessionResolveProbe, label: string): void {
-  if (probe.status !== 200) {
-    throw new Error(`${label} session:resolve returned HTTP ${probe.status}`)
-  }
-  const body = probe.body as {
-    authenticated?: unknown
-    user?: { id?: unknown }
-    data?: { authenticated?: unknown; user?: { id?: unknown } }
-  } | null
-  const authenticated = body?.authenticated ?? body?.data?.authenticated
-  if (authenticated !== true) {
-    throw new Error(`${label} session:resolve did not return authenticated=true`)
-  }
-  const userId = readSessionUserId(probe)
-  if (!isUuidString(userId)) {
-    throw new Error(`${label} user.id is not a UUID string: ${String(userId ?? '')}`)
-  }
-}
-
-function assertUnauthenticatedSession(probe: SessionResolveProbe, label: string): void {
-  if (probe.status !== 200) {
-    throw new Error(`${label} session:resolve returned HTTP ${probe.status}`)
-  }
-  const body = probe.body as { authenticated?: unknown; data?: { authenticated?: unknown } } | null
-  const authenticated = body?.authenticated ?? body?.data?.authenticated
-  if (authenticated !== false) {
-    throw new Error(`${label} session:resolve expected authenticated=false`)
-  }
 }
 
 async function assertProtectedRouteRedirectsToLogin(browser: Browser, baseUrl: string) {
