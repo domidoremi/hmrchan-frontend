@@ -172,6 +172,71 @@ describe('apiClient security headers', () => {
     expect(headers.has('X-Signature')).toBe(false)
   })
 
+  it('unwraps successful API envelopes to their data payload', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({ success: true, data: { items: ['featured-post'] } })
+    )
+
+    await expect(apiClient.get('/home', { skipAuth: true, skipSecurity: true })).resolves.toEqual({
+      items: ['featured-post'],
+    })
+  })
+
+  it('returns non-envelope JSON payloads unchanged', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ ok: true, source: 'proxy' }))
+
+    await expect(
+      apiClient.get('/home/story-deck', { skipAuth: true, skipSecurity: true })
+    ).resolves.toEqual({
+      ok: true,
+      source: 'proxy',
+    })
+  })
+
+  it('converts failed API envelopes into ApiError details', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          success: false,
+          error: {
+            code: 'UPSTREAM_RATE_LIMITED',
+            message: 'Too many upstream requests',
+          },
+        },
+        { status: 429 }
+      )
+    )
+
+    await expect(
+      apiClient.get('/home', { skipAuth: true, skipSecurity: true })
+    ).rejects.toMatchObject({
+      status: 429,
+      code: 'UPSTREAM_RATE_LIMITED',
+      message: 'Too many upstream requests',
+    })
+  })
+
+  it('returns raw text responses unchanged', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('plain upstream response', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      })
+    )
+
+    await expect(apiClient.get('/home', { skipAuth: true, skipSecurity: true })).resolves.toBe(
+      'plain upstream response'
+    )
+  })
+
+  it('returns null for empty response bodies', async () => {
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    await expect(apiClient.get('/home', { skipAuth: true, skipSecurity: true })).resolves.toBeNull()
+  })
+
   it('does not attach client security headers to client init itself', async () => {
     mockFetch.mockResolvedValueOnce(
       jsonResponse({
@@ -218,6 +283,84 @@ describe('apiClient security headers', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2)
   })
 
+  it('throws a terminal ApiError when client reinit retry is disabled', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          error: {
+            code: 'CLIENT_REINIT_REQUIRED',
+            message: 'Client credentials must be reissued',
+          },
+        },
+        {
+          status: 401,
+          headers: {
+            'X-Client-Reinit-Required': 'true',
+          },
+        }
+      )
+    )
+
+    await expect(
+      apiClient.post('/auth/login', { username: 'momi' }, { skipClientReinitRetry: true })
+    ).rejects.toMatchObject({
+      status: 401,
+      code: 'CLIENT_REINIT_REQUIRED',
+      message: 'Client credentials must be reissued',
+    })
+
+    expect(mockClientSecurity.init).not.toHaveBeenCalled()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('force reissues client security once and retries signature errors', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            error: {
+              code: 'INVALID_SIGNATURE',
+              message: 'Invalid signature',
+            },
+          },
+          { status: 401 }
+        )
+      )
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { ok: true } }))
+
+    await expect(apiClient.post('/auth/login', { username: 'momi' })).resolves.toEqual({ ok: true })
+
+    expect(mockClientSecurity.init).toHaveBeenCalledExactlyOnceWith(true, {
+      promptChallenge: false,
+    })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('throws a terminal ApiError when signature retry is disabled', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          error: {
+            code: 'INVALID_SIGNATURE',
+            message: 'Invalid signature',
+          },
+        },
+        { status: 401 }
+      )
+    )
+
+    await expect(
+      apiClient.post('/auth/login', { username: 'momi' }, { skipClientSignatureRetry: true })
+    ).rejects.toMatchObject({
+      status: 401,
+      code: 'INVALID_SIGNATURE',
+      message: 'Invalid signature',
+    })
+
+    expect(mockClientSecurity.init).not.toHaveBeenCalled()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
   it('opens the challenge bridge and retries once for CHALLENGE_REQUIRED responses', async () => {
     mockFetch
       .mockResolvedValueOnce(
@@ -238,6 +381,47 @@ describe('apiClient security headers', () => {
 
     expect(mockRequestClientChallenge).toHaveBeenCalledWith('site-key')
     expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('throws a terminal challenge ApiError when challenge retry is disabled', async () => {
+    const challengeListener = vi.fn()
+    window.addEventListener('client:challenge-required', challengeListener)
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          error: {
+            code: 'CHALLENGE_REQUIRED',
+            message: 'Challenge required',
+            turnstile_site_key: 'site-key',
+          },
+        },
+        { status: 403 }
+      )
+    )
+
+    try {
+      await expect(
+        apiClient.post('/auth/login', { username: 'momi' }, { skipChallengeRetry: true })
+      ).rejects.toMatchObject({
+        status: 403,
+        code: 'CHALLENGE_REQUIRED',
+        message: 'Challenge required',
+        details: {
+          turnstile_site_key: 'site-key',
+        },
+      })
+    } finally {
+      window.removeEventListener('client:challenge-required', challengeListener)
+    }
+
+    expect(mockRequestClientChallenge).not.toHaveBeenCalled()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(challengeListener).toHaveBeenCalledTimes(1)
+    expect(challengeListener.mock.calls[0]?.[0]).toMatchObject({
+      detail: {
+        turnstile_site_key: 'site-key',
+      },
+    })
   })
 
   it('throws ApiError when challenge retry is declined', async () => {

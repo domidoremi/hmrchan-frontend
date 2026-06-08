@@ -5,6 +5,12 @@ export function listFavorites(): Promise<unknown> {
   return apiClient.get('/favorites')
 }
 
+export function checkFavoritePost(postId: PublicResourceId): Promise<unknown> {
+  return apiClient.get(
+    `/favorites/check/${encodeURIComponent(assertUuidV7String(postId, 'post id'))}`
+  )
+}
+
 export function favoritePost(postId: PublicResourceId): Promise<unknown> {
   return apiClient.post('/favorites', {
     post_id: assertUuidV7String(postId, 'post id'),

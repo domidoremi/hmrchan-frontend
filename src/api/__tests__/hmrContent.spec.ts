@@ -42,6 +42,7 @@ describe('hmrContent post detail loading', () => {
       loadExploreContentResource,
       loadHomeContentResource,
       loadHomePrimaryContentResource,
+      loadPostDetailContentResource,
       loadScheduleContentResource,
     } = await import('../hmrContent')
 
@@ -89,6 +90,13 @@ describe('hmrContent post detail loading', () => {
         ],
       },
       {
+        load: () => loadPostDetailContentResource('018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1'),
+        paths: [
+          '/posts/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1',
+          '/posts/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1/comments',
+        ],
+      },
+      {
         load: () => loadScheduleContentResource(),
         paths: ['/schedules', '/schedules/calendar', '/schedules/highlights'],
       },
@@ -100,6 +108,81 @@ describe('hmrContent post detail loading', () => {
 
       expect(mockApiGet.mock.calls).toEqual(item.paths.map((path) => [path, { skipAuth: true }]))
     }
+  })
+
+  it('loads profile sections through their authenticated endpoint contracts', async () => {
+    const { loadProfileSectionContentResource } = await import('../hmrContent')
+    const cases = [
+      {
+        section: 'overview',
+        paths: ['/auth/me', '/users/me/profile'],
+      },
+      {
+        section: 'security',
+        paths: ['/2fa/status', '/auth/sessions', '/devices'],
+      },
+      {
+        section: 'preferences',
+        paths: ['/preferences'],
+      },
+      {
+        section: 'favorites',
+        paths: ['/favorites/summary', '/favorites'],
+      },
+      {
+        section: 'history',
+        paths: ['/history/summary', '/history/browsing'],
+      },
+      {
+        section: 'inbox',
+        paths: ['/inbox/summary', '/inbox'],
+      },
+      {
+        section: 'unknown-section',
+        expectedSection: 'overview',
+        paths: ['/auth/me', '/users/me/profile'],
+      },
+    ] as const
+
+    for (const item of cases) {
+      mockApiGet.mockClear()
+      mockApiGet.mockResolvedValue({})
+
+      const resource = await loadProfileSectionContentResource(item.section)
+
+      expect(mockApiGet.mock.calls).toEqual(item.paths.map((path) => [path, { skipAuth: false }]))
+      expect(resource.source).toBe('api')
+      expect(resource.error).toBeNull()
+      expect(resource.paths).toEqual(item.paths)
+      expect(resource.data.section).toBe(item.expectedSection ?? item.section)
+    }
+  })
+
+  it('loads settings and support route resources through explicit endpoint contracts', async () => {
+    mockApiGet.mockResolvedValue({})
+    const { loadSettingsContentResource, loadSupportContentResource } =
+      await import('../hmrContent')
+
+    const settings = await loadSettingsContentResource()
+
+    expect(mockApiGet.mock.calls).toEqual([
+      ['/preferences', { skipAuth: false }],
+      ['/2fa/status', { skipAuth: false }],
+      ['/devices', { skipAuth: false }],
+    ])
+    expect(settings.source).toBe('api')
+    expect(settings.error).toBeNull()
+    expect(settings.paths).toEqual(['/preferences', '/2fa/status', '/devices'])
+
+    mockApiGet.mockClear()
+    const support = await loadSupportContentResource()
+
+    expect(mockApiGet).not.toHaveBeenCalled()
+    expect(support.source).toBe('local')
+    expect(support.error).toBeNull()
+    expect(support.paths).toEqual(['/contact/send', '/feedback'])
+    expect(support.data.faqs.length).toBeGreaterThan(0)
+    expect(support.data.flows.length).toBeGreaterThan(0)
   })
 
   it('fetches non-UUID post ids from the API instead of returning a local not-found state', async () => {

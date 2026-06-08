@@ -132,6 +132,114 @@ describe('hmrProfileContent profile sections', () => {
     expect(content.rows).toHaveLength(1)
   })
 
+  it('maps inbox messages into the notifications profile contract', async () => {
+    const reader = vi.fn(async (path: string) => {
+      if (path === '/inbox/summary') {
+        return {
+          unread_count: 2,
+          updated_at: '刚刚',
+        }
+      }
+      if (path === '/inbox') {
+        return {
+          messages: [
+            {
+              id: 'message-1',
+              title: '评论回复',
+              content: '你的公开评论收到新回复',
+              value: 'unread',
+            },
+            {
+              id: 'message-2',
+              title: '系统通知',
+              body: '审核结果已更新',
+              metric: 'read',
+            },
+          ],
+        }
+      }
+      return null
+    })
+
+    const content = await mapProfileSectionContent('inbox', reader)
+
+    expect(reader).toHaveBeenCalledWith('/inbox/summary')
+    expect(reader).toHaveBeenCalledWith('/inbox')
+    expect(content.section).toBe('inbox')
+    expect(content.title).toBe('收件箱')
+    expect(content.inbox).toEqual({
+      unreadCount: 2,
+      latestLabel: '刚刚',
+    })
+    expect(content.rows).toEqual([
+      {
+        id: 'message-1',
+        title: '评论回复',
+        excerpt: '你的公开评论收到新回复',
+        metric: 'unread',
+      },
+      {
+        id: 'message-2',
+        title: '系统通知',
+        excerpt: '审核结果已更新',
+        metric: 'read',
+      },
+    ])
+  })
+
+  it('maps favorites summary and rows into the profile index contract', async () => {
+    const reader = vi.fn(async (path: string) => {
+      if (path === '/favorites/summary') {
+        return {
+          stats: [
+            {
+              id: 'saved-posts',
+              title: '已收藏',
+              description: '可回看的公开内容',
+              value: '2',
+            },
+          ],
+        }
+      }
+      if (path === '/favorites') {
+        return {
+          favorites: [
+            {
+              id: 'favorite-1',
+              title: 'Saved post',
+              body: 'Saved public summary',
+              metric: 'YouTube',
+            },
+          ],
+        }
+      }
+      return null
+    })
+
+    const content = await mapProfileSectionContent('favorites', reader)
+
+    expect(reader).toHaveBeenCalledWith('/favorites/summary')
+    expect(reader).toHaveBeenCalledWith('/favorites')
+    expect(content.section).toBe('favorites')
+    expect(content.title).toBe('收藏索引')
+    expect(content.summary).toEqual([
+      {
+        id: 'saved-posts',
+        title: '已收藏',
+        excerpt: '可回看的公开内容',
+        metric: '2',
+      },
+    ])
+    expect(content.rows).toEqual([
+      {
+        id: 'favorite-1',
+        title: 'Saved post',
+        excerpt: 'Saved public summary',
+        metric: 'YouTube',
+      },
+    ])
+  })
+
   it('declares stable endpoints for each profile section', () => {
     expect(endpointsForProfileSection('security')).toEqual([
       '/2fa/status',

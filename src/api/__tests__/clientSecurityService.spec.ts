@@ -190,6 +190,41 @@ describe('clientSecurityService', () => {
     expect(clientSecurityManager.getClientSecret()).toBe('reissued-secret')
   })
 
+  it('fails deterministically when force reissue still does not return signing credentials', async () => {
+    mockApiClient.post.mockResolvedValue({
+      trust_level: 'basic',
+    })
+
+    await expect(clientSecurityService.ensureRequestIntegrityCredentials()).rejects.toThrow(
+      'Missing client signing credentials'
+    )
+
+    const firstInitPayload = mockApiClient.post.mock.calls[0]?.[1] as
+      | Record<string, unknown>
+      | undefined
+    expect(firstInitPayload?.force_reissue).toBeUndefined()
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(
+      1,
+      '/client/init',
+      expect.any(Object),
+      expect.objectContaining({
+        skipSecurity: true,
+      })
+    )
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(
+      2,
+      '/client/init',
+      expect.objectContaining({
+        force_reissue: true,
+      }),
+      expect.objectContaining({
+        skipSecurity: true,
+      })
+    )
+    expect(clientSecurityManager.getClientToken()).toBeNull()
+    expect(clientSecurityManager.getClientSecret()).toBeNull()
+  })
+
   it('reinitializes once when client verify sees an expired client token', async () => {
     mockApiClient.post
       .mockRejectedValueOnce(new MockApiError('Invalid client token', 400, 'INVALID_CLIENT_TOKEN'))
