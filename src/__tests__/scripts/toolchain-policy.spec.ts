@@ -2,14 +2,56 @@ import { readFile } from 'node:fs/promises'
 
 import { describe, expect, it } from 'vitest'
 
+import {
+  getProductionContractEnvPolicy,
+  resolveProductionContractEnv,
+} from '../../../scripts/lib/production-contract-env.js'
+
 const VUE_BETA_VERSION = '3.6.0-beta.13'
 const VUE_LOCKED_PACKAGES = ['vue', '@vue/compiler-sfc', '@vue/server-renderer'] as const
-const BUN_VERSION = '1.3.11'
+const BUN_VERSION = '1.3.14'
 const NODE_VERSION = '24.14.1'
 const NODE_ENGINE_RANGE = '>=24.11.1 <25'
+const PAGES_RUNTIME_ENV_KEYS = [
+  'BUN_VERSION',
+  'SKIP_DEPENDENCY_INSTALL',
+  'API_BASE_URL',
+  'ENABLE_INTERNAL_API_GATEWAY',
+  'GOOGLE_AUTH_ENABLED',
+  'VITE_CLIENT_CONTRACT_VERSION',
+] as const
+const LOCAL_PRIVATE_ENV_KEYS = new Set(['VITE_LOCAL_AUDIT_PERSIST_AUTH_SESSION'])
+const RETIRED_CLIENT_ENV_KEYS = new Set(['VITE_API_ENDPOINT', 'VITE_API_URL'])
 
 async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, 'utf8')) as T
+}
+
+function parseEnvVarNames(content: string): Set<string> {
+  const names = new Set<string>()
+  for (const line of content.split('\n')) {
+    const match = line.trim().match(/^([A-Za-z_][A-Za-z0-9_]*)=/)
+    if (match) names.add(match[1])
+  }
+  return names
+}
+
+function extractWranglerVars(
+  content: string,
+  envName: 'production' | 'preview'
+): Map<string, string> {
+  const blockMatch = content.match(
+    new RegExp(`\\[env\\.${envName}\\.vars\\]([\\s\\S]*?)(?:\\n\\[|\\n# =|$)`)
+  )
+  const block = blockMatch?.[1] ?? ''
+  const vars = new Map<string, string>()
+
+  for (const line of block.split('\n')) {
+    const match = line.trim().match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"([^"]*)"$/)
+    if (match) vars.set(match[1], match[2])
+  }
+
+  return vars
 }
 
 type PackageJson = {
@@ -86,5 +128,71 @@ describe('toolchain package policy', () => {
       'http://127.0.0.1:5173/contact',
       'http://127.0.0.1:5173/join-us',
     ])
+  })
+
+  it('keeps Cloudflare Pages runtime env aligned between production and preview', async () => {
+    const wranglerToml = await readFile('wrangler.toml', 'utf8')
+    const productionVars = extractWranglerVars(wranglerToml, 'production')
+    const previewVars = extractWranglerVars(wranglerToml, 'preview')
+
+    for (const key of PAGES_RUNTIME_ENV_KEYS) {
+      expect(productionVars.get(key), `production ${key}`).toBeTruthy()
+      expect(previewVars.get(key), `preview ${key}`).toBe(productionVars.get(key))
+    }
+
+    expect(productionVars.get('BUN_VERSION')).toBe(BUN_VERSION)
+    expect(productionVars.get('SKIP_DEPENDENCY_INSTALL')).toBe('true')
+    expect(productionVars.get('ENABLE_INTERNAL_API_GATEWAY')).toBe('true')
+    expect(productionVars.get('GOOGLE_AUTH_ENABLED')).toBe('true')
+    expect(wranglerToml).toContain('[[env.production.services]]')
+    expect(wranglerToml).toContain('[[env.preview.services]]')
+    expect(wranglerToml.match(/binding\s*=\s*"INTERNAL_API_GATEWAY"/g)).toHaveLength(2)
+  })
+
+  it('keeps local env examples aligned with the production client env policy', async () => {
+    const envExample = await readFile('.env.example', 'utf8')
+    const exampleVars = parseEnvVarNames(envExample)
+    const policy = getProductionContractEnvPolicy()
+    const documentedStrippedKeys = policy.stripClientEnvKeys.filter(
+      (key) => !LOCAL_PRIVATE_ENV_KEYS.has(key)
+    )
+
+    for (const key of documentedStrippedKeys) {
+      expect(envExample, `${key} must stay documented as local-only or retired`).toContain(key)
+      if (!RETIRED_CLIENT_ENV_KEYS.has(key)) {
+        expect(exampleVars.has(key), `${key} must stay available for local configuration`).toBe(
+          true
+        )
+      }
+    }
+
+    for (const key of RETIRED_CLIENT_ENV_KEYS) {
+      expect(exampleVars.has(key), `${key} must stay retired from assignable examples`).toBe(false)
+    }
+
+    for (const key of ['API_BASE_URL', 'ENABLE_INTERNAL_API_GATEWAY', 'GOOGLE_AUTH_ENABLED']) {
+      expect(exampleVars.has(key), `${key} belongs to wrangler.toml, not .env.example`).toBe(false)
+    }
+
+    const resolved = resolveProductionContractEnv({
+      CF_PAGES: '1',
+      CF_PAGES_COMMIT_SHA: 'commit-contract',
+      VITE_API_BASE_URL: 'https://raw-api.example.com',
+      VITE_IDENTITY_API_BASE_URL: 'https://identity.example.com',
+      VITE_ENABLE_DEBUG: 'true',
+      VITE_ENABLE_DEVTOOLS: 'true',
+    })
+
+    expect(resolved.value).toBe('commit-contract')
+    expect(resolved.env.VITE_CLIENT_CONTRACT_VERSION).toBe('commit-contract')
+    expect(resolved.env.VITE_API_BASE_URL).toBeUndefined()
+    expect(resolved.env.VITE_IDENTITY_API_BASE_URL).toBeUndefined()
+    expect(resolved.env.VITE_ENABLE_DEBUG).toBe('false')
+    expect(resolved.env.VITE_ENABLE_DEVTOOLS).toBe('false')
+    expect(resolved.sanitized.strippedKeys).toEqual([
+      'VITE_API_BASE_URL',
+      'VITE_IDENTITY_API_BASE_URL',
+    ])
+    expect(resolved.sanitized.forcedKeys).toEqual(['VITE_ENABLE_DEBUG', 'VITE_ENABLE_DEVTOOLS'])
   })
 })

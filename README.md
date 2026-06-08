@@ -20,7 +20,7 @@ HmrChan Frontend 是一个基于 Vue 3、TypeScript 和 Vite 的社区前端项�
 环境要求：
 
 - Node.js `>=24.11.1 <25`
-- Bun `1.3.11`
+- Bun `1.3.14`
 
 安装与启动：
 

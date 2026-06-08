@@ -5,7 +5,7 @@
  * 使用 sharp 库从源图标生成所有需要的尺寸
  *
  * 前置条件：
- *   npm install sharp
+ *   bun add sharp
  *
  * 使用：
  *   node scripts/generate-icons.js <source-icon.png>

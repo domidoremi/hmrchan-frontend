@@ -73,21 +73,11 @@
 2. 选择需要的尺寸
 3. 下载生成的图标包
 
-### 方法 2: 使用命令行工具
+### 方法 2: 使用仓库命令
 
 ```bash
-# 安装 sharp-cli
-npm install -g sharp-cli
-
-# 批量生成不同尺寸
-sharp -i source.png -o icon-72x72.png resize 72 72
-sharp -i source.png -o icon-96x96.png resize 96 96
-sharp -i source.png -o icon-128x128.png resize 128 128
-sharp -i source.png -o icon-144x144.png resize 144 144
-sharp -i source.png -o icon-152x152.png resize 152 152
-sharp -i source.png -o icon-192x192.png resize 192 192
-sharp -i source.png -o icon-384x384.png resize 384 384
-sharp -i source.png -o icon-512x512.png resize 512 512
+# 使用项目内的 sharp 依赖批量生成图标
+bun run icons:generate source-icon-512.png
 ```
 
 ### 方法 3: 使用 Figma/Sketch/Adobe XD

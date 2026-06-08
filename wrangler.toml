@@ -32,7 +32,7 @@ service = "hmrchan-internal-api-gateway-production"
 
 [env.production.vars]
 # 仅使用 Bun：显式指定 Bun 版本并禁用自动 npm 依赖安装
-BUN_VERSION = "1.3.11"
+BUN_VERSION = "1.3.14"
 SKIP_DEPENDENCY_INSTALL = "true"
 # Pages Functions 运行时变量（代理目标地址）
 # 浏览器端生产默认始终通过同源 /api -> Pages Functions -> upstream 访问后端
@@ -45,7 +45,7 @@ VITE_CLIENT_CONTRACT_VERSION = "2026-04-13.p1"
 # Preview 环境配置
 # ============================================================================
 [env.preview.vars]
-BUN_VERSION = "1.3.11"
+BUN_VERSION = "1.3.14"
 SKIP_DEPENDENCY_INSTALL = "true"
 API_BASE_URL = "https://api.momichan.xyz"
 ENABLE_INTERNAL_API_GATEWAY = "true"
