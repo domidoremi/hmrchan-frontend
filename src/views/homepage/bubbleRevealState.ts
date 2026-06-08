@@ -26,6 +26,23 @@ export interface BubbleRevealViewportInput {
   burstFramePending: boolean
 }
 
+export type BubbleRevealRetreatState = {
+  phase: Extract<BubbleRevealPhase, 'idle' | 'exiting'>
+  scheduleExitReset: boolean
+}
+
+export type BubbleRevealResetState = {
+  phase: Extract<BubbleRevealPhase, 'idle'>
+  clearBurstReplayFrame: boolean
+  clearExitResetTimer: boolean
+  stopMotionLoop: boolean
+}
+
+export type BubbleRevealRestartState = {
+  phase: Extract<BubbleRevealPhase, 'idle' | 'arming' | 'revealed'>
+  scheduleBurstReplay: boolean
+}
+
 const ENTER_BOTTOM_RATIO = 0.28
 const ENTER_TOP_RATIO = 0.86
 const RESET_BOTTOM_RATIO = -0.18
@@ -81,4 +98,58 @@ export function resolveBubbleRevealViewportAction({
   }
 
   return 'none'
+}
+
+export function resolveBubbleRevealRetreatState(shouldAnimate: boolean): BubbleRevealRetreatState {
+  if (!shouldAnimate) {
+    return {
+      phase: 'idle',
+      scheduleExitReset: false,
+    }
+  }
+
+  return {
+    phase: 'exiting',
+    scheduleExitReset: true,
+  }
+}
+
+export function resolveBubbleRevealResetState(): BubbleRevealResetState {
+  return {
+    phase: 'idle',
+    clearBurstReplayFrame: true,
+    clearExitResetTimer: true,
+    stopMotionLoop: true,
+  }
+}
+
+export function shouldResetBubbleFrameStylesOnMotionStop(phase: BubbleRevealPhase): boolean {
+  return phase !== 'exiting'
+}
+
+export function resolveBubbleRevealRestartState({
+  itemCount,
+  shouldAnimate,
+}: {
+  itemCount: number
+  shouldAnimate: boolean
+}): BubbleRevealRestartState {
+  if (itemCount <= 0) {
+    return {
+      phase: 'idle',
+      scheduleBurstReplay: false,
+    }
+  }
+
+  if (!shouldAnimate) {
+    return {
+      phase: 'revealed',
+      scheduleBurstReplay: false,
+    }
+  }
+
+  return {
+    phase: 'arming',
+    scheduleBurstReplay: true,
+  }
 }

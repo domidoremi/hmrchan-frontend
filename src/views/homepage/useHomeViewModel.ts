@@ -41,11 +41,12 @@ import {
 } from './homeModel'
 import { useHomeHeroState } from './useHomeHeroState'
 import { useHomeStoryDeck } from './useHomeStoryDeck'
+import type { HomeDataSource } from './homeSupportPolicy'
 
 export function useHomeViewModel(options: {
   homeAggregate: Ref<HomeAggregateResponse | null>
   allPosts: Ref<PostListItem[]>
-  homeDataSource: Ref<'idle' | 'aggregate' | 'support' | 'cached' | 'fallback'>
+  homeDataSource: Ref<'idle' | HomeDataSource>
   total: Ref<number>
   homeScheduleHighlights: Ref<HomeScheduleHighlight[]>
   homeCommunityHighlights: Ref<HomeCommunityHighlight[]>

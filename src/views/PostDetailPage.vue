@@ -390,19 +390,25 @@ import {
   buildActiveMediaElementStyle,
   buildActiveMediaViewerStyle,
   buildDetailDescription,
+  buildPostDetailPageMeta,
   buildPostDetailNotFoundRouteParams,
   buildDetailTitle,
   buildPublishedMeta,
-  getAdjacentMediaPreloadIndexes,
+  computePostDetailScrollProgress,
   getThumbnailPlaceholderCount,
   isMediaPending as computeIsMediaPending,
+  isPostDetailAbortError,
   resolveActiveImageSource,
   resolveActiveImageSrcset,
+  resolveAdjacentImagePreloadTargets,
   resolveAutoAdvanceMediaTransition,
   resolveFallbackMediaSource,
   resolveFallbackMediaSrcset,
   resolvePlaceholderSource,
-  resolvePostDetailFallbackRecovery,
+  resolvePostDetailFallbackCandidate,
+  resolvePostDetailFallbackRecoveryFromError,
+  resolvePostDetailFetchErrorOutcome,
+  resolvePostDetailMediaHintSource,
   resolvePostDetailNavigationRequest,
   resolvePostDetailNavigationTarget,
   resolvePostDetailTouchNavigationDirection,
@@ -410,6 +416,7 @@ import {
   resolvePostDetailMediaState,
   resolveSelectedMediaTransition,
   resolveSteppedMediaTransition,
+  shouldIgnorePostDetailInteractionTarget,
   shouldLoadCommentsForViewport,
   shouldShowReadFullText as computeShouldShowReadFullText,
   shouldShowThumbnailRail as computeShouldShowThumbnailRail,
@@ -505,8 +512,11 @@ const backDashOffset = computed(() => {
 
 const handleScroll = throttleRAF(() => {
   const scrollTop = window.scrollY || document.documentElement.scrollTop
-  const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
-  backScrollProgress.value = docHeight > 0 ? Math.min(scrollTop / docHeight, 1) : 0
+  backScrollProgress.value = computePostDetailScrollProgress({
+    scrollTop,
+    scrollHeight: document.documentElement.scrollHeight,
+    clientHeight: document.documentElement.clientHeight,
+  })
 })
 
 const isSwitchingPost = ref(false)
@@ -618,16 +628,9 @@ function primeImageRequest(url: string | null | undefined) {
 }
 
 function hintPostMedia(postDetail: PostDetailResponse | null | undefined) {
-  if (!postDetail) return
-
-  const primaryImage = postDetail.media_files?.find((media) => media.file_type === 'image')
-  if (primaryImage) {
-    primeImageRequest(getMediaThumbnailUrl(primaryImage.id, 'large'))
-    return
-  }
-
-  const fallbackUrl = resolveThumbnailSrc(postDetail.thumbnail_url ?? null, 'large')
-  primeImageRequest(fallbackUrl)
+  primeImageRequest(
+    resolvePostDetailMediaHintSource(postDetail, { getMediaThumbnailUrl, resolveThumbnailSrc })
+  )
 }
 
 // 获取缓存的缩略图作为占位图
@@ -724,24 +727,22 @@ function advanceMedia() {
 
 // 用户明确切换媒体后，仅预热相邻缩略图，避免详情页首屏竞争完整媒体资源。
 function preloadAdjacentMedia() {
-  const mediaFiles = post.value?.media_files
-  if (!mediaFiles || mediaFiles.length <= 1) return
+  const preloadTargets = resolveAdjacentImagePreloadTargets({
+    mediaFiles: post.value?.media_files,
+    activeMediaIndex: activeMediaIndex.value,
+    preloadedImages: preloadedImages.value,
+    getMediaThumbnailUrl,
+  })
 
-  const indicesToPreload = getAdjacentMediaPreloadIndexes(mediaFiles.length, activeMediaIndex.value)
-
-  indicesToPreload.forEach((idx) => {
-    const media = mediaFiles[idx]
-    if (!media || media.file_type !== 'image') return
-
+  preloadTargets.forEach(({ thumbnailUrl, fullSizeUrl, shouldPreloadThumbnail }) => {
     // 预加载缩略图
-    const thumbUrl = getMediaThumbnailUrl(media.id, 'medium')
-    if (!preloadedImages.value.has(thumbUrl)) {
+    if (shouldPreloadThumbnail) {
       const thumbImg = new Image()
-      thumbImg.src = thumbUrl
-      thumbImg.onload = () => preloadedImages.value.add(thumbUrl)
+      thumbImg.src = thumbnailUrl
+      thumbImg.onload = () => preloadedImages.value.add(thumbnailUrl)
     }
 
-    void warmDecodedImage(getMediaThumbnailUrl(media.id, 'large'))
+    void warmDecodedImage(fullSizeUrl)
   })
 }
 
@@ -896,21 +897,11 @@ function applyPostNavigationDirection(direction: 1 | -1) {
   requestPostNavigate(direction)
 }
 
-function isInIgnoredInteractionArea(target: EventTarget | null): boolean {
-  const el = target as HTMLElement | null
-  if (!el) return false
-  return Boolean(
-    el.closest(
-      '.post-panel, .post-actions, .media-thumbnails, .thumbnail-btn, .vp, .vp__controls, a, button, input, textarea'
-    )
-  )
-}
-
 function handleWheel(event: WheelEvent) {
   if (!canSwipeNavigate.value || isSwitchingPost.value) return
   if (isLightboxOpen.value) return
   if (event.ctrlKey || event.metaKey) return
-  if (isInIgnoredInteractionArea(event.target)) return
+  if (shouldIgnorePostDetailInteractionTarget(event.target)) return
 
   const wheelIntent = resolvePostDetailWheelIntent({
     deltaX: event.deltaX,
@@ -931,7 +922,7 @@ function handleTouchStart(event: TouchEvent) {
   if (!canSwipeNavigate.value || isSwitchingPost.value) return
   if (isLightboxOpen.value) return
   if (event.touches.length !== 1) return
-  if (isInIgnoredInteractionArea(event.target)) return
+  if (shouldIgnorePostDetailInteractionTarget(event.target)) return
 
   touchStartX.value = event.touches[0]?.clientX ?? null
   touchStartY.value = event.touches[0]?.clientY ?? null
@@ -940,7 +931,7 @@ function handleTouchStart(event: TouchEvent) {
 function handleTouchEnd(event: TouchEvent) {
   if (!canSwipeNavigate.value || isSwitchingPost.value) return
   if (isLightboxOpen.value) return
-  if (isInIgnoredInteractionArea(event.target)) return
+  if (shouldIgnorePostDetailInteractionTarget(event.target)) return
 
   const startX = touchStartX.value
   const startY = touchStartY.value
@@ -977,21 +968,9 @@ function openLightbox(index?: number) {
   isLightboxOpen.value = true
 }
 
-function isAbortError(err: unknown): boolean {
-  return err instanceof DOMException
-    ? err.name === 'AbortError'
-    : err instanceof Error && err.name === 'AbortError'
-}
-
 function syncPostMeta(currentPost: PostDetailResponse | null | undefined) {
-  const title = currentPost?.title?.trim()
-  if (!title) return
-
-  applyPageMeta({
-    title,
-    description: buildDetailDescription(currentPost) || title,
-    canonicalPath: route.path,
-  })
+  const pageMeta = buildPostDetailPageMeta(currentPost, route.path)
+  if (pageMeta) applyPageMeta(pageMeta)
 }
 
 function cancelPostDetailIdleWork() {
@@ -1025,15 +1004,19 @@ function applyFallbackPost(postDetail: PostDetailResponse) {
 
 function resolveFallbackPostDetail(currentPostId: string, err: unknown): PostDetailResponse | null {
   const navigationSummary = getPostNavigationSummary(currentPostId)
-  const recovery = resolvePostDetailFallbackRecovery({
-    notFound: err instanceof ApiError && err.status === 404,
-    serviceUnavailable: isServiceUnavailableError(err),
+  const recovery = resolvePostDetailFallbackRecoveryFromError({
+    err,
     hasNavigationSummary: Boolean(navigationSummary),
+    isNotFoundError: (error) => error instanceof ApiError && error.status === 404,
+    isServiceUnavailableError,
   })
 
-  if (recovery === 'navigation-summary' && navigationSummary)
-    return buildFallbackPostDetail(navigationSummary)
-  return recovery === 'static-fallback' ? getFallbackPostDetailById(currentPostId) : null
+  return resolvePostDetailFallbackCandidate({
+    recovery,
+    navigationSummary,
+    buildNavigationFallback: buildFallbackPostDetail,
+    resolveStaticFallback: () => getFallbackPostDetailById(currentPostId),
+  })
 }
 
 async function fetchPost(signal?: AbortSignal) {
@@ -1094,7 +1077,8 @@ async function fetchPost(signal?: AbortSignal) {
           dataSource.value = result.fromCache ? 'cached' : 'live'
         })
         .catch((err) => {
-          if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
+          if (signal?.aborted || isPostDetailAbortError(err) || requestToken !== fetchPostToken)
+            return
           const fallbackPost = resolveFallbackPostDetail(currentPostId, err)
           if (fallbackPost) {
             applyFallbackPost(fallbackPost)
@@ -1119,14 +1103,20 @@ async function fetchPost(signal?: AbortSignal) {
 
     schedulePostViewTracking(currentPostId, requestToken)
   } catch (err) {
-    if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
+    if (signal?.aborted || isPostDetailAbortError(err) || requestToken !== fetchPostToken) return
     const fallbackPost = resolveFallbackPostDetail(currentPostId, err)
     if (fallbackPost) {
       applyFallbackPost(fallbackPost)
       return
     }
-    if (err instanceof ApiError) {
-      if (err.status === 404) {
+    const fetchErrorOutcome = resolvePostDetailFetchErrorOutcome({
+      err,
+      isNotFoundError: (error) => error instanceof ApiError && error.status === 404,
+      getApiErrorMessage: (error) => (error instanceof ApiError ? error.message : null),
+    })
+
+    switch (fetchErrorOutcome.action) {
+      case 'not-found-redirect':
         post.value = null
         error.value = null
         detailFetched.value = false
@@ -1138,10 +1128,11 @@ async function fetchPost(signal?: AbortSignal) {
           hash: route.hash,
         })
         return
-      }
-      error.value = err.message
-    } else {
-      error.value = t('common.error')
+      case 'api-error':
+        error.value = fetchErrorOutcome.message
+        return
+      case 'generic-error':
+        error.value = t('common.error')
     }
   } finally {
     if (requestToken === fetchPostToken) {

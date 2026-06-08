@@ -22,6 +22,11 @@ export type PostDetailMediaUrlResolver = {
   resolveThumbnailSrcset: (url: string | null) => string | null
 }
 
+export type PostDetailMediaHintSourceResolver = Pick<
+  PostDetailMediaUrlResolver,
+  'getMediaThumbnailUrl' | 'resolveThumbnailSrc'
+>
+
 export type PostDetailMediaState = {
   activeMedia: PostDetailMediaLike | null
   subtitlesAvailable: boolean
@@ -100,6 +105,82 @@ export type PostDetailRectLike = {
   height: number
 }
 
+export type PostDetailScrollMetrics = {
+  scrollTop: number
+  scrollHeight: number
+  clientHeight: number
+}
+
+export type PostDetailPageMeta = {
+  title: string
+  description: string
+  canonicalPath: string
+}
+
+export type PostDetailFallbackCandidateResolver<TSummary, TPost> = {
+  recovery: PostDetailFallbackRecovery
+  navigationSummary: TSummary | null | undefined
+  buildNavigationFallback: (summary: TSummary) => TPost
+  resolveStaticFallback: () => TPost | null
+}
+
+export type PostDetailFallbackRecoveryErrorClassifier = {
+  err: unknown
+  hasNavigationSummary: boolean
+  isNotFoundError: (err: unknown) => boolean
+  isServiceUnavailableError: (err: unknown) => boolean
+}
+
+export type PostDetailFetchErrorOutcome =
+  | {
+      action: 'not-found-redirect'
+    }
+  | {
+      action: 'api-error'
+      message: string
+    }
+  | {
+      action: 'generic-error'
+    }
+
+export type PostDetailFetchErrorClassifier = {
+  err: unknown
+  isNotFoundError: (err: unknown) => boolean
+  getApiErrorMessage: (err: unknown) => string | null
+}
+
+export type PostDetailAdjacentMediaPreloadTarget = {
+  mediaId: string
+  thumbnailUrl: string
+  fullSizeUrl: string
+  shouldPreloadThumbnail: boolean
+}
+
+export const POST_DETAIL_IGNORED_INTERACTION_SELECTOR =
+  '.post-panel, .post-actions, .media-thumbnails, .thumbnail-btn, .vp, .vp__controls, a, button, input, textarea'
+
+type ClosableEventTarget = EventTarget & {
+  closest?: (selector: string) => Element | null
+}
+
+export function shouldIgnorePostDetailInteractionTarget(
+  target: EventTarget | null | undefined,
+  selector = POST_DETAIL_IGNORED_INTERACTION_SELECTOR
+): boolean {
+  if (!target || typeof (target as ClosableEventTarget).closest !== 'function') return false
+  return Boolean((target as ClosableEventTarget).closest?.(selector))
+}
+
+export function computePostDetailScrollProgress({
+  scrollTop,
+  scrollHeight,
+  clientHeight,
+}: PostDetailScrollMetrics): number {
+  const docHeight = scrollHeight - clientHeight
+  if (docHeight <= 0) return 0
+  return Math.min(Math.max(scrollTop / docHeight, 0), 1)
+}
+
 export function buildDetailTitle(post: PostDetailLike | null | undefined): string {
   const title = (post?.title ?? '').trim()
   const description = (post?.description ?? '').trim()
@@ -126,6 +207,26 @@ export function buildDetailDescription(post: PostDetailLike | null | undefined):
   }
 
   return description
+}
+
+export function buildPostDetailPageMeta(
+  post: PostDetailLike | null | undefined,
+  canonicalPath: string
+): PostDetailPageMeta | null {
+  const title = post?.title?.trim()
+  if (!title) return null
+
+  return {
+    title,
+    description: buildDetailDescription(post) || title,
+    canonicalPath,
+  }
+}
+
+export function isPostDetailAbortError(err: unknown): boolean {
+  return err instanceof DOMException
+    ? err.name === 'AbortError'
+    : err instanceof Error && err.name === 'AbortError'
 }
 
 export function shouldShowReadFullText(
@@ -155,6 +256,56 @@ export function resolvePostDetailFallbackRecovery({
   if (notFound && hasNavigationSummary) return 'navigation-summary'
   if (serviceUnavailable) return 'static-fallback'
   return 'none'
+}
+
+export function resolvePostDetailFallbackRecoveryFromError({
+  err,
+  hasNavigationSummary,
+  isNotFoundError,
+  isServiceUnavailableError,
+}: PostDetailFallbackRecoveryErrorClassifier): PostDetailFallbackRecovery {
+  return resolvePostDetailFallbackRecovery({
+    notFound: isNotFoundError(err),
+    serviceUnavailable: isServiceUnavailableError(err),
+    hasNavigationSummary,
+  })
+}
+
+export function resolvePostDetailFetchErrorOutcome({
+  err,
+  isNotFoundError,
+  getApiErrorMessage,
+}: PostDetailFetchErrorClassifier): PostDetailFetchErrorOutcome {
+  if (isNotFoundError(err)) {
+    return {
+      action: 'not-found-redirect',
+    }
+  }
+
+  const apiErrorMessage = getApiErrorMessage(err)
+  if (apiErrorMessage !== null) {
+    return {
+      action: 'api-error',
+      message: apiErrorMessage,
+    }
+  }
+
+  return {
+    action: 'generic-error',
+  }
+}
+
+export function resolvePostDetailFallbackCandidate<TSummary, TPost>({
+  recovery,
+  navigationSummary,
+  buildNavigationFallback,
+  resolveStaticFallback,
+}: PostDetailFallbackCandidateResolver<TSummary, TPost>): TPost | null {
+  if (recovery === 'navigation-summary' && navigationSummary) {
+    return buildNavigationFallback(navigationSummary)
+  }
+  if (recovery === 'static-fallback') return resolveStaticFallback()
+  return null
 }
 
 export function resolvePostDetailNavigationHint(
@@ -478,6 +629,16 @@ export function resolveFallbackMediaSrcset(
   return resolver.resolveThumbnailSrcset(post?.thumbnail_url ?? null)
 }
 
+export function resolvePostDetailMediaHintSource(
+  post: PostDetailLike | null | undefined,
+  resolver: PostDetailMediaHintSourceResolver
+): string | null {
+  const primaryImage = post?.media_files?.find((media) => media.file_type === 'image' && media.id)
+  if (primaryImage?.id) return resolver.getMediaThumbnailUrl(primaryImage.id, 'large')
+
+  return resolver.resolveThumbnailSrc(post?.thumbnail_url ?? null, 'large') || null
+}
+
 export function resolvePlaceholderSource({
   activeMedia,
   activeMediaIndex,
@@ -505,4 +666,33 @@ export function getAdjacentMediaPreloadIndexes(
 ): number[] {
   if (mediaCount <= 1) return []
   return [(activeMediaIndex + 1) % mediaCount, (activeMediaIndex - 1 + mediaCount) % mediaCount]
+}
+
+export function resolveAdjacentImagePreloadTargets({
+  mediaFiles,
+  activeMediaIndex,
+  preloadedImages,
+  getMediaThumbnailUrl,
+}: {
+  mediaFiles: readonly PostDetailMediaLike[] | null | undefined
+  activeMediaIndex: number
+  preloadedImages: ReadonlySet<string>
+  getMediaThumbnailUrl: (mediaId: string, size: string) => string
+}): PostDetailAdjacentMediaPreloadTarget[] {
+  if (!mediaFiles || mediaFiles.length <= 1) return []
+
+  return getAdjacentMediaPreloadIndexes(mediaFiles.length, activeMediaIndex).flatMap((idx) => {
+    const media = mediaFiles[idx]
+    if (!media?.id || media.file_type !== 'image') return []
+
+    const thumbnailUrl = getMediaThumbnailUrl(media.id, 'medium')
+    return [
+      {
+        mediaId: media.id,
+        thumbnailUrl,
+        fullSizeUrl: getMediaThumbnailUrl(media.id, 'large'),
+        shouldPreloadThumbnail: !preloadedImages.has(thumbnailUrl),
+      },
+    ]
+  })
 }

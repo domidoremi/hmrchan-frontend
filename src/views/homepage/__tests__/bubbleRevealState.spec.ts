@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   resolveBubbleRevealLifecycleAction,
+  resolveBubbleRevealResetState,
+  resolveBubbleRevealRetreatState,
+  resolveBubbleRevealRestartState,
   resolveBubbleRevealViewportAction,
   resolveBubbleRevealWindow,
+  shouldResetBubbleFrameStylesOnMotionStop,
 } from '../bubbleRevealState'
 
 describe('resolveBubbleRevealWindow', () => {
@@ -144,5 +148,50 @@ describe('resolveBubbleRevealWindow', () => {
         burstFramePending: true,
       })
     ).toBe('none')
+  })
+
+  it('resolves retreat phase and timer intent from animation settings', () => {
+    expect(resolveBubbleRevealRetreatState(false)).toEqual({
+      phase: 'idle',
+      scheduleExitReset: false,
+    })
+
+    expect(resolveBubbleRevealRetreatState(true)).toEqual({
+      phase: 'exiting',
+      scheduleExitReset: true,
+    })
+  })
+
+  it('resolves reset phase and cleanup intent', () => {
+    expect(resolveBubbleRevealResetState()).toEqual({
+      phase: 'idle',
+      clearBurstReplayFrame: true,
+      clearExitResetTimer: true,
+      stopMotionLoop: true,
+    })
+  })
+
+  it('keeps frame styles during the exiting phase while motion is stopping', () => {
+    expect(shouldResetBubbleFrameStylesOnMotionStop('idle')).toBe(true)
+    expect(shouldResetBubbleFrameStylesOnMotionStop('arming')).toBe(true)
+    expect(shouldResetBubbleFrameStylesOnMotionStop('revealed')).toBe(true)
+    expect(shouldResetBubbleFrameStylesOnMotionStop('exiting')).toBe(false)
+  })
+
+  it('resolves restart phase and burst replay intent from items and animation settings', () => {
+    expect(resolveBubbleRevealRestartState({ itemCount: 0, shouldAnimate: true })).toEqual({
+      phase: 'idle',
+      scheduleBurstReplay: false,
+    })
+
+    expect(resolveBubbleRevealRestartState({ itemCount: 3, shouldAnimate: false })).toEqual({
+      phase: 'revealed',
+      scheduleBurstReplay: false,
+    })
+
+    expect(resolveBubbleRevealRestartState({ itemCount: 3, shouldAnimate: true })).toEqual({
+      phase: 'arming',
+      scheduleBurstReplay: true,
+    })
   })
 })

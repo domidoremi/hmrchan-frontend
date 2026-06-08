@@ -1,10 +1,49 @@
 import { describe, expect, it } from 'vitest'
 import {
   bubbleSlotsByTier,
+  hasHomeActiveBubble,
+  isHomeBubbleInteractiveTier,
+  isHomeFallbackPost,
+  resolveHomeSelectedBubbleId,
   resolveBubbleLayoutTier,
   resolveBubbleSlotCount,
   selectBubbleSlots,
+  shouldMountHomePreviewController,
 } from '../homeModel'
+
+describe('isHomeFallbackPost', () => {
+  it('matches only generated homepage fallback posts', () => {
+    expect(isHomeFallbackPost({ id: '__home_fallback__story-1' })).toBe(true)
+    expect(isHomeFallbackPost({ id: 'story-1' })).toBe(false)
+    expect(isHomeFallbackPost(null)).toBe(false)
+    expect(isHomeFallbackPost(undefined)).toBe(false)
+  })
+})
+
+describe('resolveHomeSelectedBubbleId', () => {
+  it('normalizes selected bubble ids only while preview is open', () => {
+    expect(resolveHomeSelectedBubbleId({ previewOpen: false, previewPostId: 'story-1' })).toBeNull()
+    expect(resolveHomeSelectedBubbleId({ previewOpen: true, previewPostId: '  story-1  ' })).toBe(
+      'story-1'
+    )
+    expect(resolveHomeSelectedBubbleId({ previewOpen: true, previewPostId: '   ' })).toBeNull()
+  })
+})
+
+describe('shouldMountHomePreviewController', () => {
+  it('mounts the preview controller only while preview is open', () => {
+    expect(shouldMountHomePreviewController(true)).toBe(true)
+    expect(shouldMountHomePreviewController(false)).toBe(false)
+  })
+})
+
+describe('hasHomeActiveBubble', () => {
+  it('marks the bubble layer active when either selected or hovered state is present', () => {
+    expect(hasHomeActiveBubble({ selectedBubbleId: null, hoveredBubbleId: null })).toBe(false)
+    expect(hasHomeActiveBubble({ selectedBubbleId: 'story-1', hoveredBubbleId: null })).toBe(true)
+    expect(hasHomeActiveBubble({ selectedBubbleId: null, hoveredBubbleId: 'story-2' })).toBe(true)
+  })
+})
 
 describe('selectBubbleSlots', () => {
   it('spreads six latest-post bubbles across the desktop field with top and bottom center coverage', () => {
@@ -56,5 +95,8 @@ describe('resolveBubbleLayoutTier', () => {
     expect(resolveBubbleLayoutTier(520)).toBe('mobile')
     expect(resolveBubbleLayoutTier(860)).toBe('tablet')
     expect(resolveBubbleLayoutTier(1200)).toBe('desktop')
+    expect(isHomeBubbleInteractiveTier('desktop')).toBe(true)
+    expect(isHomeBubbleInteractiveTier('tablet')).toBe(true)
+    expect(isHomeBubbleInteractiveTier('mobile')).toBe(false)
   })
 })

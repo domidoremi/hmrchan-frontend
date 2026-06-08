@@ -5,20 +5,28 @@ import {
   buildActiveMediaViewerStyle,
   buildDetailDescription,
   buildPostDetailNotFoundRouteParams,
+  buildPostDetailPageMeta,
   buildDetailTitle,
   buildPublishedMeta,
+  computePostDetailScrollProgress,
   getAdjacentMediaPreloadIndexes,
   getCommentsPreloadMargin,
   getThumbnailPlaceholderCount,
   isMediaPending,
+  isPostDetailAbortError,
   resolveActiveImageSource,
   resolveActiveImageSrcset,
+  resolveAdjacentImagePreloadTargets,
   resolveAutoAdvanceMediaTransition,
   resolveFallbackMediaSource,
   resolveFallbackMediaSrcset,
   resolveMediaAspectRatio,
   resolvePlaceholderSource,
+  resolvePostDetailFallbackCandidate,
   resolvePostDetailFallbackRecovery,
+  resolvePostDetailFallbackRecoveryFromError,
+  resolvePostDetailFetchErrorOutcome,
+  resolvePostDetailMediaHintSource,
   resolvePostDetailNavigationRequest,
   resolvePostDetailNavigationTarget,
   resolvePostDetailTouchNavigationDirection,
@@ -26,6 +34,7 @@ import {
   resolvePostDetailMediaState,
   resolveSelectedMediaTransition,
   resolveSteppedMediaTransition,
+  shouldIgnorePostDetailInteractionTarget,
   shouldLoadCommentsForViewport,
   shouldShowReadFullText,
   shouldShowThumbnailRail,
@@ -51,6 +60,42 @@ describe('postDetailModel', () => {
     expect(buildDetailDescription({ title: 'Distinct title', description: 'Body copy' })).toBe(
       'Body copy'
     )
+  })
+
+  it('builds page meta only when post title is present', () => {
+    expect(buildPostDetailPageMeta(null, '/post/missing')).toBeNull()
+    expect(
+      buildPostDetailPageMeta({ title: '   ', description: 'Body' }, '/post/missing')
+    ).toBeNull()
+
+    expect(
+      buildPostDetailPageMeta(
+        { title: 'Lead', description: 'Lead：with punctuation' },
+        '/post/lead'
+      )
+    ).toEqual({
+      title: 'Lead',
+      description: 'with punctuation',
+      canonicalPath: '/post/lead',
+    })
+
+    expect(buildPostDetailPageMeta({ title: 'Only title' }, '/post/title')).toEqual({
+      title: 'Only title',
+      description: 'Only title',
+      canonicalPath: '/post/title',
+    })
+  })
+
+  it('classifies abort errors without treating unrelated errors as aborts', () => {
+    expect(isPostDetailAbortError(new DOMException('cancelled', 'AbortError'))).toBe(true)
+
+    const abortError = new Error('cancelled')
+    abortError.name = 'AbortError'
+    expect(isPostDetailAbortError(abortError)).toBe(true)
+
+    expect(isPostDetailAbortError(new Error('network'))).toBe(false)
+    expect(isPostDetailAbortError({ name: 'AbortError' })).toBe(false)
+    expect(isPostDetailAbortError(null)).toBe(false)
   })
 
   it('builds stable media sizing fallbacks', () => {
@@ -134,6 +179,115 @@ describe('postDetailModel', () => {
         hasNavigationSummary: true,
       })
     ).toBe('none')
+  })
+
+  it('resolves post detail fallback recovery from injected error classifiers', () => {
+    const notFoundError = { status: 404 }
+    const serviceUnavailableError = { code: 'SERVICE_UNAVAILABLE' }
+    const otherError = { status: 500 }
+
+    const classify = (err: unknown, hasNavigationSummary: boolean) =>
+      resolvePostDetailFallbackRecoveryFromError({
+        err,
+        hasNavigationSummary,
+        isNotFoundError: (value) =>
+          typeof value === 'object' &&
+          value !== null &&
+          (value as { status?: unknown }).status === 404,
+        isServiceUnavailableError: (value) =>
+          typeof value === 'object' &&
+          value !== null &&
+          (value as { code?: unknown }).code === 'SERVICE_UNAVAILABLE',
+      })
+
+    expect(classify(notFoundError, true)).toBe('navigation-summary')
+    expect(classify(notFoundError, false)).toBe('none')
+    expect(classify(serviceUnavailableError, false)).toBe('static-fallback')
+    expect(classify(otherError, true)).toBe('none')
+  })
+
+  it('resolves post detail fallback candidates without reading unused sources', () => {
+    let navigationBuilds = 0
+    let staticReads = 0
+
+    expect(
+      resolvePostDetailFallbackCandidate({
+        recovery: 'navigation-summary',
+        navigationSummary: { id: 'summary-post' },
+        buildNavigationFallback: (summary) => {
+          navigationBuilds += 1
+          return { id: summary.id, source: 'navigation' }
+        },
+        resolveStaticFallback: () => {
+          staticReads += 1
+          return { id: 'static-post', source: 'static' }
+        },
+      })
+    ).toEqual({ id: 'summary-post', source: 'navigation' })
+    expect(navigationBuilds).toBe(1)
+    expect(staticReads).toBe(0)
+
+    expect(
+      resolvePostDetailFallbackCandidate({
+        recovery: 'static-fallback',
+        navigationSummary: { id: 'summary-post' },
+        buildNavigationFallback: (summary) => {
+          navigationBuilds += 1
+          return { id: summary.id, source: 'navigation' }
+        },
+        resolveStaticFallback: () => {
+          staticReads += 1
+          return { id: 'static-post', source: 'static' }
+        },
+      })
+    ).toEqual({ id: 'static-post', source: 'static' })
+    expect(navigationBuilds).toBe(1)
+    expect(staticReads).toBe(1)
+
+    expect(
+      resolvePostDetailFallbackCandidate({
+        recovery: 'none',
+        navigationSummary: null,
+        buildNavigationFallback: (summary: { id: string }) => {
+          navigationBuilds += 1
+          return { id: summary.id, source: 'navigation' }
+        },
+        resolveStaticFallback: () => {
+          staticReads += 1
+          return { id: 'static-post', source: 'static' }
+        },
+      })
+    ).toBeNull()
+    expect(navigationBuilds).toBe(1)
+    expect(staticReads).toBe(1)
+  })
+
+  it('resolves post detail fetch error outcomes through injected classifiers', () => {
+    const notFoundError = { kind: 'api', status: 404, message: 'missing' }
+    const apiError = { kind: 'api', status: 500, message: 'server failed' }
+    const emptyMessageApiError = { kind: 'api', status: 503, message: '' }
+    const genericError = new Error('network')
+
+    const resolve = (err: unknown) =>
+      resolvePostDetailFetchErrorOutcome({
+        err,
+        isNotFoundError: (value) =>
+          typeof value === 'object' &&
+          value !== null &&
+          (value as { status?: unknown }).status === 404,
+        getApiErrorMessage: (value) =>
+          typeof value === 'object' &&
+          value !== null &&
+          (value as { kind?: unknown }).kind === 'api' &&
+          typeof (value as { message?: unknown }).message === 'string'
+            ? (value as { message: string }).message
+            : null,
+      })
+
+    expect(resolve(notFoundError)).toEqual({ action: 'not-found-redirect' })
+    expect(resolve(apiError)).toEqual({ action: 'api-error', message: 'server failed' })
+    expect(resolve(emptyMessageApiError)).toEqual({ action: 'api-error', message: '' })
+    expect(resolve(genericError)).toEqual({ action: 'generic-error' })
   })
 
   it('resolves adjacent post navigation targets within stored context bounds', () => {
@@ -284,6 +438,60 @@ describe('postDetailModel', () => {
     ).toBeNull()
   })
 
+  it('ignores post navigation gestures from interactive targets only', () => {
+    const root = document.createElement('div')
+    const panel = document.createElement('section')
+    const paragraph = document.createElement('p')
+    const button = document.createElement('button')
+    const input = document.createElement('input')
+    const textNode = document.createTextNode('plain text')
+
+    panel.className = 'post-panel'
+    panel.append(paragraph)
+    root.append(panel, button, input, textNode)
+
+    expect(shouldIgnorePostDetailInteractionTarget(paragraph)).toBe(true)
+    expect(shouldIgnorePostDetailInteractionTarget(button)).toBe(true)
+    expect(shouldIgnorePostDetailInteractionTarget(input)).toBe(true)
+    expect(shouldIgnorePostDetailInteractionTarget(root)).toBe(false)
+    expect(shouldIgnorePostDetailInteractionTarget(textNode)).toBe(false)
+    expect(shouldIgnorePostDetailInteractionTarget(null)).toBe(false)
+  })
+
+  it('clamps back navigation scroll progress to a stable range', () => {
+    expect(
+      computePostDetailScrollProgress({
+        scrollTop: 250,
+        scrollHeight: 1000,
+        clientHeight: 500,
+      })
+    ).toBe(0.5)
+
+    expect(
+      computePostDetailScrollProgress({
+        scrollTop: 900,
+        scrollHeight: 1000,
+        clientHeight: 500,
+      })
+    ).toBe(1)
+
+    expect(
+      computePostDetailScrollProgress({
+        scrollTop: -50,
+        scrollHeight: 1000,
+        clientHeight: 500,
+      })
+    ).toBe(0)
+
+    expect(
+      computePostDetailScrollProgress({
+        scrollTop: 50,
+        scrollHeight: 500,
+        clientHeight: 500,
+      })
+    ).toBe(0)
+  })
+
   it('derives comments preload viewport thresholds', () => {
     expect(getCommentsPreloadMargin(300)).toBe(160)
     expect(getCommentsPreloadMargin(700)).toBeCloseTo(245)
@@ -419,9 +627,104 @@ describe('postDetailModel', () => {
     ).toBe('/media/media-1/medium.jpg')
   })
 
+  it('resolves media hint sources before page-level browser preloading', () => {
+    const calls: string[] = []
+    const resolver = {
+      getMediaThumbnailUrl: (id: string, size: string) => {
+        calls.push(`media:${id}:${size}`)
+        return `/media/${id}/${size}.jpg`
+      },
+      resolveThumbnailSrc: (url: string | null, size: string) => {
+        calls.push(`fallback:${url ?? 'none'}:${size}`)
+        return url ? `${url}?size=${size}` : ''
+      },
+    }
+
+    expect(
+      resolvePostDetailMediaHintSource(
+        {
+          thumbnail_url: '/fallback.jpg',
+          media_files: [
+            { id: 'video-1', file_type: 'video' },
+            { id: 'image-1', file_type: 'image' },
+          ],
+        },
+        resolver
+      )
+    ).toBe('/media/image-1/large.jpg')
+    expect(calls).toEqual(['media:image-1:large'])
+
+    calls.length = 0
+    expect(
+      resolvePostDetailMediaHintSource(
+        { thumbnail_url: '/fallback.jpg', media_files: [{ id: 'video-1', file_type: 'video' }] },
+        resolver
+      )
+    ).toBe('/fallback.jpg?size=large')
+    expect(calls).toEqual(['fallback:/fallback.jpg:large'])
+
+    expect(resolvePostDetailMediaHintSource(null, resolver)).toBeNull()
+  })
+
   it('returns adjacent media preload indexes with wraparound', () => {
     expect(getAdjacentMediaPreloadIndexes(1, 0)).toEqual([])
     expect(getAdjacentMediaPreloadIndexes(4, 0)).toEqual([1, 3])
     expect(getAdjacentMediaPreloadIndexes(4, 3)).toEqual([0, 2])
+  })
+
+  it('resolves adjacent image preload targets without browser side effects', () => {
+    const mediaFiles = [
+      { id: 'image-0', file_type: 'image' },
+      { id: 'image-1', file_type: 'image' },
+      { id: 'video-2', file_type: 'video' },
+      { id: 'image-3', file_type: 'image' },
+    ]
+
+    expect(
+      resolveAdjacentImagePreloadTargets({
+        mediaFiles,
+        activeMediaIndex: 0,
+        preloadedImages: new Set(['/media/image-3/medium.jpg']),
+        getMediaThumbnailUrl: (id, size) => `/media/${id}/${size}.jpg`,
+      })
+    ).toEqual([
+      {
+        mediaId: 'image-1',
+        thumbnailUrl: '/media/image-1/medium.jpg',
+        fullSizeUrl: '/media/image-1/large.jpg',
+        shouldPreloadThumbnail: true,
+      },
+      {
+        mediaId: 'image-3',
+        thumbnailUrl: '/media/image-3/medium.jpg',
+        fullSizeUrl: '/media/image-3/large.jpg',
+        shouldPreloadThumbnail: false,
+      },
+    ])
+
+    expect(
+      resolveAdjacentImagePreloadTargets({
+        mediaFiles,
+        activeMediaIndex: 1,
+        preloadedImages: new Set(),
+        getMediaThumbnailUrl: (id, size) => `/media/${id}/${size}.jpg`,
+      })
+    ).toEqual([
+      {
+        mediaId: 'image-0',
+        thumbnailUrl: '/media/image-0/medium.jpg',
+        fullSizeUrl: '/media/image-0/large.jpg',
+        shouldPreloadThumbnail: true,
+      },
+    ])
+
+    expect(
+      resolveAdjacentImagePreloadTargets({
+        mediaFiles: [{ id: 'image-0', file_type: 'image' }],
+        activeMediaIndex: 0,
+        preloadedImages: new Set(),
+        getMediaThumbnailUrl: (id, size) => `/media/${id}/${size}.jpg`,
+      })
+    ).toEqual([])
   })
 })

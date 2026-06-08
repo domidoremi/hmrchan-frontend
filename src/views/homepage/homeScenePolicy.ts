@@ -1,6 +1,20 @@
+import type { BubbleLayoutTier } from './homeModel'
+import { buildStoryCardMotion } from './storyDeckMotion'
+
 export const HOME_COMPACT_VIEWPORT_MAX_WIDTH = 768
 export const HOME_LIGHTWEIGHT_VIEWPORT_MAX_WIDTH = 1024
 export const HOME_SCENE_LAYOUT_REFRESH_THRESHOLD_PX = 24
+export const HOME_NO_GLASS_BACKDROP_STYLE = Object.freeze({
+  backdropFilter: 'blur(0rem)',
+  WebkitBackdropFilter: 'blur(0rem)',
+}) as Readonly<Record<string, string>>
+
+export function shouldUseHomeAnimations(
+  animationsEnabled: boolean,
+  reducedMotionPreferred: boolean
+): boolean {
+  return animationsEnabled && !reducedMotionPreferred
+}
 
 export type HomeSceneCapabilitiesInput = {
   hasWindow: boolean
@@ -24,11 +38,32 @@ export type HomeSceneGeometryInput = {
   viewportHeight: number
 }
 
+export type HomeMeasuredSceneGeometryInput = {
+  measured: boolean
+  sectionHeight?: number | null
+  sectionTop?: number | null
+  pinnedHeight?: number | null
+  scrollY?: number | null
+  viewportHeight?: number | null
+}
+
+export type HomeMeasuredSceneGeometryState = {
+  travelDistance: number
+  progress: number
+}
+
 export type HomeViewportBlend = {
   heroRail: number
   railPosts: number
   postsStory: number
   storyFooter: number
+}
+
+export type HomeViewportSceneBlendState = {
+  sceneBlend: HomeViewportBlend
+  footerBlendProgress: number
+  compactBubbleRevealPhase: 'idle' | 'revealed' | null
+  compactResetRequired: boolean
 }
 
 export type HomeViewportBlendInput = {
@@ -55,6 +90,28 @@ export type HomeRailTrackStyleOptions = {
   railSlideCount: number
 }
 
+export const HOME_RAIL_SLIDE_KEYS = ['portal', 'spotlight', 'featured', 'trends'] as const
+
+export type HomeRailSlideKey = (typeof HOME_RAIL_SLIDE_KEYS)[number]
+
+export type HomeRailSlideLabels = Record<HomeRailSlideKey, string>
+
+export type HomeRailSlide = {
+  key: HomeRailSlideKey
+  label: string
+}
+
+export type HomeActiveRailSlideOptions<T> = {
+  railSlides: readonly T[]
+  activeRailIndex: number
+}
+
+export type HomeActiveSectionIdOptions<TId extends string> = {
+  anchors: readonly { id: TId }[]
+  currentId: TId
+  visibilityRatios: ReadonlyMap<TId, number>
+}
+
 export type HomeFooterBlendStyle = {
   '--home-footer-opacity': string
   '--home-footer-y': string
@@ -62,6 +119,111 @@ export type HomeFooterBlendStyle = {
   '--home-footer-marquee-opacity': string
   '--home-footer-marquee-speed-progress': string
   '--home-footer-marquee-play-state': string
+}
+
+export type HomeStorySceneProgress = {
+  effectiveStoryCardCount: number
+  storyTravel: number
+  storyProgressIndex: number
+  storyMergeProgress: number
+  storyFooterFade: number
+  activeStoryIndex: number
+}
+
+export type HomeStoryCardStyleOptions = {
+  index: number
+  storyProgressIndex: number
+  storyCardCount: number
+  storyMergeProgress: number
+  storyFooterFade: number
+}
+
+export type HomeBubbleCanvasFrameParameters = {
+  width: number
+  height: number
+  dpr: number
+  pointerX: number
+  pointerY: number
+  motionFactor: number
+}
+
+export type HomeBubbleCanvasOrbFrameInput = {
+  width: number
+  height: number
+  pointerX: number
+  pointerY: number
+  motionFactor: number
+  deltaMs: number
+  x: number
+  y: number
+  radius: number
+  driftX: number
+  driftY: number
+  alpha: number
+  phase: number
+  phaseSpeed: number
+  hueMix: number
+}
+
+export type HomeBubbleCanvasOrbFrameState = {
+  x: number
+  y: number
+  phase: number
+  drawX: number
+  drawY: number
+  drawRadius: number
+  innerColor: string
+  middleColor: string
+  outerColor: string
+}
+
+export type HomeBubbleCanvasOrbSeedRandoms = {
+  x: number
+  y: number
+  radius: number
+  driftX: number
+  driftY: number
+  alpha: number
+  phase: number
+  phaseSpeed: number
+}
+
+export type HomeBubbleCanvasOrbSeedState = {
+  x: number
+  y: number
+  radius: number
+  driftX: number
+  driftY: number
+  alpha: number
+  phase: number
+  phaseSpeed: number
+  hueMix: number
+}
+
+export type HomeBubbleCanvasResizeState = {
+  width: number
+  height: number
+  dpr: number
+  canvasWidth: number
+  canvasHeight: number
+  targetOrbCount: number
+  shouldSeedOrbs: boolean
+  maxOrbRadius: number
+}
+
+export type HomeBubbleCanvasRetainedOrbInput = {
+  x?: number | null
+  y?: number | null
+  radius?: number | null
+  width?: number | null
+  height?: number | null
+  maxOrbRadius?: number | null
+}
+
+export type HomeBubbleCanvasRetainedOrbState = {
+  x: number
+  y: number
+  radius: number
 }
 
 export type HomeSceneSnapPolicy =
@@ -148,6 +310,30 @@ export function resolveHomeSceneProgress(input: HomeSceneGeometryInput): number 
   return clamp(distance / travel)
 }
 
+export function resolveHomeMeasuredSceneGeometry(
+  input: HomeMeasuredSceneGeometryInput
+): HomeMeasuredSceneGeometryState {
+  if (!input.measured) {
+    return {
+      travelDistance: 1,
+      progress: 0,
+    }
+  }
+
+  const geometry = {
+    sectionHeight: input.sectionHeight ?? 0,
+    pinnedHeight: input.pinnedHeight,
+    sectionTop: input.sectionTop ?? 0,
+    scrollY: input.scrollY ?? 0,
+    viewportHeight: input.viewportHeight ?? 0,
+  }
+
+  return {
+    travelDistance: resolveHomeSceneTravelDistance(geometry),
+    progress: resolveHomeSceneProgress(geometry),
+  }
+}
+
 export function measureHomeViewportBlend(input: HomeViewportBlendInput): number {
   const rectTop = finiteOr(input.rectTop, Number.NaN)
   if (!Number.isFinite(rectTop)) return 0
@@ -167,6 +353,168 @@ export function resolveHomeSceneLayoutSize(input: {
   return {
     width: Math.round(finiteOr(input.width, 0)),
     height: Math.round(finiteOr(input.height, 0)),
+  }
+}
+
+export function resolveHomeBubbleCanvasFrameParameters({
+  width,
+  height,
+  devicePixelRatio,
+  pointerX,
+  pointerY,
+  shouldAnimate,
+}: {
+  width?: number | null
+  height?: number | null
+  devicePixelRatio?: number | null
+  pointerX?: number | null
+  pointerY?: number | null
+  shouldAnimate: boolean
+}): HomeBubbleCanvasFrameParameters {
+  const resolvedWidth = Math.max(finiteOr(width, 0), 1)
+  const resolvedHeight = Math.max(finiteOr(height, 0), 1)
+
+  return {
+    width: resolvedWidth,
+    height: resolvedHeight,
+    dpr: Math.min(finiteOr(devicePixelRatio, 1) || 1, 2),
+    pointerX: pointerX === null || pointerX === undefined ? resolvedWidth * 0.5 : pointerX,
+    pointerY: pointerY === null || pointerY === undefined ? resolvedHeight * 0.5 : pointerY,
+    motionFactor: shouldAnimate ? 1 : 0.15,
+  }
+}
+
+export function resolveHomeBubbleCanvasOrbFrameState({
+  width,
+  height,
+  pointerX,
+  pointerY,
+  motionFactor,
+  deltaMs,
+  x,
+  y,
+  radius,
+  driftX,
+  driftY,
+  alpha,
+  phase,
+  phaseSpeed,
+  hueMix,
+}: HomeBubbleCanvasOrbFrameInput): HomeBubbleCanvasOrbFrameState {
+  const resolvedWidth = Math.max(finiteOr(width, 1), 1)
+  const resolvedHeight = Math.max(finiteOr(height, 1), 1)
+  const resolvedMotionFactor = finiteOr(motionFactor, 1)
+  const resolvedAlpha = finiteOr(alpha, 0)
+  const resolvedHueMix = finiteOr(hueMix, 1)
+  const phaseDelta = (finiteOr(deltaMs, 16) / 1000) * finiteOr(phaseSpeed, 0) * resolvedMotionFactor
+  const nextPhase = finiteOr(phase, 0) + phaseDelta
+  const nextX =
+    (finiteOr(x, 0) + finiteOr(driftX, 0) * resolvedMotionFactor + resolvedWidth) % resolvedWidth
+  const nextY =
+    (finiteOr(y, 0) + finiteOr(driftY, 0) * resolvedMotionFactor + resolvedHeight) % resolvedHeight
+  const pulse = 0.92 + Math.sin(nextPhase) * 0.08
+  const parallaxX =
+    (finiteOr(pointerX, resolvedWidth * 0.5) / resolvedWidth - 0.5) * 24 * resolvedHueMix
+  const parallaxY = (finiteOr(pointerY, resolvedHeight * 0.5) / resolvedHeight - 0.5) * 16
+  const warmTone = resolvedHueMix > 0
+  const innerChannels = warmTone ? '147, 197, 253' : '244, 114, 182'
+  const middleChannels = warmTone ? '59, 130, 246' : '236, 72, 153'
+
+  return {
+    x: nextX,
+    y: nextY,
+    phase: nextPhase,
+    drawX: nextX + parallaxX,
+    drawY: nextY + parallaxY,
+    drawRadius: finiteOr(radius, 0) * pulse,
+    innerColor: `rgba(${innerChannels}, ${resolvedAlpha})`,
+    middleColor: `rgba(${middleChannels}, ${resolvedAlpha * 0.44})`,
+    outerColor: 'rgba(15, 23, 42, 0)',
+  }
+}
+
+export function resolveHomeBubbleCanvasOrbCount(tier: BubbleLayoutTier): number {
+  if (tier === 'mobile') return 5
+  if (tier === 'tablet') return 8
+  return 11
+}
+
+export function resolveHomeBubbleCanvasOrbSeedState({
+  width,
+  height,
+  tier,
+  index,
+  randoms,
+}: {
+  width?: number | null
+  height?: number | null
+  tier: BubbleLayoutTier
+  index: number
+  randoms: HomeBubbleCanvasOrbSeedRandoms
+}): HomeBubbleCanvasOrbSeedState {
+  const resolvedWidth = Math.max(finiteOr(width, 0), 1)
+  const resolvedHeight = Math.max(finiteOr(height, 0), 1)
+  const compactDrift = tier === 'mobile'
+  const minSize = Math.min(resolvedWidth, resolvedHeight)
+
+  return {
+    x: finiteOr(randoms.x, 0) * resolvedWidth,
+    y: finiteOr(randoms.y, 0) * resolvedHeight,
+    radius: minSize * (0.08 + finiteOr(randoms.radius, 0) * 0.12),
+    driftX: (finiteOr(randoms.driftX, 0) - 0.5) * (compactDrift ? 0.5 : 0.85),
+    driftY: (finiteOr(randoms.driftY, 0) - 0.5) * (compactDrift ? 0.4 : 0.75),
+    alpha: 0.08 + finiteOr(randoms.alpha, 0) * 0.12,
+    phase: finiteOr(randoms.phase, 0) * Math.PI * 2,
+    phaseSpeed: 0.2 + finiteOr(randoms.phaseSpeed, 0) * 0.35,
+    hueMix: index % 2 === 0 ? 1 : -1,
+  }
+}
+
+export function resolveHomeBubbleCanvasResizeState({
+  width,
+  height,
+  devicePixelRatio,
+  tier,
+  currentOrbCount,
+}: {
+  width?: number | null
+  height?: number | null
+  devicePixelRatio?: number | null
+  tier: BubbleLayoutTier
+  currentOrbCount: number
+}): HomeBubbleCanvasResizeState {
+  const resolvedWidth = Math.max(Math.round(finiteOr(width, 0)), 1)
+  const resolvedHeight = Math.max(Math.round(finiteOr(height, 0)), 1)
+  const dpr = Math.min(finiteOr(devicePixelRatio, 1) || 1, 2)
+  const targetOrbCount = resolveHomeBubbleCanvasOrbCount(tier)
+
+  return {
+    width: resolvedWidth,
+    height: resolvedHeight,
+    dpr,
+    canvasWidth: Math.max(1, Math.round(resolvedWidth * dpr)),
+    canvasHeight: Math.max(1, Math.round(resolvedHeight * dpr)),
+    targetOrbCount,
+    shouldSeedOrbs: currentOrbCount !== targetOrbCount,
+    maxOrbRadius: Math.min(resolvedWidth, resolvedHeight) * 0.24,
+  }
+}
+
+export function resolveHomeBubbleCanvasRetainedOrbState({
+  x,
+  y,
+  radius,
+  width,
+  height,
+  maxOrbRadius,
+}: HomeBubbleCanvasRetainedOrbInput): HomeBubbleCanvasRetainedOrbState {
+  const resolvedWidth = Math.max(finiteOr(width, 0), 1)
+  const resolvedHeight = Math.max(finiteOr(height, 0), 1)
+
+  return {
+    x: clamp(finiteOr(x, 0), 0, resolvedWidth),
+    y: clamp(finiteOr(y, 0), 0, resolvedHeight),
+    radius: Math.min(finiteOr(radius, 0), Math.max(finiteOr(maxOrbRadius, 0), 0)),
   }
 }
 
@@ -230,6 +578,59 @@ export function buildHomeFeaturedSceneStyle(railSlideCount: number): Record<stri
   }
 }
 
+export function resolveHomeActiveRailIndex({
+  railProgress,
+  railSlideCount,
+}: {
+  railProgress: number
+  railSlideCount: number
+}): number {
+  const slideCount = Math.max(Math.floor(railSlideCount), 0)
+  if (slideCount <= 1) return 0
+  return Math.round(clamp(railProgress) * (slideCount - 1))
+}
+
+export function resolveHomeActiveRailSlide<T>({
+  railSlides,
+  activeRailIndex,
+}: HomeActiveRailSlideOptions<T>): T | undefined {
+  if (railSlides.length === 0) return undefined
+  if (
+    !Number.isInteger(activeRailIndex) ||
+    activeRailIndex < 0 ||
+    activeRailIndex >= railSlides.length
+  ) {
+    return railSlides[0]
+  }
+  return railSlides[activeRailIndex] ?? railSlides[0]
+}
+
+export function buildHomeRailSlides(labels: HomeRailSlideLabels): HomeRailSlide[] {
+  return HOME_RAIL_SLIDE_KEYS.map((key) => ({
+    key,
+    label: labels[key],
+  }))
+}
+
+export function resolveHomeActiveSectionId<TId extends string>({
+  anchors,
+  currentId,
+  visibilityRatios,
+}: HomeActiveSectionIdOptions<TId>): TId {
+  let nextActive = currentId
+  let maxRatio = -1
+
+  for (const anchor of anchors) {
+    const ratio = finiteOr(visibilityRatios.get(anchor.id), 0)
+    if (ratio > maxRatio) {
+      maxRatio = ratio
+      nextActive = anchor.id
+    }
+  }
+
+  return maxRatio > 0 ? nextActive : currentId
+}
+
 export function buildHomeRailTrackStyle(
   options: HomeRailTrackStyleOptions
 ): Record<string, string> {
@@ -263,6 +664,47 @@ export function buildHomeStorySceneStyle({
   }
 }
 
+export function buildHomeStoryCardStyle(
+  options: HomeStoryCardStyleOptions
+): Record<string, string> {
+  return buildStoryCardMotion(options)
+}
+
+export function resolveHomeMediaSliceClasses(isActive: boolean): string[] {
+  return isActive ? ['is-active'] : []
+}
+
+export function formatHomeStoryProgressNumber(value: number): string {
+  const finiteValue = typeof value === 'number' && Number.isFinite(value) ? value : 0
+  return String(Math.max(Math.round(finiteValue), 1)).padStart(2, '0')
+}
+
+export function resolveHomeStorySceneProgress({
+  storyProgress,
+  storyCardCount,
+}: {
+  storyProgress: number
+  storyCardCount: number
+}): HomeStorySceneProgress {
+  const finiteStoryCardCount =
+    typeof storyCardCount === 'number' && Number.isFinite(storyCardCount) ? storyCardCount : 0
+  const finiteProgress =
+    typeof storyProgress === 'number' && Number.isFinite(storyProgress) ? storyProgress : 0
+  const effectiveStoryCardCount = Math.max(Math.round(finiteStoryCardCount), 0)
+  const clampedProgress = Math.min(1, Math.max(0, finiteProgress))
+  const storyTravel = Math.max(effectiveStoryCardCount - 1, 0)
+  const storyProgressIndex = clampedProgress * storyTravel
+
+  return {
+    effectiveStoryCardCount,
+    storyTravel,
+    storyProgressIndex,
+    storyMergeProgress: Math.min(1, Math.max(0, (clampedProgress - 0.86) / 0.14)),
+    storyFooterFade: Math.min(1, Math.max(0, (clampedProgress - 0.9) / 0.1)),
+    activeStoryIndex: effectiveStoryCardCount > 1 ? Math.round(storyProgressIndex) : 0,
+  }
+}
+
 export function buildHomeFooterBlendStyle(progress = 0): HomeFooterBlendStyle {
   const clamped = clamp(progress)
 
@@ -278,6 +720,47 @@ export function buildHomeFooterBlendStyle(progress = 0): HomeFooterBlendStyle {
 
 export function resolveHomeFooterBlendProgress(rawProgress: number, threshold = 0.04): number {
   return rawProgress > threshold ? clamp(rawProgress) : 0
+}
+
+export function resolveHomeViewportSceneBlendState({
+  compactViewport,
+  bubbleItemCount,
+  measuredBlend = {
+    heroRail: 0,
+    railPosts: 0,
+    postsStory: 0,
+    storyFooter: 0,
+  },
+}: {
+  compactViewport: boolean
+  bubbleItemCount: number
+  measuredBlend?: HomeViewportBlend
+}): HomeViewportSceneBlendState {
+  if (compactViewport) {
+    return {
+      sceneBlend: {
+        heroRail: 0,
+        railPosts: 0,
+        postsStory: 0,
+        storyFooter: 0,
+      },
+      footerBlendProgress: 0,
+      compactBubbleRevealPhase: bubbleItemCount > 0 ? 'revealed' : 'idle',
+      compactResetRequired: true,
+    }
+  }
+
+  const footerBlendProgress = resolveHomeFooterBlendProgress(measuredBlend.storyFooter)
+
+  return {
+    sceneBlend: {
+      ...measuredBlend,
+      storyFooter: footerBlendProgress,
+    },
+    footerBlendProgress,
+    compactBubbleRevealPhase: null,
+    compactResetRequired: false,
+  }
 }
 
 export function resolveHomeRailLockActive({

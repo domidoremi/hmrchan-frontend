@@ -1,10 +1,9 @@
-import { clamp, type BubbleLayoutTier } from './homeModel'
-
+import type { BubbleRevealPhase } from './bubbleRevealState'
+import { clamp, normalizeText, type BubbleLayoutTier } from './homeModel'
 const TWO_PI = Math.PI * 2
 const REM_IN_PX = 16
-
 type BubbleInteractionMode = 'idle' | 'pointer' | 'hover'
-
+export type BubbleHoverSource = 'pointer' | 'focus'
 export type BubbleMotionProfile = {
   driftPhaseX: number
   driftPhaseY: number
@@ -25,7 +24,6 @@ export type BubbleMotionProfile = {
   baseRotateDeg: number
   shadowWeight: number
 }
-
 export type BubblePointerState = {
   insideStage: boolean
   overBubbleId: string | null
@@ -38,7 +36,16 @@ export type BubblePointerState = {
   intensity: number
   mode: BubbleInteractionMode
 }
-
+export type BubblePointerPosition = {
+  x: number | null
+  y: number | null
+  normalizedX: number
+  normalizedY: number
+}
+export type BubbleForceCenter = {
+  x: number
+  y: number
+}
 export type BubbleAnchorMetrics = {
   left: number
   top: number
@@ -47,13 +54,11 @@ export type BubbleAnchorMetrics = {
   centerX: number
   centerY: number
 }
-
 export type BubbleStageMetrics = {
   width: number
   height: number
   viewportWidth: number
 }
-
 export type BubbleFrameState = {
   translateX: number
   translateY: number
@@ -64,6 +69,552 @@ export type BubbleFrameState = {
   shadowShiftY: number
   isDisplaced: boolean
   isUnderPressure: boolean
+}
+
+export type BubbleMotionLoopInput = {
+  hasWindow: boolean
+  lightweightViewport: boolean
+  revealPhase: BubbleRevealPhase
+  itemCount: number
+  shouldAnimate: boolean
+  hasStageElement: boolean
+  measuredAnchorCount: number
+  hasActiveBubble: boolean
+  pointerInsideStage: boolean
+  pointerStrength: number
+}
+
+export type BubbleMotionTargetDecision = {
+  targetCenter: BubbleForceCenter | null
+  targetStrength: number
+  pointerSettleDurationMs: number
+}
+
+export type BubbleMotionStepState = {
+  forceCenter: BubbleForceCenter | null
+  pointerStrength: number
+}
+
+export type BubbleHoverState = {
+  hoveredBubbleId: string | null
+  hoveredBubbleSource: BubbleHoverSource | null
+}
+
+export type BubbleHoverSyncState = BubbleHoverState & {
+  syncMotionLoop: boolean
+}
+
+export type BubbleActiveState = {
+  isHoverActive: boolean
+  isPersistentSelected: boolean
+}
+
+export type BubbleStagePointerState = {
+  pointerPosition: BubblePointerPosition
+  stageMetrics: BubbleStageMetrics
+}
+
+export type BubbleStageMetricsInput = {
+  stageWidth: number
+  stageHeight: number
+  viewportWidth: number
+}
+
+export type BubbleElementRegistrationState = {
+  normalizedId: string
+  action: 'skip' | 'remove' | 'register'
+  initializeFrameState: boolean
+  scheduleMeasurement: boolean
+}
+
+export type BubblePointerOverAction = 'enter' | 'leave' | 'stage-leave'
+
+export type BubblePointerOverState = {
+  pointerOverBubbleId: string | null
+}
+
+export type BubbleStagePointerPresenceAction = 'enter' | 'move' | 'leave'
+
+export type BubbleStagePointerPresenceState = {
+  pointerInsideStage: boolean
+  updatePointerPosition: boolean
+  clearPointerOver: boolean
+  clearPointerHover: boolean
+  syncMotionLoop: boolean
+}
+
+export type BubbleInteractionAction = 'pointer-enter' | 'pointer-leave' | 'focus' | 'blur'
+
+export type BubbleInteractionState = {
+  activateEnhancements: boolean
+  pointerInsideStage: boolean | null
+  pointerOverAction: BubblePointerOverAction | null
+  updatePointerPosition: boolean
+  hoverAction: 'set' | 'clear'
+  hoverSource: BubbleHoverSource
+  syncMotionLoop: boolean
+}
+
+export function resolveBubbleFrameDeltaMs(
+  timestamp: number,
+  previousTimestamp: number | null
+): number {
+  const deltaMs = previousTimestamp === null ? 16 : timestamp - previousTimestamp
+  return Number.isFinite(deltaMs) ? Math.min(Math.max(deltaMs, 0), 34) : 16
+}
+
+export function resolveBubbleMotionLerpFactor(deltaMs: number, durationMs: number): number {
+  if (durationMs <= 0) return 1
+  return 1 - Math.exp(-deltaMs / durationMs)
+}
+
+export function resolveBubbleInteractionState(
+  action: BubbleInteractionAction
+): BubbleInteractionState {
+  switch (action) {
+    case 'pointer-enter':
+      return {
+        activateEnhancements: true,
+        pointerInsideStage: true,
+        pointerOverAction: 'enter',
+        updatePointerPosition: true,
+        hoverAction: 'set',
+        hoverSource: 'pointer',
+        syncMotionLoop: true,
+      }
+    case 'pointer-leave':
+      return {
+        activateEnhancements: false,
+        pointerInsideStage: null,
+        pointerOverAction: 'leave',
+        updatePointerPosition: false,
+        hoverAction: 'clear',
+        hoverSource: 'pointer',
+        syncMotionLoop: true,
+      }
+    case 'focus':
+      return {
+        activateEnhancements: true,
+        pointerInsideStage: null,
+        pointerOverAction: null,
+        updatePointerPosition: false,
+        hoverAction: 'set',
+        hoverSource: 'focus',
+        syncMotionLoop: false,
+      }
+    case 'blur':
+      return {
+        activateEnhancements: false,
+        pointerInsideStage: null,
+        pointerOverAction: null,
+        updatePointerPosition: false,
+        hoverAction: 'clear',
+        hoverSource: 'focus',
+        syncMotionLoop: false,
+      }
+  }
+}
+
+export function resolveBubbleStagePointerPresenceState(
+  action: BubbleStagePointerPresenceAction
+): BubbleStagePointerPresenceState {
+  if (action === 'leave') {
+    return {
+      pointerInsideStage: false,
+      updatePointerPosition: false,
+      clearPointerOver: true,
+      clearPointerHover: true,
+      syncMotionLoop: true,
+    }
+  }
+
+  return {
+    pointerInsideStage: true,
+    updatePointerPosition: true,
+    clearPointerOver: false,
+    clearPointerHover: false,
+    syncMotionLoop: true,
+  }
+}
+
+export function resolveBubblePointerOverState({
+  action,
+  bubbleId,
+  currentPointerOverBubbleId,
+}: {
+  action: BubblePointerOverAction
+  bubbleId?: string | null
+  currentPointerOverBubbleId: string | null
+}): BubblePointerOverState {
+  if (action === 'stage-leave') {
+    return {
+      pointerOverBubbleId: null,
+    }
+  }
+
+  const normalizedId = normalizeText(bubbleId)
+
+  if (action === 'enter') {
+    return {
+      pointerOverBubbleId: normalizedId || null,
+    }
+  }
+
+  if (currentPointerOverBubbleId === normalizedId) {
+    return {
+      pointerOverBubbleId: null,
+    }
+  }
+
+  return {
+    pointerOverBubbleId: currentPointerOverBubbleId,
+  }
+}
+
+export function resolveBubbleElementRegistrationState({
+  bubbleId,
+  hasElement,
+  hasFrameState,
+  enhancementsPrimed,
+}: {
+  bubbleId: string
+  hasElement: boolean
+  hasFrameState: boolean
+  enhancementsPrimed: boolean
+}): BubbleElementRegistrationState {
+  const normalizedId = normalizeText(bubbleId)
+  if (!normalizedId) {
+    return {
+      normalizedId: '',
+      action: 'skip',
+      initializeFrameState: false,
+      scheduleMeasurement: false,
+    }
+  }
+
+  if (!hasElement) {
+    return {
+      normalizedId,
+      action: 'remove',
+      initializeFrameState: false,
+      scheduleMeasurement: false,
+    }
+  }
+
+  return {
+    normalizedId,
+    action: 'register',
+    initializeFrameState: !hasFrameState,
+    scheduleMeasurement: enhancementsPrimed,
+  }
+}
+
+export function resolveBubbleStagePointerState({
+  clientX,
+  clientY,
+  stageLeft,
+  stageTop,
+  stageWidth,
+  stageHeight,
+  viewportWidth,
+}: {
+  clientX: number
+  clientY: number
+  stageLeft: number
+  stageTop: number
+  stageWidth: number
+  stageHeight: number
+  viewportWidth: number
+}): BubbleStagePointerState {
+  const stageMetrics = resolveBubbleStageMetrics({ stageWidth, stageHeight, viewportWidth })
+  const { width, height } = stageMetrics
+  const nextX = clamp(clientX - stageLeft, 0, width)
+  const nextY = clamp(clientY - stageTop, 0, height)
+
+  return {
+    pointerPosition: {
+      x: nextX,
+      y: nextY,
+      normalizedX: width > 0 ? clamp(nextX / width) : 0.5,
+      normalizedY: height > 0 ? clamp(nextY / height) : 0.5,
+    },
+    stageMetrics,
+  }
+}
+
+export function resolveBubbleStageMetrics({
+  stageWidth,
+  stageHeight,
+  viewportWidth,
+}: BubbleStageMetricsInput): BubbleStageMetrics {
+  const width = Math.max(stageWidth, 0)
+  const height = Math.max(stageHeight, 0)
+
+  return {
+    width,
+    height,
+    viewportWidth: Math.max(viewportWidth, width, 0),
+  }
+}
+
+export function resolveBubbleActiveState({
+  bubbleId,
+  hoveredBubbleId,
+  selectedBubbleId,
+}: {
+  bubbleId: string
+  hoveredBubbleId: string | null
+  selectedBubbleId: string | null
+}): BubbleActiveState {
+  const normalizedId = normalizeText(bubbleId)
+  if (!normalizedId) {
+    return {
+      isHoverActive: false,
+      isPersistentSelected: false,
+    }
+  }
+
+  return {
+    isHoverActive: hoveredBubbleId === normalizedId,
+    isPersistentSelected: selectedBubbleId === normalizedId,
+  }
+}
+
+export function resolveBubbleHoverSetState({
+  bubbleId,
+  source,
+  currentState,
+}: {
+  bubbleId: string
+  source: BubbleHoverSource
+  currentState: BubbleHoverState
+}): BubbleHoverSyncState {
+  const nextId = normalizeText(bubbleId)
+  if (!nextId) {
+    return {
+      ...currentState,
+      syncMotionLoop: false,
+    }
+  }
+
+  return {
+    hoveredBubbleId: nextId,
+    hoveredBubbleSource: source,
+    syncMotionLoop: true,
+  }
+}
+
+export function resolveBubbleHoverClearState({
+  bubbleId,
+  source,
+  currentState,
+}: {
+  bubbleId?: string | null
+  source: BubbleHoverSource | 'all'
+  currentState: BubbleHoverState
+}): BubbleHoverSyncState {
+  if (
+    source !== 'all' &&
+    currentState.hoveredBubbleSource !== null &&
+    currentState.hoveredBubbleSource !== source
+  ) {
+    return {
+      ...currentState,
+      syncMotionLoop: false,
+    }
+  }
+
+  if (!bubbleId) {
+    return {
+      hoveredBubbleId: null,
+      hoveredBubbleSource: null,
+      syncMotionLoop: true,
+    }
+  }
+
+  const nextId = normalizeText(bubbleId)
+  if (currentState.hoveredBubbleId === nextId) {
+    return {
+      hoveredBubbleId: null,
+      hoveredBubbleSource: null,
+      syncMotionLoop: true,
+    }
+  }
+
+  return {
+    ...currentState,
+    syncMotionLoop: false,
+  }
+}
+
+export function shouldRunBubbleMotionLoop({
+  hasWindow,
+  lightweightViewport,
+  revealPhase,
+  itemCount,
+  shouldAnimate,
+  hasStageElement,
+  measuredAnchorCount,
+  hasActiveBubble,
+  pointerInsideStage,
+  pointerStrength,
+}: BubbleMotionLoopInput): boolean {
+  return (
+    hasWindow &&
+    !lightweightViewport &&
+    revealPhase === 'revealed' &&
+    itemCount > 0 &&
+    shouldAnimate &&
+    hasStageElement &&
+    measuredAnchorCount >= itemCount &&
+    (hasActiveBubble || pointerInsideStage || pointerStrength > 0.001)
+  )
+}
+
+export function resolveBubblePointerState({
+  hoverAnchor,
+  pointerInsideStage,
+  interactiveTier,
+  pointerOverBubbleId,
+  pointerPosition,
+  forceCenter,
+  pointerStrength,
+}: {
+  hoverAnchor: BubbleAnchorMetrics | null | undefined
+  pointerInsideStage: boolean
+  interactiveTier: boolean
+  pointerOverBubbleId: string | null
+  pointerPosition: BubblePointerPosition
+  forceCenter: BubbleForceCenter | null | undefined
+  pointerStrength: number
+}): BubblePointerState {
+  if (hoverAnchor) {
+    return {
+      insideStage: pointerInsideStage,
+      overBubbleId: pointerOverBubbleId,
+      x: pointerPosition.x,
+      y: pointerPosition.y,
+      normalizedX: pointerPosition.normalizedX,
+      normalizedY: pointerPosition.normalizedY,
+      activeCenterX: forceCenter?.x ?? hoverAnchor.centerX,
+      activeCenterY: forceCenter?.y ?? hoverAnchor.centerY,
+      intensity: pointerStrength,
+      mode: 'hover',
+    }
+  }
+
+  if (
+    pointerInsideStage &&
+    interactiveTier &&
+    pointerPosition.x !== null &&
+    pointerPosition.y !== null
+  ) {
+    return {
+      insideStage: true,
+      overBubbleId: pointerOverBubbleId,
+      x: pointerPosition.x,
+      y: pointerPosition.y,
+      normalizedX: pointerPosition.normalizedX,
+      normalizedY: pointerPosition.normalizedY,
+      activeCenterX: forceCenter?.x ?? pointerPosition.x,
+      activeCenterY: forceCenter?.y ?? pointerPosition.y,
+      intensity: pointerStrength,
+      mode: 'pointer',
+    }
+  }
+
+  return {
+    insideStage: false,
+    overBubbleId: pointerOverBubbleId,
+    x: pointerPosition.x,
+    y: pointerPosition.y,
+    normalizedX: pointerPosition.normalizedX,
+    normalizedY: pointerPosition.normalizedY,
+    activeCenterX: forceCenter?.x ?? null,
+    activeCenterY: forceCenter?.y ?? null,
+    intensity: pointerStrength,
+    mode: 'idle',
+  }
+}
+
+export function resolveBubbleMotionTargetDecision({
+  hoverAnchor,
+  pointerInsideStage,
+  interactiveTier,
+  pointerPosition,
+  attackDurationMs,
+  releaseDurationMs,
+}: {
+  hoverAnchor: BubbleAnchorMetrics | null | undefined
+  pointerInsideStage: boolean
+  interactiveTier: boolean
+  pointerPosition: BubblePointerPosition
+  attackDurationMs: number
+  releaseDurationMs: number
+}): BubbleMotionTargetDecision {
+  const pointerTargetCenter =
+    pointerInsideStage &&
+    interactiveTier &&
+    pointerPosition.x !== null &&
+    pointerPosition.y !== null
+      ? {
+          x: pointerPosition.x,
+          y: pointerPosition.y,
+        }
+      : null
+  const targetCenter = hoverAnchor
+    ? {
+        x: hoverAnchor.centerX,
+        y: hoverAnchor.centerY,
+      }
+    : pointerTargetCenter
+
+  return {
+    targetCenter,
+    targetStrength: targetCenter ? 1 : 0,
+    pointerSettleDurationMs: targetCenter ? attackDurationMs : releaseDurationMs,
+  }
+}
+
+export function resolveBubbleMotionStepState({
+  currentForceCenter,
+  currentPointerStrength,
+  targetDecision,
+  deltaMs,
+  forceCenterLerpDurationMs,
+  idleStrengthThreshold,
+}: {
+  currentForceCenter: BubbleForceCenter | null | undefined
+  currentPointerStrength: number
+  targetDecision: BubbleMotionTargetDecision
+  deltaMs: number
+  forceCenterLerpDurationMs: number
+  idleStrengthThreshold: number
+}): BubbleMotionStepState {
+  const pointerLerp = resolveBubbleMotionLerpFactor(deltaMs, targetDecision.pointerSettleDurationMs)
+  let pointerStrength =
+    currentPointerStrength + (targetDecision.targetStrength - currentPointerStrength) * pointerLerp
+  let forceCenter: BubbleForceCenter | null = currentForceCenter ? { ...currentForceCenter } : null
+
+  if (targetDecision.targetCenter) {
+    if (!forceCenter) {
+      forceCenter = { ...targetDecision.targetCenter }
+    } else {
+      const centerLerp = resolveBubbleMotionLerpFactor(deltaMs, forceCenterLerpDurationMs)
+      forceCenter = {
+        x: forceCenter.x + (targetDecision.targetCenter.x - forceCenter.x) * centerLerp,
+        y: forceCenter.y + (targetDecision.targetCenter.y - forceCenter.y) * centerLerp,
+      }
+    }
+  } else if (pointerStrength <= idleStrengthThreshold) {
+    forceCenter = null
+    pointerStrength = 0
+  }
+
+  return {
+    forceCenter,
+    pointerStrength,
+  }
 }
 
 type BubbleTierMotionConfig = {

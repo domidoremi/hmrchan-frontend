@@ -26,7 +26,7 @@
           <span class="hero-copy__divider" aria-hidden="true" />
 
           <div class="hero-copy__right">
-            <div class="hero-editorial" :class="{ 'hero-editorial--loaded': heroEditorialVisible }">
+            <div class="hero-editorial" :class="resolveHeroEditorialClasses(heroEditorialVisible)">
               <div class="hero-editorial__state hero-editorial__state--loading" aria-hidden="true">
                 <div class="hero-editorial__kicker">
                   <span class="hero-editorial__dot" />
@@ -143,14 +143,12 @@
               <div
                 v-if="portalLeadCard"
                 class="portal-card__preview portal-card__preview--lead"
-                :style="
-                  portalLeadCard.thumbnail ? undefined : { background: 'var(--home-pill-bg)' }
-                "
+                :style="resolvePortalLeadPreviewStyle(Boolean(portalLeadCard.thumbnail))"
               >
                 <img
-                  v-if="portalLeadCard.thumbnail && !isHomeMediaFailed(portalLeadCard.thumbnail)"
+                  v-if="shouldRenderHomeMedia(portalLeadCard.thumbnail)"
                   :src="portalLeadCard.thumbnail"
-                  :srcset="resolveHomeImageSrcset(portalLeadCard.thumbnail) || undefined"
+                  :srcset="resolveHomeImageSrcsetAttribute(portalLeadCard.thumbnail)"
                   :sizes="PORTAL_LEAD_IMAGE_SIZES"
                   :alt="portalLeadCard.title"
                   class="portal-card__preview-image"
@@ -216,7 +214,7 @@
                 <div class="portal-card__header">
                   <div
                     class="portal-card__icon"
-                    :class="`portal-card__icon--${portalPanels[0].key}`"
+                    :class="resolvePortalCardIconClasses(portalPanels[0].key)"
                   >
                     <AnimatedIcon
                       :name="portalPanels[0].animation"
@@ -252,7 +250,7 @@
                   :style="noGlassBackdropStyle"
                 >
                   <div class="portal-card__header">
-                    <div class="portal-card__icon" :class="`portal-card__icon--${panel.key}`">
+                    <div class="portal-card__icon" :class="resolvePortalCardIconClasses(panel.key)">
                       <AnimatedIcon :name="panel.animation" :fallback-icon="panel.icon" size="lg" />
                     </div>
                     <AnimatedIcon
@@ -310,24 +308,17 @@
                     type="button"
                     class="hero-collage-card glass-card"
                     :style="noGlassBackdropStyle"
-                    :class="{
-                      'hero-collage-card--primary': index === 0,
-                      'hero-collage-card--textual': !card.thumbnail,
-                    }"
+                    :class="resolveHeroCollageCardClasses(index, Boolean(card.thumbnail))"
                     @click="openPostPreview(card.post, card.thumbnail)"
                   >
                     <img
-                      v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
+                      v-if="shouldRenderHomeMedia(card.thumbnail)"
                       class="hero-collage-image"
                       :src="card.thumbnail"
-                      :srcset="resolveHomeImageSrcset(card.thumbnail) || undefined"
-                      :sizes="resolveHeroCollageImageSizes(index)"
+                      :srcset="resolveHomeImageSrcsetAttribute(card.thumbnail)"
                       :alt="card.title"
-                      :width="resolveHeroCollageImageDimensions(index).width"
-                      :height="resolveHeroCollageImageDimensions(index).height"
-                      :loading="resolveHeroCollageImageLoading(index)"
+                      v-bind="resolveHeroCollageImagePresentation(index)"
                       decoding="async"
-                      :fetchpriority="resolveHeroCollageFetchPriority(index)"
                       @error="markHomeMediaFailed(card.thumbnail)"
                     />
                     <div v-else class="hero-collage-placeholder">
@@ -356,14 +347,13 @@
                 type="button"
                 class="hero-spotlight-card glass-card"
                 :style="noGlassBackdropStyle"
-                :class="{
-                  'hero-spotlight-card--lead': index === 0,
-                  'hero-spotlight-card--dense': !card.supportText,
-                }"
+                :class="resolveHeroSpotlightCardClasses(index, Boolean(card.supportText))"
                 @click="openPostPreview(card.post, null)"
               >
                 <span class="hero-spotlight-card__label">
-                  {{ index === 0 ? $t('home.hero.editorialLabel') : card.author }}
+                  {{
+                    resolveHeroSpotlightLabel(index, $t('home.hero.editorialLabel'), card.author)
+                  }}
                 </span>
                 <strong class="hero-spotlight-card__title">{{ card.title }}</strong>
                 <p v-if="card.supportText" class="hero-spotlight-card__summary">
@@ -409,30 +399,23 @@
                 type="button"
                 class="featured-rail-card glass-card"
                 :style="noGlassBackdropStyle"
-                :class="[
-                  index === 0 ? 'featured-rail-card--lead' : 'featured-rail-card--support',
-                  index > 1 ? 'featured-rail-card--compact' : null,
-                  !card.summary ? 'featured-rail-card--dense' : null,
-                  !card.thumbnail ? 'featured-rail-card--textual' : null,
-                ]"
+                :class="
+                  resolveFeaturedRailCardPresentationClasses(index, card.summary, card.thumbnail)
+                "
                 @click="openPostPreview(card.post, card.thumbnail)"
               >
                 <div
                   class="featured-rail-card__media"
-                  :class="{ 'featured-rail-card__media--empty': !card.thumbnail }"
+                  :class="resolveFeaturedRailMediaClasses(Boolean(card.thumbnail))"
                 >
                   <img
-                    v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
+                    v-if="shouldRenderHomeMedia(card.thumbnail)"
                     :src="card.thumbnail"
-                    :srcset="resolveHomeImageSrcset(card.thumbnail) || undefined"
-                    :sizes="resolveFeaturedRailImageSizes(index)"
+                    :srcset="resolveHomeImageSrcsetAttribute(card.thumbnail)"
                     :alt="card.title"
                     class="featured-rail-card__image"
-                    :width="resolveFeaturedRailImageSize(index).width"
-                    :height="resolveFeaturedRailImageSize(index).height"
-                    :loading="resolveFeaturedRailImageLoading()"
+                    v-bind="resolveFeaturedRailImagePresentation(index)"
                     decoding="async"
-                    :fetchpriority="resolveFeaturedRailFetchPriority()"
                     @error="markHomeMediaFailed(card.thumbnail)"
                   />
                   <div v-else class="featured-rail-card__placeholder">
@@ -477,16 +460,8 @@
               <PostCard
                 v-for="(post, index) in featuredRailPosts"
                 :key="`featured-rail-${post.id}`"
-                :class="[
-                  'rail-feature-card',
-                  index === 0 ? 'rail-feature-card--lead' : 'rail-feature-card--support',
-                ]"
+                v-bind="resolveFeaturedRailPostPresentation(index)"
                 :post="post"
-                :aspect-ratio="index === 0 ? '4 / 3' : '16 / 9'"
-                :thumbnail-size="index === 0 ? 'large' : 'medium'"
-                :prefetch-on-hover="index < 2"
-                :preload-large-image-on-hover="index < 2"
-                :show-excerpt="index === 0"
                 @click="(_id, thumb) => openPostPreview(post, thumb)"
               />
             </template>
@@ -529,7 +504,7 @@
                     class="trends-authors-highlight__avatar"
                     size="custom"
                     shape="square"
-                    :src="leadingTrendingAuthor.avatar || undefined"
+                    :src="resolveHomeImageSourceAttribute(leadingTrendingAuthor.avatar)"
                     :alt="leadingTrendingAuthor.name"
                     loading="lazy"
                     decoding="async"
@@ -560,7 +535,7 @@
                     <Avatar
                       class="trend-author__avatar"
                       size="custom"
-                      :src="author.avatar || undefined"
+                      :src="resolveHomeImageSourceAttribute(author.avatar)"
                       :alt="author.name"
                       loading="lazy"
                       decoding="async"
@@ -631,7 +606,7 @@
               <template v-if="heroEditorialCard">
                 <div
                   class="trends-editorial"
-                  :class="{ 'trends-editorial--compact': !heroEditorialSupportText }"
+                  :class="resolveTrendsEditorialClasses(Boolean(heroEditorialSupportText))"
                 >
                   <strong class="trends-editorial__title">{{ heroEditorialCard.title }}</strong>
                   <p v-if="heroEditorialSupportText" class="trends-editorial__text">
@@ -658,25 +633,30 @@
               <div
                 v-if="primaryScheduleHighlights.length > 0"
                 class="schedule-highlight-list"
-                :class="{
-                  'schedule-highlight-list--paired': Boolean(trendsScheduleCompanion),
-                }"
+                :class="resolveScheduleHighlightListClasses(Boolean(trendsScheduleCompanion))"
               >
                 <RouterLink
                   v-for="item in primaryScheduleHighlights"
                   :key="`schedule-highlight-${item.id}`"
-                  :to="item.deep_link || '/schedule'"
+                  :to="resolveScheduleHighlightRoute(item.deep_link)"
                   class="schedule-highlight"
                 >
                   <span class="schedule-highlight__label">
-                    {{ item.badge || getScheduleCategoryLabel(item.category) }}
+                    {{
+                      resolveScheduleHighlightLabel(
+                        item.badge,
+                        getScheduleCategoryLabel(item.category, t)
+                      )
+                    }}
                   </span>
                   <strong class="schedule-highlight__title">{{ item.title }}</strong>
                   <span class="schedule-highlight__meta">
                     {{
-                      formatScheduleHighlightMeta(item) ||
-                      formatHomeAuthorName(item.author) ||
-                      $t('home.trends.scheduleAction')
+                      resolveScheduleHighlightMetaText(
+                        formatScheduleHighlightMeta(item),
+                        formatHomeAuthorName(item.author),
+                        $t('home.trends.scheduleAction')
+                      )
                     }}
                   </span>
                 </RouterLink>
@@ -684,7 +664,7 @@
                   v-if="trendsScheduleCompanion"
                   :to="trendsScheduleCompanion.to"
                   class="schedule-highlight schedule-highlight--companion"
-                  :class="`schedule-highlight--${trendsScheduleCompanion.kind}`"
+                  :class="resolveScheduleHighlightCompanionClasses(trendsScheduleCompanion.kind)"
                 >
                   <span class="schedule-highlight__label">
                     {{ trendsScheduleCompanion.label }}
@@ -775,7 +755,7 @@
           </div>
           <div
             class="posts-toolbar__stats"
-            :class="{ 'posts-toolbar__stats--with-tags': postsToolbarTags.length > 0 }"
+            :class="resolvePostsToolbarStatsClasses(postsToolbarTags.length > 0)"
           >
             <span
               v-for="stat in heroStats"
@@ -814,13 +794,13 @@
         <div
           ref="bubbleStageRef"
           class="bubble-stage"
-          :class="[
-            `bubble-stage--${bubbleLayoutTier}`,
-            {
-              'has-active-bubble': hasActiveBubble,
-              'is-motion-active': bubbleMotionFrameActive,
-            },
-          ]"
+          :class="
+            resolveBubbleStageClasses({
+              layoutTier: bubbleLayoutTier,
+              hasActiveBubble,
+              isMotionActive: bubbleMotionFrameActive,
+            })
+          "
           @pointerenter="handleBubbleStagePointerEnter"
           @pointermove="handleBubbleStagePointerMove"
           @pointerleave="handleBubbleStagePointerLeave"
@@ -882,9 +862,9 @@
           <p>{{ $t('home.featured.subtitle') }}</p>
         </div>
         <div class="story-progress">
-          <span>{{ String(activeStoryIndex + 1).padStart(2, '0') }}</span>
+          <span>{{ formatHomeStoryProgressNumber(activeStoryIndex + 1) }}</span>
           <span>/</span>
-          <span>{{ String(Math.max(effectiveStoryCardCount, 1)).padStart(2, '0') }}</span>
+          <span>{{ formatHomeStoryProgressNumber(effectiveStoryCardCount) }}</span>
         </div>
       </header>
 
@@ -894,7 +874,7 @@
             v-for="(card, index) in storyCards"
             :key="`media-${card.post.id}`"
             class="media-slice"
-            :class="{ 'is-active': activeStoryIndex === index }"
+            :class="resolveHomeMediaSliceClasses(activeStoryIndex === index)"
             :style="getStoryCardStyle(index)"
           >
             <div class="media-slice__sticky glass-card" :style="noGlassBackdropStyle">
@@ -987,7 +967,6 @@ import {
 import type { PostListItem } from '@/api/postService'
 import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
 import { isFilteredAuthor } from '@/config/filters'
-import { getContractResourceId } from '@/utils/contractResourceId'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { prewarmPublicHomeContent } from '@/utils/cache'
@@ -996,62 +975,145 @@ import {
   buildHomePostsFromAggregate,
   clamp,
   formatHomeAuthorName,
+  getScheduleCategoryLabel,
+  hasHomeActiveBubble,
+  isHomeBubbleInteractiveTier,
   normalizeText,
+  resolveHomeSelectedBubbleId,
   resolveBubbleLayoutTier,
-  resolvePostIdFromLink,
-  resolvePreviewablePostLink,
+  shouldMountHomePreviewController,
 } from '@/views/homepage/homeModel'
 import {
-  resolveFeaturedRailFetchPriority,
-  resolveFeaturedRailImageLoading,
-  resolveFeaturedRailImageSize,
-  resolveFeaturedRailImageSizes,
-  resolveHeroCollageFetchPriority,
-  resolveHeroCollageImageDimensions,
-  resolveHeroCollageImageLoading,
-  resolveHeroCollageImageSizes,
-  resolveHomeImageSrcset,
+  resolveHomePostDetailAction,
+  resolveHomePostPreviewAction,
+} from '@/views/homepage/homePostPreviewAction'
+import {
+  resolveFeaturedRailCardPresentationClasses,
+  resolveFeaturedRailImagePresentation,
+  resolveFeaturedRailMediaClasses,
+  resolveFeaturedRailPostPresentation,
+  resolveHeroCollageCardClasses,
+  resolveHeroCollageImagePresentation,
+  resolveHeroEditorialClasses,
+  resolveHeroSpotlightCardClasses,
+  resolveHeroSpotlightLabel,
+  resolveHomeImageSourceAttribute,
+  resolveHomeImageSrcsetAttribute,
+  resolvePortalCardIconClasses,
+  resolvePortalLeadPreviewStyle,
+  resolveTrendsEditorialClasses,
 } from '@/views/homepage/homeImagePolicy'
 import {
   collectHomePrewarmMedia,
+  createEmptyHomeAggregate,
   createEmptyHomeSupportRefreshTargets,
   hasPendingHomeSupportRefresh,
+  resolveHomeMediaFailureMarkState,
+  resolveHomePublicPrewarmLimits,
+  resolveHomeTotalCount,
+  resolveHomeSupportRefreshRunState,
   resolveHomeSupportRefreshTargets,
+  resolvePostsToolbarStatsClasses,
+  resolveScheduleHighlightCompanionClasses,
+  resolveScheduleHighlightLabel,
+  resolveScheduleHighlightListClasses,
+  resolveScheduleHighlightMetaText,
+  resolveScheduleHighlightRoute,
+  shouldRenderHomeMediaSource,
+  type HomeDataSource,
   type HomeSupportRefreshTargets,
 } from '@/views/homepage/homeSupportPolicy'
 import {
   buildHomeFooterBlendStyle,
   buildHomeFeaturedSceneStyle,
   buildHomePageMotionStyle,
+  buildHomeRailSlides,
   buildHomeRailTrackStyle,
   buildHomeSceneSnap,
+  buildHomeStoryCardStyle,
   buildHomeStorySceneStyle,
+  formatHomeStoryProgressNumber,
   HOME_FOOTER_BLEND_PROPERTIES,
+  HOME_NO_GLASS_BACKDROP_STYLE,
   measureHomeViewportBlend,
-  resolveHomeFooterBlendProgress,
+  resolveHomeActiveRailIndex,
+  resolveHomeActiveRailSlide,
+  resolveHomeActiveSectionId,
+  resolveHomeBubbleCanvasFrameParameters,
+  resolveHomeBubbleCanvasOrbCount,
+  resolveHomeBubbleCanvasOrbFrameState,
+  resolveHomeBubbleCanvasOrbSeedState,
+  resolveHomeBubbleCanvasRetainedOrbState,
+  resolveHomeBubbleCanvasResizeState,
+  resolveHomeMeasuredSceneGeometry,
+  resolveHomeMediaSliceClasses,
   resolveHomeRailLockActive,
   resolveHomeSceneCapabilities,
   resolveHomeSceneLayoutRefresh,
   resolveHomeSceneLayoutSize,
-  resolveHomeSceneProgress,
-  resolveHomeSceneTravelDistance,
+  resolveHomeStorySceneProgress,
+  resolveHomeViewportSceneBlendState,
+  shouldUseHomeAnimations,
+  type HomeBubbleCanvasOrbSeedState,
+  type HomeMeasuredSceneGeometryInput,
   type HomeSceneLayoutSize,
 } from '@/views/homepage/homeScenePolicy'
 import {
+  resolveDeferredHomeEnhancementIntersectionAction,
+  resolveDeferredHomeEnhancementStartupDecision,
+  resolveHomeEnhancementScheduleDecision,
+  resolveHomeSceneActivationDecision,
+  shouldActivateHomeBubbleEnhancements,
+  shouldBindDeferredHomeSceneIntent,
+  shouldCleanupDeferredHomeEnhancementObserver,
+  shouldContinueHomeBubbleEnhancementSetup,
+  shouldScheduleHomeEnhancements,
+  shouldStartHomeBubbleCanvasScene,
+  shouldUnbindDeferredHomeSceneIntent,
+} from '@/views/homepage/homeSceneActivationPolicy'
+import {
+  resolveBubbleActivePresentationState,
+  resolveBubbleFramePresentationState,
+  resolveBubbleFrameResetPresentationState,
+  resolveBubbleStageClasses,
+} from '@/views/homepage/bubbleFramePresentation'
+import {
   computeBubbleFrameState,
+  resolveBubbleElementRegistrationState,
+  resolveBubbleActiveState,
+  resolveBubbleFrameDeltaMs,
+  resolveBubbleHoverClearState,
+  resolveBubbleHoverSetState,
+  resolveBubbleInteractionState,
+  resolveBubbleMotionStepState,
+  resolveBubbleMotionTargetDecision,
+  resolveBubblePointerState,
+  resolveBubblePointerOverState,
+  resolveBubbleStageMetrics,
+  resolveBubbleStagePointerPresenceState,
+  resolveBubbleStagePointerState,
+  shouldRunBubbleMotionLoop as shouldRunBubbleMotionLoopPolicy,
   type BubbleAnchorMetrics,
+  type BubbleForceCenter,
   type BubbleFrameState,
+  type BubbleHoverSource,
+  type BubbleInteractionAction,
+  type BubblePointerPosition,
   type BubblePointerState,
+  type BubbleStagePointerPresenceAction,
   type BubbleStageMetrics,
 } from '@/views/homepage/bubbleMotion'
 import {
   resolveBubbleRevealLifecycleAction,
+  resolveBubbleRevealResetState,
+  resolveBubbleRevealRetreatState,
+  resolveBubbleRevealRestartState,
   resolveBubbleRevealViewportAction,
   resolveBubbleRevealWindow,
+  shouldResetBubbleFrameStylesOnMotionStop,
   type BubbleRevealLifecycleAction,
   type BubbleRevealPhase,
 } from '@/views/homepage/bubbleRevealState'
-import { buildStoryCardMotion } from '@/views/homepage/storyDeckMotion'
 import { useHomeViewModel } from '@/views/homepage/useHomeViewModel'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -1071,73 +1133,30 @@ import {
   ensureSmoothScrollTriggerBridge,
   scrollWithSmoothScroll,
 } from '@/composables/useSmoothScroll'
-
 type GsapModule = typeof import('gsap')
 type ScrollTriggerModule = typeof import('gsap/ScrollTrigger')
 type ScrollTriggerInstance = InstanceType<ScrollTriggerModule['ScrollTrigger']>
-
 let gsapModule: GsapModule['default'] | null = null
 let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
 let scrollTriggerReadyPromise: Promise<boolean> | null = null
 let homeEnhancementsDisposed = false
-
 const BUBBLE_EXIT_DURATION_MS = 420
 const BUBBLE_POINTER_ATTACK_MS = 220
 const BUBBLE_POINTER_RELEASE_MS = 360
 const BUBBLE_FORCE_CENTER_LERP_MS = 180
 const HOME_ENHANCEMENTS_DELAY_MS = 1200
 const HOME_SCENE_ACTIVATION_DELAY_MS = 140
-const HOME_FALLBACK_PREFIX = '__home_fallback__'
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
-
-function createEmptyHomeAggregate(): HomeAggregateResponse {
-  return {
-    version: 'empty',
-    generated_at: '',
-    ttl_seconds: 0,
-    hero: {
-      editorial_card: null,
-      spotlight: null,
-      stats: [],
-      trending_tags: [],
-    },
-    portal: {
-      items: [],
-    },
-    featured: {
-      items: [],
-    },
-    trends: {
-      authors: [],
-      tags: [],
-      schedules: [],
-      community: [],
-    },
-    latest_text_posts: [],
-    story_deck: {
-      items: [],
-      total: 0,
-    },
-  }
-}
-
 let homepageBootstrapFallbackPromise: Promise<HomeAggregateResponse> | null = null
-
 async function loadHomepageBootstrapFallback(): Promise<HomeAggregateResponse> {
   if (!homepageBootstrapFallbackPromise) {
     homepageBootstrapFallbackPromise = import('@/fallbacks/homepageBootstrapFallback').then(
       ({ buildHomepageBootstrapFallback }) => buildHomepageBootstrapFallback()
     )
   }
-
   return homepageBootstrapFallbackPromise
 }
-
-function isHomeFallbackPost(post: Pick<PostListItem, 'id'> | null | undefined): boolean {
-  return Boolean(post?.id?.startsWith(HOME_FALLBACK_PREFIX))
-}
-
 function defineHomeAsyncComponent<T extends object>(loader: () => Promise<T>) {
   return defineAsyncComponent({
     loader,
@@ -1161,48 +1180,47 @@ const PostCardSkeleton = defineHomeAsyncComponent(
 const HomepagePreviewController = defineHomeAsyncComponent(
   () => import('@/components/home/HomepagePreviewController.vue')
 )
-
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
 const { t, locale } = useI18n()
-
-const shouldAnimate = computed(() => settings.value.enableAnimations && !prefersReducedMotion())
-const noGlassBackdropStyle = Object.freeze({
-  backdropFilter: 'blur(0rem)',
-  WebkitBackdropFilter: 'blur(0rem)',
-}) as Readonly<Record<string, string>>
+const shouldAnimate = computed(() =>
+  shouldUseHomeAnimations(settings.value.enableAnimations, prefersReducedMotion())
+)
+const noGlassBackdropStyle = HOME_NO_GLASS_BACKDROP_STYLE
 const initialHomeAggregate = createEmptyHomeAggregate()
 const initialHomePosts: PostListItem[] = []
-
 let homeSupportRefreshController: AbortController | null = null
 let pendingHomeSupportRefresh: HomeSupportRefreshTargets = {
   schedule: false,
   community: false,
 }
-
 const posts = ref<PostListItem[]>(initialHomePosts)
 const allPosts = ref<PostListItem[]>(initialHomePosts)
-
 const isPreviewOpen = ref(false)
 const previewPostId = ref<string | null>(null)
 const previewThumbnailSrc = ref<string | null>(null)
 const previewPost = ref<PostListItem | null>(null)
-const shouldMountHomepagePreviewController = computed(() => isPreviewOpen.value)
-const hoveredBubbleId = ref<string | null>(null)
-const hoveredBubbleSource = ref<'pointer' | 'focus' | null>(null)
-const selectedBubbleId = computed(() =>
-  isPreviewOpen.value ? normalizeText(previewPostId.value) || null : null
+const shouldMountHomepagePreviewController = computed(() =>
+  shouldMountHomePreviewController(isPreviewOpen.value)
 )
-const hasActiveBubble = computed(() => Boolean(selectedBubbleId.value || hoveredBubbleId.value))
+const hoveredBubbleId = ref<string | null>(null)
+const hoveredBubbleSource = ref<BubbleHoverSource | null>(null)
+const selectedBubbleId = computed(() =>
+  resolveHomeSelectedBubbleId({
+    previewOpen: isPreviewOpen.value,
+    previewPostId: previewPostId.value,
+  })
+)
+const hasActiveBubble = computed(() =>
+  hasHomeActiveBubble({
+    selectedBubbleId: selectedBubbleId.value,
+    hoveredBubbleId: hoveredBubbleId.value,
+  })
+)
 const pointerInsideBubbleStage = ref(false)
 const pointerOverBubbleId = ref<string | null>(null)
-const pointerStagePosition = ref<{
-  x: number | null
-  y: number | null
-  normalizedX: number
-  normalizedY: number
-}>({
+const pointerStagePosition = ref<BubblePointerPosition>({
   x: null,
   y: null,
   normalizedX: 0.5,
@@ -1213,7 +1231,12 @@ const bubbleMotionFrameActive = ref(false)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
-const total = ref(Math.max(initialHomePosts.length, initialHomeAggregate.story_deck.total ?? 0))
+const total = ref(
+  resolveHomeTotalCount({
+    postCount: initialHomePosts.length,
+    storyDeckTotal: initialHomeAggregate.story_deck.total,
+  })
+)
 const homeAggregate = ref<HomeAggregateResponse | null>(initialHomeAggregate)
 const homeScheduleHighlights = ref<HomeScheduleHighlight[]>(
   initialHomeAggregate.trends.schedules ?? []
@@ -1221,13 +1244,11 @@ const homeScheduleHighlights = ref<HomeScheduleHighlight[]>(
 const homeCommunityHighlights = ref<HomeCommunityHighlight[]>(
   initialHomeAggregate.trends.community ?? []
 )
-const homeDataSource = ref<'idle' | 'aggregate' | 'support' | 'cached' | 'fallback'>('idle')
+const homeDataSource = ref<'idle' | HomeDataSource>('idle')
 const failedHomeMediaUrls = ref<Set<string>>(new Set())
-
 type HomeSectionInstance = {
   element: HTMLElement | null
 }
-
 const postsSectionRef = useTemplateRef<HomeSectionInstance>('postsSectionRef')
 const bubbleStageRef = useTemplateRef<HTMLElement>('bubbleStageRef')
 const bubbleCanvasRef = useTemplateRef<HTMLCanvasElement>('bubbleCanvasRef')
@@ -1236,11 +1257,9 @@ const storyDeckRef = useTemplateRef<HomeSectionInstance>('storyDeckRef')
 const homeQuickNavAnchors = homeSectionAnchors
 const activeHomeSectionId = ref<HomeSectionAnchor['id']>(homeSectionAnchors[0]?.id ?? 'home-fold')
 let homeSectionObserver: IntersectionObserver | null = null
-
 function updateHomeQuickNavSide(side: 'left' | 'right') {
   settingsStore.setHomeQuickNavSide(side)
 }
-
 const railProgress = ref(0)
 const storyProgress = ref(0)
 const bubbleLayoutTier = ref<BubbleLayoutTier>('desktop')
@@ -1251,7 +1270,6 @@ const viewportSceneBlend = ref({
   postsStory: 0,
   storyFooter: 0,
 })
-
 const {
   bubbleItems,
   clearHeroEditorialRevealTimer,
@@ -1304,30 +1322,23 @@ const {
   translate: t,
   locale,
 })
-
 function resolveSectionElement(
   section: HomeSectionInstance | null | undefined
 ): HTMLElement | null {
   return section?.element ?? null
 }
-
 function getHomeSectionElement(id: HomeSectionAnchor['id']): HTMLElement | null {
   if (typeof document === 'undefined') return null
   return document.getElementById(id)
 }
-
 function disconnectHomeSectionObserver() {
   homeSectionObserver?.disconnect()
   homeSectionObserver = null
 }
-
 function observeHomeSections() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
-
   disconnectHomeSectionObserver()
-
   if (typeof window.IntersectionObserver !== 'function') return
-
   const visibility = new Map<HomeSectionAnchor['id'], number>()
   homeSectionObserver = createVisibilityObserver(
     (entries) => {
@@ -1336,27 +1347,17 @@ function observeHomeSections() {
         if (!id) continue
         visibility.set(id, entry.isIntersecting ? entry.intersectionRatio : 0)
       }
-
-      let nextActive = activeHomeSectionId.value
-      let maxRatio = -1
-      for (const anchor of homeQuickNavAnchors) {
-        const ratio = visibility.get(anchor.id) ?? 0
-        if (ratio > maxRatio) {
-          maxRatio = ratio
-          nextActive = anchor.id
-        }
-      }
-
-      if (maxRatio > 0) {
-        activeHomeSectionId.value = nextActive
-      }
+      activeHomeSectionId.value = resolveHomeActiveSectionId({
+        anchors: homeQuickNavAnchors,
+        currentId: activeHomeSectionId.value,
+        visibilityRatios: visibility,
+      })
     },
     {
       threshold: [0.2, 0.35, 0.55, 0.75],
       rootMargin: '-18% 0% -18% 0%',
     }
   )
-
   for (const anchor of homeQuickNavAnchors) {
     const element = getHomeSectionElement(anchor.id)
     if (element) {
@@ -1364,35 +1365,27 @@ function observeHomeSections() {
     }
   }
 }
-
 function scrollToHomeSection(id: HomeSectionAnchor['id']) {
   if (typeof document === 'undefined') return
-
   const target = getHomeSectionElement(id)
   if (!target) return
-
   activeHomeSectionId.value = id
-
   const targetTop = resolveDocumentAnchorTop(target, document)
   const top = computeScrollAnchorTop(targetTop, readNavbarVisibleOffset(document))
   scrollWithSmoothScroll(top, {
     immediate: !shouldAnimate.value,
   })
 }
-
 function refreshBubbleLayoutTier() {
   const width = Math.round(bubbleStageRef.value?.getBoundingClientRect().width ?? 0)
   bubbleLayoutTier.value = resolveBubbleLayoutTier(width)
 }
-
 function disconnectBubbleStageLayoutObserver() {
   bubbleStageResizeObserver?.disconnect()
   bubbleStageResizeObserver = null
 }
-
 function observeBubbleStageLayout() {
   if (typeof window === 'undefined') return
-
   disconnectBubbleStageLayoutObserver()
   refreshBubbleLayoutTier()
   if (shouldUseHomeBubbleCanvasScene()) {
@@ -1400,9 +1393,7 @@ function observeBubbleStageLayout() {
   } else {
     stopBubbleCanvasScene()
   }
-
   if (!bubbleStageRef.value) return
-
   bubbleStageResizeObserver = createResizeObserver((entries) => {
     for (const entry of entries) {
       if (!(entry.target instanceof HTMLElement)) continue
@@ -1415,35 +1406,33 @@ function observeBubbleStageLayout() {
       }
     }
   })
-
   bubbleStageResizeObserver?.observe(bubbleStageRef.value)
   scheduleBubbleMotionMeasurement()
   if (shouldUseHomeBubbleCanvasScene()) {
     startBubbleCanvasScene()
   }
 }
-
-const isBubbleInteractiveTier = computed(() => bubbleLayoutTier.value !== 'mobile')
-
-function resolveBubbleCanvasOrbCount(): number {
-  if (bubbleLayoutTier.value === 'mobile') return 5
-  if (bubbleLayoutTier.value === 'tablet') return 8
-  return 11
-}
-
+const isBubbleInteractiveTier = computed(() => isHomeBubbleInteractiveTier(bubbleLayoutTier.value))
 function seedBubbleCanvasOrbs(width: number, height: number) {
-  const count = resolveBubbleCanvasOrbCount()
-  bubbleCanvasOrbs = Array.from({ length: count }, (_, index) => ({
-    x: Math.random() * width,
-    y: Math.random() * height,
-    radius: Math.min(width, height) * (0.08 + Math.random() * 0.12),
-    driftX: (Math.random() - 0.5) * (bubbleLayoutTier.value === 'mobile' ? 0.5 : 0.85),
-    driftY: (Math.random() - 0.5) * (bubbleLayoutTier.value === 'mobile' ? 0.4 : 0.75),
-    alpha: 0.08 + Math.random() * 0.12,
-    phase: Math.random() * Math.PI * 2,
-    phaseSpeed: 0.2 + Math.random() * 0.35,
-    hueMix: index % 2 === 0 ? 1 : -1,
-  }))
+  const count = resolveHomeBubbleCanvasOrbCount(bubbleLayoutTier.value)
+  bubbleCanvasOrbs = Array.from({ length: count }, (_, index) =>
+    resolveHomeBubbleCanvasOrbSeedState({
+      width,
+      height,
+      tier: bubbleLayoutTier.value,
+      index,
+      randoms: {
+        x: Math.random(),
+        y: Math.random(),
+        radius: Math.random(),
+        driftX: Math.random(),
+        driftY: Math.random(),
+        alpha: Math.random(),
+        phase: Math.random(),
+        phaseSpeed: Math.random(),
+      },
+    })
+  )
 }
 
 function resizeBubbleCanvasScene() {
@@ -1454,23 +1443,33 @@ function resizeBubbleCanvasScene() {
   if (!canvas || !stage) return
 
   const rect = stage.getBoundingClientRect()
-  const width = Math.max(Math.round(rect.width), 1)
-  const height = Math.max(Math.round(rect.height), 1)
-  const dpr = Math.min(window.devicePixelRatio || 1, 2)
+  const resizeState = resolveHomeBubbleCanvasResizeState({
+    width: rect.width,
+    height: rect.height,
+    devicePixelRatio: window.devicePixelRatio,
+    tier: bubbleLayoutTier.value,
+    currentOrbCount: bubbleCanvasOrbs.length,
+  })
+  const { width, height } = resizeState
 
-  canvas.width = Math.max(1, Math.round(width * dpr))
-  canvas.height = Math.max(1, Math.round(height * dpr))
+  canvas.width = resizeState.canvasWidth
+  canvas.height = resizeState.canvasHeight
   canvas.style.width = `${width}px`
   canvas.style.height = `${height}px`
 
-  if (bubbleCanvasOrbs.length !== resolveBubbleCanvasOrbCount()) {
+  if (resizeState.shouldSeedOrbs) {
     seedBubbleCanvasOrbs(width, height)
   } else {
     bubbleCanvasOrbs = bubbleCanvasOrbs.map((orb) => ({
       ...orb,
-      x: clamp(orb.x, 0, width),
-      y: clamp(orb.y, 0, height),
-      radius: Math.min(orb.radius, Math.min(width, height) * 0.24),
+      ...resolveHomeBubbleCanvasRetainedOrbState({
+        x: orb.x,
+        y: orb.y,
+        radius: orb.radius,
+        width,
+        height,
+        maxOrbRadius: resizeState.maxOrbRadius,
+      }),
     }))
   }
 }
@@ -1502,17 +1501,17 @@ function renderBubbleCanvasFrame(timestamp: number) {
     return
   }
 
-  const deltaMs =
-    bubbleCanvasLastTimestamp === null ? 16 : Math.min(timestamp - bubbleCanvasLastTimestamp, 34)
+  const deltaMs = resolveBubbleFrameDeltaMs(timestamp, bubbleCanvasLastTimestamp)
   bubbleCanvasLastTimestamp = timestamp
-  const width = Math.max(rect.width, 1)
-  const height = Math.max(rect.height, 1)
-  const dpr = Math.min(window.devicePixelRatio || 1, 2)
-  const pointerX =
-    pointerStagePosition.value.x === null ? width * 0.5 : pointerStagePosition.value.x
-  const pointerY =
-    pointerStagePosition.value.y === null ? height * 0.5 : pointerStagePosition.value.y
-  const reducedMotion = !shouldAnimate.value
+  const frameParameters = resolveHomeBubbleCanvasFrameParameters({
+    width: rect.width,
+    height: rect.height,
+    devicePixelRatio: window.devicePixelRatio,
+    pointerX: pointerStagePosition.value.x,
+    pointerY: pointerStagePosition.value.y,
+    shouldAnimate: shouldAnimate.value,
+  })
+  const { width, height, dpr, pointerX, pointerY, motionFactor } = frameParameters
 
   context.setTransform(dpr, 0, 0, dpr, 0, 0)
   context.clearRect(0, 0, width, height)
@@ -1533,30 +1532,33 @@ function renderBubbleCanvasFrame(timestamp: number) {
   context.fillRect(0, 0, width, height)
 
   for (const orb of bubbleCanvasOrbs) {
-    const motionFactor = reducedMotion ? 0.15 : 1
-    orb.phase += (deltaMs / 1000) * orb.phaseSpeed * motionFactor
-    orb.x = (orb.x + orb.driftX * motionFactor + width) % width
-    orb.y = (orb.y + orb.driftY * motionFactor + height) % height
+    const orbFrameState = resolveHomeBubbleCanvasOrbFrameState({
+      ...orb,
+      width,
+      height,
+      pointerX,
+      pointerY,
+      motionFactor,
+      deltaMs,
+    })
+    orb.phase = orbFrameState.phase
+    orb.x = orbFrameState.x
+    orb.y = orbFrameState.y
 
-    const pulse = 0.92 + Math.sin(orb.phase) * 0.08
-    const parallaxX = (pointerX / width - 0.5) * 24 * orb.hueMix
-    const parallaxY = (pointerY / height - 0.5) * 16
-    const x = orb.x + parallaxX
-    const y = orb.y + parallaxY
-    const radius = orb.radius * pulse
-    const gradient = context.createRadialGradient(x, y, 0, x, y, radius)
-    gradient.addColorStop(
+    const gradient = context.createRadialGradient(
+      orbFrameState.drawX,
+      orbFrameState.drawY,
       0,
-      `rgba(${orb.hueMix > 0 ? '147, 197, 253' : '244, 114, 182'}, ${orb.alpha})`
+      orbFrameState.drawX,
+      orbFrameState.drawY,
+      orbFrameState.drawRadius
     )
-    gradient.addColorStop(
-      0.55,
-      `rgba(${orb.hueMix > 0 ? '59, 130, 246' : '236, 72, 153'}, ${orb.alpha * 0.44})`
-    )
-    gradient.addColorStop(1, 'rgba(15, 23, 42, 0)')
+    gradient.addColorStop(0, orbFrameState.innerColor)
+    gradient.addColorStop(0.55, orbFrameState.middleColor)
+    gradient.addColorStop(1, orbFrameState.outerColor)
     context.fillStyle = gradient
     context.beginPath()
-    context.arc(x, y, radius, 0, Math.PI * 2)
+    context.arc(orbFrameState.drawX, orbFrameState.drawY, orbFrameState.drawRadius, 0, Math.PI * 2)
     context.fill()
   }
 
@@ -1565,12 +1567,15 @@ function renderBubbleCanvasFrame(timestamp: number) {
 
 function startBubbleCanvasScene() {
   if (
-    typeof window === 'undefined' ||
-    bubbleCanvasFrame !== null ||
-    !bubbleCanvasRef.value ||
-    !shouldUseHomeBubbleCanvasScene()
-  )
+    !shouldStartHomeBubbleCanvasScene({
+      hasWindow: typeof window !== 'undefined',
+      frameActive: bubbleCanvasFrame !== null,
+      hasCanvasElement: bubbleCanvasRef.value !== null,
+      useCanvasScene: shouldUseHomeBubbleCanvasScene(),
+    })
+  ) {
     return
+  }
   resizeBubbleCanvasScene()
   bubbleCanvasFrame = window.requestAnimationFrame(renderBubbleCanvasFrame)
 }
@@ -1587,19 +1592,19 @@ function clearBubbleMotionFrame() {
   bubbleMotionFrame = null
 }
 
-function clearBubbleRuntimeClasses(element: HTMLButtonElement) {
-  element.classList.remove('is-displaced', 'is-under-pressure')
+function applyBubbleFramePresentationState(
+  element: HTMLButtonElement,
+  presentationState: ReturnType<typeof resolveBubbleFramePresentationState>
+) {
+  for (const [propertyName, value] of Object.entries(presentationState.styleProperties)) {
+    element.style.setProperty(propertyName, value)
+  }
+  element.classList.toggle('is-displaced', presentationState.classStates.isDisplaced)
+  element.classList.toggle('is-under-pressure', presentationState.classStates.isUnderPressure)
 }
 
 function resetBubbleFrameStateStyle(element: HTMLButtonElement) {
-  element.style.setProperty('--bubble-live-x', '0rem')
-  element.style.setProperty('--bubble-live-y', '0rem')
-  element.style.setProperty('--bubble-live-rotate', '0deg')
-  element.style.setProperty('--bubble-live-scale', '1')
-  element.style.setProperty('--bubble-live-opacity', '1')
-  element.style.setProperty('--bubble-live-shadow-x', '0rem')
-  element.style.setProperty('--bubble-live-shadow-y', '0rem')
-  clearBubbleRuntimeClasses(element)
+  applyBubbleFramePresentationState(element, resolveBubbleFrameResetPresentationState())
 }
 
 function resetAllBubbleFrameStateStyles() {
@@ -1632,22 +1637,28 @@ function resolveBubbleButtonElement(
 }
 
 function registerBubbleElement(bubbleId: string, value: Element | ComponentPublicInstance | null) {
-  const normalizedId = normalizeText(bubbleId)
-  if (!normalizedId) return
-
   const element = resolveBubbleButtonElement(value)
-  if (!element) {
-    bubbleElementMap.delete(normalizedId)
-    bubbleAnchorMetricsMap.delete(normalizedId)
-    bubbleFrameStateMap.delete(normalizedId)
+  const registrationState = resolveBubbleElementRegistrationState({
+    bubbleId,
+    hasElement: element !== null,
+    hasFrameState: element !== null && bubbleFrameStateMap.has(normalizeText(bubbleId)),
+    enhancementsPrimed: bubbleEnhancementsPrimed,
+  })
+  if (registrationState.action === 'skip') return
+
+  if (registrationState.action === 'remove') {
+    bubbleElementMap.delete(registrationState.normalizedId)
+    bubbleAnchorMetricsMap.delete(registrationState.normalizedId)
+    bubbleFrameStateMap.delete(registrationState.normalizedId)
     return
   }
 
-  bubbleElementMap.set(normalizedId, element)
-  if (!bubbleFrameStateMap.has(normalizedId)) {
+  if (!element) return
+  bubbleElementMap.set(registrationState.normalizedId, element)
+  if (registrationState.initializeFrameState) {
     resetBubbleFrameStateStyle(element)
   }
-  if (bubbleEnhancementsPrimed) {
+  if (registrationState.scheduleMeasurement) {
     scheduleBubbleMotionMeasurement()
   }
 }
@@ -1656,11 +1667,11 @@ function measureBubbleMotionAnchors() {
   if (typeof window === 'undefined' || !bubbleStageRef.value) return
 
   const stageRect = bubbleStageRef.value.getBoundingClientRect()
-  bubbleStageMetrics.value = {
-    width: Math.max(stageRect.width, 0),
-    height: Math.max(stageRect.height, 0),
-    viewportWidth: Math.max(window.innerWidth, stageRect.width, 0),
-  }
+  bubbleStageMetrics.value = resolveBubbleStageMetrics({
+    stageWidth: stageRect.width,
+    stageHeight: stageRect.height,
+    viewportWidth: window.innerWidth,
+  })
 
   bubbleAnchorMetricsMap.clear()
 
@@ -1697,156 +1708,129 @@ function scheduleBubbleMotionMeasurement() {
 }
 
 function writeBubbleFrameState(element: HTMLButtonElement, state: BubbleFrameState) {
-  element.style.setProperty('--bubble-live-x', `${state.translateX.toFixed(4)}rem`)
-  element.style.setProperty('--bubble-live-y', `${state.translateY.toFixed(4)}rem`)
-  element.style.setProperty('--bubble-live-rotate', `${state.rotateDeg.toFixed(4)}deg`)
-  element.style.setProperty('--bubble-live-scale', state.liveScale.toFixed(4))
-  element.style.setProperty('--bubble-live-opacity', state.opacity.toFixed(4))
-  element.style.setProperty('--bubble-live-shadow-x', `${state.shadowShiftX.toFixed(4)}rem`)
-  element.style.setProperty('--bubble-live-shadow-y', `${state.shadowShiftY.toFixed(4)}rem`)
-  element.classList.toggle('is-displaced', state.isDisplaced)
-  element.classList.toggle('is-under-pressure', state.isUnderPressure)
+  applyBubbleFramePresentationState(element, resolveBubbleFramePresentationState(state))
 }
 
 function updateBubbleStagePointerPosition(event: PointerEvent) {
   if (typeof window === 'undefined' || !bubbleStageRef.value) return
 
   const stageRect = bubbleStageRef.value.getBoundingClientRect()
-  const nextX = clamp(event.clientX - stageRect.left, 0, stageRect.width)
-  const nextY = clamp(event.clientY - stageRect.top, 0, stageRect.height)
+  const pointerState = resolveBubbleStagePointerState({
+    clientX: event.clientX,
+    clientY: event.clientY,
+    stageLeft: stageRect.left,
+    stageTop: stageRect.top,
+    stageWidth: stageRect.width,
+    stageHeight: stageRect.height,
+    viewportWidth: window.innerWidth,
+  })
 
-  pointerStagePosition.value = {
-    x: nextX,
-    y: nextY,
-    normalizedX: stageRect.width > 0 ? clamp(nextX / stageRect.width) : 0.5,
-    normalizedY: stageRect.height > 0 ? clamp(nextY / stageRect.height) : 0.5,
+  pointerStagePosition.value = pointerState.pointerPosition
+  bubbleStageMetrics.value = pointerState.stageMetrics
+}
+
+function applyBubbleStagePointerPresence(
+  action: BubbleStagePointerPresenceAction,
+  event?: PointerEvent
+) {
+  const stagePointerState = resolveBubbleStagePointerPresenceState(action)
+  pointerInsideBubbleStage.value = stagePointerState.pointerInsideStage
+  if (event && stagePointerState.updatePointerPosition) updateBubbleStagePointerPosition(event)
+  if (stagePointerState.clearPointerOver) {
+    pointerOverBubbleId.value = resolveBubblePointerOverState({
+      action: 'stage-leave',
+      currentPointerOverBubbleId: pointerOverBubbleId.value,
+    }).pointerOverBubbleId
   }
-  bubbleStageMetrics.value = {
-    width: Math.max(stageRect.width, 0),
-    height: Math.max(stageRect.height, 0),
-    viewportWidth: Math.max(window.innerWidth, stageRect.width, 0),
-  }
+  if (stagePointerState.clearPointerHover) clearHoveredBubble(undefined, 'pointer')
+  if (stagePointerState.syncMotionLoop) syncBubbleMotionLoop()
 }
 
 function handleBubbleStagePointerEnter(event: PointerEvent) {
   activateHomeBubbleEnhancements()
-  pointerInsideBubbleStage.value = true
-  updateBubbleStagePointerPosition(event)
-  syncBubbleMotionLoop()
+  applyBubbleStagePointerPresence('enter', event)
 }
 
 function handleBubbleStagePointerMove(event: PointerEvent) {
   activateHomeBubbleEnhancements()
-  pointerInsideBubbleStage.value = true
-  updateBubbleStagePointerPosition(event)
-  syncBubbleMotionLoop()
+  applyBubbleStagePointerPresence('move', event)
 }
 
 function handleBubbleStagePointerLeave() {
-  pointerInsideBubbleStage.value = false
-  pointerOverBubbleId.value = null
-  clearHoveredBubble(undefined, 'pointer')
-  syncBubbleMotionLoop()
+  applyBubbleStagePointerPresence('leave')
+}
+
+function applyBubbleInteraction(
+  action: BubbleInteractionAction,
+  bubbleId: string,
+  event?: PointerEvent
+) {
+  const interactionState = resolveBubbleInteractionState(action)
+  if (interactionState.activateEnhancements) activateHomeBubbleEnhancements()
+  if (interactionState.pointerInsideStage !== null)
+    pointerInsideBubbleStage.value = interactionState.pointerInsideStage
+  if (interactionState.pointerOverAction) {
+    pointerOverBubbleId.value = resolveBubblePointerOverState({
+      action: interactionState.pointerOverAction,
+      bubbleId,
+      currentPointerOverBubbleId: pointerOverBubbleId.value,
+    }).pointerOverBubbleId
+  }
+  if (event && interactionState.updatePointerPosition) updateBubbleStagePointerPosition(event)
+  if (interactionState.hoverAction === 'set')
+    setHoveredBubble(bubbleId, interactionState.hoverSource)
+  if (interactionState.hoverAction === 'clear')
+    clearHoveredBubble(bubbleId, interactionState.hoverSource)
+  if (interactionState.syncMotionLoop) syncBubbleMotionLoop()
 }
 
 function handleBubblePointerEnter(bubbleId: string, event: PointerEvent) {
-  activateHomeBubbleEnhancements()
-  pointerInsideBubbleStage.value = true
-  pointerOverBubbleId.value = normalizeText(bubbleId) || null
-  updateBubbleStagePointerPosition(event)
-  setHoveredBubble(bubbleId, 'pointer')
-  syncBubbleMotionLoop()
+  applyBubbleInteraction('pointer-enter', bubbleId, event)
 }
 
 function handleBubblePointerLeave(bubbleId: string) {
-  const normalizedId = normalizeText(bubbleId)
-  if (pointerOverBubbleId.value === normalizedId) {
-    pointerOverBubbleId.value = null
-  }
-  clearHoveredBubble(bubbleId, 'pointer')
-  syncBubbleMotionLoop()
+  applyBubbleInteraction('pointer-leave', bubbleId)
 }
 
 function handleBubbleFocus(bubbleId: string) {
-  activateHomeBubbleEnhancements()
-  setHoveredBubble(bubbleId, 'focus')
+  applyBubbleInteraction('focus', bubbleId)
 }
 
 function handleBubbleBlur(bubbleId: string) {
-  clearHoveredBubble(bubbleId, 'focus')
+  applyBubbleInteraction('blur', bubbleId)
 }
 
-function resolveBubbleMotionLerpFactor(deltaMs: number, durationMs: number): number {
-  if (durationMs <= 0) return 1
-  return 1 - Math.exp(-deltaMs / durationMs)
+function resolveActiveBubbleHoverAnchor(): BubbleAnchorMetrics | null {
+  return hoveredBubbleId.value !== null
+    ? (bubbleAnchorMetricsMap.get(hoveredBubbleId.value) ?? null)
+    : null
 }
 
 function buildBubblePointerState(): BubblePointerState {
-  const hoverAnchor =
-    hoveredBubbleId.value !== null
-      ? (bubbleAnchorMetricsMap.get(hoveredBubbleId.value) ?? null)
-      : null
-
-  if (hoverAnchor) {
-    return {
-      insideStage: pointerInsideBubbleStage.value,
-      overBubbleId: pointerOverBubbleId.value,
-      x: pointerStagePosition.value.x,
-      y: pointerStagePosition.value.y,
-      normalizedX: pointerStagePosition.value.normalizedX,
-      normalizedY: pointerStagePosition.value.normalizedY,
-      activeCenterX: bubbleMotionForceCenter?.x ?? hoverAnchor.centerX,
-      activeCenterY: bubbleMotionForceCenter?.y ?? hoverAnchor.centerY,
-      intensity: bubbleMotionPointerStrength,
-      mode: 'hover',
-    }
-  }
-
-  if (
-    pointerInsideBubbleStage.value &&
-    isBubbleInteractiveTier.value &&
-    pointerStagePosition.value.x !== null &&
-    pointerStagePosition.value.y !== null
-  ) {
-    return {
-      insideStage: true,
-      overBubbleId: pointerOverBubbleId.value,
-      x: pointerStagePosition.value.x,
-      y: pointerStagePosition.value.y,
-      normalizedX: pointerStagePosition.value.normalizedX,
-      normalizedY: pointerStagePosition.value.normalizedY,
-      activeCenterX: bubbleMotionForceCenter?.x ?? pointerStagePosition.value.x,
-      activeCenterY: bubbleMotionForceCenter?.y ?? pointerStagePosition.value.y,
-      intensity: bubbleMotionPointerStrength,
-      mode: 'pointer',
-    }
-  }
-
-  return {
-    insideStage: false,
-    overBubbleId: pointerOverBubbleId.value,
-    x: pointerStagePosition.value.x,
-    y: pointerStagePosition.value.y,
-    normalizedX: pointerStagePosition.value.normalizedX,
-    normalizedY: pointerStagePosition.value.normalizedY,
-    activeCenterX: bubbleMotionForceCenter?.x ?? null,
-    activeCenterY: bubbleMotionForceCenter?.y ?? null,
-    intensity: bubbleMotionPointerStrength,
-    mode: 'idle',
-  }
+  return resolveBubblePointerState({
+    hoverAnchor: resolveActiveBubbleHoverAnchor(),
+    pointerInsideStage: pointerInsideBubbleStage.value,
+    interactiveTier: isBubbleInteractiveTier.value,
+    pointerOverBubbleId: pointerOverBubbleId.value,
+    pointerPosition: pointerStagePosition.value,
+    forceCenter: bubbleMotionForceCenter,
+    pointerStrength: bubbleMotionPointerStrength,
+  })
 }
 
 function shouldRunBubbleMotionLoop(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    !isLightweightHomeViewport() &&
-    bubbleRevealPhase.value === 'revealed' &&
-    bubbleItems.value.length > 0 &&
-    shouldAnimate.value &&
-    bubbleStageRef.value !== null &&
-    bubbleAnchorMetricsMap.size >= bubbleItems.value.length &&
-    (hasActiveBubble.value || pointerInsideBubbleStage.value || bubbleMotionPointerStrength > 0.001)
-  )
+  return shouldRunBubbleMotionLoopPolicy({
+    hasWindow: typeof window !== 'undefined',
+    lightweightViewport: isLightweightHomeViewport(),
+    revealPhase: bubbleRevealPhase.value,
+    itemCount: bubbleItems.value.length,
+    shouldAnimate: shouldAnimate.value,
+    hasStageElement: bubbleStageRef.value !== null,
+    measuredAnchorCount: bubbleAnchorMetricsMap.size,
+    hasActiveBubble: hasActiveBubble.value,
+    pointerInsideStage: pointerInsideBubbleStage.value,
+    pointerStrength: bubbleMotionPointerStrength,
+  })
 }
 
 function runBubbleMotionFrame(timestamp: number) {
@@ -1854,53 +1838,33 @@ function runBubbleMotionFrame(timestamp: number) {
 
   if (!shouldRunBubbleMotionLoop()) {
     stopBubbleMotionLoop({
-      resetStyles: bubbleRevealPhase.value !== 'exiting',
+      resetStyles: shouldResetBubbleFrameStylesOnMotionStop(bubbleRevealPhase.value),
     })
     return
   }
 
-  const deltaMs =
-    bubbleMotionLastTimestamp === null ? 16 : Math.min(timestamp - bubbleMotionLastTimestamp, 34)
+  const deltaMs = resolveBubbleFrameDeltaMs(timestamp, bubbleMotionLastTimestamp)
   bubbleMotionLastTimestamp = timestamp
 
-  const hoverAnchor =
-    hoveredBubbleId.value !== null
-      ? (bubbleAnchorMetricsMap.get(hoveredBubbleId.value) ?? null)
-      : null
-  const pointerTargetCenter =
-    pointerInsideBubbleStage.value &&
-    isBubbleInteractiveTier.value &&
-    pointerStagePosition.value.x !== null &&
-    pointerStagePosition.value.y !== null
-      ? {
-          x: pointerStagePosition.value.x,
-          y: pointerStagePosition.value.y,
-        }
-      : null
-  const targetCenter = hoverAnchor
-    ? {
-        x: hoverAnchor.centerX,
-        y: hoverAnchor.centerY,
-      }
-    : pointerTargetCenter
-  const targetStrength = targetCenter ? 1 : 0
-  const pointerSettleDuration = targetCenter ? BUBBLE_POINTER_ATTACK_MS : BUBBLE_POINTER_RELEASE_MS
-  const pointerLerp = resolveBubbleMotionLerpFactor(deltaMs, pointerSettleDuration)
-
-  bubbleMotionPointerStrength += (targetStrength - bubbleMotionPointerStrength) * pointerLerp
-
-  if (targetCenter) {
-    if (!bubbleMotionForceCenter) {
-      bubbleMotionForceCenter = { ...targetCenter }
-    } else {
-      const centerLerp = resolveBubbleMotionLerpFactor(deltaMs, BUBBLE_FORCE_CENTER_LERP_MS)
-      bubbleMotionForceCenter.x += (targetCenter.x - bubbleMotionForceCenter.x) * centerLerp
-      bubbleMotionForceCenter.y += (targetCenter.y - bubbleMotionForceCenter.y) * centerLerp
-    }
-  } else if (bubbleMotionPointerStrength <= 0.001) {
-    bubbleMotionForceCenter = null
-    bubbleMotionPointerStrength = 0
-  }
+  const hoverAnchor = resolveActiveBubbleHoverAnchor()
+  const targetDecision = resolveBubbleMotionTargetDecision({
+    hoverAnchor,
+    pointerInsideStage: pointerInsideBubbleStage.value,
+    interactiveTier: isBubbleInteractiveTier.value,
+    pointerPosition: pointerStagePosition.value,
+    attackDurationMs: BUBBLE_POINTER_ATTACK_MS,
+    releaseDurationMs: BUBBLE_POINTER_RELEASE_MS,
+  })
+  const motionStepState = resolveBubbleMotionStepState({
+    currentForceCenter: bubbleMotionForceCenter,
+    currentPointerStrength: bubbleMotionPointerStrength,
+    targetDecision,
+    deltaMs,
+    forceCenterLerpDurationMs: BUBBLE_FORCE_CENTER_LERP_MS,
+    idleStrengthThreshold: 0.001,
+  })
+  bubbleMotionForceCenter = motionStepState.forceCenter
+  bubbleMotionPointerStrength = motionStepState.pointerStrength
 
   const pointerState = buildBubblePointerState()
 
@@ -1908,6 +1872,7 @@ function runBubbleMotionFrame(timestamp: number) {
     const element = bubbleElementMap.get(bubble.id)
     if (!element) continue
 
+    const activeState = resolveBubbleRuntimeActiveState(bubble.id)
     const frameState = computeBubbleFrameState({
       bubbleId: bubble.id,
       tier: bubbleLayoutTier.value,
@@ -1916,8 +1881,8 @@ function runBubbleMotionFrame(timestamp: number) {
       anchor: bubbleAnchorMetricsMap.get(bubble.id),
       stage: bubbleStageMetrics.value,
       pointer: pointerState,
-      isHoverActive: isBubbleHoverActive(bubble.id),
-      isPersistentSelected: isBubblePersistentSelected(bubble.id),
+      isHoverActive: activeState.isHoverActive,
+      isPersistentSelected: activeState.isPersistentSelected,
     })
 
     bubbleFrameStateMap.set(bubble.id, frameState)
@@ -1931,7 +1896,7 @@ function runBubbleMotionFrame(timestamp: number) {
 function syncBubbleMotionLoop() {
   if (!shouldRunBubbleMotionLoop()) {
     stopBubbleMotionLoop({
-      resetStyles: bubbleRevealPhase.value !== 'exiting',
+      resetStyles: shouldResetBubbleFrameStylesOnMotionStop(bubbleRevealPhase.value),
     })
     return
   }
@@ -1951,27 +1916,13 @@ let bubbleMotionFrame: number | null = null
 let bubbleMotionMeasureFrame: number | null = null
 let bubbleMotionLastTimestamp: number | null = null
 let bubbleMotionPointerStrength = 0
-let bubbleMotionForceCenter: {
-  x: number
-  y: number
-} | null = null
+let bubbleMotionForceCenter: BubbleForceCenter | null = null
 const bubbleElementMap = new Map<string, HTMLButtonElement>()
 const bubbleAnchorMetricsMap = new Map<string, BubbleAnchorMetrics>()
 const bubbleFrameStateMap = new Map<string, BubbleFrameState>()
 const bubbleStageMetrics = ref<BubbleStageMetrics | null>(null)
-type BubbleCanvasOrb = {
-  x: number
-  y: number
-  radius: number
-  driftX: number
-  driftY: number
-  alpha: number
-  phase: number
-  phaseSpeed: number
-  hueMix: number
-}
 let bubbleCanvasFrame: number | null = null
-let bubbleCanvasOrbs: BubbleCanvasOrb[] = []
+let bubbleCanvasOrbs: HomeBubbleCanvasOrbSeedState[] = []
 let bubbleCanvasLastTimestamp: number | null = null
 let sceneObservedSizes = new WeakMap<HTMLElement, HomeSceneLayoutSize>()
 const scheduleSceneRefreshFromResize = throttleRAF(() => {
@@ -1988,28 +1939,41 @@ let homeDeferredSceneIntentBound = false
 let sceneEnhancementsPrimed = false
 let bubbleEnhancementsPrimed = false
 
-const storyTravel = computed(() => Math.max(effectiveStoryCardCount.value - 1, 0))
-const storyProgressIndex = computed(() => storyProgress.value * storyTravel.value)
-const storyMergeProgress = computed(() => clamp((storyProgress.value - 0.86) / 0.14))
-const storyFooterFade = computed(() => clamp((storyProgress.value - 0.9) / 0.1))
-const activeStoryIndex = computed(() =>
-  effectiveStoryCardCount.value > 1 ? Math.round(storyProgressIndex.value) : 0
+const storySceneProgressState = computed(() =>
+  resolveHomeStorySceneProgress({
+    storyProgress: storyProgress.value,
+    storyCardCount: storyCardCount.value,
+  })
 )
-const effectiveStoryCardCount = computed(() => storyCardCount.value)
+const storyProgressIndex = computed(() => storySceneProgressState.value.storyProgressIndex)
+const storyMergeProgress = computed(() => storySceneProgressState.value.storyMergeProgress)
+const storyFooterFade = computed(() => storySceneProgressState.value.storyFooterFade)
+const activeStoryIndex = computed(() => storySceneProgressState.value.activeStoryIndex)
+const effectiveStoryCardCount = computed(
+  () => storySceneProgressState.value.effectiveStoryCardCount
+)
 
-const railSlides = computed(() => [
-  { key: 'portal', label: t('home.portal.title') },
-  { key: 'spotlight', label: t('home.hero.spotlightLabel') },
-  { key: 'featured', label: t('home.featured.title') },
-  { key: 'trends', label: t('home.trends.authorsTitle') },
-])
+const railSlides = computed(() =>
+  buildHomeRailSlides({
+    portal: t('home.portal.title'),
+    spotlight: t('home.hero.spotlightLabel'),
+    featured: t('home.featured.title'),
+    trends: t('home.trends.authorsTitle'),
+  })
+)
 
 const railSlideCount = computed(() => railSlides.value.length)
 const activeRailIndex = computed(() =>
-  railSlideCount.value > 1 ? Math.round(railProgress.value * (railSlideCount.value - 1)) : 0
+  resolveHomeActiveRailIndex({
+    railProgress: railProgress.value,
+    railSlideCount: railSlideCount.value,
+  })
 )
-const activeRailSlide = computed(
-  () => railSlides.value[activeRailIndex.value] ?? railSlides.value[0]
+const activeRailSlide = computed(() =>
+  resolveHomeActiveRailSlide({
+    railSlides: railSlides.value,
+    activeRailIndex: activeRailIndex.value,
+  })
 )
 
 const featuredSceneStyle = computed(() => buildHomeFeaturedSceneStyle(railSlideCount.value))
@@ -2064,7 +2028,13 @@ function disconnectDeferredHomeEnhancementObserver() {
 }
 
 function unbindDeferredHomeSceneIntent() {
-  if (typeof window === 'undefined' || !homeDeferredSceneIntentBound) return
+  if (
+    !shouldUnbindDeferredHomeSceneIntent({
+      hasWindow: typeof window !== 'undefined',
+      intentBound: homeDeferredSceneIntentBound,
+    })
+  )
+    return
   homeDeferredSceneIntentBound = false
   window.removeEventListener('scroll', handleDeferredHomeSceneIntent)
   window.removeEventListener('wheel', handleDeferredHomeSceneIntent)
@@ -2073,7 +2043,13 @@ function unbindDeferredHomeSceneIntent() {
 }
 
 function bindDeferredHomeSceneIntent() {
-  if (typeof window === 'undefined' || homeDeferredSceneIntentBound || sceneEnhancementsPrimed)
+  if (
+    !shouldBindDeferredHomeSceneIntent({
+      hasWindow: typeof window !== 'undefined',
+      intentBound: homeDeferredSceneIntentBound,
+      scenePrimed: sceneEnhancementsPrimed,
+    })
+  )
     return
   homeDeferredSceneIntentBound = true
   window.addEventListener('scroll', handleDeferredHomeSceneIntent, { passive: true })
@@ -2083,9 +2059,13 @@ function bindDeferredHomeSceneIntent() {
 }
 
 function maybeCleanupDeferredHomeEnhancementObserver() {
-  if (sceneEnhancementsPrimed && bubbleEnhancementsPrimed) {
+  if (
+    shouldCleanupDeferredHomeEnhancementObserver({
+      scenePrimed: sceneEnhancementsPrimed,
+      bubblePrimed: bubbleEnhancementsPrimed,
+    })
+  )
     disconnectDeferredHomeEnhancementObserver()
-  }
 }
 
 function syncBubbleRevealLifecycle() {
@@ -2108,24 +2088,37 @@ function applyBubbleRevealAction(action: BubbleRevealLifecycleAction) {
 }
 
 function activateHomeSceneEnhancements(delay = HOME_SCENE_ACTIVATION_DELAY_MS) {
-  if (homeEnhancementsDisposed || sceneEnhancementsPrimed) return
+  const decision = resolveHomeSceneActivationDecision({
+    disposed: homeEnhancementsDisposed,
+    scenePrimed: sceneEnhancementsPrimed,
+    lightweightViewport: isLightweightHomeViewport(),
+  })
+  if (decision.action === 'skip') return
+
   sceneEnhancementsPrimed = true
   unbindDeferredHomeSceneIntent()
-  if (isLightweightHomeViewport()) {
-    setHomeSceneLifecycleEnabled(false)
-    maybeCleanupDeferredHomeEnhancementObserver()
-    return
-  }
-  setHomeSceneLifecycleEnabled(true, delay)
+  setHomeSceneLifecycleEnabled(decision.action === 'enable-scenes', delay)
   maybeCleanupDeferredHomeEnhancementObserver()
 }
 
 function activateHomeBubbleEnhancements() {
-  if (homeEnhancementsDisposed || bubbleEnhancementsPrimed) return
+  if (
+    !shouldActivateHomeBubbleEnhancements({
+      disposed: homeEnhancementsDisposed,
+      bubblePrimed: bubbleEnhancementsPrimed,
+    })
+  )
+    return
   bubbleEnhancementsPrimed = true
   syncBubbleRevealLifecycle()
   void nextTick(() => {
-    if (homeEnhancementsDisposed || !bubbleEnhancementsPrimed) return
+    if (
+      !shouldContinueHomeBubbleEnhancementSetup({
+        disposed: homeEnhancementsDisposed,
+        bubblePrimed: bubbleEnhancementsPrimed,
+      })
+    )
+      return
     observeBubbleStageLayout()
     scheduleBubbleMotionMeasurement()
   })
@@ -2136,33 +2129,33 @@ function observeDeferredHomeEnhancements() {
   if (typeof window === 'undefined') return
 
   disconnectDeferredHomeEnhancementObserver()
-  if (!isLightweightHomeViewport()) {
+  const postsElement = resolveSectionElement(postsSectionRef.value)
+  const decision = resolveDeferredHomeEnhancementStartupDecision({
+    lightweightViewport: isLightweightHomeViewport(),
+    hasPostsElement: Boolean(postsElement),
+    supportsIntersectionObserver: typeof window.IntersectionObserver === 'function',
+  })
+
+  if (decision.bindSceneIntent) {
     bindDeferredHomeSceneIntent()
   }
 
-  const postsElement = resolveSectionElement(postsSectionRef.value)
-
   if (!postsElement) return
 
-  if (typeof window.IntersectionObserver !== 'function') {
-    if (!isLightweightHomeViewport()) {
-      activateHomeSceneEnhancements(0)
-    }
-    activateHomeBubbleEnhancements()
-    return
-  }
+  if (decision.activateSceneImmediately) activateHomeSceneEnhancements(0)
+  if (decision.activateBubbleImmediately) activateHomeBubbleEnhancements()
+  if (!decision.observePostsElement) return
 
   homeDeferredEnhancementObserver = createVisibilityObserver(
     (entries) => {
       for (const entry of entries) {
-        if (!entry.isIntersecting) continue
-
-        if (postsElement && entry.target === postsElement) {
-          if (!isLightweightHomeViewport()) {
-            activateHomeSceneEnhancements(0)
-          }
-          activateHomeBubbleEnhancements()
-        }
+        const action = resolveDeferredHomeEnhancementIntersectionAction({
+          isIntersecting: entry.isIntersecting,
+          isPostsTarget: entry.target === postsElement,
+          lightweightViewport: isLightweightHomeViewport(),
+        })
+        if (action.activateScene) activateHomeSceneEnhancements(0)
+        if (action.activateBubble) activateHomeBubbleEnhancements()
       }
     },
     {
@@ -2171,9 +2164,7 @@ function observeDeferredHomeEnhancements() {
     }
   )
 
-  if (postsElement) {
-    homeDeferredEnhancementObserver.observe(postsElement)
-  }
+  homeDeferredEnhancementObserver.observe(postsElement)
 }
 
 function handleDeferredHomeSceneIntent() {
@@ -2255,8 +2246,7 @@ function schedulePublicHomePrewarm(payload: HomeAggregateResponse) {
   if (typeof window === 'undefined') return
   cancelPublicHomePrewarm()
 
-  const mediaLimit = window.innerWidth < 768 ? 2 : 6
-  const listLimit = window.innerWidth < 768 ? 8 : 20
+  const { mediaLimit, listLimit } = resolveHomePublicPrewarmLimits(window.innerWidth)
   const mediaUrls = collectHomePrewarmMedia(payload)
 
   homePublicPrewarmCancel = scheduleTask(
@@ -2285,10 +2275,7 @@ function schedulePublicHomePrewarm(payload: HomeAggregateResponse) {
   )
 }
 
-function applyHomeAggregate(
-  payload: HomeAggregateResponse,
-  source: 'aggregate' | 'support' | 'cached' | 'fallback'
-) {
+function applyHomeAggregate(payload: HomeAggregateResponse, source: HomeDataSource) {
   homeAggregate.value = payload
   homeDataSource.value = source
   homeScheduleHighlights.value = payload.trends.schedules ?? []
@@ -2348,15 +2335,15 @@ function abortHomeSupportRefresh() {
 }
 
 function runHomeSupportRefresh() {
-  if (!hasPendingHomeSupportRefresh(pendingHomeSupportRefresh)) return
+  const refreshState = resolveHomeSupportRefreshRunState(pendingHomeSupportRefresh)
+  if (!refreshState.shouldRefresh) return
 
   abortHomeSupportRefresh()
-  const refreshTargets = { ...pendingHomeSupportRefresh }
-  pendingHomeSupportRefresh = createEmptyHomeSupportRefreshTargets()
+  pendingHomeSupportRefresh = refreshState.nextPendingTargets
 
   const controller = new AbortController()
   homeSupportRefreshController = controller
-  void refreshHomeSupportBlocks(controller.signal, refreshTargets).finally(() => {
+  void refreshHomeSupportBlocks(controller.signal, refreshState.refreshTargets).finally(() => {
     if (homeSupportRefreshController === controller) {
       homeSupportRefreshController = null
     }
@@ -2385,7 +2372,10 @@ async function fetchHomeData(): Promise<boolean> {
     if (controller.signal.aborted) return false
 
     applyHomeAggregate(result.payload, result.source)
-    total.value = Math.max(total.value, result.payload.story_deck.total ?? 0)
+    total.value = resolveHomeTotalCount({
+      currentTotal: total.value,
+      storyDeckTotal: result.payload.story_deck.total,
+    })
     error.value = null
 
     const refreshTargets = resolveHomeSupportRefreshTargets(result.payload, result.source)
@@ -2400,7 +2390,10 @@ async function fetchHomeData(): Promise<boolean> {
 
     const fallbackPayload = await loadHomepageBootstrapFallback()
     applyHomeAggregate(fallbackPayload, 'fallback')
-    total.value = Math.max(total.value, fallbackPayload.story_deck.total ?? 0)
+    total.value = resolveHomeTotalCount({
+      currentTotal: total.value,
+      storyDeckTotal: fallbackPayload.story_deck.total,
+    })
     error.value = null
     schedulePublicHomePrewarm(fallbackPayload)
     return false
@@ -2414,28 +2407,29 @@ async function fetchHomeData(): Promise<boolean> {
 }
 
 function resolveSceneTravelDistance(element: HTMLElement | null, pinnedSelector?: string): number {
-  if (typeof window === 'undefined' || !element) return 1
-
-  const pinnedElement = pinnedSelector ? element.querySelector<HTMLElement>(pinnedSelector) : null
-
-  return resolveHomeSceneTravelDistance({
-    sectionHeight: element.offsetHeight,
-    pinnedHeight: pinnedElement?.offsetHeight ?? null,
-    viewportHeight: window.innerHeight,
-  })
+  return resolveHomeMeasuredSceneGeometry(readSceneGeometry(element, pinnedSelector)).travelDistance
 }
 
 function resolveSceneProgress(element: HTMLElement | null, pinnedSelector?: string): number {
-  if (typeof window === 'undefined' || !element) return 0
+  return resolveHomeMeasuredSceneGeometry(readSceneGeometry(element, pinnedSelector)).progress
+}
+
+function readSceneGeometry(
+  element: HTMLElement | null,
+  pinnedSelector?: string
+): HomeMeasuredSceneGeometryInput {
+  if (typeof window === 'undefined' || !element) return { measured: false }
+
   const pinnedElement = pinnedSelector ? element.querySelector<HTMLElement>(pinnedSelector) : null
 
-  return resolveHomeSceneProgress({
+  return {
+    measured: true,
     sectionHeight: element.offsetHeight,
     pinnedHeight: pinnedElement?.offsetHeight ?? null,
     sectionTop: element.offsetTop,
     scrollY: window.scrollY,
     viewportHeight: window.innerHeight,
-  })
+  }
 }
 
 function syncSceneProgressFromViewport() {
@@ -2479,17 +2473,28 @@ async function ensureScrollTriggerReady(): Promise<boolean> {
 }
 
 function scheduleHomeEnhancements(delay = 1800) {
-  if (typeof window === 'undefined' || !scenesEnabled) return
+  if (
+    !shouldScheduleHomeEnhancements({
+      hasWindow: typeof window !== 'undefined',
+      scenesEnabled,
+    })
+  )
+    return
   scheduleTask(
     async () => {
-      if (!scenesEnabled) return
+      if (!shouldScheduleHomeEnhancements({ hasWindow: true, scenesEnabled })) return
       bindSceneInteractions()
       bindSceneProgressTracking()
 
-      if (!shouldUseHomeScrollScrubScenes()) {
+      const scheduleDecision = resolveHomeEnhancementScheduleDecision({
+        useScrollScrubScenes: shouldUseHomeScrollScrubScenes(),
+        useSectionBlendEffects: shouldUseHomeSectionBlendEffects(),
+      })
+
+      if (scheduleDecision.mode === 'viewport-progress') {
         runAfterNextPaint(() => {
           scheduleSceneProgressUpdate()
-          if (shouldUseHomeSectionBlendEffects()) {
+          if (scheduleDecision.bindViewportBlend) {
             bindViewportSceneBlendTracking()
             scheduleViewportSceneBlendUpdate()
           }
@@ -2498,11 +2503,11 @@ function scheduleHomeEnhancements(delay = 1800) {
       }
 
       const ready = await ensureScrollTriggerReady()
-      if (!ready || !scenesEnabled) return
+      if (!ready || !shouldScheduleHomeEnhancements({ hasWindow: true, scenesEnabled })) return
       observeSceneLayout()
       scheduleSceneSetup()
       runAfterNextPaint(() => {
-        if (shouldUseHomeSectionBlendEffects()) {
+        if (scheduleDecision.bindViewportBlend) {
           bindViewportSceneBlendTracking()
           scheduleViewportSceneBlendUpdate()
           window.dispatchEvent(new Event('scroll'))
@@ -2551,10 +2556,11 @@ function clearBubbleExitResetTimer() {
 }
 
 function resetBubbleRevealState() {
-  clearBubbleBurstReplayFrame()
-  clearBubbleExitResetTimer()
-  stopBubbleMotionLoop()
-  bubbleRevealPhase.value = 'idle'
+  const resetState = resolveBubbleRevealResetState()
+  if (resetState.clearBurstReplayFrame) clearBubbleBurstReplayFrame()
+  if (resetState.clearExitResetTimer) clearBubbleExitResetTimer()
+  if (resetState.stopMotionLoop) stopBubbleMotionLoop()
+  bubbleRevealPhase.value = resetState.phase
 }
 
 function startBubbleRetreat() {
@@ -2562,12 +2568,10 @@ function startBubbleRetreat() {
   clearBubbleExitResetTimer()
   stopBubbleMotionLoop({ resetStyles: false })
 
-  if (!shouldAnimate.value) {
-    bubbleRevealPhase.value = 'idle'
-    return
-  }
+  const retreatState = resolveBubbleRevealRetreatState(shouldAnimate.value)
+  bubbleRevealPhase.value = retreatState.phase
+  if (!retreatState.scheduleExitReset) return
 
-  bubbleRevealPhase.value = 'exiting'
   bubbleExitResetTimer = window.setTimeout(() => {
     bubbleExitResetTimer = null
     bubbleRevealPhase.value = 'idle'
@@ -2627,15 +2631,16 @@ function updateViewportSceneBlend() {
   if (typeof window === 'undefined') return
 
   if (isCompactHomeViewport()) {
+    const compactBlendState = resolveHomeViewportSceneBlendState({
+      compactViewport: true,
+      bubbleItemCount: bubbleItems.value.length,
+    })
     clearBubbleBurstReplayFrame()
     clearBubbleExitResetTimer()
-    bubbleRevealPhase.value = bubbleItems.value.length > 0 ? 'revealed' : 'idle'
-    viewportSceneBlend.value = {
-      heroRail: 0,
-      railPosts: 0,
-      postsStory: 0,
-      storyFooter: 0,
+    if (compactBlendState.compactBubbleRevealPhase !== null) {
+      bubbleRevealPhase.value = compactBlendState.compactBubbleRevealPhase
     }
+    viewportSceneBlend.value = compactBlendState.sceneBlend
     setRailNavbarLock(false)
     setHomeFooterBlend(false)
     return
@@ -2650,7 +2655,12 @@ function updateViewportSceneBlend() {
     storyFooter: measureViewportBlend(document.getElementById('home-footer'), 1.04, 0.24),
   }
 
-  const footerBlendProgress = resolveHomeFooterBlendProgress(nextBlend.storyFooter)
+  const blendState = resolveHomeViewportSceneBlendState({
+    compactViewport: false,
+    bubbleItemCount: bubbleItems.value.length,
+    measuredBlend: nextBlend,
+  })
+  const footerBlendProgress = blendState.footerBlendProgress
   const postsElement = resolveSectionElement(postsSectionRef.value)
   const featuredElement = resolveSectionElement(featuredSectionRef.value)
   const bubbleRevealWindow = resolveBubbleRevealWindow(
@@ -2666,10 +2676,7 @@ function updateViewportSceneBlend() {
     featuredHeight: featuredElement?.offsetHeight,
   })
 
-  viewportSceneBlend.value = {
-    ...nextBlend,
-    storyFooter: footerBlendProgress,
-  }
+  viewportSceneBlend.value = blendState.sceneBlend
 
   applyBubbleRevealAction(
     resolveBubbleRevealViewportAction({
@@ -2744,15 +2751,15 @@ function restartBubbleBurst() {
   clearBubbleExitResetTimer()
   clearBubbleBurstReplayFrame()
   stopBubbleMotionLoop()
-  bubbleRevealPhase.value = 'idle'
 
-  if (bubbleItems.value.length === 0) return
-  if (!shouldAnimate.value) {
-    bubbleRevealPhase.value = 'revealed'
-    return
-  }
+  const restartState = resolveBubbleRevealRestartState({
+    itemCount: bubbleItems.value.length,
+    shouldAnimate: shouldAnimate.value,
+  })
 
-  bubbleRevealPhase.value = 'arming'
+  bubbleRevealPhase.value = restartState.phase
+  if (!restartState.scheduleBurstReplay) return
+
   bubbleBurstReplayFrame = window.requestAnimationFrame(() => {
     bubbleBurstReplayFrame = window.requestAnimationFrame(() => {
       bubbleRevealPhase.value = 'revealed'
@@ -2915,7 +2922,7 @@ function scheduleSceneSetup() {
 }
 
 function getStoryCardStyle(index: number): Record<string, string> {
-  return buildStoryCardMotion({
+  return buildHomeStoryCardStyle({
     index,
     storyProgressIndex: storyProgressIndex.value,
     storyCardCount: effectiveStoryCardCount.value,
@@ -2936,112 +2943,99 @@ function scrollToFeatured() {
   scrollToHomeSection('home-rail')
 }
 
-function isHomeMediaFailed(source: string | null | undefined): boolean {
-  const key = normalizeText(source)
-  return key ? failedHomeMediaUrls.value.has(key) : false
+function shouldRenderHomeMedia(source: string | null | undefined): boolean {
+  return shouldRenderHomeMediaSource(source, failedHomeMediaUrls.value)
 }
 
 function markHomeMediaFailed(source: string | null | undefined) {
-  const key = normalizeText(source)
-  if (!key || failedHomeMediaUrls.value.has(key)) return
-  const next = new Set(failedHomeMediaUrls.value)
-  next.add(key)
-  failedHomeMediaUrls.value = next
+  const markState = resolveHomeMediaFailureMarkState(source, failedHomeMediaUrls.value)
+  if (markState.shouldUpdate) {
+    failedHomeMediaUrls.value = markState.failedSources
+  }
 }
 
-function setHoveredBubble(bubbleId: string, source: 'pointer' | 'focus' = 'pointer') {
-  const nextId = normalizeText(bubbleId)
-  if (!nextId) return
-  hoveredBubbleId.value = nextId
-  hoveredBubbleSource.value = source
-  syncBubbleMotionLoop()
+function setHoveredBubble(bubbleId: string, source: BubbleHoverSource = 'pointer') {
+  const hoverState = resolveBubbleHoverSetState({
+    bubbleId,
+    source,
+    currentState: {
+      hoveredBubbleId: hoveredBubbleId.value,
+      hoveredBubbleSource: hoveredBubbleSource.value,
+    },
+  })
+  hoveredBubbleId.value = hoverState.hoveredBubbleId
+  hoveredBubbleSource.value = hoverState.hoveredBubbleSource
+  if (hoverState.syncMotionLoop) syncBubbleMotionLoop()
 }
 
-function clearHoveredBubble(bubbleId?: string | null, source: 'pointer' | 'focus' | 'all' = 'all') {
-  if (
-    source !== 'all' &&
-    hoveredBubbleSource.value !== null &&
-    hoveredBubbleSource.value !== source
-  ) {
-    return
-  }
+function clearHoveredBubble(bubbleId?: string | null, source: BubbleHoverSource | 'all' = 'all') {
+  const hoverState = resolveBubbleHoverClearState({
+    bubbleId,
+    source,
+    currentState: {
+      hoveredBubbleId: hoveredBubbleId.value,
+      hoveredBubbleSource: hoveredBubbleSource.value,
+    },
+  })
+  hoveredBubbleId.value = hoverState.hoveredBubbleId
+  hoveredBubbleSource.value = hoverState.hoveredBubbleSource
+  if (hoverState.syncMotionLoop) syncBubbleMotionLoop()
+}
 
-  if (!bubbleId) {
-    hoveredBubbleId.value = null
-    hoveredBubbleSource.value = null
-    syncBubbleMotionLoop()
-    return
-  }
+function resolveBubbleRuntimeActiveState(bubbleId: string) {
+  return resolveBubbleActiveState({
+    bubbleId,
+    hoveredBubbleId: hoveredBubbleId.value,
+    selectedBubbleId: selectedBubbleId.value,
+  })
+}
 
-  const nextId = normalizeText(bubbleId)
-  if (hoveredBubbleId.value === nextId) {
-    hoveredBubbleId.value = null
-    hoveredBubbleSource.value = null
-    syncBubbleMotionLoop()
-  }
+function resolveBubbleActivePresentation(bubbleId: string) {
+  return resolveBubbleActivePresentationState({
+    bubbleId,
+    hoveredBubbleId: hoveredBubbleId.value,
+    selectedBubbleId: selectedBubbleId.value,
+  })
 }
 
 function isBubblePersistentSelected(bubbleId: string): boolean {
-  return selectedBubbleId.value === normalizeText(bubbleId)
-}
-
-function isBubbleHoverActive(bubbleId: string): boolean {
-  const normalizedId = normalizeText(bubbleId)
-  if (!normalizedId) return false
-  return hoveredBubbleId.value === normalizedId
+  return resolveBubbleActivePresentation(bubbleId).isPersistentSelected
 }
 
 function bubbleStateClasses(bubbleId: string) {
-  return {
-    'is-hover-active': isBubbleHoverActive(bubbleId),
-    'is-hovered': isBubbleHoverActive(bubbleId),
-    'is-persistent-selected': isBubblePersistentSelected(bubbleId),
-    'is-selected': isBubblePersistentSelected(bubbleId),
-  }
+  return resolveBubbleActivePresentation(bubbleId).classes
 }
 
 function openPostPreview(post: PostListItem, thumbnailSrc: string | null) {
-  if (isHomeFallbackPost(post)) {
-    void router.push('/explore')
+  const previewAction = resolveHomePostPreviewAction(post)
+  if (previewAction.kind === 'navigate') {
+    void router.push(previewAction.target)
     return
   }
 
-  const detailLink = resolvePreviewablePostLink(post.post_url, post.id)
-  const resolvedPostId = resolvePostIdFromLink(detailLink) || post.id
-  if (!resolvedPostId || !resolvePostIdFromLink(detailLink)) {
-    void router.push(detailLink)
-    return
-  }
-
-  previewPostId.value = resolvedPostId
-  previewPost.value = { ...post, id: resolvedPostId }
+  previewPostId.value = previewAction.postId
+  previewPost.value = { ...post, id: previewAction.postId }
   previewThumbnailSrc.value = thumbnailSrc
-  setHoveredBubble(resolvedPostId, pointerInsideBubbleStage.value ? 'pointer' : 'focus')
+  setHoveredBubble(previewAction.postId, pointerInsideBubbleStage.value ? 'pointer' : 'focus')
   isPreviewOpen.value = true
 }
 
 function openDetailFromPreview(postId: string) {
-  if (isHomeFallbackPost({ id: postId })) {
+  const detailAction = resolveHomePostDetailAction({
+    postId,
+    previewPost: previewPost.value,
+    sourcePosts: homeSourcePosts.value,
+  })
+  if (detailAction.kind === 'navigate') {
     isPreviewOpen.value = false
-    void router.push('/explore')
+    void router.push(detailAction.target)
     return
   }
-  const detailPostId = getContractResourceId(postId)
-  if (!detailPostId) {
-    isPreviewOpen.value = false
-    void router.push('/explore')
-    return
-  }
-  const previewSummary =
-    previewPost.value && previewPost.value.id === postId ? [previewPost.value] : []
-  const navigationContextPosts =
-    previewSummary.length > 0
-      ? [...previewSummary, ...homeSourcePosts.value.filter((item) => item.id !== postId)]
-      : homeSourcePosts.value
-  storePostNavigationContext(navigationContextPosts, postId, 'home')
-  cachePostThumbnailPreview(postId, previewThumbnailSrc.value)
+
+  storePostNavigationContext(detailAction.navigationContextPosts, detailAction.postId, 'home')
+  cachePostThumbnailPreview(detailAction.postId, previewThumbnailSrc.value)
   isPreviewOpen.value = false
-  router.push(`/post/${detailPostId}`)
+  router.push(detailAction.target)
 }
 
 watch(

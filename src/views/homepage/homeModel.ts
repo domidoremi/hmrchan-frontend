@@ -93,6 +93,10 @@ export function resolveBubbleLayoutTier(width: number): BubbleLayoutTier {
   return 'desktop'
 }
 
+export function isHomeBubbleInteractiveTier(tier: BubbleLayoutTier): boolean {
+  return tier !== 'mobile'
+}
+
 export const bubbleSlotsByTier: Record<BubbleLayoutTier, readonly BubbleSlot[]> = {
   desktop: [
     {
@@ -500,6 +504,37 @@ export function normalizeText(value: string | null | undefined): string {
   return String(value ?? '')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+const HOME_FALLBACK_PREFIX = '__home_fallback__'
+
+export function isHomeFallbackPost(post: Pick<PostListItem, 'id'> | null | undefined): boolean {
+  return Boolean(post?.id?.startsWith(HOME_FALLBACK_PREFIX))
+}
+
+export function shouldMountHomePreviewController(previewOpen: boolean): boolean {
+  return previewOpen
+}
+
+export function resolveHomeSelectedBubbleId({
+  previewOpen,
+  previewPostId,
+}: {
+  previewOpen: boolean
+  previewPostId: string | null | undefined
+}): string | null {
+  if (!previewOpen) return null
+  return normalizeText(previewPostId) || null
+}
+
+export function hasHomeActiveBubble({
+  selectedBubbleId,
+  hoveredBubbleId,
+}: {
+  selectedBubbleId: string | null | undefined
+  hoveredBubbleId: string | null | undefined
+}): boolean {
+  return Boolean(selectedBubbleId || hoveredBubbleId)
 }
 
 export function normalizeHomeTag(tag: HomeTagBrief | string | null | undefined): string {
