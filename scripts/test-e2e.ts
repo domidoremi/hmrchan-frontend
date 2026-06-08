@@ -375,10 +375,15 @@ function logPreviewDiagnostics(
   }
 }
 
-function classifySmokeFailure(error: unknown, evidence: FailureEvidence | null): SmokeFailureKind {
+function classifySmokeFailure(
+  error: unknown,
+  evidence: FailureEvidence | null,
+  extraDiagnostics: string[] = []
+): SmokeFailureKind {
   const errorText = formatError(error)
   const diagnostics = [
     errorText,
+    ...extraDiagnostics,
     ...(evidence?.previewDiagnostics ?? []),
     ...(evidence?.consoleMessages ?? []),
     ...(evidence?.requestFailures ?? []),
@@ -386,7 +391,7 @@ function classifySmokeFailure(error: unknown, evidence: FailureEvidence | null):
   ].join('\n')
 
   if (
-    /UPSTREAM_TIMEOUT|UPSTREAM_UNREACHABLE|Local audit environment blocked|Docker\/local backend|net::ERR_ABORTED/i.test(
+    /UPSTREAM_TIMEOUT|UPSTREAM_UNREACHABLE|Local audit environment blocked|Local API bridge unavailable|Docker\/local backend|ConnectionRefused|Unable to connect\. Is the computer able to access the url\?|net::ERR_ABORTED/i.test(
       diagnostics
     )
   ) {
@@ -2280,8 +2285,28 @@ async function main(): Promise<void> {
     console.log('\n✅ Minimal E2E checks passed')
   } catch (error) {
     runError = error
+    const previewDiagnostics = getPreviewDiagnostics()
+    if (!summary.lastFailureEvidence && previewDiagnostics?.length) {
+      summary.lastFailureEvidence = {
+        checkName: summary.lastFailedCheck,
+        route: null,
+        url: summary.baseUrl,
+        pathname: null,
+        title: null,
+        screenshotPath: null,
+        htmlSnapshotPath: null,
+        previewDiagnostics,
+        consoleMessages: null,
+        requestFailures: null,
+        badResponses: null,
+      }
+    }
     if (!summary.failureKind) {
-      summary.failureKind = classifySmokeFailure(error, summary.lastFailureEvidence)
+      summary.failureKind = classifySmokeFailure(
+        error,
+        summary.lastFailureEvidence,
+        previewDiagnostics ?? []
+      )
     }
     console.error('\n❌ Minimal E2E checks failed:', error)
   } finally {
