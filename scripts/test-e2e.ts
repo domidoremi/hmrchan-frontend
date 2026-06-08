@@ -1615,7 +1615,8 @@ async function assertServiceWorkerLifecycle(
       await page.waitForFunction(() =>
         Boolean(
           document.querySelector('.not-found-page') ||
-          document.querySelector('[data-prerender-shell-title="Page not found"]')
+          document.querySelector('[data-prerender-shell-title="Page not found"]') ||
+          document.querySelector('[data-prerender-shell-title="页面未找到"]')
         )
       )
       await page.waitForFunction(() => document.title.includes('MomiChan'))

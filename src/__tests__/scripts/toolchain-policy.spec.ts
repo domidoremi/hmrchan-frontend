@@ -7,7 +7,7 @@ import {
   resolveProductionContractEnv,
 } from '../../../scripts/lib/production-contract-env.js'
 
-const VUE_BETA_VERSION = '3.6.0-beta.13'
+const VUE_RUNTIME_VERSION = '3.5.35'
 const VUE_LOCKED_PACKAGES = ['vue', '@vue/compiler-sfc', '@vue/server-renderer'] as const
 const BUN_VERSION = '1.3.14'
 const NODE_VERSION = '24.14.1'
@@ -91,7 +91,7 @@ describe('toolchain package policy', () => {
     ])
   })
 
-  it('keeps Vue runtime, compiler, and server renderer on the selected beta line', async () => {
+  it('keeps Vue runtime, compiler, and server renderer on the selected stable line', async () => {
     const packageJson = await readJson<PackageJson>('package.json')
     const bunLock = await readFile('bun.lock', 'utf8')
     const workspaceStart = bunLock.indexOf('"workspaces"')
@@ -103,8 +103,8 @@ describe('toolchain package policy', () => {
     }
 
     for (const packageName of VUE_LOCKED_PACKAGES) {
-      expect(declaredPackages[packageName]).toBe(VUE_BETA_VERSION)
-      expect(rootWorkspaceLock).toContain(`"${packageName}": "${VUE_BETA_VERSION}"`)
+      expect(declaredPackages[packageName]).toBe(VUE_RUNTIME_VERSION)
+      expect(rootWorkspaceLock).toContain(`"${packageName}": "${VUE_RUNTIME_VERSION}"`)
     }
   })
 
