@@ -266,6 +266,52 @@ describe('functions/_middleware', () => {
     expect(html).toMatch(/nonce="[A-Za-z0-9+/=]+"/)
   })
 
+  it('sets the origin csrf cookie only when the HTML request does not already carry it', async () => {
+    resolveHtmlDocumentWithEdgeData.mockResolvedValue({
+      status: 200,
+      title: 'Explore · MomiChan',
+      description: 'explore',
+      robots: 'index, follow',
+      ogType: 'website',
+      canonicalPath: '/explore',
+      ogImage: null,
+      shellTitle: 'Explore',
+    })
+    const htmlResponse = () =>
+      Promise.resolve(
+        new MockResponse(
+          '<!doctype html><html><head><title>App</title></head><body><div id="app-root"></div></body></html>',
+          {
+            headers: { 'content-type': 'text/html; charset=utf-8' },
+          }
+        )
+      )
+    const { onRequest } = await import('../_middleware')
+
+    const responseWithoutCookie = await onRequest({
+      request: new Request('https://momichan.xyz/explore'),
+      env: {},
+      next: htmlResponse,
+    } as never)
+
+    const csrfCookie = responseWithoutCookie.headers.get('Set-Cookie')
+    expect(csrfCookie).toContain('__Host-momi_origin_csrf=')
+    expect(csrfCookie).toContain('Path=/')
+    expect(csrfCookie).toContain('Secure')
+    expect(csrfCookie).toContain('SameSite=Lax')
+    expect(csrfCookie).toContain('Max-Age=2592000')
+
+    const responseWithCookie = await onRequest({
+      request: new Request('https://momichan.xyz/explore', {
+        headers: { Cookie: '__Host-momi_origin_csrf=existing-token' },
+      }),
+      env: {},
+      next: htmlResponse,
+    } as never)
+
+    expect(responseWithCookie.headers.get('Set-Cookie')).toBeNull()
+  })
+
   it('renders restricted post preview metadata when the edge resolver returns a restricted document', async () => {
     resolveHtmlDocumentWithEdgeData.mockResolvedValue({
       status: 200,

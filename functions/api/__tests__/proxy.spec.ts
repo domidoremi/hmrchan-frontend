@@ -102,6 +102,36 @@ function getSetCookies(response: Response): string[] {
   return raw ? raw.split(/,(?=\s*__Host-)/) : []
 }
 
+function expectBffSessionCookies(cookies: string[]): void {
+  expectHardenedBffCookie(cookies, '__Host-momi_bff_at', '[1-9]\\d*')
+  expectHardenedBffCookie(cookies, '__Host-momi_bff_rt', '[1-9]\\d*')
+}
+
+function expectClearedBffSessionCookies(cookies: string[]): void {
+  expectHardenedBffCookie(cookies, '__Host-momi_bff_at', '0', '')
+  expectHardenedBffCookie(cookies, '__Host-momi_bff_rt', '0', '')
+}
+
+function expectHardenedBffCookie(
+  cookies: string[],
+  name: string,
+  maxAgePattern: string,
+  valuePattern = '[^;]+'
+): void {
+  const cookie = cookies.find((value) => value.startsWith(`${name}=`))
+
+  if (!cookie) {
+    expect(cookie).toBeDefined()
+    return
+  }
+
+  expect(cookie).toMatch(
+    new RegExp(
+      `^${name}=${valuePattern}; Max-Age=${maxAgePattern}; Path=/; HttpOnly; Secure; SameSite=Lax$`
+    )
+  )
+}
+
 function makeContext(options: {
   url: string
   method?: string
@@ -113,10 +143,7 @@ function makeContext(options: {
 }) {
   const method = options.method ?? 'GET'
   const headers = new Headers(options.headers)
-  if (
-    options.csrf !== false &&
-    !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
-  ) {
+  if (options.csrf !== false && !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) {
     headers.set('X-Origin-CSRF', CSRF_TOKEN)
     headers.set(
       'Cookie',
@@ -307,8 +334,7 @@ describe('functions/api proxy', () => {
     })
 
     const cookies = getSetCookies(response)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_at='))).toBe(true)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_rt='))).toBe(true)
+    expectBffSessionCookies(cookies)
   })
 
   it('can call internal BFF auth through the internal API gateway binding without a direct origin', async () => {
@@ -870,8 +896,7 @@ describe('functions/api proxy', () => {
     await expect(response.json()).resolves.toEqual({ success: true })
 
     const cookies = getSetCookies(response)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_at=; Max-Age=0'))).toBe(true)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_rt=; Max-Age=0'))).toBe(true)
+    expectClearedBffSessionCookies(cookies)
   })
 
   it('returns an unauthenticated session summary when no auth cookies are present', async () => {
@@ -964,8 +989,7 @@ describe('functions/api proxy', () => {
     expect(sessionExpiresAt).toBeLessThanOrEqual(expectedUpperBound)
 
     const cookies = getSetCookies(response)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_at='))).toBe(true)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_rt='))).toBe(true)
+    expectBffSessionCookies(cookies)
   })
 
   it('injects Authorization from the BFF access cookie for authenticated upstream requests', async () => {
@@ -1012,6 +1036,110 @@ describe('functions/api proxy', () => {
     expect(response.status).toBe(200)
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${BACKEND_ORIGIN}/api/v1/home`)
     expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+  })
+
+  it('passes ordinary upstream success envelopes through without unwrapping', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { items: ['post-1'] } }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/home`,
+        headers: {
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'home'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+    expect(response.headers.get('X-API-Version')).toBe('v1')
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: { items: ['post-1'] },
+    })
+  })
+
+  it('passes ordinary upstream error envelopes through with their status', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          success: false,
+          error: {
+            code: 'UPSTREAM_RATE_LIMITED',
+            message: 'Too many upstream requests',
+          },
+        },
+        { status: 429 }
+      )
+    )
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/home`,
+        headers: {
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'home'],
+      })
+    )
+
+    expect(response.status).toBe(429)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+    await expect(response.json()).resolves.toEqual({
+      success: false,
+      error: {
+        code: 'UPSTREAM_RATE_LIMITED',
+        message: 'Too many upstream requests',
+      },
+    })
+  })
+
+  it('passes ordinary upstream raw text responses through unchanged', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('plain upstream response', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      })
+    )
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/home`,
+        headers: {
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'home'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toContain('text/plain')
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
+    await expect(response.text()).resolves.toBe('plain upstream response')
+  })
+
+  it('passes ordinary upstream empty responses through unchanged', async () => {
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/home`,
+        headers: {
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'home'],
+      })
+    )
+
+    expect(response.status).toBe(204)
+    expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public')
+    expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+    await expect(response.text()).resolves.toBe('')
   })
 
   it('replays anonymous public reads without browser challenge headers when upstream temporarily restricts browser-origin requests', async () => {
@@ -1310,6 +1438,52 @@ describe('functions/api proxy', () => {
     await expect(response.text()).resolves.toContain('<svg')
   })
 
+  it('does not mask authenticated media thumbnail authorization failures with placeholders', async () => {
+    const accessToken = createJwt()
+    mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url === `${BACKEND_ORIGIN}/api/v1/media/protected-media/thumbnail?size=medium`) {
+        expect((init?.headers as Headers).get('Authorization')).toBe(`Bearer ${accessToken}`)
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'ACCESS_TEMPORARILY_RESTRICTED',
+              message: 'Protected media requires authorization.',
+            },
+          },
+          { status: 403 }
+        )
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/media/protected-media/thumbnail?size=medium`,
+        headers: {
+          Cookie: `__Host-momi_bff_at=${encodeURIComponent(accessToken)}`,
+          Origin: ORIGIN,
+        },
+        path: ['v1', 'media', 'protected-media', 'thumbnail'],
+      })
+    )
+
+    expect(response.status).toBe(403)
+    expect(response.headers.get('X-MomiChan-Media-Fallback')).toBeNull()
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store')
+    expect(response.headers.get('Vary')).toContain('Authorization')
+    await expect(response.json()).resolves.toEqual({
+      success: false,
+      error: {
+        code: 'ACCESS_TEMPORARILY_RESTRICTED',
+        message: 'Protected media requires authorization.',
+      },
+    })
+  })
+
   it('serves an empty placeholder response body for HEAD thumbnail misses', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({ detail: 'missing media' }, { status: 404 }))
 
@@ -1411,8 +1585,7 @@ describe('functions/api proxy', () => {
     expect(upstreamAttempts).toBe(2)
 
     const cookies = getSetCookies(response)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_at='))).toBe(true)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_rt='))).toBe(true)
+    expectBffSessionCookies(cookies)
   })
 
   it('refreshes once but leaves signed request replay to the browser when upstream returns 401', async () => {
@@ -1461,8 +1634,7 @@ describe('functions/api proxy', () => {
     expect(response.headers.get('X-Bff-Auth-Retry-Reason')).toBe('signed-request-refresh')
 
     const cookies = getSetCookies(response)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_at='))).toBe(true)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_rt='))).toBe(true)
+    expectBffSessionCookies(cookies)
   })
 
   it.each([404, 426, 429])('does not auto-retry upstream status %s', async (status) => {
@@ -1648,8 +1820,7 @@ describe('functions/api proxy', () => {
     })
 
     const cookies = getSetCookies(response)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_at='))).toBe(true)
-    expect(cookies.some((value) => value.includes('__Host-momi_bff_rt='))).toBe(true)
+    expectBffSessionCookies(cookies)
   })
 
   it('sanitizes cross-origin return targets from Google exchange session summaries', async () => {

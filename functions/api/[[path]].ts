@@ -1399,7 +1399,12 @@ async function replayAnonymousPublicReadWithoutBrowserContext(
   }
 }
 
-function withCorsHeaders(request: Request, isDev: boolean, env: ProxyEnv, headers: Headers): Headers {
+function withCorsHeaders(
+  request: Request,
+  isDev: boolean,
+  env: ProxyEnv,
+  headers: Headers
+): Headers {
   const origin = request.headers.get('Origin')
   if (origin && isAllowedOrigin(origin, isDev, env)) {
     headers.set('Access-Control-Allow-Origin', origin)
@@ -1648,11 +1653,13 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       responseHeaders.set('X-API-Version', apiVersion)
     }
 
+    const mediaThumbnailRequest = isMediaThumbnailRequest(compactPath, request.method)
+    const canServeMediaThumbnailPlaceholder =
+      mediaThumbnailRequest && !hasMediaAuthContext(request.headers)
     if (
+      canServeMediaThumbnailPlaceholder &&
       (upstream.response.status === 404 ||
-        (isMediaThumbnailRequest(compactPath, request.method) &&
-          (await isReplayableAnonymousPublicAccessRestriction(upstream.response)))) &&
-      isMediaThumbnailRequest(compactPath, request.method)
+        (await isReplayableAnonymousPublicAccessRestriction(upstream.response)))
     ) {
       const fallbackResponse = buildMediaThumbnailPlaceholderResponse(request, isDev, env)
       fallbackResponse.headers.set('X-Proxy-Upstream-Source', upstream.source)
