@@ -86,6 +86,67 @@ describe('public content cache', () => {
     expect(loader).toHaveBeenCalledTimes(2)
   })
 
+  it('serves cache-first entries throughout their stale usability window', async () => {
+    vi.useFakeTimers()
+    const loader = vi
+      .fn<() => Promise<{ value: number }>>()
+      .mockResolvedValueOnce({ value: 1 })
+      .mockResolvedValueOnce({ value: 2 })
+
+    await readPublicContent({
+      key: 'hmr:media:cover',
+      loader,
+      scope: 'media',
+      strategy: 'cache-first',
+      ttl: 10,
+      staleTtl: 1000,
+    })
+    vi.advanceTimersByTime(20)
+
+    await expect(
+      readPublicContent({
+        key: 'hmr:media:cover',
+        loader,
+        scope: 'media',
+        strategy: 'cache-first',
+        ttl: 10,
+        staleTtl: 1000,
+      })
+    ).resolves.toEqual({ value: 1 })
+    expect(loader).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps a stale public entry when network-first receives an unstable local fallback', async () => {
+    vi.useFakeTimers()
+    const loader = vi
+      .fn<() => Promise<{ value: number } | { error: string; source: 'local'; value: number }>>()
+      .mockResolvedValueOnce({ value: 1 })
+      .mockResolvedValueOnce({ source: 'local', error: 'offline', value: 2 })
+
+    await readPublicContent({
+      key: 'hmr:community:list',
+      loader,
+      scope: 'community',
+      ttl: 10,
+      staleTtl: 1000,
+    })
+    vi.advanceTimersByTime(20)
+
+    await expect(
+      readPublicContent({
+        key: 'hmr:community:list',
+        loader,
+        scope: 'community',
+        ttl: 10,
+        staleTtl: 1000,
+      })
+    ).resolves.toEqual({ value: 1 })
+    expect(getPublicCacheStats()).toMatchObject({
+      lastSource: 'stale',
+      staleFallbacks: 1,
+    })
+  })
+
   it('can read a stale-but-usable public entry without starting a network refresh', async () => {
     vi.useFakeTimers()
     const loader = vi.fn<() => Promise<{ value: number }>>().mockResolvedValue({ value: 1 })
@@ -137,5 +198,31 @@ describe('public content cache', () => {
 
     expect(getPublicCacheStats().memoryEntries).toBe(0)
     expect(postMessage).toHaveBeenCalledWith({ type: 'CLEAR_PUBLIC_CACHE' })
+  })
+
+  it('returns null for entries beyond their stale usability window', async () => {
+    vi.useFakeTimers()
+
+    await readPublicContent({
+      key: 'hmr:schedule:expired',
+      loader: async () => ({ value: 1 }),
+      scope: 'schedule',
+      ttl: 10,
+      staleTtl: 30,
+    })
+    vi.advanceTimersByTime(40)
+
+    await expect(
+      readAvailablePublicContent<{ value: number }>({
+        key: 'hmr:schedule:expired',
+        scope: 'schedule',
+        ttl: 10,
+        staleTtl: 30,
+      })
+    ).resolves.toBeNull()
+    expect(getPublicCacheStats()).toMatchObject({
+      expiredEntries: 1,
+      lastSource: 'stale',
+    })
   })
 })
