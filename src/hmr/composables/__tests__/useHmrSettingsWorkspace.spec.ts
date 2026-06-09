@@ -2,11 +2,13 @@ import { nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  hmrSettingsAppearanceOptions,
   hmrSettingsLocaleOptions,
   hmrSettingsThemeOptions,
   useHmrSettingsWorkspace,
 } from '@/hmr/composables/useHmrSettingsWorkspace'
 import { localeLabels, supportedLocales } from '@/i18n/locales'
+import { hmrAppearancePresetMeta, hmrAppearancePresets } from '@/stores/theme'
 
 const mocks = vi.hoisted(() => ({
   applyLocale: vi.fn(),
@@ -41,10 +43,14 @@ function makeWorkspace(options: SettingsFixtureOptions = {}) {
   const router = {
     push: vi.fn(async () => undefined),
   }
+  const locale = ref('zh-CN')
   const theme = {
     theme: options.theme ?? 'system',
+    appearancePreset: 'minimal-editorial' as const,
+    appearancePresetMeta: hmrAppearancePresetMeta['minimal-editorial'],
     resolvedTheme: options.resolvedTheme ?? 'light',
     setTheme: vi.fn(),
+    setAppearancePreset: vi.fn(),
     initializeTheme: vi.fn(),
   }
   const markSettingsReady = vi.fn()
@@ -56,12 +62,27 @@ function makeWorkspace(options: SettingsFixtureOptions = {}) {
     refreshSettingsResource,
     router,
     theme,
+    locale,
+    t: (key: string) =>
+      (
+        ({
+          'settings.themeModes.light': '浅色',
+          'settings.themeModes.dark': '深色',
+          'settings.themeModes.system': '跟随系统',
+          'settings.cacheReady': '可清理',
+          'settings.cacheClearing': '清理中',
+          'settings.cacheDone': '已清理',
+          'settings.cacheRetry': '重试',
+          'settings.presets.minimal-editorial': '极简编辑',
+        }) as Record<string, string>
+      )[key] ?? key,
     resetDelayMs: 1,
   })
 
   return {
     auth,
     content,
+    locale,
     markSettingsReady,
     refreshSettingsResource,
     router,
@@ -73,6 +94,26 @@ function makeWorkspace(options: SettingsFixtureOptions = {}) {
 describe('hmr settings workspace options', () => {
   it('exposes stable theme and locale option sets', () => {
     expect(hmrSettingsThemeOptions.map((item) => item.value)).toEqual(['light', 'dark', 'system'])
+    expect(hmrSettingsThemeOptions.map((item) => item.labelKey)).toEqual([
+      'settings.themeModes.light',
+      'settings.themeModes.dark',
+      'settings.themeModes.system',
+    ])
+    expect(hmrSettingsAppearanceOptions.map((item) => item.value)).toEqual(hmrAppearancePresets)
+    expect(
+      hmrSettingsAppearanceOptions.find((item) => item.value === 'clay-playful')
+    ).toMatchObject({
+      enhancer: 'clay',
+      family: 'rounded',
+      sceneRoles: expect.arrayContaining(['playful', 'immersive']),
+    })
+    expect(
+      hmrSettingsAppearanceOptions.find((item) => item.value === 'sketch-doodle')
+    ).toMatchObject({
+      enhancer: 'sketch',
+      family: 'sharp',
+      sceneRoles: expect.arrayContaining(['discussion', 'editorial']),
+    })
     expect(hmrSettingsLocaleOptions).toEqual(
       supportedLocales.map((id) => ({
         id,
@@ -85,6 +126,7 @@ describe('hmr settings workspace options', () => {
 describe('useHmrSettingsWorkspace', () => {
   beforeEach(() => {
     mocks.applyLocale.mockReset()
+    mocks.applyLocale.mockImplementation((locale: string) => locale)
     mocks.clearPublicContentCache.mockReset()
     window.localStorage.clear()
     window.sessionStorage.clear()
@@ -109,7 +151,8 @@ describe('useHmrSettingsWorkspace', () => {
       path: '/login',
       query: { redirect: '/profile/inbox' },
     })
-    expect(workspace.themeLabel.value).toBe('系统 / 深色')
+    expect(workspace.themeLabel.value).toBe('跟随系统 / 深色')
+    expect(workspace.appearanceLabel.value).toBe('极简编辑')
     expect(workspace.cacheClearLabel.value).toBe('可清理')
   })
 
@@ -168,6 +211,15 @@ describe('useHmrSettingsWorkspace', () => {
     await nextTick()
     expect(workspace.cacheClearState.value).toBe('idle')
     vi.useRealTimers()
+  })
+
+  it('writes resolved locale back to the active composer locale ref', () => {
+    mocks.applyLocale.mockReturnValue('en-US')
+    const { locale, workspace } = makeWorkspace()
+
+    workspace.handleLocaleChange({ target: { value: 'en-US' } } as unknown as Event)
+
+    expect(locale.value).toBe('en-US')
   })
 
   it('clears only public content cache without changing account storage or auth state', async () => {

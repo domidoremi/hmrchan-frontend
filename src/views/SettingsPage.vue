@@ -5,7 +5,7 @@
         <p class="hmr-kicker">{{ t('settings.eyebrow') }}</p>
         <div class="hmr-settings-title-row">
           <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('settings.title') }}</h1>
-          <p class="hmr-body">管理账户、安全、外观和公开缓存。</p>
+          <p class="hmr-body">{{ t('settings.body') }}</p>
         </div>
       </div>
     </header>
@@ -24,24 +24,24 @@
         <div class="hmr-settings-layout">
           <article class="hmr-settings-card hmr-settings-card--account">
             <div>
-              <p class="hmr-kicker">账户与登录</p>
-              <h2>{{ auth.isAuthenticated ? auth.displayName : '访客模式' }}</h2>
+              <p class="hmr-kicker">{{ t('settings.accountLogin') }}</p>
+              <h2>{{ auth.isAuthenticated ? auth.displayName : t('settings.guestMode') }}</h2>
               <p>
                 {{
-                  auth.isAuthenticated
-                    ? '已登录。个人资料、收藏、历史和账号安全可管理。'
-                    : '登录后同步收藏、历史、通知和安全恢复。'
+                  auth.isAuthenticated ? t('settings.accountLoggedIn') : t('settings.accountGuest')
                 }}
               </p>
             </div>
             <div class="hmr-settings-action-row">
               <RouterLink v-if="auth.isAuthenticated" class="hmr-cta" to="/profile">
-                打开个人中心
+                {{ t('settings.openProfile') }}
               </RouterLink>
               <template v-else>
-                <RouterLink class="hmr-cta" :to="settingsLoginTarget">登录</RouterLink>
+                <RouterLink class="hmr-cta" :to="settingsLoginTarget">{{
+                  t('nav.login')
+                }}</RouterLink>
                 <RouterLink class="hmr-text-link" :to="settingsRegisterTarget">
-                  创建账号
+                  {{ t('auth.registerTitle') }}
                 </RouterLink>
               </template>
             </div>
@@ -50,23 +50,29 @@
           <article class="hmr-settings-card">
             <div class="hmr-settings-card-head">
               <div>
-                <p class="hmr-kicker">安全与恢复</p>
-                <h2>登录保护</h2>
+                <p class="hmr-kicker">{{ t('settings.securityRecovery') }}</p>
+                <h2>{{ t('settings.loginProtection') }}</h2>
               </div>
-              <span>{{ auth.isAuthenticated ? '已连接' : '待登录' }}</span>
+              <span>{{
+                auth.isAuthenticated ? t('settings.connected') : t('settings.loginRequired')
+              }}</span>
             </div>
             <div class="hmr-settings-list">
               <RouterLink to="/auth/passkey-recovery">
-                <span>Passkey 恢复</span>
-                <strong>重新注册可信凭据</strong>
+                <span>{{ t('settings.passkeyRecovery') }}</span>
+                <strong>{{ t('settings.passkeyRecoveryHint') }}</strong>
               </RouterLink>
               <RouterLink :to="auth.isAuthenticated ? '/profile/security' : securityLoginTarget">
-                <span>设备与会话</span>
-                <strong>{{ auth.isAuthenticated ? '查看安全状态' : '登录后查看' }}</strong>
+                <span>{{ t('settings.devicesSessions') }}</span>
+                <strong>{{
+                  auth.isAuthenticated ? t('settings.viewSecurity') : t('settings.viewAfterLogin')
+                }}</strong>
               </RouterLink>
               <RouterLink :to="auth.isAuthenticated ? '/profile/inbox' : inboxLoginTarget">
-                <span>邮箱与通知</span>
-                <strong>{{ auth.isAuthenticated ? '管理提醒' : '登录后管理' }}</strong>
+                <span>{{ t('settings.emailNotifications') }}</span>
+                <strong>{{
+                  auth.isAuthenticated ? t('settings.manageAlerts') : t('settings.manageAfterLogin')
+                }}</strong>
               </RouterLink>
             </div>
           </article>
@@ -74,15 +80,19 @@
           <article class="hmr-settings-card hmr-settings-card--wide">
             <div class="hmr-settings-card-head">
               <div>
-                <p class="hmr-kicker">外观与语言</p>
-                <h2>界面偏好</h2>
+                <p class="hmr-kicker">{{ t('settings.appearanceLanguage') }}</p>
+                <h2>{{ t('settings.interfacePreferences') }}</h2>
               </div>
-              <span>{{ themeLabel }}</span>
+              <span>{{ themeLabel }} / {{ appearanceLabel }}</span>
             </div>
             <div class="hmr-settings-controls">
               <div class="hmr-settings-control">
-                <span>主题模式</span>
-                <div class="hmr-segmented-control" role="group" aria-label="主题模式">
+                <span>{{ t('settings.themeMode') }}</span>
+                <div
+                  class="hmr-segmented-control"
+                  role="group"
+                  :aria-label="t('settings.themeMode')"
+                >
                   <button
                     v-for="item in themeOptions"
                     :key="item.value"
@@ -90,7 +100,7 @@
                     :class="{ 'is-active': theme.theme === item.value }"
                     @click="theme.setTheme(item.value)"
                   >
-                    {{ item.label }}
+                    {{ t(item.labelKey) }}
                   </button>
                 </div>
               </div>
@@ -102,59 +112,84 @@
                   </option>
                 </select>
               </label>
+              <div class="hmr-settings-control hmr-settings-control--wide">
+                <span>{{ t('settings.appearancePreset') }}</span>
+                <div class="hmr-appearance-grid" role="list">
+                  <button
+                    v-for="item in appearanceOptions"
+                    :key="item.value"
+                    type="button"
+                    class="hmr-appearance-card"
+                    :class="{ 'is-active': theme.appearancePreset === item.value }"
+                    :data-preset-preview="item.value"
+                    :data-preset-family="item.family"
+                    :data-preset-enhancer="item.enhancer"
+                    :aria-pressed="theme.appearancePreset === item.value"
+                    @click="theme.setAppearancePreset(item.value)"
+                  >
+                    <span class="hmr-appearance-card__preview" aria-hidden="true">
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                    <span class="hmr-appearance-card__copy">
+                      <strong>{{ t(`settings.presets.${item.value}`) }}</strong>
+                      <small>{{ t(`settings.presetSummaries.${item.value}`) }}</small>
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
           </article>
 
           <article class="hmr-settings-card">
             <div class="hmr-settings-card-head">
               <div>
-                <p class="hmr-kicker">数据与缓存</p>
-                <h2>公开内容缓存</h2>
+                <p class="hmr-kicker">{{ t('settings.dataCache') }}</p>
+                <h2>{{ t('settings.publicCache') }}</h2>
               </div>
               <span>{{ cacheClearLabel }}</span>
             </div>
-            <p>
-              清理公开内容的 Memory、IndexedDB 与 Service Worker 缓存。保留登录态和本地账号数据。
-            </p>
+            <p>{{ t('settings.publicCacheBody') }}</p>
             <button
               class="hmr-settings-button"
               type="button"
               :disabled="cacheClearState === 'clearing'"
               @click="clearCache"
             >
-              清理公开缓存
+              {{ t('settings.clearPublicCache') }}
             </button>
           </article>
 
           <article class="hmr-settings-card">
             <div class="hmr-settings-card-head">
               <div>
-                <p class="hmr-kicker">支持</p>
-                <h2>反馈与帮助</h2>
+                <p class="hmr-kicker">{{ t('settings.support') }}</p>
+                <h2>{{ t('settings.feedbackHelp') }}</h2>
               </div>
-              <span>联系</span>
+              <span>{{ t('settings.contact') }}</span>
             </div>
             <div class="hmr-settings-list">
               <RouterLink to="/contact">
                 <span>{{ t('nav.contact') }}</span>
-                <strong>联系 MomiChan</strong>
+                <strong>{{ t('settings.contactMomiChan') }}</strong>
               </RouterLink>
               <RouterLink to="/about">
                 <span>{{ t('nav.about') }}</span>
-                <strong>了解产品与规则</strong>
+                <strong>{{ t('settings.aboutRules') }}</strong>
               </RouterLink>
             </div>
           </article>
 
           <article class="hmr-settings-card hmr-settings-card--danger">
             <div>
-              <p class="hmr-kicker">会话</p>
-              <h2>{{ auth.isAuthenticated ? '退出当前账号' : '进入登录流程' }}</h2>
+              <p class="hmr-kicker">{{ t('settings.session') }}</p>
+              <h2>
+                {{ auth.isAuthenticated ? t('settings.signOutCurrent') : t('settings.enterLogin') }}
+              </h2>
               <p>
                 {{
-                  auth.isAuthenticated
-                    ? '退出只会结束当前浏览器会话。'
-                    : '登录后可继续访问个人内容。'
+                  auth.isAuthenticated ? t('settings.signOutBody') : t('settings.enterLoginBody')
                 }}
               </p>
             </div>
@@ -192,7 +227,7 @@ import { useThemeStore } from '@/stores/theme'
 const auth = useAuthStore()
 const theme = useThemeStore()
 const router = useRouter()
-const { locale, t } = useI18n()
+const { locale, t } = useI18n({ useScope: 'global' })
 const initialSettingsContent: HmrSettingsContent = {
   account: seedCommunity,
   security: seedCommunity,
@@ -215,6 +250,8 @@ const {
   cacheClearState,
   clearCache,
   handleLocaleChange,
+  appearanceLabel,
+  appearanceOptions,
   inboxLoginTarget,
   initializeSettingsWorkspace,
   localeOptions,
@@ -232,6 +269,8 @@ const {
   refreshSettingsResource,
   router,
   theme,
+  locale,
+  t,
 })
 
 onMounted(() => {

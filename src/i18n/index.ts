@@ -199,6 +199,70 @@ const messages = {
       accountBody: '个人页、安全状态、Passkey 与退出。',
       preferencesBody: '主题、语言和内容密度。',
       supportBody: '账号、内容和社区反馈。',
+      body: '管理账户、安全、外观和公开缓存。',
+      accountLogin: '账户与登录',
+      guestMode: '访客模式',
+      accountLoggedIn: '已登录。个人资料、收藏、历史和账号安全可管理。',
+      accountGuest: '登录后同步收藏、历史、通知和安全恢复。',
+      openProfile: '打开个人中心',
+      securityRecovery: '安全与恢复',
+      loginProtection: '登录保护',
+      connected: '已连接',
+      loginRequired: '待登录',
+      passkeyRecovery: 'Passkey 恢复',
+      passkeyRecoveryHint: '重新注册可信凭据',
+      devicesSessions: '设备与会话',
+      viewSecurity: '查看安全状态',
+      viewAfterLogin: '登录后查看',
+      emailNotifications: '邮箱与通知',
+      manageAlerts: '管理提醒',
+      manageAfterLogin: '登录后管理',
+      appearanceLanguage: '外观与语言',
+      interfacePreferences: '界面偏好',
+      dataCache: '数据与缓存',
+      publicCache: '公开内容缓存',
+      publicCacheBody:
+        '清理公开内容的 Memory、IndexedDB 与 Service Worker 缓存。保留登录态和本地账号数据。',
+      clearPublicCache: '清理公开缓存',
+      feedbackHelp: '反馈与帮助',
+      contact: '联系',
+      contactMomiChan: '联系 MomiChan',
+      aboutRules: '了解产品与规则',
+      signOutCurrent: '退出当前账号',
+      enterLogin: '进入登录流程',
+      signOutBody: '退出只会结束当前浏览器会话。',
+      enterLoginBody: '登录后可继续访问个人内容。',
+      themeMode: '主题模式',
+      appearancePreset: '外观预设',
+      cacheReady: '可清理',
+      cacheClearing: '清理中',
+      cacheDone: '已清理',
+      cacheRetry: '重试',
+      themeModes: {
+        light: '浅色',
+        dark: '深色',
+        system: '跟随系统',
+      },
+      presets: {
+        'minimal-editorial': '极简编辑',
+        'fluent-soft': '柔和流体',
+        'material-calm': '沉静材质',
+        'organic-natural': '自然有机',
+        'biophilic-serene': '亲生物',
+        'clay-playful': '黏土触感',
+        'sketch-doodle': '手绘笔记',
+        'gradient-narrative': '渐变叙事',
+      },
+      presetSummaries: {
+        'minimal-editorial': '纸面阅读、低装饰和清晰层级。',
+        'fluent-soft': '半透明面板、柔和深度和系统感聚焦。',
+        'material-calm': '明确容器、稳定状态和高对齐秩序。',
+        'organic-natural': '暖色纸石、柔和边界和低噪浏览。',
+        'biophilic-serene': '晨雾绿意、通透留白和恢复性节奏。',
+        'clay-playful': '厚实圆角、按压反馈和友好体积感。',
+        'sketch-doodle': '纸张纹理、墨线边框和批注式组织。',
+        'gradient-narrative': '章节化场景、明亮渐变和更强导览。',
+      },
     },
     error: {
       notFound: '页面不存在',
@@ -392,6 +456,71 @@ const messages = {
       accountBody: 'Profile, security, passkey, and sign-out.',
       preferencesBody: 'Theme, language, and content density.',
       supportBody: 'Account, content, and community feedback.',
+      body: 'Manage account, security, appearance, and public cache.',
+      accountLogin: 'Account and sign-in',
+      guestMode: 'Guest mode',
+      accountLoggedIn:
+        'Signed in. Profile, favorites, history, and account security are available.',
+      accountGuest: 'Sign in to sync favorites, history, notifications, and security recovery.',
+      openProfile: 'Open profile',
+      securityRecovery: 'Security and recovery',
+      loginProtection: 'Sign-in protection',
+      connected: 'Connected',
+      loginRequired: 'Sign-in needed',
+      passkeyRecovery: 'Passkey recovery',
+      passkeyRecoveryHint: 'Register trusted credentials again',
+      devicesSessions: 'Devices and sessions',
+      viewSecurity: 'View security state',
+      viewAfterLogin: 'View after sign-in',
+      emailNotifications: 'Email and notifications',
+      manageAlerts: 'Manage alerts',
+      manageAfterLogin: 'Manage after sign-in',
+      appearanceLanguage: 'Appearance and language',
+      interfacePreferences: 'Interface preferences',
+      dataCache: 'Data and cache',
+      publicCache: 'Public content cache',
+      publicCacheBody:
+        'Clear public Memory, IndexedDB, and Service Worker caches while keeping session and local account data.',
+      clearPublicCache: 'Clear public cache',
+      feedbackHelp: 'Feedback and help',
+      contact: 'Contact',
+      contactMomiChan: 'Contact MomiChan',
+      aboutRules: 'Product and rules',
+      signOutCurrent: 'Sign out of this account',
+      enterLogin: 'Enter sign-in',
+      signOutBody: 'Signing out only ends the current browser session.',
+      enterLoginBody: 'Sign in to continue accessing personal content.',
+      themeMode: 'Theme mode',
+      appearancePreset: 'Appearance preset',
+      cacheReady: 'Ready',
+      cacheClearing: 'Clearing',
+      cacheDone: 'Cleared',
+      cacheRetry: 'Retry',
+      themeModes: {
+        light: 'Light',
+        dark: 'Dark',
+        system: 'System',
+      },
+      presets: {
+        'minimal-editorial': 'Editorial Quiet',
+        'fluent-soft': 'Soft Acrylic',
+        'material-calm': 'Tonal Structure',
+        'organic-natural': 'Earth Warmth',
+        'biophilic-serene': 'Restorative Air',
+        'clay-playful': 'Playful Clay',
+        'sketch-doodle': 'Notebook Ink',
+        'gradient-narrative': 'Story Arc',
+      },
+      presetSummaries: {
+        'minimal-editorial': 'Paper reading, low chrome, and crisp hierarchy.',
+        'fluent-soft': 'Translucent panels, soft depth, and system-like focus.',
+        'material-calm': 'Explicit containers, stable states, and aligned order.',
+        'organic-natural': 'Warm paper and stone with calm low-noise browsing.',
+        'biophilic-serene': 'Misty greens, open spacing, and restorative pacing.',
+        'clay-playful': 'Chunky radius, pressed feedback, and friendly volume.',
+        'sketch-doodle': 'Paper texture, ink borders, and annotated structure.',
+        'gradient-narrative': 'Chaptered scenes, vivid gradients, and guided flow.',
+      },
     },
     error: {
       notFound: 'Page not found',
@@ -585,6 +714,71 @@ const messages = {
       accountBody: 'プロフィール、セキュリティ、Passkey、ログアウト。',
       preferencesBody: 'テーマ、言語、コンテンツ密度。',
       supportBody: 'アカウント、コンテンツ、コミュニティの連絡。',
+      body: 'アカウント、セキュリティ、外観、公開キャッシュを管理します。',
+      accountLogin: 'アカウントとログイン',
+      guestMode: 'ゲストモード',
+      accountLoggedIn:
+        'ログイン済み。プロフィール、お気に入り、履歴、アカウント安全を管理できます。',
+      accountGuest: 'ログインするとお気に入り、履歴、通知、安全復旧を同期できます。',
+      openProfile: 'プロフィールを開く',
+      securityRecovery: 'セキュリティと復旧',
+      loginProtection: 'ログイン保護',
+      connected: '接続済み',
+      loginRequired: 'ログイン待ち',
+      passkeyRecovery: 'Passkey 復旧',
+      passkeyRecoveryHint: '信頼済み資格情報を再登録',
+      devicesSessions: 'デバイスとセッション',
+      viewSecurity: '安全状態を見る',
+      viewAfterLogin: 'ログイン後に表示',
+      emailNotifications: 'メールと通知',
+      manageAlerts: '通知を管理',
+      manageAfterLogin: 'ログイン後に管理',
+      appearanceLanguage: '外観と言語',
+      interfacePreferences: 'インターフェイス設定',
+      dataCache: 'データとキャッシュ',
+      publicCache: '公開コンテンツキャッシュ',
+      publicCacheBody:
+        '公開コンテンツの Memory、IndexedDB、Service Worker キャッシュを消去します。ログイン状態とローカルアカウントデータは保持します。',
+      clearPublicCache: '公開キャッシュを消去',
+      feedbackHelp: 'フィードバックとヘルプ',
+      contact: '連絡',
+      contactMomiChan: 'MomiChan に連絡',
+      aboutRules: '製品とルール',
+      signOutCurrent: '現在のアカウントからログアウト',
+      enterLogin: 'ログインへ進む',
+      signOutBody: 'ログアウトは現在のブラウザセッションだけを終了します。',
+      enterLoginBody: 'ログインすると個人コンテンツに引き続きアクセスできます。',
+      themeMode: 'テーマモード',
+      appearancePreset: '外観プリセット',
+      cacheReady: '消去可能',
+      cacheClearing: '消去中',
+      cacheDone: '消去済み',
+      cacheRetry: '再試行',
+      themeModes: {
+        light: 'ライト',
+        dark: 'ダーク',
+        system: 'システム',
+      },
+      presets: {
+        'minimal-editorial': '静かな編集',
+        'fluent-soft': '柔らかいアクリル',
+        'material-calm': '落ち着いた質感',
+        'organic-natural': '自然な有機感',
+        'biophilic-serene': 'バイオフィリック',
+        'clay-playful': 'クレイタッチ',
+        'sketch-doodle': '手描きノート',
+        'gradient-narrative': 'グラデーション物語',
+      },
+      presetSummaries: {
+        'minimal-editorial': '紙面の読みやすさ、少ない装飾、明確な階層。',
+        'fluent-soft': '半透明パネル、柔らかな奥行き、システムらしい焦点。',
+        'material-calm': '明確なコンテナ、安定した状態、整った配置。',
+        'organic-natural': '温かな紙と石の質感で低ノイズに閲覧。',
+        'biophilic-serene': '霧のような緑、余白、回復的なリズム。',
+        'clay-playful': '厚い角丸、押し込み反応、親しみやすい立体感。',
+        'sketch-doodle': '紙の質感、インクの枠線、注釈的な構成。',
+        'gradient-narrative': '章立ての場面、鮮やかなグラデーション、導線。',
+      },
     },
     error: {
       notFound: 'ページが見つかりません',
@@ -621,24 +815,27 @@ i18nOptions[localeCompatKey] = defaultLocale
 
 const i18n = createI18n(i18nOptions as never)
 
-export function applyLocale(locale: SupportedLocale): void {
+export function applyLocale(locale: SupportedLocale): SupportedLocale {
+  const resolvedLocale = isSupportedLocale(locale) ? locale : defaultLocale
   const globalComposer = i18n.global as unknown as {
     locale: SupportedLocale | { value: SupportedLocale }
   }
 
   if (typeof globalComposer.locale === 'string') {
-    globalComposer.locale = locale
+    globalComposer.locale = resolvedLocale
   } else {
-    globalComposer.locale.value = locale
+    globalComposer.locale.value = resolvedLocale
   }
 
   if (typeof document !== 'undefined') {
-    document.documentElement.lang = locale
-    document.documentElement.dataset.locale = locale
+    document.documentElement.lang = resolvedLocale
+    document.documentElement.dataset.locale = resolvedLocale
   }
   if (typeof window !== 'undefined') {
-    window.localStorage.setItem('hmr.locale', locale)
+    window.localStorage.setItem('hmr.locale', resolvedLocale)
   }
+
+  return resolvedLocale
 }
 
 applyLocale(initialLocale)

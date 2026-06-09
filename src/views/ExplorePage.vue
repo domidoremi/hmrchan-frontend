@@ -371,7 +371,7 @@ type ExploreFilterOption = {
   count?: number
 }
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 const {
   balancedRibbonPosts,
   blockingError,

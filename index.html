@@ -5,27 +5,89 @@
     <meta name="theme-color" content="#fbf9ef" />
     <script data-hmr-theme-bootstrap>
       ;(() => {
+        const appearancePresets = [
+          'minimal-editorial',
+          'fluent-soft',
+          'material-calm',
+          'organic-natural',
+          'biophilic-serene',
+          'clay-playful',
+          'sketch-doodle',
+          'gradient-narrative',
+        ]
+        const defaultAppearancePreset = 'minimal-editorial'
+        const appearancePresetMeta = {
+          'minimal-editorial': { family: 'rounded', enhancer: 'none' },
+          'fluent-soft': { family: 'rounded', enhancer: 'none' },
+          'material-calm': { family: 'sharp', enhancer: 'none' },
+          'organic-natural': { family: 'rounded', enhancer: 'none' },
+          'biophilic-serene': { family: 'rounded', enhancer: 'none' },
+          'clay-playful': { family: 'rounded', enhancer: 'clay' },
+          'sketch-doodle': { family: 'sharp', enhancer: 'sketch' },
+          'gradient-narrative': { family: 'rounded', enhancer: 'gradient' },
+        }
+        const criticalThemeColors = {
+          light: {
+            'minimal-editorial': '#fbf9ef',
+            'fluent-soft': '#f4f7fb',
+            'material-calm': '#f8faf8',
+            'organic-natural': '#f6efe2',
+            'biophilic-serene': '#eef7ef',
+            'clay-playful': '#fff5e8',
+            'sketch-doodle': '#fffdf4',
+            'gradient-narrative': '#f4f0ff',
+          },
+          dark: {
+            'minimal-editorial': '#11100f',
+            'fluent-soft': '#0c111c',
+            'material-calm': '#101711',
+            'organic-natural': '#17110d',
+            'biophilic-serene': '#0d1713',
+            'clay-playful': '#18111c',
+            'sketch-doodle': '#151311',
+            'gradient-narrative': '#0e0a1d',
+          },
+        }
         const normalizeTheme = (value) => {
           if (value === 'minimal-light') return 'light'
           if (value === 'minimal-dark') return 'dark'
           return value === 'light' || value === 'dark' || value === 'system' ? value : null
         }
+        const normalizeAppearancePreset = (value) =>
+          appearancePresets.includes(value) ? value : defaultAppearancePreset
         const resolveSystemTheme = () =>
           window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light'
+        const resolveThemeColor = (resolvedTheme, appearancePreset) =>
+          criticalThemeColors[resolvedTheme]?.[appearancePreset] ??
+          criticalThemeColors[resolvedTheme]?.[defaultAppearancePreset] ??
+          '#fbf9ef'
         let theme = 'system'
+        let appearancePreset = defaultAppearancePreset
         try {
           theme = normalizeTheme(window.localStorage?.getItem('hmr.theme')) || 'system'
+          appearancePreset = normalizeAppearancePreset(
+            window.localStorage?.getItem('hmr.appearancePreset')
+          )
         } catch {
           theme = 'system'
+          appearancePreset = defaultAppearancePreset
         }
         const resolvedTheme = theme === 'system' ? resolveSystemTheme() : theme
         const root = document.documentElement
         root.dataset.theme = resolvedTheme
         root.dataset.themeMode = theme
+        root.dataset.preset = appearancePreset
+        root.dataset.appearancePreset = appearancePreset
+        root.dataset.presetFamily =
+          appearancePresetMeta[appearancePreset]?.family ??
+          appearancePresetMeta[defaultAppearancePreset].family
+        root.dataset.presetEnhancer =
+          appearancePresetMeta[appearancePreset]?.enhancer ??
+          appearancePresetMeta[defaultAppearancePreset].enhancer
         root.style.colorScheme = resolvedTheme
         document
           .querySelector('meta[name="theme-color"]')
-          ?.setAttribute('content', resolvedTheme === 'dark' ? '#11100f' : '#fbf9ef')
+          ?.setAttribute('content', resolveThemeColor(resolvedTheme, appearancePreset))
       })()
     </script>
     <style id="hmr-theme-critical">
@@ -41,6 +103,76 @@
         --hmr-critical-bg: #11100f;
         --hmr-critical-base: #f7efe3;
         color-scheme: dark;
+      }
+
+      html[data-theme='light'][data-preset='fluent-soft'] {
+        --hmr-critical-bg: #f4f7fb;
+        --hmr-critical-base: #172034;
+      }
+
+      html[data-theme='dark'][data-preset='fluent-soft'] {
+        --hmr-critical-bg: #0c111c;
+        --hmr-critical-base: #edf5ff;
+      }
+
+      html[data-theme='light'][data-preset='material-calm'] {
+        --hmr-critical-bg: #f8faf8;
+        --hmr-critical-base: #18211c;
+      }
+
+      html[data-theme='dark'][data-preset='material-calm'] {
+        --hmr-critical-bg: #101711;
+        --hmr-critical-base: #edf6ed;
+      }
+
+      html[data-theme='light'][data-preset='organic-natural'] {
+        --hmr-critical-bg: #f6efe2;
+        --hmr-critical-base: #251b14;
+      }
+
+      html[data-theme='dark'][data-preset='organic-natural'] {
+        --hmr-critical-bg: #17110d;
+        --hmr-critical-base: #f5ecdf;
+      }
+
+      html[data-theme='light'][data-preset='biophilic-serene'] {
+        --hmr-critical-bg: #eef7ef;
+        --hmr-critical-base: #10251d;
+      }
+
+      html[data-theme='dark'][data-preset='biophilic-serene'] {
+        --hmr-critical-bg: #0d1713;
+        --hmr-critical-base: #e9f7ee;
+      }
+
+      html[data-theme='light'][data-preset='clay-playful'] {
+        --hmr-critical-bg: #fff5e8;
+        --hmr-critical-base: #251724;
+      }
+
+      html[data-theme='dark'][data-preset='clay-playful'] {
+        --hmr-critical-bg: #18111c;
+        --hmr-critical-base: #fff0f8;
+      }
+
+      html[data-theme='light'][data-preset='sketch-doodle'] {
+        --hmr-critical-bg: #fffdf4;
+        --hmr-critical-base: #181412;
+      }
+
+      html[data-theme='dark'][data-preset='sketch-doodle'] {
+        --hmr-critical-bg: #151311;
+        --hmr-critical-base: #fff8e8;
+      }
+
+      html[data-theme='light'][data-preset='gradient-narrative'] {
+        --hmr-critical-bg: #f4f0ff;
+        --hmr-critical-base: #17102b;
+      }
+
+      html[data-theme='dark'][data-preset='gradient-narrative'] {
+        --hmr-critical-bg: #0e0a1d;
+        --hmr-critical-base: #f7f2ff;
       }
 
       body,

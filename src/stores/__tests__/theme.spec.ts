@@ -1,7 +1,12 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { useThemeStore } from '@/stores/theme'
+import {
+  hmrAppearancePresetMeta,
+  hmrAppearancePresetThemeColors,
+  hmrAppearancePresets,
+  useThemeStore,
+} from '@/stores/theme'
 
 function mockMatchMedia(matches: boolean) {
   const listeners = new Set<(event: MediaQueryListEvent) => void>()
@@ -39,7 +44,13 @@ describe('theme store', () => {
     window.localStorage.clear()
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.removeAttribute('data-theme-mode')
+    document.documentElement.removeAttribute('data-preset')
+    document.documentElement.removeAttribute('data-appearance-preset')
+    document.documentElement.removeAttribute('data-preset-family')
+    document.documentElement.removeAttribute('data-preset-enhancer')
     document.documentElement.style.colorScheme = ''
+    document.head.innerHTML = '<meta name="theme-color" content="#fbf9ef" />'
+    mockMatchMedia(false)
     setActivePinia(createPinia())
   })
 
@@ -50,9 +61,14 @@ describe('theme store', () => {
     store.initializeTheme()
 
     expect(store.theme).toBe('dark')
+    expect(store.appearancePreset).toBe('minimal-editorial')
     expect(store.resolvedTheme).toBe('dark')
     expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(document.documentElement.dataset.preset).toBe('minimal-editorial')
     expect(document.documentElement.style.colorScheme).toBe('dark')
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
+      hmrAppearancePresetThemeColors.dark['minimal-editorial']
+    )
   })
 
   it('resolves system theme from prefers-color-scheme and follows changes', () => {
@@ -78,6 +94,67 @@ describe('theme store', () => {
 
     expect(window.localStorage.getItem('hmr.theme')).toBe('dark')
     expect(store.isDark).toBe(true)
+  })
+
+  it('exposes and persists the main branch appearance preset contract', () => {
+    const store = useThemeStore()
+
+    expect(hmrAppearancePresets).toEqual([
+      'minimal-editorial',
+      'fluent-soft',
+      'material-calm',
+      'organic-natural',
+      'biophilic-serene',
+      'clay-playful',
+      'sketch-doodle',
+      'gradient-narrative',
+    ])
+
+    store.setAppearancePreset('gradient-narrative')
+
+    expect(store.appearancePreset).toBe('gradient-narrative')
+    expect(store.appearancePresetMeta.label).toBe('渐变叙事')
+    expect(store.appearancePresetMeta.enhancer).toBe('gradient')
+    expect(store.appearancePresetMeta.sceneRoles).toContain('narrative')
+    expect(document.documentElement.dataset.preset).toBe('gradient-narrative')
+    expect(document.documentElement.dataset.appearancePreset).toBe('gradient-narrative')
+    expect(document.documentElement.dataset.presetFamily).toBe('rounded')
+    expect(document.documentElement.dataset.presetEnhancer).toBe('gradient')
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
+      hmrAppearancePresetThemeColors.light['gradient-narrative']
+    )
+    expect(window.localStorage.getItem('hmr.appearancePreset')).toBe('gradient-narrative')
+  })
+
+  it('updates browser chrome color when the resolved theme or appearance preset changes', () => {
+    const store = useThemeStore()
+
+    store.setTheme('dark')
+    store.setAppearancePreset('clay-playful')
+
+    expect(document.documentElement.dataset.presetFamily).toBe(
+      hmrAppearancePresetMeta['clay-playful'].family
+    )
+    expect(document.documentElement.dataset.presetEnhancer).toBe('clay')
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
+      hmrAppearancePresetThemeColors.dark['clay-playful']
+    )
+
+    store.setTheme('light')
+
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
+      hmrAppearancePresetThemeColors.light['clay-playful']
+    )
+  })
+
+  it('normalizes invalid stored appearance presets to the editorial default', () => {
+    window.localStorage.setItem('hmr.appearancePreset', 'unknown-preset')
+    const store = useThemeStore()
+
+    store.initializeTheme()
+
+    expect(store.appearancePreset).toBe('minimal-editorial')
+    expect(document.documentElement.dataset.preset).toBe('minimal-editorial')
   })
 
   it('keeps a pre-paint dark theme stable when Vue initializes', () => {

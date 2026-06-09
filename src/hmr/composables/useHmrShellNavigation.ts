@@ -37,7 +37,7 @@ function isShellNavKey(value: unknown): value is HmrShellNavKey {
 
 export function useHmrShellNavigation() {
   const route = useRoute()
-  const { locale, t } = useI18n()
+  const { locale, t } = useI18n({ useScope: 'global' })
   const menuOpen = ref(false)
 
   const primaryNav = computed<HmrNavItem[]>(() => [

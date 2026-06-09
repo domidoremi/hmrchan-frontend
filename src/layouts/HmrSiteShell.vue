@@ -1,5 +1,11 @@
 <template>
-  <div class="hmr-site" :class="{ 'is-preloading': preloaderVisible }" :style="scrollProgressStyle">
+  <div
+    class="hmr-site"
+    :class="{ 'is-preloading': preloaderVisible }"
+    :style="scrollProgressStyle"
+    :data-hmr-scene-role="sceneRole"
+    :data-hmr-preset-scene-fit="presetSceneFit"
+  >
     <div
       v-if="preloaderVisible"
       ref="preloaderBackdropRef"
@@ -261,6 +267,7 @@ import { useHmrAuthDisplay } from '@/hmr/composables/useHmrAuthDisplay'
 import { useHmrBrandPet } from '@/hmr/composables/useHmrBrandPet'
 import { useHmrCurrentTime } from '@/hmr/composables/useHmrCurrentTime'
 import { useHmrInViewReveal } from '@/hmr/composables/useHmrInViewReveal'
+import { resolveHmrPresetSceneFit, useHmrSceneRole } from '@/hmr/composables/useHmrSceneRole'
 import { useHmrScrollProgress } from '@/hmr/composables/useHmrScrollProgress'
 import { useHmrShellNavigation } from '@/hmr/composables/useHmrShellNavigation'
 import { useHmrTextReveal } from '@/hmr/composables/useHmrTextReveal'
@@ -284,7 +291,7 @@ const ROUTE_WARMUP_IDLE_FALLBACK_DELAY_MS = 3000
 
 const route = useRoute()
 const theme = useThemeStore()
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 const {
   activeNavKey,
   closeMenu,
@@ -322,6 +329,10 @@ let preloaderExitTimer: number | undefined
 const pageTransitionKey = computed(() => route.fullPath)
 const { auth, authDisplay } = useHmrAuthDisplay()
 const { currentTime, timeZoneLabel } = useHmrCurrentTime()
+const sceneRole = useHmrSceneRole(route)
+const presetSceneFit = computed(() =>
+  resolveHmrPresetSceneFit(sceneRole.value, theme.appearancePresetMeta.sceneRoles)
+)
 const { progress } = useHmrScrollProgress()
 const { atlasEnabled, brandState, jumpBrandPet, staticMode, waveBrandPet } = useHmrBrandPet()
 const scrollProgressStyle = computed(() => ({

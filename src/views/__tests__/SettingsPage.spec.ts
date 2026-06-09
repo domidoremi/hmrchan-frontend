@@ -60,6 +60,72 @@ async function mountSettingsPage(options: { authenticated?: boolean } = {}) {
         settings: {
           eyebrow: '偏好设置',
           title: '设置',
+          body: '管理账户、安全、外观和公开缓存。',
+          accountLogin: '账户与登录',
+          guestMode: '访客模式',
+          accountGuest: '登录后同步收藏、历史、通知和安全恢复。',
+          accountLoggedIn: '已登录。个人资料、收藏、历史和账号安全可管理。',
+          openProfile: '打开个人中心',
+          securityRecovery: '安全与恢复',
+          loginProtection: '登录保护',
+          connected: '已连接',
+          loginRequired: '待登录',
+          passkeyRecovery: 'Passkey 恢复',
+          passkeyRecoveryHint: '重新注册可信凭据',
+          devicesSessions: '设备与会话',
+          viewSecurity: '查看安全状态',
+          viewAfterLogin: '登录后查看',
+          emailNotifications: '邮箱与通知',
+          manageAlerts: '管理提醒',
+          manageAfterLogin: '登录后管理',
+          appearanceLanguage: '外观与语言',
+          interfacePreferences: '界面偏好',
+          themeMode: '主题模式',
+          appearancePreset: '外观预设',
+          dataCache: '数据与缓存',
+          publicCache: '公开内容缓存',
+          publicCacheBody:
+            '清理公开内容的 Memory、IndexedDB 与 Service Worker 缓存。保留登录态和本地账号数据。',
+          clearPublicCache: '清理公开缓存',
+          support: '支持',
+          feedbackHelp: '反馈与帮助',
+          contact: '联系',
+          contactMomiChan: '联系 MomiChan',
+          aboutRules: '了解产品与规则',
+          session: '会话',
+          signOutCurrent: '退出当前账号',
+          enterLogin: '进入登录流程',
+          signOutBody: '退出只会结束当前浏览器会话。',
+          enterLoginBody: '登录后可继续访问个人内容。',
+          cacheReady: '可清理',
+          cacheClearing: '清理中',
+          cacheDone: '已清理',
+          cacheRetry: '重试',
+          themeModes: {
+            light: '浅色',
+            dark: '深色',
+            system: '跟随系统',
+          },
+          presets: {
+            'minimal-editorial': '极简编辑',
+            'fluent-soft': '柔和流体',
+            'material-calm': '沉静材质',
+            'organic-natural': '自然有机',
+            'biophilic-serene': '亲生物',
+            'clay-playful': '黏土触感',
+            'sketch-doodle': '手绘笔记',
+            'gradient-narrative': '渐变叙事',
+          },
+          presetSummaries: {
+            'minimal-editorial': '纸面阅读、低装饰和清晰层级。',
+            'fluent-soft': '半透明面板、柔和深度和系统感聚焦。',
+            'material-calm': '明确容器、稳定状态和高对齐秩序。',
+            'organic-natural': '暖色纸石、柔和边界和低噪浏览。',
+            'biophilic-serene': '晨雾绿意、通透留白和恢复性节奏。',
+            'clay-playful': '厚实圆角、按压反馈和友好体积感。',
+            'sketch-doodle': '纸张纹理、墨线边框和批注式组织。',
+            'gradient-narrative': '章节化场景、明亮渐变和更强导览。',
+          },
         },
         explore: {
           loadMore: '更多',
@@ -67,6 +133,9 @@ async function mountSettingsPage(options: { authenticated?: boolean } = {}) {
         shell: {
           language: '语言',
           logout: '退出',
+        },
+        auth: {
+          registerTitle: '创建账号',
         },
         nav: {
           about: '关于',
@@ -145,6 +214,44 @@ describe('SettingsPage', () => {
     expect(text).toContain('深色')
     expect(text).toContain('跟随系统')
     expect(text).toContain('清理公开缓存')
+  })
+
+  it('renders the eight appearance presets from the main branch design contract', async () => {
+    const wrapper = await mountSettingsPage()
+    const presetButtons = wrapper.findAll('.hmr-appearance-card')
+
+    expect(presetButtons).toHaveLength(8)
+    expect(presetButtons.map((button) => button.attributes('data-preset-preview'))).toEqual([
+      'minimal-editorial',
+      'fluent-soft',
+      'material-calm',
+      'organic-natural',
+      'biophilic-serene',
+      'clay-playful',
+      'sketch-doodle',
+      'gradient-narrative',
+    ])
+    expect(presetButtons.map((button) => button.attributes('data-preset-family'))).toEqual([
+      'rounded',
+      'rounded',
+      'sharp',
+      'rounded',
+      'rounded',
+      'rounded',
+      'sharp',
+      'rounded',
+    ])
+    expect(presetButtons.map((button) => button.attributes('data-preset-enhancer'))).toEqual([
+      'none',
+      'none',
+      'none',
+      'none',
+      'none',
+      'clay',
+      'sketch',
+      'gradient',
+    ])
+    expect(wrapper.text()).toContain('渐变叙事')
   })
 
   it('builds guest auth links with normalized redirect targets', async () => {

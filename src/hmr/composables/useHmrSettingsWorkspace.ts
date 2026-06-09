@@ -1,11 +1,16 @@
-import { computed, ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import type { Router } from 'vue-router'
 
 import type { SupportedLocale } from '@/i18n'
 import { applyLocale, localeLabels, supportedLocales } from '@/i18n'
 import { createLoginRouteTarget, createRegisterRouteTarget } from '@/router/authTargets'
 import type { useAuthStore } from '@/stores/auth'
-import type { HmrTheme, useThemeStore } from '@/stores/theme'
+import {
+  hmrAppearancePresetMeta,
+  hmrAppearancePresets,
+  type HmrTheme,
+  type useThemeStore,
+} from '@/stores/theme'
 import { clearPublicContentCache } from '@/utils/cache/publicContentCache'
 
 type AuthStore = ReturnType<typeof useAuthStore>
@@ -15,18 +20,38 @@ export type HmrSettingsCacheClearState = 'idle' | 'clearing' | 'done' | 'error'
 export interface HmrSettingsWorkspaceOptions<T> {
   auth: Pick<AuthStore, 'isAuthenticated' | 'isLoading' | 'logout'>
   content: { value: T }
+  locale: Ref<string>
   markSettingsReady: (data: T) => void
   refreshSettingsResource: () => Promise<unknown>
   router: Pick<Router, 'push'>
-  theme: Pick<ThemeStore, 'theme' | 'resolvedTheme' | 'setTheme' | 'initializeTheme'>
+  theme: Pick<
+    ThemeStore,
+    | 'theme'
+    | 'appearancePreset'
+    | 'appearancePresetMeta'
+    | 'resolvedTheme'
+    | 'setTheme'
+    | 'setAppearancePreset'
+    | 'initializeTheme'
+  >
+  t?: (key: string) => string
   resetDelayMs?: number
 }
 
-export const hmrSettingsThemeOptions: Array<{ value: HmrTheme; label: string }> = [
-  { value: 'light', label: '浅色' },
-  { value: 'dark', label: '深色' },
-  { value: 'system', label: '跟随系统' },
+export const hmrSettingsThemeOptions: Array<{ value: HmrTheme; labelKey: string }> = [
+  { value: 'light', labelKey: 'settings.themeModes.light' },
+  { value: 'dark', labelKey: 'settings.themeModes.dark' },
+  { value: 'system', labelKey: 'settings.themeModes.system' },
 ]
+
+export const hmrSettingsAppearanceOptions = hmrAppearancePresets.map((value) => ({
+  value,
+  label: hmrAppearancePresetMeta[value].label,
+  summary: hmrAppearancePresetMeta[value].summary,
+  family: hmrAppearancePresetMeta[value].family,
+  enhancer: hmrAppearancePresetMeta[value].enhancer,
+  sceneRoles: hmrAppearancePresetMeta[value].sceneRoles,
+}))
 
 export const hmrSettingsLocaleOptions = supportedLocales.map((id) => ({
   id,
@@ -34,22 +59,30 @@ export const hmrSettingsLocaleOptions = supportedLocales.map((id) => ({
 }))
 
 export function useHmrSettingsWorkspace<T>(options: HmrSettingsWorkspaceOptions<T>) {
+  const translate = options.t ?? ((key: string) => key)
   const cacheClearState = ref<HmrSettingsCacheClearState>('idle')
   const settingsLoginTarget = computed(() => createLoginRouteTarget('/settings'))
   const settingsRegisterTarget = computed(() => createRegisterRouteTarget('/settings'))
   const securityLoginTarget = computed(() => createLoginRouteTarget('/profile/security'))
   const inboxLoginTarget = computed(() => createLoginRouteTarget('/profile/inbox'))
   const themeLabel = computed(() => {
+    const lightLabel = translate('settings.themeModes.light')
+    const darkLabel = translate('settings.themeModes.dark')
     if (options.theme.theme === 'system') {
-      return `系统 / ${options.theme.resolvedTheme === 'dark' ? '深色' : '浅色'}`
+      return `${translate('settings.themeModes.system')} / ${
+        options.theme.resolvedTheme === 'dark' ? darkLabel : lightLabel
+      }`
     }
-    return options.theme.theme === 'dark' ? '深色' : '浅色'
+    return options.theme.theme === 'dark' ? darkLabel : lightLabel
+  })
+  const appearanceLabel = computed(() => {
+    return translate(`settings.presets.${options.theme.appearancePreset}`)
   })
   const cacheClearLabel = computed(() => {
-    if (cacheClearState.value === 'clearing') return '清理中'
-    if (cacheClearState.value === 'done') return '已清理'
-    if (cacheClearState.value === 'error') return '重试'
-    return '可清理'
+    if (cacheClearState.value === 'clearing') return translate('settings.cacheClearing')
+    if (cacheClearState.value === 'done') return translate('settings.cacheDone')
+    if (cacheClearState.value === 'error') return translate('settings.cacheRetry')
+    return translate('settings.cacheReady')
   })
 
   async function logout(): Promise<void> {
@@ -72,7 +105,7 @@ export function useHmrSettingsWorkspace<T>(options: HmrSettingsWorkspaceOptions<
   function handleLocaleChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value as SupportedLocale
     if (supportedLocales.includes(value)) {
-      applyLocale(value)
+      options.locale.value = applyLocale(value)
     }
   }
 
@@ -95,6 +128,8 @@ export function useHmrSettingsWorkspace<T>(options: HmrSettingsWorkspaceOptions<
   }
 
   return {
+    appearanceLabel,
+    appearanceOptions: hmrSettingsAppearanceOptions,
     cacheClearLabel,
     cacheClearState,
     clearCache,

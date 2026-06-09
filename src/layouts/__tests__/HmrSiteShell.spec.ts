@@ -171,30 +171,44 @@ async function mountShell(path = '/', locale: SupportedLocale = 'zh-CN') {
       {
         path: '/community',
         component: { template: '<div />' },
+        name: 'hmr-community',
+        meta: { pageKey: 'community', navKey: 'community' },
       },
       {
         path: '/schedule',
         component: { template: '<div />' },
+        name: 'hmr-schedule',
+        meta: { pageKey: 'schedule', navKey: 'schedule' },
       },
       {
         path: '/settings',
         component: { template: '<div />' },
+        name: 'hmr-settings',
+        meta: { pageKey: 'settings', navKey: 'settings' },
       },
       {
         path: '/login',
         component: { template: '<div />' },
+        name: 'hmr-login',
+        meta: { pageKey: 'login' },
       },
       {
         path: '/register',
         component: { template: '<div />' },
+        name: 'hmr-register',
+        meta: { pageKey: 'register' },
       },
       {
         path: '/about',
         component: { template: '<div />' },
+        name: 'hmr-about',
+        meta: { pageKey: 'about' },
       },
       {
         path: '/contact',
         component: { template: '<div />' },
+        name: 'hmr-contact',
+        meta: { pageKey: 'contact' },
       },
     ],
   })
@@ -261,6 +275,62 @@ describe('HmrSiteShell preloader', () => {
       ).toBe(true)
     } finally {
       wrapper.unmount()
+    }
+  })
+
+  it('marks the shell with the active theme scene role', async () => {
+    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
+
+    const wrapper = await mountShell('/community')
+
+    try {
+      expect(wrapper.find('.hmr-site').attributes('data-hmr-scene-role')).toBe('discussion')
+
+      await wrapper.vm.$router.push('/schedule')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.find('.hmr-site').attributes('data-hmr-scene-role')).toBe('productivity')
+
+      await wrapper.vm.$router.push('/explore')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.find('.hmr-site').attributes('data-hmr-scene-role')).toBe('immersive')
+    } finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('marks whether the active preset is native to the current scene role', async () => {
+    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
+    window.localStorage.setItem('hmr.appearancePreset', 'gradient-narrative')
+
+    const wrapper = await mountShell('/explore')
+
+    try {
+      expect(wrapper.find('.hmr-site').attributes('data-hmr-scene-role')).toBe('immersive')
+      expect(wrapper.find('.hmr-site').attributes('data-hmr-preset-scene-fit')).toBe('native')
+
+      await wrapper.vm.$router.push('/community')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.find('.hmr-site').attributes('data-hmr-scene-role')).toBe('discussion')
+      expect(wrapper.find('.hmr-site').attributes('data-hmr-preset-scene-fit')).toBe('adaptive')
+    } finally {
+      wrapper.unmount()
+    }
+
+    window.localStorage.setItem('hmr.appearancePreset', 'sketch-doodle')
+    const discussionWrapper = await mountShell('/community')
+
+    try {
+      expect(discussionWrapper.find('.hmr-site').attributes('data-hmr-scene-role')).toBe(
+        'discussion'
+      )
+      expect(discussionWrapper.find('.hmr-site').attributes('data-hmr-preset-scene-fit')).toBe(
+        'native'
+      )
+    } finally {
+      discussionWrapper.unmount()
     }
   })
 

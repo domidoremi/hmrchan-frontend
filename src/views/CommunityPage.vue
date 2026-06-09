@@ -137,7 +137,7 @@ const initialCommunityContent: HmrCommunityContent = {
   latest: [],
   feed: [],
 }
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 const {
   content,
   pageState,

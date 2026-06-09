@@ -188,7 +188,7 @@ const {
   loader: loadScheduleContentResource,
   isEmpty: (data) => data.items.length === 0,
 })
-const { locale, t } = useI18n()
+const { locale, t } = useI18n({ useScope: 'global' })
 const {
   activeFilter,
   dayOptions,
