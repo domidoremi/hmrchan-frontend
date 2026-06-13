@@ -4,19 +4,19 @@ const mainModule = vi.hoisted(() => ({
   load: vi.fn(),
 }))
 
-vi.mock('../main', () => {
-  mainModule.load()
-  return {}
-})
-
 async function importMainEntry(): Promise<void> {
+  vi.resetModules()
+  vi.doMock('../main', () => {
+    mainModule.load()
+    return {}
+  })
   await import('../main.entry')
 }
 
 describe('main entry client init gate', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
-    vi.resetModules()
+    vi.doUnmock('../main')
     mainModule.load.mockReset()
     document.documentElement.removeAttribute('data-client-init')
   })
@@ -30,12 +30,12 @@ describe('main entry client init gate', () => {
     expect(document.documentElement.dataset.clientInit).toBeUndefined()
   })
 
-  it('marks client init disabled without loading the application bootstrap', async () => {
+  it('marks client init disabled while still loading the application bootstrap', async () => {
     vi.stubEnv('VITE_ENABLE_CLIENT_INIT', 'false')
 
     await importMainEntry()
 
-    expect(mainModule.load).not.toHaveBeenCalled()
+    expect(mainModule.load).toHaveBeenCalledOnce()
     expect(document.documentElement.dataset.clientInit).toBe('disabled')
   })
 })

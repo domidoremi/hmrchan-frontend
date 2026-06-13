@@ -1,10 +1,12 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
 
 import type { HmrCommunityContent } from '@/api/hmrContent'
 import { loadCommunityContentResource } from '@/api/hmrContent'
 import type { HmrAsyncResource } from '@/hmr/types'
+import { useAuthStore } from '@/stores/auth'
 import { readPublicContent } from '@/utils/cache/publicContentCache'
 import CommunityPage from '@/views/CommunityPage.vue'
 
@@ -38,6 +40,10 @@ const messages = {
       hotTitle: '热门回应',
       latest: '最新',
       latestTitle: '最新动态',
+      loginCtaBody: '参与社区讨论，与同好分享观点、收藏回应并接收后续提醒。',
+      loginCtaPrimary: '登录参与',
+      loginCtaSecondary: '先去探索',
+      loginCtaTitle: '发起讨论，留下你的观点',
       openFromContent: '查看内容',
       risingTitle: '升温',
       submitFeedback: '反馈',
@@ -102,20 +108,40 @@ function makeResource(data = makeContent()): HmrAsyncResource<HmrCommunityConten
   }
 }
 
-async function mountCommunityPage() {
+function renderRouteHref(to: string | { path: string; query?: Record<string, unknown> }): string {
+  if (typeof to === 'string') return to
+
+  const redirect = to.query?.redirect
+  if (typeof redirect !== 'string') return to.path
+
+  return `${to.path}?redirect=${redirect}`
+}
+
+async function mountCommunityPage(options: { authenticated?: boolean } = {}) {
   const i18n = createI18n({
     legacy: false,
     locale: 'zh-CN',
     messages,
   })
+  const pinia = createPinia()
+  setActivePinia(pinia)
+  if (options.authenticated) {
+    const auth = useAuthStore()
+    auth.user = {
+      id: 'user-1',
+      username: 'member',
+      email: 'member@example.test',
+    }
+  }
   const wrapper = mount(CommunityPage, {
     global: {
-      plugins: [i18n],
+      plugins: [pinia, i18n],
       stubs: {
         HmrPageStateBlock: true,
         RouterLink: {
           props: ['to'],
-          template: '<a :href="typeof to === `string` ? to : to?.path"><slot /></a>',
+          methods: { renderRouteHref },
+          template: '<a :href="renderRouteHref(to)"><slot /></a>',
         },
       },
     },
@@ -127,6 +153,7 @@ async function mountCommunityPage() {
 describe('CommunityPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setActivePinia(createPinia())
     const resource = makeResource()
     readPublicContentMock.mockResolvedValue(resource)
     loadCommunityContentResourceMock.mockResolvedValue(resource)
@@ -161,5 +188,27 @@ describe('CommunityPage', () => {
       .findAll('.hmr-discussion-row')
       .find((link) => link.text().includes('Latest thread'))
     expect(latestLink?.attributes('href')).toBe('/posts/latest-1')
+  })
+
+  it('renders a guest discussion CTA with clear primary and secondary actions', async () => {
+    const wrapper = await mountCommunityPage()
+    const card = wrapper.find('.community-priority-card.surface-editorial')
+
+    expect(card.exists()).toBe(true)
+    expect(card.text()).toContain('发起讨论，留下你的观点')
+    expect(card.text()).toContain('参与社区讨论')
+    expect(card.find('.community-priority-card__action--primary').attributes('href')).toBe(
+      '/login?redirect=/community'
+    )
+    expect(card.find('.community-priority-card__action--secondary').attributes('href')).toBe(
+      '/explore'
+    )
+    expect(card.text()).not.toContain('讨论与帖子分离')
+  })
+
+  it('hides the guest discussion CTA for authenticated members', async () => {
+    const wrapper = await mountCommunityPage({ authenticated: true })
+
+    expect(wrapper.find('.community-priority-card').exists()).toBe(false)
   })
 })

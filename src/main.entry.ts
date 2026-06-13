@@ -1,7 +1,7 @@
 import { markClientInitDisabled, shouldEnableClientInit } from './utils/clientInit'
 
-if (shouldEnableClientInit(import.meta.env)) {
-  await import('./main')
-} else if (typeof document !== 'undefined') {
+if (!shouldEnableClientInit(import.meta.env) && typeof document !== 'undefined') {
   markClientInitDisabled(document)
 }
+
+await import('./main')

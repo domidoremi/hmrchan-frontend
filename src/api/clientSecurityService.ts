@@ -3,6 +3,7 @@ import { requestClientChallenge } from '@/api/clientChallengeBridge'
 import { getRandomHex } from '@/utils/crypto'
 import { getScreenResolution, getTimezone } from '@/utils/device'
 import { getDeviceFingerprint, getDeviceFingerprintMetadata } from '@/utils/fingerprint'
+import { shouldEnableClientInit } from '@/utils/clientInit'
 
 export type ClientTrustLevel = 'untrusted' | 'basic' | 'verified'
 export type ClientFingerprintSource = 'oss_browser' | 'mobile_local' | 'unknown'
@@ -187,6 +188,14 @@ function buildStoredClientSummary(response: ClientInitResponse): StoredClientSum
   return summary
 }
 
+function buildSkippedClientInitResponse(): ClientInitResponse {
+  return {
+    trust_level: 'untrusted',
+    fingerprint_source: 'unknown',
+    client_type: 'web',
+  }
+}
+
 function persistInitCredentials(response: ClientInitResponse): void {
   const existing = getStoredCredentials()
   const nextClientToken = response.client_token?.trim()
@@ -285,6 +294,13 @@ export const clientSecurityService = {
     force?: boolean,
     options?: { promptChallenge?: boolean }
   ): Promise<ClientInitResponse> {
+    if (!shouldEnableClientInit(import.meta.env)) {
+      if (force) {
+        clearCredentials()
+      }
+      return buildSkippedClientInitResponse()
+    }
+
     const requestedMode: 'normal' | 'force' = force ? 'force' : 'normal'
     if (initPromise && (initPromiseMode === 'force' || requestedMode === 'normal')) {
       return initPromise
@@ -399,6 +415,13 @@ export const clientSecurityService = {
 }
 
 export function initClientSecurity(payload: ClientInitPayload = {}): Promise<ClientInitResponse> {
+  if (!shouldEnableClientInit(import.meta.env)) {
+    if (payload.force_reissue) {
+      clearCredentials()
+    }
+    return Promise.resolve(buildSkippedClientInitResponse())
+  }
+
   if (payload.client_fingerprint) {
     return apiClient.post<ClientInitResponse>(
       '/client/init',

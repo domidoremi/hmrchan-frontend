@@ -64,6 +64,7 @@ import {
 
 describe('clientSecurityService', () => {
   beforeEach(() => {
+    vi.unstubAllEnvs()
     vi.clearAllMocks()
     localStorage.clear()
     clientSecurityManager.clear()
@@ -163,6 +164,29 @@ describe('clientSecurityService', () => {
         skipSecurity: true,
       })
     )
+  })
+
+  it('skips the client init request when local audit config disables it', async () => {
+    vi.stubEnv('VITE_ENABLE_CLIENT_INIT', 'false')
+
+    await expect(clientSecurityService.init()).resolves.toEqual({
+      trust_level: 'untrusted',
+      fingerprint_source: 'unknown',
+      client_type: 'web',
+    })
+    await expect(
+      initClientSecurity({
+        client_fingerprint: 'legacy-fingerprint',
+        force_reissue: true,
+      })
+    ).resolves.toEqual({
+      trust_level: 'untrusted',
+      fingerprint_source: 'unknown',
+      client_type: 'web',
+    })
+
+    expect(mockApiClient.post).not.toHaveBeenCalled()
+    expect(clientSecurityManager.getClientToken()).toBeNull()
   })
 
   it('force reissues signing credentials when normal integrity init is throttled', async () => {

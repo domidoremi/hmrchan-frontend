@@ -43,6 +43,39 @@
               </RouterLink>
             </div>
 
+            <article
+              v-if="!auth.isAuthenticated"
+              class="community-priority-card surface-editorial"
+              aria-labelledby="community-priority-card-title"
+            >
+              <div class="community-priority-card__copy">
+                <h3 id="community-priority-card-title">{{ t('community.loginCtaTitle') }}</h3>
+                <p>{{ t('community.loginCtaBody') }}</p>
+                <div class="community-priority-card__actions">
+                  <RouterLink
+                    class="community-priority-card__action community-priority-card__action--primary"
+                    :to="communityLoginTarget"
+                  >
+                    {{ t('community.loginCtaPrimary') }}
+                  </RouterLink>
+                  <RouterLink
+                    class="community-priority-card__action community-priority-card__action--secondary"
+                    to="/explore"
+                  >
+                    {{ t('community.loginCtaSecondary') }}
+                  </RouterLink>
+                </div>
+              </div>
+              <div class="community-priority-card__visual" aria-hidden="true">
+                <span
+                  class="community-priority-card__note community-priority-card__note--wide"
+                ></span>
+                <span
+                  class="community-priority-card__note community-priority-card__note--compact"
+                ></span>
+              </div>
+            </article>
+
             <div class="hmr-discussion-list">
               <RouterLink
                 v-for="(item, index) in visibleThreads"
@@ -121,6 +154,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 
@@ -129,6 +163,8 @@ import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import { useHmrCommunityBoard } from '@/hmr/composables/useHmrCommunityBoard'
 import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
 import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
+import { createLoginRouteTarget } from '@/router/authTargets'
+import { useAuthStore } from '@/stores/auth'
 
 const initialCommunityContent: HmrCommunityContent = {
   stats: [],
@@ -138,6 +174,8 @@ const initialCommunityContent: HmrCommunityContent = {
   feed: [],
 }
 const { t } = useI18n({ useScope: 'global' })
+const auth = useAuthStore()
+const communityLoginTarget = computed(() => createLoginRouteTarget('/community'))
 const {
   content,
   pageState,
