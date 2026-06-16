@@ -4,7 +4,7 @@
 
 This plan covers business capability, technology stack, directory structure, component design, API management, state management, route permission, performance, engineering standards, and maintainability for the Vue frontend.
 
-The optimization policy is incremental. Each slice must preserve current user-visible behavior, include targeted verification, and avoid broad rewrites unless the slice defines an explicit migration boundary.
+The optimization policy is incremental. Each slice must preserve current observable behavior, include targeted verification, and avoid broad rewrites unless the slice defines an explicit migration boundary.
 
 The current implementation is not the terminal architecture. Optimization work must protect business contracts, security invariants, data semantics, route behavior, and migration boundaries. It must not turn current file layout, private helper boundaries, incidental DOM nesting, or deep import paths into permanent architecture unless the slice explicitly promotes that surface to a public contract.
 
@@ -71,7 +71,7 @@ Track 3 - Component Boundary Migration:
 
 Track 4 - Runtime And Performance Hardening:
 
-- Target: raw browser APIs must stay behind shared wrappers where release audits enforce them; background work must keep user intent, data-saving, auth state, and cleanup policy explicit.
+- Target: raw browser APIs must stay behind shared wrappers where release audits enforce them; background work must keep interaction intent, data-saving, auth state, and cleanup policy explicit.
 - Next slices: extend wrappers for delayed tasks and observers, validate update coordination blockers, tighten image preload rules, and keep bundle budget diagnostics split by JS, CSS, image, and initial-home assets.
 - Evidence: frontend-pattern audit, bundle budget, PWA/service worker tests, and targeted utility tests must pass.
 
@@ -91,7 +91,7 @@ Track 6 - Release Operations:
 
 Iteration Unit:
 
-- Each iteration must complete one documentation, contract, or code slice that can be verified without broad rewrites.
+- Each iteration must complete one documentation, contract, or code slice with bounded verification and no broad rewrite requirement.
 - Each code slice must declare the touched boundary, GitNexus impact level, verification command, and remaining migration target.
 - Each documentation slice must add executable constraints, queue items, evidence rules, or stop conditions.
 
@@ -136,9 +136,9 @@ Operating Constraints:
 Resource Recovery Protocol:
 
 - When SessionStart or PreHeavy reports memory risk `danger`, the active iteration must stop tests, builds, package installs, browser automation, type-check, and new long-running processes.
-- While memory risk remains `danger`, work may continue only through source inspection, Git status inspection, GitNexus context reads, documentation updates, `git diff --check`, and other short foreground checks that do not start heavy toolchains.
+- While memory risk remains `danger`, work is limited to source inspection, Git status inspection, GitNexus context reads, documentation updates, `git diff --check`, and other short foreground checks that do not start heavy toolchains.
 - Each `danger` continuation must record the available physical memory, registered cleanup result, and deferred verification queue in the active entry.
-- Validation may resume only after a fresh PreHeavy check reports below `danger`; run the smallest focused command first and keep workers at `--maxWorkers=1`.
+- Validation resumes only after a fresh PreHeavy check reports below `danger`; run the smallest focused command first and keep workers at `--maxWorkers=1`.
 - If no registered expired Codex-owned process is available for cleanup, the iteration must not stop unattributed processes and must preserve the pending verification state.
 
 ## Active Execution Queue
@@ -161,7 +161,7 @@ Entry 2:
 - Boundary: browser resource hints, image warming, and user-initiated adjacent preload side effects must stay page-owned while media source selection rules become testable model output.
 - Slice: extract primary-media hint selection and adjacent preload candidate selection into model helpers; keep `preconnect`, `preloadResource`, `Image`, and `warmDecodedImage` calls in the page.
 - Verification: run the post-detail model spec, the post-detail page spec, the complexity budget check, `git diff --check`, text-style audit, and GitNexus change detection.
-- Exit: media preload policy can be reviewed without reading browser API calls.
+- Exit: media preload policy is reviewable without reading browser API calls.
 
 Entry 3:
 
@@ -432,7 +432,7 @@ Target:
 
 Execution Policy:
 
-- Contract tests may assert route outcomes, API payload normalization, cache classification, auth/session invariants, readiness selectors, accessibility behavior, and user-visible component states.
+- Contract test scope includes route outcomes, API payload normalization, cache classification, auth/session invariants, readiness selectors, accessibility behavior, and observable component states.
 - Contract tests must not assert private function boundaries, current SFC structure, deep import paths, styling internals, or exact DOM nesting unless those are declared as public contracts.
 - New tests around a large route file must prefer extracted model, policy, adapter, or facade modules over mounting the route to preserve internal structure.
 - Bug fixes in hotspot files must include one of these outcomes: extracted pure logic, narrowed adapter boundary, deleted duplicated path, or a residual lock-in note in the slice log.
@@ -450,7 +450,7 @@ Acceptance Criteria:
 - Release validation protects route, API, auth, cache, and security behavior without requiring current page/component topology to remain permanent.
 - Optimization logs classify work as `contract protection`, `architecture mobility`, `implementation hardening`, or `temporary guard`.
 - `implementation hardening` entries must include a migration note when the protected implementation is not intended as the final boundary.
-- Future architecture replacement can swap large page internals, component topology, state internals, or API implementation details while keeping the documented contracts green.
+- Future architecture replacement remains valid when large page internals, component topology, state internals, or API implementation details change while the documented contracts stay green.
 
 ## Frontend Analysis Baseline
 
@@ -461,7 +461,7 @@ The frontend is a Vue SPA deployed on Cloudflare Pages with Pages Functions and 
 Runtime ownership:
 
 - Public content flows include home, explore, search, post detail, author detail, schedule, community, and static information pages.
-- Authenticated flows include profile, notifications, favorites, comments, likes, history, reports, followers, following, blocked users, settings, and public user profile access.
+- Authenticated flows include profile, notifications, favorites, comments, likes, history, reports, relations, blocked accounts, settings, and public profile access.
 - Sensitive flows include profile security, profile settings, device management redirects, security activity redirects, MFA, passkey, password, email, and verification interactions.
 - Cross-cutting runtime behavior includes BFF cookie session restore, client security credentials, challenge and verification retries, service worker caching, update coordination, prefetch, analytics consent, and runtime integrity protection.
 
@@ -531,7 +531,7 @@ Core modules:
 
 Capability controls:
 
-- Public content can optimize for cacheability and prefetch.
+- Public content optimization uses cacheability and prefetch where route sensitivity permits it.
 - Private and sensitive flows must prefer BFF session freshness, runtime authorization cache, explicit route metadata, and no persistent access token material.
 - Edge and service worker policies must use allowlists or denylists with tests.
 
@@ -589,7 +589,7 @@ Request model:
 
 State model:
 
-- Auth store keeps user state, loading/error state, runtime authorization cache, session expiry, and step-up state.
+- Auth store keeps account state, loading/error state, runtime authorization cache, session expiry, and step-up state.
 - Access token material must not persist in browser storage.
 - Session recovery resolves through BFF session summary and refresh-cookie behavior.
 - Pinia persisted state is used for settings, theme, schedule, and non-sensitive preferences.
@@ -608,7 +608,7 @@ Current performance controls:
 - Route components load through dynamic imports.
 - Global decorative layers, challenge dialogs, verification dialogs, toast container, media-heavy components, settings panel, image cropper, comment lists, and desk pet use async component boundaries where appropriate.
 - `App.vue` uses `KeepAlive` with a bounded max and route keys based on stable `viewKey`.
-- Background work uses `scheduleTask` and user-intent gates for fingerprinting, auth bootstrap, service worker registration, background sync, route prefetch, popular content prefetch, and cache cleanup.
+- Background work uses `scheduleTask` and interaction-intent gates for fingerprinting, auth bootstrap, service worker registration, background sync, route prefetch, popular content prefetch, and cache cleanup.
 - Chunk load failures trigger a single-tab hard reload guard.
 - Vite build policy includes custom plugins, hashed asset naming, service worker cache version injection, SRI, critical CSS, async CSS, static prerendering, scoped obfuscation, treeshaking, and chunk budget checks.
 
@@ -616,7 +616,7 @@ Performance risks:
 
 - Large SFCs still combine rendering, animation, fetch, and interaction state, which increases parse and maintenance cost.
 - Decorative and interactive subsystems need continued tests around scheduler boundaries, observer wrappers, and delayed mounting.
-- Prefetch policies must continue respecting auth state, duplicate request gates, and user/data-saving intent.
+- Prefetch policies must continue respecting auth state, duplicate request gates, and interaction/data-saving intent.
 
 ### 9. Engineering Standards Analysis
 
@@ -649,7 +649,7 @@ Current security controls:
 Security risks:
 
 - Security-sensitive chunks use optional obfuscation only when explicitly enabled; obfuscation is not a security boundary.
-- Client security credentials may persist non-secret summary fields; tests must keep secret fields excluded.
+- Client security credentials persist only non-secret summary fields when persistence is required; tests must keep secret fields excluded.
 - Any new BFF endpoint must be classified for public/private cache behavior and route sensitivity before release.
 
 ### 11. Current Controls
@@ -668,7 +668,7 @@ Security risks:
 - Several component domains have lower direct component-test density than `profile` and `business`.
 - Some import boundaries are still deep imports even after new barrels are introduced.
 - Multiple runtime subsystems depend on global listeners, delayed tasks, and browser APIs; regressions are easy when cleanup tests are missing.
-- Test growth can accidentally preserve the current component topology, route SFC structure, and helper placement as if they were final architecture.
+- Test growth risks preserving the current component topology, route SFC structure, and helper placement as if they were final architecture.
 - Tactical fixes increase replacement cost when they patch hotspot internals without extracting a contract or adapter boundary.
 - GitNexus and Serena MCP availability requires runtime confirmation before graph-backed blast-radius verification.
 - Beta/alpha framework and toolchain versions increase upgrade risk and require strict release evidence.
@@ -681,7 +681,7 @@ Priority sequence:
 - Add focused component tests to lower-density domains: `auth`, `home`, `comment`, and remaining appearance workflows.
 - Migrate consumers to tested component barrels in small batches, starting with low-risk static pages, then layout and route pages.
 - Contract tests must cover route outcomes, API normalization, auth/session invariants, cache classification, and accessibility states before asserting current internal component structure.
-- Convert bug fixes in hotspots into adapter or policy extraction work when the fix touches behavior that may survive a future architecture replacement.
+- Convert bug fixes in hotspots into adapter or policy extraction work when the fix touches behavior that belongs to a future architecture replacement.
 - Mark unavoidable implementation guards as temporary and state the replacement condition in the slice log.
 - Add or extend audit rules only after existing drift is fixed or explicitly allowlisted.
 - Keep API contract changes paired with service-level normalization tests and API client retry/error tests.
@@ -696,7 +696,7 @@ Priority sequence:
 
 - Public browsing must keep anonymous content routes cacheable where safe: home, posts, authors, schedules, community discovery, and search discovery.
 - Account, notification, relation, history, report, preference, device, audit, email, MFA, and security activity flows must remain BFF-session scoped.
-- Each user-facing workflow must expose a stable readiness selector or route contract before it becomes part of release smoke.
+- Each route-level workflow must expose a stable readiness selector or route contract before it becomes part of release smoke.
 
 Acceptance evidence:
 
@@ -751,7 +751,7 @@ Acceptance evidence:
 - `src/api/client.ts` remains the only HTTP transport entrypoint.
 - Endpoint services must own URL construction, response normalization, and domain-specific request options.
 - Request security policy must remain centralized in `src/api/client/request-security.ts` and `src/api/client/client-security.ts`.
-- Private BFF-backed GET endpoints must be listed in the Service Worker private cache policy when they can be reached without an `Authorization` header.
+- Private BFF-backed GET endpoints reachable without an `Authorization` header must be listed in the Service Worker private cache policy.
 
 Acceptance evidence:
 
@@ -763,7 +763,7 @@ Acceptance evidence:
 
 - Auth store must persist no access token material.
 - Session truth must resolve through the BFF session summary and refresh cookie flow.
-- Settings, theme, and non-sensitive preferences may persist locally, but privacy toggles must normalize analytics and performance tracking defaults.
+- Settings, theme, and non-sensitive preferences persist locally only when they remain non-sensitive; privacy toggles must normalize analytics and performance tracking defaults.
 - Stores must not duplicate API response normalization already owned by endpoint services.
 
 Acceptance evidence:
@@ -785,9 +785,9 @@ Acceptance evidence:
 
 ### Performance
 
-- Decorative, analytics, fingerprint, Service Worker, and prefetch work must remain deferred behind scheduler or user-intent gates.
+- Decorative, analytics, fingerprint, Service Worker, and prefetch work must remain deferred behind scheduler or interaction-intent gates.
 - Static assets with hashes must remain immutable; HTML and Service Worker must remain short-cache or no-cache.
-- Public content can use SW caching; private user-scoped API data must not be cached by default.
+- Public content is eligible for SW caching; private account-scoped API data must not be cached by default.
 - Route prefetch must respect save-data and avoid duplicating active requests.
 
 Acceptance evidence:
@@ -824,7 +824,7 @@ Acceptance evidence:
 
 Slice log classification:
 
-- `contract protection`: protects user-visible behavior, API shape, route result, auth/session invariant, cache classification, accessibility behavior, or release evidence.
+- `contract protection`: protects observable behavior, API shape, route result, auth/session invariant, cache classification, accessibility behavior, or release evidence.
 - `architecture mobility`: extracts a model, policy, adapter, facade, barrel, or boundary that makes implementation replacement easier.
 - `implementation hardening`: fixes or tests current internals that are not yet a replacement boundary.
 - `temporary guard`: protects an implementation detail only until a declared replacement condition is met.
@@ -833,7 +833,7 @@ Required slice fields:
 
 - `Classification`: one or more values from the slice log classification list.
 - `Mobility effect`: states whether the slice reduces coupling, preserves a replacement boundary, or temporarily hardens current internals.
-- `Replacement condition`: required for `implementation hardening` and `temporary guard`; states when the test, fix, or constraint can be removed or rewritten.
+- `Replacement condition`: required for `implementation hardening` and `temporary guard`; states the condition that removes or rewrites the test, fix, or constraint.
 
 ### SW Private API Cache Isolation
 
@@ -896,7 +896,7 @@ Policy:
 - Complexity budget failures must report actionable reason codes instead of a generic over-limit message.
 - Queued refactor files remain violations when their registered `maxLines` limit is exceeded.
 - Extracted large-file baselines must be tightened to the new observed line count before the slice is considered complete.
-- Component-specific CSS may move into the layered component style system when selectors are fully namespaced and do not depend on scoped-only Vue CSS features.
+- Component-specific CSS moves into the layered component style system only when selectors are fully namespaced and do not depend on scoped-only Vue CSS features.
 - DeskPet interaction constants must live in a colocated configuration module instead of expanding the component setup block.
 - DeskPet viewport math must be testable as pure positioning helpers, including bounds, edge snap, peek overflow, and default corner selection.
 
@@ -3092,7 +3092,7 @@ Mobility effect:
 
 Replacement condition:
 
-- The body-read fallback guard can be rewritten when error response parsing moves behind a transport adapter, provided HTML/non-JSON upstream failures still map to standardized `ApiError` output.
+- Rewrite the body-read fallback guard when error response parsing moves behind a transport adapter, provided HTML/non-JSON upstream failures still map to standardized `ApiError` output.
 
 Changed files:
 
@@ -3237,12 +3237,12 @@ Classification:
 
 Mobility effect:
 
-- Pushes browser API usage behind shared wrappers and release audit gates so implementation can move without duplicating raw observer and idle boundaries.
+- Pushes browser API usage behind shared wrappers and release audit gates so implementation movement does not duplicate raw observer and idle boundaries.
 - Converts `AppearancePresetPicker` observer usage into a shared visibility boundary instead of hardening a component-local raw observer.
 
 Replacement condition:
 
-- None for the audit gate. The component implementation can be replaced when it continues to use the shared visibility boundary or a declared successor adapter.
+- None for the audit gate. Component replacement is allowed when it continues to use the shared visibility boundary or a declared successor adapter.
 
 Changed files:
 
@@ -3277,7 +3277,7 @@ Classification:
 
 Mobility effect:
 
-- Protects user-visible preset application outcomes and failure handling while still testing the current component entrypoint.
+- Protects observable preset application outcomes and failure handling while still testing the current component entrypoint.
 - Does not make SettingsPanel integration or deep component placement the long-term boundary.
 
 Replacement condition:
@@ -3314,12 +3314,12 @@ Classification:
 
 Mobility effect:
 
-- Creates a public import boundary for appearance primitives so consumers can migrate away from deep imports in small batches.
+- Creates a public import boundary for appearance primitives and supports small-batch migration away from deep imports.
 - Keeps existing deep imports valid during migration instead of forcing a broad rewrite.
 
 Replacement condition:
 
-- None. The barrel is the intended migration boundary; exports may change only through a focused contract update.
+- None. The barrel is the intended migration boundary; exports change only through a focused contract update.
 
 Changed files:
 
@@ -3352,7 +3352,7 @@ Classification:
 Mobility effect:
 
 - Release summaries now classify current worktree changes, not only the resolved committed git range.
-- Local validation evidence can be used before commit without under-reporting modified, staged, or untracked files.
+- Local validation evidence supports pre-commit use without under-reporting modified, staged, or untracked files.
 
 Replacement condition:
 
@@ -3444,7 +3444,7 @@ Policy:
 - Dead-code audit must preserve Knip warning/info severity for parsed findings and fail only when Knip exits non-zero without parsed findings.
 - Dead-code cleanup findings must be addressed as a separate source/dependency cleanup task, not hidden by audit parser fallback behavior.
 - Service worker internals must remain reachable through `src/sw/index.ts` in Knip entry configuration.
-- Direct devDependencies reported by Knip may be removed only after package-manager why/search evidence shows no direct runtime or script use.
+- Remove direct devDependencies reported by Knip only after package-manager why/search evidence shows no direct runtime or script use.
 
 Validation:
 
@@ -3488,7 +3488,7 @@ Classification:
 Mobility effect:
 
 - Release smoke and production route matrices now validate against the actual Vue Router metadata.
-- Route coverage can evolve in the release contract without silently diverging from runtime security classification.
+- Route coverage evolves in the release contract without silently diverging from runtime security classification.
 
 Replacement condition:
 
@@ -3513,7 +3513,7 @@ Validation:
 Result:
 
 - Release route contract tests passed with `12` tests.
-- Authenticated and guest release matrices are now checked against runtime router metadata before release validation can pass.
+- Authenticated and guest release matrices are now checked against runtime router metadata before release validation passes.
 
 ### Bundle Budget Chunk Classification
 
@@ -3584,8 +3584,8 @@ Changed files:
 
 Policy:
 
-- Markdown headings must not use discussion-style labels such as `Strengths`, `Recommendations`, question headings, or equivalent Chinese labels.
-- Markdown text must not use advisory or speculative wording such as `recommend`, `suggest`, `maybe`, `perhaps`, `应该`, `建议`, or `可能`.
+- Markdown headings must not use audit-blocked discussion-style labels, question headings, or equivalent Chinese labels.
+- Markdown text must not use audit-blocked advisory or speculative wording.
 - Text style audit must run in hook and full release static gates after complexity budget checks and before frontend pattern checks.
 - Existing documentation drift must be rewritten to constraints, observable state, failure behavior, and verification requirements.
 

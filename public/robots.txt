@@ -2,12 +2,12 @@
 # https://www.robotstxt.org/robotstxt.html
 # 更新时间: 2026-03-22
 
-# 全局规则 - 允许所有爬虫
+# 全局抓取策略
 User-agent: *
 Allow: /
 Crawl-delay: 1
 
-# 禁止访问的路径
+# Blocked paths
 Disallow: /api/
 Disallow: /admin/
 Disallow: /profile/
@@ -21,32 +21,32 @@ Disallow: /_next/
 Disallow: /dist/
 Disallow: /node_modules/
 
-# 禁止访问查询参数页面（避免重复内容）
+# Duplicate-content query parameters
 Disallow: /*?*source=
 Disallow: /*?*utm_
 Disallow: /*?*ref=
 
-# Google 爬虫特殊规则
+# Googlebot policy
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 0.5
 
-# Google 图片爬虫
+# Google image crawler policy
 User-agent: Googlebot-Image
 Allow: /
 Disallow: /api/
 
-# Bing 爬虫
+# Bing crawler policy
 User-agent: Bingbot
 Allow: /
 Crawl-delay: 1
 
-# 百度爬虫
+# Baidu crawler policy
 User-agent: Baiduspider
 Allow: /
 Crawl-delay: 2
 
-# 禁止不良爬虫
+# Blocked crawlers
 User-agent: AhrefsBot
 Disallow: /
 
@@ -59,8 +59,8 @@ Disallow: /
 User-agent: MJ12bot
 Disallow: /
 
-# Sitemap 位置
+# Sitemap
 Sitemap: https://momichan.com/sitemap.xml
 
-# 主机信息（可选）
+# Host
 Host: momichan.com

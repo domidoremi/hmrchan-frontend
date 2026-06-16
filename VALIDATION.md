@@ -172,9 +172,9 @@ bun run test:e2e
 bun run validate:release --mode local
 ```
 
-## 本地功能链账号矩阵
+## 本地功能链认证矩阵
 
-账号矩阵是显式低输出门禁，不属于默认 `pre-push` / `validate:release:local`。它用于验证本地后端、Pages facade 与浏览器 session 行为是否能跑通，不替代统一 release runner。
+认证矩阵是显式低输出门禁，不属于默认 `pre-push` / `validate:release:local`。它验证本地后端、Pages facade 与浏览器 session 行为，不替代统一 release runner。
 
 ```bash
 PRIMARY_USERNAME='<primary-user>' \
@@ -191,11 +191,11 @@ bun run test:functional-chain:local
 ```
 
 - 目标入口固定为同源 facade：`POST /api/v1/auth/login`
-- 账号与密码只允许通过环境变量传入，不写入仓库、不生成 tracked `.env`；上方示例必须保留占位符，不提交本机真实测试账号
+- 凭据只允许通过环境变量传入，不写入仓库、不生成 tracked `.env`；示例必须保留占位符，不提交本机凭据
 - artifact 输出到 `output/functional-chain/<timestamp>/summary.json` 和 `summary.md`
 - `FUNCTIONAL_CHAIN_BASE_URL` 可指向已启动的本地前端；未设置时脚本会 build 并启动本地 Pages preview
 - Docker、本地后端栈或 local audit bridge 不可用时，结果必须记录为 `environment-blocked`，不能当作通过
-- 当前矩阵只覆盖登录、`/auth/session:resolve`、session 隔离、403 locked/inactive 与错误密码；评论/点赞/通知等双用户深链应作为后续独立批次
+- 当前矩阵只覆盖登录、`/auth/session:resolve`、session 隔离、403 locked/inactive 与错误凭据；评论、点赞、通知等双主体深链必须作为后续独立批次
 
 ## 合同与自动演进
 
@@ -222,22 +222,22 @@ runner 会根据本次交付命中的文件范围自动生成风险摘要，重�
 - `src/edge` / `functions` / `workers` / `wrangler.toml`
 - 验证合同与 runner 自身
 
-## 推荐执行顺序
+## Execution Policy
 
-日常开发：
+默认本地门禁：
 
 ```bash
 bun run validate:release
 ```
 
-候选发布前：
+候选验证：
 
 ```bash
 CONTROLLED_BASE_URL=https://controlled.example.com \
 bun run validate:release --mode candidate
 ```
 
-`main` 部署到 Pages 后：
+`main` 部署到 Pages 后的生产验收：
 
 ```bash
 BASE_URL=https://<public-site-origin> \
