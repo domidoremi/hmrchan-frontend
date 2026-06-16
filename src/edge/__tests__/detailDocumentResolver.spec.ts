@@ -72,7 +72,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const documentConfig = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.xyz/posts/${POST_ID}`),
+      new URL(`https://momichan.com/posts/${POST_ID}`),
       makeEnv({
         API_BASE_URL: ' https://api.example.test/// ',
       })
@@ -138,7 +138,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const documentConfig = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.xyz/posts/${POST_ID}`),
+      new URL(`https://momichan.com/posts/${POST_ID}`),
       makeEnv()
     )
 
@@ -165,7 +165,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     stubFetch(jsonResponse({ code: 'NOT_FOUND' }, 404))
 
     const documentConfig = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.xyz/posts/${POST_ID}`),
+      new URL(`https://momichan.com/posts/${POST_ID}`),
       makeEnv()
     )
 

@@ -316,7 +316,7 @@ export function createAggregateAnalysis(summary) {
   }
 
   const lines = []
-  lines.push('# momichan.xyz Lighthouse 聚合分析报告')
+  lines.push('# momichan.com Lighthouse 聚合分析报告')
   lines.push('')
   lines.push('## 1. 覆盖范围与排除项')
   lines.push(`- 生成时间：${summary.generatedAt}`)

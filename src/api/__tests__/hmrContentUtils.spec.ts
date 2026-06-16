@@ -5,9 +5,12 @@ import {
   extractCursorCollection,
   extractList,
   hasRenderableMediaRecord,
+  pickBoolean,
   pickNestedOptionalString,
   pickNumber,
   pickString,
+  pickStringList,
+  pickUsableUrl,
   trimText,
 } from '@/api/hmrContentUtils'
 
@@ -26,6 +29,34 @@ describe('hmrContentUtils scalar pickers', () => {
       pickNumber({ views: Number.POSITIVE_INFINITY, fallbackViews: 7 }, ['views', 'fallbackViews'])
     ).toBe(7)
     expect(pickNumber({ views: 'not-a-number' }, ['views'], 9)).toBe(9)
+  })
+
+  it('normalizes boolean-like candidates', () => {
+    expect(pickBoolean({ pinned: ' true ' }, ['pinned'])).toBe(true)
+    expect(pickBoolean({ pinned: 0, fallbackPinned: '1' }, ['pinned', 'fallbackPinned'])).toBe(
+      false
+    )
+    expect(pickBoolean({ pinned: 'false' }, ['pinned'])).toBe(false)
+  })
+
+  it('normalizes string lists from arrays and comma-separated strings', () => {
+    expect(pickStringList({ tags: [' alpha ', '', 7, 'beta'] }, ['tags'])).toEqual([
+      'alpha',
+      'beta',
+    ])
+    expect(pickStringList({ keywords: 'alpha, beta, ,gamma' }, ['keywords'], 2)).toEqual([
+      'alpha',
+      'beta',
+    ])
+  })
+
+  it('picks usable URL strings while ignoring placeholders', () => {
+    expect(
+      pickUsableUrl({ thumbnail_url: ' # ', image_url: ' /image.webp ' }, [
+        'thumbnail_url',
+        'image_url',
+      ])
+    ).toBe('/image.webp')
   })
 
   it('picks nested optional strings only from record candidates', () => {

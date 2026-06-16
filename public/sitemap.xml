@@ -6,59 +6,59 @@
   <!-- 使用 scripts/generate-sitemap.js 生成 -->
   
   <url>
-    <loc>https://momichan.xyz/</loc>
+    <loc>https://momichan.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1</priority>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.xyz/" />
-    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.xyz/" />
-    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.xyz/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.com/" />
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.com/" />
+    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.com/" />
   </url>
   <url>
-    <loc>https://momichan.xyz/explore</loc>
+    <loc>https://momichan.com/explore</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.xyz/explore" />
-    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.xyz/explore" />
-    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.xyz/explore" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.com/explore" />
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.com/explore" />
+    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.com/explore" />
   </url>
   <url>
-    <loc>https://momichan.xyz/community</loc>
+    <loc>https://momichan.com/community</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.xyz/community" />
-    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.xyz/community" />
-    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.xyz/community" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.com/community" />
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.com/community" />
+    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.com/community" />
   </url>
   <url>
-    <loc>https://momichan.xyz/schedule</loc>
+    <loc>https://momichan.com/schedule</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.xyz/schedule" />
-    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.xyz/schedule" />
-    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.xyz/schedule" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.com/schedule" />
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.com/schedule" />
+    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.com/schedule" />
   </url>
   <url>
-    <loc>https://momichan.xyz/about</loc>
+    <loc>https://momichan.com/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.xyz/about" />
-    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.xyz/about" />
-    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.xyz/about" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.com/about" />
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.com/about" />
+    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.com/about" />
   </url>
   <url>
-    <loc>https://momichan.xyz/contact</loc>
+    <loc>https://momichan.com/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.xyz/contact" />
-    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.xyz/contact" />
-    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.xyz/contact" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.com/contact" />
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.com/contact" />
+    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.com/contact" />
   </url>
   <url>
-    <loc>https://momichan.xyz/join-us</loc>
+    <loc>https://momichan.com/join-us</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.xyz/join-us" />
-    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.xyz/join-us" />
-    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.xyz/join-us" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.com/join-us" />
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://momichan.com/join-us" />
+    <xhtml:link rel="alternate" hreflang="ja-JP" href="https://momichan.com/join-us" />
   </url>
 </urlset>

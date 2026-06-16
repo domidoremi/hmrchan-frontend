@@ -1,7 +1,8 @@
 import { readFile } from 'fs/promises'
 import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { summarizeAuditIssues } from './utils'
 
 function hasFileWithExtension(dir: string, ext: string): boolean {
   if (!existsSync(dir)) return false
@@ -106,12 +107,7 @@ const buildArtifactAudit: AuditModule = {
       })
     }
 
-    const errorCount = issues.filter((i) => i.severity === 'error').length
-    const warningCount = issues.filter((i) => i.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeAuditIssues(issues)
 
     const summary =
       status === 'pass'

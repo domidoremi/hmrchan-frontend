@@ -21,10 +21,13 @@ import {
   renderSkippedChecks,
   writeRunnerPreflightArtifacts,
 } from './lib/prod-regression-report.js'
+import { maskEmail, maskIdentifier, maskUrl, sanitizeCode } from './lib/prod-regression-input.js'
+import { formatTimestamp } from './lib/time.js'
+import { normalizeAbsoluteBaseUrl } from './lib/url.js'
 
 applyLocalAuditEnvToProcess()
 
-const DEFAULT_BASE_URL = 'https://momichan.xyz'
+const DEFAULT_BASE_URL = 'https://momichan.com'
 const DEFAULT_SECONDARY_EMAIL_MODE = 'user-assisted'
 const SKIP_LIGHTHOUSE_ENV = 'PROD_REGRESSION_SKIP_LIGHTHOUSE'
 const SITE_NAME = 'MomiChan'
@@ -111,10 +114,10 @@ function parseArgs(argv) {
 
 function printHelp() {
   console.log(`
-momichan.xyz 生产深度回归 runner
+momichan.com 生产深度回归 runner
 
 用法:
-  BASE_URL=https://momichan.xyz \\
+  BASE_URL=https://momichan.com \\
   PRIMARY_USERNAME=<main account> \\
   PRIMARY_PASSWORD=<main password> \\
   SECONDARY_EMAIL_MODE=user-assisted \\
@@ -129,7 +132,7 @@ momichan.xyz 生产深度回归 runner
   --help       显示帮助
 
 固定输入契约:
-  BASE_URL                默认 https://momichan.xyz
+  BASE_URL                默认 https://momichan.com
   PRIMARY_USERNAME        必填
   PRIMARY_PASSWORD        必填
   SECONDARY_EMAIL_MODE    必须为 user-assisted
@@ -148,28 +151,6 @@ legacy post residual 输入:
   - 忘记密码重置链接
   - Turnstile（若触发）
 `)
-}
-
-function formatTimestamp(date = new Date()) {
-  const pad = (value) => String(value).padStart(2, '0')
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-    '-',
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join('')
-}
-
-function normalizeBaseUrl(raw) {
-  const url = new URL(raw || DEFAULT_BASE_URL)
-  url.hash = ''
-  if (url.pathname === '/') {
-    url.pathname = ''
-  }
-  return url.toString().replace(/\/$/, '')
 }
 
 function toAbsoluteArtifactDir(input, timestamp) {
@@ -228,39 +209,6 @@ function normalizePageText(value) {
 
 function normalizeTitleFragment(value) {
   return normalizePageText(String(value ?? ''))
-}
-
-function maskEmail(email) {
-  if (!email) return ''
-  const [local, domain] = String(email).split('@')
-  if (!local || !domain) return truncate(String(email), 60)
-  const visible = local.length <= 2 ? local : local.slice(0, 2)
-  return `${visible}***@${domain}`
-}
-
-function maskIdentifier(value) {
-  if (!value) return ''
-  if (String(value).includes('@')) return maskEmail(value)
-  const text = String(value)
-  if (text.length <= 4) return `${text[0] ?? ''}***`
-  return `${text.slice(0, 2)}***${text.slice(-2)}`
-}
-
-function sanitizeCode(raw) {
-  return String(raw ?? '')
-    .replace(/\D/g, '')
-    .slice(0, 6)
-}
-
-function maskUrl(raw) {
-  if (!raw) return ''
-  try {
-    const url = new URL(raw)
-    const paramKeys = [...url.searchParams.keys()]
-    return `${url.origin}${url.pathname}${paramKeys.length > 0 ? `?[${paramKeys.join(',')}]` : ''}`
-  } catch {
-    return truncate(String(raw), 120)
-  }
 }
 
 function getNestedValue(object, keyPath) {
@@ -3426,7 +3374,7 @@ function buildMarkdownReport(state) {
   const lingeringData = state.cleanup.filter((item) => item.restored === false)
 
   const lines = [
-    '# momichan.xyz 生产深度回归报告',
+    '# momichan.com 生产深度回归报告',
     '',
     `- 开始时间: ${state.startedAt}`,
     `- 结束时间: ${state.finishedAt}`,
@@ -3507,7 +3455,10 @@ function finalizeState(state) {
 
 function buildConfig(options) {
   const timestamp = formatTimestamp()
-  const baseUrl = normalizeBaseUrl(process.env.BASE_URL ?? DEFAULT_BASE_URL)
+  const baseUrl = normalizeAbsoluteBaseUrl(
+    process.env.BASE_URL ?? DEFAULT_BASE_URL,
+    DEFAULT_BASE_URL
+  )
   const primaryUsername = (process.env.PRIMARY_USERNAME ?? '').trim()
   const primaryPassword = process.env.PRIMARY_PASSWORD ?? ''
   const secondaryEmailMode = (
@@ -3617,7 +3568,7 @@ async function main() {
     writeText(
       summaryMdPath,
       [
-        '# momichan.xyz legacy post residual blocker',
+        '# momichan.com legacy post residual blocker',
         '',
         `- Base URL: ${config.baseUrl}`,
         `- Residual report: ${path.resolve('build', 'reports', 'uuidv7-prod-post-residuals', 'summary.json')}`,

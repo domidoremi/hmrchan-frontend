@@ -15,10 +15,13 @@ import {
   hasRenderableMediaRecord,
   isRecord,
   isTextOnlyMediaKind,
+  pickBoolean,
+  pickStringList,
   pickNestedOptionalString,
   pickNumber,
   pickOptionalString,
   pickString,
+  pickUsableUrl,
   trimText,
 } from './hmrContentUtils'
 import type { HmrScheduleItem, HmrTrendSummary } from '@/hmr/types'
@@ -272,43 +275,6 @@ function mapDiscussionListItem(value: unknown, index: number): HmrCommunityItem 
   return item
 }
 
-function pickBoolean(record: Record<string, unknown>, keys: string[]): boolean {
-  for (const key of keys) {
-    const value = record[key]
-    if (typeof value === 'boolean') return value
-    if (typeof value === 'number') return value !== 0
-    if (typeof value === 'string' && value.trim()) {
-      const normalized = value.trim().toLowerCase()
-      if (normalized === 'true' || normalized === '1') return true
-      if (normalized === 'false' || normalized === '0') return false
-    }
-  }
-
-  return false
-}
-
-function pickStringList(record: Record<string, unknown>, keys: string[]): string[] {
-  for (const key of keys) {
-    const value = record[key]
-    if (Array.isArray(value)) {
-      return value
-        .filter((item): item is string => typeof item === 'string')
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .slice(0, 8)
-    }
-    if (typeof value === 'string' && value.trim()) {
-      return value
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .slice(0, 8)
-    }
-  }
-
-  return []
-}
-
 function mapDiscussionCommentItem(value: unknown, index: number): HmrCommunityItem {
   const record = isRecord(value) ? value : {}
   const userRecord = isRecord(record.user) ? record.user : {}
@@ -437,7 +403,7 @@ function mapMediaItem(value: unknown, index: number): HmrMediaItem {
     'media'
   )
   const streamUrl =
-    pickMediaUrl(record, [
+    pickUsableUrl(record, [
       'stream_url',
       'streamUrl',
       'download_url',
@@ -447,7 +413,7 @@ function mapMediaItem(value: unknown, index: number): HmrMediaItem {
       'url',
     ]) ?? (mediaId ? buildMediaStreamUrl(mediaId) : '')
   const thumbnailUrl =
-    pickMediaUrl(record, [
+    pickUsableUrl(record, [
       'thumbnail_url',
       'thumbnailUrl',
       'poster_url',
@@ -463,18 +429,6 @@ function mapMediaItem(value: unknown, index: number): HmrMediaItem {
     thumbnailUrl,
     mediaType,
   }
-}
-
-function pickMediaUrl(record: Record<string, unknown>, keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = record[key]
-    if (typeof value !== 'string') continue
-
-    const normalized = value.trim()
-    if (normalized && normalized !== '#') return normalized
-  }
-
-  return undefined
 }
 
 function buildMediaStreamUrl(mediaId: string): string {

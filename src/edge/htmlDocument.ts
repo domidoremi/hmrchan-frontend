@@ -1,8 +1,9 @@
 import { STATIC_HOME_PRERENDER_IMAGE } from '../fallbacks/generated/homePrerenderManifest'
 import { supportedLocales } from '../i18n/locales'
+import { escapeHtml } from './htmlEscaping'
 
 const SITE_NAME = 'MomiChan'
-export const SITE_ORIGIN = 'https://momichan.xyz'
+export const SITE_ORIGIN = 'https://momichan.com'
 export const DEFAULT_OG_IMAGE_PATH = '/icons/sitting-512.webp'
 export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}${DEFAULT_OG_IMAGE_PATH}`
 const HOME_PRERENDER_IMAGE_PATH = STATIC_HOME_PRERENDER_IMAGE.href
@@ -74,15 +75,6 @@ type StaticRouteDocument = {
   shellBody: string
   type?: 'WebPage' | 'CollectionPage' | 'AboutPage' | 'ContactPage'
   options?: HtmlDocumentOverrides
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
 }
 
 function buildTitle(pageTitle: string): string {

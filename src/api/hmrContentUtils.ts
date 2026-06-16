@@ -54,6 +54,55 @@ export function pickNumber(record: JsonRecord, keys: string[], fallback = 0): nu
   return fallback
 }
 
+export function pickBoolean(record: JsonRecord, keys: string[]): boolean {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value !== 0
+    if (typeof value === 'string' && value.trim()) {
+      const normalized = value.trim().toLowerCase()
+      if (normalized === 'true' || normalized === '1') return true
+      if (normalized === 'false' || normalized === '0') return false
+    }
+  }
+
+  return false
+}
+
+export function pickStringList(record: JsonRecord, keys: string[], limit = 8): string[] {
+  for (const key of keys) {
+    const value = record[key]
+    if (Array.isArray(value)) {
+      return value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, limit)
+    }
+    if (typeof value === 'string' && value.trim()) {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, limit)
+    }
+  }
+
+  return []
+}
+
+export function pickUsableUrl(record: JsonRecord, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value !== 'string') continue
+
+    const normalized = value.trim()
+    if (normalized && normalized !== '#') return normalized
+  }
+
+  return undefined
+}
+
 export function normalizeMediaKind(value?: string): string {
   return (
     value

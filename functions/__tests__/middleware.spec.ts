@@ -16,7 +16,7 @@ vi.mock('../../src/edge/detailDocumentResolver', () => ({
 }))
 
 vi.mock('../../src/edge/htmlDocument', () => ({
-  DEFAULT_OG_IMAGE: 'https://momichan.xyz/og-default.png',
+  DEFAULT_OG_IMAGE: 'https://momichan.com/og-default.png',
   resolveDefaultOgImage,
   resolveCanonicalUrlForOrigin,
   renderPrerenderShell,
@@ -134,20 +134,20 @@ describe('functions/_middleware', () => {
     const { onRequest } = await import('../_middleware')
 
     const response = await onRequest({
-      request: new Request('https://www.momichan.xyz/explore?q=test'),
+      request: new Request('https://www.momichan.com/explore?q=test'),
       env: {},
       next,
     } as never)
 
     expect(next).not.toHaveBeenCalled()
     expect(response.status).toBe(308)
-    expect(response.headers.get('Location')).toBe('https://momichan.xyz/explore?q=test')
+    expect(response.headers.get('Location')).toBe('https://momichan.com/explore?q=test')
     expect(response.headers.get('Strict-Transport-Security')).toBe(
       'max-age=63072000; includeSubDomains; preload'
     )
   })
 
-  it('does not redirect next.momichan.xyz to the main frontend host', async () => {
+  it('does not redirect next.momichan.com to the main frontend host', async () => {
     resolveHtmlDocumentWithEdgeData.mockResolvedValue({
       status: 200,
       title: 'Login · MomiChan',
@@ -172,7 +172,7 @@ describe('functions/_middleware', () => {
     const { onRequest } = await import('../_middleware')
 
     const response = await onRequest({
-      request: new Request('https://next.momichan.xyz/login?redirect=/'),
+      request: new Request('https://next.momichan.com/login?redirect=/'),
       env: {},
       next,
     } as never)
@@ -181,8 +181,8 @@ describe('functions/_middleware', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('Location')).toBeNull()
     const html = await response.text()
-    expect(html).toContain('https://next.momichan.xyz/login')
-    expect(html).not.toContain('https://momichan.xyz/login')
+    expect(html).toContain('https://next.momichan.com/login')
+    expect(html).not.toContain('https://momichan.com/login')
   })
 
   it('applies HTML security headers, rewrites metadata, and returns the edge status', async () => {
@@ -199,7 +199,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/missing'),
+      request: new Request('https://momichan.com/missing'),
       env: {},
       next: () =>
         Promise.resolve(
@@ -256,7 +256,7 @@ describe('functions/_middleware', () => {
     expect(html).not.toContain('content="old description"')
     expect(html).not.toContain('https://old.example')
     expect(html).toContain('content="noindex, nofollow"')
-    expect(html).toContain('href="https://momichan.xyz/missing"')
+    expect(html).toContain('href="https://momichan.com/missing"')
     expect(html).toContain('data-prerender-shell="true"')
     expect(html).not.toContain('/hmrchan/pets/tidyfox/spritesheet.webp')
     expect(html).not.toContain('prerender-shell-content')
@@ -289,7 +289,7 @@ describe('functions/_middleware', () => {
     const { onRequest } = await import('../_middleware')
 
     const responseWithoutCookie = await onRequest({
-      request: new Request('https://momichan.xyz/explore'),
+      request: new Request('https://momichan.com/explore'),
       env: {},
       next: htmlResponse,
     } as never)
@@ -302,7 +302,7 @@ describe('functions/_middleware', () => {
     expect(csrfCookie).toContain('Max-Age=2592000')
 
     const responseWithCookie = await onRequest({
-      request: new Request('https://momichan.xyz/explore', {
+      request: new Request('https://momichan.com/explore', {
         headers: { Cookie: '__Host-momi_origin_csrf=existing-token' },
       }),
       env: {},
@@ -327,7 +327,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/posts/restricted-post'),
+      request: new Request('https://momichan.com/posts/restricted-post'),
       env: {},
       next: () =>
         Promise.resolve(
@@ -343,7 +343,7 @@ describe('functions/_middleware', () => {
     const html = await response.text()
     expect(html).toContain('Public preview restricted · MomiChan')
     expect(html).toContain('This post is temporarily unavailable for public preview')
-    expect(html).toContain('href="https://momichan.xyz/posts/restricted-post"')
+    expect(html).toContain('href="https://momichan.com/posts/restricted-post"')
     expect(html).toContain('data-prerender-shell="true"')
     expect(html).toContain('data-prerender-shell-title="This post is temporarily unavailable')
     expect(html).toContain('<h1>This post is temporarily unavailable for public preview</h1>')
@@ -364,7 +364,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/auth/passkey-recovery'),
+      request: new Request('https://momichan.com/auth/passkey-recovery'),
       env: {},
       next: () =>
         Promise.resolve(
@@ -382,7 +382,7 @@ describe('functions/_middleware', () => {
     expect(response.statusText).toBe('OK')
     expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate')
     expect(resolveHtmlDocumentWithEdgeData).toHaveBeenCalledWith(
-      new URL('https://momichan.xyz/auth/passkey-recovery'),
+      new URL('https://momichan.com/auth/passkey-recovery'),
       {}
     )
   })
@@ -401,7 +401,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/auth/callback'),
+      request: new Request('https://momichan.com/auth/callback'),
       env: {},
       next: () =>
         Promise.resolve(
@@ -419,7 +419,7 @@ describe('functions/_middleware', () => {
     expect(response.statusText).toBe('OK')
     expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate')
     expect(resolveHtmlDocumentWithEdgeData).toHaveBeenCalledWith(
-      new URL('https://momichan.xyz/auth/callback'),
+      new URL('https://momichan.com/auth/callback'),
       {}
     )
   })
@@ -443,7 +443,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/plain'),
+      request: new Request('https://momichan.com/api/plain'),
       env: {},
       next: () => Promise.resolve(original),
     } as never)
@@ -465,7 +465,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/login'),
+      request: new Request('https://momichan.com/login'),
       env: {},
       next: () =>
         Promise.resolve(

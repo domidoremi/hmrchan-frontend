@@ -7,7 +7,7 @@ import { renderPrerenderShell, resolveHtmlDocument } from '../htmlDocument'
 import { STATIC_PRERENDER_ROUTES, createPrerenderedHtml } from '../prerenderHtml'
 
 function resolvePath(path: string) {
-  return resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+  return resolveHtmlDocument(new URL(`https://momichan.com${path}`))
 }
 
 function resolveRepresentativeRoutePath(path: string): string {
@@ -157,13 +157,13 @@ describe('edge HTML document routing', () => {
 
   it('generates a canonical prerender document for the legacy passkey recovery redirect', () => {
     const html = createPrerenderedHtml(
-      '<html><head><title>App</title><link rel="canonical" href="https://momichan.xyz/" /></head><body><div id="app-root"></div></body></html>',
+      '<html><head><title>App</title><link rel="canonical" href="https://momichan.com/" /></head><body><div id="app-root"></div></body></html>',
       '/passkey-recovery'
     )
 
     expect(STATIC_PRERENDER_ROUTES).toContain('/passkey-recovery')
     expect(html).toContain('<title>Passkey recovery · MomiChan</title>')
-    expect(html).toContain('href="https://momichan.xyz/auth/passkey-recovery"')
+    expect(html).toContain('href="https://momichan.com/auth/passkey-recovery"')
     expect(html).toContain('data-prerender-shell-title="Recover Passkey access"')
     expect(html).not.toContain('data-prerender-shell-title="Page not found"')
   })

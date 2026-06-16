@@ -24,6 +24,7 @@ import {
   hasSessionSetCookie,
   parseBffSessionCookieForBrowser,
 } from './lib/functional-chain-session.js'
+import { stripTrailingSlash } from './lib/url.js'
 
 type MatrixAccount = ReturnType<typeof resolveFunctionalChainAccounts>[number]
 type MatrixSummary = ReturnType<typeof createFunctionalChainSummary>
@@ -61,10 +62,6 @@ const previewPorts = resolveLocalAuditPreviewPorts(auditEnv, [
   'FUNCTIONAL_CHAIN_PREVIEW_PORT',
   'LOCAL_AUDIT_PREVIEW_PORTS',
 ])
-
-function normalizeBaseUrl(rawUrl: string): string {
-  return rawUrl.replace(/\/$/, '')
-}
 
 async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -424,7 +421,7 @@ async function main() {
   let exitCode = 0
 
   try {
-    let baseUrl = externalBaseUrl ? normalizeBaseUrl(externalBaseUrl) : ''
+    let baseUrl = externalBaseUrl ? stripTrailingSlash(externalBaseUrl) : ''
     if (!baseUrl) {
       console.log('🏗️ Building project for local Pages preview...')
       await $`node scripts/build.mjs`.env(auditEnv).cwd(projectRoot).quiet()

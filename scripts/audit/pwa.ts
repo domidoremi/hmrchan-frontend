@@ -1,7 +1,8 @@
 import { readFile, readdir, stat } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join, relative } from 'path'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { summarizeAuditIssues } from './utils'
 
 const REQUIRED_MANIFEST_FIELDS = ['name', 'short_name', 'icons', 'start_url', 'display'] as const
 const I18N_LOCALE_CONTRACT_FILE = 'src/i18n/locales.ts'
@@ -52,7 +53,7 @@ const NOINDEX_SITEMAP_PATHS = [
   '/profile/security',
   '/thank-you',
 ] as const
-const SITE_ORIGIN = 'https://momichan.xyz'
+const SITE_ORIGIN = 'https://momichan.com'
 
 function getAttribute(tag: string, attribute: string): string | null {
   const match = tag.match(new RegExp(`\\s${attribute}=["']([^"']*)["']`, 'i'))
@@ -732,8 +733,7 @@ const pwaAudit: AuditModule = {
 
     const defaultAppLocale = localeContract.defaultLocale
     if (!defaultAppLocale || localeContract.supportedLocales.length === 0) {
-      const errorCount = allIssues.filter((issue) => issue.severity === 'error').length
-      const warningCount = allIssues.filter((issue) => issue.severity === 'warning').length
+      const { errorCount, warningCount } = summarizeAuditIssues(allIssues)
       return {
         module: 'pwa',
         status: 'fail',
@@ -764,12 +764,7 @@ const pwaAudit: AuditModule = {
     const sitemapGeneratorIssues = await checkSitemapGenerator(options)
     allIssues.push(...sitemapGeneratorIssues)
 
-    const errorCount = allIssues.filter((i) => i.severity === 'error').length
-    const warningCount = allIssues.filter((i) => i.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeAuditIssues(allIssues)
 
     const summary =
       status === 'pass'

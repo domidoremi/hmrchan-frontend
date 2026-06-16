@@ -18,7 +18,7 @@ import { resolve } from 'path'
 const SITEMAP_PATH = resolve(process.cwd(), 'public/sitemap.xml')
 const ROBOTS_PATH = resolve(process.cwd(), 'public/robots.txt')
 const I18N_SOURCE_PATH = resolve(process.cwd(), 'src/i18n/locales.ts')
-const DEFAULT_PUBLIC_SITE_ORIGIN = 'https://momichan.xyz'
+const DEFAULT_PUBLIC_SITE_ORIGIN = 'https://momichan.com'
 const DRY_RUN = process.argv.includes('--dry-run')
 const outputArgIndex = process.argv.indexOf('--output')
 const robotsOutputArgIndex = process.argv.indexOf('--robots-output')

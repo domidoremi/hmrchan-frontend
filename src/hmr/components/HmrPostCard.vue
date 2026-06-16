@@ -16,15 +16,14 @@
     v-bind="linkAttrs"
   >
     <div class="hmr-project-media hmr-post-card__visual">
-      <img
+      <HmrPriorityImage
         class="hmr-post-card__poster"
         :src="posterUrl"
         :srcset="posterSrcset"
         :sizes="posterSizes"
         :alt="post.title"
         :loading="imageLoading"
-        decoding="async"
-        :fetchpriority="imageFetchPriority"
+        :fetch-priority="imageFetchPriority"
       />
       <div class="hmr-post-card__shade" aria-hidden="true"></div>
       <div class="hmr-post-card__badge-row" :style="badgeStyle" aria-hidden="true">
@@ -62,6 +61,7 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import type { HmrPost } from '@/api/hmrContent'
+import HmrPriorityImage from '@/hmr/components/HmrPriorityImage.vue'
 import { buildThumbnailSrcset } from '@/hmr/runtime/mediaImages'
 import { resolveHmrPlatformVisual } from '@/hmr/runtime/platformVisuals'
 

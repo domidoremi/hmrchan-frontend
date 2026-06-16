@@ -68,7 +68,7 @@ const LEGACY_PATTERNS: Array<{
   },
   {
     rule: 'legacy-production-upstream-host',
-    regex: /https:\/\/api\.momichan\.xyz/g,
+    regex: /https:\/\/api\.momichan\.com/g,
     message:
       'Found hardcoded production upstream host; use explicit env or same-origin entrypoints.',
   },

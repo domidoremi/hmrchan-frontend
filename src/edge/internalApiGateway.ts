@@ -2,7 +2,7 @@ export type EdgeBindingFetcher = {
   fetch(input: Request): Promise<Response>
 }
 
-const INTERNAL_GATEWAY_ORIGIN = 'https://momichan.xyz'
+const INTERNAL_GATEWAY_ORIGIN = 'https://momichan.com'
 
 export type InternalApiGatewayRuntimeEnv = {
   INTERNAL_API_GATEWAY?: EdgeBindingFetcher

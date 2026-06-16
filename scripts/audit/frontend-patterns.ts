@@ -1,6 +1,7 @@
 import { glob, readFile } from 'fs/promises'
 import { join } from 'path'
-import type { AuditIssue, AuditModule, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditIssue, AuditModule, AuditOptions, AuditResult } from './types'
+import { summarizeAuditIssues } from './utils'
 
 interface BoundaryRule {
   rule: string
@@ -48,6 +49,7 @@ const ALLOWED_INTERSECTION_OBSERVER = new Set([
 const ALLOWED_FETCH_PRIORITY = new Set([
   'src/edge/htmlDocument.ts',
   'src/edge/prerenderHtml.ts',
+  'src/hmr/components/HmrPriorityImage.vue',
   'src/hmr/components/HmrPostCard.vue',
   'src/views/PostDetailPage.vue',
 ])
@@ -206,12 +208,7 @@ const frontendPatternsAudit: AuditModule = {
       ...(await scanVaporComponents(options.projectRoot, files)),
     ]
 
-    const errorCount = issues.filter((issue) => issue.severity === 'error').length
-    const warningCount = issues.filter((issue) => issue.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeAuditIssues(issues)
 
     const summary =
       issues.length === 0

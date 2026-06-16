@@ -41,6 +41,7 @@ import {
   ensureLocalAuditSmokeAccount,
   shouldEnsureLocalAuditSmokeAccount,
 } from './lib/local-audit-smoke-account.js'
+import { stripTrailingSlash } from './lib/url.js'
 
 applyLocalAuditEnvToProcess()
 
@@ -199,7 +200,7 @@ const AUTH_BOOTSTRAP_CONTRACT_VERSION =
   process.env['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
   ''
 const E2E_HARD_TIMEOUT_MS = Number.parseInt(process.env['E2E_HARD_TIMEOUT_MS'] ?? '', 10) || 720_000
-const STATIC_PRERENDER_CANONICAL_ORIGIN = 'https://momichan.xyz'
+const STATIC_PRERENDER_CANONICAL_ORIGIN = 'https://momichan.com'
 const PREVIEW_PORT_CANDIDATES = resolveLocalAuditPreviewPorts(AUDIT_ENV, [
   'E2E_PREVIEW_PORTS',
   'E2E_PREVIEW_PORT',
@@ -235,10 +236,6 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     },
   },
 ]
-
-function normalizeBaseUrl(rawUrl: string): string {
-  return rawUrl.replace(/\/$/, '')
-}
 
 function isLocalAuditOrigin(baseUrl: string): boolean {
   try {
@@ -1816,7 +1813,7 @@ async function main(): Promise<void> {
 
     if (externalBaseUrl) {
       setStage('resolve external base URL')
-      baseUrl = normalizeBaseUrl(externalBaseUrl)
+      baseUrl = stripTrailingSlash(externalBaseUrl)
       console.log(`🌐 Using existing E2E base URL: ${baseUrl}`)
     } else {
       setStage('build production bundle')

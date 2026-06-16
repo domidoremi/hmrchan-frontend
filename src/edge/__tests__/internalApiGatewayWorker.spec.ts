@@ -5,7 +5,7 @@ import {
   type InternalApiGatewayWorkerEnv,
 } from '../internalApiGatewayWorker'
 
-const APP_ORIGIN = 'https://momichan.xyz'
+const APP_ORIGIN = 'https://momichan.com'
 const API_BASE_URL = 'https://backend.test'
 
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
@@ -76,7 +76,7 @@ describe('internal API gateway worker', () => {
     const response = await handleInternalApiGatewayRequest(
       createRequest('/api/v1/home/story-deck?limit=5', {
         headers: {
-          Host: 'momichan.xyz',
+          Host: 'momichan.com',
           'CF-Connecting-IP': '203.0.113.10',
         },
       }),

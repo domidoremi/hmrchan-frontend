@@ -1,7 +1,8 @@
 import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { summarizeAuditIssues } from './utils'
 
 const LOCALES_DIR = 'src/i18n/locales'
 const INLINE_I18N_FILE = 'src/i18n/index.ts'
@@ -415,13 +416,7 @@ const i18nAudit: AuditModule = {
       }
     }
 
-    // Determine status
-    const errorCount = issues.filter((i) => i.severity === 'error').length
-    const warningCount = issues.filter((i) => i.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeAuditIssues(issues)
 
     const summary =
       status === 'pass'

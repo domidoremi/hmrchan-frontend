@@ -35,6 +35,7 @@ import {
   resolveValidationArtifactDir,
 } from './lib/validate-release.js'
 import { CommandRunError, runCommand } from './lib/command-runner.js'
+import { formatTimestamp } from './lib/time.js'
 
 const STATIC_GATE_COMMAND_TIMEOUT_MS = Number(
   process.env.VALIDATION_STATIC_COMMAND_TIMEOUT_MS ?? 10 * 60 * 1000
@@ -42,19 +43,6 @@ const STATIC_GATE_COMMAND_TIMEOUT_MS = Number(
 const BROWSER_GATE_COMMAND_TIMEOUT_MS = Number(
   process.env.VALIDATION_BROWSER_COMMAND_TIMEOUT_MS ?? 3 * 60 * 1000
 )
-
-function formatTimestamp(date = new Date()) {
-  const pad = (value) => String(value).padStart(2, '0')
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-    '-',
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join('')
-}
 
 function parseArgs(argv) {
   const options = {
@@ -768,7 +756,7 @@ async function main() {
   const git = resolveGitContext()
   const changeSummary = classifyValidationChanges(git.changedFiles)
   const stagePlan = getValidationStagePlan(options.mode)
-  const baseUrl = (process.env.BASE_URL?.trim() || 'https://momichan.xyz').replace(/\/$/, '')
+  const baseUrl = (process.env.BASE_URL?.trim() || 'https://momichan.com').replace(/\/$/, '')
   const controlledBaseUrl = process.env.CONTROLLED_BASE_URL?.trim()?.replace(/\/$/, '') || null
 
   const stageRecords = buildValidationStageRecords({

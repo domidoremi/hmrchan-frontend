@@ -32,7 +32,7 @@ describe('Lighthouse production discovery', () => {
           [
             '<?xml version="1.0" encoding="UTF-8"?>',
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-            '<url><loc>https://next.momichan.xyz/</loc></url>',
+            '<url><loc>https://next.momichan.com/</loc></url>',
             '<url><loc>https://hmrchan.local/explore</loc></url>',
             '</urlset>',
           ].join('')
@@ -72,28 +72,28 @@ describe('Lighthouse production discovery', () => {
     }
 
     const manifest = await discoverAuditTargets({
-      base: 'https://next.momichan.xyz',
+      base: 'https://next.momichan.com',
       fallbackEntries: [],
       fetchImpl,
     })
 
     const urls = manifest.entries.map((entry) => entry.url)
 
-    expect(urls).toContain('https://next.momichan.xyz/join-us')
-    expect(urls).toContain('https://next.momichan.xyz/posts/019e1463-bc76-7bf7-8266-2a8316ab3d2c')
-    expect(urls).toContain('https://next.momichan.xyz/profile/019dcf17-91e8-76cc-8a3a-e89b1666bf94')
+    expect(urls).toContain('https://next.momichan.com/join-us')
+    expect(urls).toContain('https://next.momichan.com/posts/019e1463-bc76-7bf7-8266-2a8316ab3d2c')
+    expect(urls).toContain('https://next.momichan.com/profile/019dcf17-91e8-76cc-8a3a-e89b1666bf94')
     expect(urls).toContain(
-      'https://next.momichan.xyz/schedule/019dcf17-aedb-7842-b273-463f47c7502d'
+      'https://next.momichan.com/schedule/019dcf17-aedb-7842-b273-463f47c7502d'
     )
     expect(urls).not.toContain(
-      'https://next.momichan.xyz/post/019e1463-bc76-7bf7-8266-2a8316ab3d2c'
+      'https://next.momichan.com/post/019e1463-bc76-7bf7-8266-2a8316ab3d2c'
     )
     expect(urls).not.toContain(
-      'https://next.momichan.xyz/author/019dcf17-91e8-76cc-8a3a-e89b1666bf94'
+      'https://next.momichan.com/author/019dcf17-91e8-76cc-8a3a-e89b1666bf94'
     )
-    expect(urls).not.toContain('https://next.momichan.xyz/search')
-    expect(urls).not.toContain('https://next.momichan.xyz/authors')
-    expect(urls).not.toContain('https://next.momichan.xyz/forgot-password')
+    expect(urls).not.toContain('https://next.momichan.com/search')
+    expect(urls).not.toContain('https://next.momichan.com/authors')
+    expect(urls).not.toContain('https://next.momichan.com/forgot-password')
     expect(urls.some((url) => url.includes('hmrchan.local'))).toBe(false)
   })
 

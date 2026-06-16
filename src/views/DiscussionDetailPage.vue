@@ -38,14 +38,13 @@
         data-hmr-reveal
       >
         <div class="hmr-detail-cover-media">
-          <img
+          <HmrPriorityImage
             v-if="relatedPost?.thumbnailUrl"
             :src="relatedPost.thumbnailUrl"
             :alt="relatedPost.title"
             sizes="(min-width: 64em) 34vw, 92vw"
             loading="eager"
-            decoding="async"
-            fetchpriority="high"
+            fetch-priority="high"
           />
           <span v-else>{{ coverMark }}</span>
         </div>
@@ -123,6 +122,7 @@ import {
   type HmrDiscussionDetailContent,
 } from '@/api/hmrContent'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
+import HmrPriorityImage from '@/hmr/components/HmrPriorityImage.vue'
 import { formatHmrCompactNumber } from '@/hmr/composables/useHmrPostDetailView'
 import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
 import {

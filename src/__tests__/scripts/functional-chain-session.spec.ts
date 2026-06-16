@@ -12,7 +12,7 @@ import {
   readSessionUserId,
 } from '../../../scripts/lib/functional-chain-session.js'
 
-const BASE_URL = 'https://next.momichan.xyz'
+const BASE_URL = 'https://next.momichan.com'
 const USER_ID = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1'
 
 describe('functional chain session helpers', () => {

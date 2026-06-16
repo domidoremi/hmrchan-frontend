@@ -30,15 +30,14 @@
             :style="staticHeroCardStyle"
           >
             <div class="hmr-project-media hmr-post-card__visual">
-              <img
+              <HmrPriorityImage
                 class="hmr-post-card__poster"
                 :src="STATIC_HOME_PRERENDER_IMAGE.href"
                 :srcset="STATIC_HOME_PRERENDER_IMAGE.srcset"
                 :sizes="STATIC_HOME_PRERENDER_IMAGE.sizes"
                 :alt="heroPost.title"
                 loading="eager"
-                decoding="async"
-                fetchpriority="high"
+                fetch-priority="high"
               />
               <div class="hmr-post-card__shade" aria-hidden="true"></div>
               <div
@@ -172,10 +171,11 @@ import {
   type HmrHomeContent,
 } from '@/api/hmrContent'
 import { shouldUseApiFallback } from '@/api/runtimeFlags'
+import { STATIC_HOME_PRERENDER_IMAGE } from '@/fallbacks/generated/homePrerenderManifest'
 import { useHmrHomeView } from '@/hmr/composables/useHmrHomeView'
 import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
 import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
-import { STATIC_HOME_PRERENDER_IMAGE } from '@/fallbacks/generated/homePrerenderManifest'
+import HmrPriorityImage from '@/hmr/components/HmrPriorityImage.vue'
 import { cancelIdleTask, runWhenIdle, type IdleTaskHandle } from '@/utils/performance'
 import { readPublicContent } from '@/utils/cache/publicContentCache'
 

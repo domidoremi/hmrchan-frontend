@@ -45,7 +45,7 @@ function makeValidationSummary(
       localChangedFiles: [],
     },
     targets: {
-      baseUrl: 'https://momichan.xyz',
+      baseUrl: 'https://momichan.com',
       controlledBaseUrl: null,
     },
     changeSummary: {
@@ -331,7 +331,7 @@ describe('validate release stage summaries', () => {
     const records = buildValidationStageRecords({
       stagePlan: getValidationStagePlan('hook'),
       artifactDir: 'output/validation/test-run',
-      target: 'https://momichan.xyz',
+      target: 'https://momichan.com',
     })
     const localStaticStage = records.find((stage) => stage.id === 'stage-1-local-static')
 
@@ -397,7 +397,7 @@ describe('validate release stage summaries', () => {
         localChangedFiles: ['src/__tests__/scripts/validate-release.spec.ts'],
       },
       targets: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         controlledBaseUrl: null,
       },
       changeSummary: {

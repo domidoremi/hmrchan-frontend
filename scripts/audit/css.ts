@@ -1,14 +1,8 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { glob } from 'fs/promises'
-import type {
-  AuditModule,
-  AuditIssue,
-  AuditOptions,
-  AuditResult,
-  AuditStatus,
-  Severity,
-} from './types'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult, Severity } from './types'
+import { summarizeAuditIssues } from './utils'
 
 interface CSSRule {
   id: string
@@ -422,14 +416,7 @@ const cssAudit: AuditModule = {
     const entrypointIssues = await scanStyleEntrypoints(options.projectRoot)
     allIssues.push(...entrypointIssues)
 
-    // Determine status
-    const errorCount = allIssues.filter((i) => i.severity === 'error').length
-    const warningCount = allIssues.filter((i) => i.severity === 'warning').length
-    const infoCount = allIssues.filter((i) => i.severity === 'info').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, infoCount, status } = summarizeAuditIssues(allIssues)
 
     const summary =
       status === 'pass'

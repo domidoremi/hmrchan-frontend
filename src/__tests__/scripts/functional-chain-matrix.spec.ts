@@ -57,7 +57,7 @@ describe('functional chain matrix governance', () => {
     })
     const summary = createFunctionalChainSummary({
       artifactDir: 'output/functional-chain/test',
-      baseUrl: 'https://next.momichan.xyz',
+      baseUrl: 'https://next.momichan.com',
       accounts,
     })
     const markdown = buildFunctionalChainMarkdownSummary(summary)

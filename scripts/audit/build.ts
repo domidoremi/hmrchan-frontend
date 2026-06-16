@@ -1,8 +1,8 @@
 import { readdirSync, statSync, existsSync } from 'fs'
 import { join, relative } from 'path'
 import { createLocalAuditEnv } from '../lib/audit-env.js'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { getNodeCommand, runCommand } from './utils'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { getNodeCommand, runCommand, summarizeAuditIssues } from './utils'
 
 const CHUNK_SIZE_WARN_KB = 500
 
@@ -122,9 +122,7 @@ const buildAudit: AuditModule = {
       }
     }
 
-    let status: AuditStatus = 'pass'
-    if (issues.some((i) => i.severity === 'error')) status = 'fail'
-    else if (issues.some((i) => i.severity === 'warning')) status = 'warn'
+    const { status } = summarizeAuditIssues(issues)
 
     const summary =
       status === 'pass'

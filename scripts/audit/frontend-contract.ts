@@ -1,4 +1,5 @@
-import type { AuditIssue, AuditModule, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditIssue, AuditModule, AuditOptions, AuditResult } from './types'
+import { summarizeAuditIssues } from './utils'
 import { validateFrontendContractAudit } from '../lib/frontend-contract-audit.js'
 
 const frontendContractAudit: AuditModule = {
@@ -19,8 +20,7 @@ const frontendContractAudit: AuditModule = {
       })
     )
 
-    const hasErrors = issues.some((issue) => issue.severity === 'error')
-    const status: AuditStatus = hasErrors ? 'fail' : issues.length > 0 ? 'warn' : 'pass'
+    const { status } = summarizeAuditIssues(issues)
 
     return {
       module: 'frontend-contract',

@@ -13,7 +13,7 @@ import {
 
 describe('public cache service worker policy', () => {
   it('allows public content API GET requests without credentials', () => {
-    const request = new Request('https://next.momichan.xyz/api/v1/posts/abc/comments', {
+    const request = new Request('https://next.momichan.com/api/v1/posts/abc/comments', {
       credentials: 'omit',
     })
 
@@ -23,11 +23,11 @@ describe('public cache service worker policy', () => {
 
   it('allows public discussion detail and comment API GET requests without credentials', () => {
     const detailRequest = new Request(
-      'https://next.momichan.xyz/api/v1/discussions/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0',
+      'https://next.momichan.com/api/v1/discussions/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0',
       { credentials: 'omit' }
     )
     const commentsRequest = new Request(
-      'https://next.momichan.xyz/api/v1/discussions/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0/comments',
+      'https://next.momichan.com/api/v1/discussions/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0/comments',
       { credentials: 'omit' }
     )
 
@@ -40,12 +40,12 @@ describe('public cache service worker policy', () => {
   it('rejects auth, private, cookie, and authorization requests', () => {
     expect(
       isPublicCacheableRequest(
-        new Request('https://next.momichan.xyz/api/v1/auth/me', { credentials: 'omit' })
+        new Request('https://next.momichan.com/api/v1/auth/me', { credentials: 'omit' })
       )
     ).toBe(false)
     expect(
       isPublicCacheableRequest(
-        new Request('https://next.momichan.xyz/api/v1/posts', {
+        new Request('https://next.momichan.com/api/v1/posts', {
           headers: { authorization: 'Bearer token' },
           credentials: 'omit',
         })
@@ -53,7 +53,7 @@ describe('public cache service worker policy', () => {
     ).toBe(false)
     expect(
       isPublicCacheableRequest(
-        new Request('https://next.momichan.xyz/api/v1/posts', {
+        new Request('https://next.momichan.com/api/v1/posts', {
           headers: { cookie: 'sid=1' },
           credentials: 'omit',
         })
@@ -64,7 +64,7 @@ describe('public cache service worker policy', () => {
   it('rejects non-GET, no-store, and credentialed public API requests', () => {
     expect(
       isPublicCacheableRequest(
-        new Request('https://next.momichan.xyz/api/v1/posts', {
+        new Request('https://next.momichan.com/api/v1/posts', {
           credentials: 'omit',
           method: 'POST',
         })
@@ -72,20 +72,20 @@ describe('public cache service worker policy', () => {
     ).toBe(false)
     expect(
       isPublicCacheableRequest(
-        new Request('https://next.momichan.xyz/api/v1/posts', {
+        new Request('https://next.momichan.com/api/v1/posts', {
           cache: 'no-store',
           credentials: 'omit',
         })
       )
     ).toBe(false)
-    expect(isPublicCacheableRequest(new Request('https://next.momichan.xyz/api/v1/posts'))).toBe(
+    expect(isPublicCacheableRequest(new Request('https://next.momichan.com/api/v1/posts'))).toBe(
       false
     )
   })
 
   it('routes public media to the media cache', () => {
     const request = new Request(
-      'https://next.momichan.xyz/hmrchan/pets/tidyfox/v1/spritesheet.webp'
+      'https://next.momichan.com/hmrchan/pets/tidyfox/v1/spritesheet.webp'
     )
 
     expect(isPublicCacheableRequest(request)).toBe(true)
@@ -94,7 +94,7 @@ describe('public cache service worker policy', () => {
 
   it('routes generated public media thumbnails to the media cache', () => {
     const request = new Request(
-      'https://next.momichan.xyz/api/v1/media/019e6f16-e319-7551-94b9-08e3b49e16b3/thumbnail?size=small',
+      'https://next.momichan.com/api/v1/media/019e6f16-e319-7551-94b9-08e3b49e16b3/thumbnail?size=small',
       { credentials: 'omit' }
     )
 
@@ -106,7 +106,7 @@ describe('public cache service worker policy', () => {
     expect(
       isPublicCacheableRequest(
         new Request(
-          'https://next.momichan.xyz/api/v1/media/019e6f16-e319-7551-94b9-08e3b49e16b3/stream',
+          'https://next.momichan.com/api/v1/media/019e6f16-e319-7551-94b9-08e3b49e16b3/stream',
           { credentials: 'omit' }
         )
       )
@@ -114,7 +114,7 @@ describe('public cache service worker policy', () => {
     expect(
       isPublicCacheableRequest(
         new Request(
-          'https://next.momichan.xyz/api/v1/media/019e6f16-e319-7551-94b9-08e3b49e16b3/thumbnail?size=small',
+          'https://next.momichan.com/api/v1/media/019e6f16-e319-7551-94b9-08e3b49e16b3/thumbnail?size=small',
           {
             headers: { cookie: 'sid=1' },
             credentials: 'omit',

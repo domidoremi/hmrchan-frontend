@@ -1,5 +1,5 @@
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { runLocalNodeTool } from './utils'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { runLocalNodeTool, summarizeAuditIssues } from './utils'
 
 interface KnipIssues {
   files?: string[]
@@ -134,18 +134,12 @@ const deadCodeAudit: AuditModule = {
     const knip = parseKnipOutput(result.stdout)
     const issues = collectIssues(knip)
 
-    // Determine status
-    const errorCount = issues.filter((i) => i.severity === 'error').length
-    const warningCount = issues.filter((i) => i.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, infoCount, status } = summarizeAuditIssues(issues)
 
     const summary =
       status === 'pass'
         ? 'No dead code issues found'
-        : `Found ${errorCount} error(s), ${warningCount} warning(s), and ${issues.length - errorCount - warningCount} info(s)`
+        : `Found ${errorCount} error(s), ${warningCount} warning(s), and ${infoCount} info(s)`
 
     if (options.verbose && issues.length > 0) {
       for (const issue of issues) {

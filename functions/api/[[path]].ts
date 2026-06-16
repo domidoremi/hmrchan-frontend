@@ -8,6 +8,10 @@
  */
 
 import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
+import { isGoogleAuthEnabled } from './proxyEnv'
+import { isAllowedOrigin } from './proxyOrigins'
+import { normalizePath } from './proxyPaths'
+import { safelyParseUrl, sanitizeSameOriginRelativePath } from './proxyRedirects'
 import { resolveConfiguredApiBaseUrl, resolveUpstreamDomain } from '../../src/edge/upstream'
 import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import {
@@ -80,13 +84,6 @@ type SessionSummaryResponse = {
   return_to?: string
 }
 
-const ALLOWED_ORIGINS = [
-  'https://momichan.xyz',
-  'https://www.momichan.xyz',
-  'https://next.momichan.xyz',
-  'https://himeri.momichan.xyz',
-]
-const DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
 const CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
 const CSRF_HEADER_NAME = 'X-Origin-CSRF'
 
@@ -256,11 +253,6 @@ function getCookieValue(request: Request, name: string): string | null {
 
 function normalizeInternalOrigin(env: ProxyEnv): string | null {
   return env.BACKEND_INTERNAL_ORIGIN?.trim().replace(/\/+$/, '') || null
-}
-
-function isGoogleAuthEnabled(env: ProxyEnv): boolean {
-  const value = env.GOOGLE_AUTH_ENABLED?.trim().toLowerCase()
-  return value === '1' || value === 'true' || value === 'yes' || value === 'on'
 }
 
 function isSessionMaterial(payload: unknown): payload is BffSessionMaterial {
@@ -788,25 +780,6 @@ async function resolveSessionFromCookies(
   return jsonResponse(summary, 200, responseHeaders)
 }
 
-function parseAllowedPreviewOrigins(env: ProxyEnv): string[] {
-  return (env.ALLOWED_PREVIEW_ORIGINS ?? '')
-    .split(',')
-    .map((value) => value.trim())
-    .filter(Boolean)
-}
-
-function isAllowedOrigin(origin: string | null, isDev: boolean, env: ProxyEnv): boolean {
-  if (!origin) return false
-  if (ALLOWED_ORIGINS.includes(origin)) return true
-  if (isDev && DEV_ORIGINS.includes(origin)) return true
-  if (parseAllowedPreviewOrigins(env).includes(origin)) return true
-  return false
-}
-
-function normalizePath(path: string): string {
-  return path.replace(/^\/+/, '').replace(/\/+$/, '')
-}
-
 function isInternalApiGatewayEnabled(env: ProxyEnv): boolean {
   const value = env.ENABLE_INTERNAL_API_GATEWAY?.trim().toLowerCase()
   return value === '1' || value === 'true' || value === 'yes' || value === 'on'
@@ -956,20 +929,6 @@ function stripResponseHeaders(headers: Headers, path: string): void {
 
 function shouldBypassVPCForRequest(path: string, request: Request): boolean {
   return shouldPreserveBrowserRedirect(path, request)
-}
-
-function safelyParseUrl(value: string, base?: string): URL | null {
-  try {
-    return base ? new URL(value, base) : new URL(value)
-  } catch {
-    return null
-  }
-}
-
-function sanitizeSameOriginRelativePath(value: unknown, fallback = '/profile'): string {
-  if (typeof value !== 'string' || !value.startsWith('/')) return fallback
-  if (value.startsWith('//')) return fallback
-  return value
 }
 
 function sanitizeAuthSessionSummaryRedirects(

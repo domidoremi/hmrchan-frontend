@@ -1,7 +1,7 @@
 import { spawn } from 'child_process'
 import { existsSync, readFileSync } from 'fs'
 import { delimiter, dirname, join, resolve } from 'path'
-import type { AuditStatus } from './types'
+import type { AuditIssue, AuditStatus } from './types'
 
 export interface CommandResult {
   stdout: string
@@ -146,6 +146,26 @@ export function runLocalNodeTool(
 export function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`
   return `${(ms / 1000).toFixed(2)}s`
+}
+
+export interface AuditIssueSummary {
+  errorCount: number
+  warningCount: number
+  infoCount: number
+  status: AuditStatus
+}
+
+export function summarizeAuditIssues(issues: AuditIssue[]): AuditIssueSummary {
+  const errorCount = issues.filter((issue) => issue.severity === 'error').length
+  const warningCount = issues.filter((issue) => issue.severity === 'warning').length
+  const infoCount = issues.filter((issue) => issue.severity === 'info').length
+
+  return {
+    errorCount,
+    warningCount,
+    infoCount,
+    status: errorCount > 0 ? 'fail' : warningCount > 0 ? 'warn' : 'pass',
+  }
 }
 
 const COLORS = {

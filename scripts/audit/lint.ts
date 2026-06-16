@@ -1,5 +1,5 @@
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { runLocalNodeTool } from './utils'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { runLocalNodeTool, summarizeAuditIssues } from './utils'
 
 interface ESLintMessage {
   ruleId: string | null
@@ -71,12 +71,7 @@ const lintAudit: AuditModule = {
     const files = parseESLintJSON(result.stdout)
     const issues = toAuditIssues(files, options.projectRoot)
 
-    const errorCount = issues.filter((i) => i.severity === 'error').length
-    const warningCount = issues.filter((i) => i.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeAuditIssues(issues)
 
     const summary =
       status === 'pass'

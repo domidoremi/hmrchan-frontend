@@ -67,7 +67,7 @@ describe('auth bootstrap probe classification', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    await probeAuthBootstrapEndpoints('https://next.momichan.xyz', {
+    await probeAuthBootstrapEndpoints('https://next.momichan.com', {
       clientCredentials: {
         clientToken: 'existing-token',
         clientSecret: 'existing-secret',
@@ -138,7 +138,7 @@ describe('auth bootstrap probe classification', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const probes = await probeAuthBootstrapEndpoints('https://next.momichan.xyz', {
+    const probes = await probeAuthBootstrapEndpoints('https://next.momichan.com', {
       clientFingerprint: 'existing-fingerprint',
       contractVersion: '2026-04-13.p1',
       probeIntervalMs: 0,

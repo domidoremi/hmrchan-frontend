@@ -20,7 +20,7 @@ function cacheRequestKey(request: unknown): string {
           : String(request)
 
   try {
-    const url = new URL(raw, 'https://momichan.xyz')
+    const url = new URL(raw, 'https://momichan.com')
     return `${url.pathname}${url.search}`
   } catch {
     return raw
@@ -166,7 +166,7 @@ describe('service worker public cache clearing', () => {
     await import('@/sw/index')
 
     const response = await harness.dispatchFetch(
-      new Request('https://momichan.xyz/offline-check', {
+      new Request('https://momichan.com/offline-check', {
         headers: { accept: 'text/html' },
       })
     )
@@ -200,7 +200,7 @@ describe('service worker public cache clearing', () => {
     await import('@/sw/index')
 
     const response = await harness.dispatchFetch(
-      new Request('https://momichan.xyz/profile/favorites', {
+      new Request('https://momichan.com/profile/favorites', {
         headers: { accept: 'text/html' },
       })
     )
@@ -226,7 +226,7 @@ describe('service worker public cache clearing', () => {
     await import('@/sw/index')
 
     const response = await harness.dispatchFetch(
-      new Request('https://momichan.xyz/hmrchan/reference/card.png')
+      new Request('https://momichan.com/hmrchan/reference/card.png')
     )
 
     expect(await response.text()).toBe('cached-media')
