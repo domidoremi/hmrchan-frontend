@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const resolveHtmlDocumentWithEdgeData = vi.fn()
 const resolveCanonicalUrl = vi.fn((config: { canonicalPath: string }) => {
-  return `https://momichan.xyz${config.canonicalPath}`
+  return `https://momichan.com${config.canonicalPath}`
 })
 const renderPrerenderShell = vi.fn(
   (config: { shellTitle: string }) =>
@@ -15,7 +15,7 @@ vi.mock('../../src/edge/detailDocumentResolver', () => ({
 }))
 
 vi.mock('../../src/edge/htmlDocument', () => ({
-  DEFAULT_OG_IMAGE: 'https://momichan.xyz/og-default.png',
+  DEFAULT_OG_IMAGE: 'https://momichan.com/og-default.png',
   resolveCanonicalUrl,
   renderPrerenderShell,
   resolveStructuredDataPayload,
@@ -131,14 +131,14 @@ describe('functions/_middleware', () => {
     const { onRequest } = await import('../_middleware')
 
     const response = await onRequest({
-      request: new Request('https://www.momichan.xyz/explore?q=test'),
+      request: new Request('https://www.momichan.com/explore?q=test'),
       env: {},
       next,
     } as never)
 
     expect(next).not.toHaveBeenCalled()
     expect(response.status).toBe(308)
-    expect(response.headers.get('Location')).toBe('https://momichan.xyz/explore?q=test')
+    expect(response.headers.get('Location')).toBe('https://momichan.com/explore?q=test')
     expect(response.headers.get('Strict-Transport-Security')).toBe(
       'max-age=63072000; includeSubDomains; preload'
     )
@@ -158,7 +158,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/missing'),
+      request: new Request('https://momichan.com/missing'),
       env: {},
       next: () =>
         Promise.resolve(
@@ -211,7 +211,7 @@ describe('functions/_middleware', () => {
     expect(html).not.toContain('content="old description"')
     expect(html).not.toContain('https://old.example')
     expect(html).toContain('content="noindex, nofollow"')
-    expect(html).toContain('href="https://momichan.xyz/missing"')
+    expect(html).toContain('href="https://momichan.com/missing"')
     expect(html).toContain('data-prerender-shell="true"')
     expect(html).toContain('data-prerender-structured-data="true"')
     expect(html).toContain('application/ld+json')
@@ -232,7 +232,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/auth/passkeys/recovery'),
+      request: new Request('https://momichan.com/auth/passkeys/recovery'),
       env: {},
       next: () =>
         Promise.resolve(
@@ -250,7 +250,7 @@ describe('functions/_middleware', () => {
     expect(response.statusText).toBe('OK')
     expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate')
     expect(resolveHtmlDocumentWithEdgeData).toHaveBeenCalledWith(
-      new URL('https://momichan.xyz/auth/passkeys/recovery'),
+      new URL('https://momichan.com/auth/passkeys/recovery'),
       {}
     )
   })
@@ -274,7 +274,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/plain'),
+      request: new Request('https://momichan.com/api/plain'),
       env: {},
       next: () => Promise.resolve(original),
     } as never)
@@ -296,7 +296,7 @@ describe('functions/_middleware', () => {
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/login'),
+      request: new Request('https://momichan.com/login'),
       env: {},
       next: () =>
         Promise.resolve(

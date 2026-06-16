@@ -1,7 +1,8 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { glob } from 'fs/promises'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { summarizeIssueSeverities } from './utils'
 /** Regex patterns for detecting hardcoded secrets in source code */
 const SECRET_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /['"](?:sk|pk)[-_](?:live|test)[-_][a-zA-Z0-9]{20,}['"]/, label: 'Stripe key' },
@@ -175,13 +176,7 @@ const securityAudit: AuditModule = {
     const viteIssues = await checkViteConfig(options)
     allIssues.push(...viteIssues)
 
-    // Determine status
-    const errorCount = allIssues.filter((i) => i.severity === 'error').length
-    const warningCount = allIssues.filter((i) => i.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeIssueSeverities(allIssues)
 
     const summary =
       status === 'pass'

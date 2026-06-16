@@ -1,5 +1,5 @@
 const SITE_NAME = 'MomiChan'
-const SITE_ORIGIN = 'https://momichan.xyz'
+const SITE_ORIGIN = 'https://momichan.com'
 const TITLE_SEPARATOR = ' · '
 const DESCRIPTION_MAX_LENGTH = 160
 

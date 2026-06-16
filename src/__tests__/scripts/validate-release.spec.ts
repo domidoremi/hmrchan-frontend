@@ -160,7 +160,7 @@ describe('validate release helpers', () => {
         diffRange: 'origin/main...HEAD',
       },
       targets: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         controlledBaseUrl: null,
       },
       changeSummary: classifyValidationChanges([]),
@@ -175,7 +175,7 @@ describe('validate release helpers', () => {
         diffRange: 'origin/main...HEAD',
       },
       targets: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         controlledBaseUrl: null,
       },
       changeSummary: classifyValidationChanges([]),
@@ -190,7 +190,7 @@ describe('validate release helpers', () => {
         diffRange: 'origin/main...HEAD',
       },
       targets: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         controlledBaseUrl: 'https://controlled.example.com',
       },
       changeSummary: classifyValidationChanges([]),
@@ -205,7 +205,7 @@ describe('validate release helpers', () => {
         diffRange: 'HEAD~1..HEAD',
       },
       targets: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         controlledBaseUrl: 'https://controlled.example.com',
       },
       changeSummary: classifyValidationChanges([]),
@@ -228,7 +228,7 @@ describe('validate release helpers', () => {
       artifactDir: '/tmp/validation',
       git: { branch: 'main', commitSha: 'sha', diffRange: 'HEAD~1..HEAD' },
       targets: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         controlledBaseUrl: 'https://controlled.example.com',
       },
       changeSummary: classifyValidationChanges([]),
@@ -263,7 +263,7 @@ describe('validate release helpers', () => {
       artifactDir: '/tmp/validation',
       git: { branch: 'main', commitSha: 'sha', diffRange: 'HEAD~1..HEAD' },
       targets: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         controlledBaseUrl: null,
       },
       changeSummary: classifyValidationChanges([]),
@@ -290,7 +290,7 @@ describe('validate release helpers', () => {
       artifactDir: '/tmp/validation',
       git: { branch: 'main', commitSha: 'sha', diffRange: 'HEAD~1..HEAD' },
       targets: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         controlledBaseUrl: null,
       },
       changeSummary: classifyValidationChanges([]),

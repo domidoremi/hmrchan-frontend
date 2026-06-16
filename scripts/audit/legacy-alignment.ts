@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'fs/promises'
 import { join, relative } from 'path'
-import type { AuditIssue, AuditModule, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditIssue, AuditModule, AuditOptions, AuditResult } from './types'
+import { summarizeIssueSeverities } from './utils'
 
 const SCAN_ROOTS = ['src', 'functions']
 const TEXT_FILE_EXTENSIONS = new Set([
@@ -68,7 +69,7 @@ const LEGACY_PATTERNS: Array<{
   },
   {
     rule: 'legacy-production-upstream-host',
-    regex: /https:\/\/api\.momichan\.xyz/g,
+    regex: /https:\/\/api\.momichan\.com/g,
     message:
       'Found hardcoded production upstream host; use explicit env or same-origin entrypoints.',
   },
@@ -137,7 +138,7 @@ const legacyAlignmentAudit: AuditModule = {
       }
     }
 
-    const status: AuditStatus = issues.length > 0 ? 'fail' : 'pass'
+    const { status } = summarizeIssueSeverities(issues)
 
     return {
       module: 'legacy-alignment',

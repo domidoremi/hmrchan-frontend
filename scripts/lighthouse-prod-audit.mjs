@@ -73,11 +73,11 @@ function parseArgs(argv) {
 function printHelp() {
   console.log(`
 用法:
-  node scripts/lighthouse-prod-audit.mjs --base https://momichan.xyz --profile both --urls-file scripts/config/lighthouse-prod-urls.json --output .lighthouse-prod
-  node scripts/lighthouse-prod-audit.mjs --orchestrate --base https://momichan.xyz --output .lighthouse-prod --runs 3
+  node scripts/lighthouse-prod-audit.mjs --base https://momichan.com --profile both --urls-file scripts/config/lighthouse-prod-urls.json --output .lighthouse-prod
+  node scripts/lighthouse-prod-audit.mjs --orchestrate --base https://momichan.com --output .lighthouse-prod --runs 3
 
 参数:
-  --base           目标站点基础地址，默认 https://momichan.xyz
+  --base           目标站点基础地址，默认 https://momichan.com
   --profile        mobile | desktop | both，默认 both；编排模式固定为 both
   --urls-file      URL 清单文件，支持字符串数组、结构化 manifest 或纯文本一行一个 URL
   --output         单轮模式输出目录；编排模式输出审计根目录，默认 .lighthouse-prod
@@ -283,7 +283,7 @@ function createAnalysis(summary) {
   const hotOpportunities = topOpportunityTitles(contentEntries)
 
   const lines = []
-  lines.push('# momichan.xyz Lighthouse 单轮分析报告')
+  lines.push('# momichan.com Lighthouse 单轮分析报告')
   lines.push('')
   lines.push('## 1. 覆盖范围与执行说明')
   lines.push(`- 测试时间：${summary.generatedAt}`)

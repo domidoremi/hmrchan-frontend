@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-export const DEFAULT_BASE = 'https://momichan.xyz'
+export const DEFAULT_BASE = 'https://momichan.com'
 export const DEFAULT_OUTPUT_DIR = '.lighthouse-prod'
 export const DEFAULT_URLS_FILE = path.join('scripts', 'config', 'lighthouse-prod-urls.json')
 export const DEFAULT_PROFILES = ['mobile', 'desktop']

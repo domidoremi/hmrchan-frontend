@@ -22,7 +22,7 @@ describe('runtimeHost', () => {
   })
 
   it('keeps production hosts on live runtime behavior', () => {
-    const hostname = 'momichan.xyz'
+    const hostname = 'momichan.com'
 
     expect(isPagesPreviewHost(hostname)).toBe(false)
     expect(shouldEnableCloudflareAnalytics(hostname)).toBe(true)

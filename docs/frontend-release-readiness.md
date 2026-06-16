@@ -102,13 +102,13 @@
   - 仍基于本地 build + preview shell，不直接扫生产
   - 同样上传 smoke summary artifact，便于区分 guest/auth 实际执行情况
 - `frontend_health`
-  - nightly 改为直接扫生产 `https://momichan.xyz`
+  - nightly 改为直接扫生产 `https://<public-site-origin>`
   - `FRONTEND_HEALTH_INCLUDE_API_ERRORS=true`
 
 主 CI 在 `push -> main/master` 后额外触发 `production_canary`：
 
 - 等待 Pages 生产发布窗口
-- 对 `https://momichan.xyz` 执行：
+- 对 `https://<public-site-origin>` 执行：
   - `frontend health`
   - `smoke e2e`
   - canary 也会上传 production smoke summary artifact
@@ -259,7 +259,7 @@
     - 推荐填受控站点源（例如 `https://hmrchan-frontend.pages.dev` 或对应预发站点），要求该站点的同源 `/api` 已由 Pages Functions 接入后端三域服务
   - split topology：`SMOKE_IDENTITY_API_BASE_URL`、`SMOKE_COMMUNITY_API_BASE_URL`、`SMOKE_CONTENT_API_BASE_URL`
     - 仅在刻意让 preview shell 直连受保护 API 域时使用
-  - 未配置时 workflow 直接失败，不再隐式回落到 `https://api.momichan.xyz`
+  - 未配置时 workflow 直接失败，不再隐式回落到 `https://<public-api-origin>`
 - 远端 canary / nightly health 只在显式配置站点时运行：
   - `PRODUCTION_CANARY_BASE_URL` 或 `PROTECTED_CANARY_BASE_URL`
   - 可选 nightly 覆盖：`NIGHTLY_FRONTEND_HEALTH_BASE_URL`

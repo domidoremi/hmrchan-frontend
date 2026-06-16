@@ -150,7 +150,7 @@ const DEFAULT_SAMPLE_DISCUSSION_ROUTE = '/community/discussions/018f7da0-0c13-7c
     'scripts/config/lighthouse-prod-urls.json',
     JSON.stringify(
       {
-        entries: ['https://momichan.xyz/', 'https://momichan.xyz/explore'],
+        entries: ['https://momichan.com/', 'https://momichan.com/explore'],
       },
       null,
       2
@@ -320,7 +320,7 @@ export const authService = {
       'scripts/config/lighthouse-prod-urls.json',
       JSON.stringify(
         {
-          entries: ['https://momichan.xyz/post/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'],
+          entries: ['https://momichan.com/post/dd8173a9-7ecc-4ecb-a362-0286d0eee53c'],
         },
         null,
         2

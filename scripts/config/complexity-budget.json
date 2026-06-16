@@ -13,9 +13,9 @@
       "reason": "Existing edge rendering contract; requires an explicit note before further growth."
     },
     "src/views/HomePage.vue": {
-      "maxLines": 3125,
+      "maxLines": 3058,
       "refactorQueued": true,
-      "reason": "Batch 2 extracted scoped CSS; homepage image, support refresh, scene capability/progress/snap, viewport blend, motion CSS variable, rail/story scene style, footer blend, rail navbar lock, bubble reveal lifecycle, scene layout refresh policies, and trending author view-model derivation were moved into dedicated boundaries; remaining scene/runtime orchestration is queued for staged extraction."
+      "reason": "Batch 2 extracted scoped CSS; homepage image, support refresh, scene capability/progress/snap, viewport blend, motion CSS variable, rail/story scene style, footer blend, rail navbar lock, bubble reveal lifecycle, scene layout refresh policies, trending author view-model derivation, and quick-nav section observer orchestration were moved into dedicated boundaries; remaining scene/runtime orchestration is queued for staged extraction."
     },
     "src/views/LoginPage.vue": {
       "maxLines": 1256,
@@ -23,9 +23,9 @@
       "reason": "Login step titles, credential validation, restore-account validation, restore query cleanup, risk WebAuthn visibility, Turnstile retry predicates, Turnstile freshness, Google handoff expiry predicates, route query state, Google visual state, conditional passkey start, and back navigation intent were extracted; preserve current auth flow while tracking remaining complexity."
     },
     "src/views/PostDetailPage.vue": {
-      "maxLines": 2508,
+      "maxLines": 2469,
       "refactorQueued": true,
-      "reason": "Post detail title/description, published meta, media state, image sources, placeholders, media transition rules, adjacent preload indexes, not-found route params, comments viewport preload checks, adjacent post navigation gesture rules, and fallback recovery decisions were extracted; API orchestration remains queued."
+      "reason": "Post detail title/description, published meta, media state, image sources, placeholders, media transition rules, adjacent preload indexes, not-found route params, comments viewport preload checks, adjacent post navigation gesture rules, fallback recovery decisions, and text modal lifecycle bindings were extracted; API orchestration remains queued."
     },
     "src/views/RegisterPage.vue": {
       "maxLines": 1427,

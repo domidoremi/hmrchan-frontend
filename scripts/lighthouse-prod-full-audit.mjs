@@ -46,10 +46,10 @@ function parseArgs(argv) {
 function printHelp() {
   console.log(`
 用法:
-  node scripts/lighthouse-prod-full-audit.mjs --base https://momichan.xyz --output .lighthouse-prod --runs 3
+  node scripts/lighthouse-prod-full-audit.mjs --base https://momichan.com --output .lighthouse-prod --runs 3
 
 参数:
-  --base           目标站点基础地址，默认 https://momichan.xyz
+  --base           目标站点基础地址，默认 https://momichan.com
   --output         输出目录，默认 .lighthouse-prod
   --urls-file      现有兜底 URL 清单，默认 scripts/config/lighthouse-prod-urls.json
   --runs           重复轮次，默认 3

@@ -31,10 +31,10 @@ describe('discoverAuditTargets', () => {
   it('combines sitemap, whitelist, api samples, and exclusion rules into a manifest', async () => {
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
       <urlset>
-        <url><loc>https://momichan.xyz/</loc></url>
-        <url><loc>https://momichan.xyz/explore</loc></url>
-        <url><loc>https://momichan.xyz/authors</loc></url>
-        <url><loc>https://momichan.xyz/favorites</loc></url>
+        <url><loc>https://momichan.com/</loc></url>
+        <url><loc>https://momichan.com/explore</loc></url>
+        <url><loc>https://momichan.com/authors</loc></url>
+        <url><loc>https://momichan.com/favorites</loc></url>
       </urlset>`
 
     const robots = `
@@ -74,31 +74,31 @@ describe('discoverAuditTargets', () => {
     }
 
     const manifest = await discoverAuditTargets({
-      base: 'https://momichan.xyz',
+      base: 'https://momichan.com',
       fallbackEntries: [],
       fetchImpl: fetchImpl as typeof fetch,
     })
 
     expect(manifest.entries).toHaveLength(20)
     expect(manifest.entries.map((entry) => entry.url)).not.toContain(
-      'https://momichan.xyz/favorites'
+      'https://momichan.com/favorites'
     )
     expect(manifest.excluded).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          url: 'https://momichan.xyz/favorites',
+          url: 'https://momichan.com/favorites',
         }),
       ])
     )
 
-    const home = manifest.entries.find((entry) => entry.url === 'https://momichan.xyz/')
+    const home = manifest.entries.find((entry) => entry.url === 'https://momichan.com/')
     expect(home).toMatchObject({
       pageType: 'home',
       discoverySource: 'sitemap',
       indexedInSitemap: true,
     })
 
-    const login = manifest.entries.find((entry) => entry.url === 'https://momichan.xyz/login')
+    const login = manifest.entries.find((entry) => entry.url === 'https://momichan.com/login')
     expect(login).toMatchObject({
       pageType: 'anonymous-auth',
       discoverySource: 'route-whitelist',
@@ -109,24 +109,24 @@ describe('discoverAuditTargets', () => {
       manifest.entries
         .filter((entry) => entry.pageType === 'author-detail')
         .map((entry) => entry.url)
-    ).toEqual(['https://momichan.xyz/author/author-1', 'https://momichan.xyz/author/author-2'])
+    ).toEqual(['https://momichan.com/author/author-1', 'https://momichan.com/author/author-2'])
     expect(
       manifest.entries.filter((entry) => entry.pageType === 'post-detail').map((entry) => entry.url)
     ).toEqual([
-      'https://momichan.xyz/post/post-1',
-      'https://momichan.xyz/post/post-2',
-      'https://momichan.xyz/post/post-3',
+      'https://momichan.com/post/post-1',
+      'https://momichan.com/post/post-2',
+      'https://momichan.com/post/post-3',
     ])
     expect(
       manifest.entries
         .filter((entry) => entry.pageType === 'discussion-detail')
         .map((entry) => entry.url)
-    ).toEqual(['https://momichan.xyz/community/discussions/discussion-1'])
+    ).toEqual(['https://momichan.com/community/discussions/discussion-1'])
     expect(
       manifest.entries
         .filter((entry) => entry.pageType === 'schedule-detail')
         .map((entry) => entry.url)
-    ).toEqual(['https://momichan.xyz/schedule/schedule-1'])
+    ).toEqual(['https://momichan.com/schedule/schedule-1'])
 
     expect(manifest.coverage.gaps).toEqual([])
   })
@@ -156,12 +156,12 @@ describe('discoverAuditTargets', () => {
     }
 
     const manifest = await discoverAuditTargets({
-      base: 'https://momichan.xyz',
+      base: 'https://momichan.com',
       fetchImpl: fetchImpl as typeof fetch,
       fallbackEntries: [
-        { url: 'https://momichan.xyz/author/fallback-author-a' },
-        { url: 'https://momichan.xyz/author/fallback-author-b' },
-        { url: 'https://momichan.xyz/community/discussions/fallback-discussion' },
+        { url: 'https://momichan.com/author/fallback-author-a' },
+        { url: 'https://momichan.com/author/fallback-author-b' },
+        { url: 'https://momichan.com/community/discussions/fallback-discussion' },
       ],
     })
 
@@ -170,15 +170,15 @@ describe('discoverAuditTargets', () => {
         .filter((entry) => entry.pageType === 'author-detail')
         .map((entry) => entry.url)
     ).toEqual([
-      'https://momichan.xyz/author/fallback-author-a',
-      'https://momichan.xyz/author/fallback-author-b',
+      'https://momichan.com/author/fallback-author-a',
+      'https://momichan.com/author/fallback-author-b',
     ])
 
     expect(
       manifest.entries
         .filter((entry) => entry.pageType === 'discussion-detail')
         .map((entry) => entry.url)
-    ).toEqual(['https://momichan.xyz/community/discussions/fallback-discussion'])
+    ).toEqual(['https://momichan.com/community/discussions/fallback-discussion'])
 
     expect(manifest.coverage.gaps).toEqual(
       expect.arrayContaining([
@@ -206,23 +206,23 @@ describe('discoverAuditTargets', () => {
     }
 
     const manifest = await discoverAuditTargets({
-      base: 'https://momichan.xyz',
+      base: 'https://momichan.com',
       fetchImpl: fetchImpl as typeof fetch,
       fallbackEntries: [
-        { url: 'https://momichan.xyz/schedule/stale-sample', pageType: 'schedule-detail' },
+        { url: 'https://momichan.com/schedule/stale-sample', pageType: 'schedule-detail' },
       ],
     })
 
     expect(manifest.entries.map((entry) => entry.url)).not.toContain(
-      'https://momichan.xyz/schedule/stale-sample'
+      'https://momichan.com/schedule/stale-sample'
     )
     expect(manifest.coverage.rejectedFallbacks).toEqual([
       expect.objectContaining({
-        url: 'https://momichan.xyz/schedule/stale-sample',
+        url: 'https://momichan.com/schedule/stale-sample',
         pageType: 'schedule-detail',
         status: 404,
         phase: 'detail-api',
-        probeUrl: 'https://momichan.xyz/api/v1/schedules/stale-sample',
+        probeUrl: 'https://momichan.com/api/v1/schedules/stale-sample',
       }),
     ])
     expect(manifest.coverage.gaps).toEqual(
@@ -252,22 +252,22 @@ describe('discoverAuditTargets', () => {
     }
 
     const manifest = await discoverAuditTargets({
-      base: 'https://momichan.xyz',
+      base: 'https://momichan.com',
       fallbackEntries: [],
       fetchImpl: fetchImpl as typeof fetch,
     })
 
     expect(manifest.entries.map((entry) => entry.url)).toContain(
-      `https://momichan.xyz/post/${strictPostId}`
+      `https://momichan.com/post/${strictPostId}`
     )
     expect(manifest.entries.map((entry) => entry.url)).not.toContain(
-      `https://momichan.xyz/post/${legacyPostId}`
+      `https://momichan.com/post/${legacyPostId}`
     )
-    expect(probedUrls).not.toContain(`https://momichan.xyz/api/v1/posts/${legacyPostId}`)
+    expect(probedUrls).not.toContain(`https://momichan.com/api/v1/posts/${legacyPostId}`)
     expect(manifest.coverage.rejectedFallbacks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          url: `https://momichan.xyz/post/${legacyPostId}`,
+          url: `https://momichan.com/post/${legacyPostId}`,
           pageType: 'post-detail',
           phase: 'strict-uuidv7-contract',
         }),

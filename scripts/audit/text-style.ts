@@ -1,6 +1,7 @@
 import { glob, readFile } from 'fs/promises'
 import { join } from 'path'
-import type { AuditIssue, AuditModule, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditIssue, AuditModule, AuditOptions, AuditResult } from './types'
+import { summarizeIssueSeverities } from './utils'
 
 const MARKDOWN_GLOB = '**/*.md'
 
@@ -93,7 +94,7 @@ const textStyleAudit: AuditModule = {
       issues.push(...scanMarkdownFile(file, content))
     }
 
-    const status: AuditStatus = issues.length > 0 ? 'fail' : 'pass'
+    const { status } = summarizeIssueSeverities(issues)
 
     return {
       module: 'text-style',

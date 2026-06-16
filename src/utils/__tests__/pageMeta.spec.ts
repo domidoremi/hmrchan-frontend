@@ -42,10 +42,10 @@ describe('pageMeta', () => {
 
     expect(document.title).toBe('Notifications · MomiChan')
     expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
-      'https://momichan.xyz/profile/notifications'
+      'https://momichan.com/profile/notifications'
     )
     expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(
-      'https://momichan.xyz/profile/notifications'
+      'https://momichan.com/profile/notifications'
     )
     expect(document.querySelector('meta[name="twitter:title"]')?.getAttribute('content')).toBe(
       'Notifications · MomiChan'
@@ -62,7 +62,7 @@ describe('pageMeta', () => {
 
     expect(document.title).toBe('MomiChan')
     expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
-      'https://momichan.xyz/community'
+      'https://momichan.com/community'
     )
     expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
       'Default site description'

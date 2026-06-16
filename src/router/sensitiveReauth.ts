@@ -16,8 +16,8 @@ function normalizeSensitiveRedirectTarget(fullPath: string): string {
   if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return fallback
 
   try {
-    const parsed = new URL(trimmed, 'https://momichan.xyz')
-    if (parsed.origin !== 'https://momichan.xyz') return fallback
+    const parsed = new URL(trimmed, 'https://momichan.com')
+    if (parsed.origin !== 'https://momichan.com') return fallback
 
     const normalizedPath = parsed.pathname.replace(/\/+$/, '') || '/'
     if (

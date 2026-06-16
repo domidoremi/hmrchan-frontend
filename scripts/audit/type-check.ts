@@ -1,5 +1,5 @@
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
-import { runLocalNodeTool } from './utils'
+import { runLocalNodeTool, summarizeCommandIssues } from './utils'
 
 function parseTypeErrors(output: string): AuditIssue[] {
   const issues: AuditIssue[] = []
@@ -31,9 +31,12 @@ const typeCheckAudit: AuditModule = {
     const combined = result.stdout + '\n' + result.stderr
     const issues = parseTypeErrors(combined)
 
-    const status = issues.length === 0 && result.exitCode === 0 ? 'pass' : 'fail'
-    const summary =
-      status === 'pass' ? 'All type checks passed' : `Found ${issues.length} type error(s)`
+    const { status, summary } = summarizeCommandIssues(
+      issues,
+      result.exitCode,
+      'All type checks passed',
+      `Found ${issues.length} type error(s)`
+    )
 
     if (options.verbose && issues.length > 0) {
       for (const issue of issues) {

@@ -1,6 +1,7 @@
 import { readFile, access } from 'fs/promises'
 import { join } from 'path'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { summarizeIssueSeverities } from './utils'
 
 /** Parse a dotenv file and return variable names (ignoring comments and blank lines) */
 function parseEnvVarNames(content: string): Set<string> {
@@ -236,13 +237,7 @@ const envConfigAudit: AuditModule = {
     const cacheIssues = await checkCacheConfig(options)
     allIssues.push(...cacheIssues)
 
-    // Determine status
-    const errorCount = allIssues.filter((i) => i.severity === 'error').length
-    const warningCount = allIssues.filter((i) => i.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeIssueSeverities(allIssues)
 
     const summary =
       status === 'pass'

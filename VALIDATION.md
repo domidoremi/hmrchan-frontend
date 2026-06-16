@@ -118,7 +118,7 @@ Hook 中负载静态门禁只包含：
 约束：
 
 - `candidate` 和 `production` 必须提供 `CONTROLLED_BASE_URL`
-- `production` 默认目标站点是 `https://momichan.xyz`
+- `production` 默认目标站点是 `https://<public-site-origin>`
 - `SECONDARY_EMAIL_MODE` 固定要求 `user-assisted`
 
 ## 状态语义
@@ -240,7 +240,7 @@ bun run validate:release --mode candidate
 `main` 部署到 Pages 后：
 
 ```bash
-BASE_URL=https://momichan.xyz \
+BASE_URL=https://<public-site-origin> \
 CONTROLLED_BASE_URL=https://controlled.example.com \
 PRIMARY_USERNAME=... \
 PRIMARY_PASSWORD=... \

@@ -109,13 +109,13 @@ describe('ProfileHistoryTab', () => {
           post_id: 'post-1',
           post_title: 'Older title',
           post_thumbnail_url:
-            'https://momichan.xyz/api/v1/media/223e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
+            'https://momichan.com/api/v1/media/223e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
           author_name: 'fallback-author',
           created_at: '2026-04-14T10:00:00Z',
           content_preview: {
             title: 'Preview title',
             thumbnail_url:
-              'https://momichan.xyz/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
+              'https://momichan.com/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
             author_name: 'preview-author',
           },
         },
@@ -162,7 +162,7 @@ describe('ProfileHistoryTab', () => {
     const cards = wrapper.findAll('.profile-post-preview-card-stub')
     expect(cards).toHaveLength(2)
     expect(cards[0]?.text()).toContain(
-      'Preview title|https://momichan.xyz/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium|/post/post-1?mediaId=323e4567-e89b-12d3-a456-426614174000'
+      'Preview title|https://momichan.com/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium|/post/post-1?mediaId=323e4567-e89b-12d3-a456-426614174000'
     )
     expect(cards[1]?.text()).toContain(
       'profile.unknownPost|empty|/post/post-2|profile.unknownPost|profile.noHistory'
@@ -172,7 +172,7 @@ describe('ProfileHistoryTab', () => {
 
     expect(state.cachePreview).toHaveBeenCalledWith(
       'post-1',
-      'https://momichan.xyz/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium'
+      'https://momichan.com/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium'
     )
     expect(state.routerPush).toHaveBeenCalledWith(
       '/post/post-1?mediaId=323e4567-e89b-12d3-a456-426614174000'

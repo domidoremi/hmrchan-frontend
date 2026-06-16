@@ -1,6 +1,7 @@
 import { glob, readFile } from 'fs/promises'
 import { join } from 'path'
-import type { AuditIssue, AuditModule, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditIssue, AuditModule, AuditOptions, AuditResult } from './types'
+import { summarizeIssueSeverities } from './utils'
 
 interface BoundaryRule {
   rule: string
@@ -112,6 +113,25 @@ function shouldSkipLine(line: string): boolean {
   return COMMENT_PREFIXES.some((prefix) => trimmed.startsWith(prefix))
 }
 
+async function scanSourceLines(
+  projectRoot: string,
+  files: string[],
+  visitLine: (context: { file: string; line: string; lineNumber: number }) => void
+): Promise<void> {
+  for (const file of files) {
+    const content = await readFile(join(projectRoot, file), 'utf-8')
+    const lines = content.split(/\r?\n/)
+
+    for (let index = 0; index < lines.length; index += 1) {
+      visitLine({
+        file,
+        line: lines[index],
+        lineNumber: index + 1,
+      })
+    }
+  }
+}
+
 async function listSourceFiles(projectRoot: string): Promise<string[]> {
   const srcDir = join(projectRoot, 'src')
   const files: string[] = []
@@ -126,56 +146,49 @@ async function listSourceFiles(projectRoot: string): Promise<string[]> {
 async function scanLineRules(projectRoot: string, files: string[]): Promise<AuditIssue[]> {
   const issues: AuditIssue[] = []
 
-  for (const file of files) {
-    const content = await readFile(join(projectRoot, file), 'utf-8')
-    const lines = content.split(/\r?\n/)
+  await scanSourceLines(projectRoot, files, ({ file, line, lineNumber }) => {
+    if (shouldSkipLine(line)) return
 
-    for (let index = 0; index < lines.length; index += 1) {
-      const line = lines[index]
-      if (shouldSkipLine(line)) continue
+    for (const rule of LINE_RULES) {
+      if (!rule.pattern.test(line)) continue
+      if (rule.allowedFiles?.has(file)) continue
 
-      for (const rule of LINE_RULES) {
-        if (!rule.pattern.test(line)) continue
-        if (rule.allowedFiles?.has(file)) continue
-
-        issues.push({
-          severity: 'error',
-          message: rule.message,
-          file,
-          line: index + 1,
-          rule: rule.rule,
-          suggestion: rule.suggestion,
-        })
-      }
+      issues.push({
+        severity: 'error',
+        message: rule.message,
+        file,
+        line: lineNumber,
+        rule: rule.rule,
+        suggestion: rule.suggestion,
+      })
     }
-  }
+  })
 
   return issues
 }
 
 async function scanVaporComponents(projectRoot: string, files: string[]): Promise<AuditIssue[]> {
   const issues: AuditIssue[] = []
+  const reportedFiles = new Set<string>()
 
-  for (const file of files) {
-    if (!file.endsWith('.vue')) continue
+  await scanSourceLines(projectRoot, files, ({ file, line, lineNumber }) => {
+    if (!file.endsWith('.vue')) return
+    if (reportedFiles.has(file)) return
 
-    const content = await readFile(join(projectRoot, file), 'utf-8')
-    const lines = content.split(/\r?\n/)
-    const vaporLineIndex = lines.findIndex((line) => /<script\s+setup[^>]*\bvapor\b/.test(line))
-
-    if (vaporLineIndex === -1) continue
-    if (ALLOWED_VAPOR_COMPONENTS.has(file)) continue
+    if (!/<script\s+setup[^>]*\bvapor\b/.test(line)) return
+    reportedFiles.add(file)
+    if (ALLOWED_VAPOR_COMPONENTS.has(file)) return
 
     issues.push({
       severity: 'error',
       message: 'New Vapor component added outside the audited allowlist',
       file,
-      line: vaporLineIndex + 1,
+      line: lineNumber,
       rule: 'vapor-allowlist',
       suggestion:
         'Keep Vapor limited to manually audited props-only leaf components and update the allowlist only after review',
     })
-  }
+  })
 
   return issues
 }
@@ -191,12 +204,7 @@ const frontendPatternsAudit: AuditModule = {
       ...(await scanVaporComponents(options.projectRoot, files)),
     ]
 
-    const errorCount = issues.filter((issue) => issue.severity === 'error').length
-    const warningCount = issues.filter((issue) => issue.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeIssueSeverities(issues)
 
     const summary =
       issues.length === 0

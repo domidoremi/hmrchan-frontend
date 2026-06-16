@@ -313,7 +313,7 @@ export function safeJsonParse<T = unknown>(json: string): T | null {
 // ==================== Open Redirect 防护 ====================
 
 /** 允许重定向的域名白名单 */
-const REDIRECT_WHITELIST = ['momichan.xyz', 'www.momichan.xyz', 'himeri.momichan.xyz']
+const REDIRECT_WHITELIST = ['momichan.com', 'www.momichan.com', 'himeri.momichan.com']
 
 /**
  * 校验重定向 URL 是否安全（仅允许同站或白名单域名）
@@ -353,10 +353,10 @@ export function safeRedirect(url: string, fallback: string = '/'): void {
 
 // ==================== PostMessage 安全 ====================
 
-const PRIMARY_FRONTEND_MESSAGE_ORIGIN = 'https://momichan.xyz'
+const PRIMARY_FRONTEND_MESSAGE_ORIGIN = 'https://momichan.com'
 const TRUSTED_ORIGINS = new Set([
   PRIMARY_FRONTEND_MESSAGE_ORIGIN,
-  'https://www.momichan.xyz',
+  'https://www.momichan.com',
   'https://challenges.cloudflare.com',
 ])
 

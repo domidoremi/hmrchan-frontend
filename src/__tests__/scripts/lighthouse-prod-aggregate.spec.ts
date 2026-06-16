@@ -10,7 +10,7 @@ describe('mergeRunSummaries', () => {
     const manifest = {
       entries: [
         {
-          url: 'https://momichan.xyz/post/post-1',
+          url: 'https://momichan.com/post/post-1',
           pageType: 'post-detail',
           discoverySource: 'api-posts',
           indexedInSitemap: false,
@@ -18,7 +18,7 @@ describe('mergeRunSummaries', () => {
           selectionReason: 'post sample',
         },
         {
-          url: 'https://momichan.xyz/login',
+          url: 'https://momichan.com/login',
           pageType: 'anonymous-auth',
           discoverySource: 'route-whitelist',
           indexedInSitemap: false,
@@ -41,11 +41,11 @@ describe('mergeRunSummaries', () => {
     const runSummaries = [
       {
         runId: 'run-1',
-        base: 'https://momichan.xyz',
+        base: 'https://momichan.com',
         profiles: ['mobile', 'desktop'],
         results: [
           {
-            url: 'https://momichan.xyz/post/post-1',
+            url: 'https://momichan.com/post/post-1',
             profile: 'mobile',
             performance: 80,
             accessibility: 95,
@@ -63,7 +63,7 @@ describe('mergeRunSummaries', () => {
             opportunities: [{ id: 'unused-javascript', title: 'Reduce unused JavaScript' }],
           },
           {
-            url: 'https://momichan.xyz/login',
+            url: 'https://momichan.com/login',
             profile: 'desktop',
             performance: 98,
             accessibility: 96,
@@ -84,11 +84,11 @@ describe('mergeRunSummaries', () => {
       },
       {
         runId: 'run-2',
-        base: 'https://momichan.xyz',
+        base: 'https://momichan.com',
         profiles: ['mobile', 'desktop'],
         results: [
           {
-            url: 'https://momichan.xyz/post/post-1',
+            url: 'https://momichan.com/post/post-1',
             profile: 'mobile',
             performance: 62,
             accessibility: 95,
@@ -106,7 +106,7 @@ describe('mergeRunSummaries', () => {
             opportunities: [{ id: 'unused-javascript', title: 'Reduce unused JavaScript' }],
           },
           {
-            url: 'https://momichan.xyz/login',
+            url: 'https://momichan.com/login',
             profile: 'desktop',
             error: 'Challenge required',
             warnings: ['Verification failed'],
@@ -115,11 +115,11 @@ describe('mergeRunSummaries', () => {
       },
       {
         runId: 'run-3',
-        base: 'https://momichan.xyz',
+        base: 'https://momichan.com',
         profiles: ['mobile', 'desktop'],
         results: [
           {
-            url: 'https://momichan.xyz/post/post-1',
+            url: 'https://momichan.com/post/post-1',
             profile: 'mobile',
             performance: 95,
             accessibility: 94,
@@ -137,7 +137,7 @@ describe('mergeRunSummaries', () => {
             opportunities: [{ id: 'unused-css-rules', title: 'Reduce unused CSS' }],
           },
           {
-            url: 'https://momichan.xyz/login',
+            url: 'https://momichan.com/login',
             profile: 'desktop',
             performance: 97,
             accessibility: 96,
@@ -160,10 +160,10 @@ describe('mergeRunSummaries', () => {
 
     const merged = mergeRunSummaries({ runSummaries, manifest })
     const postEntry = merged.results.find(
-      (entry) => entry.url === 'https://momichan.xyz/post/post-1' && entry.profile === 'mobile'
+      (entry) => entry.url === 'https://momichan.com/post/post-1' && entry.profile === 'mobile'
     )
     const loginEntry = merged.results.find(
-      (entry) => entry.url === 'https://momichan.xyz/login' && entry.profile === 'desktop'
+      (entry) => entry.url === 'https://momichan.com/login' && entry.profile === 'desktop'
     )
 
     expect(postEntry).toMatchObject({
@@ -199,7 +199,7 @@ describe('mergeRunSummaries', () => {
   it('renders the aggregate analysis with the expected sections', () => {
     const summary = {
       generatedAt: '2026-03-20T00:00:00.000Z',
-      base: 'https://momichan.xyz',
+      base: 'https://momichan.com',
       runs: ['run-1', 'run-2', 'run-3'],
       coverage: {
         includedByPageType: { home: 1, 'anonymous-auth': 1 },
@@ -207,10 +207,10 @@ describe('mergeRunSummaries', () => {
         robotsDisallowedCount: 1,
         gaps: [],
       },
-      excluded: [{ url: 'https://momichan.xyz/favorites' }],
+      excluded: [{ url: 'https://momichan.com/favorites' }],
       results: [
         {
-          url: 'https://momichan.xyz/',
+          url: 'https://momichan.com/',
           profile: 'mobile',
           pageType: 'home',
           performance: 82,
@@ -231,7 +231,7 @@ describe('mergeRunSummaries', () => {
           challengeLikely: false,
         },
         {
-          url: 'https://momichan.xyz/login',
+          url: 'https://momichan.com/login',
           profile: 'desktop',
           pageType: 'anonymous-auth',
           performance: 97,

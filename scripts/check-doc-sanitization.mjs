@@ -13,15 +13,15 @@ const bannedPatterns = [
   },
   {
     name: 'public-site-domain',
-    regex: /\b(?:https?:\/\/)?momichan\.xyz\b/g,
+    regex: /\b(?:https?:\/\/)?momichan\.com\b/g,
   },
   {
     name: 'public-api-domain',
-    regex: /\b(?:https?:\/\/)?api\.momichan\.xyz\b/g,
+    regex: /\b(?:https?:\/\/)?api\.momichan\.com\b/g,
   },
   {
     name: 'admin-domain',
-    regex: /\b(?:https?:\/\/)?ops\.momichan\.xyz\b/g,
+    regex: /\b(?:https?:\/\/)?ops\.momichan\.com\b/g,
   },
 ]
 

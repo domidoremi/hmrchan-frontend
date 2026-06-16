@@ -1,7 +1,8 @@
 import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { summarizeIssueSeverities } from './utils'
 
 const BASELINE_LOCALE = 'zh-CN'
 const LOCALES_DIR = 'src/i18n/locales'
@@ -29,9 +30,7 @@ function extractKeys(obj: NestedRecord, prefix = ''): Set<string> {
 /**
  * Load all locale JSON files and return a map of locale name → keys.
  */
-async function loadLocales(
-  projectRoot: string,
-): Promise<Map<string, Set<string>>> {
+async function loadLocales(projectRoot: string): Promise<Map<string, Set<string>>> {
   const localesPath = join(projectRoot, LOCALES_DIR)
   const localeMap = new Map<string, Set<string>>()
 
@@ -59,7 +58,7 @@ async function loadLocales(
  */
 function compareKeys(
   baselineKeys: Set<string>,
-  localeKeys: Set<string>,
+  localeKeys: Set<string>
 ): { missing: string[]; extra: string[] } {
   const missing: string[] = []
   const extra: string[] = []
@@ -224,13 +223,7 @@ const i18nAudit: AuditModule = {
       }
     }
 
-    // Determine status
-    const errorCount = issues.filter((i) => i.severity === 'error').length
-    const warningCount = issues.filter((i) => i.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeIssueSeverities(issues)
 
     const summary =
       status === 'pass'

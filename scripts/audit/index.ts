@@ -1,3 +1,5 @@
+import { pathToFileURL } from 'node:url'
+
 import type { AuditModule, AuditOptions, AuditReport, AuditResult } from './types'
 import { colorize, formatDuration } from './utils'
 import typeCheckAudit from './type-check'
@@ -38,7 +40,7 @@ const modules: AuditModule[] = [
 ]
 
 // --- CLI arg parsing ---
-function parseArgs(argv: string[]): { fix: boolean; verbose: boolean; only: string | null } {
+export function parseArgs(argv: string[]): { fix: boolean; verbose: boolean; only: string | null } {
   let fix = false
   let verbose = false
   let only: string | null = null
@@ -50,6 +52,41 @@ function parseArgs(argv: string[]): { fix: boolean; verbose: boolean; only: stri
   }
 
   return { fix, verbose, only }
+}
+
+export function selectModules(only: string | null): AuditModule[] {
+  return only ? modules.filter((m) => m.name.toLowerCase() === only.toLowerCase()) : modules
+}
+
+export function buildAuditReport(results: AuditResult[], totalDuration: number): AuditReport {
+  return {
+    timestamp: new Date().toISOString(),
+    results,
+    totalIssues: results.reduce((sum, r) => sum + r.issues.length, 0),
+    passCount: results.filter((r) => r.status === 'pass').length,
+    warnCount: results.filter((r) => r.status === 'warn').length,
+    failCount: results.filter((r) => r.status === 'fail').length,
+    totalDuration,
+  }
+}
+
+export async function runAuditModules(
+  activeModules: AuditModule[],
+  options: AuditOptions,
+  verbose: boolean
+): Promise<AuditReport> {
+  const results: AuditResult[] = []
+  const startTime = Date.now()
+
+  for (const mod of activeModules) {
+    if (verbose) console.log(colorize(`  → ${mod.name}...`, 'dim'))
+    const result = await mod.run(options)
+    results.push(result)
+  }
+
+  const totalDuration = Date.now() - startTime
+
+  return buildAuditReport(results, totalDuration)
 }
 
 // --- Report printer ---
@@ -83,7 +120,7 @@ function printReport(report: AuditReport): void {
 }
 
 // --- Main ---
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const { fix, verbose, only } = parseArgs(process.argv.slice(2))
 
   const options: AuditOptions = {
@@ -92,9 +129,7 @@ async function main(): Promise<void> {
     projectRoot: process.cwd(),
   }
 
-  const activeModules = only
-    ? modules.filter((m) => m.name.toLowerCase() === only.toLowerCase())
-    : modules
+  const activeModules = selectModules(only)
 
   if (only && activeModules.length === 0) {
     console.error(`No module found matching "${only}"`)
@@ -106,33 +141,16 @@ async function main(): Promise<void> {
   if (fix) console.log(colorize('  Auto-fix mode enabled', 'dim'))
   console.log('')
 
-  const results: AuditResult[] = []
-  const startTime = Date.now()
-
-  for (const mod of activeModules) {
-    if (verbose) console.log(colorize(`  → ${mod.name}...`, 'dim'))
-    const result = await mod.run(options)
-    results.push(result)
-  }
-
-  const totalDuration = Date.now() - startTime
-
-  const report: AuditReport = {
-    timestamp: new Date().toISOString(),
-    results,
-    totalIssues: results.reduce((sum, r) => sum + r.issues.length, 0),
-    passCount: results.filter((r) => r.status === 'pass').length,
-    warnCount: results.filter((r) => r.status === 'warn').length,
-    failCount: results.filter((r) => r.status === 'fail').length,
-    totalDuration,
-  }
+  const report = await runAuditModules(activeModules, options, verbose)
 
   printReport(report)
 
   if (report.failCount > 0) process.exit(1)
 }
 
-main().catch((err) => {
-  console.error('Audit runner failed:', err)
-  process.exit(1)
-})
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((err) => {
+    console.error('Audit runner failed:', err)
+    process.exit(1)
+  })
+}

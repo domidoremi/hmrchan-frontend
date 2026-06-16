@@ -1038,7 +1038,6 @@ import {
   measureHomeViewportBlend,
   resolveHomeActiveRailIndex,
   resolveHomeActiveRailSlide,
-  resolveHomeActiveSectionId,
   resolveHomeBubbleCanvasFrameParameters,
   resolveHomeBubbleCanvasOrbCount,
   resolveHomeBubbleCanvasOrbFrameState,
@@ -1115,6 +1114,7 @@ import {
   type BubbleRevealPhase,
 } from '@/views/homepage/bubbleRevealState'
 import { useHomeViewModel } from '@/views/homepage/useHomeViewModel'
+import { useHomeQuickNav } from '@/views/homepage/useHomeQuickNav'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -1122,17 +1122,8 @@ import Avatar from '@/components/ui/Avatar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import HeroSection from '@/components/home/HeroSection.vue'
 import HomeQuickNav from '@/components/home/HomeQuickNav.vue'
-import {
-  computeScrollAnchorTop,
-  readNavbarVisibleOffset,
-  resolveDocumentAnchorTop,
-} from '@/components/ui/scrollAnchorTargets'
 import { createResizeObserver, createVisibilityObserver, scheduleTask } from '@/utils/modernAPIs'
-import { homeSectionAnchors, type HomeSectionAnchor } from '@/config/homeSections'
-import {
-  ensureSmoothScrollTriggerBridge,
-  scrollWithSmoothScroll,
-} from '@/composables/useSmoothScroll'
+import { ensureSmoothScrollTriggerBridge } from '@/composables/useSmoothScroll'
 type GsapModule = typeof import('gsap')
 type ScrollTriggerModule = typeof import('gsap/ScrollTrigger')
 type ScrollTriggerInstance = InstanceType<ScrollTriggerModule['ScrollTrigger']>
@@ -1254,12 +1245,17 @@ const bubbleStageRef = useTemplateRef<HTMLElement>('bubbleStageRef')
 const bubbleCanvasRef = useTemplateRef<HTMLCanvasElement>('bubbleCanvasRef')
 const featuredSectionRef = useTemplateRef<HomeSectionInstance>('featuredSectionRef')
 const storyDeckRef = useTemplateRef<HomeSectionInstance>('storyDeckRef')
-const homeQuickNavAnchors = homeSectionAnchors
-const activeHomeSectionId = ref<HomeSectionAnchor['id']>(homeSectionAnchors[0]?.id ?? 'home-fold')
-let homeSectionObserver: IntersectionObserver | null = null
-function updateHomeQuickNavSide(side: 'left' | 'right') {
-  settingsStore.setHomeQuickNavSide(side)
-}
+const {
+  activeHomeSectionId,
+  disconnectHomeSectionObserver,
+  homeQuickNavAnchors,
+  observeHomeSections,
+  scrollToHomeSection,
+  updateHomeQuickNavSide,
+} = useHomeQuickNav({
+  setHomeQuickNavSide: (side) => settingsStore.setHomeQuickNavSide(side),
+  shouldAnimate,
+})
 const railProgress = ref(0)
 const storyProgress = ref(0)
 const bubbleLayoutTier = ref<BubbleLayoutTier>('desktop')
@@ -1326,55 +1322,6 @@ function resolveSectionElement(
   section: HomeSectionInstance | null | undefined
 ): HTMLElement | null {
   return section?.element ?? null
-}
-function getHomeSectionElement(id: HomeSectionAnchor['id']): HTMLElement | null {
-  if (typeof document === 'undefined') return null
-  return document.getElementById(id)
-}
-function disconnectHomeSectionObserver() {
-  homeSectionObserver?.disconnect()
-  homeSectionObserver = null
-}
-function observeHomeSections() {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return
-  disconnectHomeSectionObserver()
-  if (typeof window.IntersectionObserver !== 'function') return
-  const visibility = new Map<HomeSectionAnchor['id'], number>()
-  homeSectionObserver = createVisibilityObserver(
-    (entries) => {
-      for (const entry of entries) {
-        const id = entry.target.getAttribute('id') as HomeSectionAnchor['id'] | null
-        if (!id) continue
-        visibility.set(id, entry.isIntersecting ? entry.intersectionRatio : 0)
-      }
-      activeHomeSectionId.value = resolveHomeActiveSectionId({
-        anchors: homeQuickNavAnchors,
-        currentId: activeHomeSectionId.value,
-        visibilityRatios: visibility,
-      })
-    },
-    {
-      threshold: [0.2, 0.35, 0.55, 0.75],
-      rootMargin: '-18% 0% -18% 0%',
-    }
-  )
-  for (const anchor of homeQuickNavAnchors) {
-    const element = getHomeSectionElement(anchor.id)
-    if (element) {
-      homeSectionObserver.observe(element)
-    }
-  }
-}
-function scrollToHomeSection(id: HomeSectionAnchor['id']) {
-  if (typeof document === 'undefined') return
-  const target = getHomeSectionElement(id)
-  if (!target) return
-  activeHomeSectionId.value = id
-  const targetTop = resolveDocumentAnchorTop(target, document)
-  const top = computeScrollAnchorTop(targetTop, readNavbarVisibleOffset(document))
-  scrollWithSmoothScroll(top, {
-    immediate: !shouldAnimate.value,
-  })
 }
 function refreshBubbleLayoutTier() {
   const width = Math.round(bubbleStageRef.value?.getBoundingClientRect().width ?? 0)

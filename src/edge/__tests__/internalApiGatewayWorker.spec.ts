@@ -23,7 +23,7 @@ describe('handleInternalApiGatewayRequest', () => {
     )
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.xyz/api/v1/client/init', {
+      new Request('https://momichan.com/api/v1/client/init', {
         method: 'POST',
         body: JSON.stringify({ client_fingerprint: 'device-1' }),
         headers: {
@@ -62,7 +62,7 @@ describe('handleInternalApiGatewayRequest', () => {
     )
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.xyz/internal/v1/auth/bff/login', {
+      new Request('https://momichan.com/internal/v1/auth/bff/login', {
         method: 'POST',
         body: JSON.stringify({ username: 'tester@example.com' }),
         headers: {
@@ -102,7 +102,7 @@ describe('handleInternalApiGatewayRequest', () => {
     )
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.xyz/api/v1/discussions/discussion-1'),
+      new Request('https://momichan.com/api/v1/discussions/discussion-1'),
       {
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
@@ -173,7 +173,7 @@ describe('handleInternalApiGatewayRequest', () => {
     )
 
     const response = await handleInternalApiGatewayRequest(
-      new Request(`https://momichan.xyz${pathname}`),
+      new Request(`https://momichan.com${pathname}`),
       {
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
@@ -209,7 +209,7 @@ describe('handleInternalApiGatewayRequest', () => {
     const vpcFetch = vi.fn().mockRejectedValue(new Error('vpc unavailable'))
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.xyz/api/v1/posts?page=2'),
+      new Request('https://momichan.com/api/v1/posts?page=2'),
       {
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
@@ -237,7 +237,7 @@ describe('handleInternalApiGatewayRequest', () => {
     const vpcFetch = vi.fn().mockRejectedValue(new Error('vpc unavailable'))
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.xyz/internal/v1/auth/bff/login', {
+      new Request('https://momichan.com/internal/v1/auth/bff/login', {
         method: 'POST',
         body: JSON.stringify({ username: 'tester@example.com' }),
         headers: {
@@ -277,7 +277,7 @@ describe('handleInternalApiGatewayRequest', () => {
     const vpcFetch = vi.fn()
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.xyz/api/v1/auth/google/start?intent=login'),
+      new Request('https://momichan.com/api/v1/auth/google/start?intent=login'),
       {
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
@@ -307,7 +307,7 @@ describe('handleInternalApiGatewayRequest', () => {
     const vpcFetch = vi.fn()
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.xyz/api/v1/home'),
+      new Request('https://momichan.com/api/v1/home'),
       {
         API_BASE_URL: BACKEND_ORIGIN,
         VPC_CONTENT_API_ORIGIN: 'http://content-api:8000',

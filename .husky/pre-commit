@@ -17,13 +17,13 @@ git diff --cached --name-only --diff-filter=ACMR -z -- '*.ts' '*.tsx' '*.vue' > 
 if [ -s "$staged_code_files" ]; then
   xargs -0r -- "$NODE_BIN" node_modules/eslint/bin/eslint.js --fix --cache < "$staged_code_files"
   xargs -0r -- "$NODE_BIN" node_modules/prettier/bin/prettier.cjs --write < "$staged_code_files"
-  xargs -0r git add -- < "$staged_code_files"
+  xargs -0r git add -f -- < "$staged_code_files"
 fi
 
 git diff --cached --name-only --diff-filter=ACMR -z -- '*.json' '*.md' '*.css' '*.scss' > "$staged_format_files"
 if [ -s "$staged_format_files" ]; then
   xargs -0r -- "$NODE_BIN" node_modules/prettier/bin/prettier.cjs --write < "$staged_format_files"
-  xargs -0r git add -- < "$staged_format_files"
+  xargs -0r git add -f -- < "$staged_format_files"
 fi
 
 if [ $? -ne 0 ]; then

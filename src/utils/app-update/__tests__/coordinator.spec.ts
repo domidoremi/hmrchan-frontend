@@ -51,7 +51,7 @@ describe('app update coordinator', () => {
             type: 'update-available',
             senderTabId: 'peer-tab',
             timestamp: 1,
-            scriptUrl: 'https://momichan.xyz/sw-v2.js',
+            scriptUrl: 'https://momichan.com/sw-v2.js',
           },
         }),
       })
@@ -61,7 +61,7 @@ describe('app update coordinator', () => {
       type: 'update-available',
       senderTabId: 'peer-tab',
       timestamp: 1,
-      scriptUrl: 'https://momichan.xyz/sw-v2.js',
+      scriptUrl: 'https://momichan.com/sw-v2.js',
     })
 
     coordinator.stop()

@@ -34,7 +34,7 @@ describe('prod regression report helpers', () => {
   it('marks missing credentials and contract drift in preflight checks', () => {
     const checks = buildRunnerPreflightChecks({
       config: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         artifactDir: 'G:/tmp/prod-regression',
         headless: true,
         primaryUsername: '',
@@ -70,7 +70,7 @@ describe('prod regression report helpers', () => {
   it('renders preflight markdown with route coverage and failed checks', () => {
     const summary = buildRunnerPreflightSummary({
       config: {
-        baseUrl: 'https://momichan.xyz',
+        baseUrl: 'https://momichan.com',
         artifactDir: 'G:/tmp/prod-regression',
         headless: false,
       },

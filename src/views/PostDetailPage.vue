@@ -384,8 +384,8 @@ import Skeleton from '@/components/ui/Skeleton.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 import { applyPageMeta } from '@/utils/pageMeta'
+import { usePostDetailTextModal } from './post-detail/usePostDetailTextModal'
 import {
   buildActiveMediaElementStyle,
   buildActiveMediaViewerStyle,
@@ -418,7 +418,6 @@ import {
   resolveSteppedMediaTransition,
   shouldIgnorePostDetailInteractionTarget,
   shouldLoadCommentsForViewport,
-  shouldShowReadFullText as computeShouldShowReadFullText,
   shouldShowThumbnailRail as computeShouldShowThumbnailRail,
   type PostDetailMediaTransition,
 } from './post-detail/postDetailModel'
@@ -536,30 +535,22 @@ let postNavHintTimer: number | null = null
 const isLightboxOpen = ref(false)
 const lightboxInitialIndex = ref(0)
 
-// Long text → open in overlay modal for comfortable reading
-const isTextModalOpen = ref(false)
-const textModalReturnFocus = ref<HTMLElement | null>(null)
-const shouldShowReadFullText = computed(() =>
-  computeShouldShowReadFullText(detailDescription.value)
-)
-
 const detailTitle = computed(() => buildDetailTitle(post.value))
 const detailDescription = computed(() => buildDetailDescription(post.value))
 
 const publishedMeta = computed(() => buildPublishedMeta(post.value, { formatDate, translate: t }))
 
-function openTextModal() {
-  if (!detailDescription.value) return
-  isTextModalOpen.value = true
-}
-
-function closeTextModal() {
-  isTextModalOpen.value = false
-}
-
-function onTextModalKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') closeTextModal()
-}
+const {
+  isTextModalOpen,
+  shouldShowReadFullText,
+  openTextModal,
+  closeTextModal,
+  releaseTextModalBindings,
+  resumeTextModalBindings,
+} = usePostDetailTextModal({
+  detailDescription,
+  textModalPanelRef,
+})
 
 const mediaState = computed(() => resolvePostDetailMediaState(post.value, activeMediaIndex.value))
 const activeMedia = computed(() => mediaState.value.activeMedia)
@@ -1217,27 +1208,6 @@ watch(
   { flush: 'sync' }
 )
 
-watch(
-  isTextModalOpen,
-  async (open) => {
-    if (typeof window === 'undefined') return
-    if (open) {
-      textModalReturnFocus.value =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null
-      lockBodyScroll()
-      window.addEventListener('keydown', onTextModalKeydown)
-      await nextTick()
-      textModalPanelRef.value?.focus({ preventScroll: true })
-    } else {
-      unlockBodyScroll()
-      window.removeEventListener('keydown', onTextModalKeydown)
-      await nextTick()
-      textModalReturnFocus.value?.focus({ preventScroll: true })
-      textModalReturnFocus.value = null
-    }
-  },
-  { immediate: true }
-)
 function attachStageListeners() {
   if (stageListenersAttached) return
   cancelIdleStageListenerArming?.()
@@ -1312,10 +1282,7 @@ function scheduleStageListeners() {
 onActivated(() => {
   stageListenersWanted = true
   scheduleStageListeners()
-  if (isTextModalOpen.value) {
-    lockBodyScroll()
-    if (typeof window !== 'undefined') window.addEventListener('keydown', onTextModalKeydown)
-  }
+  resumeTextModalBindings()
 })
 
 onDeactivated(() => {
@@ -1327,8 +1294,7 @@ onDeactivated(() => {
   detachStageListeners()
   disconnectCommentsObserver()
   stopCommentsFallbackListeners()
-  unlockBodyScroll()
-  if (typeof window !== 'undefined') window.removeEventListener('keydown', onTextModalKeydown)
+  releaseTextModalBindings()
 })
 
 // 清理 sessionStorage
@@ -1341,8 +1307,7 @@ onUnmounted(() => {
   stopAutoPlay()
   disconnectCommentsObserver()
   stopCommentsFallbackListeners()
-  unlockBodyScroll()
-  if (typeof window !== 'undefined') window.removeEventListener('keydown', onTextModalKeydown)
+  releaseTextModalBindings()
 
   if (autoPlayResumeTimer.value !== null) {
     window.clearTimeout(autoPlayResumeTimer.value)

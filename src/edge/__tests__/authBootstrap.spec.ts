@@ -62,7 +62,7 @@ describe('auth bootstrap probes', () => {
     )
     expect(definition).toBeTruthy()
 
-    const result = await probeAuthBootstrapEndpoint('https://momichan.xyz', definition!, {
+    const result = await probeAuthBootstrapEndpoint('https://momichan.com', definition!, {
       contractVersion: '2026-04-13.p1',
     })
 
@@ -83,7 +83,7 @@ describe('auth bootstrap probes', () => {
       .mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input)
 
-        if (url === 'https://momichan.xyz/api/v1/client/init') {
+        if (url === 'https://momichan.com/api/v1/client/init') {
           return new Response(
             JSON.stringify({
               success: true,
@@ -101,7 +101,7 @@ describe('auth bootstrap probes', () => {
           )
         }
 
-        if (url === 'https://momichan.xyz/api/v1/auth/passkeys/login/options') {
+        if (url === 'https://momichan.com/api/v1/auth/passkeys/login/options') {
           passkeyLoginHeaders = new Headers(init?.headers)
         }
 
@@ -114,7 +114,7 @@ describe('auth bootstrap probes', () => {
       })
     vi.stubGlobal('fetch', fetchMock)
 
-    const results = await probeAuthBootstrapEndpoints('https://momichan.xyz', {
+    const results = await probeAuthBootstrapEndpoints('https://momichan.com', {
       contractVersion: '2026-04-13.p1',
     })
 
@@ -122,8 +122,8 @@ describe('auth bootstrap probes', () => {
     expect(fetchMock).toHaveBeenCalledTimes(5)
     expect(passkeyLoginHeaders?.get('X-Client-Token')).toBe('token-1')
     expect(passkeyLoginHeaders?.get('X-Client-Fingerprint')).toBe('auth-bootstrap-probe')
-    expect(passkeyLoginHeaders?.get('Origin')).toBe('https://momichan.xyz')
-    expect(passkeyLoginHeaders?.get('Referer')).toBe('https://momichan.xyz/')
+    expect(passkeyLoginHeaders?.get('Origin')).toBe('https://momichan.com')
+    expect(passkeyLoginHeaders?.get('Referer')).toBe('https://momichan.com/')
     expect(passkeyLoginHeaders?.get('X-Signature-Version')).toBe('2')
     expect(passkeyLoginHeaders?.get('X-Signature')).toBeTruthy()
   })

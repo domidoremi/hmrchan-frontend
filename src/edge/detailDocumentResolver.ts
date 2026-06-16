@@ -1100,7 +1100,7 @@ function buildScheduleStructuredData(
 }
 
 function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocumentConfig {
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+  const fallback = resolveHtmlDocument(new URL(`https://momichan.com${path}`))
   const titleCandidate =
     normalizeText(post.title) ||
     normalizeText(post.description) ||
@@ -1137,7 +1137,7 @@ function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocum
 }
 
 function buildDynamicAuthorDocument(path: string, author: EdgeAuthorDetail): HtmlDocumentConfig {
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+  const fallback = resolveHtmlDocument(new URL(`https://momichan.com${path}`))
   const username = normalizeText(author.username)
   const displayName = normalizeText(author.display_name)
   const name = displayName || `@${username}`
@@ -1167,7 +1167,7 @@ function buildDynamicDiscussionDocument(
   path: string,
   discussion: EdgeDiscussionDetail
 ): HtmlDocumentConfig {
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+  const fallback = resolveHtmlDocument(new URL(`https://momichan.com${path}`))
   const canonicalPath = resolveDiscussionCanonicalPath(path, discussion)
   const titleCandidate = normalizeText(discussion.title) || 'Discussion detail'
   const metaDescription = buildDiscussionMetaDescription(discussion)
@@ -1202,7 +1202,7 @@ function buildDynamicScheduleDocument(
   path: string,
   schedule: EdgeScheduleDetail
 ): HtmlDocumentConfig {
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${path}`))
+  const fallback = resolveHtmlDocument(new URL(`https://momichan.com${path}`))
   const scheduleId = resolveScheduleId(schedule, path.split('/').filter(Boolean).at(-1) ?? '')
   const canonicalPath = `/schedule/${scheduleId}`
   const titleCandidate = normalizeText(schedule.title) || 'Schedule detail'
@@ -1238,7 +1238,7 @@ export async function resolveHtmlDocumentWithEdgeData(
   env?: EdgeRuntimeEnv
 ): Promise<HtmlDocumentConfig> {
   const normalizedPath = normalizeDocumentPath(url.pathname)
-  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${normalizedPath}`))
+  const fallback = resolveHtmlDocument(new URL(`https://momichan.com${normalizedPath}`))
   const path = normalizedPath
 
   const postMatch = path.match(/^\/post\/([^/]+)$/)

@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["src/router/index.ts", "src/**/*.vue", "functions/**/*.ts"],
+  "entry": ["src/router/index.ts", "src/sw/index.ts", "src/**/*.vue", "functions/**/*.ts"],
   "project": ["src/**/*.{ts,vue}", "functions/**/*.ts", "*.config.ts", "vite-plugin-*.ts"],
   "ignore": [
     "src/**/*.d.ts",

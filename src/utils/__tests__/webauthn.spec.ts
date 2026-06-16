@@ -55,7 +55,7 @@ describe('webauthn utilities', () => {
     await getWebAuthnAssertion(
       {
         challenge: 'challenge',
-        rpId: 'momichan.xyz',
+        rpId: 'momichan.com',
       },
       {
         conditional: true,

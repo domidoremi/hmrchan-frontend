@@ -7,17 +7,17 @@ const template = `<!doctype html>
     <meta charset="UTF-8" />
     <meta name="description" content="base description" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://momichan.xyz/" />
+    <link rel="canonical" href="https://momichan.com/" />
     <script type="application/json" data-prerender-structured-data="true"></script>
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://momichan.xyz/" />
+    <meta property="og:url" content="https://momichan.com/" />
     <meta property="og:title" content="Base title" />
     <meta property="og:description" content="Base description" />
-    <meta property="og:image" content="https://momichan.xyz/icons/sitting-512.webp" />
+    <meta property="og:image" content="https://momichan.com/icons/sitting-512.webp" />
     <meta name="twitter:title" content="Base title" />
     <meta name="twitter:description" content="Base description" />
-    <meta name="twitter:url" content="https://momichan.xyz/" />
-    <meta name="twitter:image" content="https://momichan.xyz/icons/sitting-512.webp" />
+    <meta name="twitter:url" content="https://momichan.com/" />
+    <meta name="twitter:image" content="https://momichan.com/icons/sitting-512.webp" />
     <title>Base title</title>
   </head>
   <body>
@@ -44,8 +44,8 @@ describe('createPrerenderedHtml', () => {
     expect(html).toContain(
       'name="description" content="按平台、主题和时间浏览最新公开内容与作者动态。"'
     )
-    expect(html).toContain('rel="canonical" href="https://momichan.xyz/explore"')
-    expect(html).toContain('property="og:url" content="https://momichan.xyz/explore"')
+    expect(html).toContain('rel="canonical" href="https://momichan.com/explore"')
+    expect(html).toContain('property="og:url" content="https://momichan.com/explore"')
     expect(html).toContain('data-prerender-shell="true"')
     expect(html).toContain('Browse public posts, tags, and creator updates')
     expect(html).toContain('data-prerender-structured-data="true"')

@@ -1,7 +1,8 @@
 import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { summarizeIssueSeverities } from './utils'
 
 const REQUIRED_MANIFEST_FIELDS = ['name', 'short_name', 'icons', 'start_url', 'display'] as const
 
@@ -173,12 +174,7 @@ const pwaAudit: AuditModule = {
     const htmlIssues = await checkIndexHtml(options)
     allIssues.push(...htmlIssues)
 
-    const errorCount = allIssues.filter((i) => i.severity === 'error').length
-    const warningCount = allIssues.filter((i) => i.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeIssueSeverities(allIssues)
 
     const summary =
       status === 'pass'

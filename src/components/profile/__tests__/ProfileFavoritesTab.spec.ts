@@ -150,7 +150,7 @@ describe('ProfileFavoritesTab', () => {
           id: 'post-1',
           title: 'With thumb',
           thumbnail_url:
-            'https://momichan.xyz/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
+            'https://momichan.com/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
           author_name: 'alice',
         },
       },
@@ -189,7 +189,7 @@ describe('ProfileFavoritesTab', () => {
     const cards = wrapper.findAll('.profile-post-preview-card-stub')
     expect(cards).toHaveLength(2)
     expect(cards[0]?.text()).toContain(
-      'With thumb|https://momichan.xyz/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium|/post/post-1?mediaId=123e4567-e89b-12d3-a456-426614174000'
+      'With thumb|https://momichan.com/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium|/post/post-1?mediaId=123e4567-e89b-12d3-a456-426614174000'
     )
     expect(cards[1]?.text()).toContain(
       'favorites.unknownPost|empty|/post/post-2|favorites.unknownPost|favorites.organizeHint'
@@ -199,7 +199,7 @@ describe('ProfileFavoritesTab', () => {
 
     expect(state.cachePreview).toHaveBeenCalledWith(
       'post-1',
-      'https://momichan.xyz/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium'
+      'https://momichan.com/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium'
     )
     expect(state.routerPush).toHaveBeenCalledWith(
       '/post/post-1?mediaId=123e4567-e89b-12d3-a456-426614174000'

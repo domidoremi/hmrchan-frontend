@@ -53,7 +53,7 @@ describe('production contract env resolver', () => {
     const result = resolveProductionContractEnv({
       CF_PAGES: '1',
       CF_PAGES_COMMIT_SHA: 'pages-commit-sha',
-      VITE_API_BASE_URL: 'https://api.momichan.xyz',
+      VITE_API_BASE_URL: 'https://api.momichan.com',
       VITE_IDENTITY_API_BASE_URL: 'http://127.0.0.1:19081',
       VITE_COMMUNITY_API_BASE_URL: 'http://127.0.0.1:19082',
       VITE_CONTENT_API_BASE_URL: 'http://127.0.0.1:19083',

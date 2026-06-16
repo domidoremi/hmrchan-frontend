@@ -24,7 +24,7 @@ describe('normalizeAvatarUrl', () => {
   })
 
   it('drops retired legacy absolute avatar paths on the site origin', () => {
-    expect(normalizeAvatarUrl('https://momichan.xyz/uploads/avatars/test.jpg')).toBeNull()
+    expect(normalizeAvatarUrl('https://momichan.com/uploads/avatars/test.jpg')).toBeNull()
   })
 
   it('falls back YouTube maxres avatars to hqdefault before request', () => {

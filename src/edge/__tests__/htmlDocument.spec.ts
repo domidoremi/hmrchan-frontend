@@ -9,35 +9,35 @@ import {
 
 describe('resolveHtmlDocument', () => {
   it('returns indexable metadata for public discovery pages', () => {
-    const homeConfig = resolveHtmlDocument(new URL('https://momichan.xyz/'))
-    const exploreConfig = resolveHtmlDocument(new URL('https://momichan.xyz/explore'))
-    const contactConfig = resolveHtmlDocument(new URL('https://momichan.xyz/contact'))
+    const homeConfig = resolveHtmlDocument(new URL('https://momichan.com/'))
+    const exploreConfig = resolveHtmlDocument(new URL('https://momichan.com/explore'))
+    const contactConfig = resolveHtmlDocument(new URL('https://momichan.com/contact'))
 
     expect(homeConfig.status).toBe(200)
     expect(homeConfig.title).toBe('Home · MomiChan')
     expect(homeConfig.robots).toBe('index, follow')
-    expect(resolveCanonicalUrl(homeConfig)).toBe('https://momichan.xyz/')
+    expect(resolveCanonicalUrl(homeConfig)).toBe('https://momichan.com/')
     expect(homeConfig.structuredData.length).toBeGreaterThan(0)
 
     expect(exploreConfig.status).toBe(200)
     expect(exploreConfig.title).toBe('Explore · MomiChan')
     expect(exploreConfig.robots).toBe('index, follow')
-    expect(resolveCanonicalUrl(exploreConfig)).toBe('https://momichan.xyz/explore')
+    expect(resolveCanonicalUrl(exploreConfig)).toBe('https://momichan.com/explore')
 
     expect(contactConfig.status).toBe(200)
     expect(contactConfig.title).toBe('Contact · MomiChan')
     expect(contactConfig.robots).toBe('index, follow')
     expect(contactConfig.description).toContain('留言')
-    expect(resolveCanonicalUrl(contactConfig)).toBe('https://momichan.xyz/contact')
+    expect(resolveCanonicalUrl(contactConfig)).toBe('https://momichan.com/contact')
   })
 
   it('marks auth and private routes as noindex', () => {
-    const loginConfig = resolveHtmlDocument(new URL('https://momichan.xyz/login'))
-    const authCallbackConfig = resolveHtmlDocument(new URL('https://momichan.xyz/auth/callback'))
+    const loginConfig = resolveHtmlDocument(new URL('https://momichan.com/login'))
+    const authCallbackConfig = resolveHtmlDocument(new URL('https://momichan.com/auth/callback'))
     const passkeyRecoveryConfig = resolveHtmlDocument(
-      new URL('https://momichan.xyz/auth/passkeys/recovery')
+      new URL('https://momichan.com/auth/passkeys/recovery')
     )
-    const favoritesConfig = resolveHtmlDocument(new URL('https://momichan.xyz/favorites'))
+    const favoritesConfig = resolveHtmlDocument(new URL('https://momichan.com/favorites'))
     const privateProfilePaths = [
       '/profile',
       '/profile/favorites',
@@ -73,7 +73,7 @@ describe('resolveHtmlDocument', () => {
     expect(favoritesConfig.title).toBe('Account area · MomiChan')
 
     for (const privatePath of privateProfilePaths) {
-      const config = resolveHtmlDocument(new URL(`https://momichan.xyz${privatePath}`))
+      const config = resolveHtmlDocument(new URL(`https://momichan.com${privatePath}`))
 
       expect(config.status).toBe(200)
       expect(config.robots).toBe('noindex, nofollow')
@@ -83,18 +83,18 @@ describe('resolveHtmlDocument', () => {
 
   it('returns article metadata for valid detail routes', () => {
     const postConfig = resolveHtmlDocument(
-      new URL('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000')
+      new URL('https://momichan.com/post/00000000-0000-4000-8000-000000000000')
     )
-    const authorConfig = resolveHtmlDocument(new URL('https://momichan.xyz/author/momichan'))
+    const authorConfig = resolveHtmlDocument(new URL('https://momichan.com/author/momichan'))
     const discussionConfig = resolveHtmlDocument(
-      new URL('https://momichan.xyz/discussion/discussion-1')
+      new URL('https://momichan.com/discussion/discussion-1')
     )
 
     expect(postConfig.status).toBe(200)
     expect(postConfig.ogType).toBe('article')
     expect(postConfig.robots).toBe('index, follow')
     expect(resolveCanonicalUrl(postConfig)).toBe(
-      'https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'
+      'https://momichan.com/post/00000000-0000-4000-8000-000000000000'
     )
 
     expect(authorConfig.status).toBe(200)
@@ -103,16 +103,16 @@ describe('resolveHtmlDocument', () => {
 
     expect(discussionConfig.status).toBe(200)
     expect(resolveCanonicalUrl(discussionConfig)).toBe(
-      'https://momichan.xyz/community/discussions/discussion-1'
+      'https://momichan.com/community/discussions/discussion-1'
     )
   })
 
   it('returns a real 404 contract for invalid and unknown routes', () => {
     const invalidPostConfig = resolveHtmlDocument(
-      new URL('https://momichan.xyz/post/not-a-real-id')
+      new URL('https://momichan.com/post/not-a-real-id')
     )
     const unknownRouteConfig = resolveHtmlDocument(
-      new URL('https://momichan.xyz/this-route-does-not-exist')
+      new URL('https://momichan.com/this-route-does-not-exist')
     )
 
     expect(invalidPostConfig.status).toBe(404)
@@ -122,7 +122,7 @@ describe('resolveHtmlDocument', () => {
     expect(unknownRouteConfig.status).toBe(404)
     expect(unknownRouteConfig.robots).toBe('noindex, nofollow')
     expect(resolveCanonicalUrl(unknownRouteConfig)).toBe(
-      'https://momichan.xyz/this-route-does-not-exist'
+      'https://momichan.com/this-route-does-not-exist'
     )
   })
 
@@ -155,7 +155,7 @@ describe('resolveHtmlDocument', () => {
   })
 
   it('renders the homepage shell with the dedicated home variant', () => {
-    const homeConfig = resolveHtmlDocument(new URL('https://momichan.xyz/'))
+    const homeConfig = resolveHtmlDocument(new URL('https://momichan.com/'))
     const shell = renderPrerenderShell(homeConfig)
 
     expect(homeConfig.shellVariant).toBe('home')
@@ -169,7 +169,7 @@ describe('resolveHtmlDocument', () => {
 
   it('renders JSON-LD payloads for structured public pages', () => {
     const structuredDataScript = renderStructuredDataScript(
-      resolveHtmlDocument(new URL('https://momichan.xyz/'))
+      resolveHtmlDocument(new URL('https://momichan.com/'))
     )
 
     expect(structuredDataScript).toContain('application/ld+json')
@@ -178,7 +178,7 @@ describe('resolveHtmlDocument', () => {
   })
 
   it('keeps the contact prerender shell aligned with the real public contact scope', () => {
-    const contactConfig = resolveHtmlDocument(new URL('https://momichan.xyz/contact'))
+    const contactConfig = resolveHtmlDocument(new URL('https://momichan.com/contact'))
     const shell = renderPrerenderShell(contactConfig)
 
     expect(contactConfig.shellEyebrow).toBe('Contact')
@@ -199,9 +199,9 @@ describe('htmlDocument path normalization', () => {
   })
 
   it('resolves prerendered public routes even when Pages appends a trailing slash', () => {
-    const explore = resolveHtmlDocument(new URL('https://momichan.xyz/explore/'))
-    const authors = resolveHtmlDocument(new URL('https://momichan.xyz/authors/'))
-    const community = resolveHtmlDocument(new URL('https://momichan.xyz/community/'))
+    const explore = resolveHtmlDocument(new URL('https://momichan.com/explore/'))
+    const authors = resolveHtmlDocument(new URL('https://momichan.com/authors/'))
+    const community = resolveHtmlDocument(new URL('https://momichan.com/community/'))
 
     expect(explore.status).toBe(200)
     expect(explore.canonicalPath).toBe('/explore')

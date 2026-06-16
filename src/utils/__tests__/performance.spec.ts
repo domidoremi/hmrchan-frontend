@@ -206,8 +206,8 @@ describe('performance helpers', () => {
   it('deduplicates preload and preconnect links', () => {
     preloadResource('/assets/app.js', 'script')
     preloadResource('/assets/app.js', 'script')
-    preconnect('https://momichan.xyz')
-    preconnect('https://momichan.xyz')
+    preconnect('https://momichan.com')
+    preconnect('https://momichan.com')
 
     expect(document.head.querySelectorAll('link[rel="preload"]')).toHaveLength(1)
     expect(document.head.querySelectorAll('link[rel="preconnect"]')).toHaveLength(1)

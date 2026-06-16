@@ -419,7 +419,7 @@ describe('auth bootstrap helpers', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const results = await probeAuthBootstrapEndpoints('https://momichan.xyz', {
+    const results = await probeAuthBootstrapEndpoints('https://momichan.com', {
       probeIntervalMs: 0,
     })
 
@@ -455,7 +455,7 @@ describe('auth bootstrap helpers', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const result = await probeAuthBootstrapEndpoint(
-      'https://momichan.xyz',
+      'https://momichan.com',
       getAuthBootstrapProbeDefinitions()[0]!,
       {
         probeIntervalMs: 0,

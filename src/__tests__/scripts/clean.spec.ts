@@ -8,8 +8,15 @@ describe('clean script', () => {
   it('dry-run includes ignored local instruction drift and preserves tracked AGENTS.md', () => {
     const projectRoot = mkdtempSync(path.join(tmpdir(), 'hmrchan-clean-'))
     mkdirSync(path.join(projectRoot, 'dist'), { recursive: true })
+    mkdirSync(path.join(projectRoot, '.wrangler'), { recursive: true })
+    mkdirSync(path.join(projectRoot, 'docs'), { recursive: true })
     writeFileSync(path.join(projectRoot, 'CLAUDE.md'), '# local drift\n', 'utf8')
     writeFileSync(path.join(projectRoot, 'AGENTS.md'), '# tracked policy\n', 'utf8')
+    writeFileSync(
+      path.join(projectRoot, 'docs', 'refactor-modernization-plan.md'),
+      '# superseded local plan\n',
+      'utf8'
+    )
 
     const result = spawnSync(process.execPath, [path.resolve('scripts/clean.mjs'), '--dry-run'], {
       cwd: projectRoot,
@@ -18,6 +25,10 @@ describe('clean script', () => {
 
     expect(result.status).toBe(0)
     expect(result.stdout).toContain('would remove CLAUDE.md')
+    expect(result.stdout).toContain('would remove .wrangler')
+    expect(result.stdout).toContain(
+      `would remove ${path.join('docs', 'refactor-modernization-plan.md')}`
+    )
     expect(result.stdout).toContain('would remove dist')
     expect(result.stdout).not.toContain('AGENTS.md')
     expect(result.stderr).toBe('')

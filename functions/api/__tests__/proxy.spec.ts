@@ -5,7 +5,7 @@ import { onRequest } from '../[[path]]'
 const BACKEND_ORIGIN = 'https://backend.test'
 const INTERNAL_ORIGIN = 'https://internal.test'
 const INTERNAL_SECRET = 'super-secret'
-const ORIGIN = 'https://momichan.xyz'
+const ORIGIN = 'https://momichan.com'
 const SESSION_RESOLVE_ROUTE = `/api/v1/auth/${'session:resolve'}`
 const CSRF_TOKEN = 'csrf-token-1'
 const textEncoder = new TextEncoder()
@@ -112,12 +112,12 @@ function makeContext(options: {
 }) {
   const method = options.method ?? 'GET'
   const headers = new Headers(options.headers)
-  if (
-    options.csrf !== false &&
-    !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
-  ) {
+  if (options.csrf !== false && !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) {
     headers.set('X-Origin-CSRF', CSRF_TOKEN)
-    headers.set('Cookie', `${headers.get('Cookie') ? `${headers.get('Cookie')}; ` : ''}__Host-momi_origin_csrf=${CSRF_TOKEN}`)
+    headers.set(
+      'Cookie',
+      `${headers.get('Cookie') ? `${headers.get('Cookie')}; ` : ''}__Host-momi_origin_csrf=${CSRF_TOKEN}`
+    )
   }
 
   return {
@@ -1278,10 +1278,10 @@ describe('functions/api proxy', () => {
   })
 
   it.each([
-    ['https://momichan.xyz/api/auth/google/start?intent=login', ['auth', 'google', 'start']],
-    ['https://momichan.xyz/api/auth/google/callback?code=abc', ['auth', 'google', 'callback']],
-    ['https://momichan.xyz/api/auth/google/exchange', ['auth', 'google', 'exchange']],
-    ['https://momichan.xyz/api/auth/google/confirm-link', ['auth', 'google', 'confirm-link']],
+    ['https://momichan.com/api/auth/google/start?intent=login', ['auth', 'google', 'start']],
+    ['https://momichan.com/api/auth/google/callback?code=abc', ['auth', 'google', 'callback']],
+    ['https://momichan.com/api/auth/google/exchange', ['auth', 'google', 'exchange']],
+    ['https://momichan.com/api/auth/google/confirm-link', ['auth', 'google', 'confirm-link']],
   ])('returns 404 for retired legacy google auth path %s', async (url, path) => {
     const response = await onRequest(
       makeContext({

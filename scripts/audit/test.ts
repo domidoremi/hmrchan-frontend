@@ -1,5 +1,5 @@
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
-import { runLocalNodeTool } from './utils'
+import { runLocalNodeTool, summarizeCommandIssues } from './utils'
 
 interface VitestResult {
   numTotalTests: number
@@ -82,11 +82,16 @@ const testAudit: AuditModule = {
       )
     }
 
-    const status = numFailedTests > 0 ? 'fail' : 'pass'
-    const summary =
-      status === 'pass'
-        ? `All ${numTotalTests} test(s) passed`
-        : `${numFailedTests} of ${numTotalTests} test(s) failed`
+    const failedSummary =
+      numFailedTests > 0
+        ? `${numFailedTests} of ${numTotalTests} test(s) failed`
+        : `Vitest exited with code ${result.exitCode}`
+    const { status, summary } = summarizeCommandIssues(
+      issues,
+      result.exitCode,
+      `All ${numTotalTests} test(s) passed`,
+      failedSummary
+    )
 
     return {
       module: 'test',

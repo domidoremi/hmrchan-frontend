@@ -181,7 +181,7 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     path: '/',
     expected: {
       title: 'Home · MomiChan',
-      canonical: 'https://momichan.xyz/',
+      canonical: 'https://momichan.com/',
       robots: 'index, follow',
     },
   },
@@ -190,7 +190,7 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     path: '/explore',
     expected: {
       title: 'Explore · MomiChan',
-      canonical: 'https://momichan.xyz/explore',
+      canonical: 'https://momichan.com/explore',
       robots: 'index, follow',
     },
   },
@@ -199,7 +199,7 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     path: '/authors',
     expected: {
       title: 'Authors · MomiChan',
-      canonical: 'https://momichan.xyz/authors',
+      canonical: 'https://momichan.com/authors',
       robots: 'index, follow',
     },
   },
@@ -208,7 +208,7 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     path: '/404/',
     expected: {
       title: 'Page not found · MomiChan',
-      canonical: 'https://momichan.xyz/404',
+      canonical: 'https://momichan.com/404',
       robots: 'noindex, nofollow',
     },
   },
@@ -970,7 +970,7 @@ async function assertBrowserRoute(
       const expectedCanonicalPath = check.expectedCanonicalPath ?? check.path
       if (
         canonicalHref !==
-        `https://momichan.xyz${expectedCanonicalPath === '/' ? '/' : expectedCanonicalPath}`
+        `https://momichan.com${expectedCanonicalPath === '/' ? '/' : expectedCanonicalPath}`
       ) {
         throw new Error(`Unexpected canonical for ${check.path}: ${canonicalHref}`)
       }

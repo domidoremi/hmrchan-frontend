@@ -1,7 +1,9 @@
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { runLocalNodeTool } from './utils'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { createLocalAuditEnv } from '../lib/audit-env.js'
+import { runLocalNodeTool, summarizeIssueSeverities } from './utils'
 
 interface KnipIssues {
+  issues?: KnipIssues[]
   files?: string[]
   dependencies?: string[]
   devDependencies?: string[]
@@ -13,6 +15,14 @@ interface KnipIssues {
   [key: string]: unknown
 }
 
+function normalizeKnipIssueName(value: unknown): string | null {
+  if (typeof value === 'string' && value.length > 0) return value
+  if (!value || typeof value !== 'object') return null
+
+  const name = (value as Record<string, unknown>).name
+  return typeof name === 'string' && name.length > 0 ? name : null
+}
+
 function parseKnipOutput(stdout: string): KnipIssues {
   try {
     return JSON.parse(stdout) as KnipIssues
@@ -21,98 +31,90 @@ function parseKnipOutput(stdout: string): KnipIssues {
   }
 }
 
+function pushListIssues(
+  issues: AuditIssue[],
+  values: unknown,
+  buildIssue: (value: string) => AuditIssue
+): void {
+  if (!Array.isArray(values) || values.length === 0) return
+
+  for (const value of values) {
+    const name = normalizeKnipIssueName(value)
+    if (!name) continue
+    issues.push(buildIssue(name))
+  }
+}
+
+function pushObjectListIssues(
+  issues: AuditIssue[],
+  values: unknown,
+  buildIssue: (file: string, value: unknown) => AuditIssue
+): void {
+  if (!values || typeof values !== 'object' || Array.isArray(values)) return
+
+  for (const [file, entries] of Object.entries(values)) {
+    if (!Array.isArray(entries) || entries.length === 0) continue
+    for (const entry of entries) {
+      issues.push(buildIssue(file, entry))
+    }
+  }
+}
+
 function collectIssues(knip: KnipIssues): AuditIssue[] {
+  if (Array.isArray(knip.issues)) {
+    return knip.issues.flatMap((issueGroup) => collectIssues(issueGroup))
+  }
+
   const issues: AuditIssue[] = []
 
-  // Unused files
-  if (Array.isArray(knip.files) && knip.files.length > 0) {
-    for (const file of knip.files) {
-      issues.push({
-        severity: 'warning',
-        message: `Unused file: ${file}`,
-        file,
-        rule: 'unused-file',
-        suggestion: 'Remove this file if it is no longer needed',
-      })
-    }
-  }
+  pushListIssues(issues, knip.files, (file) => ({
+    severity: 'warning',
+    message: `Unused file: ${file}`,
+    file,
+    rule: 'unused-file',
+    suggestion: 'Remove this file if it is no longer needed',
+  }))
 
-  // Unused dependencies
-  if (Array.isArray(knip.dependencies) && knip.dependencies.length > 0) {
-    for (const dep of knip.dependencies) {
-      issues.push({
-        severity: 'warning',
-        message: `Unused dependency: ${dep}`,
-        rule: 'unused-dependency',
-        suggestion: `Run \`bun remove ${dep}\` to remove`,
-      })
-    }
-  }
+  pushListIssues(issues, knip.dependencies, (dep) => ({
+    severity: 'warning',
+    message: `Unused dependency: ${dep}`,
+    rule: 'unused-dependency',
+    suggestion: `Run \`bun remove ${dep}\` to remove`,
+  }))
 
-  // Unused devDependencies
-  if (Array.isArray(knip.devDependencies) && knip.devDependencies.length > 0) {
-    for (const dep of knip.devDependencies) {
-      issues.push({
-        severity: 'info',
-        message: `Unused devDependency: ${dep}`,
-        rule: 'unused-devDependency',
-        suggestion: `Run \`bun remove ${dep}\` to remove`,
-      })
-    }
-  }
+  pushListIssues(issues, knip.devDependencies, (dep) => ({
+    severity: 'info',
+    message: `Unused devDependency: ${dep}`,
+    rule: 'unused-devDependency',
+    suggestion: `Run \`bun remove ${dep}\` to remove`,
+  }))
 
-  // Unused exports (object keyed by file path)
-  if (knip.exports && typeof knip.exports === 'object' && !Array.isArray(knip.exports)) {
-    for (const [file, exportInfo] of Object.entries(knip.exports)) {
-      if (Array.isArray(exportInfo)) {
-        for (const exp of exportInfo) {
-          const name =
-            typeof exp === 'string' ? exp : ((exp as Record<string, unknown>).name ?? exp)
-          issues.push({
-            severity: 'info',
-            message: `Unused export "${name}"`,
-            file,
-            rule: 'unused-export',
-            suggestion: 'Remove this export if it is no longer used',
-          })
-        }
-      }
+  pushObjectListIssues(issues, knip.exports, (file, exp) => {
+    const name = typeof exp === 'string' ? exp : ((exp as Record<string, unknown>).name ?? exp)
+    return {
+      severity: 'info',
+      message: `Unused export "${name}"`,
+      file,
+      rule: 'unused-export',
+      suggestion: 'Remove this export if it is no longer used',
     }
-  }
+  })
 
-  // Unlisted dependencies
-  if (knip.unlisted && typeof knip.unlisted === 'object' && !Array.isArray(knip.unlisted)) {
-    for (const [file, deps] of Object.entries(knip.unlisted)) {
-      if (Array.isArray(deps)) {
-        for (const dep of deps) {
-          issues.push({
-            severity: 'error',
-            message: `Unlisted dependency "${dep}" used in ${file}`,
-            file,
-            rule: 'unlisted-dependency',
-            suggestion: `Run \`bun add ${dep}\` to add it to package.json`,
-          })
-        }
-      }
-    }
-  }
+  pushObjectListIssues(issues, knip.unlisted, (file, dep) => ({
+    severity: 'error',
+    message: `Unlisted dependency "${dep}" used in ${file}`,
+    file,
+    rule: 'unlisted-dependency',
+    suggestion: `Run \`bun add ${dep}\` to add it to package.json`,
+  }))
 
-  // Unresolved imports
-  if (knip.unresolved && typeof knip.unresolved === 'object' && !Array.isArray(knip.unresolved)) {
-    for (const [file, imports] of Object.entries(knip.unresolved)) {
-      if (Array.isArray(imports)) {
-        for (const imp of imports) {
-          issues.push({
-            severity: 'error',
-            message: `Unresolved import "${imp}"`,
-            file,
-            rule: 'unresolved-import',
-            suggestion: 'Check if the module is installed or the path is correct',
-          })
-        }
-      }
-    }
-  }
+  pushObjectListIssues(issues, knip.unresolved, (file, imp) => ({
+    severity: 'error',
+    message: `Unresolved import "${imp}"`,
+    file,
+    rule: 'unresolved-import',
+    suggestion: 'Check if the module is installed or the path is correct',
+  }))
 
   return issues
 }
@@ -129,23 +131,32 @@ const deadCodeAudit: AuditModule = {
     }
 
     // Run knip with JSON reporter
-    const result = await runLocalNodeTool('knip', ['--reporter', 'json'], options.projectRoot)
+    const knipEnv = createLocalAuditEnv(process.env, {
+      cwd: options.projectRoot,
+      includeContractFallback: true,
+    })
+    const result = await runLocalNodeTool('knip', ['--reporter', 'json'], options.projectRoot, {
+      env: knipEnv,
+    })
 
     const knip = parseKnipOutput(result.stdout)
     const issues = collectIssues(knip)
 
-    // Determine status
-    const errorCount = issues.filter((i) => i.severity === 'error').length
-    const warningCount = issues.filter((i) => i.severity === 'warning').length
+    if (result.exitCode !== 0 && issues.length === 0) {
+      const errorOutput = (result.stderr || result.stdout).slice(0, 500)
+      issues.push({
+        severity: 'error',
+        message: `knip failed (exit code ${result.exitCode}): ${errorOutput}`,
+        rule: 'knip-exit-code',
+      })
+    }
 
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, infoCount, status } = summarizeIssueSeverities(issues)
 
     const summary =
       status === 'pass'
         ? 'No dead code issues found'
-        : `Found ${errorCount} error(s), ${warningCount} warning(s), and ${issues.length - errorCount - warningCount} info(s)`
+        : `Found ${errorCount} error(s), ${warningCount} warning(s), and ${infoCount} info(s)`
 
     if (options.verbose && issues.length > 0) {
       for (const issue of issues) {

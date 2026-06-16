@@ -1,7 +1,8 @@
 import { readdirSync, statSync, existsSync } from 'fs'
 import { join, relative } from 'path'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { runLocalNodeTool } from './utils'
+import { createLocalAuditEnv } from '../lib/audit-env.js'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
+import { runLocalNodeTool, summarizeIssueSeverities } from './utils'
 
 const CHUNK_SIZE_WARN_KB = 500
 
@@ -39,7 +40,17 @@ const buildAudit: AuditModule = {
     const distDir = join(options.projectRoot, 'dist')
 
     // 1. Run vite build
-    const result = await runLocalNodeTool('vite', ['build'], options.projectRoot)
+    const buildEnv = createLocalAuditEnv(process.env, {
+      cwd: options.projectRoot,
+      includeContractFallback: true,
+      overrides: {
+        LOCAL_AUDIT_BUILD: 'true',
+      },
+    })
+
+    const result = await runLocalNodeTool('vite', ['build'], options.projectRoot, {
+      env: buildEnv,
+    })
 
     if (result.exitCode !== 0) {
       const errorOutput = (result.stderr || result.stdout).slice(0, 500)
@@ -116,9 +127,7 @@ const buildAudit: AuditModule = {
       }
     }
 
-    let status: AuditStatus = 'pass'
-    if (issues.some((i) => i.severity === 'error')) status = 'fail'
-    else if (issues.some((i) => i.severity === 'warning')) status = 'warn'
+    const { status } = summarizeIssueSeverities(issues)
 
     const summary =
       status === 'pass'

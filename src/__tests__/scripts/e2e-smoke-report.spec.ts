@@ -47,7 +47,7 @@ describe('e2e smoke report helpers', () => {
 
   it('renders guest and auth summary rows with readiness selectors and failure evidence', () => {
     const summary = createSmokeSummary('.e2e-smoke', 'demo@example.com', 'secret')
-    summary.baseUrl = 'https://momichan.xyz'
+    summary.baseUrl = 'https://momichan.com'
     summary.authSmokeRequired = true
     summary.authSmokeExecuted = true
     summary.lastStage = 'authenticated smoke'
@@ -55,7 +55,7 @@ describe('e2e smoke report helpers', () => {
     summary.lastFailureEvidence = {
       checkName: 'profile comments',
       route: '/profile/comments',
-      url: 'https://momichan.xyz/profile/comments',
+      url: 'https://momichan.com/profile/comments',
       pathname: '/profile/comments',
       title: 'Comments · MomiChan',
       screenshotPath: '.e2e-smoke/failure-last.png',

@@ -56,7 +56,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.xyz/post/${SAMPLE_POST_ID}`),
+      new URL(`https://momichan.com/post/${SAMPLE_POST_ID}`),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -117,7 +117,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL('https://momichan.xyz/author/momichan'),
+      new URL('https://momichan.com/author/momichan'),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -174,7 +174,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL('https://momichan.xyz/discussion/discussion-1'),
+      new URL('https://momichan.com/discussion/discussion-1'),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -228,7 +228,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL('https://momichan.xyz/schedule/schedule-1'),
+      new URL('https://momichan.com/schedule/schedule-1'),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -254,7 +254,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.xyz/post/${SAMPLE_POST_ID}`),
+      new URL(`https://momichan.com/post/${SAMPLE_POST_ID}`),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -267,7 +267,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.xyz/post/${SAMPLE_POST_ID}`),
+      new URL(`https://momichan.com/post/${SAMPLE_POST_ID}`),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -300,7 +300,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.xyz/post/${SAMPLE_POST_ID}`),
+      new URL(`https://momichan.com/post/${SAMPLE_POST_ID}`),
       {
         API_BASE_URL: BACKEND_ORIGIN,
         INTERNAL_API_GATEWAY: {
@@ -311,7 +311,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
 
     expect(gatewayFetch).toHaveBeenCalledTimes(1)
     expect((gatewayFetch.mock.calls[0]?.[0] as Request).url).toBe(
-      `https://momichan.xyz/api/v1/posts/${SAMPLE_POST_ID}`
+      `https://momichan.com/api/v1/posts/${SAMPLE_POST_ID}`
     )
     expect(publicFetch).not.toHaveBeenCalled()
     expect(config.title).toBe('Gateway hydrated detail · MomiChan')

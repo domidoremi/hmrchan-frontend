@@ -60,7 +60,7 @@ User-agent: MJ12bot
 Disallow: /
 
 # Sitemap 位置
-Sitemap: https://momichan.xyz/sitemap.xml
+Sitemap: https://momichan.com/sitemap.xml
 
 # 主机信息（可选）
-Host: momichan.xyz
+Host: momichan.com

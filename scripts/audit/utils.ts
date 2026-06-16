@@ -1,7 +1,7 @@
 import { spawn } from 'child_process'
 import { existsSync, readFileSync } from 'fs'
 import { delimiter, dirname, join, resolve } from 'path'
-import type { AuditStatus } from './types'
+import type { AuditIssue, AuditStatus } from './types'
 
 export interface CommandResult {
   stdout: string
@@ -129,7 +129,8 @@ export function runCommand(
 export function runLocalNodeTool(
   command: keyof typeof LOCAL_NODE_TOOLS,
   args: string[] = [],
-  cwd?: string
+  cwd?: string,
+  options: RunCommandOptions = {}
 ): Promise<CommandResult> {
   const binPath = resolveLocalNodeBin(command, cwd)
   if (!binPath) {
@@ -140,12 +141,56 @@ export function runLocalNodeTool(
     })
   }
 
-  return runCommand(getNodeCommand(), [binPath, ...args], cwd)
+  return runCommand(getNodeCommand(), [binPath, ...args], cwd, options)
 }
 
 export function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`
   return `${(ms / 1000).toFixed(2)}s`
+}
+
+export interface IssueSeveritySummary {
+  errorCount: number
+  warningCount: number
+  infoCount: number
+  status: AuditStatus
+}
+
+export function summarizeIssueSeverities(issues: AuditIssue[]): IssueSeveritySummary {
+  const errorCount = issues.filter((issue) => issue.severity === 'error').length
+  const warningCount = issues.filter((issue) => issue.severity === 'warning').length
+  const infoCount = issues.filter((issue) => issue.severity === 'info').length
+
+  let status: AuditStatus = 'pass'
+  if (errorCount > 0) status = 'fail'
+  else if (warningCount > 0) status = 'warn'
+
+  return {
+    errorCount,
+    warningCount,
+    infoCount,
+    status,
+  }
+}
+
+export function summarizeCommandIssues(
+  issues: AuditIssue[],
+  exitCode: number,
+  passedMessage: string,
+  failedMessage: string
+): { status: AuditStatus; summary: string } {
+  const { status } = summarizeIssueSeverities(issues)
+  if (issues.length === 0 && exitCode === 0) {
+    return {
+      status: 'pass',
+      summary: passedMessage,
+    }
+  }
+
+  return {
+    status: exitCode === 0 && status !== 'pass' ? status : 'fail',
+    summary: failedMessage,
+  }
 }
 
 const COLORS = {

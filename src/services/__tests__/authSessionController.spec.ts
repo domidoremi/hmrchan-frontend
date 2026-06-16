@@ -103,7 +103,7 @@ describe('createAuthSessionController', () => {
 
     vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(
       createMeResponse({
-        avatar_url: 'https://momichan.xyz/uploads/avatars/legacy-avatar.jpg',
+        avatar_url: 'https://momichan.com/uploads/avatars/legacy-avatar.jpg',
       })
     )
 

@@ -8,7 +8,7 @@ service_id = "019c954f-b5bf-7e81-aea7-fa4eb3e05cb9"
 remote = true
 
 [env.production.vars]
-API_BASE_URL = "https://api.momichan.xyz"
+API_BASE_URL = "https://api.momichan.com"
 VPC_IDENTITY_API_ORIGIN = "http://caddy:80"
 VPC_COMMUNITY_API_ORIGIN = "http://caddy:80"
 VPC_CONTENT_API_ORIGIN = "http://caddy:80"
@@ -21,7 +21,7 @@ service_id = "019c954f-b5bf-7e81-aea7-fa4eb3e05cb9"
 remote = true
 
 [env.preview.vars]
-API_BASE_URL = "https://api.momichan.xyz"
+API_BASE_URL = "https://api.momichan.com"
 VPC_IDENTITY_API_ORIGIN = "http://caddy:80"
 VPC_COMMUNITY_API_ORIGIN = "http://caddy:80"
 VPC_CONTENT_API_ORIGIN = "http://caddy:80"

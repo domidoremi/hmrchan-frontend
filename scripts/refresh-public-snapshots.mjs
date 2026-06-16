@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const repoRoot = path.resolve(__dirname, '..')
 
-const apiBaseUrl = (process.env.PUBLIC_SNAPSHOT_BASE_URL || 'https://momichan.xyz/api/v1').replace(
+const apiBaseUrl = (process.env.PUBLIC_SNAPSHOT_BASE_URL || 'https://momichan.com/api/v1').replace(
   /\/+$/,
   ''
 )

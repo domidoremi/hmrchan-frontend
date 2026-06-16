@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process'
 import { readdir, readFile } from 'node:fs/promises'
 import { relative, resolve, sep } from 'node:path'
-import type { AuditIssue, AuditModule, AuditOptions, AuditResult, AuditStatus } from './types'
+import type { AuditIssue, AuditModule, AuditOptions, AuditResult } from './types'
+import { summarizeIssueSeverities } from './utils'
 
 interface BannedSurfaceTerm {
   term: string
@@ -15,17 +16,17 @@ function joinFragments(parts: string[]): string {
 
 const BANNED_SURFACE_TERMS: BannedSurfaceTerm[] = [
   {
-    term: joinFragments(['auth', '.momichan.xyz']),
+    term: joinFragments(['auth', '.momichan.com']),
     rule: 'legacy-auth-host',
     suggestion: 'Use the canonical main-site or public-API wording instead of historical hosts',
   },
   {
-    term: joinFragments(['console', '.momichan.xyz']),
+    term: joinFragments(['console', '.momichan.com']),
     rule: 'legacy-console-host',
     suggestion: 'Replace explicit historical backend hosts with generalized rollout terminology',
   },
   {
-    term: joinFragments(['console-api', '.momichan.xyz']),
+    term: joinFragments(['console-api', '.momichan.com']),
     rule: 'legacy-console-api-host',
     suggestion:
       'Replace explicit historical backend API hosts with generalized rollout terminology',
@@ -252,12 +253,7 @@ const authSurfaceAudit: AuditModule = {
       ]
     }
 
-    const errorCount = issues.filter((issue) => issue.severity === 'error').length
-    const warningCount = issues.filter((issue) => issue.severity === 'warning').length
-
-    let status: AuditStatus = 'pass'
-    if (errorCount > 0) status = 'fail'
-    else if (warningCount > 0) status = 'warn'
+    const { errorCount, warningCount, status } = summarizeIssueSeverities(issues)
 
     if (options.verbose && issues.length > 0) {
       for (const issue of issues) {

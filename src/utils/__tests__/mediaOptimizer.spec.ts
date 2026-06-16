@@ -24,7 +24,7 @@ describe('mediaOptimizer srcset helpers', () => {
 
   it('extracts the media id from a stream url before building srcset', () => {
     const mediaId = '2d43c52e-83d6-46a1-a125-707f54119a2f'
-    const srcset = getThumbnailSrcset(`https://momichan.xyz/api/v1/media/${mediaId}/stream`)
+    const srcset = getThumbnailSrcset(`https://momichan.com/api/v1/media/${mediaId}/stream`)
 
     expect(srcset).toContain(`/media/${mediaId}/thumbnail?size=small`)
     expect(srcset).toContain(`/media/${mediaId}/thumbnail?size=medium`)
@@ -33,7 +33,7 @@ describe('mediaOptimizer srcset helpers', () => {
 
   it('detects proxied media thumbnail urls', () => {
     expect(isMediaThumbnailUrl('/api/v1/media/media-123/thumbnail?size=medium')).toBe(true)
-    expect(isMediaThumbnailUrl('https://momichan.xyz/api/v1/media/media-123/stream')).toBe(false)
+    expect(isMediaThumbnailUrl('https://momichan.com/api/v1/media/media-123/stream')).toBe(false)
     expect(isMediaThumbnailUrl('/api/v1/posts')).toBe(false)
   })
 })

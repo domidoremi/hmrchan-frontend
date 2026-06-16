@@ -1,5 +1,5 @@
 const SITE_NAME = 'MomiChan'
-export const SITE_ORIGIN = 'https://momichan.xyz'
+export const SITE_ORIGIN = 'https://momichan.com'
 export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/icons/sitting-512.webp`
 
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i

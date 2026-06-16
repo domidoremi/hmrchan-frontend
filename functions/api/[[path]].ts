@@ -81,10 +81,10 @@ type SessionSummaryResponse = {
 }
 
 const ALLOWED_ORIGINS = [
-  'https://momichan.xyz',
-  'https://www.momichan.xyz',
-  'https://next.momichan.xyz',
-  'https://himeri.momichan.xyz',
+  'https://momichan.com',
+  'https://www.momichan.com',
+  'https://next.momichan.com',
+  'https://himeri.momichan.com',
 ]
 const DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
 const CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
@@ -1246,7 +1246,12 @@ async function forwardToUpstream(options: ForwardRequestOptions): Promise<Upstre
   }
 }
 
-function withCorsHeaders(request: Request, isDev: boolean, env: ProxyEnv, headers: Headers): Headers {
+function withCorsHeaders(
+  request: Request,
+  isDev: boolean,
+  env: ProxyEnv,
+  headers: Headers
+): Headers {
   const origin = request.headers.get('Origin')
   if (origin && isAllowedOrigin(origin, isDev, env)) {
     headers.set('Access-Control-Allow-Origin', origin)

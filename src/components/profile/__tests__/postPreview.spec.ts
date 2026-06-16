@@ -10,7 +10,7 @@ describe('profile post preview adapters', () => {
         id: 'post-1',
         title: 'Favorite title',
         thumbnail_url:
-          'https://momichan.xyz/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
+          'https://momichan.com/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
         author_name: 'alice',
       },
     } as never)
@@ -21,7 +21,7 @@ describe('profile post preview adapters', () => {
       title: 'Favorite title',
       authorName: 'alice',
       thumbnailUrl:
-        'https://momichan.xyz/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
+        'https://momichan.com/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
       mediaId: '123e4567-e89b-12d3-a456-426614174000',
       target: '/post/post-1?mediaId=123e4567-e89b-12d3-a456-426614174000',
     })
@@ -61,13 +61,13 @@ describe('profile post preview adapters', () => {
         post_id: 'post-42',
         post_title: 'Older title',
         post_thumbnail_url:
-          'https://momichan.xyz/api/v1/media/223e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
+          'https://momichan.com/api/v1/media/223e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
         author_name: 'fallback-author',
         created_at: '2026-04-14T10:00:00Z',
         content_preview: {
           title: 'Preview title',
           thumbnail_url:
-            'https://momichan.xyz/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
+            'https://momichan.com/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
           author_name: 'preview-author',
         },
       } as never,
@@ -83,7 +83,7 @@ describe('profile post preview adapters', () => {
         title: 'Preview title',
         authorName: 'preview-author',
         thumbnailUrl:
-          'https://momichan.xyz/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
+          'https://momichan.com/api/v1/media/323e4567-e89b-12d3-a456-426614174000/thumbnail?size=medium',
         mediaId: '323e4567-e89b-12d3-a456-426614174000',
         target: '/post/post-42?mediaId=323e4567-e89b-12d3-a456-426614174000',
       },

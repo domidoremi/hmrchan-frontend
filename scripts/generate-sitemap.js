@@ -16,7 +16,7 @@ import { writeFileSync } from 'fs'
 import { resolve } from 'path'
 
 const SITEMAP_PATH = resolve(process.cwd(), 'public/sitemap.xml')
-const BASE_URL = 'https://momichan.xyz'
+const BASE_URL = 'https://momichan.com'
 const DRY_RUN = process.argv.includes('--dry-run')
 
 // 支持的语言

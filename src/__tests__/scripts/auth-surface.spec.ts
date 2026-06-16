@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { searchTrackedFiles } from '../../../scripts/audit/auth-surface'
 
 const legacyCopy = ['统一', '登录'].join('')
-const legacyHost = ['auth', '.momichan.xyz'].join('')
+const legacyHost = ['auth', '.momichan.com'].join('')
 const legacyBrand = ['Auth', 'entik'].join('')
 
 describe('auth-surface audit', () => {

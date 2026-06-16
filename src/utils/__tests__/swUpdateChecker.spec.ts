@@ -139,7 +139,7 @@ describe('sw-update-checker', () => {
     setRoute('/login', 'prompt')
 
     const waitingWorker: MockWaitingWorker = {
-      scriptURL: 'https://momichan.xyz/sw-v2.js',
+      scriptURL: 'https://momichan.com/sw-v2.js',
       postMessage: vi.fn(),
     }
     const registration: MockRegistration = {
@@ -150,7 +150,7 @@ describe('sw-update-checker', () => {
     }
     const serviceWorker = new MockServiceWorkerContainer(
       registration,
-      'https://momichan.xyz/sw-v1.js'
+      'https://momichan.com/sw-v1.js'
     )
 
     Object.defineProperty(globalThis, 'navigator', {
@@ -173,7 +173,7 @@ describe('sw-update-checker', () => {
 
   it('auto activates on auto routes and reloads after the idle window', async () => {
     const waitingWorker: MockWaitingWorker = {
-      scriptURL: 'https://momichan.xyz/sw-v2.js',
+      scriptURL: 'https://momichan.com/sw-v2.js',
       postMessage: vi.fn(),
     }
     const registration: MockRegistration = {
@@ -184,7 +184,7 @@ describe('sw-update-checker', () => {
     }
     const serviceWorker = new MockServiceWorkerContainer(
       registration,
-      'https://momichan.xyz/sw-v1.js'
+      'https://momichan.com/sw-v1.js'
     )
     const reloadSpy = vi.fn()
 
@@ -217,7 +217,7 @@ describe('sw-update-checker', () => {
 
   it('cancels auto reload and degrades to a toast when a blocker appears', async () => {
     const waitingWorker: MockWaitingWorker = {
-      scriptURL: 'https://momichan.xyz/sw-v3.js',
+      scriptURL: 'https://momichan.com/sw-v3.js',
       postMessage: vi.fn(),
     }
     const registration: MockRegistration = {
@@ -228,7 +228,7 @@ describe('sw-update-checker', () => {
     }
     const serviceWorker = new MockServiceWorkerContainer(
       registration,
-      'https://momichan.xyz/sw-v2.js'
+      'https://momichan.com/sw-v2.js'
     )
     const reloadSpy = vi.fn()
 
@@ -267,7 +267,7 @@ describe('sw-update-checker', () => {
     setRoute('/contact', 'prompt')
 
     const waitingWorker: MockWaitingWorker = {
-      scriptURL: 'https://momichan.xyz/sw-v4.js',
+      scriptURL: 'https://momichan.com/sw-v4.js',
       postMessage: vi.fn(),
     }
     const registration: MockRegistration = {
@@ -278,7 +278,7 @@ describe('sw-update-checker', () => {
     }
     const serviceWorker = new MockServiceWorkerContainer(
       registration,
-      'https://momichan.xyz/sw-v3.js'
+      'https://momichan.com/sw-v3.js'
     )
     const reloadSpy = vi.fn()
 

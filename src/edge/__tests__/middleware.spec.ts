@@ -24,7 +24,7 @@ describe('Cloudflare HTML middleware', () => {
 
   it('preserves non-html responses without injecting html headers', async () => {
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/api/health'),
+      request: new Request('https://momichan.com/api/health'),
       next: () =>
         Promise.resolve(
           new Response('{"ok":true}', {
@@ -41,7 +41,7 @@ describe('Cloudflare HTML middleware', () => {
 
   it('returns real 404 status and security headers for unknown html routes', async () => {
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/this-route-does-not-exist'),
+      request: new Request('https://momichan.com/this-route-does-not-exist'),
       next: () =>
         Promise.resolve(
           new Response('<!doctype html><html><head><title>App</title></head><body></body></html>', {
@@ -67,7 +67,7 @@ describe('Cloudflare HTML middleware', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/post/00000000-0000-4000-8000-000000000000'),
+      request: new Request('https://momichan.com/post/00000000-0000-4000-8000-000000000000'),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
       },

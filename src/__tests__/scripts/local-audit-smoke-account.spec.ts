@@ -32,7 +32,7 @@ describe('local audit smoke account helpers', () => {
     ).toBe(true)
 
     expect(
-      shouldEnsureLocalAuditSmokeAccount('https://momichan.xyz', {
+      shouldEnsureLocalAuditSmokeAccount('https://momichan.com', {
         login: 'local-smoke-main',
         password: 'secret',
       })

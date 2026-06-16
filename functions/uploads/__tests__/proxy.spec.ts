@@ -14,10 +14,10 @@ describe('functions/uploads proxy', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/uploads/avatars/avatar.png'),
+      request: new Request('https://momichan.com/uploads/avatars/avatar.png'),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
-        STORAGE_PUBLIC_BASE_URL: 'https://cdn.momichan.xyz',
+        STORAGE_PUBLIC_BASE_URL: 'https://cdn.momichan.com',
       },
       params: {
         path: ['avatars', 'avatar.png'],
@@ -27,7 +27,7 @@ describe('functions/uploads proxy', () => {
     expect(fetchMock).not.toHaveBeenCalled()
     expect(response.status).toBe(307)
     expect(response.headers.get('Location')).toBe(
-      'https://cdn.momichan.xyz/uploads/avatars/avatar.png'
+      'https://cdn.momichan.com/uploads/avatars/avatar.png'
     )
     expect(response.headers.get('Cache-Control')).toBe(
       'public, max-age=3600, stale-while-revalidate=86400'
@@ -47,7 +47,7 @@ describe('functions/uploads proxy', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/uploads/avatar.png'),
+      request: new Request('https://momichan.com/uploads/avatar.png'),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
       },
@@ -71,7 +71,7 @@ describe('functions/uploads proxy', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('upstream unavailable')))
 
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/uploads/missing.png'),
+      request: new Request('https://momichan.com/uploads/missing.png'),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
       },
@@ -89,7 +89,7 @@ describe('functions/uploads proxy', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await onRequest({
-      request: new Request('https://momichan.xyz/uploads/avatars/avatar.png'),
+      request: new Request('https://momichan.com/uploads/avatars/avatar.png'),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
       },

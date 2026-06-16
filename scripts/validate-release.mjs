@@ -612,7 +612,7 @@ async function main() {
   const git = resolveGitContext()
   const changeSummary = classifyValidationChanges(git.changedFiles)
   const stagePlan = getValidationStagePlan(options.mode)
-  const baseUrl = (process.env.BASE_URL?.trim() || 'https://momichan.xyz').replace(/\/$/, '')
+  const baseUrl = (process.env.BASE_URL?.trim() || 'https://momichan.com').replace(/\/$/, '')
   const controlledBaseUrl = process.env.CONTROLLED_BASE_URL?.trim()?.replace(/\/$/, '') || null
 
   const stageRecords = stagePlan.map((stage) => ({

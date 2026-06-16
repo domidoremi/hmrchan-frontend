@@ -131,7 +131,7 @@ Operating Constraints:
 - Heavy validation must run serially and only after process preflight reports enough available physical memory.
 - Codex-owned long-running processes must be registered before startup and cleaned by registry policy.
 - Unattributed user or system processes must not be stopped.
-- GitNexus tool calls for this checkout must pass repository path `G:\Project\hmrchan\hmrchan-frontend-main`, not repository name `hmrchan-frontend`, because another indexed sibling shares the same name.
+- GitNexus tool calls for this checkout must pass repository path `<frontend-main-repo>`, not repository name `hmrchan-frontend`, because another indexed sibling shares the same name.
 
 Resource Recovery Protocol:
 
@@ -301,7 +301,7 @@ Entry 3:
 - Current home-post-preview-action evidence on `2026-06-08`: SessionStart reported `low-memory` with `4.23 GB` free physical memory and PreHeavy recovered to `ok` with `12.55 GB` and later `11.03 GB` before serial validation. The first focused spec failed because a `/post/story-1` fixture is not a contract resource id; the fixture was replaced with UUID v7 `0195fe30-6f9d-7f31-9e6f-c9a5c478a301`, and a legacy slug regression now asserts navigation to `/explore`. The first complexity check failed after the helper lived in `homeModel.ts` and pushed the file to `1034` unregistered lines, so the action helper moved to `homePostPreviewAction.ts`; final `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3084` lines and `homeModel.ts` below the soft limit. `node scripts/run-vitest.mjs run src/views/homepage/__tests__/homeModel.spec.ts src/views/homepage/__tests__/homePostPreviewAction.spec.ts --maxWorkers=1` passed with 13 tests; `bun run type-check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning. `npx gitnexus analyze` completed with `14,804` nodes, `26,486` edges, `783` clusters, and `300` flows; upstream impact for `resolveHomePostPreviewAction` was LOW with direct caller limited to `openPostPreview`, one affected module, and no affected execution flows; upstream impact for `openPostPreview` was LOW with no affected execution flows.
 - Current home-post-detail-action evidence on `2026-06-08`: pre-edit upstream impact for `openDetailFromPreview` was LOW with no direct callers, no affected modules, and no affected execution flows; upstream impact for existing `resolveHomePostPreviewAction` was LOW with one direct caller and no affected execution flows. SessionStart reported `low-memory` with `5.37 GB` free physical memory; PreHeavy reported `low-memory` with `5.76 GB` before focused validation, then `danger` with `1.93 GB`; a later PreHeavy recovered to `low-memory` with `3.25 GB` before type-check, then fell back to `danger` with `0.9 GB`; the next continuation recovered to `ok` with `12.4 GB`, `13.92 GB`, and `13.7 GB` before HomePage focused tests and GitNexus analysis. `node scripts/run-vitest.mjs run src/views/homepage/__tests__/homePostPreviewAction.spec.ts --maxWorkers=1` passed with 8 tests; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3080` lines under the `3125` registered limit; `bun run type-check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning; `git diff --check` passed. `npx gitnexus analyze` completed with `14,805` nodes, `26,489` edges, `783` clusters, and `300` flows; upstream impact for `resolveHomePostDetailAction` was LOW with direct caller limited to `openDetailFromPreview`, one affected module, and no affected execution flows; upstream impact for `openDetailFromPreview` was LOW with no affected execution flows.
 - Current bubble-active-presentation-state evidence on `2026-06-08`: the helper first lived in `bubbleMotion.ts`, which failed `node scripts/check-complexity-budget.mjs` because `bubbleMotion.ts` became a new unregistered large file, so active presentation moved to `bubbleFramePresentation.ts`. `node scripts/run-vitest.mjs run src/views/homepage/__tests__/bubbleMotion.spec.ts --maxWorkers=1` passed with 42 tests; final `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3083` lines under the `3125` registered limit and no new unregistered `bubbleMotion.ts` exception; `bun run type-check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning. `npx gitnexus analyze` completed with `14,806` nodes, `26,493` edges, `782` clusters, and `300` flows; upstream impact for `resolveBubbleActivePresentationState`, `bubbleStateClasses`, and `isBubblePersistentSelected` was LOW with no affected execution flows.
-- Current bubble-active-presentation-read-wrapper evidence on `2026-06-08`: GitNexus repo selection must use full path `G:\Project\hmrchan\hmrchan-frontend-main` because two indexed repositories share the `hmrchan-frontend` name. Pre-edit upstream impact for `isBubblePersistentSelected` and `bubbleStateClasses` was LOW with no affected execution flows; upstream impact for `resolveBubbleRuntimeActiveState` was LOW with one direct page caller and no affected execution flows. `git diff --check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3083` lines under the `3125` registered limit; `bun run type-check` passed. Follow-up GitNexus analyze was initially deferred because PreHeavy reported `danger` with `1.57 GB` free physical memory, then later completed after PreHeavy recovered below `danger`; `npx gitnexus analyze` completed with `14,807` nodes, `26,498` edges, `782` clusters, and `300` flows. Upstream impact for `resolveBubbleActivePresentation` was LOW with direct callers limited to `isBubblePersistentSelected` and `bubbleStateClasses`, one direct module, and no affected execution flows.
+- Current bubble-active-presentation-read-wrapper evidence on `2026-06-08`: GitNexus repo selection must use full path `<frontend-main-repo>` because two indexed repositories share the `hmrchan-frontend` name. Pre-edit upstream impact for `isBubblePersistentSelected` and `bubbleStateClasses` was LOW with no affected execution flows; upstream impact for `resolveBubbleRuntimeActiveState` was LOW with one direct page caller and no affected execution flows. `git diff --check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3083` lines under the `3125` registered limit; `bun run type-check` passed. Follow-up GitNexus analyze was initially deferred because PreHeavy reported `danger` with `1.57 GB` free physical memory, then later completed after PreHeavy recovered below `danger`; `npx gitnexus analyze` completed with `14,807` nodes, `26,498` edges, `782` clusters, and `300` flows. Upstream impact for `resolveBubbleActivePresentation` was LOW with direct callers limited to `isBubblePersistentSelected` and `bubbleStateClasses`, one direct module, and no affected execution flows.
 - Current home-rail-slide-order-policy evidence on `2026-06-08`: pre-edit upstream impact for both indexed `railSlides` candidates was LOW with no affected execution flows; upstream impact for `resolveHomeActiveRailSlide` was LOW with one direct page caller and no affected execution flows. `git diff --check` passed; `node scripts/run-vitest.mjs run src/views/homepage/__tests__/homeScenePolicy.spec.ts --maxWorkers=1` passed with 30 tests; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3086` lines under the `3125` registered limit; `bun run type-check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning. `npx gitnexus analyze` completed with `14,809` nodes, `26,501` edges, `783` clusters, and `300` flows; upstream impact for `buildHomeRailSlides` was LOW with direct caller limited to `HomePage.vue` and no affected execution flows.
 - Current bubble-frame-reset-presentation evidence on `2026-06-08`: pre-edit upstream impact for `resetBubbleFrameStateStyle`, `writeBubbleFrameState`, `clearBubbleRuntimeClasses`, and `resolveBubbleFramePresentationState` was LOW. SessionStart reported `low-memory` with `4.68 GB` free physical memory; PreHeavy recovered to `ok` with `8.77 GB` before serial validation. `node scripts/run-vitest.mjs run src/views/homepage/__tests__/bubbleMotion.spec.ts --maxWorkers=1` passed with 43 tests; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3082` lines under the `3125` registered limit; `bun run type-check` passed; `git diff --check` passed for the tracked diff. Follow-up `npx gitnexus analyze` completed with `14,813` nodes, `26,519` edges, `786` clusters, and `300` flows; upstream impact for `resolveBubbleFrameResetPresentationState` and page-local `applyBubbleFramePresentationState` was LOW, with no affected execution flows for the helper and affected process scope limited to HomePage bubble motion/setup paths for the page-local applier. `detect_changes(scope=all)` reported HIGH cumulative scope with `changed_files=16`, `changed_count=258`, and `affected_count=12`; this is accepted as cumulative hotspot-slice scope, not as a new direct-impact finding for `resolveBubbleFrameResetPresentationState`.
 - Current bubble-motion-stop-reset-style-policy evidence on `2026-06-08`: pre-edit upstream impact for `runBubbleMotionFrame` was LOW with no affected execution flows; pre-edit upstream impact for `syncBubbleMotionLoop` was MEDIUM with no affected execution flows and direct scope limited to HomePage bubble measurement, hover, pointer, and activation callers. The slice extracted the repeated `bubbleRevealPhase.value !== 'exiting'` decision into `shouldResetBubbleFrameStylesOnMotionStop` and added focused expectations to `bubbleRevealState.spec.ts`. SessionStart reported `ok` with `7.22 GB` free physical memory; PreHeavy reported `low-memory` with `5.18 GB` before focused validation and later `ok` with `9.5 GB`, `10.94 GB`, and `10.31 GB` before serial validation and GitNexus analysis. `node scripts/run-vitest.mjs run src/views/homepage/__tests__/bubbleRevealState.spec.ts --maxWorkers=1` passed with 10 tests; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3083` lines under the `3125` registered limit; `bun run type-check` passed; `git diff --check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning. `npx gitnexus analyze` completed with `14,813` nodes, `26,524` edges, `785` clusters, and `300` flows; upstream impact for `shouldResetBubbleFrameStylesOnMotionStop` and `runBubbleMotionFrame` was LOW. `detect_changes(scope=all)` reported HIGH cumulative scope with `changed_files=16`, `changed_count=260`, and `affected_count=12`; this is accepted as cumulative hotspot-slice scope, not as a new direct-impact finding for `shouldResetBubbleFrameStylesOnMotionStop`.
@@ -380,12 +380,13 @@ Entry 3:
 - Current GitNexus detect evidence after the schedule-highlight-fallback-policy slice on `2026-06-08`: `detect_changes(scope=all)` reported CRITICAL cumulative scope with `changed_files=18`, `changed_count=300`, and `affected_count=18`; this is accepted as cumulative hotspot-slice scope, not as a new direct-impact finding for the schedule-highlight fallback helpers or `HomePage.vue`, whose upstream impact remained LOW.
 - Current featured-rail-card-raw-class-policy evidence on `2026-06-08`: pre-edit upstream impact for `HomePage.vue`, `homeImagePolicy.ts`, and `resolveFeaturedRailCardClasses` was LOW with no affected execution flows; SessionStart reported `ok` with `7.19 GB` free physical memory and PreHeavy reported `low-memory` with `3.89 GB` before serial validation and `4.27 GB` before GitNexus indexing; `node scripts/run-vitest.mjs run src/views/homepage/__tests__/homeImagePolicy.spec.ts --maxWorkers=1` passed with 13 tests; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3112` lines under the `3125` registered limit, reducing the page from the previous `3118` line state; `git diff --check` passed; `bun run type-check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning; `npx gitnexus analyze` completed in incremental mode with `14,855` nodes, `26,587` edges, `791` clusters, and `300` flows; exact GitNexus lookup for `resolveFeaturedRailCardPresentationClasses` returned not found after indexing, but upstream impact for `homeImagePolicy.ts` was LOW with direct importer `HomePage.vue`, and upstream impact for `HomePage.vue` was LOW with no affected execution flows.
 - Current GitNexus detect evidence after the featured-rail-card-raw-class-policy slice on `2026-06-08`: `detect_changes(scope=all)` reported LOW cumulative scope with `changed_files=18`, `changed_count=163`, and `affected_count=0`; this supersedes the previous cumulative CRITICAL reading for the current indexed state and shows no affected execution flows.
-- Current image-presentation-attribute-policy evidence on `2026-06-08`: pre-edit exact GitNexus lookup for the existing image-size helpers returned not found, but pre-edit file-level upstream impact for `HomePage.vue` and `homeImagePolicy.ts` was LOW with no affected execution flows; PreHeavy reported `low-memory` with `3.95 GB` free physical memory before serial validation, then `ok` with `6.97 GB` and `10.62 GB` before GitNexus indexing; `node scripts/run-vitest.mjs run src/views/homepage/__tests__/homeImagePolicy.spec.ts --maxWorkers=1` passed with 15 tests; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3111` lines under the `3125` registered limit after unused page-local residual and pre-push blank-line cleanup, keeping the page below the previous `3112` line state; `git diff --check` passed before the evidence update; `bun run type-check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning; `npx gitnexus analyze "G:\Project\hmrchan\hmrchan-frontend-main" --index-only` completed after forcing a full rebuild from an incomplete incremental state with `14,853` nodes, `26,607` edges, `787` clusters, and `300` flows; upstream impact for `resolveHeroCollageImagePresentation`, `resolveFeaturedRailImagePresentation`, and `HomePage.vue` was LOW with no affected execution flows.
-- Current GitNexus detect evidence after the image-presentation-attribute-policy slice on `2026-06-08`: `npx gitnexus detect-changes --scope all --repo "G:\Project\hmrchan\hmrchan-frontend-main"` reported CRITICAL cumulative scope with `changed_files=23`, `changed_count=325`, and `affected_count=19`; this is accepted as cumulative hotspot-slice scope, not as a new direct-impact finding for the image presentation helpers or `HomePage.vue`, whose upstream impact remained LOW with no affected execution flows.
+- Current image-presentation-attribute-policy evidence on `2026-06-08`: pre-edit exact GitNexus lookup for the existing image-size helpers returned not found, but pre-edit file-level upstream impact for `HomePage.vue` and `homeImagePolicy.ts` was LOW with no affected execution flows; PreHeavy reported `low-memory` with `3.95 GB` free physical memory before serial validation, then `ok` with `6.97 GB` and `10.62 GB` before GitNexus indexing; `node scripts/run-vitest.mjs run src/views/homepage/__tests__/homeImagePolicy.spec.ts --maxWorkers=1` passed with 15 tests; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3111` lines under the `3125` registered limit after unused page-local residual and pre-push blank-line cleanup, keeping the page below the previous `3112` line state; `git diff --check` passed before the evidence update; `bun run type-check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning; `npx gitnexus analyze "<frontend-main-repo>" --index-only` completed after forcing a full rebuild from an incomplete incremental state with `14,853` nodes, `26,607` edges, `787` clusters, and `300` flows; upstream impact for `resolveHeroCollageImagePresentation`, `resolveFeaturedRailImagePresentation`, and `HomePage.vue` was LOW with no affected execution flows.
+- Current GitNexus detect evidence after the image-presentation-attribute-policy slice on `2026-06-08`: `npx gitnexus detect-changes --scope all --repo "<frontend-main-repo>"` reported CRITICAL cumulative scope with `changed_files=23`, `changed_count=325`, and `affected_count=19`; this is accepted as cumulative hotspot-slice scope, not as a new direct-impact finding for the image presentation helpers or `HomePage.vue`, whose upstream impact remained LOW with no affected execution flows.
 - Current story-progress-counter-format-policy evidence on `2026-06-08`: pre-edit upstream impact for `HomePage.vue` was LOW with no affected execution flows, and pre-edit upstream impact for `homeScenePolicy.ts` was LOW with direct importer `HomePage.vue` and no affected execution flows; SessionStart reported `ok` with `7.38 GB` free physical memory, PreHeavy reported `low-memory` with `3.36 GB` before serial type-check and HomePage tests, then recovered to `ok` with `8.56 GB` before GitNexus indexing; `node scripts/run-vitest.mjs run src/views/homepage/__tests__/homeScenePolicy.spec.ts --maxWorkers=1` passed with 32 tests; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3087` lines under the `3125` registered limit; `git diff --check` passed; `bun run type-check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning; `npx gitnexus analyze` completed in incremental mode with `14,832` nodes, `26,548` edges, `785` clusters, and `300` flows; upstream impact for `formatHomeStoryProgressNumber` was LOW with no affected execution flows.
 - Current GitNexus detect evidence after the story-progress-counter-format-policy slice on `2026-06-08`: `detect_changes(scope=all)` reported HIGH cumulative scope with `changed_files=18`, `changed_count=280`, and `affected_count=12`; this is accepted as cumulative hotspot-slice scope, not as a new direct-impact finding for `formatHomeStoryProgressNumber`, whose upstream impact remained LOW with no affected execution flows.
 - Current home-total-count-policy evidence on `2026-06-08`: pre-edit upstream impact for `HomePage.vue` was LOW with no affected execution flows, and pre-edit upstream impact for `homeSupportPolicy.ts` was LOW with direct importers `HomePage.vue` and `useHomeViewModel.ts` and no affected execution flows; SessionStart reported `ok` with `7.42 GB` free physical memory, PreHeavy reported `ok` with `7.73 GB` before serial validation, then `low-memory` with `3.94 GB` before GitNexus indexing; `node scripts/run-vitest.mjs run src/views/homepage/__tests__/homeSupportPolicy.spec.ts --maxWorkers=1` passed with 10 tests; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3099` lines under the `3125` registered limit; `git diff --check` passed; `bun run type-check` passed; `node scripts/run-vitest.mjs run src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 17 tests and only the existing vue-i18n experimental compiler warning; `npx gitnexus analyze` completed in incremental mode with `14,834` nodes, `26,555` edges, `785` clusters, and `300` flows; upstream impact for `resolveHomeTotalCount` was LOW with direct caller `HomePage.vue` and no affected execution flows; follow-up upstream impact for touched `fetchHomeData` was LOW with no affected execution flows.
 - Current GitNexus detect evidence after the home-total-count-policy slice on `2026-06-08`: `detect_changes(scope=all)` reported CRITICAL cumulative scope with `changed_files=18`, `changed_count=233`, and `affected_count=17`; this is accepted as cumulative hotspot-slice scope, not as a new direct-impact finding for `resolveHomeTotalCount` or `fetchHomeData`, whose upstream impact remained LOW with no affected execution flows.
+- Current home-quick-nav-observer evidence on `2026-06-17`: exact GitNexus lookup for `scrollToHomeSection`, `observeHomeSections`, and `updateHomeQuickNavSide` returned not found before editing, so the slice was constrained to page-local quick-nav template bindings; `node scripts/run-vitest.mjs run src/views/homepage/__tests__/useHomeQuickNav.spec.ts --maxWorkers=1` passed with 4 tests; `node scripts/run-vitest.mjs run src/views/homepage/__tests__/useHomeQuickNav.spec.ts src/views/__tests__/HomePage.spec.ts src/views/__tests__/HomePageStoryStageStyles.spec.ts --maxWorkers=1 --testTimeout=30000` passed with 21 tests and only the existing vue-i18n experimental compiler warning; `bun run type-check`, `git diff --check`, and Prettier checks passed for touched files; `node scripts/check-complexity-budget.mjs` passed with `src/views/HomePage.vue` at `3058` lines under the tightened `3058` registered limit; quick-nav side persistence, section observer selection, smooth-scroll immediate mode, and observer replacement cleanup are covered without requiring the full HomePage component.
 - Resume validation queue: rerun GitNexus change detection after tracking state includes the new helper files, because untracked `homePostPreviewAction.ts`, `homePostPreviewAction.spec.ts`, `homeSceneActivationPolicy.ts`, `homeSceneActivationPolicy.spec.ts`, and `bubbleFramePresentation.ts` are still not counted in `detect_changes` `changed_files`.
 - Resume candidate queue: after a fresh PreHeavy result below `danger`, re-check GitNexus impact before editing and prefer remaining page-local wrappers only when the exact symbol reports LOW before edits and no indexed helper would become a shared scene-progress-chain entry; leave `window`, DOM measurement, `querySelector`, ScrollTrigger, GSAP, RAF scheduling, frame-state storage, router pushes, and template side effects in `HomePage.vue`.
 - Next slice: continue extracting the next remaining LOW-impact inline scene or motion decision from `HomePage.vue` without moving GSAP, DOM measurement, canvas rendering, RAF scheduling, frame-state storage, or DOM writes; do not edit `applyBubbleRevealAction`, capability wrappers, or the measured scene geometry chain unless HIGH upstream impact is explicitly accepted or narrowed.
@@ -1949,6 +1950,36 @@ Result:
 - `PostDetailPage.vue` now has a registered budget ceiling of `2508` logical lines, matching the extracted component file size.
 - 404 navigation-summary recovery and service-unavailable static fallback recovery are covered without requiring API calls, router mutation, or cache access in unit tests.
 
+### Post Detail Text Modal Lifecycle Extraction
+
+Changed files:
+
+- `src/views/PostDetailPage.vue`
+- `src/views/post-detail/usePostDetailTextModal.ts`
+- `src/views/post-detail/__tests__/usePostDetailTextModal.spec.ts`
+- `scripts/config/complexity-budget.json`
+
+Policy:
+
+- Long-text modal open state, Escape handling, body scroll locking, focus restoration, activation rebinding, and deactivation cleanup must live behind a page-local composable.
+- PostDetailPage must keep template bindings, route fetch orchestration, media navigation, comments loading, and API/cache/fallback side effects in the page component until those runtime workflows are split explicitly.
+- Existing large-file baselines must be tightened to the new observed line count before the slice is considered complete.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/views/post-detail/__tests__/usePostDetailTextModal.spec.ts --maxWorkers=1`
+- `node scripts/run-vitest.mjs run src/views/__tests__/PostDetailPage.spec.ts src/views/post-detail/__tests__/usePostDetailTextModal.spec.ts --maxWorkers=1 --testTimeout=30000`
+- `bun run type-check`
+- `node scripts/check-complexity-budget.mjs`
+- `bunx prettier --check FRONTEND_OPTIMIZATION_PLAN.md scripts/config/complexity-budget.json src/views/PostDetailPage.vue src/views/post-detail/usePostDetailTextModal.ts src/views/post-detail/__tests__/usePostDetailTextModal.spec.ts`
+- `git diff --check -- FRONTEND_OPTIMIZATION_PLAN.md scripts/config/complexity-budget.json src/views/PostDetailPage.vue src/views/post-detail/usePostDetailTextModal.ts src/views/post-detail/__tests__/usePostDetailTextModal.spec.ts`
+
+Result:
+
+- Post detail text modal lifecycle tests and page integration tests passed.
+- `PostDetailPage.vue` now has a registered budget ceiling of `2469` logical lines, matching the extracted component file size.
+- Pre-edit GitNexus exact lookup for `openTextModal`, `closeTextModal`, and `onTextModalKeydown` returned not found, so the slice was constrained to SFC-local template bindings and validated through focused lifecycle tests.
+
 ### Schedule Detail Recovery Policy Expansion
 
 Changed files:
@@ -3348,6 +3379,104 @@ Result:
 
 - Release validation helper tests passed with `9` tests.
 - Hook release validation passed and final summary listed current worktree focus areas for route/UI/readiness, auth/session/data flow, and validation contract changes.
+
+### Audit Runner Parity Evidence
+
+Classification:
+
+- `contract protection`
+- `release verification`
+
+Mobility effect:
+
+- Audit modules now share severity classification while preserving module status semantics.
+- Build audit local validation now receives the required contract fallback without weakening production build configuration.
+- Audit runner helper imports now avoid CLI side effects while direct `bun run audit:repo` execution still invokes `main`.
+- Audit runner module selection and report aggregation now have focused helper coverage.
+- Audit runner module execution order and option forwarding now have focused helper coverage.
+- Type-check audit now shares command-result status classification while preserving non-zero `vue-tsc` exit failure behavior.
+- Test audit now shares command-result status classification while preserving parse-failure and failed-test behavior.
+- Lint audit now shares command-result status classification while preserving parsed ESLint issue reporting.
+- Dead-code audit now runs Knip with the local audit contract fallback and parses grouped Knip `issues[]` output.
+- Knip entry configuration now includes the service worker source entry, removing service-worker internal module false positives.
+- Dead-code cleanup removed unused page-title/home fallback modules and direct unused devDependencies while preserving transitive override constraints.
+
+Replacement condition:
+
+- None. Audit runner import safety and local build-audit contract fallback are release validation contracts.
+
+Changed files:
+
+- `scripts/audit/utils.ts`
+- `knip.json`
+- `package.json`
+- `bun.lock`
+- `scripts/audit/build.ts`
+- `scripts/audit/dead-code.ts`
+- `scripts/audit/index.ts`
+- `scripts/audit/lint.ts`
+- `scripts/audit/test.ts`
+- `scripts/audit/type-check.ts`
+- `src/__tests__/scripts/audit-utils.spec.ts`
+- `src/__tests__/scripts/build-audit.spec.ts`
+- `src/__tests__/scripts/dead-code-audit.spec.ts`
+- `src/__tests__/scripts/lint-audit.spec.ts`
+- `src/__tests__/scripts/audit-runner.spec.ts`
+- `src/__tests__/scripts/text-style-audit.spec.ts`
+- `src/__tests__/scripts/test-audit.spec.ts`
+- `src/__tests__/scripts/type-check-audit.spec.ts`
+- `src/composables/usePageTitle.ts`
+- `src/fallbacks/homepageFallback.ts`
+
+Policy:
+
+- Error issues must produce `fail`, warning issues must produce `warn`, and info-only or empty issue sets must produce `pass`.
+- `runLocalNodeTool` must pass explicit environment overrides to resolved local Node tools.
+- Local build audit must set `LOCAL_AUDIT_BUILD=true` and the local contract fallback.
+- Importing audit runner helpers must not execute audit modules.
+- Module selection must remain case-insensitive.
+- Audit report totals must derive from module results without re-running modules.
+- Selected audit modules must run in order with the caller-provided audit options.
+- Text-style audit must preserve excluded generated-output paths while using shared severity classification.
+- Command-backed audits must fail when the underlying command exits non-zero, even when no parser-specific issues are extracted.
+- Test audit must fail when Vitest exits non-zero, even when parsed JSON reports zero failed tests.
+- Lint audit must fail when ESLint exits non-zero, even when parsed JSON contains no messages.
+- Dead-code audit must preserve Knip warning/info severity for parsed findings and fail only when Knip exits non-zero without parsed findings.
+- Dead-code cleanup findings must be addressed as a separate source/dependency cleanup task, not hidden by audit parser fallback behavior.
+- Service worker internals must remain reachable through `src/sw/index.ts` in Knip entry configuration.
+- Direct devDependencies reported by Knip may be removed only after package-manager why/search evidence shows no direct runtime or script use.
+
+Validation:
+
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/audit-runner.spec.ts src/__tests__/scripts/audit-utils.spec.ts src/__tests__/scripts/build-audit.spec.ts src/__tests__/scripts/text-style-audit.spec.ts --maxWorkers=1`
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/audit-utils.spec.ts src/__tests__/scripts/type-check-audit.spec.ts --maxWorkers=1`
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/audit-utils.spec.ts src/__tests__/scripts/test-audit.spec.ts --maxWorkers=1`
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/audit-utils.spec.ts src/__tests__/scripts/lint-audit.spec.ts --maxWorkers=1`
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/audit-utils.spec.ts src/__tests__/scripts/dead-code-audit.spec.ts --maxWorkers=1`
+- `bun run audit:repo --only=build`
+- `bun run audit:repo --only=dead-code`
+- `bun run audit:repo --only=lint`
+- `bun run audit:repo --only=text-style`
+- `bun run audit:repo --only=type-check`
+- `bun run audit:repo --only=css`
+- `node scripts/run-vitest.mjs run src/__tests__/scripts/audit-utils.spec.ts src/__tests__/scripts/dead-code-audit.spec.ts src/__tests__/scripts/lint-audit.spec.ts src/__tests__/scripts/test-audit.spec.ts src/__tests__/scripts/type-check-audit.spec.ts --maxWorkers=1`
+- `git diff --check`
+
+Result:
+
+- Audit helper tests passed with `13` tests.
+- Command-summary and type-check audit tests passed with `9` tests.
+- Command-summary and test audit tests passed with `8` tests.
+- Command-summary and lint audit tests passed with `8` tests.
+- Dead-code audit tests passed with `11` tests.
+- Command-backed audit focused suite passed with `18` tests across `5` files.
+- Build audit passed with `0` issues.
+- Dead-code audit passed with `0` issues after Knip entry correction, unused module deletion, and direct unused devDependency removal.
+- Lint audit passed with `0` issues.
+- CSS audit passed with `0` issues.
+- Text-style audit passed with `0` issues.
+- Type-check audit passed with `0` issues.
+- GitNexus change detection still reports the pre-existing full dirty worktree as cumulative risk; the latest unstaged read on `2026-06-17` reported `critical` with `59` files, `88` symbols, and `26` affected flows.
 
 ### Release Route Metadata Alignment Coverage
 

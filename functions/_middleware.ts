@@ -16,10 +16,10 @@ import {
 import { resolveHtmlDocumentWithEdgeData } from '../src/edge/detailDocumentResolver'
 import type { InternalApiGatewayRuntimeEnv } from '../src/edge/internalApiGateway'
 
-const CANONICAL_HOSTNAME = 'momichan.xyz'
+const CANONICAL_HOSTNAME = 'momichan.com'
 const CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
 const REPORTING_ENDPOINT_GROUP = 'csp-endpoint'
-const REDIRECT_HOSTNAMES = new Set(['www.momichan.xyz'])
+const REDIRECT_HOSTNAMES = new Set(['www.momichan.com'])
 const AUTH_ROUTE_PATHS = new Set([
   '/login',
   '/register',
