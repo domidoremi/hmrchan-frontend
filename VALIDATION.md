@@ -1,7 +1,7 @@
 # Validation Flow
 
-本仓库的交付验证以 `validate:release` 为唯一主入口。  
-仓库已移除 GitHub Actions；是否可交付只由本地统一 runner 判定。
+本仓库的变更验收以 `validate:release` 为唯一主入口。
+仓库已移除 GitHub Actions；验收状态只由本地统一 runner 判定。
 
 ## 统一入口
 
@@ -39,7 +39,7 @@ bun run validate:release --mode production
 - `pre-push` 不运行 `test:unit` 全量、`build`、`build:security-check`、Docker、本地浏览器、Pages preview 或 local audit bridge
 - `prepush-full` 必须显式运行，用于推送前人工加强验证，不属于默认 hook
 - `local` 是完整本地 release gate；必须显式运行，不再由默认 `pre-push` 自动触发
-- 候选发布前必须手动执行 `bun run validate:release --mode candidate`
+- 候选验收前必须手动执行 `bun run validate:release --mode candidate`
 - `main` 部署后必须手动执行 `bun run validate:release --mode production`
 - 不允许用零散命令口头替代统一 runner；对应模式的 runner 失败即视为失败
 
@@ -60,7 +60,7 @@ Hook 中负载静态门禁只包含：
 - `lint:strict`
 - `src/__tests__/scripts/*.spec.ts` 脚本治理测试
 
-说明：`hook` / `prepush` 成功会记录为 `passed`，只表示代码通过推送前中负载门禁，不等价于完整发布验证通过。
+说明：`hook` / `prepush` 成功会记录为 `passed`，只表示代码通过推送前中负载门禁，不等价于完整验收通过。
 
 ### `prepush-full`
 
@@ -73,7 +73,7 @@ Hook 中负载静态门禁只包含：
 
 ### `local`
 
-用于完整本地发布验证，需要显式执行：
+用于完整本地验收，需要显式执行：
 
 1. 合同自检
 2. 完整本地静态门禁
@@ -87,9 +87,9 @@ Hook 中负载静态门禁只包含：
 2. 完整本地静态门禁
 3. 本地浏览器门禁
 4. 受控站点门禁
-5. 生产预检
+5. `production` precheck
 
-说明：`candidate` 成功只表示候选验证完成；由于未执行生产深回归，最终状态会记为 `incomplete`
+说明：`candidate` 成功只表示候选验证完成；由于未执行 `production` 深回归，最终状态会记为 `incomplete`
 
 ### `production`
 
@@ -99,10 +99,10 @@ Hook 中负载静态门禁只包含：
 2. 完整本地静态门禁
 3. 本地浏览器门禁
 4. 受控站点门禁
-5. 生产预检
-6. 生产深回归
+5. `production` precheck
+6. `production` deep regression
 
-只有 `production` 模式全部通过，交付状态才会是 `passed`。
+只有 `production` 模式全部通过，验收状态才会是 `passed`。
 
 ## 必需输入
 
@@ -131,7 +131,7 @@ Hook 中负载静态门禁只包含：
   - 任一必需阶段失败
   - 或必需阶段被意外跳过
 - `incomplete`
-  - 验证本身成功，但尚未完成生产深回归
+  - 验证本身成功，但尚未完成 `production` 深回归
   - 常见于 `local` / `candidate`
 
 ## 本地环境阻塞
@@ -147,7 +147,7 @@ bun run validate:release --mode prepush-full --quiet
 bun run validate:release --mode local --quiet
 ```
 
-`hook` / `prepush` 不运行 build、全量 unit、Docker、本地后端、local audit bridge、Puppeteer/Chrome；它只验证推送前中负载硬门禁。`prepush-full --quiet` 会运行完整静态门禁，但仍不启动 Docker/browser gate。`local --quiet` 不会跳过 Docker、本地后端、local audit bridge、Puppeteer/Chrome 或任何 local release stage，只降低控制台输出。若环境不可用，`local` 结果仍必须失败，并且只能作为“环境阻塞可诊断、summary 可落盘”的验收信号；不能把 fallback 或 environment-blocked 视为正式发布通过。
+`hook` / `prepush` 不运行 build、全量 unit、Docker、本地后端、local audit bridge、Puppeteer/Chrome；它只验证推送前中负载硬门禁。`prepush-full --quiet` 会运行完整静态门禁，但仍不启动 Docker/browser gate。`local --quiet` 不会跳过 Docker、本地后端、local audit bridge、Puppeteer/Chrome 或任何 local release stage，只降低控制台输出。若环境不可用，`local` 结果仍必须失败，并且只能作为“环境阻塞可诊断、summary 可落盘”的验收信号；fallback 或 environment-blocked 不得标记为完整验收通过。
 
 恢复环境后必须补跑：
 
@@ -180,46 +180,46 @@ bun run test:functional-chain:local
 - artifact 输出到 `output/functional-chain/<timestamp>/summary.json` 和 `summary.md`
 - `FUNCTIONAL_CHAIN_BASE_URL` 可指向已启动的本地前端；未设置时脚本会 build 并启动本地 Pages preview
 - Docker、本地后端栈或 local audit bridge 不可用时，结果必须记录为 `environment-blocked`，不能当作通过
-- 当前矩阵只覆盖登录、`/auth/session:resolve`、session 隔离、403 locked/inactive 与错误密码；评论/点赞/通知等双用户深链应作为后续独立批次
+- 当前矩阵只覆盖登录、`/auth/session:resolve`、session 隔离、403 locked/inactive 与错误密码；评论、点赞、通知等双账号深链必须作为独立批次验证
 
-## 合同与自动演进
+## 合同输入
 
 这套流程不会依赖人工维护 checklist，而是从仓库真相源自动派生：
 
 - 路由与详情页 readiness：
-  - [scripts/lib/release-route-contract.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/release-route-contract.js)
+  - [scripts/lib/release-route-contract.js](scripts/lib/release-route-contract.js)
 - 认证预热探针：
-  - [scripts/lib/auth-bootstrap.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/auth-bootstrap.js)
-- 生产 contract/version 与 Pages 安全环境约束：
-  - [scripts/lib/production-contract-env.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/production-contract-env.js)
+  - [scripts/lib/auth-bootstrap.js](scripts/lib/auth-bootstrap.js)
+- `production` contract/version 与 Pages 安全环境约束：
+  - [scripts/lib/production-contract-env.js](scripts/lib/production-contract-env.js)
 - 前端 auth surface 与 UUIDv7 public ID 守卫：
-  - [scripts/lib/frontend-contract-audit.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/frontend-contract-audit.js)
+  - [scripts/lib/frontend-contract-audit.js](scripts/lib/frontend-contract-audit.js)
 - Generated fallback snapshot 合同输入：
-  - [src/fallbacks/generated/publicSnapshots.ts](/G:/Project/hmrchan/hmrchan-frontend/src/fallbacks/generated/publicSnapshots.ts)
-  - [scripts/refresh-public-snapshots.mjs](/G:/Project/hmrchan/hmrchan-frontend/scripts/refresh-public-snapshots.mjs)
-  - [scripts/lib/public-snapshot-contract.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/public-snapshot-contract.js)
+  - [src/fallbacks/generated/publicSnapshots.ts](src/fallbacks/generated/publicSnapshots.ts)
+  - [scripts/refresh-public-snapshots.mjs](scripts/refresh-public-snapshots.mjs)
+  - [scripts/lib/public-snapshot-contract.js](scripts/lib/public-snapshot-contract.js)
 - 统一 runner 编排与变更影响分类：
-  - [scripts/validate-release.mjs](/G:/Project/hmrchan/hmrchan-frontend/scripts/validate-release.mjs)
-  - [scripts/lib/validate-release.js](/G:/Project/hmrchan/hmrchan-frontend/scripts/lib/validate-release.js)
+  - [scripts/validate-release.mjs](scripts/validate-release.mjs)
+  - [scripts/lib/validate-release.js](scripts/lib/validate-release.js)
 
 UUIDv7 hard cutover 后，前端公开资源 ID 只能使用 UUIDv7 字符串；新增或修改 `src/api`、路由详情页、fallback snapshot、Service Worker cache key 时，必须同步相关类型守卫、测试和 release contract audit。当前静态审计会阻断缺失 route/cache guard 的改动；checked-in generated fallback snapshot 不允许包含旧 v4 或 numeric public ID。`src/fallbacks/generated/publicSnapshots.ts` 是 release contract audit 的 checked-in 输入，不能仅因页面未直接导入而删除。`bun run fallbacks:refresh` 会重写 generated snapshot，并可能写入 `public/snapshot-media/`；它在写入前会拒绝非 UUIDv7 public ID，因此刷新必须连接到已完成 UUIDv7 cutover 的后端/API 环境。
 
-runner 会根据本次交付命中的文件范围自动生成风险摘要，重点关注：
+runner 会根据本次变更命中的文件范围自动生成风险摘要，重点关注：
 
 - `src/views` / `src/components` / `src/router`
 - `src/api` / `src/stores` / `src/services`
 - `src/edge` / `functions` / `workers` / `wrangler.toml`
 - 验证合同与 runner 自身
 
-## 推荐执行顺序
+## 执行顺序
 
-日常开发：
+默认验收：
 
 ```bash
 bun run validate:release
 ```
 
-候选发布前：
+候选验收：
 
 ```bash
 CONTROLLED_BASE_URL=https://controlled.example.com \
@@ -239,7 +239,7 @@ bun run validate:release --mode production
 
 ## 验收规则
 
-- `local` 通过：说明本地静态与浏览器硬门禁通过，但交付仍未完成
-- `candidate` 通过：说明受控站点验证通过，但交付仍未完成
-- `production` 通过：才代表本次 `main` 交付验收完成
+- `local` 通过：本地静态与浏览器硬门禁通过，验收状态仍为未完成
+- `candidate` 通过：受控站点验证通过，验收状态仍为未完成
+- `production` 通过：本次 `main` 变更验收完成
 - 任一阶段失败，或必需阶段未执行，统一结论都是失败或未完成，不能人工口头放行

@@ -1,136 +1,106 @@
-# PWA 图标说明
+# PWA Icon Boundary
 
-本目录包含 Progressive Web App (PWA) 所需的各种尺寸图标。
+本目录保存 Web App Manifest 引用的 PWA 图标资源。文件必须是可直接由 `public/` 输出的 PNG，生成源文件不得放入本目录，除非 manifest 或生成脚本明确引用。
 
-## 图标尺寸要求
+## Required Assets
 
-### 标准图标 (any purpose)
+### Standard Icons
 
-用于应用图标、启动画面等场景。
+标准图标用于 manifest `icons[].purpose=any`、启动画面和平台图标回退。
 
-| 尺寸    | 用途           | 状态        |
-| ------- | -------------- | ----------- |
-| 72x72   | Android 小图标 | ⚠️ 需要生成 |
-| 96x96   | Android 中图标 | ⚠️ 需要生成 |
-| 128x128 | Android 大图标 | ⚠️ 需要生成 |
-| 144x144 | Windows 磁贴   | ⚠️ 需要生成 |
-| 152x152 | iOS Safari     | ⚠️ 需要生成 |
-| 192x192 | Android 标准   | ⚠️ 需要生成 |
-| 384x384 | Android 高清   | ⚠️ 需要生成 |
-| 512x512 | Android 超高清 | ⚠️ 需要生成 |
+| File requirement | Size | Status |
+| --- | --- | --- |
+| standard icon | 72x72 | missing |
+| standard icon | 96x96 | missing |
+| standard icon | 128x128 | missing |
+| standard icon | 144x144 | missing |
+| standard icon | 152x152 | missing |
+| standard icon | 192x192 | missing |
+| standard icon | 384x384 | missing |
+| standard icon | 512x512 | missing |
 
-### Maskable 图标
+### Maskable Icons
 
-用于自适应图标，支持不同形状的遮罩（圆形、圆角矩形等）。
+Maskable 图标用于 manifest `icons[].purpose=maskable`。重要图形必须落在中心 80% 安全区域内，背景必须不透明。
 
-| 尺寸    | 用途               | 状态        |
-| ------- | ------------------ | ----------- |
-| 192x192 | Android 自适应     | ⚠️ 需要生成 |
-| 512x512 | Android 自适应高清 | ⚠️ 需要生成 |
+| File requirement | Size | Status |
+| --- | --- | --- |
+| maskable icon | 192x192 | missing |
+| maskable icon | 512x512 | missing |
 
-### 快捷方式图标
+### Shortcut Icons
 
-用于应用快捷方式（shortcuts）。
+快捷方式图标用于 manifest `shortcuts[].icons`。
 
-| 名称                   | 尺寸  | 状态        |
-| ---------------------- | ----- | ----------- |
-| shortcut-home.png      | 96x96 | ⚠️ 需要生成 |
-| shortcut-explore.png   | 96x96 | ⚠️ 需要生成 |
-| shortcut-favorites.png | 96x96 | ⚠️ 需要生成 |
-| shortcut-settings.png  | 96x96 | ⚠️ 需要生成 |
+| File | Size | Status |
+| --- | --- | --- |
+| `shortcut-home.png` | 96x96 | missing |
+| `shortcut-explore.png` | 96x96 | missing |
+| `shortcut-favorites.png` | 96x96 | missing |
+| `shortcut-settings.png` | 96x96 | missing |
 
-## 设计要求
+## Asset Constraints
 
-### 标准图标 (any)
+### Standard Icon
 
-- **安全区域**: 整个画布可用
-- **内容**: 可以占满整个图标
-- **背景**: 可以是透明或有颜色
-- **格式**: PNG，24位真彩色 + Alpha 通道
+- Canvas: full canvas is usable.
+- Content: may occupy the full icon.
+- Background: transparent or opaque background is allowed.
+- Format: PNG, 24-bit true color with alpha channel.
 
-### Maskable 图标
+### Maskable Icon
 
-- **安全区域**: 中心 80% 区域（留 10% 边距）
-- **内容**: 重要内容必须在安全区域内
-- **背景**: 必须是不透明的纯色背景
-- **格式**: PNG，24位真彩色，不透明
+- Safe area: center 80% of the canvas.
+- Content: required visual content must stay inside the safe area.
+- Background: opaque solid background is required.
+- Format: PNG, 24-bit true color, no transparency.
 
-### 设计建议
+### Source Requirements
 
-1. **简洁明了**: 图标应该简单易识别
-2. **品牌一致**: 使用品牌色彩和风格
-3. **高对比度**: 确保在各种背景下都清晰可见
-4. **无文字**: 避免使用小字体文字（除非必要）
-5. **矢量优先**: 使用 SVG 作为源文件，导出为 PNG
+- Source artwork must be vector or at least 512x512 raster input.
+- Small text must not be embedded in icons.
+- Generated PNG files must preserve brand color, contrast, and transparent/opaque requirements for the matching purpose.
 
-## 生成图标
+## Generation
 
-### 方法 1: 使用在线工具
-
-推荐使用 [PWA Asset Generator](https://www.pwabuilder.com/imageGenerator)
-
-1. 上传一个 512x512 的源图标
-2. 选择需要的尺寸
-3. 下载生成的图标包
-
-### 方法 2: 使用仓库命令
+Repository command:
 
 ```bash
-# 使用项目内的 sharp 依赖批量生成图标
 bun run icons:generate source-icon-512.png
 ```
 
-### 方法 3: 使用 Figma/Sketch/Adobe XD
+The command must generate only the files required by the manifest and must not overwrite unrelated assets. Generated output must be reviewed before commit when icon filenames or manifest references change.
 
-1. 创建 512x512 的画布
-2. 设计图标
-3. 导出为多个尺寸的 PNG
+## Validation
 
-## Maskable 图标设计指南
+Local manifest inspection:
 
-Maskable 图标需要特殊处理：
+1. Run `bun run dev`.
+2. Open Chrome DevTools.
+3. Inspect Application -> Manifest.
+4. Validate icon paths, purpose values, image dimensions, and transparent/opaque requirements.
 
-```
-┌─────────────────────────┐
-│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │ ← 10% 边距（可能被裁剪）
-│ ▓▓┌─────────────────┐▓▓ │
-│ ▓▓│                 │▓▓ │
-│ ▓▓│   安全区域 80%   │▓▓ │ ← 重要内容放这里
-│ ▓▓│                 │▓▓ │
-│ ▓▓└─────────────────┘▓▓ │
-│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │ ← 10% 边距（可能被裁剪）
-└─────────────────────────┘
+Release validation must include the normal repository runner when icon files or manifest references change:
+
+```bash
+bun run validate:release --mode local
 ```
 
-## 测试图标
+## Current State
 
-### 在线测试
+Existing file:
 
-- [Maskable.app](https://maskable.app/) - 测试 maskable 图标
-- [PWA Builder](https://www.pwabuilder.com/) - 测试 PWA 配置
+- `icon-183x183.png`: legacy asset; replacement requires manifest and cache review.
 
-### 本地测试
+Missing assets:
 
-1. 启动开发服务器: `bun run dev`
-2. 打开 Chrome DevTools
-3. Application → Manifest → 查看图标
-4. 使用 Lighthouse 审计 PWA
+- Standard icon sizes listed in this file.
+- Maskable icon sizes listed in this file.
+- Shortcut icons listed in this file.
 
-## 当前状态
-
-✅ 已有文件:
-
-- `icon-183x183.png` (旧版，需要替换)
-
-⚠️ 需要生成:
-
-- 所有标准尺寸图标
-- Maskable 图标
-- 快捷方式图标
-
-## 参考资料
+## References
 
 - [Web App Manifest - MDN](https://developer.mozilla.org/en-US/docs/Web/Manifest)
 - [Maskable Icons](https://web.dev/maskable-icon/)
-- [PWA Icons Guidelines](https://web.dev/add-manifest/#icons)
+- [PWA icons](https://web.dev/add-manifest/#icons)
 - [Adaptive Icons](https://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive)
