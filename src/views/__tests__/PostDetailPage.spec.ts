@@ -153,6 +153,9 @@ describe('PostDetailPage', () => {
     expect(
       wrapper.get('[data-hmr-page-state-block="true"]').attributes('data-hmr-page-state')
     ).toBe('empty')
+    expect(wrapper.text()).toContain('当前可继续的路径')
+    expect(wrapper.text()).toContain('返回探索继续浏览')
+    expect(wrapper.findAll('.hmr-detail-fallback-card')).toHaveLength(3)
   })
 
   it('prioritizes the hero image and lazily loads attachment thumbnails', async () => {

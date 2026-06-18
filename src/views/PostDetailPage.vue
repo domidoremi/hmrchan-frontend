@@ -140,6 +140,30 @@
     </section>
 
     <section
+      v-else-if="showFallbackSections"
+      class="hmr-detail-reader-section hmr-detail-reader-section--compact hmr-detail-reader-section--fallback"
+      data-hmr-reveal
+    >
+      <div class="hmr-container hmr-container--large">
+        <div class="hmr-section-head hmr-section-head--split">
+          <div>
+            <p class="hmr-kicker">状态概览</p>
+            <h2 class="hmr-section-title">当前可继续的路径</h2>
+          </div>
+          <span class="hmr-detail-count">{{ fallbackStatusTag }}</span>
+        </div>
+
+        <div class="hmr-detail-fallback-grid">
+          <article v-for="item in fallbackSummary" :key="item.label" class="hmr-detail-fallback-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <p>{{ item.body }}</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section
       v-if="showCommunitySection"
       class="hmr-detail-reader-section hmr-detail-reader-section--compact post-comments"
       data-hmr-reveal
@@ -162,6 +186,31 @@
           <div v-if="commentsPreview.length === 0" class="hmr-detail-empty">
             <strong>暂无公开评论</strong>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section
+      v-else-if="showFallbackSections"
+      class="hmr-dark-stage hmr-dark-stage--detail"
+      data-hmr-reveal
+    >
+      <div class="hmr-container hmr-container--large">
+        <div class="hmr-section-head">
+          <p class="hmr-kicker">继续浏览</p>
+          <h2 class="hmr-section-title">先去这些入口</h2>
+        </div>
+        <div class="hmr-detail-related">
+          <RouterLink
+            v-for="item in fallbackActions"
+            :key="item.id"
+            class="hmr-detail-related-card"
+            :to="item.to"
+          >
+            <span>{{ item.tag }}</span>
+            <strong>{{ item.title }}</strong>
+            <em>{{ item.description }}</em>
+          </RouterLink>
         </div>
       </div>
     </section>
@@ -194,6 +243,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import {
@@ -268,6 +318,54 @@ const {
   stateBody,
   stateTitle,
 } = useHmrPostDetailView(detail, pageState)
+
+const showFallbackSections = computed(
+  () => pageState.value !== 'loading' && !showContentSections.value
+)
+
+const fallbackSummary = [
+  {
+    label: '状态',
+    value: '内容未取回',
+    body: '当前公开拉取失败，页面保留阅读入口与状态说明，避免只剩空白区域。',
+  },
+  {
+    label: '说明',
+    value: '稍后重试通常可恢复',
+    body: '网络或上游接口恢复后，正文、媒体与评论会回到同一阅读布局。',
+  },
+  {
+    label: '去向',
+    value: 'Explore / Community',
+    body: '继续浏览公开内容或社区讨论，不需要退出当前阅读链路。',
+  },
+]
+
+const fallbackActions = [
+  {
+    id: 'post-fallback-explore',
+    tag: '去向',
+    title: '返回探索继续浏览',
+    description: '先看其他公开内容',
+    to: '/explore',
+  },
+  {
+    id: 'post-fallback-community',
+    tag: '社区',
+    title: '进入社区查看讨论',
+    description: '切到公开讨论入口',
+    to: '/community',
+  },
+  {
+    id: 'post-fallback-home',
+    tag: '主页',
+    title: '回到媒体入口',
+    description: '重新选择浏览路径',
+    to: '/',
+  },
+]
+
+const fallbackStatusTag = '可继续浏览'
 
 function postId(): string {
   return normalizeHmrRouteParam(route.params.id, 'signal-room')

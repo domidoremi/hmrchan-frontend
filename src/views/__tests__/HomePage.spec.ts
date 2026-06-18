@@ -251,7 +251,13 @@ describe('HomePage', () => {
       })
     )
     expect(wrapper.text()).toContain('Primary post')
-    expect(wrapper.findAll('.hmr-post-card').map((card) => card.text())).toEqual(['Primary post'])
+    expect(wrapper.findAll('.hmr-post-card').map((card) => card.text())).toEqual([
+      'Primary post',
+      '公开媒体会继续回到这里',
+      '精选内容会沿用当前阅读层级',
+      '恢复后会自动接回真实封面',
+      '首页结构不会因为空数据塌掉',
+    ])
     expect(wrapper.text()).toContain('Full discussion')
     expect(mocks.scheduleHomeContentPrewarm).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -315,7 +321,7 @@ describe('HomePage', () => {
     expect(mocks.readAvailablePublicContent).not.toHaveBeenCalled()
     expect(mocks.readPublicContent).not.toHaveBeenCalled()
     expect(mocks.loadHomePrimaryContentResource).not.toHaveBeenCalled()
-    expect(mocks.renderHmrPostCard).not.toHaveBeenCalled()
+    expect(mocks.renderHmrPostCard).toHaveBeenCalledTimes(4)
 
     await vi.advanceTimersByTimeAsync(5000)
     await flushPromises()
@@ -349,5 +355,39 @@ describe('HomePage', () => {
     expect(wrapper.text()).toContain('Network post')
     expect(wrapper.find('.hmr-home-static-hero-card').exists()).toBe(false)
     expect(wrapper.find('img').attributes('src')).toBe(STATIC_HOME_PRERENDER_IMAGE.href)
+  })
+
+  it('renders structured preview cards when discussion and schedule content are empty', async () => {
+    const emptyResource = makeResource({
+      ...makeContent(makePost({ title: 'Preview hero' })),
+      highlights: [],
+      scheduleHighlights: [],
+    })
+    mocks.readAvailablePublicContent.mockResolvedValue(null)
+    mocks.readPublicContent.mockResolvedValue(emptyResource)
+
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('公开讨论会继续留在首页入口')
+    expect(wrapper.text()).toContain('直播窗口排期')
+    expect(wrapper.findAll('.hmr-home-discussion-card--preview')).toHaveLength(3)
+  })
+
+  it('renders preview featured cards when only the hero slot has content', async () => {
+    const heroOnlyResource = makeResource({
+      ...makeContent(makePost({ title: 'Hero only preview' })),
+      highlights: [],
+      scheduleHighlights: [],
+    })
+    mocks.readAvailablePublicContent.mockResolvedValue(null)
+    mocks.readPublicContent.mockResolvedValue(heroOnlyResource)
+
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('公开媒体会继续回到这里')
+    expect(wrapper.text()).toContain('首页结构不会因为空数据塌掉')
+    expect(wrapper.findAll('.hmr-featured-grid .hmr-post-card')).toHaveLength(4)
   })
 })

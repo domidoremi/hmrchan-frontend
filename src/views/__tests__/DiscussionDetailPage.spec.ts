@@ -147,6 +147,9 @@ describe('DiscussionDetailPage', () => {
     expect(wrapper.text()).toContain('未找到 · 讨论已移除或下架')
     expect(wrapper.text()).toContain('讨论不存在或已下架')
     expect(wrapper.find('.discussion-comments').exists()).toBe(false)
+    expect(wrapper.text()).toContain('当前讨论仍可继续浏览')
+    expect(wrapper.text()).toContain('返回社区查看最新讨论')
+    expect(wrapper.findAll('.hmr-detail-fallback-card')).toHaveLength(3)
   })
 
   it('keeps a stable comments readiness anchor when an available discussion has no replies', async () => {

@@ -1,13 +1,28 @@
 <template>
-  <div class="hmr-route-page hmr-route-page--schedule schedule-page">
+  <div
+    class="hmr-route-page hmr-route-page--schedule schedule-page"
+    :class="{ 'is-preview': usingPreviewSchedule }"
+  >
     <header class="hmr-page-hero hmr-page-hero--schedule">
       <div class="hmr-container hmr-page-hero-container">
         <p class="hmr-kicker">{{ t('schedule.eyebrow') }}</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('schedule.title') }}</h1>
+        <div class="hmr-page-tags hmr-page-tags--schedule" aria-label="日程概览">
+          <span>{{ selectedMonthLabel }}</span>
+          <span>{{ activeFilterLabel }}</span>
+          <span>{{ scheduleOverviewCount }} {{ t('schedule.itemCount') }}</span>
+        </div>
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
-          :empty="pageState === 'empty'"
-          :error="resource.error"
+          :empty="pageState === 'empty' && !usingPreviewSchedule"
+          :error="usingPreviewSchedule ? null : resource.error"
+          :title="usingPreviewSchedule ? '当前显示公开预览' : undefined"
+          :body="
+            usingPreviewSchedule
+              ? '日程结构、筛选和近期窗口保持可用，公开接口恢复后会自动替换成实时排期。'
+              : undefined
+          "
+          :show-when-ready="usingPreviewSchedule"
           :retry-label="t('explore.loadMore')"
           @retry="refreshSchedule"
         />
@@ -52,7 +67,11 @@
           </button>
         </div>
 
-        <div class="hmr-schedule-month-tools" aria-label="Month navigation">
+        <div
+          v-if="activeFilter === 'month'"
+          class="hmr-schedule-month-tools"
+          aria-label="Month navigation"
+        >
           <button type="button" :aria-label="t('schedule.previousMonth')" @click="shiftMonth(-1)">
             <span></span>
           </button>
@@ -108,7 +127,9 @@
             </article>
 
             <div v-if="!selectedDayEvents.length" class="hmr-schedule-empty">
-              <span aria-hidden="true"></span>
+              <span class="hmr-schedule-empty-ornament" aria-hidden="true"></span>
+              <strong>{{ selectedDayLabel }}</strong>
+              <p>{{ t('schedule.emptyDay') }}</p>
             </div>
           </div>
         </div>
@@ -122,7 +143,7 @@
           <h2 class="hmr-section-title">{{ t('schedule.nextWindow') }}</h2>
         </div>
         <div class="hmr-schedule-highlight-grid">
-          <article v-for="item in upcomingEvents.slice(0, 3)" :key="item.id">
+          <article v-for="item in highlightEvents" :key="item.id">
             <span>{{ item.dayLabel }} · {{ item.timeLabel }}</span>
             <strong>{{ item.title }}</strong>
             <p>{{ item.description }}</p>
@@ -160,6 +181,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 
@@ -168,6 +190,47 @@ import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
 import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
 import { useHmrScheduleBoard } from '@/hmr/composables/useHmrScheduleBoard'
+import type { HmrScheduleItem } from '@/hmr/types'
+
+const schedulePreviewAnchor = new Date()
+
+function buildPreviewScheduleTime(offsetDays: number, hours: number, minutes: number): string {
+  const date = new Date(schedulePreviewAnchor)
+  date.setDate(schedulePreviewAnchor.getDate() + offsetDays)
+  date.setHours(hours, minutes, 0, 0)
+  return date.toISOString()
+}
+
+const schedulePreviewItems: HmrScheduleItem[] = [
+  {
+    id: 'schedule-preview-live',
+    title: '直播窗口排期',
+    phase: '直播',
+    time: buildPreviewScheduleTime(0, 20, 30),
+    description: '公开入口恢复后，这里会同步直播窗口、开场时间与后续提醒。',
+  },
+  {
+    id: 'schedule-preview-planning',
+    title: '选题与物料确认',
+    phase: '安排',
+    time: buildPreviewScheduleTime(1, 10, 0),
+    description: '保留当周工作区结构，方便继续查看筛选、日期与切换节奏。',
+  },
+  {
+    id: 'schedule-preview-release',
+    title: '内容发布窗口',
+    phase: '发布',
+    time: buildPreviewScheduleTime(2, 18, 0),
+    description: '接口恢复后会自动替换为真实发布时间线，不需要重新适应页面。',
+  },
+  {
+    id: 'schedule-preview-community',
+    title: '社区回应整理',
+    phase: '社区',
+    time: buildPreviewScheduleTime(4, 14, 0),
+    description: '热门讨论和相关内容会继续回流到同一条时间表工作面板。',
+  },
+]
 
 const initialScheduleContent: HmrScheduleContent = {
   items: [],
@@ -189,11 +252,18 @@ const {
   isEmpty: (data) => data.items.length === 0,
 })
 const { locale, t } = useI18n({ useScope: 'global' })
+const usingPreviewSchedule = computed(() => content.value.items.length === 0)
+const scheduleBoardContent = computed<HmrScheduleContent>(() => ({
+  items: usingPreviewSchedule.value ? schedulePreviewItems : content.value.items,
+  calendar: content.value.calendar,
+  highlights: content.value.highlights.length ? content.value.highlights : schedulePreviewItems,
+}))
 const {
   activeFilter,
   dayOptions,
   filterOptions,
   monthDays,
+  normalizedEvents,
   populatedDays,
   selectedDayEvents,
   selectedDayKey,
@@ -203,7 +273,14 @@ const {
   setFilter,
   shiftMonth,
   upcomingEvents,
-} = useHmrScheduleBoard(content, { locale, t })
+} = useHmrScheduleBoard(scheduleBoardContent, { locale, t })
+const activeFilterLabel = computed(
+  () => filterOptions.value.find((item) => item.id === activeFilter.value)?.label ?? t('schedule.all')
+)
+const scheduleOverviewCount = computed(() => scheduleBoardContent.value.items.length)
+const highlightEvents = computed(() =>
+  (upcomingEvents.value.length ? upcomingEvents.value : normalizedEvents.value).slice(0, 3)
+)
 
 useHmrMountedResourceRefresh(refreshSchedule)
 </script>

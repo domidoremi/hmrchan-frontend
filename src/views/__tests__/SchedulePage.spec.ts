@@ -92,12 +92,14 @@ function makeResource(data = makeContent()): HmrAsyncResource<HmrScheduleContent
   }
 }
 
-async function mountSchedulePage() {
+async function mountSchedulePage(resource = makeResource()) {
   const i18n = createI18n({
     legacy: false,
     locale: 'zh-CN',
     messages,
   })
+  readPublicContentMock.mockResolvedValue(resource)
+  loadScheduleContentResourceMock.mockResolvedValue(resource)
   const wrapper = mount(SchedulePage, {
     global: {
       plugins: [i18n],
@@ -114,9 +116,6 @@ async function mountSchedulePage() {
 describe('SchedulePage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    const resource = makeResource()
-    readPublicContentMock.mockResolvedValue(resource)
-    loadScheduleContentResourceMock.mockResolvedValue(resource)
   })
 
   it('renders schedule events from the public content resource', async () => {
@@ -132,6 +131,13 @@ describe('SchedulePage', () => {
         strategy: 'network-first',
       })
     )
+  })
+
+  it('falls back to a preview schedule when the public content is empty', async () => {
+    const wrapper = await mountSchedulePage(makeResource({ items: [], calendar: [], highlights: [] }))
+
+    expect(wrapper.text()).toContain('直播窗口排期')
+    expect(wrapper.find('.hmr-schedule-empty').exists()).toBe(false)
   })
 
   it('switches to the month grid from filter controls', async () => {

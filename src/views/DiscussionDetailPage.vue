@@ -85,6 +85,30 @@
     </section>
 
     <section
+      v-else-if="showFallbackSections"
+      class="hmr-detail-reader-section hmr-detail-reader-section--compact hmr-detail-reader-section--fallback"
+      data-hmr-reveal
+    >
+      <div class="hmr-container hmr-container--large">
+        <div class="hmr-section-head hmr-section-head--split">
+          <div>
+            <p class="hmr-kicker">状态概览</p>
+            <h2 class="hmr-section-title">当前讨论仍可继续浏览</h2>
+          </div>
+          <span class="hmr-detail-count">{{ fallbackStatusTag }}</span>
+        </div>
+
+        <div class="hmr-detail-fallback-grid">
+          <article v-for="item in fallbackSummary" :key="item.label" class="hmr-detail-fallback-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <p>{{ item.body }}</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section
       v-if="showCommentsSection"
       class="hmr-detail-reader-section hmr-detail-reader-section--compact discussion-comments"
       data-hmr-reveal
@@ -107,6 +131,31 @@
           <div v-if="comments.length === 0" class="hmr-detail-empty">
             <strong>暂无公开回应</strong>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section
+      v-else-if="showFallbackSections"
+      class="hmr-dark-stage hmr-dark-stage--detail"
+      data-hmr-reveal
+    >
+      <div class="hmr-container hmr-container--large">
+        <div class="hmr-section-head">
+          <p class="hmr-kicker">继续浏览</p>
+          <h2 class="hmr-section-title">先去这些公开入口</h2>
+        </div>
+        <div class="hmr-detail-related">
+          <RouterLink
+            v-for="item in fallbackActions"
+            :key="item.id"
+            class="hmr-detail-related-card"
+            :to="item.to"
+          >
+            <span>{{ item.tag }}</span>
+            <strong>{{ item.title }}</strong>
+            <em>{{ item.description }}</em>
+          </RouterLink>
         </div>
       </div>
     </section>
@@ -181,6 +230,9 @@ const showContentSections = computed(
   () => pageState.value === 'ready' && detail.value.viewState === 'available'
 )
 const showCommentsSection = computed(() => showContentSections.value)
+const showFallbackSections = computed(
+  () => pageState.value !== 'loading' && !showContentSections.value
+)
 const canRetry = computed(() => isUnavailableState.value)
 const statusLabel = computed(() => {
   if (isRestrictedState.value) return '公开预览受限'
@@ -252,6 +304,50 @@ const coverStyle = computed(() => ({
   '--hmr-card-start': discussion.value.isPinned ? '#f97316' : '#14b8a6',
   '--hmr-card-end': discussion.value.isClosed ? '#64748b' : '#ec4899',
 }))
+
+const fallbackSummary = [
+  {
+    label: '状态',
+    value: '讨论未取回',
+    body: '当前公开讨论接口没有返回内容，页面保留状态、去向与恢复提示。',
+  },
+  {
+    label: '说明',
+    value: '重试会重新请求公开讨论接口',
+    body: '接口恢复后，正文、回应与关联内容会回到当前阅读结构。',
+  },
+  {
+    label: '去向',
+    value: 'Community / Discussion',
+    body: '你仍然可以继续浏览社区入口或返回相关公开内容。',
+  },
+]
+
+const fallbackActions = [
+  {
+    id: 'discussion-fallback-community',
+    tag: '社区',
+    title: '返回社区查看最新讨论',
+    description: '切回公开讨论入口',
+    to: '/community',
+  },
+  {
+    id: 'discussion-fallback-explore',
+    tag: '内容',
+    title: '去探索页继续浏览',
+    description: '先看其他公开内容',
+    to: '/explore',
+  },
+  {
+    id: 'discussion-fallback-home',
+    tag: '主页',
+    title: '回到媒体入口',
+    description: '重新选择浏览路径',
+    to: '/',
+  },
+]
+
+const fallbackStatusTag = '公开入口仍可用'
 
 function discussionId(): string {
   return normalizeHmrRouteParam(route.params.id, 'discussion')
