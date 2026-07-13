@@ -177,9 +177,12 @@ async function toggleFavorite() {
 
     // 离线时添加到队列
     if (!navigator.onLine) {
+      const ownerId = authStore.user?.id
+      if (!ownerId) return
+
       const { addOfflineAction } = await import('@/utils/cache/offlineQueue')
       const actionType = isFavorited.value ? 'unfavorite' : 'favorite'
-      await addOfflineAction(actionType, props.postId)
+      await addOfflineAction(actionType, props.postId, ownerId)
       toastStore.info(t('post.offlineQueued'))
     }
   } finally {

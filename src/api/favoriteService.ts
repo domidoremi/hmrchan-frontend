@@ -84,12 +84,16 @@ export const favoriteService = {
    */
   async create(
     postId: PublicResourceId,
-    data: Omit<FavoriteCreateRequest, 'post_id'> = {}
+    data: Omit<FavoriteCreateRequest, 'post_id'> = {},
+    config?: RequestConfig
   ): Promise<FavoriteResponse> {
-    return apiClient.post<FavoriteResponse>('/favorites', {
+    const payload = {
       post_id: assertUuidV7String(postId, 'favorite post id'),
       ...data,
-    })
+    }
+    return config === undefined
+      ? apiClient.post<FavoriteResponse>('/favorites', payload)
+      : apiClient.post<FavoriteResponse>('/favorites', payload, config)
   },
 
   /**

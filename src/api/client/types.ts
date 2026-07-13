@@ -16,6 +16,8 @@ export interface RequestConfig extends RequestInit {
   skipClientReinitRetry?: boolean
   skipClientSignatureRetry?: boolean
   skipAuthLogoutOnUnauthorized?: boolean
+  /** Opt in only when concurrent callers have equivalent request and response semantics. */
+  dedupeKey?: string
 }
 
 export interface ApiResponse<T = unknown> {

@@ -16,6 +16,7 @@ const mockGetDeviceInfo = vi.hoisted(() =>
   vi.fn(() => ({ device_name: 'Chrome', device_type: 'desktop' }))
 )
 const mockReportClientEvent = vi.hoisted(() => vi.fn())
+const mockClearOfflineActions = vi.hoisted(() => vi.fn())
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({
@@ -29,6 +30,10 @@ vi.mock('@/utils/device', () => ({
 
 vi.mock('@/utils/clientReporter', () => ({
   reportClientEvent: mockReportClientEvent,
+}))
+
+vi.mock('@/utils/cache/offlineQueue', () => ({
+  clearOfflineActions: mockClearOfflineActions,
 }))
 
 vi.mock('@/services/googleAuthService', async () => {
@@ -310,6 +315,7 @@ describe('auth store', () => {
 
     expect(store.user).toBeNull()
     expect(store.runtimeAuthzCache).toBeNull()
+    expect(mockClearOfflineActions).toHaveBeenCalledTimes(1)
     expect(mockRouterPush).toHaveBeenCalledWith('/login')
   })
 

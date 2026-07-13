@@ -3,20 +3,34 @@
  * 用于存储离线时的点赞、收藏等操作，在网络恢复后同步
  */
 
-import { idbGet, idbSet, idbDelete, idbGetAll, STORES } from './idb'
+import {
+  idbClear,
+  idbDelete,
+  idbGet,
+  idbGetAll,
+  idbMutate,
+  idbSet,
+  idbUpdateFirst,
+  STORES,
+} from './idb'
 
-interface OfflineAction {
+export interface OfflineAction {
   id: string
+  idempotencyKey: string
+  ownerId: string
   type: 'like' | 'unlike' | 'favorite' | 'unfavorite' | 'comment'
   resourceId: string
   data?: Record<string, unknown>
   timestamp: number
   retryCount: number
   status: 'pending' | 'syncing' | 'failed'
+  leaseId?: string
+  leaseExpiresAt?: number
 }
 
 const QUEUE_STORE = STORES.OFFLINE_QUEUE
 const MAX_RETRY = 3
+export const OFFLINE_ACTION_LEASE_MS = 2 * 60 * 1000
 let fallbackIdSequence = 0
 
 function createOfflineActionId(type: OfflineAction['type'], resourceId: string): string {
@@ -34,12 +48,19 @@ function createOfflineActionId(type: OfflineAction['type'], resourceId: string):
 export async function addOfflineAction(
   type: OfflineAction['type'],
   resourceId: string,
+  ownerId: string,
   data?: Record<string, unknown>
 ): Promise<string> {
+  if (!ownerId.trim()) {
+    throw new Error('Offline actions require an authenticated owner')
+  }
+
   const id = createOfflineActionId(type, resourceId)
 
   const action: OfflineAction = {
     id,
+    idempotencyKey: id,
+    ownerId,
     type,
     resourceId,
     ...(data && { data }), // Only include data if defined
@@ -71,9 +92,73 @@ export async function addOfflineAction(
 /**
  * 获取所有待同步的操作
  */
-export async function getPendingActions(): Promise<OfflineAction[]> {
+export async function getPendingActions(
+  ownerId: string,
+  now = Date.now()
+): Promise<OfflineAction[]> {
   const actions = await idbGetAll<OfflineAction>(QUEUE_STORE)
-  return actions.filter((a) => a.status === 'pending' || a.status === 'failed')
+  return actions.filter(
+    (action) =>
+      action.ownerId === ownerId &&
+      action.retryCount < MAX_RETRY &&
+      (action.status === 'pending' ||
+        action.status === 'failed' ||
+        (action.status === 'syncing' &&
+          (typeof action.leaseExpiresAt !== 'number' || action.leaseExpiresAt <= now)))
+  )
+}
+
+export async function claimNextOfflineAction(
+  ownerId: string,
+  options: { now?: number; excludeIds?: ReadonlySet<string> } = {}
+): Promise<OfflineAction | undefined> {
+  if (!ownerId.trim()) return undefined
+
+  const now = options.now ?? Date.now()
+  const excludedIds = options.excludeIds ?? new Set<string>()
+  const leaseId = createOfflineActionId('lease' as OfflineAction['type'], ownerId)
+
+  return idbUpdateFirst<OfflineAction>(
+    QUEUE_STORE,
+    (action) =>
+      action.ownerId === ownerId &&
+      action.retryCount < MAX_RETRY &&
+      !excludedIds.has(action.id) &&
+      (action.status === 'pending' ||
+        action.status === 'failed' ||
+        (action.status === 'syncing' &&
+          (typeof action.leaseExpiresAt !== 'number' || action.leaseExpiresAt <= now))),
+    (action) => ({
+      ...action,
+      status: 'syncing',
+      leaseId,
+      leaseExpiresAt: now + OFFLINE_ACTION_LEASE_MS,
+    })
+  )
+}
+
+export async function completeClaimedAction(id: string, leaseId: string): Promise<boolean> {
+  return idbMutate<OfflineAction>(QUEUE_STORE, id, (action) => {
+    if (!action || action.status !== 'syncing' || action.leaseId !== leaseId) return undefined
+    return null
+  })
+}
+
+export async function failClaimedAction(id: string, leaseId: string): Promise<boolean> {
+  return idbMutate<OfflineAction>(QUEUE_STORE, id, (action) => {
+    if (!action || action.status !== 'syncing' || action.leaseId !== leaseId) return undefined
+
+    const nextAction = { ...action }
+    delete nextAction.leaseId
+    delete nextAction.leaseExpiresAt
+    nextAction.status = 'failed'
+    nextAction.retryCount += 1
+    return nextAction
+  })
+}
+
+export async function clearOfflineActions(): Promise<void> {
+  await idbClear(QUEUE_STORE)
 }
 
 /**
@@ -105,12 +190,12 @@ export async function removeAction(id: string): Promise<void> {
 /**
  * 清理失败次数过多的操作
  */
-export async function cleanupFailedActions(): Promise<number> {
+export async function cleanupFailedActions(ownerId?: string): Promise<number> {
   const actions = await idbGetAll<OfflineAction>(QUEUE_STORE)
   let cleaned = 0
 
   const deletePromises = actions
-    .filter((action) => action.retryCount >= MAX_RETRY)
+    .filter((action) => action.retryCount >= MAX_RETRY && (!ownerId || action.ownerId === ownerId))
     .map((action) => idbDelete(QUEUE_STORE, action.id))
 
   await Promise.all(deletePromises)

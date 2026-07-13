@@ -179,6 +179,64 @@ describe('apiClient', () => {
       expect(result).toEqual({ id: 1, name: 'Test' })
     })
 
+    it('keeps concurrent GET requests with different semantics independent', async () => {
+      const firstHeaders = vi.fn()
+      const secondHeaders = vi.fn()
+      mockFetch.mockImplementation(async () =>
+        jsonResponse(
+          { success: true, data: { ok: true } },
+          { headers: { 'X-Test-Response': 'present' } }
+        )
+      )
+
+      await Promise.all([
+        apiClient.get('/auth/me', {
+          skipAuthLogoutOnUnauthorized: true,
+          onResponseHeaders: firstHeaders,
+        }),
+        apiClient.get('/auth/me', {
+          skipAuthLogoutOnUnauthorized: false,
+          onResponseHeaders: secondHeaders,
+        }),
+      ])
+
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(firstHeaders).toHaveBeenCalledTimes(1)
+      expect(secondHeaders).toHaveBeenCalledTimes(1)
+    })
+
+    it('deduplicates only when callers explicitly provide the same equivalence key', async () => {
+      let resolveFetch: ((response: Response) => void) | undefined
+      mockFetch.mockImplementationOnce(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve
+          })
+      )
+
+      const first = apiClient.get('/posts', { dedupeKey: 'public-post-list' })
+      const second = apiClient.get('/posts', { dedupeKey: 'public-post-list' })
+
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1))
+      resolveFetch?.(jsonResponse({ success: true, data: { items: [] } }))
+
+      await expect(Promise.all([first, second])).resolves.toEqual([{ items: [] }, { items: [] }])
+    })
+
+    it('keeps endpoint and equivalence-key boundaries collision resistant', async () => {
+      mockFetch.mockImplementation(async (url) =>
+        jsonResponse({ success: true, data: { url: String(url) } })
+      )
+
+      const [first, second] = await Promise.all([
+        apiClient.get<{ url: string }>('/posts:feed', { dedupeKey: 'page' }),
+        apiClient.get<{ url: string }>('/posts', { dedupeKey: 'feed:page' }),
+      ])
+
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(first.url).not.toBe(second.url)
+    })
+
     it('does not attach the contract header to client init requests', async () => {
       mockFetch.mockResolvedValueOnce(
         jsonResponse({
@@ -413,6 +471,18 @@ describe('apiClient', () => {
   })
 
   describe('mutating requests', () => {
+    it('uses an explicit idempotency key for queued mutations', async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'favorite-1' } }))
+
+      await apiClient.post(
+        '/favorites',
+        { post_id: '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10' },
+        { idempotencyKey: 'offline-favorite-1' }
+      )
+
+      expect(getLastRequestInit().headers['Idempotency-Key']).toBe('offline-favorite-1')
+    })
+
     it('adds request-id, contract and idempotency headers for protected POST requests', async () => {
       const requestData = { name: 'Test' }
       mockFetch.mockResolvedValueOnce(jsonResponse({ id: 1, name: 'Test' }, { status: 201 }))

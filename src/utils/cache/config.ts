@@ -63,7 +63,7 @@ export const CACHE_LIMITS = {
 // ============================================
 
 export const UUIDV7_CUTOVER_EPOCH = 'uuidv7-hard-cutover-2026-04-28'
-export const CACHE_VERSION = `v3-${UUIDV7_CUTOVER_EPOCH}`
+export const CACHE_VERSION = `v4-${UUIDV7_CUTOVER_EPOCH}`
 
 export const CACHE_NAMES = {
   STATIC: `hmrchan-static-${CACHE_VERSION}`,

@@ -565,8 +565,9 @@ scheduleTask(
     if (scheduledTasksDisposed) return
     import('./utils/cache/syncManager').then(
       ({ setupAutoSync, setupSwSyncListener, disposeAutoSync, disposeSwSyncListener }) => {
-        setupAutoSync()
-        setupSwSyncListener()
+        const getOfflineActionOwnerId = () => authSurface.user.value?.id
+        setupAutoSync(getOfflineActionOwnerId)
+        setupSwSyncListener(getOfflineActionOwnerId)
         if (import.meta.hot) {
           import.meta.hot.dispose(() => {
             disposeAutoSync()

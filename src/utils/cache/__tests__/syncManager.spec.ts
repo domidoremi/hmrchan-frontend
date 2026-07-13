@@ -1,18 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
-  pendingActions,
-  updateStatus,
-  removeAction,
+  claimNext,
+  completeClaim,
+  failClaim,
   cleanupFailed,
   favoriteCreate,
   favoriteRemove,
   createComment,
   syncRegister,
 } = vi.hoisted(() => ({
-  pendingActions: vi.fn(),
-  updateStatus: vi.fn(),
-  removeAction: vi.fn(),
+  claimNext: vi.fn(),
+  completeClaim: vi.fn(),
+  failClaim: vi.fn(),
   cleanupFailed: vi.fn(),
   favoriteCreate: vi.fn(),
   favoriteRemove: vi.fn(),
@@ -21,9 +21,9 @@ const {
 }))
 
 vi.mock('../offlineQueue', () => ({
-  getPendingActions: pendingActions,
-  updateActionStatus: updateStatus,
-  removeAction,
+  claimNextOfflineAction: claimNext,
+  completeClaimedAction: completeClaim,
+  failClaimedAction: failClaim,
   cleanupFailedActions: cleanupFailed,
 }))
 
@@ -53,6 +53,8 @@ describe('syncManager', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     cleanupFailed.mockResolvedValue(undefined)
+    completeClaim.mockResolvedValue(true)
+    failClaim.mockResolvedValue(true)
 
     class MockServiceWorkerRegistration {}
     Object.defineProperty(MockServiceWorkerRegistration.prototype, 'sync', {
@@ -83,25 +85,35 @@ describe('syncManager', () => {
   })
 
   it('syncs favorite and comment actions and removes them on success', async () => {
-    pendingActions.mockResolvedValue([
-      {
+    claimNext
+      .mockResolvedValueOnce({
         id: 'favorite-1',
+        ownerId: 'user-a',
         type: 'favorite',
         resourceId: 'post-1',
-      },
-      {
+        idempotencyKey: 'favorite-1',
+        leaseId: 'lease-1',
+      })
+      .mockResolvedValueOnce({
         id: 'comment-1',
+        ownerId: 'user-a',
         type: 'comment',
         resourceId: 'post-2',
         data: { content: 'Looks great' },
-      },
-    ])
+        idempotencyKey: 'comment-1',
+        leaseId: 'lease-2',
+      })
+      .mockResolvedValueOnce(undefined)
 
-    const result = await syncOfflineActions()
+    const result = await syncOfflineActions('user-a')
 
-    expect(favoriteCreate).toHaveBeenCalledWith('post-1')
-    expect(createComment).toHaveBeenCalledWith('post-2', { content: 'Looks great' })
-    expect(removeAction).toHaveBeenCalledTimes(2)
+    expect(favoriteCreate).toHaveBeenCalledWith('post-1', {}, { idempotencyKey: 'favorite-1' })
+    expect(createComment).toHaveBeenCalledWith(
+      'post-2',
+      { content: 'Looks great' },
+      { idempotencyKey: 'comment-1' }
+    )
+    expect(completeClaim).toHaveBeenCalledTimes(2)
     expect(result).toEqual({
       success: 2,
       failed: 0,
@@ -109,14 +121,30 @@ describe('syncManager', () => {
     })
   })
 
+  it('does not execute the same queued mutation twice when clients sync concurrently', async () => {
+    claimNext
+      .mockResolvedValueOnce({
+        id: 'favorite-shared',
+        ownerId: 'user-a',
+        type: 'favorite',
+        resourceId: 'post-shared',
+        leaseId: 'lease-shared',
+      })
+      .mockResolvedValue(undefined)
+
+    await Promise.all([syncOfflineActions('user-a'), syncOfflineActions('user-a')])
+
+    expect(favoriteCreate).toHaveBeenCalledTimes(1)
+  })
+
   it('falls back to direct sync when background sync registration fails', async () => {
     syncRegister.mockRejectedValueOnce(new Error('sync unavailable'))
-    pendingActions.mockResolvedValue([])
+    claimNext.mockResolvedValue(undefined)
 
-    await triggerSync()
+    await triggerSync('user-a')
 
     expect(syncRegister).toHaveBeenCalledWith('sync-offline-actions')
-    expect(pendingActions).toHaveBeenCalledTimes(1)
+    expect(claimNext).toHaveBeenCalledTimes(1)
   })
 
   it('wires online and service worker message listeners', async () => {
@@ -125,8 +153,8 @@ describe('syncManager', () => {
     const swAddListenerSpy = vi.spyOn(navigator.serviceWorker, 'addEventListener')
     const swRemoveListenerSpy = vi.spyOn(navigator.serviceWorker, 'removeEventListener')
 
-    setupAutoSync()
-    setupSwSyncListener()
+    setupAutoSync(() => 'user-a')
+    setupSwSyncListener(() => 'user-a')
 
     expect(addEventListenerSpy).toHaveBeenCalledWith('online', expect.any(Function))
     expect(swAddListenerSpy).toHaveBeenCalledWith('message', expect.any(Function))

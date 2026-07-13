@@ -78,6 +78,8 @@ describe('service worker runtime cache policy', () => {
       '/api/v1/preferences',
       '/api/v1/relations/followers',
       '/api/v1/reports/my',
+      '/api/v1/discussions/my',
+      '/api/v1/discussions/my-comments',
       '/api/v1/users/me',
       '/api/v1/users/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10/public-profile',
     ]
@@ -90,5 +92,25 @@ describe('service worker runtime cache policy', () => {
         )
       ).toBe(false)
     }
+  })
+
+  it('defaults unknown API routes to private instead of caching by missing Authorization', async () => {
+    const { isCacheableApiRequest } = await loadRuntime()
+    const url = new URL('https://example.test/api/v1/future-account-data')
+
+    expect(isCacheableApiRequest(url, new Request(url))).toBe(false)
+  })
+
+  it('does not let private API paths bypass the allowlist through media classifiers', async () => {
+    const { isAvatarRequest, isMediaRequest } = await loadRuntime()
+
+    expect(isAvatarRequest(new URL('https://example.test/api/v1/profile'))).toBe(false)
+    expect(isAvatarRequest(new URL('https://example.test/api/v1/account/avatar'))).toBe(false)
+    expect(isMediaRequest(new URL('https://example.test/api/v1/profile/avatar.png'))).toBe(false)
+    expect(
+      isMediaRequest(
+        new URL('https://example.test/api/v1/media/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10/thumbnail')
+      )
+    ).toBe(true)
   })
 })

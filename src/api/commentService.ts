@@ -100,8 +100,14 @@ export const commentService = {
   /**
    * 创建评论（支持带图片）
    */
-  async createComment(postId: string, data: CreateCommentRequest): Promise<Comment> {
-    return apiClient.post<Comment>(`/posts/${postId}/comments`, data)
+  async createComment(
+    postId: string,
+    data: CreateCommentRequest,
+    config?: RequestConfig
+  ): Promise<Comment> {
+    return config === undefined
+      ? apiClient.post<Comment>(`/posts/${postId}/comments`, data)
+      : apiClient.post<Comment>(`/posts/${postId}/comments`, data, config)
   },
 
   /**

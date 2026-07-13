@@ -439,6 +439,12 @@ export const useAuthStore = defineStore('auth', () => {
       // 忽略登出 API 错误
     } finally {
       clearPendingGoogleAuthRequest()
+      try {
+        const { clearOfflineActions } = await import('@/utils/cache/offlineQueue')
+        await clearOfflineActions()
+      } catch {
+        // ignore local queue cleanup failures
+      }
       sessionController.clearSession({ navigateToLogin: true })
       error.value = null
       try {

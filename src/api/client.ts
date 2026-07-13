@@ -588,21 +588,27 @@ export const apiClient = {
   },
 
   get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-    const { skipAuth = false, baseUrl, ...restConfig } = config || {}
+    const { skipAuth = false, baseUrl, dedupeKey, ...restConfig } = config || {}
     const url = buildRequestUrl(endpoint, baseUrl)
-    const cacheKey = buildCacheKey('GET', url)
+    const requestConfig = {
+      ...restConfig,
+      skipAuth,
+      baseUrl,
+      method: 'GET',
+    } satisfies RequestConfig
+
+    if (!dedupeKey) {
+      return request<T>(endpoint, requestConfig)
+    }
+
+    const cacheKey = buildCacheKey('GET', JSON.stringify([url, dedupeKey]))
     const inflight = inflightRequests.get(cacheKey) as Promise<T> | undefined
 
     if (inflight) {
       return inflight
     }
 
-    const promise = request<T>(endpoint, {
-      ...restConfig,
-      skipAuth,
-      baseUrl,
-      method: 'GET',
-    }).finally(() => {
+    const promise = request<T>(endpoint, requestConfig).finally(() => {
       inflightRequests.delete(cacheKey)
     })
 

@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'hmrchan-cache'
-const DB_VERSION = 4 // 增加版本以校正历史缺失 store 的缓存库
+const DB_VERSION = 5 // v5 clears unattributable offline actions and adds owner lookup
 
 // Store 名称
 export const STORES = {
@@ -234,10 +234,19 @@ function getDB(): Promise<IDBDatabase> {
       }
 
       // 离线操作队列
+      let queueStore: IDBObjectStore
       if (!db.objectStoreNames.contains(STORES.OFFLINE_QUEUE)) {
-        const queueStore = db.createObjectStore(STORES.OFFLINE_QUEUE, { keyPath: 'id' })
+        queueStore = db.createObjectStore(STORES.OFFLINE_QUEUE, { keyPath: 'id' })
         queueStore.createIndex('status', 'status', { unique: false })
         queueStore.createIndex('timestamp', 'timestamp', { unique: false })
+      } else {
+        queueStore = request.transaction!.objectStore(STORES.OFFLINE_QUEUE)
+      }
+      if (!queueStore.indexNames.contains('ownerId')) {
+        queueStore.createIndex('ownerId', 'ownerId', { unique: false })
+      }
+      if (event.oldVersion < 5) {
+        queueStore.clear()
       }
 
       // 访问历史记录
@@ -396,6 +405,82 @@ export async function idbSet<T>(store: StoreName, value: T): Promise<void> {
       const request = tx.objectStore(store).put(value)
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
+    })
+  })
+}
+
+/** Atomically updates the first record matching a synchronous predicate. */
+export async function idbUpdateFirst<T>(
+  store: StoreName,
+  predicate: (value: T) => boolean,
+  update: (value: T) => T
+): Promise<T | undefined> {
+  return withStoreRecovery(
+    store,
+    `Failed to update first record in ${store}`,
+    undefined,
+    async (db) => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readwrite')
+        const objectStore = tx.objectStore(store)
+        const request = objectStore.openCursor()
+        let updatedValue: T | undefined
+
+        request.onsuccess = () => {
+          const cursor = request.result
+          if (!cursor) return
+
+          const value = cursor.value as T
+          if (!predicate(value)) {
+            cursor.continue()
+            return
+          }
+
+          updatedValue = update(value)
+          cursor.update(updatedValue)
+        }
+        request.onerror = () => reject(request.error)
+        tx.oncomplete = () => resolve(updatedValue)
+        tx.onerror = () => reject(tx.error)
+        tx.onabort = () => reject(tx.error)
+      })
+    }
+  )
+}
+
+/** Atomically mutates or deletes a keyed record after checking its current value. */
+export async function idbMutate<T>(
+  store: StoreName,
+  key: IDBValidKey,
+  mutate: (value: T | undefined) => T | null | undefined
+): Promise<boolean> {
+  return withStoreRecovery(store, `Failed to mutate record in ${store}`, false, async (db) => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite')
+      const objectStore = tx.objectStore(store)
+      const request = objectStore.get(key)
+      let changed = false
+
+      request.onsuccess = () => {
+        try {
+          const nextValue = mutate(request.result as T | undefined)
+          if (nextValue === undefined) return
+
+          changed = true
+          if (nextValue === null) {
+            objectStore.delete(key)
+          } else {
+            objectStore.put(nextValue)
+          }
+        } catch (error) {
+          tx.abort()
+          reject(error)
+        }
+      }
+      request.onerror = () => reject(request.error)
+      tx.oncomplete = () => resolve(changed)
+      tx.onerror = () => reject(tx.error)
+      tx.onabort = () => reject(tx.error)
     })
   })
 }

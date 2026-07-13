@@ -126,4 +126,20 @@ describe('commentService', () => {
       { skipErrorToast: true }
     )
   })
+
+  it('forwards a stable idempotency key for offline comment creation', async () => {
+    vi.mocked(clientMocks.post).mockResolvedValueOnce({})
+
+    await commentService.createComment(
+      'post-1',
+      { content: 'saved while offline' },
+      { idempotencyKey: 'offline-comment-1' }
+    )
+
+    expect(clientMocks.post).toHaveBeenCalledWith(
+      '/posts/post-1/comments',
+      { content: 'saved while offline' },
+      { idempotencyKey: 'offline-comment-1' }
+    )
+  })
 })

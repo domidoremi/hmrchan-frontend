@@ -54,26 +54,6 @@ const AUTH_ROUTE_PATHS = new Set([
   '/auth/callback',
 ])
 
-const PRIVATE_API_PATH_PATTERNS = [
-  /^\/api\/v1\/2fa(?:\/|$)/i,
-  /^\/api\/v1\/account(?:\/|$)/i,
-  /^\/api\/v1\/audit(?:\/|$)/i,
-  /^\/api\/v1\/auth(?:\/|$)/i,
-  /^\/api\/v1\/devices(?:\/|$)/i,
-  /^\/api\/v1\/email(?:\/|$)/i,
-  /^\/api\/v1\/notifications(?:\/|$)/i,
-  /^\/api\/v1\/favorites(?:\/|$)/i,
-  /^\/api\/v1\/history(?:\/|$)/i,
-  /^\/api\/v1\/inbox(?:\/|$)/i,
-  /^\/api\/v1\/me(?:\/|$)/i,
-  /^\/api\/v1\/preferences(?:\/|$)/i,
-  /^\/api\/v1\/profile(?:\/|$)/i,
-  /^\/api\/v1\/relations(?:\/|$)/i,
-  /^\/api\/v1\/reports(?:\/|$)/i,
-  /^\/api\/v1\/users\/me(?:\/|$)/i,
-  /^\/api\/v1\/users\/[^/]+\/public-profile(?:\/|$)/i,
-] as const
-
 export const MEDIA_CACHE_CONFIG = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
   maxItems: 500,
@@ -139,6 +119,10 @@ export function isStaticAsset(url: URL): boolean {
 }
 
 export function isMediaRequest(url: URL): boolean {
+  if (url.pathname.startsWith('/api/')) {
+    return /^\/api\/v1\/media\/[0-9a-f-]+\/thumbnail$/i.test(url.pathname)
+  }
+
   if (
     ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg', '.mp4', '.webm'].some((ext) =>
       url.pathname.endsWith(ext)
@@ -155,7 +139,7 @@ export function isMediaRequest(url: URL): boolean {
     return true
   }
 
-  return /^\/api\/v1\/media\/[0-9a-f-]+\/thumbnail$/i.test(url.pathname)
+  return false
 }
 
 export function isVideoStreamRequest(url: URL): boolean {
@@ -179,6 +163,8 @@ export function isAuthorRequest(url: URL): boolean {
 }
 
 export function isAvatarRequest(url: URL): boolean {
+  if (url.pathname.startsWith('/api/')) return false
+
   if (url.pathname.includes('avatar') || url.pathname.includes('profile')) {
     return true
   }
@@ -204,13 +190,7 @@ export function isCacheableResponse(response: Response | undefined | null): resp
 }
 
 export function isCacheableApiRequest(url: URL, request: Request): boolean {
-  if (PRIVATE_API_PATH_PATTERNS.some((pattern) => pattern.test(url.pathname))) {
-    return false
-  }
-
-  if (!request.headers.has('Authorization')) {
-    return true
-  }
+  if (request.method !== 'GET') return false
 
   return isPostDetailRequest(url) || isPostListRequest(url) || isAuthorRequest(url)
 }
