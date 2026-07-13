@@ -32,6 +32,7 @@ export default defineConfigWithVueTs(
       '**/output/**',
       '**/.wrangler/**',
       '**/.claude/**',
+      '**/.gitnexus/**',
       '**/.agent/**',
       '**/.agents/**',
       '**/.qoder/**',

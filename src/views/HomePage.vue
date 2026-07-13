@@ -201,13 +201,14 @@ import {
   loadHomePrimaryContentResource,
   type HmrCommunityItem,
   type HmrHomeContent,
-  type HmrScheduleItem,
+  type HmrPost,
 } from '@/api/hmrContent'
 import { shouldUseApiFallback } from '@/api/runtimeFlags'
 import { STATIC_HOME_PRERENDER_IMAGE } from '@/fallbacks/generated/homePrerenderManifest'
 import { useHmrHomeView } from '@/hmr/composables/useHmrHomeView'
 import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
 import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
+import type { HmrScheduleItem } from '@/hmr/types'
 import HmrPriorityImage from '@/hmr/components/HmrPriorityImage.vue'
 import { cancelIdleTask, runWhenIdle, type IdleTaskHandle } from '@/utils/performance'
 import { readPublicContent } from '@/utils/cache/publicContentCache'
@@ -334,18 +335,20 @@ function preservePrerenderHeroMedia(data: HmrHomeContent): HmrHomeContent {
   const prerenderMediaUrl = homePrerenderPost.mediaUrl
   if (!prerenderMediaUrl || data.featured.length === 0) return data
 
-  const [firstPost, ...restPosts] = data.featured
-  const stableFirstPost = {
+  const firstPost = data.featured[0]
+  if (!firstPost) return data
+
+  const stableFirstPost: HmrPost = {
     ...firstPost,
     mediaUrl: prerenderMediaUrl,
   }
+  const firstStoryPost = data.storyDeck[0]
   return {
     ...data,
-    featured: [stableFirstPost, ...restPosts],
-    storyDeck:
-      data.storyDeck.length > 0
-        ? [{ ...data.storyDeck[0], mediaUrl: prerenderMediaUrl }, ...data.storyDeck.slice(1)]
-        : [stableFirstPost],
+    featured: [stableFirstPost, ...data.featured.slice(1)],
+    storyDeck: firstStoryPost
+      ? [{ ...firstStoryPost, mediaUrl: prerenderMediaUrl }, ...data.storyDeck.slice(1)]
+      : [stableFirstPost],
   }
 }
 

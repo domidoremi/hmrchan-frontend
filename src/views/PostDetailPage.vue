@@ -2,12 +2,14 @@
   <article class="hmr-detail hmr-detail--reader">
     <header class="hmr-detail-reader-hero">
       <div class="hmr-detail-reader-copy">
-        <RouterLink class="hmr-text-link hmr-detail-back" to="/explore">返回探索</RouterLink>
+        <RouterLink class="hmr-text-link hmr-detail-back" to="/explore">
+          {{ t('post.back') }}
+        </RouterLink>
         <p class="hmr-kicker">{{ heroEyebrow }}</p>
         <h1 class="hmr-detail-title" data-hmr-text-reveal>{{ heroTitle }}</h1>
         <p class="hmr-detail-lede">{{ heroBody }}</p>
 
-        <div class="hmr-detail-meta-grid" aria-label="内容信息">
+        <div class="hmr-detail-meta-grid" :aria-label="t('post.infoLabel')">
           <div v-for="item in detailMetrics" :key="item.label" class="hmr-detail-meta-card">
             <span>{{ item.label }}</span>
             <strong>{{ item.value }}</strong>
@@ -20,13 +22,14 @@
           :error="resource.error"
           :title="stateTitle"
           :body="stateBody"
-          :loading-title="'内容加载中'"
-          :loading-body="'正在拉取帖子、评论与媒体预览。'"
-          :empty-title="'暂无可显示内容'"
-          :empty-body="'这条帖子当前没有可展示的正文或媒体。'"
+          :loading-title="t('post.loadingTitle')"
+          :loading-body="t('post.loadingBody')"
+          :empty-title="stateTitle"
+          :empty-body="stateBody"
           :error-title="stateTitle"
           :error-body="stateBody"
           :show-retry="canRetry"
+          :retry-label="t('post.retry')"
           @retry="loadPost"
         />
       </div>
@@ -52,7 +55,7 @@
         </div>
         <div class="hmr-detail-cover-caption">
           <span>{{ platformLabel }}</span>
-          <strong>{{ mediaLabel }}</strong>
+          <strong>{{ showFallbackSections ? t('post.fallbackMediaLabel') : mediaLabel }}</strong>
         </div>
       </aside>
     </header>
@@ -147,14 +150,18 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head hmr-section-head--split">
           <div>
-            <p class="hmr-kicker">状态概览</p>
-            <h2 class="hmr-section-title">当前可继续的路径</h2>
+            <p class="hmr-kicker">{{ t('detailFallback.stateOverview') }}</p>
+            <h2 class="hmr-section-title">{{ t('detailFallback.postHeading') }}</h2>
           </div>
           <span class="hmr-detail-count">{{ fallbackStatusTag }}</span>
         </div>
 
         <div class="hmr-detail-fallback-grid">
-          <article v-for="item in fallbackSummary" :key="item.label" class="hmr-detail-fallback-card">
+          <article
+            v-for="item in fallbackSummary"
+            :key="item.label"
+            class="hmr-detail-fallback-card"
+          >
             <span>{{ item.label }}</span>
             <strong>{{ item.value }}</strong>
             <p>{{ item.body }}</p>
@@ -197,8 +204,8 @@
     >
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
-          <p class="hmr-kicker">继续浏览</p>
-          <h2 class="hmr-section-title">先去这些入口</h2>
+          <p class="hmr-kicker">{{ t('detailFallback.continueBrowsing') }}</p>
+          <h2 class="hmr-section-title">{{ t('detailFallback.postActionsTitle') }}</h2>
         </div>
         <div class="hmr-detail-related">
           <RouterLink
@@ -244,6 +251,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 
 import {
@@ -261,6 +269,7 @@ import {
 } from '@/hmr/composables/useHmrRouteResourceRefresh'
 
 const route = useRoute()
+const { t } = useI18n()
 const seedPost: HmrPost = {
   id: 'signal-room',
   title: '内容加载中',
@@ -296,12 +305,12 @@ const {
   canRetry,
   cardStyle,
   commentsPreview,
-  detailMetrics,
-  heroBody,
-  heroEyebrow,
+  detailMetrics: sourceDetailMetrics,
+  heroBody: sourceHeroBody,
+  heroEyebrow: sourceHeroEyebrow,
   heroImage,
   heroImageSrcset,
-  heroTitle,
+  heroTitle: sourceHeroTitle,
   interactionLabel,
   isRestrictedState,
   mediaImageSrcset,
@@ -315,60 +324,103 @@ const {
   showRelatedSection,
   sourceDescription,
   sourceUrl,
-  stateBody,
-  stateTitle,
+  stateBody: sourceStateBody,
+  stateTitle: sourceStateTitle,
 } = useHmrPostDetailView(detail, pageState)
 
 const showFallbackSections = computed(
   () => pageState.value !== 'loading' && !showContentSections.value
 )
 
-const fallbackSummary = [
-  {
-    label: '状态',
-    value: '内容未取回',
-    body: '当前公开拉取失败，页面保留阅读入口与状态说明，避免只剩空白区域。',
-  },
-  {
-    label: '说明',
-    value: '稍后重试通常可恢复',
-    body: '网络或上游接口恢复后，正文、媒体与评论会回到同一阅读布局。',
-  },
-  {
-    label: '去向',
-    value: 'Explore / Community',
-    body: '继续浏览公开内容或社区讨论，不需要退出当前阅读链路。',
-  },
-]
+const fallbackStateKey = computed(() => {
+  if (detail.value.viewState === 'restricted') return 'restricted'
+  if (detail.value.viewState === 'not-found') return 'notFound'
+  return 'unavailable'
+})
+const fallbackStateCopy = computed(() => {
+  const key = `post.states.${fallbackStateKey.value}`
+  return {
+    eyebrow: t(`${key}.eyebrow`),
+    heroTitle: t(`${key}.heroTitle`),
+    title: t(`${key}.title`),
+    body: t(`${key}.body`),
+    guidance: t(`${key}.guidance`),
+  }
+})
+const heroEyebrow = computed(() =>
+  showFallbackSections.value ? fallbackStateCopy.value.eyebrow : sourceHeroEyebrow.value
+)
+const heroTitle = computed(() =>
+  showFallbackSections.value ? fallbackStateCopy.value.heroTitle : sourceHeroTitle.value
+)
+const heroBody = computed(() =>
+  showFallbackSections.value ? fallbackStateCopy.value.body : sourceHeroBody.value
+)
+const stateTitle = computed(() =>
+  showFallbackSections.value ? fallbackStateCopy.value.title : sourceStateTitle.value
+)
+const stateBody = computed(() =>
+  showFallbackSections.value ? fallbackStateCopy.value.body : sourceStateBody.value
+)
+const detailMetrics = computed(() => {
+  if (!showFallbackSections.value) return sourceDetailMetrics.value
 
-const fallbackActions = [
+  return [
+    { label: t('detailFallback.status'), value: fallbackStateCopy.value.title },
+    { label: t('detailFallback.explanation'), value: fallbackStateCopy.value.body },
+    { label: t('detailFallback.next'), value: fallbackStateCopy.value.guidance },
+    { label: t('detailFallback.destination'), value: 'Explore / Community' },
+  ]
+})
+
+const fallbackSummary = computed(() => {
+  return [
+    {
+      label: t('detailFallback.status'),
+      value: fallbackStateCopy.value.title,
+      body: fallbackStateCopy.value.body,
+    },
+    {
+      label: t('detailFallback.explanation'),
+      value: fallbackStateCopy.value.guidance,
+      body: fallbackStateCopy.value.body,
+    },
+    {
+      label: t('detailFallback.destination'),
+      value: 'Explore / Community',
+      body: t('detailFallback.postDestinationBody'),
+    },
+  ]
+})
+
+const fallbackActions = computed(() => [
   {
     id: 'post-fallback-explore',
-    tag: '去向',
-    title: '返回探索继续浏览',
-    description: '先看其他公开内容',
+    tag: t('detailFallback.exploreTag'),
+    title: t('detailFallback.exploreTitle'),
+    description: t('detailFallback.exploreDescription'),
     to: '/explore',
   },
   {
     id: 'post-fallback-community',
-    tag: '社区',
-    title: '进入社区查看讨论',
-    description: '切到公开讨论入口',
+    tag: t('detailFallback.communityTag'),
+    title: t('detailFallback.postCommunityTitle'),
+    description: t('detailFallback.communityDescription'),
     to: '/community',
   },
   {
     id: 'post-fallback-home',
-    tag: '主页',
-    title: '回到媒体入口',
-    description: '重新选择浏览路径',
+    tag: t('detailFallback.homeTag'),
+    title: t('detailFallback.homeTitle'),
+    description: t('detailFallback.homeDescription'),
     to: '/',
   },
-]
+])
 
-const fallbackStatusTag = '可继续浏览'
+const fallbackStatusTag = computed(() => t('detailFallback.postStatusTag'))
 
 function postId(): string {
-  return normalizeHmrRouteParam(route.params.id, 'signal-room')
+  return normalizeHmrRouteParam(route.params['id'], 'signal-room')
 }
 
 function mediaCardHref(item: HmrMediaItem): string {
@@ -402,6 +454,6 @@ function handleMediaCardClick(event: MouseEvent): void {
 
 useHmrRouteResourceRefresh({
   refresh: loadPost,
-  watchSource: () => route.params.id,
+  watchSource: () => route.params['id'],
 })
 </script>

@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import type { HmrPostDetailContent } from '@/api/hmrContent'
 import type { HmrAsyncResource } from '@/hmr/types'
+import i18n, { applyLocale } from '@/i18n'
 import PostDetailPage from '@/views/PostDetailPage.vue'
 
 const mocks = vi.hoisted(() => ({
@@ -54,13 +55,15 @@ function makeResource(data: HmrPostDetailContent): HmrAsyncResource<HmrPostDetai
   }
 }
 
-async function mountPostDetail(path = '/posts/post-1') {
+async function mountPostDetail(path = '/posts/post-1', locale: 'zh-CN' | 'en-US' = 'zh-CN') {
+  applyLocale(locale)
   const router = createRouter({
     history: createWebHistory(),
     routes: [
       { path: '/posts/:id', component: PostDetailPage },
       { path: '/explore', component: { template: '<div />' } },
       { path: '/community', component: { template: '<div />' } },
+      { path: '/', component: { template: '<div />' } },
     ],
   })
   await router.push(path)
@@ -68,7 +71,7 @@ async function mountPostDetail(path = '/posts/post-1') {
 
   const wrapper = mount(PostDetailPage, {
     global: {
-      plugins: [router],
+      plugins: [router, i18n],
     },
   })
   await flushPromises()
@@ -156,6 +159,48 @@ describe('PostDetailPage', () => {
     expect(wrapper.text()).toContain('当前可继续的路径')
     expect(wrapper.text()).toContain('返回探索继续浏览')
     expect(wrapper.findAll('.hmr-detail-fallback-card')).toHaveLength(3)
+    expect(wrapper.text()).toContain('这条帖子没有可继续显示的公开内容')
+    expect(wrapper.text()).not.toContain('稍后重试通常可恢复')
+  })
+
+  it('keeps restricted fallback guidance distinct from retryable failures', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(makeDetailContent({ viewState: 'restricted' }))
+    )
+
+    const { wrapper } = await mountPostDetail('/posts/restricted')
+
+    expect(wrapper.text()).toContain('公开预览受限')
+    expect(wrapper.text()).toContain('当前帖子对公开访问受限')
+    expect(wrapper.text()).not.toContain('稍后重试通常可恢复')
+  })
+
+  it('keeps temporary failures explicitly retryable', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(makeDetailContent({ viewState: 'temporary-unavailable' }))
+    )
+
+    const { wrapper } = await mountPostDetail('/posts/unavailable')
+
+    expect(wrapper.text()).toContain('内容暂不可用')
+    expect(wrapper.text()).toContain('稍后重试，通常可以恢复拉取')
+  })
+
+  it('localizes the complete fallback experience', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(makeDetailContent({ viewState: 'temporary-unavailable' }))
+    )
+
+    const { wrapper } = await mountPostDetail('/posts/unavailable', 'en-US')
+
+    expect(wrapper.text()).toContain('Post unavailable')
+    expect(wrapper.text()).toContain('Status overview')
+    expect(wrapper.text()).toContain('Available next steps')
+    expect(wrapper.text()).toContain('Back to Explore')
+    expect(wrapper.get('.hmr-detail-meta-grid').attributes('aria-label')).toBe(
+      'Content information'
+    )
+    expect(wrapper.text()).not.toContain('当前可继续的路径')
   })
 
   it('prioritizes the hero image and lazily loads attachment thumbnails', async () => {

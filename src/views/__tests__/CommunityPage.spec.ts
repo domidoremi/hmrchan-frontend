@@ -46,14 +46,56 @@ const messages = {
       loginCtaTitle: '发起讨论，留下你的观点',
       openFromContent: '查看内容',
       risingTitle: '升温',
+      stats: '社区摘要',
       submitFeedback: '反馈',
       submitTopic: '提交',
       threadTitle: '讨论',
       title: '社区',
       topicTitle: '话题',
+      previewTitle: '当前显示公开预览',
+      previewEmptyBody: '讨论结构保持可浏览，可重新加载公开内容。',
+      previewErrorBody: '公开内容暂不可用，预览结构保持可浏览。',
+      previewBody: '公开接口恢复后会在当前结构中更新。',
+      previewMetric: '预览',
+      previewSync: '同步中',
+      listLabel: '讨论列表',
     },
     explore: {
       loadMore: '重新加载',
+    },
+  },
+  'en-US': {
+    community: {
+      allDiscussions: 'All',
+      channels: 'Channels',
+      eyebrow: 'Community discussions',
+      feed: 'Feed',
+      hot: 'Hot',
+      hotTitle: 'Hot replies',
+      latest: 'Latest',
+      latestTitle: 'Latest activity',
+      loginCtaBody: 'Join discussions and follow updates.',
+      loginCtaPrimary: 'Sign in to join',
+      loginCtaSecondary: 'Explore first',
+      loginCtaTitle: 'Start a discussion',
+      openFromContent: 'View content',
+      risingTitle: 'Rising',
+      stats: 'Community summary',
+      submitFeedback: 'Feedback',
+      submitTopic: 'Submit',
+      threadTitle: 'Threads',
+      title: 'Community',
+      topicTitle: 'Topics',
+      previewTitle: 'Public preview',
+      previewEmptyBody: 'The discussion structure remains available. Reload public content.',
+      previewErrorBody: 'Public content is unavailable. The preview remains available.',
+      previewBody: 'This section updates in place when the public API recovers.',
+      previewMetric: 'Preview',
+      previewSync: 'Syncing',
+      listLabel: 'Discussion list',
+    },
+    explore: {
+      loadMore: 'Reload',
     },
   },
 }
@@ -111,16 +153,18 @@ function makeResource(data = makeContent()): HmrAsyncResource<HmrCommunityConten
 function renderRouteHref(to: string | { path: string; query?: Record<string, unknown> }): string {
   if (typeof to === 'string') return to
 
-  const redirect = to.query?.redirect
+  const redirect = to.query?.['redirect']
   if (typeof redirect !== 'string') return to.path
 
   return `${to.path}?redirect=${redirect}`
 }
 
-async function mountCommunityPage(options: { authenticated?: boolean } = {}) {
+async function mountCommunityPage(
+  options: { authenticated?: boolean; locale?: 'zh-CN' | 'en-US' } = {}
+) {
   const i18n = createI18n({
     legacy: false,
-    locale: 'zh-CN',
+    locale: options.locale ?? 'zh-CN',
     messages,
   })
   const pinia = createPinia()
@@ -137,7 +181,6 @@ async function mountCommunityPage(options: { authenticated?: boolean } = {}) {
     global: {
       plugins: [pinia, i18n],
       stubs: {
-        HmrPageStateBlock: true,
         RouterLink: {
           props: ['to'],
           methods: { renderRouteHref },
@@ -210,5 +253,71 @@ describe('CommunityPage', () => {
     const wrapper = await mountCommunityPage({ authenticated: true })
 
     expect(wrapper.find('.community-priority-card').exists()).toBe(false)
+  })
+
+  it('keeps the public preview retryable when the resource is empty', async () => {
+    const resource = makeResource({
+      stats: [],
+      discussions: [],
+      hot: [],
+      latest: [],
+      feed: [],
+    })
+    readPublicContentMock.mockResolvedValue(resource)
+
+    const wrapper = await mountCommunityPage()
+    const state = wrapper.get('[data-hmr-page-state-block="true"]')
+
+    expect(state.attributes('data-hmr-page-state')).toBe('empty')
+    expect(state.text()).toContain('当前显示公开预览')
+    await state.get('button').trigger('click')
+    await flushPromises()
+    expect(readPublicContentMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('treats latest-only content as real community data', async () => {
+    const resource = makeResource({
+      stats: [],
+      discussions: [],
+      hot: [],
+      feed: [],
+      latest: [
+        {
+          id: 'latest-only',
+          title: 'Latest-only thread',
+          excerpt: 'Partial endpoint success',
+          metric: 'Now',
+        },
+      ],
+    })
+    readPublicContentMock.mockResolvedValue(resource)
+
+    const wrapper = await mountCommunityPage()
+    const latestTab = wrapper
+      .findAll('.hmr-community-tab')
+      .find((button) => button.text().includes('最新'))
+    await latestTab?.trigger('click')
+
+    expect(wrapper.classes()).not.toContain('is-preview')
+    expect(wrapper.find('[data-hmr-page-state-block="true"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Latest-only thread')
+  })
+
+  it('renders preview content in the active locale', async () => {
+    const resource = makeResource({
+      stats: [],
+      discussions: [],
+      hot: [],
+      latest: [],
+      feed: [],
+    })
+    readPublicContentMock.mockResolvedValue(resource)
+
+    const wrapper = await mountCommunityPage({ locale: 'en-US' })
+
+    expect(wrapper.text()).toContain('Public preview')
+    expect(wrapper.text()).toContain('This section updates in place')
+    expect(wrapper.text()).not.toContain('当前显示公开预览')
+    expect(wrapper.get('.hmr-community-main').attributes('aria-label')).toBe('Discussion list')
   })
 })

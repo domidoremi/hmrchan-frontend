@@ -8,36 +8,36 @@
 
 标准图标用于 manifest `icons[].purpose=any`、启动画面和平台图标回退。
 
-| File requirement | Size | Status |
-| --- | --- | --- |
-| standard icon | 72x72 | missing |
-| standard icon | 96x96 | missing |
-| standard icon | 128x128 | missing |
-| standard icon | 144x144 | missing |
-| standard icon | 152x152 | missing |
-| standard icon | 192x192 | missing |
-| standard icon | 384x384 | missing |
-| standard icon | 512x512 | missing |
+| File requirement | Size    | Status  |
+| ---------------- | ------- | ------- |
+| standard icon    | 72x72   | missing |
+| standard icon    | 96x96   | missing |
+| standard icon    | 128x128 | missing |
+| standard icon    | 144x144 | missing |
+| standard icon    | 152x152 | missing |
+| standard icon    | 192x192 | missing |
+| standard icon    | 384x384 | missing |
+| standard icon    | 512x512 | missing |
 
 ### Maskable Icons
 
 Maskable 图标用于 manifest `icons[].purpose=maskable`。重要图形必须落在中心 80% 安全区域内，背景必须不透明。
 
-| File requirement | Size | Status |
-| --- | --- | --- |
-| maskable icon | 192x192 | missing |
-| maskable icon | 512x512 | missing |
+| File requirement | Size    | Status  |
+| ---------------- | ------- | ------- |
+| maskable icon    | 192x192 | missing |
+| maskable icon    | 512x512 | missing |
 
 ### Shortcut Icons
 
 快捷方式图标用于 manifest `shortcuts[].icons`。
 
-| File | Size | Status |
-| --- | --- | --- |
-| `shortcut-home.png` | 96x96 | missing |
-| `shortcut-explore.png` | 96x96 | missing |
+| File                     | Size  | Status  |
+| ------------------------ | ----- | ------- |
+| `shortcut-home.png`      | 96x96 | missing |
+| `shortcut-explore.png`   | 96x96 | missing |
 | `shortcut-favorites.png` | 96x96 | missing |
-| `shortcut-settings.png` | 96x96 | missing |
+| `shortcut-settings.png`  | 96x96 | missing |
 
 ## Asset Constraints
 

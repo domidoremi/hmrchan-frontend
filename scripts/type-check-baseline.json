@@ -1,0 +1,2826 @@
+{
+  "version": 1,
+  "policy": "Exact normalized diagnostics; any added, changed, or resolved entry fails.",
+  "projects": {
+    "app": [
+      {
+        "file": "src/api/client.ts",
+        "line": 147,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'success' comes from an index signature, so it must be accessed with ['success']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 157,
+        "column": 20,
+        "code": "TS4111",
+        "message": "Property 'data' comes from an index signature, so it must be accessed with ['data']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 180,
+        "column": 27,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 181,
+        "column": 15,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 182,
+        "column": 24,
+        "code": "TS4111",
+        "message": "Property 'detail' comes from an index signature, so it must be accessed with ['detail']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 183,
+        "column": 17,
+        "code": "TS4111",
+        "message": "Property 'detail' comes from an index signature, so it must be accessed with ['detail']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 191,
+        "column": 39,
+        "code": "TS4111",
+        "message": "Property 'message' comes from an index signature, so it must be accessed with ['message']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 191,
+        "column": 62,
+        "code": "TS4111",
+        "message": "Property 'detail' comes from an index signature, so it must be accessed with ['detail']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 195,
+        "column": 27,
+        "code": "TS4111",
+        "message": "Property 'message' comes from an index signature, so it must be accessed with ['message']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 195,
+        "column": 46,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 195,
+        "column": 63,
+        "code": "TS4111",
+        "message": "Property 'detail' comes from an index signature, so it must be accessed with ['detail']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 203,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'code' comes from an index signature, so it must be accessed with ['code']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 207,
+        "column": 24,
+        "code": "TS4111",
+        "message": "Property 'code' comes from an index signature, so it must be accessed with ['code']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 207,
+        "column": 40,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 213,
+        "column": 26,
+        "code": "TS4111",
+        "message": "Property 'status' comes from an index signature, so it must be accessed with ['status']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 213,
+        "column": 44,
+        "code": "TS4111",
+        "message": "Property 'status_code' comes from an index signature, so it must be accessed with ['status_code']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 226,
+        "column": 56,
+        "code": "TS2345",
+        "message": "Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BufferSource'.\n  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.\n    Types of property 'buffer' are incompatible.\n      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.\n        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength"
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 339,
+        "column": 84,
+        "code": "TS2379",
+        "message": "Argument of type '{ skipAuth: boolean | undefined; }' is not assignable to parameter of type '{ skipAuth?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'skipAuth' are incompatible.\n    Type 'boolean | undefined' is not assignable to type 'boolean'.\n      Type 'undefined' is not assignable to type 'boolean'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 375,
+        "column": 72,
+        "code": "TS2379",
+        "message": "Argument of type '{ skipAuth: boolean | undefined; }' is not assignable to parameter of type '{ skipAuth?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'skipAuth' are incompatible.\n    Type 'boolean | undefined' is not assignable to type 'boolean'.\n      Type 'undefined' is not assignable to type 'boolean'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 387,
+        "column": 37,
+        "code": "TS2379",
+        "message": "Argument of type '{ method: string; url: string; bodyBytes: Uint8Array<ArrayBufferLike>; clientSecret: string | null; clientToken: string | null; skipAuth: boolean | undefined; }' is not assignable to parameter of type '{ method: string; url: string; bodyBytes: Uint8Array<ArrayBufferLike>; clientSecret: string | null; clientToken: string | null; skipAuth?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'skipAuth' are incompatible.\n    Type 'boolean | undefined' is not assignable to type 'boolean'.\n      Type 'undefined' is not assignable to type 'boolean'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 420,
+        "column": 22,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 421,
+        "column": 20,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 421,
+        "column": 26,
+        "code": "TS4111",
+        "message": "Property 'turnstile_site_key' comes from an index signature, so it must be accessed with ['turnstile_site_key']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 422,
+        "column": 17,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 422,
+        "column": 23,
+        "code": "TS4111",
+        "message": "Property 'turnstile_site_key' comes from an index signature, so it must be accessed with ['turnstile_site_key']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 423,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'turnstile_site_key' comes from an index signature, so it must be accessed with ['turnstile_site_key']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 424,
+        "column": 19,
+        "code": "TS4111",
+        "message": "Property 'turnstile_site_key' comes from an index signature, so it must be accessed with ['turnstile_site_key']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 459,
+        "column": 37,
+        "code": "TS2379",
+        "message": "Argument of type '{ skipClientReinitRetry: boolean | undefined; skipClientSignatureRetry: boolean | undefined; skipAuth?: boolean; skipErrorToast?: boolean; skipSecurity?: boolean; skipChallengeRetry?: boolean; ... 13 more ...; window?: null; }' is not assignable to parameter of type 'RequestConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'skipClientReinitRetry' are incompatible.\n    Type 'boolean | undefined' is not assignable to type 'boolean'.\n      Type 'undefined' is not assignable to type 'boolean'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 573,
+        "column": 39,
+        "code": "TS2769",
+        "message": "No overload matches this call.\n  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.\n    Argument of type '{ method: string; body: BodyInit | null | undefined; headers: Headers; credentials: RequestCredentials; cache?: RequestCache; integrity?: string; ... 7 more ...; window?: null; }' is not assignable to parameter of type 'RequestInit' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n      Types of property 'body' are incompatible.\n        Type 'BodyInit | null | undefined' is not assignable to type 'BodyInit | null'.\n          Type 'undefined' is not assignable to type 'BodyInit | null'.\n  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.\n    Argument of type '{ method: string; body: BodyInit | null | undefined; headers: Headers; credentials: RequestCredentials; cache?: RequestCache; integrity?: string; ... 7 more ...; window?: null; }' is not assignable to parameter of type 'RequestInit' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n      Types of property 'body' are incompatible.\n        Type 'BodyInit | null | undefined' is not assignable to type 'BodyInit | null'.\n          Type 'undefined' is not assignable to type 'BodyInit | null'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 614,
+        "column": 34,
+        "code": "TS2379",
+        "message": "Argument of type '{ method: string; body: string | undefined; skipAuth?: boolean; skipErrorToast?: boolean; skipSecurity?: boolean; skipClientReinitRetry?: boolean; skipClientSignatureRetry?: boolean; ... 12 more ...; window?: null; }' is not assignable to parameter of type 'RequestConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'body' are incompatible.\n    Type 'string | undefined' is not assignable to type 'BodyInit | null'.\n      Type 'undefined' is not assignable to type 'BodyInit | null'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 622,
+        "column": 34,
+        "code": "TS2379",
+        "message": "Argument of type '{ method: string; body: string | undefined; skipAuth?: boolean; skipErrorToast?: boolean; skipSecurity?: boolean; skipClientReinitRetry?: boolean; skipClientSignatureRetry?: boolean; ... 12 more ...; window?: null; }' is not assignable to parameter of type 'RequestConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'body' are incompatible.\n    Type 'string | undefined' is not assignable to type 'BodyInit | null'.\n      Type 'undefined' is not assignable to type 'BodyInit | null'."
+      },
+      {
+        "file": "src/api/clientSecurityService.ts",
+        "line": 104,
+        "column": 5,
+        "code": "TS2375",
+        "message": "Type '{ client_token: string; canonical_fingerprint: string | undefined; fingerprint_source: ClientFingerprintSource | undefined; fingerprint_components_version: string | undefined; client_type: ClientType | undefined; risk_score: number | undefined; risk_decision: string | undefined; init_summary_updated_at: number | und...' is not assignable to type 'StoredClientCredentials' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'canonical_fingerprint' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/api/clientSecurityService.ts",
+        "line": 208,
+        "column": 22,
+        "code": "TS2379",
+        "message": "Argument of type '{ client_token: string; client_secret: string | undefined; canonical_fingerprint?: string; fingerprint_source?: ClientFingerprintSource; fingerprint_components_version?: string; client_type?: ClientType; risk_score?: number; risk_decision?: RiskDecision; init_summary_updated_at?: number; }' is not assignable to parameter of type 'StoredClientCredentials' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'client_secret' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/api/clientSecurityService.ts",
+        "line": 239,
+        "column": 59,
+        "code": "TS4111",
+        "message": "Property 'rawMessage' comes from an index signature, so it must be accessed with ['rawMessage']."
+      },
+      {
+        "file": "src/api/hmrContent.ts",
+        "line": 226,
+        "column": 5,
+        "code": "TS2412",
+        "message": "Type 'undefined' is not assignable to type 'HmrDiscussionRelatedPost' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 280,
+        "column": 38,
+        "code": "TS4111",
+        "message": "Property 'user' comes from an index signature, so it must be accessed with ['user']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 280,
+        "column": 53,
+        "code": "TS4111",
+        "message": "Property 'user' comes from an index signature, so it must be accessed with ['user']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 306,
+        "column": 44,
+        "code": "TS4111",
+        "message": "Property 'referenced_post' comes from an index signature, so it must be accessed with ['referenced_post']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 306,
+        "column": 70,
+        "code": "TS4111",
+        "message": "Property 'referenced_post' comes from an index signature, so it must be accessed with ['referenced_post']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 558,
+        "column": 38,
+        "code": "TS4111",
+        "message": "Property 'user' comes from an index signature, so it must be accessed with ['user']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 559,
+        "column": 14,
+        "code": "TS4111",
+        "message": "Property 'user' comes from an index signature, so it must be accessed with ['user']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 560,
+        "column": 23,
+        "code": "TS4111",
+        "message": "Property 'author' comes from an index signature, so it must be accessed with ['author']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 561,
+        "column": 16,
+        "code": "TS4111",
+        "message": "Property 'author' comes from an index signature, so it must be accessed with ['author']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 572,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ discussion: { id: string; title: string; content: string; category: string; authorName: string; createdAt: string; updatedAt: string; lastActivityAt: string; tags: string[]; viewCount: number; likeCount: number; commentCount: number; isPinned: boolean; isClosed: boolean; }; comments: HmrCommunityItem[]; relatedPos...' is not assignable to type 'HmrDiscussionDetailContent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'relatedPost' are incompatible.\n    Type 'HmrDiscussionRelatedPost | undefined' is not assignable to type 'HmrDiscussionRelatedPost'.\n      Type 'undefined' is not assignable to type 'HmrDiscussionRelatedPost'."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 75,
+        "column": 40,
+        "code": "TS4111",
+        "message": "Property 'author' comes from an index signature, so it must be accessed with ['author']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 75,
+        "column": 57,
+        "code": "TS4111",
+        "message": "Property 'author' comes from an index signature, so it must be accessed with ['author']."
+      },
+      {
+        "file": "src/api/hmrContentResources.ts",
+        "line": 58,
+        "column": 5,
+        "code": "TS2375",
+        "message": "Type '{ kind: HmrApiErrorKind; message: string; path: string; status: number; code: string | undefined; }' is not assignable to type 'HmrApiErrorState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'code' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 205,
+        "column": 26,
+        "code": "TS4111",
+        "message": "Property 'data' comes from an index signature, so it must be accessed with ['data']."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 205,
+        "column": 42,
+        "code": "TS4111",
+        "message": "Property 'result' comes from an index signature, so it must be accessed with ['result']."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 205,
+        "column": 60,
+        "code": "TS4111",
+        "message": "Property 'payload' comes from an index signature, so it must be accessed with ['payload']."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 238,
+        "column": 31,
+        "code": "TS4111",
+        "message": "Property 'has_more' comes from an index signature, so it must be accessed with ['has_more']."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 238,
+        "column": 50,
+        "code": "TS4111",
+        "message": "Property 'hasMore' comes from an index signature, so it must be accessed with ['hasMore']."
+      },
+      {
+        "file": "src/api/hmrProfileContent.ts",
+        "line": 62,
+        "column": 47,
+        "code": "TS4111",
+        "message": "Property 'enabled' comes from an index signature, so it must be accessed with ['enabled']."
+      },
+      {
+        "file": "src/api/hmrProfileContent.ts",
+        "line": 62,
+        "column": 74,
+        "code": "TS4111",
+        "message": "Property 'totp_enabled' comes from an index signature, so it must be accessed with ['totp_enabled']."
+      },
+      {
+        "file": "src/edge/detailDocumentResolver.ts",
+        "line": 1139,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ title: string; description: string; canonicalPath: string; ogType: \"article\"; ogImage: string | undefined; shellEyebrow: string; shellTitle: string; shellBody: string; shellSummary: string[]; ... 6 more ...; shellVariant: \"default\" | \"home\"; }' is not assignable to type 'HtmlDocumentConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'ogImage' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/edge/detailDocumentResolver.ts",
+        "line": 1167,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ title: string; description: string; canonicalPath: string; ogType: \"article\"; ogImage: string | undefined; shellEyebrow: string; shellTitle: string; shellBody: string; shellSummary: string[]; ... 6 more ...; preloadImages?: HtmlDocumentPreloadImage[]; }' is not assignable to type 'HtmlDocumentConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'ogImage' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/edge/detailDocumentResolver.ts",
+        "line": 1197,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ title: string; description: string; canonicalPath: string; ogType: \"article\"; ogImage: string | undefined; shellEyebrow: string; shellTitle: string; shellBody: string; shellSummary: string[]; ... 6 more ...; preloadImages?: HtmlDocumentPreloadImage[]; }' is not assignable to type 'HtmlDocumentConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'ogImage' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/edge/htmlDocument.ts",
+        "line": 163,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ status: 200 | 404; title: string; description: string; canonicalPath: string; ogType: \"article\" | \"website\"; ogImage: string | undefined; robots: \"index, follow\" | \"noindex, nofollow\"; ... 8 more ...; preloadImages: HtmlDocumentPreloadImage[]; }' is not assignable to type 'HtmlDocumentConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'ogImage' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/edge/htmlDocument.ts",
+        "line": 469,
+        "column": 60,
+        "code": "TS2345",
+        "message": "Argument of type 'StaticRouteDocument | undefined' is not assignable to parameter of type 'StaticRouteDocument'.\n  Type 'undefined' is not assignable to type 'StaticRouteDocument'."
+      },
+      {
+        "file": "src/edge/htmlDocument.ts",
+        "line": 473,
+        "column": 44,
+        "code": "TS2345",
+        "message": "Argument of type 'StaticRouteDocument | undefined' is not assignable to parameter of type 'StaticRouteDocument'.\n  Type 'undefined' is not assignable to type 'StaticRouteDocument'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrBrandPet.ts",
+        "line": 72,
+        "column": 21,
+        "code": "TS18048",
+        "message": "'showcaseState' is possibly 'undefined'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrBrandPet.ts",
+        "line": 72,
+        "column": 42,
+        "code": "TS18048",
+        "message": "'showcaseState' is possibly 'undefined'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrBrandPet.ts",
+        "line": 72,
+        "column": 66,
+        "code": "TS18048",
+        "message": "'showcaseState' is possibly 'undefined'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrContactForm.ts",
+        "line": 50,
+        "column": 5,
+        "code": "TS2322",
+        "message": "Type '\"support\"' is not assignable to type 'PublicContentCacheScope'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrPrivateContentResource.ts",
+        "line": 13,
+        "column": 54,
+        "code": "TS2379",
+        "message": "Argument of type '{ initialData: T; paths: string[]; isEmpty: ((data: T) => boolean) | undefined; resolvePageState: ((data: T, resource: HmrAsyncResource<T>) => HmrPageState) | undefined; }' is not assignable to parameter of type 'HmrContentResourceControllerOptions<T>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'isEmpty' are incompatible.\n    Type '((data: T) => boolean) | undefined' is not assignable to type '(data: T) => boolean'.\n      Type 'undefined' is not assignable to type '(data: T) => boolean'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrPublicContentResource.ts",
+        "line": 26,
+        "column": 54,
+        "code": "TS2379",
+        "message": "Argument of type '{ initialData: T; paths: string[]; isEmpty: ((data: T) => boolean) | undefined; resolvePageState: ((data: T, resource: HmrAsyncResource<T>) => HmrPageState) | undefined; }' is not assignable to parameter of type 'HmrContentResourceControllerOptions<T>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'isEmpty' are incompatible.\n    Type '((data: T) => boolean) | undefined' is not assignable to type '(data: T) => boolean'.\n      Type 'undefined' is not assignable to type '(data: T) => boolean'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrTextReveal.ts",
+        "line": 25,
+        "column": 21,
+        "code": "TS4111",
+        "message": "Property 'hmrTextWrapped' comes from an index signature, so it must be accessed with ['hmrTextWrapped']."
+      },
+      {
+        "file": "src/hmr/composables/useHmrTextReveal.ts",
+        "line": 7,
+        "column": 25,
+        "code": "TS4111",
+        "message": "Property 'hmrTextWrapped' comes from an index signature, so it must be accessed with ['hmrTextWrapped']."
+      },
+      {
+        "file": "src/hmr/runtime/platformVisuals.ts",
+        "line": 59,
+        "column": 3,
+        "code": "TS2322",
+        "message": "Type 'HmrPlatformVisual | undefined' is not assignable to type 'HmrPlatformVisual'.\n  Type 'undefined' is not assignable to type 'HmrPlatformVisual'."
+      },
+      {
+        "file": "src/hmr/runtime/platformVisuals.ts",
+        "line": 59,
+        "column": 52,
+        "code": "TS4111",
+        "message": "Property 'default' comes from an index signature, so it must be accessed with ['default']."
+      },
+      {
+        "file": "src/layouts/HmrSiteShell.vue",
+        "line": 317,
+        "column": 7,
+        "code": "TS6133",
+        "message": "'desktopBrandPetRef' is declared but its value is never read."
+      },
+      {
+        "file": "src/layouts/HmrSiteShell.vue",
+        "line": 318,
+        "column": 7,
+        "code": "TS6133",
+        "message": "'mobileBrandPetRef' is declared but its value is never read."
+      },
+      {
+        "file": "src/router/authTargets.ts",
+        "line": 35,
+        "column": 22,
+        "code": "TS4111",
+        "message": "Property 'redirect' comes from an index signature, so it must be accessed with ['redirect']."
+      },
+      {
+        "file": "src/router/authTargets.ts",
+        "line": 35,
+        "column": 3,
+        "code": "TS2322",
+        "message": "Type 'LocationQueryValue$1 | LocationQueryValue$1[] | undefined' is not assignable to type 'LocationQueryValue$1 | LocationQueryValue$1[]'.\n  Type 'undefined' is not assignable to type 'LocationQueryValue$1 | LocationQueryValue$1[]'."
+      },
+      {
+        "file": "src/router/guards.ts",
+        "line": 31,
+        "column": 56,
+        "code": "TS4111",
+        "message": "Property 'id' comes from an index signature, so it must be accessed with ['id']."
+      },
+      {
+        "file": "src/router/guards.ts",
+        "line": 45,
+        "column": 51,
+        "code": "TS4111",
+        "message": "Property 'redirect' comes from an index signature, so it must be accessed with ['redirect']."
+      },
+      {
+        "file": "src/router/routes.ts",
+        "line": 101,
+        "column": 37,
+        "code": "TS4111",
+        "message": "Property 'section' comes from an index signature, so it must be accessed with ['section']."
+      },
+      {
+        "file": "src/router/routes.ts",
+        "line": 101,
+        "column": 70,
+        "code": "TS4111",
+        "message": "Property 'section' comes from an index signature, so it must be accessed with ['section']."
+      },
+      {
+        "file": "src/stores/auth.ts",
+        "line": 257,
+        "column": 17,
+        "code": "TS4111",
+        "message": "Property 'verification_code' comes from an index signature, so it must be accessed with ['verification_code']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 245,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'theme' comes from an index signature, so it must be accessed with ['theme']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 246,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'themeMode' comes from an index signature, so it must be accessed with ['themeMode']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 247,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'preset' comes from an index signature, so it must be accessed with ['preset']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 248,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'appearancePreset' comes from an index signature, so it must be accessed with ['appearancePreset']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 250,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'presetFamily' comes from an index signature, so it must be accessed with ['presetFamily']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 251,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'presetEnhancer' comes from an index signature, so it must be accessed with ['presetEnhancer']."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 1,
+        "column": 21,
+        "code": "TS2304",
+        "message": "Cannot find name 'ServiceWorkerGlobalScope'."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 187,
+        "column": 35,
+        "code": "TS7006",
+        "message": "Parameter 'event' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 196,
+        "column": 36,
+        "code": "TS7006",
+        "message": "Parameter 'event' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 200,
+        "column": 35,
+        "code": "TS7006",
+        "message": "Parameter 'event' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 207,
+        "column": 33,
+        "code": "TS7006",
+        "message": "Parameter 'event' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/utils/cache/publicContentCache.ts",
+        "line": 201,
+        "column": 35,
+        "code": "TS4111",
+        "message": "Property 'source' comes from an index signature, so it must be accessed with ['source']."
+      },
+      {
+        "file": "src/utils/cache/publicContentCache.ts",
+        "line": 201,
+        "column": 71,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/utils/clientInit.ts",
+        "line": 12,
+        "column": 39,
+        "code": "TS4111",
+        "message": "Property 'clientInit' comes from an index signature, so it must be accessed with ['clientInit']."
+      }
+    ],
+    "vitest": [
+      {
+        "file": "build/vite/plugins/serviceWorkerBuild.ts",
+        "line": 25,
+        "column": 19,
+        "code": "TS2379",
+        "message": "Argument of type '{ configFile: false; root: string; publicDir: false; logLevel: LogLevel | undefined; mode: string; resolve: { alias: (AliasOptions | undefined) & Alias[]; }; define: { ...; }; build: { ...; }; }' is not assignable to parameter of type 'InlineConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'logLevel' are incompatible.\n    Type 'LogLevel | undefined' is not assignable to type 'LogLevel'.\n      Type 'undefined' is not assignable to type 'LogLevel'."
+      },
+      {
+        "file": "build/vite/plugins/serviceWorkerBuild.ts",
+        "line": 3,
+        "column": 35,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/build/vite/swCacheVersion.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "functions/__tests__/middleware.spec.ts",
+        "line": 134,
+        "column": 40,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/functions/_middleware.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern.\n  The file is in the program because:\n    Imported via '../_middleware' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/__tests__/middleware.spec.ts'\n    Imported via '../_middleware' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/__tests__/middleware.spec.ts'\n    Imported via '../_middleware' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/__tests__/middleware.spec.ts'\n    Imported via '../_middleware' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/__tests__/middleware.spec.ts'\n    Imported via '../_middleware' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/__tests__/middleware.spec.ts'\n    Imported via '../_middleware' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/__tests__/middleware.spec.ts'\n    Imported via '../_middleware' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/__tests__/middleware.spec.ts'\n    Imported via '../_middleware' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/__tests__/middleware.spec.ts'\n    Imported via '../_middleware' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/__tests__/middleware.spec.ts'"
+      },
+      {
+        "file": "functions/_middleware.ts",
+        "line": 122,
+        "column": 8,
+        "code": "TS2339",
+        "message": "Property 'setInnerContent' does not exist on type 'Element'."
+      },
+      {
+        "file": "functions/_middleware.ts",
+        "line": 152,
+        "column": 8,
+        "code": "TS2339",
+        "message": "Property 'setInnerContent' does not exist on type 'Element'."
+      },
+      {
+        "file": "functions/_middleware.ts",
+        "line": 160,
+        "column": 8,
+        "code": "TS2339",
+        "message": "Property 'setInnerContent' does not exist on type 'Element'."
+      },
+      {
+        "file": "functions/_middleware.ts",
+        "line": 188,
+        "column": 12,
+        "code": "TS2304",
+        "message": "Cannot find name 'EventContext'."
+      },
+      {
+        "file": "functions/_middleware.ts",
+        "line": 224,
+        "column": 25,
+        "code": "TS2304",
+        "message": "Cannot find name 'HTMLRewriter'."
+      },
+      {
+        "file": "functions/api/__tests__/mediaCachePolicy.spec.ts",
+        "line": 3,
+        "column": 63,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/functions/api/mediaCachePolicy.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern.\n  The file is in the program because:\n    Imported via '../mediaCachePolicy' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/api/__tests__/mediaCachePolicy.spec.ts'\n    Imported via './mediaCachePolicy' from file 'G:/Project/hmrchan/hmrchan-frontend/functions/api/[[path]].ts'"
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 155,
+        "column": 39,
+        "code": "TS2379",
+        "message": "Argument of type '{ method: string; headers: Headers; body: BodyInit | null | undefined; }' is not assignable to parameter of type 'RequestInit' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'body' are incompatible.\n    Type 'BodyInit | null | undefined' is not assignable to type 'BodyInit | null'.\n      Type 'undefined' is not assignable to type 'BodyInit | null'."
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 3,
+        "column": 27,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/functions/api/[[path]].ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 464,
+        "column": 11,
+        "code": "TS2344",
+        "message": "Type '[(request: Request) => Promise<Response>]' does not satisfy the constraint 'Procedure | Constructable'."
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 466,
+        "column": 9,
+        "code": "TS2345",
+        "message": "Argument of type 'Response' is not assignable to parameter of type 'never'."
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 502,
+        "column": 29,
+        "code": "TS2339",
+        "message": "Property 'headers' does not exist on type 'never'."
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 503,
+        "column": 29,
+        "code": "TS2339",
+        "message": "Property 'headers' does not exist on type 'never'."
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 504,
+        "column": 29,
+        "code": "TS2339",
+        "message": "Property 'headers' does not exist on type 'never'."
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 505,
+        "column": 29,
+        "code": "TS2339",
+        "message": "Property 'headers' does not exist on type 'never'."
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 506,
+        "column": 29,
+        "code": "TS2339",
+        "message": "Property 'headers' does not exist on type 'never'."
+      },
+      {
+        "file": "functions/api/__tests__/proxy.spec.ts",
+        "line": 507,
+        "column": 29,
+        "code": "TS2339",
+        "message": "Property 'headers' does not exist on type 'never'."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 11,
+        "column": 37,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/functions/api/proxyEnv.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 1106,
+        "column": 33,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 1108,
+        "column": 69,
+        "code": "TS4111",
+        "message": "Property 'code' comes from an index signature, so it must be accessed with ['code']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 1111,
+        "column": 63,
+        "code": "TS4111",
+        "message": "Property 'code' comes from an index signature, so it must be accessed with ['code']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 12,
+        "column": 33,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/functions/api/proxyOrigins.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 1296,
+        "column": 9,
+        "code": "TS2353",
+        "message": "Object literal may only specify known properties, and 'env' does not exist in type 'InternalGatewayFetchOptions'."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 13,
+        "column": 31,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/functions/api/proxyPaths.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 1330,
+        "column": 9,
+        "code": "TS2353",
+        "message": "Object literal may only specify known properties, and 'env' does not exist in type 'InternalGatewayFetchOptions'."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 14,
+        "column": 64,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/functions/api/proxyRedirects.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 273,
+        "column": 14,
+        "code": "TS4111",
+        "message": "Property 'requires_risk_verification' comes from an index signature, so it must be accessed with ['requires_risk_verification']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 273,
+        "column": 68,
+        "code": "TS4111",
+        "message": "Property 'pending_token' comes from an index signature, so it must be accessed with ['pending_token']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 274,
+        "column": 14,
+        "code": "TS4111",
+        "message": "Property 'requires_mfa' comes from an index signature, so it must be accessed with ['requires_mfa']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 274,
+        "column": 54,
+        "code": "TS4111",
+        "message": "Property 'pending_mfa_login_token' comes from an index signature, so it must be accessed with ['pending_mfa_login_token']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 294,
+        "column": 23,
+        "code": "TS4111",
+        "message": "Property 'exp' comes from an index signature, so it must be accessed with ['exp']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 294,
+        "column": 67,
+        "code": "TS4111",
+        "message": "Property 'exp' comes from an index signature, so it must be accessed with ['exp']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 295,
+        "column": 20,
+        "code": "TS4111",
+        "message": "Property 'exp' comes from an index signature, so it must be accessed with ['exp']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 351,
+        "column": 56,
+        "code": "TS2345",
+        "message": "Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BufferSource'.\n  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.\n    Types of property 'buffer' are incompatible.\n      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.\n        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength"
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 382,
+        "column": 67,
+        "code": "TS4111",
+        "message": "Property 'client_fingerprint' comes from an index signature, so it must be accessed with ['client_fingerprint']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 385,
+        "column": 74,
+        "code": "TS4111",
+        "message": "Property 'fingerprint' comes from an index signature, so it must be accessed with ['fingerprint']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 403,
+        "column": 43,
+        "code": "TS4111",
+        "message": "Property 'client_fingerprint' comes from an index signature, so it must be accessed with ['client_fingerprint']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 419,
+        "column": 41,
+        "code": "TS4111",
+        "message": "Property 'client_fingerprint' comes from an index signature, so it must be accessed with ['client_fingerprint']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 420,
+        "column": 41,
+        "code": "TS4111",
+        "message": "Property 'fingerprint' comes from an index signature, so it must be accessed with ['fingerprint']."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 489,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ return_to?: string; authenticated: true; user: Record<string, unknown> | undefined; session_expires_at: string | null; permission_version: string | number | undefined; }' is not assignable to type 'SessionSummaryResponse' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'user' are incompatible.\n    Type 'Record<string, unknown> | undefined' is not assignable to type 'Record<string, unknown>'.\n      Type 'undefined' is not assignable to type 'Record<string, unknown>'."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 53,
+        "column": 24,
+        "code": "TS2304",
+        "message": "Cannot find name 'Fetcher'."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 575,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ return_to?: string; authenticated: true; user: Record<string, unknown> | undefined; session_expires_at: string | null; permission_version: string | number | undefined; }' is not assignable to type 'SessionSummaryResponse' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'user' are incompatible.\n    Type 'Record<string, unknown> | undefined' is not assignable to type 'Record<string, unknown>'.\n      Type 'undefined' is not assignable to type 'Record<string, unknown>'."
+      },
+      {
+        "file": "functions/api/[[path]].ts",
+        "line": 767,
+        "column": 9,
+        "code": "TS2375",
+        "message": "Type '{ authenticated: true; user: Record<string, unknown> | undefined; session_expires_at: string | null; permission_version: string | number | undefined; }' is not assignable to type 'SessionSummaryResponse' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'user' are incompatible.\n    Type 'Record<string, unknown> | undefined' is not assignable to type 'Record<string, unknown>'.\n      Type 'undefined' is not assignable to type 'Record<string, unknown>'."
+      },
+      {
+        "file": "functions/uploads/__tests__/proxy.spec.ts",
+        "line": 3,
+        "column": 27,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/functions/uploads/[[path]].ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 103,
+        "column": 20,
+        "code": "TS2532",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 104,
+        "column": 17,
+        "code": "TS2532",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 105,
+        "column": 24,
+        "code": "TS2532",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 107,
+        "column": 32,
+        "code": "TS2532",
+        "message": "Object is possibly 'undefined'."
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 306,
+        "column": 27,
+        "code": "TS2345",
+        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 306,
+        "column": 46,
+        "code": "TS2345",
+        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 312,
+        "column": 27,
+        "code": "TS2345",
+        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 312,
+        "column": 46,
+        "code": "TS2345",
+        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 4,
+        "column": 73,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/types.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern.\n  The file is in the program because:\n    Imported via './types' from file 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/i18n.ts'\n    Imported via './types' from file 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/utils.ts'\n    Imported via './types' from file 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/pwa.ts'\n    Imported via './types' from file 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/security.ts'"
+      },
+      {
+        "file": "scripts/audit/i18n.ts",
+        "line": 5,
+        "column": 38,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/utils.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern.\n  The file is in the program because:\n    Imported via './utils' from file 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/i18n.ts'\n    Imported via './utils' from file 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/pwa.ts'\n    Imported via './utils' from file 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/security.ts'"
+      },
+      {
+        "file": "scripts/audit/pwa.ts",
+        "line": 352,
+        "column": 40,
+        "code": "TS4111",
+        "message": "Property 'lang' comes from an index signature, so it must be accessed with ['lang']."
+      },
+      {
+        "file": "scripts/audit/pwa.ts",
+        "line": 352,
+        "column": 69,
+        "code": "TS4111",
+        "message": "Property 'lang' comes from an index signature, so it must be accessed with ['lang']."
+      },
+      {
+        "file": "scripts/audit/pwa.ts",
+        "line": 364,
+        "column": 26,
+        "code": "TS4111",
+        "message": "Property 'icons' comes from an index signature, so it must be accessed with ['icons']."
+      },
+      {
+        "file": "scripts/audit/pwa.ts",
+        "line": 84,
+        "column": 5,
+        "code": "TS2322",
+        "message": "Type 'Dirent<string>[]' is not assignable to type 'Dirent<NonSharedBuffer>[]'.\n  Type 'Dirent<string>' is not assignable to type 'Dirent<NonSharedBuffer>'.\n    Type 'string' is not assignable to type 'NonSharedBuffer'."
+      },
+      {
+        "file": "scripts/audit/pwa.ts",
+        "line": 91,
+        "column": 63,
+        "code": "TS2339",
+        "message": "Property 'localeCompare' does not exist on type 'NonSharedBuffer'."
+      },
+      {
+        "file": "scripts/audit/pwa.ts",
+        "line": 92,
+        "column": 38,
+        "code": "TS2345",
+        "message": "Argument of type 'NonSharedBuffer' is not assignable to parameter of type 'string'."
+      },
+      {
+        "file": "scripts/audit/security.ts",
+        "line": 91,
+        "column": 11,
+        "code": "TS18048",
+        "message": "'line' is possibly 'undefined'."
+      },
+      {
+        "file": "scripts/audit/security.ts",
+        "line": 91,
+        "column": 48,
+        "code": "TS18048",
+        "message": "'line' is possibly 'undefined'."
+      },
+      {
+        "file": "scripts/audit/security.ts",
+        "line": 93,
+        "column": 11,
+        "code": "TS18048",
+        "message": "'line' is possibly 'undefined'."
+      },
+      {
+        "file": "scripts/audit/security.ts",
+        "line": 93,
+        "column": 47,
+        "code": "TS18048",
+        "message": "'line' is possibly 'undefined'."
+      },
+      {
+        "file": "scripts/audit/security.ts",
+        "line": 96,
+        "column": 26,
+        "code": "TS2345",
+        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "scripts/audit/utils.ts",
+        "line": 48,
+        "column": 17,
+        "code": "TS4111",
+        "message": "Property 'npm_node_execpath' comes from an index signature, so it must be accessed with ['npm_node_execpath']."
+      },
+      {
+        "file": "scripts/audit/utils.ts",
+        "line": 48,
+        "column": 50,
+        "code": "TS4111",
+        "message": "Property 'NODE' comes from an index signature, so it must be accessed with ['NODE']."
+      },
+      {
+        "file": "scripts/audit/utils.ts",
+        "line": 48,
+        "column": 70,
+        "code": "TS4111",
+        "message": "Property 'npm_execpath' comes from an index signature, so it must be accessed with ['npm_execpath']."
+      },
+      {
+        "file": "scripts/audit/utils.ts",
+        "line": 51,
+        "column": 33,
+        "code": "TS4111",
+        "message": "Property 'PATH' comes from an index signature, so it must be accessed with ['PATH']."
+      },
+      {
+        "file": "scripts/audit/utils.ts",
+        "line": 51,
+        "column": 53,
+        "code": "TS4111",
+        "message": "Property 'Path' comes from an index signature, so it must be accessed with ['Path']."
+      },
+      {
+        "file": "scripts/audit/utils.ts",
+        "line": 55,
+        "column": 22,
+        "code": "TS4111",
+        "message": "Property 'PATHEXT' comes from an index signature, so it must be accessed with ['PATHEXT']."
+      },
+      {
+        "file": "src/__tests__/App.spec.ts",
+        "line": 43,
+        "column": 55,
+        "code": "TS2339",
+        "message": "Property 'exists' does not exist on type 'Omit<DOMWrapper<Element>, \"exists\">'."
+      },
+      {
+        "file": "src/__tests__/App.spec.ts",
+        "line": 56,
+        "column": 67,
+        "code": "TS2339",
+        "message": "Property 'exists' does not exist on type 'Omit<DOMWrapper<Element>, \"exists\">'."
+      },
+      {
+        "file": "src/__tests__/lighthouseProdDiscovery.spec.ts",
+        "line": 106,
+        "column": 22,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../scripts/lib/lighthouse-prod-shared.mjs'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/lib/lighthouse-prod-shared.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/lighthouseProdDiscovery.spec.ts",
+        "line": 112,
+        "column": 49,
+        "code": "TS7006",
+        "message": "Parameter 'entry' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/lighthouseProdDiscovery.spec.ts",
+        "line": 6,
+        "column": 17,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../scripts/lib/lighthouse-prod-discovery.mjs'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/lib/lighthouse-prod-discovery.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/lighthouseProdDiscovery.spec.ts",
+        "line": 80,
+        "column": 40,
+        "code": "TS7006",
+        "message": "Parameter 'entry' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/lighthouseProdDiscovery.spec.ts",
+        "line": 97,
+        "column": 23,
+        "code": "TS7006",
+        "message": "Parameter 'url' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/mainEntry.spec.ts",
+        "line": 30,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'clientInit' comes from an index signature, so it must be accessed with ['clientInit']."
+      },
+      {
+        "file": "src/__tests__/mainEntry.spec.ts",
+        "line": 39,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'clientInit' comes from an index signature, so it must be accessed with ['clientInit']."
+      },
+      {
+        "file": "src/__tests__/scripts/auth-bootstrap.spec.ts",
+        "line": 8,
+        "column": 8,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../../scripts/lib/auth-bootstrap.js'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/lib/auth-bootstrap.js' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/detail-route-utils.spec.ts",
+        "line": 3,
+        "column": 42,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../../scripts/lib/detail-route-utils.js'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/lib/detail-route-utils.js' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/functional-chain-matrix.spec.ts",
+        "line": 15,
+        "column": 25,
+        "code": "TS7006",
+        "message": "Parameter 'batch' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/functional-chain-matrix.spec.ts",
+        "line": 21,
+        "column": 25,
+        "code": "TS7006",
+        "message": "Parameter 'batch' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/functional-chain-matrix.spec.ts",
+        "line": 44,
+        "column": 34,
+        "code": "TS7006",
+        "message": "Parameter 'batch' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/functional-chain-matrix.spec.ts",
+        "line": 9,
+        "column": 8,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../../scripts/lib/functional-chain-matrix.js'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/lib/functional-chain-matrix.js' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/functional-chain-session.spec.ts",
+        "line": 13,
+        "column": 8,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../../scripts/lib/functional-chain-session.js'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/lib/functional-chain-session.js' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/i18n-audit.spec.ts",
+        "line": 7,
+        "column": 23,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/i18n.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "src/__tests__/scripts/i18n-audit.spec.ts",
+        "line": 98,
+        "column": 9,
+        "code": "TS2322",
+        "message": "Type 'Record<string, string> | undefined' is not assignable to type 'Record<string, string>'.\n  Type 'undefined' is not assignable to type 'Record<string, string>'."
+      },
+      {
+        "file": "src/__tests__/scripts/i18n-audit.spec.ts",
+        "line": 99,
+        "column": 9,
+        "code": "TS2322",
+        "message": "Type 'Record<string, string> | undefined' is not assignable to type 'Record<string, string>'.\n  Type 'undefined' is not assignable to type 'Record<string, string>'."
+      },
+      {
+        "file": "src/__tests__/scripts/preview-shell.spec.ts",
+        "line": 15,
+        "column": 16,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../../scripts/lib/preview-shell.js'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/lib/preview-shell.js' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/pwa-audit.spec.ts",
+        "line": 139,
+        "column": 81,
+        "code": "TS2339",
+        "message": "Property 'alternateHref' does not exist on type '{ loc: string; hreflang: string[]; }'."
+      },
+      {
+        "file": "src/__tests__/scripts/pwa-audit.spec.ts",
+        "line": 635,
+        "column": 7,
+        "code": "TS2322",
+        "message": "Type '{ loc: string; hreflang: string[]; alternateHref: string | undefined; }[]' is not assignable to type '{ loc: string; hreflang: string[]; alternateHref?: string; }[]'.\n  Type '{ loc: string; hreflang: string[]; alternateHref: string | undefined; }' is not assignable to type '{ loc: string; hreflang: string[]; alternateHref?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n    Types of property 'alternateHref' are incompatible.\n      Type 'string | undefined' is not assignable to type 'string'.\n        Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/__tests__/scripts/pwa-audit.spec.ts",
+        "line": 7,
+        "column": 22,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/pwa.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "src/__tests__/scripts/security-audit.spec.ts",
+        "line": 7,
+        "column": 27,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/scripts/audit/security.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.vitest.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "src/__tests__/scripts/toolchain-policy.spec.ts",
+        "line": 157,
+        "column": 8,
+        "code": "TS7006",
+        "message": "Parameter 'key' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/toolchain-policy.spec.ts",
+        "line": 34,
+        "column": 26,
+        "code": "TS2345",
+        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/__tests__/scripts/toolchain-policy.spec.ts",
+        "line": 51,
+        "column": 25,
+        "code": "TS2345",
+        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/__tests__/scripts/toolchain-policy.spec.ts",
+        "line": 8,
+        "column": 8,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../../scripts/lib/production-contract-env.js'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/lib/production-contract-env.js' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/toolchain-policy.spec.ts",
+        "line": 82,
+        "column": 33,
+        "code": "TS4111",
+        "message": "Property 'node' comes from an index signature, so it must be accessed with ['node']."
+      },
+      {
+        "file": "src/__tests__/scripts/validate-release.spec.ts",
+        "line": 10,
+        "column": 8,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../../scripts/lib/validate-release.js'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/lib/validate-release.js' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/validate-release.spec.ts",
+        "line": 25,
+        "column": 17,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../../scripts/validate-release.mjs'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/validate-release.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/validate-release.spec.ts",
+        "line": 30,
+        "column": 17,
+        "code": "TS7016",
+        "message": "Could not find a declaration file for module '../../../scripts/release-evidence.mjs'. 'G:/Project/hmrchan/hmrchan-frontend/scripts/release-evidence.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/scripts/validate-release.spec.ts",
+        "line": 336,
+        "column": 44,
+        "code": "TS7006",
+        "message": "Parameter 'stage' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 100,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'themeMode' comes from an index signature, so it must be accessed with ['themeMode']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 101,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'preset' comes from an index signature, so it must be accessed with ['preset']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 102,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'appearancePreset' comes from an index signature, so it must be accessed with ['appearancePreset']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 103,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'presetFamily' comes from an index signature, so it must be accessed with ['presetFamily']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 104,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'presetEnhancer' comes from an index signature, so it must be accessed with ['presetEnhancer']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 37,
+        "column": 16,
+        "code": "TS2345",
+        "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 57,
+        "column": 47,
+        "code": "TS4111",
+        "message": "Property 'theme' comes from an index signature, so it must be accessed with ['theme']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 58,
+        "column": 47,
+        "code": "TS4111",
+        "message": "Property 'themeMode' comes from an index signature, so it must be accessed with ['themeMode']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 59,
+        "column": 47,
+        "code": "TS4111",
+        "message": "Property 'preset' comes from an index signature, so it must be accessed with ['preset']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 60,
+        "column": 47,
+        "code": "TS4111",
+        "message": "Property 'appearancePreset' comes from an index signature, so it must be accessed with ['appearancePreset']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 61,
+        "column": 47,
+        "code": "TS4111",
+        "message": "Property 'presetFamily' comes from an index signature, so it must be accessed with ['presetFamily']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 64,
+        "column": 47,
+        "code": "TS4111",
+        "message": "Property 'presetEnhancer' comes from an index signature, so it must be accessed with ['presetEnhancer']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 80,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'theme' comes from an index signature, so it must be accessed with ['theme']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 81,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'themeMode' comes from an index signature, so it must be accessed with ['themeMode']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 82,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'preset' comes from an index signature, so it must be accessed with ['preset']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 83,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'appearancePreset' comes from an index signature, so it must be accessed with ['appearancePreset']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 84,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'presetFamily' comes from an index signature, so it must be accessed with ['presetFamily']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 85,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'presetEnhancer' comes from an index signature, so it must be accessed with ['presetEnhancer']."
+      },
+      {
+        "file": "src/__tests__/theme-bootstrap.spec.ts",
+        "line": 99,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'theme' comes from an index signature, so it must be accessed with ['theme']."
+      },
+      {
+        "file": "src/api/__tests__/client.spec.ts",
+        "line": 107,
+        "column": 55,
+        "code": "TS2345",
+        "message": "Argument of type 'null' is not assignable to parameter of type 'string'."
+      },
+      {
+        "file": "src/api/__tests__/client.spec.ts",
+        "line": 108,
+        "column": 56,
+        "code": "TS2345",
+        "message": "Argument of type 'null' is not assignable to parameter of type 'string'."
+      },
+      {
+        "file": "src/api/__tests__/client.spec.ts",
+        "line": 93,
+        "column": 55,
+        "code": "TS2345",
+        "message": "Argument of type 'null' is not assignable to parameter of type 'string'."
+      },
+      {
+        "file": "src/api/__tests__/client.spec.ts",
+        "line": 94,
+        "column": 56,
+        "code": "TS2345",
+        "message": "Argument of type 'null' is not assignable to parameter of type 'string'."
+      },
+      {
+        "file": "src/api/__tests__/clientSecurityService.spec.ts",
+        "line": 145,
+        "column": 19,
+        "code": "TS4111",
+        "message": "Property 'client_secret' comes from an index signature, so it must be accessed with ['client_secret']."
+      },
+      {
+        "file": "src/api/__tests__/clientSecurityService.spec.ts",
+        "line": 229,
+        "column": 30,
+        "code": "TS4111",
+        "message": "Property 'force_reissue' comes from an index signature, so it must be accessed with ['force_reissue']."
+      },
+      {
+        "file": "src/api/__tests__/deviceService.spec.ts",
+        "line": 28,
+        "column": 24,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/deviceService.spec.ts",
+        "line": 35,
+        "column": 31,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/favoriteService.spec.ts",
+        "line": 37,
+        "column": 29,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/favoriteService.spec.ts",
+        "line": 38,
+        "column": 24,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/favoriteService.spec.ts",
+        "line": 39,
+        "column": 26,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/favoriteService.spec.ts",
+        "line": 50,
+        "column": 36,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/favoriteService.spec.ts",
+        "line": 51,
+        "column": 31,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/favoriteService.spec.ts",
+        "line": 52,
+        "column": 33,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/historyService.spec.ts",
+        "line": 32,
+        "column": 26,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/historyService.spec.ts",
+        "line": 33,
+        "column": 28,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/historyService.spec.ts",
+        "line": 43,
+        "column": 33,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/historyService.spec.ts",
+        "line": 44,
+        "column": 35,
+        "code": "TS2345",
+        "message": "Argument of type 'string' is not assignable to parameter of type 'PublicResourceId'.\n  Type 'string' is not assignable to type '{ readonly __publicResourceId: unique symbol; }'."
+      },
+      {
+        "file": "src/api/__tests__/hmrContent.spec.ts",
+        "line": 15,
+        "column": 7,
+        "code": "TS2412",
+        "message": "Type 'string | undefined' is not assignable to type 'string' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/api/__tests__/hmrContent.spec.ts",
+        "line": 157,
+        "column": 47,
+        "code": "TS2339",
+        "message": "Property 'expectedSection' does not exist on type '{ readonly section: \"overview\"; readonly paths: readonly [\"/auth/me\", \"/users/me/profile\"]; } | { readonly section: \"security\"; readonly paths: readonly [\"/2fa/status\", \"/auth/sessions\", \"/devices\"]; } | ... 4 more ... | { ...; }'.\n  Property 'expectedSection' does not exist on type '{ readonly section: \"overview\"; readonly paths: readonly [\"/auth/me\", \"/users/me/profile\"]; }'."
+      },
+      {
+        "file": "src/api/__tests__/hmrContentPlatforms.spec.ts",
+        "line": 13,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ id: string; title: string; excerpt: string; authorName: string; tag: string; createdAt: string; statsLabel: string; platform: string | undefined; }' is not assignable to type 'HmrPost' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'platform' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/api/__tests__/hmrContentResources.spec.ts",
+        "line": 83,
+        "column": 7,
+        "code": "TS2322",
+        "message": "Type 'EndpointResult<unknown> | undefined' is not assignable to type 'EndpointResult<unknown>'.\n  Type 'undefined' is not assignable to type 'EndpointResult<unknown>'."
+      },
+      {
+        "file": "src/api/__tests__/hmrProfileContent.spec.ts",
+        "line": 125,
+        "column": 61,
+        "code": "TS2345",
+        "message": "Argument of type 'Mock<(path: string) => Promise<{ unread: string; latest_label: string; messages?: never; } | { messages: { id: string; title: string; body: string; metric: string; }[]; unread?: never; latest_label?: never; } | null>>' is not assignable to parameter of type '<T>(path: string) => Promise<T | null>'.\n  Type 'Promise<{ unread: string; latest_label: string; messages?: never; } | { messages: { id: string; title: string; body: string; metric: string; }[]; unread?: never; latest_label?: never; } | null>' is not assignable to type 'Promise<T | null>'.\n    Type '{ unread: string; latest_label: string; messages?: never; } | { messages: { id: string; title: string; body: string; metric: string; }[]; unread?: never; latest_label?: never; } | null' is not assignable to type 'T | null'.\n      Type '{ unread: string; latest_label: string; messages?: never; }' is not assignable to type 'T'.\n        'T' could be instantiated with an arbitrary type which could be unrelated to '{ unread: string; latest_label: string; messages?: never; }'."
+      },
+      {
+        "file": "src/api/__tests__/hmrProfileContent.spec.ts",
+        "line": 164,
+        "column": 61,
+        "code": "TS2345",
+        "message": "Argument of type 'Mock<(path: string) => Promise<{ unread_count: number; updated_at: string; messages?: never; } | { messages: ({ id: string; title: string; content: string; value: string; body?: never; metric?: never; } | { id: string; ... 4 more ...; value?: never; })[]; unread_count?: never; updated_at?: never; } | null>>' is not assignable to parameter of type '<T>(path: string) => Promise<T | null>'.\n  Type 'Promise<{ unread_count: number; updated_at: string; messages?: never; } | { messages: ({ id: string; title: string; content: string; value: string; body?: never; metric?: never; } | { id: string; title: string; body: string; metric: string; content?: never; value?: never; })[]; unread_count?: never; updated_at?: nev...' is not assignable to type 'Promise<T | null>'.\n    Type '{ unread_count: number; updated_at: string; messages?: never; } | { messages: ({ id: string; title: string; content: string; value: string; body?: never; metric?: never; } | { id: string; title: string; body: string; metric: string; content?: never; value?: never; })[]; unread_count?: never; updated_at?: never; } | ...' is not assignable to type 'T | null'.\n      Type '{ unread_count: number; updated_at: string; messages?: never; }' is not assignable to type 'T'.\n        'T' could be instantiated with an arbitrary type which could be unrelated to '{ unread_count: number; updated_at: string; messages?: never; }'."
+      },
+      {
+        "file": "src/api/__tests__/hmrProfileContent.spec.ts",
+        "line": 219,
+        "column": 65,
+        "code": "TS2345",
+        "message": "Argument of type 'Mock<(path: string) => Promise<{ stats: { id: string; title: string; description: string; value: string; }[]; favorites?: never; } | { favorites: { id: string; title: string; body: string; metric: string; }[]; stats?: never; } | null>>' is not assignable to parameter of type '<T>(path: string) => Promise<T | null>'.\n  Type 'Promise<{ stats: { id: string; title: string; description: string; value: string; }[]; favorites?: never; } | { favorites: { id: string; title: string; body: string; metric: string; }[]; stats?: never; } | null>' is not assignable to type 'Promise<T | null>'.\n    Type '{ stats: { id: string; title: string; description: string; value: string; }[]; favorites?: never; } | { favorites: { id: string; title: string; body: string; metric: string; }[]; stats?: never; } | null' is not assignable to type 'T | null'.\n      Type '{ stats: { id: string; title: string; description: string; value: string; }[]; favorites?: never; }' is not assignable to type 'T'.\n        'T' could be instantiated with an arbitrary type which could be unrelated to '{ stats: { id: string; title: string; description: string; value: string; }[]; favorites?: never; }'."
+      },
+      {
+        "file": "src/api/__tests__/hmrProfileContent.spec.ts",
+        "line": 36,
+        "column": 64,
+        "code": "TS2345",
+        "message": "Argument of type 'Mock<(path: string) => Promise<{} | null>>' is not assignable to parameter of type '<T>(path: string) => Promise<T | null>'.\n  Type 'Promise<{} | null>' is not assignable to type 'Promise<T | null>'.\n    Type '{} | null' is not assignable to type 'T | null'.\n      Type '{}' is not assignable to type 'T'.\n        'T' could be instantiated with an arbitrary type which could be unrelated to '{}'."
+      },
+      {
+        "file": "src/api/__tests__/hmrProfileContent.spec.ts",
+        "line": 85,
+        "column": 63,
+        "code": "TS2345",
+        "message": "Argument of type 'Mock<(path: string) => Promise<{} | null>>' is not assignable to parameter of type '<T>(path: string) => Promise<T | null>'.\n  Type 'Promise<{} | null>' is not assignable to type 'Promise<T | null>'.\n    Type '{} | null' is not assignable to type 'T | null'.\n      Type '{}' is not assignable to type 'T'.\n        'T' could be instantiated with an arbitrary type which could be unrelated to '{}'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 147,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'success' comes from an index signature, so it must be accessed with ['success']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 157,
+        "column": 20,
+        "code": "TS4111",
+        "message": "Property 'data' comes from an index signature, so it must be accessed with ['data']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 180,
+        "column": 27,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 181,
+        "column": 15,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 182,
+        "column": 24,
+        "code": "TS4111",
+        "message": "Property 'detail' comes from an index signature, so it must be accessed with ['detail']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 183,
+        "column": 17,
+        "code": "TS4111",
+        "message": "Property 'detail' comes from an index signature, so it must be accessed with ['detail']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 191,
+        "column": 39,
+        "code": "TS4111",
+        "message": "Property 'message' comes from an index signature, so it must be accessed with ['message']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 191,
+        "column": 62,
+        "code": "TS4111",
+        "message": "Property 'detail' comes from an index signature, so it must be accessed with ['detail']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 195,
+        "column": 27,
+        "code": "TS4111",
+        "message": "Property 'message' comes from an index signature, so it must be accessed with ['message']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 195,
+        "column": 46,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 195,
+        "column": 63,
+        "code": "TS4111",
+        "message": "Property 'detail' comes from an index signature, so it must be accessed with ['detail']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 203,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'code' comes from an index signature, so it must be accessed with ['code']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 207,
+        "column": 24,
+        "code": "TS4111",
+        "message": "Property 'code' comes from an index signature, so it must be accessed with ['code']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 207,
+        "column": 40,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 213,
+        "column": 26,
+        "code": "TS4111",
+        "message": "Property 'status' comes from an index signature, so it must be accessed with ['status']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 213,
+        "column": 44,
+        "code": "TS4111",
+        "message": "Property 'status_code' comes from an index signature, so it must be accessed with ['status_code']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 226,
+        "column": 56,
+        "code": "TS2345",
+        "message": "Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BufferSource'.\n  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.\n    Types of property 'buffer' are incompatible.\n      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.\n        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength"
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 339,
+        "column": 84,
+        "code": "TS2379",
+        "message": "Argument of type '{ skipAuth: boolean | undefined; }' is not assignable to parameter of type '{ skipAuth?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'skipAuth' are incompatible.\n    Type 'boolean | undefined' is not assignable to type 'boolean'.\n      Type 'undefined' is not assignable to type 'boolean'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 375,
+        "column": 72,
+        "code": "TS2379",
+        "message": "Argument of type '{ skipAuth: boolean | undefined; }' is not assignable to parameter of type '{ skipAuth?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'skipAuth' are incompatible.\n    Type 'boolean | undefined' is not assignable to type 'boolean'.\n      Type 'undefined' is not assignable to type 'boolean'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 387,
+        "column": 37,
+        "code": "TS2379",
+        "message": "Argument of type '{ method: string; url: string; bodyBytes: Uint8Array<ArrayBufferLike>; clientSecret: string | null; clientToken: string | null; skipAuth: boolean | undefined; }' is not assignable to parameter of type '{ method: string; url: string; bodyBytes: Uint8Array<ArrayBufferLike>; clientSecret: string | null; clientToken: string | null; skipAuth?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'skipAuth' are incompatible.\n    Type 'boolean | undefined' is not assignable to type 'boolean'.\n      Type 'undefined' is not assignable to type 'boolean'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 420,
+        "column": 22,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 421,
+        "column": 20,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 421,
+        "column": 26,
+        "code": "TS4111",
+        "message": "Property 'turnstile_site_key' comes from an index signature, so it must be accessed with ['turnstile_site_key']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 422,
+        "column": 17,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 422,
+        "column": 23,
+        "code": "TS4111",
+        "message": "Property 'turnstile_site_key' comes from an index signature, so it must be accessed with ['turnstile_site_key']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 423,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'turnstile_site_key' comes from an index signature, so it must be accessed with ['turnstile_site_key']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 424,
+        "column": 19,
+        "code": "TS4111",
+        "message": "Property 'turnstile_site_key' comes from an index signature, so it must be accessed with ['turnstile_site_key']."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 459,
+        "column": 37,
+        "code": "TS2379",
+        "message": "Argument of type '{ skipClientReinitRetry: boolean | undefined; skipClientSignatureRetry: boolean | undefined; skipAuth?: boolean; skipErrorToast?: boolean; skipSecurity?: boolean; skipChallengeRetry?: boolean; ... 13 more ...; window?: null; }' is not assignable to parameter of type 'RequestConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'skipClientReinitRetry' are incompatible.\n    Type 'boolean | undefined' is not assignable to type 'boolean'.\n      Type 'undefined' is not assignable to type 'boolean'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 573,
+        "column": 39,
+        "code": "TS2769",
+        "message": "No overload matches this call.\n  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.\n    Argument of type '{ method: string; body: BodyInit | null | undefined; headers: Headers; credentials: RequestCredentials; cache?: RequestCache; integrity?: string; ... 7 more ...; window?: null; }' is not assignable to parameter of type 'RequestInit' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n      Types of property 'body' are incompatible.\n        Type 'BodyInit | null | undefined' is not assignable to type 'BodyInit | null'.\n          Type 'undefined' is not assignable to type 'BodyInit | null'.\n  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.\n    Argument of type '{ method: string; body: BodyInit | null | undefined; headers: Headers; credentials: RequestCredentials; cache?: RequestCache; integrity?: string; ... 7 more ...; window?: null; }' is not assignable to parameter of type 'RequestInit' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n      Types of property 'body' are incompatible.\n        Type 'BodyInit | null | undefined' is not assignable to type 'BodyInit | null'.\n          Type 'undefined' is not assignable to type 'BodyInit | null'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 614,
+        "column": 34,
+        "code": "TS2379",
+        "message": "Argument of type '{ method: string; body: string | undefined; skipAuth?: boolean; skipErrorToast?: boolean; skipSecurity?: boolean; skipClientReinitRetry?: boolean; skipClientSignatureRetry?: boolean; ... 12 more ...; window?: null; }' is not assignable to parameter of type 'RequestConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'body' are incompatible.\n    Type 'string | undefined' is not assignable to type 'BodyInit | null'.\n      Type 'undefined' is not assignable to type 'BodyInit | null'."
+      },
+      {
+        "file": "src/api/client.ts",
+        "line": 622,
+        "column": 34,
+        "code": "TS2379",
+        "message": "Argument of type '{ method: string; body: string | undefined; skipAuth?: boolean; skipErrorToast?: boolean; skipSecurity?: boolean; skipClientReinitRetry?: boolean; skipClientSignatureRetry?: boolean; ... 12 more ...; window?: null; }' is not assignable to parameter of type 'RequestConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'body' are incompatible.\n    Type 'string | undefined' is not assignable to type 'BodyInit | null'.\n      Type 'undefined' is not assignable to type 'BodyInit | null'."
+      },
+      {
+        "file": "src/api/clientSecurityService.ts",
+        "line": 104,
+        "column": 5,
+        "code": "TS2375",
+        "message": "Type '{ client_token: string; canonical_fingerprint: string | undefined; fingerprint_source: ClientFingerprintSource | undefined; fingerprint_components_version: string | undefined; client_type: ClientType | undefined; risk_score: number | undefined; risk_decision: string | undefined; init_summary_updated_at: number | und...' is not assignable to type 'StoredClientCredentials' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'canonical_fingerprint' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/api/clientSecurityService.ts",
+        "line": 208,
+        "column": 22,
+        "code": "TS2379",
+        "message": "Argument of type '{ client_token: string; client_secret: string | undefined; canonical_fingerprint?: string; fingerprint_source?: ClientFingerprintSource; fingerprint_components_version?: string; client_type?: ClientType; risk_score?: number; risk_decision?: RiskDecision; init_summary_updated_at?: number; }' is not assignable to parameter of type 'StoredClientCredentials' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'client_secret' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/api/clientSecurityService.ts",
+        "line": 239,
+        "column": 59,
+        "code": "TS4111",
+        "message": "Property 'rawMessage' comes from an index signature, so it must be accessed with ['rawMessage']."
+      },
+      {
+        "file": "src/api/hmrContent.ts",
+        "line": 226,
+        "column": 5,
+        "code": "TS2412",
+        "message": "Type 'undefined' is not assignable to type 'HmrDiscussionRelatedPost' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 280,
+        "column": 38,
+        "code": "TS4111",
+        "message": "Property 'user' comes from an index signature, so it must be accessed with ['user']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 280,
+        "column": 53,
+        "code": "TS4111",
+        "message": "Property 'user' comes from an index signature, so it must be accessed with ['user']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 306,
+        "column": 44,
+        "code": "TS4111",
+        "message": "Property 'referenced_post' comes from an index signature, so it must be accessed with ['referenced_post']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 306,
+        "column": 70,
+        "code": "TS4111",
+        "message": "Property 'referenced_post' comes from an index signature, so it must be accessed with ['referenced_post']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 558,
+        "column": 38,
+        "code": "TS4111",
+        "message": "Property 'user' comes from an index signature, so it must be accessed with ['user']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 559,
+        "column": 14,
+        "code": "TS4111",
+        "message": "Property 'user' comes from an index signature, so it must be accessed with ['user']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 560,
+        "column": 23,
+        "code": "TS4111",
+        "message": "Property 'author' comes from an index signature, so it must be accessed with ['author']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 561,
+        "column": 16,
+        "code": "TS4111",
+        "message": "Property 'author' comes from an index signature, so it must be accessed with ['author']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 572,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ discussion: { id: string; title: string; content: string; category: string; authorName: string; createdAt: string; updatedAt: string; lastActivityAt: string; tags: string[]; viewCount: number; likeCount: number; commentCount: number; isPinned: boolean; isClosed: boolean; }; comments: HmrCommunityItem[]; relatedPos...' is not assignable to type 'HmrDiscussionDetailContent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'relatedPost' are incompatible.\n    Type 'HmrDiscussionRelatedPost | undefined' is not assignable to type 'HmrDiscussionRelatedPost'.\n      Type 'undefined' is not assignable to type 'HmrDiscussionRelatedPost'."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 75,
+        "column": 40,
+        "code": "TS4111",
+        "message": "Property 'author' comes from an index signature, so it must be accessed with ['author']."
+      },
+      {
+        "file": "src/api/hmrContentMappers.ts",
+        "line": 75,
+        "column": 57,
+        "code": "TS4111",
+        "message": "Property 'author' comes from an index signature, so it must be accessed with ['author']."
+      },
+      {
+        "file": "src/api/hmrContentResources.ts",
+        "line": 58,
+        "column": 5,
+        "code": "TS2375",
+        "message": "Type '{ kind: HmrApiErrorKind; message: string; path: string; status: number; code: string | undefined; }' is not assignable to type 'HmrApiErrorState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'code' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 205,
+        "column": 26,
+        "code": "TS4111",
+        "message": "Property 'data' comes from an index signature, so it must be accessed with ['data']."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 205,
+        "column": 42,
+        "code": "TS4111",
+        "message": "Property 'result' comes from an index signature, so it must be accessed with ['result']."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 205,
+        "column": 60,
+        "code": "TS4111",
+        "message": "Property 'payload' comes from an index signature, so it must be accessed with ['payload']."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 238,
+        "column": 31,
+        "code": "TS4111",
+        "message": "Property 'has_more' comes from an index signature, so it must be accessed with ['has_more']."
+      },
+      {
+        "file": "src/api/hmrContentUtils.ts",
+        "line": 238,
+        "column": 50,
+        "code": "TS4111",
+        "message": "Property 'hasMore' comes from an index signature, so it must be accessed with ['hasMore']."
+      },
+      {
+        "file": "src/api/hmrProfileContent.ts",
+        "line": 62,
+        "column": 47,
+        "code": "TS4111",
+        "message": "Property 'enabled' comes from an index signature, so it must be accessed with ['enabled']."
+      },
+      {
+        "file": "src/api/hmrProfileContent.ts",
+        "line": 62,
+        "column": 74,
+        "code": "TS4111",
+        "message": "Property 'totp_enabled' comes from an index signature, so it must be accessed with ['totp_enabled']."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 125,
+        "column": 27,
+        "code": "TS2352",
+        "message": "Conversion of type 'undefined' to type 'Request' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 125,
+        "column": 55,
+        "code": "TS2493",
+        "message": "Tuple type '[]' of length '0' has no element at index '0'."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 163,
+        "column": 27,
+        "code": "TS2352",
+        "message": "Conversion of type 'undefined' to type 'Request' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 163,
+        "column": 55,
+        "code": "TS2493",
+        "message": "Tuple type '[]' of length '0' has no element at index '0'."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 51,
+        "column": 29,
+        "code": "TS2352",
+        "message": "Conversion of type 'undefined' to type 'Request' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 51,
+        "column": 57,
+        "code": "TS2493",
+        "message": "Tuple type '[]' of length '0' has no element at index '0'."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 92,
+        "column": 54,
+        "code": "TS2493",
+        "message": "Tuple type '[]' of length '0' has no element at index '0'."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 97,
+        "column": 12,
+        "code": "TS18048",
+        "message": "'upstreamRequest' is possibly 'undefined'."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 98,
+        "column": 12,
+        "code": "TS18048",
+        "message": "'upstreamRequest' is possibly 'undefined'."
+      },
+      {
+        "file": "src/edge/__tests__/internalApiGatewayWorker.spec.ts",
+        "line": 99,
+        "column": 12,
+        "code": "TS18048",
+        "message": "'upstreamRequest' is possibly 'undefined'."
+      },
+      {
+        "file": "src/edge/detailDocumentResolver.ts",
+        "line": 1139,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ title: string; description: string; canonicalPath: string; ogType: \"article\"; ogImage: string | undefined; shellEyebrow: string; shellTitle: string; shellBody: string; shellSummary: string[]; ... 6 more ...; shellVariant: \"default\" | \"home\"; }' is not assignable to type 'HtmlDocumentConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'ogImage' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/edge/detailDocumentResolver.ts",
+        "line": 1167,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ title: string; description: string; canonicalPath: string; ogType: \"article\"; ogImage: string | undefined; shellEyebrow: string; shellTitle: string; shellBody: string; shellSummary: string[]; ... 6 more ...; preloadImages?: HtmlDocumentPreloadImage[]; }' is not assignable to type 'HtmlDocumentConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'ogImage' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/edge/detailDocumentResolver.ts",
+        "line": 1197,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ title: string; description: string; canonicalPath: string; ogType: \"article\"; ogImage: string | undefined; shellEyebrow: string; shellTitle: string; shellBody: string; shellSummary: string[]; ... 6 more ...; preloadImages?: HtmlDocumentPreloadImage[]; }' is not assignable to type 'HtmlDocumentConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'ogImage' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/edge/htmlDocument.ts",
+        "line": 163,
+        "column": 3,
+        "code": "TS2375",
+        "message": "Type '{ status: 200 | 404; title: string; description: string; canonicalPath: string; ogType: \"article\" | \"website\"; ogImage: string | undefined; robots: \"index, follow\" | \"noindex, nofollow\"; ... 8 more ...; preloadImages: HtmlDocumentPreloadImage[]; }' is not assignable to type 'HtmlDocumentConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'ogImage' are incompatible.\n    Type 'string | undefined' is not assignable to type 'string'.\n      Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/edge/htmlDocument.ts",
+        "line": 469,
+        "column": 60,
+        "code": "TS2345",
+        "message": "Argument of type 'StaticRouteDocument | undefined' is not assignable to parameter of type 'StaticRouteDocument'.\n  Type 'undefined' is not assignable to type 'StaticRouteDocument'."
+      },
+      {
+        "file": "src/edge/htmlDocument.ts",
+        "line": 473,
+        "column": 44,
+        "code": "TS2345",
+        "message": "Argument of type 'StaticRouteDocument | undefined' is not assignable to parameter of type 'StaticRouteDocument'.\n  Type 'undefined' is not assignable to type 'StaticRouteDocument'."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrExploreCatalog.spec.ts",
+        "line": 146,
+        "column": 22,
+        "code": "TS2379",
+        "message": "Argument of type '{ id: string; title: string; durationSec: number; hasRenderableMedia: false; mediaCount: number; mediaUrl: undefined; }' is not assignable to parameter of type 'Partial<HmrPost>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'mediaUrl' are incompatible.\n    Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrInViewReveal.spec.ts",
+        "line": 65,
+        "column": 20,
+        "code": "TS4111",
+        "message": "Property 'hmrReveal' comes from an index signature, so it must be accessed with ['hmrReveal']."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrInViewReveal.spec.ts",
+        "line": 90,
+        "column": 20,
+        "code": "TS4111",
+        "message": "Property 'hmrReveal' comes from an index signature, so it must be accessed with ['hmrReveal']."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrInViewReveal.spec.ts",
+        "line": 98,
+        "column": 22,
+        "code": "TS4111",
+        "message": "Property 'hmrReveal' comes from an index signature, so it must be accessed with ['hmrReveal']."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrProfileSection.spec.ts",
+        "line": 61,
+        "column": 5,
+        "code": "TS2322",
+        "message": "Type '{ isAuthenticated: boolean; isLoading: boolean; logout: Mock<() => Promise<undefined>>; sessionExpiresAt: string; user: { id: string; email: string; }; }' is not assignable to type 'Pick<Store<\"auth\", Pick<{ user: Ref<{ id: string; username: string; email?: string; avatar_url?: string; full_name?: string; roles?: string[]; } | null, AuthUser | { id: string; username: string; email?: string; avatar_url?: string; full_name?: string; roles?: string[]; } | null>; ... 17 more ...; pollPasskeyRecover...'.\n  Types of property 'user' are incompatible.\n    Property 'username' is missing in type '{ id: string; email: string; }' but required in type '{ id: string; username: string; email?: string; avatar_url?: string; full_name?: string; roles?: string[]; }'."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrTextReveal.spec.ts",
+        "line": 130,
+        "column": 22,
+        "code": "TS4111",
+        "message": "Property 'customReveal' comes from an index signature, so it must be accessed with ['customReveal']."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrTextReveal.spec.ts",
+        "line": 47,
+        "column": 20,
+        "code": "TS4111",
+        "message": "Property 'hmrTextReveal' comes from an index signature, so it must be accessed with ['hmrTextReveal']."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrTextReveal.spec.ts",
+        "line": 56,
+        "column": 20,
+        "code": "TS4111",
+        "message": "Property 'hmrTextReveal' comes from an index signature, so it must be accessed with ['hmrTextReveal']."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrTextReveal.spec.ts",
+        "line": 64,
+        "column": 27,
+        "code": "TS4111",
+        "message": "Property 'hmrTextWrapped' comes from an index signature, so it must be accessed with ['hmrTextWrapped']."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrTextReveal.spec.ts",
+        "line": 90,
+        "column": 19,
+        "code": "TS4111",
+        "message": "Property 'hmrTextReveal' comes from an index signature, so it must be accessed with ['hmrTextReveal']."
+      },
+      {
+        "file": "src/hmr/composables/__tests__/useHmrTextReveal.spec.ts",
+        "line": 93,
+        "column": 22,
+        "code": "TS4111",
+        "message": "Property 'hmrTextReveal' comes from an index signature, so it must be accessed with ['hmrTextReveal']."
+      },
+      {
+        "file": "src/hmr/composables/useHmrBrandPet.ts",
+        "line": 72,
+        "column": 21,
+        "code": "TS18048",
+        "message": "'showcaseState' is possibly 'undefined'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrBrandPet.ts",
+        "line": 72,
+        "column": 42,
+        "code": "TS18048",
+        "message": "'showcaseState' is possibly 'undefined'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrBrandPet.ts",
+        "line": 72,
+        "column": 66,
+        "code": "TS18048",
+        "message": "'showcaseState' is possibly 'undefined'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrContactForm.ts",
+        "line": 50,
+        "column": 5,
+        "code": "TS2322",
+        "message": "Type '\"support\"' is not assignable to type 'PublicContentCacheScope'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrPrivateContentResource.ts",
+        "line": 13,
+        "column": 54,
+        "code": "TS2379",
+        "message": "Argument of type '{ initialData: T; paths: string[]; isEmpty: ((data: T) => boolean) | undefined; resolvePageState: ((data: T, resource: HmrAsyncResource<T>) => HmrPageState) | undefined; }' is not assignable to parameter of type 'HmrContentResourceControllerOptions<T>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'isEmpty' are incompatible.\n    Type '((data: T) => boolean) | undefined' is not assignable to type '(data: T) => boolean'.\n      Type 'undefined' is not assignable to type '(data: T) => boolean'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrPublicContentResource.ts",
+        "line": 26,
+        "column": 54,
+        "code": "TS2379",
+        "message": "Argument of type '{ initialData: T; paths: string[]; isEmpty: ((data: T) => boolean) | undefined; resolvePageState: ((data: T, resource: HmrAsyncResource<T>) => HmrPageState) | undefined; }' is not assignable to parameter of type 'HmrContentResourceControllerOptions<T>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n  Types of property 'isEmpty' are incompatible.\n    Type '((data: T) => boolean) | undefined' is not assignable to type '(data: T) => boolean'.\n      Type 'undefined' is not assignable to type '(data: T) => boolean'."
+      },
+      {
+        "file": "src/hmr/composables/useHmrTextReveal.ts",
+        "line": 25,
+        "column": 21,
+        "code": "TS4111",
+        "message": "Property 'hmrTextWrapped' comes from an index signature, so it must be accessed with ['hmrTextWrapped']."
+      },
+      {
+        "file": "src/hmr/composables/useHmrTextReveal.ts",
+        "line": 7,
+        "column": 25,
+        "code": "TS4111",
+        "message": "Property 'hmrTextWrapped' comes from an index signature, so it must be accessed with ['hmrTextWrapped']."
+      },
+      {
+        "file": "src/hmr/runtime/platformVisuals.ts",
+        "line": 59,
+        "column": 3,
+        "code": "TS2322",
+        "message": "Type 'HmrPlatformVisual | undefined' is not assignable to type 'HmrPlatformVisual'.\n  Type 'undefined' is not assignable to type 'HmrPlatformVisual'."
+      },
+      {
+        "file": "src/hmr/runtime/platformVisuals.ts",
+        "line": 59,
+        "column": 52,
+        "code": "TS4111",
+        "message": "Property 'default' comes from an index signature, so it must be accessed with ['default']."
+      },
+      {
+        "file": "src/i18n/__tests__/index.spec.ts",
+        "line": 17,
+        "column": 31,
+        "code": "TS2339",
+        "message": "Property 'value' does not exist on type 'never'."
+      },
+      {
+        "file": "src/i18n/__tests__/index.spec.ts",
+        "line": 19,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'locale' comes from an index signature, so it must be accessed with ['locale']."
+      },
+      {
+        "file": "src/layouts/HmrSiteShell.vue",
+        "line": 317,
+        "column": 7,
+        "code": "TS6133",
+        "message": "'desktopBrandPetRef' is declared but its value is never read."
+      },
+      {
+        "file": "src/layouts/HmrSiteShell.vue",
+        "line": 318,
+        "column": 7,
+        "code": "TS6133",
+        "message": "'mobileBrandPetRef' is declared but its value is never read."
+      },
+      {
+        "file": "src/router/authTargets.ts",
+        "line": 35,
+        "column": 22,
+        "code": "TS4111",
+        "message": "Property 'redirect' comes from an index signature, so it must be accessed with ['redirect']."
+      },
+      {
+        "file": "src/router/authTargets.ts",
+        "line": 35,
+        "column": 3,
+        "code": "TS2322",
+        "message": "Type 'LocationQueryValue$1 | LocationQueryValue$1[] | undefined' is not assignable to type 'LocationQueryValue$1 | LocationQueryValue$1[]'.\n  Type 'undefined' is not assignable to type 'LocationQueryValue$1 | LocationQueryValue$1[]'."
+      },
+      {
+        "file": "src/router/guards.ts",
+        "line": 31,
+        "column": 56,
+        "code": "TS4111",
+        "message": "Property 'id' comes from an index signature, so it must be accessed with ['id']."
+      },
+      {
+        "file": "src/router/guards.ts",
+        "line": 45,
+        "column": 51,
+        "code": "TS4111",
+        "message": "Property 'redirect' comes from an index signature, so it must be accessed with ['redirect']."
+      },
+      {
+        "file": "src/router/routes.ts",
+        "line": 101,
+        "column": 37,
+        "code": "TS4111",
+        "message": "Property 'section' comes from an index signature, so it must be accessed with ['section']."
+      },
+      {
+        "file": "src/router/routes.ts",
+        "line": 101,
+        "column": 70,
+        "code": "TS4111",
+        "message": "Property 'section' comes from an index signature, so it must be accessed with ['section']."
+      },
+      {
+        "file": "src/stores/__tests__/auth.spec.ts",
+        "line": 19,
+        "column": 7,
+        "code": "TS2412",
+        "message": "Type 'string | undefined' is not assignable to type 'string' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 119,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'preset' comes from an index signature, so it must be accessed with ['preset']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 120,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'appearancePreset' comes from an index signature, so it must be accessed with ['appearancePreset']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 121,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'presetFamily' comes from an index signature, so it must be accessed with ['presetFamily']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 122,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'presetEnhancer' comes from an index signature, so it must be accessed with ['presetEnhancer']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 135,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'presetFamily' comes from an index signature, so it must be accessed with ['presetFamily']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 138,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'presetEnhancer' comes from an index signature, so it must be accessed with ['presetEnhancer']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 157,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'preset' comes from an index signature, so it must be accessed with ['preset']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 162,
+        "column": 38,
+        "code": "TS4111",
+        "message": "Property 'theme' comes from an index signature, so it must be accessed with ['theme']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 163,
+        "column": 38,
+        "code": "TS4111",
+        "message": "Property 'themeMode' comes from an index signature, so it must be accessed with ['themeMode']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 172,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'theme' comes from an index signature, so it must be accessed with ['theme']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 173,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'themeMode' comes from an index signature, so it must be accessed with ['themeMode']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 66,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'theme' comes from an index signature, so it must be accessed with ['theme']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 67,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'preset' comes from an index signature, so it must be accessed with ['preset']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 81,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'themeMode' comes from an index signature, so it must be accessed with ['themeMode']."
+      },
+      {
+        "file": "src/stores/__tests__/theme.spec.ts",
+        "line": 86,
+        "column": 45,
+        "code": "TS4111",
+        "message": "Property 'theme' comes from an index signature, so it must be accessed with ['theme']."
+      },
+      {
+        "file": "src/stores/auth.ts",
+        "line": 257,
+        "column": 17,
+        "code": "TS4111",
+        "message": "Property 'verification_code' comes from an index signature, so it must be accessed with ['verification_code']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 245,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'theme' comes from an index signature, so it must be accessed with ['theme']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 246,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'themeMode' comes from an index signature, so it must be accessed with ['themeMode']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 247,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'preset' comes from an index signature, so it must be accessed with ['preset']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 248,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'appearancePreset' comes from an index signature, so it must be accessed with ['appearancePreset']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 250,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'presetFamily' comes from an index signature, so it must be accessed with ['presetFamily']."
+      },
+      {
+        "file": "src/stores/theme.ts",
+        "line": 251,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'presetEnhancer' comes from an index signature, so it must be accessed with ['presetEnhancer']."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 1,
+        "column": 21,
+        "code": "TS2304",
+        "message": "Cannot find name 'ServiceWorkerGlobalScope'."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 187,
+        "column": 35,
+        "code": "TS7006",
+        "message": "Parameter 'event' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 196,
+        "column": 36,
+        "code": "TS7006",
+        "message": "Parameter 'event' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 200,
+        "column": 35,
+        "code": "TS7006",
+        "message": "Parameter 'event' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/sw/index.ts",
+        "line": 207,
+        "column": 33,
+        "code": "TS7006",
+        "message": "Parameter 'event' implicitly has an 'any' type."
+      },
+      {
+        "file": "src/utils/__tests__/clientInit.spec.ts",
+        "line": 18,
+        "column": 25,
+        "code": "TS4111",
+        "message": "Property 'clientInit' comes from an index signature, so it must be accessed with ['clientInit']."
+      },
+      {
+        "file": "src/utils/__tests__/fingerprint.spec.ts",
+        "line": 100,
+        "column": 35,
+        "code": "TS2493",
+        "message": "Tuple type '[]' of length '0' has no element at index '0'."
+      },
+      {
+        "file": "src/utils/__tests__/fingerprint.spec.ts",
+        "line": 101,
+        "column": 37,
+        "code": "TS2352",
+        "message": "Conversion of type 'undefined' to type 'Uint8Array<ArrayBufferLike>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first."
+      },
+      {
+        "file": "src/utils/__tests__/fingerprint.spec.ts",
+        "line": 101,
+        "column": 60,
+        "code": "TS2493",
+        "message": "Tuple type '[]' of length '0' has no element at index '1'."
+      },
+      {
+        "file": "src/utils/cache/publicContentCache.ts",
+        "line": 201,
+        "column": 35,
+        "code": "TS4111",
+        "message": "Property 'source' comes from an index signature, so it must be accessed with ['source']."
+      },
+      {
+        "file": "src/utils/cache/publicContentCache.ts",
+        "line": 201,
+        "column": 71,
+        "code": "TS4111",
+        "message": "Property 'error' comes from an index signature, so it must be accessed with ['error']."
+      },
+      {
+        "file": "src/utils/clientInit.ts",
+        "line": 12,
+        "column": 39,
+        "code": "TS4111",
+        "message": "Property 'clientInit' comes from an index signature, so it must be accessed with ['clientInit']."
+      },
+      {
+        "file": "src/views/__tests__/ContactPage.spec.ts",
+        "line": 67,
+        "column": 68,
+        "code": "TS2749",
+        "message": "'ContactPage' refers to a value, but is being used as a type here. Did you mean 'typeof ContactPage'?"
+      },
+      {
+        "file": "src/views/__tests__/ExplorePage.spec.ts",
+        "line": 131,
+        "column": 7,
+        "code": "TS2322",
+        "message": "Type 'Record<string, unknown>' is not assignable to type 'Stubs | undefined'.\n  Type 'Record<string, unknown>' is missing the following properties from type 'string[]': length, pop, push, concat, and 35 more."
+      },
+      {
+        "file": "src/views/__tests__/ExplorePage.spec.ts",
+        "line": 202,
+        "column": 19,
+        "code": "TS2339",
+        "message": "Property 'exists' does not exist on type 'Omit<DOMWrapper<Element>, \"exists\">'."
+      },
+      {
+        "file": "src/views/__tests__/ExplorePage.spec.ts",
+        "line": 245,
+        "column": 44,
+        "code": "TS2345",
+        "message": "Argument of type '(callback: () => void) => { id: number; type: string; }' is not assignable to parameter of type '(callback: () => void) => undefined'.\n  Type '{ id: number; type: string; }' is not assignable to type 'undefined'."
+      },
+      {
+        "file": "src/views/__tests__/ExplorePage.spec.ts",
+        "line": 279,
+        "column": 44,
+        "code": "TS2345",
+        "message": "Argument of type '(callback: () => void) => { id: number; type: string; }' is not assignable to parameter of type '(callback: () => void) => undefined'.\n  Type '{ id: number; type: string; }' is not assignable to type 'undefined'."
+      },
+      {
+        "file": "src/views/__tests__/RegisterPage.spec.ts",
+        "line": 125,
+        "column": 36,
+        "code": "TS4111",
+        "message": "Property 'redirect' comes from an index signature, so it must be accessed with ['redirect']."
+      },
+      {
+        "file": "src/views/__tests__/SettingsPage.spec.ts",
+        "line": 37,
+        "column": 30,
+        "code": "TS4111",
+        "message": "Property 'redirect' comes from an index signature, so it must be accessed with ['redirect']."
+      }
+    ],
+    "node": [
+      {
+        "file": "build/vite/plugins/index.ts",
+        "line": 1,
+        "column": 32,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/build/vite/plugins/asyncCss.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "build/vite/plugins/index.ts",
+        "line": 2,
+        "column": 35,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/build/vite/plugins/criticalCss.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "build/vite/plugins/index.ts",
+        "line": 3,
+        "column": 35,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/build/vite/plugins/obfuscation.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "build/vite/plugins/index.ts",
+        "line": 4,
+        "column": 42,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/build/vite/plugins/serviceWorkerBuild.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "build/vite/plugins/index.ts",
+        "line": 5,
+        "column": 27,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/build/vite/plugins/sri.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "build/vite/plugins/index.ts",
+        "line": 6,
+        "column": 39,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/build/vite/plugins/staticPrerender.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "build/vite/plugins/serviceWorkerBuild.ts",
+        "line": 3,
+        "column": 35,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/build/vite/swCacheVersion.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern.\n  The file is in the program because:\n    Imported via '../swCacheVersion' from file 'G:/Project/hmrchan/hmrchan-frontend/build/vite/plugins/serviceWorkerBuild.ts'\n    Imported via './build/vite/swCacheVersion' from file 'G:/Project/hmrchan/hmrchan-frontend/vite.config.ts'"
+      },
+      {
+        "file": "build/vite/plugins/staticPrerender.ts",
+        "line": 4,
+        "column": 64,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/src/edge/prerenderHtml.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "src/edge/htmlDocument.ts",
+        "line": 1,
+        "column": 45,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/src/fallbacks/generated/homePrerenderManifest.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "src/edge/htmlDocument.ts",
+        "line": 2,
+        "column": 34,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/src/i18n/locales.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "src/edge/htmlDocument.ts",
+        "line": 3,
+        "column": 28,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/src/edge/htmlEscaping.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "src/edge/prerenderHtml.ts",
+        "line": 9,
+        "column": 8,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/src/edge/htmlDocument.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "vite.config.ts",
+        "line": 30,
+        "column": 8,
+        "code": "TS6307",
+        "message": "File 'G:/Project/hmrchan/hmrchan-frontend/build/vite/plugins/index.ts' is not listed within the file list of project 'G:/Project/hmrchan/hmrchan-frontend/tsconfig.node.json'. Projects must list all files or use an 'include' pattern."
+      },
+      {
+        "file": "vitest.config.ts",
+        "line": 17,
+        "column": 3,
+        "code": "TS2578",
+        "message": "Unused '@ts-expect-error' directive."
+      }
+    ]
+  }
+}

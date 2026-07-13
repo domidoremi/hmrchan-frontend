@@ -19,7 +19,7 @@
       <HmrPriorityImage
         class="hmr-post-card__poster"
         :src="posterUrl"
-        :srcset="posterSrcset"
+        v-bind="posterSrcset ? { srcset: posterSrcset } : {}"
         :sizes="posterSizes"
         :alt="post.title"
         :loading="imageLoading"

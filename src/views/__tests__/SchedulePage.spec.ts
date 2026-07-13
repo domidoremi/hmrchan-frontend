@@ -29,6 +29,9 @@ const readPublicContentMock = vi.mocked(readPublicContent)
 
 const messages = {
   'zh-CN': {
+    community: {
+      title: '社区',
+    },
     explore: {
       loadMore: '重新加载',
     },
@@ -54,6 +57,59 @@ const messages = {
       upcoming: '即将开始',
       week: '本周',
       weekTitle: '一周',
+      overviewLabel: '日程概览',
+      previewTitle: '当前显示公开预览',
+      previewEmptyBody: '日程结构保持可用，可重新加载公开排期。',
+      previewErrorBody: '公开排期暂不可用，预览日程保持可浏览。',
+      previewLiveTitle: '直播窗口排期',
+      previewPlanningTitle: '选题与物料确认',
+      previewReleaseTitle: '内容发布窗口',
+      previewCommunityTitle: '社区回应整理',
+      previewItemBody: '公开接口恢复后会在当前时间表中更新。',
+      filterLabel: '日程筛选',
+      datePickerLabel: '选择日期',
+    },
+  },
+  'en-US': {
+    community: {
+      title: 'Community',
+    },
+    explore: {
+      loadMore: 'Reload',
+    },
+    schedule: {
+      all: 'All',
+      arrangement: 'Item',
+      clue: 'Add lead',
+      date: 'Date',
+      dateTitle: 'Calendar',
+      eyebrow: 'Schedule',
+      emptyDay: 'No events',
+      itemCount: 'items',
+      month: 'Month',
+      nextMonth: 'Next month',
+      nextWindow: 'Next',
+      noItems: 'None',
+      performance: 'Live',
+      previousMonth: 'Previous month',
+      related: 'Related',
+      selected: 'Selected',
+      title: 'Schedule',
+      today: 'Today',
+      upcoming: 'Upcoming',
+      week: 'Week',
+      weekTitle: 'This week',
+      overviewLabel: 'Schedule overview',
+      previewTitle: 'Public preview',
+      previewEmptyBody: 'The schedule remains available. Reload public events.',
+      previewErrorBody: 'Public events are unavailable. The preview remains available.',
+      previewLiveTitle: 'Live window schedule',
+      previewPlanningTitle: 'Topic and asset planning',
+      previewReleaseTitle: 'Content release window',
+      previewCommunityTitle: 'Community response review',
+      previewItemBody: 'This timeline updates in place when the public API recovers.',
+      filterLabel: 'Schedule filters',
+      datePickerLabel: 'Choose a date',
     },
   },
 }
@@ -92,10 +148,10 @@ function makeResource(data = makeContent()): HmrAsyncResource<HmrScheduleContent
   }
 }
 
-async function mountSchedulePage(resource = makeResource()) {
+async function mountSchedulePage(resource = makeResource(), locale: 'zh-CN' | 'en-US' = 'zh-CN') {
   const i18n = createI18n({
     legacy: false,
-    locale: 'zh-CN',
+    locale,
     messages,
   })
   readPublicContentMock.mockResolvedValue(resource)
@@ -104,7 +160,6 @@ async function mountSchedulePage(resource = makeResource()) {
     global: {
       plugins: [i18n],
       stubs: {
-        HmrPageStateBlock: true,
         RouterLink: true,
       },
     },
@@ -134,10 +189,51 @@ describe('SchedulePage', () => {
   })
 
   it('falls back to a preview schedule when the public content is empty', async () => {
-    const wrapper = await mountSchedulePage(makeResource({ items: [], calendar: [], highlights: [] }))
+    const wrapper = await mountSchedulePage(
+      makeResource({ items: [], calendar: [], highlights: [] })
+    )
 
     expect(wrapper.text()).toContain('直播窗口排期')
     expect(wrapper.find('.hmr-schedule-empty').exists()).toBe(false)
+    expect(
+      wrapper.get('[data-hmr-page-state-block="true"]').attributes('data-hmr-page-state')
+    ).toBe('empty')
+  })
+
+  it('keeps preview schedules retryable', async () => {
+    const resource = makeResource({ items: [], calendar: [], highlights: [] })
+    const wrapper = await mountSchedulePage(resource)
+    const state = wrapper.get('[data-hmr-page-state-block="true"]')
+
+    await state.get('button').trigger('click')
+    await flushPromises()
+    expect(readPublicContentMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('preserves configured local preview times', async () => {
+    const wrapper = await mountSchedulePage(
+      makeResource({ items: [], calendar: [], highlights: [] })
+    )
+    const liveEvent = wrapper
+      .findAll('.hmr-schedule-event')
+      .find((item) => item.text().includes('直播窗口排期'))
+
+    expect(liveEvent?.text()).toContain('20:30')
+  })
+
+  it('renders preview schedules in the active locale', async () => {
+    const wrapper = await mountSchedulePage(
+      makeResource({ items: [], calendar: [], highlights: [] }),
+      'en-US'
+    )
+
+    expect(wrapper.text()).toContain('Public preview')
+    expect(wrapper.text()).toContain('Live window schedule')
+    expect(wrapper.text()).not.toContain('当前显示公开预览')
+    expect(wrapper.get('.hmr-schedule-filter-row').attributes('aria-label')).toBe(
+      'Schedule filters'
+    )
+    expect(wrapper.get('.hmr-schedule-date-strip').attributes('aria-label')).toBe('Choose a date')
   })
 
   it('switches to the month grid from filter controls', async () => {

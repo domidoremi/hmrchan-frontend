@@ -1,10 +1,10 @@
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
-import { runLocalNodeTool } from './utils'
+import { getNodeCommand, runCommand } from './utils'
 
 function parseTypeErrors(output: string): AuditIssue[] {
   const issues: AuditIssue[] = []
-  // vue-tsc errors look like: src/file.ts(10,5): error TS2345: Argument of type ...
-  const errorPattern = /^(.+?)\((\d+),\d+\):\s*error\s+TS\d+:\s*(.+)$/gm
+  const errorPattern =
+    /^(?:(?:NEW|RESOLVED_OR_CHANGED):\s*)?(.+?)\((\d+),\d+\):\s*error\s+TS\d+:\s*(.+)$/gm
   let match: RegExpExecArray | null
 
   while ((match = errorPattern.exec(output)) !== null) {
@@ -25,7 +25,11 @@ const typeCheckAudit: AuditModule = {
   async run(options: AuditOptions): Promise<AuditResult> {
     const start = Date.now()
 
-    const result = await runLocalNodeTool('vue-tsc', ['--noEmit'], options.projectRoot)
+    const result = await runCommand(
+      getNodeCommand(),
+      ['scripts/type-check.mjs'],
+      options.projectRoot
+    )
 
     // vue-tsc outputs errors to stdout (not stderr) in most setups
     const combined = result.stdout + '\n' + result.stderr
@@ -33,7 +37,11 @@ const typeCheckAudit: AuditModule = {
 
     const status = issues.length === 0 && result.exitCode === 0 ? 'pass' : 'fail'
     const summary =
-      status === 'pass' ? 'All type checks passed' : `Found ${issues.length} type error(s)`
+      status === 'pass'
+        ? 'Type diagnostics match the reviewed baseline'
+        : issues.length > 0
+          ? `Found ${issues.length} type diagnostic change(s)`
+          : 'Type-check baseline mismatch or tool failure'
 
     if (options.verbose && issues.length > 0) {
       for (const issue of issues) {

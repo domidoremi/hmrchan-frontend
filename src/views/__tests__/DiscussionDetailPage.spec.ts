@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import type { HmrDiscussionDetailContent } from '@/api/hmrContent'
 import type { HmrAsyncResource } from '@/hmr/types'
+import i18n, { applyLocale } from '@/i18n'
 import DiscussionDetailPage from '@/views/DiscussionDetailPage.vue'
 
 const DISCUSSION_ID = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0'
@@ -77,13 +78,19 @@ function makeResource(
   }
 }
 
-async function mountDiscussionDetail(path = `/community/discussions/${DISCUSSION_ID}`) {
+async function mountDiscussionDetail(
+  path = `/community/discussions/${DISCUSSION_ID}`,
+  locale: 'zh-CN' | 'en-US' = 'zh-CN'
+) {
+  applyLocale(locale)
   const router = createRouter({
     history: createWebHistory(),
     routes: [
       { path: '/community/discussions/:id', component: DiscussionDetailPage },
       { path: '/community', component: { template: '<div />' } },
       { path: '/posts/:id', component: { template: '<div />' } },
+      { path: '/explore', component: { template: '<div />' } },
+      { path: '/', component: { template: '<div />' } },
     ],
   })
   await router.push(path)
@@ -91,7 +98,7 @@ async function mountDiscussionDetail(path = `/community/discussions/${DISCUSSION
 
   const wrapper = mount(DiscussionDetailPage, {
     global: {
-      plugins: [router],
+      plugins: [router, i18n],
     },
   })
   await flushPromises()
@@ -127,20 +134,17 @@ describe('DiscussionDetailPage', () => {
   })
 
   it('maps not-found detail resources to the empty page state', async () => {
-    mocks.readPublicContent.mockResolvedValue(
-      makeResource(
-        makeDetailContent({
-          discussion: {
-            ...makeDetailContent().discussion,
-            title: '讨论不存在或已下架',
-            content: '',
-          },
-          comments: [],
-          relatedPost: undefined,
-          viewState: 'not-found',
-        })
-      )
-    )
+    const notFoundContent = makeDetailContent({
+      discussion: {
+        ...makeDetailContent().discussion,
+        title: '讨论不存在或已下架',
+        content: '',
+      },
+      comments: [],
+      viewState: 'not-found',
+    })
+    delete notFoundContent.relatedPost
+    mocks.readPublicContent.mockResolvedValue(makeResource(notFoundContent))
 
     const { wrapper } = await mountDiscussionDetail()
 
@@ -150,6 +154,51 @@ describe('DiscussionDetailPage', () => {
     expect(wrapper.text()).toContain('当前讨论仍可继续浏览')
     expect(wrapper.text()).toContain('返回社区查看最新讨论')
     expect(wrapper.findAll('.hmr-detail-fallback-card')).toHaveLength(3)
+    expect(wrapper.text()).toContain('这条讨论没有可继续显示的公开内容')
+    expect(wrapper.text()).not.toContain('重试会重新请求公开讨论接口')
+  })
+
+  it('keeps restricted fallback guidance distinct from retryable failures', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(makeDetailContent({ viewState: 'restricted' }))
+    )
+
+    const { wrapper } = await mountDiscussionDetail()
+
+    expect(wrapper.text()).toContain('公开预览受限')
+    expect(wrapper.text()).toContain('当前讨论对公开访问受限')
+    expect(wrapper.text()).not.toContain('重试会重新请求公开讨论接口')
+  })
+
+  it('keeps temporary discussion failures explicitly retryable', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(makeDetailContent({ viewState: 'temporary-unavailable' }))
+    )
+
+    const { wrapper } = await mountDiscussionDetail()
+
+    expect(wrapper.text()).toContain('讨论暂不可用')
+    expect(wrapper.text()).toContain('重试会重新请求公开讨论接口')
+  })
+
+  it('localizes the complete discussion fallback experience', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(makeDetailContent({ viewState: 'temporary-unavailable' }))
+    )
+
+    const { wrapper } = await mountDiscussionDetail(
+      `/community/discussions/${DISCUSSION_ID}`,
+      'en-US'
+    )
+
+    expect(wrapper.text()).toContain('Discussion unavailable')
+    expect(wrapper.text()).toContain('Status overview')
+    expect(wrapper.text()).toContain('Continue from this discussion')
+    expect(wrapper.text()).toContain('Back to the latest discussions')
+    expect(wrapper.get('.hmr-detail-meta-grid').attributes('aria-label')).toBe(
+      'Discussion information'
+    )
+    expect(wrapper.text()).not.toContain('当前讨论仍可继续浏览')
   })
 
   it('keeps a stable comments readiness anchor when an available discussion has no replies', async () => {

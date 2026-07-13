@@ -2,12 +2,14 @@
   <article class="hmr-detail hmr-detail--reader discussion-detail-page">
     <header class="hmr-detail-reader-hero">
       <div class="hmr-detail-reader-copy">
-        <RouterLink class="hmr-text-link hmr-detail-back" to="/community">返回社区</RouterLink>
+        <RouterLink class="hmr-text-link hmr-detail-back" to="/community">
+          {{ t('discussionDetail.back') }}
+        </RouterLink>
         <p class="hmr-kicker">{{ heroEyebrow }}</p>
         <h1 class="hmr-detail-title" data-hmr-text-reveal>{{ heroTitle }}</h1>
         <p class="hmr-detail-lede">{{ heroBody }}</p>
 
-        <div class="hmr-detail-meta-grid" aria-label="讨论信息">
+        <div class="hmr-detail-meta-grid" :aria-label="t('discussionDetail.infoLabel')">
           <div v-for="item in detailMetrics" :key="item.label" class="hmr-detail-meta-card">
             <span>{{ item.label }}</span>
             <strong>{{ item.value }}</strong>
@@ -20,13 +22,14 @@
           :error="resource.error"
           :title="stateTitle"
           :body="stateBody"
-          :loading-title="'讨论加载中'"
-          :loading-body="'拉取主题、标签与最新回应。'"
-          :empty-title="'暂无可显示讨论'"
-          :empty-body="'这条讨论当前没有可展示的公开内容。'"
+          :loading-title="t('discussionDetail.loadingTitle')"
+          :loading-body="t('discussionDetail.loadingBody')"
+          :empty-title="stateTitle"
+          :empty-body="stateBody"
           :error-title="stateTitle"
           :error-body="stateBody"
           :show-retry="canRetry"
+          :retry-label="t('discussionDetail.retry')"
           @retry="loadDiscussion"
         />
       </div>
@@ -49,7 +52,11 @@
           <span v-else>{{ coverMark }}</span>
         </div>
         <div class="hmr-detail-cover-caption">
-          <span>{{ discussion.category }}</span>
+          <span>
+            {{
+              showFallbackSections ? t('discussionDetail.fallbackCoverLabel') : discussion.category
+            }}
+          </span>
           <strong>{{ statusLabel }}</strong>
         </div>
       </aside>
@@ -92,14 +99,18 @@
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head hmr-section-head--split">
           <div>
-            <p class="hmr-kicker">状态概览</p>
-            <h2 class="hmr-section-title">当前讨论仍可继续浏览</h2>
+            <p class="hmr-kicker">{{ t('detailFallback.stateOverview') }}</p>
+            <h2 class="hmr-section-title">{{ t('detailFallback.discussionHeading') }}</h2>
           </div>
           <span class="hmr-detail-count">{{ fallbackStatusTag }}</span>
         </div>
 
         <div class="hmr-detail-fallback-grid">
-          <article v-for="item in fallbackSummary" :key="item.label" class="hmr-detail-fallback-card">
+          <article
+            v-for="item in fallbackSummary"
+            :key="item.label"
+            class="hmr-detail-fallback-card"
+          >
             <span>{{ item.label }}</span>
             <strong>{{ item.value }}</strong>
             <p>{{ item.body }}</p>
@@ -142,8 +153,8 @@
     >
       <div class="hmr-container hmr-container--large">
         <div class="hmr-section-head">
-          <p class="hmr-kicker">继续浏览</p>
-          <h2 class="hmr-section-title">先去这些公开入口</h2>
+          <p class="hmr-kicker">{{ t('detailFallback.continueBrowsing') }}</p>
+          <h2 class="hmr-section-title">{{ t('detailFallback.discussionActionsTitle') }}</h2>
         </div>
         <div class="hmr-detail-related">
           <RouterLink
@@ -164,6 +175,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 
 import {
@@ -180,6 +192,7 @@ import {
 } from '@/hmr/composables/useHmrRouteResourceRefresh'
 
 const route = useRoute()
+const { t } = useI18n()
 const initialDiscussionContent: HmrDiscussionDetailContent = {
   discussion: {
     id: 'discussion',
@@ -233,11 +246,24 @@ const showCommentsSection = computed(() => showContentSections.value)
 const showFallbackSections = computed(
   () => pageState.value !== 'loading' && !showContentSections.value
 )
+const fallbackStateKey = computed(() => {
+  if (detail.value.viewState === 'restricted') return 'restricted'
+  if (detail.value.viewState === 'not-found') return 'notFound'
+  return 'unavailable'
+})
+const fallbackStateCopy = computed(() => {
+  const key = `discussionDetail.states.${fallbackStateKey.value}`
+  return {
+    eyebrow: t(`${key}.eyebrow`),
+    heroTitle: t(`${key}.heroTitle`),
+    title: t(`${key}.title`),
+    body: t(`${key}.body`),
+    guidance: t(`${key}.guidance`),
+  }
+})
 const canRetry = computed(() => isUnavailableState.value)
 const statusLabel = computed(() => {
-  if (isRestrictedState.value) return '公开预览受限'
-  if (isNotFoundState.value) return '未找到'
-  if (isUnavailableState.value) return '暂不可用'
+  if (showFallbackSections.value) return fallbackStateCopy.value.title
   if (discussion.value.isClosed) return '已关闭'
   if (discussion.value.isPinned) return '置顶讨论'
   return '开放讨论'
@@ -251,45 +277,35 @@ const tagLine = computed(() =>
 )
 const coverMark = computed(() => (discussion.value.isPinned ? 'PIN' : 'CHAT'))
 const heroEyebrow = computed(() => {
-  if (isLoadingState.value) return '讨论加载中 · 正在拉取公开主题'
-  if (isRestrictedState.value) return '公开预览受限 · 自动访问未开放'
-  if (isNotFoundState.value) return '未找到 · 讨论已移除或下架'
-  if (isUnavailableState.value) return '暂不可用 · 拉取失败'
+  if (isLoadingState.value) return t('discussionDetail.loadingTitle')
+  if (showFallbackSections.value) return fallbackStateCopy.value.eyebrow
   return `${discussion.value.category} · ${discussion.value.createdAt || '公开讨论'}`
 })
 const heroTitle = computed(() => {
-  if (isLoadingState.value) return '讨论加载中'
-  if (isRestrictedState.value) return '讨论无法公开预览'
-  if (isNotFoundState.value) return '这条讨论不存在或已下架'
-  if (isUnavailableState.value) return '讨论暂时不可用'
+  if (isLoadingState.value) return t('discussionDetail.loadingTitle')
+  if (showFallbackSections.value) return fallbackStateCopy.value.heroTitle
   return discussion.value.title
 })
 const heroBody = computed(() => {
-  if (isLoadingState.value) return '拉取讨论正文、标签与最新回应。'
-  if (isRestrictedState.value) return '当前访问方式受限，正文与回应模块已隐藏。'
-  if (isNotFoundState.value) return '讨论已删除、下架或切换为不可访问状态。'
-  if (isUnavailableState.value) return '讨论拉取失败。重试会重新请求公开讨论接口。'
+  if (isLoadingState.value) return t('discussionDetail.loadingBody')
+  if (showFallbackSections.value) return fallbackStateCopy.value.body
   return discussion.value.content
 })
 const stateTitle = computed(() => {
-  if (isRestrictedState.value) return '公开预览受限'
-  if (isNotFoundState.value) return '未找到讨论'
-  if (isUnavailableState.value) return '讨论暂不可用'
+  if (showFallbackSections.value) return fallbackStateCopy.value.title
   return ''
 })
 const stateBody = computed(() => {
-  if (isRestrictedState.value) return '当前讨论对公开访问受限，系统隐藏正文与回应模块。'
-  if (isNotFoundState.value) return '这条讨论没有可继续显示的公开内容。'
-  if (isUnavailableState.value) return '重试会重新请求公开讨论接口。'
+  if (showFallbackSections.value) return fallbackStateCopy.value.body
   return ''
 })
 const detailMetrics = computed(() => {
   if (isMutedState.value) {
     return [
-      { label: '状态', value: statusLabel.value },
-      { label: '说明', value: stateBody.value },
-      { label: '去向', value: 'Community' },
-      { label: '类型', value: 'Discussion' },
+      { label: t('detailFallback.status'), value: statusLabel.value },
+      { label: t('detailFallback.explanation'), value: stateBody.value },
+      { label: t('detailFallback.next'), value: fallbackStateCopy.value.guidance },
+      { label: t('detailFallback.destination'), value: 'Community' },
     ]
   }
 
@@ -305,56 +321,58 @@ const coverStyle = computed(() => ({
   '--hmr-card-end': discussion.value.isClosed ? '#64748b' : '#ec4899',
 }))
 
-const fallbackSummary = [
-  {
-    label: '状态',
-    value: '讨论未取回',
-    body: '当前公开讨论接口没有返回内容，页面保留状态、去向与恢复提示。',
-  },
-  {
-    label: '说明',
-    value: '重试会重新请求公开讨论接口',
-    body: '接口恢复后，正文、回应与关联内容会回到当前阅读结构。',
-  },
-  {
-    label: '去向',
-    value: 'Community / Discussion',
-    body: '你仍然可以继续浏览社区入口或返回相关公开内容。',
-  },
-]
+const fallbackSummary = computed(() => {
+  return [
+    {
+      label: t('detailFallback.status'),
+      value: fallbackStateCopy.value.title,
+      body: fallbackStateCopy.value.body,
+    },
+    {
+      label: t('detailFallback.explanation'),
+      value: fallbackStateCopy.value.guidance,
+      body: fallbackStateCopy.value.body,
+    },
+    {
+      label: t('detailFallback.destination'),
+      value: 'Community / Discussion',
+      body: t('detailFallback.discussionDestinationBody'),
+    },
+  ]
+})
 
-const fallbackActions = [
+const fallbackActions = computed(() => [
   {
     id: 'discussion-fallback-community',
-    tag: '社区',
-    title: '返回社区查看最新讨论',
-    description: '切回公开讨论入口',
+    tag: t('detailFallback.communityTag'),
+    title: t('detailFallback.discussionCommunityTitle'),
+    description: t('detailFallback.communityDescription'),
     to: '/community',
   },
   {
     id: 'discussion-fallback-explore',
-    tag: '内容',
-    title: '去探索页继续浏览',
-    description: '先看其他公开内容',
+    tag: t('detailFallback.exploreTag'),
+    title: t('detailFallback.exploreTitle'),
+    description: t('detailFallback.exploreDescription'),
     to: '/explore',
   },
   {
     id: 'discussion-fallback-home',
-    tag: '主页',
-    title: '回到媒体入口',
-    description: '重新选择浏览路径',
+    tag: t('detailFallback.homeTag'),
+    title: t('detailFallback.homeTitle'),
+    description: t('detailFallback.homeDescription'),
     to: '/',
   },
-]
+])
 
-const fallbackStatusTag = '公开入口仍可用'
+const fallbackStatusTag = computed(() => t('detailFallback.discussionStatusTag'))
 
 function discussionId(): string {
-  return normalizeHmrRouteParam(route.params.id, 'discussion')
+  return normalizeHmrRouteParam(route.params['id'], 'discussion')
 }
 
 useHmrRouteResourceRefresh({
   refresh: loadDiscussion,
-  watchSource: () => route.params.id,
+  watchSource: () => route.params['id'],
 })
 </script>

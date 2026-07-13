@@ -1,20 +1,20 @@
 <template>
-  <div class="hmr-route-page hmr-route-page--community" :class="{ 'is-preview': usingPreviewCommunity }">
+  <div
+    class="hmr-route-page hmr-route-page--community"
+    :class="{ 'is-preview': usingPreviewCommunity }"
+  >
     <header class="hmr-page-hero hmr-page-hero--community">
       <div class="hmr-container">
         <p class="hmr-kicker">{{ t('community.eyebrow') }}</p>
         <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('community.title') }}</h1>
         <HmrPageStateBlock
           :loading="pageState === 'loading'"
-          :empty="pageState === 'empty' && !usingPreviewCommunity"
-          :error="usingPreviewCommunity ? null : resource.error"
-          :title="usingPreviewCommunity ? '当前显示公开预览' : undefined"
-          :body="
-            usingPreviewCommunity
-              ? '讨论、摘要与动态入口保持可浏览，公开接口恢复后会自动替换成实时内容。'
-              : undefined
-          "
-          :show-when-ready="usingPreviewCommunity"
+          :empty="pageState === 'empty'"
+          :error="resource.error"
+          :empty-title="t('community.previewTitle')"
+          :empty-body="t('community.previewEmptyBody')"
+          :error-title="t('community.previewTitle')"
+          :error-body="t('community.previewErrorBody')"
           :retry-label="t('explore.loadMore')"
           @retry="refreshCommunity"
         />
@@ -39,7 +39,7 @@
             </button>
           </aside>
 
-          <main class="hmr-community-main" aria-label="讨论列表">
+          <main class="hmr-community-main" :aria-label="t('community.listLabel')">
             <div class="hmr-community-main-head">
               <div>
                 <p class="hmr-kicker">{{ activeTabLabel }}</p>
@@ -230,92 +230,94 @@ import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResou
 import { createLoginRouteTarget } from '@/router/authTargets'
 import { useAuthStore } from '@/stores/auth'
 
-const communityPreviewThreads: HmrCommunityItem[] = [
+const { t } = useI18n({ useScope: 'global' })
+
+const communityPreviewThreads = computed<HmrCommunityItem[]>(() => [
   {
     id: 'community-preview-thread-sync',
-    title: '热门主题会在这里继续滚动',
-    excerpt: '公开讨论接口恢复后，这里显示线程摘要、回应数和内容入口。',
-    metric: '同步中',
+    title: t('community.hotTitle'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.previewSync'),
   },
   {
     id: 'community-preview-thread-latest',
-    title: '最新回应会保持在同一入口',
-    excerpt: '新帖子回流与后续讨论会接续到当前列表，不切换浏览节奏。',
-    metric: '最新',
+    title: t('community.latestTitle'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.latest'),
   },
   {
     id: 'community-preview-thread-member',
-    title: '登录后可以继续收藏与回复',
-    excerpt: '成员态恢复后，回复、收藏和提醒会直接回到社区工作面板。',
-    metric: '参与',
+    title: t('community.loginCtaTitle'),
+    excerpt: t('community.loginCtaBody'),
+    metric: t('community.loginCtaPrimary'),
   },
-]
-const communityPreviewStats: HmrCommunityItem[] = [
+])
+const communityPreviewStats = computed<HmrCommunityItem[]>(() => [
   {
     id: 'community-preview-stat-summary',
-    title: '社区摘要',
-    excerpt: '当前面板保留公开浏览结构，摘要会在同步完成后刷新。',
-    metric: '预览',
+    title: t('community.stats'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.previewMetric'),
   },
   {
     id: 'community-preview-stat-access',
-    title: '互动状态',
-    excerpt: '登录后显示回复、收藏和提醒上下文。',
-    metric: '登录后',
+    title: t('community.loginCtaTitle'),
+    excerpt: t('community.loginCtaBody'),
+    metric: t('community.loginCtaPrimary'),
   },
   {
     id: 'community-preview-stat-cache',
-    title: '内容更新',
-    excerpt: '公开接口恢复后会自动补齐热门、最新与动态概览。',
-    metric: '缓存',
+    title: t('community.latestTitle'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.previewSync'),
   },
-]
-const communityPreviewHotThreads: HmrCommunityItem[] = [
+])
+const communityPreviewHotThreads = computed<HmrCommunityItem[]>(() => [
   {
     id: 'community-preview-hot-rising',
-    title: '高互动讨论会回到这里',
-    excerpt: '深色分区继续承担热门回应与快速跳转的入口。',
-    metric: '升温',
+    title: t('community.risingTitle'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.hot'),
   },
   {
     id: 'community-preview-hot-feedback',
-    title: '社区反馈会集中展示',
-    excerpt: '话题回顾、重点建议与公开回应将在同步后补齐。',
-    metric: '反馈',
+    title: t('community.hotTitle'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.submitFeedback'),
   },
   {
     id: 'community-preview-hot-open',
-    title: '当前保留完整浏览层次',
-    excerpt: '即使接口失败，用户仍能辨认社区主路径与下一步入口。',
-    metric: '公开',
+    title: t('community.topicTitle'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.openFromContent'),
   },
   {
     id: 'community-preview-hot-next',
-    title: '后续热度会自动接回',
-    excerpt: '恢复后会按互动强度重新排列，不需要重新学习页面结构。',
-    metric: '继续',
+    title: t('community.latestTitle'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.latest'),
   },
-]
-const communityPreviewFeed: HmrCommunityItem[] = [
+])
+const communityPreviewFeed = computed<HmrCommunityItem[]>(() => [
   {
     id: 'community-preview-feed-1',
-    title: '动态摘要会在这里更新',
-    excerpt: '公开动态、回流回应与最新讨论会按时间顺序接回当前分区。',
-    metric: '动态',
+    title: t('community.latestTitle'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.latest'),
   },
   {
     id: 'community-preview-feed-2',
-    title: '讨论入口保持稳定',
-    excerpt: '用户可以先浏览社区结构，再在接口恢复后继续深入阅读。',
-    metric: '讨论',
+    title: t('community.threadTitle'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.feed'),
   },
   {
     id: 'community-preview-feed-3',
-    title: '提交路径已经保留',
-    excerpt: '反馈与发起主题入口仍保持可见，不会在失败态里消失。',
-    metric: '提交',
+    title: t('community.submitTopic'),
+    excerpt: t('community.previewBody'),
+    metric: t('community.submitTopic'),
   },
-]
+])
 const initialCommunityContent: HmrCommunityContent = {
   stats: [],
   discussions: [],
@@ -323,7 +325,6 @@ const initialCommunityContent: HmrCommunityContent = {
   latest: [],
   feed: [],
 }
-const { t } = useI18n({ useScope: 'global' })
 const auth = useAuthStore()
 const communityLoginTarget = computed(() => createLoginRouteTarget('/community'))
 const {
@@ -338,17 +339,21 @@ const {
   scope: 'community',
   strategy: 'network-first',
   loader: loadCommunityContentResource,
-  isEmpty: (data) => data.stats.length === 0 && data.discussions.length === 0,
+  isEmpty: (data) => !hasCommunityContent(data),
 })
-const usingPreviewCommunity = computed(
-  () =>
-    content.value.stats.length === 0 &&
-    content.value.discussions.length === 0 &&
-    content.value.hot.length === 0 &&
-    content.value.feed.length === 0
-)
+const usingPreviewCommunity = computed(() => !hasCommunityContent(content.value))
 const { activeTab, activeTabLabel, discussionTabs, hotThreads, threadTarget, visibleThreads } =
   useHmrCommunityBoard(content, t)
+
+function hasCommunityContent(data: HmrCommunityContent): boolean {
+  return Boolean(
+    data.stats.length ||
+    data.discussions.length ||
+    data.hot.length ||
+    data.latest.length ||
+    data.feed.length
+  )
+}
 
 useHmrMountedResourceRefresh(refreshCommunity)
 </script>

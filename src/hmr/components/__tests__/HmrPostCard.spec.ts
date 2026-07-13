@@ -70,6 +70,32 @@ describe('HmrPostCard', () => {
     expect(heroWrapper.find('.hmr-post-card__poster').attributes('fetchpriority')).toBe('high')
   })
 
+  it('omits an unavailable poster srcset and renders responsive candidates when available', () => {
+    const fallbackWrapper = mount(HmrPostCard, {
+      props: {
+        post: makePost(),
+      },
+      global: {
+        stubs: {
+          RouterLink: RouterLinkStub,
+        },
+      },
+    })
+    const mediaWrapper = mount(HmrPostCard, {
+      props: {
+        post: makePost({ mediaUrl: 'https://cdn.example.test/poster.jpg' }),
+      },
+      global: {
+        stubs: {
+          RouterLink: RouterLinkStub,
+        },
+      },
+    })
+
+    expect(fallbackWrapper.find('.hmr-post-card__poster').attributes('srcset')).toBeUndefined()
+    expect(mediaWrapper.find('.hmr-post-card__poster').attributes('srcset')).toContain('640w')
+  })
+
   it('uses shared platform visual fallback values for unknown platforms', () => {
     const wrapper = mount(HmrPostCard, {
       props: {
