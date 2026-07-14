@@ -212,6 +212,85 @@ describe('service worker public cache clearing', () => {
     expect(harness.cacheMatchKeys).toEqual(['/index.html'])
   })
 
+  it('returns an HTTP redirect without consulting the navigation fallback cache', async () => {
+    const harness = createServiceWorkerHarness({
+      navigationFallback: new Response('<main>unexpected-fallback</main>'),
+    })
+    const redirectResponse = Response.redirect(
+      'https://momichan.com/auth/passkey-recovery?token=abc',
+      308
+    )
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => redirectResponse)
+    )
+
+    await import('@/sw/index')
+
+    const response = await harness.dispatchFetch(
+      new Request('https://momichan.com/passkey-recovery?token=abc', {
+        headers: { accept: 'text/html' },
+      })
+    )
+
+    expect(response).toBe(redirectResponse)
+    expect(response.status).toBe(308)
+    expect(response.headers.get('location')).toBe(
+      'https://momichan.com/auth/passkey-recovery?token=abc'
+    )
+    expect(harness.cacheMatch).not.toHaveBeenCalled()
+  })
+
+  it('returns an opaque redirect without consulting the navigation fallback cache', async () => {
+    const harness = createServiceWorkerHarness({
+      navigationFallback: new Response('<main>unexpected-fallback</main>'),
+    })
+    const opaqueRedirect = Response.error()
+    Object.defineProperty(opaqueRedirect, 'type', { value: 'opaqueredirect' })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => opaqueRedirect)
+    )
+
+    await import('@/sw/index')
+
+    const response = await harness.dispatchFetch(
+      new Request('https://momichan.com/passkey-recovery', {
+        headers: { accept: 'text/html' },
+      })
+    )
+
+    expect(response).toBe(opaqueRedirect)
+    expect(response.status).toBe(0)
+    expect(response.type).toBe('opaqueredirect')
+    expect(harness.cacheMatch).not.toHaveBeenCalled()
+  })
+
+  it('uses the not-found navigation fallback for an HTTP 404 response', async () => {
+    const harness = createServiceWorkerHarness({
+      cacheMatches: {
+        '/404.html': new Response('<main>not-found-cache</main>', {
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        }),
+      },
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('missing', { status: 404 }))
+    )
+
+    await import('@/sw/index')
+
+    const response = await harness.dispatchFetch(
+      new Request('https://momichan.com/unknown-route', {
+        headers: { accept: 'text/html' },
+      })
+    )
+
+    expect(await response.text()).toContain('not-found-cache')
+    expect(harness.cacheMatchKeys).toEqual(['/404.html'])
+  })
+
   it('serves cached public media without a network request', async () => {
     const harness = createServiceWorkerHarness({
       cacheMatches: {

@@ -138,7 +138,11 @@ async function handleNavigationRequest(request: Request): Promise<Response> {
 
   try {
     const response = await fetch(request)
-    if (response.ok) {
+    if (
+      response.ok ||
+      response.type === 'opaqueredirect' ||
+      (response.status >= 300 && response.status < 400)
+    ) {
       return response
     }
 
