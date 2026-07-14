@@ -2,11 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const clientMocks = vi.hoisted(() => ({
   get: vi.fn(),
+  post: vi.fn(),
+  delete: vi.fn(),
 }))
 
 vi.mock('../client', () => ({
   apiClient: {
     get: clientMocks.get,
+    post: clientMocks.post,
+    delete: clientMocks.delete,
   },
   ApiError: class extends Error {
     status: number
@@ -66,5 +70,17 @@ describe('postService', () => {
       next_cursor: 'cursor-2',
       has_more: true,
     })
+  })
+
+  it('calls the post like and unlike endpoints with request config', async () => {
+    vi.mocked(clientMocks.post).mockResolvedValueOnce(undefined)
+    vi.mocked(clientMocks.delete).mockResolvedValueOnce(undefined)
+    const config = { skipErrorToast: true }
+
+    await postService.likePost('post-1', config)
+    await postService.unlikePost('post-1', config)
+
+    expect(clientMocks.post).toHaveBeenCalledWith('/posts/post-1/like', null, config)
+    expect(clientMocks.delete).toHaveBeenCalledWith('/posts/post-1/like', config)
   })
 })

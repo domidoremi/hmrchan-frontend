@@ -299,4 +299,12 @@ export const postService = {
     })
     return normalizePostDetail(raw)
   },
+
+  async likePost(postId: string, config?: RequestConfig): Promise<void> {
+    return apiClient.post(`/posts/${postId}/like`, null, config)
+  },
+
+  async unlikePost(postId: string, config?: RequestConfig): Promise<void> {
+    return apiClient.delete(`/posts/${postId}/like`, config)
+  },
 }

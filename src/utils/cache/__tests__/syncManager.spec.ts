@@ -9,6 +9,8 @@ const {
   favoriteCreate,
   favoriteRemove,
   createComment,
+  likePost,
+  unlikePost,
   syncRegister,
 } = vi.hoisted(() => ({
   claimNext: vi.fn(),
@@ -19,6 +21,8 @@ const {
   favoriteCreate: vi.fn(),
   favoriteRemove: vi.fn(),
   createComment: vi.fn(),
+  likePost: vi.fn(),
+  unlikePost: vi.fn(),
   syncRegister: vi.fn(),
 }))
 
@@ -40,6 +44,13 @@ vi.mock('@/api/favoriteService', () => ({
 vi.mock('@/api/commentService', () => ({
   commentService: {
     createComment,
+  },
+}))
+
+vi.mock('@/api/postService', () => ({
+  postService: {
+    likePost,
+    unlikePost,
   },
 }))
 
@@ -131,6 +142,69 @@ describe('syncManager', () => {
     })
   })
 
+  it('syncs post like and unlike actions and completes their claims', async () => {
+    claimNext
+      .mockResolvedValueOnce({
+        id: 'like-1',
+        ownerId: 'user-a',
+        type: 'like',
+        resourceId: 'post-1',
+        leaseId: 'lease-like',
+      })
+      .mockResolvedValueOnce({
+        id: 'unlike-1',
+        ownerId: 'user-a',
+        type: 'unlike',
+        resourceId: 'post-2',
+        leaseId: 'lease-unlike',
+      })
+      .mockResolvedValueOnce(undefined)
+
+    const result = await syncOfflineActions('user-a')
+
+    expect(likePost).toHaveBeenCalledWith(
+      'post-1',
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    )
+    expect(unlikePost).toHaveBeenCalledWith(
+      'post-2',
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    )
+    expect(completeClaim).toHaveBeenNthCalledWith(1, 'like-1', 'lease-like')
+    expect(completeClaim).toHaveBeenNthCalledWith(2, 'unlike-1', 'lease-unlike')
+    expect(result).toEqual({ success: 2, failed: 0, errors: [] })
+  })
+
+  it('retries a transient post like failure on a later sync', async () => {
+    const queuedLike = {
+      id: 'like-retry',
+      ownerId: 'user-a',
+      type: 'like',
+      resourceId: 'post-retry',
+    }
+    claimNext
+      .mockResolvedValueOnce({ ...queuedLike, leaseId: 'lease-retry-1' })
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ ...queuedLike, leaseId: 'lease-retry-2' })
+      .mockResolvedValueOnce(undefined)
+    likePost
+      .mockRejectedValueOnce(new Error('Temporary network failure'))
+      .mockResolvedValueOnce(undefined)
+
+    const firstResult = await syncOfflineActions('user-a')
+    const retryResult = await syncOfflineActions('user-a')
+
+    expect(failClaim).toHaveBeenCalledWith('like-retry', 'lease-retry-1')
+    expect(completeClaim).toHaveBeenCalledWith('like-retry', 'lease-retry-2')
+    expect(likePost).toHaveBeenCalledTimes(2)
+    expect(firstResult).toEqual({
+      success: 0,
+      failed: 1,
+      errors: [{ id: 'like-retry', error: 'Temporary network failure' }],
+    })
+    expect(retryResult).toEqual({ success: 1, failed: 0, errors: [] })
+  })
+
   it('does not execute the same queued mutation twice when clients sync concurrently', async () => {
     claimNext
       .mockResolvedValueOnce({
@@ -171,6 +245,35 @@ describe('syncManager', () => {
 
     expect(releaseClaim).toHaveBeenCalledWith('favorite-a', 'lease-a')
     expect(completeClaim).not.toHaveBeenCalled()
+    expect(result.failed).toBe(1)
+    expect(result.errors[0]?.error).toContain('Authentication session changed')
+  })
+
+  it('releases an in-flight post unlike claim when the authenticated principal changes', async () => {
+    let resolveUnlike: (() => void) | undefined
+    unlikePost.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveUnlike = resolve
+      })
+    )
+    claimNext.mockResolvedValueOnce({
+      id: 'unlike-a',
+      ownerId: 'user-a',
+      type: 'unlike',
+      resourceId: 'post-a',
+      leaseId: 'lease-unlike-a',
+    })
+
+    const syncPromise = syncOfflineActions('user-a')
+    await vi.waitFor(() => expect(unlikePost).toHaveBeenCalledTimes(1))
+    transitionAuthSessionScope('user-b')
+    resolveUnlike?.()
+
+    const result = await syncPromise
+
+    expect(releaseClaim).toHaveBeenCalledWith('unlike-a', 'lease-unlike-a')
+    expect(completeClaim).not.toHaveBeenCalled()
+    expect(failClaim).not.toHaveBeenCalled()
     expect(result.failed).toBe(1)
     expect(result.errors[0]?.error).toContain('Authentication session changed')
   })

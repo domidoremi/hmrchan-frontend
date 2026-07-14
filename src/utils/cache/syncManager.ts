@@ -12,6 +12,7 @@ import {
 } from './offlineQueue'
 import { favoriteService } from '@/api/favoriteService'
 import { commentService } from '@/api/commentService'
+import { postService } from '@/api/postService'
 import {
   createAuthSessionOperation,
   subscribeAuthSessionScope,
@@ -76,15 +77,12 @@ export async function syncOfflineActions(ownerId: string | null | undefined): Pr
 
         // 根据操作类型执行相应的 API 调用
         switch (action.type) {
-          case 'like':
+          case 'like': {
+            await postService.likePost(action.resourceId, { signal: operation.signal })
+            break
+          }
           case 'unlike': {
-            // 后端尚未提供点赞相关 API：避免把离线操作当作同步成功
-            await failClaimedAction(action.id, leaseId)
-            results.failed++
-            results.errors.push({
-              id: action.id,
-              error: `[${action.type}] API not implemented yet`,
-            })
+            await postService.unlikePost(action.resourceId, { signal: operation.signal })
             break
           }
           case 'favorite':
@@ -120,7 +118,7 @@ export async function syncOfflineActions(ownerId: string | null | undefined): Pr
             break
         }
 
-        if (!handledAsFailure && action.type !== 'like' && action.type !== 'unlike') {
+        if (!handledAsFailure) {
           if (!operation.isCurrent()) {
             await releaseAction(operation, action.id, leaseId)
             break
