@@ -2,8 +2,9 @@
  * Comments Store - 评论状态管理
  */
 
-import { ref, shallowRef, triggerRef } from 'vue'
+import { ref, shallowRef, triggerRef, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
+import { registerPrivateSessionReset } from '@/services/privateSessionState'
 import type { Comment, CommentAttachment, CommentFormData } from '@/types'
 import { sanitizeComment, validateComment, commentRateLimiter } from '@/utils/security'
 import {
@@ -612,6 +613,8 @@ export const useCommentsStore = defineStore('comments', () => {
     currentFetchingPostId = null
     latestFetchRequestId += 1
   }
+
+  onScopeDispose(registerPrivateSessionReset(clearAllComments))
 
   return {
     comments,

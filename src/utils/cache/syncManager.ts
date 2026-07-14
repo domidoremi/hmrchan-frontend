@@ -7,13 +7,20 @@ import {
   claimNextOfflineAction,
   completeClaimedAction,
   failClaimedAction,
+  releaseClaimedAction,
   cleanupFailedActions,
 } from './offlineQueue'
 import { favoriteService } from '@/api/favoriteService'
 import { commentService } from '@/api/commentService'
+import {
+  createAuthSessionOperation,
+  subscribeAuthSessionScope,
+  type AuthSessionOperation,
+} from '@/services/authSessionScope'
 // ==================== Listener state ====================
 let autoSyncAttached = false
 let autoSyncHandler: (() => void) | null = null
+let authSessionUnsubscribe: (() => void) | null = null
 let swSyncListenerAttached = false
 let swSyncHandler: ((event: MessageEvent) => void) | null = null
 
@@ -32,86 +39,123 @@ export async function syncOfflineActions(ownerId: string | null | undefined): Pr
   }
   if (!ownerId) return results
 
-  const attemptedIds = new Set<string>()
-  let action = await claimNextOfflineAction(ownerId, { excludeIds: attemptedIds })
-
-  while (action) {
-    attemptedIds.add(action.id)
-    try {
-      const leaseId = action.leaseId
-      if (!leaseId) throw new Error('Offline action claim is missing its lease')
-      let handledAsFailure = false
-
-      // 根据操作类型执行相应的 API 调用
-      switch (action.type) {
-        case 'like':
-        case 'unlike': {
-          // 后端尚未提供点赞相关 API：避免把离线操作当作同步成功
-          await failClaimedAction(action.id, leaseId)
-          results.failed++
-          results.errors.push({
-            id: action.id,
-            error: `[${action.type}] API not implemented yet`,
-          })
-          break
-        }
-        case 'favorite':
-          await favoriteService.create(
-            action.resourceId,
-            {},
-            { idempotencyKey: action.idempotencyKey }
-          )
-          break
-        case 'unfavorite':
-          await favoriteService.removeByPostId(action.resourceId)
-          break
-        case 'comment':
-          {
-            const rawContent = action.data?.['content']
-            const content = typeof rawContent === 'string' ? rawContent.trim() : ''
-            if (!content) {
-              await failClaimedAction(action.id, leaseId)
-              handledAsFailure = true
-              results.failed++
-              results.errors.push({
-                id: action.id,
-                error: '[comment] Missing content',
-              })
-              break
-            }
-            await commentService.createComment(
-              action.resourceId,
-              { content },
-              { idempotencyKey: action.idempotencyKey }
-            )
-          }
-          break
-      }
-
-      if (!handledAsFailure && action.type !== 'like' && action.type !== 'unlike') {
-        const completed = await completeClaimedAction(action.id, leaseId)
-        if (!completed) throw new Error('Offline action lease was lost before completion')
-        results.success++
-      }
-    } catch (error) {
-      // 失败后更新状态并增加重试计数
-      if (action.leaseId) {
-        await failClaimedAction(action.id, action.leaseId)
-      }
-      results.failed++
-      results.errors.push({
-        id: action.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      })
-    }
-
-    action = await claimNextOfflineAction(ownerId, { excludeIds: attemptedIds })
+  const operation = createAuthSessionOperation(ownerId)
+  const recordSessionChange = () => {
+    results.failed++
+    results.errors.push({ id: 'session', error: 'Authentication session changed during sync' })
+  }
+  const releaseAction = async (
+    activeOperation: AuthSessionOperation,
+    id: string,
+    leaseId: string
+  ) => {
+    await releaseClaimedAction(id, leaseId)
+    if (!activeOperation.isCurrent()) recordSessionChange()
   }
 
-  // 清理失败次数过多的操作
-  await cleanupFailedActions(ownerId)
+  if (!operation.isCurrent()) {
+    recordSessionChange()
+    operation.dispose()
+    return results
+  }
 
-  return results
+  try {
+    const attemptedIds = new Set<string>()
+    let action = await claimNextOfflineAction(ownerId, { excludeIds: attemptedIds })
+
+    while (action) {
+      if (!operation.isCurrent()) {
+        if (action.leaseId) await releaseAction(operation, action.id, action.leaseId)
+        break
+      }
+      attemptedIds.add(action.id)
+      try {
+        const leaseId = action.leaseId
+        if (!leaseId) throw new Error('Offline action claim is missing its lease')
+        let handledAsFailure = false
+
+        // 根据操作类型执行相应的 API 调用
+        switch (action.type) {
+          case 'like':
+          case 'unlike': {
+            // 后端尚未提供点赞相关 API：避免把离线操作当作同步成功
+            await failClaimedAction(action.id, leaseId)
+            results.failed++
+            results.errors.push({
+              id: action.id,
+              error: `[${action.type}] API not implemented yet`,
+            })
+            break
+          }
+          case 'favorite':
+            await favoriteService.create(
+              action.resourceId,
+              {},
+              { idempotencyKey: action.idempotencyKey, signal: operation.signal }
+            )
+            break
+          case 'unfavorite':
+            await favoriteService.removeByPostId(action.resourceId, { signal: operation.signal })
+            break
+          case 'comment':
+            {
+              const rawContent = action.data?.['content']
+              const content = typeof rawContent === 'string' ? rawContent.trim() : ''
+              if (!content) {
+                await failClaimedAction(action.id, leaseId)
+                handledAsFailure = true
+                results.failed++
+                results.errors.push({
+                  id: action.id,
+                  error: '[comment] Missing content',
+                })
+                break
+              }
+              await commentService.createComment(
+                action.resourceId,
+                { content },
+                { idempotencyKey: action.idempotencyKey, signal: operation.signal }
+              )
+            }
+            break
+        }
+
+        if (!handledAsFailure && action.type !== 'like' && action.type !== 'unlike') {
+          if (!operation.isCurrent()) {
+            await releaseAction(operation, action.id, leaseId)
+            break
+          }
+          const completed = await completeClaimedAction(action.id, leaseId)
+          if (!completed) throw new Error('Offline action lease was lost before completion')
+          results.success++
+        }
+      } catch (error) {
+        if (!operation.isCurrent()) {
+          if (action.leaseId) await releaseAction(operation, action.id, action.leaseId)
+          break
+        }
+        // 失败后更新状态并增加重试计数
+        if (action.leaseId) {
+          await failClaimedAction(action.id, action.leaseId)
+        }
+        results.failed++
+        results.errors.push({
+          id: action.id,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
+      }
+
+      action = await claimNextOfflineAction(ownerId, { excludeIds: attemptedIds })
+    }
+
+    if (operation.isCurrent()) {
+      await cleanupFailedActions(ownerId)
+    }
+
+    return results
+  } finally {
+    operation.dispose()
+  }
 }
 
 export function disposeAutoSync(): void {
@@ -122,6 +166,8 @@ export function disposeAutoSync(): void {
     window.removeEventListener('online', autoSyncHandler)
     autoSyncHandler = null
   }
+  authSessionUnsubscribe?.()
+  authSessionUnsubscribe = null
 
   autoSyncAttached = false
 }
@@ -177,7 +223,17 @@ export function setupAutoSync(getOwnerId: () => string | null | undefined): void
   }
 
   window.addEventListener('online', autoSyncHandler)
+  authSessionUnsubscribe = subscribeAuthSessionScope((snapshot) => {
+    if (!snapshot.principalId || navigator.onLine === false) return
+    void triggerSync(snapshot.principalId).catch((error: unknown) => {
+      console.error('[Sync] Session startup sync failed:', error)
+    })
+  })
   autoSyncAttached = true
+
+  if (navigator.onLine !== false && getOwnerId()) {
+    autoSyncHandler()
+  }
 }
 
 /**
@@ -196,8 +252,9 @@ export function setupSwSyncListener(getOwnerId: () => string | null | undefined)
     const replyPort = event.ports?.[0]
 
     try {
-      const result = await syncOfflineActions(getOwnerId())
-      replyPort?.postMessage({ ok: true, result })
+      const ownerId = getOwnerId()
+      const result = await syncOfflineActions(ownerId)
+      replyPort?.postMessage({ ok: Boolean(ownerId) && result.failed === 0, result })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
       replyPort?.postMessage({ ok: false, error: message })

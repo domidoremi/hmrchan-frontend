@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import i18n from '@/i18n'
 import { ApiError, preferencesService, type UserPreferences } from '@/api'
 import { useAuthStore, useSettingsStore, useToastStore } from '@/stores'
+import { createAuthSessionOperation, type AuthSessionOperation } from './authSessionScope'
 
 const isLoadingPreferences = ref(false)
 const isSavingPreferences = ref(false)
@@ -13,6 +14,7 @@ let lastSyncedSnapshot = ''
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let suspendRemoteSync = false
 let installed = false
+let operationGeneration = 0
 
 function clearSyncTimer() {
   if (syncTimer === null) return
@@ -60,7 +62,31 @@ export function usePreferencesSyncService() {
   const currentUserId = computed(() => user.value?.id ?? null)
   const localSnapshot = computed(() => serializePreferences(settingsStore.exportPreferences()))
 
+  function beginOperation(userId: string): {
+    generation: number
+    operation: AuthSessionOperation
+  } {
+    return {
+      generation: ++operationGeneration,
+      operation: createAuthSessionOperation(userId),
+    }
+  }
+
+  function isOperationCurrent(
+    userId: string,
+    generation: number,
+    operation: AuthSessionOperation
+  ): boolean {
+    return (
+      generation === operationGeneration &&
+      operation.isCurrent() &&
+      isAuthenticated.value &&
+      currentUserId.value === userId
+    )
+  }
+
   function resetSyncState() {
+    operationGeneration += 1
     clearSyncTimer()
     loadedUserId = null
     lastSyncedSnapshot = ''
@@ -82,21 +108,35 @@ export function usePreferencesSyncService() {
     }
 
     isLoadingPreferences.value = true
+    const { generation, operation } = beginOperation(userId)
+    if (!operation.isCurrent()) {
+      operation.dispose()
+      resetSyncState()
+      return
+    }
 
     try {
-      const remotePreferences = await preferencesService.get()
+      const remotePreferences = await preferencesService.get({ signal: operation.signal })
+      if (!isOperationCurrent(userId, generation, operation)) return
       suspendRemoteSync = true
       settingsStore.applyPreferences(remotePreferences)
       lastSyncedSnapshot = serializePreferences(settingsStore.exportPreferences())
       loadedUserId = userId
       hasLoadedPreferences.value = true
     } catch (error) {
-      if (!(error instanceof ApiError && [401, 403].includes(error.status)) && !silent) {
+      if (
+        isOperationCurrent(userId, generation, operation) &&
+        !(error instanceof ApiError && [401, 403].includes(error.status)) &&
+        !silent
+      ) {
         toastStore.error(i18n.global.t('settings.preferencesLoadFailed'))
       }
     } finally {
-      suspendRemoteSync = false
-      isLoadingPreferences.value = false
+      if (isOperationCurrent(userId, generation, operation)) {
+        suspendRemoteSync = false
+        isLoadingPreferences.value = false
+      }
+      operation.dispose()
     }
   }
 
@@ -118,19 +158,33 @@ export function usePreferencesSyncService() {
     }
 
     isSavingPreferences.value = true
+    const { generation, operation } = beginOperation(userId)
+    if (!operation.isCurrent()) {
+      operation.dispose()
+      return
+    }
 
     try {
-      const remotePreferences = await preferencesService.update(payload)
+      const remotePreferences = await preferencesService.update(payload, {
+        signal: operation.signal,
+      })
+      if (!isOperationCurrent(userId, generation, operation)) return
       suspendRemoteSync = true
       settingsStore.applyPreferences(remotePreferences)
       lastSyncedSnapshot = serializePreferences(settingsStore.exportPreferences())
     } catch (error) {
-      if (!(error instanceof ApiError && [401, 403].includes(error.status))) {
+      if (
+        isOperationCurrent(userId, generation, operation) &&
+        !(error instanceof ApiError && [401, 403].includes(error.status))
+      ) {
         toastStore.error(i18n.global.t('settings.preferencesSaveFailed'))
       }
     } finally {
-      suspendRemoteSync = false
-      isSavingPreferences.value = false
+      if (isOperationCurrent(userId, generation, operation)) {
+        suspendRemoteSync = false
+        isSavingPreferences.value = false
+      }
+      operation.dispose()
     }
   }
 
@@ -147,20 +201,35 @@ export function usePreferencesSyncService() {
 
     clearSyncTimer()
     isSavingPreferences.value = true
+    const { generation, operation } = beginOperation(userId)
+    if (!operation.isCurrent()) {
+      operation.dispose()
+      return
+    }
 
     try {
-      const remotePreferences = await preferencesService.replace(settingsStore.exportPreferences())
+      const remotePreferences = await preferencesService.replace(
+        settingsStore.exportPreferences(),
+        {
+          signal: operation.signal,
+        }
+      )
+      if (!isOperationCurrent(userId, generation, operation)) return
       suspendRemoteSync = true
       settingsStore.applyPreferences(remotePreferences)
       lastSyncedSnapshot = serializePreferences(settingsStore.exportPreferences())
     } catch (error) {
+      if (!isOperationCurrent(userId, generation, operation)) return
       if (!(error instanceof ApiError && [401, 403].includes(error.status))) {
         toastStore.error(i18n.global.t('settings.preferencesSaveFailed'))
       }
       throw error
     } finally {
-      suspendRemoteSync = false
-      isSavingPreferences.value = false
+      if (isOperationCurrent(userId, generation, operation)) {
+        suspendRemoteSync = false
+        isSavingPreferences.value = false
+      }
+      operation.dispose()
     }
   }
 
@@ -173,22 +242,32 @@ export function usePreferencesSyncService() {
 
     clearSyncTimer()
     isSavingPreferences.value = true
+    const { generation, operation } = beginOperation(userId)
+    if (!operation.isCurrent()) {
+      operation.dispose()
+      return
+    }
 
     try {
-      await preferencesService.reset()
+      await preferencesService.reset({ signal: operation.signal })
+      if (!isOperationCurrent(userId, generation, operation)) return
       suspendRemoteSync = true
       settingsStore.resetSettings()
       lastSyncedSnapshot = serializePreferences(settingsStore.exportPreferences())
       loadedUserId = userId
       hasLoadedPreferences.value = true
     } catch (error) {
+      if (!isOperationCurrent(userId, generation, operation)) return
       if (!(error instanceof ApiError && [401, 403].includes(error.status))) {
         toastStore.error(i18n.global.t('settings.preferencesSaveFailed'))
       }
       throw error
     } finally {
-      suspendRemoteSync = false
-      isSavingPreferences.value = false
+      if (isOperationCurrent(userId, generation, operation)) {
+        suspendRemoteSync = false
+        isSavingPreferences.value = false
+      }
+      operation.dispose()
     }
   }
 

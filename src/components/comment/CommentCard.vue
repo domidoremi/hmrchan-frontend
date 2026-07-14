@@ -224,6 +224,7 @@ import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserDisplayName } from '@/utils/user'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { formatRelativeTime } from '@/utils/date'
+import { normalizeHttpUrl } from '@/utils/security'
 import { copyToClipboard } from '@/utils/modernAPIs'
 import CommentForm from './CommentForm.vue'
 import { commentTreeContextKey } from './commentTreeContext'
@@ -329,7 +330,20 @@ const userLevelBadge = computed(() => {
   return badges[props.comment.user.level] || null
 })
 
-const commentImages = computed(() => props.comment.images ?? [])
+const commentImages = computed(() =>
+  (props.comment.images ?? []).flatMap((image) => {
+    const url = normalizeHttpUrl(image.url)
+    if (!url) return []
+
+    return [
+      {
+        ...image,
+        url,
+        thumbnail_url: normalizeHttpUrl(image.thumbnail_url) ?? url,
+      },
+    ]
+  })
+)
 
 const likeCount = computed(() => props.comment.like_count ?? props.comment.likes_count ?? 0)
 const replyCount = computed(() => props.comment.reply_count ?? props.comment.replies_count ?? 0)

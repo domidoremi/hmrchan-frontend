@@ -4,7 +4,7 @@
  * 集中管理收藏列表、收藏夹、标签、收藏状态检查
  */
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
 import {
   favoriteService,
@@ -16,6 +16,7 @@ import {
 import { normalizeFavoritesSummaryCount } from '@/api/summaryCounts'
 import { useSettingsStore } from '@/stores/settings'
 import { resolvePreferredPageSize } from '@/composables/usePreferredPageSize'
+import { registerPrivateSessionReset } from '@/services/privateSessionState'
 
 const CHECKED_POST_CACHE_LIMIT = 300
 
@@ -290,6 +291,8 @@ export const useFavoritesStore = defineStore('favorites', () => {
     currentFolder.value = undefined
     currentTag.value = undefined
   }
+
+  onScopeDispose(registerPrivateSessionReset($reset))
 
   watch(pageSize, (nextPageSize, previousPageSize) => {
     if (nextPageSize === previousPageSize) return

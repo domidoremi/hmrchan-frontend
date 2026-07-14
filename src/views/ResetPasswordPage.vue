@@ -120,6 +120,7 @@ import { CheckCircle, AlertTriangle, Eye, EyeOff } from '@lucide/vue'
 import { authService, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
 import { checkPasswordStrength } from '@/utils/crypto'
+import { scrubSensitiveUrlParameters } from '@/utils/sensitiveUrl'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
@@ -129,10 +130,13 @@ const router = useRouter()
 const { t } = useI18n()
 const toastStore = useToastStore()
 
-const token = computed(() => {
-  const t = route.query['token']
-  return typeof t === 'string' && t ? t : ''
-})
+const token = ref(
+  (() => {
+    const t = route.query['token']
+    return typeof t === 'string' && t ? t : ''
+  })()
+)
+scrubSensitiveUrlParameters(['token'])
 
 const newPassword = ref('')
 const confirmPassword = ref('')

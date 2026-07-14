@@ -4,7 +4,7 @@
  * 集中管理讨论列表、筛选、排序、点赞状态
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
 import {
   discussionService,
@@ -15,6 +15,7 @@ import {
 } from '@/api/discussionService'
 import { normalizeDiscussionsSummaryCount } from '@/api/summaryCounts'
 import type { RequestConfig } from '@/api/client'
+import { registerPrivateSessionReset } from '@/services/privateSessionState'
 import {
   getFallbackDiscussionById,
   getFallbackDiscussionCommentsCursor,
@@ -425,6 +426,8 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     commentsLoading.value = false
     hasMoreCommentsState.value = false
   }
+
+  onScopeDispose(registerPrivateSessionReset($reset))
 
   return {
     items,

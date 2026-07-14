@@ -15,6 +15,7 @@ import {
 } from '../googleAuthService'
 
 const GOOGLE_POPUP_RELAY_STORAGE_KEY = '__momi_google_auth_popup_result__'
+const GOOGLE_AUTH_REQUEST_STORAGE_KEY = 'momi_google_auth_request'
 
 class FakeBroadcastChannel {
   private static listeners = new Map<string, Set<(event: MessageEvent<unknown>) => void>>()
@@ -51,6 +52,7 @@ class FakeBroadcastChannel {
 describe('googleAuthService', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     vi.useFakeTimers()
     vi.stubGlobal(
       'matchMedia',
@@ -159,6 +161,16 @@ describe('googleAuthService', () => {
     )
   })
 
+  it('does not classify an arbitrary opener as an auth popup without bound request state', () => {
+    expect(
+      resolveGooglePopupBridgeMessage({
+        search: '?handoff_code=unbound-handoff',
+        opener: {} as Window,
+        pendingRequest: null,
+      })
+    ).toBeNull()
+  })
+
   it('opens Google auth through the site proxy instead of the API origin', () => {
     const popup = {
       closed: false,
@@ -200,6 +212,7 @@ describe('googleAuthService', () => {
       window.dispatchEvent(
         new MessageEvent('message', {
           origin: window.location.origin,
+          source: popup,
           data: {
             type: 'google-auth-result',
             requestId,
@@ -244,6 +257,7 @@ describe('googleAuthService', () => {
     window.dispatchEvent(
       new MessageEvent('message', {
         origin: window.location.origin,
+        source: popup,
         data: {
           type: 'google-auth-result',
           requestId: 'request-1',
@@ -264,6 +278,47 @@ describe('googleAuthService', () => {
     )
   })
 
+  it('rejects same-origin popup messages with a wrong source or missing request id', async () => {
+    const popup = {
+      close: vi.fn(),
+      focus: vi.fn(),
+    } as unknown as Window
+    const attacker = {} as Window
+    const pending = waitForGooglePopupResult(popup, {
+      requestId: 'source-bound-request',
+      timeoutMs: 10_000,
+    })
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        origin: window.location.origin,
+        source: attacker,
+        data: {
+          type: 'google-auth-result',
+          requestId: 'source-bound-request',
+          status: 'success',
+          handoffCode: 'wrong-source',
+        },
+      })
+    )
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        origin: window.location.origin,
+        source: popup,
+        data: {
+          type: 'google-auth-result',
+          status: 'success',
+          handoffCode: 'missing-request-id',
+        },
+      })
+    )
+
+    await vi.advanceTimersByTimeAsync(10_000)
+    await expect(pending.promise).resolves.toEqual(
+      expect.objectContaining({ status: 'error', error: 'popup_closed' })
+    )
+  })
+
   it('accepts popup bridge messages from the configured frontend origin in dev', async () => {
     vi.stubEnv('VITE_FRONTEND_ORIGIN', 'http://127.0.0.1:4173')
 
@@ -278,6 +333,7 @@ describe('googleAuthService', () => {
     window.dispatchEvent(
       new MessageEvent('message', {
         origin: 'http://127.0.0.1:4173',
+        source: popup,
         data: {
           type: 'google-auth-result',
           requestId: 'request-dev',
@@ -348,6 +404,78 @@ describe('googleAuthService', () => {
         handoffCode: 'stored-handoff',
       })
     )
+    expect(localStorage.getItem(GOOGLE_POPUP_RELAY_STORAGE_KEY)).toBeNull()
+  })
+
+  it('removes malformed, stale, and mismatched stored relay results', async () => {
+    const popup = { close: vi.fn(), focus: vi.fn() } as unknown as Window
+
+    localStorage.setItem(GOOGLE_POPUP_RELAY_STORAGE_KEY, '{malformed')
+    let pending = waitForGooglePopupResult(popup, {
+      requestId: 'expected-request',
+      timeoutMs: 10_000,
+    })
+    expect(localStorage.getItem(GOOGLE_POPUP_RELAY_STORAGE_KEY)).toBeNull()
+    pending.dispose()
+
+    localStorage.setItem(
+      GOOGLE_POPUP_RELAY_STORAGE_KEY,
+      JSON.stringify({
+        id: 'stale-relay',
+        publishedAt: Date.now() - 5 * 60 * 1000 - 1,
+        payload: {
+          type: 'google-auth-result',
+          requestId: 'expected-request',
+          status: 'success',
+          handoffCode: 'stale-handoff',
+        },
+      })
+    )
+    pending = waitForGooglePopupResult(popup, {
+      requestId: 'expected-request',
+      timeoutMs: 10_000,
+    })
+    expect(localStorage.getItem(GOOGLE_POPUP_RELAY_STORAGE_KEY)).toBeNull()
+    pending.dispose()
+
+    localStorage.setItem(
+      GOOGLE_POPUP_RELAY_STORAGE_KEY,
+      JSON.stringify({
+        id: 'mismatched-relay',
+        publishedAt: Date.now(),
+        payload: {
+          type: 'google-auth-result',
+          requestId: 'other-request',
+          status: 'success',
+          handoffCode: 'mismatched-handoff',
+        },
+      })
+    )
+    pending = waitForGooglePopupResult(popup, {
+      requestId: 'expected-request',
+      timeoutMs: 10_000,
+    })
+    expect(localStorage.getItem(GOOGLE_POPUP_RELAY_STORAGE_KEY)).toBeNull()
+    pending.dispose()
+  })
+
+  it('removes invalid and expired pending auth requests', () => {
+    sessionStorage.setItem(GOOGLE_AUTH_REQUEST_STORAGE_KEY, '{malformed')
+    expect(getPendingGoogleAuthRequest()).toBeNull()
+    expect(sessionStorage.getItem(GOOGLE_AUTH_REQUEST_STORAGE_KEY)).toBeNull()
+
+    sessionStorage.setItem(
+      GOOGLE_AUTH_REQUEST_STORAGE_KEY,
+      JSON.stringify({
+        requestId: 'expired-request',
+        mode: 'popup',
+        intent: 'login',
+        redirectTo: '/',
+        createdAt: Date.now() - 10 * 60 * 1000 - 1,
+      })
+    )
+    expect(getPendingGoogleAuthRequest()).toBeNull()
+    expect(sessionStorage.getItem(GOOGLE_AUTH_REQUEST_STORAGE_KEY)).toBeNull()
   })
 
   it('ignores relay messages for a different popup request id', async () => {
@@ -366,6 +494,7 @@ describe('googleAuthService', () => {
         key: GOOGLE_POPUP_RELAY_STORAGE_KEY,
         newValue: JSON.stringify({
           id: 'relay-1',
+          publishedAt: Date.now(),
           payload: {
             type: 'google-auth-result',
             requestId: 'other-request',

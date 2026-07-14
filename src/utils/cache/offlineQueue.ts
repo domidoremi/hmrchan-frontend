@@ -157,6 +157,18 @@ export async function failClaimedAction(id: string, leaseId: string): Promise<bo
   })
 }
 
+export async function releaseClaimedAction(id: string, leaseId: string): Promise<boolean> {
+  return idbMutate<OfflineAction>(QUEUE_STORE, id, (action) => {
+    if (!action || action.status !== 'syncing' || action.leaseId !== leaseId) return undefined
+
+    const nextAction = { ...action }
+    delete nextAction.leaseId
+    delete nextAction.leaseExpiresAt
+    nextAction.status = 'pending'
+    return nextAction
+  })
+}
+
 export async function clearOfflineActions(): Promise<void> {
   await idbClear(QUEUE_STORE)
 }

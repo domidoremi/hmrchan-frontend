@@ -37,6 +37,23 @@ describe('mediaCachePolicy', () => {
     ).toBe('private, no-store')
   })
 
+  it.each(['__Host-momi_bff_at=access-token', '__Host-momi_bff_rt=refresh-token'])(
+    'treats the BFF cookie %s as authenticated media context',
+    (cookie) => {
+      const headers = new Headers({ Cookie: cookie })
+
+      expect(hasMediaAuthContext(headers)).toBe(true)
+      expect(
+        resolveMediaCacheControl({
+          path: '/v1/media/abc/thumbnail',
+          method: 'GET',
+          requestHeaders: headers,
+          responseStatus: 200,
+        })
+      ).toBe('private, no-store')
+    }
+  )
+
   it('prevents caching error responses for media thumbnails', () => {
     const headers = new Headers()
 

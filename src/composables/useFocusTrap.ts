@@ -71,14 +71,16 @@ export function useFocusTrap(
     }
   }
 
-  function clearAllRafs() {
+  function clearAllRafs(preserveRestoreFocus = false) {
     clearRaf(focusOutRaf)
     clearRaf(autoFocusRaf)
-    clearRaf(restoreFocusRaf)
+    if (!preserveRestoreFocus) {
+      clearRaf(restoreFocusRaf)
+      restoreFocusRaf = null
+    }
     clearRaf(activationRaf)
     focusOutRaf = null
     autoFocusRaf = null
-    restoreFocusRaf = null
     activationRaf = null
   }
 
@@ -312,7 +314,8 @@ export function useFocusTrap(
 
   const dispose = () => {
     deactivate()
-    clearAllRafs()
+    // Focus restoration intentionally runs on the next frame after the trap DOM is removed.
+    clearAllRafs(true)
   }
 
   // 在组件 setup 或 effectScope 中自动清理

@@ -25,6 +25,7 @@ import { getDeviceInfo } from '@/utils/device'
 import { createAuthSessionController } from '@/services/authSessionController'
 import { reportClientEvent } from '@/utils/clientReporter'
 import { resetRiskMode } from '@/security/runtimeState'
+import { resetPrivateSessionState } from '@/services/privateSessionState'
 
 // 用户类型（与 API 响应匹配）
 export type AuthUser = UserResponse
@@ -125,6 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!user.value)
   const sessionController = createAuthSessionController<AuthUser>({
+    onSessionTransition: resetPrivateSessionState,
     router,
     state: {
       user,

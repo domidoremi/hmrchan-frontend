@@ -157,6 +157,19 @@ describe('SchedulePage', () => {
     expect(wrapper.find('[data-testid=\"state-indicator\"]').exists()).toBe(false)
   })
 
+  it('does not render unsafe backend-provided schedule links', async () => {
+    scheduleApi.getById.mockResolvedValueOnce({
+      ...(await scheduleApi.getById()),
+      event_url: 'javascript:alert(1)',
+      ticket_url: '//evil.example/ticket',
+      source_url: 'https://user:password@example.com/source',
+    })
+
+    const { wrapper } = await mountSchedule()
+
+    expect(wrapper.find('.detail-links').exists()).toBe(false)
+  })
+
   it('shows the agenda and planner shells together on the main schedule route', async () => {
     const { wrapper } = await mountSchedule('/schedule')
 

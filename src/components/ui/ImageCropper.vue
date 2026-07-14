@@ -1,8 +1,15 @@
 <template>
   <div class="image-cropper-overlay" @click.self="cancel">
-    <div class="image-cropper empty-surface" role="dialog" aria-modal="true">
+    <div
+      ref="dialogRef"
+      class="image-cropper empty-surface"
+      role="dialog"
+      aria-modal="true"
+      :aria-labelledby="titleId"
+      tabindex="-1"
+    >
       <header class="cropper-header">
-        <h3>{{ $t('profile.cropAvatar') }}</h3>
+        <h3 :id="titleId">{{ $t('profile.cropAvatar') }}</h3>
         <ControlButton
           class="close-btn"
           size="square"
@@ -119,11 +126,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
+import { ref, computed, onMounted, onUnmounted, useId, useTemplateRef } from 'vue'
 import { X, Circle, Square } from '@lucide/vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { useFocusTrap } from '@/composables/useFocusTrap'
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
 interface Props {
   imageSrc: string
@@ -141,6 +150,8 @@ const emit = defineEmits<{
 
 const containerRef = useTemplateRef<HTMLDivElement>('containerRef')
 const imageRef = useTemplateRef<HTMLImageElement>('imageRef')
+const dialogRef = useTemplateRef<HTMLElement>('dialogRef')
+const titleId = `${useId()}-title`
 const shape = ref<'circle' | 'square'>('circle')
 
 const imageSize = ref({ width: 0, height: 0 })
@@ -344,6 +355,14 @@ function cancel() {
   emit('cancel')
 }
 
+useFocusTrap(dialogRef, () => true, {
+  autoFocus: true,
+  restoreFocus: true,
+  initialFocus: '.close-btn',
+  escapeDeactivates: true,
+  onEscape: cancel,
+})
+
 function updateZoom(event: Event) {
   const value = Number((event.target as HTMLInputElement).value)
   if (!Number.isNaN(value)) {
@@ -364,6 +383,7 @@ function resetAdjustments() {
 }
 
 onMounted(() => {
+  lockBodyScroll()
   document.addEventListener('mousemove', onMouseMove)
   document.addEventListener('mouseup', onMouseUp)
   document.addEventListener('touchmove', onMouseMove)
@@ -371,6 +391,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  unlockBodyScroll()
   document.removeEventListener('mousemove', onMouseMove)
   document.removeEventListener('mouseup', onMouseUp)
   document.removeEventListener('touchmove', onMouseMove)

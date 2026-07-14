@@ -17,6 +17,11 @@ import { execSync } from 'node:child_process'
 import type { ClientRequest, IncomingMessage } from 'node:http'
 
 import { defineConfig, loadEnv } from 'vite'
+import {
+  DEFAULT_LOCAL_API_PROXY_TARGET,
+  assertDevProxyTargetsAllowed,
+  rewriteDevProxyCookies,
+} from './scripts/lib/dev-proxy-safety'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import { imagetools } from 'vite-imagetools'
@@ -138,7 +143,11 @@ function shouldObfuscateChunk(fileName: string): boolean {
   return OBFUSCATED_CHUNK_PATTERNS.some((pattern) => pattern.test(chunkName))
 }
 
-function createProxyRule(apiTarget: string, rehearsalTurnstileBypassToken = '') {
+function createProxyRule(
+  apiTarget: string,
+  rehearsalTurnstileBypassToken = '',
+  allowRemoteCookieDowngrade = false
+) {
   return {
     target: apiTarget,
     changeOrigin: true,
@@ -151,8 +160,10 @@ function createProxyRule(apiTarget: string, rehearsalTurnstileBypassToken = '') 
       proxy.on('proxyRes', (proxyRes) => {
         const setCookie = proxyRes.headers['set-cookie']
         if (setCookie && Array.isArray(setCookie)) {
-          proxyRes.headers['set-cookie'] = setCookie.map((cookie) =>
-            cookie.replace(/;\s*Secure/gi, '')
+          proxyRes.headers['set-cookie'] = rewriteDevProxyCookies(
+            setCookie,
+            apiTarget,
+            allowRemoteCookieDowngrade
           )
         }
       })
@@ -180,17 +191,35 @@ function createProxyConfig(
     communityTarget = apiTarget,
     contentTarget = apiTarget,
     rehearsalTurnstileBypassToken = '',
+    allowRemoteCookieDowngrade = false,
   }: {
     identityTarget?: string
     communityTarget?: string
     contentTarget?: string
     rehearsalTurnstileBypassToken?: string
+    allowRemoteCookieDowngrade?: boolean
   } = {}
 ) {
-  const identityProxy = createProxyRule(identityTarget, rehearsalTurnstileBypassToken)
-  const communityProxy = createProxyRule(communityTarget, rehearsalTurnstileBypassToken)
-  const contentProxy = createProxyRule(contentTarget, rehearsalTurnstileBypassToken)
-  const defaultProxy = createProxyRule(apiTarget, rehearsalTurnstileBypassToken)
+  const identityProxy = createProxyRule(
+    identityTarget,
+    rehearsalTurnstileBypassToken,
+    allowRemoteCookieDowngrade
+  )
+  const communityProxy = createProxyRule(
+    communityTarget,
+    rehearsalTurnstileBypassToken,
+    allowRemoteCookieDowngrade
+  )
+  const contentProxy = createProxyRule(
+    contentTarget,
+    rehearsalTurnstileBypassToken,
+    allowRemoteCookieDowngrade
+  )
+  const defaultProxy = createProxyRule(
+    apiTarget,
+    rehearsalTurnstileBypassToken,
+    allowRemoteCookieDowngrade
+  )
 
   return {
     '^/api/v1/posts/[^/]+/comments$': communityProxy,
@@ -254,13 +283,28 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   const disablePreviewProxy = parseBoolEnv(env, 'VITE_DISABLE_PREVIEW_PROXY', false)
   const devtoolsEnabled = isDev && parseBoolEnv(env, 'VITE_ENABLE_DEVTOOLS', false)
   const sourcemapMode = isProd ? false : parseSourcemapEnv(env.VITE_SOURCEMAP)
-  const apiProxyTarget = normalizeProxyTarget(env.VITE_API_BASE_URL, 'https://api.momichan.com')
+  const apiProxyTarget = normalizeProxyTarget(
+    env.VITE_API_BASE_URL,
+    isDev ? DEFAULT_LOCAL_API_PROXY_TARGET : 'https://api.momichan.com'
+  )
+  const identityProxyTarget = normalizeProxyTarget(env.VITE_IDENTITY_API_BASE_URL, apiProxyTarget)
+  const communityProxyTarget = normalizeProxyTarget(env.VITE_COMMUNITY_API_BASE_URL, apiProxyTarget)
+  const contentProxyTarget = normalizeProxyTarget(env.VITE_CONTENT_API_BASE_URL, apiProxyTarget)
+  const allowProductionApiProxy = parseBoolEnv(env, 'ALLOW_PRODUCTION_API_PROXY', false)
+  const allowRemoteCookieDowngrade = parseBoolEnv(env, 'ALLOW_REMOTE_COOKIE_DOWNGRADE', false)
+  if (isDev) {
+    assertDevProxyTargetsAllowed(
+      [apiProxyTarget, identityProxyTarget, communityProxyTarget, contentProxyTarget],
+      allowProductionApiProxy
+    )
+  }
   const rehearsalTurnstileBypassToken = (env.REHEARSAL_TURNSTILE_BYPASS_TOKEN ?? '').trim()
   const sharedProxyConfig = createProxyConfig(apiProxyTarget, {
-    identityTarget: normalizeProxyTarget(env.VITE_IDENTITY_API_BASE_URL, apiProxyTarget),
-    communityTarget: normalizeProxyTarget(env.VITE_COMMUNITY_API_BASE_URL, apiProxyTarget),
-    contentTarget: normalizeProxyTarget(env.VITE_CONTENT_API_BASE_URL, apiProxyTarget),
+    identityTarget: identityProxyTarget,
+    communityTarget: communityProxyTarget,
+    contentTarget: contentProxyTarget,
     rehearsalTurnstileBypassToken,
+    allowRemoteCookieDowngrade,
   })
   const obfuscationProfile = env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
   const obfuscationControlFlow = parseBoolEnv(env, 'VITE_OBFUSCATION_CONTROL_FLOW', false)

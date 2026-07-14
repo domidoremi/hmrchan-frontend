@@ -1,5 +1,6 @@
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
+import { registerPrivateSessionReset } from '@/services/privateSessionState'
 import {
   consumeInboxStream,
   inboxService,
@@ -707,6 +708,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
       system: false,
     }
   }
+
+  onScopeDispose(registerPrivateSessionReset($reset))
 
   return {
     items,

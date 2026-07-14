@@ -5,6 +5,7 @@ import {
   validateComment,
   sanitizeComment,
   isValidUrl,
+  normalizeHttpUrl,
   RateLimiter,
 } from '../security'
 
@@ -110,6 +111,30 @@ describe('isValidUrl', () => {
 
   it('should return false for invalid URL', () => {
     expect(isValidUrl('not a url')).toBe(false)
+  })
+})
+
+describe('normalizeHttpUrl', () => {
+  it('accepts credential-free HTTP(S) URLs and root-relative paths', () => {
+    expect(normalizeHttpUrl('/uploads/comment.png?size=small')).toBe(
+      '/uploads/comment.png?size=small'
+    )
+    expect(normalizeHttpUrl('https://example.com/event')).toBe('https://example.com/event')
+  })
+
+  it('rejects active-content, protocol-relative, credentialed, and ambiguous URLs', () => {
+    for (const unsafe of [
+      'javascript:alert(1)',
+      'data:text/html,unsafe',
+      'file:///tmp/private',
+      'blob:https://example.com/id',
+      '//evil.example/path',
+      'https://user:password@example.com/path',
+      'example.com/path',
+      '   ',
+    ]) {
+      expect(normalizeHttpUrl(unsafe)).toBeNull()
+    }
   })
 })
 

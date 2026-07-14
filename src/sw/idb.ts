@@ -1,11 +1,13 @@
 import { swWarn } from './runtime'
+import {
+  CACHE_DB_NAME,
+  CACHE_DB_VERSION,
+  STORES,
+  upgradeCacheDatabase,
+} from '../utils/cache/idbSchema'
 
-export const MEDIA_META_STORE = 'media-meta'
-const POSTS_STORE = 'posts'
-const POST_LISTS_STORE = 'post-lists'
-const META_STORE = 'meta'
-const OFFLINE_QUEUE_STORE = 'offline-queue'
-const ACCESS_HISTORY_STORE = 'access-history'
+export const MEDIA_META_STORE = STORES.MEDIA_META
+let databasePromise: Promise<IDBDatabase> | null = null
 
 export interface MediaMetaRecord {
   url: string
@@ -45,59 +47,34 @@ export async function getMediaMetaStats(): Promise<{ count: number; totalSize: n
 }
 
 export function openDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('hmrchan-cache', 4)
+  if (databasePromise) return databasePromise
 
-    request.onupgradeneeded = () => {
+  databasePromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(CACHE_DB_NAME, CACHE_DB_VERSION)
+
+    request.onupgradeneeded = (event) => {
       const db = request.result
-
-      if (!db.objectStoreNames.contains(POSTS_STORE)) {
-        const postsStore = db.createObjectStore(POSTS_STORE, { keyPath: 'uuid' })
-        postsStore.createIndex('cached_at', 'cached_at', { unique: false })
-      }
-
-      if (!db.objectStoreNames.contains(POST_LISTS_STORE)) {
-        const listsStore = db.createObjectStore(POST_LISTS_STORE, { keyPath: 'cache_key' })
-        listsStore.createIndex('cached_at', 'cached_at', { unique: false })
-      }
-
-      if (!db.objectStoreNames.contains(META_STORE)) {
-        const metaStore = db.createObjectStore(META_STORE, { keyPath: 'key' })
-        metaStore.createIndex('cached_at', 'cached_at', { unique: false })
-      } else {
-        const metaStore = request.transaction?.objectStore(META_STORE)
-        if (metaStore && !metaStore.indexNames.contains('cached_at')) {
-          metaStore.createIndex('cached_at', 'cached_at', { unique: false })
-        }
-      }
-
-      if (!db.objectStoreNames.contains(OFFLINE_QUEUE_STORE)) {
-        const queueStore = db.createObjectStore(OFFLINE_QUEUE_STORE, { keyPath: 'id' })
-        queueStore.createIndex('status', 'status', { unique: false })
-        queueStore.createIndex('timestamp', 'timestamp', { unique: false })
-      }
-
-      if (!db.objectStoreNames.contains(ACCESS_HISTORY_STORE)) {
-        const historyStore = db.createObjectStore(ACCESS_HISTORY_STORE, { keyPath: 'id' })
-        historyStore.createIndex('type', 'type', { unique: false })
-        historyStore.createIndex('lastAccess', 'lastAccess', { unique: false })
-        historyStore.createIndex('accessCount', 'accessCount', { unique: false })
-      }
-
-      if (!db.objectStoreNames.contains(MEDIA_META_STORE)) {
-        const mediaStore = db.createObjectStore(MEDIA_META_STORE, { keyPath: 'url' })
-        mediaStore.createIndex('lastAccess', 'lastAccess', { unique: false })
-        mediaStore.createIndex('cachedAt', 'cachedAt', { unique: false })
-        mediaStore.createIndex('size', 'size', { unique: false })
-      }
+      upgradeCacheDatabase(db, request.transaction, event.oldVersion)
     }
 
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
+    request.onsuccess = () => {
+      const db = request.result
+      db.onversionchange = () => {
+        db.close()
+        databasePromise = null
+      }
+      resolve(db)
+    }
+    request.onerror = () => {
+      databasePromise = null
+      reject(request.error)
+    }
     request.onblocked = () => {
       swWarn('[SW] IDB upgrade blocked')
     }
   })
+
+  return databasePromise
 }
 
 export function idbGet<T = unknown>(store: string, key: IDBValidKey): Promise<T | undefined> {

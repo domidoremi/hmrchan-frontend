@@ -8,6 +8,7 @@
 
 import { resolveConfiguredApiBaseUrl } from '../../src/edge/upstream'
 import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
+import { hasMediaAuthContext } from '../api/mediaCachePolicy'
 
 interface Env {
   API_BASE_URL?: string
@@ -23,6 +24,7 @@ type CFPagesContext = {
 export async function onRequest(context: CFPagesContext): Promise<Response> {
   const { request, env, params } = context
   const path = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
+  const hasAuthContext = hasMediaAuthContext(request.headers)
 
   if (path.startsWith('avatars/')) {
     const storagePublicBaseUrl = env.STORAGE_PUBLIC_BASE_URL?.trim().replace(/\/+$/, '')
@@ -67,9 +69,18 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     // 复制响应头
     const responseHeaders = new Headers(response.headers)
 
-    // 设置缓存（头像可以缓存较长时间）
+    // Authenticated legacy uploads may vary by caller and must never enter a shared cache.
     if (response.ok) {
-      responseHeaders.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800')
+      responseHeaders.set(
+        'Cache-Control',
+        hasAuthContext
+          ? 'private, no-store'
+          : 'public, max-age=86400, stale-while-revalidate=604800'
+      )
+      if (hasAuthContext) {
+        responseHeaders.append('Vary', 'Authorization')
+        responseHeaders.append('Vary', 'Cookie')
+      }
     }
 
     // 移除可能导致问题的头

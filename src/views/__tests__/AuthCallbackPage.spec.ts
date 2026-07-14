@@ -214,11 +214,12 @@ describe('AuthCallbackPage', () => {
     expect(closeSpy).toHaveBeenCalled()
   })
 
-  it('still bridges popup results when popup session state is missing but opener survives', async () => {
+  it('bridges popup results from the bound window name when popup session state is missing', async () => {
     const postMessage = vi.fn()
     const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => undefined)
 
     testState.pendingGoogleAuthRequest = null as never
+    window.name = 'momi-google-auth:popup-request-recovered'
 
     Object.defineProperty(window, 'opener', {
       configurable: true,
@@ -235,6 +236,7 @@ describe('AuthCallbackPage', () => {
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'google-auth-result',
+        requestId: 'popup-request-recovered',
         status: 'success',
         handoffCode: 'popup-handoff',
       }),

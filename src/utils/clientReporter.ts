@@ -21,7 +21,6 @@ interface ClientReportPayload {
   category: ReportCategory
   timestamp: string
   path: string
-  href: string
   buildHash: string
   buildTime: string
   requestId?: string
@@ -42,40 +41,87 @@ const REPORTING_ENABLED =
 function getRuntimeInfo() {
   if (typeof window === 'undefined') {
     return {
-      href: '',
       path: '',
     }
   }
 
   return {
-    href: window.location.href,
-    path: window.location.pathname + window.location.search + window.location.hash,
+    path: window.location.pathname,
   }
 }
 
-function sanitizeValue(value: unknown): unknown {
+const SENSITIVE_DATA_KEYS = new Set([
+  'access_token',
+  'api_key',
+  'authorization',
+  'authorization_header',
+  'client_secret',
+  'code',
+  'code_verifier',
+  'cookie',
+  'credential',
+  'csrf_token',
+  'handoff_code',
+  'id_token',
+  'password',
+  'private_key',
+  'refresh_token',
+  'secret',
+  'session',
+  'session_id',
+  'state',
+  'token',
+])
+
+const SENSITIVE_QUERY_PATTERN =
+  /([?&#](?:access_token|api_key|authorization|client_secret|code|code_verifier|credential|csrf_token|handoff_code|id_token|password|private_key|refresh_token|secret|session|session_id|state|token)=)[^&#\s"'<>]*/gi
+const BEARER_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi
+
+function sanitizeText(value: string, maxLength: number): string {
+  return value
+    .replace(SENSITIVE_QUERY_PATTERN, '$1[redacted]')
+    .replace(BEARER_PATTERN, 'Bearer [redacted]')
+    .slice(0, maxLength)
+}
+
+function isSensitiveDataKey(key: string): boolean {
+  return SENSITIVE_DATA_KEYS.has(
+    key
+      .trim()
+      .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+  )
+}
+
+function sanitizeValue(value: unknown, depth = 0): unknown {
   if (value instanceof Error) {
     return {
       name: value.name,
-      message: value.message,
-      stack: value.stack,
+      message: sanitizeText(value.message, 400),
+      stack: value.stack ? sanitizeText(value.stack, 4000) : undefined,
     }
   }
 
   if (Array.isArray(value)) {
-    return value.slice(0, 20).map((item) => sanitizeValue(item))
+    if (depth >= 3) return '[truncated]'
+    return value.slice(0, 20).map((item) => sanitizeValue(item, depth + 1))
   }
 
   if (value && typeof value === 'object') {
+    if (depth >= 3) return '[truncated]'
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
         .slice(0, 40)
-        .map(([key, item]) => [key, sanitizeValue(item)])
+        .map(([key, item]) => [
+          key,
+          isSensitiveDataKey(key) ? '[redacted]' : sanitizeValue(item, depth + 1),
+        ])
     )
   }
 
   if (typeof value === 'string') {
-    return value.slice(0, 400)
+    return sanitizeText(value, 400)
   }
 
   return value
@@ -86,7 +132,7 @@ function sanitizeData(data?: Record<string, unknown>): Record<string, unknown> |
   return Object.fromEntries(
     Object.entries(data)
       .slice(0, 40)
-      .map(([key, value]) => [key, sanitizeValue(value)])
+      .map(([key, value]) => [key, isSensitiveDataKey(key) ? '[redacted]' : sanitizeValue(value)])
   )
 }
 
@@ -108,15 +154,14 @@ function buildPayload(
     category: options.category ?? 'app',
     timestamp: new Date().toISOString(),
     path: runtimeInfo.path,
-    href: runtimeInfo.href,
     buildHash: typeof __BUILD_HASH__ === 'string' ? __BUILD_HASH__ : 'unknown',
     buildTime: typeof __BUILD_TIME__ === 'string' ? __BUILD_TIME__ : '',
     requestId: options.requestId,
     securityLevel: options.securityLevel ?? runtimeSecurity.currentSecurityLevel,
     riskMode: options.riskMode ?? runtimeSecurity.riskMode,
     data: sanitizeData(data),
-    message: normalizedError?.message,
-    stack: normalizedError?.stack?.slice(0, 4000),
+    message: normalizedError ? sanitizeText(normalizedError.message, 1000) : undefined,
+    stack: normalizedError?.stack ? sanitizeText(normalizedError.stack, 4000) : undefined,
   }
 }
 
@@ -132,12 +177,6 @@ function canSend(kind: ReportKind, options: ReportOptions): boolean {
 function sendPayload(payload: ClientReportPayload): void {
   const body = JSON.stringify(payload)
 
-  if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-    const blob = new Blob([body], { type: 'application/json' })
-    const sent = navigator.sendBeacon(REPORT_ENDPOINT, blob)
-    if (sent) return
-  }
-
   void fetch(REPORT_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -145,6 +184,7 @@ function sendPayload(payload: ClientReportPayload): void {
     },
     body,
     keepalive: true,
+    referrerPolicy: 'no-referrer',
   }).catch(() => {
     // Reporting must stay silent on failure.
   })

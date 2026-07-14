@@ -278,6 +278,21 @@ describe('CommentCard', () => {
     expect(wrapper.find('.comment-gallery__image').attributes('src')).toBe('/thumb.png')
   })
 
+  it('drops unsafe backend-provided comment image URLs and falls back to a safe full image', () => {
+    const { wrapper } = mountCommentCard({
+      comment: createComment({
+        images: [
+          { id: 'unsafe', url: 'javascript:alert(1)', thumbnail_url: null, filename: 'bad' },
+          { id: 'safe', url: '/full.png', thumbnail_url: 'data:text/html,bad', filename: 'ok' },
+        ],
+      }),
+    })
+
+    expect(wrapper.findAll('.comment-gallery__item')).toHaveLength(1)
+    expect(wrapper.find('.comment-gallery__item').attributes('href')).toBe('/full.png')
+    expect(wrapper.find('.comment-gallery__image').attributes('src')).toBe('/full.png')
+  })
+
   it('opens the reply form, pre-fills mention for nested replies, and submits through the thread context', async () => {
     const { wrapper, onReplySubmitted } = mountCommentCard({
       comment: createComment(),

@@ -16,7 +16,12 @@ vi.mock('../client', () => ({
   },
 }))
 
-import { consumeInboxStream, inboxService, splitInboxSseFrames } from '../inboxService'
+import {
+  MAX_INBOX_SSE_FRAME_CHARS,
+  consumeInboxStream,
+  inboxService,
+  splitInboxSseFrames,
+} from '../inboxService'
 
 describe('inboxService', () => {
   beforeEach(() => {
@@ -139,5 +144,34 @@ describe('inboxService', () => {
         }),
       },
     ])
+  })
+
+  it('accepts a large chunk containing individually bounded frames', async () => {
+    const commentFrame = `: ${'x'.repeat(1024)}\n\n`
+    const payload = commentFrame.repeat(
+      Math.ceil(MAX_INBOX_SSE_FRAME_CHARS / commentFrame.length) + 1
+    )
+    const response = new Response(payload)
+    const onEvent = vi.fn()
+
+    await expect(consumeInboxStream(response, { onEvent })).resolves.toBeUndefined()
+    expect(payload.length).toBeGreaterThan(MAX_INBOX_SSE_FRAME_CHARS)
+    expect(onEvent).not.toHaveBeenCalled()
+  })
+
+  it('cancels the reader when an incomplete frame exceeds the size limit', async () => {
+    const cancel = vi.fn()
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(`data: ${'x'.repeat(MAX_INBOX_SSE_FRAME_CHARS + 1)}`))
+      },
+      cancel,
+    })
+
+    await expect(consumeInboxStream(new Response(stream), { onEvent: vi.fn() })).rejects.toThrow(
+      'Inbox SSE frame exceeds'
+    )
+    expect(cancel).toHaveBeenCalledTimes(1)
   })
 })

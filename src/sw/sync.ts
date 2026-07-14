@@ -1,8 +1,10 @@
 import { sw } from './types'
 
-export async function triggerClientSync(): Promise<boolean> {
+export async function triggerClientSync(): Promise<void> {
   const clients = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true })
-  if (!clients.length) return true
+  if (!clients.length) {
+    throw new Error('No window client is available to synchronize offline actions')
+  }
 
   const results = await Promise.all(
     clients.map((client) => {
@@ -20,5 +22,8 @@ export async function triggerClientSync(): Promise<boolean> {
     })
   )
 
-  return results.some((result) => result.ok)
+  if (!results.some((result) => result.ok)) {
+    const error = results.map((result) => result.error).find(Boolean) ?? 'client sync failed'
+    throw new Error(`Offline action synchronization was not acknowledged: ${error}`)
+  }
 }

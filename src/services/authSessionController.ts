@@ -10,6 +10,12 @@ import {
 import { clearStoredAuthSource, setStoredAuthSource } from '@/utils/authSource'
 import { normalizeAvatarUrl } from '@/utils/avatarUrl'
 import { reportClientEvent } from '@/utils/clientReporter'
+import {
+  captureAuthSessionSnapshot,
+  createAuthSessionOperation,
+  isAuthSessionSnapshotCurrent,
+  transitionAuthSessionScope,
+} from './authSessionScope'
 
 const DEFAULT_AUTHZ_TTL_MS = 60 * 1000
 
@@ -82,6 +88,7 @@ function normalizeUserSnapshot<TUser extends UserResponse>(user: TUser): TUser {
 }
 
 export function createAuthSessionController<TUser extends UserResponse>(options: {
+  onSessionTransition?: () => void
   router: RouterLike
   state: AuthSessionState<TUser>
 }) {
@@ -90,6 +97,11 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   let authLogoutHandler: ((to?: Event) => void) | null = null
   let authzVersionHandler: ((to?: Event) => void) | null = null
   let riskModeHandler: ((to?: Event) => void) | null = null
+
+  function transitionSession(principalId: string | null): void {
+    transitionAuthSessionScope(principalId)
+    options.onSessionTransition?.()
+  }
 
   function syncAuthSource(user?: UserResponse | null): void {
     if (user?.auth_source) {
@@ -111,9 +123,13 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     user: MeResponse | UserResponse,
     options: {
       securityLevel?: 'authenticated' | 'sensitive'
+      skipSessionTransition?: boolean
       stepUpRequired?: boolean
     } = {}
   ): void {
+    if (!options.skipSessionTransition && state.user.value?.id !== user.id) {
+      transitionSession(user.id)
+    }
     state.user.value = normalizeUserSnapshot(user as TUser)
     updateStateFromRuntimeSession(options.securityLevel)
     state.stepUpRequired.value = options.stepUpRequired ?? state.stepUpRequired.value
@@ -141,6 +157,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   }
 
   function clearSession(options: { navigateToLogin?: boolean } = {}): void {
+    transitionSession(null)
     state.user.value = null
     state.runtimeAuthzCache.value = null
     state.sessionExpiresAt.value = null
@@ -170,13 +187,20 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       securityLevel = 'authenticated',
       skipErrorToast = true,
     } = options
+    const activePrincipalId = state.user.value?.id ?? null
+    const operation = activePrincipalId ? createAuthSessionOperation(activePrincipalId) : null
 
     try {
       const me = await authService.getCurrentUser({
+        ...(operation ? { signal: operation.signal } : {}),
         securityPolicy: securityLevel === 'sensitive' ? 'sensitive' : 'default',
         skipAuthLogoutOnUnauthorized: securityLevel === 'sensitive',
         skipErrorToast,
       })
+
+      if (operation && !operation.isCurrent()) {
+        return state.user.value
+      }
 
       updateRuntimePermissionVersion(me.permission_version)
       applyCurrentUser(me, {
@@ -184,6 +208,9 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       })
       return me as TUser
     } catch (error) {
+      if (operation && !operation.isCurrent()) {
+        return state.user.value
+      }
       if (clearOnAuthError && error instanceof ApiError && error.status === 401) {
         clearSession()
         return null
@@ -194,10 +221,13 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       }
 
       throw error
+    } finally {
+      operation?.dispose()
     }
   }
 
   async function establishSession(response: AuthResponse) {
+    transitionSession(response.user.id)
     establishAuthRuntimeSession({
       permission_version: response.permission_version,
       permissions: response.permissions,
@@ -217,6 +247,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       },
       {
         securityLevel: 'authenticated',
+        skipSessionTransition: true,
         stepUpRequired: false,
       }
     )
@@ -233,7 +264,11 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   }
 
   async function resolveSessionSummary(): Promise<AuthResponse | null> {
+    const snapshot = captureAuthSessionSnapshot()
     const result = await authService.resolveSession()
+    if (!isAuthSessionSnapshotCurrent(snapshot)) {
+      return null
+    }
     if (!('authenticated' in result) || !result.authenticated) {
       clearSession()
       return null

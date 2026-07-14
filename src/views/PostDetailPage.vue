@@ -688,17 +688,19 @@ function startAutoPlay() {
 }
 
 function stopAutoPlay() {
-  if (autoPlayTimer.value !== null) {
-    window.clearInterval(autoPlayTimer.value)
-    autoPlayTimer.value = null
-  }
+  if (autoPlayTimer.value === null) return
+  window.clearInterval(autoPlayTimer.value)
+  autoPlayTimer.value = null
 }
-
+function resetAutoPlay() {
+  stopAutoPlay()
+  if (autoPlayResumeTimer.value !== null) window.clearTimeout(autoPlayResumeTimer.value)
+  autoPlayResumeTimer.value = null
+  isAutoPlayPaused.value = false
+}
 function scheduleAutoPlayResume() {
   if (!hasMultipleMedia.value || !isImageSequence.value) return
-  if (autoPlayResumeTimer.value !== null) {
-    window.clearTimeout(autoPlayResumeTimer.value)
-  }
+  if (autoPlayResumeTimer.value !== null) window.clearTimeout(autoPlayResumeTimer.value)
   autoPlayResumeTimer.value = window.setTimeout(() => {
     isAutoPlayPaused.value = false
     startAutoPlay()
@@ -1283,6 +1285,7 @@ onActivated(() => {
   stageListenersWanted = true
   scheduleStageListeners()
   resumeTextModalBindings()
+  if (!isLightboxOpen.value) startAutoPlay()
 })
 
 onDeactivated(() => {
@@ -1291,6 +1294,7 @@ onDeactivated(() => {
   isLoading.value = false
   isTextModalOpen.value = false
   cancelPostDetailIdleWork()
+  resetAutoPlay()
   detachStageListeners()
   disconnectCommentsObserver()
   stopCommentsFallbackListeners()
@@ -1304,15 +1308,10 @@ onUnmounted(() => {
   isLoading.value = false
   cancelPostDetailIdleWork()
   detachStageListeners()
-  stopAutoPlay()
+  resetAutoPlay()
   disconnectCommentsObserver()
   stopCommentsFallbackListeners()
   releaseTextModalBindings()
-
-  if (autoPlayResumeTimer.value !== null) {
-    window.clearTimeout(autoPlayResumeTimer.value)
-    autoPlayResumeTimer.value = null
-  }
 
   if (peekTimer) {
     window.clearTimeout(peekTimer)

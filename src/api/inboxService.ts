@@ -169,6 +169,14 @@ function decodeInboxStreamEvent(frame: RawSseFrame): InboxStreamEvent | null {
   return null
 }
 
+export const MAX_INBOX_SSE_FRAME_CHARS = 256 * 1024
+
+function assertInboxSseFrameSize(frame: string): void {
+  if (frame.length > MAX_INBOX_SSE_FRAME_CHARS) {
+    throw new Error(`Inbox SSE frame exceeds ${MAX_INBOX_SSE_FRAME_CHARS} characters`)
+  }
+}
+
 export function splitInboxSseFrames(buffer: string): {
   frames: RawSseFrame[]
   remainder: string
@@ -179,6 +187,7 @@ export function splitInboxSseFrames(buffer: string): {
   const frames: RawSseFrame[] = []
 
   for (const segment of segments) {
+    assertInboxSseFrameSize(segment)
     const trimmed = segment.trim()
     if (!trimmed) continue
 
@@ -207,6 +216,7 @@ export function splitInboxSseFrames(buffer: string): {
     })
   }
 
+  assertInboxSseFrameSize(remainder)
   return { frames, remainder }
 }
 
@@ -226,48 +236,59 @@ export async function consumeInboxStream(
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
+  let abortHandler: (() => void) | null = null
 
-  const abortPromise =
-    signal && !signal.aborted
-      ? new Promise<never>((_, reject) => {
-          signal.addEventListener(
-            'abort',
-            () => {
-              void reader.cancel().catch(() => {})
-              reject(new DOMException('Aborted', 'AbortError'))
-            },
-            { once: true }
-          )
-        })
-      : null
-
-  while (true) {
-    const readResult = abortPromise
-      ? await Promise.race([reader.read(), abortPromise])
-      : await reader.read()
-
-    if (readResult.done) break
-
-    buffer += decoder.decode(readResult.value, { stream: true })
-    const { frames, remainder } = splitInboxSseFrames(buffer)
-    buffer = remainder
-
-    for (const frame of frames) {
-      const parsed = decodeInboxStreamEvent(frame)
-      if (parsed) {
-        await onEvent(parsed)
-      }
-    }
+  if (signal?.aborted) {
+    await reader.cancel().catch(() => undefined)
+    throw new DOMException('Aborted', 'AbortError')
   }
 
-  buffer += decoder.decode()
-  if (buffer.trim()) {
-    const { frames } = splitInboxSseFrames(`${buffer}\n\n`)
-    for (const frame of frames) {
-      const parsed = decodeInboxStreamEvent(frame)
-      if (parsed) {
-        await onEvent(parsed)
+  const abortPromise = signal
+    ? new Promise<never>((_, reject) => {
+        abortHandler = () => {
+          void reader.cancel().catch(() => {})
+          reject(new DOMException('Aborted', 'AbortError'))
+        }
+        signal.addEventListener('abort', abortHandler, { once: true })
+      })
+    : null
+
+  try {
+    while (true) {
+      const readResult = abortPromise
+        ? await Promise.race([reader.read(), abortPromise])
+        : await reader.read()
+
+      if (readResult.done) break
+
+      buffer += decoder.decode(readResult.value, { stream: true })
+      const { frames, remainder } = splitInboxSseFrames(buffer)
+      buffer = remainder
+
+      for (const frame of frames) {
+        const parsed = decodeInboxStreamEvent(frame)
+        if (parsed) {
+          await onEvent(parsed)
+        }
       }
+    }
+
+    buffer += decoder.decode()
+    if (buffer.trim()) {
+      const { frames } = splitInboxSseFrames(`${buffer}\n\n`)
+      for (const frame of frames) {
+        const parsed = decodeInboxStreamEvent(frame)
+        if (parsed) {
+          await onEvent(parsed)
+        }
+      }
+    }
+  } catch (error) {
+    await reader.cancel(error).catch(() => undefined)
+    throw error
+  } finally {
+    if (signal && abortHandler) {
+      signal.removeEventListener('abort', abortHandler)
     }
   }
 }

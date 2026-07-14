@@ -52,6 +52,8 @@ const GOOGLE_AUTH_REQUEST_STORAGE_KEY = 'momi_google_auth_request'
 const GOOGLE_AUTH_POPUP_NAME_PREFIX = 'momi-google-auth'
 const GOOGLE_AUTH_POPUP_RELAY_CHANNEL = 'momi-google-auth-relay'
 const GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY = '__momi_google_auth_popup_result__'
+const GOOGLE_AUTH_POPUP_RELAY_MAX_AGE_MS = 5 * 60 * 1000
+const GOOGLE_AUTH_REQUEST_MAX_AGE_MS = 10 * 60 * 1000
 const GOOGLE_AUTH_POPUP_WIDTH = 34
 const GOOGLE_AUTH_POPUP_HEIGHT = 42
 const GOOGLE_AUTH_START_PATH = '/api/v1/auth/google/start'
@@ -156,14 +158,7 @@ export function isGoogleAuthPopupCandidate(
 ): boolean {
   const pendingRequest =
     options.pendingRequest === undefined ? getPendingGoogleAuthRequest() : options.pendingRequest
-  const opener =
-    options.opener === undefined
-      ? typeof window !== 'undefined'
-        ? window.opener
-        : null
-      : options.opener
 
-  if (opener) return true
   if (resolveGoogleAuthPopupRequestIdFromWindowName(options.windowName)) return true
   return pendingRequest?.mode === 'popup'
 }
@@ -172,7 +167,17 @@ function isGooglePopupRelayEnvelope(value: unknown): value is GooglePopupRelayEn
   if (!value || typeof value !== 'object') return false
 
   const envelope = value as Partial<GooglePopupRelayEnvelope>
-  return typeof envelope.id === 'string' && isGooglePopupMessage(envelope.payload)
+  return (
+    typeof envelope.id === 'string' &&
+    typeof envelope.publishedAt === 'number' &&
+    Number.isFinite(envelope.publishedAt) &&
+    isGooglePopupMessage(envelope.payload)
+  )
+}
+
+function isFreshGooglePopupRelayEnvelope(envelope: GooglePopupRelayEnvelope): boolean {
+  const age = Date.now() - envelope.publishedAt
+  return age >= 0 && age <= GOOGLE_AUTH_POPUP_RELAY_MAX_AGE_MS
 }
 
 function shouldAcceptGooglePopupMessage(
@@ -180,7 +185,6 @@ function shouldAcceptGooglePopupMessage(
   expectedRequestId?: string
 ): boolean {
   if (!expectedRequestId) return true
-  if (!message.requestId) return true
   return message.requestId === expectedRequestId
 }
 
@@ -194,10 +198,12 @@ function subscribeToGooglePopupRelay(
 
   let channel: BroadcastChannel | null = null
 
-  const handleRelayEnvelope = (value: unknown) => {
-    if (!isGooglePopupRelayEnvelope(value)) return
-    if (!shouldAcceptGooglePopupMessage(value.payload, expectedRequestId)) return
+  const handleRelayEnvelope = (value: unknown): boolean => {
+    if (!isGooglePopupRelayEnvelope(value)) return false
+    if (!isFreshGooglePopupRelayEnvelope(value)) return false
+    if (!shouldAcceptGooglePopupMessage(value.payload, expectedRequestId)) return false
     handler(value.payload)
+    return true
   }
 
   if (typeof BroadcastChannel !== 'undefined') {
@@ -211,9 +217,11 @@ function subscribeToGooglePopupRelay(
     if (event.key !== GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY || !event.newValue) return
 
     try {
-      handleRelayEnvelope(JSON.parse(event.newValue))
+      if (!handleRelayEnvelope(JSON.parse(event.newValue))) {
+        localStorage.removeItem(GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY)
+      }
     } catch {
-      // ignore malformed relay payloads
+      localStorage.removeItem(GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY)
     }
   }
 
@@ -235,20 +243,19 @@ function readGooglePopupRelayEnvelope(): GooglePopupRelayEnvelope | null {
     if (!raw) return null
 
     const parsed = JSON.parse(raw) as Partial<GooglePopupRelayEnvelope>
-    if (
-      typeof parsed.id !== 'string' ||
-      typeof parsed.publishedAt !== 'number' ||
-      !isGooglePopupMessage(parsed.payload)
-    ) {
+    if (!isGooglePopupRelayEnvelope(parsed)) {
+      localStorage.removeItem(GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY)
       return null
     }
 
-    return {
-      id: parsed.id,
-      publishedAt: parsed.publishedAt,
-      payload: parsed.payload,
+    if (!isFreshGooglePopupRelayEnvelope(parsed)) {
+      localStorage.removeItem(GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY)
+      return null
     }
+
+    return parsed
   } catch {
+    localStorage.removeItem(GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY)
     return null
   }
 }
@@ -256,7 +263,11 @@ function readGooglePopupRelayEnvelope(): GooglePopupRelayEnvelope | null {
 function readStoredGooglePopupResult(expectedRequestId?: string): GooglePopupMessage | null {
   const envelope = readGooglePopupRelayEnvelope()
   if (!envelope) return null
-  if (!shouldAcceptGooglePopupMessage(envelope.payload, expectedRequestId)) return null
+  if (!shouldAcceptGooglePopupMessage(envelope.payload, expectedRequestId)) {
+    localStorage.removeItem(GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY)
+    return null
+  }
+  localStorage.removeItem(GOOGLE_AUTH_POPUP_RELAY_STORAGE_KEY)
   return envelope.payload
 }
 
@@ -319,25 +330,31 @@ export function getPendingGoogleAuthRequest(): PendingGoogleAuthRequest | null {
     if (!raw) return null
 
     const parsed = JSON.parse(raw) as Partial<PendingGoogleAuthRequest>
+    const age = Date.now() - (parsed.createdAt ?? Number.NaN)
     if (
       (parsed.intent !== 'login' && parsed.intent !== 'register') ||
+      (parsed.mode !== 'popup' && parsed.mode !== 'redirect') ||
+      typeof parsed.requestId !== 'string' ||
+      !parsed.requestId.trim() ||
       typeof parsed.redirectTo !== 'string' ||
-      typeof parsed.createdAt !== 'number'
+      typeof parsed.createdAt !== 'number' ||
+      !Number.isFinite(parsed.createdAt) ||
+      age < 0 ||
+      age > GOOGLE_AUTH_REQUEST_MAX_AGE_MS
     ) {
+      clearPendingGoogleAuthRequest()
       return null
     }
 
     return {
-      requestId:
-        typeof parsed.requestId === 'string' && parsed.requestId.trim()
-          ? parsed.requestId.trim()
-          : createGoogleAuthRequestId(),
-      mode: parsed.mode === 'popup' || parsed.mode === 'redirect' ? parsed.mode : 'redirect',
+      requestId: parsed.requestId.trim(),
+      mode: parsed.mode,
       intent: parsed.intent,
       redirectTo: parsed.redirectTo,
       createdAt: parsed.createdAt,
     }
   } catch {
+    clearPendingGoogleAuthRequest()
     return null
   }
 }
@@ -565,9 +582,20 @@ function createGooglePopupWaitHandle(options?: GooglePopupWaitOptions): {
     }
 
     removeMessageHandler = createSecureMessageHandler<GooglePopupMessage>(
-      (message) => {
-        if (!shouldAcceptGooglePopupMessage(message, options?.requestId)) return
-        settle(message)
+      (message, event) => {
+        const eventSource = event.source
+        const acceptFromExpectedPopup = () => {
+          const expectedSource = options?.resolvePopup?.()
+          if (!expectedSource || eventSource !== expectedSource) return
+          if (!shouldAcceptGooglePopupMessage(message, options?.requestId)) return
+          settle(message)
+        }
+
+        if (options?.resolvePopup?.()) {
+          acceptFromExpectedPopup()
+        } else {
+          queueMicrotask(acceptFromExpectedPopup)
+        }
       },
       {
         allowedOrigins: getTrustedFrontendOrigins(),

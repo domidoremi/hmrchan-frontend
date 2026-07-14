@@ -13,6 +13,8 @@ import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import {
   buildInternalGatewayUrl,
   fetchViaInternalApiGateway,
+  withInternalApiGatewayAuth,
+  type EdgeBindingFetcher,
   type InternalApiGatewayRuntimeEnv,
 } from '../../src/edge/internalApiGateway'
 
@@ -46,7 +48,7 @@ interface ForwardRequestOptions {
   bodyBuffer: ArrayBuffer | null
   env: ProxyEnv
   headers: Headers
-  internalApiGateway?: Fetcher
+  internalApiGateway?: EdgeBindingFetcher
   path: string
   redirectMode: RedirectMode
   request: Request
@@ -464,7 +466,7 @@ async function fetchInternalBff(env: ProxyEnv, path: string, payload: unknown): 
     return internalApiGateway.fetch(
       new Request(buildInternalGatewayUrl(path), {
         method: 'POST',
-        headers,
+        headers: withInternalApiGatewayAuth(headers, env),
         body,
       })
     )
@@ -676,10 +678,49 @@ function isStateChangingBrowserFacadePath(path: string, request: Request): boole
   return isBrowserAuthFacadePath(path) || path === 'v1/auth/google/exchange'
 }
 
+function isUnsafeMethod(method: string): boolean {
+  return !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
+}
+
+function hasBffSessionCookie(request: Request): boolean {
+  return Boolean(
+    getCookieValue(request, BFF_ACCESS_COOKIE_NAME) ||
+    getCookieValue(request, BFF_REFRESH_COOKIE_NAME)
+  )
+}
+
+function hasSameOriginProvenance(request: Request): boolean {
+  const requestOrigin = new URL(request.url).origin
+  const origin = request.headers.get('Origin')?.trim()
+  if (origin) {
+    try {
+      return new URL(origin).origin === requestOrigin
+    } catch {
+      return false
+    }
+  }
+
+  const referer = request.headers.get('Referer')?.trim()
+  if (!referer) return false
+
+  try {
+    return new URL(referer).origin === requestOrigin
+  } catch {
+    return false
+  }
+}
+
 function validateOriginCsrf(request: Request): boolean {
   const cookieValue = getCookieValue(request, CSRF_COOKIE_NAME)?.trim()
   const headerValue = request.headers.get(CSRF_HEADER_NAME)?.trim()
-  return Boolean(cookieValue && headerValue && cookieValue === headerValue)
+  return Boolean(
+    hasSameOriginProvenance(request) && cookieValue && headerValue && cookieValue === headerValue
+  )
+}
+
+function requiresOriginCsrf(path: string, request: Request): boolean {
+  if (!isUnsafeMethod(request.method)) return false
+  return isStateChangingBrowserFacadePath(path, request) || hasBffSessionCookie(request)
 }
 
 async function refreshBffSession(
@@ -1320,7 +1361,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       'This legacy auth path is retired. Resolve browser sessions through /api/v1/auth/session:resolve.'
     )
   }
-  if (isStateChangingBrowserFacadePath(compactPath, request) && !validateOriginCsrf(request)) {
+  if (requiresOriginCsrf(compactPath, request) && !validateOriginCsrf(request)) {
     return buildErrorResponse(
       request,
       isDev,

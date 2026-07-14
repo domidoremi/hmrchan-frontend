@@ -1,0 +1,9 @@
+{
+  "extends": "../../functions/tsconfig.json",
+  "include": [
+    "./index.ts",
+    "../../src/edge/internalApiGateway.ts",
+    "../../src/edge/internalApiGatewayWorker.ts"
+  ],
+  "exclude": ["../../src/**/__tests__/**", "../../src/**/*.spec.ts", "../../src/**/*.test.ts"]
+}

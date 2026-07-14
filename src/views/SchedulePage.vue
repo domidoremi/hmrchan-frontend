@@ -611,9 +611,9 @@
 
               <div class="detail-links page-control-group-shell--comfortable">
                 <ControlButton
-                  v-if="detailEvent.event_url"
+                  v-if="safeDetailLinks.event"
                   :tag="'a'"
-                  :href="detailEvent.event_url"
+                  :href="safeDetailLinks.event"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="detail-link-btn"
@@ -625,9 +625,9 @@
                   <span>{{ $t('schedule.detail.eventPage') }}</span>
                 </ControlButton>
                 <ControlButton
-                  v-if="detailEvent.ticket_url"
+                  v-if="safeDetailLinks.ticket"
                   :tag="'a'"
-                  :href="detailEvent.ticket_url"
+                  :href="safeDetailLinks.ticket"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="detail-link-btn detail-link-btn--ticket"
@@ -639,9 +639,9 @@
                   <span>{{ $t('schedule.detail.buyTicket') }}</span>
                 </ControlButton>
                 <ControlButton
-                  v-if="detailEvent.source_url"
+                  v-if="safeDetailLinks.source"
                   :tag="'a'"
-                  :href="detailEvent.source_url"
+                  :href="safeDetailLinks.source"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="detail-link-btn"
@@ -711,6 +711,7 @@ import { ApiError } from '@/api'
 import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/fallbacks/scheduleFallback'
 import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 import { applyPageMeta } from '@/utils/pageMeta'
+import { normalizeHttpUrl } from '@/utils/security'
 import {
   isServiceUnavailableError,
   type PublicPageDataSource,
@@ -737,7 +738,6 @@ import {
   getScheduleCategoryColor,
   getTodayScheduleEvents,
   getUpcomingScheduleEvents,
-  hasScheduleDetailLinks,
   isSameScheduleDate,
   linkifyScheduleDescriptionLine,
   parseScheduleDateJumpValue,
@@ -1170,7 +1170,12 @@ function syncSelectedDayWithDetail(event: ScheduleResponse | null | undefined) {
   }
 }
 
-const hasDetailLinks = computed(() => hasScheduleDetailLinks(detailEvent.value))
+const safeDetailLinks = computed(() => ({
+  event: normalizeHttpUrl(detailEvent.value?.event_url),
+  ticket: normalizeHttpUrl(detailEvent.value?.ticket_url),
+  source: normalizeHttpUrl(detailEvent.value?.source_url),
+}))
+const hasDetailLinks = computed(() => Object.values(safeDetailLinks.value).some(Boolean))
 
 const detailPanelVisible = computed(() =>
   Boolean(routeScheduleId.value || detailLoading.value || detailEvent.value)

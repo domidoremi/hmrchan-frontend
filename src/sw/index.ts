@@ -22,6 +22,7 @@ sw.addEventListener('install', (rawEvent) => {
       await sw.skipWaiting()
     })().catch((error) => {
       console.error('[SW] Install failed:', error)
+      throw error
     })
   )
 })

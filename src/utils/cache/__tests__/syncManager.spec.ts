@@ -4,6 +4,7 @@ const {
   claimNext,
   completeClaim,
   failClaim,
+  releaseClaim,
   cleanupFailed,
   favoriteCreate,
   favoriteRemove,
@@ -13,6 +14,7 @@ const {
   claimNext: vi.fn(),
   completeClaim: vi.fn(),
   failClaim: vi.fn(),
+  releaseClaim: vi.fn(),
   cleanupFailed: vi.fn(),
   favoriteCreate: vi.fn(),
   favoriteRemove: vi.fn(),
@@ -24,6 +26,7 @@ vi.mock('../offlineQueue', () => ({
   claimNextOfflineAction: claimNext,
   completeClaimedAction: completeClaim,
   failClaimedAction: failClaim,
+  releaseClaimedAction: releaseClaim,
   cleanupFailedActions: cleanupFailed,
 }))
 
@@ -48,6 +51,7 @@ import {
   syncOfflineActions,
   triggerSync,
 } from '../syncManager'
+import { transitionAuthSessionScope } from '@/services/authSessionScope'
 
 describe('syncManager', () => {
   beforeEach(() => {
@@ -55,6 +59,8 @@ describe('syncManager', () => {
     cleanupFailed.mockResolvedValue(undefined)
     completeClaim.mockResolvedValue(true)
     failClaim.mockResolvedValue(true)
+    releaseClaim.mockResolvedValue(true)
+    transitionAuthSessionScope('user-a')
 
     class MockServiceWorkerRegistration {}
     Object.defineProperty(MockServiceWorkerRegistration.prototype, 'sync', {
@@ -107,11 +113,15 @@ describe('syncManager', () => {
 
     const result = await syncOfflineActions('user-a')
 
-    expect(favoriteCreate).toHaveBeenCalledWith('post-1', {}, { idempotencyKey: 'favorite-1' })
+    expect(favoriteCreate).toHaveBeenCalledWith(
+      'post-1',
+      {},
+      expect.objectContaining({ idempotencyKey: 'favorite-1', signal: expect.any(AbortSignal) })
+    )
     expect(createComment).toHaveBeenCalledWith(
       'post-2',
       { content: 'Looks great' },
-      { idempotencyKey: 'comment-1' }
+      expect.objectContaining({ idempotencyKey: 'comment-1', signal: expect.any(AbortSignal) })
     )
     expect(completeClaim).toHaveBeenCalledTimes(2)
     expect(result).toEqual({
@@ -137,6 +147,34 @@ describe('syncManager', () => {
     expect(favoriteCreate).toHaveBeenCalledTimes(1)
   })
 
+  it('releases an in-flight claim without completing it after the authenticated principal changes', async () => {
+    let resolveFavorite: (() => void) | undefined
+    favoriteCreate.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveFavorite = resolve
+      })
+    )
+    claimNext.mockResolvedValueOnce({
+      id: 'favorite-a',
+      ownerId: 'user-a',
+      type: 'favorite',
+      resourceId: 'post-a',
+      leaseId: 'lease-a',
+    })
+
+    const syncPromise = syncOfflineActions('user-a')
+    await vi.waitFor(() => expect(favoriteCreate).toHaveBeenCalledTimes(1))
+    transitionAuthSessionScope('user-b')
+    resolveFavorite?.()
+
+    const result = await syncPromise
+
+    expect(releaseClaim).toHaveBeenCalledWith('favorite-a', 'lease-a')
+    expect(completeClaim).not.toHaveBeenCalled()
+    expect(result.failed).toBe(1)
+    expect(result.errors[0]?.error).toContain('Authentication session changed')
+  })
+
   it('falls back to direct sync when background sync registration fails', async () => {
     syncRegister.mockRejectedValueOnce(new Error('sync unavailable'))
     claimNext.mockResolvedValue(undefined)
@@ -158,6 +196,7 @@ describe('syncManager', () => {
 
     expect(addEventListenerSpy).toHaveBeenCalledWith('online', expect.any(Function))
     expect(swAddListenerSpy).toHaveBeenCalledWith('message', expect.any(Function))
+    await vi.waitFor(() => expect(syncRegister).toHaveBeenCalledWith('sync-offline-actions'))
 
     const onlineHandler = addEventListenerSpy.mock.calls.find(([event]) => event === 'online')?.[1]
     expect(onlineHandler).toBeTypeOf('function')

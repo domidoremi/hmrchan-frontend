@@ -71,6 +71,7 @@ export async function precacheStaticAssets(): Promise<void> {
 
   if (missingEssentialAssets.length > 0) {
     swWarn('[SW] Essential precache assets missing:', missingEssentialAssets)
+    throw new Error(`Essential precache failed: ${missingEssentialAssets.join(', ')}`)
   }
 }
 
@@ -170,7 +171,11 @@ export async function cacheFirstMedia(request: Request): Promise<Response> {
   const cached = await cache.match(request)
 
   if (cached) {
-    await updateMediaAccessTime(request.url)
+    try {
+      await updateMediaAccessTime(request.url)
+    } catch (error) {
+      swWarn('[SW] Media access metadata update failed:', request.url, error)
+    }
     return cached
   }
 
@@ -178,7 +183,11 @@ export async function cacheFirstMedia(request: Request): Promise<Response> {
     const response = await fetch(request)
 
     if (response.ok && response.status === 200 && isCacheableResponse(response)) {
-      await manageMediaCache(request, response.clone())
+      try {
+        await manageMediaCache(request, response.clone())
+      } catch (error) {
+        swWarn('[SW] Media cache metadata update failed:', request.url, error)
+      }
     }
 
     return response

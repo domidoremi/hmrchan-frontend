@@ -63,6 +63,7 @@ import { useI18n } from 'vue-i18n'
 import { CheckCircle, XCircle, AlertTriangle } from '@lucide/vue'
 import { authService, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
+import { scrubSensitiveUrlParameters } from '@/utils/sensitiveUrl'
 import Button from '@/components/ui/Button.vue'
 
 const route = useRoute()
@@ -77,6 +78,7 @@ let verifyController: AbortController | null = null
 
 onMounted(async () => {
   const token = route.query['token']
+  scrubSensitiveUrlParameters(['token'])
   if (typeof token !== 'string' || !token) {
     status.value = 'invalid'
     return

@@ -3,18 +3,9 @@
  * 提供类型安全的 IndexedDB 操作
  */
 
-const DB_NAME = 'hmrchan-cache'
-const DB_VERSION = 5 // v5 clears unattributable offline actions and adds owner lookup
+import { CACHE_DB_NAME, CACHE_DB_VERSION, STORES, upgradeCacheDatabase } from './idbSchema'
 
-// Store 名称
-export const STORES = {
-  POSTS: 'posts',
-  POST_LISTS: 'post-lists',
-  META: 'meta',
-  OFFLINE_QUEUE: 'offline-queue',
-  ACCESS_HISTORY: 'access-history',
-  MEDIA_META: 'media-meta',
-} as const
+export { STORES } from './idbSchema'
 
 type StoreName = (typeof STORES)[keyof typeof STORES]
 const REQUIRED_STORES = Object.values(STORES) as StoreName[]
@@ -79,7 +70,7 @@ async function resetDatabase(reason: string): Promise<void> {
     dbPromise = null
 
     await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.deleteDatabase(DB_NAME)
+      const request = indexedDB.deleteDatabase(CACHE_DB_NAME)
 
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
@@ -155,7 +146,7 @@ function getDB(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise
 
   dbPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION)
+    const request = indexedDB.open(CACHE_DB_NAME, CACHE_DB_VERSION)
 
     request.onerror = () => {
       dbPromise = null
@@ -209,61 +200,7 @@ function getDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result
-
-      // 帖子详情存储（按 UUID 索引）
-      if (!db.objectStoreNames.contains(STORES.POSTS)) {
-        const postsStore = db.createObjectStore(STORES.POSTS, { keyPath: 'uuid' })
-        postsStore.createIndex('cached_at', 'cached_at', { unique: false })
-      }
-
-      // 帖子列表存储（按 cache_key 索引）
-      if (!db.objectStoreNames.contains(STORES.POST_LISTS)) {
-        const listsStore = db.createObjectStore(STORES.POST_LISTS, { keyPath: 'cache_key' })
-        listsStore.createIndex('cached_at', 'cached_at', { unique: false })
-      }
-
-      // 元数据存储
-      if (!db.objectStoreNames.contains(STORES.META)) {
-        const metaStore = db.createObjectStore(STORES.META, { keyPath: 'key' })
-        metaStore.createIndex('cached_at', 'cached_at', { unique: false })
-      } else {
-        const metaStore = request.transaction?.objectStore(STORES.META)
-        if (metaStore && !metaStore.indexNames.contains('cached_at')) {
-          metaStore.createIndex('cached_at', 'cached_at', { unique: false })
-        }
-      }
-
-      // 离线操作队列
-      let queueStore: IDBObjectStore
-      if (!db.objectStoreNames.contains(STORES.OFFLINE_QUEUE)) {
-        queueStore = db.createObjectStore(STORES.OFFLINE_QUEUE, { keyPath: 'id' })
-        queueStore.createIndex('status', 'status', { unique: false })
-        queueStore.createIndex('timestamp', 'timestamp', { unique: false })
-      } else {
-        queueStore = request.transaction!.objectStore(STORES.OFFLINE_QUEUE)
-      }
-      if (!queueStore.indexNames.contains('ownerId')) {
-        queueStore.createIndex('ownerId', 'ownerId', { unique: false })
-      }
-      if (event.oldVersion < 5) {
-        queueStore.clear()
-      }
-
-      // 访问历史记录
-      if (!db.objectStoreNames.contains(STORES.ACCESS_HISTORY)) {
-        const historyStore = db.createObjectStore(STORES.ACCESS_HISTORY, { keyPath: 'id' })
-        historyStore.createIndex('type', 'type', { unique: false })
-        historyStore.createIndex('lastAccess', 'lastAccess', { unique: false })
-        historyStore.createIndex('accessCount', 'accessCount', { unique: false })
-      }
-
-      // 媒体缓存元数据（用于 SW LRU）
-      if (!db.objectStoreNames.contains(STORES.MEDIA_META)) {
-        const mediaStore = db.createObjectStore(STORES.MEDIA_META, { keyPath: 'url' })
-        mediaStore.createIndex('lastAccess', 'lastAccess', { unique: false })
-        mediaStore.createIndex('cachedAt', 'cachedAt', { unique: false })
-        mediaStore.createIndex('size', 'size', { unique: false })
-      }
+      upgradeCacheDatabase(db, request.transaction, event.oldVersion)
     }
   })
 

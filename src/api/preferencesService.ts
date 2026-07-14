@@ -6,6 +6,7 @@
  */
 
 import { apiClient } from './client'
+import type { RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -30,8 +31,9 @@ export const preferencesService = {
   /**
    * 获取偏好设置
    */
-  async get(): Promise<UserPreferences> {
+  async get(config: RequestConfig = {}): Promise<UserPreferences> {
     return apiClient.get<UserPreferences>('/preferences', {
+      ...config,
       skipErrorToast: true,
     })
   },
@@ -39,8 +41,12 @@ export const preferencesService = {
   /**
    * 完整替换偏好设置（PUT）
    */
-  async replace(preferences: UserPreferences): Promise<UserPreferences> {
+  async replace(
+    preferences: UserPreferences,
+    config: RequestConfig = {}
+  ): Promise<UserPreferences> {
     return apiClient.put<UserPreferences>('/preferences', preferences, {
+      ...config,
       skipErrorToast: true,
     })
   },
@@ -48,8 +54,9 @@ export const preferencesService = {
   /**
    * 部分更新偏好设置（PATCH）
    */
-  async update(preferences: UserPreferences): Promise<UserPreferences> {
+  async update(preferences: UserPreferences, config: RequestConfig = {}): Promise<UserPreferences> {
     return apiClient.patch<UserPreferences>('/preferences', preferences, {
+      ...config,
       skipErrorToast: true,
     })
   },
@@ -57,15 +64,16 @@ export const preferencesService = {
   /**
    * 更新单项偏好（合并到批量更新）
    */
-  async updateOne(key: string, value: unknown): Promise<void> {
-    return apiClient.patch('/preferences', { [key]: value }, { skipErrorToast: true })
+  async updateOne(key: string, value: unknown, config: RequestConfig = {}): Promise<void> {
+    return apiClient.patch('/preferences', { [key]: value }, { ...config, skipErrorToast: true })
   },
 
   /**
    * 重置偏好为默认值
    */
-  async reset(): Promise<void> {
+  async reset(config: RequestConfig = {}): Promise<void> {
     return apiClient.delete('/preferences', {
+      ...config,
       skipErrorToast: true,
     })
   },

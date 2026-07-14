@@ -1,3 +1,13 @@
+import {
+  TelemetryPayloadTooLargeError,
+  hasAllowedContentType,
+  isSameOriginTelemetryRequest,
+  readBoundedJsonBody,
+  sanitizeTelemetryPath,
+  sanitizeTelemetryText,
+  sanitizeTelemetryValue,
+} from './_shared/telemetry'
+
 interface ClientReportPayload {
   kind?: 'error' | 'event' | 'performance'
   name?: string
@@ -5,7 +15,6 @@ interface ClientReportPayload {
   category?: 'app' | 'security'
   timestamp?: string
   path?: string
-  href?: string
   buildHash?: string
   buildTime?: string
   requestId?: string
@@ -43,8 +52,7 @@ function normalizePayload(payload: unknown): ClientReportPayload | null {
         : 'info',
     category: payload['category'] === 'security' ? 'security' : 'app',
     timestamp: typeof payload['timestamp'] === 'string' ? payload['timestamp'] : undefined,
-    path: typeof payload['path'] === 'string' ? payload['path'].slice(0, 500) : undefined,
-    href: typeof payload['href'] === 'string' ? payload['href'].slice(0, 500) : undefined,
+    path: typeof payload['path'] === 'string' ? sanitizeTelemetryPath(payload['path']) : undefined,
     buildHash:
       typeof payload['buildHash'] === 'string' ? payload['buildHash'].slice(0, 120) : undefined,
     buildTime:
@@ -56,9 +64,17 @@ function normalizePayload(payload: unknown): ClientReportPayload | null {
         ? payload['securityLevel']
         : 'public',
     riskMode: payload['riskMode'] === 'degraded' ? 'degraded' : 'normal',
-    data: isRecord(payload['data']) ? payload['data'] : undefined,
-    message: typeof payload['message'] === 'string' ? payload['message'].slice(0, 1000) : undefined,
-    stack: typeof payload['stack'] === 'string' ? payload['stack'].slice(0, 4000) : undefined,
+    data: isRecord(payload['data'])
+      ? (sanitizeTelemetryValue(payload['data']) as Record<string, unknown>)
+      : undefined,
+    message:
+      typeof payload['message'] === 'string'
+        ? sanitizeTelemetryText(payload['message'], 1000)
+        : undefined,
+    stack:
+      typeof payload['stack'] === 'string'
+        ? sanitizeTelemetryText(payload['stack'], 4000)
+        : undefined,
   }
 }
 
@@ -77,8 +93,22 @@ export async function onRequest(
     })
   }
 
+  if (!isSameOriginTelemetryRequest(request)) {
+    return new Response('Forbidden', {
+      status: 403,
+      headers: { 'Cache-Control': 'no-store' },
+    })
+  }
+
+  if (!hasAllowedContentType(request, new Set(['application/json']))) {
+    return new Response('Unsupported Media Type', {
+      status: 415,
+      headers: { 'Cache-Control': 'no-store' },
+    })
+  }
+
   try {
-    const payload = normalizePayload(await request.json())
+    const payload = normalizePayload(await readBoundedJsonBody(request))
     if (!payload) {
       return new Response('Bad Request', {
         status: 400,
@@ -90,8 +120,8 @@ export async function onRequest(
 
     const entry = {
       ...payload,
-      cfRay: request.headers.get('cf-ray') ?? undefined,
-      userAgent: request.headers.get('user-agent') ?? undefined,
+      cfRay: sanitizeTelemetryText(request.headers.get('cf-ray') ?? '', 120) || undefined,
+      userAgent: sanitizeTelemetryText(request.headers.get('user-agent') ?? '', 300) || undefined,
     }
 
     if (payload.kind === 'error' || payload.severity === 'error') {
@@ -108,7 +138,14 @@ export async function onRequest(
         'Cache-Control': 'no-store',
       },
     })
-  } catch {
+  } catch (error) {
+    if (error instanceof TelemetryPayloadTooLargeError) {
+      return new Response('Payload Too Large', {
+        status: 413,
+        headers: { 'Cache-Control': 'no-store' },
+      })
+    }
+
     return new Response('Bad Request', {
       status: 400,
       headers: {

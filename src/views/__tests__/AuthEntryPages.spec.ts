@@ -186,6 +186,28 @@ const globalConfig = {
   },
 }
 
+function dispatchGooglePopupSuccess(popup: Window, handoffCode = 'popup-handoff') {
+  const pending = JSON.parse(
+    window.sessionStorage.getItem('momi_google_auth_request') ?? 'null'
+  ) as { requestId?: unknown } | null
+  if (typeof pending?.requestId !== 'string') {
+    throw new Error('Expected a pending Google popup request id')
+  }
+
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      origin: window.location.origin,
+      source: popup,
+      data: {
+        type: 'google-auth-result',
+        requestId: pending.requestId,
+        status: 'success',
+        handoffCode,
+      },
+    })
+  )
+}
+
 describe('Auth entry pages', () => {
   enableAutoUnmount(afterEach)
 
@@ -442,16 +464,7 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    window.dispatchEvent(
-      new MessageEvent('message', {
-        origin: window.location.origin,
-        data: {
-          type: 'google-auth-result',
-          status: 'success',
-          handoffCode: 'popup-handoff',
-        },
-      })
-    )
+    dispatchGooglePopupSuccess(popup as unknown as Window)
 
     await flushPromises()
 
@@ -564,11 +577,12 @@ describe('Auth entry pages', () => {
         dispatchEvent: vi.fn(),
       }))
     )
-    vi.spyOn(window, 'open').mockReturnValue({
+    const popup = {
       closed: false,
       focus: vi.fn(),
       close: vi.fn(),
-    } as unknown as Window)
+    } as unknown as Window
+    vi.spyOn(window, 'open').mockReturnValue(popup)
 
     const wrapper = mount(LoginPage, {
       global: globalConfig,
@@ -607,11 +621,12 @@ describe('Auth entry pages', () => {
         dispatchEvent: vi.fn(),
       }))
     )
-    vi.spyOn(window, 'open').mockReturnValue({
+    const popup = {
       closed: false,
       focus: vi.fn(),
       close: vi.fn(),
-    } as unknown as Window)
+    } as unknown as Window
+    vi.spyOn(window, 'open').mockReturnValue(popup)
 
     testState.googleAuth.prepareGoogleAuthHandoff.mockResolvedValueOnce({
       status: 'challenge-required',
@@ -635,16 +650,7 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    window.dispatchEvent(
-      new MessageEvent('message', {
-        origin: window.location.origin,
-        data: {
-          type: 'google-auth-result',
-          status: 'success',
-          handoffCode: 'popup-handoff',
-        },
-      })
-    )
+    dispatchGooglePopupSuccess(popup)
     await flushPromises()
     await nextTick()
 
@@ -675,11 +681,12 @@ describe('Auth entry pages', () => {
         dispatchEvent: vi.fn(),
       }))
     )
-    vi.spyOn(window, 'open').mockReturnValue({
+    const popup = {
       closed: false,
       focus: vi.fn(),
       close: vi.fn(),
-    } as unknown as Window)
+    } as unknown as Window
+    vi.spyOn(window, 'open').mockReturnValue(popup)
 
     testState.googleAuth.prepareGoogleAuthHandoff.mockResolvedValueOnce({
       status: 'challenge-required',
@@ -703,16 +710,7 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    window.dispatchEvent(
-      new MessageEvent('message', {
-        origin: window.location.origin,
-        data: {
-          type: 'google-auth-result',
-          status: 'success',
-          handoffCode: 'popup-handoff',
-        },
-      })
-    )
+    dispatchGooglePopupSuccess(popup)
     await flushPromises()
     await nextTick()
 
@@ -739,11 +737,12 @@ describe('Auth entry pages', () => {
         dispatchEvent: vi.fn(),
       }))
     )
-    vi.spyOn(window, 'open').mockReturnValue({
+    const popup = {
       closed: false,
       focus: vi.fn(),
       close: vi.fn(),
-    } as unknown as Window)
+    } as unknown as Window
+    vi.spyOn(window, 'open').mockReturnValue(popup)
 
     testState.googleAuth.prepareGoogleAuthHandoff.mockResolvedValueOnce({
       status: 'challenge-required',
@@ -767,16 +766,7 @@ describe('Auth entry pages', () => {
 
     await googleButton!.trigger('click')
 
-    window.dispatchEvent(
-      new MessageEvent('message', {
-        origin: window.location.origin,
-        data: {
-          type: 'google-auth-result',
-          status: 'success',
-          handoffCode: 'popup-handoff',
-        },
-      })
-    )
+    dispatchGooglePopupSuccess(popup)
     await flushPromises()
     await nextTick()
 

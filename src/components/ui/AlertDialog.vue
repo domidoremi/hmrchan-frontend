@@ -3,11 +3,13 @@
     <Transition name="dialog">
       <div v-if="isOpen" class="ui-alert-dialog-overlay" @click.self="handleOverlayClick">
         <div
+          ref="dialogRef"
           class="ui-alert-dialog"
           role="alertdialog"
           aria-modal="true"
           :aria-labelledby="titleId"
           :aria-describedby="descriptionId"
+          tabindex="-1"
         >
           <div class="ui-alert-dialog__header">
             <h2 :id="titleId" class="ui-alert-dialog__title">
@@ -43,10 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted, useId } from 'vue'
+import { computed, watch, onMounted, onUnmounted, useId, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from './Button.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 defineOptions({ name: 'UiAlertDialog' })
 
@@ -82,6 +85,7 @@ const { t } = useI18n()
 const baseId = useId()
 const titleId = `${baseId}-title`
 const descriptionId = `${baseId}-description`
+const dialogRef = useTemplateRef<HTMLElement>('dialogRef')
 
 const confirmText = computed(() => props.confirmText || t('common.confirm'))
 const cancelText = computed(() => props.cancelText || t('common.cancel'))
@@ -103,11 +107,13 @@ function handleOverlayClick() {
   }
 }
 
-function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && props.isOpen) {
-    handleCancel()
-  }
-}
+useFocusTrap(dialogRef, () => props.isOpen, {
+  autoFocus: true,
+  restoreFocus: true,
+  initialFocus: '.ui-alert-dialog__footer button',
+  escapeDeactivates: true,
+  onEscape: handleCancel,
+})
 
 watch(
   () => props.isOpen,
@@ -118,12 +124,10 @@ watch(
 )
 
 onMounted(() => {
-  document.addEventListener('keydown', handleKeydown)
   if (props.isOpen) lockBodyScroll()
 })
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
   if (props.isOpen) unlockBodyScroll()
 })
 </script>

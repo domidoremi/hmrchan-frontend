@@ -190,6 +190,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { AlertCircle } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
+import { scrubSensitiveUrlParameters } from '@/utils/sensitiveUrl'
 import { clientSecurityService } from '@/api/clientSecurityService'
 import { useAuthStore, useToastStore } from '@/stores'
 import type { AuthFlowResult } from '@/stores/auth'
@@ -599,6 +600,7 @@ async function runPopupBridge(): Promise<boolean> {
   isPopupBridgeMode.value = true
   popupBridgeState.value = 'posting'
   bridgeGooglePopupResult({ pendingRequest })
+  scrubSensitiveUrlParameters(['handoff_code'])
   clearPopupBridgeTimers()
 
   popupBridgeCloseTimer = window.setTimeout(() => {
@@ -628,6 +630,7 @@ async function runInitialExchange() {
   const callbackError = typeof route.query['error'] === 'string' ? route.query['error'].trim() : ''
   const handoffCode =
     typeof route.query['handoff_code'] === 'string' ? route.query['handoff_code'] : ''
+  scrubSensitiveUrlParameters(['handoff_code'])
   if (callbackError) {
     currentStep.value = 'error'
     errorMessage.value = t(

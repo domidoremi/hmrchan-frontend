@@ -7,6 +7,19 @@ interface PushPayload {
   url?: string
 }
 
+export function normalizePushActionUrl(value: unknown): string {
+  if (typeof value !== 'string' || !value.trim()) return '/'
+
+  try {
+    const parsed = new URL(value, sw.location.origin)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '/'
+    if (parsed.origin !== sw.location.origin) return '/'
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return '/'
+  }
+}
+
 function parsePushPayload(
   event: PushEventLike
 ): Required<Pick<PushPayload, 'title' | 'body'>> & Pick<PushPayload, 'url'> {
@@ -48,7 +61,7 @@ export function handlePush(event: PushEventLike): void {
       body: payload.body,
       icon: '/icons/sitting-192.webp',
       badge: '/icons/sitting-96.webp',
-      data: payload.url || '/',
+      data: normalizePushActionUrl(payload.url),
       actions: [
         { action: 'open', title: '查看' },
         { action: 'close', title: '关闭' },
@@ -65,12 +78,13 @@ export function handleNotificationClick(event: NotificationEventLike): void {
     return
   }
 
-  const urlToOpen = String(event.notification.data || '/')
+  const urlToOpen = normalizePushActionUrl(event.notification.data)
+  const absoluteUrlToOpen = new URL(urlToOpen, sw.location.origin).toString()
 
   event.waitUntil(
     sw.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url === urlToOpen && 'focus' in client) {
+        if (client.url === absoluteUrlToOpen && 'focus' in client) {
           return client.focus()
         }
       }

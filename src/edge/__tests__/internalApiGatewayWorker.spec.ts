@@ -3,10 +3,39 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { handleInternalApiGatewayRequest } from '@/edge/internalApiGatewayWorker'
 
 const BACKEND_ORIGIN = 'https://backend.test'
+const GATEWAY_SECRET = 'gateway-test-secret'
+const GATEWAY_AUTH_HEADER = 'X-MomiChan-Internal-Gateway-Token'
 
 describe('handleInternalApiGatewayRequest', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+  })
+
+  it('fails closed when gateway authentication is not configured', async () => {
+    const response = await handleInternalApiGatewayRequest(
+      new Request('https://momichan.com/api/v1/home'),
+      { API_BASE_URL: BACKEND_ORIGIN }
+    )
+
+    expect(response.status).toBe(503)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'INTERNAL_GATEWAY_AUTH_NOT_CONFIGURED',
+    })
+  })
+
+  it('rejects callers that do not possess the service-binding secret', async () => {
+    const response = await handleInternalApiGatewayRequest(
+      new Request('https://momichan.com/internal/v1/auth/bff/login'),
+      {
+        API_BASE_URL: BACKEND_ORIGIN,
+        INTERNAL_API_GATEWAY_SHARED_SECRET: GATEWAY_SECRET,
+      }
+    )
+
+    expect(response.status).toBe(401)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'INTERNAL_GATEWAY_UNAUTHORIZED',
+    })
   })
 
   it('routes identity bootstrap calls through the VPC worker binding', async () => {
@@ -28,9 +57,11 @@ describe('handleInternalApiGatewayRequest', () => {
         body: JSON.stringify({ client_fingerprint: 'device-1' }),
         headers: {
           'Content-Type': 'application/json',
+          [GATEWAY_AUTH_HEADER]: GATEWAY_SECRET,
         },
       }),
       {
+        INTERNAL_API_GATEWAY_SHARED_SECRET: GATEWAY_SECRET,
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
         VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
@@ -44,6 +75,7 @@ describe('handleInternalApiGatewayRequest', () => {
     expect((vpcFetch.mock.calls[0]?.[0] as Request).url).toBe(
       'http://identity-api:8000/api/v1/client/init'
     )
+    expect((vpcFetch.mock.calls[0]?.[0] as Request).headers.has(GATEWAY_AUTH_HEADER)).toBe(false)
     expect(publicFetch).not.toHaveBeenCalled()
     expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
   })
@@ -68,9 +100,11 @@ describe('handleInternalApiGatewayRequest', () => {
         headers: {
           'Content-Type': 'application/json',
           'X-Internal-Service': 'bff',
+          [GATEWAY_AUTH_HEADER]: GATEWAY_SECRET,
         },
       }),
       {
+        INTERNAL_API_GATEWAY_SHARED_SECRET: GATEWAY_SECRET,
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
         VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
@@ -102,8 +136,11 @@ describe('handleInternalApiGatewayRequest', () => {
     )
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.com/api/v1/discussions/discussion-1'),
+      new Request('https://momichan.com/api/v1/discussions/discussion-1', {
+        headers: { [GATEWAY_AUTH_HEADER]: GATEWAY_SECRET },
+      }),
       {
+        INTERNAL_API_GATEWAY_SHARED_SECRET: GATEWAY_SECRET,
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
         VPC_COMMUNITY_API_ORIGIN: 'http://community-api:8000',
@@ -173,8 +210,11 @@ describe('handleInternalApiGatewayRequest', () => {
     )
 
     const response = await handleInternalApiGatewayRequest(
-      new Request(`https://momichan.com${pathname}`),
+      new Request(`https://momichan.com${pathname}`, {
+        headers: { [GATEWAY_AUTH_HEADER]: GATEWAY_SECRET },
+      }),
       {
+        INTERNAL_API_GATEWAY_SHARED_SECRET: GATEWAY_SECRET,
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
         VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
@@ -209,8 +249,11 @@ describe('handleInternalApiGatewayRequest', () => {
     const vpcFetch = vi.fn().mockRejectedValue(new Error('vpc unavailable'))
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.com/api/v1/posts?page=2'),
+      new Request('https://momichan.com/api/v1/posts?page=2', {
+        headers: { [GATEWAY_AUTH_HEADER]: GATEWAY_SECRET },
+      }),
       {
+        INTERNAL_API_GATEWAY_SHARED_SECRET: GATEWAY_SECRET,
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
         VPC_CONTENT_API_ORIGIN: 'http://content-api:8000',
@@ -242,9 +285,11 @@ describe('handleInternalApiGatewayRequest', () => {
         body: JSON.stringify({ username: 'tester@example.com' }),
         headers: {
           'Content-Type': 'application/json',
+          [GATEWAY_AUTH_HEADER]: GATEWAY_SECRET,
         },
       }),
       {
+        INTERNAL_API_GATEWAY_SHARED_SECRET: GATEWAY_SECRET,
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
         VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
@@ -277,8 +322,11 @@ describe('handleInternalApiGatewayRequest', () => {
     const vpcFetch = vi.fn()
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.com/api/v1/auth/google/start?intent=login'),
+      new Request('https://momichan.com/api/v1/auth/google/start?intent=login', {
+        headers: { [GATEWAY_AUTH_HEADER]: GATEWAY_SECRET },
+      }),
       {
+        INTERNAL_API_GATEWAY_SHARED_SECRET: GATEWAY_SECRET,
         API_BASE_URL: BACKEND_ORIGIN,
         ENABLE_VPC_PROXY: 'true',
         VPC_IDENTITY_API_ORIGIN: 'http://identity-api:8000',
@@ -307,8 +355,11 @@ describe('handleInternalApiGatewayRequest', () => {
     const vpcFetch = vi.fn()
 
     const response = await handleInternalApiGatewayRequest(
-      new Request('https://momichan.com/api/v1/home'),
+      new Request('https://momichan.com/api/v1/home', {
+        headers: { [GATEWAY_AUTH_HEADER]: GATEWAY_SECRET },
+      }),
       {
+        INTERNAL_API_GATEWAY_SHARED_SECRET: GATEWAY_SECRET,
         API_BASE_URL: BACKEND_ORIGIN,
         VPC_CONTENT_API_ORIGIN: 'http://content-api:8000',
         VPC_SERVICE: {

@@ -149,9 +149,10 @@ export const favoriteService = {
   /**
    * 删除收藏
    */
-  async remove(favoriteId: PublicResourceId): Promise<void> {
+  async remove(favoriteId: PublicResourceId, config: RequestConfig = {}): Promise<void> {
     const publicFavoriteId = assertUuidV7String(favoriteId, 'favorite id')
     await apiClient.delete(`/favorites/${publicFavoriteId}`, {
+      ...config,
       skipErrorToast: true,
     })
   },
@@ -160,17 +161,17 @@ export const favoriteService = {
    * 按帖子 ID 取消收藏
    * 文档未定义 /favorites/post/:postId，统一通过收藏列表定位后删除
    */
-  async removeByPostId(postId: PublicResourceId): Promise<void> {
+  async removeByPostId(postId: PublicResourceId, config: RequestConfig = {}): Promise<void> {
     const publicPostId = assertUuidV7String(postId, 'favorite post id')
     let cursor: string | null = null
     const limit = 100
 
     while (true) {
-      const list = await this.list({ limit, cursor })
+      const list = await this.list({ limit, cursor }, config)
       const favorite = list.items.find((item) => item.post_id === publicPostId)
 
       if (favorite) {
-        await this.remove(favorite.id)
+        await this.remove(favorite.id, config)
         return
       }
 

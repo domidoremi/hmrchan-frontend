@@ -123,6 +123,50 @@ describe('createAuthSessionController', () => {
     expect(mockSetStoredAuthSource).toHaveBeenCalledWith('session')
   })
 
+  it('invalidates private session state on establishment and clearing', async () => {
+    const state = createState()
+    const onSessionTransition = vi.fn()
+    const controller = createAuthSessionController({ router, state, onSessionTransition })
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+
+    await controller.establishSession(createSessionSummary())
+    controller.clearSession()
+
+    expect(onSessionTransition).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not let stale auth hydration overwrite a newer principal', async () => {
+    const state = createState()
+    const controller = createAuthSessionController({ router, state })
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(createMeResponse())
+    await controller.establishSession(createSessionSummary())
+
+    let resolveStaleHydration: ((value: ReturnType<typeof createMeResponse>) => void) | undefined
+    vi.mocked(authService.getCurrentUser)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveStaleHydration = resolve
+        })
+      )
+      .mockResolvedValueOnce(createMeResponse({ id: 'user-2', email: 'second@example.com' }))
+
+    const staleHydration = controller.fetchCurrentUser(false)
+    await Promise.resolve()
+    await controller.establishSession(
+      createSessionSummary({
+        user: createUser({ id: 'user-2', email: 'second@example.com' }),
+      })
+    )
+    resolveStaleHydration?.(createMeResponse())
+
+    await expect(staleHydration).resolves.toEqual(
+      expect.objectContaining({ id: 'user-2', email: 'second@example.com' })
+    )
+    expect(state.user.value).toEqual(
+      expect.objectContaining({ id: 'user-2', email: 'second@example.com' })
+    )
+  })
+
   it('recovers authorization roles from the session-summary user fallback', async () => {
     const state = createState()
     const controller = createAuthSessionController({ router, state })

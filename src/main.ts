@@ -189,8 +189,10 @@ function shouldHandleEarlyGooglePopupBridge(): boolean {
 
 if (shouldHandleEarlyGooglePopupBridge()) {
   const { bridgeGooglePopupResult } = await import('./services/googleAuthService')
+  const { scrubSensitiveUrlParameters } = await import('./utils/sensitiveUrl')
   const earlyGooglePopupBridge = bridgeGooglePopupResult()
   if (earlyGooglePopupBridge.handled) {
+    scrubSensitiveUrlParameters(['handoff_code'])
     if (typeof window !== 'undefined') {
       window.setTimeout(() => {
         window.close()

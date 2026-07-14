@@ -62,6 +62,7 @@ import {
   getQueueStats,
   hasPendingActions,
   OFFLINE_ACTION_LEASE_MS,
+  releaseClaimedAction,
   removeAction,
   updateActionStatus,
 } from '../offlineQueue'
@@ -194,5 +195,19 @@ describe('offlineQueue', () => {
     await expect(completeClaimedAction(firstClaim!.id, firstClaim!.leaseId!)).resolves.toBe(false)
     await expect(completeClaimedAction(secondClaim!.id, secondClaim!.leaseId!)).resolves.toBe(true)
     await expect(getPendingActions('user-a')).resolves.toEqual([])
+  })
+
+  it('releases a session-cancelled lease without consuming a retry attempt', async () => {
+    await addOfflineAction('favorite', 'post-session', 'user-a')
+    const claim = await claimNextOfflineAction('user-a', { now: 1_000 })
+
+    await expect(releaseClaimedAction(claim!.id, claim!.leaseId!)).resolves.toBe(true)
+    await expect(getPendingActions('user-a')).resolves.toEqual([
+      expect.objectContaining({
+        id: claim!.id,
+        status: 'pending',
+        retryCount: 0,
+      }),
+    ])
   })
 })

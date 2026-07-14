@@ -5,16 +5,24 @@ import {
   type UpstreamRuntimeEnv,
 } from './upstream'
 import { buildBufferedResponse } from './bufferedResponse'
-import type { EdgeBindingFetcher } from './internalApiGateway'
+import { INTERNAL_API_GATEWAY_AUTH_HEADER, type EdgeBindingFetcher } from './internalApiGateway'
 
 export type InternalApiGatewayWorkerEnv = UpstreamRuntimeEnv & {
   ENABLE_VPC_PROXY?: string
+  INTERNAL_API_GATEWAY_SHARED_SECRET?: string
   VPC_SERVICE?: EdgeBindingFetcher
 }
 
 export type InternalGatewayUpstreamSource = 'vpc' | 'public' | 'public-fallback' | 'vpc-error'
 
-const REQUEST_HEADERS_TO_SKIP = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
+const REQUEST_HEADERS_TO_SKIP = [
+  'host',
+  'cf-connecting-ip',
+  'cf-ray',
+  'cf-visitor',
+  'cf-ipcountry',
+  INTERNAL_API_GATEWAY_AUTH_HEADER.toLowerCase(),
+]
 const RESPONSE_HEADERS_TO_SKIP = [
   'connection',
   'Connection',
@@ -58,6 +66,63 @@ function shouldBypassVpc(pathname: string, request: Request): boolean {
 
 function requiresPrivateVpc(pathname: string): boolean {
   return pathname.startsWith('/internal/')
+}
+
+async function secretsMatch(expected: string, provided: string): Promise<boolean> {
+  const [expectedDigest, providedDigest] = await Promise.all([
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(expected)),
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(provided)),
+  ])
+  const expectedBytes = new Uint8Array(expectedDigest)
+  const providedBytes = new Uint8Array(providedDigest)
+  let difference = 0
+
+  for (let index = 0; index < expectedBytes.length; index += 1) {
+    difference |= expectedBytes[index]! ^ providedBytes[index]!
+  }
+
+  return difference === 0
+}
+
+async function authenticateGatewayRequest(
+  request: Request,
+  env: InternalApiGatewayWorkerEnv
+): Promise<Response | null> {
+  const expected = env.INTERNAL_API_GATEWAY_SHARED_SECRET?.trim()
+  if (!expected) {
+    return new Response(
+      JSON.stringify({
+        error: 'INTERNAL_GATEWAY_AUTH_NOT_CONFIGURED',
+        message: 'Internal API gateway authentication is not configured.',
+      }),
+      {
+        status: 503,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      }
+    )
+  }
+
+  const provided = request.headers.get(INTERNAL_API_GATEWAY_AUTH_HEADER)?.trim() ?? ''
+  if (!provided || !(await secretsMatch(expected, provided))) {
+    return new Response(
+      JSON.stringify({
+        error: 'INTERNAL_GATEWAY_UNAUTHORIZED',
+        message: 'Internal API gateway authentication failed.',
+      }),
+      {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      }
+    )
+  }
+
+  return null
 }
 
 function extractApiVersion(path: string): string | null {
@@ -192,6 +257,9 @@ export async function handleInternalApiGatewayRequest(
   request: Request,
   env: InternalApiGatewayWorkerEnv
 ): Promise<Response> {
+  const authenticationError = await authenticateGatewayRequest(request, env)
+  if (authenticationError) return authenticationError
+
   const apiBaseUrl = resolveConfiguredApiBaseUrl(env)
   if (!apiBaseUrl) {
     return buildConfigurationError()

@@ -16,9 +16,9 @@ import {
   resolveVpcOriginForPath,
   type UpstreamRuntimeEnv,
 } from './upstream'
-import { buildInternalGatewayUrl, type InternalApiGatewayRuntimeEnv } from './internalApiGateway'
+import * as internalApiGateway from './internalApiGateway'
 
-export type EdgeRuntimeEnv = UpstreamRuntimeEnv & InternalApiGatewayRuntimeEnv
+export type EdgeRuntimeEnv = UpstreamRuntimeEnv & internalApiGateway.InternalApiGatewayRuntimeEnv
 
 type EdgeAuthorRelatedPost = {
   id?: string | null
@@ -373,9 +373,9 @@ async function fetchEdgeJson<T>(
 
   if (env?.INTERNAL_API_GATEWAY) {
     response = await env.INTERNAL_API_GATEWAY.fetch(
-      new Request(buildInternalGatewayUrl(path), {
+      new Request(internalApiGateway.buildInternalGatewayUrl(path), {
         method: 'GET',
-        headers,
+        headers: internalApiGateway.withInternalApiGatewayAuth(headers, env),
       })
     )
   } else {

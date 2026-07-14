@@ -113,6 +113,9 @@ function makeContext(options: {
   const method = options.method ?? 'GET'
   const headers = new Headers(options.headers)
   if (options.csrf !== false && !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) {
+    if (!headers.has('Origin')) {
+      headers.set('Origin', new URL(options.url).origin)
+    }
     headers.set('X-Origin-CSRF', CSRF_TOKEN)
     headers.set(
       'Cookie',
@@ -130,6 +133,7 @@ function makeContext(options: {
       API_BASE_URL: BACKEND_ORIGIN,
       BACKEND_INTERNAL_ORIGIN: INTERNAL_ORIGIN,
       BACKEND_INTERNAL_AUTH_SHARED_SECRET: INTERNAL_SECRET,
+      INTERNAL_API_GATEWAY_SHARED_SECRET: INTERNAL_SECRET,
       VITE_CLIENT_CONTRACT_VERSION: '2026-04-13.p1',
       ...options.env,
     },
@@ -215,6 +219,47 @@ describe('functions/api proxy', () => {
     await expect(response.json()).resolves.toMatchObject({
       error: 'CSRF_TOKEN_INVALID',
     })
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it('rejects ordinary unsafe API requests authenticated by BFF cookies without CSRF proof', async () => {
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/preferences`,
+        method: 'PATCH',
+        headers: {
+          Origin: ORIGIN,
+          Cookie: '__Host-momi_bff_at=access-cookie',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ show_hero_section: false }),
+        path: ['v1', 'preferences'],
+        csrf: false,
+      })
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toMatchObject({ error: 'CSRF_TOKEN_INVALID' })
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it('rejects cross-origin provenance even when the double-submit CSRF values match', async () => {
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/preferences`,
+        method: 'PATCH',
+        headers: {
+          Origin: 'https://attacker.test',
+          Cookie: '__Host-momi_bff_at=access-cookie',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ show_hero_section: false }),
+        path: ['v1', 'preferences'],
+      })
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toMatchObject({ error: 'CSRF_TOKEN_INVALID' })
     expect(mockFetch).not.toHaveBeenCalled()
   })
 
@@ -921,6 +966,29 @@ describe('functions/api proxy', () => {
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${BACKEND_ORIGIN}/api/v1/posts?page=2`)
     expect((requestInit.headers as Headers).get('Authorization')).toBe(`Bearer ${accessToken}`)
     expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+  })
+
+  it('keeps BFF-cookie media responses private even when Authorization is injected later', async () => {
+    const accessToken = createJwt()
+    mockFetch.mockResolvedValueOnce(
+      new Response('image-bytes', {
+        status: 200,
+        headers: { 'Content-Type': 'image/webp' },
+      })
+    )
+
+    const response = await onRequest(
+      makeContext({
+        url: `${ORIGIN}/api/v1/media/0198f5a0-0000-7000-8000-000000000001/thumbnail`,
+        headers: { Cookie: `__Host-momi_bff_at=${encodeURIComponent(accessToken)}` },
+        path: ['v1', 'media', '0198f5a0-0000-7000-8000-000000000001', 'thumbnail'],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store')
+    expect(response.headers.get('Vary')).toContain('Authorization')
+    expect(response.headers.get('Vary')).toContain('Cookie')
   })
 
   it('keeps Pages public fallback pinned to API_BASE_URL even when VPC origins are present in env', async () => {

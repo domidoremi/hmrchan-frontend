@@ -303,6 +303,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
       new URL(`https://momichan.com/post/${SAMPLE_POST_ID}`),
       {
         API_BASE_URL: BACKEND_ORIGIN,
+        INTERNAL_API_GATEWAY_SHARED_SECRET: 'gateway-test-secret',
         INTERNAL_API_GATEWAY: {
           fetch: gatewayFetch,
         },
@@ -313,6 +314,9 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     expect((gatewayFetch.mock.calls[0]?.[0] as Request).url).toBe(
       `https://momichan.com/api/v1/posts/${SAMPLE_POST_ID}`
     )
+    expect(
+      (gatewayFetch.mock.calls[0]?.[0] as Request).headers.get('X-MomiChan-Internal-Gateway-Token')
+    ).toBe('gateway-test-secret')
     expect(publicFetch).not.toHaveBeenCalled()
     expect(config.title).toBe('Gateway hydrated detail · MomiChan')
   })

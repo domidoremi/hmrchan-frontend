@@ -31,6 +31,7 @@ export default defineConfigWithVueTs(
       '**/coverage/**',
       '**/output/**',
       '**/.wrangler/**',
+      '**/.gitnexus/**',
       '**/.claude/**',
       '**/.agent/**',
       '**/.agents/**',

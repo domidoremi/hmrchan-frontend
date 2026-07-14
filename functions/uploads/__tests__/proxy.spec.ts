@@ -67,6 +67,28 @@ describe('functions/uploads proxy', () => {
     expect(response.headers.get('content-encoding')).toBeNull()
   })
 
+  it('prevents shared caching when a legacy upload request carries BFF auth cookies', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('private-image-bytes', {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await onRequest({
+      request: new Request('https://momichan.com/uploads/private.png', {
+        headers: { Cookie: '__Host-momi_bff_at=access-token' },
+      }),
+      env: { API_BASE_URL: BACKEND_ORIGIN },
+      params: { path: ['private.png'] },
+    })
+
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store')
+    expect(response.headers.get('Vary')).toContain('Authorization')
+    expect(response.headers.get('Vary')).toContain('Cookie')
+  })
+
   it('returns 404 when the upstream upload request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('upstream unavailable')))
 

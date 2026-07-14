@@ -192,6 +192,27 @@ export function isValidUrl(url: string): boolean {
   }
 }
 
+export function normalizeHttpUrl(url: string | null | undefined): string | null {
+  if (typeof url !== 'string') return null
+  const candidate = url.trim()
+  if (!candidate) return null
+
+  const isRootRelative = candidate.startsWith('/') && !candidate.startsWith('//')
+  if (!isRootRelative && !/^[a-z][a-z\d+.-]*:/iu.test(candidate)) return null
+
+  try {
+    const baseOrigin =
+      typeof window !== 'undefined' ? window.location.origin : 'https://momichan.com'
+    const parsed = new URL(candidate, baseOrigin)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+    if (parsed.username || parsed.password) return null
+
+    return isRootRelative ? `${parsed.pathname}${parsed.search}${parsed.hash}` : parsed.toString()
+  } catch {
+    return null
+  }
+}
+
 /**
  * 速率限制工具 - 防止频繁提交
  */
