@@ -61,7 +61,12 @@ const imageWrapperStyle = computed(() => ({
   display: block;
   overflow: hidden;
   background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78)), var(--glass-bg);
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--semantic-surface-base) 92%, transparent),
+      color-mix(in srgb, var(--semantic-surface-muted) 84%, transparent)
+    ),
+    var(--glass-bg);
 }
 
 /* ========== 图片区域 ========== */
@@ -70,7 +75,11 @@ const imageWrapperStyle = computed(() => ({
   width: 100%;
   overflow: hidden;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.82)),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--semantic-surface-base) 90%, transparent),
+      color-mix(in srgb, var(--semantic-surface-muted) 82%, transparent)
+    ),
     var(--glass-bg-light);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }

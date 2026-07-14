@@ -23,77 +23,6 @@
   --home-story-visual-max-inline: 31rem;
   --home-story-merge-max-inline: 74rem;
   --home-bubble-max-inline: 18.5rem;
-  --home-blush-rgb: 246, 218, 229;
-  --home-mist-rgb: 199, 220, 244;
-  --home-lilac-rgb: 219, 211, 245;
-  --home-ink: #1f2b44;
-  --home-shell-radius: var(--ui-radius-card, var(--radius-2xl));
-  --home-card-radius: var(--ui-radius-input, var(--radius-xl));
-  --home-chip-radius: var(--ui-radius-button, var(--radius-full));
-  --home-section-bg: transparent;
-  --home-card-shadow: 0 1.25rem 3.5rem -2.25rem rgba(83, 103, 144, 0.35);
-  --home-soft-border: rgba(255, 255, 255, 0.7);
-  --home-pill-bg: rgba(255, 255, 255, 0.72);
-  --home-pill-border: rgba(148, 163, 184, 0.16);
-  --home-tag-hover: rgba(255, 255, 255, 0.9);
-  --home-accent: #6a88b8;
-  --home-accent-soft: #d792aa;
-  --home-panel-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84));
-  --home-panel-bg-soft: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.9),
-    rgba(255, 255, 255, 0.74)
-  );
-  --home-panel-bg-strong: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.98),
-    rgba(247, 248, 251, 0.94)
-  );
-  --home-panel-muted: rgba(255, 255, 255, 0.74);
-  --home-panel-muted-strong: rgba(255, 255, 255, 0.86);
-  --home-panel-border: rgba(193, 216, 239, 0.56);
-  --home-panel-border-strong: rgba(193, 216, 239, 0.82);
-  --home-panel-highlight: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.44);
-  --home-panel-shadow: 0 1.5rem 3.8rem -2.4rem rgba(35, 53, 85, 0.26);
-  --home-panel-shadow-strong: 0 2.5rem 5rem -2.8rem rgba(35, 53, 85, 0.34);
-  --home-preview-bg:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
-    rgba(255, 255, 255, 0.42);
-  --home-preview-empty-bg: linear-gradient(
-    155deg,
-    rgba(255, 255, 255, 0.92),
-    rgba(245, 248, 252, 0.8)
-  );
-  --home-preview-border: rgba(255, 255, 255, 0.56);
-  --home-preview-overlay: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.72) 100%);
-  --home-preview-overlay-ink: rgba(255, 255, 255, 0.94);
-  --home-preview-shadow: 0 1rem 2.5rem -1.8rem rgba(15, 23, 42, 0.26);
-  --home-community-rgb: 14, 165, 164;
-  --home-stage-chip-bg: rgba(255, 255, 255, 0.58);
-  --home-stage-chip-border: rgba(255, 255, 255, 0.42);
-  --home-stage-backdrop: blur(0rem);
-  --home-story-card-bg: linear-gradient(
-    150deg,
-    rgba(255, 255, 255, 0.99),
-    rgba(245, 249, 255, 0.98)
-  );
-  --home-story-card-border: rgba(193, 216, 239, 0.86);
-  --home-story-card-shadow: 0 3.2rem 5.6rem -3rem rgba(59, 78, 112, 0.34);
-  --home-story-visual-bg: linear-gradient(
-    160deg,
-    rgba(248, 251, 255, 0.98),
-    rgba(243, 247, 254, 0.92)
-  );
-  --home-story-stage-bg: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--page-shell-surface-bg) 44%, transparent) 0%,
-    color-mix(in srgb, var(--page-shell-surface-bg-strong) 76%, transparent) 100%
-  );
-  --home-story-stage-end-surface: linear-gradient(
-    180deg,
-    transparent 0%,
-    color-mix(in srgb, var(--page-shell-surface-bg-strong) 52%, transparent) 100%
-  );
   --home-screen-transition-ms: 780ms;
 }
 
@@ -2386,9 +2315,7 @@
   align-self: stretch;
   min-block-size: 0;
   block-size: 100%;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84)),
-    var(--home-pill-bg);
+  background: var(--home-panel-bg), var(--home-pill-bg);
 }
 
 .trends-grid,
@@ -2645,9 +2572,7 @@
 }
 
 .trends-card--tags {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.74)),
-    var(--home-pill-bg);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
 }
 
 .schedule-highlight-list {
@@ -3074,12 +2999,7 @@
       ((var(--story-card-count, 1) - 1) * var(--home-story-scroll-travel))
   );
   padding: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(248, 247, 244, 0) 0%,
-    rgba(248, 247, 244, 0.22) 22%,
-    rgba(248, 247, 244, 0.78) 100%
-  );
+  background: var(--home-media-slices-bg);
 }
 
 .story-stage {
@@ -3162,12 +3082,11 @@
   align-items: center;
   padding: clamp(0.8rem, 1.5vw, 1rem);
   border-radius: clamp(1.35rem, 2vw, 1.75rem);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.56);
+  border: 0.0625rem solid var(--home-panel-border-strong);
   background:
-    radial-gradient(circle at top right, rgba(199, 220, 244, 0.14), transparent 42%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.93), rgba(255, 255, 255, 0.78)),
-    var(--home-pill-bg);
-  box-shadow: 0 2.3rem 4rem -2.4rem rgba(35, 53, 85, 0.38);
+    radial-gradient(circle at top right, rgba(var(--home-mist-rgb), 0.14), transparent 42%),
+    var(--home-panel-bg-strong), var(--home-pill-bg);
+  box-shadow: var(--home-panel-shadow-strong);
   backdrop-filter: blur(0.75rem);
   opacity: var(--story-merge-opacity, 0);
   transform: translate3d(0, var(--story-merge-y, 3.5rem), 0);

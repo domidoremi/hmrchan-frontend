@@ -14,20 +14,24 @@ const homePageSystemSource = readFileSync(
 
 function mobileRuleFor(source: string, selector: string): string {
   const mobileSource = mobileMediaBlock(source)
-  const selectorIndex = findSelectorIndex(mobileSource, selector)
+  return ruleFor(mobileSource, selector)
+}
+
+function ruleFor(source: string, selector: string): string {
+  const selectorIndex = findSelectorIndex(source, selector)
   expect(selectorIndex).toBeGreaterThanOrEqual(0)
 
-  const blockStart = mobileSource.indexOf('{', selectorIndex)
+  const blockStart = source.indexOf('{', selectorIndex)
   expect(blockStart).toBeGreaterThanOrEqual(0)
 
   let depth = 0
-  for (let index = blockStart; index < mobileSource.length; index += 1) {
-    const char = mobileSource[index]
+  for (let index = blockStart; index < source.length; index += 1) {
+    const char = source[index]
     if (char === '{') depth += 1
     if (char === '}') {
       depth -= 1
       if (depth === 0) {
-        return mobileSource.slice(blockStart + 1, index)
+        return source.slice(blockStart + 1, index)
       }
     }
   }
@@ -109,6 +113,76 @@ function mobileMediaBlock(source: string): string {
 }
 
 describe('HomePage story-stage styles', () => {
+  it('keeps visual theme tokens in the layered page system so dark mode can override them', () => {
+    const visualTokens = [
+      '--home-blush-rgb',
+      '--home-mist-rgb',
+      '--home-lilac-rgb',
+      '--home-ink',
+      '--home-shell-radius',
+      '--home-card-radius',
+      '--home-chip-radius',
+      '--home-section-bg',
+      '--home-card-shadow',
+      '--home-soft-border',
+      '--home-pill-bg',
+      '--home-pill-border',
+      '--home-tag-hover',
+      '--home-accent',
+      '--home-accent-soft',
+      '--home-panel-bg',
+      '--home-panel-bg-soft',
+      '--home-panel-bg-strong',
+      '--home-panel-muted',
+      '--home-panel-muted-strong',
+      '--home-panel-border',
+      '--home-panel-border-strong',
+      '--home-panel-highlight',
+      '--home-panel-shadow',
+      '--home-panel-shadow-strong',
+      '--home-preview-bg',
+      '--home-preview-empty-bg',
+      '--home-preview-border',
+      '--home-preview-overlay',
+      '--home-preview-overlay-ink',
+      '--home-preview-shadow',
+      '--home-community-rgb',
+      '--home-stage-chip-bg',
+      '--home-stage-chip-border',
+      '--home-stage-backdrop',
+      '--home-story-card-bg',
+      '--home-story-card-border',
+      '--home-story-card-shadow',
+      '--home-story-visual-bg',
+      '--home-story-stage-bg',
+      '--home-story-stage-end-surface',
+      '--home-media-slices-bg',
+    ]
+
+    const scopedHomeRule = ruleFor(homePageSource, '.home-page')
+    const defaultThemeRule = ruleFor(homePageSystemSource, '.home-page')
+    const darkThemeRule = ruleFor(homePageSystemSource, "[data-color-mode='dark'] .home-page")
+
+    for (const token of visualTokens) {
+      expect(scopedHomeRule).not.toContain(`${token}:`)
+      expect(defaultThemeRule).toContain(`${token}:`)
+    }
+
+    expect(darkThemeRule).toContain('--home-ink: #f8fafc')
+    expect(darkThemeRule).toContain('--home-pill-bg: rgba(15, 20, 31, 0.76)')
+    expect(darkThemeRule).toContain('rgba(12, 16, 23, 0.88)')
+    expect(darkThemeRule).toContain('rgba(18, 24, 36, 0.78)')
+    expect(darkThemeRule).toContain('rgba(8, 12, 18, 0.78)')
+    expect(darkThemeRule).not.toContain('--home-pill-bg: rgba(255, 255, 255')
+
+    expect(homePageSource).toContain('background: var(--home-media-slices-bg)')
+    expect(homePageSource).toContain('background: var(--home-panel-bg), var(--home-pill-bg)')
+    expect(homePageSource).not.toContain(
+      'linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.74))'
+    )
+    expect(homePageSource).not.toContain('rgba(248, 247, 244, 0.78)')
+  })
+
   it('keeps mobile story-stage on a 3D transform layer instead of resetting motion', () => {
     for (const source of [homePageSource, homePageSystemSource]) {
       const mobileSource = mobileMediaBlock(source)
