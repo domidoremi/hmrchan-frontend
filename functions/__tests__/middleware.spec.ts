@@ -185,6 +185,27 @@ describe('functions/_middleware', () => {
     expect(html).not.toContain('https://momichan.com/login')
   })
 
+  it('redirects legacy passkey recovery before Cloudflare can serve the 404 document', async () => {
+    const next = vi.fn()
+    const { onRequest } = await import('../_middleware')
+
+    const response = await onRequest({
+      request: new Request(
+        'https://preview.example.com/passkey-recovery/?return_to=%2Fprofile%2Fsecurity'
+      ),
+      env: {},
+      next,
+    } as never)
+
+    expect(next).not.toHaveBeenCalled()
+    expect(resolveHtmlDocumentWithEdgeData).not.toHaveBeenCalled()
+    expect(response.status).toBe(308)
+    expect(response.headers.get('Location')).toBe(
+      'https://preview.example.com/auth/passkey-recovery?return_to=%2Fprofile%2Fsecurity'
+    )
+    expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff')
+  })
+
   it('applies HTML security headers, rewrites metadata, and returns the edge status', async () => {
     resolveHtmlDocumentWithEdgeData.mockResolvedValue({
       status: 404,

@@ -47,6 +47,7 @@ const CANONICAL_HOSTNAME = 'momichan.com'
 const CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
 const REPORTING_ENDPOINT_GROUP = 'csp-endpoint'
 const REDIRECT_HOSTNAMES = new Set(['www.momichan.com'])
+const LEGACY_ROUTE_REDIRECTS = new Map([['/passkey-recovery', '/auth/passkey-recovery']])
 const AUTH_ROUTE_PATHS = new Set([
   '/login',
   '/register',
@@ -198,6 +199,28 @@ function resolveCanonicalHostRedirect(requestUrl: URL): string | null {
   return redirectUrl.toString()
 }
 
+function resolveLegacyRouteRedirect(requestUrl: URL): string | null {
+  const targetPath = LEGACY_ROUTE_REDIRECTS.get(normalizePathname(requestUrl.pathname))
+  if (!targetPath) {
+    return null
+  }
+
+  const redirectUrl = new URL(requestUrl.toString())
+  redirectUrl.pathname = targetPath
+  return redirectUrl.toString()
+}
+
+function buildPermanentRedirect(location: string): Response {
+  return new Response(null, {
+    status: 308,
+    headers: {
+      Location: location,
+      'Strict-Transport-Security': HTML_SECURITY_HEADERS['Strict-Transport-Security'],
+      'X-Content-Type-Options': HTML_SECURITY_HEADERS['X-Content-Type-Options'],
+    },
+  })
+}
+
 function normalizePathname(pathname: string): string {
   if (pathname.length > 1 && pathname.endsWith('/')) {
     return pathname.slice(0, -1)
@@ -221,14 +244,12 @@ export async function onRequest(
   const requestUrl = new URL(context.request.url)
   const canonicalRedirectUrl = resolveCanonicalHostRedirect(requestUrl)
   if (canonicalRedirectUrl) {
-    return new Response(null, {
-      status: 308,
-      headers: {
-        Location: canonicalRedirectUrl,
-        'Strict-Transport-Security': HTML_SECURITY_HEADERS['Strict-Transport-Security'],
-        'X-Content-Type-Options': HTML_SECURITY_HEADERS['X-Content-Type-Options'],
-      },
-    })
+    return buildPermanentRedirect(canonicalRedirectUrl)
+  }
+
+  const legacyRouteRedirectUrl = resolveLegacyRouteRedirect(requestUrl)
+  if (legacyRouteRedirectUrl) {
+    return buildPermanentRedirect(legacyRouteRedirectUrl)
   }
 
   const response = await context.next()
