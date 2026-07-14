@@ -75,7 +75,7 @@ export function parseDevServerArgs(argv) {
   const options = {
     host: DEFAULT_DEV_HOST,
     port: DEFAULT_DEV_PORT,
-    strictPort: true,
+    strictPort: false,
   }
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -92,6 +92,7 @@ export function parseDevServerArgs(argv) {
       const parsed = Number.parseInt(next, 10)
       if (Number.isInteger(parsed) && parsed > 0) {
         options.port = parsed
+        options.strictPort = true
       }
       index += 1
       continue
@@ -171,14 +172,9 @@ export function buildViteArgs(argv, { host = DEFAULT_DEV_HOST, strictPort = true
     nextArgs.push('--host', host)
   }
 
-  if (
-    strictPort &&
-    !nextArgs.includes('--strictPort') &&
-    !nextArgs.includes('--strict-port')
-  ) {
+  if (strictPort && !nextArgs.includes('--strictPort') && !nextArgs.includes('--strict-port')) {
     nextArgs.push('--strictPort')
   }
 
   return nextArgs
 }
-

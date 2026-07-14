@@ -666,7 +666,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
     server: {
       port: 5173,
       host: resolveDevHost(env.VITE_DEV_HOST),
-      strictPort: true,
+      strictPort: false,
 
       /** 文件预热 - 预加载关键文件加速首次访问 */
       warmup: {

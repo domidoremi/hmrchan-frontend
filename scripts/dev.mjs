@@ -28,9 +28,11 @@ async function main() {
   const passthroughArgs = process.argv.slice(2)
   const options = parseDevServerArgs(passthroughArgs)
 
-  await assertDevOriginIsSafe({
-    port: options.port,
-  })
+  if (options.strictPort) {
+    await assertDevOriginIsSafe({
+      port: options.port,
+    })
+  }
 
   await runNodeScript('scripts/patch-lucide.mjs')
 
@@ -39,7 +41,13 @@ async function main() {
     strictPort: options.strictPort,
   })
 
-  console.log(`dev server target: http://${options.host}:${options.port}/`)
+  if (options.strictPort) {
+    console.log(`dev server target: http://${options.host}:${options.port}/`)
+  } else {
+    console.log(
+      `dev server target starts at http://${options.host}:${options.port}/ and will use the next available port automatically`
+    )
+  }
 
   const child = spawn(process.execPath, ['node_modules/vite/bin/vite.js', ...viteArgs], {
     stdio: 'inherit',
