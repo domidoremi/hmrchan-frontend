@@ -153,7 +153,7 @@ async function handleNavigationRequest(request: Request): Promise<Response> {
         '/',
         '/offline.html',
       ])
-      if (notFoundFallback) return notFoundFallback
+      return notFoundFallback ?? response
     }
   } catch {
     // Fall through to the cached navigation fallback.

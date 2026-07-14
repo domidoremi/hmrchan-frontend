@@ -266,7 +266,7 @@ describe('service worker public cache clearing', () => {
     expect(harness.cacheMatch).not.toHaveBeenCalled()
   })
 
-  it('uses the not-found navigation fallback for an HTTP 404 response', async () => {
+  it('uses the cached not-found navigation fallback for an HTTP 404 response', async () => {
     const harness = createServiceWorkerHarness({
       cacheMatches: {
         '/404.html': new Response('<main>not-found-cache</main>', {
@@ -277,6 +277,55 @@ describe('service worker public cache clearing', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => new Response('missing', { status: 404 }))
+    )
+
+    await import('@/sw/index')
+
+    const response = await harness.dispatchFetch(
+      new Request('https://momichan.com/unknown-route', {
+        headers: { accept: 'text/html' },
+      })
+    )
+
+    expect(await response.text()).toContain('not-found-cache')
+    expect(harness.cacheMatchKeys).toEqual(['/404.html'])
+  })
+
+  it('returns the HTTP 404 response when the navigation fallback cache is empty', async () => {
+    const harness = createServiceWorkerHarness()
+    const notFoundResponse = new Response('<main>network-not-found</main>', { status: 404 })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => notFoundResponse)
+    )
+
+    await import('@/sw/index')
+
+    const response = await harness.dispatchFetch(
+      new Request('https://momichan.com/unknown-route', {
+        headers: { accept: 'text/html' },
+      })
+    )
+
+    expect(response).toBe(notFoundResponse)
+    expect(response.status).toBe(404)
+    expect(await response.text()).toContain('network-not-found')
+    expect(harness.cacheMatchKeys).toEqual(['/404.html', '/index.html', '/', '/offline.html'])
+  })
+
+  it('uses the cached not-found navigation fallback when the network is unavailable', async () => {
+    const harness = createServiceWorkerHarness({
+      cacheMatches: {
+        '/404.html': new Response('<main>not-found-cache</main>', {
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        }),
+      },
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline')
+      })
     )
 
     await import('@/sw/index')
