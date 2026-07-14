@@ -225,7 +225,7 @@ Validation intentionally not claimed:
 
 ## Change-impact assessment
 
-GitNexus change detection classified the aggregate worktree risk as Critical because changes cross authentication, Cloudflare ingress, private cache policy, offline mutations, telemetry, service-worker lifecycle, and dependency/release gates. The initial pre-delivery map reported 143 changed symbols, 62 tracked changed files, and 29 affected processes.
+GitNexus final pre-commit change detection classified the aggregate worktree risk as Critical because changes cross authentication, Cloudflare ingress, private cache policy, offline mutations, telemetry, service-worker lifecycle, and dependency/release gates. It reported 143 changed symbols, 62 indexed changed files, and 29 affected processes.
 
 Targeted upstream impact checks found:
 
@@ -233,7 +233,7 @@ Targeted upstream impact checks found:
 - `fetchViaInternalApiGateway`: Low isolated risk; one direct caller, `forwardToUpstream`.
 - `consumeInboxStream`: Low isolated risk; one direct caller, `openStreamConnection`.
 
-The direct callers were inspected, and the affected flows are covered by focused tests plus the complete unit/release gate. A final change-detection run is required immediately before commit to account for this report and the last telemetry redaction update.
+The direct callers were inspected, and the affected flows are covered by focused tests plus the complete unit/release gate. The final change-detection run was completed after the report and last telemetry redaction update; it found no unexpected source scope beyond the documented security work.
 
 ## Residual frontend risk
 
