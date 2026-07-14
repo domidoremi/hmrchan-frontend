@@ -14,6 +14,8 @@ const CLIENT_HEAD_SYNC_ROUTE_NAMES = new Set([
   'hmr-settings',
   'hmr-login',
   'hmr-register',
+  'hmr-forgot-password',
+  'hmr-reset-password',
   'hmr-auth-callback',
   'hmr-passkey-recovery',
   'hmr-profile',

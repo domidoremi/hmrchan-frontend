@@ -1,6 +1,18 @@
 {
   "extends": "@tsconfig/node24/tsconfig.json",
-  "include": ["vite.config.*", "vite-plugin-*.ts", "vitest.config.*", "eslint.config.*"],
+  "include": [
+    "vite.config.*",
+    "vite-plugin-*.ts",
+    "vitest.config.*",
+    "eslint.config.*",
+    "build/vite/plugins/*.ts",
+    "build/vite/swCacheVersion.ts",
+    "src/edge/htmlDocument.ts",
+    "src/edge/htmlEscaping.ts",
+    "src/edge/prerenderHtml.ts",
+    "src/fallbacks/generated/homePrerenderManifest.ts",
+    "src/i18n/locales.ts"
+  ],
   "compilerOptions": {
     "composite": true,
     "noEmit": true,

@@ -37,7 +37,11 @@ const testAudit: AuditModule = {
     const start = Date.now()
     const issues: AuditIssue[] = []
 
-    const result = await runLocalNodeTool('vitest', ['run', '--reporter=json'], options.projectRoot)
+    const result = await runLocalNodeTool(
+      'vitest',
+      ['run', '--reporter=json', '--maxWorkers=1'],
+      options.projectRoot
+    )
 
     const parsed = parseVitestJSON(result.stdout)
 

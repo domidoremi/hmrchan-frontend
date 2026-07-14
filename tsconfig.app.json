@@ -43,9 +43,6 @@
     // === 目标环境 ===
     "target": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "useDefineForClassFields": true,
-
-    // === 性能优化 ===
-    "assumeChangesOnlyAffectDirectDependencies": true
+    "useDefineForClassFields": true
   }
 }

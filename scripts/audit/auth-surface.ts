@@ -210,6 +210,7 @@ function parseRipgrepOutput(stdout: string): AuditIssue[] {
     if (!match) continue
 
     const [, file, lineNumber, content] = match
+    if (!file || !lineNumber || content === undefined) continue
     const matchedTerm = BANNED_SURFACE_TERMS.find((item) => content.includes(item.term))
     if (!matchedTerm) continue
 

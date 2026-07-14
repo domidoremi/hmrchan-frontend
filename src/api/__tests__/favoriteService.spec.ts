@@ -6,6 +6,7 @@ import {
   listFavorites,
   removeFavorite,
 } from '@/api/favoriteService'
+import { assertUuidV7String, type PublicResourceId } from '@/utils/contractResourceId'
 
 const mockGet = vi.hoisted(() => vi.fn())
 const mockPost = vi.hoisted(() => vi.fn())
@@ -19,7 +20,7 @@ vi.mock('@/api/client', () => ({
   },
 }))
 
-const POST_ID = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1'
+const POST_ID = assertUuidV7String('018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1')
 
 describe('favoriteService', () => {
   beforeEach(() => {
@@ -47,9 +48,9 @@ describe('favoriteService', () => {
   })
 
   it('rejects non-UUIDv7 favorite identifiers before calling the facade', async () => {
-    expect(() => checkFavoritePost('not-a-v7-id')).toThrow('post id')
-    expect(() => favoritePost('not-a-v7-id')).toThrow('post id')
-    expect(() => removeFavorite('not-a-v7-id')).toThrow('post id')
+    expect(() => checkFavoritePost('not-a-v7-id' as PublicResourceId)).toThrow('post id')
+    expect(() => favoritePost('not-a-v7-id' as PublicResourceId)).toThrow('post id')
+    expect(() => removeFavorite('not-a-v7-id' as PublicResourceId)).toThrow('post id')
 
     expect(mockGet).not.toHaveBeenCalled()
     expect(mockPost).not.toHaveBeenCalled()

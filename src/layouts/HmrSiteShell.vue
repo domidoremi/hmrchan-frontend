@@ -314,8 +314,6 @@ const preloaderLogoRef = ref<HTMLElement | null>(null)
 const preloaderPetRef = ref<HTMLElement | null>(null)
 const preloaderProgressRef = ref<SVGCircleElement | null>(null)
 const preloaderRevealerRef = ref<HTMLElement | null>(null)
-const desktopBrandPetRef = ref<HTMLElement | null>(null)
-const mobileBrandPetRef = ref<HTMLElement | null>(null)
 const preloaderBrandState = ref<HmrBrandSpriteState>('idle')
 let gsapApiPromise: Promise<GsapApi> | undefined
 let gsapApi: GsapApi | undefined

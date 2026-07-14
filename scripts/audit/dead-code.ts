@@ -67,7 +67,7 @@ function collectIssues(knip: KnipIssues): AuditIssue[] {
       if (Array.isArray(exportInfo)) {
         for (const exp of exportInfo) {
           const name =
-            typeof exp === 'string' ? exp : ((exp as Record<string, unknown>).name ?? exp)
+            typeof exp === 'string' ? exp : ((exp as Record<string, unknown>)['name'] ?? exp)
           issues.push({
             severity: 'info',
             message: `Unused export "${name}"`,

@@ -17,6 +17,7 @@ const bootstrapScript = indexHtml.match(
 if (!bootstrapScript) {
   throw new Error('index.html theme bootstrap script was not found')
 }
+const verifiedBootstrapScript = bootstrapScript
 
 function resetDocument(): void {
   document.open()
@@ -34,7 +35,7 @@ function mockMatchMedia(matches: boolean): void {
 }
 
 function runBootstrap(): void {
-  new Function(bootstrapScript)()
+  new Function(verifiedBootstrapScript)()
 }
 
 describe('index.html theme bootstrap', () => {
@@ -54,14 +55,14 @@ describe('index.html theme bootstrap', () => {
 
       runBootstrap()
 
-      expect(document.documentElement.dataset.theme).toBe('light')
-      expect(document.documentElement.dataset.themeMode).toBe('light')
-      expect(document.documentElement.dataset.preset).toBe(preset)
-      expect(document.documentElement.dataset.appearancePreset).toBe(preset)
-      expect(document.documentElement.dataset.presetFamily).toBe(
+      expect(document.documentElement.dataset['theme']).toBe('light')
+      expect(document.documentElement.dataset['themeMode']).toBe('light')
+      expect(document.documentElement.dataset['preset']).toBe(preset)
+      expect(document.documentElement.dataset['appearancePreset']).toBe(preset)
+      expect(document.documentElement.dataset['presetFamily']).toBe(
         hmrAppearancePresetMeta[appearancePreset].family
       )
-      expect(document.documentElement.dataset.presetEnhancer).toBe(
+      expect(document.documentElement.dataset['presetEnhancer']).toBe(
         hmrAppearancePresetMeta[appearancePreset].enhancer
       )
       expect(document.documentElement.style.colorScheme).toBe('light')
@@ -77,12 +78,12 @@ describe('index.html theme bootstrap', () => {
 
     runBootstrap()
 
-    expect(document.documentElement.dataset.theme).toBe('dark')
-    expect(document.documentElement.dataset.themeMode).toBe('dark')
-    expect(document.documentElement.dataset.preset).toBe('clay-playful')
-    expect(document.documentElement.dataset.appearancePreset).toBe('clay-playful')
-    expect(document.documentElement.dataset.presetFamily).toBe('rounded')
-    expect(document.documentElement.dataset.presetEnhancer).toBe('clay')
+    expect(document.documentElement.dataset['theme']).toBe('dark')
+    expect(document.documentElement.dataset['themeMode']).toBe('dark')
+    expect(document.documentElement.dataset['preset']).toBe('clay-playful')
+    expect(document.documentElement.dataset['appearancePreset']).toBe('clay-playful')
+    expect(document.documentElement.dataset['presetFamily']).toBe('rounded')
+    expect(document.documentElement.dataset['presetEnhancer']).toBe('clay')
     expect(document.documentElement.style.colorScheme).toBe('dark')
     expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
       '#18111c'
@@ -96,12 +97,12 @@ describe('index.html theme bootstrap', () => {
 
     runBootstrap()
 
-    expect(document.documentElement.dataset.theme).toBe('dark')
-    expect(document.documentElement.dataset.themeMode).toBe('system')
-    expect(document.documentElement.dataset.preset).toBe('minimal-editorial')
-    expect(document.documentElement.dataset.appearancePreset).toBe('minimal-editorial')
-    expect(document.documentElement.dataset.presetFamily).toBe('rounded')
-    expect(document.documentElement.dataset.presetEnhancer).toBe('none')
+    expect(document.documentElement.dataset['theme']).toBe('dark')
+    expect(document.documentElement.dataset['themeMode']).toBe('system')
+    expect(document.documentElement.dataset['preset']).toBe('minimal-editorial')
+    expect(document.documentElement.dataset['appearancePreset']).toBe('minimal-editorial')
+    expect(document.documentElement.dataset['presetFamily']).toBe('rounded')
+    expect(document.documentElement.dataset['presetEnhancer']).toBe('none')
     expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
       '#11100f'
     )

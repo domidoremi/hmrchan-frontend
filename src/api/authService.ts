@@ -36,6 +36,15 @@ export interface PasskeyRecoveryRegisterVerifyPayload {
   credential: unknown
 }
 
+export interface PasswordResetRequestPayload {
+  email: string
+}
+
+export interface PasswordResetPayload {
+  token: string
+  newPassword: string
+}
+
 export function resolveAuthSession(): Promise<AuthSessionSummary> {
   const AUTH_SESSION_RESOLVE_PATH = '/auth/session:resolve'
   return apiClient.post<AuthSessionSummary>(AUTH_SESSION_RESOLVE_PATH, {})
@@ -87,5 +96,18 @@ export function verifyPasskeyRecoveryRegister(
     recovery_id: payload.recovery_id,
     ceremony_id: payload.ceremony_id,
     credential: payload.credential,
+  })
+}
+
+export function requestPasswordReset(payload: PasswordResetRequestPayload): Promise<unknown> {
+  return apiClient.post('/email/request-password-reset', {
+    email: payload.email.trim(),
+  })
+}
+
+export function resetPassword(payload: PasswordResetPayload): Promise<unknown> {
+  return apiClient.post('/email/reset-password', {
+    token: payload.token.trim(),
+    new_password: payload.newPassword,
   })
 }

@@ -166,7 +166,7 @@ function createDocumentConfig(
     description,
     canonicalPath,
     ogType: options.ogType ?? 'website',
-    ogImage: options.ogImage,
+    ...(options.ogImage === undefined ? {} : { ogImage: options.ogImage }),
     robots: options.robots ?? 'index, follow',
     shellEyebrow,
     shellTitle,
@@ -340,6 +340,22 @@ const STATIC_ROUTE_DOCUMENTS: Record<string, StaticRouteDocument> = {
     shellBody: '创建账号后即可同步收藏、通知和偏好设置。',
     options: { robots: 'noindex, nofollow' },
   },
+  '/forgot-password': {
+    pageTitle: 'Forgot password',
+    description: '请求 MomiChan 密码重置验证码。',
+    shellEyebrow: 'Account recovery',
+    shellTitle: 'Request a password reset code',
+    shellBody: '输入账号邮箱以接收一次性密码重置验证码。',
+    options: { robots: 'noindex, nofollow' },
+  },
+  '/reset-password': {
+    pageTitle: 'Reset password',
+    description: '使用一次性验证码重置 MomiChan 账号密码。',
+    shellEyebrow: 'Account recovery',
+    shellTitle: 'Set a new account password',
+    shellBody: '输入邮件中的验证码并设置新的账号密码。',
+    options: { robots: 'noindex, nofollow' },
+  },
   '/auth/passkey-recovery': {
     pageTitle: 'Passkey recovery',
     description: '恢复 MomiChan Passkey 登录能力并重新保护账号。',
@@ -465,12 +481,13 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     return createStaticRouteDocument(path, staticRoute)
   }
 
-  if (path === '/favorites') {
-    return createStaticRouteDocument('/profile/favorites', STATIC_ROUTE_DOCUMENTS['/profile'])
-  }
-
-  if (/^\/profile\/[^/]+$/.test(path)) {
-    return createStaticRouteDocument(path, STATIC_ROUTE_DOCUMENTS['/profile'])
+  if (path === '/favorites' || /^\/profile\/[^/]+$/.test(path)) {
+    const profileRoute = STATIC_ROUTE_DOCUMENTS['/profile']
+    if (!profileRoute) return createNotFoundDocument(path)
+    return createStaticRouteDocument(
+      path === '/favorites' ? '/profile/favorites' : path,
+      profileRoute
+    )
   }
 
   if (/^\/posts\/[^/]+$/.test(path)) {

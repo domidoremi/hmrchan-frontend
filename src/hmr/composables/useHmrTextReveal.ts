@@ -4,7 +4,7 @@ export function useHmrTextReveal(selector = '[data-hmr-text-reveal]') {
   let mutationObserver: MutationObserver | undefined
 
   function wrapRevealChildren(element: HTMLElement): void {
-    if (element.dataset.hmrTextWrapped === 'true') return
+    if (element.dataset['hmrTextWrapped'] === 'true') return
 
     const nodes = [...element.childNodes].filter((node) => {
       return node.nodeType !== Node.TEXT_NODE || Boolean(node.textContent?.trim())
@@ -22,7 +22,7 @@ export function useHmrTextReveal(selector = '[data-hmr-text-reveal]') {
       fragment.append(mask)
     })
     element.append(fragment)
-    element.dataset.hmrTextWrapped = 'true'
+    element.dataset['hmrTextWrapped'] = 'true'
   }
 
   function prepareText(): void {

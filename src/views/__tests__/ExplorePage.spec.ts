@@ -1,14 +1,15 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, type Stubs } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
 
 import type { HmrExploreContent, HmrPost } from '@/api/hmrContent'
 import type { HmrAsyncResource } from '@/hmr/types'
+import type { IdleTaskHandle } from '@/utils/performance'
 import ExplorePage from '@/views/ExplorePage.vue'
 
 const mockReadPublicContent = vi.hoisted(() => vi.fn())
 const mockRunWhenIdle = vi.hoisted(() =>
-  vi.fn((callback: () => void) => {
+  vi.fn<(callback: () => void) => IdleTaskHandle | undefined>((callback) => {
     callback()
     return undefined
   })
@@ -119,7 +120,7 @@ async function mountExplorePage() {
   return mountExplorePageWithStubs()
 }
 
-async function mountExplorePageWithStubs(stubs: Record<string, unknown> = defaultExploreStubs()) {
+async function mountExplorePageWithStubs(stubs: Stubs = defaultExploreStubs()) {
   const i18n = createI18n({
     legacy: false,
     locale: 'zh-CN',
@@ -135,7 +136,7 @@ async function mountExplorePageWithStubs(stubs: Record<string, unknown> = defaul
   return wrapper
 }
 
-function defaultExploreStubs(): Record<string, unknown> {
+function defaultExploreStubs(): Stubs {
   return {
     HmrPostCard: {
       props: ['post', 'imageLoading', 'imageFetchPriority'],
@@ -199,7 +200,7 @@ describe('ExplorePage', () => {
       const trigger = wrapper.get(`#hmr-filter-value-${id}`)
       const menu = wrapper.get(`#${trigger.attributes('aria-controls')}`)
 
-      expect(menu.exists()).toBe(true)
+      expect(menu.element).toBeDefined()
       expect(menu.attributes('hidden')).toBeDefined()
     }
 

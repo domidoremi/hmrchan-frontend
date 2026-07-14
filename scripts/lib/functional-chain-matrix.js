@@ -159,6 +159,14 @@ export function resolveFunctionalChainBatchPlan(selection = '') {
   }
 }
 
+/**
+ * @param {{
+ *   artifactDir: string,
+ *   baseUrl?: string | null,
+ *   accounts?: ReturnType<typeof resolveFunctionalChainAccounts>,
+ *   batches?: ReturnType<typeof getFunctionalChainBatchSpecs>
+ * }} options
+ */
 export function createFunctionalChainSummary({
   artifactDir,
   baseUrl = null,

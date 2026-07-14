@@ -26,7 +26,7 @@ export function serviceWorkerBuildPlugin(options: ServiceWorkerBuildPluginOption
         configFile: false,
         root,
         publicDir: false,
-        logLevel: config.logLevel,
+        ...(config.logLevel === undefined ? {} : { logLevel: config.logLevel }),
         mode: config.mode,
         resolve: {
           alias: config.resolve.alias,

@@ -10,7 +10,8 @@ function parseEnvVarNames(content: string): Set<string> {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith('#')) continue
     const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=/)
-    if (match) names.add(match[1])
+    const name = match?.[1]
+    if (name) names.add(name)
   }
   return names
 }

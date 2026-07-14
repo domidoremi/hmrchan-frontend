@@ -1,3 +1,5 @@
+/// <reference lib="webworker" />
+
 declare const self: ServiceWorkerGlobalScope
 
 import {
@@ -26,6 +28,8 @@ const APP_SHELL_PATHS = new Set([
   '/login',
   '/profile',
   '/register',
+  '/forgot-password',
+  '/reset-password',
   '/schedule',
   '/settings',
   '/thank-you',

@@ -17,6 +17,7 @@ import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import {
   buildInternalGatewayUrl,
   fetchViaInternalApiGateway,
+  type EdgeBindingFetcher,
   type InternalApiGatewayRuntimeEnv,
 } from '../../src/edge/internalApiGateway'
 
@@ -50,7 +51,7 @@ interface ForwardRequestOptions {
   bodyBuffer: ArrayBuffer | null
   env: ProxyEnv
   headers: Headers
-  internalApiGateway?: Fetcher
+  internalApiGateway?: EdgeBindingFetcher
   path: string
   redirectMode: RedirectMode
   request: Request
@@ -270,8 +271,9 @@ function isAuthChallengePayload(payload: unknown): boolean {
   if (!isJsonRecord(payload)) return false
 
   return (
-    (payload.requires_risk_verification === true && typeof payload.pending_token === 'string') ||
-    (payload.requires_mfa === true && typeof payload.pending_mfa_login_token === 'string')
+    (payload['requires_risk_verification'] === true &&
+      typeof payload['pending_token'] === 'string') ||
+    (payload['requires_mfa'] === true && typeof payload['pending_mfa_login_token'] === 'string')
   )
 }
 
@@ -291,8 +293,9 @@ function parseJwtPayload(token: string): Record<string, unknown> | null {
 
 function getTokenExpiresAt(token: string, fallbackExpiresIn?: number): number | null {
   const payload = parseJwtPayload(token)
-  if (typeof payload?.exp === 'number' && Number.isFinite(payload.exp)) {
-    return payload.exp * 1000
+  const exp = payload?.['exp']
+  if (typeof exp === 'number' && Number.isFinite(exp)) {
+    return exp * 1000
   }
 
   if (typeof fallbackExpiresIn === 'number' && Number.isFinite(fallbackExpiresIn)) {
@@ -348,7 +351,9 @@ function appendClearedSessionCookies(headers: Headers): void {
 }
 
 async function sha256Hex(bodyBytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', bodyBytes)
+  const ownedBytes = new Uint8Array(bodyBytes.byteLength)
+  ownedBytes.set(bodyBytes)
+  const digest = await crypto.subtle.digest('SHA-256', ownedBytes.buffer)
   return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, '0')).join('')
 }
 
@@ -379,10 +384,10 @@ function normalizeBrowserFingerprint(value: unknown): string | null {
 
 function extractBrowserFingerprint(request: Request, payload?: unknown): string | null {
   if (isJsonRecord(payload)) {
-    const clientFingerprint = normalizeBrowserFingerprint(payload.client_fingerprint)
+    const clientFingerprint = normalizeBrowserFingerprint(payload['client_fingerprint'])
     if (clientFingerprint) return clientFingerprint
 
-    const compatibilityFingerprint = normalizeBrowserFingerprint(payload.fingerprint)
+    const compatibilityFingerprint = normalizeBrowserFingerprint(payload['fingerprint'])
     if (compatibilityFingerprint) return compatibilityFingerprint
   }
 
@@ -400,7 +405,7 @@ function withBrowserFingerprint(payload: unknown, fingerprint: string | null): u
     }
   }
 
-  if (normalizeBrowserFingerprint(payload.client_fingerprint) === fingerprint) {
+  if (normalizeBrowserFingerprint(payload['client_fingerprint']) === fingerprint) {
     return payload
   }
 
@@ -416,8 +421,8 @@ function extractPayloadFingerprint(payload: unknown): string | null {
   }
 
   return (
-    normalizeBrowserFingerprint(payload.client_fingerprint) ??
-    normalizeBrowserFingerprint(payload.fingerprint)
+    normalizeBrowserFingerprint(payload['client_fingerprint']) ??
+    normalizeBrowserFingerprint(payload['fingerprint'])
   )
 }
 
@@ -486,16 +491,20 @@ async function copyResponse(response: Response, headers?: Headers): Promise<Resp
 }
 
 function buildFallbackSessionSummary(material: BffSessionMaterial): SessionSummaryResponse {
+  const user = material.user && typeof material.user === 'object' ? material.user : undefined
+
   return {
     authenticated: true,
-    user: material.user && typeof material.user === 'object' ? material.user : undefined,
+    ...(user === undefined ? {} : { user }),
     session_expires_at:
       getTokenExpiresAt(material.access_token, material.expires_in) != null
         ? new Date(
             getTokenExpiresAt(material.access_token, material.expires_in) as number
           ).toISOString()
         : null,
-    permission_version: material.permission_version,
+    ...(material.permission_version === undefined
+      ? {}
+      : { permission_version: material.permission_version }),
     ...(typeof material.return_to === 'string' && material.return_to
       ? { return_to: sanitizeSameOriginRelativePath(material.return_to) }
       : {}),
@@ -574,14 +583,16 @@ async function buildSessionSummary(
 
   return {
     authenticated: true,
-    user,
+    ...(user === undefined ? {} : { user }),
     session_expires_at:
       getTokenExpiresAt(material.access_token, material.expires_in) != null
         ? new Date(
             getTokenExpiresAt(material.access_token, material.expires_in) as number
           ).toISOString()
         : null,
-    permission_version: material.permission_version,
+    ...(material.permission_version === undefined
+      ? {}
+      : { permission_version: material.permission_version }),
     ...(typeof material.return_to === 'string' && material.return_to
       ? { return_to: sanitizeSameOriginRelativePath(material.return_to) }
       : {}),
@@ -766,15 +777,15 @@ async function resolveSessionFromCookies(
 
   const summary: SessionSummaryResponse = {
     authenticated: true,
-    user,
+    ...(user === undefined ? {} : { user }),
     session_expires_at:
       getTokenExpiresAt(accessToken) != null
         ? new Date(getTokenExpiresAt(accessToken) as number).toISOString()
         : null,
-    permission_version:
-      typeof payload?.principal === 'object' && payload.principal
-        ? payload.principal.permission_version
-        : undefined,
+    ...(typeof payload?.principal === 'object' &&
+    payload.principal?.permission_version !== undefined
+      ? { permission_version: payload.principal.permission_version }
+      : {}),
   }
 
   return jsonResponse(summary, 200, responseHeaders)
@@ -1103,12 +1114,12 @@ async function isReplayableAnonymousPublicAccessRestriction(response: Response):
     const payload = (await response.clone().json()) as unknown
     if (!isJsonRecord(payload)) return false
 
-    const nestedError = payload.error
+    const nestedError = payload['error']
     if (isJsonRecord(nestedError)) {
-      return isAnonymousPublicReplayableAccessErrorCode(nestedError.code)
+      return isAnonymousPublicReplayableAccessErrorCode(nestedError['code'])
     }
 
-    return isAnonymousPublicReplayableAccessErrorCode(payload.code)
+    return isAnonymousPublicReplayableAccessErrorCode(payload['code'])
   } catch {
     return false
   }
@@ -1293,7 +1304,6 @@ async function forwardToUpstream(options: ForwardRequestOptions): Promise<Upstre
     try {
       const response = await fetchViaInternalApiGateway(internalApiGateway, {
         bodyBuffer: options.bodyBuffer,
-        env: options.env,
         headers: options.headers,
         redirectMode: options.redirectMode,
         request,
@@ -1327,7 +1337,6 @@ async function replayAnonymousPublicReadWithoutBrowserContext(
     try {
       const response = await fetchViaInternalApiGateway(options.internalApiGateway, {
         bodyBuffer: options.bodyBuffer,
-        env: options.env,
         headers: replayHeaders,
         redirectMode: options.redirectMode,
         request: options.request,
@@ -1352,7 +1361,6 @@ async function replayAnonymousPublicReadWithoutBrowserContext(
     response: await fetchViaPublic({
       ...options,
       headers: replayHeaders,
-      internalApiGateway: undefined,
     }),
     source: 'public-anonymous-replay',
   }
@@ -1516,7 +1524,9 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       request,
       requestUrl,
       search: requestUrl.search,
-      internalApiGateway: isInternalApiGatewayEnabled(env) ? env.INTERNAL_API_GATEWAY : undefined,
+      ...(isInternalApiGatewayEnabled(env) && env.INTERNAL_API_GATEWAY
+        ? { internalApiGateway: env.INTERNAL_API_GATEWAY }
+        : {}),
     }
 
     let upstream = await forwardToUpstream(upstreamOptions)

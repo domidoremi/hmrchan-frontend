@@ -64,7 +64,9 @@ async function mountContactPage() {
   return { router, wrapper }
 }
 
-async function fillRequiredFields(wrapper: ReturnType<typeof mount<ContactPage>>) {
+async function fillRequiredFields(
+  wrapper: Awaited<ReturnType<typeof mountContactPage>>['wrapper']
+) {
   const inputs = wrapper.findAll('input')
   await inputs[0]?.setValue('Momi')
   await inputs[1]?.setValue('momi@example.com')

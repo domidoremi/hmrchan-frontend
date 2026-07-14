@@ -155,7 +155,7 @@ function makeContext(options: {
     request: new Request(options.url, {
       method,
       headers,
-      body: options.body,
+      ...(options.body === undefined ? {} : { body: options.body }),
     }),
     env: {
       API_BASE_URL: BACKEND_ORIGIN,
@@ -460,18 +460,16 @@ describe('functions/api proxy', () => {
   })
 
   it('strips browser challenge headers before forwarding anonymous public reads through the internal gateway', async () => {
-    const gatewayFetch = vi
-      .fn<[{ fetch(request: Request): Promise<Response> }['fetch']]>()
-      .mockResolvedValueOnce(
-        apiEnvelope(
-          { items: [] },
-          {
-            headers: {
-              'X-Proxy-Upstream-Source': 'vpc',
-            },
-          }
-        )
+    const gatewayFetch = vi.fn<(request: Request) => Promise<Response>>().mockResolvedValueOnce(
+      apiEnvelope(
+        { items: [] },
+        {
+          headers: {
+            'X-Proxy-Upstream-Source': 'vpc',
+          },
+        }
       )
+    )
 
     const response = await onRequest(
       makeContext({
@@ -973,7 +971,7 @@ describe('functions/api proxy', () => {
     )
 
     expect(response.status).toBe(200)
-    const payload = await response.json()
+    const payload = (await response.json()) as Record<string, unknown>
     expect(payload).toEqual(
       expect.objectContaining({
         authenticated: true,
@@ -981,8 +979,12 @@ describe('functions/api proxy', () => {
         permission_version: 7,
       })
     )
-    expect(typeof payload.session_expires_at).toBe('string')
-    const sessionExpiresAt = Date.parse(payload.session_expires_at)
+    const sessionExpiresAtValue = payload['session_expires_at']
+    expect(typeof sessionExpiresAtValue).toBe('string')
+    if (typeof sessionExpiresAtValue !== 'string') {
+      throw new Error('Expected a session expiration timestamp')
+    }
+    const sessionExpiresAt = Date.parse(sessionExpiresAtValue)
     const expectedLowerBound = Date.now() + 59 * 60 * 1000
     const expectedUpperBound = Date.now() + 61 * 60 * 1000
     expect(sessionExpiresAt).toBeGreaterThanOrEqual(expectedLowerBound)

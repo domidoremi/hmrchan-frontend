@@ -28,7 +28,7 @@ export async function resolveHmrRouteGuard(
 ): Promise<RouteLocationRaw | true> {
   await auth.resolveSession()
 
-  if (blocksInvalidPublicResourceId(to.name, to.params.id)) {
+  if (blocksInvalidPublicResourceId(to.name, to.params['id'])) {
     return {
       name: 'hmr-not-found',
     }
@@ -42,7 +42,7 @@ export async function resolveHmrRouteGuard(
   }
 
   if ((to.name === 'hmr-login' || to.name === 'hmr-register') && auth.isAuthenticated) {
-    return resolvePostAuthRedirectTarget(to.query.redirect)
+    return resolvePostAuthRedirectTarget(to.query['redirect'])
   }
 
   return true

@@ -11,6 +11,7 @@ describe('resolveHmrSceneRole', () => {
     expect(resolveHmrSceneRole({ meta: { pageKey: 'schedule' } })).toBe('productivity')
     expect(resolveHmrSceneRole({ meta: { pageKey: 'settings' } })).toBe('productivity')
     expect(resolveHmrSceneRole({ meta: { pageKey: 'login' } })).toBe('editorial')
+    expect(resolveHmrSceneRole({ meta: { pageKey: 'forgot-password' } })).toBe('editorial')
     expect(resolveHmrSceneRole({ meta: { pageKey: 'profile' } })).toBe('editorial')
   })
 

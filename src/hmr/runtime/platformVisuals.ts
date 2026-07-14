@@ -5,6 +5,13 @@ export interface HmrPlatformVisual {
   colors: readonly [string, string]
 }
 
+const DEFAULT_PLATFORM_VISUAL: HmrPlatformVisual = {
+  key: 'default',
+  label: 'MomiChan',
+  mark: 'M',
+  colors: ['#ff7722', '#3d2fa9'],
+}
+
 const PLATFORM_VISUALS: Record<string, HmrPlatformVisual> = {
   instagram: {
     key: 'instagram',
@@ -42,12 +49,7 @@ const PLATFORM_VISUALS: Record<string, HmrPlatformVisual> = {
     mark: 'YT',
     colors: ['#ff3c34', '#ff7722'],
   },
-  default: {
-    key: 'default',
-    label: 'MomiChan',
-    mark: 'M',
-    colors: ['#ff7722', '#3d2fa9'],
-  },
+  default: DEFAULT_PLATFORM_VISUAL,
 }
 
 export function resolveHmrPlatformKey(value: string | null | undefined): string {
@@ -56,5 +58,5 @@ export function resolveHmrPlatformKey(value: string | null | undefined): string 
 
 export function resolveHmrPlatformVisual(value: string | null | undefined): HmrPlatformVisual {
   const key = resolveHmrPlatformKey(value)
-  return PLATFORM_VISUALS[key] ?? PLATFORM_VISUALS.default
+  return PLATFORM_VISUALS[key] ?? DEFAULT_PLATFORM_VISUAL
 }

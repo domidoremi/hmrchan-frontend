@@ -144,7 +144,7 @@ export function buildApiPath(...segments: string[]): string {
 }
 
 function unwrapEnvelope<T>(payload: unknown): T {
-  if (isRecord(payload) && payload.success === false) {
+  if (isRecord(payload) && payload['success'] === false) {
     throw new ApiError(
       resolveErrorMessage(payload, 'Request failed'),
       resolveErrorStatus(payload, 200),
@@ -154,7 +154,7 @@ function unwrapEnvelope<T>(payload: unknown): T {
   }
 
   if (isRecord(payload) && 'data' in payload) {
-    return payload.data as T
+    return payload['data'] as T
   }
 
   return payload as T
@@ -177,10 +177,10 @@ async function parseResponsePayload(response: Response): Promise<unknown> {
 }
 
 function resolveNestedError(payload: JsonRecord): unknown {
-  return isRecord(payload.error)
-    ? payload.error
-    : isRecord(payload.detail)
-      ? payload.detail
+  return isRecord(payload['error'])
+    ? payload['error']
+    : isRecord(payload['detail'])
+      ? payload['detail']
       : undefined
 }
 
@@ -188,11 +188,11 @@ function resolveErrorMessage(payload: unknown, fallback: string): string {
   if (!isRecord(payload)) return fallback
   const nestedError = resolveNestedError(payload)
   if (isRecord(nestedError)) {
-    const nestedMessage = nestedError.message ?? nestedError.detail
+    const nestedMessage = nestedError['message'] ?? nestedError['detail']
     if (typeof nestedMessage === 'string' && nestedMessage.trim()) return nestedMessage
   }
 
-  const message = payload.message ?? payload.error ?? payload.detail
+  const message = payload['message'] ?? payload['error'] ?? payload['detail']
   return typeof message === 'string' && message.trim() ? message : fallback
 }
 
@@ -200,17 +200,17 @@ function resolveErrorCode(payload: unknown): string | undefined {
   if (!isRecord(payload)) return undefined
   const nestedError = resolveNestedError(payload)
   if (isRecord(nestedError)) {
-    const nestedCode = nestedError.code
+    const nestedCode = nestedError['code']
     if (typeof nestedCode === 'string' && nestedCode.trim()) return nestedCode
   }
 
-  const code = payload.code ?? payload.error
+  const code = payload['code'] ?? payload['error']
   return typeof code === 'string' && code.trim() ? code : undefined
 }
 
 function resolveErrorStatus(payload: unknown, fallback: number): number {
   if (!isRecord(payload)) return fallback
-  const status = payload.status ?? payload.status_code
+  const status = payload['status'] ?? payload['status_code']
   return typeof status === 'number' && Number.isFinite(status) ? status : fallback
 }
 
@@ -223,7 +223,9 @@ function canonicalizeQuery(search: string): string {
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  const ownedBytes = new Uint8Array(bytes.byteLength)
+  ownedBytes.set(bytes)
+  const digest = await crypto.subtle.digest('SHA-256', ownedBytes.buffer)
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
@@ -336,7 +338,12 @@ async function applySignedHeaders(
   }
 ): Promise<void> {
   const { method, url, bodyBytes, clientSecret, clientToken, skipAuth } = options
-  if (!clientSecret || !clientToken || !shouldRequireRequestSignature(method, url, { skipAuth })) {
+  const signatureOptions = skipAuth === undefined ? {} : { skipAuth }
+  if (
+    !clientSecret ||
+    !clientToken ||
+    !shouldRequireRequestSignature(method, url, signatureOptions)
+  ) {
     return
   }
 
@@ -372,7 +379,8 @@ async function attachClientSecurityHeaders(
 ): Promise<void> {
   const { method, url, bodyBytes, skipAuth } = options
   const { clientSecurityManager, clientSecurityService } = await import('./clientSecurityService')
-  const requiresIntegrity = shouldRequireRequestSignature(method, url, { skipAuth })
+  const signatureOptions = skipAuth === undefined ? {} : { skipAuth }
+  const requiresIntegrity = shouldRequireRequestSignature(method, url, signatureOptions)
 
   if (requiresIntegrity && !clientSecurityManager.hasRequestIntegrityCredentials()) {
     await clientSecurityService.ensureRequestIntegrityCredentials()
@@ -390,7 +398,7 @@ async function attachClientSecurityHeaders(
     bodyBytes,
     clientSecret: clientSecurityManager.getClientSecret(),
     clientToken,
-    skipAuth,
+    ...signatureOptions,
   })
 }
 
@@ -417,11 +425,11 @@ async function handleChallengeRequired<T>(
 ): Promise<T> {
   const siteKey =
     isRecord(payload) &&
-    isRecord(payload.error) &&
-    typeof payload.error.turnstile_site_key === 'string'
-      ? payload.error.turnstile_site_key
-      : isRecord(payload) && typeof payload.turnstile_site_key === 'string'
-        ? payload.turnstile_site_key
+    isRecord(payload['error']) &&
+    typeof payload['error']['turnstile_site_key'] === 'string'
+      ? payload['error']['turnstile_site_key']
+      : isRecord(payload) && typeof payload['turnstile_site_key'] === 'string'
+        ? payload['turnstile_site_key']
         : undefined
 
   window.dispatchEvent(
@@ -458,8 +466,7 @@ async function retryAfterClientSecurityRefresh<T>(
   await clientSecurityService.init(true, { promptChallenge: false })
   return apiClient.request<T>(path, {
     ...config,
-    skipClientReinitRetry: force ? true : config.skipClientReinitRetry,
-    skipClientSignatureRetry: force ? config.skipClientSignatureRetry : true,
+    ...(force ? { skipClientReinitRetry: true } : { skipClientSignatureRetry: true }),
   })
 }
 
@@ -537,10 +544,11 @@ class ApiClient {
     void skipClientSignatureRetry
     void skipChallengeRetry
 
-    const method = requestConfig.method?.toUpperCase() ?? 'GET'
+    const { body: requestBody, ...requestInit } = requestConfig
+    const method = requestInit.method?.toUpperCase() ?? 'GET'
     const url = `${this.baseUrl}${path}`
     const headers = new Headers(config.headers)
-    const serializedBody = await serializeRequestBody(requestConfig.body)
+    const serializedBody = await serializeRequestBody(requestBody)
 
     if (serializedBody.body != null && !headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json')
@@ -571,11 +579,11 @@ class ApiClient {
     }
 
     const response = await fetch(url, {
-      ...requestConfig,
+      ...requestInit,
       method,
-      body: serializedBody.body,
+      ...(serializedBody.body === undefined ? {} : { body: serializedBody.body }),
       headers,
-      credentials: skipAuth ? 'omit' : (requestConfig.credentials ?? 'include'),
+      credentials: skipAuth ? 'omit' : (requestInit.credentials ?? 'include'),
     })
     const payload = await parseResponsePayload(response)
 
@@ -614,7 +622,7 @@ class ApiClient {
     return this.request<T>(path, {
       ...config,
       method: 'POST',
-      body: payload === undefined ? undefined : JSON.stringify(payload),
+      ...(payload === undefined ? {} : { body: JSON.stringify(payload) }),
     })
   }
 
@@ -622,7 +630,7 @@ class ApiClient {
     return this.request<T>(path, {
       ...config,
       method: 'PATCH',
-      body: payload === undefined ? undefined : JSON.stringify(payload),
+      ...(payload === undefined ? {} : { body: JSON.stringify(payload) }),
     })
   }
 

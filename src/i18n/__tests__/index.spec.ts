@@ -12,11 +12,12 @@ describe('i18n runtime locale', () => {
 
   it('updates the global composer, document language, and persisted locale', () => {
     const resolvedLocale = applyLocale('en-US')
+    const globalLocale = (i18n.global as unknown as { locale: { value: string } }).locale
 
     expect(resolvedLocale).toBe('en-US')
-    expect(i18n.global.locale.value).toBe('en-US')
+    expect(globalLocale.value).toBe('en-US')
     expect(document.documentElement.lang).toBe('en-US')
-    expect(document.documentElement.dataset.locale).toBe('en-US')
+    expect(document.documentElement.dataset['locale']).toBe('en-US')
     expect(window.localStorage.getItem('hmr.locale')).toBe('en-US')
   })
 })

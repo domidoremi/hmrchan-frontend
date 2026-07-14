@@ -1,5 +1,5 @@
 <template>
-  <section class="hmr-auth-page">
+  <section class="hmr-auth-page auth-page auth-page--login">
     <div class="hmr-auth-layout hmr-form-layout--wide">
       <aside class="hmr-auth-story" data-hmr-reveal>
         <p class="hmr-kicker">登录</p>
@@ -53,6 +53,7 @@
           <RouterLink class="hmr-text-link" :to="registerTarget">
             {{ t('auth.registerTitle') }}
           </RouterLink>
+          <RouterLink class="hmr-text-link" to="/forgot-password">忘记密码</RouterLink>
           <RouterLink class="hmr-text-link" to="/auth/passkey-recovery">恢复 Passkey</RouterLink>
         </div>
       </form>

@@ -10,6 +10,7 @@ export type PublicContentCacheScope =
   | 'author-list'
   | 'community'
   | 'schedule'
+  | 'support'
   | 'media'
   | 'snapshot'
 
@@ -69,6 +70,7 @@ const scopeTtls: Record<
   explore: { ttl: 90_000, staleTtl: 6 * 60 * 60_000, strategy: 'network-first' },
   community: { ttl: 90_000, staleTtl: 6 * 60 * 60_000, strategy: 'network-first' },
   schedule: { ttl: 90_000, staleTtl: 6 * 60 * 60_000, strategy: 'network-first' },
+  support: { ttl: 5 * 60_000, staleTtl: 24 * 60 * 60_000, strategy: 'stale-while-revalidate' },
   'post-detail': {
     ttl: 5 * 60_000,
     staleTtl: 24 * 60 * 60_000,
@@ -135,6 +137,7 @@ function inferScopeFromKey(key: string): PublicContentCacheScope {
   if (key.includes('author-list') || key.includes('authors')) return 'author-list'
   if (key.includes('community')) return 'community'
   if (key.includes('schedule')) return 'schedule'
+  if (key.includes('support')) return 'support'
   if (key.includes('media')) return 'media'
   return 'snapshot'
 }
@@ -198,7 +201,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isUnstableFallbackValue(value: unknown): boolean {
-  return isRecord(value) && value.source === 'local' && Boolean(value.error)
+  return isRecord(value) && value['source'] === 'local' && Boolean(value['error'])
 }
 
 function openIdb(): Promise<IDBDatabase | null> {

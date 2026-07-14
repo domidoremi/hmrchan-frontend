@@ -1,6 +1,6 @@
 # PWA Icon Boundary
 
-本目录保存 Web App Manifest 引用的 PWA 图标资源。文件必须是可直接由 `public/` 输出的 PNG，生成源文件不得放入本目录，除非 manifest 或生成脚本明确引用。
+本目录保存 Web App Manifest 引用的 PWA 图标、PNG 兼容资源和图标生成器输出。部署资源必须可直接由 `public/` 输出；生成源文件不得放入本目录，除非 manifest 或生成脚本明确引用。
 
 ## Required Assets
 
@@ -10,14 +10,14 @@
 
 | File requirement | Size    | Status  |
 | ---------------- | ------- | ------- |
-| standard icon    | 72x72   | missing |
-| standard icon    | 96x96   | missing |
-| standard icon    | 128x128 | missing |
-| standard icon    | 144x144 | missing |
-| standard icon    | 152x152 | missing |
-| standard icon    | 192x192 | missing |
-| standard icon    | 384x384 | missing |
-| standard icon    | 512x512 | missing |
+| standard icon    | 72x72   | present |
+| standard icon    | 96x96   | present |
+| standard icon    | 128x128 | present |
+| standard icon    | 144x144 | present |
+| standard icon    | 152x152 | present |
+| standard icon    | 192x192 | present |
+| standard icon    | 384x384 | present |
+| standard icon    | 512x512 | present |
 
 ### Maskable Icons
 
@@ -25,8 +25,8 @@ Maskable 图标用于 manifest `icons[].purpose=maskable`。重要图形必须�
 
 | File requirement | Size    | Status  |
 | ---------------- | ------- | ------- |
-| maskable icon    | 192x192 | missing |
-| maskable icon    | 512x512 | missing |
+| maskable icon    | 192x192 | present |
+| maskable icon    | 512x512 | present |
 
 ### Shortcut Icons
 
@@ -34,10 +34,10 @@ Maskable 图标用于 manifest `icons[].purpose=maskable`。重要图形必须�
 
 | File                     | Size  | Status  |
 | ------------------------ | ----- | ------- |
-| `shortcut-home.png`      | 96x96 | missing |
-| `shortcut-explore.png`   | 96x96 | missing |
-| `shortcut-favorites.png` | 96x96 | missing |
-| `shortcut-settings.png`  | 96x96 | missing |
+| `shortcut-home.png`      | 96x96 | present |
+| `shortcut-explore.png`   | 96x96 | present |
+| `shortcut-favorites.png` | 96x96 | present |
+| `shortcut-settings.png`  | 96x96 | present |
 
 ## Asset Constraints
 
@@ -88,15 +88,10 @@ bun run validate:release --mode local
 
 ## Current State
 
-Existing file:
-
-- `icon-183x183.png`: legacy asset; replacement requires manifest and cache review.
-
-Missing assets:
-
-- Standard icon sizes listed in this file.
-- Maskable icon sizes listed in this file.
-- Shortcut icons listed in this file.
+- `public/manifest.json` uses `sitting-32.webp`, `sitting-96.webp`, `sitting-192.webp`, and `sitting-512.webp` for `purpose=any`.
+- `public/manifest.json` uses the opaque `icon-maskable-192x192.png` and `icon-maskable-512x512.png` assets for `purpose=maskable`.
+- The standard PNG compatibility set, both maskable PNGs, the Apple touch icon, and all four shortcut PNGs are present at their declared dimensions.
+- Shortcut PNGs are generator outputs but are not currently declared in `public/manifest.json`.
 
 ## References
 

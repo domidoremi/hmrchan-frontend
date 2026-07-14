@@ -1,12 +1,23 @@
 import { readFile, readdir, stat } from 'fs/promises'
-import { existsSync } from 'fs'
+import { existsSync, type Dirent } from 'fs'
 import { join, relative } from 'path'
+import sharp from 'sharp'
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
 import { summarizeAuditIssues } from './utils'
 
 const REQUIRED_MANIFEST_FIELDS = ['name', 'short_name', 'icons', 'start_url', 'display'] as const
 const I18N_LOCALE_CONTRACT_FILE = 'src/i18n/locales.ts'
 const SITEMAP_GENERATOR_FILE = 'scripts/generate-sitemap.js'
+
+function hasManifestPurpose(value: unknown, purpose: string): boolean {
+  return typeof value === 'string' && value.split(/\s+/).includes(purpose)
+}
+
+async function isOpaqueImage(imagePath: string): Promise<boolean> {
+  const stats = await sharp(imagePath).stats()
+  const alphaChannel = stats.channels[3]
+  return alphaChannel === undefined || alphaChannel.min === 255
+}
 const PUBLIC_ASSET_BUDGETS = [
   {
     label: 'PWA icon',
@@ -46,6 +57,8 @@ const NOINDEX_SITEMAP_PATHS = [
   '/settings',
   '/login',
   '/register',
+  '/forgot-password',
+  '/reset-password',
   '/auth/callback',
   '/auth/passkey-recovery',
   '/profile',
@@ -79,7 +92,7 @@ function toRepoPath(options: AuditOptions, filePath: string): string {
 }
 
 async function listFilesRecursive(rootPath: string): Promise<string[]> {
-  let entries: Awaited<ReturnType<typeof readdir>>
+  let entries: Dirent<string>[]
   try {
     entries = await readdir(rootPath, { withFileTypes: true })
   } catch (error) {
@@ -349,7 +362,7 @@ async function checkManifest(
     }
   }
 
-  const manifestLang = typeof manifest.lang === 'string' ? manifest.lang.trim() : ''
+  const manifestLang = typeof manifest['lang'] === 'string' ? manifest['lang'].trim() : ''
   if (manifestLang !== defaultAppLocale) {
     issues.push({
       severity: 'error',
@@ -361,7 +374,7 @@ async function checkManifest(
   }
 
   // Verify icon files exist
-  const icons = manifest.icons as Array<{ src?: unknown }> | undefined
+  const icons = manifest['icons'] as Array<{ purpose?: unknown; src?: unknown }> | undefined
   if (Array.isArray(icons) && icons.length > 0) {
     for (const icon of icons) {
       if (typeof icon.src !== 'string' || icon.src.trim().length === 0) {
@@ -382,6 +395,29 @@ async function checkManifest(
           file: iconPath,
           rule: 'pwa-icons',
         })
+        continue
+      }
+
+      if (hasManifestPurpose(icon.purpose, 'maskable')) {
+        try {
+          if (!(await isOpaqueImage(iconPath))) {
+            issues.push({
+              severity: 'error',
+              message: `Maskable icon must have an opaque background: ${icon.src}`,
+              file: iconPath,
+              rule: 'pwa-maskable-icon',
+              suggestion:
+                'Use an opaque maskable asset whose essential artwork stays in the safe zone.',
+            })
+          }
+        } catch {
+          issues.push({
+            severity: 'error',
+            message: `Cannot decode declared maskable icon: ${icon.src}`,
+            file: iconPath,
+            rule: 'pwa-maskable-icon',
+          })
+        }
       }
     }
   } else {

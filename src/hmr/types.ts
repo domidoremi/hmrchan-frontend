@@ -8,6 +8,8 @@ export type HmrPublicPageKey =
   | 'settings'
   | 'login'
   | 'register'
+  | 'forgot-password'
+  | 'reset-password'
   | 'auth-callback'
   | 'passkey-recovery'
   | 'profile'

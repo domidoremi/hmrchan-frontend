@@ -101,33 +101,35 @@ function getStoredCredentials(): StoredClientCredentials | null {
       return null
     }
 
-    return {
+    const credentials: StoredClientCredentials = {
       client_token: parsed.client_token,
-      canonical_fingerprint:
-        typeof parsed.canonical_fingerprint === 'string' && parsed.canonical_fingerprint.trim()
-          ? parsed.canonical_fingerprint
-          : undefined,
-      fingerprint_source: normalizeFingerprintSource(parsed.fingerprint_source),
-      fingerprint_components_version:
-        typeof parsed.fingerprint_components_version === 'string' &&
-        parsed.fingerprint_components_version.trim()
-          ? parsed.fingerprint_components_version
-          : undefined,
-      client_type: normalizeClientType(parsed.client_type),
-      risk_score:
-        typeof parsed.risk_score === 'number' && Number.isFinite(parsed.risk_score)
-          ? parsed.risk_score
-          : undefined,
-      risk_decision:
-        typeof parsed.risk_decision === 'string' && parsed.risk_decision.trim()
-          ? parsed.risk_decision
-          : undefined,
-      init_summary_updated_at:
-        typeof parsed.init_summary_updated_at === 'number' &&
-        Number.isFinite(parsed.init_summary_updated_at)
-          ? parsed.init_summary_updated_at
-          : undefined,
     }
+    if (typeof parsed.canonical_fingerprint === 'string' && parsed.canonical_fingerprint.trim()) {
+      credentials.canonical_fingerprint = parsed.canonical_fingerprint
+    }
+    const fingerprintSource = normalizeFingerprintSource(parsed.fingerprint_source)
+    if (fingerprintSource) credentials.fingerprint_source = fingerprintSource
+    if (
+      typeof parsed.fingerprint_components_version === 'string' &&
+      parsed.fingerprint_components_version.trim()
+    ) {
+      credentials.fingerprint_components_version = parsed.fingerprint_components_version
+    }
+    const clientType = normalizeClientType(parsed.client_type)
+    if (clientType) credentials.client_type = clientType
+    if (typeof parsed.risk_score === 'number' && Number.isFinite(parsed.risk_score)) {
+      credentials.risk_score = parsed.risk_score
+    }
+    if (typeof parsed.risk_decision === 'string' && parsed.risk_decision.trim()) {
+      credentials.risk_decision = parsed.risk_decision
+    }
+    if (
+      typeof parsed.init_summary_updated_at === 'number' &&
+      Number.isFinite(parsed.init_summary_updated_at)
+    ) {
+      credentials.init_summary_updated_at = parsed.init_summary_updated_at
+    }
+    return credentials
   } catch {
     return null
   }
@@ -204,14 +206,16 @@ function persistInitCredentials(response: ClientInitResponse): void {
 
   if (nextClientToken) {
     const shouldReuseExistingSecret =
-      existing?.client_token === nextClientToken && inMemoryClientSecret && !nextClientSecret
+      existing?.client_token === nextClientToken &&
+      Boolean(inMemoryClientSecret) &&
+      !nextClientSecret
+    const clientSecret =
+      nextClientSecret || (shouldReuseExistingSecret ? inMemoryClientSecret : undefined)
     storeCredentials({
       ...(existing ?? {}),
       ...responseSummary,
       client_token: nextClientToken,
-      client_secret:
-        nextClientSecret ||
-        (shouldReuseExistingSecret ? (inMemoryClientSecret ?? undefined) : undefined),
+      ...(clientSecret ? { client_secret: clientSecret } : {}),
     })
     return
   }
@@ -236,7 +240,7 @@ function isRecoverableVerifyError(error: unknown): error is ApiError {
 
   const rawMessage =
     error.details && typeof error.details === 'object' && 'rawMessage' in error.details
-      ? String((error.details as Record<string, unknown>).rawMessage ?? '').toLowerCase()
+      ? String((error.details as Record<string, unknown>)['rawMessage'] ?? '').toLowerCase()
       : ''
 
   return rawMessage.includes('missing client token') || rawMessage.includes('invalid client token')

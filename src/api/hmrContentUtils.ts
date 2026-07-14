@@ -202,7 +202,7 @@ export function extractRecord(payload: unknown, keys: string[]): JsonRecord {
 export function unwrapApiPayload(payload: unknown): unknown {
   if (!isRecord(payload)) return payload
 
-  const nested = payload.data ?? payload.result ?? payload.payload
+  const nested = payload['data'] ?? payload['result'] ?? payload['payload']
   if (Array.isArray(nested) || isRecord(nested)) return nested
 
   return payload
@@ -235,7 +235,7 @@ export function extractCursorCollection<T>(
   const items = extractList(unwrapped, keys)
   const record = isRecord(unwrapped) ? unwrapped : {}
   const nextCursor = pickOptionalString(record, ['next_cursor', 'nextCursor'])
-  const hasMoreValue = record.has_more ?? record.hasMore
+  const hasMoreValue = record['has_more'] ?? record['hasMore']
 
   return {
     items: (items.length ? items : fallback).map(mapper),

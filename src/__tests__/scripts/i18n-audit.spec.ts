@@ -15,7 +15,7 @@ interface I18nFixtureOptions {
   writeContract?: boolean
 }
 
-const completeMessages: LocaleMessages = {
+const completeMessages = {
   'zh-CN': {
     'nav.home': '首页',
     'nav.settings': '设置',
@@ -28,7 +28,7 @@ const completeMessages: LocaleMessages = {
     'nav.home': 'ホーム',
     'nav.settings': '設定',
   },
-}
+} satisfies LocaleMessages
 
 function formatMessages(messages: LocaleMessages): string {
   const localeBlocks = Object.entries(messages).map(([locale, keys]) => {

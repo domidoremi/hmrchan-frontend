@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearPostHistory, listBrowsingHistory, recordPostView } from '@/api/historyService'
+import { assertUuidV7String, type PublicResourceId } from '@/utils/contractResourceId'
 
 const mockGet = vi.hoisted(() => vi.fn())
 const mockPost = vi.hoisted(() => vi.fn())
@@ -14,7 +15,7 @@ vi.mock('@/api/client', () => ({
   },
 }))
 
-const POST_ID = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1'
+const POST_ID = assertUuidV7String('018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1')
 
 describe('historyService', () => {
   beforeEach(() => {
@@ -40,8 +41,8 @@ describe('historyService', () => {
   })
 
   it('rejects non-UUIDv7 post identifiers before calling the facade', () => {
-    expect(() => recordPostView('not-a-v7-id')).toThrow('post id')
-    expect(() => clearPostHistory('not-a-v7-id')).toThrow('post id')
+    expect(() => recordPostView('not-a-v7-id' as PublicResourceId)).toThrow('post id')
+    expect(() => clearPostHistory('not-a-v7-id' as PublicResourceId)).toThrow('post id')
 
     expect(mockPost).not.toHaveBeenCalled()
     expect(mockDelete).not.toHaveBeenCalled()

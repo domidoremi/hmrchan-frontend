@@ -59,7 +59,7 @@ function summarizeSecurity(
     passkeys: credentials.length,
     sessions: sessionRows.length,
     devices: deviceRows.length,
-    twoFactorEnabled: Boolean(twoFactorRecord.enabled ?? twoFactorRecord.totp_enabled),
+    twoFactorEnabled: Boolean(twoFactorRecord['enabled'] ?? twoFactorRecord['totp_enabled']),
     updatedAt: pickString(twoFactorRecord, ['updated_at', 'last_used_at'], '已更新'),
   }
 }

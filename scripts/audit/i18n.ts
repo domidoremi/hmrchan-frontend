@@ -100,11 +100,12 @@ async function loadInlineLocales(projectRoot: string): Promise<Map<string, Set<s
     const match = line.match(/^(\s*)(['"]?[\w-]+['"]?)\s*:\s*(.*)$/)
     if (!match) continue
 
-    const indent = match[1].length
-    const key = match[2].replace(/^['"]|['"]$/g, '')
-    const valueStart = match[3].trim()
+    const [, indentSource = '', rawKey = '', rawValue = ''] = match
+    const indent = indentSource.length
+    const key = rawKey.replace(/^['"]|['"]$/g, '')
+    const valueStart = rawValue.trim()
 
-    while (stack.length > 0 && stack[stack.length - 1].indent >= indent) {
+    while ((stack.at(-1)?.indent ?? -1) >= indent) {
       stack.pop()
     }
 
@@ -303,13 +304,13 @@ async function extractUsedKeys(projectRoot: string): Promise<Set<string>> {
     let match: RegExpExecArray | null
     while ((match = dollarTPattern.exec(content)) !== null) {
       const key = match[1]
-      if (isLikelyI18nKey(key)) usedKeys.add(key)
+      if (key && isLikelyI18nKey(key)) usedKeys.add(key)
     }
     dollarTPattern.lastIndex = 0
 
     while ((match = tPattern.exec(content)) !== null) {
       const key = match[1]
-      if (isLikelyI18nKey(key)) usedKeys.add(key)
+      if (key && isLikelyI18nKey(key)) usedKeys.add(key)
     }
     tPattern.lastIndex = 0
   }

@@ -82,7 +82,7 @@ function extractStyleBlocks(content: string): Array<{ css: string; startLine: nu
   while ((match = regex.exec(content)) !== null) {
     const beforeMatch = content.slice(0, match.index)
     const startLine = beforeMatch.split('\n').length
-    blocks.push({ css: match[1], startLine })
+    blocks.push({ css: match[1] ?? '', startLine })
   }
 
   return blocks
@@ -113,6 +113,7 @@ function isWithinReducedMotionBlock(lines: string[], currentIndex: number): bool
 
   for (let i = currentIndex; i >= 0; i--) {
     const line = lines[i]
+    if (line === undefined) continue
     braceBalance += countOccurrences(line, '}')
     braceBalance -= countOccurrences(line, '{')
 
@@ -149,8 +150,9 @@ function hasModernViewportFallback(
     if (!candidate || isCommentLine(candidate) || candidate.trim() === '') continue
 
     const propMatch = candidate.match(/^\s*([a-z-]+)\s*:/i)
-    if (!propMatch) break
-    if (propMatch[1].toLowerCase() !== property.toLowerCase()) break
+    const candidateProperty = propMatch?.[1]
+    if (!candidateProperty) break
+    if (candidateProperty.toLowerCase() !== property.toLowerCase()) break
 
     if (/\b\d+(?:dvh|svh|lvh)\b/.test(candidate)) {
       return true
@@ -166,8 +168,7 @@ function analyzeCSS(css: string, filePath: string, lineOffset: number): AuditIss
   const issues: AuditIssue[] = []
   const lines = css.split('\n')
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
+  for (const [i, line] of lines.entries()) {
     if (isCommentLine(line) || isVarDeclaration(line) || isAtRuleLine(line)) continue
 
     if (line.includes('!important') && !isAllowedImportantLine(lines, i, filePath)) {
@@ -200,7 +201,8 @@ function analyzeCSS(css: string, filePath: string, lineOffset: number): AuditIss
 
       if (rule.id === 'no-legacy-vh') {
         const propMatch = line.match(/^\s*([a-z-]+)\s*:/i)
-        if (propMatch && hasModernViewportFallback(lines, i, propMatch[1])) {
+        const property = propMatch?.[1]
+        if (property && hasModernViewportFallback(lines, i, property)) {
           continue
         }
       }
@@ -214,7 +216,7 @@ function analyzeCSS(css: string, filePath: string, lineOffset: number): AuditIss
         file: filePath,
         line: lineOffset + i,
         rule: rule.id,
-        suggestion: rule.suggestion,
+        ...(rule.suggestion === undefined ? {} : { suggestion: rule.suggestion }),
       })
     }
   }
@@ -228,7 +230,7 @@ function countStyleBlocks(content: string): { scoped: number; unscoped: number }
   let unscoped = 0
 
   for (const match of matches) {
-    const attrs = match.groups?.attrs ?? ''
+    const attrs = match.groups?.['attrs'] ?? ''
     if (/\bscoped\b/i.test(attrs)) scoped += 1
     else unscoped += 1
   }
@@ -276,8 +278,7 @@ function analyzeVueStyleArchitecture(content: string, filePath: string): AuditIs
     for (const block of styleBlocks) {
       const lines = block.css.split('\n')
 
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
+      for (const [i, line] of lines.entries()) {
         if (isCommentLine(line)) continue
 
         if (line.includes(':global(')) {
@@ -321,7 +322,9 @@ async function scanStyleEntrypoints(projectRoot: string): Promise<AuditIssue[]> 
     return issues
   }
 
-  const imports = [...content.matchAll(/import\s+['"](.+?\.css)['"]/g)].map((match) => match[1])
+  const imports = [...content.matchAll(/import\s+['"](.+?\.css)['"]/g)]
+    .map((match) => match[1])
+    .filter((spec): spec is string => spec !== undefined)
   const disallowed = imports.filter(
     (spec) => spec.startsWith('./styles/') && spec !== './styles/index.css'
   )

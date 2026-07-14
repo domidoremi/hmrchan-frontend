@@ -69,6 +69,7 @@ export function useHmrBrandPet() {
       const showcaseState =
         idleShowcaseStates[Math.floor(Math.random() * idleShowcaseStates.length)] ??
         idleShowcaseStates[0]
+      if (!showcaseState) return
       setBrandState(showcaseState.state, showcaseState.duration, showcaseState.cooldown)
       scheduleIdleReview()
     }, delay)

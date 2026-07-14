@@ -149,7 +149,6 @@ describe('useHmrExploreCatalog', () => {
               durationSec: 0,
               hasRenderableMedia: false,
               mediaCount: 0,
-              mediaUrl: undefined,
             }),
           ],
         }),

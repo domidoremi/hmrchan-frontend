@@ -60,7 +60,7 @@ export function toApiErrorState(error: unknown, path: string): HmrApiErrorState 
       message: error.message || '当前内容暂时不可用。',
       path,
       status: error.status,
-      code: error.code,
+      ...(error.code === undefined ? {} : { code: error.code }),
     }
   }
 

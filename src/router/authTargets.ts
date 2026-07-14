@@ -31,8 +31,8 @@ export function resolveAuthRedirectTarget(value: unknown, fallback = '/profile')
 
 export function readAuthRedirectQuery(
   route: Pick<RouteLocationNormalizedLoaded, 'query'>
-): LocationQueryValue | LocationQueryValue[] {
-  return route.query.redirect
+): LocationQueryValue | LocationQueryValue[] | undefined {
+  return route.query['redirect']
 }
 
 export function resolvePostAuthRedirectTarget(value: unknown, fallback = '/profile'): string {

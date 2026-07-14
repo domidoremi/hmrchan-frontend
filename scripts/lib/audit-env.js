@@ -6,6 +6,8 @@ export const LOCAL_AUDIT_CONTRACT_VERSION = 'local-audit-contract'
 export const LOCAL_AUDIT_PREVIEW_PORTS = Object.freeze([4173, 5173, 3000])
 export const DEFAULT_LOCAL_AUDIT_NODE_MAX_OLD_SPACE_SIZE_MB = 4096
 export const DEFAULT_LOCAL_AUDIT_BUN_SMOL = 'true'
+const WRANGLER_CONFIG_FILE = 'wrangler.toml'
+const WRANGLER_CONTRACT_VERSION_RE = /^\s*VITE_CLIENT_CONTRACT_VERSION\s*=\s*"([^"]+)"/m
 const BACKEND_AUDIT_ENV_FILE_CANDIDATES = Object.freeze([['..', 'hmrchan-backend', '.env']])
 const BACKEND_ENV_FALLBACK_KEYS = Object.freeze({
   REHEARSAL_TURNSTILE_BYPASS_TOKEN: ['REHEARSAL_TURNSTILE_BYPASS_TOKEN'],
@@ -185,6 +187,16 @@ export function readLocalAuditEnv({ cwd = process.cwd(), fileName = LOCAL_AUDIT_
   }
 }
 
+export function resolveLocalAuditContractVersion({ cwd = process.cwd() } = {}) {
+  try {
+    const wrangler = fs.readFileSync(path.resolve(cwd, WRANGLER_CONFIG_FILE), 'utf8')
+    const configuredVersion = wrangler.match(WRANGLER_CONTRACT_VERSION_RE)?.[1]?.trim()
+    return configuredVersion || LOCAL_AUDIT_CONTRACT_VERSION
+  } catch {
+    return LOCAL_AUDIT_CONTRACT_VERSION
+  }
+}
+
 function readAdjacentAuditEnvFile(cwd, relativePathSegments) {
   const filePath = path.resolve(cwd, ...relativePathSegments)
   if (!fs.existsSync(filePath)) {
@@ -289,7 +301,7 @@ export function createLocalAuditEnv(
   applyBackendAuditFallbacks(mergedEnv, { cwd })
 
   if (includeContractFallback && !hasTrimmedValue(mergedEnv.VITE_CLIENT_CONTRACT_VERSION)) {
-    mergedEnv.VITE_CLIENT_CONTRACT_VERSION = LOCAL_AUDIT_CONTRACT_VERSION
+    mergedEnv.VITE_CLIENT_CONTRACT_VERSION = resolveLocalAuditContractVersion({ cwd })
   }
 
   return applyLocalAuditResourceDefaults(mergedEnv)

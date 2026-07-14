@@ -18,7 +18,7 @@ function makePost(id: string, platform?: string): HmrPost {
     tag: 'test',
     createdAt: '2026-05-28T00:00:00.000Z',
     statsLabel: '0',
-    platform,
+    ...(platform === undefined ? {} : { platform }),
   }
 }
 

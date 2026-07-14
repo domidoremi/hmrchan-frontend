@@ -1128,6 +1128,7 @@ function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocum
   const metaDescription = buildPostMetaDescription(post)
   const shellBody = buildPostShellBody(post, metaDescription)
   const author = normalizeText(post.author_name) || normalizeText(post.author_username)
+  const ogImage = normalizeText(post.thumbnail_url)
   const primaryTag = Array.isArray(post.tags) ? normalizeText(post.tags[0]) : ''
   const eyebrowParts = [
     primaryTag ? `#${primaryTag}` : '',
@@ -1142,7 +1143,7 @@ function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocum
     description: metaDescription,
     canonicalPath: path,
     ogType: 'article',
-    ogImage: normalizeText(post.thumbnail_url) || undefined,
+    ...(ogImage ? { ogImage } : {}),
     shellEyebrow: eyebrowParts || fallback.shellEyebrow,
     shellTitle,
     shellBody,
@@ -1163,6 +1164,7 @@ function buildDynamicAuthorDocument(path: string, author: EdgeAuthorDetail): Htm
   const metaDescription = buildAuthorMetaDescription(author)
   const shellBody = buildAuthorShellBody(author, metaDescription)
   const verifiedLabel = author.is_verified ? 'Verified creator' : 'Creator profile'
+  const ogImage = normalizeText(author.avatar_url)
 
   return {
     ...fallback,
@@ -1170,7 +1172,7 @@ function buildDynamicAuthorDocument(path: string, author: EdgeAuthorDetail): Htm
     description: metaDescription,
     canonicalPath: path,
     ogType: 'article',
-    ogImage: normalizeText(author.avatar_url) || undefined,
+    ...(ogImage ? { ogImage } : {}),
     shellEyebrow: `${verifiedLabel} · ${formatPlatform(author.platform ?? '')}`,
     shellTitle: truncate(name, 120),
     shellBody,
@@ -1192,7 +1194,7 @@ function buildDynamicDiscussionDocument(
   const shellBody = buildDiscussionShellBody(discussion, metaDescription)
   const category = formatDiscussionCategory(discussion.category ?? '')
   const eyebrowPrefix = discussion.is_pinned ? 'Pinned discussion' : 'Discussion'
-  const ogImage = normalizeText(discussion.referenced_post?.thumbnail_url) || undefined
+  const ogImage = normalizeText(discussion.referenced_post?.thumbnail_url)
 
   return {
     ...fallback,
@@ -1200,7 +1202,7 @@ function buildDynamicDiscussionDocument(
     description: metaDescription,
     canonicalPath,
     ogType: 'article',
-    ogImage,
+    ...(ogImage ? { ogImage } : {}),
     shellEyebrow: `${eyebrowPrefix} · ${category}`,
     shellTitle: truncate(titleCandidate, 120),
     shellBody,

@@ -6,15 +6,17 @@
     "src/**/*.test.ts",
     "src/**/*.ts",
     "src/**/*.vue",
-    "functions/**/__tests__/*",
-    "build/vite/plugins/**/__tests__/*",
-    "build/vite/plugins/**/*.spec.ts",
-    "build/vite/plugins/**/*.ts",
+    "functions/**/*.ts",
+    "scripts/audit/**/*.ts",
+    "scripts/**/*.js",
+    "scripts/**/*.mjs",
+    "build/vite/**/*.ts",
     "env.d.ts"
   ],
   "exclude": [],
   "compilerOptions": {
     "composite": true,
+    "allowJs": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",
     "types": ["node", "jsdom", "vitest/globals"]
   }

@@ -382,6 +382,25 @@ function buildDetailFallbackBuckets(entries) {
   return buckets
 }
 
+/**
+ * @param {{
+ *   base?: string,
+ *   fallbackUrlsFile?: string,
+ *   fallbackEntries?: Array<
+ *     string | {
+ *       url?: string,
+ *       path?: string,
+ *       href?: string,
+ *       pageType?: string,
+ *       indexedInSitemap?: boolean,
+ *       robotsDisallowed?: boolean,
+ *       discoverySource?: string,
+ *       selectionReason?: string
+ *     }
+ *   >,
+ *   fetchImpl?: typeof fetch
+ * }} [options]
+ */
 export async function discoverAuditTargets({
   base = DEFAULT_BASE,
   fallbackUrlsFile = DEFAULT_URLS_FILE,
@@ -397,7 +416,7 @@ export async function discoverAuditTargets({
     base: normalizedBase,
     sitemapUrl,
     robotsUrl,
-    entries: [],
+    entries: /** @type {Array<ReturnType<typeof normalizeManifestEntry>>} */ ([]),
     excluded: [],
     coverage: {
       detailTargets: { ...DETAIL_PAGE_TARGETS },

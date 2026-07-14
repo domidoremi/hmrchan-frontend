@@ -147,8 +147,7 @@ async function scanLineRules(projectRoot: string, files: string[]): Promise<Audi
     const content = await readFile(join(projectRoot, file), 'utf-8')
     const lines = content.split(/\r?\n/)
 
-    for (let index = 0; index < lines.length; index += 1) {
-      const line = lines[index]
+    for (const [index, line] of lines.entries()) {
       if (shouldSkipLine(line)) continue
 
       for (const rule of LINE_RULES) {

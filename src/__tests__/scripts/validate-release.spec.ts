@@ -202,6 +202,14 @@ describe('validate release git range resolution', () => {
   })
 })
 
+describe('validate release command budgets', () => {
+  it('allows the full frontend health matrix to exceed three minutes', async () => {
+    const { DEFAULT_BROWSER_GATE_COMMAND_TIMEOUT_MS } = await importValidateReleaseModule()
+
+    expect(DEFAULT_BROWSER_GATE_COMMAND_TIMEOUT_MS).toBe(6 * 60 * 1000)
+  })
+})
+
 describe('release evidence command policy', () => {
   beforeEach(() => {
     vi.unstubAllEnvs()
@@ -248,7 +256,11 @@ describe('release evidence command policy', () => {
       })
     )
     expect(
-      runReleaseEvidence({ env, cwd: 'G:/Project/hmrchan/hmrchan-frontend', spawnProcess })
+      runReleaseEvidence({
+        env,
+        cwd: 'G:/Project/hmrchan/hmrchan-frontend',
+        spawnProcess: spawnProcess as unknown as (typeof import('node:child_process'))['spawn'],
+      })
     ).toBe(0)
     expect(spawnProcess).toHaveBeenCalledWith(
       'node',
@@ -333,7 +345,9 @@ describe('validate release stage summaries', () => {
       artifactDir: 'output/validation/test-run',
       target: 'https://momichan.com',
     })
-    const localStaticStage = records.find((stage) => stage.id === 'stage-1-local-static')
+    const localStaticStage = records.find(
+      (stage: { id: string }) => stage.id === 'stage-1-local-static'
+    )
 
     expect(localStaticStage?.selected).toBe(false)
     expect(localStaticStage?.status).toBe('skipped')
@@ -371,12 +385,12 @@ describe('validate release stage summaries', () => {
       length: 'contract-secret-sha'.length,
     })
     expect(preview.env.sensitiveKeys).toEqual(['CLOUDFLARE_API_TOKEN', 'PRIMARY_PASSWORD'])
-    expect(preview.env.values.CLOUDFLARE_API_TOKEN).toEqual({
+    expect(preview.env.values['CLOUDFLARE_API_TOKEN']).toEqual({
       present: true,
       length: 'cf-token-secret'.length,
       risk: 'sensitive',
     })
-    expect(preview.env.values.VITE_ENABLE_DEBUG).toEqual({
+    expect(preview.env.values['VITE_ENABLE_DEBUG']).toEqual({
       present: true,
       length: 'false'.length,
       risk: 'standard',

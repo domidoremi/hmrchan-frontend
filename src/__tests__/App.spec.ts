@@ -40,7 +40,7 @@ describe('App', () => {
 
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="router-view"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="router-view"]').element).toBeDefined()
     expect(wrapper.find('[data-testid="client-challenge-dialog"]').exists()).toBe(false)
   })
 
@@ -53,7 +53,7 @@ describe('App', () => {
     await nextTick()
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-challenge-dialog"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="client-challenge-dialog"]').element).toBeDefined()
 
     bridge.dismissClientChallenge()
     await pending

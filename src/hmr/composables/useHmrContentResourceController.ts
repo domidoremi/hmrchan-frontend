@@ -1,4 +1,4 @@
-import { shallowRef } from 'vue'
+import { shallowRef, type ShallowRef } from 'vue'
 
 import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
 
@@ -7,6 +7,15 @@ export interface HmrContentResourceControllerOptions<T> {
   paths: string[]
   isEmpty?: (data: T) => boolean
   resolvePageState?: (data: T, resource: HmrAsyncResource<T>) => HmrPageState
+}
+
+export interface HmrContentResourceController<T> {
+  content: ShallowRef<T>
+  pageState: ShallowRef<HmrPageState>
+  resource: ShallowRef<HmrAsyncResource<T>>
+  applyResource: (nextResource: HmrAsyncResource<T>) => HmrAsyncResource<T>
+  markLoading: () => void
+  markReady: (data: T) => HmrAsyncResource<T>
 }
 
 export function createHmrInitialResource<T>(data: T, paths: string[]): HmrAsyncResource<T> {
@@ -22,7 +31,7 @@ export function createHmrInitialResource<T>(data: T, paths: string[]): HmrAsyncR
 
 export function useHmrContentResourceController<T>(
   options: HmrContentResourceControllerOptions<T>
-) {
+): HmrContentResourceController<T> {
   const content = shallowRef<T>(options.initialData)
   const pageState = shallowRef<HmrPageState>('idle')
   const resource = shallowRef<HmrAsyncResource<T>>(

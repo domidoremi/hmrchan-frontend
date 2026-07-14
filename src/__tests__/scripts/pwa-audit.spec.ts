@@ -3,10 +3,12 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
+import sharp from 'sharp'
 
 import pwaAudit from '../../../scripts/audit/pwa'
 
 type ManifestIcon = {
+  purpose?: string
   src?: string
 }
 
@@ -78,7 +80,7 @@ async function createPwaFixture(options: ManifestFixtureOptions): Promise<string
   const offlineLang = options.offlineLang ?? 'zh-CN'
   const sitemapHreflang = options.sitemapHreflang ?? i18nSupportedLocales
   const sitemapGeneratorPaths = options.sitemapGeneratorPaths ?? [...indexedSitemapPaths]
-  const sitemapEntries =
+  const sitemapEntries: NonNullable<ManifestFixtureOptions['sitemapEntries']> =
     options.sitemapEntries ??
     indexedSitemapPaths.map((path) => ({
       loc: new URL(path, 'https://momichan.com').toString(),
@@ -193,6 +195,69 @@ async function runPwaAudit(projectRoot: string) {
 }
 
 describe('pwa audit manifest icon contract', () => {
+  it('passes when a maskable icon has an opaque background', async () => {
+    const iconPath = '/icons/maskable.png'
+    const projectRoot = await createPwaFixture({
+      icons: [{ src: iconPath, purpose: 'maskable' }],
+      existingIcons: [iconPath, '/icons/sitting-192.webp'],
+    })
+
+    try {
+      await sharp({
+        create: {
+          width: 192,
+          height: 192,
+          channels: 4,
+          background: { r: 75, g: 140, b: 255, alpha: 1 },
+        },
+      })
+        .png()
+        .toFile(join(projectRoot, 'public', iconPath.replace(/^\//, '')))
+
+      const result = await runPwaAudit(projectRoot)
+
+      expect(result.status).toBe('pass')
+      expect(result.issues).toEqual([])
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true })
+    }
+  })
+
+  it('fails when a maskable icon contains transparent pixels', async () => {
+    const iconPath = '/icons/maskable.png'
+    const projectRoot = await createPwaFixture({
+      icons: [{ src: iconPath, purpose: 'maskable' }],
+      existingIcons: [iconPath, '/icons/sitting-192.webp'],
+    })
+
+    try {
+      await sharp({
+        create: {
+          width: 192,
+          height: 192,
+          channels: 4,
+          background: { r: 75, g: 140, b: 255, alpha: 0 },
+        },
+      })
+        .png()
+        .toFile(join(projectRoot, 'public', iconPath.replace(/^\//, '')))
+
+      const result = await runPwaAudit(projectRoot)
+
+      expect(result.status).toBe('fail')
+      expect(result.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            rule: 'pwa-maskable-icon',
+            message: `Maskable icon must have an opaque background: ${iconPath}`,
+          }),
+        ])
+      )
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true })
+    }
+  })
+
   it('passes when the manifest declares an existing install icon', async () => {
     const projectRoot = await createPwaFixture({
       icons: [{ src: '/icons/sitting-192.webp' }],
@@ -635,7 +700,7 @@ describe('pwa audit language contract', () => {
       sitemapEntries: indexedSitemapPaths.map((path) => ({
         loc: new URL(path, 'https://momichan.com').toString(),
         hreflang: ['zh-CN', 'en-US', 'ja-JP'],
-        alternateHref: path === '/explore' ? 'https://momichan.com/community' : undefined,
+        ...(path === '/explore' ? { alternateHref: 'https://momichan.com/community' } : {}),
       })),
     })
 

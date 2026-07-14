@@ -17,6 +17,32 @@ import {
 import { resolveHtmlDocumentWithEdgeData } from '../src/edge/detailDocumentResolver'
 import type { InternalApiGatewayRuntimeEnv } from '../src/edge/internalApiGateway'
 
+interface RewriterElement {
+  getAttribute(name: string): string | null
+  remove(): void
+  setAttribute(name: string, value: string): void
+  setInnerContent(content: string, options?: { html?: boolean }): void
+}
+
+interface RewriterHandler {
+  element(element: RewriterElement): void
+}
+
+interface RewriterInstance {
+  on(selector: string, handler: RewriterHandler): RewriterInstance
+  transform(response: Response): Response
+}
+
+declare const HTMLRewriter: {
+  new (): RewriterInstance
+}
+
+type PagesEventContext<Env> = {
+  env: Env
+  next(): Promise<Response>
+  request: Request
+}
+
 const CANONICAL_HOSTNAME = 'momichan.com'
 const CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
 const REPORTING_ENDPOINT_GROUP = 'csp-endpoint'
@@ -108,7 +134,7 @@ function ensureCsrfCookie(request: Request, headers: Headers): void {
 class ScriptNonceHandler {
   constructor(private readonly nonce: string) {}
 
-  element(el: Element) {
+  element(el: RewriterElement) {
     if (!el.getAttribute('nonce')) {
       el.setAttribute('nonce', this.nonce)
     }
@@ -118,7 +144,7 @@ class ScriptNonceHandler {
 class TitleHandler {
   constructor(private readonly titleText: string) {}
 
-  element(el: Element) {
+  element(el: RewriterElement) {
     el.setInnerContent(this.titleText)
   }
 }
@@ -126,7 +152,7 @@ class TitleHandler {
 class MetaContentHandler {
   constructor(private readonly content: string) {}
 
-  element(el: Element) {
+  element(el: RewriterElement) {
     el.setAttribute('content', this.content)
   }
 }
@@ -134,7 +160,7 @@ class MetaContentHandler {
 class CanonicalHandler {
   constructor(private readonly href: string) {}
 
-  element(el: Element) {
+  element(el: RewriterElement) {
     el.setAttribute('href', this.href)
   }
 }
@@ -142,7 +168,7 @@ class CanonicalHandler {
 class StructuredDataHandler {
   constructor(private readonly payload: string | null) {}
 
-  element(el: Element) {
+  element(el: RewriterElement) {
     if (!this.payload) {
       el.remove()
       return
@@ -156,7 +182,7 @@ class StructuredDataHandler {
 class AppRootHandler {
   constructor(private readonly html: string) {}
 
-  element(el: Element) {
+  element(el: RewriterElement) {
     el.setInnerContent(this.html, { html: true })
   }
 }
@@ -185,13 +211,11 @@ function isAuthRoutePath(pathname: string): boolean {
 }
 
 export async function onRequest(
-  context: EventContext<
+  context: PagesEventContext<
     InternalApiGatewayRuntimeEnv & {
       API_BASE_URL?: string
       VPC_API_ORIGIN?: string
-    },
-    string,
-    unknown
+    }
   >
 ): Promise<Response> {
   const requestUrl = new URL(context.request.url)

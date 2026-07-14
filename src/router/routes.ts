@@ -65,6 +65,18 @@ export const appRoutes: RouteRecordRaw[] = [
         meta: { pageKey: 'register', isPanel: true },
       },
       {
+        path: 'forgot-password',
+        name: 'hmr-forgot-password',
+        component: () => import('@/views/ForgotPasswordPage.vue'),
+        meta: { pageKey: 'forgot-password', isPanel: true },
+      },
+      {
+        path: 'reset-password',
+        name: 'hmr-reset-password',
+        component: () => import('@/views/ResetPasswordPage.vue'),
+        meta: { pageKey: 'reset-password', isPanel: true },
+      },
+      {
         path: 'auth/callback',
         name: 'hmr-auth-callback',
         component: () => import('@/views/AuthCallbackPage.vue'),
@@ -98,7 +110,7 @@ export const appRoutes: RouteRecordRaw[] = [
         name: 'hmr-profile-section',
         component: () => import('@/views/ProfilePage.vue'),
         props: (to) => ({
-          section: typeof to.params.section === 'string' ? to.params.section : 'overview',
+          section: typeof to.params['section'] === 'string' ? to.params['section'] : 'overview',
         }),
         meta: { pageKey: 'profile', isPanel: true, requiresAuth: true },
       },

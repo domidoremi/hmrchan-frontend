@@ -8,11 +8,28 @@ import lighthouse from 'lighthouse'
 import * as chromeLauncher from 'chrome-launcher'
 import fs from 'fs'
 import path from 'path'
+import { pathToFileURL } from 'url'
 
 const TARGET_URLS = process.argv.slice(2)
 const DEFAULT_URL = 'http://127.0.0.1:5173'
 
-async function runLighthouse() {
+function formatError(error) {
+  return error instanceof Error ? error.message : String(error)
+}
+
+/**
+ * @param {{ kill: () => Promise<unknown> }} chrome
+ * @param {{ warn: (message: string) => void }} [logger]
+ */
+export async function cleanupChrome(chrome, logger = console) {
+  try {
+    await chrome.kill()
+  } catch (error) {
+    logger.warn(`⚠️ Chrome cleanup warning: ${formatError(error)}`)
+  }
+}
+
+export async function runLighthouse() {
   const urls = TARGET_URLS.length > 0 ? TARGET_URLS : [DEFAULT_URL]
   console.log(`🔍 Starting Lighthouse audit for: ${urls.join(', ')}\n`)
 
@@ -143,11 +160,29 @@ async function runLighthouse() {
     }
 
     console.log(`\n✅ Reports saved to: ${reportsDir}`)
-  } catch (error) {
-    console.error('❌ Lighthouse audit failed:', error.message)
   } finally {
-    await chrome.kill()
+    await cleanupChrome(chrome)
   }
 }
 
-runLighthouse().catch(console.error)
+/**
+ * @param {() => Promise<unknown>} [run]
+ * @param {{ error: (message: string, detail?: string) => void }} [logger]
+ * @returns {Promise<number>}
+ */
+export async function main(run = runLighthouse, logger = console) {
+  try {
+    await run()
+    return 0
+  } catch (error) {
+    logger.error('❌ Lighthouse audit failed:', formatError(error))
+    return 1
+  }
+}
+
+const isDirectExecution =
+  process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+
+if (isDirectExecution) {
+  process.exitCode = await main()
+}

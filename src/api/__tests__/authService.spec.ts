@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   getPasskeyRecoveryStatus,
+  requestPasswordReset,
   requestPasskeyLoginOptions,
   requestPasskeyRecoveryRegisterOptions,
+  resetPassword,
   resolveAuthSession,
   startPasskeyRecovery,
   verifyPasskeyLogin,
@@ -91,6 +93,21 @@ describe('authService', () => {
       recovery_id: 'recovery-1',
       ceremony_id: 'ceremony-2',
       credential,
+    })
+  })
+
+  it('uses the public email facade for password reset requests and completion', async () => {
+    mockPost.mockResolvedValue({})
+
+    await requestPasswordReset({ email: '  momi@example.com  ' })
+    await resetPassword({ token: '  246810  ', newPassword: 'New-password-123' })
+
+    expect(mockPost).toHaveBeenNthCalledWith(1, '/email/request-password-reset', {
+      email: 'momi@example.com',
+    })
+    expect(mockPost).toHaveBeenNthCalledWith(2, '/email/reset-password', {
+      token: '246810',
+      new_password: 'New-password-123',
     })
   })
 })

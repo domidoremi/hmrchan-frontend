@@ -34,7 +34,7 @@ vi.mock('@/utils/cache/publicContentCache', () => ({
 function renderRouteHref(to: string | { path: string; query?: Record<string, unknown> }): string {
   if (typeof to === 'string') return to
 
-  const redirect = to.query?.redirect
+  const redirect = to.query?.['redirect']
   if (typeof redirect !== 'string') return to.path
 
   return `${to.path}?redirect=${redirect}`

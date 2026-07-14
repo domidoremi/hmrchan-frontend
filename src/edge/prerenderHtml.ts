@@ -16,6 +16,8 @@ export const STATIC_PRERENDER_ROUTES = [
   '/settings',
   '/login',
   '/register',
+  '/forgot-password',
+  '/reset-password',
   '/auth/callback',
   '/auth/passkey-recovery',
   '/passkey-recovery',

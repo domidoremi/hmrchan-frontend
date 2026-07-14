@@ -63,8 +63,8 @@ describe('theme store', () => {
     expect(store.theme).toBe('dark')
     expect(store.appearancePreset).toBe('minimal-editorial')
     expect(store.resolvedTheme).toBe('dark')
-    expect(document.documentElement.dataset.theme).toBe('dark')
-    expect(document.documentElement.dataset.preset).toBe('minimal-editorial')
+    expect(document.documentElement.dataset['theme']).toBe('dark')
+    expect(document.documentElement.dataset['preset']).toBe('minimal-editorial')
     expect(document.documentElement.style.colorScheme).toBe('dark')
     expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
       hmrAppearancePresetThemeColors.dark['minimal-editorial']
@@ -78,12 +78,12 @@ describe('theme store', () => {
     store.setTheme('system')
 
     expect(store.resolvedTheme).toBe('light')
-    expect(document.documentElement.dataset.themeMode).toBe('system')
+    expect(document.documentElement.dataset['themeMode']).toBe('system')
 
     media.setMatches(true)
 
     expect(store.resolvedTheme).toBe('dark')
-    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(document.documentElement.dataset['theme']).toBe('dark')
   })
 
   it('persists explicit theme choices', () => {
@@ -116,10 +116,10 @@ describe('theme store', () => {
     expect(store.appearancePresetMeta.label).toBe('渐变叙事')
     expect(store.appearancePresetMeta.enhancer).toBe('gradient')
     expect(store.appearancePresetMeta.sceneRoles).toContain('narrative')
-    expect(document.documentElement.dataset.preset).toBe('gradient-narrative')
-    expect(document.documentElement.dataset.appearancePreset).toBe('gradient-narrative')
-    expect(document.documentElement.dataset.presetFamily).toBe('rounded')
-    expect(document.documentElement.dataset.presetEnhancer).toBe('gradient')
+    expect(document.documentElement.dataset['preset']).toBe('gradient-narrative')
+    expect(document.documentElement.dataset['appearancePreset']).toBe('gradient-narrative')
+    expect(document.documentElement.dataset['presetFamily']).toBe('rounded')
+    expect(document.documentElement.dataset['presetEnhancer']).toBe('gradient')
     expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
       hmrAppearancePresetThemeColors.light['gradient-narrative']
     )
@@ -132,10 +132,10 @@ describe('theme store', () => {
     store.setTheme('dark')
     store.setAppearancePreset('clay-playful')
 
-    expect(document.documentElement.dataset.presetFamily).toBe(
+    expect(document.documentElement.dataset['presetFamily']).toBe(
       hmrAppearancePresetMeta['clay-playful'].family
     )
-    expect(document.documentElement.dataset.presetEnhancer).toBe('clay')
+    expect(document.documentElement.dataset['presetEnhancer']).toBe('clay')
     expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe(
       hmrAppearancePresetThemeColors.dark['clay-playful']
     )
@@ -154,13 +154,13 @@ describe('theme store', () => {
     store.initializeTheme()
 
     expect(store.appearancePreset).toBe('minimal-editorial')
-    expect(document.documentElement.dataset.preset).toBe('minimal-editorial')
+    expect(document.documentElement.dataset['preset']).toBe('minimal-editorial')
   })
 
   it('keeps a pre-paint dark theme stable when Vue initializes', () => {
     window.localStorage.setItem('hmr.theme', 'system')
-    document.documentElement.dataset.theme = 'dark'
-    document.documentElement.dataset.themeMode = 'system'
+    document.documentElement.dataset['theme'] = 'dark'
+    document.documentElement.dataset['themeMode'] = 'system'
     document.documentElement.style.colorScheme = 'dark'
     mockMatchMedia(true)
     const store = useThemeStore()
@@ -169,8 +169,8 @@ describe('theme store', () => {
 
     expect(store.theme).toBe('system')
     expect(store.resolvedTheme).toBe('dark')
-    expect(document.documentElement.dataset.theme).toBe('dark')
-    expect(document.documentElement.dataset.themeMode).toBe('system')
+    expect(document.documentElement.dataset['theme']).toBe('dark')
+    expect(document.documentElement.dataset['themeMode']).toBe('system')
     expect(document.documentElement.style.colorScheme).toBe('dark')
   })
 })

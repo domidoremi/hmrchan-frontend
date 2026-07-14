@@ -40,7 +40,10 @@ describe('internal API gateway worker', () => {
   })
 
   it('forwards through the public upstream when VPC proxy is disabled', async () => {
-    const publicFetch = vi.fn(async () => jsonResponse({ ok: true }))
+    const publicFetch = vi.fn(async (request: Request) => {
+      void request
+      return jsonResponse({ ok: true })
+    })
     vi.stubGlobal('fetch', publicFetch)
 
     const response = await handleInternalApiGatewayRequest(
@@ -48,7 +51,8 @@ describe('internal API gateway worker', () => {
       createEnv()
     )
 
-    const upstreamRequest = publicFetch.mock.calls[0]?.[0] as Request
+    const upstreamRequest = publicFetch.mock.calls[0]?.[0]
+    if (!upstreamRequest) throw new Error('Expected a public upstream request')
 
     expect(response.status).toBe(200)
     expect(publicFetch).toHaveBeenCalledTimes(1)
@@ -60,8 +64,9 @@ describe('internal API gateway worker', () => {
 
   it('forwards through the VPC binding when VPC proxy is enabled', async () => {
     const publicFetch = vi.fn()
-    const vpcFetch = vi.fn(async () =>
-      jsonResponse(
+    const vpcFetch = vi.fn(async (request: Request) => {
+      void request
+      return jsonResponse(
         { ok: true },
         {
           headers: {
@@ -70,7 +75,7 @@ describe('internal API gateway worker', () => {
           },
         }
       )
-    )
+    })
     vi.stubGlobal('fetch', publicFetch)
 
     const response = await handleInternalApiGatewayRequest(
@@ -90,6 +95,7 @@ describe('internal API gateway worker', () => {
     )
 
     const upstreamRequest = vpcFetch.mock.calls[0]?.[0]
+    if (!upstreamRequest) throw new Error('Expected a VPC upstream request')
 
     expect(response.status).toBe(200)
     expect(publicFetch).not.toHaveBeenCalled()
@@ -105,8 +111,12 @@ describe('internal API gateway worker', () => {
 
   it('falls back to the public upstream when non-private VPC routing fails', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const publicFetch = vi.fn(async () => jsonResponse({ ok: true }))
-    const vpcFetch = vi.fn(async () => {
+    const publicFetch = vi.fn(async (request: Request) => {
+      void request
+      return jsonResponse({ ok: true })
+    })
+    const vpcFetch = vi.fn(async (request: Request) => {
+      void request
       throw new Error('vpc unavailable')
     })
     vi.stubGlobal('fetch', publicFetch)
@@ -122,7 +132,8 @@ describe('internal API gateway worker', () => {
       })
     )
 
-    const publicRequest = publicFetch.mock.calls[0]?.[0] as Request
+    const publicRequest = publicFetch.mock.calls[0]?.[0]
+    if (!publicRequest) throw new Error('Expected a public fallback request')
 
     expect(response.status).toBe(200)
     expect(vpcFetch).toHaveBeenCalledTimes(1)
@@ -137,16 +148,19 @@ describe('internal API gateway worker', () => {
   })
 
   it('bypasses VPC for Google popup redirect endpoints', async () => {
-    const publicFetch = vi.fn(
-      async () =>
-        new Response(null, {
-          status: 302,
-          headers: {
-            Location: `${API_BASE_URL}/api/v1/auth/google/callback?code=abc`,
-          },
-        })
-    )
-    const vpcFetch = vi.fn(async () => jsonResponse({ unexpected: true }))
+    const publicFetch = vi.fn(async (request: Request) => {
+      void request
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: `${API_BASE_URL}/api/v1/auth/google/callback?code=abc`,
+        },
+      })
+    })
+    const vpcFetch = vi.fn(async (request: Request) => {
+      void request
+      return jsonResponse({ unexpected: true })
+    })
     vi.stubGlobal('fetch', publicFetch)
 
     const response = await handleInternalApiGatewayRequest(
@@ -160,7 +174,8 @@ describe('internal API gateway worker', () => {
       })
     )
 
-    const publicRequest = publicFetch.mock.calls[0]?.[0] as Request
+    const publicRequest = publicFetch.mock.calls[0]?.[0]
+    if (!publicRequest) throw new Error('Expected a public Google auth request')
 
     expect(response.status).toBe(302)
     expect(vpcFetch).not.toHaveBeenCalled()
@@ -192,7 +207,8 @@ describe('internal API gateway worker', () => {
   it('returns a VPC error instead of public fallback for private internal paths', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const publicFetch = vi.fn()
-    const vpcFetch = vi.fn(async () => {
+    const vpcFetch = vi.fn(async (request: Request) => {
+      void request
       throw new Error('identity upstream unavailable')
     })
     vi.stubGlobal('fetch', publicFetch)

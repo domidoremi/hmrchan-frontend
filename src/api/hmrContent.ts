@@ -223,7 +223,7 @@ export async function loadDiscussionDetailContentResource(
       isClosed: false,
     }
     data.comments = []
-    data.relatedPost = undefined
+    delete data.relatedPost
     data.viewState = 'restricted'
   } else if (status.error?.kind === 'not-found') {
     data.discussion.title = '讨论不存在或已下架'
@@ -416,7 +416,7 @@ export async function submitContactResource(
       )
     } catch (feedbackError) {
       return makeResource(
-        { delivered: true, endpoint: 'local-queue' },
+        { delivered: false, endpoint: '/feedback' },
         {
           source: 'local',
           error: toApiErrorState(feedbackError, '/feedback'),

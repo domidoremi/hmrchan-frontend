@@ -4628,6 +4628,21 @@ svg {
   line-height: 1.45;
 }
 
+.hmr-form-success {
+  display: flex;
+  align-items: center;
+  gap: 0.65em;
+  margin: 0;
+  color: var(--hmr-base);
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.status-icon--success {
+  flex: 0 0 auto;
+  color: var(--hmr-orange);
+}
+
 .hmr-contact-aside {
   display: grid;
   gap: 1.25em;

@@ -212,6 +212,25 @@ export function normalizeManifestEntry(entry, base = DEFAULT_BASE) {
   return normalizeEntryObject(entry, base)
 }
 
+/**
+ * @returns {{
+ *   generatedAt?: string | null,
+ *   base: string,
+ *   notes?: {
+ *     purpose?: string,
+ *     authorDetail?: string,
+ *     postDetail?: string,
+ *     discussionDetail?: string,
+ *     scheduleDetail?: string
+ *   },
+ *   coverage: {
+ *     staticAnonymousRoutes?: string[],
+ *     detailTargets?: Record<string, number>
+ *   } | null,
+ *   excluded: unknown[],
+ *   entries: Array<ReturnType<typeof normalizeManifestEntry>>
+ * }}
+ */
 export function readUrlManifestDocument(filePath, base = DEFAULT_BASE) {
   const absolutePath = path.resolve(filePath)
   const raw = fs.readFileSync(absolutePath, 'utf8').trim()
@@ -221,7 +240,7 @@ export function readUrlManifestDocument(filePath, base = DEFAULT_BASE) {
       base: normalizeBase(base),
       coverage: null,
       excluded: [],
-      entries: [],
+      entries: /** @type {Array<ReturnType<typeof normalizeManifestEntry>>} */ ([]),
     }
   }
 

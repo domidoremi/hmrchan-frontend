@@ -40,8 +40,9 @@ import { formatTimestamp } from './lib/time.js'
 const STATIC_GATE_COMMAND_TIMEOUT_MS = Number(
   process.env.VALIDATION_STATIC_COMMAND_TIMEOUT_MS ?? 10 * 60 * 1000
 )
+export const DEFAULT_BROWSER_GATE_COMMAND_TIMEOUT_MS = 6 * 60 * 1000
 const BROWSER_GATE_COMMAND_TIMEOUT_MS = Number(
-  process.env.VALIDATION_BROWSER_COMMAND_TIMEOUT_MS ?? 3 * 60 * 1000
+  process.env.VALIDATION_BROWSER_COMMAND_TIMEOUT_MS ?? DEFAULT_BROWSER_GATE_COMMAND_TIMEOUT_MS
 )
 
 function parseArgs(argv) {

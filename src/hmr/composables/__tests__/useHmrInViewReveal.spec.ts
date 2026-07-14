@@ -62,7 +62,7 @@ describe('useHmrInViewReveal', () => {
     window.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 
     const target = document.createElement('section')
-    target.dataset.hmrReveal = ''
+    target.dataset['hmrReveal'] = ''
     document.body.append(target)
 
     const probe = mountRevealProbe()
@@ -87,7 +87,7 @@ describe('useHmrInViewReveal', () => {
     window.IntersectionObserver = undefined as unknown as typeof IntersectionObserver
 
     const target = document.createElement('section')
-    target.dataset.hmrReveal = ''
+    target.dataset['hmrReveal'] = ''
     document.body.append(target)
 
     const probe = mountRevealProbe()
@@ -95,7 +95,7 @@ describe('useHmrInViewReveal', () => {
     expect(target.classList.contains('is-inview')).toBe(true)
 
     const inserted = document.createElement('section')
-    inserted.dataset.hmrReveal = ''
+    inserted.dataset['hmrReveal'] = ''
     document.body.append(inserted)
     await nextTick()
 

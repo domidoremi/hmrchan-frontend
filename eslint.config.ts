@@ -15,7 +15,7 @@ import pluginVue from 'eslint-plugin-vue'
 import pluginVitest from '@vitest/eslint-plugin'
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 
-export default defineConfigWithVueTs(
+const config: ReturnType<typeof defineConfigWithVueTs> = defineConfigWithVueTs(
   /** 应用文件检查范围配置 */
   {
     name: 'app/files-to-lint',
@@ -89,3 +89,5 @@ export default defineConfigWithVueTs(
     },
   }
 )
+
+export default config

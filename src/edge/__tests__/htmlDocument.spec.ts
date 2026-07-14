@@ -34,7 +34,7 @@ function collectNamedShellRoutes() {
 }
 
 describe('edge HTML document routing', () => {
-  it.each(['/auth/passkey-recovery', '/auth/callback'])(
+  it.each(['/forgot-password', '/reset-password', '/auth/passkey-recovery', '/auth/callback'])(
     'serves %s as a noindex SPA document',
     (path) => {
       const documentConfig = resolvePath(path)
@@ -77,6 +77,8 @@ describe('edge HTML document routing', () => {
       'hmr-settings',
       'hmr-login',
       'hmr-register',
+      'hmr-forgot-password',
+      'hmr-reset-password',
       'hmr-auth-callback',
       'hmr-passkey-recovery',
       'hmr-profile',
@@ -166,6 +168,12 @@ describe('edge HTML document routing', () => {
     expect(html).toContain('href="https://momichan.com/auth/passkey-recovery"')
     expect(html).toContain('data-prerender-shell-title="Recover Passkey access"')
     expect(html).not.toContain('data-prerender-shell-title="Page not found"')
+  })
+
+  it('keeps password recovery routes in the static prerender contract', () => {
+    expect(STATIC_PRERENDER_ROUTES).toEqual(
+      expect.arrayContaining(['/forgot-password', '/reset-password'])
+    )
   })
 
   it('binds WebSite structured data languages to the supported locale contract', () => {

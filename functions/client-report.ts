@@ -16,6 +16,10 @@ interface ClientReportPayload {
   stack?: string
 }
 
+type ClientReportContext = {
+  request: Request
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -42,29 +46,32 @@ function normalizePayload(payload: unknown): ClientReportPayload | null {
         ? payload['severity']
         : 'info',
     category: payload['category'] === 'security' ? 'security' : 'app',
-    timestamp: typeof payload['timestamp'] === 'string' ? payload['timestamp'] : undefined,
-    path: typeof payload['path'] === 'string' ? payload['path'].slice(0, 500) : undefined,
-    href: typeof payload['href'] === 'string' ? payload['href'].slice(0, 500) : undefined,
-    buildHash:
-      typeof payload['buildHash'] === 'string' ? payload['buildHash'].slice(0, 120) : undefined,
-    buildTime:
-      typeof payload['buildTime'] === 'string' ? payload['buildTime'].slice(0, 120) : undefined,
-    requestId:
-      typeof payload['requestId'] === 'string' ? payload['requestId'].slice(0, 120) : undefined,
+    ...(typeof payload['timestamp'] === 'string' ? { timestamp: payload['timestamp'] } : {}),
+    ...(typeof payload['path'] === 'string' ? { path: payload['path'].slice(0, 500) } : {}),
+    ...(typeof payload['href'] === 'string' ? { href: payload['href'].slice(0, 500) } : {}),
+    ...(typeof payload['buildHash'] === 'string'
+      ? { buildHash: payload['buildHash'].slice(0, 120) }
+      : {}),
+    ...(typeof payload['buildTime'] === 'string'
+      ? { buildTime: payload['buildTime'].slice(0, 120) }
+      : {}),
+    ...(typeof payload['requestId'] === 'string'
+      ? { requestId: payload['requestId'].slice(0, 120) }
+      : {}),
     securityLevel:
       payload['securityLevel'] === 'authenticated' || payload['securityLevel'] === 'sensitive'
         ? payload['securityLevel']
         : 'public',
     riskMode: payload['riskMode'] === 'degraded' ? 'degraded' : 'normal',
-    data: isRecord(payload['data']) ? payload['data'] : undefined,
-    message: typeof payload['message'] === 'string' ? payload['message'].slice(0, 1000) : undefined,
-    stack: typeof payload['stack'] === 'string' ? payload['stack'].slice(0, 4000) : undefined,
+    ...(isRecord(payload['data']) ? { data: payload['data'] } : {}),
+    ...(typeof payload['message'] === 'string'
+      ? { message: payload['message'].slice(0, 1000) }
+      : {}),
+    ...(typeof payload['stack'] === 'string' ? { stack: payload['stack'].slice(0, 4000) } : {}),
   }
 }
 
-export async function onRequest(
-  context: EventContext<unknown, string, unknown>
-): Promise<Response> {
+export async function onRequest(context: ClientReportContext): Promise<Response> {
   const { request } = context
 
   if (request.method !== 'POST') {

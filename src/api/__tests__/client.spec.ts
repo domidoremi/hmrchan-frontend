@@ -11,8 +11,8 @@ const mockClientSecurity = vi.hoisted(() => ({
   ensureRequestIntegrityCredentials: vi.fn(async () => undefined),
   init: vi.fn(async () => ({ trust_level: 'basic' })),
   hasRequestIntegrityCredentials: vi.fn(() => false),
-  getClientToken: vi.fn(() => 'client-token'),
-  getClientSecret: vi.fn(() => 'client-secret'),
+  getClientToken: vi.fn<() => string | null>(() => 'client-token'),
+  getClientSecret: vi.fn<() => string | null>(() => 'client-secret'),
 }))
 const mockFetch = vi.hoisted(() => vi.fn())
 

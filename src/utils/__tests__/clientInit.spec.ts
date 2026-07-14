@@ -15,6 +15,6 @@ describe('client init gate', () => {
     const root = document.createElement('html')
     markClientInitDisabled({ documentElement: root })
 
-    expect(root.dataset.clientInit).toBe('disabled')
+    expect(root.dataset['clientInit']).toBe('disabled')
   })
 })

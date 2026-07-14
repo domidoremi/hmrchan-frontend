@@ -14,7 +14,6 @@ import { defineConfig, configDefaults } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
-  // @ts-expect-error - Vite 8 (Rolldown) plugin compatibility with Vitest - type mismatch in hotUpdate hook
   plugins: [vue()],
 
   /** Vite缓存目录（Vitest会使用cacheDir/vitest） */

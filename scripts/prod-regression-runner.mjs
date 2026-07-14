@@ -46,7 +46,7 @@ const CHECKPOINT_TYPES = {
   loginRisk: 'login-risk-verification',
   turnstile: 'turnstile',
   verifyEmailLink: 'verify-email-link',
-  forgotPasswordLink: 'forgot-password-link',
+  forgotPasswordCode: 'forgot-password-code',
   qaEmail: 'qa-email',
 }
 const UUID_V4_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -2853,13 +2853,18 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         await submitButton.click()
         await harness.page.waitForSelector('.status-icon--success', { timeout: 20_000 })
 
-        const resetLink = await promptForUrl(
+        const resetCode = await promptForCode(
           state._rl,
           state,
-          '请输入忘记密码邮件中的 reset-password 完整链接',
-          CHECKPOINT_TYPES.forgotPasswordLink
+          '请输入忘记密码邮件中的 6 位验证码',
+          CHECKPOINT_TYPES.forgotPasswordCode
         )
-        await gotoPath(harness.page, config.baseUrl, resetLink, '.auth-page')
+        await gotoPath(
+          harness.page,
+          config.baseUrl,
+          `/reset-password?token=${encodeURIComponent(resetCode)}`,
+          '.auth-page--reset'
+        )
         await setInputValue(harness.page, '#new_password', resetPassword)
         await setInputValue(harness.page, '#confirm_password', resetPassword)
         const resetButton = await harness.page.$(

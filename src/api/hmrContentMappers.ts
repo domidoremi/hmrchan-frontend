@@ -72,7 +72,7 @@ export function mapPost(value: unknown, index: number): HmrPost {
   )
   const title = trimText(rawTitle, 34) || fallbackPost?.title || '未命名内容'
   const excerpt = trimText(rawExcerpt, 96) || fallbackPost?.excerpt || ''
-  const authorRecord = isRecord(record.author) ? record.author : {}
+  const authorRecord = isRecord(record['author']) ? record['author'] : {}
   const mediaUrl =
     pickOptionalString(record, [
       'thumbnail_url',
@@ -277,7 +277,7 @@ function mapDiscussionListItem(value: unknown, index: number): HmrCommunityItem 
 
 function mapDiscussionCommentItem(value: unknown, index: number): HmrCommunityItem {
   const record = isRecord(value) ? value : {}
-  const userRecord = isRecord(record.user) ? record.user : {}
+  const userRecord = isRecord(record['user']) ? record['user'] : {}
   const replyCount = pickNumber(record, ['reply_count', 'replies'])
   const likeCount = pickNumber(record, ['like_count', 'likes'])
   const createdAt = pickOptionalString(record, ['created_at', 'updated_at'])
@@ -303,7 +303,7 @@ function mapDiscussionCommentItem(value: unknown, index: number): HmrCommunityIt
 function mapDiscussionRelatedPost(
   record: Record<string, unknown>
 ): HmrDiscussionRelatedPost | undefined {
-  const referencedRecord = isRecord(record.referenced_post) ? record.referenced_post : {}
+  const referencedRecord = isRecord(record['referenced_post']) ? record['referenced_post'] : {}
   const id =
     pickOptionalString(referencedRecord, ['id', 'post_id']) ??
     pickOptionalString(record, ['referenced_post_id', 'post_id'])
@@ -555,10 +555,10 @@ export function mapDiscussionDetailContent(
     return makeDiscussionUnavailable(id)
   }
 
-  const userRecord = isRecord(record.user)
-    ? record.user
-    : isRecord(record.author)
-      ? record.author
+  const userRecord = isRecord(record['user'])
+    ? record['user']
+    : isRecord(record['author'])
+      ? record['author']
       : {}
   const rawCreatedAt = pickString(record, ['created_at', 'published_at'], '')
   const rawUpdatedAt = pickString(record, ['updated_at'], rawCreatedAt)
@@ -568,6 +568,7 @@ export function mapDiscussionDetailContent(
     rawUpdatedAt || rawCreatedAt
   )
   const comments = extractList(commentsPayload, ['items', 'comments', 'results'])
+  const relatedPost = mapDiscussionRelatedPost(record)
 
   return {
     discussion: {
@@ -591,7 +592,7 @@ export function mapDiscussionDetailContent(
       isClosed: pickBoolean(record, ['is_closed', 'closed']),
     },
     comments: comments.map(mapDiscussionCommentItem).slice(0, 12),
-    relatedPost: mapDiscussionRelatedPost(record),
+    ...(relatedPost === undefined ? {} : { relatedPost }),
     viewState: 'available',
   }
 }

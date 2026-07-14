@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockApiGet = vi.hoisted(() => vi.fn())
+const mockApiPost = vi.hoisted(() => vi.fn())
 
 const MockApiError = vi.hoisted(() => {
   return class MockApiError extends Error {
@@ -12,8 +13,8 @@ const MockApiError = vi.hoisted(() => {
       super(message)
       this.name = 'ApiError'
       this.status = status
-      this.code = code
-      this.details = details
+      if (code !== undefined) this.code = code
+      if (details !== undefined) this.details = details
     }
   }
 })
@@ -22,6 +23,7 @@ vi.mock('@/api/client', () => ({
   ApiError: MockApiError,
   apiClient: {
     get: mockApiGet,
+    post: mockApiPost,
   },
 }))
 
@@ -32,6 +34,7 @@ vi.mock('@/api/runtimeFlags', () => ({
 describe('hmrContent post detail loading', () => {
   beforeEach(() => {
     mockApiGet.mockReset()
+    mockApiPost.mockReset()
   })
 
   it('loads public page resources as anonymous requests', async () => {
@@ -154,7 +157,8 @@ describe('hmrContent post detail loading', () => {
       expect(resource.source).toBe('api')
       expect(resource.error).toBeNull()
       expect(resource.paths).toEqual(item.paths)
-      expect(resource.data.section).toBe(item.expectedSection ?? item.section)
+      const expectedSection = 'expectedSection' in item ? item.expectedSection : item.section
+      expect(resource.data.section).toBe(expectedSection)
     }
   })
 
@@ -392,5 +396,30 @@ describe('hmrContent post detail loading', () => {
     expect(resource.error?.kind).toBe('network')
     expect(resource.data.viewState).toBe('temporary-unavailable')
     expect(resource.retry).toBeUndefined()
+  })
+
+  it('reports a contact message as undelivered when both endpoints fail', async () => {
+    mockApiPost
+      .mockRejectedValueOnce(new MockApiError('Primary unavailable', 503, 'PRIMARY_UNAVAILABLE'))
+      .mockRejectedValueOnce(new MockApiError('Fallback unavailable', 503, 'FALLBACK_UNAVAILABLE'))
+
+    const { submitContactResource } = await import('../hmrContent')
+    const resource = await submitContactResource({
+      name: 'Momi',
+      email: 'momi@example.com',
+      topic: 'Feedback',
+      message: 'Hello',
+    })
+
+    expect(mockApiPost).toHaveBeenNthCalledWith(1, '/contact/send', expect.any(Object))
+    expect(mockApiPost).toHaveBeenNthCalledWith(2, '/feedback', expect.any(Object))
+    expect(resource.data).toEqual({ delivered: false, endpoint: '/feedback' })
+    expect(resource.source).toBe('local')
+    expect(resource.error).toMatchObject({
+      kind: 'server',
+      path: '/feedback',
+      status: 503,
+      code: 'FALLBACK_UNAVAILABLE',
+    })
   })
 })

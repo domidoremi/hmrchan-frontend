@@ -45,14 +45,14 @@ export function getNodeCommand(): string {
   if (execName.startsWith('node')) return process.execPath
 
   const explicitNodePath =
-    process.env.npm_node_execpath || process.env.NODE || process.env.npm_execpath
+    process.env['npm_node_execpath'] || process.env['NODE'] || process.env['npm_execpath']
   if (explicitNodePath && existsSync(explicitNodePath)) return explicitNodePath
 
-  const pathValue = process.env.PATH || process.env.Path || ''
+  const pathValue = process.env['PATH'] || process.env['Path'] || ''
   const pathEntries = pathValue.split(delimiter).filter(Boolean)
   const extensions =
     process.platform === 'win32'
-      ? (process.env.PATHEXT || '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean)
+      ? (process.env['PATHEXT'] || '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean)
       : ['']
 
   for (const entry of pathEntries) {

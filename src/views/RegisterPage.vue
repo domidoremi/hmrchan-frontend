@@ -1,5 +1,5 @@
 <template>
-  <section class="hmr-auth-page">
+  <section class="hmr-auth-page auth-page auth-page--register">
     <div class="hmr-auth-layout hmr-form-layout--wide">
       <aside class="hmr-auth-story" data-hmr-reveal>
         <p class="hmr-kicker">注册</p>

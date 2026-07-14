@@ -44,7 +44,7 @@ describe('useHmrTextReveal', () => {
 
   it('wraps non-empty text and element children with reveal spans', async () => {
     const target = document.createElement('h1')
-    target.dataset.hmrTextReveal = ''
+    target.dataset['hmrTextReveal'] = ''
     target.append('Momi')
     target.append(document.createTextNode('   '))
     const strong = document.createElement('strong')
@@ -53,7 +53,7 @@ describe('useHmrTextReveal', () => {
     document.body.append(target)
 
     const second = document.createElement('p')
-    second.dataset.hmrTextReveal = ''
+    second.dataset['hmrTextReveal'] = ''
     second.textContent = 'Second'
     document.body.append(second)
 
@@ -61,7 +61,7 @@ describe('useHmrTextReveal', () => {
     await waitForMountedReveal()
 
     const masks = target.querySelectorAll('.hmr-reveal-mask')
-    expect(target.dataset.hmrTextWrapped).toBe('true')
+    expect(target.dataset['hmrTextWrapped']).toBe('true')
     expect(target.classList.contains('hmr-text-ready')).toBe(true)
     expect(target.style.getPropertyValue('--hmr-reveal-delay')).toBe('0ms')
     expect(masks).toHaveLength(2)
@@ -87,10 +87,10 @@ describe('useHmrTextReveal', () => {
     globalThis.MutationObserver = MockMutationObserver as unknown as typeof MutationObserver
 
     const empty = document.createElement('h2')
-    empty.dataset.hmrTextReveal = ''
+    empty.dataset['hmrTextReveal'] = ''
     empty.textContent = '   '
     const prepared = document.createElement('h2')
-    prepared.dataset.hmrTextReveal = ''
+    prepared.dataset['hmrTextReveal'] = ''
     prepared.textContent = 'Ready'
     document.body.append(empty, prepared)
 
@@ -127,7 +127,7 @@ describe('useHmrTextReveal', () => {
     await waitForMountedReveal()
 
     const inserted = document.createElement('h2')
-    inserted.dataset.customReveal = ''
+    inserted.dataset['customReveal'] = ''
     inserted.textContent = 'Inserted'
     document.body.append(inserted)
     callback?.([], new MockMutationObserver(callback) as unknown as MutationObserver)

@@ -14,6 +14,24 @@ vi.mock('node:child_process', () => ({
 const { PreviewShellManager, parseListeningProcessIdsFromNetstat } =
   await import('../../../scripts/lib/preview-shell.js')
 
+type PreviewStopChild = EventEmitter & {
+  pid: number
+  exitCode: number | null
+  killed: boolean
+  stdout: { destroy: ReturnType<typeof vi.fn> }
+  stderr: { destroy: ReturnType<typeof vi.fn> }
+  unref: ReturnType<typeof vi.fn>
+}
+
+type PreviewStopHarness = Omit<
+  InstanceType<typeof PreviewShellManager>,
+  'child' | 'localApiBridge' | 'port'
+> & {
+  child: PreviewStopChild | null
+  localApiBridge: { stop: ReturnType<typeof vi.fn> } | null
+  port: number | null
+}
+
 function createMockProcess({
   stdout = '',
   stderr = '',
@@ -76,19 +94,7 @@ describe('PreviewShellManager', () => {
       throw new Error(`Unexpected command: ${command} ${args.join(' ')}`)
     })
 
-    const manager = new PreviewShellManager({
-      localApiBridgeFactory: () => ({ stop: bridgeStop }),
-    }) as InstanceType<typeof PreviewShellManager> & {
-      child: EventEmitter & {
-        pid: number
-        exitCode: number | null
-        killed: boolean
-        stdout: { destroy: ReturnType<typeof vi.fn> }
-        stderr: { destroy: ReturnType<typeof vi.fn> }
-        unref: ReturnType<typeof vi.fn>
-      }
-      localApiBridge: { stop: ReturnType<typeof vi.fn> }
-    }
+    const manager = new PreviewShellManager() as unknown as PreviewStopHarness
     manager.localApiBridge = { stop: bridgeStop }
     manager.child = Object.assign(new EventEmitter(), {
       pid,
@@ -143,20 +149,7 @@ describe('PreviewShellManager', () => {
       throw new Error(`Unexpected command: ${command} ${args.join(' ')}`)
     })
 
-    const manager = new PreviewShellManager({
-      localApiBridgeFactory: () => ({ stop: bridgeStop }),
-    }) as InstanceType<typeof PreviewShellManager> & {
-      child: EventEmitter & {
-        pid: number
-        exitCode: number | null
-        killed: boolean
-        stdout: { destroy: ReturnType<typeof vi.fn> }
-        stderr: { destroy: ReturnType<typeof vi.fn> }
-        unref: ReturnType<typeof vi.fn>
-      }
-      localApiBridge: { stop: ReturnType<typeof vi.fn> }
-      port: number
-    }
+    const manager = new PreviewShellManager() as unknown as PreviewStopHarness
     manager.localApiBridge = { stop: bridgeStop }
     manager.port = previewPort
     manager.child = Object.assign(new EventEmitter(), {
@@ -208,20 +201,7 @@ describe('PreviewShellManager', () => {
       throw new Error(`Unexpected command: ${command} ${args.join(' ')}`)
     })
 
-    const manager = new PreviewShellManager({
-      localApiBridgeFactory: () => ({ stop: bridgeStop }),
-    }) as InstanceType<typeof PreviewShellManager> & {
-      child: EventEmitter & {
-        pid: number
-        exitCode: number | null
-        killed: boolean
-        stdout: { destroy: ReturnType<typeof vi.fn> }
-        stderr: { destroy: ReturnType<typeof vi.fn> }
-        unref: ReturnType<typeof vi.fn>
-      }
-      localApiBridge: { stop: ReturnType<typeof vi.fn> }
-      port: number
-    }
+    const manager = new PreviewShellManager() as unknown as PreviewStopHarness
     manager.localApiBridge = { stop: bridgeStop }
     manager.port = previewPort
     manager.child = Object.assign(new EventEmitter(), {

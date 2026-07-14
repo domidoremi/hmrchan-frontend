@@ -14,6 +14,8 @@ const productivityPageKeys = new Set<HmrPublicPageKey>(['schedule', 'settings'])
 const editorialPageKeys = new Set<HmrPublicPageKey>([
   'login',
   'register',
+  'forgot-password',
+  'reset-password',
   'auth-callback',
   'passkey-recovery',
   'profile',
@@ -56,10 +58,13 @@ export function resolveHmrSceneRole(route: {
   if (
     routeName.includes('login') ||
     routeName.includes('register') ||
+    routeName.includes('password') ||
     routeName.includes('auth') ||
     routeName.includes('profile') ||
     routePath.startsWith('/login') ||
     routePath.startsWith('/register') ||
+    routePath.startsWith('/forgot-password') ||
+    routePath.startsWith('/reset-password') ||
     routePath.startsWith('/auth') ||
     routePath.startsWith('/profile')
   ) {

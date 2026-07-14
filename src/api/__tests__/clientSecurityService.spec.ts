@@ -65,6 +65,7 @@ import {
 describe('clientSecurityService', () => {
   beforeEach(() => {
     vi.unstubAllEnvs()
+    vi.stubEnv('VITE_ENABLE_CLIENT_INIT', 'true')
     vi.clearAllMocks()
     localStorage.clear()
     clientSecurityManager.clear()
@@ -142,7 +143,7 @@ describe('clientSecurityService', () => {
         init_summary_updated_at: expect.any(Number),
       })
     )
-    expect(stored.client_secret).toBeUndefined()
+    expect(stored['client_secret']).toBeUndefined()
     expect(clientSecurityManager.getClientSecret()).toBe('client-secret')
   })
 
@@ -226,7 +227,7 @@ describe('clientSecurityService', () => {
     const firstInitPayload = mockApiClient.post.mock.calls[0]?.[1] as
       | Record<string, unknown>
       | undefined
-    expect(firstInitPayload?.force_reissue).toBeUndefined()
+    expect(firstInitPayload?.['force_reissue']).toBeUndefined()
     expect(mockApiClient.post).toHaveBeenNthCalledWith(
       1,
       '/client/init',

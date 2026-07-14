@@ -85,8 +85,7 @@ async function scanForSecrets(options: AuditOptions): Promise<AuditIssue[]> {
     }
 
     const lines = content.split('\n')
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
+    for (const [index, line] of lines.entries()) {
       // Skip comments
       if (line.trimStart().startsWith('//') || line.trimStart().startsWith('*')) continue
       // Skip lines referencing env vars (import.meta.env, process.env)
@@ -98,7 +97,7 @@ async function scanForSecrets(options: AuditOptions): Promise<AuditIssue[]> {
             severity: 'error',
             message: `Possible hardcoded secret (${label})`,
             file: `src/${file}`,
-            line: i + 1,
+            line: index + 1,
             rule: 'secret-scan',
             suggestion: 'Move to environment variable',
           })

@@ -242,13 +242,13 @@ function applyThemeToDocument(
   resolvedTheme = resolveTheme(theme)
 ): void {
   if (typeof document === 'undefined') return
-  document.documentElement.dataset.theme = resolvedTheme
-  document.documentElement.dataset.themeMode = theme
-  document.documentElement.dataset.preset = appearancePreset
-  document.documentElement.dataset.appearancePreset = appearancePreset
+  document.documentElement.dataset['theme'] = resolvedTheme
+  document.documentElement.dataset['themeMode'] = theme
+  document.documentElement.dataset['preset'] = appearancePreset
+  document.documentElement.dataset['appearancePreset'] = appearancePreset
   const appearanceMeta = resolveAppearancePresetMeta(appearancePreset)
-  document.documentElement.dataset.presetFamily = appearanceMeta.family
-  document.documentElement.dataset.presetEnhancer = appearanceMeta.enhancer
+  document.documentElement.dataset['presetFamily'] = appearanceMeta.family
+  document.documentElement.dataset['presetEnhancer'] = appearanceMeta.enhancer
   document.documentElement.style.colorScheme = resolvedTheme
   document
     .querySelector('meta[name="theme-color"]')

@@ -7,9 +7,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-export async function onRequest(
-  context: EventContext<unknown, string, unknown>
-): Promise<Response> {
+export async function onRequest(context: { request: Request }): Promise<Response> {
   const { request } = context
 
   if (request.method !== 'POST') {

@@ -9,7 +9,7 @@ const frontendContractAudit: AuditModule = {
     const start = Date.now()
     const issues = validateFrontendContractAudit(options.projectRoot).map(
       (issue): AuditIssue => ({
-        severity: issue.severity ?? 'error',
+        severity: 'error',
         message: issue.message,
         file: issue.file,
         rule: issue.code,

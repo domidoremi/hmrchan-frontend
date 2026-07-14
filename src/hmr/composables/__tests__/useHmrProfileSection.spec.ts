@@ -49,6 +49,7 @@ function makeProfileSection(
     sessionExpiresAt: '2026-06-01T00:00:00.000Z',
     user: {
       id: 'user-1',
+      username: 'momi',
       email: 'user@example.test',
     },
   }

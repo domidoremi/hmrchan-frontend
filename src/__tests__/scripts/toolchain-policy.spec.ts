@@ -31,7 +31,8 @@ function parseEnvVarNames(content: string): Set<string> {
   const names = new Set<string>()
   for (const line of content.split('\n')) {
     const match = line.trim().match(/^([A-Za-z_][A-Za-z0-9_]*)=/)
-    if (match) names.add(match[1])
+    const name = match?.[1]
+    if (name) names.add(name)
   }
   return names
 }
@@ -48,7 +49,9 @@ function extractWranglerVars(
 
   for (const line of block.split('\n')) {
     const match = line.trim().match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"([^"]*)"$/)
-    if (match) vars.set(match[1], match[2])
+    const name = match?.[1]
+    const value = match?.[2]
+    if (name !== undefined && value !== undefined) vars.set(name, value)
   }
 
   return vars
@@ -79,7 +82,7 @@ describe('toolchain package policy', () => {
     const wranglerToml = await readFile('wrangler.toml', 'utf8')
 
     expect(packageJson.packageManager).toBe(`bun@${BUN_VERSION}`)
-    expect(packageJson.engines?.node).toBe(NODE_ENGINE_RANGE)
+    expect(packageJson.engines?.['node']).toBe(NODE_ENGINE_RANGE)
     expect(miseToml).toContain(`node = "${NODE_VERSION}"`)
     expect(miseToml).toContain(`bun = "${BUN_VERSION}"`)
     expect(nodeVersion).toBe(NODE_VERSION)
@@ -154,7 +157,7 @@ describe('toolchain package policy', () => {
     const exampleVars = parseEnvVarNames(envExample)
     const policy = getProductionContractEnvPolicy()
     const documentedStrippedKeys = policy.stripClientEnvKeys.filter(
-      (key) => !LOCAL_PRIVATE_ENV_KEYS.has(key)
+      (key: string) => !LOCAL_PRIVATE_ENV_KEYS.has(key)
     )
 
     for (const key of documentedStrippedKeys) {

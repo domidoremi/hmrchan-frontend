@@ -8,11 +8,16 @@ function parseTypeErrors(output: string): AuditIssue[] {
   let match: RegExpExecArray | null
 
   while ((match = errorPattern.exec(output)) !== null) {
+    const file = match[1]
+    const line = match[2]
+    const message = match[3]
+    if (!file || !line || !message) continue
+
     issues.push({
       severity: 'error',
-      message: match[3].trim(),
-      file: match[1].trim(),
-      line: parseInt(match[2], 10),
+      message: message.trim(),
+      file: file.trim(),
+      line: parseInt(line, 10),
     })
   }
 

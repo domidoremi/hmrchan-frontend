@@ -40,7 +40,11 @@ function setBrowserFingerprintSurface() {
 }
 
 function mockDigest(bytes: number[]) {
-  const digest = vi.fn(async () => Uint8Array.from(bytes).buffer)
+  const digest = vi.fn(async (algorithm: AlgorithmIdentifier, data: BufferSource) => {
+    void algorithm
+    void data
+    return Uint8Array.from(bytes).buffer
+  })
   vi.stubGlobal('crypto', {
     subtle: {
       digest,

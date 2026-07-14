@@ -42,7 +42,7 @@ function toAuditIssues(files: ESLintFileResult[], projectRoot: string): AuditIss
         message: msg.message,
         file: relPath,
         line: msg.line,
-        rule: msg.ruleId ?? undefined,
+        ...(msg.ruleId == null ? {} : { rule: msg.ruleId }),
       })
     }
   }

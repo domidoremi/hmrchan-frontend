@@ -79,8 +79,10 @@ describe('hmrContentResources resource metadata', () => {
       { data: ['post'], error: null, source: 'api', path: '/posts' },
       { data: ['author'], error: null, source: 'api', path: '/authors' },
     ]
+    const firstApiResult = apiResults[0]
+    if (!firstApiResult) throw new Error('Expected the post endpoint fixture')
     const mixedResults: EndpointResult<unknown>[] = [
-      apiResults[0],
+      firstApiResult,
       { data: null, error: networkError, source: 'local', path: '/authors' },
     ]
 

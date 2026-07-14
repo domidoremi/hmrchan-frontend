@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { listDevices, revokeDevice } from '@/api/deviceService'
+import { assertUuidV7String, type PublicResourceId } from '@/utils/contractResourceId'
 
 const mockGet = vi.hoisted(() => vi.fn())
 const mockDelete = vi.hoisted(() => vi.fn())
@@ -12,7 +13,7 @@ vi.mock('@/api/client', () => ({
   },
 }))
 
-const DEVICE_ID = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1'
+const DEVICE_ID = assertUuidV7String('018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1')
 
 describe('deviceService', () => {
   beforeEach(() => {
@@ -32,7 +33,7 @@ describe('deviceService', () => {
   })
 
   it('rejects non-UUIDv7 device identifiers before calling the facade', () => {
-    expect(() => revokeDevice('not-a-v7-id')).toThrow('device id')
+    expect(() => revokeDevice('not-a-v7-id' as PublicResourceId)).toThrow('device id')
 
     expect(mockDelete).not.toHaveBeenCalled()
   })

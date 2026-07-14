@@ -122,6 +122,6 @@ describe('RegisterPage', () => {
     await flushPromises()
 
     expect(wrapper.vm.$route.path).toBe('/login')
-    expect(wrapper.vm.$route.query.redirect).toBe('/account/profile')
+    expect(wrapper.vm.$route.query['redirect']).toBe('/account/profile')
   })
 })

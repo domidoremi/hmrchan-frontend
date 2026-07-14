@@ -254,7 +254,7 @@ export const useAuthStore = defineStore('auth', () => {
         password,
       }
       if (verificationCode.trim()) {
-        payload.verification_code = verificationCode.trim()
+        payload['verification_code'] = verificationCode.trim()
       }
 
       await apiClient.post<RegisterResponse>('/auth/register', payload)

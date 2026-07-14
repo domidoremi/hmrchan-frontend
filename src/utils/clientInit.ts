@@ -9,5 +9,5 @@ export function shouldEnableClientInit(env: ClientInitEnv): boolean {
 }
 
 export function markClientInitDisabled(documentRef: Pick<Document, 'documentElement'>): void {
-  documentRef.documentElement.dataset.clientInit = 'disabled'
+  documentRef.documentElement.dataset['clientInit'] = 'disabled'
 }

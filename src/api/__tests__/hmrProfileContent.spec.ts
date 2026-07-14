@@ -7,6 +7,12 @@ import {
   mapSettingsContent,
 } from '@/api/hmrProfileContent'
 
+type ProfileReader = Parameters<typeof mapProfileSectionContent>[1]
+
+function adaptProfileReader(reader: (path: string) => Promise<unknown | null>): ProfileReader {
+  return async <T>(path: string): Promise<T | null> => (await reader(path)) as T | null
+}
+
 describe('hmrProfileContent profile sections', () => {
   it('maps security section endpoints into summary, rows, and security metrics', async () => {
     const reader = vi.fn(async (path: string) => {
@@ -33,7 +39,7 @@ describe('hmrProfileContent profile sections', () => {
       return payloads[path] ?? null
     })
 
-    const content = await mapProfileSectionContent('security', reader)
+    const content = await mapProfileSectionContent('security', adaptProfileReader(reader))
 
     expect(reader).toHaveBeenCalledWith('/2fa/status')
     expect(reader).toHaveBeenCalledWith('/auth/sessions')
@@ -82,7 +88,7 @@ describe('hmrProfileContent profile sections', () => {
       return payloads[path] ?? null
     })
 
-    const content = await mapProfileSectionContent('unknown', reader)
+    const content = await mapProfileSectionContent('unknown', adaptProfileReader(reader))
 
     expect(content.section).toBe('overview')
     expect(content.summary[0]).toEqual({
@@ -122,7 +128,7 @@ describe('hmrProfileContent profile sections', () => {
       return null
     })
 
-    const content = await mapProfileSectionContent('inbox', reader)
+    const content = await mapProfileSectionContent('inbox', adaptProfileReader(reader))
 
     expect(content.inbox).toEqual({
       unreadCount: 5,
@@ -161,7 +167,7 @@ describe('hmrProfileContent profile sections', () => {
       return null
     })
 
-    const content = await mapProfileSectionContent('inbox', reader)
+    const content = await mapProfileSectionContent('inbox', adaptProfileReader(reader))
 
     expect(reader).toHaveBeenCalledWith('/inbox/summary')
     expect(reader).toHaveBeenCalledWith('/inbox')
@@ -216,7 +222,7 @@ describe('hmrProfileContent profile sections', () => {
       return null
     })
 
-    const content = await mapProfileSectionContent('favorites', reader)
+    const content = await mapProfileSectionContent('favorites', adaptProfileReader(reader))
 
     expect(reader).toHaveBeenCalledWith('/favorites/summary')
     expect(reader).toHaveBeenCalledWith('/favorites')

@@ -27,7 +27,7 @@ describe('main entry client init gate', () => {
     await importMainEntry()
 
     expect(mainModule.load).toHaveBeenCalledOnce()
-    expect(document.documentElement.dataset.clientInit).toBeUndefined()
+    expect(document.documentElement.dataset['clientInit']).toBeUndefined()
   })
 
   it('marks client init disabled while still loading the application bootstrap', async () => {
@@ -36,6 +36,6 @@ describe('main entry client init gate', () => {
     await importMainEntry()
 
     expect(mainModule.load).toHaveBeenCalledOnce()
-    expect(document.documentElement.dataset.clientInit).toBe('disabled')
+    expect(document.documentElement.dataset['clientInit']).toBe('disabled')
   })
 })

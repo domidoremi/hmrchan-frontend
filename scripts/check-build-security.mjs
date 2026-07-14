@@ -3,6 +3,9 @@ import { join, relative, resolve } from 'node:path'
 
 const distDir = resolve(process.cwd(), 'dist')
 const htmlPath = join(distDir, 'index.html')
+const manifestPath = join(distDir, '.vite', 'manifest.json')
+const appRuntimeManifestKey = 'src/main.ts'
+const appMountSelector = '#app-root'
 const sourcemapEnv = (process.env.VITE_SOURCEMAP ?? '').trim().toLowerCase()
 
 function walk(dir) {
@@ -30,6 +33,43 @@ if (sourcemapEnv === 'true' || sourcemapEnv === 'hidden') {
 
 if (!existsSync(distDir) || !existsSync(htmlPath)) {
   console.error('[build-security] dist/index.html not found. Run build first.')
+  process.exit(1)
+}
+
+if (!existsSync(manifestPath)) {
+  console.error('[build-security] dist/.vite/manifest.json not found. Run build first.')
+  process.exit(1)
+}
+
+let buildManifest
+try {
+  buildManifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+} catch (error) {
+  console.error(
+    `[build-security] Unable to parse dist/.vite/manifest.json: ${
+      error instanceof Error ? error.message : String(error)
+    }`
+  )
+  process.exit(1)
+}
+
+const appRuntimeEntry = buildManifest[appRuntimeManifestKey]
+if (!appRuntimeEntry || typeof appRuntimeEntry.file !== 'string') {
+  console.error(`[build-security] Missing ${appRuntimeManifestKey} in the build manifest.`)
+  process.exit(1)
+}
+
+const appRuntimePath = join(distDir, appRuntimeEntry.file)
+if (!existsSync(appRuntimePath)) {
+  console.error(`[build-security] Application runtime asset not found: ${appRuntimeEntry.file}`)
+  process.exit(1)
+}
+
+const appRuntime = readFileSync(appRuntimePath, 'utf8')
+if (!appRuntime.includes(appMountSelector)) {
+  console.error(
+    `[build-security] Application runtime does not mount ${appMountSelector}; the startup entry may have been tree-shaken.`
+  )
   process.exit(1)
 }
 

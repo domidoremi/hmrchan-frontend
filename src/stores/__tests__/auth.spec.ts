@@ -16,8 +16,8 @@ const MockApiError = vi.hoisted(() => {
       super(message)
       this.name = 'ApiError'
       this.status = status
-      this.code = code
-      this.details = details
+      if (code !== undefined) this.code = code
+      if (details !== undefined) this.details = details
     }
   }
 })
