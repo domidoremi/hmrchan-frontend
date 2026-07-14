@@ -9,8 +9,10 @@ import {
   isHomeMediaFailureRecorded,
   resolveHomeMediaFailureMarkState,
   resolveHomePublicPrewarmLimits,
+  resolveHomeSupportRefreshKinds,
   resolveHomeSupportRefreshRunState,
   resolveHomeSupportRefreshTargets,
+  resolveHomeSupportRefreshUpdates,
   resolveHomeTotalCount,
   resolvePostsToolbarStatsClasses,
   resolveScheduleHighlightCompanionClasses,
@@ -192,6 +194,20 @@ describe('homeSupportPolicy', () => {
     })
   })
 
+  it('selects enabled support refresh kinds in stable request order', () => {
+    expect(resolveHomeSupportRefreshKinds({ schedule: false, community: false })).toEqual([])
+    expect(resolveHomeSupportRefreshKinds({ schedule: true, community: false })).toEqual([
+      'schedule',
+    ])
+    expect(resolveHomeSupportRefreshKinds({ schedule: false, community: true })).toEqual([
+      'community',
+    ])
+    expect(resolveHomeSupportRefreshKinds({ schedule: true, community: true })).toEqual([
+      'schedule',
+      'community',
+    ])
+  })
+
   it('resolves schedule highlight list presentation classes', () => {
     expect(resolveScheduleHighlightListClasses(false)).toEqual([])
     expect(resolveScheduleHighlightListClasses(true)).toEqual(['schedule-highlight-list--paired'])
@@ -248,6 +264,31 @@ describe('homeSupportPolicy', () => {
         schedule: false,
         community: false,
       },
+    })
+  })
+
+  it('keeps successful support refresh updates when sibling requests fail', () => {
+    const scheduleItems = [{ id: 'schedule-1' } as never]
+    const communityItems = [{ id: 'community-1' } as never]
+
+    expect(
+      resolveHomeSupportRefreshUpdates([
+        { status: 'fulfilled', value: { kind: 'schedule', items: scheduleItems } },
+        { status: 'rejected', reason: new Error('support request failed') },
+        { status: 'fulfilled', value: { kind: 'community', items: communityItems } },
+      ])
+    ).toEqual({
+      scheduleItems,
+      communityItems,
+    })
+
+    expect(
+      resolveHomeSupportRefreshUpdates([
+        { status: 'rejected', reason: new Error('all support requests failed') },
+      ])
+    ).toEqual({
+      scheduleItems: null,
+      communityItems: null,
     })
   })
 

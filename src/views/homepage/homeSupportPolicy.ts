@@ -1,4 +1,4 @@
-import type { HomeAggregateResponse } from '@/api'
+import type { HomeAggregateResponse, HomeCommunityHighlight, HomeScheduleHighlight } from '@/api'
 import { normalizeText } from './homeModel'
 
 export type HomeDataSource = 'aggregate' | 'support' | 'cached' | 'fallback'
@@ -6,6 +6,17 @@ export type HomeDataSource = 'aggregate' | 'support' | 'cached' | 'fallback'
 export type HomeSupportRefreshTargets = {
   schedule: boolean
   community: boolean
+}
+
+export type HomeSupportRefreshKind = keyof HomeSupportRefreshTargets
+
+export type HomeSupportRefreshResult =
+  | { kind: 'schedule'; items: HomeScheduleHighlight[] }
+  | { kind: 'community'; items: HomeCommunityHighlight[] }
+
+export type HomeSupportRefreshUpdates = {
+  scheduleItems: HomeScheduleHighlight[] | null
+  communityItems: HomeCommunityHighlight[] | null
 }
 
 export type HomeSupportRefreshRunState = {
@@ -154,6 +165,13 @@ export function hasPendingHomeSupportRefresh(targets: HomeSupportRefreshTargets)
   return targets.schedule || targets.community
 }
 
+export function resolveHomeSupportRefreshKinds(
+  targets: HomeSupportRefreshTargets
+): HomeSupportRefreshKind[] {
+  const kinds: readonly HomeSupportRefreshKind[] = ['schedule', 'community']
+  return kinds.filter((kind) => targets[kind])
+}
+
 export function resolveScheduleHighlightListClasses(hasCompanion: boolean): string[] {
   return hasCompanion ? ['schedule-highlight-list--paired'] : []
 }
@@ -204,6 +222,27 @@ export function resolveHomeSupportRefreshRunState(
     refreshTargets: { ...targets },
     nextPendingTargets: createEmptyHomeSupportRefreshTargets(),
   }
+}
+
+export function resolveHomeSupportRefreshUpdates(
+  results: readonly PromiseSettledResult<HomeSupportRefreshResult>[]
+): HomeSupportRefreshUpdates {
+  const updates: HomeSupportRefreshUpdates = {
+    scheduleItems: null,
+    communityItems: null,
+  }
+
+  for (const result of results) {
+    if (result.status !== 'fulfilled') continue
+
+    if (result.value.kind === 'schedule') {
+      updates.scheduleItems = result.value.items
+    } else {
+      updates.communityItems = result.value.items
+    }
+  }
+
+  return updates
 }
 
 export function resolveHomeSupportRefreshTargets(

@@ -1011,8 +1011,10 @@ import {
   resolveHomeMediaFailureMarkState,
   resolveHomePublicPrewarmLimits,
   resolveHomeTotalCount,
+  resolveHomeSupportRefreshKinds,
   resolveHomeSupportRefreshRunState,
   resolveHomeSupportRefreshTargets,
+  resolveHomeSupportRefreshUpdates,
   resolvePostsToolbarStatsClasses,
   resolveScheduleHighlightCompanionClasses,
   resolveScheduleHighlightLabel,
@@ -1021,6 +1023,8 @@ import {
   resolveScheduleHighlightRoute,
   shouldRenderHomeMediaSource,
   type HomeDataSource,
+  type HomeSupportRefreshKind,
+  type HomeSupportRefreshResult,
   type HomeSupportRefreshTargets,
 } from '@/views/homepage/homeSupportPolicy'
 import {
@@ -2241,39 +2245,26 @@ async function refreshHomeSupportBlocks(
   signal: AbortSignal,
   targets: HomeSupportRefreshTargets
 ): Promise<void> {
-  const tasks = [
-    ...(targets.schedule
-      ? [
-          homeService
-            .getScheduleHighlights(4, { signal, skipErrorToast: true })
-            .then((result) => ({ kind: 'schedule' as const, result })),
-        ]
-      : []),
-    ...(targets.community
-      ? [
-          homeService
-            .getCommunityHighlights(4, { signal, skipErrorToast: true })
-            .then((result) => ({ kind: 'community' as const, result })),
-        ]
-      : []),
-  ]
+  const tasks = resolveHomeSupportRefreshKinds(targets).map(
+    async (kind: HomeSupportRefreshKind): Promise<HomeSupportRefreshResult> => {
+      if (kind === 'schedule') {
+        const result = await homeService.getScheduleHighlights(4, { signal, skipErrorToast: true })
+        return { kind, items: result.payload.items }
+      }
+
+      const result = await homeService.getCommunityHighlights(4, { signal, skipErrorToast: true })
+      return { kind, items: result.payload.items }
+    }
+  )
 
   if (tasks.length === 0) return
 
-  const results = await Promise.allSettled(tasks)
+  const updates = resolveHomeSupportRefreshUpdates(await Promise.allSettled(tasks))
 
   if (signal.aborted) return
 
-  for (const task of results) {
-    if (task.status !== 'fulfilled') continue
-
-    if (task.value.kind === 'schedule') {
-      homeScheduleHighlights.value = task.value.result.payload.items
-      continue
-    }
-
-    homeCommunityHighlights.value = task.value.result.payload.items
-  }
+  if (updates.scheduleItems) homeScheduleHighlights.value = updates.scheduleItems
+  if (updates.communityItems) homeCommunityHighlights.value = updates.communityItems
 }
 
 function abortHomeSupportRefresh() {
