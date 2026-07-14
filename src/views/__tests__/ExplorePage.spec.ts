@@ -209,6 +209,32 @@ describe('ExplorePage', () => {
     expect(wrapper.get('#hmr-filter-menu-platform').attributes('hidden')).toBeUndefined()
   })
 
+  it('closes an open filter menu when the pointer moves outside the filter form', async () => {
+    mockReadPublicContent.mockResolvedValue(makeResource())
+    const wrapper = await mountExplorePage()
+
+    await wrapper.get('#hmr-filter-value-platform').trigger('click')
+    expect(wrapper.get('#hmr-filter-menu-platform').attributes('hidden')).toBeUndefined()
+
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('#hmr-filter-menu-platform').attributes('hidden')).toBeDefined()
+  })
+
+  it('keeps an open filter menu visible for pointer interactions inside the filter form', async () => {
+    mockReadPublicContent.mockResolvedValue(makeResource())
+    const wrapper = await mountExplorePage()
+
+    await wrapper.get('#hmr-filter-value-platform').trigger('click')
+    wrapper
+      .get('#hmr-filter-menu-platform')
+      .element.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('#hmr-filter-menu-platform').attributes('hidden')).toBeUndefined()
+  })
+
   it('renders real post cards with navigable thumbnails for visible public content', async () => {
     mockReadPublicContent.mockResolvedValue(
       makeResource({

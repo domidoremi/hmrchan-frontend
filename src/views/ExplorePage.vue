@@ -27,6 +27,7 @@
             <p class="hmr-kicker">{{ t('explore.allMedia') }}</p>
             <h2 class="hmr-section-title">{{ t('explore.allPosts') }}</h2>
             <form
+              ref="filterToolbarRef"
               class="hmr-data-toolbar hmr-data-toolbar--explore"
               @submit.prevent="submitExploreFilters"
             >
@@ -352,7 +353,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
@@ -402,6 +403,7 @@ const {
 } = useHmrExploreCatalog(t)
 
 const openFilterMenu = ref<ExploreFilterMenuId | null>(null)
+const filterToolbarRef = ref<HTMLFormElement | null>(null)
 const platformFilterOptions = computed<ExploreFilterOption[]>(() => platformOptions.value)
 const sortOptions = computed<ExploreFilterOption[]>(() => [
   { id: 'published_at', label: t('explore.sortPublished') },
@@ -430,6 +432,19 @@ function closeFilterMenu(): void {
   openFilterMenu.value = null
 }
 
+function handleDocumentPointerDown(event: PointerEvent): void {
+  const target = event.target
+  if (
+    openFilterMenu.value === null ||
+    !(target instanceof Node) ||
+    filterToolbarRef.value?.contains(target)
+  ) {
+    return
+  }
+
+  closeFilterMenu()
+}
+
 function toggleFilterMenu(id: ExploreFilterMenuId): void {
   openFilterMenu.value = openFilterMenu.value === id ? null : id
 }
@@ -451,6 +466,14 @@ function submitExploreFilters(): void {
   closeFilterMenu()
   void refreshExplore()
 }
+
+onMounted(() => {
+  document.addEventListener('pointerdown', handleDocumentPointerDown, true)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
+})
 
 useHmrMountedResourceRefresh(refreshExplore)
 </script>
