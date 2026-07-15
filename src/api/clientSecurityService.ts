@@ -54,6 +54,8 @@ export interface ClientVerifyResponse {
 interface StoredClientCredentials {
   client_token: string
   client_secret?: string
+  trust_level?: ClientTrustLevel
+  expires_at?: string
   canonical_fingerprint?: string
   fingerprint_source?: ClientFingerprintSource
   fingerprint_components_version?: string
@@ -66,11 +68,16 @@ interface StoredClientCredentials {
 type StoredClientSummary = Omit<StoredClientCredentials, 'client_token' | 'client_secret'>
 
 const STORAGE_KEY = 'momi_client_security'
+const CLIENT_INIT_BACKOFF_BASE_MS = 1_000
+const CLIENT_INIT_BACKOFF_MAX_MS = 30_000
+const CLIENT_CREDENTIAL_EXPIRY_SKEW_MS = 5_000
 
 let ensureInitPromise: Promise<void> | null = null
 let initPromise: Promise<ClientInitResponse> | null = null
-let initPromiseMode: 'normal' | 'force' | null = null
 let inMemoryClientSecret: string | null = null
+let clientInitRateLimitError: ApiError | null = null
+let clientInitRateLimitFailures = 0
+let clientInitBackoffUntil = 0
 
 const publicClientConfig: RequestConfig = {
   skipAuth: true,
@@ -92,6 +99,10 @@ function normalizeClientType(value: unknown): ClientType | undefined {
   return value === 'web' || value === 'mobile' || value === 'admin' ? value : undefined
 }
 
+function normalizeTrustLevel(value: unknown): ClientTrustLevel | undefined {
+  return value === 'untrusted' || value === 'basic' || value === 'verified' ? value : undefined
+}
+
 function getStoredCredentials(): StoredClientCredentials | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -103,6 +114,15 @@ function getStoredCredentials(): StoredClientCredentials | null {
 
     const credentials: StoredClientCredentials = {
       client_token: parsed.client_token,
+    }
+    const storedSecret = parsed.client_secret?.trim()
+    if (storedSecret) {
+      inMemoryClientSecret ??= storedSecret
+    }
+    const trustLevel = normalizeTrustLevel(parsed.trust_level)
+    if (trustLevel) credentials.trust_level = trustLevel
+    if (typeof parsed.expires_at === 'string' && parsed.expires_at.trim()) {
+      credentials.expires_at = parsed.expires_at.trim()
     }
     if (typeof parsed.canonical_fingerprint === 'string' && parsed.canonical_fingerprint.trim()) {
       credentials.canonical_fingerprint = parsed.canonical_fingerprint
@@ -128,6 +148,13 @@ function getStoredCredentials(): StoredClientCredentials | null {
       Number.isFinite(parsed.init_summary_updated_at)
     ) {
       credentials.init_summary_updated_at = parsed.init_summary_updated_at
+    }
+    if (storedSecret) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials))
+      } catch {
+        // The in-memory copy remains usable when storage is read-only.
+      }
     }
     return credentials
   } catch {
@@ -160,7 +187,16 @@ function clearCredentials(): void {
 }
 
 function buildStoredClientSummary(response: ClientInitResponse): StoredClientSummary {
-  const summary: StoredClientSummary = {}
+  const summary: StoredClientSummary = {
+    trust_level: response.trust_level,
+  }
+
+  const expiresAt = response.expires_at?.trim()
+  if (expiresAt) {
+    summary.expires_at = expiresAt
+  } else if (typeof response.expires_in === 'number' && response.expires_in > 0) {
+    summary.expires_at = new Date(Date.now() + response.expires_in * 1_000).toISOString()
+  }
 
   if (typeof response.canonical_fingerprint === 'string' && response.canonical_fingerprint.trim()) {
     summary.canonical_fingerprint = response.canonical_fingerprint.trim()
@@ -188,6 +224,54 @@ function buildStoredClientSummary(response: ClientInitResponse): StoredClientSum
   }
 
   return summary
+}
+
+function hasExpired(credentials: StoredClientCredentials): boolean {
+  if (!credentials.expires_at) return false
+  const expiresAt = Date.parse(credentials.expires_at)
+  return !Number.isFinite(expiresAt) || expiresAt <= Date.now() + CLIENT_CREDENTIAL_EXPIRY_SKEW_MS
+}
+
+function buildReusableClientInitResponse(): ClientInitResponse | null {
+  const stored = getStoredCredentials()
+  if (!stored || hasExpired(stored) || !inMemoryClientSecret) return null
+
+  return {
+    client_token: stored.client_token,
+    client_secret: inMemoryClientSecret,
+    trust_level: stored.trust_level ?? 'basic',
+    ...(stored.expires_at ? { expires_at: stored.expires_at } : {}),
+    ...(stored.canonical_fingerprint
+      ? { canonical_fingerprint: stored.canonical_fingerprint }
+      : {}),
+    ...(stored.fingerprint_source ? { fingerprint_source: stored.fingerprint_source } : {}),
+    ...(stored.fingerprint_components_version
+      ? { fingerprint_components_version: stored.fingerprint_components_version }
+      : {}),
+    ...(stored.client_type ? { client_type: stored.client_type } : {}),
+    ...(stored.risk_score === undefined ? {} : { risk_score: stored.risk_score }),
+    ...(stored.risk_decision ? { risk_decision: stored.risk_decision } : {}),
+  }
+}
+
+function isClientInitRateLimited(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 429
+}
+
+function recordClientInitRateLimit(error: ApiError): void {
+  clientInitRateLimitFailures += 1
+  const delay = Math.min(
+    CLIENT_INIT_BACKOFF_BASE_MS * 2 ** (clientInitRateLimitFailures - 1),
+    CLIENT_INIT_BACKOFF_MAX_MS
+  )
+  clientInitBackoffUntil = Date.now() + delay
+  clientInitRateLimitError = error
+}
+
+function resetClientInitBackoff(): void {
+  clientInitRateLimitError = null
+  clientInitRateLimitFailures = 0
+  clientInitBackoffUntil = 0
 }
 
 function buildSkippedClientInitResponse(): ClientInitResponse {
@@ -281,7 +365,7 @@ export const clientSecurityManager = {
 
   hasRequestIntegrityCredentials(): boolean {
     const stored = getStoredCredentials()
-    return Boolean(stored?.client_token && inMemoryClientSecret)
+    return Boolean(stored?.client_token && !hasExpired(stored) && inMemoryClientSecret)
   },
 
   getFingerprint: getDeviceFingerprint,
@@ -289,7 +373,8 @@ export const clientSecurityManager = {
   clear: clearCredentials,
 
   isInitialized(): boolean {
-    return this.getClientToken() !== null
+    const stored = getStoredCredentials()
+    return Boolean(stored?.client_token && !hasExpired(stored))
   },
 }
 
@@ -305,22 +390,33 @@ export const clientSecurityService = {
       return buildSkippedClientInitResponse()
     }
 
-    const requestedMode: 'normal' | 'force' = force ? 'force' : 'normal'
-    if (initPromise && (initPromiseMode === 'force' || requestedMode === 'normal')) {
-      return initPromise
+    if (!force) {
+      const reusableResponse = buildReusableClientInitResponse()
+      if (reusableResponse) return reusableResponse
     }
 
-    const currentInitPromise = (async () => {
-      if (force) {
-        clearCredentials()
-      }
+    if (clientInitRateLimitError && Date.now() < clientInitBackoffUntil) {
+      throw clientInitRateLimitError
+    }
 
-      const response = await apiClient.post<ClientInitResponse>(
-        '/client/init',
-        await collectClientInfo(force),
-        clientInitConfig
-      )
-      persistInitCredentials(response)
+    if (initPromise) return initPromise
+
+    const currentInitPromise = (async () => {
+      let response: ClientInitResponse
+      try {
+        response = await apiClient.post<ClientInitResponse>(
+          '/client/init',
+          await collectClientInfo(force),
+          clientInitConfig
+        )
+        persistInitCredentials(response)
+        resetClientInitBackoff()
+      } catch (error) {
+        if (isClientInitRateLimited(error)) {
+          recordClientInitRateLimit(error)
+        }
+        throw error
+      }
 
       if (response.challenge_required && options?.promptChallenge !== false) {
         window.dispatchEvent(
@@ -335,14 +431,12 @@ export const clientSecurityService = {
     })()
 
     initPromise = currentInitPromise
-    initPromiseMode = requestedMode
 
     try {
       return await currentInitPromise
     } finally {
       if (initPromise === currentInitPromise) {
         initPromise = null
-        initPromiseMode = null
       }
     }
   },
@@ -394,8 +488,9 @@ export const clientSecurityService = {
       const integrityInitPromise = (async () => {
         try {
           await this.init(false, { promptChallenge: false })
-        } catch {
-          // A force reissue below can still recover signing credentials after normal init is throttled.
+        } catch (error) {
+          if (isClientInitRateLimited(error)) throw error
+          // A force reissue below can still recover a successful init that omitted signing credentials.
         }
         if (clientSecurityManager.hasRequestIntegrityCredentials()) {
           return
@@ -416,6 +511,13 @@ export const clientSecurityService = {
 
     await ensureInitPromise
   },
+}
+
+export function __resetClientSecurityForTests(): void {
+  ensureInitPromise = null
+  initPromise = null
+  resetClientInitBackoff()
+  clearCredentials()
 }
 
 export function initClientSecurity(payload: ClientInitPayload = {}): Promise<ClientInitResponse> {

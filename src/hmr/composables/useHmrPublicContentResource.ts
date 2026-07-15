@@ -1,7 +1,8 @@
-import type { HmrAsyncResource, HmrPageState } from '@/hmr/types'
+import type { HmrAsyncResource } from '@/hmr/types'
 import {
   useHmrContentResourceController,
-  type HmrContentResourceController,
+  type HmrContentResourceControllerOptions,
+  type HmrContentResourceState,
 } from '@/hmr/composables/useHmrContentResourceController'
 import {
   readAvailablePublicContent,
@@ -12,35 +13,23 @@ import {
   type PublicContentCacheStrategy,
 } from '@/utils/cache/publicContentCache'
 
-export interface HmrPublicContentResourceOptions<T> {
-  initialData: T
-  paths: string[]
+export interface HmrPublicContentResourceOptions<T> extends HmrContentResourceControllerOptions<T> {
   cacheKey: string | (() => string)
   scope: PublicContentCacheScope
   strategy?: PublicContentCacheStrategy
   loader: () => Promise<HmrAsyncResource<T>>
-  isEmpty?: (data: T) => boolean
-  resolvePageState?: (data: T, resource: HmrAsyncResource<T>) => HmrPageState
   readAvailableBeforeRefresh?: boolean
   onResolved?: (data: T, resource: HmrAsyncResource<T>) => void
 }
 
-export type HmrPublicContentResource<T> = Pick<
-  HmrContentResourceController<T>,
-  'content' | 'pageState' | 'resource' | 'applyResource'
-> & {
+export type HmrPublicContentResource<T> = HmrContentResourceState<T> & {
   refresh: () => Promise<HmrAsyncResource<T>>
 }
 
 export function useHmrPublicContentResource<T>(
   options: HmrPublicContentResourceOptions<T>
 ): HmrPublicContentResource<T> {
-  const controller = useHmrContentResourceController({
-    initialData: options.initialData,
-    paths: options.paths,
-    ...(options.isEmpty ? { isEmpty: options.isEmpty } : {}),
-    ...(options.resolvePageState ? { resolvePageState: options.resolvePageState } : {}),
-  })
+  const controller = useHmrContentResourceController(options)
   const { content, pageState, resource, applyResource, markLoading } = controller
 
   function resolveCacheKey(): string {

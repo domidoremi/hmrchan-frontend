@@ -57,9 +57,11 @@ vi.mock('@/utils/crypto', () => ({
 }))
 
 import {
+  __resetClientSecurityForTests,
   clientSecurityManager,
   clientSecurityService,
   initClientSecurity,
+  type ClientInitResponse,
 } from '../clientSecurityService'
 
 describe('clientSecurityService', () => {
@@ -68,7 +70,7 @@ describe('clientSecurityService', () => {
     vi.stubEnv('VITE_ENABLE_CLIENT_INIT', 'true')
     vi.clearAllMocks()
     localStorage.clear()
-    clientSecurityManager.clear()
+    __resetClientSecurityForTests()
     mockGetDeviceFingerprint.mockResolvedValue('fingerprint-123')
     mockGetDeviceFingerprintMetadata.mockResolvedValue({
       value: 'fingerprint-123',
@@ -147,6 +149,59 @@ describe('clientSecurityService', () => {
     expect(clientSecurityManager.getClientSecret()).toBe('client-secret')
   })
 
+  it('single-flights concurrent credential checks and reuses the resolved credentials', async () => {
+    let resolveInit: ((value: ClientInitResponse) => void) | undefined
+    mockApiClient.post.mockImplementationOnce(
+      () =>
+        new Promise<ClientInitResponse>((resolve) => {
+          resolveInit = resolve
+        })
+    )
+
+    const checks = [
+      clientSecurityService.ensureRequestIntegrityCredentials(),
+      clientSecurityService.ensureRequestIntegrityCredentials(),
+      clientSecurityService.ensureRequestIntegrityCredentials(),
+    ]
+    await vi.waitFor(() => {
+      expect(mockApiClient.post).toHaveBeenCalledTimes(1)
+    })
+
+    resolveInit?.({
+      client_token: 'single-flight-token',
+      client_secret: 'single-flight-secret',
+      trust_level: 'basic',
+    })
+    await Promise.all(checks)
+    await clientSecurityService.ensureRequestIntegrityCredentials()
+
+    expect(mockApiClient.post).toHaveBeenCalledTimes(1)
+    expect(clientSecurityManager.getClientToken()).toBe('single-flight-token')
+  })
+
+  it('rehydrates health-check credentials once and immediately scrubs the persisted secret', async () => {
+    localStorage.setItem(
+      'momi_client_security',
+      JSON.stringify({
+        client_token: 'health-token',
+        client_secret: 'health-secret',
+        trust_level: 'basic',
+        expires_at: '2099-01-01T00:00:00.000Z',
+      })
+    )
+
+    await Promise.all([
+      clientSecurityService.ensureRequestIntegrityCredentials(),
+      clientSecurityService.ensureRequestIntegrityCredentials(),
+    ])
+
+    expect(mockApiClient.post).not.toHaveBeenCalled()
+    expect(clientSecurityManager.getClientSecret()).toBe('health-secret')
+    expect(JSON.parse(localStorage.getItem('momi_client_security') ?? '{}')).not.toHaveProperty(
+      'client_secret'
+    )
+  })
+
   it('preserves legacy raw fingerprint init calls with free contract defaults', async () => {
     await initClientSecurity({
       client_fingerprint: 'legacy-fingerprint',
@@ -190,29 +245,18 @@ describe('clientSecurityService', () => {
     expect(clientSecurityManager.getClientToken()).toBeNull()
   })
 
-  it('force reissues signing credentials when normal integrity init is throttled', async () => {
-    mockApiClient.post
-      .mockRejectedValueOnce(new MockApiError('Too many requests', 429, 'RATE_LIMITED'))
-      .mockResolvedValueOnce({
-        client_token: 'reissued-token',
-        client_secret: 'reissued-secret',
-        trust_level: 'basic',
-      })
-
-    await expect(clientSecurityService.ensureRequestIntegrityCredentials()).resolves.toBeUndefined()
-
-    expect(mockApiClient.post).toHaveBeenNthCalledWith(
-      2,
-      '/client/init',
-      expect.objectContaining({
-        force_reissue: true,
-      }),
-      expect.objectContaining({
-        skipSecurity: true,
-      })
+  it('backs off after 429 without forcing a second request or discarding valid credentials', async () => {
+    await clientSecurityService.init()
+    mockApiClient.post.mockRejectedValueOnce(
+      new MockApiError('Too many requests', 429, 'RATE_LIMITED')
     )
-    expect(clientSecurityManager.getClientToken()).toBe('reissued-token')
-    expect(clientSecurityManager.getClientSecret()).toBe('reissued-secret')
+
+    await expect(clientSecurityService.init(true)).rejects.toThrow('Too many requests')
+    await expect(clientSecurityService.init(true)).rejects.toThrow('Too many requests')
+
+    expect(mockApiClient.post).toHaveBeenCalledTimes(2)
+    expect(clientSecurityManager.getClientToken()).toBe('client-token')
+    expect(clientSecurityManager.getClientSecret()).toBe('client-secret')
   })
 
   it('fails deterministically when force reissue still does not return signing credentials', async () => {

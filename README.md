@@ -30,9 +30,9 @@ cp .env.example .env.development
 bun run dev
 ```
 
-默认开发地址：`http://127.0.0.1:5173`。
+默认开发地址从 `http://127.0.0.1:5173` 开始；如果 5173 已被占用，会依次尝试 5174、5175，直到找到可用端口。
 
-`bun run dev` 在检测到 `localhost:5173` 被其他应用占用时会失败。默认使用 `127.0.0.1` 可减少跨项目 dev server 串站，并避免 `__WS_TOKEN__ is not defined` 被误判为仓库缺陷。
+`bun run dev` 会同时检查 `localhost` 和 `127.0.0.1`，然后把选中的端口显式传给 Vite 并启用严格端口绑定。启动后请使用终端输出的 `127.0.0.1` 地址，避免跨项目 dev server 串站，并避免 `__WS_TOKEN__ is not defined` 被误判为仓库缺陷。显式传入 `--port` 时仍只使用该端口；若端口不可用则直接失败。
 
 ## 常用脚本
 

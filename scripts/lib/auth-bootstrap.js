@@ -717,3 +717,17 @@ export async function probeAuthBootstrapEndpoints(baseUrl, options = {}) {
 
   return results
 }
+
+export function createAuthBootstrapPreflightSingleFlight(options = {}) {
+  const probesByOrigin = new Map()
+
+  return function runAuthBootstrapPreflightOnce(baseUrl) {
+    const origin = new URL(baseUrl).origin
+    const existing = probesByOrigin.get(origin)
+    if (existing) return existing
+
+    const probes = probeAuthBootstrapEndpoints(origin, options)
+    probesByOrigin.set(origin, probes)
+    return probes
+  }
+}

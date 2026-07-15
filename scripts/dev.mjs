@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process'
 import {
   assertDevOriginIsSafe,
   buildViteArgs,
+  findAvailableDevPort,
   parseDevServerArgs,
 } from './lib/dev-server-guard.mjs'
 
@@ -28,18 +29,29 @@ async function main() {
   const passthroughArgs = process.argv.slice(2)
   const options = parseDevServerArgs(passthroughArgs)
 
-  await assertDevOriginIsSafe({
-    port: options.port,
-  })
+  const port = options.portIsExplicit
+    ? options.port
+    : await findAvailableDevPort({
+        startPort: options.port,
+        host: options.host,
+      })
+
+  if (options.portIsExplicit) {
+    await assertDevOriginIsSafe({
+      port,
+      host: options.host,
+    })
+  }
 
   await runNodeScript('scripts/patch-lucide.mjs')
 
   const viteArgs = buildViteArgs(passthroughArgs, {
     host: options.host,
+    port,
     strictPort: options.strictPort,
   })
 
-  console.log(`dev server target: http://${options.host}:${options.port}/`)
+  console.log(`dev server target: http://${options.host}:${port}/`)
 
   const child = spawn(process.execPath, ['node_modules/vite/bin/vite.js', ...viteArgs], {
     stdio: 'inherit',

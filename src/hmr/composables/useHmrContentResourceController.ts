@@ -18,6 +18,11 @@ export interface HmrContentResourceController<T> {
   markReady: (data: T) => HmrAsyncResource<T>
 }
 
+export type HmrContentResourceState<T> = Pick<
+  HmrContentResourceController<T>,
+  'content' | 'pageState' | 'resource' | 'applyResource'
+>
+
 export function createHmrInitialResource<T>(data: T, paths: string[]): HmrAsyncResource<T> {
   return {
     state: 'idle',

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   classifyAuthBootstrapProbe,
+  createAuthBootstrapPreflightSingleFlight,
   findFatalAuthBootstrapProbe,
   isAuthBootstrapChallengeRequiredPayload,
   probeAuthBootstrapEndpoints,
@@ -81,6 +82,33 @@ describe('auth bootstrap probe classification', () => {
     )
     expect(passkeyRequest?.headers.get('X-Client-Token')).toBe('existing-token')
     expect(passkeyRequest?.headers.get('X-Signature')).toBeTruthy()
+  })
+
+  it('deduplicates concurrent and repeated health bootstrap checks by origin', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      void input
+      void init
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const runPreflight = createAuthBootstrapPreflightSingleFlight({ probeIntervalMs: 0 })
+
+    const [first, second] = await Promise.all([
+      runPreflight('https://next.momichan.com/login'),
+      runPreflight('https://next.momichan.com/profile'),
+    ])
+    const repeated = await runPreflight('https://next.momichan.com')
+
+    expect(second).toBe(first)
+    expect(repeated).toBe(first)
+    expect(
+      fetchMock.mock.calls.filter(
+        ([input]) => new URL(String(input)).pathname === '/api/v1/client/init'
+      )
+    ).toHaveLength(1)
   })
 
   it('attaches origin CSRF material to auth facade mutation probes', async () => {

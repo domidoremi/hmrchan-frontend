@@ -4,12 +4,16 @@ import type { RouteLocationNormalized } from 'vue-router'
 import { syncClientDocumentHead } from '@/router/clientHead'
 import { appRoutes } from '@/router/routes'
 
-function makeRoute(path: string, name: string): RouteLocationNormalized {
+function makeRoute(
+  path: string,
+  name: string,
+  meta: RouteLocationNormalized['meta'] = {}
+): RouteLocationNormalized {
   return {
     fullPath: path,
     hash: '',
     matched: [],
-    meta: {},
+    meta,
     name,
     params: {},
     path,
@@ -35,13 +39,18 @@ function resolveRepresentativeRoutePath(path: string): string {
     .replace('/:pathMatch(.*)*', '/__missing-route__')
 }
 
-function collectNamedShellRoutes(): Array<{ name: string; path: string }> {
+function collectNamedShellRoutes(): Array<{
+  name: string
+  path: string
+  meta: RouteLocationNormalized['meta']
+}> {
   return appRoutes.flatMap((route) =>
     (route.children ?? [])
       .filter((child) => typeof child.name === 'string')
       .map((child) => ({
         name: String(child.name),
         path: resolveRepresentativeRoutePath(child.path),
+        meta: child.meta ?? {},
       }))
   )
 }
@@ -53,7 +62,7 @@ describe('syncClientDocumentHead', () => {
   })
 
   it('syncs title, meta tags, and canonical link for public shell routes', () => {
-    syncClientDocumentHead(makeRoute('/explore', 'hmr-explore'))
+    syncClientDocumentHead(makeRoute('/explore', 'hmr-explore', { pageKey: 'explore' }))
 
     expect(document.title).toBe('Explore · MomiChan')
     expect(findNamedMeta('description')?.content).toContain('探索最新公开内容')
@@ -69,7 +78,9 @@ describe('syncClientDocumentHead', () => {
   })
 
   it('syncs noindex head tags for protected profile shell routes', () => {
-    syncClientDocumentHead(makeRoute('/profile/security', 'hmr-profile-section'))
+    syncClientDocumentHead(
+      makeRoute('/profile/security', 'hmr-profile-section', { pageKey: 'profile' })
+    )
 
     expect(document.title).toBe('Profile · MomiChan')
     expect(findNamedMeta('description')?.content).toContain('查看 MomiChan 个人资料')
@@ -82,7 +93,7 @@ describe('syncClientDocumentHead', () => {
   })
 
   it('syncs article head tags for post detail shell routes', () => {
-    syncClientDocumentHead(makeRoute('/posts/123', 'hmr-post-detail'))
+    syncClientDocumentHead(makeRoute('/posts/123', 'hmr-post-detail', { pageKey: 'post' }))
 
     expect(document.title).toBe('Post detail · MomiChan')
     expect(findNamedMeta('description')?.content).toContain('浏览 MomiChan 公开帖子详情')
@@ -96,7 +107,9 @@ describe('syncClientDocumentHead', () => {
   })
 
   it('syncs article head tags for discussion detail shell routes', () => {
-    syncClientDocumentHead(makeRoute('/community/discussions/123', 'hmr-discussion-detail'))
+    syncClientDocumentHead(
+      makeRoute('/community/discussions/123', 'hmr-discussion-detail', { pageKey: 'community' })
+    )
 
     expect(document.title).toBe('Discussion detail · MomiChan')
     expect(findNamedMeta('description')?.content).toContain('浏览 MomiChan 公开讨论详情')
@@ -143,7 +156,7 @@ describe('syncClientDocumentHead', () => {
       document.head.innerHTML = ''
       document.title = 'Before'
 
-      syncClientDocumentHead(makeRoute(route.path, route.name))
+      syncClientDocumentHead(makeRoute(route.path, route.name, route.meta))
 
       expect({ routeName: route.name, title: document.title }).not.toMatchObject({
         title: 'Before',
@@ -161,7 +174,7 @@ describe('syncClientDocumentHead', () => {
     }
   })
 
-  it('does not mutate head tags for routes outside the client head whitelist', () => {
+  it('does not mutate head tags for routes without managed page metadata', () => {
     syncClientDocumentHead(makeRoute('/draft-preview', 'hmr-draft-preview'))
 
     expect(document.title).toBe('Before')

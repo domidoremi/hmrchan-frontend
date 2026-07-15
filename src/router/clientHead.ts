@@ -6,35 +6,12 @@ import {
   resolveHtmlDocument,
 } from '@/edge/htmlDocument'
 
-const CLIENT_HEAD_SYNC_ROUTE_NAMES = new Set([
-  'hmr-home',
-  'hmr-explore',
-  'hmr-community',
-  'hmr-schedule',
-  'hmr-settings',
-  'hmr-login',
-  'hmr-register',
-  'hmr-forgot-password',
-  'hmr-reset-password',
-  'hmr-auth-callback',
-  'hmr-passkey-recovery',
-  'hmr-profile',
-  'hmr-profile-section',
-  'hmr-about',
-  'hmr-contact',
-  'hmr-join-us',
-  'hmr-thank-you',
-  'hmr-post-detail',
-  'hmr-discussion-detail',
-  'hmr-not-found',
-])
-
 function isBrowserRuntime(): boolean {
   return typeof window !== 'undefined' && typeof document !== 'undefined'
 }
 
 function shouldSyncClientHead(route: RouteLocationNormalized): boolean {
-  return typeof route.name === 'string' && CLIENT_HEAD_SYNC_ROUTE_NAMES.has(route.name)
+  return typeof route.meta.pageKey === 'string'
 }
 
 function setNamedMetaContent(name: string, content: string): void {

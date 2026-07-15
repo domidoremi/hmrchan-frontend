@@ -1,73 +1,34 @@
+import { lookup } from 'node:dns/promises'
+import { createServer } from 'node:net'
+
 const DEFAULT_DEV_PORT = 5173
 const DEFAULT_DEV_HOST = '127.0.0.1'
-const PROBE_TIMEOUT_MS = 1500
-const CURRENT_APP_MARKERS = ['id="app-root"', '/manifest.json', 'hmrchan frontend reset']
-const FOREIGN_APP_MARKERS = ['<!--app-context-->', '__WS_TOKEN__', 'vite-plugin-uni']
+const MAX_PORT = 65535
 
-function createAbortSignal(timeoutMs) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  timer.unref?.()
+function matchesOption(token, optionNames) {
+  return optionNames.some((name) => token === name || token.startsWith(`${name}=`))
+}
+
+function parseOptionValue(token, next, optionNames) {
+  for (const name of optionNames) {
+    if (token.startsWith(`${name}=`)) {
+      return {
+        consumedNext: false,
+        value: token.slice(name.length + 1),
+      }
+    }
+  }
+
+  if (optionNames.includes(token) && typeof next === 'string' && !next.startsWith('-')) {
+    return {
+      consumedNext: true,
+      value: next,
+    }
+  }
+
   return {
-    signal: controller.signal,
-    cleanup() {
-      clearTimeout(timer)
-    },
-  }
-}
-
-function normalizeText(value) {
-  return typeof value === 'string' ? value : ''
-}
-
-function includesAny(text, markers) {
-  return markers.some((marker) => text.includes(marker))
-}
-
-export function classifyServerPayload(payload) {
-  const text = normalizeText(payload)
-
-  if (!text) {
-    return 'empty'
-  }
-
-  if (includesAny(text, CURRENT_APP_MARKERS)) {
-    return 'hmrchan-frontend'
-  }
-
-  if (includesAny(text, FOREIGN_APP_MARKERS)) {
-    return 'foreign-vite'
-  }
-
-  return 'unknown'
-}
-
-export async function probeHttpText(url, timeoutMs = PROBE_TIMEOUT_MS) {
-  const { signal, cleanup } = createAbortSignal(timeoutMs)
-
-  try {
-    const response = await fetch(url, {
-      redirect: 'manual',
-      signal,
-    })
-    const text = await response.text()
-
-    return {
-      ok: true,
-      status: response.status,
-      text,
-      classification: classifyServerPayload(text),
-    }
-  } catch (error) {
-    return {
-      ok: false,
-      status: null,
-      text: '',
-      classification: 'unreachable',
-      error: error instanceof Error ? error.message : String(error),
-    }
-  } finally {
-    cleanup()
+    consumedNext: false,
+    value: undefined,
   }
 }
 
@@ -75,6 +36,7 @@ export function parseDevServerArgs(argv) {
   const options = {
     host: DEFAULT_DEV_HOST,
     port: DEFAULT_DEV_PORT,
+    portIsExplicit: false,
     strictPort: true,
   }
 
@@ -82,93 +44,129 @@ export function parseDevServerArgs(argv) {
     const token = argv[index]
     const next = argv[index + 1]
 
-    if ((token === '--host' || token === '-H') && typeof next === 'string') {
-      options.host = next
-      index += 1
+    if (matchesOption(token, ['--host', '-H'])) {
+      const parsed = parseOptionValue(token, next, ['--host', '-H'])
+      options.host = parsed.value || '0.0.0.0'
+      if (parsed.consumedNext) index += 1
       continue
     }
 
-    if ((token === '--port' || token === '-p') && typeof next === 'string') {
-      const parsed = Number.parseInt(next, 10)
-      if (Number.isInteger(parsed) && parsed > 0) {
-        options.port = parsed
+    if (matchesOption(token, ['--port', '-p'])) {
+      const parsed = parseOptionValue(token, next, ['--port', '-p'])
+      const port = Number.parseInt(parsed.value ?? '', 10)
+      options.portIsExplicit = true
+      if (Number.isInteger(port) && port > 0 && port <= MAX_PORT) {
+        options.port = port
       }
-      index += 1
+      if (parsed.consumedNext) index += 1
       continue
     }
 
     if (token === '--strictPort' || token === '--strict-port') {
       options.strictPort = true
-      continue
     }
   }
 
   return options
 }
 
-function formatProbeSummary(label, probe) {
-  if (!probe.ok) {
-    return `${label}: unreachable (${probe.error ?? 'request failed'})`
+function canListenOnHost(port, host) {
+  return new Promise((resolve, reject) => {
+    const server = createServer()
+    server.unref()
+
+    server.once('error', (error) => {
+      if (error?.code === 'EADDRINUSE' || error?.code === 'EACCES') {
+        resolve(false)
+        return
+      }
+
+      reject(error)
+    })
+
+    server.listen({ port, host, exclusive: true }, () => {
+      server.close((error) => {
+        if (error) {
+          reject(error)
+          return
+        }
+
+        resolve(true)
+      })
+    })
+  })
+}
+
+async function resolveProbeHosts(host) {
+  const hosts = new Set([host, DEFAULT_DEV_HOST])
+
+  try {
+    const localhostAddresses = await lookup('localhost', { all: true })
+    for (const { address } of localhostAddresses) {
+      hosts.add(address)
+    }
+  } catch {
+    hosts.add('localhost')
   }
 
-  return `${label}: status ${probe.status}, classification ${probe.classification}`
+  return [...hosts]
+}
+
+export async function isDevPortAvailable(port, { host = DEFAULT_DEV_HOST } = {}) {
+  const probeHosts = await resolveProbeHosts(host)
+
+  for (const probeHost of probeHosts) {
+    if (!(await canListenOnHost(port, probeHost))) {
+      return false
+    }
+  }
+
+  return true
+}
+
+export async function findAvailableDevPort({
+  startPort = DEFAULT_DEV_PORT,
+  host = DEFAULT_DEV_HOST,
+  isPortAvailable = isDevPortAvailable,
+} = {}) {
+  if (!Number.isInteger(startPort) || startPort <= 0 || startPort > MAX_PORT) {
+    throw new Error(`Invalid development server port: ${startPort}`)
+  }
+
+  for (let port = startPort; port <= MAX_PORT; port += 1) {
+    if (await isPortAvailable(port, { host })) {
+      return port
+    }
+  }
+
+  throw new Error(`No available development server port found from ${startPort} to ${MAX_PORT}.`)
 }
 
 export async function assertDevOriginIsSafe({
   port = DEFAULT_DEV_PORT,
-  timeoutMs = PROBE_TIMEOUT_MS,
+  host = DEFAULT_DEV_HOST,
 } = {}) {
-  const localhostUrl = `http://localhost:${port}/`
-  const loopbackUrl = `http://${DEFAULT_DEV_HOST}:${port}/`
-  const [localhostProbe, loopbackProbe] = await Promise.all([
-    probeHttpText(localhostUrl, timeoutMs),
-    probeHttpText(loopbackUrl, timeoutMs),
-  ])
-
-  const anyOccupied = localhostProbe.ok || loopbackProbe.ok
-  if (!anyOccupied) {
+  if (await isDevPortAvailable(port, { host })) {
     return
   }
 
-  const currentAppRunning =
-    localhostProbe.classification === 'hmrchan-frontend' ||
-    loopbackProbe.classification === 'hmrchan-frontend'
-
-  const foreignServerDetected =
-    localhostProbe.classification === 'foreign-vite' ||
-    loopbackProbe.classification === 'foreign-vite' ||
-    (localhostProbe.ok && localhostProbe.classification !== 'hmrchan-frontend') ||
-    (loopbackProbe.ok && loopbackProbe.classification !== 'hmrchan-frontend')
-
-  if (currentAppRunning) {
-    throw new Error(
-      [
-        `A dev server for this repo already appears to be running on port ${port}.`,
-        formatProbeSummary('localhost', localhostProbe),
-        formatProbeSummary(DEFAULT_DEV_HOST, loopbackProbe),
-        `Reuse http://${DEFAULT_DEV_HOST}:${port}/ instead of launching a duplicate dev server.`,
-      ].join('\n')
-    )
-  }
-
-  if (foreignServerDetected) {
-    throw new Error(
-      [
-        `Port ${port} is already serving another app, so starting this repo on the same port would split localhost and ${DEFAULT_DEV_HOST}.`,
-        formatProbeSummary('localhost', localhostProbe),
-        formatProbeSummary(DEFAULT_DEV_HOST, loopbackProbe),
-        'This is the exact pattern that produces "__WS_TOKEN__ is not defined" and stray /favicon.ico 404s in the browser.',
-        `Stop the conflicting process first, then reopen this app at http://${DEFAULT_DEV_HOST}:${port}/.`,
-      ].join('\n')
-    )
-  }
+  throw new Error(
+    `Port ${port} is unavailable on ${host} or localhost. Choose another explicit --port, or omit --port to search from ${DEFAULT_DEV_PORT}.`
+  )
 }
 
-export function buildViteArgs(argv, { host = DEFAULT_DEV_HOST, strictPort = true } = {}) {
+export function buildViteArgs(
+  argv,
+  { host = DEFAULT_DEV_HOST, port = DEFAULT_DEV_PORT, strictPort = true } = {}
+) {
   const nextArgs = [...argv]
 
-  if (!nextArgs.includes('--host') && !nextArgs.includes('-H')) {
+  if (!nextArgs.some((token) => matchesOption(token, ['--host', '-H']))) {
     nextArgs.push('--host', host)
+  }
+
+  if (!nextArgs.some((token) => matchesOption(token, ['--port', '-p']))) {
+    nextArgs.push('--port', String(port))
   }
 
   if (strictPort && !nextArgs.includes('--strictPort') && !nextArgs.includes('--strict-port')) {

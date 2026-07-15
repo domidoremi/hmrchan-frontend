@@ -35,169 +35,46 @@
                 <span>{{ t('explore.search') }}</span>
                 <input v-model="query" :placeholder="t('explore.searchPlaceholder')" />
               </label>
-              <div class="hmr-data-field hmr-filter-field">
-                <span id="hmr-filter-label-platform">{{ t('explore.platform') }}</span>
-                <div
-                  class="hmr-filter-select"
-                  :class="{ 'is-open': openFilterMenu === 'platform' }"
-                >
-                  <button
-                    id="hmr-filter-value-platform"
-                    class="hmr-filter-trigger"
-                    type="button"
-                    aria-haspopup="listbox"
-                    :aria-expanded="openFilterMenu === 'platform'"
-                    aria-controls="hmr-filter-menu-platform"
-                    aria-labelledby="hmr-filter-label-platform hmr-filter-value-platform"
-                    @click="toggleFilterMenu('platform')"
-                    @keydown.esc.prevent="closeFilterMenu"
-                  >
-                    {{ selectedFilterLabel(platformFilterOptions, platform) }}
-                  </button>
-                  <div
-                    v-show="openFilterMenu === 'platform'"
-                    id="hmr-filter-menu-platform"
-                    class="hmr-filter-menu"
-                    role="listbox"
-                    :hidden="openFilterMenu !== 'platform'"
-                    aria-labelledby="hmr-filter-label-platform"
-                  >
-                    <button
-                      v-for="item in platformFilterOptions"
-                      :key="`filter-platform-${item.id}`"
-                      class="hmr-filter-option"
-                      :class="{ 'is-selected': item.id === platform }"
-                      type="button"
-                      role="option"
-                      :aria-selected="item.id === platform"
-                      @click="selectFilterOption('platform', item.id)"
-                    >
-                      <span>{{ item.label }}</span>
-                      <em v-if="typeof item.count === 'number'">{{ item.count }}</em>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="hmr-data-field hmr-filter-field">
-                <span id="hmr-filter-label-sort">{{ t('explore.sort') }}</span>
-                <div class="hmr-filter-select" :class="{ 'is-open': openFilterMenu === 'sort' }">
-                  <button
-                    id="hmr-filter-value-sort"
-                    class="hmr-filter-trigger"
-                    type="button"
-                    aria-haspopup="listbox"
-                    :aria-expanded="openFilterMenu === 'sort'"
-                    aria-controls="hmr-filter-menu-sort"
-                    aria-labelledby="hmr-filter-label-sort hmr-filter-value-sort"
-                    @click="toggleFilterMenu('sort')"
-                    @keydown.esc.prevent="closeFilterMenu"
-                  >
-                    {{ selectedFilterLabel(sortOptions, sortBy) }}
-                  </button>
-                  <div
-                    v-show="openFilterMenu === 'sort'"
-                    id="hmr-filter-menu-sort"
-                    class="hmr-filter-menu"
-                    role="listbox"
-                    :hidden="openFilterMenu !== 'sort'"
-                    aria-labelledby="hmr-filter-label-sort"
-                  >
-                    <button
-                      v-for="item in sortOptions"
-                      :key="`filter-sort-${item.id}`"
-                      class="hmr-filter-option"
-                      :class="{ 'is-selected': item.id === sortBy }"
-                      type="button"
-                      role="option"
-                      :aria-selected="item.id === sortBy"
-                      @click="selectFilterOption('sort', item.id)"
-                    >
-                      <span>{{ item.label }}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="hmr-data-field hmr-filter-field">
-                <span id="hmr-filter-label-kind">{{ t('explore.type') }}</span>
-                <div class="hmr-filter-select" :class="{ 'is-open': openFilterMenu === 'kind' }">
-                  <button
-                    id="hmr-filter-value-kind"
-                    class="hmr-filter-trigger"
-                    type="button"
-                    aria-haspopup="listbox"
-                    :aria-expanded="openFilterMenu === 'kind'"
-                    aria-controls="hmr-filter-menu-kind"
-                    aria-labelledby="hmr-filter-label-kind hmr-filter-value-kind"
-                    @click="toggleFilterMenu('kind')"
-                    @keydown.esc.prevent="closeFilterMenu"
-                  >
-                    {{ selectedFilterLabel(contentKindOptions, contentKind) }}
-                  </button>
-                  <div
-                    v-show="openFilterMenu === 'kind'"
-                    id="hmr-filter-menu-kind"
-                    class="hmr-filter-menu"
-                    role="listbox"
-                    :hidden="openFilterMenu !== 'kind'"
-                    aria-labelledby="hmr-filter-label-kind"
-                  >
-                    <button
-                      v-for="item in contentKindOptions"
-                      :key="`filter-kind-${item.id}`"
-                      class="hmr-filter-option"
-                      :class="{ 'is-selected': item.id === contentKind }"
-                      type="button"
-                      role="option"
-                      :aria-selected="item.id === contentKind"
-                      @click="selectFilterOption('kind', item.id)"
-                    >
-                      <span>{{ item.label }}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="hmr-data-field hmr-filter-field">
-                <span id="hmr-filter-label-duration">{{ t('explore.duration') }}</span>
-                <div
-                  class="hmr-filter-select"
-                  :class="{ 'is-open': openFilterMenu === 'duration' }"
-                >
-                  <button
-                    id="hmr-filter-value-duration"
-                    class="hmr-filter-trigger"
-                    type="button"
-                    aria-haspopup="listbox"
-                    :aria-expanded="openFilterMenu === 'duration'"
-                    aria-controls="hmr-filter-menu-duration"
-                    aria-labelledby="hmr-filter-label-duration hmr-filter-value-duration"
-                    @click="toggleFilterMenu('duration')"
-                    @keydown.esc.prevent="closeFilterMenu"
-                  >
-                    {{ selectedFilterLabel(durationOptions, durationRange) }}
-                  </button>
-                  <div
-                    v-show="openFilterMenu === 'duration'"
-                    id="hmr-filter-menu-duration"
-                    class="hmr-filter-menu"
-                    role="listbox"
-                    :hidden="openFilterMenu !== 'duration'"
-                    aria-labelledby="hmr-filter-label-duration"
-                  >
-                    <button
-                      v-for="item in durationOptions"
-                      :key="`filter-duration-${item.id}`"
-                      class="hmr-filter-option"
-                      :class="{ 'is-selected': item.id === durationRange }"
-                      type="button"
-                      role="option"
-                      :aria-selected="item.id === durationRange"
-                      @click="selectFilterOption('duration', item.id)"
-                    >
-                      <span>{{ item.label }}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <HmrFilterSelect
+                filter-id="platform"
+                :label="t('explore.platform')"
+                :model-value="platform"
+                :open="openFilterMenu === 'platform'"
+                :options="platformFilterOptions"
+                @close="closeFilterMenu"
+                @select="selectFilterOption('platform', $event)"
+                @toggle="toggleFilterMenu('platform')"
+              />
+              <HmrFilterSelect
+                filter-id="sort"
+                :label="t('explore.sort')"
+                :model-value="sortBy"
+                :open="openFilterMenu === 'sort'"
+                :options="sortOptions"
+                @close="closeFilterMenu"
+                @select="selectFilterOption('sort', $event)"
+                @toggle="toggleFilterMenu('sort')"
+              />
+              <HmrFilterSelect
+                filter-id="kind"
+                :label="t('explore.type')"
+                :model-value="contentKind"
+                :open="openFilterMenu === 'kind'"
+                :options="contentKindOptions"
+                @close="closeFilterMenu"
+                @select="selectFilterOption('kind', $event)"
+                @toggle="toggleFilterMenu('kind')"
+              />
+              <HmrFilterSelect
+                filter-id="duration"
+                :label="t('explore.duration')"
+                :model-value="durationRange"
+                :open="openFilterMenu === 'duration'"
+                :options="durationOptions"
+                @close="closeFilterMenu"
+                @select="selectFilterOption('duration', $event)"
+                @toggle="toggleFilterMenu('duration')"
+              />
               <button class="hmr-status-button" type="submit">{{ t('explore.apply') }}</button>
             </form>
           </div>
@@ -356,6 +233,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import HmrFilterSelect from '@/hmr/components/HmrFilterSelect.vue'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import HmrPostCard from '@/hmr/components/HmrPostCard.vue'
 import {
@@ -366,12 +244,6 @@ import {
 import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'
 
 type ExploreFilterMenuId = 'platform' | 'sort' | 'kind' | 'duration'
-type ExploreFilterOption = {
-  id: string
-  label: string
-  count?: number
-}
-
 const { t } = useI18n({ useScope: 'global' })
 const {
   balancedRibbonPosts,
@@ -404,29 +276,25 @@ const {
 
 const openFilterMenu = ref<ExploreFilterMenuId | null>(null)
 const filterToolbarRef = ref<HTMLFormElement | null>(null)
-const platformFilterOptions = computed<ExploreFilterOption[]>(() => platformOptions.value)
-const sortOptions = computed<ExploreFilterOption[]>(() => [
+const platformFilterOptions = computed(() => platformOptions.value)
+const sortOptions = computed(() => [
   { id: 'published_at', label: t('explore.sortPublished') },
   { id: 'scraped_at', label: t('explore.sortScraped') },
   { id: 'view_count', label: t('explore.sortViews') },
   { id: 'like_count', label: t('explore.sortLikes') },
   { id: 'comment_count', label: t('explore.sortComments') },
 ])
-const contentKindOptions = computed<ExploreFilterOption[]>(() => [
+const contentKindOptions = computed(() => [
   { id: 'all', label: t('explore.kindAll') },
   { id: 'media', label: t('explore.kindMedia') },
   { id: 'text', label: t('explore.kindText') },
 ])
-const durationOptions = computed<ExploreFilterOption[]>(() => [
+const durationOptions = computed(() => [
   { id: 'all', label: t('explore.durationAll') },
   { id: 'short', label: t('explore.durationShort') },
   { id: 'medium', label: t('explore.durationMedium') },
   { id: 'long', label: t('explore.durationLong') },
 ])
-
-function selectedFilterLabel(options: ExploreFilterOption[], value: string): string {
-  return options.find((item) => item.id === value)?.label ?? value
-}
 
 function closeFilterMenu(): void {
   openFilterMenu.value = null

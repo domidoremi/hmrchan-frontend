@@ -172,37 +172,47 @@ export function useHmrScheduleBoard(
   )
 
   const filteredEvents = computed(() => {
-    const today = currentDate(options)
-    const todayKey = formatDateKey(today)
-    const weekKeys = new Set(makeDayWindow(today, 7).map((item) => item.key))
-    const monthKey = formatMonthKey(selectedMonth.value)
+    switch (activeFilter.value) {
+      case 'today': {
+        const todayKey = formatDateKey(currentDate(options))
+        return normalizedEvents.value.filter((item) => item.dateKey === todayKey)
+      }
+      case 'week': {
+        const weekKeys = new Set(makeDayWindow(currentDate(options), 7).map((item) => item.key))
+        return normalizedEvents.value.filter((item) => weekKeys.has(item.dateKey))
+      }
+      case 'month': {
+        const monthKey = formatMonthKey(selectedMonth.value)
+        return normalizedEvents.value.filter((item) => item.dateKey.startsWith(monthKey))
+      }
+      case 'performance':
+        return normalizedEvents.value.filter((item) => item.isPerformance)
+      default:
+        return normalizedEvents.value
+    }
+  })
 
-    if (activeFilter.value === 'today') {
-      return normalizedEvents.value.filter((item) => item.dateKey === todayKey)
+  const eventsByDate = computed(() => {
+    const groupedEvents = new Map<string, HmrScheduleEvent[]>()
+    for (const event of filteredEvents.value) {
+      const events = groupedEvents.get(event.dateKey)
+      if (events) {
+        events.push(event)
+      } else {
+        groupedEvents.set(event.dateKey, [event])
+      }
     }
-    if (activeFilter.value === 'week') {
-      return normalizedEvents.value.filter((item) => weekKeys.has(item.dateKey))
-    }
-    if (activeFilter.value === 'month') {
-      return normalizedEvents.value.filter((item) => item.dateKey.startsWith(monthKey))
-    }
-    if (activeFilter.value === 'performance') {
-      return normalizedEvents.value.filter((item) => item.isPerformance)
-    }
-
-    return normalizedEvents.value
+    return groupedEvents
   })
 
   const dayOptions = computed<HmrScheduleDayOption[]>(() =>
     makeDayWindow(currentDate(options), 7).map((day) => ({
       ...day,
-      count: filteredEvents.value.filter((item) => item.dateKey === day.key).length,
+      count: eventsByDate.value.get(day.key)?.length ?? 0,
     }))
   )
 
-  const selectedDayEvents = computed(() =>
-    filteredEvents.value.filter((item) => item.dateKey === selectedDayKey.value)
-  )
+  const selectedDayEvents = computed(() => eventsByDate.value.get(selectedDayKey.value) ?? [])
 
   const selectedDay = computed(
     () => dayOptions.value.find((item) => item.key === selectedDayKey.value) ?? dayOptions.value[0]
@@ -219,16 +229,14 @@ export function useHmrScheduleBoard(
   const monthDays = computed<HmrScheduleMonthDay[]>(() =>
     makeMonthGrid(selectedMonth.value).map((day) => ({
       ...day,
-      count: filteredEvents.value.filter((item) => item.dateKey === day.key).length,
+      count: eventsByDate.value.get(day.key)?.length ?? 0,
     }))
   )
   const populatedDays = computed(() =>
-    dayOptions.value
-      .map((day) => ({
-        ...day,
-        events: filteredEvents.value.filter((item) => item.dateKey === day.key),
-      }))
-      .filter((day) => day.events.length)
+    dayOptions.value.flatMap((day) => {
+      const events = eventsByDate.value.get(day.key) ?? []
+      return events.length ? [{ ...day, events }] : []
+    })
   )
 
   function setFilter(filter: HmrScheduleFilter): void {

@@ -33,12 +33,12 @@ import {
 } from './lib/release-route-contract.js'
 import {
   buildAuthBootstrapProbeSummary,
+  createAuthBootstrapPreflightSingleFlight,
   extractAuthBootstrapError,
   findFatalAuthBootstrapProbe,
   findLocalAuditEnvironmentBlockedProbe,
   formatFatalAuthBootstrapProbe,
   formatLocalAuditEnvironmentBlockedProbe,
-  probeAuthBootstrapEndpoints,
 } from './lib/auth-bootstrap.js'
 import { ensureDetailRouteReadiness, resolveSampleDetailRoute } from './lib/detail-route-utils.js'
 import { getAuthSkipReason, resolveAuthSmokeCredentials } from './lib/e2e-smoke-report.js'
@@ -46,8 +46,13 @@ import {
   ensureLocalAuditSmokeAccount,
   shouldEnsureLocalAuditSmokeAccount,
 } from './lib/local-audit-smoke-account.js'
+import { createLoginShellSelectorWaiter, waitForRoutePath } from './lib/browser-route-assertions.js'
 
 applyLocalAuditEnvToProcess()
+
+const waitForLoginShellSelector = createLoginShellSelectorWaiter({
+  routeDriftPrefix: 'auth guard/session state drift; ',
+})
 
 interface ScanIssue {
   type: string
@@ -252,11 +257,9 @@ async function readAuthBootstrapPageProbe(
   }
 }
 
-async function runAuthBootstrapPreflight(baseUrl: string): Promise<AuthBootstrapProbe[]> {
-  return probeAuthBootstrapEndpoints(baseUrl, {
-    contractVersion: AUTH_BOOTSTRAP_CONTRACT_VERSION,
-  }) as Promise<AuthBootstrapProbe[]>
-}
+const runAuthBootstrapPreflight = createAuthBootstrapPreflightSingleFlight({
+  contractVersion: AUTH_BOOTSTRAP_CONTRACT_VERSION,
+}) as (baseUrl: string) => Promise<AuthBootstrapProbe[]>
 
 function throwIfFatalAuthBootstrapProbe(probes: AuthBootstrapProbe[]): void {
   const localEnvironmentProbe = findLocalAuditEnvironmentBlockedProbe(probes)
@@ -422,60 +425,6 @@ async function prepareRouteAuditNavigation(page: Page): Promise<void> {
     await cdpSession?.send('Network.clearBrowserCache').catch(() => undefined)
   } finally {
     await cdpSession?.detach().catch(() => undefined)
-  }
-}
-
-async function readPageRouteState(page: Page): Promise<{
-  url: string
-  pathname: string | null
-  title: string | null
-}> {
-  const [pathname, title] = await Promise.all([
-    page.evaluate(() => window.location.pathname).catch(() => null),
-    page.title().catch(() => null),
-  ])
-  return {
-    url: page.url(),
-    pathname,
-    title,
-  }
-}
-
-async function waitForRoutePath(
-  page: Page,
-  expectedPath: string,
-  context: string,
-  timeout = 5_000
-): Promise<void> {
-  await page
-    .waitForFunction((path) => window.location.pathname === path, { timeout }, expectedPath)
-    .catch(async () => {
-      const state = await readPageRouteState(page)
-      throw new Error(
-        `${context}: expected browser path ${expectedPath}, got ${state.pathname ?? 'unknown'} (${state.url}, title: ${state.title ?? 'unknown'})`
-      )
-    })
-}
-
-async function waitForLoginShellSelector(
-  page: Page,
-  selector: string,
-  context: string,
-  timeout = 15_000
-): Promise<void> {
-  try {
-    await page.waitForSelector(selector, { timeout })
-  } catch (error) {
-    const state = await readPageRouteState(page)
-    if (state.pathname !== '/login') {
-      throw new Error(
-        `${context}: auth guard/session state drift; login route left /login before auth shell rendered, current path ${state.pathname ?? 'unknown'} (${state.url}, title: ${state.title ?? 'unknown'})`
-      )
-    }
-
-    throw new Error(
-      `${context}: LoginPage mount/runtime failure; selector ${selector} was not found on /login (title: ${state.title ?? 'unknown'}) after ${timeout}ms. Original error: ${formatError(error)}`
-    )
   }
 }
 
@@ -862,12 +811,7 @@ async function authenticateViaApi(
           if (!raw) return false
           try {
             const parsed = JSON.parse(raw) as { client_token?: unknown; client_secret?: unknown }
-            return Boolean(
-              typeof parsed.client_token === 'string' &&
-              parsed.client_token.trim() &&
-              typeof parsed.client_secret === 'string' &&
-              parsed.client_secret.trim()
-            )
+            return Boolean(typeof parsed.client_token === 'string' && parsed.client_token.trim())
           } catch {
             return false
           }
@@ -937,8 +881,6 @@ async function authenticateViaApi(
             platform: navigator.platform,
           })
         )
-        window.localStorage.removeItem(credentialStorageKey)
-
         const response = await fetch('/api/v1/client/init', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

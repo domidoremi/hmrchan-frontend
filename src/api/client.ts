@@ -14,6 +14,7 @@ export class ApiError extends Error {
 }
 
 export interface RequestConfig extends RequestInit {
+  idempotencyKey?: string
   skipAuth?: boolean
   skipErrorToast?: boolean
   skipSecurity?: boolean
@@ -29,6 +30,7 @@ const CLIENT_HEADER_NAME = ['X-Client-', 'Con', 'tract', '-Version'].join('')
 const ORIGIN_CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
 const LOCAL_ORIGIN_CSRF_COOKIE_NAME = 'momi_origin_csrf'
 const ORIGIN_CSRF_HEADER_NAME = 'X-Origin-CSRF'
+const IDEMPOTENCY_HEADER_NAME = 'Idempotency-Key'
 const textEncoder = new TextEncoder()
 
 const REQUEST_INTEGRITY_EXEMPT_PATHS = new Set([
@@ -417,6 +419,12 @@ function isClientReinitRequired(response: Response): boolean {
   return response.headers.get('X-Client-Reinit-Required')?.toLowerCase() === 'true'
 }
 
+function isRetryableCreate(method: string, url: string): boolean {
+  if (method !== 'POST') return false
+  const pathname = getPathname(url).replace(/\/$/, '')
+  return pathname === '/api/v1/favorites' || /^\/api\/v1\/posts\/[^/]+\/comments$/i.test(pathname)
+}
+
 async function handleChallengeRequired<T>(
   path: string,
   config: RequestConfig,
@@ -537,6 +545,7 @@ class ApiClient {
       skipClientReinitRetry,
       skipClientSignatureRetry,
       skipChallengeRetry,
+      idempotencyKey,
       ...requestConfig
     } = config
     void skipErrorToast
@@ -558,6 +567,16 @@ class ApiClient {
     }
 
     headers.set('X-Request-Id', generateUUID())
+    let logicalOperationKey = idempotencyKey?.trim() || headers.get(IDEMPOTENCY_HEADER_NAME)?.trim()
+    if (isRetryableCreate(method, url)) {
+      logicalOperationKey ||= generateUUID()
+      if (!headers.has(IDEMPOTENCY_HEADER_NAME)) {
+        headers.set(IDEMPOTENCY_HEADER_NAME, logicalOperationKey)
+      }
+    }
+    const retryConfig = logicalOperationKey
+      ? { ...config, idempotencyKey: logicalOperationKey }
+      : config
     applyOriginCsrfHeader(headers, method, url)
     const contractVersion = resolveClientContractVersion()
     if (
@@ -595,16 +614,16 @@ class ApiClient {
       )
 
       if (errorCode?.toUpperCase() === 'CHALLENGE_REQUIRED') {
-        return handleChallengeRequired<T>(path, config, payload, errorMessage)
+        return handleChallengeRequired<T>(path, retryConfig, payload, errorMessage)
       }
 
       if (isClientReinitRequired(response)) {
-        const retried = await retryAfterClientSecurityRefresh<T>(path, config, true)
+        const retried = await retryAfterClientSecurityRefresh<T>(path, retryConfig, true)
         if (retried !== null) return retried
       }
 
       if (isSignatureErrorResponse(errorCode, errorMessage)) {
-        const retried = await retryAfterClientSecurityRefresh<T>(path, config, false)
+        const retried = await retryAfterClientSecurityRefresh<T>(path, retryConfig, false)
         if (retried !== null) return retried
       }
 

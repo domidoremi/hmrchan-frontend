@@ -7,6 +7,7 @@
     "src/**/index.ts",
     "**/__tests__/**",
     "**/*.spec.ts",
+    "src/fallbacks/generated/publicSnapshots.ts",
     "src/utils/notifications/pushManager.ts"
   ],
   "ignoreDependencies": [
@@ -14,10 +15,16 @@
     "chrome-launcher",
     "lighthouse",
     "@types/*",
-    "@vue/test-utils"
+    "@vue/test-utils",
+    "baseline-browser-mapping",
+    "javascript-obfuscator",
+    "pinia-plugin-persistedstate"
   ],
   "ignoreUnresolved": ["vitest.setup.ts"],
   "ignoreExportsUsedInFile": true,
+  "ignoreIssues": {
+    "src/api/hmrContentFallbacks.ts": ["duplicates"]
+  },
   "ignoreBinaries": [],
   "rules": {
     "exports": "off",

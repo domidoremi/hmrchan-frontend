@@ -8,6 +8,7 @@
     "src/**/*.vue",
     "functions/**/*.ts",
     "scripts/audit/**/*.ts",
+    "scripts/lib/**/*.ts",
     "scripts/**/*.js",
     "scripts/**/*.mjs",
     "build/vite/**/*.ts",

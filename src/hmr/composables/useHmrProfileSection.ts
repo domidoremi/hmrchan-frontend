@@ -19,6 +19,11 @@ export interface HmrProfileSectionCard {
   body: string
 }
 
+interface HmrProfileSectionDefinition extends Omit<HmrProfileNavSection, 'label'> {
+  labelKey: string
+  intro: string | null
+}
+
 export interface HmrProfileSectionOptions {
   auth: Pick<AuthStore, 'isAuthenticated' | 'isLoading' | 'logout' | 'sessionExpiresAt' | 'user'>
   content: Ref<HmrProfileSectionContent>
@@ -27,80 +32,77 @@ export interface HmrProfileSectionOptions {
   t: (key: string) => string
 }
 
-const PROFILE_SECTION_KEYS = [
-  'overview',
-  'security',
-  'preferences',
-  'favorites',
-  'history',
-  'inbox',
-] as const satisfies readonly HmrProfileSectionKey[]
+const PROFILE_SECTION_DEFINITIONS = [
+  {
+    section: 'overview',
+    labelKey: 'profile.overview',
+    to: '/profile',
+    testId: 'profile-overview-tab',
+    intro: null,
+  },
+  {
+    section: 'security',
+    labelKey: 'profile.security',
+    to: '/profile/security',
+    testId: 'profile-security-tab',
+    intro: '管理 Passkey、2FA、设备会话和敏感操作验证。',
+  },
+  {
+    section: 'preferences',
+    labelKey: 'profile.preferences',
+    to: '/profile/preferences',
+    testId: 'profile-preferences-tab',
+    intro: '管理主题、语言、通知和内容密度。',
+  },
+  {
+    section: 'favorites',
+    labelKey: 'profile.favorites',
+    to: '/profile/favorites',
+    testId: 'profile-favorites-tab',
+    intro: '收藏内容会在这里形成可回看的个人索引。',
+  },
+  {
+    section: 'history',
+    labelKey: 'profile.history',
+    to: '/profile/history',
+    testId: 'profile-history-tab',
+    intro: '浏览、阅读和互动历史会在这里展示。',
+  },
+  {
+    section: 'inbox',
+    labelKey: 'profile.inbox',
+    to: '/profile/inbox',
+    testId: 'profile-inbox-tab',
+    intro: '评论、回复、系统通知和审核结果会进入这里。',
+  },
+] as const satisfies readonly HmrProfileSectionDefinition[]
+
+const PROFILE_SECTION_DEFINITION_BY_KEY = new Map(
+  PROFILE_SECTION_DEFINITIONS.map((definition) => [definition.section, definition])
+)
+
+function isHmrProfileSectionKey(section: string): section is HmrProfileSectionKey {
+  return PROFILE_SECTION_DEFINITION_BY_KEY.has(section as HmrProfileSectionKey)
+}
 
 export function normalizeHmrProfileSection(section: string): HmrProfileSectionKey {
-  return PROFILE_SECTION_KEYS.includes(section as HmrProfileSectionKey)
-    ? (section as HmrProfileSectionKey)
-    : 'overview'
+  return isHmrProfileSectionKey(section) ? section : 'overview'
 }
 
 export function createHmrProfileSections(t: (key: string) => string): HmrProfileNavSection[] {
-  return [
-    {
-      section: 'overview',
-      label: t('profile.overview'),
-      to: '/profile',
-      testId: 'profile-overview-tab',
-    },
-    {
-      section: 'security',
-      label: t('profile.security'),
-      to: '/profile/security',
-      testId: 'profile-security-tab',
-    },
-    {
-      section: 'preferences',
-      label: t('profile.preferences'),
-      to: '/profile/preferences',
-      testId: 'profile-preferences-tab',
-    },
-    {
-      section: 'favorites',
-      label: t('profile.favorites'),
-      to: '/profile/favorites',
-      testId: 'profile-favorites-tab',
-    },
-    {
-      section: 'history',
-      label: t('profile.history'),
-      to: '/profile/history',
-      testId: 'profile-history-tab',
-    },
-    {
-      section: 'inbox',
-      label: t('profile.inbox'),
-      to: '/profile/inbox',
-      testId: 'profile-inbox-tab',
-    },
-  ]
+  return PROFILE_SECTION_DEFINITIONS.map(({ section, labelKey, to, testId }) => ({
+    section,
+    label: t(labelKey),
+    to,
+    testId,
+  }))
 }
 
 export function resolveHmrProfileSectionIntro(
   section: HmrProfileSectionKey,
   t: (key: string) => string
 ): string {
-  switch (section) {
-    case 'security':
-      return '管理 Passkey、2FA、设备会话和敏感操作验证。'
-    case 'preferences':
-      return '管理主题、语言、通知和内容密度。'
-    case 'favorites':
-      return '收藏内容会在这里形成可回看的个人索引。'
-    case 'history':
-      return '浏览、阅读和互动历史会在这里展示。'
-    case 'inbox':
-      return '评论、回复、系统通知和审核结果会进入这里。'
-    default:
-      return t('profile.empty')
-  }
+  return PROFILE_SECTION_DEFINITION_BY_KEY.get(section)?.intro ?? t('profile.empty')
 }
 
 export function useHmrProfileSection(options: HmrProfileSectionOptions) {

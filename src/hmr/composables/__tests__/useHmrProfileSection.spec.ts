@@ -82,20 +82,58 @@ describe('profile section helpers', () => {
   })
 
   it('builds the stable profile section navigation', () => {
-    expect(createHmrProfileSections(t).map((item) => item.section)).toEqual([
-      'overview',
-      'security',
-      'preferences',
-      'favorites',
-      'history',
-      'inbox',
+    expect(createHmrProfileSections(t)).toEqual([
+      {
+        section: 'overview',
+        label: '概览',
+        to: '/profile',
+        testId: 'profile-overview-tab',
+      },
+      {
+        section: 'security',
+        label: '安全',
+        to: '/profile/security',
+        testId: 'profile-security-tab',
+      },
+      {
+        section: 'preferences',
+        label: '偏好',
+        to: '/profile/preferences',
+        testId: 'profile-preferences-tab',
+      },
+      {
+        section: 'favorites',
+        label: '收藏',
+        to: '/profile/favorites',
+        testId: 'profile-favorites-tab',
+      },
+      {
+        section: 'history',
+        label: '历史',
+        to: '/profile/history',
+        testId: 'profile-history-tab',
+      },
+      {
+        section: 'inbox',
+        label: '收件箱',
+        to: '/profile/inbox',
+        testId: 'profile-inbox-tab',
+      },
     ])
   })
 
   it('resolves section intro copy by active section', () => {
-    expect(resolveHmrProfileSectionIntro('favorites', t)).toBe(
-      '收藏内容会在这里形成可回看的个人索引。'
-    )
+    expect(
+      (['security', 'preferences', 'favorites', 'history', 'inbox'] as const).map((section) =>
+        resolveHmrProfileSectionIntro(section, t)
+      )
+    ).toEqual([
+      '管理 Passkey、2FA、设备会话和敏感操作验证。',
+      '管理主题、语言、通知和内容密度。',
+      '收藏内容会在这里形成可回看的个人索引。',
+      '浏览、阅读和互动历史会在这里展示。',
+      '评论、回复、系统通知和审核结果会进入这里。',
+    ])
     expect(resolveHmrProfileSectionIntro('overview', t)).toBe('暂无个人内容')
   })
 })

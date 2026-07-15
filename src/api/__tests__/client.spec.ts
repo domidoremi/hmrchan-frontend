@@ -145,6 +145,62 @@ describe('apiClient security headers', () => {
     expect(getLastHeaders().get('X-Origin-CSRF')).toBe('local-csrf-token')
   })
 
+  it('automatically attaches idempotency keys to retryable comment and favorite creates', async () => {
+    mockFetch
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'comment-1' } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'favorite-1' } }))
+
+    await apiClient.post('/posts/post-1/comments', { content: 'hello' })
+    await apiClient.post('/favorites', { post_id: 'post-1' })
+
+    expect(
+      new Headers((mockFetch.mock.calls[0]?.[1] as RequestInit | undefined)?.headers).get(
+        'Idempotency-Key'
+      )
+    ).toBeTruthy()
+    expect(
+      new Headers((mockFetch.mock.calls[1]?.[1] as RequestInit | undefined)?.headers).get(
+        'Idempotency-Key'
+      )
+    ).toBeTruthy()
+  })
+
+  it('keeps one logical operation key across automatic security retries', async () => {
+    mockCrypto.generateUUID
+      .mockReturnValueOnce('request-id-first')
+      .mockReturnValueOnce('comment-operation-key')
+      .mockReturnValueOnce('request-id-retry')
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse(
+          { error: { code: 'INVALID_SIGNATURE', message: 'Invalid signature' } },
+          { status: 401 }
+        )
+      )
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'comment-1' } }))
+
+    await apiClient.post('/posts/post-1/comments', { content: 'hello' })
+
+    const keys = mockFetch.mock.calls.map(([, init]) =>
+      new Headers(init?.headers).get('Idempotency-Key')
+    )
+    expect(keys).toEqual(['comment-operation-key', 'comment-operation-key'])
+  })
+
+  it('reuses a queued action key across separate retry attempts', async () => {
+    mockFetch
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'favorite-1' } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'favorite-1' } }))
+    const queuedAction = { idempotencyKey: 'offline-favorite-action-1' }
+
+    await apiClient.post('/favorites', { post_id: 'post-1' }, queuedAction)
+    await apiClient.post('/favorites', { post_id: 'post-1' }, queuedAction)
+
+    expect(
+      mockFetch.mock.calls.map(([, init]) => new Headers(init?.headers).get('Idempotency-Key'))
+    ).toEqual(['offline-favorite-action-1', 'offline-favorite-action-1'])
+  })
+
   it('signs authenticated private GET requests that the backend protects', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'profile-1' } }))
 

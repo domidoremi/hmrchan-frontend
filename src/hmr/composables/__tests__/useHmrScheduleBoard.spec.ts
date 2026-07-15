@@ -68,6 +68,25 @@ describe('useHmrScheduleBoard', () => {
     expect(board.upcomingEvents.value.map((item) => item.id)).toEqual(['today-live', 'next-month'])
   })
 
+  it('reuses the daily event grouping for counts and populated days', () => {
+    const content = makeContent()
+    content.items.push({
+      id: 'today-note',
+      title: 'Evening note',
+      phase: '安排',
+      time: '2026-05-28T21:00:00+08:00',
+      description: 'Follow-up work',
+    })
+    const board = useHmrScheduleBoard(ref(content), { locale, t, now })
+
+    expect(board.selectedDayEvents.value.map((item) => item.id)).toEqual([
+      'today-live',
+      'today-note',
+    ])
+    expect(board.dayOptions.value[0]?.count).toBe(2)
+    expect(board.populatedDays.value[0]?.events).toHaveLength(2)
+  })
+
   it('switches to month mode and exposes a 42-cell month grid', () => {
     const board = useHmrScheduleBoard(ref(makeContent()), { locale, t, now })
 
