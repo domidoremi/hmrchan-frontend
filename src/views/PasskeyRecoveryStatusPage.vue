@@ -92,7 +92,7 @@ import { ApiError, authService } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import { getDeviceInfo } from '@/utils/device'
 import { createWebAuthnCredential, serializePublicKeyCredential } from '@/utils/webauthn'
-import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
+import { AuthEntryShell } from '@/components/auth/entry'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 

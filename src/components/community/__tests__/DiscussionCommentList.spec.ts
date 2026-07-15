@@ -191,8 +191,8 @@ vi.mock('@/components/ui/StateIndicator.vue', () => ({
   },
 }))
 
-vi.mock('@/components/comment/shared/CommentThreadHeader.vue', () => ({
-  default: {
+vi.mock('@/components/comment/shared', () => ({
+  CommentThreadHeader: {
     name: 'CommentThreadHeader',
     props: ['title', 'count', 'subtitle'],
     template:

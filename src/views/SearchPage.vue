@@ -386,12 +386,14 @@ import {
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import AuthorCard from '@/components/business/AuthorCard.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
-import ControlButton from '@/components/appearance/ControlButton.vue'
-import ControlGroup from '@/components/appearance/ControlGroup.vue'
-import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
-import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
-import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
-import PageToolbar from '@/components/appearance/PageToolbar.vue'
+import {
+  ControlButton,
+  ControlGroup,
+  PageHeroShell,
+  PageMetaChip,
+  PageMetaRow,
+  PageToolbar,
+} from '@/components/appearance'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'

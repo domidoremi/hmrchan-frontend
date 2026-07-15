@@ -146,7 +146,7 @@ import { profileSections, type ProfileSectionDefinition } from '@/config/profile
 import { userService } from '@/api/userService'
 import { withProfileReturnTo } from '@/utils/profileReturnTo'
 import Avatar from '@/components/ui/Avatar.vue'
-import ControlButton from '@/components/appearance/ControlButton.vue'
+import { ControlButton } from '@/components/appearance'
 
 type AccountDataSummary = Awaited<ReturnType<typeof userService.getDataSummary>> & {
   data_counts?: Record<string, number | null | undefined>

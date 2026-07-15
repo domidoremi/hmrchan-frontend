@@ -210,7 +210,7 @@ import Textarea from '@/components/ui/Textarea.vue'
 import Select from '@/components/ui/Select.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Badge from '@/components/ui/Badge.vue'
-import CommentItemShell from '@/components/comment/shared/CommentItemShell.vue'
+import { CommentItemShell } from '@/components/comment/shared'
 
 interface Props {
   comment: DiscussionComment

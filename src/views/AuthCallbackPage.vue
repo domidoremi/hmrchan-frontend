@@ -209,9 +209,8 @@ import { isTurnstileBusy, type TurnstileWidgetStatus } from '@/utils/turnstileWi
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
-import AuthTurnstileStatus from '@/components/auth/AuthTurnstileStatus.vue'
-import AuthMfaStep from '@/components/auth/AuthMfaStep.vue'
-import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
+import { AuthEntryShell } from '@/components/auth/entry'
+import { AuthMfaStep, AuthTurnstileStatus } from '@/components/auth/security'
 
 type CallbackStep = 'loading' | 'client-challenge' | 'risk-verification' | 'mfa' | 'error'
 type PopupBridgeState = 'posting' | 'manual-close'

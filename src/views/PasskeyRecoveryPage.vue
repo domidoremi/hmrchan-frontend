@@ -91,7 +91,7 @@ import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ApiError, authService } from '@/api'
-import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
+import { AuthEntryShell } from '@/components/auth/entry'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 

@@ -62,7 +62,7 @@ import { discussionCommentTreeContextKey } from './discussionCommentTreeContext'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
-import CommentThreadHeader from '@/components/comment/shared/CommentThreadHeader.vue'
+import { CommentThreadHeader } from '@/components/comment/shared'
 
 interface Props {
   discussionId: string

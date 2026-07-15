@@ -98,8 +98,8 @@ vi.mock('@/utils/security', () => ({
   commentRateLimiter: state.rateLimiter,
 }))
 
-vi.mock('@/components/comment/shared/CommentComposerShell.vue', () => ({
-  default: {
+vi.mock('@/components/comment/shared', () => ({
+  CommentComposerShell: {
     props: ['title', 'subtitle', 'authenticated'],
     template: `
       <section class="composer-shell-stub">

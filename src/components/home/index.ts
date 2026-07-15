@@ -1,0 +1,6 @@
+export { default as FeaturedRailSection } from './FeaturedRailSection.vue'
+export { default as HeroSection } from './HeroSection.vue'
+export { default as HomePagePreviewController } from './HomepagePreviewController.vue'
+export { default as HomeQuickNav } from './HomeQuickNav.vue'
+export { default as LatestPostsSection } from './LatestPostsSection.vue'
+export { default as StoryDeckSection } from './StoryDeckSection.vue'

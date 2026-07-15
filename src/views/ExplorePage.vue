@@ -150,10 +150,7 @@ import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import NextPostFab from '@/components/ui/NextPostFab.vue'
-import ControlButton from '@/components/appearance/ControlButton.vue'
-import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
-import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
-import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
+import { ControlButton, PageHeroShell, PageMetaChip, PageMetaRow } from '@/components/appearance'
 
 const router = useRouter()
 const { t } = useI18n()

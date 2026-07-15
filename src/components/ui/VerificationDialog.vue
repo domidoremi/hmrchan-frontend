@@ -66,6 +66,7 @@ import { authService, ApiError } from '@/api'
 import { clearAuthRuntimeSession } from '@/api/client/auth-runtime'
 import {
   dismissVerification,
+  isUnauthenticatedVerificationError,
   resolveVerification,
   type VerificationAction,
 } from '@/api/verificationBridge'
@@ -91,22 +92,6 @@ const actionReasonKeyMap: Record<string, string> = {
   change_password: 'auth.stepUp.reasons.changePassword',
   manage_api_keys: 'auth.stepUp.reasons.manageApiKeys',
   admin_operation: 'auth.stepUp.reasons.adminOperation',
-}
-
-function isUnauthenticatedStepUpError(error: ApiError): boolean {
-  const rawMessage =
-    typeof error.details?.rawMessage === 'string' ? error.details.rawMessage : error.message
-  const normalized = rawMessage.trim().toLowerCase()
-
-  return (
-    error.code === 'UNAUTHENTICATED' ||
-    error.code === 'NOT_AUTHENTICATED' ||
-    normalized.includes('not authenticated') ||
-    normalized.includes('please login') ||
-    normalized.includes('请先登录') ||
-    normalized.includes('請先登入') ||
-    normalized.includes('認証が必要です')
-  )
 }
 
 function dispatchSessionRejected(): void {
@@ -183,7 +168,7 @@ async function submitVerification() {
     })
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
-      if (isUnauthenticatedStepUpError(error)) {
+      if (isUnauthenticatedVerificationError(error)) {
         dispatchSessionRejected()
         errorMessage.value = t('auth.stepUp.sessionExpired')
       } else {

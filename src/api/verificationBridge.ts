@@ -100,7 +100,7 @@ function createVerificationFailedError(action: VerificationAction, resourceId?: 
   })
 }
 
-function isUnauthenticatedVerificationError(error: ApiError): boolean {
+export function isUnauthenticatedVerificationError(error: ApiError): boolean {
   const rawMessage =
     typeof error.details?.rawMessage === 'string' ? error.details.rawMessage : error.message
   const normalized = rawMessage.trim().toLowerCase()

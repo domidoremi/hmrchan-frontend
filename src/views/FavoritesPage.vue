@@ -221,11 +221,13 @@ import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { ensureProtectedPageReady } from '@/composables/useProtectedPageBootstrap'
-import ControlButton from '@/components/appearance/ControlButton.vue'
-import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
-import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
-import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
-import PageToolbar from '@/components/appearance/PageToolbar.vue'
+import {
+  ControlButton,
+  PageHeroShell,
+  PageMetaChip,
+  PageMetaRow,
+  PageToolbar,
+} from '@/components/appearance'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Input from '@/components/ui/Input.vue'

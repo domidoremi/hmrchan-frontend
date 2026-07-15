@@ -92,10 +92,7 @@ import {
   isServiceUnavailableError,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
-import ControlButton from '@/components/appearance/ControlButton.vue'
-import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
-import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
-import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
+import { ControlButton, PageHeroShell, PageMetaChip, PageMetaRow } from '@/components/appearance'
 import AuthorCard from '@/components/business/AuthorCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'

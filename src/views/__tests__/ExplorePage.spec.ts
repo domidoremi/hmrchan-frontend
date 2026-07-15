@@ -237,63 +237,33 @@ vi.mock('@/components/ui/NextPostFab.vue', async () => {
   }
 })
 
-vi.mock('@/components/appearance/ControlButton.vue', async () => {
+vi.mock('@/components/appearance', async () => {
   const { defineComponent } = await import('vue')
   return {
-    default: defineComponent({
+    ControlButton: defineComponent({
       name: 'ControlButton',
       emits: ['click'],
       template:
         '<button type="button" @click="$emit(\'click\', $event)"><slot name="start" /><slot /><slot name="end" /></button>',
     }),
-  }
-})
-
-vi.mock('@/components/appearance/ControlGroup.vue', async () => {
-  const { defineComponent } = await import('vue')
-  return {
-    default: defineComponent({
+    ControlGroup: defineComponent({
       name: 'ControlGroup',
       template: '<div><slot /></div>',
     }),
-  }
-})
-
-vi.mock('@/components/appearance/PageHeroShell.vue', async () => {
-  const { defineComponent } = await import('vue')
-  return {
-    default: defineComponent({
+    PageHeroShell: defineComponent({
       name: 'PageHeroShell',
       template:
         '<div><slot name="heading" /><slot name="actions" /><slot name="meta" /><slot /></div>',
     }),
-  }
-})
-
-vi.mock('@/components/appearance/PageMetaChip.vue', async () => {
-  const { defineComponent } = await import('vue')
-  return {
-    default: defineComponent({
+    PageMetaChip: defineComponent({
       name: 'PageMetaChip',
       template: '<span><slot /></span>',
     }),
-  }
-})
-
-vi.mock('@/components/appearance/PageMetaRow.vue', async () => {
-  const { defineComponent } = await import('vue')
-  return {
-    default: defineComponent({
+    PageMetaRow: defineComponent({
       name: 'PageMetaRow',
       template: '<div><slot /></div>',
     }),
-  }
-})
-
-vi.mock('@/components/appearance/PageToolbar.vue', async () => {
-  const { defineComponent } = await import('vue')
-  return {
-    default: defineComponent({
+    PageToolbar: defineComponent({
       name: 'PageToolbar',
       template: '<div><slot /></div>',
     }),

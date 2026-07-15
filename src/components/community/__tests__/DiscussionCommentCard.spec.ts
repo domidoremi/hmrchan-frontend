@@ -76,8 +76,8 @@ vi.mock('@/utils/modernAPIs', () => ({
   copyToClipboard: state.copyToClipboard,
 }))
 
-vi.mock('@/components/comment/shared/CommentItemShell.vue', () => ({
-  default: {
+vi.mock('@/components/comment/shared', () => ({
+  CommentItemShell: {
     template: `
       <div class="comment-item-shell-stub">
         <slot name="badges" />

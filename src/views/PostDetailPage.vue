@@ -983,16 +983,22 @@ function schedulePostViewTracking(currentPostId: string, requestToken: number) {
   }, 1500)
 }
 
-function applyFallbackPost(postDetail: PostDetailResponse) {
+type PostDetailContentState = 'cached-summary' | 'cached' | 'live' | 'fallback'
+
+function applyPostDetailContent(postDetail: PostDetailResponse, state: PostDetailContentState) {
   hintPostMedia(postDetail)
   post.value = postDetail
-  detailFetched.value = true
+  detailFetched.value = state !== 'cached-summary'
   activeMediaIndex.value = 0
-  isMediaLoaded.value = true
-  dataSource.value = 'fallback'
-  error.value = null
+  isMediaLoaded.value = state === 'fallback'
+  if (state !== 'cached-summary') dataSource.value = state
+  if (state === 'fallback') error.value = null
   syncNavigationContext()
   syncPostMeta(postDetail)
+}
+
+function applyFallbackPost(postDetail: PostDetailResponse) {
+  applyPostDetailContent(postDetail, 'fallback')
 }
 
 function resolveFallbackPostDetail(currentPostId: string, err: unknown): PostDetailResponse | null {
@@ -1012,17 +1018,21 @@ function resolveFallbackPostDetail(currentPostId: string, err: unknown): PostDet
   })
 }
 
+async function redirectToPostNotFound(currentPostId: string) {
+  await router.replace({
+    name: 'not-found',
+    params: buildPostDetailNotFoundRouteParams(currentPostId),
+    query: route.query,
+    hash: route.hash,
+  })
+}
+
 async function fetchPost(signal?: AbortSignal) {
   if (!postId.value) return
   if (!getContractResourceId(postId.value)) {
     error.value = null
     isLoading.value = false
-    await router.replace({
-      name: 'not-found',
-      params: buildPostDetailNotFoundRouteParams(postId.value),
-      query: route.query,
-      hash: route.hash,
-    })
+    await redirectToPostNotFound(postId.value)
     return
   }
 
@@ -1049,14 +1059,7 @@ async function fetchPost(signal?: AbortSignal) {
     if (signal?.aborted || requestToken !== fetchPostToken) return
 
     if (cached) {
-      hintPostMedia(cached as PostDetailResponse)
-      post.value = cached as PostDetailResponse
-      activeMediaIndex.value = 0
-      isMediaLoaded.value = false
-
-      syncNavigationContext()
-
-      syncPostMeta(post.value)
+      applyPostDetailContent(cached as PostDetailResponse, 'cached-summary')
 
       isLoading.value = false
 
@@ -1083,16 +1086,7 @@ async function fetchPost(signal?: AbortSignal) {
     const res = await loadCachedPost(currentPostId, signal ? { signal } : undefined)
     if (signal?.aborted || requestToken !== fetchPostToken) return
 
-    hintPostMedia(res.data)
-    post.value = res.data
-    detailFetched.value = true
-    activeMediaIndex.value = 0
-    isMediaLoaded.value = false
-
-    syncNavigationContext()
-
-    syncPostMeta(post.value)
-    dataSource.value = res.fromCache ? 'cached' : 'live'
+    applyPostDetailContent(res.data, res.fromCache ? 'cached' : 'live')
 
     schedulePostViewTracking(currentPostId, requestToken)
   } catch (err) {
@@ -1114,12 +1108,7 @@ async function fetchPost(signal?: AbortSignal) {
         error.value = null
         detailFetched.value = false
         dataSource.value = 'live'
-        await router.replace({
-          name: 'not-found',
-          params: buildPostDetailNotFoundRouteParams(currentPostId),
-          query: route.query,
-          hash: route.hash,
-        })
+        await redirectToPostNotFound(currentPostId)
         return
       case 'api-error':
         error.value = fetchErrorOutcome.message

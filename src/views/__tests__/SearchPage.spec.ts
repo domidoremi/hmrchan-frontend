@@ -43,42 +43,27 @@ vi.mock('@/components/business/SearchBar.vue', () => ({
   },
 }))
 
-vi.mock('@/components/appearance/ControlButton.vue', () => ({
-  default: {
+vi.mock('@/components/appearance', () => ({
+  ControlButton: {
     props: ['pressed', 'disabled'],
     emits: ['click'],
     template:
       '<button type="button" class="control-button-stub" :disabled="disabled" @click="$emit(\'click\')"><slot name="start" /><slot /><slot name="end" /></button>',
   },
-}))
-
-vi.mock('@/components/appearance/ControlGroup.vue', () => ({
-  default: {
+  ControlGroup: {
     template: '<div class="control-group-stub"><slot /></div>',
   },
-}))
-
-vi.mock('@/components/appearance/PageHeroShell.vue', () => ({
-  default: {
+  PageHeroShell: {
     template:
       '<section class="page-hero-shell-stub"><slot name="heading" /><slot name="actions" /><slot /><slot name="meta" /></section>',
   },
-}))
-
-vi.mock('@/components/appearance/PageMetaChip.vue', () => ({
-  default: {
+  PageMetaChip: {
     template: '<span class="page-meta-chip-stub"><slot /></span>',
   },
-}))
-
-vi.mock('@/components/appearance/PageMetaRow.vue', () => ({
-  default: {
+  PageMetaRow: {
     template: '<div class="page-meta-row-stub"><slot /></div>',
   },
-}))
-
-vi.mock('@/components/appearance/PageToolbar.vue', () => ({
-  default: {
+  PageToolbar: {
     template: '<section class="page-toolbar-stub"><slot /></section>',
   },
 }))

@@ -90,8 +90,8 @@ vi.mock('@/components/ui/Avatar.vue', () => ({
   },
 }))
 
-vi.mock('@/components/appearance/ControlButton.vue', () => ({
-  default: {
+vi.mock('@/components/appearance', () => ({
+  ControlButton: {
     emits: ['click'],
     template:
       '<button type="button" class="control-button-stub" @click="$emit(\'click\')"><slot /></button>',

@@ -96,7 +96,7 @@ import Button from '@/components/ui/Button.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import PlainTextToolbar from '@/components/thread/PlainTextToolbar.vue'
-import CommentComposerShell from '@/components/comment/shared/CommentComposerShell.vue'
+import { CommentComposerShell } from '@/components/comment/shared'
 
 interface Props {
   discussionId: string

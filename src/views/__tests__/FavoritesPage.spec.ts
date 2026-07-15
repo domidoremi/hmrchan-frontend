@@ -144,15 +144,13 @@ const stubFactories = vi.hoisted(() => ({
   animatedIcon: { name: 'AnimatedIcon', template: '<span />' },
 }))
 
-vi.mock('@/components/appearance/ControlButton.vue', () => ({
-  default: stubFactories.controlButton,
+vi.mock('@/components/appearance', () => ({
+  ControlButton: stubFactories.controlButton,
+  PageHeroShell: stubFactories.pageHeroShell,
+  PageMetaChip: stubFactories.pageMetaChip,
+  PageMetaRow: stubFactories.pageMetaRow,
+  PageToolbar: stubFactories.pageToolbar,
 }))
-vi.mock('@/components/appearance/PageHeroShell.vue', () => ({
-  default: stubFactories.pageHeroShell,
-}))
-vi.mock('@/components/appearance/PageMetaChip.vue', () => ({ default: stubFactories.pageMetaChip }))
-vi.mock('@/components/appearance/PageMetaRow.vue', () => ({ default: stubFactories.pageMetaRow }))
-vi.mock('@/components/appearance/PageToolbar.vue', () => ({ default: stubFactories.pageToolbar }))
 vi.mock('@/components/ui/Button.vue', () => ({ default: stubFactories.button }))
 vi.mock('@/components/ui/Dialog.vue', () => ({ default: stubFactories.dialog }))
 vi.mock('@/components/ui/Input.vue', () => ({ default: stubFactories.input }))

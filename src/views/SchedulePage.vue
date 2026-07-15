@@ -716,12 +716,14 @@ import {
   isServiceUnavailableError,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
-import ControlButton from '@/components/appearance/ControlButton.vue'
-import ControlGroup from '@/components/appearance/ControlGroup.vue'
-import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
-import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
-import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
-import PageToolbar from '@/components/appearance/PageToolbar.vue'
+import {
+  ControlButton,
+  ControlGroup,
+  PageHeroShell,
+  PageMetaChip,
+  PageMetaRow,
+  PageToolbar,
+} from '@/components/appearance'
 import SafeHtml from '@/components/ui/SafeHtml.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import {

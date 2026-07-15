@@ -442,11 +442,13 @@ import Avatar from '@/components/ui/Avatar.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
 import ReferencedPostPreview from '@/components/community/ReferencedPostPreview.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import ControlButton from '@/components/appearance/ControlButton.vue'
-import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
-import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
-import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
-import PageToolbar from '@/components/appearance/PageToolbar.vue'
+import {
+  ControlButton,
+  PageHeroShell,
+  PageMetaChip,
+  PageMetaRow,
+  PageToolbar,
+} from '@/components/appearance'
 import Dialog from '@/components/ui/Dialog.vue'
 
 const router = useRouter()

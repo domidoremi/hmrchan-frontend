@@ -123,7 +123,7 @@ import { checkPasswordStrength } from '@/utils/crypto'
 import { scrubSensitiveUrlParameters } from '@/utils/sensitiveUrl'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
-import AuthEntryShell from '@/components/auth/AuthEntryShell.vue'
+import { AuthEntryShell } from '@/components/auth/entry'
 
 const route = useRoute()
 const router = useRouter()

@@ -1124,8 +1124,7 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
-import HeroSection from '@/components/home/HeroSection.vue'
-import HomeQuickNav from '@/components/home/HomeQuickNav.vue'
+import { HeroSection, HomeQuickNav } from '@/components/home'
 import { createResizeObserver, createVisibilityObserver, scheduleTask } from '@/utils/modernAPIs'
 import { ensureSmoothScrollTriggerBridge } from '@/composables/useSmoothScroll'
 type GsapModule = typeof import('gsap')
@@ -2166,7 +2165,7 @@ onActivated(() => {
   }
 })
 
-onDeactivated(() => {
+function deactivateHomeRuntime() {
   setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
   cancelPublicHomePrewarm()
@@ -2179,7 +2178,9 @@ onDeactivated(() => {
   clearBubbleMotionMeasureFrame()
   stopBubbleMotionLoop()
   stopBubbleCanvasScene()
-})
+}
+
+onDeactivated(deactivateHomeRuntime)
 let homeRequestController: AbortController | null = null
 let homePublicPrewarmCancel: (() => void) | null = null
 
@@ -2239,6 +2240,11 @@ function applyHomeAggregate(payload: HomeAggregateResponse, source: HomeDataSour
   posts.value = normalizedPosts
   allPosts.value = normalizedPosts
   total.value = normalizedPosts.length
+  total.value = resolveHomeTotalCount({
+    currentTotal: total.value,
+    storyDeckTotal: payload.story_deck.total,
+  })
+  error.value = null
 }
 
 async function refreshHomeSupportBlocks(
@@ -2310,11 +2316,6 @@ async function fetchHomeData(): Promise<boolean> {
     if (controller.signal.aborted) return false
 
     applyHomeAggregate(result.payload, result.source)
-    total.value = resolveHomeTotalCount({
-      currentTotal: total.value,
-      storyDeckTotal: result.payload.story_deck.total,
-    })
-    error.value = null
 
     const refreshTargets = resolveHomeSupportRefreshTargets(result.payload, result.source)
     if (hasPendingHomeSupportRefresh(refreshTargets)) {
@@ -2328,11 +2329,6 @@ async function fetchHomeData(): Promise<boolean> {
 
     const fallbackPayload = await loadHomepageBootstrapFallback()
     applyHomeAggregate(fallbackPayload, 'fallback')
-    total.value = resolveHomeTotalCount({
-      currentTotal: total.value,
-      storyDeckTotal: fallbackPayload.story_deck.total,
-    })
-    error.value = null
     schedulePublicHomePrewarm(fallbackPayload)
     return false
   } finally {
@@ -3029,18 +3025,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   homeEnhancementsDisposed = true
-  setHomeSceneLifecycleEnabled(false)
-  abortHomeRequest()
-  cancelPublicHomePrewarm()
-  abortHomeSupportRefresh()
-  setRailNavbarLock(false)
-  disconnectHomeSectionObserver()
-  disconnectDeferredHomeEnhancementObserver()
-  unbindDeferredHomeSceneIntent()
-  disconnectBubbleStageLayoutObserver()
-  clearBubbleMotionMeasureFrame()
-  stopBubbleMotionLoop()
-  stopBubbleCanvasScene()
+  deactivateHomeRuntime()
   bubbleElementMap.clear()
   bubbleAnchorMetricsMap.clear()
 })

@@ -311,9 +311,7 @@ import {
 } from '@lucide/vue'
 import { useAboutData } from '@/composables/useAboutData'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import PageHeroShell from '@/components/appearance/PageHeroShell.vue'
-import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
-import PageMetaRow from '@/components/appearance/PageMetaRow.vue'
+import { PageHeroShell, PageMetaChip, PageMetaRow } from '@/components/appearance'
 import { IconInstagram, IconX, IconYoutube } from '@/components/icons'
 
 const { locale, t } = useI18n()

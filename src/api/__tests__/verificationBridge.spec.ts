@@ -35,12 +35,13 @@ vi.mock('../authService', () => {
   }
 })
 
-import { authService } from '../authService'
+import { ApiError, authService } from '../authService'
 import {
   clearVerificationToken,
   dismissVerification,
   ensureVerificationToken,
   getCachedVerificationToken,
+  isUnauthenticatedVerificationError,
   requestVerification,
   resolveVerification,
 } from '../verificationBridge'
@@ -91,5 +92,24 @@ describe('verificationBridge', () => {
     dismissVerification()
 
     await expect(pending).resolves.toBeNull()
+  })
+
+  it.each([
+    new ApiError('expired session', 401, 'UNAUTHENTICATED'),
+    new ApiError('expired session', 401, 'NOT_AUTHENTICATED'),
+    new ApiError('Not authenticated', 401),
+    new ApiError('Please login again', 401),
+    new ApiError('请先登录', 401),
+    new ApiError('請先登入', 401),
+    new ApiError('認証が必要です', 401),
+    new ApiError('localized message', 401, undefined, { rawMessage: 'Please login again' }),
+  ])('recognizes unauthenticated verification errors', (error) => {
+    expect(isUnauthenticatedVerificationError(error)).toBe(true)
+  })
+
+  it('keeps invalid-password verification errors distinct from an expired session', () => {
+    const error = new ApiError('Invalid password', 401, 'VERIFICATION_FAILED')
+
+    expect(isUnauthenticatedVerificationError(error)).toBe(false)
   })
 })
