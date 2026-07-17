@@ -7,18 +7,16 @@ const frontendContractAudit: AuditModule = {
 
   async run(options: AuditOptions): Promise<AuditResult> {
     const start = Date.now()
-    const issues = validateFrontendContractAudit(options.projectRoot).map(
-      (issue): AuditIssue => ({
-        severity: 'error',
-        message: issue.message,
-        file: issue.file,
-        rule: issue.code,
-        suggestion:
-          issue.code === 'numeric-public-id-contract-drift'
-            ? 'Use PublicResourceId and assertUuidV7String for frontend public resource IDs'
-            : 'Align frontend auth service/proxy references with the backend OpenAPI and frontend contract',
-      })
-    )
+    const issues = validateFrontendContractAudit(options.projectRoot).map((issue): AuditIssue => ({
+      severity: 'error',
+      message: issue.message,
+      file: issue.file,
+      rule: issue.code,
+      suggestion:
+        issue.code === 'numeric-public-id-contract-drift'
+          ? 'Use PublicResourceId and assertUuidV7String for frontend public resource IDs'
+          : 'Align frontend auth service/proxy references with the backend OpenAPI and frontend contract',
+    }))
 
     const { status } = summarizeAuditIssues(issues)
 

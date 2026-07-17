@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import SettingsPage from '@/views/SettingsPage.vue'
 
 const mocks = vi.hoisted(() => ({
+  clearPublicContentCache: vi.fn<() => Promise<void>>(async () => undefined),
   loadSettingsContentResource: vi.fn(async () => ({
     state: 'ready',
     data: {
@@ -28,7 +29,7 @@ vi.mock('@/api/hmrContent', () => ({
 }))
 
 vi.mock('@/utils/cache/publicContentCache', () => ({
-  clearPublicContentCache: vi.fn(async () => undefined),
+  clearPublicContentCache: mocks.clearPublicContentCache,
 }))
 
 function renderRouteHref(to: string | { path: string; query?: Record<string, unknown> }): string {
@@ -87,6 +88,12 @@ async function mountSettingsPage(options: { authenticated?: boolean } = {}) {
           publicCacheBody:
             '清理公开内容的 Memory、IndexedDB 与 Service Worker 缓存。保留登录态和本地账号数据。',
           clearPublicCache: '清理公开缓存',
+          cacheClearingAction: '正在清理公开缓存…',
+          clearPublicCacheAgain: '再次清理公开缓存',
+          cacheRetryAction: '重新尝试清理',
+          cacheClearingMessage: '正在移除此浏览器中的公开内容缓存…',
+          cacheDoneMessage: '公开内容缓存已清理。下次请求将加载最新数据。',
+          cacheErrorMessage: '缓存清理失败。账号数据未受影响，请重试。',
           support: '支持',
           feedbackHelp: '反馈与帮助',
           contact: '联系',
@@ -193,6 +200,8 @@ describe('SettingsPage', () => {
     window.localStorage.clear()
     mockMatchMedia(false)
     setActivePinia(createPinia())
+    mocks.clearPublicContentCache.mockReset()
+    mocks.clearPublicContentCache.mockResolvedValue(undefined)
     mocks.loadSettingsContentResource.mockClear()
   })
 
@@ -214,6 +223,57 @@ describe('SettingsPage', () => {
     expect(text).toContain('深色')
     expect(text).toContain('跟随系统')
     expect(text).toContain('清理公开缓存')
+  })
+
+  it('keeps cache progress and completion feedback beside the clicked action', async () => {
+    let finishClear: (() => void) | undefined
+    mocks.clearPublicContentCache.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishClear = resolve
+        })
+    )
+    const wrapper = await mountSettingsPage()
+    const button = wrapper.get('.hmr-settings-button--cache')
+    const status = wrapper.get('#hmr-public-cache-status')
+
+    expect(status.attributes('role')).toBe('status')
+    expect(status.attributes('aria-live')).toBe('polite')
+    expect(status.text()).toBe('')
+
+    await button.trigger('click')
+
+    expect(button.attributes('aria-busy')).toBe('true')
+    expect(button.attributes('data-state')).toBe('clearing')
+    expect(button.text()).toContain('正在清理公开缓存')
+    expect(status.attributes('data-state')).toBe('clearing')
+    expect(status.text()).toBe('正在移除此浏览器中的公开内容缓存…')
+
+    finishClear?.()
+    await flushPromises()
+
+    expect(button.attributes('aria-busy')).toBe('false')
+    expect(button.attributes('data-state')).toBe('done')
+    expect(button.text()).toContain('再次清理公开缓存')
+    expect(status.attributes('data-state')).toBe('done')
+    expect(status.text()).toBe('公开内容缓存已清理。下次请求将加载最新数据。')
+  })
+
+  it('leaves an actionable error message when cache clearing fails', async () => {
+    mocks.clearPublicContentCache.mockRejectedValueOnce(new Error('cache unavailable'))
+    const wrapper = await mountSettingsPage()
+    const button = wrapper.get('.hmr-settings-button--cache')
+    const status = wrapper.get('#hmr-public-cache-status')
+
+    await button.trigger('click')
+    await flushPromises()
+
+    expect(button.attributes('aria-busy')).toBe('false')
+    expect(button.attributes('data-state')).toBe('error')
+    expect(button.attributes('disabled')).toBeUndefined()
+    expect(button.text()).toContain('重新尝试清理')
+    expect(status.attributes('data-state')).toBe('error')
+    expect(status.text()).toBe('缓存清理失败。账号数据未受影响，请重试。')
   })
 
   it('renders the eight appearance presets from the main branch design contract', async () => {

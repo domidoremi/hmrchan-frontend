@@ -256,7 +256,7 @@ describe('HomePage', () => {
       '公开媒体会继续回到这里',
       '精选内容会沿用当前阅读层级',
       '恢复后会自动接回真实封面',
-      '首页结构不会因为空数据塌掉',
+      '空数据时依然保留完整首页结构',
     ])
     expect(wrapper.text()).toContain('Full discussion')
     expect(mocks.scheduleHomeContentPrewarm).toHaveBeenCalledWith(
@@ -387,7 +387,7 @@ describe('HomePage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('公开媒体会继续回到这里')
-    expect(wrapper.text()).toContain('首页结构不会因为空数据塌掉')
+    expect(wrapper.text()).toContain('空数据时依然保留完整首页结构')
     expect(wrapper.findAll('.hmr-featured-grid .hmr-post-card')).toHaveLength(4)
   })
 })

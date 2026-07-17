@@ -113,8 +113,12 @@
                 </select>
               </label>
               <div class="hmr-settings-control hmr-settings-control--wide">
-                <span>{{ t('settings.appearancePreset') }}</span>
-                <div class="hmr-appearance-grid" role="list">
+                <span id="hmr-appearance-preset-label">{{ t('settings.appearancePreset') }}</span>
+                <div
+                  class="hmr-appearance-grid"
+                  role="group"
+                  aria-labelledby="hmr-appearance-preset-label"
+                >
                   <button
                     v-for="item in appearanceOptions"
                     :key="item.value"
@@ -142,23 +146,43 @@
             </div>
           </article>
 
-          <article class="hmr-settings-card">
+          <article
+            class="hmr-settings-card hmr-settings-card--cache"
+            :data-cache-state="cacheClearState"
+          >
             <div class="hmr-settings-card-head">
               <div>
                 <p class="hmr-kicker">{{ t('settings.dataCache') }}</p>
                 <h2>{{ t('settings.publicCache') }}</h2>
               </div>
-              <span>{{ cacheClearLabel }}</span>
+              <span :data-state="cacheClearState">{{ cacheClearLabel }}</span>
             </div>
-            <p>{{ t('settings.publicCacheBody') }}</p>
-            <button
-              class="hmr-settings-button"
-              type="button"
-              :disabled="cacheClearState === 'clearing'"
-              @click="clearCache"
-            >
-              {{ t('settings.clearPublicCache') }}
-            </button>
+            <p id="hmr-public-cache-description">{{ t('settings.publicCacheBody') }}</p>
+            <div class="hmr-settings-cache-action">
+              <button
+                class="hmr-settings-button hmr-settings-button--cache"
+                type="button"
+                aria-describedby="hmr-public-cache-description hmr-public-cache-status"
+                :aria-busy="cacheClearState === 'clearing'"
+                :data-state="cacheClearState"
+                :disabled="cacheClearState === 'clearing'"
+                @click="clearCache"
+              >
+                <span class="hmr-settings-button__indicator" aria-hidden="true" />
+                <span>{{ cacheClearActionLabel }}</span>
+              </button>
+              <p
+                id="hmr-public-cache-status"
+                class="hmr-settings-cache-status"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                :data-state="cacheClearState"
+              >
+                <span class="hmr-settings-cache-status__indicator" aria-hidden="true" />
+                <span>{{ cacheClearMessage }}</span>
+              </p>
+            </div>
           </article>
 
           <article class="hmr-settings-card">
@@ -246,7 +270,9 @@ const {
 })
 
 const {
+  cacheClearActionLabel,
   cacheClearLabel,
+  cacheClearMessage,
   cacheClearState,
   clearCache,
   handleLocaleChange,

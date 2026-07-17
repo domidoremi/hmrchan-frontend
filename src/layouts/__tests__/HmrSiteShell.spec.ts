@@ -10,11 +10,6 @@ import HmrSiteShell from '@/layouts/HmrSiteShell.vue'
 const mocks = vi.hoisted(() => ({
   resolveSession: vi.fn(async () => undefined),
   warmHmrPriorityRoutes: vi.fn(async () => undefined),
-  warmHmrSessionEntry: vi.fn(async () => ({
-    tasks: [],
-    settled: [],
-    timedOut: false,
-  })),
 }))
 
 vi.mock('@/hmr/composables/useHmrAuthDisplay', () => ({
@@ -34,7 +29,6 @@ vi.mock('@/hmr/composables/useHmrAuthDisplay', () => ({
 
 vi.mock('@/hmr/runtime/hmrRouteWarmup', () => ({
   warmHmrPriorityRoutes: mocks.warmHmrPriorityRoutes,
-  warmHmrSessionEntry: mocks.warmHmrSessionEntry,
 }))
 
 vi.mock('@/hmr/composables/useHmrInViewReveal', () => ({
@@ -45,51 +39,6 @@ vi.mock('@/hmr/composables/useHmrTextReveal', () => ({
   useHmrTextReveal: vi.fn(),
 }))
 
-vi.mock('gsap', () => {
-  const createTimeline = (options?: { onComplete?: () => void }) => {
-    const timeline = {
-      call: vi.fn((callback?: () => void) => {
-        callback?.()
-        return timeline
-      }),
-      kill: vi.fn(),
-      set: vi.fn(() => timeline),
-      to: vi.fn(() => timeline),
-    }
-
-    if (options?.onComplete && typeof window !== 'undefined') {
-      window.setTimeout(options.onComplete, 0)
-    }
-
-    return timeline
-  }
-
-  return {
-    gsap: {
-      set: vi.fn(),
-      timeline: vi.fn(createTimeline),
-    },
-  }
-})
-
-function mockMatchMedia(matches: boolean) {
-  Object.defineProperty(window, 'matchMedia', {
-    configurable: true,
-    value: vi.fn(() => ({
-      matches,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
-  })
-}
-
-function mockPreloaderProgressGeometry() {
-  Object.defineProperty(SVGElement.prototype, 'getTotalLength', {
-    configurable: true,
-    value: vi.fn(() => 288.56),
-  })
-}
-
 const shellMessages = {
   'zh-CN': {
     nav: {
@@ -99,11 +48,14 @@ const shellMessages = {
       explore: '探索',
       home: '首页',
       login: '登录',
+      profile: '个人中心',
       register: '注册',
       schedule: '日程',
+      settings: '设置',
     },
     shell: {
       footerContact: '联系',
+      skipToContent: '跳至主要内容',
       settings: '设置',
     },
   },
@@ -115,11 +67,14 @@ const shellMessages = {
       explore: 'Explore',
       home: 'Home',
       login: 'Log in',
+      profile: 'Profile',
       register: 'Sign up',
       schedule: 'Schedule',
+      settings: 'Settings',
     },
     shell: {
       footerContact: 'Contact',
+      skipToContent: 'Skip to content',
       settings: 'Settings',
     },
   },
@@ -131,11 +86,14 @@ const shellMessages = {
       explore: '探索',
       home: 'ホーム',
       login: 'ログイン',
+      profile: 'プロフィール',
       register: '登録',
       schedule: '予定',
+      settings: '設定',
     },
     shell: {
       footerContact: 'お問い合わせ',
+      skipToContent: 'メインコンテンツへ移動',
       settings: '設定',
     },
   },
@@ -210,6 +168,18 @@ async function mountShell(path = '/', locale: SupportedLocale = 'zh-CN') {
         name: 'hmr-contact',
         meta: { pageKey: 'contact' },
       },
+      {
+        path: '/join-us',
+        component: { template: '<div />' },
+        name: 'hmr-join-us',
+        meta: { pageKey: 'join' },
+      },
+      {
+        path: '/profile',
+        component: { template: '<div />' },
+        name: 'hmr-profile',
+        meta: { pageKey: 'profile' },
+      },
     ],
   })
   await router.push(path)
@@ -226,7 +196,7 @@ async function mountShell(path = '/', locale: SupportedLocale = 'zh-CN') {
   })
 }
 
-describe('HmrSiteShell preloader', () => {
+describe('HmrSiteShell', () => {
   beforeEach(() => {
     vi.useRealTimers()
     vi.clearAllMocks()
@@ -234,13 +204,17 @@ describe('HmrSiteShell preloader', () => {
     window.localStorage.clear()
     window.sessionStorage.clear()
     setActivePinia(createPinia())
-    mockMatchMedia(false)
-    mockPreloaderProgressGeometry()
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn(() => ({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    })
   })
 
   it.each(supportedLocales)('renders compact shell navigation labels for %s', async (locale) => {
-    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
-
     const wrapper = await mountShell('/', locale)
 
     try {
@@ -279,29 +253,30 @@ describe('HmrSiteShell preloader', () => {
   })
 
   it('marks the shell with the active theme scene role', async () => {
-    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
-
     const wrapper = await mountShell('/community')
 
     try {
       expect(wrapper.find('.hmr-site').attributes('data-hmr-scene-role')).toBe('discussion')
+      expect(wrapper.find('.hmr-experience-rail__route strong').text()).toBe('COMMUNITY')
+      expect(wrapper.find('.hmr-experience-rail__metrics').text()).toContain('03 / 18')
 
       await wrapper.vm.$router.push('/schedule')
       await wrapper.vm.$nextTick()
 
       expect(wrapper.find('.hmr-site').attributes('data-hmr-scene-role')).toBe('productivity')
+      expect(wrapper.find('.hmr-experience-rail__route strong').text()).toBe('SCHEDULE')
 
       await wrapper.vm.$router.push('/explore')
       await wrapper.vm.$nextTick()
 
       expect(wrapper.find('.hmr-site').attributes('data-hmr-scene-role')).toBe('immersive')
+      expect(wrapper.find('.hmr-experience-rail__route strong').text()).toBe('EXPLORE')
     } finally {
       wrapper.unmount()
     }
   })
 
   it('marks whether the active preset is native to the current scene role', async () => {
-    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
     window.localStorage.setItem('hmr.appearancePreset', 'gradient-narrative')
 
     const wrapper = await mountShell('/explore')
@@ -334,83 +309,44 @@ describe('HmrSiteShell preloader', () => {
     }
   })
 
-  it('automatically completes the first session preloader without a click', async () => {
-    vi.useFakeTimers()
+  it('renders the site immediately on first entry without a preloader', async () => {
     const wrapper = await mountShell('/')
 
     try {
-      expect(wrapper.find('.hmr-preloader').exists()).toBe(true)
-      expect(wrapper.find('.hmr-site').classes()).toContain('is-preloading')
-      expect(wrapper.findAll('.hmr-preloader .hmr-brand-sprite')).toHaveLength(1)
-      expect(wrapper.find('.hmr-preloader .hmr-preloader-halo').exists()).toBe(false)
-      expect(wrapper.find('.hmr-preloader .hmr-preloader-pulse').exists()).toBe(false)
-      expect(wrapper.find('.hmr-preloader .hmr-preloader-status').exists()).toBe(false)
-
-      await wrapper.vm.$nextTick()
-      await vi.dynamicImportSettled()
-      await vi.advanceTimersByTimeAsync(0)
-      await vi.advanceTimersByTimeAsync(3500)
-      await vi.advanceTimersByTimeAsync(0)
       await wrapper.vm.$nextTick()
 
-      expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
-      expect(mocks.warmHmrSessionEntry).toHaveBeenCalledWith(
-        expect.objectContaining({
-          path: '/',
-          resolveSession: mocks.resolveSession,
-          timeoutMs: 4500,
-        })
-      )
+      expect(wrapper.find('[data-testid="home-page"]').exists()).toBe(true)
+      expect(wrapper.find('.hmr-signal-field canvas').exists()).toBe(true)
       expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
       expect(wrapper.find('.hmr-site').classes()).not.toContain('is-preloading')
+      expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBeNull()
+      expect(mocks.resolveSession).toHaveBeenCalledTimes(1)
     } finally {
       wrapper.unmount()
-      vi.useRealTimers()
     }
   })
 
-  it('does not show the preloader again within the same browser session', async () => {
-    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
-
+  it('exposes the primary application scope from the global footer index', async () => {
     const wrapper = await mountShell('/')
+    const links = wrapper.findAll('.hmr-footer-index a')
 
-    expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
-    expect(mocks.resolveSession).toHaveBeenCalledTimes(1)
-    expect(mocks.warmHmrSessionEntry).not.toHaveBeenCalled()
-  })
-
-  it('does not restart the entry preloader during same-session route changes', async () => {
-    vi.useFakeTimers()
-    const wrapper = await mountShell('/')
-
-    try {
-      await wrapper.vm.$nextTick()
-      await vi.dynamicImportSettled()
-      await vi.advanceTimersByTimeAsync(3500)
-      await vi.advanceTimersByTimeAsync(0)
-      await wrapper.vm.$nextTick()
-
-      expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
-      expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
-      expect(mocks.warmHmrSessionEntry).toHaveBeenCalledTimes(1)
-
-      await wrapper.vm.$router.push('/explore')
-      await wrapper.vm.$router.isReady()
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.vm.$route.fullPath).toBe('/explore')
-      expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
-      expect(mocks.warmHmrSessionEntry).toHaveBeenCalledTimes(1)
-      expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
-    } finally {
-      wrapper.unmount()
-      vi.useRealTimers()
-    }
+    expect(links).toHaveLength(11)
+    expect(links.map((link) => link.attributes('href'))).toEqual(
+      expect.arrayContaining([
+        '/',
+        '/explore',
+        '/community',
+        '/schedule',
+        '/about',
+        '/contact',
+        '/join-us',
+        '/profile',
+        '/settings',
+      ])
+    )
   })
 
   it('keeps footer brand marks static and detached from global brand animation state', async () => {
-    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
-
     const wrapper = await mountShell('/')
     const footerSprites = wrapper.findAll('.hmr-footer .hmr-brand-sprite')
 
@@ -425,8 +361,6 @@ describe('HmrSiteShell preloader', () => {
   })
 
   it('defers the full brand atlas until direct brand interaction', async () => {
-    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
-
     const wrapper = await mountShell('/')
     const brandSprite = () => wrapper.find('.hmr-brand-link .hmr-brand-sprite')
 
@@ -444,7 +378,6 @@ describe('HmrSiteShell preloader', () => {
   it('defers priority route warmup until after the initial stabilization window', async () => {
     vi.useFakeTimers()
     const originalRequestIdleCallback = window.requestIdleCallback
-    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
     Object.defineProperty(window, 'requestIdleCallback', {
       configurable: true,
       value: undefined,
@@ -471,30 +404,5 @@ describe('HmrSiteShell preloader', () => {
       })
       vi.useRealTimers()
     }
-  })
-
-  it('bypasses the preloader with the QA query flag', async () => {
-    const wrapper = await mountShell('/?skipPreloader=1')
-
-    expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
-    expect(mocks.resolveSession).toHaveBeenCalledTimes(1)
-    expect(mocks.warmHmrSessionEntry).not.toHaveBeenCalled()
-  })
-
-  it('uses the reduced motion timing budget and still auto-enters', async () => {
-    mockMatchMedia(true)
-
-    const wrapper = await mountShell('/')
-    await vi.waitFor(() => {
-      expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
-    }, 3000)
-    await wrapper.vm.$nextTick()
-
-    expect(mocks.warmHmrSessionEntry).toHaveBeenCalledWith(
-      expect.objectContaining({
-        timeoutMs: 1200,
-      })
-    )
-    expect(wrapper.find('.hmr-preloader').exists()).toBe(false)
   })
 })

@@ -9,11 +9,7 @@ export type ClientTrustLevel = 'untrusted' | 'basic' | 'verified'
 export type ClientFingerprintSource = 'oss_browser' | 'mobile_local' | 'unknown'
 export type ClientType = 'web' | 'mobile' | 'admin'
 export type RiskDecision =
-  | 'allow'
-  | 'challenge_turnstile'
-  | 'challenge_mfa_or_passkey'
-  | 'deny_obvious_abuse'
-  | string
+  'allow' | 'challenge_turnstile' | 'challenge_mfa_or_passkey' | 'deny_obvious_abuse' | string
 
 export interface ClientInitPayload {
   client_fingerprint?: string

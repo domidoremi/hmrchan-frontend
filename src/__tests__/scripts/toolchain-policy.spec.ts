@@ -7,7 +7,7 @@ import {
   resolveProductionContractEnv,
 } from '../../../scripts/lib/production-contract-env.js'
 
-const VUE_RUNTIME_VERSION = '3.5.35'
+const VUE_RUNTIME_VERSION = '3.5.40'
 const VUE_LOCKED_PACKAGES = ['vue', '@vue/compiler-sfc', '@vue/server-renderer'] as const
 const BUN_VERSION = '1.3.14'
 const NODE_VERSION = '24.14.1'

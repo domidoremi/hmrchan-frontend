@@ -438,8 +438,7 @@ export function writePublicSnapshot<T>(key: string, value: T): void {
 
 export function readPublicSnapshotEntry<T>(key: string): HmrCachedSnapshot<T> | null {
   const entry = memoryCache.get(buildPublicSnapshotCacheKey(key)) as
-    | PublicContentCacheEntry<HmrCachedSnapshot<T>>
-    | undefined
+    PublicContentCacheEntry<HmrCachedSnapshot<T>> | undefined
   if (!entry || !isFresh(entry)) return null
   return entry.value
 }

@@ -359,8 +359,7 @@ async function assertAdminSignal(baseUrl: string, admin: MatrixAccount) {
   }
   const body = login.body ?? {}
   const user = (body.user ?? (body.data as Record<string, unknown> | undefined)?.user) as
-    | Record<string, unknown>
-    | undefined
+    Record<string, unknown> | undefined
   const isAdmin =
     user?.is_admin === true ||
     user?.role === 'super_admin' ||

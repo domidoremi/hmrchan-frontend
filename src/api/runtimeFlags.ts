@@ -17,3 +17,8 @@ export function shouldUseApiFallback(): boolean {
 
   return readBooleanEnv(import.meta.env.VITE_HMRCHAN_ENABLE_API) === false
 }
+
+export function shouldUseScheduleApi(): boolean {
+  if (shouldUseApiFallback()) return false
+  return readBooleanEnv(import.meta.env.VITE_ENABLE_SCHEDULE_API) !== false
+}

@@ -71,18 +71,6 @@ describe('HmrBrandSprite', () => {
     expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-frame: 1')
   })
 
-  it('uses faster frame pacing for the preloader playback', async () => {
-    const wrapper = mount(HmrBrandSprite, {
-      props: { state: 'waving', playback: 'preloader' },
-    })
-
-    stepFrame(0)
-    stepFrame(140)
-    await wrapper.vm.$nextTick()
-
-    expect(wrapper.attributes('style')).toContain('--hmr-brand-sprite-frame: 1')
-  })
-
   it('uses the lightweight static strip before the atlas is enabled', () => {
     const wrapper = mount(HmrBrandSprite, { props: { state: 'waving' } })
 

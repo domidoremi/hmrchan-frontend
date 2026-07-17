@@ -1,4 +1,5 @@
 import { apiClient } from '@/api/client'
+import { shouldUseScheduleApi } from '@/api/runtimeFlags'
 import { buildExplorePostsEndpoint, buildExploreSuggestionsEndpoint } from './hmrContentPlatforms'
 import {
   mapAuthor,
@@ -285,6 +286,14 @@ export async function loadPostDetailContent(id: string): Promise<HmrPostDetailCo
 }
 
 export async function loadScheduleContentResource(): Promise<HmrAsyncResource<HmrScheduleContent>> {
+  const paths = ['/schedules', '/schedules/calendar', '/schedules/highlights']
+  if (!shouldUseScheduleApi()) {
+    return makeResource(mapScheduleContent(null, null, null), {
+      source: 'local',
+      paths,
+    })
+  }
+
   const results = await Promise.all([
     readEndpointResult<unknown>('/schedules', { skipAuth: true }),
     readEndpointResult<unknown>('/schedules/calendar', { skipAuth: true }),

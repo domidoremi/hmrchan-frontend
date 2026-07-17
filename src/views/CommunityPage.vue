@@ -39,7 +39,7 @@
             </button>
           </aside>
 
-          <main class="hmr-community-main" :aria-label="t('community.listLabel')">
+          <section class="hmr-community-main" :aria-label="t('community.listLabel')">
             <div class="hmr-community-main-head">
               <div>
                 <p class="hmr-kicker">{{ activeTabLabel }}</p>
@@ -113,7 +113,7 @@
                 <em>{{ item.metric }}</em>
               </article>
             </div>
-          </main>
+          </section>
 
           <aside class="hmr-community-aside">
             <template v-if="content.stats.length">

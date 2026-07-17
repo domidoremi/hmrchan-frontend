@@ -10,16 +10,16 @@
           <span>验证</span>
           <span>进入</span>
         </div>
-        <div class="hmr-story-stack" aria-label="Registration flow">
-          <article class="hmr-story-block">
+        <div class="hmr-story-stack" role="list" aria-label="Registration flow">
+          <article class="hmr-story-block" role="listitem">
             <p class="hmr-kicker">01 / 创建</p>
             <strong>创建账号</strong>
             <span>用户名、邮箱和密码会建立 MomiChan 账户。</span>
           </article>
-          <article class="hmr-story-block">
+          <article class="hmr-story-block" role="listitem">
             <p class="hmr-kicker">02 / 验证</p>
             <strong>验证码可选</strong>
-            <span>填写后会一并校验，不填写也可以继续。</span>
+            <span>此项可留空，其他信息填写完成后即可继续。</span>
           </article>
         </div>
       </aside>

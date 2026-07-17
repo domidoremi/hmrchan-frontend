@@ -37,10 +37,11 @@
           <p class="hmr-kicker">处理流程</p>
           <h2 class="hmr-section-title">24 小时内给你回应。</h2>
           <p class="hmr-body">提交后会进入感谢页，我们会继续跟进。</p>
-          <div class="hmr-auth-timeline" aria-label="Contact flow">
+          <div class="hmr-auth-timeline" role="list" aria-label="Contact flow">
             <span
               v-for="(item, index) in support.flows"
               :key="item.id"
+              role="listitem"
               :class="{ 'is-active': index === 0 }"
             >
               {{ item.metric }}

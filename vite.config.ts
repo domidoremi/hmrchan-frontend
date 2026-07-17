@@ -28,6 +28,7 @@ import {
   sriPlugin,
   staticPrerenderPlugin,
 } from './build/vite/plugins'
+import { normalizeProxyTarget } from './build/vite/plugins/proxyTarget'
 import { getSwCacheVersion } from './build/vite/swCacheVersion'
 
 type DevProxyServer = {
@@ -39,6 +40,7 @@ const DEV_PROXY_BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 const REHEARSAL_TURNSTILE_BYPASS_HEADER = 'X-Rehearsal-Turnstile-Bypass'
+const DEFAULT_DEV_API_PROXY_TARGET = 'https://momichan.com'
 const DEV_PROXY_HOST_COOKIE_EQUIVALENTS = new Map<string, string>([
   ['__Host-momi_bff_at', 'momi_bff_at'],
   ['__Host-momi_bff_rt', 'momi_bff_rt'],
@@ -142,11 +144,6 @@ function parseSourcemapEnv(raw: string | undefined): boolean | 'hidden' {
   if (value === 'false') return false
   if (value === 'hidden') return 'hidden'
   return false
-}
-
-function normalizeProxyTarget(rawTarget: string | undefined, fallbackTarget: string): string {
-  const target = rawTarget?.trim() || fallbackTarget
-  return target.replace(/\/+$/, '')
 }
 
 function resolveDevHost(rawHost: string | undefined): string | true {
@@ -307,7 +304,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   const disablePreviewProxy = parseBoolEnv(env, 'VITE_DISABLE_PREVIEW_PROXY', false)
   const devtoolsEnabled = isDev && parseBoolEnv(env, 'VITE_ENABLE_DEVTOOLS', false)
   const sourcemapMode = isProd ? false : parseSourcemapEnv(env.VITE_SOURCEMAP)
-  const apiProxyTarget = normalizeProxyTarget(env.VITE_API_BASE_URL, 'https://api.momichan.com')
+  const apiProxyTarget = normalizeProxyTarget(env.VITE_API_BASE_URL, DEFAULT_DEV_API_PROXY_TARGET)
   const rehearsalTurnstileBypassToken = (env.REHEARSAL_TURNSTILE_BYPASS_TOKEN ?? '').trim()
   const sharedProxyConfig = createProxyConfig(apiProxyTarget, {
     identityTarget: normalizeProxyTarget(env.VITE_IDENTITY_API_BASE_URL, apiProxyTarget),

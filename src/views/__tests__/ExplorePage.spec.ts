@@ -101,7 +101,9 @@ const messages = {
       kindText: '文字',
       list: '列表',
       loadMore: '加载更多',
+      mediaPreview: '媒体预览',
       platform: '平台',
+      previewMediaState: '静音媒体预览指示',
       search: '搜索',
       searchPlaceholder: '搜索公开内容',
       sort: '排序',
@@ -299,6 +301,18 @@ describe('ExplorePage', () => {
 
     expect(wrapper.find('.hmr-cinema-section').exists()).toBe(true)
     expect(wrapper.find('.hmr-author-strip').exists()).toBe(true)
+  })
+
+  it('renders the decorative media state without a false button affordance', async () => {
+    mockReadPublicContent.mockResolvedValue(makeResource())
+
+    const wrapper = await mountExplorePage()
+    const mediaState = wrapper.get('.hmr-cinema-mute')
+
+    expect(mediaState.element.tagName).toBe('SPAN')
+    expect(mediaState.attributes('role')).toBe('img')
+    expect(mediaState.attributes('aria-label')).toBe('静音媒体预览指示')
+    expect(wrapper.find('button.hmr-cinema-mute').exists()).toBe(false)
   })
 
   it('renders a compact initial post set before idle expansion', async () => {

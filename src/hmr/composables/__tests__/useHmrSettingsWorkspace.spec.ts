@@ -73,6 +73,13 @@ function makeWorkspace(options: SettingsFixtureOptions = {}) {
           'settings.cacheClearing': '清理中',
           'settings.cacheDone': '已清理',
           'settings.cacheRetry': '重试',
+          'settings.clearPublicCache': '清理公开缓存',
+          'settings.cacheClearingAction': '正在清理公开缓存…',
+          'settings.clearPublicCacheAgain': '再次清理公开缓存',
+          'settings.cacheRetryAction': '重新尝试清理',
+          'settings.cacheClearingMessage': '正在移除此浏览器中的公开内容缓存…',
+          'settings.cacheDoneMessage': '公开内容缓存已清理。下次请求将加载最新数据。',
+          'settings.cacheErrorMessage': '缓存清理失败。账号数据未受影响，请重试。',
           'settings.presets.minimal-editorial': '极简编辑',
         }) as Record<string, string>
       )[key] ?? key,
@@ -153,7 +160,9 @@ describe('useHmrSettingsWorkspace', () => {
     })
     expect(workspace.themeLabel.value).toBe('跟随系统 / 深色')
     expect(workspace.appearanceLabel.value).toBe('极简编辑')
+    expect(workspace.cacheClearActionLabel.value).toBe('清理公开缓存')
     expect(workspace.cacheClearLabel.value).toBe('可清理')
+    expect(workspace.cacheClearMessage.value).toBe('')
   })
 
   it('marks guest settings ready without fetching private settings', async () => {
@@ -205,12 +214,48 @@ describe('useHmrSettingsWorkspace', () => {
     await workspace.clearCache()
     expect(mocks.clearPublicContentCache).toHaveBeenCalledOnce()
     expect(workspace.cacheClearState.value).toBe('done')
+    expect(workspace.cacheClearActionLabel.value).toBe('再次清理公开缓存')
     expect(workspace.cacheClearLabel.value).toBe('已清理')
+    expect(workspace.cacheClearMessage.value).toBe('公开内容缓存已清理。下次请求将加载最新数据。')
 
     vi.runOnlyPendingTimers()
     await nextTick()
     expect(workspace.cacheClearState.value).toBe('idle')
     vi.useRealTimers()
+  })
+
+  it('exposes clearing feedback immediately and ignores duplicate requests', async () => {
+    let finishClear: (() => void) | undefined
+    mocks.clearPublicContentCache.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishClear = resolve
+        })
+    )
+    const { workspace } = makeWorkspace()
+
+    const pendingClear = workspace.clearCache()
+    void workspace.clearCache()
+
+    expect(mocks.clearPublicContentCache).toHaveBeenCalledOnce()
+    expect(workspace.cacheClearState.value).toBe('clearing')
+    expect(workspace.cacheClearActionLabel.value).toBe('正在清理公开缓存…')
+    expect(workspace.cacheClearMessage.value).toBe('正在移除此浏览器中的公开内容缓存…')
+
+    finishClear?.()
+    await pendingClear
+  })
+
+  it('exposes persistent retry feedback when public cache clearing fails', async () => {
+    mocks.clearPublicContentCache.mockRejectedValueOnce(new Error('cache unavailable'))
+    const { workspace } = makeWorkspace()
+
+    await workspace.clearCache()
+
+    expect(workspace.cacheClearState.value).toBe('error')
+    expect(workspace.cacheClearLabel.value).toBe('重试')
+    expect(workspace.cacheClearActionLabel.value).toBe('重新尝试清理')
+    expect(workspace.cacheClearMessage.value).toBe('缓存清理失败。账号数据未受影响，请重试。')
   })
 
   it('writes resolved locale back to the active composer locale ref', () => {
@@ -227,7 +272,6 @@ describe('useHmrSettingsWorkspace', () => {
     window.localStorage.setItem('hmr.preview.auth', 'member')
     window.localStorage.setItem('momi_client_security', '{"token":"client"}')
     window.localStorage.setItem('momi_device_fingerprint_v1', '{"value":"fingerprint"}')
-    window.sessionStorage.setItem('momichan.preloader.seen', 'true')
     const { auth, router, workspace } = makeWorkspace({ authenticated: true })
 
     await workspace.clearCache()
@@ -240,6 +284,5 @@ describe('useHmrSettingsWorkspace', () => {
     expect(window.localStorage.getItem('momi_device_fingerprint_v1')).toBe(
       '{"value":"fingerprint"}'
     )
-    expect(window.sessionStorage.getItem('momichan.preloader.seen')).toBe('true')
   })
 })

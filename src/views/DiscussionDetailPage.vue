@@ -9,8 +9,13 @@
         <h1 class="hmr-detail-title" data-hmr-text-reveal>{{ heroTitle }}</h1>
         <p class="hmr-detail-lede">{{ heroBody }}</p>
 
-        <div class="hmr-detail-meta-grid" :aria-label="t('discussionDetail.infoLabel')">
-          <div v-for="item in detailMetrics" :key="item.label" class="hmr-detail-meta-card">
+        <div class="hmr-detail-meta-grid" role="list" :aria-label="t('discussionDetail.infoLabel')">
+          <div
+            v-for="item in detailMetrics"
+            :key="item.label"
+            class="hmr-detail-meta-card"
+            role="listitem"
+          >
             <span>{{ item.label }}</span>
             <strong>{{ item.value }}</strong>
           </div>

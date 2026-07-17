@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockApiGet = vi.hoisted(() => vi.fn())
 const mockApiPost = vi.hoisted(() => vi.fn())
+const mockShouldUseScheduleApi = vi.hoisted(() => vi.fn(() => true))
 
 const MockApiError = vi.hoisted(() => {
   return class MockApiError extends Error {
@@ -29,12 +30,15 @@ vi.mock('@/api/client', () => ({
 
 vi.mock('@/api/runtimeFlags', () => ({
   shouldUseApiFallback: () => false,
+  shouldUseScheduleApi: mockShouldUseScheduleApi,
 }))
 
 describe('hmrContent post detail loading', () => {
   beforeEach(() => {
     mockApiGet.mockReset()
     mockApiPost.mockReset()
+    mockShouldUseScheduleApi.mockReset()
+    mockShouldUseScheduleApi.mockReturnValue(true)
   })
 
   it('loads public page resources as anonymous requests', async () => {
@@ -111,6 +115,19 @@ describe('hmrContent post detail loading', () => {
 
       expect(mockApiGet.mock.calls).toEqual(item.paths.map((path) => [path, { skipAuth: true }]))
     }
+  })
+
+  it('uses local schedule preview content without proxy requests when the schedule API is disabled', async () => {
+    mockShouldUseScheduleApi.mockReturnValue(false)
+    const { loadScheduleContentResource } = await import('../hmrContent')
+
+    const resource = await loadScheduleContentResource()
+
+    expect(mockApiGet).not.toHaveBeenCalled()
+    expect(resource.source).toBe('local')
+    expect(resource.error).toBeNull()
+    expect(resource.paths).toEqual(['/schedules', '/schedules/calendar', '/schedules/highlights'])
+    expect(resource.data).toEqual({ items: [], calendar: [], highlights: [] })
   })
 
   it('loads profile sections through their authenticated endpoint contracts', async () => {

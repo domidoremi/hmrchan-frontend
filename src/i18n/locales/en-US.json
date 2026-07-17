@@ -12,6 +12,7 @@
     "settings": "Settings"
   },
   "shell": {
+    "skipToContent": "Skip to content",
     "settings": "Settings",
     "authCta": "Log in / Sign up",
     "profileCta": "Profile",
@@ -40,6 +41,8 @@
   "explore": {
     "eyebrow": "Media exploration",
     "title": "Explore",
+    "mediaPreview": "Media preview",
+    "previewMediaState": "Silent media preview indicator",
     "allMedia": "All media",
     "allPosts": "Posts",
     "search": "Search",
@@ -147,7 +150,7 @@
     "states": {
       "restricted": {
         "eyebrow": "Public preview restricted · Automated access unavailable",
-        "heroTitle": "This post cannot be publicly previewed",
+        "heroTitle": "Public preview is restricted for this post",
         "title": "Public preview restricted",
         "body": "Public access to this post is restricted. Its body, media, and comments are hidden.",
         "guidance": "Continue in Explore or Community"
@@ -156,7 +159,7 @@
         "eyebrow": "Not found · This post may have been removed",
         "heroTitle": "This post does not exist or was removed",
         "title": "Post not found",
-        "body": "This post has no public content left to display.",
+        "body": "Public content for this post is no longer available.",
         "guidance": "Back to Explore"
       },
       "unavailable": {
@@ -178,7 +181,7 @@
     "states": {
       "restricted": {
         "eyebrow": "Public preview restricted · Automated access unavailable",
-        "heroTitle": "This discussion cannot be publicly previewed",
+        "heroTitle": "Public preview is restricted for this discussion",
         "title": "Public preview restricted",
         "body": "Public access to this discussion is restricted. Its body and replies are hidden.",
         "guidance": "Continue in Community"
@@ -187,7 +190,7 @@
         "eyebrow": "Not found · This discussion was removed",
         "heroTitle": "This discussion does not exist or was removed",
         "title": "Discussion not found",
-        "body": "This discussion has no public content left to display.",
+        "body": "Public content for this discussion is no longer available.",
         "guidance": "Browse other discussions"
       },
       "unavailable": {
@@ -245,7 +248,7 @@
     "sent": "Submitted. We will review it soon.",
     "messageBadge": "Saved",
     "messageTitle": "Processing your message",
-    "messageBody": "If the primary channel is unavailable, your message is still kept safely."
+    "messageBody": "Your message stays safely stored while the primary channel reconnects."
   },
   "auth": {
     "eyebrow": "Auth",
@@ -315,13 +318,19 @@
     "publicCache": "Public content cache",
     "publicCacheBody": "Clear public Memory, IndexedDB, and Service Worker caches while keeping session and local account data.",
     "clearPublicCache": "Clear public cache",
+    "cacheClearingAction": "Clearing public cache…",
+    "clearPublicCacheAgain": "Clear public cache again",
+    "cacheRetryAction": "Try clearing again",
+    "cacheClearingMessage": "Removing cached public content from this browser…",
+    "cacheDoneMessage": "Public content cache cleared. Fresh data loads with the next request.",
+    "cacheErrorMessage": "Cache clearing failed. Your account data is unchanged. Try again.",
     "feedbackHelp": "Feedback and help",
     "contact": "Contact",
     "contactMomiChan": "Contact MomiChan",
     "aboutRules": "Product and rules",
     "signOutCurrent": "Sign out of this account",
     "enterLogin": "Enter sign-in",
-    "signOutBody": "Signing out only ends the current browser session.",
+    "signOutBody": "Signing out ends the current browser session.",
     "enterLoginBody": "Sign in to continue accessing personal content.",
     "themeMode": "Theme mode",
     "appearancePreset": "Appearance preset",

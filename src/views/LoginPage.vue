@@ -10,13 +10,13 @@
           <span>个人</span>
           <span>Passkey</span>
         </div>
-        <div class="hmr-story-stack" aria-label="Login benefits">
-          <article class="hmr-story-block">
+        <div class="hmr-story-stack" role="list" aria-label="Login benefits">
+          <article class="hmr-story-block" role="listitem">
             <p class="hmr-kicker">01 / 内容</p>
             <strong>恢复内容</strong>
             <span>继续查看收藏、历史和回复。</span>
           </article>
-          <article class="hmr-story-block">
+          <article class="hmr-story-block" role="listitem">
             <p class="hmr-kicker">02 / 安全</p>
             <strong>保护账号</strong>
             <span>支持密码、Google 登录和 Passkey 恢复。</span>

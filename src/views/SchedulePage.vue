@@ -9,6 +9,7 @@
         <h1 class="hmr-page-title" data-hmr-text-reveal>{{ t('schedule.title') }}</h1>
         <div
           class="hmr-page-tags hmr-page-tags--schedule"
+          role="group"
           :aria-label="t('schedule.overviewLabel')"
         >
           <span>{{ selectedMonthLabel }}</span>
@@ -36,7 +37,7 @@
             <p class="hmr-kicker">{{ t('schedule.date') }}</p>
             <h2 class="hmr-section-title">{{ t('schedule.dateTitle') }}</h2>
           </div>
-          <div class="hmr-schedule-filter-row" :aria-label="t('schedule.filterLabel')">
+          <div class="hmr-schedule-filter-row" role="group" :aria-label="t('schedule.filterLabel')">
             <button
               v-for="item in filterOptions"
               :key="item.id"
@@ -50,7 +51,11 @@
           </div>
         </div>
 
-        <div class="hmr-schedule-date-strip" :aria-label="t('schedule.datePickerLabel')">
+        <div
+          class="hmr-schedule-date-strip"
+          role="group"
+          :aria-label="t('schedule.datePickerLabel')"
+        >
           <button
             v-for="day in dayOptions"
             :key="day.key"
@@ -70,6 +75,7 @@
         <div
           v-if="activeFilter === 'month'"
           class="hmr-schedule-month-tools"
+          role="group"
           aria-label="Month navigation"
         >
           <button type="button" :aria-label="t('schedule.previousMonth')" @click="shiftMonth(-1)">

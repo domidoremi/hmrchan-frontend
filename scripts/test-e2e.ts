@@ -50,10 +50,7 @@ type SmokeMode = 'guest' | 'auth' | 'both'
 type CheckKind = 'static' | 'browser' | 'auth' | 'service-worker'
 type CheckStatus = 'passed' | 'failed' | 'skipped'
 type SmokeFailureKind =
-  | 'environment-blocked'
-  | 'auth-contract-failed'
-  | 'ui-timeout'
-  | 'browser-crash'
+  'environment-blocked' | 'auth-contract-failed' | 'ui-timeout' | 'browser-crash'
 
 type StaticRouteCheck = {
   name: string

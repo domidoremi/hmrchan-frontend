@@ -12,6 +12,7 @@
     "settings": "設定"
   },
   "shell": {
+    "skipToContent": "メインコンテンツへ移動",
     "settings": "設定",
     "authCta": "ログイン / 登録",
     "profileCta": "プロフィール",
@@ -40,6 +41,8 @@
   "explore": {
     "eyebrow": "メディア探索",
     "title": "探索",
+    "mediaPreview": "メディアプレビュー",
+    "previewMediaState": "無音メディアプレビュー表示",
     "allMedia": "全メディア",
     "allPosts": "投稿",
     "search": "検索",
@@ -245,7 +248,7 @@
     "sent": "送信しました。確認します。",
     "messageBadge": "保存済み",
     "messageTitle": "メッセージを処理中",
-    "messageBody": "主要な通路が使えない場合でも、メッセージは安全に保管されます。"
+    "messageBody": "メッセージは安全に保管され、主要な通路の復旧後に送信を続けます。"
   },
   "auth": {
     "eyebrow": "認証",
@@ -315,13 +318,19 @@
     "publicCache": "公開コンテンツキャッシュ",
     "publicCacheBody": "公開コンテンツの Memory、IndexedDB、Service Worker キャッシュを消去します。ログイン状態とローカルアカウントデータは保持します。",
     "clearPublicCache": "公開キャッシュを消去",
+    "cacheClearingAction": "公開キャッシュを消去中…",
+    "clearPublicCacheAgain": "公開キャッシュをもう一度消去",
+    "cacheRetryAction": "消去を再試行",
+    "cacheClearingMessage": "このブラウザの公開コンテンツキャッシュを消去しています…",
+    "cacheDoneMessage": "公開コンテンツキャッシュを消去しました。次回のリクエストで最新データを読み込みます。",
+    "cacheErrorMessage": "キャッシュの消去に失敗しました。アカウントデータは保持されています。再試行してください。",
     "feedbackHelp": "フィードバックとヘルプ",
     "contact": "連絡",
     "contactMomiChan": "MomiChan に連絡",
     "aboutRules": "製品とルール",
     "signOutCurrent": "現在のアカウントからログアウト",
     "enterLogin": "ログインへ進む",
-    "signOutBody": "ログアウトは現在のブラウザセッションだけを終了します。",
+    "signOutBody": "ログアウトすると、現在のブラウザセッションが終了します。",
     "enterLoginBody": "ログインすると個人コンテンツに引き続きアクセスできます。",
     "themeMode": "テーマモード",
     "appearancePreset": "外観プリセット",

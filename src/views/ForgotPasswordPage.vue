@@ -10,13 +10,13 @@
           <span>验证码</span>
           <span>新密码</span>
         </div>
-        <div class="hmr-story-stack" aria-label="Password reset steps">
-          <article class="hmr-story-block">
+        <div class="hmr-story-stack" role="list" aria-label="Password reset steps">
+          <article class="hmr-story-block" role="listitem">
             <p class="hmr-kicker">01 / 请求</p>
             <strong>接收验证码</strong>
-            <span>为了保护账号，无论邮箱是否存在，页面都会显示相同结果。</span>
+            <span>页面会为所有邮箱显示相同结果，保护账号隐私。</span>
           </article>
-          <article class="hmr-story-block">
+          <article class="hmr-story-block" role="listitem">
             <p class="hmr-kicker">02 / 重置</p>
             <strong>设置新密码</strong>
             <span>输入邮件中的六位验证码并设置一个未使用过的新密码。</span>
@@ -36,7 +36,7 @@
           <input id="email" v-model="email" required type="email" autocomplete="email" />
         </label>
         <p class="hmr-auth-status">
-          {{ isLoading ? '正在发送...' : '我们不会在此页面透露邮箱是否已注册。' }}
+          {{ isLoading ? '正在发送...' : '提交后会显示统一结果，账号状态保持私密。' }}
         </p>
         <p v-if="error" class="hmr-form-error" role="alert">{{ error }}</p>
         <button class="hmr-cta" type="submit" :disabled="isLoading">发送重置验证码</button>

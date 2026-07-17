@@ -52,7 +52,7 @@
           />
         </label>
         <p class="hmr-auth-status">
-          {{ isLoading ? '正在更新密码...' : '新密码不能与近期使用过的密码相同。' }}
+          {{ isLoading ? '正在更新密码...' : '请使用近期密码之外的新组合。' }}
         </p>
         <p v-if="error" class="hmr-form-error" role="alert">{{ error }}</p>
         <button class="hmr-cta" type="submit" :disabled="isLoading">更新密码</button>

@@ -44,13 +44,7 @@ export interface HmrAuthDisplayState {
 export type HmrAuthIntent = 'login' | 'register'
 
 export type HmrPasskeyRecoveryStage =
-  | 'idle'
-  | 'started'
-  | 'verifying'
-  | 'cooldown'
-  | 'ready'
-  | 'complete'
-  | 'blocked'
+  'idle' | 'started' | 'verifying' | 'cooldown' | 'ready' | 'complete' | 'blocked'
 
 export interface HmrPasskeyRecoveryStatus {
   id: string

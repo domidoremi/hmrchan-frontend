@@ -12,6 +12,7 @@
     "settings": "设置"
   },
   "shell": {
+    "skipToContent": "跳至主要内容",
     "settings": "设置",
     "authCta": "登录 / 注册",
     "profileCta": "个人中心",
@@ -40,6 +41,8 @@
   "explore": {
     "eyebrow": "媒体探索",
     "title": "探索",
+    "mediaPreview": "媒体预览",
+    "previewMediaState": "静音媒体预览指示",
     "allMedia": "全部媒体",
     "allPosts": "帖子",
     "search": "搜索",
@@ -245,7 +248,7 @@
     "sent": "已提交，我们会尽快查看。",
     "messageBadge": "已保存",
     "messageTitle": "正在处理你的消息",
-    "messageBody": "如果当前通道暂时不可用，内容也会先保留。"
+    "messageBody": "内容会安全保留，并在通道恢复后继续送达。"
   },
   "auth": {
     "eyebrow": "认证",
@@ -315,13 +318,19 @@
     "publicCache": "公开内容缓存",
     "publicCacheBody": "清理公开内容的 Memory、IndexedDB 与 Service Worker 缓存。保留登录态和本地账号数据。",
     "clearPublicCache": "清理公开缓存",
+    "cacheClearingAction": "正在清理公开缓存…",
+    "clearPublicCacheAgain": "再次清理公开缓存",
+    "cacheRetryAction": "重新尝试清理",
+    "cacheClearingMessage": "正在移除此浏览器中的公开内容缓存…",
+    "cacheDoneMessage": "公开内容缓存已清理。下次请求将加载最新数据。",
+    "cacheErrorMessage": "缓存清理失败。账号数据未受影响，请重试。",
     "feedbackHelp": "反馈与帮助",
     "contact": "联系",
     "contactMomiChan": "联系 MomiChan",
     "aboutRules": "了解产品与规则",
     "signOutCurrent": "退出当前账号",
     "enterLogin": "进入登录流程",
-    "signOutBody": "退出只会结束当前浏览器会话。",
+    "signOutBody": "退出后，当前浏览器会话将结束。",
     "enterLoginBody": "登录后可继续访问个人内容。",
     "themeMode": "主题模式",
     "appearancePreset": "外观预设",

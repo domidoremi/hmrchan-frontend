@@ -13,7 +13,7 @@
 
     <section class="hmr-cinema-section hmr-cinema-section--about" data-hmr-reveal data-hmr-scroll>
       <div class="hmr-cinema-sticky">
-        <div class="hmr-cinema-frame" aria-label="MomiChan team tornado">
+        <div class="hmr-cinema-frame">
           <div class="hmr-cinema-orbit hmr-cinema-orbit--team" aria-hidden="true">
             <span v-for="item in tornadoItems" :key="item">{{ item }}</span>
           </div>
@@ -34,12 +34,12 @@
         <div class="hmr-story-stack">
           <article class="hmr-story-block">
             <p class="hmr-kicker">目标</p>
-            <strong>内容不是瀑布。</strong>
+            <strong>内容沿着清晰路径流动。</strong>
             <span>让发现、讨论、收藏和发布都有明确路径。</span>
           </article>
           <article class="hmr-story-block">
             <p class="hmr-kicker">入口</p>
-            <strong>入口必须稳定。</strong>
+            <strong>稳定入口，顺畅抵达。</strong>
             <span>首页、探索、社区和日程保持稳定；个人页承接账号内容。</span>
           </article>
           <article class="hmr-story-block">

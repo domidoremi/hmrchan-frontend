@@ -154,9 +154,4 @@ export interface HmrSupportContent {
 }
 
 export type HmrProfileSectionKey =
-  | 'overview'
-  | 'security'
-  | 'preferences'
-  | 'favorites'
-  | 'history'
-  | 'inbox'
+  'overview' | 'security' | 'preferences' | 'favorites' | 'history' | 'inbox'

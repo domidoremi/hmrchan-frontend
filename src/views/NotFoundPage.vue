@@ -8,11 +8,11 @@
         <RouterLink class="hmr-cta" to="/">{{ t('error.home') }}</RouterLink>
         <RouterLink class="hmr-text-link" to="/explore">查看探索</RouterLink>
       </div>
-      <div class="hmr-page-tags" aria-label="Available routes">
-        <span>/</span>
-        <span>/explore</span>
-        <span>/community</span>
-        <span>/schedule</span>
+      <div class="hmr-page-tags" role="list" aria-label="Available routes">
+        <span role="listitem">/</span>
+        <span role="listitem">/explore</span>
+        <span role="listitem">/community</span>
+        <span role="listitem">/schedule</span>
       </div>
     </div>
   </section>

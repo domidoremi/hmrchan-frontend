@@ -269,8 +269,7 @@ describe('clientSecurityService', () => {
     )
 
     const firstInitPayload = mockApiClient.post.mock.calls[0]?.[1] as
-      | Record<string, unknown>
-      | undefined
+      Record<string, unknown> | undefined
     expect(firstInitPayload?.['force_reissue']).toBeUndefined()
     expect(mockApiClient.post).toHaveBeenNthCalledWith(
       1,

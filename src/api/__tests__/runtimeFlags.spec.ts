@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { shouldUseApiFallback } from '@/api/runtimeFlags'
+import { shouldUseApiFallback, shouldUseScheduleApi } from '@/api/runtimeFlags'
 
 describe('runtimeFlags', () => {
   afterEach(() => {
@@ -35,5 +35,21 @@ describe('runtimeFlags', () => {
     vi.stubEnv('VITE_HMRCHAN_ENABLE_API', 'maybe')
 
     expect(shouldUseApiFallback()).toBe(false)
+  })
+
+  it('disables schedule requests independently while keeping the rest of the API enabled', () => {
+    vi.stubEnv('VITE_HMRCHAN_FORCE_FALLBACK', 'false')
+    vi.stubEnv('VITE_HMRCHAN_ENABLE_API', 'true')
+    vi.stubEnv('VITE_ENABLE_SCHEDULE_API', 'false')
+
+    expect(shouldUseApiFallback()).toBe(false)
+    expect(shouldUseScheduleApi()).toBe(false)
+  })
+
+  it('enables schedule requests by default when the API is available', () => {
+    expect(shouldUseScheduleApi()).toBe(true)
+
+    vi.stubEnv('VITE_ENABLE_SCHEDULE_API', 'true')
+    expect(shouldUseScheduleApi()).toBe(true)
   })
 })

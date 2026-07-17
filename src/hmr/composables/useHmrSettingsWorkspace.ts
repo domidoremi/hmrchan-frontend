@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
 import type { Router } from 'vue-router'
 
 import type { SupportedLocale } from '@/i18n'
@@ -61,6 +61,7 @@ export const hmrSettingsLocaleOptions = supportedLocales.map((id) => ({
 export function useHmrSettingsWorkspace<T>(options: HmrSettingsWorkspaceOptions<T>) {
   const translate = options.t ?? ((key: string) => key)
   const cacheClearState = ref<HmrSettingsCacheClearState>('idle')
+  let cacheClearResetTimer: number | undefined
   const settingsLoginTarget = computed(() => createLoginRouteTarget('/settings'))
   const settingsRegisterTarget = computed(() => createRegisterRouteTarget('/settings'))
   const securityLoginTarget = computed(() => createLoginRouteTarget('/profile/security'))
@@ -78,12 +79,35 @@ export function useHmrSettingsWorkspace<T>(options: HmrSettingsWorkspaceOptions<
   const appearanceLabel = computed(() => {
     return translate(`settings.presets.${options.theme.appearancePreset}`)
   })
+  const cacheClearActionLabel = computed(() => {
+    if (cacheClearState.value === 'clearing') return translate('settings.cacheClearingAction')
+    if (cacheClearState.value === 'done') return translate('settings.clearPublicCacheAgain')
+    if (cacheClearState.value === 'error') return translate('settings.cacheRetryAction')
+    return translate('settings.clearPublicCache')
+  })
   const cacheClearLabel = computed(() => {
     if (cacheClearState.value === 'clearing') return translate('settings.cacheClearing')
     if (cacheClearState.value === 'done') return translate('settings.cacheDone')
     if (cacheClearState.value === 'error') return translate('settings.cacheRetry')
     return translate('settings.cacheReady')
   })
+  const cacheClearMessage = computed(() => {
+    if (cacheClearState.value === 'clearing') return translate('settings.cacheClearingMessage')
+    if (cacheClearState.value === 'done') return translate('settings.cacheDoneMessage')
+    if (cacheClearState.value === 'error') return translate('settings.cacheErrorMessage')
+    return ''
+  })
+
+  function cancelCacheClearReset(): void {
+    if (cacheClearResetTimer === undefined) return
+
+    window.clearTimeout(cacheClearResetTimer)
+    cacheClearResetTimer = undefined
+  }
+
+  if (getCurrentScope()) {
+    onScopeDispose(cancelCacheClearReset)
+  }
 
   async function logout(): Promise<void> {
     if (options.auth.isAuthenticated) {
@@ -110,13 +134,17 @@ export function useHmrSettingsWorkspace<T>(options: HmrSettingsWorkspaceOptions<
   }
 
   async function clearCache(): Promise<void> {
+    if (cacheClearState.value === 'clearing') return
+
+    cancelCacheClearReset()
     cacheClearState.value = 'clearing'
     try {
       await clearPublicContentCache()
       cacheClearState.value = 'done'
-      window.setTimeout(() => {
+      cacheClearResetTimer = window.setTimeout(() => {
         if (cacheClearState.value === 'done') cacheClearState.value = 'idle'
-      }, options.resetDelayMs ?? 1600)
+        cacheClearResetTimer = undefined
+      }, options.resetDelayMs ?? 4800)
     } catch {
       cacheClearState.value = 'error'
     }
@@ -130,7 +158,9 @@ export function useHmrSettingsWorkspace<T>(options: HmrSettingsWorkspaceOptions<
   return {
     appearanceLabel,
     appearanceOptions: hmrSettingsAppearanceOptions,
+    cacheClearActionLabel,
     cacheClearLabel,
+    cacheClearMessage,
     cacheClearState,
     clearCache,
     handleLocaleChange,

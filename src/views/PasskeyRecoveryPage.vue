@@ -10,10 +10,12 @@
           <span>验证</span>
           <span>恢复</span>
         </div>
-        <div class="hmr-auth-timeline" aria-label="Passkey recovery steps">
-          <span :class="{ 'is-active': recoveryStep === 'start' }">开始</span>
-          <span :class="{ 'is-active': recoveryStep === 'verify' }">验证</span>
-          <span :class="{ 'is-active': auth.passkeyRecovery?.canRegister }">完成</span>
+        <div class="hmr-auth-timeline" role="list" aria-label="Passkey recovery steps">
+          <span role="listitem" :class="{ 'is-active': recoveryStep === 'start' }">开始</span>
+          <span role="listitem" :class="{ 'is-active': recoveryStep === 'verify' }">验证</span>
+          <span role="listitem" :class="{ 'is-active': auth.passkeyRecovery?.canRegister }"
+            >完成</span
+          >
         </div>
       </aside>
 

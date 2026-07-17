@@ -6,7 +6,7 @@
         <h1 class="hmr-page-title" data-hmr-text-reveal>
           <span>{{ t('explore.title') }}</span>
         </h1>
-        <div class="hmr-page-tags" aria-label="Search suggestions">
+        <div class="hmr-page-tags" role="group" aria-label="Search suggestions">
           <button
             v-for="item in content.suggestions"
             :key="item"
@@ -78,7 +78,7 @@
               <button class="hmr-status-button" type="submit">{{ t('explore.apply') }}</button>
             </form>
           </div>
-          <div class="hmr-view-tools" aria-label="探索视图">
+          <div class="hmr-view-tools" role="group" aria-label="探索视图">
             <button
               :class="{ 'is-active': viewMode === 'grid' }"
               type="button"
@@ -96,7 +96,7 @@
           </div>
         </div>
 
-        <div class="hmr-platform-strip" aria-label="All platform post filters">
+        <div class="hmr-platform-strip" role="group" aria-label="All platform post filters">
           <button
             v-for="item in platformOptions"
             :key="item.id"
@@ -180,7 +180,7 @@
       data-hmr-scroll
     >
       <div class="hmr-cinema-sticky">
-        <div class="hmr-cinema-frame" aria-label="媒体预览">
+        <div class="hmr-cinema-frame" role="region" :aria-label="t('explore.mediaPreview')">
           <div class="hmr-media-ribbon hmr-media-ribbon--floating" aria-hidden="true">
             <div class="hmr-media-ribbon-track">
               <div
@@ -201,9 +201,9 @@
               </div>
             </div>
           </div>
-          <button class="hmr-cinema-mute" type="button" aria-label="Preview media state">
-            <span></span>
-          </button>
+          <span class="hmr-cinema-mute" role="img" :aria-label="t('explore.previewMediaState')">
+            <span aria-hidden="true" />
+          </span>
           <div class="hmr-cinema-timeline" aria-hidden="true">
             <span v-for="item in 6" :key="item"></span>
           </div>
