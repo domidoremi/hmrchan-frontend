@@ -173,6 +173,27 @@
   font-weight: var(--font-semibold);
 }
 
+.community-page .login-prompt__description {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.65;
+}
+
+.community-page .login-prompt__preview {
+  inline-size: 100%;
+  min-block-size: 8.5rem;
+  padding: 1rem;
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  font: inherit;
+  line-height: 1.6;
+  text-align: start;
+  cursor: pointer;
+}
+
 .community-page .login-prompt__list {
   display: grid;
   gap: var(--spacing-2);
@@ -361,6 +382,12 @@
 
 .community-page .author-avatar {
   --avatar-size: 1.25rem;
+  border: 0;
+}
+
+.community-page .discussion-leading-avatar {
+  --avatar-size: 3rem;
+  flex: 0 0 auto;
   border: 0;
 }
 

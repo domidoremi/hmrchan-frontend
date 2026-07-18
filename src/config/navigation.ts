@@ -64,6 +64,7 @@ export const navigationItems: NavigationItem[] = [
     icon: Heart,
     requiresAuth: true,
     prefetchFn: 'prefetchFavoritesPage',
+    showOnMobile: false,
   },
   {
     path: '/authors',
@@ -87,7 +88,6 @@ export const navigationItems: NavigationItem[] = [
     path: '/about',
     i18nKey: 'nav.about',
     icon: Info,
-    showOnMobile: false, // 移动端不显示关于页面
   },
 ]
 

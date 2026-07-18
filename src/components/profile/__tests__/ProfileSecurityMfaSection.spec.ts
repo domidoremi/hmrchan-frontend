@@ -106,6 +106,7 @@ function mountSection() {
 describe('ProfileSecurityMfaSection', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    vi.clearAllMocks()
     testState.twoFactorService.getStatus.mockResolvedValue(statusResponse())
     testState.twoFactorService.updateWebAuthnCredential.mockResolvedValue(passkeyCredential)
     testState.twoFactorService.deleteWebAuthnCredential.mockResolvedValue({ success: true })
@@ -154,6 +155,6 @@ describe('ProfileSecurityMfaSection', () => {
     await flushPromises()
 
     expect(testState.twoFactorService.deleteWebAuthnCredential).toHaveBeenCalledWith('credential-1')
-    expect(testState.twoFactorService.getStatus).toHaveBeenCalledTimes(4)
+    expect(testState.twoFactorService.getStatus).toHaveBeenCalledTimes(3)
   })
 })

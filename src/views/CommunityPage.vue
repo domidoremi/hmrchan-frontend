@@ -32,17 +32,6 @@
                 <AnimatedIcon name="explore" :fallback-icon="X" size="sm" />
               </button>
             </div>
-            <ControlButton
-              class="guide-trigger"
-              size="square"
-              icon-only
-              :aria-label="$t('community.guideTitle')"
-              @click="showGuide = true"
-            >
-              <template #start>
-                <AnimatedIcon name="sparkle" :fallback-icon="HelpCircle" size="sm" />
-              </template>
-            </ControlButton>
           </div>
         </template>
 
@@ -60,36 +49,7 @@
             <span>{{ tab.label }}</span>
           </ControlButton>
         </PageToolbar>
-
-        <template #meta>
-          <PageMetaRow v-if="!searchQuery" class="community-hero__meta page-meta-row--comfortable">
-            <PageMetaChip>
-              <strong>{{ $t('community.recentDiscussions') }}</strong>
-              {{ $t('community.guidePoint1') }}
-            </PageMetaChip>
-            <PageMetaChip>
-              <strong>{{ $t('community.hotTopics') }}</strong>
-              {{ $t('community.guidePoint2') }}
-            </PageMetaChip>
-            <PageMetaChip>
-              <strong>{{ $t('community.guideTitle') }}</strong>
-              {{ $t('community.guidePoint3') }}
-            </PageMetaChip>
-          </PageMetaRow>
-        </template>
       </PageHeroShell>
-
-      <!-- Community Guide Dialog -->
-      <Dialog v-model:isOpen="showGuide" :title="$t('community.guideTitle')" size="sm">
-        <div class="guide-dialog-body">
-          <p class="guide-text">{{ $t('community.guideDescription') }}</p>
-          <ul class="guide-list">
-            <li>{{ $t('community.guidePoint1') }}</li>
-            <li>{{ $t('community.guidePoint2') }}</li>
-            <li>{{ $t('community.guidePoint3') }}</li>
-          </ul>
-        </div>
-      </Dialog>
 
       <section v-if="!searchQuery" class="community-priority-grid content-auto-lg">
         <article class="community-priority-card surface-editorial">
@@ -159,12 +119,14 @@
         <StateIndicator
           v-else-if="searchError && !isUsingSearchFallback"
           variant="error"
+          title-tag="h2"
           :description="searchError"
           @action="() => searchDiscussions(searchQuery.trim())"
         />
         <StateIndicator
           v-else-if="searchResults.length === 0 && searchQuery.trim()"
           variant="empty"
+          title-tag="h2"
           :description="$t('common.noResults')"
         />
         <div v-else class="discussions-list">
@@ -212,18 +174,14 @@
         </div>
         <div v-else class="login-prompt surface-editorial">
           <div class="login-prompt__content">
-            <p class="login-prompt__title">{{ $t('community.loginToPost') }}</p>
-            <ul class="login-prompt__list">
-              <li>{{ $t('community.guidePoint1') }}</li>
-              <li>{{ $t('community.guidePoint2') }}</li>
-              <li>{{ $t('community.guidePoint3') }}</li>
-            </ul>
+            <p class="login-prompt__title">{{ $t('community.composerTitle') }}</p>
+            <p class="login-prompt__description">{{ $t('community.composerDescription') }}</p>
+            <button type="button" class="login-prompt__preview" @click="goToLogin">
+              {{ $t('community.discussionPlaceholder') }}
+            </button>
           </div>
           <div class="login-prompt__actions">
-            <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
-            <ControlButton class="login-prompt__secondary" size="compact" @click="goToExplore">
-              {{ $t('nav.explore') }}
-            </ControlButton>
+            <Button full-width @click="goToLogin">{{ $t('community.loginToPost') }}</Button>
           </div>
         </div>
 
@@ -247,12 +205,14 @@
           <StateIndicator
             v-else-if="error && !isUsingRecentFallback"
             variant="error"
+            title-tag="h2"
             :description="error"
             @action="fetchDiscussions"
           />
           <StateIndicator
             v-else-if="discussions.length === 0"
             variant="empty"
+            title-tag="h2"
             :description="$t('common.noResults')"
           />
           <div v-else class="discussions-list">
@@ -267,6 +227,15 @@
               @keydown.space.prevent="goToDiscussion(discussion.id)"
               @mouseenter="prefetchDiscussionDetailPage"
             >
+              <Avatar
+                :src="resolveAvatarSrc(discussion.author.avatar_url)"
+                :alt="discussion.author.username"
+                class="discussion-leading-avatar"
+                size="custom"
+                loading="lazy"
+                decoding="async"
+                :fallback="getAvatarFallbackLabel(discussion.author.username)"
+              />
               <div
                 class="discussion-thumbnail"
                 v-if="discussion.referenced_post && discussion.referenced_post.thumbnail_url"
@@ -362,12 +331,14 @@
           <StateIndicator
             v-else-if="hotTopicsError && !isUsingHotFallback && hotTopics.length === 0"
             variant="error"
+            title-tag="h2"
             :description="hotTopicsError"
             @action="fetchHotTopics"
           />
           <StateIndicator
             v-else-if="hotTopics.length === 0"
             variant="empty"
+            title-tag="h2"
             :description="$t('community.noHotTopics')"
           />
           <div v-else class="hot-topics-grid">
@@ -416,7 +387,7 @@ import {
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { MessageSquare, Flame, HelpCircle, Search, X } from '@lucide/vue'
+import { MessageSquare, Flame, Search, X } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useDiscussionsStore } from '@/stores'
 import { discussionService, communityService, type Discussion, ApiError } from '@/api'
@@ -442,14 +413,7 @@ import Avatar from '@/components/ui/Avatar.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
 import ReferencedPostPreview from '@/components/community/ReferencedPostPreview.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import {
-  ControlButton,
-  PageHeroShell,
-  PageMetaChip,
-  PageMetaRow,
-  PageToolbar,
-} from '@/components/appearance'
-import Dialog from '@/components/ui/Dialog.vue'
+import { ControlButton, PageHeroShell, PageToolbar } from '@/components/appearance'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -457,7 +421,6 @@ const authStore = useAuthStore()
 const discStore = useDiscussionsStore()
 const { isAuthenticated } = storeToRefs(authStore)
 
-const showGuide = ref(false)
 const activeTab = ref('recent')
 const isPageActive = ref(true)
 

@@ -1,14 +1,11 @@
 import type { PostDetailResponse, PostListItem } from '@/api/postService'
-import {
-  STATIC_EXPLORE_POSTS,
-  STATIC_HOME_POSTS,
-  STATIC_POST_DETAILS,
-} from './generated/publicSnapshots'
+import { STATIC_HOME_POSTS, STATIC_POST_DETAILS } from './generated/publicSnapshots'
+import { EXPLORE_FALLBACK_POSTS } from './exploreFallback'
 import { clonePublicSnapshot } from './publicPageFallback'
 
 const FALLBACK_POSTS: PostListItem[] = [
   ...clonePublicSnapshot(STATIC_HOME_POSTS),
-  ...clonePublicSnapshot(STATIC_EXPLORE_POSTS),
+  ...clonePublicSnapshot(EXPLORE_FALLBACK_POSTS),
 ]
 
 function uniquePosts(posts: PostListItem[]): PostListItem[] {

@@ -38,7 +38,7 @@ describe('appearance config', () => {
       sourceDoc: 'docs/滚动叙事.txt',
       family: 'rounded',
       enhancer: 'gradient',
-      galleryTitle: 'Story Arc',
+      galleryTitle: 'Night Tour',
     })
 
     expect(getAppearancePresetSpec('fluent-soft').influences).toContain('docs/可爱极简.txt')

@@ -34,6 +34,18 @@ const aboutPageSource = readFileSync(
   'utf8'
 )
 const authCompatSource = readFileSync(resolve(process.cwd(), 'src/styles/auth-compat.css'), 'utf8')
+const publicPagesSource = readFileSync(
+  resolve(process.cwd(), 'src/styles/public-pages.css'),
+  'utf8'
+)
+const homePageSource = readFileSync(
+  resolve(process.cwd(), 'src/styles/page-systems/home-page-view.css'),
+  'utf8'
+)
+const stageLetterbookSource = readFileSync(
+  resolve(process.cwd(), 'src/styles/stage-letterbook.css'),
+  'utf8'
+)
 
 describe('responsive layout contracts', () => {
   it('keeps shared page shells stacking hero and toolbar controls on narrow screens', () => {
@@ -44,6 +56,19 @@ describe('responsive layout contracts', () => {
     expect(pagePrimitivesSource).toContain('align-items: stretch')
     expect(pagePrimitivesSource).toContain('.page-toolbar-shell > :where(')
     expect(pagePrimitivesSource).toContain('flex: 1 1 100%')
+  })
+
+  it('lets shared section copy shrink to its content after mobile headers stack', () => {
+    expect(publicPagesSource).toContain('@media (max-width: 48rem)')
+    expect(publicPagesSource).toContain('.page-section-copy {')
+    expect(publicPagesSource).toContain('flex: 0 1 auto')
+    expect(publicPagesSource).toContain('inline-size: 100%')
+  })
+
+  it('keeps home section actions in the mobile column instead of wrapping off canvas', () => {
+    expect(homePageSource).toContain('.page-section-copy {')
+    expect(homePageSource).toContain('flex: 0 1 auto')
+    expect(homePageSource).toContain('inline-size: 100%')
   })
 
   it('keeps profile settings sections fluid instead of capped by viewport-coupled widths', () => {
@@ -136,6 +161,13 @@ describe('responsive layout contracts', () => {
     expect(aboutPageSource).toContain('white-space: normal')
   })
 
+  it('lets the About section title keep content height after mobile headers stack', () => {
+    expect(aboutPageSource).toContain('@media (max-width: 48rem)')
+    expect(aboutPageSource).toContain('.about-page .about-section-title {')
+    expect(aboutPageSource).toContain('flex: 0 1 auto')
+    expect(aboutPageSource).toContain('inline-size: 100%')
+  })
+
   it('lets auth inline states and short viewports degrade into a single flowing column', () => {
     expect(authCompatSource).toContain('#app .auth-inline-state__content,')
     expect(authCompatSource).toContain('min-inline-size: 0')
@@ -144,5 +176,10 @@ describe('responsive layout contracts', () => {
     expect(authCompatSource).toContain('grid-template-columns: minmax(0, 1fr)')
     expect(authCompatSource).toContain('@media (max-height: 52rem)')
     expect(authCompatSource).toContain('place-items: start center')
+  })
+
+  it('reserves room for the auth back control beside long mobile titles', () => {
+    expect(stageLetterbookSource).toContain('#app .auth-shell__copy {')
+    expect(stageLetterbookSource).toContain('max-inline-size: calc(100% - 3.5rem)')
   })
 })

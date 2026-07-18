@@ -3,11 +3,9 @@
     <div class="container">
       <PageHeroShell class="explore-hero" bare>
         <template #heading>
-          <div class="page-hero-shell__title-row">
-            <h1 class="page-hero-shell__title">{{ $t('explore.title') }}</h1>
-            <span class="page-hero-shell__badge">{{ heroBadgeLabel }}</span>
-          </div>
+          <h1 class="page-hero-shell__title">{{ $t('explore.title') }}</h1>
           <p class="page-hero-shell__subtitle">{{ $t('explore.subtitle') }}</p>
+          <span class="sr-only" aria-live="polite">{{ heroBadgeLabel }}</span>
         </template>
 
         <template #actions>
@@ -20,7 +18,7 @@
               <template #start>
                 <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
               </template>
-              <span class="search-trigger-text">{{ $t('search.title') }}</span>
+              <span class="search-trigger-text">{{ $t('explore.searchAction') }}</span>
               <template #end>
                 <kbd class="search-kbd">/</kbd>
               </template>
@@ -28,22 +26,26 @@
             <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
           </div>
         </template>
-
-        <template #meta>
-          <PageMetaRow class="page-meta-row--comfortable">
-            <PageMetaChip>
-              <strong>{{ visiblePosts.length }}</strong>
-              <span>{{ $t('search.tab.posts') }}</span>
-            </PageMetaChip>
-          </PageMetaRow>
-        </template>
       </PageHeroShell>
 
-      <h2 class="sr-only">{{ $t('search.tab.posts') }}</h2>
+      <nav class="explore-filter-tabs" :aria-label="$t('explore.platformFilter')">
+        <button
+          v-for="filter in editorialFilters"
+          :key="filter.id"
+          type="button"
+          class="explore-filter-tab"
+          :class="{ 'explore-filter-tab--active': activeEditorialFilter === filter.id }"
+          :aria-pressed="activeEditorialFilter === filter.id"
+          @click="activeEditorialFilter = filter.id"
+        >
+          {{ filter.label }}
+        </button>
+      </nav>
 
       <StateIndicator
         v-if="error && !isUsingFallback"
         variant="error"
+        title-tag="h2"
         :description="error"
         @action="fetchPosts"
       />
@@ -65,28 +67,82 @@
         </div>
 
         <template v-else>
-          <!-- JS Masonry 布局 - 避免 CSS column-count 的 CLS 问题 -->
-          <div
-            ref="masonryContainerRef"
-            class="posts-masonry-js"
-            :style="{ '--masonry-columns': columnCount }"
-          >
-            <div v-for="(column, colIndex) in columns" :key="colIndex" class="masonry-column">
-              <PostCard
-                v-for="(post, postIndex) in column"
-                :key="post.id"
-                :post="post"
-                image-fit="cover"
-                :priority="colIndex === 0 && postIndex < 2"
-                @click="goToPost"
-                @height-change="handleCardHeightChange"
-              />
+          <section v-if="editorialLeadPost" class="explore-editorial-grid">
+            <div class="explore-story-stage">
+              <button
+                type="button"
+                class="explore-story explore-story--lead"
+                @click="goToPost(editorialLeadPost.id, editorialLeadPost.thumbnail_url ?? null)"
+              >
+                <img
+                  :src="resolveEditorialImage(editorialLeadPost)"
+                  :alt="editorialLeadPost.title || $t('post.untitled')"
+                  fetchpriority="high"
+                />
+                <span class="explore-story__shade" aria-hidden="true" />
+                <span class="explore-story__copy">
+                  <strong>{{ editorialLeadPost.title || $t('post.untitled') }}</strong>
+                  <small>{{ formatEditorialMeta(editorialLeadPost) }}</small>
+                </span>
+              </button>
+
+              <div class="explore-story-stage__supporting">
+                <button
+                  v-for="post in editorialSupportPosts"
+                  :key="post.id"
+                  type="button"
+                  class="explore-story explore-story--supporting"
+                  @click="goToPost(post.id, post.thumbnail_url ?? null)"
+                >
+                  <img
+                    :src="resolveEditorialImage(post)"
+                    :alt="post.title || $t('post.untitled')"
+                    loading="lazy"
+                  />
+                  <span class="explore-story__shade" aria-hidden="true" />
+                  <span class="explore-story__copy">
+                    <strong>{{ post.title || $t('post.untitled') }}</strong>
+                    <small>{{ formatEditorialMeta(post) }}</small>
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
 
-          <StateIndicator v-if="posts.length === 0" variant="empty" />
+            <aside class="explore-weekly-rail" :aria-label="$t('explore.weeklyPopular')">
+              <h2>{{ $t('explore.weeklyPopular') }}</h2>
+              <ol>
+                <li v-for="(post, index) in editorialRailPosts" :key="post.id">
+                  <button type="button" @click="goToPost(post.id, post.thumbnail_url ?? null)">
+                    <span>{{ String(index + 1).padStart(2, '0') }}</span>
+                    <strong>{{ post.title || $t('post.untitled') }}</strong>
+                  </button>
+                </li>
+              </ol>
+            </aside>
+          </section>
 
-          <!-- Load More / Quota Indicator -->
+          <StateIndicator v-if="filteredVisiblePosts.length === 0" variant="empty" title-tag="h2" />
+
+          <section v-if="masonryVisiblePosts.length > 0" class="explore-archive">
+            <h2>{{ $t('explore.moreStories') }}</h2>
+            <div
+              ref="masonryContainerRef"
+              class="posts-masonry-js"
+              :style="{ '--masonry-columns': columnCount }"
+            >
+              <div v-for="(column, colIndex) in columns" :key="colIndex" class="masonry-column">
+                <PostCard
+                  v-for="post in column"
+                  :key="post.id"
+                  :post="post"
+                  image-fit="cover"
+                  @click="goToPost"
+                  @height-change="handleCardHeightChange"
+                />
+              </div>
+            </div>
+          </section>
+
           <LoadMoreSection
             v-if="posts.length > 0"
             :count="visiblePosts.length"
@@ -150,10 +206,10 @@ import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import NextPostFab from '@/components/ui/NextPostFab.vue'
-import { ControlButton, PageHeroShell, PageMetaChip, PageMetaRow } from '@/components/appearance'
+import { ControlButton, PageHeroShell } from '@/components/appearance'
 
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const renderDebugEnabled =
   import.meta.env.DEV &&
   typeof window !== 'undefined' &&
@@ -237,6 +293,36 @@ const {
   batchSize: progressiveBatchSize,
 })
 
+type ExploreEditorialFilter = 'latest' | 'popular' | 'youtube' | 'tiktok' | 'instagram' | 'x'
+
+const activeEditorialFilter = ref<ExploreEditorialFilter>('latest')
+const editorialFilters = computed<Array<{ id: ExploreEditorialFilter; label: string }>>(() => [
+  { id: 'latest', label: t('explore.newest') },
+  { id: 'popular', label: t('explore.popular') },
+  { id: 'youtube', label: 'YouTube' },
+  { id: 'tiktok', label: 'TikTok' },
+  { id: 'instagram', label: 'Instagram' },
+  { id: 'x', label: 'X' },
+])
+const filteredVisiblePosts = computed(() => {
+  const items = [...visiblePosts.value]
+  if (activeEditorialFilter.value === 'latest') return items
+  if (activeEditorialFilter.value === 'popular') {
+    return items.sort(
+      (left, right) =>
+        right.like_count + right.view_count * 0.02 - (left.like_count + left.view_count * 0.02)
+    )
+  }
+
+  return items.filter(
+    (post) => post.platform.toLowerCase() === activeEditorialFilter.value.toLowerCase()
+  )
+})
+const editorialLeadPost = computed(() => filteredVisiblePosts.value[0] ?? null)
+const editorialSupportPosts = computed(() => filteredVisiblePosts.value.slice(1, 3))
+const editorialRailPosts = computed(() => filteredVisiblePosts.value.slice(3, 7))
+const masonryVisiblePosts = computed(() => filteredVisiblePosts.value.slice(7))
+
 const lastVisibleCount = ref(0)
 let isActive = true
 
@@ -281,6 +367,27 @@ function goToPost(postId: string, thumbnailSrc: string | null) {
 
 function goToSearch() {
   router.push({ name: 'search' })
+}
+
+function resolveEditorialImage(post: PostListItem): string {
+  return (
+    post.thumbnail_url ||
+    '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp'
+  )
+}
+
+function formatEditorialMeta(post: PostListItem): string {
+  const source = post.author_name || post.platform
+  if (!post.published_at) return source
+
+  const timestamp = Date.parse(post.published_at)
+  if (!Number.isFinite(timestamp)) return source
+
+  const date = new Intl.DateTimeFormat(locale.value, {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(timestamp))
+  return `${source} · ${date}`
 }
 
 function isAbortError(err: unknown): boolean {
@@ -526,8 +633,8 @@ const handleContainerResize = throttleRAF((width: number) => {
     columnCount.value = newColumnCount
     const colWidth = getColumnWidth(width)
     initColumns()
-    redistribute(visiblePosts.value, colWidth)
-    lastVisibleCount.value = visiblePosts.value.length
+    redistribute(masonryVisiblePosts.value, colWidth)
+    lastVisibleCount.value = masonryVisiblePosts.value.length
   }
 })
 
@@ -561,7 +668,7 @@ function attachResizeObserver(el: HTMLElement) {
 }
 
 function applyVisiblePosts(reset = false) {
-  const current = visiblePosts.value
+  const current = masonryVisiblePosts.value
   if (current.length === 0) {
     initColumns()
     lastVisibleCount.value = 0
@@ -599,6 +706,11 @@ watch(pageSize, () => {
   onWatcherCleanup(() => controller.abort())
   if (posts.value.length === 0 && !isLoading.value) return
   void fetchPosts(true, controller.signal)
+})
+
+watch(activeEditorialFilter, async () => {
+  await nextTick()
+  applyVisiblePosts(true)
 })
 
 watchSyncEffect(() => {
@@ -753,6 +865,209 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 }
 
+.explore-filter-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(0.85rem, 2vw, 1.5rem);
+  margin-block: clamp(0.75rem, 2vw, 1.5rem) clamp(1rem, 2.5vw, 1.75rem);
+  border-block-end: 0.0625rem solid var(--letterbook-line, var(--color-border));
+}
+
+.explore-filter-tab {
+  position: relative;
+  min-block-size: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--letterbook-muted, var(--color-text-secondary));
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.explore-filter-tab::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: -0.0625rem;
+  block-size: 0.125rem;
+  border-radius: 999rem;
+  background: var(--letterbook-accent, var(--color-primary));
+  transform: scaleX(0);
+  transition: transform var(--transition-fast);
+}
+
+.explore-filter-tab:hover,
+.explore-filter-tab:focus-visible,
+.explore-filter-tab--active {
+  color: var(--letterbook-accent, var(--color-primary));
+}
+
+.explore-filter-tab--active::after {
+  transform: scaleX(1);
+}
+
+.explore-editorial-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(15rem, 1fr);
+  align-items: start;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+
+.explore-story-stage {
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.4rem);
+  min-inline-size: 0;
+}
+
+.explore-story-stage__supporting {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1rem, 2vw, 1.4rem);
+}
+
+.explore-story {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: 0;
+  overflow: clip;
+  border: 0.0625rem solid var(--letterbook-line, var(--color-border));
+  border-radius: var(--letterbook-photo-radius, var(--radius-xl));
+  background: var(--letterbook-paper, var(--color-surface));
+  color: #fff;
+  text-align: start;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.explore-story:hover,
+.explore-story:focus-visible {
+  border-color: var(--letterbook-line-strong, var(--color-primary));
+  box-shadow: var(--letterbook-shadow, var(--shadow-lg));
+  transform: translateY(-0.18rem);
+}
+
+.explore-story--lead {
+  aspect-ratio: 2.55 / 1;
+}
+
+.explore-story--supporting {
+  aspect-ratio: 1.48 / 1;
+}
+
+.explore-story img {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.explore-story:hover img,
+.explore-story:focus-visible img {
+  transform: scale(1.025);
+}
+
+.explore-story__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 42%, rgb(42 20 35 / 0.86));
+}
+
+.explore-story__copy {
+  position: absolute;
+  inset-inline: clamp(1.1rem, 2.4vw, 1.75rem);
+  inset-block-end: clamp(1rem, 2.2vw, 1.5rem);
+  display: grid;
+  gap: 0.35rem;
+  z-index: 1;
+}
+
+.explore-story__copy strong {
+  font-family: var(--letterbook-display-font, var(--font-serif));
+  font-size: clamp(1.05rem, 1rem + 0.45vw, 1.45rem);
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.explore-story__copy small {
+  color: rgb(255 255 255 / 0.86);
+  font-size: var(--text-xs);
+}
+
+.explore-weekly-rail {
+  padding-block: clamp(1.25rem, 2.5vw, 2rem);
+  border-block: 0.0625rem solid var(--letterbook-line, var(--color-border));
+}
+
+.explore-weekly-rail h2,
+.explore-archive > h2 {
+  margin: 0;
+  color: var(--letterbook-ink, var(--color-text-primary));
+  font-family: var(--letterbook-display-font, var(--font-serif));
+  font-size: clamp(1.35rem, 1.15rem + 0.65vw, 1.75rem);
+  font-weight: 650;
+}
+
+.explore-weekly-rail ol {
+  display: grid;
+  gap: 0;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.explore-weekly-rail li + li {
+  border-block-start: 0.0625rem solid color-mix(in srgb, var(--letterbook-line) 72%, transparent);
+}
+
+.explore-weekly-rail button {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+  inline-size: 100%;
+  min-block-size: 3.25rem;
+  padding: 0.8rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--letterbook-ink, var(--color-text-primary));
+  text-align: start;
+  cursor: pointer;
+}
+
+.explore-weekly-rail button > span {
+  color: var(--letterbook-accent, var(--color-primary));
+  font-family: var(--letterbook-display-font, var(--font-serif));
+}
+
+.explore-weekly-rail button > strong {
+  font-size: var(--text-sm);
+  font-weight: 550;
+  line-height: 1.55;
+}
+
+.explore-weekly-rail button:hover > strong,
+.explore-weekly-rail button:focus-visible > strong {
+  color: var(--letterbook-accent, var(--color-primary));
+}
+
+.explore-archive {
+  display: grid;
+  gap: 1rem;
+  margin-block-start: clamp(2.5rem, 6vw, 4.5rem);
+  padding-block-start: clamp(1.25rem, 2.5vw, 2rem);
+  border-block-start: 0.0625rem solid var(--letterbook-line, var(--color-border));
+}
+
 /* ========== JS Masonry 布局 - 避免 CLS ========== */
 .posts-masonry-js {
   --masonry-gap: var(--spacing-3);
@@ -774,6 +1089,37 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 767px) {
+  .explore-filter-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .explore-filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .explore-filter-tab {
+    flex: 0 0 auto;
+  }
+
+  .explore-editorial-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  .explore-story--lead {
+    aspect-ratio: 1.08 / 1;
+  }
+
+  .explore-story-stage__supporting {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .explore-story--supporting {
+    aspect-ratio: 1.3 / 1;
+  }
+
   .posts-masonry-js {
     flex-direction: column;
   }

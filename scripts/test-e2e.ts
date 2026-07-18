@@ -1818,13 +1818,17 @@ async function main(): Promise<void> {
         ? await detectStaticPrerenderMismatch(baseUrl, STATIC_ROUTE_CHECKS[1]!)
         : null
 
-    setStage('auth bootstrap preflight')
-    const authBootstrapProbes = await runAuthBootstrapPreflight(baseUrl)
-    try {
-      throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
-    } catch (error) {
-      logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
-      throw error
+    if (authSmokeRequired) {
+      setStage('auth bootstrap preflight')
+      const authBootstrapProbes = await runAuthBootstrapPreflight(baseUrl)
+      try {
+        throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
+      } catch (error) {
+        logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
+        throw error
+      }
+    } else {
+      console.log('🔐 Skipping auth bootstrap preflight because E2E_REQUIRE_AUTH=false')
     }
 
     setStage('static prerender checks')

@@ -23,7 +23,7 @@
           @focusout="handleNavbarActionsFocusOut"
         >
           <form
-            v-if="!isMobile"
+            v-if="!isMobile && !isAuthEntryRoute"
             class="nav-search-shell"
             :class="{ 'nav-search-shell--expanded': isDesktopSearchExpanded }"
             role="search"
@@ -60,7 +60,7 @@
           </form>
 
           <button
-            v-else
+            v-else-if="!isAuthEntryRoute"
             type="button"
             class="nav-action-btn nav-action-btn--pill nav-action-btn--search"
             @click="goToSearch"
@@ -73,6 +73,7 @@
           </button>
 
           <button
+            v-if="!isAuthEntryRoute"
             type="button"
             ref="settingsBtnRef"
             class="nav-action-btn nav-action-btn--square"
@@ -94,7 +95,17 @@
           </button>
 
           <RouterLink
-            v-if="!isAuthenticated"
+            v-if="!isAuthenticated && isAuthEntryRoute"
+            to="/"
+            class="login-btn nav-action-btn nav-action-btn--primary nav-action-btn--auth-home"
+            :aria-label="$t('nav.backHome')"
+          >
+            <ArrowLeft :size="16" aria-hidden="true" />
+            <span class="desktop-only">{{ $t('nav.backHome') }}</span>
+          </RouterLink>
+
+          <RouterLink
+            v-else-if="!isAuthenticated"
             :to="{
               path: '/login',
               query: {
@@ -300,7 +311,17 @@ import {
   useTemplateRef,
 } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { Bell, ChevronRight, LogIn, LogOut, Search, Settings, Shield, User } from '@lucide/vue'
+import {
+  ArrowLeft,
+  Bell,
+  ChevronRight,
+  LogIn,
+  LogOut,
+  Search,
+  Settings,
+  Shield,
+  User,
+} from '@lucide/vue'
 import { getAvatarFallbackLabel } from '@/utils/avatarPresentation'
 import { getUserDisplayName } from '@/utils/user'
 import { useFocusTrap } from '@/composables/useFocusTrap'
@@ -351,6 +372,7 @@ const profileSecurityLink = computed(() =>
   withProfileReturnTo('/profile/security', { returnTo: route.fullPath })
 )
 const isPostDetailRoute = computed(() => route.name === 'post-detail')
+const isAuthEntryRoute = computed(() => route.path === '/login' || route.path === '/register')
 const { user, isAuthenticated } = useAuthSurface()
 const showSettings = ref(false)
 const showUserMenu = ref(false)

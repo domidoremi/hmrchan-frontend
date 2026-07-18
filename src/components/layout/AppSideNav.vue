@@ -155,9 +155,7 @@ const desktopPrimaryNavItems = computed(() =>
 
 const mobilePrimaryNavItems = computed(() =>
   mobileNavItems.value.filter((item) =>
-    ['/', '/explore', '/profile/favorites', '/authors', '/community', '/schedule'].includes(
-      item.path
-    )
+    ['/', '/explore', '/authors', '/community', '/schedule', '/about'].includes(item.path)
   )
 )
 

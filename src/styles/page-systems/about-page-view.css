@@ -66,6 +66,13 @@
   overflow-wrap: anywhere;
 }
 
+@media (max-width: 48rem) {
+  .about-page .about-section-title {
+    flex: 0 1 auto;
+    inline-size: 100%;
+  }
+}
+
 /* 关于 Himeri - 优化版 */
 .about-page .himeri-section {
   position: relative;

@@ -12,7 +12,6 @@
           <PageMetaRow class="page-meta-row--comfortable">
             <PageMetaChip>{{ $t('about.links.title') }}</PageMetaChip>
             <PageMetaChip>{{ $t('about.features.title') }}</PageMetaChip>
-            <PageMetaChip>{{ $t('about.tech.title') }}</PageMetaChip>
           </PageMetaRow>
         </template>
       </PageHeroShell>
@@ -202,57 +201,6 @@
         </div>
       </section>
 
-      <!-- 技术实现 -->
-      <section class="section tech-section content-auto-lg">
-        <div class="page-section-head about-section-head">
-          <AnimatedIcon name="explore" :fallback-icon="Code" size="lg" class="about-section-icon" />
-          <h2 class="page-section-title about-section-title">{{ $t('about.tech.title') }}</h2>
-        </div>
-        <div class="tech-grid">
-          <a
-            v-for="tech in techStack"
-            :key="tech.name"
-            :href="tech.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="tech-card page-list-card"
-          >
-            <div class="tech-header">
-              <div class="tech-name">{{ tech.name }}</div>
-              <div class="tech-version-badge">v{{ tech.version }}</div>
-            </div>
-            <div class="tech-description">{{ tech.description }}</div>
-          </a>
-        </div>
-      </section>
-
-      <!-- 项目信息 -->
-      <section class="section info-section content-auto-sm">
-        <div class="page-section-head about-section-head">
-          <AnimatedIcon name="sparkle" :fallback-icon="Info" size="lg" class="about-section-icon" />
-          <h2 class="page-section-title about-section-title">
-            {{ $t('about.projectInfo.title') }}
-          </h2>
-        </div>
-        <div class="info-grid">
-          <div class="info-card page-list-card">
-            <div class="info-label">{{ $t('about.projectInfo.buildHash') }}</div>
-            <div class="info-value commit-hash">{{ buildHash }}</div>
-          </div>
-          <div class="info-card page-list-card">
-            <div class="info-label">{{ $t('about.projectInfo.buildTime') }}</div>
-            <div class="info-value">{{ buildTime }}</div>
-          </div>
-          <div class="info-card page-list-card">
-            <div class="info-label">{{ $t('about.projectInfo.status') }}</div>
-            <div class="info-value status-active">
-              <span class="status-dot"></span>
-              {{ $t('about.projectInfo.active') }}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <!-- 页脚信息 -->
       <footer class="about-footer">
         <p class="footer-text">
@@ -268,7 +216,7 @@
             @domi
           </a>
         </p>
-        <p class="footer-copyright">© 2025 MomiChan. {{ $t('about.footer.rights') }}</p>
+        <p class="footer-copyright">© 2026 MomiChan. {{ $t('about.footer.rights') }}</p>
         <p class="footer-disclaimer">{{ $t('about.footer.fanProject') }}</p>
       </footer>
     </div>
@@ -281,8 +229,6 @@ defineOptions({ name: 'AboutPage' })
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  Info,
-  Code,
   Heart,
   Sparkles,
   Layers,
@@ -309,12 +255,11 @@ import {
   Gamepad2,
   Camera,
 } from '@lucide/vue'
-import { useAboutData } from '@/composables/useAboutData'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { PageHeroShell, PageMetaChip, PageMetaRow } from '@/components/appearance'
 import { IconInstagram, IconX, IconYoutube } from '@/components/icons'
 
-const { locale, t } = useI18n()
+const { t } = useI18n()
 
 // Profile items configuration
 const profileItems = computed(() => [
@@ -468,20 +413,6 @@ const groupSocialLinks = computed(() => [
   },
 ])
 
-// Build hash - should be injected at build time, fallback to 'dev' for development
-const buildHash = typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : 'dev'
-
-// Build time - should be injected at build time, fallback to current date for dev
-const buildTime = computed(() => {
-  // In production, __BUILD_TIME__ would be defined by Vite
-  const timestamp = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : Date.now()
-  return new Date(timestamp).toLocaleDateString(locale.value, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-})
-
 // 核心功能
 const features = computed(() => [
   {
@@ -505,7 +436,4 @@ const features = computed(() => [
     description: t('about.features.multilinguralDesc'),
   },
 ])
-
-// Extract data from composable
-const { techStack } = useAboutData()
 </script>

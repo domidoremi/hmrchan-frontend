@@ -12,10 +12,7 @@
       <HeroSection :enabled="settings.showHeroSection" :animated="shouldAnimate">
         <div class="hero-copy">
           <div class="hero-copy__left">
-            <p class="hero-kicker hero-copy__line hero-copy__line--kicker">
-              {{ $t('home.hero.kicker') }}
-            </p>
-            <h1 class="hero-title gradient-text hero-copy__line hero-copy__line--title">
+            <h1 class="hero-title hero-copy__line hero-copy__line--title">
               {{ $t('home.hero.title') }}
             </h1>
             <p class="hero-subtitle hero-copy__line hero-copy__line--subtitle">
@@ -26,6 +23,72 @@
           <span class="hero-copy__divider" aria-hidden="true" />
 
           <div class="hero-copy__right">
+            <div class="hero-letterbook-media" :aria-label="$t('home.letterbook.mediaLabel')">
+              <template v-if="spotlightMediaCards.length > 0">
+                <button
+                  v-for="(card, index) in spotlightMediaCards.slice(0, 2)"
+                  :key="`hero-letterbook-${card.post.id}`"
+                  type="button"
+                  class="hero-letterbook-frame"
+                  :class="`hero-letterbook-frame--${index + 1}`"
+                  :aria-label="card.title"
+                  @click="openPostPreview(card.post, card.thumbnail)"
+                >
+                  <img
+                    v-if="shouldRenderHomeMedia(card.thumbnail)"
+                    :src="card.thumbnail"
+                    :srcset="resolveHomeImageSrcsetAttribute(card.thumbnail)"
+                    :alt="card.title"
+                    :sizes="
+                      index === 0
+                        ? '(max-width: 48rem) 68vw, 32vw'
+                        : '(max-width: 48rem) 48vw, 18vw'
+                    "
+                    class="hero-letterbook-image"
+                    decoding="async"
+                    :loading="index === 0 ? 'eager' : 'lazy'"
+                    @error="markHomeMediaFailed(card.thumbnail)"
+                  />
+                  <span v-else class="hero-letterbook-placeholder">
+                    <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
+                    <span>{{ card.title }}</span>
+                  </span>
+                  <span v-if="index === 0" class="hero-letterbook-caption">
+                    {{ card.title }}
+                  </span>
+                </button>
+              </template>
+              <template v-else>
+                <RouterLink to="/explore" class="hero-letterbook-frame hero-letterbook-frame--1">
+                  <img
+                    :src="'/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp'"
+                    :alt="$t('home.letterbook.todayTitle')"
+                    sizes="(max-width: 48rem) 68vw, 32vw"
+                    class="hero-letterbook-image"
+                    decoding="async"
+                    loading="eager"
+                  />
+                  <span class="hero-letterbook-caption">
+                    {{ $t('home.letterbook.photoCaption') }}
+                  </span>
+                </RouterLink>
+                <RouterLink
+                  to="/schedule"
+                  class="hero-letterbook-frame hero-letterbook-frame--2"
+                  :aria-label="$t('home.letterbook.scheduleTitle')"
+                >
+                  <img
+                    :src="'/snapshot-media/home/story-1-90c52c15-ab0a-473d-8981-f2420a91fdc1.webp'"
+                    :alt="$t('home.letterbook.scheduleTitle')"
+                    sizes="(max-width: 48rem) 48vw, 18vw"
+                    class="hero-letterbook-image"
+                    decoding="async"
+                    loading="eager"
+                  />
+                </RouterLink>
+              </template>
+            </div>
+
             <div class="hero-editorial" :class="resolveHeroEditorialClasses(heroEditorialVisible)">
               <div class="hero-editorial__state hero-editorial__state--loading" aria-hidden="true">
                 <div class="hero-editorial__kicker">
@@ -103,6 +166,30 @@
           </div>
         </div>
       </HeroSection>
+
+      <nav class="home-letterbook-index" :aria-label="$t('home.letterbook.indexLabel')">
+        <RouterLink to="/explore" class="home-letterbook-index__item">
+          <span class="home-letterbook-index__number">01</span>
+          <span>
+            <strong>{{ $t('home.letterbook.todayTitle') }}</strong>
+            <small>{{ $t('home.letterbook.todayText') }}</small>
+          </span>
+        </RouterLink>
+        <RouterLink to="/schedule" class="home-letterbook-index__item">
+          <span class="home-letterbook-index__number">02</span>
+          <span>
+            <strong>{{ $t('home.letterbook.scheduleTitle') }}</strong>
+            <small>{{ $t('home.letterbook.scheduleText') }}</small>
+          </span>
+        </RouterLink>
+        <RouterLink to="/community" class="home-letterbook-index__item">
+          <span class="home-letterbook-index__number">03</span>
+          <span>
+            <strong>{{ $t('home.letterbook.communityTitle') }}</strong>
+            <small>{{ $t('home.letterbook.communityText') }}</small>
+          </span>
+        </RouterLink>
+      </nav>
     </section>
 
     <FeaturedRailSection

@@ -4321,6 +4321,8 @@
   }
 
   .page-section-copy {
+    flex: 0 1 auto;
+    inline-size: 100%;
     gap: 0.25rem;
   }
 

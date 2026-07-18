@@ -5,6 +5,9 @@
       :subtitle="pageSubtitle"
       active-tab="login"
       :redirect-to="redirectTo"
+      :data-media-caption="$t('auth.loginMediaCaption')"
+      :show-tabs="false"
+      :show-back="false"
       split
       @back="handleBack"
     >
@@ -93,7 +96,10 @@
               >
                 {{ $t('auth.mfa.passkeyAction') }}
               </Button>
-              <p v-if="conditionalPasskeyAvailable" class="auth-helper auth-helper--compact">
+              <p
+                v-if="conditionalPasskeyAvailable"
+                class="auth-helper auth-helper--compact sr-only"
+              >
                 {{ $t('auth.passkeyAutofillHint') }}
               </p>
             </div>
@@ -344,64 +350,62 @@
         </div>
       </Transition>
 
-      <template #footer>
-        <section v-if="showRestorePanel && step === 'credentials'" class="auth-restore">
-          <div class="auth-restore__copy">
-            <p class="auth-restore__title">{{ $t('auth.restoreTitle') }}</p>
-            <p class="auth-inline-state__copy">{{ restoreNotice }}</p>
-          </div>
+      <section v-if="showRestorePanel && step === 'credentials'" class="auth-restore">
+        <div class="auth-restore__copy">
+          <p class="auth-restore__title">{{ $t('auth.restoreTitle') }}</p>
+          <p class="auth-inline-state__copy">{{ restoreNotice }}</p>
+        </div>
 
-          <div class="form-group">
-            <label for="restore-identifier">{{ $t('auth.usernameOrEmail') }}</label>
+        <div class="form-group">
+          <label for="restore-identifier">{{ $t('auth.usernameOrEmail') }}</label>
+          <Input
+            id="restore-identifier"
+            v-model="restoreIdentifier"
+            type="text"
+            :placeholder="$t('auth.usernameOrEmailPlaceholder')"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="restore-password">{{ $t('auth.password') }}</label>
+          <div class="password-field">
             <Input
-              id="restore-identifier"
-              v-model="restoreIdentifier"
-              type="text"
-              :placeholder="$t('auth.usernameOrEmailPlaceholder')"
-              autocomplete="username"
+              id="restore-password"
+              v-model="restorePassword"
+              :type="showRestorePassword ? 'text' : 'password'"
+              class="password-input"
+              :placeholder="$t('auth.passwordPlaceholder')"
+              autocomplete="current-password"
             />
+            <button
+              type="button"
+              class="password-toggle"
+              :aria-label="showRestorePassword ? $t('common.hide') : $t('common.show')"
+              @click="showRestorePassword = !showRestorePassword"
+            >
+              <EyeOff v-if="showRestorePassword" :size="16" />
+              <Eye v-else :size="16" />
+            </button>
           </div>
+        </div>
 
-          <div class="form-group">
-            <label for="restore-password">{{ $t('auth.password') }}</label>
-            <div class="password-field">
-              <Input
-                id="restore-password"
-                v-model="restorePassword"
-                :type="showRestorePassword ? 'text' : 'password'"
-                class="password-input"
-                :placeholder="$t('auth.passwordPlaceholder')"
-                autocomplete="current-password"
-              />
-              <button
-                type="button"
-                class="password-toggle"
-                :aria-label="showRestorePassword ? $t('common.hide') : $t('common.show')"
-                @click="showRestorePassword = !showRestorePassword"
-              >
-                <EyeOff v-if="showRestorePassword" :size="16" />
-                <Eye v-else :size="16" />
-              </button>
-            </div>
-          </div>
+        <Button
+          type="button"
+          variant="ghost"
+          full-width
+          :loading="isRestoringAccount"
+          :disabled="!canRestoreAccount"
+          @click="handleRestoreAccount"
+        >
+          {{ $t('auth.restoreButton') }}
+        </Button>
+      </section>
 
-          <Button
-            type="button"
-            variant="ghost"
-            full-width
-            :loading="isRestoringAccount"
-            :disabled="!canRestoreAccount"
-            @click="handleRestoreAccount"
-          >
-            {{ $t('auth.restoreButton') }}
-          </Button>
-        </section>
-
-        <p v-if="step === 'credentials'" class="auth-footer">
-          {{ $t('auth.noAccount') }}
-          <RouterLink to="/register">{{ $t('nav.register') }}</RouterLink>
-        </p>
-      </template>
+      <p v-if="step === 'credentials'" class="auth-footer auth-footer--entry">
+        {{ $t('auth.noAccount') }}
+        <RouterLink to="/register">{{ $t('nav.register') }}</RouterLink>
+      </p>
     </AuthEntryShell>
   </div>
 </template>

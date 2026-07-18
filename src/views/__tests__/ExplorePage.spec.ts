@@ -340,7 +340,9 @@ describe('ExplorePage', () => {
 
     expect(wrapper.text()).toContain('explore.title')
     expect(wrapper.text()).toContain('2 search.tab.posts')
-    expect(wrapper.findAll('.post-card-stub')).toHaveLength(2)
+    expect(wrapper.findAll('.explore-story')).toHaveLength(2)
+    expect(wrapper.find('.explore-story--lead').text()).toContain('First post')
+    expect(wrapper.find('.explore-story--supporting').text()).toContain('Second post')
     expect(wrapper.get('[data-testid="load-more-section"]').attributes('data-total')).toBe('26')
     expect(exploreMocks.getPublicPostList).toHaveBeenCalledWith(
       {

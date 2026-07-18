@@ -45,6 +45,7 @@ interface GeneratorOptions {
   outputDir: string
   baseUrl: string
   waitAfterLoad: number
+  apiMode: 'mock' | 'live'
   screenshotConfigs: ScreenshotConfig[]
 }
 
@@ -59,6 +60,7 @@ function getConfig(): GeneratorOptions {
   const outputDir = process.env.SCREENSHOT_OUTPUT_DIR || 'public/screenshots'
   const baseUrl = process.env.SCREENSHOT_BASE_URL || 'http://127.0.0.1:5173'
   const waitAfterLoad = parseInt(process.env.SCREENSHOT_WAIT || '2000', 10)
+  const apiMode = process.env.SCREENSHOT_API_MODE === 'live' ? 'live' : 'mock'
   const screenshotConfigs = expandScreenshots(SCREENSHOTS)
 
   if (isNaN(waitAfterLoad) || waitAfterLoad < 0) {
@@ -69,6 +71,7 @@ function getConfig(): GeneratorOptions {
     outputDir: resolve(process.cwd(), outputDir),
     baseUrl,
     waitAfterLoad,
+    apiMode,
     screenshotConfigs,
   }
 }
@@ -131,7 +134,7 @@ const SCREENSHOTS: ScreenshotConfig[] = [
   {
     name: 'home-desktop.png',
     url: '/',
-    viewport: { width: 1920, height: 1080 },
+    viewport: { width: 1440, height: 960 },
     description: 'Home - Desktop',
   },
   {
@@ -139,33 +142,33 @@ const SCREENSHOTS: ScreenshotConfig[] = [
     url: '/explore',
     viewport: { width: 390, height: 844 },
     description: 'Explore - Mobile',
-    waitForSelector: '.post-grid',
+    waitForSelector: '.explore-editorial-grid',
   },
   {
     name: 'explore-desktop.png',
     url: '/explore',
-    viewport: { width: 1920, height: 1080 },
+    viewport: { width: 1440, height: 960 },
     description: 'Explore - Desktop',
-    waitForSelector: '.post-grid',
+    waitForSelector: '.explore-editorial-grid',
   },
   {
     name: 'search-desktop.png',
     url: '/search?q=design',
-    viewport: { width: 1920, height: 1080 },
+    viewport: { width: 1440, height: 960 },
     description: 'Search - Desktop',
     waitForSelector: '.search-page',
   },
   {
     name: 'community-desktop.png',
     url: '/community',
-    viewport: { width: 1920, height: 1080 },
+    viewport: { width: 1440, height: 960 },
     description: 'Community - Desktop',
     waitForSelector: '.community-page',
   },
   {
     name: 'schedule-desktop.png',
     url: '/schedule',
-    viewport: { width: 1920, height: 1080 },
+    viewport: { width: 1440, height: 960 },
     description: 'Schedule - Desktop',
     waitForSelector: '.schedule-page',
   },
@@ -206,34 +209,41 @@ async function sleep(ms: number): Promise<void> {
  * Generate mock post data for screenshots
  */
 function generateMockPosts(count: number) {
-  const tags = ['风景', '人物', '动物', '建筑', '美食', '旅行', '艺术', '自然']
-  const platforms = ['pixiv', 'twitter', 'danbooru', 'gelbooru']
+  const tags = ['籾山ひめり', '高嶺のなでしこ', '舞台', '日常', '应援', '直播', '照片', '回忆']
+  const platforms = ['official', 'x', 'instagram', 'youtube']
+  const media = [
+    '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp',
+    '/snapshot-media/home/story-1-90c52c15-ab0a-473d-8981-f2420a91fdc1.webp',
+    '/snapshot-media/home/featured-2-5acfcb8e-235b-4c81-91cc-7711b043005a.webp',
+    '/snapshot-media/home/story-0-403aefeb-e9e2-4f16-884d-1875ee34916f.webp',
+    '/snapshot-media/home/featured-1-bb51c72a-fd3d-4439-b009-8db595568e36.webp',
+  ]
 
   return Array.from({ length: count }, (_, i) => ({
     id: `post-${i + 1}`,
-    title: `精美作品 ${i + 1}`,
-    description: '这是一张精美的图片作品',
-    media_url: `https://picsum.photos/seed/${i + 1}/800/1200`,
-    thumbnail_url: `https://picsum.photos/seed/${i + 1}/400/600`,
+    title: `ひめり相册 · ${String(i + 1).padStart(2, '0')}`,
+    description: '舞台与日常里，值得一起收藏的一刻。',
+    media_url: media[i % media.length],
+    thumbnail_url: media[i % media.length],
     media_type: 'image',
     width: 800,
     height: 1200,
     file_size: 1024000,
-    tags: tags.slice(0, Math.floor(Math.random() * 3) + 2),
+    tags: [tags[i % tags.length], tags[(i + 2) % tags.length]],
     author: {
       id: `author-${(i % 5) + 1}`,
-      name: `创作者${(i % 5) + 1}`,
-      avatar: `https://i.pravatar.cc/150?img=${(i % 5) + 1}`,
-      post_count: Math.floor(Math.random() * 1000) + 100,
+      name: ['ひめり相册', '舞台来信', 'なでしこ手帐', '粉色应援团', '周末放送'][i % 5],
+      avatar: media[(i + 1) % media.length],
+      post_count: 120 + i * 17,
     },
     platform: platforms[i % platforms.length],
     platform_id: `${platforms[i % platforms.length]}_${i + 1}`,
-    view_count: Math.floor(Math.random() * 10000) + 100,
-    like_count: Math.floor(Math.random() * 1000) + 10,
-    favorite_count: Math.floor(Math.random() * 500) + 5,
-    comment_count: Math.floor(Math.random() * 100) + 1,
-    created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date().toISOString(),
+    view_count: 2400 + i * 317,
+    like_count: 240 + i * 29,
+    favorite_count: 90 + i * 13,
+    comment_count: 12 + i * 3,
+    created_at: new Date(Date.UTC(2026, 6, 17, 12) - i * 3_600_000).toISOString(),
+    updated_at: new Date(Date.UTC(2026, 6, 17, 12)).toISOString(),
   }))
 }
 
@@ -241,15 +251,24 @@ function generateMockPosts(count: number) {
  * Generate mock author data for screenshots
  */
 function generateMockAuthors(count: number) {
+  const names = ['ひめり相册', '舞台来信', 'なでしこ手帐', '粉色应援团', '周末放送']
+  const avatars = [
+    '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp',
+    '/snapshot-media/home/story-1-90c52c15-ab0a-473d-8981-f2420a91fdc1.webp',
+    '/snapshot-media/home/story-0-403aefeb-e9e2-4f16-884d-1875ee34916f.webp',
+    '/snapshot-media/home/featured-2-5acfcb8e-235b-4c81-91cc-7711b043005a.webp',
+    '/snapshot-media/home/featured-1-bb51c72a-fd3d-4439-b009-8db595568e36.webp',
+  ]
+
   return Array.from({ length: count }, (_, i) => ({
     id: `author-${i + 1}`,
-    name: `创作者${i + 1}`,
-    avatar: `https://i.pravatar.cc/150?img=${i + 1}`,
-    bio: `这是创作者${i + 1}的个人简介`,
-    post_count: Math.floor(Math.random() * 1000) + 100,
-    follower_count: Math.floor(Math.random() * 5000) + 500,
-    following_count: Math.floor(Math.random() * 500) + 50,
-    created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+    name: names[i % names.length],
+    avatar: avatars[i % avatars.length],
+    bio: '记录籾山ひめり与高嶺のなでしこ的舞台、日常和应援回忆。',
+    post_count: 120 + i * 17,
+    follower_count: 880 + i * 213,
+    following_count: 32 + i * 7,
+    created_at: new Date(Date.UTC(2025, 6, 17) + i * 86_400_000).toISOString(),
   }))
 }
 
@@ -290,10 +309,17 @@ async function generateScreenshot(
             )
           }
 
+          const persistedSettings = JSON.parse(window.localStorage.getItem('settings') || '{}')
           window.localStorage.setItem(
             'settings',
             JSON.stringify({
-              appearancePreset: visualState.preset,
+              ...persistedSettings,
+              settings: {
+                ...(persistedSettings.settings || {}),
+                appearancePreset: visualState.preset,
+                enableAnimations: false,
+                animationIntensity: 'none',
+              },
             })
           )
         } catch {
@@ -302,47 +328,47 @@ async function generateScreenshot(
       }, config.visualState)
     }
 
-    // 拦截 API 请求，返回 mock 数据
-    await page.setRequestInterception(true)
-    page.on('request', (request) => {
-      const url = request.url()
+    if (options.apiMode === 'mock') {
+      await page.setRequestInterception(true)
+      page.on('request', (request) => {
+        const url = request.url()
 
-      // 放行非 API 请求
-      if (!url.includes('/api/v1/')) {
-        request.continue()
-        return
-      }
+        if (!url.includes('/api/v1/')) {
+          request.continue()
+          return
+        }
 
-      // Mock API 响应
-      if (url.includes('/posts')) {
-        request.respond({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            items: generateMockPosts(12),
-            next_cursor: null,
-            has_more: false,
-          }),
-        })
-      } else if (url.includes('/authors')) {
-        request.respond({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            items: generateMockAuthors(8),
-            next_cursor: null,
-            has_more: false,
-          }),
-        })
-      } else {
-        // 其他 API 请求返回空数据
-        request.respond({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ items: [], total: 0 }),
-        })
-      }
-    })
+        if (url.includes('/posts')) {
+          request.respond({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              items: generateMockPosts(12),
+              next_cursor: null,
+              has_more: false,
+            }),
+          })
+        } else if (url.includes('/authors')) {
+          request.respond({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              items: generateMockAuthors(8),
+              next_cursor: null,
+              has_more: false,
+            }),
+          })
+        } else {
+          request.respond({
+            status: 503,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              detail: 'Screenshot mode uses tracked public snapshots for this surface.',
+            }),
+          })
+        }
+      })
+    }
 
     await page.goto(`${options.baseUrl}${url}`, {
       waitUntil: 'networkidle2',
@@ -372,6 +398,11 @@ async function generateScreenshot(
 
     // Wait for animations and content to settle
     await sleep(options.waitAfterLoad)
+
+    // The Vite-only Vue DevTools launcher is not part of the product UI.
+    await page.evaluate(() => {
+      document.getElementById('__vue-devtools-container__')?.remove()
+    })
 
     await page.screenshot({
       path: outputPath,
@@ -507,7 +538,7 @@ async function main(): Promise<void> {
 }
 
 // Execute with proper error handling
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.main) {
   main().catch((err) => {
     console.error('\n❌ Fatal error:', (err as Error).message)
     process.exit(1)

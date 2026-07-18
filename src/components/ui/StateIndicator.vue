@@ -21,7 +21,7 @@
     </div>
 
     <div class="state-indicator__content">
-      <h3 class="state-indicator__title">{{ resolvedTitle }}</h3>
+      <component :is="titleTag" class="state-indicator__title">{{ resolvedTitle }}</component>
       <p v-if="resolvedDescription" class="state-indicator__description">
         {{ resolvedDescription }}
       </p>
@@ -74,8 +74,11 @@ type StateIndicatorVariant =
   | 'provider-sync'
   | 'update-check'
 
+type StateIndicatorTitleTag = 'h2' | 'h3' | 'h4'
+
 interface Props {
   variant?: StateIndicatorVariant
+  titleTag?: StateIndicatorTitleTag
   title?: string
   description?: string
   showAction?: boolean
@@ -85,6 +88,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   variant: 'empty',
+  titleTag: 'h3',
   actionLoading: false,
   showAction: undefined,
 })

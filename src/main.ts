@@ -394,15 +394,21 @@ const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 // 公共页面首屏不再静默恢复登录态，避免 /login /register 等匿名入口主动触发
 // refresh + challenge 噪音；受保护路由仍由路由守卫按需完成初始化。
 
-app.mount('#app-root')
-scheduleAuthSurfaceBootstrap()
-
-void preloadActiveLocale().catch((error) => {
-  if (import.meta.env.DEV) {
-    console.warn('[i18n] Failed to preload active locale:', error)
+async function mountApp(): Promise<void> {
+  try {
+    await preloadActiveLocale()
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[i18n] Failed to preload active locale:', error)
+    }
+    reportClientError('i18n.preload_failed', error, undefined, { severity: 'warn' })
   }
-  reportClientError('i18n.preload_failed', error, undefined, { severity: 'warn' })
-})
+
+  app.mount('#app-root')
+  scheduleAuthSurfaceBootstrap()
+}
+
+void mountApp()
 
 // 性能监控：由隐私设置动态控制
 import { disposePerformanceMonitoring, initPerformanceMonitoring } from './utils/performanceMonitor'

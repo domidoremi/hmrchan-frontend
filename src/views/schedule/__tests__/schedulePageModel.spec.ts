@@ -86,6 +86,14 @@ describe('schedulePageModel', () => {
     expect(formatCalendarDateKey(new Date(2026, 4, 3))).toBe('2026-05-03')
   })
 
+  it('indexes offset timestamps by the date shown in the local calendar', () => {
+    const start = '2026-05-03T23:30:00-07:00'
+    const offsetEvent = { ...events[0]!, id: 'offset-event', start }
+    const expectedDate = formatCalendarDateKey(new Date(start))
+
+    expect(buildEventsByDate([offsetEvent]).get(expectedDate)?.[0]?.id).toBe('offset-event')
+  })
+
   it('builds a stable six-week month grid with event hydration', () => {
     const byDate = buildEventsByDate(events)
     const days = buildCalendarDays({

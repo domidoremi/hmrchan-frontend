@@ -289,7 +289,7 @@ describe('Auth entry pages', () => {
     vi.useRealTimers()
   })
 
-  it('renders forgot password, tab navigation, and Google entry on the login page', () => {
+  it('renders the open login composition, forgot password, and Google entry', () => {
     testState.turnstile.siteKey = 'site-key'
     testState.turnstile.enabled = true
 
@@ -298,7 +298,7 @@ describe('Auth entry pages', () => {
     })
 
     expect(wrapper.find('.auth-shell--split').exists()).toBe(true)
-    expect(wrapper.find('.auth-tab-nav').exists()).toBe(true)
+    expect(wrapper.find('.auth-tab-nav').exists()).toBe(false)
     expect(wrapper.text()).toContain('auth.forgotPassword')
     expect(wrapper.text()).toContain('auth.googleDivider')
     expect(wrapper.text()).toContain('auth.googleLoginButton')

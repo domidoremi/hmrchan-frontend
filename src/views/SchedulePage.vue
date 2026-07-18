@@ -13,39 +13,19 @@
 
         <template #actions>
           <div class="schedule-hero__actions page-actions page-actions--comfortable">
-            <ControlGroup
-              class="planner-view-switch page-control-group-shell--comfortable"
-              :aria-label="$t('schedule.plannerTitle')"
-            >
-              <ControlButton
-                v-for="view in plannerViews"
-                :key="view.value"
-                size="compact"
-                :pressed="plannerView === view.value"
-                @click="setPlannerView(view.value)"
-              >
-                {{ $t(view.label) }}
-              </ControlButton>
-            </ControlGroup>
-            <ControlGroup
-              class="category-filters page-control-group-shell--comfortable"
-              role="group"
-              :aria-label="$t('schedule.filterLabel')"
-            >
-              <ControlButton
-                v-for="cat in categories"
-                :key="cat.value"
-                class="schedule-filter-pill"
-                size="compact"
-                :pressed="activeCategory === cat.value"
-                @click="setCategory(cat.value)"
-              >
-                <template #start>
-                  <component :is="cat.icon" :size="14" />
-                </template>
-                <span>{{ $t(cat.label) }}</span>
-              </ControlButton>
-            </ControlGroup>
+            <ControlButton class="schedule-today-action" size="compact" @click="goToday">
+              {{ $t('schedule.today') }}
+            </ControlButton>
+            <label class="schedule-hero__date-action page-control page-control--compact">
+              <span>{{ $t('schedule.dateJumpLabel') }}</span>
+              <input
+                :value="dateJumpValue"
+                type="date"
+                class="schedule-hero__date-input"
+                :aria-label="$t('schedule.dateJumpLabel')"
+                @input="handleDateJumpInput"
+              />
+            </label>
           </div>
         </template>
 
@@ -106,16 +86,6 @@
             <span>{{ $t('schedule.today') }}</span>
           </ControlButton>
         </Transition>
-        <label class="schedule-date-jump">
-          <span class="sr-only">{{ $t('schedule.dateJumpLabel') }}</span>
-          <input
-            :value="dateJumpValue"
-            type="date"
-            class="schedule-date-jump__input"
-            :aria-label="$t('schedule.dateJumpLabel')"
-            @input="handleDateJumpInput"
-          />
-        </label>
       </PageToolbar>
 
       <section class="schedule-overview">
@@ -197,10 +167,7 @@
                 <div class="event-header">
                   <span
                     class="event-badge"
-                    :style="{
-                      background: getCategoryColor(evt.category) + '16',
-                      color: getCategoryColor(evt.category),
-                    }"
+                    :style="{ '--event-category-color': getCategoryColor(evt.category) }"
                   >
                     {{ $t(`schedule.categories.${evt.category}`) }}
                   </span>
@@ -302,6 +269,45 @@
           </div>
         </section>
       </section>
+
+      <details class="schedule-tools">
+        <summary>{{ $t('schedule.filterLabel') }}</summary>
+        <div class="schedule-tools__body">
+          <ControlGroup
+            class="planner-view-switch page-control-group-shell--comfortable"
+            :aria-label="$t('schedule.plannerTitle')"
+          >
+            <ControlButton
+              v-for="view in plannerViews"
+              :key="view.value"
+              size="compact"
+              :pressed="plannerView === view.value"
+              @click="setPlannerView(view.value)"
+            >
+              {{ $t(view.label) }}
+            </ControlButton>
+          </ControlGroup>
+          <ControlGroup
+            class="category-filters page-control-group-shell--comfortable"
+            role="group"
+            :aria-label="$t('schedule.filterLabel')"
+          >
+            <ControlButton
+              v-for="cat in categories"
+              :key="cat.value"
+              class="schedule-filter-pill"
+              size="compact"
+              :pressed="activeCategory === cat.value"
+              @click="setCategory(cat.value)"
+            >
+              <template #start>
+                <component :is="cat.icon" :size="14" />
+              </template>
+              <span>{{ $t(cat.label) }}</span>
+            </ControlButton>
+          </ControlGroup>
+        </div>
+      </details>
 
       <StateIndicator
         v-if="error && !isUsingFallback"
@@ -422,10 +428,7 @@
                     <div class="event-header">
                       <span
                         class="event-badge"
-                        :style="{
-                          background: getCategoryColor(evt.category) + '16',
-                          color: getCategoryColor(evt.category),
-                        }"
+                        :style="{ '--event-category-color': getCategoryColor(evt.category) }"
                       >
                         {{ $t(`schedule.categories.${evt.category}`) }}
                       </span>
@@ -483,10 +486,7 @@
               <div class="detail-meta">
                 <span
                   class="event-badge"
-                  :style="{
-                    background: getCategoryColor(detailEvent.category) + '16',
-                    color: getCategoryColor(detailEvent.category),
-                  }"
+                  :style="{ '--event-category-color': getCategoryColor(detailEvent.category) }"
                 >
                   {{ $t(`schedule.categories.${detailEvent.category}`) }}
                 </span>
@@ -1393,6 +1393,17 @@ async function fetchEvents(signal?: AbortSignal) {
   error.value = null
   const start = new Date(currentYear.value, currentMonth.value - 1, 1).toISOString()
   const end = new Date(currentYear.value, currentMonth.value + 2, 0).toISOString()
+
+  if (import.meta.env.VITE_ENABLE_SCHEDULE_API === 'false') {
+    events.value = getFallbackScheduleCalendar({ start, end })
+    eventsSource.value = 'fallback'
+    if (!selectedDay.value && plannerView.value !== 'month') {
+      selectedDay.value = buildCalendarDay(new Date())
+    }
+    isLoading.value = false
+    return
+  }
+
   try {
     const result = await scheduleService.calendar({ start, end }, { signal })
     if (signal?.aborted || fetchId !== latestFetchId) return

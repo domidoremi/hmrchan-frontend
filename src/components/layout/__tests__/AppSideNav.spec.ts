@@ -202,7 +202,7 @@ describe('AppSideNav', () => {
     const titles = mobileLinks.map((link) => link.attributes('title'))
 
     expect(mobileLinks).toHaveLength(6)
-    expect(titles).toEqual(['Home', 'Explore', 'Favorites', 'Authors', 'Community', 'Schedule'])
+    expect(titles).toEqual(['Home', 'Explore', 'Authors', 'Community', 'Schedule', 'About'])
     expect(wrapper.find('.app-mobile-dock__link--active').attributes('title')).toBe('Community')
     expect(document.documentElement.style.getPropertyValue('--mobile-nav-height')).toBe('88px')
   })

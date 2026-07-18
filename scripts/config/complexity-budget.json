@@ -2,6 +2,11 @@
   "softLineLimit": 1000,
   "hardLineLimit": 1500,
   "registeredLargeFiles": {
+    "src/views/ExplorePage.vue": {
+      "maxLines": 1156,
+      "refactorQueued": false,
+      "reason": "Fan-site explore presentation now includes the editorial fallback grid, source-aware cards, and responsive empty/loading states; keep the current ceiling while the reusable feed sections are assessed for a later extraction."
+    },
     "src/components/ui/VideoPlayer.vue": {
       "maxLines": 1360,
       "refactorQueued": false,
@@ -13,12 +18,12 @@
       "reason": "Existing edge rendering contract; requires an explicit note before further growth."
     },
     "src/views/HomePage.vue": {
-      "maxLines": 3058,
+      "maxLines": 3129,
       "refactorQueued": true,
       "reason": "Batch 2 extracted scoped CSS; homepage image, support refresh, scene capability/progress/snap, viewport blend, motion CSS variable, rail/story scene style, footer blend, rail navbar lock, bubble reveal lifecycle, scene layout refresh policies, trending author view-model derivation, and quick-nav section observer orchestration were moved into dedicated boundaries; remaining scene/runtime orchestration is queued for staged extraction."
     },
     "src/views/LoginPage.vue": {
-      "maxLines": 1256,
+      "maxLines": 1257,
       "refactorQueued": false,
       "reason": "Login step titles, credential validation, restore-account validation, restore query cleanup, risk WebAuthn visibility, Turnstile retry predicates, Turnstile freshness, Google handoff expiry predicates, route query state, Google visual state, conditional passkey start, and back navigation intent were extracted; preserve current auth flow while tracking remaining complexity."
     },
@@ -33,9 +38,9 @@
       "reason": "Register step titles, password strength text keys, email masking, progress visibility, login redirect target, form validation gates, Turnstile freshness, Google handoff expiry predicates, Google visual state, client challenge visibility, and back navigation intent were extracted; preserve current auth flow while tracking remaining complexity."
     },
     "src/views/SchedulePage.vue": {
-      "maxLines": 1494,
-      "refactorQueued": false,
-      "reason": "Schedule calendar grid, event indexing, weekday labels, upcoming/today lists, category breakdown, keyboard navigation index resolution, month swipe direction, planner/month step targets, today transition direction, detail link availability, lead text, host label, same-day check, description parsing/linkification, detail recovery source decisions, and detail share/link policies were extracted; remaining detail route and API orchestration must not grow without an explicit note."
+      "maxLines": 1508,
+      "refactorQueued": true,
+      "reason": "Schedule calendar grid, event indexing, weekday labels, upcoming/today lists, category breakdown, keyboard navigation index resolution, month swipe direction, planner/month step targets, today transition direction, detail link availability, lead text, host label, same-day check, description parsing/linkification, detail recovery source decisions, and detail share/link policies were extracted; the fan-site filter disclosure and runtime fallback now cross the hard line, so the remaining detail/API orchestration is queued for staged extraction."
     }
   }
 }

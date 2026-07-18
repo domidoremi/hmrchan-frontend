@@ -35,7 +35,6 @@
       <section class="contact-workflow surface-editorial" aria-labelledby="contact-workflow-title">
         <div class="contact-workflow__header">
           <div class="contact-workflow__copy">
-            <span class="page-section-kicker">{{ $t('contact.workflowTitle') }}</span>
             <h2 id="contact-workflow-title" class="page-section-title contact-workflow__title">
               {{ $t('contact.workflowTitle') }}
             </h2>
@@ -65,7 +64,6 @@
             <template v-if="activeStep === 1">
               <div id="contact-step-topic" class="contact-panel">
                 <div class="contact-panel__header">
-                  <span class="page-section-kicker">{{ $t('contact.stepExplain') }}</span>
                   <h3 class="contact-panel__title">{{ $t('contact.topicTitle') }}</h3>
                   <p class="contact-panel__subtitle">{{ $t('contact.topicSubtitle') }}</p>
                 </div>
@@ -92,7 +90,6 @@
             <template v-else-if="activeStep === 2">
               <div id="contact-step-details" class="contact-panel">
                 <div class="contact-panel__header">
-                  <span class="page-section-kicker">{{ selectedTopicMeta.label }}</span>
                   <h3 class="contact-panel__title">{{ $t('contact.detailTitle') }}</h3>
                   <p class="contact-panel__subtitle">{{ selectedTopicMeta.hint }}</p>
                 </div>
@@ -113,7 +110,6 @@
             <template v-else>
               <div id="contact-step-send" class="contact-panel">
                 <div class="contact-panel__header">
-                  <span class="page-section-kicker">{{ $t('contact.stepSubmit') }}</span>
                   <h3 class="contact-panel__title">{{ $t('contact.sendTitle') }}</h3>
                   <p class="contact-panel__subtitle">{{ $t('contact.sendSubtitle') }}</p>
                 </div>
@@ -185,7 +181,6 @@
         aria-labelledby="contact-private-note-title"
       >
         <div class="contact-private-note__copy">
-          <span class="page-section-kicker">{{ $t('contact.privateTitle') }}</span>
           <h2 id="contact-private-note-title" class="contact-private-note__title">
             {{ $t('contact.privateTitle') }}
           </h2>
@@ -612,6 +607,11 @@ async function handleSubmit() {
 @media (max-width: 48rem) {
   .contact-page {
     padding: var(--spacing-3) 0 var(--spacing-6);
+  }
+
+  .contact-page .page-hero-shell__title {
+    font-size: clamp(2.65rem, 12.5vw, 3.35rem);
+    line-height: 1.04;
   }
 
   .contact-stepper {

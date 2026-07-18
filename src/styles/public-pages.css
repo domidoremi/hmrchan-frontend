@@ -674,6 +674,11 @@
     align-items: flex-start;
   }
 
+  .page-section-copy {
+    flex: 0 1 auto;
+    inline-size: 100%;
+  }
+
   .page-section-title,
   .page-section-subtitle {
     max-inline-size: 100%;

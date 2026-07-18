@@ -8,12 +8,107 @@ import type {
 } from '@/api/discussionService'
 import type { CursorCollectionResponse } from '@/api'
 import { STATIC_DISCUSSION_COMMENTS, STATIC_DISCUSSIONS } from './generated/publicSnapshots'
-import { clonePublicSnapshot, cursorPaginateFallbackItems } from './publicPageFallback'
+import {
+  clonePublicSnapshot,
+  createPublicFallbackId,
+  cursorPaginateFallbackItems,
+  hoursAgo,
+  minutesAgo,
+} from './publicPageFallback'
 
-export const COMMUNITY_FALLBACK_DISCUSSIONS: Discussion[] = clonePublicSnapshot(STATIC_DISCUSSIONS)
-export const COMMUNITY_FALLBACK_COMMENTS: Record<string, DiscussionComment[]> = clonePublicSnapshot(
-  STATIC_DISCUSSION_COMMENTS
-)
+const RUNTIME_COMMUNITY_DISCUSSIONS: Discussion[] = [
+  {
+    id: createPublicFallbackId('community', 'favorite-stage-moment'),
+    title: '大家最喜欢这次舞台里的哪一个瞬间？',
+    content: '灯光亮起来的那一刻真的很漂亮，回看时又发现了好多小表情。',
+    category: 'sharing',
+    author: { id: createPublicFallbackId('member', 'momo'), username: 'momo' },
+    tags: ['舞台回顾', '高嶺のなでしこ'],
+    view_count: 842,
+    likes_count: 72,
+    comments_count: 18,
+    created_at: minutesAgo(12),
+    updated_at: minutesAgo(8),
+    last_activity_at: minutesAgo(3),
+  },
+  {
+    id: createPublicFallbackId('community', 'spring-photo-colors'),
+    title: 'ひめり今天分享的照片，春天的颜色好适合她',
+    content: '樱花、灰蓝色外套，还有很自然的光线，看着心情也跟着变好了。',
+    category: 'sharing',
+    author: { id: createPublicFallbackId('member', 'hime-note'), username: 'hime_note' },
+    tags: ['籾山ひめり', '照片'],
+    view_count: 516,
+    likes_count: 58,
+    comments_count: 9,
+    created_at: hoursAgo(1),
+    updated_at: minutesAgo(42),
+    last_activity_at: minutesAgo(24),
+  },
+  {
+    id: createPublicFallbackId('community', 'two-week-event-list'),
+    title: '把接下来两周的活动整理成了一张小清单',
+    content: '直播、媒体出演和周末舞台都放进去了，欢迎大家一起补充。',
+    category: 'general',
+    author: { id: createPublicFallbackId('member', 'takane-days'), username: 'takane_days' },
+    tags: ['日程', '活动'],
+    view_count: 734,
+    likes_count: 61,
+    comments_count: 24,
+    created_at: hoursAgo(4),
+    updated_at: hoursAgo(2),
+    last_activity_at: minutesAgo(38),
+  },
+  {
+    id: createPublicFallbackId('community', 'first-stage-support'),
+    title: '第一次去现场前，可以准备哪些应援物？',
+    content: '想轻松地享受现场，也希望提前了解大家常带的东西。',
+    category: 'question',
+    author: { id: createPublicFallbackId('member', 'yume'), username: 'yume' },
+    tags: ['现场', '应援'],
+    view_count: 392,
+    likes_count: 29,
+    comments_count: 31,
+    created_at: hoursAgo(19),
+    updated_at: hoursAgo(3),
+    last_activity_at: minutesAgo(56),
+  },
+]
+
+const firstDiscussionId = RUNTIME_COMMUNITY_DISCUSSIONS[0]?.id ?? ''
+const RUNTIME_COMMUNITY_COMMENTS: Record<string, DiscussionComment[]> = firstDiscussionId
+  ? {
+      [firstDiscussionId]: [
+        {
+          id: createPublicFallbackId('comment', 'stage-smile'),
+          discussion_id: firstDiscussionId,
+          content: '副歌前大家相视而笑的地方，每次回看都觉得很温柔。',
+          user: { id: createPublicFallbackId('member', 'hana'), username: 'hana' },
+          like_count: 12,
+          reply_count: 0,
+          created_at: minutesAgo(9),
+        },
+        {
+          id: createPublicFallbackId('comment', 'final-pose'),
+          discussion_id: firstDiscussionId,
+          content: '我最喜欢最后的定格，服装和灯光的颜色搭得特别好看。',
+          user: { id: createPublicFallbackId('member', 'riri'), username: 'riri' },
+          like_count: 8,
+          reply_count: 0,
+          created_at: minutesAgo(5),
+        },
+      ],
+    }
+  : {}
+
+export const COMMUNITY_FALLBACK_DISCUSSIONS: Discussion[] =
+  STATIC_DISCUSSIONS.length > 0
+    ? clonePublicSnapshot(STATIC_DISCUSSIONS)
+    : clonePublicSnapshot(RUNTIME_COMMUNITY_DISCUSSIONS)
+export const COMMUNITY_FALLBACK_COMMENTS: Record<string, DiscussionComment[]> =
+  Object.keys(STATIC_DISCUSSION_COMMENTS).length > 0
+    ? clonePublicSnapshot(STATIC_DISCUSSION_COMMENTS)
+    : clonePublicSnapshot(RUNTIME_COMMUNITY_COMMENTS)
 
 function sortDiscussions(
   items: Discussion[],

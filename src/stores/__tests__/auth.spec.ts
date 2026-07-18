@@ -6,7 +6,7 @@ import { clientSecurityService } from '@/api/clientSecurityService'
 import {
   clearPendingGoogleAuthRequest,
   exchangeGoogleHandoff,
-  startGoogleAuth,
+  startGoogleAuthRedirect,
 } from '@/services/googleAuthService'
 import { clearAuthRuntimeSession, getRuntimeAccessToken } from '@/api/client/auth-runtime'
 import { enterRiskMode, getRiskMode } from '@/security/runtimeState'
@@ -43,7 +43,7 @@ vi.mock('@/services/googleAuthService', async () => {
 
   return {
     ...actual,
-    startGoogleAuth: vi.fn(),
+    startGoogleAuthRedirect: vi.fn(),
     exchangeGoogleHandoff: vi.fn(),
     clearPendingGoogleAuthRequest: vi.fn(),
   }
@@ -215,12 +215,12 @@ describe('auth store', () => {
 
   it('starts Google auth with the requested intent and redirect target in test mode', async () => {
     const store = useAuthStore()
-    vi.mocked(startGoogleAuth).mockImplementation(() => undefined)
+    vi.mocked(startGoogleAuthRedirect).mockImplementation(() => undefined)
 
     const result = await store.startGoogleAuth('register', '/profile/settings')
 
     expect(result.status).toBe('success')
-    expect(startGoogleAuth).toHaveBeenCalledWith('register', '/profile/settings')
+    expect(startGoogleAuthRedirect).toHaveBeenCalledWith('register', '/profile/settings')
   })
 
   it('establishes a session from a successful Google handoff exchange', async () => {

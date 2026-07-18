@@ -106,6 +106,14 @@ describe('StateIndicator', () => {
     expect(host.querySelector('button')?.textContent).toContain('Retry')
   })
 
+  it('keeps h3 as the default title and supports page-level h2 titles', () => {
+    const defaultState = mountStateIndicator({ variant: 'empty' })
+    const pageState = mountStateIndicator({ variant: 'error', titleTag: 'h2' })
+
+    expect(defaultState.host.querySelector('.state-indicator__title')?.tagName).toBe('H3')
+    expect(pageState.host.querySelector('.state-indicator__title')?.tagName).toBe('H2')
+  })
+
   it('exposes pet workflow hints for extended page states', () => {
     const success = mountStateIndicator({ variant: 'success' }).host.querySelector(
       '.state-indicator'

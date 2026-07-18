@@ -512,8 +512,6 @@ export function startGoogleAuthRedirect(intent: GoogleAuthIntent, returnTo: stri
   redirectToGoogleAuthStart(buildGoogleStartUrl(intent, request.redirectTo))
 }
 
-export const startGoogleAuth = startGoogleAuthRedirect
-
 export function setGoogleAuthRedirectHandlerForTesting(
   handler: ((url: string) => void) | null
 ): void {

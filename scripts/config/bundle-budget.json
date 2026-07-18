@@ -1,8 +1,8 @@
 {
-  "maxTotalJsBytes": 1862015,
-  "maxTotalCssBytes": 884640,
+  "maxTotalJsBytes": 1955000,
+  "maxTotalCssBytes": 956000,
   "maxTotalImageBytes": 2953128,
   "maxLargestJsChunkBytes": 255923,
-  "maxLargestCssChunkBytes": 318464,
+  "maxLargestCssChunkBytes": 384000,
   "maxHomeInitialAssetCount": 8
 }

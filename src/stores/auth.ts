@@ -16,7 +16,7 @@ import type {
   UserResponse,
 } from '@/api'
 import {
-  startGoogleAuth as startGoogleAuthRedirect,
+  startGoogleAuthRedirect,
   exchangeGoogleHandoff,
   clearPendingGoogleAuthRequest,
   type GoogleAuthIntent,

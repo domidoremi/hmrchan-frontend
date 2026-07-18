@@ -304,13 +304,14 @@ bun run check:bundle-budget
 
 | 指标 | 阈值 |
 | --- | ---: |
-| JS 总量 | 1,862,015 bytes |
-| CSS 总量 | 884,640 bytes |
+| JS 总量 | 1,955,000 bytes |
+| CSS 总量 | 956,000 bytes |
 | 图片总量 | 2,953,128 bytes |
-| 最大 JS/CSS chunk | 255,923 bytes |
+| 最大 JS chunk | 255,923 bytes |
+| 最大 CSS chunk | 384,000 bytes |
 | 首页首屏唯一 asset 数 | 8 |
 
-本轮已把 `HomePage.vue`、`SchedulePage.vue`、`VideoPlayer.vue` 的 scoped style 外提到独立 CSS 文件，降低单文件 review 面积，并让页面样式更容易随异步 chunk 管理。后续继续收紧预算时，应优先处理全局 `index.css`、首页 CSS、动画/装饰资源和只用少量能力却引入大体积依赖的场景。
+本轮已把 `HomePage.vue`、`SchedulePage.vue`、`VideoPlayer.vue` 的 scoped style 外提到独立 CSS 文件，并加入全站的温暖信纸视觉层，降低单文件 review 面积，同时让页面样式更容易随异步 chunk 管理。当前 CSS/JS 阈值按这版视觉层产物预留约 5% 的演进空间；后续继续收紧预算时，应优先处理全局 `index.css`、首页 CSS、动画/装饰资源和只用少量能力却引入大体积依赖的场景。
 
 ### UX 状态规范
 

@@ -77,7 +77,9 @@ export function buildEventsByDate(
 ): Map<string, ScheduleCalendarItem[]> {
   const map = new Map<string, ScheduleCalendarItem[]>()
   for (const event of events) {
-    const dateStr = event.start.slice(0, 10)
+    const parsedStart = new Date(event.start)
+    if (Number.isNaN(parsedStart.getTime())) continue
+    const dateStr = formatCalendarDateKey(parsedStart)
     const existing = map.get(dateStr)
     if (existing) {
       existing.push(event)
