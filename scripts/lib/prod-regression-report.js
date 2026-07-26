@@ -128,7 +128,7 @@ export function buildRunnerPreflightMarkdownSummary(summary) {
       : ['- none']
 
   return [
-    '# momichan.com 生产深度回归预检',
+    '# next.momichan.com 生产深度回归预检',
     '',
     `- 状态: ${summary.status}`,
     `- Base URL: ${summary.baseUrl}`,

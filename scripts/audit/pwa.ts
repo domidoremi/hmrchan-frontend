@@ -66,7 +66,7 @@ const NOINDEX_SITEMAP_PATHS = [
   '/profile/security',
   '/thank-you',
 ] as const
-const SITE_ORIGIN = 'https://momichan.com'
+const SITE_ORIGIN = 'https://next.momichan.com'
 
 function getAttribute(tag: string, attribute: string): string | null {
   const match = tag.match(new RegExp(`\\s${attribute}=["']([^"']*)["']`, 'i'))
@@ -200,12 +200,6 @@ function getSitemapAlternateLinks(entry: string): SitemapAlternateLink[] {
         href: getAttribute(tag, 'href') ?? '',
       }
     }
-  )
-}
-
-function doLocaleListsMatch(actual: string[], expected: string[]): boolean {
-  return (
-    actual.length === expected.length && actual.every((value, index) => value === expected[index])
   )
 }
 
@@ -642,10 +636,7 @@ async function checkOfflineHtml(
   return issues
 }
 
-async function checkSitemap(
-  options: AuditOptions,
-  supportedLocales: string[]
-): Promise<AuditIssue[]> {
+async function checkSitemap(options: AuditOptions): Promise<AuditIssue[]> {
   const issues: AuditIssue[] = []
   const sitemapPath = join(options.projectRoot, 'public/sitemap.xml')
 
@@ -691,35 +682,16 @@ async function checkSitemap(
     ...validateSitemapRoutePolicy(indexedPaths, 'public/sitemap.xml', 'public/sitemap.xml')
   )
 
-  const invalidEntry = localizedEntries.find(
-    (entry) =>
-      !doLocaleListsMatch(
-        entry.alternateLinks.map((link) => link.hreflang),
-        supportedLocales
-      )
-  )
+  const invalidEntry = localizedEntries.find((entry) => entry.alternateLinks.length > 0)
 
   if (invalidEntry) {
     issues.push({
       severity: 'error',
-      message: `public/sitemap.xml hreflang values must match supported locales for ${invalidEntry.loc}: ${supportedLocales.join(', ')}`,
+      message: `public/sitemap.xml must not declare hreflang without locale-specific public URLs: ${invalidEntry.loc}`,
       file: 'public/sitemap.xml',
       rule: 'pwa-sitemap-language',
-      suggestion: 'Regenerate sitemap hreflang values from supportedLocales.',
-    })
-  }
-
-  const invalidAlternateHrefEntry = localizedEntries.find((entry) =>
-    entry.alternateLinks.some((link) => link.href !== entry.loc)
-  )
-
-  if (invalidAlternateHrefEntry) {
-    issues.push({
-      severity: 'error',
-      message: `public/sitemap.xml alternate href values must match loc for ${invalidAlternateHrefEntry.loc}`,
-      file: 'public/sitemap.xml',
-      rule: 'pwa-sitemap-language',
-      suggestion: 'Regenerate sitemap alternate links from each route loc.',
+      suggestion:
+        'Remove hreflang entries until each locale has a distinct, crawlable canonical URL.',
     })
   }
 
@@ -794,7 +766,7 @@ const pwaAudit: AuditModule = {
     const offlineIssues = await checkOfflineHtml(options, defaultAppLocale)
     allIssues.push(...offlineIssues)
 
-    const sitemapIssues = await checkSitemap(options, localeContract.supportedLocales)
+    const sitemapIssues = await checkSitemap(options)
     allIssues.push(...sitemapIssues)
 
     const sitemapGeneratorIssues = await checkSitemapGenerator(options)

@@ -133,6 +133,27 @@ export interface HmrScheduleContent {
   highlights: HmrScheduleItem[]
 }
 
+export interface HmrScheduleDetailContent {
+  id: string
+  title: string
+  description: string
+  category: string
+  startAt: string
+  endAt?: string
+  isAllDay: boolean
+  venue?: string
+  venueAddress?: string
+  eventUrl?: string
+  ticketUrl?: string
+  sourceUrl?: string
+  sourcePlatform?: string
+  author?: {
+    id: string
+    name: string
+  }
+  viewState: 'available' | 'not-found' | 'temporary-unavailable'
+}
+
 export interface HmrProfileSectionContent {
   section: HmrProfileSectionKey
   title: string

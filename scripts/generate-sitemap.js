@@ -4,9 +4,8 @@
  *
  * 功能：
  * - 从路由配置自动生成 sitemap
- * - 支持多语言 hreflang 标签
  * - 自动设置优先级和更新频率
- * - 支持动态路由（需要从 API 获取）
+ * - 可从公开 API 补充动态详情路由
  *
  * 使用：
  *   node scripts/generate-sitemap.js [--dry-run]
@@ -17,8 +16,7 @@ import { resolve } from 'path'
 
 const SITEMAP_PATH = resolve(process.cwd(), 'public/sitemap.xml')
 const ROBOTS_PATH = resolve(process.cwd(), 'public/robots.txt')
-const I18N_SOURCE_PATH = resolve(process.cwd(), 'src/i18n/locales.ts')
-const DEFAULT_PUBLIC_SITE_ORIGIN = 'https://momichan.com'
+const DEFAULT_PUBLIC_SITE_ORIGIN = 'https://next.momichan.com'
 const DRY_RUN = process.argv.includes('--dry-run')
 const outputArgIndex = process.argv.indexOf('--output')
 const robotsOutputArgIndex = process.argv.indexOf('--robots-output')
@@ -41,22 +39,8 @@ function resolvePublicSiteOrigin() {
 }
 
 const BASE_URL = resolvePublicSiteOrigin()
-
-function resolveSupportedLocales() {
-  const content = readFileSync(I18N_SOURCE_PATH, 'utf-8')
-  const match = content.match(
-    /export\s+const\s+supportedLocales(?:\s*:\s*[^=]+)?\s*=\s*\[([\s\S]*?)\]/
-  )
-  const locales = match?.[1]?.match(/['"]([^'"]+)['"]/g)?.map((item) => item.slice(1, -1)) ?? []
-
-  if (locales.length === 0) {
-    throw new Error('Cannot resolve supportedLocales from src/i18n/locales.ts')
-  }
-
-  return locales
-}
-
-const LANGUAGES = resolveSupportedLocales()
+const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
 
 /**
  * 可被搜索引擎索引的公开路由。
@@ -100,6 +84,156 @@ const ROUTES = [
   },
 ]
 
+const DYNAMIC_ROUTE_SOURCES = [
+  {
+    endpoint: '/posts?limit=100',
+    pathPrefix: '/posts/',
+    collectionKeys: ['items', 'posts', 'results'],
+    idKeys: ['id', 'post_id', 'uuid'],
+    priority: 0.7,
+    changefreq: 'daily',
+  },
+  {
+    endpoint: '/authors?limit=100',
+    pathPrefix: '/author/',
+    collectionKeys: ['items', 'authors', 'results'],
+    idKeys: ['id', 'author_id', 'uuid'],
+    priority: 0.6,
+    changefreq: 'weekly',
+  },
+  {
+    endpoint: '/discussions?limit=100',
+    pathPrefix: '/community/discussions/',
+    collectionKeys: ['items', 'discussions', 'results'],
+    idKeys: ['id', 'discussion_id', 'uuid'],
+    priority: 0.6,
+    changefreq: 'daily',
+  },
+  {
+    endpoint: '/schedules?limit=100',
+    pathPrefix: '/schedule/',
+    collectionKeys: ['items', 'schedules', 'results'],
+    idKeys: ['id', 'schedule_id', 'uuid'],
+    priority: 0.6,
+    changefreq: 'weekly',
+  },
+]
+
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isPublicResourceId(value) {
+  return UUID_LIKE_RE.test(value) || ULID_RE.test(value)
+}
+
+function extractCollection(payload, keys) {
+  const unwrapped = isRecord(payload) && 'data' in payload ? payload.data : payload
+  if (Array.isArray(unwrapped)) return unwrapped
+  if (!isRecord(unwrapped)) return []
+
+  for (const key of keys) {
+    if (Array.isArray(unwrapped[key])) return unwrapped[key]
+  }
+
+  return []
+}
+
+function resolveResourceId(item, keys) {
+  if (!isRecord(item)) return null
+  for (const key of keys) {
+    const value = item[key]
+    if (typeof value === 'string' && isPublicResourceId(value.trim())) return value.trim()
+  }
+  return null
+}
+
+function resolveDynamicApiBaseUrl() {
+  const candidate = process.env.PUBLIC_SITEMAP_API_BASE_URL?.trim()
+  if (!candidate) return null
+
+  try {
+    return new URL(candidate).toString().replace(/\/+$/, '')
+  } catch {
+    throw new Error(`Invalid PUBLIC_SITEMAP_API_BASE_URL: ${candidate}`)
+  }
+}
+
+function dynamicRouteForPath(path) {
+  const source = DYNAMIC_ROUTE_SOURCES.find((item) => path.startsWith(item.pathPrefix))
+  if (!source) return null
+  const id = path.slice(source.pathPrefix.length)
+  if (!isPublicResourceId(id)) return null
+  return { path, priority: source.priority, changefreq: source.changefreq }
+}
+
+function readPreservedDynamicRoutes() {
+  try {
+    const content = readFileSync(SITEMAP_PATH, 'utf-8')
+    return [...content.matchAll(/<loc>([^<]+)<\/loc>/g)]
+      .map((match) => {
+        try {
+          const url = new URL(match[1])
+          return url.origin === BASE_URL ? dynamicRouteForPath(url.pathname) : null
+        } catch {
+          return null
+        }
+      })
+      .filter(Boolean)
+  } catch {
+    return []
+  }
+}
+
+async function fetchDynamicRoutes(apiBaseUrl) {
+  const routeGroups = await Promise.all(
+    DYNAMIC_ROUTE_SOURCES.map(async (source) => {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000)
+      try {
+        const response = await fetch(`${apiBaseUrl}${source.endpoint}`, {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'MomiChan-Sitemap/1.0',
+          },
+          signal: controller.signal,
+        })
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        return extractCollection(await response.json(), source.collectionKeys)
+          .map((item) => resolveResourceId(item, source.idKeys))
+          .filter(Boolean)
+          .map((id) => ({
+            path: `${source.pathPrefix}${id}`,
+            priority: source.priority,
+            changefreq: source.changefreq,
+          }))
+      } catch (error) {
+        console.warn(
+          `Dynamic sitemap source unavailable (${source.endpoint}): ${error instanceof Error ? error.message : String(error)}`
+        )
+        return []
+      } finally {
+        clearTimeout(timeout)
+      }
+    })
+  )
+
+  return routeGroups.flat()
+}
+
+async function resolveDynamicRoutes() {
+  const preservedRoutes = readPreservedDynamicRoutes()
+  const apiBaseUrl = resolveDynamicApiBaseUrl()
+  const fetchedRoutes = apiBaseUrl ? await fetchDynamicRoutes(apiBaseUrl) : []
+  const routesByPath = new Map()
+
+  for (const route of [...preservedRoutes, ...fetchedRoutes]) {
+    routesByPath.set(route.path, route)
+  }
+
+  return [...routesByPath.values()].sort((left, right) => left.path.localeCompare(right.path))
+}
+
 /**
  * 生成 URL 条目
  * @param {Object} route - 路由配置对象
@@ -117,11 +251,6 @@ function generateUrlEntry(route) {
     `    <priority>${route.priority}</priority>`,
   ]
 
-  const langLinks = LANGUAGES.map(
-    (lang) => `    <xhtml:link rel="alternate" hreflang="${lang}" href="${loc}" />`
-  )
-  parts.push(...langLinks)
-
   parts.push('  </url>')
 
   return parts.join('\n')
@@ -131,18 +260,16 @@ function generateUrlEntry(route) {
  * 生成完整的 sitemap
  * @returns {string} 完整的 sitemap XML 内容
  */
-function generateSitemap() {
+function generateSitemap(routes) {
   const header = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
-    '        xmlns:xhtml="http://www.w3.org/1999/xhtml"',
-    '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     '  ',
     '  <!-- 使用 scripts/generate-sitemap.js 生成 -->',
     '  ',
   ]
 
-  const urlEntries = ROUTES.map((route) => generateUrlEntry(route))
+  const urlEntries = routes.map((route) => generateUrlEntry(route))
 
   const footer = ['</urlset>']
 
@@ -225,12 +352,13 @@ async function main() {
   try {
     console.log('🗺️  Generating sitemap...')
     console.log(`📍 Base URL: ${BASE_URL}`)
-    console.log(`📄 Routes: ${ROUTES.length}`)
-    console.log(`🌐 Languages: ${LANGUAGES.join(', ')}`)
+    const dynamicRoutes = await resolveDynamicRoutes()
+    const routes = [...ROUTES, ...dynamicRoutes]
+    console.log(`📄 Routes: ${routes.length} (${dynamicRoutes.length} dynamic)`)
     console.log('')
 
     // 生成 sitemap / robots
-    const sitemap = generateSitemap()
+    const sitemap = generateSitemap(routes)
     const robots = generateRobots()
 
     // 验证

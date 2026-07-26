@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { normalizeProxyTarget } from '../proxyTarget'
 
 describe('Vite API proxy target normalization', () => {
-  const facade = 'https://momichan.com'
+  const facade = 'https://next.momichan.com'
 
   it.each([undefined, '', '/api', '/api/'])(
     'maps the same-origin %s sentinel to the configured facade',

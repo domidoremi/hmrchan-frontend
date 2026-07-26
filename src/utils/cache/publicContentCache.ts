@@ -7,6 +7,7 @@ export type PublicContentCacheScope =
   | 'post-detail'
   | 'discussion-detail'
   | 'author-detail'
+  | 'schedule-detail'
   | 'author-list'
   | 'community'
   | 'schedule'
@@ -86,6 +87,11 @@ const scopeTtls: Record<
     staleTtl: 24 * 60 * 60_000,
     strategy: 'stale-while-revalidate',
   },
+  'schedule-detail': {
+    ttl: 5 * 60_000,
+    staleTtl: 24 * 60 * 60_000,
+    strategy: 'stale-while-revalidate',
+  },
   'author-list': {
     ttl: 5 * 60_000,
     staleTtl: 12 * 60 * 60_000,
@@ -134,6 +140,7 @@ function inferScopeFromKey(key: string): PublicContentCacheScope {
   if (key.includes('post-detail')) return 'post-detail'
   if (key.includes('discussion-detail')) return 'discussion-detail'
   if (key.includes('author-detail')) return 'author-detail'
+  if (key.includes('schedule-detail')) return 'schedule-detail'
   if (key.includes('author-list') || key.includes('authors')) return 'author-list'
   if (key.includes('community')) return 'community'
   if (key.includes('schedule')) return 'schedule'

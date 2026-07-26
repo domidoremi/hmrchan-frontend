@@ -51,6 +51,7 @@ describe('hmrContent post detail loading', () => {
       loadHomePrimaryContentResource,
       loadPostDetailContentResource,
       loadScheduleContentResource,
+      loadScheduleDetailContentResource,
     } = await import('../hmrContent')
 
     const cases = [
@@ -107,6 +108,10 @@ describe('hmrContent post detail loading', () => {
         load: () => loadScheduleContentResource(),
         paths: ['/schedules', '/schedules/calendar', '/schedules/highlights'],
       },
+      {
+        load: () => loadScheduleDetailContentResource('018f6d22-3cc7-7a1d-a456-4d2c59b6f4f2'),
+        paths: ['/schedules/018f6d22-3cc7-7a1d-a456-4d2c59b6f4f2'],
+      },
     ]
 
     for (const item of cases) {
@@ -128,6 +133,58 @@ describe('hmrContent post detail loading', () => {
     expect(resource.error).toBeNull()
     expect(resource.paths).toEqual(['/schedules', '/schedules/calendar', '/schedules/highlights'])
     expect(resource.data).toEqual({ items: [], calendar: [], highlights: [] })
+  })
+
+  it('maps the backend schedule list and detail field contract', async () => {
+    const scheduleId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f2'
+    mockApiGet.mockImplementation(async (path: string) => {
+      if (path === '/schedules') {
+        return {
+          items: [
+            {
+              id: scheduleId,
+              title: 'Momi Live Window',
+              description: 'Public event description.',
+              category: 'live',
+              start_date: '2026-07-26T12:00:00Z',
+            },
+          ],
+        }
+      }
+      if (path === `/schedules/${scheduleId}`) {
+        return {
+          id: scheduleId,
+          title: 'Momi Live Window',
+          description: 'Public event description.',
+          category: 'live',
+          start_date: '2026-07-26T12:00:00Z',
+          end_date: '2026-07-26T13:30:00Z',
+          is_all_day: false,
+          venue: 'Signal Hall',
+          event_url: 'https://events.example.test/momi-live',
+        }
+      }
+      return {}
+    })
+    const { loadScheduleContentResource, loadScheduleDetailContentResource } =
+      await import('../hmrContent')
+
+    const list = await loadScheduleContentResource()
+    const detail = await loadScheduleDetailContentResource(scheduleId)
+
+    expect(list.data.items[0]).toMatchObject({
+      id: scheduleId,
+      time: '2026-07-26T12:00:00Z',
+      title: 'Momi Live Window',
+    })
+    expect(detail.data).toMatchObject({
+      endAt: '2026-07-26T13:30:00Z',
+      eventUrl: 'https://events.example.test/momi-live',
+      id: scheduleId,
+      startAt: '2026-07-26T12:00:00Z',
+      venue: 'Signal Hall',
+      viewState: 'available',
+    })
   })
 
   it('loads profile sections through their authenticated endpoint contracts', async () => {

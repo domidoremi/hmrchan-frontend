@@ -78,12 +78,12 @@ async function createPwaFixture(options: ManifestFixtureOptions): Promise<string
   const i18nSupportedLocales = options.i18nSupportedLocales ?? ['zh-CN', 'en-US', 'ja-JP']
   const htmlLang = options.html?.lang ?? 'zh-CN'
   const offlineLang = options.offlineLang ?? 'zh-CN'
-  const sitemapHreflang = options.sitemapHreflang ?? i18nSupportedLocales
+  const sitemapHreflang = options.sitemapHreflang ?? []
   const sitemapGeneratorPaths = options.sitemapGeneratorPaths ?? [...indexedSitemapPaths]
   const sitemapEntries: NonNullable<ManifestFixtureOptions['sitemapEntries']> =
     options.sitemapEntries ??
     indexedSitemapPaths.map((path) => ({
-      loc: new URL(path, 'https://momichan.com').toString(),
+      loc: new URL(path, 'https://next.momichan.com').toString(),
       hreflang: sitemapHreflang,
     }))
   const manifestHref = options.html?.manifestHref ?? '/manifest.json'
@@ -597,11 +597,11 @@ describe('pwa audit language contract', () => {
     }
   })
 
-  it('fails when sitemap hreflang values drift from supported locales', async () => {
+  it('fails when sitemap declares hreflang without locale-specific public URLs', async () => {
     const projectRoot = await createPwaFixture({
       icons: [{ src: '/icons/sitting-192.webp' }],
       existingIcons: ['/icons/sitting-192.webp'],
-      sitemapHreflang: ['zh-CN', 'zh-TW', 'ja-JP'],
+      sitemapHreflang: ['zh-CN'],
     })
 
     try {
@@ -614,107 +614,7 @@ describe('pwa audit language contract', () => {
             rule: 'pwa-sitemap-language',
             file: 'public/sitemap.xml',
             message:
-              'public/sitemap.xml hreflang values must match supported locales for https://momichan.com/: zh-CN, en-US, ja-JP',
-          }),
-        ])
-      )
-    } finally {
-      await rm(projectRoot, { recursive: true, force: true })
-    }
-  })
-
-  it('fails when a localized sitemap entry omits one supported locale', async () => {
-    const projectRoot = await createPwaFixture({
-      icons: [{ src: '/icons/sitting-192.webp' }],
-      existingIcons: ['/icons/sitting-192.webp'],
-      sitemapEntries: [
-        {
-          loc: 'https://momichan.com/',
-          hreflang: ['zh-CN', 'en-US', 'ja-JP'],
-        },
-        {
-          loc: 'https://momichan.com/explore',
-          hreflang: ['zh-CN', 'ja-JP'],
-        },
-      ],
-    })
-
-    try {
-      const result = await runPwaAudit(projectRoot)
-
-      expect(result.status).toBe('fail')
-      expect(result.issues).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            rule: 'pwa-sitemap-language',
-            file: 'public/sitemap.xml',
-            message:
-              'public/sitemap.xml hreflang values must match supported locales for https://momichan.com/explore: zh-CN, en-US, ja-JP',
-          }),
-        ])
-      )
-    } finally {
-      await rm(projectRoot, { recursive: true, force: true })
-    }
-  })
-
-  it('fails when an indexed sitemap entry has no alternate languages', async () => {
-    const projectRoot = await createPwaFixture({
-      icons: [{ src: '/icons/sitting-192.webp' }],
-      existingIcons: ['/icons/sitting-192.webp'],
-      sitemapEntries: [
-        {
-          loc: 'https://momichan.com/',
-          hreflang: ['zh-CN', 'en-US', 'ja-JP'],
-        },
-        {
-          loc: 'https://momichan.com/explore',
-          hreflang: [],
-        },
-      ],
-    })
-
-    try {
-      const result = await runPwaAudit(projectRoot)
-
-      expect(result.status).toBe('fail')
-      expect(result.issues).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            rule: 'pwa-sitemap-language',
-            file: 'public/sitemap.xml',
-            message:
-              'public/sitemap.xml hreflang values must match supported locales for https://momichan.com/explore: zh-CN, en-US, ja-JP',
-          }),
-        ])
-      )
-    } finally {
-      await rm(projectRoot, { recursive: true, force: true })
-    }
-  })
-
-  it('fails when a sitemap alternate href drifts from the entry loc', async () => {
-    const projectRoot = await createPwaFixture({
-      icons: [{ src: '/icons/sitting-192.webp' }],
-      existingIcons: ['/icons/sitting-192.webp'],
-      sitemapEntries: indexedSitemapPaths.map((path) => ({
-        loc: new URL(path, 'https://momichan.com').toString(),
-        hreflang: ['zh-CN', 'en-US', 'ja-JP'],
-        ...(path === '/explore' ? { alternateHref: 'https://momichan.com/community' } : {}),
-      })),
-    })
-
-    try {
-      const result = await runPwaAudit(projectRoot)
-
-      expect(result.status).toBe('fail')
-      expect(result.issues).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            rule: 'pwa-sitemap-language',
-            file: 'public/sitemap.xml',
-            message:
-              'public/sitemap.xml alternate href values must match loc for https://momichan.com/explore',
+              'public/sitemap.xml must not declare hreflang without locale-specific public URLs: https://next.momichan.com/',
           }),
         ])
       )
@@ -730,7 +630,7 @@ describe('pwa audit language contract', () => {
       sitemapEntries: indexedSitemapPaths
         .filter((path) => path !== '/join-us')
         .map((path) => ({
-          loc: new URL(path, 'https://momichan.com').toString(),
+          loc: new URL(path, 'https://next.momichan.com').toString(),
           hreflang: ['zh-CN', 'en-US', 'ja-JP'],
         })),
     })
@@ -759,11 +659,11 @@ describe('pwa audit language contract', () => {
       existingIcons: ['/icons/sitting-192.webp'],
       sitemapEntries: [
         ...indexedSitemapPaths.map((path) => ({
-          loc: new URL(path, 'https://momichan.com').toString(),
+          loc: new URL(path, 'https://next.momichan.com').toString(),
           hreflang: ['zh-CN', 'en-US', 'ja-JP'],
         })),
         {
-          loc: 'https://momichan.com/profile',
+          loc: 'https://next.momichan.com/profile',
           hreflang: ['zh-CN', 'en-US', 'ja-JP'],
         },
       ],
@@ -794,7 +694,7 @@ describe('pwa audit language contract', () => {
       sitemapEntries: indexedSitemapPaths.map((path) => ({
         loc: new URL(
           path,
-          path === '/join-us' ? 'https://example.com' : 'https://momichan.com'
+          path === '/join-us' ? 'https://example.com' : 'https://next.momichan.com'
         ).toString(),
         hreflang: ['zh-CN', 'en-US', 'ja-JP'],
       })),
@@ -810,7 +710,7 @@ describe('pwa audit language contract', () => {
             rule: 'pwa-sitemap-origin',
             file: 'public/sitemap.xml',
             message:
-              'public/sitemap.xml loc origin must match https://momichan.com: https://example.com/join-us',
+              'public/sitemap.xml loc origin must match https://next.momichan.com: https://example.com/join-us',
           }),
         ])
       )

@@ -527,7 +527,7 @@ function buildPostShellLinks(post: EdgePostDetail): HtmlDocumentShellLink[] {
 
   if (authorId) {
     links.push({
-      href: `/profile/${authorId}`,
+      href: `/author/${authorId}`,
       label: authorName ? `${authorName} profile` : 'Author profile',
     })
   }
@@ -588,7 +588,7 @@ function buildPostStructuredData(
         ? compactRecord({
             '@type': 'Person',
             name: authorName,
-            url: authorId ? new URL(`/profile/${authorId}`, SITE_ORIGIN).toString() : undefined,
+            url: authorId ? new URL(`/author/${authorId}`, SITE_ORIGIN).toString() : undefined,
             image: normalizeText(post.author_avatar_url) || undefined,
           })
         : undefined,
@@ -1051,7 +1051,7 @@ function buildScheduleShellLinks(schedule: EdgeScheduleDetail): HtmlDocumentShel
   const links: HtmlDocumentShellLink[] = []
   const authorId = normalizeIdentifier(schedule.author?.id)
 
-  if (authorId) links.push({ href: `/profile/${authorId}`, label: 'Related profile' })
+  if (authorId) links.push({ href: `/author/${authorId}`, label: 'Related profile' })
 
   links.push({ href: '/schedule', label: 'Schedule' })
   links.push({ href: '/community', label: 'Community' })
@@ -1311,7 +1311,7 @@ export async function resolveHtmlDocumentWithEdgeData(
     }
   }
 
-  const authorMatch = path.match(/^\/profile\/([^/]+)$/)
+  const authorMatch = path.match(/^\/author\/([^/]+)$/)
   if (authorMatch?.[1]) {
     try {
       const result = await fetchEdgeJson<EdgeAuthorDetail>(env, `/api/v1/authors/${authorMatch[1]}`)

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://momichan.com/sitemap.xml
+Sitemap: https://next.momichan.com/sitemap.xml

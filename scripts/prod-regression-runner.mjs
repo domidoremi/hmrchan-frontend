@@ -27,7 +27,7 @@ import { normalizeAbsoluteBaseUrl } from './lib/url.js'
 
 applyLocalAuditEnvToProcess()
 
-const DEFAULT_BASE_URL = 'https://momichan.com'
+const DEFAULT_BASE_URL = 'https://next.momichan.com'
 const DEFAULT_SECONDARY_EMAIL_MODE = 'user-assisted'
 const SKIP_LIGHTHOUSE_ENV = 'PROD_REGRESSION_SKIP_LIGHTHOUSE'
 const SITE_NAME = 'MomiChan'
@@ -114,10 +114,10 @@ function parseArgs(argv) {
 
 function printHelp() {
   console.log(`
-momichan.com 生产深度回归 runner
+next.momichan.com 生产深度回归 runner
 
 用法:
-  BASE_URL=https://momichan.com \\
+  BASE_URL=https://next.momichan.com \\
   PRIMARY_USERNAME=<main account> \\
   PRIMARY_PASSWORD=<main password> \\
   SECONDARY_EMAIL_MODE=user-assisted \\
@@ -132,7 +132,7 @@ momichan.com 生产深度回归 runner
   --help       显示帮助
 
 固定输入契约:
-  BASE_URL                默认 https://momichan.com
+  BASE_URL                默认 https://next.momichan.com
   PRIMARY_USERNAME        必填
   PRIMARY_PASSWORD        必填
   SECONDARY_EMAIL_MODE    必须为 user-assisted
@@ -3379,7 +3379,7 @@ function buildMarkdownReport(state) {
   const lingeringData = state.cleanup.filter((item) => item.restored === false)
 
   const lines = [
-    '# momichan.com 生产深度回归报告',
+    '# next.momichan.com 生产深度回归报告',
     '',
     `- 开始时间: ${state.startedAt}`,
     `- 结束时间: ${state.finishedAt}`,
@@ -3573,7 +3573,7 @@ async function main() {
     writeText(
       summaryMdPath,
       [
-        '# momichan.com legacy post residual blocker',
+        '# next.momichan.com legacy post residual blocker',
         '',
         `- Base URL: ${config.baseUrl}`,
         `- Residual report: ${path.resolve('build', 'reports', 'uuidv7-prod-post-residuals', 'summary.json')}`,

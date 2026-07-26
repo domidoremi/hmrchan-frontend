@@ -9,6 +9,8 @@ type AuthStore = ReturnType<typeof useAuthStore>
 const PUBLIC_ID_DETAIL_ROUTE_NAMES = new Set([
   'hmr-post-detail',
   'hmr-discussion-detail',
+  'hmr-author-detail',
+  'hmr-schedule-detail',
   'post-detail',
   'author-detail',
   'discussion-detail',

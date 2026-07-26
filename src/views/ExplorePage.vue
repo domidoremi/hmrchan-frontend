@@ -218,11 +218,16 @@
           <h2 class="hmr-section-title">{{ t('explore.authorTitle') }}</h2>
         </div>
         <div class="hmr-author-strip">
-          <article v-for="author in content.authors" :key="author.id" class="hmr-author-chip">
+          <RouterLink
+            v-for="author in content.authors"
+            :key="author.id"
+            class="hmr-author-chip"
+            :to="`/author/${author.id}`"
+          >
             <div class="hmr-avatar">{{ author.name.slice(0, 1).toUpperCase() }}</div>
             <h3 class="hmr-card-title">{{ author.name }}</h3>
             <p class="hmr-body">{{ author.bio }}</p>
-          </article>
+          </RouterLink>
         </div>
       </div>
     </section>

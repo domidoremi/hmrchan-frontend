@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const resolveHtmlDocumentWithEdgeData = vi.fn()
-const resolveCanonicalUrlForOrigin = vi.fn((config: { canonicalPath: string }, origin: string) => {
-  return `${origin}${config.canonicalPath}`
-})
-const resolveDefaultOgImage = vi.fn((origin: string) => `${origin}/og-default.png`)
+const resolveCanonicalUrl = vi.fn(
+  (config: { canonicalPath: string }) => `https://next.momichan.com${config.canonicalPath}`
+)
 const renderPrerenderShell = vi.fn(
   (config: { shellTitle: string }) =>
     `<section data-prerender-shell="true" data-prerender-shell-title="${config.shellTitle}"><h1>${config.shellTitle}</h1></section>`
@@ -16,9 +15,8 @@ vi.mock('../../src/edge/detailDocumentResolver', () => ({
 }))
 
 vi.mock('../../src/edge/htmlDocument', () => ({
-  DEFAULT_OG_IMAGE: 'https://momichan.com/og-default.png',
-  resolveDefaultOgImage,
-  resolveCanonicalUrlForOrigin,
+  DEFAULT_OG_IMAGE: 'https://next.momichan.com/og-default.png',
+  resolveCanonicalUrl,
   renderPrerenderShell,
   resolveStructuredDataPayload,
 }))
@@ -107,8 +105,7 @@ describe('functions/_middleware', () => {
   beforeEach(() => {
     vi.resetModules()
     resolveHtmlDocumentWithEdgeData.mockReset()
-    resolveCanonicalUrlForOrigin.mockClear()
-    resolveDefaultOgImage.mockClear()
+    resolveCanonicalUrl.mockClear()
     renderPrerenderShell.mockClear()
     resolveStructuredDataPayload.mockClear()
 
@@ -129,19 +126,19 @@ describe('functions/_middleware', () => {
     vi.unstubAllGlobals()
   })
 
-  it('redirects the www host to the canonical apex host', async () => {
+  it('redirects the next-site www host to the canonical next host', async () => {
     const next = vi.fn()
     const { onRequest } = await import('../_middleware')
 
     const response = await onRequest({
-      request: new Request('https://www.momichan.com/explore?q=test'),
+      request: new Request('https://www.next.momichan.com/explore?q=test'),
       env: {},
       next,
     } as never)
 
     expect(next).not.toHaveBeenCalled()
     expect(response.status).toBe(308)
-    expect(response.headers.get('Location')).toBe('https://momichan.com/explore?q=test')
+    expect(response.headers.get('Location')).toBe('https://next.momichan.com/explore?q=test')
     expect(response.headers.get('Strict-Transport-Security')).toBe(
       'max-age=63072000; includeSubDomains; preload'
     )
@@ -277,7 +274,7 @@ describe('functions/_middleware', () => {
     expect(html).not.toContain('content="old description"')
     expect(html).not.toContain('https://old.example')
     expect(html).toContain('content="noindex, nofollow"')
-    expect(html).toContain('href="https://momichan.com/missing"')
+    expect(html).toContain('href="https://next.momichan.com/missing"')
     expect(html).toContain('data-prerender-shell="true"')
     expect(html).not.toContain('/hmrchan/pets/tidyfox/spritesheet.webp')
     expect(html).not.toContain('prerender-shell-content')
@@ -364,7 +361,7 @@ describe('functions/_middleware', () => {
     const html = await response.text()
     expect(html).toContain('Public preview restricted · MomiChan')
     expect(html).toContain('This post is temporarily unavailable for public preview')
-    expect(html).toContain('href="https://momichan.com/posts/restricted-post"')
+    expect(html).toContain('href="https://next.momichan.com/posts/restricted-post"')
     expect(html).toContain('data-prerender-shell="true"')
     expect(html).toContain('data-prerender-shell-title="This post is temporarily unavailable')
     expect(html).toContain('<h1>This post is temporarily unavailable for public preview</h1>')

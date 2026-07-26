@@ -140,6 +140,10 @@ async function mountExplorePageWithStubs(stubs: Stubs = defaultExploreStubs()) {
 
 function defaultExploreStubs(): Stubs {
   return {
+    RouterLink: {
+      props: ['to'],
+      template: '<a class="router-link-stub" :href="to"><slot /></a>',
+    },
     HmrPostCard: {
       props: ['post', 'imageLoading', 'imageFetchPriority'],
       template:
@@ -451,6 +455,7 @@ describe('ExplorePage', () => {
           }),
         ],
         stubs: {
+          ...defaultExploreStubs(),
           HmrPostCard: true,
         },
       },

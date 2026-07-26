@@ -3,7 +3,7 @@ import { supportedLocales } from '../i18n/locales'
 import { escapeHtml } from './htmlEscaping'
 
 const SITE_NAME = 'MomiChan'
-export const SITE_ORIGIN = 'https://momichan.com'
+export const SITE_ORIGIN = 'https://next.momichan.com'
 export const DEFAULT_OG_IMAGE_PATH = '/icons/sitting-512.webp'
 export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}${DEFAULT_OG_IMAGE_PATH}`
 const HOME_PRERENDER_IMAGE_PATH = STATIC_HOME_PRERENDER_IMAGE.href
@@ -506,6 +506,50 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
         ],
         shellLinks: [
           { href: '/explore', label: 'Explore' },
+          { href: '/', label: 'Home' },
+        ],
+      }
+    )
+  }
+
+  if (/^\/author\/[^/]+$/.test(path)) {
+    return createDocumentConfig(
+      path,
+      'Creator profile',
+      '浏览 MomiChan 公开创作者资料、简介与相关内容。',
+      'Creator profile',
+      'Discover this creator and their public updates',
+      '查看创作者公开资料与简介，并从探索页继续浏览相关内容。',
+      {
+        ogType: 'article',
+        shellSummary: [
+          'Open Explore to continue through recent posts and creator activity.',
+          'If this profile is no longer available, you can keep browsing public content.',
+        ],
+        shellLinks: [
+          { href: '/explore', label: 'Explore' },
+          { href: '/', label: 'Home' },
+        ],
+      }
+    )
+  }
+
+  if (/^\/schedule\/[^/]+$/.test(path)) {
+    return createDocumentConfig(
+      path,
+      'Schedule detail',
+      '查看 MomiChan 公开日程详情、时间、地点与相关活动信息。',
+      'Schedule detail',
+      'Review this public event and its latest schedule information',
+      '查看活动时间、地点与公开链接，并从日程页继续浏览近期安排。',
+      {
+        ogType: 'article',
+        shellSummary: [
+          'Return to Schedule to browse more public events and upcoming activity.',
+          'If this event is no longer available, you can continue from the public schedule.',
+        ],
+        shellLinks: [
+          { href: '/schedule', label: 'Schedule' },
           { href: '/', label: 'Home' },
         ],
       }

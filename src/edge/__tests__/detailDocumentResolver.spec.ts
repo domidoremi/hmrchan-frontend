@@ -4,6 +4,7 @@ import { resolveHtmlDocumentWithEdgeData, type EdgeRuntimeEnv } from '../detailD
 
 const POST_ID = '018f5f3a-01a2-7c3d-8e4f-0123456789ab'
 const RELATED_POST_ID = '018f5f3a-01a2-7c3d-8e4f-0123456789ac'
+const SCHEDULE_ID = '018f5f3a-01a2-7c3d-8e4f-0123456789ae'
 
 function makeEnv(overrides: Partial<EdgeRuntimeEnv> = {}): EdgeRuntimeEnv {
   return {
@@ -72,7 +73,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const documentConfig = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.com/posts/${POST_ID}`),
+      new URL(`https://next.momichan.com/posts/${POST_ID}`),
       makeEnv({
         API_BASE_URL: ' https://api.example.test/// ',
       })
@@ -110,7 +111,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
     expect(documentConfig.shellLinks).toEqual(
       expect.arrayContaining([
-        { href: '/profile/creator-1', label: 'Momi Author profile' },
+        { href: '/author/creator-1', label: 'Momi Author profile' },
         { href: `/posts/${RELATED_POST_ID}`, label: 'Latest related post' },
       ])
     )
@@ -138,7 +139,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const documentConfig = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.com/posts/${POST_ID}`),
+      new URL(`https://next.momichan.com/posts/${POST_ID}`),
       makeEnv()
     )
 
@@ -165,7 +166,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     stubFetch(jsonResponse({ code: 'NOT_FOUND' }, 404))
 
     const documentConfig = await resolveHtmlDocumentWithEdgeData(
-      new URL(`https://momichan.com/posts/${POST_ID}`),
+      new URL(`https://next.momichan.com/posts/${POST_ID}`),
       makeEnv()
     )
 
@@ -174,6 +175,118 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
       robots: 'noindex, nofollow',
       status: 404,
       title: 'Page not found · MomiChan',
+    })
+  })
+
+  it('keeps protected profile sections out of the public author resolver', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const documentConfig = await resolveHtmlDocumentWithEdgeData(
+      new URL('https://next.momichan.com/profile/security'),
+      makeEnv()
+    )
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(documentConfig).toMatchObject({
+      canonicalPath: '/profile/security',
+      robots: 'noindex, nofollow',
+      status: 200,
+      title: 'Profile · MomiChan',
+    })
+  })
+
+  it('resolves public creator metadata only on the author route', async () => {
+    const authorId = '018f5f3a-01a2-7c3d-8e4f-0123456789ad'
+    const fetchMock = stubFetch(
+      jsonResponse({
+        data: {
+          avatar_url: 'https://cdn.example.test/author.webp',
+          bio: 'Public creator biography.',
+          display_name: 'Momi Creator',
+          id: authorId,
+          is_verified: true,
+          platform: 'youtube',
+          username: 'momi_creator',
+        },
+      })
+    )
+
+    const documentConfig = await resolveHtmlDocumentWithEdgeData(
+      new URL(`https://next.momichan.com/author/${authorId}`),
+      makeEnv()
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://api.example.test/api/v1/authors/${authorId}`,
+      expect.objectContaining({ method: 'GET' })
+    )
+    expect(documentConfig).toMatchObject({
+      canonicalPath: `/author/${authorId}`,
+      ogImage: 'https://cdn.example.test/author.webp',
+      robots: 'index, follow',
+      status: 200,
+      title: 'Momi Creator (@momi_creator) · MomiChan',
+    })
+  })
+
+  it('builds dynamic schedule metadata from the public schedule detail contract', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse({
+        data: {
+          category: 'live',
+          description: 'A published public event.',
+          end_date: '2026-07-26T13:30:00Z',
+          event_url: 'https://events.example.test/momi-live',
+          id: SCHEDULE_ID,
+          start_date: '2026-07-26T12:00:00Z',
+          title: 'Momi Live Window',
+          venue: 'Signal Hall',
+        },
+      })
+    )
+
+    const documentConfig = await resolveHtmlDocumentWithEdgeData(
+      new URL(`https://next.momichan.com/schedule/${SCHEDULE_ID}`),
+      makeEnv()
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://api.example.test/api/v1/schedules/${SCHEDULE_ID}`,
+      expect.objectContaining({ method: 'GET' })
+    )
+    expect(documentConfig).toMatchObject({
+      canonicalPath: `/schedule/${SCHEDULE_ID}`,
+      ogType: 'article',
+      robots: 'index, follow',
+      shellTitle: 'Momi Live Window',
+      status: 200,
+      title: 'Momi Live Window · MomiChan',
+    })
+    expect(documentConfig.structuredData[0]).toMatchObject({
+      '@type': 'Event',
+      location: expect.objectContaining({ name: 'Signal Hall' }),
+      name: 'Momi Live Window',
+    })
+  })
+
+  it('keeps a valid schedule route indexable when edge enrichment is unavailable', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Promise.reject(new TypeError('network failed')))
+    )
+
+    const documentConfig = await resolveHtmlDocumentWithEdgeData(
+      new URL(`https://next.momichan.com/schedule/${SCHEDULE_ID}`),
+      makeEnv()
+    )
+
+    expect(documentConfig).toMatchObject({
+      canonicalPath: `/schedule/${SCHEDULE_ID}`,
+      ogType: 'article',
+      robots: 'index, follow',
+      status: 200,
+      title: 'Schedule detail · MomiChan',
     })
   })
 })

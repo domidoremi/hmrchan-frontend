@@ -40,7 +40,7 @@ const DEV_PROXY_BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 const REHEARSAL_TURNSTILE_BYPASS_HEADER = 'X-Rehearsal-Turnstile-Bypass'
-const DEFAULT_DEV_API_PROXY_TARGET = 'https://momichan.com'
+const DEFAULT_DEV_API_PROXY_TARGET = 'https://next.momichan.com'
 const DEV_PROXY_HOST_COOKIE_EQUIVALENTS = new Map<string, string>([
   ['__Host-momi_bff_at', 'momi_bff_at'],
   ['__Host-momi_bff_rt', 'momi_bff_rt'],

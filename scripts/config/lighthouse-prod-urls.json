@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-03-20T00:00:00+09:00",
-  "base": "https://momichan.com",
+  "base": "https://next.momichan.com",
   "notes": {
     "purpose": "Anonymous-surface Lighthouse fallback sample URLs",
     "authorDetail": "No verified live author detail URL is currently available; discovery must fill this from the production API or report an explicit gap.",
@@ -28,14 +28,14 @@
     }
   },
   "entries": [
-    "https://momichan.com/",
-    "https://momichan.com/explore",
-    "https://momichan.com/community",
-    "https://momichan.com/schedule",
-    "https://momichan.com/about",
-    "https://momichan.com/contact",
-    "https://momichan.com/join-us",
-    "https://momichan.com/login",
-    "https://momichan.com/register"
+    "https://next.momichan.com/",
+    "https://next.momichan.com/explore",
+    "https://next.momichan.com/community",
+    "https://next.momichan.com/schedule",
+    "https://next.momichan.com/about",
+    "https://next.momichan.com/contact",
+    "https://next.momichan.com/join-us",
+    "https://next.momichan.com/login",
+    "https://next.momichan.com/register"
   ]
 }

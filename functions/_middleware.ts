@@ -9,8 +9,7 @@
 
 import {
   DEFAULT_OG_IMAGE,
-  resolveDefaultOgImage,
-  resolveCanonicalUrlForOrigin,
+  resolveCanonicalUrl,
   renderPrerenderShell,
   resolveStructuredDataPayload,
 } from '../src/edge/htmlDocument'
@@ -43,10 +42,10 @@ type PagesEventContext<Env> = {
   request: Request
 }
 
-const CANONICAL_HOSTNAME = 'momichan.com'
+const CANONICAL_HOSTNAME = 'next.momichan.com'
 const CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
 const REPORTING_ENDPOINT_GROUP = 'csp-endpoint'
-const REDIRECT_HOSTNAMES = new Set(['www.momichan.com'])
+const REDIRECT_HOSTNAMES = new Set(['www.next.momichan.com'])
 const LEGACY_ROUTE_REDIRECTS = new Map([['/passkey-recovery', '/auth/passkey-recovery']])
 const AUTH_ROUTE_PATHS = new Set([
   '/login',
@@ -261,8 +260,7 @@ export async function onRequest(
 
   const nonce = generateNonce()
   const documentConfig = await resolveHtmlDocumentWithEdgeData(requestUrl, context.env)
-  const canonicalUrl = resolveCanonicalUrlForOrigin(documentConfig, requestUrl.origin)
-  const defaultOgImage = resolveDefaultOgImage(requestUrl.origin)
+  const canonicalUrl = resolveCanonicalUrl(documentConfig)
   const prerenderShell = renderPrerenderShell(documentConfig)
   const structuredDataPayload = resolveStructuredDataPayload(documentConfig)
 
@@ -277,14 +275,14 @@ export async function onRequest(
     .on('meta[property="og:description"]', new MetaContentHandler(documentConfig.description))
     .on(
       'meta[property="og:image"]',
-      new MetaContentHandler(documentConfig.ogImage || defaultOgImage || DEFAULT_OG_IMAGE)
+      new MetaContentHandler(documentConfig.ogImage || DEFAULT_OG_IMAGE)
     )
     .on('meta[name="twitter:title"]', new MetaContentHandler(documentConfig.title))
     .on('meta[name="twitter:description"]', new MetaContentHandler(documentConfig.description))
     .on('meta[name="twitter:url"]', new MetaContentHandler(canonicalUrl))
     .on(
       'meta[name="twitter:image"]',
-      new MetaContentHandler(documentConfig.ogImage || defaultOgImage || DEFAULT_OG_IMAGE)
+      new MetaContentHandler(documentConfig.ogImage || DEFAULT_OG_IMAGE)
     )
     .on('link[rel="canonical"]', new CanonicalHandler(canonicalUrl))
     .on(

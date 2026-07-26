@@ -29,6 +29,12 @@ export const appRoutes: RouteRecordRaw[] = [
         meta: { pageKey: 'explore', navKey: 'explore' },
       },
       {
+        path: 'author/:id',
+        name: 'hmr-author-detail',
+        component: () => import('@/views/AuthorDetailPage.vue'),
+        meta: { pageKey: 'explore', navKey: 'explore' },
+      },
+      {
         path: 'community',
         name: 'hmr-community',
         component: () => import('@/views/CommunityPage.vue'),
@@ -44,6 +50,12 @@ export const appRoutes: RouteRecordRaw[] = [
         path: 'schedule',
         name: 'hmr-schedule',
         component: () => import('@/views/SchedulePage.vue'),
+        meta: { pageKey: 'schedule', navKey: 'schedule' },
+      },
+      {
+        path: 'schedule/:id',
+        name: 'hmr-schedule-detail',
+        component: () => import('@/views/ScheduleDetailPage.vue'),
         meta: { pageKey: 'schedule', navKey: 'schedule' },
       },
       {

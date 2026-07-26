@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RouteLocationNormalized } from 'vue-router'
 
 import { syncClientDocumentHead } from '@/router/clientHead'
@@ -34,6 +34,8 @@ function resolveRepresentativeRoutePath(path: string): string {
   if (!path) return '/'
   return `/${path}`
     .replace('/profile/:section', '/profile/security')
+    .replace('/author/:id', '/author/018f5f3a-01a2-7c3d-8e4f-0123456789ad')
+    .replace('/schedule/:id', '/schedule/018f5f3a-01a2-7c3d-8e4f-0123456789ae')
     .replace('/community/discussions/:id', '/community/discussions/123')
     .replace('/posts/:id', '/posts/123')
     .replace('/:pathMatch(.*)*', '/__missing-route__')
@@ -57,6 +59,7 @@ function collectNamedShellRoutes(): Array<{
 
 describe('syncClientDocumentHead', () => {
   beforeEach(() => {
+    vi.unstubAllGlobals()
     document.head.innerHTML = ''
     document.title = 'Before'
   })
@@ -67,13 +70,13 @@ describe('syncClientDocumentHead', () => {
     expect(document.title).toBe('Explore · MomiChan')
     expect(findNamedMeta('description')?.content).toContain('探索最新公开内容')
     expect(findNamedMeta('robots')?.content).toBe('index, follow')
-    expect(findNamedMeta('twitter:url')?.content).toBe('http://localhost:3000/explore')
-    expect(findPropertyMeta('og:url')?.content).toBe('http://localhost:3000/explore')
+    expect(findNamedMeta('twitter:url')?.content).toBe('https://next.momichan.com/explore')
+    expect(findPropertyMeta('og:url')?.content).toBe('https://next.momichan.com/explore')
     expect(findPropertyMeta('og:image')?.content).toBe(
-      'http://localhost:3000/icons/sitting-512.webp'
+      'https://next.momichan.com/icons/sitting-512.webp'
     )
     expect(document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
-      'http://localhost:3000/explore'
+      'https://next.momichan.com/explore'
     )
   })
 
@@ -85,10 +88,10 @@ describe('syncClientDocumentHead', () => {
     expect(document.title).toBe('Profile · MomiChan')
     expect(findNamedMeta('description')?.content).toContain('查看 MomiChan 个人资料')
     expect(findNamedMeta('robots')?.content).toBe('noindex, nofollow')
-    expect(findNamedMeta('twitter:url')?.content).toBe('http://localhost:3000/profile/security')
-    expect(findPropertyMeta('og:url')?.content).toBe('http://localhost:3000/profile/security')
+    expect(findNamedMeta('twitter:url')?.content).toBe('https://next.momichan.com/profile/security')
+    expect(findPropertyMeta('og:url')?.content).toBe('https://next.momichan.com/profile/security')
     expect(document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
-      'http://localhost:3000/profile/security'
+      'https://next.momichan.com/profile/security'
     )
   })
 
@@ -98,11 +101,11 @@ describe('syncClientDocumentHead', () => {
     expect(document.title).toBe('Post detail · MomiChan')
     expect(findNamedMeta('description')?.content).toContain('浏览 MomiChan 公开帖子详情')
     expect(findNamedMeta('robots')?.content).toBe('index, follow')
-    expect(findNamedMeta('twitter:url')?.content).toBe('http://localhost:3000/posts/123')
+    expect(findNamedMeta('twitter:url')?.content).toBe('https://next.momichan.com/posts/123')
     expect(findPropertyMeta('og:type')?.content).toBe('article')
-    expect(findPropertyMeta('og:url')?.content).toBe('http://localhost:3000/posts/123')
+    expect(findPropertyMeta('og:url')?.content).toBe('https://next.momichan.com/posts/123')
     expect(document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
-      'http://localhost:3000/posts/123'
+      'https://next.momichan.com/posts/123'
     )
   })
 
@@ -115,14 +118,14 @@ describe('syncClientDocumentHead', () => {
     expect(findNamedMeta('description')?.content).toContain('浏览 MomiChan 公开讨论详情')
     expect(findNamedMeta('robots')?.content).toBe('index, follow')
     expect(findNamedMeta('twitter:url')?.content).toBe(
-      'http://localhost:3000/community/discussions/123'
+      'https://next.momichan.com/community/discussions/123'
     )
     expect(findPropertyMeta('og:type')?.content).toBe('article')
     expect(findPropertyMeta('og:url')?.content).toBe(
-      'http://localhost:3000/community/discussions/123'
+      'https://next.momichan.com/community/discussions/123'
     )
     expect(document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
-      'http://localhost:3000/community/discussions/123'
+      'https://next.momichan.com/community/discussions/123'
     )
   })
 
@@ -132,9 +135,11 @@ describe('syncClientDocumentHead', () => {
     expect(namedRoutes.map((route) => route.name)).toEqual([
       'hmr-home',
       'hmr-explore',
+      'hmr-author-detail',
       'hmr-community',
       'hmr-discussion-detail',
       'hmr-schedule',
+      'hmr-schedule-detail',
       'hmr-settings',
       'hmr-login',
       'hmr-register',
@@ -169,7 +174,7 @@ describe('syncClientDocumentHead', () => {
         robots: expect.stringMatching(/^(index|noindex), /),
       })
       expect(document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
-        new URL(route.path, window.location.origin).toString()
+        new URL(route.path, 'https://next.momichan.com').toString()
       )
     }
   })
@@ -180,5 +185,99 @@ describe('syncClientDocumentHead', () => {
     expect(document.title).toBe('Before')
     expect(findNamedMeta('description')).toBeNull()
     expect(document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')).toBeNull()
+  })
+
+  it('does not request public author metadata for protected profile sections', () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    syncClientDocumentHead(
+      makeRoute('/profile/security', 'hmr-profile-section', { pageKey: 'profile' })
+    )
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(findNamedMeta('robots')?.content).toBe('noindex, nofollow')
+  })
+
+  it('upgrades author head metadata and structured data after client navigation', async () => {
+    const authorId = '018f5f3a-01a2-7c3d-8e4f-0123456789ad'
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              avatar_url: 'https://cdn.example.test/creator.webp',
+              bio: 'Creator biography for client-side metadata.',
+              display_name: 'Client Creator',
+              id: authorId,
+              platform: 'youtube',
+              username: 'client_creator',
+            },
+          }),
+          { headers: { 'content-type': 'application/json' } }
+        )
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    syncClientDocumentHead(
+      makeRoute(`/author/${authorId}`, 'hmr-author-detail', { pageKey: 'explore' })
+    )
+
+    await vi.waitFor(() => {
+      expect(document.title).toBe('Client Creator (@client_creator) · MomiChan')
+    })
+    expect(findNamedMeta('description')?.content).toContain(
+      'Creator biography for client-side metadata.'
+    )
+    expect(findNamedMeta('robots')?.content).toBe('index, follow')
+    expect(findPropertyMeta('og:image')?.content).toBe('https://cdn.example.test/creator.webp')
+    expect(fetchMock).toHaveBeenCalledWith(
+      `http://localhost:3000/api/v1/authors/${authorId}`,
+      expect.any(Object)
+    )
+    expect(
+      document.head.querySelector<HTMLScriptElement>(
+        'script[data-prerender-structured-data="true"]'
+      )?.textContent
+    ).toContain('Client Creator')
+  })
+
+  it('upgrades schedule head metadata and structured data after client navigation', async () => {
+    const scheduleId = '018f5f3a-01a2-7c3d-8e4f-0123456789ae'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              data: {
+                category: 'live',
+                description: 'A public schedule for client-side metadata.',
+                id: scheduleId,
+                start_date: '2026-07-26T12:00:00Z',
+                title: 'Client Schedule',
+              },
+            }),
+            { headers: { 'content-type': 'application/json' } }
+          )
+      )
+    )
+
+    syncClientDocumentHead(
+      makeRoute(`/schedule/${scheduleId}`, 'hmr-schedule-detail', { pageKey: 'schedule' })
+    )
+
+    await vi.waitFor(() => {
+      expect(document.title).toBe('Client Schedule · MomiChan')
+    })
+    expect(findNamedMeta('description')?.content).toContain(
+      'A public schedule for client-side metadata.'
+    )
+    expect(findPropertyMeta('og:type')?.content).toBe('article')
+    expect(
+      document.head.querySelector<HTMLScriptElement>(
+        'script[data-prerender-structured-data="true"]'
+      )?.textContent
+    ).toContain('Client Schedule')
   })
 })

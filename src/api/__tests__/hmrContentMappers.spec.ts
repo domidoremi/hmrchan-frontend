@@ -1,6 +1,31 @@
 import { describe, expect, it } from 'vitest'
 
-import { mapExploreContent, mapPost, mapPostDetailContent } from '@/api/hmrContentMappers'
+import {
+  mapAuthor,
+  mapExploreContent,
+  mapPost,
+  mapPostDetailContent,
+} from '@/api/hmrContentMappers'
+
+describe('hmrContentMappers author mapping', () => {
+  it('prefers the public display name over the account username', () => {
+    expect(
+      mapAuthor(
+        {
+          id: 'author-1',
+          username: 'account-handle',
+          display_name: 'Public Creator',
+          bio: 'Creator bio',
+        },
+        0
+      )
+    ).toEqual({
+      id: 'author-1',
+      name: 'Public Creator',
+      bio: 'Creator bio',
+    })
+  })
+})
 
 describe('hmrContentMappers post mapping', () => {
   it('maps API field aliases into normalized post card data', () => {

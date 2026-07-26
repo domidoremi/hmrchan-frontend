@@ -115,11 +115,13 @@
           </aside>
 
           <div class="hmr-schedule-event-list">
-            <article
+            <component
               v-for="item in selectedDayEvents"
               :key="item.id"
+              :is="isValidPostRouteId(item.id) ? RouterLink : 'article'"
               class="hmr-schedule-event"
               :class="{ 'is-performance': item.isPerformance }"
+              :to="isValidPostRouteId(item.id) ? `/schedule/${item.id}` : undefined"
             >
               <time :datetime="item.dateKey">{{ item.timeLabel }}</time>
               <div>
@@ -130,7 +132,7 @@
               <em>{{
                 item.isPerformance ? t('schedule.performance') : t('schedule.arrangement')
               }}</em>
-            </article>
+            </component>
 
             <div v-if="!selectedDayEvents.length" class="hmr-schedule-empty">
               <span class="hmr-schedule-empty-ornament" aria-hidden="true"></span>
@@ -192,6 +194,7 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 
 import { loadScheduleContentResource, type HmrScheduleContent } from '@/api/hmrContent'
+import { isValidPostRouteId } from '@/edge/htmlDocument'
 import HmrPageStateBlock from '@/hmr/components/HmrPageStateBlock.vue'
 import { useHmrPublicContentResource } from '@/hmr/composables/useHmrPublicContentResource'
 import { useHmrMountedResourceRefresh } from '@/hmr/composables/useHmrRouteResourceRefresh'

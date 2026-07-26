@@ -199,7 +199,7 @@ const AUTH_BOOTSTRAP_CONTRACT_VERSION =
   process.env['VITE_CLIENT_CONTRACT_VERSION']?.trim() ||
   ''
 const E2E_HARD_TIMEOUT_MS = Number.parseInt(process.env['E2E_HARD_TIMEOUT_MS'] ?? '', 10) || 720_000
-const STATIC_PRERENDER_CANONICAL_ORIGIN = 'https://momichan.com'
+const STATIC_PRERENDER_CANONICAL_ORIGIN = 'https://next.momichan.com'
 const PREVIEW_PORT_CANDIDATES = resolveLocalAuditPreviewPorts(AUDIT_ENV, [
   'E2E_PREVIEW_PORTS',
   'E2E_PREVIEW_PORT',
@@ -936,7 +936,10 @@ async function assertBrowserRoute(
         el.getAttribute('href')
       )
       const expectedCanonicalPath = check.expectedCanonicalPath ?? check.path
-      const expectedCanonical = resolveExpectedCanonical(baseUrl, expectedCanonicalPath)
+      const expectedCanonical = resolveExpectedCanonical(
+        STATIC_PRERENDER_CANONICAL_ORIGIN,
+        expectedCanonicalPath
+      )
       if (canonicalHref !== expectedCanonical) {
         throw new Error(`Unexpected canonical for ${check.path}: ${canonicalHref}`)
       }

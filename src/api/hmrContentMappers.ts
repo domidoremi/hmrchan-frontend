@@ -39,6 +39,7 @@ import type {
   HmrPost,
   HmrPostDetailContent,
   HmrScheduleContent,
+  HmrScheduleDetailContent,
 } from './hmrContentTypes'
 
 const MEDIA_THUMBNAIL_FALLBACK = '/hmrchan/reference/media-youtube.svg'
@@ -215,7 +216,7 @@ export function mapAuthor(value: unknown, index: number): HmrAuthor {
     id: pickString(record, ['id', 'user_id', 'slug'], `author-${index + 1}`),
     name: pickString(
       record,
-      ['name', 'username', 'display_name'],
+      ['name', 'display_name', 'username'],
       fallbackAuthors[index]?.name ?? '创作者'
     ),
     bio: pickString(record, ['bio', 'description'], fallbackAuthors[index]?.bio ?? ''),
@@ -370,7 +371,7 @@ function mapScheduleItem(value: unknown, index: number): HmrScheduleItem {
   const fallback = fallbackScheduleItems[index] ?? fallbackScheduleItems[0]
   const startsAt = pickString(
     record,
-    ['starts_at', 'start_at', 'scheduled_at', 'time'],
+    ['start_date', 'starts_at', 'start_at', 'scheduled_at', 'time'],
     fallback?.time ?? '待定'
   )
   const title = pickString(record, ['title', 'name'], fallback?.title ?? '日程项')
@@ -385,6 +386,38 @@ function mapScheduleItem(value: unknown, index: number): HmrScheduleItem {
       ['description', 'excerpt', 'summary', 'body'],
       fallback?.description ?? ''
     ),
+  }
+}
+
+export function mapScheduleDetailContent(id: string, payload: unknown): HmrScheduleDetailContent {
+  const record = extractRecord(payload, ['schedule', 'item', 'data'])
+  const authorRecord = isRecord(record['author']) ? record['author'] : {}
+  const authorId = pickOptionalString(authorRecord, ['id', 'author_id', 'uuid'])
+  const authorName = pickOptionalString(authorRecord, ['display_name', 'username', 'name'])
+  const endAt = pickOptionalString(record, ['end_date', 'ends_at', 'end_at'])
+  const venue = pickOptionalString(record, ['venue'])
+  const venueAddress = pickOptionalString(record, ['venue_address', 'venueAddress'])
+  const eventUrl = pickUsableUrl(record, ['event_url', 'eventUrl'])
+  const ticketUrl = pickUsableUrl(record, ['ticket_url', 'ticketUrl'])
+  const sourceUrl = pickUsableUrl(record, ['source_url', 'sourceUrl'])
+  const sourcePlatform = pickOptionalString(record, ['source_platform', 'sourcePlatform'])
+
+  return {
+    id: pickString(record, ['id', 'schedule_id', 'uuid'], id),
+    title: pickString(record, ['title', 'name'], '日程详情'),
+    description: pickString(record, ['description', 'summary', 'body'], ''),
+    category: pickString(record, ['category', 'phase', 'type'], 'other'),
+    startAt: pickString(record, ['start_date', 'starts_at', 'start_at', 'time'], ''),
+    ...(endAt ? { endAt } : {}),
+    isAllDay: pickBoolean(record, ['is_all_day', 'all_day', 'allDay']),
+    ...(venue ? { venue } : {}),
+    ...(venueAddress ? { venueAddress } : {}),
+    ...(eventUrl ? { eventUrl } : {}),
+    ...(ticketUrl ? { ticketUrl } : {}),
+    ...(sourceUrl ? { sourceUrl } : {}),
+    ...(sourcePlatform ? { sourcePlatform } : {}),
+    ...(authorId && authorName ? { author: { id: authorId, name: authorName } } : {}),
+    viewState: 'available',
   }
 }
 

@@ -9,6 +9,7 @@ import {
   mapHomeContent,
   mapPostDetailContent,
   mapScheduleContent,
+  mapScheduleDetailContent,
 } from './hmrContentMappers'
 import {
   endpointsForProfileSection,
@@ -27,6 +28,7 @@ import type {
   HmrPostDetailContent,
   HmrProfileSectionContent,
   HmrScheduleContent,
+  HmrScheduleDetailContent,
   HmrSettingsContent,
   HmrSupportContent,
 } from './hmrContentTypes'
@@ -75,6 +77,7 @@ export type {
   HmrProfileSectionContent,
   HmrProfileSectionKey,
   HmrScheduleContent,
+  HmrScheduleDetailContent,
   HmrSettingsContent,
   HmrSupportContent,
 } from './hmrContentTypes'
@@ -309,6 +312,33 @@ export async function loadScheduleContentResource(): Promise<HmrAsyncResource<Hm
 
 export async function loadScheduleContent(): Promise<HmrScheduleContent> {
   return (await loadScheduleContentResource()).data
+}
+
+export async function loadScheduleDetailContentResource(
+  id: string
+): Promise<HmrAsyncResource<HmrScheduleDetailContent>> {
+  const normalizedId = id.trim() || 'schedule'
+  const result = await readEndpointResult<unknown>(
+    `/schedules/${encodeURIComponent(normalizedId)}`,
+    { skipAuth: true }
+  )
+  const data = mapScheduleDetailContent(normalizedId, result.data)
+
+  if (result.error?.kind === 'not-found') {
+    data.viewState = 'not-found'
+  } else if (result.error) {
+    data.viewState = 'temporary-unavailable'
+  }
+
+  return makeResource(data, {
+    source: result.source,
+    error: result.error,
+    paths: [result.path],
+  })
+}
+
+export async function loadScheduleDetailContent(id: string): Promise<HmrScheduleDetailContent> {
+  return (await loadScheduleDetailContentResource(id)).data
 }
 
 export async function loadProfileSectionContentResource(
