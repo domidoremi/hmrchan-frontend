@@ -1,9 +1,8 @@
+import { isContractResourceId } from '../utils/contractResourceId'
+
 const SITE_NAME = 'MomiChan'
 export const SITE_ORIGIN = 'https://momichan.com'
 export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/icons/sitting-512.webp`
-
-const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
 
 export type HtmlStructuredData = Record<string, unknown>
 
@@ -119,7 +118,7 @@ function createWebsiteStructuredData(): HtmlStructuredData {
     '@type': 'WebSite',
     name: SITE_NAME,
     url: SITE_ORIGIN,
-    inLanguage: ['zh-CN', 'ja', 'en'],
+    inLanguage: ['zh-CN', 'zh-TW', 'ja', 'en'],
     potentialAction: {
       '@type': 'SearchAction',
       target: `${SITE_ORIGIN}/search?q={search_term_string}`,
@@ -172,11 +171,7 @@ export function normalizeDocumentPath(path: string): string {
 }
 
 export function isValidPostRouteId(value: string): boolean {
-  const id = value.trim()
-  if (!id) return false
-  const lower = id.toLowerCase()
-  if (lower === 'undefined' || lower === 'null' || lower === 'nan') return false
-  return UUID_LIKE_RE.test(id) || ULID_RE.test(id)
+  return isContractResourceId(value)
 }
 
 export function createNotFoundDocument(canonicalPath: string): HtmlDocumentConfig {
@@ -230,6 +225,13 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
         ],
         shellLinks: createPrimaryPublicLinks(),
         shellVariant: 'home',
+        preloadImages: [
+          {
+            href: '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp',
+            sizes: '(max-width: 48rem) 68vw, 32vw',
+            fetchPriority: 'high',
+          },
+        ],
         structuredData: [
           createWebsiteStructuredData(),
           createOrganizationStructuredData(),
@@ -399,7 +401,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
 
   const discussionMatch =
     path.match(/^\/community\/discussions\/([^/]+)$/) ?? path.match(/^\/discussion\/([^/]+)$/)
-  if (discussionMatch?.[1]) {
+  if (discussionMatch?.[1] && isContractResourceId(discussionMatch[1])) {
     return createDocumentConfig(
       `/community/discussions/${discussionMatch[1]}`,
       'Discussion detail',
@@ -465,6 +467,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     )
   }
 
+  const userProfileMatch = path.match(/^\/users\/([^/]+)$/)
   if (
     path === '/favorites' ||
     path === '/profile' ||
@@ -483,7 +486,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     path === '/profile/security-activity' ||
     path === '/profile/devices' ||
     path === '/settings/profile' ||
-    /^\/users\/[^/]+$/.test(path)
+    (userProfileMatch?.[1] && isContractResourceId(userProfileMatch[1]))
   ) {
     return createDocumentConfig(
       path,
@@ -508,11 +511,13 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
     )
   }
 
+  const passkeyRecoveryDetailMatch = path.match(/^\/auth\/passkeys\/recovery\/([^/]+)$/)
   if (
     path === '/forgot-password' ||
     path === '/reset-password' ||
     path === '/verify-email' ||
-    path === '/auth/passkeys/recovery'
+    path === '/auth/passkeys/recovery' ||
+    (passkeyRecoveryDetailMatch?.[1] && isContractResourceId(passkeyRecoveryDetailMatch[1]))
   ) {
     return createDocumentConfig(
       path,
@@ -549,7 +554,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
   }
 
   const authorMatch = path.match(/^\/author\/([^/]+)$/)
-  if (authorMatch?.[1]) {
+  if (authorMatch?.[1] && isContractResourceId(authorMatch[1])) {
     return createDocumentConfig(
       path,
       'Author detail',

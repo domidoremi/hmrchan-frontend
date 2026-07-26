@@ -47,6 +47,7 @@
                     class="hero-letterbook-image"
                     decoding="async"
                     :loading="index === 0 ? 'eager' : 'lazy'"
+                    :fetchpriority="index === 0 ? 'high' : 'auto'"
                     @error="markHomeMediaFailed(card.thumbnail)"
                   />
                   <span v-else class="hero-letterbook-placeholder">
@@ -67,6 +68,7 @@
                     class="hero-letterbook-image"
                     decoding="async"
                     loading="eager"
+                    fetchpriority="high"
                   />
                   <span class="hero-letterbook-caption">
                     {{ $t('home.letterbook.photoCaption') }}

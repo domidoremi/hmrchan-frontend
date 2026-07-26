@@ -8,8 +8,8 @@
  */
 
 import { createHash } from 'node:crypto'
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import type { Plugin } from 'vite'
 
 interface SRIPluginOptions {
@@ -26,6 +26,59 @@ function computeIntegrity(filePath: string, algorithm: string): string | null {
   return `${algorithm}-${hash}`
 }
 
+function collectHtmlFiles(directory: string): string[] {
+  if (!existsSync(directory)) return []
+
+  const files: string[] = []
+  for (const entry of readdirSync(directory)) {
+    const absolutePath = join(directory, entry)
+    if (statSync(absolutePath).isDirectory()) {
+      files.push(...collectHtmlFiles(absolutePath))
+    } else if (absolutePath.endsWith('.html')) {
+      files.push(absolutePath)
+    }
+  }
+  return files
+}
+
+export function injectSriIntoHtml(
+  html: string,
+  outputDir: string,
+  algorithm: 'sha256' | 'sha384' | 'sha512' = 'sha384'
+): { html: string; count: number } {
+  let count = 0
+
+  const injectIntegrity = (match: string, before: string, source: string, after: string) => {
+    if (match.includes('integrity=')) return match
+    const integrity = computeIntegrity(resolve(outputDir, source.slice(1)), algorithm)
+    if (!integrity) return match
+    count += 1
+    return { match, before, source, after, integrity }
+  }
+
+  const withScriptIntegrity = html.replace(
+    /<script\b([^>]*)\bsrc="(\/assets\/[^"]+)"([^>]*)>/g,
+    (match, before, src, after) => {
+      const result = injectIntegrity(match, before, src, after)
+      return typeof result === 'string'
+        ? result
+        : `<script${result.before}src="${result.source}"${result.after} integrity="${result.integrity}">`
+    }
+  )
+
+  const withLinkIntegrity = withScriptIntegrity.replace(
+    /<link\b([^>]*)\bhref="(\/assets\/[^"]+\.(?:css|js))"([^>]*)>/g,
+    (match, before, href, after) => {
+      const result = injectIntegrity(match, before, href, after)
+      return typeof result === 'string'
+        ? result
+        : `<link${result.before}href="${result.source}"${result.after} integrity="${result.integrity}">`
+    }
+  )
+
+  return { html: withLinkIntegrity, count }
+}
+
 export function sriPlugin(options: SRIPluginOptions = {}): Plugin {
   const { algorithm = 'sha384', verbose = true } = options
   let outDir = 'dist'
@@ -40,58 +93,27 @@ export function sriPlugin(options: SRIPluginOptions = {}): Plugin {
     },
 
     closeBundle() {
-      const htmlPath = resolve(process.cwd(), outDir, 'index.html')
-      if (!existsSync(htmlPath)) {
-        console.warn('[SRI] index.html not found, skipping')
+      const outputDir = resolve(process.cwd(), outDir)
+      const htmlPaths = collectHtmlFiles(outputDir)
+      if (htmlPaths.length === 0) {
+        console.warn('[SRI] No HTML files found, skipping')
         return
       }
 
-      let html = readFileSync(htmlPath, 'utf-8')
       let count = 0
-
-      // 匹配 <script src="/assets/..."> 标签（含 type="module"）
-      html = html.replace(
-        /<script\b([^>]*)\bsrc="(\/assets\/[^"]+)"([^>]*)>/g,
-        (match, before, src, after) => {
-          if (match.includes('integrity=')) return match
-          const filePath = resolve(process.cwd(), outDir, src.slice(1))
-          const integrity = computeIntegrity(filePath, algorithm)
-          if (!integrity) return match
-          count++
-          return `<script${before}src="${src}"${after} integrity="${integrity}">`
+      for (const htmlPath of htmlPaths) {
+        const source = readFileSync(htmlPath, 'utf-8')
+        const result = injectSriIntoHtml(source, outputDir, algorithm)
+        if (result.count > 0) {
+          writeFileSync(htmlPath, result.html, 'utf-8')
+          count += result.count
         }
-      )
-
-      // 匹配 <link rel="stylesheet" href="/assets/..."> 标签
-      html = html.replace(
-        /<link\b([^>]*)\bhref="(\/assets\/[^"]+\.css)"([^>]*)>/g,
-        (match, before, href, after) => {
-          if (match.includes('integrity=')) return match
-          const filePath = resolve(process.cwd(), outDir, href.slice(1))
-          const integrity = computeIntegrity(filePath, algorithm)
-          if (!integrity) return match
-          count++
-          return `<link${before}href="${href}"${after} integrity="${integrity}">`
-        }
-      )
-
-      // 匹配 <link rel="modulepreload" href="/assets/..."> 标签
-      html = html.replace(
-        /<link\b([^>]*)\bhref="(\/assets\/[^"]+\.js)"([^>]*)>/g,
-        (match, before, href, after) => {
-          if (match.includes('integrity=')) return match
-          const filePath = resolve(process.cwd(), outDir, href.slice(1))
-          const integrity = computeIntegrity(filePath, algorithm)
-          if (!integrity) return match
-          count++
-          return `<link${before}href="${href}"${after} integrity="${integrity}">`
-        }
-      )
-
-      writeFileSync(htmlPath, html, 'utf-8')
+      }
 
       if (verbose) {
-        console.log(`✅ SRI: ${count} resources tagged with ${algorithm} integrity`)
+        console.log(
+          `✅ SRI: ${count} resources tagged with ${algorithm} integrity across ${htmlPaths.length} HTML files`
+        )
       }
     },
   }

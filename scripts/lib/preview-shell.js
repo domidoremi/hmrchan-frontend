@@ -597,6 +597,21 @@ function hasTrimmedEnvValue(env, key) {
   return typeof env?.[key] === 'string' && env[key].trim().length > 0
 }
 
+function isHostReachableConfiguredOrigin(value) {
+  try {
+    const hostname = new URL(value.trim()).hostname.toLowerCase()
+    return hostname === 'localhost' || hostname.includes('.') || hostname.includes(':')
+  } catch {
+    return false
+  }
+}
+
+function hasHostReachableConfiguredOrigins(env, keys) {
+  return keys.every(
+    (key) => hasTrimmedEnvValue(env, key) && isHostReachableConfiguredOrigin(env[key])
+  )
+}
+
 function hasConfiguredLocalApiOrigins(env) {
   return (
     hasTrimmedEnvValue(env, 'BACKEND_INTERNAL_ORIGIN') &&
@@ -632,18 +647,22 @@ function shouldAutoStartLocalApiBridge(env) {
   if (env?.VITE_DISABLE_PREVIEW_PROXY === 'true') return false
   if (
     !forceBridge &&
-    hasTrimmedEnvValue(env, 'VITE_API_BASE_URL') &&
-    hasTrimmedEnvValue(env, 'API_BASE_URL') &&
-    hasTrimmedEnvValue(env, 'BACKEND_INTERNAL_ORIGIN')
+    hasHostReachableConfiguredOrigins(env, [
+      'VITE_API_BASE_URL',
+      'API_BASE_URL',
+      'BACKEND_INTERNAL_ORIGIN',
+    ])
   ) {
     return false
   }
   if (
     !forceBridge &&
-    hasTrimmedEnvValue(env, 'API_BASE_URL') &&
-    hasTrimmedEnvValue(env, LOCAL_API_BRIDGE_SERVICES.identity.envKey) &&
-    hasTrimmedEnvValue(env, LOCAL_API_BRIDGE_SERVICES.community.envKey) &&
-    hasTrimmedEnvValue(env, LOCAL_API_BRIDGE_SERVICES.content.envKey)
+    hasHostReachableConfiguredOrigins(env, [
+      'API_BASE_URL',
+      LOCAL_API_BRIDGE_SERVICES.identity.envKey,
+      LOCAL_API_BRIDGE_SERVICES.community.envKey,
+      LOCAL_API_BRIDGE_SERVICES.content.envKey,
+    ])
   ) {
     return false
   }

@@ -403,7 +403,17 @@ describe('auth bootstrap helpers', () => {
   })
 
   it('stops probing after a fatal client-init failure', async () => {
-    const fetchMock = vi.fn(async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (new URL(String(input)).pathname === '/') {
+        return new Response('<!doctype html>', {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html',
+            'Set-Cookie': '__Host-momi_origin_csrf=probe-csrf; Path=/; Secure; SameSite=Lax',
+          },
+        })
+      }
+
       return new Response(
         JSON.stringify({
           code: 'UPSTREAM_UNREACHABLE',
@@ -423,7 +433,7 @@ describe('auth bootstrap helpers', () => {
       probeIntervalMs: 0,
     })
 
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(results).toEqual([
       expect.objectContaining({
         path: '/api/v1/client/init',
@@ -432,6 +442,43 @@ describe('auth bootstrap helpers', () => {
         code: 'UPSTREAM_UNREACHABLE',
       }),
     ])
+  })
+
+  it('acquires and mirrors the origin CSRF cookie for unsafe bootstrap probes', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (new URL(String(input)).pathname === '/') {
+        return new Response('<!doctype html>', {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html',
+            'Set-Cookie': '__Host-momi_origin_csrf=probe-csrf; Path=/; Secure; SameSite=Lax',
+          },
+        })
+      }
+
+      const headers = new Headers(init?.headers)
+      expect(headers.get('Cookie')).toBe('__Host-momi_origin_csrf=probe-csrf')
+      expect(headers.get('X-Origin-CSRF')).toBe('probe-csrf')
+
+      return new Response(
+        JSON.stringify({
+          code: 'UPSTREAM_UNREACHABLE',
+          message: 'stop after the CSRF assertion',
+        }),
+        {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const results = await probeAuthBootstrapEndpoints('https://momichan.com', {
+      probeIntervalMs: 0,
+    })
+
+    expect(results).toHaveLength(1)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
   it('does not copy successful credential payloads into probe summaries', async () => {

@@ -1,14 +1,19 @@
 #!/usr/bin/env bun
 
 import { existsSync, statSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import { extname, join, normalize, resolve } from 'node:path'
 import { onRequest as onApiRequest } from '../functions/api/[[path]].ts'
 import { onRequest as onClientReportRequest } from '../functions/client-report.ts'
 import { onRequest as onCspReportRequest } from '../functions/csp-report.ts'
+import { onRequest as onSitemapRequest } from '../functions/sitemap.xml.ts'
 import { onRequest as onUploadsRequest } from '../functions/uploads/[[path]].ts'
 import { handleInternalApiGatewayRequest } from '../src/edge/internalApiGatewayWorker.ts'
 import { resolveHtmlDocument, SITE_ORIGIN } from '../src/edge/htmlDocument.ts'
+import { createPrerenderedHtml } from '../src/edge/prerenderHtml.ts'
 import { createLocalAuditEnv } from './lib/audit-env.js'
+import { withLocalPreviewCsrfCookie } from './lib/local-preview-csrf'
+import { rewriteLocalPreviewUpstreamOrigin } from './lib/local-preview-upstream'
 
 type RouteContext = {
   env: LocalPreviewEnv
@@ -112,12 +117,15 @@ function createPreviewEnv(baseEnv: NodeJS.ProcessEnv): LocalPreviewEnv {
     return env
   }
 
+  env.INTERNAL_API_GATEWAY_SHARED_SECRET =
+    env.INTERNAL_API_GATEWAY_SHARED_SECRET?.trim() || randomUUID()
+
   const gatewayEnv = {
     ...env,
     ENABLE_VPC_PROXY: 'true',
     VPC_SERVICE: {
       fetch(request: Request) {
-        return fetch(request)
+        return fetch(rewriteLocalPreviewUpstreamOrigin(request, SITE_ORIGIN))
       },
     },
   }
@@ -326,6 +334,24 @@ async function serveStaticFile(filePath: string, status = 200): Promise<Response
   })
 }
 
+async function serveHtmlFallback(request: Request, pathname: string): Promise<Response> {
+  const fallback = resolveHtmlFallbackPath(pathname)
+  const documentConfig = resolveHtmlDocument(new URL(pathname, SITE_ORIGIN))
+  const template = await Bun.file(fallback.filePath).text()
+  const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' })
+  if (documentConfig.robots === 'noindex, nofollow') {
+    headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+  }
+
+  return new Response(
+    request.method === 'HEAD' ? null : createPrerenderedHtml(template, pathname),
+    {
+      status: fallback.status,
+      headers,
+    }
+  )
+}
+
 function createRouteContext(request: Request, env: LocalPreviewEnv, path?: string): RouteContext {
   const normalizedPath = typeof path === 'string' ? path.replace(/^\/+|\/+$/g, '') : ''
   return {
@@ -355,6 +381,10 @@ async function handleFunctionRequest(request: Request, env: LocalPreviewEnv): Pr
 
   if (pathname === '/csp-report') {
     return onCspReportRequest(createRouteContext(request, env))
+  }
+
+  if (pathname === '/sitemap.xml') {
+    return onSitemapRequest(createRouteContext(request, env) as never)
   }
 
   return new Response('Not Found', {
@@ -393,7 +423,8 @@ async function handleRequest(request: Request, env: LocalPreviewEnv): Promise<Re
     pathname.startsWith('/api/') ||
     pathname.startsWith('/uploads/') ||
     pathname === '/client-report' ||
-    pathname === '/csp-report'
+    pathname === '/csp-report' ||
+    pathname === '/sitemap.xml'
   ) {
     return rewriteResponseForLocalCookies(await handleFunctionRequest(request, env))
   }
@@ -431,8 +462,7 @@ async function handleRequest(request: Request, env: LocalPreviewEnv): Promise<Re
     })
   }
 
-  const fallback = resolveHtmlFallbackPath(pathname)
-  return serveStaticFile(fallback.filePath, fallback.status)
+  return serveHtmlFallback(request, pathname)
 }
 
 const options = parseArgs(Bun.argv.slice(2))
@@ -442,8 +472,8 @@ const server = Bun.serve({
   hostname: options.host,
   idleTimeout: options.idleTimeout,
   port: options.port,
-  fetch(request) {
-    return handleRequest(request, env)
+  async fetch(request) {
+    return withLocalPreviewCsrfCookie(request, await handleRequest(request, env))
   },
 })
 

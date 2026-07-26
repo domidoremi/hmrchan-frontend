@@ -221,21 +221,22 @@ describe('functions/_middleware', () => {
     expect(html).toMatch(/nonce="[A-Za-z0-9+/=]+"/)
   })
 
-  it('treats passkey recovery as a public auth SPA route instead of a 404 document', async () => {
+  it('treats passkey recovery detail as a no-store auth SPA route instead of a 404 document', async () => {
+    const recoveryPath = '/auth/passkeys/recovery/01900000-0000-7000-8000-000000000001'
     resolveHtmlDocumentWithEdgeData.mockResolvedValue({
       status: 200,
       title: 'Account security · MomiChan',
       description: 'passkey recovery',
       robots: 'noindex, nofollow',
       ogType: 'website',
-      canonicalPath: '/auth/passkeys/recovery',
+      canonicalPath: recoveryPath,
       ogImage: null,
       shellTitle: 'Secure your account',
     })
 
     const { onRequest } = await import('../_middleware')
     const response = await onRequest({
-      request: new Request('https://momichan.com/auth/passkeys/recovery'),
+      request: new Request(`https://momichan.com${recoveryPath}`),
       env: {},
       next: () =>
         Promise.resolve(
@@ -253,7 +254,7 @@ describe('functions/_middleware', () => {
     expect(response.statusText).toBe('OK')
     expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate')
     expect(resolveHtmlDocumentWithEdgeData).toHaveBeenCalledWith(
-      new URL('https://momichan.com/auth/passkeys/recovery'),
+      new URL(`https://momichan.com${recoveryPath}`),
       {}
     )
   })

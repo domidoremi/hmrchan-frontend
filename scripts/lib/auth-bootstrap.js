@@ -5,6 +5,8 @@ function isRecord(value) {
 const AUTH_BOOTSTRAP_CLIENT_FINGERPRINT = 'auth-bootstrap-probe'
 const AUTH_BOOTSTRAP_REQUEST_TIMEOUT_MS = 10_000
 const AUTH_BOOTSTRAP_PROBE_INTERVAL_MS = 250
+const ORIGIN_CSRF_COOKIE_NAME = '__Host-momi_origin_csrf'
+const ORIGIN_CSRF_HEADER_NAME = 'X-Origin-CSRF'
 const textEncoder = new TextEncoder()
 const AUTH_BOOTSTRAP_PROBE_DEFINITIONS = Object.freeze([
   Object.freeze({
@@ -201,6 +203,40 @@ function attachProbeBrowserContextHeaders(headers, baseUrl, probe) {
 
   if (parsedUrl.pathname.startsWith('/api/v1/auth/')) {
     headers.set('Referer', `${origin}/`)
+  }
+}
+
+function extractOriginCsrfToken(headers) {
+  const setCookieHeaders =
+    typeof headers.getSetCookie === 'function'
+      ? headers.getSetCookie()
+      : [headers.get('set-cookie')].filter(Boolean)
+
+  for (const setCookie of setCookieHeaders) {
+    const match = setCookie.match(new RegExp(`${ORIGIN_CSRF_COOKIE_NAME}=([^;,\\s]+)`))
+    if (match?.[1]) {
+      return match[1]
+    }
+  }
+
+  return null
+}
+
+async function acquireOriginCsrfToken(baseUrl) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), AUTH_BOOTSTRAP_REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(new URL('/', baseUrl).toString(), {
+      headers: { Accept: 'text/html' },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+    return extractOriginCsrfToken(response.headers)
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
   }
 }
 
@@ -513,6 +549,10 @@ export async function probeAuthBootstrapEndpoint(baseUrl, probe, options = {}) {
       : JSON.stringify(probe.body)
 
   attachProbeBrowserContextHeaders(headers, baseUrl, probe)
+  if (probe.method.toUpperCase() !== 'GET' && options.originCsrfToken) {
+    headers.set('Cookie', `${ORIGIN_CSRF_COOKIE_NAME}=${options.originCsrfToken}`)
+    headers.set(ORIGIN_CSRF_HEADER_NAME, options.originCsrfToken)
+  }
   await attachProbeSignatureHeaders(headers, baseUrl, probe, requestBody, options.clientCredentials)
 
   const controller = new AbortController()
@@ -580,6 +620,7 @@ export async function probeAuthBootstrapEndpoints(baseUrl, options = {}) {
   const probes = getAuthBootstrapProbeDefinitions()
   const results = []
   let clientCredentials = options.clientCredentials ?? null
+  const originCsrfToken = options.originCsrfToken ?? (await acquireOriginCsrfToken(baseUrl))
   const probeIntervalMs = options.probeIntervalMs ?? AUTH_BOOTSTRAP_PROBE_INTERVAL_MS
 
   for (const [index, probe] of probes.entries()) {
@@ -587,6 +628,7 @@ export async function probeAuthBootstrapEndpoints(baseUrl, options = {}) {
       ...options,
       clientFingerprint: options.clientFingerprint ?? AUTH_BOOTSTRAP_CLIENT_FINGERPRINT,
       clientCredentials,
+      originCsrfToken,
     })
     results.push(result)
 

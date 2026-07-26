@@ -115,6 +115,8 @@ export type PostDetailPageMeta = {
   title: string
   description: string
   canonicalPath: string
+  ogType: 'article'
+  ogImage?: string | null
 }
 
 export type PostDetailFallbackCandidateResolver<TSummary, TPost> = {
@@ -220,6 +222,8 @@ export function buildPostDetailPageMeta(
     title,
     description: buildDetailDescription(post) || title,
     canonicalPath,
+    ogType: 'article',
+    ogImage: post?.thumbnail_url ?? null,
   }
 }
 

@@ -147,6 +147,8 @@ function syncAuthorMeta(currentAuthor: AuthorResponse | null | undefined) {
     title,
     description: currentAuthor?.bio ?? currentAuthor?.description,
     canonicalPath: route.path,
+    ogType: 'article',
+    ogImage: currentAuthor?.avatar_url ?? null,
   })
 }
 

@@ -40,7 +40,7 @@ export function staticPrerenderPlugin(): Plugin {
       outDir = config.build.outDir || 'dist'
     },
 
-    closeBundle() {
+    writeBundle() {
       const outputDir = resolve(process.cwd(), outDir)
       const indexPath = resolve(outputDir, 'index.html')
 

@@ -34,6 +34,10 @@ describe('createPrerenderedHtml', () => {
     expect(html).toContain('data-prerender-shell-content="true"')
     expect(html).toContain('Start here')
     expect(html).toContain('Public posts, creators, and discussions')
+    expect(html).toContain(
+      'href="/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp"'
+    )
+    expect(html).toContain('fetchpriority="high"')
     expect(html).not.toContain('Quick bridge')
   })
 

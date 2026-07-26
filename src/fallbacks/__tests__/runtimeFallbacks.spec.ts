@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { getFallbackExplorePostById, getFallbackExplorePosts } from '../exploreFallback'
 import {
@@ -25,18 +25,25 @@ describe('runtime public fallbacks', () => {
   })
 
   it('projects a populated schedule into the requested calendar range', () => {
-    const events = getFallbackScheduleCalendar({
-      start: '2026-07-01T00:00:00.000Z',
-      end: '2026-07-31T23:59:59.999Z',
-    })
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-15T00:00:00.000Z'))
 
-    expect(events.length).toBeGreaterThanOrEqual(4)
-    expect(new Set(events.map((event) => event.category)).size).toBeGreaterThanOrEqual(3)
-    expect(getFallbackScheduleById(events[0]!.id)).toMatchObject({
-      id: events[0]!.id,
-      title: events[0]!.title,
-      is_published: true,
-    })
+    try {
+      const events = getFallbackScheduleCalendar({
+        start: '2026-07-01T00:00:00.000Z',
+        end: '2026-07-31T23:59:59.999Z',
+      })
+
+      expect(events.length).toBeGreaterThanOrEqual(4)
+      expect(new Set(events.map((event) => event.category)).size).toBeGreaterThanOrEqual(3)
+      expect(getFallbackScheduleById(events[0]!.id)).toMatchObject({
+        id: events[0]!.id,
+        title: events[0]!.title,
+        is_published: true,
+      })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('provides warm community discussions and a navigable detail thread', () => {

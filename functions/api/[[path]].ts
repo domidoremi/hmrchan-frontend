@@ -446,15 +446,18 @@ async function fetchInternalBff(env: ProxyEnv, path: string, payload: unknown): 
   const body = payload == null ? '' : JSON.stringify(payload)
   const bodyBytes = textEncoder.encode(body)
   const timestamp = new Date().toISOString()
+  const serviceName = 'bff'
+  const nonce = crypto.randomUUID().replaceAll('-', '')
   const bodyHash = await sha256Hex(bodyBytes)
-  const signaturePayload = ['POST', path, timestamp, bodyHash].join('\n')
+  const signaturePayload = [serviceName, 'POST', path, timestamp, nonce, bodyHash].join('\n')
   const signature = await hmacSha256Hex(secret, signaturePayload)
 
   const headers = new Headers({
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    'X-Internal-Service': 'bff',
+    'X-Internal-Service': serviceName,
     'X-Internal-Timestamp': timestamp,
+    'X-Internal-Nonce': nonce,
     'X-Internal-Signature': signature,
   })
   const browserFingerprint = extractPayloadFingerprint(payload)

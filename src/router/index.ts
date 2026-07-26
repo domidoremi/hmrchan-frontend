@@ -617,6 +617,7 @@ function syncRoutePageMeta(route: RouteLocationNormalizedLoadedGeneric): void {
     title: translatedTitle || undefined,
     description: typeof route.meta.description === 'string' ? route.meta.description : undefined,
     canonicalPath: route.path,
+    locale: i18n.global.locale.value,
   })
 }
 

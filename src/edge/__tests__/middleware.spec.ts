@@ -67,7 +67,7 @@ describe('Cloudflare HTML middleware', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await onRequest({
-      request: new Request('https://momichan.com/post/00000000-0000-4000-8000-000000000000'),
+      request: new Request('https://momichan.com/post/01900000-0000-7000-8000-000000000001'),
       env: {
         API_BASE_URL: BACKEND_ORIGIN,
       },

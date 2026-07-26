@@ -1217,9 +1217,15 @@ async function authenticateViaApi(
         })
       const fillInputValue = async (selector: string, value: string) => {
         await page.waitForSelector(selector, { timeout: 10_000 })
-        await page.click(selector, { clickCount: 3 })
-        await page.keyboard.press('Backspace')
-        await page.type(selector, value)
+        await page.focus(selector)
+        await page.evaluate((nextSelector) => {
+          const input = document.querySelector(nextSelector)
+          if (!(input instanceof HTMLInputElement)) {
+            throw new Error(`input not found for selector: ${nextSelector}`)
+          }
+          input.select()
+        }, selector)
+        await page.keyboard.type(value)
         await page.evaluate((nextSelector) => {
           const input = document.querySelector(nextSelector)
           if (!(input instanceof HTMLInputElement)) {

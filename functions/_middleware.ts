@@ -179,7 +179,10 @@ function normalizePathname(pathname: string): string {
 }
 
 function isAuthRoutePath(pathname: string): boolean {
-  return AUTH_ROUTE_PATHS.has(normalizePathname(pathname))
+  const normalizedPath = normalizePathname(pathname)
+  return (
+    AUTH_ROUTE_PATHS.has(normalizedPath) || normalizedPath.startsWith('/auth/passkeys/recovery/')
+  )
 }
 
 export async function onRequest(

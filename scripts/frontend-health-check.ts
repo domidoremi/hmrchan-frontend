@@ -1589,40 +1589,47 @@ async function main() {
     })
     console.log('🌐 Headless browser ready')
 
-    if (
-      shouldEnsureLocalAuditSmokeAccount(effectiveBaseUrl, {
-        login: AUTH_LOGIN,
-        password: AUTH_PASSWORD,
-      })
-    ) {
-      const ensuredAccount = ensureLocalAuditSmokeAccount(AUDIT_ENV, effectiveBaseUrl, {
-        login: AUTH_LOGIN,
-        password: AUTH_PASSWORD,
-      })
-      if (ensuredAccount.ensured) {
-        console.log(
-          `🔐 Ensured local audit smoke account ${ensuredAccount.username} (${ensuredAccount.email})`
-        )
-      } else if (ensuredAccount.skipped) {
-        console.warn(`⚠️ Skipped local audit smoke account ensure: ${ensuredAccount.reason}`)
+    try {
+      if (
+        shouldEnsureLocalAuditSmokeAccount(effectiveBaseUrl, {
+          login: AUTH_LOGIN,
+          password: AUTH_PASSWORD,
+        })
+      ) {
+        const ensuredAccount = ensureLocalAuditSmokeAccount(AUDIT_ENV, effectiveBaseUrl, {
+          login: AUTH_LOGIN,
+          password: AUTH_PASSWORD,
+        })
+        if (ensuredAccount.ensured) {
+          console.log(
+            `🔐 Ensured local audit smoke account ${ensuredAccount.username} (${ensuredAccount.email})`
+          )
+        } else if (ensuredAccount.skipped) {
+          console.warn(`⚠️ Skipped local audit smoke account ensure: ${ensuredAccount.reason}`)
+        }
       }
-    }
 
-    const authBootstrapProbes = await runAuthBootstrapPreflight(effectiveBaseUrl)
-    try {
-      throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
-    } catch (error) {
-      logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
-      throw error
-    }
+      if (authHealthEnabled && isLocalAuditOrigin(effectiveBaseUrl)) {
+        const clearedRateLimitKeys = await clearLocalAuditRateLimitState(AUDIT_ENV)
+        if (clearedRateLimitKeys > 0) {
+          console.log(`🔐 Cleared ${clearedRateLimitKeys} local audit rate-limit keys`)
+        }
+      }
 
-    const healthFilterOptions = {
-      baseOrigin: effectiveBaseUrl,
-      allowLocalPreviewApiNoise: Boolean(managedServer),
-      managedPreview: Boolean(managedServer),
-    }
+      const authBootstrapProbes = await runAuthBootstrapPreflight(effectiveBaseUrl)
+      try {
+        throwIfFatalAuthBootstrapProbe(authBootstrapProbes)
+      } catch (error) {
+        logPreviewDiagnostics(getPreviewDiagnostics(), 'auth bootstrap preview diagnostics')
+        throw error
+      }
 
-    try {
+      const healthFilterOptions = {
+        baseOrigin: effectiveBaseUrl,
+        allowLocalPreviewApiNoise: Boolean(managedServer),
+        managedPreview: Boolean(managedServer),
+      }
+
       const sampleRouteProbePage = await browser.newPage()
       const skippedRouteReasons = new Map<string, string>()
       let resolvedSamplePostRoute = DEFAULT_SAMPLE_POST_ROUTE
@@ -1701,10 +1708,6 @@ async function main() {
         : guestRoutes
 
       if (authHealthEnabled) {
-        const clearedRateLimitKeys = await clearLocalAuditRateLimitState(AUDIT_ENV)
-        if (clearedRateLimitKeys > 0) {
-          console.log(`🔐 Cleared ${clearedRateLimitKeys} local audit rate-limit keys`)
-        }
         await authenticateViaApi(
           browser,
           effectiveBaseUrl,

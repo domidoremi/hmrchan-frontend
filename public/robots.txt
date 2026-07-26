@@ -1,6 +1,6 @@
 # Robots.txt for MomiChan
 # https://www.robotstxt.org/robotstxt.html
-# 更新时间: 2026-03-22
+# 更新时间: 2026-07-26
 
 # 全局抓取策略
 User-agent: *
@@ -10,41 +10,17 @@ Crawl-delay: 1
 # Blocked paths
 Disallow: /api/
 Disallow: /admin/
-Disallow: /profile/
-Disallow: /favorites
-Disallow: /login
-Disallow: /register
-Disallow: /forgot-password
-Disallow: /reset-password
-Disallow: /verify-email
 Disallow: /_next/
 Disallow: /dist/
 Disallow: /node_modules/
+
+# Account and authentication pages remain crawlable so their HTML noindex
+# directives can be observed. They never appear in the sitemap.
 
 # Duplicate-content query parameters
 Disallow: /*?*source=
 Disallow: /*?*utm_
 Disallow: /*?*ref=
-
-# Googlebot policy
-User-agent: Googlebot
-Allow: /
-Crawl-delay: 0.5
-
-# Google image crawler policy
-User-agent: Googlebot-Image
-Allow: /
-Disallow: /api/
-
-# Bing crawler policy
-User-agent: Bingbot
-Allow: /
-Crawl-delay: 1
-
-# Baidu crawler policy
-User-agent: Baiduspider
-Allow: /
-Crawl-delay: 2
 
 # Blocked crawlers
 User-agent: AhrefsBot

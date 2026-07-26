@@ -46,6 +46,7 @@
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="ja_JP" />
     <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:locale:alternate" content="zh_TW" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
@@ -73,40 +74,20 @@
 
     <!-- 动态标题将由 Vue Router 管理 -->
 
-    <style>
-      html[data-js='1']
-        [data-prerender-shell='true'][data-prerender-shell-variant='home']
-        [data-prerender-shell-content='true'] {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-      }
-    </style>
-
     <!--
       点击劫持防御 — 第一阶段（同步 JS）
       服务端已有 X-Frame-Options + CSP frame-ancestors，此处只做前端兜底：
       - 仅在 iframe 内嵌时隐藏页面并尝试跳出
       - 顶层访问不再默认隐藏，避免影响首屏渲染
     -->
-    <!-- 替换原来的两个 script 为下面这个（仍然放在 <head> 末尾） -->
     <script defer>
-      // 1. 点击劫持防御（顶层判断）
+      // 点击劫持防御（顶层判断）
       if (window.self !== window.top) {
         document.documentElement.style.display = 'none'
         try {
           window.top.location.href = window.self.location.href
         } catch (e) {}
       }
-
-      // 2. prerender shell 清理
-      document.documentElement.setAttribute('data-js', '1')
-      setTimeout(() => {
-        const appRoot = document.getElementById('app-root')
-        if (!appRoot || !appRoot.hasAttribute('data-v-app')) {
-          document.documentElement.removeAttribute('data-js')
-        }
-      }, 4000)
     </script>
   </head>
   <body>

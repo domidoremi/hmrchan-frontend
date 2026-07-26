@@ -77,12 +77,16 @@ describe('postDetailModel', () => {
       title: 'Lead',
       description: 'with punctuation',
       canonicalPath: '/post/lead',
+      ogType: 'article',
+      ogImage: null,
     })
 
     expect(buildPostDetailPageMeta({ title: 'Only title' }, '/post/title')).toEqual({
       title: 'Only title',
       description: 'Only title',
       canonicalPath: '/post/title',
+      ogType: 'article',
+      ogImage: null,
     })
   })
 

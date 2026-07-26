@@ -8,6 +8,8 @@ import {
 } from '@/edge/htmlDocument'
 
 describe('resolveHtmlDocument', () => {
+  const contractId = '01900000-0000-7000-8000-000000000001'
+
   it('returns indexable metadata for public discovery pages', () => {
     const homeConfig = resolveHtmlDocument(new URL('https://momichan.com/'))
     const exploreConfig = resolveHtmlDocument(new URL('https://momichan.com/explore'))
@@ -18,6 +20,13 @@ describe('resolveHtmlDocument', () => {
     expect(homeConfig.robots).toBe('index, follow')
     expect(resolveCanonicalUrl(homeConfig)).toBe('https://momichan.com/')
     expect(homeConfig.structuredData.length).toBeGreaterThan(0)
+    expect(homeConfig.preloadImages).toEqual([
+      {
+        href: '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp',
+        sizes: '(max-width: 48rem) 68vw, 32vw',
+        fetchPriority: 'high',
+      },
+    ])
 
     expect(exploreConfig.status).toBe(200)
     expect(exploreConfig.title).toBe('Explore · MomiChan')
@@ -36,6 +45,9 @@ describe('resolveHtmlDocument', () => {
     const authCallbackConfig = resolveHtmlDocument(new URL('https://momichan.com/auth/callback'))
     const passkeyRecoveryConfig = resolveHtmlDocument(
       new URL('https://momichan.com/auth/passkeys/recovery')
+    )
+    const passkeyRecoveryDetailConfig = resolveHtmlDocument(
+      new URL('https://momichan.com/auth/passkeys/recovery/01900000-0000-7000-8000-000000000001')
     )
     const favoritesConfig = resolveHtmlDocument(new URL('https://momichan.com/favorites'))
     const privateProfilePaths = [
@@ -68,6 +80,10 @@ describe('resolveHtmlDocument', () => {
     expect(passkeyRecoveryConfig.robots).toBe('noindex, nofollow')
     expect(passkeyRecoveryConfig.title).toBe('Account security · MomiChan')
 
+    expect(passkeyRecoveryDetailConfig.status).toBe(200)
+    expect(passkeyRecoveryDetailConfig.robots).toBe('noindex, nofollow')
+    expect(passkeyRecoveryDetailConfig.title).toBe('Account security · MomiChan')
+
     expect(favoritesConfig.status).toBe(200)
     expect(favoritesConfig.robots).toBe('noindex, nofollow')
     expect(favoritesConfig.title).toBe('Account area · MomiChan')
@@ -82,20 +98,16 @@ describe('resolveHtmlDocument', () => {
   })
 
   it('returns article metadata for valid detail routes', () => {
-    const postConfig = resolveHtmlDocument(
-      new URL('https://momichan.com/post/00000000-0000-4000-8000-000000000000')
-    )
-    const authorConfig = resolveHtmlDocument(new URL('https://momichan.com/author/momichan'))
+    const postConfig = resolveHtmlDocument(new URL(`https://momichan.com/post/${contractId}`))
+    const authorConfig = resolveHtmlDocument(new URL(`https://momichan.com/author/${contractId}`))
     const discussionConfig = resolveHtmlDocument(
-      new URL('https://momichan.com/discussion/discussion-1')
+      new URL(`https://momichan.com/discussion/${contractId}`)
     )
 
     expect(postConfig.status).toBe(200)
     expect(postConfig.ogType).toBe('article')
     expect(postConfig.robots).toBe('index, follow')
-    expect(resolveCanonicalUrl(postConfig)).toBe(
-      'https://momichan.com/post/00000000-0000-4000-8000-000000000000'
-    )
+    expect(resolveCanonicalUrl(postConfig)).toBe(`https://momichan.com/post/${contractId}`)
 
     expect(authorConfig.status).toBe(200)
     expect(authorConfig.ogType).toBe('article')
@@ -103,21 +115,30 @@ describe('resolveHtmlDocument', () => {
 
     expect(discussionConfig.status).toBe(200)
     expect(resolveCanonicalUrl(discussionConfig)).toBe(
-      'https://momichan.com/community/discussions/discussion-1'
+      `https://momichan.com/community/discussions/${contractId}`
     )
   })
 
   it('returns a real 404 contract for invalid and unknown routes', () => {
-    const invalidPostConfig = resolveHtmlDocument(
-      new URL('https://momichan.com/post/not-a-real-id')
-    )
+    const invalidDetailPaths = [
+      '/post/00000000-0000-4000-8000-000000000000',
+      '/post/01ARZ3NDEKTSV4RRFFQ69G5FAV',
+      '/author/momichan',
+      '/community/discussions/discussion-1',
+      '/users/user-1',
+      '/auth/passkeys/recovery/recovery-1',
+    ]
     const unknownRouteConfig = resolveHtmlDocument(
       new URL('https://momichan.com/this-route-does-not-exist')
     )
 
-    expect(invalidPostConfig.status).toBe(404)
-    expect(invalidPostConfig.robots).toBe('noindex, nofollow')
-    expect(invalidPostConfig.title).toBe('Page not found · MomiChan')
+    for (const invalidPath of invalidDetailPaths) {
+      const invalidConfig = resolveHtmlDocument(new URL(invalidPath, 'https://momichan.com'))
+      expect(invalidConfig.status).toBe(404)
+      expect(invalidConfig.robots).toBe('noindex, nofollow')
+      expect(invalidConfig.title).toBe('Page not found · MomiChan')
+      expect(resolveCanonicalUrl(invalidConfig)).toBe(`https://momichan.com${invalidPath}`)
+    }
 
     expect(unknownRouteConfig.status).toBe(404)
     expect(unknownRouteConfig.robots).toBe('noindex, nofollow')

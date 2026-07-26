@@ -1,60 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  
-  <!-- 自动生成于 2026-03-22T00:00:00.000Z -->
-  <!-- 使用 scripts/generate-sitemap.js 生成 -->
-  
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Canonical public routes; dynamic details are added by the edge function. -->
   <url>
     <loc>https://momichan.com/</loc>
-    <lastmod>2026-03-22</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://momichan.com/" />
-    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://momichan.com/" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://momichan.com/" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://momichan.com/" />
   </url>
   <url>
     <loc>https://momichan.com/explore</loc>
-    <lastmod>2026-03-22</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://momichan.com/search</loc>
-    <lastmod>2026-03-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://momichan.com/authors</loc>
-    <lastmod>2026-03-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://momichan.com/community</loc>
-    <lastmod>2026-03-22</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://momichan.com/schedule</loc>
-    <lastmod>2026-03-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://momichan.com/about</loc>
-    <lastmod>2026-03-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://momichan.com/contact</loc>
-    <lastmod>2026-03-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

@@ -1242,7 +1242,7 @@ export async function resolveHtmlDocumentWithEdgeData(
   const path = normalizedPath
 
   const postMatch = path.match(/^\/post\/([^/]+)$/)
-  if (postMatch?.[1]) {
+  if (postMatch?.[1] && fallback.status !== 404) {
     try {
       const result = await fetchEdgeJson<EdgePostDetail>(env, `/api/v1/posts/${postMatch[1]}`)
       if (result.status === 404) return createNotFoundDocument(path)
@@ -1254,7 +1254,7 @@ export async function resolveHtmlDocumentWithEdgeData(
   }
 
   const authorMatch = path.match(/^\/author\/([^/]+)$/)
-  if (authorMatch?.[1]) {
+  if (authorMatch?.[1] && fallback.status !== 404) {
     try {
       const result = await fetchEdgeJson<EdgeAuthorDetail>(env, `/api/v1/authors/${authorMatch[1]}`)
       if (result.status === 404) return createNotFoundDocument(path)
@@ -1267,7 +1267,7 @@ export async function resolveHtmlDocumentWithEdgeData(
 
   const discussionMatch =
     path.match(/^\/community\/discussions\/([^/]+)$/) ?? path.match(/^\/discussion\/([^/]+)$/)
-  if (discussionMatch?.[1]) {
+  if (discussionMatch?.[1] && fallback.status !== 404) {
     try {
       const result = await fetchEdgeJson<EdgeDiscussionDetail>(
         env,

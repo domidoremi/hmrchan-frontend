@@ -5,6 +5,9 @@ const BACKEND_ORIGIN = 'https://backend.test'
 const SAMPLE_POST_ID = '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10'
 const SAMPLE_RELATED_POST_ID = '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a11'
 const SAMPLE_REFERENCED_POST_ID = '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a12'
+const SAMPLE_AUTHOR_ID = '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a13'
+const SAMPLE_DISCUSSION_ID = '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a14'
+const SAMPLE_USER_ID = '018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a15'
 
 describe('resolveHtmlDocumentWithEdgeData', () => {
   afterEach(() => {
@@ -18,14 +21,14 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
         new Response(
           JSON.stringify({
             data: {
-              id: 'post-1',
+              id: SAMPLE_POST_ID,
               platform: 'youtube',
               title: 'Himeri Spring Stage Performance',
               description: 'A special stage performance with behind-the-scenes notes.',
               content:
                 'A special stage performance with behind-the-scenes notes and fan-call timing details.',
               thumbnail_url: 'https://cdn.example.com/post-1.jpg',
-              author_id: 'author-1',
+              author_id: SAMPLE_AUTHOR_ID,
               author_name: 'Momiyama Himeri',
               tags: ['stage'],
               like_count: 1200,
@@ -69,7 +72,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     expect(config.shellStats.some((stat) => stat.label === 'Views' && stat.value === '54K')).toBe(
       true
     )
-    expect(config.shellLinks.some((link) => link.href === '/author/author-1')).toBe(true)
+    expect(config.shellLinks.some((link) => link.href === `/author/${SAMPLE_AUTHOR_ID}`)).toBe(true)
     expect(config.ogImage).toBe('https://cdn.example.com/post-1.jpg')
     expect(config.preloadImages?.[0]).toMatchObject({
       href: '/api/v1/media/media-1/thumbnail?size=large&format=webp',
@@ -91,7 +94,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
         new Response(
           JSON.stringify({
             data: {
-              id: 'author-1',
+              id: SAMPLE_AUTHOR_ID,
               username: 'momichan',
               display_name: 'MomiChan',
               bio: 'Public creator profile with updates, schedules, and recent posts.',
@@ -117,7 +120,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL('https://momichan.com/author/momichan'),
+      new URL(`https://momichan.com/author/${SAMPLE_AUTHOR_ID}`),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
@@ -141,13 +144,13 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
         new Response(
           JSON.stringify({
             data: {
-              id: 'discussion-1',
+              id: SAMPLE_DISCUSSION_ID,
               title: 'Should the homepage motion be reduced further?',
               content:
                 'I would cut the remaining large parallax shifts and keep only hierarchy and reveal timing.',
               category: 'feedback',
               author: {
-                id: 'user-1',
+                id: SAMPLE_USER_ID,
                 username: 'editor_momo',
                 avatar_url: 'https://cdn.example.com/editor-momo.jpg',
               },
@@ -174,13 +177,13 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     const config = await resolveHtmlDocumentWithEdgeData(
-      new URL('https://momichan.com/discussion/discussion-1'),
+      new URL(`https://momichan.com/discussion/${SAMPLE_DISCUSSION_ID}`),
       { API_BASE_URL: BACKEND_ORIGIN }
     )
 
     expect(config.status).toBe(200)
     expect(config.title).toBe('Should the homepage motion be reduced further? · MomiChan')
-    expect(config.canonicalPath).toBe('/community/discussions/discussion-1')
+    expect(config.canonicalPath).toBe(`/community/discussions/${SAMPLE_DISCUSSION_ID}`)
     expect(config.shellEyebrow).toBe('Pinned discussion · Feedback')
     expect(config.shellSummary.some((item) => item.includes('2.9K views'))).toBe(true)
     expect(
@@ -211,7 +214,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
               venue_address: 'Online stream',
               ticket_url: 'https://example.com/tickets/schedule-1',
               author: {
-                id: 'author-7',
+                id: SAMPLE_AUTHOR_ID,
                 display_name: 'Kana',
                 avatar_url: 'https://cdn.example.com/kana.jpg',
               },
@@ -236,7 +239,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     expect(config.title).toBe('Editorial live room · MomiChan')
     expect(config.shellEyebrow).toContain('Live')
     expect(config.shellSummary.some((item) => item.includes('Ticket link'))).toBe(true)
-    expect(config.shellLinks.some((link) => link.href === '/author/author-7')).toBe(true)
+    expect(config.shellLinks.some((link) => link.href === `/author/${SAMPLE_AUTHOR_ID}`)).toBe(true)
     expect(config.structuredData[0]).toMatchObject({
       '@type': 'Event',
     })
@@ -276,6 +279,20 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     expect(config.ogImage).toBeUndefined()
   })
 
+  it('does not call the upstream for invalid contract resource ids', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const config = await resolveHtmlDocumentWithEdgeData(
+      new URL('https://momichan.com/author/momichan'),
+      { API_BASE_URL: BACKEND_ORIGIN }
+    )
+
+    expect(config.status).toBe(404)
+    expect(config.robots).toBe('noindex, nofollow')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('prefers the internal API gateway when edge metadata fetches run inside Pages', async () => {
     const publicFetch = vi.fn()
     vi.stubGlobal('fetch', publicFetch)
@@ -284,11 +301,11 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
       new Response(
         JSON.stringify({
           data: {
-            id: 'post-1',
+            id: SAMPLE_POST_ID,
             platform: 'youtube',
             title: 'Gateway hydrated detail',
             description: 'Hydrated via internal worker binding.',
-            author_id: 'author-1',
+            author_id: SAMPLE_AUTHOR_ID,
             author_name: 'MomiChan',
           },
         }),

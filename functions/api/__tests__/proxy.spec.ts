@@ -313,15 +313,17 @@ describe('functions/api proxy', () => {
 
     const internalHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers
     const timestamp = '2026-04-17T07:00:00.000Z'
+    const nonce = internalHeaders.get('X-Internal-Nonce')
     const bodyHash = await sha256Hex(JSON.stringify(expectedInternalBody))
     const expectedSignature = await hmacSha256Hex(
       INTERNAL_SECRET,
-      ['POST', '/internal/v1/auth/bff/login', timestamp, bodyHash].join('\n')
+      ['bff', 'POST', '/internal/v1/auth/bff/login', timestamp, nonce, bodyHash].join('\n')
     )
 
     expect(mockFetch).toHaveBeenCalledTimes(2)
     expect(internalHeaders.get('X-Internal-Service')).toBe('bff')
     expect(internalHeaders.get('X-Internal-Timestamp')).toBe(timestamp)
+    expect(nonce).toMatch(/^[a-f0-9]{32}$/)
     expect(internalHeaders.get('X-Internal-Signature')).toBe(expectedSignature)
     expect(internalHeaders.get('X-Client-Fingerprint')).toBe(fingerprint)
     expect(response.status).toBe(200)
@@ -354,6 +356,7 @@ describe('functions/api proxy', () => {
       })
       expect(request.headers.get('X-Internal-Service')).toBe('bff')
       expect(request.headers.get('X-Internal-Timestamp')).toBe('2026-04-17T07:00:00.000Z')
+      expect(request.headers.get('X-Internal-Nonce')).toMatch(/^[a-f0-9]{32}$/)
       expect(request.headers.get('X-Internal-Signature')).toBeTruthy()
       expect(request.headers.get('X-Client-Fingerprint')).toBe(fingerprint)
       return apiEnvelope(material)
