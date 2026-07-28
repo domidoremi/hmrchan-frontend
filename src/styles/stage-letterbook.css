@@ -360,11 +360,6 @@ body::before,
   background: transparent;
 }
 
-#app .app-decoration-layer--particle,
-#app .app-decoration-layer--mascot {
-  display: none;
-}
-
 #app :where(h1, h2, h3, .page-hero-shell__title, .page-section-title, .auth-title) {
   font-family: var(--letterbook-display-font);
   color: var(--letterbook-ink);
@@ -947,8 +942,16 @@ body::before,
 }
 
 #app .home-fold .hero-btn {
+  block-size: 2.75rem;
   min-block-size: 2.75rem;
-  padding-inline: 1.35rem;
+  padding-block: 0;
+  padding-inline: 1.1rem;
+  line-height: 1;
+  text-align: center;
+}
+
+#app .home-fold .hero-btn .btn-content {
+  transform: none;
 }
 
 #app .home-fold .hero-btn .animated-icon {
@@ -1119,6 +1122,60 @@ body::before,
 
 #app .home-page :where(.rail, .posts--bubble, .story-stage) {
   padding-block: var(--letterbook-section-space);
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  #app .home-page .rail {
+    min-block-size: 0;
+    overflow: visible;
+  }
+
+  #app .home-page :where(.rail-sticky, .rail-stage) {
+    position: relative;
+    block-size: auto;
+    min-block-size: 0;
+    overflow: visible;
+  }
+
+  #app .home-page .rail-stage__chrome {
+    display: none;
+  }
+
+  #app .home-page .rail-track {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+    grid-template-columns: minmax(0, 1fr);
+    inline-size: 100%;
+    block-size: auto;
+    gap: clamp(0.875rem, 2vw, 1.25rem);
+    padding-inline: clamp(0.875rem, 2vw, 1.25rem);
+    transform: none;
+    will-change: auto;
+    overflow: visible;
+  }
+
+  #app .home-page .rail-panel {
+    flex: 1 1 auto;
+    block-size: auto;
+    min-inline-size: 0;
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+    overflow: visible;
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
+  }
+
+  #app .home-page .rail-panel__content {
+    block-size: auto;
+    overflow: visible;
+  }
+}
+
+@media (min-width: 1025px) {
+  #app .home-page .rail {
+    --home-safe-block-size: calc(100dvh - var(--home-navbar-stable-height));
+    padding-block: 0;
+  }
 }
 
 #app .home-page :where(.rail-panel, .posts-surface, .story-card, .media-slice__sticky) {
@@ -2725,7 +2782,7 @@ body::before,
     flex: 0 1 auto;
     min-inline-size: 0;
     inline-size: auto;
-    padding-inline: 1.2rem;
+    padding-inline: 1rem;
     font-size: 0.82rem;
   }
 

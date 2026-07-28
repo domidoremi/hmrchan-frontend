@@ -1,18 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { nextTick } from 'vue'
+import { createApp, nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useSettingsStore } from '../settings'
 
 describe('Settings Store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    localStorage.clear()
   })
 
   it('applies backend preferences without overwriting local-only settings', () => {
     const store = useSettingsStore()
 
     store.setAppearancePreset('material-calm')
-    store.setBackgroundEffect({ type: 'stars', density: 0.8, speed: 1.2 })
     store.setAppUpdateStrategy('aggressive-idle-refresh')
 
     store.applyPreferences({
@@ -31,8 +32,6 @@ describe('Settings Store', () => {
     expect(store.settings.analyticsEnabled).toBe(true)
     expect(store.settings.performanceCookiesEnabled).toBe(true)
     expect(store.settings.appearancePreset).toBe('material-calm')
-    expect(store.settings.backgroundEffect.type).toBe('stars')
-    expect(store.settings.backgroundEffect.density).toBe(0.8)
     expect(store.settings.appUpdateStrategy).toBe('aggressive-idle-refresh')
   })
 
@@ -89,74 +88,75 @@ describe('Settings Store', () => {
     expect(store.settings.performanceCookiesEnabled).toBe(false)
   })
 
-  it('defaults non-essential decorations to disabled for new users', () => {
+  it('keeps retired appearance fields out of new settings', () => {
     const store = useSettingsStore()
 
     expect(store.settings.appearancePreset).toBe('minimal-editorial')
     expect('densityMode' in store.settings).toBe(false)
     expect('contrastMode' in store.settings).toBe(false)
     expect('textureLevel' in store.settings).toBe(false)
-    expect(store.settings.backgroundEffect.type).toBe('none')
-    expect(store.settings.mascotBackground.enabled).toBe(false)
-    expect(store.settings.deskPet.enabled).toBe(false)
-    expect(store.settings.deskPet.autoHomeEnabled).toBe(false)
-    expect(store.settings.deskPet.speechEnabled).toBe(false)
-    expect(store.settings.deskPet.autoHeroInteraction).toBe(false)
-    expect(store.settings.deskPet.dismissedAutoHome).toBe(false)
+    expect('backgroundEffect' in store.settings).toBe(false)
+    expect('mascotBackground' in store.settings).toBe(false)
+    expect('deskPet' in store.settings).toBe(false)
     expect(store.settings.appUpdateStrategy).toBe('public-idle-refresh')
     expect('uiStyle' in store.settings).toBe(false)
   })
 
-  it('keeps explicit desk pet dismissal ahead of homepage auto mode', () => {
+  it('removes retired visual runtime fields from hydrated settings', async () => {
     const store = useSettingsStore()
-
-    store.setDeskPet({ enabled: false })
-    expect(store.settings.deskPet.dismissedAutoHome).toBe(true)
-
-    store.setDeskPet({ enabled: true })
-    expect(store.settings.deskPet.enabled).toBe(true)
-    expect(store.settings.deskPet.dismissedAutoHome).toBe(false)
-  })
-
-  it('clamps visual companion settings when updating runtime state', () => {
-    const store = useSettingsStore()
-
-    store.setMascotBackground({ density: 99, speed: 0.1, opacity: 2 })
-    store.setDeskPet({ scale: 5, followSensitivity: 0.1 })
-
-    expect(store.settings.mascotBackground.density).toBe(1.6)
-    expect(store.settings.mascotBackground.speed).toBe(0.6)
-    expect(store.settings.mascotBackground.opacity).toBe(1)
-    expect(store.settings.deskPet.scale).toBe(1.5)
-    expect(store.settings.deskPet.followSensitivity).toBe(0.5)
-  })
-
-  it('clamps visual companion settings from legacy hydration snapshots', async () => {
-    const store = useSettingsStore()
-
-    store.settings.mascotBackground = {
-      enabled: true,
-      density: 0,
-      speed: 99,
-      opacity: -1,
+    const legacySnapshot = store.settings as typeof store.settings & {
+      backgroundEffect?: unknown
+      mascotBackground?: unknown
+      deskPet?: unknown
     }
-    store.settings.deskPet = {
-      enabled: true,
-      autoHomeEnabled: true,
-      dismissedAutoHome: false,
-      scale: 0.1,
-      speechEnabled: true,
-      autoHeroInteraction: true,
-      followSensitivity: 99,
-    }
+
+    legacySnapshot.backgroundEffect = { type: 'stars' }
+    legacySnapshot.mascotBackground = { enabled: true }
+    legacySnapshot.deskPet = { enabled: true }
+    localStorage.setItem('desk-pet:last-position', '{"x":10,"y":20}')
 
     await nextTick()
 
-    expect(store.settings.mascotBackground.density).toBe(0.4)
-    expect(store.settings.mascotBackground.speed).toBe(1.8)
-    expect(store.settings.mascotBackground.opacity).toBe(0.3)
-    expect(store.settings.deskPet.scale).toBe(0.8)
-    expect(store.settings.deskPet.followSensitivity).toBe(1.8)
+    expect('backgroundEffect' in store.settings).toBe(false)
+    expect('mascotBackground' in store.settings).toBe(false)
+    expect('deskPet' in store.settings).toBe(false)
+    expect(localStorage.getItem('desk-pet:last-position')).toBeNull()
+  })
+
+  it('removes retired visual runtime fields from persisted snapshots', async () => {
+    localStorage.setItem(
+      'settings',
+      JSON.stringify({
+        settings: {
+          ...useSettingsStore().settings,
+          backgroundEffect: { type: 'stars' },
+          mascotBackground: { enabled: true },
+          deskPet: { enabled: true },
+        },
+      })
+    )
+    localStorage.setItem('desk-pet:last-position', '{"x":10,"y":20}')
+
+    const pinia = createPinia()
+    pinia.use(piniaPluginPersistedstate)
+    createApp({}).use(pinia)
+    setActivePinia(pinia)
+
+    const store = useSettingsStore()
+    await nextTick()
+    await nextTick()
+
+    expect('backgroundEffect' in store.settings).toBe(false)
+    expect('mascotBackground' in store.settings).toBe(false)
+    expect('deskPet' in store.settings).toBe(false)
+    expect(localStorage.getItem('desk-pet:last-position')).toBeNull()
+
+    const persistedState = JSON.parse(localStorage.getItem('settings') ?? '{}') as {
+      settings?: Record<string, unknown>
+    }
+    expect(persistedState.settings).not.toHaveProperty('backgroundEffect')
+    expect(persistedState.settings).not.toHaveProperty('mascotBackground')
+    expect(persistedState.settings).not.toHaveProperty('deskPet')
   })
 
   it('stores app update strategy locally without exporting it to backend preferences', () => {

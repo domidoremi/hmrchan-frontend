@@ -2271,7 +2271,7 @@ function deactivateHomeRuntime() {
 
 onDeactivated(deactivateHomeRuntime)
 let homeRequestController: AbortController | null = null
-let homePublicPrewarmCancel: (() => void) | null = null
+let homePublicPrewarmToken: symbol | null = null
 
 function abortHomeRequest() {
   homeRequestController?.abort()
@@ -2279,8 +2279,7 @@ function abortHomeRequest() {
 }
 
 function cancelPublicHomePrewarm() {
-  homePublicPrewarmCancel?.()
-  homePublicPrewarmCancel = null
+  homePublicPrewarmToken = null
 }
 
 function schedulePublicHomePrewarm(payload: HomeAggregateResponse) {
@@ -2289,10 +2288,13 @@ function schedulePublicHomePrewarm(payload: HomeAggregateResponse) {
 
   const { mediaLimit, listLimit } = resolveHomePublicPrewarmLimits(window.innerWidth)
   const mediaUrls = collectHomePrewarmMedia(payload)
+  const prewarmToken = Symbol('home-public-prewarm')
+  homePublicPrewarmToken = prewarmToken
 
-  homePublicPrewarmCancel = scheduleTask(
+  void scheduleTask(
     () => {
-      homePublicPrewarmCancel = null
+      if (homePublicPrewarmToken !== prewarmToken) return
+      homePublicPrewarmToken = null
       void prewarmPublicHomeContent({
         explore: async () => {
           const { postService } = await import('@/api/postService')
@@ -2417,6 +2419,8 @@ async function fetchHomeData(): Promise<boolean> {
     if (controller.signal.aborted) return false
 
     const fallbackPayload = await loadHomepageBootstrapFallback()
+    if (controller.signal.aborted) return false
+
     applyHomeAggregate(fallbackPayload, 'fallback')
     schedulePublicHomePrewarm(fallbackPayload)
     return false

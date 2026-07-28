@@ -338,29 +338,29 @@
     "links": "链接",
     "theme": "主题",
     "appearancePreset": "外观预设",
-    "appearanceLead": "每种预设都会在全站范围内同步改变节奏、材质语言、视觉重音与动效方式。",
+    "appearanceLead": "全站配色、排版与动效。",
     "light": "浅色",
     "dark": "深色",
     "auto": "跟随系统",
     "language": "语言",
     "appUpdateTitle": "应用更新",
     "appUpdatePromptOnly": "仅提示",
-    "appUpdatePromptOnlyDesc": "检测到新版本时始终只提示，不自动刷新当前页面。",
+    "appUpdatePromptOnlyDesc": "仅显示提示，不自动刷新。",
     "appUpdatePublicIdle": "公共页空闲自动更新",
-    "appUpdatePublicIdleDesc": "公开阅读页会在空闲时自动刷新，输入或表单页面只提示。",
+    "appUpdatePublicIdleDesc": "公开页空闲时刷新；表单和输入页仅提示。",
     "appUpdateAggressive": "更积极自动更新",
-    "appUpdateAggressiveDesc": "除受保护页面外，尽量在空闲时自动刷新到新版本。",
+    "appUpdateAggressiveDesc": "受保护页面除外，空闲时自动刷新。",
     "display": "显示",
     "toggleHeroSection": "显示首页横幅",
-    "heroSectionDesc": "在首页显示横幅区域",
+    "heroSectionDesc": "显示首页横幅",
     "toggleAnimations": "启用动画",
-    "animationsDesc": "启用页面过渡和界面动画",
-    "reducedMotionNotice": "您的系统已启用减少动画设置，无论此选项如何，动画都将被最小化。",
+    "animationsDesc": "页面过渡与界面动效",
+    "reducedMotionNotice": "系统已开启“减少动态效果”，动画会保持在最低限度。",
     "toggleSwipeNavigation": "滑动导航",
-    "swipeNavigationDesc": "在帖子详情页左右滑动切换内容",
+    "swipeNavigationDesc": "在帖子页左右滑动切换内容",
     "openAdvanced": "高级设置",
     "animationIntensity": "动效强度",
-    "animationIntensityDesc": "控制动画的速度和数量",
+    "animationIntensityDesc": "调整动画速度与数量",
     "animationNone": "无动效",
     "animationReduced": "减弱",
     "animationNormal": "正常",
@@ -368,41 +368,17 @@
     "postsPerPage": "每页内容数量",
     "privacy": "隐私与统计",
     "cookieConsent": "允许统计 Cookie",
-    "cookieConsentDesc": "决定是否允许前端注入统计与性能分析脚本。",
+    "cookieConsentDesc": "允许统计与性能脚本运行。",
     "analyticsEnabled": "启用匿名分析",
-    "analyticsEnabledDesc": "允许发送匿名使用与错误诊断数据，帮助改进稳定性。",
+    "analyticsEnabledDesc": "发送匿名使用与错误诊断数据，改善稳定性。",
     "performanceCookies": "启用性能监测",
-    "performanceCookiesDesc": "允许记录 Web Vitals 与前端性能指标。",
+    "performanceCookiesDesc": "记录 Web Vitals 与前端性能指标。",
     "replacePreferences": "完整覆盖同步偏好",
-    "backgroundEffect": "背景效果",
-    "ambientEffectsNote": "环境效果保留为附属选项，其优先级始终低于当前外观预设。",
-    "bgNone": "关闭",
-    "bgRain": "雨幕",
-    "bgSnow": "雪花",
-    "bgStars": "星空",
-    "bgDensity": "密度",
-    "bgSpeed": "速度",
-    "bgOpacity": "透明度",
-    "mascotBackground": "吉祥物飞行背景",
-    "mascotEnabled": "启用飞行背景",
-    "mascotEnabledDesc": "显示吉祥物从左下到右上的飞行动画",
-    "mascotDensity": "飞行密度",
-    "mascotSpeed": "飞行速度",
-    "mascotOpacity": "飞行透明度",
-    "deskPet": "桌宠",
-    "deskPetEnabled": "启用桌宠",
-    "deskPetEnabledDesc": "显示可交互桌宠",
-    "deskPetSpeech": "桌宠气泡",
-    "deskPetSpeechDesc": "显示桌宠台词气泡",
-    "deskPetAutoHero": "自动互动",
-    "deskPetAutoHeroDesc": "自动与首页按钮互动",
-    "deskPetScale": "桌宠大小",
-    "deskPetFollowSensitivity": "跟随灵敏度",
     "videoSettings": "视频设置",
     "resetPreferences": "重置已同步偏好",
-    "preferencesReset": "已恢复默认偏好设置",
-    "preferencesReplaced": "已完整覆盖云端偏好设置",
-    "appearanceRuntimeFailed": "新外观预设加载失败，已保留当前预设。",
+    "preferencesReset": "偏好设置已恢复默认值",
+    "preferencesReplaced": "云端偏好设置已覆盖",
+    "appearanceRuntimeFailed": "无法加载该预设，当前预设保持不变。",
     "presets": {
       "minimal-editorial": "花信简章",
       "fluent-soft": "轻柔相册",
@@ -413,13 +389,13 @@
       "sketch-doodle": "应援手帐",
       "gradient-narrative": "夜色巡演"
     },
-    "preferencesLoadFailed": "同步偏好设置失败",
-    "preferencesSaveFailed": "保存偏好设置失败",
+    "preferencesLoadFailed": "偏好同步失败",
+    "preferencesSaveFailed": "偏好保存失败",
     "resetVideoSettings": "重置视频设置",
-    "videoSettingsReset": "视频设置已重置为默认值",
+    "videoSettingsReset": "视频设置已恢复默认值",
     "cache": {
       "title": "缓存管理",
-      "description": "清除缓存数据以释放空间",
+      "description": "清除缓存，释放空间",
       "clear": "清除缓存"
     }
   },
@@ -432,73 +408,73 @@
   },
   "home": {
     "quickNav": {
-      "ariaLabel": "首页分区导航",
+      "ariaLabel": "首页分区",
       "items": {
         "fold": "首页",
         "rail": "今日入口",
         "posts": "最新发布",
-        "media": "今日内容",
+        "media": "精选",
         "footer": "页脚"
       }
     },
     "hero": {
-      "title": "把每一次心动，收藏在这里",
-      "subtitle": "一起追踪籾山ひめり与高嶺のなでしこ的最新动态、舞台日程与粉丝分享。",
-      "badge": "ひめり粉丝收藏",
+      "title": "ひめり动态，尽在这里",
+      "subtitle": "籾山ひめり与高嶺のなでしこ的动态、出演、日程与粉丝讨论。",
+      "badge": "ひめり粉丝档案",
       "highlights": {
         "multilingual": {
-          "title": "多语言界面",
-          "desc": "随时切换中文、English 与日语。"
+          "title": "四种语言",
+          "desc": "简体中文、繁体中文、英语、日语。"
         },
         "motion": {
-          "title": "动效无障碍",
-          "desc": "动效随设置与系统“减少动态效果”自动调整。"
+          "title": "动效控制",
+          "desc": "动效遵循系统与站内设置。"
         },
         "performance": {
-          "title": "新鲜应援动态",
-          "desc": "最近的照片、出演与讨论都能轻松找到。"
+          "title": "近期动态",
+          "desc": "照片、出演、讨论。"
         }
       },
-      "kicker": "MomiChan · ひめり粉丝收藏",
-      "primaryAction": "看看最新动态",
-      "secondaryAction": "打开本周日程",
-      "trendingLabel": "今日趋势",
+      "kicker": "MomiChan · ひめり粉丝档案",
+      "primaryAction": "最新动态",
+      "secondaryAction": "本周日程",
+      "trendingLabel": "热门趋势",
       "tagsEmpty": "暂无趋势标签",
       "fallbackTitle": "公开内容",
       "fallbackAuthor": "公开作者",
       "editorialLabel": "今日摘要",
-      "editorialFallbackTitle": "今日内容摘要",
-      "editorialText": "{author} 的公开内容已列入首页摘要。",
-      "editorialTextWithTag": "{author} 与 {tag} 相关内容已列入首页摘要。",
-      "spotlightLabel": "当前重点",
+      "editorialFallbackTitle": "今日摘要",
+      "editorialText": "今日摘要收录 {author} 的公开内容。",
+      "editorialTextWithTag": "今日摘要收录 {author} 的 {tag} 内容。",
+      "spotlightLabel": "焦点",
       "stats": {
         "ariaLabel": "首页亮点",
         "updates": "更新",
-        "updatesHint": "当前可看的新内容",
+        "updatesHint": "近期内容",
         "authors": "作者",
-        "authorsHint": "本周活跃创作者",
+        "authorsHint": "本周活跃",
         "tags": "标签",
-        "tagsHint": "本周趋势标签"
+        "tagsHint": "本周热门"
       }
     },
     "letterbook": {
-      "mediaLabel": "精选照片相册",
-      "photoCaption": "今天也有值得记住的舞台与笑容。",
-      "indexLabel": "粉丝站快捷入口",
+      "mediaLabel": "精选相册",
+      "photoCaption": "今日舞台与笑容。",
+      "indexLabel": "快捷入口",
       "todayTitle": "今日心动",
-      "todayText": "刚刚更新的照片与动态",
+      "todayText": "新照片与动态",
       "scheduleTitle": "舞台与直播",
-      "scheduleText": "本周活动安排一目了然",
-      "communityTitle": "大家正在聊",
-      "communityText": "读读粉丝们的最新分享"
+      "scheduleText": "本周活动",
+      "communityTitle": "粉丝讨论",
+      "communityText": "最新社区分享"
     },
     "quickStart": {
       "title": "快速开始",
-      "subtitle": "浏览内容、作者、收藏与日程入口。"
+      "subtitle": "内容、作者、收藏、日程。"
     },
     "bento": {
-      "featureTitle": "浏览入口",
-      "featureSubtitle": "最新内容与作者",
+      "featureTitle": "浏览",
+      "featureSubtitle": "最新内容和作者",
       "searchMeta": "关键词 · 标签 · 作者",
       "communityMeta": "公告与讨论",
       "authorsMeta": "作者列表",
@@ -508,42 +484,42 @@
     "latest": "最新发布",
     "popular": "热门内容",
     "portal": {
-      "kicker": "今日入口",
-      "title": "今日公开入口",
-      "subtitle": "内容、作者、日程、社区入口。",
-      "action": "进入探索",
+      "kicker": "探索",
+      "title": "从这里开始",
+      "subtitle": "内容 · 作者 · 日程 · 社区",
+      "action": "探索",
       "publicCount": "公开 {count} 项",
       "emptyState": "暂无公开内容",
       "items": {
         "recommend": {
-          "title": "今日内容",
-          "desc": "编辑选择内容卡",
-          "dynamicDesc": "编辑选择 {count} 张内容卡"
+          "title": "今日精选",
+          "desc": "精选内容",
+          "dynamicDesc": "{count} 条精选内容"
         },
         "authors": {
           "title": "热门作者",
-          "desc": "本周讨论数最高的作者"
+          "desc": "本周更新最多"
         },
         "schedule": {
           "title": "本周日程",
-          "desc": "即将开始的活动与直播"
+          "desc": "近期活动与直播"
         },
         "community": {
-          "title": "社区热帖",
-          "desc": "今日讨论与分享列表"
+          "title": "社区",
+          "desc": "今日讨论"
         }
       }
     },
     "featured": {
-      "kicker": "编辑选择",
-      "title": "今日内容",
-      "subtitle": "今日编辑内容列表。",
-      "action": "去探索"
+      "kicker": "精选",
+      "title": "今日精选",
+      "subtitle": "精选内容。",
+      "action": "探索"
     },
     "trends": {
-      "kicker": "本周趋势",
+      "kicker": "本周脉动",
       "title": "本周趋势",
-      "subtitle": "作者、标签、日程热度汇总。",
+      "subtitle": "作者、标签、活动。",
       "authorsTitle": "热门作者",
       "tagsTitle": "热门标签",
       "scheduleTitle": "本周日程",
@@ -552,8 +528,8 @@
       "scheduleAction": "查看日程",
       "authorsEmpty": "暂无热门作者",
       "tagsEmpty": "暂无热门标签",
-      "authorsHint": "本周关注度最高的作者",
-      "scheduleHint": "查看本周最新活动与直播安排",
+      "authorsHint": "本周更新最多",
+      "scheduleHint": "近期活动与直播",
       "authorCount": "共 {n} 条更新"
     },
     "tags": {
@@ -561,18 +537,18 @@
       "empty": "暂无标签"
     },
     "filters": {
-      "label": "分类筛选"
+      "label": "筛选"
     },
     "preview": {
       "label": "今日内容",
-      "desc": "首页选择内容、作者与公开入口。"
+      "desc": "精选内容、作者、入口。"
     },
     "storyMerge": {
-      "kicker": "继续下滑",
-      "title": "继续浏览首页内容",
-      "subtitle": "返回探索、作者、日程或社区入口。"
+      "kicker": "更多",
+      "title": "继续探索",
+      "subtitle": "内容、作者、日程、社区。"
     },
-    "latestSubtitle": "持续更新的内容流",
+    "latestSubtitle": "新内容持续更新",
     "latestAction": "查看更多"
   },
   "explore": {
@@ -1618,73 +1594,5 @@
     "codeExpired": "验证码已过期，请重新发送",
     "tooManyAttempts": "尝试次数过多，请稍后再试",
     "verifyFailed": "验证失败，请重试"
-  },
-  "deskPet": {
-    "ariaLabel": "桌宠状态: {state}",
-    "close": "关闭桌宠",
-    "menu": {
-      "pat": "🤚 摸摸头",
-      "feed": "🐟 喂食",
-      "play": "✨ 玩一下",
-      "focus": "◎ 专注",
-      "rest": "Zzz 休息",
-      "hide": "👋 隐藏桌宠"
-    },
-    "greeting": {
-      "lateNight": "深夜了还不睡吗？",
-      "morning": "早上好喵~",
-      "afternoon": "下午好~",
-      "evening": "晚上好喵~"
-    },
-    "speech": {
-      "idle": ["喵~", "...", "(｡◕‿◕｡)"],
-      "hover": ["嗯？", "你在看我吗？", "(・・？"],
-      "click": ["哇！", "别戳啦~", "(°△°)"],
-      "angry": ["够了！！", "再戳咬你！", "(╬▔皿▔)"],
-      "sleep": ["zzZ...", "呼噜...", "(˘ᵕ˘)"],
-      "wake": ["嗯..？醒了", "谁叫我？", "(⊙_⊙)"],
-      "happy": ["嘿嘿~", "开心！", "(≧▽≦)"],
-      "thinking": ["在想事情...", "嗯...", "(._.)"],
-      "pat": ["咕噜噜~", "好舒服喵~", "还要还要！", "(´▽`ʃ♡ƪ)"],
-      "eat": ["好吃！", "还想吃~", "饱了喵~", "(ↀᴥↀ)"],
-      "dizzy": ["好晕...", "慢点啦~", "(≧﹏≦)"],
-      "enter": ["我来啦！", "跳一下~", "( •̀ ω •́ )✧"],
-      "perch": ["这里视野真好~", "我先趴一会儿", "守着你呀"],
-      "track": ["欸？你在动！", "我看到你啦~", "(⊙o⊙)"],
-      "leap": ["起跳！", "看我闪现~", "咻——"],
-      "peek": ["我在这边偷看~", "嘿嘿，藏好了", "( •̀ .̫ •́ )✧"],
-      "sendingPrompt": ["我把消息送出去~", "传令模式启动！", "马上出发！"],
-      "review": ["我看看...", "检查一下线索。", "嗯，在复核。"],
-      "failed": ["这里摔了一跤。", "有东西出错了。", "我先标记一下。"],
-      "waiting": ["我陪你等。", "还在这里哦。", "稍微休息一下。"],
-      "deepThinking": ["深度思考中...", "把线索连起来。", "给我一点时间。"],
-      "retrieving": ["去找线索！", "翻翻资料架。", "我看到路径了。"],
-      "contextCompressing": ["整理笔记中。", "把上下文收一收。", "腾点空间。"],
-      "flareScan": ["再扫一遍！", "检查边角线索。", "补检索启动！"],
-      "memoryLinking": ["翻翻记忆。", "把旧线索接上。", "这个我好像见过。"],
-      "graphMapping": ["关系网展开。", "我在连点成线。", "路径越来越清楚了。"],
-      "citationReview": ["核对来源中。", "引用要对齐。", "检查证据链。"],
-      "knowledgeIndexing": ["整理索引。", "把资料归档。", "新知识入库中。"],
-      "toolWorking": ["工具模式！", "正在处理。", "这件事交给我。"],
-      "mcpWorking": ["叫个帮手。", "MCP 通道启动。", "检查工具桥。"],
-      "skillRunning": ["技能运行中！", "用个熟练招式。", "这需要特殊动作。"],
-      "attachmentReading": ["读取文件中。", "打开附件看看。", "让我检查一下。"],
-      "webSearching": ["去搜索啦！", "跟着关键词走。", "我来找结果。"],
-      "success": ["已完成。", "步骤已完成。", "任务已完成。"],
-      "modelTesting": ["测试路线。", "检查引擎。", "快速系统检查。"],
-      "modelUnconfigured": ["还没配置好。", "先接上模型吧。", "缺一把钥匙。"],
-      "modelUnavailable": ["模型现在不在线。", "这条路暂时封住了。", "等它回来。"],
-      "syncingModels": ["同步中！", "重新对齐。", "刷新连接。"],
-      "providerIssue": ["服务有点不稳。", "上游需要缓一缓。", "接口刚刚眨眼了。"],
-      "offlineWaiting": ["现在离线啦。", "恢复前我先小睡。", "还没有信号。"],
-      "warningRecover": ["恢复中...", "走安全路线试试。", "我能绕过去。"],
-      "updateCheck": ["看看有没有新版本。", "检查更新中。", "刷新一下状态。"],
-      "hungry": ["有点饿了。", "可以来点小点心吗？", "能量不足。"],
-      "tired": ["我想休息一下。", "眼皮变重了。", "慢慢来就好。"],
-      "bored": ["有点无聊。", "要不要逛点新内容？", "我在等新动静。"],
-      "excited": ["好耶！", "动起来！", "这下有精神了。"],
-      "focused": ["专注模式。", "先把这件事看完。", "我盯住重点了。"],
-      "sick": ["状态不太好。", "需要一点修复。", "我先缓一下。"]
-    }
   }
 }

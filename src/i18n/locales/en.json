@@ -338,29 +338,29 @@
     "links": "Links",
     "theme": "Theme",
     "appearancePreset": "Appearance Preset",
-    "appearanceLead": "Each preset changes pacing, material language, emphasis, and motion across the whole site.",
+    "appearanceLead": "Site-wide color, type, and motion.",
     "light": "Light",
     "dark": "Dark",
     "auto": "Auto",
     "language": "Language",
     "appUpdateTitle": "App updates",
     "appUpdatePromptOnly": "Prompt only",
-    "appUpdatePromptOnlyDesc": "Always show an update prompt and never refresh the current page automatically.",
+    "appUpdatePromptOnlyDesc": "Show a prompt. Never refresh automatically.",
     "appUpdatePublicIdle": "Auto refresh public pages",
-    "appUpdatePublicIdleDesc": "Reading pages refresh when idle, while forms and input-heavy pages only show a prompt.",
+    "appUpdatePublicIdleDesc": "Refresh idle public pages. Prompt on forms and input pages.",
     "appUpdateAggressive": "More aggressive auto refresh",
-    "appUpdateAggressiveDesc": "Refresh into the new version on idle whenever the page is not protected.",
+    "appUpdateAggressiveDesc": "Refresh idle pages unless protected.",
     "display": "Display",
     "toggleHeroSection": "Show Hero Section",
-    "heroSectionDesc": "Show the hero banner on the homepage",
+    "heroSectionDesc": "Show the homepage banner",
     "toggleAnimations": "Enable Animations",
-    "animationsDesc": "Enable page transitions and interface animations",
-    "reducedMotionNotice": "Your system has reduced motion enabled. Animations will be minimized regardless of this setting.",
+    "animationsDesc": "Page transitions and interface motion",
+    "reducedMotionNotice": "Reduced motion is active in your system. Animations stay minimal.",
     "toggleSwipeNavigation": "Swipe Navigation",
-    "swipeNavigationDesc": "Swipe left or right on post detail pages to switch content",
+    "swipeNavigationDesc": "Swipe on post pages to move between posts",
     "openAdvanced": "Advanced Settings",
     "animationIntensity": "Animation Intensity",
-    "animationIntensityDesc": "Control the speed and amount of animations",
+    "animationIntensityDesc": "Set animation speed and amount",
     "animationNone": "None",
     "animationReduced": "Reduced",
     "animationNormal": "Normal",
@@ -368,41 +368,17 @@
     "postsPerPage": "Posts per page",
     "privacy": "Privacy & analytics",
     "cookieConsent": "Allow analytics cookies",
-    "cookieConsentDesc": "Controls whether analytics and performance scripts may be injected.",
+    "cookieConsentDesc": "Allow analytics and performance scripts.",
     "analyticsEnabled": "Enable anonymous analytics",
-    "analyticsEnabledDesc": "Allow anonymous usage and error diagnostics to improve stability.",
+    "analyticsEnabledDesc": "Share anonymous usage and error diagnostics for stability.",
     "performanceCookies": "Enable performance telemetry",
-    "performanceCookiesDesc": "Allow Web Vitals and frontend performance metrics to be recorded.",
+    "performanceCookiesDesc": "Record Web Vitals and frontend performance metrics.",
     "replacePreferences": "Replace synced preferences",
-    "backgroundEffect": "Background",
-    "ambientEffectsNote": "Ambient effects stay optional and secondary to the active appearance preset.",
-    "bgNone": "Off",
-    "bgRain": "Rain",
-    "bgSnow": "Snow",
-    "bgStars": "Stars",
-    "bgDensity": "Density",
-    "bgSpeed": "Speed",
-    "bgOpacity": "Opacity",
-    "mascotBackground": "Mascot Flight Background",
-    "mascotEnabled": "Enable Flight Background",
-    "mascotEnabledDesc": "Show mascot flying diagonally across pages",
-    "mascotDensity": "Flight Density",
-    "mascotSpeed": "Flight Speed",
-    "mascotOpacity": "Flight Opacity",
-    "deskPet": "Desk Pet",
-    "deskPetEnabled": "Enable Desk Pet",
-    "deskPetEnabledDesc": "Show an interactive desk pet",
-    "deskPetSpeech": "Pet Speech Bubble",
-    "deskPetSpeechDesc": "Show desk pet speech bubbles",
-    "deskPetAutoHero": "Auto Hero Interaction",
-    "deskPetAutoHeroDesc": "Auto interact with homepage hero button",
-    "deskPetScale": "Pet Size",
-    "deskPetFollowSensitivity": "Follow Sensitivity",
     "videoSettings": "Video Settings",
     "resetPreferences": "Reset Synced Preferences",
-    "preferencesReset": "Preferences have been reset to defaults",
-    "preferencesReplaced": "Cloud preferences replaced successfully",
-    "appearanceRuntimeFailed": "The new appearance preset could not be loaded. The current preset was kept.",
+    "preferencesReset": "Preferences reset to defaults",
+    "preferencesReplaced": "Cloud preferences replaced",
+    "appearanceRuntimeFailed": "Couldn't load that preset. The current preset remains active.",
     "presets": {
       "minimal-editorial": "Blossom Letter",
       "fluent-soft": "Soft Album",
@@ -413,13 +389,13 @@
       "sketch-doodle": "Support Scrapbook",
       "gradient-narrative": "Night Tour"
     },
-    "preferencesLoadFailed": "Failed to sync preferences",
-    "preferencesSaveFailed": "Failed to save preferences",
+    "preferencesLoadFailed": "Preference sync failed",
+    "preferencesSaveFailed": "Preference save failed",
     "resetVideoSettings": "Reset Video Settings",
-    "videoSettingsReset": "Video settings have been reset to defaults",
+    "videoSettingsReset": "Video settings reset to defaults",
     "cache": {
       "title": "Cache Management",
-      "description": "Clear cached data to free up space",
+      "description": "Remove cached data and free space",
       "clear": "Clear Cache"
     }
   },
@@ -432,73 +408,73 @@
   },
   "home": {
     "quickNav": {
-      "ariaLabel": "Homepage section navigation",
+      "ariaLabel": "Home sections",
       "items": {
         "fold": "Home",
         "rail": "Today",
         "posts": "Posts",
-        "media": "Today",
+        "media": "Highlights",
         "footer": "Footer"
       }
     },
     "hero": {
-      "title": "Keep every spark close",
-      "subtitle": "Follow Momiyama Himeri and TAKANE NO NADESHIKO through new posts, stage schedules, and fan conversations.",
-      "badge": "Himeri fan collection",
+      "title": "Himeri, all in one place",
+      "subtitle": "New posts, appearances, schedules, and fan conversations from Momiyama Himeri and TAKANE NO NADESHIKO.",
+      "badge": "Himeri fan archive",
       "highlights": {
         "multilingual": {
-          "title": "Multilingual UI",
-          "desc": "Switch between Chinese, English, and Japanese anytime."
+          "title": "Four languages",
+          "desc": "Simplified Chinese, Traditional Chinese, English, and Japanese."
         },
         "motion": {
-          "title": "Motion-aware",
-          "desc": "Animations respect your settings and reduced-motion preference."
+          "title": "Motion controls",
+          "desc": "Animation follows your system and site settings."
         },
         "performance": {
-          "title": "Fresh fan updates",
-          "desc": "Recent photos, appearances, and conversations stay easy to find."
+          "title": "Recent updates",
+          "desc": "Photos, appearances, and discussions."
         }
       },
-      "kicker": "MomiChan · Himeri fan collection",
-      "primaryAction": "See Latest Updates",
-      "secondaryAction": "Open This Week's Schedule",
-      "trendingLabel": "Trending Today",
+      "kicker": "MomiChan · Himeri fan archive",
+      "primaryAction": "Latest Updates",
+      "secondaryAction": "This Week's Schedule",
+      "trendingLabel": "Trending",
       "tagsEmpty": "No trending tags yet",
       "fallbackTitle": "Public content",
       "fallbackAuthor": "Public creator",
       "editorialLabel": "Today summary",
-      "editorialFallbackTitle": "Today content summary",
-      "editorialText": "{author} public content is included in the homepage summary.",
-      "editorialTextWithTag": "{author} and {tag} content is included in the homepage summary.",
-      "spotlightLabel": "Current focus",
+      "editorialFallbackTitle": "Today's summary",
+      "editorialText": "Today's summary includes public posts from {author}.",
+      "editorialTextWithTag": "Today's summary includes {author} posts tagged {tag}.",
+      "spotlightLabel": "Spotlight",
       "stats": {
         "ariaLabel": "Homepage highlights",
         "updates": "Updates",
-        "updatesHint": "available recent posts",
+        "updatesHint": "recent posts",
         "authors": "Authors",
-        "authorsHint": "active creators this week",
+        "authorsHint": "active this week",
         "tags": "Tags",
-        "tagsHint": "weekly trend tags"
+        "tagsHint": "trending this week"
       }
     },
     "letterbook": {
-      "mediaLabel": "Featured photo album",
-      "photoCaption": "Another stage and smile worth remembering today.",
-      "indexLabel": "Fan-site shortcuts",
+      "mediaLabel": "Featured album",
+      "photoCaption": "Today's stage moments and smiles.",
+      "indexLabel": "Shortcuts",
       "todayTitle": "Today's spark",
-      "todayText": "Fresh photos and updates",
+      "todayText": "New photos and posts",
       "scheduleTitle": "Stage and live",
-      "scheduleText": "This week's plans at a glance",
-      "communityTitle": "Fan conversations",
-      "communityText": "See what everyone is sharing"
+      "scheduleText": "This week's events",
+      "communityTitle": "Fan talk",
+      "communityText": "Latest community posts"
     },
     "quickStart": {
       "title": "Quick start",
-      "subtitle": "Browse content, creators, favorites, and schedule entry points."
+      "subtitle": "Posts, creators, favorites, and schedules."
     },
     "bento": {
-      "featureTitle": "Browse entry",
-      "featureSubtitle": "Latest content and creators",
+      "featureTitle": "Browse",
+      "featureSubtitle": "Latest posts and creators",
       "searchMeta": "Keywords · Tags · Creators",
       "communityMeta": "News & Discussions",
       "authorsMeta": "Creator directory",
@@ -508,42 +484,42 @@
     "latest": "Latest Posts",
     "popular": "Popular Content",
     "portal": {
-      "kicker": "Today Entry Points",
-      "title": "Today public entry points",
-      "subtitle": "Posts, creators, schedule, community.",
-      "action": "Go Explore",
+      "kicker": "Explore",
+      "title": "Start here",
+      "subtitle": "Posts · Creators · Schedule · Community",
+      "action": "Explore",
       "publicCount": "{count} public items",
       "emptyState": "No public items yet",
       "items": {
         "recommend": {
-          "title": "Today’s Content",
-          "desc": "Editor-selected content cards",
-          "dynamicDesc": "{count} editor-selected content cards"
+          "title": "Today's picks",
+          "desc": "Selected posts",
+          "dynamicDesc": "{count} selected posts"
         },
         "authors": {
           "title": "Active Creators",
-          "desc": "Creators with the highest discussion count this week"
+          "desc": "Most updates this week"
         },
         "schedule": {
           "title": "This Week",
-          "desc": "Upcoming events and live moments"
+          "desc": "Upcoming events and streams"
         },
         "community": {
-          "title": "Community Threads",
-          "desc": "Today discussion and sharing list"
+          "title": "Community",
+          "desc": "Today's discussions"
         }
       }
     },
     "featured": {
-      "kicker": "Editor Selection",
-      "title": "Today’s Content",
-      "subtitle": "Today editor-selected content list.",
-      "action": "Open Explore"
+      "kicker": "Selected",
+      "title": "Today's picks",
+      "subtitle": "Selected posts.",
+      "action": "Explore"
     },
     "trends": {
-      "kicker": "This Week",
+      "kicker": "Weekly pulse",
       "title": "This Week",
-      "subtitle": "Creator, tag, and schedule trend summary.",
+      "subtitle": "Creators, tags, and events.",
       "authorsTitle": "Active Creators",
       "tagsTitle": "Popular Tags",
       "scheduleTitle": "This Week’s Schedule",
@@ -552,8 +528,8 @@
       "scheduleAction": "View Schedule",
       "authorsEmpty": "No active creators yet",
       "tagsEmpty": "No popular tags yet",
-      "authorsHint": "Creators with the highest attention this week",
-      "scheduleHint": "See the latest events and live sessions",
+      "authorsHint": "Most updates this week",
+      "scheduleHint": "Upcoming events and streams",
       "authorCount": "{n} updates"
     },
     "tags": {
@@ -561,18 +537,18 @@
       "empty": "No tags yet"
     },
     "filters": {
-      "label": "Quick Filters"
+      "label": "Filters"
     },
     "preview": {
       "label": "Today Content",
-      "desc": "Homepage selected posts, creators, and public entry points."
+      "desc": "Selected posts, creators, and links."
     },
     "storyMerge": {
-      "kicker": "Continue",
-      "title": "Continue browsing homepage content",
-      "subtitle": "Return to explore, creators, schedule, or community entry points."
+      "kicker": "More",
+      "title": "Keep exploring",
+      "subtitle": "Posts, creators, schedules, and community."
     },
-    "latestSubtitle": "Continuously updated feed",
+    "latestSubtitle": "New posts as they arrive",
     "latestAction": "View All"
   },
   "explore": {
@@ -1618,97 +1594,5 @@
     "codeExpired": "Verification code has expired, please resend",
     "tooManyAttempts": "Too many attempts, please try again later",
     "verifyFailed": "Verification failed, please try again"
-  },
-  "deskPet": {
-    "ariaLabel": "Desk pet state: {state}",
-    "close": "Close desk pet",
-    "menu": {
-      "pat": "🤚 Pat head",
-      "feed": "🐟 Feed",
-      "play": "✨ Play",
-      "focus": "◎ Focus",
-      "rest": "Zzz Rest",
-      "hide": "👋 Hide pet"
-    },
-    "greeting": {
-      "lateNight": "Still up this late?",
-      "morning": "Good morning meow~",
-      "afternoon": "Good afternoon~",
-      "evening": "Good evening meow~"
-    },
-    "speech": {
-      "idle": ["Meow~", "...", "(｡◕‿◕｡)"],
-      "hover": ["Hmm?", "Looking at me?", "(・・？"],
-      "click": ["Wow!", "Stop poking~", "(°△°)"],
-      "angry": ["Enough!!", "I'll bite!", "(╬▔皿▔)"],
-      "sleep": ["zzZ...", "Snore...", "(˘ᵕ˘)"],
-      "wake": ["Huh..? Awake", "Who called?", "(⊙_⊙)"],
-      "happy": ["Hehe~", "Happy!", "(≧▽≦)"],
-      "thinking": ["Thinking...", "Hmm...", "(._.)"],
-      "pat": ["Purr~", "So comfy~", "More more!", "(´▽`ʃ♡ƪ)"],
-      "eat": ["Yummy!", "Want more~", "Full meow~", "(ↀᴥↀ)"],
-      "dizzy": ["So dizzy...", "Slow down~", "(≧﹏≦)"],
-      "enter": ["Here I come!", "Boing~", "( •̀ ω •́ )✧"],
-      "perch": ["Nice view from here~", "I'll perch for a bit", "Guarding this button!"],
-      "track": ["Oh? You're moving!", "I see you~", "(⊙o⊙)"],
-      "leap": ["Jump!", "Watch this dash~", "Whoosh!"],
-      "peek": ["Peeking from here~", "Hehe, I'm hiding", "( •̀ .̫ •́ )✧"],
-      "sendingPrompt": ["Sending it along~", "Message courier mode!", "On my way!"],
-      "review": ["Let me take a look...", "Checking the trail.", "Hmm, reviewing."],
-      "failed": ["That stumbled.", "Something broke here.", "I'll flag this."],
-      "waiting": ["Waiting with you.", "Still here.", "Taking a tiny pause."],
-      "deepThinking": ["Deep thinking...", "Connecting the dots.", "Give me a moment."],
-      "retrieving": ["Fetching clues!", "Digging through the shelves.", "I found a trail."],
-      "contextCompressing": ["Packing the notes.", "Tidying the context.", "Making room."],
-      "flareScan": ["Running a second sweep!", "Scanning the edges.", "One more pass!"],
-      "memoryLinking": ["Checking memory.", "Linking older clues.", "I have seen this before."],
-      "graphMapping": [
-        "Mapping relations.",
-        "Connecting points into paths.",
-        "The route is clearer."
-      ],
-      "citationReview": [
-        "Checking sources.",
-        "Aligning citations.",
-        "Reviewing the evidence chain."
-      ],
-      "knowledgeIndexing": [
-        "Sorting the index.",
-        "Filing new knowledge.",
-        "Adding this to the shelf."
-      ],
-      "toolWorking": ["Tool mode!", "Working on it.", "Let me handle that."],
-      "mcpWorking": ["Calling a helper.", "MCP route active.", "Checking the tool bridge."],
-      "skillRunning": ["Skill running!", "Using a learned trick.", "This needs a special move."],
-      "attachmentReading": ["Reading the file.", "Opening the attachment.", "Let me inspect this."],
-      "webSearching": ["Searching around!", "Following the keywords.", "Sniffing out results."],
-      "success": ["Done.", "Step complete.", "Task complete."],
-      "modelTesting": ["Testing the route.", "Checking the engine.", "A quick systems check."],
-      "modelUnconfigured": [
-        "Not configured yet.",
-        "Let's connect a model first.",
-        "Missing a key."
-      ],
-      "modelUnavailable": [
-        "The model is away.",
-        "That route is closed for now.",
-        "Waiting for it to return."
-      ],
-      "syncingModels": ["Syncing up!", "Back in step.", "Refreshing the connection."],
-      "providerIssue": [
-        "Service looks shaky.",
-        "That endpoint needs a moment.",
-        "Something upstream blinked."
-      ],
-      "offlineWaiting": ["Offline for now.", "I'll nap until it returns.", "No signal yet."],
-      "warningRecover": ["Recovering...", "Let's try the safer path.", "I can work around this."],
-      "updateCheck": ["Looking for updates.", "Checking the new build.", "Refreshing status."],
-      "hungry": ["A little hungry.", "Snack break?", "Running low on energy."],
-      "tired": ["I could use a rest.", "Getting sleepy.", "Slow is fine."],
-      "bored": ["A little bored.", "Want to browse something new?", "Waiting for a new move."],
-      "excited": ["Nice!", "Let's move!", "Fully awake now."],
-      "focused": ["Focus mode.", "Let's finish this part.", "I have the important bit."],
-      "sick": ["Not feeling great.", "Needs a little repair.", "Taking a short recovery pause."]
-    }
   }
 }

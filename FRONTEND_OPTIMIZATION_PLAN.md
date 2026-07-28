@@ -3597,3 +3597,94 @@ Result:
 
 - Text style audit passed with `0` issues.
 - Markdown docs no longer contain the scanned advisory or speculative wording patterns outside excluded generated directories.
+
+### Visual Runtime Retirement and Home Performance
+
+Date:
+
+- `2026-07-28`
+
+Classification:
+
+- `runtime deletion`
+- `locale stability`
+- `rendered accessibility`
+- `performance evidence`
+
+Completed scope:
+
+- Removed `ParticleBackground`, `MascotFlightBackground`, `DeskPet`, the particle engine, DeskPet workflow helpers, exclusive styles, focused tests, and the build-time DeskPet boundary gate.
+- Removed the visual-runtime mounts, lazy imports, settings controls, store actions and types, workflow hints, and locale keys.
+- Retained public expression assets used by avatars, branding, and direct public URLs.
+- Replaced the invalid `scheduleTask()` cancellation assignment in `HomePage.vue` with a page-local identity token while preserving the shared Promise contract.
+- Restored viewport-sized desktop rail geometry, removed Letterbook padding from the wide rail, and extended the compact document-flow rail through `1024 px`.
+- Constrained homepage hero actions to a stable `44 px` block size with centered labels.
+- Rewrote Home and Settings copy in `en`, `zh-CN`, `zh-TW`, and `ja` with shorter labels and descriptions.
+
+Compatibility window:
+
+- Settings hydration deletes persisted `backgroundEffect`, `mascotBackground`, and `deskPet` fields.
+- Hydration removes `desk-pet:last-position`.
+- Cache cleanup retains the `desk-pet:` prefix for one release. Delete this tombstone after the compatibility release has completed and telemetry or support evidence shows no remaining persisted clients.
+
+Rendered acceptance evidence:
+
+- Locale switching completed across `en`, `zh-CN`, `zh-TW`, and `ja` with no Vue exception or error overlay.
+- Selected update-strategy text measured `4.57:1` contrast in light mode and `8.15:1` in dark mode, unchanged on hover.
+- Desktop and mobile hero actions measured `44 px` high with zero horizontal and vertical inset delta.
+- Desktop rail measured `1352 px` total height, `812 px` sticky height, `540 px` travel, four reachable panels, and `0 px` document-flow gap before posts.
+- At `769 px` and `1024 px`, the rail rendered as a single-column grid with all four panels reachable and `0 px` horizontal overflow. At `1025 px`, sticky travel reached the final panel with a `-3075 px` track transform.
+- Removed visual runtimes produced zero matching DOM nodes and no production chunks.
+
+Playwright cold-load evidence:
+
+Five fresh contexts per profile ran against a production preview with service workers blocked. Values are median / p75.
+
+| Metric            |  Desktop `1440x900` | Mobile `390x844 @3x` |
+| ----------------- | ------------------: | -------------------: |
+| TTFB              |        `3.4 / 4 ms` |       `3.5 / 3.6 ms` |
+| DOMContentLoaded  |  `164.3 / 187.7 ms` |   `145.2 / 154.4 ms` |
+| Load              |  `178.2 / 202.9 ms` |     `151.4 / 265 ms` |
+| FCP               |      `124 / 136 ms` |        `88 / 104 ms` |
+| LCP               |    `2180 / 2336 ms` |       `400 / 416 ms` |
+| CLS               |             `0 / 0` |              `0 / 0` |
+| Long-task total   |      `508 / 542 ms` |       `416 / 447 ms` |
+| Long-task maximum |      `296 / 311 ms` |       `202 / 223 ms` |
+| Resources         |           `94 / 94` |            `97 / 97` |
+| Transfer          | `481.6 / 481.6 KiB` |  `537.5 / 537.5 KiB` |
+| Decoded resources |   `1.41 / 1.41 MiB` |    `1.46 / 1.46 MiB` |
+| DOM elements      |       `1099 / 1099` |        `1104 / 1104` |
+| JS heap used      |   `8.27 / 8.29 MiB` |    `8.32 / 8.32 MiB` |
+| Task duration     |    `829 / 837.9 ms` |   `684.1 / 721.4 ms` |
+| Script duration   |      `18.7 / 20 ms` |     `15.7 / 15.8 ms` |
+| Layout duration   |  `498.8 / 524.8 ms` |     `427 / 438.4 ms` |
+
+Desktop LCP ranged from `2132 ms` to `2460 ms`. The late candidate was the aggregate-data hero image under `/api/v1/media/.../thumbnail`; mobile retained the initial snapshot hero and ranged from `372 ms` to `492 ms`. Desktop CLS reached `0.10` in one run while median and p75 remained `0`. Each profile loaded `74` scripts totaling about `315 KiB`; stylesheet links totaled about `116 KiB`.
+
+Lighthouse evidence:
+
+`bun run test:perf` completed under the repository audit environment.
+
+| Route   | Score |       FCP |       LCP | CLS |      TBT | Main thread |    Transfer |
+| ------- | ----: | --------: | --------: | --: | -------: | ----------: | ----------: |
+| Home    |  `61` | `2490 ms` | `5807 ms` | `0` | `551 ms` |   `2416 ms` | `532.8 KiB` |
+| Explore |  `82` | `2337 ms` | `3165 ms` | `0` | `350 ms` |   `1725 ms` |   `415 KiB` |
+| Search  |  `86` | `2207 ms` | `2893 ms` | `0` | `301 ms` |   `1812 ms` | `413.9 KiB` |
+
+The Home audit reports about `600 ms` of render-blocking savings, `23 KiB` of unused JavaScript, `12 KiB` of image-delivery savings, and `2.4 s` of main-thread work. Loopback TTFB remains `2-4 ms`; homepage rendering and scheduling own the primary delay.
+
+Optimization queue:
+
+1. `P0 - Scene startup`: move `scheduleSceneSetup()` and `setupSceneTriggers()` work behind the first stable paint and section proximity. Preserve immediate setup when the rail is already near the viewport. Acceptance: Home Lighthouse TBT at or below `250 ms`, main-thread work below `1.8 s`, and Playwright p75 long-task maximum below `200 ms`.
+2. `P0 - Stable hero LCP`: keep one above-fold LCP candidate from initial HTML through aggregate-data replacement. Preload the final candidate URL, retain explicit dimensions, and keep eager loading plus high fetch priority limited to that candidate. Acceptance: Home Lighthouse LCP at or below `2.5 s`, Playwright p75 LCP below `1.0 s`, and CLS at or below `0.05`.
+3. `P1 - Initial request graph`: reduce the `68-74` initial script requests by consolidating microchunks and enabling targeted preload only for the critical Vue, router, i18n, and Home path. Acceptance: p75 initial script requests at or below `45` without increasing total JavaScript transfer or the largest-JavaScript budget.
+4. `P1 - Render-blocking CSS`: split above-fold Home and shell rules from below-fold page systems. Keep selected-state contrast tokens and rail geometry in the critical path. Acceptance: Lighthouse render-blocking savings below `250 ms`, stylesheet transfer below `90 KiB`, and no dark/light contrast regression.
+5. `P2 - Below-fold DOM and layout`: delay non-visible section trees or apply stable intrinsic sizing and `content-visibility` where interaction and accessibility remain intact. Acceptance: initial DOM below `850` elements, Playwright p75 layout duration below `300 ms`, and all four rail panels remain reachable by keyboard, wheel, touch, and reduced-motion navigation.
+
+Validation contract:
+
+- Run focused Home, Settings, settings-store, StateIndicator, locale-parity, and responsive-style tests for each slice.
+- Run `bun run type-check`, `bun run lint:strict`, `bun run check:complexity-budget`, `bun run build`, and `bun run check:bundle-budget`.
+- Run five cold Playwright samples per desktop and mobile profile and report median plus p75.
+- Run `bun run test:perf` and compare route metrics under the same audit environment.
+- Reject any slice that restores the retired visual runtimes, changes the `scheduleTask()` Promise contract, reintroduces a rail document gap, or drops selected text below `4.5:1` contrast.

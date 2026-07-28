@@ -1,13 +1,5 @@
 <template>
-  <div
-    class="state-indicator"
-    :class="`state-indicator--${variant}`"
-    :data-pet-state="petStateHint"
-    :data-rag-activity="ragActivityHint"
-    :data-provider-activity="providerActivityHint"
-    :data-model-status="modelStatusHint"
-    :data-update-activity="updateActivityHint"
-  >
+  <div class="state-indicator" :class="`state-indicator--${variant}`">
     <div class="state-indicator__visual">
       <div class="state-indicator__glow" />
       <div class="state-indicator__icon-wrapper">
@@ -170,47 +162,6 @@ const shouldShowAction = computed(() => {
 })
 
 const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'))
-
-const petStateHint = computed(() => {
-  const hints: Partial<Record<StateIndicatorVariant, string>> = {
-    error: 'warningRecover',
-    empty: 'review',
-    'not-found': 'review',
-    'no-results': 'review',
-    'service-unavailable': 'providerIssue',
-    success: 'success',
-    'model-testing': 'modelTesting',
-    'model-unconfigured': 'modelUnconfigured',
-    'model-unavailable': 'modelUnavailable',
-  }
-
-  return hints[props.variant] ?? null
-})
-
-const ragActivityHint = computed(() => {
-  if (props.variant === 'loading') return 'retrieving'
-  return null
-})
-
-const providerActivityHint = computed(() => {
-  if (props.variant === 'provider-sync') return 'syncing'
-  return null
-})
-
-const modelStatusHint = computed(() => {
-  const hints: Partial<Record<StateIndicatorVariant, string>> = {
-    'model-testing': 'testing',
-    'model-unconfigured': 'unconfigured',
-    'model-unavailable': 'unavailable',
-  }
-
-  return hints[props.variant] ?? null
-})
-
-const updateActivityHint = computed(() => {
-  if (props.variant === 'update-check') return 'checking'
-  return null
-})
 </script>
 
 <style scoped>

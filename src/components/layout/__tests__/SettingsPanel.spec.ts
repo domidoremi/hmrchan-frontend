@@ -52,27 +52,6 @@ const settingsStoreState = reactive({
     cookieConsent: false,
     analyticsEnabled: false,
     performanceCookiesEnabled: false,
-    backgroundEffect: {
-      type: 'none',
-      density: 0.4,
-      speed: 1,
-      opacity: 0.6,
-    },
-    mascotBackground: {
-      enabled: false,
-      density: 1,
-      speed: 1,
-      opacity: 0.85,
-    },
-    deskPet: {
-      enabled: false,
-      autoHomeEnabled: false,
-      dismissedAutoHome: false,
-      scale: 1,
-      speechEnabled: false,
-      autoHeroInteraction: false,
-      followSensitivity: 1,
-    },
     appUpdateStrategy: 'prompt-only',
   }),
   toggleSetting: vi.fn(),
@@ -82,10 +61,7 @@ const settingsStoreState = reactive({
   setCookieConsent: vi.fn(),
   setAnalyticsEnabled: vi.fn(),
   setPerformanceCookiesEnabled: vi.fn(),
-  setBackgroundEffect: vi.fn(),
   setAnimationIntensity: vi.fn(),
-  setMascotBackground: vi.fn(),
-  setDeskPet: vi.fn(),
 })
 
 vi.mock('vue-i18n', () => ({
@@ -223,10 +199,7 @@ describe('SettingsPanel', () => {
       'setCookieConsent',
       'setAnalyticsEnabled',
       'setPerformanceCookiesEnabled',
-      'setBackgroundEffect',
       'setAnimationIntensity',
-      'setMascotBackground',
-      'setDeskPet',
     ] as const) {
       settingsStoreState[method].mockReset()
     }
@@ -245,27 +218,6 @@ describe('SettingsPanel', () => {
       cookieConsent: false,
       analyticsEnabled: false,
       performanceCookiesEnabled: false,
-      backgroundEffect: {
-        type: 'none',
-        density: 0.4,
-        speed: 1,
-        opacity: 0.6,
-      },
-      mascotBackground: {
-        enabled: false,
-        density: 1,
-        speed: 1,
-        opacity: 0.85,
-      },
-      deskPet: {
-        enabled: false,
-        autoHomeEnabled: false,
-        dismissedAutoHome: false,
-        scale: 1,
-        speechEnabled: false,
-        autoHeroInteraction: false,
-        followSensitivity: 1,
-      },
       appUpdateStrategy: 'prompt-only',
     })
   })
@@ -384,17 +336,19 @@ describe('SettingsPanel', () => {
     expect(panelMocks.toastError).toHaveBeenCalledWith('settings.appearanceRuntimeFailed')
   })
 
-  it('removes deprecated style-gallery, density, contrast, and texture controls', () => {
+  it('removes deprecated style and visual runtime controls', () => {
     const wrapper = createWrapper({
       embedded: true,
       allowedCategories: ['appearance', 'experience'],
     })
 
     expect(wrapper.text()).toContain('settings.appearanceLead')
-    expect(wrapper.text()).toContain('settings.ambientEffectsNote')
     expect(wrapper.text()).not.toContain('settings.openStyleGallery')
     expect(wrapper.text()).not.toContain('settings.density')
     expect(wrapper.text()).not.toContain('settings.contrast')
     expect(wrapper.text()).not.toContain('settings.texture')
+    expect(wrapper.text()).not.toContain('settings.backgroundEffect')
+    expect(wrapper.text()).not.toContain('settings.mascotBackground')
+    expect(wrapper.text()).not.toContain('settings.deskPet')
   })
 })

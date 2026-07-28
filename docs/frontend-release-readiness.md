@@ -290,7 +290,6 @@
 - `src/views/ProfileSettingsPage.vue`
 - `src/components/layout/AppNavbar.vue`
 - `src/components/layout/SettingsPanel.vue`
-- `src/components/ui/DeskPet.vue`
 
 ### Bundle Budget
 

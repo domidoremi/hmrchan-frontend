@@ -12,7 +12,6 @@
 @import './components/page-primitives.css' layer(components);
 @import './components/button-system.css' layer(components);
 @import './components/component-state-system.css' layer(components);
-@import './components/desk-pet.css' layer(components);
 @import './components/post-preview-modal.css' layer(components);
 @import './auth-compat.css' layer(page-systems);
 @import './public-pages.css' layer(page-systems);

@@ -12,53 +12,6 @@ export type AnimationIntensity = 'none' | 'reduced' | 'normal' | 'full'
 export type AppUpdateStrategy = 'prompt-only' | 'public-idle-refresh' | 'aggressive-idle-refresh'
 type LegacyUiStyleSnapshot = 'ios' | 'material'
 
-/** 背景粒子效果类型 */
-export type ParticleEffectType = 'none' | 'rain' | 'snow' | 'stars'
-
-/** 粒子效果自定义参数 */
-export interface ParticleEffectConfig {
-  /** 效果类型 */
-  type: ParticleEffectType
-  /** 粒子密度 0.1–1（默认 0.5）。实际数量 = density × 基准数量 */
-  density: number
-  /** 速度倍率 0.2–2（默认 1） */
-  speed: number
-  /** 自定义颜色（CSS 颜色值，空字符串表示使用主题默认色） */
-  color: string
-  /** 粒子透明度 0.1–1（默认 0.6） */
-  opacity: number
-}
-
-/** 吉祥物飞行背景配置 */
-export interface MascotBackgroundConfig {
-  /** 开关 */
-  enabled: boolean
-  /** 密度倍率 0.4-1.6 */
-  density: number
-  /** 速度倍率 0.6-1.8 */
-  speed: number
-  /** 透明度倍率 0.3-1 */
-  opacity: number
-}
-
-/** 桌宠配置 */
-export interface DeskPetConfig {
-  /** 开关 */
-  enabled: boolean
-  /** 首页首屏自动体验（不等同于全站桌宠常驻开关） */
-  autoHomeEnabled: boolean
-  /** 用户是否显式关闭过首页自动桌宠 */
-  dismissedAutoHome: boolean
-  /** 尺寸倍率 0.8-1.5 */
-  scale: number
-  /** 允许气泡台词 */
-  speechEnabled: boolean
-  /** 自动与 Hero 按钮互动 */
-  autoHeroInteraction: boolean
-  /** 跟随灵敏度 0.5-1.8 */
-  followSensitivity: number
-}
-
 export interface Settings {
   showHeroSection: boolean
   enableAnimations: boolean
@@ -77,12 +30,6 @@ export interface Settings {
   postDetailViewMode: 'stream' | 'data'
   /** 外观预设 */
   appearancePreset: AppearancePreset
-  /** 全局背景粒子效果 */
-  backgroundEffect: ParticleEffectConfig
-  /** 吉祥物飞行背景 */
-  mascotBackground: MascotBackgroundConfig
-  /** 桌宠配置 */
-  deskPet: DeskPetConfig
   /** 应用更新策略 */
   appUpdateStrategy: AppUpdateStrategy
   /** 首页快捷导航在移动端吸附的侧边 */
@@ -104,39 +51,12 @@ const defaultSettings: Settings = {
   animationIntensity: 'normal',
   postDetailViewMode: 'stream',
   appearancePreset: DEFAULT_APPEARANCE_PRESET,
-  backgroundEffect: {
-    type: 'none',
-    density: 0.5,
-    speed: 1,
-    color: '',
-    opacity: 0.6,
-  },
-  mascotBackground: {
-    enabled: false,
-    density: 1,
-    speed: 1,
-    opacity: 0.85,
-  },
-  deskPet: {
-    enabled: false,
-    autoHomeEnabled: false,
-    dismissedAutoHome: false,
-    scale: 1,
-    speechEnabled: false,
-    autoHeroInteraction: false,
-    followSensitivity: 1,
-  },
   appUpdateStrategy: 'public-idle-refresh',
   homeQuickNavSide: 'right',
 }
 
 function createDefaultSettings(): Settings {
-  return {
-    ...defaultSettings,
-    backgroundEffect: { ...defaultSettings.backgroundEffect },
-    mascotBackground: { ...defaultSettings.mascotBackground },
-    deskPet: { ...defaultSettings.deskPet },
-  }
+  return { ...defaultSettings }
 }
 
 function normalizePrivacySettings(target: Settings): void {
@@ -146,44 +66,26 @@ function normalizePrivacySettings(target: Settings): void {
   }
 }
 
-function clampNumber(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
-}
-
-function normalizeMascotBackgroundConfig(
-  config: Partial<MascotBackgroundConfig> | undefined
-): MascotBackgroundConfig {
-  const next = {
-    ...defaultSettings.mascotBackground,
-    ...config,
-  }
-
-  return {
-    ...next,
-    density: clampNumber(next.density, 0.4, 1.6),
-    speed: clampNumber(next.speed, 0.6, 1.8),
-    opacity: clampNumber(next.opacity, 0.3, 1),
-  }
-}
-
-function normalizeDeskPetConfig(config: Partial<DeskPetConfig> | undefined): DeskPetConfig {
-  const next = {
-    ...defaultSettings.deskPet,
-    ...config,
-  }
-
-  return {
-    ...next,
-    scale: clampNumber(next.scale, 0.8, 1.5),
-    followSensitivity: clampNumber(next.followSensitivity, 0.5, 1.8),
-  }
-}
-
 type SettingsHydrationSnapshot = Settings & {
   uiStyle?: LegacyUiStyleSnapshot
   densityMode?: string
   contrastMode?: string
   textureLevel?: string
+  backgroundEffect?: unknown
+  mascotBackground?: unknown
+  deskPet?: unknown
+}
+
+function retireVisualRuntimeSettings(target: SettingsHydrationSnapshot): void {
+  delete target.backgroundEffect
+  delete target.mascotBackground
+  delete target.deskPet
+
+  try {
+    globalThis.localStorage?.removeItem('desk-pet:last-position')
+  } catch {
+    // Storage can be unavailable in privacy-restricted contexts.
+  }
 }
 
 function resolvePresetFromLegacyUiStyle(style: LegacyUiStyleSnapshot): AppearancePreset {
@@ -236,17 +138,6 @@ export const useSettingsStore = defineStore(
       if (settings.value.personalizedContent === undefined) {
         settings.value.personalizedContent = false
       }
-      if (!settings.value.backgroundEffect) {
-        settings.value.backgroundEffect = { ...defaultSettings.backgroundEffect }
-      }
-      if (!settings.value.mascotBackground) {
-        settings.value.mascotBackground = { ...defaultSettings.mascotBackground }
-      }
-      if (!settings.value.deskPet) {
-        settings.value.deskPet = {
-          ...defaultSettings.deskPet,
-        }
-      }
       if (!settings.value.appUpdateStrategy) {
         settings.value.appUpdateStrategy = defaultSettings.appUpdateStrategy
       }
@@ -257,10 +148,6 @@ export const useSettingsStore = defineStore(
         settings.value.homeQuickNavSide = defaultSettings.homeQuickNavSide
       }
 
-      settings.value.mascotBackground = normalizeMascotBackgroundConfig(
-        settings.value.mascotBackground
-      )
-      settings.value.deskPet = normalizeDeskPetConfig(settings.value.deskPet)
       settings.value.appUpdateStrategy = [
         'prompt-only',
         'public-idle-refresh',
@@ -269,6 +156,7 @@ export const useSettingsStore = defineStore(
         ? settings.value.appUpdateStrategy
         : defaultSettings.appUpdateStrategy
 
+      retireVisualRuntimeSettings(settings.value)
       normalizeAppearanceSettings(settings.value)
       normalizePrivacySettings(settings.value)
     })
@@ -363,34 +251,6 @@ export const useSettingsStore = defineStore(
       normalizePrivacySettings(settings.value)
     }
 
-    function setBackgroundEffect(config: Partial<ParticleEffectConfig>) {
-      settings.value.backgroundEffect = {
-        ...settings.value.backgroundEffect,
-        ...config,
-      }
-    }
-
-    function setMascotBackground(config: Partial<MascotBackgroundConfig>) {
-      settings.value.mascotBackground = normalizeMascotBackgroundConfig({
-        ...settings.value.mascotBackground,
-        ...config,
-      })
-    }
-
-    function setDeskPet(config: Partial<DeskPetConfig>) {
-      const next = {
-        ...settings.value.deskPet,
-        ...config,
-      }
-      if (config.enabled === true && config.dismissedAutoHome === undefined) {
-        next.dismissedAutoHome = false
-      }
-      if (config.enabled === false && config.dismissedAutoHome === undefined) {
-        next.dismissedAutoHome = true
-      }
-      settings.value.deskPet = normalizeDeskPetConfig(next)
-    }
-
     function setAppUpdateStrategy(strategy: AppUpdateStrategy) {
       settings.value.appUpdateStrategy = strategy
     }
@@ -479,9 +339,6 @@ export const useSettingsStore = defineStore(
       setCookieConsent,
       setAnalyticsEnabled,
       setPerformanceCookiesEnabled,
-      setBackgroundEffect,
-      setMascotBackground,
-      setDeskPet,
       setAppUpdateStrategy,
       setHomeQuickNavSide,
       applyPreferences,

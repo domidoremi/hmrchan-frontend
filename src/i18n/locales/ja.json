@@ -338,29 +338,29 @@
     "links": "リンク",
     "theme": "テーマ",
     "appearancePreset": "外観プリセット",
-    "appearanceLead": "各プリセットは、サイト全体のリズム、素材感、強調の仕方、モーションまでまとめて切り替えます。",
+    "appearanceLead": "サイト全体の配色・書体・モーション。",
     "light": "ライト",
     "dark": "ダーク",
     "auto": "自動",
     "language": "言語",
     "appUpdateTitle": "アプリ更新",
     "appUpdatePromptOnly": "通知のみ",
-    "appUpdatePromptOnlyDesc": "新しいバージョンを検出しても通知だけを出し、現在のページは自動更新しません。",
+    "appUpdatePromptOnlyDesc": "通知のみ表示。自動更新はしません。",
     "appUpdatePublicIdle": "公開ページを待機時に自動更新",
-    "appUpdatePublicIdleDesc": "閲覧中心の公開ページは待機時に更新し、入力やフォーム画面は通知のみにします。",
+    "appUpdatePublicIdleDesc": "公開ページは待機中に更新。フォームや入力画面は通知のみ。",
     "appUpdateAggressive": "より積極的に自動更新",
-    "appUpdateAggressiveDesc": "保護対象ページ以外は、待機時にできるだけ新バージョンへ更新します。",
+    "appUpdateAggressiveDesc": "保護対象以外は待機中に更新。",
     "display": "表示",
     "toggleHeroSection": "ヒーローセクション表示",
-    "heroSectionDesc": "ホームページにヒーローバナーを表示",
+    "heroSectionDesc": "ホームのバナーを表示",
     "toggleAnimations": "アニメーション有効",
-    "animationsDesc": "ページ遷移とインターフェースアニメーションを有効化",
-    "reducedMotionNotice": "システムでモーション軽減が有効になっています。この設定に関係なく、アニメーションは最小限に抑えられます。",
+    "animationsDesc": "ページ遷移と画面モーション",
+    "reducedMotionNotice": "システムのモーション軽減が有効です。アニメーションは最小限になります。",
     "toggleSwipeNavigation": "スワイプナビ",
-    "swipeNavigationDesc": "投稿詳細ページで左右にスワイプして切り替えます",
+    "swipeNavigationDesc": "投稿ページを左右にスワイプして移動",
     "openAdvanced": "詳細設定",
     "animationIntensity": "アニメーション強度",
-    "animationIntensityDesc": "アニメーションの速度と量を調整",
+    "animationIntensityDesc": "速度と量を調整",
     "animationNone": "なし",
     "animationReduced": "軽減",
     "animationNormal": "通常",
@@ -368,41 +368,17 @@
     "postsPerPage": "1ページあたりの件数",
     "privacy": "プライバシーと分析",
     "cookieConsent": "分析 Cookie を許可",
-    "cookieConsentDesc": "分析・パフォーマンス用スクリプトを読み込んでよいかを制御します。",
+    "cookieConsentDesc": "分析・パフォーマンス用スクリプトを許可。",
     "analyticsEnabled": "匿名分析を有効化",
-    "analyticsEnabledDesc": "匿名の利用状況とエラー診断を送信し、安定性向上に役立てます。",
+    "analyticsEnabledDesc": "安定性向上のため、匿名の利用状況とエラー診断を送信。",
     "performanceCookies": "性能テレメトリを有効化",
-    "performanceCookiesDesc": "Web Vitals とフロントエンド性能指標の記録を許可します。",
+    "performanceCookiesDesc": "Web Vitals とフロントエンド性能指標を記録。",
     "replacePreferences": "同期設定を完全上書き",
-    "backgroundEffect": "背景エフェクト",
-    "ambientEffectsNote": "環境演出は補助オプションとして残し、主役は常に現在の外観プリセットにします。",
-    "bgNone": "オフ",
-    "bgRain": "雨",
-    "bgSnow": "雪",
-    "bgStars": "星空",
-    "bgDensity": "密度",
-    "bgSpeed": "速度",
-    "bgOpacity": "不透明度",
-    "mascotBackground": "マスコット飛行背景",
-    "mascotEnabled": "飛行背景を有効化",
-    "mascotEnabledDesc": "マスコットが左下から右上へ飛行します",
-    "mascotDensity": "飛行密度",
-    "mascotSpeed": "飛行速度",
-    "mascotOpacity": "飛行不透明度",
-    "deskPet": "デスクペット",
-    "deskPetEnabled": "デスクペットを有効化",
-    "deskPetEnabledDesc": "操作できるデスクペットを表示",
-    "deskPetSpeech": "ペット吹き出し",
-    "deskPetSpeechDesc": "デスクペットの吹き出しを表示",
-    "deskPetAutoHero": "自動インタラクション",
-    "deskPetAutoHeroDesc": "ホームのヒーローボタンと自動で連動",
-    "deskPetScale": "ペットサイズ",
-    "deskPetFollowSensitivity": "追従感度",
     "videoSettings": "動画設定",
     "resetPreferences": "同期済み設定をリセット",
     "preferencesReset": "設定をデフォルトに戻しました",
-    "preferencesReplaced": "クラウド設定を完全に上書きしました",
-    "appearanceRuntimeFailed": "新しい外観プリセットを読み込めませんでした。現在のプリセットを維持しています。",
+    "preferencesReplaced": "クラウド設定を上書きしました",
+    "appearanceRuntimeFailed": "プリセットを読み込めませんでした。現在の設定を維持します。",
     "presets": {
       "minimal-editorial": "花便り",
       "fluent-soft": "やわらかアルバム",
@@ -413,13 +389,13 @@
       "sketch-doodle": "応援スクラップブック",
       "gradient-narrative": "夜のツアー"
     },
-    "preferencesLoadFailed": "設定の同期に失敗しました",
-    "preferencesSaveFailed": "設定の保存に失敗しました",
+    "preferencesLoadFailed": "設定を同期できませんでした",
+    "preferencesSaveFailed": "設定を保存できませんでした",
     "resetVideoSettings": "動画設定をリセット",
-    "videoSettingsReset": "動画設定をデフォルトにリセットしました",
+    "videoSettingsReset": "動画設定をデフォルトに戻しました",
     "cache": {
       "title": "キャッシュ管理",
-      "description": "キャッシュデータを削除して空き容量を確保",
+      "description": "キャッシュを削除して空き容量を確保",
       "clear": "キャッシュをクリア"
     }
   },
@@ -432,73 +408,73 @@
   },
   "home": {
     "quickNav": {
-      "ariaLabel": "ホームセクションナビゲーション",
+      "ariaLabel": "ホームセクション",
       "items": {
         "fold": "ホーム",
         "rail": "今日の入口",
         "posts": "最新",
-        "media": "今日の内容",
+        "media": "注目",
         "footer": "フッター"
       }
     },
     "hero": {
-      "title": "ときめきの一瞬を、ここに集めて",
-      "subtitle": "籾山ひめりと高嶺のなでしこの最新情報、ステージ予定、ファンの投稿を一緒に楽しみましょう。",
-      "badge": "ひめりファンコレクション",
+      "title": "ひめりの今を、ここに",
+      "subtitle": "籾山ひめりと高嶺のなでしこの新着、出演、予定、ファンの声。",
+      "badge": "ひめりファンアーカイブ",
       "highlights": {
         "multilingual": {
-          "title": "多言語UI",
-          "desc": "中国語・英語・日本語をいつでも切り替え。"
+          "title": "4つの言語",
+          "desc": "簡体字中国語・繁体字中国語・英語・日本語。"
         },
         "motion": {
-          "title": "モーション配慮",
-          "desc": "設定と「動きを減らす」に応じてアニメーションを調整。"
+          "title": "モーション設定",
+          "desc": "システムとサイトの設定に合わせます。"
         },
         "performance": {
-          "title": "新しい応援便り",
-          "desc": "最近の写真、出演、会話を気軽に見つけられます。"
+          "title": "最近の更新",
+          "desc": "写真・出演・トーク。"
         }
       },
-      "kicker": "MomiChan · ひめりファンコレクション",
-      "primaryAction": "最新情報を見る",
-      "secondaryAction": "今週の予定を開く",
-      "trendingLabel": "今日のトレンド",
+      "kicker": "MomiChan · ひめりファンアーカイブ",
+      "primaryAction": "最新情報",
+      "secondaryAction": "今週の予定",
+      "trendingLabel": "トレンド",
       "tagsEmpty": "トレンドタグはまだありません",
       "fallbackTitle": "公開コンテンツ",
       "fallbackAuthor": "公開作者",
       "editorialLabel": "今日の概要",
-      "editorialFallbackTitle": "今日のコンテンツ概要",
-      "editorialText": "{author} の公開コンテンツをホーム概要に表示しています。",
-      "editorialTextWithTag": "{author} と {tag} に関連する内容をホーム概要に表示しています。",
-      "spotlightLabel": "現在の重点",
+      "editorialFallbackTitle": "今日の概要",
+      "editorialText": "今日の概要に {author} の公開投稿を掲載。",
+      "editorialTextWithTag": "今日の概要に {author} の {tag} 投稿を掲載。",
+      "spotlightLabel": "注目",
       "stats": {
         "ariaLabel": "ホームハイライト",
         "updates": "更新",
-        "updatesHint": "表示可能な新着",
+        "updatesHint": "最近の投稿",
         "authors": "作者",
-        "authorsHint": "今週アクティブな作者",
+        "authorsHint": "今週アクティブ",
         "tags": "タグ",
-        "tagsHint": "今週のトレンドタグ"
+        "tagsHint": "今週の人気"
       }
     },
     "letterbook": {
-      "mediaLabel": "おすすめ写真アルバム",
-      "photoCaption": "今日も心に残るステージと笑顔を。",
-      "indexLabel": "ファンサイトのショートカット",
+      "mediaLabel": "おすすめアルバム",
+      "photoCaption": "今日のステージと笑顔。",
+      "indexLabel": "ショートカット",
       "todayTitle": "今日のときめき",
-      "todayText": "届いたばかりの写真と近況",
+      "todayText": "新しい写真と投稿",
       "scheduleTitle": "ステージと配信",
-      "scheduleText": "今週の予定をひと目で確認",
-      "communityTitle": "みんなのお話",
-      "communityText": "ファンの新しい投稿を読む"
+      "scheduleText": "今週のイベント",
+      "communityTitle": "ファントーク",
+      "communityText": "最新のコミュニティ投稿"
     },
     "quickStart": {
       "title": "クイックスタート",
-      "subtitle": "コンテンツ、作者、保存、予定の入口を表示します。"
+      "subtitle": "投稿・作者・保存・予定。"
     },
     "bento": {
-      "featureTitle": "閲覧入口",
-      "featureSubtitle": "最新コンテンツと作者",
+      "featureTitle": "見る",
+      "featureSubtitle": "最新の投稿と作者",
       "searchMeta": "キーワード · タグ · 作者",
       "communityMeta": "お知らせと議論",
       "authorsMeta": "作者一覧",
@@ -508,42 +484,42 @@
     "latest": "最新",
     "popular": "人気コンテンツ",
     "portal": {
-      "kicker": "今日の公開入口",
-      "title": "今日の公開入口",
-      "subtitle": "投稿、作者、予定、コミュニティ。",
-      "action": "探索へ",
+      "kicker": "探索",
+      "title": "ここから",
+      "subtitle": "投稿 · 作者 · 予定 · コミュニティ",
+      "action": "探索",
       "publicCount": "公開 {count} 件",
       "emptyState": "公開中の項目はまだありません",
       "items": {
         "recommend": {
-          "title": "今日のコンテンツ",
-          "desc": "編集選定コンテンツカード",
-          "dynamicDesc": "編集選定コンテンツ {count} 件"
+          "title": "今日のおすすめ",
+          "desc": "おすすめ投稿",
+          "dynamicDesc": "おすすめ投稿 {count} 件"
         },
         "authors": {
           "title": "アクティブな作者",
-          "desc": "今週の議論数が多い作者"
+          "desc": "今週の更新数上位"
         },
         "schedule": {
           "title": "今週の予定",
-          "desc": "近日開催のイベントや配信"
+          "desc": "近日のイベント・配信"
         },
         "community": {
-          "title": "コミュニティ議論",
-          "desc": "今日の議論と共有一覧"
+          "title": "コミュニティ",
+          "desc": "今日のトーク"
         }
       }
     },
     "featured": {
-      "kicker": "編集選定",
-      "title": "今日のコンテンツ",
-      "subtitle": "今日の編集選定コンテンツ一覧。",
-      "action": "探索を開く"
+      "kicker": "おすすめ",
+      "title": "今日のおすすめ",
+      "subtitle": "おすすめ投稿。",
+      "action": "探索"
     },
     "trends": {
-      "kicker": "今週のトレンド",
+      "kicker": "今週の動き",
       "title": "今週のトレンド",
-      "subtitle": "作者、タグ、予定のトレンド概要。",
+      "subtitle": "作者・タグ・イベント。",
       "authorsTitle": "アクティブな作者",
       "tagsTitle": "人気タグ",
       "scheduleTitle": "今週の予定",
@@ -552,8 +528,8 @@
       "scheduleAction": "予定を見る",
       "authorsEmpty": "アクティブな作者はまだありません",
       "tagsEmpty": "人気タグはまだありません",
-      "authorsHint": "今週の注目度が高い作者",
-      "scheduleHint": "最新のイベントと配信予定を見る",
+      "authorsHint": "今週の更新数上位",
+      "scheduleHint": "近日のイベント・配信",
       "authorCount": "{n} 件の更新"
     },
     "tags": {
@@ -561,18 +537,18 @@
       "empty": "タグはまだありません"
     },
     "filters": {
-      "label": "クイックフィルター"
+      "label": "フィルター"
     },
     "preview": {
       "label": "今日のコンテンツ",
-      "desc": "ホームの選定投稿、作者、公開入口。"
+      "desc": "おすすめ投稿・作者・入口。"
     },
     "storyMerge": {
-      "kicker": "続き",
-      "title": "ホームコンテンツを続けて表示",
-      "subtitle": "探索、作者、予定、コミュニティ入口へ戻れます。"
+      "kicker": "もっと見る",
+      "title": "探索を続ける",
+      "subtitle": "投稿・作者・予定・コミュニティ。"
     },
-    "latestSubtitle": "継続更新されるコンテンツフロー",
+    "latestSubtitle": "新着を随時更新",
     "latestAction": "すべて見る"
   },
   "explore": {
@@ -1618,81 +1594,5 @@
     "codeExpired": "認証コードの有効期限が切れました。再送信してください",
     "tooManyAttempts": "試行回数が多すぎます。しばらくしてから再試行してください",
     "verifyFailed": "認証に失敗しました。再試行してください"
-  },
-  "deskPet": {
-    "ariaLabel": "デスクペットの状態: {state}",
-    "close": "デスクペットを閉じる",
-    "menu": {
-      "pat": "🤚 なでなで",
-      "feed": "🐟 ごはん",
-      "play": "✨ あそぶ",
-      "focus": "◎ 集中",
-      "rest": "Zzz 休む",
-      "hide": "👋 ペットを隠す"
-    },
-    "greeting": {
-      "lateNight": "こんな夜更かしして大丈夫？",
-      "morning": "おはようにゃ~",
-      "afternoon": "こんにちは~",
-      "evening": "こんばんはにゃ~"
-    },
-    "speech": {
-      "idle": ["にゃ~", "...", "(｡◕‿◕｡)"],
-      "hover": ["ん？", "見てるの？", "(・・？"],
-      "click": ["わっ！", "つつかないで~", "(°△°)"],
-      "angry": ["もう！！", "噛むよ！", "(╬▔皿▔)"],
-      "sleep": ["zzZ...", "すやすや...", "(˘ᵕ˘)"],
-      "wake": ["ん..？起きた", "誰？", "(⊙_⊙)"],
-      "happy": ["えへへ~", "嬉しい！", "(≧▽≦)"],
-      "thinking": ["考え中...", "うーん...", "(._.)"],
-      "pat": ["ゴロゴロ~", "気持ちいいにゃ~", "もっともっと！", "(´▽`ʃ♡ƪ)"],
-      "eat": ["おいしい！", "もっと食べたい~", "お腹いっぱいにゃ~", "(ↀᴥↀ)"],
-      "dizzy": ["目が回る...", "ゆっくりして~", "(≧﹏≦)"],
-      "enter": ["きたよー！", "ぴょんっ~", "( •̀ ω •́ )✧"],
-      "perch": ["ここ、見晴らしがいい~", "ちょっとここで待つね", "このボタンを見守るよ"],
-      "track": ["あっ、動いた！", "見えてるよ~", "(⊙o⊙)"],
-      "leap": ["ジャンプ！", "ダッシュするよ~", "しゅっ！"],
-      "peek": ["ここからこっそり見てる~", "えへへ、隠れたよ", "( •̀ .̫ •́ )✧"],
-      "sendingPrompt": ["メッセージを届けるよ~", "伝令モード起動！", "すぐ行くよ！"],
-      "review": ["ちょっと見るね...", "手がかりを確認中。", "うん、見直してる。"],
-      "failed": ["ここでつまずいたね。", "何かが失敗したみたい。", "印を付けておくよ。"],
-      "waiting": ["一緒に待つよ。", "ここにいるよ。", "少し休憩中。"],
-      "deepThinking": ["深く考え中...", "点と点をつないでる。", "少し待ってね。"],
-      "retrieving": ["手がかりを探すよ！", "資料棚を見てくる。", "道筋が見えたよ。"],
-      "contextCompressing": ["ノートを整理中。", "文脈をまとめてる。", "少し余白を作るね。"],
-      "flareScan": ["もう一度スキャン！", "端っこまで確認中。", "追加検索するよ！"],
-      "memoryLinking": ["記憶をたどるね。", "前の手がかりをつなげてる。", "これ、見覚えがあるよ。"],
-      "graphMapping": ["関係図を広げるね。", "点を線につないでる。", "道筋がもっと見えてきた。"],
-      "citationReview": ["出典を確認中。", "引用をそろえてる。", "証拠の流れを見てるよ。"],
-      "knowledgeIndexing": ["索引を整理中。", "資料をしまってる。", "新しい知識を登録中。"],
-      "toolWorking": ["ツールモード！", "処理中だよ。", "これは任せて。"],
-      "mcpWorking": ["助っ人を呼ぶね。", "MCP ルート起動。", "ツールの橋を確認中。"],
-      "skillRunning": ["スキル実行中！", "覚えた技を使うよ。", "特別な動きが必要だね。"],
-      "attachmentReading": ["ファイルを読んでるよ。", "添付を開いてみるね。", "中身を確認するね。"],
-      "webSearching": ["検索してくるよ！", "キーワードを追ってる。", "結果を探すね。"],
-      "success": ["完了しました。", "手順が完了しました。", "タスクが完了しました。"],
-      "modelTesting": ["ルートをテスト中。", "エンジンを確認中。", "軽くシステムチェック。"],
-      "modelUnconfigured": [
-        "まだ設定されてないよ。",
-        "先にモデルをつなごう。",
-        "鍵がひとつ足りないみたい。"
-      ],
-      "modelUnavailable": ["モデルは今お休み中。", "この道は少し待ちかな。", "戻るまで待とう。"],
-      "syncingModels": ["同期中！", "もう一度そろえるね。", "接続を更新中。"],
-      "providerIssue": [
-        "サービスが少し不安定。",
-        "上流が少し待ってほしそう。",
-        "接続先が瞬きしたみたい。"
-      ],
-      "offlineWaiting": ["今はオフラインだよ。", "戻るまで少し寝るね。", "まだ電波がないみたい。"],
-      "warningRecover": ["復旧中...", "安全な道を試すね。", "回り道できるよ。"],
-      "updateCheck": ["更新を確認中。", "新しい版があるかな。", "状態を更新するね。"],
-      "hungry": ["ちょっとお腹すいた。", "おやつにする？", "エネルギーが少なめ。"],
-      "tired": ["少し休みたいな。", "眠くなってきた。", "ゆっくりで大丈夫。"],
-      "bored": ["ちょっと退屈かも。", "新しいものを見に行く？", "次の動きを待ってるよ。"],
-      "excited": ["やった！", "動こう！", "元気出てきたよ。"],
-      "focused": ["集中モード。", "ここを先に片付けよう。", "大事なところを見てるよ。"],
-      "sick": ["調子が少し悪いかも。", "ちょっと直してほしい。", "少し回復するね。"]
-    }
   }
 }

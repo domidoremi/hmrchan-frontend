@@ -431,8 +431,7 @@
   color: var(--settings-option-selected-marker-ink);
 }
 
-.settings-group-lead,
-.settings-group-note {
+.settings-group-lead {
   margin: 0 0 var(--spacing-3);
   font-size: var(--text-xs);
   line-height: 1.5;
@@ -774,11 +773,6 @@
 .bg-effect-btn.active {
   background: var(--ui-compat-surface-accent);
   border-color: var(--ui-compat-border-strong);
-}
-
-.bg-effect-emoji {
-  font-size: var(--text-lg);
-  line-height: 1;
 }
 
 .bg-effect-label {

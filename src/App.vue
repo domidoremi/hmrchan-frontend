@@ -27,7 +27,6 @@
         'main--home': isHomeRoute,
         'main--auth': isAuthRoute,
         'main--under-navbar': extendsContentUnderNavbar,
-        'main--decorated': showBackgroundDecorations,
       }"
     >
       <div
@@ -37,7 +36,6 @@
           'route-view--home': isHomeRoute,
           'route-view--auth': isAuthRoute,
           'route-view--under-navbar': extendsContentUnderNavbar,
-          'route-view--decorated': showBackgroundDecorations,
         }"
       >
         <ErrorBoundary @retry="handleRetry">
@@ -74,37 +72,17 @@
 
     <!-- Back to Top Button -->
     <BackToTop v-if="!isHomeRoute" :show-progress="true" />
-
-    <div
-      v-if="showParticleBackground"
-      class="app-decoration-layer app-decoration-layer--particle"
-      aria-hidden="true"
-    >
-      <ParticleBackground />
-    </div>
-
-    <div
-      v-if="showMascotBackground"
-      class="app-decoration-layer app-decoration-layer--mascot"
-      aria-hidden="true"
-    >
-      <MascotFlightBackground />
-    </div>
-
-    <!-- Desk Pet -->
-    <DeskPet v-if="showDeskPet" :auto-home-mode="showAutoHomeDeskPet" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, defineAsyncComponent, onMounted } from 'vue'
+import { ref, watch, computed, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '@/stores'
 import { useAppearanceRuntime } from '@/composables/useAppearanceRuntime'
 import { useLocaleConfig } from '@/composables/useLocaleConfig'
 import { usePreferencesSync } from '@/composables/usePreferencesSync'
-import { scheduleTask } from '@/utils/modernAPIs'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppSideNav from '@/components/layout/AppSideNav.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
@@ -115,13 +93,6 @@ import { clientChallengeState } from '@/api/clientChallengeBridge'
 import { verificationDialogState } from '@/api/verificationState'
 import { useSmoothScroll } from '@/composables/useSmoothScroll'
 
-const ParticleBackground = defineAsyncComponent(
-  () => import('@/components/ui/ParticleBackground.vue')
-)
-const MascotFlightBackground = defineAsyncComponent(
-  () => import('@/components/ui/MascotFlightBackground.vue')
-)
-
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
 const ClientChallengeDialog = defineAsyncComponent(
   () => import('@/components/ui/ClientChallengeDialog.vue')
@@ -129,8 +100,6 @@ const ClientChallengeDialog = defineAsyncComponent(
 const VerificationDialog = defineAsyncComponent(
   () => import('@/components/ui/VerificationDialog.vue')
 )
-
-const DeskPet = defineAsyncComponent(() => import('@/components/ui/DeskPet.vue'))
 
 const route = useRoute()
 const router = useRouter()
@@ -152,50 +121,6 @@ const localeAnimation = computed(() => localeInteraction.value.animationStyle)
 // 动效强度
 const animationIntensity = computed(() =>
   settings.value.enableAnimations ? settings.value.animationIntensity : 'none'
-)
-
-// 延迟挂载装饰性组件，避免首屏抢占主线程与网络资源
-const decorationsReady = ref(false)
-const DECORATIONS_DELAY_MS = 1200
-onMounted(() => {
-  scheduleTask(
-    () => {
-      decorationsReady.value = true
-    },
-    { priority: 'background', delay: DECORATIONS_DELAY_MS }
-  )
-})
-
-const showParticleBackground = computed(
-  () =>
-    decorationsReady.value &&
-    settings.value.enableAnimations &&
-    settings.value.animationIntensity !== 'none' &&
-    settings.value.backgroundEffect.type !== 'none'
-)
-const showMascotBackground = computed(
-  () =>
-    decorationsReady.value &&
-    settings.value.enableAnimations &&
-    settings.value.animationIntensity !== 'none' &&
-    settings.value.mascotBackground.enabled
-)
-const showAutoHomeDeskPet = computed(
-  () =>
-    decorationsReady.value &&
-    isHomeRoute.value &&
-    settings.value.enableAnimations &&
-    settings.value.animationIntensity !== 'none' &&
-    settings.value.deskPet.enabled &&
-    settings.value.deskPet.autoHomeEnabled &&
-    settings.value.deskPet.autoHeroInteraction &&
-    !settings.value.deskPet.dismissedAutoHome
-)
-const showDeskPet = computed(
-  () => decorationsReady.value && (settings.value.deskPet.enabled || showAutoHomeDeskPet.value)
-)
-const showBackgroundDecorations = computed(
-  () => showMascotBackground.value || showParticleBackground.value
 )
 
 // Footer only appears on key pages (configured via route meta)
@@ -287,31 +212,6 @@ watch(
       return
     }
 
-    // 页面切换时触发粒子干扰效果（仅在启用时）
-    const shouldBurst =
-      settings.value.enableAnimations &&
-      settings.value.animationIntensity !== 'none' &&
-      settings.value.backgroundEffect.type !== 'none'
-
-    if (shouldBurst) {
-      try {
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('particle-burst', {
-              detail: {
-                x: window.innerWidth * 0.5,
-                y: window.innerHeight * 0.35,
-                strength: 220,
-                radius: 380,
-              },
-            })
-          )
-        }
-      } catch {
-        // ignore
-      }
-    }
-
     if (isAuthRouteName(toName) || isAuthRouteName(fromName)) {
       transitionName.value = ''
       return
@@ -367,7 +267,6 @@ function handleRetry() {
   flex-direction: column;
   background: var(--color-background);
   transition: background-color 0.3s ease;
-  /* 创建层叠上下文，使粒子背景 canvas (z-index:-1) 可见于背景之上、内容之下 */
   isolation: isolate;
 }
 
@@ -426,34 +325,10 @@ main.main--under-navbar {
   background: transparent;
 }
 
-.route-view.route-view--decorated {
-  background: transparent;
-}
-
 @media (max-width: 960px) {
   .route-view.route-view--home {
     min-height: var(--app-safe-block-size-with-mobile-nav);
   }
-}
-
-.app-decoration-layer {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity var(--duration-normal) var(--ease-out);
-}
-
-.app-decoration-layer--particle {
-  z-index: 0;
-  opacity: var(--app-particle-layer-opacity, 0.9);
-  filter: saturate(1.04);
-}
-
-.app-decoration-layer--mascot {
-  z-index: 0;
-  opacity: var(--app-mascot-layer-opacity, 0.9);
 }
 
 .app-footer-shell {
@@ -468,26 +343,6 @@ main.main--under-navbar {
     --app-side-nav-gap: clamp(0.75rem, 1.6vw, 1.125rem);
     --app-side-nav-offset: 0rem;
   }
-}
-
-#app[data-color-mode='light'] {
-  --app-particle-layer-opacity: 0.94;
-  --app-mascot-layer-opacity: 0.72;
-}
-
-#app[data-color-mode='dark'] {
-  --app-particle-layer-opacity: 1;
-  --app-mascot-layer-opacity: 0.68;
-}
-
-#app[data-preset='gradient-narrative'][data-color-mode='light'] {
-  --app-particle-layer-opacity: 0.96;
-  --app-mascot-layer-opacity: 0.74;
-}
-
-#app[data-preset='material-calm'],
-#app[data-preset='sketch-doodle'] {
-  --app-particle-layer-opacity: 0.88;
 }
 
 /* 动效强度控制 */

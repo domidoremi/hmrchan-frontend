@@ -8,8 +8,6 @@ export {
   type Settings,
   type AnimationIntensity,
   type AppUpdateStrategy,
-  type ParticleEffectType,
-  type ParticleEffectConfig,
 } from './settings'
 export { useAuthStore } from './auth'
 export { useToastStore, type Toast } from './toast'

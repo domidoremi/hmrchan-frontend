@@ -11,6 +11,10 @@ const homePageSystemSource = readFileSync(
   resolve(process.cwd(), 'src/styles/page-systems/home-page-system.css'),
   'utf8'
 )
+const stageLetterbookSource = readFileSync(
+  resolve(process.cwd(), 'src/styles/stage-letterbook.css'),
+  'utf8'
+)
 
 function mobileRuleFor(source: string, selector: string): string {
   const mobileSource = mobileMediaBlock(source)
@@ -113,6 +117,18 @@ function mobileMediaBlock(source: string): string {
 }
 
 describe('HomePage story-stage styles', () => {
+  it('keeps the compact rail in document flow through tablet widths', () => {
+    expect(stageLetterbookSource).toMatch(
+      /@media \(min-width: 769px\) and \(max-width: 1024px\)\s*\{[\s\S]*?#app \.home-page :where\(\.rail-sticky, \.rail-stage\)\s*\{[^}]*position:\s*relative;[^}]*block-size:\s*auto;[^}]*overflow:\s*visible;[\s\S]*?#app \.home-page \.rail-track\s*\{[^}]*display:\s*grid;[^}]*inline-size:\s*100%;[^}]*block-size:\s*auto;[^}]*transform:\s*none;[\s\S]*?#app \.home-page \.rail-panel\s*\{[^}]*block-size:\s*auto;[^}]*min-inline-size:\s*0;/
+    )
+  })
+
+  it('keeps the wide featured rail viewport-sized without letterbook padding travel', () => {
+    expect(stageLetterbookSource).toMatch(
+      /@media \(min-width: 1025px\)\s*\{\s*#app \.home-page \.rail\s*\{[^}]*--home-safe-block-size:\s*calc\(100dvh - var\(--home-navbar-stable-height\)\);[^}]*padding-block:\s*0;/
+    )
+  })
+
   it('keeps visual theme tokens in the layered page system so dark mode can override them', () => {
     const visualTokens = [
       '--home-blush-rgb',

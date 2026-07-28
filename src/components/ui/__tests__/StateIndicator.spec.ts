@@ -114,26 +114,6 @@ describe('StateIndicator', () => {
     expect(pageState.host.querySelector('.state-indicator__title')?.tagName).toBe('H2')
   })
 
-  it('exposes pet workflow hints for extended page states', () => {
-    const success = mountStateIndicator({ variant: 'success' }).host.querySelector(
-      '.state-indicator'
-    )
-    const unavailable = mountStateIndicator({ variant: 'model-unavailable' }).host.querySelector(
-      '.state-indicator'
-    )
-    const syncing = mountStateIndicator({ variant: 'provider-sync' }).host.querySelector(
-      '.state-indicator'
-    )
-    const update = mountStateIndicator({ variant: 'update-check' }).host.querySelector(
-      '.state-indicator'
-    )
-
-    expect(success?.getAttribute('data-pet-state')).toBe('success')
-    expect(unavailable?.getAttribute('data-model-status')).toBe('unavailable')
-    expect(syncing?.getAttribute('data-provider-activity')).toBe('syncing')
-    expect(update?.getAttribute('data-update-activity')).toBe('checking')
-  })
-
   it('disables loading icon animation when reduced motion is requested', () => {
     expect(stateIndicatorSource).toContain('.state-indicator--loading .state-indicator__icon')
     expect(stateIndicatorSource).toContain('.state-indicator--model-testing .state-indicator__icon')

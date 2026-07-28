@@ -338,29 +338,29 @@
     "links": "連結",
     "theme": "主題",
     "appearancePreset": "外觀預設",
-    "appearanceLead": "每種預設都會在全站同步改變節奏、材質語言、視覺重音與動效方式。",
+    "appearanceLead": "全站配色、排版與動效。",
     "light": "淺色",
     "dark": "深色",
     "auto": "跟隨系統",
     "language": "語言",
     "appUpdateTitle": "應用更新",
     "appUpdatePromptOnly": "僅提示",
-    "appUpdatePromptOnlyDesc": "偵測到新版本時一律只提示，不自動重新整理目前頁面。",
+    "appUpdatePromptOnlyDesc": "僅顯示提示，不自動重新整理。",
     "appUpdatePublicIdle": "公開頁閒置自動更新",
-    "appUpdatePublicIdleDesc": "公開閱讀頁會在閒置時自動重新整理，輸入或表單頁只提示。",
+    "appUpdatePublicIdleDesc": "公開頁閒置時重新整理；表單和輸入頁僅提示。",
     "appUpdateAggressive": "更積極自動更新",
-    "appUpdateAggressiveDesc": "除受保護頁面外，盡量在閒置時自動重新整理到新版本。",
+    "appUpdateAggressiveDesc": "受保護頁面除外，閒置時自動重新整理。",
     "display": "顯示",
     "toggleHeroSection": "顯示首頁橫幅",
-    "heroSectionDesc": "在首頁顯示橫幅區域",
+    "heroSectionDesc": "顯示首頁橫幅",
     "toggleAnimations": "啟用動畫",
-    "animationsDesc": "啟用頁面過渡和介面動畫",
-    "reducedMotionNotice": "您的系統已啟用減少動畫設定，無論此選項如何，動畫都將被最小化。",
+    "animationsDesc": "頁面過渡與介面動效",
+    "reducedMotionNotice": "系統已開啟「減少動態效果」，動畫會保持在最低限度。",
     "toggleSwipeNavigation": "滑動導航",
-    "swipeNavigationDesc": "在貼文詳情頁左右滑動切換內容",
+    "swipeNavigationDesc": "在貼文頁左右滑動切換內容",
     "openAdvanced": "進階設定",
     "animationIntensity": "動效強度",
-    "animationIntensityDesc": "控制動畫的速度和數量",
+    "animationIntensityDesc": "調整動畫速度與數量",
     "animationNone": "無動效",
     "animationReduced": "減弱",
     "animationNormal": "正常",
@@ -368,41 +368,17 @@
     "postsPerPage": "每頁內容數量",
     "privacy": "隱私與分析",
     "cookieConsent": "允許分析 Cookie",
-    "cookieConsentDesc": "決定是否允許前端注入分析與效能監測腳本。",
+    "cookieConsentDesc": "允許分析與效能腳本執行。",
     "analyticsEnabled": "啟用匿名分析",
-    "analyticsEnabledDesc": "允許傳送匿名使用與錯誤診斷資料，以改善穩定性。",
+    "analyticsEnabledDesc": "傳送匿名使用與錯誤診斷資料，改善穩定性。",
     "performanceCookies": "啟用效能監測",
-    "performanceCookiesDesc": "允許記錄 Web Vitals 與前端效能指標。",
-    "backgroundEffect": "背景效果",
-    "ambientEffectsNote": "環境效果保留為附屬選項，其優先級始終低於目前的外觀預設。",
-    "bgNone": "關閉",
-    "bgRain": "雨幕",
-    "bgSnow": "雪花",
-    "bgStars": "星空",
-    "bgDensity": "密度",
-    "bgSpeed": "速度",
-    "bgOpacity": "透明度",
-    "mascotBackground": "吉祥物飛行背景",
-    "mascotEnabled": "啟用飛行背景",
-    "mascotEnabledDesc": "顯示吉祥物由左下到右上的飛行動畫",
-    "mascotDensity": "飛行密度",
-    "mascotSpeed": "飛行速度",
-    "mascotOpacity": "飛行透明度",
-    "deskPet": "桌寵",
-    "deskPetEnabled": "啟用桌寵",
-    "deskPetEnabledDesc": "顯示可互動桌寵",
-    "deskPetSpeech": "桌寵氣泡",
-    "deskPetSpeechDesc": "顯示桌寵台詞氣泡",
-    "deskPetAutoHero": "自動互動",
-    "deskPetAutoHeroDesc": "自動與首頁按鈕互動",
-    "deskPetScale": "桌寵大小",
-    "deskPetFollowSensitivity": "跟隨靈敏度",
+    "performanceCookiesDesc": "記錄 Web Vitals 與前端效能指標。",
     "videoSettings": "影片設定",
     "replacePreferences": "完整覆蓋同步偏好",
     "resetPreferences": "重置已同步偏好",
-    "preferencesReset": "已恢復預設偏好設定",
-    "preferencesReplaced": "已完整覆蓋雲端偏好設定",
-    "appearanceRuntimeFailed": "新的外觀預設載入失敗，已保留目前預設。",
+    "preferencesReset": "偏好設定已恢復預設值",
+    "preferencesReplaced": "雲端偏好設定已覆蓋",
+    "appearanceRuntimeFailed": "無法載入該預設，目前預設保持不變。",
     "presets": {
       "minimal-editorial": "花信簡章",
       "fluent-soft": "輕柔相簿",
@@ -413,13 +389,13 @@
       "sketch-doodle": "應援手帳",
       "gradient-narrative": "夜色巡演"
     },
-    "preferencesLoadFailed": "同步偏好設定失敗",
-    "preferencesSaveFailed": "儲存偏好設定失敗",
+    "preferencesLoadFailed": "偏好同步失敗",
+    "preferencesSaveFailed": "偏好儲存失敗",
     "resetVideoSettings": "重置影片設定",
-    "videoSettingsReset": "影片設定已重置為預設值",
+    "videoSettingsReset": "影片設定已恢復預設值",
     "cache": {
       "title": "快取管理",
-      "description": "清除快取資料以釋放空間",
+      "description": "清除快取，釋放空間",
       "clear": "清除快取"
     }
   },
@@ -432,73 +408,73 @@
   },
   "home": {
     "quickNav": {
-      "ariaLabel": "首頁分區導覽",
+      "ariaLabel": "首頁分區",
       "items": {
         "fold": "首頁",
         "rail": "今日入口",
         "posts": "最新發布",
-        "media": "今日內容",
+        "media": "精選",
         "footer": "頁腳"
       }
     },
     "hero": {
-      "title": "把每一次心動，收藏在這裡",
-      "subtitle": "一起追蹤籾山ひめり與高嶺のなでしこ的最新動態、舞台日程與粉絲分享。",
-      "badge": "ひめり粉絲收藏",
+      "title": "ひめり動態，盡在這裡",
+      "subtitle": "籾山ひめり與高嶺のなでしこ的動態、演出、日程與粉絲討論。",
+      "badge": "ひめり粉絲檔案",
       "highlights": {
         "multilingual": {
-          "title": "多語言介面",
-          "desc": "隨時切換中文、English 與日語。"
+          "title": "四種語言",
+          "desc": "簡體中文、繁體中文、英文、日文。"
         },
         "motion": {
-          "title": "動效無障礙",
-          "desc": "動效隨設定與系統「減少動態效果」自動調整。"
+          "title": "動效控制",
+          "desc": "動效遵循系統與站內設定。"
         },
         "performance": {
-          "title": "新鮮應援動態",
-          "desc": "最近的照片、演出與討論都能輕鬆找到。"
+          "title": "近期動態",
+          "desc": "照片、演出、討論。"
         }
       },
-      "kicker": "MomiChan · ひめり粉絲收藏",
-      "primaryAction": "看看最新動態",
-      "secondaryAction": "打開本週日程",
-      "trendingLabel": "今日趨勢",
+      "kicker": "MomiChan · ひめり粉絲檔案",
+      "primaryAction": "最新動態",
+      "secondaryAction": "本週日程",
+      "trendingLabel": "熱門趨勢",
       "tagsEmpty": "暫無趨勢標籤",
       "fallbackTitle": "公開內容",
       "fallbackAuthor": "公開作者",
       "editorialLabel": "今日摘要",
-      "editorialFallbackTitle": "今日內容摘要",
-      "editorialText": "{author} 的公開內容已列入首頁摘要。",
-      "editorialTextWithTag": "{author} 與 {tag} 相關內容已列入首頁摘要。",
-      "spotlightLabel": "目前重點",
+      "editorialFallbackTitle": "今日摘要",
+      "editorialText": "今日摘要收錄 {author} 的公開內容。",
+      "editorialTextWithTag": "今日摘要收錄 {author} 的 {tag} 內容。",
+      "spotlightLabel": "焦點",
       "stats": {
         "ariaLabel": "首頁亮點",
         "updates": "更新",
-        "updatesHint": "目前可看的新內容",
+        "updatesHint": "近期內容",
         "authors": "作者",
-        "authorsHint": "本週活躍創作者",
+        "authorsHint": "本週活躍",
         "tags": "標籤",
-        "tagsHint": "本週趨勢標籤"
+        "tagsHint": "本週熱門"
       }
     },
     "letterbook": {
-      "mediaLabel": "精選照片相簿",
-      "photoCaption": "今天也有值得記住的舞台與笑容。",
-      "indexLabel": "粉絲站快捷入口",
+      "mediaLabel": "精選相簿",
+      "photoCaption": "今日舞台與笑容。",
+      "indexLabel": "快捷入口",
       "todayTitle": "今日心動",
-      "todayText": "剛剛更新的照片與動態",
+      "todayText": "新照片與動態",
       "scheduleTitle": "舞台與直播",
-      "scheduleText": "本週活動安排一目了然",
-      "communityTitle": "大家正在聊",
-      "communityText": "讀讀粉絲們的最新分享"
+      "scheduleText": "本週活動",
+      "communityTitle": "粉絲討論",
+      "communityText": "最新社群分享"
     },
     "quickStart": {
       "title": "快速開始",
-      "subtitle": "瀏覽內容、作者、收藏與日程入口。"
+      "subtitle": "內容、作者、收藏、日程。"
     },
     "bento": {
-      "featureTitle": "瀏覽入口",
-      "featureSubtitle": "最新內容與作者",
+      "featureTitle": "瀏覽",
+      "featureSubtitle": "最新內容和作者",
       "searchMeta": "關鍵詞 · 標籤 · 作者",
       "communityMeta": "公告與討論",
       "authorsMeta": "作者列表",
@@ -508,42 +484,42 @@
     "latest": "最新發布",
     "popular": "熱門內容",
     "portal": {
-      "kicker": "今日入口",
-      "title": "今日公開入口",
-      "subtitle": "內容、作者、日程、社群入口。",
-      "action": "進入探索",
+      "kicker": "探索",
+      "title": "從這裡開始",
+      "subtitle": "內容 · 作者 · 日程 · 社群",
+      "action": "探索",
       "items": {
         "recommend": {
-          "title": "今日內容",
-          "desc": "編輯選擇內容卡",
-          "dynamicDesc": "編輯選擇 {count} 張內容卡"
+          "title": "今日精選",
+          "desc": "精選內容",
+          "dynamicDesc": "{count} 則精選內容"
         },
         "authors": {
           "title": "熱門作者",
-          "desc": "本週討論數最高的作者"
+          "desc": "本週更新最多"
         },
         "schedule": {
           "title": "本週日程",
-          "desc": "即將開始的活動與直播"
+          "desc": "近期活動與直播"
         },
         "community": {
-          "title": "社群熱帖",
-          "desc": "今日討論與分享列表"
+          "title": "社群",
+          "desc": "今日討論"
         }
       },
       "publicCount": "公開 {count} 項",
       "emptyState": "暫無公開內容"
     },
     "featured": {
-      "kicker": "編輯選擇",
-      "title": "今日內容",
-      "subtitle": "今日編輯內容列表。",
-      "action": "去探索"
+      "kicker": "精選",
+      "title": "今日精選",
+      "subtitle": "精選內容。",
+      "action": "探索"
     },
     "trends": {
-      "kicker": "本週趨勢",
+      "kicker": "本週脈動",
       "title": "本週趨勢",
-      "subtitle": "作者、標籤、日程熱度彙總。",
+      "subtitle": "作者、標籤、活動。",
       "authorsTitle": "熱門作者",
       "tagsTitle": "熱門標籤",
       "scheduleTitle": "本週日程",
@@ -552,8 +528,8 @@
       "scheduleAction": "查看日程",
       "authorsEmpty": "暫無熱門作者",
       "tagsEmpty": "暫無熱門標籤",
-      "authorsHint": "本週關注度最高的作者",
-      "scheduleHint": "查看本週最新活動與直播安排",
+      "authorsHint": "本週更新最多",
+      "scheduleHint": "近期活動與直播",
       "authorCount": "共 {n} 則更新"
     },
     "tags": {
@@ -561,18 +537,18 @@
       "empty": "暫無標籤"
     },
     "filters": {
-      "label": "分類篩選"
+      "label": "篩選"
     },
     "preview": {
       "label": "今日內容",
-      "desc": "首頁選擇內容、作者與公開入口。"
+      "desc": "精選內容、作者、入口。"
     },
     "storyMerge": {
-      "kicker": "繼續下滑",
-      "title": "繼續瀏覽首頁內容",
-      "subtitle": "返回探索、作者、日程或社群入口。"
+      "kicker": "更多",
+      "title": "繼續探索",
+      "subtitle": "內容、作者、日程、社群。"
     },
-    "latestSubtitle": "持續更新的內容流",
+    "latestSubtitle": "新內容持續更新",
     "latestAction": "查看更多"
   },
   "explore": {
@@ -1618,73 +1594,5 @@
     "codeExpired": "驗證碼已過期，請重新傳送",
     "tooManyAttempts": "嘗試次數過多，請稍後再試",
     "verifyFailed": "驗證失敗，請重試"
-  },
-  "deskPet": {
-    "ariaLabel": "桌寵狀態: {state}",
-    "close": "關閉桌寵",
-    "menu": {
-      "pat": "🤚 摸摸頭",
-      "feed": "🐟 餵食",
-      "play": "✨ 玩一下",
-      "focus": "◎ 專注",
-      "rest": "Zzz 休息",
-      "hide": "👋 隱藏桌寵"
-    },
-    "greeting": {
-      "lateNight": "深夜了還不睡嗎？",
-      "morning": "早安喵~",
-      "afternoon": "午安~",
-      "evening": "晚安喵~"
-    },
-    "speech": {
-      "idle": ["喵~", "...", "(｡◕‿◕｡)"],
-      "hover": ["嗯？", "你在看我嗎？", "(・・？"],
-      "click": ["哇！", "別戳啦~", "(°△°)"],
-      "angry": ["夠了！！", "再戳咬你！", "(╬▔皿▔)"],
-      "sleep": ["zzZ...", "呼嚕...", "(˘ᵕ˘)"],
-      "wake": ["嗯..？醒了", "誰叫我？", "(⊙_⊙)"],
-      "happy": ["嘿嘿~", "開心！", "(≧▽≦)"],
-      "thinking": ["在想事情...", "嗯...", "(._.)"],
-      "pat": ["咕嚕嚕~", "好舒服喵~", "還要還要！", "(´▽`ʃ♡ƪ)"],
-      "eat": ["好吃！", "還想吃~", "飽了喵~", "(ↀᴥↀ)"],
-      "dizzy": ["好暈...", "慢點啦~", "(≧﹏≦)"],
-      "enter": ["我來啦！", "跳一下~", "( •̀ ω •́ )✧"],
-      "perch": ["這裡視野真好~", "我先趴一下", "守著你呀"],
-      "track": ["欸？你在動！", "我看到你啦~", "(⊙o⊙)"],
-      "leap": ["起跳！", "看我閃現~", "咻——"],
-      "peek": ["我在這邊偷看~", "嘿嘿，躲好了", "( •̀ .̫ •́ )✧"],
-      "sendingPrompt": ["我把訊息送出去~", "傳令模式啟動！", "馬上出發！"],
-      "review": ["我看看...", "檢查一下線索。", "嗯，在複核。"],
-      "failed": ["這裡摔了一跤。", "有東西出錯了。", "我先標記一下。"],
-      "waiting": ["我陪你等。", "還在這裡喔。", "稍微休息一下。"],
-      "deepThinking": ["深度思考中...", "把線索連起來。", "給我一點時間。"],
-      "retrieving": ["去找線索！", "翻翻資料架。", "我看到路徑了。"],
-      "contextCompressing": ["整理筆記中。", "把上下文收一收。", "騰點空間。"],
-      "flareScan": ["再掃一遍！", "檢查邊角線索。", "補檢索啟動！"],
-      "memoryLinking": ["翻翻記憶。", "把舊線索接上。", "這個我好像見過。"],
-      "graphMapping": ["關係網展開。", "我在連點成線。", "路徑越來越清楚了。"],
-      "citationReview": ["核對來源中。", "引用要對齊。", "檢查證據鏈。"],
-      "knowledgeIndexing": ["整理索引。", "把資料歸檔。", "新知識入庫中。"],
-      "toolWorking": ["工具模式！", "正在處理。", "這件事交給我。"],
-      "mcpWorking": ["叫個幫手。", "MCP 通道啟動。", "檢查工具橋。"],
-      "skillRunning": ["技能執行中！", "用個熟練招式。", "這需要特殊動作。"],
-      "attachmentReading": ["讀取檔案中。", "打開附件看看。", "讓我檢查一下。"],
-      "webSearching": ["去搜尋啦！", "跟著關鍵字走。", "我來找結果。"],
-      "success": ["已完成。", "步驟已完成。", "任務已完成。"],
-      "modelTesting": ["測試路線。", "檢查引擎。", "快速系統檢查。"],
-      "modelUnconfigured": ["還沒設定好。", "先接上模型吧。", "缺一把鑰匙。"],
-      "modelUnavailable": ["模型現在不在線。", "這條路暫時封住了。", "等它回來。"],
-      "syncingModels": ["同步中！", "重新對齊。", "刷新連線。"],
-      "providerIssue": ["服務有點不穩。", "上游需要緩一緩。", "介面剛剛眨眼了。"],
-      "offlineWaiting": ["現在離線啦。", "恢復前我先小睡。", "還沒有訊號。"],
-      "warningRecover": ["恢復中...", "走安全路線試試。", "我能繞過去。"],
-      "updateCheck": ["看看有沒有新版本。", "檢查更新中。", "刷新一下狀態。"],
-      "hungry": ["有點餓了。", "可以來點小點心嗎？", "能量不足。"],
-      "tired": ["我想休息一下。", "眼皮變重了。", "慢慢來就好。"],
-      "bored": ["有點無聊。", "要不要逛點新內容？", "我在等新動靜。"],
-      "excited": ["好耶！", "動起來！", "這下有精神了。"],
-      "focused": ["專注模式。", "先把這件事看完。", "我盯住重點了。"],
-      "sick": ["狀態不太好。", "需要一點修復。", "我先緩一下。"]
-    }
   }
 }

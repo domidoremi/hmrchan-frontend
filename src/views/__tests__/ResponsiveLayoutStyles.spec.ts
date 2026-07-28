@@ -182,4 +182,13 @@ describe('responsive layout contracts', () => {
     expect(stageLetterbookSource).toContain('#app .auth-shell__copy {')
     expect(stageLetterbookSource).toContain('max-inline-size: calc(100% - 3.5rem)')
   })
+
+  it('keeps home hero actions compact with centered labels', () => {
+    expect(stageLetterbookSource).toContain('#app .home-fold .hero-btn {')
+    expect(stageLetterbookSource).toContain('block-size: 2.75rem')
+    expect(stageLetterbookSource).toContain('padding-block: 0')
+    expect(stageLetterbookSource).toContain('text-align: center')
+    expect(stageLetterbookSource).toContain('#app .home-fold .hero-btn .btn-content {')
+    expect(stageLetterbookSource).toContain('transform: none')
+  })
 })

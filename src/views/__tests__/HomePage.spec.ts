@@ -85,6 +85,7 @@ const mocks = vi.hoisted(() => ({
   createVisibilityObserver: vi.fn(),
   storePostNavigationContext: vi.fn(),
   prewarmPublicHomeContent: vi.fn(),
+  buildHomepageBootstrapFallback: vi.fn(),
   throttleRAF: vi.fn((fn: (...args: unknown[]) => void) => {
     const wrapped = (...args: unknown[]) => fn(...args)
     ;(wrapped as typeof wrapped & { cancel?: () => void }).cancel = vi.fn()
@@ -135,6 +136,10 @@ vi.mock('@/utils/postNavigation', () => ({
 vi.mock('@/utils/cache', () => ({
   prewarmPublicHomeContent: (...args: Parameters<typeof mocks.prewarmPublicHomeContent>) =>
     mocks.prewarmPublicHomeContent(...args),
+}))
+
+vi.mock('@/fallbacks/homepageBootstrapFallback', () => ({
+  buildHomepageBootstrapFallback: mocks.buildHomepageBootstrapFallback,
 }))
 
 vi.mock('@/components/home/HomepagePreviewController.vue', async () => {
@@ -657,9 +662,11 @@ describe('HomePage', () => {
     mocks.createVisibilityObserver.mockReset()
     mocks.storePostNavigationContext.mockReset()
     mocks.prewarmPublicHomeContent.mockReset()
+    mocks.buildHomepageBootstrapFallback.mockReset()
     mocks.throttleRAF.mockClear()
 
-    mocks.scheduleTask.mockImplementation(() => {})
+    mocks.scheduleTask.mockImplementation(() => Promise.resolve(undefined))
+    mocks.buildHomepageBootstrapFallback.mockResolvedValue(buildInteractiveAggregate())
     mocks.createResizeObserver.mockImplementation(() => ({
       observe: vi.fn(),
       disconnect: vi.fn(),
@@ -767,6 +774,46 @@ describe('HomePage', () => {
     expect(quickNav.props('side')).toBe('right')
     expect(mocks.getScheduleHighlights).toHaveBeenCalledTimes(1)
     expect(mocks.getCommunityHighlights).toHaveBeenCalledTimes(1)
+  })
+
+  it('invalidates queued public prewarm work during teardown', async () => {
+    const wrapper = await mountHomePage()
+    await flushPromises()
+
+    const scheduledPrewarm = mocks.scheduleTask.mock.calls.find(
+      ([, options]) => (options as { delay?: number } | undefined)?.delay === 1200
+    )
+    expect(scheduledPrewarm).toBeTruthy()
+
+    const [runPrewarm] = scheduledPrewarm!
+    expect(() => wrapper.unmount()).not.toThrow()
+    ;(runPrewarm as () => void)()
+    await flushPromises()
+
+    expect(mocks.prewarmPublicHomeContent).not.toHaveBeenCalled()
+  })
+
+  it('does not schedule fallback prewarm work after teardown', async () => {
+    let resolveFallback!: (payload: HomeAggregateResponse) => void
+    const deferredFallback = new Promise<HomeAggregateResponse>((resolve) => {
+      resolveFallback = resolve
+    })
+    mocks.loadHomepageBootstrap.mockRejectedValueOnce(new Error('offline'))
+    mocks.buildHomepageBootstrapFallback.mockReturnValueOnce(deferredFallback)
+
+    const wrapper = await mountHomePage()
+    await flushPromises()
+    expect(mocks.buildHomepageBootstrapFallback).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+    resolveFallback(buildInteractiveAggregate())
+    await flushPromises()
+
+    const scheduledPrewarm = mocks.scheduleTask.mock.calls.find(
+      ([, options]) => (options as { delay?: number } | undefined)?.delay === 1200
+    )
+    expect(scheduledPrewarm).toBeUndefined()
+    expect(mocks.prewarmPublicHomeContent).not.toHaveBeenCalled()
   })
 
   it('does not mount the preview controller during initial load or idle secondary reveal', async () => {
