@@ -2,6 +2,11 @@
   --settings-shell-surface: var(--ui-compat-surface-interactive);
   --settings-shell-surface-strong: var(--ui-compat-surface-interactive-strong);
   --settings-shell-border: var(--ui-compat-border);
+  --settings-option-selected-bg: var(--ui-compat-surface-accent);
+  --settings-option-selected-border: var(--ui-compat-border-strong);
+  --settings-option-selected-ink: var(--color-text-primary);
+  --settings-option-selected-marker-bg: var(--color-primary);
+  --settings-option-selected-marker-ink: var(--color-on-primary);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: var(--appearance-surface-gap-sm);
@@ -303,8 +308,9 @@
 }
 
 .theme-btn.active {
-  background: var(--ui-compat-surface-accent);
-  border-color: var(--ui-compat-border-strong);
+  background: var(--settings-option-selected-bg);
+  border-color: var(--settings-option-selected-border);
+  color: var(--settings-option-selected-ink);
 }
 
 .theme-btn-icon {
@@ -340,8 +346,8 @@
 }
 
 .theme-btn.active .theme-btn-icon {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+  background: var(--settings-option-selected-marker-bg);
+  color: var(--settings-option-selected-marker-ink);
   box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
 }
 
@@ -399,14 +405,16 @@
   text-align: left;
 }
 
-.theme-btn.active .theme-btn-label {
-  color: var(--color-primary);
-  font-weight: var(--font-semibold);
-}
-
+.theme-btn.active .theme-btn-label,
+.theme-btn.active .strategy-btn__title,
+.theme-btn.active .strategy-btn__desc,
 .theme-btn.active .theme-btn-summary,
 .theme-btn.active .theme-btn-meta {
-  color: var(--color-text-primary);
+  color: var(--settings-option-selected-ink);
+}
+
+.theme-btn.active .theme-btn-label {
+  font-weight: var(--font-semibold);
 }
 
 .theme-btn-check {
@@ -418,9 +426,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary);
+  background: var(--settings-option-selected-marker-bg);
   border-radius: var(--radius-full);
-  color: var(--color-on-primary);
+  color: var(--settings-option-selected-marker-ink);
 }
 
 .settings-group-lead,

@@ -1924,8 +1924,20 @@ body::before,
 }
 
 #app .settings-panel {
+  --settings-option-selected-bg: var(--letterbook-accent);
+  --settings-option-selected-border: var(--letterbook-accent);
+  --settings-option-selected-ink: var(--letterbook-on-accent);
+  --settings-option-selected-marker-bg: var(--letterbook-on-accent);
+  --settings-option-selected-marker-ink: var(--letterbook-accent);
   background: var(--letterbook-paper);
   color: var(--letterbook-ink);
+}
+
+#app .settings-panel .theme-btn.active:hover,
+#app .settings-panel .theme-btn.active:focus-visible {
+  border-color: var(--settings-option-selected-border);
+  background: var(--settings-option-selected-bg);
+  color: var(--settings-option-selected-ink);
 }
 
 #app .settings-dropdown,

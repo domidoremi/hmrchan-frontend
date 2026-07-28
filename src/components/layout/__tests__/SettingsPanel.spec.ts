@@ -152,6 +152,10 @@ const settingsPanelStyles = readFileSync(
   resolve(process.cwd(), 'src/styles/components/settings-panel.css'),
   'utf8'
 )
+const letterbookStyles = readFileSync(
+  resolve(process.cwd(), 'src/styles/stage-letterbook.css'),
+  'utf8'
+)
 
 function createWrapper(props: Record<string, unknown> = {}) {
   return mount(SettingsPanel, {
@@ -276,6 +280,25 @@ describe('SettingsPanel', () => {
     expect(settingsPanelStyles).toContain('.toggle-btn {')
     expect(settingsPanelStyles).toContain('.reduced-motion-notice {')
     expect(settingsPanelStyles).toContain('@media (max-width: 28rem)')
+  })
+
+  it('keeps selected option copy and markers on one readable color contract', () => {
+    expect(settingsPanelStyles).toContain(
+      '.theme-btn.active .strategy-btn__desc,\n.theme-btn.active .theme-btn-summary'
+    )
+    expect(settingsPanelStyles).toContain('color: var(--settings-option-selected-ink)')
+    expect(settingsPanelStyles).toContain('background: var(--settings-option-selected-marker-bg)')
+    expect(settingsPanelStyles).toContain('color: var(--settings-option-selected-marker-ink)')
+    expect(letterbookStyles).toContain(
+      '--settings-option-selected-ink: var(--letterbook-on-accent)'
+    )
+    expect(letterbookStyles).toContain(
+      '--settings-option-selected-marker-bg: var(--letterbook-on-accent)'
+    )
+    expect(letterbookStyles).toContain(
+      '--settings-option-selected-marker-ink: var(--letterbook-accent)'
+    )
+    expect(letterbookStyles).toContain('#app .settings-panel .theme-btn.active:focus-visible')
   })
 
   it('supports external scroll shell and category switching', async () => {
