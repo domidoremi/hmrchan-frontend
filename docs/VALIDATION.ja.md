@@ -172,14 +172,14 @@ bun run test:functional-chain:local
 
 runner はリポジトリの正本から contract を導出します。
 
-- Route と detail readiness: [`scripts/lib/release-route-contract.js`](scripts/lib/release-route-contract.js)
-- 認証 warmup probe: [`scripts/lib/auth-bootstrap.js`](scripts/lib/auth-bootstrap.js)
-- Production contract と Pages 環境規則: [`scripts/lib/production-contract-env.js`](scripts/lib/production-contract-env.js)
-- Frontend auth surface と UUIDv7 guard: [`scripts/lib/frontend-contract-audit.js`](scripts/lib/frontend-contract-audit.js)
-- Generated fallback input: [`src/fallbacks/generated/publicSnapshots.ts`](src/fallbacks/generated/publicSnapshots.ts)
-- Snapshot refresh: [`scripts/refresh-public-snapshots.mjs`](scripts/refresh-public-snapshots.mjs)
-- Snapshot contract: [`scripts/lib/public-snapshot-contract.js`](scripts/lib/public-snapshot-contract.js)
-- Runner と影響分類: [`scripts/validate-release.mjs`](scripts/validate-release.mjs)、[`scripts/lib/validate-release.js`](scripts/lib/validate-release.js)
+- Route と detail readiness: [`scripts/lib/release-route-contract.js`](../scripts/lib/release-route-contract.js)
+- 認証 warmup probe: [`scripts/lib/auth-bootstrap.js`](../scripts/lib/auth-bootstrap.js)
+- Production contract と Pages 環境規則: [`scripts/lib/production-contract-env.js`](../scripts/lib/production-contract-env.js)
+- Frontend auth surface と UUIDv7 guard: [`scripts/lib/frontend-contract-audit.js`](../scripts/lib/frontend-contract-audit.js)
+- Generated fallback input: [`src/fallbacks/generated/publicSnapshots.ts`](../src/fallbacks/generated/publicSnapshots.ts)
+- Snapshot refresh: [`scripts/refresh-public-snapshots.mjs`](../scripts/refresh-public-snapshots.mjs)
+- Snapshot contract: [`scripts/lib/public-snapshot-contract.js`](../scripts/lib/public-snapshot-contract.js)
+- Runner と影響分類: [`scripts/validate-release.mjs`](../scripts/validate-release.mjs)、[`scripts/lib/validate-release.js`](../scripts/lib/validate-release.js)
 
 hard cutover 後の public resource ID は UUIDv7 文字列だけを使用します。`src/api`、detail route、fallback
 snapshot、Service Worker cache key を変更する場合は guard、test、release audit も更新します。checked-in

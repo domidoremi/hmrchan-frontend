@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="README.md"><strong>简体中文</strong></a> ·
-  <a href="README.en.md">English</a> ·
-  <a href="README.ja.md">日本語</a>
+  <a href="docs/README.en.md">English</a> ·
+  <a href="docs/README.ja.md">日本語</a>
 </p>
 
 <p align="center">
@@ -79,4 +79,4 @@ bun run build
 
 环境配置：[`.env.example`](.env.example) · [`wrangler.toml`](wrangler.toml)
 
-完整验收说明：[`VALIDATION.md`](VALIDATION.md)
+完整验收说明：[`docs/VALIDATION.md`](docs/VALIDATION.md)

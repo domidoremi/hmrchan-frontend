@@ -155,6 +155,7 @@ output/
 .agent/
 .agents/
 .claude/
+AGENTS.md
 CLAUDE.md
 .codex/
 .codex-temp/
@@ -196,8 +197,20 @@ scripts/config/*.tmp.json
 !public/images/expressions/55.png
 !public/images/expressions/fly.png
 
-# keep docs workspace content local
+# Keep local docs drafts ignored while publishing the repository guides.
+/README.en.md
+/README.ja.md
+/VALIDATION.md
+/VALIDATION.en.md
+/VALIDATION.ja.md
 docs/
+!docs/
+docs/*
+!docs/README.en.md
+!docs/README.ja.md
+!docs/VALIDATION.md
+!docs/VALIDATION.en.md
+!docs/VALIDATION.ja.md
 host/
 scripts/lib/__tests__/
 

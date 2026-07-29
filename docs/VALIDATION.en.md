@@ -173,14 +173,14 @@ bun run test:functional-chain:local
 
 The runner derives its contract from repository truth sources:
 
-- Routes and detail readiness: [`scripts/lib/release-route-contract.js`](scripts/lib/release-route-contract.js)
-- Authentication warmup probes: [`scripts/lib/auth-bootstrap.js`](scripts/lib/auth-bootstrap.js)
-- Production contract and Pages environment rules: [`scripts/lib/production-contract-env.js`](scripts/lib/production-contract-env.js)
-- Frontend auth surface and UUIDv7 guards: [`scripts/lib/frontend-contract-audit.js`](scripts/lib/frontend-contract-audit.js)
-- Generated fallback inputs: [`src/fallbacks/generated/publicSnapshots.ts`](src/fallbacks/generated/publicSnapshots.ts)
-- Snapshot refresh: [`scripts/refresh-public-snapshots.mjs`](scripts/refresh-public-snapshots.mjs)
-- Snapshot contract: [`scripts/lib/public-snapshot-contract.js`](scripts/lib/public-snapshot-contract.js)
-- Runner orchestration and impact classification: [`scripts/validate-release.mjs`](scripts/validate-release.mjs) and [`scripts/lib/validate-release.js`](scripts/lib/validate-release.js)
+- Routes and detail readiness: [`scripts/lib/release-route-contract.js`](../scripts/lib/release-route-contract.js)
+- Authentication warmup probes: [`scripts/lib/auth-bootstrap.js`](../scripts/lib/auth-bootstrap.js)
+- Production contract and Pages environment rules: [`scripts/lib/production-contract-env.js`](../scripts/lib/production-contract-env.js)
+- Frontend auth surface and UUIDv7 guards: [`scripts/lib/frontend-contract-audit.js`](../scripts/lib/frontend-contract-audit.js)
+- Generated fallback inputs: [`src/fallbacks/generated/publicSnapshots.ts`](../src/fallbacks/generated/publicSnapshots.ts)
+- Snapshot refresh: [`scripts/refresh-public-snapshots.mjs`](../scripts/refresh-public-snapshots.mjs)
+- Snapshot contract: [`scripts/lib/public-snapshot-contract.js`](../scripts/lib/public-snapshot-contract.js)
+- Runner orchestration and impact classification: [`scripts/validate-release.mjs`](../scripts/validate-release.mjs) and [`scripts/lib/validate-release.js`](../scripts/lib/validate-release.js)
 
 Public resource IDs are UUIDv7 strings after the hard cutover. Changes to `src/api`, detail routes,
 fallback snapshots, or Service Worker cache keys must update their guards, tests, and release audits.

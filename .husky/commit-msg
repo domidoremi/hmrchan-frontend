@@ -39,7 +39,7 @@ if ! echo "$commit_msg" | grep -qE "$pattern"; then
   echo "  - 增加裁剪预览与缩放"
   echo "  - 修复移动端手势冲突"
   echo ""
-  echo "更多说明见: README.md 与 VALIDATION.md"
+  echo "更多说明见: README.md 与 docs/VALIDATION.md"
   echo ""
   echo "当前提交信息:"
   echo "  $commit_msg"

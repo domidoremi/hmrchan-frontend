@@ -128,7 +128,7 @@ const CHANGE_FOCUS_RULES = Object.freeze([
         'scripts/lib/validate-release.js',
         'scripts/validate-release.mjs',
         'scripts/release-evidence.mjs',
-        'VALIDATION.md',
+        'docs/VALIDATION.md',
       ].includes(filePath) || /^src\/__tests__\/scripts\/[^/]+\.spec\.ts$/.test(filePath),
   }),
   Object.freeze({

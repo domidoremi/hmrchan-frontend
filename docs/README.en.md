@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/icons/icon-192x192.png" width="128" height="128" alt="MomiChan" />
+  <img src="../public/icons/icon-192x192.png" width="128" height="128" alt="MomiChan" />
 </p>
 
 <h1 align="center">MomiChan</h1>
@@ -7,7 +7,7 @@
 <p align="center"><strong>Momiyama Himeri</strong> (籾山ひめり / 籾山姫璃)</p>
 
 <p align="center">
-  <a href="README.md">简体中文</a> ·
+  <a href="../README.md">简体中文</a> ·
   <a href="README.en.md"><strong>English</strong></a> ·
   <a href="README.ja.md">日本語</a>
 </p>
@@ -77,6 +77,6 @@ bun run validate:release:prepush
 bun run build
 ```
 
-Environment configuration: [`.env.example`](.env.example) · [`wrangler.toml`](wrangler.toml)
+Environment configuration: [`.env.example`](../.env.example) · [`wrangler.toml`](../wrangler.toml)
 
 Complete validation guide: [`VALIDATION.en.md`](VALIDATION.en.md)
