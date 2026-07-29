@@ -1,48 +1,48 @@
-# Cloudflare Pages 配置
-# 参考：https://developers.cloudflare.com/pages/functions/wrangler-configuration/
+# Cloudflare Pages configuration
+# Reference: https://developers.cloudflare.com/pages/functions/wrangler-configuration/
 #
-# 绑定使用示例（在 functions/ 目录的函数中）：
+# Binding usage examples for functions under functions/:
 # export async function onRequest(context) {
 #   const { env } = context;
-#   // 访问 KV: await env.KV.get('key')
-#   // 访问 D1: await env.DB.prepare('SELECT * FROM users').all()
-#   // 访问 R2: await env.BUCKET.get('file.jpg')
-#   // 访问 AI: await env.AI.run('@cf/meta/llama-2-7b-chat-int8', { prompt: 'Hello' })
+#   // KV: await env.KV.get('key')
+#   // D1: await env.DB.prepare('SELECT * FROM users').all()
+#   // R2: await env.BUCKET.get('file.jpg')
+#   // AI: await env.AI.run('@cf/meta/llama-2-7b-chat-int8', { prompt: 'Hello' })
 # }
 
 name = "hmrchan-frontend"
 compatibility_date = "2024-12-09"
 pages_build_output_dir = "./dist"
 
-# 注意：Cloudflare Pages 不支持在 wrangler.toml 中配置 [build]
-# 构建命令需要在 Cloudflare Dashboard > Pages > Settings > Builds & deployments 中配置
-# 推荐构建命令：bun install --frozen-lockfile && VITE_GIT_COMMIT=$CF_PAGES_COMMIT_SHA bun run build
-# 若 Dashboard 未显式配置 VITE_CLIENT_CONTRACT_VERSION，仓库 build wrapper 仅在
-# Cloudflare Pages 环境中使用 CF_PAGES_COMMIT_SHA 作为本次 rollout contract。
+# Cloudflare Pages does not support a [build] section in wrangler.toml.
+# Configure the build command in Cloudflare Dashboard > Pages > Settings > Builds & deployments.
+# Recommended: bun install --frozen-lockfile && VITE_GIT_COMMIT=$CF_PAGES_COMMIT_SHA bun run build
+# When VITE_CLIENT_CONTRACT_VERSION is absent from the Dashboard, the repository build wrapper uses
+# CF_PAGES_COMMIT_SHA as the rollout contract only inside the Cloudflare Pages environment.
 
 # ============================================================================
-# Production 环境配置
+# Production environment
 # ============================================================================
 
-# Pages Functions 通过受支持的 Service Binding 连接到内部 API gateway Worker，
-# 再由该 Worker 负责 VPC/private upstream 访问。
+# Pages Functions connect to the internal API gateway Worker through a supported Service Binding.
+# That Worker owns VPC and private-upstream access.
 [[env.production.services]]
 binding = "INTERNAL_API_GATEWAY"
 service = "hmrchan-internal-api-gateway-production"
 
 [env.production.vars]
-# 仅使用 Bun：显式指定 Bun 版本并禁用自动 npm 依赖安装
+# Bun-only build: pin Bun and disable automatic npm dependency installation
 BUN_VERSION = "1.3.14"
 SKIP_DEPENDENCY_INSTALL = "true"
-# Pages Functions 运行时变量（代理目标地址）
-# 浏览器端生产默认始终通过同源 /api -> Pages Functions -> upstream 访问后端
+# Pages Functions runtime variables for the proxy target
+# Production browser traffic reaches the backend through same-origin /api -> Pages Functions -> upstream
 API_BASE_URL = "https://api.momichan.com"
 ENABLE_INTERNAL_API_GATEWAY = "true"
 GOOGLE_AUTH_ENABLED = "true"
 VITE_CLIENT_CONTRACT_VERSION = "2026-04-13.p1"
 
 # ============================================================================
-# Preview 环境配置
+# Preview environment
 # ============================================================================
 [env.preview.vars]
 BUN_VERSION = "1.3.14"
@@ -57,22 +57,22 @@ binding = "INTERNAL_API_GATEWAY"
 service = "hmrchan-internal-api-gateway-preview"
 
 # ============================================================================
-# 绑定配置（Bindings）
+# Bindings
 # ============================================================================
-# 以下是可用的绑定类型示例，根据实际需求取消注释并配置
+# The following binding examples remain commented until required.
 
-# --- KV 命名空间（键值存储）---
+# --- KV namespaces ---
 # [[env.production.kv_namespaces]]
-# binding = "KV"  # 在代码中通过 env.KV 访问
+# binding = "KV"  # Access through env.KV
 # id = "your_kv_namespace_id"
 
 # [[env.preview.kv_namespaces]]
 # binding = "KV"
 # id = "your_preview_kv_namespace_id"
 
-# --- D1 数据库（SQLite）---
+# --- D1 databases (SQLite) ---
 # [[env.production.d1_databases]]
-# binding = "DB"  # 在代码中通过 env.DB 访问
+# binding = "DB"  # Access through env.DB
 # database_name = "your_database_name"
 # database_id = "your_database_id"
 
@@ -81,9 +81,9 @@ service = "hmrchan-internal-api-gateway-preview"
 # database_name = "your_preview_database_name"
 # database_id = "your_preview_database_id"
 
-# --- R2 存储桶（对象存储）---
+# --- R2 buckets (object storage) ---
 # [[env.production.r2_buckets]]
-# binding = "BUCKET"  # 在代码中通过 env.BUCKET 访问
+# binding = "BUCKET"  # Access through env.BUCKET
 # bucket_name = "your_bucket_name"
 
 # [[env.preview.r2_buckets]]
@@ -98,12 +98,12 @@ service = "hmrchan-internal-api-gateway-preview"
 
 # --- Workers AI ---
 # [env.production.ai]
-# binding = "AI"  # 在代码中通过 env.AI 访问
+# binding = "AI"  # Access through env.AI
 
 # [env.preview.ai]
 # binding = "AI"
 
-# --- Vectorize（向量数据库）---
+# --- Vectorize databases ---
 # [[env.production.vectorize]]
 # binding = "VECTORIZE"
 # index_name = "your_index_name"
@@ -112,7 +112,7 @@ service = "hmrchan-internal-api-gateway-preview"
 # binding = "VECTORIZE"
 # index_name = "your_preview_index_name"
 
-# --- Queue（消息队列）---
+# --- Queues ---
 # [[env.production.queues.producers]]
 # binding = "MY_QUEUE"
 # queue = "your_queue_name"
@@ -122,7 +122,7 @@ service = "hmrchan-internal-api-gateway-preview"
 # max_batch_size = 10
 # max_batch_timeout = 30
 
-# --- Service Bindings（调用其他 Worker）---
+# --- Service Bindings for other Workers ---
 # [[env.production.services]]
 # binding = "MY_SERVICE"
 # service = "my-worker-name"

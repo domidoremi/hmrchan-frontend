@@ -1,9 +1,6 @@
 #!/usr/bin/env node
-/**
- * Lighthouse 性能审计脚本
- * 用于分析前端性能问题并生成报告
- */
 
+/** Runs Lighthouse against one or more frontend URLs and writes HTML and JSON reports. */
 import lighthouse from 'lighthouse'
 import * as chromeLauncher from 'chrome-launcher'
 import fs from 'fs'
@@ -106,13 +103,11 @@ export async function runLighthouse() {
       )
       console.log(`   SI (Speed Index): ${audits['speed-index'].displayValue}`)
 
-      // 网络请求分析
       const networkRequests = audits['network-requests']
       if (networkRequests?.details?.items) {
         const items = networkRequests.details.items
         console.log(`\n📡 Network Requests: ${items.length} total`)
 
-        // 按类型分组
         const byType = {}
         let totalSize = 0
         items.forEach((item) => {
@@ -133,7 +128,6 @@ export async function runLighthouse() {
         console.log(`\n   Total Transfer Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`)
       }
 
-      // 优化建议
       console.log('\n💡 Optimization Opportunities:')
       const opportunities = [
         'render-blocking-resources',

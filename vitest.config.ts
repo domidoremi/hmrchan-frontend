@@ -1,12 +1,12 @@
 /**
- * Vitest 测试配置文件
+ * Vitest test configuration.
  *
- * 优化策略:
- * - 使用 jsdom 环境模拟浏览器
- * - 启用全局 API 简化测试代码
- * - 配置覆盖率报告
- * - 优化测试性能和并发
- * - 启用快照测试
+ * Strategy:
+ * - Simulate browser behavior with jsdom.
+ * - Enable global APIs to keep tests concise.
+ * - Configure coverage reporting.
+ * - Keep test concurrency stable.
+ * - Enable snapshot testing.
  */
 
 import { fileURLToPath } from 'node:url'
@@ -16,7 +16,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
 
-  /** Vite缓存目录（Vitest会使用cacheDir/vitest） */
+  /** Vite cache directory; Vitest uses cacheDir/vitest */
   cacheDir: 'node_modules/.vite',
 
   resolve: {
@@ -25,34 +25,34 @@ export default defineConfig({
     },
   },
   test: {
-    /** 使用 jsdom 模拟浏览器环境 */
+    /** Simulate the browser environment with jsdom */
     environment: 'jsdom',
 
-    /** 启用全局 API (describe, it, expect 等) */
+    /** Enable global APIs such as describe, it, and expect */
     globals: true,
 
-    /** 排除不需要测试的文件 */
+    /** Exclude files that do not require tests */
     exclude: [...configDefaults.exclude, 'e2e/**', 'dist/**', 'node_modules/**'],
 
-    /** 测试根目录 */
+    /** Test root directory */
     root: fileURLToPath(new URL('./', import.meta.url)),
 
-    /** 覆盖率配置 */
+    /** Coverage configuration */
     coverage: {
       /**
-       * 生产门禁使用 Istanbul 覆盖率。
-       * v8 provider 在当前 Bun/Windows + worker 组合下存在 inspector/.tmp 聚合不稳定问题，
-       * 会导致 0% 假数据或运行时错误，不能作为可信门禁来源。
+       * Production gates use Istanbul coverage.
+       * The v8 provider has unstable inspector/.tmp aggregation with the current Bun/Windows
+       * worker setup, producing false 0% data or runtime failures, so it is not a trusted gate.
        */
       provider: 'istanbul',
 
-      /** 报告格式 */
+      /** Report formats */
       reporter: ['text', 'json', 'html', 'lcov'],
 
       /**
-       * 阶段一覆盖率基线。
-       * 先基于当前真实可用覆盖率建立阻塞下限，后续再按模块逐步上调，
-       * 避免继续沿用失真的 60% 全局阈值。
+       * Phase-one coverage baseline.
+       * Start with blocking thresholds based on reliable current coverage, then raise them by
+       * module instead of retaining a misleading global 60% threshold.
        */
       thresholds: {
         lines: 39,
@@ -61,7 +61,7 @@ export default defineConfig({
         statements: 38,
       },
 
-      /** 排除不需要覆盖率的文件 */
+      /** Exclude files that do not require coverage */
       exclude: [
         ...(configDefaults.coverage.exclude || []),
         '**/*.config.*',
@@ -76,26 +76,26 @@ export default defineConfig({
         'public/**',
       ],
 
-      /** 包含的文件 */
+      /** Included files */
       include: ['src/**/*.{ts,vue}'],
 
-      /** 清理之前的覆盖率报告 */
+      /** Remove previous coverage reports */
       clean: true,
     },
 
-    /** 测试超时时间 (ms) */
+    /** Test timeout in milliseconds */
     testTimeout: 10000,
 
-    /** Hook 超时时间 (ms) */
+    /** Hook timeout in milliseconds */
     hookTimeout: 10000,
 
-    /** 监听模式下的文件变化 */
+    /** Watch file changes */
     watch: false,
 
-    /** 隔离测试环境 */
+    /** Isolate test environments */
     isolate: true,
 
-    /** 测试文件匹配模式 */
+    /** Test file patterns */
     include: [
       'src/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}',
       'functions/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}',
@@ -106,32 +106,32 @@ export default defineConfig({
     setupFiles: ['vitest.setup.ts'],
 
     /**
-     * Windows + Bun 下 threads worker 会在无交互终端里启动失败。
-     * 改用 forks，保证 Codex/CI/后台终端都能稳定执行同一条测试命令。
+     * Thread workers can fail to start in non-interactive terminals on Windows with Bun.
+     * Forks keep the same test command stable in Codex, CI, and background terminals.
      */
     pool: 'forks',
 
-    /** 启用快照测试 */
+    /** Snapshot formatting */
     snapshotFormat: {
       escapeString: true,
       printBasicPrototype: true,
     },
 
-    /** 测试报告器 */
+    /** Test reporters */
     reporters: ['default'],
 
-    /** 静默模式 */
+    /** Silent mode */
     silent: false,
 
-    /** 启用 UI 模式 */
+    /** UI mode */
     ui: false,
 
-    /** 启用浏览器模式 */
+    /** Browser mode */
     browser: {
       enabled: false,
     },
 
-    /** 启用类型检查 */
+    /** Type checking */
     typecheck: {
       enabled: false,
     },

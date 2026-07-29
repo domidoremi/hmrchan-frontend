@@ -1,5 +1,7 @@
 # Validation Flow
 
+[简体中文](VALIDATION.md) · [English](VALIDATION.en.md) · [日本語](VALIDATION.ja.md)
+
 本仓库的变更验收以 `validate:release` 为唯一主入口。
 仓库已移除 GitHub Actions；验收状态只由本地统一 runner 判定。
 

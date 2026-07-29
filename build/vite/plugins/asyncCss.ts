@@ -1,14 +1,12 @@
 import type { Plugin } from 'vite'
 
 /**
- * 将入口样式表转换为 preload + 常规 stylesheet。
+ * Converts entry stylesheets into preload links followed by regular stylesheets.
  *
- * 说明：
- * - 旧方案依赖 `media="print" + onload="this.media='all'"` 规避首屏阻塞；
- * - 但站点当前使用严格 CSP，禁止内联事件处理器，导致 onload 无法执行；
- * - 结果是主样式表长期停留在 print 媒体类型，页面只剩 critical CSS，表现为“样式几乎全部丢失”。
+ * The previous media="print" plus inline onload approach conflicted with the strict CSP,
+ * leaving the main stylesheet in print mode and rendering only critical CSS.
  *
- * 因此这里保留 preload，但恢复为正常 stylesheet，优先保证线上可用性与 CSP 兼容性。
+ * Keep preload discovery, then load a regular stylesheet to preserve availability and CSP compatibility.
  */
 export function asyncCssPlugin(): Plugin {
   return {

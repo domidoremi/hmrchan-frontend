@@ -1,9 +1,8 @@
 /**
- * Cloudflare Pages Function - Uploads 代理
+ * Cloudflare Pages Function - uploads proxy.
  *
- * `/uploads/*` 仅保留为 edge 兼容层。
- * 现役公开资源 contract 已迁移到 storage-backed public URL，
- * 因此前端不应再主动生成或依赖这些旧路径。
+ * `/uploads/*` remains only as an edge compatibility layer. Active public resource contracts use
+ * storage-backed public URLs, so frontend code must not generate or depend on these legacy paths.
  */
 
 import { resolveConfiguredApiBaseUrl } from '../../src/edge/upstream'
@@ -45,10 +44,8 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     return new Response('Uploads proxy is not configured', { status: 500 })
   }
 
-  // 构建目标 URL
   const targetUrl = `${apiBaseUrl}/uploads/${path}`
 
-  // 复制请求头
   const headers = new Headers()
   const skipHeaders = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
 
@@ -64,15 +61,12 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       headers,
     })
 
-    // 复制响应头
     const responseHeaders = new Headers(response.headers)
 
-    // 设置缓存（头像可以缓存较长时间）
     if (response.ok) {
       responseHeaders.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800')
     }
 
-    // 移除可能导致问题的头
     responseHeaders.delete('content-encoding')
     responseHeaders.delete('transfer-encoding')
 

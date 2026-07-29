@@ -151,7 +151,7 @@ async function safeKillChrome(chrome) {
   try {
     await chrome.kill()
   } catch {
-    // Windows 下 chrome-launcher 偶发清理失败，忽略即可
+    // chrome-launcher may fail during cleanup on Windows after Chrome has already exited.
   }
 }
 

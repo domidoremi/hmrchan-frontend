@@ -1,12 +1,14 @@
 # PWA Icon Boundary
 
-本目录保存 Web App Manifest 引用的 PWA 图标、PNG 兼容资源和图标生成器输出。部署资源必须可直接由 `public/` 输出；生成源文件不得放入本目录，除非 manifest 或生成脚本明确引用。
+This directory contains PWA icons referenced by the Web App Manifest, PNG compatibility assets,
+and icon generator output. Deployable assets must be emitted directly from `public/`. Source artwork
+must stay outside this directory unless the manifest or generator explicitly references it.
 
 ## Required Assets
 
 ### Standard Icons
 
-标准图标用于 manifest `icons[].purpose=any`、启动画面和平台图标回退。
+Standard icons support manifest `icons[].purpose=any`, splash screens, and platform fallbacks.
 
 | File requirement | Size    | Status  |
 | ---------------- | ------- | ------- |
@@ -21,7 +23,8 @@
 
 ### Maskable Icons
 
-Maskable 图标用于 manifest `icons[].purpose=maskable`。重要图形必须落在中心 80% 安全区域内，背景必须不透明。
+Maskable icons support manifest `icons[].purpose=maskable`. Important artwork must remain inside the
+central 80% safe area and use an opaque background.
 
 | File requirement | Size    | Status  |
 | ---------------- | ------- | ------- |
@@ -30,7 +33,7 @@ Maskable 图标用于 manifest `icons[].purpose=maskable`。重要图形必须�
 
 ### Shortcut Icons
 
-快捷方式图标用于 manifest `shortcuts[].icons`。
+Shortcut icons support manifest `shortcuts[].icons`.
 
 | File                     | Size  | Status  |
 | ------------------------ | ----- | ------- |

@@ -1,7 +1,7 @@
 /**
- * Cloudflare Pages Function - WebSocket 代理
+ * Cloudflare Pages Function - WebSocket proxy.
  *
- * 将 /ws 请求代理到后端 WebSocket 服务器
+ * Proxies /ws requests to the backend WebSocket server.
  */
 
 import { buildWebSocketUpstreamUrl, resolveConfiguredApiBaseUrl } from '../src/edge/upstream'
@@ -18,13 +18,13 @@ interface Context {
 export async function onRequest(context: Context): Promise<Response> {
   const { request, env } = context
 
-  // 检查是否为 WebSocket 升级请求
+  // Require a WebSocket upgrade request.
   const upgradeHeader = request.headers.get('Upgrade')
   if (upgradeHeader !== 'websocket') {
     return new Response('Expected WebSocket upgrade', { status: 426 })
   }
 
-  // 获取后端 API 地址
+  // Resolve the configured backend API address.
   const apiBaseUrl = resolveConfiguredApiBaseUrl(env)
   if (!apiBaseUrl) {
     return new Response('WebSocket proxy is not configured', { status: 500 })
@@ -32,12 +32,12 @@ export async function onRequest(context: Context): Promise<Response> {
 
   const wsUrl = buildWebSocketUpstreamUrl(apiBaseUrl)
 
-  // 复制请求头
+  // Copy request headers without the original host.
   const headers = new Headers(request.headers)
   headers.delete('host')
 
   try {
-    // 转发 WebSocket 连接
+    // Forward the WebSocket connection.
     const response = await fetch(wsUrl, {
       method: 'GET',
       headers,

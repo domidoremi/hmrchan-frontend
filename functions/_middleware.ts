@@ -1,10 +1,10 @@
 /**
  * Cloudflare Pages Middleware
  *
- * 作用：
- * 1. 为 HTML 响应注入动态 CSP nonce 与安全头
- * 2. 为高价值公开路由输出服务端首包 meta/canonical/骨架内容
- * 3. 为未知导航路由返回真实 404，避免所有导航都回 200 的软 404
+ * Responsibilities:
+ * 1. Inject a dynamic CSP nonce and security headers into HTML responses.
+ * 2. Render first-response metadata, canonical URLs, and shells for important public routes.
+ * 3. Return real 404 responses for unknown navigations instead of soft 404 pages.
  */
 
 import {
@@ -67,7 +67,7 @@ const HTML_CORS_HEADERS = [
   'Access-Control-Max-Age',
 ] as const
 
-/** 生成 16 字节随机 nonce（Base64 编码） */
+/** Generates a random 16-byte nonce encoded as Base64. */
 function generateNonce(): string {
   const bytes = new Uint8Array(16)
   crypto.getRandomValues(bytes)

@@ -304,18 +304,16 @@ async function generateScreenshot(
       }, config.visualState)
     }
 
-    // 拦截 API 请求，返回 mock 数据
+    // Keep screenshots deterministic by replacing API calls with stable fixtures.
     await page.setRequestInterception(true)
     page.on('request', (request) => {
       const url = request.url()
 
-      // 放行非 API 请求
       if (!url.includes('/api/v1/')) {
         request.continue()
         return
       }
 
-      // Mock API 响应
       if (url.includes('/posts')) {
         request.respond({
           status: 200,
@@ -337,7 +335,6 @@ async function generateScreenshot(
           }),
         })
       } else {
-        // 其他 API 请求返回空数据
         request.respond({
           status: 200,
           contentType: 'application/json',

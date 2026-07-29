@@ -1,16 +1,6 @@
 #!/usr/bin/env node
-/**
- * 自动生成 sitemap.xml
- *
- * 功能：
- * - 从路由配置自动生成 sitemap
- * - 自动设置优先级和更新频率
- * - 可从公开 API 补充动态详情路由
- *
- * 使用：
- *   node scripts/generate-sitemap.js [--dry-run]
- */
 
+/** Generates sitemap.xml and robots.txt from public routes and optional API detail resources. */
 import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 
@@ -42,10 +32,7 @@ const BASE_URL = resolvePublicSiteOrigin()
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
 
-/**
- * 可被搜索引擎索引的公开路由。
- * 仅收录当前真实公开页面，避免与 robots.txt 产生漂移。
- */
+/** Public routes that are eligible for search-engine indexing. */
 const ROUTES = [
   {
     path: '/',
@@ -234,14 +221,6 @@ async function resolveDynamicRoutes() {
   return [...routesByPath.values()].sort((left, right) => left.path.localeCompare(right.path))
 }
 
-/**
- * 生成 URL 条目
- * @param {Object} route - 路由配置对象
- * @param {string} route.path - 路由路径
- * @param {number} route.priority - SEO 优先级 (0.0-1.0)
- * @param {string} route.changefreq - 更新频率
- * @returns {string} XML 格式的 URL 条目
- */
 function generateUrlEntry(route) {
   const loc = `${BASE_URL}${route.path}`
   const parts = [
@@ -256,10 +235,6 @@ function generateUrlEntry(route) {
   return parts.join('\n')
 }
 
-/**
- * 生成完整的 sitemap
- * @returns {string} 完整的 sitemap XML 内容
- */
 function generateSitemap(routes) {
   const header = [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -280,12 +255,6 @@ function generateRobots() {
   return ['User-agent: *', 'Allow: /', '', `Sitemap: ${BASE_URL}/sitemap.xml`, ''].join('\n')
 }
 
-/**
- * 验证 sitemap 格式
- * @param {string} content - sitemap XML 内容
- * @returns {boolean} 验证是否通过
- * @throws {Error} 验证失败时抛出错误
- */
 function validateSitemap(content) {
   const validations = [
     {
@@ -302,14 +271,12 @@ function validateSitemap(content) {
     },
   ]
 
-  // 执行所有验证
   for (const validation of validations) {
     if (!validation.test()) {
       throw new Error(validation.error)
     }
   }
 
-  // 检查 URL 数量
   const urlCount = (content.match(/<url>/g) || []).length
   if (urlCount === 0) {
     throw new Error('No URLs found in sitemap')
@@ -319,11 +286,6 @@ function validateSitemap(content) {
   return true
 }
 
-/**
- * 显示预览
- * @param {string} content - sitemap 内容
- * @param {number} lines - 预览行数
- */
 function showPreview(content, lines = 20) {
   console.log('🔍 Dry run mode - no files modified')
   console.log('')
@@ -334,20 +296,12 @@ function showPreview(content, lines = 20) {
   console.log('─'.repeat(60))
 }
 
-/**
- * 显示成功信息
- * @param {string} path - 文件路径
- * @param {number} size - 文件大小（字节）
- */
 function showSuccess(path, size) {
   console.log(`✅ Sitemap generated successfully`)
   console.log(`📁 Output: ${path}`)
   console.log(`📊 Size: ${(size / 1024).toFixed(2)} KB`)
 }
 
-/**
- * 主执行函数
- */
 async function main() {
   try {
     console.log('🗺️  Generating sitemap...')
@@ -357,11 +311,9 @@ async function main() {
     console.log(`📄 Routes: ${routes.length} (${dynamicRoutes.length} dynamic)`)
     console.log('')
 
-    // 生成 sitemap / robots
     const sitemap = generateSitemap(routes)
     const robots = generateRobots()
 
-    // 验证
     validateSitemap(sitemap)
 
     if (DRY_RUN) {
@@ -374,7 +326,6 @@ async function main() {
       process.exit(0)
     }
 
-    // 写入文件
     writeFileSync(SITEMAP_OUTPUT_PATH, sitemap, 'utf-8')
     writeFileSync(ROBOTS_OUTPUT_PATH, robots, 'utf-8')
 
@@ -386,5 +337,4 @@ async function main() {
   }
 }
 
-// 执行主函数
 main()

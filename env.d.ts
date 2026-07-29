@@ -6,75 +6,75 @@
  * by Vite config or local validation scripts before bundling.
  */
 interface ImportMetaEnv {
-  /** API 基础 URL */
+  /** Base API URL */
   readonly VITE_API_BASE_URL?: string
-  /** 身份域 API 基础 URL，用于本地 dev/preview proxy 覆盖 */
+  /** Identity API base URL override for the local dev/preview proxy */
   readonly VITE_IDENTITY_API_BASE_URL?: string
-  /** 社区域 API 基础 URL，用于本地 dev/preview proxy 覆盖 */
+  /** Community API base URL override for the local dev/preview proxy */
   readonly VITE_COMMUNITY_API_BASE_URL?: string
-  /** 内容域 API 基础 URL，用于本地 dev/preview proxy 覆盖 */
+  /** Content API base URL override for the local dev/preview proxy */
   readonly VITE_CONTENT_API_BASE_URL?: string
-  /** Turnstile 站点密钥 */
+  /** Turnstile site key */
   readonly VITE_TURNSTILE_SITE_KEY?: string
-  /** 启用 FingerprintJS OSS 高级浏览器指纹。默认使用轻量 fallback。 */
+  /** Enables advanced FingerprintJS OSS browser fingerprinting; defaults to a lightweight fallback */
   readonly VITE_ENABLE_ADVANCED_FINGERPRINT?: string
-  /** 共享 release contract hash，生产构建必须显式注入 */
+  /** Shared release contract hash; production builds must inject it explicitly */
   readonly VITE_CLIENT_CONTRACT_VERSION?: string
-  /** 启用调试输出 */
+  /** Enables debug output */
   readonly VITE_ENABLE_DEBUG?: string
-  /** 启用 DevTools */
+  /** Enables DevTools */
   readonly VITE_ENABLE_DEVTOOLS?: string
-  /** 启用应用启动时的 client init */
+  /** Enables client initialization during application startup */
   readonly VITE_ENABLE_CLIENT_INIT?: string
-  /** 启用日程 API 请求 */
+  /** Enables schedule API requests */
   readonly VITE_ENABLE_SCHEDULE_API?: string
-  /** 启用后台数据预取 */
+  /** Enables background data prefetching */
   readonly VITE_ENABLE_DATA_PREFETCH?: string
-  /** 延迟加载动画样式 */
+  /** Defers loading animation styles */
   readonly VITE_ENABLE_DEFERRED_ANIMATION_STYLES?: string
-  /** 构建 sourcemap 模式：false|true|hidden */
+  /** Build sourcemap mode: false|true|hidden */
   readonly VITE_SOURCEMAP?: string
-  /** 本地 dev server host 覆盖 */
+  /** Local development server host override */
   readonly VITE_DEV_HOST?: string
-  /** 开发期是否启用更激进的 Vite 优化 */
+  /** Enables more aggressive Vite optimization during development */
   readonly VITE_ENABLE_AGGRESSIVE_DEV_OPTIMIZATION?: string
-  /** 是否启用 Vue package devtools */
+  /** Enables Vue package devtools */
   readonly VITE_ENABLE_VUE_PACKAGE_DEVTOOLS?: string
-  /** 预览服务器是否禁用 API proxy */
+  /** Disables the API proxy in the preview server */
   readonly VITE_DISABLE_PREVIEW_PROXY?: string
-  /** 生产构建是否异步加载主 CSS */
+  /** Loads the main CSS asynchronously in production builds */
   readonly VITE_ASYNC_MAIN_CSS?: string
-  /** Anti-tamper 模式：off|warn|balanced|strict */
+  /** Anti-tamper mode: off|warn|balanced|strict */
   readonly VITE_ANTI_TAMPER_MODE?: string
-  /** 是否允许在开发环境启用 anti-tamper（默认 false） */
+  /** Allows anti-tamper checks in development; defaults to false */
   readonly VITE_ANTI_TAMPER_ALLOW_DEV?: string
-  /** strict 模式下是否禁用右键菜单 */
+  /** Disables the context menu in strict mode */
   readonly VITE_DISABLE_CONTEXT_MENU?: string
-  /** 是否启用构建混淆 */
+  /** Enables build-time obfuscation */
   readonly VITE_ENABLE_OBFUSCATION?: string
-  /** 混淆强度配置：safe|aggressive */
+  /** Obfuscation profile: safe|aggressive */
   readonly VITE_OBFUSCATION_PROFILE?: string
-  /** 是否启用字符串阵列化 */
+  /** Enables string-array transformation */
   readonly VITE_OBFUSCATION_STRING_ARRAY?: string
-  /** 字符串阵列编码：none|base64|rc4 */
+  /** String-array encoding: none|base64|rc4 */
   readonly VITE_OBFUSCATION_STRING_ARRAY_ENCODING?: string
-  /** 是否启用 anti-formatting（self-defending） */
+  /** Enables anti-formatting (self-defending) */
   readonly VITE_OBFUSCATION_ANTI_FORMATTING?: string
-  /** 是否启用 infinite debugger（debugProtection） */
+  /** Enables the infinite debugger guard (debugProtection) */
   readonly VITE_OBFUSCATION_INFINITE_DEBUGGER?: string
-  /** debugProtection 触发间隔（ms） */
+  /** debugProtection trigger interval in milliseconds */
   readonly VITE_OBFUSCATION_INFINITE_DEBUGGER_INTERVAL?: string
-  /** 前端代码伪加密（基于字符串 RC4 包裹） */
+  /** Enables frontend code pseudo-encryption through RC4-wrapped strings */
   readonly VITE_OBFUSCATION_CODE_ENCRYPTION?: string
-  /** 是否开启控制流平坦化 */
+  /** Enables control-flow flattening */
   readonly VITE_OBFUSCATION_CONTROL_FLOW?: string
-  /** 是否开启废代码注入 */
+  /** Enables dead-code injection */
   readonly VITE_OBFUSCATION_DEAD_CODE?: string
-  /** 日志级别 */
+  /** Log level */
   readonly VITE_LOG_LEVEL?: string
-  /** 是否显式启用真实 API。默认启用；仅 false 时关闭。 */
+  /** Explicitly enables the live API; enabled by default and disabled only by false */
   readonly VITE_HMRCHAN_ENABLE_API?: string
-  /** 是否强制使用本地 fallback 内容，供离线视觉调试使用。 */
+  /** Forces local fallback content for offline visual debugging */
   readonly VITE_HMRCHAN_FORCE_FALLBACK?: string
 }
 
@@ -82,7 +82,7 @@ interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 
-/** 编译时常量 */
+/** Compile-time constants */
 declare const __BUILD_TIME__: string
 declare const __BUILD_HASH__: string
 declare const __PROD__: boolean

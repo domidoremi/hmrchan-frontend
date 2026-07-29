@@ -1,10 +1,10 @@
 /**
  * Vite Plugin: Subresource Integrity (SRI)
  *
- * 构建完成后为 dist 中所有 HTML 文件里的 <script> 和 <link> 标签
- * 注入 integrity 属性（SHA-384 哈希），防止资源被篡改。
+ * Adds SHA-384 integrity attributes to script and link elements in built HTML files
+ * so modified assets cannot be loaded silently.
  *
- * 仅处理同源资源（/assets/... 路径），跳过外部 URL。
+ * Processes only same-origin /assets/ paths and skips external URLs.
  */
 
 import { createHash } from 'node:crypto'
@@ -13,9 +13,9 @@ import { join, resolve } from 'node:path'
 import type { Plugin } from 'vite'
 
 interface SRIPluginOptions {
-  /** 哈希算法，默认 sha384 */
+  /** Hash algorithm; defaults to sha384 */
   algorithm?: 'sha256' | 'sha384' | 'sha512'
-  /** 是否启用详细日志 */
+  /** Enables detailed logging */
   verbose?: boolean
 }
 
@@ -77,7 +77,6 @@ export function sriPlugin(options: SRIPluginOptions = {}): Plugin {
       for (const htmlPath of htmlFiles) {
         let html = readFileSync(htmlPath, 'utf-8')
 
-        // 匹配 <script src="/assets/..."> 标签（含 type="module"）
         html = html.replace(
           /<script\b([^>]*)\bsrc="(\/assets\/[^"]+)"([^>]*)>/g,
           (match, before, src, after) => {
@@ -90,7 +89,6 @@ export function sriPlugin(options: SRIPluginOptions = {}): Plugin {
           }
         )
 
-        // 匹配 <link rel="stylesheet" href="/assets/..."> 标签
         html = html.replace(
           /<link\b([^>]*)\bhref="(\/assets\/[^"]+\.css)"([^>]*)>/g,
           (match, before, href, after) => {
@@ -103,7 +101,6 @@ export function sriPlugin(options: SRIPluginOptions = {}): Plugin {
           }
         )
 
-        // 匹配 <link rel="modulepreload" href="/assets/..."> 标签
         html = html.replace(
           /<link\b([^>]*)\bhref="(\/assets\/[^"]+\.js)"([^>]*)>/g,
           (match, before, href, after) => {
