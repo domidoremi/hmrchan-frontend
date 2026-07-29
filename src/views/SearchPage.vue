@@ -115,7 +115,6 @@
               @load-more="loadMore"
             />
 
-            <!-- 未登录用户提示 -->
             <div v-if="mayHaveMoreResults && results.length > 0" class="login-hint empty-surface">
               <AnimatedIcon name="user" :fallback-icon="LogIn" size="md" class="login-hint-icon" />
               <div class="login-hint-content">

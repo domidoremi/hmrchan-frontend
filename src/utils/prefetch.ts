@@ -1,8 +1,3 @@
-/**
- * 智能路由预加载工具
- * 基于用户行为和网络状况预加载关键路由
- */
-
 import { reportClientError } from './clientReporter'
 import { runWhenIdle } from './performance'
 
@@ -63,10 +58,8 @@ export function disposePrefetch(): void {
 const DEFAULT_TIMEOUT_MS = 2000 // 2 seconds for requestIdleCallback
 const PREFETCH_DELAY_MS = 1000 // Delay after page load before prefetching
 
-// 已预加载的路由缓存
 const prefetchedRoutes = new Set<string>()
 
-// 网络状况检测
 function getNetworkQuality(): 'slow' | 'fast' {
   if (typeof navigator === 'undefined') return 'fast'
   if ('connection' in navigator) {
@@ -74,10 +67,9 @@ function getNetworkQuality(): 'slow' | 'fast' {
     const effectiveType = conn?.effectiveType
     return effectiveType === '4g' || effectiveType === 'wifi' ? 'fast' : 'slow'
   }
-  return 'fast' // 默认假设快速网络
+  return 'fast'
 }
 
-// 检查是否在省电模式
 function isSavingData(): boolean {
   if (typeof navigator === 'undefined') return false
   if ('connection' in navigator) {
@@ -120,9 +112,6 @@ function scheduleIdlePrefetchTask(
   })
 }
 
-/**
- * 预加载路由组件
- */
 export async function prefetchRoute(
   routeName: string,
   importFn: () => Promise<unknown>,
@@ -130,17 +119,14 @@ export async function prefetchRoute(
 ): Promise<void> {
   if (typeof window === 'undefined') return
 
-  // 避免重复预加载
   if (prefetchedRoutes.has(routeName)) {
     return
   }
 
-  // 省电模式下不预加载
   if (isSavingData()) {
     return
   }
 
-  // 慢速网络下只预加载高优先级路由
   if (getNetworkQuality() === 'slow' && options.priority !== 'high') {
     return
   }
@@ -165,34 +151,25 @@ export async function prefetchRoute(
   }
 }
 
-/**
- * 批量预加载路由
- */
 export async function prefetchRoutes(
   routes: Array<{ name: string; importFn: () => Promise<unknown>; priority?: 'high' | 'low' }>
 ): Promise<void> {
-  // 按优先级排序
   const sortedRoutes = routes.sort((a, b) => {
     if (a.priority === 'high' && b.priority !== 'high') return -1
     if (a.priority !== 'high' && b.priority === 'high') return 1
     return 0
   })
 
-  // 串行预加载，避免同时加载过多资源
   for (const route of sortedRoutes) {
     const options: PrefetchOptions = route.priority ? { priority: route.priority } : {}
     await prefetchRoute(route.name, route.importFn, options)
   }
 }
 
-/**
- * 预加载关键路由（首页加载后立即执行）
- */
 export function prefetchCriticalRoutes(): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
   if (prefetchScheduled) return
 
-  // 在页面加载完成后预加载
   if (document.readyState === 'complete') {
     executePrefetch()
   } else {
@@ -206,23 +183,20 @@ export function prefetchCriticalRoutes(): void {
 function executePrefetch(): void {
   if (prefetchScheduled) return
   prefetchScheduled = true
-  // 延迟后开始预加载，确保首屏已完全渲染
+
   prefetchStartTimer = window.setTimeout(() => {
     prefetchStartTimer = null
-    // 预加载路由组件
+
     prefetchRoutes([
-      // 高优先级：用户最可能访问的页面
       { name: 'explore', importFn: ROUTE_CONFIG.explore.importFn, priority: 'high' },
       { name: 'search', importFn: ROUTE_CONFIG.search.importFn, priority: 'high' },
       { name: 'post-detail', importFn: ROUTE_CONFIG['post-detail'].importFn, priority: 'high' },
-      // 低优先级：次要页面
+
       { name: 'authors', importFn: ROUTE_CONFIG.authors.importFn, priority: 'low' },
       { name: 'community', importFn: ROUTE_CONFIG.community.importFn, priority: 'low' },
       { name: 'profile', importFn: ROUTE_CONFIG.profile.importFn, priority: 'low' },
     ])
 
-    // 预加载关键数据（延迟更长，避免与首屏请求竞争）
-    // 串行执行，避免并发请求过多
     prefetchDataTimer = window.setTimeout(async () => {
       prefetchDataTimer = null
       await prefetchExploreData()
@@ -231,16 +205,12 @@ function executePrefetch(): void {
   }, PREFETCH_DELAY_MS)
 }
 
-/**
- * 鼠标悬停预加载
- * 当用户鼠标悬停在链接上时预加载目标页面
- */
 export function setupHoverPrefetch(): void {
   if (typeof document === 'undefined') return
   if (hoverPrefetchAttached) return
   hoverPrefetchAttached = true
 
-  const HOVER_DELAY = 100 // 延迟 100ms 后预加载，避免快速划过时触发
+  const HOVER_DELAY = 100
 
   hoverHandler = (e: MouseEvent) => {
     const target = e.target as HTMLElement
@@ -248,15 +218,12 @@ export function setupHoverPrefetch(): void {
 
     if (!link || !link.href) return
 
-    // 只处理内部链接
     if (link.origin !== window.location.origin) return
 
-    // 清除之前的定时器
     if (hoverTimer) {
       clearTimeout(hoverTimer)
     }
 
-    // 延迟后预加载，避免快速划过时触发
     hoverTimer = window.setTimeout(() => {
       const path = new URL(link.href).pathname
       const routeName = getRouteNameFromPath(path)
@@ -273,7 +240,6 @@ export function setupHoverPrefetch(): void {
   document.addEventListener('mouseover', hoverHandler, { passive: true })
 }
 
-// 路由配置映射 - 单一数据源
 const ROUTE_CONFIG = {
   home: { path: '/', importFn: () => import('@/views/HomePage.vue') },
   explore: { path: '/explore', importFn: () => import('@/views/ExplorePage.vue') },
@@ -314,16 +280,13 @@ const ROUTE_CONFIG = {
 
 type RouteName = keyof typeof ROUTE_CONFIG
 
-// 路径到路由名称的映射
 function getRouteNameFromPath(path: string): RouteName | null {
-  // 先检查精确匹配
   for (const [name, config] of Object.entries(ROUTE_CONFIG)) {
     if ('path' in config && config.path === path) {
       return name as RouteName
     }
   }
 
-  // 再检查模式匹配
   for (const [name, config] of Object.entries(ROUTE_CONFIG)) {
     if ('pathPattern' in config && config.pathPattern.test(path)) {
       return name as RouteName
@@ -333,16 +296,11 @@ function getRouteNameFromPath(path: string): RouteName | null {
   return null
 }
 
-// 路由名称到导入函数的映射
 function getRouteImportFn(routeName: string): (() => Promise<unknown>) | null {
   const config = ROUTE_CONFIG[routeName as RouteName]
   return config?.importFn ?? null
 }
 
-/**
- * 通用数据预加载工具
- * 检查网络状况后执行预加载函数
- */
 async function prefetchData(
   importFn: () => Promise<unknown>,
   options: { skipOnSlowNetwork?: boolean } = {}
@@ -351,12 +309,10 @@ async function prefetchData(
 
   const { skipOnSlowNetwork = true } = options
 
-  // 省电模式下不预加载
   if (isSavingData()) {
     return
   }
 
-  // 慢速网络下可选跳过
   if (skipOnSlowNetwork && getNetworkQuality() === 'slow') {
     return
   }
@@ -366,20 +322,14 @@ async function prefetchData(
       try {
         await importFn()
       } catch {
-        // 静默失败 - 预加载失败不应影响用户体验
-        // 在开发模式下也不记录，避免控制台噪音
+        // Data prefetch is best-effort and must not affect route availability.
       }
     }, DEFAULT_TIMEOUT_MS)
   } catch {
-    // 外层错误捕获（requestIdleCallback 本身的错误）
-    // 完全静默，避免控制台噪音
+    // Idle scheduler failures are also non-blocking for navigation.
   }
 }
 
-/**
- * 预加载探索页数据
- * 在用户导航到探索页前预加载首页数据
- */
 export async function prefetchExploreData(): Promise<void> {
   if (!DATA_PREFETCH_ENABLED) {
     return
@@ -388,7 +338,7 @@ export async function prefetchExploreData(): Promise<void> {
   await prefetchData(async () => {
     const { postService } = await import('@/api/postService')
     const { getPublicPostList } = await import('@/utils/cache')
-    // 只预加载第一页，避免并发请求过多触发 429
+
     await getPublicPostList({ limit: 20, cursor: null }, (params, config) =>
       postService.listPosts(params, { ...config, skipErrorToast: true })
     )
@@ -397,10 +347,6 @@ export async function prefetchExploreData(): Promise<void> {
   })
 }
 
-/**
- * 预加载作者列表数据
- * 在用户导航到作者页前预加载首页作者
- */
 export async function prefetchAuthorsData(): Promise<void> {
   if (!DATA_PREFETCH_ENABLED) {
     return
@@ -409,7 +355,7 @@ export async function prefetchAuthorsData(): Promise<void> {
   await prefetchData(async () => {
     const { authorService } = await import('@/api/authorService')
     const { getPublicAuthorList } = await import('@/utils/cache')
-    // 只预加载第一页
+
     await getPublicAuthorList({ cursor: null, limit: 20 }, (params, config) =>
       authorService.listAuthors(params, { ...config, skipErrorToast: true })
     )
@@ -418,11 +364,6 @@ export async function prefetchAuthorsData(): Promise<void> {
   })
 }
 
-/**
- * 预加载帖子详情数据
- * 在用户点击帖子前预加载详情和评论
- * @param postId - 帖子 UUID
- */
 export async function prefetchPostDetail(
   postId: string,
   options: { includeComments?: boolean } = {}

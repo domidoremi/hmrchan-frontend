@@ -1,11 +1,5 @@
-/**
- * Favorites Service - 收藏相关 API
- */
-
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import { assertUuidV7String, type PublicResourceId } from '@/types/publicId'
-
-// ========== 类型定义 ==========
 
 export interface FavoriteCheckResponse {
   is_favorited: boolean
@@ -65,12 +59,7 @@ export interface ListFavoritesParams {
   tags?: string[]
 }
 
-// ========== 收藏服务 ==========
-
 export const favoriteService = {
-  /**
-   * 检查帖子是否已收藏
-   */
   async check(postId: PublicResourceId, config?: RequestConfig): Promise<FavoriteCheckResponse> {
     const publicPostId = assertUuidV7String(postId, 'favorite post id')
     return apiClient.get<FavoriteCheckResponse>(`/favorites/check/${publicPostId}`, {
@@ -79,9 +68,6 @@ export const favoriteService = {
     })
   },
 
-  /**
-   * 添加收藏
-   */
   async create(
     postId: PublicResourceId,
     data: Omit<FavoriteCreateRequest, 'post_id'> = {},
@@ -96,9 +82,6 @@ export const favoriteService = {
       : apiClient.post<FavoriteResponse>('/favorites', payload, config)
   },
 
-  /**
-   * 获取收藏列表
-   */
   async list(
     params: ListFavoritesParams = {},
     config?: RequestConfig
@@ -127,17 +110,11 @@ export const favoriteService = {
     )
   },
 
-  /**
-   * 获取收藏详情
-   */
   async get(favoriteId: PublicResourceId): Promise<FavoriteResponse> {
     const publicFavoriteId = assertUuidV7String(favoriteId, 'favorite id')
     return apiClient.get<FavoriteResponse>(`/favorites/${publicFavoriteId}`)
   },
 
-  /**
-   * 更新收藏元信息
-   */
   async update(
     favoriteId: PublicResourceId,
     data: FavoriteUpdateRequest
@@ -146,9 +123,6 @@ export const favoriteService = {
     return apiClient.patch<FavoriteResponse>(`/favorites/${publicFavoriteId}`, data)
   },
 
-  /**
-   * 删除收藏
-   */
   async remove(favoriteId: PublicResourceId, config: RequestConfig = {}): Promise<void> {
     const publicFavoriteId = assertUuidV7String(favoriteId, 'favorite id')
     await apiClient.delete(`/favorites/${publicFavoriteId}`, {
@@ -157,10 +131,6 @@ export const favoriteService = {
     })
   },
 
-  /**
-   * 按帖子 ID 取消收藏
-   * 文档未定义 /favorites/post/:postId，统一通过收藏列表定位后删除
-   */
   async removeByPostId(postId: PublicResourceId, config: RequestConfig = {}): Promise<void> {
     const publicPostId = assertUuidV7String(postId, 'favorite post id')
     let cursor: string | null = null
@@ -184,16 +154,10 @@ export const favoriteService = {
     return apiClient.get<Record<string, unknown>>('/favorites/summary', config)
   },
 
-  /**
-   * 获取收藏夹列表
-   */
   async getFolders(config?: RequestConfig): Promise<{ folders: FavoriteFolder[] }> {
     return apiClient.get<{ folders: FavoriteFolder[] }>('/favorites/folders/list', config)
   },
 
-  /**
-   * 获取收藏标签统计
-   */
   async getTags(config?: RequestConfig): Promise<FavoriteTagStats[]> {
     return apiClient.get<FavoriteTagStats[]>('/favorites/tags/list', config)
   },

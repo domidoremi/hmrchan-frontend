@@ -17,10 +17,7 @@ function isRetiredLegacyAvatarPath(value: string): boolean {
   return RETIRED_LEGACY_AVATAR_PATH_PREFIXES.some((prefix) => value.startsWith(prefix))
 }
 
-/**
- * 当前现役 contract 只接受 storage-backed public URL。
- * 历史 `/uploads/*` 兼容公开 URL 已退役，前端不再继续消费它们。
- */
+/** Accepts storage-backed public URLs and rejects retired /uploads paths. */
 export function normalizeAvatarUrl(url: string | null | undefined): string | null {
   if (!url) return null
   const normalized = normalizeToProxyPath(url)
@@ -47,9 +44,7 @@ export function normalizeAvatarUrl(url: string | null | undefined): string | nul
     const isYoutubeThumbnail = parsed.hostname === 'i.ytimg.com'
     const isMaxResVariant = /\/vi\/[^/]+\/maxresdefault\.jpg$/i.test(parsed.pathname)
 
-    // `maxresdefault.jpg` is missing for a subset of YouTube videos and
-    // produces noisy network errors in Lighthouse. Fall back to the more
-    // widely available `hqdefault.jpg` before the request starts.
+    // Some YouTube videos lack maxresdefault.jpg; avoid predictable Lighthouse failures.
     if (isYoutubeThumbnail && isMaxResVariant) {
       parsed.pathname = parsed.pathname.replace(/maxresdefault\.jpg$/i, 'hqdefault.jpg')
       return parsed.toString()

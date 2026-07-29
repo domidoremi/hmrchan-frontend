@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { useMasonryColumns } from '../useMasonryColumns'
 import type { PostListItem } from '@/api/postService'
 
-// 创建模拟帖子数据
 function createMockPost(id: number, thumbnailWidth = 300, thumbnailHeight = 400): PostListItem {
   return {
     id: `post-${id}`,
@@ -49,7 +48,6 @@ describe('useMasonryColumns', () => {
 
       distributePosts(posts, 300, false)
 
-      // 检查所有帖子都被分发了
       const totalPosts = columns.value.reduce((sum, col) => sum + col.length, 0)
       expect(totalPosts).toBe(3)
     })
@@ -84,7 +82,6 @@ describe('useMasonryColumns', () => {
     it('should calculate column width correctly', () => {
       const { getColumnWidth } = useMasonryColumns({ initialColumnCount: 3 })
 
-      // 容器宽度 1000px，3 列，间距 16px * 2 = 32px
       // (1000 - 32) / 3 = 322.67
       const width = getColumnWidth(1000)
       expect(width).toBeCloseTo(322.67, 1)
@@ -101,7 +98,6 @@ describe('useMasonryColumns', () => {
 
       distributePosts(posts, 300, false)
 
-      // 改变列数并重新分发
       columnCount.value = 4
       redistribute(posts, 250)
 
@@ -129,7 +125,6 @@ describe('useMasonryColumns', () => {
 
       distributePostsRoundRobin(posts, 0)
 
-      // 每列应该有 2 个帖子
       expect(columns.value[0]?.length).toBe(2)
       expect(columns.value[1]?.length).toBe(2)
       expect(columns.value[2]?.length).toBe(2)

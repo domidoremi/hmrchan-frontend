@@ -1,11 +1,4 @@
 #!/usr/bin/env bun
-/**
- * 前端健康巡检脚本（路由可用性 + 基础可访问性 + 控制台与网络错误）
- *
- * 用法：
- *   bun run scripts/frontend-health-check.ts
- *   FRONTEND_HEALTH_BASE_URL=http://localhost:5174 bun run scripts/frontend-health-check.ts
- */
 
 import puppeteer, { type Viewport, type Page } from 'puppeteer'
 import { mkdir, writeFile } from 'fs/promises'

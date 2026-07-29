@@ -1,8 +1,3 @@
-/**
- * 公开页面真实快照缓存
- * 优先保存最近一次成功的公开响应，用于异常时回退。
- */
-
 import { idbDelete, idbGet, idbPruneByIndex, idbSet, STORES } from './idb'
 import { CACHE_LIMITS, CACHE_TTL, UUIDV7_CUTOVER_EPOCH, generateCacheKey } from './config'
 import { memoryCache } from './memoryCache'

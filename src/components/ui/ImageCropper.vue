@@ -199,7 +199,6 @@ function onImageLoad() {
     height: displayHeight,
   }
 
-  // 计算图片在容器中的居中偏移
   imageOffset.value = {
     x: (containerRect.width - displayWidth) / 2,
     y: (containerRect.height - displayHeight) / 2,

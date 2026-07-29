@@ -547,7 +547,6 @@ import {
   resolveProfileDisplayName,
 } from '@/views/profile-settings/profileSettingsModel'
 
-// 动态导入大型组件以减少初始包体积
 const ImageCropper = defineAsyncComponent(() => import('@/components/ui/ImageCropper.vue'))
 
 const router = useRouter()
@@ -817,7 +816,6 @@ function formatDateTime(value?: string | null) {
   return formatOptionalDateTime(value, '—')
 }
 
-// 头像上传限制
 const AVATAR_LIMITS = {
   MAX_FILE_SIZE_MB: 5,
   ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
@@ -870,7 +868,7 @@ async function handleCroppedImage(blob: Blob) {
 
   try {
     const result = await userService.uploadAvatar(file)
-    // 文件名包含时间戳，本身就是唯一的，无需额外添加参数破坏缓存
+
     const cleanUrl = result.url
 
     if (profile.value) {
@@ -879,9 +877,9 @@ async function handleCroppedImage(blob: Blob) {
     if (authStore.user) {
       authStore.user.avatar_url = cleanUrl
     }
-    // 刷新全局头像缓存，确保导航栏等组件立即更新
+
     refreshAvatarCache()
-    // 同步更新 auth store 中的用户数据
+
     await authStore.fetchCurrentUser()
     toastStore.success(t('profile.avatarUpdated'))
   } catch (err) {

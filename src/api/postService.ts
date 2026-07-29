@@ -1,7 +1,3 @@
-/**
- * Posts Service - 帖子相关 API
- */
-
 import { apiClient, ApiError, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 
@@ -39,7 +35,7 @@ export interface PostListItem {
   media_count: number
   author_name?: string | null
   author_id?: string | null
-  // 兼容旧字段
+
   description?: string
   url?: string
   author_username?: string
@@ -110,7 +106,7 @@ export interface PostDetailResponse {
   original_author_avatar_url?: string | null
   media_files?: MediaFile[] | undefined
   tags?: string[] | undefined
-  // API spec 新增字段
+
   post_type?: string | undefined
   media_type?: string | null
   language?: string | null
@@ -132,7 +128,6 @@ export type PostListResponse = CursorCollectionResponse<PostListItem> & {
   items: PostListItem[]
 }
 
-/** 后端实际返回的文件结构 */
 interface RawFile {
   id: string
   file_name?: string
@@ -144,7 +139,6 @@ interface RawFile {
   mime_type?: string | null
 }
 
-/** 后端实际返回的帖子详情结构 */
 interface RawPostDetail {
   id: string
   platform: string
@@ -181,7 +175,7 @@ interface RawPostDetail {
   files?: RawFile[]
   tags?: string[]
   author_other_posts?: AuthorOtherPost[]
-  // 前端已有字段（兼容旧版后端）
+
   media_files?: MediaFile[]
   author_id?: string
   author_name?: string
@@ -195,12 +189,10 @@ interface RawPostDetail {
   subtitles?: MediaSubtitle[]
 }
 
-/** 将顶层字幕数组挂载到视频类型的 MediaFile 上 */
 function attachSubtitlesToVideos(files: MediaFile[] | undefined, subtitles: MediaSubtitle[]): void {
   if (!files?.length || !subtitles.length) return
   for (const file of files) {
     if (file.file_type === 'video') {
-      // 合并：保留已有字幕，追加顶层字幕（去重）
       const existing = file.subtitles ?? []
       const existingLangs = new Set(existing.map((s) => s.language))
       const newSubs = subtitles.filter((s) => !existingLangs.has(s.language))
@@ -209,10 +201,7 @@ function attachSubtitlesToVideos(files: MediaFile[] | undefined, subtitles: Medi
   }
 }
 
-/** 将后端原始响应映射为前端 PostDetailResponse */
 function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
-  // 如果已经有非空 media_files，说明后端格式已对齐，直接返回
-  // 注意：空数组 [] 不算有效，需要继续尝试从 files 字段映射
   if (raw.media_files && raw.media_files.length > 0) {
     return raw as unknown as PostDetailResponse
   }
@@ -232,7 +221,6 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
       created_at: raw.published_at ?? raw.created_at ?? '',
     }))
 
-  // 把顶层字幕挂到视频文件上
   const topLevelSubtitles = raw.subtitles
   if (mediaFiles && topLevelSubtitles?.length) {
     attachSubtitlesToVideos(mediaFiles, topLevelSubtitles)
@@ -278,7 +266,6 @@ export const postService = {
       cursor: params.cursor,
     })
 
-    // 列表端点使用无尾斜杠路径，避免与后端签名路径规范不一致
     const response = await apiClient.get<PostListResponse>(`/posts${query}`, config)
     return {
       ...response,
@@ -292,7 +279,7 @@ export const postService = {
     if (!postId || postId === 'undefined') {
       throw new ApiError('Invalid post ID', 400)
     }
-    // 详情页由组件自身渲染错误状态，避免重复全局 toast
+
     const raw = await apiClient.get<RawPostDetail>(`/posts/${postId}`, {
       skipErrorToast: true,
       ...config,

@@ -1,26 +1,13 @@
-/**
- * Vite 插件：自动内联关键 CSS
- * 在构建时将关键 CSS 注入到 HTML <head> 中
- *
- * 优化特性：
- * - 自动压缩 CSS (移除注释、空格、冗余分号)
- * - 优化 FCP (First Contentful Paint)
- * - 缓存 CSS 内容避免重复读取
- * - 详细的构建日志
- */
-
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { Plugin, ResolvedConfig } from 'vite'
 
+// Inlines a validated reset-layer subset so first paint is usable before full CSS loads.
+
 interface CriticalCSSOptions {
-  /** CSS 文件路径（相对于项目根目录） */
   path?: string
-  /** 是否启用压缩 */
   minify?: boolean
-  /** 是否启用详细日志 */
   verbose?: boolean
-  /** 是否在开发环境启用 */
   enableInDev?: boolean
 }
 
@@ -29,41 +16,27 @@ const CRITICAL_LAYER_PREAMBLE =
 const CRITICAL_LAYER_NAME = 'reset'
 const UNSAFE_CRITICAL_RESET_PATTERN = /\*,\*::before,\*::after\{[^}]*padding:0(?:[;}])[^}]*\}/i
 
-/**
- * 高效压缩 CSS
- * 移除注释、多余空格、冗余分号，保持最小体积
- *
- * 优化策略：
- * - 移除所有注释（块注释和行注释）
- * - 压缩空格和换行
- * - 移除符号周围的空格
- * - 优化单位值（0px → 0）
- * - 压缩颜色值（#ffffff → #fff）
- * - 合并重复的选择器
- */
 export function minifyCSS(css: string): string {
-  return (
-    css
-      // 移除注释
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/\/\/[^\n]*/g, '')
-      // 压缩空格
-      .replace(/\s+/g, ' ')
-      .replace(/\s*([{}:;,>~+])\s*/g, '$1')
-      .replace(/;}/g, '}')
-      .replace(/\s*!important/g, '!important')
-      // 优化单位值
-      .replace(/:\s*0(?:px|em|rem|%|vh|vw|vmin|vmax)/g, ':0')
-      .replace(/:\s*0\s+0\s+0\s+0(?![.\d])/g, ':0')
-      .replace(/:\s*0\s+0(?![.\d])/g, ':0')
-      // 优化颜色值
-      .replace(/#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3/gi, '#$1$2$3')
-      // 移除最后的分号
-      .replace(/;(?=})/g, '')
-      // 移除空规则
-      .replace(/[^{}]+\{\}/g, '')
-      .trim()
-  )
+  return css
+
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/[^\n]*/g, '')
+
+    .replace(/\s+/g, ' ')
+    .replace(/\s*([{}:;,>~+])\s*/g, '$1')
+    .replace(/;}/g, '}')
+    .replace(/\s*!important/g, '!important')
+
+    .replace(/:\s*0(?:px|em|rem|%|vh|vw|vmin|vmax)/g, ':0')
+    .replace(/:\s*0\s+0\s+0\s+0(?![.\d])/g, ':0')
+    .replace(/:\s*0\s+0(?![.\d])/g, ':0')
+
+    .replace(/#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3/gi, '#$1$2$3')
+
+    .replace(/;(?=})/g, '')
+
+    .replace(/[^{}]+\{\}/g, '')
+    .trim()
 }
 
 export function validateCriticalCSS(css: string): void {
@@ -92,7 +65,7 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
 
   let criticalCSS = ''
   let config: ResolvedConfig
-  let cssHash = '' // 用于缓存验证
+  let cssHash = ''
 
   return {
     name: 'vite-plugin-critical-css',
@@ -103,7 +76,6 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
     },
 
     buildStart() {
-      // 开发环境跳过（除非明确启用）
       if (config.command === 'serve' && !enableInDev) {
         return
       }
@@ -118,7 +90,6 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
 
         const rawCSS = readFileSync(absolutePath, 'utf-8')
 
-        // 生成 CSS hash 用于缓存验证
         cssHash = Buffer.from(rawCSS).toString('base64').slice(0, 8)
 
         const minifiedCSS = minify ? minifyCSS(rawCSS) : rawCSS
@@ -147,17 +118,14 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
         throw new Error('Critical CSS must be emitted as layered CSS')
       }
 
-      // 生成 style 标签（style-src 'unsafe-inline' 已覆盖）
       const styleTag = `<style id="critical-css" data-hash="${cssHash}">${criticalCSS}</style>`
       const styleBlock = `\n    ${styleTag}\n    <!-- Critical CSS inlined for FCP optimization -->`
 
-      // 优先插入到 <meta charset> 之后，避免触发 Lighthouse "charset too late"
       const charsetMetaRegex = /<meta\s+[^>]*charset\s*=\s*["']?[^"'>\s]+["']?[^>]*>\s*/i
       if (charsetMetaRegex.test(html)) {
         return html.replace(charsetMetaRegex, (matched) => `${matched}${styleBlock}\n`)
       }
 
-      // 无 charset 时，退化为插入到 <head> 最前面
       return html.replace(/<head([^>]*)>/i, `<head$1>${styleBlock}`)
     },
   }

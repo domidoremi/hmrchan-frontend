@@ -11,28 +11,21 @@ export interface TechItem {
 
 // QuickLink interface removed - repository is private
 
-/**
- * 从 package.json 版本号中提取主版本号
- * 例如: "^3.5.26" -> "3.5", "~5.9.3" -> "5.9", "npm:rolldown-vite@^7.3.1" -> "7.3"
- */
 export function extractVersion(version: string | undefined): string {
   if (!version?.trim()) return 'N/A'
 
   let normalized = version.trim()
 
-  // 处理 npm: 前缀的别名依赖（兼容 scoped 包名，如 npm:@scope/pkg@^1.2.3）
   if (normalized.startsWith('npm:')) {
     const aliasSeparator = normalized.lastIndexOf('@')
     if (aliasSeparator <= 4 || aliasSeparator >= normalized.length - 1) return 'N/A'
     normalized = normalized.slice(aliasSeparator + 1)
   }
 
-  // 移除 ^, ~, >= 等前缀
   const versionNumber = normalized.replace(/^[^\d]+/, '')
   const matched = versionNumber.match(/^(\d+)(?:\.(\d+))?/)
   if (!matched) return 'N/A'
 
-  // 提取主版本号和次版本号
   const major = matched[1]
   const minor = matched[2]
   return minor ? `${major}.${minor}` : major

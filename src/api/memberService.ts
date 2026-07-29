@@ -1,12 +1,4 @@
-/**
- * Member Service - 成员资料 API
- *
- * 静态数据，硬编码在后端，无需数据库
- */
-
 import { apiClient, type CursorCollectionResponse } from './client'
-
-// ========== 类型定义 ==========
 
 export interface MemberProfile {
   id: string
@@ -24,12 +16,7 @@ export interface MemberProfile {
   profile_url: string
 }
 
-// ========== 成员服务 ==========
-
 export const memberService = {
-  /**
-   * 获取全部成员资料
-   */
   async list(
     options: { limit?: number; cursor?: string | null } = {}
   ): Promise<CursorCollectionResponse<MemberProfile>> {
@@ -51,9 +38,6 @@ export const memberService = {
     }
   },
 
-  /**
-   * 获取单个成员资料
-   */
   async getById(memberId: string): Promise<MemberProfile> {
     return apiClient.get<MemberProfile>(`/members/${memberId}`, { skipAuth: true })
   },

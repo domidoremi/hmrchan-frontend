@@ -1,14 +1,5 @@
-/**
- * 设备信息工具
- *
- * 用于获取设备名称和类型，供登录/注册时传递给后端
- */
-
 import { getDeviceFingerprint } from './fingerprint'
 
-/**
- * 获取浏览器名称和版本
- */
 function getBrowserInfo(): { name: string; version: string } {
   const ua = navigator.userAgent
   let name = 'Browser'
@@ -39,9 +30,6 @@ function getBrowserInfo(): { name: string; version: string } {
   return { name, version }
 }
 
-/**
- * 获取操作系统名称和版本
- */
 function getOSInfo(): { name: string; version: string } {
   const ua = navigator.userAgent
   let name = 'Unknown'
@@ -52,7 +40,7 @@ function getOSInfo(): { name: string; version: string } {
     const match = ua.match(/Windows NT (\d+\.\d+)/)
     if (match?.[1]) {
       const ntVersion = match[1]
-      // 映射 NT 版本到 Windows 版本
+
       const versionMap: Record<string, string> = {
         '10.0': '10',
         '6.3': '8.1',
@@ -80,28 +68,19 @@ function getOSInfo(): { name: string; version: string } {
   return { name, version }
 }
 
-/**
- * 获取设备名称
- * 格式: "Browser on OS" (如 "Chrome on Windows")
- */
 export function getDeviceName(): string {
   const browser = getBrowserInfo()
   const os = getOSInfo()
   return `${browser.name} on ${os.name}`
 }
 
-/**
- * 获取设备类型
- */
 export function getDeviceType(): 'desktop' | 'mobile' | 'tablet' {
   const ua = navigator.userAgent
 
-  // 检测平板
   if (ua.includes('iPad') || (ua.includes('Android') && !ua.includes('Mobile'))) {
     return 'tablet'
   }
 
-  // 检测手机
   if (ua.includes('Mobile') || ua.includes('iPhone') || ua.includes('Android')) {
     return 'mobile'
   }
@@ -109,30 +88,18 @@ export function getDeviceType(): 'desktop' | 'mobile' | 'tablet' {
   return 'desktop'
 }
 
-/**
- * 获取屏幕分辨率
- */
 export function getScreenResolution(): string {
   return `${window.screen.width}x${window.screen.height}`
 }
 
-/**
- * 获取时区
- */
 export function getTimezone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone
 }
 
-/**
- * 获取语言
- */
 export function getLanguage(): string {
   return navigator.language
 }
 
-/**
- * 获取完整设备信息（不含指纹）
- */
 export function getDeviceInfo(): { device_name: string; device_type: string } {
   return {
     device_name: getDeviceName(),
@@ -140,9 +107,6 @@ export function getDeviceInfo(): { device_name: string; device_type: string } {
   }
 }
 
-/**
- * 获取完整设备信息（含指纹和额外信息）
- */
 export async function getFullDeviceInfo() {
   const browser = getBrowserInfo()
   const os = getOSInfo()

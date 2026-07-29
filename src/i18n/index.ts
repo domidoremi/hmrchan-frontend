@@ -1,8 +1,3 @@
-/**
- * Vue I18n Configuration
- * 支持按需加载语言包，减少首屏加载体积
- */
-
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import { getLocaleConfig, isCJKLocale } from '@/config/locale'
@@ -27,7 +22,6 @@ function isSupportedLocale(locale: string | null | undefined): locale is Support
   return typeof locale === 'string' && SUPPORTED_LOCALES.includes(locale as SupportedLocale)
 }
 
-// 获取用户首选语言
 function getDefaultLocale(): SupportedLocale {
   const saved = typeof window !== 'undefined' ? localStorage.getItem('locale') : null
   if (isSupportedLocale(saved)) return saved
@@ -101,10 +95,6 @@ export async function preloadActiveLocale(): Promise<SupportedLocale> {
   return locale
 }
 
-/**
- * 切换语言
- * 语言包按需加载，切换前确保目标语言已就绪
- */
 export async function setLocale(locale: SupportedLocale): Promise<void> {
   const resolvedLocale = await resolveLocale(locale)
   i18n.global.locale.value = resolvedLocale
@@ -112,7 +102,6 @@ export async function setLocale(locale: SupportedLocale): Promise<void> {
   applyLocaleToDocument(resolvedLocale)
 }
 
-// 初始化：尽早设置 HTML lang 属性和地区配置，避免首屏样式闪动
 applyLocaleToDocument(defaultLocale)
 
 export default i18n

@@ -595,18 +595,14 @@ async function handleResetPreferences() {
   try {
     await resetPreferences()
     toastStore.success(t('settings.preferencesReset'))
-  } catch {
-    // 错误提示由同步层统一处理
-  }
+  } catch {}
 }
 
 async function handleReplacePreferences() {
   try {
     await replacePreferences()
     toastStore.success(t('settings.preferencesReplaced'))
-  } catch {
-    // 错误提示由同步层统一处理
-  }
+  } catch {}
 }
 
 function resetVideoSettings() {

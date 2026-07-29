@@ -1,8 +1,3 @@
-/**
- * 离线操作队列管理
- * 用于存储离线时的点赞、收藏等操作，在网络恢复后同步
- */
-
 import {
   idbClear,
   idbDelete,
@@ -42,9 +37,6 @@ function createOfflineActionId(type: OfflineAction['type'], resourceId: string):
   return `${type}-${resourceId}-${timestamp}-${suffix}`
 }
 
-/**
- * 添加离线操作到队列
- */
 export async function addOfflineAction(
   type: OfflineAction['type'],
   resourceId: string,
@@ -71,7 +63,6 @@ export async function addOfflineAction(
 
   await idbSet(QUEUE_STORE, action)
 
-  // 触发后台同步（如果支持）
   if (
     'serviceWorker' in navigator &&
     'sync' in ServiceWorkerRegistration.prototype &&
@@ -89,9 +80,6 @@ export async function addOfflineAction(
   return id
 }
 
-/**
- * 获取所有待同步的操作
- */
 export async function getPendingActions(
   ownerId: string,
   now = Date.now()
@@ -173,9 +161,6 @@ export async function clearOfflineActions(): Promise<void> {
   await idbClear(QUEUE_STORE)
 }
 
-/**
- * 更新操作状态
- */
 export async function updateActionStatus(
   id: string,
   status: OfflineAction['status'],
@@ -192,16 +177,10 @@ export async function updateActionStatus(
   }
 }
 
-/**
- * 删除已完成的操作
- */
 export async function removeAction(id: string): Promise<void> {
   await idbDelete(QUEUE_STORE, id)
 }
 
-/**
- * 清理失败次数过多的操作
- */
 export async function cleanupFailedActions(ownerId?: string): Promise<number> {
   const actions = await idbGetAll<OfflineAction>(QUEUE_STORE)
   let cleaned = 0
@@ -216,9 +195,6 @@ export async function cleanupFailedActions(ownerId?: string): Promise<number> {
   return cleaned
 }
 
-/**
- * 获取队列统计
- */
 export async function getQueueStats(): Promise<{
   total: number
   pending: number
@@ -233,9 +209,6 @@ export async function getQueueStats(): Promise<{
   }
 }
 
-/**
- * 检查是否有待同步的操作
- */
 export async function hasPendingActions(): Promise<boolean> {
   const stats = await getQueueStats()
   return stats.pending > 0 || stats.failed > 0

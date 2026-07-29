@@ -1,39 +1,17 @@
-/**
- * 性能优化工具集
- * 减少回流与重绘、避免布局抖动、GPU 加速辅助
- */
-
-/**
- * 批量读取 DOM 布局属性，避免读写交织导致的布局抖动
- * 将所有读取操作收集后统一执行，再执行写入操作
- */
 export function batchDOMRead<T>(reader: () => T): T {
-  // 强制同步布局，确保读取最新值
   return reader()
 }
 
-/**
- * 批量写入 DOM，使用 requestAnimationFrame 合并到下一帧
- */
 export function batchDOMWrite(writer: () => void): void {
   requestAnimationFrame(writer)
 }
 
-/**
- * 读写分离的 DOM 操作调度器
- * 先批量读取所有需要的布局值，再批量写入
- */
 export function scheduleDOMUpdate<T>(read: () => T, write: (values: T) => void): void {
-  // 在当前帧读取
   const values = read()
-  // 在下一帧写入
+
   requestAnimationFrame(() => write(values))
 }
 
-/**
- * 使用 DocumentFragment 批量插入 DOM 节点
- * 减少多次插入导致的回流
- */
 export function batchInsertNodes(parent: Element, createNodes: () => Node[]): void {
   const fragment = document.createDocumentFragment()
   const nodes = createNodes()
@@ -41,13 +19,10 @@ export function batchInsertNodes(parent: Element, createNodes: () => Node[]): vo
   requestAnimationFrame(() => parent.appendChild(fragment))
 }
 
-/**
- * 缓存布局值，避免重复读取导致的强制同步布局
- */
 export class LayoutCache {
   private cache = new Map<string, { value: unknown; timestamp: number }>()
-  private maxAge = 16 // 约一帧的时间 (ms)
-  private maxSize = 100 // 防止快速调用时无限增长
+  private maxAge = 16
+  private maxSize = 100
 
   get<T>(key: string, getter: () => T): T {
     const cached = this.cache.get(key)
@@ -57,7 +32,6 @@ export class LayoutCache {
       return cached.value as T
     }
 
-    // 容量保护：淘汰最旧条目
     if (this.cache.size >= this.maxSize) {
       const oldest = this.cache.keys().next().value
       if (oldest !== undefined) this.cache.delete(oldest)
@@ -77,14 +51,8 @@ export class LayoutCache {
   }
 }
 
-/**
- * 全局布局缓存实例
- */
 export const layoutCache = new LayoutCache()
 
-/**
- * 防抖函数 - 适用于 resize/scroll 等高频事件
- */
 export function debounce<T extends (...args: Parameters<T>) => void>(
   fn: T,
   delay: number
@@ -110,9 +78,6 @@ export function debounce<T extends (...args: Parameters<T>) => void>(
   return debounced
 }
 
-/**
- * 节流函数 - 使用 requestAnimationFrame 限制执行频率
- */
 export type ThrottledRafHandler<T extends unknown[]> = ((...args: T) => void) & {
   cancel?: () => void
 }
@@ -144,10 +109,6 @@ export function throttleRAF<T extends unknown[]>(fn: (...args: T) => void): Thro
   return throttled
 }
 
-/**
- * 使用 Intersection Observer 实现懒加载
- * 比滚动事件监听更高效
- */
 export function createLazyObserver(
   callback: (entry: IntersectionObserverEntry) => void,
   options: IntersectionObserverInit = {}
@@ -168,17 +129,10 @@ export function createLazyObserver(
   )
 }
 
-/**
- * 检测是否支持 will-change 优化
- */
 export function supportsWillChange(): boolean {
   return CSS.supports('will-change', 'transform')
 }
 
-/**
- * 为元素添加 GPU 加速
- * 使用 transform: translateZ(0) 或 will-change
- */
 export function enableGPUAcceleration(element: HTMLElement): void {
   if (supportsWillChange()) {
     element.style.willChange = 'transform, opacity'
@@ -187,18 +141,12 @@ export function enableGPUAcceleration(element: HTMLElement): void {
   element.style.backfaceVisibility = 'hidden'
 }
 
-/**
- * 移除 GPU 加速（释放合成层资源）
- */
 export function disableGPUAcceleration(element: HTMLElement): void {
   element.style.willChange = 'auto'
   element.style.transform = ''
   element.style.backfaceVisibility = ''
 }
 
-/**
- * 在空闲时执行任务
- */
 export function runWhenIdle(task: () => void, timeout = 2000): () => void {
   if (typeof window === 'undefined') return () => {}
 
@@ -240,9 +188,6 @@ export function runWhenIdle(task: () => void, timeout = 2000): () => void {
   }
 }
 
-/**
- * 预加载关键资源（带去重，避免重复插入 link 元素）
- */
 export function preloadResource(
   url: string,
   as: 'script' | 'style' | 'image' | 'font' | 'fetch' = 'fetch'
@@ -262,9 +207,6 @@ export function preloadResource(
   document.head.appendChild(link)
 }
 
-/**
- * 预连接到指定域名（带去重，避免重复插入 link 元素）
- */
 export function preconnect(url: string): void {
   if (document.querySelector(`link[rel="preconnect"][href="${CSS.escape(url)}"]`)) return
 
@@ -277,10 +219,6 @@ export function preconnect(url: string): void {
 
 const pendingDecodedImages = new Map<string, Promise<void>>()
 
-/**
- * 预热图片并在支持时提前 decode，减少切图时的空白帧。
- * 仅对进行中的相同 URL 请求做去重，完成后释放引用。
- */
 export function warmDecodedImage(url: string | null | undefined): Promise<void> {
   if (typeof window === 'undefined' || typeof Image === 'undefined' || !url) {
     return Promise.resolve()
@@ -336,9 +274,6 @@ export function warmDecodedImage(url: string | null | undefined): Promise<void> 
   return promise
 }
 
-/**
- * 使用 CSS contain 属性优化渲染
- */
 export function applyContainment(
   element: HTMLElement,
   value: 'strict' | 'content' | 'size' | 'layout' | 'paint' | 'style' = 'content'
@@ -346,18 +281,12 @@ export function applyContainment(
   element.style.contain = value
 }
 
-/**
- * 检测用户是否偏好减少动画
- */
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') return false
   if (typeof window.matchMedia !== 'function') return false
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-/**
- * 获取安全的动画时长（尊重用户偏好）
- */
 export function getAnimationDuration(defaultMs: number): number {
   return prefersReducedMotion() ? 0 : defaultMs
 }

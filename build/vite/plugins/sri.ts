@@ -1,21 +1,11 @@
-/**
- * Vite Plugin: Subresource Integrity (SRI)
- *
- * 构建完成后为 dist/index.html 中的 <script> 和 <link> 标签
- * 注入 integrity 属性（SHA-384 哈希），防止资源被篡改。
- *
- * 仅处理同源资源（/assets/... 路径），跳过外部 URL。
- */
-
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import type { Plugin } from 'vite'
 
 interface SRIPluginOptions {
-  /** 哈希算法，默认 sha384 */
   algorithm?: 'sha256' | 'sha384' | 'sha512'
-  /** 是否启用详细日志 */
+
   verbose?: boolean
 }
 

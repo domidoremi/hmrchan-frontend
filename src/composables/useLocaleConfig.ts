@@ -1,14 +1,3 @@
-/**
- * Locale Configuration Composable
- *
- * 为不同语言/地区提供差异化配置：
- * - 日期/数字格式化
- * - 地区配色方案
- * - 布局密度偏好
- * - 交互风格
- * - 内容展示偏好
- */
-
 import { computed, watchEffect, onScopeDispose } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SupportedLocale } from '@/i18n'
@@ -24,8 +13,6 @@ import {
   getLocaleConfig,
   isCJKLocale,
 } from '@/config/locale'
-
-/* ---------- Intl 格式化配置 ---------- */
 
 interface IntlConfig {
   /** BCP 47 locale tag for Intl APIs */
@@ -93,34 +80,23 @@ const intlConfigs: Record<SupportedLocale, IntlConfig> = {
   },
 }
 
-/* ---------- CSS 变量同步 ---------- */
-
-/**
- * 将 locale 配置写入 document CSS 变量，
- * 使纯 CSS 组件也能消费地区差异化样式。
- */
 function applyLocaleCSSVariables(locale: string, config: LocaleConfig): void {
   if (typeof document === 'undefined') return
 
   const root = document.documentElement
 
-  // data-locale 属性（供 CSS 选择器使用）
   root.setAttribute('data-locale', locale)
 
-  // 布局密度
   root.setAttribute('data-locale-density', config.layout.density)
 
-  // CJK 标记
   if (isCJKLocale(locale)) {
     root.setAttribute('data-cjk', '')
   } else {
     root.removeAttribute('data-cjk')
   }
 
-  // 交互风格
   root.setAttribute('data-locale-animation', config.interaction.animationStyle)
 
-  // 配色 CSS 变量
   const { colors } = config
   root.style.setProperty('--locale-accent', colors.accent)
   root.style.setProperty('--locale-accent-rgb', colors.accentRgb)
@@ -129,14 +105,12 @@ function applyLocaleCSSVariables(locale: string, config: LocaleConfig): void {
   root.style.setProperty('--locale-secondary', colors.secondary)
   root.style.setProperty('--locale-secondary-rgb', colors.secondaryRgb)
 
-  // 布局 CSS 变量
   const { layout } = config
   root.style.setProperty('--locale-card-gap-multiplier', String(layout.cardGapMultiplier))
   root.style.setProperty('--locale-content-max-ch', `${layout.contentMaxCh}ch`)
   root.style.setProperty('--locale-paragraph-indent', `${layout.paragraphIndent}em`)
   root.style.setProperty('--locale-heading-weight', String(layout.headingWeight))
 
-  // 交互 CSS 变量
   const { interaction } = config
   root.style.setProperty('--locale-hover-intensity', String(interaction.hoverIntensity))
 
@@ -163,10 +137,8 @@ export function useLocaleConfig() {
 
   const currentLocale = computed(() => locale.value as SupportedLocale)
 
-  /** 完整地区配置 */
   const localeConfig = computed<LocaleConfig>(() => getLocaleConfig(locale.value))
 
-  /** Intl 格式化配置 */
   const intlConfig = computed(() => intlConfigs[currentLocale.value] ?? intlConfigs.en)
   const dateFormatter = computed(
     () => new Intl.DateTimeFormat(intlConfig.value.bcp47, intlConfig.value.dateShort)
@@ -188,41 +160,29 @@ export function useLocaleConfig() {
     () => new Intl.RelativeTimeFormat(intlConfig.value.bcp47, { numeric: 'auto' })
   )
 
-  /** 配色方案 */
   const colors = computed<LocaleColorScheme>(() => localeConfig.value.colors)
 
-  /** 布局偏好 */
   const layout = computed<LocaleLayoutConfig>(() => localeConfig.value.layout)
 
-  /** 交互偏好 */
   const interaction = computed<LocaleInteractionConfig>(() => localeConfig.value.interaction)
 
-  /** 内容展示偏好 */
   const content = computed<LocaleContentConfig>(() => localeConfig.value.content)
 
-  /** 排版偏好 */
   const typography = computed<LocaleTypographyConfig>(() => localeConfig.value.typography)
 
-  /** 可访问性偏好 */
   const accessibility = computed<LocaleAccessibilityConfig>(() => localeConfig.value.accessibility)
 
-  /** 垂直对齐与基线微调 */
   const alignment = computed<LocaleAlignmentConfig>(() => localeConfig.value.alignment)
 
-  /** 是否为 CJK 语言 */
   const isCJK = computed(() => isCJKLocale(locale.value))
 
-  /** 内容密度 class 名 */
   const densityClass = computed(() => `density-${localeConfig.value.layout.density}`)
 
-  // 自动同步 CSS 变量
   const stop = watchEffect(() => {
     applyLocaleCSSVariables(locale.value, localeConfig.value)
   })
 
   onScopeDispose(stop)
-
-  /* ---------- 格式化工具 ---------- */
 
   function formatDate(dateStr: string): string {
     const date = parseDate(dateStr)
@@ -245,7 +205,6 @@ export function useLocaleConfig() {
     return compactNumberFormatter.value.format(n)
   }
 
-  /** 相对时间格式化 (e.g. "3 分钟前", "2 hours ago") */
   function formatRelativeTime(dateStr: string): string {
     const date = parseDate(dateStr)
     const now = Date.now()
@@ -260,23 +219,19 @@ export function useLocaleConfig() {
     const days = Math.floor(hours / 24)
     if (days < 30) return relativeTimeFormatter.value.format(-days, 'day')
 
-    // 超过 30 天回退到绝对日期
     return formatDate(dateStr)
   }
 
-  /** 根据 content.dateStyle 智能选择日期格式 */
   function formatSmartDate(dateStr: string): string {
     const style = localeConfig.value.content.dateStyle
     if (style === 'relative') return formatRelativeTime(dateStr)
     if (style === 'absolute') return formatDate(dateStr)
 
-    // mixed: 7 天内用相对时间，之后用绝对日期
     const date = parseDate(dateStr)
     const daysDiff = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24)
     return daysDiff < 7 ? formatRelativeTime(dateStr) : formatDate(dateStr)
   }
 
-  /** 文本截断 */
   function truncateText(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text
     return text.slice(0, maxLength) + localeConfig.value.content.ellipsis

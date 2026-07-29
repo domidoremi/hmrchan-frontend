@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-/**
- * Lighthouse 性能审计脚本
- * 用于分析前端性能问题并生成报告
- */
 
 import lighthouse from 'lighthouse'
 import * as chromeLauncher from 'chrome-launcher'
@@ -49,7 +45,12 @@ async function runLighthouse() {
         try {
           const parsed = new URL(url)
           const raw = `${parsed.hostname}${parsed.pathname}`
-          return raw.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'report'
+          return (
+            raw
+              .replace(/[^a-z0-9]+/gi, '-')
+              .replace(/^-+|-+$/g, '')
+              .toLowerCase() || 'report'
+          )
         } catch {
           return 'report'
         }
@@ -72,19 +73,23 @@ async function runLighthouse() {
       console.log(`🎯 SEO: ${Math.round(categories.seo.score * 100)}/100`)
 
       console.log('\n⏱️  Core Web Vitals:')
-      console.log(`   FCP (First Contentful Paint): ${audits['first-contentful-paint'].displayValue}`)
-      console.log(`   LCP (Largest Contentful Paint): ${audits['largest-contentful-paint'].displayValue}`)
+      console.log(
+        `   FCP (First Contentful Paint): ${audits['first-contentful-paint'].displayValue}`
+      )
+      console.log(
+        `   LCP (Largest Contentful Paint): ${audits['largest-contentful-paint'].displayValue}`
+      )
       console.log(`   TBT (Total Blocking Time): ${audits['total-blocking-time'].displayValue}`)
-      console.log(`   CLS (Cumulative Layout Shift): ${audits['cumulative-layout-shift'].displayValue}`)
+      console.log(
+        `   CLS (Cumulative Layout Shift): ${audits['cumulative-layout-shift'].displayValue}`
+      )
       console.log(`   SI (Speed Index): ${audits['speed-index'].displayValue}`)
 
-      // 网络请求分析
       const networkRequests = audits['network-requests']
       if (networkRequests?.details?.items) {
         const items = networkRequests.details.items
         console.log(`\n📡 Network Requests: ${items.length} total`)
 
-        // 按类型分组
         const byType = {}
         let totalSize = 0
         items.forEach((item) => {
@@ -105,7 +110,6 @@ async function runLighthouse() {
         console.log(`\n   Total Transfer Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`)
       }
 
-      // 优化建议
       console.log('\n💡 Optimization Opportunities:')
       const opportunities = [
         'render-blocking-resources',
@@ -132,7 +136,6 @@ async function runLighthouse() {
     }
 
     console.log(`\n✅ Reports saved to: ${reportsDir}`)
-
   } catch (error) {
     console.error('❌ Lighthouse audit failed:', error.message)
   } finally {

@@ -1,8 +1,3 @@
-/**
- * 后台同步管理器
- * 处理离线操作队列的同步
- */
-
 import {
   claimNextOfflineAction,
   completeClaimedAction,
@@ -25,9 +20,6 @@ let authSessionUnsubscribe: (() => void) | null = null
 let swSyncListenerAttached = false
 let swSyncHandler: ((event: MessageEvent) => void) | null = null
 
-/**
- * 同步所有待处理的离线操作
- */
 export async function syncOfflineActions(ownerId: string | null | undefined): Promise<{
   success: number
   failed: number
@@ -75,7 +67,6 @@ export async function syncOfflineActions(ownerId: string | null | undefined): Pr
         if (!leaseId) throw new Error('Offline action claim is missing its lease')
         let handledAsFailure = false
 
-        // 根据操作类型执行相应的 API 调用
         switch (action.type) {
           case 'like': {
             await postService.likePost(action.resourceId, { signal: operation.signal })
@@ -132,7 +123,7 @@ export async function syncOfflineActions(ownerId: string | null | undefined): Pr
           if (action.leaseId) await releaseAction(operation, action.id, action.leaseId)
           break
         }
-        // 失败后更新状态并增加重试计数
+
         if (action.leaseId) {
           await failClaimedAction(action.id, action.leaseId)
         }
@@ -183,9 +174,6 @@ export function disposeSwSyncListener(): void {
   swSyncListenerAttached = false
 }
 
-/**
- * 手动触发同步
- */
 export async function triggerSync(ownerId: string | null | undefined): Promise<void> {
   if (!ownerId) return
 
@@ -204,7 +192,6 @@ export async function triggerSync(ownerId: string | null | undefined): Promise<v
       await syncOfflineActions(ownerId)
     }
   } else {
-    // 不支持后台同步，直接执行
     await syncOfflineActions(ownerId)
   }
 }
@@ -234,10 +221,6 @@ export function setupAutoSync(getOwnerId: () => string | null | undefined): void
   }
 }
 
-/**
- * 监听来自 Service Worker 的同步请求
- * 用于 SW 在后台同步时无法携带 auth 的场景
- */
 export function setupSwSyncListener(getOwnerId: () => string | null | undefined): void {
   if (typeof window === 'undefined') return
   if (!('serviceWorker' in navigator)) return

@@ -1,16 +1,12 @@
 <template>
   <div class="post-card-skeleton glass-card">
-    <!-- 图片区域 - 与 PostCard 完全匹配 -->
     <div class="skeleton-image-wrapper" :style="imageWrapperStyle">
-      <!-- Platform Badge 占位 -->
       <div class="skeleton-platform-badge glass-skeleton glass-skeleton--wave" />
-      <!-- 图片占位 -->
+
       <div class="skeleton-image glass-skeleton glass-skeleton--wave" />
     </div>
 
-    <!-- 内容区域 - 与 PostCard 完全匹配 -->
     <div v-if="showContent" class="skeleton-content">
-      <!-- 标题：两行，与 PostCard 的 line-clamp-2 匹配 -->
       <div class="skeleton-title-wrapper">
         <div class="skeleton-title glass-skeleton glass-skeleton--wave" />
         <div class="skeleton-title skeleton-title--short glass-skeleton glass-skeleton--wave" />
@@ -21,7 +17,6 @@
         <div class="skeleton-line skeleton-line--short glass-skeleton glass-skeleton--wave" />
       </div>
 
-      <!-- Meta 区域 -->
       <div class="skeleton-meta">
         <div class="skeleton-author-wrapper">
           <div class="skeleton-avatar glass-skeleton glass-skeleton--wave" />
@@ -40,9 +35,8 @@
 import { computed } from 'vue'
 
 interface Props {
-  /** 是否显示内容区域 */
   showContent?: boolean
-  /** 自定义宽高比 */
+
   aspectRatio?: string | number
 }
 
@@ -69,7 +63,6 @@ const imageWrapperStyle = computed(() => ({
     var(--glass-bg);
 }
 
-/* ========== 图片区域 ========== */
 .skeleton-image-wrapper {
   position: relative;
   width: 100%;
@@ -102,7 +95,6 @@ const imageWrapperStyle = computed(() => ({
   border-radius: 0;
 }
 
-/* ========== 内容区域 ========== */
 .skeleton-content {
   display: grid;
   gap: var(--spacing-3);
@@ -140,7 +132,6 @@ const imageWrapperStyle = computed(() => ({
   width: 72%;
 }
 
-/* ========== Meta 区域 ========== */
 .skeleton-meta {
   display: flex;
   align-items: center;
@@ -181,7 +172,6 @@ const imageWrapperStyle = computed(() => ({
   border-radius: var(--radius-sm);
 }
 
-/* ========== 交错动画延迟 ========== */
 .post-card-skeleton .skeleton-platform-badge {
   animation-delay: 0ms;
 }

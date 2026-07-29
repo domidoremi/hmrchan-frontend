@@ -1,7 +1,3 @@
-/**
- * Comments Store - 评论状态管理
- */
-
 import { ref, shallowRef, triggerRef, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
 import { registerPrivateSessionReset } from '@/services/privateSessionState'
@@ -15,7 +11,6 @@ import {
   type RequestConfig,
 } from '@/api'
 
-/** 最多缓存多少个帖子的评论，超限时 FIFO 淘汰最早的 */
 const MAX_CACHED_POSTS = 20
 
 export const useCommentsStore = defineStore('comments', () => {
@@ -68,7 +63,6 @@ export const useCommentsStore = defineStore('comments', () => {
     fetchRepliesTokens.clear()
   }
 
-  // 获取某个帖子的评论
   function getCommentsByPostId(postId: string): Comment[] {
     return comments.value.get(postId) || []
   }
@@ -154,14 +148,12 @@ export const useCommentsStore = defineStore('comments', () => {
     })
   }
 
-  // 获取评论数量
   function getCommentsCount(postId: string): number {
     const postComments = comments.value.get(postId)
     if (!postComments) return 0
     return postComments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)
   }
 
-  // 获取评论
   async function fetchComments(
     postId: string,
     sort: 'newest' | 'oldest' | 'popular' = 'newest',
@@ -216,7 +208,6 @@ export const useCommentsStore = defineStore('comments', () => {
       const items = sortComments(normalizeCommentList(data.items || []), sort)
       comments.value.set(postId, items)
 
-      // 淘汰超限的帖子评论缓存（FIFO：Map 迭代顺序即插入顺序）
       while (comments.value.size > MAX_CACHED_POSTS) {
         const oldestKey = comments.value.keys().next().value
         if (oldestKey !== undefined) comments.value.delete(oldestKey)
@@ -241,9 +232,7 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 获取评论回复
   async function fetchReplies(commentId: string, postId?: string, config?: RequestConfig) {
-    // 如果调用方提供了 postId，直接使用，避免遍历查找
     if (postId) {
       const postComments = comments.value.get(postId)
       if (postComments && findComment(postComments, commentId)) {
@@ -251,7 +240,6 @@ export const useCommentsStore = defineStore('comments', () => {
       }
     }
 
-    // 降级：遍历查找（兼容未传 postId 的调用方）
     for (const [pId, pComments] of comments.value.entries()) {
       const found = findComment(pComments, commentId)
       if (found) {
@@ -262,7 +250,6 @@ export const useCommentsStore = defineStore('comments', () => {
     return { success: false, error: 'comment.notFound' }
   }
 
-  // 内部专用：已知 postId 的回复获取
   async function fetchRepliesForPost(postId: string, commentId: string, config?: RequestConfig) {
     const requestKey = buildRepliesRequestKey(postId, String(commentId))
     const externalSignal = config?.signal
@@ -294,9 +281,7 @@ export const useCommentsStore = defineStore('comments', () => {
         return { success: false, error: 'aborted' as const }
       }
 
-      // 更新本地状态
       if (data.items && data.items.length > 0) {
-        // 递归查找并更新 replies
         const postComments = comments.value.get(postId) || []
 
         const fetchedReplies = normalizeCommentList((data.items ?? []) as unknown as Comment[])
@@ -304,7 +289,6 @@ export const useCommentsStore = defineStore('comments', () => {
         const updateCommentReplies = (list: Comment[]): Comment[] => {
           return list.map((c) => {
             if (String(c.id) === String(commentId)) {
-              // 合并现有的回复和新获取的回复，去重
               const existingReplies: Comment[] = normalizeCommentList(c.replies || [])
               const existingIds = new Set(existingReplies.map((r) => String(r.id)))
               const newReplies = fetchedReplies.filter((r) => !existingIds.has(String(r.id)))
@@ -355,9 +339,7 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 添加评论
   async function addComment(postId: string, formData: CommentFormData) {
-    // 速率限制检查
     if (!commentRateLimiter.canProceed()) {
       const remaining = Math.ceil(commentRateLimiter.getRemainingTime() / 1000)
       return {
@@ -367,13 +349,11 @@ export const useCommentsStore = defineStore('comments', () => {
       }
     }
 
-    // 验证内容
     const validation = validateComment(formData.content)
     if (!validation.valid) {
       return { success: false, error: validation.error }
     }
 
-    // 清理内容
     const sanitizedContent = sanitizeComment(formData.content)
 
     isLoading.value = true
@@ -399,15 +379,10 @@ export const useCommentsStore = defineStore('comments', () => {
         images: hydratedImages,
       })
 
-      // 记录速率限制
       commentRateLimiter.record()
 
-      // 更新本地状态
-      // 后端返回的 newComment 已包含 is_thread_owner, replied_to_user, replies 等字段
       const postComments = comments.value.get(postId) || []
       if (formData.parent_id) {
-        // 回复 - 递归查找并更新父评论的 replies 数组
-        // 确保 ID 类型一致（统一转为字符串比对）
         const parentIdStr = String(formData.parent_id)
         const updateReplies = (commentList: Comment[]): Comment[] => {
           return commentList.map((comment) => {
@@ -430,7 +405,6 @@ export const useCommentsStore = defineStore('comments', () => {
         }
         comments.value.set(postId, updateReplies(postComments))
       } else {
-        // 顶级评论 - 后端返回的数据已包含 is_thread_owner: true
         comments.value.set(postId, [normalizedNewComment, ...postComments])
       }
       touchComments()
@@ -444,12 +418,10 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 删除评论
   async function deleteComment(postId: string, commentId: string) {
     try {
       await apiClient.delete(`/comments/${commentId}`, { skipErrorToast: true })
 
-      // 更新本地状态 - 原地递归删除 + 浅拷贝触发响应式
       const postComments = comments.value.get(postId) || []
       removeComment(postComments, commentId)
       comments.value.set(postId, [...postComments])
@@ -461,12 +433,10 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 点赞评论
   async function likeComment(commentId: string) {
     try {
       await commentService.likeComment(commentId, { skipErrorToast: true })
 
-      // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
         comment.is_liked = true
         const nextLikeCount = getCommentLikeCount(comment) + 1
@@ -480,12 +450,10 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 取消点赞
   async function unlikeComment(commentId: string) {
     try {
       await commentService.unlikeComment(commentId, { skipErrorToast: true })
 
-      // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
         comment.is_liked = false
         const nextLikeCount = Math.max(0, getCommentLikeCount(comment) - 1)
@@ -499,7 +467,6 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 收藏评论
   async function favoriteComment(commentId: string) {
     try {
       await commentService.favoriteComment(commentId, { skipErrorToast: true })
@@ -514,7 +481,6 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 取消收藏评论
   async function unfavoriteComment(commentId: string) {
     try {
       await commentService.unfavoriteComment(commentId, { skipErrorToast: true })
@@ -529,7 +495,6 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 举报评论
   async function reportComment(commentId: string, reason: string, description?: string) {
     try {
       await commentService.reportComment(commentId, reason, description, { skipErrorToast: true })
@@ -540,7 +505,6 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 辅助函数：在评论树中查找评论
   function findComment(commentList: Comment[], commentId: string): Comment | null {
     const commentIdStr = String(commentId)
     for (const comment of commentList) {
@@ -553,7 +517,6 @@ export const useCommentsStore = defineStore('comments', () => {
     return null
   }
 
-  // 辅助函数：从评论树中移除评论
   function removeComment(commentList: Comment[], commentId: string): boolean {
     const commentIdStr = String(commentId)
     const index = commentList.findIndex((c) => String(c.id) === commentIdStr)
@@ -572,7 +535,6 @@ export const useCommentsStore = defineStore('comments', () => {
     return false
   }
 
-  // 辅助函数：更新所有帖子中的某个评论
   function updateCommentInAll(commentId: string, updater: (comment: Comment) => void) {
     let hasUpdated = false
     comments.value.forEach((postComments, postId) => {
@@ -588,7 +550,6 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 清空某个帖子的评论缓存
   function clearPostComments(postId: string) {
     if (currentFetchingPostId === postId) {
       abortFetchCommentsRequest()
@@ -602,7 +563,6 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
-  // 清空所有评论缓存
   function clearAllComments() {
     abortFetchCommentsRequest()
     abortAllFetchRepliesRequests()

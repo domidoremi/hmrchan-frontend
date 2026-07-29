@@ -9,10 +9,6 @@ import { useToastStore } from '@/stores/toast'
 import { useI18n } from 'vue-i18n'
 import { isVerificationCancelledError } from '@/api/verificationBridge'
 
-/**
- * 按设备指纹去重，保留每个物理设备最近活跃的会话
- * 没有 fingerprint 的会话保持原样
- */
 function deduplicateByDevice(devices: Device[]): Device[] {
   const byFingerprint = new Map<string, Device>()
   const noFingerprint: Device[] = []
@@ -30,7 +26,6 @@ function deduplicateByDevice(devices: Device[]): Device[] {
       continue
     }
 
-    // 保留 is_current 的会话，否则保留最近活跃的
     if (device.is_current) {
       byFingerprint.set(fp, device)
     } else if (!existing.is_current) {

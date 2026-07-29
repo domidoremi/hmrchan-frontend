@@ -1,14 +1,6 @@
-/**
- * Design Tokens - 设计系统核心变量
- *
- * 基于 8px 网格系统，提供一致的视觉语言
- * UI Overhaul v2.0 - 增强版设计系统
- */
-
 :root {
   /* ========== Colors ========== */
 
-  /* Primary - 简约石墨黑体系 (zinc) */
   --color-primary: #18181b;
   --color-primary-rgb: 24, 24, 27;
   --color-primary-alpha: rgba(24, 24, 27, 0.08);
@@ -27,13 +19,11 @@
   --color-primary-800: #27272a;
   --color-primary-900: #18181b;
 
-  /* Accent - 清新绿色（沿用 MindMarket 绿） */
   --color-accent: #22c55e;
   --color-accent-rgb: 34, 197, 94;
   --color-accent-light: #4ade80;
   --color-accent-dark: #16a34a;
 
-  /* Legacy MindMarket RGB aliases（用于渐变背景兼容，避免全局样式依赖） */
   --mm-green-rgb: 74, 222, 128;
   --mm-teal-rgb: 45, 212, 191;
   --mm-purple-rgb: 167, 139, 250;
@@ -41,13 +31,11 @@
   --mm-orange-rgb: 251, 146, 60;
   --mm-yellow-rgb: 251, 191, 36;
 
-  /* Secondary - 中性灰 (zinc) */
   --color-secondary: #a1a1aa;
   --color-secondary-rgb: 161, 161, 170;
   --color-secondary-light: #d4d4d8;
   --color-secondary-dark: #71717a;
 
-  /* Semantic Colors - 更鲜明的语义色 */
   --color-success: #10b981;
   --color-success-rgb: 16, 185, 129;
   --color-success-alpha: rgba(16, 185, 129, 0.1);
@@ -65,7 +53,6 @@
   --color-info-alpha: rgba(59, 130, 246, 0.1);
   --color-info-hover: #2563eb;
 
-  /* Neutral - 灰度 */
   --color-white: #ffffff;
   --color-black: #000000;
   --color-gray-50: #f8fafc;
@@ -86,11 +73,9 @@
   --color-background: var(--color-gray-50);
   --color-border: var(--color-gray-200);
 
-  /* Background aliases (兼容旧变量命名) */
   --color-bg-secondary: var(--color-gray-100);
   --color-bg-tertiary: var(--color-gray-50);
 
-  /* Surface Elevation System - 表面层级 */
   --color-surface-1: rgba(0, 0, 0, 0.02);
   --color-surface-2: rgba(0, 0, 0, 0.04);
   --color-surface-3: rgba(0, 0, 0, 0.06);
@@ -227,7 +212,6 @@
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 
-  /* ========== Glass Morphism - 增强版 ========== */
   --glass-bg: rgba(255, 255, 255, 0.72);
   --glass-bg-light: rgba(255, 255, 255, 0.45);
   --glass-bg-strong: rgba(255, 255, 255, 0.88);
@@ -243,29 +227,24 @@
   --glass-glow: 0 0 24px rgba(var(--color-primary-rgb), 0.3);
   --glass-glow-accent: 0 0 24px rgba(var(--color-accent-rgb), 0.25);
 
-  /* 玻璃阴影层级 */
   --glass-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02);
   --glass-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
   --glass-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1), 0 32px 96px rgba(0, 0, 0, 0.06);
   --glass-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1), 0 16px 48px rgba(0, 0, 0, 0.06);
 
-  /* 玻璃背景层级 */
   --glass-bg-ultra-light: rgba(255, 255, 255, 0.6);
   --glass-bg-medium: rgba(255, 255, 255, 0.3);
   --glass-bg-dark: rgba(255, 255, 255, 0.15);
 
-  /* 玻璃边框层级 */
   --glass-border-light: rgba(255, 255, 255, 0.4);
   --glass-border-medium: rgba(255, 255, 255, 0.25);
 
-  /* 模糊值 */
   --blur-xs: 0.25rem;
   --blur-sm: 0.5rem;
   --blur-md: 0.75rem;
   --blur-lg: 1.25rem;
   --blur-xl: 2.5rem;
 
-  /* 渐变背景 - 简约单色微妙渐变 */
   --gradient-primary: linear-gradient(
     135deg,
     var(--color-primary) 0%,
@@ -307,7 +286,6 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-  /* 柔和缓动 */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out-smooth: cubic-bezier(0, 0, 0.2, 1);
   --ease-in-smooth: cubic-bezier(0.4, 0, 1, 1);
@@ -318,14 +296,12 @@
   --transition-base: var(--duration-normal) var(--ease-out);
   --transition-slow: var(--duration-slow) var(--ease-out);
 
-  /* 悬停抬升 / 按压效果 */
   --lift-sm: translateY(-2px);
   --lift-md: translateY(-0.25rem);
   --lift-lg: translateY(-0.5rem);
   --press-sm: scale(0.98);
   --press-md: scale(0.96);
 
-  /* 高光渐变 & 光晕 */
   --highlight-gradient: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.4) 0%,
@@ -335,7 +311,6 @@
   --glow-primary: 0 0 20px rgba(var(--color-primary-rgb), 0.3);
   --glow-accent: 0 0 20px rgba(var(--color-accent-rgb), 0.3);
 
-  /* GSAP / 微交互令牌 */
   --micro-duration-xs: 100ms;
   --micro-duration-sm: 150ms;
   --micro-duration-md: 250ms;
@@ -389,15 +364,12 @@
   --breakpoint-3xl: 1920px;
 }
 
-/* ========== Dark Theme - 简约中性 ========== */
 [data-color-mode='dark'] {
-  /* Primary - 简约石墨黑体系 (zinc) */
   --color-primary: #f4f4f5;
   --color-primary-rgb: 244, 244, 245;
   --color-primary-light: #ffffff;
   --color-primary-dark: #e4e4e7;
 
-  /* Accent - 保持一致 */
   --color-accent: #22c55e;
   --color-accent-rgb: 34, 197, 94;
   --color-accent-light: #4ade80;
@@ -407,8 +379,6 @@
   --color-on-primary: #09090b;
 }
 
-/* Vibrant Theme - 赛博朋克/霓虹风格 */
-/* Minimal Blue Theme - 简约蓝/专业风格 */
 [data-preset='gradient-narrative'][data-color-mode='light'] {
   /* Primary - Solid Blue */
   --color-primary: #3b82f6;
@@ -431,7 +401,6 @@
   --color-secondary-light: #94a3b8;
   --color-secondary-dark: #475569;
 
-  /* Semantic Colors - 蓝色主题优化，避免黄色调 */
   --color-success: #10b981;
   --color-success-rgb: 16, 185, 129;
   --color-success-alpha: rgba(16, 185, 129, 0.1);
@@ -520,7 +489,6 @@
   --glass-shadow: 0 8px 32px rgba(59, 130, 246, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
   --glass-shadow-lg: 0 16px 48px rgba(59, 130, 246, 0.1), 0 4px 16px rgba(0, 0, 0, 0.04);
 
-  /* Shadows - 蓝色调阴影 */
   --shadow-sm: 0 1px 2px rgba(59, 130, 246, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(59, 130, 246, 0.08), 0 2px 4px -2px rgba(59, 130, 246, 0.04);
   --shadow-lg: 0 10px 15px -3px rgba(59, 130, 246, 0.08), 0 4px 6px -4px rgba(59, 130, 246, 0.04);
@@ -544,19 +512,16 @@
 [data-color-mode='dark'] {
   /* ... continue existing dark mode from here ... */
 
-  /* Accent - 暗色模式下绿色稍亮 */
   --color-accent: #4ade80;
   --color-accent-rgb: 74, 222, 128;
   --color-accent-light: #86efac;
   --color-accent-dark: #22c55e;
 
-  /* Secondary - 暗色模式下中性灰 */
   --color-secondary: #71717a;
   --color-secondary-rgb: 113, 113, 122;
   --color-secondary-light: #a1a1aa;
   --color-secondary-dark: #52525b;
 
-  /* Semantic Colors - 暗色模式优化 */
   --color-success: #34d399;
   --color-success-rgb: 52, 211, 153;
   --color-success-alpha: rgba(52, 211, 153, 0.1);
@@ -574,21 +539,17 @@
   --color-info-alpha: rgba(96, 165, 250, 0.1);
   --color-info-hover: #3b82f6;
 
-  /* Surface & Background - 深邃的层次感 */
   --color-surface: #0c1017;
   --color-surface-variant: #151b24;
   --color-background: #060810;
   --color-border: rgba(255, 255, 255, 0.08);
 
-  /* Background aliases - 多层次表面 */
   --color-bg-secondary: #111827;
   --color-bg-tertiary: #0c1017;
 
-  /* Elevated surfaces - 用于卡片和浮层 */
   --color-surface-elevated: #151b24;
   --color-surface-elevated-high: #1c2432;
 
-  /* Surface Elevation System - 暗色表面层级 */
   --color-surface-1: rgba(255, 255, 255, 0.05);
   --color-surface-2: rgba(255, 255, 255, 0.08);
   --color-surface-3: rgba(255, 255, 255, 0.11);
@@ -606,11 +567,10 @@
   --color-outline: rgba(255, 255, 255, 0.16);
   --color-outline-variant: rgba(255, 255, 255, 0.08);
 
-  /* Text - 精细的对比度层次 */
   --color-text-primary: #f8fafc;
   --color-text-secondary: #a1a1aa;
   --color-text-tertiary: #a3a3a3;
-  /* 从 #9ca3af 提升到 #a3a3a3，确保在所有背景上满足 WCAG AA 4.5:1 对比度 */
+
   --color-text-muted: #71717a;
   --color-on-primary: #09090b;
   --surface-minimal-canvas: #060810;
@@ -633,7 +593,6 @@
   --color-ring: var(--color-primary);
   --color-input: rgba(255, 255, 255, 0.08);
 
-  /* Gray scale - 暗色模式优化 */
   --color-gray-50: #18181b;
   --color-gray-100: #27272a;
   --color-gray-200: #3f3f46;
@@ -645,7 +604,6 @@
   --color-gray-800: #f4f4f5;
   --color-gray-900: #fafafa;
 
-  /* Glass Morphism - Dark 增强版 */
   --glass-bg: rgba(12, 16, 23, 0.78);
   --glass-bg-light: rgba(12, 16, 23, 0.55);
   --glass-bg-strong: rgba(12, 16, 23, 0.95);
@@ -667,7 +625,6 @@
   --glass-glow-accent:
     0 0 40px rgba(var(--color-accent-rgb), 0.2), 0 0 80px rgba(var(--color-accent-rgb), 0.08);
 
-  /* 暗色玻璃阴影层级 */
   --glass-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.12);
   --glass-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.18);
   --glass-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4), 0 32px 96px rgba(0, 0, 0, 0.28);
@@ -675,16 +632,13 @@
     0 8px 24px rgba(0, 0, 0, 0.35), 0 16px 48px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
-  /* 暗色玻璃背景层级 */
   --glass-bg-ultra-light: rgba(20, 24, 32, 0.75);
   --glass-bg-medium: rgba(20, 24, 32, 0.5);
   --glass-bg-dark: rgba(20, 24, 32, 0.35);
 
-  /* 暗色玻璃边框层级 */
   --glass-border-light: rgba(255, 255, 255, 0.14);
   --glass-border-medium: rgba(255, 255, 255, 0.09);
 
-  /* 暗色高光 */
   --highlight-gradient: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.08) 0%,
@@ -696,7 +650,6 @@
   --glow-accent:
     0 0 24px rgba(var(--color-accent-rgb), 0.2), 0 0 48px rgba(var(--color-accent-rgb), 0.08);
 
-  /* 暗色渐变 - 简约单色 */
   --gradient-primary: linear-gradient(
     135deg,
     var(--color-primary) 0%,
@@ -723,14 +676,12 @@
   --gradient-text: var(--color-primary);
   --gradient-text-shadow: none;
 
-  /* 暗色模式特有阴影 */
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 8px -1px rgb(0 0 0 / 0.35), 0 2px 4px -2px rgb(0 0 0 / 0.3);
   --shadow-lg: 0 12px 20px -4px rgb(0 0 0 / 0.4), 0 4px 8px -4px rgb(0 0 0 / 0.3);
   --shadow-xl: 0 24px 32px -8px rgb(0 0 0 / 0.45), 0 8px 16px -8px rgb(0 0 0 / 0.35);
   --shadow-2xl: 0 32px 64px -16px rgb(0 0 0 / 0.55);
 
-  /* 暗色模式高亮效果 */
   --highlight-glow: 0 0 1px rgba(255, 255, 255, 0.15);
   --highlight-ring: 0 0 0 1px rgba(255, 255, 255, 0.1);
 }

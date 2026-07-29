@@ -29,7 +29,6 @@ import {
 } from './routeSecurityPolicy'
 import { buildSensitiveReauthRedirect, isSensitiveReauthLoginRoute } from './sensitiveReauth'
 
-// 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
 declare module 'vue-router' {
   interface RouteMeta {
     title?: string | ((route: RouteLocationNormalizedLoadedGeneric) => string)
@@ -561,7 +560,6 @@ const router = createRouter({
   },
 })
 
-// 路由守卫
 router.beforeEach(async (to) => {
   const invalidContractResourceRedirect = resolveInvalidContractResourceRedirect(to)
   if (invalidContractResourceRedirect) return invalidContractResourceRedirect
@@ -627,18 +625,13 @@ router.afterEach((to) => {
   )
   syncRoutePageMeta(to)
 
-  // 记录访问历史（用于智能预缓存）
   if (to.name === 'post-detail' && to.params.id) {
     import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
-      recordAccess('post', String(to.params.id)).catch(() => {
-        // 忽略错误
-      })
+      recordAccess('post', String(to.params.id)).catch(() => {})
     })
   } else if (to.name === 'author-detail' && to.params.id) {
     import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
-      recordAccess('author', String(to.params.id)).catch(() => {
-        // 忽略错误
-      })
+      recordAccess('author', String(to.params.id)).catch(() => {})
     })
   }
 })

@@ -1,9 +1,4 @@
 #!/usr/bin/env bun
-/**
- * 可访问性专项测试脚本（Lighthouse）
- * - 先 build，再用 preview 服务测试核心路由
- * - 输出每页 accessibility 分数与失败审计项
- */
 
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'

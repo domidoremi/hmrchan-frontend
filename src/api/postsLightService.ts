@@ -1,7 +1,3 @@
-/**
- * Posts Light Service - 轻量帖子列表 API
- */
-
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 
@@ -30,9 +26,6 @@ const DEFAULT_PARAMS = {
 } as const
 
 export const postsLightService = {
-  /**
-   * 获取轻量帖子列表（单一流）
-   */
   async listLight(
     params: PostsLightParams = {},
     config?: RequestConfig
@@ -54,10 +47,6 @@ export const postsLightService = {
     }
   },
 
-  /**
-   * 获取混合轻量帖子流（多平台混合）
-   * API: per_platform (3-10, default 5)
-   */
   async listMixed(
     params: PostsLightParams = {},
     config?: RequestConfig

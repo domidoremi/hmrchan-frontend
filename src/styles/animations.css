@@ -1,11 +1,3 @@
-/**
- * Animations - 高性能动画系统
- *
- * UI Overhaul v2.0 - 增强版动画系统
- * 使用 GPU 加速属性 (transform, opacity)
- * 支持 prefers-reduced-motion
- */
-
 /* ========== Core Keyframes ========== */
 
 /* Fade */
@@ -183,7 +175,6 @@
   }
 }
 
-/* Shimmer for skeleton loading - 使用 transform 实现 GPU 加速，避免 CLS */
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);
@@ -247,7 +238,6 @@
   }
 }
 
-/* Reveal animation - 仅使用合成属性避免 CLS */
 @keyframes revealBlur {
   0% {
     opacity: 0;
@@ -666,8 +656,6 @@
 
 /* ========== Enhanced Page Transitions ========== */
 
-/* Page Fade - 淡入淡出 + 轻微缩放 */
-/* 注意：移除 filter: blur() 以避免 CLS，仅使用合成属性 transform/opacity */
 .page-fade-enter-active {
   transition:
     opacity var(--duration-fast) var(--ease-out-smooth),
@@ -694,7 +682,6 @@
   transform: translate3d(0, -0.2rem, 0) scale3d(0.999, 0.999, 1);
 }
 
-/* Page Slide Up - 进入深层页面 */
 .page-slide-up-enter-active {
   transition:
     opacity var(--duration-fast) var(--ease-out-smooth),
@@ -721,8 +708,6 @@
   transform: translate3d(0, -0.28rem, 0) scale3d(0.999, 0.999, 1);
 }
 
-/* Page Slide Down - 返回上层页面 */
-/* 注意：移除 filter: blur() 以避免 CLS，仅使用合成属性 transform/opacity */
 .page-slide-down-enter-active {
   transition:
     opacity var(--duration-fast) var(--ease-out-smooth),
@@ -906,7 +891,6 @@
 }
 
 /* ========== Skeleton Loading ========== */
-/* 使用伪元素 + transform 实现 shimmer，避免 background-position 导致的 CLS */
 
 .skeleton {
   position: relative;

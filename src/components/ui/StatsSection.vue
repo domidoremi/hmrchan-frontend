@@ -215,7 +215,6 @@ const platforms = [
   color: var(--color-success);
 }
 
-/* 平台颜色 */
 .platform-card--tiktok .platform-card__icon {
   background: rgba(0, 0, 0, 0.08);
   color: #000;
@@ -252,7 +251,6 @@ const platforms = [
   border-color: #000;
 }
 
-/* 暗色模式 */
 [data-color-mode='dark'] .platform-card--tiktok .platform-card__icon {
   background: rgba(255, 255, 255, 0.12);
   color: var(--color-gray-100);
@@ -271,7 +269,6 @@ const platforms = [
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* 响应式 */
 @media (max-width: 1024px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);

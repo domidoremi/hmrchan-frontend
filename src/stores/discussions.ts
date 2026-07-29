@@ -1,9 +1,3 @@
-/**
- * Discussions Store - 讨论状态管理
- *
- * 集中管理讨论列表、筛选、排序、点赞状态
- */
-
 import { ref, computed, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
 import {
@@ -40,7 +34,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   const error = ref<string | null>(null)
   const source = ref<PublicPageDataSource>('live')
 
-  // 当前查看的讨论详情
   const currentDiscussion = ref<Discussion | null>(null)
   const currentComments = ref<DiscussionComment[]>([])
   const commentsTotal = ref(0)

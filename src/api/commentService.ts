@@ -1,13 +1,5 @@
-/**
- * Comment Service - 评论服务
- *
- * 提供评论相关的 API 调用，包括评论图片上传
- */
-
 import { apiClient, type RequestConfig } from './client'
 import type { Comment } from '@/types'
-
-// ========== 类型定义 ==========
 
 export interface CommentImage {
   id: string
@@ -62,11 +54,10 @@ export interface CommentThreadResponse {
   post_id: string
   thread: Comment[]
   depth: number
-  // 兼容旧字段
+
   root_comment?: Comment
 }
 
-// 图片上传限制
 export const COMMENT_IMAGE_LIMITS = {
   MAX_IMAGES_PER_COMMENT: 9,
   MAX_FILE_SIZE_MB: 10,
@@ -76,12 +67,7 @@ export const COMMENT_IMAGE_LIMITS = {
   ALLOWED_FORMATS: ['jpg', 'jpeg', 'png', 'webp', 'gif'] as const,
 }
 
-// ========== 评论服务 ==========
-
 export const commentService = {
-  /**
-   * 获取帖子评论列表
-   */
   async getPostComments(
     postId: string,
     options: GetPostCommentsOptions = {},
@@ -97,9 +83,6 @@ export const commentService = {
     )
   },
 
-  /**
-   * 创建评论（支持带图片）
-   */
   async createComment(
     postId: string,
     data: CreateCommentRequest,
@@ -110,18 +93,12 @@ export const commentService = {
       : apiClient.post<Comment>(`/posts/${postId}/comments`, data, config)
   },
 
-  /**
-   * 删除评论
-   */
   async deleteComment(commentId: string): Promise<void> {
     return apiClient.delete(`/comments/${commentId}`, {
       verificationAction: 'delete_content',
     })
   },
 
-  /**
-   * 上传评论图片
-   */
   async uploadImage(file: File): Promise<CommentImageUploadResponse> {
     const formData = new FormData()
     formData.append('files', file)
@@ -133,9 +110,6 @@ export const commentService = {
     })
   },
 
-  /**
-   * 批量上传评论图片
-   */
   async uploadImages(files: File[]): Promise<CommentImageUploadResponse[]> {
     const formData = new FormData()
     for (const file of files) {
@@ -149,53 +123,32 @@ export const commentService = {
     return response.images
   },
 
-  /**
-   * 获取评论图片详情
-   */
   async getImage(imageId: string): Promise<CommentImage> {
     return apiClient.get<CommentImage>(`/comment-images/${imageId}`)
   },
 
-  /**
-   * 删除评论图片
-   */
   async deleteImage(imageId: string): Promise<void> {
     return apiClient.delete(`/comment-images/${imageId}`, {
       verificationAction: 'delete_content',
     })
   },
 
-  /**
-   * 点赞评论
-   */
   async likeComment(commentId: string, config?: RequestConfig): Promise<void> {
     return apiClient.post(`/comments/${commentId}/like`, null, config)
   },
 
-  /**
-   * 取消点赞评论
-   */
   async unlikeComment(commentId: string, config?: RequestConfig): Promise<void> {
     return apiClient.delete(`/comments/${commentId}/like`, config)
   },
 
-  /**
-   * 收藏评论
-   */
   async favoriteComment(commentId: string, config?: RequestConfig): Promise<void> {
     return apiClient.post(`/comments/${commentId}/favorite`, null, config)
   },
 
-  /**
-   * 取消收藏评论
-   */
   async unfavoriteComment(commentId: string, config?: RequestConfig): Promise<void> {
     return apiClient.delete(`/comments/${commentId}/favorite`, config)
   },
 
-  /**
-   * 举报评论
-   */
   async reportComment(
     commentId: string,
     reason: string,
@@ -212,9 +165,6 @@ export const commentService = {
     )
   },
 
-  /**
-   * 获取评论回复列表
-   */
   async getCommentReplies(
     commentId: string,
     options: GetCommentRepliesOptions = {},
@@ -229,25 +179,15 @@ export const commentService = {
     )
   },
 
-  /**
-   * 编辑评论
-   */
   async updateComment(commentId: string, content: string): Promise<Comment> {
     return apiClient.patch<Comment>(`/comments/${commentId}`, { content })
   },
 
-  /**
-   * 获取评论线索链（从当前评论到根评论的完整链路）
-   */
   async getCommentThread(commentId: string): Promise<CommentThreadResponse> {
     return apiClient.get<CommentThreadResponse>(`/comments/${commentId}/thread`)
   },
 
-  /**
-   * 验证图片文件是否符合限制
-   */
   validateImageFile(file: File): { valid: boolean; error?: string } {
-    // 检查文件格式
     const ext = file.name.split('.').pop()?.toLowerCase()
     if (
       !ext ||
@@ -261,7 +201,6 @@ export const commentService = {
       }
     }
 
-    // 检查文件大小
     const sizeMB = file.size / (1024 * 1024)
     if (sizeMB > COMMENT_IMAGE_LIMITS.MAX_FILE_SIZE_MB) {
       return {
@@ -273,11 +212,7 @@ export const commentService = {
     return { valid: true }
   },
 
-  /**
-   * 验证图片数组是否符合限制
-   */
   validateImageFiles(files: File[]): { valid: boolean; error?: string } {
-    // 检查图片数量
     if (files.length > COMMENT_IMAGE_LIMITS.MAX_IMAGES_PER_COMMENT) {
       return {
         valid: false,
@@ -285,7 +220,6 @@ export const commentService = {
       }
     }
 
-    // 检查总大小
     const totalSizeMB = files.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024)
     if (totalSizeMB > COMMENT_IMAGE_LIMITS.MAX_TOTAL_SIZE_MB) {
       return {
@@ -294,7 +228,6 @@ export const commentService = {
       }
     }
 
-    // 验证每个文件
     for (const file of files) {
       const result = this.validateImageFile(file)
       if (!result.valid) {

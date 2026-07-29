@@ -37,8 +37,8 @@ const APPEARANCE_PRESETS = [
 const APPEARANCE_PRESET_SPECS: Record<AppearancePreset, AppearancePresetSpec> = {
   'minimal-editorial': {
     preset: 'minimal-editorial',
-    sourceDoc: 'docs/极简主义.txt',
-    influences: ['docs/极简主义.txt'],
+    sourceDoc: 'docs/appearance-presets.md',
+    influences: ['docs/appearance-presets.md'],
     family: 'rounded',
     enhancer: 'none',
     designIntent:
@@ -57,8 +57,8 @@ const APPEARANCE_PRESET_SPECS: Record<AppearancePreset, AppearancePresetSpec> = 
   },
   'fluent-soft': {
     preset: 'fluent-soft',
-    sourceDoc: 'docs/Fluent 2.txt',
-    influences: ['docs/Fluent 2.txt', 'docs/可爱极简.txt'],
+    sourceDoc: 'docs/appearance-presets.md',
+    influences: ['docs/appearance-presets.md'],
     family: 'rounded',
     enhancer: 'none',
     designIntent:
@@ -77,8 +77,8 @@ const APPEARANCE_PRESET_SPECS: Record<AppearancePreset, AppearancePresetSpec> = 
   },
   'material-calm': {
     preset: 'material-calm',
-    sourceDoc: 'docs/Material Design.txt',
-    influences: ['docs/Material Design.txt'],
+    sourceDoc: 'docs/appearance-presets.md',
+    influences: ['docs/appearance-presets.md'],
     family: 'sharp',
     enhancer: 'none',
     designIntent:
@@ -97,8 +97,8 @@ const APPEARANCE_PRESET_SPECS: Record<AppearancePreset, AppearancePresetSpec> = 
   },
   'organic-natural': {
     preset: 'organic-natural',
-    sourceDoc: 'docs/Natural 自然风格.txt',
-    influences: ['docs/Natural 自然风格.txt', 'docs/织物纹理.txt'],
+    sourceDoc: 'docs/appearance-presets.md',
+    influences: ['docs/appearance-presets.md'],
     family: 'rounded',
     enhancer: 'none',
     designIntent:
@@ -117,8 +117,8 @@ const APPEARANCE_PRESET_SPECS: Record<AppearancePreset, AppearancePresetSpec> = 
   },
   'biophilic-serene': {
     preset: 'biophilic-serene',
-    sourceDoc: 'docs/亲生物设计.txt',
-    influences: ['docs/亲生物设计.txt', 'docs/织物纹理.txt'],
+    sourceDoc: 'docs/appearance-presets.md',
+    influences: ['docs/appearance-presets.md'],
     family: 'rounded',
     enhancer: 'none',
     designIntent:
@@ -137,8 +137,8 @@ const APPEARANCE_PRESET_SPECS: Record<AppearancePreset, AppearancePresetSpec> = 
   },
   'clay-playful': {
     preset: 'clay-playful',
-    sourceDoc: 'docs/黏土质感.txt',
-    influences: ['docs/黏土质感.txt', 'docs/可爱极简.txt'],
+    sourceDoc: 'docs/appearance-presets.md',
+    influences: ['docs/appearance-presets.md'],
     family: 'rounded',
     enhancer: 'clay',
     designIntent:
@@ -157,8 +157,8 @@ const APPEARANCE_PRESET_SPECS: Record<AppearancePreset, AppearancePresetSpec> = 
   },
   'sketch-doodle': {
     preset: 'sketch-doodle',
-    sourceDoc: 'docs/手绘涂鸦.txt',
-    influences: ['docs/手绘涂鸦.txt'],
+    sourceDoc: 'docs/appearance-presets.md',
+    influences: ['docs/appearance-presets.md'],
     family: 'sharp',
     enhancer: 'sketch',
     designIntent:
@@ -177,8 +177,8 @@ const APPEARANCE_PRESET_SPECS: Record<AppearancePreset, AppearancePresetSpec> = 
   },
   'gradient-narrative': {
     preset: 'gradient-narrative',
-    sourceDoc: 'docs/滚动叙事.txt',
-    influences: ['docs/滚动叙事.txt'],
+    sourceDoc: 'docs/appearance-presets.md',
+    influences: ['docs/appearance-presets.md'],
     family: 'rounded',
     enhancer: 'gradient',
     designIntent:

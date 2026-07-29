@@ -302,7 +302,7 @@ watch(
     abortAllRequests()
     isSending.value = false
     isVerifying.value = false
-    // 关闭时清理计时器，避免后台计时占用
+
     if (cooldownTimer) {
       clearInterval(cooldownTimer)
       cooldownTimer = null

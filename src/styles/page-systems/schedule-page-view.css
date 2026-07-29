@@ -181,7 +181,6 @@
   max-inline-size: 100%;
 }
 
-/* ========== 月份导航 ========== */
 .month-nav {
   display: flex;
   align-items: center;
@@ -401,7 +400,6 @@
   gap: var(--spacing-2);
 }
 
-/* ========== 日历 ========== */
 .calendar-wrapper {
   padding: clamp(1rem, 2vw, 1.5rem);
   margin-bottom: var(--spacing-6);
@@ -533,7 +531,6 @@
   }
 }
 
-/* ========== 月份切换动画 ========== */
 .month-slide-left-enter-active,
 .month-slide-left-leave-active,
 .month-slide-right-enter-active,
@@ -563,7 +560,6 @@
   transform: translateX(0.875rem);
 }
 
-/* ========== Today 按钮过渡 ========== */
 .today-fade-enter-active,
 .today-fade-leave-active {
   transition:
@@ -577,7 +573,6 @@
   transform: scale(0.9);
 }
 
-/* ========== 事件列表 ========== */
 .day-events {
   margin-bottom: 0;
   padding: clamp(1rem, 2vw, 1.5rem);
@@ -725,7 +720,6 @@
   text-decoration: underline;
 }
 
-/* ========== 过渡动画 ========== */
 .slide-fade-enter-active {
   transition:
     opacity 0.25s ease-out,
@@ -748,7 +742,6 @@
   transform: translateY(-0.1875rem);
 }
 
-/* ========== 响应式 ========== */
 @media (max-width: 64rem) {
   .schedule-overview,
   .schedule-workspace--detail {
@@ -869,7 +862,6 @@
   }
 }
 
-/* ========== 可点击事件卡片 ========== */
 .event-card[role='button'] {
   cursor: pointer;
 }

@@ -10,17 +10,14 @@
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
   >
-    <!-- Ripple 容器 -->
     <span ref="rippleContainer" class="btn-ripple-container" />
 
-    <!-- 加载状态 -->
     <span v-if="loading" class="btn-loader" aria-hidden="true">
       <span class="btn-loader-dot" />
       <span class="btn-loader-dot" />
       <span class="btn-loader-dot" />
     </span>
 
-    <!-- 图标和内容 -->
     <span class="btn-visual" :class="{ 'btn-visual--hidden': loading }">
       <component v-if="showLeftIcon" :is="icon" :size="iconSize" class="btn-icon-el" />
       <span v-if="hasDefaultSlot" class="btn-content">
@@ -52,9 +49,9 @@ interface Props {
   iconPosition?: 'left' | 'right'
   fullWidth?: boolean
   type?: 'button' | 'submit' | 'reset'
-  /** 是否启用 ripple 效果 */
+
   ripple?: boolean
-  /** 是否启用弹簧动画 */
+
   springAnimation?: boolean
 }
 
@@ -206,7 +203,6 @@ function handleMouseLeave() {
   line-height: var(--appearance-ui-line-height);
 }
 
-/* Ripple 容器 */
 .btn-ripple-container {
   position: absolute;
   inset: 0;
@@ -469,7 +465,6 @@ function handleMouseLeave() {
   visibility: hidden;
 }
 
-/* Reduced motion - 禁用弹簧动画，保留基本反馈 */
 @media (prefers-reduced-motion: reduce) {
   .btn {
     transition: none;

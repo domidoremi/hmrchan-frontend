@@ -1,14 +1,3 @@
-/**
- * 视频播放器手势控制
- * 支持触摸、鼠标、手写笔等多种输入方式
- *
- * 手势功能：
- * - 左侧上下滑动：调节亮度
- * - 右侧上下滑动：调节音量
- * - 左右滑动：快进/快退
- * - 双击：播放/暂停
- */
-
 import {
   ref,
   toValue,
@@ -20,19 +9,18 @@ import {
 } from 'vue'
 
 export interface GestureOptions {
-  /** 视频元素引用 */
   videoRef: MaybeRefOrGetter<HTMLVideoElement | null>
-  /** 容器元素引用 */
+
   containerRef: MaybeRefOrGetter<HTMLElement | null>
-  /** 音量变化回调 */
+
   onVolumeChange?: (volume: number) => void
-  /** 亮度变化回调 */
+
   onBrightnessChange?: (brightness: number) => void
-  /** 进度变化回调 */
+
   onSeek?: (time: number) => void
-  /** 播放/暂停回调 */
+
   onTogglePlay?: () => void
-  /** 双击回调（默认同 onTogglePlay） */
+
   onDoubleTap?: () => void
 }
 
@@ -42,18 +30,18 @@ interface TouchState {
   startTime: number
   lastX: number
   lastY: number
-  isLeft: boolean // 是否在左侧
+  isLeft: boolean
   isDragging: boolean
-  lastTapTime: number // 用于检测双击
+  lastTapTime: number
   isPointerDown: boolean
   gestureAxis: 'horizontal' | 'vertical' | null
 }
 
-const SWIPE_THRESHOLD = 10 // 最小滑动距离
-const DOUBLE_TAP_DELAY = 300 // 双击间隔时间
-const BRIGHTNESS_STEP = 0.006 // 亮度调节步长
-const VOLUME_STEP = 0.006 // 音量调节步长
-const SEEK_STEP = 0.12 // 快进/快退步长（秒/像素）
+const SWIPE_THRESHOLD = 10
+const DOUBLE_TAP_DELAY = 300
+const BRIGHTNESS_STEP = 0.006
+const VOLUME_STEP = 0.006
+const SEEK_STEP = 0.12
 
 export function useVideoGestures(options: GestureOptions) {
   const {
@@ -96,9 +84,6 @@ export function useVideoGestures(options: GestureOptions) {
   // can reference it even if the ref becomes null during unmount.
   let boundContainer: HTMLElement | null = null
 
-  /**
-   * 显示指示器
-   */
   function showIndicator(type: 'volume' | 'brightness' | 'seek', value: number) {
     if (indicatorTimeout) {
       clearTimeout(indicatorTimeout)
@@ -127,10 +112,6 @@ export function useVideoGestures(options: GestureOptions) {
     }, 1000)
   }
 
-  /**
-   * 判断事件是否来自交互式表单控件（应跳过手势处理）
-   * 注意：不拦截 .vp__controls 整体，否则会阻止视频区域的手势（双击全屏等）
-   */
   function isInteractiveTarget(event: Event): boolean {
     const target = event.target as HTMLElement | null
     if (!target) return false
@@ -140,9 +121,6 @@ export function useVideoGestures(options: GestureOptions) {
     return false
   }
 
-  /**
-   * 处理触摸/鼠标/手写笔开始
-   */
   function handleStart(event: TouchEvent | MouseEvent | PointerEvent) {
     const container = getContainerElement()
     if (!container) return
@@ -172,10 +150,8 @@ export function useVideoGestures(options: GestureOptions) {
       gestureAxis: null,
     }
 
-    // 检测双击
     const now = Date.now()
     if (now - touchState.value.lastTapTime < DOUBLE_TAP_DELAY) {
-      // 取消待执行的单击
       if (singleTapTimer) {
         clearTimeout(singleTapTimer)
         singleTapTimer = null
@@ -187,16 +163,12 @@ export function useVideoGestures(options: GestureOptions) {
     }
   }
 
-  /**
-   * 处理触摸/鼠标/手写笔结束 — 单击延迟触发播放/暂停
-   */
   function handleEnd() {
     const wasDragging = touchState.value.isDragging
     touchState.value.isDragging = false
     touchState.value.isPointerDown = false
     touchState.value.gestureAxis = null
 
-    // 非拖动且有 lastTapTime → 延迟触发单击（等待可能的双击）
     if (!wasDragging && touchState.value.lastTapTime > 0) {
       if (singleTapTimer) clearTimeout(singleTapTimer)
       singleTapTimer = setTimeout(() => {
@@ -206,9 +178,6 @@ export function useVideoGestures(options: GestureOptions) {
     }
   }
 
-  /**
-   * 处理触摸/鼠标/手写笔移动
-   */
   function handleMove(event: TouchEvent | MouseEvent | PointerEvent) {
     const container = getContainerElement()
     const videoElement = getVideoElement()
@@ -231,7 +200,6 @@ export function useVideoGestures(options: GestureOptions) {
     const deltaX = x - touchState.value.lastX
     const deltaY = y - touchState.value.lastY
 
-    // 判断是否开始拖动
     if (
       !touchState.value.isDragging &&
       (Math.abs(totalDeltaX) > SWIPE_THRESHOLD || Math.abs(totalDeltaY) > SWIPE_THRESHOLD)
@@ -243,22 +211,18 @@ export function useVideoGestures(options: GestureOptions) {
 
     if (!touchState.value.isDragging) return
 
-    // 阻止默认行为（如页面滚动）
     if ('preventDefault' in event) {
       event.preventDefault()
     }
 
-    // 垂直滑动：调节亮度或音量
     if (touchState.value.gestureAxis === 'vertical') {
       if (touchState.value.isLeft) {
-        // 左侧：调节亮度
         const brightnessChange = -deltaY * BRIGHTNESS_STEP
         const newBrightness = Math.max(0, Math.min(1, currentBrightness.value + brightnessChange))
         currentBrightness.value = newBrightness
         onBrightnessChange?.(newBrightness)
         showIndicator('brightness', Math.round(newBrightness * 100))
       } else {
-        // 右侧：调节音量
         const volumeChange = -deltaY * VOLUME_STEP
         const newVolume = Math.max(0, Math.min(1, currentVolume.value + volumeChange))
         currentVolume.value = newVolume
@@ -266,9 +230,7 @@ export function useVideoGestures(options: GestureOptions) {
         onVolumeChange?.(newVolume)
         showIndicator('volume', Math.round(newVolume * 100))
       }
-    }
-    // 水平滑动：快进/快退
-    else if (touchState.value.gestureAxis === 'horizontal') {
+    } else if (touchState.value.gestureAxis === 'horizontal') {
       const seekChange = deltaX * SEEK_STEP
       const currentTime = videoElement.currentTime
       const newTime = Math.max(0, Math.min(videoElement.duration, currentTime + seekChange))
@@ -282,13 +244,9 @@ export function useVideoGestures(options: GestureOptions) {
     touchState.value.lastY = y
   }
 
-  /**
-   * 初始化当前容器的手势监听
-   */
   function initListeners(container: HTMLElement) {
     boundContainer = container
 
-    // 手写笔事件（Pointer Events）
     if ('PointerEvent' in window) {
       container.addEventListener('pointerdown', handleStart as EventListener)
       container.addEventListener('pointermove', handleMove as EventListener, { passive: false })
@@ -297,13 +255,11 @@ export function useVideoGestures(options: GestureOptions) {
       return
     }
 
-    // 触摸事件
     container.addEventListener('touchstart', handleStart as EventListener, { passive: false })
     container.addEventListener('touchmove', handleMove as EventListener, { passive: false })
     container.addEventListener('touchend', handleEnd)
     container.addEventListener('touchcancel', handleEnd)
 
-    // 鼠标事件
     container.addEventListener('mousedown', handleStart as EventListener)
     container.addEventListener('mousemove', handleMove as EventListener)
     container.addEventListener('mouseup', handleEnd)
@@ -320,9 +276,6 @@ export function useVideoGestures(options: GestureOptions) {
     }
   }
 
-  /**
-   * 清理事件监听
-   */
   function cleanupListeners() {
     // Use the saved container reference to ensure cleanup works even if
     // the ref has already been nulled during component unmount.

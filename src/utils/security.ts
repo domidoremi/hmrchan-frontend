@@ -1,10 +1,6 @@
-/**
- * Security Utilities - 安全工具
- *
- * 提供 XSS 防护、输入验证、内容过滤等安全功能
- */
-
 import DOMPurify from 'dompurify'
+
+// Shared browser security boundaries for HTML, URLs, object keys, and window messaging.
 
 let domPurifyHooksConfigured = false
 
@@ -35,7 +31,6 @@ function configureDomPurifyHooks(): void {
   domPurifyHooksConfigured = true
 }
 
-// HTML 实体编码映射
 const HTML_ENTITIES: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',
@@ -47,18 +42,11 @@ const HTML_ENTITIES: Record<string, string> = {
   '=': '&#x3D;',
 }
 
-/**
- * 转义 HTML 特殊字符，防止 XSS 攻击
- */
 export function escapeHtml(str: string): string {
   if (!str || typeof str !== 'string') return ''
   return str.replace(/[&<>"'`=/]/g, (char) => HTML_ENTITIES[char] || char)
 }
 
-/**
- * 清理 HTML 内容，移除危险标签和属性
- * 使用 DOMPurify 进行可靠的 DOM 级清理，替代易被绕过的正则方案
- */
 export function sanitizeHtml(html: string): string {
   if (!html || typeof html !== 'string') return ''
   configureDomPurifyHooks()
@@ -105,30 +93,20 @@ export function sanitizeHtml(html: string): string {
   })
 }
 
-/**
- * 验证并清理评论内容
- */
 export function sanitizeComment(content: string): string {
   if (!content || typeof content !== 'string') return ''
 
-  // 去除首尾空白
   let clean = content.trim()
 
-  // 转义 HTML 特殊字符
   clean = escapeHtml(clean)
 
-  // 限制连续空白字符
   clean = clean.replace(/\s{3,}/g, '  ')
 
-  // 限制连续换行
   clean = clean.replace(/\n{3,}/g, '\n\n')
 
   return clean
 }
 
-/**
- * 验证评论内容
- */
 export interface ValidationResult {
   valid: boolean
   error?: string
@@ -157,12 +135,10 @@ export function validateComment(
     return { valid: false, error: 'comment.validation.tooLong' }
   }
 
-  // 检测垃圾内容 (重复字符)
   if (/(.)\1{10,}/.test(trimmed)) {
     return { valid: false, error: 'comment.validation.spam' }
   }
 
-  // 检测可能的注入攻击
   if (/<script|javascript:|onclick|onerror/i.test(trimmed)) {
     return { valid: false, error: 'comment.validation.invalid' }
   }
@@ -170,17 +146,11 @@ export function validateComment(
   return { valid: true }
 }
 
-/**
- * 生成安全的用户展示名称
- */
 export function sanitizeUsername(username: string): string {
   if (!username || typeof username !== 'string') return 'Anonymous'
   return escapeHtml(username.trim().slice(0, 50))
 }
 
-/**
- * 验证 URL 是否安全
- */
 export function isValidUrl(url: string): boolean {
   if (!url || typeof url !== 'string') return false
 
@@ -213,9 +183,6 @@ export function normalizeHttpUrl(url: string | null | undefined): string | null 
   }
 }
 
-/**
- * 速率限制工具 - 防止频繁提交
- */
 export class RateLimiter {
   private timestamps: number[] = []
   private readonly limit: number
@@ -228,7 +195,7 @@ export class RateLimiter {
 
   canProceed(): boolean {
     const now = Date.now()
-    // 清理过期的时间戳
+
     this.timestamps = this.timestamps.filter((ts) => now - ts < this.windowMs)
     return this.timestamps.length < this.limit
   }
@@ -245,37 +212,20 @@ export class RateLimiter {
   }
 }
 
-/**
- * 创建评论提交的速率限制器 (每分钟最多 5 条评论)
- */
 export const commentRateLimiter = new RateLimiter(5, 60000)
 
-/**
- * 检测内容是否包含敏感词 (基础实现，实际应该从服务端获取词库)
- */
 export function containsSensitiveWords(content: string): boolean {
-  // 这里只是示例，实际的敏感词应该从后端获取
   const sensitivePatterns = [/\b(spam|scam)\b/i]
 
   return sensitivePatterns.some((pattern) => pattern.test(content))
 }
 
-// ==================== Prototype Pollution 防护 ====================
-
-/** 原型链污染中常见的危险 key */
 const DANGEROUS_PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
-/**
- * 检查对象 key 是否为原型链污染攻击向量
- */
 export function hasDangerousKey(key: string): boolean {
   return DANGEROUS_PROTO_KEYS.has(key)
 }
 
-/**
- * 安全的对象深合并，过滤 __proto__ / constructor / prototype
- * 用于替代 lodash.merge 等可能被污染的深合并操作
- */
 export function safeMerge<T extends Record<string, unknown>>(
   target: T,
   ...sources: Array<Record<string, unknown>>
@@ -311,9 +261,6 @@ export function safeMerge<T extends Record<string, unknown>>(
   return target
 }
 
-/**
- * 从 JSON 字符串安全解析，移除原型链污染 key
- */
 export function safeJsonParse<T = unknown>(json: string): T | null {
   try {
     return JSON.parse(json, (_key, value) => {
@@ -331,28 +278,19 @@ export function safeJsonParse<T = unknown>(json: string): T | null {
   }
 }
 
-// ==================== Open Redirect 防护 ====================
-
-/** 允许重定向的域名白名单 */
 const REDIRECT_WHITELIST = ['momichan.com', 'www.momichan.com', 'himeri.momichan.com']
 
-/**
- * 校验重定向 URL 是否安全（仅允许同站或白名单域名）
- * 防止 Open Redirect 攻击
- */
 export function isSafeRedirect(url: string): boolean {
   if (!url || typeof url !== 'string') return false
 
-  // 相对路径始终安全
+  // Root-relative paths are safe after protocol-relative URLs are excluded.
   if (url.startsWith('/') && !url.startsWith('//')) return true
 
   try {
     const parsed = new URL(url, window.location.origin)
 
-    // 仅允许 http/https
     if (!['http:', 'https:'].includes(parsed.protocol)) return false
 
-    // 检查是否在白名单中
     return REDIRECT_WHITELIST.some(
       (domain) => parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
     )
@@ -361,9 +299,6 @@ export function isSafeRedirect(url: string): boolean {
   }
 }
 
-/**
- * 安全地执行页面跳转，拒绝不安全的 URL
- */
 export function safeRedirect(url: string, fallback: string = '/'): void {
   if (isSafeRedirect(url)) {
     window.location.href = url
@@ -371,8 +306,6 @@ export function safeRedirect(url: string, fallback: string = '/'): void {
     window.location.href = fallback
   }
 }
-
-// ==================== PostMessage 安全 ====================
 
 const PRIMARY_FRONTEND_MESSAGE_ORIGIN = 'https://momichan.com'
 const TRUSTED_ORIGINS = new Set([
@@ -430,14 +363,6 @@ export function resolveTrustedFrontendTargetOrigin(): string {
 
 export type MessageHandler<T = unknown> = (data: T, event: MessageEvent) => void
 
-/**
- * 创建带 origin 校验的安全 postMessage 处理器
- *
- * @param handler - 消息处理回调
- * @param options.allowedOrigins - 额外允许的 origin 列表
- * @param options.validateData - 可选的数据结构校验函数
- * @returns dispose 函数，调用后移除监听
- */
 export function createSecureMessageHandler<T = unknown>(
   handler: MessageHandler<T>,
   options?: {
@@ -463,10 +388,9 @@ export function createSecureMessageHandler<T = unknown>(
   }
 
   function onMessage(event: MessageEvent): void {
-    // 校验 origin
+    // Origin validation runs before optional payload validation and handler dispatch.
     if (!origins.has(normalizeMessageOrigin(event.origin))) return
 
-    // 可选的数据结构校验
     if (options?.validateData && !options.validateData(event.data)) return
 
     handler(event.data as T, event)
@@ -479,9 +403,6 @@ export function createSecureMessageHandler<T = unknown>(
   }
 }
 
-/**
- * 安全地发送 postMessage，始终指定目标 origin
- */
 export function safePostMessage(target: Window, data: unknown, targetOrigin: string): void {
   const normalizedTargetOrigin = normalizeMessageOrigin(targetOrigin)
   if (!normalizedTargetOrigin || normalizedTargetOrigin === '*') {

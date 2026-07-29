@@ -1,256 +1,93 @@
-# Validation Flow
+# Release Validation / 发布验证
 
-本仓库的交付验证以 `validate:release` 为唯一主入口。  
-仓库已移除 GitHub Actions；是否可交付只由本地统一 runner 判定。
+`validate:release` is the release decision entrypoint. Every mode writes structured evidence under `output/validation/<timestamp>/`; generated evidence stays untracked.
 
-## 统一入口
+`validate:release` 是发布判定入口。各模式均在 `output/validation/<timestamp>/` 写入结构化证据；生成内容保持未跟踪状态。
 
-```bash
-bun run validate:release
-bun run validate:release --mode hook
-bun run validate:release:hook
-bun run validate:release --mode prepush
-bun run validate:release:prepush
-bun run validate:release --mode prepush-full
-bun run validate:release:prepush:full
-bun run validate:release --mode local
-bun run validate:release --mode local --quiet
-bun run validate:release:local:quiet
-bun run validate:release --mode candidate
-bun run validate:release --mode production
-```
-
-- 默认模式是 `local`
-- `hook` 是默认 Git hook 使用的中负载门禁，只跑合同自检、格式检查、类型检查、严格 lint 和验证脚本窄测
-- `prepush` 是 `hook` 的兼容别名，保持同等负载
-- `prepush-full` 是显式重静态门禁，会运行完整本地静态门禁，包括全量 unit、build 和 build security check
-- artifact 默认输出到 `output/validation/<timestamp>/`
-- 统一摘要固定输出：
-  - `summary.json`
-  - `summary.md`
-  - `stages/*.json`
-- Windows 环境下 runner 会通过共享命令执行器解析 `bun.exe` / `bun.cmd`；若需要固定 Bun 路径，可设置 `BUN_EXECUTABLE`
-- `--quiet` 只降低控制台输出，不降低验证强度；子命令 stdout/stderr 仍写入每个 command artifact 的 `stdout.tail.log` / `stderr.tail.log`
-
-## 本地真相源
-
-- `pre-commit` 继续只做最小化格式化与暂存检查
-- `pre-push` 固定执行 `bun run validate:release --mode hook --quiet`；hook 不自动改写工作树，不运行全仓库 `prettier --write` / `eslint --fix`
-- `pre-push` 不运行 `test:unit` 全量、`build`、`build:security-check`、Docker、本地浏览器、Pages preview 或 local audit bridge
-- `prepush-full` 必须显式运行，用于推送前人工加强验证，不属于默认 hook
-- `local` 是完整本地 release gate；必须显式运行，不再由默认 `pre-push` 自动触发
-- 候选发布前必须手动执行 `bun run validate:release --mode candidate`
-- `main` 部署后必须手动执行 `bun run validate:release --mode production`
-- 不允许用零散命令口头替代统一 runner；对应模式的 runner 失败即视为失败
-
-## 阶段定义
-
-### `hook` / `prepush`
-
-用于默认 Git 推送前阻断，目标是真正中负载、可常规运行，不启动 build、全量 unit、Docker、本地浏览器、Pages preview 或 local audit bridge：
-
-1. 合同自检
-2. Hook 中负载静态门禁
-
-Hook 中负载静态门禁只包含：
-
-- `format:check`
-- `type-check`
-- `lint:strict`
-- 验证 runner / command runner / frontend contract / route contract 窄测
-
-说明：`hook` / `prepush` 成功会记录为 `passed`，只表示代码通过推送前中负载门禁，不等价于完整发布验证通过。
-
-### `prepush-full`
-
-用于显式推送前加强验证，不属于默认 hook：
-
-1. 合同自检
-2. 完整本地静态门禁
-
-完整本地静态门禁包含 `format:check`、`type-check`、`lint:strict`、`test:unit`、`build`、`build:security-check` 和 `check:bundle-budget`。它仍不启动 Docker/browser gate。
-
-### `local`
-
-用于完整本地发布验证，需要显式执行：
-
-1. 合同自检
-2. 完整本地静态门禁
-3. 本地浏览器门禁
-
-### `candidate`
-
-用于受控站点候选验证：
-
-1. 合同自检
-2. 完整本地静态门禁
-3. 本地浏览器门禁
-4. 受控站点门禁
-5. 生产预检
-
-说明：`candidate` 成功只表示候选验证完成；由于未执行生产深回归，最终状态会记为 `incomplete`
-
-### `production`
-
-用于 `main` 已部署后的最终验收：
-
-1. 合同自检
-2. 完整本地静态门禁
-3. 本地浏览器门禁
-4. 受控站点门禁
-5. 生产预检
-6. 生产深回归
-
-只有 `production` 模式全部通过，交付状态才会是 `passed`。
-
-## 必需输入
-
-统一 runner 会记录并透传这些输入：
-
-- `BASE_URL`
-- `CONTROLLED_BASE_URL`
-- `PRIMARY_USERNAME`
-- `PRIMARY_PASSWORD`
-- `SECONDARY_EMAIL_MODE=user-assisted`
-- 可选 `ARTIFACT_DIR`
-- 可选 `QA_PREFIX`
-
-约束：
-
-- `candidate` 和 `production` 必须提供 `CONTROLLED_BASE_URL`
-- `production` 默认目标站点是 `https://<public-site-origin>`
-- `SECONDARY_EMAIL_MODE` 固定要求 `user-assisted`
-
-## 状态语义
-
-- `passed`
-  - 所有必需阶段都通过
-  - 可出现在 `hook` / `prepush` / `prepush-full` / `production` 模式
-- `failed`
-  - 任一必需阶段失败
-  - 或必需阶段被意外跳过
-- `incomplete`
-  - 验证本身成功，但尚未完成生产深回归
-  - 常见于 `local` / `candidate`
-
-## 本地环境阻塞
-
-本地浏览器门禁依赖 Docker Desktop、本地后端栈、Pages-compatible preview facade 和 local audit bridge。若这些依赖不可用，`check:frontend` / `test:e2e` 会把 `UPSTREAM_TIMEOUT`、`UPSTREAM_UNREACHABLE`、API `530`、同源 upstream unavailable、`/client-report` unavailable 等探针结果报告为 local audit environment blocked，而不是误报为后端契约变更。
-
-在 Codex、远程终端或其他容易被大日志拖垮的非交互环境中，优先使用低输出入口：
+## Commands / 命令
 
 ```bash
 bun run validate:release --mode hook --quiet
-bun run validate:release --mode prepush --quiet
 bun run validate:release --mode prepush-full --quiet
 bun run validate:release --mode local --quiet
-```
-
-`hook` / `prepush` 不运行 build、全量 unit、Docker、本地后端、local audit bridge、Puppeteer/Chrome；它只验证推送前中负载硬门禁。`prepush-full --quiet` 会运行完整静态门禁与 bundle budget，但仍不启动 Docker/browser gate。`local --quiet` 不会跳过 Docker、本地后端、local audit bridge、Puppeteer/Chrome 或任何 local release stage，只降低控制台输出。若环境不可用，`local` 结果仍必须失败，并且只能作为“环境阻塞可诊断、summary 可落盘”的验收信号；不能把 fallback 或 environment-blocked 视为正式发布通过。
-
-## Artifact 脱敏规则
-
-`validate:release` 写入 `summary.json`、`summary.md`、`stages/*.json` 前会统一清洗 artifact payload：
-
-- `token`、`password`、`secret`、`cookie`、`key`、`auth`、`authorization`、`credential`、`jwt`、`session`、`private`、`cert`、`refresh`、`pass` 等大小写和 camelCase 变体必须写为 `[redacted]`
-- 环境变量 map 只允许记录 key 名、是否存在、是否敏感、来源与 `[present]` / `[redacted]` 占位，不得落盘真实值
-- `VITE_*` 仍按同一规则处理；客户端可见变量不等于可随意写入 artifact 的安全值
-- 嵌套对象、数组和 stage details 都必须走同一 sanitizer
-
-人工抽查最近一次验证产物必须检查：
-
-```bash
-bun run validate:release --mode hook --quiet
-# 检查 output/validation/<latest>/summary.json 和 stages/*.json 仅包含占位值
-```
-
-恢复环境后必须补跑：
-
-```bash
-bun run check:frontend
-bun run test:e2e
-bun run validate:release --mode local
-```
-
-## 本地功能链认证矩阵
-
-认证矩阵是显式低输出门禁，不属于默认 `pre-push` / `validate:release:local`。它验证本地后端、Pages facade 与浏览器 session 行为，不替代统一 release runner。
-
-```bash
-PRIMARY_USERNAME='<primary-user>' \
-PRIMARY_PASSWORD='<primary-password>' \
-PEER_USERNAME='<peer-user>' \
-PEER_PASSWORD='<peer-password>' \
-ADMIN_USERNAME='<admin-user>' \
-ADMIN_PASSWORD='<admin-password>' \
-LOCKED_USERNAME='<locked-user>' \
-LOCKED_PASSWORD='<locked-password>' \
-DISABLED_USERNAME='<disabled-user>' \
-DISABLED_PASSWORD='<disabled-password>' \
-bun run test:functional-chain:local
-```
-
-- 目标入口固定为同源 facade：`POST /api/v1/auth/login`
-- 凭据只允许通过环境变量传入，不写入仓库、不生成 tracked `.env`；示例必须保留占位符，不提交本机凭据
-- artifact 输出到 `output/functional-chain/<timestamp>/summary.json` 和 `summary.md`
-- `FUNCTIONAL_CHAIN_BASE_URL` 可指向已启动的本地前端；未设置时脚本会 build 并启动本地 Pages preview
-- Docker、本地后端栈或 local audit bridge 不可用时，结果必须记录为 `environment-blocked`，不能当作通过
-- 当前矩阵只覆盖登录、`/auth/session:resolve`、session 隔离、403 locked/inactive 与错误凭据；评论、点赞、通知等双主体深链必须作为后续独立批次
-
-## 合同与自动演进
-
-这套流程不会依赖人工维护 checklist，而是从仓库真相源自动派生：
-
-- 路由与详情页 readiness：
-  - [scripts/lib/release-route-contract.js](scripts/lib/release-route-contract.js)
-- 认证预热探针：
-  - [scripts/lib/auth-bootstrap.js](scripts/lib/auth-bootstrap.js)
-- 生产 contract/version 与 Pages 安全环境约束：
-  - [scripts/lib/production-contract-env.js](scripts/lib/production-contract-env.js)
-- 前端 auth surface 与 UUIDv7 public ID 守卫：
-  - [scripts/lib/frontend-contract-audit.js](scripts/lib/frontend-contract-audit.js)
-- 统一 runner 编排与变更影响分类：
-  - [scripts/validate-release.mjs](scripts/validate-release.mjs)
-  - [scripts/lib/validate-release.js](scripts/lib/validate-release.js)
-
-UUIDv7 hard cutover 后，前端公开资源 ID 只能使用 UUIDv7 字符串；新增或修改 `src/api`、路由详情页、fallback snapshot、Service Worker cache key 时，必须同步相关类型守卫、测试和 release contract audit。当前静态审计会阻断缺失 route/cache guard 的改动；checked-in generated fallback snapshot 不允许包含旧 v4 或 numeric public ID。`bun run fallbacks:refresh` 在写入 generated snapshot 前会拒绝非 UUIDv7 public ID，因此刷新必须连接到已完成 UUIDv7 cutover 的后端/API 环境。
-
-runner 会根据本次交付命中的文件范围自动生成风险摘要，重点关注：
-
-- `src/views` / `src/components` / `src/router`
-- `src/api` / `src/stores` / `src/services`
-- `src/edge` / `functions` / `workers` / `wrangler.toml`
-- 验证合同与 runner 自身
-
-## Execution Policy
-
-默认本地门禁：
-
-```bash
-bun run validate:release
-```
-
-候选验证：
-
-```bash
-CONTROLLED_BASE_URL=https://controlled.example.com \
 bun run validate:release --mode candidate
-```
-
-`main` 部署到 Pages 后的生产验收：
-
-```bash
-BASE_URL=https://<public-site-origin> \
-CONTROLLED_BASE_URL=https://controlled.example.com \
-PRIMARY_USERNAME=... \
-PRIMARY_PASSWORD=... \
-SECONDARY_EMAIL_MODE=user-assisted \
 bun run validate:release --mode production
 ```
 
-## 验收规则
+`prepush` remains an alias of `hook`. The default mode is `local`.
 
-- `local` 通过：说明本地静态与浏览器硬门禁通过，但交付仍未完成
-- `candidate` 通过：说明受控站点验证通过，但交付仍未完成
-- `production` 通过：才代表本次 `main` 交付验收完成
-- 任一阶段失败，或必需阶段未执行，统一结论都是失败或未完成，不能人工口头放行
+`prepush` 是 `hook` 的兼容别名。默认模式为 `local`。
+
+## Modes / 模式
+
+| Mode              | Required stages / 必需阶段                                                                                                | Result contract / 结果契约                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `hook`, `prepush` | contract checks, formatting, type-check, strict lint, focused runner tests / 合同检查、格式、类型、严格 lint、runner 窄测 | push gate / 推送门禁                                                          |
+| `prepush-full`    | full static gates, unit tests, build, build security check, bundle budget / 完整静态门禁、单测、构建、安全检查、包体预算  | strengthened push gate / 加强推送门禁                                         |
+| `local`           | full static gates and local browser gates / 完整静态门禁与本地浏览器门禁                                                  | `incomplete` until deployed checks run / 部署验证前为 `incomplete`            |
+| `candidate`       | local gates, controlled-site gates, production preflight / 本地门禁、受控站点门禁、生产预检                               | `incomplete` until production regression runs / 生产深回归前为 `incomplete`   |
+| `production`      | candidate stages and production deep regression / candidate 阶段与生产深回归                                              | only fully passing mode yields release `passed` / 全部通过才得到发布 `passed` |
+
+The Git pre-push hook runs `hook --quiet`. It does not run the full unit suite, build, Docker, browser automation, or production checks.
+
+Git pre-push hook 执行 `hook --quiet`，不运行全量单测、构建、Docker、浏览器自动化或生产验证。
+
+## Result States / 结果状态
+
+- `passed`: every required stage completed successfully / 所有必需阶段成功完成
+- `failed`: a required stage failed or was skipped unexpectedly / 必需阶段失败或被意外跳过
+- `incomplete`: executed stages passed, while deployed production evidence is still absent / 已执行阶段通过，但仍缺少部署后的生产证据
+
+## Inputs / 输入
+
+`candidate` requires `CONTROLLED_BASE_URL`. `production` uses the public `BASE_URL` and requires the controlled target plus release credentials supplied through environment variables.
+
+`candidate` 必须提供 `CONTROLLED_BASE_URL`。`production` 使用公开 `BASE_URL`，并通过环境变量接收受控目标与发布凭据。
+
+```text
+BASE_URL
+CONTROLLED_BASE_URL
+PRIMARY_USERNAME
+PRIMARY_PASSWORD
+SECONDARY_EMAIL_MODE=user-assisted
+ARTIFACT_DIR                 # optional / 可选
+QA_PREFIX                    # optional / 可选
+BUN_EXECUTABLE               # optional / 可选
+```
+
+Credentials remain in process environment only. Tracked `.env` files and command examples contain placeholders.
+
+凭据仅通过进程环境传入。受跟踪的 `.env` 文件和命令示例只保留占位符。
+
+## Evidence / 验证证据
+
+Each run writes:
+
+每次运行写入：
+
+- `summary.json`
+- `summary.md`
+- `stages/*.json`
+- command tail logs / 命令尾部日志
+
+Artifact serialization redacts credential-like keys and values. Console output identifies a failed rule by file, line, and rule name without printing matched secret text.
+
+Artifact 序列化会脱敏凭据类键和值。控制台仅按文件、行号和规则名定位失败项，不打印匹配到的敏感文本。
+
+## Environment Failures / 环境失败
+
+Local browser gates require Docker Desktop, the local backend stack, a Pages-compatible preview, and the local audit bridge. Missing dependencies produce a failed or environment-blocked result in the evidence. Fallback output never counts as a release pass.
+
+本地浏览器门禁依赖 Docker Desktop、本地后端栈、兼容 Pages 的预览服务和本地审计桥。依赖缺失会在证据中记录为失败或环境阻塞；fallback 结果不能计为发布通过。
+
+## Release Decision / 发布判定
+
+1. Run `prepush-full` before pushing a release change / 发布变更推送前执行 `prepush-full`
+2. Run `candidate` against a controlled deployment / 对受控部署执行 `candidate`
+3. Deploy `main` through the configured platform / 通过既有平台部署 `main`
+4. Run `production` against the deployed site / 对已部署站点执行 `production`
+5. Accept the release only when `production` reports `passed` / 仅在 `production` 报告 `passed` 时接受发布
+
+Runner implementation and stage contracts live in [scripts/validate-release.mjs](scripts/validate-release.mjs) and [scripts/lib/validate-release.js](scripts/lib/validate-release.js).
+
+Runner 实现与阶段合同位于 [scripts/validate-release.mjs](scripts/validate-release.mjs) 和 [scripts/lib/validate-release.js](scripts/lib/validate-release.js)。

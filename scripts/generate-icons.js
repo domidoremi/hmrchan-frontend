@@ -1,18 +1,4 @@
 #!/usr/bin/env node
-/**
- * 自动生成 PWA 图标
- *
- * 使用 sharp 库从源图标生成所有需要的尺寸
- *
- * 前置条件：
- *   npm install sharp
- *
- * 使用：
- *   node scripts/generate-icons.js <source-icon.png>
- *
- * 示例：
- *   node scripts/generate-icons.js source-icon-512.png
- */
 
 import sharp from 'sharp'
 import { existsSync, mkdirSync } from 'fs'
@@ -37,12 +23,10 @@ if (!existsSync(SOURCE_ICON)) {
   process.exit(1)
 }
 
-// 确保输出目录存在
 if (!existsSync(OUTPUT_DIR)) {
   mkdirSync(OUTPUT_DIR, { recursive: true })
 }
 
-// 需要生成的图标尺寸
 const ICON_SIZES = [
   { size: 72, name: 'icon-72x72.png', purpose: 'Android 小图标' },
   { size: 96, name: 'icon-96x96.png', purpose: 'Android 中图标' },
@@ -54,11 +38,10 @@ const ICON_SIZES = [
   { size: 512, name: 'icon-512x512.png', purpose: 'Android 超高清' },
 ]
 
-// 配置常量
 const CONFIG = {
   MASKABLE: {
-    ICON_RATIO: 0.8, // 图标占 80% 空间
-    PADDING_RATIO: 0.1, // 周围留 10% 边距
+    ICON_RATIO: 0.8,
+    PADDING_RATIO: 0.1,
     BACKGROUND_COLOR: { r: 139, g: 92, b: 246, alpha: 1 }, // #8b5cf6
   },
   SHORTCUT: {
@@ -68,7 +51,6 @@ const CONFIG = {
   },
 }
 
-// 快捷方式图标（96x96）
 const SHORTCUT_ICONS = [
   { name: 'shortcut-home.png', emoji: '🏠', color: '#8b5cf6' },
   { name: 'shortcut-explore.png', emoji: '🔍', color: '#06b6d4' },
@@ -76,9 +58,6 @@ const SHORTCUT_ICONS = [
   { name: 'shortcut-settings.png', emoji: '⚙️', color: '#6b7280' },
 ]
 
-/**
- * 生成标准图标
- */
 async function generateStandardIcons() {
   console.log('📦 生成标准图标...')
   console.log('')
@@ -90,7 +69,7 @@ async function generateStandardIcons() {
       await sharp(SOURCE_ICON)
         .resize(size, size, {
           fit: 'contain',
-          background: { r: 0, g: 0, b: 0, alpha: 0 }, // 透明背景
+          background: { r: 0, g: 0, b: 0, alpha: 0 },
         })
         .png()
         .toFile(outputPath)
@@ -102,9 +81,6 @@ async function generateStandardIcons() {
   }
 }
 
-/**
- * 生成 Maskable 图标（带背景）
- */
 async function generateMaskableIcons() {
   console.log('')
   console.log('🎭 生成 Maskable 图标...')
@@ -119,11 +95,9 @@ async function generateMaskableIcons() {
     const outputPath = resolve(OUTPUT_DIR, name)
 
     try {
-      // 创建带背景的 maskable 图标
       const iconSize = Math.floor(size * CONFIG.MASKABLE.ICON_RATIO)
       const padding = Math.floor(size * CONFIG.MASKABLE.PADDING_RATIO)
 
-      // 先调整图标大小
       const resizedIcon = await sharp(SOURCE_ICON)
         .resize(iconSize, iconSize, {
           fit: 'contain',
@@ -132,7 +106,6 @@ async function generateMaskableIcons() {
         .png()
         .toBuffer()
 
-      // 创建带背景的图标
       await sharp({
         create: {
           width: size,
@@ -158,9 +131,6 @@ async function generateMaskableIcons() {
   }
 }
 
-/**
- * 生成快捷方式图标（带 emoji）
- */
 async function generateShortcutIcons() {
   console.log('')
   console.log('🔗 生成快捷方式图标...')
@@ -172,7 +142,6 @@ async function generateShortcutIcons() {
     const outputPath = resolve(OUTPUT_DIR, name)
 
     try {
-      // 创建带圆角的背景
       const svg = `
         <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
           <rect width="${SIZE}" height="${SIZE}" rx="${BORDER_RADIUS}" fill="${color}"/>
@@ -189,9 +158,6 @@ async function generateShortcutIcons() {
   }
 }
 
-/**
- * 验证源图标
- */
 async function validateSourceIcon() {
   try {
     const metadata = await sharp(SOURCE_ICON).metadata()
@@ -220,22 +186,17 @@ async function validateSourceIcon() {
   }
 }
 
-/**
- * 主执行函数
- */
 async function main() {
   console.log('🎨 PWA 图标生成器')
   console.log('═'.repeat(60))
   console.log('')
 
-  // 验证源图标
   const isValid = await validateSourceIcon()
   if (!isValid) {
     process.exit(1)
   }
 
   try {
-    // 并行生成所有图标以提升性能
     await Promise.all([generateStandardIcons(), generateMaskableIcons(), generateShortcutIcons()])
 
     console.log('')

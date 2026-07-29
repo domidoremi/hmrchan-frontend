@@ -80,7 +80,6 @@
                   @keydown.enter.prevent="openLightbox()"
                   @keydown.space.prevent="openLightbox()"
                 >
-                  <!-- 模糊占位图 -->
                   <img
                     v-if="!isMediaLoaded && placeholderSrc"
                     class="media-placeholder"
@@ -88,7 +87,7 @@
                     :alt="post?.title || ''"
                     aria-hidden="true"
                   />
-                  <!-- 原图 -->
+
                   <img
                     class="media-viewer-item"
                     :class="{ 'is-loaded': isMediaLoaded }"
@@ -422,7 +421,6 @@ import {
   type PostDetailMediaTransition,
 } from './post-detail/postDetailModel'
 
-// 动态导入大型组件以减少初始包体积
 const PostActionStrip = defineAsyncComponent({
   loader: () => import('@/components/business/PostActionStrip.vue'),
 })
@@ -436,7 +434,6 @@ const MediaLightbox = defineAsyncComponent({
         message
       )
 
-    // 网络抖动时先重试一次，避免直接失败
     if (isChunkLoadError && attempts <= 1) {
       retry()
       return
@@ -531,7 +528,6 @@ const pendingPostNav = ref<{ direction: 1 | -1; expiresAt: number } | null>(null
 const postNavHint = ref<'left' | 'right' | null>(null)
 let postNavHintTimer: number | null = null
 
-// Lightbox 状态
 const isLightboxOpen = ref(false)
 const lightboxInitialIndex = ref(0)
 
@@ -565,9 +561,6 @@ const canGoPrevMedia = computed(() => mediaState.value.canGoPrevMedia)
 const canGoNextMedia = computed(() => mediaState.value.canGoNextMedia)
 const showMediaNavButtons = computed(() => mediaState.value.showMediaNavButtons)
 
-// 缓存来自列表页时可能没有 media_files，但 media_count > 0 表示有媒体
-// 此时应显示加载骨架而非"无媒体"占位
-// 一旦详情 API 已返回（detailFetched），不再显示骨架
 const isMediaPending = computed(() => computeIsMediaPending(post.value, detailFetched.value))
 
 const isImageSequence = computed(() => mediaState.value.isImageSequence)
@@ -624,7 +617,6 @@ function hintPostMedia(postDetail: PostDetailResponse | null | undefined) {
   )
 }
 
-// 获取缓存的缩略图作为占位图
 const placeholderSrc = computed(() => {
   return resolvePlaceholderSource({
     activeMedia: activeMedia.value,
@@ -718,7 +710,6 @@ function advanceMedia() {
   commitMediaTransition(resolveAutoAdvanceMediaTransition(activeMediaIndex.value, mediaCount.value))
 }
 
-// 用户明确切换媒体后，仅预热相邻缩略图，避免详情页首屏竞争完整媒体资源。
 function preloadAdjacentMedia() {
   const preloadTargets = resolveAdjacentImagePreloadTargets({
     mediaFiles: post.value?.media_files,
@@ -728,7 +719,6 @@ function preloadAdjacentMedia() {
   })
 
   preloadTargets.forEach(({ thumbnailUrl, fullSizeUrl, shouldPreloadThumbnail }) => {
-    // 预加载缩略图
     if (shouldPreloadThumbnail) {
       const thumbImg = new Image()
       thumbImg.src = thumbnailUrl
@@ -953,7 +943,6 @@ function goToAuthor(authorId: string) {
   router.push(`/author/${authorId}`)
 }
 
-// 打开 Lightbox 查看大图
 function openLightbox(index?: number) {
   pauseAutoPlay()
   allowAdjacentMediaPreload.value = true
@@ -1047,7 +1036,6 @@ async function fetchPost(signal?: AbortSignal) {
   disconnectCommentsObserver()
   stopCommentsFallbackListeners()
 
-  // 从 sessionStorage 获取缓存的缩略图
   const cachedThumb = sessionStorage.getItem(`post-thumbnail-${currentPostId}`)
   if (cachedThumb) {
     cachedThumbnailUrl.value = cachedThumb
@@ -1065,7 +1053,6 @@ async function fetchPost(signal?: AbortSignal) {
 
       schedulePostViewTracking(currentPostId, requestToken)
 
-      // 后台刷新：缓存来自列表页时不含 media_files，需要网络请求补全
       void loadCachedPost(currentPostId, signal ? { signal } : undefined)
         .then((result) => {
           if (signal?.aborted || requestToken !== fetchPostToken) return
@@ -1130,10 +1117,8 @@ onMounted(() => {
   scheduleStageListeners()
 })
 
-// 记录访问开始时间（用于智能预缓存）
 const accessStartTime = Date.now()
 
-// 在组件卸载时记录访问
 onUnmounted(() => {
   const timeSpent = Date.now() - accessStartTime
   if (postId.value) {
@@ -1151,7 +1136,7 @@ watch(postId, (nextId, prevId) => {
 
   cancelPostDetailIdleWork()
   isSwitchingPost.value = false
-  // 清理上一条内容的缓存，避免长时间浏览造成内存堆积
+
   if (prevId && prevId !== nextId) {
     sessionStorage.removeItem(`post-thumbnail-${prevId}`)
   }
@@ -1290,7 +1275,6 @@ onDeactivated(() => {
   releaseTextModalBindings()
 })
 
-// 清理 sessionStorage
 onUnmounted(() => {
   stageListenersWanted = false
   fetchPostToken += 1

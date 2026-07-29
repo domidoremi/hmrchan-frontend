@@ -1,15 +1,6 @@
-/**
- * Device Service - 设备管理服务
- *
- * 提供设备会话管理相关的 API 调用
- * 合约端点: /devices/
- */
-
 import { apiClient, type RequestConfig } from './client'
 import { ensureVerificationToken } from './verificationBridge'
 import { assertUuidV7String, type PublicResourceId } from '@/types/publicId'
-
-// ========== 请求/响应类型 ==========
 
 export interface Device {
   id: PublicResourceId
@@ -43,12 +34,7 @@ export interface DeviceListResponse {
   current_fingerprint?: string | null
 }
 
-// ========== 设备服务 ==========
-
 export const deviceService = {
-  /**
-   * 获取设备列表
-   */
   async getDevices(config?: RequestConfig): Promise<DeviceListResponse> {
     const response = await apiClient.get<DeviceListResponse>('/devices', {
       ...config,
@@ -60,16 +46,12 @@ export const deviceService = {
     }
   },
 
-  /** 取消当前设备信任状态 */
   async untrustDevice(deviceId: PublicResourceId): Promise<{ success: boolean }> {
     return apiClient.post('/devices/untrust', {
       device_id: assertUuidV7String(deviceId, 'device id'),
     })
   },
 
-  /**
-   * 获取当前设备信息
-   */
   async getCurrentDevice(config?: RequestConfig): Promise<Device> {
     return apiClient.get<Device>('/devices/current', {
       ...config,
@@ -77,9 +59,6 @@ export const deviceService = {
     })
   },
 
-  /**
-   * 注销指定设备
-   */
   async revokeDevice(deviceId: PublicResourceId): Promise<void> {
     const publicDeviceId = assertUuidV7String(deviceId, 'device id')
     const verificationToken = await ensureVerificationToken('revoke_sessions')
@@ -91,10 +70,6 @@ export const deviceService = {
     })
   },
 
-  /**
-   * 注销所有设备
-   * DELETE /api/v1/devices → { message, success, revoked_count }
-   */
   async revokeAllDevices(): Promise<{
     message?: string
     success?: boolean
@@ -109,9 +84,6 @@ export const deviceService = {
     })
   },
 
-  /**
-   * 仅允许将当前设备标记为 trusted
-   */
   async trustDevice(deviceId: PublicResourceId): Promise<{ success: boolean }> {
     return apiClient.post(
       '/devices/trust',
@@ -123,9 +95,6 @@ export const deviceService = {
     )
   },
 
-  /**
-   * 更新设备名称
-   */
   async updateDeviceName(
     deviceId: PublicResourceId,
     deviceName: string

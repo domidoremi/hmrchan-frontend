@@ -1,7 +1,3 @@
-/**
- * Authors Service - 作者相关 API
- */
-
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 import type { PostListItem } from './postService'
@@ -19,7 +15,7 @@ export interface AuthorListItem {
   is_verified: boolean
   created_at?: string
   updated_at?: string
-  // 兼容旧字段
+
   platform_user_id?: string
   name?: string
   description?: string | null
@@ -43,7 +39,7 @@ export interface AuthorResponse {
   created_at?: string
   updated_at?: string
   recent_posts?: AuthorRecentPost[]
-  // 兼容旧字段
+
   name?: string
   description?: string | null
   video_count?: number | null
@@ -80,7 +76,6 @@ export const authorService = {
       cursor: params.cursor ?? null,
     })
 
-    // 列表端点使用无尾斜杠路径，避免与后端签名路径规范不一致
     return apiClient.get<CursorCollectionResponse<AuthorListItem>>(`/authors${query}`, config)
   },
 

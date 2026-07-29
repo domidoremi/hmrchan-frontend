@@ -632,7 +632,7 @@ function bindGlobalEvents() {
 
 function unbindGlobalEvents() {
   document.removeEventListener('keydown', handleKeydown)
-  // 弹窗关闭时确保拖拽监听解除，避免遗留全局监听。
+
   stopDrag()
 }
 

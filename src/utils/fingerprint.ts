@@ -1,10 +1,4 @@
-/**
- * Device Fingerprint Utility
- *
- * 使用 FingerprintJS 生成唯一的设备指纹
- * 提供降级方案以确保在 FingerprintJS 失败时仍能生成标识符
- */
-
+// Fingerprints are cached metadata for client integrity, not authentication authority.
 type FpAgent = { get: () => Promise<{ visitorId: string }> }
 
 let fpPromise: Promise<FpAgent> | null = null
@@ -98,23 +92,16 @@ function persistFingerprint(metadata: DeviceFingerprintMetadata): void {
 
 let cachedFingerprint: DeviceFingerprintMetadata | null = readPersistedFingerprint()
 
-/**
- * 懒加载 FingerprintJS（避免阻塞首屏）
- */
 async function loadFingerprintJS(): Promise<FpAgent> {
   const mod = await import('@fingerprintjs/fingerprintjs')
   return mod.default.load()
 }
 
-/**
- * 初始化 FingerprintJS（应用启动时调用一次）
- */
 export function initFingerprint(): Promise<FpAgent | null> {
-  // 已有持久缓存时无需预热第三方库
   if (cachedFingerprint) {
     return Promise.resolve(null)
   }
-  // 默认走轻量本地指纹，避免第三方库抢占首屏主线程
+
   if (!ENABLE_ADVANCED_FINGERPRINT) {
     return Promise.resolve(null)
   }
@@ -125,9 +112,6 @@ export function initFingerprint(): Promise<FpAgent | null> {
   return fpPromise
 }
 
-/**
- * 清除缓存的指纹（用于测试或强制重新生成）
- */
 export function clearFingerprintCache() {
   cachedFingerprint = null
   fpPromise = null
@@ -141,18 +125,11 @@ export function clearFingerprintCache() {
   }
 }
 
-/**
- * 获取设备指纹及生成版本元数据。
- * 优先使用 FingerprintJS，失败时使用降级方案
- * 结果会被缓存以避免重复计算
- */
 export async function getDeviceFingerprintMetadata(): Promise<DeviceFingerprintMetadata> {
-  // 返回缓存的指纹（如果存在）
   if (cachedFingerprint) {
     return cachedFingerprint
   }
 
-  // 默认：直接使用轻量降级指纹，避免加载第三方指纹库造成长任务。
   if (!ENABLE_ADVANCED_FINGERPRINT) {
     cachedFingerprint = {
       value: await getFallbackFingerprint(),
@@ -184,7 +161,7 @@ export async function getDeviceFingerprintMetadata(): Promise<DeviceFingerprintM
     if (import.meta.env.DEV) {
       console.warn('FingerprintJS failed, using fallback:', error)
     }
-    // 降级方案：使用基于浏览器特征的指纹
+
     cachedFingerprint = {
       value: await getFallbackFingerprint(),
       source: 'oss_browser',
@@ -196,17 +173,10 @@ export async function getDeviceFingerprintMetadata(): Promise<DeviceFingerprintM
   }
 }
 
-/**
- * 获取设备指纹
- */
 export async function getDeviceFingerprint(): Promise<string> {
   return (await getDeviceFingerprintMetadata()).value
 }
 
-/**
- * 降级方案：生成简单的浏览器指纹
- * 使用 SubtleCrypto API 生成更安全的哈希值
- */
 async function getFallbackFingerprint(): Promise<string> {
   const components = [
     navigator.userAgent,
@@ -221,7 +191,7 @@ async function getFallbackFingerprint(): Promise<string> {
 
   const fingerprint = components.join('|')
 
-  // 使用 SubtleCrypto API 生成 SHA-256 哈希
+  // Web Crypto is preferred; the integer hash only supports restricted runtimes.
   try {
     const encoder = new TextEncoder()
     const data = encoder.encode(fingerprint)
@@ -232,7 +202,6 @@ async function getFallbackFingerprint(): Promise<string> {
       .join('')
       .slice(0, 32)
   } catch {
-    // 降级到简单的字符串哈希（仅在 SubtleCrypto 不可用时）
     let hash = 0
     for (let i = 0; i < fingerprint.length; i++) {
       const char = fingerprint.charCodeAt(i)

@@ -1,12 +1,6 @@
-/**
- * Schedule Service - 日程/活动 API
- */
-
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 
 const SCHEDULE_API_ENABLED = import.meta.env.VITE_ENABLE_SCHEDULE_API !== 'false'
-
-// ========== 类型定义 ==========
 
 export type ScheduleCategory = 'live' | 'media' | 'birth' | 'other'
 
@@ -34,7 +28,7 @@ export interface ScheduleResponse {
   is_published: boolean
   created_at: string
   updated_at?: string | null
-  // 兼容旧字段
+
   uuid?: string
   author_id?: number | null
 }
@@ -61,12 +55,7 @@ export interface ListSchedulesParams {
   published_only?: boolean
 }
 
-// ========== 日程服务 ==========
-
 export const scheduleService = {
-  /**
-   * 获取日程列表（分页）
-   */
   async list(
     params: ListSchedulesParams = {},
     config?: RequestConfig
@@ -93,9 +82,6 @@ export const scheduleService = {
     }
   },
 
-  /**
-   * 获取日历格式事件列表（FullCalendar 兼容）
-   */
   async calendar(
     params: {
       start?: string
@@ -120,9 +106,6 @@ export const scheduleService = {
     })
   },
 
-  /**
-   * 获取日程详情
-   */
   async getById(scheduleId: string, config?: RequestConfig): Promise<ScheduleResponse> {
     return apiClient.get<ScheduleResponse>(`/schedules/${scheduleId}`, {
       ...config,

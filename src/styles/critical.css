@@ -1,19 +1,4 @@
-/**
- * Critical CSS - 关键首屏样式
- *
- * 此文件将在构建时内联到 HTML <head> 中
- * 用于优化 FCP (First Contentful Paint)
- *
- * 只包含首屏渲染必需的最小样式：
- * - CSS 变量定义
- * - 导航栏布局
- * - 骨架屏样式
- * - 基础布局
- */
-
-/* ========== 核心 CSS 变量 ========== */
 :root {
-  /* 颜色 - 与 tokens.css zinc 体系保持一致 */
   --color-primary: #18181b;
   --color-primary-rgb: 24, 24, 27;
   --color-primary-dark: #09090b;
@@ -26,30 +11,25 @@
   --color-gray-900: #18181b;
   --color-gray-950: #09090b;
 
-  /* 语义颜色 */
   --color-background: var(--color-gray-50);
   --color-text-primary: var(--color-gray-900);
   --color-text-secondary: var(--color-gray-600);
 
-  /* 玻璃态 */
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-bg-light: rgba(255, 255, 255, 0.5);
   --glass-bg-strong: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.3);
   --glass-blur: blur(0.75rem);
 
-  /* 间距 */
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
   --spacing-4: 1rem;
   --spacing-6: 1.5rem;
 
-  /* 圆角 */
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
 
-  /* 布局 */
   --navbar-height: 4rem;
   --mobile-nav-height: 0rem;
   --navbar-visible-height: var(--navbar-height);
@@ -60,7 +40,6 @@
   );
   --container-max: 1400px;
 
-  /* 字体 */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --text-base: 1rem;
   --text-sm: 0.875rem;
@@ -74,7 +53,6 @@
   --z-fixed: 300;
 }
 
-/* 暗色模式 - 与 tokens.css 暗色体系保持一致 */
 [data-color-mode='dark'] {
   --color-primary: #f4f4f5;
   --color-primary-rgb: 244, 244, 245;
@@ -88,7 +66,6 @@
   --glass-border: rgba(255, 255, 255, 0.06);
 }
 
-/* ========== 基础重置 ========== */
 *,
 *::before,
 *::after {
@@ -158,7 +135,6 @@ svg {
   height: auto;
 }
 
-/* ========== 容器 ========== */
 .container {
   width: 100%;
   max-width: var(--container-max-fluid, var(--container-max));
@@ -166,7 +142,6 @@ svg {
   padding-inline: var(--page-padding, var(--spacing-4));
 }
 
-/* ========== 导航栏 ========== */
 .glass-navbar {
   position: fixed;
   top: 0;
@@ -203,7 +178,6 @@ svg {
   text-decoration: none;
 }
 
-/* ========== 主内容区域 ========== */
 #app {
   min-height: 100svh;
   min-height: 100dvh;
@@ -293,8 +267,6 @@ main {
   }
 }
 
-/* ========== 骨架屏 ========== */
-/* 使用 transform 实现 shimmer 效果，避免 background-position 导致的 CLS */
 @keyframes skeleton-pulse {
   0% {
     transform: translateX(-100%);
@@ -309,7 +281,7 @@ main {
   overflow: hidden;
   background: var(--color-gray-200);
   border-radius: var(--radius-md);
-  /* 添加固定宽高比以防止布局偏移 */
+
   aspect-ratio: 16 / 9;
 }
 
@@ -331,7 +303,6 @@ main {
   background: linear-gradient(90deg, transparent 0%, rgba(71, 85, 105, 0.5) 50%, transparent 100%);
 }
 
-/* ========== 玻璃卡片 ========== */
 .glass-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
@@ -357,7 +328,6 @@ main {
   top: var(--spacing-4);
 }
 
-/* ========== 隐藏类 ========== */
 .sr-only {
   position: absolute;
   width: 0.0625rem;
@@ -370,7 +340,6 @@ main {
   border: 0;
 }
 
-/* ========== 响应式 ========== */
 @media (max-width: 768px) {
   .container {
     padding-inline: var(--spacing-4);

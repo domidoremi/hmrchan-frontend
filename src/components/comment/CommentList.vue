@@ -114,27 +114,18 @@ function changeSort(sort: 'newest' | 'oldest' | 'popular') {
   currentSort.value = sort
 }
 
-function handleCommentAdded() {
-  // 评论已由 store 添加到本地状态
-}
+function handleCommentAdded() {}
 
-function handleReplySubmitted() {
-  // 回复已由子组件处理
-}
+function handleReplySubmitted() {}
 
-function handleDeleted() {
-  // 评论已由 store 从本地状态移除
-}
+function handleDeleted() {}
 
 provide(commentTreeContextKey, {
   onDeleted: handleDeleted,
   onReplySubmitted: handleReplySubmitted,
 })
 
-async function loadMore() {
-  // NOTE: 评论分页由 useCommentsStore 通过 fetchComments(postId, page) 支持
-  // 当前版本一次性加载所有评论，分页加载将在评论量较大时启用
-}
+async function loadMore() {}
 
 watch(
   [() => props.postId, currentSort],

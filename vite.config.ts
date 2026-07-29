@@ -1,17 +1,3 @@
-/**
- * Vite 构建配置文件
- *
- * 主要配置：
- * - Vue 3 插件和开发工具
- * - 图片优化和关键 CSS 内联
- * - 依赖预构建优化
- * - 生产环境构建优化
- * - 代码分割策略（细粒度分割，优化缓存）
- * - 开发服务器配置和预热
- *
- * @see https://vite.dev/config/
- */
-
 import { fileURLToPath, URL } from 'node:url'
 import { execSync } from 'node:child_process'
 import type { ClientRequest, IncomingMessage } from 'node:http'
@@ -62,10 +48,8 @@ function normalizeProxyRequestHeaders(
   }
 }
 
-/** 构建时间戳，用于缓存破坏 */
 const BUILD_TIME = new Date().toISOString()
 
-/** 获取 Git commit hash */
 function getBuildHash(): string {
   try {
     return execSync('git rev-parse --short HEAD').toString().trim()
@@ -326,33 +310,24 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
     : []
 
   return {
-    /**
-     * 插件配置
-     */
     plugins: [
-      /** Vue 3 单文件组件支持 */
       vue({
         script: {
-          /** 启用响应式语法糖 */
           defineModel: true,
-          /** 启用 props 解构 */
+
           propsDestructure: true,
         },
         template: {
-          /** 生产环境移除模板注释 */
           compilerOptions: {
             comments: !isProd,
           },
         },
       }),
 
-      /** Vue JSX/TSX 语法支持 */
       vueJsx(),
 
-      /** 开发环境启用 Vue DevTools */
       ...devtoolsPlugins,
 
-      /** 图片优化：自动转 WebP，质量 85% */
       imagetools({
         defaultDirectives: (url) => {
           if (url.searchParams.has('format')) {
@@ -365,7 +340,6 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
         },
       }),
 
-      /** 生产环境内联关键 CSS + SW 版本注入 + SRI 完整性校验 + 可选混淆 */
       ...(isProd
         ? [
             criticalCSSPlugin(),
@@ -390,7 +364,6 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
           ]
         : []),
 
-      /** 生产环境压缩 HTML：移除注释、多余空行和缩进 */
       ...(isProd
         ? [
             {
@@ -399,11 +372,11 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
               transformIndexHtml(html: string) {
                 return (
                   html
-                    // 保留 IE 条件注释（<!--[if ...]>），移除其余 HTML 注释
+
                     .replace(/<!--(?!\[if\s)[\s\S]*?-->/g, '')
-                    // 压缩连续空行为单个换行
+
                     .replace(/\n\s*\n/g, '\n')
-                    // 移除行首多余空格（保留 2 空格缩进结构）
+
                     .replace(/^\s{4,}/gm, (m) => '  '.repeat(Math.floor(m.length / 2)))
                     .trim() + '\n'
                 )
@@ -413,21 +386,13 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
         : []),
     ],
 
-    /**
-     * 路径解析配置
-     */
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
 
-    /**
-     * 编译时常量替换
-     * 用于 Tree-shaking 和运行时优化
-     */
     define: {
-      /** 编译时间戳 */
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
       /** Git commit hash */
       __BUILD_HASH__: JSON.stringify(BUILD_HASH),
@@ -435,210 +400,130 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       __CLIENT_CONTRACT_VERSION__: JSON.stringify(clientContractVersion || 'dev-local'),
       /** Service Worker cache version */
       __SW_CACHE_VERSION__: JSON.stringify(SW_CACHE_VERSION),
-      /** 生产环境标识 */
+
       __PROD__: isProd,
-      /** 开发环境标识 */
+
       __DEV__: isDev,
-      /** Vue 生产环境优化标识 */
+
       __VUE_OPTIONS_API__: false,
       __VUE_PROD_DEVTOOLS__: false,
       __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
     },
 
-    /**
-     * 依赖预构建优化配置
-     *
-     * 优化策略：
-     * - 预构建高频使用的核心依赖，加快开发服务器启动
-     * - 排除按需加载的大型库，避免不必要的预构建
-     * - 精确指定扫描入口，减少扫描时间
-     */
     optimizeDeps: {
-      /**
-       * 需要预构建的核心依赖
-       * 这些依赖在应用启动时就会被使用，预构建可以提升性能
-       */
       include: [
         'vue',
         'vue-router',
         'pinia',
         'pinia-plugin-persistedstate',
         'vue-i18n',
-        // 关键优化：预构建 @lucide/vue 避免 1500+ 个单独请求
+
         '@lucide/vue',
       ],
 
-      /**
-       * 排除预构建的依赖
-       * 这些依赖按需加载，不需要预构建
-       */
       exclude: ['vite-plugin-vue-devtools', 'gsap'],
 
-      /** 是否强制重新预构建 */
       force: false,
 
-      /** 依赖扫描入口 */
       entries: ['./src/main.ts', './src/views/HomePage.vue'],
 
-      /** 立即启动，不等待扫描完成 */
       holdUntilCrawlEnd: false,
     },
 
-    /**
-     * Oxc 配置 (Vite 8 默认使用 Oxc 替代 esbuild)
-     * Oxc 是用 Rust 编写的高性能 JavaScript 工具链
-     */
     oxc: {
-      /** 编译目标 */
       target: 'esnext',
-      /** 启用所有优化 */
+
       minify: {
         compress: {
-          /** 移除 console 语句 */
           drop_console: isProd,
-          /** 移除 debugger 语句 */
+
           drop_debugger: isProd,
-          /** 移除未使用的代码 */
+
           dead_code: true,
-          /** 内联常量 */
+
           evaluate: true,
-          /** 合并变量声明 */
+
           join_vars: true,
-          /** 循环优化 */
+
           loops: true,
-          /** 移除未使用的函数参数 */
+
           unused: true,
         },
-        /** 启用变量名混淆 */
+
         mangle: isProd,
       },
     },
 
-    /**
-     * 构建配置
-     *
-     * 优化策略：
-     * - 使用 ESNext 目标，生成现代化代码
-     * - 使用 Oxc 进行快速压缩和转换
-     * - 生产环境移除 console 和 debugger
-     * - 细粒度代码分割，优化缓存策略
-     * - 优化资源处理和文件命名
-     */
     build: {
-      /** 构建目标，使用最新的 ES 特性 */
       target: 'esnext',
 
-      /** 生产环境默认不输出 sourcemap；仅在显式设置 VITE_SOURCEMAP 时启用调试映射 */
       sourcemap: sourcemapMode,
 
-      /**
-       * 生产环境代码压缩配置
-       * Vite 8 使用 Oxc Minifier（已在 oxc 配置中设置）
-       */
       minify: isProd,
 
-      /**
-       * 模块预加载配置
-       * 关闭 polyfill 以减小体积
-       */
       modulePreload: false,
 
-      /** chunk 大小警告阈值（KB） */
       chunkSizeWarningLimit: 500,
 
-      /** 小于 4KB 的资源内联为 base64 */
       assetsInlineLimit: 4096,
 
-      /** 启用 CSS 代码分割 */
       cssCodeSplit: true,
 
-      /** 使用 Lightning CSS 压缩 (Vite 8 默认) */
       cssMinify: 'lightningcss' as const,
 
-      /** CSS 目标版本 */
       cssTarget: 'esnext',
 
-      /** 启用 CSS 树摇 */
       cssTreeShaking: true,
 
-      /** 禁用压缩大小报告，加快构建速度 */
       reportCompressedSize: false,
 
-      /** 构建前清空输出目录 */
       emptyOutDir: true,
 
-      /**
-       * 生产环境额外配置
-       */
       ...(isProd && {
         assetsDir: 'assets',
         manifest: true,
       }),
 
-      /**
-       * Rolldown 打包配置
-       * Rolldown 是用 Rust 编写的高性能打包器
-       */
       rolldownOptions: {
-        /** 外部依赖（不打包） */
         external: ['@/views/ComponentsShowcase.vue'],
 
-        /** Tree-shaking 配置 */
         treeshake: {
-          /** 启用模块副作用检测 */
           moduleSideEffects: 'no-external' as const,
-          /** 移除未使用的导出 */
+
           propertyReadSideEffects: false as const,
-          /** 移除未使用的代码 */
+
           unknownGlobalSideEffects: false,
         },
 
         output: {
-          /**
-           * 代码分割策略
-           * 使用 Rolldown 的 codeSplitting 替代 manualChunks
-           */
           codeSplitting: {
             groups: [
-              // Vue 核心库（最稳定，变化最少）
               { test: /vue\/dist|@vue\/runtime/, name: 'vue-runtime' },
               { test: /@vue\/reactivity|@vue\/shared/, name: 'vue-reactivity' },
               { test: /@vue\//, name: 'vue-core' },
 
-              // 路由和状态管理
               { test: /vue-router/, name: 'vue-router' },
               { test: /pinia/, name: 'pinia' },
 
-              // i18n 独立
               { test: /vue-i18n|@intlify/, name: 'i18n' },
 
-              // 图标库
               { test: /@lucide\/vue/, name: 'icons' },
 
-              // GSAP 动画库
               { test: /gsap/, name: 'gsap' },
 
-              // 重型库：按需加载，独立分块避免阻塞首屏
               { test: /three/, name: 'three' },
               { test: /lottie-web/, name: 'lottie' },
               { test: /@rive-app/, name: 'rive' },
               { test: /@fingerprintjs/, name: 'fingerprint' },
 
-              // 其他 node_modules 依赖
               { test: /node_modules/, name: 'vendor' },
             ],
           },
 
-          /** JS chunk 文件命名 */
           chunkFileNames: 'assets/js/[name]-[hash].js',
 
-          /** 入口文件命名 */
           entryFileNames: 'assets/js/[name]-[hash].js',
 
-          /**
-           * 静态资源文件命名
-           * 根据文件类型分类存放
-           */
           assetFileNames: (assetInfo: { name?: string }) => {
             const name = assetInfo.name || ''
 
@@ -660,15 +545,11 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       },
     },
 
-    /**
-     * 开发服务器配置
-     */
     server: {
       port: 5173,
       host: resolveDevHost(env.VITE_DEV_HOST),
       strictPort: false,
 
-      /** 文件预热 - 预加载关键文件加速首次访问 */
       warmup: {
         clientFiles: [
           './src/main.ts',
@@ -681,10 +562,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
         ],
       },
 
-      /** 启用 CORS */
       cors: true,
 
-      /** 文件系统安全配置 */
       fs: {
         strict: true,
         allow: ['..'],
@@ -693,22 +572,15 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
 
       preTransformRequests: true,
 
-      /** API 代理 */
       proxy: sharedProxyConfig,
     },
 
-    /**
-     * 预览服务器配置
-     */
     preview: {
       port: 4173,
       strictPort: true,
       proxy: disablePreviewProxy ? {} : sharedProxyConfig,
     },
 
-    /**
-     * Worker 配置
-     */
     worker: {
       format: 'es' as const,
       rollupOptions: {
@@ -718,23 +590,14 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       },
     },
 
-    /**
-     * JSON 处理优化
-     */
     json: {
-      /** 命名导出，支持 tree-shaking */
       namedExports: true,
-      /** 小 JSON 直接内联 */
+
       stringify: true,
     },
 
-    /**
-     * 实验性功能
-     */
     experimental: {
-      /** 启用渲染内置 HTML */
       renderBuiltUrl: (filename: string) => {
-        // 对于关键资源使用相对路径
         if (filename.includes('critical') || filename.includes('main')) {
           return `./${filename}`
         }

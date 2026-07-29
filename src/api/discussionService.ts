@@ -1,16 +1,4 @@
-/**
- * Discussion Service - 社区讨论服务
- *
- * 社区讨论独立于帖子评论系统，支持：
- * - 发起独立讨论话题
- * - 分类：general、question、sharing、feedback
- * - #tag 标签分类（最多 5 个）
- * - 讨论评论（支持嵌套回复）
- */
-
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
-
-// ========== 类型定义 ==========
 
 export interface DiscussionAuthor {
   id: string
@@ -109,7 +97,7 @@ export interface DiscussionCommentThreadResponse {
   discussion_id: string
   thread: DiscussionComment[]
   depth: number
-  // 兼容旧字段
+
   root_comment?: DiscussionComment
 }
 
@@ -228,12 +216,7 @@ function buildCursorQuery(params: { limit?: number; cursor?: string | null }): U
   return query
 }
 
-// ========== 讨论服务 ==========
-
 export const discussionService = {
-  /**
-   * 获取讨论列表
-   */
   async list(
     params: ListDiscussionsParams = {},
     config?: RequestConfig
@@ -247,58 +230,35 @@ export const discussionService = {
     return normalizeCursorCollection(data, normalizeDiscussion)
   },
 
-  /**
-   * 获取单个讨论详情
-   */
   async get(discussionId: string, config?: RequestConfig): Promise<Discussion> {
     const data = await apiClient.get<Discussion>(`/discussions/${discussionId}`, config)
     return normalizeDiscussion(data)
   },
 
-  /**
-   * 创建讨论
-   */
   async create(data: CreateDiscussionRequest): Promise<Discussion> {
     const response = await apiClient.post<Discussion>('/discussions', data)
     return normalizeDiscussion(response)
   },
 
-  /**
-   * 更新讨论
-   */
   async update(discussionId: string, data: UpdateDiscussionRequest): Promise<Discussion> {
     const response = await apiClient.patch<Discussion>(`/discussions/${discussionId}`, data)
     return normalizeDiscussion(response)
   },
 
-  /**
-   * 删除讨论
-   */
   async delete(discussionId: string): Promise<void> {
     await apiClient.delete(`/discussions/${discussionId}`, {
       verificationAction: 'delete_content',
     })
   },
 
-  /**
-   * 点赞讨论
-   */
   async like(discussionId: string): Promise<{ message: string; like_count: number }> {
     return apiClient.post(`/discussions/${discussionId}/like`, null)
   },
 
-  /**
-   * 取消点赞讨论
-   */
   async unlike(discussionId: string): Promise<{ message: string; like_count: number }> {
     return apiClient.delete(`/discussions/${discussionId}/like`)
   },
 
-  // ========== 讨论评论 ==========
-
-  /**
-   * 获取讨论评论列表
-   */
   async getComments(
     discussionId: string,
     params: GetDiscussionCommentsOptions = {},
@@ -313,9 +273,6 @@ export const discussionService = {
     return normalizeCursorCollection(data, normalizeDiscussionComment)
   },
 
-  /**
-   * 添加讨论评论
-   */
   async addComment(discussionId: string, data: CreateCommentRequest): Promise<DiscussionComment> {
     const response = await apiClient.post<DiscussionComment>(
       `/discussions/${discussionId}/comments`,
@@ -324,9 +281,6 @@ export const discussionService = {
     return normalizeDiscussionComment(response)
   },
 
-  /**
-   * 获取评论回复列表
-   */
   async getCommentReplies(
     commentId: string,
     options: GetDiscussionCommentRepliesOptions = {},
@@ -343,9 +297,6 @@ export const discussionService = {
     return normalizeCursorCollection(data, normalizeDiscussionComment)
   },
 
-  /**
-   * 更新评论
-   */
   async updateComment(commentId: string, content: string): Promise<DiscussionComment> {
     const response = await apiClient.patch<DiscussionComment>(
       `/discussions/comments/${commentId}`,
@@ -356,40 +307,25 @@ export const discussionService = {
     return normalizeDiscussionComment(response)
   },
 
-  /**
-   * 删除评论
-   */
   async deleteComment(commentId: string): Promise<void> {
     await apiClient.delete(`/discussions/comments/${commentId}`, {
       verificationAction: 'delete_content',
     })
   },
 
-  /**
-   * 点赞评论
-   */
   async likeComment(commentId: string): Promise<void> {
     await apiClient.post(`/discussions/comments/${commentId}/like`, null)
   },
 
-  /**
-   * 取消点赞评论
-   */
   async unlikeComment(commentId: string): Promise<void> {
     await apiClient.delete(`/discussions/comments/${commentId}/like`)
   },
 
-  /**
-   * 获取评论详情
-   */
   async getComment(commentId: string): Promise<DiscussionComment> {
     const data = await apiClient.get<DiscussionComment>(`/discussions/comments/${commentId}`)
     return normalizeDiscussionComment(data)
   },
 
-  /**
-   * 举报评论
-   */
   async reportComment(commentId: string, reason: string, description?: string): Promise<void> {
     await apiClient.post(
       `/discussions/comments/${commentId}/report`,
@@ -398,11 +334,6 @@ export const discussionService = {
     )
   },
 
-  // ========== 用户中心 ==========
-
-  /**
-   * 获取我发起的讨论
-   */
   async getMyDiscussions(
     options: { limit?: number; cursor?: string | null } = {},
     config?: RequestConfig
@@ -414,9 +345,6 @@ export const discussionService = {
     return normalizeCursorCollection(data, normalizeDiscussion)
   },
 
-  /**
-   * 获取我的讨论评论
-   */
   async getMyComments(
     options: { limit?: number; cursor?: string | null } = {},
     config?: RequestConfig
@@ -428,11 +356,6 @@ export const discussionService = {
     return normalizeCursorCollection(data, normalizeDiscussionComment)
   },
 
-  // ========== 帖子搜索 (用于 @帖子 引用) ==========
-
-  /**
-   * 搜索帖子（用于@帖子引用）
-   */
   async searchPosts(query: string, limit = 10): Promise<PostReference[]> {
     const response = await apiClient.get<{ items: PostReference[] }>(
       `/search/posts?q=${encodeURIComponent(query)}&limit=${limit}`
@@ -440,11 +363,6 @@ export const discussionService = {
     return response.items
   },
 
-  // ========== 搜索 ==========
-
-  /**
-   * 搜索讨论
-   */
   async search(
     q: string,
     params: { limit?: number; cursor?: string | null } = {},
@@ -460,19 +378,10 @@ export const discussionService = {
     return normalizeCursorCollection(data, normalizeDiscussion)
   },
 
-  /**
-   * 获取讨论 summary
-   */
   async getSummary(config?: RequestConfig): Promise<Record<string, unknown>> {
     return apiClient.get<Record<string, unknown>>('/discussions/summary', config)
   },
 
-  // ========== 评论线索链 ==========
-
-  /**
-   * 获取讨论评论线索链
-   * GET /api/v1/discussions/comments/:id/thread → { discussion_id, thread, depth }
-   */
   async getCommentThread(
     _discussionId: string,
     commentId: string

@@ -1,14 +1,3 @@
-/**
- * API Client - HTTP 请求客户端
- *
- * 统一负责：
- * - 同源 /api/v1/* 请求基线
- * - BFF cookie 会话传输与 401 单次重试门禁
- * - request-integrity V2
- * - challenge / verification / client re-init / contract gate
- * - multipart 自组装上传
- */
-
 import { reportClientEvent } from '@/utils/clientReporter'
 import { clearAuthRuntimeSession, getAuthRuntimeSession } from './client/auth-runtime'
 import {

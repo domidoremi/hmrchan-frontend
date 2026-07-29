@@ -113,12 +113,10 @@ useSmoothScroll(
   computed(() => settings.value.animationIntensity)
 )
 
-// 地区配置
 const { currentLocale, layout: localeLayout, interaction: localeInteraction } = useLocaleConfig()
 const localeDensity = computed(() => localeLayout.value.density)
 const localeAnimation = computed(() => localeInteraction.value.animationStyle)
 
-// 动效强度
 const animationIntensity = computed(() =>
   settings.value.enableAnimations ? settings.value.animationIntensity : 'none'
 )
@@ -235,15 +233,11 @@ watch(
     const toDepth = routeDepth(toPath)
     const fromDepth = routeDepth(fromPath || '/')
 
-    // 根据导航深度选择不同的过渡效果
     if (toDepth > fromDepth) {
-      // 进入更深层级 - 向上滑入 + 缩放
       transitionName.value = 'page-slide-up'
     } else if (toDepth < fromDepth) {
-      // 返回上层 - 向下滑出 + 缩放
       transitionName.value = 'page-slide-down'
     } else {
-      // 同级切换 - 淡入淡出 + 轻微缩放
       transitionName.value = 'page-fade'
     }
   }
@@ -345,7 +339,6 @@ main.main--under-navbar {
   }
 }
 
-/* 动效强度控制 */
 #app[data-animation-intensity='none'] {
   --duration-instant: 0ms;
   --duration-fast: 0ms;

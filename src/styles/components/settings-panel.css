@@ -74,7 +74,6 @@
   padding-block-end: 0;
 }
 
-/* 移动端优化：确保面板可以滚动 */
 @media (max-width: 768px) {
   .settings-panel {
     max-block-size: var(--app-safe-block-size-with-mobile-nav);

@@ -167,7 +167,6 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
   isLoading.value = true
   error.value = null
 
-  // 先从缓存加载（快速显示）
   const cached = await authorCache.getAuthor(targetAuthorId)
   if (requestSignal?.aborted || requestId !== latestRequestId) return
 
@@ -196,7 +195,6 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
     dataSource.value = 'live'
     syncAuthorMeta(authorRes)
 
-    // 写入缓存
     await authorCache.setAuthor(targetAuthorId, authorRes)
     await setPublicSnapshot(
       AUTHOR_DETAIL_SNAPSHOT_SCOPE,

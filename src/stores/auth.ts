@@ -1,9 +1,3 @@
-/**
- * Auth Store - 认证状态管理
- *
- * 运行时只保存内存 access token；冷启动恢复依赖 refresh cookie。
- */
-
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
@@ -27,7 +21,6 @@ import { reportClientEvent } from '@/utils/clientReporter'
 import { resetRiskMode } from '@/security/runtimeState'
 import { resetPrivateSessionState } from '@/services/privateSessionState'
 
-// 用户类型（与 API 响应匹配）
 export type AuthUser = UserResponse
 type RuntimeAuthzCache = {
   roles: string[]
@@ -438,7 +431,6 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await authService.logout()
     } catch {
-      // 忽略登出 API 错误
     } finally {
       clearPendingGoogleAuthRequest()
       try {

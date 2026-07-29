@@ -1,12 +1,3 @@
-/**
- * Application Entry Point
- *
- * 性能优化：
- * 1. 同步导入仅限核心依赖
- * 2. 认证初始化在 app mount 前完成
- * 3. Service Worker 在空闲时注册
- */
-
 import { createApp, vaporInteropPlugin, watch } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
@@ -26,7 +17,6 @@ import { reportClientError, reportClientEvent } from './utils/clientReporter'
 import vClickOutside from './directives/clickOutside'
 import { ensureAuthStoreLoaded, useAuthSurface } from './services/authSurface'
 
-// 生产环境控制台保护（防止 Self-XSS 攻击）
 import { initConsoleGuard } from './utils/consoleGuard'
 const disposeConsoleGuard = initConsoleGuard()
 if (import.meta.hot) {
@@ -35,9 +25,6 @@ if (import.meta.hot) {
   })
 }
 
-// 点击劫持防御 — 第二阶段（模块加载后）
-// 第一阶段已在 index.html 内联脚本中完成（CSS 隐藏 + 同步跳出）
-// 此处处理跨域 iframe 降级：清空 DOM、阻断交互
 import { initFrameGuard } from './utils/frameGuard'
 initFrameGuard()
 
@@ -49,7 +36,6 @@ if (import.meta.hot) {
   })
 }
 
-// 过滤 Cloudflare 相关的控制台警告
 import { disposeConsoleFilter, initConsoleFilter } from './utils/consoleFilter'
 initConsoleFilter()
 if (import.meta.hot) {
@@ -207,14 +193,11 @@ if (shouldHandleEarlyGooglePopupBridge()) {
 const app = createApp(App)
 app.directive('click-outside', vClickOutside)
 
-/**
- * 动态模块加载失败兜底：
- * 发布后旧缓存可能命中失效 chunk，导致路由白屏。
- * 检测到典型 chunk load 错误时，仅在当前 Tab 自动刷新一次。
- */
 const CHUNK_ERROR_RE =
   /chunkloaderror|loading chunk [\w-]+ failed|failed to fetch dynamically imported module|importing a module script failed|dynamically imported module/i
 const CHUNK_RELOAD_ONCE_KEY = '__chunk_reload_once__'
+
+// One session-scoped reload recovers stale chunk URLs after deployment without a reload loop.
 
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message
@@ -272,9 +255,7 @@ router.onError((error) => {
   reloadOnceForChunkError(`router.onError: ${toErrorMessage(error)}`)
 })
 
-// 全局错误处理
 app.config.errorHandler = (err, instance, info) => {
-  // 生产环境静默处理，开发环境打印详细信息
   if (import.meta.env.DEV) {
     console.error('Vue Error:', err)
     console.error('Component:', instance)
@@ -290,7 +271,6 @@ app.config.errorHandler = (err, instance, info) => {
   })
 }
 
-// 开发环境：打印 Vue 警告详情
 if (import.meta.env.DEV) {
   app.config.warnHandler = (msg, _instance, trace) => {
     console.warn('Vue Warning:', msg)
@@ -343,7 +323,6 @@ watch(
   { immediate: true, deep: true }
 )
 
-// 初始化设备指纹（异步，不阻塞应用启动）
 import { initFingerprint } from './utils/fingerprint'
 
 function scheduleFingerprintInit(): void {
@@ -391,9 +370,6 @@ scheduleFingerprintInit()
 
 const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 
-// 公共页面首屏不再静默恢复登录态，避免 /login /register 等匿名入口主动触发
-// refresh + challenge 噪音；受保护路由仍由路由守卫按需完成初始化。
-
 async function mountApp(): Promise<void> {
   try {
     await preloadActiveLocale()
@@ -410,7 +386,6 @@ async function mountApp(): Promise<void> {
 
 void mountApp()
 
-// 性能监控：由隐私设置动态控制
 import { disposePerformanceMonitoring, initPerformanceMonitoring } from './utils/performanceMonitor'
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
@@ -418,7 +393,6 @@ if (import.meta.hot) {
   })
 }
 
-// 非关键任务：使用现代 Scheduler API 在空闲时执行
 import { scheduleTask } from './utils/modernAPIs'
 import { shouldEnableCloudflareAnalytics } from './utils/runtimeHost'
 const PREFETCH_SETUP_DELAY_MS = 14000
@@ -497,7 +471,6 @@ function scheduleAuthSurfaceBootstrap(): void {
   scheduleTask(run, { priority: 'background', delay: 12000 })
 }
 
-// Cloudflare Web Analytics（仅生产环境 + 配置 token 时启用）
 const CF_BEACON_TOKEN = (import.meta.env.VITE_CF_BEACON_TOKEN ?? '').trim()
 const CF_BEACON_ENABLED = import.meta.env.VITE_ENABLE_CF_BEACON === 'true'
 
@@ -532,8 +505,6 @@ scheduleTask(
   { priority: 'background', delay: 5000 }
 )
 
-// Service Worker 注册：页面加载完成后尽快注册（user-visible 优先级）
-// 这样可以更早地启用离线缓存和资源预缓存
 scheduleTask(
   () => {
     if (scheduledTasksDisposed) return
@@ -545,16 +516,16 @@ scheduleTask(
           reportClientEvent('sw.registered')
         }
       })
-      // 初始化 SW 更新检测器
+
       import('./utils/sw-update-checker').then(
         ({ initSwUpdateChecker, disposeSwUpdateChecker }) => {
           initSwUpdateChecker({
-            checkInterval: 30 * 60 * 1000, // 30 分钟检查一次
-            showToast: true, // 显示更新提示
+            checkInterval: 30 * 60 * 1000,
+            showToast: true,
             router,
             pinia,
           })
-          // HMR 下避免重复注册监听器
+
           if (import.meta.hot) {
             import.meta.hot.dispose(() => {
               disposeSwUpdateChecker()
@@ -564,10 +535,9 @@ scheduleTask(
       )
     })
   },
-  { priority: 'background', delay: SW_REGISTER_DELAY_MS } // 延迟注册，降低与首屏关键资源的竞争
+  { priority: 'background', delay: SW_REGISTER_DELAY_MS }
 )
 
-// 后台同步管理器：监听网络状态和 SW 消息
 scheduleTask(
   () => {
     if (scheduledTasksDisposed) return
@@ -585,10 +555,9 @@ scheduleTask(
       }
     )
   },
-  { priority: 'background', delay: SW_SYNC_DELAY_MS } // 进一步后移后台同步初始化，避免首屏主线程竞争
+  { priority: 'background', delay: SW_SYNC_DELAY_MS }
 )
 
-// 智能路由预加载：在首屏渲染完成后预加载关键路由
 import { disposePrefetch, prefetchCriticalRoutes, setupHoverPrefetch } from './utils/prefetch'
 let prefetchTaskDisposed = false
 let prefetchStarted = false
@@ -669,7 +638,6 @@ function setupIntentDrivenPrefetch(): void {
     window.removeEventListener('keydown', onIntent)
   }
 
-  // 长停留且无交互时仍执行预加载，兼顾二跳体验
   prefetchFallbackTimer = window.setTimeout(() => {
     triggerPrefetchPipeline('fallback')
   }, PREFETCH_FALLBACK_DELAY_MS)
@@ -705,7 +673,6 @@ scheduleTask(
   { priority: 'background', delay: PREFETCH_SETUP_DELAY_MS }
 )
 
-// 后台维护任务：清理过期缓存/队列
 scheduleTask(
   async () => {
     if (scheduledTasksDisposed) return

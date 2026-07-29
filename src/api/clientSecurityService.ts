@@ -1,24 +1,12 @@
-/**
- * Client Security Service - 客户端安全服务
- *
- * 实现后端 client/init + anti-abuse 凭证管理：
- * 1. 应用初始化 — POST /api/v1/client/init 获取 client_token + client_secret
- * 2. 本地持久化 anti-abuse 凭证（不用于登录态）
- * 3. Turnstile 人机验证 — 处理 CHALLENGE_REQUIRED
- * 4. 凭证重签发 — 处理签名失败 / client token 失效
- *
- * request-integrity V2 的签名拼装由 `src/api/client/client-security.ts` 统一负责。
- */
-
 import { ApiError, apiClient } from './client'
+
+// Coordinates anonymous client-integrity credentials and challenge recovery.
 import { requestClientChallenge } from './clientChallengeBridge'
 import type { RequestConfig } from './client'
 import { getDeviceFingerprint, getDeviceFingerprintMetadata } from '@/utils/fingerprint'
 import { getScreenResolution, getTimezone } from '@/utils/device'
 import { getRandomHex } from '@/utils/crypto'
 import { reportClientEvent } from '@/utils/clientReporter'
-
-// ========== 类型定义 ==========
 
 export interface ClientInitRequest {
   client_fingerprint: string
@@ -80,8 +68,6 @@ export type RiskDecision =
   | 'challenge_mfa_or_passkey'
   | 'deny_obvious_abuse'
   | string
-
-// ========== 安全存储 ==========
 
 const STORAGE_KEY = 'momi_client_security'
 let ensureInitPromise: Promise<void> | null = null
@@ -149,12 +135,13 @@ function storeCredentials(creds: StoredClientCredentials): void {
     inMemoryClientSecret = nextSecret
   }
 
+  // Signing secrets remain memory-only; storage receives the token and non-secret summary.
   const { client_secret: _clientSecret, ...persistedCredentials } = creds
   void _clientSecret
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedCredentials))
   } catch {
-    // localStorage 不可用时静默失败
+    // Storage availability is optional; the in-memory secret still supports this session.
   }
 }
 
@@ -253,54 +240,39 @@ function isRecoverableVerifyError(error: unknown): error is ApiError {
   return rawMessage.includes('missing client token') || rawMessage.includes('invalid client token')
 }
 
-// ========== 客户端安全管理器 ==========
-
 export const clientSecurityManager = {
-  /** 获取当前 client_token（用于请求头） */
   getClientToken(): string | null {
     return getStoredCredentials()?.client_token ?? null
   },
 
-  /** 获取当前 client_secret（用于签名） */
   getClientSecret(): string | null {
     return inMemoryClientSecret
   },
 
-  /** 请求签名所需凭证是否齐全 */
   hasRequestIntegrityCredentials(): boolean {
     const stored = getStoredCredentials()
     return Boolean(stored?.client_token && inMemoryClientSecret)
   },
 
-  /** 获取设备指纹（用于请求头） */
   getFingerprint: getDeviceFingerprint,
 
-  /** 清除客户端凭证（登出时调用） */
   clear: clearCredentials,
 
-  /** 是否已初始化 */
   isInitialized(): boolean {
     return this.getClientToken() !== null
   },
 }
 
-// ========== 客户端安全服务 ==========
-
-/** 客户端安全相关接口均为 public，不应附带业务登录态，也不应弹默认错误 toast */
 const publicClientConfig: RequestConfig = {
   skipAuth: true,
   skipErrorToast: true,
 }
 
-/** 仅 client/init 需要跳过安全头，避免在尚未持有 client_token 时触发循环初始化 */
 const clientInitConfig: RequestConfig = {
   ...publicClientConfig,
   skipSecurity: true,
 }
 
-/**
- * 收集客户端环境信息用于 init 请求
- */
 async function collectClientInfo(forceReissue?: boolean): Promise<ClientInitRequest> {
   const fingerprint = await getDeviceFingerprintMetadata()
   const platform = navigator.platform || undefined
@@ -328,17 +300,13 @@ async function collectClientInfo(forceReissue?: boolean): Promise<ClientInitRequ
 }
 
 export const clientSecurityService = {
-  /**
-   * 初始化客户端（获取 client_token 和 client_secret）
-   * 每次页面加载都应调用；回访用户后端返回空 token 时保留旧凭证
-   * @param force 强制刷新：清除旧凭证后重新获取（用于签名失效重试）
-   */
   async init(
     force?: boolean,
     options?: { promptChallenge?: boolean }
   ): Promise<ClientInitResponse> {
     const requestedMode: 'normal' | 'force' = force ? 'force' : 'normal'
 
+    // Forced initialization supersedes a normal request; normal callers share in-flight work.
     if (initPromise && (initPromiseMode === 'force' || requestedMode === 'normal')) {
       return initPromise
     }
@@ -354,10 +322,9 @@ export const clientSecurityService = {
         clientInitConfig
       )
 
-      // 回访用户：后端返回空 token 表示继续使用旧凭证；若只返回 client_token 也要保留
+      // Persist the token before challenge dispatch so follow-up requests can be signed.
       persistInitCredentials(response)
 
-      // 如果需要 Turnstile 验证，派发事件通知 UI
       if (response.challenge_required && options?.promptChallenge !== false) {
         window.dispatchEvent(
           new CustomEvent('client:challenge-required', {
@@ -383,9 +350,6 @@ export const clientSecurityService = {
     }
   },
 
-  /**
-   * Turnstile 验证（提升信任等级到 basic）
-   */
   async verify(
     turnstileToken: string,
     options: ClientVerifyOptions = {}
@@ -398,6 +362,7 @@ export const clientSecurityService = {
       )
     } catch (error) {
       if (isRecoverableVerifyError(error)) {
+        // A single forced re-initialization recovers expired tokens; later failures propagate.
         await this.init(true, { promptChallenge: false })
         if (clientSecurityManager.getClientToken()) {
           const result = await apiClient.post<ClientVerifyResponse>(
@@ -426,16 +391,10 @@ export const clientSecurityService = {
     }
   },
 
-  /**
-   * 查询当前信任状态（适合敏感操作前预检）
-   */
   async getStatus(): Promise<ClientStatusResponse> {
     return apiClient.get<ClientStatusResponse>('/client/status', publicClientConfig)
   },
 
-  /**
-   * 确保客户端已初始化（幂等，仅在无凭证时调用 init）
-   */
   async ensureInitialized(): Promise<void> {
     if (clientSecurityManager.isInitialized()) return
     if (!ensureInitPromise) {
@@ -449,10 +408,6 @@ export const clientSecurityService = {
     await ensureInitPromise
   },
 
-  /**
-   * 确保请求签名所需的 client_token + client_secret 齐全。
-   * 若静默 init 仍未返回可签名凭证，则自动 force reissue 一次。
-   */
   async ensureRequestIntegrityCredentials(): Promise<void> {
     if (clientSecurityManager.hasRequestIntegrityCredentials()) return
     if (!ensureInitPromise) {

@@ -173,7 +173,6 @@ async function fetchAuthors(reset = true): Promise<boolean> {
   const requestToken = ++fetchAuthorsToken
 
   try {
-    // 从缓存快速加载（仅首次加载时）
     if (reset && !hadData) {
       const cached = await authorCache.getList(params)
       if (controller.signal.aborted || requestToken !== fetchAuthorsToken) return false
@@ -196,7 +195,7 @@ async function fetchAuthors(reset = true): Promise<boolean> {
     const cursorState = extractAuthorsCursorState(res)
     if (reset) {
       authors.value = res.items
-      // 写入缓存
+
       await authorCache.setList(params, res.items, res.items.length, undefined, {
         next_cursor: res.next_cursor ?? null,
         has_more: Boolean(res.has_more),
@@ -262,7 +261,7 @@ async function loadMore(): Promise<boolean> {
 }
 
 useInfiniteScroll(sentinelRef, loadMore, {
-  rootMargin: '800px', // 提前 800px 开始加载
+  rootMargin: '800px',
   enabled: () => isPageActive.value && hasMore.value && !isLoading.value && !isLoadingMore.value,
 })
 

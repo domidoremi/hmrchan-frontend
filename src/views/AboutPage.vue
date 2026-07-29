@@ -1,7 +1,6 @@
 <template>
   <div class="about-page">
     <div class="container">
-      <!-- 页面标题 -->
       <PageHeroShell class="about-hero page-hero-shell--comfortable">
         <template #heading>
           <h1 class="page-hero-shell__title gradient-text">{{ $t('about.title') }}</h1>
@@ -16,14 +15,12 @@
         </template>
       </PageHeroShell>
 
-      <!-- 关于 Himeri -->
       <section class="section himeri-section">
         <div class="page-section-head about-section-head">
           <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" class="about-section-icon" />
           <h2 class="page-section-title about-section-title">{{ $t('about.origin.title') }}</h2>
         </div>
         <div class="origin-content empty-surface">
-          <!-- 名字展示 -->
           <div class="himeri-header">
             <div class="himeri-name-card">
               <div class="name-wrapper">
@@ -41,7 +38,6 @@
             </div>
           </div>
 
-          <!-- 个人资料 -->
           <div class="profile-section">
             <h3 class="subsection-title">
               <AnimatedIcon name="user" :fallback-icon="User" size="md" />
@@ -64,7 +60,6 @@
             </div>
           </div>
 
-          <!-- 简介 -->
           <div class="bio-section">
             <h3 class="subsection-title">
               <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="md" />
@@ -85,7 +80,6 @@
         </div>
       </section>
 
-      <!-- 官方网站 & 社交媒体 -->
       <section class="section links-section content-auto-lg">
         <div class="page-section-head about-section-head">
           <AnimatedIcon
@@ -97,7 +91,6 @@
           <h2 class="page-section-title about-section-title">{{ $t('about.links.title') }}</h2>
         </div>
 
-        <!-- 官方网站 -->
         <div class="links-group">
           <h3 class="subsection-title">
             <AnimatedIcon name="explore" :fallback-icon="Globe" size="md" />
@@ -125,7 +118,6 @@
           </div>
         </div>
 
-        <!-- 个人社交媒体 -->
         <div class="links-group">
           <h3 class="subsection-title">
             <AnimatedIcon name="heart" :fallback-icon="User" size="md" />
@@ -150,7 +142,6 @@
           </div>
         </div>
 
-        <!-- 团体社交媒体 -->
         <div class="links-group">
           <h3 class="subsection-title">
             <AnimatedIcon name="heart" :fallback-icon="Share2" size="md" />
@@ -176,7 +167,6 @@
         </div>
       </section>
 
-      <!-- 核心功能 -->
       <section class="section content-auto-lg">
         <div class="page-section-head about-section-head">
           <AnimatedIcon
@@ -201,7 +191,6 @@
         </div>
       </section>
 
-      <!-- 页脚信息 -->
       <footer class="about-footer">
         <p class="footer-text">
           {{ $t('about.footer.madeWith') }}
@@ -413,7 +402,6 @@ const groupSocialLinks = computed(() => [
   },
 ])
 
-// 核心功能
 const features = computed(() => [
   {
     icon: Layers,

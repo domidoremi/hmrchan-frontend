@@ -131,7 +131,6 @@ watch(resolvedSrc, (nextSrc) => {
   }
 })
 
-// 检查图片是否已经在缓存中
 onMounted(() => {
   if (fullImageRef.value?.complete && fullImageRef.value?.naturalWidth > 0) {
     isFullLoaded.value = true
@@ -160,12 +159,10 @@ function retry() {
   border: 1px solid rgba(var(--color-border-rgb), 0.6);
 }
 
-/* 有宽高比时使用 padding-top 技巧 */
 .progressive-image[style*='--aspect-ratio'] {
   aspect-ratio: var(--aspect-ratio);
 }
 
-/* 限制最大高度 */
 .progressive-image[style*='--max-height'] {
   max-height: var(--max-height);
 }

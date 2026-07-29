@@ -1,35 +1,15 @@
-/**
- * Locale-Specific Styles
- *
- * 基于 html[lang] / [data-locale] / [data-locale-density] 属性
- * 为不同语言/地区提供差异化的：
- * - 字体栈（CJK vs Latin）
- * - 行高 / 字间距
- * - 地区特色强调色
- * - 布局密度（紧凑 / 标准 / 宽松）
- * - 交互动效风格
- * - 内容排版微调
- */
-
-/* ================================================================
-   1. 字体栈 & 基础排版
-   ================================================================ */
-
-/* 中文简体 — 思源黑体 / 苹方 / 微软雅黑 */
 [lang='zh-CN'] {
   --font-family: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --leading-normal: 1.625;
   --leading-relaxed: 1.75;
 }
 
-/* 中文繁体 — 思源黑体 / 苹方 / 微软正黑 */
 [lang='zh-TW'] {
   --font-family: 'Inter', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   --leading-normal: 1.625;
   --leading-relaxed: 1.75;
 }
 
-/* 日本語 — 思源黑体 / ヒラギノ / メイリオ */
 [lang='ja'] {
   --font-family:
     'Inter', 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
@@ -44,37 +24,28 @@
   --leading-relaxed: 1.625;
 }
 
-/* ================================================================
-   2. CJK 排版微调
-   ================================================================ */
-
-/* CJK 共享：段落行高 & 断词 */
 [data-cjk] p {
   line-height: var(--leading-relaxed);
   word-break: break-all;
 }
 
-/* CJK 段落首行缩进 */
 [data-cjk] .prose p,
 [data-cjk] .content-body p {
   text-indent: var(--locale-paragraph-indent, 2em);
 }
 
-/* 日语标题字间距（假名 + 汉字混排需要呼吸感） */
 [lang='ja'] h1,
 [lang='ja'] h2,
 [lang='ja'] h3 {
   letter-spacing: 0.02em;
 }
 
-/* 英文标题紧凑字间距 */
 [lang='en'] h1,
 [lang='en'] h2,
 [lang='en'] h3 {
   letter-spacing: -0.02em;
 }
 
-/* 标题字重跟随地区偏好 */
 [data-locale] h1,
 [data-locale] h2,
 [data-locale] h3,
@@ -82,32 +53,19 @@
   font-weight: var(--locale-heading-weight, 600);
 }
 
-/* ================================================================
-   3. 地区强调色集成
-   ================================================================ */
-
-/*
- * --locale-accent-* 变量由 useLocaleConfig 动态注入到 :root，
- * 以下规则将地区强调色应用到关键 UI 元素。
- */
-
-/* 链接悬停使用地区强调色 */
 [data-locale] a:hover {
   color: var(--locale-accent);
 }
 
-/* 选中文本使用地区强调色 */
 [data-locale] ::selection {
   background: rgba(var(--locale-accent-rgb), 0.2);
   color: inherit;
 }
 
-/* 焦点环使用地区强调色 */
 [data-locale] :focus-visible {
   outline-color: var(--locale-accent);
 }
 
-/* 地区强调色按钮变体 */
 .btn-locale-accent {
   background: var(--locale-accent);
   color: #fff;
@@ -117,7 +75,6 @@
   background: var(--locale-accent-dark);
 }
 
-/* 地区强调色徽章 */
 .badge-locale {
   background: rgba(var(--locale-accent-rgb), 0.12);
   color: var(--locale-accent-dark);
@@ -128,26 +85,14 @@
   color: var(--locale-accent-light);
 }
 
-/* 地区强调色进度条 / 加载指示器 */
 .progress-locale {
   background: linear-gradient(90deg, var(--locale-accent) 0%, var(--locale-accent-light) 100%);
 }
 
-/* 地区强调色分割线装饰 */
 .divider-locale {
   border-image: linear-gradient(90deg, transparent, var(--locale-accent), transparent) 1;
 }
 
-/* ================================================================
-   4. 布局密度系统
-   ================================================================ */
-
-/*
- * 三档密度：compact (CJK 偏好) / normal / spacious (西文偏好)
- * 通过 [data-locale-density] 属性切换
- */
-
-/* --- Compact: 紧凑布局 (zh-CN, zh-TW, ja) --- */
 [data-locale-density='compact'] {
   --density-gap-sm: 0.5rem;
   --density-gap-md: 0.75rem;
@@ -159,7 +104,6 @@
   --density-text-base: clamp(0.875rem, 0.84rem + 0.2vw, 0.9375rem);
 }
 
-/* --- Normal: 标准布局 --- */
 [data-locale-density='normal'] {
   --density-gap-sm: 0.625rem;
   --density-gap-md: 0.875rem;
@@ -171,7 +115,6 @@
   --density-text-base: var(--text-base);
 }
 
-/* --- Spacious: 宽松布局 (en) --- */
 [data-locale-density='spacious'] {
   --density-gap-sm: 0.75rem;
   --density-gap-md: 1.125rem;
@@ -183,35 +126,20 @@
   --density-text-base: var(--text-base);
 }
 
-/* 卡片间距跟随密度 */
 .card-grid,
 .masonry-grid {
   gap: calc(var(--density-gap-lg, 1.25rem) * var(--locale-card-gap-multiplier, 1));
 }
 
-/* 内容区最大宽度跟随地区 */
 .content-body,
 .prose {
   max-width: var(--locale-content-max-ch, 70ch);
 }
 
-/* 区块间距跟随密度 */
 .section-gap {
   padding-block: var(--density-padding-section, 1.5rem);
 }
 
-/* ================================================================
-   5. 交互动效风格
-   ================================================================ */
-
-/*
- * 三种动效风格：
- * - spring: 弹性回弹 (日系 kawaii 风格)
- * - smooth: 平滑流畅 (中文稳重风格)
- * - snappy: 干脆利落 (西文效率风格)
- */
-
-/* Spring 弹性动效 (ja) */
 [data-locale-animation='spring'] {
   --locale-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
   --locale-ease-out: cubic-bezier(0.22, 1.2, 0.36, 1);
@@ -221,7 +149,6 @@
   --locale-press-scale: 0.96;
 }
 
-/* Smooth 平滑动效 (zh-CN, zh-TW) */
 [data-locale-animation='smooth'] {
   --locale-ease: cubic-bezier(0.4, 0, 0.2, 1);
   --locale-ease-out: cubic-bezier(0, 0, 0.2, 1);
@@ -231,7 +158,6 @@
   --locale-press-scale: 0.98;
 }
 
-/* Snappy 干脆动效 (en) */
 [data-locale-animation='snappy'] {
   --locale-ease: cubic-bezier(0.2, 0, 0, 1);
   --locale-ease-out: cubic-bezier(0.1, 0, 0, 1);
@@ -241,7 +167,6 @@
   --locale-press-scale: 0.97;
 }
 
-/* 通用交互元素使用地区动效变量 */
 .locale-interactive {
   transition:
     transform var(--locale-duration-fast) var(--locale-ease-out),
@@ -257,35 +182,26 @@
   transform: scale(var(--locale-press-scale, 0.98));
 }
 
-/* 点击反馈: scale (en 默认) */
 [data-locale-animation='snappy'] .click-feedback:active {
   transform: scale(var(--locale-press-scale));
   transition-duration: 80ms;
 }
 
-/* 点击反馈: glow (ja) */
 [data-locale-animation='spring'] .click-feedback:active {
   box-shadow: 0 0 16px rgba(var(--locale-accent-rgb), 0.35);
   transform: scale(var(--locale-press-scale));
 }
 
-/* 点击反馈: ripple (zh) — 需配合 JS ripple 效果 */
 [data-locale-animation='smooth'] .click-feedback {
   position: relative;
   overflow: hidden;
 }
 
-/* ================================================================
-   6. 地区特色装饰
-   ================================================================ */
-
-/* 日语: 柔和圆润的卡片风格 (kawaii) */
 [data-locale='ja'] .card,
 [data-locale='ja'] .glass-card-enhanced {
   border-radius: calc(var(--radius-xl) * 1.2);
 }
 
-/* 英文: 更大的标题尺寸 (西文排版传统) */
 [data-locale='en'] h1 {
   font-size: calc(var(--text-4xl) * 1.1);
 }
@@ -294,11 +210,6 @@
   font-size: calc(var(--text-3xl) * 1.05);
 }
 
-/* ================================================================
-   7. 暗色模式地区适配
-   ================================================================ */
-
-/* 暗色模式下地区强调色微调 */
 [data-color-mode='dark'][data-locale='zh-CN'] {
   --locale-accent: #fc8181;
   --locale-accent-rgb: 252, 129, 129;
@@ -319,11 +230,6 @@
   --locale-accent-rgb: 96, 165, 250;
 }
 
-/* ================================================================
-   8. 响应式地区适配
-   ================================================================ */
-
-/* 移动端统一使用紧凑密度 */
 @media (max-width: 768px) {
   [data-locale-density='spacious'],
   [data-locale-density='normal'] {
@@ -336,7 +242,6 @@
   }
 }
 
-/* 大屏幕下 CJK 可以稍微放松密度 */
 @media (min-width: 1536px) {
   [data-cjk][data-locale-density='compact'] {
     --density-gap-md: 0.875rem;

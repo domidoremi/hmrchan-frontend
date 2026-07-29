@@ -1,9 +1,3 @@
-/**
- * Favorites Store - 收藏状态管理
- *
- * 集中管理收藏列表、收藏夹、标签、收藏状态检查
- */
-
 import { ref, computed, watch, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
 import {
@@ -38,10 +32,8 @@ export const useFavoritesStore = defineStore('favorites', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  // 收藏状态缓存: postId -> boolean
   const checkedPosts = ref<Map<string, boolean>>(new Map())
 
-  // 当前筛选条件
   const currentFolder = ref<string | undefined>(undefined)
   const currentTag = ref<string | undefined>(undefined)
   let fetchFavoritesController: AbortController | null = null

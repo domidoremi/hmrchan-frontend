@@ -1,13 +1,5 @@
-/**
- * Community Service - 社区服务
- *
- * 提供社区相关的 API 调用
- */
-
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import type { Comment } from '@/types'
-
-// ========== 类型定义 ==========
 
 export interface DiscussionItem {
   id: string
@@ -31,7 +23,7 @@ export interface CommunityStats {
   active_participants: number
   comments_today: number
   hot_topics_count: number
-  // 兼容旧字段
+
   active_discussions?: number
 }
 
@@ -90,12 +82,7 @@ function normalizeHotTopicItem(raw: unknown): HotTopicItem {
   }
 }
 
-// ========== 社区服务 ==========
-
 export const communityService = {
-  /**
-   * 获取社区动态流
-   */
   async getFeed(
     options: CursorCollectionOptions = {},
     config?: RequestConfig
@@ -106,10 +93,6 @@ export const communityService = {
     )
   },
 
-  /**
-   * 获取热门内容
-   * GET /api/v1/community/hot → cursor collection
-   */
   async getTrending(
     timeRange: TimeRange = '7d',
     options: CursorCollectionOptions = {},
@@ -127,9 +110,6 @@ export const communityService = {
     return normalizeCursorCollection(result, normalizeHotTopicItem)
   },
 
-  /**
-   * 获取最新评论
-   */
   async getRecentComments(
     options: CursorCollectionOptions = {},
     config?: RequestConfig
@@ -140,9 +120,6 @@ export const communityService = {
     )
   },
 
-  /**
-   * 获取我的评论
-   */
   async getMyComments(
     options: CursorCollectionOptions = {},
     config?: RequestConfig
@@ -153,9 +130,6 @@ export const communityService = {
     )
   },
 
-  /**
-   * 获取收藏的评论
-   */
   async getFavoriteComments(
     options: CursorCollectionOptions = {},
     config?: RequestConfig
@@ -166,9 +140,6 @@ export const communityService = {
     )
   },
 
-  /**
-   * 获取我的点赞
-   */
   async getMyLikes(
     options: CursorCollectionOptions = {},
     config?: RequestConfig
@@ -179,16 +150,10 @@ export const communityService = {
     )
   },
 
-  /**
-   * 获取社区统计
-   */
   async getStats(): Promise<CommunityStats> {
     return apiClient.get<CommunityStats>('/community/stats')
   },
 
-  /**
-   * 获取社区 summary
-   */
   async getSummary(config?: RequestConfig): Promise<Record<string, unknown>> {
     return apiClient.get<Record<string, unknown>>('/community/summary', config)
   },

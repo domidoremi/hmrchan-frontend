@@ -1,8 +1,3 @@
-/**
- * IndexedDB 封装层
- * 提供类型安全的 IndexedDB 操作
- */
-
 import { CACHE_DB_NAME, CACHE_DB_VERSION, STORES, upgradeCacheDatabase } from './idbSchema'
 
 export { STORES } from './idbSchema'
@@ -135,9 +130,6 @@ async function withStoreRecovery<T>(
   }
 }
 
-/**
- * 获取数据库连接（单例）
- */
 function getDB(): Promise<IDBDatabase> {
   if (dbResetPromise) {
     return dbResetPromise.then(() => getDB())
@@ -206,9 +198,7 @@ function getDB(): Promise<IDBDatabase> {
 
   return dbPromise
 }
-/**
- * 获取记录数量
- */
+
 export async function idbCount(store: StoreName): Promise<number> {
   return withStoreRecovery(store, `Failed to count ${store}`, 0, async (db) => {
     return new Promise((resolve, reject) => {
@@ -220,9 +210,6 @@ export async function idbCount(store: StoreName): Promise<number> {
   })
 }
 
-/**
- * 获取所有键
- */
 export async function idbGetAllKeys(store: StoreName): Promise<IDBValidKey[]> {
   return withStoreRecovery(
     store,
@@ -239,9 +226,6 @@ export async function idbGetAllKeys(store: StoreName): Promise<IDBValidKey[]> {
   )
 }
 
-/**
- * 批量写入
- */
 export async function idbPutMany<T>(store: StoreName, values: T[]): Promise<void> {
   if (values.length === 0) return
   return withStoreRecovery(store, `Failed to putMany in ${store}`, undefined, async (db) => {
@@ -257,9 +241,6 @@ export async function idbPutMany<T>(store: StoreName, values: T[]): Promise<void
   })
 }
 
-/**
- * 批量删除
- */
 export async function idbDeleteMany(store: StoreName, keys: IDBValidKey[]): Promise<void> {
   if (keys.length === 0) return
   return withStoreRecovery(store, `Failed to deleteMany from ${store}`, undefined, async (db) => {
@@ -275,9 +256,6 @@ export async function idbDeleteMany(store: StoreName, keys: IDBValidKey[]): Prom
   })
 }
 
-/**
- * 按索引裁剪到指定条目数量（删除最旧记录）
- */
 export async function idbPruneByIndex(
   store: StoreName,
   indexName: string,
@@ -318,9 +296,6 @@ export async function idbPruneByIndex(
   })
 }
 
-/**
- * 通用读取操作
- */
 export async function idbGet<T>(store: StoreName, key: IDBValidKey): Promise<T | undefined> {
   return withStoreRecovery(store, `Failed to get from ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
@@ -332,9 +307,6 @@ export async function idbGet<T>(store: StoreName, key: IDBValidKey): Promise<T |
   })
 }
 
-/**
- * 通用写入操作
- */
 export async function idbSet<T>(store: StoreName, value: T): Promise<void> {
   return withStoreRecovery(store, `Failed to set in ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
@@ -422,9 +394,6 @@ export async function idbMutate<T>(
   })
 }
 
-/**
- * 通用删除操作
- */
 export async function idbDelete(store: StoreName, key: IDBValidKey): Promise<void> {
   return withStoreRecovery(store, `Failed to delete from ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
@@ -436,9 +405,6 @@ export async function idbDelete(store: StoreName, key: IDBValidKey): Promise<voi
   })
 }
 
-/**
- * 获取所有记录
- */
 export async function idbGetAll<T>(store: StoreName): Promise<T[]> {
   return withStoreRecovery(
     store,
@@ -455,9 +421,6 @@ export async function idbGetAll<T>(store: StoreName): Promise<T[]> {
   )
 }
 
-/**
- * 简化的 openDB 接口（兼容新代码）
- */
 export interface IDBPDatabase {
   get<T>(store: StoreName, key: IDBValidKey): Promise<T | undefined>
   put<T>(store: StoreName, value: T): Promise<void>
@@ -471,7 +434,7 @@ export interface IDBPDatabase {
 }
 
 export async function openDB(): Promise<IDBPDatabase> {
-  await getDB() // 确保数据库已初始化
+  await getDB()
   return {
     get: idbGet,
     put: idbSet,
@@ -485,9 +448,6 @@ export async function openDB(): Promise<IDBPDatabase> {
   }
 }
 
-/**
- * 清空指定 store
- */
 export async function idbClear(store: StoreName): Promise<void> {
   return withStoreRecovery(store, `Failed to clear ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
@@ -499,9 +459,6 @@ export async function idbClear(store: StoreName): Promise<void> {
   })
 }
 
-/**
- * 按索引查询并删除过期记录
- */
 export async function idbDeleteExpired(
   store: StoreName,
   indexName: string,

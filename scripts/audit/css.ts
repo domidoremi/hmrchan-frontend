@@ -186,13 +186,11 @@ function analyzeCSS(css: string, filePath: string, lineOffset: number): AuditIss
       if (!rule.pattern.test(line)) continue
 
       if (rule.id === 'no-hardcoded-px') {
-        // 允许微调级像素值（<= 4px）
         const pxValues = extractPxValues(line)
         if (pxValues.length > 0 && pxValues.every((v) => Math.abs(v) <= MICRO_PX_THRESHOLD)) {
           continue
         }
 
-        // 允许绝对定位类微调（如 top: -6px）
         if (ABSOLUTE_POSITION_TWEAK_PATTERN.test(line)) {
           continue
         }

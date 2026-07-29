@@ -203,7 +203,6 @@ const categories = [
   { value: 'feedback' as const, label: '💡 反馈' },
 ]
 
-// 使用 debounce 优化帖子搜索
 const debouncedSearchPosts = debounce(async (query: string) => {
   mentionSearchController?.abort()
   const controller = new AbortController()
@@ -374,7 +373,6 @@ async function handleSubmit() {
     payload.tags = combinedTags
   }
 
-  // 添加引用帖子（只支持单个引用）
   if (selectedPosts.value.length > 0) {
     payload.referenced_post_id = selectedPosts.value[0]!.id
   }

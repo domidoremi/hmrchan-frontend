@@ -1,13 +1,3 @@
-/**
- * 作者数据缓存层
- * 结合 IndexedDB 持久化 + Memory 热缓存
- *
- * 缓存策略:
- * - 作者详情: 24小时
- * - 作者列表: 10分钟
- * - 作者头像 URL: 由 SW 媒体缓存处理
- */
-
 import { idbGet, idbSet, idbDelete, idbDeleteExpired, idbPruneByIndex, STORES } from './idb'
 import { memoryCache } from './memoryCache'
 import { CACHE_LIMITS, CACHE_TTL, generateCacheKey } from './config'
@@ -41,8 +31,6 @@ export interface CachedAuthorList {
 }
 
 export const authorCache = {
-  // ==================== 作者详情 ====================
-
   async getAuthor(id: string): Promise<CachedAuthor | undefined> {
     const startTime = performance.now()
     const memKey = `author:${id}`
@@ -88,8 +76,6 @@ export const authorCache = {
     await idbDelete(STORES.META, `author:${id}`)
     cacheStats.recordDelete('AUTHOR_DETAIL')
   },
-
-  // ==================== 作者列表 ====================
 
   async getList(params: Record<string, unknown>): Promise<CachedAuthorList | undefined> {
     const startTime = performance.now()
@@ -144,8 +130,6 @@ export const authorCache = {
   async clearLists(): Promise<void> {
     memoryCache.deleteByPrefix('author_list:')
   },
-
-  // ==================== 维护操作 ====================
 
   async cleanup(): Promise<number> {
     return idbDeleteExpired(STORES.META, 'cached_at', CACHE_TTL.AUTHOR_DETAIL)

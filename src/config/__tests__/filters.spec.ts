@@ -1,7 +1,3 @@
-/**
- * Filters 配置单元测试
- */
-
 import { describe, it, expect } from 'vitest'
 import { FILTERED_AUTHORS, isFilteredAuthor } from '../filters'
 

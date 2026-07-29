@@ -1,8 +1,3 @@
-/**
- * 帖子详情页导航上下文管理
- * 用于在详情页实现上下滑切换帖子
- */
-
 import type { PostListItem } from '@/api/postService'
 
 export interface PostNavigationContext {

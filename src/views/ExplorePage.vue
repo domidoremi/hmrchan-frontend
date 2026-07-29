@@ -51,7 +51,6 @@
       />
 
       <template v-else>
-        <!-- 骨架屏：使用与真实内容相同的 masonry 布局结构，避免 CLS -->
         <div
           v-if="isLoading && posts.length === 0"
           class="posts-masonry-js"
@@ -234,7 +233,6 @@ const isUsingFallback = computed(() => dataSource.value === 'fallback')
 const nextCursor = ref<string | null>(null)
 const hasMoreFromCursor = ref(false)
 
-// 使用公开内容缓存编排层加载探索列表：network-first + stale/snapshot fallback
 const total = ref(0)
 let fetchPostsToken = 0
 let fetchPostsController: AbortController | null = null
@@ -243,7 +241,6 @@ let exploreFallbackModulePromise: Promise<typeof import('@/fallbacks/exploreFall
 let publicFallbackModulePromise: Promise<typeof import('@/fallbacks/publicPageFallback')> | null =
   null
 
-// 移动端优化：减少首屏加载数量
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 const pageSize = usePreferredPageSize({
   fallback: isMobile ? 8 : 24,
@@ -252,7 +249,6 @@ const pageSize = usePreferredPageSize({
   mobileCap: 12,
 })
 
-// JS Masonry 布局 - 避免 CSS column-count 的 CLS 问题
 const masonryContainerRef = useTemplateRef<HTMLElement>('masonryContainerRef')
 const cachedColumnHeights = ref<number[]>([])
 
@@ -272,14 +268,12 @@ const {
 const hasKnownTotal = computed(() => false)
 const hasMore = computed(() => hasMoreFromCursor.value)
 
-// 骨架屏列数和每列数量 - 与真实 masonry 布局保持一致，避免 CLS
 const skeletonColumnCount = computed(() => columnCount.value)
 const skeletonPerColumn = computed(() => Math.ceil(12 / skeletonColumnCount.value))
 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
 
-// 移动端优化：减少初始渲染数量（首屏渲染 6 张，平衡性能和 CLS）
 const initialRenderCount = computed(() =>
   isMobile ? Math.min(pageSize.value, 6) : Math.min(pageSize.value, 18)
 )
@@ -481,7 +475,6 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
     nextCursor.value = cursorState.nextCursor
     hasMoreFromCursor.value = cursorState.hasMore
 
-    // 更新 masonry 布局（仅渲染可见部分）
     await nextTick()
     if (requestSignal?.aborted || requestToken !== fetchPostsToken) {
       return false
@@ -556,19 +549,11 @@ async function loadMore(): Promise<boolean> {
   return ok
 }
 
-// 增加预加载距离，让内容提前加载，避免用户等待
 useInfiniteScroll(sentinelRef, loadMore, {
-  rootMargin: '800px', // 提前 800px 开始加载下一批
+  rootMargin: '800px',
   enabled: () => isActive && hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
 })
 
-// ========== Masonry 布局管理 ==========
-
-/**
- * 计算响应式列数（Explore Masonry）
- * - Mobile: 1 column
- * - Desktop: 3–5 columns
- */
 function calculateColumnCount(): number {
   if (typeof window === 'undefined') return 4
   const width = window.innerWidth
@@ -580,9 +565,6 @@ function calculateColumnCount(): number {
   return 5
 }
 
-/**
- * 更新 masonry 布局
- */
 function updateMasonryLayout(items: PostListItem[], reset = false) {
   const newColumnCount = calculateColumnCount()
   const containerWidth = masonryContainerRef.value?.clientWidth || 1200
@@ -591,20 +573,18 @@ function updateMasonryLayout(items: PostListItem[], reset = false) {
   if (reset || newColumnCount !== columnCount.value) {
     columnCount.value = newColumnCount
     initColumns()
-    // 移动端使用轮询分发，避免高度估算误差导致的 CLS
+
     if (isMobile) {
       distributePostsRoundRobin(items, 0)
     } else {
       redistribute(items, colWidth)
     }
   } else {
-    // 追加模式：优先使用缓存高度，回退到虚拟高度，避免同步读取 offsetHeight
     const realHeights =
       cachedColumnHeights.value.length === columnCount.value
         ? cachedColumnHeights.value
         : columnHeights.value
     if (isMobile) {
-      // 移动端追加也用轮询
       const startIndex = columns.value.reduce((sum, col) => sum + col.length, 0)
       distributePostsRoundRobin(items, startIndex)
     } else {
@@ -615,16 +595,11 @@ function updateMasonryLayout(items: PostListItem[], reset = false) {
   updateCachedColumnHeights()
 }
 
-// 响应式调整列数 - 使用 ResizeObserver 监听容器而非 window
 let resizeObserver: ResizeObserver | null = null
 let observedResizeElement: HTMLElement | null = null
 let lastContainerWidth = 0
 
-/**
- * 处理容器 resize - 使用 ResizeObserver 替代 window resize
- */
 const handleContainerResize = throttleRAF((width: number) => {
-  // 忽略微小变化，避免频繁重排
   if (Math.abs(width - lastContainerWidth) < 24) return
   lastContainerWidth = width
 
@@ -693,13 +668,7 @@ function updateCachedColumnHeights() {
   cachedColumnHeights.value = columnHeights.value.slice(0, columnCount.value)
 }
 
-/**
- * 处理卡片高度变化（图片加载完成等）
- */
-const handleCardHeightChange = throttleRAF(() => {
-  // 高度变化时不需要重新分发，因为 JS masonry 是固定列分配
-  // 只有在需要重新平衡时才调用 redistribute
-})
+const handleCardHeightChange = throttleRAF(() => {})
 
 watch(pageSize, () => {
   const controller = new AbortController()
@@ -718,14 +687,11 @@ watchSyncEffect(() => {
 })
 
 onMounted(() => {
-  // 初始化列数（composable 已经用 calculateColumnCount() 初始化了）
-  // 确保 columns 数组与当前列数匹配
   initColumns()
 
   if (posts.value.length === 0) {
     fetchPosts()
   } else {
-    // 已有数据时重新分发到列
     nextTick(() => {
       applyVisiblePosts(true)
     })
@@ -1068,7 +1034,6 @@ onBeforeUnmount(() => {
   border-block-start: 0.0625rem solid var(--letterbook-line, var(--color-border));
 }
 
-/* ========== JS Masonry 布局 - 避免 CLS ========== */
 .posts-masonry-js {
   --masonry-gap: var(--spacing-3);
 
@@ -1085,7 +1050,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: var(--masonry-gap);
-  min-width: 0; /* 防止 flex 子项溢出 */
+  min-width: 0;
 }
 
 @media (max-width: 767px) {
@@ -1129,7 +1094,6 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 响应式间距调整 */
 @media (min-width: 1024px) {
   .posts-masonry-js {
     --masonry-gap: var(--spacing-4);

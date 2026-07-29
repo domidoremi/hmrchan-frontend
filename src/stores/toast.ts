@@ -1,7 +1,3 @@
-/**
- * Toast Store - 通知消息状态管理
- */
-
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
@@ -22,7 +18,7 @@ export interface Toast {
 export const useToastStore = defineStore('toast', () => {
   const toasts = ref<Toast[]>([])
   const timeoutIds = new Map<string, ReturnType<typeof setTimeout>>()
-  /** 记录每个 toast 的剩余时间和暂停时刻 */
+
   const remainingTime = new Map<string, number>()
   const pauseStartTime = new Map<string, number>()
 
@@ -55,7 +51,6 @@ export const useToastStore = defineStore('toast', () => {
   }
 
   function removeToast(id: string) {
-    // 清理定时器
     const timeoutId = timeoutIds.get(id)
     if (timeoutId) {
       clearTimeout(timeoutId)
@@ -118,7 +113,6 @@ export const useToastStore = defineStore('toast', () => {
   }
 
   function clear() {
-    // 清理所有定时器
     timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId))
     timeoutIds.clear()
     remainingTime.clear()

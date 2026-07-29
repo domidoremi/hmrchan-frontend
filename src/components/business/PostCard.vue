@@ -19,12 +19,8 @@
         <span class="platform-label">{{ platformLabel }}</span>
       </div>
 
-      <!-- 预设固定尺寸的占位符，防止图片加载时的布局偏移 -->
       <div v-if="!isImageLoaded && thumbnailSrc" class="post-image-placeholder glass-skeleton" />
 
-      <!-- 无缩略图：纯文本帖子 → 不显示图片占位区域 -->
-
-      <!-- 无缩略图：有媒体但缩略图缺失 → 显示媒体类型指示 -->
       <div
         v-else-if="!thumbnailSrc && hasMediaNoThumbnail"
         class="post-image-placeholder post-image-placeholder--media"
@@ -38,7 +34,6 @@
         </span>
       </div>
 
-      <!-- 无缩略图：无媒体也无文本 → 平台图标占位 -->
       <div v-else-if="!thumbnailSrc" class="post-image-placeholder post-image-placeholder--empty">
         <component :is="platformIcon" :size="28" />
       </div>
@@ -156,18 +151,10 @@ import {
   resolvePlatformLabel,
 } from './post-card/postCardModel'
 
-/**
- * 固定宽高比缓存 - 用于保持布局稳定，避免 CLS
- * 添加大小限制防止内存泄漏
- */
 const postAspectRatioCache = new Map<string, string>()
 const MAX_ASPECT_RATIO_CACHE_SIZE = 500
 
-/**
- * 设置宽高比缓存，带大小限制
- */
 function setAspectRatioCache(id: string, ratio: string): void {
-  // 缓存满时清理最早的 100 条
   if (postAspectRatioCache.size >= MAX_ASPECT_RATIO_CACHE_SIZE) {
     const keysToDelete = Array.from(postAspectRatioCache.keys()).slice(0, 100)
     keysToDelete.forEach((k) => postAspectRatioCache.delete(k))
@@ -175,17 +162,14 @@ function setAspectRatioCache(id: string, ratio: string): void {
   postAspectRatioCache.set(id, ratio)
 }
 
-/**
- * 根据平台设置默认宽高比
- */
 const PLATFORM_ASPECT_RATIOS: Record<string, string> = {
-  tiktok: '9 / 16', // 竖屏视频
+  tiktok: '9 / 16',
   youtube: '16 / 9',
   twitter: '16 / 9',
   bilibili: '16 / 9',
-  pixiv: '3 / 4', // 竖屏图片
+  pixiv: '3 / 4',
   weibo: '4 / 3',
-  instagram: '4 / 5', // Instagram 常见比例
+  instagram: '4 / 5',
 }
 
 const DEFAULT_ASPECT_RATIO = '16 / 9'
@@ -194,17 +178,17 @@ export interface PostCardProps {
   post: PostListItem
   showContent?: boolean
   showAuthor?: boolean
-  /** 是否显示文本摘要（在content区域） */
+
   showExcerpt?: boolean
   thumbnailSize?: 'small' | 'medium' | 'large' | 'responsive'
   aspectRatio?: string | number
   /** Media sizing strategy for the card thumbnail */
   imageFit?: 'cover' | 'contain'
-  /** 是否为首屏图片（前4张优先加载） */
+
   priority?: boolean
-  /** 是否允许 hover / focus 时预取详情页 */
+
   prefetchOnHover?: boolean
-  /** 是否允许 hover / focus 时预热大图 */
+
   preloadLargeImageOnHover?: boolean
 }
 
@@ -298,7 +282,6 @@ const imageHeight = ref(360)
 let hasPrefetchedPostDetailPage = false
 let hasPreloadedLargeImage = false
 
-// Platform icon mapping - 品牌 SVG 图标
 const platformIconMap: Record<string, Component> = {
   youtube: IconYoutube,
   twitter: IconX,
@@ -324,7 +307,6 @@ const platformLabel = computed(() => {
 
 const effectiveThumbnailSize = computed(() => {
   if (props.thumbnailSize === 'responsive') {
-    // 移动端使用 medium，桌面端使用 large 作为基础尺寸
     const baseSize = isMobileDevice() ? 'medium' : 'large'
     return baseSize
   }
@@ -353,7 +335,6 @@ const thumbnailSrc = computed(() => {
   return optimized
 })
 
-/** 纯文本帖子：无缩略图且无媒体 */
 const isTextOnlyPost = computed(() => {
   if (thumbnailSrc.value) return false
   const count = props.post.media_count ?? 0
@@ -362,13 +343,11 @@ const isTextOnlyPost = computed(() => {
   return text.length > 0
 })
 
-/** 有媒体但缩略图缺失 */
 const hasMediaNoThumbnail = computed(() => {
   if (thumbnailSrc.value) return false
   return (props.post.media_count ?? 0) > 0
 })
 
-/** 媒体类型图标 */
 const mediaTypeIcon = computed(() => {
   const postType = props.post.post_type?.toLowerCase()
   if (postType === 'video' || postType === 'short' || postType === 'live_replay') return Play
@@ -383,7 +362,6 @@ const wrapperAspectRatio = computed(() => {
     return String(props.aspectRatio)
   }
 
-  // 纯文本帖子使用较矮的比例
   if (isTextOnlyPost.value) {
     return '16 / 10'
   }
@@ -416,14 +394,11 @@ const shouldPrefetchDetailOnHover = computed(() => props.prefetchOnHover === tru
 
 const shouldPreloadLargeImageOnHover = computed(() => props.preloadLargeImageOnHover === true)
 
-// 图片加载策略：首屏图片 eager，其他 lazy
 const imageLoadingStrategy = computed(() => (props.priority ? 'eager' : 'lazy'))
 
-// 图片优先级：首屏图片 high，其他 low
 const imageFetchPriority = computed(() => (props.priority ? 'high' : 'low'))
 
 function preloadImageDimensions() {
-  // 如果后端提供了尺寸数据，使用它
   if (props.post.thumbnail_width && props.post.thumbnail_height) {
     imageWidth.value = props.post.thumbnail_width
     imageHeight.value = props.post.thumbnail_height
@@ -433,7 +408,6 @@ function preloadImageDimensions() {
     return
   }
 
-  // 检查缓存
   const cachedRatio = postAspectRatioCache.get(props.post.id)
   if (cachedRatio) {
     const ratio = parseFloat(cachedRatio)
@@ -445,8 +419,6 @@ function preloadImageDimensions() {
     return
   }
 
-  // 没有尺寸数据时，使用平台默认比例，不再预加载图片获取尺寸
-  // 这样可以避免图片加载后 aspect-ratio 变化导致的 CLS
   const platform = props.post.platform?.toLowerCase()
   if (platform && PLATFORM_ASPECT_RATIOS[platform]) {
     preloadedAspectRatio.value = PLATFORM_ASPECT_RATIOS[platform]
@@ -471,9 +443,6 @@ watch(
   { immediate: true }
 )
 
-/**
- * 格式化发布时间为相对时间或日期
- */
 function formatPublishedTime(dateStr: string): string {
   const date = new Date(dateStr)
   const now = new Date()
@@ -492,10 +461,6 @@ function formatPublishedTime(dateStr: string): string {
   return t('common.yearsAgo', { n: Math.floor(diffDay / 365) })
 }
 
-/**
- * 预加载大图到浏览器缓存（hover 时触发）
- * 注意：只预加载到缓存，不替换当前显示的小图，避免 CLS
- */
 function preloadLargeImage() {
   if (!shouldPreloadLargeImageOnHover.value) return
   if (hasPreloadedLargeImage || !props.post.thumbnail_url) return
@@ -513,11 +478,11 @@ function onImageLoad(event: Event) {
   const img = event.target as HTMLImageElement | null
   if (img?.naturalWidth && img?.naturalHeight) {
     const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
-    // 只缓存比例，不更新当前显示的 aspect-ratio，避免 CLS
+
     setAspectRatioCache(props.post.id, ratio)
   }
   isImageLoaded.value = true
-  // 通知父组件高度可能已变化
+
   emit('height-change')
 }
 
@@ -596,7 +561,6 @@ function handleClick() {
   background: var(--glass-bg-light);
 }
 
-/* ========== Platform Badge - 增强版 v2 ========== */
 .platform-badge {
   position: absolute;
   top: var(--spacing-2);

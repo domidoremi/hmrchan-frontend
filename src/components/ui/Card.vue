@@ -6,10 +6,8 @@
     @mouseleave="handleMouseLeave"
     @mousemove="handleMouseMove"
   >
-    <!-- 光泽扫过效果 -->
     <span v-if="shine" class="ui-card__shine" />
 
-    <!-- 顶部光泽线 -->
     <span class="ui-card__highlight" />
 
     <div v-if="$slots['header']" class="ui-card__header">
@@ -98,7 +96,6 @@ function handleMouseLeave() {
   will-change: transform;
 }
 
-/* 顶部光泽线 */
 .ui-card__highlight {
   content: '';
   position: absolute;
@@ -117,7 +114,6 @@ function handleMouseLeave() {
   z-index: 2;
 }
 
-/* 光泽扫过效果 */
 .ui-card__shine {
   position: absolute;
   width: 12.5rem;
@@ -130,7 +126,6 @@ function handleMouseLeave() {
   transform: translate(-50%, -50%);
 }
 
-/* Elevated 变体 */
 .ui-card--elevated {
   box-shadow: var(--appearance-shadow-strong);
 }
@@ -149,7 +144,6 @@ function handleMouseLeave() {
   cursor: pointer;
 }
 
-/* 悬停状态 */
 .ui-card--hovered {
   transform: translateY(-0.3rem);
   border-color: var(--semantic-border-strong);
@@ -158,12 +152,10 @@ function handleMouseLeave() {
     0 1rem 2.5rem -0.75rem rgba(var(--color-primary-rgb), 0.15);
 }
 
-/* 3D 悬停卡片 */
 .ui-card--hover3d {
   transform-style: preserve-3d;
 }
 
-/* 内容区域 */
 .ui-card__header,
 .ui-card__content,
 .ui-card__footer {

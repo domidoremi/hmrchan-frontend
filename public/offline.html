@@ -257,7 +257,7 @@
         font-weight: 500;
       }
 
-      /* 响应式优化 */
+      /* Responsive layout */
       @media (max-width: 640px) {
         body {
           padding: 1rem;
@@ -276,7 +276,7 @@
         }
       }
 
-      /* 深色模式支持 */
+      /* Dark color scheme */
       @media (prefers-color-scheme: dark) {
         :root {
           --glass-bg: rgba(255, 255, 255, 0.15);
@@ -284,7 +284,7 @@
         }
       }
 
-      /* 减少动画 */
+      /* Reduced motion */
       @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -333,7 +333,6 @@
       let reloadAttempts = 0
       const MAX_RELOAD_ATTEMPTS = 3
 
-      // 更新在线状态
       function updateOnlineStatus() {
         const statusText = document.getElementById('statusText')
         const statusIndicator = document.getElementById('statusIndicator')
@@ -343,7 +342,7 @@
           statusText.textContent = '在线'
           statusIndicator.className = 'status-indicator status-online'
 
-          // 网络恢复后自动重新加载（带延迟和重试限制）
+          // Keep automatic reloads bounded when connectivity returns.
           if (reloadAttempts < MAX_RELOAD_ATTEMPTS) {
             reloadAttempts++
             reloadBtn.disabled = true
@@ -361,12 +360,11 @@
         }
       }
 
-      // 重新加载处理
       function handleReload() {
         if (navigator.onLine) {
           window.location.reload()
         } else {
-          // 离线时尝试重新检测网络
+          // A HEAD probe distinguishes stale online state from real reachability.
           fetch('/', { method: 'HEAD', cache: 'no-cache' })
             .then(() => {
               window.location.reload()
@@ -377,7 +375,6 @@
         }
       }
 
-      // 返回上一页处理
       function handleGoBack() {
         if (window.history.length > 1) {
           window.history.back()
@@ -386,28 +383,22 @@
         }
       }
 
-      // 监听网络状态变化
       window.addEventListener('online', updateOnlineStatus)
       window.addEventListener('offline', updateOnlineStatus)
 
-      // 页面可见性变化时检查网络状态
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
           updateOnlineStatus()
         }
       })
 
-      // 初始检查
       updateOnlineStatus()
 
-      // 键盘快捷键支持
       document.addEventListener('keydown', (e) => {
-        // Ctrl/Cmd + R: 重新加载
         if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
           e.preventDefault()
           handleReload()
         }
-        // Escape: 返回
         if (e.key === 'Escape') {
           handleGoBack()
         }

@@ -165,7 +165,6 @@ async function toggleFavorite() {
     toastStore.success(t('post.favorite'))
   } catch (err) {
     if (err instanceof ApiError) {
-      // 502 网关错误特殊处理
       if (err.message.includes('502') || err.message.includes('网关')) {
         toastStore.error(t('post.favoriteServerError'))
       } else {
@@ -175,7 +174,6 @@ async function toggleFavorite() {
       toastStore.error(t('common.error'))
     }
 
-    // 离线时添加到队列
     if (!navigator.onLine) {
       const ownerId = authStore.user?.id
       if (!ownerId) return

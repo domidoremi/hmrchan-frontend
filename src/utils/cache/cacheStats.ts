@@ -1,8 +1,3 @@
-/**
- * 缓存统计模块
- * 用于监控缓存命中率和性能指标
- */
-
 interface CacheStats {
   hits: number
   misses: number
@@ -25,72 +20,48 @@ class CacheStatsCollector {
   private responseTimes: Map<string, number[]> = new Map()
   private enabled = import.meta.env['VITE_ENABLE_DEBUG'] === 'true'
 
-  /**
-   * 记录缓存命中
-   */
   recordHit(cacheType: string): void {
     if (!this.enabled) return
     this.ensureStats(cacheType)
     this.stats.get(cacheType)!.hits++
   }
 
-  /**
-   * 记录缓存未命中
-   */
   recordMiss(cacheType: string): void {
     if (!this.enabled) return
     this.ensureStats(cacheType)
     this.stats.get(cacheType)!.misses++
   }
 
-  /**
-   * 记录缓存写入
-   */
   recordSet(cacheType: string): void {
     if (!this.enabled) return
     this.ensureStats(cacheType)
     this.stats.get(cacheType)!.sets++
   }
 
-  /**
-   * 记录缓存删除
-   */
   recordDelete(cacheType: string): void {
     if (!this.enabled) return
     this.ensureStats(cacheType)
     this.stats.get(cacheType)!.deletes++
   }
 
-  /**
-   * 记录缓存错误
-   */
   recordError(cacheType: string): void {
     if (!this.enabled) return
     this.ensureStats(cacheType)
     this.stats.get(cacheType)!.errors++
   }
 
-  /**
-   * 记录陈旧缓存被用于兜底
-   */
   recordStale(cacheType: string): void {
     if (!this.enabled) return
     this.ensureStats(cacheType)
     this.stats.get(cacheType)!.stale++
   }
 
-  /**
-   * 记录公开缓存回退来源
-   */
   recordFallback(cacheType: string): void {
     if (!this.enabled) return
     this.ensureStats(cacheType)
     this.stats.get(cacheType)!.fallbacks++
   }
 
-  /**
-   * 记录命中的缓存层（memory/idb/sw/snapshot/http 等）
-   */
   recordLayerHit(cacheType: string, layer: string): void {
     if (!this.enabled) return
     this.ensureStats(cacheType)
@@ -98,9 +69,6 @@ class CacheStatsCollector {
     stats.layers[layer] = (stats.layers[layer] ?? 0) + 1
   }
 
-  /**
-   * 记录响应时间
-   */
   recordResponseTime(cacheType: string, timeMs: number): void {
     if (!this.enabled) return
     if (!this.responseTimes.has(cacheType)) {
@@ -108,15 +76,12 @@ class CacheStatsCollector {
     }
     const times = this.responseTimes.get(cacheType)!
     times.push(timeMs)
-    // 只保留最近 100 条记录
+
     if (times.length > 100) {
       times.shift()
     }
   }
 
-  /**
-   * 获取缓存指标
-   */
   getMetrics(cacheType: string): CacheMetrics | null {
     if (!this.enabled) return null
     const stats = this.stats.get(cacheType)
@@ -135,9 +100,6 @@ class CacheStatsCollector {
     }
   }
 
-  /**
-   * 获取所有缓存统计
-   */
   getAllStats(): Record<string, CacheStats & CacheMetrics> {
     if (!this.enabled) return {}
 
@@ -149,9 +111,6 @@ class CacheStatsCollector {
     return result
   }
 
-  /**
-   * 打印统计报告
-   */
   printReport(): void {
     if (!this.enabled) {
       console.log('[Cache Stats] Disabled (enable with VITE_ENABLE_DEBUG=true)')
@@ -185,17 +144,11 @@ class CacheStatsCollector {
     console.groupEnd()
   }
 
-  /**
-   * 重置统计
-   */
   reset(): void {
     this.stats.clear()
     this.responseTimes.clear()
   }
 
-  /**
-   * 确保统计对象存在
-   */
   private ensureStats(cacheType: string): void {
     if (!this.stats.has(cacheType)) {
       this.stats.set(cacheType, {
@@ -212,10 +165,8 @@ class CacheStatsCollector {
   }
 }
 
-// 单例实例
 export const cacheStats = new CacheStatsCollector()
 
-// 在开发环境下，每 30 秒打印一次报告
 if (import.meta.env.DEV && import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
   const reportInterval: ReturnType<typeof setInterval> | null = setInterval(() => {
     cacheStats.printReport()
@@ -230,7 +181,6 @@ if (import.meta.env.DEV && import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
   }
 }
 
-// 仅在调试模式下暴露到全局，避免生产环境占用
 if (typeof window !== 'undefined' && import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
   interface WindowWithCacheStats extends Window {
     __cacheStats?: CacheStatsCollector

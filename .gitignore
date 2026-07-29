@@ -39,9 +39,7 @@ bun-debug.log*
 # =====================
 # Editor & IDE
 # =====================
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+.vscode/
 .idea/
 .history/
 *.suo
@@ -188,6 +186,11 @@ AGENTS.local.md
 CLAUDE.md
 CLAUDE.local.md
 
+# Local workspace integrations and planning logs
+.postman/
+postman/
+/FRONTEND_OPTIMIZATION_PLAN.md
+
 # =====================
 # Project specific generated files
 # =====================
@@ -215,6 +218,3 @@ scripts/config/*.tmp.json
 !public/images/expressions/22.png
 !public/images/expressions/55.png
 !public/images/expressions/fly.png
-
-# keep local docs workspace changes out of git noise
-docs/

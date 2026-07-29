@@ -1,22 +1,9 @@
-/**
- * MindMarket 风格设计系统
- *
- * 设计原则：
- * - 简洁、温暖、人性化
- * - 高性能优先（GPU 加速、避免重排）
- * - 支持 prefers-reduced-motion
- * - 低性能设备友好
- */
-
-/* ========== 配色变量 ========== */
 :root {
-  /* 主色调 - 温暖的绿色 */
   --mm-green: #4ade80;
   --mm-green-rgb: 74, 222, 128;
   --mm-green-light: #86efac;
   --mm-green-dark: #22c55e;
 
-  /* 辅助色 */
   --mm-yellow: #fbbf24;
   --mm-yellow-rgb: 251, 191, 36;
   --mm-orange: #fb923c;
@@ -28,11 +15,9 @@
   --mm-teal: #2dd4bf;
   --mm-teal-rgb: 45, 212, 191;
 
-  /* 渐变 */
   --mm-gradient-primary: linear-gradient(135deg, var(--mm-green) 0%, var(--mm-teal) 100%);
 }
 
-/* ========== 卡片组件 ========== */
 .mm-card {
   background: var(--color-surface);
   border-radius: var(--radius-2xl);
@@ -49,7 +34,6 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-/* ========== 按钮组件 ========== */
 .mm-btn {
   display: inline-flex;
   align-items: center;
@@ -95,7 +79,6 @@
   color: var(--mm-green-dark);
 }
 
-/* ========== 标题样式 ========== */
 .mm-heading {
   font-weight: var(--font-bold);
   line-height: var(--leading-tight);
@@ -114,7 +97,6 @@
   font-size: clamp(1.5rem, 3vw, 2rem);
 }
 
-/* ========== 徽章 ========== */
 .mm-badge {
   display: inline-flex;
   align-items: center;
@@ -137,7 +119,6 @@
   color: var(--mm-purple);
 }
 
-/* ========== 特性标签 ========== */
 .mm-feature-tag {
   display: inline-flex;
   align-items: center;
@@ -161,9 +142,6 @@
   color: var(--mm-green-dark);
 }
 
-/* ========== 简单动画（高性能） ========== */
-
-/* 淡入 - 仅使用 opacity 和 transform */
 @keyframes mm-fade-in {
   from {
     opacity: 0;
@@ -179,7 +157,6 @@
   animation: mm-fade-in 0.3s ease-out forwards;
 }
 
-/* 延迟类 */
 .mm-animate-delay-1 {
   animation-delay: 50ms;
 }
@@ -193,7 +170,6 @@
   animation-delay: 200ms;
 }
 
-/* ========== 减少动画偏好 ========== */
 @media (prefers-reduced-motion: reduce) {
   .mm-card,
   .mm-btn {
@@ -207,7 +183,6 @@
   }
 }
 
-/* ========== 暗色模式 ========== */
 [data-color-mode='dark'] .mm-card {
   box-shadow: none;
   background: var(--color-surface);
@@ -273,9 +248,6 @@
   color: var(--mm-green);
 }
 
-/* ========== 页面背景装饰系统 ========== */
-
-/* 背景容器 - 用于页面级装饰 */
 .mm-page-bg {
   position: fixed;
   inset: 0;
@@ -284,7 +256,6 @@
   overflow: hidden;
 }
 
-/* 有机形状背景 blob */
 .mm-bg-blob {
   position: absolute;
   border-radius: 50%;
@@ -313,7 +284,6 @@
   background: radial-gradient(circle, rgba(var(--mm-teal-rgb), 0.35) 0%, transparent 70%);
 }
 
-/* 位置预设 */
 .mm-bg-blob--top-left {
   top: -10%;
   left: -5%;
@@ -350,9 +320,6 @@
   height: 21.875rem;
 }
 
-/* ========== 区块过渡分隔线 ========== */
-
-/* 波浪分隔线 */
 .mm-section-divider {
   position: relative;
   height: 5rem;
@@ -376,7 +343,6 @@
   background-size: 100% 100%;
 }
 
-/* 渐变过渡 */
 .mm-section-divider--gradient {
   height: 7.5rem;
   background: linear-gradient(
@@ -387,7 +353,6 @@
   );
 }
 
-/* 点状分隔 */
 .mm-section-divider--dots {
   height: 3.75rem;
   display: flex;
@@ -416,7 +381,6 @@
   opacity: 0.2;
 }
 
-/* 有机曲线分隔 */
 .mm-section-divider--organic {
   height: 6.25rem;
   position: relative;
@@ -431,9 +395,6 @@
   background-size: 100% 100%;
 }
 
-/* ========== 区块背景装饰 ========== */
-
-/* 区块内的装饰性 blob（相对定位） */
 .mm-section-blob {
   position: absolute;
   border-radius: 50%;
@@ -458,7 +419,6 @@
   height: 28.125rem;
 }
 
-/* ========== 响应式 ========== */
 @media (max-width: 768px) {
   .mm-card {
     padding: var(--spacing-4);
@@ -502,7 +462,6 @@
   }
 }
 
-/* ========== 暗色模式背景调整 ========== */
 [data-color-mode='dark'] .mm-bg-blob {
   opacity: 0.2;
 }

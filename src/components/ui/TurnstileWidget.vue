@@ -175,7 +175,7 @@ function logDebug(method: 'log' | 'warn' | 'error', ...args: unknown[]) {
 }
 
 function resetRetryState() {
-  // 保持接口稳定，但不再自动重试，避免 challenge 反复重建导致抖动和噪音。
+  // Kept as a stable hook; automatic retries would rebuild challenges and create UI churn.
 }
 
 function clearInteractiveFallbackTimer() {
@@ -413,7 +413,6 @@ onMounted(async () => {
     await loadTurnstileScript()
     logDebug('log', 'Script loaded, rendering widget...')
 
-    // 等待下一个 tick 确保 DOM 完全准备好
     await waitForMountDelay(100)
     if (isUnmounted) return
 

@@ -1,15 +1,7 @@
-/**
- * Search Service - 搜索服务
- *
- * 提供全站搜索相关的 API 调用
- */
-
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 import type { PostListItem } from './postService'
 import type { AuthorListItem } from './authorService'
-
-// ========== 类型定义 ==========
 
 export interface SearchSuggestion {
   type: 'post' | 'author'
@@ -18,7 +10,7 @@ export interface SearchSuggestion {
   subtitle?: string
   avatar_url?: string | null
   platform?: string
-  // 兼容旧字段
+
   text?: string
   score?: number
 }
@@ -44,12 +36,7 @@ export interface SearchAuthorsParams {
   limit?: number
 }
 
-// ========== 搜索服务 ==========
-
 export const searchService = {
-  /**
-   * 搜索帖子
-   */
   async searchPosts(
     params: SearchPostsParams,
     config?: RequestConfig
@@ -72,9 +59,6 @@ export const searchService = {
     }
   },
 
-  /**
-   * 搜索作者
-   */
   async searchAuthors(
     params: SearchAuthorsParams,
     config?: RequestConfig
@@ -97,9 +81,6 @@ export const searchService = {
     }
   },
 
-  /**
-   * 获取搜索建议
-   */
   async getSuggestions(q: string, config?: SearchSuggestionsConfig): Promise<SearchSuggestion[]> {
     if (!q.trim() || q.trim().length < 2) {
       return []

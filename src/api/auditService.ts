@@ -1,13 +1,4 @@
-/**
- * Audit Service - 审计日志服务
- *
- * 提供用户活动日志和安全摘要的 API 调用
- * 合约端点: /audit
- */
-
 import { apiClient } from './client'
-
-// ========== 类型定义 ==========
 
 export interface AuditActivityItem {
   id: number
@@ -50,13 +41,7 @@ export interface MyActivityParams {
   event_type?: string
 }
 
-// ========== 审计服务 ==========
-
 export const auditService = {
-  /**
-   * 获取我的活动日志（需认证）
-   * API: GET /audit/my-activity?days=30&limit=50&event_type=...
-   */
   async getMyActivity(params: MyActivityParams = {}): Promise<AuditActivityResponse> {
     const query = new URLSearchParams()
     if (params.days) query.set('days', String(params.days))
@@ -77,10 +62,6 @@ export const auditService = {
     }
   },
 
-  /**
-   * 获取我的安全摘要（需认证）
-   * API: GET /audit/my-security-summary?days=30
-   */
   async getMySecuritySummary(days = 30): Promise<SecuritySummary> {
     return apiClient.get<SecuritySummary>(`/audit/my-security-summary?days=${days}`, {
       skipErrorToast: true,

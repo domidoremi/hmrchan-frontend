@@ -58,7 +58,6 @@ function scrollToNextPost() {
   const viewCenter = viewHeight / 2
   const viewportCenterDocY = scrollTop + viewCenter
 
-  // 收集所有卡片的文档流位置并按 top 排序
   const cardEntries = Array.from(cards)
     .map((card) => {
       const el = card as HTMLElement
@@ -72,11 +71,9 @@ function scrollToNextPost() {
     })
     .sort((a, b) => a.top - b.top)
 
-  // 找到第一个位于当前视窗中心下方的卡片
   const next = cardEntries.find((c) => c.top > viewportCenterDocY + 10)
 
   if (next) {
-    // 滚动到卡片中心对齐视口中心
     const cardCenterDocY = next.top + next.height / 2
     const targetScrollTop = Math.max(0, cardCenterDocY - viewCenter)
     window.scrollBy({

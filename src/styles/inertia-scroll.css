@@ -1,19 +1,6 @@
-/**
- * Inertia Scroll - 全局惯性滚动
- *
- * 确保所有可滚动容器拥有一致的惯性滚动体验：
- * - iOS 原生惯性滚动 (-webkit-overflow-scrolling: touch)
- * - 防止连锁滚动 (overscroll-behavior)
- * - 平滑的滚动起停 (scroll-behavior / Lenis fallback)
- * - 在启用 Lenis 时退回原生滚动行为，避免双重平滑
- */
-
-/* ========== 全局惯性基础 ========== */
-
 html {
-  /* 无 JS 或降级模式下，保留原生平滑锚点滚动 */
   scroll-behavior: smooth;
-  /* 防止顶层 overscroll（如下拉刷新、前进后退手势） */
+
   overscroll-behavior: none;
 }
 
@@ -22,15 +9,11 @@ html[data-smooth-scroll] {
 }
 
 body {
-  /* iOS Safari 惯性滚动 */
   -webkit-overflow-scrolling: touch;
-  /* 防止 body 连锁滚动 */
+
   overscroll-behavior-y: contain;
 }
 
-/* ========== 通用可滚动容器 ========== */
-
-/* 带 overflow-y 的容器自动继承惯性滚动 */
 [style*='overflow-y'],
 [style*='overflow: auto'],
 [style*='overflow: scroll'] {
@@ -38,17 +21,15 @@ body {
   overscroll-behavior: contain;
 }
 
-/* 常见的可滚动组件模式 */
 .scrollable,
 .scroll-container,
 [data-scrollable] {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  /* 使用合成层避免重绘 */
+
   will-change: scroll-position;
 }
 
-/* 面板 / 侧边栏 / 弹窗等可滚动区域 */
 .settings-panel,
 .dialog-body,
 .modal-body,
@@ -58,9 +39,6 @@ body {
   overscroll-behavior: contain;
 }
 
-/* ========== 滚动条美化（保持惯性） ========== */
-
-/* Firefox 统一的滚动条样式 */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-gray-300) transparent;
@@ -70,15 +48,12 @@ body {
   scrollbar-color: var(--color-gray-600) transparent;
 }
 
-/* ========== 减少动态效果 ========== */
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 }
 
-/* 应用设置：禁用动画时取消平滑滚动 */
 #app[data-animation-intensity='none'] {
   scroll-behavior: auto;
 }

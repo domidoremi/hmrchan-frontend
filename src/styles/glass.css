@@ -1,11 +1,3 @@
-/**
- * Glass Morphism - 最小必要全局玻璃态类
- *
- * 说明：
- * - 保留当前页面中实际使用的 glass-* 通用类
- * - 其余未使用变体已移除，降低首屏全局 CSS 体积
- */
-
 /* ========== Glass Card ========== */
 :root {
   --glass-surface-base-bg:

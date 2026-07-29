@@ -1,7 +1,3 @@
-/**
- * Settings Store - 用户设置状态管理
- */
-
 import { ref, computed, nextTick } from 'vue'
 import { defineStore } from 'pinia'
 import type { UserPreferences } from '@/api/preferencesService'
@@ -24,15 +20,15 @@ export interface Settings {
   dataCollection: boolean
   personalizedContent: boolean
   defaultSort: 'newest' | 'popular' | 'trending'
-  /** 动效强度：none=无动效, reduced=减弱, normal=正常, full=完整 */
+
   animationIntensity: AnimationIntensity
-  /** 帖子详情视图模式：stream=流媒体，data=数据展示 */
+
   postDetailViewMode: 'stream' | 'data'
-  /** 外观预设 */
+
   appearancePreset: AppearancePreset
-  /** 应用更新策略 */
+
   appUpdateStrategy: AppUpdateStrategy
-  /** 首页快捷导航在移动端吸附的侧边 */
+
   homeQuickNavSide: 'left' | 'right'
 }
 
@@ -120,9 +116,6 @@ export const useSettingsStore = defineStore(
   () => {
     const settings = ref<Settings>(createDefaultSettings())
 
-    // 一次性兼容迁移：补全旧版本持久化数据中缺失的新字段
-    // pinia-plugin-persistedstate 在 store 创建后恢复数据，
-    // 使用 nextTick 确保持久化数据已写入 ref
     nextTick(() => {
       if (!settings.value.appearancePreset)
         settings.value.appearancePreset = DEFAULT_APPEARANCE_PRESET
@@ -161,13 +154,6 @@ export const useSettingsStore = defineStore(
       normalizePrivacySettings(settings.value)
     })
 
-    /**
-     * 计算实际的动效时长倍数
-     * none: 0 (无动效)
-     * reduced: 0.5 (减半)
-     * normal: 1 (正常)
-     * full: 1.2 (增强)
-     */
     const animationDurationMultiplier = computed(() => {
       const multipliers: Record<AnimationIntensity, number> = {
         none: 0,
@@ -178,16 +164,10 @@ export const useSettingsStore = defineStore(
       return multipliers[settings.value.animationIntensity]
     })
 
-    /**
-     * 是否应该播放动画
-     */
     const shouldAnimate = computed(() => {
       return settings.value.enableAnimations && settings.value.animationIntensity !== 'none'
     })
 
-    /**
-     * 是否使用减弱动效（用于 prefers-reduced-motion 兼容）
-     */
     const prefersReducedMotion = computed(() => {
       return (
         settings.value.animationIntensity === 'reduced' ||
@@ -216,7 +196,7 @@ export const useSettingsStore = defineStore(
 
     function setAnimationIntensity(intensity: AnimationIntensity) {
       settings.value.animationIntensity = intensity
-      // 如果设置为 none，同时禁用动画
+
       if (intensity === 'none') {
         settings.value.enableAnimations = false
       } else if (!settings.value.enableAnimations) {

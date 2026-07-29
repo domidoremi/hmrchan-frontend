@@ -2219,7 +2219,6 @@ const homePageMotionStyle = computed<Record<string, string>>(() =>
 )
 
 watchSyncEffect(() => {
-  // 确保全量加载和分页加载状态不会并存，减少 UI 状态抖动。
   if (isLoading.value && isLoadingMore.value) {
     isLoadingMore.value = false
   }

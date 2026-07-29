@@ -1,8 +1,3 @@
-/**
- * 全局类型定义
- * 与 API_FRONTEND_SPEC.md 对齐
- */
-
 export type ColorMode = 'light' | 'dark' | 'auto'
 
 export type Theme = ColorMode
@@ -103,10 +98,6 @@ export interface PostImage {
   alt?: string
 }
 
-/**
- * API 错误响应结构（V1Envelope 错误格式）
- * 注意：运行时错误类请使用 api/client.ts 导出的 ApiError class
- */
 export interface ApiErrorResponse {
   success: false
   error: {
@@ -144,7 +135,7 @@ export interface Comment {
   updated_at?: string | null
   user: CommentUser
   replies?: Comment[]
-  // 兼容旧字段
+
   post_id?: string
   likes_count?: number
   replies_count?: number

@@ -1,8 +1,4 @@
 #!/usr/bin/env bun
-/**
- * 性能测试脚本
- * 使用 Lighthouse 测试应用性能并生成报告
- */
 
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
@@ -77,9 +73,6 @@ async function resolveChromePath(): Promise<string | null> {
   return cachedChromePathPromise
 }
 
-/**
- * 运行 Lighthouse 测试
- */
 interface LighthouseRunnerResult {
   report: string | string[]
   lhr: {
@@ -114,13 +107,9 @@ async function runLighthouseWithApi(url: string, name: string, chromePort: numbe
   console.log(`   Performance: ${perfScore}/100\n`)
 }
 
-/**
- * 主函数
- */
 async function main(): Promise<void> {
   console.log('🔍 MomiChan Performance Testing\n')
 
-  // 创建报告目录
   if (!existsSync(LIGHTHOUSE_REPORTS_DIR)) {
     mkdirSync(LIGHTHOUSE_REPORTS_DIR, { recursive: true })
   }
@@ -140,7 +129,6 @@ async function main(): Promise<void> {
   let chrome: chromeLauncher.LaunchedChrome | null = null
 
   try {
-    // 先构建生产产物，再用 preview 跑 Lighthouse（更接近真实生产表现）
     console.log('🏗️ Building production bundle...')
     await withBuildArtifactLock('vite-dist-build', () => runBunTask('build', { env: AUDIT_ENV }), {
       onWait: () => {
@@ -149,7 +137,6 @@ async function main(): Promise<void> {
     })
     console.log('✅ Build completed\n')
 
-    // 启动预览服务器
     previewServer = new PreviewShellManager({
       env: AUDIT_ENV,
       preferredPort: PREVIEW_SERVER_PORT,
@@ -171,7 +158,6 @@ async function main(): Promise<void> {
       ...(chromePath ? { chromePath } : {}),
     })
 
-    // 运行 Lighthouse 测试
     for (const { url, name } of tests) {
       await runLighthouseWithApi(url, name, chrome.port)
     }
@@ -186,12 +172,10 @@ async function main(): Promise<void> {
       try {
         await chrome.kill()
       } catch (error) {
-        // Windows 下 chrome-launcher 偶发 EPERM 清理失败，不影响报告输出
         console.warn('⚠️ Failed to fully clean Lighthouse temp directory:', error)
       }
     }
 
-    // 关闭开发服务器
     if (previewServer) {
       console.log('\n🛑 Stopping preview server...')
       await previewServer.stop()

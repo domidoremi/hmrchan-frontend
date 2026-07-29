@@ -1,12 +1,6 @@
-/**
- * Cloudflare Pages Function - Uploads 代理
- *
- * `/uploads/*` 仅保留为 edge 兼容层。
- * 现役公开资源 contract 已迁移到 storage-backed public URL，
- * 因此前端不应再主动生成或依赖这些旧路径。
- */
-
 import { resolveConfiguredApiBaseUrl } from '../../src/edge/upstream'
+
+// Compatibility proxy for retired /uploads paths; new public media uses storage-backed URLs.
 import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import { hasMediaAuthContext } from '../api/mediaCachePolicy'
 
@@ -47,10 +41,8 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     return new Response('Uploads proxy is not configured', { status: 500 })
   }
 
-  // 构建目标 URL
   const targetUrl = `${apiBaseUrl}/uploads/${path}`
 
-  // 复制请求头
   const headers = new Headers()
   const skipHeaders = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
 
@@ -66,7 +58,6 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       headers,
     })
 
-    // 复制响应头
     const responseHeaders = new Headers(response.headers)
 
     // Authenticated legacy uploads may vary by caller and must never enter a shared cache.
@@ -83,7 +74,6 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       }
     }
 
-    // 移除可能导致问题的头
     responseHeaders.delete('content-encoding')
     responseHeaders.delete('transfer-encoding')
 

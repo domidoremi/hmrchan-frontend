@@ -1,10 +1,3 @@
-/**
- * Two-Factor Authentication Service - 双因素认证服务
- *
- * 提供 TOTP 2FA 相关的 API 调用
- * 合约端点: /2fa/
- */
-
 import { apiClient } from './client'
 import type {
   AuthResponse,
@@ -13,12 +6,9 @@ import type {
 } from './authService'
 import { ensureVerificationToken } from './verificationBridge'
 
-// ========== 类型定义 ==========
-
 export interface TwoFactorSetupResponse {
-  /** TOTP Secret (手动输入用) */
   secret: string
-  /** otpauth:// URI（用于生成 QR 码） */
+
   otpauth_url: string
   already_setup?: boolean
 }
@@ -79,19 +69,11 @@ export interface WebAuthnAuthenticationOptionsResponse {
   provider?: string
 }
 
-// ========== 2FA 服务 ==========
-
 export const twoFactorService = {
-  /**
-   * 获取 2FA 状态
-   */
   async getStatus(): Promise<TwoFactorStatusResponse> {
     return apiClient.get('/2fa/status')
   },
 
-  /**
-   * 初始化 TOTP（生成密钥和 QR 码）
-   */
   async setup(): Promise<TwoFactorSetupResponse> {
     const verificationToken = await ensureVerificationToken('update_security_settings')
     return apiClient.post<TwoFactorSetupResponse>('/2fa/setup', null, {
@@ -103,9 +85,6 @@ export const twoFactorService = {
     })
   },
 
-  /**
-   * 验证并启用 2FA（需提供 TOTP code）
-   */
   async verify(code: string): Promise<TwoFactorVerifyResponse> {
     return apiClient.post(
       '/2fa/verify',
@@ -117,9 +96,6 @@ export const twoFactorService = {
     )
   },
 
-  /**
-   * 禁用 2FA（支持密码或当前验证码）
-   */
   async disable(
     code?: string,
     password?: string
@@ -142,9 +118,6 @@ export const twoFactorService = {
     )
   },
 
-  /**
-   * 2FA 登录验证（登录时返回 pending_mfa_login_token 后调用）
-   */
   async verifyLogin(
     pendingMfaLoginToken: string,
     code: string,
@@ -159,9 +132,6 @@ export const twoFactorService = {
     })
   },
 
-  /**
-   * 重新生成备份码（支持密码或当前验证码）
-   */
   async regenerateBackupCodes(code?: string, password?: string): Promise<BackupCodesResponse> {
     const verificationToken = await ensureVerificationToken(
       'update_security_settings',

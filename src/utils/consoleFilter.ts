@@ -1,15 +1,3 @@
-/**
- * Console Filter - 过滤 Cloudflare 相关的控制台警告
- *
- * 过滤以下 Cloudflare 产生的噪音：
- * - Cloudflare 注入的 /cdn-cgi/challenge-platform/scripts/jsd/main.js 弃用告警
- * - Private Access Token 请求
- * - CSP (Content Security Policy) 警告
- * - document.write() 违规警告
- * - Preload 资源未使用警告
- * - Cloudflare Challenge Platform 相关日志
- */
-
 declare global {
   interface Window {
     __restoreConsole?: () => void
@@ -32,18 +20,15 @@ const CLOUDFLARE_PATTERNS = [
   /PAT challenge/i,
   /Request for the Private Access Token challenge/i,
 
-  // CSP 警告
   /script-src.*was not explicitly set/i,
   /default-src.*is used as a fallback/i,
   /Executing inline script violates/i,
   /Either the 'unsafe-inline' keyword/i,
   /Content Security Policy directive/i,
 
-  // document.write 警告
   /Avoid using document\.write/i,
   /document\.write.*deprecated/i,
 
-  // Preload 警告
   /was preloaded using link preload but not used/i,
   /challenges\.cloudflare\.com.*preload/i,
 
@@ -53,7 +38,6 @@ const CLOUDFLARE_PATTERNS = [
   /rocket loader/i,
   /No available adapters/i,
 
-  // Cloudflare 域名相关
   /challenges\.cloudflare\.com/i,
   /cloudflareinsights\.com/i,
   /cdn-cgi\/rum/i,
@@ -81,16 +65,10 @@ const CLOUDFLARE_PATTERNS = [
   /Shared Storage API/i,
 ]
 
-/**
- * 检查消息是否应该被过滤
- */
 function shouldFilter(message: string): boolean {
   return CLOUDFLARE_PATTERNS.some((pattern) => pattern.test(message))
 }
 
-/**
- * 将参数转换为字符串用于模式匹配
- */
 function argsToString(args: unknown[]): string {
   return args
     .map((arg) => {
@@ -105,10 +83,6 @@ function argsToString(args: unknown[]): string {
     .join(' ')
 }
 
-/**
- * 浏览器原生网络错误的过滤模式
- * 这些错误不经过 console.*，而是通过 window error / unhandledrejection 事件触发
- */
 const NETWORK_ERROR_PATTERNS = [/cloudflareinsights\.com/i, /cdn-cgi\/rum/i, /beacon\.min\.js/i]
 
 function shouldFilterNetworkError(event: Event | PromiseRejectionEvent): boolean {
@@ -121,15 +95,10 @@ function shouldFilterNetworkError(event: Event | PromiseRejectionEvent): boolean
   return NETWORK_ERROR_PATTERNS.some((p) => p.test(message))
 }
 
-/**
- * 初始化控制台过滤器
- */
 export function initConsoleFilter(): void {
-  // 只在浏览器环境中运行
   if (typeof window === 'undefined') return
   if (window.__consoleFilterApplied) return
 
-  // 保存原始的控制台方法
   const originalConsole: OriginalConsole = {
     log: console.log.bind(console),
     warn: console.warn.bind(console),
@@ -141,28 +110,22 @@ export function initConsoleFilter(): void {
     window.__originalConsole = originalConsole
   }
 
-  // 创建过滤包装器
   function createFilteredMethod(method: ConsoleMethod): (...args: unknown[]) => void {
     return (...args: unknown[]) => {
       const message = argsToString(args)
 
-      // 如果消息匹配 Cloudflare 模式，则过滤掉
       if (shouldFilter(message)) {
         return
       }
 
-      // 否则调用原始方法
       originalConsole[method](...args)
     }
   }
 
-  // 替换控制台方法
   CONSOLE_METHODS.forEach((method) => {
     console[method] = createFilteredMethod(method)
   })
 
-  // 拦截浏览器原生网络错误（CORS / net::ERR_FAILED 等）
-  // 这些不经过 console.*，需要通过事件监听器捕获
   errorListener = (e) => {
     if (shouldFilterNetworkError(e)) {
       e.preventDefault()
@@ -178,7 +141,6 @@ export function initConsoleFilter(): void {
 
   window.__consoleFilterApplied = true
 
-  // 开发环境下提供恢复方法
   if (import.meta.env.DEV) {
     window.__restoreConsole = () => {
       CONSOLE_METHODS.forEach((method) => {

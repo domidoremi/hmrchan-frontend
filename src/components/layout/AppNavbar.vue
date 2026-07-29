@@ -347,13 +347,10 @@ const props = withDefaults(
   }
 )
 
-// 懒加载设置面板，减少首屏 JS
 const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
 
-// 预加载设置面板的标志
 let hasPrefetchedSettingsPanel = false
 
-// 预加载设置面板组件
 function prefetchSettingsPanel() {
   if (hasPrefetchedSettingsPanel) return
   hasPrefetchedSettingsPanel = true
@@ -434,7 +431,6 @@ function isHomeRailNavLockEnabled(): boolean {
   return document.documentElement.dataset.homeRailNavLock === 'true'
 }
 
-// 使用统一的用户头像 composable，确保与其他组件同步
 const { avatarUrl: userAvatar } = useUserAvatar()
 const userAvatarFallbackLabel = computed(() =>
   getAvatarFallbackLabel(
@@ -504,7 +500,6 @@ function freezeNavbarVisibilityForRouteChange() {
   }, NAVBAR_ROUTE_FREEZE_MS)
 }
 
-// 路由变化时关闭所有菜单
 watch(
   () => route.fullPath,
   () => {
@@ -537,7 +532,6 @@ watch(
   { immediate: true }
 )
 
-// 预加载头像以提高导航栏显示优先级
 watch(
   userAvatar,
   (url) => {
@@ -744,16 +738,14 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
   const dropdownEl = kind === 'settings' ? settingsDropdownRef.value : userDropdownRef.value
   if (!triggerEl || !dropdownEl) return
 
-  // 使用 scheduleDOMUpdate 分离读写操作，避免布局抖动
   scheduleDOMUpdate(
-    // 读取阶段：批量获取所有布局值
     () => ({
       triggerRect: triggerEl.getBoundingClientRect(),
       dropdownRect: dropdownEl.getBoundingClientRect(),
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
     }),
-    // 写入阶段：基于读取的值更新样式
+
     ({ triggerRect, dropdownRect, viewportWidth, viewportHeight }) => {
       const position = resolveNavbarDropdownPosition({
         triggerRect,
@@ -782,7 +774,6 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
   )
 }
 
-// 滚动处理：实现导航栏渐进式隐藏
 const handleScroll = throttleRAF(() => {
   const currentScrollY = window.scrollY
   const delta = currentScrollY - lastScrollY
@@ -825,14 +816,12 @@ const handleScroll = throttleRAF(() => {
       lastToggleTime = now
     }
   } else if (currentScrollY <= showAt) {
-    // 确保靠近顶部时高度变量正确
     syncNavbarVisibleHeight()
   }
 
   lastScrollY = currentScrollY
 })
 
-// 使用 throttleRAF 节流 resize 事件，避免高频触发导致的性能问题
 const handleResize = throttleRAF(() => {
   updateIsMobile()
   syncNavbarVisibleHeight()

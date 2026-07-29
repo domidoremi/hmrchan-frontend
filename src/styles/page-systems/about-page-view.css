@@ -11,7 +11,6 @@
   padding: 0 var(--page-padding);
 }
 
-/* 页面标题 */
 .about-page .about-hero .page-hero-shell__content {
   align-items: stretch;
   text-align: center;
@@ -35,7 +34,6 @@
   justify-content: center;
 }
 
-/* 章节 */
 .about-page .section {
   margin-bottom: var(--spacing-8);
 }
@@ -73,7 +71,6 @@
   }
 }
 
-/* 关于 Himeri - 优化版 */
 .about-page .himeri-section {
   position: relative;
 }
@@ -83,7 +80,6 @@
   overflow: hidden;
 }
 
-/* 名字卡片 */
 .about-page .himeri-header {
   padding: clamp(
     var(--appearance-surface-padding-md),
@@ -156,7 +152,6 @@
   z-index: 1;
 }
 
-/* 子标题 */
 .about-page .subsection-title {
   display: flex;
   align-items: center;
@@ -173,7 +168,6 @@
   color: var(--color-primary);
 }
 
-/* 个人资料区域 */
 .about-page .profile-section {
   padding: var(--spacing-6);
   display: grid;
@@ -219,7 +213,6 @@
   word-break: break-word;
 }
 
-/* 简介区域 */
 .about-page .bio-section {
   padding: var(--spacing-6);
 }
@@ -282,7 +275,6 @@
   margin: 0;
 }
 
-/* 官方 & 社交链接 */
 .about-page .links-section .origin-content {
   padding: 0;
 }
@@ -378,7 +370,6 @@
   flex-shrink: 0;
 }
 
-/* 核心功能 */
 .about-page .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.625rem), 1fr));
@@ -464,7 +455,6 @@
   margin: 0;
 }
 
-/* 项目信息 */
 .about-page .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
@@ -513,7 +503,6 @@
   box-shadow: 0 0 0 6px rgba(var(--color-success-rgb), 0.15);
 }
 
-/* 页脚 */
 .about-page .about-footer {
   margin-top: var(--spacing-12);
   padding-top: var(--spacing-6);
@@ -559,7 +548,6 @@
   font-style: italic;
 }
 
-/* 响应式 */
 @media (max-width: 768px) {
   .about-page .himeri-header {
     padding: var(--spacing-6) var(--spacing-4);

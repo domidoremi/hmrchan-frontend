@@ -1,13 +1,6 @@
-/**
- * Cloudflare Pages Function - 透明 API 反向代理
- *
- * 作用：
- * - 将同源 /api/v1/* 请求转发到后端
- * - 为浏览器 auth facade 路径补 internal BFF 签名、BFF cookie 与 session summary
- * - 保留上游 Set-Cookie、Google redirect rewrite、媒体缓存策略
- */
-
 import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
+
+// Same-origin API facade; edge credentials never enter browser-visible configuration.
 import { resolveConfiguredApiBaseUrl, resolveUpstreamDomain } from '../../src/edge/upstream'
 import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import {

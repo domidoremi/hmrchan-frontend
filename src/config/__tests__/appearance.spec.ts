@@ -35,14 +35,18 @@ describe('appearance config', () => {
     ])
 
     expect(getAppearancePresetSpec('gradient-narrative')).toMatchObject({
-      sourceDoc: 'docs/滚动叙事.txt',
+      sourceDoc: 'docs/appearance-presets.md',
       family: 'rounded',
       enhancer: 'gradient',
       galleryTitle: 'Night Tour',
     })
 
-    expect(getAppearancePresetSpec('fluent-soft').influences).toContain('docs/可爱极简.txt')
-    expect(getAppearancePresetSpec('organic-natural').influences).toContain('docs/织物纹理.txt')
+    expect(getAppearancePresetSpec('fluent-soft').influences).toEqual([
+      'docs/appearance-presets.md',
+    ])
+    expect(getAppearancePresetSpec('organic-natural').influences).toEqual([
+      'docs/appearance-presets.md',
+    ])
   })
 
   it('resolves scene roles from routes', () => {

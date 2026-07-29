@@ -150,9 +150,7 @@ async function safeKillChrome(chrome) {
   if (!chrome) return
   try {
     await chrome.kill()
-  } catch {
-    // Windows 下 chrome-launcher 偶发清理失败，忽略即可
-  }
+  } catch {}
 }
 
 async function resolveChromePath() {
