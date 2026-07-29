@@ -38,9 +38,7 @@ bun-debug.log*
 # =====================
 # Editor & IDE
 # =====================
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+.vscode/
 .idea/
 .history/
 *.suo
@@ -123,6 +121,7 @@ lighthouse-reports/
 # =====================
 # Package Managers
 # =====================
+.npmrc
 bun.lockb
 package-lock.json
 npm-shrinkwrap.json

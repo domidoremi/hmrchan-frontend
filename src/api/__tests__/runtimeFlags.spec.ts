@@ -47,6 +47,10 @@ describe('runtimeFlags', () => {
   })
 
   it('enables schedule requests by default when the API is available', () => {
+    vi.stubEnv('VITE_HMRCHAN_FORCE_FALLBACK', 'false')
+    vi.stubEnv('VITE_HMRCHAN_ENABLE_API', 'true')
+    vi.stubEnv('VITE_ENABLE_SCHEDULE_API', '')
+
     expect(shouldUseScheduleApi()).toBe(true)
 
     vi.stubEnv('VITE_ENABLE_SCHEDULE_API', 'true')

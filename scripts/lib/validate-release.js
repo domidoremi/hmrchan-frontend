@@ -146,7 +146,6 @@ const CHANGE_FOCUS_RULES = Object.freeze([
         '.env.example',
         '.gitignore',
         '.gitattributes',
-        '.npmrc',
         '.node-version',
         'bun.lock',
         'eslint.config.ts',

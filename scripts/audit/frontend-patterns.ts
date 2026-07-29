@@ -29,19 +29,15 @@ const ALLOWED_VAPOR_COMPONENTS = new Set([
   'src/components/ui/StateIndicator.vue',
 ])
 
-const ALLOWED_REQUEST_IDLE_CALLBACK = new Set([
-  'src/utils/performance.ts',
-  'src/utils/modernAPIs.ts',
-])
+const ALLOWED_REQUEST_IDLE_CALLBACK = new Set(['src/utils/performance.ts'])
 
 const ALLOWED_CANCEL_IDLE_CALLBACK = new Set(['src/utils/performance.ts'])
 
-const ALLOWED_RESIZE_OBSERVER = new Set(['src/utils/modernAPIs.ts'])
+const ALLOWED_RESIZE_OBSERVER = new Set(['src/hmr/components/HmrSignalField.vue'])
 
 const ALLOWED_INTERSECTION_OBSERVER = new Set([
   'src/composables/useInfiniteScroll.ts',
   'src/utils/performance.ts',
-  'src/utils/modernAPIs.ts',
   'src/hmr/composables/useHmrInViewReveal.ts',
   'src/views/PostDetailPage.vue',
 ])
@@ -97,8 +93,8 @@ const LINE_RULES: BoundaryRule[] = [
   {
     rule: 'no-raw-resize-observer',
     pattern: /\bnew\s+ResizeObserver\s*\(/,
-    message: 'Use createResizeObserver() instead of new ResizeObserver()',
-    suggestion: 'Centralize ResizeObserver creation in src/utils/modernAPIs.ts',
+    message: 'New raw ResizeObserver usage requires manual lifecycle review before it can land',
+    suggestion: 'Reuse an existing observer boundary or add an audited exception after review',
     allowedFiles: ALLOWED_RESIZE_OBSERVER,
   },
   {
@@ -107,7 +103,7 @@ const LINE_RULES: BoundaryRule[] = [
     message:
       'Use the shared observer entry points instead of adding new raw IntersectionObserver() calls',
     suggestion:
-      'Prefer createVisibilityObserver() or extend useInfiniteScroll() unless the file is already an audited exception',
+      'Prefer useHmrInViewReveal() or extend useInfiniteScroll() unless the file is already an audited exception',
     allowedFiles: ALLOWED_INTERSECTION_OBSERVER,
   },
   {
