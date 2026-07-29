@@ -280,16 +280,6 @@ vi.mock('@/components/business/PostCardSkeleton.vue', async () => {
   }
 })
 
-vi.mock('@/components/ui/ScrollDownFab.vue', async () => {
-  const { defineComponent } = await import('vue')
-  return {
-    default: defineComponent({
-      name: 'ScrollDownFab',
-      template: '<div data-stub="ScrollDownFab" />',
-    }),
-  }
-})
-
 const i18n = createI18n({
   legacy: false,
   locale: 'en-US',

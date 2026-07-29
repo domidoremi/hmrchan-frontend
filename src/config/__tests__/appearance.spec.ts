@@ -35,17 +35,17 @@ describe('appearance config', () => {
     ])
 
     expect(getAppearancePresetSpec('gradient-narrative')).toMatchObject({
-      sourceDoc: 'docs/appearance-presets.md',
+      sourceDoc: 'docs/en/appearance-presets.md',
       family: 'rounded',
       enhancer: 'gradient',
       galleryTitle: 'Night Tour',
     })
 
     expect(getAppearancePresetSpec('fluent-soft').influences).toEqual([
-      'docs/appearance-presets.md',
+      'docs/en/appearance-presets.md',
     ])
     expect(getAppearancePresetSpec('organic-natural').influences).toEqual([
-      'docs/appearance-presets.md',
+      'docs/en/appearance-presets.md',
     ])
   })
 

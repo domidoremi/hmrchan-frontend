@@ -1,3 +1,6 @@
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
 import { runLocalNodeTool, summarizeCommandIssues } from './utils'
 
@@ -36,10 +39,21 @@ const testAudit: AuditModule = {
   async run(options: AuditOptions): Promise<AuditResult> {
     const start = Date.now()
     const issues: AuditIssue[] = []
+    const reportPath = join(options.projectRoot, '.vitest', 'audit', 'output.json')
 
-    const result = await runLocalNodeTool('vitest', ['run', '--reporter=json'], options.projectRoot)
+    mkdirSync(dirname(reportPath), { recursive: true })
+    rmSync(reportPath, { force: true })
 
-    const parsed = parseVitestJSON(result.stdout)
+    const result = await runLocalNodeTool(
+      'vitest',
+      ['run', '--maxWorkers=1', '--reporter=json', '--outputFile', reportPath],
+      options.projectRoot
+    )
+
+    const parsed =
+      parseVitestJSON(result.stdout) ??
+      (existsSync(reportPath) ? parseVitestJSON(readFileSync(reportPath, 'utf8')) : null)
+    rmSync(reportPath, { force: true })
 
     if (!parsed) {
       // Could not parse output — treat as failure

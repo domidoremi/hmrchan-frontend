@@ -109,6 +109,8 @@ describe('validate release helpers', () => {
       'src/api/authService.ts',
       'workers/internal-api/index.ts',
       'scripts/lib/release-route-contract.js',
+      'docs/zh-CN/validation.md',
+      'docs/en/validation.md',
     ])
 
     expect(summary.labels).toEqual(

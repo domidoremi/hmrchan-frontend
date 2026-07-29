@@ -1,14 +1,22 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["src/router/index.ts", "src/sw/index.ts", "src/**/*.vue", "functions/**/*.ts"],
-  "project": ["src/**/*.{ts,vue}", "functions/**/*.ts", "*.config.ts", "vite-plugin-*.ts"],
-  "ignore": [
-    "src/**/*.d.ts",
-    "src/**/index.ts",
-    "**/__tests__/**",
-    "**/*.spec.ts",
-    "src/utils/notifications/pushManager.ts"
+  "entry": [
+    "src/main.ts",
+    "src/sw/index.ts",
+    "scripts/local-pages-preview.ts",
+    "functions/**/*.ts",
+    "workers/internal-api/index.ts"
   ],
+  "project": [
+    "src/**/*.{ts,vue}",
+    "functions/**/*.ts",
+    "workers/**/*.ts",
+    "build/**/*.ts",
+    "scripts/**/*.{js,mjs,ts}",
+    "*.config.ts",
+    "vite-plugin-*.ts"
+  ],
+  "ignore": ["src/**/*.d.ts"],
   "ignoreDependencies": [
     "@cloudflare/*",
     "chrome-launcher",
@@ -18,7 +26,7 @@
   ],
   "ignoreUnresolved": ["vitest.setup.ts"],
   "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": [],
+  "ignoreBinaries": ["rg"],
   "rules": {
     "exports": "off",
     "types": "off",

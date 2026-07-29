@@ -5,11 +5,19 @@ import { join } from 'node:path'
 import { findMarkdownSanitizationIssues } from './lib/doc-sanitization.js'
 
 function getTrackedMarkdownFiles() {
-  const stdout = execFileSync('git', ['ls-files', '*.md'], { encoding: 'utf8' })
-  return stdout
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+  const stdout = execFileSync(
+    'git',
+    ['ls-files', '--cached', '--others', '--exclude-standard', '*.md'],
+    { encoding: 'utf8' }
+  )
+  return [
+    ...new Set(
+      stdout
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+    ),
+  ]
 }
 
 const issues = []

@@ -102,7 +102,8 @@ const CHANGE_FOCUS_RULES = Object.freeze([
         'scripts/lib/validate-release.js',
         'scripts/validate-release.mjs',
         'scripts/release-evidence.mjs',
-        'VALIDATION.md',
+        'docs/zh-CN/validation.md',
+        'docs/en/validation.md',
       ].includes(filePath),
   }),
 ])

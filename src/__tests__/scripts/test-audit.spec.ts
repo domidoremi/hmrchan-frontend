@@ -5,7 +5,13 @@ import { describe, expect, it } from 'vitest'
 
 import testAudit from '../../../scripts/audit/test'
 
-function writeFakeVitest(projectRoot: string, exitCode: number, stdout: string, stderr = ''): void {
+function writeFakeVitest(
+  projectRoot: string,
+  exitCode: number,
+  stdout: string,
+  stderr = '',
+  reportToFile = false
+): void {
   const packageRoot = join(projectRoot, 'node_modules', 'vitest')
   mkdirSync(packageRoot, { recursive: true })
   writeFileSync(
@@ -20,7 +26,10 @@ function writeFakeVitest(projectRoot: string, exitCode: number, stdout: string, 
   writeFileSync(
     join(packageRoot, 'fake-vitest.cjs'),
     [
-      `process.stdout.write(${JSON.stringify(stdout)})`,
+      reportToFile ? "const fs = require('node:fs'); const path = require('node:path')" : '',
+      reportToFile
+        ? `const outputIndex = process.argv.indexOf('--outputFile'); const outputPath = process.argv[outputIndex + 1]; fs.mkdirSync(path.dirname(outputPath), { recursive: true }); fs.writeFileSync(outputPath, ${JSON.stringify(stdout)}, 'utf8'); process.stdout.write('JSON report written')`
+        : `process.stdout.write(${JSON.stringify(stdout)})`,
       `process.stderr.write(${JSON.stringify(stderr)})`,
       `process.exit(${exitCode})`,
       '',
@@ -55,6 +64,28 @@ describe('test audit', () => {
         module: 'test',
         status: 'pass',
         summary: 'All 3 test(s) passed',
+      })
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true })
+    }
+  })
+
+  it('reads and removes a Vitest 5 JSON output file', async () => {
+    const projectRoot = mkdtempSync(join(tmpdir(), 'test-audit-file-'))
+
+    try {
+      writeFakeVitest(projectRoot, 0, vitestJson(4, 4, 0), '', true)
+
+      await expect(
+        testAudit.run({
+          fix: false,
+          verbose: false,
+          projectRoot,
+        })
+      ).resolves.toMatchObject({
+        module: 'test',
+        status: 'pass',
+        summary: 'All 4 test(s) passed',
       })
     } finally {
       rmSync(projectRoot, { recursive: true, force: true })
