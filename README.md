@@ -45,14 +45,14 @@ bun run validate:release --mode local
 
 脚本和环境变量来源：
 
-- [package.json](/G:/Project/hmrchan/hmrchan-frontend-main/package.json)
-- [wrangler.toml](/G:/Project/hmrchan/hmrchan-frontend-main/wrangler.toml)
-- [.env.example](/G:/Project/hmrchan/hmrchan-frontend-main/.env.example)
+- [package.json](package.json)
+- [wrangler.toml](wrangler.toml)
+- [.env.example](.env.example)
 
 ## 文档说明
 
 - 认证唯一正文位于 [../AUTHENTICATION.md](../AUTHENTICATION.md)
-- 交付验证流程位于 [VALIDATION.md](/G:/Project/hmrchan/hmrchan-frontend-main/VALIDATION.md)
+- 交付验证流程位于 [VALIDATION.md](VALIDATION.md)
 - 本仓库交付不再依赖 GitHub Actions，统一使用本地 `validate:release` runner
 - 本仓库内的 `docs/` 目录继续维护非认证类文档
 

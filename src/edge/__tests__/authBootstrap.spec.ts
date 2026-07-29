@@ -116,6 +116,7 @@ describe('auth bootstrap probes', () => {
 
     const results = await probeAuthBootstrapEndpoints('https://momichan.com', {
       contractVersion: '2026-04-13.p1',
+      originCsrfToken: 'test-origin-csrf',
     })
 
     expect(results).toHaveLength(5)

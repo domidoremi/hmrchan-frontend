@@ -13,4 +13,12 @@ describe('service worker path consistency', () => {
     expect(headersFile).toContain('Cache-Control: no-cache, no-store, must-revalidate')
     expect(headersFile).not.toContain('/service-worker.js')
   })
+
+  it('keeps the offline fallback outside Pages Functions after extensionless redirects', () => {
+    const routesFile = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'public/_routes.json'), 'utf-8')
+    ) as { exclude?: string[] }
+
+    expect(routesFile.exclude).toEqual(expect.arrayContaining(['/offline.html', '/offline']))
+  })
 })
