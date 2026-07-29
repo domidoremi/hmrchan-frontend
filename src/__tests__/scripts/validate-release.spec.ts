@@ -258,7 +258,7 @@ describe('release evidence command policy', () => {
     expect(
       runReleaseEvidence({
         env,
-        cwd: 'G:/Project/hmrchan/hmrchan-frontend',
+        cwd: '/workspace/frontend',
         spawnProcess: spawnProcess as unknown as (typeof import('node:child_process'))['spawn'],
       })
     ).toBe(0)
@@ -266,7 +266,7 @@ describe('release evidence command policy', () => {
       'node',
       ['scripts/validate-release.mjs', '--mode', 'candidate'],
       expect.objectContaining({
-        cwd: 'G:/Project/hmrchan/hmrchan-frontend',
+        cwd: '/workspace/frontend',
         env,
         stdio: 'inherit',
         shell: false,
