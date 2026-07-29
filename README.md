@@ -24,9 +24,9 @@ HmrChan Frontend is the Vue application for the production site. It serves publi
 
 ## Verification / 验证
 
-The repository uses Bun `1.3.11` and Node.js `>=24.15.0 <25`. The main local gates are:
+The repository uses Bun `1.3.11` and Node.js `>=24.14.0 <25`. The main local gates are:
 
-仓库使用 Bun `1.3.11` 与 Node.js `>=24.15.0 <25`。主要本地门禁如下：
+仓库使用 Bun `1.3.11` 与 Node.js `>=24.14.0 <25`。主要本地门禁如下：
 
 ```bash
 bun run type-check

@@ -9,7 +9,7 @@
     "*.vue"
   ],
   "engines": {
-    "node": ">=24.15.0 <25"
+    "node": ">=24.14.0 <25"
   },
   "browserslist": [
     "defaults and fully supports es6-module"
