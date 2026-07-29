@@ -34,7 +34,7 @@
 | 分层       | 技术                                                 |
 | ---------- | ---------------------------------------------------- |
 | 前端       | Vue 3、TypeScript、Vite、Vue Router、Vue I18n        |
-| 状态管理   | Pinia、pinia-plugin-persistedstate                   |
+| 状态管理   | Pinia                                                |
 | 边缘与 PWA | Cloudflare Pages、Functions、Workers、Service Worker |
 | 测试与质量 | Vitest、Puppeteer、Lighthouse、ESLint、Prettier      |
 

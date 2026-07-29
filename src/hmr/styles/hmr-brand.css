@@ -7035,7 +7035,7 @@ svg {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(2.5rem, 6vh, 5rem);
+  gap: clamp(2.5rem, 6dvh, 5rem);
 }
 
 .hmr-footer-content {

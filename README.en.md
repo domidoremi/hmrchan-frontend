@@ -34,7 +34,7 @@
 | Layer        | Technology                                           |
 | ------------ | ---------------------------------------------------- |
 | Frontend     | Vue 3, TypeScript, Vite, Vue Router, Vue I18n        |
-| State        | Pinia, pinia-plugin-persistedstate                   |
+| State        | Pinia                                                |
 | Edge and PWA | Cloudflare Pages, Functions, Workers, Service Worker |
 | Testing      | Vitest, Puppeteer, Lighthouse, ESLint, Prettier      |
 

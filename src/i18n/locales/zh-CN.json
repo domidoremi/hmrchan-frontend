@@ -260,12 +260,105 @@
   },
   "about": {
     "eyebrow": "关于",
-    "principles": "原则",
+    "hero": {
+      "name": "籾山ひめり，",
+      "project": "与 MomiChan。"
+    },
     "title": "关于 MomiChan",
-    "body": "一个围绕内容发现、创作者主页、社区讨论和个人知识流构建的轻量产品。",
-    "ruleTitle": "社区规则",
-    "ruleBody": "少一点噪音，多一点上下文；尊重创作，保护账户安全。",
-    "entranceBody": "首页、探索、社区、个人中心会成为首轮正式产品的四个稳定入口。"
+    "subtitle": "珍藏籾山ひめり与高嶺のなでしこ每一个美好瞬间的粉丝小站。",
+    "origin": {
+      "title": "关于 Himeri",
+      "himeri": "籾山ひめり / 籾山姫璃",
+      "himeriRomaji": "Momiyama Himeri",
+      "profileLabels": {
+        "birthday": "生日",
+        "age": "年龄",
+        "bloodType": "血型",
+        "zodiac": "星座",
+        "height": "身高",
+        "birthplace": "出身地",
+        "group": "所属组合",
+        "position": "担当",
+        "nickname": "昵称",
+        "hobbies": "兴趣爱好",
+        "skills": "特技"
+      },
+      "profile": {
+        "birthday": "2004年3月22日",
+        "age": "{age}岁",
+        "bloodType": "B型",
+        "zodiac": "白羊座",
+        "height": "158cm",
+        "birthplace": "栃木县",
+        "group": "高嶺のなでしこ",
+        "position": "队长 · 蓝色担当",
+        "nickname": "ひめちゃん、ひめりん",
+        "hobbies": "视频剪辑、时尚、音乐、喝咖啡拿铁",
+        "skills": "编舞（Choreography）、轮滑"
+      },
+      "career": "籾山ひめり是日本偶像组合「高嶺のなでしこ」的队长。她从2014年开始偶像活动，曾是栃木县足利市本地偶像组合「渡良瀬橋43」的初期成员，后加入轮滑偶像组合「Spindle」，2017年成为「Last Idol」Someday Somewhere小队成员。2022年加入「高嶺のなでしこ」并担任队长至今。",
+      "personality": "她的公开资料包含双马尾造型、舞蹈编排经历和轮滑表演经历。作为编舞师，她为自己的组合编舞，并参与轮滑相关表演。",
+      "platforms": "她活跃在TikTok、Instagram、X、YouTube等多个社交平台，与粉丝分享日常生活、演出活动和创作内容。",
+      "purpose": "MomiChan把散落在不同地方的美好瞬间收进一本随时可以翻阅的粉丝相册。",
+      "profileTitle": "个人资料",
+      "aboutTitle": "简介"
+    },
+    "story": {
+      "title": "从舞台到今天。",
+      "intro": "以公开资料为基础，记录她走过的组合、创作与分享。",
+      "careerTitle": "偶像经历",
+      "creativeTitle": "编舞与表演",
+      "platformsTitle": "日常分享"
+    },
+    "links": {
+      "eyebrow": "官方入口",
+      "title": "官方网站与社交媒体",
+      "official": "官方网站",
+      "personal": "ひめり个人社交",
+      "groupSocial": "团体社交媒体",
+      "socialEyebrow": "个人账号",
+      "groupEyebrow": "组合账号",
+      "groupSite": "高嶺のなでしこ官网",
+      "memberPage": "籾山ひめり个人页",
+      "schedule": "活动日程",
+      "fanClub": "粉丝俱乐部",
+      "ecShop": "官方商城",
+      "douyin": "抖音",
+      "redbook": "小红书"
+    },
+    "features": {
+      "eyebrow": "粉丝站",
+      "title": "和大家一起享受。",
+      "description": "把公开内容、社区交流与个人收藏放在一条清晰的浏览路径里。",
+      "aggregation": "一本共同相册",
+      "aggregationDesc": "把舞台、照片、视频与新消息放在一起慢慢回味。",
+      "community": "与粉丝聊聊",
+      "communityDesc": "分享喜欢的瞬间，也听听大家珍藏的故事。",
+      "personalization": "自己的收藏夹",
+      "personalizationDesc": "把想要再次遇见的瞬间轻轻收藏起来。",
+      "multilingual": "跨越语言",
+      "multilingualDesc": "可以用中文、英文或日文享受这个小站。"
+    },
+    "tech": {
+      "title": "技术实现",
+      "description": "MomiChan采用现代Web技术栈，提供内容浏览、缓存、路由、国际化与边缘交付能力。点击标签可打开对应的官方文档。",
+      "stack": "技术栈",
+      "vue": "渐进式JavaScript框架",
+      "typescript": "类型安全的JavaScript超集",
+      "vite": "前端构建工具",
+      "pinia": "Vue状态管理",
+      "router": "Vue官方路由",
+      "i18n": "Vue国际化",
+      "lucide": "开源图标库",
+      "cloudflare": "边缘托管与Functions",
+      "vitest": "单元测试框架",
+      "bun": "JavaScript运行时与包管理器"
+    },
+    "footer": {
+      "eyebrow": "个人项目",
+      "title": "为喜欢的瞬间而做。",
+      "fanProject": "本站为个人维护的粉丝项目，与籾山ひめり、高嶺のなでしこ及其所属官方机构无关。"
+    }
   },
   "contact": {
     "eyebrow": "反馈",

@@ -425,14 +425,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
 
     optimizeDeps: aggressiveDevOptimization
       ? {
-          include: [
-            'vue',
-            'vue-router',
-            'pinia',
-            'pinia-plugin-persistedstate',
-            'vue-i18n',
-            '@lucide/vue',
-          ],
+          include: ['vue', 'vue-router', 'pinia', 'vue-i18n', '@lucide/vue'],
           exclude: ['vite-plugin-vue-devtools', 'gsap'],
           force: false,
           entries: ['./src/main.entry.ts'],
@@ -443,7 +436,6 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
             'vue',
             'vue-router',
             'pinia',
-            'pinia-plugin-persistedstate',
             'vue-i18n',
             '@intlify/core-base',
             '@intlify/shared',

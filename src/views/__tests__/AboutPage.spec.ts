@@ -1,25 +1,50 @@
 import { mount } from '@vue/test-utils'
+import { createI18n } from 'vue-i18n'
 import { describe, expect, it } from 'vitest'
 
+import enUS from '@/i18n/locales/en-US.json'
+import jaJP from '@/i18n/locales/ja-JP.json'
+import zhCN from '@/i18n/locales/zh-CN.json'
 import AboutPage from '@/views/AboutPage.vue'
 
-describe('AboutPage', () => {
-  it('renders the about content groups and join link', () => {
-    const wrapper = mount(AboutPage, {
-      global: {
-        stubs: {
-          RouterLink: {
-            props: ['to'],
-            template: '<a :href="to"><slot /></a>',
+function mountAboutPage(locale = 'zh-CN') {
+  return mount(AboutPage, {
+    global: {
+      plugins: [
+        createI18n({
+          legacy: false,
+          locale,
+          messages: {
+            'zh-CN': zhCN,
+            'en-US': enUS,
+            'ja-JP': jaJP,
           },
-        },
-      },
-    })
+        }),
+      ],
+    },
+  })
+}
 
-    expect(wrapper.text()).toContain('四个区域组成 MomiChan')
-    expect(wrapper.text()).toContain('内容发现')
-    expect(wrapper.text()).toContain('身份安全')
-    expect(wrapper.text()).toContain('上下文优先')
-    expect(wrapper.find('a[href="/join-us"]').exists()).toBe(true)
+describe('AboutPage', () => {
+  it('renders Himeri profile, official links, features, and technology links', () => {
+    const wrapper = mountAboutPage()
+
+    expect(wrapper.text()).toContain('籾山ひめり')
+    expect(wrapper.text()).toContain('2004年3月22日')
+    expect(wrapper.text()).toContain('高嶺のなでしこ')
+    expect(wrapper.text()).toContain('一本共同相册')
+    expect(wrapper.find('a[href="https://takanenonadeshiko.jp/himeri_momiyama/"]').exists()).toBe(
+      true
+    )
+    expect(wrapper.find('a[href="https://vite.dev/"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="https://bun.sh/"]').exists()).toBe(true)
+  })
+
+  it('renders translated English content from the active locale', () => {
+    const wrapper = mountAboutPage('en-US')
+
+    expect(wrapper.text()).toContain('Momiyama Himeri')
+    expect(wrapper.text()).toContain('Official Websites')
+    expect(wrapper.text()).toContain('Technical Implementation')
   })
 })

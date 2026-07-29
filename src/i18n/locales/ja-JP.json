@@ -260,12 +260,105 @@
   },
   "about": {
     "eyebrow": "概要",
-    "principles": "原則",
+    "hero": {
+      "name": "籾山ひめりと",
+      "project": "MomiChan。"
+    },
     "title": "MomiChan について",
-    "body": "コンテンツ発見、作者プロフィール、コミュニティ議論、個人の知識ループのための軽量プロダクトです。",
-    "ruleTitle": "コミュニティルール",
-    "ruleBody": "ノイズを減らし、文脈を増やす。創作を尊重し、アカウントを守ります。",
-    "entranceBody": "ホーム、探索、コミュニティ、プロフィールが初回プロダクトの安定した入口になります。"
+    "subtitle": "籾山ひめりと高嶺のなでしこの瞬間を大切に綴る、ファンの居場所です。",
+    "origin": {
+      "title": "Himeri について",
+      "himeri": "籾山ひめり（籾山姫璃）",
+      "himeriRomaji": "Momiyama Himeri",
+      "profileLabels": {
+        "birthday": "誕生日",
+        "age": "年齢",
+        "bloodType": "血液型",
+        "zodiac": "星座",
+        "height": "身長",
+        "birthplace": "出身地",
+        "group": "所属グループ",
+        "position": "担当",
+        "nickname": "愛称",
+        "hobbies": "趣味",
+        "skills": "特技"
+      },
+      "profile": {
+        "birthday": "2004年3月22日",
+        "age": "{age}歳",
+        "bloodType": "B型",
+        "zodiac": "おひつじ座",
+        "height": "158cm",
+        "birthplace": "栃木県",
+        "group": "高嶺のなでしこ",
+        "position": "キャプテン・青色担当",
+        "nickname": "ひめちゃん、ひめりん",
+        "hobbies": "動画編集、ファッション、音楽、カフェラテ",
+        "skills": "振付（Choreography）、ローラースケート"
+      },
+      "career": "籾山ひめりは、日本のアイドルグループ「高嶺のなでしこ」のキャプテンです。2014年にアイドル活動を開始し、栃木県足利市の地元アイドルグループ「渡良瀬橋43」の初期メンバー、ローラースケートアイドルグループ「Spindle」を経て、2017年に「Last Idol」Someday Somewhereのメンバーとなりました。2022年に「高嶺のなでしこ」に加入し、現在までキャプテンを務めています。",
+      "personality": "公開プロフィールにはハーフツインヘア、振付活動、ローラースケートパフォーマンスの経歴が含まれます。振付師として自身のグループのダンスを制作し、ローラースケートのパフォーマンスにも参加しています。",
+      "platforms": "TikTok、Instagram、X、YouTubeなど複数のSNSで活動し、日常やステージ、クリエイティブなコンテンツをファンと共有しています。",
+      "purpose": "MomiChanは、いろいろな場所に届いた瞬間を、いつでも読み返せるファンアルバムにまとめています。",
+      "profileTitle": "プロフィール",
+      "aboutTitle": "紹介"
+    },
+    "story": {
+      "title": "ステージから今日まで。",
+      "intro": "公開プロフィールをもとに、所属グループ、創作活動、日々の発信をまとめています。",
+      "careerTitle": "アイドル活動",
+      "creativeTitle": "振付とパフォーマンス",
+      "platformsTitle": "日々の発信"
+    },
+    "links": {
+      "eyebrow": "公式リンク",
+      "title": "公式サイトとSNS",
+      "official": "公式サイト",
+      "personal": "ひめり個人SNS",
+      "groupSocial": "グループSNS",
+      "socialEyebrow": "個人アカウント",
+      "groupEyebrow": "グループアカウント",
+      "groupSite": "高嶺のなでしこ公式",
+      "memberPage": "籾山ひめりメンバーページ",
+      "schedule": "イベントスケジュール",
+      "fanClub": "ファンクラブ",
+      "ecShop": "公式ショップ",
+      "douyin": "抖音（Douyin）",
+      "redbook": "小紅書（RED）"
+    },
+    "features": {
+      "eyebrow": "ファンサイト",
+      "title": "ファンのみんなで楽しめること。",
+      "description": "公開情報、コミュニティでの会話、自分のコレクションを、わかりやすい閲覧経路にまとめています。",
+      "aggregation": "ひとつのアルバム",
+      "aggregationDesc": "ステージ、写真、動画、お知らせを一緒に振り返れます。",
+      "community": "ファンとのおしゃべり",
+      "communityDesc": "好きな瞬間や、みんなが大切にしている物語を分かち合えます。",
+      "personalization": "自分だけのコレクション",
+      "personalizationDesc": "もう一度会いたい瞬間を、そっと残しておけます。",
+      "multilingual": "言葉をこえて",
+      "multilingualDesc": "中国語、英語、日本語でサイトを楽しめます。"
+    },
+    "tech": {
+      "title": "技術実装",
+      "description": "MomiChanは、コンテンツ閲覧、キャッシュ、ルーティング、国際化、エッジ配信を扱うモダンなWeb技術スタックで構築されています。各タグから公式ドキュメントを開けます。",
+      "stack": "技術スタック",
+      "vue": "プログレッシブJavaScriptフレームワーク",
+      "typescript": "型安全なJavaScriptスーパーセット",
+      "vite": "フロントエンドビルドツール",
+      "pinia": "Vueの状態管理",
+      "router": "Vue公式ルーター",
+      "i18n": "Vueの国際化",
+      "lucide": "オープンソースのアイコンライブラリ",
+      "cloudflare": "エッジホスティングとFunctions",
+      "vitest": "ユニットテストフレームワーク",
+      "bun": "JavaScriptランタイムとパッケージマネージャー"
+    },
+    "footer": {
+      "eyebrow": "個人プロジェクト",
+      "title": "大切な瞬間を振り返るために。",
+      "fanProject": "個人で運営するファンプロジェクトであり、籾山ひめり、高嶺のなでしこ、および所属する公式組織とは関係ありません。"
+    }
   },
   "contact": {
     "eyebrow": "フィードバック",

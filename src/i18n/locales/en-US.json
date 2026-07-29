@@ -260,12 +260,105 @@
   },
   "about": {
     "eyebrow": "About",
-    "principles": "Principles",
+    "hero": {
+      "name": "Momiyama Himeri.",
+      "project": "MomiChan."
+    },
     "title": "About MomiChan",
-    "body": "A lightweight product for content discovery, creator profiles, community discussions, and personal knowledge loops.",
-    "ruleTitle": "Community rules",
-    "ruleBody": "Less noise, more context. Respect creators and keep accounts safe.",
-    "entranceBody": "Home, Explore, Community, and Profile are the stable first-round product entrances."
+    "subtitle": "A fan-made home for moments shared by Momiyama Himeri and Takane no Nadeshiko.",
+    "origin": {
+      "title": "About Himeri",
+      "himeri": "Momiyama Himeri",
+      "himeriRomaji": "籾山ひめり / 籾山姫璃",
+      "profileLabels": {
+        "birthday": "Birthday",
+        "age": "Age",
+        "bloodType": "Blood type",
+        "zodiac": "Zodiac",
+        "height": "Height",
+        "birthplace": "Birthplace",
+        "group": "Group",
+        "position": "Role",
+        "nickname": "Nicknames",
+        "hobbies": "Hobbies",
+        "skills": "Skills"
+      },
+      "profile": {
+        "birthday": "March 22, 2004",
+        "age": "{age} years old",
+        "bloodType": "B",
+        "zodiac": "Aries",
+        "height": "158cm",
+        "birthplace": "Tochigi Prefecture",
+        "group": "Takane no Nadeshiko",
+        "position": "Captain · Blue member",
+        "nickname": "Hime-chan, Himerin",
+        "hobbies": "Video editing, fashion, music, and café latte",
+        "skills": "Choreography and roller skating"
+      },
+      "career": "Momiyama Himeri is the captain of the Japanese idol group Takane no Nadeshiko. She began her idol career in 2014 as an early member of the local Tochigi idol group Watarase Bridge 43, later joined the roller-skating idol group Spindle, and became a member of Last Idol's Someday Somewhere unit in 2017. She joined Takane no Nadeshiko in 2022 and has served as captain since then.",
+      "personality": "Her public profile includes twin-tail styling, choreography work, and roller-skating performances. As a choreographer, she creates dances for her group and participates in roller-skating performances.",
+      "platforms": "She is active on TikTok, Instagram, X, and YouTube, sharing daily life, performances, and creative work with fans.",
+      "purpose": "MomiChan gathers these scattered moments into a fan album that is easy to revisit and share.",
+      "profileTitle": "Profile",
+      "aboutTitle": "Story"
+    },
+    "story": {
+      "title": "From the stage to today.",
+      "intro": "A concise record of her groups, creative work, and public updates based on published profiles.",
+      "careerTitle": "Idol career",
+      "creativeTitle": "Choreography and performance",
+      "platformsTitle": "Everyday updates"
+    },
+    "links": {
+      "eyebrow": "Official destinations",
+      "title": "Official Websites and Social Media",
+      "official": "Official Websites",
+      "personal": "Himeri's Social Media",
+      "groupSocial": "Group Social Media",
+      "socialEyebrow": "Personal accounts",
+      "groupEyebrow": "Group accounts",
+      "groupSite": "Takane no Nadeshiko Official",
+      "memberPage": "Momiyama Himeri Profile",
+      "schedule": "Event Schedule",
+      "fanClub": "Fan Club",
+      "ecShop": "Official Shop",
+      "douyin": "Douyin",
+      "redbook": "RED (Xiaohongshu)"
+    },
+    "features": {
+      "eyebrow": "Fan site",
+      "title": "What fans can enjoy.",
+      "description": "Public updates, community conversations, and personal collections in one clear browsing path.",
+      "aggregation": "One shared album",
+      "aggregationDesc": "Revisit performances, photos, videos, and new updates together.",
+      "community": "Conversations with fans",
+      "communityDesc": "Share favorite moments and enjoy the stories saved by other fans.",
+      "personalization": "Your own collection",
+      "personalizationDesc": "Save the moments you would like to visit again.",
+      "multilingual": "Across languages",
+      "multilingualDesc": "Enjoy the site in Chinese, English, or Japanese."
+    },
+    "tech": {
+      "title": "Technical Implementation",
+      "description": "MomiChan uses a modern web stack for content browsing, caching, routing, internationalization, and edge delivery. Each tag opens the official documentation.",
+      "stack": "Technology stack",
+      "vue": "Progressive JavaScript framework",
+      "typescript": "Type-safe JavaScript superset",
+      "vite": "Frontend build tool",
+      "pinia": "State management for Vue",
+      "router": "Official Vue router",
+      "i18n": "Internationalization for Vue",
+      "lucide": "Open-source icon library",
+      "cloudflare": "Edge hosting and Functions",
+      "vitest": "Unit testing framework",
+      "bun": "JavaScript runtime and package manager"
+    },
+    "footer": {
+      "eyebrow": "Personal project",
+      "title": "Built for moments worth revisiting.",
+      "fanProject": "This independently maintained fan project is not affiliated with Momiyama Himeri, Takane no Nadeshiko, or their official organizations."
+    }
   },
   "contact": {
     "eyebrow": "Feedback",

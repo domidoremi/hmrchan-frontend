@@ -34,7 +34,7 @@
 | レイヤー       | 技術                                                 |
 | -------------- | ---------------------------------------------------- |
 | フロントエンド | Vue 3、TypeScript、Vite、Vue Router、Vue I18n        |
-| 状態管理       | Pinia、pinia-plugin-persistedstate                   |
+| 状態管理       | Pinia                                                |
 | エッジと PWA   | Cloudflare Pages、Functions、Workers、Service Worker |
 | テストと品質   | Vitest、Puppeteer、Lighthouse、ESLint、Prettier      |
 

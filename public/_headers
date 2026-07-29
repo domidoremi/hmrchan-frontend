@@ -13,7 +13,7 @@
 /hmrchan/reference/v1/*
   Cache-Control: public, max-age=31536000, immutable
 
-/hmrchan/pets/tidyfox/v1/*
+/hmrchan/pets/isle/v1/*
   Cache-Control: public, max-age=31536000, immutable
 
 /sw.js
