@@ -31,6 +31,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: clip;
+  transition:
+    color 320ms ease,
+    background-color 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body::before {
@@ -55,6 +58,16 @@ body::before {
     radial-gradient(ellipse 36% 32% at 50% 52%, rgba(255, 255, 255, 0.34) 0%, transparent 64%),
     var(--color-background);
   pointer-events: none;
+  transition:
+    opacity 420ms ease,
+    background-color 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  body::before {
+    transition: none;
+  }
 }
 
 [data-color-mode='dark'] body::before {

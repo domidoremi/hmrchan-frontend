@@ -824,6 +824,28 @@
   display: flex;
 }
 
+@media (max-width: 82em) and (min-width: 60.0625em) {
+  .nav-search-shell__field,
+  .nav-search-shell--expanded .nav-search-shell__field,
+  .nav-search-shell:hover .nav-search-shell__field,
+  .nav-search-shell:focus-within .nav-search-shell__field {
+    max-inline-size: 7.5rem;
+  }
+
+  .nav-search-shell__input {
+    inline-size: 7.5rem;
+  }
+
+  .navbar-actions .login-btn {
+    min-inline-size: var(--ui-action-size, 2.75rem);
+    padding-inline: var(--spacing-3);
+  }
+
+  .navbar-actions .login-btn .desktop-only {
+    display: none;
+  }
+}
+
 @media (max-width: 960px) {
   .desktop-only {
     display: none;

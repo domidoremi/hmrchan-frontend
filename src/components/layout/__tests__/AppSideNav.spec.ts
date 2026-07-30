@@ -162,8 +162,13 @@ describe('AppSideNav', () => {
         .exists()
     ).toBe(true)
     expect(wrapper.find('nav[aria-label="Primary navigation"]').exists()).toBe(true)
-    expect(wrapper.find('nav[aria-label="Utility navigation"]').exists()).toBe(true)
-    expect(wrapper.findAll('.app-side-nav__section--primary .app-side-nav__link')).toHaveLength(5)
+    expect(wrapper.find('nav[aria-label="Utility navigation"]').exists()).toBe(false)
+    const primaryLinks = wrapper.findAll('.app-side-nav__section--primary .app-side-nav__link')
+    const primaryTitles = primaryLinks.map((link) => link.attributes('title'))
+
+    expect(primaryLinks).toHaveLength(6)
+    expect(primaryTitles).toContain('About')
+    expect(wrapper.find('.app-side-nav__link[title="Profile Settings"]').exists()).toBe(false)
     expect(wrapper.find('.app-side-nav__link--active').attributes('title')).toBe('Explore')
   })
 
@@ -175,22 +180,19 @@ describe('AppSideNav', () => {
     const primaryLinks = wrapper.findAll('.app-side-nav__section--primary .app-side-nav__link')
     const titles = primaryLinks.map((link) => link.attributes('title'))
 
-    expect(primaryLinks).toHaveLength(6)
+    expect(primaryLinks).toHaveLength(7)
     expect(titles).toContain('Favorites')
     expect(wrapper.find('.app-side-nav__link--active').attributes('title')).toBe('Favorites')
   })
 
-  it('keeps the utility settings link deterministic for authenticated profile navigation', async () => {
+  it('does not duplicate profile settings in the authenticated side navigation', async () => {
     authStoreState.user = { username: 'momo' }
     authStoreState.isAuthenticated = true
 
     const wrapper = await createWrapper('/explore')
-    const utilityLinks = wrapper.findAll('.app-side-nav__section--utility .app-side-nav__link')
-    const settingsLink = utilityLinks.at(1)
 
-    expect(settingsLink?.attributes('title')).toBe('Profile Settings')
-    expect(settingsLink?.attributes('href')).toContain('/profile/settings')
-    expect(settingsLink?.attributes('href')).toContain('returnTo=/explore')
+    expect(wrapper.find('.app-side-nav__section--utility').exists()).toBe(false)
+    expect(wrapper.find('.app-side-nav__link[title="Profile Settings"]').exists()).toBe(false)
   })
 
   it('renders the mobile floating dock with six primary routes and syncs its height', async () => {

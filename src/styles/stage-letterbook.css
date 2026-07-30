@@ -413,7 +413,7 @@ body::before,
 #app .app-side-nav__shell {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(9.5rem, 1fr) auto minmax(9.5rem, 1fr);
+  grid-template-columns: minmax(9.5rem, 1fr) max-content minmax(23rem, 1fr);
   align-items: center;
   gap: clamp(1rem, 3vw, 2.5rem);
   inline-size: min(100%, var(--letterbook-container));
@@ -437,11 +437,6 @@ body::before,
 #app .app-side-nav__section--primary {
   justify-self: center;
   justify-content: center;
-}
-
-#app .app-side-nav__section--utility {
-  justify-self: start;
-  margin-inline-end: 0;
 }
 
 #app .app-side-nav__brand {
@@ -509,10 +504,6 @@ body::before,
 
 #app .app-side-nav__link[href^='/profile/favorites'],
 #app .app-side-nav__link[href^='/profile/settings'] {
-  display: none;
-}
-
-#app .app-side-nav__section--utility .app-side-nav__link:nth-child(2) {
   display: none;
 }
 
@@ -670,7 +661,7 @@ body::before,
   transform: translateY(-0.12rem);
 }
 
-#app :where(.page-control, .btn, .theme-btn, .lang-btn, .bg-effect-btn) {
+#app :where(.page-control, .btn, .lang-btn, .bg-effect-btn) {
   min-block-size: 2.75rem;
   border-radius: 999rem;
   border: var(--letterbook-rule) solid var(--letterbook-line);
@@ -683,8 +674,8 @@ body::before,
   letter-spacing: 0;
 }
 
-#app :where(.page-control, .btn, .theme-btn, .lang-btn, .bg-effect-btn):hover:not(:disabled),
-#app :where(.page-control, .btn, .theme-btn, .lang-btn, .bg-effect-btn):focus-visible {
+#app :where(.page-control, .btn, .lang-btn, .bg-effect-btn):hover:not(:disabled),
+#app :where(.page-control, .btn, .lang-btn, .bg-effect-btn):focus-visible {
   border-color: var(--letterbook-accent);
   background: color-mix(in srgb, var(--letterbook-paper) 82%, var(--letterbook-blob));
   color: var(--letterbook-accent);
@@ -692,13 +683,7 @@ body::before,
   transform: translateY(-0.08rem);
 }
 
-#app
-  :where(
-    .btn-default,
-    .page-control--active,
-    .page-control[aria-pressed='true'],
-    .theme-btn.active
-  ) {
+#app :where(.btn-default, .page-control--active, .page-control[aria-pressed='true']) {
   border-color: var(--letterbook-accent);
   background: var(--letterbook-accent);
   color: var(--letterbook-on-accent);
@@ -706,12 +691,9 @@ body::before,
 }
 
 #app
-  :where(
-    .btn-default,
-    .page-control--active,
-    .page-control[aria-pressed='true'],
-    .theme-btn.active
-  ):hover:not(:disabled) {
+  :where(.btn-default, .page-control--active, .page-control[aria-pressed='true']):hover:not(
+    :disabled
+  ) {
   border-color: color-mix(in srgb, var(--letterbook-accent) 78%, var(--letterbook-ink));
   background: color-mix(in srgb, var(--letterbook-accent) 88%, white);
   color: var(--letterbook-on-accent);
@@ -1990,8 +1972,8 @@ body::before,
   color: var(--letterbook-ink);
 }
 
-#app .settings-panel .theme-btn.active:hover,
-#app .settings-panel .theme-btn.active:focus-visible {
+#app .settings-panel .update-strategy-option--active:hover,
+#app .settings-panel .update-strategy-option--active:focus-visible {
   border-color: var(--settings-option-selected-border);
   background: var(--settings-option-selected-bg);
   color: var(--settings-option-selected-ink);
@@ -2361,12 +2343,13 @@ body::before,
 
 /* Responsive navigation and layouts */
 @media (max-width: 74em) and (min-width: 60.0625em) {
-  #app .app-side-nav__section--primary {
-    gap: 0.35rem;
+  #app .app-side-nav__shell {
+    grid-template-columns: minmax(7.5rem, 1fr) max-content minmax(18rem, 1fr);
+    gap: 0.75rem;
   }
 
-  #app .app-side-nav__section--utility {
-    display: none;
+  #app .app-side-nav__section--primary {
+    gap: 0.35rem;
   }
 
   #app .app-side-nav__link {

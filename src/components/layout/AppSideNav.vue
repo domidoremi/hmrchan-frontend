@@ -45,32 +45,6 @@
           <span class="sr-only">{{ $t(item.i18nKey) }}</span>
         </RouterLink>
       </nav>
-
-      <nav
-        class="app-side-nav__section app-side-nav__section--utility"
-        :aria-label="$t('common.utilityNavigation')"
-        @pointerleave="clearDockHover('utility')"
-        @focusout="handleDockSectionFocusOut('utility', $event)"
-      >
-        <RouterLink
-          v-for="(item, index) in utilityNavItems"
-          :key="item.path"
-          :to="item.to"
-          class="app-side-nav__link"
-          :class="{ 'app-side-nav__link--active': isRouteActive(item.path) }"
-          :style="getDockStyle('utility', index, utilityNavItems.length)"
-          :aria-label="$t(item.i18nKey)"
-          :title="$t(item.i18nKey)"
-          @pointerenter="setDockHover('utility', index)"
-          @focus="setDockHover('utility', index)"
-          @pointermove="handleMagneticMove"
-          @pointerleave="resetMagneticMove"
-        >
-          <component :is="item.icon" class="app-side-nav__icon" aria-hidden="true" />
-          <span class="app-side-nav__label" aria-hidden="true">{{ $t(item.i18nKey) }}</span>
-          <span class="sr-only">{{ $t(item.i18nKey) }}</span>
-        </RouterLink>
-      </nav>
     </div>
   </aside>
 
@@ -100,15 +74,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, type Component } from 'vue'
-import { RouterLink, useRoute, type RouteLocationRaw } from 'vue-router'
-import { Info, Settings2 } from '@lucide/vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { prefetchAuthorsData, prefetchExploreData } from '@/utils/prefetch'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { useNavigation } from '@/composables/useNavigation'
-import type { NavigationItem } from '@/config/navigation'
-import { withProfileReturnTo } from '@/utils/profileReturnTo'
-import { useAuthSurface } from '@/services/authSurface'
 import BrandPetLogo from '@/components/brand/BrandPetLogo.vue'
 
 const props = withDefaults(
@@ -120,19 +90,11 @@ const props = withDefaults(
   }
 )
 
-interface UtilityNavItem {
-  path: string
-  i18nKey: string
-  icon: Component
-  to: RouteLocationRaw
-}
-
-type DockSection = 'primary' | 'utility'
+type DockSection = 'primary'
 
 const MOBILE_DOCK_BREAKPOINT_QUERY = '(max-width: 960px)'
 
 const route = useRoute()
-const { isAuthenticated } = useAuthSurface()
 const { desktopNavItems, mobileNavItems, getNavigationLink } = useNavigation()
 
 const prefetchedRoutes = new Set<string>()
@@ -147,9 +109,15 @@ let mobileDockResizeObserver: ResizeObserver | null = null
 
 const desktopPrimaryNavItems = computed(() =>
   desktopNavItems.value.filter((item) =>
-    ['/', '/explore', '/profile/favorites', '/authors', '/community', '/schedule'].includes(
-      item.path
-    )
+    [
+      '/',
+      '/explore',
+      '/profile/favorites',
+      '/authors',
+      '/community',
+      '/schedule',
+      '/about',
+    ].includes(item.path)
   )
 )
 
@@ -158,23 +126,6 @@ const mobilePrimaryNavItems = computed(() =>
     ['/', '/explore', '/authors', '/community', '/schedule', '/about'].includes(item.path)
   )
 )
-
-const utilityNavItems = computed<UtilityNavItem[]>(() => [
-  {
-    path: '/about',
-    i18nKey: 'nav.about',
-    icon: Info,
-    to: '/about',
-  },
-  {
-    path: '/profile/settings',
-    i18nKey: 'nav.profileSettings',
-    icon: Settings2,
-    to: isAuthenticated.value
-      ? withProfileReturnTo('/profile/settings', { returnTo: route.fullPath })
-      : getNavigationLink({ path: '/profile/settings', requiresAuth: true } as NavigationItem),
-  },
-])
 
 function isRouteActive(path: string): boolean {
   if (path === '/') return route.path === '/'

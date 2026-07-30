@@ -346,7 +346,7 @@
     "appUpdateTitle": "アプリ更新",
     "appUpdatePromptOnly": "通知のみ",
     "appUpdatePromptOnlyDesc": "通知のみ表示。自動更新はしません。",
-    "appUpdatePublicIdle": "公開ページを待機時に自動更新",
+    "appUpdatePublicIdle": "待機時に自動更新",
     "appUpdatePublicIdleDesc": "公開ページは待機中に更新。フォームや入力画面は通知のみ。",
     "appUpdateAggressive": "より積極的に自動更新",
     "appUpdateAggressiveDesc": "保護対象以外は待機中に更新。",

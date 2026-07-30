@@ -346,7 +346,7 @@
     "appUpdateTitle": "App updates",
     "appUpdatePromptOnly": "Prompt only",
     "appUpdatePromptOnlyDesc": "Show a prompt. Never refresh automatically.",
-    "appUpdatePublicIdle": "Auto refresh public pages",
+    "appUpdatePublicIdle": "Idle auto-update",
     "appUpdatePublicIdleDesc": "Refresh idle public pages. Prompt on forms and input pages.",
     "appUpdateAggressive": "More aggressive auto refresh",
     "appUpdateAggressiveDesc": "Refresh idle pages unless protected.",

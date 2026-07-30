@@ -10,6 +10,12 @@ describe('Settings Store', () => {
     localStorage.clear()
   })
 
+  it('defaults to idle automatic application updates', () => {
+    const store = useSettingsStore()
+
+    expect(store.settings.appUpdateStrategy).toBe('public-idle-refresh')
+  })
+
   it('applies backend preferences without overwriting local-only settings', () => {
     const store = useSettingsStore()
 

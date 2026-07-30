@@ -346,7 +346,7 @@
     "appUpdateTitle": "應用更新",
     "appUpdatePromptOnly": "僅提示",
     "appUpdatePromptOnlyDesc": "僅顯示提示，不自動重新整理。",
-    "appUpdatePublicIdle": "公開頁閒置自動更新",
+    "appUpdatePublicIdle": "閒置自動更新",
     "appUpdatePublicIdleDesc": "公開頁閒置時重新整理；表單和輸入頁僅提示。",
     "appUpdateAggressive": "更積極自動更新",
     "appUpdateAggressiveDesc": "受保護頁面除外，閒置時自動重新整理。",

@@ -68,27 +68,15 @@
           </div>
           <span class="settings-label">{{ $t('settings.theme') }}</span>
         </div>
-        <div class="settings-options theme-options">
-          <button
-            v-for="opt in themeOptions"
-            :key="opt.value"
-            type="button"
-            class="theme-btn"
-            :class="{ active: theme === opt.value }"
-            :aria-pressed="theme === opt.value"
-            @click="setTheme(opt.value)"
-          >
-            <div class="theme-btn-icon">
-              <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
-            </div>
-            <span class="theme-btn-label">{{ opt.label }}</span>
-            <Transition name="check">
-              <div v-if="theme === opt.value" class="theme-btn-check">
-                <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
-              </div>
-            </Transition>
-          </button>
-        </div>
+        <ThemeModeSwitch
+          :model-value="theme"
+          :resolved-theme="resolvedTheme"
+          :label="$t('settings.theme')"
+          :light-label="$t('settings.light')"
+          :dark-label="$t('settings.dark')"
+          :auto-label="$t('settings.auto')"
+          @update:model-value="setTheme"
+        />
       </div>
 
       <!-- Appearance Preset -->
@@ -134,30 +122,32 @@
           </div>
           <span class="settings-label">{{ $t('settings.appUpdateTitle') }}</span>
         </div>
-        <div class="settings-options strategy-options">
+        <div
+          class="update-strategy-options"
+          role="radiogroup"
+          :aria-label="$t('settings.appUpdateTitle')"
+        >
           <button
             v-for="opt in appUpdateStrategyOptions"
             :key="opt.value"
             type="button"
-            class="theme-btn strategy-btn"
-            :class="{ active: settings.appUpdateStrategy === opt.value }"
-            :aria-pressed="settings.appUpdateStrategy === opt.value"
+            class="update-strategy-option"
+            :class="{
+              'update-strategy-option--active': settings.appUpdateStrategy === opt.value,
+            }"
+            role="radio"
+            :aria-checked="settings.appUpdateStrategy === opt.value"
             @click="setAppUpdateStrategy(opt.value)"
           >
-            <div class="theme-btn-icon">
+            <span class="update-strategy-option__icon">
               <AnimatedIcon name="loading" :fallback-icon="opt.icon" size="sm" />
-            </div>
-            <div class="strategy-btn__copy">
-              <span class="strategy-btn__title">{{ opt.label }}</span>
-              <span class="strategy-btn__desc">{{ opt.description }}</span>
-            </div>
-            <Transition name="check">
-              <div v-if="settings.appUpdateStrategy === opt.value" class="theme-btn-check">
-                <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
-              </div>
-            </Transition>
+            </span>
+            <span class="update-strategy-option__label">{{ opt.label }}</span>
           </button>
         </div>
+        <p class="update-strategy-description" aria-live="polite">
+          {{ selectedAppUpdateStrategyDescription }}
+        </p>
       </div>
 
       <!-- Display -->
@@ -400,7 +390,6 @@
 
 <script setup lang="ts">
 import {
-  Check,
   ChevronRight,
   Globe,
   Info,
@@ -408,9 +397,6 @@ import {
   Palette,
   X,
   Settings,
-  Sun,
-  Moon,
-  Monitor,
   Save,
   Video,
   RotateCcw,
@@ -435,6 +421,7 @@ import type { AnimationIntensity, AppUpdateStrategy } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import AppearancePresetPicker from '@/components/appearance/AppearancePresetPicker.vue'
 import ControlButton from '@/components/appearance/ControlButton.vue'
+import ThemeModeSwitch from '@/components/appearance/ThemeModeSwitch.vue'
 
 type SettingsCategory = 'appearance' | 'experience' | 'privacy' | 'system'
 
@@ -466,7 +453,7 @@ const { resetSettings: resetVideoPlayerSettings } = useVideoSettings()
 const { isSavingPreferences, resetPreferences, replacePreferences } = usePreferencesSync()
 
 const { isAuthenticated } = storeToRefs(authStore)
-const { theme } = storeToRefs(themeStore)
+const { theme, resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
 const visibleSettingsCategories = computed<{ id: SettingsCategory; label: string }[]>(() => {
   const allCategories = [
@@ -481,11 +468,6 @@ const visibleSettingsCategories = computed<{ id: SettingsCategory; label: string
 const activeSettingsCategory = ref<SettingsCategory>(
   props.allowedCategories[0] ?? ('appearance' as SettingsCategory)
 )
-const themeOptions = computed(() => [
-  { value: 'light' as Theme, icon: Sun, label: t('settings.light') },
-  { value: 'dark' as Theme, icon: Moon, label: t('settings.dark') },
-  { value: 'auto' as Theme, icon: Monitor, label: t('settings.auto') },
-])
 const animationIntensityOptions = computed<{ value: AnimationIntensity; label: string }[]>(() => [
   { value: 'none', label: t('settings.animationNone') },
   { value: 'reduced', label: t('settings.animationReduced') },
@@ -519,6 +501,12 @@ const appUpdateStrategyOptions = computed<
     description: t('settings.appUpdateAggressiveDesc'),
   },
 ])
+const selectedAppUpdateStrategyDescription = computed(
+  () =>
+    appUpdateStrategyOptions.value.find(
+      (option) => option.value === settings.value.appUpdateStrategy
+    )?.description ?? ''
+)
 const selectedAnimationIntensityLabel = computed(() => {
   return (
     animationIntensityOptions.value.find((opt) => opt.value === settings.value.animationIntensity)

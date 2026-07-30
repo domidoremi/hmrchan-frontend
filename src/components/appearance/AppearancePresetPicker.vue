@@ -162,7 +162,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .appearance-preset-picker {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
   gap: clamp(0.75rem, 1.8vw, 0.95rem);
 }
 
@@ -205,7 +205,8 @@ onBeforeUnmount(() => {
 .appearance-preset-card__preview {
   position: relative;
   overflow: hidden;
-  min-height: 7.5rem;
+  aspect-ratio: 4 / 3;
+  min-block-size: 0;
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(15, 23, 42, 0.05));
@@ -637,7 +638,29 @@ onBeforeUnmount(() => {
   }
 }
 
+@media (max-height: 54rem) {
+  .appearance-preset-picker {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.25rem), 1fr));
+    gap: 0.625rem;
+  }
+
+  .appearance-preset-card {
+    gap: 0.5rem;
+    padding: 0.625rem;
+  }
+
+  .appearance-preset-card__preview {
+    aspect-ratio: 5 / 3;
+  }
+}
+
 @media (max-width: 34rem) {
+  .appearance-preset-picker {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr));
+  }
+}
+
+@media (max-width: 22rem) {
   .appearance-preset-picker {
     grid-template-columns: 1fr;
   }

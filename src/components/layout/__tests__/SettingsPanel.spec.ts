@@ -160,6 +160,17 @@ function createWrapper(props: Record<string, unknown> = {}) {
             </button>
           `,
         },
+        ThemeModeSwitch: {
+          props: ['modelValue', 'resolvedTheme', 'label', 'lightLabel', 'darkLabel', 'autoLabel'],
+          emits: ['update:modelValue'],
+          template: `
+            <div data-stub="theme-mode-switch">
+              <button type="button" @click="$emit('update:modelValue', 'light')">{{ lightLabel }}</button>
+              <button type="button" @click="$emit('update:modelValue', 'dark')">{{ darkLabel }}</button>
+              <button type="button" @click="$emit('update:modelValue', 'auto')">{{ autoLabel }}</button>
+            </div>
+          `,
+        },
       },
     },
   })
@@ -232,25 +243,37 @@ describe('SettingsPanel', () => {
     expect(settingsPanelStyles).toContain('.toggle-btn {')
     expect(settingsPanelStyles).toContain('.reduced-motion-notice {')
     expect(settingsPanelStyles).toContain('@media (max-width: 28rem)')
+    expect(settingsPanelSource).toContain('<ThemeModeSwitch')
   })
 
-  it('keeps selected option copy and markers on one readable color contract', () => {
-    expect(settingsPanelStyles).toContain(
-      '.theme-btn.active .strategy-btn__desc,\n.theme-btn.active .theme-btn-summary'
-    )
-    expect(settingsPanelStyles).toContain('color: var(--settings-option-selected-ink)')
-    expect(settingsPanelStyles).toContain('background: var(--settings-option-selected-marker-bg)')
-    expect(settingsPanelStyles).toContain('color: var(--settings-option-selected-marker-ink)')
+  it('renders app update strategies as a compact segmented control', () => {
+    expect(settingsPanelSource).toContain('class="update-strategy-options"')
+    expect(settingsPanelSource).toContain('role="radiogroup"')
+    expect(settingsPanelSource).not.toContain('theme-btn-check')
+    expect(settingsPanelStyles).toContain('grid-template-columns: repeat(3, minmax(0, 1fr))')
+    expect(settingsPanelStyles).toContain('min-block-size: 3.25rem')
+    expect(settingsPanelStyles).toContain('.update-strategy-description {')
     expect(letterbookStyles).toContain(
-      '--settings-option-selected-ink: var(--letterbook-on-accent)'
+      '#app .settings-panel .update-strategy-option--active:focus-visible'
     )
-    expect(letterbookStyles).toContain(
-      '--settings-option-selected-marker-bg: var(--letterbook-on-accent)'
+  })
+
+  it('exposes all update strategies and selects idle automatic updates', async () => {
+    const wrapper = createWrapper({
+      embedded: true,
+      allowedCategories: ['system'],
+    })
+
+    const strategies = wrapper.findAll('[role="radio"]')
+    expect(strategies).toHaveLength(3)
+    expect(strategies[0]?.attributes('aria-checked')).toBe('true')
+    expect(wrapper.get('.update-strategy-description').text()).toBe(
+      'settings.appUpdatePromptOnlyDesc'
     )
-    expect(letterbookStyles).toContain(
-      '--settings-option-selected-marker-ink: var(--letterbook-accent)'
-    )
-    expect(letterbookStyles).toContain('#app .settings-panel .theme-btn.active:focus-visible')
+
+    await findButtonByText(wrapper, 'settings.appUpdatePublicIdle').trigger('click')
+
+    expect(settingsStoreState.setAppUpdateStrategy).toHaveBeenCalledWith('public-idle-refresh')
   })
 
   it('supports external scroll shell and category switching', async () => {
