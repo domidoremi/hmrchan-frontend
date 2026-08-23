@@ -1,4 +1,4 @@
-import { isContractResourceId } from '../utils/contractResourceId'
+import { isContractResourceId } from '../utils/contractResourceId.ts'
 
 const SITE_NAME = 'MomiChan'
 export const SITE_ORIGIN = 'https://momichan.com'

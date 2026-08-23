@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import type { Plugin } from 'vite'
-import { createPrerenderedHtml, STATIC_PRERENDER_ROUTES } from '../../../src/edge/prerenderHtml'
+import { createPrerenderedHtml, STATIC_PRERENDER_ROUTES } from '../../../src/edge/prerenderHtml.ts'
 
 type PrerenderRouteTarget = {
   path: string

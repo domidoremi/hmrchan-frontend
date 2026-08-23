@@ -7,7 +7,7 @@ import {
   DEFAULT_LOCAL_API_PROXY_TARGET,
   assertDevProxyTargetsAllowed,
   rewriteDevProxyCookies,
-} from './scripts/lib/dev-proxy-safety'
+} from './scripts/lib/dev-proxy-safety.ts'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import { imagetools } from 'vite-imagetools'
@@ -18,8 +18,8 @@ import {
   serviceWorkerBuildPlugin,
   sriPlugin,
   staticPrerenderPlugin,
-} from './build/vite/plugins'
-import { getSwCacheVersion } from './build/vite/swCacheVersion'
+} from './build/vite/plugins/index.ts'
+import { getSwCacheVersion } from './build/vite/swCacheVersion.ts'
 
 type DevProxyServer = {
   on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void

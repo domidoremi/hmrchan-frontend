@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://developers.cloudflare.com/pages/"><img alt="Cloudflare Pages" src="https://img.shields.io/badge/Deploy-Cloudflare_Pages-F38020?logo=cloudflare&logoColor=white"></a>
   <a href="docs/zh-CN/validation.md"><img alt="本地发布验证" src="https://img.shields.io/badge/Release-local_validation-2563EB?logo=checkmarx&logoColor=white"></a>
-  <a href="https://bun.sh/docs"><img alt="Bun 1.3.11" src="https://img.shields.io/badge/Bun-1.3.11-000000?logo=bun&logoColor=white"></a>
+  <a href="https://bun.sh/docs"><img alt="Bun 1.4.0" src="https://img.shields.io/badge/Bun-1.4.0-000000?logo=bun&logoColor=white"></a>
 </p>
 
 <p align="center">
@@ -18,8 +18,8 @@ HmrChan Frontend 是站点的 Vue 应用，负责公开内容、社区、账号�
 
 [![Vue 3.6.0 beta.17](https://img.shields.io/badge/Vue-3.6.0--beta.17-42B883?logo=vuedotjs&logoColor=white)](https://vuejs.org/guide/)
 [![TypeScript 6.0.3](https://img.shields.io/badge/TypeScript-6.0.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/)
-[![Vite 8.1.5](https://img.shields.io/badge/Vite-8.1.5-646CFF?logo=vite&logoColor=white)](https://vite.dev/guide/)
-[![Pinia 4.0.2](https://img.shields.io/badge/Pinia-4.0.2-FFD859?logo=pinia&logoColor=111827)](https://pinia.vuejs.org/)
+[![Vite 8.2.2](https://img.shields.io/badge/Vite-8.2.2-646CFF?logo=vite&logoColor=white)](https://vite.dev/guide/)
+[![Pinia 4.0.3](https://img.shields.io/badge/Pinia-4.0.3-FFD859?logo=pinia&logoColor=111827)](https://pinia.vuejs.org/)
 [![Vue Router 5.2.0](https://img.shields.io/badge/Vue_Router-5.2.0-42B883?logo=vuedotjs&logoColor=white)](https://router.vuejs.org/guide/)
 [![Vue I18n 12.0.0 alpha.4](https://img.shields.io/badge/Vue_I18n-12.0.0--alpha.4-26A69A?logo=vuedotjs&logoColor=white)](https://vue-i18n.intlify.dev/guide/introduction.html)
 
@@ -27,9 +27,9 @@ HmrChan Frontend 是站点的 Vue 应用，负责公开内容、社区、账号�
 
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages_%2B_Functions-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/pages/)
 [![Vitest 5.0.0 beta.7](https://img.shields.io/badge/Vitest-5.0.0--beta.7-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/guide/)
-[![ESLint 10.8.0](https://img.shields.io/badge/ESLint-10.8.0-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/docs/latest/)
+[![ESLint 10.9.0](https://img.shields.io/badge/ESLint-10.9.0-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/docs/latest/)
 [![Prettier 4.0.0 alpha.13](https://img.shields.io/badge/Prettier-4.0.0--alpha.13-F7B93E?logo=prettier&logoColor=111827)](https://prettier.io/docs/)
-[![Knip 6.29.0](https://img.shields.io/badge/Knip-6.29.0-EA580C)](https://knip.dev/overview/getting-started)
+[![Knip 6.32.2](https://img.shields.io/badge/Knip-6.32.2-EA580C)](https://knip.dev/overview/getting-started)
 
 ## 项目范围
 
@@ -59,10 +59,10 @@ docs/en/             English documentation
 
 ## 环境要求
 
-| 工具                                                 | 支持版本        |
-| ---------------------------------------------------- | --------------- |
-| [Bun](https://bun.sh/docs)                           | `1.3.11`        |
-| [Node.js](https://nodejs.org/docs/latest-v24.x/api/) | `>=24.14.0 <25` |
+| 工具                                                 | 支持版本       |
+| ---------------------------------------------------- | -------------- |
+| [Bun](https://bun.sh/docs)                           | `1.4.0`        |
+| [Node.js](https://nodejs.org/docs/latest-v26.x/api/) | `>=26.7.0 <27` |
 
 `bun.lock` 是唯一依赖锁文件，请勿混用 npm、pnpm 或 Yarn。
 
