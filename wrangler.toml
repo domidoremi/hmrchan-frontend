@@ -11,7 +11,7 @@
 # }
 
 name = "hmrchan-frontend"
-compatibility_date = "2026-08-24"
+compatibility_date = "2026-08-23"
 pages_build_output_dir = "./dist"
 
 # 注意：Cloudflare Pages 不支持在 wrangler.toml 中配置 [build]
