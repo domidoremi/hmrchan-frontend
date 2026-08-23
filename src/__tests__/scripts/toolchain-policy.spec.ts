@@ -9,9 +9,9 @@ import {
 
 const VUE_RUNTIME_VERSION = '3.5.41'
 const VUE_LOCKED_PACKAGES = ['vue', '@vue/compiler-sfc', '@vue/server-renderer'] as const
-const BUN_VERSION = '1.3.14'
-const NODE_VERSION = '24.14.1'
-const NODE_ENGINE_RANGE = '>=24.11.1 <25'
+const BUN_VERSION = '1.4.0'
+const NODE_VERSION = '26.7.0'
+const NODE_ENGINE_RANGE = '>=26.7.0 <27'
 const PAGES_RUNTIME_ENV_KEYS = [
   'BUN_VERSION',
   'SKIP_DEPENDENCY_INSTALL',

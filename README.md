@@ -17,7 +17,7 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white" />
   <img alt="Vite" src="https://img.shields.io/badge/Vite-646cff?logo=vite&logoColor=white" />
   <img alt="Cloudflare Pages" src="https://img.shields.io/badge/Cloudflare_Pages-f38020?logo=cloudflarepages&logoColor=white" />
-  <img alt="Bun 1.3.14" src="https://img.shields.io/badge/Bun-1.3.14-14151a?logo=bun&logoColor=white" />
+  <img alt="Bun 1.4.0" src="https://img.shields.io/badge/Bun-1.4.0-14151a?logo=bun&logoColor=white" />
 </p>
 
 > 我个人开发和维护的籾山姫璃粉丝站。
@@ -57,8 +57,8 @@
 
 ## 🚀 运行
 
-- Node.js `>=24.11.1 <25`
-- Bun `1.3.14`
+- Node.js `>=26.7.0 <27`
+- Bun `1.4.0`
 
 ```bash
 bun install --frozen-lockfile

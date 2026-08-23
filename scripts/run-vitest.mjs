@@ -11,6 +11,12 @@ const child = spawn(process.execPath, ['./node_modules/vitest/vitest.mjs', ...ar
   stdio: ['inherit', 'pipe', 'pipe'],
   env: {
     ...process.env,
+    // Node 26 exposes an experimental process-wide Web Storage implementation. Without a
+    // persistence file its localStorage getter is unavailable, and Vitest can overwrite
+    // jsdom's isolated storage globals with that value. Keep browser storage owned by jsdom.
+    NODE_OPTIONS: [process.env.NODE_OPTIONS, '--no-experimental-webstorage']
+      .filter(Boolean)
+      .join(' '),
     // `baseline-browser-mapping` is pinned to the latest available release in this repo,
     // but upstream can still emit a stale-data warning when its published dataset ages past
     // two months. Keep CI output focused on real test failures by suppressing only that

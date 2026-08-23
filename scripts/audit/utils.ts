@@ -129,7 +129,8 @@ export function runCommand(
 export function runLocalNodeTool(
   command: keyof typeof LOCAL_NODE_TOOLS,
   args: string[] = [],
-  cwd?: string
+  cwd?: string,
+  options: RunCommandOptions = {}
 ): Promise<CommandResult> {
   const binPath = resolveLocalNodeBin(command, cwd)
   if (!binPath) {
@@ -140,7 +141,7 @@ export function runLocalNodeTool(
     })
   }
 
-  return runCommand(getNodeCommand(), [binPath, ...args], cwd)
+  return runCommand(getNodeCommand(), [binPath, ...args], cwd, options)
 }
 
 export function formatDuration(ms: number): string {

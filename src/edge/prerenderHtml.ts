@@ -6,7 +6,7 @@ import {
   resolveHtmlDocument,
   SITE_ORIGIN,
   type HtmlDocumentConfig,
-} from './htmlDocument'
+} from './htmlDocument.ts'
 
 export const STATIC_PRERENDER_ROUTES = [
   '/',

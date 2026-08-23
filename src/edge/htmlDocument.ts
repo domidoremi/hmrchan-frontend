@@ -1,6 +1,6 @@
-import { STATIC_HOME_PRERENDER_IMAGE } from '../fallbacks/generated/homePrerenderManifest'
-import { supportedLocales } from '../i18n/locales'
-import { escapeHtml } from './htmlEscaping'
+import { STATIC_HOME_PRERENDER_IMAGE } from '../fallbacks/generated/homePrerenderManifest.ts'
+import { supportedLocales } from '../i18n/locales.ts'
+import { escapeHtml } from './htmlEscaping.ts'
 
 const SITE_NAME = 'MomiChan'
 export const SITE_ORIGIN = 'https://next.momichan.com'

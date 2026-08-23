@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { build, type Plugin, type ResolvedConfig } from 'vite'
-import { getSwCacheVersion } from '../swCacheVersion'
+import { getSwCacheVersion } from '../swCacheVersion.ts'
 
 interface ServiceWorkerBuildPluginOptions {
   entry?: string

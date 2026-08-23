@@ -40,7 +40,14 @@ const testAudit: AuditModule = {
     const result = await runLocalNodeTool(
       'vitest',
       ['run', '--reporter=json', '--maxWorkers=1'],
-      options.projectRoot
+      options.projectRoot,
+      {
+        env: {
+          NODE_OPTIONS: [process.env['NODE_OPTIONS'], '--no-experimental-webstorage']
+            .filter(Boolean)
+            .join(' '),
+        },
+      }
     )
 
     const parsed = parseVitestJSON(result.stdout)

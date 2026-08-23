@@ -30,7 +30,7 @@ describe('useHmrAboutContent', () => {
 
     expect(byId.get('vite')?.url).toBe('https://vite.dev/')
     expect(byId.get('cloudflare')?.url).toBe('https://developers.cloudflare.com/pages/')
-    expect(byId.get('bun')?.version).toBe('1.3.14')
+    expect(byId.get('bun')?.version).toBe('1.4.0')
     expect(byId.has('gsap')).toBe(false)
     expect(byId.has('pinia-persisted-state')).toBe(false)
   })

@@ -19,9 +19,9 @@ import {
   serviceWorkerBuildPlugin,
   sriPlugin,
   staticPrerenderPlugin,
-} from './build/vite/plugins'
-import { normalizeProxyTarget } from './build/vite/plugins/proxyTarget'
-import { getSwCacheVersion } from './build/vite/swCacheVersion'
+} from './build/vite/plugins/index.ts'
+import { normalizeProxyTarget } from './build/vite/plugins/proxyTarget.ts'
+import { getSwCacheVersion } from './build/vite/swCacheVersion.ts'
 
 type DevProxyServer = {
   on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void
