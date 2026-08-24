@@ -17,6 +17,7 @@ import { buildBufferedResponse } from '../../src/edge/bufferedResponse'
 import {
   buildInternalGatewayUrl,
   fetchViaInternalApiGateway,
+  withInternalApiGatewayAuth,
   type EdgeBindingFetcher,
   type InternalApiGatewayRuntimeEnv,
 } from '../../src/edge/internalApiGateway'
@@ -467,7 +468,7 @@ async function fetchInternalBff(env: ProxyEnv, path: string, payload: unknown): 
     return internalApiGateway.fetch(
       new Request(buildInternalGatewayUrl(path), {
         method: 'POST',
-        headers,
+        headers: withInternalApiGatewayAuth(headers, env),
         body,
       })
     )
@@ -1304,6 +1305,7 @@ async function forwardToUpstream(options: ForwardRequestOptions): Promise<Upstre
     try {
       const response = await fetchViaInternalApiGateway(internalApiGateway, {
         bodyBuffer: options.bodyBuffer,
+        env: options.env,
         headers: options.headers,
         redirectMode: options.redirectMode,
         request,
@@ -1337,6 +1339,7 @@ async function replayAnonymousPublicReadWithoutBrowserContext(
     try {
       const response = await fetchViaInternalApiGateway(options.internalApiGateway, {
         bodyBuffer: options.bodyBuffer,
+        env: options.env,
         headers: replayHeaders,
         redirectMode: options.redirectMode,
         request: options.request,

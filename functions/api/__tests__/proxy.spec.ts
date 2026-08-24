@@ -5,6 +5,7 @@ import { onRequest } from '../[[path]]'
 const BACKEND_ORIGIN = 'https://backend.test'
 const INTERNAL_ORIGIN = 'https://internal.test'
 const INTERNAL_SECRET = 'super-secret'
+const INTERNAL_GATEWAY_SECRET = 'gateway-super-secret'
 const ORIGIN = 'https://momichan.com'
 const NEXT_ORIGIN = 'https://next.momichan.com'
 const SESSION_RESOLVE_ROUTE = `/api/v1/auth/${'session:resolve'}`
@@ -161,6 +162,7 @@ function makeContext(options: {
       API_BASE_URL: BACKEND_ORIGIN,
       BACKEND_INTERNAL_ORIGIN: INTERNAL_ORIGIN,
       BACKEND_INTERNAL_AUTH_SHARED_SECRET: INTERNAL_SECRET,
+      INTERNAL_API_GATEWAY_SHARED_SECRET: INTERNAL_GATEWAY_SECRET,
       VITE_CLIENT_CONTRACT_VERSION: '2026-04-13.p1',
       ...options.env,
     },
@@ -356,6 +358,7 @@ describe('functions/api proxy', () => {
       expect(request.headers.get('X-Internal-Timestamp')).toBe('2026-04-17T07:00:00.000Z')
       expect(request.headers.get('X-Internal-Signature')).toBeTruthy()
       expect(request.headers.get('X-Client-Fingerprint')).toBe(fingerprint)
+      expect(request.headers.get('X-MomiChan-Internal-Gateway-Token')).toBe(INTERNAL_GATEWAY_SECRET)
       return apiEnvelope(material)
     })
 
@@ -503,6 +506,9 @@ describe('functions/api proxy', () => {
     expect(internalRequest?.headers.has('Sec-Fetch-Mode')).toBe(false)
     expect(internalRequest?.headers.has('Sec-Fetch-Site')).toBe(false)
     expect(internalRequest?.headers.get('User-Agent')).toBe('Chrome')
+    expect(internalRequest?.headers.get('X-MomiChan-Internal-Gateway-Token')).toBe(
+      INTERNAL_GATEWAY_SECRET
+    )
     expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('vpc')
   })
 
