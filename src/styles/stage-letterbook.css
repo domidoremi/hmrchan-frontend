@@ -1154,8 +1154,11 @@ body::before,
 }
 
 @media (min-width: 1025px) {
-  #app .home-page .rail {
+  #app .home-page {
     --home-safe-block-size: calc(100dvh - var(--home-navbar-stable-height));
+  }
+
+  #app .home-page .rail {
     padding-block: 0;
   }
 }

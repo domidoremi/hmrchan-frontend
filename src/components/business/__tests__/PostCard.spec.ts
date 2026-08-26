@@ -70,6 +70,7 @@ afterEach(() => {
     entry?.app.unmount()
     entry?.host.remove()
   }
+  vi.unstubAllGlobals()
 })
 
 describe('PostCard', () => {
@@ -93,5 +94,70 @@ describe('PostCard', () => {
 
     expect(host.querySelector('.post-author-avatar img')).toBeNull()
     expect(host.querySelector('.post-author-avatar .ui-avatar__fallback')).not.toBeNull()
+  })
+
+  it('upgrades undersized large thumbnails to an image stream', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        new Uint8Array([0xff, 0xd8, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/octet-stream' },
+        }
+      )
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const mediaId = '123e4567-e89b-12d3-a456-426614174000'
+    const { host } = mountPostCard(
+      createPost({
+        thumbnail_url: `/api/v1/media/${mediaId}/thumbnail?size=small`,
+        media_count: 1,
+      })
+    )
+    const image = host.querySelector<HTMLImageElement>('.post-image')
+    expect(image).not.toBeNull()
+    Object.defineProperty(image, 'naturalWidth', { configurable: true, value: 400 })
+    Object.defineProperty(image, 'naturalHeight', { configurable: true, value: 600 })
+
+    image?.dispatchEvent(new Event('load'))
+    await vi.waitFor(() => {
+      expect(host.querySelector<HTMLImageElement>('.post-image')?.src).toContain(
+        `/api/v1/media/${mediaId}/stream`
+      )
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith(`/api/v1/media/${mediaId}/stream`, {
+      headers: { Range: 'bytes=0-15' },
+      credentials: 'same-origin',
+    })
+  })
+
+  it('keeps the thumbnail when the media stream is not an image', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(new Uint8Array([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]), {
+          status: 200,
+          headers: { 'Content-Type': 'application/octet-stream' },
+        })
+      )
+    )
+
+    const mediaId = '123e4567-e89b-12d3-a456-426614174000'
+    const { host } = mountPostCard(
+      createPost({
+        thumbnail_url: `/api/v1/media/${mediaId}/thumbnail?size=small`,
+        media_count: 1,
+      })
+    )
+    const image = host.querySelector<HTMLImageElement>('.post-image')
+    Object.defineProperty(image, 'naturalWidth', { configurable: true, value: 400 })
+    Object.defineProperty(image, 'naturalHeight', { configurable: true, value: 225 })
+
+    image?.dispatchEvent(new Event('load'))
+    await vi.waitFor(() => expect(image?.classList.contains('is-loaded')).toBe(true))
+
+    expect(image?.src).toContain('/thumbnail?size=large')
   })
 })

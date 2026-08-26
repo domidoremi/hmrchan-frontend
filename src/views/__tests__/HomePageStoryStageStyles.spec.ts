@@ -125,7 +125,13 @@ describe('HomePage story-stage styles', () => {
 
   it('keeps the wide featured rail viewport-sized without letterbook padding travel', () => {
     expect(stageLetterbookSource).toMatch(
-      /@media \(min-width: 1025px\)\s*\{\s*#app \.home-page \.rail\s*\{[^}]*--home-safe-block-size:\s*calc\(100dvh - var\(--home-navbar-stable-height\)\);[^}]*padding-block:\s*0;/
+      /@media \(min-width: 1025px\)\s*\{\s*#app \.home-page\s*\{[^}]*--home-safe-block-size:\s*calc\(100dvh - var\(--home-navbar-stable-height\)\);[^}]*\}\s*#app \.home-page \.rail\s*\{[^}]*padding-block:\s*0;/
+    )
+  })
+
+  it('keeps the desktop story deck viewport-sized so lazy media can enter the scroll window', () => {
+    expect(stageLetterbookSource).toMatch(
+      /@media \(min-width: 1025px\)\s*\{\s*#app \.home-page\s*\{[^}]*--home-safe-block-size:\s*calc\(100dvh - var\(--home-navbar-stable-height\)\);/
     )
   })
 

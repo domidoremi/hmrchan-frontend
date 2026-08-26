@@ -19,10 +19,10 @@
         <span class="platform-label">{{ platformLabel }}</span>
       </div>
 
-      <div v-if="!isImageLoaded && thumbnailSrc" class="post-image-placeholder glass-skeleton" />
+      <div v-if="!isImageLoaded && activeImageSrc" class="post-image-placeholder glass-skeleton" />
 
       <div
-        v-else-if="!thumbnailSrc && hasMediaNoThumbnail"
+        v-else-if="!activeImageSrc && hasMediaNoThumbnail"
         class="post-image-placeholder post-image-placeholder--media"
       >
         <component :is="mediaTypeIcon" :size="32" />
@@ -34,15 +34,15 @@
         </span>
       </div>
 
-      <div v-else-if="!thumbnailSrc" class="post-image-placeholder post-image-placeholder--empty">
+      <div v-else-if="!activeImageSrc" class="post-image-placeholder post-image-placeholder--empty">
         <component :is="platformIcon" :size="28" />
       </div>
 
       <img
-        v-if="thumbnailSrc && shouldRenderImage"
+        v-if="activeImageSrc && shouldRenderImage"
         class="post-image"
         :class="{ 'is-loaded': isImageLoaded }"
-        :src="thumbnailSrc"
+        :src="activeImageSrc"
         :alt="displayTitle"
         :width="imageWidth"
         :height="imageHeight"
@@ -150,6 +150,10 @@ import {
   resolvePlatformAnimation,
   resolvePlatformLabel,
 } from './post-card/postCardModel'
+import {
+  resolveOriginalImageStream,
+  shouldUpgradeThumbnailToOriginal,
+} from './post-card/postCardMediaQuality'
 
 const postAspectRatioCache = new Map<string, string>()
 const MAX_ASPECT_RATIO_CACHE_SIZE = 500
@@ -204,6 +208,9 @@ const props = withDefaults(defineProps<PostCardProps>(), {
 
 const imageFit = computed(() => props.imageFit)
 const thumbnailFailed = ref(false)
+const highQualitySrc = ref<string | null>(null)
+const qualityUpgradeAttempted = ref(false)
+const qualityUpgradePending = ref(false)
 
 const emit = defineEmits<{
   click: [postId: string, thumbnailSrc: string | null]
@@ -335,6 +342,8 @@ const thumbnailSrc = computed(() => {
   return optimized
 })
 
+const activeImageSrc = computed(() => highQualitySrc.value || thumbnailSrc.value)
+
 const isTextOnlyPost = computed(() => {
   if (thumbnailSrc.value) return false
   const count = props.post.media_count ?? 0
@@ -431,6 +440,9 @@ watch(
   () => `${props.post.id}:${props.post.thumbnail_url ?? ''}:${effectiveThumbnailSize.value ?? ''}`,
   () => {
     thumbnailFailed.value = false
+    highQualitySrc.value = null
+    qualityUpgradeAttempted.value = false
+    qualityUpgradePending.value = false
     isImageLoaded.value = false
     shouldRenderImage.value = true
     preloadedAspectRatio.value = null
@@ -476,6 +488,23 @@ function preloadLargeImage() {
 
 function onImageLoad(event: Event) {
   const img = event.target as HTMLImageElement | null
+
+  if (
+    img &&
+    shouldUpgradeThumbnailToOriginal({
+      attempted: qualityUpgradeAttempted.value,
+      pending: qualityUpgradePending.value,
+      highQualitySrc: highQualitySrc.value,
+      thumbnailSize: effectiveThumbnailSize.value,
+      duration: props.post.duration,
+      postType: props.post.post_type,
+      naturalWidth: img.naturalWidth,
+    })
+  ) {
+    void upgradeToOriginalImage()
+    return
+  }
+
   if (img?.naturalWidth && img?.naturalHeight) {
     const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
 
@@ -486,7 +515,37 @@ function onImageLoad(event: Event) {
   emit('height-change')
 }
 
+async function upgradeToOriginalImage(): Promise<void> {
+  const thumbnailUrl = props.post.thumbnail_url
+  if (!thumbnailUrl) {
+    isImageLoaded.value = true
+    emit('height-change')
+    return
+  }
+
+  qualityUpgradeAttempted.value = true
+  qualityUpgradePending.value = true
+
+  const streamUrl = await resolveOriginalImageStream(thumbnailUrl)
+  qualityUpgradePending.value = false
+  if (streamUrl) {
+    isImageLoaded.value = false
+    highQualitySrc.value = streamUrl
+    return
+  }
+
+  isImageLoaded.value = true
+  emit('height-change')
+}
+
 function onImageError() {
+  if (highQualitySrc.value) {
+    highQualitySrc.value = null
+    isImageLoaded.value = true
+    shouldRenderImage.value = true
+    return
+  }
+
   const mediaId = props.post.thumbnail_url ? extractMediaIdFromUrl(props.post.thumbnail_url) : null
   const size = effectiveThumbnailSize.value || 'medium'
 
@@ -523,7 +582,7 @@ function handleMouseEnter() {
 }
 
 function handleClick() {
-  emit('click', props.post.id, thumbnailSrc.value)
+  emit('click', props.post.id, activeImageSrc.value)
 }
 </script>
 
