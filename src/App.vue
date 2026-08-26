@@ -17,7 +17,7 @@
 
     <!-- Navbar -->
     <AppNavbar chromeless />
-    <AppSideNav chromeless />
+    <AppSideNav v-if="!isAuthRoute" chromeless />
 
     <!-- Main Content with Error Boundary -->
     <main
@@ -125,17 +125,6 @@ const animationIntensity = computed(() =>
 const showFooter = computed(() => Boolean(route.meta.showFooter) && !isHomeRoute.value)
 const isHomeRoute = computed(() => route.name === 'home' || route.path === '/')
 const extendsContentUnderNavbar = computed(() => Boolean(route.meta.extendContentUnderNavbar))
-const isAuthRoute = computed(() => {
-  const routeName = typeof route.name === 'string' ? route.name : ''
-  return (
-    routeName === 'login' ||
-    routeName === 'register' ||
-    routeName === 'forgot-password' ||
-    routeName === 'reset-password' ||
-    routeName === 'verify-email' ||
-    routeName === 'auth-callback'
-  )
-})
 const shouldMountClientChallengeDialog = computed(() => clientChallengeState.isOpen.value)
 const shouldMountVerificationDialog = computed(
   () =>
@@ -148,7 +137,10 @@ const AUTH_ROUTE_NAMES = new Set([
   'reset-password',
   'verify-email',
   'auth-callback',
+  'passkey-recovery',
+  'passkey-recovery-detail',
 ])
+const isAuthRoute = computed(() => isAuthRouteName(toRouteName(route.name)))
 
 // Page transition name
 const transitionName = ref('')
@@ -293,6 +285,10 @@ main.main--under-navbar {
 
   main.main--home {
     padding-bottom: var(--mobile-nav-height);
+  }
+
+  main.main--auth {
+    padding-bottom: 0;
   }
 }
 

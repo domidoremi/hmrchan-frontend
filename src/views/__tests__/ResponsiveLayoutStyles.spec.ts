@@ -46,6 +46,7 @@ const stageLetterbookSource = readFileSync(
   resolve(process.cwd(), 'src/styles/stage-letterbook.css'),
   'utf8'
 )
+const appShellSource = readFileSync(resolve(process.cwd(), 'src/App.vue'), 'utf8')
 
 describe('responsive layout contracts', () => {
   it('keeps shared page shells stacking hero and toolbar controls on narrow screens', () => {
@@ -181,6 +182,13 @@ describe('responsive layout contracts', () => {
   it('reserves room for the auth back control beside long mobile titles', () => {
     expect(stageLetterbookSource).toContain('#app .auth-shell__copy {')
     expect(stageLetterbookSource).toContain('max-inline-size: calc(100% - 3.5rem)')
+  })
+
+  it('keeps global navigation chrome out of auth entry layouts', () => {
+    expect(appShellSource).toContain('<AppSideNav v-if="!isAuthRoute" chromeless />')
+    expect(appShellSource).toContain("'passkey-recovery'")
+    expect(appShellSource).toContain("'passkey-recovery-detail'")
+    expect(appShellSource).toMatch(/main\.main--auth\s*\{[^}]*padding-bottom:\s*0/s)
   })
 
   it('keeps home hero actions compact with centered labels', () => {
