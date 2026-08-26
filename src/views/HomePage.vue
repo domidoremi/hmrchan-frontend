@@ -1,5 +1,9 @@
 <template>
-  <div class="home-page" :style="homePageMotionStyle">
+  <div
+    class="home-page"
+    :class="{ 'home-page--scrolling': homeScrollPerformanceActive }"
+    :style="homePageMotionStyle"
+  >
     <HomeQuickNav
       :anchors="homeQuickNavAnchors"
       :active-id="activeHomeSectionId"
@@ -1122,7 +1126,6 @@ import {
   buildHomePageMotionStyle,
   buildHomeRailSlides,
   buildHomeRailTrackStyle,
-  buildHomeSceneSnap,
   buildHomeStoryCardStyle,
   buildHomeStorySceneStyle,
   formatHomeStoryProgressNumber,
@@ -1216,6 +1219,7 @@ import AppFooter from '@/components/layout/AppFooter.vue'
 import { HeroSection, HomeQuickNav } from '@/components/home'
 import { createResizeObserver, createVisibilityObserver, scheduleTask } from '@/utils/modernAPIs'
 import { ensureSmoothScrollTriggerBridge } from '@/composables/useSmoothScroll'
+import { useHomeScrollPerformance } from '@/composables/useHomeScrollPerformance'
 type GsapModule = typeof import('gsap')
 type ScrollTriggerModule = typeof import('gsap/ScrollTrigger')
 type ScrollTriggerInstance = InstanceType<ScrollTriggerModule['ScrollTrigger']>
@@ -1520,7 +1524,6 @@ function stopBubbleCanvasScene() {
   bubbleCanvasFrame = null
   bubbleCanvasLastTimestamp = null
 }
-
 function renderBubbleCanvasFrame(timestamp: number) {
   const canvas = bubbleCanvasRef.value
   const stage = bubbleStageRef.value
@@ -1532,14 +1535,12 @@ function renderBubbleCanvasFrame(timestamp: number) {
   if (bubbleCanvasOrbs.length === 0) {
     resizeBubbleCanvasScene()
   }
-
   const rect = stage.getBoundingClientRect()
   const context = canvas.getContext('2d')
   if (!context) {
     stopBubbleCanvasScene()
     return
   }
-
   const deltaMs = resolveBubbleFrameDeltaMs(timestamp, bubbleCanvasLastTimestamp)
   bubbleCanvasLastTimestamp = timestamp
   const frameParameters = resolveHomeBubbleCanvasFrameParameters({
@@ -1551,7 +1552,6 @@ function renderBubbleCanvasFrame(timestamp: number) {
     shouldAnimate: shouldAnimate.value,
   })
   const { width, height, dpr, pointerX, pointerY, motionFactor } = frameParameters
-
   context.setTransform(dpr, 0, 0, dpr, 0, 0)
   context.clearRect(0, 0, width, height)
   context.globalCompositeOperation = 'source-over'
@@ -1569,7 +1569,6 @@ function renderBubbleCanvasFrame(timestamp: number) {
   mistGradient.addColorStop(1, 'rgba(15, 23, 42, 0)')
   context.fillStyle = mistGradient
   context.fillRect(0, 0, width, height)
-
   for (const orb of bubbleCanvasOrbs) {
     const orbFrameState = resolveHomeBubbleCanvasOrbFrameState({
       ...orb,
@@ -1606,6 +1605,7 @@ function renderBubbleCanvasFrame(timestamp: number) {
 
 function startBubbleCanvasScene() {
   if (
+    homeScrollPerformanceActive.value ||
     !shouldStartHomeBubbleCanvasScene({
       hasWindow: typeof window !== 'undefined',
       frameActive: bubbleCanvasFrame !== null,
@@ -1618,7 +1618,6 @@ function startBubbleCanvasScene() {
   resizeBubbleCanvasScene()
   bubbleCanvasFrame = window.requestAnimationFrame(renderBubbleCanvasFrame)
 }
-
 function clearBubbleMotionMeasureFrame() {
   if (typeof window === 'undefined' || bubbleMotionMeasureFrame === null) return
   window.cancelAnimationFrame(bubbleMotionMeasureFrame)
@@ -1943,6 +1942,12 @@ function syncBubbleMotionLoop() {
   if (bubbleMotionFrame !== null) return
   bubbleMotionFrame = window.requestAnimationFrame(runBubbleMotionFrame)
 }
+
+const { active: homeScrollPerformanceActive } = useHomeScrollPerformance({
+  onScrollStart: stopBubbleCanvasScene,
+  onScrollIdle: () =>
+    void (bubbleEnhancementsPrimed && shouldUseHomeBubbleCanvasScene() && startBubbleCanvasScene()),
+})
 
 let storyDeckTrigger: ScrollTriggerInstance | null = null
 let featuredRailTrigger: ScrollTriggerInstance | null = null
@@ -2892,8 +2897,7 @@ async function setupSceneTriggers() {
       start: 'top top',
       end: () => `+=${resolveSceneTravelDistance(featuredElement, '.rail-sticky')}`,
       invalidateOnRefresh: true,
-      scrub: 0.28,
-      snap: buildHomeSceneSnap(railSlideCount.value),
+      scrub: 0.16,
       onUpdate: (self) => {
         railProgress.value = self.progress
       },
@@ -2910,8 +2914,7 @@ async function setupSceneTriggers() {
       start: 'top top',
       end: () => `+=${resolveSceneTravelDistance(storyElement, '.story-stage')}`,
       invalidateOnRefresh: true,
-      scrub: 0.4,
-      snap: buildHomeSceneSnap(effectiveStoryCardCount.value),
+      scrub: 0.22,
       onUpdate: (self) => {
         storyProgress.value = self.progress
       },
