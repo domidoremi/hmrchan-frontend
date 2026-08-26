@@ -184,6 +184,20 @@ describe('responsive layout contracts', () => {
     expect(stageLetterbookSource).toContain('max-inline-size: calc(100% - 3.5rem)')
   })
 
+  it('keeps mobile search and dock destinations discoverable without obscuring the home stage', () => {
+    expect(stageLetterbookSource).toContain('#app .navbar-actions .nav-action-btn--search {')
+    expect(stageLetterbookSource).toContain('display: inline-flex')
+    expect(stageLetterbookSource).toContain('#app .app-mobile-dock__icon {')
+    expect(stageLetterbookSource).toContain('grid-template-columns: repeat(6, minmax(0, 1fr))')
+    expect(stageLetterbookSource).toContain('white-space: nowrap')
+    expect(stageLetterbookSource).toContain('min-block-size: 14.5rem')
+    expect(stageLetterbookSource).toContain('inline-size: min(40%, 9.5rem)')
+    expect(stageLetterbookSource).not.toContain(
+      "#app[data-locale^='zh'] .app-mobile-dock__link::after"
+    )
+    expect(stageLetterbookSource).toContain('max(2rem, calc(var(--mobile-nav-height, 0px) + 1rem))')
+  })
+
   it('keeps global navigation chrome out of auth entry layouts', () => {
     expect(appShellSource).toContain('<AppSideNav v-if="!isAuthRoute" chromeless />')
     expect(appShellSource).toContain("'passkey-recovery'")
