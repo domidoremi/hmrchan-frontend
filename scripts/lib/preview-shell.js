@@ -698,6 +698,7 @@ export class LocalApiBridgeManager {
         patch.API_BASE_URL = bridge.baseUrl
         patch.VITE_API_BASE_URL = bridge.baseUrl
         patch.VPC_API_ORIGIN = bridge.baseUrl
+        patch.VITE_API_PROXY_HOST = 'caddy'
       }
       if (bridge.name === 'identity') {
         patch.BACKEND_INTERNAL_ORIGIN = bridge.baseUrl

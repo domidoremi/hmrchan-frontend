@@ -34,7 +34,8 @@ const REHEARSAL_TURNSTILE_BYPASS_HEADER = 'X-Rehearsal-Turnstile-Bypass'
 function normalizeProxyRequestHeaders(
   proxyReq: ClientRequest,
   req: IncomingMessage,
-  rehearsalTurnstileBypassToken = ''
+  rehearsalTurnstileBypassToken = '',
+  proxyHost = ''
 ): void {
   const incomingUserAgent = req.headers['user-agent']
   const normalizedUserAgent =
@@ -43,6 +44,9 @@ function normalizeProxyRequestHeaders(
       : DEV_PROXY_BROWSER_UA
 
   proxyReq.setHeader('user-agent', normalizedUserAgent)
+  if (proxyHost) {
+    proxyReq.setHeader('host', proxyHost)
+  }
   if (rehearsalTurnstileBypassToken) {
     proxyReq.setHeader(REHEARSAL_TURNSTILE_BYPASS_HEADER, rehearsalTurnstileBypassToken)
   }
@@ -130,7 +134,8 @@ function shouldObfuscateChunk(fileName: string): boolean {
 function createProxyRule(
   apiTarget: string,
   rehearsalTurnstileBypassToken = '',
-  allowRemoteCookieDowngrade = false
+  allowRemoteCookieDowngrade = false,
+  proxyHost = ''
 ) {
   return {
     target: apiTarget,
@@ -139,7 +144,7 @@ function createProxyRule(
     followRedirects: true,
     configure: (proxy: DevProxyServer) => {
       proxy.on('proxyReq', (proxyReq, req) => {
-        normalizeProxyRequestHeaders(proxyReq, req, rehearsalTurnstileBypassToken)
+        normalizeProxyRequestHeaders(proxyReq, req, rehearsalTurnstileBypassToken, proxyHost)
       })
       proxy.on('proxyRes', (proxyRes) => {
         const setCookie = proxyRes.headers['set-cookie']
@@ -176,12 +181,14 @@ function createProxyConfig(
     contentTarget = apiTarget,
     rehearsalTurnstileBypassToken = '',
     allowRemoteCookieDowngrade = false,
+    proxyHost = '',
   }: {
     identityTarget?: string
     communityTarget?: string
     contentTarget?: string
     rehearsalTurnstileBypassToken?: string
     allowRemoteCookieDowngrade?: boolean
+    proxyHost?: string
   } = {}
 ) {
   const identityProxy = createProxyRule(
@@ -202,7 +209,8 @@ function createProxyConfig(
   const defaultProxy = createProxyRule(
     apiTarget,
     rehearsalTurnstileBypassToken,
-    allowRemoteCookieDowngrade
+    allowRemoteCookieDowngrade,
+    proxyHost
   )
 
   return {
@@ -251,8 +259,10 @@ function createProxyConfig(
 
 export default defineConfig(async ({ mode }: { mode: string }) => {
   const env = {
-    ...process.env,
     ...loadEnv(mode, process.cwd(), ''),
+    // Explicit shell values (including the short-lived Docker API bridge
+    // created by scripts/dev.mjs) must override checked-in mode defaults.
+    ...process.env,
   }
   const isProd = mode === 'production'
   const isDev = mode === 'development'
@@ -274,6 +284,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   const identityProxyTarget = normalizeProxyTarget(env.VITE_IDENTITY_API_BASE_URL, apiProxyTarget)
   const communityProxyTarget = normalizeProxyTarget(env.VITE_COMMUNITY_API_BASE_URL, apiProxyTarget)
   const contentProxyTarget = normalizeProxyTarget(env.VITE_CONTENT_API_BASE_URL, apiProxyTarget)
+  const apiProxyHost = (env.VITE_API_PROXY_HOST ?? '').trim()
   const allowProductionApiProxy = parseBoolEnv(env, 'ALLOW_PRODUCTION_API_PROXY', false)
   const allowRemoteCookieDowngrade = parseBoolEnv(env, 'ALLOW_REMOTE_COOKIE_DOWNGRADE', false)
   if (isDev) {
@@ -289,6 +300,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
     contentTarget: contentProxyTarget,
     rehearsalTurnstileBypassToken,
     allowRemoteCookieDowngrade,
+    proxyHost: apiProxyHost,
   })
   const obfuscationProfile = env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
   const obfuscationControlFlow = parseBoolEnv(env, 'VITE_OBFUSCATION_CONTROL_FLOW', false)
