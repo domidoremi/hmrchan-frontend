@@ -2,10 +2,15 @@
   "softLineLimit": 1000,
   "hardLineLimit": 1500,
   "registeredLargeFiles": {
-    "src/views/ExplorePage.vue": {
-      "maxLines": 1156,
+    "src/components/business/PostCard.vue": {
+      "maxLines": 1041,
       "refactorQueued": false,
-      "reason": "Fan-site explore presentation now includes the editorial fallback grid, source-aware cards, and responsive empty/loading states; keep the current ceiling while the reusable feed sections are assessed for a later extraction."
+      "reason": "Content cards now resolve original image streams and retain large-thumbnail fallbacks; keep the current ceiling while media presentation logic is assessed for a later extraction."
+    },
+    "src/views/ExplorePage.vue": {
+      "maxLines": 1190,
+      "refactorQueued": false,
+      "reason": "Fan-site explore presentation now includes the editorial fallback grid, source-aware cards, original media resolution, and responsive empty/loading states; keep the current ceiling while the reusable feed sections are assessed for a later extraction."
     },
     "src/components/ui/VideoPlayer.vue": {
       "maxLines": 1360,

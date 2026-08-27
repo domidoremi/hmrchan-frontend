@@ -131,6 +131,7 @@ import { warmDecodedImage } from '@/utils/performance'
 import {
   normalizeToThumbnailUrl,
   extractMediaIdFromUrl,
+  getMediaStreamUrl,
   getMediaThumbnailUrl,
   isMobileDevice,
 } from '@/utils/mediaOptimizer'
@@ -194,6 +195,8 @@ export interface PostCardProps {
   prefetchOnHover?: boolean
 
   preloadLargeImageOnHover?: boolean
+
+  preferOriginalImage?: boolean
 }
 
 const props = withDefaults(defineProps<PostCardProps>(), {
@@ -204,10 +207,12 @@ const props = withDefaults(defineProps<PostCardProps>(), {
   thumbnailSize: 'responsive',
   imageFit: 'cover',
   priority: false,
+  preferOriginalImage: false,
 })
 
 const imageFit = computed(() => props.imageFit)
 const thumbnailFailed = ref(false)
+const preferredOriginalSrc = ref<string | null>(null)
 const highQualitySrc = ref<string | null>(null)
 const qualityUpgradeAttempted = ref(false)
 const qualityUpgradePending = ref(false)
@@ -324,6 +329,8 @@ const thumbnailSrc = computed(() => {
   if (!props.post.thumbnail_url || thumbnailFailed.value) return null
 
   const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
+  if (props.preferOriginalImage) return preferredOriginalSrc.value
+
   const rawSize = effectiveThumbnailSize.value || 'medium'
   const size = rawSize
 
@@ -437,9 +444,11 @@ function preloadImageDimensions() {
 }
 
 watch(
-  () => `${props.post.id}:${props.post.thumbnail_url ?? ''}:${effectiveThumbnailSize.value ?? ''}`,
+  () =>
+    `${props.post.id}:${props.post.thumbnail_url ?? ''}:${props.post.media_type ?? ''}:${effectiveThumbnailSize.value ?? ''}:${props.preferOriginalImage}`,
   () => {
     thumbnailFailed.value = false
+    preferredOriginalSrc.value = null
     highQualitySrc.value = null
     qualityUpgradeAttempted.value = false
     qualityUpgradePending.value = false
@@ -448,12 +457,48 @@ watch(
     preloadedAspectRatio.value = null
     preloadImageDimensions()
 
+    if (props.preferOriginalImage) {
+      void resolvePreferredOriginalSource()
+    }
+
     if (props.priority && thumbnailSrc.value) {
       void warmDecodedImage(thumbnailSrc.value)
     }
   },
   { immediate: true }
 )
+
+async function resolvePreferredOriginalSource(): Promise<void> {
+  const thumbnailUrl = props.post.thumbnail_url
+  if (!thumbnailUrl) return
+
+  const expectedPostId = props.post.id
+  const expectedThumbnailUrl = thumbnailUrl
+  const mediaId = extractMediaIdFromUrl(thumbnailUrl)
+  if (!mediaId) {
+    preferredOriginalSrc.value = thumbnailUrl
+    return
+  }
+
+  const mediaType = props.post.media_type?.toLowerCase()
+  const resolvedSource =
+    mediaType === 'image'
+      ? getMediaStreamUrl(mediaId)
+      : mediaType === 'video'
+        ? getMediaThumbnailUrl(mediaId, 'large')
+        : ((await resolveOriginalImageStream(thumbnailUrl)) ??
+          getMediaThumbnailUrl(mediaId, 'large'))
+
+  if (
+    props.post.id !== expectedPostId ||
+    props.post.thumbnail_url !== expectedThumbnailUrl ||
+    !props.preferOriginalImage
+  ) {
+    return
+  }
+
+  preferredOriginalSrc.value = resolvedSource
+}
 
 function formatPublishedTime(dateStr: string): string {
   const date = new Date(dateStr)
@@ -491,6 +536,7 @@ function onImageLoad(event: Event) {
 
   if (
     img &&
+    !props.preferOriginalImage &&
     shouldUpgradeThumbnailToOriginal({
       attempted: qualityUpgradeAttempted.value,
       pending: qualityUpgradePending.value,
@@ -539,6 +585,16 @@ async function upgradeToOriginalImage(): Promise<void> {
 }
 
 function onImageError() {
+  if (props.preferOriginalImage && preferredOriginalSrc.value?.includes('/stream')) {
+    const mediaId = props.post.thumbnail_url
+      ? extractMediaIdFromUrl(props.post.thumbnail_url)
+      : null
+    preferredOriginalSrc.value = mediaId ? getMediaThumbnailUrl(mediaId, 'large') : null
+    isImageLoaded.value = false
+    shouldRenderImage.value = true
+    return
+  }
+
   if (highQualitySrc.value) {
     highQualitySrc.value = null
     isImageLoaded.value = true

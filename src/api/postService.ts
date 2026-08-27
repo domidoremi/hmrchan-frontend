@@ -22,6 +22,7 @@ export interface PostListItem {
   platform_post_id?: string
   post_url?: string
   post_type?: string
+  media_type?: string | null
   title?: string | null
   content?: string | null
   thumbnail_url?: string | null

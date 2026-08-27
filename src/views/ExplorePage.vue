@@ -77,6 +77,7 @@
                   :src="resolveEditorialImage(editorialLeadPost)"
                   :alt="editorialLeadPost.title || $t('post.untitled')"
                   fetchpriority="high"
+                  @error="handleEditorialImageError(editorialLeadPost)"
                 />
                 <span class="explore-story__shade" aria-hidden="true" />
                 <span class="explore-story__copy">
@@ -97,6 +98,7 @@
                     :src="resolveEditorialImage(post)"
                     :alt="post.title || $t('post.untitled')"
                     loading="lazy"
+                    @error="handleEditorialImageError(post)"
                   />
                   <span class="explore-story__shade" aria-hidden="true" />
                   <span class="explore-story__copy">
@@ -135,6 +137,7 @@
                   :key="post.id"
                   :post="post"
                   image-fit="cover"
+                  :prefer-original-image="true"
                   @click="goToPost"
                   @height-change="handleCardHeightChange"
                 />
@@ -191,6 +194,11 @@ import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
+import {
+  extractMediaIdFromUrl,
+  getMediaStreamUrl,
+  getMediaThumbnailUrl,
+} from '@/utils/mediaOptimizer'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import type { PublicPageDataSource } from '@/fallbacks/publicPageFallback'
@@ -202,6 +210,7 @@ import {
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
+import { resolveOriginalImageStream } from '@/components/business/post-card/postCardMediaQuality'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import NextPostFab from '@/components/ui/NextPostFab.vue'
@@ -289,7 +298,11 @@ const {
 
 type ExploreEditorialFilter = 'latest' | 'popular' | 'youtube' | 'tiktok' | 'instagram' | 'x'
 
+const EDITORIAL_IMAGE_FALLBACK =
+  '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp'
 const activeEditorialFilter = ref<ExploreEditorialFilter>('latest')
+const editorialImageSources = ref<Record<string, string>>({})
+const editorialImageResolutionKeys = new Set<string>()
 const editorialFilters = computed<Array<{ id: ExploreEditorialFilter; label: string }>>(() => [
   { id: 'latest', label: t('explore.newest') },
   { id: 'popular', label: t('explore.popular') },
@@ -316,6 +329,16 @@ const editorialLeadPost = computed(() => filteredVisiblePosts.value[0] ?? null)
 const editorialSupportPosts = computed(() => filteredVisiblePosts.value.slice(1, 3))
 const editorialRailPosts = computed(() => filteredVisiblePosts.value.slice(3, 7))
 const masonryVisiblePosts = computed(() => filteredVisiblePosts.value.slice(7))
+
+watch(
+  () => [editorialLeadPost.value, ...editorialSupportPosts.value],
+  (editorialPosts) => {
+    editorialPosts.forEach((post) => {
+      if (post) void resolveEditorialImageSource(post)
+    })
+  },
+  { immediate: true }
+)
 
 const lastVisibleCount = ref(0)
 let isActive = true
@@ -364,10 +387,57 @@ function goToSearch() {
 }
 
 function resolveEditorialImage(post: PostListItem): string {
-  return (
-    post.thumbnail_url ||
-    '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp'
-  )
+  const resolved = editorialImageSources.value[post.id]
+  if (resolved) return resolved
+
+  const mediaId = extractMediaIdFromUrl(post.thumbnail_url)
+  if (mediaId && post.media_type?.toLowerCase() === 'image') {
+    return getMediaStreamUrl(mediaId)
+  }
+  if (mediaId && post.media_type?.toLowerCase() === 'video') {
+    return getMediaThumbnailUrl(mediaId, 'large')
+  }
+
+  return EDITORIAL_IMAGE_FALLBACK
+}
+
+async function resolveEditorialImageSource(post: PostListItem): Promise<void> {
+  const thumbnailUrl = post.thumbnail_url
+  if (!thumbnailUrl) return
+
+  const resolutionKey = `${post.id}:${thumbnailUrl}`
+  if (editorialImageResolutionKeys.has(resolutionKey)) return
+  editorialImageResolutionKeys.add(resolutionKey)
+
+  const mediaId = extractMediaIdFromUrl(thumbnailUrl)
+  const mediaType = post.media_type?.toLowerCase()
+  const resolvedSource = !mediaId
+    ? thumbnailUrl
+    : mediaType === 'image'
+      ? getMediaStreamUrl(mediaId)
+      : mediaType === 'video'
+        ? getMediaThumbnailUrl(mediaId, 'large')
+        : ((await resolveOriginalImageStream(thumbnailUrl)) ??
+          getMediaThumbnailUrl(mediaId, 'large'))
+
+  if (posts.value.find((item) => item.id === post.id)?.thumbnail_url !== thumbnailUrl) return
+
+  editorialImageSources.value = {
+    ...editorialImageSources.value,
+    [post.id]: resolvedSource,
+  }
+}
+
+function handleEditorialImageError(post: PostListItem): void {
+  const currentSource = editorialImageSources.value[post.id] || resolveEditorialImage(post)
+  const mediaId = extractMediaIdFromUrl(post.thumbnail_url)
+  editorialImageSources.value = {
+    ...editorialImageSources.value,
+    [post.id]:
+      currentSource?.includes('/stream') && mediaId
+        ? getMediaThumbnailUrl(mediaId, 'large')
+        : EDITORIAL_IMAGE_FALLBACK,
+  }
 }
 
 function formatEditorialMeta(post: PostListItem): string {

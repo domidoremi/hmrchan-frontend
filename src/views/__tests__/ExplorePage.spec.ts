@@ -189,8 +189,9 @@ vi.mock('@/components/business/PostCard.vue', async () => {
   return {
     default: defineComponent({
       name: 'PostCard',
-      props: ['post'],
-      template: '<article class="post-card-stub">{{ post.title }}</article>',
+      props: ['post', 'preferOriginalImage'],
+      template:
+        '<article class="post-card-stub" :data-original="String(preferOriginalImage)">{{ post.title }}</article>',
     }),
   }
 })
@@ -391,5 +392,43 @@ describe('ExplorePage', () => {
     expect(wrapper.get('[data-testid="state-indicator"]').attributes('data-description')).toBe(
       'boom'
     )
+  })
+
+  it('requests original media for editorial and archive images', async () => {
+    const mediaId = '123e4567-e89b-12d3-a456-426614174000'
+    exploreMocks.getPublicPostList.mockResolvedValue({
+      data: Array.from({ length: 8 }, (_, index) => ({
+        id: `post-${index + 1}`,
+        title: `Post ${index + 1}`,
+        platform: 'twitter',
+        media_type: 'image',
+        thumbnail_url: `/api/v1/media/${mediaId}/thumbnail?size=small`,
+        view_count: index,
+        like_count: 0,
+        comment_count: 0,
+        media_count: 1,
+      })),
+      total: 8,
+      meta: { next_cursor: null, has_more: false },
+      source: 'network',
+      stale: false,
+      key: 'public-content:v1:post-list',
+    })
+
+    const { router } = createWrapper()
+    await router.push('/explore')
+    await router.isReady()
+    const wrapper = mount(ExplorePage, {
+      global: {
+        plugins: [router],
+        mocks: { $t: (key: string) => key },
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.get('.explore-story--lead img').attributes('src')).toContain(
+      `/api/v1/media/${mediaId}/stream`
+    )
+    expect(wrapper.get('.post-card-stub').attributes('data-original')).toBe('true')
   })
 })

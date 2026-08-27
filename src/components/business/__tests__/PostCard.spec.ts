@@ -36,7 +36,7 @@ function createPost(overrides: Partial<PostListItem> = {}): PostListItem {
 
 const mountedApps: Array<{ app: App; host: HTMLDivElement }> = []
 
-function mountPostCard(post: PostListItem) {
+function mountPostCard(post: PostListItem, props: { preferOriginalImage?: boolean } = {}) {
   const emitted: Array<[string, string | null]> = []
   const host = document.createElement('div')
   document.body.appendChild(host)
@@ -51,6 +51,7 @@ function mountPostCard(post: PostListItem) {
         return () =>
           h(PostCard, {
             post,
+            ...props,
             onClick: handleClick,
           })
       },
@@ -159,5 +160,21 @@ describe('PostCard', () => {
     await vi.waitFor(() => expect(image?.classList.contains('is-loaded')).toBe(true))
 
     expect(image?.src).toContain('/thumbnail?size=large')
+  })
+
+  it('uses the original image stream before any thumbnail when requested', async () => {
+    const mediaId = '223e4567-e89b-12d3-a456-426614174000'
+    const { host } = mountPostCard(
+      createPost({
+        thumbnail_url: `/api/v1/media/${mediaId}/thumbnail?size=small`,
+        media_type: 'image',
+        media_count: 1,
+      }),
+      { preferOriginalImage: true }
+    )
+    await nextTick()
+    const image = host.querySelector<HTMLImageElement>('.post-image')
+
+    expect(image?.src).toContain(`/api/v1/media/${mediaId}/stream`)
   })
 })
