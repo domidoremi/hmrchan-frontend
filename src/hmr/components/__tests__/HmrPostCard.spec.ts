@@ -96,6 +96,48 @@ describe('HmrPostCard', () => {
     expect(mediaWrapper.find('.hmr-post-card__poster').attributes('srcset')).toContain('640w')
   })
 
+  it('requests original media for Explore cards and falls back to the largest thumbnail', async () => {
+    const wrapper = mount(HmrPostCard, {
+      props: {
+        post: makePost({ mediaUrl: '/api/v1/media/poster/thumbnail?size=small' }),
+        mediaQuality: 'original',
+      },
+      global: {
+        stubs: {
+          RouterLink: RouterLinkStub,
+        },
+      },
+    })
+    const poster = wrapper.find('.hmr-post-card__poster')
+
+    expect(poster.attributes('src')).toBe('/api/v1/media/poster/stream')
+    expect(poster.attributes('srcset')).toBeUndefined()
+
+    await poster.trigger('error')
+    expect(poster.attributes('src')).toContain('/api/v1/media/poster/thumbnail?size=xlarge')
+  })
+
+  it('keeps video posters on the largest thumbnail instead of requesting a video stream as an image', () => {
+    const wrapper = mount(HmrPostCard, {
+      props: {
+        post: makePost({
+          mediaUrl: '/api/v1/media/video/thumbnail?size=small',
+          mediaType: 'video',
+        }),
+        mediaQuality: 'original',
+      },
+      global: {
+        stubs: {
+          RouterLink: RouterLinkStub,
+        },
+      },
+    })
+
+    expect(wrapper.find('.hmr-post-card__poster').attributes('src')).toContain(
+      '/api/v1/media/video/thumbnail?size=xlarge'
+    )
+  })
+
   it('uses shared platform visual fallback values for unknown platforms', () => {
     const wrapper = mount(HmrPostCard, {
       props: {

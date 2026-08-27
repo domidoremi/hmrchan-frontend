@@ -135,6 +135,7 @@
             :variant="viewMode === 'grid' ? 'grid' : 'list'"
             :to="`/posts/${post.id}`"
             :show-footer="true"
+            media-quality="original"
             :image-loading="index < 2 ? 'eager' : 'lazy'"
             :image-fetch-priority="index < 2 ? 'high' : 'auto'"
           />

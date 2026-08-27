@@ -24,6 +24,7 @@
         :alt="post.title"
         :loading="imageLoading"
         :fetch-priority="imageFetchPriority"
+        @error="handlePosterError"
       />
       <div class="hmr-post-card__shade" aria-hidden="true"></div>
       <div class="hmr-post-card__badge-row" :style="badgeStyle" aria-hidden="true">
@@ -57,12 +58,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import type { HmrPost } from '@/api/hmrContent'
 import HmrPriorityImage from '@/hmr/components/HmrPriorityImage.vue'
-import { buildThumbnailSrcset } from '@/hmr/runtime/mediaImages'
+import {
+  buildThumbnailSrcset,
+  withOriginalQuality,
+  withThumbnailQuality,
+} from '@/hmr/runtime/mediaImages'
 import { resolveHmrPlatformVisual } from '@/hmr/runtime/platformVisuals'
 
 const props = withDefaults(
@@ -75,6 +80,7 @@ const props = withDefaults(
     showFooter?: boolean
     imageLoading?: 'eager' | 'lazy'
     imageFetchPriority?: 'high' | 'low' | 'auto'
+    mediaQuality?: 'thumbnail' | 'original'
   }>(),
   {
     index: 0,
@@ -83,6 +89,7 @@ const props = withDefaults(
     showFooter: true,
     imageLoading: 'lazy',
     imageFetchPriority: 'auto',
+    mediaQuality: 'thumbnail',
   }
 )
 
@@ -118,9 +125,22 @@ const hasRealPoster = computed(() => {
   const value = props.post.mediaUrl?.trim()
   return Boolean(value) && !value?.startsWith('/hmrchan/reference/') && !value?.startsWith('data:')
 })
-const posterUrl = computed(() => props.post.mediaUrl ?? buildPosterDataUrl())
+const originalPosterFailed = ref(false)
+const posterUrl = computed(() => {
+  if (!props.post.mediaUrl) return buildPosterDataUrl()
+  if (props.mediaQuality === 'original' && !originalPosterFailed.value) {
+    if (props.post.mediaType?.toLowerCase() === 'video') {
+      return withThumbnailQuality(props.post.mediaUrl, 'xlarge')
+    }
+    return withOriginalQuality(props.post.mediaUrl)
+  }
+  if (props.mediaQuality === 'original') {
+    return withThumbnailQuality(props.post.mediaUrl, 'xlarge')
+  }
+  return props.post.mediaUrl
+})
 const posterSrcset = computed(() => {
-  if (!props.post.mediaUrl) return undefined
+  if (!props.post.mediaUrl || props.mediaQuality === 'original') return undefined
   return buildThumbnailSrcset(props.post.mediaUrl)
 })
 const posterSizes = computed(() => {
@@ -172,6 +192,20 @@ const footerMetric = computed(() =>
     : props.post.statsLabel
 )
 const showFooter = computed(() => props.showFooter && props.variant !== 'compact')
+
+function handlePosterError(): void {
+  if (props.mediaQuality === 'original' && !originalPosterFailed.value) {
+    originalPosterFailed.value = true
+  }
+}
+
+watch(
+  () => `${props.post.id}:${props.post.mediaUrl ?? ''}:${props.mediaQuality}`,
+  () => {
+    originalPosterFailed.value = false
+  },
+  { immediate: true }
+)
 
 function buildPosterDataUrl(): string {
   const [start, end] = colorSet.value

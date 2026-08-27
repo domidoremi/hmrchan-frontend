@@ -145,9 +145,9 @@ function defaultExploreStubs(): Stubs {
       template: '<a class="router-link-stub" :href="to"><slot /></a>',
     },
     HmrPostCard: {
-      props: ['post', 'imageLoading', 'imageFetchPriority'],
+      props: ['post', 'imageLoading', 'imageFetchPriority', 'mediaQuality'],
       template:
-        '<article class="hmr-post-card" :data-loading="imageLoading" :data-priority="imageFetchPriority">{{ post.title }}</article>',
+        '<article class="hmr-post-card" :data-loading="imageLoading" :data-priority="imageFetchPriority" :data-quality="mediaQuality">{{ post.title }}</article>',
     },
   }
 }
@@ -195,6 +195,11 @@ describe('ExplorePage', () => {
 
     expect(cards.map((card) => card.attributes('data-loading'))).toEqual(['eager', 'eager', 'lazy'])
     expect(cards.map((card) => card.attributes('data-priority'))).toEqual(['high', 'high', 'auto'])
+    expect(cards.map((card) => card.attributes('data-quality'))).toEqual([
+      'original',
+      'original',
+      'original',
+    ])
   })
 
   it('keeps filter menu targets mounted for aria-controls', async () => {
@@ -267,8 +272,8 @@ describe('ExplorePage', () => {
 
     expect(card.attributes('href')).toBe('/posts/real-post')
     expect(card.classes()).toContain('hmr-post-card--real-poster')
-    expect(poster.attributes('src')).toBe('/api/v1/media/poster/thumbnail?size=small')
-    expect(poster.attributes('srcset')).toContain('/api/v1/media/poster/thumbnail?size=medium')
+    expect(poster.attributes('src')).toBe('/api/v1/media/poster/stream')
+    expect(poster.attributes('srcset')).toBeUndefined()
     expect(poster.attributes('loading')).toBe('eager')
     expect(poster.attributes('fetchpriority')).toBe('high')
   })

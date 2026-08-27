@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildThumbnailSrcset, withThumbnailQuality } from '@/hmr/runtime/mediaImages'
+import {
+  buildThumbnailSrcset,
+  withOriginalQuality,
+  withThumbnailQuality,
+} from '@/hmr/runtime/mediaImages'
 
 describe('mediaImages', () => {
   it('sets the requested thumbnail size when the URL points at a thumbnail endpoint', () => {
@@ -17,6 +21,13 @@ describe('mediaImages', () => {
         'http://localhost:3000/api/v1/media/one/thumbnail?size=xlarge 1440w',
       ].join(', ')
     )
+  })
+
+  it('maps media thumbnail URLs to original stream URLs while preserving relative paths', () => {
+    expect(withOriginalQuality('/api/v1/media/one/thumbnail?size=small')).toBe(
+      '/api/v1/media/one/stream'
+    )
+    expect(withOriginalQuality('/static/poster.webp')).toBe('/static/poster.webp')
   })
 
   it('leaves non-thumbnail URLs unchanged while preserving srcset widths', () => {
