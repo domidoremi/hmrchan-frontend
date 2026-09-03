@@ -129,7 +129,9 @@ export function mapPost(value: unknown, index: number): HmrPost {
   const commentCount = pickNumber(record, ['comment_count', 'comments'])
   const durationSec = pickNumber(record, ['duration_sec', 'durationSec', 'duration'])
   const fileCount = pickNumber(record, ['file_count', 'fileCount'])
-  const likeCount = pickNumber(record, ['community_like_count', 'like_count', 'likes'])
+  // like_count 是源平台计数，community_like_count 是站内点赞计数，两者互不覆盖。
+  // community_like_count 无 omitempty，始终以 0 出现，放在 pickNumber 首位会永久屏蔽源平台计数。
+  const likeCount = pickNumber(record, ['like_count', 'likes'])
   const viewCount = pickNumber(record, ['view_count', 'views'])
   const mediaItems = extractList(record, ['files', 'media_files', 'media', 'attachments'])
   const mediaItemCount = mediaItems.filter(hasRenderableMediaRecord).length

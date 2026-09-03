@@ -82,6 +82,20 @@ describe('hmrContentMappers post mapping', () => {
       mediaCount: 1,
     })
   })
+
+  it('keeps the source platform like count when the site-side count is zero', () => {
+    const post = mapPost(
+      {
+        id: 'post-2',
+        title: 'Post with platform likes',
+        community_like_count: 0,
+        like_count: 1329,
+      },
+      0
+    )
+
+    expect(post.likeCount).toBe(1329)
+  })
 })
 
 describe('hmrContentMappers explore mapping', () => {
