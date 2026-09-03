@@ -1,6 +1,7 @@
 name = "hmrchan-internal-api-gateway"
 main = "./index.ts"
 compatibility_date = "2026-08-24"
+workers_dev = false
 
 [[env.production.vpc_services]]
 binding = "VPC_SERVICE"
