@@ -1,4 +1,8 @@
-import type { PostDetailResponse, PostListItem } from '@/api/postService'
+import {
+  normalizePostExternalLinks,
+  type PostDetailResponse,
+  type PostListItem,
+} from '@/api/postService'
 import { STATIC_HOME_POSTS, STATIC_POST_DETAILS } from './generated/publicSnapshots'
 import { EXPLORE_FALLBACK_POSTS } from './exploreFallback'
 import { clonePublicSnapshot } from './publicPageFallback'
@@ -49,12 +53,19 @@ export function buildFallbackPostDetail(post: PostListItem): PostDetailResponse 
     media_type: null,
     language: null,
     author_other_posts: [],
+    external_links: normalizePostExternalLinks(post.external_links, post.id),
   }
 }
 
 export function getFallbackPostDetailById(postId: string): PostDetailResponse | null {
   const detail = STATIC_POST_DETAILS[postId]
-  if (detail) return clonePublicSnapshot(detail)
+  if (detail) {
+    const cloned = clonePublicSnapshot(detail) as PostDetailResponse
+    return {
+      ...cloned,
+      external_links: normalizePostExternalLinks(cloned.external_links, cloned.id),
+    }
+  }
 
   const post = UNIQUE_FALLBACK_POSTS.find((item) => item.id === postId)
   if (!post) return null

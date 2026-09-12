@@ -1,4 +1,4 @@
-import type { PostListItem } from '@/api/postService'
+import { normalizePostExternalLinks, type PostListItem } from '@/api/postService'
 
 export interface PostNavigationContext {
   ids: string[]
@@ -64,9 +64,21 @@ function normalizePostSummary(item: PostIdSource): PostListItem | null {
   const candidate = item as Partial<PostListItem>
   if (!hasSummaryShape(candidate)) return null
 
-  return {
+  const summary: PostListItem = {
     id,
     platform: normalizeOptionalString(candidate.platform) ?? 'unknown',
+    view_count: normalizeOptionalNumber(candidate.view_count) ?? 0,
+    like_count: normalizeOptionalNumber(candidate.like_count) ?? 0,
+    comment_count: normalizeOptionalNumber(candidate.comment_count) ?? 0,
+    media_count: normalizeOptionalNumber(candidate.media_count) ?? 0,
+    duration:
+      typeof candidate.duration === 'number' && Number.isFinite(candidate.duration)
+        ? candidate.duration
+        : null,
+    external_links: normalizePostExternalLinks(candidate.external_links, id),
+  }
+
+  const optionalValues = {
     platform_post_id: normalizeOptionalString(candidate.platform_post_id),
     post_url: normalizeOptionalString(candidate.post_url),
     post_type: normalizeOptionalString(candidate.post_type),
@@ -76,11 +88,7 @@ function normalizePostSummary(item: PostIdSource): PostListItem | null {
     thumbnail_width: normalizeOptionalNumber(candidate.thumbnail_width) ?? null,
     thumbnail_height: normalizeOptionalNumber(candidate.thumbnail_height) ?? null,
     published_at: normalizeNullableString(candidate.published_at),
-    view_count: normalizeOptionalNumber(candidate.view_count) ?? 0,
-    like_count: normalizeOptionalNumber(candidate.like_count) ?? 0,
-    comment_count: normalizeOptionalNumber(candidate.comment_count) ?? 0,
     file_count: normalizeOptionalNumber(candidate.file_count),
-    media_count: normalizeOptionalNumber(candidate.media_count) ?? 0,
     author_name: normalizeNullableString(candidate.author_name),
     author_id: normalizeNullableString(candidate.author_id),
     description: normalizeOptionalString(candidate.description),
@@ -91,14 +99,17 @@ function normalizePostSummary(item: PostIdSource): PostListItem | null {
     original_author_name: normalizeNullableString(candidate.original_author_name),
     original_author_username: normalizeNullableString(candidate.original_author_username),
     original_author_avatar_url: normalizeNullableString(candidate.original_author_avatar_url),
-    duration:
-      typeof candidate.duration === 'number' && Number.isFinite(candidate.duration)
-        ? candidate.duration
-        : null,
     scraped_at: normalizeOptionalString(candidate.scraped_at),
     created_at: normalizeOptionalString(candidate.created_at),
     tags: normalizeTags(candidate.tags),
   }
+
+  for (const [key, value] of Object.entries(optionalValues)) {
+    if (value !== undefined) {
+      ;(summary as Record<string, unknown>)[key] = value
+    }
+  }
+  return summary
 }
 
 function clearExpiredNavigationState(): void {

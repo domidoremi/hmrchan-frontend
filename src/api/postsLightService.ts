@@ -1,4 +1,5 @@
 import { apiClient, type CursorCollectionResponse, type RequestConfig } from './client'
+import { normalizePostExternalLinks, type PostExternalLink } from './postService'
 import { buildQuery } from '@/utils/queryBuilder'
 
 export interface PostsLightParams {
@@ -19,6 +20,15 @@ export interface PostLightItem {
   view_count: number
   like_count: number
   media_count: number
+  external_links: PostExternalLink[]
+}
+
+type RawPostLightItem = Omit<PostLightItem, 'external_links'> & {
+  external_links?: unknown
+}
+
+type RawPostLightResponse = CursorCollectionResponse<RawPostLightItem> & {
+  items?: RawPostLightItem[]
 }
 
 const DEFAULT_PARAMS = {
@@ -35,13 +45,13 @@ export const postsLightService = {
       cursor: params.cursor ?? null,
     })
 
-    const response = await apiClient.get<CursorCollectionResponse<PostLightItem>>(
-      `/posts/light${query}`,
-      config
-    )
+    const response = await apiClient.get<RawPostLightResponse>(`/posts/light${query}`, config)
     return {
       ...response,
-      items: response.items ?? [],
+      items: (response.items ?? []).map((item) => ({
+        ...item,
+        external_links: normalizePostExternalLinks(item.external_links, item.id),
+      })),
       next_cursor: response.next_cursor ?? null,
       has_more: Boolean(response.has_more),
     }
@@ -56,13 +66,13 @@ export const postsLightService = {
       cursor: params.cursor ?? null,
     })
 
-    const response = await apiClient.get<CursorCollectionResponse<PostLightItem>>(
-      `/posts/mixed${query}`,
-      config
-    )
+    const response = await apiClient.get<RawPostLightResponse>(`/posts/mixed${query}`, config)
     return {
       ...response,
-      items: response.items ?? [],
+      items: (response.items ?? []).map((item) => ({
+        ...item,
+        external_links: normalizePostExternalLinks(item.external_links, item.id),
+      })),
       next_cursor: response.next_cursor ?? null,
       has_more: Boolean(response.has_more),
     }

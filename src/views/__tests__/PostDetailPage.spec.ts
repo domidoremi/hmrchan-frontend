@@ -149,6 +149,11 @@ vi.mock('@/fallbacks/postFallback', () => ({
     author_name?: string | null
     published_at?: string | null
     created_at?: string
+    external_links?: Array<{
+      platform: 'tiktok' | 'youtube'
+      url: string
+      target_post_id?: string
+    }>
   }) => ({
     id: post.id,
     platform: post.platform ?? 'unknown',
@@ -168,6 +173,7 @@ vi.mock('@/fallbacks/postFallback', () => ({
     media_type: null,
     language: null,
     author_other_posts: [],
+    external_links: post.external_links ?? [],
   }),
 }))
 
@@ -246,6 +252,7 @@ const basePost = {
   view_count: 10,
   like_count: 2,
   published_at: '2026-04-14T00:00:00Z',
+  external_links: [],
 }
 
 function mountDetailPage(options?: {
@@ -269,7 +276,9 @@ function mountDetailPage(options?: {
           template: '<div class="comment-list-stub">comments for {{ postId }}</div>',
         },
         PostActionStrip: {
-          template: '<div class="post-action-strip-stub" />',
+          props: ['postId', 'subtitlesAvailable', 'externalLinks'],
+          template:
+            '<div class="post-action-strip-stub" :data-links="JSON.stringify(externalLinks)" />',
         },
         MediaLightbox: {
           props: ['isOpen'],
@@ -493,6 +502,27 @@ describe('PostDetailPage', () => {
     expect(wrapper.find('.post-title').text()).toContain('List summary title')
     expect(wrapper.find('.post-description').text()).toContain('List summary content')
     expect(wrapper.find('.post-image').attributes('src')).toContain('list-thumb.jpg?resolved=1')
+  })
+
+  it('forwards loaded detail external links to the shared action strip', async () => {
+    const externalLinks = [
+      {
+        platform: 'youtube' as const,
+        url: 'https://youtu.be/detail-video',
+        target_post_id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a337',
+      },
+    ]
+    mocks.loadCachedPostMock.mockResolvedValue({
+      data: { ...basePost, external_links: externalLinks },
+      fromCache: false,
+    })
+
+    const wrapper = mountDetailPage()
+    await flushPromises()
+
+    expect(wrapper.find('.post-action-strip-stub').attributes('data-links')).toBe(
+      JSON.stringify(externalLinks)
+    )
   })
 
   it('loads the comment list branch once the comments section becomes visible', async () => {

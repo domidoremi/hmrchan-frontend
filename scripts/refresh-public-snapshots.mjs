@@ -15,7 +15,13 @@ const apiBaseUrl = (process.env.PUBLIC_SNAPSHOT_BASE_URL || 'https://momichan.co
   ''
 )
 const siteOrigin = new URL(apiBaseUrl).origin
-const generatedModulePath = path.join(repoRoot, 'src', 'fallbacks', 'generated', 'publicSnapshots.ts')
+const generatedModulePath = path.join(
+  repoRoot,
+  'src',
+  'fallbacks',
+  'generated',
+  'publicSnapshots.ts'
+)
 const snapshotMediaDir = path.join(repoRoot, 'public', 'snapshot-media')
 
 const MAX_EXPLORE_POSTS = 12
@@ -46,11 +52,71 @@ function safeString(value) {
   return typeof value === 'string' ? value : ''
 }
 
+const EXTERNAL_LINK_HOSTS = {
+  tiktok: new Set([
+    'tiktok.com',
+    'www.tiktok.com',
+    'm.tiktok.com',
+    'vm.tiktok.com',
+    'vt.tiktok.com',
+  ]),
+  youtube: new Set([
+    'youtube.com',
+    'www.youtube.com',
+    'm.youtube.com',
+    'music.youtube.com',
+    'youtu.be',
+  ]),
+}
+const UNSAFE_URL_CHARACTER_PATTERN = /[\\\u0000-\u001f\u007f]/
+const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+export function normalizeSnapshotExternalLinks(value, currentPostId) {
+  if (!Array.isArray(value)) return []
+
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return []
+    const { platform, url } = entry
+    if (!Object.hasOwn(EXTERNAL_LINK_HOSTS, platform) || typeof url !== 'string') return []
+    if (UNSAFE_URL_CHARACTER_PATTERN.test(url)) return []
+
+    let parsed
+    try {
+      parsed = new URL(url)
+    } catch {
+      return []
+    }
+    if (
+      parsed.protocol !== 'https:' ||
+      parsed.username ||
+      parsed.password ||
+      parsed.port ||
+      !EXTERNAL_LINK_HOSTS[platform].has(parsed.hostname.toLowerCase())
+    ) {
+      return []
+    }
+
+    const normalized = { platform, url }
+    if (typeof entry.platform_post_id === 'string') {
+      normalized.platform_post_id = entry.platform_post_id
+    }
+    if (
+      UUID_V7_PATTERN.test(entry.target_post_id) &&
+      entry.target_post_id.toLowerCase() !== safeString(currentPostId).toLowerCase()
+    ) {
+      normalized.target_post_id = entry.target_post_id
+    }
+    return [normalized]
+  })
+}
+
 function toSlug(value) {
-  return safeString(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'snapshot'
+  return (
+    safeString(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'snapshot'
+  )
 }
 
 function extensionFromContentType(contentType, fallbackUrl = '') {
@@ -276,21 +342,27 @@ async function buildSnapshots() {
     })
   )
 
-  const authorDetails = Object.fromEntries(authorDetailEntries.map(([id, value]) => [id, value.detail]))
-  const authorPostsById = Object.fromEntries(authorDetailEntries.map(([id, value]) => [id, value.posts]))
+  const authorDetails = Object.fromEntries(
+    authorDetailEntries.map(([id, value]) => [id, value.detail])
+  )
+  const authorPostsById = Object.fromEntries(
+    authorDetailEntries.map(([id, value]) => [id, value.posts])
+  )
 
   const homeAggregate = structuredClone(homeAggregateRaw)
 
   const postIdSet = new Set(
     [
       ...(Array.isArray(postsPageRaw?.items) ? postsPageRaw.items.map((item) => item.id) : []),
-      ...(homeAggregate.hero?.editorial_card?.post_id ? [homeAggregate.hero.editorial_card.post_id] : []),
+      ...(homeAggregate.hero?.editorial_card?.post_id
+        ? [homeAggregate.hero.editorial_card.post_id]
+        : []),
       ...(homeAggregate.hero?.spotlight?.post_id ? [homeAggregate.hero.spotlight.post_id] : []),
-      ...((homeAggregate.latest_text_posts || []).map((item) => item.post_id)),
-      ...((homeAggregate.story_deck?.items || []).map((item) => item.post_id)),
-      ...((homeAggregate.featured?.items || []).flatMap((item) =>
+      ...(homeAggregate.latest_text_posts || []).map((item) => item.post_id),
+      ...(homeAggregate.story_deck?.items || []).map((item) => item.post_id),
+      ...(homeAggregate.featured?.items || []).flatMap((item) =>
         (item.related_posts || []).map((post) => post.post_id || post.id).filter(Boolean)
-      )),
+      ),
     ].filter(Boolean)
   )
 
@@ -320,7 +392,8 @@ async function buildSnapshots() {
         post_type: post.post_type || 'post',
         content: post.content || rawDetail.content || null,
         description: post.description || rawDetail.content || null,
-        author_username: post.author_username || author?.username || rawDetail.author?.username || undefined,
+        author_username:
+          post.author_username || author?.username || rawDetail.author?.username || undefined,
         author_avatar_url:
           post.author_avatar_url || author?.avatar_url || rawDetail.author?.avatar_url || null,
         tags: Array.isArray(rawDetail.tags) ? rawDetail.tags : [],
@@ -415,6 +488,7 @@ async function buildSnapshots() {
       media_type: raw.media_type ?? null,
       language: raw.language ?? null,
       author_other_posts: Array.isArray(raw.author_other_posts) ? raw.author_other_posts : [],
+      external_links: normalizeSnapshotExternalLinks(raw.external_links, raw.id),
     }
   }
 
@@ -435,16 +509,23 @@ async function buildSnapshots() {
         const rawDetail = detailLookup.get(post.id) || {}
         const normalized = {
           ...post,
-          media_count: typeof post.media_count === 'number' ? post.media_count : post.file_count || 0,
+          media_count:
+            typeof post.media_count === 'number' ? post.media_count : post.file_count || 0,
           post_type: post.post_type || 'post',
           content: post.content || rawDetail.content || null,
           description: post.description || rawDetail.content || null,
           author_username: post.author_username || authorDetails[authorId]?.username || undefined,
           author_avatar_url:
-            post.author_avatar_url || authorDetails[authorId]?.avatar_url || rawDetail.author?.avatar_url || null,
+            post.author_avatar_url ||
+            authorDetails[authorId]?.avatar_url ||
+            rawDetail.author?.avatar_url ||
+            null,
           tags: Array.isArray(rawDetail.tags) ? rawDetail.tags : [],
         }
-        return localizePostThumbnail(normalized, `author-posts/${toSlug(authorId)}-${toSlug(post.id)}`)
+        return localizePostThumbnail(
+          normalized,
+          `author-posts/${toSlug(authorId)}-${toSlug(post.id)}`
+        )
       })
     )
   }
@@ -542,8 +623,11 @@ async function main() {
   console.log(`[snapshot] wrote ${path.relative(repoRoot, generatedModulePath)}`)
 }
 
-main().catch((error) => {
-  console.error('[snapshot] refresh failed')
-  console.error(error)
-  process.exitCode = 1
-})
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === __filename
+if (isDirectRun) {
+  main().catch((error) => {
+    console.error('[snapshot] refresh failed')
+    console.error(error)
+    process.exitCode = 1
+  })
+}
