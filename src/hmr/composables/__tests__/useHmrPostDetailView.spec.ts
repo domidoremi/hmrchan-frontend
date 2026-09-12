@@ -38,6 +38,9 @@ describe('formatHmrCompactNumber', () => {
 })
 
 describe('useHmrPostDetailView', () => {
+  const currentPostId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0'
+  const linkedPostId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1'
+
   it('derives available detail labels and interaction metrics', () => {
     const detail = ref(
       makeDetailContent({
@@ -66,6 +69,56 @@ describe('useHmrPostDetailView', () => {
       { label: '作者', value: 'MomiChan' },
       { label: '互动', value: '12 views' },
       { label: '类型', value: '帖子' },
+    ])
+  })
+
+  it('derives platform-only external actions and suppresses unsafe internal targets', () => {
+    const detail = ref(
+      makeDetailContent({
+        post: {
+          ...makeDetailContent().post,
+          id: currentPostId,
+          postUrl: 'https://x.com/momichan/status/1',
+          externalLinks: [
+            {
+              platform: 'tiktok',
+              url: 'https://www.tiktok.com/@momi/video/1',
+              linkedPostId,
+            },
+            {
+              platform: 'youtube',
+              url: 'https://youtu.be/video-id',
+              linkedPostId: currentPostId.toUpperCase(),
+            },
+            {
+              platform: 'youtube',
+              url: 'https://youtube.com/watch?v=other',
+              linkedPostId: 'not-a-contract-id',
+            },
+          ],
+        },
+      })
+    )
+    const view = useHmrPostDetailView(detail, ref<HmrPageState>('ready'))
+
+    expect(view.sourceUrl.value).toBe('https://x.com/momichan/status/1')
+    expect(view.externalLinkActions.value).toEqual([
+      {
+        platform: 'tiktok',
+        platformLabel: 'TikTok',
+        url: 'https://www.tiktok.com/@momi/video/1',
+        linkedPostPath: `/posts/${linkedPostId}`,
+      },
+      {
+        platform: 'youtube',
+        platformLabel: 'YouTube',
+        url: 'https://youtu.be/video-id',
+      },
+      {
+        platform: 'youtube',
+        platformLabel: 'YouTube',
+        url: 'https://youtube.com/watch?v=other',
+      },
     ])
   })
 

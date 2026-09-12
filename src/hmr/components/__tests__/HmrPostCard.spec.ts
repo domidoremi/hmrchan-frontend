@@ -21,6 +21,29 @@ function makePost(overrides: Partial<HmrPost> = {}): HmrPost {
 }
 
 describe('HmrPostCard', () => {
+  it('keeps production navigation internal when external links are present', () => {
+    const wrapper = mount(HmrPostCard, {
+      props: {
+        post: makePost({
+          externalLinks: [
+            {
+              platform: 'youtube',
+              url: 'https://youtu.be/video-id',
+            },
+          ],
+        }),
+      },
+      global: {
+        stubs: {
+          RouterLink: RouterLinkStub,
+        },
+      },
+    })
+
+    expect(wrapper.getComponent(RouterLinkStub).props('to')).toBe('/posts/post-1')
+    expect(wrapper.attributes('href')).not.toBe('https://youtu.be/video-id')
+  })
+
   it('keeps decorative badge rows hidden without prohibited ARIA labels', () => {
     const wrapper = mount(HmrPostCard, {
       props: {

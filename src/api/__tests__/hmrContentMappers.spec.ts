@@ -28,6 +28,8 @@ describe('hmrContentMappers author mapping', () => {
 })
 
 describe('hmrContentMappers post mapping', () => {
+  const linkedPostId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1'
+
   it('maps API field aliases into normalized post card data', () => {
     const post = mapPost(
       {
@@ -81,6 +83,71 @@ describe('hmrContentMappers post mapping', () => {
       hasRenderableMedia: true,
       mediaCount: 1,
     })
+  })
+
+  it('normalizes validated TikTok and YouTube external links without restoring cleaned URLs', () => {
+    const post = mapPost(
+      {
+        id: 'post-links',
+        title: 'Watch https://youtube.com/watch?v=source now',
+        excerpt: 'Clip https://www.tiktok.com/@momi/video/1 summary',
+        post_url: 'https://x.com/momichan/status/1',
+        external_links: [
+          {
+            platform: 'tiktok',
+            url: 'https://www.tiktok.com/@momi/video/1?lang=en',
+            platform_post_id: 'tiktok-1',
+            target_post_id: linkedPostId,
+          },
+          {
+            platform: 'youtube',
+            url: 'https://youtu.be/video-id',
+            target_post_id: 'not-a-contract-id',
+          },
+        ],
+      },
+      0
+    )
+
+    expect(post.title).toBe('Watch now')
+    expect(post.excerpt).toBe('Clip summary')
+    expect(post.postUrl).toBe('https://x.com/momichan/status/1')
+    expect(post.externalLinks).toEqual([
+      {
+        platform: 'tiktok',
+        url: 'https://www.tiktok.com/@momi/video/1?lang=en',
+        platformPostId: 'tiktok-1',
+        linkedPostId,
+      },
+      {
+        platform: 'youtube',
+        url: 'https://youtu.be/video-id',
+      },
+    ])
+  })
+
+  it('accepts the camelCase cache shape and drops unsafe or spoofed external links', () => {
+    const post = mapPost(
+      {
+        id: 'post-cache',
+        title: 'Cached post',
+        externalLinks: [
+          { platform: 'youtube', url: 'https://music.youtube.com/watch?v=ok' },
+          { platform: 'tiktok', url: 'http://www.tiktok.com/@momi/video/1' },
+          { platform: 'youtube', url: 'https://youtube.com.evil.test/watch?v=1' },
+          { platform: 'youtube', url: 'https://user@youtube.com/watch?v=1' },
+          { platform: 'youtube', url: 'https://youtube.com:444/watch?v=1' },
+          { platform: 'tiktok', url: 'https://www.tiktok.com\\@evil.test/video/1' },
+          { platform: 'x', url: 'https://x.com/momichan/status/1' },
+        ],
+      },
+      0
+    )
+
+    expect(post.externalLinks).toEqual([
+      { platform: 'youtube', url: 'https://music.youtube.com/watch?v=ok' },
+    ])
+    expect(mapPost({ id: 'legacy-post', external_links: null }, 0).externalLinks).toBeUndefined()
   })
 
   it('keeps the source platform like count when the site-side count is zero', () => {

@@ -73,6 +73,7 @@ export type {
   HmrMediaItem,
   HmrPlatformSummary,
   HmrPost,
+  HmrPostExternalLink,
   HmrPostDetailContent,
   HmrProfileSectionContent,
   HmrProfileSectionKey,

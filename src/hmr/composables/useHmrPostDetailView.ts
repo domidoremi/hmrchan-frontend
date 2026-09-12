@@ -4,10 +4,18 @@ import type { HmrPostDetailContent } from '@/api/hmrContent'
 import { buildThumbnailSrcset } from '@/hmr/runtime/mediaImages'
 import { resolveHmrPlatformVisual } from '@/hmr/runtime/platformVisuals'
 import type { HmrPageState } from '@/hmr/types'
+import { isContractResourceId } from '@/utils/contractResourceId'
 
 export interface HmrPostDetailMetric {
   label: string
   value: string
+}
+
+export interface HmrPostExternalLinkAction {
+  platform: 'tiktok' | 'youtube'
+  platformLabel: 'TikTok' | 'YouTube'
+  url: string
+  linkedPostPath?: string
 }
 
 export function formatHmrCompactNumber(value: number): string {
@@ -51,6 +59,24 @@ export function useHmrPostDetailView(
   })
   const sourceDescription = computed(() =>
     sourceUrl.value ? sourceUrl.value : platformLabel.value
+  )
+  const externalLinkActions = computed<HmrPostExternalLinkAction[]>(() =>
+    (post.value.externalLinks ?? [])
+      .filter(
+        (link) =>
+          (link.platform === 'tiktok' || link.platform === 'youtube') &&
+          typeof link.url === 'string'
+      )
+      .map((link) => ({
+        platform: link.platform,
+        platformLabel: link.platform === 'tiktok' ? 'TikTok' : 'YouTube',
+        url: link.url,
+        ...(link.linkedPostId &&
+        link.linkedPostId.toLowerCase() !== post.value.id.toLowerCase() &&
+        isContractResourceId(link.linkedPostId)
+          ? { linkedPostPath: `/posts/${encodeURIComponent(link.linkedPostId)}` }
+          : {}),
+      }))
   )
   const commentsPreview = computed(() => detail.value.comments.slice(0, 5))
   const interactionLabel = computed(
@@ -152,6 +178,7 @@ export function useHmrPostDetailView(
     commentsPreview,
     contentTypeLabel,
     detailMetrics,
+    externalLinkActions,
     hasRenderableMedia,
     heroBody,
     heroEyebrow,

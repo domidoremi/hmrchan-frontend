@@ -79,6 +79,9 @@ async function mountPostDetail(path = '/posts/post-1', locale: 'zh-CN' | 'en-US'
 }
 
 describe('PostDetailPage', () => {
+  const currentPostId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f0'
+  const linkedPostId = '018f6d22-3cc7-7a1d-a456-4d2c59b6f4f1'
+
   beforeEach(() => {
     mocks.loadPostDetailContentResource.mockReset()
     mocks.readPublicContent.mockReset()
@@ -103,6 +106,57 @@ describe('PostDetailPage', () => {
     expect(wrapper.find('.post-comments').exists()).toBe(true)
     expect(wrapper.find('.hmr-detail-comment-list').exists()).toBe(true)
     expect(wrapper.text()).toContain('暂无公开评论')
+  })
+
+  it('renders separate X, TikTok, and YouTube source cards with safe actions', async () => {
+    mocks.readPublicContent.mockResolvedValue(
+      makeResource(
+        makeDetailContent({
+          post: {
+            ...makeDetailContent().post,
+            id: currentPostId,
+            postUrl: 'https://x.com/momichan/status/1',
+            externalLinks: [
+              {
+                platform: 'tiktok',
+                url: 'https://www.tiktok.com/@momi/video/1',
+                linkedPostId,
+              },
+              {
+                platform: 'youtube',
+                url: 'https://youtu.be/video-id',
+                linkedPostId: currentPostId,
+              },
+            ],
+          },
+        })
+      )
+    )
+
+    const { wrapper } = await mountPostDetail(`/posts/${currentPostId}`)
+    const sourceCards = wrapper.findAll('.hmr-detail-source-card')
+    const externalCards = wrapper.findAll('.hmr-detail-external-source-card')
+    const externalAnchors = externalCards.map((card) => card.get('a'))
+
+    expect(sourceCards[0]?.text()).toContain('https://x.com/momichan/status/1')
+    expect(sourceCards[0]?.get('a').attributes()).toMatchObject({
+      href: 'https://x.com/momichan/status/1',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    })
+    expect(externalCards).toHaveLength(2)
+    expect(externalCards[0]?.text()).toContain('TikTok')
+    expect(externalCards[1]?.text()).toContain('YouTube')
+    for (const anchor of externalAnchors) {
+      expect(anchor.attributes('target')).toBe('_blank')
+      expect(anchor.attributes('rel')).toBe('noopener noreferrer')
+    }
+    expect(externalCards[0]?.get('a').find('a').exists()).toBe(false)
+    expect(externalCards[0]?.findAll('a')).toHaveLength(2)
+    expect(externalCards[1]?.findAll('a')).toHaveLength(1)
+    expect(externalCards[0]?.getComponent({ name: 'RouterLink' }).props('to')).toBe(
+      `/posts/${linkedPostId}`
+    )
   })
 
   it('keeps a stable comments readiness anchor when public comments are present', async () => {

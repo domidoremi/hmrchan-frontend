@@ -5,6 +5,13 @@ import type {
   HmrTrendSummary,
 } from '@/hmr/types'
 
+export interface HmrPostExternalLink {
+  platform: 'tiktok' | 'youtube'
+  url: string
+  platformPostId?: string
+  linkedPostId?: string
+}
+
 export interface HmrPost {
   id: string
   title: string
@@ -22,6 +29,7 @@ export interface HmrPost {
   postType?: string
   mediaType?: string
   postUrl?: string
+  externalLinks?: HmrPostExternalLink[]
   commentCount?: number
   durationSec?: number
   fileCount?: number

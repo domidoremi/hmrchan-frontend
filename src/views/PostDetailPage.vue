@@ -77,10 +77,30 @@
               class="hmr-text-link"
               :href="sourceUrl"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               打开原帖
             </a>
+          </div>
+
+          <div
+            v-for="action in externalLinkActions"
+            :key="`${action.platform}:${action.url}`"
+            class="hmr-detail-source-card hmr-detail-external-source-card"
+          >
+            <p class="hmr-kicker">来源</p>
+            <strong>{{ action.platformLabel }}</strong>
+            <span>{{ action.url }}</span>
+            <a class="hmr-text-link" :href="action.url" target="_blank" rel="noopener noreferrer">
+              打开原帖
+            </a>
+            <RouterLink
+              v-if="action.linkedPostPath"
+              class="hmr-text-link"
+              :to="action.linkedPostPath"
+            >
+              查看 HMRChan 归档
+            </RouterLink>
           </div>
 
           <div class="hmr-detail-source-card">
@@ -311,6 +331,7 @@ const {
   cardStyle,
   commentsPreview,
   detailMetrics: sourceDetailMetrics,
+  externalLinkActions,
   heroBody: sourceHeroBody,
   heroEyebrow: sourceHeroEyebrow,
   heroImage,

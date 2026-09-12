@@ -38,11 +38,76 @@ import type {
   HmrMediaItem,
   HmrPost,
   HmrPostDetailContent,
+  HmrPostExternalLink,
   HmrScheduleContent,
   HmrScheduleDetailContent,
 } from './hmrContentTypes'
 
 const MEDIA_THUMBNAIL_FALLBACK = '/hmrchan/reference/media-youtube.svg'
+
+const EXTERNAL_LINK_HOSTS: Record<'tiktok' | 'youtube', ReadonlySet<string>> = {
+  tiktok: new Set([
+    'tiktok.com',
+    'www.tiktok.com',
+    'm.tiktok.com',
+    'vm.tiktok.com',
+    'vt.tiktok.com',
+  ]),
+  youtube: new Set([
+    'youtube.com',
+    'www.youtube.com',
+    'm.youtube.com',
+    'music.youtube.com',
+    'youtu.be',
+  ]),
+} as const
+
+function mapPostExternalLink(value: unknown): HmrPostExternalLink | null {
+  if (!isRecord(value)) return null
+
+  const platformValue = pickOptionalString(value, ['platform'])?.toLowerCase()
+  if (platformValue !== 'tiktok' && platformValue !== 'youtube') return null
+
+  const rawUrl = pickOptionalString(value, ['url'])
+  if (!rawUrl || /[\\\u0000-\u001f\u007f]/.test(rawUrl)) return null
+
+  const rawAuthority = /^https:\/\/([^/?#]*)/i.exec(rawUrl)?.[1]
+  if (!rawAuthority) return null
+
+  let parsedUrl: URL
+  try {
+    parsedUrl = new URL(rawUrl)
+  } catch {
+    return null
+  }
+
+  if (
+    parsedUrl.protocol !== 'https:' ||
+    parsedUrl.username ||
+    parsedUrl.password ||
+    parsedUrl.port ||
+    rawAuthority.toLowerCase() !== parsedUrl.hostname.toLowerCase() ||
+    !EXTERNAL_LINK_HOSTS[platformValue].has(parsedUrl.hostname.toLowerCase())
+  ) {
+    return null
+  }
+
+  const platformPostId = pickOptionalString(value, ['platform_post_id', 'platformPostId'])
+  const targetPostId = pickOptionalString(value, ['target_post_id', 'targetPostId', 'linkedPostId'])
+
+  return {
+    platform: platformValue,
+    url: parsedUrl.href,
+    ...(platformPostId ? { platformPostId } : {}),
+    ...(targetPostId && isContractResourceId(targetPostId) ? { linkedPostId: targetPostId } : {}),
+  }
+}
+
+function mapPostExternalLinks(record: Record<string, unknown>): HmrPostExternalLink[] {
+  return extractList(record, ['external_links', 'externalLinks'])
+    .map(mapPostExternalLink)
+    .filter((link): link is HmrPostExternalLink => link !== null)
+}
 
 export function mapPost(value: unknown, index: number): HmrPost {
   const record = isRecord(value) ? value : {}
@@ -126,6 +191,7 @@ export function mapPost(value: unknown, index: number): HmrPost {
   const postType = pickOptionalString(record, ['post_type', 'postType', 'content_type'])
   const mediaType = pickOptionalString(record, ['media_type', 'mediaType'])
   const postUrl = pickOptionalString(record, ['post_url', 'url'])
+  const externalLinks = mapPostExternalLinks(record)
   const commentCount = pickNumber(record, ['comment_count', 'comments'])
   const durationSec = pickNumber(record, ['duration_sec', 'durationSec', 'duration'])
   const fileCount = pickNumber(record, ['file_count', 'fileCount'])
@@ -160,6 +226,7 @@ export function mapPost(value: unknown, index: number): HmrPost {
   if (postType) post.postType = postType
   if (mediaType) post.mediaType = mediaType
   if (postUrl) post.postUrl = postUrl
+  if (externalLinks.length) post.externalLinks = externalLinks
   if (commentCount) post.commentCount = commentCount
   if (durationSec) post.durationSec = durationSec
   if (fileCount) post.fileCount = fileCount
