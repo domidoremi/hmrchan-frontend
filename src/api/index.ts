@@ -42,7 +42,12 @@ export {
 } from './authService'
 export {
   postService,
+  normalizePostExternalLinks,
+  type PostExternalLink,
+  type PostExternalLinkPlatform,
   type PostListItem,
+  type RawPostListItem,
+  type RawPostDetail,
   type PostDetailResponse,
   type AuthorOtherPost,
   type ThumbnailQuality,

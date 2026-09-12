@@ -10,6 +10,29 @@
       </span>
     </span>
 
+    <template v-for="link in normalizedExternalLinks" :key="`${link.platform}:${link.url}`">
+      <a :href="link.url" target="_blank" rel="noopener noreferrer" class="action-btn">
+        <ExternalLink :size="18" aria-hidden="true" />
+        <span>{{ externalLinkLabel(link.platform) }}</span>
+      </a>
+
+      <RouterLink
+        v-if="link.target_post_id"
+        v-slot="{ href, navigate }"
+        :to="`/post/${link.target_post_id}`"
+        custom
+      >
+        <a
+          :href="href"
+          class="action-btn"
+          @click="navigateToLinkedPost($event, link.target_post_id, navigate)"
+        >
+          <MessagesSquare :size="18" aria-hidden="true" />
+          <span>{{ t('post.viewLinkedPost') }}</span>
+        </a>
+      </RouterLink>
+    </template>
+
     <button
       v-if="showFavorite"
       type="button"
@@ -43,14 +66,21 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, onWatcherCleanup, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { Bookmark, Share2 } from '@lucide/vue'
-import { favoriteService, ApiError } from '@/api'
+import { Bookmark, ExternalLink, MessagesSquare, Share2 } from '@lucide/vue'
+import {
+  favoriteService,
+  ApiError,
+  normalizePostExternalLinks,
+  type PostExternalLink,
+  type PostExternalLinkPlatform,
+} from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { copyToClipboard } from '@/utils/modernAPIs'
+import { isUuidV7String } from '@/types/publicId'
 
 const props = withDefaults(
   defineProps<{
@@ -59,14 +89,20 @@ const props = withDefaults(
     showFavorite?: boolean
     showShare?: boolean
     subtitlesAvailable?: boolean
+    externalLinks?: PostExternalLink[] | unknown
   }>(),
   {
     variant: 'default',
     showFavorite: true,
     showShare: true,
     subtitlesAvailable: false,
+    externalLinks: () => [],
   }
 )
+
+const emit = defineEmits<{
+  internalNavigate: [postId: string]
+}>()
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -75,6 +111,35 @@ const { isAuthenticated } = storeToRefs(authStore)
 const { t } = useI18n()
 
 const showLabels = computed(() => props.variant === 'default')
+const normalizedExternalLinks = computed(() =>
+  normalizePostExternalLinks(props.externalLinks, props.postId)
+)
+
+function externalLinkLabel(platform: PostExternalLinkPlatform): string {
+  return t(platform === 'tiktok' ? 'post.viewOnTikTok' : 'post.viewOnYouTube')
+}
+
+function isUnmodifiedPrimaryClick(event: MouseEvent): boolean {
+  return (
+    event.button === 0 &&
+    !event.defaultPrevented &&
+    !event.metaKey &&
+    !event.altKey &&
+    !event.ctrlKey &&
+    !event.shiftKey
+  )
+}
+
+function navigateToLinkedPost(
+  event: MouseEvent,
+  postId: string,
+  navigate: (event?: MouseEvent) => Promise<unknown>
+) {
+  if (isUnmodifiedPrimaryClick(event)) {
+    emit('internalNavigate', postId)
+  }
+  return navigate(event)
+}
 
 const isFavorited = ref(false)
 const isFavoriteLoading = ref(false)
@@ -96,7 +161,7 @@ function abortFavoriteStatusRequest() {
 
 async function fetchFavoriteStatus(signal?: AbortSignal) {
   const postId = props.postId
-  if (!postId) return
+  if (!postId || !isUuidV7String(postId)) return
 
   if (!isAuthenticated.value) {
     abortFavoriteStatusRequest()
@@ -148,6 +213,7 @@ watch(
 async function toggleFavorite() {
   if (!isAuthenticated.value) return
   if (isFavoriteLoading.value) return
+  if (!isUuidV7String(props.postId)) return
   abortFavoriteStatusRequest()
 
   isFavoriteLoading.value = true

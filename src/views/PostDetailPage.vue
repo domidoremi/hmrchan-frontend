@@ -260,7 +260,11 @@
             <div class="post-actions">
               <Suspense>
                 <template #default>
-                  <PostActionStrip :post-id="postId" :subtitles-available="subtitlesAvailable" />
+                  <PostActionStrip
+                    :post-id="postId"
+                    :subtitles-available="subtitlesAvailable"
+                    :external-links="post?.external_links"
+                  />
                 </template>
                 <template #fallback>
                   <div class="post-actions-placeholder" aria-hidden="true">

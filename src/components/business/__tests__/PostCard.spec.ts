@@ -30,6 +30,7 @@ function createPost(overrides: Partial<PostListItem> = {}): PostListItem {
     author_name: 'Test Author',
     author_avatar_url: 'https://example.com/avatar.jpg',
     tags: [],
+    external_links: [],
     ...overrides,
   }
 }
@@ -80,6 +81,19 @@ describe('PostCard', () => {
 
     host.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
 
+    expect(emitted).toEqual([['post-1', null]])
+  })
+
+  it('keeps whole-card navigation unchanged when external links are present', () => {
+    const { emitted, host } = mountPostCard(
+      createPost({
+        external_links: [{ platform: 'youtube', url: 'https://youtu.be/video' }],
+      })
+    )
+
+    expect(host.querySelectorAll('a')).toHaveLength(0)
+    expect(host.querySelectorAll('button')).toHaveLength(1)
+    host.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     expect(emitted).toEqual([['post-1', null]])
   })
 

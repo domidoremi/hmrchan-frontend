@@ -1,5 +1,15 @@
 import { apiClient, ApiError, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
+import { isUuidV7String } from '@/types/publicId'
+
+export type PostExternalLinkPlatform = 'tiktok' | 'youtube'
+
+export interface PostExternalLink {
+  platform: PostExternalLinkPlatform
+  url: string
+  platform_post_id?: string
+  target_post_id?: string
+}
 
 /**
  * Parameters for listing posts with filtering, sorting, and pagination
@@ -49,6 +59,7 @@ export interface PostListItem {
   scraped_at?: string
   created_at?: string
   tags?: string[]
+  external_links?: PostExternalLink[]
 }
 
 export interface MediaFile {
@@ -112,6 +123,7 @@ export interface PostDetailResponse {
   media_type?: string | null
   language?: string | null
   author_other_posts?: AuthorOtherPost[] | undefined
+  external_links: PostExternalLink[]
 }
 
 export interface AuthorOtherPost {
@@ -129,6 +141,14 @@ export type PostListResponse = CursorCollectionResponse<PostListItem> & {
   items: PostListItem[]
 }
 
+export type RawPostListItem = Omit<PostListItem, 'external_links'> & {
+  external_links?: unknown
+}
+
+type RawPostListResponse = CursorCollectionResponse<RawPostListItem> & {
+  items?: RawPostListItem[]
+}
+
 interface RawFile {
   id: string
   file_name?: string
@@ -140,7 +160,7 @@ interface RawFile {
   mime_type?: string | null
 }
 
-interface RawPostDetail {
+export interface RawPostDetail {
   id: string
   platform: string
   platform_post_id?: string
@@ -188,6 +208,77 @@ interface RawPostDetail {
   media_type_legacy?: string
   duration?: number | null
   subtitles?: MediaSubtitle[]
+  external_links?: unknown
+}
+
+const EXTERNAL_LINK_HOSTS: Record<PostExternalLinkPlatform, ReadonlySet<string>> = {
+  tiktok: new Set([
+    'tiktok.com',
+    'www.tiktok.com',
+    'm.tiktok.com',
+    'vm.tiktok.com',
+    'vt.tiktok.com',
+  ]),
+  youtube: new Set([
+    'youtube.com',
+    'www.youtube.com',
+    'm.youtube.com',
+    'music.youtube.com',
+    'youtu.be',
+  ]),
+}
+
+const UNSAFE_URL_CHARACTER_PATTERN = /[\\\u0000-\u001f\u007f]/
+
+export function normalizePostExternalLinks(
+  value: unknown,
+  currentPostId?: string | null
+): PostExternalLink[] {
+  if (!Array.isArray(value)) return []
+
+  const normalized: PostExternalLink[] = []
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') continue
+
+    const candidate = entry as Record<string, unknown>
+    const platform = candidate['platform']
+    const rawUrl = candidate['url']
+    if ((platform !== 'tiktok' && platform !== 'youtube') || typeof rawUrl !== 'string') {
+      continue
+    }
+    if (UNSAFE_URL_CHARACTER_PATTERN.test(rawUrl)) continue
+
+    let parsed: URL
+    try {
+      parsed = new URL(rawUrl)
+    } catch {
+      continue
+    }
+
+    if (
+      parsed.protocol !== 'https:' ||
+      parsed.username ||
+      parsed.password ||
+      parsed.port ||
+      !EXTERNAL_LINK_HOSTS[platform].has(parsed.hostname.toLowerCase())
+    ) {
+      continue
+    }
+
+    const link: PostExternalLink = { platform, url: rawUrl }
+    if (typeof candidate['platform_post_id'] === 'string') {
+      link.platform_post_id = candidate['platform_post_id']
+    }
+    if (
+      isUuidV7String(candidate['target_post_id']) &&
+      candidate['target_post_id'].toLowerCase() !== currentPostId?.toLowerCase()
+    ) {
+      link.target_post_id = candidate['target_post_id']
+    }
+    normalized.push(link)
+  }
+
+  return normalized
 }
 
 function attachSubtitlesToVideos(files: MediaFile[] | undefined, subtitles: MediaSubtitle[]): void {
@@ -203,8 +294,12 @@ function attachSubtitlesToVideos(files: MediaFile[] | undefined, subtitles: Medi
 }
 
 function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
+  const externalLinks = normalizePostExternalLinks(raw.external_links, raw.id)
   if (raw.media_files && raw.media_files.length > 0) {
-    return raw as unknown as PostDetailResponse
+    return {
+      ...(raw as unknown as PostDetailResponse),
+      external_links: externalLinks,
+    }
   }
 
   const mediaFiles: MediaFile[] | undefined = raw.files
@@ -257,6 +352,7 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     media_type: raw.media_type ?? raw.media_type_legacy ?? null,
     language: raw.language ?? null,
     author_other_posts: raw.author_other_posts,
+    external_links: externalLinks,
   }
 }
 
@@ -267,10 +363,13 @@ export const postService = {
       cursor: params.cursor,
     })
 
-    const response = await apiClient.get<PostListResponse>(`/posts${query}`, config)
+    const response = await apiClient.get<RawPostListResponse>(`/posts${query}`, config)
     return {
       ...response,
-      items: response.items ?? [],
+      items: (response.items ?? []).map((item) => ({
+        ...item,
+        external_links: normalizePostExternalLinks(item.external_links, item.id),
+      })),
       next_cursor: response.next_cursor ?? null,
       has_more: Boolean(response.has_more),
     }

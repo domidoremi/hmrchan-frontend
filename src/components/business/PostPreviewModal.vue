@@ -205,7 +205,13 @@
               <div class="post-preview-action-bar">
                 <Suspense>
                   <template #default>
-                    <PostActionStrip v-if="postId" :post-id="postId" variant="compact" />
+                    <PostActionStrip
+                      v-if="postId"
+                      :post-id="postId"
+                      :external-links="displayExternalLinks"
+                      variant="compact"
+                      @internal-navigate="closeBeforeInternalNavigation"
+                    />
                   </template>
                   <template #fallback>
                     <div class="post-preview-action-placeholder" aria-hidden="true">
@@ -414,10 +420,11 @@ function onPopState() {
 }
 
 const { load } = useCachedPost<PostDetailResponse>(postService.getPost, {
-  revalidate: false,
+  revalidate: true,
 })
 
 const post = ref<PostDetailResponse | null>(null)
+const hasLiveDetail = ref(false)
 const activeMediaIndex = ref(0)
 const isLoading = ref(false)
 const loadError = ref<string | null>(null)
@@ -480,17 +487,20 @@ async function reload() {
     const res = await load(id, { signal: controller.signal })
     if (controller.signal.aborted || seq !== reloadSeq) return
     post.value = res.data
+    hasLiveDetail.value = !res.fromCache
   } catch (e) {
     if (controller.signal.aborted || isAbortError(e) || seq !== reloadSeq) return
     if (e instanceof ApiError && e.status === 404) {
       const fallbackPost = getInitialFallbackPost(id)
       if (fallbackPost) {
         post.value = fallbackPost
+        hasLiveDetail.value = false
         loadError.value = null
         return
       }
     }
     post.value = null
+    hasLiveDetail.value = false
     loadError.value = e instanceof Error ? e.message : t('common.error')
   } finally {
     clearLoadingTimer(seq)
@@ -513,6 +523,7 @@ watch(
 
     // avoid showing stale detail content from previous open
     post.value = null
+    hasLiveDetail.value = false
 
     activeMediaIndex.value = 0
 
@@ -637,6 +648,14 @@ const displayLikes = computed(() => {
   return typeof v === 'number' ? v : null
 })
 
+const displayExternalLinks = computed(() => {
+  if (hasLiveDetail.value) return post.value?.external_links ?? []
+
+  const initialLinks = props.initialPost?.external_links
+  if (initialLinks?.length) return initialLinks
+  return post.value?.external_links ?? initialLinks ?? []
+})
+
 const initialMediaSrc = computed(() => {
   return props.initialThumbnailSrc || props.initialPost?.thumbnail_url || ''
 })
@@ -714,6 +733,12 @@ function onAfterLeave() {
   sheetDragY.value = 0
   isSheetDragging.value = false
   activePointerId = null
+}
+
+function closeBeforeInternalNavigation() {
+  if (!props.isOpen) return
+  emit('update:isOpen', false)
+  unlockBodyScroll()
 }
 
 function openDetail() {
