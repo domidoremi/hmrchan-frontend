@@ -179,7 +179,7 @@ const PLATFORM_ASPECT_RATIOS: Record<string, string> = {
 
 const DEFAULT_ASPECT_RATIO = '16 / 9'
 
-export interface PostCardProps {
+interface PostCardProps {
   post: PostListItem
   showContent?: boolean
   showAuthor?: boolean

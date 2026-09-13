@@ -145,6 +145,7 @@ describe('PostCard', () => {
     expect(fetchMock).toHaveBeenCalledWith(`/api/v1/media/${mediaId}/stream`, {
       headers: { Range: 'bytes=0-15' },
       credentials: 'same-origin',
+      signal: expect.any(AbortSignal),
     })
   })
 

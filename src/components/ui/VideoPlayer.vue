@@ -671,7 +671,7 @@ import {
 
 interface Props {
   src: string
-  poster?: string
+  poster?: string | undefined
   playsinline?: boolean
   loop?: boolean
   preload?: 'auto' | 'metadata' | 'none'

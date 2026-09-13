@@ -1,4 +1,5 @@
 import { extractMediaIdFromUrl, getMediaStreamUrl } from '@/utils/mediaOptimizer'
+import { probeImageStream } from '@/utils/mediaStreamProbe'
 
 export function shouldUpgradeThumbnailToOriginal({
   attempted,
@@ -13,8 +14,8 @@ export function shouldUpgradeThumbnailToOriginal({
   pending: boolean
   highQualitySrc: string | null
   thumbnailSize: string | undefined
-  duration?: number | null
-  postType?: string | null
+  duration?: number | null | undefined
+  postType?: string | null | undefined
   naturalWidth: number
 }): boolean {
   if (attempted || pending || highQualitySrc || thumbnailSize !== 'large') return false
@@ -38,17 +39,7 @@ export async function resolveOriginalImageStream(thumbnailUrl: string): Promise<
 
   const streamUrl = getMediaStreamUrl(mediaId)
 
-  try {
-    const response = await fetch(streamUrl, {
-      headers: { Range: 'bytes=0-15' },
-      credentials: 'same-origin',
-    })
-    const contentType = response.headers.get('content-type')?.toLowerCase() ?? ''
-    const probe = new Uint8Array(await response.arrayBuffer())
-    return response.ok && isImageStreamResponse(contentType, probe) ? streamUrl : null
-  } catch {
-    return null
-  }
+  return probeImageStream(streamUrl, isImageStreamResponse)
 }
 
 function isImageStreamResponse(contentType: string, bytes: Uint8Array): boolean {

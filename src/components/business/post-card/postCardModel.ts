@@ -32,8 +32,8 @@ export function normalizeTag(input: string | null | undefined): string {
 }
 
 export function resolveDisplayAuthorName(options: {
-  authorName?: string | null
-  authorUsername?: string | null
+  authorName?: string | null | undefined
+  authorUsername?: string | null | undefined
 }): string {
   const name = normalizeText(options.authorName)
   if (name) return name
@@ -42,8 +42,8 @@ export function resolveDisplayAuthorName(options: {
 }
 
 export function isTitleDerivedFromContent(options: {
-  title?: string | null
-  description?: string | null
+  title?: string | null | undefined
+  description?: string | null | undefined
 }): boolean {
   const title = normalizeText(options.title)
   const content = normalizeText(options.description)
@@ -54,8 +54,8 @@ export function isTitleDerivedFromContent(options: {
 }
 
 export function resolveDisplayTitle(options: {
-  title?: string | null
-  description?: string | null
+  title?: string | null | undefined
+  description?: string | null | undefined
   titleFromContent: boolean
 }): string {
   const title = normalizeText(options.title)
@@ -75,7 +75,7 @@ export function resolveDisplayTitle(options: {
 }
 
 export function resolveDisplayExcerpt(options: {
-  description?: string | null
+  description?: string | null | undefined
   titleFromContent: boolean
 }): string {
   const content = normalizeText(options.description)
@@ -84,12 +84,12 @@ export function resolveDisplayExcerpt(options: {
   return content
 }
 
-export function resolvePlatformAnimation(platform?: string | null): string {
+export function resolvePlatformAnimation(platform?: string | null | undefined): string {
   const normalized = platform?.toLowerCase()
   return normalized ? (PLATFORM_ANIMATIONS[normalized] ?? 'explore') : 'explore'
 }
 
-export function resolvePlatformLabel(platform?: string | null): string {
+export function resolvePlatformLabel(platform?: string | null | undefined): string {
   if (!platform) return ''
   return (
     PLATFORM_LABELS[platform] ??

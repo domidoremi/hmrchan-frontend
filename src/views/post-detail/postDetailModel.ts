@@ -1,25 +1,28 @@
+import type { SubtitleTrack } from '@/types'
+import type { MediaThumbnailSize } from '@/utils/mediaOptimizer'
+
 export interface PostDetailMediaLike {
   id?: string | null
   file_type?: string | null
   width?: number | null
   height?: number | null
-  subtitles?: unknown[] | null
+  subtitles?: SubtitleTrack[] | null
 }
 
 export interface PostDetailLike {
-  title?: string | null
-  description?: string | null
-  published_at?: string | null
+  title?: string | null | undefined
+  description?: string | null | undefined
+  published_at?: string | null | undefined
   thumbnail_url?: string | null
   media_count?: number | null
-  media_files?: PostDetailMediaLike[] | null
+  media_files?: PostDetailMediaLike[] | null | undefined
 }
 
 export type PostDetailMediaUrlResolver = {
-  getMediaThumbnailUrl: (mediaId: string, size: string) => string
+  getMediaThumbnailUrl: (mediaId: string, size: MediaThumbnailSize) => string
   getMediaThumbnailSrcset: (mediaId: string) => string | null
-  resolveThumbnailSrc: (url: string | null, size: string) => string
-  resolveThumbnailSrcset: (url: string | null) => string | null
+  resolveThumbnailSrc: (url: string | null, size: MediaThumbnailSize) => string | undefined
+  resolveThumbnailSrcset: (url: string | null) => string | null | undefined
 }
 
 export type PostDetailMediaHintSourceResolver = Pick<
@@ -630,7 +633,7 @@ export function resolveFallbackMediaSrcset(
   post: PostDetailLike | null | undefined,
   resolver: Pick<PostDetailMediaUrlResolver, 'resolveThumbnailSrcset'>
 ): string | null {
-  return resolver.resolveThumbnailSrcset(post?.thumbnail_url ?? null)
+  return resolver.resolveThumbnailSrcset(post?.thumbnail_url ?? null) ?? null
 }
 
 export function resolvePostDetailMediaHintSource(
@@ -654,7 +657,7 @@ export function resolvePlaceholderSource({
   activeMediaIndex: number
   cachedThumbnailUrl: string | null
   preloadedImages: ReadonlySet<string>
-  getMediaThumbnailUrl: (mediaId: string, size: string) => string
+  getMediaThumbnailUrl: (mediaId: string, size: MediaThumbnailSize) => string
 }): string | null {
   if (!activeMedia?.id) return cachedThumbnailUrl
 
@@ -681,7 +684,7 @@ export function resolveAdjacentImagePreloadTargets({
   mediaFiles: readonly PostDetailMediaLike[] | null | undefined
   activeMediaIndex: number
   preloadedImages: ReadonlySet<string>
-  getMediaThumbnailUrl: (mediaId: string, size: string) => string
+  getMediaThumbnailUrl: (mediaId: string, size: MediaThumbnailSize) => string
 }): PostDetailAdjacentMediaPreloadTarget[] {
   if (!mediaFiles || mediaFiles.length <= 1) return []
 

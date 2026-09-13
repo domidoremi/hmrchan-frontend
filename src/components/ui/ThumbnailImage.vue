@@ -25,7 +25,7 @@ import type { MediaThumbnailSize } from '@/utils/mediaOptimizer'
 import { resolveThumbnailSrc, resolveThumbnailSrcset } from '@/utils/thumbnailPresentation'
 
 interface Props {
-  src?: string | null
+  src?: string | null | undefined
   alt?: string
   size?: MediaThumbnailSize
   responsive?: boolean
@@ -40,7 +40,6 @@ const props = withDefaults(defineProps<Props>(), {
   alt: '',
   size: 'medium',
   responsive: false,
-  sizes: undefined,
   loading: 'lazy',
   decoding: 'async',
   fetchPriority: 'auto',
