@@ -78,11 +78,15 @@ function normalizeVerificationResponse(
 
   return {
     verificationToken,
-    expiresIn: response.expires_in,
+    ...(response.expires_in === undefined ? {} : { expiresIn: response.expires_in }),
     action: request.action,
-    resourceId: request.resourceId,
-    stepUpRequired: response.step_up_required,
-    currentDeviceTrusted: response.current_device_trusted,
+    ...(request.resourceId === undefined ? {} : { resourceId: request.resourceId }),
+    ...(response.step_up_required === undefined
+      ? {}
+      : { stepUpRequired: response.step_up_required }),
+    ...(response.current_device_trusted === undefined
+      ? {}
+      : { currentDeviceTrusted: response.current_device_trusted }),
   }
 }
 
@@ -102,7 +106,7 @@ function createVerificationFailedError(action: VerificationAction, resourceId?: 
 
 export function isUnauthenticatedVerificationError(error: ApiError): boolean {
   const rawMessage =
-    typeof error.details?.rawMessage === 'string' ? error.details.rawMessage : error.message
+    typeof error.details?.['rawMessage'] === 'string' ? error.details['rawMessage'] : error.message
   const normalized = rawMessage.trim().toLowerCase()
 
   return (
@@ -125,7 +129,10 @@ async function verifyWithPassword(
     const response = await authService.verifyIdentity(password, action, resourceId, {
       skipErrorToast: true,
     })
-    const result = normalizeVerificationResponse(response, { action, resourceId })
+    const result = normalizeVerificationResponse(response, {
+      action,
+      ...(resourceId === undefined ? {} : { resourceId }),
+    })
     cacheVerificationToken(result)
     reportClientEvent('verification.password_verified', {
       action,
@@ -190,10 +197,7 @@ export async function ensureVerificationToken(
 
   const result = await requestVerification({
     action,
-    resourceId: options.resourceId,
-    title: options.title,
-    description: options.description,
-    confirmLabel: options.confirmLabel,
+    ...options,
   })
 
   if (!result) {

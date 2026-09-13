@@ -390,21 +390,23 @@ export function resolveGooglePopupBridgeMessage(
   if (handoffCode) {
     return {
       type: 'google-auth-result',
-      requestId: requestId || undefined,
+      ...(requestId ? { requestId } : {}),
       status: 'success',
       handoffCode,
-      redirectTo: pendingRequest?.redirectTo,
-      intent: pendingRequest?.intent,
+      ...(pendingRequest?.redirectTo === undefined
+        ? {}
+        : { redirectTo: pendingRequest?.redirectTo }),
+      ...(pendingRequest?.intent === undefined ? {} : { intent: pendingRequest?.intent }),
     }
   }
 
   return {
     type: 'google-auth-result',
-    requestId: requestId || undefined,
+    ...(requestId ? { requestId } : {}),
     status: 'error',
     error: error || 'missing_handoff_code',
-    redirectTo: pendingRequest?.redirectTo,
-    intent: pendingRequest?.intent,
+    ...(pendingRequest?.redirectTo === undefined ? {} : { redirectTo: pendingRequest?.redirectTo }),
+    ...(pendingRequest?.intent === undefined ? {} : { intent: pendingRequest?.intent }),
   }
 }
 
@@ -621,7 +623,7 @@ function createGooglePopupWaitHandle(options?: GooglePopupWaitOptions): {
 
         settle({
           type: 'google-auth-result',
-          requestId: options?.requestId,
+          ...(options?.requestId === undefined ? {} : { requestId: options?.requestId }),
           status: 'error',
           error: 'popup_closed',
         })
@@ -655,7 +657,7 @@ export function openGoogleAuthPopupFlow(
 
   const pending = createGooglePopupWaitHandle({
     requestId: request.requestId,
-    timeoutMs: options?.timeoutMs,
+    ...(options?.timeoutMs === undefined ? {} : { timeoutMs: options?.timeoutMs }),
     resolvePopup: () => popup,
   })
 
@@ -750,7 +752,7 @@ export function resolveGoogleAuthSecurityError(error: unknown): GoogleAuthSecuri
             ? getTurnstileErrorMessageKey(error)
             : 'auth.error.turnstileFailed',
         detail,
-        code: apiError?.code,
+        ...(apiError?.code === undefined ? {} : { code: apiError?.code }),
       }
   }
 }

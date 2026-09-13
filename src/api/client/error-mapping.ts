@@ -130,7 +130,7 @@ export function extractApiErrorMeta(errorBody: unknown): { code?: string; messag
 
   const code = pickNonEmptyString(envelopeError?.['code'], body['code'], detailObject?.['code'])
 
-  return { code, message }
+  return { ...(code === undefined ? {} : { code }), message }
 }
 
 export async function handleErrorResponse(
@@ -304,9 +304,7 @@ export async function handleErrorResponse(
       errorMessage !== 'error.unknown' ? resolveServerMessage(errorMessage) : undefined
     localizedMessage = mappedKey
       ? t(mappedKey)
-      : statusMessages[effectiveStatus]
-        ? t(statusMessages[effectiveStatus])
-        : t('error.unknown')
+      : t(statusMessages[effectiveStatus] ?? 'error.unknown')
   }
 
   if (!skipErrorToast && effectiveStatus !== 401) {

@@ -118,6 +118,16 @@ describe('auth store', () => {
     vi.mocked(authService.getCurrentUser).mockResolvedValue(createMeResponse())
   })
 
+  it('exposes initialization state and bootstraps only once', async () => {
+    const store = useAuthStore()
+    expect(store.isInitialized).toBe(false)
+    vi.mocked(authService.resolveSession).mockResolvedValueOnce({ authenticated: false })
+    await store.ensureAuthInitialized()
+    expect(store.isInitialized).toBe(true)
+    await store.ensureAuthInitialized()
+    expect(authService.resolveSession).toHaveBeenCalledTimes(1)
+  })
+
   it('starts empty with BFF-first auth state', () => {
     const store = useAuthStore()
     expect(store.user).toBeNull()

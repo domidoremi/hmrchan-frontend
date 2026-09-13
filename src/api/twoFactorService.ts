@@ -1,4 +1,5 @@
 import { apiClient } from './client'
+import type { SerializedPublicKeyCredential } from '@/utils/webauthn'
 import type {
   AuthResponse,
   MfaRequiredResponse,
@@ -56,7 +57,7 @@ export interface WebAuthnCredentialSummary {
 
 export interface WebAuthnRegistrationOptionsResponse {
   ceremony_id: string
-  options: Record<string, unknown>
+  options: PublicKeyCredentialCreationOptionsJSON
   device_name?: string | null
 }
 
@@ -64,7 +65,7 @@ export type WebAuthnRegistrationVerifyResponse = WebAuthnCredentialSummary
 
 export interface WebAuthnAuthenticationOptionsResponse {
   ceremony_id: string
-  options: Record<string, unknown>
+  options: PublicKeyCredentialRequestOptionsJSON
   methods?: string[]
   provider?: string
 }
@@ -170,7 +171,7 @@ export const twoFactorService = {
 
   async finishWebAuthnRegistration(
     ceremonyId: string,
-    credential: Record<string, unknown>,
+    credential: SerializedPublicKeyCredential,
     deviceName?: string
   ): Promise<WebAuthnRegistrationVerifyResponse> {
     return apiClient.post<WebAuthnRegistrationVerifyResponse>(
@@ -205,7 +206,7 @@ export const twoFactorService = {
   async finishWebAuthnLogin(
     pendingMfaLoginToken: string,
     ceremonyId: string,
-    credential: Record<string, unknown>,
+    credential: SerializedPublicKeyCredential,
     deviceName?: string,
     deviceType?: string
   ): Promise<AuthResponse> {

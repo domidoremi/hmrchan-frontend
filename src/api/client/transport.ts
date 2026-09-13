@@ -13,17 +13,26 @@ let activeCount = 0
 const waitQueue: Array<() => void> = []
 let rateLimitedUntil = 0
 
-function acquireSlot(): Promise<void> {
+function acquireSlot(signal?: AbortSignal | null): Promise<void> {
+  if (signal?.aborted) return Promise.reject(signal.reason)
   if (activeCount < MAX_CONCURRENT) {
     activeCount += 1
     return Promise.resolve()
   }
 
-  return new Promise<void>((resolve) => {
-    waitQueue.push(() => {
+  return new Promise<void>((resolve, reject) => {
+    const grant = () => {
+      signal?.removeEventListener('abort', onAbort)
       activeCount += 1
       resolve()
-    })
+    }
+    const onAbort = () => {
+      const index = waitQueue.indexOf(grant)
+      if (index >= 0) waitQueue.splice(index, 1)
+      reject(signal?.reason)
+    }
+    waitQueue.push(grant)
+    signal?.addEventListener('abort', onAbort, { once: true })
   })
 }
 
@@ -35,11 +44,21 @@ function releaseSlot(): void {
   }
 }
 
-async function waitForRateLimit(): Promise<void> {
-  const now = Date.now()
-  if (rateLimitedUntil <= now) return
-
-  await new Promise<void>((resolve) => setTimeout(resolve, rateLimitedUntil - now))
+async function waitForRateLimit(signal?: AbortSignal | null): Promise<void> {
+  while (rateLimitedUntil > Date.now()) {
+    if (signal?.aborted) throw signal.reason
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        signal?.removeEventListener('abort', onAbort)
+        resolve()
+      }, rateLimitedUntil - Date.now())
+      const onAbort = () => {
+        clearTimeout(timer)
+        reject(signal?.reason)
+      }
+      signal?.addEventListener('abort', onAbort, { once: true })
+    })
+  }
 }
 
 export { API_BASE_URL, REFRESH_TIMEOUT, REQUEST_TIMEOUT }
@@ -58,10 +77,11 @@ export function setRateLimitCooldown(waitMs: number): void {
 }
 
 export async function fetchWithTransportGuards(url: string, init: RequestInit): Promise<Response> {
-  await waitForRateLimit()
-  await acquireSlot()
+  await acquireSlot(init.signal)
 
   try {
+    await waitForRateLimit(init.signal)
+    if (init.signal?.aborted) throw init.signal.reason
     return await fetch(url, init)
   } finally {
     releaseSlot()

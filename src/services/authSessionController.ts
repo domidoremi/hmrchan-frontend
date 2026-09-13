@@ -30,8 +30,8 @@ interface RuntimeAuthzCache {
   expiresAt: number
 }
 
-interface AuthSessionState<TUser extends UserResponse> {
-  user: Ref<TUser | null>
+interface AuthSessionState {
+  user: Ref<UserResponse | null>
   runtimeAuthzCache: Ref<RuntimeAuthzCache | null>
   sessionExpiresAt: Ref<string | null>
   stepUpRequired: Ref<boolean>
@@ -80,17 +80,19 @@ function buildRuntimeAuthzCache(
   }
 }
 
-function normalizeUserSnapshot<TUser extends UserResponse>(user: TUser): TUser {
+function normalizeUserSnapshot(user: UserResponse): UserResponse {
+  const { avatar_url, ...snapshot } = user
+  const normalizedAvatar = normalizeAvatarUrl(avatar_url)
   return {
-    ...user,
-    avatar_url: normalizeAvatarUrl(user.avatar_url) ?? undefined,
+    ...snapshot,
+    ...(normalizedAvatar == null ? {} : { avatar_url: normalizedAvatar }),
   }
 }
 
-export function createAuthSessionController<TUser extends UserResponse>(options: {
+export function createAuthSessionController(options: {
   onSessionTransition?: () => void
   router: RouterLike
-  state: AuthSessionState<TUser>
+  state: AuthSessionState
 }) {
   const { router, state } = options
   let initPromise: Promise<void> | null = null
@@ -130,7 +132,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     if (!options.skipSessionTransition && state.user.value?.id !== user.id) {
       transitionSession(user.id)
     }
-    state.user.value = normalizeUserSnapshot(user as TUser)
+    state.user.value = normalizeUserSnapshot(user)
     updateStateFromRuntimeSession(options.securityLevel)
     state.stepUpRequired.value = options.stepUpRequired ?? state.stepUpRequired.value
     syncAuthSource(state.user.value)
@@ -181,7 +183,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       securityLevel?: 'authenticated' | 'sensitive'
       skipErrorToast?: boolean
     } = {}
-  ): Promise<TUser | null> {
+  ): Promise<UserResponse | null> {
     const {
       clearOnAuthError = true,
       securityLevel = 'authenticated',
@@ -206,7 +208,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       applyCurrentUser(me, {
         securityLevel,
       })
-      return me as TUser
+      return state.user.value
     } catch (error) {
       if (operation && !operation.isCurrent()) {
         return state.user.value
@@ -229,15 +231,15 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   async function establishSession(response: AuthResponse) {
     transitionSession(response.user.id)
     establishAuthRuntimeSession({
-      permission_version: response.permission_version,
+      ...(response.permission_version === undefined
+        ? {}
+        : { permission_version: response.permission_version }),
       permissions: response.permissions,
       roles: response.roles ?? response.user.roles,
-      session_expires_at: response.session_expires_at,
-      identity_provider: response.user.identity_provider,
-      user: {
-        is_admin: response.user.is_admin,
-        identity_provider: response.user.identity_provider,
-      },
+      ...(response.session_expires_at === undefined
+        ? {}
+        : { session_expires_at: response.session_expires_at }),
+      user: response.user,
     })
 
     applyCurrentUser(
@@ -278,7 +280,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
     return result
   }
 
-  async function fetchCurrentUser(clearOnAuthError = true): Promise<TUser | null> {
+  async function fetchCurrentUser(clearOnAuthError = true): Promise<UserResponse | null> {
     let restoredSession = false
     if (!getAuthRuntimeSession()) {
       const summary = await resolveSessionSummary()

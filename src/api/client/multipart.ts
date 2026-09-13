@@ -1,6 +1,6 @@
 const encoder = new TextEncoder()
 
-function concatUint8Arrays(chunks: Uint8Array[]): Uint8Array {
+function concatUint8Arrays(chunks: Uint8Array[]): Uint8Array<ArrayBuffer> {
   const totalLength = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0)
   const merged = new Uint8Array(totalLength)
 
@@ -13,7 +13,7 @@ function concatUint8Arrays(chunks: Uint8Array[]): Uint8Array {
   return merged
 }
 
-function encodeHeader(value: string): Uint8Array {
+function encodeHeader(value: string): Uint8Array<ArrayBuffer> {
   return encoder.encode(value)
 }
 
@@ -22,7 +22,7 @@ function normalizeFilename(value: string): string {
 }
 
 export async function buildMultipartRequestBody(formData: FormData): Promise<{
-  body: Uint8Array
+  body: Uint8Array<ArrayBuffer>
   contentType: string
 }> {
   const boundary = `----momi-${crypto.randomUUID()}`

@@ -1,3 +1,4 @@
+import { assertUuidV7String } from '@/types/publicId'
 import { ref, computed, watch, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
 import {
@@ -91,8 +92,8 @@ export const useFavoritesStore = defineStore('favorites', () => {
       const params: ListFavoritesParams = {
         limit: pageSize.value,
         cursor: reset ? null : nextCursor.value,
-        folder_name: currentFolder.value,
-        tag: currentTag.value,
+        ...(currentFolder.value !== undefined ? { folder_name: currentFolder.value } : {}),
+        ...(currentTag.value !== undefined ? { tag: currentTag.value } : {}),
       }
 
       const res = await favoriteService.list(params, {
@@ -194,7 +195,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
     if (cached !== undefined) return cached
 
     try {
-      const res = await favoriteService.check(postId)
+      const res = await favoriteService.check(assertUuidV7String(postId, 'favorite post id'))
       rememberCheckedPost(postId, res.is_favorited)
       return res.is_favorited
     } catch {
@@ -204,7 +205,10 @@ export const useFavoritesStore = defineStore('favorites', () => {
 
   async function addFavorite(postId: string, options?: { folder_name?: string; notes?: string }) {
     try {
-      const res = await favoriteService.create(postId, options)
+      const res = await favoriteService.create(
+        assertUuidV7String(postId, 'favorite post id'),
+        options
+      )
       items.value.unshift(res)
       if (typeof total.value === 'number') {
         total.value += 1
@@ -219,7 +223,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
   async function removeFavorite(favoriteId: string) {
     try {
       const item = items.value.find((f) => f.id === favoriteId)
-      await favoriteService.remove(favoriteId)
+      await favoriteService.remove(assertUuidV7String(favoriteId, 'favorite id'))
       items.value = items.value.filter((f) => f.id !== favoriteId)
       if (typeof total.value === 'number') {
         total.value = Math.max(0, total.value - 1)
@@ -235,7 +239,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
 
   async function removeFavoriteByPostId(postId: string) {
     try {
-      await favoriteService.removeByPostId(postId)
+      await favoriteService.removeByPostId(assertUuidV7String(postId, 'favorite post id'))
       items.value = items.value.filter((f) => f.post_id !== postId)
       if (typeof total.value === 'number') {
         total.value = Math.max(0, total.value - 1)
@@ -252,7 +256,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
     data: { folder_name?: string | null; notes?: string | null }
   ) {
     try {
-      const res = await favoriteService.update(favoriteId, data)
+      const res = await favoriteService.update(assertUuidV7String(favoriteId, 'favorite id'), data)
       const idx = items.value.findIndex((f) => f.id === favoriteId)
       if (idx !== -1) items.value[idx] = res
       return { success: true, data: res }
@@ -261,7 +265,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
     }
   }
 
-  function setFilter(options: { folder?: string; tag?: string }) {
+  function setFilter(options: { folder?: string | undefined; tag?: string | undefined }) {
     currentFolder.value = options.folder
     currentTag.value = options.tag
     void fetchFavorites(true)

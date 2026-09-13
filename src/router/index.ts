@@ -521,7 +521,7 @@ const router = createRouter({
   routes,
   scrollBehavior(to, from, savedPosition) {
     const smoothBehavior: ScrollBehavior =
-      typeof document !== 'undefined' && document.documentElement.dataset.smoothScroll
+      typeof document !== 'undefined' && document.documentElement.dataset['smoothScroll']
         ? 'auto'
         : 'smooth'
 
@@ -577,11 +577,14 @@ router.beforeEach(async (to) => {
   })
   if (unauthenticatedRedirect) return unauthenticatedRedirect
 
-  if (securityLevel === 'authenticated' && isAuthenticated) {
+  if (securityLevel === 'authenticated' && authStore?.isAuthenticated) {
     await authStore.ensureFreshAuthz('authenticated')
   }
 
   if (securityLevel === 'sensitive') {
+    if (!authStore?.isAuthenticated) {
+      return buildLoginRedirect(to.fullPath)
+    }
     if (getRiskMode() === 'degraded') {
       return buildSensitiveReauthRedirect(to)
     }
@@ -594,7 +597,7 @@ router.beforeEach(async (to) => {
 
   if (
     shouldRedirectAuthenticatedGuestRoute({
-      guestOnly: to.meta.guestOnly,
+      guestOnly: to.meta.guestOnly ?? false,
       isAuthenticated,
       sensitiveReauthLogin: isSensitiveReauthLoginRoute(to),
     })
@@ -625,13 +628,13 @@ router.afterEach((to) => {
   )
   syncRoutePageMeta(to)
 
-  if (to.name === 'post-detail' && to.params.id) {
+  if (to.name === 'post-detail' && to.params['id']) {
     import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
-      recordAccess('post', String(to.params.id)).catch(() => {})
+      recordAccess('post', String(to.params['id'])).catch(() => {})
     })
-  } else if (to.name === 'author-detail' && to.params.id) {
+  } else if (to.name === 'author-detail' && to.params['id']) {
     import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
-      recordAccess('author', String(to.params.id)).catch(() => {})
+      recordAccess('author', String(to.params['id'])).catch(() => {})
     })
   }
 })

@@ -130,7 +130,7 @@ function triggerHardReloadGate(): never {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('app:hard-reload-required'))
 
-    const isTest = import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+    const isTest = import.meta.env.MODE === 'test' || import.meta.env['VITEST'] === 'true'
     if (!isTest) {
       window.setTimeout(() => {
         window.location.reload()
@@ -152,7 +152,7 @@ async function readErrorMeta(response: Response): Promise<{ code?: string; messa
 
 async function serializeRequestBody(body: BodyInit | null | undefined): Promise<{
   body: BodyInit | null
-  bodyBytes: Uint8Array
+  bodyBytes: Uint8Array<ArrayBuffer>
   contentType?: string
 }> {
   if (body == null) {
@@ -193,7 +193,7 @@ async function serializeRequestBody(body: BodyInit | null | undefined): Promise<
     return {
       body,
       bodyBytes: bytes,
-      contentType: body.type || undefined,
+      ...(body.type ? { contentType: body.type } : {}),
     }
   }
 
@@ -302,7 +302,7 @@ async function handleForbiddenResponse<T>(options: {
     if (verificationRequired && verificationAction && !skipVerificationRetry) {
       const { ensureVerificationToken } = await import('./verificationBridge')
       const verificationToken = await ensureVerificationToken(verificationAction, {
-        resourceId: verificationResourceId,
+        ...(verificationResourceId === undefined ? {} : { resourceId: verificationResourceId }),
       })
       const { body: retryBody, headers: retryHeaders } = withVerificationToken(
         method,
@@ -313,7 +313,7 @@ async function handleForbiddenResponse<T>(options: {
 
       return request<T>(endpoint, {
         ...config,
-        body: retryBody,
+        body: retryBody ?? null,
         headers: retryHeaders,
         skipVerificationRetry: true,
       })
@@ -365,7 +365,7 @@ async function handleForbiddenResponse<T>(options: {
     }
   }
 
-  await handleErrorResponse(response, skipErrorToast)
+  return handleErrorResponse(response, skipErrorToast)
 }
 
 async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
@@ -392,19 +392,25 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
   const method = fetchConfig.method?.toUpperCase() || 'GET'
   const url = buildRequestUrl(endpoint, baseUrl)
-  const requestHeaders: Record<string, string> = { ...(customHeaders as Record<string, string>) }
+  const requestHeaders: Record<string, string> =
+    customHeaders instanceof Headers || Array.isArray(customHeaders)
+      ? Object.fromEntries(new Headers(customHeaders))
+      : { ...customHeaders }
+  const hasContentType = Object.keys(requestHeaders).some(
+    (name) => name.toLowerCase() === 'content-type'
+  )
   const serializedBody = await serializeRequestBody(body)
   const hasAuthContext = Boolean(getAuthRuntimeSession())
   const requestId = applyRequestSecurityHeaders(requestHeaders, method, url, config)
 
-  if (serializedBody.contentType && !requestHeaders['Content-Type']) {
+  if (serializedBody.contentType && !hasContentType) {
     requestHeaders['Content-Type'] = serializedBody.contentType
   }
 
   if (
     serializedBody.body &&
     !serializedBody.contentType &&
-    !requestHeaders['Content-Type'] &&
+    !hasContentType &&
     ['POST', 'PUT', 'PATCH'].includes(method)
   ) {
     requestHeaders['Content-Type'] =
@@ -465,7 +471,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
         {
           ...config,
           headers: requestHeaders,
-          body,
+          body: body ?? null,
           skipClientSignatureRetry,
         },
         !skipClientReinitRetry
@@ -529,16 +535,16 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
           config: {
             ...config,
             headers: requestHeaders,
-            body,
+            body: body ?? null,
             skipClientSignatureRetry,
             skipClientReinitRetry,
           },
           response,
           method,
-          body,
+          body: body ?? null,
           skipErrorToast,
-          verificationAction,
-          verificationResourceId,
+          ...(verificationAction === undefined ? {} : { verificationAction }),
+          ...(verificationResourceId === undefined ? {} : { verificationResourceId }),
           skipChallengeRetry,
           skipVerificationRetry,
         })
@@ -569,6 +575,25 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     )
     return handleTransportError(error, skipErrorToast)
   }
+}
+
+function toRequestBody(data: unknown): BodyInit | null {
+  if (data == null) return null
+  if (
+    typeof data === 'string' ||
+    data instanceof FormData ||
+    data instanceof Blob ||
+    data instanceof URLSearchParams ||
+    data instanceof ArrayBuffer
+  )
+    return data
+  if (ArrayBuffer.isView(data)) {
+    // Copy only this view's bytes into an owned buffer accepted by Fetch and Web Crypto.
+    return new Uint8Array(new Uint8Array(data.buffer, data.byteOffset, data.byteLength))
+  }
+  const json = JSON.stringify(data)
+  if (json === undefined) throw new TypeError('Unsupported request body type')
+  return json
 }
 
 export const apiClient = {
@@ -606,19 +631,10 @@ export const apiClient = {
   },
 
   post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
-    const body = data !== undefined ? ((data as BodyInit) ?? null) : null
-
     return request<T>(endpoint, {
       ...config,
       method: 'POST',
-      body:
-        body instanceof FormData ||
-        body instanceof Blob ||
-        body instanceof URLSearchParams ||
-        typeof body === 'string' ||
-        body == null
-          ? body
-          : JSON.stringify(body),
+      body: toRequestBody(data),
     })
   },
 
@@ -626,14 +642,7 @@ export const apiClient = {
     return request<T>(endpoint, {
       ...config,
       method: 'PUT',
-      body:
-        data instanceof FormData ||
-        data instanceof Blob ||
-        data instanceof URLSearchParams ||
-        typeof data === 'string' ||
-        data == null
-          ? (data as BodyInit | null | undefined)
-          : JSON.stringify(data),
+      body: toRequestBody(data),
     })
   },
 
@@ -641,14 +650,7 @@ export const apiClient = {
     return request<T>(endpoint, {
       ...config,
       method: 'PATCH',
-      body:
-        data instanceof FormData ||
-        data instanceof Blob ||
-        data instanceof URLSearchParams ||
-        typeof data === 'string' ||
-        data == null
-          ? (data as BodyInit | null | undefined)
-          : JSON.stringify(data),
+      body: toRequestBody(data),
     })
   },
 

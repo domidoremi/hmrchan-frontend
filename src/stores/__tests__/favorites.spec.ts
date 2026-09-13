@@ -18,6 +18,8 @@ vi.mock('@/api/favoriteService', () => ({
   favoriteService: favoriteServiceMocks,
 }))
 
+const postId = (index: number) => `01900000-0000-7000-8000-${String(index).padStart(12, '0')}`
+
 describe('favorites store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -31,28 +33,52 @@ describe('favorites store', () => {
     favoriteServiceMocks.check.mockResolvedValue({ is_favorited: true })
 
     for (let i = 0; i < 301; i += 1) {
-      await store.checkFavorited(`post-${i}`)
+      await store.checkFavorited(postId(i))
     }
 
     expect(favoriteServiceMocks.check).toHaveBeenCalledTimes(301)
-    await store.checkFavorited('post-0')
+    await store.checkFavorited(postId(0))
 
     expect(favoriteServiceMocks.check).toHaveBeenCalledTimes(302)
-    await store.checkFavorited('post-300')
+    await store.checkFavorited(postId(300))
 
     expect(favoriteServiceMocks.check).toHaveBeenCalledTimes(302)
+  })
+
+  it('rejects invalid identifiers before calling the API', async () => {
+    const store = useFavoritesStore()
+    expect(await store.checkFavorited('invalid')).toBe(false)
+    expect(await store.addFavorite('invalid')).toEqual({
+      success: false,
+      error: 'favorite.error.addFailed',
+    })
+    expect(await store.removeFavorite('invalid')).toEqual({
+      success: false,
+      error: 'favorite.error.removeFailed',
+    })
+    expect(await store.removeFavoriteByPostId('invalid')).toEqual({
+      success: false,
+      error: 'favorite.error.removeFailed',
+    })
+    expect(await store.updateFavorite('invalid', {})).toEqual({
+      success: false,
+      error: 'favorite.error.updateFailed',
+    })
+    for (const method of ['check', 'create', 'remove', 'removeByPostId', 'update'] as const) {
+      expect(favoriteServiceMocks[method]).not.toHaveBeenCalled()
+    }
   })
 
   it('clears checked post cache on reset', async () => {
     const store = useFavoritesStore()
     favoriteServiceMocks.check.mockResolvedValue({ is_favorited: true })
 
-    await store.checkFavorited('post-1')
-    await store.checkFavorited('post-1')
+    await store.checkFavorited(postId(1))
+    await store.checkFavorited(postId(1))
     expect(favoriteServiceMocks.check).toHaveBeenCalledTimes(1)
 
     store.$reset()
-    await store.checkFavorited('post-1')
+    await store.checkFavorited(postId(1))
 
     expect(favoriteServiceMocks.check).toHaveBeenCalledTimes(2)
   })

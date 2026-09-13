@@ -9,7 +9,7 @@ type CredentialRefreshSubscriber = {
 const ENABLE_CLIENT_SECURITY_INIT =
   import.meta.env.VITE_ENABLE_CLIENT_INIT !== 'false' &&
   import.meta.env.MODE !== 'test' &&
-  import.meta.env.VITEST !== 'true'
+  import.meta.env['VITEST'] !== 'true'
 
 const REQUEST_INTEGRITY_EXEMPT_PATHS = new Set([
   '/',
@@ -93,7 +93,7 @@ function canonicalizeQuery(search: string): string {
   return params.toString()
 }
 
-async function sha256Hex(bytes: Uint8Array): Promise<string> {
+async function sha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes)
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
@@ -135,7 +135,7 @@ async function applySignedHeaders(
   options: {
     method: string
     url: string
-    bodyBytes: Uint8Array
+    bodyBytes: Uint8Array<ArrayBuffer>
     clientSecret: string | null
     clientToken: string | null
     forceSignature?: boolean
@@ -222,7 +222,7 @@ export async function attachClientSecurityHeaders(
     method: string
     url: string
     hadToken: boolean
-    bodyBytes: Uint8Array
+    bodyBytes: Uint8Array<ArrayBuffer>
   }
 ): Promise<void> {
   const { method, url, hadToken, bodyBytes } = options
@@ -254,7 +254,7 @@ export async function rebuildClientSecurityHeaders(
   options: {
     method: string
     url: string
-    bodyBytes: Uint8Array
+    bodyBytes: Uint8Array<ArrayBuffer>
     hadToken?: boolean
   }
 ): Promise<void> {

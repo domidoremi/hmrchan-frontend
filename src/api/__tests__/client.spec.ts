@@ -158,6 +158,21 @@ describe('apiClient', () => {
   })
 
   describe('GET requests', () => {
+    it.each([
+      new Headers({ 'X-Custom': 'kept', 'Content-Type': 'application/custom+json' }),
+      [
+        ['X-Custom', 'kept'],
+        ['content-type', 'application/custom+json'],
+      ] as [string, string][],
+    ])('preserves supported HeadersInit forms and explicit content type', async (headers) => {
+      mockFetch.mockResolvedValueOnce(jsonResponse({ ok: true }))
+      await apiClient.post('/test', { value: 1 }, { headers })
+      const sent = new Headers(mockFetch.mock.calls.at(-1)?.[1]?.headers)
+      expect(sent.get('X-Custom')).toBe('kept')
+      expect(sent.get('Content-Type')).toBe('application/custom+json')
+      expect(sent.get('X-Request-Id')).toBeTruthy()
+    })
+
     it('makes a GET request with cookie-session transport headers', async () => {
       mockFetch.mockResolvedValueOnce(
         jsonResponse({ success: true, data: { id: 1, name: 'Test' }, meta: { api_version: '1' } })
@@ -471,6 +486,31 @@ describe('apiClient', () => {
   })
 
   describe('mutating requests', () => {
+    it.each(['post', 'put', 'patch'] as const)(
+      'keeps %s binary view bytes and signed bytes identical',
+      async (method) => {
+        mockFetch.mockResolvedValueOnce(jsonResponse({ ok: true }))
+        const securitySpy = vi.spyOn(clientSecurityModule, 'attachClientSecurityHeaders')
+        const data = new Uint8Array([99, 1, 2, 88]).subarray(1, 3)
+        await apiClient[method]('/binary', data, {
+          headers: { 'Content-Type': 'application/octet-stream' },
+        })
+        const body = getLastRequestInit().body
+        expect(body).toBeInstanceOf(Uint8Array)
+        expect(Array.from(body as Uint8Array)).toEqual([1, 2])
+        expect(securitySpy.mock.calls[0]?.[1].bodyBytes).toEqual(body)
+      }
+    )
+
+    it.each(['post', 'put', 'patch'] as const)(
+      'sends omitted %s data with no body',
+      async (method) => {
+        mockFetch.mockResolvedValueOnce(jsonResponse({ ok: true }))
+        await apiClient[method]('/empty')
+        expect(getLastRequestInit().body).toBeNull()
+      }
+    )
+
     it('uses an explicit idempotency key for queued mutations', async () => {
       mockFetch.mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'favorite-1' } }))
 

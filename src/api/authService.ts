@@ -1,5 +1,6 @@
 import { apiClient, ApiError } from './client'
 import type { RequestConfig } from './client'
+import type { SerializedPublicKeyCredential } from '@/utils/webauthn'
 
 const AUTH_SESSION_RESOLVE_PATH = `/auth/${'session:resolve'}`
 const PASSKEY_OPTIONS_COOLDOWN_MS = 10_000
@@ -205,7 +206,7 @@ export interface VerificationTokenResponse {
 
 export interface WebAuthnAuthenticationOptionsResponse {
   ceremony_id: string
-  options: Record<string, unknown>
+  options: PublicKeyCredentialRequestOptionsJSON
   methods?: string[]
   provider?: string
   discoverable?: boolean
@@ -247,7 +248,7 @@ export interface RecoveryPasskeyRegistrationRequest {
 
 export interface RecoveryPasskeyRegistrationOptionsResponse {
   ceremony_id: string
-  options: Record<string, unknown>
+  options: PublicKeyCredentialCreationOptionsJSON
 }
 
 export const authService = {
@@ -265,7 +266,7 @@ export const authService = {
       },
     })
 
-    if (securityWarning && 'access_token' in response) {
+    if (securityWarning && 'authenticated' in response && response.authenticated) {
       response._securityWarning = securityWarning
     }
 
@@ -559,7 +560,7 @@ export const authService = {
   async finishRiskWebAuthnLogin(
     pendingToken: string,
     ceremonyId: string,
-    credential: Record<string, unknown>,
+    credential: SerializedPublicKeyCredential,
     deviceName?: string,
     deviceType?: string
   ): Promise<AuthResponse | MfaRequiredResponse> {
@@ -593,7 +594,7 @@ export const authService = {
 
   async finishPasswordlessLogin(
     ceremonyId: string,
-    credential: Record<string, unknown>,
+    credential: SerializedPublicKeyCredential,
     deviceName?: string,
     deviceType?: string
   ): Promise<AuthResponse> {
@@ -655,7 +656,7 @@ export const authService = {
   async finishRecoveryPasskeyRegistration(
     recoveryId: string,
     ceremonyId: string,
-    credential: Record<string, unknown>,
+    credential: SerializedPublicKeyCredential,
     deviceName?: string
   ): Promise<{ success?: boolean; message?: string }> {
     return apiClient.post(

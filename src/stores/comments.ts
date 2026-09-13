@@ -137,12 +137,14 @@ export const useCommentsStore = defineStore('comments', () => {
         {
           id: result.value.id,
           url: result.value.url,
-          thumbnail_url: result.value.thumbnail_url,
-          filename: result.value.filename,
-          file_size: result.value.file_size,
-          mime_type: result.value.mime_type,
-          width: result.value.width,
-          height: result.value.height,
+          ...(result.value.thumbnail_url !== undefined
+            ? { thumbnail_url: result.value.thumbnail_url }
+            : {}),
+          ...(result.value.filename !== undefined ? { filename: result.value.filename } : {}),
+          ...(result.value.file_size !== undefined ? { file_size: result.value.file_size } : {}),
+          ...(result.value.mime_type !== undefined ? { mime_type: result.value.mime_type } : {}),
+          ...(result.value.width !== undefined ? { width: result.value.width } : {}),
+          ...(result.value.height !== undefined ? { height: result.value.height } : {}),
         },
       ]
     })
@@ -375,7 +377,9 @@ export const useCommentsStore = defineStore('comments', () => {
           : await hydrateCommentImages(formData.image_ids)
       const normalizedNewComment = normalizeCommentTree({
         ...newComment,
-        image_ids: newComment.image_ids ?? formData.image_ids,
+        ...((newComment.image_ids ?? formData.image_ids)
+          ? { image_ids: newComment.image_ids ?? formData.image_ids ?? [] }
+          : {}),
         images: hydratedImages,
       })
 

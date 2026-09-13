@@ -28,7 +28,8 @@ interface PersistedFingerprint {
 }
 
 function isBrowserRuntime(): boolean {
-  return typeof window !== 'undefined' && typeof localStorage !== 'undefined'
+  // Even typeof can invoke a throwing Storage getter; access storage only inside try blocks.
+  return typeof window !== 'undefined'
 }
 
 function isValidFingerprint(value: unknown): value is string {
