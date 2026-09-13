@@ -692,7 +692,7 @@ async function searchDiscussions(
   signal?: AbortSignal,
   requestToken?: number,
   reset = true
-) {
+): Promise<boolean> {
   const token = requestToken ?? ++searchRequestToken
   const requestCursor = reset ? null : searchNextCursor.value
   if (reset) {
@@ -707,7 +707,7 @@ async function searchDiscussions(
       { limit: 20, cursor: requestCursor },
       signal ? { signal } : undefined
     )
-    if (signal?.aborted || token !== searchRequestToken) return
+    if (signal?.aborted || token !== searchRequestToken) return false
     if (reset) {
       searchResults.value = res.items
     } else {
@@ -725,13 +725,14 @@ async function searchDiscussions(
       { q, cursor: requestCursor, limit: 20 },
       res
     )
+    return true
   } catch (err: unknown) {
     if (
       signal?.aborted ||
       (err instanceof DOMException && err.name === 'AbortError') ||
       token !== searchRequestToken
     ) {
-      return
+      return false
     }
     if (isServiceUnavailableError(err)) {
       const snapshotKey = { q, cursor: requestCursor, limit: 20 }
@@ -758,9 +759,10 @@ async function searchDiscussions(
       searchNextCursor.value = resolved.next_cursor ?? null
       searchHasMore.value = Boolean(resolved.has_more && resolved.next_cursor)
       searchError.value = null
-      return
+      return true
     }
     searchError.value = err instanceof ApiError ? err.message : t('common.error')
+    return false
   } finally {
     if (token === searchRequestToken) {
       isSearching.value = false

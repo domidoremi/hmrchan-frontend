@@ -243,7 +243,7 @@ export function resolveBubblePointerOverState({
   currentPointerOverBubbleId,
 }: {
   action: BubblePointerOverAction
-  bubbleId?: string | null
+  bubbleId?: string | null | undefined
   currentPointerOverBubbleId: string | null
 }): BubblePointerOverState {
   if (action === 'stage-leave') {
@@ -409,7 +409,7 @@ export function resolveBubbleHoverClearState({
   source,
   currentState,
 }: {
-  bubbleId?: string | null
+  bubbleId?: string | null | undefined
   source: BubbleHoverSource | 'all'
   currentState: BubbleHoverState
 }): BubbleHoverSyncState {

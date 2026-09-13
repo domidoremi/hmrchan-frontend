@@ -81,6 +81,7 @@ vi.mock('@/utils/webauthn', () => ({
 describe('Passkey recovery pages', () => {
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   beforeEach(() => {
@@ -102,10 +103,12 @@ describe('Passkey recovery pages', () => {
       options: { challenge: 'abc' },
     })
     state.api.finishRecoveryPasskeyRegistration.mockResolvedValue({ success: true })
-    state.webauthn.createWebAuthnCredential.mockResolvedValue({
-      id: 'credential-1',
-      type: 'public-key',
-    } as unknown as PublicKeyCredential)
+    class BrowserPublicKeyCredential {
+      id = 'credential-1'
+      type = 'public-key'
+    }
+    vi.stubGlobal('PublicKeyCredential', BrowserPublicKeyCredential)
+    state.webauthn.createWebAuthnCredential.mockResolvedValue(new BrowserPublicKeyCredential())
     state.webauthn.serializePublicKeyCredential.mockReturnValue({ id: 'credential-1' })
   })
 
@@ -142,6 +145,25 @@ describe('Passkey recovery pages', () => {
       params: { id: '0195fe30-6f9d-7f31-9e6f-c9a5c478a001' },
     })
   })
+
+  it.each([null, { id: 'not-a-public-key-credential', type: 'password' }])(
+    'does not submit an invalid browser credential: %j',
+    async (credential) => {
+      vi.useFakeTimers()
+      state.webauthn.createWebAuthnCredential.mockResolvedValue(credential)
+      const wrapper = mount(PasskeyRecoveryStatusPage, {
+        global: { mocks: { $t: (key: string) => key } },
+      })
+      await flushPromises()
+      await wrapper.get('.recovery-register-btn').trigger('click')
+      await flushPromises()
+      expect(state.webauthn.serializePublicKeyCredential).not.toHaveBeenCalled()
+      expect(state.api.finishRecoveryPasskeyRegistration).not.toHaveBeenCalled()
+      expect(state.toastStore.success).not.toHaveBeenCalled()
+      expect(wrapper.text()).toContain('auth.error.webauthnRegistrationFailed')
+      wrapper.unmount()
+    }
+  )
 
   it('reads recovery status and completes replacement passkey registration', async () => {
     vi.useFakeTimers()

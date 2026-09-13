@@ -166,7 +166,7 @@ const displayName = computed(() => {
   const fullName = (user.value as { full_name?: string } | null)?.full_name
   return fullName || user.value?.username || ''
 })
-const userAvatar = computed(() => getUserAvatarUrl(user.value?.avatar_url, user.value?.username))
+const userAvatar = computed(() => getUserAvatarUrl(user.value?.avatar_url))
 
 const summaryItems = computed(() => {
   const counts = (dataSummary.value?.data_counts ?? {}) as Record<string, number | null | undefined>
@@ -240,7 +240,7 @@ const groupedSections = computed(() => {
   return groups.filter((group) => group.sections.length > 0)
 })
 
-function resolveCount(section: ProfileSectionDefinition): number | null {
+function resolveCount(section: ProfileSectionDefinition): string | number | null {
   if (section.id === 'notifications') {
     return notifStore.unreadDisplayCount ?? 0
   }

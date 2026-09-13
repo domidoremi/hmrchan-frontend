@@ -372,7 +372,7 @@
                   variant="ghost"
                   full-width
                   :loading="isLoading"
-                  @click="continueGoogleInCurrentPage"
+                  @click="continueGoogleInCurrentPage()"
                 >
                   {{ $t('auth.googlePopupFallbackAction') }}
                 </Button>
@@ -437,7 +437,7 @@
                   variant="ghost"
                   full-width
                   :loading="isLoading"
-                  @click="continueGoogleInCurrentPage"
+                  @click="continueGoogleInCurrentPage()"
                 >
                   {{ $t('auth.googlePopupFallbackAction') }}
                 </Button>
@@ -491,7 +491,7 @@ import type { AuthFlowResult } from '@/stores/auth'
 import { clientSecurityService } from '@/api/clientSecurityService'
 import * as registerModel from './register/registerPageModel'
 const GOOGLE_AUTH_ENABLED =
-  import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+  import.meta.env.MODE === 'test' || import.meta.env['VITEST'] === 'true'
     ? true
     : import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 

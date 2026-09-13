@@ -387,7 +387,7 @@ export function useHomeViewModel(options: {
           value: getPortalItemCountText(item),
         }
       })
-      .filter((item): item is { key: string; label: string; value: string } => Boolean(item))
+      .filter((item) => item !== null)
 
     if (liveStats.length > 0) return liveStats
     return heroState.heroStats.value
@@ -688,7 +688,6 @@ export function useHomeViewModel(options: {
     scheduleFallbackCard,
     secondaryTrendingAuthors,
     spotlightMediaCards,
-    spotlightTextCards,
     storyCardCount,
     storyCardIds,
     storyCards,

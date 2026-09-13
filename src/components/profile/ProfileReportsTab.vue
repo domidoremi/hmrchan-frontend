@@ -209,7 +209,7 @@ function statusClass(status?: ReportItem['status']) {
 }
 
 function formatDate(dateString?: string | null) {
-  return formatRelativeTime(dateString, t)
+  return dateString ? formatRelativeTime(dateString, t) : ''
 }
 
 onMounted(() => {

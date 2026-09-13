@@ -40,7 +40,7 @@ import Button from '@/components/ui/Button.vue'
 defineProps<{
   title: string
   subtitle?: string
-  hint?: string
+  hint?: string | undefined
 }>()
 defineSlots<{
   actions?: () => unknown

@@ -184,7 +184,7 @@
                   variant="ghost"
                   full-width
                   :loading="isLoading"
-                  @click="continueGoogleInCurrentPage"
+                  @click="continueGoogleInCurrentPage()"
                 >
                   {{ $t('auth.googlePopupFallbackAction') }}
                 </Button>
@@ -249,7 +249,7 @@
                   variant="ghost"
                   full-width
                   :loading="isLoading"
-                  @click="continueGoogleInCurrentPage"
+                  @click="continueGoogleInCurrentPage()"
                 >
                   {{ $t('auth.googlePopupFallbackAction') }}
                 </Button>
@@ -450,7 +450,7 @@ import IconGoogle from '@/components/icons/IconGoogle.vue'
 import * as loginModel from './login/loginPageModel'
 
 const GOOGLE_AUTH_ENABLED =
-  import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+  import.meta.env.MODE === 'test' || import.meta.env['VITEST'] === 'true'
     ? true
     : import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 

@@ -1,6 +1,7 @@
 import { createApp, vaporInteropPlugin, watch } from 'vue'
 import { createPinia } from 'pinia'
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { createPersistedState } from 'pinia-plugin-persistedstate'
+import { optionalLocalStorage } from './utils/optionalStorage'
 
 import App from './App.vue'
 import router from './router'
@@ -280,7 +281,7 @@ if (import.meta.env.DEV) {
 
 // Pinia with persistence
 const pinia = createPinia()
-pinia.use(piniaPluginPersistedstate)
+pinia.use(createPersistedState({ storage: optionalLocalStorage }))
 
 app.use(pinia)
 app.use(router)

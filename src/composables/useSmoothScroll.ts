@@ -239,7 +239,7 @@ async function startLenis(mode: Exclude<SmoothScrollMode, 'disabled'>) {
 
     lenis = nextLenis
     activeMode = mode
-    document.documentElement.dataset.smoothScroll = mode
+    document.documentElement.dataset['smoothScroll'] = mode
     startFallbackRafLoop(nextLenis)
   })()
 

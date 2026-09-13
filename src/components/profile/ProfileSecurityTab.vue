@@ -151,7 +151,7 @@ async function loadSecurityData() {
       auditService.getMyActivity({ days: 30, limit: 10 }),
     ])
     summary.value = securitySummary
-    activity.value = Array.isArray(activityResponse.logs) ? activityResponse.logs : []
+    activity.value = activityResponse.items
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : t('common.error')
   } finally {

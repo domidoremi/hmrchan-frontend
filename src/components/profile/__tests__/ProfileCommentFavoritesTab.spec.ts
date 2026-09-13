@@ -1,6 +1,8 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { ref } from 'vue'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+enableAutoUnmount(afterEach)
 
 const state = vi.hoisted(() => ({
   routerPush: vi.fn(),
@@ -89,20 +91,6 @@ vi.mock('@/components/ui/Skeleton.vue', () => ({
 
 import ProfileCommentFavoritesTab from '../ProfileCommentFavoritesTab.vue'
 
-async function invokeSetupMethod(wrapper: ReturnType<typeof mount>, method: string) {
-  const vm = wrapper.vm as Record<string, unknown> & {
-    $?: {
-      setupState?: Record<string, unknown>
-    }
-  }
-  const candidate = vm[method] ?? vm.$?.setupState?.[method]
-  if (typeof candidate !== 'function') {
-    throw new Error(`Missing setup method: ${method}`)
-  }
-
-  await candidate()
-}
-
 describe('ProfileCommentFavoritesTab', () => {
   beforeEach(() => {
     state.routerPush.mockReset()
@@ -145,7 +133,7 @@ describe('ProfileCommentFavoritesTab', () => {
           Heart: true,
           Bookmark: true,
           BookmarkMinus: true,
-          AsyncComponentWrapper: {
+          ConfirmDialog: {
             props: ['isOpen'],
             emits: ['update:isOpen', 'confirm'],
             template: `
@@ -168,7 +156,8 @@ describe('ProfileCommentFavoritesTab', () => {
     expect(state.routerPush).toHaveBeenCalledWith('/post/post-88')
 
     await wrapper.get('.unfav-btn').trigger('click')
-    await invokeSetupMethod(wrapper, 'confirmUnfavorite')
+    expect(wrapper.get('.confirm-dialog-stub').attributes('data-open')).toBe('true')
+    await wrapper.get('.confirm-dialog-confirm').trigger('click')
     await flushPromises()
 
     expect(state.apiDelete).toHaveBeenCalledWith('fav-comment-1')
@@ -208,7 +197,7 @@ describe('ProfileCommentFavoritesTab', () => {
           Heart: true,
           Bookmark: true,
           BookmarkMinus: true,
-          AsyncComponentWrapper: {
+          ConfirmDialog: {
             props: ['isOpen'],
             emits: ['update:isOpen', 'confirm'],
             template: `
@@ -223,7 +212,8 @@ describe('ProfileCommentFavoritesTab', () => {
 
     await flushPromises()
     await wrapper.get('.unfav-btn').trigger('click')
-    await invokeSetupMethod(wrapper, 'confirmUnfavorite')
+    expect(wrapper.get('.confirm-dialog-stub').attributes('data-open')).toBe('true')
+    await wrapper.get('.confirm-dialog-confirm').trigger('click')
     await flushPromises()
 
     expect(state.toastStore.error).toHaveBeenCalledWith('common.error')

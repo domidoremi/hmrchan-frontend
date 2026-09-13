@@ -244,7 +244,7 @@ export function resolveScheduleNextHighlightLabel({
   emptyLabel,
   dateLabel,
 }: {
-  event?: Pick<ScheduleCalendarItem, 'title'> | null
+  event?: Pick<ScheduleCalendarItem, 'title'> | null | undefined
   emptyLabel: string
   dateLabel: string
 }): string {
@@ -310,7 +310,7 @@ export function resolveScheduleEventTitleLabel({
   event,
   fallbackLabel,
 }: {
-  event?: Pick<ScheduleCalendarItem, 'title'> | null
+  event?: Pick<ScheduleCalendarItem, 'title'> | null | undefined
   fallbackLabel: string
 }): string {
   return event?.title ?? fallbackLabel
@@ -321,7 +321,7 @@ export function resolveScheduleEventMetaLabel({
   fallbackLabel,
   formatEvent,
 }: {
-  event?: Pick<ScheduleCalendarItem, 'start' | 'allDay'> | null
+  event?: Pick<ScheduleCalendarItem, 'start' | 'allDay'> | null | undefined
   fallbackLabel: string
   formatEvent: (start: string, allDay: boolean) => string
 }): string {
@@ -400,7 +400,7 @@ export function resolveScheduleAgendaJumpTargetDate({
   now = new Date(),
 }: {
   target: ScheduleAgendaJumpTarget
-  upcomingEvent?: Pick<ScheduleCalendarItem, 'start'> | null
+  upcomingEvent?: Pick<ScheduleCalendarItem, 'start'> | null | undefined
   now?: Date
 }): Date | null {
   const targetDate = target === 'today' ? now : upcomingEvent ? new Date(upcomingEvent.start) : null
@@ -534,12 +534,12 @@ export function buildScheduleDetailSharePayload({
 }: {
   title: string
   lead?: string | null
-  venue?: string | null
+  venue?: string | null | undefined
   url: string
 }): ScheduleDetailSharePayload {
   return {
     title,
-    text: lead || venue || undefined,
+    ...(lead || venue ? { text: lead || venue || '' } : {}),
     url,
   }
 }

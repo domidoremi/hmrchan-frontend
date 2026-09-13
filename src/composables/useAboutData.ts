@@ -24,7 +24,7 @@ export function extractVersion(version: string | undefined): string {
 
   const versionNumber = normalized.replace(/^[^\d]+/, '')
   const matched = versionNumber.match(/^(\d+)(?:\.(\d+))?/)
-  if (!matched) return 'N/A'
+  if (!matched?.[1]) return 'N/A'
 
   const major = matched[1]
   const minor = matched[2]

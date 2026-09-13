@@ -176,7 +176,8 @@ function focusSelection(start?: number, end?: number) {
   })
 }
 
-function handleToolbarAction(action: PlainTextToolAction) {
+function handleToolbarAction(action: PlainTextToolAction | 'media') {
+  if (action === 'media') return
   const textarea = textareaRef.value?.el
   const result = applyPlainTextSnippet(
     content.value,

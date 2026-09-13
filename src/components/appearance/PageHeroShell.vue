@@ -18,16 +18,16 @@
             <p v-if="subtitle" class="page-hero-shell__subtitle">{{ subtitle }}</p>
           </slot>
         </div>
-        <div v-if="$slots.actions" class="page-hero-shell__actions">
+        <div v-if="$slots['actions']" class="page-hero-shell__actions">
           <slot name="actions" />
         </div>
       </div>
 
-      <div v-if="$slots.default" class="page-hero-shell__body">
+      <div v-if="$slots['default']" class="page-hero-shell__body">
         <slot />
       </div>
 
-      <div v-if="$slots.meta" class="page-hero-shell__meta">
+      <div v-if="$slots['meta']" class="page-hero-shell__meta">
         <slot name="meta" />
       </div>
     </div>

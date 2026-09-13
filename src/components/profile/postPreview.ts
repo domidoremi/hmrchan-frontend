@@ -6,7 +6,7 @@ export interface PostPreviewModel {
   id: string
   postId: string
   title: string
-  authorName?: string
+  authorName?: string | undefined
   thumbnailUrl?: string | null
   mediaId?: string | null
   target: string
@@ -21,7 +21,7 @@ export interface HistoryPreviewRecord {
 function buildPostTarget(
   postId: string,
   thumbnailUrl?: string | null
-): Pick<PostPreviewModel, 'target' | 'mediaId'> {
+): { target: string; mediaId: string | null } {
   const mediaId = thumbnailUrl ? extractMediaIdFromUrl(thumbnailUrl) : null
   return {
     target: mediaId ? `/post/${postId}?mediaId=${mediaId}` : `/post/${postId}`,

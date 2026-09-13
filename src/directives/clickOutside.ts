@@ -107,7 +107,7 @@ function bind(el: ClickOutsideHTMLElement, value: ClickOutsideBindingValue) {
     options.handler(event)
   }
 
-  document.addEventListener(options.event, handleEvent, true)
+  document.addEventListener(options.event ?? 'click', handleEvent, true)
   el.__clickOutsideCleanup__ = () => {
     document.removeEventListener(options.event ?? 'click', handleEvent, true)
   }

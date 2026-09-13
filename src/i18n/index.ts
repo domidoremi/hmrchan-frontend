@@ -23,7 +23,12 @@ function isSupportedLocale(locale: string | null | undefined): locale is Support
 }
 
 function getDefaultLocale(): SupportedLocale {
-  const saved = typeof window !== 'undefined' ? localStorage.getItem('locale') : null
+  let saved: string | null = null
+  try {
+    saved = typeof window !== 'undefined' ? localStorage.getItem('locale') : null
+  } catch {
+    // Storage is optional; browser defaults must still allow the application to start.
+  }
   if (isSupportedLocale(saved)) return saved
 
   const previewLocale = getPreferredPreviewLocale()
@@ -37,14 +42,13 @@ function getDefaultLocale(): SupportedLocale {
 }
 
 const defaultLocale = getDefaultLocale()
+const initialMessages: Partial<Record<SupportedLocale, LocaleMessages>> = { en }
 
 const i18n = createI18n({
   legacy: false,
   locale: defaultLocale,
   fallbackLocale: FALLBACK_LOCALE,
-  messages: {
-    en,
-  },
+  messages: initialMessages,
 })
 
 function applyLocaleToDocument(locale: SupportedLocale): void {
@@ -98,7 +102,11 @@ export async function preloadActiveLocale(): Promise<SupportedLocale> {
 export async function setLocale(locale: SupportedLocale): Promise<void> {
   const resolvedLocale = await resolveLocale(locale)
   i18n.global.locale.value = resolvedLocale
-  localStorage.setItem('locale', resolvedLocale)
+  try {
+    localStorage.setItem('locale', resolvedLocale)
+  } catch {
+    // Apply the selection for this session even if persistence is unavailable.
+  }
   applyLocaleToDocument(resolvedLocale)
 }
 

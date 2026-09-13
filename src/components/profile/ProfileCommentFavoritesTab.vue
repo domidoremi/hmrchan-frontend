@@ -134,10 +134,15 @@ const router = useRouter()
 const { t } = useI18n()
 const toastStore = useToastStore()
 
-const items = ref<MyCommentFavoriteItem[]>([])
+type CommentFavorite = MyCommentFavoriteItem & {
+  id: MyCommentFavoriteItem['comment_id']
+  created_at: string
+  content: string
+}
+const items = ref<CommentFavorite[]>([])
 const unfavoritingId = ref<string | number | null>(null)
 const showConfirmDialog = ref(false)
-const pendingUnfavoriteItem = ref<MyCommentFavoriteItem | null>(null)
+const pendingUnfavoriteItem = ref<CommentFavorite | null>(null)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
@@ -182,7 +187,14 @@ async function fetchFavorites(reset = true): Promise<boolean> {
       }
     )
     if (controller.signal.aborted || requestToken !== commentFavoritesRequestToken) return false
-    const nextItems = Array.isArray(res.items) ? res.items : []
+    const nextItems = (res.items ?? []).map(
+      (item): CommentFavorite => ({
+        ...item,
+        id: item.id ?? item.comment_id,
+        created_at: item.created_at ?? item.favorited_at,
+        content: item.content ?? item.comment_content ?? '',
+      })
+    )
 
     if (reset) {
       items.value = nextItems
@@ -256,7 +268,7 @@ function goToPost(postId?: string) {
   if (postId) router.push(`/post/${postId}`)
 }
 
-function handleUnfavorite(item: MyCommentFavoriteItem) {
+function handleUnfavorite(item: CommentFavorite) {
   pendingUnfavoriteItem.value = item
   showConfirmDialog.value = true
 }

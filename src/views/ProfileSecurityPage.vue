@@ -113,7 +113,7 @@
             data-testid="profile-security-workspace"
           >
             <div class="security-workspace__toolbar">
-              <div class="security-workspace__summary">
+              <div v-if="activePanelCard" class="security-workspace__summary">
                 <p class="security-workspace__eyebrow">{{ activePanelCard.kicker }}</p>
                 <h2>{{ activePanelCard.title }}</h2>
                 <p>{{ activePanelCard.description }}</p>

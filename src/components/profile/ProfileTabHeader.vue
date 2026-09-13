@@ -16,7 +16,7 @@ defineOptions({ name: 'ProfileTabHeader' })
 
 const props = defineProps<{
   title: string
-  count?: number
+  count?: number | undefined
 }>()
 
 const slots = useSlots()

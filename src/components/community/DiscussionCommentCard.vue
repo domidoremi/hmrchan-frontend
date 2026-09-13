@@ -215,7 +215,7 @@ import { CommentItemShell } from '@/components/comment/shared'
 interface Props {
   comment: DiscussionComment
   discussionId: string
-  discussionAuthorId?: string
+  discussionAuthorId?: string | undefined
   isReply?: boolean
   depth?: number
   rootId?: string
@@ -267,9 +267,7 @@ const hasMoreReplies = computed(() => {
 
 const replyParentId = computed(() => props.rootId || String(props.comment.id))
 
-const avatarUrl = computed(() =>
-  getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
-)
+const avatarUrl = computed(() => getUserAvatarUrl(props.comment.user.avatar_url))
 
 const avatarFallbackLabel = computed(() => getAvatarFallbackLabel(props.comment.user.username))
 

@@ -37,7 +37,7 @@ const textareaRef = useTemplateRef<HTMLTextAreaElement>('textareaRef')
 
 const attrs = useAttrs()
 const generatedId = useId()
-const textareaId = computed(() => (attrs.id as string | undefined) ?? generatedId)
+const textareaId = computed(() => (attrs['id'] as string | undefined) ?? generatedId)
 
 const ariaInvalid = computed(() => attrs['aria-invalid'] === 'true')
 

@@ -1405,7 +1405,7 @@ async function fetchEvents(signal?: AbortSignal) {
   }
 
   try {
-    const result = await scheduleService.calendar({ start, end }, { signal })
+    const result = await scheduleService.calendar({ start, end }, signal ? { signal } : undefined)
     if (signal?.aborted || fetchId !== latestFetchId) return
     events.value = result
     eventsSource.value = 'live'

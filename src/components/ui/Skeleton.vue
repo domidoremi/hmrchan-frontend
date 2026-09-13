@@ -27,11 +27,11 @@ const computedStyle = computed(() => {
   const style: Record<string, string> = {}
 
   if (props.width) {
-    style.width = typeof props.width === 'number' ? `${props.width}px` : props.width
+    style['width'] = typeof props.width === 'number' ? `${props.width}px` : props.width
   }
 
   if (props.height) {
-    style.height = typeof props.height === 'number' ? `${props.height}px` : props.height
+    style['height'] = typeof props.height === 'number' ? `${props.height}px` : props.height
   }
 
   return style

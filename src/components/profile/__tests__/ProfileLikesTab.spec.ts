@@ -1,6 +1,8 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { ref } from 'vue'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+enableAutoUnmount(afterEach)
 
 const state = vi.hoisted(() => ({
   routerPush: vi.fn(),
@@ -89,20 +91,6 @@ vi.mock('@/components/ui/Skeleton.vue', () => ({
 
 import ProfileLikesTab from '../ProfileLikesTab.vue'
 
-async function invokeSetupMethod(wrapper: ReturnType<typeof mount>, method: string) {
-  const vm = wrapper.vm as Record<string, unknown> & {
-    $?: {
-      setupState?: Record<string, unknown>
-    }
-  }
-  const candidate = vm[method] ?? vm.$?.setupState?.[method]
-  if (typeof candidate !== 'function') {
-    throw new Error(`Missing setup method: ${method}`)
-  }
-
-  await candidate()
-}
-
 describe('ProfileLikesTab', () => {
   beforeEach(() => {
     state.routerPush.mockReset()
@@ -145,7 +133,7 @@ describe('ProfileLikesTab', () => {
           Heart: true,
           MessageCircle: true,
           HeartOff: true,
-          AsyncComponentWrapper: {
+          ConfirmDialog: {
             props: ['isOpen'],
             emits: ['update:isOpen', 'confirm'],
             template: `
@@ -168,7 +156,8 @@ describe('ProfileLikesTab', () => {
     expect(state.routerPush).toHaveBeenCalledWith('/post/post-liked')
 
     await wrapper.get('.unlike-btn').trigger('click')
-    await invokeSetupMethod(wrapper, 'confirmUnlike')
+    expect(wrapper.get('.confirm-dialog-stub').attributes('data-open')).toBe('true')
+    await wrapper.get('.confirm-dialog-confirm').trigger('click')
     await flushPromises()
 
     expect(state.apiDelete).toHaveBeenCalledWith('10')
@@ -208,7 +197,7 @@ describe('ProfileLikesTab', () => {
           Heart: true,
           MessageCircle: true,
           HeartOff: true,
-          AsyncComponentWrapper: {
+          ConfirmDialog: {
             props: ['isOpen'],
             emits: ['update:isOpen', 'confirm'],
             template: `
@@ -223,7 +212,8 @@ describe('ProfileLikesTab', () => {
 
     await flushPromises()
     await wrapper.get('.unlike-btn').trigger('click')
-    await invokeSetupMethod(wrapper, 'confirmUnlike')
+    expect(wrapper.get('.confirm-dialog-stub').attributes('data-open')).toBe('true')
+    await wrapper.get('.confirm-dialog-confirm').trigger('click')
     await flushPromises()
 
     expect(state.toastStore.error).toHaveBeenCalledWith('common.error')

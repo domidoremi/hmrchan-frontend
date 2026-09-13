@@ -16,6 +16,12 @@ import {
   minutesAgo,
 } from './publicPageFallback'
 
+interface FallbackDiscussionsParams extends ListDiscussionsParams {
+  category?: DiscussionCategory
+  tag?: string
+  sort?: 'latest' | 'popular' | 'active'
+}
+
 const RUNTIME_COMMUNITY_DISCUSSIONS: Discussion[] = [
   {
     id: createPublicFallbackId('community', 'favorite-stage-moment'),
@@ -112,7 +118,7 @@ export const COMMUNITY_FALLBACK_COMMENTS: Record<string, DiscussionComment[]> =
 
 function sortDiscussions(
   items: Discussion[],
-  sort: ListDiscussionsParams['sort'] = 'latest'
+  sort: FallbackDiscussionsParams['sort'] = 'latest'
 ): Discussion[] {
   return [...items].sort((left, right) => {
     if (sort === 'popular') {
@@ -135,7 +141,7 @@ function sortDiscussions(
 }
 
 export function getFallbackDiscussions(
-  params: ListDiscussionsParams = {}
+  params: FallbackDiscussionsParams = {}
 ): CursorCollectionResponse<Discussion> {
   let items = COMMUNITY_FALLBACK_DISCUSSIONS.filter((item) => {
     if (params.category && item.category !== params.category) return false
@@ -177,7 +183,7 @@ export function getFallbackDiscussionsCursor(
     cursor?: string | null
     category?: DiscussionCategory
     tag?: string
-    sort?: ListDiscussionsParams['sort']
+    sort?: FallbackDiscussionsParams['sort']
   } = {}
 ): CursorCollectionResponse<Discussion> {
   let items = COMMUNITY_FALLBACK_DISCUSSIONS.filter((item) => {
@@ -189,8 +195,8 @@ export function getFallbackDiscussionsCursor(
   items = sortDiscussions(items, params.sort ?? 'latest')
 
   return cursorPaginateFallbackItems(items, {
-    limit: params.limit,
-    cursor: params.cursor,
+    limit: params.limit ?? 20,
+    cursor: params.cursor ?? null,
   })
 }
 
@@ -213,8 +219,8 @@ export function searchFallbackDiscussionsCursor(
   })
 
   return cursorPaginateFallbackItems(sortDiscussions(filtered, 'active'), {
-    limit: params.limit,
-    cursor: params.cursor,
+    limit: params.limit ?? 20,
+    cursor: params.cursor ?? null,
   })
 }
 
@@ -253,7 +259,7 @@ export function getFallbackDiscussionCommentsCursor(
 ): CursorCollectionResponse<DiscussionComment> {
   const items = COMMUNITY_FALLBACK_COMMENTS[discussionId] ?? []
   return cursorPaginateFallbackItems(items, {
-    limit: params.limit,
-    cursor: params.cursor,
+    limit: params.limit ?? 20,
+    cursor: params.cursor ?? null,
   })
 }

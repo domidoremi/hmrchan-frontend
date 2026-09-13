@@ -18,7 +18,7 @@
             <span class="comment-item-shell__time">{{ time }}</span>
           </div>
         </div>
-        <div v-if="$slots.menu" class="comment-item-shell__menu">
+        <div v-if="$slots['menu']" class="comment-item-shell__menu">
           <slot name="menu" />
         </div>
       </header>
@@ -27,15 +27,15 @@
         <slot />
       </div>
 
-      <div v-if="$slots.actions" class="comment-item-shell__actions">
+      <div v-if="$slots['actions']" class="comment-item-shell__actions">
         <slot name="actions" />
       </div>
 
-      <div v-if="$slots.reply" class="comment-item-shell__reply">
+      <div v-if="$slots['reply']" class="comment-item-shell__reply">
         <slot name="reply" />
       </div>
 
-      <div v-if="$slots.replies" class="comment-item-shell__replies">
+      <div v-if="$slots['replies']" class="comment-item-shell__replies">
         <slot name="replies" />
       </div>
     </div>

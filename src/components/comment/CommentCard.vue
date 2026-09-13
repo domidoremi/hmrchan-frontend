@@ -313,9 +313,7 @@ async function handleShowReplies() {
   showReplies.value = true
 }
 
-const avatarUrl = computed(() =>
-  getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
-)
+const avatarUrl = computed(() => getUserAvatarUrl(props.comment.user.avatar_url))
 
 const avatarFallbackLabel = computed(() =>
   getAvatarFallbackLabel(props.comment.user.username, getUserDisplayName(props.comment.user))
@@ -327,7 +325,7 @@ const userLevelBadge = computed(() => {
     moderator: 'MOD',
     admin: 'ADMIN',
   }
-  return badges[props.comment.user.level] || null
+  return props.comment.user.level ? badges[props.comment.user.level] || null : null
 })
 
 const commentImages = computed(() =>

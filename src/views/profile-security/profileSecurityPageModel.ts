@@ -37,7 +37,10 @@ export interface SecurityPanelCard<TIcon = unknown> {
   metaValue: string
 }
 
-export const SECURITY_PANEL_DEFINITIONS: readonly SecurityPanelDefinition[] = [
+export const SECURITY_PANEL_DEFINITIONS: readonly [
+  SecurityPanelDefinition,
+  ...SecurityPanelDefinition[],
+] = [
   {
     id: 'credentials',
     hash: '#credentials',
@@ -93,7 +96,7 @@ export function hasSecurityRiskSignals(failedLogins: number | null | undefined):
 }
 
 export function resolveLastLoginLabel(options: {
-  value?: string | null
+  value?: string | null | undefined
   fallback: string
   format: (value: string) => string
 }): string {

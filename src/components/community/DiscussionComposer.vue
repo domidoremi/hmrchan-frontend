@@ -222,9 +222,9 @@ const debouncedSearchPosts = debounce(async (query: string) => {
     if (controller.signal.aborted || requestToken !== mentionSearchToken) return
     searchResults.value = result.items.map((post) => ({
       id: post.id,
-      title: post.title,
+      title: post.title || post.content || t('post.untitled'),
       thumbnail_url: post.thumbnail_url || null,
-      author_name: post.author_name,
+      ...(post.author_name ? { author_name: post.author_name } : {}),
     }))
   } catch {
     if (controller.signal.aborted || requestToken !== mentionSearchToken) return
@@ -288,7 +288,8 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-function handleToolbarAction(action: PlainTextToolAction) {
+function handleToolbarAction(action: PlainTextToolAction | 'media') {
+  if (action === 'media') return
   const textarea = textareaRef.value?.el
   const result = applyPlainTextSnippet(
     content.value,

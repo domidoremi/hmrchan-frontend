@@ -52,14 +52,8 @@
   </button>
 </template>
 
-<script setup lang="ts" vapor>
-import { computed } from 'vue'
-import { ArrowRight, BadgeCheck, FileText, Users } from '@lucide/vue'
+<script lang="ts">
 import type { AuthorListItem } from '@/api'
-import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
-import Avatar from '@/components/ui/Avatar.vue'
-
-defineOptions({ name: 'AuthorCard' })
 
 export type AuthorCardAuthor = Pick<
   AuthorListItem,
@@ -80,6 +74,16 @@ export interface AuthorCardProps {
   prefetchOnHover?: boolean
   compact?: boolean
 }
+</script>
+
+<script setup lang="ts" vapor>
+import { computed } from 'vue'
+import { ArrowRight, BadgeCheck, FileText, Users } from '@lucide/vue'
+
+import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
+import Avatar from '@/components/ui/Avatar.vue'
+
+defineOptions({ name: 'AuthorCard' })
 
 const props = withDefaults(defineProps<AuthorCardProps>(), {
   prefetchOnHover: false,

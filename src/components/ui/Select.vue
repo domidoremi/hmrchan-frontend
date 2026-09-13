@@ -36,7 +36,7 @@ defineSlots<{
 
 const attrs = useAttrs()
 const generatedId = useId()
-const selectId = computed(() => (attrs.id as string | undefined) ?? generatedId)
+const selectId = computed(() => (attrs['id'] as string | undefined) ?? generatedId)
 
 const ariaInvalid = computed(() => attrs['aria-invalid'] === 'true')
 

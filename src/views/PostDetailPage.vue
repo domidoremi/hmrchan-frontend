@@ -112,7 +112,7 @@
                   </button>
                 </div>
                 <div
-                  v-else-if="activeMedia?.file_type === 'video'"
+                  v-else-if="activeMedia?.file_type === 'video' && activeMedia.id"
                   :key="`video-${activeMedia.id}`"
                   class="media-item-container media-item-container--viewer"
                 >

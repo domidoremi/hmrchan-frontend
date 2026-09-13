@@ -413,7 +413,7 @@ const hideHysteresis = 24
 const showHysteresis = 16
 const minScrollDelta = 4
 let lastToggleTime = 0
-let routeVisibilityFreezeTimer: ReturnType<typeof setTimeout> | null = null
+let routeVisibilityFreezeTimer: number | null = null
 const MOBILE_NAV_BREAKPOINT_QUERY = '(max-width: 960px)'
 
 let navbarHeightPx = '64px'
@@ -428,7 +428,7 @@ function syncNavbarVisibleHeight() {
 
 function isHomeRailNavLockEnabled(): boolean {
   if (typeof document === 'undefined') return false
-  return document.documentElement.dataset.homeRailNavLock === 'true'
+  return document.documentElement.dataset['homeRailNavLock'] === 'true'
 }
 
 const { avatarUrl: userAvatar } = useUserAvatar()
@@ -525,7 +525,7 @@ watch([() => route.fullPath, isAuthenticated], () => {
 })
 
 watch(
-  () => route.query.q,
+  () => route.query['q'],
   (value) => {
     desktopSearchQuery.value = typeof value === 'string' ? value : ''
   },
@@ -610,7 +610,7 @@ function handleNavbarActionsFocusOut(event: FocusEvent) {
 }
 
 function handleDesktopSearchEscape() {
-  desktopSearchQuery.value = typeof route.query.q === 'string' ? route.query.q : ''
+  desktopSearchQuery.value = typeof route.query['q'] === 'string' ? route.query['q'] : ''
   collapseDesktopSearch(!desktopSearchQuery.value)
 }
 

@@ -35,7 +35,7 @@ export function computeScrollAnchorTop(anchorTop: number, navbarOffset: number):
 }
 
 function readExplicitAnchorTop(element: HTMLElement): number | null {
-  const rawValue = element.dataset.scrollAnchorTop
+  const rawValue = element.dataset['scrollAnchorTop']
   if (!rawValue) return null
 
   const parsed = Number(rawValue)
@@ -47,7 +47,7 @@ function resolveSteppedAnchorTop(
   doc: Document,
   scrollY: number
 ): number | null {
-  const rawStep = element.dataset.scrollAnchorStep
+  const rawStep = element.dataset['scrollAnchorStep']
   if (!rawStep) return null
 
   const step = Number(rawStep)
@@ -56,7 +56,7 @@ function resolveSteppedAnchorTop(
   const root = element.closest<HTMLElement>('[data-scroll-anchor-root]')
   if (!root) return null
 
-  const rawCount = root.dataset.scrollAnchorStepCount
+  const rawCount = root.dataset['scrollAnchorStepCount']
   const count = Number(rawCount)
   if (!Number.isFinite(count) || count <= 1) {
     const rootTop = scrollY + root.getBoundingClientRect().top
@@ -86,7 +86,7 @@ export function resolveDocumentAnchorTop(
 
 function getAnchorId(element: HTMLElement, index: number): string {
   return (
-    element.dataset.scrollAnchor ||
+    element.dataset['scrollAnchor'] ||
     element.id ||
     `${element.tagName.toLowerCase()}-${element.className || 'anchor'}-${index}`
   )

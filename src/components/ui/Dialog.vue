@@ -111,8 +111,8 @@ const titleId = `${baseId}-title`
 const descriptionId = `${baseId}-description`
 
 const closeLabel = computed(() => t('common.close'))
-const hasTitle = computed(() => Boolean(props.title || slots.title))
-const hasDescription = computed(() => Boolean(props.description || slots.description))
+const hasTitle = computed(() => Boolean(props.title || slots['title']))
+const hasDescription = computed(() => Boolean(props.description || slots['description']))
 const labelledBy = computed(() => (hasTitle.value ? titleId : undefined))
 const describedBy = computed(() => (hasDescription.value ? descriptionId : undefined))
 const isDialogOpen = computed(() => props.isOpen)
@@ -130,7 +130,7 @@ const dialogClass = computed(() => [
 useFocusTrap(dialogRef, isDialogOpen, {
   autoFocus: true,
   restoreFocus: true,
-  initialFocus: props.showClose ? '.ui-dialog__close' : undefined,
+  ...(props.showClose ? { initialFocus: '.ui-dialog__close' } : {}),
   escapeDeactivates: props.closeOnEscape,
   onEscape: close,
 })
@@ -146,6 +146,7 @@ const DISMISS_THRESHOLD = 120
 
 function onTouchStart(e: TouchEvent) {
   const touch = e.touches[0]
+  if (!touch) return
   touchStartY = touch.clientY
   touchStartX = touch.clientX
   dragY.value = 0
@@ -156,6 +157,7 @@ function onTouchStart(e: TouchEvent) {
 
 function onTouchMove(e: TouchEvent) {
   const touch = e.touches[0]
+  if (!touch) return
   const dy = touch.clientY - touchStartY
   const dx = touch.clientX - touchStartX
 

@@ -77,21 +77,23 @@ export function useHomeHeroState(options: {
       id: spotlight.post_id,
       platform: 'story',
       title: normalizeText(spotlight.title) || translate('home.hero.fallbackTitle'),
-      content: normalizeText(spotlight.summary) || undefined,
-      description: normalizeText(spotlight.summary) || undefined,
+      content: normalizeText(spotlight.summary) || null,
+      ...(normalizeText(spotlight.summary)
+        ? { description: normalizeText(spotlight.summary) }
+        : {}),
       thumbnail_url: mapHomeImageUrl(spotlight.image, 'large'),
-      published_at: undefined,
+      published_at: null,
       view_count: 0,
       like_count: 0,
       comment_count: 0,
       media_count: spotlight.image ? 1 : 0,
-      media_type: spotlight.image ? 'image' : undefined,
-      author_name: formatHomeAuthorName(spotlight.author) || undefined,
-      author_id: spotlight.author?.id ?? undefined,
-      author_username: spotlight.author?.username ?? undefined,
-      author_avatar_url: spotlight.author?.avatar_url ?? undefined,
-      post_url: spotlight.deep_link || undefined,
-      tags: spotlight.primary_tag ? [normalizeHomeTag(spotlight.primary_tag)] : undefined,
+      media_type: spotlight.image ? 'image' : null,
+      author_name: formatHomeAuthorName(spotlight.author) || null,
+      author_id: spotlight.author?.id ?? null,
+      ...(spotlight.author?.username ? { author_username: spotlight.author?.username } : {}),
+      author_avatar_url: spotlight.author?.avatar_url ?? null,
+      ...(spotlight.deep_link ? { post_url: spotlight.deep_link } : {}),
+      ...(spotlight.primary_tag ? { tags: [normalizeHomeTag(spotlight.primary_tag)] } : {}),
     }
   })
 

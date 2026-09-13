@@ -331,7 +331,7 @@ function selectHistoryItem(item: string) {
 }
 
 function selectSuggestion(suggestion: SearchSuggestion) {
-  query.value = suggestion.text
+  query.value = suggestion.text ?? suggestion.label ?? ''
   handleSearch()
 }
 
@@ -394,7 +394,7 @@ watch(selectedIndex, (index) => {
     } else {
       const suggestion = suggestions.value[index - historyLen]
       if (suggestion) {
-        query.value = suggestion.text
+        query.value = suggestion.text ?? suggestion.label ?? ''
       }
     }
   }

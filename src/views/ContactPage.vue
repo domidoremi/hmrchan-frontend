@@ -232,28 +232,31 @@ const workflowSteps = computed(() => [
   { value: 3 as const, index: '03', label: t('contact.stepSubmit') },
 ])
 
-const contactTopicOptions = computed(() => [
-  {
-    value: 'general' as const,
-    label: t('contact.topicGeneral'),
-    hint: t('contact.topicGeneralHint'),
-  },
-  {
-    value: 'bug' as const,
-    label: t('contact.topicIssue'),
-    hint: t('contact.topicIssueHint'),
-  },
-  {
-    value: 'feature' as const,
-    label: t('contact.topicSuggestion'),
-    hint: t('contact.topicSuggestionHint'),
-  },
-  {
-    value: 'other' as const,
-    label: t('contact.topicOther'),
-    hint: t('contact.topicOtherHint'),
-  },
-])
+const contactTopicOptions = computed(
+  () =>
+    [
+      {
+        value: 'general' as const,
+        label: t('contact.topicGeneral'),
+        hint: t('contact.topicGeneralHint'),
+      },
+      {
+        value: 'bug' as const,
+        label: t('contact.topicIssue'),
+        hint: t('contact.topicIssueHint'),
+      },
+      {
+        value: 'feature' as const,
+        label: t('contact.topicSuggestion'),
+        hint: t('contact.topicSuggestionHint'),
+      },
+      {
+        value: 'other' as const,
+        label: t('contact.topicOther'),
+        hint: t('contact.topicOtherHint'),
+      },
+    ] as const
+)
 
 const selectedTopicMeta = computed(
   () =>

@@ -29,11 +29,11 @@
         </div>
       </div>
 
-      <div v-if="$slots.badge" class="post-preview-card__badge">
+      <div v-if="$slots['badge']" class="post-preview-card__badge">
         <slot name="badge" />
       </div>
 
-      <div v-if="$slots.actions" class="post-preview-card__actions">
+      <div v-if="$slots['actions']" class="post-preview-card__actions">
         <slot name="actions" />
       </div>
     </div>
@@ -45,7 +45,7 @@
       <p v-if="preview.authorName" class="post-preview-card__author">
         {{ preview.authorName }}
       </p>
-      <div v-if="$slots.meta" class="post-preview-card__meta">
+      <div v-if="$slots['meta']" class="post-preview-card__meta">
         <slot name="meta" />
       </div>
     </div>

@@ -157,14 +157,10 @@ async function handleRegister() {
       ...(deviceName.value.trim() ? { device_name: deviceName.value.trim() } : {}),
     })
 
-    const credential = await createWebAuthnCredential(
-      options.options as PublicKeyCredentialCreationOptionsJSON
-    )
-    const hasBrowserCredentialType = typeof PublicKeyCredential !== 'undefined'
-    const isCredentialObject = typeof credential === 'object' && credential !== null
+    const credential = await createWebAuthnCredential(options.options)
     if (
-      (hasBrowserCredentialType && !(credential instanceof PublicKeyCredential)) ||
-      !isCredentialObject
+      typeof PublicKeyCredential === 'undefined' ||
+      !(credential instanceof PublicKeyCredential)
     ) {
       throw new Error('Failed to create WebAuthn credential')
     }

@@ -39,7 +39,7 @@ const props = withDefaults(
 )
 
 const targetQuery = computed(() =>
-  props.redirectTo && props.redirectTo !== '/' ? { redirect: props.redirectTo } : undefined
+  props.redirectTo && props.redirectTo !== '/' ? { redirect: props.redirectTo } : {}
 )
 
 const loginTarget = computed(() => ({
