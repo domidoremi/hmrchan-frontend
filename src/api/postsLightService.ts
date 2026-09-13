@@ -12,7 +12,9 @@ export interface PostLightItem {
   platform: string
   title?: string | null
   content?: string | null
-  media_type?: 'video' | 'image' | 'text' | null
+  media_id?: string | null
+  media_type?: string | null
+  stream_url?: string | null
   thumbnail_url?: string | null
   thumbnail_width?: number
   thumbnail_height?: number

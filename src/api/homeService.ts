@@ -21,10 +21,13 @@ async function loadHomepageBootstrapFallback(): Promise<HomeAggregateResponse> {
 }
 
 export interface HomeImageAsset {
-  url: string
+  url?: string | null
   width: number | null
   height: number | null
-  thumbnail_url: string
+  media_id?: string | null
+  media_type?: string | null
+  stream_url?: string | null
+  thumbnail_url?: string | null
   alt: string
 }
 
@@ -384,9 +387,9 @@ function normalizeFeaturedItem(item: HomeFeaturedItem): HomeFeaturedItem {
       : null,
     related_posts: (item.related_posts ?? []).map((post) => ({
       ...post,
-      image: normalizeImageAsset(post.image ?? post.thumbnail),
-      cover: normalizeImageAsset(post.cover ?? post.thumbnail),
-      thumbnail: normalizeImageAsset(post.thumbnail ?? post.image ?? post.cover),
+      image: normalizeImageAsset(post.image),
+      cover: normalizeImageAsset(post.cover),
+      thumbnail: normalizeImageAsset(post.thumbnail),
       author: normalizeAuthorBrief(post.author),
       deep_link: normalizeHomeLink(post.deep_link),
     })),

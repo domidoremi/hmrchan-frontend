@@ -37,7 +37,7 @@ export const useScheduleStore = defineStore(
           const sorted = items
             .map((i) => i.start)
             .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-          latestEventTime.value = sorted[0]
+          latestEventTime.value = sorted[0] ?? null
         }
       } catch (err) {
         if ((err instanceof ApiError && err.status === 404) || isServiceUnavailableError(err)) {

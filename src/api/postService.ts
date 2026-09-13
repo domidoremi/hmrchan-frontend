@@ -32,7 +32,9 @@ export interface PostListItem {
   platform_post_id?: string
   post_url?: string
   post_type?: string
+  media_id?: string | null
   media_type?: string | null
+  stream_url?: string | null
   title?: string | null
   content?: string | null
   thumbnail_url?: string | null
@@ -67,6 +69,9 @@ export interface MediaFile {
   post_id?: string | null
   file_path: string
   file_type: string
+  media_type?: string | null
+  stream_url?: string | null
+  thumbnail_url?: string | null
   file_size?: number | null
   width?: number | null
   height?: number | null
@@ -99,6 +104,9 @@ export interface PostDetailResponse {
   title?: string | undefined
   description?: string | undefined
   url?: string | undefined
+  media_id?: string | null
+  media_type?: string | null
+  stream_url?: string | null
   thumbnail_url?: string | null
   author_id?: string | undefined
   author_name?: string | undefined
@@ -120,7 +128,6 @@ export interface PostDetailResponse {
   tags?: string[] | undefined
 
   post_type?: string | undefined
-  media_type?: string | null
   language?: string | null
   author_other_posts?: AuthorOtherPost[] | undefined
   external_links: PostExternalLink[]
@@ -158,6 +165,10 @@ interface RawFile {
   height?: number | null
   duration_sec?: number | null
   mime_type?: string | null
+  media_type?: string | null
+  stream_url?: string | null
+  thumbnail_url?: string | null
+  thumbnail_path?: string | null
 }
 
 export interface RawPostDetail {
@@ -168,7 +179,9 @@ export interface RawPostDetail {
   content?: string
   post_url?: string
   post_type?: string
+  media_id?: string | null
   media_type?: string | null
+  stream_url?: string | null
   language?: string | null
   thumbnail_url?: string | null
   author?: {
@@ -281,6 +294,15 @@ export function normalizePostExternalLinks(
   return normalized
 }
 
+function normalizeMediaFile(file: MediaFile): MediaFile {
+  return {
+    ...file,
+    media_type: file.media_type ?? file.file_type ?? null,
+    stream_url: file.stream_url ?? null,
+    thumbnail_url: file.thumbnail_url ?? file.thumbnail_path ?? null,
+  }
+}
+
 function attachSubtitlesToVideos(files: MediaFile[] | undefined, subtitles: MediaSubtitle[]): void {
   if (!files?.length || !subtitles.length) return
   for (const file of files) {
@@ -298,6 +320,7 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
   if (raw.media_files && raw.media_files.length > 0) {
     return {
       ...(raw as unknown as PostDetailResponse),
+      media_files: raw.media_files.map(normalizeMediaFile),
       external_links: externalLinks,
     }
   }
@@ -308,11 +331,14 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
       id: f.id,
       file_path: f.file_name ?? '',
       file_type: f.file_type ?? 'image',
+      media_type: f.media_type ?? f.mime_type ?? f.file_type ?? null,
+      stream_url: f.stream_url ?? null,
+      thumbnail_url: f.thumbnail_url ?? null,
       file_size: f.file_size_bytes ?? null,
       width: f.width ?? null,
       height: f.height ?? null,
       duration: f.duration_sec ?? null,
-      thumbnail_path: null,
+      thumbnail_path: f.thumbnail_path ?? null,
       is_downloaded: true,
       created_at: raw.published_at ?? raw.created_at ?? '',
     }))
@@ -329,6 +355,9 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     title: raw.title,
     description: raw.description ?? raw.content,
     url: raw.url ?? raw.post_url,
+    media_id: raw.media_id ?? null,
+    media_type: raw.media_type ?? raw.media_type_legacy ?? null,
+    stream_url: raw.stream_url ?? null,
     thumbnail_url: raw.thumbnail_url ?? null,
     author_id: raw.author_id ?? raw.author?.id,
     author_name: raw.author_name ?? raw.author?.display_name,
@@ -349,7 +378,6 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     media_files: mediaFiles,
     tags: raw.tags,
     post_type: raw.post_type,
-    media_type: raw.media_type ?? raw.media_type_legacy ?? null,
     language: raw.language ?? null,
     author_other_posts: raw.author_other_posts,
     external_links: externalLinks,

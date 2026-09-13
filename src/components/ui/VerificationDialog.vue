@@ -160,11 +160,15 @@ async function submitVerification() {
 
     resolveVerification({
       verificationToken,
-      expiresIn: response.expires_in,
+      ...(response.expires_in === undefined ? {} : { expiresIn: response.expires_in }),
       action: request.action,
-      resourceId: request.resourceId,
-      stepUpRequired: response.step_up_required,
-      currentDeviceTrusted: response.current_device_trusted,
+      ...(request.resourceId === undefined ? {} : { resourceId: request.resourceId }),
+      ...(response.step_up_required === undefined
+        ? {}
+        : { stepUpRequired: response.step_up_required }),
+      ...(response.current_device_trusted === undefined
+        ? {}
+        : { currentDeviceTrusted: response.current_device_trusted }),
     })
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {

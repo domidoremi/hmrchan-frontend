@@ -34,8 +34,8 @@ export const useToastStore = defineStore('toast', () => {
       type,
       message,
       duration,
-      title: options?.title,
-      action: options?.action,
+      ...(options?.title === undefined ? {} : { title: options.title }),
+      ...(options?.action === undefined ? {} : { action: options.action }),
     }
     toasts.value.push(toast)
 

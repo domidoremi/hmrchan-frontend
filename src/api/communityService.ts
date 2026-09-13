@@ -75,10 +75,10 @@ function normalizeCursorCollection<T, R>(
 function normalizeHotTopicItem(raw: unknown): HotTopicItem {
   const data = (raw || {}) as Record<string, unknown>
   return {
-    post_id: toString(data.post_id ?? data.id ?? ''),
-    comment_count: toNumber(data.comment_count),
-    platform: toString(data.platform, 'unknown'),
-    title: (data.title as string | null | undefined) ?? null,
+    post_id: toString(data['post_id'] ?? data['id'] ?? ''),
+    comment_count: toNumber(data['comment_count']),
+    platform: toString(data['platform'], 'unknown'),
+    title: (data['title'] as string | null | undefined) ?? null,
   }
 }
 

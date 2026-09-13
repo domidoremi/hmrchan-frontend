@@ -24,6 +24,32 @@ describe('authService', () => {
     vi.useRealTimers()
   })
 
+  it('attaches security warnings to authenticated BFF summaries without access tokens', async () => {
+    apiClientPost.mockImplementationOnce((_path, _data, config) => {
+      config.onResponseHeaders(new Headers({ 'X-Security-Warning': 'high' }))
+      return Promise.resolve({ authenticated: true, user: { id: 'user-1' } })
+    })
+    await expect(
+      authService.login({ username: 'tester', password: 'test-password' })
+    ).resolves.toMatchObject({
+      authenticated: true,
+      _securityWarning: 'high',
+    })
+  })
+
+  it('does not attach session warnings to an unfinished MFA challenge', async () => {
+    apiClientPost.mockImplementationOnce((_path, _data, config) => {
+      config.onResponseHeaders(new Headers({ 'X-Security-Warning': 'high' }))
+      return Promise.resolve({
+        requires_mfa: true,
+        pending_mfa_login_token: 'challenge',
+        methods: ['totp'],
+      })
+    })
+    const result = await authService.login({ username: 'tester', password: 'test-password' })
+    expect(result).not.toHaveProperty('_securityWarning')
+  })
+
   it('handles verify-identity 401 responses as step-up failures instead of auth logout', async () => {
     apiClientPost.mockResolvedValueOnce({
       verified: true,

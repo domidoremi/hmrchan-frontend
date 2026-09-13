@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import type { SerializedPublicKeyCredential } from '@/utils/webauthn'
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { authService, ApiError, twoFactorService } from '@/api'
@@ -72,14 +73,14 @@ type WebAuthnLoginOptionsResult =
   | {
       status: 'success'
       ceremonyId: string
-      options: Record<string, unknown>
+      options: PublicKeyCredentialRequestOptionsJSON
       methods?: string[]
       provider?: string
     }
   | AuthFlowErrorResult
 
 const GOOGLE_AUTH_ENABLED =
-  import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+  import.meta.env.MODE === 'test' || import.meta.env['VITEST'] === 'true'
     ? true
     : import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 
@@ -118,7 +119,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isInitialized = ref(false)
 
   const isAuthenticated = computed(() => !!user.value)
-  const sessionController = createAuthSessionController<AuthUser>({
+  const sessionController = createAuthSessionController({
     onSessionTransition: resetPrivateSessionState,
     router,
     state: {
@@ -369,8 +370,8 @@ export const useAuthStore = defineStore('auth', () => {
         status: 'success',
         ceremonyId: response.ceremony_id,
         options: response.options,
-        methods: response.methods,
-        provider: response.provider,
+        ...(response.methods === undefined ? {} : { methods: response.methods }),
+        ...(response.provider === undefined ? {} : { provider: response.provider }),
       }
     } catch (err) {
       const errorResult = mapApiError(err, {
@@ -387,7 +388,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function finishWebAuthnLogin(
     pendingMfaLoginToken: string,
     ceremonyId: string,
-    credential: Record<string, unknown>
+    credential: SerializedPublicKeyCredential
   ): Promise<AuthFlowResult> {
     if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
@@ -461,11 +462,13 @@ export const useAuthStore = defineStore('auth', () => {
       return {
         status: 'risk-verification',
         pendingToken: response.pending_token,
-        challengeType: response.challenge_type,
+        ...(response.challenge_type === undefined
+          ? {}
+          : { challengeType: response.challenge_type }),
         methods: Array.isArray(response.methods) ? response.methods : [],
-        expiresIn: response.expires_in,
-        message: response.message,
-        redirectTo: response.return_to,
+        ...(response.expires_in === undefined ? {} : { expiresIn: response.expires_in }),
+        ...(response.message === undefined ? {} : { message: response.message }),
+        ...(response.return_to === undefined ? {} : { redirectTo: response.return_to }),
       }
     }
 
@@ -474,12 +477,9 @@ export const useAuthStore = defineStore('auth', () => {
         status: 'mfa',
         pendingMfaLoginToken: response.pending_mfa_login_token,
         methods: Array.isArray(response.methods) ? response.methods : [],
-        expiresIn: response.expires_in,
-        message: response.message,
-        redirectTo:
-          typeof (response as { return_to?: unknown }).return_to === 'string'
-            ? (response as { return_to: string }).return_to
-            : undefined,
+        ...(response.expires_in === undefined ? {} : { expiresIn: response.expires_in }),
+        ...(response.message === undefined ? {} : { message: response.message }),
+        ...(response.return_to === undefined ? {} : { redirectTo: response.return_to }),
       }
     }
 
@@ -497,8 +497,10 @@ export const useAuthStore = defineStore('auth', () => {
     return {
       status: 'success',
       user: successResponse.user,
-      redirectTo: successResponse.return_to,
-      securityWarning: successResponse._securityWarning,
+      ...(successResponse.return_to === undefined ? {} : { redirectTo: successResponse.return_to }),
+      ...(successResponse._securityWarning === undefined
+        ? {}
+        : { securityWarning: successResponse._securityWarning }),
     }
   }
 
@@ -540,11 +542,12 @@ export const useAuthStore = defineStore('auth', () => {
               : getAuthErrorKey(apiError.status, apiError.code)))
       : defaultError
 
+    const detail = extractApiErrorDetail(apiError)
     return {
       status: 'error',
       error: errorKey,
-      code: apiError?.code,
-      detail: extractApiErrorDetail(apiError),
+      ...(apiError?.code === undefined ? {} : { code: apiError?.code }),
+      ...(detail === undefined ? {} : { detail }),
     }
   }
 
@@ -742,6 +745,7 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading,
     error,
     isAuthenticated,
+    isInitialized,
     login,
     verifyRiskLogin,
     startGoogleAuth,
@@ -761,8 +765,8 @@ export const useAuthStore = defineStore('auth', () => {
           status: 'success',
           ceremonyId: response.ceremony_id,
           options: response.options,
-          methods: response.methods,
-          provider: response.provider,
+          ...(response.methods === undefined ? {} : { methods: response.methods }),
+          ...(response.provider === undefined ? {} : { provider: response.provider }),
         }
       } catch (err) {
         const errorResult = mapApiError(err, {
@@ -778,7 +782,7 @@ export const useAuthStore = defineStore('auth', () => {
     async finishRiskWebAuthnLogin(
       pendingToken: string,
       ceremonyId: string,
-      credential: Record<string, unknown>
+      credential: SerializedPublicKeyCredential
     ): Promise<AuthFlowResult> {
       if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
@@ -824,8 +828,8 @@ export const useAuthStore = defineStore('auth', () => {
           status: 'success',
           ceremonyId: response.ceremony_id,
           options: response.options,
-          methods: response.methods,
-          provider: response.provider,
+          ...(response.methods === undefined ? {} : { methods: response.methods }),
+          ...(response.provider === undefined ? {} : { provider: response.provider }),
         }
       } catch (err) {
         const errorResult = mapApiError(err, {
@@ -840,7 +844,7 @@ export const useAuthStore = defineStore('auth', () => {
     },
     async finishPasswordlessLogin(
       ceremonyId: string,
-      credential: Record<string, unknown>
+      credential: SerializedPublicKeyCredential
     ): Promise<AuthFlowResult> {
       if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 

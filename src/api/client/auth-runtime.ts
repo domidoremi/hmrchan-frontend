@@ -46,14 +46,12 @@ function resolveRoles(payload: RuntimeSessionPayload): string[] {
 }
 
 function buildRuntimeSession(payload: RuntimeSessionPayload): AuthRuntimeSession {
+  const identityProvider = payload.identity_provider ?? payload.user?.identity_provider
   return {
     permissionVersion: normalizePermissionVersion(payload.permission_version),
     permissions: normalizeStringArray(payload.permissions),
     roles: resolveRoles(payload),
-    identityProvider:
-      typeof payload.identity_provider === 'string'
-        ? payload.identity_provider
-        : payload.user?.identity_provider,
+    ...(identityProvider === undefined ? {} : { identityProvider }),
     sessionExpiresAt:
       typeof payload.session_expires_at === 'string' ? payload.session_expires_at : null,
     lastAuthzCheckAt: Date.now(),

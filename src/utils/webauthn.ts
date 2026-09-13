@@ -1,4 +1,4 @@
-function base64UrlToUint8Array(value: string): Uint8Array {
+function base64UrlToUint8Array(value: string): Uint8Array<ArrayBuffer> {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/')
   const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4))
   const binary = atob(normalized + padding)
@@ -18,6 +18,89 @@ function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
 }
 
+function isAuthenticatorTransport(value: string): value is AuthenticatorTransport {
+  return ['ble', 'hybrid', 'internal', 'nfc', 'usb'].includes(value)
+}
+
+function mapCredentialDescriptor(
+  descriptor: PublicKeyCredentialDescriptorJSON
+): PublicKeyCredentialDescriptor {
+  if (descriptor.type !== 'public-key') throw new TypeError('Unsupported credential type')
+  return {
+    type: descriptor.type,
+    id: base64UrlToUint8Array(descriptor.id),
+    ...(descriptor.transports === undefined
+      ? {}
+      : { transports: descriptor.transports.filter(isAuthenticatorTransport) }),
+  }
+}
+
+// Legacy browsers without toJSON() expose the original binary extension results
+// and may not implement the newer attestation metadata methods.
+type LegacyCredentialJSON = {
+  id: string
+  rawId: string
+  type: string
+  response: {
+    clientDataJSON: string
+    attestationObject?: string
+    transports?: string[]
+    authenticatorData?: string
+    signature?: string
+    userHandle?: string | null
+  }
+  clientExtensionResults: AuthenticationExtensionsClientOutputs
+}
+
+export type SerializedPublicKeyCredential =
+  | RegistrationResponseJSON
+  | AuthenticationResponseJSON
+  | LegacyCredentialJSON
+
+function mapPrfValues(
+  values: AuthenticationExtensionsPRFValuesJSON
+): AuthenticationExtensionsPRFValues {
+  return {
+    first: base64UrlToUint8Array(values.first),
+    ...(values.second === undefined ? {} : { second: base64UrlToUint8Array(values.second) }),
+  }
+}
+
+function mapExtensions(
+  extensions: AuthenticationExtensionsClientInputsJSON
+): AuthenticationExtensionsClientInputs {
+  const { largeBlob, prf, ...rest } = extensions
+  const { write, ...blobOptions } = largeBlob ?? {}
+  return {
+    ...rest,
+    ...(largeBlob === undefined
+      ? {}
+      : {
+          largeBlob: {
+            ...blobOptions,
+            ...(write === undefined ? {} : { write: base64UrlToUint8Array(write) }),
+          },
+        }),
+    ...(prf === undefined
+      ? {}
+      : {
+          prf: {
+            ...(prf.eval === undefined ? {} : { eval: mapPrfValues(prf.eval) }),
+            ...(prf.evalByCredential === undefined
+              ? {}
+              : {
+                  evalByCredential: Object.fromEntries(
+                    Object.entries(prf.evalByCredential).map(([id, values]) => [
+                      id,
+                      mapPrfValues(values),
+                    ])
+                  ),
+                }),
+          },
+        }),
+  }
+}
+
 function mapCreationOptions(
   options: PublicKeyCredentialCreationOptionsJSON
 ): CredentialCreationOptions {
@@ -30,18 +113,29 @@ function mapCreationOptions(
     }
   }
 
+  const { excludeCredentials, attestation, extensions, ...creationOptions } = options
+  if (
+    attestation !== undefined &&
+    attestation !== 'none' &&
+    attestation !== 'indirect' &&
+    attestation !== 'direct' &&
+    attestation !== 'enterprise'
+  ) {
+    throw new TypeError('Unsupported attestation preference')
+  }
   return {
     publicKey: {
-      ...options,
+      ...creationOptions,
+      ...(attestation === undefined ? {} : { attestation }),
+      ...(extensions === undefined ? {} : { extensions: mapExtensions(extensions) }),
       challenge: base64UrlToUint8Array(options.challenge),
       user: {
         ...options.user,
         id: base64UrlToUint8Array(options.user.id),
       },
-      excludeCredentials: options.excludeCredentials?.map((item) => ({
-        ...item,
-        id: base64UrlToUint8Array(item.id),
-      })),
+      ...(excludeCredentials === undefined
+        ? {}
+        : { excludeCredentials: excludeCredentials.map(mapCredentialDescriptor) }),
     },
   }
 }
@@ -58,14 +152,24 @@ function mapRequestOptions(
     }
   }
 
+  const { allowCredentials, userVerification, extensions, ...requestOptions } = options
+  if (
+    userVerification !== undefined &&
+    userVerification !== 'required' &&
+    userVerification !== 'preferred' &&
+    userVerification !== 'discouraged'
+  ) {
+    throw new TypeError('Unsupported user verification requirement')
+  }
   return {
     publicKey: {
-      ...options,
+      ...requestOptions,
+      ...(userVerification === undefined ? {} : { userVerification }),
+      ...(extensions === undefined ? {} : { extensions: mapExtensions(extensions) }),
       challenge: base64UrlToUint8Array(options.challenge),
-      allowCredentials: options.allowCredentials?.map((item) => ({
-        ...item,
-        id: base64UrlToUint8Array(item.id),
-      })),
+      ...(allowCredentials === undefined
+        ? {}
+        : { allowCredentials: allowCredentials.map(mapCredentialDescriptor) }),
     },
   }
 }
@@ -75,7 +179,9 @@ type WebAuthnAssertionRequestOptions = {
   signal?: AbortSignal
 }
 
-function serializeCredentialFallback(credential: PublicKeyCredential): PublicKeyCredentialJSON {
+function serializeCredentialFallback(
+  credential: PublicKeyCredential
+): SerializedPublicKeyCredential {
   const response = credential.response
 
   if (response instanceof AuthenticatorAttestationResponse) {
@@ -86,8 +192,9 @@ function serializeCredentialFallback(credential: PublicKeyCredential): PublicKey
       response: {
         clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
         attestationObject: arrayBufferToBase64Url(response.attestationObject),
-        transports:
-          typeof response.getTransports === 'function' ? response.getTransports() : undefined,
+        ...(typeof response.getTransports === 'function'
+          ? { transports: response.getTransports() }
+          : {}),
       },
       clientExtensionResults: credential.getClientExtensionResults(),
     }
@@ -156,7 +263,7 @@ export async function getWebAuthnAssertion(
 
 export function serializePublicKeyCredential(
   credential: PublicKeyCredential
-): PublicKeyCredentialJSON {
+): SerializedPublicKeyCredential {
   if (typeof credential.toJSON === 'function') {
     return credential.toJSON()
   }

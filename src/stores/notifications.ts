@@ -127,7 +127,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     items.value.some((item) => !item.archived_at && item.is_read)
   )
   const preferencesByCategory = computed<Record<InboxCategory, InboxPreference>>(() => {
-    const record = {
+    const record: Record<InboxCategory, InboxPreference> = {
       interaction: { category: 'interaction', inbox_enabled: true, email_enabled: false },
       security: { category: 'security', inbox_enabled: true, email_enabled: true },
       system: { category: 'system', inbox_enabled: true, email_enabled: true },

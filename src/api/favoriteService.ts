@@ -32,6 +32,9 @@ export interface FavoriteResponse {
     title: string
     platform?: string
     post_url?: string
+    media_id?: string | null
+    media_type?: string | null
+    stream_url?: string | null
     thumbnail_url?: string | null
     author_name?: string
   }

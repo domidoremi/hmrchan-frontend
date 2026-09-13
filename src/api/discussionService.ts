@@ -11,6 +11,9 @@ export interface DiscussionAuthor {
 export interface PostReference {
   id: string
   title: string
+  media_id?: string | null
+  media_type?: string | null
+  stream_url?: string | null
   thumbnail_url?: string | null
   author_name?: string
 }
@@ -122,76 +125,81 @@ const toString = (value: unknown) => {
 function normalizeDiscussionAuthor(raw: unknown): DiscussionAuthor {
   const data = (raw || {}) as Record<string, unknown>
   return {
-    id: toString(data.id ?? data.user_id ?? ''),
-    username: toString(data.username ?? data.name ?? 'Anonymous'),
-    avatar_url: (data.avatar_url as string | null | undefined) ?? null,
-    is_admin: Boolean(data.is_admin),
-    is_verified: Boolean(data.is_verified),
+    id: toString(data['id'] ?? data['user_id'] ?? ''),
+    username: toString(data['username'] ?? data['name'] ?? 'Anonymous'),
+    avatar_url: (data['avatar_url'] as string | null | undefined) ?? null,
+    is_admin: Boolean(data['is_admin']),
+    is_verified: Boolean(data['is_verified']),
   }
 }
 
 function normalizePostReference(raw: unknown): PostReference {
   const data = (raw || {}) as Record<string, unknown>
   return {
-    id: toString(data.id ?? data.post_id ?? data.uuid ?? ''),
-    title: toString(data.title ?? ''),
-    thumbnail_url: (data.thumbnail_url as string | null | undefined) ?? null,
-    author_name: toString(data.author_name ?? data.author ?? ''),
+    id: toString(data['id'] ?? data['post_id'] ?? data['uuid'] ?? ''),
+    title: toString(data['title'] ?? ''),
+    media_id: (data['media_id'] as string | null | undefined) ?? null,
+    media_type: (data['media_type'] as string | null | undefined) ?? null,
+    stream_url: (data['stream_url'] as string | null | undefined) ?? null,
+    thumbnail_url: (data['thumbnail_url'] as string | null | undefined) ?? null,
+    author_name: toString(data['author_name'] ?? data['author'] ?? ''),
   }
 }
 
 function normalizeDiscussion(raw: unknown): Discussion {
   const data = (raw || {}) as Record<string, unknown>
-  const author = normalizeDiscussionAuthor(data.author ?? data.user ?? {})
-  const likeCount = toNumber(data.likes_count ?? data.like_count)
-  const commentCount = toNumber(data.comments_count ?? data.comment_count)
+  const author = normalizeDiscussionAuthor(data['author'] ?? data['user'] ?? {})
+  const likeCount = toNumber(data['likes_count'] ?? data['like_count'])
+  const commentCount = toNumber(data['comments_count'] ?? data['comment_count'])
 
   return {
-    id: toString(data.uuid ?? data.id ?? ''),
-    title: toString(data.title ?? ''),
-    content: toString(data.content ?? ''),
-    category: (data.category as DiscussionCategory) ?? 'general',
+    id: toString(data['uuid'] ?? data['id'] ?? ''),
+    title: toString(data['title'] ?? ''),
+    content: toString(data['content'] ?? ''),
+    category: (data['category'] as DiscussionCategory) ?? 'general',
     author,
-    referenced_post: data.referenced_post ? normalizePostReference(data.referenced_post) : null,
-    tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
-    view_count: toNumber(data.view_count),
+    referenced_post: data['referenced_post']
+      ? normalizePostReference(data['referenced_post'])
+      : null,
+    tags: Array.isArray(data['tags']) ? (data['tags'] as string[]) : [],
+    view_count: toNumber(data['view_count']),
     likes_count: likeCount,
     like_count: likeCount,
     comments_count: commentCount,
     comment_count: commentCount,
-    is_liked: Boolean(data.is_liked),
-    is_pinned: Boolean(data.is_pinned),
-    is_closed: Boolean(data.is_closed),
-    created_at: toString(data.created_at ?? ''),
-    updated_at: (data.updated_at as string | null | undefined) ?? null,
-    last_activity_at: toString(data.last_activity_at ?? ''),
+    is_liked: Boolean(data['is_liked']),
+    is_pinned: Boolean(data['is_pinned']),
+    is_closed: Boolean(data['is_closed']),
+    created_at: toString(data['created_at'] ?? ''),
+    updated_at: (data['updated_at'] as string | null | undefined) ?? null,
+    last_activity_at: toString(data['last_activity_at'] ?? ''),
   }
 }
 
 function normalizeDiscussionComment(raw: unknown): DiscussionComment {
   const data = (raw || {}) as Record<string, unknown>
-  const likeCount = toNumber(data.like_count ?? data.likes_count)
-  const replyCount = toNumber(data.reply_count ?? data.replies_count)
-  const replies = Array.isArray(data.replies)
-    ? (data.replies as unknown[]).map((item) => normalizeDiscussionComment(item))
+  const likeCount = toNumber(data['like_count'] ?? data['likes_count'])
+  const replyCount = toNumber(data['reply_count'] ?? data['replies_count'])
+  const replies = Array.isArray(data['replies'])
+    ? (data['replies'] as unknown[]).map((item) => normalizeDiscussionComment(item))
     : undefined
 
   return {
-    id: toString(data.id ?? data.uuid ?? ''),
-    discussion_id: toString(data.discussion_id ?? ''),
-    content: toString(data.content ?? ''),
-    user: normalizeDiscussionAuthor(data.user ?? data.author ?? {}),
-    parent_id: (data.parent_id as string | null | undefined) ?? null,
+    id: toString(data['id'] ?? data['uuid'] ?? ''),
+    discussion_id: toString(data['discussion_id'] ?? ''),
+    content: toString(data['content'] ?? ''),
+    user: normalizeDiscussionAuthor(data['user'] ?? data['author'] ?? {}),
+    parent_id: (data['parent_id'] as string | null | undefined) ?? null,
     like_count: likeCount,
     reply_count: replyCount,
     likes_count: likeCount,
     replies_count: replyCount,
-    is_liked: Boolean(data.is_liked),
-    is_pinned: Boolean(data.is_pinned),
-    is_featured: Boolean(data.is_featured),
-    created_at: toString(data.created_at ?? ''),
-    updated_at: (data.updated_at as string | null | undefined) ?? null,
-    replies,
+    is_liked: Boolean(data['is_liked']),
+    is_pinned: Boolean(data['is_pinned']),
+    is_featured: Boolean(data['is_featured']),
+    created_at: toString(data['created_at'] ?? ''),
+    updated_at: (data['updated_at'] as string | null | undefined) ?? null,
+    ...(replies === undefined ? {} : { replies }),
   }
 }
 

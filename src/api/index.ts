@@ -13,10 +13,8 @@ export {
   authService,
   type LoginRequest,
   type RegisterRequest,
-  type LoginResponse,
   type AuthResponse,
   type MeResponse,
-  type HeartbeatResponse,
   type RegisterResponse,
   type AuthLoginFlowResponse,
   type MfaRequiredResponse,
@@ -50,7 +48,6 @@ export {
   type RawPostDetail,
   type PostDetailResponse,
   type AuthorOtherPost,
-  type ThumbnailQuality,
 } from './postService'
 export { postsLightService, type PostsLightParams, type PostLightItem } from './postsLightService'
 export { authorService, type AuthorListItem, type AuthorResponse } from './authorService'
@@ -64,7 +61,6 @@ export {
 } from './favoriteService'
 export {
   commentService,
-  type Comment,
   type CommentImage,
   type CommentImageUploadResponse,
   type CreateCommentRequest,
@@ -80,7 +76,6 @@ export {
   type ChangePasswordRequest,
   type RestoreAccountRequest,
   type AvatarUploadResponse,
-  type ExportAccountDataResult,
   USERNAME_LIMITS,
   PROFILE_LIMITS,
 } from './userService'
@@ -181,6 +176,8 @@ export {
   type HomeScheduleHighlight,
   type HomeCommunityHighlight,
   type HomePortalItem,
+  type HomePortalPreview,
+  type HomeImageAsset,
   type HomeHeroSpotlight,
   type HomeEditorialCard,
   type HomeTagBrief,
@@ -211,3 +208,7 @@ export {
   type SecurityEvent,
   type MyActivityParams,
 } from './auditService'
+
+export type { Comment } from '@/types'
+
+export type { WebAuthnCredentialSummary } from './twoFactorService'

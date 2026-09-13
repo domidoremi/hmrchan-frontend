@@ -47,5 +47,5 @@ export function buildSensitiveReauthRedirect(to: Pick<RouteLocationNormalized, '
 export function isSensitiveReauthLoginRoute(
   to: Pick<RouteLocationNormalized, 'name' | 'query'>
 ): boolean {
-  return to.name === 'login' && to.query.reauth === 'sensitive'
+  return to.name === 'login' && to.query['reauth'] === 'sensitive'
 }

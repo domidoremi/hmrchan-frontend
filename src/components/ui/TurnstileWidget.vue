@@ -51,14 +51,14 @@ const containerClass = computed(() =>
 let isUnmounted = false
 let previousOnloadHandler: (() => void) | null = null
 let turnstileOnloadHandler: (() => void) | null = null
-let mountDelayTimer: ReturnType<typeof setTimeout> | null = null
+let mountDelayTimer: number | null = null
 let mountDelayResolve: (() => void) | null = null
 let turnstilePollRaf: number | null = null
 let turnstilePollReject: ((reason?: Error) => void) | null = null
 let isReady = false
 let pendingExecutionResolve: ((token: string) => void) | null = null
 let pendingExecutionReject: ((reason?: Error) => void) | null = null
-let interactiveFallbackTimer: ReturnType<typeof setTimeout> | null = null
+let interactiveFallbackTimer: number | null = null
 const status = ref<TurnstileWidgetStatus>('idle')
 
 const INTERACTIVE_REQUIRED_DELAY_MS = 1200
@@ -119,7 +119,7 @@ function loadTurnstileScript(): Promise<void> {
         resolve()
         return
       }
-      if ((existingScript as HTMLScriptElement).readyState === 'complete') {
+      if ('readyState' in existingScript && existingScript.readyState === 'complete') {
         waitForTurnstile()
         return
       }
@@ -378,6 +378,7 @@ async function execute(): Promise<string> {
     return existingResponse
   }
 
+  const currentWidgetId = widgetId.value
   return await new Promise<string>((resolve, reject) => {
     pendingExecutionResolve = resolve
     pendingExecutionReject = reject
@@ -390,7 +391,7 @@ async function execute(): Promise<string> {
     }
 
     try {
-      const result = window.turnstile.execute(widgetId.value)
+      const result = window.turnstile.execute(currentWidgetId)
       Promise.resolve(result).catch((error) => {
         rejectPendingExecution(error instanceof Error ? error : new Error(String(error)))
       })
@@ -449,7 +450,8 @@ onUnmounted(() => {
   resetRetryState()
   cleanupWidget()
   if (turnstileOnloadHandler && window.onTurnstileLoad === turnstileOnloadHandler) {
-    window.onTurnstileLoad = previousOnloadHandler ?? undefined
+    if (previousOnloadHandler) window.onTurnstileLoad = previousOnloadHandler
+    else delete window.onTurnstileLoad
   }
 })
 

@@ -29,6 +29,42 @@ describe('webauthn utilities', () => {
     vi.unstubAllGlobals()
   })
 
+  it('decodes credential IDs and challenges without native JSON parsers', async () => {
+    const get = installCredentialsGet()
+    installPublicKeyCredential({ parseRequestOptionsFromJSON: undefined })
+    await getWebAuthnAssertion({
+      challenge: 'AQI',
+      allowCredentials: [{ type: 'public-key', id: 'AwQ', transports: ['internal', 'future'] }],
+    })
+    expect(get).toHaveBeenCalledWith({
+      publicKey: {
+        challenge: new Uint8Array([1, 2]),
+        allowCredentials: [
+          { type: 'public-key', id: new Uint8Array([3, 4]), transports: ['internal'] },
+        ],
+      },
+    })
+  })
+
+  it('omits absent optional credential lists in legacy browsers', async () => {
+    const get = installCredentialsGet()
+    installPublicKeyCredential({ parseRequestOptionsFromJSON: undefined })
+    await getWebAuthnAssertion({ challenge: 'AQI' })
+    expect(get).toHaveBeenCalledWith({ publicKey: { challenge: new Uint8Array([1, 2]) } })
+  })
+
+  it('rejects invalid credential types before calling the browser', async () => {
+    const get = installCredentialsGet()
+    installPublicKeyCredential({ parseRequestOptionsFromJSON: undefined })
+    await expect(
+      getWebAuthnAssertion({
+        challenge: 'AQI',
+        allowCredentials: [{ type: 'invalid', id: 'AwQ' }],
+      })
+    ).rejects.toThrow('Unsupported credential type')
+    expect(get).not.toHaveBeenCalled()
+  })
+
   it('reports conditional mediation as unavailable when the browser API is missing', async () => {
     Object.defineProperty(window, 'PublicKeyCredential', {
       value: undefined,

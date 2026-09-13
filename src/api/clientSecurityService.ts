@@ -77,14 +77,14 @@ let inMemoryClientSecret: string | null = null
 
 interface StoredClientCredentials {
   client_token: string
-  client_secret?: string
-  canonical_fingerprint?: string
-  fingerprint_source?: ClientFingerprintSource
-  fingerprint_components_version?: string
-  client_type?: ClientType
-  risk_score?: number
-  risk_decision?: RiskDecision
-  init_summary_updated_at?: number
+  client_secret?: string | undefined
+  canonical_fingerprint?: string | undefined
+  fingerprint_source?: ClientFingerprintSource | undefined
+  fingerprint_components_version?: string | undefined
+  client_type?: ClientType | undefined
+  risk_score?: number | undefined
+  risk_decision?: RiskDecision | undefined
+  init_summary_updated_at?: number | undefined
 }
 
 type StoredClientSummary = Omit<StoredClientCredentials, 'client_token' | 'client_secret'>
@@ -235,7 +235,9 @@ function isRecoverableVerifyError(error: unknown): error is ApiError {
   }
 
   const rawMessage =
-    typeof error.details?.rawMessage === 'string' ? error.details.rawMessage.toLowerCase() : ''
+    typeof error.details?.['rawMessage'] === 'string'
+      ? error.details['rawMessage'].toLowerCase()
+      : ''
 
   return rawMessage.includes('missing client token') || rawMessage.includes('invalid client token')
 }

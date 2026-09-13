@@ -30,6 +30,9 @@ export interface BrowsingHistoryItem {
   created_at: string
 
   post_title?: string | null
+  post_media_id?: string | null
+  post_media_type?: string | null
+  post_stream_url?: string | null
   post_thumbnail_url?: string | null
   author_name?: string | null
 
