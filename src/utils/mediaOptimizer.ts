@@ -1,8 +1,33 @@
+import { normalizeHttpUrl } from '@/utils/security'
+import { probeImageStream } from '@/utils/mediaStreamProbe'
 import { normalizeToProxyPath } from '@/utils/url'
 
 // Media URL helpers preserve the same-origin proxy contract used by the browser.
 
 export type MediaThumbnailSize = 'small' | 'medium' | 'large' | 'original'
+export type MediaKind = 'image' | 'video' | 'unknown'
+
+export interface MediaSourceLike {
+  media_id?: string | null | undefined
+  media_type?: string | null | undefined
+  stream_url?: string | null | undefined
+  thumbnail_url?: string | null | undefined
+  file_type?: string | null | undefined
+  file_path?: string | null | undefined
+  thumbnail_path?: string | null | undefined
+}
+
+export interface ResolvedMediaSources {
+  kind: MediaKind
+  mediaId: string | null
+  streamUrl: string | null
+  posterUrl: string | null
+  displayUrl: string | null
+  imageCandidates: string[]
+}
+
+const originalImageProbeCache = new Map<string, Promise<string | null>>()
+const MAX_IMAGE_PROBE_CACHE_SIZE = 250
 
 export const THUMBNAIL_SIZES: Record<
   MediaThumbnailSize,
@@ -103,8 +128,90 @@ export function getMediaThumbnailSrcset(mediaId?: string | null): string | null 
 export function extractMediaIdFromUrl(url?: string | null): string | null {
   if (!url) return null
 
-  const match = url.match(/\/api\/v1\/media\/([0-9a-f-]+)\/(?:stream|thumbnail)/i)
-  return match?.[1] ?? null
+  const match = url.match(/\/api\/v1\/media\/([^/?#]+)\/(?:stream|thumbnail)(?:$|[/?#])/i)
+  if (!match?.[1]) return null
+  try {
+    return decodeURIComponent(match[1])
+  } catch {
+    return match[1]
+  }
+}
+
+export function normalizeMediaKind(value?: string | null): MediaKind {
+  const normalized = value?.trim().toLowerCase() ?? ''
+  if (normalized === 'image' || normalized.startsWith('image/')) return 'image'
+  if (normalized === 'video' || normalized.startsWith('video/')) return 'video'
+  return 'unknown'
+}
+
+export function normalizeMediaUrl(url?: string | null): string | null {
+  if (!url) return null
+  const proxied = normalizeToProxyPath(url)
+  if (!proxied || !normalizeHttpUrl(proxied)) return null
+  return proxied
+}
+
+export function isMediaStreamUrl(url?: string | null): boolean {
+  const normalized = normalizeMediaUrl(url)
+  return Boolean(normalized && /\/api\/v1\/media\/[^/]+\/stream(?:$|[?#])/i.test(normalized))
+}
+
+export function resolveMediaSources(
+  media: MediaSourceLike | null | undefined
+): ResolvedMediaSources {
+  const kind = normalizeMediaKind(media?.media_type ?? media?.file_type)
+  const explicitStreamUrl = normalizeMediaUrl(media?.stream_url)
+  const legacyFileUrl = normalizeMediaUrl(media?.file_path)
+  const explicitPosterUrl = normalizeMediaUrl(media?.thumbnail_url ?? media?.thumbnail_path)
+  const fallbackUrl = explicitPosterUrl || legacyFileUrl
+  const mediaId =
+    (typeof media?.media_id === 'string' && media.media_id.trim()) ||
+    extractMediaIdFromUrl(explicitStreamUrl) ||
+    extractMediaIdFromUrl(explicitPosterUrl) ||
+    null
+  const generatedStreamUrl = mediaId ? getMediaStreamUrl(mediaId) : null
+  const generatedPosterUrl = mediaId ? getMediaThumbnailUrl(mediaId, 'large') : null
+  const streamUrl =
+    explicitStreamUrl || (kind !== 'unknown' ? legacyFileUrl : null) || generatedStreamUrl
+
+  if (kind === 'image') {
+    const imageStreamUrl =
+      streamUrl && !isMediaThumbnailUrl(streamUrl) ? streamUrl : generatedStreamUrl
+    return {
+      kind,
+      mediaId,
+      streamUrl: imageStreamUrl,
+      posterUrl: explicitPosterUrl,
+      displayUrl: imageStreamUrl || explicitPosterUrl || legacyFileUrl,
+      imageCandidates: uniqueMediaUrls([imageStreamUrl, explicitPosterUrl, legacyFileUrl]),
+    }
+  }
+
+  if (kind === 'video') {
+    const posterUrl = explicitPosterUrl || generatedPosterUrl
+    return {
+      kind,
+      mediaId,
+      streamUrl,
+      posterUrl,
+      displayUrl: posterUrl,
+      imageCandidates: uniqueMediaUrls([posterUrl]),
+    }
+  }
+
+  const safeDisplayUrl = explicitPosterUrl || fallbackUrl
+  return {
+    kind,
+    mediaId,
+    streamUrl: explicitStreamUrl,
+    posterUrl: safeDisplayUrl,
+    displayUrl: safeDisplayUrl,
+    imageCandidates: uniqueMediaUrls([safeDisplayUrl]),
+  }
+}
+
+function uniqueMediaUrls(urls: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(urls.filter((url): url is string => Boolean(url))))
 }
 
 export function normalizeToThumbnailUrl(
@@ -115,7 +222,6 @@ export function normalizeToThumbnailUrl(
   const normalized = normalizeToProxyPath(url) ?? url
   const mediaId = extractMediaIdFromUrl(normalized)
   if (!mediaId) return normalized
-  if (!mediaId) return url
 
   return getMediaThumbnailUrl(mediaId, size)
 }
@@ -163,4 +269,71 @@ export function isMediaThumbnailUrl(url?: string | null): boolean {
   if (!url) return false
   const normalized = normalizeToProxyPath(url) ?? url
   return /\/api\/v1\/media\/[^/]+\/thumbnail(?:$|[?#])/i.test(normalized)
+}
+
+export function isImageStreamResponse(contentType: string, bytes: Uint8Array): boolean {
+  const normalizedType = contentType.toLowerCase().split(';', 1)[0]?.trim() ?? ''
+  if (normalizedType.startsWith('image/')) return true
+  if (normalizedType !== 'application/octet-stream' || bytes.length < 12) return false
+
+  const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+  const isPng =
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  const isWebp =
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+
+  return isJpeg || isPng || isWebp
+}
+
+export async function resolveOriginalImageStream(
+  media: MediaSourceLike | string
+): Promise<string | null> {
+  const source = typeof media === 'string' ? { thumbnail_url: media } : media
+  const resolved = resolveMediaSources(source)
+  if (resolved.kind === 'video') return null
+  if (resolved.kind === 'image') return resolved.streamUrl
+  if (!resolved.mediaId) return null
+
+  const streamUrl = getMediaStreamUrl(resolved.mediaId)
+  const cached = originalImageProbeCache.get(streamUrl)
+  if (cached) return cached
+
+  if (originalImageProbeCache.size >= MAX_IMAGE_PROBE_CACHE_SIZE) {
+    originalImageProbeCache.delete(originalImageProbeCache.keys().next().value ?? '')
+  }
+
+  const probe = probeImageStream(streamUrl, isImageStreamResponse)
+
+  originalImageProbeCache.set(streamUrl, probe)
+  void probe.then((result) => {
+    if (result === null && originalImageProbeCache.get(streamUrl) === probe) {
+      originalImageProbeCache.delete(streamUrl)
+    }
+  })
+  return probe
+}
+
+export async function resolveMediaImageCandidates(
+  media: MediaSourceLike | null | undefined,
+  options: { probeUnknown?: boolean } = {}
+): Promise<string[]> {
+  const resolved = resolveMediaSources(media)
+  if (resolved.kind !== 'unknown' || !options.probeUnknown) return resolved.imageCandidates
+
+  const streamUrl = await resolveOriginalImageStream(media ?? {})
+  return uniqueMediaUrls([streamUrl, ...resolved.imageCandidates])
 }

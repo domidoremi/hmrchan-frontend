@@ -1,12 +1,20 @@
 import {
   getThumbnailSrcset,
   normalizeToThumbnailUrl,
+  resolveMediaSources,
+  type MediaSourceLike,
   type MediaThumbnailSize,
 } from '@/utils/mediaOptimizer'
 
+const POST_PREVIEW_STORAGE_PREFIX = 'post-media-preview-v2-'
+
+export function getPostPreviewStorageKey(postId: string): string {
+  return `${POST_PREVIEW_STORAGE_PREFIX}${postId}`
+}
+
 export function resolveThumbnailSrc(
   thumbnailUrl: string | null | undefined,
-  size: MediaThumbnailSize = 'medium'
+  size: MediaThumbnailSize = 'original'
 ): string | undefined {
   return normalizeToThumbnailUrl(thumbnailUrl, size) || thumbnailUrl || undefined
 }
@@ -19,13 +27,13 @@ export function resolveThumbnailSrcset(
 
 export function cachePostThumbnailPreview(
   postId: string,
-  thumbnailUrl: string | null | undefined
+  media: MediaSourceLike | string | null | undefined
 ): void {
-  if (typeof sessionStorage === 'undefined') return
-  if (!postId || !thumbnailUrl) return
+  if (typeof sessionStorage === 'undefined' || !postId || !media) return
 
-  sessionStorage.setItem(
-    `post-thumbnail-${postId}`,
-    resolveThumbnailSrc(thumbnailUrl) || thumbnailUrl
-  )
+  const source = typeof media === 'string' ? { thumbnail_url: media } : media
+  const displayUrl = resolveMediaSources(source).displayUrl
+  if (!displayUrl) return
+
+  sessionStorage.setItem(getPostPreviewStorageKey(postId), displayUrl)
 }

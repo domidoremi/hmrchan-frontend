@@ -9,7 +9,8 @@ const mediaMocks = vi.hoisted(() => ({
   unlockBodyScroll: vi.fn(),
 }))
 
-vi.mock('@/utils/mediaOptimizer', () => ({
+vi.mock('@/utils/mediaOptimizer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/mediaOptimizer')>()),
   getMediaStreamUrl: mediaMocks.getMediaStreamUrl,
 }))
 
@@ -29,8 +30,8 @@ vi.mock('@/utils/bodyScrollLock', () => ({
 import MediaLightbox from '../MediaLightbox.vue'
 
 const mediaList = [
-  { id: 'img-1', file_type: 'image' },
-  { id: 'img-2', file_type: 'image' },
+  { id: 'img-1', file_type: 'image', stream_url: 'https://cdn.example.com/media/img-1' },
+  { id: 'img-2', file_type: 'image', stream_url: 'https://cdn.example.com/media/img-2' },
 ]
 
 function createWrapper(props: Record<string, unknown> = {}) {

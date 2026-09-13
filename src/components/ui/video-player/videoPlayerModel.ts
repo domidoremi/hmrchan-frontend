@@ -166,14 +166,14 @@ export function extractCueTextHtml(text: string): string {
 }
 
 export function extractActiveCueHtml(
-  cues: ArrayLike<{ text?: string }> | null | undefined
+  cues: ArrayLike<TextTrackCue | { text?: string }> | null | undefined
 ): string {
   if (!cues?.length) return ''
 
   const parts: string[] = []
   for (let index = 0; index < cues.length; index += 1) {
     const cue = cues[index]
-    if (!cue?.text) continue
+    if (!cue || !('text' in cue) || typeof cue.text !== 'string' || !cue.text) continue
     const clean = extractCueTextHtml(cue.text)
     if (clean) parts.push(clean)
   }

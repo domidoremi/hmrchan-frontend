@@ -588,7 +588,7 @@ describe('postDetailModel', () => {
       resolveActiveImageSource(activeImage, {
         getMediaThumbnailUrl: (id, size) => `/media/${id}/${size}.jpg`,
       })
-    ).toBe('/media/media-1/large.jpg')
+    ).toBe('/api/v1/media/media-1/stream')
     expect(
       resolveActiveImageSrcset(video, {
         getMediaThumbnailSrcset: (id) => `/media/${id}/small.jpg 1x`,
@@ -601,7 +601,7 @@ describe('postDetailModel', () => {
           resolveThumbnailSrc: (url, size) => `${url}?size=${size}`,
         }
       )
-    ).toBe('/thumb.jpg?size=large')
+    ).toBe('/thumb.jpg')
     expect(
       resolveFallbackMediaSrcset(
         { thumbnail_url: '/thumb.jpg' },
@@ -609,7 +609,7 @@ describe('postDetailModel', () => {
           resolveThumbnailSrcset: (url) => `${url} 1x`,
         }
       )
-    ).toBe('/thumb.jpg 1x')
+    ).toBeNull()
 
     expect(
       resolvePlaceholderSource({
@@ -655,8 +655,7 @@ describe('postDetailModel', () => {
         },
         resolver
       )
-    ).toBe('/media/image-1/large.jpg')
-    expect(calls).toEqual(['media:image-1:large'])
+    ).toBe('/api/v1/media/image-1/stream')
 
     calls.length = 0
     expect(
@@ -664,8 +663,8 @@ describe('postDetailModel', () => {
         { thumbnail_url: '/fallback.jpg', media_files: [{ id: 'video-1', file_type: 'video' }] },
         resolver
       )
-    ).toBe('/fallback.jpg?size=large')
-    expect(calls).toEqual(['fallback:/fallback.jpg:large'])
+    ).toBe('/fallback.jpg')
+    expect(calls).toEqual([])
 
     expect(resolvePostDetailMediaHintSource(null, resolver)).toBeNull()
   })
@@ -688,20 +687,20 @@ describe('postDetailModel', () => {
       resolveAdjacentImagePreloadTargets({
         mediaFiles,
         activeMediaIndex: 0,
-        preloadedImages: new Set(['/media/image-3/medium.jpg']),
+        preloadedImages: new Set(['/api/v1/media/image-3/stream']),
         getMediaThumbnailUrl: (id, size) => `/media/${id}/${size}.jpg`,
       })
     ).toEqual([
       {
         mediaId: 'image-1',
-        thumbnailUrl: '/media/image-1/medium.jpg',
-        fullSizeUrl: '/media/image-1/large.jpg',
+        thumbnailUrl: '/api/v1/media/image-1/stream',
+        fullSizeUrl: '/api/v1/media/image-1/stream',
         shouldPreloadThumbnail: true,
       },
       {
         mediaId: 'image-3',
-        thumbnailUrl: '/media/image-3/medium.jpg',
-        fullSizeUrl: '/media/image-3/large.jpg',
+        thumbnailUrl: '/api/v1/media/image-3/stream',
+        fullSizeUrl: '/api/v1/media/image-3/stream',
         shouldPreloadThumbnail: false,
       },
     ])
@@ -716,8 +715,8 @@ describe('postDetailModel', () => {
     ).toEqual([
       {
         mediaId: 'image-0',
-        thumbnailUrl: '/media/image-0/medium.jpg',
-        fullSizeUrl: '/media/image-0/large.jpg',
+        thumbnailUrl: '/api/v1/media/image-0/stream',
+        fullSizeUrl: '/api/v1/media/image-0/stream',
         shouldPreloadThumbnail: true,
       },
     ])

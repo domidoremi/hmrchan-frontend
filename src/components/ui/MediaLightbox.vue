@@ -22,7 +22,7 @@
             </div>
             <div class="lightbox-header-actions">
               <button
-                v-if="allowDownload && currentMedia?.file_type === 'image'"
+                v-if="allowDownload && isImageMedia"
                 type="button"
                 class="icon-btn"
                 :aria-label="$t('common.download')"
@@ -77,7 +77,7 @@
                 </div>
 
                 <img
-                  v-if="currentMedia.file_type === 'image'"
+                  v-if="isImageMedia"
                   :key="imageKey"
                   class="lightbox-media"
                   :class="{ 'is-loaded': isLoaded, 'is-dragging': isDragging }"
@@ -89,9 +89,10 @@
                 />
 
                 <VideoPlayer
-                  v-else-if="currentMedia.file_type === 'video'"
+                  v-else-if="currentMediaKind === 'video'"
                   class="lightbox-media is-loaded"
                   :src="fullSizeUrl"
+                  :poster="currentMediaSources.posterUrl || undefined"
                   :subtitles="currentMedia?.subtitles ?? null"
                   playsinline
                   @ready="onMediaLoad"
@@ -188,7 +189,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from '@lucide/vue'
-import { getMediaStreamUrl } from '@/utils/mediaOptimizer'
+import { resolveMediaSources } from '@/utils/mediaOptimizer'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import { warmDecodedImage } from '@/utils/performance'
 import VideoPlayer from './VideoPlayer.vue'
@@ -199,6 +200,11 @@ import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 export interface MediaItem {
   id: string
   file_type: string
+  media_type?: string | null
+  stream_url?: string | null
+  thumbnail_url?: string | null
+  file_path?: string | null
+  thumbnail_path?: string | null
   width?: number | null
   height?: number | null
   duration?: number | null
@@ -275,13 +281,15 @@ const CONTROLS_HIDE_DELAY = 2500
 let controlsTimer: ReturnType<typeof setTimeout> | null = null
 
 const currentMedia = computed(() => props.mediaList[currentIndex.value] ?? null)
-const isImageMedia = computed(() => currentMedia.value?.file_type === 'image')
+const currentMediaSources = computed(() => {
+  const media = currentMedia.value
+  return resolveMediaSources(media ? { media_id: media.id, ...media } : null)
+})
+const currentMediaKind = computed(() => currentMediaSources.value.kind)
+const isImageMedia = computed(() => currentMediaKind.value === 'image')
 const hasMultiple = computed(() => props.mediaList.length > 1)
 const showImageToolbar = computed(() => props.showToolbar && isImageMedia.value)
-const fullSizeUrl = computed(() => {
-  if (!currentMedia.value) return ''
-  return getMediaStreamUrl(currentMedia.value.id)
-})
+const fullSizeUrl = computed(() => currentMediaSources.value.streamUrl || '')
 
 const currentMediaKey = computed(
   () => `${currentMedia.value?.id ?? 'unknown'}-${imageReloadToken.value}`
@@ -289,7 +297,7 @@ const currentMediaKey = computed(
 const imageKey = computed(() => `${currentMedia.value?.id ?? 'unknown'}-${imageReloadToken.value}`)
 
 function warmCurrentImage() {
-  if (currentMedia.value?.file_type !== 'image' || !fullSizeUrl.value) return
+  if (!isImageMedia.value || !fullSizeUrl.value) return
   void warmDecodedImage(fullSizeUrl.value)
 }
 
@@ -655,11 +663,13 @@ function prefetchAround(index: number) {
   const prevIndex = (index - 1 + props.mediaList.length) % props.mediaList.length
   const nextItem = props.mediaList[nextIndex]
   const prevItem = props.mediaList[prevIndex]
-  if (nextItem?.file_type === 'image') {
-    prefetchImage(getMediaStreamUrl(nextItem.id))
+  const nextSource = nextItem ? resolveMediaSources({ media_id: nextItem.id, ...nextItem }) : null
+  const prevSource = prevItem ? resolveMediaSources({ media_id: prevItem.id, ...prevItem }) : null
+  if (nextSource?.kind === 'image' && nextSource.streamUrl) {
+    prefetchImage(nextSource.streamUrl)
   }
-  if (prevItem?.file_type === 'image') {
-    prefetchImage(getMediaStreamUrl(prevItem.id))
+  if (prevSource?.kind === 'image' && prevSource.streamUrl) {
+    prefetchImage(prevSource.streamUrl)
   }
 }
 

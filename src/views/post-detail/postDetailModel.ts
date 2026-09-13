@@ -1,25 +1,38 @@
+import { normalizeMediaKind, resolveMediaSources } from '@/utils/mediaOptimizer'
+
+import type { SubtitleTrack } from '@/types'
+import type { MediaThumbnailSize } from '@/utils/mediaOptimizer'
+
 export interface PostDetailMediaLike {
   id?: string | null
   file_type?: string | null
+  media_type?: string | null
+  stream_url?: string | null
+  thumbnail_url?: string | null
+  file_path?: string | null
+  thumbnail_path?: string | null
   width?: number | null
   height?: number | null
-  subtitles?: unknown[] | null
+  subtitles?: SubtitleTrack[] | null
 }
 
 export interface PostDetailLike {
-  title?: string | null
-  description?: string | null
-  published_at?: string | null
+  title?: string | null | undefined
+  description?: string | null | undefined
+  published_at?: string | null | undefined
+  media_id?: string | null
+  media_type?: string | null
+  stream_url?: string | null
   thumbnail_url?: string | null
   media_count?: number | null
-  media_files?: PostDetailMediaLike[] | null
+  media_files?: PostDetailMediaLike[] | null | undefined
 }
 
 export type PostDetailMediaUrlResolver = {
-  getMediaThumbnailUrl: (mediaId: string, size: string) => string
+  getMediaThumbnailUrl: (mediaId: string, size: MediaThumbnailSize) => string
   getMediaThumbnailSrcset: (mediaId: string) => string | null
-  resolveThumbnailSrc: (url: string | null, size: string) => string
-  resolveThumbnailSrcset: (url: string | null) => string | null
+  resolveThumbnailSrc: (url: string | null, size: MediaThumbnailSize) => string | undefined
+  resolveThumbnailSrcset: (url: string | null) => string | null | undefined
 }
 
 export type PostDetailMediaHintSourceResolver = Pick<
@@ -223,7 +236,7 @@ export function buildPostDetailPageMeta(
     description: buildDetailDescription(post) || title,
     canonicalPath,
     ogType: 'article',
-    ogImage: post?.thumbnail_url ?? null,
+    ogImage: resolveMediaSources(post).displayUrl,
   }
 }
 
@@ -463,17 +476,22 @@ export function resolvePostDetailMediaState(
   const mediaCount = mediaFiles.length
   const hasMultipleMedia = mediaCount > 1
 
+  const isVideo = activeMedia
+    ? normalizeMediaKind(activeMedia.media_type ?? activeMedia.file_type) === 'video'
+    : false
+  const allImages = mediaFiles.every(
+    (media) => normalizeMediaKind(media.media_type ?? media.file_type) === 'image'
+  )
+
   return {
     activeMedia,
-    subtitlesAvailable: Boolean(
-      activeMedia && activeMedia.file_type === 'video' && (activeMedia.subtitles?.length ?? 0) > 0
-    ),
+    subtitlesAvailable: Boolean(activeMedia && isVideo && (activeMedia.subtitles?.length ?? 0) > 0),
     hasMultipleMedia,
     mediaCount,
     canGoPrevMedia: activeMediaIndex > 0,
     canGoNextMedia: activeMediaIndex + 1 < mediaCount,
-    showMediaNavButtons: hasMultipleMedia && activeMedia?.file_type !== 'video',
-    isImageSequence: mediaFiles.every((media) => media.file_type === 'image'),
+    showMediaNavButtons: hasMultipleMedia && !isVideo,
+    isImageSequence: allImages,
   }
 }
 
@@ -603,44 +621,34 @@ export function getThumbnailPlaceholderCount(mediaCount?: number | null): number
   return Math.min(Math.max(mediaCount ?? 0, 2), 6)
 }
 
-export function resolveActiveImageSource(
-  media: PostDetailMediaLike | null | undefined,
-  resolver: Pick<PostDetailMediaUrlResolver, 'getMediaThumbnailUrl'>
-): string {
-  if (!media?.id || media.file_type !== 'image') return ''
-  return resolver.getMediaThumbnailUrl(media.id, 'large')
+export function resolveActiveImageSource(media: PostDetailMediaLike | null | undefined): string {
+  if (!media || normalizeMediaKind(media.media_type ?? media.file_type) !== 'image') return ''
+  return resolveMediaSources({ media_id: media.id, ...media }).displayUrl || ''
 }
 
-export function resolveActiveImageSrcset(
-  media: PostDetailMediaLike | null | undefined,
-  resolver: Pick<PostDetailMediaUrlResolver, 'getMediaThumbnailSrcset'>
-): string | null {
-  if (!media?.id || media.file_type !== 'image') return null
-  return resolver.getMediaThumbnailSrcset(media.id)
+export function resolveActiveImageSrcset(): string | null {
+  return null
 }
 
-export function resolveFallbackMediaSource(
-  post: PostDetailLike | null | undefined,
-  resolver: Pick<PostDetailMediaUrlResolver, 'resolveThumbnailSrc'>
-): string {
-  return resolver.resolveThumbnailSrc(post?.thumbnail_url ?? null, 'large') || ''
+export function resolveFallbackMediaSource(post: PostDetailLike | null | undefined): string {
+  return resolveMediaSources(post).displayUrl || ''
 }
 
-export function resolveFallbackMediaSrcset(
-  post: PostDetailLike | null | undefined,
-  resolver: Pick<PostDetailMediaUrlResolver, 'resolveThumbnailSrcset'>
-): string | null {
-  return resolver.resolveThumbnailSrcset(post?.thumbnail_url ?? null)
+export function resolveFallbackMediaSrcset(): string | null {
+  return null
 }
 
 export function resolvePostDetailMediaHintSource(
-  post: PostDetailLike | null | undefined,
-  resolver: PostDetailMediaHintSourceResolver
+  post: PostDetailLike | null | undefined
 ): string | null {
-  const primaryImage = post?.media_files?.find((media) => media.file_type === 'image' && media.id)
-  if (primaryImage?.id) return resolver.getMediaThumbnailUrl(primaryImage.id, 'large')
+  const primaryImage = post?.media_files?.find(
+    (media) => normalizeMediaKind(media.media_type ?? media.file_type) === 'image'
+  )
+  if (primaryImage) {
+    return resolveMediaSources({ media_id: primaryImage.id, ...primaryImage }).displayUrl
+  }
 
-  return resolver.resolveThumbnailSrc(post?.thumbnail_url ?? null, 'large') || null
+  return resolveMediaSources(post).displayUrl
 }
 
 export function resolvePlaceholderSource({
@@ -654,7 +662,7 @@ export function resolvePlaceholderSource({
   activeMediaIndex: number
   cachedThumbnailUrl: string | null
   preloadedImages: ReadonlySet<string>
-  getMediaThumbnailUrl: (mediaId: string, size: string) => string
+  getMediaThumbnailUrl: (mediaId: string, size: MediaThumbnailSize) => string
 }): string | null {
   if (!activeMedia?.id) return cachedThumbnailUrl
 
@@ -676,25 +684,27 @@ export function resolveAdjacentImagePreloadTargets({
   mediaFiles,
   activeMediaIndex,
   preloadedImages,
-  getMediaThumbnailUrl,
 }: {
   mediaFiles: readonly PostDetailMediaLike[] | null | undefined
   activeMediaIndex: number
   preloadedImages: ReadonlySet<string>
-  getMediaThumbnailUrl: (mediaId: string, size: string) => string
+  getMediaThumbnailUrl?: (mediaId: string, size: MediaThumbnailSize) => string
 }): PostDetailAdjacentMediaPreloadTarget[] {
   if (!mediaFiles || mediaFiles.length <= 1) return []
 
   return getAdjacentMediaPreloadIndexes(mediaFiles.length, activeMediaIndex).flatMap((idx) => {
     const media = mediaFiles[idx]
-    if (!media?.id || media.file_type !== 'image') return []
+    if (!media || normalizeMediaKind(media.media_type ?? media.file_type) !== 'image') return []
 
-    const thumbnailUrl = getMediaThumbnailUrl(media.id, 'medium')
+    const sources = resolveMediaSources({ media_id: media.id, ...media })
+    const fullSizeUrl = sources.displayUrl
+    if (!sources.mediaId || !fullSizeUrl) return []
+    const thumbnailUrl = sources.posterUrl || fullSizeUrl
     return [
       {
-        mediaId: media.id,
+        mediaId: sources.mediaId,
         thumbnailUrl,
-        fullSizeUrl: getMediaThumbnailUrl(media.id, 'large'),
+        fullSizeUrl,
         shouldPreloadThumbnail: !preloadedImages.has(thumbnailUrl),
       },
     ]

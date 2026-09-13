@@ -13,6 +13,7 @@ describe('ThumbnailImage', () => {
       props: {
         src: '/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=original',
         alt: 'Thumb',
+        size: 'medium',
         responsive: true,
         sizes: '50vw',
       },
@@ -28,6 +29,38 @@ describe('ThumbnailImage', () => {
     expect(img.attributes('srcset')).toContain('/thumbnail?size=small')
     expect(img.attributes('srcset')).toContain('/thumbnail?size=large')
     expect(img.attributes('sizes')).toBe('50vw')
+  })
+
+  it('keeps original media source untouched by default and omits thumbnail srcset', () => {
+    const wrapper = mount(ThumbnailImage, {
+      props: {
+        src: '/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=original',
+        alt: 'Thumb',
+        responsive: true,
+        sizes: '50vw',
+      },
+    })
+
+    const img = wrapper.get('img')
+
+    expect(img.attributes('src')).toContain('/thumbnail?size=original')
+    expect(img.attributes('srcset')).toBeUndefined()
+  })
+
+  it('does not generate a srcset for original-size sources', () => {
+    const wrapper = mount(ThumbnailImage, {
+      props: {
+        src: '/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=original',
+        alt: 'Thumb',
+        responsive: true,
+        sizes: '50vw',
+      },
+    })
+
+    const img = wrapper.get('img')
+
+    expect(img.attributes('src')).toContain('size=original')
+    expect(img.attributes('srcset')).toBeUndefined()
   })
 
   it('renders fallback slot when no thumbnail source exists', () => {

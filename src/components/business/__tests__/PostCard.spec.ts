@@ -145,6 +145,7 @@ describe('PostCard', () => {
     expect(fetchMock).toHaveBeenCalledWith(`/api/v1/media/${mediaId}/stream`, {
       headers: { Range: 'bytes=0-15' },
       credentials: 'same-origin',
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -159,7 +160,7 @@ describe('PostCard', () => {
       )
     )
 
-    const mediaId = '123e4567-e89b-12d3-a456-426614174000'
+    const mediaId = '3a1f5c8e-2b6d-4f90-8a3b-1c2d3e4f5a6b'
     const { host } = mountPostCard(
       createPost({
         thumbnail_url: `/api/v1/media/${mediaId}/thumbnail?size=small`,
@@ -173,7 +174,9 @@ describe('PostCard', () => {
     image?.dispatchEvent(new Event('load'))
     await vi.waitFor(() => expect(image?.classList.contains('is-loaded')).toBe(true))
 
-    expect(image?.src).toContain('/thumbnail?size=large')
+    // The non-image stream probe must not replace the rendered thumbnail with /stream.
+    expect(image?.src).not.toContain('/stream')
+    expect(image?.src).toContain(`/media/${mediaId}/thumbnail`)
   })
 
   it('uses the original image stream before any thumbnail when requested', async () => {

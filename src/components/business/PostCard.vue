@@ -85,7 +85,7 @@
           <Avatar
             class="post-author-avatar"
             size="custom"
-            :src="resolveAvatarSrc(post.author_avatar_url)"
+            :src="resolveAvatarSrc(post.author_avatar_url) || ''"
             :alt="displayAuthorName"
             loading="lazy"
             decoding="async"
@@ -126,16 +126,15 @@ import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icon
 import type { PostListItem } from '@/api'
 import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { prefetchPostDetail } from '@/utils/prefetch'
-import { reportClientEvent } from '@/utils/clientReporter'
 import { warmDecodedImage } from '@/utils/performance'
 import {
-  normalizeToThumbnailUrl,
-  extractMediaIdFromUrl,
-  getMediaStreamUrl,
-  getMediaThumbnailUrl,
+  isMediaThumbnailUrl,
   isMobileDevice,
+  normalizeToThumbnailUrl,
+  resolveMediaImageCandidates,
+  resolveMediaSources,
+  type MediaSourceLike,
 } from '@/utils/mediaOptimizer'
-import { thumbnailCache } from '@/utils/thumbnailCache'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
@@ -151,10 +150,7 @@ import {
   resolvePlatformAnimation,
   resolvePlatformLabel,
 } from './post-card/postCardModel'
-import {
-  resolveOriginalImageStream,
-  shouldUpgradeThumbnailToOriginal,
-} from './post-card/postCardMediaQuality'
+import { shouldUpgradeThumbnailToOriginal } from './post-card/postCardMediaQuality'
 
 const postAspectRatioCache = new Map<string, string>()
 const MAX_ASPECT_RATIO_CACHE_SIZE = 500
@@ -179,7 +175,7 @@ const PLATFORM_ASPECT_RATIOS: Record<string, string> = {
 
 const DEFAULT_ASPECT_RATIO = '16 / 9'
 
-export interface PostCardProps {
+interface PostCardProps {
   post: PostListItem
   showContent?: boolean
   showAuthor?: boolean
@@ -207,12 +203,20 @@ const props = withDefaults(defineProps<PostCardProps>(), {
   thumbnailSize: 'responsive',
   imageFit: 'cover',
   priority: false,
-  preferOriginalImage: false,
+  preferOriginalImage: true,
 })
 
 const imageFit = computed(() => props.imageFit)
+const mediaSource = computed<MediaSourceLike>(() => ({
+  media_id: props.post.media_id ?? null,
+  media_type: props.post.media_type ?? null,
+  stream_url: props.post.stream_url ?? null,
+  thumbnail_url: props.post.thumbnail_url ?? null,
+}))
+const resolvedMedia = computed(() => resolveMediaSources(mediaSource.value))
+const imageCandidates = ref<string[]>([])
+const activeImageIndex = ref(0)
 const thumbnailFailed = ref(false)
-const preferredOriginalSrc = ref<string | null>(null)
 const highQualitySrc = ref<string | null>(null)
 const qualityUpgradeAttempted = ref(false)
 const qualityUpgradePending = ref(false)
@@ -240,29 +244,29 @@ if (renderDebugEnabled) {
 
 const displayAuthorName = computed(() =>
   resolveDisplayAuthorName({
-    authorName: props.post.author_name,
-    authorUsername: props.post.author_username,
+    authorName: props.post.author_name ?? null,
+    authorUsername: props.post.author_username ?? null,
   })
 )
 
 const titleFromContent = computed(() =>
   isTitleDerivedFromContent({
-    title: props.post.title,
-    description: props.post.description,
+    title: props.post.title ?? null,
+    description: props.post.description ?? null,
   })
 )
 
 const displayTitle = computed(() =>
   resolveDisplayTitle({
-    title: props.post.title,
-    description: props.post.description,
+    title: props.post.title ?? null,
+    description: props.post.description ?? null,
     titleFromContent: titleFromContent.value,
   })
 )
 
 const displayExcerpt = computed(() =>
   resolveDisplayExcerpt({
-    description: props.post.description,
+    description: props.post.description ?? null,
     titleFromContent: titleFromContent.value,
   })
 )
@@ -326,27 +330,14 @@ const effectiveThumbnailSize = computed(() => {
 })
 
 const thumbnailSrc = computed(() => {
-  if (!props.post.thumbnail_url || thumbnailFailed.value) return null
+  if (thumbnailFailed.value) return null
 
-  const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
-  if (props.preferOriginalImage) return preferredOriginalSrc.value
-
-  const rawSize = effectiveThumbnailSize.value || 'medium'
-  const size = rawSize
-
-  if (mediaId) {
-    const cached = thumbnailCache.get(mediaId, size)
-    if (cached) return cached
+  const candidate = imageCandidates.value[activeImageIndex.value]
+  if (props.preferOriginalImage || !candidate || !isMediaThumbnailUrl(candidate)) {
+    return candidate ?? null
   }
 
-  const optimized =
-    normalizeToThumbnailUrl(props.post.thumbnail_url, rawSize) || props.post.thumbnail_url
-
-  if (mediaId) {
-    thumbnailCache.set(mediaId, optimized, size)
-  }
-
-  return optimized
+  return normalizeToThumbnailUrl(candidate, effectiveThumbnailSize.value || 'medium') || candidate
 })
 
 const activeImageSrc = computed(() => highQualitySrc.value || thumbnailSrc.value)
@@ -445,19 +436,34 @@ function preloadImageDimensions() {
 
 watch(
   () =>
-    `${props.post.id}:${props.post.thumbnail_url ?? ''}:${props.post.media_type ?? ''}:${effectiveThumbnailSize.value ?? ''}:${props.preferOriginalImage}`,
+    [
+      props.post.id,
+      props.post.media_id ?? '',
+      props.post.media_type ?? '',
+      props.post.stream_url ?? '',
+      props.post.thumbnail_url ?? '',
+      effectiveThumbnailSize.value ?? '',
+      String(props.preferOriginalImage),
+    ].join(':'),
   () => {
+    const resolved = resolvedMedia.value
+    imageCandidates.value = props.preferOriginalImage
+      ? resolved.imageCandidates
+      : resolved.posterUrl
+        ? [resolved.posterUrl]
+        : resolved.imageCandidates
+    activeImageIndex.value = 0
     thumbnailFailed.value = false
-    preferredOriginalSrc.value = null
     highQualitySrc.value = null
     qualityUpgradeAttempted.value = false
     qualityUpgradePending.value = false
     isImageLoaded.value = false
     shouldRenderImage.value = true
     preloadedAspectRatio.value = null
+    hasPreloadedLargeImage = false
     preloadImageDimensions()
 
-    if (props.preferOriginalImage) {
+    if (props.preferOriginalImage && resolved.kind === 'unknown') {
       void resolvePreferredOriginalSource()
     }
 
@@ -469,35 +475,35 @@ watch(
 )
 
 async function resolvePreferredOriginalSource(): Promise<void> {
-  const thumbnailUrl = props.post.thumbnail_url
-  if (!thumbnailUrl) return
-
   const expectedPostId = props.post.id
-  const expectedThumbnailUrl = thumbnailUrl
-  const mediaId = extractMediaIdFromUrl(thumbnailUrl)
-  if (!mediaId) {
-    preferredOriginalSrc.value = thumbnailUrl
-    return
-  }
+  const expectedMediaKey = [
+    props.post.media_id ?? '',
+    props.post.media_type ?? '',
+    props.post.stream_url ?? '',
+    props.post.thumbnail_url ?? '',
+  ].join(':')
+  const candidates = await resolveMediaImageCandidates(mediaSource.value, { probeUnknown: true })
 
-  const mediaType = props.post.media_type?.toLowerCase()
-  const resolvedSource =
-    mediaType === 'image'
-      ? getMediaStreamUrl(mediaId)
-      : mediaType === 'video'
-        ? getMediaThumbnailUrl(mediaId, 'large')
-        : ((await resolveOriginalImageStream(thumbnailUrl)) ??
-          getMediaThumbnailUrl(mediaId, 'large'))
-
+  const currentMediaKey = [
+    props.post.media_id ?? '',
+    props.post.media_type ?? '',
+    props.post.stream_url ?? '',
+    props.post.thumbnail_url ?? '',
+  ].join(':')
   if (
     props.post.id !== expectedPostId ||
-    props.post.thumbnail_url !== expectedThumbnailUrl ||
-    !props.preferOriginalImage
+    currentMediaKey !== expectedMediaKey ||
+    !props.preferOriginalImage ||
+    candidates.length === 0
   ) {
     return
   }
 
-  preferredOriginalSrc.value = resolvedSource
+  if (candidates[0] !== imageCandidates.value[0]) {
+    isImageLoaded.value = false
+  }
+  imageCandidates.value = candidates
+  activeImageIndex.value = 0
 }
 
 function formatPublishedTime(dateStr: string): string {
@@ -520,15 +526,10 @@ function formatPublishedTime(dateStr: string): string {
 
 function preloadLargeImage() {
   if (!shouldPreloadLargeImageOnHover.value) return
-  if (hasPreloadedLargeImage || !props.post.thumbnail_url) return
+  if (hasPreloadedLargeImage || !activeImageSrc.value) return
   hasPreloadedLargeImage = true
 
-  const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
-  if (!mediaId) return
-
-  const largeUrl = getMediaThumbnailUrl(mediaId, 'large')
-
-  void warmDecodedImage(largeUrl)
+  void warmDecodedImage(activeImageSrc.value)
 }
 
 function onImageLoad(event: Event) {
@@ -542,8 +543,8 @@ function onImageLoad(event: Event) {
       pending: qualityUpgradePending.value,
       highQualitySrc: highQualitySrc.value,
       thumbnailSize: effectiveThumbnailSize.value,
-      duration: props.post.duration,
-      postType: props.post.post_type,
+      duration: props.post.duration ?? null,
+      postType: props.post.post_type ?? null,
       naturalWidth: img.naturalWidth,
     })
   ) {
@@ -562,18 +563,12 @@ function onImageLoad(event: Event) {
 }
 
 async function upgradeToOriginalImage(): Promise<void> {
-  const thumbnailUrl = props.post.thumbnail_url
-  if (!thumbnailUrl) {
-    isImageLoaded.value = true
-    emit('height-change')
-    return
-  }
-
   qualityUpgradeAttempted.value = true
   qualityUpgradePending.value = true
 
-  const streamUrl = await resolveOriginalImageStream(thumbnailUrl)
+  const candidates = await resolveMediaImageCandidates(mediaSource.value, { probeUnknown: true })
   qualityUpgradePending.value = false
+  const streamUrl = candidates.find((candidate) => candidate !== thumbnailSrc.value) ?? null
   if (streamUrl) {
     isImageLoaded.value = false
     highQualitySrc.value = streamUrl
@@ -585,38 +580,18 @@ async function upgradeToOriginalImage(): Promise<void> {
 }
 
 function onImageError() {
-  if (props.preferOriginalImage && preferredOriginalSrc.value?.includes('/stream')) {
-    const mediaId = props.post.thumbnail_url
-      ? extractMediaIdFromUrl(props.post.thumbnail_url)
-      : null
-    preferredOriginalSrc.value = mediaId ? getMediaThumbnailUrl(mediaId, 'large') : null
+  if (highQualitySrc.value) {
+    highQualitySrc.value = null
     isImageLoaded.value = false
     shouldRenderImage.value = true
     return
   }
 
-  if (highQualitySrc.value) {
-    highQualitySrc.value = null
-    isImageLoaded.value = true
+  if (activeImageIndex.value + 1 < imageCandidates.value.length) {
+    activeImageIndex.value += 1
+    isImageLoaded.value = false
     shouldRenderImage.value = true
     return
-  }
-
-  const mediaId = props.post.thumbnail_url ? extractMediaIdFromUrl(props.post.thumbnail_url) : null
-  const size = effectiveThumbnailSize.value || 'medium'
-
-  if (mediaId) {
-    thumbnailCache.markFailure(mediaId, size)
-    reportClientEvent(
-      'media.thumbnail_forbidden',
-      {
-        inferred: true,
-        postId: props.post.id,
-        mediaId,
-        size,
-      },
-      { severity: 'warn' }
-    )
   }
 
   thumbnailFailed.value = true
