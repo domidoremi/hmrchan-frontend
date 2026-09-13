@@ -14,7 +14,16 @@ export async function triggerClientSync(): Promise<void> {
 
         channel.port1.onmessage = (event) => {
           clearTimeout(timeout)
-          resolve((event.data as { ok?: boolean; error?: string } | undefined) || { ok: true })
+          const data: unknown = event.data
+          if (data && typeof data === 'object' && 'ok' in data && data.ok === true) {
+            resolve({ ok: true })
+          } else {
+            const error =
+              data && typeof data === 'object' && 'error' in data && typeof data.error === 'string'
+                ? data.error
+                : 'invalid synchronization acknowledgement'
+            resolve({ ok: false, error })
+          }
         }
 
         client.postMessage({ type: 'SYNC_OFFLINE_ACTIONS' }, [channel.port2])

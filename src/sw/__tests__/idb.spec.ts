@@ -18,6 +18,8 @@ describe('service worker IndexedDB schema', () => {
     expect(open).toHaveBeenCalledWith('hmrchan-cache', 5)
 
     const database = {
+      version: 5,
+      objectStoreNames: { contains: () => true },
       close: vi.fn(),
       onversionchange: null as (() => void) | null,
     }

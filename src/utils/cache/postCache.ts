@@ -105,9 +105,7 @@ export const postCache = {
     cacheStats.recordSet('POST_ENTITY')
   },
 
-  async setPostEntities(
-    posts: Array<{ uuid?: string; id?: string; [key: string]: unknown }>
-  ): Promise<void> {
+  async setPostEntities(posts: Array<{ uuid?: string; id?: string }>): Promise<void> {
     await Promise.all(
       posts.map((post) => {
         const uuid = post.uuid || post.id
@@ -170,13 +168,13 @@ export const postCache = {
       data,
       total: listCache.total,
       fromCache: true,
-      meta: listCache.meta,
+      ...(listCache.meta === undefined ? {} : { meta: listCache.meta }),
     }
   },
 
   async setList(
     params: Record<string, unknown>,
-    posts: Array<{ uuid?: string; id?: string; [key: string]: unknown }>,
+    posts: Array<{ uuid?: string; id?: string }>,
     total: number,
     etag?: string,
     meta?: Record<string, unknown>
@@ -191,7 +189,7 @@ export const postCache = {
       cache_key: cacheKey,
       uuids,
       total,
-      meta,
+      ...(meta === undefined ? {} : { meta }),
       cached_at: Date.now(),
       etag,
     }

@@ -6,7 +6,7 @@ import { deepClone } from '@/utils/modernAPIs'
 export interface PublicSnapshotRecord<T> {
   key: string
   scope: string
-  params: Record<string, unknown>
+  params: object
   data: T
   cached_at: number
 }
@@ -21,7 +21,7 @@ function schedulePublicSnapshotPrune(): void {
   }, 500)
 }
 
-function buildSnapshotKey(scope: string, params: Record<string, unknown> = {}): string {
+function buildSnapshotKey(scope: string, params: object = {}): string {
   return generateCacheKey(`public_snapshot:${UUIDV7_CUTOVER_EPOCH}:${scope}`, params)
 }
 
@@ -31,7 +31,7 @@ function cloneSnapshotData<T>(value: T): T {
 
 export async function getPublicSnapshot<T>(
   scope: string,
-  params: Record<string, unknown> = {},
+  params: object = {},
   ttl = CACHE_TTL.PUBLIC_SNAPSHOT
 ): Promise<T | undefined> {
   const key = buildSnapshotKey(scope, params)
@@ -54,7 +54,7 @@ export async function getPublicSnapshot<T>(
 
 export async function setPublicSnapshot<T>(
   scope: string,
-  params: Record<string, unknown> = {},
+  params: object = {},
   data: T
 ): Promise<void> {
   const key = buildSnapshotKey(scope, params)
@@ -71,10 +71,7 @@ export async function setPublicSnapshot<T>(
   schedulePublicSnapshotPrune()
 }
 
-export async function deletePublicSnapshot(
-  scope: string,
-  params: Record<string, unknown> = {}
-): Promise<void> {
+export async function deletePublicSnapshot(scope: string, params: object = {}): Promise<void> {
   const key = buildSnapshotKey(scope, params)
   memoryCache.delete(key)
   await idbDelete(STORES.META, key)

@@ -49,9 +49,9 @@ export async function precacheStaticAssets(): Promise<void> {
     STATIC_ASSETS.map((asset) => cacheStaticAsset(cache, asset))
   )
 
-  const failures = results
-    .map((result, index) => ({ result, asset: STATIC_ASSETS[index] }))
-    .filter(({ result }) => result.status === 'rejected')
+  const failures = results.flatMap((result, index) =>
+    result.status === 'rejected' ? [{ result, asset: STATIC_ASSETS[index] }] : []
+  )
 
   if (failures.length > 0) {
     swWarn(
@@ -79,7 +79,11 @@ export async function cleanupOutdatedCaches(): Promise<void> {
   const cacheNames = await caches.keys()
   await Promise.all(
     cacheNames
-      .filter((name) => name.startsWith('hmrchan-') && !Object.values(CACHE_NAMES).includes(name))
+      .filter(
+        (name) =>
+          name.startsWith('hmrchan-') &&
+          !Object.values(CACHE_NAMES).some((current) => current === name)
+      )
       .map((name) => caches.delete(name))
   )
 }
