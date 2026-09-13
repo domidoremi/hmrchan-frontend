@@ -1,5 +1,6 @@
 import {
   idbClear,
+  idbAddDurable,
   idbDelete,
   idbGet,
   idbGetAll,
@@ -61,20 +62,22 @@ export async function addOfflineAction(
     status: 'pending',
   }
 
-  await idbSet(QUEUE_STORE, action)
+  await idbAddDurable(QUEUE_STORE, action)
 
   if (
     'serviceWorker' in navigator &&
+    typeof ServiceWorkerRegistration !== 'undefined' &&
     'sync' in ServiceWorkerRegistration.prototype &&
     navigator.serviceWorker.controller
   ) {
-    try {
-      const registration = await navigator.serviceWorker.ready
-      // @ts-expect-error - Background Sync API not fully typed
-      await registration.sync.register('sync-offline-actions')
-    } catch (error) {
-      console.warn('[OfflineQueue] Background sync registration failed:', error)
-    }
+    void navigator.serviceWorker.ready
+      .then(async (registration) => {
+        // @ts-expect-error - Background Sync API not fully typed
+        await registration.sync.register('sync-offline-actions')
+      })
+      .catch((error: unknown) => {
+        console.warn('[OfflineQueue] Background sync registration failed:', error)
+      })
   }
 
   return id

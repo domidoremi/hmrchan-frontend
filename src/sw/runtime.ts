@@ -45,6 +45,7 @@ export const STATIC_ASSETS = [
 ]
 export const ESSENTIAL_STATIC_ASSETS = ['/', '/index.html', OFFLINE_FALLBACK]
 
+const AUTH_COOKIE_PATTERN = /(?:^|;\s*)(?:__Host-momi_bff_at|__Host-momi_bff_rt|refresh_token)=/i
 const AUTH_ROUTE_PATHS = new Set([
   '/login',
   '/register',
@@ -120,11 +121,11 @@ export function isStaticAsset(url: URL): boolean {
 
 export function isMediaRequest(url: URL): boolean {
   if (url.pathname.startsWith('/api/')) {
-    return /^\/api\/v1\/media\/[0-9a-f-]+\/thumbnail$/i.test(url.pathname)
+    return /^\/api\/v1\/media\/[^/]+\/(?:thumbnail|image)$/i.test(url.pathname)
   }
 
   if (
-    ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg', '.mp4', '.webm'].some((ext) =>
+    ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg'].some((ext) =>
       url.pathname.endsWith(ext)
     )
   ) {
@@ -142,8 +143,19 @@ export function isMediaRequest(url: URL): boolean {
   return false
 }
 
+export function isMediaStreamRequest(url: URL): boolean {
+  return /^\/api\/v1\/media\/[^/]+\/stream$/i.test(url.pathname)
+}
+
 export function isVideoStreamRequest(url: URL): boolean {
-  return /^\/api\/v1\/media\/[0-9a-f-]+\/stream$/i.test(url.pathname)
+  return isMediaStreamRequest(url)
+}
+
+export function isCacheableImageStreamRequest(request: Request): boolean {
+  if (request.method !== 'GET' || request.destination !== 'image') return false
+  if (request.headers.has('Range') || request.headers.has('Authorization')) return false
+  const cookie = request.headers.get('Cookie') ?? ''
+  return !AUTH_COOKIE_PATTERN.test(cookie)
 }
 
 export function isApiRequest(url: URL): boolean {

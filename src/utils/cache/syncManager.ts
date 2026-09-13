@@ -1,3 +1,4 @@
+import { assertUuidV7String } from '@/types/publicId'
 import {
   claimNextOfflineAction,
   completeClaimedAction,
@@ -78,13 +79,16 @@ export async function syncOfflineActions(ownerId: string | null | undefined): Pr
           }
           case 'favorite':
             await favoriteService.create(
-              action.resourceId,
+              assertUuidV7String(action.resourceId, 'favorite post id'),
               {},
               { idempotencyKey: action.idempotencyKey, signal: operation.signal }
             )
             break
           case 'unfavorite':
-            await favoriteService.removeByPostId(action.resourceId, { signal: operation.signal })
+            await favoriteService.removeByPostId(
+              assertUuidV7String(action.resourceId, 'favorite post id'),
+              { signal: operation.signal }
+            )
             break
           case 'comment':
             {

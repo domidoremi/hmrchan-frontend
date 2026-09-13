@@ -1,10 +1,5 @@
-import { swWarn } from './runtime'
-import {
-  CACHE_DB_NAME,
-  CACHE_DB_VERSION,
-  STORES,
-  upgradeCacheDatabase,
-} from '../utils/cache/idbSchema'
+import { STORES } from '../utils/cache/idbSchema'
+import { openCacheDatabase } from '../utils/cache/idbConnection'
 
 export const MEDIA_META_STORE = STORES.MEDIA_META
 let databasePromise: Promise<IDBDatabase> | null = null
@@ -49,30 +44,20 @@ export async function getMediaMetaStats(): Promise<{ count: number; totalSize: n
 export function openDatabase(): Promise<IDBDatabase> {
   if (databasePromise) return databasePromise
 
-  databasePromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(CACHE_DB_NAME, CACHE_DB_VERSION)
-
-    request.onupgradeneeded = (event) => {
-      const db = request.result
-      upgradeCacheDatabase(db, request.transaction, event.oldVersion)
-    }
-
-    request.onsuccess = () => {
-      const db = request.result
-      db.onversionchange = () => {
+  databasePromise = openCacheDatabase()
+    .then((db) => {
+      const invalidate = () => {
         db.close()
         databasePromise = null
       }
-      resolve(db)
-    }
-    request.onerror = () => {
+      db.onversionchange = invalidate
+      db.onclose = invalidate
+      return db
+    })
+    .catch((error: unknown) => {
       databasePromise = null
-      reject(request.error)
-    }
-    request.onblocked = () => {
-      swWarn('[SW] IDB upgrade blocked')
-    }
-  })
+      throw error
+    })
 
   return databasePromise
 }

@@ -77,7 +77,7 @@ export const authorCache = {
     cacheStats.recordDelete('AUTHOR_DETAIL')
   },
 
-  async getList(params: Record<string, unknown>): Promise<CachedAuthorList | undefined> {
+  async getList(params: object): Promise<CachedAuthorList | undefined> {
     const startTime = performance.now()
     const cacheKey = generateCacheKey('author_list', params)
 
@@ -105,7 +105,7 @@ export const authorCache = {
   },
 
   async setList(
-    params: Record<string, unknown>,
+    params: object,
     data: unknown[],
     total: number,
     etag?: string,
@@ -116,7 +116,7 @@ export const authorCache = {
       cache_key: cacheKey,
       data,
       total,
-      meta,
+      ...(meta === undefined ? {} : { meta }),
       cached_at: Date.now(),
       etag,
     }

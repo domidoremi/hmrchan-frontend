@@ -104,7 +104,7 @@ export function getCacheRemainingTTL(cachedAt: number, ttl: number): number {
   return Math.max(0, remaining)
 }
 
-export function generateCacheKey(prefix: string, params: Record<string, unknown>): string {
+export function generateCacheKey(prefix: string, params: object): string {
   const sorted = Object.entries(params)
     .filter(([, v]) => v !== undefined && v !== null)
     .sort(([a], [b]) => a.localeCompare(b))

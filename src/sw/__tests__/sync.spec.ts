@@ -54,4 +54,19 @@ describe('triggerClientSync', () => {
 
     await expect(triggerClientSync()).resolves.toBeUndefined()
   })
+
+  it.each([undefined, null, {}, { ok: 'true' }, { error: 'incomplete' }])(
+    'rejects a malformed synchronization acknowledgement: %j',
+    async (reply) => {
+      matchAll.mockResolvedValue([
+        {
+          postMessage: (_message: unknown, ports: Array<MockMessageChannel['port2']>) => {
+            ports[0]?.reply(reply)
+          },
+        },
+      ])
+
+      await expect(triggerClientSync()).rejects.toThrow('not acknowledged')
+    }
+  )
 })

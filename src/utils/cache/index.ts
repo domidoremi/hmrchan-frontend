@@ -2,7 +2,7 @@ import { memoryCache } from './memoryCache'
 import { idbClear, STORES } from './idb'
 
 export { registerServiceWorker, unregisterServiceWorker } from './swRegister'
-export { postCache, type CachedPost, type CachedPostList } from './postCache'
+export { postCache, type CachedPostEntity, type CachedPostList } from './postCache'
 export { authorCache, type CachedAuthor, type CachedAuthorList } from './authorCache'
 export {
   getPublicSnapshot,

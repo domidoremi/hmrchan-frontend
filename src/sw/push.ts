@@ -22,7 +22,7 @@ export function normalizePushActionUrl(value: unknown): string {
 
 function parsePushPayload(
   event: PushEventLike
-): Required<Pick<PushPayload, 'title' | 'body'>> & Pick<PushPayload, 'url'> {
+): Required<Pick<PushPayload, 'title' | 'body'>> & { url: string | undefined } {
   let payload: PushPayload = {
     title: '新消息',
     body: '您有新的内容更新',
@@ -56,18 +56,18 @@ export function handlePush(event: PushEventLike): void {
   swLog('[SW] Push notification received')
   const payload = parsePushPayload(event)
 
-  event.waitUntil(
-    sw.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: '/icons/sitting-192.webp',
-      badge: '/icons/sitting-96.webp',
-      data: normalizePushActionUrl(payload.url),
-      actions: [
-        { action: 'open', title: '查看' },
-        { action: 'close', title: '关闭' },
-      ],
-    })
-  )
+  // Notification actions are a browser extension to the base DOM options.
+  const options: NotificationOptions & { actions: { action: string; title: string }[] } = {
+    body: payload.body,
+    icon: '/icons/sitting-192.webp',
+    badge: '/icons/sitting-96.webp',
+    data: normalizePushActionUrl(payload.url),
+    actions: [
+      { action: 'open', title: '查看' },
+      { action: 'close', title: '关闭' },
+    ],
+  }
+  event.waitUntil(sw.registration.showNotification(payload.title, options))
 }
 
 export function handleNotificationClick(event: NotificationEventLike): void {

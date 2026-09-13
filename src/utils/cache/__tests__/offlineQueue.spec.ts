@@ -10,6 +10,9 @@ vi.mock('../idb', () => ({
   idbSet: vi.fn(async (_store: string, value: Record<string, unknown>) => {
     queueStore.set(String(value.id), structuredClone(value))
   }),
+  idbAddDurable: vi.fn(async (_store: string, value: Record<string, unknown>) => {
+    queueStore.set(String(value.id), structuredClone(value))
+  }),
   idbGet: vi.fn(async (_store: string, id: string) => structuredClone(queueStore.get(id) ?? null)),
   idbDelete: vi.fn(async (_store: string, id: string) => {
     queueStore.delete(id)
@@ -66,6 +69,7 @@ import {
   removeAction,
   updateActionStatus,
 } from '../offlineQueue'
+import { idbAddDurable } from '../idb'
 
 describe('offlineQueue', () => {
   beforeEach(() => {
@@ -96,6 +100,33 @@ describe('offlineQueue', () => {
     vi.restoreAllMocks()
   })
 
+  it('propagates enqueue failure without scheduling replay or reporting success', async () => {
+    const failure = new DOMException('Storage full', 'QuotaExceededError')
+    vi.mocked(idbAddDurable).mockRejectedValueOnce(failure)
+    await expect(addOfflineAction('favorite', 'post-1', 'user-a')).rejects.toBe(failure)
+    expect(syncRegister).not.toHaveBeenCalled()
+    expect(queueStore.size).toBe(0)
+  })
+
+  it('does not return an action ID or schedule replay before commit', async () => {
+    let commit = () => {}
+    vi.mocked(idbAddDurable).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          commit = resolve
+        })
+    )
+    const success = vi.fn()
+    const enqueue = addOfflineAction('favorite', 'post-1', 'user-a').then(success)
+    await Promise.resolve()
+    expect(success).not.toHaveBeenCalled()
+    expect(syncRegister).not.toHaveBeenCalled()
+    commit()
+    await enqueue
+    expect(success).toHaveBeenCalledWith(expect.stringContaining('favorite-post-1-'))
+    expect(syncRegister).toHaveBeenCalledWith('sync-offline-actions')
+  })
+
   it('stores offline actions and requests background sync when supported', async () => {
     const id = await addOfflineAction('favorite', 'post-1', 'user-a', { source: 'test' })
 
@@ -111,6 +142,26 @@ describe('offlineQueue', () => {
       status: 'pending',
     })
     expect(syncRegister).toHaveBeenCalledWith('sync-offline-actions')
+  })
+
+  it('confirms committed enqueue even if a service worker never becomes ready', async () => {
+    Object.defineProperty(navigator.serviceWorker, 'ready', {
+      value: new Promise<ServiceWorkerRegistration>(() => {}),
+      configurable: true,
+    })
+    const id = await addOfflineAction('favorite', 'post-1', 'user-a')
+
+    expect(queueStore.has(id)).toBe(true)
+    expect(syncRegister).not.toHaveBeenCalled()
+  })
+
+  it('retains committed actions when background sync registration fails', async () => {
+    syncRegister.mockRejectedValueOnce(new Error('Background sync unavailable'))
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const id = await addOfflineAction('favorite', 'post-1', 'user-a')
+    await vi.waitFor(() => expect(console.warn).toHaveBeenCalled())
+
+    expect(queueStore.has(id)).toBe(true)
   })
 
   it('never exposes one account queued actions to another account', async () => {

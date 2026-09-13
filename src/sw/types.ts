@@ -1,4 +1,8 @@
-export const sw = self as ServiceWorkerGlobalScope & typeof globalThis
+/// <reference lib="webworker" />
+
+// This entry executes in a browser service worker, not the window global.
+declare const self: ServiceWorkerGlobalScope
+export const sw = self
 
 export interface ExtendableEventLike extends Event {
   waitUntil(promise: Promise<unknown>): void
@@ -16,7 +20,7 @@ export interface SyncEventLike extends ExtendableEventLike {
 
 export interface MessageEventLike extends ExtendableEventLike {
   data: unknown
-  ports: MessagePort[]
+  ports: readonly MessagePort[]
 }
 
 export interface PushDataLike {
@@ -25,7 +29,7 @@ export interface PushDataLike {
 }
 
 export interface PushEventLike extends ExtendableEventLike {
-  data?: PushDataLike
+  data?: PushDataLike | null
 }
 
 export interface NotificationEventLike extends ExtendableEventLike {

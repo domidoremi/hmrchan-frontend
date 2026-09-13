@@ -4,10 +4,11 @@ import {
   isAuthorRequest,
   isAvatarRequest,
   isMediaRequest,
+  isMediaStreamRequest,
+  isCacheableImageStreamRequest,
   isPostDetailRequest,
   isPostListRequest,
   isStaticAsset,
-  isVideoStreamRequest,
   shouldHandleRequest,
 } from './runtime'
 import type { FetchEventLike } from './types'
@@ -35,8 +36,12 @@ export function handleFetch(event: FetchEventLike): void {
 
   if (isStaticAsset(url)) {
     event.respondWith(cacheFirst(request, CACHE_NAMES.static))
-  } else if (isVideoStreamRequest(url)) {
-    event.respondWith(fetch(request))
+  } else if (isMediaStreamRequest(url)) {
+    event.respondWith(
+      isCacheableImageStreamRequest(request)
+        ? cacheFirstMedia(request, { allowPlaceholder: false, requireImageResponse: true })
+        : fetch(request)
+    )
   } else if (isAvatarRequest(url)) {
     event.respondWith(cacheFirstMedia(request))
   } else if (isMediaRequest(url)) {

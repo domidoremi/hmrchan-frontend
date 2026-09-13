@@ -107,7 +107,7 @@ describe('syncManager', () => {
         id: 'favorite-1',
         ownerId: 'user-a',
         type: 'favorite',
-        resourceId: 'post-1',
+        resourceId: '01900000-0000-7000-8000-000000000001',
         idempotencyKey: 'favorite-1',
         leaseId: 'lease-1',
       })
@@ -125,7 +125,7 @@ describe('syncManager', () => {
     const result = await syncOfflineActions('user-a')
 
     expect(favoriteCreate).toHaveBeenCalledWith(
-      'post-1',
+      '01900000-0000-7000-8000-000000000001',
       {},
       expect.objectContaining({ idempotencyKey: 'favorite-1', signal: expect.any(AbortSignal) })
     )
@@ -148,7 +148,7 @@ describe('syncManager', () => {
         id: 'like-1',
         ownerId: 'user-a',
         type: 'like',
-        resourceId: 'post-1',
+        resourceId: '01900000-0000-7000-8000-000000000001',
         leaseId: 'lease-like',
       })
       .mockResolvedValueOnce({
@@ -163,7 +163,7 @@ describe('syncManager', () => {
     const result = await syncOfflineActions('user-a')
 
     expect(likePost).toHaveBeenCalledWith(
-      'post-1',
+      '01900000-0000-7000-8000-000000000001',
       expect.objectContaining({ signal: expect.any(AbortSignal) })
     )
     expect(unlikePost).toHaveBeenCalledWith(
@@ -211,7 +211,7 @@ describe('syncManager', () => {
         id: 'favorite-shared',
         ownerId: 'user-a',
         type: 'favorite',
-        resourceId: 'post-shared',
+        resourceId: '01900000-0000-7000-8000-000000000002',
         leaseId: 'lease-shared',
       })
       .mockResolvedValue(undefined)
@@ -232,7 +232,7 @@ describe('syncManager', () => {
       id: 'favorite-a',
       ownerId: 'user-a',
       type: 'favorite',
-      resourceId: 'post-a',
+      resourceId: '01900000-0000-7000-8000-000000000003',
       leaseId: 'lease-a',
     })
 
@@ -260,7 +260,7 @@ describe('syncManager', () => {
       id: 'unlike-a',
       ownerId: 'user-a',
       type: 'unlike',
-      resourceId: 'post-a',
+      resourceId: '01900000-0000-7000-8000-000000000003',
       leaseId: 'lease-unlike-a',
     })
 

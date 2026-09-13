@@ -49,9 +49,9 @@ export async function precacheStaticAssets(): Promise<void> {
     STATIC_ASSETS.map((asset) => cacheStaticAsset(cache, asset))
   )
 
-  const failures = results
-    .map((result, index) => ({ result, asset: STATIC_ASSETS[index] }))
-    .filter(({ result }) => result.status === 'rejected')
+  const failures = results.flatMap((result, index) =>
+    result.status === 'rejected' ? [{ result, asset: STATIC_ASSETS[index] }] : []
+  )
 
   if (failures.length > 0) {
     swWarn(
@@ -79,7 +79,11 @@ export async function cleanupOutdatedCaches(): Promise<void> {
   const cacheNames = await caches.keys()
   await Promise.all(
     cacheNames
-      .filter((name) => name.startsWith('hmrchan-') && !Object.values(CACHE_NAMES).includes(name))
+      .filter(
+        (name) =>
+          name.startsWith('hmrchan-') &&
+          !Object.values(CACHE_NAMES).some((current) => current === name)
+      )
       .map((name) => caches.delete(name))
   )
 }
@@ -162,8 +166,22 @@ export async function cacheFirst(request: Request, cacheName: string): Promise<R
   }
 }
 
-export async function cacheFirstMedia(request: Request): Promise<Response> {
+export async function cacheFirstMedia(
+  request: Request,
+  options: { allowPlaceholder?: boolean; requireImageResponse?: boolean } = {}
+): Promise<Response> {
+  const allowPlaceholder = options.allowPlaceholder !== false
+  const requireImageResponse = options.requireImageResponse === true
   if (request.method !== 'GET') {
+    return fetch(request)
+  }
+  if (
+    requireImageResponse &&
+    (request.destination !== 'image' ||
+      request.headers.has('Range') ||
+      request.headers.has('Authorization') ||
+      request.headers.has('Cookie'))
+  ) {
     return fetch(request)
   }
 
@@ -181,8 +199,14 @@ export async function cacheFirstMedia(request: Request): Promise<Response> {
 
   try {
     const response = await fetch(request)
+    const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
+    const canCache =
+      response.ok &&
+      response.status === 200 &&
+      isCacheableResponse(response) &&
+      (!requireImageResponse || contentType.startsWith('image/'))
 
-    if (response.ok && response.status === 200 && isCacheableResponse(response)) {
+    if (canCache) {
       try {
         await manageMediaCache(request, response.clone())
       } catch (error) {
@@ -193,6 +217,15 @@ export async function cacheFirstMedia(request: Request): Promise<Response> {
     return response
   } catch (error) {
     swWarn('[SW] Media fetch failed:', request.url, error)
+    if (!allowPlaceholder) {
+      return new Response('Media unavailable', {
+        status: 503,
+        headers: {
+          'Cache-Control': 'no-store',
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      })
+    }
     return getPlaceholderImage()
   }
 }
