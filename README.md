@@ -26,7 +26,7 @@ HmrChan Frontend 是站点的 Vue 应用，负责公开内容、社区、账号�
 ### 平台与质量
 
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages_%2B_Functions-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/pages/)
-[![Vitest 5.0.0 beta.7](https://img.shields.io/badge/Vitest-5.0.0--beta.7-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/guide/)
+[![Vitest 5.0.0](https://img.shields.io/badge/Vitest-5.0.0-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/guide/)
 [![ESLint 10.9.0](https://img.shields.io/badge/ESLint-10.9.0-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/docs/latest/)
 [![Prettier 4.0.0 alpha.13](https://img.shields.io/badge/Prettier-4.0.0--alpha.13-F7B93E?logo=prettier&logoColor=111827)](https://prettier.io/docs/)
 [![Knip 6.32.2](https://img.shields.io/badge/Knip-6.32.2-EA580C)](https://knip.dev/overview/getting-started)

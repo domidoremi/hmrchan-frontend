@@ -5,7 +5,7 @@ export type AppUpdateMode = 'auto' | 'prompt'
 export const APP_UPDATE_IDLE_WINDOW_MS = 15_000
 
 export interface AppUpdatePolicyInput {
-  routeMode?: AppUpdateMode
+  routeMode?: AppUpdateMode | undefined
   strategy: AppUpdateStrategy
   documentVisible: boolean
   documentFocused: boolean

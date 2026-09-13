@@ -6,6 +6,34 @@ import {
 } from '../../../functions/api/mediaCachePolicy'
 
 describe('mediaCachePolicy', () => {
+  it.each([
+    { 'Cache-Control': 'private, max-age=60' },
+    { 'Cache-Control': 'no-store' },
+    { 'Cache-Control': 'no-cache' },
+    { 'Set-Cookie': 'preference=example; Secure; HttpOnly' },
+  ])('does not override upstream privacy policy %j', (responseHeaders) => {
+    expect(
+      resolveMediaCacheControl({
+        path: '/v1/media/abc/thumbnail',
+        method: 'GET',
+        requestHeaders: new Headers(),
+        responseStatus: 200,
+        responseHeaders: new Headers(responseHeaders),
+      })
+    ).toBe('private, no-store')
+  })
+
+  it('does not publicly cache a partial media response', () => {
+    expect(
+      resolveMediaCacheControl({
+        path: '/v1/media/abc/image',
+        method: 'GET',
+        requestHeaders: new Headers({ Range: 'bytes=0-15' }),
+        responseStatus: 206,
+      })
+    ).toBe('private, no-store')
+  })
+
   it('detects anonymous successful media thumbnail requests as public-cacheable', () => {
     const headers = new Headers()
 

@@ -4,6 +4,13 @@
 
 `validate:release` is the release decision entry point. Every mode writes structured evidence under `output/validation/<timestamp>/`; generated evidence stays untracked.
 
+Application type checking is a zero-error gate. The historical
+`scripts/check-app-type-budget.mjs` filename is retained for compatibility, but
+compiler diagnostics are no longer accepted under an error budget. `build`
+explicitly checks `tsconfig.app.json`; checking the empty solution config without
+build mode does not check its referenced projects. A Vite-only compilation is not
+a passing release build.
+
 ## Commands
 
 ```bash
@@ -65,6 +72,24 @@ Artifact serialization redacts credential-like keys and values. Console output i
 ## Environment Failures
 
 Local browser gates require Docker Desktop, the local backend stack, a Pages-compatible preview, and the local audit bridge. Missing dependencies produce a failed or environment-blocked result in the evidence. Fallback output never counts as a release pass.
+
+Docker service names such as `identity-api` resolve inside the Docker network,
+not necessarily from a host-based preview. For a running Docker backend without
+published API ports, enable the existing temporary localhost bridge in the
+validation process:
+
+```text
+LOCAL_AUDIT_AUTO_API_BRIDGE=true
+VITE_DISABLE_PREVIEW_PROXY=false
+LOCAL_AUDIT_AUTO_CLIENT_TRUST=false
+LOCAL_AUDIT_CLEAR_RATE_LIMITS=false
+```
+
+The last two settings prevent the helper from granting backend trust or clearing
+rate-limit state. The bridge is removed when the preview stops. Do not use a live
+deployment's accounts or alter its security state for smoke tests. Authenticated
+release checks still require a seeded non-MFA test account and available sample
+post/discussion data; enabling the bridge does not satisfy those requirements.
 
 ## Release Decision
 

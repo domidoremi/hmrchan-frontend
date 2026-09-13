@@ -134,7 +134,7 @@ export interface Comment {
   created_at: string
   updated_at?: string | null
   user: CommentUser
-  replies?: Comment[]
+  replies?: Comment[] | undefined
 
   post_id?: string
   likes_count?: number

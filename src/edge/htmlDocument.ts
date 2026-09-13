@@ -29,7 +29,7 @@ export type HtmlDocumentConfig = {
   description: string
   canonicalPath: string
   ogType: 'website' | 'article'
-  ogImage?: string
+  ogImage?: string | undefined
   robots: 'index, follow' | 'noindex, nofollow'
   shellTitle: string
   shellBody: string

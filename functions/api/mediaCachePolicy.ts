@@ -20,14 +20,25 @@ export function resolveMediaCacheControl(options: {
   method: string
   requestHeaders: Headers
   responseStatus: number
+  responseHeaders?: Headers
 }): string | null {
-  const { path, method, requestHeaders, responseStatus } = options
+  const { path, method, requestHeaders, responseStatus, responseHeaders } = options
 
   if (!isMediaAssetRequest(path, method)) {
     return null
   }
 
-  if (responseStatus >= 400 || hasMediaAuthContext(requestHeaders)) {
+  const upstreamCacheControl = responseHeaders?.get('Cache-Control') ?? ''
+  const upstreamRequiresPrivacy =
+    /(?:^|,)\s*(?:private|no-store|no-cache)(?:\s*(?:=|,|$))/i.test(upstreamCacheControl) ||
+    responseHeaders?.has('Set-Cookie')
+
+  if (
+    responseStatus !== 200 ||
+    requestHeaders.has('Range') ||
+    hasMediaAuthContext(requestHeaders) ||
+    upstreamRequiresPrivacy
+  ) {
     return 'private, no-store'
   }
 

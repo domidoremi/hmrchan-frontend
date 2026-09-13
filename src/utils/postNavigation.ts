@@ -102,13 +102,12 @@ function normalizePostSummary(item: PostIdSource): PostListItem | null {
     scraped_at: normalizeOptionalString(candidate.scraped_at),
     created_at: normalizeOptionalString(candidate.created_at),
     tags: normalizeTags(candidate.tags),
-  }
+  } satisfies { [K in keyof PostListItem]?: Required<PostListItem>[K] | undefined }
 
-  for (const [key, value] of Object.entries(optionalValues)) {
-    if (value !== undefined) {
-      ;(summary as Record<string, unknown>)[key] = value
-    }
-  }
+  Object.assign(
+    summary,
+    Object.fromEntries(Object.entries(optionalValues).filter(([, value]) => value !== undefined))
+  )
   return summary
 }
 

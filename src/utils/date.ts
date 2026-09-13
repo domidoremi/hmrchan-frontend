@@ -1,6 +1,4 @@
-import type { ComposerTranslation } from 'vue-i18n'
-
-type TranslateFunction = ComposerTranslation
+type TranslateFunction = (key: string, params?: Record<string, unknown>) => string
 
 const localeBcp47Map: Record<string, string> = {
   'zh-CN': 'zh-CN',

@@ -71,8 +71,8 @@ export class AppUpdateCoordinator {
   private readonly leaseTtlMs: number
   private readonly now: () => number
   private readonly isDocumentVisible: () => boolean
-  private readonly onLeadershipChange?: (isLeader: boolean) => void
-  private readonly onMessage?: (message: AppUpdateCoordinatorMessage) => void
+  private readonly onLeadershipChange: ((isLeader: boolean) => void) | undefined
+  private readonly onMessage: ((message: AppUpdateCoordinatorMessage) => void) | undefined
   private channel: BroadcastChannel | null = null
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null
   private leadership = false

@@ -1541,6 +1541,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       method: request.method,
       requestHeaders: request.headers,
       responseStatus: upstream.response.status,
+      responseHeaders,
     })
 
     if (mediaCacheControl) {

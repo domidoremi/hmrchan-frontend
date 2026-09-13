@@ -1,6 +1,16 @@
 {
   "extends": "@tsconfig/node26/tsconfig.json",
-  "include": ["vite.config.*", "vite-plugin-*.ts", "vitest.config.*", "eslint.config.*"],
+  "include": [
+    "vite.config.*",
+    "vite-plugin-*.ts",
+    "vitest.config.*",
+    "eslint.config.*",
+    "build/vite/**/*.ts",
+    "scripts/lib/dev-proxy-safety.ts",
+    "src/edge/prerenderHtml.ts",
+    "src/edge/htmlDocument.ts",
+    "src/utils/contractResourceId.ts"
+  ],
   "compilerOptions": {
     "composite": true,
     "noEmit": true,

@@ -23,8 +23,8 @@ const OPEN_GRAPH_LOCALES = {
 type SupportedLocale = keyof typeof OPEN_GRAPH_LOCALES
 
 export interface PageMetaInput {
-  title?: string | null
-  description?: string | null
+  title?: string | null | undefined
+  description?: string | null | undefined
   canonicalPath?: string
   robots?: PageMetaDefaults['robots']
   ogType?: PageMetaDefaults['ogType']
@@ -131,7 +131,7 @@ function replaceStructuredData(
   const [script, ...duplicates] = scripts
   const target = script ?? document.createElement('script')
   target.type = 'application/ld+json'
-  target.dataset.prerenderStructuredData = 'true'
+  target.dataset['prerenderStructuredData'] = 'true'
   target.textContent = payload
   const nonce = document.querySelector<HTMLScriptElement>('script[nonce]')?.nonce
   if (nonce) target.nonce = nonce
