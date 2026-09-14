@@ -61,6 +61,23 @@
     <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)" />
 
+    <!-- Prerender shell spinner animation (pure CSS so the loading state works without JS) -->
+    <style>
+      @keyframes momichan-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      section[data-prerender-shell='true'] span[role='status'] {
+        animation: momichan-spin 0.9s linear infinite;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        section[data-prerender-shell='true'] span[role='status'] {
+          animation: none;
+        }
+      }
+    </style>
+
     <!-- Performance Optimization: DNS Prefetch -->
     <link rel="dns-prefetch" href="https://api.momichan.com" />
 

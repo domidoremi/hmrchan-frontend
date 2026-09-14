@@ -180,7 +180,7 @@ const STATIC_ROUTE_CHECKS: StaticRouteCheck[] = [
     name: 'home prerender',
     path: '/',
     expected: {
-      title: 'Home · MomiChan',
+      title: 'MomiChan',
       canonical: 'https://momichan.com/',
       robots: 'index, follow',
     },

@@ -90,7 +90,7 @@ describe('pageMeta', () => {
   it('restores route defaults and removes stale JSON-LD during SPA navigation', () => {
     applyPageMeta({ canonicalPath: '/' })
 
-    expect(document.title).toBe('Home · MomiChan')
+    expect(document.title).toBe('MomiChan')
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe(
       'index, follow'
     )

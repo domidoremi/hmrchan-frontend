@@ -29,7 +29,7 @@ export type HtmlDocumentConfig = {
   description: string
   canonicalPath: string
   ogType: 'website' | 'article'
-  ogImage?: string
+  ogImage?: string | undefined
   robots: 'index, follow' | 'noindex, nofollow'
   shellTitle: string
   shellBody: string
@@ -206,14 +206,17 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
   const path = normalizeDocumentPath(url.pathname)
 
   if (path === '/') {
-    const description = 'MomiChan 首页集中显示公开内容、趋势作者、日程与社区入口。'
+    const description =
+      'MomiChan 汇集 YouTube、bilibili 等平台的公开帖子与创作者动态，趋势日程与社区讨论一站浏览。'
     return createDocumentConfig(
       '/',
-      'Home',
+      // Use SITE_NAME as the title so buildTitle does not prefix it again, and
+      // the homepage search result shows the brand instead of a generic "Home".
+      SITE_NAME,
       description,
       'MomiChan',
-      'Public posts, creators, and discussions',
-      '从首页浏览公开内容、趋势作者、近期日程和社区讨论。',
+      'Public posts, creators, schedule, and community in one place',
+      '从首页浏览公开帖子、趋势作者、近期日程和社区讨论，发现值得关注的内容。',
       {
         shellSummary: [
           'Use the homepage summary to open public posts, creators, schedules, and discussions.',
@@ -235,7 +238,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
         structuredData: [
           createWebsiteStructuredData(),
           createOrganizationStructuredData(),
-          createWebPageStructuredData('WebPage', '/', 'Home', description),
+          createWebPageStructuredData('WebPage', '/', SITE_NAME, description),
         ],
       }
     )
@@ -582,25 +585,6 @@ export function resolveCanonicalUrl(config: HtmlDocumentConfig): string {
   return new URL(config.canonicalPath, SITE_ORIGIN).toString()
 }
 
-function renderShellSummary(summary: string[]): string {
-  if (!summary.length) return ''
-
-  return `
-    <ul style="display:grid;gap:0.625rem;margin:0;padding:0;list-style:none;">
-      ${summary
-        .map(
-          (item) => `
-            <li style="display:flex;gap:0.625rem;align-items:flex-start;color:#334155;font:500 0.875rem/1.6 ui-sans-serif,system-ui;">
-              <span style="display:inline-flex;align-items:center;justify-content:center;width:1.25rem;height:1.25rem;border-radius:999rem;background:rgba(37,99,235,0.12);color:#2563eb;font:700 0.6875rem/1 ui-sans-serif,system-ui;flex:none;">&bull;</span>
-              <span>${escapeHtml(item)}</span>
-            </li>
-          `
-        )
-        .join('')}
-    </ul>
-  `
-}
-
 function renderShellLinks(links: HtmlDocumentShellLink[]): string {
   if (!links.length) return ''
 
@@ -616,53 +600,6 @@ function renderShellLinks(links: HtmlDocumentShellLink[]): string {
         )
         .join('')}
     </nav>
-  `
-}
-
-function renderShellStats(stats: HtmlDocumentShellStat[]): string {
-  if (!stats.length) {
-    return `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(9.375rem,1fr));gap:0.75rem;">
-        <div style="min-height:6.5rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(14,165,233,0.08));border:1px solid rgba(37,99,235,0.12);"></div>
-        <div style="min-height:6.5rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(16,185,129,0.10),rgba(59,130,246,0.08));border:1px solid rgba(15,23,42,0.06);"></div>
-        <div style="min-height:6.5rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(249,115,22,0.10),rgba(244,114,182,0.08));border:1px solid rgba(15,23,42,0.06);"></div>
-      </div>
-    `
-  }
-
-  return `
-    <dl style="display:grid;grid-template-columns:repeat(auto-fit,minmax(9.375rem,1fr));gap:0.75rem;margin:0;">
-      ${stats
-        .map(
-          (stat) => `
-            <div style="display:grid;gap:0.5rem;padding:1rem;border-radius:1.25rem;background:rgba(255,255,255,0.88);border:1px solid rgba(15,23,42,0.08);box-shadow:0 16px 32px rgba(15,23,42,0.06);">
-              <dt style="margin:0;color:#64748b;font:600 0.75rem/1.2 ui-sans-serif,system-ui;text-transform:uppercase;letter-spacing:0.08em;">${escapeHtml(stat.label)}</dt>
-              <dd style="margin:0;color:#020617;font:700 1.125rem/1.3 ui-sans-serif,system-ui;">${escapeHtml(stat.value)}</dd>
-            </div>
-          `
-        )
-        .join('')}
-    </dl>
-  `
-}
-
-function renderShellVisual(config: HtmlDocumentConfig): string {
-  if (config.ogImage) {
-    return `
-      <figure style="margin:0;display:grid;gap:0.625rem;padding:0.875rem;border-radius:1.5rem;background:rgba(15,23,42,0.92);box-shadow:0 18px 40px rgba(15,23,42,0.16);min-height:13.75rem;">
-        <img src="${escapeHtml(config.ogImage)}" alt="${escapeHtml(config.shellTitle)}" loading="eager" decoding="async" style="width:100%;height:100%;min-height:13.75rem;object-fit:cover;border-radius:1.125rem;" />
-      </figure>
-    `
-  }
-
-  return `
-    <div style="display:grid;gap:0.75rem;">
-      <div style="min-height:10rem;border-radius:1.5rem;background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 55%,#38bdf8 100%);box-shadow:0 20px 44px rgba(37,99,235,0.18);"></div>
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0.75rem;">
-        <div style="min-height:5.875rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(14,165,233,0.08));border:1px solid rgba(37,99,235,0.12);"></div>
-        <div style="min-height:5.875rem;border-radius:1.25rem;background:linear-gradient(135deg,rgba(249,115,22,0.10),rgba(244,114,182,0.08));border:1px solid rgba(15,23,42,0.06);"></div>
-      </div>
-    </div>
   `
 }
 
@@ -688,69 +625,43 @@ export function renderStructuredDataScript(config: HtmlDocumentConfig): string {
   return `<script type="application/ld+json" data-prerender-structured-data="true">${payload}</script>`
 }
 
-function renderDefaultPrerenderShell(config: HtmlDocumentConfig): string {
-  const accent = config.status === 404 ? '#f97316' : '#2563eb'
-  const summaryMarkup = renderShellSummary(config.shellSummary)
-  const linksMarkup = renderShellLinks(config.shellLinks)
-  const statsMarkup = renderShellStats(config.shellStats)
-  const visualMarkup = renderShellVisual(config)
-
+function renderShellBrandMark(): string {
   return `
-    <section data-prerender-shell="true" data-prerender-shell-variant="default" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:2rem 1.25rem;background:linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);color:#0f172a;">
-      <div data-prerender-shell-content="true" style="width:min(100%,70rem);display:grid;gap:1.5rem;">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(18.75rem,1fr));gap:1.25rem;align-items:start;">
-          <article style="display:grid;gap:1rem;padding:1.75rem;border-radius:1.75rem;background:rgba(255,255,255,0.90);border:1px solid rgba(15,23,42,0.08);box-shadow:0 20px 52px rgba(15,23,42,0.08);">
-            <span style="display:inline-flex;width:max-content;padding:0.375rem 0.625rem;border-radius:999rem;background:rgba(37,99,235,0.08);color:${accent};font:600 0.75rem/1.2 ui-sans-serif,system-ui;">${escapeHtml(config.shellEyebrow)}</span>
-            <h1 style="margin:0;font:700 clamp(2rem,5vw,3.5rem)/1.05 ui-sans-serif,system-ui;color:#020617;">${escapeHtml(config.shellTitle)}</h1>
-            <p style="margin:0;max-width:68ch;font:400 1rem/1.8 ui-sans-serif,system-ui;color:#334155;">${escapeHtml(config.shellBody)}</p>
-            ${summaryMarkup}
-            ${linksMarkup}
-          </article>
-          <aside style="display:grid;gap:1rem;">
-            ${visualMarkup}
-            ${statsMarkup}
-          </aside>
-        </div>
-      </div>
-    </section>
+    <div aria-hidden="true" style="display:grid;place-items:center;width:3rem;height:3rem;border-radius:1rem;background:linear-gradient(135deg,#2563eb 0%,#38bdf8 100%);color:#fff;font:700 1.125rem/1 ui-sans-serif,system-ui;box-shadow:0 16px 36px rgba(37,99,235,0.28);">M</div>
   `
 }
 
-function renderHomePrerenderShell(config: HtmlDocumentConfig): string {
-  const summaryMarkup = renderShellSummary(config.shellSummary)
+function renderShellSpinner(): string {
+  // CSS-only spinner so the prerender shell communicates "loading" without JS.
+  return `
+    <span role="status" aria-live="polite" aria-label="Loading MomiChan" style="display:inline-flex;width:1.5rem;height:1.5rem;border-radius:50%;border:0.1875rem solid rgba(37,99,235,0.18);border-top-color:#2563eb;">
+    </span>
+  `
+}
+
+function renderLoadingShell(config: HtmlDocumentConfig): string {
+  const variantAttr =
+    config.shellVariant === 'home'
+      ? ' data-prerender-shell-variant="home"'
+      : ' data-prerender-shell-variant="default"'
   const linksMarkup = renderShellLinks(config.shellLinks)
-  const statsMarkup = renderShellStats(config.shellStats)
 
   return `
-    <section data-prerender-shell="true" data-prerender-shell-variant="home" style="position:relative;min-height:100dvh;padding:6rem 1.25rem 2.5rem;background:radial-gradient(circle at top left,rgba(147,197,253,0.34) 0%,transparent 34%),radial-gradient(circle at top right,rgba(129,140,248,0.24) 0%,transparent 28%),radial-gradient(circle at 50% 18%,rgba(186,230,253,0.32) 0%,transparent 26%),linear-gradient(180deg,rgba(240,249,255,0.98) 0%,rgba(239,246,255,0.96) 52%,#eff6ff 100%);color:#0f172a;overflow:hidden;">
-      <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 16% 16%,rgba(255,255,255,0.62) 0%,transparent 38%),radial-gradient(circle at 82% 24%,rgba(96,165,250,0.18) 0%,transparent 32%);opacity:0.9;"></div>
-      <div style="position:relative;width:min(100%,72.5rem);margin:0 auto;display:grid;gap:1.5rem;">
-        <div data-prerender-shell-content="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(18.75rem,1fr));gap:1.5rem;align-items:center;">
-          <article style="display:grid;gap:1rem;align-content:center;min-height:min(36rem,calc(100dvh - 8.5rem));padding:clamp(1.5rem,4vw,2.5rem) 0;">
-            <span style="display:inline-flex;width:max-content;padding:0.5rem 0.75rem;border-radius:999rem;background:rgba(255,255,255,0.72);border:1px solid rgba(59,130,246,0.12);box-shadow:0 12px 24px rgba(37,99,235,0.08);color:#2563eb;font:600 0.75rem/1.2 ui-sans-serif,system-ui;">${escapeHtml(config.shellEyebrow)}</span>
-            <h1 style="margin:0;max-width:14ch;font:700 clamp(2.5rem,6vw,4rem)/1.02 ui-sans-serif,system-ui;color:#0f172a;letter-spacing:-0.03em;text-wrap:balance;">${escapeHtml(config.shellTitle)}</h1>
-            <p style="margin:0;max-width:62ch;font:400 1rem/1.8 ui-sans-serif,system-ui;color:#334155;">${escapeHtml(config.shellBody)}</p>
-            ${summaryMarkup}
-            ${linksMarkup}
-          </article>
-          <aside style="display:grid;gap:1rem;align-content:center;">
-            <section style="display:grid;gap:0.875rem;padding:1.5rem;border-radius:1.75rem;background:linear-gradient(160deg,rgba(255,255,255,0.98),rgba(240,249,255,0.92));border:1px solid rgba(96,165,250,0.18);box-shadow:0 28px 56px -34px rgba(37,99,235,0.28);">
-              <div style="display:grid;gap:0.5rem;">
-                <span style="font:600 0.75rem/1.2 ui-sans-serif,system-ui;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">Start here</span>
-                <strong style="font:700 1.5rem/1.15 ui-sans-serif,system-ui;color:#0f172a;">Explore today’s picks, authors, schedule, and community.</strong>
-                <p style="margin:0;font:400 0.875rem/1.7 ui-sans-serif,system-ui;color:#475569;">打开公开入口，继续浏览帖子、作者和讨论。</p>
-              </div>
-              ${statsMarkup}
-            </section>
-          </aside>
+    <section data-prerender-shell="true"${variantAttr} style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:2rem 1.25rem;background:radial-gradient(circle at top left,rgba(147,197,253,0.32) 0%,transparent 34%),radial-gradient(circle at top right,rgba(129,140,248,0.22) 0%,transparent 30%),linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);color:#0f172a;">
+      <div data-prerender-shell-content="true" style="display:grid;gap:1.125rem;place-items:center;text-align:center;">
+        ${renderShellBrandMark()}
+        <div style="display:grid;gap:0.375rem;">
+          <span style="font:600 0.8125rem/1.2 ui-sans-serif,system-ui;letter-spacing:0.14em;text-transform:uppercase;color:#2563eb;">${escapeHtml(config.shellEyebrow)}</span>
+          <h1 style="margin:0;font:700 clamp(1.5rem,4vw,2.125rem)/1.15 ui-sans-serif,system-ui;color:#0f172a;">${escapeHtml(config.shellTitle)}</h1>
+          <p style="margin:0;max-width:34rem;font:400 0.9375rem/1.7 ui-sans-serif,system-ui;color:#475569;">${escapeHtml(config.shellBody)}</p>
         </div>
+        ${renderShellSpinner()}
+        ${linksMarkup}
       </div>
     </section>
   `
 }
 
 export function renderPrerenderShell(config: HtmlDocumentConfig): string {
-  return config.shellVariant === 'home'
-    ? renderHomePrerenderShell(config)
-    : renderDefaultPrerenderShell(config)
+  return renderLoadingShell(config)
 }

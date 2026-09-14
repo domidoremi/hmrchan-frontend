@@ -13,8 +13,8 @@ type PostIdSource = {
   post_id?: string | null
 }
 
-const STORAGE_KEY = 'post-navigation-context'
-const SUMMARY_STORAGE_KEY = 'post-navigation-summaries'
+const STORAGE_KEY = 'post-navigation-context-v2'
+const SUMMARY_STORAGE_KEY = 'post-navigation-summaries-v2'
 const MAX_IDS = 200
 const EXPIRY_MS = 30 * 60 * 1000
 
@@ -52,6 +52,9 @@ function hasSummaryShape(candidate: Partial<PostListItem>): boolean {
     typeof candidate.title === 'string' ||
     typeof candidate.content === 'string' ||
     typeof candidate.description === 'string' ||
+    typeof candidate.media_id === 'string' ||
+    typeof candidate.media_type === 'string' ||
+    typeof candidate.stream_url === 'string' ||
     typeof candidate.thumbnail_url === 'string' ||
     typeof candidate.author_name === 'string'
   )
@@ -82,6 +85,9 @@ function normalizePostSummary(item: PostIdSource): PostListItem | null {
     platform_post_id: normalizeOptionalString(candidate.platform_post_id),
     post_url: normalizeOptionalString(candidate.post_url),
     post_type: normalizeOptionalString(candidate.post_type),
+    media_id: normalizeNullableString(candidate.media_id),
+    media_type: normalizeNullableString(candidate.media_type),
+    stream_url: normalizeNullableString(candidate.stream_url),
     title: normalizeNullableString(candidate.title),
     content: normalizeNullableString(candidate.content),
     thumbnail_url: normalizeNullableString(candidate.thumbnail_url),
@@ -102,13 +108,12 @@ function normalizePostSummary(item: PostIdSource): PostListItem | null {
     scraped_at: normalizeOptionalString(candidate.scraped_at),
     created_at: normalizeOptionalString(candidate.created_at),
     tags: normalizeTags(candidate.tags),
-  }
+  } satisfies { [K in keyof PostListItem]?: Required<PostListItem>[K] | undefined }
 
-  for (const [key, value] of Object.entries(optionalValues)) {
-    if (value !== undefined) {
-      ;(summary as Record<string, unknown>)[key] = value
-    }
-  }
+  Object.assign(
+    summary,
+    Object.fromEntries(Object.entries(optionalValues).filter(([, value]) => value !== undefined))
+  )
   return summary
 }
 

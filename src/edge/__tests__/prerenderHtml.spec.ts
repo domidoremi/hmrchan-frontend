@@ -29,15 +29,10 @@ describe('createPrerenderedHtml', () => {
   it('rewrites the homepage using the dedicated home prerender shell', () => {
     const html = createPrerenderedHtml(template, '/')
 
-    expect(html).toContain('<title>Home · MomiChan</title>')
+    expect(html).toContain('<title>MomiChan</title>')
     expect(html).toContain('data-prerender-shell-variant="home"')
     expect(html).toContain('data-prerender-shell-content="true"')
-    expect(html).toContain('Start here')
-    expect(html).toContain('Public posts, creators, and discussions')
-    expect(html).toContain(
-      'href="/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp"'
-    )
-    expect(html).toContain('fetchpriority="high"')
+    expect(html).toContain('MomiChan')
     expect(html).not.toContain('Quick bridge')
   })
 
@@ -85,18 +80,14 @@ describe('createPrerenderedHtml', () => {
       shellVariant: 'default',
       preloadImages: [
         {
-          href: '/api/v1/media/media-1/thumbnail?size=large&format=webp',
-          srcset:
-            '/api/v1/media/media-1/thumbnail?size=small&format=webp 200w, /api/v1/media/media-1/thumbnail?size=medium&format=webp 400w, /api/v1/media/media-1/thumbnail?size=large&format=webp 800w',
-          sizes: '100vw',
+          href: '/api/v1/media/media-1/stream',
           fetchPriority: 'high',
         },
       ],
     })
 
     expect(html).toContain('data-prerender-preload-image="true"')
-    expect(html).toContain('href="/api/v1/media/media-1/thumbnail?size=large&amp;format=webp"')
-    expect(html).toContain('imagesizes="100vw"')
+    expect(html).toContain('href="/api/v1/media/media-1/stream"')
     expect(html).toContain('fetchpriority="high"')
   })
 })

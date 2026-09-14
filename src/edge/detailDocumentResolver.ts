@@ -32,6 +32,8 @@ type EdgeAuthorRelatedPost = {
 type EdgePostMediaFile = {
   id?: string | null
   file_type?: string | null
+  stream_url?: string | null
+  thumbnail_url?: string | null
 }
 
 type EdgePostDetail = {
@@ -140,10 +142,6 @@ type EdgeScheduleDetail = {
   created_at?: string | null
   updated_at?: string | null
 }
-
-const DETAIL_PRELOAD_IMAGE_SIZES =
-  '(min-width: 1100px) 60rem, (min-width: 900px) calc(100vw - 31rem), 100vw'
-const EDGE_PRELOAD_IMAGE_FORMAT = 'webp'
 
 function normalizeText(value: unknown): string {
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
@@ -271,55 +269,29 @@ function compactRecord<T extends Record<string, unknown>>(record: T): T {
   return Object.fromEntries(Object.entries(record).filter(([, value]) => hasContent(value))) as T
 }
 
-function buildEdgeMediaThumbnailUrl(mediaId: string, size: 'small' | 'medium' | 'large'): string {
-  return `/api/v1/media/${encodeURIComponent(mediaId)}/thumbnail?size=${size}&format=${EDGE_PRELOAD_IMAGE_FORMAT}`
+function resolveEdgeOriginalImageUrl(mediaId: string, streamUrl?: string | null): string {
+  const normalizedStream = normalizeText(streamUrl)
+  if (normalizedStream) return normalizedStream
+  return `/api/v1/media/${encodeURIComponent(mediaId)}/stream`
 }
 
-function buildEdgeMediaThumbnailSrcset(mediaId: string): string {
-  return [
-    `${buildEdgeMediaThumbnailUrl(mediaId, 'small')} 200w`,
-    `${buildEdgeMediaThumbnailUrl(mediaId, 'medium')} 400w`,
-    `${buildEdgeMediaThumbnailUrl(mediaId, 'large')} 800w`,
-  ].join(', ')
-}
+function resolvePrimaryImageUrl(post: EdgePostDetail): string {
+  const primaryImage = post.media_files?.find(
+    (media) => normalizeText(media.file_type).toLowerCase() === 'image'
+  )
+  const primaryImageId = normalizeIdentifier(primaryImage?.id)
 
-function extractMediaIdFromThumbnailUrl(url: string): string | null {
-  const match = url.match(/\/media\/([^/?#]+)\/(?:stream|thumbnail)/i)
-  return match?.[1] ? decodeURIComponent(match[1]) : null
+  if (primaryImage && primaryImageId) {
+    return resolveEdgeOriginalImageUrl(primaryImageId, primaryImage.stream_url)
+  }
+
+  return normalizeText(post.thumbnail_url)
 }
 
 function buildPostPreloadImages(post: EdgePostDetail): HtmlDocumentPreloadImage[] {
-  const primaryImageId = normalizeIdentifier(
-    post.media_files?.find((media) => normalizeText(media.file_type).toLowerCase() === 'image')?.id
-  )
-
-  if (primaryImageId) {
-    return [
-      {
-        href: buildEdgeMediaThumbnailUrl(primaryImageId, 'large'),
-        srcset: buildEdgeMediaThumbnailSrcset(primaryImageId),
-        sizes: DETAIL_PRELOAD_IMAGE_SIZES,
-        fetchPriority: 'high',
-      },
-    ]
-  }
-
-  const fallbackThumbnailUrl = normalizeText(post.thumbnail_url)
-  if (!fallbackThumbnailUrl) return []
-
-  const fallbackMediaId = extractMediaIdFromThumbnailUrl(fallbackThumbnailUrl)
-  if (!fallbackMediaId) {
-    return [{ href: fallbackThumbnailUrl, fetchPriority: 'high' }]
-  }
-
-  return [
-    {
-      href: buildEdgeMediaThumbnailUrl(fallbackMediaId, 'large'),
-      srcset: buildEdgeMediaThumbnailSrcset(fallbackMediaId),
-      sizes: DETAIL_PRELOAD_IMAGE_SIZES,
-      fetchPriority: 'high',
-    },
-  ]
+  const imageUrl = resolvePrimaryImageUrl(post)
+  if (!imageUrl) return []
+  return [{ href: imageUrl, fetchPriority: 'high' }]
 }
 
 function pushUnique(list: string[], value: string | null | undefined): void {
@@ -537,7 +509,7 @@ function buildPostStructuredData(
   const pageUrl = new URL(path, SITE_ORIGIN).toString()
   const authorName = normalizeText(post.author_name) || normalizeText(post.author_username)
   const authorId = normalizeIdentifier(post.author_id)
-  const imageUrl = normalizeText(post.thumbnail_url)
+  const imageUrl = resolvePrimaryImageUrl(post)
   const sourceUrl = normalizeText(post.post_url)
   const keywords = (post.tags ?? []).map((tag) => normalizeText(tag)).filter(Boolean)
   const interactionStatistic = [
@@ -1124,7 +1096,7 @@ function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocum
     description: metaDescription,
     canonicalPath: path,
     ogType: 'article',
-    ogImage: normalizeText(post.thumbnail_url) || undefined,
+    ogImage: resolvePrimaryImageUrl(post) || undefined,
     shellEyebrow: eyebrowParts || fallback.shellEyebrow,
     shellTitle,
     shellBody,

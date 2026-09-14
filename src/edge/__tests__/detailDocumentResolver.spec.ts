@@ -73,15 +73,12 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
       true
     )
     expect(config.shellLinks.some((link) => link.href === `/author/${SAMPLE_AUTHOR_ID}`)).toBe(true)
-    expect(config.ogImage).toBe('https://cdn.example.com/post-1.jpg')
+    expect(config.ogImage).toBe('/api/v1/media/media-1/stream')
     expect(config.preloadImages?.[0]).toMatchObject({
-      href: '/api/v1/media/media-1/thumbnail?size=large&format=webp',
-      sizes: '(min-width: 1100px) 60rem, (min-width: 900px) calc(100vw - 31rem), 100vw',
+      href: '/api/v1/media/media-1/stream',
       fetchPriority: 'high',
     })
-    expect(config.preloadImages?.[0]?.srcset).toContain(
-      '/api/v1/media/media-1/thumbnail?size=small&format=webp 200w'
-    )
+    expect(config.preloadImages?.[0]?.srcset).toBeUndefined()
     expect(config.structuredData[0]).toMatchObject({
       '@type': 'SocialMediaPosting',
     })

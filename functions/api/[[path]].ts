@@ -1541,6 +1541,8 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       method: request.method,
       requestHeaders: request.headers,
       responseStatus: upstream.response.status,
+      responseHeaders: upstream.response.headers,
+      requestDestination: request.headers.get('Sec-Fetch-Dest') ?? '',
     })
 
     if (mediaCacheControl) {

@@ -55,7 +55,9 @@ export interface Post {
   platform_post_id?: string
   post_url?: string
   post_type?: 'video' | 'image' | 'text' | 'short' | 'live_replay'
-  media_type?: 'video' | 'image' | 'text' | null
+  media_id?: string | null
+  media_type?: string | null
+  stream_url?: string | null
   title?: string | null
   content?: string | null
   language?: string | null
@@ -134,7 +136,7 @@ export interface Comment {
   created_at: string
   updated_at?: string | null
   user: CommentUser
-  replies?: Comment[]
+  replies?: Comment[] | undefined
 
   post_id?: string
   likes_count?: number
@@ -290,6 +292,9 @@ export interface MediaFile {
   file_type: 'video' | 'image' | 'thumbnail' | 'subtitle'
   file_name: string
   file_path?: string
+  media_type?: string | null
+  stream_url?: string | null
+  thumbnail_url?: string | null
   file_size_bytes: number
   mime_type?: string | null
   width?: number | null

@@ -58,7 +58,7 @@ if (contract.sanitized?.forcedKeys?.length) {
 runNodeScript(path.join(rootDir, 'scripts/patch-lucide.mjs'), [], contract.env)
 runNodeScript(
   path.join(rootDir, 'node_modules/vue-tsc/bin/vue-tsc.js'),
-  ['--noEmit', '--pretty'],
+  ['--noEmit', '--pretty', '--project', 'tsconfig.app.json'],
   contract.env
 )
 try {

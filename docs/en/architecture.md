@@ -13,6 +13,29 @@
 
 Browser code uses same-origin `/api` and `/ws` paths. Upstream hosts and internal service identity remain edge concerns.
 
+API concurrency and rate-limit waits honor cancellation before dispatch. Media
+type probes retain only a 16-byte prefix and abort after five seconds, even when
+an upstream ignores Range. The edge media policy preserves upstream privacy
+directives and never promotes partial or cookie-setting responses to public cache.
+Preference and locale persistence is optional and must not prevent startup or
+language changes, including when the browser's storage getter throws.
+
+## Offline action durability
+
+Offline actions are account-owned data, not disposable cache. `addOfflineAction`
+rejects on storage or transaction failure and confirms enqueue only after the
+IndexedDB read-write transaction commits (using strict durability). Request
+success alone is not a commit. The UI must await enqueue before displaying a
+queued-success message and must retain the initiating account and resource.
+Background Sync is only a best-effort replay trigger, not the durability boundary.
+
+Cache reads and writes retain their existing best-effort behavior. Database
+recovery repairs missing stores with additive version upgrades; it never deletes
+the shared database to repair cache. Page and service-worker connections accept
+newer repair versions and close on version changes. Owned queue records survive
+repair; the pre-v5 migration intentionally discards legacy, unowned actions so
+they cannot be replayed under another account.
+
 ## Backend Contracts
 
 Backend integration and OpenAPI contracts are maintained in the backend repository under:

@@ -156,12 +156,12 @@ function buildPayload(
     path: runtimeInfo.path,
     buildHash: typeof __BUILD_HASH__ === 'string' ? __BUILD_HASH__ : 'unknown',
     buildTime: typeof __BUILD_TIME__ === 'string' ? __BUILD_TIME__ : '',
-    requestId: options.requestId,
+    ...(options.requestId !== undefined ? { requestId: options.requestId } : {}),
     securityLevel: options.securityLevel ?? runtimeSecurity.currentSecurityLevel,
     riskMode: options.riskMode ?? runtimeSecurity.riskMode,
-    data: sanitizeData(data),
-    message: normalizedError ? sanitizeText(normalizedError.message, 1000) : undefined,
-    stack: normalizedError?.stack ? sanitizeText(normalizedError.stack, 4000) : undefined,
+    ...(data ? { data: sanitizeData(data) ?? {} } : {}),
+    ...(normalizedError ? { message: sanitizeText(normalizedError.message, 1000) } : {}),
+    ...(normalizedError?.stack ? { stack: sanitizeText(normalizedError.stack, 4000) } : {}),
   }
 }
 

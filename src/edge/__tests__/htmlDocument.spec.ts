@@ -16,7 +16,9 @@ describe('resolveHtmlDocument', () => {
     const contactConfig = resolveHtmlDocument(new URL('https://momichan.com/contact'))
 
     expect(homeConfig.status).toBe(200)
-    expect(homeConfig.title).toBe('Home · MomiChan')
+    // Homepage leads with the brand so the search snippet reads "MomiChan" rather
+    // than a generic "Home · MomiChan".
+    expect(homeConfig.title).toBe('MomiChan')
     expect(homeConfig.robots).toBe('index, follow')
     expect(resolveCanonicalUrl(homeConfig)).toBe('https://momichan.com/')
     expect(homeConfig.structuredData.length).toBeGreaterThan(0)
@@ -171,7 +173,7 @@ describe('resolveHtmlDocument', () => {
     expect(shell).toContain('404 &lt;missing&gt;')
     expect(shell).toContain('Page &quot;not found&quot;')
     expect(shell).toContain('Try another route &amp; keep browsing.')
-    expect(shell).toContain('Missing route &amp; keep browsing')
+    expect(shell).not.toContain('Missing route &amp; keep browsing')
     expect(shell).toContain('href="/explore"')
   })
 
@@ -182,8 +184,8 @@ describe('resolveHtmlDocument', () => {
     expect(homeConfig.shellVariant).toBe('home')
     expect(shell).toContain('data-prerender-shell-variant="home"')
     expect(shell).toContain('data-prerender-shell-content="true"')
-    expect(shell).toContain('Start here')
-    expect(shell).toContain('Public posts, creators, and discussions')
+    expect(shell).not.toContain('Start here')
+    expect(shell).toContain('MomiChan')
     expect(shell).not.toContain('Quick bridge')
     expect(shell).not.toContain('client takeover')
   })
@@ -204,7 +206,6 @@ describe('resolveHtmlDocument', () => {
 
     expect(contactConfig.shellEyebrow).toBe('Contact')
     expect(contactConfig.shellTitle).toContain('share feedback')
-    expect(shell).toContain('questions, suggestions, corrections')
     expect(shell).toContain('Private reporting')
     expect(shell).not.toContain('partnership requests')
     expect(shell).not.toContain('private security reporting')

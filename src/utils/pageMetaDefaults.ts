@@ -114,7 +114,7 @@ function createHomeStructuredData(description: string): PageMetaStructuredData[]
         url: DEFAULT_OG_IMAGE,
       },
     },
-    createWebPageStructuredData('WebPage', '/', 'Home', description),
+    createWebPageStructuredData('WebPage', '/', SITE_NAME, description),
   ]
 }
 
@@ -122,8 +122,9 @@ export function resolvePageMetaDefaults(pathOrUrl: string | URL): PageMetaDefaul
   const path = normalizePath(pathOrUrl instanceof URL ? pathOrUrl.pathname : pathOrUrl)
 
   if (path === '/') {
-    const description = 'MomiChan 首页集中显示公开内容、趋势作者、日程与社区入口。'
-    return createDefaults(path, 'Home', description, {
+    const description =
+      'MomiChan 汇集 YouTube、bilibili 等平台的公开帖子与创作者动态，趋势日程与社区讨论一站浏览。'
+    return createDefaults(path, SITE_NAME, description, {
       structuredData: createHomeStructuredData(description),
     })
   }
