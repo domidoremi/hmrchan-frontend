@@ -20,7 +20,7 @@
             <span class="comment-composer-shell__count">{{ charCount }}/{{ maxLength }}</span>
           </header>
 
-          <div v-if="$slots.toolbar" class="comment-composer-shell__toolbar">
+          <div v-if="$slots['toolbar']" class="comment-composer-shell__toolbar">
             <slot name="toolbar" />
           </div>
 
@@ -28,7 +28,7 @@
             <slot />
           </div>
 
-          <div v-if="$slots.attachments" class="comment-composer-shell__attachments">
+          <div v-if="$slots['attachments']" class="comment-composer-shell__attachments">
             <slot name="attachments" />
           </div>
 
@@ -47,7 +47,7 @@ import Avatar from '@/components/ui/Avatar.vue'
 defineProps<{
   authenticated: boolean
   avatarSrc?: string | null
-  avatarAlt?: string
+  avatarAlt?: string | undefined
   avatarFallback?: string
   title: string
   subtitle?: string

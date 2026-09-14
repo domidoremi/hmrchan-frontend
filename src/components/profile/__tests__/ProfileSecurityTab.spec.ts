@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { AuditActivityResponse } from '@/api/auditService'
 
 const securityMocks = vi.hoisted(() => ({
   getMySecuritySummary: vi.fn(),
@@ -66,9 +67,10 @@ describe('ProfileSecurityTab', () => {
       last_password_change: '2026-04-09T00:00:00.000Z',
     })
     securityMocks.getMyActivity.mockResolvedValue({
-      logs: [
+      items: [
         {
-          id: 'log-1',
+          id: 1,
+          severity: 'info',
           success: true,
           event_type: 'login',
           event_description: 'Successful login',
@@ -78,7 +80,7 @@ describe('ProfileSecurityTab', () => {
           device_type: 'desktop',
         },
       ],
-    })
+    } satisfies AuditActivityResponse)
   })
 
   it('loads and renders security summary and activity feed', async () => {

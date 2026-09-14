@@ -33,7 +33,7 @@ export type HomeSceneCapabilities = {
 export type HomeSceneGeometryInput = {
   sectionHeight: number
   sectionTop?: number
-  pinnedHeight?: number | null
+  pinnedHeight?: number | null | undefined
   scrollY?: number
   viewportHeight: number
 }
@@ -42,7 +42,7 @@ export type HomeMeasuredSceneGeometryInput = {
   measured: boolean
   sectionHeight?: number | null
   sectionTop?: number | null
-  pinnedHeight?: number | null
+  pinnedHeight?: number | null | undefined
   scrollY?: number | null
   viewportHeight?: number | null
 }
@@ -523,7 +523,7 @@ export function resolveHomeSceneLayoutRefresh({
   nextSize,
   thresholdPx = HOME_SCENE_LAYOUT_REFRESH_THRESHOLD_PX,
 }: {
-  previousSize?: HomeSceneLayoutSize | null
+  previousSize?: HomeSceneLayoutSize | null | undefined
   nextSize: HomeSceneLayoutSize
   thresholdPx?: number | null
 }): boolean {
@@ -773,9 +773,9 @@ export function resolveHomeRailLockActive({
 }: {
   scrollY: number
   viewportHeight: number
-  postsOffsetTop?: number | null
-  featuredOffsetTop?: number | null
-  featuredHeight?: number | null
+  postsOffsetTop?: number | null | undefined
+  featuredOffsetTop?: number | null | undefined
+  featuredHeight?: number | null | undefined
   releaseOffsetRatio?: number
 }): boolean {
   const fallbackBoundary = finiteOr(featuredOffsetTop, 0) + finiteOr(featuredHeight, 0)

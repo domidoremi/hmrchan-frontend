@@ -11,13 +11,13 @@
       'page-control--active': active || pressed || current,
     }"
   >
-    <span v-if="$slots.start" class="page-control__icon page-control__icon--start">
+    <span v-if="$slots['start']" class="page-control__icon page-control__icon--start">
       <slot name="start" />
     </span>
-    <span v-if="$slots.default" class="page-control__label">
+    <span v-if="$slots['default']" class="page-control__label">
       <slot />
     </span>
-    <span v-if="$slots.end" class="page-control__meta">
+    <span v-if="$slots['end']" class="page-control__meta">
       <slot name="end" />
     </span>
   </component>

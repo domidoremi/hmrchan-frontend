@@ -100,7 +100,6 @@ const { desktopNavItems, mobileNavItems, getNavigationLink } = useNavigation()
 const prefetchedRoutes = new Set<string>()
 const hoveredDockIndex = ref<Record<DockSection, number | null>>({
   primary: null,
-  utility: null,
 })
 const mobileDockRef = ref<HTMLElement | null>(null)
 const isMobileDockViewport = ref(false)

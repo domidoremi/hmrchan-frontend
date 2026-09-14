@@ -53,7 +53,7 @@ describe('ReferencedPostPreview', () => {
     expect(wrapper.get('.referenced-post').classes()).toContain('referenced-post--compact')
     expect(wrapper.get('.referenced-label').text()).toBe('Referenced post')
     expect(wrapper.get('.referenced-title').text()).toBe('Referenced post title')
-    expect(wrapper.get('img').attributes('src')).toContain('/thumbnail?size=medium')
+    expect(wrapper.get('img').attributes('src')).toContain('/thumbnail?size=original')
   })
 
   it('caches the thumbnail preview before navigating', async () => {
@@ -79,7 +79,7 @@ describe('ReferencedPostPreview', () => {
 
     expect(referencedPostPreviewMocks.cachePostThumbnailPreviewMock).toHaveBeenCalledWith(
       'post-2',
-      'https://example.com/thumb.jpg'
+      expect.objectContaining({ thumbnail_url: 'https://example.com/thumb.jpg' })
     )
   })
 })

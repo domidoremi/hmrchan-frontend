@@ -249,6 +249,7 @@
     </section>
 
     <EmailVerifyDialog
+      v-if="credentialVerificationDialog.action"
       :is-open="credentialVerificationDialog.isOpen"
       :action="credentialVerificationDialog.action"
       :email="profile.email"

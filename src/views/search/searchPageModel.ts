@@ -67,7 +67,7 @@ export function isAbortError(err: unknown): boolean {
 export function getPostMemo(post: PostListItem): (string | number)[] {
   return [
     post.id,
-    post.updated_at ?? post.created_at ?? post.published_at ?? '',
+    post.created_at ?? post.published_at ?? '',
     post.view_count ?? 0,
     post.like_count ?? 0,
     post.comment_count ?? 0,

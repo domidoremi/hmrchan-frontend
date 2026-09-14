@@ -12,8 +12,10 @@ import type {
   PostListItem,
 } from '@/api'
 import { getContractResourceId } from '@/utils/contractResourceId'
-import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
+import { resolveMediaSources } from '@/utils/mediaOptimizer'
 import { formatRelativeTime } from '@/utils/date'
+import { mapHomeImageMedia } from './homeMedia'
+export { mapHomeImageUrl } from './homeMedia'
 
 export type HomeTranslate = (key: string, params?: Record<string, unknown>) => string
 
@@ -491,7 +493,10 @@ export function selectBubbleSlots(
       ? [...preferredIndexes]
       : getEvenlyDistributedBubbleIndexes(clampedCount, slots.length)
 
-  return indexes.map((index) => slots[index]).filter(Boolean)
+  return indexes.flatMap((index) => {
+    const slot = slots[index]
+    return slot ? [slot] : []
+  })
 }
 
 export function normalizeTag(tag: string): string {
@@ -549,15 +554,6 @@ export function formatHomeAuthorName(author: HomeAuthorBrief | null | undefined)
   const username = normalizeText(author.username)
   if (!username) return ''
   return username.startsWith('@') ? username : `@${username}`
-}
-
-export function mapHomeImageUrl(
-  image: { url?: string | null; thumbnail_url?: string | null } | null | undefined,
-  size: 'small' | 'medium' | 'large' = 'large'
-): string | null {
-  const source = normalizeText(image?.url) || normalizeText(image?.thumbnail_url)
-  if (!source) return null
-  return normalizeToThumbnailUrl(source, size) || source
 }
 
 export function resolvePostIdFromLink(link: string | null | undefined): string | null {
@@ -642,15 +638,15 @@ export function mapLatestTextItemToPost(
     title: excerpt.slice(0, 36) || authorName || translate('home.hero.fallbackTitle'),
     content: excerpt,
     description: excerpt,
-    published_at: item.published_at ?? undefined,
+    published_at: item.published_at ?? null,
     view_count: 0,
     like_count: 0,
     comment_count: 0,
     media_count: 0,
-    author_name: authorName || undefined,
-    author_id: item.author?.id ?? undefined,
-    author_username: item.author?.username ?? undefined,
-    author_avatar_url: item.author?.avatar_url ?? undefined,
+    author_name: authorName || null,
+    author_id: item.author?.id ?? null,
+    ...(item.author?.username ? { author_username: item.author.username } : {}),
+    author_avatar_url: item.author?.avatar_url ?? null,
     post_url: resolvePostLink(item.deep_link, item.post_id),
     tags: (item.tags ?? []).map((tag) => normalizeHomeTag(tag)).filter(Boolean),
   }
@@ -671,19 +667,20 @@ export function mapFeaturedItemToPost(
     id: postId,
     platform: normalizePlatform(item.kicker, 'story'),
     title: normalizeText(item.title) || translate('home.hero.fallbackTitle'),
-    content: normalizeText(item.summary || item.subtitle) || undefined,
-    description: normalizeText(item.summary || item.subtitle) || undefined,
-    thumbnail_url: mapHomeImageUrl(item.cover, 'large'),
-    published_at: item.related_posts?.[0]?.published_at ?? undefined,
+    content: normalizeText(item.summary || item.subtitle) || null,
+    ...(normalizeText(item.summary || item.subtitle)
+      ? { description: normalizeText(item.summary || item.subtitle) }
+      : {}),
+    ...mapHomeImageMedia(item.cover),
+    published_at: item.related_posts?.[0]?.published_at ?? null,
     view_count: 0,
     like_count: 0,
     comment_count: 0,
     media_count: item.cover ? 1 : 0,
-    media_type: item.cover ? 'image' : undefined,
-    author_name: formatHomeAuthorName(author) || undefined,
-    author_id: author?.id ?? undefined,
-    author_username: author?.username ?? undefined,
-    author_avatar_url: author?.avatar_url ?? undefined,
+    author_name: formatHomeAuthorName(author) || null,
+    author_id: author?.id ?? null,
+    ...(author?.username ? { author_username: author.username } : {}),
+    author_avatar_url: author?.avatar_url ?? null,
     post_url: resolvePostLink(item.primary_cta?.target, postId),
   }
 }
@@ -700,21 +697,20 @@ export function mapStoryDeckItemToPost(
     id: item.post_id,
     platform: 'story',
     title: normalizeText(item.title) || translate('home.hero.fallbackTitle'),
-    content: normalizeText(item.summary) || undefined,
-    description: normalizeText(item.summary) || undefined,
-    thumbnail_url: mapHomeImageUrl(item.image, 'large'),
-    published_at: item.published_at ?? undefined,
+    content: normalizeText(item.summary) || null,
+    ...(normalizeText(item.summary) ? { description: normalizeText(item.summary) } : {}),
+    ...mapHomeImageMedia(item.image),
+    published_at: item.published_at ?? null,
     view_count: 0,
     like_count: 0,
     comment_count: 0,
     media_count: item.image ? 1 : 0,
-    media_type: item.image ? 'image' : undefined,
-    author_name: authorName || undefined,
-    author_id: item.author?.id ?? undefined,
-    author_username: item.author?.username ?? undefined,
-    author_avatar_url: item.author?.avatar_url ?? undefined,
+    author_name: authorName || null,
+    author_id: item.author?.id ?? null,
+    ...(item.author?.username ? { author_username: item.author?.username } : {}),
+    author_avatar_url: item.author?.avatar_url ?? null,
     post_url: resolvePostLink(item.deep_link, item.post_id),
-    tags: firstTag ? [firstTag] : undefined,
+    ...(firstTag ? { tags: [firstTag] } : {}),
   }
 }
 
@@ -745,21 +741,22 @@ export function buildHomePostsFromAggregate(
       id: spotlight.post_id,
       platform: 'story',
       title: normalizeText(spotlight.title) || translate('home.hero.fallbackTitle'),
-      content: normalizeText(spotlight.summary) || undefined,
-      description: normalizeText(spotlight.summary) || undefined,
-      thumbnail_url: mapHomeImageUrl(spotlight.image, 'large'),
-      published_at: undefined,
+      content: normalizeText(spotlight.summary) || null,
+      ...(normalizeText(spotlight.summary)
+        ? { description: normalizeText(spotlight.summary) }
+        : {}),
+      ...mapHomeImageMedia(spotlight.image),
+      published_at: null,
       view_count: 0,
       like_count: 0,
       comment_count: 0,
       media_count: spotlight.image ? 1 : 0,
-      media_type: spotlight.image ? 'image' : undefined,
-      author_name: formatHomeAuthorName(spotlight.author) || undefined,
-      author_id: spotlight.author?.id ?? undefined,
-      author_username: spotlight.author?.username ?? undefined,
-      author_avatar_url: spotlight.author?.avatar_url ?? undefined,
+      author_name: formatHomeAuthorName(spotlight.author) || null,
+      author_id: spotlight.author?.id ?? null,
+      ...(spotlight.author?.username ? { author_username: spotlight.author?.username } : {}),
+      author_avatar_url: spotlight.author?.avatar_url ?? null,
       post_url: resolvePostLink(spotlight.deep_link, spotlight.post_id),
-      tags: spotlight.primary_tag ? [normalizeHomeTag(spotlight.primary_tag)] : undefined,
+      ...(spotlight.primary_tag ? { tags: [normalizeHomeTag(spotlight.primary_tag)] } : {}),
     }
     deduped.set(spotlightPost.id, spotlightPost)
   }
@@ -989,9 +986,7 @@ export function buildMediaHighlightCard(
 ): MediaHighlightCard {
   return {
     post,
-    thumbnail:
-      overrides.thumbnail ??
-      (post.thumbnail_url ? normalizeToThumbnailUrl(post.thumbnail_url, 'large') : null),
+    thumbnail: overrides.thumbnail ?? resolveMediaSources(post).displayUrl,
     title: overrides.title ?? formatStoryTitle(post, translate),
     author: overrides.author ?? (formatAuthorName(post) || translate('home.hero.fallbackAuthor')),
   }

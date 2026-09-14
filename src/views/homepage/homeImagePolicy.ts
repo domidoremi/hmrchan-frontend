@@ -1,5 +1,3 @@
-import { getThumbnailSrcset } from '@/utils/mediaOptimizer'
-
 export type HomeImageDimensions = {
   width: number
   height: number
@@ -32,14 +30,12 @@ export const HOME_PORTAL_LEAD_PREVIEW_EMPTY_STYLE = Object.freeze({
   background: 'var(--home-pill-bg)',
 }) as HomeImageStyle
 
-export function resolveHomeImageSrcset(url: string | null | undefined): string | null {
-  return getThumbnailSrcset(url)
+export function resolveHomeImageSrcset(): string | null {
+  return null
 }
 
-export function resolveHomeImageSrcsetAttribute(
-  url: string | null | undefined
-): string | undefined {
-  return resolveHomeImageSrcset(url) ?? undefined
+export function resolveHomeImageSrcsetAttribute(): string | undefined {
+  return resolveHomeImageSrcset() ?? undefined
 }
 
 export function resolveHomeImageSourceAttribute(

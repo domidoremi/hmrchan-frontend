@@ -11,7 +11,6 @@
       <Transition name="tooltip">
         <div
           v-if="isVisible"
-          ref="tooltipRef"
           class="ui-tooltip"
           :class="`ui-tooltip--${side}`"
           :style="tooltipStyle"
@@ -26,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted, useTemplateRef } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 
 defineOptions({ name: 'UiTooltip' })
 
@@ -46,7 +45,6 @@ defineSlots<{
 }>()
 
 const isVisible = ref(false)
-const tooltipRef = useTemplateRef<HTMLElement>('tooltipRef')
 const triggerRect = ref<DOMRect | null>(null)
 let showTimeout: ReturnType<typeof setTimeout> | null = null
 

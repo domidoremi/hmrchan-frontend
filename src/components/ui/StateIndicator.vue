@@ -73,7 +73,7 @@ interface Props {
   titleTag?: StateIndicatorTitleTag
   title?: string
   description?: string
-  showAction?: boolean
+  showAction?: boolean | undefined
   actionLabel?: string
   actionLoading?: boolean
 }

@@ -40,7 +40,7 @@
       >
         <ErrorBoundary @retry="handleRetry">
           <RouterView v-slot="{ Component, route }">
-            <Transition :name="transitionName" :mode="transitionMode">
+            <Transition :name="transitionName" :mode="transitionMode ?? 'default'">
               <Suspense>
                 <template #default>
                   <KeepAlive :max="10" :exclude="authKeepAliveExclude">

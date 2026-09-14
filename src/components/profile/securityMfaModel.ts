@@ -31,7 +31,10 @@ export function buildLinkedIdentityProviderLabel(options: {
   return labels.length ? labels.join(', ') : options.fallbackLabel
 }
 
-export function localizeMfaMethod(method: string, labels: Record<string, string>): string {
+export function localizeMfaMethod(
+  method: string,
+  labels: { totp: string; backupCode: string; webauthn: string }
+): string {
   switch (method) {
     case 'totp':
       return labels.totp
@@ -111,8 +114,8 @@ export function buildMfaRecoveryVerificationPayload(options: { code: string; pas
   password?: string
 } {
   return {
-    code: options.code.trim() || undefined,
-    password: options.password || undefined,
+    ...(options.code.trim() ? { code: options.code.trim() } : {}),
+    ...(options.password ? { password: options.password } : {}),
   }
 }
 

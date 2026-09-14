@@ -37,7 +37,7 @@ type StoryDeckPreset = {
   copyTilt: number
 }
 
-const STORY_DECK_PRESETS: readonly StoryDeckPreset[] = [
+const STORY_DECK_PRESETS = [
   {
     stackInline: -1.55,
     stackLift: 1.18,
@@ -123,11 +123,11 @@ const STORY_DECK_PRESETS: readonly StoryDeckPreset[] = [
     cardLift: 0.72,
     copyTilt: 0.24,
   },
-] as const
+] as const satisfies readonly StoryDeckPreset[]
 
 export function buildStoryCardMotion(input: StoryDeckMotionInput): Record<string, string> {
   const { index, storyProgressIndex, storyCardCount, storyMergeProgress, storyFooterFade } = input
-  const preset = STORY_DECK_PRESETS[index % STORY_DECK_PRESETS.length]
+  const preset = STORY_DECK_PRESETS[index % STORY_DECK_PRESETS.length] ?? STORY_DECK_PRESETS[0]
   const motionScale = resolveStoryDeckMotionScale()
   const stackInline = preset.stackInline * motionScale
   const stackLift = preset.stackLift * motionScale

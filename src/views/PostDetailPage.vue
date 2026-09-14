@@ -70,7 +70,7 @@
 
               <Transition :name="mediaTransitionName" mode="out-in">
                 <div
-                  v-if="activeMedia?.file_type === 'image'"
+                  v-if="activeMedia && activeMediaSources.kind === 'image'"
                   :key="`img-${activeMedia.id}`"
                   class="media-item-container media-clickable"
                   role="button"
@@ -101,6 +101,7 @@
                     loading="eager"
                     :fetchpriority="activeMediaIndex === 0 ? 'high' : 'auto'"
                     @load="onMediaLoad"
+                    @error="onActiveImageError"
                   />
                   <button
                     type="button"
@@ -112,14 +113,14 @@
                   </button>
                 </div>
                 <div
-                  v-else-if="activeMedia?.file_type === 'video'"
+                  v-else-if="activeMedia && activeMediaSources.kind === 'video'"
                   :key="`video-${activeMedia.id}`"
                   class="media-item-container media-item-container--viewer"
                 >
                   <VideoPlayer
                     class="media-viewer-item is-loaded"
-                    :src="getMediaStreamUrl(activeMedia.id)"
-                    :poster="getMediaThumbnailUrl(activeMedia.id, 'medium')"
+                    :src="activeMediaSources.streamUrl || ''"
+                    :poster="activeMediaSources.posterUrl || undefined"
                     :style="activeMediaElementStyle"
                     playsinline
                     preload="none"
@@ -162,7 +163,7 @@
 
             <div v-else class="post-media-empty">
               <img
-                v-if="post?.thumbnail_url"
+                v-if="fallbackMediaSrc"
                 class="post-image"
                 :src="fallbackMediaSrc"
                 :srcset="fallbackMediaSrcset || undefined"
@@ -362,11 +363,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, Maximize2 } from '@lu
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { postService, type PostDetailResponse, ApiError } from '@/api'
-import {
-  getMediaStreamUrl,
-  getMediaThumbnailSrcset,
-  getMediaThumbnailUrl,
-} from '@/utils/mediaOptimizer'
+import { getMediaThumbnailUrl, resolveMediaSources } from '@/utils/mediaOptimizer'
 import { shouldUseStalePostDetailOnError, useCachedPost } from '@/composables/useCachedPosts'
 import { trackPostView } from '@/composables/useViewTracking'
 import { postCache } from '@/utils/cache'
@@ -381,7 +378,7 @@ import {
   isServiceUnavailableError,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
-import { resolveThumbnailSrc, resolveThumbnailSrcset } from '@/utils/thumbnailPresentation'
+import { getPostPreviewStorageKey } from '@/utils/thumbnailPresentation'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
@@ -402,7 +399,6 @@ import {
   isMediaPending as computeIsMediaPending,
   isPostDetailAbortError,
   resolveActiveImageSource,
-  resolveActiveImageSrcset,
   resolveAdjacentImagePreloadTargets,
   resolveAutoAdvanceMediaTransition,
   resolveFallbackMediaSource,
@@ -554,6 +550,12 @@ const {
 
 const mediaState = computed(() => resolvePostDetailMediaState(post.value, activeMediaIndex.value))
 const activeMedia = computed(() => mediaState.value.activeMedia)
+const activeMediaSources = computed(() => {
+  const media = activeMedia.value
+  return resolveMediaSources(media ? { media_id: media.id, ...media } : null)
+})
+const activeImageCandidates = ref<string[]>([])
+const activeImageCandidateIndex = ref(0)
 
 const detailMediaImageSizes =
   '(min-width: 1100px) 60rem, (min-width: 900px) calc(100vw - 31rem), 100vw'
@@ -579,21 +581,19 @@ const activeMediaElementStyle = computed<Record<string, string>>(() =>
   buildActiveMediaElementStyle(activeMedia.value)
 )
 
-const activeImageSrc = computed(() =>
-  resolveActiveImageSource(activeMedia.value, { getMediaThumbnailUrl })
+const activeImageSrc = computed(
+  () =>
+    activeImageCandidates.value[activeImageCandidateIndex.value] ||
+    resolveActiveImageSource(activeMedia.value)
 )
 
-const activeImageSrcset = computed(() =>
-  resolveActiveImageSrcset(activeMedia.value, { getMediaThumbnailSrcset })
-)
+const activeImageSrcset = computed(() => null)
 
 const fallbackMediaSrc = computed(() => {
-  return resolveFallbackMediaSource(post.value, { resolveThumbnailSrc })
+  return resolveFallbackMediaSource(post.value)
 })
 
-const fallbackMediaSrcset = computed(() =>
-  resolveFallbackMediaSrcset(post.value, { resolveThumbnailSrcset })
-)
+const fallbackMediaSrcset = computed(() => resolveFallbackMediaSrcset())
 
 const shouldShowThumbnailRail = computed(() =>
   computeShouldShowThumbnailRail(post.value, detailFetched.value)
@@ -616,9 +616,7 @@ function primeImageRequest(url: string | null | undefined) {
 }
 
 function hintPostMedia(postDetail: PostDetailResponse | null | undefined) {
-  primeImageRequest(
-    resolvePostDetailMediaHintSource(postDetail, { getMediaThumbnailUrl, resolveThumbnailSrc })
-  )
+  primeImageRequest(resolvePostDetailMediaHintSource(postDetail))
 }
 
 const placeholderSrc = computed(() => {
@@ -673,6 +671,15 @@ function onMediaLoad() {
   if (allowAdjacentMediaPreload.value) {
     preloadAdjacentMedia()
   }
+}
+
+function onActiveImageError(): void {
+  if (activeImageCandidateIndex.value + 1 < activeImageCandidates.value.length) {
+    activeImageCandidateIndex.value += 1
+    isMediaLoaded.value = false
+    return
+  }
+  isMediaLoaded.value = true
 }
 
 function startAutoPlay() {
@@ -1040,10 +1047,10 @@ async function fetchPost(signal?: AbortSignal) {
   disconnectCommentsObserver()
   stopCommentsFallbackListeners()
 
-  const cachedThumb = sessionStorage.getItem(`post-thumbnail-${currentPostId}`)
+  const cachedThumb = sessionStorage.getItem(getPostPreviewStorageKey(currentPostId))
   if (cachedThumb) {
     cachedThumbnailUrl.value = cachedThumb
-    primeImageRequest(resolveThumbnailSrc(cachedThumb, 'large') || cachedThumb)
+    primeImageRequest(cachedThumb)
   }
 
   try {
@@ -1142,7 +1149,7 @@ watch(postId, (nextId, prevId) => {
   isSwitchingPost.value = false
 
   if (prevId && prevId !== nextId) {
-    sessionStorage.removeItem(`post-thumbnail-${prevId}`)
+    sessionStorage.removeItem(getPostPreviewStorageKey(prevId))
   }
   cachedThumbnailUrl.value = null
   preloadedImages.value = new Set()
@@ -1163,6 +1170,17 @@ watch(
     })
   },
   { flush: 'post' }
+)
+
+watch(
+  activeMedia,
+  (media) => {
+    activeImageCandidates.value = media
+      ? resolveMediaSources({ media_id: media.id, ...media }).imageCandidates
+      : []
+    activeImageCandidateIndex.value = 0
+  },
+  { immediate: true }
 )
 
 watch([hasMultipleMedia, isImageSequence, isLightboxOpen], () => {
@@ -1300,7 +1318,7 @@ onUnmounted(() => {
     postNavHintTimer = null
   }
 
-  sessionStorage.removeItem(`post-thumbnail-${postId.value}`)
+  sessionStorage.removeItem(getPostPreviewStorageKey(postId.value))
 })
 </script>
 

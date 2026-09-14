@@ -215,7 +215,7 @@ import { AuthMfaStep, AuthTurnstileStatus } from '@/components/auth/security'
 type CallbackStep = 'loading' | 'client-challenge' | 'risk-verification' | 'mfa' | 'error'
 type PopupBridgeState = 'posting' | 'manual-close'
 const GOOGLE_AUTH_ENABLED =
-  import.meta.env.MODE === 'test' || import.meta.env.VITEST === 'true'
+  import.meta.env.MODE === 'test' || import.meta.env['VITEST'] === 'true'
     ? true
     : import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 
@@ -257,8 +257,8 @@ const clientChallengeError = ref('')
 const clientChallengeDetail = ref('')
 const isClientChallengeSubmitting = ref(false)
 const clientChallengeStatus = ref<TurnstileWidgetStatus>('idle')
-let popupBridgeCloseTimer: ReturnType<typeof window.setTimeout> | null = null
-let popupBridgeManualHintTimer: ReturnType<typeof window.setTimeout> | null = null
+let popupBridgeCloseTimer: number | null = null
+let popupBridgeManualHintTimer: number | null = null
 type TurnstileWidgetHandle = {
   reset: () => void
   execute?: () => Promise<string>

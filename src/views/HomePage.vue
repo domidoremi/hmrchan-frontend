@@ -40,8 +40,8 @@
                 >
                   <img
                     v-if="shouldRenderHomeMedia(card.thumbnail)"
-                    :src="card.thumbnail"
-                    :srcset="resolveHomeImageSrcsetAttribute(card.thumbnail)"
+                    :src="resolveHomeImageSourceAttribute(card.thumbnail)"
+                    :srcset="resolveHomeImageSrcsetAttribute()"
                     :alt="card.title"
                     :sizes="
                       index === 0
@@ -240,8 +240,8 @@
               >
                 <img
                   v-if="shouldRenderHomeMedia(portalLeadCard.thumbnail)"
-                  :src="portalLeadCard.thumbnail"
-                  :srcset="resolveHomeImageSrcsetAttribute(portalLeadCard.thumbnail)"
+                  :src="resolveHomeImageSourceAttribute(portalLeadCard.thumbnail)"
+                  :srcset="resolveHomeImageSrcsetAttribute()"
                   :sizes="PORTAL_LEAD_IMAGE_SIZES"
                   :alt="portalLeadCard.title"
                   class="portal-card__preview-image"
@@ -407,8 +407,8 @@
                     <img
                       v-if="shouldRenderHomeMedia(card.thumbnail)"
                       class="hero-collage-image"
-                      :src="card.thumbnail"
-                      :srcset="resolveHomeImageSrcsetAttribute(card.thumbnail)"
+                      :src="resolveHomeImageSourceAttribute(card.thumbnail)"
+                      :srcset="resolveHomeImageSrcsetAttribute()"
                       :alt="card.title"
                       v-bind="resolveHeroCollageImagePresentation(index)"
                       decoding="async"
@@ -503,8 +503,8 @@
                 >
                   <img
                     v-if="shouldRenderHomeMedia(card.thumbnail)"
-                    :src="card.thumbnail"
-                    :srcset="resolveHomeImageSrcsetAttribute(card.thumbnail)"
+                    :src="resolveHomeImageSourceAttribute(card.thumbnail)"
+                    :srcset="resolveHomeImageSrcsetAttribute()"
                     :alt="card.title"
                     class="featured-rail-card__image"
                     v-bind="resolveFeaturedRailImagePresentation(index)"
@@ -555,7 +555,7 @@
                 :key="`featured-rail-${post.id}`"
                 v-bind="resolveFeaturedRailPostPresentation(index)"
                 :post="post"
-                @click="(_id, thumb) => openPostPreview(post, thumb)"
+                @click="(_id: string, thumb: string | null) => openPostPreview(post, thumb)"
               />
             </template>
             <template v-else>
@@ -976,7 +976,7 @@
                 :post="card.post"
                 :show-content="false"
                 :style="noGlassBackdropStyle"
-                @click="(_id, thumb) => openPostPreview(card.post, thumb)"
+                @click="(_id: string, thumb: string | null) => openPostPreview(card.post, thumb)"
               />
               <div class="media-slice__copy">
                 <p class="media-slice__eyebrow">{{ card.eyebrow }}</p>
@@ -1973,7 +1973,7 @@ const scheduleSceneRefreshFromResize = throttleRAF(() => {
   scheduleSceneSetup()
 })
 let bubbleBurstReplayFrame: number | null = null
-let bubbleExitResetTimer: ReturnType<typeof setTimeout> | null = null
+let bubbleExitResetTimer: number | null = null
 let viewportSceneFrame: number | null = null
 let viewportSceneTrackingBound = false
 let sceneProgressFrame: number | null = null
@@ -2618,10 +2618,10 @@ function clearViewportSceneFrame() {
 function setRailNavbarLock(locked: boolean) {
   if (typeof document === 'undefined') return
   if (locked) {
-    document.documentElement.dataset.homeRailNavLock = 'true'
+    document.documentElement.dataset['homeRailNavLock'] = 'true'
     return
   }
-  delete document.documentElement.dataset.homeRailNavLock
+  delete document.documentElement.dataset['homeRailNavLock']
 }
 
 function setHomeFooterBlend(enabled: boolean) {
@@ -2876,7 +2876,7 @@ function observeSceneLayout() {
 
   for (const element of trackedElements) {
     sceneObservedSizes.set(element, resolveHomeSceneLayoutSize(element.getBoundingClientRect()))
-    sceneResizeObserver.observe(element)
+    sceneResizeObserver?.observe(element)
   }
 }
 

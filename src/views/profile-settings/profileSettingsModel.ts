@@ -106,8 +106,8 @@ const DATA_SUMMARY_DEFINITIONS: ReadonlyArray<Omit<DataSummaryItem, 'value'>> = 
 ]
 
 export function resolveProfileDisplayName(options: {
-  fullName?: string | null
-  username?: string | null
+  fullName?: string | null | undefined
+  username?: string | null | undefined
   trimUsername?: boolean
 }): string {
   const { fullName, username, trimUsername = false } = options
@@ -120,8 +120,8 @@ export function normalizeIdentityProvider(provider?: string | null): string {
 }
 
 export function resolveIdentityProvider(options: {
-  profileProvider?: string | null
-  authProvider?: string | null
+  profileProvider?: string | null | undefined
+  authProvider?: string | null | undefined
 }): string {
   const { profileProvider, authProvider } = options
   return normalizeIdentityProvider(profileProvider ?? authProvider)
@@ -146,7 +146,7 @@ export function resolveAuthSourceSummaryLabel(options: {
   googleLabel: string
   thirdPartyLabel: string
   emailLabel: string
-  thirdPartyProviderLabel?: string | null
+  thirdPartyProviderLabel?: string | null | undefined
 }): string {
   const { provider, googleLabel, thirdPartyLabel, emailLabel, thirdPartyProviderLabel } = options
   const normalized = normalizeIdentityProvider(provider)
@@ -185,8 +185,8 @@ export function buildDataSummaryItems(
 }
 
 export function buildRestoreAccountRouteQuery(options: {
-  email?: string | null
-  username?: string | null
+  email?: string | null | undefined
+  username?: string | null | undefined
   includeDeletedNotice?: boolean
 }): Record<string, string> {
   const { email, username, includeDeletedNotice = false } = options

@@ -52,7 +52,6 @@
               v-memo="getPostMemo(post)"
               :post="post"
               aspect-ratio="1"
-              thumbnail-size="small"
               :show-content="false"
               :prefetch-on-hover="false"
               :preload-large-image-on-hover="false"

@@ -7,7 +7,7 @@
       </h3>
       <p v-if="subtitle" class="comment-thread-header__subtitle">{{ subtitle }}</p>
     </div>
-    <div v-if="$slots.actions" class="comment-thread-header__actions">
+    <div v-if="$slots['actions']" class="comment-thread-header__actions">
       <slot name="actions" />
     </div>
   </header>

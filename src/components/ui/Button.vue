@@ -45,7 +45,7 @@ interface Props {
   size?: 'sm' | 'md' | 'lg' | 'default' | 'icon'
   disabled?: boolean
   loading?: boolean
-  icon?: Component
+  icon?: Component | undefined
   iconPosition?: 'left' | 'right'
   fullWidth?: boolean
   type?: 'button' | 'submit' | 'reset'

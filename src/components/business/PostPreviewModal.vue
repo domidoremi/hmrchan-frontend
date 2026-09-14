@@ -99,7 +99,7 @@
                       fetchpriority="low"
                     />
                     <img
-                      v-if="primaryMedia.file_type === 'image'"
+                      v-if="primaryMediaKind === 'image'"
                       class="post-preview-media-item"
                       :src="imageSrc"
                       :alt="post?.title || ''"
@@ -109,7 +109,7 @@
                     />
 
                     <VideoPlayer
-                      v-else-if="primaryMedia.file_type === 'video'"
+                      v-else-if="primaryMediaKind === 'video'"
                       class="post-preview-media-video"
                       :src="videoSrc"
                       :poster="videoPoster"
@@ -168,7 +168,7 @@
                     >
                       <img
                         class="post-preview-thumb-img"
-                        :src="getMediaThumbnailUrl(m.id, 'small')"
+                        :src="resolveMediaSources({ media_id: m.id, ...m }).posterUrl || ''"
                         :alt="post?.title || ''"
                         loading="lazy"
                         decoding="async"
@@ -255,7 +255,7 @@ import { postService, type PostDetailResponse, type PostListItem, ApiError } fro
 import { useCachedPost } from '@/composables/useCachedPosts'
 import { buildFallbackPostDetail } from '@/fallbacks/postFallback'
 import { prefetchPostDetail } from '@/utils/prefetch'
-import { getMediaStreamUrl, getMediaThumbnailUrl } from '@/utils/mediaOptimizer'
+import { normalizeMediaUrl, resolveMediaSources } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
@@ -608,10 +608,15 @@ onBeforeUnmount(() => {
 })
 
 const primaryMedia = computed(() => post.value?.media_files?.[activeMediaIndex.value] ?? null)
+const primaryMediaSources = computed(() => {
+  const media = primaryMedia.value
+  return resolveMediaSources(media ? { media_id: media.id, ...media } : null)
+})
+const primaryMediaKind = computed(() => primaryMediaSources.value.kind)
 
 const subtitlesAvailable = computed(() => {
   const m = primaryMedia.value
-  return Boolean(m && m.file_type === 'video' && (m.subtitles?.length ?? 0) > 0)
+  return Boolean(m && primaryMediaKind.value === 'video' && (m.subtitles?.length ?? 0) > 0)
 })
 
 const displayTitle = computed(
@@ -657,7 +662,8 @@ const displayExternalLinks = computed(() => {
 })
 
 const initialMediaSrc = computed(() => {
-  return props.initialThumbnailSrc || props.initialPost?.thumbnail_url || ''
+  if (props.initialThumbnailSrc) return normalizeMediaUrl(props.initialThumbnailSrc) || ''
+  return resolveMediaSources(props.initialPost).displayUrl || ''
 })
 
 const shouldShowMediaSection = computed(() => {
@@ -700,28 +706,16 @@ const durationLabel = computed(() => {
   return `${m}:${s.toString().padStart(2, '0')}`
 })
 
-const videoSrc = computed(() => {
-  const m = primaryMedia.value
-  if (!m) return ''
-  return getMediaStreamUrl(m.id)
-})
+const videoSrc = computed(() => primaryMediaSources.value.streamUrl || '')
 
-const videoPoster = computed(() => {
-  const m = primaryMedia.value
-  if (!m) return ''
-  return getMediaThumbnailUrl(m.id, 'large')
-})
+const videoPoster = computed(() => primaryMediaSources.value.posterUrl || '')
 
-const imageSrc = computed(() => {
-  const m = primaryMedia.value
-  if (!m) return ''
-  return getMediaThumbnailUrl(m.id, 'large')
-})
+const imageSrc = computed(() => primaryMediaSources.value.displayUrl || '')
 
 const mediaBackdropSrc = computed(() => {
   const m = primaryMedia.value
   if (!m) return initialMediaSrc.value
-  return getMediaThumbnailUrl(m.id, 'medium')
+  return primaryMediaSources.value.posterUrl || primaryMediaSources.value.displayUrl || ''
 })
 
 function close() {

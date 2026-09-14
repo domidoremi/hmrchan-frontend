@@ -36,7 +36,7 @@
       <slot />
     </div>
 
-    <footer v-if="$slots.footer" class="auth-shell__footer">
+    <footer v-if="$slots['footer']" class="auth-shell__footer">
       <slot name="footer" />
     </footer>
   </section>
@@ -64,7 +64,6 @@ withDefaults(
   }>(),
   {
     subtitle: '',
-    activeTab: undefined,
     redirectTo: '/',
     showTabs: true,
     showBack: true,

@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts" vapor>
-import { computed } from 'vue'
+import { computed, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronDown } from '@lucide/vue'
 import PageMetaChip from '@/components/appearance/PageMetaChip.vue'
@@ -70,7 +70,7 @@ import { resolveLoadMoreMetrics } from '@/components/ui/loadMoreMetrics'
 
 interface Props {
   count: number
-  total?: number
+  total?: number | undefined
   hasMore: boolean
   loading?: boolean
   sentinelRef?: (el: HTMLElement | null) => void
@@ -96,7 +96,7 @@ const progressPercent = computed(() => {
   return metrics.value.progressPercent
 })
 
-const setSentinelRef = (el: Element | null) => {
+const setSentinelRef = (el: Element | ComponentPublicInstance | null) => {
   const resolved = el instanceof HTMLElement ? el : null
   props.sentinelRef?.(resolved)
 }

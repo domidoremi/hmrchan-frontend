@@ -214,6 +214,9 @@ async function toggleFavorite() {
   if (!isAuthenticated.value) return
   if (isFavoriteLoading.value) return
   if (!isUuidV7String(props.postId)) return
+  const postId = props.postId
+  const ownerId = authStore.user?.id
+  const actionType = isFavorited.value ? 'unfavorite' : 'favorite'
   abortFavoriteStatusRequest()
 
   isFavoriteLoading.value = true
@@ -230,6 +233,20 @@ async function toggleFavorite() {
     isFavorited.value = true
     toastStore.success(t('post.favorite'))
   } catch (err) {
+    if (!navigator.onLine && ownerId && authStore.user?.id === ownerId && props.postId === postId) {
+      try {
+        const { addOfflineAction } = await import('@/utils/cache/offlineQueue')
+        if (authStore.user?.id !== ownerId || props.postId !== postId) return
+        await addOfflineAction(actionType, postId, ownerId)
+        if (authStore.user?.id === ownerId && props.postId === postId) {
+          toastStore.info(t('post.offlineQueued'))
+        }
+      } catch {
+        toastStore.error(t('common.error'))
+      }
+      return
+    }
+
     if (err instanceof ApiError) {
       if (err.message.includes('502') || err.message.includes('网关')) {
         toastStore.error(t('post.favoriteServerError'))
@@ -238,16 +255,6 @@ async function toggleFavorite() {
       }
     } else {
       toastStore.error(t('common.error'))
-    }
-
-    if (!navigator.onLine) {
-      const ownerId = authStore.user?.id
-      if (!ownerId) return
-
-      const { addOfflineAction } = await import('@/utils/cache/offlineQueue')
-      const actionType = isFavorited.value ? 'unfavorite' : 'favorite'
-      await addOfflineAction(actionType, props.postId, ownerId)
-      toastStore.info(t('post.offlineQueued'))
     }
   } finally {
     isFavoriteLoading.value = false

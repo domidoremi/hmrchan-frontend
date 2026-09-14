@@ -37,7 +37,7 @@ const model = defineModel<string | number>()
 
 const attrs = useAttrs()
 const generatedId = useId()
-const inputId = computed(() => (attrs.id as string | undefined) ?? generatedId)
+const inputId = computed(() => (attrs['id'] as string | undefined) ?? generatedId)
 
 const ariaInvalid = computed(() => attrs['aria-invalid'] === 'true')
 

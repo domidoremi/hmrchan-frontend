@@ -6,9 +6,9 @@
     @click.stop="handleNavigate"
   >
     <ThumbnailImage
-      v-if="post.thumbnail_url"
+      v-if="displayUrl"
       class="referenced-thumb"
-      :src="post.thumbnail_url"
+      :src="displayUrl"
       :alt="post.title"
       :width="compact ? 36 : 48"
       :height="compact ? 36 : 48"
@@ -28,12 +28,16 @@ defineOptions({ name: 'ReferencedPostPreview' })
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { resolveMediaSources } from '@/utils/mediaOptimizer'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 
 interface ReferencedPostSummary {
   id: string
   title: string
+  media_id?: string | null
+  media_type?: string | null
+  stream_url?: string | null
   thumbnail_url?: string | null
 }
 
@@ -49,9 +53,10 @@ const props = withDefaults(defineProps<Props>(), {
 const { t } = useI18n()
 
 const postHref = computed(() => `/post/${props.post.id}`)
+const displayUrl = computed(() => resolveMediaSources(props.post).displayUrl)
 
 function handleNavigate() {
-  cachePostThumbnailPreview(props.post.id, props.post.thumbnail_url)
+  cachePostThumbnailPreview(props.post.id, props.post)
 }
 </script>
 

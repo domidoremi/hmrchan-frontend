@@ -149,7 +149,11 @@ export function useCachedPostList<T>(
           return null
         }
 
-        return { data: cached.data as T[], total: cached.total, meta: cached.meta }
+        return {
+          data: cached.data as T[],
+          total: cached.total,
+          ...(cached.meta === undefined ? {} : { meta: cached.meta }),
+        }
       },
       fetchFn,
       async (p, d, t, meta) => {

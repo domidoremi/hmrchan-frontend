@@ -7,10 +7,11 @@ import {
   watch,
   type MaybeRefOrGetter,
   type Ref,
+  type DeepReadonly,
 } from 'vue'
 
 interface UseDebouncedRefResult<T> {
-  debounced: Readonly<Ref<T>>
+  debounced: Readonly<Ref<DeepReadonly<T>>>
   flush: () => void
   cancel: () => void
 }

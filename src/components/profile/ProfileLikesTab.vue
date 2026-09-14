@@ -139,9 +139,9 @@ function normalizeLikedComment(item: MyLikeHistoryItem): LikedComment {
     id: item.id ?? item.comment_id,
     content: item.content ?? item.comment_content ?? '',
     post_uuid: item.post_uuid ?? item.post_id ?? '',
-    post_title: item.post_title,
+    ...(item.post_title === undefined ? {} : { post_title: item.post_title }),
     like_count: item.like_count ?? 0,
-    reply_count: item.reply_count,
+    ...(item.reply_count === undefined ? {} : { reply_count: item.reply_count }),
     created_at: item.created_at ?? item.liked_at,
   }
 }
@@ -151,7 +151,7 @@ const { t } = useI18n()
 const toastStore = useToastStore()
 
 const comments = ref<LikedComment[]>([])
-const unlikingId = ref<number | null>(null)
+const unlikingId = ref<LikedComment['id'] | null>(null)
 const showConfirmDialog = ref(false)
 const pendingUnlikeComment = ref<LikedComment | null>(null)
 const isLoading = ref(false)

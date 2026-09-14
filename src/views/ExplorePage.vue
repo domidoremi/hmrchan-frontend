@@ -194,11 +194,7 @@ import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
-import {
-  extractMediaIdFromUrl,
-  getMediaStreamUrl,
-  getMediaThumbnailUrl,
-} from '@/utils/mediaOptimizer'
+import { resolveMediaImageCandidates, resolveMediaSources } from '@/utils/mediaOptimizer'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import type { PublicPageDataSource } from '@/fallbacks/publicPageFallback'
@@ -210,7 +206,6 @@ import {
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
-import { resolveOriginalImageStream } from '@/components/business/post-card/postCardMediaQuality'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import NextPostFab from '@/components/ui/NextPostFab.vue'
@@ -302,6 +297,7 @@ const EDITORIAL_IMAGE_FALLBACK =
   '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp'
 const activeEditorialFilter = ref<ExploreEditorialFilter>('latest')
 const editorialImageSources = ref<Record<string, string>>({})
+const editorialImageCandidates = new Map<string, string[]>()
 const editorialImageResolutionKeys = new Set<string>()
 const editorialFilters = computed<Array<{ id: ExploreEditorialFilter; label: string }>>(() => [
   { id: 'latest', label: t('explore.newest') },
@@ -387,56 +383,42 @@ function goToSearch() {
 }
 
 function resolveEditorialImage(post: PostListItem): string {
-  const resolved = editorialImageSources.value[post.id]
-  if (resolved) return resolved
-
-  const mediaId = extractMediaIdFromUrl(post.thumbnail_url)
-  if (mediaId && post.media_type?.toLowerCase() === 'image') {
-    return getMediaStreamUrl(mediaId)
-  }
-  if (mediaId && post.media_type?.toLowerCase() === 'video') {
-    return getMediaThumbnailUrl(mediaId, 'large')
-  }
-
-  return EDITORIAL_IMAGE_FALLBACK
+  return (
+    editorialImageSources.value[post.id] ||
+    resolveMediaSources(post).displayUrl ||
+    EDITORIAL_IMAGE_FALLBACK
+  )
 }
 
 async function resolveEditorialImageSource(post: PostListItem): Promise<void> {
-  const thumbnailUrl = post.thumbnail_url
-  if (!thumbnailUrl) return
-
-  const resolutionKey = `${post.id}:${thumbnailUrl}`
+  const resolutionKey = [
+    post.id,
+    post.media_id ?? '',
+    post.media_type ?? '',
+    post.stream_url ?? '',
+    post.thumbnail_url ?? '',
+  ].join(':')
   if (editorialImageResolutionKeys.has(resolutionKey)) return
   editorialImageResolutionKeys.add(resolutionKey)
 
-  const mediaId = extractMediaIdFromUrl(thumbnailUrl)
-  const mediaType = post.media_type?.toLowerCase()
-  const resolvedSource = !mediaId
-    ? thumbnailUrl
-    : mediaType === 'image'
-      ? getMediaStreamUrl(mediaId)
-      : mediaType === 'video'
-        ? getMediaThumbnailUrl(mediaId, 'large')
-        : ((await resolveOriginalImageStream(thumbnailUrl)) ??
-          getMediaThumbnailUrl(mediaId, 'large'))
-
-  if (posts.value.find((item) => item.id === post.id)?.thumbnail_url !== thumbnailUrl) return
-
+  const candidates = await resolveMediaImageCandidates(post, { probeUnknown: true })
+  editorialImageCandidates.set(post.id, [...candidates, EDITORIAL_IMAGE_FALLBACK])
   editorialImageSources.value = {
     ...editorialImageSources.value,
-    [post.id]: resolvedSource,
+    [post.id]: candidates[0] ?? EDITORIAL_IMAGE_FALLBACK,
   }
 }
 
 function handleEditorialImageError(post: PostListItem): void {
+  const candidates = editorialImageCandidates.get(post.id) ?? [
+    ...resolveMediaSources(post).imageCandidates,
+    EDITORIAL_IMAGE_FALLBACK,
+  ]
   const currentSource = editorialImageSources.value[post.id] || resolveEditorialImage(post)
-  const mediaId = extractMediaIdFromUrl(post.thumbnail_url)
+  const currentIndex = candidates.indexOf(currentSource)
   editorialImageSources.value = {
     ...editorialImageSources.value,
-    [post.id]:
-      currentSource?.includes('/stream') && mediaId
-        ? getMediaThumbnailUrl(mediaId, 'large')
-        : EDITORIAL_IMAGE_FALLBACK,
+    [post.id]: candidates[currentIndex + 1] ?? EDITORIAL_IMAGE_FALLBACK,
   }
 }
 

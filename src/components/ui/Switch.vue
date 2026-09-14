@@ -33,7 +33,7 @@ const props = withDefaults(defineProps<Props>(), {
 const model = defineModel<boolean>({ default: false })
 const attrs = useAttrs()
 const generatedId = useId()
-const switchId = computed(() => (attrs.id as string | undefined) ?? generatedId)
+const switchId = computed(() => (attrs['id'] as string | undefined) ?? generatedId)
 const ariaLabel = computed(() => attrs['aria-label'] as string | undefined)
 
 const switchClass = computed(() => [

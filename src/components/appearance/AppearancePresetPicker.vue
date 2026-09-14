@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, reactive, ref } from 'vue'
+import { onBeforeUnmount, reactive, ref, type ComponentPublicInstance } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Check } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
@@ -109,7 +109,7 @@ function ensureObserver() {
 }
 
 function bindPreview(preset: AppearancePreset) {
-  return (element: Element | null) => {
+  return (element: Element | ComponentPublicInstance | null) => {
     const htmlElement = element instanceof HTMLElement ? element : null
 
     if (!htmlElement) {

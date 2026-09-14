@@ -39,9 +39,9 @@ import { computed, ref, watch } from 'vue'
 defineOptions({ name: 'UiAvatar' })
 
 interface Props {
-  src?: string
-  alt?: string
-  fallback?: string
+  src?: string | null | undefined
+  alt?: string | undefined
+  fallback?: string | undefined
   size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | 'custom'
   shape?: 'circle' | 'square'
   loading?: 'eager' | 'lazy'
@@ -87,7 +87,7 @@ const avatarStyle = computed(() => {
     xl: '4rem',
   }
   return {
-    '--avatar-size': sizes[props.size] || sizes.default,
+    '--avatar-size': sizes[props.size] || sizes['default'],
   }
 })
 

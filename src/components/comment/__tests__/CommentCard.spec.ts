@@ -275,7 +275,7 @@ describe('CommentCard', () => {
     expect(wrapper.text()).toContain('comment.threadOwner')
     expect(wrapper.text()).toContain('ADMIN')
     expect(wrapper.find('.reply-indicator').exists()).toBe(true)
-    expect(wrapper.find('.comment-gallery__image').attributes('src')).toBe('/thumb.png')
+    expect(wrapper.find('.comment-gallery__image').attributes('src')).toBe('/full.png')
   })
 
   it('drops unsafe backend-provided comment image URLs and falls back to a safe full image', () => {

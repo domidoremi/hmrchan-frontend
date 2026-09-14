@@ -81,11 +81,13 @@
             rel="noopener noreferrer"
           >
             <img
-              :src="image.thumbnail_url || image.url"
+              v-if="image.candidates[image.activeIndex]"
+              :src="image.candidates[image.activeIndex]"
               :alt="image.filename || comment.content"
               class="comment-gallery__image"
               loading="lazy"
               decoding="async"
+              @error="handleCommentImageError(image)"
             />
           </a>
         </div>
@@ -205,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, nextTick, onUnmounted, useTemplateRef } from 'vue'
+import { reactive, ref, computed, inject, nextTick, onUnmounted, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import {
@@ -313,9 +315,7 @@ async function handleShowReplies() {
   showReplies.value = true
 }
 
-const avatarUrl = computed(() =>
-  getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
-)
+const avatarUrl = computed(() => getUserAvatarUrl(props.comment.user.avatar_url))
 
 const avatarFallbackLabel = computed(() =>
   getAvatarFallbackLabel(props.comment.user.username, getUserDisplayName(props.comment.user))
@@ -327,7 +327,7 @@ const userLevelBadge = computed(() => {
     moderator: 'MOD',
     admin: 'ADMIN',
   }
-  return badges[props.comment.user.level] || null
+  return props.comment.user.level ? badges[props.comment.user.level] || null : null
 })
 
 const commentImages = computed(() =>
@@ -335,15 +335,23 @@ const commentImages = computed(() =>
     const url = normalizeHttpUrl(image.url)
     if (!url) return []
 
+    const thumbnailUrl = normalizeHttpUrl(image.thumbnail_url)
     return [
-      {
+      reactive({
         ...image,
         url,
-        thumbnail_url: normalizeHttpUrl(image.thumbnail_url) ?? url,
-      },
+        candidates: Array.from(
+          new Set([url, thumbnailUrl].filter((value): value is string => Boolean(value)))
+        ),
+        activeIndex: 0,
+      }),
     ]
   })
 )
+
+function handleCommentImageError(image: { candidates: string[]; activeIndex: number }): void {
+  image.activeIndex += 1
+}
 
 const likeCount = computed(() => props.comment.like_count ?? props.comment.likes_count ?? 0)
 const replyCount = computed(() => props.comment.reply_count ?? props.comment.replies_count ?? 0)

@@ -181,13 +181,15 @@ vi.mock('@/fallbacks/publicPageFallback', () => ({
   isServiceUnavailableError: (...args: unknown[]) => mocks.isServiceUnavailableErrorMock(...args),
 }))
 
-vi.mock('@/utils/mediaOptimizer', () => ({
+vi.mock('@/utils/mediaOptimizer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/mediaOptimizer')>()),
   getMediaStreamUrl: (...args: unknown[]) => mocks.getMediaStreamUrlMock(...args),
   getMediaThumbnailSrcset: (...args: unknown[]) => mocks.getMediaThumbnailSrcsetMock(...args),
   getMediaThumbnailUrl: (...args: unknown[]) => mocks.getMediaThumbnailUrlMock(...args),
 }))
 
-vi.mock('@/utils/thumbnailPresentation', () => ({
+vi.mock('@/utils/thumbnailPresentation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/thumbnailPresentation')>()),
   resolveThumbnailSrc: (...args: unknown[]) => mocks.resolveThumbnailSrcMock(...args),
   resolveThumbnailSrcset: (...args: unknown[]) => mocks.resolveThumbnailSrcsetMock(...args),
 }))
@@ -501,7 +503,7 @@ describe('PostDetailPage', () => {
     expect(mocks.replaceSpy).not.toHaveBeenCalled()
     expect(wrapper.find('.post-title').text()).toContain('List summary title')
     expect(wrapper.find('.post-description').text()).toContain('List summary content')
-    expect(wrapper.find('.post-image').attributes('src')).toContain('list-thumb.jpg?resolved=1')
+    expect(wrapper.find('.post-image').attributes('src')).toContain('list-thumb.jpg')
   })
 
   it('forwards loaded detail external links to the shared action strip', async () => {
@@ -702,7 +704,7 @@ describe('PostDetailPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.find('.post-image').attributes('src')).toContain('thumb.jpg?resolved=1')
+    expect(wrapper.find('.post-image').attributes('src')).toContain('thumb.jpg')
     expect(wrapper.findAll('.thumbnail-btn--placeholder')).toHaveLength(0)
   })
 
@@ -728,7 +730,7 @@ describe('PostDetailPage', () => {
     expect(
       wrapper
         .findAll('.media-viewer-item')
-        .some((item) => item.attributes('src')?.includes('/media/media-1/large.jpg'))
+        .some((item) => item.attributes('src')?.includes('/media/media-1/stream'))
     ).toBe(true)
     expect(wrapper.find('.media-viewer-expand').exists()).toBe(true)
     expect(wrapper.find('.media-nav.next').attributes('disabled')).toBeUndefined()

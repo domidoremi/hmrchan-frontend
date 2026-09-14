@@ -31,9 +31,10 @@ describe('homeImagePolicy', () => {
   it('resolves responsive image srcsets through the shared media optimizer', () => {
     expect(resolveHomeImageSrcset(null)).toBe(null)
     expect(resolveHomeImageSrcset('https://cdn.example.com/image.jpg')).toBe(null)
+    // Original-size media must not emit a thumbnail srcset that would downgrade the image
     expect(
       resolveHomeImageSrcset('/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail')
-    ).toContain('/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=small')
+    ).toBe(null)
   })
 
   it('resolves Vue image srcset attributes without template-owned fallback coercion', () => {
@@ -43,7 +44,7 @@ describe('homeImagePolicy', () => {
       resolveHomeImageSrcsetAttribute(
         '/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail'
       )
-    ).toContain('/api/v1/media/123e4567-e89b-12d3-a456-426614174000/thumbnail?size=small')
+    ).toBeUndefined()
   })
 
   it('resolves Vue image source attributes without template-owned fallback coercion', () => {
