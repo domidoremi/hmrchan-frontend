@@ -38,6 +38,12 @@
         <component :is="platformIcon" :size="28" />
       </div>
 
+      <div v-if="isTextOnlyPost" class="post-card__text-preview">
+        <p class="post-card__text-preview-content">
+          {{ normalizeText(post.description) || normalizeText(post.content) }}
+        </p>
+      </div>
+
       <img
         v-if="activeImageSrc && shouldRenderImage"
         class="post-image"
@@ -351,17 +357,27 @@ const thumbnailSrc = computed(() => {
 
 const activeImageSrc = computed(() => highQualitySrc.value || thumbnailSrc.value)
 
+// A card may only use the media placeholder when the post is genuinely typed
+// image/video. Text-only posts can still carry an inflated media_count from
+// list payloads, which must never be treated as "media present".
+const hasMediaTypedCard = computed(() => {
+  const type = (props.post.media_type ?? '').trim().toLowerCase()
+  return (
+    type === 'image' || type === 'video' || type.startsWith('image/') || type.startsWith('video/')
+  )
+})
+
 const isTextOnlyPost = computed(() => {
   if (thumbnailSrc.value) return false
   const count = props.post.media_count ?? 0
-  if (count > 0) return false
+  if (count > 0 && hasMediaTypedCard.value) return false
   const text = normalizeText(props.post.description) || normalizeText(props.post.content)
   return text.length > 0
 })
 
 const hasMediaNoThumbnail = computed(() => {
   if (thumbnailSrc.value) return false
-  return (props.post.media_count ?? 0) > 0
+  return (props.post.media_count ?? 0) > 0 && hasMediaTypedCard.value
 })
 
 const mediaTypeIcon = computed(() => {
@@ -813,6 +829,25 @@ function handleClick() {
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+.post-card__text-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  text-align: center;
+}
+
+.post-card__text-preview-content {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .post-image-placeholder--empty {

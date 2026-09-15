@@ -175,10 +175,10 @@
                 fetchpriority="high"
               />
               <div
-                v-else-if="post?.description && post.media_count === 0"
+                v-else-if="isTextOnlyRenderablePost && textOnlyPostText"
                 class="post-media-text-only"
               >
-                <p class="post-media-text-only__content">{{ post.description }}</p>
+                <p class="post-media-text-only__content">{{ textOnlyPostText }}</p>
               </div>
               <div class="post-image skeleton" v-else />
             </div>
@@ -399,6 +399,7 @@ import {
   buildPublishedMeta,
   computePostDetailScrollProgress,
   getThumbnailPlaceholderCount,
+  hasDetailRenderableMedia,
   isMediaPending as computeIsMediaPending,
   isPostDetailAbortError,
   resolveActiveImageSource,
@@ -414,6 +415,7 @@ import {
   resolvePostDetailMediaHintSource,
   resolvePostDetailNavigationRequest,
   resolvePostDetailNavigationTarget,
+  resolvePostDetailText,
   resolvePostDetailTouchNavigationDirection,
   resolvePostDetailWheelIntent,
   resolvePostDetailMediaState,
@@ -566,6 +568,9 @@ const canGoNextMedia = computed(() => mediaState.value.canGoNextMedia)
 const showMediaNavButtons = computed(() => mediaState.value.showMediaNavButtons)
 
 const isMediaPending = computed(() => computeIsMediaPending(post.value, detailFetched.value))
+
+const isTextOnlyRenderablePost = computed(() => !hasDetailRenderableMedia(post.value))
+const textOnlyPostText = computed(() => resolvePostDetailText(post.value))
 
 const isImageSequence = computed(() => mediaState.value.isImageSequence)
 

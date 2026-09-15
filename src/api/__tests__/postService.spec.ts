@@ -184,4 +184,94 @@ describe('postService', () => {
     expect(clientMocks.post).toHaveBeenCalledWith('/posts/post-1/like', null, config)
     expect(clientMocks.delete).toHaveBeenCalledWith('/posts/post-1/like', config)
   })
+
+  describe('normalizePostDetail media_count semantics', () => {
+    const basePost = {
+      id: '01890f47-6a35-7cc4-8a2d-7f5b56c9e001',
+      platform: 'twitter',
+      view_count: 0,
+      like_count: 0,
+      comment_count: 0,
+    }
+
+    it('treats a text-only post with file_count but no files as having no media', async () => {
+      vi.mocked(clientMocks.get).mockResolvedValueOnce({
+        ...basePost,
+        title: 'text post',
+        media_type: 'text',
+        file_count: 1,
+        files: [],
+      })
+
+      const result = await postService.getPost(basePost.id)
+      expect(result.media_count).toBe(0)
+      expect(result.media_files).toEqual([])
+    })
+
+    it('treats a text-only post without any files field as having no media', async () => {
+      vi.mocked(clientMocks.get).mockResolvedValueOnce({
+        ...basePost,
+        title: 'text post',
+        media_type: 'text',
+        file_count: 1,
+      })
+
+      const result = await postService.getPost(basePost.id)
+      expect(result.media_count).toBe(0)
+    })
+
+    it('falls back to file_count for an image post with a resolvable thumbnail', async () => {
+      vi.mocked(clientMocks.get).mockResolvedValueOnce({
+        ...basePost,
+        media_type: 'image',
+        thumbnail_url: '/api/v1/media/media-1/thumbnail',
+        file_count: 2,
+        files: [],
+      })
+
+      const result = await postService.getPost(basePost.id)
+      expect(result.media_count).toBe(2)
+    })
+
+    it('ignores file_count when no media source resolves', async () => {
+      vi.mocked(clientMocks.get).mockResolvedValueOnce({
+        ...basePost,
+        media_type: 'image',
+        file_count: 3,
+        files: [],
+      })
+
+      const result = await postService.getPost(basePost.id)
+      expect(result.media_count).toBe(0)
+    })
+
+    it('counts actual media files when present', async () => {
+      vi.mocked(clientMocks.get).mockResolvedValueOnce({
+        ...basePost,
+        media_type: 'image',
+        file_count: 9,
+        files: [
+          { id: 'm1', file_name: 'a.jpg', file_type: 'image' },
+          { id: 'm2', file_name: 'b.jpg', file_type: 'image' },
+        ],
+      })
+
+      const result = await postService.getPost(basePost.id)
+      expect(result.media_count).toBe(2)
+      expect(result.media_files).toHaveLength(2)
+    })
+
+    it('respects an explicit media_count from the payload', async () => {
+      vi.mocked(clientMocks.get).mockResolvedValueOnce({
+        ...basePost,
+        media_type: 'image',
+        media_count: 4,
+        thumbnail_url: '/api/v1/media/media-1/thumbnail',
+        files: [],
+      })
+
+      const result = await postService.getPost(basePost.id)
+      expect(result.media_count).toBe(4)
+    })
+  })
 })

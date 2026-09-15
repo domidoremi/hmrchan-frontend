@@ -4,6 +4,7 @@ import type { MediaThumbnailSize } from '@/utils/mediaOptimizer'
 export interface PostDetailMediaLike {
   id?: string | null
   file_type?: string | null
+  file_path?: string | null
   width?: number | null
   height?: number | null
   subtitles?: SubtitleTrack[] | null
@@ -14,8 +15,19 @@ export interface PostDetailLike {
   description?: string | null | undefined
   published_at?: string | null | undefined
   thumbnail_url?: string | null
+  media_type?: string | null
   media_count?: number | null
   media_files?: PostDetailMediaLike[] | null | undefined
+}
+
+function isImageOrVideoType(type: string | null | undefined): boolean {
+  const normalized = (type ?? '').trim().toLowerCase()
+  return (
+    normalized === 'image' ||
+    normalized === 'video' ||
+    normalized.startsWith('image/') ||
+    normalized.startsWith('video/')
+  )
 }
 
 export type PostDetailMediaUrlResolver = {
@@ -581,6 +593,30 @@ export function buildActiveMediaElementStyle(
   }
 }
 
+// A post has renderable media only when it is genuinely typed as image/video
+// and at least one source (thumbnail or media file URL) resolves. Text-only
+// posts can report file_count/media metadata without any media files, so
+// media_count alone must never be treated as proof of renderable media.
+export function hasDetailRenderableMedia(post: PostDetailLike | null | undefined): boolean {
+  if (!post) return false
+  if (
+    post.media_files?.some(
+      (media) => isImageOrVideoType(media.file_type) && Boolean((media.file_path ?? '').trim())
+    )
+  ) {
+    return true
+  }
+  return isImageOrVideoType(post.media_type) && Boolean((post.thumbnail_url ?? '').trim())
+}
+
+export function resolvePostDetailText(post: PostDetailLike | null | undefined): string {
+  const description = (post?.description ?? '').trim()
+  if (!description) return ''
+  const title = (post?.title ?? '').trim()
+  if (!title || description.startsWith(title)) return description
+  return `${title} ${description}`.trim()
+}
+
 export function isMediaPending(
   post: PostDetailLike | null | undefined,
   detailFetched: boolean
@@ -590,7 +626,7 @@ export function isMediaPending(
   const hasFiles = Boolean(post.media_files && post.media_files.length > 0)
   if (hasFiles) return false
 
-  return (post.media_count ?? 0) > 0
+  return (post.media_count ?? 0) > 0 && hasDetailRenderableMedia(post)
 }
 
 export function shouldShowThumbnailRail(
@@ -599,7 +635,9 @@ export function shouldShowThumbnailRail(
 ): boolean {
   const mediaCount = post?.media_files?.length ?? 0
   if (mediaCount > 1) return true
-  return Boolean(post && !detailFetched && (post.media_count ?? 0) > 1)
+  return Boolean(
+    post && !detailFetched && (post.media_count ?? 0) > 1 && hasDetailRenderableMedia(post)
+  )
 }
 
 export function getThumbnailPlaceholderCount(mediaCount?: number | null): number {
@@ -626,6 +664,7 @@ export function resolveFallbackMediaSource(
   post: PostDetailLike | null | undefined,
   resolver: Pick<PostDetailMediaUrlResolver, 'resolveThumbnailSrc'>
 ): string {
+  if (!post || (post.media_count ?? 0) === 0) return ''
   return resolver.resolveThumbnailSrc(post?.thumbnail_url ?? null, 'large') || ''
 }
 

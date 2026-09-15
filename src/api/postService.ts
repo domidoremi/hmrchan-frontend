@@ -322,6 +322,29 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     attachSubtitlesToVideos(mediaFiles, topLevelSubtitles)
   }
 
+  // file_count alone cannot be trusted: text-only posts may report a metadata
+  // record in file_count while having no media files, so only use it when a
+  // resolvable top-level media source exists.
+  const hasTopLevelMedia = (() => {
+    const type = (raw.media_type ?? raw.media_type_legacy ?? '').trim().toLowerCase()
+    if (
+      type !== 'image' &&
+      type !== 'video' &&
+      !type.startsWith('image/') &&
+      !type.startsWith('video/')
+    ) {
+      return false
+    }
+    if (typeof raw.thumbnail_url === 'string' && raw.thumbnail_url.trim()) return true
+    return mediaFiles?.some((file) => (file.file_path ?? '').trim()) ?? false
+  })()
+  const fallbackMediaCount =
+    mediaFiles && mediaFiles.length > 0
+      ? mediaFiles.length
+      : hasTopLevelMedia
+        ? (raw.file_count ?? 0)
+        : 0
+
   return {
     id: raw.id,
     platform: raw.platform,
@@ -342,7 +365,7 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     like_count: raw.like_count,
     comment_count: raw.comment_count,
     share_count: raw.share_count,
-    media_count: raw.media_count ?? mediaFiles?.length ?? raw.file_count ?? 0,
+    media_count: raw.media_count ?? fallbackMediaCount,
     duration: raw.duration ?? (raw.duration_sec != null ? raw.duration_sec : null),
     published_at: raw.published_at,
     created_at: raw.created_at ?? raw.published_at ?? '',

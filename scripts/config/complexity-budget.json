@@ -3,9 +3,9 @@
   "hardLineLimit": 1500,
   "registeredLargeFiles": {
     "src/components/business/PostCard.vue": {
-      "maxLines": 1041,
+      "maxLines": 1076,
       "refactorQueued": false,
-      "reason": "Content cards now resolve original image streams and retain large-thumbnail fallbacks; keep the current ceiling while media presentation logic is assessed for a later extraction."
+      "reason": "Content cards now resolve original image streams and retain large-thumbnail fallbacks; keep the current ceiling while media presentation logic is assessed for a later extraction. Text-only cards now render their inline text preview in-card so text posts stop showing fallback media placeholders."
     },
     "src/views/ExplorePage.vue": {
       "maxLines": 1190,
