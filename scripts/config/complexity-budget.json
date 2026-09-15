@@ -33,9 +33,9 @@
       "reason": "Login step titles, credential validation, restore-account validation, restore query cleanup, risk WebAuthn visibility, Turnstile retry predicates, Turnstile freshness, Google handoff expiry predicates, route query state, Google visual state, conditional passkey start, and back navigation intent were extracted; preserve current auth flow while tracking remaining complexity."
     },
     "src/views/PostDetailPage.vue": {
-      "maxLines": 2469,
+      "maxLines": 2473,
       "refactorQueued": true,
-      "reason": "Post detail title/description, published meta, media state, image sources, placeholders, media transition rules, adjacent preload indexes, not-found route params, comments viewport preload checks, adjacent post navigation gesture rules, fallback recovery decisions, and text modal lifecycle bindings were extracted; API orchestration remains queued."
+      "reason": "Post detail title/description, published meta, media state, image sources, placeholders, media transition rules, adjacent preload indexes, not-found route params, comments viewport preload checks, adjacent post navigation gesture rules, fallback recovery decisions, and text modal lifecycle bindings were extracted; API orchestration remains queued. Text-only detail rendering is now gated on a renderability predicate so text posts never receive fallback media."
     },
     "src/views/RegisterPage.vue": {
       "maxLines": 1427,

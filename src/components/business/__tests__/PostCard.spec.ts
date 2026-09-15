@@ -195,3 +195,78 @@ describe('PostCard', () => {
     expect(image?.src).toContain(`/api/v1/media/${mediaId}/stream`)
   })
 })
+
+describe('PostCard no-media semantics', () => {
+  it('renders no media placeholder for a text-only post with an inflated media_count', () => {
+    // Production shape: backend counts a metadata record in file_count, posts may
+    // surface media_count=1 while having neither thumbnail nor stream media.
+    const { host } = mountPostCard(
+      createPost({
+        title: '@saara_hazuki すきー！！！',
+        description: '@saara_hazuki すきー！！！',
+        content: '@saara_hazuki すきー！！！',
+        media_type: 'text',
+        media_count: 1,
+        thumbnail_url: null,
+        stream_url: null,
+        media_id: null,
+      })
+    )
+
+    expect(host.querySelector('.post-image')).toBeNull()
+    expect(host.querySelector('.post-image-placeholder--media')).toBeNull()
+    expect(host.textContent).toContain('@saara_hazuki すきー！！！')
+  })
+
+  it('renders no media placeholder when media_count is positive but no source resolves', () => {
+    const { host } = mountPostCard(
+      createPost({
+        media_count: 2,
+        media_type: null,
+        thumbnail_url: null,
+        stream_url: '',
+        media_id: null,
+        description: null,
+        content: null,
+      })
+    )
+
+    expect(host.querySelector('.post-image')).toBeNull()
+    expect(host.querySelector('.post-image-placeholder--media')).toBeNull()
+    expect(host.querySelector('.post-image-placeholder--empty')).not.toBeNull()
+  })
+
+  it('renders no image for an empty-string thumbnail url', () => {
+    const { host } = mountPostCard(createPost({ thumbnail_url: '', media_count: 1 }))
+
+    expect(host.querySelector('.post-image')).toBeNull()
+    expect(host.querySelector('.post-image-placeholder--media')).toBeNull()
+  })
+
+  it('still renders an image for a post with a genuine thumbnail', () => {
+    const { host } = mountPostCard(
+      createPost({
+        thumbnail_url: 'https://img.example.com/cover.jpg',
+        media_count: 1,
+      })
+    )
+
+    const image = host.querySelector<HTMLImageElement>('.post-image')
+    expect(image?.src).toContain('https://img.example.com/cover.jpg')
+  })
+
+  it('still marks a video post with a thumbnail as having media', () => {
+    const mediaId = '123e4567-e89b-12d3-a456-426614174000'
+    const { host } = mountPostCard(
+      createPost({
+        media_count: 1,
+        media_type: 'video',
+        thumbnail_url: `/api/v1/media/${mediaId}/thumbnail?size=small`,
+        duration: 12,
+      })
+    )
+
+    const image = host.querySelector<HTMLImageElement>('.post-image')
+    expect(image).not.toBeNull()
+  })
+})

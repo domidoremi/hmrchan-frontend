@@ -1,4 +1,4 @@
-import { normalizeMediaKind, resolveMediaSources } from '@/utils/mediaOptimizer'
+import { hasRenderableMedia, normalizeMediaKind, resolveMediaSources } from '@/utils/mediaOptimizer'
 
 import type { SubtitleTrack } from '@/types'
 import type { MediaThumbnailSize } from '@/utils/mediaOptimizer'
@@ -596,6 +596,20 @@ export function buildActiveMediaElementStyle(
   }
 }
 
+export function hasDetailRenderableMedia(post: PostDetailLike | null | undefined): boolean {
+  if (!post) return false
+  if (post.media_files?.some((media) => hasRenderableMedia(media))) return true
+  return hasRenderableMedia(post)
+}
+
+export function resolvePostDetailText(post: PostDetailLike | null | undefined): string {
+  const description = (post?.description ?? '').trim()
+  if (!description) return ''
+  const title = (post?.title ?? '').trim()
+  if (!title || description.startsWith(title)) return description
+  return `${title} ${description}`.trim()
+}
+
 export function isMediaPending(
   post: PostDetailLike | null | undefined,
   detailFetched: boolean
@@ -605,7 +619,7 @@ export function isMediaPending(
   const hasFiles = Boolean(post.media_files && post.media_files.length > 0)
   if (hasFiles) return false
 
-  return (post.media_count ?? 0) > 0
+  return (post.media_count ?? 0) > 0 && hasDetailRenderableMedia(post)
 }
 
 export function shouldShowThumbnailRail(
@@ -614,7 +628,9 @@ export function shouldShowThumbnailRail(
 ): boolean {
   const mediaCount = post?.media_files?.length ?? 0
   if (mediaCount > 1) return true
-  return Boolean(post && !detailFetched && (post.media_count ?? 0) > 1)
+  return Boolean(
+    post && !detailFetched && (post.media_count ?? 0) > 1 && hasDetailRenderableMedia(post)
+  )
 }
 
 export function getThumbnailPlaceholderCount(mediaCount?: number | null): number {
@@ -631,6 +647,7 @@ export function resolveActiveImageSrcset(): string | null {
 }
 
 export function resolveFallbackMediaSource(post: PostDetailLike | null | undefined): string {
+  if (!post || (post.media_count ?? 0) === 0) return ''
   return resolveMediaSources(post).displayUrl || ''
 }
 

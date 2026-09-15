@@ -156,6 +156,19 @@ export function isMediaStreamUrl(url?: string | null): boolean {
   return Boolean(normalized && /\/api\/v1\/media\/[^/]+\/stream(?:$|[?#])/i.test(normalized))
 }
 
+// A post has renderable media only when its media type is genuinely image/video
+// and at least one source (stream, poster, thumbnail, or file URL) resolves.
+// Anything else — missing metadata, `text`/unknown kinds, empty URLs — must be
+// treated as "no media", never as "media present but failed", so that fallback
+// media is not injected.
+export function hasRenderableMedia(media?: MediaSourceLike | null): boolean {
+  if (!media) return false
+  const kind = normalizeMediaKind(media.media_type ?? media.file_type)
+  if (kind !== 'image' && kind !== 'video') return false
+  const sources = resolveMediaSources(media)
+  return Boolean(sources.displayUrl || sources.streamUrl || sources.posterUrl)
+}
+
 export function resolveMediaSources(
   media: MediaSourceLike | null | undefined
 ): ResolvedMediaSources {

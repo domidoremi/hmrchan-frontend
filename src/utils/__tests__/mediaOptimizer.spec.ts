@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { getMediaThumbnailSrcset, getThumbnailSrcset, isMediaThumbnailUrl } from '../mediaOptimizer'
+import {
+  getMediaThumbnailSrcset,
+  getThumbnailSrcset,
+  hasRenderableMedia,
+  isMediaThumbnailUrl,
+} from '../mediaOptimizer'
 
 describe('mediaOptimizer srcset helpers', () => {
   beforeAll(() => {
@@ -35,5 +40,37 @@ describe('mediaOptimizer srcset helpers', () => {
     expect(isMediaThumbnailUrl('/api/v1/media/media-123/thumbnail?size=medium')).toBe(true)
     expect(isMediaThumbnailUrl('https://momichan.com/api/v1/media/media-123/stream')).toBe(false)
     expect(isMediaThumbnailUrl('/api/v1/posts')).toBe(false)
+  })
+})
+
+describe('hasRenderableMedia', () => {
+  beforeAll(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => null)
+  })
+
+  it('returns false for text-only, missing, empty, or invalid media', () => {
+    expect(hasRenderableMedia(null)).toBe(false)
+    expect(hasRenderableMedia(undefined)).toBe(false)
+    expect(hasRenderableMedia({})).toBe(false)
+    expect(hasRenderableMedia({ media_type: 'text', media_id: 'media-1' })).toBe(false)
+    expect(hasRenderableMedia({ media_type: 'image', stream_url: '' })).toBe(false)
+    expect(hasRenderableMedia({ media_type: 'image', file_path: '   ' })).toBe(false)
+    expect(hasRenderableMedia({ media_type: 'video', thumbnail_url: null })).toBe(false)
+  })
+
+  it('returns true when a genuine image or video source resolves', () => {
+    expect(hasRenderableMedia({ media_type: 'image', media_id: 'media-1' })).toBe(true)
+    expect(
+      hasRenderableMedia({ media_type: 'image', thumbnail_url: 'https://img.example.com/a.jpg' })
+    ).toBe(true)
+    expect(
+      hasRenderableMedia({ media_type: 'video', file_path: 'https://cdn.example.com/a.mp4' })
+    ).toBe(true)
+    expect(
+      hasRenderableMedia({
+        file_type: 'video',
+        stream_url: 'https://momichan.com/api/v1/media/media-1/stream',
+      })
+    ).toBe(true)
   })
 })

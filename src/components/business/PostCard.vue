@@ -128,6 +128,7 @@ import { resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import { warmDecodedImage } from '@/utils/performance'
 import {
+  hasRenderableMedia,
   isMediaThumbnailUrl,
   isMobileDevice,
   normalizeToThumbnailUrl,
@@ -342,17 +343,22 @@ const thumbnailSrc = computed(() => {
 
 const activeImageSrc = computed(() => highQualitySrc.value || thumbnailSrc.value)
 
+// media_count alone does not prove renderable media: text-only posts can carry a
+// metadata-only record in file_count, so a positive count without a resolvable
+// media source must fall through to the empty/text-only presentation.
+const hasRenderableCardMedia = computed(() => hasRenderableMedia(props.post))
+
 const isTextOnlyPost = computed(() => {
   if (thumbnailSrc.value) return false
   const count = props.post.media_count ?? 0
-  if (count > 0) return false
+  if (count > 0 && hasRenderableCardMedia.value) return false
   const text = normalizeText(props.post.description) || normalizeText(props.post.content)
   return text.length > 0
 })
 
 const hasMediaNoThumbnail = computed(() => {
   if (thumbnailSrc.value) return false
-  return (props.post.media_count ?? 0) > 0
+  return (props.post.media_count ?? 0) > 0 && hasRenderableCardMedia.value
 })
 
 const mediaTypeIcon = computed(() => {

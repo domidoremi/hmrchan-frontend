@@ -176,10 +176,10 @@
                 fetchpriority="high"
               />
               <div
-                v-else-if="post?.description && post.media_count === 0"
+                v-else-if="isTextOnlyRenderablePost && textOnlyPostText"
                 class="post-media-text-only"
               >
-                <p class="post-media-text-only__content">{{ post.description }}</p>
+                <p class="post-media-text-only__content">{{ textOnlyPostText }}</p>
               </div>
               <div class="post-image skeleton" v-else />
             </div>
@@ -396,6 +396,7 @@ import {
   buildPublishedMeta,
   computePostDetailScrollProgress,
   getThumbnailPlaceholderCount,
+  hasDetailRenderableMedia,
   isMediaPending as computeIsMediaPending,
   isPostDetailAbortError,
   resolveActiveImageSource,
@@ -408,6 +409,7 @@ import {
   resolvePostDetailFallbackRecoveryFromError,
   resolvePostDetailFetchErrorOutcome,
   resolvePostDetailMediaHintSource,
+  resolvePostDetailText,
   resolvePostDetailNavigationRequest,
   resolvePostDetailNavigationTarget,
   resolvePostDetailTouchNavigationDirection,
@@ -568,6 +570,14 @@ const canGoNextMedia = computed(() => mediaState.value.canGoNextMedia)
 const showMediaNavButtons = computed(() => mediaState.value.showMediaNavButtons)
 
 const isMediaPending = computed(() => computeIsMediaPending(post.value, detailFetched.value))
+
+// A text-only post has text content but no renderable media; media_count alone is
+// not trusted because text/metadata records can inflate it.
+const isTextOnlyRenderablePost = computed(() => {
+  return !hasDetailRenderableMedia(post.value)
+})
+
+const textOnlyPostText = computed(() => resolvePostDetailText(post.value))
 
 const isImageSequence = computed(() => mediaState.value.isImageSequence)
 

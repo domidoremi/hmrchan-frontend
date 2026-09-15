@@ -185,3 +185,110 @@ describe('postService', () => {
     expect(clientMocks.delete).toHaveBeenCalledWith('/posts/post-1/like', config)
   })
 })
+
+describe('normalizePostDetail media_count semantics', () => {
+  const baseRaw = {
+    id: '01a09c33-5207-7c02-9b88-da5d3c3112cc',
+    platform: 'twitter',
+    view_count: 10,
+    like_count: 5,
+    comment_count: 0,
+    created_at: '2026-04-01T00:00:00Z',
+  }
+
+  it('derives media_count 0 for a text-only post whose file_count counts a metadata record', async () => {
+    // Real production shape: { content, media_type: 'text', file_count: 1, files: [] }
+    clientMocks.get.mockResolvedValueOnce({
+      ...baseRaw,
+      title: 'hello',
+      content: 'hello',
+      media_type: 'text',
+      file_count: 1,
+      files: [],
+    })
+
+    const post = await postService.getPost(baseRaw.id)
+    expect(post.media_files).toEqual([])
+    expect(post.media_count).toBe(0)
+  })
+
+  it('derives media_count 0 when files contain only metadata records', async () => {
+    clientMocks.get.mockResolvedValueOnce({
+      ...baseRaw,
+      title: 'hello',
+      file_count: 2,
+      files: [{ id: 'meta-1', file_type: 'metadata', file_name: 'tweet.json' }],
+    })
+
+    const post = await postService.getPost(baseRaw.id)
+    expect(post.media_count).toBe(0)
+  })
+
+  it('normalizes a missing media field as no media rather than a fallback', async () => {
+    clientMocks.get.mockResolvedValueOnce({ ...baseRaw, title: 'plain' })
+
+    const post = await postService.getPost(baseRaw.id)
+    expect(post.media_count).toBe(0)
+    expect(post.media_files ?? []).toEqual([])
+  })
+
+  it('treats an empty stream url as no media instead of defaulting to a generated url', async () => {
+    clientMocks.get.mockResolvedValueOnce({
+      ...baseRaw,
+      media_type: 'image',
+      stream_url: '',
+      thumbnail_url: null,
+      file_count: 1,
+      files: [],
+    })
+
+    const post = await postService.getPost(baseRaw.id)
+    expect(post.media_count).toBe(0)
+  })
+
+  it('keeps a real file_count for posts with a resolvable top-level media source', async () => {
+    const mediaId = '2d43c52e-83d6-46a1-a125-707f54119a2f'
+    clientMocks.get.mockResolvedValueOnce({
+      ...baseRaw,
+      media_id: mediaId,
+      media_type: 'image',
+      file_count: 1,
+      files: [],
+    })
+
+    const post = await postService.getPost(baseRaw.id)
+    expect(post.media_count).toBe(1)
+  })
+
+  it('derives media_count from actual media files and keeps them renderable', async () => {
+    clientMocks.get.mockResolvedValueOnce({
+      ...baseRaw,
+      media_type: 'video',
+      file_count: 3,
+      files: [
+        { id: 'video-1', file_type: 'video', file_name: 'a.mp4' },
+        { id: 'image-1', file_type: 'image', file_name: 'b.jpg' },
+      ],
+    })
+
+    const post = await postService.getPost(baseRaw.id)
+    expect(post.media_count).toBe(2)
+    expect(post.media_files).toHaveLength(2)
+    expect(post.media_files?.[0]?.file_type).toBe('video')
+  })
+
+  it('respects an explicit media_count from the api', async () => {
+    clientMocks.get.mockResolvedValueOnce({
+      ...baseRaw,
+      media_count: 4,
+      media_files: [
+        { id: 'media-1', file_path: '', file_type: 'image', is_downloaded: true, created_at: '' },
+      ],
+      external_links: [],
+    })
+
+    const post = await postService.getPost(baseRaw.id)
+    expect(post.media_count).toBe(4)
+    expect(post.media_files).toHaveLength(1)
+  })
+})

@@ -683,6 +683,7 @@ describe('PostDetailPage', () => {
       ...basePost,
       media_count: 3,
       media_files: [],
+      media_type: 'image',
       thumbnail_url: 'https://cdn.example.com/thumb.jpg',
     })
     mocks.loadCachedPostMock.mockReturnValue(deferredRefresh.promise)

@@ -1,6 +1,7 @@
 import { apiClient, ApiError, type CursorCollectionResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 import { isUuidV7String } from '@/types/publicId'
+import { hasRenderableMedia } from '@/utils/mediaOptimizer'
 
 export type PostExternalLinkPlatform = 'tiktok' | 'youtube'
 
@@ -315,6 +316,15 @@ function attachSubtitlesToVideos(files: MediaFile[] | undefined, subtitles: Medi
   }
 }
 
+function hasTopLevelRenderableMedia(raw: RawPostDetail): boolean {
+  return hasRenderableMedia({
+    media_id: raw.media_id,
+    media_type: raw.media_type ?? raw.media_type_legacy,
+    stream_url: raw.stream_url,
+    thumbnail_url: raw.thumbnail_url,
+  })
+}
+
 function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
   const externalLinks = normalizePostExternalLinks(raw.external_links, raw.id)
   if (raw.media_files && raw.media_files.length > 0) {
@@ -348,6 +358,16 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     attachSubtitlesToVideos(mediaFiles, topLevelSubtitles)
   }
 
+  // file_count alone does not imply renderable media: text-only posts can report a
+  // metadata record in file_count with no media files, so only trust it when a
+  // top-level media source actually resolves to a displayable URL.
+  const fallbackMediaCount =
+    mediaFiles && mediaFiles.length > 0
+      ? mediaFiles.length
+      : hasTopLevelRenderableMedia(raw)
+        ? (raw.file_count ?? 0)
+        : 0
+
   return {
     id: raw.id,
     platform: raw.platform,
@@ -371,7 +391,7 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     like_count: raw.like_count,
     comment_count: raw.comment_count,
     share_count: raw.share_count,
-    media_count: raw.media_count ?? mediaFiles?.length ?? raw.file_count ?? 0,
+    media_count: raw.media_count ?? fallbackMediaCount,
     duration: raw.duration ?? (raw.duration_sec != null ? raw.duration_sec : null),
     published_at: raw.published_at,
     created_at: raw.created_at ?? raw.published_at ?? '',

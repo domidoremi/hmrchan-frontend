@@ -12,6 +12,7 @@ import {
   getAdjacentMediaPreloadIndexes,
   getCommentsPreloadMargin,
   getThumbnailPlaceholderCount,
+  hasDetailRenderableMedia,
   isMediaPending,
   isPostDetailAbortError,
   resolveActiveImageSource,
@@ -29,6 +30,7 @@ import {
   resolvePostDetailMediaHintSource,
   resolvePostDetailNavigationRequest,
   resolvePostDetailNavigationTarget,
+  resolvePostDetailText,
   resolvePostDetailTouchNavigationDirection,
   resolvePostDetailWheelIntent,
   resolvePostDetailMediaState,
@@ -119,9 +121,15 @@ describe('postDetailModel', () => {
   })
 
   it('keeps media fallback rules aligned with fetch state', () => {
-    expect(isMediaPending({ media_count: 2, media_files: [] }, false)).toBe(true)
-    expect(isMediaPending({ media_count: 2, media_files: [] }, true)).toBe(false)
-    expect(shouldShowThumbnailRail({ media_count: 3, media_files: [] }, false)).toBe(true)
+    const pendingMediaPost = {
+      media_count: 2,
+      media_files: [],
+      media_type: 'image',
+      media_id: 'media-pending',
+    }
+    expect(isMediaPending(pendingMediaPost, false)).toBe(true)
+    expect(isMediaPending(pendingMediaPost, true)).toBe(false)
+    expect(shouldShowThumbnailRail({ ...pendingMediaPost, media_count: 3 }, false)).toBe(true)
     expect(
       shouldShowThumbnailRail({ media_count: 1, media_files: [{ id: '1' }, { id: '2' }] }, true)
     ).toBe(true)
@@ -596,7 +604,7 @@ describe('postDetailModel', () => {
     ).toBeNull()
     expect(
       resolveFallbackMediaSource(
-        { thumbnail_url: '/thumb.jpg' },
+        { thumbnail_url: '/thumb.jpg', media_count: 1 },
         {
           resolveThumbnailSrc: (url, size) => `${url}?size=${size}`,
         }
@@ -729,5 +737,83 @@ describe('postDetailModel', () => {
         getMediaThumbnailUrl: (id, size) => `/media/${id}/${size}.jpg`,
       })
     ).toEqual([])
+  })
+})
+
+describe('no-media vs unavailable-media semantics', () => {
+  const textOnlyPost = {
+    title: '@saara_hazuki すきー！！！',
+    description: '@saara_hazuki すきー！！！',
+    media_type: 'text',
+    media_count: 1,
+    media_files: [],
+  }
+
+  it('treats text-only posts with an inflated media_count as having no media', () => {
+    expect(hasDetailRenderableMedia(textOnlyPost)).toBe(false)
+    expect(isMediaPending(textOnlyPost, false)).toBe(false)
+    expect(shouldShowThumbnailRail(textOnlyPost, false)).toBe(false)
+    expect(resolveFallbackMediaSource(textOnlyPost)).toBe('')
+  })
+
+  it('treats null, empty, or missing media metadata as no media', () => {
+    expect(hasDetailRenderableMedia(null)).toBe(false)
+    expect(hasDetailRenderableMedia(undefined)).toBe(false)
+    expect(hasDetailRenderableMedia({})).toBe(false)
+    expect(hasDetailRenderableMedia({ media_files: null })).toBe(false)
+    expect(hasDetailRenderableMedia({ media_files: [] })).toBe(false)
+    expect(hasDetailRenderableMedia({ media_count: 4, media_files: [] })).toBe(false)
+    expect(resolveFallbackMediaSource({})).toBe('')
+    expect(isMediaPending({ media_count: 3, media_files: [] }, false)).toBe(false)
+  })
+
+  it('rejects empty or invalid media urls without falling back to defaults', () => {
+    expect(
+      hasDetailRenderableMedia({ media_type: 'image', stream_url: '', thumbnail_url: null })
+    ).toBe(false)
+    expect(
+      hasDetailRenderableMedia({ media_type: 'video', stream_url: '   ', file_path: '' })
+    ).toBe(false)
+    expect(hasDetailRenderableMedia({ media_type: 'text', media_id: 'media-1' })).toBe(false)
+  })
+
+  it('detects genuinely renderable image and video posts', () => {
+    expect(hasDetailRenderableMedia({ media_type: 'image', media_id: 'media-1' })).toBe(true)
+    expect(hasDetailRenderableMedia({ media_type: 'video', media_id: 'media-1' })).toBe(true)
+    expect(
+      hasDetailRenderableMedia({
+        media_files: [
+          { id: 'media-1', media_type: 'image', file_path: 'https://cdn.example.com/a.jpg' },
+        ],
+      })
+    ).toBe(true)
+    expect(
+      hasDetailRenderableMedia({
+        media_files: [
+          { id: 'media-2', media_type: 'video', file_path: 'https://cdn.example.com/a.mp4' },
+        ],
+      })
+    ).toBe(true)
+    expect(
+      isMediaPending({ media_count: 1, media_type: 'image', media_id: 'media-1' }, false)
+    ).toBe(true)
+  })
+
+  it('keeps fallback media for posts that genuinely have a thumbnail source', () => {
+    expect(
+      resolveFallbackMediaSource({
+        media_count: 1,
+        media_type: 'image',
+        thumbnail_url: 'https://cdn.example.com/thumb.jpg',
+      })
+    ).toBe('https://cdn.example.com/thumb.jpg')
+  })
+
+  it('combines title and description for the text-only detail body', () => {
+    expect(resolvePostDetailText(textOnlyPost)).toBe('@saara_hazuki すきー！！！')
+    expect(resolvePostDetailText({ title: 'T', description: 'T body copy' })).toBe('T body copy')
+    expect(resolvePostDetailText({ title: 'T', description: 'Body' })).toBe('T Body')
+    expect(resolvePostDetailText({ title: 'T', description: '' })).toBe('')
+    expect(resolvePostDetailText(null)).toBe('')
   })
 })
