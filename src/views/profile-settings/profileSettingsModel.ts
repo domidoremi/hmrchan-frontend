@@ -9,10 +9,7 @@ export type PasswordStrengthTextKey =
 export type ProfileCredentialPendingAction = 'change_email' | 'change_password'
 
 export type PasswordChangeSubmitBlocker =
-  | 'busy'
-  | 'provider_managed'
-  | 'password_mismatch'
-  | 'password_too_short'
+  'busy' | 'provider_managed' | 'password_mismatch' | 'password_too_short'
 
 export type PasswordChangeSubmitErrorKey = 'profile.passwordMismatch' | 'profile.passwordTooShort'
 
@@ -37,10 +34,7 @@ export interface CredentialEmailForm {
 }
 
 export type CredentialPasswordVisibilityField =
-  | 'currentPassword'
-  | 'newPassword'
-  | 'confirmPassword'
-  | 'emailPassword'
+  'currentPassword' | 'newPassword' | 'confirmPassword' | 'emailPassword'
 
 export interface CredentialPasswordVisibilityState {
   currentPassword: boolean
@@ -57,9 +51,7 @@ export interface CredentialVerificationSuccessOutcome {
 }
 
 export type AuthSourceSummaryKey =
-  | 'profile.authSourceGoogle'
-  | 'profile.authSourceThirdParty'
-  | 'profile.authSourceEmail'
+  'profile.authSourceGoogle' | 'profile.authSourceThirdParty' | 'profile.authSourceEmail'
 
 export type AuthSourceSummaryHintKey =
   | 'profile.authSourceGoogleHint'

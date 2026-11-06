@@ -187,14 +187,12 @@ async function fetchFavorites(reset = true): Promise<boolean> {
       }
     )
     if (controller.signal.aborted || requestToken !== commentFavoritesRequestToken) return false
-    const nextItems = (res.items ?? []).map(
-      (item): CommentFavorite => ({
-        ...item,
-        id: item.id ?? item.comment_id,
-        created_at: item.created_at ?? item.favorited_at,
-        content: item.content ?? item.comment_content ?? '',
-      })
-    )
+    const nextItems = (res.items ?? []).map((item): CommentFavorite => ({
+      ...item,
+      id: item.id ?? item.comment_id,
+      created_at: item.created_at ?? item.favorited_at,
+      content: item.content ?? item.comment_content ?? '',
+    }))
 
     if (reset) {
       items.value = nextItems

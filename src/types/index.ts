@@ -15,13 +15,7 @@ export type AppearancePreset =
 export type MotionMode = 'none' | 'reduced' | 'standard' | 'expressive'
 
 export type SceneRole =
-  | 'editorial'
-  | 'productivity'
-  | 'discussion'
-  | 'narrative'
-  | 'utility'
-  | 'immersive'
-  | 'playful'
+  'editorial' | 'productivity' | 'discussion' | 'narrative' | 'utility' | 'immersive' | 'playful'
 
 export type Locale = 'en' | 'zh-CN' | 'zh-TW' | 'ja'
 

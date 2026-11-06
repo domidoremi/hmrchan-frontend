@@ -63,11 +63,7 @@ export const CACHE_NAMES = {
 // ============================================
 
 export type CacheStrategy =
-  | 'cache-first'
-  | 'network-first'
-  | 'stale-while-revalidate'
-  | 'network-only'
-  | 'cache-only'
+  'cache-first' | 'network-first' | 'stale-while-revalidate' | 'network-only' | 'cache-only'
 
 // ============================================
 

@@ -127,8 +127,7 @@ describe('TurnstileWidget', () => {
     await vi.advanceTimersByTimeAsync(100)
 
     const errorCallback = turnstile.getLatestOptions()?.['error-callback'] as
-      | ((code: unknown) => boolean)
-      | undefined
+      ((code: unknown) => boolean) | undefined
     expect(errorCallback?.('110100')).toBe(true)
 
     const emittedError = wrapper.emitted('error')?.[0]?.[0] as Error & {

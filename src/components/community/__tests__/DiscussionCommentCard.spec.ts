@@ -446,8 +446,7 @@ describe('DiscussionCommentCard', () => {
     expect(state.discussionService.getCommentReplies).not.toHaveBeenCalled()
 
     let resolveFetch:
-      | ((value: { items: never[]; has_more: boolean; next_cursor: null }) => void)
-      | null = null
+      ((value: { items: never[]; has_more: boolean; next_cursor: null }) => void) | null = null
     state.discussionService.getCommentReplies.mockImplementation(
       (_commentId: string, _query: unknown, options: { signal: AbortSignal }) =>
         new Promise((resolve) => {
