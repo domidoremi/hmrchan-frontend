@@ -941,8 +941,7 @@ describe('HomePage', () => {
       disconnect: vi.fn(),
     }
     let deferredCallback:
-      | ((entries: Array<{ isIntersecting: boolean; target: Element }>) => void)
-      | null = null
+      ((entries: Array<{ isIntersecting: boolean; target: Element }>) => void) | null = null
     mocks.createVisibilityObserver.mockImplementation((callback) => {
       deferredCallback = callback as typeof deferredCallback
       return visibilityObserver
@@ -977,8 +976,7 @@ describe('HomePage', () => {
       disconnect: vi.fn(),
     }
     let deferredCallback:
-      | ((entries: Array<{ isIntersecting: boolean; target: Element }>) => void)
-      | null = null
+      ((entries: Array<{ isIntersecting: boolean; target: Element }>) => void) | null = null
     mocks.createVisibilityObserver.mockImplementation((callback) => {
       deferredCallback = callback as typeof deferredCallback
       return visibilityObserver

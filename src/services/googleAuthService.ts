@@ -17,13 +17,7 @@ import { reportClientEvent } from '@/utils/clientReporter'
 export type GoogleAuthIntent = 'login' | 'register'
 export type GoogleAuthMode = 'popup' | 'redirect'
 export type GooglePopupState =
-  | 'idle'
-  | 'opening'
-  | 'waiting'
-  | 'recovery'
-  | 'blocked'
-  | 'handling'
-  | 'error'
+  'idle' | 'opening' | 'waiting' | 'recovery' | 'blocked' | 'handling' | 'error'
 
 export interface GooglePopupMessage {
   type: 'google-auth-result'
@@ -36,9 +30,7 @@ export interface GooglePopupMessage {
 }
 
 export type GoogleAuthFlowResponse =
-  | AuthResponse
-  | RiskVerificationChallengeResponse
-  | MfaRequiredResponse
+  AuthResponse | RiskVerificationChallengeResponse | MfaRequiredResponse
 
 type PendingGoogleAuthRequest = {
   requestId: string

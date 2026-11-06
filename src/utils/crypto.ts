@@ -159,7 +159,7 @@ export function generateSecurePassword(
   let offset = 0
   let randomBytes = getRandomBytes(length * 2)
 
-  for (let i = 0; i < length; ) {
+  for (let i = 0; i < length;) {
     if (offset >= randomBytes.length) {
       randomBytes = getRandomBytes(length * 2)
       offset = 0

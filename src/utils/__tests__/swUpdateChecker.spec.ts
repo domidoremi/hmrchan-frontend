@@ -13,9 +13,7 @@ const mocks = vi.hoisted(() => {
     settingsStore: {
       settings: {
         appUpdateStrategy: 'public-idle-refresh' as
-          | 'prompt-only'
-          | 'public-idle-refresh'
-          | 'aggressive-idle-refresh',
+          'prompt-only' | 'public-idle-refresh' | 'aggressive-idle-refresh',
       },
     },
     toastStore: {

@@ -2,10 +2,7 @@ import type { Component } from 'vue'
 import { Home, Compass, Heart, Users, MessageSquare, CalendarDays, Info } from '@lucide/vue'
 
 export type PrefetchFunction =
-  | 'prefetchExplorePage'
-  | 'prefetchFavoritesPage'
-  | 'prefetchAuthorsPage'
-  | 'prefetchCommunityPage'
+  'prefetchExplorePage' | 'prefetchFavoritesPage' | 'prefetchAuthorsPage' | 'prefetchCommunityPage'
 
 export const DEFAULT_ICON_SIZES = {
   desktop: 18,

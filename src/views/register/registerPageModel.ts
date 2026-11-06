@@ -2,13 +2,7 @@ export type RegisterStep = 'email' | 'register' | 'risk-verification' | 'mfa'
 export type RegistrationStep = 'email' | 'register'
 export type RegisterPasswordStrengthLevel = 'weak' | 'fair' | 'good' | 'strong'
 export type RegisterGooglePopupState =
-  | 'idle'
-  | 'opening'
-  | 'waiting'
-  | 'recovery'
-  | 'blocked'
-  | 'handling'
-  | 'error'
+  'idle' | 'opening' | 'waiting' | 'recovery' | 'blocked' | 'handling' | 'error'
 export type RegisterBackNavigationIntent = 'return-to-primary' | 'history-back' | 'home-replace'
 
 export type AuthFlowErrorLike = {

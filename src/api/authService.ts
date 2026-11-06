@@ -146,9 +146,7 @@ export interface RiskVerificationChallengeResponse {
 }
 
 export type AuthLoginFlowResponse =
-  | AuthResponse
-  | RiskVerificationChallengeResponse
-  | MfaRequiredResponse
+  AuthResponse | RiskVerificationChallengeResponse | MfaRequiredResponse
 
 export interface SendVerificationEmailRequest {
   email?: string

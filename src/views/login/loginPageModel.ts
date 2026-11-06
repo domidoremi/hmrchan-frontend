@@ -1,12 +1,6 @@
 export type LoginStep = 'credentials' | 'risk-verification' | 'mfa'
 export type LoginGooglePopupState =
-  | 'idle'
-  | 'opening'
-  | 'waiting'
-  | 'recovery'
-  | 'blocked'
-  | 'handling'
-  | 'error'
+  'idle' | 'opening' | 'waiting' | 'recovery' | 'blocked' | 'handling' | 'error'
 
 export type LoginBackNavigationIntent = 'return-to-credentials' | 'history-back' | 'home-replace'
 

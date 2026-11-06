@@ -64,10 +64,7 @@ type AuthFlowErrorResult = {
 }
 
 export type AuthFlowResult =
-  | AuthFlowSuccessResult
-  | AuthFlowRiskVerificationResult
-  | AuthFlowMfaResult
-  | AuthFlowErrorResult
+  AuthFlowSuccessResult | AuthFlowRiskVerificationResult | AuthFlowMfaResult | AuthFlowErrorResult
 
 type WebAuthnLoginOptionsResult =
   | {

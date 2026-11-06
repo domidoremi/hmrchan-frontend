@@ -53,9 +53,7 @@ type LegacyCredentialJSON = {
 }
 
 export type SerializedPublicKeyCredential =
-  | RegistrationResponseJSON
-  | AuthenticationResponseJSON
-  | LegacyCredentialJSON
+  RegistrationResponseJSON | AuthenticationResponseJSON | LegacyCredentialJSON
 
 function mapPrfValues(
   values: AuthenticationExtensionsPRFValuesJSON
