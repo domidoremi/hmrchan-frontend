@@ -168,7 +168,7 @@ const emit = defineEmits<{
   selected: [items: UploadQueueItem[]]
 }>()
 
-const items = defineModel<UploadQueueItem[]>({ default: [] })
+const items = defineModel<UploadQueueItem[]>({ default: () => [] })
 const inputRef = useTemplateRef<HTMLInputElement>('inputRef')
 const isDragActive = ref(false)
 const controllers = new Map<string, AbortController>()

@@ -118,7 +118,7 @@
   </button>
 </template>
 
-<script setup lang="ts" vapor>
+<script setup lang="ts">
 import { ref, computed, watch, onRenderTracked, onRenderTriggered, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Calendar, Eye, Film, Globe, Heart, Play, User } from '@lucide/vue'

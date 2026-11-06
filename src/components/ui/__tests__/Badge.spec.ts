@@ -1,6 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-vi.mock('vue', async () => await import('vue/dist/vue.runtime-with-vapor.esm-browser.js'))
-import { createApp, defineComponent, h, vaporInteropPlugin, type App } from 'vue'
+import { afterEach, describe, expect, it } from 'vitest'
+import { createApp, defineComponent, h, type App } from 'vue'
 import Badge from '../Badge.vue'
 
 const mountedApps: Array<{ app: App; host: HTMLDivElement }> = []
@@ -20,7 +19,6 @@ function mountBadge(props: Record<string, unknown>, slotText = 'Badge text') {
     })
   )
 
-  app.use(vaporInteropPlugin)
   app.mount(host)
   mountedApps.push({ app, host })
   return host

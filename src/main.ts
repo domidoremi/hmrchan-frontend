@@ -1,4 +1,4 @@
-import { createApp, vaporInteropPlugin, watch } from 'vue'
+import { createApp, watch } from 'vue'
 import { createPinia } from 'pinia'
 import { createPersistedState } from 'pinia-plugin-persistedstate'
 import { optionalLocalStorage } from './utils/optionalStorage'
@@ -286,7 +286,6 @@ pinia.use(createPersistedState({ storage: optionalLocalStorage }))
 app.use(pinia)
 app.use(router)
 app.use(i18n)
-app.use(vaporInteropPlugin)
 
 // Track last pointer position for click-origin animations (e.g. opening preview modal)
 import { disposeLastPointerTracker, initLastPointerTracker } from './utils/lastPointer'
