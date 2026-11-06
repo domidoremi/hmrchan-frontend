@@ -193,7 +193,7 @@ export function isCacheableResponse(response: Response | undefined | null): resp
   if (!response || !response.ok) return false
   if (response.type === 'opaque') return false
 
-  const cacheControl = response.headers.get('Cache-Control') || ''
+  const cacheControl = response.headers.get('Cache-Control')?.toLowerCase() || ''
   if (cacheControl.includes('no-store') || cacheControl.includes('private')) {
     return false
   }

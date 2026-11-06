@@ -52,7 +52,9 @@ describe('service worker cache strategies', () => {
   })
 
   it('returns cached media even when access metadata fails', async () => {
-    const cached = new Response('cached-image')
+    const cached = new Response('cached-image', {
+      headers: { 'X-Cached-At': new Date().toISOString() },
+    })
     cache.match.mockResolvedValue(cached)
     idbMocks.idbGet.mockRejectedValue(new Error('idb unavailable'))
     const { cacheFirstMedia } = await loadStrategies()
@@ -82,6 +84,87 @@ describe('service worker cache strategies', () => {
     expect(response.headers.get('Content-Type')).toBe('image/svg+xml')
     expect(await response.text()).toContain('Image unavailable')
   })
+
+  it.each([401, 403, 404, 410])(
+    'evicts a post after status %i and never serves it offline',
+    async (status) => {
+      let entry: Response | undefined = new Response('old post', {
+        headers: { 'X-Cached-At': new Date(Date.now() - 360000).toISOString() },
+      })
+      cache.match.mockImplementation(async () => entry?.clone())
+      cache.delete.mockImplementation(async () => {
+        entry = undefined
+        return true
+      })
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockResolvedValueOnce(new Response('gone', { status }))
+          .mockRejectedValue(new Error('offline'))
+      )
+      const { staleWhileRevalidatePost } = await loadStrategies()
+      const request = new Request(
+        'https://momichan.com/api/v1/posts/018f7d9f-7a22-7c8d-9b11-2d8c0e8c7a10'
+      )
+      expect((await staleWhileRevalidatePost(request)).status).toBe(status)
+      expect((await staleWhileRevalidatePost(request)).status).toBe(503)
+    }
+  )
+
+  it.each(['private', 'no-store', 'PRIVATE, max-age=0'])(
+    'evicts API data when Cache-Control becomes %s',
+    async (cacheControl) => {
+      let entry: Response | undefined = new Response('old list', {
+        headers: { 'X-Cached-At': new Date().toISOString() },
+      })
+      cache.match.mockImplementation(async () => entry?.clone())
+      cache.delete.mockImplementation(async () => {
+        entry = undefined
+        return true
+      })
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockResolvedValueOnce(
+            new Response('private list', {
+              headers: { 'Cache-Control': cacheControl },
+            })
+          )
+          .mockRejectedValue(new Error('offline'))
+      )
+      const { networkFirstApi } = await loadStrategies()
+      const request = new Request('https://momichan.com/api/v1/posts')
+      expect(await (await networkFirstApi(request)).text()).toBe('private list')
+      expect((await networkFirstApi(request)).status).toBe(503)
+    }
+  )
+
+  it.each(['', 'invalid', new Date(Date.now() - 8 * 86400000).toISOString()])(
+    'does not serve expired or undated post/API/media entries (%s)',
+    async (timestamp) => {
+      cache.match.mockImplementation(
+        async () => new Response('expired', { headers: { 'X-Cached-At': timestamp } })
+      )
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+      const { networkFirstApi, staleWhileRevalidatePost, cacheFirstMedia } = await loadStrategies()
+      expect((await networkFirstApi(new Request('https://momichan.com/api/v1/posts'))).status).toBe(
+        503
+      )
+      expect(
+        (await staleWhileRevalidatePost(new Request('https://momichan.com/api/v1/posts/example')))
+          .status
+      ).toBe(503)
+      expect(
+        (
+          await cacheFirstMedia(new Request('https://momichan.com/image.webp'), {
+            allowPlaceholder: false,
+          })
+        ).status
+      ).toBe(503)
+    }
+  )
 
   it('tolerates optional precache failures but rejects missing essential assets', async () => {
     vi.stubGlobal(
