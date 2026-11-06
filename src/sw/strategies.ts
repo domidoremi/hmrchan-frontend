@@ -29,6 +29,21 @@ import type { FetchEventLike } from './types'
 
 const mediaAccessWriteBuffer = new Map<string, number>()
 
+function cacheAge(response: Response): number {
+  const timestamp = Date.parse(response.headers.get('X-Cached-At') ?? '')
+  const age = Date.now() - timestamp
+  return Number.isFinite(age) && age >= 0 ? age : Infinity
+}
+
+function invalidatesCachedResponse(response: Response): boolean {
+  const cacheControl = response.headers.get('Cache-Control')?.toLowerCase() ?? ''
+  return (
+    (response.status >= 400 && response.status < 500) ||
+    /(?:^|,)\s*(?:private|no-store)(?:\s*(?:=|,)|$)/.test(cacheControl) ||
+    response.headers.has('Set-Cookie')
+  )
+}
+
 function getAbortSignalWithTimeout(ms: number): AbortSignal {
   const abortSignal = AbortSignal as typeof AbortSignal & {
     timeout?: (timeoutMs: number) => AbortSignal
@@ -172,7 +187,12 @@ export async function cacheFirstMedia(request: Request): Promise<Response> {
   }
 
   const cache = await caches.open(CACHE_NAMES.media)
-  const cached = await cache.match(request)
+  let cached = await cache.match(request)
+
+  if (cached && (!isCacheableResponse(cached) || cacheAge(cached) >= MEDIA_CACHE_CONFIG.maxAge)) {
+    await cache.delete(request)
+    cached = undefined
+  }
 
   if (cached) {
     try {
@@ -208,11 +228,15 @@ export async function staleWhileRevalidatePost(request: Request): Promise<Respon
 
   const cache = await caches.open(CACHE_NAMES.posts)
   const url = new URL(request.url)
-  const normalizedRequest = new Request(`${url.origin}${url.pathname}`, {
+  const normalizedRequest = new Request(`${url.origin}${url.pathname}${url.search}`, {
     method: request.method,
     headers: request.headers,
   })
-  const cached = await cache.match(normalizedRequest)
+  let cached = await cache.match(normalizedRequest)
+  if (cached && (!isCacheableResponse(cached) || cacheAge(cached) >= POST_CACHE_CONFIG.maxAge)) {
+    await cache.delete(normalizedRequest)
+    cached = undefined
+  }
 
   const fetchAndUpdate = async (): Promise<Response | null> => {
     try {
@@ -220,9 +244,16 @@ export async function staleWhileRevalidatePost(request: Request): Promise<Respon
         signal: getAbortSignalWithTimeout(10000),
       })
 
-      if (isCacheableResponse(response)) {
-        await cache.put(normalizedRequest, withCacheTimestamp(response.clone()))
-        await managePostCache()
+      try {
+        if (isCacheableResponse(response)) {
+          await cache.put(normalizedRequest, withCacheTimestamp(response.clone()))
+          await managePostCache()
+        } else if (invalidatesCachedResponse(response)) {
+          cached = undefined
+          await cache.delete(normalizedRequest)
+        }
+      } catch (error) {
+        swWarn('[SW] Post cache update failed:', request.url, error)
       }
 
       return response
@@ -232,23 +263,16 @@ export async function staleWhileRevalidatePost(request: Request): Promise<Respon
     }
   }
 
-  if (cached) {
-    const cachedAt = cached.headers.get('X-Cached-At')
-    const cacheAge = cachedAt ? Date.now() - new Date(cachedAt).getTime() : Infinity
-
-    if (cacheAge < POST_CACHE_CONFIG.staleWhileRevalidate) {
-      swLog('[SW] Post cache hit (fresh):', request.url)
-      return cached
-    }
-
-    swLog('[SW] Post cache hit (stale), revalidating:', request.url)
-    void fetchAndUpdate()
-    return addCacheHeader(cached, true)
+  if (cached && cacheAge(cached) < POST_CACHE_CONFIG.staleWhileRevalidate) {
+    return cached
   }
 
   const networkResponse = await fetchAndUpdate()
   if (networkResponse) {
     return networkResponse
+  }
+  if (cached) {
+    return addCacheHeader(cached, true)
   }
 
   return new Response(JSON.stringify({ error: 'Offline', message: '帖子数据不可用' }), {
@@ -263,7 +287,7 @@ export async function networkFirstApi(request: Request): Promise<Response> {
   }
 
   const url = new URL(request.url)
-  if (url.pathname.includes('/auth/')) {
+  if (!isCacheableApiRequest(url, request)) {
     return fetch(request)
   }
 
@@ -274,14 +298,20 @@ export async function networkFirstApi(request: Request): Promise<Response> {
       signal: getAbortSignalWithTimeout(5000),
     })
 
-    if (isCacheableResponse(response) && isCacheableApiRequest(url, request)) {
-      await cache.put(request, withCacheTimestamp(response.clone()))
+    try {
+      if (isCacheableResponse(response)) {
+        await cache.put(request, withCacheTimestamp(response.clone()))
+      } else if (invalidatesCachedResponse(response)) {
+        await cache.delete(request)
+      }
+    } catch (error) {
+      swWarn('[SW] API cache update failed:', request.url, error)
     }
 
     return response
   } catch {
     const cached = await cache.match(request)
-    if (cached) {
+    if (cached && isCacheableResponse(cached) && cacheAge(cached) < POST_CACHE_CONFIG.maxAge) {
       const headers = new Headers(cached.headers)
       headers.set('X-From-Cache', 'true')
       return new Response(cached.body, {
@@ -290,6 +320,8 @@ export async function networkFirstApi(request: Request): Promise<Response> {
         headers,
       })
     }
+
+    if (cached) await cache.delete(request)
 
     return new Response(JSON.stringify({ error: 'Offline' }), {
       status: 503,
@@ -379,7 +411,7 @@ async function manageMediaCache(request: Request, response: Response): Promise<v
   const size = await getResponseSize(response)
   const now = Date.now()
 
-  await cache.put(request, response)
+  await cache.put(request, withCacheTimestamp(response))
   await idbPut(MEDIA_META_STORE, {
     url: request.url,
     size,
