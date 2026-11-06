@@ -1,14 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-vi.mock('vue', async () => await import('vue/dist/vue.runtime-with-vapor.esm-browser.js'))
-import {
-  createApp,
-  defineComponent,
-  h,
-  nextTick,
-  reactive,
-  vaporInteropPlugin,
-  type App,
-} from 'vue'
+import { afterEach, describe, expect, it } from 'vitest'
+import { createApp, defineComponent, h, nextTick, reactive, type App } from 'vue'
 import Avatar from '../Avatar.vue'
 
 const mountedApps: Array<{ app: App; host: HTMLDivElement }> = []
@@ -25,7 +16,6 @@ function mountAvatar(props: Record<string, unknown>) {
     })
   )
 
-  app.use(vaporInteropPlugin)
   app.mount(host)
   mountedApps.push({ app, host })
   return host

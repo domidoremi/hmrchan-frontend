@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-vi.mock('vue', async () => await import('vue/dist/vue.runtime-with-vapor.esm-browser.js'))
-import { createApp, defineComponent, h, nextTick, vaporInteropPlugin, type App } from 'vue'
+import { createApp, defineComponent, h, nextTick, type App } from 'vue'
 import type { PostListItem } from '@/api'
 
 vi.mock('vue-i18n', async (importOriginal) => {
@@ -59,7 +58,6 @@ function mountPostCard(post: PostListItem, props: { preferOriginalImage?: boolea
     })
   )
 
-  app.use(vaporInteropPlugin)
   app.mount(host)
   mountedApps.push({ app, host })
 

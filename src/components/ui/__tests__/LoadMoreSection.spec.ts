@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-vi.mock('vue', async () => await import('vue/dist/vue.runtime-with-vapor.esm-browser.js'))
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
     t: (key: string, params?: Record<string, number>) => {
@@ -17,7 +16,7 @@ vi.mock('vue-i18n', () => ({
     },
   }),
 }))
-import { createApp, defineComponent, h, vaporInteropPlugin, type App } from 'vue'
+import { createApp, defineComponent, h, type App } from 'vue'
 import LoadMoreSection from '../LoadMoreSection.vue'
 
 const mountedApps: Array<{ app: App; host: HTMLDivElement }> = []
@@ -38,7 +37,6 @@ function mountLoadMoreSection(props: Record<string, unknown>) {
     })
   )
 
-  app.use(vaporInteropPlugin)
   app.mount(host)
   mountedApps.push({ app, host })
   return host

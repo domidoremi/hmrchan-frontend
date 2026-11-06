@@ -195,7 +195,7 @@ describe('performance helpers', () => {
     applyContainment(element, 'paint')
     expect(supportsSpy).toHaveBeenCalled()
     expect(element.style.willChange).toBe('transform, opacity')
-    expect(element.style.transform).toBe('translateZ(0)')
+    expect(element.style.transform).toMatch(/^translateZ\(0(?:px)?\)$/)
     expect(element.style.contain).toBe('paint')
 
     disableGPUAcceleration(element)

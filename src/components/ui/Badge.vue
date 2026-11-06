@@ -4,7 +4,7 @@
   </span>
 </template>
 
-<script setup lang="ts" vapor>
+<script setup lang="ts">
 import { computed } from 'vue'
 
 defineOptions({ name: 'UiBadge' })

@@ -31,7 +31,7 @@
   </div>
 </template>
 
-<script setup lang="ts" vapor>
+<script setup lang="ts">
 import { computed } from 'vue'
 
 interface Props {

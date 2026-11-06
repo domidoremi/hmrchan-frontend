@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-vi.mock('vue', async () => await import('vue/dist/vue.runtime-with-vapor.esm-browser.js'))
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
     t: (key: string) => {
@@ -20,7 +19,7 @@ vi.mock('vue-i18n', () => ({
     },
   }),
 }))
-import { createApp, defineComponent, h, nextTick, vaporInteropPlugin, type App } from 'vue'
+import { createApp, defineComponent, h, nextTick, type App } from 'vue'
 import StateIndicator from '../StateIndicator.vue'
 
 const mountedApps: Array<{ app: App; host: HTMLDivElement }> = []
@@ -48,7 +47,6 @@ function mountStateIndicator(props: Record<string, unknown>) {
     })
   )
 
-  app.use(vaporInteropPlugin)
   app.mount(host)
   mountedApps.push({ app, host })
 

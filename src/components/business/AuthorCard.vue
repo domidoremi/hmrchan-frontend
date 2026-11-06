@@ -76,7 +76,7 @@ export interface AuthorCardProps {
 }
 </script>
 
-<script setup lang="ts" vapor>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { ArrowRight, BadgeCheck, FileText, Users } from '@lucide/vue'
 

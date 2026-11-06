@@ -1,6 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-vi.mock('vue', async () => await import('vue/dist/vue.runtime-with-vapor.esm-browser.js'))
-import { createApp, defineComponent, h, nextTick, vaporInteropPlugin, type App } from 'vue'
+import { afterEach, describe, expect, it } from 'vitest'
+import { createApp, defineComponent, h, nextTick, type App } from 'vue'
 import AuthorCard, { type AuthorCardAuthor } from '../AuthorCard.vue'
 
 function createAuthor(overrides: Partial<AuthorCardAuthor> = {}): AuthorCardAuthor {
@@ -43,7 +42,6 @@ function mountAuthorCard(author: AuthorCardAuthor, props: Record<string, unknown
     })
   )
 
-  app.use(vaporInteropPlugin)
   app.mount(host)
   mountedApps.push({ app, host })
 
