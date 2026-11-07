@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
 
+import { matchesExpectedBrowserRoute } from './lib/browser-route-path.js'
 import puppeteer, { type Viewport, type Page } from 'puppeteer'
+import { configureScopedQaPage, prepareScopedQaSession } from './lib/scoped-qa-session.js'
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import http from 'node:http'
@@ -643,7 +645,7 @@ async function assertHealthRouteContract(page: Page, route: HealthRouteDefinitio
 
   if (route.expectedPath) {
     const currentPath = await page.evaluate(() => window.location.pathname)
-    if (currentPath !== route.expectedPath) {
+    if (!matchesExpectedBrowserRoute(page.url(), route.expectedPath)) {
       throw new Error(
         `Expected ${route.path} to resolve to ${route.expectedPath}, got ${currentPath}`
       )
@@ -1065,6 +1067,7 @@ async function authenticateViaApi(
       if (options?.resetSession) {
         await clearBrowserAuditSession(page, baseUrl)
       }
+      await prepareScopedQaSession(page, AUDIT_ENV, baseUrl)
       await page.goto(`${baseUrl}/login`, {
         waitUntil: 'domcontentloaded',
         timeout: 30_000,
@@ -1116,7 +1119,9 @@ async function authenticateViaApi(
       ])
     }
 
-    const loginExited = await waitForLoginExit(5_000)
+    const loginExited = await waitForLoginExit(
+      AUDIT_ENV.LOCAL_AUDIT_SCOPED_QA_SESSION === 'true' ? 30_000 : 5_000
+    )
     if (!loginExited) {
       await ensureClientCredentials()
       const trustedVisitorCount = await grantLocalAuditClientTrust(AUDIT_ENV)
@@ -1624,6 +1629,7 @@ async function main() {
       }
 
       const sampleRouteProbePage = await browser.newPage()
+      await prepareScopedQaSession(sampleRouteProbePage, AUDIT_ENV, effectiveBaseUrl)
       const skippedRouteReasons = new Map<string, string>()
       let resolvedSamplePostRoute = DEFAULT_SAMPLE_POST_ROUTE
       let resolvedSampleDiscussionRoute = DEFAULT_SAMPLE_DISCUSSION_ROUTE
@@ -1751,6 +1757,7 @@ async function main() {
 
           for (let attempt = 0; attempt < (managedServer ? 2 : 1); attempt += 1) {
             const page = await browser.newPage()
+            await configureScopedQaPage(page, AUDIT_ENV, effectiveBaseUrl)
             const issues: ScanIssue[] = []
             const consoleErrors = new Set<string>()
             const requestFailures = new Set<string>()

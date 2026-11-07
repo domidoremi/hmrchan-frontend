@@ -75,3 +75,9 @@ Artifact 序列化会脱敏凭据类键和值。控制台仅按文件、行号�
 5. 仅在 `production` 报告 `passed` 时接受发布
 
 Runner 实现与阶段合同位于 [`scripts/validate-release.mjs`](../../scripts/validate-release.mjs) 和 [`scripts/lib/validate-release.js`](../../scripts/lib/validate-release.js)。
+
+## 专用账号自动化
+
+可使用显式的 `LOCAL_AUDIT_SCOPED_QA_SESSION=true` 为浏览器验收准备单个专用测试访客。必须同时提供精确的 `LOCAL_AUDIT_SCOPED_ORIGINS` 白名单及 `qa-` 开头、邮箱为 `@local-smoke.invalid` 的已建测试账号。可在本地忽略配置中保存随机的 48 位十六进制 `LOCAL_AUDIT_SCOPED_FINGERPRINT`，复用同一测试设备。
+
+此模式只设置该测试访客的短期缓存，并以账号和设备记录校验复用权限；不扫描其他访客，不清空限流，不改变后端全局配置。浏览器请求按现有限速排队；HTTP 响应和页面断言保持真实。它验证账号与页面操作，不代表真实 Turnstile 验证已通过。注册、验证邮箱和密码重置仍需真实收信。默认关闭。

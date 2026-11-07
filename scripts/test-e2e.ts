@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
 
+import { matchesExpectedBrowserRoute } from './lib/browser-route-path.js'
+import { configureScopedQaPage, prepareScopedQaSession } from './lib/scoped-qa-session.js'
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import puppeteer, { type Page } from 'puppeteer'
@@ -48,10 +50,7 @@ type SmokeMode = 'guest' | 'auth' | 'both'
 type CheckKind = 'static' | 'browser' | 'auth' | 'service-worker'
 type CheckStatus = 'passed' | 'failed' | 'skipped'
 type SmokeFailureKind =
-  | 'environment-blocked'
-  | 'auth-contract-failed'
-  | 'ui-timeout'
-  | 'browser-crash'
+  'environment-blocked' | 'auth-contract-failed' | 'ui-timeout' | 'browser-crash'
 
 type StaticRouteCheck = {
   name: string
@@ -777,6 +776,11 @@ async function withPageFailureEvidence(
   keepCreatedPageOpen = false
 ): Promise<void> {
   const page = existingPage ?? (await browser!.newPage())
+  await configureScopedQaPage(
+    page,
+    AUDIT_ENV,
+    process.env['E2E_BASE_URL'] || 'http://127.0.0.1:4173'
+  )
   let completed = false
   page.setDefaultTimeout(timeout)
   const consoleMessages: string[] = []
@@ -957,7 +961,7 @@ async function assertBrowserRoute(
       }
 
       const currentPath = await page.evaluate(() => window.location.pathname)
-      if (check.expectedPath && currentPath !== check.expectedPath) {
+      if (check.expectedPath && !matchesExpectedBrowserRoute(page.url(), check.expectedPath)) {
         throw new Error(
           `Expected ${check.path} to resolve to ${check.expectedPath}, got ${currentPath}`
         )
@@ -1320,6 +1324,7 @@ async function authenticateViaApi(
         if (options?.resetSession) {
           await clearBrowserAuditSession(page, baseUrl)
         }
+        await prepareScopedQaSession(page, AUDIT_ENV, baseUrl)
         await page.goto(`${baseUrl}/login`, {
           waitUntil: 'domcontentloaded',
         })
@@ -1372,7 +1377,9 @@ async function authenticateViaApi(
         ])
       }
 
-      const loginExited = await waitForLoginExit(5_000)
+      const loginExited = await waitForLoginExit(
+        AUDIT_ENV.LOCAL_AUDIT_SCOPED_QA_SESSION === 'true' ? 30_000 : 5_000
+      )
       if (AUDIT_ENV.LOCAL_AUDIT_DEBUG_CLIENT_TRUST === 'true') {
         console.log('   • Debug: login exited after first submit', loginExited)
       }
@@ -1480,7 +1487,7 @@ async function assertAuthenticatedRoute(
       )
     }
 
-    if (check.expectedPath && currentPath !== check.expectedPath) {
+    if (check.expectedPath && !matchesExpectedBrowserRoute(page.url(), check.expectedPath)) {
       throw new Error(
         `Expected authenticated route ${check.path} to resolve to ${check.expectedPath}, got ${currentPath}`
       )
@@ -1876,6 +1883,7 @@ async function main(): Promise<void> {
     console.log('🌐 Headless browser ready')
 
     const sampleRouteProbePage = await browser.newPage()
+    await prepareScopedQaSession(sampleRouteProbePage, AUDIT_ENV, baseUrl)
     const skippedSampleChecks: RouteCheck[] = []
     let resolvedSamplePostRoute = DEFAULT_SAMPLE_POST_ROUTE
     let resolvedSampleDiscussionRoute = DEFAULT_SAMPLE_DISCUSSION_ROUTE

@@ -102,6 +102,12 @@ export async function resolveSampleDetailRoute(page, baseUrl, config) {
         timeout: config.timeout ?? 60_000,
       })
       await page.waitForSelector('body', { timeout: config.timeout ?? 8_000 })
+      await page.waitForFunction(
+        (selector) =>
+          Boolean(document.querySelector(selector) || document.querySelector('.not-found-page')),
+        { timeout: config.timeout ?? 15_000 },
+        config.shellSelector
+      )
 
       const state = await page.evaluate((shellSelector) => {
         return {
@@ -135,7 +141,10 @@ export async function resolveSampleDetailRoute(page, baseUrl, config) {
         continue
       }
 
-      if ((config.readinessSelectorsAll?.length ?? 0) > 0 || (config.readinessSelectorsAny?.length ?? 0) > 0) {
+      if (
+        (config.readinessSelectorsAll?.length ?? 0) > 0 ||
+        (config.readinessSelectorsAny?.length ?? 0) > 0
+      ) {
         try {
           await ensureDetailRouteReadiness(
             page,
