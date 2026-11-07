@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { matchesExpectedBrowserRoute } from '../../../scripts/lib/browser-route-path.js'
+import {
+  matchesExpectedBrowserRoute,
+  resolveCanonicalRouteUrl,
+} from '../../../scripts/lib/browser-route-path.js'
 
 describe('browser route expectations', () => {
+  it('keeps the published canonical origin and excludes browse state and anchors', () => {
+    expect(resolveCanonicalRouteUrl('/profile/security#devices', 'https://momichan.com')).toBe(
+      'https://momichan.com/profile/security'
+    )
+    expect(resolveCanonicalRouteUrl('/explore?layout=list', 'https://momichan.com')).toBe(
+      'https://momichan.com/explore'
+    )
+  })
   it('checks required fragments while allowing ordinary route query state', () => {
     expect(
       matchesExpectedBrowserRoute(
