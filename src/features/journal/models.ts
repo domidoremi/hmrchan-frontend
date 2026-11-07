@@ -1,11 +1,11 @@
-import type { PostListItem } from '@/api/postService'
+import type { PostListItem, PostDetailResponse } from '@/api/postService'
 import type { FavoriteResponse } from '@/api/favoriteService'
 import type { Discussion } from '@/api/discussionService'
 import type { ScheduleResponse } from '@/api/scheduleService'
 import { formatRelativeTime as relativeTime } from '@/utils/date'
 import i18n from '@/i18n'
 const formatRelativeTime = (date: string) => relativeTime(date, i18n.global.t)
-import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
+import { normalizeToThumbnailUrl, resolveMediaSources } from '@/utils/mediaOptimizer'
 
 export interface JournalPost {
   id: string
@@ -16,7 +16,7 @@ export interface JournalPost {
   authorId: string | null
   avatar: string
   time: string
-  likes: number
+  likes: number | null
   platform: string
   type: string
   tags: string[]
@@ -59,14 +59,18 @@ export const platforms: Record<string, string> = {
   bilibili: 'Bilibili',
 }
 export const contentTypes = ['全部', '写真', '文字', '节目', '出演', '应援']
-export function postModel(post: PostListItem): JournalPost {
-  const image = post.thumbnail_url
-    ? normalizeToThumbnailUrl(post.thumbnail_url, 'large') || post.thumbnail_url
-    : null
+export function postModel(post: PostListItem | PostDetailResponse): JournalPost {
+  const content = 'content' in post ? post.content : post.description
+  const firstMedia = 'media_files' in post ? post.media_files?.[0] : undefined
+  const primary = resolveMediaSources(post)
+  const media = primary.displayUrl
+    ? primary
+    : resolveMediaSources(firstMedia ? { ...firstMedia, media_id: firstMedia.id } : null)
+  const image = normalizeToThumbnailUrl(media.displayUrl, 'large')
   return {
     id: post.id,
-    title: post.title || post.content?.slice(0, 100) || '动态',
-    text: post.content || post.description || '',
+    title: post.title || content?.slice(0, 100) || '动态',
+    text: content || post.description || '',
     image,
     author: post.author_name || post.author_username || 'MomiChan',
     authorId: post.author_id || null,
@@ -74,32 +78,38 @@ export function postModel(post: PostListItem): JournalPost {
     time: post.published_at ? formatRelativeTime(post.published_at) : '',
     likes: post.like_count || 0,
     platform: post.platform === 'twitter' ? 'x' : post.platform,
-    type: !image ? '文字' : post.media_type === 'video' ? '节目' : '写真',
+    type: !image ? '文字' : media.kind === 'video' ? '节目' : '写真',
     tags: post.tags || [],
   }
 }
-export function favoriteModel(favorite: FavoriteResponse): JournalPost {
+export function favoriteModel(
+  favorite: FavoriteResponse,
+  detail?: PostDetailResponse
+): JournalPost {
   const post = favorite.post
+  if (detail) {
+    return {
+      ...postModel(detail),
+      favoriteId: favorite.id,
+      text: favorite.notes || detail.description || '',
+      time: formatRelativeTime(favorite.created_at),
+    }
+  }
+  const media = resolveMediaSources(post)
+  const image = normalizeToThumbnailUrl(media.displayUrl, 'large')
   return {
     id: favorite.post_id,
     favoriteId: favorite.id,
     title: post?.title || '已收藏动态',
     text: favorite.notes || '',
-    image: post?.thumbnail_url
-      ? normalizeToThumbnailUrl(post.thumbnail_url, 'large') || post.thumbnail_url
-      : null,
-    author: post?.author_name || '',
-    authorId: null,
+    image,
+    author: post?.author_name || favorite.author?.username || '',
+    authorId: favorite.author?.id || null,
     avatar: '/journal/mascot.webp',
     time: formatRelativeTime(favorite.created_at),
-    likes: 0,
-    platform: post?.platform || 'official',
-    type:
-      post && 'media_type' in post && post.media_type === 'video'
-        ? '节目'
-        : post?.thumbnail_url
-          ? '写真'
-          : '文字',
+    likes: null,
+    platform: post?.platform === 'twitter' ? 'x' : post?.platform || 'official',
+    type: media.kind === 'video' ? '节目' : image ? '写真' : '文字',
     tags: favorite.tags || [],
   }
 }

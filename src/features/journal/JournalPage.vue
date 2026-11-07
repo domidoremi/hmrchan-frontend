@@ -178,7 +178,9 @@ const visiblePosts = computed(() => {
           .toLowerCase()
           .includes(query.value.toLowerCase()))
   )
-  return sort.value === 'popular' ? values.toSorted((a, b) => b.likes - a.likes) : values
+  return sort.value === 'popular'
+    ? values.toSorted((a, b) => (b.likes ?? 0) - (a.likes ?? 0))
+    : values
 })
 const visibleDiscussions = computed(() =>
   discussions.value.filter(
