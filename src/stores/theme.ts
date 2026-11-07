@@ -1,5 +1,6 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { defineStore } from 'pinia'
+import { designEdition } from '@/config/designEdition'
 import type { ColorMode, Theme } from '@/types'
 
 function normalizeLegacyThemeValue(value: string | null | undefined): Theme {
@@ -9,7 +10,7 @@ function normalizeLegacyThemeValue(value: string | null | undefined): Theme {
 export const useThemeStore = defineStore(
   'theme',
   () => {
-    const theme = ref<Theme>('auto')
+    const theme = ref<Theme>(designEdition === 'archive' ? 'dark' : 'auto')
     const systemTheme = ref<'light' | 'dark'>('light')
 
     let mediaQueryCleanup: (() => void) | null = null

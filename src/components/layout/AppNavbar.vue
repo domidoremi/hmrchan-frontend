@@ -22,6 +22,11 @@
           @mouseleave="handleNavbarActionsLeave"
           @focusout="handleNavbarActionsFocusOut"
         >
+          <SpatialDirectory
+            v-if="!isAuthEntryRoute"
+            :animated="props.animated"
+            @open="closeNavbarOverlays"
+          />
           <form
             v-if="!isMobile && !isAuthEntryRoute"
             class="nav-search-shell"
@@ -333,6 +338,7 @@ import { withProfileReturnTo } from '@/utils/profileReturnTo'
 import { logoutFromAuthSurface, useAuthSurface } from '@/services/authSurface'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import BrandPetLogo from '@/components/brand/BrandPetLogo.vue'
+import SpatialDirectory from '@/components/layout/SpatialDirectory.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Separator from '@/components/ui/Separator.vue'
 
@@ -341,9 +347,11 @@ const NAVBAR_ROUTE_FREEZE_MS = 280
 const props = withDefaults(
   defineProps<{
     chromeless?: boolean
+    animated?: boolean
   }>(),
   {
     chromeless: false,
+    animated: true,
   }
 )
 
@@ -375,6 +383,11 @@ const showSettings = ref(false)
 const showUserMenu = ref(false)
 const isDesktopSearchExpanded = ref(false)
 const desktopSearchQuery = ref('')
+
+function closeNavbarOverlays() {
+  showSettings.value = false
+  showUserMenu.value = false
+}
 
 const settingsBtnRef = useTemplateRef<HTMLButtonElement>('settingsBtnRef')
 const userBtnRef = useTemplateRef<HTMLButtonElement>('userBtnRef')

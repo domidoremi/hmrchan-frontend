@@ -2,6 +2,30 @@
   <div class="favorites-tab" data-testid="profile-favorites-tab">
     <ProfileTabHeader v-if="showHeader" :title="$t('profile.tabs.favorites')" :count="total" />
 
+    <div v-if="favorites.length" class="collection-tools">
+      <label
+        ><span>{{ t('spatial.find') }}</span
+        ><input
+          v-model="favoriteSearch"
+          type="search"
+          maxlength="160"
+          :placeholder="t('spatial.findLoaded')"
+      /></label>
+      <span class="collection-tools__count" aria-live="polite">{{
+        t('spatial.matches', { count: visibleFavoriteCards.length })
+      }}</span>
+      <div class="collection-tools__layouts" :aria-label="t('spatial.arrangement')">
+        <button
+          v-for="layout in ['grid', 'list'] as const"
+          :key="layout"
+          type="button"
+          :aria-pressed="favoriteLayout === layout"
+          @click="favoriteLayout = layout"
+        >
+          {{ t(`spatial.${layout}`) }}
+        </button>
+      </div>
+    </div>
     <StateIndicator
       v-if="error"
       variant="error"
@@ -29,7 +53,8 @@
         :description="$t('favorites.empty')"
       />
 
-      <div v-else class="posts-masonry">
+      <StateIndicator v-else-if="visibleFavoriteCards.length === 0" variant="empty" />
+      <div v-else class="posts-masonry" :class="{ 'favorites-list': favoriteLayout === 'list' }">
         <ProfilePostPreviewCard
           v-for="{ favorite, preview } in visibleFavoriteCards"
           :key="favorite.id"
@@ -52,6 +77,8 @@
               :title="$t('favorites.remove')"
               :aria-label="$t('favorites.remove')"
               @click.stop="removeFavorite(favorite.id)"
+              @keydown.enter.stop
+              @keydown.space.stop
             >
               <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
             </button>
@@ -73,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { X } from '@lucide/vue'
@@ -110,7 +137,20 @@ const toastStore = useToastStore()
 const favStore = useFavoritesStore()
 const { isAuthenticated } = storeToRefs(authStore)
 
+const favoriteSearch = ref('')
+const favoriteLayout = ref<'grid' | 'list'>('grid')
 const favorites = computed(() => favStore.items)
+const filteredFavorites = computed(() =>
+  favorites.value.filter((favorite) => {
+    const query = favoriteSearch.value.trim().toLocaleLowerCase()
+    return (
+      !query ||
+      `${favorite.post?.title ?? ''} ${favorite.post?.author_name ?? ''} ${favorite.folder_name ?? ''} ${(favorite.tags ?? []).join(' ')}`
+        .toLocaleLowerCase()
+        .includes(query)
+    )
+  })
+)
 const isLoading = computed(() => favStore.isLoading)
 const error = computed(() => (favStore.error ? t(favStore.error) : null))
 const total = computed(() => favStore.total ?? (favStore.items.length || undefined))
@@ -126,7 +166,7 @@ const {
   visibleItems: visibleFavorites,
   hasMoreToRender,
   revealNextBatch,
-} = useProgressiveRender(favorites, {
+} = useProgressiveRender(filteredFavorites, {
   initialCount: preferredPageSize,
   batchSize: preferredPageSize,
 })
@@ -158,6 +198,7 @@ async function bootstrapFavorites(reset = true): Promise<boolean> {
   bootstrapPromise = (async () => {
     const ready = await ensureProtectedPageReady(authStore, 'authenticated')
     if (!ready) {
+      favoriteSearch.value = ''
       favStore.$reset()
       return false
     }
@@ -185,9 +226,30 @@ useInfiniteScroll(sentinelRef, loadMore, {
 })
 
 async function removeFavorite(favoriteId: string) {
+  const original = favorites.value.find((item) => item.id === favoriteId)
+  const position = favorites.value.findIndex((item) => item.id === favoriteId)
+  const owner = authStore.user?.id
   const result = await favStore.removeFavorite(favoriteId)
-  if (result.success) {
-    toastStore.success(t('favorites.removed'))
+  if (owner !== authStore.user?.id) return
+  if (result.success && original && owner === authStore.user?.id) {
+    let restoring = false
+    let restored = false
+    toastStore.info(t('favorites.removed'), 8000, {
+      action: {
+        label: t('spatial.undo'),
+        onClick: async () => {
+          if (restoring || restored || !isAuthenticated.value || owner !== authStore.user?.id)
+            return
+          restoring = true
+          const result = await favStore.restoreFavorite(original, position)
+          restoring = false
+          if (owner !== authStore.user?.id) return
+          restored = result.success
+          if (result.success) toastStore.success(t('spatial.favoriteRestored'))
+          else toastStore.error(t('common.error'))
+        },
+      },
+    })
   } else {
     toastStore.error(t('common.error'))
   }

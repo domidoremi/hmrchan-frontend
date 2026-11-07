@@ -325,6 +325,16 @@ export function classifyAuthBootstrapProbe(probe) {
   }
 
   if (probe.path === '/api/v1/auth/passkeys/login/options' && probe.status === 403) {
+    const challenge = isRecord(probe.body?.error) ? probe.body.error : null
+    if (
+      probe.body?.success === false &&
+      probe.code === 'CHALLENGE_REQUIRED' &&
+      challenge?.code === 'CHALLENGE_REQUIRED' &&
+      challenge.challenge_required === true &&
+      pickNonEmptyString(challenge.turnstile_site_key)
+    ) {
+      return null
+    }
     return 'passkeys-login-forbidden'
   }
 

@@ -15,7 +15,10 @@ const searchPageSource = readFileSync(
   resolve(process.cwd(), 'src/styles/page-systems/search-page-view.css'),
   'utf8'
 )
-const explorePageSource = readFileSync(resolve(process.cwd(), 'src/views/ExplorePage.vue'), 'utf8')
+const explorePageSource = readFileSync(
+  resolve(process.cwd(), 'src/styles/page-systems/explore-page-view.css'),
+  'utf8'
+)
 const communityPageSource = readFileSync(
   resolve(process.cwd(), 'src/styles/page-systems/community-page-view.css'),
   'utf8'

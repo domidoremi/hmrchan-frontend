@@ -64,6 +64,13 @@ function shouldPreserveIntraViewNavigation(
     return true
   }
 
+  if (
+    to.path === from.path &&
+    to.hash === from.hash &&
+    ['/explore', '/schedule', '/profile/favorites'].includes(to.path)
+  )
+    return true
+
   const toViewKey = resolveViewKey(to)
   if (!toViewKey || toViewKey !== resolveViewKey(from)) return false
 
@@ -71,8 +78,10 @@ function shouldPreserveIntraViewNavigation(
 }
 
 export function shouldPreserveScrollForNavigation(
-  to: Pick<RouteLocationNormalized, 'fullPath' | 'meta'>,
-  from: Pick<RouteLocationNormalized, 'fullPath' | 'meta'>
+  to: Pick<RouteLocationNormalized, 'fullPath' | 'meta'> &
+    Partial<Pick<RouteLocationNormalized, 'path' | 'hash'>>,
+  from: Pick<RouteLocationNormalized, 'fullPath' | 'meta'> &
+    Partial<Pick<RouteLocationNormalized, 'path' | 'hash'>>
 ): boolean {
   return shouldPreserveIntraViewNavigation(
     to as RouteLocationNormalized,

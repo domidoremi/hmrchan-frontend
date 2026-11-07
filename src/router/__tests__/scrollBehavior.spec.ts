@@ -3,6 +3,20 @@ import { describe, expect, it } from 'vitest'
 import { shouldPreserveScrollForNavigation } from '../index'
 
 describe('router scroll preservation', () => {
+  it('preserves a feed position when its address filters change', () => {
+    expect(
+      shouldPreserveScrollForNavigation(
+        { fullPath: '/explore?layout=list', path: '/explore', hash: '', meta: {} },
+        { fullPath: '/explore', path: '/explore', hash: '', meta: {} }
+      )
+    ).toBe(true)
+    expect(
+      shouldPreserveScrollForNavigation(
+        { fullPath: '/explore#item', path: '/explore', hash: '#item', meta: {} },
+        { fullPath: '/explore', path: '/explore', hash: '', meta: {} }
+      )
+    ).toBe(false)
+  })
   it('preserves scroll for state-only navigation on the same fullPath', () => {
     expect(
       shouldPreserveScrollForNavigation(

@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useFavoritesStore } from '../favorites'
+import type { FavoriteResponse } from '@/api/favoriteService'
 
 const favoriteServiceMocks = vi.hoisted(() => ({
   check: vi.fn(),
@@ -81,5 +82,75 @@ describe('favorites store', () => {
     await store.checkFavorited(postId(1))
 
     expect(favoriteServiceMocks.check).toHaveBeenCalledTimes(2)
+  })
+
+  it('restores the original collection metadata and keeps a usable preview', async () => {
+    const store = useFavoritesStore()
+    const original = {
+      id: postId(10),
+      post_id: postId(1),
+      created_at: '2026-11-07',
+      folder_name: 'Tour',
+      tags: ['live'],
+      notes: 'Encore',
+      post: { id: postId(1), title: 'Original' },
+    } as FavoriteResponse
+    favoriteServiceMocks.create.mockResolvedValue({
+      id: postId(11),
+      post_id: postId(1),
+      folder_name: 'Tour',
+      tags: ['live'],
+      notes: 'Encore',
+    })
+    favoriteServiceMocks.getSummary.mockResolvedValue({ total: 1 })
+    expect(await store.restoreFavorite(original)).toEqual({ success: true })
+    expect(favoriteServiceMocks.create).toHaveBeenCalledWith(postId(1), {
+      folder_name: 'Tour',
+      tags: ['live'],
+      notes: 'Encore',
+    })
+    expect(store.items[0]?.post?.title).toBe('Original')
+    expect(store.total).toBe(1)
+    expect(await store.checkFavorited(postId(1))).toBe(true)
+  })
+
+  it('does not repopulate private state after an account reset during undo', async () => {
+    const store = useFavoritesStore()
+    let resolve!: (value: unknown) => void
+    favoriteServiceMocks.create.mockImplementation(
+      () =>
+        new Promise((done) => {
+          resolve = done
+        })
+    )
+    const promise = store.restoreFavorite({
+      id: postId(10),
+      post_id: postId(1),
+      created_at: '2026-11-07',
+    } as FavoriteResponse)
+    store.$reset()
+    resolve({ id: postId(11), post_id: postId(1) })
+    expect(await promise).toEqual({ success: false })
+    expect(store.items).toEqual([])
+    expect(favoriteServiceMocks.getSummary).not.toHaveBeenCalled()
+  })
+
+  it('keeps a failed undo removed and respects an active folder filter', async () => {
+    const store = useFavoritesStore()
+    const original = {
+      id: postId(10),
+      post_id: postId(1),
+      created_at: '2026-11-07',
+      folder_name: 'Tour',
+    } as FavoriteResponse
+    favoriteServiceMocks.create.mockRejectedValueOnce(new Error('offline'))
+    expect(await store.restoreFavorite(original)).toEqual({ success: false })
+    expect(store.items).toEqual([])
+    store.currentFolder = 'Other'
+    favoriteServiceMocks.create.mockResolvedValue(original)
+    favoriteServiceMocks.getSummary.mockResolvedValue({ total: 1 })
+    expect(await store.restoreFavorite(original)).toEqual({ success: true })
+    expect(store.items).toEqual([])
+    expect(store.total).toBe(1)
   })
 })

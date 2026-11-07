@@ -8,10 +8,12 @@ const state = vi.hoisted(() => ({
   ensureProtectedPageReady: vi.fn().mockResolvedValue(true),
   authStore: {
     isAuthenticated: true,
+    user: { id: 'alice' },
   },
   toastStore: {
     success: vi.fn(),
     error: vi.fn(),
+    info: vi.fn(),
   },
   favoritesStore: {
     items: [] as Array<Record<string, unknown>>,
@@ -22,6 +24,7 @@ const state = vi.hoisted(() => ({
     fetchFavorites: vi.fn().mockResolvedValue(true),
     loadMore: vi.fn().mockResolvedValue(false),
     removeFavorite: vi.fn().mockResolvedValue({ success: true }),
+    restoreFavorite: vi.fn().mockResolvedValue({ success: true }),
     $reset: vi.fn(),
   },
 }))
@@ -113,13 +116,13 @@ vi.mock('@/components/profile/ProfilePostPreviewCard.vue', () => ({
     props: ['preview', 'emptyLabel', 'emptyHint'],
     emits: ['select'],
     template: `
-      <button
-        type="button"
+      <article
         class="profile-post-preview-card-stub"
         @click="$emit('select', preview)"
       >
         {{ preview.title }}|{{ preview.thumbnailUrl || 'empty' }}|{{ preview.target }}|{{ emptyLabel }}|{{ emptyHint }}
-      </button>
+        <slot name="actions" />
+      </article>
     `,
   },
 }))
@@ -136,6 +139,12 @@ describe('ProfileFavoritesTab', () => {
     state.favoritesStore.fetchFavorites.mockResolvedValue(true)
     state.favoritesStore.loadMore.mockReset()
     state.favoritesStore.removeFavorite.mockReset()
+    state.favoritesStore.removeFavorite.mockResolvedValue({ success: true })
+    state.favoritesStore.restoreFavorite.mockReset()
+    state.favoritesStore.restoreFavorite.mockResolvedValue({ success: true })
+    state.toastStore.info.mockReset()
+    state.toastStore.error.mockReset()
+    state.authStore.user.id = 'alice'
     state.favoritesStore.$reset.mockReset()
     state.favoritesStore.isLoading = false
     state.favoritesStore.error = null
@@ -204,5 +213,58 @@ describe('ProfileFavoritesTab', () => {
     expect(state.routerPush).toHaveBeenCalledWith(
       '/post/post-1?mediaId=123e4567-e89b-12d3-a456-426614174000'
     )
+    wrapper.unmount()
+  })
+
+  it('filters loaded favorites by author and switches to a list', async () => {
+    const wrapper = mount(ProfileFavoritesTab, { global: { mocks: { $t: (key: string) => key } } })
+    await flushPromises()
+    await wrapper.find('.collection-tools input').setValue('alice')
+    expect(wrapper.findAll('.profile-post-preview-card-stub')).toHaveLength(1)
+    await wrapper.findAll('.collection-tools__layouts button')[1]!.trigger('click')
+    expect(wrapper.find('.favorites-list').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('offers undo only after deletion succeeds and restores at the original position', async () => {
+    const wrapper = mount(ProfileFavoritesTab, { global: { mocks: { $t: (key: string) => key } } })
+    await flushPromises()
+    const original = state.favoritesStore.items[0]
+    await wrapper.find('.remove-btn').trigger('click')
+    await flushPromises()
+    expect(state.routerPush).not.toHaveBeenCalled()
+    expect(state.toastStore.info).toHaveBeenCalledWith(
+      'favorites.removed',
+      8000,
+      expect.objectContaining({ action: expect.any(Object) })
+    )
+    const action = state.toastStore.info.mock.calls[0]![2].action
+    await action.onClick()
+    await action.onClick()
+    expect(state.favoritesStore.restoreFavorite).toHaveBeenCalledTimes(1)
+    expect(state.favoritesStore.restoreFavorite).toHaveBeenCalledWith(original, 0)
+    wrapper.unmount()
+  })
+
+  it('does not restore a prior account favorite after switching users', async () => {
+    const wrapper = mount(ProfileFavoritesTab, { global: { mocks: { $t: (key: string) => key } } })
+    await flushPromises()
+    await wrapper.find('.remove-btn').trigger('click')
+    await flushPromises()
+    state.authStore.user.id = 'bob'
+    await state.toastStore.info.mock.calls[0]![2].action.onClick()
+    expect(state.favoritesStore.restoreFavorite).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('reports removal failure without showing an undo action', async () => {
+    state.favoritesStore.removeFavorite.mockResolvedValue({ success: false })
+    const wrapper = mount(ProfileFavoritesTab, { global: { mocks: { $t: (key: string) => key } } })
+    await flushPromises()
+    await wrapper.find('.remove-btn').trigger('click')
+    await flushPromises()
+    expect(state.toastStore.info).not.toHaveBeenCalled()
+    expect(state.toastStore.error).toHaveBeenCalledWith('common.error')
+    wrapper.unmount()
   })
 })

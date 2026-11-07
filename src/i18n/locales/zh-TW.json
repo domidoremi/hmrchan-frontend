@@ -418,8 +418,8 @@
       }
     },
     "hero": {
-      "title": "ひめり動態，盡在這裡",
-      "subtitle": "籾山ひめり與高嶺のなでしこ的動態、演出、日程與粉絲討論。",
+      "title": "ひめり，近況。",
+      "subtitle": "照片、舞台與下一次見面。",
       "badge": "ひめり粉絲檔案",
       "highlights": {
         "multilingual": {
@@ -459,9 +459,9 @@
     },
     "letterbook": {
       "mediaLabel": "精選相簿",
-      "photoCaption": "今日舞台與笑容。",
+      "photoCaption": "現場與日常",
       "indexLabel": "快捷入口",
-      "todayTitle": "今日心動",
+      "todayTitle": "最新動態",
       "todayText": "新照片與動態",
       "scheduleTitle": "舞台與直播",
       "scheduleText": "本週活動",
@@ -552,11 +552,11 @@
     "latestAction": "查看更多"
   },
   "explore": {
-    "title": "今天的收藏夾",
-    "subtitle": "依時間、平台或話題，慢慢翻看最新的舞台片段與日常分享。",
+    "title": "動態",
+    "subtitle": "照片、片段與最近的消息。",
     "searchAction": "搜尋動態",
     "weeklyPopular": "本週大家在看",
-    "moreStories": "更多收藏",
+    "moreStories": "更多動態",
     "allPlatforms": "全部",
     "searchPlaceholder": "搜尋貼文、作者、標籤...",
     "filters": "篩選",
@@ -791,8 +791,8 @@
     }
   },
   "community": {
-    "title": "一起聊聊今天的心動",
-    "subtitle": "分享舞台記憶、喜歡的片段，也聽聽其他粉絲眼中的精彩瞬間。",
+    "title": "社群",
+    "subtitle": "新鮮事，接著聊。",
     "composerTitle": "寫下想分享的事",
     "composerDescription": "一段感想、一張回憶清單，或是想和大家聊聊的話題。",
     "searchPlaceholder": "搜尋討論...",
@@ -829,8 +829,8 @@
     }
   },
   "schedule": {
-    "title": "一起等候的日子",
-    "subtitle": "演出、直播、媒體與紀念日，都整齊收進這一週。",
+    "title": "日程",
+    "subtitle": "演出、直播與活動。",
     "plannerTitle": "規劃本",
     "plannerSubtitle": "用一頁安靜的週視圖整理接下來的安排。",
     "upcoming": "即將到來",
@@ -1597,5 +1597,39 @@
     "codeExpired": "驗證碼已過期，請重新傳送",
     "tooManyAttempts": "嘗試次數過多，請稍後再試",
     "verifyFailed": "驗證失敗，請重試"
+  },
+  "spatial": {
+    "gallery": "精選相簿",
+    "selected": "本期精選",
+    "previous": "上一張",
+    "next": "下一張",
+    "arrangement": "排列",
+    "orbit": "環覽",
+    "stack": "疊放",
+    "fan": "展開",
+    "grid": "網格",
+    "wall": "畫報",
+    "list": "列表",
+    "all": "全部",
+    "find": "尋找",
+    "findLoaded": "尋找目前內容",
+    "sort": "排序",
+    "matches": "目前顯示 {count} 則",
+    "draftSaved": "草稿已儲存",
+    "draftFailed": "草稿未儲存",
+    "clearDraft": "清空草稿",
+    "draftCleared": "草稿已清空",
+    "undo": "復原",
+    "draftRestored": "草稿已復原",
+    "favoriteRestored": "已復原收藏",
+    "general": "綜合",
+    "question": "提問",
+    "sharing": "分享",
+    "feedback": "意見",
+    "directory": "目錄",
+    "book": "照片集",
+    "contents": "本期目錄",
+    "openBook": "翻開",
+    "viewPhoto": "查看動態"
   }
 }

@@ -341,6 +341,10 @@ describe('ExplorePage', () => {
 
     expect(wrapper.text()).toContain('explore.title')
     expect(wrapper.text()).toContain('2 search.tab.posts')
+    expect(wrapper.findAll('.post-card-stub')).toHaveLength(2)
+    await wrapper.findAll('.collection-tools__layouts button')[1]!.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query['layout']).toBe('wall')
     expect(wrapper.findAll('.explore-story')).toHaveLength(2)
     expect(wrapper.find('.explore-story--lead').text()).toContain('First post')
     expect(wrapper.find('.explore-story--supporting').text()).toContain('Second post')
@@ -363,6 +367,7 @@ describe('ExplorePage', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.name).toBe('search')
+    wrapper.unmount()
   })
 
   it('renders an error state when loading fails outside fallback mode', async () => {
@@ -426,9 +431,48 @@ describe('ExplorePage', () => {
     })
     await flushPromises()
 
+    await wrapper.findAll('.collection-tools__layouts button')[1]!.trigger('click')
+    await flushPromises()
+
     expect(wrapper.get('.explore-story--lead img').attributes('src')).toContain(
       `/api/v1/media/${mediaId}/stream`
     )
     expect(wrapper.get('.post-card-stub').attributes('data-original')).toBe('true')
+    wrapper.unmount()
+  })
+
+  it('combines address filters, sorting and search without refetching the feed', async () => {
+    exploreMocks.getPublicPostList.mockResolvedValue({
+      data: [
+        { id: 'post-a', title: 'Stage A', platform: 'youtube', like_count: 1, view_count: 1 },
+        { id: 'post-b', title: 'Stage B', platform: 'youtube', like_count: 20, view_count: 10 },
+        { id: 'post-c', title: 'Stage C', platform: 'instagram', like_count: 30, view_count: 20 },
+      ],
+      meta: { next_cursor: null, has_more: false },
+      source: 'network',
+      stale: false,
+    })
+    const { router } = createWrapper()
+    await router.push('/explore?source=youtube&sort=popular&layout=list&q=Stage')
+    await router.isReady()
+    const wrapper = mount(ExplorePage, {
+      global: { plugins: [router], mocks: { $t: (key: string) => key } },
+    })
+    await flushPromises()
+    expect(wrapper.find('.collection-feed--list').exists()).toBe(true)
+    expect(wrapper.findAll('.post-card-stub').map((card) => card.text())).toEqual([
+      'Stage B',
+      'Stage A',
+    ])
+    await wrapper.find('.collection-tools input').setValue('missing')
+    await flushPromises()
+    expect(router.currentRoute.value.query['q']).toBe('missing')
+    expect(router.currentRoute.value.query['source']).toBe('youtube')
+    expect(wrapper.findAll('.post-card-stub')).toHaveLength(0)
+    expect(exploreMocks.getPublicPostList).toHaveBeenCalledTimes(1)
+    await router.replace('/explore?layout=grid')
+    await flushPromises()
+    expect(wrapper.findAll('.post-card-stub')).toHaveLength(3)
+    wrapper.unmount()
   })
 })

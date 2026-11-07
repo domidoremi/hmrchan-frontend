@@ -39,6 +39,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
   const currentTag = ref<string | undefined>(undefined)
   let fetchFavoritesController: AbortController | null = null
   let fetchFavoritesToken = 0
+  let restoreSessionVersion = 0
   let fetchFoldersController: AbortController | null = null
   let fetchFoldersToken = 0
   let fetchTagsController: AbortController | null = null
@@ -220,10 +221,49 @@ export const useFavoritesStore = defineStore('favorites', () => {
     }
   }
 
+  async function restoreFavorite(original: FavoriteResponse, position = 0) {
+    const sessionVersion = restoreSessionVersion
+    try {
+      const restored = await favoriteService.create(
+        assertUuidV7String(original.post_id, 'favorite post id'),
+        {
+          ...(original.folder_name == null ? {} : { folder_name: original.folder_name }),
+          ...(original.notes == null ? {} : { notes: original.notes }),
+          ...(original.tags == null ? {} : { tags: [...original.tags] }),
+        }
+      )
+      if (sessionVersion !== restoreSessionVersion) return { success: false }
+      const alreadyPresent = items.value.some((item) => item.post_id === restored.post_id)
+      const matchesFolder =
+        currentFolder.value === undefined || currentFolder.value === restored.folder_name
+      const matchesTag = currentTag.value === undefined || restored.tags?.includes(currentTag.value)
+      if (!alreadyPresent && matchesFolder && matchesTag) {
+        items.value.splice(Math.min(position, items.value.length), 0, {
+          ...restored,
+          ...(restored.post || !original.post ? {} : { post: original.post }),
+        })
+      }
+      rememberCheckedPost(original.post_id, true)
+      if (!alreadyPresent && typeof total.value === 'number') total.value += 1
+      try {
+        const summary = await favoriteService.getSummary({ skipErrorToast: true })
+        if (sessionVersion === restoreSessionVersion)
+          total.value = normalizeFavoritesSummaryCount(summary)
+      } catch {
+        /* Keep the confirmed local count when the summary is unavailable. */
+      }
+      return { success: sessionVersion === restoreSessionVersion }
+    } catch {
+      return { success: false }
+    }
+  }
+
   async function removeFavorite(favoriteId: string) {
+    const sessionVersion = restoreSessionVersion
     try {
       const item = items.value.find((f) => f.id === favoriteId)
       await favoriteService.remove(assertUuidV7String(favoriteId, 'favorite id'))
+      if (sessionVersion !== restoreSessionVersion) return { success: false }
       items.value = items.value.filter((f) => f.id !== favoriteId)
       if (typeof total.value === 'number') {
         total.value = Math.max(0, total.value - 1)
@@ -272,6 +312,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
   }
 
   function $reset() {
+    restoreSessionVersion += 1
     abortFetchFavorites()
     abortFetchFolders()
     abortFetchTags()
@@ -313,6 +354,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
     fetchTags,
     checkFavorited,
     addFavorite,
+    restoreFavorite,
     removeFavorite,
     removeFavoriteByPostId,
     updateFavorite,
