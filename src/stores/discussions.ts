@@ -7,7 +7,6 @@ import {
   type DiscussionCommentListResponse,
   type ListDiscussionsParams,
 } from '@/api/discussionService'
-import { normalizeDiscussionsSummaryCount } from '@/api/summaryCounts'
 import type { RequestConfig } from '@/api/client'
 import { registerPrivateSessionReset } from '@/services/privateSessionState'
 import {
@@ -107,11 +106,9 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
       nextCursor.value = res.next_cursor ?? null
       hasMoreState.value = Boolean(res.has_more && res.next_cursor)
+      total.value = hasMoreState.value ? null : items.value.length
       source.value = 'live'
       await setPublicSnapshot(DISCUSSIONS_LIST_SNAPSHOT_SCOPE, params, res)
-      if (reset) {
-        void refreshSummary()
-      }
       return true
     } catch (err) {
       if (controller.signal.aborted || requestToken !== fetchDiscussionsToken) return false
@@ -138,6 +135,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
         nextCursor.value = fallbackRes.next_cursor ?? null
         hasMoreState.value = Boolean(fallbackRes.has_more && fallbackRes.next_cursor)
+        total.value = hasMoreState.value ? null : items.value.length
         source.value = cachedRes ? 'cached' : 'fallback'
         error.value = null
         return true
@@ -158,15 +156,6 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   async function loadMore(): Promise<boolean> {
     if (!hasMore.value || isLoading.value) return false
     return fetchDiscussions(false)
-  }
-
-  async function refreshSummary(): Promise<void> {
-    try {
-      const summary = await discussionService.getSummary({ skipErrorToast: true })
-      total.value = normalizeDiscussionsSummaryCount(summary)
-    } catch {
-      total.value = items.value.length > 0 ? items.value.length : null
-    }
   }
 
   async function fetchDiscussion(id: string, config?: RequestConfig) {
