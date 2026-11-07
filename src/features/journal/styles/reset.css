@@ -1,0 +1,18 @@
+/* Restore the reference's inherited text before its page rules are applied. */
+:where(body.site-body) dialog {
+  margin: auto;
+}
+:where(body.site-body) svg.icon {
+  display: inline;
+}
+:where(body.site-body .journal-shell) p {
+  font: inherit;
+  line-height: normal;
+}
+:where(body.site-body .journal-shell) :is(h1, h2, h3, h4, h5, h6) {
+  font-size: revert;
+  font-weight: revert;
+  line-height: normal;
+  color: inherit;
+  text-wrap: wrap;
+}

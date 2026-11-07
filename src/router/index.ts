@@ -93,7 +93,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/views/HomePage.vue'),
+    component: () => import('@/features/journal/JournalPage.vue'),
     meta: {
       title: 'nav.home',
       showFooter: true,
@@ -106,7 +106,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/explore',
     name: 'explore',
-    component: () => import('@/views/ExplorePage.vue'),
+    component: () => import('@/features/journal/JournalPage.vue'),
     meta: { title: 'nav.explore', securityLevel: 'public', dataSensitivity: 'none' },
   },
   {
@@ -150,7 +150,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'community',
-        component: () => import('@/views/CommunityPage.vue'),
+        component: () => import('@/features/journal/JournalPage.vue'),
       },
       {
         path: 'discussions/:id',
@@ -253,8 +253,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'favorites',
         name: 'profile-favorites',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
-        props: { sectionId: 'favorites' },
+        component: () => import('@/features/journal/JournalPage.vue'),
         meta: {
           title: 'profile.tabs.favorites',
           securityLevel: 'authenticated',
@@ -485,7 +484,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/schedule',
     name: 'schedule',
-    component: () => import('@/views/SchedulePage.vue'),
+    component: () => import('@/features/journal/JournalPage.vue'),
     meta: {
       title: 'nav.schedule',
       viewKey: 'schedule',
@@ -568,6 +567,14 @@ const router = createRouter({
     return { top: 0, behavior: smoothBehavior }
   },
 })
+
+if (import.meta.env.DEV) {
+  router.addRoute({
+    path: '/__journal/:page',
+    component: () => import('@/features/journal/JournalPage.vue'),
+    meta: { securityLevel: 'public', dataSensitivity: 'none' },
+  })
+}
 
 router.beforeEach(async (to) => {
   const invalidContractResourceRedirect = resolveInvalidContractResourceRedirect(to)

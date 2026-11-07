@@ -202,10 +202,15 @@ describe('responsive layout contracts', () => {
   })
 
   it('keeps global navigation chrome out of auth entry layouts', () => {
-    expect(appShellSource).toContain('<AppSideNav v-if="!isAuthRoute" chromeless />')
-    expect(appShellSource).toContain("'passkey-recovery'")
-    expect(appShellSource).toContain("'passkey-recovery-detail'")
-    expect(appShellSource).toMatch(/main\.main--auth\s*\{[^}]*padding-bottom:\s*0/s)
+    const journalShellSource = readFileSync(
+      resolve(process.cwd(), 'src/features/journal/JournalShell.vue'),
+      'utf8'
+    )
+    expect(appShellSource).toContain('<JournalShell>')
+    expect(journalShellSource).toContain('v-if="isNext && !isAuthRoute"')
+    expect(journalShellSource).toContain('v-if="!isAuthRoute"')
+    expect(journalShellSource).toContain("'passkey-recovery'")
+    expect(journalShellSource).toContain("'passkey-recovery-detail'")
   })
 
   it('keeps home hero actions compact with centered labels', () => {

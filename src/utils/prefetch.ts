@@ -241,8 +241,8 @@ export function setupHoverPrefetch(): void {
 }
 
 const ROUTE_CONFIG = {
-  home: { path: '/', importFn: () => import('@/views/HomePage.vue') },
-  explore: { path: '/explore', importFn: () => import('@/views/ExplorePage.vue') },
+  home: { path: '/', importFn: () => import('@/features/journal/JournalPage.vue') },
+  explore: { path: '/explore', importFn: () => import('@/features/journal/JournalPage.vue') },
   search: { path: '/search', importFn: () => import('@/views/SearchPage.vue') },
   'post-detail': { pathPattern: /^\/post\//, importFn: () => import('@/views/PostDetailPage.vue') },
   authors: { path: '/authors', importFn: () => import('@/views/AuthorsPage.vue') },
@@ -250,7 +250,7 @@ const ROUTE_CONFIG = {
     pathPattern: /^\/author\//,
     importFn: () => import('@/views/AuthorDetailPage.vue'),
   },
-  community: { path: '/community', importFn: () => import('@/views/CommunityPage.vue') },
+  community: { path: '/community', importFn: () => import('@/features/journal/JournalPage.vue') },
   'discussion-detail': {
     pathPattern: /^\/community\/discussions\//,
     importFn: () => import('@/views/DiscussionDetailPage.vue'),
