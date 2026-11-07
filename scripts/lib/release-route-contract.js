@@ -88,15 +88,15 @@ function attachRouteContractMetadata(route) {
 
 const GUEST_BROWSER_ROUTE_DEFINITIONS = Object.freeze(
   [
-    { name: 'home route', path: '/', mode: 'guest', shellSelector: '.home-page' },
-    { name: 'explore route', path: '/explore', mode: 'guest', shellSelector: '.explore-page' },
+    { name: 'home route', path: '/', mode: 'guest', shellSelector: '.atelier-home' },
+    { name: 'explore route', path: '/explore', mode: 'guest', shellSelector: '.edition-browser' },
     { name: 'search route', path: '/search', mode: 'guest', shellSelector: '.search-page' },
     { name: 'authors route', path: '/authors', mode: 'guest', shellSelector: '.authors-page' },
     {
       name: 'community route',
       path: '/community',
       mode: 'guest',
-      shellSelector: '.community-page',
+      shellSelector: '[data-journal-page="community"]',
     },
     { name: 'login route', path: '/login', mode: 'guest', shellSelector: '.auth-page--login' },
     {
@@ -269,12 +269,7 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze(
       expectedPath: '/profile/favorites',
       expectedTitleKey: 'profile.tabs.favorites',
       readinessSelectorsAll: ['[data-testid="profile-favorites-tab"]'],
-      runnerReadinessSelectorsAny: [
-        '.posts-masonry',
-        '.posts-grid',
-        '.loading-indicator',
-        '.state-indicator',
-      ],
+      runnerReadinessSelectorsAny: ['.post-grid', '.journal-state', '.empty-state'],
     },
     {
       name: 'profile favorites',
@@ -284,12 +279,7 @@ const AUTHENTICATED_ROUTE_DEFINITIONS = Object.freeze(
       shellSelector: buildProfileSectionShellSelector('favorites'),
       expectedTitleKey: 'profile.tabs.favorites',
       readinessSelectorsAll: ['[data-testid="profile-favorites-tab"]'],
-      runnerReadinessSelectorsAny: [
-        '.posts-masonry',
-        '.posts-grid',
-        '.loading-indicator',
-        '.state-indicator',
-      ],
+      runnerReadinessSelectorsAny: ['.post-grid', '.journal-state', '.empty-state'],
     },
     {
       name: 'profile comments',

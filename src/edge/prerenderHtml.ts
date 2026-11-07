@@ -85,9 +85,23 @@ function replaceTitle(html: string, title: string): string {
 
 function replaceAppRoot(html: string, shell: string): string {
   const replacement = `<div id="app-root">${shell}</div>`
-  return replaceOrInsert(html, /<div id="app-root">[\s\S]*?<\/div>/i, replacement, (source, next) =>
-    source.replace('</body>', `  ${next}\n  </body>`)
-  )
+  const opening = /<div\s+id=["']app-root["'][^>]*>/i.exec(html)
+  if (!opening) return html.replace('</body>', `  ${replacement}\n  </body>`)
+
+  // The build and the edge can both render this root. Consume its entire nested
+  // container, while ignoring div-like text in comments, scripts and attributes.
+  const tokens =
+    /<!--[\s\S]*?-->|<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>|<\/?div\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi
+  tokens.lastIndex = opening.index + opening[0].length
+  let depth = 1
+  for (let token = tokens.exec(html); token; token = tokens.exec(html)) {
+    if (!/^<\/?div\b/i.test(token[0])) continue
+    depth += /^<\//.test(token[0]) ? -1 : 1
+    if (depth === 0) {
+      return html.slice(0, opening.index) + replacement + html.slice(tokens.lastIndex)
+    }
+  }
+  throw new Error('The application root is not closed')
 }
 
 function replaceStructuredDataScript(html: string, script: string): string {

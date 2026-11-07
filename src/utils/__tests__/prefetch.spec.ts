@@ -73,8 +73,9 @@ vi.mock('@/views/HomePage.vue', () => {
   mocks.homeViewLoaded()
   return { default: {} }
 })
-vi.mock('@/views/ExplorePage.vue', () => {
+vi.mock('@/features/journal/JournalPage.vue', () => {
   mocks.exploreViewLoaded()
+  mocks.communityViewLoaded()
   return { default: {} }
 })
 vi.mock('@/views/SearchPage.vue', () => {

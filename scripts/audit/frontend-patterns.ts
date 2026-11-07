@@ -13,7 +13,15 @@ interface BoundaryRule {
 
 const SOURCE_GLOB = '**/*.{ts,js,vue}'
 
-const ALLOWED_V_HTML = new Set(['src/views/SchedulePage.vue', 'src/components/ui/VideoPlayer.vue'])
+const ALLOWED_V_HTML = new Set([
+  'src/views/SchedulePage.vue',
+  'src/components/ui/VideoPlayer.vue',
+  // Reviewed repository-owned chrome, scenes and fixed SVG paths; no API HTML.
+  // See docs/zh-CN/journal-security-review.md for the dynamic text boundary.
+  'src/features/journal/JournalShell.vue',
+  'src/features/journal/JournalScene.vue',
+  'src/features/journal/JournalIcon.vue',
+])
 
 const ALLOWED_VAPOR_COMPONENTS = new Set([
   'src/components/business/AuthorCard.vue',

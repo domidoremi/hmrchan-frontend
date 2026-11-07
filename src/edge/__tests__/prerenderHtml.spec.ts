@@ -100,3 +100,25 @@ describe('createPrerenderedHtml', () => {
     expect(html).toContain('fetchpriority="high"')
   })
 })
+
+it('replaces an already rendered nested root without leaving old content after the app', () => {
+  const once = createPrerenderedHtml(template, '/')
+  const twice = createPrerenderedHtml(once, '/explore')
+  const document = new DOMParser().parseFromString(twice, 'text/html')
+  expect(document.body.children).toHaveLength(1)
+  expect(document.body.firstElementChild?.id).toBe('app-root')
+  expect(document.querySelectorAll('[data-prerender-shell]')).toHaveLength(1)
+  expect(document.body.textContent).not.toContain('Use the homepage summary')
+})
+
+it('preserves siblings and skips div-like text while replacing the root', () => {
+  const nested = template.replace(
+    '<div id="app-root"></div>',
+    '<div id="app-root"><!-- <div> --><div title="a > b"><script>const value = "<div>"</script><div>old content</div></div></div><footer id="outside">footer</footer>'
+  )
+  const html = createPrerenderedHtml(nested, '/explore')
+  const document = new DOMParser().parseFromString(html, 'text/html')
+  expect(document.body.children).toHaveLength(2)
+  expect(document.getElementById('outside')?.textContent).toBe('footer')
+  expect(document.body.textContent).not.toContain('old content')
+})

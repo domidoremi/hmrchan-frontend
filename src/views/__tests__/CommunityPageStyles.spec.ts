@@ -14,9 +14,9 @@ const communityPageStyles = readFileSync(
 const stylesIndex = readFileSync(resolve(process.cwd(), 'src/styles/index.css'), 'utf8')
 
 describe('CommunityPage styles', () => {
-  it('keeps page presentation in the layered page-system stylesheet', () => {
+  it('keeps retired community presentation outside the production stylesheet', () => {
     expect(communityPageSource).not.toContain('<style')
-    expect(stylesIndex).toContain(
+    expect(stylesIndex).not.toContain(
       "@import './page-systems/community-page-view.css' layer(page-systems);"
     )
     expect(communityPageStyles).toContain('.community-page .community-priority-grid {')

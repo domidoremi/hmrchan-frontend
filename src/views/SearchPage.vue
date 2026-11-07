@@ -27,13 +27,6 @@
         </template>
 
         <SearchBar class="search-bar-main" />
-
-        <template #meta>
-          <PageMetaRow v-if="!query">
-            <PageMetaChip>{{ $t('search.tips.keyword') }}</PageMetaChip>
-            <PageMetaChip>{{ $t('search.tips.author') }}</PageMetaChip>
-          </PageMetaRow>
-        </template>
       </PageHeroShell>
 
       <div v-if="query" class="search-content">
@@ -168,13 +161,6 @@
         <div class="empty-content empty-surface search-empty-surface">
           <h2>{{ $t('search.emptyTitle') }}</h2>
           <p>{{ $t('search.emptyHint') }}</p>
-          <div class="search-tips">
-            <h3>{{ $t('search.tips.title') }}</h3>
-            <ul>
-              <li>{{ $t('search.tips.keyword') }}</li>
-              <li>{{ $t('search.tips.author') }}</li>
-            </ul>
-          </div>
         </div>
 
         <section
@@ -390,7 +376,6 @@ import {
   ControlGroup,
   PageHeroShell,
   PageMetaChip,
-  PageMetaRow,
   PageToolbar,
 } from '@/components/appearance'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
