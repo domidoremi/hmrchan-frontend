@@ -11,11 +11,11 @@ import { searchService } from '@/api/searchService'
 import { discussionService } from '@/api/discussionService'
 import { scheduleService } from '@/api/scheduleService'
 import { useAuthStore, useFavoritesStore } from '@/stores'
+import { useJournalFavoritePosts } from './useJournalFavoritePosts'
 import {
   postModel,
   discussionModel,
   eventModel,
-  favoriteModel,
   type JournalPost,
   type JournalEvent,
   type JournalDiscussion,
@@ -36,6 +36,9 @@ export function useJournalData(page: Ref<string>) {
     generation = 0
   const fixture = computed(
     () => import.meta.env.DEV && route.query['journal-fixture'] === 'reference'
+  )
+  const favoritePosts = useJournalFavoritePosts(
+    computed(() => page.value === 'favorites' && !fixture.value)
   )
   const query = computed(() => (typeof route.query['q'] === 'string' ? route.query['q'] : ''))
   const month = computed(() => {
@@ -138,7 +141,7 @@ export function useJournalData(page: Ref<string>) {
             const ok = await favorites.fetchFavorites(!more)
             if (!valid()) return
             if (!ok) throw new Error('收藏暂时无法加载')
-            posts.value = favorites.items.map(favoriteModel)
+            posts.value = favoritePosts.value
             hasMore.value = favorites.hasMore
           })()
         )
@@ -212,10 +215,10 @@ export function useJournalData(page: Ref<string>) {
     { immediate: true }
   )
   watch(
-    () => favorites.items,
+    favoritePosts,
     (items) => {
       if (page.value === 'favorites' && !fixture.value)
-        posts.value = auth.isAuthenticated ? items.map(favoriteModel) : []
+        posts.value = auth.isAuthenticated ? items : []
     },
     { deep: true }
   )

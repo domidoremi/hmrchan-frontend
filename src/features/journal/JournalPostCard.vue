@@ -61,7 +61,7 @@
         <img :src="post.avatar" alt="" width="19" height="19" loading="lazy" /><span>{{
           post.author
         }}</span></button
-      ><span v-if="!post.editorial" class="post-likes"
+      ><span v-if="!post.editorial && post.likes !== null" class="post-likes"
         ><JournalIcon name="heart" />{{ post.likes }}</span
       >
     </div>
