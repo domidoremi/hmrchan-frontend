@@ -1536,7 +1536,7 @@ async function assertServiceWorkerLifecycle(
     onFailure,
     async (page) => {
       await page.goto(`${baseUrl}/`, {
-        waitUntil: 'networkidle0',
+        waitUntil: 'domcontentloaded',
       })
 
       await page.waitForFunction(async () => {
@@ -1547,7 +1547,7 @@ async function assertServiceWorkerLifecycle(
         return Boolean(scriptUrl?.endsWith('/sw.js'))
       })
 
-      await page.reload({ waitUntil: 'networkidle0' })
+      await page.reload({ waitUntil: 'domcontentloaded' })
       await page.waitForFunction(async () => {
         if (navigator.serviceWorker.controller) return true
         await navigator.serviceWorker.ready

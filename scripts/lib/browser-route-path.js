@@ -8,3 +8,10 @@ export function matchesExpectedBrowserRoute(actual, expected) {
     (!expected.includes('#') || actualUrl.hash === expectedUrl.hash)
   )
 }
+
+export function resolveCanonicalRouteUrl(path, origin) {
+  const url = new URL(path, origin)
+  url.search = ''
+  url.hash = ''
+  return url.toString()
+}

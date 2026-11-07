@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { matchesExpectedBrowserRoute } from './lib/browser-route-path.js'
+import { matchesExpectedBrowserRoute, resolveCanonicalRouteUrl } from './lib/browser-route-path.js'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -1685,10 +1685,10 @@ async function prepareRouteEvidence(page, expected) {
     )
   }
 
-  const expectedCanonical =
-    expected.expectedCanonicalPath !== undefined
-      ? new URL(expected.expectedCanonicalPath, expected.baseUrl).toString()
-      : new URL(finalUrlObject.pathname, expected.baseUrl).toString()
+  const expectedCanonical = resolveCanonicalRouteUrl(
+    expected.expectedCanonicalPath ?? finalUrlObject.pathname,
+    process.env.CANONICAL_BASE_URL?.trim() || DEFAULT_BASE_URL
+  )
 
   assert(
     canonical === expectedCanonical,
