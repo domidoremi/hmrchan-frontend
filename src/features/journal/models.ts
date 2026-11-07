@@ -93,6 +93,7 @@ export function favoriteModel(
       ...postModel(detail),
       favoriteId: favorite.id,
       text: favorite.notes || detail.description || '',
+      tags: favorite.tags ?? detail.tags ?? [],
       time: formatRelativeTime(favorite.created_at),
     }
   }

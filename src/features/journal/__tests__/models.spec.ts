@@ -49,7 +49,7 @@ describe('journal favorite presentation', () => {
         },
       ],
     }
-    const model = favoriteModel({ ...favorite, notes: 'My note' }, detail)
+    const model = favoriteModel({ ...favorite, notes: 'My note', tags: ['Saved tag'] }, detail)
     expect(model.image).toContain(`/media/${mediaId}/thumbnail?size=large`)
     expect(model).toMatchObject({
       favoriteId: favorite.id,
@@ -58,6 +58,7 @@ describe('journal favorite presentation', () => {
       author: 'Himeri',
       likes: 422,
       text: 'My note',
+      tags: ['Saved tag'],
     })
   })
 })
