@@ -12,7 +12,11 @@ import {
   createLocalAuditEnv,
   resolveLocalAuditPreviewPorts,
 } from './lib/audit-env.js'
-import { shouldIgnoreConsoleError, shouldIgnoreRequestIssue } from './lib/frontend-health'
+import {
+  isExpectedHealthNotFoundDocument,
+  shouldIgnoreConsoleError,
+  shouldIgnoreRequestIssue,
+} from './lib/frontend-health'
 import { withBuildArtifactLock } from './lib/build-artifact-lock.js'
 import {
   PreviewShellManager,
@@ -762,9 +766,13 @@ async function authenticateViaApi(
   options?: {
     getPreviewDiagnostics?: (() => string[] | null) | null
     onFailureEvidence?: (evidence: HealthFailureEvidence) => void
+    existingPage?: Page
+    viewport?: Viewport
   }
-): Promise<void> {
-  const page = await browser.newPage()
+): Promise<Page> {
+  const page = options?.existingPage ?? (await browser.newPage())
+  if (options?.viewport) await page.setViewport(options.viewport)
+  let bootstrapCdpSession: puppeteer.CDPSession | null = null
   const consoleMessages: string[] = []
   const requestFailures: string[] = []
   const badResponses: string[] = []
@@ -1013,6 +1021,7 @@ async function authenticateViaApi(
       await Promise.all([...pendingAuthBootstrapResponses])
     }
     const cdpSession = await page.createCDPSession()
+    bootstrapCdpSession = cdpSession
     await cdpSession.send('Network.enable')
     cdpSession.on('Network.requestWillBeSent', (event: CdpRequestWillBeSentEvent) => {
       const request = event.request
@@ -1100,7 +1109,7 @@ async function authenticateViaApi(
     const loginFormReady = await openAndFillLoginForm({ resetSession: !prewarmedLocalTrust })
     if (!loginFormReady) {
       await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
-      return
+      return page
     }
     const preflightProbes = await runAuthBootstrapPreflight(baseUrl)
     throwIfFatalAuthBootstrapProbe([...pageAuthBootstrapProbes, ...preflightProbes])
@@ -1162,6 +1171,7 @@ async function authenticateViaApi(
       }
     }
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 4_000 }).catch(() => undefined)
+    return page
   } catch (error) {
     const state = await readPageRouteState(page).catch(() => ({
       url: page.url(),
@@ -1192,7 +1202,20 @@ async function authenticateViaApi(
     options?.onFailureEvidence?.(evidence)
     throw error
   } finally {
+    await bootstrapCdpSession?.detach().catch(() => undefined)
+    for (const event of ['console', 'requestfailed', 'response', 'request'] as const) {
+      page.removeAllListeners(event)
+    }
+  }
+}
+
+async function releaseHealthScanPage(page: Page, authenticatedPage: Page | null): Promise<void> {
+  if (page !== authenticatedPage) {
     await page.close().catch(() => undefined)
+    return
+  }
+  for (const event of ['console', 'requestfailed', 'response'] as const) {
+    page.removeAllListeners(event)
   }
 }
 
@@ -1482,9 +1505,18 @@ function attachPageDiagnostics(
     }
   }
 
+  const isExpectedNotFoundDocument = (targetUrl?: string | null): boolean =>
+    isExpectedHealthNotFoundDocument(route.path, targetUrl, healthFilterOptions.baseOrigin)
+
   page.on('console', (msg) => {
     if (msg.type() === 'error') {
       const text = msg.text()
+      if (
+        /server responded with a status of 404/.test(text) &&
+        isExpectedNotFoundDocument(msg.location().url || page.url())
+      ) {
+        return
+      }
       if (
         isManagedPreviewSpa404Noise(msg.location().url) ||
         (healthFilterOptions.managedPreview &&
@@ -1518,6 +1550,14 @@ function attachPageDiagnostics(
 
   page.on('response', (res) => {
     const status = res.status()
+    if (
+      status === 404 &&
+      res.request().isNavigationRequest() &&
+      res.request().frame() === page.mainFrame() &&
+      isExpectedNotFoundDocument(res.url())
+    ) {
+      return
+    }
     if (status === 404 && isManagedPreviewSpa404Noise(res.url())) return
     if (shouldIgnoreRequestIssue(res.url(), INCLUDE_API_ERRORS, healthFilterOptions)) return
     if (status >= 400) {
@@ -1541,6 +1581,7 @@ async function main() {
   const results: RouteResult[] = []
   let crashed = false
   let firstBlockingIssue: HealthFailureEvidence | null = null
+  let authenticatedPage: Page | null = null
   const authSkipReason = getAuthSkipReason(AUTH_LOGIN, AUTH_PASSWORD, AUTH_CREDENTIALS.source)
   const authCredentialsDetected = Boolean(AUTH_LOGIN && AUTH_PASSWORD)
   const authHealthEnabled = AUTH_REQUIRED && authCredentialsDetected
@@ -1707,7 +1748,7 @@ async function main() {
         : guestRoutes
 
       if (authHealthEnabled) {
-        await authenticateViaApi(
+        authenticatedPage = await authenticateViaApi(
           browser,
           effectiveBaseUrl,
           {
@@ -1715,6 +1756,7 @@ async function main() {
             password: AUTH_PASSWORD,
           },
           {
+            viewport: VIEWPORTS[0]!.value,
             getPreviewDiagnostics,
             onFailureEvidence: (evidence) => {
               if (!firstBlockingIssue) {
@@ -1745,7 +1787,23 @@ async function main() {
         : guestRoutes
 
       for (const viewport of VIEWPORTS) {
+        if (authHealthEnabled && viewport.name !== VIEWPORTS[0]!.name) {
+          authenticatedPage = await authenticateViaApi(
+            browser,
+            effectiveBaseUrl,
+            { login: AUTH_LOGIN, password: AUTH_PASSWORD },
+            {
+              existingPage: authenticatedPage ?? undefined,
+              viewport: viewport.value,
+              getPreviewDiagnostics,
+              onFailureEvidence: (evidence) => {
+                firstBlockingIssue ??= evidence
+              },
+            }
+          )
+        }
         for (const route of routesToScan) {
+          console.log(`Scanning ${viewport.name}: ${route.path}`)
           const skipReason = skippedRouteReasons.get(route.name)
           if (skipReason) {
             console.log(`⏭️ Skipping ${route.name} (${route.path}): ${skipReason}`)
@@ -1756,7 +1814,8 @@ async function main() {
           let routeIssues: ScanIssue[] = []
 
           for (let attempt = 0; attempt < (managedServer ? 2 : 1); attempt += 1) {
-            const page = await browser.newPage()
+            // Keep the requested authenticated audit in its original tab.
+            const page = authenticatedPage ?? (await browser.newPage())
             await configureScopedQaPage(page, AUDIT_ENV, effectiveBaseUrl)
             const issues: ScanIssue[] = []
             const consoleErrors = new Set<string>()
@@ -1809,6 +1868,8 @@ async function main() {
                     password: AUTH_PASSWORD,
                   },
                   {
+                    existingPage: page,
+                    viewport: viewport.value,
                     getPreviewDiagnostics,
                     onFailureEvidence: (evidence) => {
                       if (!firstBlockingIssue) {
@@ -1816,6 +1877,14 @@ async function main() {
                       }
                     },
                   }
+                )
+                attachPageDiagnostics(
+                  page,
+                  route,
+                  healthFilterOptions,
+                  consoleErrors,
+                  requestFailures,
+                  badResponses
                 )
                 await navigateAndAssertRoute()
               }
@@ -1890,7 +1959,7 @@ async function main() {
                   }
                 )
               }
-              await page.close()
+              await releaseHealthScanPage(page, authenticatedPage)
               break
             } catch (error) {
               const recoverable =
@@ -1900,7 +1969,7 @@ async function main() {
                 console.warn(
                   `⚠️ Preview shell became unhealthy while scanning ${route.path}; restarting once and retrying...`
                 )
-                await page.close().catch(() => undefined)
+                await releaseHealthScanPage(page, authenticatedPage)
                 await managedServer?.restart()
                 continue
               }
@@ -1926,7 +1995,7 @@ async function main() {
                   }
                 )
               }
-              await page.close().catch(() => undefined)
+              await releaseHealthScanPage(page, authenticatedPage)
               break
             }
           }

@@ -3,10 +3,21 @@ import { enterRiskMode } from './runtimeState'
 
 type Teardown = () => void
 
-function isSameOriginAsset(url: string): boolean {
+function isTrustedAssetSource(element: Element, url: string): boolean {
   try {
     const parsed = new URL(url, window.location.origin)
-    return parsed.origin === window.location.origin
+    if (parsed.origin === window.location.origin) return true
+
+    // Cloudflare adds this nonced, SRI-protected beacon on production HTML.
+    return (
+      element instanceof HTMLScriptElement &&
+      Boolean(element.nonce.trim()) &&
+      parsed.origin === 'https://static.cloudflareinsights.com' &&
+      /^\/beacon\.min\.js(?:\/v[a-f0-9]{32,64})?$/.test(parsed.pathname) &&
+      !parsed.search &&
+      !parsed.username &&
+      !parsed.password
+    )
   } catch {
     return false
   }
@@ -24,7 +35,7 @@ function collectMissingIntegrityAssets(): string[] {
       const href = element.getAttribute('src') ?? element.getAttribute('href') ?? ''
       return {
         href,
-        valid: isSameOriginAsset(href) && hasIntegrityAttribute(element),
+        valid: isTrustedAssetSource(element, href) && hasIntegrityAttribute(element),
       }
     })
     .filter((entry) => entry.href && !entry.valid)

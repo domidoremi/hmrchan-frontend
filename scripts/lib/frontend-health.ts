@@ -62,6 +62,21 @@ export function isLocalPreviewEnvironmentBlocker(
   }
 }
 
+export function isExpectedHealthNotFoundDocument(
+  routePath: string,
+  targetUrl: string | null | undefined,
+  baseOrigin: string
+): boolean {
+  if (routePath !== '/this-route-does-not-exist' || !targetUrl) return false
+  try {
+    const target = new URL(targetUrl, baseOrigin)
+    const expected = new URL(routePath, baseOrigin)
+    return target.origin === expected.origin && target.pathname === expected.pathname
+  } catch {
+    return false
+  }
+}
+
 export function isIgnoredOptionalEndpoint(urlOrText: string): boolean {
   const normalized = normalizeText(urlOrText)
 

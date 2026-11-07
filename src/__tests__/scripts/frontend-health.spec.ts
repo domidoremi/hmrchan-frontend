@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  isExpectedHealthNotFoundDocument,
   isIgnoredOptionalEndpoint,
   isLocalPreviewEnvironmentBlocker,
   shouldIgnoreConsoleError,
@@ -8,6 +9,26 @@ import {
 } from '../../../scripts/lib/frontend-health'
 
 describe('frontend health filtering', () => {
+  it('recognizes the deliberate missing-route document on the audited origin', () => {
+    expect(
+      isExpectedHealthNotFoundDocument(
+        '/this-route-does-not-exist',
+        'https://momichan.com/this-route-does-not-exist',
+        'https://momichan.com'
+      )
+    ).toBe(true)
+  })
+
+  it.each([
+    ['/explore', 'https://momichan.com/this-route-does-not-exist'],
+    ['/this-route-does-not-exist', 'https://momichan.com/assets/missing.js'],
+    ['/this-route-does-not-exist', 'https://momichan.com/api/missing'],
+    ['/this-route-does-not-exist', 'https://other.example/this-route-does-not-exist'],
+    ['/this-route-does-not-exist', ''],
+  ])('keeps unrelated failures blocking: %s / %s', (route, url) => {
+    expect(isExpectedHealthNotFoundDocument(route, url, 'https://momichan.com')).toBe(false)
+  })
+
   it('ignores preview telemetry endpoint noise by default', () => {
     expect(isIgnoredOptionalEndpoint('http://127.0.0.1:4174/client-report')).toBe(true)
     expect(
