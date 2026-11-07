@@ -1,6 +1,7 @@
 <template>
   <div
     id="app"
+    :data-edition="designEdition"
     :data-preset="activePreset"
     :data-color-mode="resolvedColorMode"
     :data-animation-intensity="animationIntensity"
@@ -10,13 +11,14 @@
     :data-locale-animation="localeAnimation"
     :data-scene-role="routeSceneRole"
   >
+    <SpatialBackdrop :enabled="motionMode === 'standard' || motionMode === 'expressive'" />
     <!-- Skip to main content -->
     <a href="#main-content" class="skip-link">
       {{ $t('common.skipToContent') }}
     </a>
 
     <!-- Navbar -->
-    <AppNavbar chromeless />
+    <AppNavbar chromeless :animated="motionMode === 'standard' || motionMode === 'expressive'" />
     <AppSideNav v-if="!isAuthRoute" chromeless />
 
     <!-- Main Content with Error Boundary -->
@@ -77,6 +79,8 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, defineAsyncComponent } from 'vue'
+import SpatialBackdrop from '@/components/layout/SpatialBackdrop.vue'
+import { designEdition } from '@/config/designEdition'
 import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '@/stores'

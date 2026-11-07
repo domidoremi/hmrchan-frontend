@@ -27,73 +27,33 @@
           <span class="hero-copy__divider" aria-hidden="true" />
 
           <div class="hero-copy__right">
-            <div class="hero-letterbook-media" :aria-label="$t('home.letterbook.mediaLabel')">
-              <template v-if="spotlightMediaCards.length > 0">
-                <button
-                  v-for="(card, index) in spotlightMediaCards.slice(0, 2)"
-                  :key="`hero-letterbook-${card.post.id}`"
-                  type="button"
-                  class="hero-letterbook-frame"
-                  :class="`hero-letterbook-frame--${index + 1}`"
-                  :aria-label="card.title"
-                  @click="openPostPreview(card.post, card.thumbnail)"
-                >
-                  <img
-                    v-if="shouldRenderHomeMedia(card.thumbnail)"
-                    :src="resolveHomeImageSourceAttribute(card.thumbnail)"
-                    :srcset="resolveHomeImageSrcsetAttribute()"
-                    :alt="card.title"
-                    :sizes="
-                      index === 0
-                        ? '(max-width: 48rem) 68vw, 32vw'
-                        : '(max-width: 48rem) 48vw, 18vw'
-                    "
-                    class="hero-letterbook-image"
-                    decoding="async"
-                    :loading="index === 0 ? 'eager' : 'lazy'"
-                    :fetchpriority="index === 0 ? 'high' : 'auto'"
-                    @error="markHomeMediaFailed(card.thumbnail)"
-                  />
-                  <span v-else class="hero-letterbook-placeholder">
-                    <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
-                    <span>{{ card.title }}</span>
-                  </span>
-                  <span v-if="index === 0" class="hero-letterbook-caption">
-                    {{ card.title }}
-                  </span>
-                </button>
+            <SpatialGallery
+              :items="spatialCards"
+              :animated="
+                shouldAnimate &&
+                settings.animationIntensity !== 'reduced' &&
+                settings.animationIntensity !== 'none'
+              "
+              @select="selectSpatialCard"
+            >
+              <template #image="{ index }">
+                <img
+                  v-if="shouldRenderHomeMedia(spatialCards[index]?.thumbnail)"
+                  :src="resolveHomeImageSourceAttribute(spatialCards[index]?.thumbnail)"
+                  :srcset="resolveHomeImageSrcsetAttribute()"
+                  :alt="spatialCards[index]?.title"
+                  sizes="(max-width: 760px) 50vw, 30vw"
+                  decoding="async"
+                  :loading="index === 0 ? 'eager' : 'lazy'"
+                  :fetchpriority="index === 0 ? 'high' : 'auto'"
+                  draggable="false"
+                  @error="markHomeMediaFailed(spatialCards[index]?.thumbnail)"
+                />
+                <span v-else class="hero-letterbook-placeholder">{{
+                  spatialCards[index]?.title
+                }}</span>
               </template>
-              <template v-else>
-                <RouterLink to="/explore" class="hero-letterbook-frame hero-letterbook-frame--1">
-                  <img
-                    :src="'/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp'"
-                    :alt="$t('home.letterbook.todayTitle')"
-                    sizes="(max-width: 48rem) 68vw, 32vw"
-                    class="hero-letterbook-image"
-                    decoding="async"
-                    loading="eager"
-                    fetchpriority="high"
-                  />
-                  <span class="hero-letterbook-caption">
-                    {{ $t('home.letterbook.photoCaption') }}
-                  </span>
-                </RouterLink>
-                <RouterLink
-                  to="/schedule"
-                  class="hero-letterbook-frame hero-letterbook-frame--2"
-                  :aria-label="$t('home.letterbook.scheduleTitle')"
-                >
-                  <img
-                    :src="'/snapshot-media/home/story-1-90c52c15-ab0a-473d-8981-f2420a91fdc1.webp'"
-                    :alt="$t('home.letterbook.scheduleTitle')"
-                    sizes="(max-width: 48rem) 48vw, 18vw"
-                    class="hero-letterbook-image"
-                    decoding="async"
-                    loading="eager"
-                  />
-                </RouterLink>
-              </template>
-            </div>
+            </SpatialGallery>
 
             <div class="hero-editorial" :class="resolveHeroEditorialClasses(heroEditorialVisible)">
               <div class="hero-editorial__state hero-editorial__state--loading" aria-hidden="true">
@@ -140,7 +100,7 @@
                 size="lg"
                 variant="secondary"
                 class="hero-btn hero-btn--secondary"
-                @click="scrollToFeatured"
+                @click="goToSchedule"
               >
                 <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="md" />
                 {{ $t('home.hero.secondaryAction') }}
@@ -197,6 +157,31 @@
         </RouterLink>
       </nav>
     </section>
+
+    <PhotoBook
+      :items="spatialCards"
+      :animated="
+        shouldAnimate &&
+        settings.animationIntensity !== 'reduced' &&
+        settings.animationIntensity !== 'none'
+      "
+      @select="selectSpatialCard"
+    >
+      <template #image="{ index, decorative }">
+        <img
+          v-if="shouldRenderHomeMedia(spatialCards[index]?.thumbnail)"
+          :src="resolveHomeImageSourceAttribute(spatialCards[index]?.thumbnail)"
+          :srcset="resolveHomeImageSrcsetAttribute()"
+          :alt="decorative ? '' : spatialCards[index]?.title"
+          sizes="(max-width: 700px) 90vw, 40vw"
+          loading="lazy"
+          decoding="async"
+          draggable="false"
+          @error="markHomeMediaFailed(spatialCards[index]?.thumbnail)"
+        />
+        <span v-else>{{ spatialCards[index]?.title }}</span>
+      </template>
+    </PhotoBook>
 
     <FeaturedRailSection
       id="home-rail"
@@ -1216,6 +1201,9 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
+import SpatialGallery from '@/components/home/SpatialGallery.vue'
+import PhotoBook from '@/components/home/PhotoBook.vue'
+import { resolveHomeSpatialCards } from '@/components/home/homeSpatialCards'
 import { HeroSection, HomeQuickNav } from '@/components/home'
 import { createResizeObserver, createVisibilityObserver, scheduleTask } from '@/utils/modernAPIs'
 import { ensureSmoothScrollTriggerBridge } from '@/composables/useSmoothScroll'
@@ -1267,6 +1255,15 @@ const PostCardSkeleton = defineHomeAsyncComponent(
 const HomepagePreviewController = defineHomeAsyncComponent(
   () => import('@/components/home/HomepagePreviewController.vue')
 )
+const spatialCards = computed(() =>
+  resolveHomeSpatialCards(spotlightMediaCards.value, t('home.letterbook.photoCaption'))
+)
+function selectSpatialCard(index: number) {
+  const card = spotlightMediaCards.value[index]
+  if (card) openPostPreview(card.post, card.thumbnail)
+  else void router.push(index === 1 ? '/schedule' : '/explore')
+}
+
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
@@ -2966,10 +2963,6 @@ function goToExplore() {
 
 function goToSchedule() {
   router.push('/schedule')
-}
-
-function scrollToFeatured() {
-  scrollToHomeSection('home-rail')
 }
 
 function shouldRenderHomeMedia(source: string | null | undefined): boolean {

@@ -418,8 +418,8 @@
       }
     },
     "hero": {
-      "title": "Himeri, all in one place",
-      "subtitle": "New posts, appearances, schedules, and fan conversations from Momiyama Himeri and TAKANE NO NADESHIKO.",
+      "title": "Himeri, lately.",
+      "subtitle": "Photographs, stages, and what’s next.",
       "badge": "Himeri fan archive",
       "highlights": {
         "multilingual": {
@@ -459,9 +459,9 @@
     },
     "letterbook": {
       "mediaLabel": "Featured album",
-      "photoCaption": "Today's stage moments and smiles.",
+      "photoCaption": "On stage. Off stage.",
       "indexLabel": "Shortcuts",
-      "todayTitle": "Today's spark",
+      "todayTitle": "Latest stories",
       "todayText": "New photos and posts",
       "scheduleTitle": "Stage and live",
       "scheduleText": "This week's events",
@@ -552,11 +552,11 @@
     "latestAction": "View All"
   },
   "explore": {
-    "title": "Today's collection",
-    "subtitle": "Take your time with the latest stage moments and everyday stories, gathered by date, platform, and topic.",
+    "title": "The latest",
+    "subtitle": "Photographs, clips, and recent updates.",
     "searchAction": "Search updates",
     "weeklyPopular": "What everyone is watching this week",
-    "moreStories": "More to collect",
+    "moreStories": "More stories",
     "allPlatforms": "All",
     "searchPlaceholder": "Search posts, authors, tags...",
     "filters": "Filters",
@@ -791,8 +791,8 @@
     }
   },
   "community": {
-    "title": "Let's share today's little sparks",
-    "subtitle": "Share stage memories and favorite moments, and discover what caught another fan's eye.",
+    "title": "Community",
+    "subtitle": "The conversation continues.",
     "composerTitle": "Write what you'd love to share",
     "composerDescription": "Leave a thought, a small memory list, or a topic you'd enjoy exploring together.",
     "searchPlaceholder": "Search discussions...",
@@ -829,8 +829,8 @@
     }
   },
   "schedule": {
-    "title": "Days we look forward to together",
-    "subtitle": "Stages, streams, media appearances, and anniversaries gathered into one gentle week.",
+    "title": "Calendar",
+    "subtitle": "Shows, livestreams, and events.",
     "plannerTitle": "Planner",
     "plannerSubtitle": "A calm weekly view of what is coming next.",
     "upcoming": "Upcoming",
@@ -1597,5 +1597,39 @@
     "codeExpired": "Verification code has expired, please resend",
     "tooManyAttempts": "Too many attempts, please try again later",
     "verifyFailed": "Verification failed, please try again"
+  },
+  "spatial": {
+    "gallery": "Selected photographs",
+    "selected": "In focus",
+    "previous": "Previous photograph",
+    "next": "Next photograph",
+    "arrangement": "Layout",
+    "orbit": "Orbit",
+    "stack": "Stack",
+    "fan": "Fan",
+    "grid": "Grid",
+    "wall": "Editorial",
+    "list": "List",
+    "all": "All",
+    "find": "Find",
+    "findLoaded": "Find in these items",
+    "sort": "Sort",
+    "matches": "Showing {count} items",
+    "draftSaved": "Draft saved",
+    "draftFailed": "Draft not saved",
+    "clearDraft": "Clear draft",
+    "draftCleared": "Draft cleared",
+    "undo": "Undo",
+    "draftRestored": "Draft restored",
+    "favoriteRestored": "Favorite restored",
+    "general": "General",
+    "question": "Questions",
+    "sharing": "Sharing",
+    "feedback": "Feedback",
+    "directory": "Index",
+    "book": "Photo journal",
+    "contents": "In this issue",
+    "openBook": "Open",
+    "viewPhoto": "View post"
   }
 }

@@ -189,6 +189,31 @@ describe('SchedulePage', () => {
     expect(router.currentRoute.value.name).toBe('schedule')
   })
 
+  it('restores a month address and updates the selected date without losing filters', async () => {
+    const { wrapper, router } = await mountSchedule(
+      '/schedule?view=month&month=2026-11&date=2026-11-19&category=live'
+    )
+    expect(wrapper.findAll('.calendar-cell[tabindex="0"]')).toHaveLength(1)
+    expect(wrapper.find('.calendar-cell--selected').attributes('tabindex')).toBe('0')
+    const cells = wrapper.findAll('.calendar-cell')
+    const selectedIndex = cells.findIndex((cell) =>
+      cell.classes().includes('calendar-cell--selected')
+    )
+    await cells[selectedIndex + 1]!.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query).toMatchObject({
+      date: '2026-11-20',
+      month: '2026-11',
+      view: 'month',
+      category: 'live',
+    })
+    await router.replace('/schedule?view=month&month=2027-02&date=2027-02-03')
+    await flushPromises()
+    expect(wrapper.find('.calendar-cell--selected').text()).toContain('3')
+    expect(wrapper.findAll('.calendar-cell[tabindex="0"]')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
   it('keeps a stable detail shell and avoids toast noise for missing detail routes', async () => {
     scheduleApi.getById.mockRejectedValueOnce(new ApiError('not found', 404, 'NOT_FOUND'))
 

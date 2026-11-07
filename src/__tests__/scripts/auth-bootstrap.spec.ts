@@ -167,6 +167,34 @@ describe('auth bootstrap helpers', () => {
       })
     ).toBe('passkeys-login-forbidden')
 
+    const challengeProbe = {
+      path: '/api/v1/auth/passkeys/login/options',
+      method: 'POST',
+      status: 403,
+      code: 'CHALLENGE_REQUIRED',
+      body: {
+        success: false,
+        error: {
+          code: 'CHALLENGE_REQUIRED',
+          challenge_required: true,
+          turnstile_site_key: 'public-test-site-key',
+        },
+      },
+    }
+    expect(classifyAuthBootstrapProbe(challengeProbe)).toBeNull()
+    expect(classifyAuthBootstrapProbe({ ...challengeProbe, body: null })).toBe(
+      'passkeys-login-forbidden'
+    )
+    expect(
+      classifyAuthBootstrapProbe({
+        ...challengeProbe,
+        body: {
+          ...challengeProbe.body,
+          error: { ...challengeProbe.body.error, turnstile_site_key: '' },
+        },
+      })
+    ).toBe('passkeys-login-forbidden')
+
     expect(
       classifyAuthBootstrapProbe({
         path: '/api/v1/auth/passkeys/login/options',

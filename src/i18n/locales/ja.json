@@ -418,8 +418,8 @@
       }
     },
     "hero": {
-      "title": "ひめりの今を、ここに",
-      "subtitle": "籾山ひめりと高嶺のなでしこの新着、出演、予定、ファンの声。",
+      "title": "ひめりの、いま。",
+      "subtitle": "写真、ステージ、これからの予定。",
       "badge": "ひめりファンアーカイブ",
       "highlights": {
         "multilingual": {
@@ -459,9 +459,9 @@
     },
     "letterbook": {
       "mediaLabel": "おすすめアルバム",
-      "photoCaption": "今日のステージと笑顔。",
+      "photoCaption": "ステージと日常",
       "indexLabel": "ショートカット",
-      "todayTitle": "今日のときめき",
+      "todayTitle": "最新の投稿",
       "todayText": "新しい写真と投稿",
       "scheduleTitle": "ステージと配信",
       "scheduleText": "今週のイベント",
@@ -552,11 +552,11 @@
     "latestAction": "すべて見る"
   },
   "explore": {
-    "title": "今日のコレクション",
-    "subtitle": "時間やプラットフォーム、話題から、最新のステージと日常をゆっくりたどれます。",
+    "title": "最新の投稿",
+    "subtitle": "写真、映像、最近のお知らせ。",
     "searchAction": "投稿を探す",
     "weeklyPopular": "今週みんなが見ているもの",
-    "moreStories": "もっと見る",
+    "moreStories": "ほかの投稿",
     "allPlatforms": "すべて",
     "searchPlaceholder": "投稿、作者、タグを検索...",
     "filters": "フィルター",
@@ -791,8 +791,8 @@
     }
   },
   "community": {
-    "title": "今日のときめきを、いっしょに話そう",
-    "subtitle": "ステージの思い出や好きな場面を分かち合い、みんなのまなざしにも耳を傾ける場所です。",
+    "title": "コミュニティ",
+    "subtitle": "話のつづきは、ここで。",
     "composerTitle": "話したいことを書いてみる",
     "composerDescription": "感想や思い出のメモ、みんなと話してみたいテーマを気軽にどうぞ。",
     "searchPlaceholder": "ディスカッションを検索...",
@@ -829,8 +829,8 @@
     }
   },
   "schedule": {
-    "title": "いっしょに待つ日々",
-    "subtitle": "ライブ、配信、メディア、記念日を一週間にそっとまとめました。",
+    "title": "スケジュール",
+    "subtitle": "ライブ、配信、イベント。",
     "plannerTitle": "プランナー",
     "plannerSubtitle": "静かな週ビューでこれからの予定を整理します。",
     "upcoming": "今後の予定",
@@ -1597,5 +1597,39 @@
     "codeExpired": "認証コードの有効期限が切れました。再送信してください",
     "tooManyAttempts": "試行回数が多すぎます。しばらくしてから再試行してください",
     "verifyFailed": "認証に失敗しました。再試行してください"
+  },
+  "spatial": {
+    "gallery": "セレクト写真",
+    "selected": "ピックアップ",
+    "previous": "前の写真",
+    "next": "次の写真",
+    "arrangement": "並び方",
+    "orbit": "回転",
+    "stack": "重ねる",
+    "fan": "広げる",
+    "grid": "グリッド",
+    "wall": "特集",
+    "list": "リスト",
+    "all": "すべて",
+    "find": "検索",
+    "findLoaded": "表示中の内容を検索",
+    "sort": "並び順",
+    "matches": "{count} 件を表示",
+    "draftSaved": "下書き保存済み",
+    "draftFailed": "下書き未保存",
+    "clearDraft": "下書きを消去",
+    "draftCleared": "下書きを消去しました",
+    "undo": "元に戻す",
+    "draftRestored": "下書きを復元しました",
+    "favoriteRestored": "お気に入りを復元しました",
+    "general": "総合",
+    "question": "質問",
+    "sharing": "シェア",
+    "feedback": "フィードバック",
+    "directory": "目次",
+    "book": "フォトブック",
+    "contents": "今号の目次",
+    "openBook": "開く",
+    "viewPhoto": "投稿を見る"
   }
 }

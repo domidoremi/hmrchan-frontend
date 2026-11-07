@@ -9,7 +9,7 @@ function normalizeLegacyThemeValue(value: string | null | undefined): Theme {
 export const useThemeStore = defineStore(
   'theme',
   () => {
-    const theme = ref<Theme>('auto')
+    const theme = ref<Theme>('light')
     const systemTheme = ref<'light' | 'dark'>('light')
 
     let mediaQueryCleanup: (() => void) | null = null

@@ -207,6 +207,7 @@ async function createWrapper(initialPath = '/') {
         'click-outside': vClickOutside,
       },
       stubs: {
+        SpatialDirectory: true,
         transition: true,
         AnimatedIcon: {
           template: '<span aria-hidden="true" />',

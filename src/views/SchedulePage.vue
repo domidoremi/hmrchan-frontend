@@ -1,5 +1,9 @@
 <template>
-  <div class="schedule-page">
+  <div
+    class="schedule-page"
+    :data-view="plannerView"
+    :class="{ 'schedule-page--detail': detailPanelVisible }"
+  >
     <div class="schedule-bg" aria-hidden="true" />
 
     <div class="container">
@@ -88,189 +92,7 @@
         </Transition>
       </PageToolbar>
 
-      <section class="schedule-overview">
-        <section class="agenda-shell schedule-panel content-auto-lg">
-          <div class="agenda-shell__head page-section-head page-section-head--stage">
-            <div class="page-section-copy">
-              <p class="page-section-kicker">{{ monthLabel }}</p>
-              <h2 class="page-section-title">{{ $t('schedule.upcoming') }}</h2>
-              <p class="page-section-subtitle">{{ agendaSummaryLabel }}</p>
-            </div>
-
-            <div class="agenda-shell__actions">
-              <ControlButton
-                class="agenda-shell__action"
-                size="compact"
-                @click="jumpToAgendaDate('today')"
-              >
-                <template #start>
-                  <CalendarCheck :size="14" />
-                </template>
-                <span>{{ $t('schedule.today') }}</span>
-              </ControlButton>
-              <ControlButton
-                v-if="nextAgendaDateLabel"
-                class="agenda-shell__action"
-                size="compact"
-                @click="jumpToAgendaDate('next')"
-              >
-                <template #start>
-                  <ChevronRight :size="14" />
-                </template>
-                <span>{{ nextAgendaDateLabel }}</span>
-              </ControlButton>
-            </div>
-          </div>
-
-          <div class="agenda-strip">
-            <article class="agenda-spotlight agenda-spotlight--primary">
-              <span class="agenda-spotlight__label">{{ $t('schedule.today') }}</span>
-              <strong class="agenda-spotlight__value">{{ todayAgendaTitle }}</strong>
-              <span class="agenda-spotlight__meta">{{ todayAgendaMeta }}</span>
-            </article>
-            <article class="agenda-spotlight">
-              <span class="agenda-spotlight__label">{{ $t('schedule.insights.next') }}</span>
-              <strong class="agenda-spotlight__value">{{ nextAgendaTitle }}</strong>
-              <span class="agenda-spotlight__meta">{{ nextAgendaMeta }}</span>
-            </article>
-            <article class="agenda-spotlight">
-              <span class="agenda-spotlight__label">{{ $t('schedule.filterLabel') }}</span>
-              <strong class="agenda-spotlight__value">{{ activeCategoryLabel }}</strong>
-              <span class="agenda-spotlight__meta"
-                >{{ upcomingEvents.length }} {{ $t('schedule.eventsCount') }}</span
-              >
-            </article>
-          </div>
-
-          <StateIndicator
-            v-if="upcomingEvents.length === 0 && !isLoading"
-            variant="empty"
-            :description="$t('schedule.noUpcoming')"
-          />
-
-          <div v-else class="events-list agenda-events-list">
-            <article
-              v-for="evt in upcomingEvents"
-              :key="evt.id"
-              class="event-card page-list-card"
-              role="button"
-              tabindex="0"
-              @click="openDetail(evt.id)"
-              @keydown.enter.prevent="openDetail(evt.id)"
-              @keydown.space.prevent="openDetail(evt.id)"
-            >
-              <div
-                class="event-category-bar"
-                :style="{ background: getCategoryColor(evt.category) }"
-              />
-              <div class="event-body">
-                <div class="event-header">
-                  <span
-                    class="event-badge"
-                    :style="{ '--event-category-color': getCategoryColor(evt.category) }"
-                  >
-                    {{ $t(`schedule.categories.${evt.category}`) }}
-                  </span>
-                  <span class="event-time">
-                    {{ formatEventDateTime(evt.start, evt.allDay) }}
-                  </span>
-                </div>
-                <h3 class="event-title">{{ evt.title }}</h3>
-                <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
-                <div v-if="evt.venue" class="event-venue">
-                  <MapPin :size="14" />
-                  <span>{{ evt.venue }}</span>
-                </div>
-                <div class="event-card-hint">
-                  <ChevronRight :size="14" />
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section class="planner-shell schedule-panel schedule-panel--planner">
-          <div class="planner-shell__head">
-            <div class="planner-shell__copy">
-              <p class="planner-shell__eyebrow">{{ $t('schedule.plannerTitle') }}</p>
-              <p class="planner-shell__summary">{{ plannerSummaryLabel }}</p>
-            </div>
-            <span class="paper-chip">{{ activeCategoryLabel }}</span>
-          </div>
-
-          <div v-if="plannerView === 'week'" class="planner-week-grid">
-            <button
-              v-for="day in weekDays"
-              :key="day.key"
-              type="button"
-              class="planner-week-day"
-              :class="{
-                'is-selected': selectedDay?.key === day.key,
-                'is-today': day.isToday,
-                'has-events': day.events.length > 0,
-              }"
-              @click="selectPlannerDay(day)"
-            >
-              <span class="planner-week-day__label">
-                {{ formatWeekdayLabel(day.fullDate) }}
-              </span>
-              <strong class="planner-week-day__date">{{ day.date }}</strong>
-              <span class="planner-week-day__count">
-                {{ day.events.length }} {{ $t('schedule.eventsCount') }}
-              </span>
-              <span v-if="day.events[0]" class="planner-week-day__event">
-                {{ day.events[0].title }}
-              </span>
-              <span v-if="day.events.length > 1" class="planner-week-day__overflow">
-                +{{ day.events.length - 1 }}
-              </span>
-            </button>
-          </div>
-
-          <div v-else-if="plannerView === 'day'" class="planner-day-focus paper-rule">
-            <strong class="planner-day-focus__title">{{
-              selectedDayLabel || plannerPeriodLabel
-            }}</strong>
-            <p class="planner-day-focus__summary">
-              {{
-                selectedDayEvents.length > 0
-                  ? `${selectedDayEvents.length} ${$t('schedule.eventsCount')}`
-                  : $t('schedule.noEvents')
-              }}
-            </p>
-          </div>
-
-          <div class="planner-insights">
-            <article class="planner-insight">
-              <span class="planner-insight__label">{{ $t('schedule.insights.focus') }}</span>
-              <strong class="planner-insight__value">
-                {{ highlightedEvent?.title || $t('schedule.insights.empty') }}
-              </strong>
-            </article>
-            <article class="planner-insight">
-              <span class="planner-insight__label">{{ $t('schedule.insights.next') }}</span>
-              <strong class="planner-insight__value">
-                {{ nextHighlightLabel }}
-              </strong>
-            </article>
-            <article class="planner-insight">
-              <span class="planner-insight__label">{{ $t('schedule.insights.distribution') }}</span>
-              <div class="planner-insight__chips">
-                <span
-                  v-for="item in categoryBreakdown"
-                  :key="item.category"
-                  class="paper-chip"
-                  :style="{ '--paper-chip-accent': getCategoryColor(item.category) }"
-                >
-                  {{ $t(`schedule.categories.${item.category}`) }} · {{ item.count }}
-                </span>
-              </div>
-            </article>
-          </div>
-        </section>
-      </section>
-
-      <details class="schedule-tools">
+      <details class="schedule-tools" open>
         <summary>{{ $t('schedule.filterLabel') }}</summary>
         <div class="schedule-tools__body">
           <ControlGroup
@@ -309,370 +131,567 @@
         </div>
       </details>
 
-      <StateIndicator
-        v-if="error && !isUsingFallback"
-        variant="error"
-        :description="error"
-        @action="fetchEvents"
-      />
+      <div class="schedule-body">
+        <section class="schedule-overview">
+          <section class="agenda-shell schedule-panel content-auto-lg">
+            <div class="agenda-shell__head page-section-head page-section-head--stage">
+              <div class="page-section-copy">
+                <p class="page-section-kicker">{{ monthLabel }}</p>
+                <h2 class="page-section-title">{{ $t('schedule.upcoming') }}</h2>
+                <p class="page-section-subtitle">{{ agendaSummaryLabel }}</p>
+              </div>
 
-      <div class="schedule-workspace" :class="{ 'schedule-workspace--detail': detailPanelVisible }">
-        <div class="schedule-workspace__main">
-          <div
-            v-if="plannerView === 'month'"
-            ref="calendarRef"
-            class="calendar-wrapper schedule-panel"
-            :aria-label="$t('schedule.calendarLabel')"
-            @keydown="handleCalendarKeydown"
-            @touchstart.passive="onTouchStart"
-            @touchend.passive="onTouchEnd"
-          >
-            <div class="calendar-weekdays">
-              <div v-for="d in weekdays" :key="d" class="weekday-cell">
-                {{ d }}
+              <div class="agenda-shell__actions">
+                <ControlButton
+                  class="agenda-shell__action"
+                  size="compact"
+                  @click="jumpToAgendaDate('today')"
+                >
+                  <template #start>
+                    <CalendarCheck :size="14" />
+                  </template>
+                  <span>{{ $t('schedule.today') }}</span>
+                </ControlButton>
+                <ControlButton
+                  v-if="nextAgendaDateLabel"
+                  class="agenda-shell__action"
+                  size="compact"
+                  @click="jumpToAgendaDate('next')"
+                >
+                  <template #start>
+                    <ChevronRight :size="14" />
+                  </template>
+                  <span>{{ nextAgendaDateLabel }}</span>
+                </ControlButton>
               </div>
             </div>
 
-            <Transition :name="monthTransition" mode="out-in">
-              <div v-if="isLoading && events.length === 0" key="skeleton" class="calendar-grid">
-                <div v-for="i in 42" :key="i" class="calendar-cell calendar-cell--skeleton">
-                  <div class="skeleton-day" />
+            <div class="agenda-strip">
+              <article class="agenda-spotlight agenda-spotlight--primary">
+                <span class="agenda-spotlight__label">{{ $t('schedule.today') }}</span>
+                <strong class="agenda-spotlight__value">{{ todayAgendaTitle }}</strong>
+                <span class="agenda-spotlight__meta">{{ todayAgendaMeta }}</span>
+              </article>
+              <article class="agenda-spotlight">
+                <span class="agenda-spotlight__label">{{ $t('schedule.insights.next') }}</span>
+                <strong class="agenda-spotlight__value">{{ nextAgendaTitle }}</strong>
+                <span class="agenda-spotlight__meta">{{ nextAgendaMeta }}</span>
+              </article>
+              <article class="agenda-spotlight">
+                <span class="agenda-spotlight__label">{{ $t('schedule.filterLabel') }}</span>
+                <strong class="agenda-spotlight__value">{{ activeCategoryLabel }}</strong>
+                <span class="agenda-spotlight__meta"
+                  >{{ upcomingEvents.length }} {{ $t('schedule.eventsCount') }}</span
+                >
+              </article>
+            </div>
+
+            <StateIndicator
+              v-if="upcomingEvents.length === 0 && !isLoading"
+              variant="empty"
+              :description="$t('schedule.noUpcoming')"
+            />
+
+            <div v-else class="events-list agenda-events-list">
+              <article
+                v-for="evt in upcomingEvents"
+                :key="evt.id"
+                class="event-card page-list-card"
+                role="button"
+                tabindex="0"
+                @click="openDetail(evt.id)"
+                @keydown.enter.prevent="openDetail(evt.id)"
+                @keydown.space.prevent="openDetail(evt.id)"
+              >
+                <div
+                  class="event-category-bar"
+                  :style="{ background: getCategoryColor(evt.category) }"
+                />
+                <div class="event-body">
+                  <div class="event-header">
+                    <span
+                      class="event-badge"
+                      :style="{ '--event-category-color': getCategoryColor(evt.category) }"
+                    >
+                      {{ $t(`schedule.categories.${evt.category}`) }}
+                    </span>
+                    <span class="event-time">
+                      {{ formatEventDateTime(evt.start, evt.allDay) }}
+                    </span>
+                  </div>
+                  <h3 class="event-title">{{ evt.title }}</h3>
+                  <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
+                  <div v-if="evt.venue" class="event-venue">
+                    <MapPin :size="14" />
+                    <span>{{ evt.venue }}</span>
+                  </div>
+                  <div class="event-card-hint">
+                    <ChevronRight :size="14" />
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section
+            v-if="plannerView !== 'month'"
+            class="planner-shell schedule-panel schedule-panel--planner"
+          >
+            <div class="planner-shell__head">
+              <div class="planner-shell__copy">
+                <p class="planner-shell__eyebrow">{{ $t('schedule.plannerTitle') }}</p>
+                <p class="planner-shell__summary">{{ plannerSummaryLabel }}</p>
+              </div>
+              <span class="paper-chip">{{ activeCategoryLabel }}</span>
+            </div>
+
+            <div v-if="plannerView === 'week'" class="planner-week-grid">
+              <button
+                v-for="day in weekDays"
+                :key="day.key"
+                type="button"
+                class="planner-week-day"
+                :class="{
+                  'is-selected': selectedDay?.key === day.key,
+                  'is-today': day.isToday,
+                  'has-events': day.events.length > 0,
+                }"
+                @click="selectPlannerDay(day)"
+              >
+                <span class="planner-week-day__label">
+                  {{ formatWeekdayLabel(day.fullDate) }}
+                </span>
+                <strong class="planner-week-day__date">{{ day.date }}</strong>
+                <span class="planner-week-day__count">
+                  {{ day.events.length }} {{ $t('schedule.eventsCount') }}
+                </span>
+                <span v-if="day.events[0]" class="planner-week-day__event">
+                  {{ day.events[0].title }}
+                </span>
+                <span v-if="day.events.length > 1" class="planner-week-day__overflow">
+                  +{{ day.events.length - 1 }}
+                </span>
+              </button>
+            </div>
+
+            <div v-else-if="plannerView === 'day'" class="planner-day-focus paper-rule">
+              <strong class="planner-day-focus__title">{{
+                selectedDayLabel || plannerPeriodLabel
+              }}</strong>
+              <p class="planner-day-focus__summary">
+                {{
+                  selectedDayEvents.length > 0
+                    ? `${selectedDayEvents.length} ${$t('schedule.eventsCount')}`
+                    : $t('schedule.noEvents')
+                }}
+              </p>
+            </div>
+
+            <div class="planner-insights">
+              <article class="planner-insight">
+                <span class="planner-insight__label">{{ $t('schedule.insights.focus') }}</span>
+                <strong class="planner-insight__value">
+                  {{ highlightedEvent?.title || $t('schedule.insights.empty') }}
+                </strong>
+              </article>
+              <article class="planner-insight">
+                <span class="planner-insight__label">{{ $t('schedule.insights.next') }}</span>
+                <strong class="planner-insight__value">
+                  {{ nextHighlightLabel }}
+                </strong>
+              </article>
+              <article class="planner-insight">
+                <span class="planner-insight__label">{{
+                  $t('schedule.insights.distribution')
+                }}</span>
+                <div class="planner-insight__chips">
+                  <span
+                    v-for="item in categoryBreakdown"
+                    :key="item.category"
+                    class="paper-chip"
+                    :style="{ '--paper-chip-accent': getCategoryColor(item.category) }"
+                  >
+                    {{ $t(`schedule.categories.${item.category}`) }} · {{ item.count }}
+                  </span>
+                </div>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <StateIndicator
+          v-if="error && !isUsingFallback"
+          variant="error"
+          :description="error"
+          @action="fetchEvents"
+        />
+
+        <div
+          class="schedule-workspace"
+          :class="{ 'schedule-workspace--detail': detailPanelVisible }"
+        >
+          <div class="schedule-workspace__main">
+            <div
+              v-if="plannerView === 'month'"
+              ref="calendarRef"
+              class="calendar-wrapper schedule-panel"
+              :aria-label="$t('schedule.calendarLabel')"
+              @keydown="handleCalendarKeydown"
+              @touchstart.passive="onTouchStart"
+              @touchend.passive="onTouchEnd"
+            >
+              <div class="calendar-weekdays">
+                <div v-for="d in weekdays" :key="d" class="weekday-cell">
+                  {{ d }}
                 </div>
               </div>
 
-              <div v-else :key="monthKey" class="calendar-grid">
-                <button
-                  v-for="(day, idx) in calendarDays"
-                  :key="day.key"
-                  type="button"
-                  class="calendar-cell"
-                  :class="{
-                    'calendar-cell--other': !day.currentMonth,
-                    'calendar-cell--today': day.isToday,
-                    'calendar-cell--has-events': day.events.length > 0,
-                    'calendar-cell--selected': selectedDay?.key === day.key,
-                  }"
-                  :tabindex="day.isToday || (idx === 0 && !selectedDay) ? 0 : -1"
-                  :aria-label="getDayAriaLabel(day)"
-                  @click="selectDay(day)"
-                >
-                  <span class="day-number">{{ day.date }}</span>
-                  <div v-if="day.events.length > 0" class="day-dots">
-                    <span
-                      v-for="(evt, i) in day.events.slice(0, 3)"
-                      :key="i"
-                      class="day-dot"
+              <Transition :name="monthTransition" mode="out-in">
+                <div v-if="isLoading && events.length === 0" key="skeleton" class="calendar-grid">
+                  <div v-for="i in 42" :key="i" class="calendar-cell calendar-cell--skeleton">
+                    <div class="skeleton-day" />
+                  </div>
+                </div>
+
+                <div v-else :key="monthKey" class="calendar-grid">
+                  <button
+                    v-for="day in calendarDays"
+                    :key="day.key"
+                    type="button"
+                    class="calendar-cell"
+                    :class="{
+                      'calendar-cell--other': !day.currentMonth,
+                      'calendar-cell--today': day.isToday,
+                      'calendar-cell--has-events': day.events.length > 0,
+                      'calendar-cell--selected': selectedDay?.key === day.key,
+                    }"
+                    :tabindex="day.key === calendarFocusKey ? 0 : -1"
+                    :aria-label="getDayAriaLabel(day)"
+                    @click="selectDay(day)"
+                  >
+                    <span class="day-number">{{ day.date }}</span>
+                    <div v-if="day.events.length > 0" class="day-dots">
+                      <span
+                        v-for="(evt, i) in day.events.slice(0, 3)"
+                        :key="i"
+                        class="day-dot"
+                        :style="{ background: getCategoryColor(evt.category) }"
+                      />
+                    </div>
+                  </button>
+                </div>
+              </Transition>
+            </div>
+
+            <Transition name="slide-fade">
+              <section v-if="selectedDay" class="day-events schedule-panel content-auto-lg">
+                <div class="page-section-head page-section-head--stage day-events-header">
+                  <div class="page-section-copy">
+                    <p class="page-section-kicker">{{ $t('schedule.title') }}</p>
+                    <h2 class="page-section-title">{{ selectedDayLabel }}</h2>
+                    <p class="page-section-subtitle">
+                      {{
+                        selectedDayEvents.length > 0
+                          ? $t('schedule.upcoming')
+                          : $t('schedule.noEvents')
+                      }}
+                    </p>
+                  </div>
+                  <span v-if="selectedDayEvents.length" class="event-count">
+                    {{ selectedDayEvents.length }}
+                  </span>
+                  <ControlButton
+                    class="close-btn"
+                    size="square"
+                    icon-only
+                    :aria-label="$t('common.close')"
+                    @click="selectedDay = null"
+                  >
+                    <template #start>
+                      <X :size="16" />
+                    </template>
+                  </ControlButton>
+                </div>
+
+                <StateIndicator
+                  v-if="selectedDayEvents.length === 0"
+                  variant="empty"
+                  :description="$t('schedule.noEvents')"
+                />
+
+                <div v-else class="events-list">
+                  <article
+                    v-for="evt in selectedDayEvents"
+                    :key="evt.id"
+                    class="event-card page-list-card"
+                    role="button"
+                    tabindex="0"
+                    @click="openDetail(evt.id)"
+                    @keydown.enter.prevent="openDetail(evt.id)"
+                    @keydown.space.prevent="openDetail(evt.id)"
+                  >
+                    <div
+                      class="event-category-bar"
                       :style="{ background: getCategoryColor(evt.category) }"
                     />
-                  </div>
-                </button>
-              </div>
+                    <div class="event-body">
+                      <div class="event-header">
+                        <span
+                          class="event-badge"
+                          :style="{ '--event-category-color': getCategoryColor(evt.category) }"
+                        >
+                          {{ $t(`schedule.categories.${evt.category}`) }}
+                        </span>
+                        <span v-if="!evt.allDay" class="event-time">
+                          {{ formatEventTime(evt.start) }}
+                        </span>
+                        <span v-else class="event-time">{{ $t('schedule.allDay') }}</span>
+                      </div>
+                      <h3 class="event-title">{{ evt.title }}</h3>
+                      <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
+                      <div v-if="evt.venue" class="event-venue">
+                        <MapPin :size="14" />
+                        <span>{{ evt.venue }}</span>
+                      </div>
+                      <div class="event-card-hint">
+                        <ChevronRight :size="14" />
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </section>
             </Transition>
           </div>
 
-          <Transition name="slide-fade">
-            <section
-              v-if="selectedDay && plannerView !== 'month'"
-              class="day-events schedule-panel content-auto-lg"
-            >
-              <div class="page-section-head page-section-head--stage day-events-header">
-                <div class="page-section-copy">
-                  <p class="page-section-kicker">{{ $t('schedule.title') }}</p>
-                  <h2 class="page-section-title">{{ selectedDayLabel }}</h2>
-                  <p class="page-section-subtitle">
-                    {{
-                      selectedDayEvents.length > 0
-                        ? $t('schedule.upcoming')
-                        : $t('schedule.noEvents')
-                    }}
-                  </p>
+          <aside
+            v-if="detailPanelVisible"
+            ref="detailPanelRef"
+            class="schedule-detail-shell schedule-panel content-auto-xl"
+          >
+            <div v-if="detailLoading" class="detail-loading">
+              <div class="detail-skeleton" />
+              <div class="detail-skeleton detail-skeleton--short" />
+              <div class="detail-skeleton detail-skeleton--long" />
+            </div>
+
+            <article v-else-if="detailEvent" class="schedule-detail-article">
+              <header class="schedule-detail-article__header">
+                <div class="schedule-detail-article__topline">
+                  <span class="schedule-detail-article__eyebrow">
+                    {{ $t('schedule.detail.panelEyebrow') }}
+                  </span>
+                  <ControlButton
+                    class="schedule-detail-shell__close"
+                    size="square"
+                    icon-only
+                    :aria-label="$t('common.close')"
+                    @click="closeDetail"
+                  >
+                    <template #start>
+                      <X :size="16" />
+                    </template>
+                  </ControlButton>
                 </div>
-                <span v-if="selectedDayEvents.length" class="event-count">
-                  {{ selectedDayEvents.length }}
-                </span>
+
+                <div class="detail-meta">
+                  <span
+                    class="event-badge"
+                    :style="{ '--event-category-color': getCategoryColor(detailEvent.category) }"
+                  >
+                    {{ $t(`schedule.categories.${detailEvent.category}`) }}
+                  </span>
+                  <span v-if="detailEvent.is_published === false" class="draft-badge">
+                    {{ $t('schedule.detail.draft') }}
+                  </span>
+                </div>
+
+                <h2 class="schedule-detail-article__title">{{ detailEvent.title }}</h2>
+                <p v-if="detailLead" class="schedule-detail-article__lead">{{ detailLead }}</p>
+              </header>
+
+              <div class="schedule-detail-actions">
                 <ControlButton
-                  class="close-btn"
-                  size="square"
-                  icon-only
-                  :aria-label="$t('common.close')"
-                  @click="selectedDay = null"
+                  class="schedule-detail-action"
+                  size="compact"
+                  @click="copyDetailLink"
                 >
                   <template #start>
-                    <X :size="16" />
+                    <Copy :size="14" />
                   </template>
+                  <span>{{ $t('schedule.detail.copyLinkAction') }}</span>
+                </ControlButton>
+
+                <ControlButton
+                  v-if="canShareDetail"
+                  class="schedule-detail-action"
+                  size="compact"
+                  @click="shareDetail"
+                >
+                  <template #start>
+                    <Share2 :size="14" />
+                  </template>
+                  <span>{{ $t('schedule.detail.shareAction') }}</span>
                 </ControlButton>
               </div>
 
-              <StateIndicator
-                v-if="selectedDayEvents.length === 0"
-                variant="empty"
-                :description="$t('schedule.noEvents')"
-              />
-
-              <div v-else class="events-list">
-                <article
-                  v-for="evt in selectedDayEvents"
-                  :key="evt.id"
-                  class="event-card page-list-card"
-                  role="button"
-                  tabindex="0"
-                  @click="openDetail(evt.id)"
-                  @keydown.enter.prevent="openDetail(evt.id)"
-                  @keydown.space.prevent="openDetail(evt.id)"
-                >
-                  <div
-                    class="event-category-bar"
-                    :style="{ background: getCategoryColor(evt.category) }"
-                  />
-                  <div class="event-body">
-                    <div class="event-header">
-                      <span
-                        class="event-badge"
-                        :style="{ '--event-category-color': getCategoryColor(evt.category) }"
-                      >
-                        {{ $t(`schedule.categories.${evt.category}`) }}
-                      </span>
-                      <span v-if="!evt.allDay" class="event-time">
-                        {{ formatEventTime(evt.start) }}
-                      </span>
-                      <span v-else class="event-time">{{ $t('schedule.allDay') }}</span>
-                    </div>
-                    <h3 class="event-title">{{ evt.title }}</h3>
-                    <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
-                    <div v-if="evt.venue" class="event-venue">
-                      <MapPin :size="14" />
-                      <span>{{ evt.venue }}</span>
-                    </div>
-                    <div class="event-card-hint">
-                      <ChevronRight :size="14" />
+              <div class="schedule-detail-facts">
+                <article class="schedule-detail-fact">
+                  <span class="schedule-detail-fact__label">
+                    {{ $t('schedule.detail.whenLabel') }}
+                  </span>
+                  <div class="detail-row">
+                    <Clock :size="16" class="detail-icon" />
+                    <div class="detail-row-content">
+                      <template v-if="detailEvent.is_all_day">
+                        <span>{{ formatDetailDate(detailEvent.start_date) }}</span>
+                        <template
+                          v-if="
+                            detailEvent.end_date && detailEvent.end_date !== detailEvent.start_date
+                          "
+                        >
+                          <span class="detail-separator">—</span>
+                          <span>{{ formatDetailDate(detailEvent.end_date) }}</span>
+                        </template>
+                        <span class="detail-allday-tag">{{ $t('schedule.allDay') }}</span>
+                      </template>
+                      <template v-else>
+                        <span>{{ formatDetailTime(detailEvent.start_date) }}</span>
+                        <template v-if="detailEvent.end_date">
+                          <span class="detail-separator">—</span>
+                          <span v-if="isSameDay(detailEvent.start_date, detailEvent.end_date)">
+                            {{ formatTimeOnly(detailEvent.end_date) }}
+                          </span>
+                          <span v-else>{{ formatDetailTime(detailEvent.end_date) }}</span>
+                        </template>
+                      </template>
                     </div>
                   </div>
                 </article>
+
+                <article v-if="detailEvent.venue" class="schedule-detail-fact">
+                  <span class="schedule-detail-fact__label">
+                    {{ $t('schedule.detail.whereLabel') }}
+                  </span>
+                  <div class="detail-row">
+                    <MapPin :size="16" class="detail-icon" />
+                    <div class="detail-row-content detail-row-content--stack">
+                      <span class="detail-venue-name">{{ detailEvent.venue }}</span>
+                      <span v-if="detailEvent.venue_address" class="detail-venue-addr">
+                        {{ detailEvent.venue_address }}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+
+                <article v-if="detailHostLabel" class="schedule-detail-fact">
+                  <span class="schedule-detail-fact__label">
+                    {{ $t('schedule.detail.hostLabel') }}
+                  </span>
+                  <div class="schedule-detail-fact__copy">
+                    {{ detailHostLabel }}
+                  </div>
+                </article>
               </div>
-            </section>
-          </Transition>
+
+              <section class="schedule-detail-section">
+                <h3 class="schedule-detail-section__title">
+                  {{ $t('schedule.detail.aboutTitle') }}
+                </h3>
+
+                <div v-if="detailEvent.description" class="detail-description">
+                  <template v-if="parsedDescription.length > 0">
+                    <div
+                      v-for="(section, idx) in parsedDescription"
+                      :key="idx"
+                      class="desc-section"
+                    >
+                      <h4 v-if="section.heading" class="desc-heading">{{ section.heading }}</h4>
+                      <SafeHtml
+                        v-for="(line, li) in section.lines"
+                        :key="li"
+                        as="p"
+                        class="desc-line"
+                        :html="linkify(line)"
+                      />
+                    </div>
+                  </template>
+                </div>
+
+                <p v-else class="schedule-detail-empty">
+                  {{ $t('schedule.detail.descriptionFallback') }}
+                </p>
+              </section>
+
+              <section v-if="hasDetailLinks" class="schedule-detail-section">
+                <h3 class="schedule-detail-section__title">
+                  {{ $t('schedule.detail.linksTitle') }}
+                </h3>
+
+                <div class="detail-links page-control-group-shell--comfortable">
+                  <ControlButton
+                    v-if="safeDetailLinks.event"
+                    :tag="'a'"
+                    :href="safeDetailLinks.event"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="detail-link-btn"
+                    size="compact"
+                  >
+                    <template #start>
+                      <ExternalLink :size="14" />
+                    </template>
+                    <span>{{ $t('schedule.detail.eventPage') }}</span>
+                  </ControlButton>
+                  <ControlButton
+                    v-if="safeDetailLinks.ticket"
+                    :tag="'a'"
+                    :href="safeDetailLinks.ticket"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="detail-link-btn detail-link-btn--ticket"
+                    size="compact"
+                  >
+                    <template #start>
+                      <Ticket :size="14" />
+                    </template>
+                    <span>{{ $t('schedule.detail.buyTicket') }}</span>
+                  </ControlButton>
+                  <ControlButton
+                    v-if="safeDetailLinks.source"
+                    :tag="'a'"
+                    :href="safeDetailLinks.source"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="detail-link-btn"
+                    size="compact"
+                  >
+                    <template #start>
+                      <Link2 :size="14" />
+                    </template>
+                    <span>{{ $t('schedule.detail.source') }}</span>
+                  </ControlButton>
+                </div>
+              </section>
+            </article>
+
+            <StateIndicator
+              v-else-if="detailStatus === 'not-found'"
+              class="schedule-detail-state"
+              variant="not-found"
+              :title="$t('common.notFound')"
+              :description="$t('schedule.detail.notFoundDescription')"
+              show-action
+              @action="retryDetail"
+            />
+            <StateIndicator
+              v-else-if="detailStatus === 'error'"
+              class="schedule-detail-state"
+              variant="error"
+              :description="detailError || $t('common.error')"
+              @action="retryDetail"
+            />
+          </aside>
         </div>
-
-        <aside
-          v-if="detailPanelVisible"
-          ref="detailPanelRef"
-          class="schedule-detail-shell schedule-panel content-auto-xl"
-        >
-          <div v-if="detailLoading" class="detail-loading">
-            <div class="detail-skeleton" />
-            <div class="detail-skeleton detail-skeleton--short" />
-            <div class="detail-skeleton detail-skeleton--long" />
-          </div>
-
-          <article v-else-if="detailEvent" class="schedule-detail-article">
-            <header class="schedule-detail-article__header">
-              <div class="schedule-detail-article__topline">
-                <span class="schedule-detail-article__eyebrow">
-                  {{ $t('schedule.detail.panelEyebrow') }}
-                </span>
-                <ControlButton
-                  class="schedule-detail-shell__close"
-                  size="square"
-                  icon-only
-                  :aria-label="$t('common.close')"
-                  @click="closeDetail"
-                >
-                  <template #start>
-                    <X :size="16" />
-                  </template>
-                </ControlButton>
-              </div>
-
-              <div class="detail-meta">
-                <span
-                  class="event-badge"
-                  :style="{ '--event-category-color': getCategoryColor(detailEvent.category) }"
-                >
-                  {{ $t(`schedule.categories.${detailEvent.category}`) }}
-                </span>
-                <span v-if="detailEvent.is_published === false" class="draft-badge">
-                  {{ $t('schedule.detail.draft') }}
-                </span>
-              </div>
-
-              <h2 class="schedule-detail-article__title">{{ detailEvent.title }}</h2>
-              <p v-if="detailLead" class="schedule-detail-article__lead">{{ detailLead }}</p>
-            </header>
-
-            <div class="schedule-detail-actions">
-              <ControlButton class="schedule-detail-action" size="compact" @click="copyDetailLink">
-                <template #start>
-                  <Copy :size="14" />
-                </template>
-                <span>{{ $t('schedule.detail.copyLinkAction') }}</span>
-              </ControlButton>
-
-              <ControlButton
-                v-if="canShareDetail"
-                class="schedule-detail-action"
-                size="compact"
-                @click="shareDetail"
-              >
-                <template #start>
-                  <Share2 :size="14" />
-                </template>
-                <span>{{ $t('schedule.detail.shareAction') }}</span>
-              </ControlButton>
-            </div>
-
-            <div class="schedule-detail-facts">
-              <article class="schedule-detail-fact">
-                <span class="schedule-detail-fact__label">
-                  {{ $t('schedule.detail.whenLabel') }}
-                </span>
-                <div class="detail-row">
-                  <Clock :size="16" class="detail-icon" />
-                  <div class="detail-row-content">
-                    <template v-if="detailEvent.is_all_day">
-                      <span>{{ formatDetailDate(detailEvent.start_date) }}</span>
-                      <template
-                        v-if="
-                          detailEvent.end_date && detailEvent.end_date !== detailEvent.start_date
-                        "
-                      >
-                        <span class="detail-separator">—</span>
-                        <span>{{ formatDetailDate(detailEvent.end_date) }}</span>
-                      </template>
-                      <span class="detail-allday-tag">{{ $t('schedule.allDay') }}</span>
-                    </template>
-                    <template v-else>
-                      <span>{{ formatDetailTime(detailEvent.start_date) }}</span>
-                      <template v-if="detailEvent.end_date">
-                        <span class="detail-separator">—</span>
-                        <span v-if="isSameDay(detailEvent.start_date, detailEvent.end_date)">
-                          {{ formatTimeOnly(detailEvent.end_date) }}
-                        </span>
-                        <span v-else>{{ formatDetailTime(detailEvent.end_date) }}</span>
-                      </template>
-                    </template>
-                  </div>
-                </div>
-              </article>
-
-              <article v-if="detailEvent.venue" class="schedule-detail-fact">
-                <span class="schedule-detail-fact__label">
-                  {{ $t('schedule.detail.whereLabel') }}
-                </span>
-                <div class="detail-row">
-                  <MapPin :size="16" class="detail-icon" />
-                  <div class="detail-row-content detail-row-content--stack">
-                    <span class="detail-venue-name">{{ detailEvent.venue }}</span>
-                    <span v-if="detailEvent.venue_address" class="detail-venue-addr">
-                      {{ detailEvent.venue_address }}
-                    </span>
-                  </div>
-                </div>
-              </article>
-
-              <article v-if="detailHostLabel" class="schedule-detail-fact">
-                <span class="schedule-detail-fact__label">
-                  {{ $t('schedule.detail.hostLabel') }}
-                </span>
-                <div class="schedule-detail-fact__copy">
-                  {{ detailHostLabel }}
-                </div>
-              </article>
-            </div>
-
-            <section class="schedule-detail-section">
-              <h3 class="schedule-detail-section__title">
-                {{ $t('schedule.detail.aboutTitle') }}
-              </h3>
-
-              <div v-if="detailEvent.description" class="detail-description">
-                <template v-if="parsedDescription.length > 0">
-                  <div v-for="(section, idx) in parsedDescription" :key="idx" class="desc-section">
-                    <h4 v-if="section.heading" class="desc-heading">{{ section.heading }}</h4>
-                    <SafeHtml
-                      v-for="(line, li) in section.lines"
-                      :key="li"
-                      as="p"
-                      class="desc-line"
-                      :html="linkify(line)"
-                    />
-                  </div>
-                </template>
-              </div>
-
-              <p v-else class="schedule-detail-empty">
-                {{ $t('schedule.detail.descriptionFallback') }}
-              </p>
-            </section>
-
-            <section v-if="hasDetailLinks" class="schedule-detail-section">
-              <h3 class="schedule-detail-section__title">
-                {{ $t('schedule.detail.linksTitle') }}
-              </h3>
-
-              <div class="detail-links page-control-group-shell--comfortable">
-                <ControlButton
-                  v-if="safeDetailLinks.event"
-                  :tag="'a'"
-                  :href="safeDetailLinks.event"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="detail-link-btn"
-                  size="compact"
-                >
-                  <template #start>
-                    <ExternalLink :size="14" />
-                  </template>
-                  <span>{{ $t('schedule.detail.eventPage') }}</span>
-                </ControlButton>
-                <ControlButton
-                  v-if="safeDetailLinks.ticket"
-                  :tag="'a'"
-                  :href="safeDetailLinks.ticket"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="detail-link-btn detail-link-btn--ticket"
-                  size="compact"
-                >
-                  <template #start>
-                    <Ticket :size="14" />
-                  </template>
-                  <span>{{ $t('schedule.detail.buyTicket') }}</span>
-                </ControlButton>
-                <ControlButton
-                  v-if="safeDetailLinks.source"
-                  :tag="'a'"
-                  :href="safeDetailLinks.source"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="detail-link-btn"
-                  size="compact"
-                >
-                  <template #start>
-                    <Link2 :size="14" />
-                  </template>
-                  <span>{{ $t('schedule.detail.source') }}</span>
-                </ControlButton>
-              </div>
-            </section>
-          </article>
-
-          <StateIndicator
-            v-else-if="detailStatus === 'not-found'"
-            class="schedule-detail-state"
-            variant="not-found"
-            :title="$t('common.notFound')"
-            :description="$t('schedule.detail.notFoundDescription')"
-            show-action
-            @action="retryDetail"
-          />
-          <StateIndicator
-            v-else-if="detailStatus === 'error'"
-            class="schedule-detail-state"
-            variant="error"
-            :description="detailError || $t('common.error')"
-            @action="retryDetail"
-          />
-        </aside>
       </div>
     </div>
   </div>
@@ -693,11 +712,6 @@ import {
   ExternalLink,
   Share2,
   X,
-  Calendar,
-  Radio,
-  Film,
-  Cake,
-  LayoutGrid,
   CalendarCheck,
   Clock,
   Ticket,
@@ -768,6 +782,9 @@ import {
   type ScheduleDescriptionSection,
 } from './schedule/schedulePageModel'
 
+import { useScheduleBrowseState } from '@/composables/useScheduleBrowseState'
+import { categories, plannerViews } from './schedule/schedulePageOptions'
+
 const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -779,11 +796,8 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const eventsSource = ref<PublicPageDataSource>('live')
 const isUsingFallback = computed(() => eventsSource.value === 'fallback')
-const currentYear = ref(new Date().getFullYear())
-const currentMonth = ref(new Date().getMonth())
-const activeCategory = ref<ScheduleCategory | 'all'>('all')
-const selectedDay = ref<CalendarDay | null>(null)
-const plannerView = ref<PlannerView>('week')
+const { currentYear, currentMonth, activeCategory, selectedDay, plannerView, connectCalendar } =
+  useScheduleBrowseState()
 const calendarRef = useTemplateRef<HTMLElement>('calendarRef')
 const detailPanelRef = useTemplateRef<HTMLElement>('detailPanelRef')
 const monthTransition = ref<ScheduleMonthTransitionName>('month-slide-left')
@@ -804,20 +818,6 @@ const SCHEDULE_DETAIL_SNAPSHOT_SCOPE = 'schedule/detail'
 
 let touchStartX = 0
 let touchStartY = 0
-
-const categories = [
-  { value: 'all' as const, label: 'schedule.categories.all', icon: LayoutGrid },
-  { value: 'live' as const, label: 'schedule.categories.live', icon: Radio },
-  { value: 'media' as const, label: 'schedule.categories.media', icon: Film },
-  { value: 'birth' as const, label: 'schedule.categories.birth', icon: Cake },
-  { value: 'other' as const, label: 'schedule.categories.other', icon: Calendar },
-]
-
-const plannerViews = [
-  { value: 'week' as const, label: 'schedule.view.week' },
-  { value: 'day' as const, label: 'schedule.view.day' },
-  { value: 'month' as const, label: 'schedule.view.month' },
-]
 
 const activeCategoryLabel = computed(() => {
   const matched = categories.find((category) => category.value === activeCategory.value)
@@ -861,7 +861,7 @@ const calendarDays = computed<CalendarDay[]>(() => {
 
 const selectedDayEvents = computed(() => {
   if (!selectedDay.value) return []
-  return selectedDay.value.events
+  return eventsByDate.value.get(selectedDay.value.key) ?? []
 })
 
 const selectedDayLabel = computed(() => {
@@ -1258,7 +1258,7 @@ async function loadDetail(eventId: string) {
 
 async function openDetail(eventId: string) {
   if (routeScheduleId.value !== eventId) {
-    await router.push({ name: 'schedule-detail', params: { id: eventId } })
+    await router.push({ name: 'schedule-detail', params: { id: eventId }, query: route.query })
     return
   }
 
@@ -1270,7 +1270,7 @@ function closeDetail() {
   detailStatus.value = 'idle'
   detailError.value = null
   if (routeScheduleId.value) {
-    void router.replace({ name: 'schedule' })
+    void router.replace({ name: 'schedule', query: route.query })
   }
 }
 
@@ -1444,6 +1444,8 @@ async function fetchEvents(signal?: AbortSignal) {
     }
   }
 }
+
+const calendarFocusKey = connectCalendar(buildCalendarDay, calendarDays)
 
 watch(
   [currentYear, currentMonth],

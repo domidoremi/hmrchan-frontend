@@ -11,6 +11,26 @@
       }}</span>
     </header>
 
+    <div class="draft-strip" aria-live="polite">
+      <span>{{
+        draft.status.value === 'saved'
+          ? t('spatial.draftSaved')
+          : draft.status.value === 'failed'
+            ? t('spatial.draftFailed')
+            : ''
+      }}</span>
+      <button
+        v-if="draft.hasDraft.value"
+        type="button"
+        :disabled="isSubmitting"
+        @click="draft.clear"
+      >
+        {{ t('spatial.clearDraft') }}
+      </button>
+      <button v-else-if="draft.canUndo.value" type="button" @click="draft.restore">
+        {{ t('spatial.undo') }}
+      </button>
+    </div>
     <div class="composer-body">
       <Input
         v-model="title"
@@ -144,7 +164,8 @@ import {
   type Discussion,
   type CreateDiscussionRequest,
 } from '@/api'
-import { useToastStore } from '@/stores'
+import { useToastStore, useAuthStore } from '@/stores'
+import { useDiscussionDraft } from '@/composables/useDiscussionDraft'
 import { useUpdateBlocker } from '@/utils/app-update/updateBlockers'
 import { debounce } from '@/utils/performance'
 import { applyPlainTextSnippet, type PlainTextToolAction } from '@/utils/plainTextTools'
@@ -168,6 +189,16 @@ const tags = ref<string[]>([])
 const selectedPosts = ref<PostReference[]>([])
 const title = ref('')
 const category = ref<'general' | 'question' | 'sharing' | 'feedback'>('general')
+
+const authStore = useAuthStore()
+const draft = useDiscussionDraft(() => authStore.user?.id, {
+  title,
+  content,
+  tagInput,
+  tags,
+  selectedPosts,
+  category,
+})
 
 const showMentions = ref(false)
 const searchResults = ref<PostReference[]>([])
@@ -196,12 +227,12 @@ const shouldBlockUpdate = computed(() => {
   )
 })
 
-const categories = [
-  { value: 'general' as const, label: '💬 综合' },
-  { value: 'question' as const, label: '❓ 提问' },
-  { value: 'sharing' as const, label: '📢 分享' },
-  { value: 'feedback' as const, label: '💡 反馈' },
-]
+const categories = computed(() =>
+  (['general', 'question', 'sharing', 'feedback'] as const).map((value) => ({
+    value,
+    label: t(`spatial.${value}`),
+  }))
+)
 
 const debouncedSearchPosts = debounce(async (query: string) => {
   mentionSearchController?.abort()
@@ -357,7 +388,19 @@ function removeTag(tag: string) {
 }
 
 async function handleSubmit() {
-  if (!canSubmit.value || isSubmitting.value) return
+  if (!canSubmit.value || isSubmitting.value || !authStore.user?.id) return
+
+  const submittingOwner = authStore.user.id
+  const readForm = () =>
+    JSON.stringify([
+      title.value,
+      content.value,
+      tagInput.value,
+      tags.value,
+      selectedPosts.value,
+      category.value,
+    ])
+  const submittedForm = readForm()
 
   isSubmitting.value = true
 
@@ -381,14 +424,13 @@ async function handleSubmit() {
   try {
     const discussion = await discussionService.create(payload)
 
-    title.value = ''
-    content.value = ''
-    tags.value = []
-    selectedPosts.value = []
+    if (authStore.user?.id !== submittingOwner) return
+    if (readForm() === submittedForm) draft.discard()
 
     toastStore.success(t('community.publishSuccess'))
     emit('created', discussion)
   } catch (err) {
+    if (authStore.user?.id !== submittingOwner) return
     const status = err instanceof Error && 'status' in err ? (err as { status: number }).status : 0
     const canRetry = status === 422 && (payload.tags?.length || payload.referenced_post_id)
     if (canRetry) {
@@ -400,10 +442,8 @@ async function handleSubmit() {
         }
         const discussion = await discussionService.create(fallbackPayload)
 
-        title.value = ''
-        content.value = ''
-        tags.value = []
-        selectedPosts.value = []
+        if (authStore.user?.id !== submittingOwner) return
+        if (readForm() === submittedForm) draft.discard()
 
         toastStore.success(t('community.publishSuccess'))
         emit('created', discussion)

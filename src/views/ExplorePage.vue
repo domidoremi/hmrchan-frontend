@@ -42,6 +42,38 @@
         </button>
       </nav>
 
+      <div class="collection-tools">
+        <label
+          ><span>{{ t('spatial.find') }}</span
+          ><input
+            v-model="feedSearch"
+            type="search"
+            maxlength="160"
+            :placeholder="t('spatial.findLoaded')"
+        /></label>
+        <label
+          ><span class="sr-only">{{ t('spatial.sort') }}</span
+          ><select v-model="feedSort">
+            <option value="latest">{{ t('explore.newest') }}</option>
+            <option value="popular">{{ t('explore.popular') }}</option>
+          </select></label
+        >
+        <span class="collection-tools__count" aria-live="polite">{{
+          t('spatial.matches', { count: filteredVisiblePosts.length })
+        }}</span>
+        <div class="collection-tools__layouts" :aria-label="t('spatial.arrangement')">
+          <button
+            v-for="layout in feedLayouts"
+            :key="layout"
+            type="button"
+            :aria-pressed="feedLayout === layout"
+            @click="feedLayout = layout"
+          >
+            {{ t(`spatial.${layout}`) }}
+          </button>
+        </div>
+      </div>
+
       <StateIndicator
         v-if="error && !isUsingFallback"
         variant="error"
@@ -66,11 +98,12 @@
         </div>
 
         <template v-else>
-          <section v-if="editorialLeadPost" class="explore-editorial-grid">
+          <section v-if="feedLayout === 'wall' && editorialLeadPost" class="explore-editorial-grid">
             <div class="explore-story-stage">
               <button
                 type="button"
                 class="explore-story explore-story--lead"
+                :data-post-id="editorialLeadPost.id"
                 @click="goToPost(editorialLeadPost.id, editorialLeadPost.thumbnail_url ?? null)"
               >
                 <img
@@ -92,6 +125,7 @@
                   :key="post.id"
                   type="button"
                   class="explore-story explore-story--supporting"
+                  :data-post-id="post.id"
                   @click="goToPost(post.id, post.thumbnail_url ?? null)"
                 >
                   <img
@@ -113,7 +147,11 @@
               <h2>{{ $t('explore.weeklyPopular') }}</h2>
               <ol>
                 <li v-for="(post, index) in editorialRailPosts" :key="post.id">
-                  <button type="button" @click="goToPost(post.id, post.thumbnail_url ?? null)">
+                  <button
+                    type="button"
+                    :data-post-id="post.id"
+                    @click="goToPost(post.id, post.thumbnail_url ?? null)"
+                  >
                     <span>{{ String(index + 1).padStart(2, '0') }}</span>
                     <strong>{{ post.title || $t('post.untitled') }}</strong>
                   </button>
@@ -124,7 +162,10 @@
 
           <StateIndicator v-if="filteredVisiblePosts.length === 0" variant="empty" title-tag="h2" />
 
-          <section v-if="masonryVisiblePosts.length > 0" class="explore-archive">
+          <section
+            v-if="feedLayout === 'wall' && masonryVisiblePosts.length > 0"
+            class="explore-archive"
+          >
             <h2>{{ $t('explore.moreStories') }}</h2>
             <div
               ref="masonryContainerRef"
@@ -144,6 +185,28 @@
               </div>
             </div>
           </section>
+
+          <TransitionGroup
+            v-if="feedLayout !== 'wall'"
+            name="collection-feed"
+            tag="div"
+            class="collection-feed"
+            :class="`collection-feed--${feedLayout}`"
+          >
+            <div
+              v-for="post in filteredVisiblePosts"
+              :key="post.id"
+              :data-post-id="post.id"
+              tabindex="-1"
+            >
+              <PostCard
+                :post="post"
+                image-fit="cover"
+                :prefer-original-image="true"
+                @click="goToPost"
+              />
+            </div>
+          </TransitionGroup>
 
           <LoadMoreSection
             v-if="posts.length > 0"
@@ -181,7 +244,8 @@ import {
   onWatcherCleanup,
   useTemplateRef,
 } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { readBrowseState, feedLayouts, type FeedSource } from '@/utils/browseState'
 import { useI18n } from 'vue-i18n'
 import { Search } from '@lucide/vue'
 import { ApiError } from '@/api/client'
@@ -212,6 +276,21 @@ import NextPostFab from '@/components/ui/NextPostFab.vue'
 import { ControlButton, PageHeroShell } from '@/components/appearance'
 
 const router = useRouter()
+const route = useRoute()
+const browse = computed(() => readBrowseState(route.query))
+function updateBrowse(key: string, value: string) {
+  void router.replace({ query: { ...route.query, [key]: value || undefined } })
+}
+const feedLayout = computed({
+  get: () => browse.value.layout,
+  set: (value) => updateBrowse('layout', value),
+})
+const feedSearch = computed({ get: () => browse.value.q, set: (value) => updateBrowse('q', value) })
+const feedSort = computed({
+  get: () => browse.value.sort,
+  set: (value) => updateBrowse('sort', value),
+})
+let returnPostId: string | null = null
 const { t, locale } = useI18n()
 const renderDebugEnabled =
   import.meta.env.DEV &&
@@ -282,45 +361,51 @@ const initialRenderCount = computed(() =>
   isMobile ? Math.min(pageSize.value, 6) : Math.min(pageSize.value, 18)
 )
 const progressiveBatchSize = computed(() => Math.min(pageSize.value, 12))
-const {
-  visibleItems: visiblePosts,
-  hasMoreToRender,
-  revealNextBatch,
-} = useProgressiveRender(posts, {
-  initialCount: initialRenderCount,
-  batchSize: progressiveBatchSize,
-})
-
-type ExploreEditorialFilter = 'latest' | 'popular' | 'youtube' | 'tiktok' | 'instagram' | 'x'
+type ExploreEditorialFilter = FeedSource
 
 const EDITORIAL_IMAGE_FALLBACK =
   '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp'
-const activeEditorialFilter = ref<ExploreEditorialFilter>('latest')
+const activeEditorialFilter = computed({
+  get: () => browse.value.source,
+  set: (value) => updateBrowse('source', value),
+})
 const editorialImageSources = ref<Record<string, string>>({})
 const editorialImageCandidates = new Map<string, string[]>()
 const editorialImageResolutionKeys = new Set<string>()
 const editorialFilters = computed<Array<{ id: ExploreEditorialFilter; label: string }>>(() => [
-  { id: 'latest', label: t('explore.newest') },
-  { id: 'popular', label: t('explore.popular') },
+  { id: 'latest', label: t('spatial.all') },
   { id: 'youtube', label: 'YouTube' },
   { id: 'tiktok', label: 'TikTok' },
   { id: 'instagram', label: 'Instagram' },
   { id: 'x', label: 'X' },
 ])
-const filteredVisiblePosts = computed(() => {
-  const items = [...visiblePosts.value]
-  if (activeEditorialFilter.value === 'latest') return items
-  if (activeEditorialFilter.value === 'popular') {
-    return items.sort(
+const filteredLoadedPosts = computed(() => {
+  const query = feedSearch.value.trim().toLocaleLowerCase()
+  const items = posts.value.filter(
+    (post) =>
+      (activeEditorialFilter.value === 'latest' ||
+        (post.platform.toLowerCase() === 'twitter' ? 'x' : post.platform.toLowerCase()) ===
+          activeEditorialFilter.value) &&
+      (!query ||
+        `${post.title ?? ''} ${post.author_name ?? ''}`.toLocaleLowerCase().includes(query))
+  )
+  if (feedSort.value === 'popular')
+    items.sort(
       (left, right) =>
         right.like_count + right.view_count * 0.02 - (left.like_count + left.view_count * 0.02)
     )
-  }
-
-  return items.filter(
-    (post) => post.platform.toLowerCase() === activeEditorialFilter.value.toLowerCase()
-  )
+  return items
 })
+const {
+  visibleItems: visiblePosts,
+  hasMoreToRender,
+  revealNextBatch,
+} = useProgressiveRender(filteredLoadedPosts, {
+  initialCount: initialRenderCount,
+  batchSize: progressiveBatchSize,
+})
+
+const filteredVisiblePosts = visiblePosts
 const editorialLeadPost = computed(() => filteredVisiblePosts.value[0] ?? null)
 const editorialSupportPosts = computed(() => filteredVisiblePosts.value.slice(1, 3))
 const editorialRailPosts = computed(() => filteredVisiblePosts.value.slice(3, 7))
@@ -373,7 +458,8 @@ const onGlobalKeydown = (event: KeyboardEvent) => {
 }
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
-  storePostNavigationContext(posts.value, postId, 'explore')
+  returnPostId = postId
+  storePostNavigationContext(filteredLoadedPosts.value, postId, 'explore')
   cachePostThumbnailPreview(postId, thumbnailSrc)
   router.push(`/post/${postId}`)
 }
@@ -729,7 +815,7 @@ watch(pageSize, () => {
   void fetchPosts(true, controller.signal)
 })
 
-watch(activeEditorialFilter, async () => {
+watch([activeEditorialFilter, feedSearch, feedSort, feedLayout], async () => {
   await nextTick()
   applyVisiblePosts(true)
 })
@@ -764,6 +850,14 @@ watchPostEffect(() => {
   attachResizeObserver(el)
 })
 onActivated(() => {
+  if (returnPostId)
+    void nextTick(() => {
+      const element = Array.from(
+        document.querySelectorAll<HTMLElement>('button[data-post-id]')
+      ).find((node) => node.dataset['postId'] === returnPostId)
+      element?.focus({ preventScroll: true })
+      returnPostId = null
+    })
   isActive = true
   attachGlobalListeners()
   if (masonryContainerRef.value) {
@@ -796,377 +890,4 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style scoped>
-.explore-page {
-  position: relative;
-  padding: var(--spacing-4) 0 var(--spacing-8);
-  min-height: 100svh;
-  min-height: 100dvh;
-}
-
-.fallback-preview {
-  display: grid;
-  gap: var(--spacing-2);
-  padding: clamp(1rem, 1.8vw, 1.25rem);
-  margin-block-end: var(--spacing-4);
-}
-
-.fallback-preview__label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-}
-
-.fallback-preview p {
-  margin: 0;
-  max-width: 52ch;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.fallback-preview__detail {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.page-hero-shell__badge {
-  min-block-size: var(--ui-chip-height);
-  padding-inline: var(--ui-chip-padding-x);
-  background: var(--page-shell-control-bg);
-  border: 0.0625rem solid var(--page-shell-control-border);
-  color: var(--page-shell-control-ink);
-  box-shadow: none;
-}
-
-.page-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-3);
-  min-inline-size: 0;
-}
-
-.search-trigger {
-  flex: 0 1 auto;
-  min-inline-size: 0;
-}
-
-.search-trigger-text {
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .search-trigger-text {
-    display: inline;
-  }
-}
-
-.search-kbd {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-block-size: calc(var(--ui-control-height-sm) - 0.75rem);
-  min-inline-size: 1.5rem;
-  padding-inline: 0.375rem;
-  background: var(--page-shell-control-bg);
-  border: 0.0625rem solid var(--page-shell-control-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-family: var(--font-mono);
-  line-height: var(--appearance-ui-line-height);
-  color: var(--semantic-text-tertiary);
-}
-
-.explore-hero .page-actions {
-  flex-wrap: wrap;
-}
-
-.explore-filter-tabs {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: clamp(0.85rem, 2vw, 1.5rem);
-  margin-block: clamp(0.75rem, 2vw, 1.5rem) clamp(1rem, 2.5vw, 1.75rem);
-  border-block-end: 0.0625rem solid var(--letterbook-line, var(--color-border));
-}
-
-.explore-filter-tab {
-  position: relative;
-  min-block-size: 2.75rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--letterbook-muted, var(--color-text-secondary));
-  font: inherit;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.explore-filter-tab::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: -0.0625rem;
-  block-size: 0.125rem;
-  border-radius: 999rem;
-  background: var(--letterbook-accent, var(--color-primary));
-  transform: scaleX(0);
-  transition: transform var(--transition-fast);
-}
-
-.explore-filter-tab:hover,
-.explore-filter-tab:focus-visible,
-.explore-filter-tab--active {
-  color: var(--letterbook-accent, var(--color-primary));
-}
-
-.explore-filter-tab--active::after {
-  transform: scaleX(1);
-}
-
-.explore-editorial-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2.1fr) minmax(15rem, 1fr);
-  align-items: start;
-  gap: clamp(2rem, 4vw, 3rem);
-}
-
-.explore-story-stage {
-  display: grid;
-  gap: clamp(1rem, 2vw, 1.4rem);
-  min-inline-size: 0;
-}
-
-.explore-story-stage__supporting {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(1rem, 2vw, 1.4rem);
-}
-
-.explore-story {
-  position: relative;
-  display: block;
-  inline-size: 100%;
-  min-inline-size: 0;
-  padding: 0;
-  overflow: clip;
-  border: 0.0625rem solid var(--letterbook-line, var(--color-border));
-  border-radius: var(--letterbook-photo-radius, var(--radius-xl));
-  background: var(--letterbook-paper, var(--color-surface));
-  color: #fff;
-  text-align: start;
-  cursor: pointer;
-  box-shadow: none;
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast),
-    border-color var(--transition-fast);
-}
-
-.explore-story:hover,
-.explore-story:focus-visible {
-  border-color: var(--letterbook-line-strong, var(--color-primary));
-  box-shadow: var(--letterbook-shadow, var(--shadow-lg));
-  transform: translateY(-0.18rem);
-}
-
-.explore-story--lead {
-  aspect-ratio: 2.55 / 1;
-}
-
-.explore-story--supporting {
-  aspect-ratio: 1.48 / 1;
-}
-
-.explore-story img {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.explore-story:hover img,
-.explore-story:focus-visible img {
-  transform: scale(1.025);
-}
-
-.explore-story__shade {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 42%, rgb(42 20 35 / 0.86));
-}
-
-.explore-story__copy {
-  position: absolute;
-  inset-inline: clamp(1.1rem, 2.4vw, 1.75rem);
-  inset-block-end: clamp(1rem, 2.2vw, 1.5rem);
-  display: grid;
-  gap: 0.35rem;
-  z-index: 1;
-}
-
-.explore-story__copy strong {
-  font-family: var(--letterbook-display-font, var(--font-serif));
-  font-size: clamp(1.05rem, 1rem + 0.45vw, 1.45rem);
-  line-height: 1.35;
-  text-wrap: balance;
-}
-
-.explore-story__copy small {
-  color: rgb(255 255 255 / 0.86);
-  font-size: var(--text-xs);
-}
-
-.explore-weekly-rail {
-  padding-block: clamp(1.25rem, 2.5vw, 2rem);
-  border-block: 0.0625rem solid var(--letterbook-line, var(--color-border));
-}
-
-.explore-weekly-rail h2,
-.explore-archive > h2 {
-  margin: 0;
-  color: var(--letterbook-ink, var(--color-text-primary));
-  font-family: var(--letterbook-display-font, var(--font-serif));
-  font-size: clamp(1.35rem, 1.15rem + 0.65vw, 1.75rem);
-  font-weight: 650;
-}
-
-.explore-weekly-rail ol {
-  display: grid;
-  gap: 0;
-  margin: 1rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.explore-weekly-rail li + li {
-  border-block-start: 0.0625rem solid color-mix(in srgb, var(--letterbook-line) 72%, transparent);
-}
-
-.explore-weekly-rail button {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr);
-  align-items: start;
-  gap: 0.75rem;
-  inline-size: 100%;
-  min-block-size: 3.25rem;
-  padding: 0.8rem 0;
-  border: 0;
-  background: transparent;
-  color: var(--letterbook-ink, var(--color-text-primary));
-  text-align: start;
-  cursor: pointer;
-}
-
-.explore-weekly-rail button > span {
-  color: var(--letterbook-accent, var(--color-primary));
-  font-family: var(--letterbook-display-font, var(--font-serif));
-}
-
-.explore-weekly-rail button > strong {
-  font-size: var(--text-sm);
-  font-weight: 550;
-  line-height: 1.55;
-}
-
-.explore-weekly-rail button:hover > strong,
-.explore-weekly-rail button:focus-visible > strong {
-  color: var(--letterbook-accent, var(--color-primary));
-}
-
-.explore-archive {
-  display: grid;
-  gap: 1rem;
-  margin-block-start: clamp(2.5rem, 6vw, 4.5rem);
-  padding-block-start: clamp(1.25rem, 2.5vw, 2rem);
-  border-block-start: 0.0625rem solid var(--letterbook-line, var(--color-border));
-}
-
-.posts-masonry-js {
-  --masonry-gap: var(--spacing-3);
-
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: nowrap;
-  gap: var(--masonry-gap);
-  inline-size: 100%;
-  margin-block-start: clamp(0.25rem, 0.8vw, 0.6rem);
-}
-
-.masonry-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--masonry-gap);
-  min-width: 0;
-}
-
-@media (max-width: 767px) {
-  .explore-filter-tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .explore-filter-tabs::-webkit-scrollbar {
-    display: none;
-  }
-
-  .explore-filter-tab {
-    flex: 0 0 auto;
-  }
-
-  .explore-editorial-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2rem;
-  }
-
-  .explore-story--lead {
-    aspect-ratio: 1.08 / 1;
-  }
-
-  .explore-story-stage__supporting {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .explore-story--supporting {
-    aspect-ratio: 1.3 / 1;
-  }
-
-  .posts-masonry-js {
-    flex-direction: column;
-  }
-
-  .masonry-column {
-    inline-size: 100%;
-  }
-}
-
-@media (min-width: 1024px) {
-  .posts-masonry-js {
-    --masonry-gap: var(--spacing-4);
-  }
-}
-
-.post-card {
-  overflow: hidden;
-}
-
-.post-card-btn {
-  display: block;
-  inline-size: 100%;
-  text-align: left;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-.post-content {
-  padding: var(--spacing-3);
-}
-</style>
+<style scoped src="../styles/page-systems/explore-page-view.css"></style>

@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
 import { DEFAULT_APPEARANCE_PRESET, resolveSceneRole } from '@/config/appearance'
+import { designEdition } from '@/config/designEdition'
 import { applyAppearancePreset } from '@/services/appearanceLoader'
 
 export function useAppearanceRuntime(
@@ -34,6 +35,7 @@ export function useAppearanceRuntime(
 
     const root = document.documentElement
 
+    root.setAttribute('data-edition', designEdition)
     root.setAttribute('data-preset', activePreset.value)
     root.setAttribute('data-color-mode', resolvedColorMode.value)
     root.setAttribute('data-motion', motionMode.value)
