@@ -45,6 +45,7 @@ VITE_CLIENT_CONTRACT_VERSION = "2026-04-13.p1"
 # Preview 环境配置
 # ============================================================================
 [env.preview.vars]
+ALLOWED_PREVIEW_ORIGINS = "https://design-release-20261108.hmrchan-frontend-dev.pages.dev"
 BUN_VERSION = "1.4.4"
 SKIP_DEPENDENCY_INSTALL = "true"
 API_BASE_URL = "https://api.momichan.com"
