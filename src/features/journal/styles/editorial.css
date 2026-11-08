@@ -240,6 +240,26 @@
     serif;
   overflow: hidden;
 }
+.site-body .journal-shell .cover-sheet-text.short-copy {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(30px, 3.8vw, 58px);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-shell .cover-sheet-text.short-copy::before {
+  content: '“';
+  position: absolute;
+  left: 22px;
+  top: 12px;
+  color: var(--accent);
+  font:
+    80px/1 Georgia,
+    serif;
+}
 .site-body .journal-shell .cover-orbit {
   position: absolute;
   inset: 14% 0;
