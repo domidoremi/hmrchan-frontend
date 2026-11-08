@@ -92,6 +92,9 @@ describe('googleAuthService', () => {
     )
     expect(redirectSpy).toHaveBeenCalledTimes(1)
     expect(redirectSpy).toHaveBeenCalledWith(expect.stringContaining('/api/v1/auth/google/start?'))
+    const startUrl = new URL(redirectSpy.mock.calls[0]?.[0])
+    expect(startUrl.searchParams.get('frontend_origin')).toBe(window.location.origin)
+    expect(startUrl.searchParams.get('return_to')).toBe('/profile/settings')
   })
 
   it('returns blocked when the popup cannot be opened', () => {
