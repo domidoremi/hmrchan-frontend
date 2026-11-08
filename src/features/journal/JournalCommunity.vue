@@ -49,16 +49,15 @@
           </button>
         </div>
         <hr />
-        <RouterLink class="text-button" to="/about"
-          >关于 MomiChan <JournalIcon name="arrow-up-right"
-        /></RouterLink>
+        <button class="text-button" data-action="about">
+          关于 MomiChan <JournalIcon name="arrow-up-right" />
+        </button>
       </aside>
     </div>
   </div>
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
 import JournalScene from './JournalScene.vue'
 import JournalIcon from './JournalIcon.vue'
 import JournalDiscussionRow from './JournalDiscussionRow.vue'

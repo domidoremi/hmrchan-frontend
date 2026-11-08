@@ -17,6 +17,8 @@ export interface JournalPost {
   avatar: string
   time: string
   likes: number | null
+  communityLikes?: number | undefined
+  liked?: boolean | undefined
   platform: string
   type: string
   tags: string[]
@@ -77,6 +79,8 @@ export function postModel(post: PostListItem | PostDetailResponse): JournalPost 
     avatar: post.author_avatar_url || '/journal/mascot.webp',
     time: post.published_at ? formatRelativeTime(post.published_at) : '',
     likes: post.like_count || 0,
+    communityLikes: post.community_like_count,
+    liked: post.is_liked,
     platform: post.platform === 'twitter' ? 'x' : post.platform,
     type: !image ? '文字' : media.kind === 'video' ? '节目' : '写真',
     tags: post.tags || [],

@@ -71,6 +71,7 @@
           </select></label
         ><button
           class="browse-filter-button"
+          data-action="filters"
           :aria-expanded="filtersOpen"
           aria-controls="browse-filters"
           @click="filtersOpen = !filtersOpen"
@@ -126,7 +127,9 @@
           @click="change(key, '')"
         >
           {{ label }}<JournalIcon name="x" /></button
-        ><button class="filter-reset" @click="$emit('reset')">清除全部</button>
+        ><button v-if="filters.length" class="filter-reset" @click="$emit('reset')">
+          清除全部
+        </button>
       </div>
       <div class="browser-toolbar">
         <p id="results-count" class="results-count" aria-live="polite">
@@ -170,7 +173,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref, onBeforeUnmount, nextTick } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted, nextTick, watch } from 'vue'
 import JournalIcon from './JournalIcon.vue'
 import JournalPostCard from './JournalPostCard.vue'
 import { platforms, contentTypes, type JournalPost } from './models'
@@ -197,7 +200,31 @@ const emit = defineEmits<{
 }>()
 const runtime = useJournal(),
   grid = ref<HTMLElement>()
-const filtersOpen = ref(false)
+const filtersOpen = ref(Boolean(history.state?.journalFiltersOpen))
+watch(filtersOpen, (value) =>
+  history.replaceState({ ...history.state, journalFiltersOpen: value }, '')
+)
+let restoreFocus: string = history.state?.journalBrowseFocus || ''
+function rememberFocus(event: FocusEvent) {
+  if (
+    !(event.target instanceof Element) ||
+    !event.target.closest('.browse-workbench,#post-results')
+  )
+    return
+  const focus = runtime.value?.UI.focusSelector(event.target)
+  if (focus) history.replaceState({ ...history.state, journalBrowseFocus: focus }, '')
+}
+watch(
+  () => props.loading,
+  async (loading) => {
+    if (loading || !restoreFocus) return
+    await nextTick()
+    document.querySelector<HTMLElement>(restoreFocus)?.focus({ preventScroll: true })
+    restoreFocus = ''
+  },
+  { immediate: true }
+)
+onMounted(() => document.addEventListener('focusin', rememberFocus))
 const sourceOptions = computed(() =>
   props.fixture ? Object.entries(platforms).slice(0, 5) : Object.entries(platforms)
 )
@@ -240,5 +267,8 @@ function change(key: string, value: string) {
     if (grid.value) runtime.value?.Experience.mount(grid.value)
   })
 }
-onBeforeUnmount(() => clearTimeout(timer))
+onBeforeUnmount(() => {
+  clearTimeout(timer)
+  document.removeEventListener('focusin', rememberFocus)
+})
 </script>

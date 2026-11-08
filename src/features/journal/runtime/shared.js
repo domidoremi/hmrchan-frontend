@@ -109,6 +109,15 @@ export function installUI(runtime, environment) {
     if (element.id) return `#${CSS.escape(element.id)}`
     const attrs = [
       'data-open',
+      'data-dialog-post',
+      'data-dialog-gallery',
+      'data-dialog-save',
+      'data-dialog-like',
+      'data-search-term',
+      'data-author-id',
+      'data-author-query',
+      'data-real-gallery-step',
+      'data-real-gallery-index',
       'data-collection',
       'data-gallery',
       'data-author',
@@ -149,7 +158,6 @@ export function installUI(runtime, environment) {
   function openDialog(content, className = '', view) {
     const el = document.querySelector('#app-dialog')
     const wasOpen = el.open
-    document.dispatchEvent(new Event('dialogwillchange'))
     if (!wasOpen) {
       dialogTrail = []
       outsideFocus = document.activeElement
@@ -159,6 +167,7 @@ export function installUI(runtime, environment) {
       else dialogTrail.push({ ...dialogView, snapshot: dialogSnapshot() })
       if (dialogTrail.length > 12) dialogTrail.shift()
     }
+    document.dispatchEvent(new Event('dialogwillchange'))
     dialogView = view
     runtime.Experience?.clearBook()
     runtime.Atelier?.clearDialogFlight(el, returning)

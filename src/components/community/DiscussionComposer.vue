@@ -1,5 +1,78 @@
 <template>
-  <div class="discussion-composer surface-paper-sketch analog-dot-grid">
+  <template v-if="journal">
+    <div class="compose-heading">
+      <span class="eyebrow">COMMUNITY / NEW NOTE</span>
+      <h2 id="dialog-title">发起讨论</h2>
+    </div>
+    <form id="discussion-form" class="form-stack" @submit.prevent="handleSubmit">
+      <label class="field compose-title"
+        ><span>标题</span
+        ><input
+          ref="journalTitle"
+          v-model="title"
+          class="composer-title-input"
+          name="title"
+          placeholder="聊点什么？"
+          :minlength="TITLE_MIN"
+          :maxlength="TITLE_MAX"
+          required
+          autofocus
+      /></label>
+      <label class="field compose-category"
+        ><span>分类</span
+        ><select v-model="category" name="category">
+          <option v-for="item in categories" :key="item.value" :value="item.value">
+            {{ item.label }}
+          </option>
+        </select></label
+      >
+      <label class="field compose-body"
+        ><span>正文</span
+        ><textarea
+          v-model="content"
+          class="composer-textarea"
+          name="body"
+          placeholder="写在这里"
+          :minlength="CONTENT_MIN"
+          :maxlength="CONTENT_MAX"
+          required
+        />
+      </label>
+      <div class="draft-meta">
+        <span class="draft-status" role="status">{{
+          draft.status.value === 'saved'
+            ? '草稿已保存'
+            : draft.status.value === 'failed'
+              ? '草稿暂时无法保存'
+              : ''
+        }}</span
+        ><span class="draft-length">{{ content.length }} / {{ CONTENT_MAX }}</span>
+      </div>
+      <div class="compose-footer">
+        <button
+          v-if="draft.canUndo.value"
+          type="button"
+          class="text-button"
+          data-draft-undo
+          @click="draft.restore"
+        >
+          撤销清空</button
+        ><button
+          v-else
+          type="button"
+          class="text-button"
+          data-draft-clear
+          :disabled="isSubmitting"
+          @click="draft.clear"
+        >
+          清空草稿</button
+        ><button class="button button-dark" type="submit" :disabled="!canSubmit || isSubmitting">
+          {{ isSubmitting ? '发布中…' : '发布讨论' }} <span aria-hidden="true">↗</span>
+        </button>
+      </div>
+    </form>
+  </template>
+  <div v-else class="discussion-composer surface-paper-sketch analog-dot-grid">
     <header class="composer-header">
       <div class="composer-header__copy">
         <p class="composer-kicker">{{ $t('nav.community') }}</p>
@@ -155,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, useTemplateRef, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, useTemplateRef, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   discussionService,
@@ -175,6 +248,11 @@ import Textarea from '@/components/ui/Textarea.vue'
 import ThumbnailImage from '@/components/ui/ThumbnailImage.vue'
 import PlainTextToolbar from '@/components/thread/PlainTextToolbar.vue'
 
+const props = defineProps<{ journal?: boolean }>()
+const journalTitle = useTemplateRef<HTMLInputElement>('journalTitle')
+onMounted(() => {
+  if (props.journal) journalTitle.value?.focus({ preventScroll: true })
+})
 const emit = defineEmits<{
   created: [discussion: Discussion]
 }>()
@@ -209,9 +287,9 @@ const isSubmitting = ref(false)
 let mentionSearchController: AbortController | null = null
 let mentionSearchToken = 0
 const TITLE_MIN = 2
-const TITLE_MAX = 200
+const TITLE_MAX = props.journal ? 70 : 200
 const CONTENT_MIN = 10
-const CONTENT_MAX = 10000
+const CONTENT_MAX = props.journal ? 2000 : 10000
 
 const canSubmit = computed(
   () => title.value.trim().length >= TITLE_MIN && content.value.trim().length >= CONTENT_MIN

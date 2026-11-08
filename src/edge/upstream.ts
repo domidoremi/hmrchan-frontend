@@ -53,7 +53,7 @@ function isAuthenticatedUserPublicProfilePath(path: string): boolean {
 export function resolveUpstreamDomain(path: string): UpstreamDomain {
   const normalizedPath = normalizeApiPath(path)
 
-  if (/^\/api\/v1\/posts\/[^/]+\/comments(?:\/)?$/i.test(normalizedPath)) {
+  if (/^\/api\/v1\/posts\/[^/]+\/(?:comments|like)\/?$/i.test(normalizedPath)) {
     return 'community'
   }
 

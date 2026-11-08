@@ -28,6 +28,8 @@ const DEFAULT_LIST_PARAMS = {
 } as const
 
 export interface PostListItem {
+  is_liked?: boolean | undefined
+  community_like_count?: number | undefined
   id: string
   platform: string
   platform_post_id?: string
@@ -99,6 +101,8 @@ export interface MediaSubtitle {
 }
 
 export interface PostDetailResponse {
+  is_liked?: boolean | undefined
+  community_like_count?: number | undefined
   id: string
   platform: string
   platform_post_id?: string | undefined
@@ -173,6 +177,8 @@ interface RawFile {
 }
 
 export interface RawPostDetail {
+  is_liked?: boolean | undefined
+  community_like_count?: number | undefined
   id: string
   platform: string
   platform_post_id?: string
@@ -389,6 +395,8 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     original_author_avatar_url: raw.original_author?.avatar_url ?? null,
     view_count: raw.view_count,
     like_count: raw.like_count,
+    is_liked: raw.is_liked,
+    community_like_count: raw.community_like_count,
     comment_count: raw.comment_count,
     share_count: raw.share_count,
     media_count: raw.media_count ?? fallbackMediaCount,
@@ -402,6 +410,12 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     author_other_posts: raw.author_other_posts,
     external_links: externalLinks,
   }
+}
+
+export interface PostLikeResponse {
+  post_id: string
+  is_liked: boolean
+  community_like_count: number
 }
 
 export const postService = {
@@ -435,11 +449,11 @@ export const postService = {
     return normalizePostDetail(raw)
   },
 
-  async likePost(postId: string, config?: RequestConfig): Promise<void> {
+  async likePost(postId: string, config?: RequestConfig): Promise<PostLikeResponse> {
     return apiClient.post(`/posts/${postId}/like`, null, config)
   },
 
-  async unlikePost(postId: string, config?: RequestConfig): Promise<void> {
+  async unlikePost(postId: string, config?: RequestConfig): Promise<PostLikeResponse> {
     return apiClient.delete(`/posts/${postId}/like`, config)
   },
 }

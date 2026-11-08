@@ -92,25 +92,15 @@
       @more="load(true)"
       ><template #state><JournalState :loading="loading" :error="error" @retry="load()" /></template
     ></JournalCommunity>
-    <dialog
-      ref="composer"
-      class="journal-compose"
-      aria-labelledby="compose-title"
-      @click="closeOnBackdrop"
-    >
-      <header>
-        <h2 id="compose-title">发起讨论</h2>
-        <button class="icon-button" aria-label="关闭" @click="composer?.close()">
-          <JournalIcon name="x" />
-        </button>
-      </header>
-      <DiscussionComposer v-if="composeMounted" @created="created" />
-    </dialog>
   </div>
 </template>
 <script setup lang="ts">
 import {
   computed,
+  inject,
+  getCurrentInstance,
+  createVNode,
+  render,
   ref,
   watch,
   nextTick,
@@ -132,6 +122,10 @@ import JournalIcon from './JournalIcon.vue'
 import JournalState from './JournalState.vue'
 import { useJournalData } from './useJournalData'
 import { useJournal } from './context'
+import { journalDialogsKey } from './useJournalDialogs'
+import { journalEventsKey } from './useJournalEvents'
+import { useJournalDiscussion } from './useJournalDiscussion'
+import { discussionModel } from './models'
 import type { JournalPost } from './models'
 
 const DiscussionComposer = defineAsyncComponent(
@@ -141,10 +135,17 @@ const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore(),
   favorites = useFavoritesStore()
+const dialogs = inject(journalDialogsKey)!
+const eventDialogs = inject(journalEventsKey)!
 const runtime = useJournal(),
-  root = ref<HTMLElement>(),
-  composer = ref<HTMLDialogElement>(),
-  composeMounted = ref(false)
+  root = ref<HTMLElement>()
+const discussionDialog = useJournalDiscussion(runtime)
+const appContext = getCurrentInstance()!.appContext
+let composerHost: HTMLElement | null = null
+function unmountComposer() {
+  if (composerHost) render(null, composerHost)
+  composerHost = null
+}
 const page = computed(() =>
   import.meta.env.DEV && route.path.startsWith('/__journal/')
     ? String(route.params['page'])
@@ -218,7 +219,7 @@ watch(
   () => {
     confirmedSaves.value = new Map()
     readReminders()
-    composer.value?.close()
+    unmountComposer()
   },
   { immediate: true }
 )
@@ -272,6 +273,9 @@ async function save(post: JournalPost, event: MouseEvent) {
       return
     }
     confirmedSaves.value.set(post.id, !wasSaved)
+    document.dispatchEvent(
+      new CustomEvent('journalfavoritechange', { detail: { id: post.id, saved: !wasSaved } })
+    )
     if (button) runtime.value?.Experience.savedFeedback(button, post.id, !wasSaved)
     runtime.value?.UI.toast(wasSaved ? '已取消收藏' : '已收藏', {
       label: '撤销',
@@ -285,8 +289,14 @@ async function save(post: JournalPost, event: MouseEvent) {
                 ? await favorites.restoreFavorite(original)
                 : await favorites.addFavorite(post.id)
               : await favorites.removeFavoriteByPostId(post.id)
-            if (auth.user?.id === user && restored.success)
+            if (auth.user?.id === user && restored.success) {
               confirmedSaves.value.set(post.id, wasSaved)
+              document.dispatchEvent(
+                new CustomEvent('journalfavoritechange', {
+                  detail: { id: post.id, saved: wasSaved },
+                })
+              )
+            }
           } finally {
             pendingSaves.delete(post.id)
           }
@@ -296,56 +306,6 @@ async function save(post: JournalPost, event: MouseEvent) {
   } finally {
     pendingSaves.delete(post.id)
   }
-}
-function remind(id: string) {
-  const next = new Set(reminders.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  try {
-    localStorage.setItem(reminderKey.value, JSON.stringify([...next]))
-    reminders.value = next
-    runtime.value?.UI.toast(next.has(id) ? '已记下' : '已移除')
-  } catch {
-    runtime.value?.UI.toast('暂时未能保存，请重试')
-  }
-}
-function eventDialog(id: string) {
-  const event = events.value.find((item) => item.id === id),
-    ui = runtime.value?.UI
-  if (!event || !ui) return
-  const esc = ui.escape
-  const href = event.url && /^https?:\/\//i.test(event.url) ? event.url : null
-  ui.openDialog(
-    `<div class="event-detail"><span class="eyebrow">${esc(event.type)}</span><h2 id="dialog-title">${esc(event.title)}</h2><p class="dialog-copy">${event.month} 月 ${event.day} 日 · ${esc(event.time)}<br>${esc(event.venue)}</p><p class="dialog-copy">${esc(event.description)}</p><div class="dialog-actions"><button class="button button-dark" data-remind="${esc(id)}">${ui.icon('bookmark')}${reminders.value.has(id) ? '已记下' : '记下日程'}</button>${href ? `<a class="button button-outline" href="${esc(href)}" target="_blank" rel="noopener noreferrer">活动详情 ${ui.icon('arrow-up-right')}</a>` : ''}</div></div>`,
-    '',
-    { key: `event:${id}`, render: () => eventDialog(id) }
-  )
-}
-let previewPost: JournalPost | undefined
-function postDialog(post: JournalPost) {
-  const ui = runtime.value?.UI
-  if (!ui) return
-  previewPost = post
-  const esc = ui.escape,
-    saved = savedPosts.value.has(post.id)
-  const media = post.image
-    ? `<button class="detail-photo-open" data-real-gallery="${esc(post.id)}" aria-label="查看大图"><img class="detail-photo" src="${esc(post.image)}" alt="${esc(post.title)}" width="400" height="500"><span>${ui.icon('expand')} 查看大图</span></button>`
-    : `<div class="detail-text">${esc(post.text)}</div>`
-  ui.openDialog(
-    `<div class="post-detail"><div>${media}</div><div class="detail-copy"><div class="post-meta"><span class="platform">${esc(post.platform)}</span><span>${esc(post.time)}</span></div><h2 id="dialog-title">${esc(post.title)}</h2><p class="dialog-copy">${esc(post.text)}</p><div class="detail-tags">${post.tags.map((tag) => `<span class="badge badge-purple"># ${esc(tag)}</span>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small>作者 ${ui.icon('arrow-up-right')}</small></span></button><div class="detail-actions"><button class="button button-dark button-small detail-save" data-save-id="${esc(post.id)}" aria-pressed="${saved}">${ui.icon('bookmark')}${saved ? '已收藏' : '收藏'}</button><a class="button button-outline button-small" href="/post/${esc(post.id)}">查看动态 ${ui.icon('arrow-up-right')}</a></div></div></div>`,
-    'detail-dialog',
-    { key: `post:${post.id}`, render: () => postDialog(post) }
-  )
-}
-function realGallery(post: JournalPost) {
-  const ui = runtime.value?.UI
-  if (!ui || !post.image) return
-  const esc = ui.escape
-  ui.openDialog(
-    `<div class="gallery-toolbar"><div><span class="eyebrow">PHOTOS</span><h2 id="dialog-title">${esc(post.title)}</h2></div><button class="icon-button" data-gallery-zoom aria-label="放大图片" aria-pressed="false">${ui.icon('expand')}</button></div><div class="gallery-stage"><div class="gallery-image-area"><img class="gallery-image" src="${esc(post.image)}" alt="${esc(post.title)}" width="900" height="1200"></div></div><div class="gallery-footer"><div class="gallery-counter">01<span> / 01</span></div><a class="text-button" href="/post/${esc(post.id)}">查看动态 ${ui.icon('arrow-up-right')}</a></div>`,
-    'gallery-dialog journal-real-gallery',
-    { key: `gallery:${post.id}`, render: () => realGallery(post) }
-  )
 }
 function handleClick(event: MouseEvent) {
   const target =
@@ -358,25 +318,12 @@ function handleClick(event: MouseEvent) {
   const data = target.dataset
   if (data['open'] && isUuidV7String(data['open'])) {
     const post = posts.value.find((item) => item.id === data['open'])
-    if (post) postDialog(post)
+    if (post) void dialogs.openPost(post)
   }
-  if (data['realGallery'] && previewPost?.id === data['realGallery']) realGallery(previewPost)
-  if (data['saveId'] && previewPost?.id === data['saveId']) {
-    const post = previewPost
-    void save(post, event).then(() => {
-      if (document.querySelector('#app-dialog.detail-dialog[open]')) postDialog(post)
-    })
+  if (data['discussion']) {
+    const item = discussions.value.find((entry) => entry.id === data['discussion'])
+    if (item) discussionDialog.open(item)
   }
-  if (data['authorId']) void router.push(`/author/${data['authorId']}`)
-  else if (data['authorQuery'])
-    void router.push({ path: '/search', query: { q: data['authorQuery'] } })
-  if (data['event']) eventDialog(data['event'])
-  if (data['remind']) {
-    remind(data['remind'])
-    if (target.closest('#app-dialog')) eventDialog(data['remind'])
-  }
-  if (data['discussion'] && isUuidV7String(data['discussion']))
-    void router.push(`/community/discussions/${data['discussion']}`)
   if (data['action'] === 'compose') void compose()
 }
 function documentClick(event: MouseEvent) {
@@ -384,25 +331,28 @@ function documentClick(event: MouseEvent) {
   handleClick(event)
 }
 async function compose() {
-  if (!(await requireAccount())) return
-  composeMounted.value = true
-  await nextTick()
-  composer.value?.showModal()
+  if ((!fixture.value && !(await requireAccount())) || !runtime.value) return
+  renderComposer()
 }
-function closeOnBackdrop(event: MouseEvent) {
-  if (event.target !== composer.value) return
-  const rect = composer.value.getBoundingClientRect()
-  if (
-    event.clientX < rect.left ||
-    event.clientX > rect.right ||
-    event.clientY < rect.top ||
-    event.clientY > rect.bottom
-  )
-    composer.value.close()
+function renderComposer() {
+  if (!runtime.value) return
+  runtime.value.UI.openDialog('<div id="journal-composer-root"></div>', 'compose-dialog', {
+    key: 'compose',
+    label: '草稿',
+    render: renderComposer,
+  })
+  composerHost = document.querySelector('#journal-composer-root')
+  if (!composerHost) return
+  const vnode = createVNode(DiscussionComposer, { journal: true, onCreated: created })
+  vnode.appContext = appContext
+  render(vnode, composerHost)
 }
 function created(item: Discussion) {
-  composer.value?.close()
-  void router.push(`/community/discussions/${item.id}`)
+  discussionDialog.open(discussionModel(item))
+}
+function favoriteChanged(event: Event) {
+  const value = (event as CustomEvent<{ id: string; saved: boolean }>).detail
+  confirmedSaves.value.set(value.id, value.saved)
 }
 function storage(event: StorageEvent) {
   if (event.key === reminderKey.value) readReminders()
@@ -442,6 +392,8 @@ watch(
 watch(
   () => [runtime.value, posts.value, events.value, discussions.value, route.query],
   async () => {
+    dialogs.remember(posts.value)
+    eventDialogs.remember(events.value)
     await nextTick()
     if (root.value) runtime.value?.mount(root.value)
   },
@@ -449,12 +401,18 @@ watch(
 )
 onMounted(() => {
   document.addEventListener('click', documentClick)
+  document.addEventListener('dialogwillchange', unmountComposer)
   window.addEventListener('storage', storage)
+  document.addEventListener('journalreminderschange', readReminders)
+  document.addEventListener('journalfavoritechange', favoriteChanged)
 })
 onBeforeUnmount(() => {
   saveObserver?.disconnect()
-  composer.value?.close()
+  unmountComposer()
   document.removeEventListener('click', documentClick)
+  document.removeEventListener('dialogwillchange', unmountComposer)
   window.removeEventListener('storage', storage)
+  document.removeEventListener('journalreminderschange', readReminders)
+  document.removeEventListener('journalfavoritechange', favoriteChanged)
 })
 </script>
