@@ -1,6 +1,7 @@
 <template>
   <div class="author-detail-page">
     <div class="container">
+      <RouterLink class="author-back-link" to="/authors">← {{ $t('nav.authors') }}</RouterLink>
       <StateIndicator
         v-if="error && !isUsingFallback"
         variant="error"
@@ -33,6 +34,12 @@
             <div class="author-info">
               <h1 class="author-name">{{ author.display_name || author.name }}</h1>
               <p class="author-username">@{{ author.username }}</p>
+              <p v-if="author.bio || author.description" class="author-biography">
+                {{ author.bio || author.description }}
+              </p>
+              <p v-if="author.post_count != null" class="author-post-count">
+                {{ $t('author.postCount', { count: author.post_count }) }}
+              </p>
             </div>
           </template>
         </div>
@@ -51,8 +58,8 @@
               :key="post.id"
               v-memo="getPostMemo(post)"
               :post="post"
-              aspect-ratio="1"
-              :show-content="false"
+              aspect-ratio="4 / 5"
+              :show-author="false"
               :prefetch-on-hover="false"
               :preload-large-image-on-hover="false"
               @click="goToPost"
@@ -60,6 +67,12 @@
 
             <StateIndicator v-if="posts.length === 0" variant="empty" />
           </template>
+        </div>
+        <div v-if="hasMorePosts || postsError" class="author-load-more">
+          <p v-if="postsError" role="alert">{{ postsError }}</p>
+          <Button :loading="isLoadingMore" :disabled="isLoadingMore" @click="loadMorePosts">{{
+            $t('common.loadMore')
+          }}</Button>
         </div>
       </template>
     </div>
@@ -70,7 +83,7 @@
 defineOptions({ name: 'AuthorDetailPage' })
 
 import { ref, computed, watch, onWatcherCleanup, onBeforeUnmount } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
 import { authorCache, getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
@@ -86,6 +99,7 @@ import {
 import Avatar from '@/components/ui/Avatar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
+import Button from '@/components/ui/Button.vue'
 import PostCard from '@/components/business/PostCard.vue'
 
 const route = useRoute()
@@ -97,6 +111,11 @@ const authorId = computed(() => route.params['id'] as string)
 
 const author = ref<AuthorResponse | null>(null)
 const posts = ref<PostListItem[]>([])
+const postsCursor = ref<string | null>(null)
+const hasMorePosts = ref(false)
+const isLoadingMore = ref(false)
+const postsError = ref('')
+let paginationController: AbortController | null = null
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
@@ -116,6 +135,9 @@ function isAbortError(err: unknown): boolean {
 }
 
 function abortAuthorRequest() {
+  paginationController?.abort()
+  paginationController = null
+  isLoadingMore.value = false
   authorController?.abort()
   authorController = null
 }
@@ -151,6 +173,35 @@ function syncAuthorMeta(currentAuthor: AuthorResponse | null | undefined) {
   })
 }
 
+async function loadMorePosts() {
+  if (isLoadingMore.value || !hasMorePosts.value || !postsCursor.value) return
+  const targetId = authorId.value
+  const controller = new AbortController()
+  paginationController = controller
+  isLoadingMore.value = true
+  postsError.value = ''
+  try {
+    const response = await authorService.listAuthorPosts(
+      targetId,
+      { cursor: postsCursor.value, limit: 24 },
+      { signal: controller.signal, skipErrorToast: true }
+    )
+    if (controller.signal.aborted || targetId !== authorId.value) return
+    const seen = new Set(posts.value.map((post) => post.id))
+    posts.value = [...posts.value, ...response.items.filter((post) => !seen.has(post.id))]
+    postsCursor.value = response.next_cursor ?? null
+    hasMorePosts.value = Boolean(response.has_more && postsCursor.value)
+  } catch (err) {
+    if (!controller.signal.aborted && targetId === authorId.value)
+      postsError.value = err instanceof ApiError ? err.message : t('common.error')
+  } finally {
+    if (paginationController === controller) {
+      isLoadingMore.value = false
+      paginationController = null
+    }
+  }
+}
+
 async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal) {
   const requestId = ++latestRequestId
   const controller = signal ? null : new AbortController()
@@ -165,6 +216,9 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
 
   isLoading.value = true
   error.value = null
+  postsError.value = ''
+  hasMorePosts.value = false
+  postsCursor.value = null
 
   const cached = await authorCache.getAuthor(targetAuthorId)
   if (requestSignal?.aborted || requestId !== latestRequestId) return
@@ -191,6 +245,8 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
 
     author.value = authorRes
     posts.value = postsRes.items
+    postsCursor.value = postsRes.next_cursor ?? null
+    hasMorePosts.value = Boolean(postsRes.has_more && postsCursor.value)
     dataSource.value = 'live'
     syncAuthorMeta(authorRes)
 

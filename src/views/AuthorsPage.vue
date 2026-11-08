@@ -16,15 +16,6 @@
             <span v-if="isLoading && authors.length > 0" class="spinner spinner-sm" />
           </div>
         </template>
-
-        <template #meta>
-          <PageMetaRow class="page-meta-row--comfortable">
-            <PageMetaChip>
-              <strong>{{ authors.length }}</strong>
-              <span>{{ $t('nav.authors') }}</span>
-            </PageMetaChip>
-          </PageMetaRow>
-        </template>
       </PageHeroShell>
 
       <h2 class="sr-only">{{ $t('nav.authors') }}</h2>
@@ -63,9 +54,8 @@
           <StateIndicator v-if="authors.length === 0" variant="empty" />
 
           <LoadMoreSection
-            v-if="authors.length > 0"
+            v-if="hasMore"
             :count="authors.length"
-            :total="loadMoreTotal"
             :has-more="hasMore"
             :loading="isLoadingMore"
             :sentinel-ref="setSentinelRef"
@@ -92,7 +82,7 @@ import {
   isServiceUnavailableError,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
-import { ControlButton, PageHeroShell, PageMetaChip, PageMetaRow } from '@/components/appearance'
+import { ControlButton, PageHeroShell } from '@/components/appearance'
 import AuthorCard from '@/components/business/AuthorCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -122,9 +112,6 @@ const isPageActive = ref(true)
 const hasMore = computed(() => hasMoreState.value)
 const heroBadgeLabel = computed(() =>
   authors.value.length > 0 ? String(authors.value.length) : ''
-)
-const loadMoreTotal = computed(() =>
-  hasMore.value ? authors.value.length + Math.max(pageSize, 1) : Math.max(authors.value.length, 1)
 )
 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =

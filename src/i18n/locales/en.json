@@ -87,7 +87,8 @@
     "utilityNavigation": "Utility navigation",
     "footerNav": "Footer navigation",
     "zoomSlider": "Zoom level",
-    "cropPreview": "Crop preview"
+    "cropPreview": "Crop preview",
+    "loadedCount": "{count} items loaded"
   },
   "auth": {
     "email": "Email",

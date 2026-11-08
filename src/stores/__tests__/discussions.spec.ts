@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDiscussionsStore } from '../discussions'
 import type { Discussion } from '@/api/discussionService'
 
-const mocks = vi.hoisted(() => ({ list: vi.fn(), getSummary: vi.fn(), snapshot: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  list: vi.fn(),
+  get: vi.fn(),
+  getSummary: vi.fn(),
+  snapshot: vi.fn(),
+}))
 vi.mock('@/api/discussionService', () => ({ discussionService: mocks }))
 vi.mock('@/utils/cache', () => ({
   getPublicSnapshot: mocks.snapshot,
@@ -28,6 +33,7 @@ describe('public discussion counts', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     mocks.list.mockReset()
+    mocks.get.mockReset()
     mocks.snapshot.mockReset()
   })
 
@@ -57,6 +63,18 @@ describe('public discussion counts', () => {
     expect(store.total).toBe(1)
     await store.fetchDiscussions(true)
     expect(store.total).toBeNull()
+  })
+
+  it('clears the detail error after a successful retry', async () => {
+    mocks.get
+      .mockRejectedValueOnce(new Error('request rejected'))
+      .mockResolvedValueOnce(discussion('one'))
+    const store = useDiscussionsStore()
+    await store.fetchDiscussion('one')
+    expect(store.error).toBe('community.error.fetchFailed')
+    await store.fetchDiscussion('one')
+    expect(store.currentDiscussion?.id).toBe('one')
+    expect(store.error).toBeNull()
   })
 
   it('keeps the total unknown for an incomplete cached feed', async () => {

@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent, reactive, ref } from 'vue'
+import { defineComponent, reactive, ref, toRefs } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DiscussionDetailPage from '../DiscussionDetailPage.vue'
 
@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   fetchDiscussion: vi.fn(),
   updateDiscussionLocally: vi.fn(),
   authStore: {
+    ensureAuthInitialized: vi.fn().mockResolvedValue(undefined),
     user: {
       id: 'viewer-1',
       is_admin: false,
@@ -50,10 +51,12 @@ vi.mock('vue-i18n', () => ({
 }))
 
 vi.mock('pinia', () => ({
-  storeToRefs: (store: Record<string, unknown>) => store,
+  storeToRefs: (store: Record<string, unknown>) => toRefs(store),
 }))
 
 vi.mock('@/stores', () => {
+  state.authStore = reactive(state.authStore)
+  state.discussionStore = reactive(state.discussionStore)
   const discussionStore = Object.assign(reactive(state.discussionStore), {
     fetchDiscussion: state.fetchDiscussion,
     updateDiscussionLocally: state.updateDiscussionLocally,
@@ -212,8 +215,42 @@ describe('DiscussionDetailPage', () => {
     state.discussionStore.currentDiscussion = null
     state.discussionStore.source = 'live'
     state.discussionStore.error = null
+    state.authStore.ensureAuthInitialized.mockReset().mockResolvedValue(undefined)
     state.fetchDiscussion.mockReset()
     state.updateDiscussionLocally.mockReset()
+  })
+
+  it('loads the discussion after session restoration clears private state', async () => {
+    let restoreSession!: () => void
+    state.authStore.ensureAuthInitialized.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          restoreSession = resolve
+        })
+    )
+    state.fetchDiscussion.mockImplementation(async () => {
+      state.discussionStore.currentDiscussion = {
+        id: 'discussion-1',
+        title: 'Restored discussion',
+        content: 'Full content',
+        created_at: '2026-04-14T00:00:00Z',
+        comments_count: 0,
+        view_count: 1,
+        tags: [],
+        category: 'general',
+        author: { id: 'author-1', username: 'alice' },
+      }
+    })
+    const wrapper = mount(DiscussionDetailPage, { global: { mocks: { $t: (key: string) => key } } })
+    await flushPromises()
+    expect(state.fetchDiscussion).not.toHaveBeenCalled()
+    state.discussionStore.currentDiscussion = null
+    restoreSession()
+    await flushPromises()
+    expect(state.fetchDiscussion).toHaveBeenCalledTimes(1)
+    expect(wrapper.get('.discussion-title').text()).toBe('Restored discussion')
+    expect(wrapper.find('.discussion-comment-list-stub').exists()).toBe(true)
+    wrapper.unmount()
   })
 
   it('renders the discussion comment list when the discussion loads successfully', async () => {

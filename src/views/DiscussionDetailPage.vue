@@ -190,6 +190,8 @@ async function fetchDiscussion(targetDiscussionId = discussionId.value, signal?:
   error.value = null
 
   try {
+    await authStore.ensureAuthInitialized()
+    if (signal?.aborted || requestToken !== fetchDiscussionToken) return
     await discStore.fetchDiscussion(targetDiscussionId, signal ? { signal } : undefined)
     if (signal?.aborted || requestToken !== fetchDiscussionToken) return
     if (discStore.error) {
@@ -228,8 +230,8 @@ async function handleDeleteDiscussion() {
 }
 
 watch(
-  discussionId,
-  (nextDiscussionId) => {
+  [discussionId, () => user.value?.id],
+  ([nextDiscussionId]) => {
     const controller = new AbortController()
     void fetchDiscussion(nextDiscussionId, controller.signal)
     onWatcherCleanup(() => controller.abort())

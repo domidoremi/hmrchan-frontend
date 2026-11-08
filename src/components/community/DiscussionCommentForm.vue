@@ -21,7 +21,6 @@
           </div>
           <div class="prompt-text">
             <h4 class="prompt-title">{{ t('comment.loginRequiredTitle') }}</h4>
-            <p class="prompt-desc">{{ t('comment.loginRequired') }}</p>
           </div>
           <div class="prompt-actions">
             <Button type="button" size="sm" class="prompt-btn" @click="goToLogin">

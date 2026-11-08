@@ -43,9 +43,13 @@ import {
 } from '../postDetailModel'
 
 describe('postDetailModel', () => {
-  it('hides duplicate titles while preserving distinct ones', () => {
-    expect(buildDetailTitle({ title: 'Same', description: 'Same' })).toBe('')
-    expect(buildDetailTitle({ title: 'Lead', description: 'Lead with more context' })).toBe('')
+  it('keeps the title when the description also contains it', () => {
+    expect(buildDetailTitle({ title: 'Same', description: 'Same' })).toBe('Same')
+    expect(buildDetailTitle({ title: 'Lead', description: 'Lead with more context' })).toBe('Lead')
+    const emojiPost = { title: '💙', description: '💙' }
+    expect(
+      [buildDetailTitle(emojiPost), buildDetailDescription(emojiPost)].filter(Boolean)
+    ).toEqual(['💙'])
     expect(buildDetailTitle({ title: 'Distinct title', description: 'Body copy' })).toBe(
       'Distinct title'
     )
