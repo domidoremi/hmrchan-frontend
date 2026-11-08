@@ -237,27 +237,26 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
   }
   async function openGallery(post: JournalPost) {
     if (!post.image) return
-    galleryPost = post
-    galleryImages = [{ src: post.image, thumb: post.image }]
-    renderGallery(0)
     const request = generation
-    if (!isUuidV7String(post.id)) return
-    try {
-      const response = await detail(post.id)
-      if (request !== generation || !active('journal-real-gallery')) return
-      const images = (response.media_files || [])
-        .filter((file) => /^image(?:\/|$)/i.test(file.file_type))
-        .map((file) => ({
-          src: getMediaStreamUrl(file.id),
-          thumb: getMediaThumbnailUrl(file.id, 'large'),
-        }))
-      if (images.length) {
-        galleryImages = images
-        renderGallery(0)
+    let images = [{ src: post.image, thumb: post.image }]
+    if (isUuidV7String(post.id)) {
+      try {
+        const response = await detail(post.id)
+        const originals = (response.media_files || [])
+          .filter((file) => /^image(?:\/|$)/i.test(file.file_type))
+          .map((file) => ({
+            src: getMediaStreamUrl(file.id),
+            thumb: getMediaThumbnailUrl(file.id, 'large'),
+          }))
+        if (originals.length) images = originals
+      } catch {
+        if (request === generation) ui().toast('原图暂时无法加载')
       }
-    } catch {
-      if (request === generation) ui().toast('原图暂时无法加载')
     }
+    if (request !== generation) return
+    galleryPost = post
+    galleryImages = images
+    renderGallery(0)
   }
   async function account() {
     try {
