@@ -109,7 +109,12 @@
             :loading="i === 0 ? 'eager' : 'lazy'"
             :fetchpriority="i === 0 ? 'high' : 'auto'"
           />
-          <span v-else class="cover-sheet-text">{{ post.text || post.title }}</span>
+          <span
+            v-else
+            class="cover-sheet-text"
+            :class="{ 'short-copy': (post.text || post.title).length < 80 }"
+            >{{ post.text || post.title }}</span
+          >
           <span class="sheet-caption"
             ><b>{{ String(i + 1).padStart(2, '0') }}</b
             ><span>{{ post.author || platforms[post.platform] || post.platform }}</span
