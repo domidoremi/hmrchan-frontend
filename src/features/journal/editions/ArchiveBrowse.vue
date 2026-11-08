@@ -1,5 +1,5 @@
 <template>
-  <div class="archive-page archive-browse">
+  <div :ref="setRoot" @keydown="keydown" class="archive-page archive-browse">
     <header class="archive-page-title" data-reveal>
       <div>
         <span class="eyebrow">{{ favorites ? 'COLLECTION' : 'SEARCH & FILTER' }}</span>
@@ -72,7 +72,8 @@
             :class="{ selected: selectedId === post.id }"
             :aria-pressed="selectedId === post.id"
             :data-select-post="post.id"
-            @click="selectedId = post.id"
+            @click="select(post.id)"
+            :tabindex="selectedId === post.id ? 0 : -1"
           >
             <JournalImage
               v-if="post.image"
@@ -97,7 +98,7 @@
           </button>
         </div>
       </section>
-      <aside class="archive-inspector">
+      <aside :ref="setPreview" class="archive-inspector">
         <div class="inspector-heading">
           <span>预览</span><span>{{ selected?.type }}</span
           ><button class="text-button" :disabled="!selected" :data-open="selected?.id">
@@ -111,15 +112,25 @@
         />
       </aside>
     </div>
+    <ArchiveSelectionDock
+      :post="selected"
+      :index="index"
+      :total="posts.length"
+      :visible="!previewVisible"
+      @step="step"
+      @preview="showPreview"
+    />
   </div>
 </template>
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { platforms, type JournalPost } from '../models'
-import { sourceGroups, usePostSelection } from '../presentation'
+import { sourceGroups } from '../presentation'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
 import ArchivePreview from './ArchivePreview.vue'
+import ArchiveSelectionDock from './ArchiveSelectionDock.vue'
+import { useArchiveNavigation } from './useArchiveNavigation'
 const props = defineProps<{
   posts: JournalPost[]
   allPosts: JournalPost[]
@@ -146,7 +157,18 @@ watch(
     search.value = value
   }
 )
-const { selected, selectedId } = usePostSelection(computed(() => props.posts))
+const {
+  selected,
+  selectedId,
+  index,
+  step,
+  setRoot,
+  setPreview,
+  previewVisible,
+  select,
+  keydown,
+  showPreview,
+} = useArchiveNavigation(computed(() => props.posts))
 const sourceOptions = computed(() => [
   ['all', '全部'] as [string, string],
   ...sourceGroups(props.allPosts).map((source): [string, string] => [source.key, source.label]),

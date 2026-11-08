@@ -1,5 +1,5 @@
 <template>
-  <div class="archive-page archive-home">
+  <div :ref="setRoot" @keydown="keydown" class="archive-page archive-home">
     <div class="archive-page-title" data-reveal>
       <div>
         <span class="eyebrow">OVERVIEW</span>
@@ -82,7 +82,8 @@
               :class="{ selected: selectedId === post.id }"
               :aria-pressed="selectedId === post.id"
               :data-select-post="post.id"
-              @click="selectedId = post.id"
+              @click="select(post.id)"
+              :tabindex="selectedId === post.id ? 0 : -1"
             >
               <span class="stream-dot" /><JournalImage
                 v-if="post.image"
@@ -105,10 +106,10 @@
           >全部动态 <JournalIcon name="arrow"
         /></RouterLink>
       </section>
-      <aside class="observatory-preview" data-reveal>
+      <aside :ref="setPreview" class="observatory-preview" data-reveal>
         <div class="preview-label">
           <span class="status-light" />预览<span
-            >{{ String(index + 1).padStart(2, '0') }} /
+            >{{ String(posts.length ? index + 1 : 0).padStart(2, '0') }} /
             {{ String(posts.length).padStart(2, '0') }}</span
           >
         </div>
@@ -189,6 +190,14 @@
         <p v-if="!discussions.length" class="journal-state">暂无讨论</p>
       </section>
     </div>
+    <ArchiveSelectionDock
+      :post="selected"
+      :index="index"
+      :total="posts.length"
+      :visible="!previewVisible"
+      @step="step"
+      @preview="showPreview"
+    />
   </div>
 </template>
 <script setup lang="ts">
@@ -197,7 +206,9 @@ import { RouterLink } from 'vue-router'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
 import ArchivePreview from './ArchivePreview.vue'
-import { sourceGroups, timelineGroups, usePostSelection } from '../presentation'
+import ArchiveSelectionDock from './ArchiveSelectionDock.vue'
+import { useArchiveNavigation } from './useArchiveNavigation'
+import { sourceGroups, timelineGroups } from '../presentation'
 import { platforms, type JournalPost, type JournalEvent, type JournalDiscussion } from '../models'
 const props = defineProps<{
   posts: JournalPost[]
@@ -215,9 +226,20 @@ defineEmits<{
   platform: [value: string]
   sort: [value: string]
 }>()
-const { selected, selectedId, index, step } = usePostSelection(computed(() => props.posts))
+const {
+  selected,
+  selectedId,
+  index,
+  step,
+  setRoot,
+  setPreview,
+  previewVisible,
+  select,
+  keydown,
+  showPreview,
+} = useArchiveNavigation(computed(() => props.posts))
 const sources = computed(() => sourceGroups(props.allPosts)),
-  groups = computed(() => timelineGroups(props.posts.slice(0, 12)))
+  groups = computed(() => timelineGroups(props.posts))
 const date = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Asia/Taipei',
   year: 'numeric',
