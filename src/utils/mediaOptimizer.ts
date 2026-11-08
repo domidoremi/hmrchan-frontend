@@ -51,7 +51,7 @@ export function getMediaThumbnailUrl(mediaId: string, size: MediaThumbnailSize =
 
   // An explicit format avoids unstable upstream defaults while retaining JPEG fallback.
   const format = supportsWebP() ? 'webp' : 'jpeg'
-  return `${baseUrl}&format=${format}`
+  return `${baseUrl}&format=${format}&v=2`
 }
 
 export function isMobileDevice(): boolean {
