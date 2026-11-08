@@ -71,7 +71,10 @@
               motion === 'full' ? '动效全开' : '动效简化'
             }}</span>
           </button>
-          <RouterLink class="account-link" to="/profile"
+          <RouterLink
+            class="account-link"
+            to="/profile"
+            :aria-label="auth.isAuthenticated ? '我的' : '登录'"
             ><JournalIcon name="users" /><span>{{
               auth.isAuthenticated ? '我的' : '登录'
             }}</span></RouterLink

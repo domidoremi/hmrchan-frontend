@@ -1,11 +1,6 @@
 <template>
   <article class="post-card" :data-post="post.id">
-    <button
-      v-if="post.image"
-      class="post-media"
-      :data-open="post.id"
-      :aria-label="`查看：${post.title}`"
-    >
+    <button v-if="post.image" class="post-media" :data-open="post.id">
       <JournalImage
         :src="post.image"
         :original-src="post.originalImage"
@@ -18,7 +13,7 @@
         ><JournalIcon :name="post.type === '节目' ? 'headphones' : 'image'" />{{ post.type }}</span
       >
     </button>
-    <button v-else class="text-post" :data-open="post.id" :aria-label="`阅读：${post.title}`">
+    <button v-else class="text-post" :data-open="post.id">
       <span aria-hidden="true">“</span>
       <p>
         <template v-for="(line, index) in textLines" :key="index"

@@ -37,7 +37,7 @@
           >
             <img :src="selected.avatar" alt="" width="28" height="28" />{{ selected.author }}
           </button>
-          <button class="round-action" :data-open="selected.id">
+          <button class="round-action" :data-open="selected.id" aria-label="阅读动态">
             <span>阅读动态</span><JournalIcon name="arrow-up-right" />
           </button></div
       ></Transition>
@@ -97,7 +97,6 @@
           :data-open="post.id === selectedId ? post.id : undefined"
           :tabindex="post.id === selectedId ? 0 : -1"
           :aria-hidden="Math.abs(position(i)) > 2 || undefined"
-          :aria-label="post.title"
           @click="selectSheet(post.id)"
         >
           <JournalImage
@@ -107,7 +106,7 @@
             :alt="post.title"
             width="640"
             height="800"
-            :loading="i === 0 ? 'eager' : 'lazy'"
+            :loading="Math.abs(position(i)) <= 2 ? 'eager' : 'lazy'"
             :fetchpriority="i === 0 ? 'high' : 'auto'"
           />
           <span
