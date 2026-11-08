@@ -10,6 +10,8 @@ export type TurnstileErrorKind =
   | 'hostname-mismatch'
   | 'script-load'
   | 'token-rejected'
+  | 'challenge-failed'
+  | 'timeout'
   | 'browser-support'
   | 'challenge-required'
   | 'unknown'
@@ -27,6 +29,9 @@ export function extractTurnstileErrorCode(error: unknown): string | null {
   }
 
   if (error instanceof Error) {
+    const code = (error as Error & { code?: unknown }).code
+    if (typeof code === 'string' || typeof code === 'number')
+      return normalizeTurnstileErrorCode(code)
     const matchedCode = error.message.match(/\b(\d{6})\b/)
     return matchedCode?.[1] ?? null
   }
@@ -41,6 +46,9 @@ export function classifyTurnstileError(error: unknown): TurnstileErrorKind {
   if (code === TURNSTILE_HOSTNAME_MISMATCH_CODE) {
     return 'hostname-mismatch'
   }
+  if (code?.startsWith('600') || code?.startsWith('300')) return 'challenge-failed'
+  if (code === '110600' || code === '110620') return 'timeout'
+  if (code === '110500') return 'browser-support'
 
   if (
     message.includes('failed to load turnstile script') ||
@@ -78,6 +86,10 @@ export function describeTurnstileError(error: unknown): string {
         return 'Challenge script failed to load or initialize.'
       case 'token-rejected':
         return 'Verification token was rejected or expired.'
+      case 'challenge-failed':
+        return 'Challenge verification failed.'
+      case 'timeout':
+        return 'Challenge verification timed out.'
       case 'browser-support':
         return 'Browser trust adapter is unavailable in this environment.'
       case 'challenge-required':

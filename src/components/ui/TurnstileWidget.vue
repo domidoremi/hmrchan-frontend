@@ -2,18 +2,19 @@
   <div
     ref="containerRef"
     class="turnstile-container"
-    :class="[`turnstile-container--${props.size}`, containerClass]"
+    :class="`turnstile-container--${props.size}`"
+    :data-status="status"
   />
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch, useTemplateRef } from 'vue'
+import { ref, onMounted, onUnmounted, watch, useTemplateRef } from 'vue'
 import {
   classifyTurnstileError,
   describeTurnstileError,
   extractTurnstileErrorCode,
-  TURNSTILE_HOSTNAME_MISMATCH_CODE,
 } from '@/utils/turnstile'
+import { loadTurnstileScript } from '@/utils/turnstileScript'
 import type { TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
 
 export interface TurnstileWidgetProps {
@@ -25,7 +26,6 @@ export interface TurnstileWidgetProps {
   execution?: 'render' | 'execute'
   autoExecute?: boolean
 }
-
 const props = withDefaults(defineProps<TurnstileWidgetProps>(), {
   theme: 'auto',
   size: 'normal',
@@ -33,36 +33,12 @@ const props = withDefaults(defineProps<TurnstileWidgetProps>(), {
   execution: 'render',
   autoExecute: false,
 })
-
 const emit = defineEmits<{
   verify: [token: string]
   expire: []
   error: [error: Error]
   status: [status: TurnstileWidgetStatus]
 }>()
-
-const containerRef = useTemplateRef<HTMLDivElement>('containerRef')
-const widgetId = ref<string | null>(null)
-const containerClass = computed(() =>
-  props.execution === 'execute' || props.appearance === 'execute'
-    ? 'turnstile-container--invisible'
-    : ''
-)
-let isUnmounted = false
-let previousOnloadHandler: (() => void) | null = null
-let turnstileOnloadHandler: (() => void) | null = null
-let mountDelayTimer: number | null = null
-let mountDelayResolve: (() => void) | null = null
-let turnstilePollRaf: number | null = null
-let turnstilePollReject: ((reason?: Error) => void) | null = null
-let isReady = false
-let pendingExecutionResolve: ((token: string) => void) | null = null
-let pendingExecutionReject: ((reason?: Error) => void) | null = null
-let interactiveFallbackTimer: number | null = null
-const status = ref<TurnstileWidgetStatus>('idle')
-
-const INTERACTIVE_REQUIRED_DELAY_MS = 1200
-
 declare global {
   interface Window {
     turnstile?: {
@@ -76,433 +52,192 @@ declare global {
   }
 }
 
-function loadTurnstileScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.turnstile) {
-      resolve()
-      return
-    }
+const containerRef = useTemplateRef<HTMLDivElement>('containerRef')
+const status = ref<TurnstileWidgetStatus>('idle')
+let widgetId: string | null = null
+let unmounted = false
+let generation = 0
+let initializing: Promise<void> | null = null
+let pending: Promise<string> | null = null
+let resolveExecution: ((token: string) => void) | null = null
+let rejectExecution: ((error: Error) => void) | null = null
+let executionTimer: ReturnType<typeof setTimeout> | undefined
 
-    const waitForTurnstile = (timeoutMs = 2000) => {
-      const start = Date.now()
-      turnstilePollReject = reject
-      const check = () => {
-        if (isUnmounted) {
-          const err = new Error('Turnstile widget unmounted before API became available')
-          turnstilePollReject?.(err)
-          turnstilePollReject = null
-          turnstilePollRaf = null
-          return
-        }
-        if (window.turnstile) {
-          turnstilePollReject = null
-          turnstilePollRaf = null
-          resolve()
-          return
-        }
-        if (Date.now() - start >= timeoutMs) {
-          turnstilePollReject?.(new Error('Turnstile script loaded but API is unavailable'))
-          turnstilePollReject = null
-          turnstilePollRaf = null
-          return
-        }
-        turnstilePollRaf = requestAnimationFrame(check)
-      }
-      turnstilePollRaf = requestAnimationFrame(check)
-    }
-
-    const existingScript = document.querySelector(
-      'script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]'
-    )
-    if (existingScript) {
-      if (window.turnstile) {
-        resolve()
-        return
-      }
-      if ('readyState' in existingScript && existingScript.readyState === 'complete') {
-        waitForTurnstile()
-        return
-      }
-      const handleLoad = () => {
-        existingScript.removeEventListener('load', handleLoad)
-        existingScript.removeEventListener('error', handleError)
-        waitForTurnstile()
-      }
-      const handleError = () => {
-        existingScript.removeEventListener('load', handleLoad)
-        existingScript.removeEventListener('error', handleError)
-        reject(new Error('Failed to load Turnstile script'))
-      }
-      existingScript.addEventListener('load', handleLoad, { once: true })
-      existingScript.addEventListener('error', handleError, { once: true })
-      return
-    }
-
-    const script = document.createElement('script')
-    script.src =
-      'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad'
-    script.async = true
-    script.defer = true
-    script.crossOrigin = 'anonymous'
-
-    previousOnloadHandler = window.onTurnstileLoad ?? null
-    turnstileOnloadHandler = () => {
-      previousOnloadHandler?.()
-      waitForTurnstile()
-    }
-    window.onTurnstileLoad = turnstileOnloadHandler
-    script.onerror = () => reject(new Error('Failed to load Turnstile script'))
-
-    document.head.appendChild(script)
+function updateStatus(value: TurnstileWidgetStatus) {
+  if (status.value === value) return
+  status.value = value
+  emit('status', value)
+}
+function settleExecution(error?: Error, token?: string) {
+  clearTimeout(executionTimer)
+  if (error) rejectExecution?.(error)
+  else if (token) resolveExecution?.(token)
+  pending = null
+  resolveExecution = null
+  rejectExecution = null
+}
+function fail(reason: unknown) {
+  if (unmounted) return
+  const error = new Error(describeTurnstileError(reason))
+  error.name = 'TurnstileError'
+  Object.assign(error, {
+    code: extractTurnstileErrorCode(reason),
+    kind: classifyTurnstileError(reason),
   })
+  updateStatus('error')
+  settleExecution(error)
+  emit('error', error)
+}
+function startExecutionTimer() {
+  clearTimeout(executionTimer)
+  executionTimer = setTimeout(() => fail('110600'), 120000)
+}
+function removeWidget() {
+  generation++
+  settleExecution(new Error('Turnstile widget removed'))
+  if (widgetId) window.turnstile?.remove(widgetId)
+  widgetId = null
 }
 
-// Constants
-const LOG_PREFIX = '[Turnstile]'
-const SITE_KEY_PREVIEW_LENGTH = 10
-const IS_DEV = import.meta.env.DEV
-
-// Helper functions
-function maskSiteKey(key: string): string {
-  return key.length > SITE_KEY_PREVIEW_LENGTH
-    ? `${key.substring(0, SITE_KEY_PREVIEW_LENGTH)}...`
-    : key
-}
-
-function logDebug(method: 'log' | 'warn' | 'error', ...args: unknown[]) {
-  if (!IS_DEV) return
-  console[method](LOG_PREFIX, ...args)
-}
-
-function resetRetryState() {
-  // Kept as a stable hook; automatic retries would rebuild challenges and create UI churn.
-}
-
-function clearInteractiveFallbackTimer() {
-  if (!interactiveFallbackTimer) return
-  clearTimeout(interactiveFallbackTimer)
-  interactiveFallbackTimer = null
-}
-
-function updateStatus(nextStatus: TurnstileWidgetStatus) {
-  if (status.value === nextStatus) return
-  status.value = nextStatus
-  emit('status', nextStatus)
-}
-
-function scheduleInteractiveFallback() {
-  clearInteractiveFallbackTimer()
-
-  if (!(props.execution === 'execute' || props.appearance === 'execute')) {
-    return
-  }
-
-  interactiveFallbackTimer = window.setTimeout(() => {
-    if (pendingExecutionResolve && status.value === 'executing') {
-      updateStatus('interactive_required')
-    }
-  }, INTERACTIVE_REQUIRED_DELAY_MS)
-}
-
-function clearPendingExecution() {
-  pendingExecutionResolve = null
-  pendingExecutionReject = null
-  clearInteractiveFallbackTimer()
-}
-
-function rejectPendingExecution(error: Error) {
-  pendingExecutionReject?.(error)
-  clearPendingExecution()
-}
-
-function validateRenderConditions(): boolean {
-  if (!containerRef.value || !window.turnstile) {
-    logDebug('warn', 'Cannot render: missing container or API')
-    return false
-  }
-
-  if (!props.siteKey) {
-    logDebug('error', 'Cannot render: missing siteKey')
-    emit('error', new Error('Turnstile siteKey is required'))
-    return false
-  }
-
-  return true
-}
-
-function cleanupWidget(): void {
-  if (!widgetId.value || !window.turnstile) return
-
-  try {
-    rejectPendingExecution(new Error('Turnstile widget removed'))
-    window.turnstile.remove(widgetId.value)
-  } catch (e) {
-    logDebug('warn', 'Failed to remove old widget:', e)
-  } finally {
-    widgetId.value = null
-  }
-}
-
-function createTurnstileConfig() {
-  return {
-    sitekey: props.siteKey,
-    theme: props.theme,
-    size: props.size,
-    action: props.action,
-    appearance: props.appearance,
-    execution: props.execution,
-    retry: 'never',
-    callback: (token: string) => {
-      resetRetryState()
-      logDebug('log', 'Verification successful')
-      updateStatus('verified')
-      pendingExecutionResolve?.(token)
-      clearPendingExecution()
-      emit('verify', token)
-    },
-    'expired-callback': () => {
-      resetRetryState()
-      logDebug('log', 'Token expired')
-      updateStatus('expired')
-      rejectPendingExecution(new Error('Turnstile token expired'))
-      emit('expire')
-    },
-    'error-callback': (errorCode: unknown) => {
-      const code = extractTurnstileErrorCode(errorCode)
-      const kind = classifyTurnstileError(errorCode)
-
-      if (code === TURNSTILE_HOSTNAME_MISMATCH_CODE) {
-        logDebug('error', 'Hostname is not authorized for this site key:', {
-          hostname: window.location.hostname,
-          siteKey: maskSiteKey(props.siteKey),
-        })
-      } else {
-        logDebug('warn', 'Challenge widget reported an error:', {
-          kind,
-          code: code ?? 'unknown',
-        })
-      }
-
-      const error = new Error(describeTurnstileError(errorCode))
-      error.name = 'TurnstileError'
-      Object.assign(error, { code, kind })
-      updateStatus('error')
-      rejectPendingExecution(error)
-      emit('error', error)
-      return true
-    },
-  }
-}
-
-function renderWidget() {
-  if (!isReady) return
-  if (!validateRenderConditions()) return
-
-  cleanupWidget()
-
-  // Clear container only if needed
-  if (containerRef.value!.innerHTML) {
-    containerRef.value!.innerHTML = ''
-  }
-
-  try {
-    logDebug('log', 'Rendering widget with siteKey:', maskSiteKey(props.siteKey))
-    widgetId.value = window.turnstile!.render(containerRef.value!, createTurnstileConfig())
-    updateStatus('idle')
-    logDebug('log', 'Widget rendered with ID:', widgetId.value)
-    if (props.autoExecute || props.execution === 'execute') {
-      void execute().catch((error) => {
-        logDebug('warn', 'Auto execute failed:', error)
-      })
-    }
-  } catch (error) {
-    logDebug('error', 'Render failed:', error)
-    widgetId.value = null // Ensure clean state on error
-    updateStatus('error')
-    emit('error', error as Error)
-  }
-}
-
-async function rerender() {
-  try {
+async function ensureWidget() {
+  if (widgetId) return
+  if (initializing) return initializing
+  initializing = (async () => {
     await loadTurnstileScript()
-    if (isUnmounted) return
-    renderWidget()
-  } catch (error) {
-    logDebug('error', 'Rerender failed:', error)
-    updateStatus('error')
-    emit('error', error as Error)
-  }
-}
-
-function waitForMountDelay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    mountDelayResolve = resolve
-    mountDelayTimer = window.setTimeout(() => {
-      mountDelayTimer = null
-      mountDelayResolve = null
-      resolve()
-    }, ms)
-  })
-}
-function reset() {
-  if (widgetId.value && window.turnstile) {
-    resetRetryState()
-    rejectPendingExecution(new Error('Turnstile reset'))
-    window.turnstile.reset(widgetId.value)
-    updateStatus('idle')
-    logDebug('log', 'Widget reset')
+    if (unmounted || !containerRef.value) return
+    if (!props.siteKey) throw new Error('Turnstile siteKey is required')
+    const current = ++generation
+    const active = () => !unmounted && current === generation
+    updateStatus(props.execution === 'render' ? 'executing' : 'idle')
+    if (props.execution === 'render') startExecutionTimer()
+    widgetId = window.turnstile!.render(containerRef.value, {
+      sitekey: props.siteKey,
+      theme: props.theme,
+      size: props.size,
+      action: props.action,
+      appearance: props.appearance,
+      execution: props.execution,
+      retry: 'never',
+      'refresh-expired': 'manual',
+      'refresh-timeout': 'manual',
+      callback: (token: string) => {
+        if (!active()) return
+        updateStatus('verified')
+        settleExecution(undefined, token)
+        emit('verify', token)
+      },
+      'before-interactive-callback': () => {
+        if (active()) updateStatus('interactive_required')
+      },
+      'after-interactive-callback': () => {
+        if (active() && status.value === 'interactive_required') updateStatus('executing')
+      },
+      'expired-callback': () => {
+        if (!active()) return
+        updateStatus('expired')
+        settleExecution(new Error('Turnstile token expired'))
+        emit('expire')
+      },
+      'timeout-callback': () => {
+        if (active()) fail('110620')
+      },
+      'unsupported-callback': () => {
+        if (active()) fail('110500')
+      },
+      'error-callback': (code: unknown) => {
+        if (active()) fail(code)
+        return true
+      },
+    })
+  })()
+  try {
+    await initializing
+  } finally {
+    initializing = null
   }
 }
 
 async function execute(): Promise<string> {
-  if (isUnmounted) {
-    throw new Error('Turnstile widget is unmounted')
-  }
-
-  await loadTurnstileScript()
-  if (!isReady) {
-    isReady = true
-  }
-  if (!widgetId.value) {
-    renderWidget()
-  }
-
-  if (!widgetId.value || !window.turnstile) {
-    throw new Error('Turnstile widget is not ready')
-  }
-
-  const existingResponse = window.turnstile.getResponse(widgetId.value)
-  if (existingResponse) {
-    updateStatus('verified')
-    return existingResponse
-  }
-
-  const currentWidgetId = widgetId.value
-  return await new Promise<string>((resolve, reject) => {
-    pendingExecutionResolve = resolve
-    pendingExecutionReject = reject
-    updateStatus('executing')
-    scheduleInteractiveFallback()
-
-    if (!window.turnstile?.execute) {
-      rejectPendingExecution(new Error('Turnstile execute API is unavailable'))
-      return
-    }
-
-    try {
-      const result = window.turnstile.execute(currentWidgetId)
-      Promise.resolve(result).catch((error) => {
-        rejectPendingExecution(error instanceof Error ? error : new Error(String(error)))
-      })
-    } catch (error) {
-      rejectPendingExecution(error instanceof Error ? error : new Error(String(error)))
-    }
-  })
-}
-
-function getResponse(): string | undefined {
-  if (widgetId.value && window.turnstile) {
-    return window.turnstile.getResponse(widgetId.value)
-  }
-  return undefined
-}
-
-onMounted(async () => {
+  if (unmounted) throw new Error('Turnstile widget is unmounted')
   try {
-    logDebug('log', 'Component mounted, loading script...')
-    await loadTurnstileScript()
-    logDebug('log', 'Script loaded, rendering widget...')
-
-    await waitForMountDelay(100)
-    if (isUnmounted) return
-
-    isReady = true
-    renderWidget()
+    await ensureWidget()
   } catch (error) {
-    logDebug('error', 'Mount failed:', error)
-    updateStatus('error')
-    emit('error', error as Error)
+    fail(error)
+    throw error
   }
-})
-
+  if (unmounted || !widgetId || !window.turnstile) throw new Error('Turnstile widget is not ready')
+  if (pending) return pending
+  if (status.value === 'error' || status.value === 'expired') reset()
+  const response = window.turnstile.getResponse(widgetId)
+  if (response) return response
+  const execution = new Promise<string>((resolve, reject) => {
+    resolveExecution = resolve
+    rejectExecution = reject
+  })
+  pending = execution
+  updateStatus('executing')
+  startExecutionTimer()
+  try {
+    if (props.execution === 'execute') {
+      if (!window.turnstile.execute) throw new Error('Turnstile execute API is unavailable')
+      void Promise.resolve(window.turnstile.execute(widgetId)).catch(fail)
+    }
+  } catch (error) {
+    fail(error)
+  }
+  return execution
+}
+function reset() {
+  settleExecution(new Error('Turnstile reset'))
+  updateStatus(props.execution === 'render' ? 'executing' : 'idle')
+  if (widgetId) window.turnstile?.reset(widgetId)
+  if (props.execution === 'render') startExecutionTimer()
+}
+function getResponse() {
+  return widgetId ? window.turnstile?.getResponse(widgetId) : undefined
+}
+async function start() {
+  let attempt = generation
+  try {
+    await ensureWidget()
+    attempt = generation
+    if (!unmounted && props.autoExecute) await execute()
+  } catch (error) {
+    if (
+      !unmounted &&
+      attempt === generation &&
+      status.value !== 'error' &&
+      status.value !== 'expired'
+    )
+      fail(error)
+  }
+}
+async function rerender() {
+  removeWidget()
+  await start()
+}
+onMounted(start)
 onUnmounted(() => {
-  isUnmounted = true
-  isReady = false
-  if (turnstilePollRaf !== null) {
-    cancelAnimationFrame(turnstilePollRaf)
-    turnstilePollRaf = null
-  }
-  if (turnstilePollReject) {
-    turnstilePollReject(new Error('Turnstile widget unmounted'))
-    turnstilePollReject = null
-  }
-  rejectPendingExecution(new Error('Turnstile widget unmounted'))
-  if (mountDelayTimer) {
-    clearTimeout(mountDelayTimer)
-    mountDelayTimer = null
-  }
-  if (mountDelayResolve) {
-    mountDelayResolve()
-    mountDelayResolve = null
-  }
-  clearInteractiveFallbackTimer()
-  resetRetryState()
-  cleanupWidget()
-  if (turnstileOnloadHandler && window.onTurnstileLoad === turnstileOnloadHandler) {
-    if (previousOnloadHandler) window.onTurnstileLoad = previousOnloadHandler
-    else delete window.onTurnstileLoad
-  }
+  unmounted = true
+  removeWidget()
 })
-
 watch(
   () => props.siteKey,
-  (nextSiteKey, previousSiteKey) => {
-    if (!isReady || nextSiteKey === previousSiteKey) return
-    renderWidget()
+  () => {
+    void rerender()
   }
 )
-
-defineExpose({
-  reset,
-  getResponse,
-  rerender,
-  execute,
-})
+defineExpose({ reset, getResponse, rerender, execute })
 </script>
 
 <style scoped>
 .turnstile-container {
   display: grid;
   place-items: center;
-  inline-size: min(100%, clamp(18rem, 88vw, 20rem));
+  inline-size: 100%;
   min-inline-size: 0;
   margin-inline: auto;
-  padding-inline: clamp(0.2rem, 0.8vw, 0.4rem);
-  min-block-size: 0;
 }
-
-.turnstile-container--normal {
-  min-block-size: clamp(4.35rem, 6vw, 4.9rem);
-}
-
-.turnstile-container--compact {
-  min-block-size: clamp(4rem, 5vw, 4.45rem);
-}
-
-.turnstile-container--invisible {
-  position: absolute;
-  inline-size: 0.0625rem;
-  block-size: 0.0625rem;
-  min-block-size: 0;
-  min-inline-size: 0;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-
 .turnstile-container :deep(iframe),
 .turnstile-container :deep(div) {
   /* Third-party Turnstile DOM: retained as the only approved deep-selector exception. */

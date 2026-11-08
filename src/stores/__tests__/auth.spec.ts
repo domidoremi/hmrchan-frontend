@@ -69,6 +69,7 @@ vi.mock('@/api', async () => {
       resolveSession: vi.fn(),
       verifyRiskLogin: vi.fn(),
       logout: vi.fn(),
+      beginPasswordlessLogin: vi.fn(),
     },
     twoFactorService: {
       ...actual.twoFactorService,
@@ -110,6 +111,24 @@ function createMeResponse(overrides: Record<string, unknown> = {}) {
 }
 
 describe('auth store', () => {
+  it('keeps password login available while passive passkey discovery waits or fails', async () => {
+    const store = useAuthStore()
+    let rejectOptions: ((error: Error) => void) | undefined
+    vi.mocked(authService.beginPasswordlessLogin).mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectOptions = reject
+      })
+    )
+    const discovery = store.beginPasswordlessLogin(undefined, { background: true })
+    expect(store.isLoading).toBe(false)
+    rejectOptions!(new ApiError('Challenge required', 403, 'CHALLENGE_REQUIRED'))
+    expect(await discovery).toMatchObject({ status: 'error' })
+    expect(store.isLoading).toBe(false)
+    expect(store.error).toBeNull()
+    expect(authService.beginPasswordlessLogin).toHaveBeenCalledWith(undefined, {
+      skipChallengeRetry: true,
+    })
+  })
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()

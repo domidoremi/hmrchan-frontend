@@ -59,7 +59,7 @@ import Dialog from '@/components/ui/Dialog.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import { ApiError } from '@/api'
 import { clientSecurityService } from '@/api/clientSecurityService'
-import { describeTurnstileError, getTurnstileErrorMessageKey } from '@/utils/turnstile'
+import { extractTurnstileErrorCode, getTurnstileErrorMessageKey } from '@/utils/turnstile'
 import {
   clientChallengeState,
   dismissClientChallenge,
@@ -149,7 +149,7 @@ function handleTurnstileExpire() {
 
 function handleTurnstileError(error?: Error) {
   errorMessage.value = t(getTurnstileErrorMessageKey(error))
-  errorDetail.value = error ? describeTurnstileError(error) : ''
+  errorDetail.value = extractTurnstileErrorCode(error) || ''
 }
 
 async function handleRetry() {

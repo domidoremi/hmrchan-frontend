@@ -34,11 +34,13 @@ async function requestPasskeyOptions<T>(
   scope: string,
   path: string,
   payload: Record<string, unknown>,
-  identifier?: unknown
+  identifier?: unknown,
+  config?: RequestConfig
 ): Promise<T> {
   assertPasskeyOptionsCooldown(scope, identifier)
   try {
     return await apiClient.post<T>(path, payload, {
+      ...config,
       skipAuth: true,
       skipErrorToast: true,
     })
@@ -578,15 +580,16 @@ export const authService = {
     )
   },
 
-  async beginPasswordlessLogin(identifier?: {
-    username?: string
-    email?: string
-  }): Promise<WebAuthnAuthenticationOptionsResponse> {
+  async beginPasswordlessLogin(
+    identifier?: { username?: string; email?: string },
+    config?: RequestConfig
+  ): Promise<WebAuthnAuthenticationOptionsResponse> {
     return requestPasskeyOptions<WebAuthnAuthenticationOptionsResponse>(
       'passwordless-login',
       '/auth/passkeys/login/options',
       identifier ?? {},
-      identifier ?? {}
+      identifier ?? {},
+      config
     )
   },
 

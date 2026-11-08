@@ -581,13 +581,6 @@
   margin-inline: auto;
 }
 
-#app .auth-turnstile-status .turnstile-container--invisible {
-  inline-size: 0.0625rem;
-  block-size: 0.0625rem;
-  min-inline-size: 0.0625rem;
-  min-block-size: 0.0625rem;
-}
-
 #app .auth-turnstile-status__widget--interactive .turnstile-container {
   inline-size: min(100%, clamp(18rem, 82vw, 19.5rem));
 }
