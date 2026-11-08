@@ -156,13 +156,17 @@
   }
 }
 .site-body[data-motion='full'] .journal-shell .film-frame {
-  transform: perspective(1200px) translateY(calc(var(--scroll-depth, 0) * -28px))
-    rotateY(calc(var(--scroll-depth, 0) * 5deg)) rotate(-2deg);
-  transition: transform 0.25s linear;
+  transform: perspective(1200px)
+    translateY(calc(var(--scroll-depth, 0) * -20px + var(--film-distance, 0) * 24px))
+    rotateY(calc(var(--film-offset, 0) * -16deg)) rotate(-2deg)
+    scale(calc(1 - var(--film-distance, 0) * 0.06));
+  transition: transform 0.18s linear;
 }
 .site-body[data-motion='full'] .journal-shell .film-frame:nth-child(even) {
-  transform: perspective(1200px) translateY(calc(14px + var(--scroll-depth, 0) * 22px))
-    rotateY(calc(var(--scroll-depth, 0) * -5deg)) rotate(2deg);
+  transform: perspective(1200px)
+    translateY(calc(10px + var(--scroll-depth, 0) * 14px + var(--film-distance, 0) * 24px))
+    rotateY(calc(var(--film-offset, 0) * -16deg)) rotate(2deg)
+    scale(calc(1 - var(--film-distance, 0) * 0.06));
 }
 .site-body[data-motion='full'] .journal-shell .preview-spatial {
   animation-fill-mode: backwards;

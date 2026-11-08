@@ -55,36 +55,7 @@
         />
       </div>
     </section>
-    <section v-if="pictures.length" class="editorial-film" data-reveal data-depth-scene>
-      <div class="film-heading">
-        <span>02 / PHOTOGRAPHS</span>
-        <h2>影像</h2>
-        <div>
-          <button class="icon-button" aria-label="向前浏览影像" @click="scrollFilm(-1)">
-            <JournalIcon name="arrow-left" /></button
-          ><button class="icon-button" aria-label="向后浏览影像" @click="scrollFilm(1)">
-            <JournalIcon name="arrow" />
-          </button>
-        </div>
-      </div>
-      <div ref="film" class="film-track">
-        <button
-          v-for="(post, i) in pictures"
-          :key="post.id"
-          :data-open="post.id"
-          class="film-frame"
-        >
-          <span>{{ String(i + 1).padStart(2, '0') }} / {{ post.author }}</span
-          ><JournalImage
-            :src="post.image!"
-            :alt="post.title"
-            loading="lazy"
-            width="400"
-            height="520"
-          /><span>{{ post.title }} <JournalIcon name="arrow-up-right" /></span>
-        </button>
-      </div>
-    </section>
+    <EditorialFilm v-if="pictures.length" :posts="pictures" />
     <section class="editorial-calendar" data-reveal>
       <div class="section-heading">
         <span class="section-number">03</span>
@@ -141,11 +112,11 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import SpatialCover from './SpatialCover.vue'
 import JournalIcon from '../JournalIcon.vue'
-import JournalImage from '../JournalImage.vue'
+import EditorialFilm from './EditorialFilm.vue'
 import JournalPostCard from '../JournalPostCard.vue'
 import JournalEventCard from '../JournalEventCard.vue'
 import { sourceGroups } from '../presentation'
@@ -181,11 +152,4 @@ const monthName = computed(() =>
     .format(new Date(props.month + '-01T00:00:00Z'))
     .toUpperCase()
 )
-const film = ref<HTMLElement>()
-function scrollFilm(direction: number) {
-  film.value?.scrollBy({
-    left: direction * film.value.clientWidth * 0.7,
-    behavior: document.body.dataset['motion'] === 'full' ? 'smooth' : 'instant',
-  })
-}
 </script>
