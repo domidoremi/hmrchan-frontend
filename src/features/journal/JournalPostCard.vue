@@ -6,7 +6,14 @@
       :data-open="post.id"
       :aria-label="`查看：${post.title}`"
     >
-      <JournalImage :src="post.image" :alt="post.title" width="400" height="400" loading="lazy" />
+      <JournalImage
+        :src="post.image"
+        :original-src="post.originalImage"
+        :alt="post.title"
+        width="400"
+        height="400"
+        loading="lazy"
+      />
       <span class="media-type"
         ><JournalIcon :name="post.type === '节目' ? 'headphones' : 'image'" />{{ post.type }}</span
       >

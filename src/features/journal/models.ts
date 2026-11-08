@@ -12,6 +12,7 @@ export interface JournalPost {
   title: string
   text: string
   image: string | null
+  originalImage?: string | null
   author: string
   authorId: string | null
   avatar: string
@@ -75,6 +76,7 @@ export function postModel(post: PostListItem | PostDetailResponse): JournalPost 
     title: post.title || content?.slice(0, 100) || '动态',
     text: content || post.description || '',
     image,
+    originalImage: media.kind === 'image' ? media.streamUrl : null,
     author: post.author_name || post.author_username || '',
     authorId: post.author_id || null,
     avatar: post.author_avatar_url || '/journal/mascot.webp',
@@ -111,6 +113,7 @@ export function favoriteModel(
     title: post?.title || '已收藏动态',
     text: favorite.notes || '',
     image,
+    originalImage: media.kind === 'image' ? media.streamUrl : null,
     author: post?.author_name || favorite.author?.username || '',
     authorId: favorite.author?.id || null,
     avatar: '/journal/mascot.webp',

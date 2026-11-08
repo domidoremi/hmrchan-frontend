@@ -88,6 +88,7 @@
               <span class="stream-dot" /><JournalImage
                 v-if="post.image"
                 :src="post.image"
+                :original-src="post.originalImage"
                 alt=""
                 width="48"
                 height="60"
