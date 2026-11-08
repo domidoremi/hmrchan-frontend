@@ -15,6 +15,19 @@ vi.mock('../client', async () => {
 import { ApiError, authService } from '../authService'
 
 describe('authService', () => {
+  it('allows passive passkey discovery to return a challenge without opening a dialog', async () => {
+    apiClientPost.mockRejectedValueOnce(
+      new ApiError('Challenge required', 403, 'CHALLENGE_REQUIRED')
+    )
+    await expect(
+      authService.beginPasswordlessLogin(undefined, { skipChallengeRetry: true })
+    ).rejects.toMatchObject({ code: 'CHALLENGE_REQUIRED' })
+    expect(apiClientPost).toHaveBeenCalledWith(
+      '/auth/passkeys/login/options',
+      {},
+      expect.objectContaining({ skipAuth: true, skipChallengeRetry: true })
+    )
+  })
   beforeEach(() => {
     apiClientPost.mockReset()
     vi.useRealTimers()

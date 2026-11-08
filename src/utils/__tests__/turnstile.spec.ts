@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   TURNSTILE_HOSTNAME_MISMATCH_CODE,
+  classifyTurnstileError,
+  describeTurnstileError,
   extractTurnstileErrorCode,
   getTurnstileErrorMessageKey,
   isRetryableTurnstileError,
@@ -9,6 +11,11 @@ import {
 } from '../turnstile'
 
 describe('turnstile utils', () => {
+  it('distinguishes a failed challenge from a rejected server token', () => {
+    expect(classifyTurnstileError('600010')).toBe('challenge-failed')
+    expect(describeTurnstileError('600010')).not.toMatch(/token|expired/i)
+    expect(classifyTurnstileError('110620')).toBe('timeout')
+  })
   it('extracts numeric error codes from callback payloads', () => {
     expect(extractTurnstileErrorCode(110200)).toBe(TURNSTILE_HOSTNAME_MISMATCH_CODE)
     expect(extractTurnstileErrorCode('110200')).toBe(TURNSTILE_HOSTNAME_MISMATCH_CODE)

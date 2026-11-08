@@ -806,11 +806,16 @@ export const useAuthStore = defineStore('auth', () => {
         isLoading.value = false
       }
     },
-    async beginPasswordlessLogin(identifier?: string): Promise<WebAuthnLoginOptionsResult> {
+    async beginPasswordlessLogin(
+      identifier?: string,
+      options: { background?: boolean; signal?: AbortSignal } = {}
+    ): Promise<WebAuthnLoginOptionsResult> {
       if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-      isLoading.value = true
-      error.value = null
+      if (!options.background) {
+        isLoading.value = true
+        error.value = null
+      }
 
       try {
         const normalizedIdentifier = identifier?.trim()
@@ -819,6 +824,9 @@ export const useAuthStore = defineStore('auth', () => {
             ? normalizedIdentifier.includes('@')
               ? { email: normalizedIdentifier }
               : { username: normalizedIdentifier }
+            : undefined,
+          options.background
+            ? { skipChallengeRetry: true, ...(options.signal ? { signal: options.signal } : {}) }
             : undefined
         )
         return {
@@ -833,10 +841,10 @@ export const useAuthStore = defineStore('auth', () => {
           defaultError: 'auth.error.webauthnLoginFailed',
           invalidStatusCodes: [400, 401, 403, 422, 429],
         })
-        error.value = errorResult.error
+        if (!options.background) error.value = errorResult.error
         return errorResult
       } finally {
-        isLoading.value = false
+        if (!options.background) isLoading.value = false
       }
     },
     async finishPasswordlessLogin(

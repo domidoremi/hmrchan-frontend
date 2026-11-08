@@ -1107,15 +1107,15 @@ async function initializeConditionalPasskeyAutofill() {
 
   conditionalPasskeyStarted = true
   conditionalPasskeyAvailable.value = await isConditionalMediationAvailable()
-  if (!conditionalPasskeyAvailable.value) {
-    return
-  }
-
+  if (!conditionalPasskeyAvailable.value) return
   const abortController = new AbortController()
   conditionalPasskeyAbortController = abortController
 
   try {
-    const optionsResult = await authStore.beginPasswordlessLogin()
+    const optionsResult = await authStore.beginPasswordlessLogin(undefined, {
+      background: true,
+      signal: abortController.signal,
+    })
     if (optionsResult.status === 'error' || abortController.signal.aborted) {
       return
     }

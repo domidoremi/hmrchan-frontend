@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const turnstileMocks = vi.hoisted(() => ({
@@ -87,7 +87,7 @@ describe('TurnstileWidget', () => {
     expect(turnstile.api.remove).toHaveBeenCalledWith('widget-1')
   })
 
-  it('supports invisible execute mode and resolves execute() with challenge token', async () => {
+  it('keeps execute mode visible and resolves execute() with challenge token', async () => {
     const turnstile = createTurnstileApi()
     window.turnstile = turnstile.api
 
@@ -101,7 +101,7 @@ describe('TurnstileWidget', () => {
 
     await vi.advanceTimersByTimeAsync(100)
 
-    expect(wrapper.classes()).toContain('turnstile-container--invisible')
+    expect(wrapper.classes()).not.toContain('turnstile-container--invisible')
 
     turnstile.setResponse(undefined)
     await expect(wrapper.vm.execute()).resolves.toBe('token-from-execute')
@@ -109,6 +109,7 @@ describe('TurnstileWidget', () => {
 
     turnstile.setResponse('cached-token')
     await expect(wrapper.vm.execute()).resolves.toBe('cached-token')
+    wrapper.unmount()
   })
 
   it('emits normalized errors from challenge callbacks and supports reset()', async () => {
@@ -141,5 +142,94 @@ describe('TurnstileWidget', () => {
 
     wrapper.vm.reset()
     expect(turnstile.api.reset).toHaveBeenCalledWith('widget-1')
+    wrapper.unmount()
+  })
+
+  it('shares an in-flight execution and exposes interaction immediately', async () => {
+    const turnstile = createTurnstileApi()
+    turnstile.api.execute.mockImplementation(() => {})
+    window.turnstile = turnstile.api
+    const wrapper = mount(TurnstileWidget, {
+      props: {
+        siteKey: 'site-key',
+        execution: 'execute',
+        appearance: 'execute',
+        autoExecute: true,
+      },
+    })
+    await flushPromises()
+    const first = wrapper.vm.execute()
+    const second = wrapper.vm.execute()
+    await flushPromises()
+    expect(turnstile.api.execute).toHaveBeenCalledTimes(1)
+    const options = turnstile.getLatestOptions()!
+    ;(options['before-interactive-callback'] as () => void)()
+    await flushPromises()
+    expect(wrapper.attributes('data-status')).toBe('interactive_required')
+    expect(wrapper.classes()).not.toContain('turnstile-container--invisible')
+    ;(options.callback as (token: string) => void)('interactive-token')
+    await expect(first).resolves.toBe('interactive-token')
+    await expect(second).resolves.toBe('interactive-token')
+    expect(wrapper.emitted('verify')).toEqual([['interactive-token']])
+    wrapper.unmount()
+  })
+
+  it('leaves busy state after a timeout and starts a fresh challenge on retry', async () => {
+    const turnstile = createTurnstileApi()
+    turnstile.api.execute.mockImplementation(() => {})
+    window.turnstile = turnstile.api
+    const wrapper = mount(TurnstileWidget, {
+      props: { siteKey: 'site-key', execution: 'execute' },
+    })
+    await flushPromises()
+    const result = wrapper.vm.execute().catch((error: Error) => error)
+    await flushPromises()
+    ;(turnstile.getLatestOptions()!['timeout-callback'] as () => void)()
+    expect(await result).toBeInstanceOf(Error)
+    await flushPromises()
+    expect(wrapper.attributes('data-status')).toBe('error')
+    const retry = wrapper.vm.execute()
+    await flushPromises()
+    expect(turnstile.api.reset).toHaveBeenCalledOnce()
+    ;(turnstile.getLatestOptions()!.callback as (token: string) => void)('fresh-token')
+    await expect(retry).resolves.toBe('fresh-token')
+    wrapper.unmount()
+  })
+
+  it('bounds a stalled execution instead of leaving the form busy forever', async () => {
+    const turnstile = createTurnstileApi()
+    turnstile.api.execute.mockImplementation(() => {})
+    window.turnstile = turnstile.api
+    const wrapper = mount(TurnstileWidget, { props: { siteKey: 'site-key', execution: 'execute' } })
+    const result = wrapper.vm.execute().catch((error: Error) => error)
+    await vi.advanceTimersByTimeAsync(120001)
+    expect(await result).toBeInstanceOf(Error)
+    expect(wrapper.attributes('data-status')).toBe('error')
+    wrapper.unmount()
+  })
+
+  it('ignores callbacks and cancellation from a previous challenge after retry', async () => {
+    const turnstile = createTurnstileApi()
+    turnstile.api.execute.mockImplementation(() => {})
+    window.turnstile = turnstile.api
+    const wrapper = mount(TurnstileWidget, {
+      props: {
+        siteKey: 'site-key',
+        execution: 'execute',
+        autoExecute: true,
+      },
+    })
+    await flushPromises()
+    const previous = turnstile.getLatestOptions()!
+    const retry = wrapper.vm.rerender()
+    await flushPromises()
+    ;(previous.callback as (token: string) => void)('obsolete-token')
+    ;(previous['error-callback'] as (code: string) => void)('600010')
+    expect(wrapper.emitted('error')).toBeUndefined()
+    expect(wrapper.emitted('verify')).toBeUndefined()
+    ;(turnstile.getLatestOptions()!.callback as (token: string) => void)('fresh-token')
+    await retry
+    expect(wrapper.emitted('verify')).toEqual([['fresh-token']])
+    wrapper.unmount()
   })
 })

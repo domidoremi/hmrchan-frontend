@@ -4,7 +4,7 @@
     :class="[
       `auth-turnstile-status--${status}`,
       {
-        'auth-turnstile-status--interactive': showWidgetFrame,
+        'auth-turnstile-status--interactive': widgetVisible,
         'auth-turnstile-status--error': Boolean(errorMessage),
       },
     ]"
@@ -16,7 +16,7 @@
 
     <div
       class="auth-turnstile-status__widget"
-      :class="{ 'auth-turnstile-status__widget--interactive': showWidgetFrame }"
+      :class="{ 'auth-turnstile-status__widget--interactive': widgetVisible }"
     >
       <slot />
     </div>
@@ -46,6 +46,7 @@ const props = withDefaults(
 )
 
 const { t } = useI18n()
+const widgetVisible = computed(() => props.showWidgetFrame || props.status !== 'idle')
 
 const title = computed(() => {
   switch (props.status) {
