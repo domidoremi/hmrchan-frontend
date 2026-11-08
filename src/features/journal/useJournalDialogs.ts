@@ -466,6 +466,9 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     (_next, previous) => {
       liked.clear()
       confirmed.clear()
+      details.clear()
+      searches.clear()
+      for (const post of posts.values()) delete post.liked
       if (previous) runtime.value?.UI.closeDialog(true)
     }
   )
