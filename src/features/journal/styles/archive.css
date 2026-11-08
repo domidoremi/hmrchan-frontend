@@ -1509,6 +1509,7 @@ body.site-body.next-body {
   .site-body .journal-shell .archive-browser {
     display: flex;
     flex-direction: column-reverse;
+    min-height: 0;
   }
   .site-body .journal-shell .archive-inspector {
     position: static;
