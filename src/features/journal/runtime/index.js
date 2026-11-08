@@ -34,6 +34,7 @@ export function createJournalRuntime(navigate) {
     document.dispatchEvent(new CustomEvent('journalmotionchange', { detail: motion }))
   }
   document.body.dataset.motion = motion
+  listen(document, 'journalmotionrequest', (event) => setMotion(event.detail))
   function animate(element, keyframes, options = {}) {
     if (!element || motion !== 'full' || lifetime.signal.aborted) return
     const animation = element.animate(keyframes, {
@@ -72,12 +73,34 @@ export function createJournalRuntime(navigate) {
   )
   function mount(root = document) {
     runtime.UI.hydrate(root)
-    root.querySelectorAll('[data-reveal]').forEach((element) => {
-      if (observed.has(element)) return
-      observed.add(element)
-      observer.observe(element)
-    })
+    observeReveals(root)
   }
+  function observeReveals(root = document) {
+    root
+      .querySelectorAll(
+        '[data-reveal], .journal-legacy :is(.page-hero-shell, .sub-header, .author-card, .discover-section, .post-shell, .profile-group, .settings-section, .security-command, .security-workspace, .discussion-card, .about-link-group)'
+      )
+      .forEach((element) => {
+        if (observed.has(element)) return
+        observed.add(element)
+        observer.observe(element)
+      })
+  }
+  let pendingMount = false
+  const contentObserver = new MutationObserver((records) => {
+    if (
+      pendingMount ||
+      !records.some((record) => [...record.addedNodes].some((node) => node.nodeType === 1))
+    )
+      return
+    pendingMount = true
+    frame(() => {
+      pendingMount = false
+      observeReveals()
+    })
+  })
+  const pageRoot = document.querySelector('#main-content')
+  if (pageRoot) contentObserver.observe(pageRoot, { childList: true, subtree: true })
   let tilted = null,
     pointerFrame = false,
     pointerX = 0,
@@ -257,6 +280,7 @@ export function createJournalRuntime(navigate) {
   runtime.dispose = () => {
     lifetime.abort()
     observer.disconnect()
+    contentObserver.disconnect()
     frames.forEach(cancelAnimationFrame)
     animations.forEach((animation) => animation.cancel())
     runtime.UI.closeDialog(true)

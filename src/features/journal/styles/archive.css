@@ -1,7 +1,7 @@
 body.site-body.next-body {
   --ink: #e3ebe7;
-  --muted: #87988f;
-  --faint: #5c6d63;
+  --muted: #a1b2a8;
+  --faint: #a0b0a6;
   --canvas: #111a18;
   --paper: #18231f;
   --line: #2b3a33;
@@ -93,7 +93,7 @@ body.site-body.next-body {
 .site-body .journal-shell .nav-index {
   margin-left: auto;
   font: 9px monospace;
-  opacity: 0.5;
+  opacity: 1;
 }
 .site-body .journal-shell .sidebar-bottom {
   margin-top: auto;

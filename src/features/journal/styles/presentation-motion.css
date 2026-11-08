@@ -1,3 +1,16 @@
+.site-body[data-motion='full'] .journal-legacy :is(.security-panel, .settings-group-panel) {
+  animation: business-panel-arrive 0.4s cubic-bezier(0.18, 0.75, 0.22, 1) both;
+}
+@keyframes business-panel-arrive {
+  from {
+    opacity: 0.2;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 .site-body[data-motion='full'] .journal-shell :is(button, a) {
   transition:
     color 0.25s,

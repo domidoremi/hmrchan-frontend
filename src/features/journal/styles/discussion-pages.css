@@ -1,0 +1,144 @@
+.site-body .journal-legacy .discussion-detail-page {
+  --surface-paper-bg: var(--paper);
+  --surface-paper-border: var(--line);
+  --surface-paper-ink: var(--ink);
+  --surface-paper-ink-soft: var(--muted);
+  --ui-compat-surface-elevated: var(--paper);
+  --ui-compat-surface-interactive: var(--canvas);
+  --ui-compat-border: var(--line);
+  overflow-wrap: anywhere;
+}
+.site-body .journal-legacy .discussion-detail-page .container,
+.site-body .journal-legacy .discussion-card {
+  grid-template-columns: minmax(0, 1fr);
+}
+.site-body .journal-legacy .discussion-detail-page .container > div {
+  min-width: 0;
+}
+.site-body .journal-legacy :is(.discussion-card, .discussion-comments) {
+  width: 100%;
+  min-width: 0;
+}
+.site-body .journal-legacy .discussion-title {
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-legacy .discussion-content {
+  overflow-wrap: anywhere;
+}
+.site-body .journal-legacy .discussion-detail-page .category-pill {
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+.site-body .journal-legacy .discussion-comment-section {
+  gap: 24px;
+  padding: 32px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.site-body .journal-legacy .discussion-detail-page .surface-paper-sketch::before,
+.site-body .journal-legacy .discussion-detail-page .surface-paper-sketch::after {
+  content: none;
+}
+.site-body .journal-legacy .discussion-detail-page .comment-thread-header__title {
+  font-size: 24px;
+  font-weight: 500;
+}
+.site-body .journal-legacy .discussion-detail-page .login-prompt {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 20px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: none;
+}
+.site-body .journal-legacy .discussion-detail-page .prompt-icon-wrap {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  box-shadow: none;
+}
+.site-body .journal-legacy .discussion-detail-page .prompt-actions {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.site-body .journal-legacy .discussion-detail-page .prompt-btn {
+  inline-size: auto;
+  min-height: 42px;
+  padding-inline: 18px;
+  border-radius: 3px;
+}
+.site-body .journal-legacy .discussion-detail-page .comment-item-shell__frame {
+  padding: 24px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.site-body .journal-legacy .discussion-detail-page .comment-item-shell__body {
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.site-body .journal-legacy .discussion-detail-page .ui-badge {
+  color: var(--ink);
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 11px;
+}
+.site-body .journal-legacy .discussion-detail-page .comment-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-legacy .discussion-detail-page .comment-composer-shell__card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: none;
+}
+.site-body .journal-legacy .discussion-detail-page .comment-textarea {
+  color: var(--ink);
+  background: var(--canvas);
+  border-color: var(--line);
+  border-radius: 3px;
+}
+.site-body.next-body .journal-legacy .discussion-comment-section {
+  padding: 28px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+.site-body.next-body .journal-legacy .discussion-detail-page .login-prompt {
+  background: var(--canvas);
+}
+@media (max-width: 640px) {
+  .site-body .journal-legacy .discussion-content {
+    padding-block: 16px;
+    font-size: 16px;
+    line-height: 1.9;
+  }
+  .site-body .journal-legacy .discussion-detail-page .login-prompt {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 16px;
+  }
+  .site-body .journal-legacy .discussion-detail-page .prompt-actions {
+    grid-column: 1 / -1;
+  }
+  .site-body .journal-legacy .discussion-detail-page .prompt-btn {
+    flex: 1;
+  }
+  .site-body.next-body .journal-legacy :is(.discussion-card, .discussion-comment-section) {
+    padding: 20px;
+  }
+}

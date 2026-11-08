@@ -1,0 +1,891 @@
+body.site-body #main-content.journal-legacy {
+  --page-control-ink: var(--muted);
+  --page-control-ink-strong: var(--ink);
+  --page-control-bg: var(--paper);
+  --page-control-border: var(--line);
+  --page-shell-control-ink: var(--ink);
+  --page-shell-control-ink-strong: var(--ink);
+  --page-shell-control-bg: var(--paper);
+  --page-shell-control-bg-hover: var(--canvas);
+  --page-shell-control-border: var(--line);
+  --page-shell-control-active-bg: var(--accent-soft);
+  --page-shell-control-active-ink: var(--ink);
+  --page-shell-control-active-border: var(--accent);
+  --page-shell-surface-bg: var(--paper);
+  --page-shell-surface-bg-strong: var(--paper);
+  --page-shell-surface-border: var(--line);
+  --appearance-page-surface-shadow: none;
+  --appearance-page-control-shadow: none;
+  --profile-shell-radius: 6px;
+  --profile-section-radius: 4px;
+  width: 100%;
+  max-width: 1440px;
+  padding: clamp(28px, 4vw, 64px) clamp(22px, 4vw, 64px) 72px;
+  min-height: calc(100dvh - 240px);
+}
+.site-body .journal-legacy > * {
+  min-width: 0;
+}
+.site-body .journal-legacy .container {
+  width: 100%;
+  max-width: none;
+  padding-inline: 0;
+}
+.site-body
+  .journal-legacy
+  :is(
+    .search-page,
+    .authors-page,
+    .author-detail-page,
+    .about-page,
+    .contact-page,
+    .profile-page,
+    .profile-sub-page,
+    .not-found-page
+  ) {
+  min-height: 0;
+  padding-block: 0;
+  background: transparent;
+}
+.site-body .journal-legacy :is(.page-hero-shell, .sub-header__content) {
+  padding-inline: 0;
+  margin-bottom: 32px;
+}
+body.site-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
+  font-size: clamp(36px, 5.2vw, 72px);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+.site-body
+  .journal-legacy
+  :is(.page-hero-shell__subtitle, .sub-header__hint, .sub-header__subtitle) {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+  max-width: 56ch;
+}
+.site-body
+  .journal-legacy
+  :is(.page-section-title, .discover-title, .author-section-title, .profile-group__title) {
+  color: var(--ink);
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.site-body .journal-legacy :is(.page-control, .page-inline-cta) {
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: none;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.site-body .journal-legacy .page-control--square {
+  width: 42px;
+  min-width: 42px;
+  padding: 10px;
+}
+.site-body .journal-legacy .page-control--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.site-body .journal-legacy .page-control:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.site-body
+  .journal-legacy
+  :is(.page-meta-chip, .page-hero-shell__badge, .author-metric, .author-platform) {
+  background: transparent;
+  border-color: var(--line);
+  border-radius: 3px;
+  color: var(--muted);
+  box-shadow: none;
+}
+.site-body .journal-legacy :is(.page-toolbar, .page-meta-row, .page-control-group) {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 4px;
+  border-color: var(--line);
+}
+.site-body .journal-legacy .state-indicator {
+  min-height: 260px;
+  padding: 48px 24px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+.site-body .journal-legacy .state-indicator__glow {
+  display: none;
+}
+.site-body .journal-legacy .state-indicator__title {
+  font-size: 22px;
+  color: var(--ink);
+}
+.site-body .journal-legacy .state-indicator__description {
+  color: var(--muted);
+  line-height: 1.8;
+}
+.site-body .journal-legacy .ui-avatar {
+  --ui-avatar-fallback-color: var(--ink);
+  --ui-avatar-fallback-bg: var(--accent-soft);
+  --ui-avatar-fallback-border: 1px solid var(--line);
+}
+
+/* 阅读页与检索页共享数据，各自保留不同的内容密度。 */
+.site-body .journal-legacy .search-header {
+  max-width: none;
+  margin: 0 0 32px;
+}
+.site-body .journal-legacy .search-bar-main {
+  width: 100%;
+  max-width: 760px;
+  flex: 1 1 100%;
+}
+.site-body .journal-legacy .search-bar-main .search-input-wrapper {
+  border-radius: 4px;
+  box-shadow: none;
+}
+.site-body .journal-legacy .discover-header {
+  align-items: end;
+  margin-bottom: 24px;
+}
+.site-body .journal-legacy .search-empty {
+  gap: 36px;
+}
+.site-body .journal-legacy :is(.posts-masonry, .posts-grid) {
+  gap: 28px;
+}
+.site-body .journal-legacy .post-card[data-post-id] {
+  width: 100%;
+  margin-bottom: 26px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--ink);
+  overflow: hidden;
+  text-align: left;
+}
+.site-body .journal-legacy .post-card[data-post-id]:hover {
+  border-color: var(--accent);
+  box-shadow: 0 18px 32px -26px color-mix(in srgb, var(--ink) 35%, transparent);
+}
+.site-body .journal-legacy .post-card[data-post-id] .post-content {
+  padding: 20px;
+}
+.site-body .journal-legacy .post-card[data-post-id] .post-title {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.65;
+}
+.site-body .journal-legacy .post-card[data-post-id] .post-meta {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.site-body .journal-legacy .platform-badge {
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: none;
+}
+.site-body .journal-legacy .time-badge {
+  border-radius: 3px;
+}
+.site-body .journal-legacy .authors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 24px;
+}
+.site-body .journal-legacy .author-card {
+  position: relative;
+  min-height: 280px;
+  padding: 32px;
+  gap: 24px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: none;
+  content-visibility: visible;
+}
+.site-body .journal-legacy .author-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+}
+.site-body .journal-legacy .author-card .author-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+}
+.site-body .journal-legacy .author-name {
+  color: var(--ink);
+}
+.site-body .journal-legacy .author-card .author-name {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: normal;
+}
+.site-body .journal-legacy .author-card .author-username {
+  color: var(--muted);
+  font-size: 13px;
+}
+.site-body .journal-legacy .author-card__cta {
+  position: absolute;
+  right: 28px;
+  top: 28px;
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+}
+.site-body .journal-legacy .author-header {
+  padding: 32px 0 40px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 36px;
+}
+.site-body .journal-legacy .author-header .author-name {
+  font:
+    400 clamp(28px, 3.5vw, 48px)/1.25 Georgia,
+    'Songti SC',
+    serif;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-legacy .author-header .author-avatar {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+}
+.site-body .journal-legacy .load-more-section {
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  box-shadow: none;
+  padding: 24px 0;
+}
+
+.site-body .journal-legacy .post-detail-page {
+  padding: 0;
+  background: transparent;
+}
+.site-body .journal-legacy .post-stage {
+  min-height: 0;
+  padding: 0 0 40px;
+}
+.site-body .journal-legacy .post-shell {
+  width: 100%;
+  max-width: none;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr);
+  gap: 40px;
+}
+.site-body .journal-legacy .media-viewer {
+  width: 100%;
+  min-height: 380px;
+  max-height: 74dvh;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 5%, var(--canvas));
+}
+.site-body .journal-legacy .media-item-container {
+  padding: 12px;
+}
+.site-body .journal-legacy .media-viewer-item {
+  object-fit: contain;
+}
+.site-body .journal-legacy .post-panel {
+  position: sticky;
+  top: 100px;
+  border: 0;
+  border-top: 2px solid var(--ink);
+  padding: 24px 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.site-body .journal-legacy .post-panel .post-title {
+  font:
+    400 clamp(26px, 2.4vw, 38px)/1.4 Georgia,
+    'Songti SC',
+    serif;
+}
+.site-body .journal-legacy .post-description {
+  font-size: 15px;
+  line-height: 1.9;
+}
+.site-body .journal-legacy .post-comments {
+  padding: 32px 0 0;
+  border-top: 1px solid var(--line);
+}
+.site-body .journal-legacy .post-detail-page .comment-section {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.site-body .journal-legacy .post-back-fab {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 20px #0001;
+}
+.site-body .journal-legacy .post-action-strip .action-btn {
+  min-height: 42px;
+  padding: 10px 16px;
+}
+.site-body .journal-legacy .media-nav {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.site-body .journal-legacy .account-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.site-body .journal-legacy .account-navigation a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  border-radius: 4px;
+}
+.site-body .journal-legacy .account-navigation a.is-current {
+  background: var(--ink);
+  color: var(--paper);
+}
+.site-body .journal-legacy .account-navigation .icon {
+  width: 16px;
+  height: 16px;
+}
+.site-body .journal-legacy .profile-banner {
+  display: none;
+}
+.site-body .journal-legacy .profile-overview {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.site-body .journal-legacy .profile-overview__name {
+  font:
+    400 clamp(32px, 4vw, 56px)/1.2 Georgia,
+    'Songti SC',
+    serif;
+  overflow-wrap: anywhere;
+}
+.site-body
+  .journal-legacy
+  :is(
+    .profile-command-card,
+    .profile-nav-card,
+    .summary-card,
+    .settings-section,
+    .settings-overview,
+    .security-command,
+    .security-workspace,
+    .security-entry
+  ) {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: none;
+}
+.site-body .journal-legacy :is(.profile-nav-card, .profile-command-card) {
+  padding: 24px;
+}
+.site-body .journal-legacy .profile-nav-card:hover {
+  border-color: var(--accent);
+}
+.site-body .journal-legacy .profile-overview__hero {
+  gap: 32px;
+}
+.site-body .journal-legacy .profile-overview__summary {
+  border-block: 1px solid var(--line);
+  gap: 0;
+}
+.site-body .journal-legacy .summary-card {
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  padding: 24px;
+}
+.site-body .journal-legacy .summary-card:last-child {
+  border-right: 0;
+}
+.site-body .journal-legacy .summary-card__value {
+  font:
+    400 40px/1.1 Georgia,
+    serif;
+}
+.site-body .journal-legacy .security-command__headline h1 {
+  font-size: clamp(24px, 2.8vw, 38px);
+  line-height: 1.35;
+}
+.site-body .journal-legacy :is(.security-entry__copy h2, .security-workspace__summary h2) {
+  font-size: 22px;
+  line-height: 1.4;
+}
+.site-body .journal-legacy .security-entry {
+  padding: 24px;
+  text-align: left;
+}
+.site-body .journal-legacy .security-entry--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.site-body .journal-legacy .security-workspace__chip {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.site-body .journal-legacy .security-workspace__chip--active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.site-body .journal-legacy .settings-group-switcher__item {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+.site-body .journal-legacy .settings-group-switcher__item--active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.site-body .journal-legacy :is(.settings-section-title, .profile-nav-card__title) {
+  font-size: 18px;
+  line-height: 1.4;
+}
+.site-body .journal-legacy .settings-overview__title {
+  font-size: 28px;
+  line-height: 1.4;
+}
+.site-body .journal-legacy .settings-section {
+  padding: 28px;
+}
+.site-body .journal-legacy .profile-group__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.site-body
+  .journal-legacy
+  :is(
+    .contact-workflow,
+    .contact-stage,
+    .contact-private-note,
+    .contact-highlight,
+    .contact-topic-card,
+    .contact-guide-card
+  ) {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: none;
+}
+.site-body .journal-legacy .contact-topic-card {
+  padding: 24px;
+  text-align: left;
+}
+.site-body .journal-legacy .contact-topic-card:hover {
+  border-color: var(--accent);
+}
+.site-body .journal-legacy .contact-topic-card.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.site-body .journal-legacy .not-found-page {
+  padding: clamp(32px, 6vw, 90px) 0;
+}
+.site-body .journal-legacy .error-code {
+  color: var(--ink);
+  background: none;
+  -webkit-text-fill-color: var(--ink);
+  font:
+    400 clamp(100px, 20vw, 240px)/0.9 Georgia,
+    serif;
+  letter-spacing: -0.08em;
+}
+.site-body .journal-legacy .error-title {
+  margin-top: 32px;
+  font-size: 26px;
+}
+.site-body .journal-legacy .error-message {
+  margin-block: 16px 28px;
+  color: var(--muted);
+}
+
+body.site-body.next-body #main-content.journal-legacy {
+  max-width: 1560px;
+  padding: 36px 36px 64px;
+}
+body.site-body.next-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
+  font-family: inherit;
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+.site-body.next-body .journal-legacy :is(.page-hero-shell, .sub-header__content) {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+}
+.site-body.next-body
+  .journal-legacy
+  :is(.page-section-title, .discover-title, .author-section-title, .profile-group__title) {
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
+}
+.site-body.next-body .journal-legacy .authors-grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.site-body.next-body .journal-legacy .author-card {
+  display: grid;
+  grid-template-columns: 72px 1fr 40px;
+  min-height: 148px;
+  padding: 24px;
+  border-radius: 0;
+  border-width: 0 0 1px;
+  background: transparent;
+  align-items: center;
+}
+.site-body.next-body .journal-legacy .author-card .author-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+}
+.site-body.next-body .journal-legacy .author-card .author-name {
+  font-size: 18px;
+}
+.site-body.next-body .journal-legacy .author-card__cta {
+  position: static;
+}
+.site-body.next-body .journal-legacy .author-card:hover {
+  transform: translateX(4px);
+  background: var(--paper);
+}
+.site-body.next-body .journal-legacy .author-topline {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+.site-body.next-body .journal-legacy .author-header {
+  padding-block: 12px 28px;
+}
+.site-body.next-body .journal-legacy .author-header .author-name {
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 600;
+  line-height: 1.4;
+  font-family: inherit;
+}
+.site-body.next-body .journal-legacy .author-header .author-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+}
+.site-body.next-body .journal-legacy .posts-masonry {
+  display: grid;
+  grid-template-columns: 1fr;
+  columns: auto;
+  gap: 0;
+}
+.site-body.next-body .journal-legacy .post-card[data-post-id] {
+  display: grid;
+  grid-template-columns: 152px minmax(0, 1fr);
+  gap: 0;
+  margin: 0;
+  padding: 20px 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.site-body.next-body .journal-legacy .post-card[data-post-id]:hover {
+  background: var(--paper);
+  transform: translateX(3px);
+}
+.site-body.next-body .journal-legacy .post-card[data-post-id] .post-image-wrapper {
+  min-height: 118px;
+  height: 100%;
+  border-radius: 4px;
+}
+.site-body.next-body .journal-legacy .post-card[data-post-id] .post-content {
+  padding: 0 20px;
+}
+.site-body.next-body .journal-legacy .post-card[data-post-id] .post-title {
+  font-size: 15px;
+  line-height: 1.65;
+}
+.site-body.next-body .journal-legacy .post-card[data-post-id] .post-meta {
+  margin-top: 12px;
+  padding-top: 0;
+  border: 0;
+}
+.site-body.next-body .journal-legacy .posts-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.site-body.next-body .journal-legacy .posts-grid .post-card[data-post-id] {
+  display: block;
+  padding: 0;
+}
+.site-body.next-body .journal-legacy .post-shell {
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.4fr);
+  gap: 28px;
+}
+.site-body.next-body .journal-legacy .post-panel {
+  grid-column: 1;
+  grid-row: 1;
+  border-top: 0;
+  padding: 0 24px 0 0;
+  border-right: 1px solid var(--line);
+}
+.site-body.next-body .journal-legacy .post-shell > .post-media {
+  grid-column: 2;
+  grid-row: 1;
+}
+.site-body.next-body .journal-legacy .post-panel .post-title {
+  font-family: inherit;
+  font-size: 24px;
+}
+.site-body.next-body .journal-legacy .media-viewer {
+  background: #090f0d;
+}
+.site-body.next-body .journal-legacy.account-workspace {
+  display: grid;
+  grid-template-columns: 138px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 28px;
+}
+.site-body.next-body .journal-legacy .account-navigation {
+  position: sticky;
+  top: 96px;
+  flex-direction: column;
+  border-bottom: 0;
+  padding: 0;
+  gap: 4px;
+}
+.site-body.next-body .journal-legacy .account-navigation a {
+  padding: 11px 12px;
+}
+.site-body.next-body .journal-legacy .account-navigation a.is-current {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.site-body.next-body .journal-legacy .profile-overview__name {
+  font-family: inherit;
+  font-size: 34px;
+}
+.site-body.next-body .journal-legacy .profile-group__grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.site-body.next-body .journal-legacy .profile-nav-card {
+  border-width: 0 0 1px;
+  border-radius: 0;
+  background: transparent;
+  padding: 18px 0;
+}
+.site-body.next-body .journal-legacy .summary-card__value {
+  font-family: 'Consolas', monospace;
+  font-size: 32px;
+}
+.site-body.next-body .journal-legacy .profile-command-grid {
+  grid-template-columns: 1fr 1fr;
+}
+.site-body.next-body .journal-legacy .profile-command-list {
+  grid-column: 1 / -1;
+}
+.site-body.next-body .journal-legacy .security-console__overview {
+  gap: 12px;
+}
+.site-body.next-body .journal-legacy .security-entry {
+  padding: 18px;
+}
+.site-body.next-body .journal-legacy .security-entry__copy h2 {
+  font-size: 18px;
+}
+
+@media (min-width: 1100px) {
+  .site-body:not(.next-body) .journal-legacy .posts-masonry {
+    columns: 3;
+    column-gap: 28px;
+  }
+  .site-body:not(.next-body) .journal-legacy .posts-masonry__item {
+    break-inside: avoid;
+  }
+  .site-body:not(.next-body) .journal-legacy .author-card .author-info {
+    padding-right: 24px;
+  }
+}
+@media (max-width: 1100px) {
+  .site-body.next-body .journal-legacy.account-workspace {
+    display: block;
+  }
+  .site-body.next-body .journal-legacy .account-navigation {
+    position: static;
+    flex-direction: row;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+  }
+  .site-body .journal-legacy .post-shell,
+  .site-body.next-body .journal-legacy .post-shell {
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+    gap: 24px;
+  }
+  .site-body.next-body .journal-legacy .post-panel {
+    grid-column: 2;
+  }
+  .site-body.next-body .journal-legacy .post-shell > .post-media {
+    grid-column: 1;
+  }
+}
+@media (max-width: 700px) {
+  body.site-body #main-content.journal-legacy,
+  body.site-body.next-body #main-content.journal-legacy {
+    padding: 24px 18px 48px;
+  }
+  body.site-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
+    font-size: 36px;
+  }
+  body.site-body.next-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
+    font-size: 28px;
+  }
+  .site-body .journal-legacy .account-navigation,
+  .site-body.next-body .journal-legacy .account-navigation {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: -18px;
+    padding-inline: 18px;
+    gap: 2px;
+  }
+  .site-body .journal-legacy .account-navigation a {
+    flex-shrink: 0;
+    padding: 10px;
+  }
+  .site-body .journal-legacy .account-navigation .icon {
+    display: none;
+  }
+  .site-body .journal-legacy .authors-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .site-body .journal-legacy .author-card {
+    min-height: 240px;
+    padding: 24px;
+  }
+  .site-body.next-body .journal-legacy .author-card {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 16px;
+    padding: 20px 0;
+    min-height: 150px;
+  }
+  .site-body.next-body .journal-legacy .author-card .author-avatar {
+    width: 48px;
+    height: 48px;
+  }
+  .site-body.next-body .journal-legacy .author-card__cta {
+    display: none;
+  }
+  .site-body.next-body .journal-legacy .author-card .author-name {
+    font-size: 16px;
+  }
+  .site-body.next-body .journal-legacy .author-topline {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .site-body .journal-legacy .author-header {
+    align-items: start;
+    gap: 20px;
+  }
+  .site-body .journal-legacy .author-header .author-avatar {
+    width: 72px;
+    height: 72px;
+  }
+  .site-body .journal-legacy .author-header .author-name {
+    font-size: 28px;
+  }
+  .site-body .journal-legacy .post-card[data-post-id] .post-content {
+    padding: 16px;
+  }
+  .site-body .journal-legacy .posts-masonry {
+    columns: 1;
+  }
+  .site-body.next-body .journal-legacy .post-card[data-post-id] {
+    grid-template-columns: 96px minmax(0, 1fr);
+    padding-block: 16px;
+  }
+  .site-body.next-body .journal-legacy .post-card[data-post-id] .post-content {
+    padding: 0 0 0 14px;
+  }
+  .site-body.next-body .journal-legacy .post-card[data-post-id] .post-image-wrapper {
+    min-height: 108px;
+  }
+  .site-body.next-body .journal-legacy .post-card[data-post-id] .time-badge {
+    display: none;
+  }
+  .site-body.next-body .journal-legacy .post-card[data-post-id] .post-meta {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .site-body .journal-legacy .post-shell,
+  .site-body.next-body .journal-legacy .post-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .site-body .journal-legacy .post-shell > .post-media {
+    width: 100%;
+  }
+  .site-body .journal-legacy .post-panel,
+  .site-body.next-body .journal-legacy .post-panel {
+    position: static;
+    width: 100%;
+    border: 0;
+    border-top: 1px solid var(--line);
+    padding: 24px 0 0;
+  }
+  .site-body .journal-legacy .media-viewer {
+    min-height: 260px;
+    max-height: 64dvh;
+  }
+  .site-body .journal-legacy .post-stage {
+    padding-bottom: 28px;
+  }
+  .site-body .journal-legacy .profile-group__grid {
+    grid-template-columns: 1fr;
+  }
+  .site-body
+    .journal-legacy
+    :is(.profile-nav-card, .profile-command-card, .security-entry, .settings-section) {
+    padding: 20px;
+  }
+  .site-body .journal-legacy .summary-card {
+    padding: 18px 12px;
+  }
+  .site-body .journal-legacy .summary-card__value {
+    font-size: 30px;
+  }
+  .site-body .journal-legacy .profile-overview__name {
+    font-size: 32px;
+  }
+  .site-body.next-body .journal-legacy .profile-command-grid {
+    grid-template-columns: 1fr;
+  }
+}

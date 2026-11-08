@@ -51,7 +51,7 @@
         <template v-else>
           <RouterLink class="mobile-archive-logo" to="/">m.</RouterLink>
           <div class="workspace-location">
-            <span>MOMICHAN</span><i>/</i><b>{{ labels[pageName] || '账号' }}</b>
+            <span>MOMICHAN</span><i>/</i><b>{{ locationLabel }}</b>
           </div>
         </template>
         <div class="header-actions">
@@ -109,16 +109,25 @@
           >
         </div>
       </Transition>
-      <main id="main-content" tabindex="-1" :class="{ 'journal-legacy': !isJournalPage }">
+      <main
+        id="main-content"
+        tabindex="-1"
+        :class="{ 'journal-legacy': !isJournalPage, 'account-workspace': isAccountPage }"
+        :data-route="route.name"
+      >
+        <AccountNavigation v-if="isAccountPage" />
         <slot />
       </main>
       <footer v-if="!isAuthRoute" class="edition-footer" data-reveal>
-        <div v-if="!isNext" class="footer-wordmark" aria-hidden="true">MomiChan<span>®</span></div>
+        <div v-if="!isNext && !isAccountPage" class="footer-wordmark" aria-hidden="true">
+          MomiChan<span>®</span>
+        </div>
         <div class="footer-bottom">
           <span>MOMICHAN · {{ new Date().getFullYear() }}</span
           ><span>{{ isNext ? 'ARCHIVE' : 'JOURNAL' }}</span
           ><a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'"
             >{{ isNext ? '前往杂志' : '前往资料库' }} <JournalIcon name="arrow-up-right" /></a
+          ><RouterLink to="/about">关于</RouterLink><RouterLink to="/contact">联系</RouterLink
           ><button data-action="top">回到顶部 ↑</button>
         </div>
       </footer>
@@ -156,11 +165,22 @@ import { journalKey } from './context'
 import { useJournalDialogs } from './useJournalDialogs'
 import { useJournalEvents } from './useJournalEvents'
 import JournalIcon from './JournalIcon.vue'
+import AccountNavigation from './AccountNavigation.vue'
+import { useI18n } from 'vue-i18n'
 import './styles/index.css'
 const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore()
 const isNext = designEdition === 'archive'
+const { t } = useI18n()
+const isAccountPage = computed(
+  () => route.path.startsWith('/profile') && route.path !== '/profile/favorites'
+)
+const locationLabel = computed(() => {
+  if (labels[pageName.value]) return labels[pageName.value]
+  const title = typeof route.meta.title === 'function' ? route.meta.title(route) : route.meta.title
+  return title ? t(String(title)) : 'MomiChan'
+})
 const authRoutes = new Set([
   'login',
   'register',
@@ -230,6 +250,9 @@ function toggleMotion() {
   motion.value = motion.value === 'full' ? 'reduced' : 'full'
   runtime.value?.setMotion(motion.value)
 }
+function syncMotion() {
+  motion.value = runtime.value?.getMotion() === 'reduced' ? 'reduced' : 'full'
+}
 function syncChrome() {
   document.body.classList.toggle('journal-auth', isAuthRoute.value)
   document.body.dataset['page'] = pageName.value
@@ -247,6 +270,7 @@ onMounted(() => {
   })
   motion.value = runtime.value.getMotion()
   document.addEventListener('keydown', escapeMenu)
+  document.addEventListener('journalmotionchange', syncMotion)
 })
 watch(
   () => route.path,
@@ -261,6 +285,7 @@ watch(
 onBeforeUnmount(() => {
   runtime.value?.dispose()
   document.removeEventListener('keydown', escapeMenu)
+  document.removeEventListener('journalmotionchange', syncMotion)
   document.body.classList.remove('site-body', 'next-body', 'reading-large', 'journal-auth')
   delete document.body.dataset['variant']
   delete document.body.dataset['page']

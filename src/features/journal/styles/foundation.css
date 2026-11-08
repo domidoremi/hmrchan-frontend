@@ -1,11 +1,11 @@
 body.site-body {
   --ink: #252722;
-  --muted: #77786e;
-  --faint: #a7a79a;
+  --muted: #62665b;
+  --faint: #686b61;
   --paper: #faf9f3;
   --canvas: #f2f1e9;
   --line: #d9d9cc;
-  --accent: #c74831;
+  --accent: #b83d29;
   --accent-soft: #e9d9c9;
   --green: #44674d;
   --radius: 3px;
@@ -41,31 +41,31 @@ body.site-body::after {
 .site-body #toast * {
   box-sizing: border-box;
 }
-.site-body .journal-shell :is(h1, h2, h3, h4, p) {
+:where(.site-body .journal-shell) :is(h1, h2, h3, h4, p) {
   margin: 0;
   color: inherit;
   font: inherit;
   text-wrap: pretty;
 }
-.site-body .journal-shell :is(button, input, select, textarea) {
+:where(.site-body .journal-shell) :is(button, input, select, textarea) {
   font: inherit;
   color: inherit;
 }
-.site-body .journal-shell button {
+:where(.site-body .journal-shell) button {
   border: 0;
   background: transparent;
   cursor: pointer;
   padding: 0;
 }
-.site-body .journal-shell button:disabled {
+:where(.site-body .journal-shell) button:disabled {
   opacity: 0.4;
   cursor: default;
 }
-.site-body .journal-shell a {
+:where(.site-body .journal-shell) a {
   text-decoration: none;
   color: inherit;
 }
-.site-body .journal-shell img {
+:where(.site-body .journal-shell) img {
   display: block;
   object-fit: cover;
   max-width: 100%;
@@ -393,6 +393,9 @@ body.site-body::after {
   color: var(--muted);
 }
 .site-body .journal-shell .footer-bottom a {
+  margin-left: 0;
+}
+.site-body .journal-shell .footer-bottom a:first-of-type {
   margin-left: auto;
 }
 .site-body .journal-shell .footer-bottom .icon {
