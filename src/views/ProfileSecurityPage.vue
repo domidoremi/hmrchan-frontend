@@ -4,7 +4,6 @@
       <ProfileSubPageHeader
         :title="$t('profile.securityHubTitle')"
         :subtitle="$t('profile.securityHubSubtitle')"
-        :hint="$t('profile.securityHubHint')"
       >
         <template #actions>
           <Button variant="ghost" size="sm" type="button" @click="refreshSecurityCenter">
@@ -47,7 +46,7 @@
             </div>
             <div class="security-command__headline">
               <p class="security-command__eyebrow">{{ $t('profile.securityHubTitle') }}</p>
-              <h1>{{ securityHeadline }}</h1>
+              <h2>{{ securityHeadline }}</h2>
               <p>{{ $t('profile.securityHubHint') }}</p>
             </div>
           </div>
@@ -74,40 +73,6 @@
         </section>
 
         <section class="security-console">
-          <div class="security-console__overview">
-            <button
-              v-for="panel in panelCards"
-              :key="panel.id"
-              type="button"
-              class="security-entry glass-surface--editorial"
-              :class="{ 'security-entry--active': activePanel === panel.id }"
-              :aria-pressed="activePanel === panel.id"
-              :aria-controls="panel.panelId"
-              @click="selectPanel(panel.id)"
-            >
-              <div class="security-entry__media">
-                <AnimatedIcon name="explore" :fallback-icon="panel.icon" size="lg" />
-              </div>
-
-              <div class="security-entry__copy">
-                <p class="security-entry__eyebrow">{{ panel.kicker }}</p>
-                <h2>{{ panel.title }}</h2>
-                <p>{{ panel.description }}</p>
-              </div>
-
-              <div class="security-entry__footer">
-                <div class="security-entry__meta">
-                  <span class="security-entry__meta-label">{{ panel.metaLabel }}</span>
-                  <strong class="security-entry__meta-value">{{ panel.metaValue }}</strong>
-                </div>
-                <span class="security-entry__cta">
-                  {{ $t('profile.viewSection') }}
-                  <ChevronRight :size="16" />
-                </span>
-              </div>
-            </button>
-          </div>
-
           <section
             class="security-workspace glass-surface--editorial"
             data-testid="profile-security-workspace"
@@ -116,12 +81,15 @@
               <div v-if="activePanelCard" class="security-workspace__summary">
                 <p class="security-workspace__eyebrow">{{ activePanelCard.kicker }}</p>
                 <h2>{{ activePanelCard.title }}</h2>
-                <p>{{ activePanelCard.description }}</p>
+                <p v-if="activePanelCard.description !== activePanelCard.title">
+                  {{ activePanelCard.description }}
+                </p>
               </div>
 
               <div
                 class="security-workspace__chips"
                 role="tablist"
+                @keydown="handleTabListKeydown"
                 :aria-label="$t('profile.securityHubTitle')"
               >
                 <button
@@ -133,6 +101,7 @@
                   :class="{ 'security-workspace__chip--active': activePanel === panel.id }"
                   :aria-selected="activePanel === panel.id"
                   :tabindex="activePanel === panel.id ? 0 : -1"
+                  :aria-controls="panel.id"
                   role="tab"
                   @click="selectPanel(panel.id)"
                 >
@@ -243,8 +212,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { handleTabListKeydown } from '@/utils/tabNavigation'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronRight, Fingerprint, History, Mail, Monitor, RefreshCw, Shield } from '@lucide/vue'
+import { Fingerprint, History, Mail, Monitor, RefreshCw, Shield } from '@lucide/vue'
 import { ApiError, auditService, userService, type SecuritySummary, type UserProfile } from '@/api'
 import { useSessionManagement } from '@/composables/useSessionManagement'
 import { useAuthStore } from '@/stores'
@@ -395,8 +365,10 @@ function currentPanelElement(): HTMLElement | null {
 }
 
 async function syncPanelFromHash(hash: string, shouldScroll = false) {
-  activePanel.value = resolveSecurityPanelFromHash(hash)
-  if (!shouldScroll) return
+  const nextPanel = resolveSecurityPanelFromHash(hash)
+  const changed = activePanel.value !== nextPanel
+  activePanel.value = nextPanel
+  if (!shouldScroll || !changed) return
 
   await nextTick()
   currentPanelElement()?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -410,9 +382,6 @@ async function selectPanel(panelId: SecurityPanelId) {
   if (shouldReplaceSecurityPanelHash({ currentHash: route.hash, panelId })) {
     await router.replace({ hash: getSecurityPanelHash(panelId) })
   }
-
-  await nextTick()
-  currentPanelElement()?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 async function fetchProfile() {

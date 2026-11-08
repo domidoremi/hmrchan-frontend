@@ -35,11 +35,7 @@
             'notification-item--archived': Boolean(message.archived_at),
             'notification-item--actionable': Boolean(resolveActionTarget(message.action_url)),
           }"
-          :role="resolveActionTarget(message.action_url) ? 'button' : undefined"
-          :tabindex="resolveActionTarget(message.action_url) ? 0 : undefined"
           @click="handleMessageClick(message)"
-          @keydown.enter.prevent="handleMessageClick(message)"
-          @keydown.space.prevent="handleMessageClick(message)"
         >
           <div class="notification-item__media">
             <Avatar
@@ -61,7 +57,17 @@
           <div class="notification-item__content">
             <div class="notification-item__header">
               <div class="notification-item__headline-wrap">
-                <p class="notification-item__title">{{ message.title }}</p>
+                <p class="notification-item__title">
+                  <button
+                    v-if="resolveActionTarget(message.action_url)"
+                    type="button"
+                    class="notification-item__open"
+                    @click.stop="handleMessageClick(message)"
+                  >
+                    {{ message.title }}
+                  </button>
+                  <template v-else>{{ message.title }}</template>
+                </p>
                 <p v-if="message.body" class="notification-item__body">{{ message.body }}</p>
               </div>
               <ChevronRight
