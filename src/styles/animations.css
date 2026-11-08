@@ -1045,9 +1045,10 @@
 /* ========== Reduced Motion ========== */
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :where(html:not(:has(body.site-body[data-motion='full']))),
+  :where(html:not(:has(body.site-body[data-motion='full']))) *,
+  :where(html:not(:has(body.site-body[data-motion='full']))) *::before,
+  :where(html:not(:has(body.site-body[data-motion='full']))) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

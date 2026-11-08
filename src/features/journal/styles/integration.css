@@ -354,3 +354,16 @@ body.site-body .journal-compose > header {
 .site-body .calendar-toolbar h2 > .journal-month-next {
   right: 0;
 }
+.site-body .scene-modes [data-motion-enable] {
+  border-right: 1px solid var(--line);
+  color: var(--accent);
+}
+.site-body [data-motion-enable][hidden] {
+  display: none;
+}
+.site-body .journal-motion-status {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}

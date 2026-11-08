@@ -502,11 +502,11 @@ body.site-body[data-motion='reduced'] .collection-seal {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  :where(body.site-body) .deck-tilt,
-  :where(body.site-body) .collection-art {
+  :where(body.site-body:not([data-motion='full'])) .deck-tilt,
+  :where(body.site-body:not([data-motion='full'])) .collection-art {
     transform: none !important;
   }
-  :where(body.site-body) .depth-card {
+  :where(body.site-body:not([data-motion='full'])) .depth-card {
     transition: none !important;
   }
 }

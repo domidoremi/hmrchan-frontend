@@ -5929,11 +5929,11 @@ body.site-body[data-motion='reduced'] [data-reveal] {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  :where(body.site-body) [data-reveal] {
+  :where(body.site-body:not([data-motion='full'])) [data-reveal] {
     opacity: 1 !important;
     transform: none !important;
   }
-  html:has(body.site-body) {
+  html:has(body.site-body:not([data-motion='full'])) {
     scroll-behavior: auto !important;
   }
 }

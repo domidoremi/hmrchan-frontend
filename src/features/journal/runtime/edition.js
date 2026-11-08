@@ -87,12 +87,29 @@ export function installEditorial(runtime, environment) {
   if (!preferences || typeof preferences !== 'object')
     preferences = { motion: null, largeText: false }
   const systemMotion = matchMedia('(prefers-reduced-motion: reduce)')
+  function syncMotionControls() {
+    const enabled = document.body.dataset.motion === 'full'
+    const label = `${preferences.motion === null ? '跟随系统 · ' : ''}${enabled ? '已开启' : '已关闭'}`
+    document.querySelectorAll('[data-motion-enable]').forEach((button) => {
+      button.hidden = enabled
+    })
+    document.querySelectorAll('[data-motion-status]').forEach((status) => {
+      status.textContent = label
+    })
+    document.querySelectorAll('[data-preference="motion"]').forEach((button) => {
+      button.setAttribute('aria-checked', String(enabled))
+    })
+  }
   function applyPreferences() {
+    const previous = document.body.dataset.motion
     document.body.dataset.motion =
       preferences.motion === true || (!systemMotion.matches && preferences.motion !== false)
         ? 'full'
         : 'reduced'
     document.body.classList.toggle('reading-large', preferences.largeText === true)
+    syncMotionControls()
+    if (previous === 'reduced' && document.body.dataset.motion === 'full')
+      requestAnimationFrame(() => enhance())
   }
   applyPreferences()
   systemMotion.addEventListener('change', applyPreferences)
@@ -124,15 +141,17 @@ export function installEditorial(runtime, environment) {
   }
   function appearance() {
     openDialog(
-      `<div class="appearance-heading"><span class="eyebrow">DISPLAY</span><h2 id="dialog-title">显示设置</h2></div><div class="preference-row"><div><h3>大号文字</h3></div><button class="switch" role="switch" aria-checked="${preferences.largeText === true}" data-preference="largeText" aria-label="大号文字"><span></span></button></div><div class="preference-row"><div><h3>动画效果</h3></div><button class="switch" role="switch" aria-checked="${document.body.dataset.motion === 'full'}" data-preference="motion" aria-label="动画效果"><span></span></button></div><div class="dialog-actions"><button class="button button-dark" data-close>完成 ${icon('check')}</button></div>`,
+      `<div class="appearance-heading"><span class="eyebrow">DISPLAY</span><h2 id="dialog-title">显示设置</h2></div><div class="preference-row"><div><h3>大号文字</h3></div><button class="switch" role="switch" aria-checked="${preferences.largeText === true}" data-preference="largeText" aria-label="大号文字"><span></span></button></div><div class="preference-row"><div><h3>动画效果</h3><small class="journal-motion-status" data-motion-status></small></div><button class="switch" role="switch" aria-checked="${document.body.dataset.motion === 'full'}" data-preference="motion" aria-label="动画效果"><span></span></button></div><div class="dialog-actions"><button class="button button-dark" data-close>完成 ${icon('check')}</button></div>`,
       'appearance-dialog'
     )
+    syncMotionControls()
   }
   let observer
   function enhance(root = document) {
     runtime.SpatialMotion?.mount(root)
     runtime.Atelier?.mount(root)
     runtime.Experience?.mount(root)
+    syncMotionControls()
     const targets = document.querySelectorAll('[data-reveal]')
     observer?.disconnect()
     updateProgress()
@@ -177,6 +196,15 @@ export function installEditorial(runtime, environment) {
   document.addEventListener('click', (event) => {
     const button = event.target.closest('button')
     if (!button) return
+    if (button.hasAttribute('data-motion-enable')) {
+      preferences.motion = true
+      save('reading', preferences)
+      applyPreferences()
+      const cover = button.closest('[data-cover-shell]')
+      cover
+        ?.querySelector('[data-scene-mode="' + cover.dataset.sceneMode + '"]')
+        ?.focus({ preventScroll: true })
+    }
     if (button.dataset.preference) {
       const key = button.dataset.preference
       if (!['motion', 'largeText'].includes(key)) return
