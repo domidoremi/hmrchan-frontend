@@ -105,6 +105,7 @@ beforeEach(() => {
   mocks.favorites.items = []
   mocks.favorites.checkFavorited.mockResolvedValue(false)
   mocks.listPosts.mockResolvedValue({ items: [post()], has_more: false })
+  mocks.getPost.mockReset()
   mocks.getPost.mockResolvedValue({
     ...post(),
     media_files: [
@@ -120,6 +121,63 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 describe('journal dialog requests and real media', () => {
+  it('revalidates the same post when its backend content and photos change', async () => {
+    await dialogs.openPost(post())
+    const updated = { ...post('Updated content'), image: '/updated.webp', author: 'New author' }
+    mocks.getPost.mockResolvedValue({
+      ...updated,
+      media_files: [{ id: 'updated-image', file_type: 'image/jpeg' }],
+    })
+    dialogs.remember([updated])
+    await dialogs.openPost(updated)
+    expect(document.querySelector('#dialog-title')!.textContent).toBe('Updated content')
+    expect(document.querySelector('.detail-photo')!.getAttribute('src')).toBe('/updated.webp')
+    document.querySelector<HTMLElement>('[data-dialog-gallery]')!.click()
+    await flushPromises()
+    expect(document.querySelector('.gallery-image')!.getAttribute('src')).toBe(
+      '/media/updated-image/stream'
+    )
+  })
+
+  it('does not let an older response replace the latest remembered post', async () => {
+    let finish!: (value: JournalPost) => void
+    mocks.getPost.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve
+      })
+    )
+    const first = dialogs.openPost(post('Old loading'))
+    mocks.getPost.mockResolvedValueOnce(post('Newest content'))
+    await dialogs.openPost(post('New loading'))
+    finish(post('Old response'))
+    await first
+    expect(document.querySelector('#dialog-title')!.textContent).toBe('Newest content')
+    mocks.getPost.mockRejectedValueOnce(new Error('Offline'))
+    const reopen = document.createElement('button')
+    reopen.dataset['dialogPost'] = id
+    document.body.append(reopen)
+    reopen.click()
+    await flushPromises()
+    expect(document.querySelector('#dialog-title')!.textContent).toBe('Newest content')
+  })
+
+  it('does not reuse an old gallery after the backend removes its image', async () => {
+    await dialogs.openPost(post())
+    mocks.getPost.mockResolvedValue({ ...post('Now text only'), image: null, media_files: [] })
+    document.querySelector<HTMLElement>('[data-dialog-gallery]')!.click()
+    await flushPromises()
+    expect(document.querySelector('.journal-real-gallery')).toBeNull()
+    expect(document.querySelector('.gallery-image')).toBeNull()
+  })
+
+  it('retries a failed detail request on the next opening', async () => {
+    mocks.getPost.mockRejectedValueOnce(new Error('Offline'))
+    await dialogs.openPost(post('Available preview'))
+    mocks.getPost.mockResolvedValueOnce(post('Recovered content'))
+    await dialogs.openPost(post('Available preview'))
+    expect(document.querySelector('#dialog-title')!.textContent).toBe('Recovered content')
+  })
+
   it('keeps an open dialog during initial session restoration', async () => {
     mocks.auth.user.id = undefined
     await flushPromises()

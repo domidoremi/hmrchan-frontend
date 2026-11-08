@@ -9,7 +9,7 @@ import {
 } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authorService } from '@/api/authorService'
-import { postService, type PostDetailResponse } from '@/api/postService'
+import { postService } from '@/api/postService'
 import { searchService } from '@/api/searchService'
 import { ensureAuthStoreLoaded } from '@/services/authSurface'
 import { useAuthStore, useFavoritesStore } from '@/stores'
@@ -30,7 +30,6 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     () => import.meta.env.DEV && route.query['journal-fixture'] === 'reference'
   )
   const posts = new Map<string, JournalPost>()
-  const details = new Map<string, Promise<PostDetailResponse>>()
   const searches = new Map<string, { items: JournalPost[]; more: boolean }>()
   const pending = new Set<string>(),
     liked = new Map<string, boolean>()
@@ -52,16 +51,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     while (posts.size > 120) posts.delete(posts.keys().next().value!)
   }
   function detail(id: string) {
-    let promise = details.get(id)
-    if (!promise) {
-      promise = postService.getPost(id, config()).catch((error) => {
-        details.delete(id)
-        throw error
-      })
-      details.set(id, promise)
-      if (details.size > 60) details.delete(details.keys().next().value!)
-    }
-    return promise
+    return postService.getPost(id, config())
   }
   function resultRows(items: JournalPost[], time = false) {
     return items
@@ -189,6 +179,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     if (!isUuidV7String(post.id)) return
     try {
       const response = await detail(post.id)
+      if (request !== generation || !active('detail-dialog')) return
       const full = postModel(response)
       if (full.liked !== undefined) liked.set(full.id, full.liked)
       remember([full])
@@ -238,23 +229,36 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
   async function openGallery(post: JournalPost) {
     if (!post.image) return
     const request = generation
-    let images = [{ src: post.image, thumb: post.image }]
+    let current = post,
+      images = [{ src: post.image, thumb: post.image }]
     if (isUuidV7String(post.id)) {
       try {
         const response = await detail(post.id)
+        if (request !== generation) return
+        current = postModel(response)
+        remember([current])
         const originals = (response.media_files || [])
           .filter((file) => /^image(?:\/|$)/i.test(file.file_type))
           .map((file) => ({
             src: getMediaStreamUrl(file.id),
             thumb: getMediaThumbnailUrl(file.id, 'large'),
           }))
-        if (originals.length) images = originals
+        images = originals.length
+          ? originals
+          : current.image
+            ? [{ src: current.image, thumb: current.image }]
+            : []
       } catch {
         if (request === generation) ui().toast('原图暂时无法加载')
       }
     }
     if (request !== generation) return
-    galleryPost = post
+    if (!images.length) {
+      ui().toast('暂无图片')
+      if (active('detail-dialog')) renderPost(current)
+      return
+    }
+    galleryPost = current
     galleryImages = images
     renderGallery(0)
   }
@@ -328,7 +332,6 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
         post.liked = response.is_liked
         post.communityLikes = response.community_like_count
       }
-      details.delete(id)
       button.setAttribute('aria-pressed', String(response.is_liked))
       const count = button.querySelector('span')
       if (count) count.textContent = String(response.community_like_count)
@@ -466,7 +469,6 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     (_next, previous) => {
       liked.clear()
       confirmed.clear()
-      details.clear()
       searches.clear()
       for (const post of posts.values()) delete post.liked
       if (previous) runtime.value?.UI.closeDialog(true)
