@@ -168,6 +168,17 @@
     rotateY(calc(var(--film-offset, 0) * -16deg)) rotate(2deg)
     scale(calc(1 - var(--film-distance, 0) * 0.06));
 }
+.site-body .selection-dock-enter-active,
+.site-body .selection-dock-leave-active {
+  transition:
+    transform 0.45s cubic-bezier(0.16, 0.8, 0.23, 1),
+    opacity 0.25s;
+}
+.site-body .selection-dock-enter-from,
+.site-body .selection-dock-leave-to {
+  transform: perspective(800px) translateY(35px) rotateX(12deg);
+  opacity: 0;
+}
 .site-body[data-motion='full'] .journal-shell .preview-spatial {
   animation-fill-mode: backwards;
 }
