@@ -88,8 +88,13 @@ function attachRouteContractMetadata(route) {
 
 const GUEST_BROWSER_ROUTE_DEFINITIONS = Object.freeze(
   [
-    { name: 'home route', path: '/', mode: 'guest', shellSelector: '.atelier-home' },
-    { name: 'explore route', path: '/explore', mode: 'guest', shellSelector: '.edition-browser' },
+    { name: 'home route', path: '/', mode: 'guest', shellSelector: '[data-journal-page="home"]' },
+    {
+      name: 'explore route',
+      path: '/explore',
+      mode: 'guest',
+      shellSelector: '[data-journal-page="explore"]',
+    },
     { name: 'search route', path: '/search', mode: 'guest', shellSelector: '.search-page' },
     { name: 'authors route', path: '/authors', mode: 'guest', shellSelector: '.authors-page' },
     {

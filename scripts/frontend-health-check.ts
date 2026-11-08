@@ -326,7 +326,12 @@ function buildGuestRoutes(
       samplePostRoute,
       sampleDiscussionRoute,
     }).guest.map(toHealthRouteDefinition),
-    { name: 'schedule route', path: '/schedule', mode: 'guest', shellSelector: '.schedule-page' },
+    {
+      name: 'schedule route',
+      path: '/schedule',
+      mode: 'guest',
+      shellSelector: '[data-journal-page="schedule"]',
+    },
     { name: 'about route', path: '/about', mode: 'guest' },
     { name: 'contact route', path: '/contact', mode: 'guest' },
     {
@@ -494,6 +499,7 @@ async function collectBrowserTrustHeaders(page: Page): Promise<Record<string, st
 }
 
 async function prewarmLocalAuditTrust(page: Page, baseUrl: string): Promise<boolean> {
+  if (AUDIT_ENV.LOCAL_AUDIT_SCOPED_QA_SESSION === 'true') return false
   if (!isLocalAuditOrigin(baseUrl)) {
     return false
   }
