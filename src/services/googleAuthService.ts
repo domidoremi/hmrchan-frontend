@@ -431,6 +431,7 @@ export function bridgeGooglePopupResult(
 function buildGoogleStartUrl(intent: GoogleAuthIntent, returnTo: string): string {
   const url = new URL(GOOGLE_AUTH_START_PATH, window.location.origin)
   url.searchParams.set('intent', intent)
+  url.searchParams.set('frontend_origin', window.location.origin)
   url.searchParams.set('return_to', returnTo)
   return url.toString()
 }
