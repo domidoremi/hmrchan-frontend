@@ -151,7 +151,10 @@ import {
   resolvePlatformAnimation,
   resolvePlatformLabel,
 } from './post-card/postCardModel'
-import { shouldUpgradeThumbnailToOriginal } from './post-card/postCardMediaQuality'
+import {
+  resolveOriginalImageStream,
+  shouldUpgradeThumbnailToOriginal,
+} from './post-card/postCardMediaQuality'
 
 const postAspectRatioCache = new Map<string, string>()
 const MAX_ASPECT_RATIO_CACHE_SIZE = 500
@@ -204,7 +207,7 @@ const props = withDefaults(defineProps<PostCardProps>(), {
   thumbnailSize: 'responsive',
   imageFit: 'cover',
   priority: false,
-  preferOriginalImage: true,
+  preferOriginalImage: false,
 })
 
 const imageFit = computed(() => props.imageFit)
@@ -324,8 +327,7 @@ const platformLabel = computed(() => {
 
 const effectiveThumbnailSize = computed(() => {
   if (props.thumbnailSize === 'responsive') {
-    const baseSize = isMobileDevice() ? 'medium' : 'large'
-    return baseSize
+    return 'large'
   }
   return props.thumbnailSize
 })
@@ -552,6 +554,11 @@ function onImageLoad(event: Event) {
       duration: props.post.duration ?? null,
       postType: props.post.post_type ?? null,
       naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+      renderedWidth: img.clientWidth,
+      renderedHeight: img.clientHeight,
+      pixelRatio: window.devicePixelRatio || 1,
+      fit: props.imageFit,
     })
   ) {
     void upgradeToOriginalImage()
@@ -569,12 +576,13 @@ function onImageLoad(event: Event) {
 }
 
 async function upgradeToOriginalImage(): Promise<void> {
+  const expectedThumbnail = thumbnailSrc.value
   qualityUpgradeAttempted.value = true
   qualityUpgradePending.value = true
 
-  const candidates = await resolveMediaImageCandidates(mediaSource.value, { probeUnknown: true })
+  const streamUrl = await resolveOriginalImageStream(mediaSource.value)
+  if (expectedThumbnail !== thumbnailSrc.value) return
   qualityUpgradePending.value = false
-  const streamUrl = candidates.find((candidate) => candidate !== thumbnailSrc.value) ?? null
   if (streamUrl) {
     isImageLoaded.value = false
     highQualitySrc.value = streamUrl

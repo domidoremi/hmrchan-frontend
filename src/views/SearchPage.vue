@@ -83,12 +83,12 @@
             <template v-else>
               <div class="posts-masonry">
                 <div
-                  v-for="post in results"
+                  v-for="(post, index) in results"
                   :key="post.id"
                   v-memo="getPostMemo(post)"
                   class="posts-masonry__item"
                 >
-                  <PostCard :post="post" @click="goToPost" />
+                  <PostCard :post="post" :priority="index === 0" @click="goToPost" />
                 </div>
               </div>
             </template>
@@ -327,10 +327,11 @@
 
           <div v-else class="posts-masonry discover-masonry">
             <PostCard
-              v-for="post in discoverPosts"
+              v-for="(post, index) in discoverPosts"
               :key="post.id"
               v-memo="getPostMemo(post)"
               :post="post"
+              :priority="index === 0"
               @click="goToPost"
             />
           </div>

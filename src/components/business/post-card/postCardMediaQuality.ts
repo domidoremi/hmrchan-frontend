@@ -8,6 +8,11 @@ export function shouldUpgradeThumbnailToOriginal({
   duration,
   postType,
   naturalWidth,
+  naturalHeight,
+  renderedWidth,
+  renderedHeight,
+  pixelRatio = 1,
+  fit = 'cover',
 }: {
   attempted: boolean
   pending: boolean
@@ -16,6 +21,11 @@ export function shouldUpgradeThumbnailToOriginal({
   duration?: number | null
   postType?: string | null
   naturalWidth: number
+  naturalHeight: number
+  renderedWidth: number
+  renderedHeight: number
+  pixelRatio?: number
+  fit?: 'cover' | 'contain'
 }): boolean {
   if (attempted || pending || highQualitySrc || thumbnailSize !== 'large') return false
   if (duration && duration > 0) return false
@@ -29,5 +39,10 @@ export function shouldUpgradeThumbnailToOriginal({
     return false
   }
 
-  return naturalWidth > 0 && naturalWidth < 600
+  if (!naturalWidth || !naturalHeight || !renderedWidth || !renderedHeight) return false
+  const widthScale = renderedWidth / naturalWidth
+  const heightScale = renderedHeight / naturalHeight
+  const scale =
+    fit === 'contain' ? Math.min(widthScale, heightScale) : Math.max(widthScale, heightScale)
+  return scale * pixelRatio > 1.05
 }
