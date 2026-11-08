@@ -9,7 +9,12 @@
           ><span>{{ post.type }}</span
           ><JournalIcon name="expand" />
         </div>
-        <button class="preview-media" :class="{ 'is-text': !post.image }" :data-open="post.id">
+        <button
+          class="preview-media"
+          :class="{ 'is-text': !post.image }"
+          :data-open="post.id"
+          :aria-label="post.image ? post.title : undefined"
+        >
           <JournalImage
             v-if="post.image"
             :src="post.image"
@@ -42,7 +47,7 @@
             ><button
               class="button button-outline"
               :aria-pressed="saved"
-              :aria-label="`${saved ? '取消收藏' : '收藏'}：${post.title}`"
+              :aria-label="`${saved ? '已收藏，取消收藏' : '收藏'}：${post.title}`"
               @click="$emit('save', post, $event)"
             >
               <JournalIcon name="bookmark" />{{ saved ? '已收藏' : '收藏' }}</button
