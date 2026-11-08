@@ -58,7 +58,7 @@ body.site-body .post-card .post-title {
   overflow: hidden;
 }
 body.site-body .view-list .post-card .post-title {
-  width: 100%;
+  width: auto;
 }
 body.site-body #main-content.journal-legacy {
   padding: 32px 48px;
