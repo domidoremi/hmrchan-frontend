@@ -134,7 +134,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
   function openSearch(initial = '') {
     let query = initial
     ui().openDialog(
-      `<h2 id="dialog-title">搜索</h2><label class="explore-search">${icon('search')}<input id="global-search" type="search" placeholder="搜索动态、作者、标签…" aria-label="搜索动态、作者或标签" value="${esc(initial)}" autofocus></label><div class="search-shortcuts"><button data-search-term="籾山ひめり">籾山ひめり</button><button data-search-term="写真">写真</button><button data-search-term="高嶺のなでしこ">高嶺のなでしこ</button></div><div id="search-results" class="search-results" aria-live="polite"></div>`,
+      `<h2 id="dialog-title">搜索</h2><label class="explore-search">${icon('search')}<input id="global-search" type="search" placeholder="动态、作者、标签" aria-label="搜索动态、作者或标签" value="${esc(initial)}" autofocus></label><div id="search-results" class="search-results" aria-live="polite"></div>`,
       'search-dialog',
       { key: 'search', label: '搜索', render: () => openSearch(query) }
     )

@@ -1,0 +1,1657 @@
+body.site-body.next-body {
+  --ink: #e3ebe7;
+  --muted: #87988f;
+  --faint: #5c6d63;
+  --canvas: #111a18;
+  --paper: #18231f;
+  --line: #2b3a33;
+  --accent: #b8f4ce;
+  --accent-soft: #2a3f32;
+  --green: #a5dcb7;
+  color-scheme: dark;
+}
+.site-body .journal-shell.edition-archive {
+  background-image: radial-gradient(ellipse at 85% 0, #25403438, transparent 55%);
+}
+.site-body .journal-shell .archive-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 212px;
+  padding: 27px 19px 18px;
+  display: flex;
+  flex-direction: column;
+  z-index: 35;
+  background: #111a18;
+  border-right: 1px solid var(--line);
+}
+.site-body .journal-shell .archive-logo {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 17px;
+  letter-spacing: -0.5px;
+}
+.site-body .journal-shell .archive-logo small {
+  display: block;
+  font: 8px monospace;
+  letter-spacing: 3px;
+  margin-top: 5px;
+  color: var(--muted);
+}
+.site-body .journal-shell .brand-mark {
+  font:
+    600 38px/1 'Georgia',
+    serif;
+  color: var(--accent);
+}
+.site-body .journal-shell .sidebar-search {
+  margin: 35px 0 27px;
+  padding: 12px 11px;
+  background: #1a2721;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.site-body .journal-shell kbd {
+  font: 9px monospace;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 2px 5px;
+  color: var(--muted);
+}
+.site-body .journal-shell .sidebar-search kbd {
+  margin-left: auto;
+}
+.site-body .journal-shell .archive-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.site-body .journal-shell .archive-sidebar nav a {
+  display: flex;
+  align-items: center;
+  padding: 12px 12px;
+  font-size: 12px;
+  gap: 12px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+.site-body .journal-shell .archive-sidebar nav a.active {
+  background: #243b2d;
+  color: var(--accent);
+  box-shadow: inset 2px 0 var(--accent);
+}
+.site-body .journal-shell .archive-sidebar nav .icon {
+  width: 16px;
+  height: 16px;
+}
+.site-body .journal-shell .nav-index {
+  margin-left: auto;
+  font: 9px monospace;
+  opacity: 0.5;
+}
+.site-body .journal-shell .sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 10px;
+}
+.site-body .journal-shell .sidebar-bottom .motion-switch {
+  align-self: flex-start;
+  margin: 0 8px 5px;
+}
+.site-body .journal-shell .sidebar-bottom > a {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 14px 8px 0;
+  border-top: 1px solid var(--line);
+}
+.site-body .journal-shell .sidebar-bottom > a > .icon:last-child {
+  margin-left: auto;
+}
+.site-body .journal-shell .sidebar-bottom > a > .icon {
+  width: 14px;
+  height: 14px;
+}
+.site-body .edition-archive .edition-workspace {
+  margin-left: 212px;
+}
+.site-body .edition-archive .edition-header {
+  min-height: 66px;
+  padding-inline: 32px;
+}
+.site-body .journal-shell .workspace-location {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+}
+.site-body .journal-shell .workspace-location > span {
+  font: 9px monospace;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+.site-body .journal-shell .workspace-location i {
+  font-style: normal;
+  color: var(--faint);
+}
+.site-body .journal-shell .workspace-location b {
+  font-weight: 400;
+}
+.site-body .edition-archive .account-link {
+  border-radius: 4px;
+}
+.site-body .edition-archive .edition-footer {
+  margin-inline: 32px;
+  margin-top: 45px;
+  border-top: 0;
+}
+.site-body .journal-shell .archive-page {
+  padding: 32px;
+  max-width: 1660px;
+  margin: auto;
+}
+.site-body .journal-shell .archive-page-title {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  margin-bottom: 30px;
+}
+.site-body .journal-shell .archive-page-title > div {
+  margin-right: auto;
+}
+.site-body .journal-shell .archive-page-title h1 {
+  font:
+    500 36px/1.3 'Inter',
+    'Microsoft YaHei',
+    sans-serif;
+  letter-spacing: -1.7px;
+  margin-top: 8px;
+}
+.site-body .journal-shell .title-dot {
+  color: var(--accent);
+}
+.site-body .journal-shell .archive-date {
+  font: 9px monospace;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.site-body .journal-shell .meta-count {
+  padding: 3px 7px;
+  font: 10px monospace;
+  background: #1f3027;
+  color: var(--accent);
+  border: 1px solid #334d3c;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.site-body .edition-archive .button-dark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #15291d;
+}
+.site-body .journal-shell .archive-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) 1.5fr;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  margin-bottom: 32px;
+  background: #19261e80;
+  overflow: hidden;
+}
+.site-body .journal-shell .archive-summary > div {
+  display: flex;
+  gap: 13px;
+  padding: 23px 20px;
+  border-right: 1px solid var(--line);
+  min-width: 0;
+}
+.site-body .journal-shell .archive-summary > div > .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.site-body .journal-shell .archive-summary > div > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.site-body .journal-shell .archive-summary strong {
+  display: block;
+  margin-top: 8px;
+  font: 28px/1 monospace;
+  color: var(--ink);
+}
+.site-body .journal-shell .archive-summary > .source-distribution {
+  display: block;
+  border: 0;
+  padding-top: 30px;
+}
+.site-body .journal-shell .source-distribution > div {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+  margin-bottom: 17px;
+}
+.site-body .journal-shell .source-distribution > div > span {
+  background: var(--accent);
+  opacity: calc(1 - var(--source-index) * 0.16);
+  border-radius: 1px;
+}
+.site-body .journal-shell .source-distribution > span {
+  margin-right: 13px;
+  font: 8px monospace;
+}
+.site-body .journal-shell .source-distribution b {
+  color: var(--ink);
+  margin-left: 3px;
+  font-weight: 400;
+}
+.site-body .journal-shell .archive-command {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.site-body .journal-shell .archive-command > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.site-body .journal-shell .archive-command h2 {
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.site-body .journal-shell .command-marker {
+  color: var(--accent);
+  font-size: 24px;
+}
+.site-body .journal-shell .archive-command > button {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.site-body .journal-shell .archive-command > button kbd {
+  margin-left: auto;
+}
+.site-body .journal-shell .archive-command > button > .icon {
+  width: 14px;
+  height: 14px;
+}
+.site-body .journal-shell .archive-observatory {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 48px;
+  min-height: 650px;
+  padding: 0 0 25px;
+}
+.site-body .journal-shell .archive-stream {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.site-body .journal-shell .stream-tabs {
+  display: flex;
+  gap: 20px;
+  min-height: 58px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  overflow: auto;
+  scrollbar-width: none;
+}
+.site-body .journal-shell .stream-tabs button {
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--muted);
+  height: 58px;
+  border-bottom: 2px solid transparent;
+}
+.site-body .journal-shell .stream-tabs button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.site-body .journal-shell .stream-content {
+  max-height: 620px;
+  overflow: auto;
+  scrollbar-width: thin;
+  padding-right: 5px;
+}
+.site-body .journal-shell .timeline-label {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: var(--faint);
+  font: 9px monospace;
+  padding: 21px 0 12px;
+}
+.site-body .journal-shell .timeline-label i {
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+}
+.site-body .journal-shell .stream-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 13px 10px;
+  text-align: left;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+.site-body .journal-shell .stream-row.selected {
+  border-color: #456b4e;
+  background: #243b2d85;
+}
+.site-body .journal-shell .stream-row:hover {
+  background: #203027;
+}
+.site-body .journal-shell .stream-row > .journal-image {
+  width: 40px;
+  height: 49px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.site-body .journal-shell .stream-row > .icon:first-of-type {
+  color: var(--faint);
+}
+.site-body .journal-shell .stream-row > .icon:last-child {
+  width: 14px;
+  height: 14px;
+  color: var(--faint);
+}
+.site-body .journal-shell .stream-dot {
+  width: 4px;
+  height: 4px;
+  border: 1px solid var(--faint);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.site-body .journal-shell .stream-row.selected .stream-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px #b8f4ce66;
+}
+.site-body .journal-shell .stream-row-copy {
+  flex: 1;
+  min-width: 0;
+}
+.site-body .journal-shell .stream-row-copy b {
+  display: -webkit-box;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-shell .stream-row-copy small {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 9px monospace;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.site-body .journal-shell .stream-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  font-size: 10px;
+  padding: 18px;
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+.site-body .journal-shell .observatory-preview {
+  position: relative;
+  min-width: 0;
+  padding: 24px 20px 0;
+  background-image: radial-gradient(#7fb18c19 1px, transparent 1px);
+  background-size: 19px 19px;
+}
+.site-body .journal-shell .preview-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 9px monospace;
+  color: var(--muted);
+  margin-bottom: 26px;
+  letter-spacing: 1px;
+}
+.site-body .journal-shell .preview-label > span:last-child {
+  margin-left: auto;
+  color: var(--faint);
+}
+.site-body .journal-shell .archive-preview {
+  position: relative;
+  perspective: 1600px;
+  min-width: 0;
+}
+.site-body .journal-shell .preview-face {
+  position: relative;
+  background: #1d2b23;
+  border: 1px solid #3b5242;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 25px 55px #0005;
+}
+.site-body .journal-shell .preview-spatial {
+  margin: 0 16px 0 4px;
+  transform: perspective(1800px) rotateX(var(--tilt-x, 0deg))
+    rotateY(calc(-7deg + var(--tilt-y, 0deg)));
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+.site-body .journal-shell .preview-edge {
+  display: none;
+}
+.site-body .journal-shell .preview-spatial .preview-edge {
+  display: block;
+  position: absolute;
+  inset: 8px -16px 8px 15px;
+  background: #22352a;
+  border: 1px solid #3c5141;
+  border-radius: 6px;
+  transform: translateZ(-35px) rotateY(-5deg) rotateZ(2deg);
+}
+.site-body .journal-shell .preview-spatial .preview-edge.second {
+  inset: 16px -28px 16px 28px;
+  background: #17261d;
+  transform: translateZ(-70px) rotateY(-8deg) rotateZ(4deg);
+}
+.site-body .journal-shell .preview-caption {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 15px;
+  font: 8px monospace;
+  color: var(--muted);
+  background: #1a2920;
+  border-bottom: 1px solid #3b5242;
+}
+.site-body .journal-shell .preview-caption > span:first-child {
+  color: var(--accent);
+}
+.site-body .journal-shell .preview-caption > .icon {
+  margin-left: auto;
+  width: 12px;
+  height: 12px;
+}
+.site-body .journal-shell .preview-media {
+  width: 100%;
+  height: 300px;
+  display: block;
+  background: #0d1612;
+  overflow: hidden;
+}
+.site-body .journal-shell .preview-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.site-body .journal-shell .preview-media.is-text {
+  display: grid;
+  align-items: center;
+  padding: 35px;
+  text-align: left;
+  background: linear-gradient(135deg, #304836, #1d3025);
+}
+.site-body .journal-shell .preview-media > span:not(.journal-image) {
+  font-size: 19px;
+  line-height: 1.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 7;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-shell .preview-copy {
+  padding: 18px;
+}
+.site-body .journal-shell .preview-copy h2 {
+  font-size: 17px;
+  line-height: 1.6;
+  margin: 13px 0 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-shell .preview-copy h2 button {
+  text-align: left;
+}
+.site-body .journal-shell .preview-copy > p {
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.site-body .journal-shell .preview-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.site-body .journal-shell .preview-tags > button {
+  font-size: 9px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 3px 6px;
+  border-radius: 3px;
+}
+.site-body .journal-shell .preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.site-body .journal-shell .preview-actions .button {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 10px;
+}
+.site-body .journal-shell .preview-actions .icon {
+  width: 14px;
+  height: 14px;
+}
+.site-body .journal-shell .preview-actions > span {
+  margin-left: auto;
+  color: var(--muted);
+  font: 9px monospace;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.site-body .journal-shell .preview-steppers {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  font: 9px monospace;
+  color: var(--muted);
+}
+.site-body .journal-shell .preview-empty {
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: var(--faint);
+  border: 1px dashed var(--line);
+}
+.site-body .journal-shell .archive-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-top: 30px;
+}
+.site-body .journal-shell .archive-panel {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #16211b;
+  padding: 20px;
+  min-width: 0;
+}
+.site-body .journal-shell .panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+}
+.site-body .journal-shell .panel-heading > span:first-child {
+  font: 8px monospace;
+  color: var(--faint);
+  letter-spacing: 1px;
+}
+.site-body .journal-shell .panel-heading h2 {
+  font-size: 13px;
+  font-weight: 500;
+}
+.site-body .journal-shell .panel-heading > :last-child {
+  margin-left: auto;
+}
+.site-body .journal-shell .panel-heading > a .icon {
+  width: 16px;
+  height: 16px;
+}
+.site-body .journal-shell .archive-agenda article {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.site-body .journal-shell .agenda-day {
+  font: 22px/1 monospace;
+  color: var(--accent);
+}
+.site-body .journal-shell .agenda-day small {
+  display: block;
+  font: 8px monospace;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.site-body .journal-shell .archive-agenda article > button:not(.icon-button) {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+.site-body .journal-shell .archive-agenda b {
+  font-size: 12px;
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.site-body .journal-shell .archive-agenda small {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.site-body .journal-shell .archive-discussion-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.site-body .journal-shell .archive-discussion-row > div {
+  flex: 1;
+  min-width: 0;
+}
+.site-body .journal-shell .archive-discussion-row button {
+  text-align: left;
+  font-size: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.site-body .journal-shell .archive-discussion-row small {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  margin-top: 6px;
+}
+.site-body .journal-shell .archive-discussion-row > span:last-child {
+  font: 10px monospace;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.site-body .journal-shell .archive-discussion-row > span:last-child .icon {
+  width: 13px;
+  height: 13px;
+}
+.site-body .journal-shell .archive-searchbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid #486351;
+  background: #1b2a21;
+  padding: 12px 16px;
+  border-radius: 5px;
+}
+.site-body .journal-shell .archive-searchbar input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 10px 0;
+  font-size: 15px;
+}
+.site-body .journal-shell .archive-querybar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 23px 0;
+}
+.site-body .journal-shell .archive-querybar label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.site-body .journal-shell .archive-querybar label > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.site-body .journal-shell .archive-querybar select {
+  background: #1d2b23;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 19px 6px 8px;
+}
+.site-body .journal-shell .density-toggle {
+  margin-left: auto;
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 3px;
+}
+.site-body .journal-shell .density-toggle button {
+  padding: 5px 9px;
+  font-size: 9px;
+  color: var(--muted);
+}
+.site-body .journal-shell .density-toggle .active {
+  background: #2c4032;
+  color: var(--accent);
+  border-radius: 2px;
+}
+.site-body .journal-shell .archive-browser {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-height: 600px;
+}
+.site-body .journal-shell .archive-results {
+  min-width: 0;
+}
+.site-body .journal-shell .results-table-heading {
+  display: grid;
+  grid-template-columns: 1fr 80px 82px;
+  gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--line);
+  font-size: 9px;
+  color: var(--muted);
+}
+.site-body .journal-shell .archive-result-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 17px;
+  border-bottom: 1px solid var(--line);
+  width: 100%;
+  text-align: left;
+  border-left: 2px solid transparent;
+  transition:
+    padding 0.4s,
+    background 0.3s;
+}
+.site-body .journal-shell .archive-result-row.selected {
+  background: #263d2f;
+  border-left-color: var(--accent);
+}
+.site-body .journal-shell .archive-result-row:hover {
+  background: #203328;
+}
+.site-body .journal-shell .archive-result-row > .journal-image,
+.site-body .journal-shell .result-text-icon {
+  width: 45px;
+  height: 56px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.site-body .journal-shell .result-text-icon {
+  display: grid;
+  place-items: center;
+  background: #2d4032;
+  color: var(--muted);
+}
+.site-body .journal-shell .result-title {
+  flex: 1;
+  min-width: 0;
+}
+.site-body .journal-shell .result-title b {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-shell .result-title small {
+  display: block;
+  margin-top: 7px;
+  font-size: 9px;
+  color: var(--muted);
+}
+.site-body .journal-shell .result-source {
+  width: 70px;
+  font: 8px monospace;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.site-body .journal-shell .archive-result-row > time {
+  width: 60px;
+  font-size: 8px;
+  color: var(--faint);
+  flex-shrink: 0;
+}
+.site-body .journal-shell .archive-result-row > .icon {
+  width: 12px;
+  height: 12px;
+  color: var(--faint);
+}
+.site-body .journal-shell .compact .archive-result-row {
+  padding-block: 10px;
+}
+.site-body .journal-shell .compact .archive-result-row > .journal-image,
+.site-body .journal-shell .compact .result-text-icon {
+  height: 32px;
+  width: 30px;
+}
+.site-body .journal-shell .compact .result-title b {
+  -webkit-line-clamp: 1;
+  font-size: 11px;
+}
+.site-body .journal-shell .compact .result-title small {
+  display: none;
+}
+.site-body .journal-shell .archive-inspector {
+  border-left: 1px solid var(--line);
+  background: #152019;
+  min-width: 0;
+  align-self: start;
+  position: sticky;
+  top: 83px;
+}
+.site-body .journal-shell .inspector-heading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 18px;
+  font: 9px monospace;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.site-body .journal-shell .inspector-heading > :last-child {
+  margin-left: auto;
+}
+.site-body .journal-shell .archive-inspector .preview-face {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.site-body .journal-shell .archive-inspector .preview-caption {
+  display: none;
+}
+.site-body .journal-shell .archive-inspector .preview-media {
+  height: 340px;
+}
+.site-body .journal-shell .archive-inspector .preview-copy {
+  padding: 22px;
+}
+.site-body .journal-shell .archive-inspector .preview-copy > p {
+  -webkit-line-clamp: 5;
+}
+.site-body .journal-shell .archive-calendar-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  padding: 15px 0 22px;
+}
+.site-body .journal-shell .archive-calendar-toolbar .month-navigation {
+  gap: 15px;
+}
+.site-body .journal-shell .archive-calendar-toolbar h2 {
+  font: 22px monospace;
+}
+.site-body .journal-shell .archive-calendar-toolbar h2 > span {
+  color: var(--faint);
+}
+.site-body .journal-shell .archive-calendar-toolbar > span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.site-body .journal-shell .archive-calendar-toolbar > button:first-of-type {
+  margin-left: auto;
+}
+.site-body .journal-shell .archive-calendar-workspace {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.site-body .journal-shell .archive-month {
+  min-width: 0;
+}
+.site-body .journal-shell .calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  color: var(--muted);
+  text-align: right;
+  padding: 15px 0;
+  font-size: 10px;
+  border-bottom: 1px solid var(--line);
+  background: #1c2b22;
+}
+.site-body .journal-shell .calendar-weekdays > span {
+  padding-right: 13px;
+}
+.site-body .journal-shell .archive-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.site-body .journal-shell .archive-month-day,
+.site-body .journal-shell .month-blank {
+  min-height: 115px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 10px 7px;
+  min-width: 0;
+}
+.site-body .journal-shell .archive-month-day > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font: 11px monospace;
+}
+.site-body .journal-shell .archive-month-day > span small {
+  font-size: 8px;
+  color: var(--accent);
+}
+.site-body .journal-shell .archive-month-day.selected {
+  background: #2a4433;
+  box-shadow: inset 0 0 0 1px #a9dfbb;
+}
+.site-body .journal-shell .archive-month-day.today > span {
+  color: var(--accent);
+}
+.site-body .journal-shell .month-day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+.site-body .journal-shell .month-day-events > span {
+  font-size: 8px;
+  padding: 3px;
+  background: #32493a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 2px solid #83b394;
+}
+.site-body .journal-shell .month-day-events > .purple {
+  background: #353744;
+  border-left-color: #a59bbd;
+}
+.site-body .journal-shell .month-day-events b {
+  font: 9px monospace;
+  color: var(--muted);
+}
+.site-body .journal-shell .archive-calendar-inspector {
+  padding: 20px;
+  background: #18261d;
+  border-left: 1px solid var(--line);
+  max-height: 720px;
+  overflow: auto;
+}
+.site-body .journal-shell .archive-calendar-inspector .panel-heading {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.site-body .journal-shell .archive-calendar-inspector .panel-heading > span:first-child {
+  flex-basis: 100%;
+}
+.site-body .journal-shell .calendar-inspector-event {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+}
+.site-body .journal-shell .calendar-inspector-event > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 9px monospace;
+  color: var(--muted);
+}
+.site-body .journal-shell .calendar-inspector-event > div > button {
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+}
+.site-body .journal-shell .calendar-inspector-event h3 {
+  font-size: 14px;
+  line-height: 1.7;
+  margin-top: 10px;
+}
+.site-body .journal-shell .calendar-inspector-event h3 button {
+  text-align: left;
+}
+.site-body .journal-shell .calendar-inspector-event p {
+  font-size: 10px;
+  color: var(--muted);
+  margin: 10px 0 14px;
+}
+.site-body .journal-shell .archive-forum {
+  display: grid;
+  grid-template-columns: 140px 1.3fr 1fr;
+  gap: 22px;
+  align-items: start;
+}
+.site-body .journal-shell .forum-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.site-body .journal-shell .forum-categories button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 12px 10px;
+  border-radius: 4px;
+}
+.site-body .journal-shell .forum-categories button .icon {
+  width: 13px;
+  height: 13px;
+}
+.site-body .journal-shell .forum-categories button .icon:last-child {
+  width: 10px;
+  margin-left: auto;
+}
+.site-body .journal-shell .forum-categories .active {
+  background: #2a4031;
+  color: var(--accent);
+}
+.site-body .journal-shell .forum-threads {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  min-width: 0;
+}
+.site-body .journal-shell .forum-threads .panel-heading {
+  padding: 17px;
+}
+.site-body .journal-shell .forum-thread {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 21px 18px;
+  border-bottom: 1px solid var(--line);
+  border-left: 2px solid transparent;
+}
+.site-body .journal-shell .forum-thread.selected {
+  border-left-color: var(--accent);
+  background: #253b2d;
+}
+.site-body .journal-shell .forum-thread h3 {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 12px 0 8px;
+}
+.site-body .journal-shell .forum-thread p {
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.site-body .journal-shell .forum-thread > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 17px;
+}
+.site-body .journal-shell .forum-thread .discussion-avatar {
+  width: 23px;
+  height: 23px;
+  font-size: 10px;
+}
+.site-body .journal-shell .forum-thread small {
+  margin-left: auto;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.site-body .journal-shell .forum-thread small .icon {
+  width: 12px;
+  height: 12px;
+}
+.site-body .journal-shell .forum-preview {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #18261e;
+  min-width: 0;
+  position: sticky;
+  top: 90px;
+}
+.site-body .journal-shell .forum-preview > article {
+  padding: 24px;
+}
+.site-body .journal-shell .forum-preview h2 {
+  font-size: 21px;
+  line-height: 1.5;
+  margin: 20px 0;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-shell .forum-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+}
+.site-body .journal-shell .forum-author small {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.site-body .journal-shell .forum-preview p {
+  font-size: 12px;
+  line-height: 2;
+  margin: 26px 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  max-height: 400px;
+  overflow: auto;
+  color: var(--muted);
+}
+.site-body.journal-auth .edition-archive .edition-workspace {
+  margin-left: 0;
+}
+@media (min-width: 1700px) {
+  .site-body .journal-shell .preview-media {
+    height: 380px;
+  }
+  .site-body .journal-shell .archive-observatory {
+    gap: 80px;
+  }
+}
+@media (max-width: 1250px) {
+  .site-body .journal-shell .archive-sidebar {
+    width: 180px;
+    padding-inline: 12px;
+  }
+  .site-body .edition-archive .edition-workspace {
+    margin-left: 180px;
+  }
+  .site-body .journal-shell .archive-page {
+    padding: 26px;
+  }
+  .site-body .journal-shell .archive-summary {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .site-body .journal-shell .archive-summary > .source-distribution {
+    display: none;
+  }
+  .site-body .journal-shell .archive-observatory {
+    gap: 25px;
+  }
+  .site-body .journal-shell .observatory-preview {
+    padding-inline: 8px;
+  }
+  .site-body .journal-shell .archive-calendar-workspace {
+    grid-template-columns: 1fr 240px;
+  }
+  .site-body .journal-shell .archive-month-day,
+  .site-body .journal-shell .month-blank {
+    min-height: 95px;
+  }
+  .site-body .journal-shell .archive-forum {
+    grid-template-columns: 1.2fr 1fr;
+    gap: 18px;
+  }
+  .site-body .journal-shell .forum-categories {
+    grid-column: 1/-1;
+    flex-direction: row;
+  }
+  .site-body .journal-shell .archive-result-row > time {
+    display: none;
+  }
+  .site-body .journal-shell .results-table-heading {
+    grid-template-columns: 1fr 80px;
+  }
+  .site-body .journal-shell .results-table-heading > span:last-child {
+    display: none;
+  }
+  .site-body .journal-shell .archive-command > button {
+    min-width: 210px;
+  }
+}
+@media (max-width: 1000px) {
+  .site-body .journal-shell .archive-sidebar {
+    width: 70px;
+    padding: 24px 10px;
+  }
+  .site-body .edition-archive .edition-workspace {
+    margin-left: 70px;
+  }
+  .site-body .journal-shell .archive-logo {
+    padding: 0 5px;
+  }
+  .site-body .journal-shell .archive-logo > span:last-child,
+  .site-body .journal-shell .archive-sidebar .sidebar-search :is(span, kbd),
+  .site-body .journal-shell .archive-sidebar nav a :is(span),
+  .site-body .journal-shell .sidebar-bottom {
+    display: none;
+  }
+  .site-body .journal-shell .archive-sidebar nav a {
+    padding: 15px;
+  }
+  .site-body .journal-shell .sidebar-search {
+    justify-content: center;
+  }
+  .site-body .journal-shell .archive-browser {
+    grid-template-columns: 1.1fr 1fr;
+  }
+  .site-body .journal-shell .archive-result-row .result-source {
+    display: none;
+  }
+  .site-body .journal-shell .results-table-heading {
+    display: block;
+  }
+  .site-body .journal-shell .results-table-heading > span:not(:first-child) {
+    display: none;
+  }
+  .site-body .journal-shell .archive-calendar-workspace {
+    grid-template-columns: 1fr;
+  }
+  .site-body .journal-shell .archive-calendar-inspector {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    max-height: none;
+  }
+  .site-body .journal-shell .archive-calendar-inspector .panel-heading {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 800px) {
+  .site-body .journal-shell .archive-sidebar {
+    display: none;
+  }
+  .site-body .edition-archive .edition-workspace {
+    margin-left: 0;
+  }
+  .site-body .journal-shell .mobile-archive-logo {
+    display: block;
+    font:
+      600 32px 'Georgia',
+      serif;
+    color: var(--accent);
+  }
+  .site-body .journal-shell .workspace-location {
+    margin-right: auto;
+    gap: 10px;
+  }
+  .site-body .journal-shell .workspace-location > span {
+    display: none;
+  }
+  .site-body .edition-archive .edition-header {
+    min-height: 68px;
+    padding-inline: 22px;
+  }
+  .site-body .journal-shell .archive-page {
+    padding: 26px 22px;
+  }
+  .site-body .journal-shell .archive-page-title h1 {
+    font-size: 32px;
+  }
+  .site-body .journal-shell .archive-date {
+    display: none;
+  }
+  .site-body .journal-shell .archive-summary > div {
+    padding: 18px 12px;
+    gap: 8px;
+  }
+  .site-body .journal-shell .archive-summary > div > .icon {
+    display: none;
+  }
+  .site-body .journal-shell .archive-summary strong {
+    font-size: 24px;
+  }
+  .site-body .journal-shell .archive-observatory {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .site-body .journal-shell .preview-media {
+    height: 240px;
+  }
+  .site-body .journal-shell .preview-copy {
+    padding: 14px;
+  }
+  .site-body .journal-shell .preview-actions {
+    flex-wrap: wrap;
+  }
+  .site-body .journal-shell .preview-copy h2 {
+    font-size: 15px;
+  }
+  .site-body .journal-shell .stream-row {
+    padding: 11px 4px;
+    gap: 8px;
+  }
+  .site-body .journal-shell .stream-row > .journal-image {
+    width: 32px;
+    height: 43px;
+  }
+  .site-body .journal-shell .stream-row-copy b {
+    font-size: 11px;
+  }
+  .site-body .journal-shell .stream-dot {
+    display: none;
+  }
+  .site-body .journal-shell .archive-bottom-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .site-body .journal-shell .archive-panel {
+    padding: 16px;
+  }
+  .site-body .journal-shell .panel-heading > span:first-child {
+    display: none;
+  }
+  .site-body .journal-shell .archive-command > button {
+    min-width: 0;
+    flex: 1;
+  }
+  .site-body .journal-shell .archive-command > button kbd {
+    display: none;
+  }
+  .site-body .journal-shell .archive-querybar {
+    gap: 12px;
+  }
+  .site-body .journal-shell .density-toggle {
+    display: none;
+  }
+  .site-body .journal-shell .archive-inspector .preview-media {
+    height: 260px;
+  }
+  .site-body .journal-shell .archive-calendar-toolbar {
+    gap: 15px;
+  }
+  .site-body .journal-shell .archive-calendar-toolbar h2 {
+    font-size: 20px;
+  }
+  .site-body .journal-shell .archive-calendar-toolbar > span {
+    display: none;
+  }
+}
+@media (max-width: 580px) {
+  .site-body .journal-shell .archive-page {
+    padding: 24px 18px;
+  }
+  .site-body .journal-shell .archive-page-title {
+    margin-bottom: 23px;
+  }
+  .site-body .journal-shell .archive-page-title h1 {
+    font-size: 30px;
+  }
+  .site-body .journal-shell .archive-page-title > .button {
+    padding: 8px 11px;
+    min-height: 36px;
+    font-size: 10px;
+  }
+  .site-body .journal-shell .archive-summary {
+    margin-bottom: 25px;
+  }
+  .site-body .journal-shell .archive-summary > div {
+    padding: 15px 10px;
+  }
+  .site-body .journal-shell .archive-summary > div > span {
+    font-size: 9px;
+  }
+  .site-body .journal-shell .archive-command {
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .site-body .journal-shell .archive-command > button {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .site-body .journal-shell .archive-command > a {
+    margin-left: auto;
+  }
+  .site-body .journal-shell .archive-observatory {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 25px;
+  }
+  .site-body .journal-shell .observatory-preview {
+    padding: 24px 18px 0;
+  }
+  .site-body .journal-shell .preview-spatial {
+    margin-right: 18px;
+  }
+  .site-body .journal-shell .preview-media {
+    height: 280px;
+  }
+  .site-body .journal-shell .preview-copy h2 {
+    font-size: 17px;
+  }
+  .site-body .journal-shell .preview-copy > p {
+    -webkit-line-clamp: 2;
+  }
+  .site-body .journal-shell .stream-content {
+    max-height: 450px;
+  }
+  .site-body .journal-shell .stream-row {
+    padding: 13px 10px;
+  }
+  .site-body .journal-shell .stream-row > .journal-image {
+    width: 42px;
+    height: 52px;
+  }
+  .site-body .journal-shell .stream-row-copy b {
+    font-size: 12px;
+  }
+  .site-body .journal-shell .archive-bottom-grid {
+    grid-template-columns: 1fr;
+    margin-top: 15px;
+  }
+  .site-body .journal-shell .archive-searchbar {
+    padding: 8px 12px;
+    gap: 12px;
+  }
+  .site-body .journal-shell .archive-searchbar input {
+    font-size: 13px;
+  }
+  .site-body .journal-shell .archive-searchbar .button {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-height: 34px;
+  }
+  .site-body .journal-shell .archive-searchbar .button > .icon {
+    display: none;
+  }
+  .site-body .journal-shell .archive-querybar {
+    gap: 10px;
+  }
+  .site-body .journal-shell .archive-querybar label {
+    flex: 1;
+    gap: 5px;
+  }
+  .site-body .journal-shell .archive-querybar label > span {
+    font-size: 9px;
+  }
+  .site-body .journal-shell .archive-querybar select {
+    width: 100%;
+    font-size: 10px;
+  }
+  .site-body .journal-shell .archive-browser {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  .site-body .journal-shell .archive-inspector {
+    position: static;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .site-body .journal-shell .archive-inspector .preview-face {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+  }
+  .site-body .journal-shell .archive-inspector .preview-media {
+    height: 100%;
+    min-height: 240px;
+  }
+  .site-body .journal-shell .archive-inspector .preview-copy {
+    padding: 15px;
+  }
+  .site-body .journal-shell .archive-inspector .preview-copy > p,
+  .site-body .journal-shell .archive-inspector .preview-tags {
+    display: none;
+  }
+  .site-body .journal-shell .archive-inspector .preview-copy h2 {
+    font-size: 13px;
+    -webkit-line-clamp: 4;
+  }
+  .site-body .journal-shell .archive-inspector .meta-line {
+    flex-wrap: wrap;
+    gap: 5px;
+    font-size: 9px;
+  }
+  .site-body .journal-shell .archive-inspector .meta-line time {
+    margin: 0;
+  }
+  .site-body .journal-shell .archive-inspector .preview-actions {
+    gap: 6px;
+  }
+  .site-body .journal-shell .archive-inspector .preview-actions .button {
+    font-size: 9px;
+    padding: 5px 7px;
+  }
+  .site-body .journal-shell .archive-inspector .preview-actions > span {
+    display: none;
+  }
+  .site-body .journal-shell .archive-result-row > .result-source {
+    display: block;
+    font-size: 8px;
+    width: 55px;
+  }
+  .site-body .journal-shell .archive-result-list {
+    max-height: 600px;
+    overflow: auto;
+  }
+  .site-body .journal-shell .archive-calendar-toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .site-body .journal-shell .archive-calendar-toolbar .month-navigation {
+    gap: 4px;
+  }
+  .site-body .journal-shell .archive-calendar-toolbar h2 {
+    font-size: 17px;
+  }
+  .site-body .journal-shell .archive-calendar-toolbar .icon-button {
+    width: 28px;
+  }
+  .site-body .journal-shell .archive-calendar-toolbar .text-button {
+    font-size: 9px;
+  }
+  .site-body .journal-shell .archive-month-day,
+  .site-body .journal-shell .month-blank {
+    min-height: 78px;
+    padding: 8px 4px;
+  }
+  .site-body .journal-shell .archive-month-day > span {
+    font-size: 10px;
+  }
+  .site-body .journal-shell .archive-month-day > span > small {
+    display: none;
+  }
+  .site-body .journal-shell .month-day-events {
+    margin-top: 8px;
+    gap: 3px;
+  }
+  .site-body .journal-shell .month-day-events > span {
+    height: 5px;
+    padding: 0;
+    color: transparent;
+    font-size: 0;
+  }
+  .site-body .journal-shell .month-day-events > b {
+    font-size: 8px;
+  }
+  .site-body .journal-shell .archive-calendar-inspector {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .site-body .journal-shell .calendar-inspector-event {
+    padding-block: 15px;
+  }
+  .site-body .journal-shell .archive-forum {
+    display: flex;
+    flex-direction: column;
+  }
+  .site-body .journal-shell .forum-categories {
+    flex-wrap: wrap;
+    gap: 2px;
+    width: 100%;
+  }
+  .site-body .journal-shell .forum-categories button {
+    font-size: 10px;
+    padding: 9px 8px;
+    gap: 4px;
+  }
+  .site-body .journal-shell .forum-categories button .icon:last-child {
+    display: none;
+  }
+  .site-body .journal-shell .forum-threads {
+    width: 100%;
+    max-height: 650px;
+    overflow: auto;
+  }
+  .site-body .journal-shell .forum-preview {
+    position: static;
+    width: 100%;
+  }
+  .site-body .journal-shell .forum-preview > article {
+    padding: 20px;
+  }
+  .site-body .journal-shell .forum-preview h2 {
+    font-size: 18px;
+  }
+}
+.site-body .journal-shell .archive-querybar label > span {
+  white-space: nowrap;
+}
+.site-body .journal-shell :is(.archive-result-row, .stream-row) .image-fallback > span {
+  display: none;
+}
+.site-body .journal-shell :is(.archive-result-row, .stream-row) .image-fallback {
+  padding: 5px;
+}
+.site-body .journal-shell :is(.archive-result-row, .stream-row) .image-fallback .icon {
+  width: 17px;
+  height: 17px;
+}

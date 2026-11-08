@@ -1,11 +1,5 @@
 import { ref, computed, watch, onScopeDispose, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
-import photos from './photos.json'
-const collectionPhotos: Record<string, string[]> = {
-  letters: ['garden', 'memory'],
-  daydream: ['pink', 'shop'],
-  encore: ['stage', 'radio', 'cheer'],
-}
 import { postService } from '@/api/postService'
 import { searchService } from '@/api/searchService'
 import { discussionService } from '@/api/discussionService'
@@ -90,30 +84,6 @@ export function useJournalData(page: Ref<string>) {
           url: null,
         }))
         discussions.value = reference.discussions
-        return
-      }
-      const collection =
-        typeof route.query['collection'] === 'string'
-          ? collectionPhotos[route.query['collection']]
-          : undefined
-      if (collection && page.value === 'explore') {
-        posts.value = collection.flatMap((id) => {
-          const item = photos.find((photo) => photo.id === id)
-          return item
-            ? [
-                {
-                  ...item,
-                  image: '/journal/' + item.image,
-                  avatar: '/journal/himeri-garden.webp',
-                  authorId: null,
-                  time: '',
-                  likes: 0,
-                  platform: 'official',
-                  editorial: true,
-                },
-              ]
-            : []
-        })
         return
       }
       const jobs: Promise<void>[] = []
@@ -206,7 +176,6 @@ export function useJournalData(page: Ref<string>) {
       () => (['home', 'explore'].includes(page.value) ? query.value : ''),
       month,
       fixture,
-      () => route.query['collection'],
       () => (page.value === 'favorites' ? auth.user?.id : undefined),
     ],
     () => {

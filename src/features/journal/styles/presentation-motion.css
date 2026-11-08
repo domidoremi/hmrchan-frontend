@@ -1,0 +1,169 @@
+.site-body[data-motion='full'] .journal-shell :is(button, a) {
+  transition:
+    color 0.25s,
+    background 0.25s,
+    border-color 0.25s,
+    transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.site-body[data-motion='full'] .journal-shell .cover-sheet {
+  transition:
+    transform 1.1s cubic-bezier(0.16, 0.8, 0.23, 1),
+    opacity 0.8s,
+    box-shadow 0.6s;
+}
+.site-body[data-motion='full'] .journal-shell .cover-scene {
+  animation: cover-arrive 1.45s cubic-bezier(0.16, 0.8, 0.23, 1) both;
+}
+.site-body[data-motion='full'] .journal-shell .preview-spatial {
+  animation: desk-arrive 1.2s cubic-bezier(0.16, 0.8, 0.23, 1) both;
+}
+.site-body[data-motion='full'] .journal-shell .status-light:not(.dim) {
+  animation: status-breathe 3.8s ease-in-out infinite;
+}
+.site-body .cover-copy-enter-active,
+.site-body .cover-copy-leave-active {
+  transition:
+    opacity 0.3s,
+    transform 0.45s;
+}
+.site-body .cover-copy-enter-from {
+  opacity: 0;
+  transform: translateY(15px);
+}
+.site-body .cover-copy-leave-to {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+.site-body .archive-preview-enter-active,
+.site-body .archive-preview-leave-active {
+  transition:
+    opacity 0.3s,
+    transform 0.5s cubic-bezier(0.2, 0.75, 0.2, 1);
+  transform-origin: left center;
+}
+.site-body .archive-preview-enter-from {
+  opacity: 0;
+  transform: perspective(1300px) translateX(24px) rotateY(14deg);
+}
+.site-body .archive-preview-leave-to {
+  opacity: 0;
+  transform: perspective(1300px) translateX(-18px) rotateY(-10deg);
+}
+.site-body .month-turn-enter-active,
+.site-body .month-turn-leave-active {
+  transition:
+    transform 0.5s cubic-bezier(0.18, 0.7, 0.23, 1),
+    opacity 0.4s;
+  transform-origin: left;
+}
+.site-body .month-turn-enter-from {
+  transform: perspective(1000px) rotateY(50deg);
+  opacity: 0;
+}
+.site-body .month-turn-leave-to {
+  transform: perspective(1000px) rotateY(-55deg);
+  opacity: 0;
+}
+.site-body .calendar-shift-enter-active,
+.site-body .calendar-shift-leave-active {
+  transition:
+    opacity 0.25s,
+    transform 0.4s;
+}
+.site-body .calendar-shift-enter-from {
+  opacity: 0;
+  transform: translateX(25px);
+}
+.site-body .calendar-shift-leave-to {
+  opacity: 0;
+  transform: translateX(-25px);
+}
+.site-body .directory-enter-active,
+.site-body .directory-leave-active {
+  transition:
+    transform 0.6s cubic-bezier(0.16, 0.8, 0.23, 1),
+    opacity 0.4s;
+  transform-origin: top;
+}
+.site-body .directory-enter-from,
+.site-body .directory-leave-to {
+  transform: perspective(1200px) rotateX(-12deg) translateY(-35px);
+  opacity: 0;
+}
+.site-body .directory-enter-active nav a {
+  animation: directory-item 0.6s both;
+}
+.site-body .directory-enter-active nav a:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.site-body .directory-enter-active nav a:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.site-body .directory-enter-active nav a:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.site-body .directory-enter-active nav a:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.site-body[data-motion='reduced'] .journal-shell *,
+.site-body[data-motion='reduced'] .journal-shell *::before,
+.site-body[data-motion='reduced'] .journal-shell *::after {
+  animation: none !important;
+  transition-duration: 0s !important;
+  scroll-behavior: auto !important;
+}
+.site-body[data-motion='reduced'] [data-tilt] {
+  --tilt-x: 0deg !important;
+  --tilt-y: 0deg !important;
+}
+@keyframes cover-arrive {
+  from {
+    opacity: 0.2;
+    transform: perspective(1800px) translateY(90px) rotateY(-18deg) rotateX(8deg) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1800px) translateY(0) rotateY(0) rotateX(0) scale(1);
+  }
+}
+@keyframes desk-arrive {
+  from {
+    opacity: 0.1;
+    transform: perspective(1800px) rotateY(-30deg) translateX(45px) translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1800px) rotateY(-7deg) translateX(0) translateY(0);
+  }
+}
+@keyframes status-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+}
+@keyframes directory-item {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.site-body[data-motion='full'] .journal-shell .film-frame {
+  transform: perspective(1200px) translateY(calc(var(--scroll-depth, 0) * -28px))
+    rotateY(calc(var(--scroll-depth, 0) * 5deg)) rotate(-2deg);
+  transition: transform 0.25s linear;
+}
+.site-body[data-motion='full'] .journal-shell .film-frame:nth-child(even) {
+  transform: perspective(1200px) translateY(calc(14px + var(--scroll-depth, 0) * 22px))
+    rotateY(calc(var(--scroll-depth, 0) * -5deg)) rotate(2deg);
+}
+.site-body[data-motion='full'] .journal-shell .preview-spatial {
+  animation-fill-mode: backwards;
+}

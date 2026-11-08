@@ -50,6 +50,13 @@ beforeEach(() => {
 afterEach(() => scope?.stop())
 
 describe('journal live data', () => {
+  it('never replaces backend data with a legacy static collection', async () => {
+    mocks.route.query.collection = 'letters'
+    const data = start('explore')
+    await flushPromises()
+    expect(mocks.posts).toHaveBeenCalledTimes(1)
+    expect(data.posts.value.map((item) => item.id)).toEqual(['post'])
+  })
   it('keeps the current search when an older request finishes last', async () => {
     let resolveOld!: (value: ReturnType<typeof response>) => void
     mocks.posts.mockReturnValueOnce(

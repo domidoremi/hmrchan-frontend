@@ -169,7 +169,7 @@ export function installUI(runtime, environment) {
     }
     document.dispatchEvent(new Event('dialogwillchange'))
     dialogView = view
-    runtime.Experience?.clearBook()
+    runtime.Experience?.clearBook?.()
     runtime.Atelier?.clearDialogFlight(el, returning)
     el.className = className
     const body = document.querySelector('#dialog-content')
@@ -227,7 +227,7 @@ export function installUI(runtime, environment) {
     const el = document.querySelector('#app-dialog')
     if (!el.open) return
     document.dispatchEvent(new Event('dialogwillchange'))
-    runtime.Experience?.clearBook()
+    runtime.Experience?.clearBook?.()
     document.body.classList.remove('app-dialog-open')
     document.body.append(toastElement)
     if (runtime.Atelier?.closeDialog(el, immediate === true)) return

@@ -1,65 +1,3 @@
-/* Product shell uses the frozen reference without its preview toolbar. */
-html:has(body.site-body) {
-  font-size: 14px;
-  scrollbar-width: auto;
-}
-html:has(body.site-body)::-webkit-scrollbar,
-body.site-body::-webkit-scrollbar {
-  width: 15px;
-  height: 15px;
-}
-body.site-body {
-  margin: 0;
-  background: var(--canvas);
-  font:
-    14px Inter,
-    'Microsoft YaHei',
-    'PingFang SC',
-    'Noto Sans CJK SC',
-    'Segoe UI',
-    system-ui,
-    sans-serif;
-  letter-spacing: normal;
-}
-body.site-body #app {
-  background: transparent;
-  min-height: 100vh;
-}
-body.site-body::before,
-body.site-body::after {
-  content: none;
-}
-body.site-body #main-content {
-  padding: 0;
-  margin: 0;
-  min-height: 60vh;
-  max-width: none;
-}
-body.site-body .journal-slot {
-  display: contents;
-}
-body.site-body .next-sidebar {
-  top: 0;
-  height: 100dvh;
-}
-body.site-body .site-header,
-body.site-body .next-topbar {
-  top: 0;
-}
-body.site-body .journal-scene {
-  display: contents;
-}
-body.site-body .post-card .post-title {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  width: fit-content;
-  max-width: 100%;
-  overflow: hidden;
-}
-body.site-body .view-list .post-card .post-title {
-  width: auto;
-}
 body.site-body #main-content.journal-legacy {
   padding: 32px 48px;
   max-width: 1640px;
@@ -280,90 +218,13 @@ body.site-body.journal-auth #app .ui-input {
 body.site-body.journal-auth #app .ui-input::placeholder {
   color: var(--muted);
 }
-body.site-body .journal-full-photo {
-  position: relative;
-  height: 82dvh;
-  display: grid;
-  place-items: center;
-}
-body.site-body .journal-full-photo img {
-  max-height: 100%;
-  width: 100%;
-  object-fit: contain;
-}
-body.site-body .journal-full-photo button {
-  position: absolute;
-  top: 50%;
-  background: var(--paper);
-}
-body.site-body .journal-full-photo button:first-of-type {
-  left: 12px;
-}
-body.site-body .journal-full-photo button:last-of-type {
-  right: 12px;
-}
-body.site-body .journal-state {
-  min-height: 180px;
-  padding: 48px 20px;
-  text-align: center;
-}
-body.site-body .journal-state p {
-  margin-bottom: 20px;
-  color: var(--muted);
-}
-body.site-body .journal-compose {
-  width: min(760px, 94vw);
-  max-height: 90dvh;
-  overflow: auto;
-  background: var(--canvas);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  padding: 24px;
-}
-body.site-body .journal-compose::backdrop {
-  background: #0008;
-  backdrop-filter: blur(8px);
-}
-body.site-body .journal-compose > header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
+
 @media (max-width: 700px) {
   body.site-body #main-content.journal-legacy {
-    padding: 20px 18px 80px;
+    padding: 24px 18px 60px;
   }
 }
-.site-body button.atelier-round-link {
-  padding: 1px 6px;
-}
-.site-body .calendar-toolbar h2 {
-  position: relative;
-}
-.site-body .calendar-toolbar h2 > :is(.journal-month-prev, .journal-month-next) {
-  position: absolute;
-  bottom: 0;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-}
-.site-body .calendar-toolbar h2 > .journal-month-prev {
-  right: 32px;
-}
-.site-body .calendar-toolbar h2 > .journal-month-next {
-  right: 0;
-}
-.site-body .scene-modes [data-motion-enable] {
-  border-right: 1px solid var(--line);
-  color: var(--accent);
-}
-.site-body [data-motion-enable][hidden] {
-  display: none;
-}
-.site-body .journal-motion-status {
-  display: block;
-  margin-top: 6px;
-  color: var(--muted);
-  font-size: 11px;
+body.site-body.next-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
+  font-family: inherit;
+  font-size: 36px;
 }
