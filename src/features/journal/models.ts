@@ -16,6 +16,7 @@ export interface JournalPost {
   authorId: string | null
   avatar: string
   time: string
+  publishedAt?: string
   likes: number | null
   communityLikes?: number | undefined
   liked?: boolean | undefined
@@ -75,10 +76,11 @@ export function postModel(post: PostListItem | PostDetailResponse): JournalPost 
     title: post.title || content?.slice(0, 100) || '动态',
     text: content || post.description || '',
     image,
-    author: post.author_name || post.author_username || 'MomiChan',
+    author: post.author_name || post.author_username || '',
     authorId: post.author_id || null,
     avatar: post.author_avatar_url || '/journal/mascot.webp',
     time: post.published_at ? formatRelativeTime(post.published_at) : '',
+    publishedAt: post.published_at || post.created_at || '',
     likes: post.like_count || 0,
     communityLikes: post.community_like_count,
     liked: post.is_liked,
@@ -99,6 +101,7 @@ export function favoriteModel(
       text: favorite.notes || detail.description || '',
       tags: favorite.tags ?? detail.tags ?? [],
       time: formatRelativeTime(favorite.created_at),
+      publishedAt: favorite.created_at,
     }
   }
   const image = normalizeToThumbnailUrl(post?.thumbnail_url, 'large')
@@ -112,6 +115,7 @@ export function favoriteModel(
     authorId: favorite.author?.id || null,
     avatar: '/journal/mascot.webp',
     time: formatRelativeTime(favorite.created_at),
+    publishedAt: favorite.created_at,
     likes: null,
     platform: post?.platform === 'twitter' ? 'x' : post?.platform || 'official',
     type:

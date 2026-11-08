@@ -10,6 +10,7 @@
     <JournalHome
       v-if="page === 'home'"
       :posts="visiblePosts"
+      :all-posts="posts"
       :events="events"
       :discussions="discussions"
       :saved-posts="savedPosts"
@@ -32,6 +33,7 @@
     <JournalBrowse
       v-else-if="page === 'explore' || page === 'favorites'"
       :posts="visiblePosts"
+      :all-posts="posts"
       :saved-posts="savedPosts"
       :favorites="page === 'favorites'"
       :query="query"
@@ -39,10 +41,8 @@
       :sort="sort"
       :content-type="contentType"
       :layout="layout"
-      :collection="param('collection')"
       :has-more="hasMore"
       :loading="loading"
-      :fixture="fixture"
       :data-testid="page === 'favorites' ? 'profile-favorites-tab' : undefined"
       @change="change"
       @reset="resetFilters"
@@ -75,13 +75,11 @@
       :reminders="reminders"
       :saved-only="param('saved') === '1'"
       :loading="loading"
-      :fixture="fixture"
       @change="change"
       ><template #state><JournalState :loading="false" :error="error" @retry="load()" /></template
     ></JournalSchedule>
     <JournalCommunity
       v-else
-      :fixture="fixture"
       :discussions="visibleDiscussions"
       :category="param('category', '全部')"
       :loading="loading"
@@ -114,10 +112,15 @@ import { ensureAuthStoreLoaded } from '@/services/authSurface'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
 import type { Discussion } from '@/api/discussionService'
 import { isUuidV7String } from '@/types/publicId'
-import JournalHome from './JournalHome.vue'
-import JournalBrowse from './JournalBrowse.vue'
-import JournalSchedule from './JournalSchedule.vue'
-import JournalCommunity from './JournalCommunity.vue'
+import { designEdition } from '@/config/designEdition'
+import EditorialHome from './editions/EditorialHome.vue'
+import ArchiveHome from './editions/ArchiveHome.vue'
+import EditorialBrowse from './editions/EditorialBrowse.vue'
+import ArchiveBrowse from './editions/ArchiveBrowse.vue'
+import EditorialSchedule from './editions/EditorialSchedule.vue'
+import ArchiveSchedule from './editions/ArchiveSchedule.vue'
+import EditorialCommunity from './editions/EditorialCommunity.vue'
+import ArchiveCommunity from './editions/ArchiveCommunity.vue'
 import JournalIcon from './JournalIcon.vue'
 import JournalState from './JournalState.vue'
 import { useJournalData } from './useJournalData'
@@ -131,6 +134,10 @@ import type { JournalPost } from './models'
 const DiscussionComposer = defineAsyncComponent(
   () => import('@/components/community/DiscussionComposer.vue')
 )
+const JournalHome = designEdition === 'archive' ? ArchiveHome : EditorialHome
+const JournalBrowse = designEdition === 'archive' ? ArchiveBrowse : EditorialBrowse
+const JournalSchedule = designEdition === 'archive' ? ArchiveSchedule : EditorialSchedule
+const JournalCommunity = designEdition === 'archive' ? ArchiveCommunity : EditorialCommunity
 const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore(),
@@ -173,7 +180,7 @@ const visiblePosts = computed(() => {
     (post) =>
       (platform.value === 'all' || post.platform === platform.value) &&
       (contentType.value === '全部' || post.type === contentType.value) &&
-      (!(fixture.value || page.value === 'favorites' || Boolean(param('collection'))) ||
+      (!(fixture.value || page.value === 'favorites') ||
         !query.value ||
         `${post.title} ${post.text} ${post.author} ${post.tags.join(' ')}`
           .toLowerCase()
@@ -248,7 +255,7 @@ async function requireAccount() {
 }
 async function save(post: JournalPost, event: MouseEvent) {
   if (!isUuidV7String(post.id)) {
-    runtime.value?.UI.toast('这张照片收在主题合集里')
+    runtime.value?.UI.toast('暂时无法收藏')
     return
   }
   if (!(await requireAccount()) || pendingSaves.has(post.id)) return

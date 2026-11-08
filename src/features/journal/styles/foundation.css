@@ -1,0 +1,544 @@
+body.site-body {
+  --ink: #252722;
+  --muted: #77786e;
+  --faint: #a7a79a;
+  --paper: #faf9f3;
+  --canvas: #f2f1e9;
+  --line: #d9d9cc;
+  --accent: #c74831;
+  --accent-soft: #e9d9c9;
+  --green: #44674d;
+  --radius: 3px;
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font:
+    14px/1.5 'Inter',
+    'Microsoft YaHei',
+    'PingFang SC',
+    system-ui,
+    sans-serif;
+  font-synthesis: none;
+  letter-spacing: normal;
+}
+html:has(body.site-body) {
+  scroll-padding-top: 96px;
+  scrollbar-width: thin;
+  scrollbar-color: #a5a599 transparent;
+}
+body.site-body #app {
+  background: transparent;
+  min-height: 100dvh;
+}
+body.site-body::before,
+body.site-body::after {
+  content: none;
+}
+.site-body .journal-shell {
+  overflow: clip;
+}
+.site-body .journal-shell *,
+.site-body #toast * {
+  box-sizing: border-box;
+}
+.site-body .journal-shell :is(h1, h2, h3, h4, p) {
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  text-wrap: pretty;
+}
+.site-body .journal-shell :is(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
+.site-body .journal-shell button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.site-body .journal-shell button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.site-body .journal-shell a {
+  text-decoration: none;
+  color: inherit;
+}
+.site-body .journal-shell img {
+  display: block;
+  object-fit: cover;
+  max-width: 100%;
+}
+.site-body .journal-shell :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+}
+.site-body .journal-shell :is(button, a) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.site-body .journal-shell [hidden] {
+  display: none !important;
+}
+.site-body .journal-shell .icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+}
+.site-body
+  .journal-shell
+  :is(.icon-button, .button, .text-button, .account-link, .round-action, .motion-switch) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+.site-body .journal-shell .icon-button {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.site-body .journal-shell .icon-button:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.site-body .journal-shell .button {
+  min-height: 42px;
+  padding: 10px 20px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.site-body .journal-shell .button-dark {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.site-body .journal-shell .button-small {
+  min-height: 34px;
+  padding: 7px 13px;
+}
+.site-body .journal-shell .button:hover {
+  transform: translateY(-2px);
+}
+.site-body .journal-shell .text-button {
+  font-size: 12px;
+  gap: 8px;
+}
+.site-body .journal-shell .text-button:hover,
+.site-body .journal-shell a:hover {
+  color: var(--accent);
+}
+.site-body .journal-shell .eyebrow {
+  font:
+    10px/1.4 'Consolas',
+    monospace;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+.site-body .journal-shell .meta-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.site-body .journal-shell .meta-line time {
+  margin-left: auto;
+}
+.site-body .journal-shell .status-light {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.site-body .journal-shell .status-light.dim {
+  background: var(--muted);
+}
+.site-body .journal-shell .motion-switch {
+  font-size: 10px;
+  gap: 7px;
+  min-height: 36px;
+}
+.site-body .journal-shell .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.site-body .journal-shell .chip {
+  border: 1px solid transparent;
+  padding: 7px 13px;
+  border-radius: 30px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.site-body .journal-shell .chip.active {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.site-body .journal-shell .chip:hover {
+  color: var(--accent);
+}
+.site-body .journal-shell select {
+  background: transparent;
+  padding: 9px 22px 9px 9px;
+  border: 0;
+  font-size: 11px;
+  cursor: pointer;
+  max-width: 100%;
+}
+.site-body .journal-shell option {
+  background: var(--paper);
+  color: var(--ink);
+}
+.site-body .journal-shell .badge {
+  display: inline-flex;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 9px;
+  letter-spacing: 0.6px;
+}
+.site-body .journal-shell #main-content {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+  min-height: 65vh;
+}
+.site-body .journal-shell .edition-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  min-height: 78px;
+  padding: 0 4%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--canvas) 94%, transparent);
+  backdrop-filter: blur(16px);
+}
+.site-body .journal-shell .editorial-logo {
+  font:
+    600 26px/1 'Georgia',
+    serif;
+  letter-spacing: -1.2px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.site-body .journal-shell .editorial-logo span {
+  font: 8px/1 monospace;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.site-body .journal-shell .desktop-navigation {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+.site-body .journal-shell .desktop-navigation a {
+  position: relative;
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 27px 0;
+}
+.site-body .journal-shell .desktop-navigation a::after {
+  content: '';
+  position: absolute;
+  bottom: 19px;
+  height: 2px;
+  width: 100%;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s;
+}
+.site-body .journal-shell .desktop-navigation a.active::after,
+.site-body .journal-shell .desktop-navigation a:hover::after {
+  transform: scaleX(1);
+}
+.site-body .journal-shell .desktop-navigation sup {
+  font: 8px monospace;
+  color: var(--muted);
+}
+.site-body .journal-shell .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.site-body .journal-shell .account-link {
+  padding: 7px 13px;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  font-size: 11px;
+}
+.site-body .journal-shell .account-link .icon {
+  width: 16px;
+  height: 16px;
+}
+.site-body .journal-shell .mobile-menu-button,
+.site-body .journal-shell .mobile-archive-logo {
+  display: none;
+}
+.site-body .journal-shell .mobile-directory {
+  position: fixed;
+  z-index: 29;
+  inset: 68px 0 auto;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
+  padding: 24px;
+  box-shadow: 0 50px 80px #0003;
+  max-height: calc(100dvh - 68px);
+  overflow: auto;
+}
+.site-body .journal-shell .mobile-directory nav {
+  margin-bottom: 20px;
+}
+.site-body .journal-shell .mobile-directory nav a {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 17px 0;
+  font-size: 26px;
+}
+.site-body .journal-shell .mobile-directory nav small {
+  color: var(--muted);
+  font: 10px monospace;
+}
+.site-body .journal-shell .mobile-directory nav .icon {
+  margin-left: auto;
+}
+.site-body .journal-shell .mobile-directory > a {
+  float: right;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.site-body .journal-shell .skip-link {
+  position: fixed;
+  left: 20px;
+  top: -100px;
+  z-index: 100;
+  padding: 12px 22px;
+  background: var(--ink);
+  color: var(--paper);
+}
+.site-body .journal-shell .skip-link:focus {
+  top: 10px;
+}
+.site-body .journal-shell .reading-progress {
+  position: fixed;
+  top: 0;
+  height: 2px;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--accent);
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left;
+  pointer-events: none;
+}
+.site-body .journal-shell .back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 20;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+.site-body .journal-shell .edition-footer {
+  margin: 80px 4% 0;
+  border-top: 1px solid var(--line);
+}
+.site-body .journal-shell .footer-wordmark {
+  font:
+    500 clamp(80px, 17vw, 250px)/1.1 'Georgia',
+    serif;
+  letter-spacing: -0.075em;
+  display: flex;
+  justify-content: center;
+  padding: 25px 0 45px;
+  overflow: hidden;
+}
+.site-body .journal-shell .footer-wordmark span {
+  font: 20px sans-serif;
+  letter-spacing: 0;
+  margin: 30px 0 0 25px;
+}
+.site-body .journal-shell .footer-bottom {
+  padding: 22px 0;
+  display: flex;
+  gap: 26px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  font: 10px monospace;
+  color: var(--muted);
+}
+.site-body .journal-shell .footer-bottom a {
+  margin-left: auto;
+}
+.site-body .journal-shell .footer-bottom .icon {
+  width: 14px;
+  height: 14px;
+}
+.site-body .journal-shell .journal-state,
+.site-body .journal-shell .empty-state {
+  padding: 44px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+.site-body .journal-shell .empty-state h3 {
+  margin: 16px 0;
+  font-size: 15px;
+}
+.site-body .journal-shell .journal-state p {
+  margin-bottom: 12px;
+}
+.site-body .journal-shell .load-more {
+  display: flex;
+  justify-content: center;
+  margin: 40px 0;
+}
+.site-body .journal-shell .explore-search {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.site-body .journal-shell .explore-search input {
+  background: transparent;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 12px 0;
+}
+.site-body .journal-shell .discussion-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--accent-soft);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-size: 13px;
+}
+.site-body .journal-shell .media-unavailable {
+  opacity: 0.12;
+}
+@media (min-width: 1600px) {
+  .site-body .journal-shell .edition-header {
+    padding-inline: max(4%, calc((100% - 1480px) / 2));
+  }
+}
+@media (max-width: 1100px) {
+  .site-body .journal-shell .desktop-navigation {
+    gap: 20px;
+  }
+  .site-body .journal-shell .editorial-logo span {
+    display: none;
+  }
+  .site-body .journal-shell .header-actions {
+    gap: 4px;
+  }
+}
+@media (max-width: 800px) {
+  .site-body .journal-shell .edition-header {
+    min-height: 68px;
+    padding: 0 22px;
+    gap: 12px;
+  }
+  .site-body .journal-shell .desktop-navigation {
+    display: none;
+  }
+  .site-body .journal-shell .mobile-menu-button {
+    display: inline-flex;
+  }
+  .site-body .journal-shell .header-actions > .motion-switch {
+    display: none;
+  }
+  .site-body .journal-shell .edition-footer {
+    margin: 50px 22px 0;
+  }
+  .site-body .journal-shell .footer-bottom {
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 9px;
+  }
+  .site-body .journal-shell .footer-wordmark {
+    padding: 20px 0;
+  }
+  .site-body .journal-shell .footer-wordmark span {
+    font-size: 12px;
+    margin: 12px 0 0 10px;
+  }
+}
+@media (max-width: 460px) {
+  .site-body .journal-shell .header-actions > [data-action='notifications'] {
+    display: none;
+  }
+  .site-body .journal-shell .edition-header {
+    padding-inline: 18px;
+  }
+  .site-body .journal-shell .account-link {
+    padding: 7px;
+  }
+  .site-body .journal-shell .account-link span {
+    display: none;
+  }
+}
+
+.site-body .journal-shell .journal-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background: color-mix(in srgb, var(--canvas) 88%, var(--ink) 12%);
+}
+.site-body .journal-shell .journal-image > img {
+  width: 100%;
+  height: 100%;
+  object-fit: var(--image-fit, cover);
+}
+.site-body .journal-shell .image-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  color: var(--muted);
+  padding: 12px;
+}
+.site-body .journal-shell .image-fallback > span {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.site-body .journal-shell .image-fallback .icon {
+  width: 27px;
+  height: 27px;
+  opacity: 0.5;
+}

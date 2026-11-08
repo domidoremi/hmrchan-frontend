@@ -1,36 +1,165 @@
 <template>
-  <div class="journal-shell">
-    <div v-if="isNext && !isAuthRoute" class="journal-slot" v-html="chrome.sidebar" />
-    <div :class="{ 'next-workspace': isNext && !isAuthRoute }">
-      <div ref="header" class="journal-slot" v-html="chrome.header" />
+  <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
+    <a class="skip-link" href="#main-content">跳至内容</a>
+    <aside v-if="isNext && !isAuthRoute" class="archive-sidebar">
+      <RouterLink class="archive-logo" to="/" aria-label="MomiChan 首页"
+        ><span class="brand-mark">m.</span><span>MomiChan<small>ARCHIVE</small></span></RouterLink
+      >
+      <button class="sidebar-search" data-action="search">
+        <JournalIcon name="search" /><span>搜索</span><kbd>⌘ K</kbd>
+      </button>
+      <nav aria-label="主导航">
+        <RouterLink
+          v-for="item in navigation"
+          :key="item.path"
+          :to="item.path"
+          :class="{ active: pageName === item.key }"
+          :aria-current="pageName === item.key ? 'page' : undefined"
+        >
+          <JournalIcon :name="item.icon" /><span>{{ item.archive }}</span
+          ><span class="nav-index">{{ item.index }}</span>
+        </RouterLink>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="motion-switch" :aria-pressed="motion === 'full'" @click="toggleMotion">
+          <span class="status-light" :class="{ dim: motion !== 'full' }" />动效
+          {{ motion === 'full' ? '全开' : '简化' }}
+        </button>
+        <RouterLink to="/profile"
+          ><JournalIcon name="users" />{{
+            auth.isAuthenticated ? auth.user?.username || '我的账号' : '登录 / 注册'
+          }}<JournalIcon name="arrow-up-right"
+        /></RouterLink>
+        <a href="https://momichan.com">前往杂志 <JournalIcon name="arrow" /></a>
+      </div>
+    </aside>
+    <div class="edition-workspace">
+      <header class="edition-header">
+        <template v-if="!isNext">
+          <RouterLink class="editorial-logo" to="/">MomiChan<span>JOURNAL</span></RouterLink>
+          <nav class="desktop-navigation" aria-label="主导航">
+            <RouterLink
+              v-for="item in navigation"
+              :key="item.path"
+              :to="item.path"
+              :class="{ active: pageName === item.key }"
+              :aria-current="pageName === item.key ? 'page' : undefined"
+              >{{ item.main }}<sup>{{ item.index }}</sup></RouterLink
+            >
+          </nav>
+        </template>
+        <template v-else>
+          <RouterLink class="mobile-archive-logo" to="/">m.</RouterLink>
+          <div class="workspace-location">
+            <span>MOMICHAN</span><i>/</i><b>{{ labels[pageName] || '账号' }}</b>
+          </div>
+        </template>
+        <div class="header-actions">
+          <button class="icon-button" data-action="search" aria-label="搜索">
+            <JournalIcon name="search" />
+          </button>
+          <button class="icon-button" data-action="notifications" aria-label="已记下的日程">
+            <JournalIcon name="calendar" />
+          </button>
+          <button
+            v-if="!isNext"
+            class="motion-switch"
+            :aria-pressed="motion === 'full'"
+            @click="toggleMotion"
+          >
+            <span class="status-light" :class="{ dim: motion !== 'full' }" /><span>{{
+              motion === 'full' ? '动效全开' : '动效简化'
+            }}</span>
+          </button>
+          <RouterLink class="account-link" to="/profile"
+            ><JournalIcon name="users" /><span>{{
+              auth.isAuthenticated ? '我的' : '登录'
+            }}</span></RouterLink
+          >
+          <button
+            class="mobile-menu-button icon-button"
+            :aria-expanded="menuOpen"
+            aria-controls="edition-mobile-menu"
+            :aria-label="menuOpen ? '关闭目录' : '打开目录'"
+            @click="menuOpen = !menuOpen"
+          >
+            <JournalIcon :name="menuOpen ? 'x' : 'menu'" />
+          </button>
+        </div>
+      </header>
+      <Transition name="directory">
+        <div v-if="menuOpen" id="edition-mobile-menu" class="mobile-directory">
+          <nav aria-label="移动导航">
+            <RouterLink
+              v-for="item in navigation"
+              :key="item.path"
+              :to="item.path"
+              @click="menuOpen = false"
+              ><small>{{ item.index }}</small
+              ><span>{{ isNext ? item.archive : item.main }}</span
+              ><JournalIcon name="arrow-up-right"
+            /></RouterLink>
+          </nav>
+          <button class="motion-switch" :aria-pressed="motion === 'full'" @click="toggleMotion">
+            <span class="status-light" :class="{ dim: motion !== 'full' }" />动效
+            {{ motion === 'full' ? '全开' : '简化' }}
+          </button>
+          <a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'"
+            >{{ isNext ? '前往杂志' : '前往资料库' }} ↗</a
+          >
+        </div>
+      </Transition>
       <main id="main-content" tabindex="-1" :class="{ 'journal-legacy': !isJournalPage }">
         <slot />
       </main>
-      <div class="journal-slot" v-html="chrome.footer" />
+      <footer v-if="!isAuthRoute" class="edition-footer" data-reveal>
+        <div v-if="!isNext" class="footer-wordmark" aria-hidden="true">MomiChan<span>®</span></div>
+        <div class="footer-bottom">
+          <span>MOMICHAN · {{ new Date().getFullYear() }}</span
+          ><span>{{ isNext ? 'ARCHIVE' : 'JOURNAL' }}</span
+          ><a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'"
+            >{{ isNext ? '前往杂志' : '前往资料库' }} <JournalIcon name="arrow-up-right" /></a
+          ><button data-action="top">回到顶部 ↑</button>
+        </div>
+      </footer>
     </div>
-    <div v-if="!isAuthRoute" class="journal-slot" v-html="chrome.mobile" />
-    <div class="journal-slot" v-html="chrome.dialog" />
+    <dialog id="app-dialog" aria-labelledby="dialog-title">
+      <div class="dialog-head">
+        <span class="eyebrow">MOMICHAN</span
+        ><button class="icon-button" data-close aria-label="关闭"><JournalIcon name="x" /></button>
+      </div>
+      <div id="dialog-content" />
+    </dialog>
     <div id="toast" class="toast" role="status" aria-live="polite" />
     <div class="reading-progress" aria-hidden="true" />
     <button class="back-to-top icon-button" data-action="top" aria-label="返回顶部" hidden>
-      <i data-icon="arrow-up" />
+      <JournalIcon name="arrow-up" />
     </button>
   </div>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, nextTick, provide, shallowRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import {
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  nextTick,
+  provide,
+  shallowRef,
+  ref,
+  watch,
+} from 'vue'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useAuthStore } from '@/stores'
 import { designEdition } from '@/config/designEdition'
 import { createJournalRuntime, type JournalRuntime } from './runtime'
 import { journalKey } from './context'
 import { useJournalDialogs } from './useJournalDialogs'
 import { useJournalEvents } from './useJournalEvents'
-import mainChrome from './main-chrome.json'
-import nextChrome from './next-chrome.json'
+import JournalIcon from './JournalIcon.vue'
 import './styles/index.css'
-
-const route = useRoute()
-const router = useRouter()
+const route = useRoute(),
+  router = useRouter(),
+  auth = useAuthStore()
 const isNext = designEdition === 'archive'
 const authRoutes = new Set([
   'login',
@@ -43,44 +172,70 @@ const authRoutes = new Set([
   'passkey-recovery-detail',
 ])
 const isAuthRoute = computed(() => authRoutes.has(String(route.name)))
-const chrome = isNext ? nextChrome : mainChrome
 const runtime = shallowRef<JournalRuntime | null>(null)
+const motion = ref<'full' | 'reduced'>('full'),
+  menuOpen = ref(false)
 provide(journalKey, runtime)
 useJournalDialogs(runtime)
 useJournalEvents(runtime)
-const names: Record<string, string> = {
-  '/': 'home',
-  '/explore': 'explore',
-  '/schedule': 'schedule',
-  '/community': 'community',
-  '/profile/favorites': 'favorites',
-}
+const navigation = [
+  { path: '/', key: 'home', main: '首页', archive: '总览', icon: 'home', index: '01' },
+  {
+    path: '/explore',
+    key: 'explore',
+    main: '动态',
+    archive: '资料检索',
+    icon: 'compass',
+    index: '02',
+  },
+  {
+    path: '/schedule',
+    key: 'schedule',
+    main: '日程',
+    archive: '月历',
+    icon: 'calendar',
+    index: '03',
+  },
+  {
+    path: '/community',
+    key: 'community',
+    main: '社区',
+    archive: '讨论',
+    icon: 'messages',
+    index: '04',
+  },
+  {
+    path: '/profile/favorites',
+    key: 'favorites',
+    main: '收藏',
+    archive: '我的收藏',
+    icon: 'bookmark',
+    index: '05',
+  },
+]
 const pageName = computed(() =>
   import.meta.env.DEV && route.path.startsWith('/__journal/')
     ? String(route.params['page'])
-    : (names[route.path] ?? 'other')
+    : navigation.find((item) => item.path === route.path)?.key || 'other'
 )
 const isJournalPage = computed(() => pageName.value !== 'other')
 const labels: Record<string, string> = {
-  home: '首页',
-  explore: '动态',
-  schedule: '日程',
-  community: '社区',
-  favorites: '收藏',
-  other: 'MomiChan',
+  home: '总览',
+  explore: '资料检索',
+  schedule: '月历',
+  community: '讨论',
+  favorites: '我的收藏',
+}
+function toggleMotion() {
+  motion.value = motion.value === 'full' ? 'reduced' : 'full'
+  runtime.value?.setMotion(motion.value)
 }
 function syncChrome() {
   document.body.classList.toggle('journal-auth', isAuthRoute.value)
   document.body.dataset['page'] = pageName.value
-  for (const node of document.querySelectorAll<HTMLElement>('[data-page]')) {
-    if (node === document.body) continue
-    const active = node.dataset['page'] === pageName.value
-    node.classList.toggle('active', active)
-    if (active) node.setAttribute('aria-current', 'page')
-    else node.removeAttribute('aria-current')
-  }
-  const title = document.querySelector('#next-page-name')
-  if (title) title.textContent = labels[pageName.value] ?? 'MomiChan'
+}
+function escapeMenu(event: KeyboardEvent) {
+  if (event.key === 'Escape') menuOpen.value = false
 }
 onMounted(() => {
   document.body.classList.add('site-body')
@@ -90,10 +245,13 @@ onMounted(() => {
   runtime.value = createJournalRuntime((path) => {
     void router.push(path)
   })
+  motion.value = runtime.value.getMotion()
+  document.addEventListener('keydown', escapeMenu)
 })
 watch(
   () => route.path,
   async () => {
+    menuOpen.value = false
     syncChrome()
     await nextTick()
     runtime.value?.transition()
@@ -102,7 +260,8 @@ watch(
 )
 onBeforeUnmount(() => {
   runtime.value?.dispose()
-  document.body.classList.remove('site-body', 'next-body', 'reading-large')
+  document.removeEventListener('keydown', escapeMenu)
+  document.body.classList.remove('site-body', 'next-body', 'reading-large', 'journal-auth')
   delete document.body.dataset['variant']
   delete document.body.dataset['page']
   delete document.body.dataset['motion']
