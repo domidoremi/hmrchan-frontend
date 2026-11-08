@@ -13,6 +13,7 @@ import {
   resolveLocalAuditPreviewPorts,
 } from './lib/audit-env.js'
 import {
+  createHealthRequestTracker,
   isExpectedHealthNotFoundDocument,
   shouldIgnoreConsoleError,
   shouldIgnoreRequestIssue,
@@ -1484,6 +1485,7 @@ function attachPageDiagnostics(
   requestFailures: Set<string>,
   badResponses: Set<string>
 ): void {
+  const requestTracker = createHealthRequestTracker(requestFailures)
   const isManagedPreviewSpa404Noise = (targetUrl?: string | null): boolean => {
     if (!healthFilterOptions.managedPreview) {
       return false
@@ -1551,11 +1553,12 @@ function attachPageDiagnostics(
     if (isManagedPreviewSpa404Noise(req.url())) return
     if (shouldIgnoreRequestIssue(req.url(), INCLUDE_API_ERRORS, healthFilterOptions)) return
     const reason = req.failure()?.errorText ?? 'unknown'
-    requestFailures.add(`${req.method()} ${req.url()} (${reason})`)
+    requestTracker.failed(req.method(), req.url(), reason)
   })
 
   page.on('response', (res) => {
     const status = res.status()
+    requestTracker.responded(res.request().method(), res.url(), status)
     if (
       status === 404 &&
       res.request().isNavigationRequest() &&

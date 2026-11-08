@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  createHealthRequestTracker,
   isExpectedHealthNotFoundDocument,
   isIgnoredOptionalEndpoint,
   isLocalPreviewEnvironmentBlocker,
@@ -9,6 +10,33 @@ import {
 } from '../../../scripts/lib/frontend-health'
 
 describe('frontend health filtering', () => {
+  it.each([true, false])(
+    'accepts a cancelled duplicate only after a successful GET: %s',
+    (responseFirst) => {
+      const failures = new Set<string>()
+      const tracker = createHealthRequestTracker(failures)
+      if (responseFirst) tracker.responded('GET', '/api/schedules?month=11', 200)
+      tracker.failed('GET', '/api/schedules?month=11', 'net::ERR_ABORTED')
+      if (!responseFirst) {
+        expect(failures.size).toBe(1)
+        tracker.responded('GET', '/api/schedules?month=11', 200)
+      }
+      expect(failures.size).toBe(0)
+    }
+  )
+
+  it('retains network failures, failed replacements, distinct queries and writes', () => {
+    const failures = new Set<string>()
+    const tracker = createHealthRequestTracker(failures)
+    tracker.failed('GET', '/api/schedules?month=10', 'net::ERR_ABORTED')
+    tracker.failed('GET', '/api/schedules?month=11', 'net::ERR_FAILED')
+    tracker.failed('GET', '/api/posts', 'net::ERR_ABORTED')
+    tracker.failed('POST', '/api/comments', 'net::ERR_ABORTED')
+    tracker.responded('GET', '/api/schedules?month=11', 200)
+    tracker.responded('GET', '/api/posts', 503)
+    tracker.responded('POST', '/api/comments', 200)
+    expect(failures.size).toBe(4)
+  })
   it('recognizes the deliberate missing-route document on the audited origin', () => {
     expect(
       isExpectedHealthNotFoundDocument(

@@ -1,4 +1,20 @@
 const IGNORED_OPTIONAL_ENDPOINTS = ['/client-report']
+
+export function createHealthRequestTracker(failures: Set<string>) {
+  const completedGets = new Set<string>()
+  return {
+    failed(method: string, url: string, reason: string) {
+      if (method === 'GET' && reason === 'net::ERR_ABORTED' && completedGets.has(url)) return
+      failures.add(`${method} ${url} (${reason})`)
+    },
+    responded(method: string, url: string, status: number) {
+      if (method !== 'GET' || status < 200 || status >= 300) return
+      completedGets.add(url)
+      failures.delete(`GET ${url} (net::ERR_ABORTED)`)
+    },
+  }
+}
+
 const IGNORED_THIRD_PARTY_HEALTH_ENDPOINTS = [
   'https://challenges.cloudflare.com/cdn-cgi/challenge-platform/',
 ]
