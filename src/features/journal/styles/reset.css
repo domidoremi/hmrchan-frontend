@@ -10,7 +10,7 @@
   line-height: normal;
   color: inherit;
 }
-:where(body.site-body .journal-shell) button {
+:where(body.site-body .journal-shell, body.site-body #experience-menu) button {
   padding: 1px 6px;
 }
 :where(body.site-body .journal-shell) input {
