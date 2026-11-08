@@ -6,6 +6,7 @@
       'auth-shell--split': split,
     }"
   >
+    <EditionAuthArt />
     <header class="auth-shell__header">
       <div class="auth-shell__topline">
         <button
@@ -45,6 +46,7 @@
 <script setup lang="ts">
 import { ArrowLeft } from '@lucide/vue'
 import AuthTabNav from './AuthTabNav.vue'
+import EditionAuthArt from './EditionAuthArt.vue'
 import type { AuthEntryTab } from './authTypes'
 
 defineOptions({ name: 'AuthEntryShell' })
