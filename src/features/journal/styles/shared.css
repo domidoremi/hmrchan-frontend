@@ -479,12 +479,12 @@ body.site-body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  html:has(body.site-body) {
+  html:has(body.site-body:not([data-motion='full'])) {
     scroll-behavior: auto;
   }
-  :where(body.site-body) *,
-  :where(body.site-body) *::before,
-  :where(body.site-body) *::after {
+  :where(body.site-body:not([data-motion='full'])) *,
+  :where(body.site-body:not([data-motion='full'])) *::before,
+  :where(body.site-body:not([data-motion='full'])) *::after {
     animation: none !important;
     transition: none !important;
   }

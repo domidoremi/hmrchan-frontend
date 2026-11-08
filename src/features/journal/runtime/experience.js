@@ -229,7 +229,7 @@ export function installExperience(runtime, environment) {
   }
 
   function modes() {
-    return `<div class="scene-modes" aria-label="相册浏览方式"><button data-scene-mode="orbit" aria-pressed="true">环览</button><button data-scene-mode="stack" aria-pressed="false">叠放</button></div>`
+    return `<div class="scene-modes" aria-label="相册浏览方式"><button data-motion-enable hidden>开启动效</button><button data-scene-mode="orbit" aria-pressed="true">环览</button><button data-scene-mode="stack" aria-pressed="false">叠放</button></div>`
   }
 
   function bindOrbit(root) {
@@ -816,7 +816,7 @@ export function installExperience(runtime, environment) {
       }
       cover.dataset.sceneMode = mode.dataset.sceneMode
       cover
-        .querySelectorAll('.scene-modes button')
+        .querySelectorAll('.scene-modes [data-scene-mode]')
         .forEach((b) => b.setAttribute('aria-pressed', String(b === mode)))
       state?.paint()
       if (mode.dataset.sceneMode === 'stack') {
