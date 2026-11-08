@@ -548,14 +548,96 @@
   margin-left: auto;
 }
 .site-body .journal-shell .film-track {
+  position: relative;
   display: flex;
   gap: 35px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding: 20px 2px 38px;
+  padding: 20px 16px 38px;
   scrollbar-width: thin;
   scrollbar-color: #ffffff4d transparent;
   perspective: 1200px;
+  cursor: grab;
+  user-select: none;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+.site-body .journal-shell .film-track.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+.site-body .journal-shell .film-track.is-dragging .film-frame {
+  cursor: grabbing;
+}
+.site-body .journal-shell .film-track img {
+  -webkit-user-drag: none;
+}
+.site-body .journal-shell .film-frame:focus-visible {
+  outline: 2px solid #e4edb9;
+  outline-offset: 6px;
+}
+.site-body .journal-shell .film-position {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #ffffff30;
+}
+.site-body .journal-shell .film-counter {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+  font: 11px monospace;
+}
+.site-body .journal-shell .film-counter b {
+  font:
+    30px Georgia,
+    serif;
+  color: #e4edb9;
+}
+.site-body .journal-shell .film-scrubber {
+  position: relative;
+  flex: 1;
+  height: 36px;
+  display: block;
+}
+.site-body .journal-shell .film-scrubber input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: ew-resize;
+  z-index: 1;
+}
+.site-body .journal-shell .film-scrubber i {
+  display: block;
+  position: absolute;
+  top: 17px;
+  height: 2px;
+  width: 100%;
+  background: #ffffff35;
+}
+.site-body .journal-shell .film-scrubber i::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: calc(var(--film-progress, 0) * (100% - 32px));
+  width: 32px;
+  height: 8px;
+  background: #e4edb9;
+}
+.site-body .journal-shell .film-scrubber:focus-within {
+  outline: 1px solid #e4edb9;
+  outline-offset: 3px;
+}
+.site-body .journal-shell .film-current-author {
+  max-width: 25%;
+  font-size: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .site-body .journal-shell .film-frame {
   min-width: 280px;
