@@ -4,7 +4,6 @@
       <ProfileSubPageHeader
         :title="$t('profile.tabs.notifications')"
         :subtitle="$t('profile.notificationsSubtitle')"
-        :hint="$t('profile.notificationPreferencesHint')"
       >
         <template #actions>
           <div class="notifications-header-actions">
@@ -90,7 +89,7 @@
           </p>
           <ControlGroup
             class="notifications-filter-row"
-            role="tablist"
+            role="group"
             :aria-label="$t('profile.notificationStatusLabel')"
           >
             <ControlButton
@@ -116,7 +115,7 @@
           </p>
           <ControlGroup
             class="notifications-filter-row"
-            role="tablist"
+            role="group"
             :aria-label="$t('profile.notificationCategoryLabel')"
           >
             <ControlButton
@@ -276,11 +275,6 @@ const streamIcon = computed(() => {
 const streamStateClass = computed(() => `notifications-live-pill--${notifStore.streamState}`)
 
 const summaryCards = computed(() => [
-  {
-    key: 'unread',
-    label: t('profile.unreadNotifications'),
-    value: formatSummaryCount(notifStore.summary.total.count, notifStore.summary.total.is_capped),
-  },
   {
     key: 'interaction',
     label: t('profile.notificationCategories.interaction'),

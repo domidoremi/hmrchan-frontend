@@ -176,7 +176,7 @@ describe('ProfileSecurityPage', () => {
 
     expect(wrapper.get('[data-testid="profile-security-page"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('profile.securityHubTitle')
-    expect(wrapper.findAll('.security-entry')).toHaveLength(4)
+    expect(wrapper.findAll('[role="tab"]')).toHaveLength(4)
     expect(wrapper.find('[data-testid="profile-security-workspace"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="profile-security-credentials-panel"]').isVisible()).toBe(
       true

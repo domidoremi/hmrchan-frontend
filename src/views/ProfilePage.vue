@@ -28,49 +28,6 @@
             </div>
           </div>
 
-          <div class="profile-command-grid">
-            <RouterLink
-              :to="
-                withProfileReturnTo('/profile/favorites', {
-                  returnTo: route.fullPath,
-                })
-              "
-              class="profile-command-card"
-            >
-              <span class="profile-command-card__eyebrow">{{ $t('profile.tabs.favorites') }}</span>
-              <strong class="profile-command-card__title">{{ primaryContentCard.title }}</strong>
-              <p class="profile-command-card__text">{{ primaryContentCard.hint }}</p>
-            </RouterLink>
-
-            <RouterLink
-              v-if="securitySection"
-              :to="withProfileReturnTo(securitySection.route, { returnTo: route.fullPath })"
-              class="profile-command-card profile-command-card--security"
-            >
-              <span class="profile-command-card__eyebrow">{{
-                $t('profile.securityHubTitle')
-              }}</span>
-              <strong class="profile-command-card__title">{{
-                $t('profile.securityHubTitle')
-              }}</strong>
-              <p class="profile-command-card__text">{{ $t('profile.securityHubHint') }}</p>
-            </RouterLink>
-
-            <div class="profile-command-list">
-              <RouterLink
-                v-for="section in frequentSections"
-                :key="section.id"
-                :to="withProfileReturnTo(section.route, { returnTo: route.fullPath })"
-                class="profile-command-link"
-              >
-                <span class="profile-command-link__label">{{ $t(section.labelKey) }}</span>
-                <span v-if="resolveCount(section) !== null" class="profile-command-link__count">
-                  {{ resolveCount(section) }}
-                </span>
-              </RouterLink>
-            </div>
-          </div>
-
           <div class="profile-overview__summary">
             <article v-for="item in summaryItems" :key="item.key" class="summary-card">
               <span class="summary-card__label">{{ item.label }}</span>
@@ -117,9 +74,6 @@
                       {{ resolveCount(section) }}
                     </span>
                   </div>
-                  <p class="profile-nav-card__hint">
-                    {{ section.hintKey ? $t(section.hintKey) : $t('profile.manageSection') }}
-                  </p>
                 </div>
                 <span class="profile-nav-card__cta">{{ $t('profile.viewSection') }}</span>
               </RouterLink>
@@ -174,22 +128,22 @@ const summaryItems = computed(() => {
     {
       key: 'favorites',
       label: t('profile.tabs.favorites'),
-      value: counts['favorites'] ?? 0,
+      value: counts['favorites'] ?? '—',
     },
     {
       key: 'comments',
       label: t('profile.tabs.comments'),
-      value: counts['comments'] ?? 0,
+      value: counts['comments'] ?? '—',
     },
     {
       key: 'followers',
       label: t('profile.tabs.followers'),
-      value: counts['followers'] ?? 0,
+      value: counts['followers'] ?? '—',
     },
     {
       key: 'following',
       label: t('profile.tabs.following'),
-      value: counts['following'] ?? 0,
+      value: counts['following'] ?? '—',
     },
   ]
 })
@@ -197,16 +151,6 @@ const summaryItems = computed(() => {
 const securitySection = computed(
   () => profileSections.find((section) => section.id === 'security') ?? null
 )
-const frequentSections = computed(() =>
-  profileSections.filter((section) =>
-    ['favorites', 'history', 'notifications', 'settings'].includes(section.id)
-  )
-)
-const primaryContentCard = computed(() => ({
-  title: t('profile.tabs.favorites'),
-  hint: t('favorites.organizeHint'),
-}))
-
 const groupedSections = computed(() => {
   const groups: Array<{
     id: 'content' | 'activity' | 'network' | 'account'

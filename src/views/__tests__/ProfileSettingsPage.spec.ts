@@ -433,9 +433,7 @@ describe('ProfileSettingsPage', () => {
       .find((item) => item.text().includes('settings.categoryAppearance'))!
       .trigger('click')
 
-    expect(wrapper.get('[data-testid="settings-panel"]').attributes('data-categories')).toBe(
-      'appearance,experience'
-    )
+    expect(wrapper.get('.journal-display-settings').isVisible()).toBe(true)
     expect(wrapper.text()).not.toContain('settings.openStyleGallery')
 
     await wrapper

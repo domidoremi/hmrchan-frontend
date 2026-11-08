@@ -4,7 +4,6 @@
       <ProfileSubPageHeader
         :title="$t('profile.settings')"
         :subtitle="$t('profile.settingsSubtitle')"
-        :hint="$t('profile.settingsHint')"
       >
         <template #actions>
           <Button variant="ghost" size="sm" type="button" @click="refreshSettingsData">
@@ -77,10 +76,17 @@
             </div>
           </section>
 
-          <div class="settings-group-switcher" role="tablist" :aria-label="$t('profile.settings')">
+          <div
+            class="settings-group-switcher"
+            role="tablist"
+            @keydown="handleTabListKeydown"
+            :aria-label="$t('profile.settings')"
+          >
             <button
               v-for="group in settingsDashboardGroups"
               :key="group.id"
+              :id="`settings-tab-${group.id}`"
+              :aria-controls="`settings-panel-${group.id}`"
               type="button"
               class="settings-group-switcher__item"
               :class="{ 'settings-group-switcher__item--active': activeSettingsGroup === group.id }"
@@ -94,14 +100,19 @@
               </div>
               <div class="settings-group-switcher__copy">
                 <strong>{{ group.title }}</strong>
-                <span>{{ group.description }}</span>
               </div>
             </button>
           </div>
 
           <div class="settings-layout">
             <div class="settings-main">
-              <div v-show="activeSettingsGroup === 'account'" class="settings-group-panel">
+              <div
+                v-show="activeSettingsGroup === 'account'"
+                id="settings-panel-account"
+                role="tabpanel"
+                aria-labelledby="settings-tab-account"
+                class="settings-group-panel"
+              >
                 <form class="settings-form" @submit.prevent="saveProfile">
                   <!-- Avatar Section -->
                   <section id="avatar-section" class="settings-section glass-surface--editorial">
@@ -266,6 +277,9 @@
 
               <section
                 v-show="activeSettingsGroup === 'appearance'"
+                id="settings-panel-appearance"
+                role="tabpanel"
+                aria-labelledby="settings-tab-appearance"
                 class="settings-section settings-section--embedded glass-surface--editorial"
               >
                 <div class="settings-section-head">
@@ -278,15 +292,16 @@
                   </div>
                 </div>
 
-                <SettingsPanel
-                  :compact="false"
-                  :embedded="true"
-                  :show-header="false"
-                  :allowed-categories="appearanceSettingsCategories"
-                />
+                <JournalDisplaySettings />
               </section>
 
-              <div v-show="activeSettingsGroup === 'privacy'" class="settings-group-panel">
+              <div
+                v-show="activeSettingsGroup === 'privacy'"
+                id="settings-panel-privacy"
+                role="tabpanel"
+                aria-labelledby="settings-tab-privacy"
+                class="settings-group-panel"
+              >
                 <section
                   class="settings-section settings-section--embedded glass-surface--editorial"
                 >
@@ -508,6 +523,7 @@ defineOptions({ name: 'ProfileSettingsPage' })
 
 import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { handleTabListKeydown } from '@/utils/tabNavigation'
 import { useRouter } from 'vue-router'
 // ... icons imports ...
 import {
@@ -537,6 +553,7 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import SettingsPanel from '@/components/layout/SettingsPanel.vue'
+import JournalDisplaySettings from '@/features/journal/JournalDisplaySettings.vue'
 import SketchDropUploader from '@/components/ui/SketchDropUploader.vue'
 import {
   buildDataSummaryItems,
@@ -563,10 +580,6 @@ const error = ref<string | null>(null)
 const isDeletionStatusLoading = ref(false)
 const isExportingData = ref(false)
 const isDeletingAccount = ref(false)
-const appearanceSettingsCategories: Array<'appearance' | 'experience'> = [
-  'appearance',
-  'experience',
-]
 const privacySettingsCategories: Array<'privacy'> = ['privacy']
 
 const showCropper = ref(false)

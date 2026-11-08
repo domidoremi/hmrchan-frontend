@@ -1,63 +1,9 @@
 <template>
   <div class="security-mfa-panel">
-    <section class="settings-section glass-surface--editorial two-factor-section">
-      <div class="settings-section-head">
-        <div class="settings-section-icon settings-section-icon--success">
-          <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-        </div>
-        <div>
-          <h2 class="settings-section-title">{{ $t('profile.loginMethodTitle') }}</h2>
-          <p class="settings-section-desc">{{ $t('profile.loginMethodHint') }}</p>
-        </div>
-      </div>
-
-      <div class="two-factor-status-card">
-        <div class="two-factor-status-copy">
-          <p class="two-factor-status-label">{{ $t('profile.loginMethodCurrentLabel') }}</p>
-          <p class="two-factor-status-value">{{ authSourceSummaryLabel }}</p>
-          <p class="field-hint">{{ authSourceSummaryHint }}</p>
-        </div>
-
-        <div class="two-factor-actions">
-          <Button
-            v-if="!status?.totp_enabled"
-            type="button"
-            variant="secondary"
-            :loading="isSettingUpTotp"
-            @click="handleSetupTotp"
-          >
-            {{ $t('profile.twoFactorSetupAction') }}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            :loading="isRegisteringPasskey"
-            @click="handleRegisterPasskey"
-          >
-            {{ $t('profile.passkeyAddAction') }}
-          </Button>
-        </div>
-      </div>
-
-      <div class="account-meta-grid auth-method-meta-grid">
-        <div class="account-meta-item">
-          <span class="account-meta-label">{{ $t('profile.authSourceLabel') }}</span>
-          <span class="account-meta-value">{{ authSourceSummaryLabel }}</span>
-        </div>
-        <div class="account-meta-item">
-          <span class="account-meta-label">{{ $t('profile.identityProviderLabel') }}</span>
-          <span class="account-meta-value">{{ primaryIdentityProviderLabel }}</span>
-        </div>
-        <div class="account-meta-item">
-          <span class="account-meta-label">{{ $t('profile.linkedProvidersLabel') }}</span>
-          <span class="account-meta-value">{{ linkedProvidersLabel }}</span>
-        </div>
-        <div class="account-meta-item">
-          <span class="account-meta-label">{{ $t('profile.twoFactorSummaryLabel') }}</span>
-          <span class="account-meta-value">{{ localizedMethodSummary }}</span>
-        </div>
-      </div>
-    </section>
+    <div class="security-linked-methods">
+      <span>{{ $t('profile.linkedProvidersLabel') }}</span>
+      <strong>{{ linkedProvidersLabel }}</strong>
+    </div>
 
     <section class="settings-section glass-surface--editorial two-factor-section">
       <div class="settings-section-head">
@@ -88,14 +34,6 @@
             @click="handleSetupTotp"
           >
             {{ $t('profile.twoFactorSetupAction') }}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            :loading="isRegisteringPasskey"
-            @click="handleRegisterPasskey"
-          >
-            {{ $t('profile.passkeyAddAction') }}
           </Button>
           <Button
             v-if="status?.enabled"
@@ -397,22 +335,15 @@ import {
   canRenamePasskey as canRenamePasskeyWithDrafts,
   formatAuthenticatorAttachmentLabel,
   formatBooleanLabel,
-  formatIdentityProviderLabel,
   formatPasskeyTransports as formatPasskeyTransportList,
   getPasskeyDraftName,
   localizeMfaMethod as localizeMfaMethodLabel,
-  normalizeIdentityProvider,
   removePasskeyDraftName,
-  resolveMfaMethodSummary,
   resolveMfaStatusHint,
   resolveMfaStatusLabel,
   updatePasskeyDraftNames,
 } from './securityMfaModel'
-import {
-  formatOptionalIntlDateTime,
-  resolveAuthSourceSummaryHintKey,
-  resolveAuthSourceSummaryLabel,
-} from '@/views/profile-settings/profileSettingsModel'
+import { formatOptionalIntlDateTime } from '@/views/profile-settings/profileSettingsModel'
 
 const props = withDefaults(
   defineProps<{
@@ -448,31 +379,6 @@ const passkeyDeviceName = ref('')
 const passkeyDraftNames = ref<Record<string, string>>({})
 const passkeyBusyId = ref<string | null>(null)
 
-const normalizedIdentityProvider = computed(() =>
-  normalizeIdentityProvider(props.profile?.identity_provider, props.authUser?.identity_provider)
-)
-
-const authSourceSummaryLabel = computed(() => {
-  return resolveAuthSourceSummaryLabel({
-    provider: normalizedIdentityProvider.value,
-    googleLabel: t('profile.authSourceGoogle'),
-    thirdPartyLabel: t('profile.authSourceThirdParty'),
-    emailLabel: t('profile.authSourceEmail'),
-    thirdPartyProviderLabel: props.authUser?.identity_provider,
-  })
-})
-
-const authSourceSummaryHint = computed(() => {
-  return t(resolveAuthSourceSummaryHintKey(normalizedIdentityProvider.value))
-})
-
-const primaryIdentityProviderLabel = computed(() => {
-  const provider = props.profile?.identity_provider ?? props.authUser?.identity_provider
-  return provider
-    ? formatIdentityProviderLabel(provider, t('profile.authSourceEmail'))
-    : t('profile.identityProviderUnavailable')
-})
-
 const linkedProvidersLabel = computed(() =>
   buildLinkedIdentityProviderLabel({
     providers: [
@@ -487,15 +393,6 @@ const linkedProvidersLabel = computed(() =>
 )
 
 const localizedMethodList = computed(() => (status.value?.methods ?? []).map(localizeMfaMethod))
-
-const localizedMethodSummary = computed(() =>
-  resolveMfaMethodSummary({
-    isLoadingInitialStatus: isRefreshingStatus.value && !status.value,
-    methods: localizedMethodList.value,
-    loadingLabel: t('profile.twoFactorStatusLoadingHint'),
-    disabledLabel: t('profile.twoFactorDisabled'),
-  })
-)
 
 const mfaStatusLabel = computed(() =>
   resolveMfaStatusLabel({
