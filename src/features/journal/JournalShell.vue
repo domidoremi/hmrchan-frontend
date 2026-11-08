@@ -79,7 +79,7 @@
           <button
             class="mobile-menu-button icon-button"
             :aria-expanded="menuOpen"
-            aria-controls="edition-mobile-menu"
+            :aria-controls="menuOpen ? 'edition-mobile-menu' : undefined"
             :aria-label="menuOpen ? '关闭目录' : '打开目录'"
             @click="menuOpen = !menuOpen"
           >
