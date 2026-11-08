@@ -5,13 +5,19 @@ import type { ScheduleResponse } from '@/api/scheduleService'
 import { formatRelativeTime as relativeTime } from '@/utils/date'
 import i18n from '@/i18n'
 const formatRelativeTime = (date: string) => relativeTime(date, i18n.global.t)
-import { getMediaThumbnailUrl, normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
+import {
+  extractMediaIdFromUrl,
+  getMediaStreamUrl,
+  getMediaThumbnailUrl,
+  normalizeToThumbnailUrl,
+} from '@/utils/mediaOptimizer'
 
 export interface JournalPost {
   id: string
   title: string
   text: string
   image: string | null
+  originalImage?: string | null
   author: string
   authorId: string | null
   avatar: string
@@ -71,11 +77,17 @@ export function postModel(post: PostListItem | PostDetailResponse): JournalPost 
     (firstMedia && /^(image|video)(\/|$)/.test(firstMedia.file_type)
       ? getMediaThumbnailUrl(firstMedia.id, 'large')
       : null)
+  const mediaId =
+    post.media_id || extractMediaIdFromUrl(post.stream_url || post.thumbnail_url) || firstMedia?.id
+  const originalImage = /^image(?:\/|$)/i.test(mediaType)
+    ? post.stream_url || (mediaId ? getMediaStreamUrl(mediaId) : null)
+    : null
   return {
     id: post.id,
     title: post.title || content?.slice(0, 100) || '动态',
     text: content || post.description || '',
     image,
+    originalImage,
     author: post.author_name || post.author_username || '',
     authorId: post.author_id || null,
     avatar: post.author_avatar_url || '/journal/mascot.webp',
@@ -105,12 +117,17 @@ export function favoriteModel(
     }
   }
   const image = normalizeToThumbnailUrl(post?.thumbnail_url, 'large')
+  const mediaId = post?.media_id || extractMediaIdFromUrl(post?.stream_url || post?.thumbnail_url)
+  const originalImage = /^image(?:\/|$)/i.test(post?.media_type || '')
+    ? post?.stream_url || (mediaId ? getMediaStreamUrl(mediaId) : null)
+    : null
   return {
     id: favorite.post_id,
     favoriteId: favorite.id,
     title: post?.title || '已收藏动态',
     text: favorite.notes || '',
     image,
+    originalImage,
     author: post?.author_name || favorite.author?.username || '',
     authorId: favorite.author?.id || null,
     avatar: '/journal/mascot.webp',

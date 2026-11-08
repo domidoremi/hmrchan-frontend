@@ -103,6 +103,7 @@
           <JournalImage
             v-if="post.image"
             :src="post.image"
+            :original-src="post.originalImage"
             :alt="post.title"
             width="640"
             height="800"

@@ -34,6 +34,8 @@ export interface PostListItem {
   platform_post_id?: string
   post_url?: string
   post_type?: string
+  media_id?: string | null
+  stream_url?: string | null
   media_type?: string | null
   title?: string | null
   content?: string | null
@@ -95,6 +97,8 @@ export interface MediaSubtitle {
 }
 
 export interface PostDetailResponse {
+  media_id?: string | null
+  stream_url?: string | null
   is_liked?: boolean | undefined
   community_like_count?: number | undefined
   id: string
@@ -165,6 +169,8 @@ interface RawFile {
 }
 
 export interface RawPostDetail {
+  media_id?: string | null
+  stream_url?: string | null
   is_liked?: boolean | undefined
   community_like_count?: number | undefined
   id: string
@@ -359,6 +365,8 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     description: raw.description ?? raw.content,
     url: raw.url ?? raw.post_url,
     thumbnail_url: raw.thumbnail_url ?? null,
+    media_id: raw.media_id ?? null,
+    stream_url: raw.stream_url ?? null,
     author_id: raw.author_id ?? raw.author?.id,
     author_name: raw.author_name ?? raw.author?.display_name,
     author_username: raw.author_username ?? raw.author?.username,

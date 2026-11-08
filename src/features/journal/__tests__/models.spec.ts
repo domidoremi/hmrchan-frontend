@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { FavoriteResponse } from '@/api/favoriteService'
 import type { PostDetailResponse } from '@/api/postService'
-import { favoriteModel } from '../models'
+import { favoriteModel, postModel } from '../models'
 
 vi.mock('@/i18n', () => ({ default: { global: { t: (key: string) => key } } }))
 const favorite: FavoriteResponse = {
@@ -51,6 +51,7 @@ describe('journal favorite presentation', () => {
     }
     const model = favoriteModel({ ...favorite, notes: 'My note', tags: ['Saved tag'] }, detail)
     expect(model.image).toContain(`/media/${mediaId}/thumbnail?size=large`)
+    expect(model.originalImage).toBe(`/api/v1/media/${mediaId}/stream`)
     expect(model).toMatchObject({
       favoriteId: favorite.id,
       type: '写真',
@@ -60,5 +61,22 @@ describe('journal favorite presentation', () => {
       text: 'My note',
       tags: ['Saved tag'],
     })
+  })
+
+  it('does not send a video stream to an image element', () => {
+    const model = postModel({
+      id: favorite.post_id,
+      platform: 'youtube',
+      media_type: 'video',
+      media_id: favorite.post_id,
+      thumbnail_url: `/api/v1/media/${favorite.post_id}/thumbnail`,
+      stream_url: `/api/v1/media/${favorite.post_id}/stream`,
+      view_count: 0,
+      like_count: 0,
+      comment_count: 0,
+      media_count: 1,
+    })
+    expect(model.image).toContain('/thumbnail')
+    expect(model.originalImage).toBeNull()
   })
 })

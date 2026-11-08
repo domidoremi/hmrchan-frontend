@@ -49,6 +49,7 @@
         <span>{{ String(i + 1).padStart(2, '0') }} / {{ post.author }}</span>
         <JournalImage
           :src="post.image!"
+          :original-src="post.originalImage"
           :alt="post.title"
           loading="lazy"
           width="400"

@@ -1,7 +1,67 @@
 import { shallowMount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import JournalImage from '../JournalImage.vue'
 describe('journal images', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  function loaded(img: HTMLImageElement, width = 407, height = 300) {
+    Object.defineProperties(img, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 267 },
+      naturalHeight: { configurable: true, value: 400 },
+      clientWidth: { configurable: true, value: width },
+      clientHeight: { configurable: true, value: height },
+    })
+  }
+  it('uses the original when an actual thumbnail is too small for a high density preview', async () => {
+    vi.stubGlobal('devicePixelRatio', 2)
+    const wrapper = shallowMount(JournalImage, {
+      props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo', fit: 'contain' },
+    })
+    loaded(wrapper.get('img').element)
+    await wrapper.get('img').trigger('load')
+    expect(wrapper.get('img').attributes('src')).toBe('/photo.jpg')
+    wrapper.unmount()
+  })
+  it('keeps small rows light and upgrades after the image grows', async () => {
+    vi.stubGlobal('devicePixelRatio', 2)
+    const wrapper = shallowMount(JournalImage, {
+      props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo' },
+    })
+    loaded(wrapper.get('img').element, 40, 49)
+    await wrapper.get('img').trigger('load')
+    expect(wrapper.get('img').attributes('src')).toBe('/thumbnail.webp')
+    loaded(wrapper.get('img').element, 480, 520)
+    window.dispatchEvent(new Event('resize'))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('img').attributes('src')).toBe('/photo.jpg')
+    wrapper.unmount()
+  })
+  it('accounts for cover cropping instead of comparing only image width', async () => {
+    vi.stubGlobal('devicePixelRatio', 1)
+    const wrapper = shallowMount(JournalImage, {
+      props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo' },
+    })
+    loaded(wrapper.get('img').element, 200, 600)
+    await wrapper.get('img').trigger('load')
+    expect(wrapper.get('img').attributes('src')).toBe('/photo.jpg')
+    wrapper.unmount()
+  })
+  it('keeps the thumbnail after an original fails and resets for another backend image', async () => {
+    const wrapper = shallowMount(JournalImage, {
+      props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo' },
+    })
+    loaded(wrapper.get('img').element, 800, 900)
+    await wrapper.get('img').trigger('load')
+    await wrapper.get('img').trigger('error')
+    expect(wrapper.get('img').attributes('src')).toBe('/thumbnail.webp')
+    await wrapper.get('img').trigger('load')
+    expect(wrapper.get('img').attributes('src')).toBe('/thumbnail.webp')
+    await wrapper.setProps({ src: '/another-thumbnail.webp', originalSrc: '/another-photo.jpg' })
+    loaded(wrapper.get('img').element, 800, 900)
+    await wrapper.get('img').trigger('load')
+    expect(wrapper.get('img').attributes('src')).toBe('/another-photo.jpg')
+    wrapper.unmount()
+  })
   it('shows an accessible fallback on failure and retries when backend image changes', async () => {
     const wrapper = shallowMount(JournalImage, {
       props: { src: '/missing.jpg', alt: 'A backend title' },
