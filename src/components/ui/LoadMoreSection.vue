@@ -3,13 +3,15 @@
     <header class="load-more-header">
       <PageMetaChip class="progress-pill">
         <span class="progress-label">{{
-          t('common.showing', { count: displayCount, total: displayTotal })
+          hasKnownTotal
+            ? t('common.showing', { count: displayCount, total: displayTotal })
+            : t('common.loadedCount', { count: displayCount })
         }}</span>
-        <span class="progress-value">{{ Math.round(progressPercent) }}%</span>
+        <span v-if="hasKnownTotal" class="progress-value">{{ Math.round(progressPercent) }}%</span>
       </PageMetaChip>
     </header>
 
-    <div class="progress-track">
+    <div v-if="hasKnownTotal" class="progress-track">
       <div class="progress-fill" :style="{ width: `${progressPercent}%` }">
         <div class="progress-glow" />
       </div>
@@ -87,6 +89,10 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const hasKnownTotal = computed(
+  () => typeof props.total === 'number' && Number.isFinite(props.total)
+)
 
 const metrics = computed(() => resolveLoadMoreMetrics(props.count, props.total))
 const displayCount = computed(() => metrics.value.count)

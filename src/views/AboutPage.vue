@@ -1,271 +1,74 @@
 <template>
   <div class="about-page">
-    <div class="container">
-      <PageHeroShell class="about-hero page-hero-shell--comfortable">
-        <template #heading>
-          <h1 class="page-hero-shell__title gradient-text">{{ $t('about.title') }}</h1>
-          <p class="page-hero-shell__subtitle">{{ $t('about.subtitle') }}</p>
-        </template>
-
-        <template #meta>
-          <PageMetaRow class="page-meta-row--comfortable">
-            <PageMetaChip>{{ $t('about.links.title') }}</PageMetaChip>
-            <PageMetaChip>{{ $t('about.features.title') }}</PageMetaChip>
-          </PageMetaRow>
-        </template>
-      </PageHeroShell>
-
-      <section class="section himeri-section">
-        <div class="page-section-head about-section-head">
-          <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" class="about-section-icon" />
-          <h2 class="page-section-title about-section-title">{{ $t('about.origin.title') }}</h2>
-        </div>
-        <div class="origin-content empty-surface">
-          <div class="himeri-header">
-            <div class="himeri-name-card">
-              <div class="name-wrapper">
-                <h3 class="himeri-jp gradient-text">{{ $t('about.origin.himeri') }}</h3>
-                <p class="himeri-romaji">{{ $t('about.origin.himeriRomaji') }}</p>
-              </div>
-              <div class="name-decoration">
-                <AnimatedIcon
-                  name="heart"
-                  :fallback-icon="Heart"
-                  size="xl"
-                  class="decoration-icon"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="profile-section">
-            <h3 class="subsection-title">
-              <AnimatedIcon name="user" :fallback-icon="User" size="md" />
-              <span>{{ $t('about.origin.profileTitle') }}</span>
-            </h3>
-            <div class="profile-grid-enhanced">
-              <div
-                v-for="(item, index) in profileItems"
-                :key="item.label"
-                class="profile-card page-list-card"
-                :style="{ animationDelay: `${index * 0.05}s` }"
-              >
-                <div class="profile-card-icon">
-                  <AnimatedIcon name="explore" :fallback-icon="item.icon" size="md" />
-                </div>
-                <div class="profile-card-content">
-                  <span class="profile-card-text">{{ item.label }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="bio-section">
-            <h3 class="subsection-title">
-              <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="md" />
-              <span>{{ $t('about.origin.aboutTitle') }}</span>
-            </h3>
-            <div class="bio-content">
-              <p class="bio-text">{{ $t('about.origin.career') }}</p>
-              <p class="bio-text">{{ $t('about.origin.personality') }}</p>
-              <p class="bio-text">{{ $t('about.origin.platforms') }}</p>
-              <div class="bio-highlight">
-                <div class="highlight-icon">
-                  <AnimatedIcon name="sparkle" :fallback-icon="Star" size="md" />
-                </div>
-                <p class="bio-text-highlight">{{ $t('about.origin.purpose') }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section links-section content-auto-lg">
-        <div class="page-section-head about-section-head">
-          <AnimatedIcon
-            name="explore"
-            :fallback-icon="Globe"
-            size="lg"
-            class="about-section-icon"
-          />
-          <h2 class="page-section-title about-section-title">{{ $t('about.links.title') }}</h2>
-        </div>
-
-        <div class="links-group">
-          <h3 class="subsection-title">
-            <AnimatedIcon name="explore" :fallback-icon="Globe" size="md" />
-            <span>{{ $t('about.links.official') }}</span>
-          </h3>
-          <div class="links-grid">
-            <a
-              v-for="link in officialLinks"
-              :key="link.url"
-              :href="link.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="link-card page-list-card"
-              :style="{ '--link-color': link.color }"
-            >
-              <div class="link-icon-wrap">
-                <component :is="link.icon" :size="22" />
-              </div>
-              <div class="link-info">
-                <span class="link-name">{{ link.name }}</span>
-                <span class="link-desc">{{ link.desc }}</span>
-              </div>
-              <ExternalLink :size="14" class="link-arrow" />
-            </a>
-          </div>
-        </div>
-
-        <div class="links-group">
-          <h3 class="subsection-title">
-            <AnimatedIcon name="heart" :fallback-icon="User" size="md" />
-            <span>{{ $t('about.links.personal') }}</span>
-          </h3>
-          <div class="links-grid links-grid--social">
-            <a
-              v-for="link in personalLinks"
-              :key="link.url"
-              :href="link.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="link-card link-card--compact page-list-card"
-              :style="{ '--link-color': link.color }"
-            >
-              <div class="link-icon-wrap">
-                <component :is="link.icon" :size="20" />
-              </div>
-              <span class="link-name">{{ link.name }}</span>
-              <ExternalLink :size="12" class="link-arrow" />
-            </a>
-          </div>
-        </div>
-
-        <div class="links-group">
-          <h3 class="subsection-title">
-            <AnimatedIcon name="heart" :fallback-icon="Share2" size="md" />
-            <span>{{ $t('about.links.groupSocial') }}</span>
-          </h3>
-          <div class="links-grid links-grid--social">
-            <a
-              v-for="link in groupSocialLinks"
-              :key="link.url"
-              :href="link.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="link-card link-card--compact page-list-card"
-              :style="{ '--link-color': link.color }"
-            >
-              <div class="link-icon-wrap">
-                <component :is="link.icon" :size="20" />
-              </div>
-              <span class="link-name">{{ link.name }}</span>
-              <ExternalLink :size="12" class="link-arrow" />
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section class="section content-auto-lg">
-        <div class="page-section-head about-section-head">
-          <AnimatedIcon
-            name="sparkle"
-            :fallback-icon="Sparkles"
-            size="lg"
-            class="about-section-icon"
-          />
-          <h2 class="page-section-title about-section-title">{{ $t('about.features.title') }}</h2>
-        </div>
-        <div class="features-grid">
-          <div v-for="feature in features" :key="feature.title" class="feature-card page-list-card">
-            <AnimatedIcon
-              name="explore"
-              :fallback-icon="feature.icon"
-              size="xl"
-              class="feature-icon"
-            />
-            <div class="feature-title">{{ feature.title }}</div>
-            <div class="feature-description">{{ feature.description }}</div>
-          </div>
-        </div>
-      </section>
-
-      <footer class="about-footer">
-        <p class="footer-text">
-          {{ $t('about.footer.madeWith') }}
-          <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" class="heart-icon" />
-          {{ $t('about.footer.by') }}
+    <header class="about-masthead">
+      <div class="about-intro">
+        <span class="eyebrow">{{ isArchive ? 'THE ARCHIVE' : 'THE JOURNAL' }}</span>
+        <h1>MomiChan<span>↗</span></h1>
+        <p>{{ $t('about.subtitle') }}</p>
+        <nav class="about-index" :aria-label="$t('nav.about')">
+          <RouterLink v-for="(item, index) in destinations" :key="item.path" :to="item.path"
+            ><small>0{{ index + 1 }}</small
+            ><span>{{ $t(item.label) }}</span
+            ><ArrowUpRight :size="20"
+          /></RouterLink>
+        </nav>
+        <p class="about-disclaimer">{{ $t('about.footer.fanProject') }}</p>
+      </div>
+      <EditionAuthArt />
+    </header>
+    <section class="about-links" :aria-label="$t('about.links.title')">
+      <div v-for="group in linkGroups" :key="group.label" class="about-link-group">
+        <h2>{{ $t(group.label) }}</h2>
+        <div class="about-link-list">
           <a
-            href="https://github.com/domidoremi"
+            v-for="link in group.links"
+            :key="link.url"
+            :href="link.url"
             target="_blank"
             rel="noopener noreferrer"
-            class="footer-link"
-          >
-            @domi
-          </a>
-        </p>
-        <p class="footer-copyright">© 2026 MomiChan. {{ $t('about.footer.rights') }}</p>
-        <p class="footer-disclaimer">{{ $t('about.footer.fanProject') }}</p>
-      </footer>
+            ><component :is="link.icon" :size="20" /><span>{{ link.name }}</span
+            ><ExternalLink :size="16"
+          /></a>
+        </div>
+      </div>
+    </section>
+    <div class="about-colophon">
+      <span>© {{ new Date().getFullYear() }} MomiChan</span
+      ><a href="https://github.com/domidoremi" target="_blank" rel="noopener noreferrer">@domi ↗</a
+      ><RouterLink to="/contact">{{ $t('nav.contact') }} ↗</RouterLink>
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
-defineOptions({ name: 'AboutPage' })
-
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  Heart,
-  Sparkles,
-  Layers,
-  Users,
-  Star,
+  ArrowUpRight,
   Globe,
-  Cake,
   User,
-  Smile,
-  Ruler,
-  Droplet,
-  Sparkle,
-  MapPin,
-  Music,
-  Palette,
-  ExternalLink,
-  Share2,
-  Video,
-  MessageCircle,
-  Radio,
   BookOpen,
+  Heart,
   ShoppingBag,
-  Disc,
+  Video,
+  Radio,
   Gamepad2,
+  MessageCircle,
   Camera,
+  Disc,
+  ExternalLink,
 } from '@lucide/vue'
-import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import { PageHeroShell, PageMetaChip, PageMetaRow } from '@/components/appearance'
 import { IconInstagram, IconX, IconYoutube } from '@/components/icons'
-
+import { designEdition } from '@/config/designEdition'
+import EditionAuthArt from '@/components/auth/EditionAuthArt.vue'
 const { t } = useI18n()
-
-// Profile items configuration
-const profileItems = computed(() => [
-  { icon: Cake, label: t('about.origin.profile.birthday') },
-  { icon: User, label: t('about.origin.profile.age') },
-  { icon: Droplet, label: t('about.origin.profile.bloodType') },
-  { icon: Sparkle, label: t('about.origin.profile.zodiac') },
-  { icon: Ruler, label: t('about.origin.profile.height') },
-  { icon: MapPin, label: t('about.origin.profile.birthplace') },
-  { icon: Users, label: t('about.origin.profile.group') },
-  { icon: Star, label: t('about.origin.profile.position') },
-  { icon: Smile, label: t('about.origin.profile.nickname') },
-  { icon: Music, label: t('about.origin.profile.hobbies') },
-  { icon: Palette, label: t('about.origin.profile.skills') },
-])
-
-// Official websites (all verified from takanenonadeshiko.jp)
+const isArchive = designEdition === 'archive'
+const destinations = [
+  { path: '/explore', label: 'nav.explore' },
+  { path: '/authors', label: 'nav.authors' },
+  { path: '/schedule', label: 'nav.schedule' },
+  { path: '/community', label: 'nav.community' },
+]
 const officialLinks = computed(() => [
   {
     name: t('about.links.groupSite'),
@@ -402,26 +205,9 @@ const groupSocialLinks = computed(() => [
   },
 ])
 
-const features = computed(() => [
-  {
-    icon: Layers,
-    title: t('about.features.aggregation'),
-    description: t('about.features.aggregationDesc'),
-  },
-  {
-    icon: Users,
-    title: t('about.features.community'),
-    description: t('about.features.communityDesc'),
-  },
-  {
-    icon: Star,
-    title: t('about.features.personalization'),
-    description: t('about.features.personalizationDesc'),
-  },
-  {
-    icon: Globe,
-    title: t('about.features.multilingual'),
-    description: t('about.features.multilinguralDesc'),
-  },
+const linkGroups = computed(() => [
+  { label: 'about.links.official', links: officialLinks.value },
+  { label: 'about.links.personal', links: personalLinks.value },
+  { label: 'about.links.groupSocial', links: groupSocialLinks.value },
 ])
 </script>

@@ -51,6 +51,12 @@ afterEach(() => {
 })
 
 describe('LoadMoreSection', () => {
+  it('does not invent a total or percentage for cursor-only feeds', () => {
+    const host = mountLoadMoreSection({ count: 24, hasMore: true })
+    expect(host.querySelector('.progress-value')).toBeNull()
+    expect(host.querySelector('.progress-track')).toBeNull()
+    expect(host.querySelector('.load-more-btn')).not.toBeNull()
+  })
   it('renders a single manual load-more action and a non-redundant scroll hint', () => {
     const host = mountLoadMoreSection({
       count: 12,

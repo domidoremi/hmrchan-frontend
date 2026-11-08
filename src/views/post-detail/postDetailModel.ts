@@ -199,13 +199,7 @@ export function computePostDetailScrollProgress({
 }
 
 export function buildDetailTitle(post: PostDetailLike | null | undefined): string {
-  const title = (post?.title ?? '').trim()
-  const description = (post?.description ?? '').trim()
-
-  if (!title) return ''
-  if (title === description) return ''
-  if (description && description.startsWith(title)) return ''
-  return title
+  return (post?.title ?? '').trim()
 }
 
 export function buildDetailDescription(post: PostDetailLike | null | undefined): string {

@@ -2,7 +2,7 @@
   <div class="auth-page auth-page--reset">
     <AuthEntryShell
       :title="pageTitle"
-      :subtitle="pageSubtitle"
+      :subtitle="token && !resetSuccess ? pageSubtitle : ''"
       :show-tabs="false"
       split
       @back="handleBack"

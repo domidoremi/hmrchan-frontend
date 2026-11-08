@@ -29,7 +29,7 @@ const profileSecurityPageSource = readFileSync(
   'utf8'
 )
 const postDetailPageSource = readFileSync(
-  resolve(process.cwd(), 'src/views/PostDetailPage.vue'),
+  resolve(process.cwd(), 'src/styles/page-systems/post-detail-page-view.css'),
   'utf8'
 )
 const aboutPageSource = readFileSync(

@@ -178,6 +178,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       })
       if (signal?.aborted || requestToken !== fetchDiscussionToken) return null
       currentDiscussion.value = discussion
+      error.value = null
       source.value = 'live'
       await setPublicSnapshot(DISCUSSION_DETAIL_SNAPSHOT_SCOPE, { id }, discussion)
       return currentDiscussion.value

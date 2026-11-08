@@ -87,7 +87,8 @@
     "utilityNavigation": "補助ナビゲーション",
     "footerNav": "フッターナビゲーション",
     "zoomSlider": "ズームレベル",
-    "cropPreview": "トリミングプレビュー"
+    "cropPreview": "トリミングプレビュー",
+    "loadedCount": "{count} 件を読み込み済み"
   },
   "auth": {
     "email": "メールアドレス",

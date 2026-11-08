@@ -3,11 +3,7 @@
     class="discussion-comment-section surface-paper-sketch analog-dot-grid"
     :class="{ 'comment-section--guest': !isAuthenticated }"
   >
-    <CommentThreadHeader
-      :title="$t('comment.title')"
-      :count="commentsCount"
-      :subtitle="$t('comment.beFirst')"
-    />
+    <CommentThreadHeader :title="$t('comment.title')" :count="commentsCount" />
 
     <DiscussionCommentForm :discussion-id="discussionId" @submitted="handleCommentAdded" />
 
@@ -30,7 +26,6 @@
     >
       <AnimatedIcon name="explore" :fallback-icon="MessageSquare" size="xl" class="empty-icon" />
       <h4 class="empty-title">{{ $t('comment.empty') }}</h4>
-      <p class="empty-hint">{{ $t('comment.beFirst') }}</p>
     </div>
 
     <TransitionGroup v-else name="list" tag="div" class="comments-list">

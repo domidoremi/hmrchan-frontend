@@ -20,12 +20,6 @@
           <p class="page-hero-shell__subtitle">{{ $t('search.subtitle') }}</p>
         </template>
 
-        <template #actions>
-          <PageMetaChip v-if="query">
-            {{ $t('search.resultsFor') }} <strong>"{{ query }}"</strong>
-          </PageMetaChip>
-        </template>
-
         <SearchBar class="search-bar-main" />
       </PageHeroShell>
 
@@ -102,7 +96,6 @@
             <LoadMoreSection
               v-if="results.length > 0"
               :count="results.length"
-              :total="loadMoreTotal"
               :has-more="hasMore"
               :loading="isLoadingMore"
               @load-more="loadMore"
@@ -158,11 +151,6 @@
       </div>
 
       <div v-else class="search-empty">
-        <div class="empty-content empty-surface search-empty-surface">
-          <h2>{{ $t('search.emptyTitle') }}</h2>
-          <p>{{ $t('search.emptyHint') }}</p>
-        </div>
-
         <section
           v-if="isAuthenticated"
           class="search-history-section empty-surface content-auto-xl"
@@ -311,7 +299,6 @@
           <div class="discover-header">
             <div>
               <h2 class="discover-title">{{ $t('search.discoverTitle') }}</h2>
-              <p class="discover-subtitle">{{ $t('search.discoverHint') }}</p>
             </div>
             <ControlButton
               class="discover-refresh"
@@ -371,13 +358,7 @@ import {
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import AuthorCard from '@/components/business/AuthorCard.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
-import {
-  ControlButton,
-  ControlGroup,
-  PageHeroShell,
-  PageMetaChip,
-  PageToolbar,
-} from '@/components/appearance'
+import { ControlButton, ControlGroup, PageHeroShell, PageToolbar } from '@/components/appearance'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
@@ -408,7 +389,6 @@ const {
   discoverError,
   historyError,
   hasMore,
-  loadMoreTotal,
   topSearchQueries,
   mayHaveMoreResults,
   goBack,

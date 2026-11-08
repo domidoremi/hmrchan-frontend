@@ -1,3 +1,4 @@
+import { normalizeHttpUrl } from '@/utils/security'
 import type {
   ScheduleCalendarItem,
   ScheduleCategory,
@@ -615,4 +616,14 @@ export function linkifyScheduleDescriptionLine(text: string): string {
 
 export function isSameScheduleDate(a: string, b: string): boolean {
   return a.slice(0, 10) === b.slice(0, 10)
+}
+
+export function resolveScheduleDetailLinks(
+  event?: Pick<ScheduleResponse, 'event_url' | 'ticket_url' | 'source_url'> | null
+) {
+  return {
+    event: normalizeHttpUrl(event?.event_url),
+    ticket: normalizeHttpUrl(event?.ticket_url),
+    source: normalizeHttpUrl(event?.source_url),
+  }
 }

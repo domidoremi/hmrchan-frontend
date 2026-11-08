@@ -7,7 +7,12 @@
     <div class="schedule-bg" aria-hidden="true" />
 
     <div class="container">
-      <PageHeroShell class="schedule-hero" bare>
+      <div v-if="routeScheduleId" class="schedule-detail-breadcrumb">
+        <ControlButton @click="closeDetail"
+          ><ChevronLeft :size="16" />{{ $t('nav.schedule') }}</ControlButton
+        >
+      </div>
+      <PageHeroShell v-if="!routeScheduleId" class="schedule-hero" bare>
         <template #heading>
           <div class="schedule-hero__copy">
             <h1 class="page-hero-shell__title">{{ $t('schedule.title') }}</h1>
@@ -51,7 +56,7 @@
         </template>
       </PageHeroShell>
 
-      <PageToolbar class="month-nav page-toolbar-shell--comfortable">
+      <PageToolbar v-if="!routeScheduleId" class="month-nav page-toolbar-shell--comfortable">
         <ControlButton
           class="month-nav-btn"
           size="square"
@@ -92,7 +97,7 @@
         </Transition>
       </PageToolbar>
 
-      <details class="schedule-tools" open>
+      <details v-if="!routeScheduleId" class="schedule-tools" open>
         <summary>{{ $t('schedule.filterLabel') }}</summary>
         <div class="schedule-tools__body">
           <ControlGroup
@@ -132,7 +137,7 @@
       </details>
 
       <div class="schedule-body">
-        <section class="schedule-overview">
+        <section v-if="!routeScheduleId" class="schedule-overview">
           <section class="agenda-shell schedule-panel content-auto-lg">
             <div class="agenda-shell__head page-section-head page-section-head--stage">
               <div class="page-section-copy">
@@ -320,7 +325,7 @@
         </section>
 
         <StateIndicator
-          v-if="error && !isUsingFallback"
+          v-if="!routeScheduleId && error && !isUsingFallback"
           variant="error"
           :description="error"
           @action="fetchEvents"
@@ -330,7 +335,7 @@
           class="schedule-workspace"
           :class="{ 'schedule-workspace--detail': detailPanelVisible }"
         >
-          <div class="schedule-workspace__main">
+          <div v-if="!routeScheduleId" class="schedule-workspace__main">
             <div
               v-if="plannerView === 'month'"
               ref="calendarRef"
@@ -463,7 +468,7 @@
             </Transition>
           </div>
 
-          <aside
+          <section
             v-if="detailPanelVisible"
             ref="detailPanelRef"
             class="schedule-detail-shell schedule-panel content-auto-xl"
@@ -505,8 +510,14 @@
                   </span>
                 </div>
 
-                <h2 class="schedule-detail-article__title">{{ detailEvent.title }}</h2>
-                <p v-if="detailLead" class="schedule-detail-article__lead">{{ detailLead }}</p>
+                <time class="schedule-date-stamp" :datetime="detailEvent.start_date">{{
+                  formatDetailDate(detailEvent.start_date)
+                }}</time>
+                <component
+                  :is="routeScheduleId ? 'h1' : 'h2'"
+                  class="schedule-detail-article__title"
+                  >{{ detailEvent.title }}</component
+                >
               </header>
 
               <div class="schedule-detail-actions">
@@ -690,7 +701,7 @@
               :description="detailError || $t('common.error')"
               @action="retryDetail"
             />
-          </aside>
+          </section>
         </div>
       </div>
     </div>
@@ -725,7 +736,6 @@ import { ApiError } from '@/api'
 import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/fallbacks/scheduleFallback'
 import { getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 import { applyPageMeta } from '@/utils/pageMeta'
-import { normalizeHttpUrl } from '@/utils/security'
 import {
   isServiceUnavailableError,
   type PublicPageDataSource,
@@ -764,6 +774,7 @@ import {
   resolveScheduleDateJumpValue,
   resolveScheduleDayAriaLabel,
   resolveScheduleDetailHostLabel,
+  resolveScheduleDetailLinks,
   resolveScheduleDetailLead,
   resolveScheduleDetailPermalink,
   resolveScheduleDetailRecoverySource,
@@ -1172,11 +1183,7 @@ function syncSelectedDayWithDetail(event: ScheduleResponse | null | undefined) {
   }
 }
 
-const safeDetailLinks = computed(() => ({
-  event: normalizeHttpUrl(detailEvent.value?.event_url),
-  ticket: normalizeHttpUrl(detailEvent.value?.ticket_url),
-  source: normalizeHttpUrl(detailEvent.value?.source_url),
-}))
+const safeDetailLinks = computed(() => resolveScheduleDetailLinks(detailEvent.value))
 const hasDetailLinks = computed(() => Object.values(safeDetailLinks.value).some(Boolean))
 
 const detailPanelVisible = computed(() =>
