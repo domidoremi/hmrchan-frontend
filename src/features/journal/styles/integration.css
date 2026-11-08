@@ -332,3 +332,22 @@ body.site-body .journal-compose > header {
     padding: 20px 18px 80px;
   }
 }
+.site-body button.atelier-round-link {
+  padding: 1px 6px;
+}
+.site-body .calendar-toolbar h2 {
+  position: relative;
+}
+.site-body .calendar-toolbar h2 > :is(.journal-month-prev, .journal-month-next) {
+  position: absolute;
+  bottom: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+.site-body .calendar-toolbar h2 > .journal-month-prev {
+  right: 32px;
+}
+.site-body .calendar-toolbar h2 > .journal-month-next {
+  right: 0;
+}

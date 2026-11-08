@@ -5,11 +5,7 @@
         <span class="eyebrow">SCHEDULE / {{ monthWord }}</span>
         <h1>活动日程</h1>
       </div>
-      <button
-        class="button button-outline button-small"
-        :aria-pressed="savedOnly"
-        @click="change('saved', savedOnly ? '' : '1')"
-      >
+      <button class="button button-outline button-small" data-action="notifications">
         <JournalIcon name="bookmark" />已记下
         <span class="reminder-count">{{ reminders.size }}</span>
       </button>
@@ -133,7 +129,7 @@
           <JournalIcon name="bookmark" />
           <h3>已记下的日程</h3>
           <p>{{ reminders.size ? `${reminders.size} 项活动` : '暂无日程' }}</p>
-          <button class="text-button" @click="change('saved', savedOnly ? '' : '1')">
+          <button class="text-button" data-action="notifications">
             查看日程 <JournalIcon name="arrow" />
           </button>
         </aside>

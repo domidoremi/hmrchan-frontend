@@ -123,7 +123,7 @@ export function createJournalRuntime(navigate) {
         photos.filter((item) => collection.posts.includes(item.id))
       ),
       'collection-dialog',
-      { key: `collection:${id}`, render: () => openCollection(id) }
+      { key: `collection:${id}`, label: '合集', render: () => openCollection(id) }
     )
   }
   listen(document, 'click', (event) => {
@@ -148,12 +148,17 @@ export function createJournalRuntime(navigate) {
       target.setAttribute('aria-pressed', String(Boolean(zoomed)))
       target.setAttribute('aria-label', zoomed ? '还原图片' : '放大图片')
     }
-    if (target.dataset.photoTag || target.dataset.photoAuthor) {
-      runtime.UI.closeDialog(true)
-      navigate(
-        '/explore?q=' + encodeURIComponent(target.dataset.photoTag || target.dataset.photoAuthor)
+    if (target.dataset.photoTag) {
+      document.dispatchEvent(
+        new CustomEvent('journalsearch', {
+          detail: target.dataset.photoTag,
+        })
       )
     }
+    if (target.dataset.photoAuthor)
+      document.dispatchEvent(
+        new CustomEvent('journalauthor', { detail: target.dataset.photoAuthor })
+      )
     if (target.dataset.photoStep) {
       const pictures = photos.filter((item) => item.image)
       const index = pictures.findIndex((item) => item.id === target.dataset.currentPhoto)
@@ -171,18 +176,26 @@ export function createJournalRuntime(navigate) {
       if (collection) navigate(`/explore?collection=${encodeURIComponent(collection.id)}`)
     }
     const actions = {
-      search: '/search',
       login: '/profile',
       favorites: '/profile/favorites',
-      notifications: '/schedule?saved=1',
-      about: '/about',
+    }
+    if (target.dataset.action === 'search') document.dispatchEvent(new CustomEvent('journalsearch'))
+    if (target.dataset.action === 'notifications')
+      document.dispatchEvent(new Event('journalnotifications'))
+    if (target.dataset.action === 'about') {
+      const next = document.body.classList.contains('next-body')
+      runtime.UI.openDialog(
+        `<h2 id="dialog-title">MomiChan</h2><p class="dialog-copy">籾山ひめり / 高嶺のなでしこ<br>非官方粉丝站</p><div class="dialog-actions"><a class="button button-dark" href="${next ? 'https://momichan.com' : 'https://next.momichan.com'}">${next ? '浅色版' : '深色版'} ${icon('arrow-up-right')}</a></div>`
+      )
+    }
+    if (target.dataset.action === 'goto-schedule') {
+      runtime.UI.closeDialog(true)
+      navigate('/schedule')
     }
     if (actions[target.dataset.action]) {
       runtime.UI.closeDialog(true)
       navigate(actions[target.dataset.action])
     }
-    if (target.dataset.discussion === 'd3')
-      navigate('/community?q=' + encodeURIComponent('最近在听'))
     const step = target.dataset.coverStep
     const selected = target.dataset.cover
     if (step || selected !== undefined) {
@@ -214,14 +227,13 @@ export function createJournalRuntime(navigate) {
       )
     ) {
       const input = document.querySelector('#explore-input')
-      if (input) {
-        event.preventDefault()
-        input.focus()
-      }
+      event.preventDefault()
+      if (input && !document.querySelector('#app-dialog[open]')) input.focus()
+      else document.dispatchEvent(new CustomEvent('journalsearch'))
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault()
-      navigate('/search')
+      document.dispatchEvent(new CustomEvent('journalsearch'))
     }
   })
   return {

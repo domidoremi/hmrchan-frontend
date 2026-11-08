@@ -21,11 +21,9 @@
     <button v-else class="text-post" :data-open="post.id" :aria-label="`阅读：${post.title}`">
       <span aria-hidden="true">“</span>
       <p>
-        {{
-          post.id === 'letter'
-            ? '最近在听什么？\n这周的歌单\n又换了一轮。'
-            : post.text || post.title
-        }}
+        <template v-for="(line, index) in textLines" :key="index"
+          >{{ line }}<br v-if="index < textLines.length - 1"
+        /></template>
       </p>
       <small>ON REPEAT</small>
     </button>
@@ -68,8 +66,15 @@
   </article>
 </template>
 <script setup lang="ts">
+import { computed } from 'vue'
 import JournalIcon from './JournalIcon.vue'
 import { platforms, type JournalPost } from './models'
-defineProps<{ post: JournalPost; saved: boolean }>()
+const props = defineProps<{ post: JournalPost; saved: boolean }>()
+const textLines = computed(() =>
+  (props.post.id === 'letter'
+    ? '最近在听什么？\n这周的歌单\n又换了一轮。'
+    : props.post.text || props.post.title
+  ).split('\n')
+)
 defineEmits<{ save: [post: JournalPost, event: MouseEvent] }>()
 </script>

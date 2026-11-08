@@ -23,6 +23,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { designEdition } from '@/config/designEdition'
 import { createJournalRuntime, type JournalRuntime } from './runtime'
 import { journalKey } from './context'
+import { useJournalDialogs } from './useJournalDialogs'
+import { useJournalEvents } from './useJournalEvents'
 import mainChrome from './main-chrome.json'
 import nextChrome from './next-chrome.json'
 import './styles/index.css'
@@ -44,6 +46,8 @@ const isAuthRoute = computed(() => authRoutes.has(String(route.name)))
 const chrome = isNext ? nextChrome : mainChrome
 const runtime = shallowRef<JournalRuntime | null>(null)
 provide(journalKey, runtime)
+useJournalDialogs(runtime)
+useJournalEvents(runtime)
 const names: Record<string, string> = {
   '/': 'home',
   '/explore': 'explore',
