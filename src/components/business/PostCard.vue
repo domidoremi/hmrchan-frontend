@@ -325,8 +325,7 @@ const platformLabel = computed(() => {
 
 const effectiveThumbnailSize = computed(() => {
   if (props.thumbnailSize === 'responsive') {
-    const baseSize = isMobileDevice() ? 'medium' : 'large'
-    return baseSize
+    return 'large'
   }
   return props.thumbnailSize
 })
@@ -561,6 +560,11 @@ function onImageLoad(event: Event) {
       duration: props.post.duration,
       postType: props.post.post_type,
       naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+      renderedWidth: img.clientWidth,
+      renderedHeight: img.clientHeight,
+      pixelRatio: window.devicePixelRatio || 1,
+      fit: props.imageFit,
     })
   ) {
     void upgradeToOriginalImage()
@@ -589,6 +593,7 @@ async function upgradeToOriginalImage(): Promise<void> {
   qualityUpgradePending.value = true
 
   const streamUrl = await resolveOriginalImageStream(thumbnailUrl)
+  if (thumbnailUrl !== props.post.thumbnail_url) return
   qualityUpgradePending.value = false
   if (streamUrl) {
     isImageLoaded.value = false

@@ -132,6 +132,8 @@ describe('PostCard', () => {
     expect(image).not.toBeNull()
     Object.defineProperty(image, 'naturalWidth', { configurable: true, value: 400 })
     Object.defineProperty(image, 'naturalHeight', { configurable: true, value: 600 })
+    Object.defineProperty(image, 'clientWidth', { configurable: true, value: 600 })
+    Object.defineProperty(image, 'clientHeight', { configurable: true, value: 400 })
 
     image?.dispatchEvent(new Event('load'))
     await vi.waitFor(() => {
@@ -146,6 +148,47 @@ describe('PostCard', () => {
       signal: expect.any(AbortSignal),
     })
   })
+
+  it.each([1, 2])(
+    'selects card media for a %i× screen without unnecessary original downloads',
+    async (pixelRatio) => {
+      vi.stubGlobal('devicePixelRatio', pixelRatio)
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(new Uint8Array([0xff, 0xd8, 0xff]), {
+          status: 200,
+          headers: { 'Content-Type': 'image/jpeg' },
+        })
+      )
+      vi.stubGlobal('fetch', fetchMock)
+      const mediaId =
+        pixelRatio === 1
+          ? '123e4567-e89b-12d3-a456-426614174011'
+          : '123e4567-e89b-12d3-a456-426614174012'
+      const { host } = mountPostCard(
+        createPost({
+          thumbnail_url: `/api/v1/media/${mediaId}/thumbnail`,
+          media_count: 1,
+        })
+      )
+      const image = host.querySelector<HTMLImageElement>('.post-image')!
+      expect(image.src).toContain('/thumbnail?size=large')
+      for (const [property, value] of Object.entries({
+        naturalWidth: 400,
+        naturalHeight: 600,
+        clientWidth: 300,
+        clientHeight: 180,
+      })) {
+        Object.defineProperty(image, property, { configurable: true, value })
+      }
+      image.dispatchEvent(new Event('load'))
+      await nextTick()
+      const expectedSource = pixelRatio === 1 ? '/thumbnail?size=large' : '/stream'
+      await vi.waitFor(() =>
+        expect(host.querySelector<HTMLImageElement>('.post-image')?.src).toContain(expectedSource)
+      )
+      expect(fetchMock).toHaveBeenCalledTimes(pixelRatio === 1 ? 0 : 1)
+    }
+  )
 
   it('keeps the thumbnail when the media stream is not an image', async () => {
     vi.stubGlobal(
@@ -168,6 +211,8 @@ describe('PostCard', () => {
     const image = host.querySelector<HTMLImageElement>('.post-image')
     Object.defineProperty(image, 'naturalWidth', { configurable: true, value: 400 })
     Object.defineProperty(image, 'naturalHeight', { configurable: true, value: 225 })
+    Object.defineProperty(image, 'clientWidth', { configurable: true, value: 600 })
+    Object.defineProperty(image, 'clientHeight', { configurable: true, value: 400 })
 
     image?.dispatchEvent(new Event('load'))
     await vi.waitFor(() => expect(image?.classList.contains('is-loaded')).toBe(true))
