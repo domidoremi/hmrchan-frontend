@@ -121,6 +121,30 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 describe('journal dialog requests and real media', () => {
+  it('shows identical title and body once, including surrounding whitespace', async () => {
+    await dialogs.openPost({ ...post('A short update'), id: 'dedupe', text: '  A short update  ' })
+    expect(document.querySelector('#dialog-title')!.textContent).toBe('A short update')
+    expect(document.querySelector('.dialog-copy')).toBeNull()
+  })
+
+  it('keeps the complete body when the title is only its opening text', async () => {
+    const text = 'First line\nSecond line with more information'
+    await dialogs.openPost({ ...post('First line'), id: 'prefix', text })
+    expect(document.querySelector('.dialog-copy')!.innerHTML).toContain(
+      'Second line with more information'
+    )
+    expect(document.querySelector('.dialog-copy')!.textContent).toContain('First line')
+  })
+
+  it('renders text-only posts in a single reading column without repeating the body', async () => {
+    await dialogs.openPost({ ...post('Text update'), id: 'text-only', image: null })
+    expect(document.querySelector('.post-detail--text')).not.toBeNull()
+    expect(document.querySelector('.detail-media')).toBeNull()
+    expect(document.querySelector('.detail-copy')!.textContent!.split('Second line')).toHaveLength(
+      2
+    )
+  })
+
   it('revalidates the same post when its backend content and photos change', async () => {
     await dialogs.openPost(post())
     const updated = { ...post('Updated content'), image: '/updated.webp', author: 'New author' }

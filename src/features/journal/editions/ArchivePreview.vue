@@ -32,11 +32,13 @@
               {{ post.author }}</button
             ><time>{{ post.time }}</time>
           </div>
-          <h2>
+          <h2 v-if="post.image || post.text.trim() !== post.title.trim()">
             <button :data-open="post.id">{{ post.title }}</button>
           </h2>
-          <p v-if="post.text !== post.title">{{ post.text }}</p>
-          <div class="preview-tags">
+          <p v-if="post.image && post.text.trim() && post.text.trim() !== post.title.trim()">
+            {{ post.text }}
+          </p>
+          <div v-if="post.tags.length" class="preview-tags">
             <button v-for="tag in post.tags.slice(0, 4)" :key="tag" :data-search-term="tag">
               # {{ tag }}
             </button>
