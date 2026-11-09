@@ -54,13 +54,14 @@ export function installViewportMotion({ listen, frame, fullMotion }) {
     scrollPending = true
     frame(() => {
       scrollPending = false
-      const height = document.documentElement.scrollHeight - innerHeight
       const y = scrollY
-      const measurements = fullMotion()
-        ? scenes
-            .filter((scene) => scene.isConnected)
-            .map((scene) => ({ scene, box: scene.getBoundingClientRect() }))
-        : []
+      const height = y > 0 ? document.documentElement.scrollHeight - innerHeight : 0
+      const measurements =
+        fullMotion() && y > 0
+          ? scenes
+              .filter((scene) => scene.isConnected)
+              .map((scene) => ({ scene, box: scene.getBoundingClientRect() }))
+          : []
       progress?.style.setProperty(
         '--progress',
         String(height > 0 ? Math.min(1, Math.max(0, y / height)) : 0)
@@ -85,7 +86,8 @@ export function installViewportMotion({ listen, frame, fullMotion }) {
   return {
     refresh() {
       scenes = [...document.querySelectorAll('[data-depth-scene]')]
-      schedule()
+      // The initial reading position is already zero; defer geometry until scrolling.
+      if (scrollY > 0) schedule()
     },
     dispose() {
       resetTilt()
