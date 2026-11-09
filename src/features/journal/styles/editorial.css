@@ -526,6 +526,17 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 35px 24px;
 }
+@media (max-width: 760px) {
+  .site-body .journal-shell .editorial-home > section:not(.spatial-cover) {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 900px;
+  }
+  .site-body .journal-shell .home-reading-grid .post-card {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 370px;
+    overflow-clip-margin: 12px;
+  }
+}
 .site-body .journal-shell .home-reading-grid .post-card:nth-child(4n + 2) {
   margin-top: 62px;
 }
