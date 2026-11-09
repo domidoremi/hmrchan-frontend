@@ -84,7 +84,7 @@ body.site-body.app-dialog-open {
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
-.site-body #app-dialog .post-detail > div:first-child {
+.site-body #app-dialog .detail-media {
   background: color-mix(in srgb, var(--canvas) 85%, #000 15%);
   min-width: 0;
   display: flex;

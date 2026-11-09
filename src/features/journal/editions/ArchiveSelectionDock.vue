@@ -15,7 +15,7 @@
       >
         <JournalIcon name="arrow-left" />
       </button>
-      <button class="selection-dock-title" aria-label="查看所选预览" @click="$emit('preview')">
+      <button class="selection-dock-title" @click="$emit('preview')">
         <small>{{ String(index + 1).padStart(2, '0') }} / {{ total }} · {{ post.author }}</small
         ><span :key="post.id">{{ post.title }}</span>
       </button>

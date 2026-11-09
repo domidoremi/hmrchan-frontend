@@ -1,0 +1,254 @@
+body.site-body.journal-directory-open {
+  overflow: hidden;
+}
+.site-body .journal-shell .mobile-directory {
+  overscroll-behavior: contain;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+.site-body .journal-shell .mobile-directory nav a {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease;
+}
+.site-body .journal-shell .mobile-directory nav a[aria-current='page'] {
+  color: var(--accent);
+}
+.site-body .journal-shell .directory-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.site-body .journal-shell .directory-footer :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+}
+.site-body .edition-archive .mobile-directory {
+  padding-inline: 18px;
+}
+.site-body .edition-archive .mobile-directory nav {
+  display: grid;
+  gap: 6px;
+}
+.site-body .edition-archive .mobile-directory nav a {
+  min-height: 58px;
+  padding: 14px;
+  gap: 14px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 16px;
+}
+.site-body .edition-archive .mobile-directory nav a[aria-current='page'] {
+  background: var(--accent-soft);
+  border-color: var(--line);
+}
+.site-body .edition-archive .mobile-directory nav small {
+  order: 1;
+  margin-left: auto;
+}
+.site-body .edition-archive .mobile-directory nav .directory-icon {
+  margin-left: 0;
+}
+.site-body .edition-archive .mobile-directory nav .icon:last-child {
+  display: none;
+}
+.site-body .edition-archive .directory-enter-active nav a {
+  animation-name: directory-archive-item;
+}
+@keyframes directory-archive-item {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.site-body .journal-shell .cover-controls .icon-button {
+  width: 44px;
+  height: 44px;
+}
+.site-body .journal-shell .cover-pause {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.site-body .journal-shell .cover-pagination button {
+  height: 44px;
+}
+.site-body .journal-shell .post-author {
+  min-height: 32px;
+  font-size: 12px;
+}
+.site-body .journal-shell .post-title {
+  min-height: 28px;
+}
+.site-body .journal-shell .preview-copy .meta-line {
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.site-body .journal-shell .preview-copy .meta-line > button {
+  min-height: 32px;
+  font-size: 12px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-shell .preview-copy .meta-line time {
+  margin-left: 0;
+  font-size: 10px;
+}
+.site-body .journal-shell .preview-copy h2 button {
+  min-height: 32px;
+  width: 100%;
+}
+.site-body .journal-shell .stream-tabs > button {
+  min-width: 44px;
+  min-height: 36px;
+  padding-inline: 10px;
+  font-size: 12px;
+}
+.site-body .journal-shell .density-toggle button {
+  min-height: 32px;
+  font-size: 12px;
+}
+.site-body #app-dialog.detail-dialog--text {
+  width: min(720px, calc(100vw - 40px));
+}
+.site-body #app-dialog .post-detail--text {
+  grid-template-columns: minmax(0, 1fr);
+}
+.site-body #app-dialog .detail-copy .dialog-copy {
+  max-height: none;
+  overflow: visible;
+  font-size: 15px;
+}
+.site-body #app-dialog .detail-actions > a {
+  min-width: 44px;
+  min-height: 44px;
+  margin-left: auto;
+}
+.site-body #app-dialog .gallery-filmstrip {
+  justify-content: safe center;
+}
+.site-body #app-dialog .gallery-filmstrip button {
+  min-width: 44px;
+}
+.site-body #app-dialog .gallery-filmstrip img {
+  margin-inline: auto;
+}
+@media (max-width: 800px) {
+  body.site-body
+    #app
+    .journal-shell
+    :is(
+      input:not(
+        [type='checkbox'],
+        [type='radio'],
+        [type='range'],
+        [type='hidden'],
+        [type='button'],
+        [type='submit']
+      ),
+      textarea,
+      select
+    ) {
+    font-size: 16px;
+  }
+  .site-body .journal-shell .header-actions :is(.icon-button, .account-link) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .site-body
+    .journal-shell
+    :is(
+      .post-author,
+      .post-title,
+      .preview-actions .button,
+      .archive-searchbar .button,
+      .stream-tabs > button,
+      .browse-views button,
+      .browse-filter-row .chip,
+      .browse-filter-row .text-button,
+      .browse-filter-row select,
+      .archive-querybar select
+    ) {
+    min-height: 44px;
+  }
+  .site-body .journal-shell .browse-views button {
+    min-width: 44px;
+  }
+  .site-body .journal-shell .editorial-browse-toolbar {
+    position: relative;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-block: 18px;
+  }
+  .site-body .journal-shell .editorial-browse-toolbar .explore-search {
+    flex: 1 1 100%;
+  }
+  .site-body .journal-shell .browse-views {
+    position: absolute;
+    top: calc(100% + 16px);
+    right: 0;
+  }
+  .site-body .journal-shell .browse-filter-row {
+    gap: 12px;
+    padding-block: 16px 24px;
+  }
+  .site-body .journal-shell .browse-filter-row .chips {
+    flex-basis: 100%;
+    min-height: 44px;
+    padding-right: 148px;
+  }
+  .site-body .journal-shell .browse-filter-row select {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+  }
+  .site-body .journal-shell .editorial-grid .post-excerpt {
+    font-size: 12px;
+  }
+  .site-body .journal-shell .post-meta {
+    font-size: 10px;
+  }
+  .site-body .journal-shell .archive-querybar {
+    gap: 8px;
+  }
+  .site-body .journal-shell .archive-querybar label {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .site-body .journal-shell .archive-querybar label > span {
+    font-size: 12px;
+  }
+  .site-body .journal-shell .archive-querybar select {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 8px 0;
+  }
+  .site-body .journal-shell .preview-copy .meta-line > button {
+    min-height: 44px;
+  }
+  .site-body
+    #app-dialog
+    :is(.icon-button, .button, .dialog-back, .detail-author, .gallery-footer > .text-button) {
+    min-height: 44px;
+  }
+  .site-body #app-dialog .icon-button {
+    min-width: 44px;
+  }
+  .site-body #app-dialog .gallery-footer > .text-button {
+    font-size: 12px;
+  }
+  .site-body #app-dialog .search-result > span {
+    font-size: 14px;
+  }
+  .site-body #app-dialog .search-result small {
+    font-size: 11px;
+  }
+}

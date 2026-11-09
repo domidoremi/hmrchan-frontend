@@ -162,10 +162,14 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     remember([post])
     const media = post.image
       ? `<button class="detail-photo-open" data-dialog-gallery="${esc(post.id)}" aria-label="查看大图"><img class="detail-photo" src="${esc(post.originalImage || post.image)}" alt="${esc(post.title)}" width="400" height="500"><span>${icon('expand')} 查看大图</span></button>`
-      : `<div class="detail-text">${lines(post.text)}</div>`
+      : ''
+    const copy =
+      post.text.trim() && post.text.trim() !== post.title.trim()
+        ? `<p class="dialog-copy">${lines(post.text)}</p>`
+        : ''
     ui().openDialog(
-      `<div class="post-detail"><div>${media}</div><div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i>${esc(platforms[post.platform] || post.platform)}</span><span>${esc(post.time)}</span></div><h2 id="dialog-title">${esc(post.title)}</h2><p class="dialog-copy">${lines(post.text)}</p><div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small>作者 ${icon('arrow-up-right')}</small></span></button><div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id) ?? post.liked ?? false}">${icon('heart')}<span>${post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="打开动态页面">${icon('arrow-up-right')}</a></div></div></div>`,
-      'detail-dialog',
+      `<div class="post-detail${post.image ? '' : ' post-detail--text'}">${media ? `<div class="detail-media">${media}</div>` : ''}<div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i>${esc(platforms[post.platform] || post.platform)}</span><span>${esc(post.time)}</span></div><h2 id="dialog-title">${esc(post.title)}</h2>${copy}<div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small>作者 ${icon('arrow-up-right')}</small></span></button><div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id) ?? post.liked ?? false}">${icon('heart')}<span>${post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="打开动态页面">${icon('arrow-up-right')}</a></div></div></div>`,
+      post.image ? 'detail-dialog' : 'detail-dialog detail-dialog--text',
       {
         key: `post:${post.id}`,
         label: '详情',

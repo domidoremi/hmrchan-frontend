@@ -38,8 +38,10 @@
         }}</span
       ><time>{{ post.time }}</time>
     </div>
-    <button class="post-title" :data-open="post.id">{{ post.title }}</button>
-    <p class="post-excerpt">{{ post.text }}</p>
+    <button v-if="post.image || distinctText" class="post-title" :data-open="post.id">
+      {{ post.title }}
+    </button>
+    <p v-if="post.image && distinctText" class="post-excerpt">{{ post.text }}</p>
     <div class="post-bottom">
       <button class="post-author" :data-author-id="post.authorId" :data-author-query="post.author">
         <img :src="post.avatar" alt="" width="19" height="19" loading="lazy" /><span>{{
@@ -58,5 +60,8 @@ import JournalImage from './JournalImage.vue'
 import { platforms, type JournalPost } from './models'
 const props = defineProps<{ post: JournalPost; saved: boolean }>()
 const textLines = computed(() => (props.post.text || props.post.title).split('\n'))
+const distinctText = computed(
+  () => props.post.text.trim() && props.post.text.trim() !== props.post.title.trim()
+)
 defineEmits<{ save: [post: JournalPost, event: MouseEvent] }>()
 </script>
