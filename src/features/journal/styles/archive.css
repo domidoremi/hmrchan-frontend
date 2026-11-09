@@ -21,7 +21,7 @@ body.site-body.next-body {
   display: flex;
   flex-direction: column;
   z-index: 35;
-  background: #111a18;
+  background: var(--canvas);
   border-right: 1px solid var(--line);
 }
 .site-body .journal-shell .archive-logo {
@@ -48,7 +48,7 @@ body.site-body.next-body {
 .site-body .journal-shell .sidebar-search {
   margin: 35px 0 27px;
   padding: 12px 11px;
-  background: #1a2721;
+  background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 5px;
   display: flex;
@@ -82,7 +82,7 @@ body.site-body.next-body {
   color: var(--muted);
 }
 .site-body .journal-shell .archive-sidebar nav a.active {
-  background: #243b2d;
+  background: var(--accent-soft);
   color: var(--accent);
   box-shadow: inset 2px 0 var(--accent);
 }
@@ -186,9 +186,9 @@ body.site-body.next-body {
 .site-body .journal-shell .meta-count {
   padding: 3px 7px;
   font: 10px monospace;
-  background: #1f3027;
+  background: var(--paper);
   color: var(--accent);
-  border: 1px solid #334d3c;
+  border: 1px solid var(--line);
   border-radius: 3px;
   white-space: nowrap;
 }
@@ -203,7 +203,7 @@ body.site-body.next-body {
   border: 1px solid var(--line);
   border-radius: 7px;
   margin-bottom: 32px;
-  background: #19261e80;
+  background: var(--paper);
   overflow: hidden;
 }
 .site-body .journal-shell .archive-summary > div {
@@ -356,11 +356,11 @@ body.site-body.next-body {
   border: 1px solid transparent;
 }
 .site-body .journal-shell .stream-row.selected {
-  border-color: #456b4e;
-  background: #243b2d85;
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 .site-body .journal-shell .stream-row:hover {
-  background: #203027;
+  background: var(--paper);
 }
 .site-body .journal-shell .stream-row > .journal-image {
   width: 40px;
@@ -450,7 +450,7 @@ body.site-body.next-body {
 .site-body .journal-shell :is(.archive-result-row, .stream-row):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -3px;
-  background: #294434;
+  background: var(--accent-soft);
 }
 .site-body .journal-shell .archive-preview {
   position: relative;
@@ -459,8 +459,8 @@ body.site-body.next-body {
 }
 .site-body .journal-shell .preview-face {
   position: relative;
-  background: #1d2b23;
-  border: 1px solid #3b5242;
+  background: var(--paper);
+  border: 1px solid var(--line);
   border-radius: 5px;
   overflow: hidden;
   box-shadow: 0 25px 55px #0005;
@@ -479,14 +479,14 @@ body.site-body.next-body {
   display: block;
   position: absolute;
   inset: 8px -16px 8px 15px;
-  background: #22352a;
-  border: 1px solid #3c5141;
+  background: var(--paper);
+  border: 1px solid var(--line);
   border-radius: 6px;
   transform: translateZ(-35px) rotateY(-5deg) rotateZ(2deg);
 }
 .site-body .journal-shell .preview-spatial .preview-edge.second {
   inset: 16px -28px 16px 28px;
-  background: #17261d;
+  background: var(--paper);
   transform: translateZ(-70px) rotateY(-8deg) rotateZ(4deg);
 }
 .site-body .journal-shell .preview-caption {
@@ -497,8 +497,8 @@ body.site-body.next-body {
   padding: 11px 15px;
   font: 8px monospace;
   color: var(--muted);
-  background: #1a2920;
-  border-bottom: 1px solid #3b5242;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
 }
 .site-body .journal-shell .preview-caption > span:first-child {
   color: var(--accent);
@@ -512,7 +512,7 @@ body.site-body.next-body {
   width: 100%;
   height: 300px;
   display: block;
-  background: #0d1612;
+  background: var(--canvas);
   overflow: hidden;
 }
 .site-body .journal-shell .preview-media img {
@@ -525,7 +525,7 @@ body.site-body.next-body {
   align-items: center;
   padding: 35px;
   text-align: left;
-  background: linear-gradient(135deg, #304836, #1d3025);
+  background: linear-gradient(135deg, var(--accent-soft), var(--paper));
 }
 .site-body .journal-shell .preview-media > span:not(.journal-image) {
   font-size: 19px;
@@ -626,7 +626,7 @@ body.site-body.next-body {
 .site-body .journal-shell .archive-panel {
   border: 1px solid var(--line);
   border-radius: 5px;
-  background: #16211b;
+  background: var(--paper);
   padding: 20px;
   min-width: 0;
 }
@@ -729,8 +729,8 @@ body.site-body.next-body {
   display: flex;
   align-items: center;
   gap: 20px;
-  border: 1px solid #486351;
-  background: #1b2a21;
+  border: 1px solid var(--line);
+  background: var(--paper);
   padding: 12px 16px;
   border-radius: 5px;
 }
@@ -760,7 +760,7 @@ body.site-body.next-body {
   color: var(--muted);
 }
 .site-body .journal-shell .archive-querybar select {
-  background: #1d2b23;
+  background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 6px 19px 6px 8px;
@@ -778,7 +778,7 @@ body.site-body.next-body {
   color: var(--muted);
 }
 .site-body .journal-shell .density-toggle .active {
-  background: #2c4032;
+  background: var(--accent-soft);
   color: var(--accent);
   border-radius: 2px;
 }
@@ -815,11 +815,11 @@ body.site-body.next-body {
     background 0.3s;
 }
 .site-body .journal-shell .archive-result-row.selected {
-  background: #263d2f;
+  background: var(--accent-soft);
   border-left-color: var(--accent);
 }
 .site-body .journal-shell .archive-result-row:hover {
-  background: #203328;
+  background: var(--paper);
 }
 .site-body .journal-shell .archive-result-row > .journal-image,
 .site-body .journal-shell .result-text-icon {
@@ -831,7 +831,7 @@ body.site-body.next-body {
 .site-body .journal-shell .result-text-icon {
   display: grid;
   place-items: center;
-  background: #2d4032;
+  background: var(--accent-soft);
   color: var(--muted);
 }
 .site-body .journal-shell .result-title {
@@ -888,7 +888,7 @@ body.site-body.next-body {
 }
 .site-body .journal-shell .archive-inspector {
   border-left: 1px solid var(--line);
-  background: #152019;
+  background: var(--canvas);
   min-width: 0;
   align-self: start;
   position: sticky;
@@ -964,7 +964,7 @@ body.site-body.next-body {
   padding: 15px 0;
   font-size: 10px;
   border-bottom: 1px solid var(--line);
-  background: #1c2b22;
+  background: var(--paper);
 }
 .site-body .journal-shell .calendar-weekdays > span {
   padding-right: 13px;
@@ -993,8 +993,8 @@ body.site-body.next-body {
   color: var(--accent);
 }
 .site-body .journal-shell .archive-month-day.selected {
-  background: #2a4433;
-  box-shadow: inset 0 0 0 1px #a9dfbb;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 .site-body .journal-shell .archive-month-day.today > span {
   color: var(--accent);
@@ -1008,15 +1008,15 @@ body.site-body.next-body {
 .site-body .journal-shell .month-day-events > span {
   font-size: 8px;
   padding: 3px;
-  background: #32493a;
+  background: var(--accent-soft);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-left: 2px solid #83b394;
+  border-left: 2px solid var(--accent);
 }
 .site-body .journal-shell .month-day-events > .purple {
-  background: #353744;
-  border-left-color: #a59bbd;
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
 }
 .site-body .journal-shell .month-day-events b {
   font: 9px monospace;
@@ -1024,7 +1024,7 @@ body.site-body.next-body {
 }
 .site-body .journal-shell .archive-calendar-inspector {
   padding: 20px;
-  background: #18261d;
+  background: var(--paper);
   border-left: 1px solid var(--line);
   max-height: 720px;
   overflow: auto;
@@ -1094,7 +1094,7 @@ body.site-body.next-body {
   margin-left: auto;
 }
 .site-body .journal-shell .forum-categories .active {
-  background: #2a4031;
+  background: var(--accent-soft);
   color: var(--accent);
 }
 .site-body .journal-shell .forum-threads {
@@ -1116,7 +1116,7 @@ body.site-body.next-body {
 }
 .site-body .journal-shell .forum-thread.selected {
   border-left-color: var(--accent);
-  background: #253b2d;
+  background: var(--accent-soft);
 }
 .site-body .journal-shell .forum-thread h3 {
   font-size: 15px;
@@ -1158,7 +1158,7 @@ body.site-body.next-body {
 .site-body .journal-shell .forum-preview {
   border: 1px solid var(--line);
   border-radius: 5px;
-  background: #18261e;
+  background: var(--paper);
   min-width: 0;
   position: sticky;
   top: 90px;
@@ -1434,8 +1434,8 @@ body.site-body.next-body {
     gap: 4px;
     padding: 9px 6px;
     color: var(--ink);
-    background: #1c3025f5;
-    border: 1px solid #719b80;
+    background: color-mix(in srgb, var(--paper) 96%, transparent);
+    border: 1px solid var(--line);
     border-radius: 8px;
     box-shadow:
       0 12px 50px #0009,
@@ -1574,7 +1574,6 @@ body.site-body.next-body {
   .site-body .journal-shell .archive-browser {
     display: flex;
     flex-direction: column-reverse;
-    min-height: 0;
   }
   .site-body .journal-shell .archive-inspector {
     position: static;

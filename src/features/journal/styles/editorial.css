@@ -376,7 +376,7 @@
   display: block;
   position: relative;
   overflow: hidden;
-  background: #e3e2d7;
+  background: var(--appearance-surface-2);
   text-align: left;
 }
 .site-body .journal-shell .editorial-grid .post-media img {
@@ -497,7 +497,7 @@
 }
 .site-body .journal-shell .editorial-grid .text-post {
   padding: 35px;
-  background: #e8e7d9;
+  background: var(--appearance-surface-2);
   display: flex;
   flex-direction: column;
 }
@@ -525,6 +525,17 @@
 .site-body .journal-shell .home-reading-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 35px 24px;
+}
+@media (max-width: 760px) {
+  .site-body .journal-shell .editorial-home > section:not(.spatial-cover) {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 900px;
+  }
+  .site-body .journal-shell .home-reading-grid .post-card {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 370px;
+    overflow-clip-margin: 12px;
+  }
 }
 .site-body .journal-shell .home-reading-grid .post-card:nth-child(4n + 2) {
   margin-top: 62px;
@@ -708,7 +719,7 @@
   position: relative;
   min-height: 330px;
   padding: 24px;
-  background: #d5d8bd;
+  background: var(--appearance-surface-2);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -975,7 +986,7 @@
   position: sticky;
   top: 100px;
   align-self: start;
-  background: #d4d7bf;
+  background: var(--appearance-surface-2);
   padding: 28px 34px;
   height: 520px;
   display: flex;
@@ -1014,7 +1025,7 @@
   position: absolute;
   width: 300px;
   height: 300px;
-  border: 1px solid #9da48a;
+  border: 1px solid var(--line);
   border-radius: 50%;
   right: -150px;
   top: 5px;
@@ -1147,7 +1158,7 @@
 .site-body .journal-shell .community-cover {
   display: grid;
   grid-template-columns: 0.65fr 1.35fr;
-  background: #e7e4d6;
+  background: var(--appearance-surface-2);
   margin: 34px 0 50px;
   min-height: 350px;
 }
@@ -1155,7 +1166,7 @@
   position: relative;
   overflow: hidden;
   padding: 30px;
-  border-right: 1px solid #cecabb;
+  border-right: 1px solid var(--line);
   display: grid;
   place-items: center;
 }
@@ -1176,7 +1187,7 @@
   position: absolute;
   width: 260px;
   height: 260px;
-  border: 1px solid #c3b9a2;
+  border: 1px solid var(--line);
   border-radius: 50%;
 }
 .site-body .journal-shell .community-cover-copy {

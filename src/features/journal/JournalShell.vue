@@ -2,10 +2,10 @@
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
     <a class="skip-link" href="#main-content">跳至内容</a>
     <aside v-if="isNext && !isAuthRoute" class="archive-sidebar">
-      <RouterLink class="archive-logo" to="/"
+      <RouterLink class="archive-logo" to="/" aria-label="MomiChan 首页"
         ><span class="brand-mark">m.</span><span>MomiChan<small>ARCHIVE</small></span></RouterLink
       >
-      <button class="sidebar-search" data-action="search">
+      <button class="sidebar-search" data-action="search" aria-label="搜索">
         <JournalIcon name="search" /><span>搜索</span><kbd>⌘ K</kbd>
       </button>
       <nav aria-label="主导航">
@@ -13,6 +13,7 @@
           v-for="item in navigation"
           :key="item.path"
           :to="item.path"
+          :aria-label="item.archive"
           :class="{ active: pageName === item.key }"
           :aria-current="pageName === item.key ? 'page' : undefined"
         >
@@ -55,6 +56,13 @@
           </div>
         </template>
         <div class="header-actions">
+          <button
+            class="icon-button appearance-trigger"
+            aria-label="显示设置"
+            @click="openAppearance"
+          >
+            <JournalIcon name="sliders" />
+          </button>
           <button class="icon-button" data-action="search" aria-label="搜索">
             <JournalIcon name="search" />
           </button>
@@ -146,6 +154,7 @@
         </div>
       </footer>
     </div>
+    <JournalAppearanceDialog v-if="appearanceOpen" @close="appearanceOpen = false" />
     <dialog id="app-dialog" aria-labelledby="dialog-title">
       <div class="dialog-head">
         <span class="eyebrow">MOMICHAN</span
@@ -162,6 +171,7 @@
 </template>
 <script setup lang="ts">
 import {
+  defineAsyncComponent,
   computed,
   onMounted,
   onBeforeMount,
@@ -182,6 +192,7 @@ import { useJournalEvents } from './useJournalEvents'
 import { useJournalDirectory } from './useJournalDirectory'
 import JournalIcon from './JournalIcon.vue'
 import AccountNavigation from './AccountNavigation.vue'
+const JournalAppearanceDialog = defineAsyncComponent(() => import('./JournalAppearanceDialog.vue'))
 import { useI18n } from 'vue-i18n'
 import './styles/index.css'
 const route = useRoute(),
@@ -210,6 +221,7 @@ const authRoutes = new Set([
 const isAuthRoute = computed(() => authRoutes.has(String(route.name)))
 const runtime = shallowRef<JournalRuntime | null>(null)
 const motion = ref<'full' | 'reduced'>('full')
+const appearanceOpen = ref(false)
 const { menuOpen, menuButton, directory } = useJournalDirectory()
 provide(journalKey, runtime)
 useJournalDialogs(runtime)
@@ -266,6 +278,10 @@ function toggleMotion() {
   motion.value = motion.value === 'full' ? 'reduced' : 'full'
   runtime.value?.setMotion(motion.value)
 }
+function openAppearance() {
+  menuOpen.value = false
+  appearanceOpen.value = true
+}
 function syncMotion() {
   motion.value = runtime.value?.getMotion() === 'reduced' ? 'reduced' : 'full'
 }
@@ -289,6 +305,7 @@ onMounted(() => {
 watch(
   () => route.path,
   async () => {
+    appearanceOpen.value = false
     menuOpen.value = false
     syncChrome()
     await nextTick()

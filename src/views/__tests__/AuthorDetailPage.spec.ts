@@ -4,7 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AuthorDetailPage from '../AuthorDetailPage.vue'
 
 const mocks = vi.hoisted(() => ({ author: vi.fn(), posts: vi.fn() }))
-const route = reactive({ params: { id: 'author-one' }, path: '/author/author-one' })
+const route = reactive({
+  name: 'author-detail',
+  params: { id: 'author-one' },
+  path: '/author/author-one',
+})
 vi.mock('vue-router', () => ({
   useRoute: () => route,
   useRouter: () => ({ push: vi.fn() }),
@@ -42,6 +46,7 @@ const setup = () =>
   })
 beforeEach(() => {
   vi.clearAllMocks()
+  route.name = 'author-detail'
   route.params.id = 'author-one'
   mocks.author.mockResolvedValue({
     id: 'author-one',
@@ -58,6 +63,18 @@ beforeEach(() => {
 })
 
 describe('author detail pagination', () => {
+  it('ignores ids belonging to other routes while the author page is cached', async () => {
+    const wrapper = setup()
+    await flushPromises()
+    mocks.author.mockClear()
+    mocks.posts.mockClear()
+    route.name = 'post-detail'
+    route.params.id = 'post-two'
+    await flushPromises()
+    expect(mocks.author).not.toHaveBeenCalled()
+    expect(mocks.posts).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
   it('shows backend copy and loads the next cursor without duplicating earlier posts', async () => {
     mocks.posts.mockResolvedValueOnce({
       items: [

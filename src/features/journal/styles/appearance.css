@@ -1,0 +1,167 @@
+/* Preserve each edition's default palette; other presets use the existing appearance tokens. */
+:is(:root, #app)[data-edition='editorial'][data-preset='minimal-editorial'] {
+  --appearance-canvas: #f2f1e9;
+  --appearance-surface-1: #faf9f3;
+  --appearance-surface-2: #e9e7dc;
+  --appearance-text-primary: #252722;
+  --appearance-text-secondary: #62665b;
+  --appearance-text-tertiary: #686b61;
+  --appearance-border: #d9d9cc;
+  --appearance-accent: #b83d29;
+}
+:is(
+    :root,
+    #app
+  )[data-edition='editorial'][data-preset='minimal-editorial'][data-color-mode='dark'] {
+  --appearance-canvas: #1c1b18;
+  --appearance-surface-1: #25241f;
+  --appearance-surface-2: #323027;
+  --appearance-text-primary: #f1eee2;
+  --appearance-text-secondary: #c0bcae;
+  --appearance-text-tertiary: #b6b2a4;
+  --appearance-border: #484539;
+  --appearance-accent: #f1a18e;
+}
+:is(:root, #app)[data-edition='archive'][data-preset='minimal-editorial'] {
+  --appearance-canvas: #edf2ee;
+  --appearance-surface-1: #f8fbf8;
+  --appearance-surface-2: #dfe9e1;
+  --appearance-text-primary: #192e24;
+  --appearance-text-secondary: #4f6557;
+  --appearance-text-tertiary: #586b5f;
+  --appearance-border: #c7d6ca;
+  --appearance-accent: #28633e;
+}
+:is(:root, #app)[data-edition='archive'][data-preset='minimal-editorial'][data-color-mode='dark'] {
+  --appearance-canvas: #111a18;
+  --appearance-surface-1: #18231f;
+  --appearance-surface-2: #24372c;
+  --appearance-text-primary: #e3ebe7;
+  --appearance-text-secondary: #a1b2a8;
+  --appearance-text-tertiary: #a0b0a6;
+  --appearance-border: #2b3a33;
+  --appearance-accent: #b8f4ce;
+}
+html[data-color-mode='light']:has(.site-body) {
+  color-scheme: light;
+}
+:is(:root, #app)[data-preset='clay-playful'][data-color-mode='light'] {
+  --appearance-accent: #9a3412;
+}
+html[data-color-mode='dark']:has(.site-body) {
+  color-scheme: dark;
+}
+body.site-body,
+body.site-body.next-body {
+  --ink: var(--appearance-text-primary);
+  --muted: var(--appearance-text-secondary);
+  --faint: var(--appearance-text-secondary);
+  --paper: var(--appearance-surface-1);
+  --canvas: var(--appearance-canvas);
+  --line: var(--appearance-border);
+  --accent: var(--appearance-accent);
+  --accent-soft: color-mix(in srgb, var(--appearance-accent) 12%, var(--appearance-surface-1));
+  --green: var(--appearance-accent);
+  color-scheme: inherit;
+}
+body.journal-appearance-open {
+  overflow: hidden;
+}
+.site-body .journal-shell .archive-sidebar nav a.active,
+.site-body .journal-shell .mobile-directory nav a[aria-current='page'],
+.site-body .journal-shell .density-toggle button.active,
+.site-body .journal-shell .archive-result-row.selected time,
+.site-body .journal-shell .forum-categories button.active,
+.site-body.next-body .journal-legacy .account-navigation a.is-current {
+  color: var(--ink);
+}
+.site-body .journal-shell .header-actions > .appearance-trigger {
+  width: 40px;
+  height: 44px;
+}
+.site-body .journal-shell .edition-archive .button-dark,
+.site-body .edition-archive .button-dark,
+.site-body.next-body #app-dialog .button-dark {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.site-body .journal-shell .journal-display-settings :is(h3, legend) {
+  font-size: 16px;
+  font-weight: 500;
+}
+.site-body .journal-shell .appearance-preset-card__title {
+  color: var(--ink);
+}
+.site-body .journal-shell .appearance-preset-card {
+  background: var(--canvas);
+  border-color: var(--line);
+}
+.site-body .journal-shell .appearance-preset-card--active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.site-body .journal-shell .appearance-preset-card__current {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.site-body .journal-shell .display-color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.site-body .journal-shell .display-color-options label {
+  position: relative;
+  flex: 1;
+  min-width: 80px;
+  cursor: pointer;
+}
+.site-body .journal-shell .display-color-options input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+.site-body .journal-shell .display-color-options span {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink);
+  background: var(--canvas);
+}
+.site-body .journal-shell .display-color-options input:checked + span {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.site-body .journal-shell .display-color-options input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.site-body .journal-shell .display-preset-heading {
+  margin-bottom: 16px;
+}
+.site-body .journal-legacy .detail-allday-tag {
+  color: var(--muted);
+}
+.site-body .journal-shell .display-color-field {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+@media (max-width: 460px) {
+  .site-body .journal-shell .edition-header {
+    gap: 6px;
+    padding-inline: 12px;
+  }
+  .site-body .journal-shell .appearance-preset-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

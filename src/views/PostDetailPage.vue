@@ -459,7 +459,7 @@ const settingsStore = useSettingsStore()
 const { isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 
-const postId = computed(() => route.params['id'] as string)
+const postId = computed(() => (route.name === 'post-detail' ? (route.params['id'] as string) : ''))
 const post = ref<PostDetailResponse | null>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -1018,6 +1018,7 @@ function resolveFallbackPostDetail(currentPostId: string, err: unknown): PostDet
 }
 
 async function redirectToPostNotFound(currentPostId: string) {
+  if (route.name !== 'post-detail' || postId.value !== currentPostId) return
   await router.replace({
     name: 'not-found',
     params: buildPostDetailNotFoundRouteParams(currentPostId),
@@ -1141,6 +1142,7 @@ onUnmounted(() => {
 })
 
 watch(postId, (nextId, prevId) => {
+  fetchPostToken += 1
   const controller = new AbortController()
   onWatcherCleanup(() => controller.abort())
 

@@ -80,6 +80,7 @@ body.site-body.journal-auth #app .auth-subtitle {
   font-size: 14px;
 }
 .site-body .edition-auth-art {
+  --auth-art-paper: #e8e4d8;
   align-self: stretch;
   height: 100%;
   grid-column: 1;
@@ -112,6 +113,10 @@ body.site-body.journal-auth #app .auth-subtitle {
   font:
     32px/1 Georgia,
     serif;
+}
+.site-body :is(.auth-art-top, .auth-art-bottom) > span {
+  background: var(--auth-art-paper);
+  padding: 3px 0;
 }
 .site-body .auth-art-stage {
   position: absolute;
@@ -230,6 +235,7 @@ body.site-body.next-body.journal-auth #app .auth-title {
   font-weight: 600;
 }
 .site-body.next-body .edition-auth-art {
+  --auth-art-paper: #10211b;
   grid-column: 2;
   background: #10211b;
   color: #bbf7d0;
