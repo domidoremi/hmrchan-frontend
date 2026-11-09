@@ -153,6 +153,7 @@
 import {
   computed,
   onMounted,
+  onBeforeMount,
   onBeforeUnmount,
   nextTick,
   provide,
@@ -263,11 +264,13 @@ function syncChrome() {
 function escapeMenu(event: KeyboardEvent) {
   if (event.key === 'Escape') menuOpen.value = false
 }
-onMounted(() => {
+onBeforeMount(() => {
   document.body.classList.add('site-body')
   document.body.classList.toggle('next-body', isNext)
   document.body.dataset['variant'] = isNext ? 'next' : 'main'
   syncChrome()
+})
+onMounted(() => {
   runtime.value = createJournalRuntime((path) => {
     void router.push(path)
   })
