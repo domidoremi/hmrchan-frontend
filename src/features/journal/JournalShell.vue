@@ -80,6 +80,7 @@
             }}</span></RouterLink
           >
           <button
+            :ref="(element) => (menuButton = element as HTMLButtonElement | null)"
             class="mobile-menu-button icon-button"
             :aria-expanded="menuOpen"
             :aria-controls="menuOpen ? 'edition-mobile-menu' : undefined"
@@ -91,25 +92,35 @@
         </div>
       </header>
       <Transition name="directory">
-        <div v-if="menuOpen" id="edition-mobile-menu" class="mobile-directory">
+        <div
+          v-if="menuOpen"
+          id="edition-mobile-menu"
+          :ref="(element) => (directory = element as HTMLElement | null)"
+          class="mobile-directory"
+        >
           <nav aria-label="移动导航">
             <RouterLink
               v-for="item in navigation"
               :key="item.path"
               :to="item.path"
+              :aria-current="pageName === item.key ? 'page' : undefined"
               @click="menuOpen = false"
               ><small>{{ item.index }}</small
-              ><span>{{ isNext ? item.archive : item.main }}</span
+              ><JournalIcon v-if="isNext" :name="item.icon" class="directory-icon" /><span>{{
+                isNext ? item.archive : item.main
+              }}</span
               ><JournalIcon name="arrow-up-right"
             /></RouterLink>
           </nav>
-          <button class="motion-switch" :aria-pressed="motion === 'full'" @click="toggleMotion">
-            <span class="status-light" :class="{ dim: motion !== 'full' }" />动效
-            {{ motion === 'full' ? '全开' : '简化' }}
-          </button>
-          <a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'"
-            >{{ isNext ? '前往杂志' : '前往资料库' }} ↗</a
-          >
+          <div class="directory-footer">
+            <button class="motion-switch" :aria-pressed="motion === 'full'" @click="toggleMotion">
+              <span class="status-light" :class="{ dim: motion !== 'full' }" />动效
+              {{ motion === 'full' ? '全开' : '简化' }}
+            </button>
+            <a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'"
+              >{{ isNext ? '前往杂志' : '前往资料库' }} ↗</a
+            >
+          </div>
         </div>
       </Transition>
       <main
@@ -168,6 +179,7 @@ import { createJournalRuntime, type JournalRuntime } from './runtime'
 import { journalKey } from './context'
 import { useJournalDialogs } from './useJournalDialogs'
 import { useJournalEvents } from './useJournalEvents'
+import { useJournalDirectory } from './useJournalDirectory'
 import JournalIcon from './JournalIcon.vue'
 import AccountNavigation from './AccountNavigation.vue'
 import { useI18n } from 'vue-i18n'
@@ -197,8 +209,8 @@ const authRoutes = new Set([
 ])
 const isAuthRoute = computed(() => authRoutes.has(String(route.name)))
 const runtime = shallowRef<JournalRuntime | null>(null)
-const motion = ref<'full' | 'reduced'>('full'),
-  menuOpen = ref(false)
+const motion = ref<'full' | 'reduced'>('full')
+const { menuOpen, menuButton, directory } = useJournalDirectory()
 provide(journalKey, runtime)
 useJournalDialogs(runtime)
 useJournalEvents(runtime)
@@ -261,9 +273,6 @@ function syncChrome() {
   document.body.classList.toggle('journal-auth', isAuthRoute.value)
   document.body.dataset['page'] = pageName.value
 }
-function escapeMenu(event: KeyboardEvent) {
-  if (event.key === 'Escape') menuOpen.value = false
-}
 onBeforeMount(() => {
   document.body.classList.add('site-body')
   document.body.classList.toggle('next-body', isNext)
@@ -275,7 +284,6 @@ onMounted(() => {
     void router.push(path)
   })
   motion.value = runtime.value.getMotion()
-  document.addEventListener('keydown', escapeMenu)
   document.addEventListener('journalmotionchange', syncMotion)
 })
 watch(
@@ -290,7 +298,6 @@ watch(
 )
 onBeforeUnmount(() => {
   runtime.value?.dispose()
-  document.removeEventListener('keydown', escapeMenu)
   document.removeEventListener('journalmotionchange', syncMotion)
   document.body.classList.remove('site-body', 'next-body', 'reading-large', 'journal-auth')
   delete document.body.dataset['variant']

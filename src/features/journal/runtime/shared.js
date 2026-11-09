@@ -118,6 +118,7 @@ export function installUI(runtime, environment) {
       'data-author-query',
       'data-real-gallery-step',
       'data-real-gallery-index',
+      'data-gallery-zoom',
       'data-collection',
       'data-gallery',
       'data-author',
@@ -158,6 +159,9 @@ export function installUI(runtime, environment) {
   function openDialog(content, className = '', view) {
     const el = document.querySelector('#app-dialog')
     const wasOpen = el.open
+    const refreshing = wasOpen && !returning && view?.key && view.key === dialogView?.key
+    const snapshot = refreshing ? dialogSnapshot() : null
+    const focused = document.activeElement
     if (!wasOpen) {
       dialogTrail = []
       outsideFocus = document.activeElement
@@ -170,7 +174,7 @@ export function installUI(runtime, environment) {
     document.dispatchEvent(new Event('dialogwillchange'))
     dialogView = view
     runtime.Experience?.clearBook?.()
-    runtime.Atelier?.clearDialogFlight(el, returning)
+    if (!refreshing) runtime.Atelier?.clearDialogFlight(el, returning)
     el.className = className
     const body = document.querySelector('#dialog-content')
     body.getAnimations().forEach((animation) => animation.cancel())
@@ -191,12 +195,21 @@ export function installUI(runtime, environment) {
     document.body.classList.add('app-dialog-open')
     if (!wasOpen) el.showModal()
     if (toastElement.classList.contains('visible')) el.append(toastElement)
-    if (wasOpen || !el.querySelector('[autofocus]')) {
+    if (refreshing) {
+      const target =
+        focused?.isConnected && el.contains(focused)
+          ? focused
+          : snapshot.focus && el.querySelector(snapshot.focus)
+      const fallback = el.querySelector('#dialog-title')
+      fallback?.setAttribute('tabindex', '-1')
+      ;(target || fallback)?.focus({ preventScroll: true })
+      body.scrollTop = snapshot.scroll
+    } else if (wasOpen || !el.querySelector('[autofocus]')) {
       const heading = el.querySelector('#dialog-title')
       heading?.setAttribute('tabindex', '-1')
       heading?.focus({ preventScroll: true })
     }
-    if (!returning) {
+    if (!returning && !refreshing) {
       runtime.SpatialMotion?.dialog(el)
       runtime.Atelier?.dialog(el)
     }

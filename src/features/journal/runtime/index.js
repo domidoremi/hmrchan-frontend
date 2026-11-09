@@ -150,6 +150,7 @@ export function createJournalRuntime(navigate) {
       const gallery = document.querySelector('#app-dialog')
       const enabled = gallery.classList.toggle('gallery-zoomed')
       zoom.setAttribute('aria-pressed', String(enabled))
+      zoom.setAttribute('aria-label', enabled ? '缩小图片' : '放大图片')
     }
     const target = event.target.closest?.('[data-action]')
     if (!target) return
