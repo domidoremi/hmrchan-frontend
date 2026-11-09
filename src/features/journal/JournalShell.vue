@@ -2,7 +2,7 @@
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
     <a class="skip-link" href="#main-content">跳至内容</a>
     <aside v-if="isNext && !isAuthRoute" class="archive-sidebar">
-      <RouterLink class="archive-logo" to="/" aria-label="MomiChan 首页"
+      <RouterLink class="archive-logo" to="/" aria-label="m. MomiChan ARCHIVE 首页"
         ><span class="brand-mark">m.</span><span>MomiChan<small>ARCHIVE</small></span></RouterLink
       >
       <button class="sidebar-search" data-action="search" aria-label="搜索">
@@ -18,7 +18,7 @@
           :aria-current="pageName === item.key ? 'page' : undefined"
         >
           <JournalIcon :name="item.icon" /><span>{{ item.archive }}</span
-          ><span class="nav-index">{{ item.index }}</span>
+          ><span class="nav-index" aria-hidden="true">{{ item.index }}</span>
         </RouterLink>
       </nav>
       <div class="sidebar-bottom">

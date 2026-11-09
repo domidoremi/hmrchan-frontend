@@ -109,6 +109,7 @@ export function installUI(runtime, environment) {
     if (element.id) return `#${CSS.escape(element.id)}`
     const attrs = [
       'data-open',
+      'data-select-post',
       'data-dialog-post',
       'data-dialog-gallery',
       'data-dialog-save',

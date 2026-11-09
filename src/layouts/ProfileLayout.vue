@@ -41,3 +41,7 @@ defineOptions({ name: 'ProfileLayout' })
   }
 }
 </style>
+
+<style>
+@import '@/styles/page-systems/profile-page-system.css' layer(page-systems);
+</style>

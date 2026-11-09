@@ -528,6 +528,9 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
               { test: /@rive-app/, name: 'rive' },
               { test: /@fingerprintjs/, name: 'fingerprint' },
 
+              { test: /motion-v|motion-dom|motion-utils|framer-motion/, name: 'motion' },
+              { test: /dompurify/, name: 'sanitize' },
+              { test: /lenis/, name: 'smooth-scroll' },
               { test: /node_modules/, name: 'vendor' },
             ],
           },

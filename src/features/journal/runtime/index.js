@@ -1,4 +1,6 @@
 import { installUI } from './shared.js'
+import { createMotionPreference, motionTiming } from './motion.js'
+import { installViewportMotion } from './viewport-motion.js'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
 
 export function createJournalRuntime(navigate) {
@@ -25,21 +27,22 @@ export function createJournalRuntime(navigate) {
   })
   const runtime = {}
   installUI(runtime, { document: scopedDocument })
-  let motion = runtime.UI.read('presentation-motion', 'full') === 'reduced' ? 'reduced' : 'full'
-  function setMotion(value) {
-    motion = value === 'reduced' ? 'reduced' : 'full'
-    document.body.dataset.motion = motion
-    runtime.UI.save('presentation-motion', motion)
-    if (motion === 'reduced') animations.forEach((animation) => animation.finish())
-    document.dispatchEvent(new CustomEvent('journalmotionchange', { detail: motion }))
-  }
-  document.body.dataset.motion = motion
-  listen(document, 'journalmotionrequest', (event) => setMotion(event.detail))
+  let motion = 'full'
+  const preference = createMotionPreference({
+    read: runtime.UI.read,
+    save: runtime.UI.save,
+    signal: lifetime.signal,
+    changed(value) {
+      motion = value
+      if (value === 'reduced') animations.forEach((animation) => animation.finish())
+    },
+  })
+  const viewport = installViewportMotion({ listen, frame, fullMotion: () => motion === 'full' })
   function animate(element, keyframes, options = {}) {
     if (!element || motion !== 'full' || lifetime.signal.aborted) return
     const animation = element.animate(keyframes, {
-      duration: 780,
-      easing: 'cubic-bezier(.18,.75,.22,1)',
+      duration: motionTiming.reveal,
+      easing: motionTiming.ease,
       ...options,
     })
     animations.add(animation)
@@ -57,12 +60,10 @@ export function createJournalRuntime(navigate) {
             {
               opacity: 0.15,
               transform: 'perspective(1200px) translateY(54px) rotateX(5deg)',
-              filter: 'blur(3px)',
             },
             {
               opacity: 1,
               transform: 'perspective(1200px) translateY(0) rotateX(0deg)',
-              filter: 'blur(0)',
             },
           ],
           { delay: Math.min(index * 65, 260) }
@@ -74,76 +75,41 @@ export function createJournalRuntime(navigate) {
   function mount(root = document) {
     runtime.UI.hydrate(root)
     observeReveals(root)
+    viewport.refresh()
   }
+  const revealSelector =
+    '[data-reveal], .journal-legacy :is(.page-hero-shell, .sub-header, .author-card, .discover-section, .post-shell, .profile-group, .settings-section, .security-command, .security-workspace, .discussion-card, .about-link-group)'
   function observeReveals(root = document) {
-    root
-      .querySelectorAll(
-        '[data-reveal], .journal-legacy :is(.page-hero-shell, .sub-header, .author-card, .discover-section, .post-shell, .profile-group, .settings-section, .security-command, .security-workspace, .discussion-card, .about-link-group)'
-      )
-      .forEach((element) => {
-        if (observed.has(element)) return
-        observed.add(element)
-        observer.observe(element)
-      })
+    const elements = [...root.querySelectorAll(revealSelector)]
+    if (root instanceof Element && root.matches(revealSelector)) elements.unshift(root)
+    for (const element of elements) {
+      if (observed.has(element)) continue
+      observed.add(element)
+      observer.observe(element)
+    }
   }
+  const pendingRoots = new Set()
   let pendingMount = false
   const contentObserver = new MutationObserver((records) => {
-    if (
-      pendingMount ||
-      !records.some((record) => [...record.addedNodes].some((node) => node.nodeType === 1))
-    )
-      return
+    for (const record of records) {
+      for (const node of record.addedNodes) if (node instanceof Element) pendingRoots.add(node)
+      for (const node of record.removedNodes) {
+        if (!(node instanceof Element)) continue
+        observer.unobserve(node)
+        node.querySelectorAll(revealSelector).forEach((element) => observer.unobserve(element))
+      }
+    }
+    if (pendingMount || !pendingRoots.size) return
     pendingMount = true
     frame(() => {
       pendingMount = false
-      observeReveals()
+      for (const root of pendingRoots) if (root.isConnected) observeReveals(root)
+      pendingRoots.clear()
+      viewport.refresh()
     })
   })
   const pageRoot = document.querySelector('#main-content')
   if (pageRoot) contentObserver.observe(pageRoot, { childList: true, subtree: true })
-  let tilted = null,
-    pointerFrame = false,
-    pointerX = 0,
-    pointerY = 0
-  listen(
-    document,
-    'pointermove',
-    (event) => {
-      if (motion !== 'full' || event.pointerType === 'touch') return
-      const target = event.target.closest?.('[data-tilt]')
-      if (target !== tilted) {
-        tilted?.style.setProperty('--tilt-x', '0deg')
-        tilted?.style.setProperty('--tilt-y', '0deg')
-        tilted = target
-      }
-      if (!target) return
-      pointerX = event.clientX
-      pointerY = event.clientY
-      if (pointerFrame) return
-      pointerFrame = true
-      frame(() => {
-        pointerFrame = false
-        if (target !== tilted || !target.isConnected) return
-        const box = target.getBoundingClientRect()
-        target.style.setProperty(
-          '--tilt-x',
-          String(((pointerY - box.top) / box.height - 0.5) * -9) + 'deg'
-        )
-        target.style.setProperty(
-          '--tilt-y',
-          String(((pointerX - box.left) / box.width - 0.5) * 11) + 'deg'
-        )
-      })
-    },
-    { passive: true }
-  )
-  listen(document, 'pointerout', (event) => {
-    if (!tilted || (event.relatedTarget instanceof Node && tilted.contains(event.relatedTarget)))
-      return
-    tilted.style.setProperty('--tilt-x', '0deg')
-    tilted.style.setProperty('--tilt-y', '0deg')
-    tilted = null
-  })
   listen(document, 'click', (event) => {
     const zoom = event.target.closest?.('[data-gallery-zoom]')
     if (zoom) {
@@ -170,34 +136,6 @@ export function createJournalRuntime(navigate) {
       document.dispatchEvent(new Event('journalsearch'))
     }
   })
-  let scrollFrame = false
-  listen(
-    window,
-    'scroll',
-    () => {
-      if (scrollFrame) return
-      scrollFrame = true
-      frame(() => {
-        scrollFrame = false
-        const height = document.documentElement.scrollHeight - innerHeight
-        document
-          .querySelector('.reading-progress')
-          ?.style.setProperty('--progress', String(height ? scrollY / height : 0))
-        const top = document.querySelector('.back-to-top')
-        if (top) top.hidden = scrollY < 700
-        if (motion === 'full')
-          document.querySelectorAll('[data-depth-scene]').forEach((scene) => {
-            const box = scene.getBoundingClientRect()
-            if (box.top > innerHeight || box.bottom < 0) return
-            scene.style.setProperty(
-              '--scroll-depth',
-              String(Math.min(1, Math.max(0, (innerHeight - box.top) / (innerHeight + box.height))))
-            )
-          })
-      })
-    },
-    { passive: true }
-  )
   runtime.Experience = {
     savedFeedback(button) {
       animate(
@@ -207,7 +145,7 @@ export function createJournalRuntime(navigate) {
           { transform: 'scale(1.24) rotate(-8deg)', offset: 0.35 },
           { transform: 'scale(1)' },
         ],
-        { duration: 440 }
+        { duration: motionTiming.feedback }
       )
     },
   }
@@ -222,7 +160,7 @@ export function createJournalRuntime(navigate) {
           },
           { opacity: 1, transform: 'perspective(1300px) translateY(0) rotateX(0deg) scale(1)' },
         ],
-        { duration: 600 }
+        { duration: motionTiming.dialog }
       )
     },
     layout(root, update) {
@@ -257,7 +195,7 @@ export function createJournalRuntime(navigate) {
                 },
                 { transformOrigin: '0 0', transform: 'translate(0,0) scale(1)' },
               ],
-              { duration: 720 }
+              { duration: motionTiming.layout }
             )
           })
         })
@@ -266,7 +204,7 @@ export function createJournalRuntime(navigate) {
   }
   runtime.mount = mount
   runtime.getMotion = () => motion
-  runtime.setMotion = setMotion
+  runtime.setMotion = preference.set
   runtime.transition = () => {
     runtime.UI.closeDialog(true)
     animate(
@@ -275,13 +213,15 @@ export function createJournalRuntime(navigate) {
         { opacity: 0.2, transform: 'translateY(18px)' },
         { opacity: 1, transform: 'translateY(0)' },
       ],
-      { duration: 550 }
+      { duration: motionTiming.page }
     )
   }
   runtime.dispose = () => {
     lifetime.abort()
     observer.disconnect()
     contentObserver.disconnect()
+    viewport.dispose()
+    pendingRoots.clear()
     frames.forEach(cancelAnimationFrame)
     animations.forEach((animation) => animation.cancel())
     runtime.UI.closeDialog(true)

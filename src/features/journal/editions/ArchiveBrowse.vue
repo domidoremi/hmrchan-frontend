@@ -44,11 +44,7 @@
           <option value="latest">最新发布</option>
           <option value="popular">最多赞</option>
         </select></label
-      ><button
-        v-if="query || platform !== 'all' || contentType !== '全部'"
-        class="text-button"
-        @click="$emit('reset')"
-      >
+      ><button v-if="activeFilters.length" class="text-button" @click="$emit('reset')">
         清除 <JournalIcon name="x" />
       </button>
       <div class="density-toggle">
@@ -59,6 +55,24 @@
         </button>
       </div>
     </div>
+    <div v-if="activeFilters.length" class="active-query-summary" aria-label="当前筛选">
+      <span>当前筛选</span>
+      <button
+        v-for="filter in activeFilters"
+        :key="filter.key"
+        :aria-label="`移除筛选：${filter.label}`"
+        @click="$emit('change', filter.key, filter.reset)"
+      >
+        <span>{{ filter.label }}</span
+        ><JournalIcon name="x" />
+      </button>
+    </div>
+    <ArchiveNavigationHint
+      :index="index"
+      :total="posts.length"
+      :preview-id="previewId"
+      :title="selected?.title"
+    />
     <div class="archive-browser" :class="{ compact }">
       <section class="archive-results" data-reveal>
         <div class="results-table-heading">
@@ -72,6 +86,8 @@
             :class="{ selected: selectedId === post.id }"
             :aria-pressed="selectedId === post.id"
             :data-select-post="post.id"
+            :aria-controls="previewId"
+            :aria-describedby="`${previewId}-hint`"
             @click="select(post.id)"
             :tabindex="selectedId === post.id ? 0 : -1"
           >
@@ -99,10 +115,15 @@
           </button>
         </div>
       </section>
-      <aside :ref="setPreview" class="archive-inspector">
+      <aside :id="previewId" :ref="setPreview" aria-label="所选动态预览" class="archive-inspector">
         <div class="inspector-heading">
           <span>预览</span><span>{{ selected?.type }}</span
-          ><button class="text-button" :disabled="!selected" :data-open="selected?.id">
+          ><button
+            class="text-button"
+            :disabled="!selected"
+            :data-open="selected?.id"
+            data-preview-open
+          >
             打开 <JournalIcon name="arrow-up-right" />
           </button>
         </div>
@@ -132,6 +153,7 @@ import JournalImage from '../JournalImage.vue'
 import ArchivePreview from './ArchivePreview.vue'
 import ArchiveSelectionDock from './ArchiveSelectionDock.vue'
 import { useArchiveNavigation } from './useArchiveNavigation'
+import ArchiveNavigationHint from './ArchiveNavigationHint.vue'
 const props = defineProps<{
   posts: JournalPost[]
   allPosts: JournalPost[]
@@ -144,14 +166,43 @@ const props = defineProps<{
   hasMore: boolean
   loading: boolean
 }>()
-defineEmits<{
+const emit = defineEmits<{
+  open: [post: JournalPost]
   change: [key: string, value: string]
   reset: []
   save: [post: JournalPost, event: MouseEvent]
   more: []
 }>()
-const search = ref(props.query),
-  compact = ref(false)
+const search = ref(props.query)
+const compact = ref(false)
+try {
+  compact.value = localStorage.getItem('momichan-journal:archive-density') === 'compact'
+} catch {
+  /* Storage may be unavailable. */
+}
+watch(compact, (value) => {
+  try {
+    localStorage.setItem('momichan-journal:archive-density', value ? 'compact' : 'standard')
+  } catch {
+    /* Keep the in-memory preference. */
+  }
+})
+const activeFilters = computed(() => [
+  ...(props.query ? [{ key: 'q', label: `搜索：${props.query}`, reset: '' }] : []),
+  ...(props.platform !== 'all'
+    ? [
+        {
+          key: 'platform',
+          label: `来源：${platforms[props.platform] || props.platform}`,
+          reset: 'all',
+        },
+      ]
+    : []),
+  ...(props.contentType !== '全部'
+    ? [{ key: 'type', label: `内容：${props.contentType}`, reset: '全部' }]
+    : []),
+  ...(props.sort !== 'latest' ? [{ key: 'sort', label: '排序：最多赞', reset: 'latest' }] : []),
+])
 watch(
   () => props.query,
   (value) => {
@@ -161,6 +212,7 @@ watch(
 const {
   selected,
   selectedId,
+  previewId,
   index,
   step,
   setRoot,
@@ -169,7 +221,10 @@ const {
   select,
   keydown,
   showPreview,
-} = useArchiveNavigation(computed(() => props.posts))
+} = useArchiveNavigation(
+  computed(() => props.posts),
+  (post) => emit('open', post)
+)
 const sourceOptions = computed(() => [
   ['all', '全部'] as [string, string],
   ...sourceGroups(props.allPosts).map((source): [string, string] => [source.key, source.label]),
