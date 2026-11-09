@@ -380,6 +380,7 @@ async function mountApp(): Promise<void> {
     reportClientError('i18n.preload_failed', error, undefined, { severity: 'warn' })
   }
 
+  await router.isReady()
   app.mount('#app-root')
   scheduleAuthSurfaceBootstrap()
 }
