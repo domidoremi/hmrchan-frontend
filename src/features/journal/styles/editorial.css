@@ -43,6 +43,31 @@
   border-bottom: 1px solid var(--line);
   isolation: isolate;
 }
+.site-body .journal-shell .cover-loading i {
+  display: block;
+  height: 12px;
+  width: 45%;
+  background: var(--line);
+}
+.site-body .journal-shell .cover-loading .cover-article i {
+  height: clamp(26px, 3vw, 46px);
+  width: 88%;
+  margin-block: 12px;
+}
+.site-body .journal-shell .cover-loading .cover-article i:last-child {
+  width: 60%;
+  height: 12px;
+  margin-top: 30px;
+}
+.site-body .journal-shell .cover-placeholder {
+  height: 100%;
+  background: var(--line);
+  border: 8px solid var(--paper);
+  box-shadow:
+    14px 12px 0 var(--canvas),
+    15px 13px 0 var(--line);
+  transform: rotate(-4deg);
+}
 .site-body .journal-shell .cover-copy {
   display: flex;
   flex-direction: column;

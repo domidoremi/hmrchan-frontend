@@ -10,6 +10,7 @@
     <JournalHome
       v-if="page === 'home'"
       :posts="visiblePosts"
+      :loading="loading"
       :all-posts="posts"
       :events="events"
       :discussions="discussions"

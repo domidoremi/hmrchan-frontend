@@ -7,6 +7,16 @@
         ><span>PHOTOS · POSTS · PEOPLE</span>
       </div>
     </div>
+    <div v-if="loading && !posts.length" class="spatial-cover cover-loading" aria-hidden="true">
+      <div class="cover-copy">
+        <div class="cover-kicker"><i /></div>
+        <div class="cover-article"><i /><i /><i /><i /></div>
+        <div class="cover-controls"><i /></div>
+      </div>
+      <div class="cover-scene">
+        <div class="cover-deck"><div class="cover-placeholder" /></div>
+      </div>
+    </div>
     <SpatialCover :posts="posts" />
     <slot name="state" />
     <section class="editorial-latest" data-reveal>
@@ -122,6 +132,7 @@ import JournalEventCard from '../JournalEventCard.vue'
 import { sourceGroups } from '../presentation'
 import type { JournalPost, JournalEvent, JournalDiscussion } from '../models'
 const props = defineProps<{
+  loading?: boolean
   posts: JournalPost[]
   allPosts: JournalPost[]
   events: JournalEvent[]
