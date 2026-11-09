@@ -115,3 +115,24 @@ export function formatDuration(seconds: number): string {
   }
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
+
+export function formatPublishedTime(
+  dateStr: string,
+  t: (key: string, params?: { n: number }) => string
+): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHour / 24)
+
+  if (diffSec < 60) return t('common.justNow')
+  if (diffMin < 60) return t('common.minutesAgo', { n: diffMin })
+  if (diffHour < 24) return t('common.hoursAgo', { n: diffHour })
+  if (diffDay < 7) return t('common.daysAgo', { n: diffDay })
+  if (diffDay < 30) return t('common.weeksAgo', { n: Math.floor(diffDay / 7) })
+  if (diffDay < 365) return t('common.monthsAgo', { n: Math.floor(diffDay / 30) })
+  return t('common.yearsAgo', { n: Math.floor(diffDay / 365) })
+}

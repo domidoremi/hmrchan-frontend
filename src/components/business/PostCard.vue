@@ -68,7 +68,7 @@
       <!-- Published Time Badge -->
       <div v-if="post.published_at" class="time-badge">
         <AnimatedIcon name="explore" :fallback-icon="Calendar" size="sm" />
-        {{ formatPublishedTime(post.published_at) }}
+        {{ formatPublishedTime(post.published_at, t) }}
       </div>
 
       <!-- Image Overlay Gradient -->
@@ -148,6 +148,7 @@ import Tooltip from '@/components/ui/Tooltip.vue'
 import {
   formatCount,
   formatDuration,
+  formatPublishedTime,
   isTitleDerivedFromContent,
   normalizeTag,
   normalizeText,
@@ -513,24 +514,6 @@ async function resolvePreferredOriginalSource(): Promise<void> {
   }
 
   preferredOriginalSrc.value = resolvedSource
-}
-
-function formatPublishedTime(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffSec = Math.floor(diffMs / 1000)
-  const diffMin = Math.floor(diffSec / 60)
-  const diffHour = Math.floor(diffMin / 60)
-  const diffDay = Math.floor(diffHour / 24)
-
-  if (diffSec < 60) return t('common.justNow')
-  if (diffMin < 60) return t('common.minutesAgo', { n: diffMin })
-  if (diffHour < 24) return t('common.hoursAgo', { n: diffHour })
-  if (diffDay < 7) return t('common.daysAgo', { n: diffDay })
-  if (diffDay < 30) return t('common.weeksAgo', { n: Math.floor(diffDay / 7) })
-  if (diffDay < 365) return t('common.monthsAgo', { n: Math.floor(diffDay / 30) })
-  return t('common.yearsAgo', { n: Math.floor(diffDay / 365) })
 }
 
 function preloadLargeImage() {
