@@ -1,3 +1,5 @@
+import { createResizeObserver } from '@/utils/modernAPIs'
+
 // Read all layout geometry before writing styles for the current frame.
 export function installViewportMotion({ listen, frame, fullMotion }) {
   let tilted = null
@@ -5,6 +7,7 @@ export function installViewportMotion({ listen, frame, fullMotion }) {
   let pointerX = 0
   let pointerY = 0
   let scrollPending = false
+  let position = 0
   let scenes = []
   const progress = document.querySelector('.reading-progress')
   const top = document.querySelector('.back-to-top')
@@ -55,6 +58,7 @@ export function installViewportMotion({ listen, frame, fullMotion }) {
     frame(() => {
       scrollPending = false
       const y = scrollY
+      position = y
       const height = y > 0 ? document.documentElement.scrollHeight - innerHeight : 0
       const measurements =
         fullMotion() && y > 0
@@ -76,6 +80,12 @@ export function installViewportMotion({ listen, frame, fullMotion }) {
       }
     })
   }
+  const resizeObserver = createResizeObserver(() => {
+    // Resize notifications arrive after layout, including restored scroll positions.
+    position = scrollY
+    if (position > 0) schedule()
+  })
+  resizeObserver?.observe(document.documentElement)
   listen(window, 'scroll', schedule, { passive: true })
   listen(window, 'resize', schedule, { passive: true })
   listen(document, 'visibilitychange', () => {
@@ -86,10 +96,11 @@ export function installViewportMotion({ listen, frame, fullMotion }) {
   return {
     refresh() {
       scenes = [...document.querySelectorAll('[data-depth-scene]')]
-      // The initial reading position is already zero; defer geometry until scrolling.
-      if (scrollY > 0) schedule()
+      // Reading scrollY here would flush layout after every content mutation.
+      if (position > 0) schedule()
     },
     dispose() {
+      resizeObserver?.disconnect()
       resetTilt()
       document.body.classList.remove('journal-suspended')
     },
