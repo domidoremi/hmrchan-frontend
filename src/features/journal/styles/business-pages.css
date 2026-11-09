@@ -136,7 +136,7 @@ body.site-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
   --ui-avatar-fallback-border: 1px solid var(--line);
 }
 
-/* 阅读页与检索页共享数据，各自保留不同的内容密度。 */
+/* Reading and search pages share data with different content density. */
 .site-body .journal-legacy .search-header {
   max-width: none;
   margin: 0 0 32px;
