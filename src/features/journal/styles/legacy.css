@@ -8,6 +8,7 @@ body.site-body #main-content.journal-legacy {
   --color-text-tertiary: var(--muted);
   --color-foreground: var(--ink);
   --color-muted-foreground: var(--muted);
+  --ui-compat-text-muted: var(--muted);
   --color-primary: var(--ink);
   --color-surface: var(--paper);
   --color-background: var(--canvas);

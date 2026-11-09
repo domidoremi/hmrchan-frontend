@@ -150,7 +150,9 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { user } = storeToRefs(authStore)
 
-const userId = computed(() => String(route.params['id'] ?? ''))
+const userId = computed(() =>
+  route.name === 'user-public-profile' ? String(route.params['id'] ?? '') : ''
+)
 const currentUserId = computed(() => user.value?.id ?? '')
 const isCurrentUser = computed(() => userId.value === currentUserId.value)
 
@@ -172,13 +174,13 @@ const relationState = computed<UserRelation>(() => {
 })
 
 async function loadProfile() {
+  const currentRequestToken = ++requestToken
   if (!userId.value) return
   if (isCurrentUser.value) {
     await router.replace('/profile')
     return
   }
 
-  const currentRequestToken = ++requestToken
   isLoading.value = true
   error.value = null
 

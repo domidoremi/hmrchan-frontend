@@ -288,6 +288,9 @@ function createWrapper() {
   return mount(ProfileSettingsPage, {
     global: {
       stubs: {
+        JournalDisplaySettings: {
+          template: '<div class="journal-display-settings" />',
+        },
         teleport: true,
         transition: false,
         AsyncComponentWrapper: {

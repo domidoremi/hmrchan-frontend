@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDiscussionsStore } from '../discussions'
+import { ApiError } from '@/api/client'
 import type { Discussion } from '@/api/discussionService'
 
 const mocks = vi.hoisted(() => ({
@@ -75,6 +76,19 @@ describe('public discussion counts', () => {
     await store.fetchDiscussion('one')
     expect(store.currentDiscussion?.id).toBe('one')
     expect(store.error).toBeNull()
+  })
+
+  it('clears the previous detail and identifies a missing discussion', async () => {
+    mocks.get
+      .mockResolvedValueOnce(discussion('one'))
+      .mockRejectedValueOnce(new ApiError('Discussion not found', 404))
+    const store = useDiscussionsStore()
+    await store.fetchDiscussion('one')
+    store.source = 'fallback'
+    await store.fetchDiscussion('missing')
+    expect(store.currentDiscussion).toBeNull()
+    expect(store.source).toBe('live')
+    expect(store.error).toBe('common.notFound')
   })
 
   it('keeps the total unknown for an incomplete cached feed', async () => {

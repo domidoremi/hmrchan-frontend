@@ -95,7 +95,7 @@ body.site-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
 }
 .site-body .journal-legacy .page-control:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--ink);
 }
 .site-body
   .journal-legacy

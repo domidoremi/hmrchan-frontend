@@ -8,7 +8,7 @@
 
       <StateIndicator
         v-if="error && !isUsingFallback"
-        variant="error"
+        :variant="discStore.error === 'common.notFound' ? 'not-found' : 'error'"
         :description="error"
         @action="fetchDiscussion"
       />

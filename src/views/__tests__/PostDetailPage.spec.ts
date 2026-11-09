@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, ref } from 'vue'
+import { defineComponent, reactive, ref } from 'vue'
 import PostDetailPage from '../PostDetailPage.vue'
 
 const mocks = vi.hoisted(() => {
@@ -38,6 +38,7 @@ const mocks = vi.hoisted(() => {
     resolveThumbnailSrcsetMock: vi.fn((url: string | null) => (url ? `${url}?resolved=1 1x` : '')),
     settingsRef: null as unknown as { value: { enableSwipeNavigation: boolean } },
     mockedRoute: {
+      name: 'post-detail',
       params: { id: DEFAULT_POST_ID },
       query: { from: 'profile' },
       hash: '#comments',
@@ -390,6 +391,11 @@ describe('PostDetailPage', () => {
   let originalIntersectionObserver: typeof window.IntersectionObserver | undefined
 
   beforeEach(() => {
+    mocks.mockedRoute = {
+      ...mocks.mockedRoute,
+      name: 'post-detail',
+      params: { ...mocks.mockedRoute.params },
+    }
     mocks.mockedRoute.params.id = '0195fe30-6f9d-7f31-9e6f-c9a5c478a336'
     mocks.mockedRoute.path = '/post/0195fe30-6f9d-7f31-9e6f-c9a5c478a336'
     mocks.mockedRoute.query = { from: 'profile' }
@@ -461,6 +467,35 @@ describe('PostDetailPage', () => {
       query: mocks.mockedRoute.query,
       hash: mocks.mockedRoute.hash,
     })
+  })
+
+  it('does not load or redirect a cached post page when another detail route changes its id', async () => {
+    mocks.mockedRoute = reactive(mocks.mockedRoute)
+    const wrapper = mountDetailPage()
+    await flushPromises()
+    mocks.loadCachedPostMock.mockClear()
+    mocks.replaceSpy.mockClear()
+    mocks.mockedRoute.name = 'discussion-detail'
+    mocks.mockedRoute.params.id = '01900000-0000-7000-8000-000000000042'
+    await flushPromises()
+    expect(mocks.loadCachedPostMock).not.toHaveBeenCalled()
+    expect(mocks.replaceSpy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('ignores a late not-found response after leaving the post route', async () => {
+    mocks.mockedRoute = reactive(mocks.mockedRoute)
+    const pending = createDeferred<never>()
+    mocks.loadCachedPostMock.mockReturnValue(pending.promise)
+    const wrapper = mountDetailPage()
+    await flushPromises()
+    mocks.mockedRoute.name = 'user-public-profile'
+    mocks.mockedRoute.params.id = '01900000-0000-7000-8000-000000000042'
+    await flushPromises()
+    pending.reject(new mocks.MockApiError('Post not found', 404))
+    await flushPromises()
+    expect(mocks.replaceSpy).not.toHaveBeenCalled()
+    wrapper.unmount()
   })
 
   it('redirects invalid placeholder route ids to not-found instead of explore', async () => {

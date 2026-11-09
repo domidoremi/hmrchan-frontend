@@ -1,5 +1,24 @@
 <template>
   <div class="journal-display-settings">
+    <fieldset class="display-color-field">
+      <legend>明暗</legend>
+      <div class="display-color-options">
+        <label v-for="option in colorOptions" :key="option.value">
+          <input
+            type="radio"
+            :name="colorGroup"
+            :value="option.value"
+            :checked="theme === option.value"
+            @change="themeStore.setTheme(option.value)"
+          />
+          <span>{{ option.label }}</span>
+        </label>
+      </div>
+    </fieldset>
+    <section aria-label="外观主题">
+      <h3 class="display-preset-heading">外观主题</h3>
+      <AppearancePresetPicker />
+    </section>
     <div class="display-editions" aria-label="站点">
       <a
         v-for="edition in editions"
@@ -34,9 +53,21 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useThemeStore } from '@/stores'
+import AppearancePresetPicker from '@/components/appearance/AppearancePresetPicker.vue'
+import type { Theme } from '@/types'
 import { designEdition } from '@/config/designEdition'
 
+const themeStore = useThemeStore()
+const { theme } = storeToRefs(themeStore)
+const colorGroup = useId()
+const colorOptions: { value: Theme; label: string }[] = [
+  { value: 'light', label: '浅色' },
+  { value: 'auto', label: '跟随系统' },
+  { value: 'dark', label: '深色' },
+]
 const editions = [
   { id: 'editorial', label: '杂志', href: 'https://momichan.com' },
   { id: 'archive', label: '资料库', href: 'https://next.momichan.com' },

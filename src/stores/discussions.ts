@@ -7,7 +7,7 @@ import {
   type DiscussionCommentListResponse,
   type ListDiscussionsParams,
 } from '@/api/discussionService'
-import type { RequestConfig } from '@/api/client'
+import { ApiError, type RequestConfig } from '@/api/client'
 import { registerPrivateSessionReset } from '@/services/privateSessionState'
 import {
   getFallbackDiscussionById,
@@ -201,7 +201,12 @@ export const useDiscussionsStore = defineStore('discussions', () => {
         }
       }
 
-      error.value = 'community.error.fetchFailed'
+      currentDiscussion.value = null
+      source.value = 'live'
+      error.value =
+        err instanceof ApiError && err.status === 404
+          ? 'common.notFound'
+          : 'community.error.fetchFailed'
       return null
     } finally {
       if (

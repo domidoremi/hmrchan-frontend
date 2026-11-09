@@ -107,7 +107,9 @@ const router = useRouter()
 
 const { t } = useI18n()
 
-const authorId = computed(() => route.params['id'] as string)
+const authorId = computed(() =>
+  route.name === 'author-detail' ? (route.params['id'] as string) : ''
+)
 
 const author = ref<AuthorResponse | null>(null)
 const posts = ref<PostListItem[]>([])
@@ -204,6 +206,7 @@ async function loadMorePosts() {
 
 async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal) {
   const requestId = ++latestRequestId
+  if (!targetAuthorId) return
   const controller = signal ? null : new AbortController()
   const requestSignal = signal ?? controller?.signal
 

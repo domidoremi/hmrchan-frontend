@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({
   route: {
+    name: 'user-public-profile',
     params: { id: 'user-2' },
     fullPath: '/users/user-2',
   },
@@ -107,6 +108,7 @@ function mountPage() {
 
 describe('UserPublicProfilePage', () => {
   beforeEach(() => {
+    state.route = { ...state.route, name: 'user-public-profile', params: { id: 'user-2' } }
     state.route.params.id = 'user-2'
     state.route.fullPath = '/users/user-2'
     state.router.push.mockReset()
@@ -148,6 +150,21 @@ describe('UserPublicProfilePage', () => {
     expect(state.userRelationsService.getUserProfile).toHaveBeenCalledWith('user-2')
     expect(state.userRelationsService.getRelation).toHaveBeenCalledWith('user-2')
     expect(wrapper.text()).toContain('alice')
+  })
+
+  it('does not request another route id as a public user while cached', async () => {
+    state.route = reactive(state.route)
+    const wrapper = mountPage()
+    await flushPromises()
+    state.userRelationsService.getUserProfile.mockClear()
+    state.userRelationsService.getRelation.mockClear()
+    state.route.name = 'discussion-detail'
+    state.route.params.id = 'discussion-one'
+    await flushPromises()
+    expect(state.userRelationsService.getUserProfile).not.toHaveBeenCalled()
+    expect(state.userRelationsService.getRelation).not.toHaveBeenCalled()
+    expect(state.router.replace).not.toHaveBeenCalled()
+    wrapper.unmount()
   })
 
   it('redirects self-profile visits and allows authenticated follow actions', async () => {

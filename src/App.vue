@@ -70,7 +70,19 @@ const shouldMountVerificationDialog = computed(
   () =>
     verificationDialogState.isOpen.value || Boolean(verificationDialogState.currentRequest.value)
 )
-const authKeepAliveExclude = ['AuthCallbackPage', 'JournalPage', 'CommunityLayout', 'ProfileLayout']
+const authKeepAliveExclude = [
+  'AuthCallbackPage',
+  'LoginPage',
+  'RegisterPage',
+  'ResetPasswordPage',
+  'ForgotPasswordPage',
+  'VerifyEmailPage',
+  'PasskeyRecoveryPage',
+  'PasskeyRecoveryStatusPage',
+  'JournalPage',
+  'CommunityLayout',
+  'ProfileLayout',
+]
 function resolveRouteKey(routeRecord: RouteLocationNormalizedLoaded): string {
   const viewKey = typeof routeRecord.meta.viewKey === 'string' ? routeRecord.meta.viewKey : ''
   return (
