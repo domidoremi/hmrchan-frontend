@@ -1,13 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installViewportMotion } from '../viewport-motion.js'
+import { createResizeObserver } from '@/utils/modernAPIs'
 
-let lifetime, callbacks, height, sceneBox, viewport, progress, top, order
+vi.mock('@/utils/modernAPIs', () => ({
+  createResizeObserver: vi.fn(),
+}))
+
+let lifetime, callbacks, height, sceneBox, viewport, progress, top, order, afterLayout, disconnect
 beforeEach(() => {
   document.body.innerHTML =
     '<div class="reading-progress"></div><button class="back-to-top" hidden></button><section data-depth-scene></section>'
   lifetime = new AbortController()
   callbacks = []
   order = []
+  disconnect = vi.fn()
+  vi.mocked(createResizeObserver).mockImplementation((callback) => {
+    afterLayout = callback
+    return { observe: vi.fn(), disconnect }
+  })
   vi.stubGlobal('scrollY', 0)
   vi.stubGlobal('innerHeight', 800)
   vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
@@ -55,9 +65,12 @@ describe('journal scroll geometry', () => {
     expect(height).not.toHaveBeenCalled()
     expect(sceneBox).not.toHaveBeenCalled()
     expect(top.hidden).toBe(true)
+    viewport.dispose()
+    expect(disconnect).toHaveBeenCalledOnce()
   })
   it('updates restored scroll positions with all reads before writes', () => {
     vi.stubGlobal('scrollY', 1000)
+    afterLayout()
     viewport.refresh()
     flush()
     expect(progress.style.getPropertyValue('--progress')).toBe('0.5')
