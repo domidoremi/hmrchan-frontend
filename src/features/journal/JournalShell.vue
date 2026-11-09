@@ -2,7 +2,7 @@
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
     <a class="skip-link" href="#main-content">跳至内容</a>
     <aside v-if="isNext && !isAuthRoute" class="archive-sidebar">
-      <RouterLink class="archive-logo" to="/" aria-label="m. MomiChan ARCHIVE 首页"
+      <RouterLink class="archive-logo" to="/"
         ><span class="brand-mark">m.</span><span>MomiChan<small>ARCHIVE</small></span></RouterLink
       >
       <button class="sidebar-search" data-action="search">
