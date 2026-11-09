@@ -12,10 +12,10 @@ const stylesIndex = readFileSync(resolve(process.cwd(), 'src/styles/index.css'),
 
 describe('SearchPage styles', () => {
   it('keeps page presentation in the layered page-system stylesheet', () => {
-    expect(searchPageSource).not.toContain('<style')
-    expect(stylesIndex).toContain(
-      "@import './page-systems/search-page-view.css' layer(page-systems);"
+    expect(searchPageSource).toContain(
+      "@import '@/styles/page-systems/search-page-view.css' layer(page-systems);"
     )
+    expect(stylesIndex).not.toContain('search-page-view.css')
     expect(searchPageStyles).toContain('.search-page .search-content {')
     expect(searchPageStyles).toContain('.search-page .search-history-layout {')
   })

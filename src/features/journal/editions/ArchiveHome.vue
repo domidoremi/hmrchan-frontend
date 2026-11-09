@@ -55,6 +55,12 @@
         <JournalIcon name="search" /><span>搜索动态、作者、标签</span><kbd>⌘ K</kbd></button
       ><RouterLink to="/explore" class="text-button">全部 <JournalIcon name="arrow" /></RouterLink>
     </section>
+    <ArchiveNavigationHint
+      :index="index"
+      :total="posts.length"
+      :preview-id="previewId"
+      :title="selected?.title"
+    />
     <div class="archive-observatory">
       <section class="archive-stream" data-reveal>
         <div class="stream-tabs">
@@ -82,6 +88,8 @@
               :class="{ selected: selectedId === post.id }"
               :aria-pressed="selectedId === post.id"
               :data-select-post="post.id"
+              :aria-controls="previewId"
+              :aria-describedby="`${previewId}-hint`"
               @click="select(post.id)"
               :tabindex="selectedId === post.id ? 0 : -1"
             >
@@ -107,9 +115,22 @@
           >全部动态 <JournalIcon name="arrow"
         /></RouterLink>
       </section>
-      <aside :ref="setPreview" class="observatory-preview" data-reveal>
+      <aside
+        :id="previewId"
+        :ref="setPreview"
+        aria-label="所选动态预览"
+        class="observatory-preview"
+        data-reveal
+      >
         <div class="preview-label">
-          <span class="status-light" />预览<span
+          <span class="status-light" />预览<button
+            class="text-button"
+            :disabled="!selected"
+            :data-open="selected?.id"
+            data-preview-open
+          >
+            打开 <JournalIcon name="arrow-up-right" /></button
+          ><span
             >{{ String(posts.length ? index + 1 : 0).padStart(2, '0') }} /
             {{ String(posts.length).padStart(2, '0') }}</span
           >
@@ -209,6 +230,7 @@ import JournalImage from '../JournalImage.vue'
 import ArchivePreview from './ArchivePreview.vue'
 import ArchiveSelectionDock from './ArchiveSelectionDock.vue'
 import { useArchiveNavigation } from './useArchiveNavigation'
+import ArchiveNavigationHint from './ArchiveNavigationHint.vue'
 import { sourceGroups, timelineGroups } from '../presentation'
 import { platforms, type JournalPost, type JournalEvent, type JournalDiscussion } from '../models'
 const props = defineProps<{
@@ -223,7 +245,8 @@ const props = defineProps<{
   sort: string
   month: string
 }>()
-defineEmits<{
+const emit = defineEmits<{
+  open: [post: JournalPost]
   save: [post: JournalPost, event: MouseEvent]
   platform: [value: string]
   sort: [value: string]
@@ -231,6 +254,7 @@ defineEmits<{
 const {
   selected,
   selectedId,
+  previewId,
   index,
   step,
   setRoot,
@@ -239,7 +263,10 @@ const {
   select,
   keydown,
   showPreview,
-} = useArchiveNavigation(computed(() => props.posts))
+} = useArchiveNavigation(
+  computed(() => props.posts),
+  (post) => emit('open', post)
+)
 const sources = computed(() => sourceGroups(props.allPosts)),
   groups = computed(() => timelineGroups(props.posts))
 const date = new Intl.DateTimeFormat('en-GB', {

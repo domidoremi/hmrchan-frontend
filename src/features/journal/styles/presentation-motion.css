@@ -1,3 +1,13 @@
+.site-body {
+  --journal-duration-control: 220ms;
+  --journal-duration-panel: 480ms;
+  --journal-ease: cubic-bezier(0.18, 0.75, 0.22, 1);
+}
+.site-body.journal-suspended .journal-shell *,
+.site-body.journal-suspended .journal-shell *::before,
+.site-body.journal-suspended .journal-shell *::after {
+  animation-play-state: paused !important;
+}
 .site-body[data-motion='full'] .journal-legacy :is(.security-panel, .settings-group-panel) {
   animation: business-panel-arrive 0.5s cubic-bezier(0.18, 0.75, 0.22, 1) both;
   transform-origin: left top;
@@ -32,7 +42,7 @@
   animation: desk-arrive 1.2s cubic-bezier(0.16, 0.8, 0.23, 1) both;
 }
 .site-body[data-motion='full'] .journal-shell .status-light:not(.dim) {
-  animation: status-breathe 3.8s ease-in-out infinite;
+  animation: status-breathe 3.8s ease-in-out 2;
 }
 .site-body .cover-copy-enter-active,
 .site-body .cover-copy-leave-active {

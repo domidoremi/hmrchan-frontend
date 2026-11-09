@@ -20,6 +20,7 @@
       :sort="sort"
       :month="month"
       @save="save"
+      @open="dialogs.openPost($event)"
       @platform="change('platform', $event)"
       @sort="change('sort', $event)"
     >
@@ -48,6 +49,7 @@
       @change="change"
       @reset="resetFilters"
       @save="save"
+      @open="dialogs.openPost($event)"
       @more="load(true)"
     >
       <template #empty
@@ -116,12 +118,6 @@ import { isUuidV7String } from '@/types/publicId'
 import { designEdition } from '@/config/designEdition'
 import EditorialHome from './editions/EditorialHome.vue'
 import ArchiveHome from './editions/ArchiveHome.vue'
-import EditorialBrowse from './editions/EditorialBrowse.vue'
-import ArchiveBrowse from './editions/ArchiveBrowse.vue'
-import EditorialSchedule from './editions/EditorialSchedule.vue'
-import ArchiveSchedule from './editions/ArchiveSchedule.vue'
-import EditorialCommunity from './editions/EditorialCommunity.vue'
-import ArchiveCommunity from './editions/ArchiveCommunity.vue'
 import JournalIcon from './JournalIcon.vue'
 import JournalState from './JournalState.vue'
 import { useJournalData } from './useJournalData'
@@ -136,9 +132,18 @@ const DiscussionComposer = defineAsyncComponent(
   () => import('@/components/community/DiscussionComposer.vue')
 )
 const JournalHome = designEdition === 'archive' ? ArchiveHome : EditorialHome
-const JournalBrowse = designEdition === 'archive' ? ArchiveBrowse : EditorialBrowse
-const JournalSchedule = designEdition === 'archive' ? ArchiveSchedule : EditorialSchedule
-const JournalCommunity = designEdition === 'archive' ? ArchiveCommunity : EditorialCommunity
+const JournalBrowse =
+  designEdition === 'archive'
+    ? defineAsyncComponent(() => import('./editions/ArchiveBrowse.vue'))
+    : defineAsyncComponent(() => import('./editions/EditorialBrowse.vue'))
+const JournalSchedule =
+  designEdition === 'archive'
+    ? defineAsyncComponent(() => import('./editions/ArchiveSchedule.vue'))
+    : defineAsyncComponent(() => import('./editions/EditorialSchedule.vue'))
+const JournalCommunity =
+  designEdition === 'archive'
+    ? defineAsyncComponent(() => import('./editions/ArchiveCommunity.vue'))
+    : defineAsyncComponent(() => import('./editions/EditorialCommunity.vue'))
 const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore(),

@@ -211,3 +211,7 @@ const linkGroups = computed(() => [
   { label: 'about.links.groupSocial', links: groupSocialLinks.value },
 ])
 </script>
+
+<style>
+@import '@/styles/page-systems/about-page-view.css' layer(page-systems);
+</style>

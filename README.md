@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://developers.cloudflare.com/pages/"><img alt="Cloudflare Pages" src="https://img.shields.io/badge/Deploy-Cloudflare_Pages-F38020?logo=cloudflare&logoColor=white"></a>
   <a href="docs/zh-CN/validation.md"><img alt="本地发布验证" src="https://img.shields.io/badge/Release-local_validation-2563EB?logo=checkmarx&logoColor=white"></a>
-  <a href="https://bun.sh/docs"><img alt="Bun 1.4.0" src="https://img.shields.io/badge/Bun-1.4.0-000000?logo=bun&logoColor=white"></a>
+  <a href="https://bun.sh/docs"><img alt="Bun 1.4.4" src="https://img.shields.io/badge/Bun-1.4.4-000000?logo=bun&logoColor=white"></a>
 </p>
 
 <p align="center">
@@ -16,20 +16,20 @@ HmrChan Frontend 是站点的 Vue 应用，负责公开内容、社区、账号�
 
 ### 应用
 
-[![Vue 3.6.0 beta.17](https://img.shields.io/badge/Vue-3.6.0--beta.17-42B883?logo=vuedotjs&logoColor=white)](https://vuejs.org/guide/)
+[![Vue 3.5.45](https://img.shields.io/badge/Vue-3.5.45-42B883?logo=vuedotjs&logoColor=white)](https://vuejs.org/guide/)
 [![TypeScript 6.0.3](https://img.shields.io/badge/TypeScript-6.0.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/)
-[![Vite 8.2.2](https://img.shields.io/badge/Vite-8.2.2-646CFF?logo=vite&logoColor=white)](https://vite.dev/guide/)
-[![Pinia 4.0.3](https://img.shields.io/badge/Pinia-4.0.3-FFD859?logo=pinia&logoColor=111827)](https://pinia.vuejs.org/)
-[![Vue Router 5.2.0](https://img.shields.io/badge/Vue_Router-5.2.0-42B883?logo=vuedotjs&logoColor=white)](https://router.vuejs.org/guide/)
-[![Vue I18n 12.0.0 alpha.4](https://img.shields.io/badge/Vue_I18n-12.0.0--alpha.4-26A69A?logo=vuedotjs&logoColor=white)](https://vue-i18n.intlify.dev/guide/introduction.html)
+[![Vite 8.3.7](https://img.shields.io/badge/Vite-8.3.7-646CFF?logo=vite&logoColor=white)](https://vite.dev/guide/)
+[![Pinia 4.1.0](https://img.shields.io/badge/Pinia-4.1.0-FFD859?logo=pinia&logoColor=111827)](https://pinia.vuejs.org/)
+[![Vue Router 5.4.0](https://img.shields.io/badge/Vue_Router-5.4.0-42B883?logo=vuedotjs&logoColor=white)](https://router.vuejs.org/guide/)
+[![Vue I18n 11.4.18](https://img.shields.io/badge/Vue_I18n-11.4.18-26A69A?logo=vuedotjs&logoColor=white)](https://vue-i18n.intlify.dev/guide/introduction.html)
 
 ### 平台与质量
 
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages_%2B_Functions-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/pages/)
-[![Vitest 5.0.0](https://img.shields.io/badge/Vitest-5.0.0-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/guide/)
-[![ESLint 10.9.0](https://img.shields.io/badge/ESLint-10.9.0-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/docs/latest/)
-[![Prettier 4.0.0 alpha.13](https://img.shields.io/badge/Prettier-4.0.0--alpha.13-F7B93E?logo=prettier&logoColor=111827)](https://prettier.io/docs/)
-[![Knip 6.32.2](https://img.shields.io/badge/Knip-6.32.2-EA580C)](https://knip.dev/overview/getting-started)
+[![Vitest 5.1.0](https://img.shields.io/badge/Vitest-5.1.0-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/guide/)
+[![ESLint 10.14.0](https://img.shields.io/badge/ESLint-10.14.0-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/docs/latest/)
+[![Prettier 3.9.10](https://img.shields.io/badge/Prettier-3.9.10-F7B93E?logo=prettier&logoColor=111827)](https://prettier.io/docs/)
+[![Knip 6.44.2](https://img.shields.io/badge/Knip-6.44.2-EA580C)](https://knip.dev/overview/getting-started)
 
 ## 项目范围
 
@@ -100,6 +100,7 @@ bun run dev
 
 ## 文档
 
+- [技术栈版本与升级策略](docs/zh-CN/stack-policy.md)
 - [发布验证](docs/zh-CN/validation.md)
 - [前端架构](docs/zh-CN/architecture.md)
 - [外观预设](docs/zh-CN/appearance-presets.md)

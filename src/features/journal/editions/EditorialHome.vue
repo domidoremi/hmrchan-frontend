@@ -18,13 +18,23 @@
       </div>
     </div>
     <SpatialCover :posts="posts" />
+    <EditorialContents :sections="contents" />
     <slot name="state" />
-    <section class="editorial-latest" data-reveal>
+    <section
+      id="issue-latest"
+      class="editorial-latest"
+      data-reading-section
+      tabindex="-1"
+      data-reveal
+    >
       <div class="section-heading">
         <span class="section-number">01</span>
         <h2>最近更新<small>THE LATEST</small></h2>
         <RouterLink to="/explore">全部动态 <JournalIcon name="arrow-up-right" /></RouterLink>
       </div>
+      <p class="reading-section-note">
+        <span>从这里，读起今天的更新。</span><span>{{ posts.length }} 条动态</span>
+      </p>
       <div class="editorial-source-bar">
         <div class="chips">
           <button
@@ -65,8 +75,20 @@
         />
       </div>
     </section>
-    <EditorialFilm v-if="pictures.length" :posts="pictures" />
-    <section class="editorial-calendar" data-reveal>
+    <EditorialFilm
+      v-if="pictures.length"
+      id="issue-film"
+      data-reading-section
+      tabindex="-1"
+      :posts="pictures"
+    />
+    <section
+      id="issue-calendar"
+      class="editorial-calendar"
+      data-reading-section
+      tabindex="-1"
+      data-reveal
+    >
       <div class="section-heading">
         <span class="section-number">03</span>
         <h2>日程<small>ON THE CALENDAR</small></h2>
@@ -89,7 +111,13 @@
         </div>
       </div>
     </section>
-    <section class="editorial-conversation" data-reveal>
+    <section
+      id="issue-conversation"
+      class="editorial-conversation"
+      data-reading-section
+      tabindex="-1"
+      data-reveal
+    >
       <div class="conversation-heading">
         <span>04 / COMMUNITY</span>
         <h2>讨论</h2>
@@ -125,6 +153,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import SpatialCover from './SpatialCover.vue'
+import EditorialContents from './EditorialContents.vue'
 import JournalIcon from '../JournalIcon.vue'
 import EditorialFilm from './EditorialFilm.vue'
 import JournalPostCard from '../JournalPostCard.vue'
@@ -150,6 +179,14 @@ defineEmits<{
 }>()
 const sources = computed(() => sourceGroups(props.allPosts)),
   pictures = computed(() => props.posts.filter((post) => post.image).slice(0, 10))
+const contents = computed(() => [
+  { id: 'issue-latest', number: '01', label: '动态', count: props.posts.length },
+  ...(pictures.value.length
+    ? [{ id: 'issue-film', number: '02', label: '影像', count: pictures.value.length }]
+    : []),
+  { id: 'issue-calendar', number: '03', label: '日程', count: props.events.length },
+  { id: 'issue-conversation', number: '04', label: '讨论', count: props.discussions.length },
+])
 const date = new Intl.DateTimeFormat('en', {
   timeZone: 'Asia/Taipei',
   day: '2-digit',

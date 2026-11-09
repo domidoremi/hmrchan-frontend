@@ -1,0 +1,98 @@
+.site-body .journal-shell .archive-navigation-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  padding-block: 14px;
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.site-body .journal-shell .archive-navigation-hint p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.site-body .journal-shell .selection-marker {
+  width: 5px;
+  height: 5px;
+  background: var(--accent);
+}
+.site-body .journal-shell .keyboard-guide {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.site-body .journal-shell .keyboard-guide kbd {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font: 10px monospace;
+  color: var(--ink);
+}
+.site-body .journal-shell .active-query-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-block: 14px 0;
+  font-size: 12px;
+}
+.site-body .journal-shell .active-query-summary > span {
+  color: var(--muted);
+  margin-right: 4px;
+}
+.site-body .journal-shell .active-query-summary button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  padding: 8px 12px;
+  min-height: 36px;
+  max-width: 100%;
+}
+.site-body .journal-shell .active-query-summary button span {
+  overflow-wrap: anywhere;
+}
+.site-body .journal-shell .active-query-summary svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+.site-body .journal-shell :is(.stream-row, .archive-result-row) {
+  position: relative;
+}
+.site-body .journal-shell :is(.stream-row, .archive-result-row).selected::before {
+  content: '';
+  position: absolute;
+  width: 3px;
+  inset: 14px auto 14px 0;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.site-body .journal-shell :is(.stream-row, .archive-result-row):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  z-index: 1;
+}
+.site-body .journal-shell .archive-preview {
+  min-height: 340px;
+}
+.site-body .journal-shell .archive-summary strong {
+  font-variant-numeric: tabular-nums;
+}
+@media (hover: none), (max-width: 760px) {
+  .site-body .journal-shell .keyboard-guide {
+    display: none;
+  }
+  .site-body .journal-shell .active-query-summary button {
+    min-height: 44px;
+  }
+}

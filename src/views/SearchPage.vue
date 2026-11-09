@@ -419,3 +419,7 @@ const tabs = computed(() => [
   { id: 'authors' as const, label: t('search.tab.authors'), icon: tabIcons.authors },
 ])
 </script>
+
+<style>
+@import '@/styles/page-systems/search-page-view.css' layer(page-systems);
+</style>

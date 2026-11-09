@@ -12,10 +12,10 @@ const stylesIndex = readFileSync(resolve(process.cwd(), 'src/styles/index.css'),
 
 describe('AboutPage styles', () => {
   it('keeps page presentation in the layered page-system stylesheet', () => {
-    expect(aboutPageSource).not.toContain('<style')
-    expect(stylesIndex).toContain(
-      "@import './page-systems/about-page-view.css' layer(page-systems);"
+    expect(aboutPageSource).toContain(
+      "@import '@/styles/page-systems/about-page-view.css' layer(page-systems);"
     )
+    expect(stylesIndex).not.toContain('about-page-view.css')
     expect(aboutPageStyles).toContain('.about-page .origin-content {')
     expect(aboutPageStyles).toContain('.about-page .tech-grid {')
   })
