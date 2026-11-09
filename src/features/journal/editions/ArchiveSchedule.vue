@@ -44,9 +44,9 @@
               :class="{ selected: selectedDay === String(day), today: isToday(day) }"
               :data-day="day"
               :aria-pressed="selectedDay === String(day)"
-              :aria-label="`${number} 月 ${day} 日，${dayEvents(day).length} 项活动`"
               @click="$emit('change', 'day', String(day))"
             >
+              <span class="sr-only">{{ number }} 月</span>
               <span>{{ String(day).padStart(2, '0') }}<small v-if="isToday(day)">今日</small></span>
               <div class="month-day-events">
                 <span

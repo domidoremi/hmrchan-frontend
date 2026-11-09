@@ -61,7 +61,7 @@
             :data-day="day"
             :class="{ active: selectedDay === String(day), today: isToday(day) }"
             :aria-pressed="selectedDay === String(day)"
-            :aria-label="`${number} 月 ${day} 日，${dayEvents(day).length} 项活动`"
+            :aria-label="`星期${weekday(day)}${String(day).padStart(2, '0')}，${number} 月 ${day} 日，${dayEvents(day).length} 项活动`"
             @click="$emit('change', 'day', String(day))"
           >
             <small>{{ weekday(day) }}</small

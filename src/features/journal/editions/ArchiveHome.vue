@@ -212,6 +212,7 @@ import { useArchiveNavigation } from './useArchiveNavigation'
 import { sourceGroups, timelineGroups } from '../presentation'
 import { platforms, type JournalPost, type JournalEvent, type JournalDiscussion } from '../models'
 const props = defineProps<{
+  loading?: boolean
   posts: JournalPost[]
   allPosts: JournalPost[]
   events: JournalEvent[]

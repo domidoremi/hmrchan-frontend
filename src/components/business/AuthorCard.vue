@@ -6,7 +6,6 @@
       'author-card--compact': compact,
       'author-card--has-prefetch-intent': prefetchOnHover,
     }"
-    :aria-label="cardAriaLabel"
     :data-prefetch-on-hover="prefetchOnHover ? 'true' : undefined"
     @click="emit('click', author.id)"
   >
@@ -97,12 +96,6 @@ const emit = defineEmits<{
 const displayName = computed(
   () => props.author.display_name || props.author.name || props.author.username || 'Unknown'
 )
-
-const cardAriaLabel = computed(() => {
-  const name = displayName.value.trim()
-  const username = props.author.username.trim()
-  return username && username !== name ? `${name} @${username}` : name
-})
 
 const resolvedAvatarSrc = computed(() => resolveAvatarSrc(props.author.avatar_url))
 
