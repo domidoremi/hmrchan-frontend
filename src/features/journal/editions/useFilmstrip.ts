@@ -1,5 +1,5 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
-import { createResizeObserver } from '@/utils/modernAPIs'
+import { createResizeObserver, createVisibilityObserver } from '@/utils/modernAPIs'
 import type { JournalPost } from '../models'
 
 export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
@@ -10,6 +10,8 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
   const canScroll = ref(false)
   let frame = 0,
     resize: ResizeObserver | null = null,
+    visibility: IntersectionObserver | null = null,
+    visible = false,
     suppressUntil = 0
   let pointer: { id: number; x: number; y: number; left: number } | undefined
   const cards = () => [...(track.value?.querySelectorAll<HTMLElement>('.film-frame') || [])]
@@ -18,15 +20,19 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
   function measure() {
     frame = 0
     const element = track.value
-    if (!element) return
-    const max = element.scrollWidth - element.clientWidth
+    if (!element || !visible || document.hidden) return
+    const width = element.clientWidth
+    if (!width) return
+    const left = element.scrollLeft
+    const max = element.scrollWidth - width
     canScroll.value = max > 2
-    progress.value = max > 0 ? Math.min(1, Math.max(0, element.scrollLeft / max)) : 0
+    progress.value = max > 0 ? Math.min(1, Math.max(0, left / max)) : 0
     let closest = Infinity
-    cards().forEach((card, i) => {
-      const offset =
-        (card.offsetLeft + card.offsetWidth / 2 - element.scrollLeft - element.clientWidth / 2) /
-        element.clientWidth
+    const positions = cards().map((card) => ({
+      card,
+      offset: (card.offsetLeft + card.offsetWidth / 2 - left - width / 2) / width,
+    }))
+    positions.forEach(({ card, offset }, i) => {
       card.style.setProperty('--film-offset', String(Math.max(-1.5, Math.min(1.5, offset))))
       card.style.setProperty('--film-distance', String(Math.min(1, Math.abs(offset))))
       if (Math.abs(offset) < closest) {
@@ -141,12 +147,22 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
   )
   onMounted(() => {
     resize = createResizeObserver(schedule)
-    if (track.value) resize?.observe(track.value)
-    schedule()
+    visibility = createVisibilityObserver(
+      ([entry]) => {
+        visible = Boolean(entry?.isIntersecting)
+        if (visible) schedule()
+      },
+      { rootMargin: '300px 0px' }
+    )
+    if (track.value) {
+      resize?.observe(track.value)
+      visibility.observe(track.value)
+    }
   })
   onBeforeUnmount(() => {
     cancelAnimationFrame(frame)
     resize?.disconnect()
+    visibility?.disconnect()
   })
   function setTrack(element: unknown) {
     track.value = element instanceof HTMLElement ? element : undefined
