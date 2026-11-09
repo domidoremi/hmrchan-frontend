@@ -390,6 +390,40 @@ body.site-body.app-dialog-open {
   padding: 10px;
   background: var(--canvas);
 }
+body.site-body .toast-viewport .toast-card {
+  background: var(--paper);
+  border-color: var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+}
+body.site-body .toast-card .toast-card__title,
+body.site-body .toast-card .toast-card__action,
+body.site-body .toast-card .toast-card__action:hover,
+body.site-body .toast-card .toast-card__action:focus-visible {
+  color: var(--ink);
+}
+body.site-body .toast-card .toast-card__message,
+body.site-body .toast-card .toast-card__close {
+  color: var(--muted);
+}
+body.site-body .toast-card .toast-card__action {
+  min-height: 36px;
+  background: var(--canvas);
+  border-color: var(--line);
+  border-radius: var(--radius);
+}
+body.site-body .toast-card .toast-card__action:focus-visible,
+body.site-body .toast-card .toast-card__close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  body.site-body .toast-card .toast-card__action,
+  body.site-body .toast-card .toast-card__close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
 .site-body .toast {
   position: fixed;
   bottom: 28px;
