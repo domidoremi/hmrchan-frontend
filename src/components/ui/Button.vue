@@ -462,7 +462,7 @@ function handleMouseLeave() {
 }
 
 .btn-visual--hidden {
-  visibility: hidden;
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
