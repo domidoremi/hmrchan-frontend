@@ -1,0 +1,265 @@
+/* Scoped to the recovery surface; the normal application keeps its own tokens. */
+html[data-bootstrap-pending] body {
+  margin: 0;
+}
+#app-root[data-bootstrap-recovery] > [data-prerender-shell] {
+  display: none !important;
+}
+html:not([data-bootstrap-pending]) [data-prerender-shell] span[role='status'] {
+  display: none !important;
+}
+.boot-recovery {
+  --boot-paper: #f5f3eb;
+  --boot-ink: #262c28;
+  --boot-muted: #5d665e;
+  --boot-line: #d5d8cc;
+  --boot-accent: #aa422c;
+  --boot-panel: #eeede4;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  margin: 0;
+  background: var(--boot-paper);
+  color: var(--boot-ink);
+  color-scheme: light;
+  font:
+    14px/1.6 system-ui,
+    sans-serif;
+}
+.boot-recovery *,
+.boot-recovery *::before,
+.boot-recovery *::after {
+  box-sizing: border-box;
+}
+.boot-recovery[data-color='dark'] {
+  --boot-paper: #151816;
+  --boot-ink: #efeee6;
+  --boot-muted: #b9c0b6;
+  --boot-line: #3d483d;
+  --boot-accent: #f3ac8f;
+  --boot-panel: #202720;
+  color-scheme: dark;
+}
+.boot-recovery[data-edition='archive'] {
+  --boot-paper: #f0f3ef;
+  --boot-ink: #1e3429;
+  --boot-muted: #53675a;
+  --boot-accent: #2b6549;
+  --boot-line: #c3d0c1;
+  --boot-panel: #e4eae2;
+}
+.boot-recovery[data-edition='archive'][data-color='dark'] {
+  --boot-paper: #101d17;
+  --boot-ink: #e4eee3;
+  --boot-muted: #a7bcab;
+  --boot-accent: #9bd4ac;
+  --boot-line: #3c5142;
+  --boot-panel: #1b2b22;
+}
+.boot-recovery a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
+.boot-recovery :is(h1, h2) {
+  color: var(--boot-ink);
+}
+.boot-recovery :is(a, button):focus-visible {
+  outline: 3px solid var(--boot-accent);
+  outline-offset: 5px;
+}
+.boot-recovery :is(a, button) {
+  touch-action: manipulation;
+}
+.boot-recovery__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 80px;
+  padding: 20px 5vw;
+  border-bottom: 1px solid var(--boot-line);
+}
+.boot-recovery__brand {
+  font:
+    700 29px/1 Georgia,
+    serif;
+  letter-spacing: -1.6px;
+  text-decoration: none;
+}
+.boot-recovery__index {
+  font:
+    10px/1.6 ui-monospace,
+    monospace;
+  letter-spacing: 1px;
+  color: var(--boot-muted);
+  text-align: right;
+}
+.boot-recovery__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8vw;
+  padding: 64px 8vw;
+  width: 100%;
+  max-width: 1600px;
+  margin: auto;
+}
+.boot-recovery small {
+  font:
+    10px/1.6 ui-monospace,
+    monospace;
+  letter-spacing: 2px;
+  color: var(--boot-accent);
+}
+.boot-recovery__intro h1 {
+  font:
+    500 clamp(38px, 5.4vw, 72px)/1.2 Georgia,
+    'Songti SC',
+    serif;
+  letter-spacing: -0.04em;
+  margin: 24px 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.boot-recovery p {
+  color: var(--boot-muted);
+  max-width: 430px;
+  margin: 0;
+}
+.boot-recovery__status {
+  padding: 28px 0;
+  border-block: 1px solid var(--boot-line);
+}
+.boot-recovery__status small {
+  color: var(--boot-muted);
+}
+.boot-recovery__live {
+  margin-top: 24px;
+}
+.boot-recovery__live h2 {
+  font:
+    500 24px/1.5 system-ui,
+    sans-serif;
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.boot-recovery__live p {
+  min-height: 3.2em;
+  margin-bottom: 26px;
+}
+.boot-recovery__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.boot-recovery__actions a,
+.boot-recovery__nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.boot-recovery__retry {
+  min-height: 46px;
+  padding: 11px 18px;
+  border: 1px solid var(--boot-ink);
+  border-radius: 2px;
+  background: var(--boot-ink);
+  color: var(--boot-paper);
+  font: inherit;
+  cursor: pointer;
+}
+.boot-recovery__retry::after {
+  content: '↗';
+  margin-left: 24px;
+}
+.boot-recovery__retry:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.boot-recovery__progress {
+  display: block;
+  height: 2px;
+  background: var(--boot-line);
+  overflow: hidden;
+  margin-top: 28px;
+}
+.boot-recovery__progress i {
+  display: block;
+  width: 35%;
+  height: 100%;
+  background: var(--boot-accent);
+}
+.boot-recovery[data-state='error'] .boot-recovery__progress,
+.boot-recovery[data-state='offline'] .boot-recovery__progress {
+  visibility: hidden;
+}
+.boot-recovery__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 16px 0;
+  margin: 0 5vw;
+  border-top: 1px solid var(--boot-line);
+  font-size: 12px;
+}
+.boot-recovery[data-edition='archive'] .boot-recovery__brand {
+  font-size: 43px;
+  letter-spacing: -3px;
+}
+.boot-recovery[data-edition='archive'] .boot-recovery__intro h1 {
+  font-family: system-ui, sans-serif;
+  font-size: clamp(34px, 4.2vw, 58px);
+  line-height: 1.3;
+}
+.boot-recovery[data-edition='archive'] .boot-recovery__status {
+  background: var(--boot-panel);
+  border: 1px solid var(--boot-line);
+  padding: 30px;
+}
+.boot-recovery[data-edition='archive'] .boot-recovery__retry {
+  border-radius: 5px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .boot-recovery[data-state='slow']:not([data-reduced='true']) .boot-recovery__progress i {
+    animation: boot-recovery-progress 1.8s ease-in-out infinite;
+  }
+  @keyframes boot-recovery-progress {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(390%);
+    }
+  }
+}
+@media (max-width: 700px) {
+  .boot-recovery__body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
+    padding: 36px 6vw;
+  }
+  .boot-recovery__intro h1 {
+    font-size: 40px;
+  }
+  .boot-recovery__top {
+    padding-inline: 6vw;
+    min-height: 74px;
+  }
+  .boot-recovery__brand {
+    font-size: 26px;
+  }
+  .boot-recovery__index {
+    font-size: 9px;
+  }
+  .boot-recovery__live h2 {
+    font-size: 22px;
+  }
+  .boot-recovery[data-edition='archive'] .boot-recovery__status {
+    padding: 22px;
+  }
+  .boot-recovery__nav {
+    margin-inline: 6vw;
+  }
+}

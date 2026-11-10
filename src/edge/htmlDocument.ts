@@ -704,6 +704,7 @@ function renderDefaultPrerenderShell(config: HtmlDocumentConfig): string {
             <h1 style="margin:0;letter-spacing:normal;font:700 clamp(2rem,5vw,3.5rem)/1.05 ui-sans-serif,system-ui;color:#020617;">${escapeHtml(config.shellTitle)}</h1>
             <p style="margin:0;max-width:68ch;font:400 1rem/1.8 ui-sans-serif,system-ui;color:#334155;">${escapeHtml(config.shellBody)}</p>
             ${summaryMarkup}
+            <noscript><p lang="en" style="margin:0;font:400 0.9375rem/1.7 ui-sans-serif,system-ui;">JavaScript is disabled. Use the public links below to browse. Interactive features require JavaScript.</p></noscript>
             ${linksMarkup}
           </article>
           <aside style="display:grid;gap:1rem;">
@@ -731,6 +732,7 @@ function renderHomePrerenderShell(config: HtmlDocumentConfig): string {
             <h1 style="margin:0;max-width:14ch;font:700 clamp(2.5rem,6vw,4rem)/1.02 ui-sans-serif,system-ui;color:#0f172a;letter-spacing:-0.03em;text-wrap:balance;">${escapeHtml(config.shellTitle)}</h1>
             <p style="margin:0;max-width:62ch;font:400 1rem/1.8 ui-sans-serif,system-ui;color:#334155;">${escapeHtml(config.shellBody)}</p>
             ${summaryMarkup}
+            <noscript><p lang="en" style="margin:0;font:400 0.9375rem/1.7 ui-sans-serif,system-ui;">JavaScript is disabled. Use the public links below to browse. Interactive features require JavaScript.</p></noscript>
             ${linksMarkup}
           </article>
           <aside style="display:grid;gap:1rem;align-content:center;">

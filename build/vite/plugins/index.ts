@@ -1,3 +1,4 @@
+export { bootstrapRecoveryPlugin } from './bootstrapRecovery.ts'
 export { asyncCssPlugin } from './asyncCss.ts'
 export { criticalCSSPlugin } from './criticalCss.ts'
 export { obfuscationPlugin } from './obfuscation.ts'
