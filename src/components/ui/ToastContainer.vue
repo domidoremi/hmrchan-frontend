@@ -1,342 +1,252 @@
 <template>
-  <div
-    class="toast-viewport"
-    :class="`toast-viewport--${normalizedPosition}`"
-    :data-preset="settings.appearancePreset"
-    :data-color-mode="resolvedTheme"
-    :data-motion="motionMode"
-    data-scene-role="utility"
-  >
-    <TransitionGroup name="toast-slide" tag="div" class="toast-stack">
+  <Teleport :to="portalTarget">
+    <aside
+      v-if="current"
+      ref="region"
+      class="toast-viewport"
+      :class="{ 'toast-viewport--bottom': dock === 'bottom' }"
+      :data-edition="designEdition"
+      :data-preset="settings.appearancePreset"
+      :data-color-mode="resolvedTheme"
+      :data-motion="motionMode"
+      :aria-label="t('toast.region')"
+      data-scene-role="utility"
+      @pointerenter="onPointerEnter"
+      @pointerleave="toastStore.resumeTimer(current.id, 'pointer')"
+      @focusin="toastStore.pauseTimer(current.id, 'focus')"
+      @focusout="onFocusOut"
+      @keydown.esc.stop.prevent="dismiss"
+    >
       <section
-        v-for="toast in visibleToasts"
-        :key="toast.id"
+        :key="current.id"
         class="toast-card"
-        :class="`toast-card--${toast.type}`"
-        role="alert"
-        @mouseenter="handlePause(toast.id)"
-        @mouseleave="handleResume(toast.id)"
+        :class="['toast-card--' + current.type, { 'is-collapsed': collapsed }]"
       >
-        <span class="toast-card__accent" aria-hidden="true" />
-
-        <div class="toast-card__icon">
-          <component :is="getIcon(toast.type)" :size="18" />
-        </div>
-
-        <div class="toast-card__body">
-          <h4 v-if="toast.title" class="toast-card__title">{{ toast.title }}</h4>
-          <p class="toast-card__message">{{ toast.message }}</p>
-
+        <div class="toast-card__heading">
+          <component :is="icon" :size="18" aria-hidden="true" />
+          <span class="toast-card__kind">{{ t('toast.' + current.type) }}</span>
+          <span v-if="queued" class="toast-card__queue">{{
+            t('toast.queued', { count: queued })
+          }}</span>
           <button
-            v-if="toast.action"
+            class="toast-card__collapse"
             type="button"
-            class="toast-card__action"
-            @click="handleAction(toast)"
+            :aria-label="t(collapsed ? 'toast.expand' : 'toast.collapse')"
+            :aria-expanded="!collapsed"
+            aria-controls="toast-message"
+            @click="toggleCollapsed"
           >
-            {{ toast.action.label }}
+            <ChevronDown v-if="collapsed" :size="16" /><Minus v-else :size="16" />
+          </button>
+          <button
+            class="toast-card__close"
+            type="button"
+            :disabled="acting"
+            :aria-label="t('toast.close')"
+            @click="dismiss"
+          >
+            <X :size="18" />
           </button>
         </div>
-
-        <button
-          type="button"
-          class="toast-card__close"
-          :aria-label="$t('common.close')"
-          @click="removeToast(toast.id)"
-        >
-          <X :size="16" />
-        </button>
-
+        <div v-show="!collapsed" id="toast-message" class="toast-card__body">
+          <p v-if="current.title" class="toast-card__title">{{ current.title }}</p>
+          <p class="toast-card__message">{{ current.message }}</p>
+          <p v-if="actionError" class="toast-card__message">{{ actionError }}</p>
+          <div class="toast-card__footer">
+            <button
+              v-if="current.action"
+              type="button"
+              class="toast-card__action"
+              :disabled="acting"
+              @click="handleAction"
+            >
+              {{ acting ? t('common.loading') : current.action.label }}
+            </button>
+            <span class="toast-card__reading">{{
+              t(
+                current.duration === 0
+                  ? 'toast.persistent'
+                  : timing?.paused
+                    ? 'toast.paused'
+                    : 'toast.reading'
+              )
+            }}</span>
+          </div>
+        </div>
         <span
-          v-if="toast.duration > 0"
+          v-if="current.duration > 0 && !collapsed"
+          :key="current.id + ':' + timing?.revision"
           class="toast-card__progress"
-          :class="{ 'is-paused': isPaused(toast.id) }"
-          :style="{ animationDuration: `${toast.duration}ms` }"
+          :class="{ 'is-paused': timing?.paused }"
+          :style="{
+            '--toast-fraction': String((timing?.remaining ?? current.duration) / current.duration),
+            animationDuration: (timing?.remaining ?? current.duration) + 'ms',
+          }"
+          aria-hidden="true"
         />
       </section>
-    </TransitionGroup>
-  </div>
+    </aside>
+    <div class="toast-announcement" role="status" aria-live="polite" aria-atomic="true">
+      {{ announcement }}
+    </div>
+    <div class="toast-announcement" role="alert" aria-atomic="true">{{ urgentAnnouncement }}</div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { AlertTriangle, CheckCircle2, Info, TriangleAlert, X, CircleAlert } from '@lucide/vue'
-import { useToastStore, useThemeStore, useSettingsStore, type Toast } from '@/stores'
+import { useI18n } from 'vue-i18n'
+import { Check, Info, TriangleAlert, CircleAlert, X, Minus, ChevronDown } from '@lucide/vue'
+import { designEdition } from '@/config/designEdition'
+import { useToastStore, useThemeStore, useSettingsStore } from '@/stores'
+import { useToastPortal } from './useToastPortal'
+import './toast.css'
 
-defineOptions({ name: 'UiToastContainer' })
-
-interface Props {
-  position?:
-    'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center'
-}
-
-const { position = 'bottom-center' } = defineProps<Props>()
-
+defineOptions({ name: 'UiToastContainer', inheritAttrs: false })
+const { t } = useI18n()
+const { portalTarget, syncPortal } = useToastPortal()
 const toastStore = useToastStore()
-const themeStore = useThemeStore()
-const settingsStore = useSettingsStore()
+const { settings, motionMode } = storeToRefs(useSettingsStore())
+const { resolvedTheme } = storeToRefs(useThemeStore())
+const current = computed(() => toastStore.toasts[0])
+const queued = computed(() => Math.max(0, toastStore.toasts.length - 1))
+const timing = computed(() =>
+  current.value ? toastStore.timings.get(current.value.id) : undefined
+)
+const icon = computed(
+  () =>
+    ({ success: Check, error: CircleAlert, warning: TriangleAlert, info: Info })[
+      current.value?.type ?? 'info'
+    ]
+)
+const region = ref<HTMLElement | null>(null)
+const collapsed = ref(false),
+  acting = ref(false),
+  dock = ref<'top' | 'bottom'>('top')
+const announcement = ref(''),
+  urgentAnnouncement = ref(''),
+  actionError = ref('')
+let returnTarget: HTMLElement | null = null
+let mounted = false
 
-const { toasts } = storeToRefs(toastStore)
-const { resolvedTheme } = storeToRefs(themeStore)
-const { settings, motionMode } = storeToRefs(settingsStore)
-const { removeToast } = toastStore
-
-const pausedIds = ref(new Set<string>())
-const visibleToasts = computed(() => toasts.value.slice(0, 5))
-const normalizedPosition = computed<'bottom-center'>(() => {
-  if (!position) return 'bottom-center'
-  return 'bottom-center'
+function onPointerEnter(event: PointerEvent) {
+  if (current.value && event.pointerType !== 'touch')
+    toastStore.pauseTimer(current.value.id, 'pointer')
+}
+function onFocusOut(event: FocusEvent) {
+  if (current.value && !region.value?.contains(event.relatedTarget as Node | null))
+    toastStore.resumeTimer(current.value.id, 'focus')
+}
+function toggleCollapsed() {
+  const toast = current.value
+  if (!toast) return
+  collapsed.value = !collapsed.value
+  if (collapsed.value) toastStore.pauseTimer(toast.id, 'collapsed')
+  else toastStore.resumeTimer(toast.id, 'collapsed')
+}
+function restoreFocus() {
+  const target =
+    returnTarget?.isConnected && returnTarget.getClientRects().length
+      ? returnTarget
+      : (document.querySelector<HTMLElement>('dialog[open]') ??
+        document.querySelector<HTMLElement>('#main-content'))
+  target?.focus({ preventScroll: true })
+}
+function dismiss() {
+  if (!current.value || acting.value) return
+  if (region.value?.contains(document.activeElement)) restoreFocus()
+  toastStore.removeToast(current.value.id)
+}
+async function handleAction() {
+  const toast = current.value
+  if (!toast?.action || acting.value) return
+  acting.value = true
+  actionError.value = ''
+  toastStore.pauseTimer(toast.id, 'action')
+  try {
+    await toast.action.onClick()
+    if (mounted && current.value?.id === toast.id) {
+      if (region.value?.contains(document.activeElement)) restoreFocus()
+      toastStore.removeToast(toast.id)
+    }
+  } catch {
+    if (mounted && current.value?.id === toast.id) {
+      actionError.value = t('toast.actionFailed')
+      urgentAnnouncement.value = actionError.value
+    }
+  } finally {
+    if (mounted && current.value?.id === toast.id) acting.value = false
+    toastStore.resumeTimer(toast.id, 'action')
+  }
+}
+function onWindowBlur() {
+  toastStore.setWindowFocused(false)
+}
+function onWindowFocus() {
+  toastStore.setWindowFocused(true)
+}
+function syncVisibility() {
+  toastStore.setPageHidden(document.hidden)
+}
+function protectFocusedControl(event?: FocusEvent) {
+  const target = event?.target ?? document.activeElement
+  if (
+    !(target instanceof HTMLElement) ||
+    target === document.body ||
+    region.value?.contains(target)
+  )
+    return
+  returnTarget = target
+  const notice = region.value?.getBoundingClientRect(),
+    control = target.getBoundingClientRect()
+  if (
+    notice &&
+    control.width &&
+    control.height &&
+    control.left < notice.right &&
+    control.right > notice.left &&
+    control.top < notice.bottom &&
+    control.bottom > notice.top
+  )
+    dock.value = control.top < innerHeight / 2 ? 'bottom' : 'top'
+}
+async function activateCurrent(id: string | undefined) {
+  collapsed.value = false
+  acting.value = false
+  actionError.value = ''
+  dock.value = 'top'
+  announcement.value = ''
+  urgentAnnouncement.value = ''
+  syncPortal()
+  await nextTick()
+  if (id !== current.value?.id || !mounted) return
+  toastStore.setVisibleToasts(id ? [id] : [])
+  if (!current.value) return
+  const message = [current.value.title, current.value.message].filter(Boolean).join('。')
+  if (current.value.type === 'error') urgentAnnouncement.value = message
+  else announcement.value = message
+  protectFocusedControl()
+  if (region.value?.matches(':hover')) toastStore.pauseTimer(id!, 'pointer')
+  if (region.value?.contains(document.activeElement)) toastStore.pauseTimer(id!, 'focus')
+}
+watch(() => current.value?.id, activateCurrent, { flush: 'post' })
+onMounted(() => {
+  mounted = true
+  syncVisibility()
+  toastStore.setWindowFocused(document.hasFocus())
+  window.addEventListener('blur', onWindowBlur)
+  window.addEventListener('focus', onWindowFocus)
+  void activateCurrent(current.value?.id)
+  document.addEventListener('visibilitychange', syncVisibility)
+  document.addEventListener('focusin', protectFocusedControl)
 })
-
-function getIcon(type: Toast['type']) {
-  if (type === 'success') return CheckCircle2
-  if (type === 'error') return CircleAlert
-  if (type === 'warning') return TriangleAlert
-  if (type === 'info') return Info
-  return AlertTriangle
-}
-
-function handlePause(id: string) {
-  pausedIds.value = new Set([...pausedIds.value, id])
-  toastStore.pauseTimer(id)
-}
-
-function handleResume(id: string) {
-  const next = new Set(pausedIds.value)
-  next.delete(id)
-  pausedIds.value = next
-  toastStore.resumeTimer(id)
-}
-
-function isPaused(id: string) {
-  return pausedIds.value.has(id)
-}
-
-function handleAction(toast: Toast) {
-  toast.action?.onClick?.()
-  removeToast(toast.id)
-}
+onBeforeUnmount(() => {
+  mounted = false
+  window.removeEventListener('blur', onWindowBlur)
+  window.removeEventListener('focus', onWindowFocus)
+  toastStore.setVisibleToasts([])
+  document.removeEventListener('visibilitychange', syncVisibility)
+  document.removeEventListener('focusin', protectFocusedControl)
+})
 </script>
-
-<style scoped>
-.toast-viewport {
-  position: fixed;
-  z-index: var(--z-toast);
-  pointer-events: none;
-  inset-inline: 0;
-  display: flex;
-  justify-content: center;
-  padding-inline: var(--spacing-4);
-  padding-block-end: calc(env(safe-area-inset-bottom, 0rem) + var(--spacing-4));
-}
-
-.toast-viewport--bottom-center {
-  inset-block-end: 0;
-}
-
-.toast-stack {
-  display: grid;
-  gap: 0.875rem;
-  inline-size: min(26rem, calc(100vw - 1.5rem));
-}
-
-.toast-card {
-  --toast-accent: var(--color-info);
-  position: relative;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: flex-start;
-  gap: 0.875rem;
-  overflow: hidden;
-  padding-block: 0.9375rem;
-  padding-inline: 1rem;
-  border: 1px solid color-mix(in srgb, var(--ui-compat-border) 72%, transparent);
-  border-radius: clamp(1rem, 2vw, 1.25rem);
-  background: color-mix(in srgb, var(--ui-compat-surface-elevated) 88%, transparent);
-  box-shadow:
-    0 1rem 2.5rem rgba(15, 23, 42, 0.16),
-    0 0.25rem 1rem rgba(15, 23, 42, 0.1);
-  backdrop-filter: blur(1rem) saturate(1.08);
-  -webkit-backdrop-filter: blur(1rem) saturate(1.08);
-  pointer-events: auto;
-}
-
-.toast-card--success {
-  --toast-accent: var(--color-success);
-}
-
-.toast-card--error {
-  --toast-accent: var(--color-error);
-}
-
-.toast-card--warning {
-  --toast-accent: var(--color-warning);
-}
-
-.toast-card--info {
-  --toast-accent: var(--color-info);
-}
-
-.toast-card__accent {
-  position: absolute;
-  inset-block-start: 0.75rem;
-  inset-inline-start: 0.75rem;
-  inline-size: 0.625rem;
-  block-size: 0.625rem;
-  border-radius: 999rem;
-  background: color-mix(in srgb, var(--toast-accent) 86%, white 14%);
-  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--toast-accent) 12%, transparent);
-}
-
-.toast-card__icon {
-  display: grid;
-  place-items: center;
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
-  margin-block-start: 0.125rem;
-  border-radius: 0.9rem;
-  color: color-mix(in srgb, var(--toast-accent) 82%, var(--color-text-primary) 18%);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--toast-accent) 16%, transparent),
-    color-mix(in srgb, var(--toast-accent) 9%, white 8%)
-  );
-  border: 1px solid color-mix(in srgb, var(--toast-accent) 16%, transparent);
-}
-
-.toast-card__body {
-  display: grid;
-  gap: 0.35rem;
-  min-inline-size: 0;
-}
-
-.toast-card__title,
-.toast-card__message {
-  margin: 0;
-  word-break: break-word;
-}
-
-.toast-card__title {
-  font-size: 0.9375rem;
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  line-height: 1.35;
-}
-
-.toast-card__message {
-  font-size: var(--text-sm);
-  line-height: 1.55;
-  color: var(--color-text-secondary);
-}
-
-.toast-card__action,
-.toast-card__close {
-  color: var(--color-text-tertiary);
-  transition:
-    color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
-}
-
-.toast-card__action {
-  margin-block-start: 0.1rem;
-  justify-self: start;
-  padding: 0.375rem 0.625rem;
-  border-radius: 999rem;
-  border: 1px solid color-mix(in srgb, var(--toast-accent) 18%, transparent);
-  background: color-mix(in srgb, var(--toast-accent) 8%, transparent);
-  font-size: 0.75rem;
-  font-weight: var(--font-medium);
-  color: var(--toast-accent);
-}
-
-.toast-card__close {
-  display: grid;
-  place-items: center;
-  align-self: start;
-  inline-size: 2rem;
-  block-size: 2rem;
-  border: 1px solid transparent;
-  border-radius: 999rem;
-}
-
-.toast-card__close:hover,
-.toast-card__close:focus-visible {
-  color: var(--color-text-primary);
-  background: color-mix(in srgb, var(--ui-compat-surface-interactive) 82%, transparent);
-  border-color: color-mix(in srgb, var(--ui-compat-border) 80%, transparent);
-  transform: translateY(-0.0625rem);
-}
-
-.toast-card__action:hover,
-.toast-card__action:focus-visible {
-  color: color-mix(in srgb, var(--toast-accent) 82%, var(--color-text-primary) 18%);
-  background: color-mix(in srgb, var(--toast-accent) 14%, transparent);
-  border-color: color-mix(in srgb, var(--toast-accent) 28%, transparent);
-}
-
-.toast-card__progress {
-  position: absolute;
-  inset-block-end: 0;
-  inset-inline: 0;
-  block-size: 0.125rem;
-  transform-origin: left center;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--toast-accent) 55%, transparent),
-    color-mix(in srgb, var(--toast-accent) 18%, transparent)
-  );
-  animation: toast-progress linear forwards;
-}
-
-.toast-card__progress.is-paused {
-  animation-play-state: paused;
-}
-
-.toast-slide-enter-active,
-.toast-slide-leave-active,
-.toast-slide-move {
-  transition:
-    transform 220ms ease,
-    opacity 220ms ease;
-}
-
-.toast-slide-enter-from,
-.toast-slide-leave-to {
-  opacity: 0;
-  transform: translateY(0.875rem) scale(0.985);
-}
-
-@keyframes toast-progress {
-  from {
-    transform: scaleX(1);
-  }
-
-  to {
-    transform: scaleX(0);
-  }
-}
-
-@media (max-width: 40rem) {
-  .toast-viewport {
-    padding-inline: 0.75rem;
-    padding-block-end: calc(env(safe-area-inset-bottom, 0rem) + 0.75rem);
-  }
-
-  .toast-stack {
-    width: min(100%, 100vw - 1.5rem);
-  }
-
-  .toast-card {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 0.75rem;
-    padding-inline: 0.875rem;
-  }
-
-  .toast-card__icon {
-    inline-size: 2.25rem;
-    block-size: 2.25rem;
-  }
-}
-</style>

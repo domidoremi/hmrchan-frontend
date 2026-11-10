@@ -1,4 +1,19 @@
 {
+  "toast": {
+    "region": "Action feedback",
+    "success": "Done",
+    "info": "Update",
+    "warning": "Please note",
+    "error": "Needs attention",
+    "queued": "{count} more",
+    "expand": "Expand notification",
+    "collapse": "Collapse and keep notification",
+    "close": "Dismiss notification",
+    "persistent": "Stays until dismissed",
+    "paused": "Paused for reading",
+    "reading": "Hover or focus to pause",
+    "actionFailed": "The action could not be completed. Please try again."
+  },
   "app": {
     "name": "MomiChan"
   },

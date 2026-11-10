@@ -26,7 +26,7 @@
         </RouterView>
       </ErrorBoundary>
     </JournalShell>
-    <Teleport to="body"><ToastContainer position="bottom-center" /></Teleport>
+    <ToastContainer />
     <ClientChallengeDialog v-if="shouldMountClientChallengeDialog" />
     <VerificationDialog v-if="shouldMountVerificationDialog" />
   </div>
