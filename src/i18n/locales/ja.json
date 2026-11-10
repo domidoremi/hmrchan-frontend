@@ -1,4 +1,19 @@
 {
+  "toast": {
+    "region": "操作結果",
+    "success": "完了",
+    "info": "お知らせ",
+    "warning": "ご確認ください",
+    "error": "対応が必要です",
+    "queued": "ほか {count} 件",
+    "expand": "通知を展開",
+    "collapse": "通知を折りたたんで保持",
+    "close": "現在の通知を閉じる",
+    "persistent": "閉じるまで表示",
+    "paused": "読む間は一時停止",
+    "reading": "ホバーやフォーカスで一時停止",
+    "actionFailed": "操作を完了できませんでした。もう一度お試しください。"
+  },
   "app": {
     "name": "MomiChan"
   },

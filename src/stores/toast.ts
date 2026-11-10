@@ -1,9 +1,9 @@
-import { ref } from 'vue'
+import { onScopeDispose, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 
 export interface ToastAction {
   label: string
-  onClick: () => void
+  onClick: () => void | Promise<void>
 }
 
 export interface Toast {
@@ -15,123 +15,157 @@ export interface Toast {
   action?: ToastAction
 }
 
+type PauseReason = 'pointer' | 'focus' | 'hidden' | 'window' | 'queued' | 'collapsed' | 'action'
+interface ToastTiming {
+  remaining: number
+  startedAt: number
+  paused: boolean
+  revision: number
+}
+interface ToastOptions {
+  title?: string
+  action?: ToastAction
+}
+
 export const useToastStore = defineStore('toast', () => {
   const toasts = ref<Toast[]>([])
+  const timings = reactive(new Map<string, ToastTiming>())
+  const reasons = new Map<string, Set<PauseReason>>()
   const timeoutIds = new Map<string, ReturnType<typeof setTimeout>>()
+  let pageHidden = false
+  let windowFocused = true
 
-  const remainingTime = new Map<string, number>()
-  const pauseStartTime = new Map<string, number>()
+  function cancelTimer(id: string) {
+    const timeout = timeoutIds.get(id)
+    if (timeout !== undefined) clearTimeout(timeout)
+    timeoutIds.delete(id)
+  }
+
+  function startTimer(id: string) {
+    const timing = timings.get(id)
+    if (!timing || reasons.get(id)?.size) return
+    const toast = toasts.value.find((item) => item.id === id)
+    if (!toast || toast.duration <= 0) return
+    timing.paused = false
+    timing.startedAt = performance.now()
+    timing.revision++
+    cancelTimer(id)
+    timeoutIds.set(
+      id,
+      setTimeout(() => removeToast(id), timing.remaining)
+    )
+  }
 
   function addToast(
     type: Toast['type'],
     message: string,
-    duration = 4000,
-    options?: { title?: string; action?: ToastAction }
+    duration?: number,
+    options?: ToastOptions
   ) {
+    const fallback = type === 'error' ? 0 : Math.min(12000, Math.max(6000, message.length * 70))
+    const lifetime =
+      duration === undefined || !Number.isFinite(duration) ? fallback : Math.max(0, duration)
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`
-    const toast: Toast = {
+    const pauses = new Set<PauseReason>(['queued'])
+    if (pageHidden) pauses.add('hidden')
+    if (!windowFocused) pauses.add('window')
+    reasons.set(id, pauses)
+    timings.set(id, { remaining: lifetime, startedAt: 0, paused: true, revision: 0 })
+    toasts.value.push({
       id,
       type,
       message,
-      duration,
+      duration: lifetime,
       ...(options?.title === undefined ? {} : { title: options.title }),
       ...(options?.action === undefined ? {} : { action: options.action }),
-    }
-    toasts.value.push(toast)
-
-    if (duration > 0) {
-      remainingTime.set(id, duration)
-      const timeoutId = setTimeout(() => {
-        removeToast(id)
-      }, duration)
-      timeoutIds.set(id, timeoutId)
-    }
-
+    })
     return id
   }
 
   function removeToast(id: string) {
-    const timeoutId = timeoutIds.get(id)
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-      timeoutIds.delete(id)
-    }
+    cancelTimer(id)
+    timings.delete(id)
+    reasons.delete(id)
+    const index = toasts.value.findIndex((toast) => toast.id === id)
+    if (index !== -1) toasts.value.splice(index, 1)
+  }
 
-    remainingTime.delete(id)
-    pauseStartTime.delete(id)
+  function pauseTimer(id: string, reason: PauseReason = 'pointer') {
+    const timing = timings.get(id),
+      pauses = reasons.get(id)
+    if (!timing || !pauses || pauses.has(reason)) return
+    if (!timing.paused)
+      timing.remaining = Math.max(0, timing.remaining - (performance.now() - timing.startedAt))
+    pauses.add(reason)
+    timing.paused = true
+    timing.revision++
+    cancelTimer(id)
+  }
 
-    const index = toasts.value.findIndex((t) => t.id === id)
-    if (index !== -1) {
-      toasts.value.splice(index, 1)
+  function resumeTimer(id: string, reason: PauseReason = 'pointer') {
+    const pauses = reasons.get(id)
+    if (!pauses?.delete(reason) || pauses.size) return
+    startTimer(id)
+  }
+
+  function setVisibleToasts(ids: string[]) {
+    const visible = new Set(ids)
+    for (const toast of toasts.value) {
+      if (visible.has(toast.id)) resumeTimer(toast.id, 'queued')
+      else pauseTimer(toast.id, 'queued')
     }
   }
 
-  function pauseTimer(id: string) {
-    const timeoutId = timeoutIds.get(id)
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-      timeoutIds.delete(id)
-      pauseStartTime.set(id, Date.now())
+  function setPageHidden(hidden: boolean) {
+    pageHidden = hidden
+    for (const toast of toasts.value) {
+      if (hidden) pauseTimer(toast.id, 'hidden')
+      else resumeTimer(toast.id, 'hidden')
     }
   }
 
-  function resumeTimer(id: string) {
-    if (!pauseStartTime.has(id)) return
-
-    const pausedAt = pauseStartTime.get(id)!
-    const remaining = remainingTime.get(id) ?? 0
-    const elapsed = Date.now() - pausedAt
-    const left = Math.max(remaining - elapsed, 100)
-
-    pauseStartTime.delete(id)
-    remainingTime.set(id, left)
-
-    const timeoutId = setTimeout(() => {
-      removeToast(id)
-    }, left)
-    timeoutIds.set(id, timeoutId)
+  function setWindowFocused(focused: boolean) {
+    windowFocused = focused
+    for (const toast of toasts.value) {
+      if (focused) resumeTimer(toast.id, 'window')
+      else pauseTimer(toast.id, 'window')
+    }
   }
 
-  function success(message: string, duration?: number, options?: { title?: string }) {
+  function success(message: string, duration?: number, options?: ToastOptions) {
     return addToast('success', message, duration, options)
   }
-
-  function error(message: string, duration?: number, options?: { title?: string }) {
+  function error(message: string, duration?: number, options?: ToastOptions) {
     return addToast('error', message, duration, options)
   }
-
-  function warning(message: string, duration?: number, options?: { title?: string }) {
+  function warning(message: string, duration?: number, options?: ToastOptions) {
     return addToast('warning', message, duration, options)
   }
-
-  function info(
-    message: string,
-    duration?: number,
-    options?: { title?: string; action?: ToastAction }
-  ) {
+  function info(message: string, duration?: number, options?: ToastOptions) {
     return addToast('info', message, duration, options)
   }
 
   function clear() {
-    timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId))
+    timeoutIds.forEach(clearTimeout)
     timeoutIds.clear()
-    remainingTime.clear()
-    pauseStartTime.clear()
+    timings.clear()
+    reasons.clear()
     toasts.value = []
   }
 
-  if (import.meta.hot) {
-    import.meta.hot.dispose(() => {
-      clear()
-    })
-  }
+  onScopeDispose(clear)
+  if (import.meta.hot) import.meta.hot.dispose(clear)
 
   return {
     toasts,
+    timings,
     addToast,
     removeToast,
     pauseTimer,
     resumeTimer,
+    setVisibleToasts,
+    setPageHidden,
+    setWindowFocused,
     success,
     error,
     warning,

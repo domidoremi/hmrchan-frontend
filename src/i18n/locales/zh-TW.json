@@ -1,4 +1,19 @@
 {
+  "toast": {
+    "region": "操作回饋",
+    "success": "已完成",
+    "info": "操作提示",
+    "warning": "請留意",
+    "error": "需要處理",
+    "queued": "另有 {count} 則",
+    "expand": "展開提示",
+    "collapse": "收起提示，保留待辦",
+    "close": "關閉目前提示",
+    "persistent": "關閉前保留",
+    "paused": "等待你讀完",
+    "reading": "停留或聚焦可暫停",
+    "actionFailed": "操作未完成，請重試。"
+  },
   "app": {
     "name": "MomiChan"
   },
