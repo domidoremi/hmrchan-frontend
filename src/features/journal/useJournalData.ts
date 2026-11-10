@@ -6,6 +6,7 @@ import { discussionService } from '@/api/discussionService'
 import { scheduleService } from '@/api/scheduleService'
 import { useAuthStore, useFavoritesStore } from '@/stores'
 import { useJournalFavoritePosts } from './useJournalFavoritePosts'
+import type { JournalResource, JournalResourceStates } from './resourceState'
 import {
   postModel,
   discussionModel,
@@ -22,6 +23,11 @@ export function useJournalData(page: Ref<string>) {
   const posts = ref<JournalPost[]>([]),
     events = ref<JournalEvent[]>([]),
     discussions = ref<JournalDiscussion[]>([])
+  const resourceStates = ref<JournalResourceStates>({
+    posts: 'idle',
+    events: 'idle',
+    discussions: 'idle',
+  })
   const loading = ref(false),
     error = ref(''),
     hasMore = ref(false)
@@ -54,6 +60,16 @@ export function useJournalData(page: Ref<string>) {
     const request = ++generation
     const valid = () => request === generation && !current.signal.aborted
     const config = { signal: current.signal, skipErrorToast: true }
+    async function track(resource: JournalResource, task: () => Promise<void>) {
+      resourceStates.value[resource] = 'loading'
+      try {
+        await task()
+        if (valid()) resourceStates.value[resource] = 'ready'
+      } catch (cause) {
+        if (valid()) resourceStates.value[resource] = 'error'
+        throw cause
+      }
+    }
     loading.value = true
     error.value = ''
     if (!more) {
@@ -62,6 +78,7 @@ export function useJournalData(page: Ref<string>) {
       posts.value = []
       events.value = []
       discussions.value = []
+      resourceStates.value = { posts: 'idle', events: 'idle', discussions: 'idle' }
     }
     try {
       if (import.meta.env.DEV && fixture.value) {
@@ -84,12 +101,13 @@ export function useJournalData(page: Ref<string>) {
           url: null,
         }))
         discussions.value = reference.discussions
+        resourceStates.value = { posts: 'ready', events: 'ready', discussions: 'ready' }
         return
       }
       const jobs: Promise<void>[] = []
       if (page.value === 'home' || page.value === 'explore')
         jobs.push(
-          (async () => {
+          track('posts', async () => {
             const response = query.value
               ? await searchService.searchPosts({ q: query.value, limit: 24, cursor }, config)
               : await postService.listPosts({ limit: 24, cursor }, config)
@@ -103,21 +121,21 @@ export function useJournalData(page: Ref<string>) {
               : mapped
             cursor = response.next_cursor ?? null
             hasMore.value = Boolean(response.has_more && cursor)
-          })()
+          })
         )
       if (page.value === 'favorites' && auth.isAuthenticated)
         jobs.push(
-          (async () => {
+          track('posts', async () => {
             const ok = await favorites.fetchFavorites(!more)
             if (!valid()) return
             if (!ok) throw new Error('收藏暂时无法加载')
             posts.value = favoritePosts.value
             hasMore.value = favorites.hasMore
-          })()
+          })
         )
       if (page.value === 'schedule' || page.value === 'home')
         jobs.push(
-          (async () => {
+          track('events', async () => {
             const [year, number] = month.value.split('-').map(Number)
             const lastDay = new Date(year!, number!, 0).getDate()
             const collected: JournalEvent[] = []
@@ -138,11 +156,11 @@ export function useJournalData(page: Ref<string>) {
               next = response.has_more ? (response.next_cursor ?? null) : null
             } while (next)
             events.value = collected
-          })()
+          })
         )
       if (page.value === 'community' || page.value === 'home')
         jobs.push(
-          (async () => {
+          track('discussions', async () => {
             const response = await discussionService.list(
               { limit: 20, ...(more && cursor ? { cursor } : {}) },
               config
@@ -159,7 +177,7 @@ export function useJournalData(page: Ref<string>) {
               cursor = response.next_cursor ?? null
               hasMore.value = Boolean(response.has_more && cursor)
             }
-          })()
+          })
         )
       const results = await Promise.allSettled(jobs)
       if (valid() && results.some((result) => result.status === 'rejected'))
@@ -195,5 +213,16 @@ export function useJournalData(page: Ref<string>) {
     generation++
     controller?.abort()
   })
-  return { posts, events, discussions, loading, error, hasMore, load, fixture, month }
+  return {
+    posts,
+    events,
+    discussions,
+    resourceStates,
+    loading,
+    error,
+    hasMore,
+    load,
+    fixture,
+    month,
+  }
 }

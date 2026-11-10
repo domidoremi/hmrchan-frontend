@@ -13,22 +13,33 @@
     <div class="archive-summary" data-reveal>
       <div>
         <JournalIcon name="file" /><span
-          >当前动态<strong>{{ posts.length }}</strong></span
+          >当前动态<strong
+            :aria-label="states.posts !== 'ready' ? '动态数量尚未读取' : undefined"
+            >{{ states.posts === 'ready' ? posts.length : '—' }}</strong
+          ></span
         >
       </div>
       <div>
         <JournalIcon name="compass" /><span
-          >来源<strong>{{ sources.length }}</strong></span
+          >来源<strong :aria-label="states.posts !== 'ready' ? '来源数量尚未读取' : undefined">{{
+            states.posts === 'ready' ? sources.length : '—'
+          }}</strong></span
         >
       </div>
       <div>
         <JournalIcon name="calendar" /><span
-          >{{ Number(month.slice(5)) }} 月日程<strong>{{ events.length }}</strong></span
+          >{{ Number(month.slice(5)) }} 月日程<strong
+            :aria-label="states.events !== 'ready' ? '日程数量尚未读取' : undefined"
+            >{{ states.events === 'ready' ? events.length : '—' }}</strong
+          ></span
         >
       </div>
       <div>
         <JournalIcon name="messages" /><span
-          >最近讨论<strong>{{ discussions.length }}</strong></span
+          >最近讨论<strong
+            :aria-label="states.discussions !== 'ready' ? '讨论数量尚未读取' : undefined"
+            >{{ states.discussions === 'ready' ? discussions.length : '—' }}</strong
+          ></span
         >
       </div>
       <div class="source-distribution" aria-label="当前动态来源分布">
@@ -49,7 +60,11 @@
       <div>
         <span class="command-marker">⌕</span>
         <h2>动态索引</h2>
-        <span class="meta-count">{{ posts.length }}</span>
+        <span
+          class="meta-count"
+          :aria-label="states.posts !== 'ready' ? '动态数量尚未读取' : undefined"
+          >{{ states.posts === 'ready' ? posts.length : '—' }}</span
+        >
       </div>
       <button data-action="search">
         <JournalIcon name="search" /><span>搜索动态、作者、标签</span><kbd>⌘ K</kbd></button
@@ -58,6 +73,7 @@
     <ArchiveNavigationHint
       :index="index"
       :total="posts.length"
+      :state="states.posts"
       :preview-id="previewId"
       :title="selected?.title"
     />
@@ -75,7 +91,16 @@
             {{ source.label }}
           </button>
         </div>
-        <div class="stream-content">
+        <div class="stream-content" :aria-busy="states.posts === 'loading'">
+          <div
+            v-if="states.posts === 'loading' && !posts.length"
+            class="archive-loading-list"
+            aria-hidden="true"
+          >
+            <div v-for="row in 4" :key="row">
+              <i /><span><i /><i /></span>
+            </div>
+          </div>
           <div v-for="group in groups" :key="group.label" class="timeline-group">
             <div class="timeline-label">
               <span>{{ group.label }}</span
@@ -109,7 +134,13 @@
               ><JournalIcon name="arrow-up-right" />
             </button>
           </div>
-          <slot name="state" />
+          <JournalResourceState
+            :state="states.posts"
+            label="动态"
+            :empty="!posts.length"
+            empty-message="暂无动态"
+            @retry="$emit('retry')"
+          />
         </div>
         <RouterLink to="/explore" class="stream-more"
           >全部动态 <JournalIcon name="arrow"
@@ -131,12 +162,15 @@
           >
             打开 <JournalIcon name="arrow-up-right" /></button
           ><span
-            >{{ String(posts.length ? index + 1 : 0).padStart(2, '0') }} /
-            {{ String(posts.length).padStart(2, '0') }}</span
+            >{{
+              states.posts === 'ready' ? String(posts.length ? index + 1 : 0).padStart(2, '0') : '—'
+            }}
+            / {{ states.posts === 'ready' ? String(posts.length).padStart(2, '0') : '—' }}</span
           >
         </div>
         <ArchivePreview
           :post="selected"
+          :state="states.posts"
           :saved="Boolean(selected && savedPosts.has(selected.id))"
           spatial
           @save="(item, event) => $emit('save', item, event)"
@@ -186,7 +220,13 @@
               <JournalIcon :name="reminders.has(event.id) ? 'check' : 'plus'" />
             </button>
           </article>
-          <p v-if="!events.length" class="journal-state">本月暂无日程</p>
+          <JournalResourceState
+            :state="states.events"
+            label="日程"
+            :empty="!events.length"
+            empty-message="本月暂无日程"
+            @retry="$emit('retry')"
+          />
         </div>
       </section>
       <section class="archive-panel" data-reveal>
@@ -209,7 +249,13 @@
           </div>
           <span>{{ item.replies }}<JournalIcon name="messages" /></span>
         </article>
-        <p v-if="!discussions.length" class="journal-state">暂无讨论</p>
+        <JournalResourceState
+          :state="states.discussions"
+          label="讨论"
+          :empty="!discussions.length"
+          empty-message="暂无讨论"
+          @retry="$emit('retry')"
+        />
       </section>
     </div>
     <ArchiveSelectionDock
@@ -226,6 +272,9 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import JournalIcon from '../JournalIcon.vue'
+import JournalResourceState from '../JournalResourceState.vue'
+import type { JournalResourceStates } from '../resourceState'
+import '../styles/home-loading.css'
 import JournalImage from '../JournalImage.vue'
 import ArchivePreview from './ArchivePreview.vue'
 import ArchiveSelectionDock from './ArchiveSelectionDock.vue'
@@ -234,7 +283,7 @@ import ArchiveNavigationHint from './ArchiveNavigationHint.vue'
 import { sourceGroups, timelineGroups } from '../presentation'
 import { platforms, type JournalPost, type JournalEvent, type JournalDiscussion } from '../models'
 const props = defineProps<{
-  loading?: boolean
+  states: JournalResourceStates
   posts: JournalPost[]
   allPosts: JournalPost[]
   events: JournalEvent[]
@@ -246,6 +295,7 @@ const props = defineProps<{
   month: string
 }>()
 const emit = defineEmits<{
+  retry: []
   open: [post: JournalPost]
   save: [post: JournalPost, event: MouseEvent]
   platform: [value: string]

@@ -110,6 +110,89 @@ describe('journal live data', () => {
     expect(data.loading.value).toBe(false)
   })
 
+  it('tracks each home request before and after independent completion', async () => {
+    let resolvePosts!: (value: ReturnType<typeof response>) => void
+    let resolveEvents!: (value: ReturnType<typeof response>) => void
+    mocks.posts.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolvePosts = resolve
+      })
+    )
+    mocks.schedules.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveEvents = resolve
+      })
+    )
+    const data = start('home')
+    expect(data.resourceStates.value).toEqual({
+      posts: 'loading',
+      events: 'loading',
+      discussions: 'loading',
+    })
+    await flushPromises()
+    expect(data.resourceStates.value.discussions).toBe('ready')
+    resolvePosts(response('first'))
+    await flushPromises()
+    expect(data.resourceStates.value).toEqual({
+      posts: 'ready',
+      events: 'loading',
+      discussions: 'ready',
+    })
+    expect(data.loading.value).toBe(true)
+    resolveEvents(response('calendar'))
+    await flushPromises()
+    expect(data.resourceStates.value.events).toBe('ready')
+    expect(data.loading.value).toBe(false)
+  })
+
+  it('distinguishes a successful empty section from a failed section and resets on retry', async () => {
+    mocks.posts.mockResolvedValueOnce({ items: [], has_more: false, next_cursor: null })
+    mocks.schedules.mockRejectedValueOnce(new Error('offline'))
+    const data = start('home')
+    await flushPromises()
+    expect(data.posts.value).toEqual([])
+    expect(data.resourceStates.value).toEqual({
+      posts: 'ready',
+      events: 'error',
+      discussions: 'ready',
+    })
+    const retry = data.load()
+    expect(data.resourceStates.value.events).toBe('loading')
+    await retry
+    expect(data.resourceStates.value).toEqual({
+      posts: 'ready',
+      events: 'ready',
+      discussions: 'ready',
+    })
+    expect(data.error.value).toBe('')
+  })
+
+  it('does not let a superseded response finish the current loading state', async () => {
+    let resolveOld!: (value: ReturnType<typeof response>) => void
+    let resolveCurrent!: (value: ReturnType<typeof response>) => void
+    mocks.posts.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOld = resolve
+      })
+    )
+    mocks.search.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveCurrent = resolve
+      })
+    )
+    const data = start('explore')
+    mocks.route.query.q = 'current'
+    await nextTick()
+    resolveOld(response('old'))
+    await flushPromises()
+    expect(data.resourceStates.value.posts).toBe('loading')
+    expect(data.posts.value).toEqual([])
+    resolveCurrent(response('current'))
+    await flushPromises()
+    expect(data.resourceStates.value.posts).toBe('ready')
+    expect(data.posts.value[0]?.id).toBe('current')
+  })
+
   it('aborts pending requests when the page leaves', () => {
     mocks.posts.mockReturnValueOnce(new Promise(() => {}))
     start('explore')

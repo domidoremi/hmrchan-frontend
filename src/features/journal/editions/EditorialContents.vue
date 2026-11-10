@@ -10,7 +10,9 @@
     >
       <span>{{ section.number }}</span
       ><b>{{ section.label }}</b
-      ><small>{{ section.count }}</small>
+      ><small :aria-label="section.count === null ? '数量尚未读取' : undefined">{{
+        section.count ?? '—'
+      }}</small>
     </a>
   </nav>
 </template>
@@ -18,7 +20,7 @@
 import { nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
 const props = defineProps<{
-  sections: { id: string; number: string; label: string; count: number }[]
+  sections: { id: string; number: string; label: string; count: number | null }[]
 }>()
 const active = ref('issue-latest')
 let observer: IntersectionObserver | undefined

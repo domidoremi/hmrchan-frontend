@@ -7,7 +7,11 @@
         ><span>PHOTOS · POSTS · PEOPLE</span>
       </div>
     </div>
-    <div v-if="loading && !posts.length" class="spatial-cover cover-loading" aria-hidden="true">
+    <div
+      v-if="states.posts === 'loading' && !posts.length"
+      class="spatial-cover cover-loading"
+      aria-hidden="true"
+    >
       <div class="cover-copy">
         <div class="cover-kicker"><i /></div>
         <div class="cover-article"><i /><i /><i /><i /></div>
@@ -19,7 +23,13 @@
     </div>
     <SpatialCover :posts="posts" />
     <EditorialContents :sections="contents" />
-    <slot name="state" />
+    <JournalResourceState
+      :state="states.posts"
+      label="动态"
+      :empty="!posts.length"
+      empty-message="暂无动态"
+      @retry="$emit('retry')"
+    />
     <section
       id="issue-latest"
       class="editorial-latest"
@@ -33,7 +43,14 @@
         <RouterLink to="/explore">全部动态 <JournalIcon name="arrow-up-right" /></RouterLink>
       </div>
       <p class="reading-section-note">
-        <span>从这里，读起今天的更新。</span><span>{{ posts.length }} 条动态</span>
+        <span>从这里，读起今天的更新。</span
+        ><span>{{
+          states.posts === 'ready'
+            ? posts.length + ' 条动态'
+            : states.posts === 'error'
+              ? '动态暂时无法读取'
+              : '正在读取动态'
+        }}</span>
       </p>
       <div class="editorial-source-bar">
         <div class="chips">
@@ -107,7 +124,13 @@
             :event="event"
             :saved="reminders.has(event.id)"
           />
-          <div v-if="!events.length" class="journal-state">本月暂无日程</div>
+          <JournalResourceState
+            :state="states.events"
+            label="日程"
+            :empty="!events.length"
+            empty-message="本月暂无日程"
+            @retry="$emit('retry')"
+          />
         </div>
       </div>
     </section>
@@ -144,7 +167,13 @@
           </div>
           <JournalIcon name="arrow-up-right" />
         </article>
-        <p v-if="!discussions.length" class="journal-state">暂无讨论</p>
+        <JournalResourceState
+          :state="states.discussions"
+          label="讨论"
+          :empty="!discussions.length"
+          empty-message="暂无讨论"
+          @retry="$emit('retry')"
+        />
       </div>
     </section>
   </div>
@@ -155,13 +184,16 @@ import { RouterLink } from 'vue-router'
 import SpatialCover from './SpatialCover.vue'
 import EditorialContents from './EditorialContents.vue'
 import JournalIcon from '../JournalIcon.vue'
+import JournalResourceState from '../JournalResourceState.vue'
+import type { JournalResourceStates } from '../resourceState'
+import '../styles/home-loading.css'
 import EditorialFilm from './EditorialFilm.vue'
 import JournalPostCard from '../JournalPostCard.vue'
 import JournalEventCard from '../JournalEventCard.vue'
 import { sourceGroups } from '../presentation'
 import type { JournalPost, JournalEvent, JournalDiscussion } from '../models'
 const props = defineProps<{
-  loading?: boolean
+  states: JournalResourceStates
   posts: JournalPost[]
   allPosts: JournalPost[]
   events: JournalEvent[]
@@ -173,6 +205,7 @@ const props = defineProps<{
   month: string
 }>()
 defineEmits<{
+  retry: []
   save: [post: JournalPost, event: MouseEvent]
   platform: [value: string]
   sort: [value: string]
@@ -180,12 +213,27 @@ defineEmits<{
 const sources = computed(() => sourceGroups(props.allPosts)),
   pictures = computed(() => props.posts.filter((post) => post.image).slice(0, 10))
 const contents = computed(() => [
-  { id: 'issue-latest', number: '01', label: '动态', count: props.posts.length },
+  {
+    id: 'issue-latest',
+    number: '01',
+    label: '动态',
+    count: props.states.posts === 'ready' ? props.posts.length : null,
+  },
   ...(pictures.value.length
     ? [{ id: 'issue-film', number: '02', label: '影像', count: pictures.value.length }]
     : []),
-  { id: 'issue-calendar', number: '03', label: '日程', count: props.events.length },
-  { id: 'issue-conversation', number: '04', label: '讨论', count: props.discussions.length },
+  {
+    id: 'issue-calendar',
+    number: '03',
+    label: '日程',
+    count: props.states.events === 'ready' ? props.events.length : null,
+  },
+  {
+    id: 'issue-conversation',
+    number: '04',
+    label: '讨论',
+    count: props.states.discussions === 'ready' ? props.discussions.length : null,
+  },
 ])
 const date = new Intl.DateTimeFormat('en', {
   timeZone: 'Asia/Taipei',
