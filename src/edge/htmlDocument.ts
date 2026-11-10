@@ -652,7 +652,7 @@ function renderLoadingShell(config: HtmlDocumentConfig): string {
         ${renderShellBrandMark()}
         <div style="display:grid;gap:0.375rem;">
           <span style="font:600 0.8125rem/1.2 ui-sans-serif,system-ui;letter-spacing:0.14em;text-transform:uppercase;color:#2563eb;">${escapeHtml(config.shellEyebrow)}</span>
-          <h1 style="margin:0;font:700 clamp(1.5rem,4vw,2.125rem)/1.15 ui-sans-serif,system-ui;color:#0f172a;">${escapeHtml(config.shellTitle)}</h1>
+          <h1 style="margin:0;letter-spacing:normal;font:700 clamp(1.5rem,4vw,2.125rem)/1.15 ui-sans-serif,system-ui;color:#0f172a;">${escapeHtml(config.shellTitle)}</h1>
           <p style="margin:0;max-width:34rem;font:400 0.9375rem/1.7 ui-sans-serif,system-ui;color:#475569;">${escapeHtml(config.shellBody)}</p>
         </div>
         ${renderShellSpinner()}
