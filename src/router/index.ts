@@ -11,6 +11,7 @@ import {
   type RouteLocationNormalizedLoadedGeneric,
 } from 'vue-router'
 import i18n from '@/i18n'
+import { journalLegacyView } from '@/features/journal/legacyView'
 import {
   getRiskMode,
   setCurrentSecurityLevel,
@@ -112,7 +113,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/search',
     name: 'search',
-    component: () => import('@/views/SearchPage.vue'),
+    component: journalLegacyView(() => import('@/views/SearchPage.vue')),
     meta: {
       title: 'nav.search',
       appUpdateMode: 'prompt',
@@ -123,7 +124,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/post/:id',
     name: 'post-detail',
-    component: () => import('@/views/PostDetailPage.vue'),
+    component: journalLegacyView(() => import('@/views/PostDetailPage.vue')),
     meta: {
       title: 'nav.postDetail',
       securityLevel: 'public',
@@ -134,7 +135,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/authors',
     name: 'authors',
-    component: () => import('@/views/AuthorsPage.vue'),
+    component: journalLegacyView(() => import('@/views/AuthorsPage.vue')),
     meta: { title: 'nav.authors', securityLevel: 'public', dataSensitivity: 'none' },
   },
   {
@@ -155,7 +156,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'discussions/:id',
         name: 'discussion-detail',
-        component: () => import('@/views/DiscussionDetailPage.vue'),
+        component: journalLegacyView(() => import('@/views/DiscussionDetailPage.vue')),
         meta: {
           title: 'community.recentDiscussions',
           appUpdateMode: 'auto',
@@ -176,13 +177,13 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/author/:id',
     name: 'author-detail',
-    component: () => import('@/views/AuthorDetailPage.vue'),
+    component: journalLegacyView(() => import('@/views/AuthorDetailPage.vue')),
     meta: { title: 'nav.authorDetail', securityLevel: 'public', dataSensitivity: 'none' },
   },
   {
     path: '/users/:id',
     name: 'user-public-profile',
-    component: () => import('@/views/UserPublicProfilePage.vue'),
+    component: journalLegacyView(() => import('@/views/UserPublicProfilePage.vue')),
     meta: {
       title: 'nav.userProfile',
       requiresAuth: true,
@@ -204,13 +205,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'profile',
-        component: () => import('@/views/ProfilePage.vue'),
+        component: journalLegacyView(() => import('@/views/ProfilePage.vue')),
         meta: { title: 'nav.profile', securityLevel: 'authenticated', dataSensitivity: 'profile' },
       },
       {
         path: 'notifications',
         name: 'profile-notifications',
-        component: () => import('@/views/ProfileNotificationsPage.vue'),
+        component: journalLegacyView(() => import('@/views/ProfileNotificationsPage.vue')),
         meta: {
           title: 'profile.tabs.notifications',
           securityLevel: 'authenticated',
@@ -220,7 +221,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'security',
         name: 'profile-security',
-        component: () => import('@/views/ProfileSecurityPage.vue'),
+        component: journalLegacyView(() => import('@/views/ProfileSecurityPage.vue')),
         meta: {
           title: 'profile.securityHubTitle',
           securityLevel: 'sensitive',
@@ -243,7 +244,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'settings',
         name: 'profile-settings',
-        component: () => import('@/views/ProfileSettingsPage.vue'),
+        component: journalLegacyView(() => import('@/views/ProfileSettingsPage.vue')),
         meta: {
           title: 'nav.profileSettings',
           securityLevel: 'sensitive',
@@ -263,7 +264,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'comments',
         name: 'profile-comments',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
+        component: journalLegacyView(() => import('@/views/profile/ProfileSectionPage.vue')),
         props: { sectionId: 'comments' },
         meta: {
           title: 'profile.tabs.comments',
@@ -274,7 +275,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'likes',
         name: 'profile-likes',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
+        component: journalLegacyView(() => import('@/views/profile/ProfileSectionPage.vue')),
         props: { sectionId: 'likes' },
         meta: {
           title: 'profile.tabs.likes',
@@ -285,7 +286,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'comment-favorites',
         name: 'profile-comment-favorites',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
+        component: journalLegacyView(() => import('@/views/profile/ProfileSectionPage.vue')),
         props: { sectionId: 'comment-favorites' },
         meta: {
           title: 'profile.tabs.commentFavorites',
@@ -296,7 +297,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'history',
         name: 'profile-history',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
+        component: journalLegacyView(() => import('@/views/profile/ProfileSectionPage.vue')),
         props: { sectionId: 'history' },
         meta: {
           title: 'profile.tabs.history',
@@ -307,7 +308,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'reports',
         name: 'profile-reports',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
+        component: journalLegacyView(() => import('@/views/profile/ProfileSectionPage.vue')),
         props: { sectionId: 'reports' },
         meta: {
           title: 'profile.tabs.reports',
@@ -331,7 +332,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'followers',
         name: 'profile-followers',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
+        component: journalLegacyView(() => import('@/views/profile/ProfileSectionPage.vue')),
         props: { sectionId: 'followers' },
         meta: {
           title: 'profile.tabs.followers',
@@ -342,7 +343,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'following',
         name: 'profile-following',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
+        component: journalLegacyView(() => import('@/views/profile/ProfileSectionPage.vue')),
         props: { sectionId: 'following' },
         meta: {
           title: 'profile.tabs.following',
@@ -353,7 +354,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'blocked',
         name: 'profile-blocked',
-        component: () => import('@/views/profile/ProfileSectionPage.vue'),
+        component: journalLegacyView(() => import('@/views/profile/ProfileSectionPage.vue')),
         props: { sectionId: 'blocked' },
         meta: {
           title: 'profile.tabs.blocked',
@@ -378,7 +379,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('@/views/LoginPage.vue'),
+    component: journalLegacyView(() => import('@/views/LoginPage.vue')),
     meta: {
       title: 'nav.login',
       guestOnly: true,
@@ -390,7 +391,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/auth/callback',
     name: 'auth-callback',
-    component: () => import('@/views/AuthCallbackPage.vue'),
+    component: journalLegacyView(() => import('@/views/AuthCallbackPage.vue')),
     meta: {
       title: 'auth.callback.title',
       appUpdateMode: 'prompt',
@@ -401,7 +402,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/auth/passkeys/recovery',
     name: 'passkey-recovery',
-    component: () => import('@/views/PasskeyRecoveryPage.vue'),
+    component: journalLegacyView(() => import('@/views/PasskeyRecoveryPage.vue')),
     meta: {
       title: 'auth.passkeyRecovery.title',
       guestOnly: true,
@@ -413,7 +414,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/auth/passkeys/recovery/:id',
     name: 'passkey-recovery-detail',
-    component: () => import('@/views/PasskeyRecoveryStatusPage.vue'),
+    component: journalLegacyView(() => import('@/views/PasskeyRecoveryStatusPage.vue')),
     meta: {
       title: 'auth.passkeyRecovery.statusTitle',
       guestOnly: true,
@@ -425,7 +426,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/register',
     name: 'register',
-    component: () => import('@/views/RegisterPage.vue'),
+    component: journalLegacyView(() => import('@/views/RegisterPage.vue')),
     meta: {
       title: 'nav.register',
       guestOnly: true,
@@ -437,7 +438,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/forgot-password',
     name: 'forgot-password',
-    component: () => import('@/views/ForgotPasswordPage.vue'),
+    component: journalLegacyView(() => import('@/views/ForgotPasswordPage.vue')),
     meta: {
       title: 'email.forgotPasswordTitle',
       guestOnly: true,
@@ -449,7 +450,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/reset-password',
     name: 'reset-password',
-    component: () => import('@/views/ResetPasswordPage.vue'),
+    component: journalLegacyView(() => import('@/views/ResetPasswordPage.vue')),
     meta: {
       title: 'email.resetPasswordTitle',
       guestOnly: true,
@@ -461,7 +462,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/verify-email',
     name: 'verify-email',
-    component: () => import('@/views/VerifyEmailPage.vue'),
+    component: journalLegacyView(() => import('@/views/VerifyEmailPage.vue')),
     meta: {
       title: 'email.verifyTitle',
       appUpdateMode: 'prompt',
@@ -472,7 +473,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/contact',
     name: 'contact',
-    component: () => import('@/views/ContactPage.vue'),
+    component: journalLegacyView(() => import('@/views/ContactPage.vue')),
     meta: {
       title: 'nav.contact',
       showFooter: true,
@@ -496,7 +497,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/schedule/:id',
     name: 'schedule-detail',
-    component: () => import('@/views/SchedulePage.vue'),
+    component: journalLegacyView(() => import('@/views/SchedulePage.vue')),
     meta: {
       title: 'nav.schedule',
       viewKey: 'schedule',
@@ -508,7 +509,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/about',
     name: 'about',
-    component: () => import('@/views/AboutPage.vue'),
+    component: journalLegacyView(() => import('@/views/AboutPage.vue')),
     meta: {
       title: 'nav.about',
       showFooter: true,
@@ -519,7 +520,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    component: () => import('@/views/NotFoundPage.vue'),
+    component: journalLegacyView(() => import('@/views/NotFoundPage.vue')),
     meta: { title: 'error.notFound', securityLevel: 'public', dataSensitivity: 'none' },
   },
 ]

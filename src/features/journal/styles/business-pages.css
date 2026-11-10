@@ -686,7 +686,7 @@ body.site-body.next-body .journal-legacy :is(.page-hero-shell__title, .sub-heade
 }
 .site-body.next-body .journal-legacy .account-navigation a.is-current {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--ink);
 }
 .site-body.next-body .journal-legacy .profile-overview__name {
   font-family: inherit;
