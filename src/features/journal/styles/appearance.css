@@ -64,6 +64,13 @@ body.site-body.next-body {
   --green: var(--appearance-accent);
   color-scheme: inherit;
 }
+/* Keep text and surfaces in sync, then restore each control transition. */
+html[data-appearance-changing] body.site-body,
+html[data-appearance-changing] body.site-body *,
+html[data-appearance-changing] body.site-body *::before,
+html[data-appearance-changing] body.site-body *::after {
+  transition: none !important;
+}
 body.journal-appearance-open {
   overflow: hidden;
 }
