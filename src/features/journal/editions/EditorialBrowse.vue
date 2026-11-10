@@ -28,7 +28,7 @@
           :class="{ active: layout === view.key }"
           :aria-pressed="layout === view.key"
           :aria-label="view.label"
-          @click="setLayout(view.key)"
+          @click="$emit('change', 'view', view.key)"
         >
           <JournalIcon :name="view.icon" />
         </button>
@@ -109,7 +109,7 @@ const props = defineProps<{
   hasMore: boolean
   loading: boolean
 }>()
-const emit = defineEmits<{
+defineEmits<{
   change: [key: string, value: string]
   reset: []
   save: [post: JournalPost, event: MouseEvent]
@@ -129,15 +129,13 @@ const views = [
   { key: 'wall', label: '照片墙', icon: 'image' },
   { key: 'list', label: '阅读列表', icon: 'list' },
 ]
-function setLayout(value: string) {
-  if (grid.value && runtime.value)
-    runtime.value.SpatialMotion.layout(grid.value, async () => {
-      emit('change', 'view', value)
-      await nextTick()
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
-    })
-  else emit('change', 'view', value)
-}
+watch(
+  () => props.layout,
+  () => {
+    if (grid.value && runtime.value)
+      runtime.value.SpatialMotion.layout(grid.value, () => nextTick())
+  }
+)
 const sourceOptions = computed(() => [
   ['all', '全部'] as [string, string],
   ...sourceGroups(props.allPosts).map((source): [string, string] => [source.key, source.label]),

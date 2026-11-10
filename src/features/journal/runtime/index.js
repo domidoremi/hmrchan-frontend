@@ -1,6 +1,7 @@
 import { installUI } from './shared.js'
 import { createMotionPreference, motionTiming } from './motion.js'
 import { installViewportMotion } from './viewport-motion.js'
+import { createLayoutMotion } from './layout-motion.js'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
 
 export function createJournalRuntime(navigate) {
@@ -28,13 +29,22 @@ export function createJournalRuntime(navigate) {
   const runtime = {}
   installUI(runtime, { document: scopedDocument })
   let motion = 'full'
+  const layoutMotion = createLayoutMotion({
+    animate,
+    frame,
+    fullMotion: () => motion === 'full',
+    signal: lifetime.signal,
+  })
   const preference = createMotionPreference({
     read: runtime.UI.read,
     save: runtime.UI.save,
     signal: lifetime.signal,
     changed(value) {
       motion = value
-      if (value === 'reduced') animations.forEach((animation) => animation.finish())
+      if (value === 'reduced') {
+        animations.forEach((animation) => animation.finish())
+        layoutMotion.cancel()
+      }
     },
   })
   const viewport = installViewportMotion({ listen, frame, fullMotion: () => motion === 'full' })
@@ -163,44 +173,7 @@ export function createJournalRuntime(navigate) {
         { duration: motionTiming.dialog }
       )
     },
-    layout(root, update) {
-      const before = new Map(
-        [...root.querySelectorAll('[data-post]')].map((el) => [
-          el.dataset.post,
-          el.getBoundingClientRect(),
-        ])
-      )
-      Promise.resolve(update()).then(() =>
-        frame(() => {
-          root.querySelectorAll('[data-post]').forEach((element) => {
-            const previous = before.get(element.dataset.post)
-            if (!previous) return
-            const next = element.getBoundingClientRect()
-            if (!next.width || !next.height) return
-            animate(
-              element,
-              [
-                {
-                  transformOrigin: '0 0',
-                  transform:
-                    'translate(' +
-                    (previous.x - next.x) +
-                    'px,' +
-                    (previous.y - next.y) +
-                    'px) scale(' +
-                    previous.width / next.width +
-                    ',' +
-                    previous.height / next.height +
-                    ')',
-                },
-                { transformOrigin: '0 0', transform: 'translate(0,0) scale(1)' },
-              ],
-              { duration: motionTiming.layout }
-            )
-          })
-        })
-      )
-    },
+    layout: layoutMotion.layout,
   }
   runtime.mount = mount
   runtime.getMotion = () => motion

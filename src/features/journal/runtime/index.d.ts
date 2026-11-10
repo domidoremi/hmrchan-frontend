@@ -13,7 +13,7 @@ export interface JournalRuntime {
     toast(message: string, action?: { label: string; run(): void }): void
   }
   Experience: { savedFeedback(button: Element, id: string, saved: boolean): void }
-  SpatialMotion: { layout(root: Element, update: () => void | Promise<void>): void }
+  SpatialMotion: { layout(root: Element, update: () => void | Promise<void>): Promise<void> }
   getMotion(): 'full' | 'reduced'
   setMotion(value: 'full' | 'reduced'): void
   mount(root?: ParentNode): void
