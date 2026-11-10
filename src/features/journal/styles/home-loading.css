@@ -1,0 +1,105 @@
+.site-body .journal-shell .home-resource-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-height: 84px;
+  padding-block: 22px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.site-body .journal-shell .home-resource-state p {
+  margin: 0;
+}
+.site-body .journal-shell .home-resource-state .button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.site-body .journal-shell .home-resource-state[data-state='loading'] p::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.site-body .journal-shell .archive-loading-list > div {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 88px;
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.site-body .journal-shell .archive-loading-list > div > i {
+  width: 36px;
+  height: 42px;
+  border: 1px solid var(--line-strong, var(--line));
+  background: var(--paper);
+}
+.site-body .journal-shell .archive-loading-list span {
+  flex: 1;
+}
+.site-body .journal-shell .archive-loading-list span i,
+.site-body .journal-shell .archive-loading-preview i {
+  display: block;
+  width: 76%;
+  height: 9px;
+  margin-block: 10px;
+  background: var(--line);
+}
+.site-body .journal-shell .archive-loading-list span i:last-child {
+  width: 43%;
+  height: 6px;
+}
+.site-body .journal-shell :is(.archive-loading-preview, .preview-empty) {
+  position: relative;
+  transform: translateZ(0);
+}
+.site-body .journal-shell .archive-loading-preview {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 350px;
+  padding: 30px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font: 10px/1.5 monospace;
+  letter-spacing: 0.12em;
+}
+.site-body .journal-shell .archive-loading-preview i {
+  height: 18px;
+  margin-block: 15px;
+}
+.site-body .journal-shell .archive-loading-preview i:nth-child(2) {
+  width: 90%;
+}
+.site-body .journal-shell .archive-loading-preview i:last-child {
+  width: 54%;
+}
+.site-body[data-motion='full']
+  .journal-shell
+  :is(.archive-loading-list, .archive-loading-preview)
+  i {
+  animation: home-loading-pulse 1.8s ease-in-out 3;
+}
+@keyframes home-loading-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-body[data-motion='full']
+    .journal-shell
+    :is(.archive-loading-list, .archive-loading-preview)
+    i {
+    animation: none;
+  }
+}

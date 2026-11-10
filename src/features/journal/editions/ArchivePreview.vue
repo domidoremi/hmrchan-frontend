@@ -57,16 +57,35 @@
           </div>
         </div>
       </article>
+    </Transition>
+    <template v-if="!post">
+      <div
+        v-if="state === 'loading' || state === 'idle'"
+        class="archive-loading-preview"
+        aria-hidden="true"
+      >
+        <span>PREVIEW</span>
+        <div><i /><i /><i /></div>
+        <small>· · ·</small>
+      </div>
       <div v-else class="preview-empty">
-        <JournalIcon name="file" /><span>暂无内容</span>
-      </div></Transition
-    >
+        <JournalIcon name="file" /><span>{{
+          state === 'error' ? '预览暂不可用' : '暂无内容'
+        }}</span>
+      </div>
+    </template>
   </div>
 </template>
 <script setup lang="ts">
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
 import { platforms, type JournalPost } from '../models'
-defineProps<{ post?: JournalPost | undefined; saved: boolean; spatial?: boolean }>()
+import type { JournalResourceState } from '../resourceState'
+defineProps<{
+  post?: JournalPost | undefined
+  saved: boolean
+  spatial?: boolean
+  state?: JournalResourceState
+}>()
 defineEmits<{ save: [post: JournalPost, event: MouseEvent] }>()
 </script>

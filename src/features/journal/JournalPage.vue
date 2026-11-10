@@ -10,7 +10,7 @@
     <JournalHome
       v-if="page === 'home'"
       :posts="visiblePosts"
-      :loading="loading"
+      :states="resourceStates"
       :all-posts="posts"
       :events="events"
       :discussions="discussions"
@@ -23,15 +23,8 @@
       @open="dialogs.openPost($event)"
       @platform="change('platform', $event)"
       @sort="change('sort', $event)"
-    >
-      <template #state
-        ><JournalState
-          :loading="loading"
-          :error="error"
-          :empty="!visiblePosts.length"
-          @retry="load()"
-      /></template>
-    </JournalHome>
+      @retry="load()"
+    />
     <JournalBrowse
       v-else-if="page === 'explore' || page === 'favorites'"
       :posts="visiblePosts"
@@ -172,8 +165,18 @@ const page = computed(() =>
         '/profile/favorites': 'favorites',
       }[route.path] ?? 'home')
 )
-const { posts, events, discussions, loading, error, hasMore, load, fixture, month } =
-  useJournalData(page)
+const {
+  posts,
+  events,
+  discussions,
+  resourceStates,
+  loading,
+  error,
+  hasMore,
+  load,
+  fixture,
+  month,
+} = useJournalData(page)
 const param = (key: string, fallback = '') =>
   typeof route.query[key] === 'string' ? (route.query[key] as string) : fallback
 const query = computed(() => param('q')),
