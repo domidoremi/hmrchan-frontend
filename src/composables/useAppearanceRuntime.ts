@@ -5,6 +5,7 @@ import { useThemeStore, useSettingsStore } from '@/stores'
 import { DEFAULT_APPEARANCE_PRESET, resolveSceneRole } from '@/config/appearance'
 import { designEdition } from '@/config/designEdition'
 import { applyAppearancePreset } from '@/services/appearanceLoader'
+import { useAppearanceColorSync } from './useAppearanceColorSync'
 
 export function useAppearanceRuntime(
   routeSource: MaybeRefOrGetter<{ name?: unknown; path?: string }>
@@ -18,6 +19,8 @@ export function useAppearanceRuntime(
   const activePreset = ref(settings.value.appearancePreset ?? DEFAULT_APPEARANCE_PRESET)
 
   const routeSceneRole = computed(() => resolveSceneRole(toValue(routeSource)))
+
+  useAppearanceColorSync([activePreset, resolvedColorMode])
 
   watch(
     () => [settings.value.appearancePreset, resolvedColorMode.value] as const,
