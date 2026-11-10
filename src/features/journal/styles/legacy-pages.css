@@ -1,0 +1,9 @@
+@import './legacy.css';
+@import './business-pages.css';
+@import './auth-editions.css';
+@import './business-details.css';
+@import './discussion-pages.css';
+
+.site-body .journal-legacy .detail-allday-tag {
+  color: var(--muted);
+}

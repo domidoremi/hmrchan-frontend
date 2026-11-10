@@ -71,8 +71,7 @@ body.journal-appearance-open {
 .site-body .journal-shell .mobile-directory nav a[aria-current='page'],
 .site-body .journal-shell .density-toggle button.active,
 .site-body .journal-shell .archive-result-row.selected time,
-.site-body .journal-shell .forum-categories button.active,
-.site-body.next-body .journal-legacy .account-navigation a.is-current {
+.site-body .journal-shell .forum-categories button.active {
   color: var(--ink);
 }
 .site-body .journal-shell .header-actions > .appearance-trigger {
@@ -146,9 +145,6 @@ body.journal-appearance-open {
 }
 .site-body .journal-shell .display-preset-heading {
   margin-bottom: 16px;
-}
-.site-body .journal-legacy .detail-allday-tag {
-  color: var(--muted);
 }
 .site-body .journal-shell .display-color-field {
   padding: 0;

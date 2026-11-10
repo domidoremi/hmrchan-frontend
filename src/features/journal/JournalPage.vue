@@ -120,6 +120,7 @@ import EditorialHome from './editions/EditorialHome.vue'
 import ArchiveHome from './editions/ArchiveHome.vue'
 import JournalIcon from './JournalIcon.vue'
 import JournalState from './JournalState.vue'
+import { journalAsyncView, useJournalModuleRecovery } from './asyncView'
 import { useJournalData } from './useJournalData'
 import { useJournal } from './context'
 import { journalDialogsKey } from './useJournalDialogs'
@@ -128,22 +129,23 @@ import { useJournalDiscussion } from './useJournalDiscussion'
 import { discussionModel } from './models'
 import type { JournalPost } from './models'
 
+useJournalModuleRecovery()
 const DiscussionComposer = defineAsyncComponent(
   () => import('@/components/community/DiscussionComposer.vue')
 )
 const JournalHome = designEdition === 'archive' ? ArchiveHome : EditorialHome
 const JournalBrowse =
   designEdition === 'archive'
-    ? defineAsyncComponent(() => import('./editions/ArchiveBrowse.vue'))
-    : defineAsyncComponent(() => import('./editions/EditorialBrowse.vue'))
+    ? journalAsyncView(() => import('./editions/ArchiveBrowse.vue'))
+    : journalAsyncView(() => import('./editions/EditorialBrowse.vue'))
 const JournalSchedule =
   designEdition === 'archive'
-    ? defineAsyncComponent(() => import('./editions/ArchiveSchedule.vue'))
-    : defineAsyncComponent(() => import('./editions/EditorialSchedule.vue'))
+    ? journalAsyncView(() => import('./editions/ArchiveSchedule.vue'))
+    : journalAsyncView(() => import('./editions/EditorialSchedule.vue'))
 const JournalCommunity =
   designEdition === 'archive'
-    ? defineAsyncComponent(() => import('./editions/ArchiveCommunity.vue'))
-    : defineAsyncComponent(() => import('./editions/EditorialCommunity.vue'))
+    ? journalAsyncView(() => import('./editions/ArchiveCommunity.vue'))
+    : journalAsyncView(() => import('./editions/EditorialCommunity.vue'))
 const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore(),

@@ -2,10 +2,11 @@
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
     <a class="skip-link" href="#main-content">跳至内容</a>
     <aside v-if="isNext && !isAuthRoute" class="archive-sidebar">
-      <RouterLink class="archive-logo" to="/" aria-label="m. MomiChan ARCHIVE 首页"
-        ><span class="brand-mark">m.</span><span>MomiChan<small>ARCHIVE</small></span></RouterLink
+      <RouterLink class="archive-logo" to="/"
+        ><span class="brand-mark">m.</span><span>MomiChan<small>ARCHIVE</small></span
+        ><span class="sr-only"> 首页</span></RouterLink
       >
-      <button class="sidebar-search" data-action="search" aria-label="搜索">
+      <button class="sidebar-search" data-action="search" aria-keyshortcuts="Control+K Meta+K">
         <JournalIcon name="search" /><span>搜索</span><kbd>⌘ K</kbd>
       </button>
       <nav aria-label="主导航">
@@ -13,12 +14,11 @@
           v-for="item in navigation"
           :key="item.path"
           :to="item.path"
-          :aria-label="item.archive"
           :class="{ active: pageName === item.key }"
           :aria-current="pageName === item.key ? 'page' : undefined"
         >
           <JournalIcon :name="item.icon" /><span>{{ item.archive }}</span
-          ><span class="nav-index" aria-hidden="true">{{ item.index }}</span>
+          ><span class="nav-index">{{ item.index }}</span>
         </RouterLink>
       </nav>
       <div class="sidebar-bottom">
