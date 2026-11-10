@@ -1,19 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const SLOT_PATCH = 'slots && slots.default ? { default: slots.default } : void 0'
-const SLOT_REGEX = /},\s*slots\s*\);/
-
+// Lucide 1.71 already preserves default slots; keep only the context guard.
 const rules = [
   {
-    target: path.join(process.cwd(), 'node_modules/@lucide/vue/dist/esm/createLucideIcon.js'),
-    apply(source) {
-      if (source.includes(SLOT_PATCH) || !SLOT_REGEX.test(source)) return source
-      return source.replace(SLOT_REGEX, `}, ${SLOT_PATCH});`)
-    },
-  },
-  {
-    target: path.join(process.cwd(), 'node_modules/@lucide/vue/dist/esm/context.js'),
+    target: path.join(process.cwd(), 'node_modules/@lucide/vue/dist/esm/context.mjs'),
+    expected: 'getCurrentInstance() ? inject(LUCIDE_CONTEXT, {}) : {}',
     apply(source) {
       let next = source
 
@@ -36,12 +28,9 @@ const rules = [
   },
   {
     target: path.join(process.cwd(), 'node_modules/@lucide/vue/dist/cjs/lucide-vue.js'),
+    expected: 'vue.getCurrentInstance() ? vue.inject(LUCIDE_CONTEXT, {}) : {}',
     apply(source) {
       let next = source
-
-      if (!next.includes(SLOT_PATCH) && SLOT_REGEX.test(next)) {
-        next = next.replace(SLOT_REGEX, `}, ${SLOT_PATCH});`)
-      }
 
       if (next.includes('  return vue.inject(LUCIDE_CONTEXT, {});')) {
         next = next.replace(
@@ -58,10 +47,15 @@ const rules = [
 let patchedCount = 0
 
 for (const rule of rules) {
-  if (!fs.existsSync(rule.target)) continue
+  if (!fs.existsSync(rule.target)) {
+    throw new Error(`Lucide compatibility target is missing: ${rule.target}`)
+  }
 
   const source = fs.readFileSync(rule.target, 'utf8')
   const next = rule.apply(source)
+  if (!next.includes(rule.expected)) {
+    throw new Error(`Lucide context implementation changed: ${rule.target}`)
+  }
   if (next === source) continue
 
   fs.writeFileSync(rule.target, next, 'utf8')
