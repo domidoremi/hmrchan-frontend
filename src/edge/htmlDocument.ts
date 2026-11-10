@@ -656,6 +656,7 @@ function renderLoadingShell(config: HtmlDocumentConfig): string {
           <p style="margin:0;max-width:34rem;font:400 0.9375rem/1.7 ui-sans-serif,system-ui;color:#475569;">${escapeHtml(config.shellBody)}</p>
         </div>
         ${renderShellSpinner()}
+        <noscript><p lang="en" style="margin:0;max-width:34rem;font:400 0.9375rem/1.7 ui-sans-serif,system-ui;">JavaScript is disabled. Use the public links below to browse. Interactive features require JavaScript.</p></noscript>
         ${linksMarkup}
       </div>
     </section>

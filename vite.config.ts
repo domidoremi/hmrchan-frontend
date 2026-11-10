@@ -13,6 +13,7 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import { imagetools } from 'vite-imagetools'
 import {
   asyncCssPlugin,
+  bootstrapRecoveryPlugin,
   criticalCSSPlugin,
   obfuscationPlugin,
   serviceWorkerBuildPlugin,
@@ -323,6 +324,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
 
   return {
     plugins: [
+      bootstrapRecoveryPlugin(),
       vue({
         script: {
           defineModel: true,
