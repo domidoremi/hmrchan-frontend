@@ -1,0 +1,328 @@
+/* The first document stays readable before application CSS and JavaScript arrive. */
+html:has(> body > #app-root > [data-prerender-shell])::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+body:has(> #app-root > [data-prerender-shell]) {
+  margin: 0;
+}
+.prerender-shell {
+  --shell-paper: #f5f3eb;
+  --shell-ink: #262c28;
+  --shell-muted: #5d665e;
+  --shell-line: #d5d8cc;
+  --shell-accent: #aa422c;
+  --shell-panel: #eeede4;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  padding: 0 max(5vw, env(safe-area-inset-left)) env(safe-area-inset-bottom);
+  margin: 0;
+  color: var(--shell-ink);
+  background: var(--shell-paper);
+  color-scheme: light;
+  font:
+    400 14px/1.65 system-ui,
+    sans-serif;
+  letter-spacing: normal;
+  overflow-wrap: anywhere;
+}
+.prerender-shell *,
+.prerender-shell *::before,
+.prerender-shell *::after {
+  box-sizing: border-box;
+}
+.prerender-shell[data-edition='archive'] {
+  --shell-paper: #f0f3ef;
+  --shell-ink: #1e3429;
+  --shell-muted: #53675a;
+  --shell-line: #c3d0c1;
+  --shell-accent: #2b6549;
+  --shell-panel: #e4eae2;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-bootstrap-color='light']) .prerender-shell {
+    --shell-paper: #151816;
+    --shell-ink: #efeee6;
+    --shell-muted: #b9c0b6;
+    --shell-line: #3d483d;
+    --shell-accent: #f3ac8f;
+    --shell-panel: #202720;
+    color-scheme: dark;
+  }
+  html:not([data-bootstrap-color='light']) .prerender-shell[data-edition='archive'] {
+    --shell-paper: #101d17;
+    --shell-ink: #e4eee3;
+    --shell-muted: #a7bcab;
+    --shell-line: #3c5142;
+    --shell-accent: #9bd4ac;
+    --shell-panel: #1b2b22;
+  }
+}
+html[data-bootstrap-color='dark'] .prerender-shell {
+  --shell-paper: #151816;
+  --shell-ink: #efeee6;
+  --shell-muted: #b9c0b6;
+  --shell-line: #3d483d;
+  --shell-accent: #f3ac8f;
+  --shell-panel: #202720;
+  color-scheme: dark;
+}
+html[data-bootstrap-color='dark'] .prerender-shell[data-edition='archive'] {
+  --shell-paper: #101d17;
+  --shell-ink: #e4eee3;
+  --shell-muted: #a7bcab;
+  --shell-line: #3c5142;
+  --shell-accent: #9bd4ac;
+  --shell-panel: #1b2b22;
+}
+.prerender-shell :is(h1, h2, p, ol, dl, dd, figure) {
+  margin: 0;
+  color: inherit;
+}
+.prerender-shell a {
+  color: inherit;
+  text-decoration: none;
+}
+.prerender-shell a:focus-visible {
+  outline: 3px solid var(--shell-accent);
+  outline-offset: 5px;
+}
+.prerender-shell__header,
+.prerender-shell__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.prerender-shell__header {
+  min-height: 84px;
+  padding-block: 14px;
+  border-bottom: 1px solid var(--shell-line);
+}
+.prerender-shell .prerender-shell__brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font:
+    700 32px/1.1 Georgia,
+    serif;
+  letter-spacing: -1.2px;
+}
+.prerender-shell[data-edition='archive'] .prerender-shell__brand {
+  font-size: 44px;
+}
+.prerender-shell__header > span,
+.prerender-shell__footer,
+.prerender-shell .prerender-shell__eyebrow,
+.prerender-shell__record h2 {
+  font:
+    400 10px/1.6 ui-monospace,
+    monospace;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.prerender-shell .prerender-shell__eyebrow {
+  color: var(--shell-accent);
+}
+.prerender-shell__body {
+  width: min(100%, 1220px);
+  margin: auto;
+  padding-block: clamp(48px, 10vh, 110px);
+}
+.prerender-shell__intro {
+  max-width: 780px;
+}
+.prerender-shell h1 {
+  max-width: 20ch;
+  margin-block: 24px;
+  font:
+    400 clamp(36px, 5.3vw, 72px)/1.12 Georgia,
+    'Songti SC',
+    serif;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.prerender-shell .prerender-shell__description {
+  max-width: 52ch;
+  color: var(--shell-muted);
+  font:
+    400 16px/1.8 system-ui,
+    sans-serif;
+  text-wrap: pretty;
+  word-break: normal;
+}
+.prerender-shell .prerender-shell__note {
+  max-width: 58ch;
+  padding-left: 16px;
+  border-left: 2px solid var(--shell-accent);
+  margin-top: 32px;
+  color: var(--shell-muted);
+  font:
+    400 14px/1.7 system-ui,
+    sans-serif;
+  text-wrap: pretty;
+}
+.prerender-shell__loading {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 32px;
+  color: var(--shell-muted);
+  font-size: 12px;
+}
+.prerender-shell__loading i {
+  width: 6px;
+  height: 6px;
+  background: var(--shell-accent);
+  border-radius: 50%;
+}
+html:not([data-bootstrap-pending]) .prerender-shell__loading {
+  display: none;
+}
+.prerender-shell__links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  margin-top: 36px;
+  border-top: 1px solid var(--shell-line);
+}
+.prerender-shell__links a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 44px;
+  min-height: 56px;
+  padding: 12px 14px 12px 0;
+  border-bottom: 1px solid var(--shell-line);
+  font:
+    500 14px/1.5 system-ui,
+    sans-serif;
+}
+.prerender-shell__links a > :last-child {
+  margin-left: auto;
+  font-size: 18px;
+}
+.prerender-shell__link-index {
+  color: var(--shell-muted);
+  font:
+    400 10px/1.5 ui-monospace,
+    monospace;
+}
+.prerender-shell__links a:hover {
+  color: var(--shell-accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.prerender-shell__footer {
+  margin-top: auto;
+  border-top: 1px solid var(--shell-line);
+  min-height: 76px;
+  padding-block: 20px;
+  color: var(--shell-muted);
+}
+.prerender-shell[data-edition='archive'] .prerender-shell__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  align-items: start;
+  gap: clamp(32px, 6vw, 100px);
+}
+.prerender-shell[data-edition='archive'] h1 {
+  max-width: 18ch;
+  font:
+    500 clamp(34px, 4.4vw, 60px)/1.12 system-ui,
+    sans-serif;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.prerender-shell__record {
+  padding: clamp(20px, 3vw, 40px);
+  border: 1px solid var(--shell-line);
+  background: var(--shell-panel);
+}
+.prerender-shell__record h2 {
+  color: var(--shell-muted);
+  margin-bottom: 24px;
+}
+.prerender-shell__summary {
+  list-style: decimal-leading-zero;
+  padding-left: 28px;
+  color: var(--shell-ink);
+  font:
+    400 15px/1.8 system-ui,
+    sans-serif;
+}
+.prerender-shell__summary li {
+  padding-left: 8px;
+  margin-bottom: 16px;
+}
+.prerender-shell__summary li::marker {
+  color: var(--shell-muted);
+  font:
+    400 11px/1.8 ui-monospace,
+    monospace;
+}
+.prerender-shell__stats {
+  display: grid;
+  margin-top: 24px;
+}
+.prerender-shell__stats > div {
+  border-top: 1px solid var(--shell-line);
+  padding-top: 16px;
+  margin-top: 16px;
+}
+.prerender-shell__stats dt {
+  color: var(--shell-muted);
+  font:
+    400 11px/1.6 ui-monospace,
+    monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.prerender-shell__stats dd {
+  margin-top: 6px;
+  font:
+    500 18px/1.5 system-ui,
+    sans-serif;
+}
+.prerender-shell__visual {
+  margin-block: 20px;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+}
+.prerender-shell__visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (max-width: 700px) {
+  .prerender-shell__header {
+    min-height: 76px;
+  }
+  .prerender-shell .prerender-shell__brand {
+    font-size: 28px;
+  }
+  .prerender-shell[data-edition='archive'] .prerender-shell__brand {
+    font-size: 40px;
+  }
+  .prerender-shell__header > span {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .prerender-shell__body {
+    padding-block: 48px;
+  }
+  .prerender-shell__links {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .prerender-shell[data-edition='archive'] .prerender-shell__body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 36px;
+  }
+  .prerender-shell__footer {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+}
