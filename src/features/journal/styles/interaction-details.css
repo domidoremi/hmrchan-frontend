@@ -252,3 +252,15 @@ body.site-body.journal-directory-open {
     font-size: 11px;
   }
 }
+
+/* Keep all four header controls reachable on narrow editorial screens. */
+@media (max-width: 360px) {
+  .site-body .journal-shell.edition-editorial .edition-header {
+    padding-inline: 8px;
+    gap: 4px;
+  }
+  .site-body .journal-shell.edition-editorial .editorial-logo {
+    font-size: 20px;
+    letter-spacing: -1px;
+  }
+}

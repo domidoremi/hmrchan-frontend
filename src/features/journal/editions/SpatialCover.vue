@@ -20,7 +20,7 @@
         >
       </div>
       <Transition name="cover-copy" mode="out-in"
-        ><div :key="selected.id" class="cover-article">
+        ><div :key="selected.id" class="cover-article cover-story">
           <div class="cover-source">
             <span>{{ platforms[selected.platform] || selected.platform }}</span
             ><time>{{ selected.time }}</time>
@@ -35,7 +35,9 @@
             :data-author-id="selected.authorId"
             :data-author-query="selected.author"
           >
-            <img :src="selected.avatar" alt="" width="28" height="28" />{{ selected.author }}
+            <img :src="selected.avatar" alt="" width="28" height="28" /><span>{{
+              selected.author
+            }}</span>
           </button>
           <button class="round-action" :data-open="selected.id" aria-label="阅读动态">
             <span>阅读动态</span><JournalIcon name="arrow-up-right" />

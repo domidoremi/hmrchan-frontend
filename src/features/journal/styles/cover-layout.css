@@ -1,0 +1,92 @@
+/* Reserve cover rows so automatic changes do not move the surrounding controls. */
+.site-body .journal-shell .cover-story {
+  --cover-title-size: clamp(26px, 3vw, 46px);
+  --cover-title-leading: 1.3;
+  --cover-summary-size: 12px;
+  --cover-summary-leading: 1.9;
+  --cover-summary-lines: 3;
+  --cover-source-space: 33px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows:
+    minmax(var(--cover-source-space), auto)
+    minmax(calc(3 * var(--cover-title-leading) * var(--cover-title-size)), auto)
+    minmax(
+      calc(
+        var(--cover-summary-lines) * var(--cover-summary-leading) * var(--cover-summary-size) + 40px
+      ),
+      1fr
+    )
+    minmax(44px, auto);
+  column-gap: 12px;
+  min-height: 0;
+}
+.site-body .journal-shell .cover-story .cover-source {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+.site-body .journal-shell .cover-story h1 {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  font-size: var(--cover-title-size);
+  line-height: var(--cover-title-leading);
+}
+.site-body .journal-shell .cover-story p {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  align-self: start;
+  font-size: var(--cover-summary-size);
+  line-height: var(--cover-summary-leading);
+  -webkit-line-clamp: var(--cover-summary-lines);
+}
+.site-body .journal-shell .cover-story .cover-author {
+  grid-column: 1;
+  grid-row: 4;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  margin-top: 0;
+  align-self: center;
+  justify-self: start;
+}
+.site-body .journal-shell .cover-story .cover-author img {
+  flex: none;
+}
+.site-body .journal-shell .cover-story .cover-author > span {
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.site-body .journal-shell .cover-story .round-action {
+  position: static;
+  grid-column: 2;
+  grid-row: 4;
+  align-self: center;
+  margin-top: 0;
+  min-height: 44px;
+  gap: 12px;
+  white-space: nowrap;
+}
+.site-body .journal-shell .cover-story .round-action span {
+  display: inline;
+}
+@media (max-width: 800px) {
+  .site-body .journal-shell .cover-story {
+    --cover-title-size: 27px;
+    --cover-summary-size: 11px;
+    --cover-summary-lines: 2;
+  }
+}
+@media (max-width: 560px) {
+  .site-body .journal-shell .cover-story {
+    --cover-title-size: 29px;
+    --cover-source-space: 27px;
+  }
+  .site-body .journal-shell .cover-story .round-action {
+    gap: 10px;
+  }
+}
