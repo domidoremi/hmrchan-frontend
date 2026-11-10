@@ -196,6 +196,11 @@ body.site-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
 }
 .site-body .journal-legacy .time-badge {
   border-radius: 3px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--paper);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .site-body .journal-legacy .authors-grid {
   display: grid;
