@@ -75,7 +75,7 @@
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.3.0",
-    "@lucide/vue": "^1.70.0",
+    "@lucide/vue": "1.71.0",
     "@vueuse/core": "15.0.0",
     "dompurify": "3.4.17",
     "gsap": "^3.15.1",
@@ -88,7 +88,7 @@
     "vue-router": "^5.4.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "5.20261109.1",
+    "@cloudflare/workers-types": "5.20261110.1",
     "@tsconfig/node26": "^26.0.1",
     "@types/node": "^26.6.6",
     "@typescript/native": "npm:typescript@7.0.2",
@@ -102,15 +102,15 @@
     "@vue/test-utils": "^2.5.1",
     "chrome-launcher": "^1.2.3",
     "eslint": "^10.14.0",
-    "eslint-plugin-vue": "^10.12.0",
+    "eslint-plugin-vue": "10.12.1",
     "husky": "^9.1.7",
     "jiti": "^2.7.0",
     "jsdom": "^31.0.0",
-    "knip": "6.44.2",
+    "knip": "6.45.0",
     "lighthouse": "^13.6.0",
     "lint-staged": "^17.6.0",
     "prettier": "3.9.10",
-    "puppeteer": "^25.16.0",
+    "puppeteer": "25.17.0",
     "sharp": "^0.35.5",
     "typescript": "6.0.3",
     "vite": "8.3.7",
@@ -118,7 +118,7 @@
     "vite-plugin-vue-devtools": "^8.2.1",
     "vitest": "5.1.0",
     "vue-tsc": "^3.3.14",
-    "wrangler": "4.158.0"
+    "wrangler": "4.160.0"
   },
   "lint-staged": {
     "*.{ts,tsx,vue}": [
