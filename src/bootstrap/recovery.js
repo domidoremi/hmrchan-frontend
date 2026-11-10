@@ -116,6 +116,7 @@
     stopped = false,
     recoveryFocused = false
   document.documentElement.setAttribute('data-bootstrap-pending', '')
+  document.documentElement.setAttribute('data-bootstrap-color', color)
 
   function element(tag, className, text) {
     const node = document.createElement(tag)
@@ -180,6 +181,7 @@
     window.removeEventListener('online', render)
     window.removeEventListener('offline', render)
     document.documentElement.removeAttribute('data-bootstrap-pending')
+    document.documentElement.removeAttribute('data-bootstrap-color')
     root?.removeAttribute('data-bootstrap-recovery')
     if (recoveryFocused && document.activeElement === document.body) {
       handoffFocus()

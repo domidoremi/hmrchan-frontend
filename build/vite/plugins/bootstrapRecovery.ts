@@ -19,11 +19,15 @@ export function bootstrapRecoveryPlugin(): Plugin {
           new URL('../../../src/bootstrap/recovery.css', import.meta.url),
           'utf8'
         )
+        const shellStyle = readFileSync(
+          new URL('../../../src/bootstrap/prerender.css', import.meta.url),
+          'utf8'
+        )
         // Keep charset in the first 1024 bytes, ahead of translated recovery copy.
         return html.replace(
           charset,
           () =>
-            `${charset}\n<style data-bootstrap-style>${style}</style>\n<script data-bootstrap-script data-edition="${designEdition}">${script}</script>`
+            `${charset}\n<style data-bootstrap-style>${shellStyle}\n${style}</style>\n<script data-bootstrap-script data-edition="${designEdition}">${script}</script>`
         )
       },
     },

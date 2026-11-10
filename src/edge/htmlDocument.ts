@@ -1,4 +1,5 @@
 import { isContractResourceId } from '../utils/contractResourceId.ts'
+import { renderPublicShell } from './prerenderShell.ts'
 
 const SITE_NAME = 'MomiChan'
 export const SITE_ORIGIN = 'https://momichan.com'
@@ -53,15 +54,6 @@ type HtmlDocumentOverrides = {
   structuredData?: HtmlStructuredData[]
   shellVariant?: HtmlDocumentConfig['shellVariant']
   preloadImages?: HtmlDocumentPreloadImage[]
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
 }
 
 function buildTitle(pageTitle: string): string {
@@ -585,24 +577,6 @@ export function resolveCanonicalUrl(config: HtmlDocumentConfig): string {
   return new URL(config.canonicalPath, SITE_ORIGIN).toString()
 }
 
-function renderShellLinks(links: HtmlDocumentShellLink[]): string {
-  if (!links.length) return ''
-
-  return `
-    <nav aria-label="Public route shortcuts" style="display:flex;flex-wrap:wrap;gap:0.625rem;">
-      ${links
-        .map(
-          (link) => `
-            <a href="${escapeHtml(link.href)}" style="display:inline-flex;align-items:center;justify-content:center;padding:0.625rem 0.875rem;border-radius:999rem;background:rgba(15,23,42,0.05);border:1px solid rgba(15,23,42,0.08);color:#0f172a;text-decoration:none;font:600 0.8125rem/1.2 ui-sans-serif,system-ui;">
-              ${escapeHtml(link.label)}
-            </a>
-          `
-        )
-        .join('')}
-    </nav>
-  `
-}
-
 function serializeStructuredData(payload: unknown): string {
   return JSON.stringify(payload)
     .replaceAll('<', '\\u003c')
@@ -625,44 +599,6 @@ export function renderStructuredDataScript(config: HtmlDocumentConfig): string {
   return `<script type="application/ld+json" data-prerender-structured-data="true">${payload}</script>`
 }
 
-function renderShellBrandMark(): string {
-  return `
-    <div aria-hidden="true" style="display:grid;place-items:center;width:3rem;height:3rem;border-radius:1rem;background:linear-gradient(135deg,#2563eb 0%,#38bdf8 100%);color:#fff;font:700 1.125rem/1 ui-sans-serif,system-ui;box-shadow:0 16px 36px rgba(37,99,235,0.28);">M</div>
-  `
-}
-
-function renderShellSpinner(): string {
-  // CSS-only spinner so the prerender shell communicates "loading" without JS.
-  return `
-    <span role="status" aria-live="polite" aria-label="Loading MomiChan" style="display:inline-flex;width:1.5rem;height:1.5rem;border-radius:50%;border:0.1875rem solid rgba(37,99,235,0.18);border-top-color:#2563eb;">
-    </span>
-  `
-}
-
-function renderLoadingShell(config: HtmlDocumentConfig): string {
-  const variantAttr =
-    config.shellVariant === 'home'
-      ? ' data-prerender-shell-variant="home"'
-      : ' data-prerender-shell-variant="default"'
-  const linksMarkup = renderShellLinks(config.shellLinks)
-
-  return `
-    <section data-prerender-shell="true"${variantAttr} style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:2rem 1.25rem;background:radial-gradient(circle at top left,rgba(147,197,253,0.32) 0%,transparent 34%),radial-gradient(circle at top right,rgba(129,140,248,0.22) 0%,transparent 30%),linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);color:#0f172a;">
-      <div data-prerender-shell-content="true" style="display:grid;gap:1.125rem;place-items:center;text-align:center;">
-        ${renderShellBrandMark()}
-        <div style="display:grid;gap:0.375rem;">
-          <span style="font:600 0.8125rem/1.2 ui-sans-serif,system-ui;letter-spacing:0.14em;text-transform:uppercase;color:#2563eb;">${escapeHtml(config.shellEyebrow)}</span>
-          <h1 style="margin:0;letter-spacing:normal;font:700 clamp(1.5rem,4vw,2.125rem)/1.15 ui-sans-serif,system-ui;color:#0f172a;">${escapeHtml(config.shellTitle)}</h1>
-          <p style="margin:0;max-width:34rem;font:400 0.9375rem/1.7 ui-sans-serif,system-ui;color:#475569;">${escapeHtml(config.shellBody)}</p>
-        </div>
-        ${renderShellSpinner()}
-        <noscript><p lang="en" style="margin:0;max-width:34rem;font:400 0.9375rem/1.7 ui-sans-serif,system-ui;">JavaScript is disabled. Use the public links below to browse. Interactive features require JavaScript.</p></noscript>
-        ${linksMarkup}
-      </div>
-    </section>
-  `
-}
-
 export function renderPrerenderShell(config: HtmlDocumentConfig): string {
-  return renderLoadingShell(config)
+  return renderPublicShell(config, 'editorial')
 }
