@@ -32,7 +32,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
   const posts = new Map<string, JournalPost>()
   const searches = new Map<string, { items: JournalPost[]; more: boolean }>()
   const pending = new Set<string>(),
-    liked = new Map<string, boolean>()
+    liked = new Map<string, { active: boolean; count: number | undefined }>()
   const confirmed = new Map<string, boolean>()
   const lifetime = new AbortController()
   let searchRequest: AbortController | undefined, timer: ReturnType<typeof setTimeout> | undefined
@@ -168,7 +168,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
         ? `<p class="dialog-copy">${lines(post.text)}</p>`
         : ''
     ui().openDialog(
-      `<div class="post-detail${post.image ? '' : ' post-detail--text'}">${media ? `<div class="detail-media">${media}</div>` : ''}<div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i>${esc(platforms[post.platform] || post.platform)}</span><span>${esc(post.time)}</span></div><h2 id="dialog-title">${esc(post.title)}</h2>${copy}<div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small>作者 ${icon('arrow-up-right')}</small></span></button><div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id) ?? post.liked ?? false}">${icon('heart')}<span>${post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="打开动态页面">${icon('arrow-up-right')}</a></div></div></div>`,
+      `<div class="post-detail${post.image ? '' : ' post-detail--text'}">${media ? `<div class="detail-media">${media}</div>` : ''}<div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i>${esc(platforms[post.platform] || post.platform)}</span><span>${esc(post.time)}</span></div><h2 id="dialog-title">${esc(post.title)}</h2>${copy}<div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small>作者 ${icon('arrow-up-right')}</small></span></button><div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id)?.active ?? post.liked ?? false}">${icon('heart')}<span>${liked.get(post.id)?.count ?? post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="打开动态页面">${icon('arrow-up-right')}</a></div></div></div>`,
       post.image ? 'detail-dialog' : 'detail-dialog detail-dialog--text',
       {
         key: `post:${post.id}`,
@@ -178,6 +178,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     )
   }
   async function openPost(post: JournalPost) {
+    const likeSnapshot = liked.get(post.id)
     renderPost(post)
     const request = generation
     if (!isUuidV7String(post.id)) return
@@ -185,7 +186,14 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       const response = await detail(post.id)
       if (request !== generation || !active('detail-dialog')) return
       const full = postModel(response)
-      if (full.liked !== undefined) liked.set(full.id, full.liked)
+      // A read started before a confirmed mutation must not replace that result.
+      const currentLike = liked.get(full.id)
+      if (currentLike && currentLike !== likeSnapshot) {
+        full.liked = currentLike.active
+        full.communityLikes = currentLike.count
+      } else if (full.liked !== undefined) {
+        liked.set(full.id, { active: full.liked, count: full.communityLikes })
+      }
       remember([full])
       if (request === generation && active('detail-dialog')) renderPost(full)
       if (auth.isAuthenticated) {
@@ -320,25 +328,28 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       button.removeAttribute('aria-busy')
     }
   }
-  async function toggleLike(id: string, button: HTMLElement) {
-    if (!isUuidV7String(id) || pending.has(id) || !(await account())) return
+  async function toggleLike(id: string) {
+    if (!isUuidV7String(id) || pending.has(id) || !(await account()) || pending.has(id)) return
     pending.add(id)
     const user = auth.user?.id,
-      wasLiked = liked.get(id) ?? posts.get(id)?.liked ?? false
+      wasLiked = liked.get(id)?.active ?? posts.get(id)?.liked ?? false
     try {
       const response = await (wasLiked
         ? postService.unlikePost(id, config())
         : postService.likePost(id, config()))
       if (user !== auth.user?.id) return
-      liked.set(id, response.is_liked)
+      liked.set(id, { active: response.is_liked, count: response.community_like_count })
       const post = posts.get(id)
       if (post) {
         post.liked = response.is_liked
         post.communityLikes = response.community_like_count
       }
-      button.setAttribute('aria-pressed', String(response.is_liked))
-      const count = button.querySelector('span')
-      if (count) count.textContent = String(response.community_like_count)
+      // Content refresh can replace the control while the request is pending.
+      for (const control of document.querySelectorAll(`[data-dialog-like="${id}"]`)) {
+        control.setAttribute('aria-pressed', String(response.is_liked))
+        const count = control.querySelector('span')
+        if (count) count.textContent = String(response.community_like_count)
+      }
     } catch {
       ui().toast('暂时未能保存，请重试')
     } finally {
@@ -399,7 +410,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       if (post) void openGallery(post)
     }
     if (data['dialogSave']) void toggleSave(data['dialogSave'], button)
-    if (data['dialogLike']) void toggleLike(data['dialogLike'], button)
+    if (data['dialogLike']) void toggleLike(data['dialogLike'])
     if (data['authorQuery']) void openAuthor(data['authorId'] || '', data['authorQuery'])
     if (data['realGalleryStep'])
       renderGallery(
