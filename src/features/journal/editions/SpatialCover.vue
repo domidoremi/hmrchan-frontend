@@ -107,7 +107,8 @@
             width="640"
             height="800"
             :loading="Math.abs(position(i)) <= 2 ? 'eager' : 'lazy'"
-            :fetchpriority="i === 0 ? 'high' : 'auto'"
+            :fetchpriority="post.id === selectedId ? 'high' : 'low'"
+            :upgrade="post.id === selectedId"
           />
           <span
             v-else

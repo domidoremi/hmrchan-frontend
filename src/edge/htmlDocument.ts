@@ -217,13 +217,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
         ],
         shellLinks: createPrimaryPublicLinks(),
         shellVariant: 'home',
-        preloadImages: [
-          {
-            href: '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp',
-            sizes: '(max-width: 48rem) 68vw, 32vw',
-            fetchPriority: 'high',
-          },
-        ],
+        // The current cover comes from live data; fallback media is loaded only when used.
         structuredData: [
           createWebsiteStructuredData(),
           createOrganizationStructuredData(),

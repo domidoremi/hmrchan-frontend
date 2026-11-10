@@ -32,8 +32,9 @@ const props = withDefaults(
     loading?: 'eager' | 'lazy'
     fetchpriority?: 'high' | 'low' | 'auto'
     fit?: 'cover' | 'contain'
+    upgrade?: boolean
   }>(),
-  { loading: 'lazy', fetchpriority: 'auto', fit: 'cover' }
+  { loading: 'lazy', fetchpriority: 'auto', fit: 'cover', upgrade: true }
 )
 const failed = ref(false)
 const upgraded = ref(false)
@@ -48,6 +49,7 @@ let observer: ResizeObserver | undefined
 function checkResolution() {
   const img = imageRef.value
   if (
+    !props.upgrade ||
     !img?.complete ||
     !img.naturalWidth ||
     upgraded.value ||
@@ -83,6 +85,7 @@ watch(
     thumbnailFailed.value = false
   }
 )
+watch(() => props.upgrade, checkResolution, { flush: 'post' })
 watch(imageRef, (image, previous) => {
   if (previous) observer?.unobserve(previous)
   if (image) observer?.observe(image)

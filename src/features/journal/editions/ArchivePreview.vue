@@ -23,6 +23,7 @@
             width="600"
             height="680"
             loading="eager"
+            fetchpriority="high"
             fit="contain"
           /><span v-else>{{ post.text || post.title }}</span>
         </button>

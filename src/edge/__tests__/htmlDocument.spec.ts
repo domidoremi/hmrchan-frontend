@@ -20,13 +20,7 @@ describe('resolveHtmlDocument', () => {
     expect(homeConfig.robots).toBe('index, follow')
     expect(resolveCanonicalUrl(homeConfig)).toBe('https://momichan.com/')
     expect(homeConfig.structuredData.length).toBeGreaterThan(0)
-    expect(homeConfig.preloadImages).toEqual([
-      {
-        href: '/snapshot-media/home/hero-spotlight-f2e0f8f6-0434-4e37-874e-bb9b506585bf.webp',
-        sizes: '(max-width: 48rem) 68vw, 32vw',
-        fetchPriority: 'high',
-      },
-    ])
+    expect(homeConfig.preloadImages).toEqual([])
 
     expect(exploreConfig.status).toBe(200)
     expect(exploreConfig.title).toBe('Explore · MomiChan')
