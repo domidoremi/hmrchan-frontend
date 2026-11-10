@@ -223,6 +223,75 @@ describe('journal dialog requests and real media', () => {
     expect(button.getAttribute('aria-pressed')).toBe('false')
   })
 
+  it('updates the currently rendered like control after detail refresh replaces the clicked button', async () => {
+    let finishLike!: (value: unknown) => void
+    mocks.likePost.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishLike = resolve
+      })
+    )
+    await dialogs.openPost({ ...post(), liked: false, communityLikes: 0 })
+    const oldButton = document.querySelector<HTMLElement>('[data-dialog-like]')!
+    oldButton.click()
+    await flushPromises()
+    await dialogs.openPost(post('Refreshed detail'))
+    expect(oldButton.isConnected).toBe(false)
+    finishLike({ post_id: id, is_liked: true, community_like_count: 1 })
+    await flushPromises()
+    const button = document.querySelector<HTMLElement>('[data-dialog-like]')!
+    expect(button.getAttribute('aria-pressed')).toBe('true')
+    expect(button.textContent).toBe('1')
+  })
+
+  it('preserves a confirmed like when an older detail response arrives afterwards', async () => {
+    let finishDetail!: (value: JournalPost) => void
+    mocks.getPost.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishDetail = resolve
+      })
+    )
+    mocks.likePost.mockResolvedValueOnce({ post_id: id, is_liked: true, community_like_count: 1 })
+    const opening = dialogs.openPost({ ...post(), liked: false, communityLikes: 0 })
+    document.querySelector<HTMLElement>('[data-dialog-like]')!.click()
+    await flushPromises()
+    finishDetail({ ...post('Loaded detail'), liked: false, communityLikes: 0 })
+    await opening
+    const button = document.querySelector<HTMLElement>('[data-dialog-like]')!
+    expect(button.getAttribute('aria-pressed')).toBe('true')
+    expect(button.textContent).toBe('1')
+    expect(document.querySelector('#dialog-title')!.textContent).toBe('Loaded detail')
+  })
+
+  it('refreshes the server count on a read started after a confirmed like', async () => {
+    mocks.likePost.mockResolvedValueOnce({ post_id: id, is_liked: true, community_like_count: 1 })
+    await dialogs.openPost({ ...post(), liked: false, communityLikes: 0 })
+    document.querySelector<HTMLElement>('[data-dialog-like]')!.click()
+    await flushPromises()
+    mocks.getPost.mockResolvedValueOnce({ ...post(), liked: true, communityLikes: 4 })
+    await dialogs.openPost(post())
+    const button = document.querySelector<HTMLElement>('[data-dialog-like]')!
+    expect(button.getAttribute('aria-pressed')).toBe('true')
+    expect(button.textContent).toBe('4')
+  })
+
+  it('sends one mutation when repeated clicks await the same account check', async () => {
+    let finishLike!: (value: unknown) => void
+    mocks.likePost.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishLike = resolve
+      })
+    )
+    await dialogs.openPost({ ...post(), liked: false, communityLikes: 0 })
+    const button = document.querySelector<HTMLElement>('[data-dialog-like]')!
+    button.click()
+    button.click()
+    await flushPromises()
+    expect(mocks.likePost).toHaveBeenCalledTimes(1)
+    finishLike({ post_id: id, is_liked: true, community_like_count: 1 })
+    await flushPromises()
+    expect(button.getAttribute('aria-pressed')).toBe('true')
+  })
+
   it('keeps the newer search when an old request finishes later', async () => {
     let finish!: (value: unknown) => void
     mocks.searchPosts
