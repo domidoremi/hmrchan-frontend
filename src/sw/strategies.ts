@@ -104,6 +104,18 @@ export async function cleanupOutdatedCaches(): Promise<void> {
 }
 
 export async function handleNavigationRequest(event: FetchEventLike): Promise<Response> {
+  const response = await resolveNavigationResponse(event)
+  if (!response.redirected || event.request.redirect === 'follow') return response
+
+  // Preserve the stream and headers while clearing redirect history for navigation.
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  })
+}
+
+async function resolveNavigationResponse(event: FetchEventLike): Promise<Response> {
   const { request } = event
   const authRoute = isAuthRoutePath(new URL(request.url).pathname)
 
