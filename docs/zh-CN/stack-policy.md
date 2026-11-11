@@ -29,3 +29,13 @@ Lucide 1.71 已包含默认插槽修复，删除对应旧补丁；ESM 上下文�
 - [Vue 编译器版本](https://vuejs.org/guide/scaling-up/tooling)
 - [TypeScript 原生编译器](https://github.com/microsoft/typescript-go)
 - [Node 官方发布索引](https://nodejs.org/dist/index.json)
+
+## 2026-11-12 02:33 +08:00 · 当前升级追加记录
+
+以上内容保留原核验时点。2026-11-11 18:32 UTC 的新官方查询重新取得 42 个不同 npm 包的 dist-tags，覆盖每站 43 条直接依赖声明（TypeScript 的 API 包与原生 CLI 别名共用一个官方包）。Main 的 Vue / compiler-sfc 3.5.45 对应 latest；Next 的 3.6.0-rc.14 对应 rc。除已有 TypeScript JavaScript API 兼容例外和 Next 的两条 Vue RC 外，当前实际安装的直接依赖均与这次官方 latest 一致。当前 Vite 为 8.3.8、Lucide Vue 为 1.72.0、Knip 为 6.45.1、Prettier 为 3.10.0。预发布可用性并不构成自动采用的理由，既有稳定选择与 TypeScript 例外继续适用。
+
+Node 官方索引当前最新稳定发布为 26.13.1，发布日期为 2026-11-10，security 标记为 true。已匹配官方 SHASUMS 并安装 Windows x64 构建，实际版本探测成功；两站 mise.toml、.node-version 和 engines.node 均使用 26.13.1 / >=26.13.1 <27。Wrangler 4.160.1 已在两站通过正常 Bun 安装，patch-lucide 与 Husky 均执行，安装和实际版本探测均 exit 0。各站其余 42 条直接依赖的安装版本和 metadata SHA 保持；锁只改变 Wrangler 声明、Wrangler 与 Miniflare 三行，没有新增或删除包。官方传递依赖 Miniflare 为 5.20261110.1-beta，workerd 1.20261110.1 保持原记录。
+
+Bun 保持 1.4.4。2026-11-11 18:32 UTC 的 owner API latest 请求仍返回 403，原失败没有修改；18:33 UTC 的独立 owner 公共 releases/latest 请求返回真实 302，指向 bun-v1.4.4，目标发布页为 200 且标记 Latest。因此当前版本另有公共发布入口的最新版本证据，不将 API 403 写成通过。
+
+新 Node 上的七个局部候选格式检查和两站各 12 个离线导航重定向用例已通过，前后源码、配置与锁绑定一致。这一结果仅覆盖格式和单元测试；当前组合的完整门禁、严格类型、构建、原生导航、保存交互、布局动效与性能仍须各自的新执行回执，不能继承旧构建通过。
