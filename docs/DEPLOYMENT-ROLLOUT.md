@@ -12,10 +12,10 @@
 
 ## 发布目标
 
-| 工作树 / 分支                | Pages 项目           | 生产入口                  | 发布前生产部署 ID                    |
-| ---------------------------- | -------------------- | ------------------------- | ------------------------------------ |
-| hmrchan-frontend / main      | hmrchan-frontend     | https://momichan.com      | 97862b79-0569-40f5-894f-6bbfc541d228 |
-| hmrchan-frontend-next / next | hmrchan-frontend-dev | https://next.momichan.com | 8cac5273-e947-4147-90e1-97c4ac524403 |
+| 工作树 / 分支                | Pages 项目           | 生产入口             | 发布前生产部署 ID                    |
+| ---------------------------- | -------------------- | -------------------- | ------------------------------------ |
+| hmrchan-frontend / main      | hmrchan-frontend     | 主站配置的生产入口   | 97862b79-0569-40f5-894f-6bbfc541d228 |
+| hmrchan-frontend-next / next | hmrchan-frontend-dev | 资料库配置的生产入口 | 8cac5273-e947-4147-90e1-97c4ac524403 |
 
 发布前 main 提交为 `73c7afeeceaa46e0b3c847aec79fd17d6cd10a3b`，next 提交为 `ce837d55665a23e80fec8cbdb139cf15d49045d3`。如出现上线回归，可使用以上部署 ID 在对应 Pages 项目回滚，并记录原因。
 

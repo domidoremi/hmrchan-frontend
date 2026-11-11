@@ -87,6 +87,77 @@ describe('pageMeta', () => {
     expect(JSON.parse(scripts[0]?.textContent ?? '')).toMatchObject({ '@type': 'ProfilePage' })
   })
 
+  it.each(['en', 'zh-CN', 'zh-TW', 'ja'])(
+    'updates route metadata without mutating the existing %s document language',
+    (locale) => {
+      applyPageMeta({ canonicalPath: '/explore', locale })
+      const observer = new MutationObserver(() => undefined)
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] })
+      try {
+        applyPageMeta({ canonicalPath: '/explore?view=list', locale })
+        applyPageMeta({
+          title: 'Upcoming events',
+          description: 'The next live appearances',
+          canonicalPath: '/schedule?month=2026-11',
+          locale,
+        })
+
+        expect(observer.takeRecords()).toHaveLength(0)
+        expect(document.documentElement.lang).toBe(locale)
+        expect(document.title).toBe('Upcoming events · MomiChan')
+        expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
+          'The next live appearances'
+        )
+        expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
+          'https://momichan.com/schedule'
+        )
+      } finally {
+        observer.disconnect()
+      }
+    }
+  )
+
+  it('updates document and social languages when the language actually changes', () => {
+    const observer = new MutationObserver(() => undefined)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['lang'],
+      attributeOldValue: true,
+    })
+    const languages = [
+      ['zh-CN', 'zh_CN'],
+      ['zh-TW', 'zh_TW'],
+      ['ja', 'ja_JP'],
+      ['en', 'en_US'],
+    ] as const
+    try {
+      let previous = 'en'
+      for (const [locale, socialLocale] of languages) {
+        applyPageMeta({ canonicalPath: '/explore', locale })
+        const mutations = observer.takeRecords()
+        expect(mutations).toHaveLength(1)
+        expect(mutations[0]?.oldValue).toBe(previous)
+        expect(document.documentElement.lang).toBe(locale)
+        expect(document.querySelector('meta[property="og:locale"]')?.getAttribute('content')).toBe(
+          socialLocale
+        )
+        const alternates = Array.from(
+          document.querySelectorAll('meta[property="og:locale:alternate"]'),
+          (element) => element.getAttribute('content')
+        )
+        expect(alternates).toEqual(
+          expect.arrayContaining(
+            languages.map(([, value]) => value).filter((value) => value !== socialLocale)
+          )
+        )
+        expect(alternates).toHaveLength(3)
+        previous = locale
+      }
+    } finally {
+      observer.disconnect()
+    }
+  })
+
   it('restores route defaults and removes stale JSON-LD during SPA navigation', () => {
     applyPageMeta({ canonicalPath: '/' })
 

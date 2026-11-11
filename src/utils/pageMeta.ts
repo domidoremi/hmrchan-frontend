@@ -188,7 +188,8 @@ export function applyPageMeta(input: PageMetaInput = {}): void {
   }
 
   document.title = documentConfig.title
-  document.documentElement.lang = locale
+  // Rewriting the same language still invalidates document-wide language styles.
+  if (document.documentElement.lang !== locale) document.documentElement.lang = locale
   ensureMetaName('description').setAttribute('content', documentConfig.description)
   ensureMetaName('robots').setAttribute('content', documentConfig.robots)
   ensureLinkRel('canonical').setAttribute('href', canonicalUrl)
