@@ -504,7 +504,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
         treeshake: {
           moduleSideEffects: 'no-external' as const,
 
-          propertyReadSideEffects: false as const,
+          // Reactive ref getters collect dependencies; retain their property reads.
+          propertyReadSideEffects: 'always' as const,
 
           unknownGlobalSideEffects: false,
         },
