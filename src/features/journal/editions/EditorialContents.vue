@@ -8,8 +8,7 @@
       :aria-current="active === section.id ? 'location' : undefined"
       @click.prevent="go(section.id)"
     >
-      <span>{{ section.number }}</span
-      ><b>{{ section.label }}</b
+      <span>{{ section.number }}</span><b>{{ section.label }}</b
       ><small :aria-label="section.count === null ? '数量尚未读取' : undefined">{{
         section.count ?? '—'
       }}</small>

@@ -10,17 +10,25 @@
           >{{ isArchive ? 'ARCHIVE' : 'THE JOURNAL' }} / {{ pageLabel }}</span
         >
         <h1>
-          {{ error ? '这一页暂时未能载入。' : isArchive ? '正在读取内容。' : '正在翻开这一页。' }}
+          {{
+            t(
+              error
+                ? 'journal.states.pageFailed'
+                : isArchive
+                  ? 'journal.states.loadingRecords'
+                  : 'journal.states.loadingPage'
+            )
+          }}
         </h1>
         <p role="status" aria-live="polite">
           {{
             error
-              ? '请检查网络后重试，或继续浏览其他页面。'
+              ? t('journal.states.checkNetwork')
               : slow
-                ? '仍在载入，请稍候。'
+                ? t('common.loading')
                 : isArchive
-                  ? '记录与预览即将就绪。'
-                  : '内容正在载入，稍后即可阅读。'
+                  ? t('journal.states.archiveReadySoon')
+                  : t('journal.states.journalReadySoon')
           }}
         </p>
       </div>
@@ -34,30 +42,32 @@
       </div>
     </template>
     <div v-if="error || slow" class="route-state-recovery">
-      <p v-if="slow && !error">加载时间比平时长，可以继续等待或重新加载。</p>
+      <p v-if="slow && !error">{{ t('journal.states.slow') }}</p>
       <div>
         <button class="button button-dark" @click="reloadPage">
-          重新加载 <span aria-hidden="true">↗</span>
+          {{ t('common.retry') }} <span aria-hidden="true">↗</span>
         </button>
-        <RouterLink class="button button-outline" to="/">返回首页</RouterLink>
+        <RouterLink class="button button-outline" to="/">{{ t('nav.backHome') }}</RouterLink>
       </div>
     </div>
   </section>
 </template>
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { designEdition } from '@/config/designEdition'
 
 defineProps<{ error?: Error }>()
 const route = useRoute()
+const { t } = useI18n({ useScope: 'global' })
 const isArchive = designEdition === 'archive'
 const pageLabel = computed(() => {
-  if (route.path === '/schedule') return isArchive ? '月历' : '日程'
-  if (route.path === '/community') return isArchive ? '讨论' : '社区'
-  if (route.path === '/profile/favorites') return '我的收藏'
-  if (route.path === '/explore') return isArchive ? '资料检索' : '动态'
-  return '页面载入'
+  if (route.path === '/schedule') return t(isArchive ? 'journal.nav.calendar' : 'nav.schedule')
+  if (route.path === '/community') return t(isArchive ? 'journal.nav.discussions' : 'nav.community')
+  if (route.path === '/profile/favorites') return t('journal.nav.collection')
+  if (route.path === '/explore') return t(isArchive ? 'journal.nav.records' : 'journal.nav.posts')
+  return t('journal.states.pageLoadingLabel')
 })
 const slow = ref(false)
 let slowTimer: ReturnType<typeof setTimeout> | undefined

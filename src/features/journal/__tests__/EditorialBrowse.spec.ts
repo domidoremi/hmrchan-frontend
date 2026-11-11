@@ -1,3 +1,4 @@
+import { createJournalTestI18n } from './journalTestI18n'
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick, shallowRef } from 'vue'
@@ -27,6 +28,7 @@ describe('editorial view selection', () => {
         loading: false,
       },
       global: {
+        plugins: [createJournalTestI18n()],
         provide: { [journalKey as symbol]: shallowRef({ SpatialMotion: { layout } }) },
         stubs: { JournalIcon: true, JournalPostCard: true },
       },

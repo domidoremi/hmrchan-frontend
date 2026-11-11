@@ -1647,5 +1647,170 @@
     "contents": "In this issue",
     "openBook": "Open",
     "viewPhoto": "View post"
+  },
+  "journal": {
+    "actions": {
+      "addFavorite": "Add to favorites: {title}",
+      "backTo": "Back to {label}",
+      "open": "Open",
+      "openPostNamed": "Open post: {title}",
+      "remind": "Save event",
+      "remindNamed": "Save event: {title}",
+      "reminded": "Event saved",
+      "removeFavorite": "Remove from favorites: {title}",
+      "removeReminderNamed": "Remove saved event: {title}",
+      "saved": "Saved"
+    },
+    "appearance": {
+      "archiveEdition": "Archive",
+      "colorMode": "Color mode",
+      "currentSite": "Current site",
+      "journalEdition": "Journal",
+      "languageChanging": "Changing language…",
+      "languageHint": "Choose the interface language. Posts stay in their original language.",
+      "languageUnavailable": "That language couldn't be loaded. {language} is active.",
+      "motion": "Motion",
+      "motionFull": "Full motion",
+      "motionReduced": "Reduced motion",
+      "sites": "Sites",
+      "thisDevice": "This device",
+      "title": "Display settings",
+      "visit": "Visit"
+    },
+    "browse": {
+      "adjustSearch": "Adjust search",
+      "continue": "Continue browsing",
+      "count": "{count} items",
+      "countUnknown": "Result count is not available yet",
+      "emptyHint": "Try another keyword or adjust the filters. Your current choices remain above.",
+      "emptyKicker": "Current filters",
+      "errorKicker": "Loading incomplete",
+      "favoritesHint": "Your saved posts appear here. Explore posts to start your collection.",
+      "index": "Post index",
+      "loadingHint": "Loading records. Your search and filters stay in place.",
+      "loadingKicker": "Loading",
+      "moreRetryHint": "The next set of records could not load. You can keep browsing the current results or retry.",
+      "postAuthor": "Post / author",
+      "retryHint": "Try loading again. Your search and filters stay in place so you can continue here.",
+      "retrying": "Retrying…",
+      "searchAndFilter": "Search & filter",
+      "time": "Time"
+    },
+    "calendar": {
+      "allEvents": "All events",
+      "eventCount": "{count} events",
+      "noneThisMonth": "No events this month",
+      "partialLoad": "Some events couldn't be loaded",
+      "taipeiTime": "Taipei time"
+    },
+    "community": {
+      "closed": "Discussion closed",
+      "draft": "Draft",
+      "replyLabel": "Reply text"
+    },
+    "content": {
+      "photo": "Photographs",
+      "program": "Programs",
+      "text": "Text"
+    },
+    "density": {
+      "compact": "Compact",
+      "label": "Display density",
+      "standard": "Standard"
+    },
+    "filters": {
+      "active": "Current filters",
+      "contentType": "Content type",
+      "mostLiked": "Most liked",
+      "querySummary": "Search: {query}",
+      "remove": "Remove filter: {filter}",
+      "sortSummary": "Sort: {sort}",
+      "source": "Source",
+      "sourceSummary": "Source: {source}",
+      "typeSummary": "Type: {type}"
+    },
+    "gallery": {
+      "imageUnavailable": "Image unavailable",
+      "next": "Next image",
+      "noImages": "No images",
+      "open": "View large image",
+      "previous": "Previous image",
+      "thumbnails": "Image thumbnails",
+      "viewIndex": "View image {index}"
+    },
+    "nav": {
+      "accountNavigation": "Account navigation",
+      "calendar": "Calendar",
+      "closeDirectory": "Close menu",
+      "collection": "My favorites",
+      "discussions": "Discussions",
+      "goToArchive": "Go to Archive",
+      "goToJournal": "Go to Journal",
+      "loginOrRegister": "Sign in / register",
+      "mobileNavigation": "Mobile navigation",
+      "my": "Account",
+      "myAccount": "My account",
+      "openDirectory": "Open menu",
+      "overview": "Overview",
+      "posts": "Posts",
+      "records": "Search records",
+      "savedSchedule": "Saved events"
+    },
+    "search": {
+      "inputLabel": "Search posts, authors or tags",
+      "recent": "Recent updates",
+      "results": "Found {count}{more} matching posts"
+    },
+    "selection": {
+      "current": "Current preview",
+      "empty": "No content",
+      "next": "Next post",
+      "open": "Open selected post",
+      "preview": "Preview",
+      "previous": "Previous post",
+      "returnToList": "Return to list",
+      "select": "Select",
+      "selected": "Selected {current} / {total}",
+      "unavailable": "Preview will be available after records load"
+    },
+    "sources": {
+      "official": "Official"
+    },
+    "states": {
+      "archiveReadySoon": "Records and previews will be ready shortly.",
+      "checkNetwork": "Check your connection and try again, or browse another page.",
+      "failed": "Couldn't load {label}",
+      "journalReadySoon": "The page will be ready to read shortly.",
+      "loading": "Loading {label}…",
+      "loadingPage": "Opening this page…",
+      "loadingRecords": "Loading records…",
+      "noDiscussions": "No discussions yet",
+      "noEvents": "No events",
+      "noFavorites": "No favorites yet",
+      "noPosts": "No posts yet",
+      "noRecords": "No records",
+      "pageFailed": "Couldn't load this page.",
+      "pageLoadingLabel": "Page loading",
+      "resetFilters": "Reset filters",
+      "retryNamed": "Reload {label}",
+      "slow": "This is taking longer than usual. You can wait or reload."
+    },
+    "toast": {
+      "authorFailed": "Couldn't load this author's posts.",
+      "connectFailed": "Couldn't connect. Try again.",
+      "discussionFailed": "Couldn't load the full discussion.",
+      "favoriteAdded": "Added to favorites",
+      "favoriteRemoved": "Removed from favorites",
+      "favoriteUnavailable": "Can't save this post right now.",
+      "postFailed": "Couldn't load the full post.",
+      "reminderRemoved": "Event removed",
+      "saveFailed": "Couldn't save. Try again.",
+      "storageFailed": "Couldn't save this preference."
+    },
+    "views": {
+      "gallery": "Gallery",
+      "list": "Reading list",
+      "wall": "Photo wall"
+    }
   }
 }

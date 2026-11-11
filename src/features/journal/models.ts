@@ -10,7 +10,10 @@ import { normalizeToThumbnailUrl, resolveMediaSources } from '@/utils/mediaOptim
 export interface JournalPost {
   id: string
   title: string
+  titleOrigin?: 'unknown' | 'fallback'
   text: string
+  /** Source of the text currently rendered by cards. */
+  textOrigin?: 'post' | 'favorite-note' | 'unknown'
   image: string | null
   originalImage?: string | null
   author: string
@@ -74,7 +77,9 @@ export function postModel(post: PostListItem | PostDetailResponse): JournalPost 
   return {
     id: post.id,
     title: post.title || content?.slice(0, 100) || '动态',
+    titleOrigin: post.title ? 'unknown' : 'fallback',
     text: content || post.description || '',
+    textOrigin: 'post',
     image,
     originalImage: media.kind === 'image' ? media.streamUrl : null,
     author: post.author_name || post.author_username || '',
@@ -100,6 +105,7 @@ export function favoriteModel(
       ...postModel(detail),
       favoriteId: favorite.id,
       text: favorite.notes || detail.description || '',
+      textOrigin: favorite.notes ? 'favorite-note' : 'post',
       tags: favorite.tags ?? detail.tags ?? [],
       time: formatRelativeTime(favorite.created_at),
       publishedAt: favorite.created_at,
@@ -111,7 +117,9 @@ export function favoriteModel(
     id: favorite.post_id,
     favoriteId: favorite.id,
     title: post?.title || '已收藏动态',
+    titleOrigin: post?.title ? 'unknown' : 'fallback',
     text: favorite.notes || '',
+    textOrigin: favorite.notes ? 'favorite-note' : 'unknown',
     image,
     originalImage: media.kind === 'image' ? media.streamUrl : null,
     author: post?.author_name || favorite.author?.username || '',

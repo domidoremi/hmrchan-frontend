@@ -20,8 +20,7 @@
       <div class="photo-book__spread">
         <div class="photo-book__page photo-book__left" :inert="!opened">
           <div class="photo-book__meta">
-            <span>{{ t('spatial.selected') }}</span
-            ><span>{{ folio }}</span>
+            <span>{{ t('spatial.selected') }}</span><span>{{ folio }}</span>
           </div>
           <button
             class="photo-book__image"
@@ -36,8 +35,7 @@
         </div>
         <div class="photo-book__page photo-book__right" :inert="!opened">
           <div class="photo-book__meta">
-            <span>{{ t('spatial.contents') }}</span
-            ><span>02</span>
+            <span>{{ t('spatial.contents') }}</span><span>02</span>
           </div>
           <div class="photo-book__index">
             <button

@@ -1,5 +1,9 @@
 <template>
-  <article class="post-card" :data-post="post.id">
+  <article
+    class="post-card"
+    :class="post.image ? 'post-card--media' : 'post-card--text'"
+    :data-post="post.id"
+  >
     <button v-if="post.image" class="post-media" :data-open="post.id">
       <JournalImage
         :src="post.image"
@@ -25,7 +29,11 @@
     <button
       class="icon-button post-save"
       :class="{ saved }"
-      :aria-label="`${saved ? '取消收藏' : '收藏'}：${post.title}`"
+      :aria-label="
+        t(saved ? 'journal.actions.removeFavorite' : 'journal.actions.addFavorite', {
+          title: post.title,
+        })
+      "
       :aria-pressed="saved"
       @click="$emit('save', post, $event)"
     >
@@ -36,12 +44,12 @@
         ><i class="platform-dot" :class="`platform-${post.platform}`" />{{
           platforms[post.platform] || post.platform
         }}</span
-      ><time>{{ post.time }}</time>
+      ><time>{{ journalPostTimeLabel(post, t, locale) }}</time>
     </div>
-    <button v-if="post.image || distinctText" class="post-title" :data-open="post.id">
+    <button v-if="post.image || copy.showTextTitle" class="post-title" :data-open="post.id">
       {{ post.title }}
     </button>
-    <p v-if="post.image && distinctText" class="post-excerpt">{{ post.text }}</p>
+    <p v-if="post.image && copy.showImageExcerpt" class="post-excerpt">{{ post.text }}</p>
     <div class="post-bottom">
       <button class="post-author" :data-author-id="post.authorId" :data-author-query="post.author">
         <img :src="post.avatar" alt="" width="19" height="19" loading="lazy" /><span>{{
@@ -54,14 +62,16 @@
   </article>
 </template>
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 import JournalIcon from './JournalIcon.vue'
 import JournalImage from './JournalImage.vue'
+import { journalPostTimeLabel } from './localizedPostTime'
 import { platforms, type JournalPost } from './models'
+import { postCopyPresentation } from './post-copy'
+const { locale, t } = useI18n({ useScope: 'global' })
 const props = defineProps<{ post: JournalPost; saved: boolean }>()
 const textLines = computed(() => (props.post.text || props.post.title).split('\n'))
-const distinctText = computed(
-  () => props.post.text.trim() && props.post.text.trim() !== props.post.title.trim()
-)
+const copy = computed(() => postCopyPresentation(props.post))
 defineEmits<{ save: [post: JournalPost, event: MouseEvent] }>()
 </script>

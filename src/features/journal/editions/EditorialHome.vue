@@ -3,8 +3,7 @@
     <div class="journal-masthead" data-reveal>
       <span>THE JOURNAL</span><strong>MomiChan<span>↗</span></strong>
       <div>
-        <span>{{ date }}</span
-        ><span>PHOTOS · POSTS · PEOPLE</span>
+        <span>{{ date }}</span><span>PHOTOS · POSTS · PEOPLE</span>
       </div>
     </div>
     <div
@@ -26,8 +25,10 @@
     <JournalResourceState
       :state="states.posts"
       label="动态"
+      label-key="journal.nav.posts"
       :empty="!posts.length"
       empty-message="暂无动态"
+      empty-message-key="journal.states.noPosts"
       @retry="$emit('retry')"
     />
     <section
@@ -127,8 +128,10 @@
           <JournalResourceState
             :state="states.events"
             label="日程"
+            label-key="nav.schedule"
             :empty="!events.length"
             empty-message="本月暂无日程"
+            empty-message-key="journal.calendar.noneThisMonth"
             @retry="$emit('retry')"
           />
         </div>
@@ -155,8 +158,7 @@
           <span>{{ String(i + 1).padStart(2, '0') }}</span>
           <div>
             <div class="meta-line">
-              <span>{{ item.category }}</span
-              ><time>{{ item.time }}</time>
+              <span>{{ item.category }}</span><time>{{ item.time }}</time>
             </div>
             <h3>
               <button :data-discussion="item.id">{{ item.title }}</button>
@@ -170,8 +172,10 @@
         <JournalResourceState
           :state="states.discussions"
           label="讨论"
+          label-key="journal.nav.discussions"
           :empty="!discussions.length"
           empty-message="暂无讨论"
+          empty-message-key="journal.states.noDiscussions"
           @retry="$emit('retry')"
         />
       </div>

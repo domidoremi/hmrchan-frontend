@@ -1,3 +1,4 @@
+import { createJournalTestI18n } from './journalTestI18n'
 import { defineComponent, h, reactive, shallowRef } from 'vue'
 import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
@@ -94,7 +95,7 @@ function start() {
         return () => h('div')
       },
     }),
-    { attachTo: document.body }
+    { attachTo: document.body, global: { plugins: [createJournalTestI18n()] } }
   )
 }
 beforeEach(() => {

@@ -1,3 +1,4 @@
+import { createJournalTestI18n } from './journalTestI18n'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import JournalAppearanceDialog from '../JournalAppearanceDialog.vue'
@@ -28,7 +29,10 @@ beforeEach(() => {
   })
   wrapper = mount(JournalAppearanceDialog, {
     attachTo: document.body,
-    global: { stubs: { JournalDisplaySettings: true, JournalIcon: true } },
+    global: {
+      plugins: [createJournalTestI18n()],
+      stubs: { JournalDisplaySettings: true, JournalIcon: true },
+    },
   })
 })
 

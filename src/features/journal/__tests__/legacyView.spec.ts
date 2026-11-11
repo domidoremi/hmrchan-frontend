@@ -3,6 +3,7 @@ import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { afterEach, describe, expect, it } from 'vitest'
 import { journalLegacyView } from '../legacyView'
+import { createJournalTestI18n } from './journalTestI18n'
 
 let dispose: (() => void) | undefined
 afterEach(() => {
@@ -20,22 +21,25 @@ async function openView(loader: () => Promise<ReturnType<typeof defineComponent>
   })
   await router.push('/about')
   await router.isReady()
+  const i18n = createJournalTestI18n()
   const wrapper = mount(defineComponent({ render: () => h(RouterView) }), {
-    global: { plugins: [router] },
+    global: { plugins: [router, i18n] },
   })
   dispose = () => wrapper.unmount()
   await flushPromises()
-  return { router, wrapper }
+  return { router, wrapper, i18n }
 }
 
 describe('business route module recovery', () => {
   it('finishes initial navigation with recovery actions when the page module fails', async () => {
-    const { router, wrapper } = await openView(async () => {
+    const { router, wrapper, i18n } = await openView(async () => {
       throw new Error('private network diagnostic')
     })
     expect(router.currentRoute.value.path).toBe('/about')
     expect(wrapper.get('.journal-route-state').attributes('data-state')).toBe('error')
-    expect(wrapper.text()).toContain('重新加载')
+    expect(wrapper.get('.route-state-recovery button').text()).toContain(
+      i18n.global.t('common.retry')
+    )
     expect(wrapper.text()).not.toContain('private network diagnostic')
   })
   it('recovers a preload failure suppressed by the global deployment handler', async () => {

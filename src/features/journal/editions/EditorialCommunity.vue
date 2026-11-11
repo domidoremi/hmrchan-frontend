@@ -17,8 +17,9 @@
       </div>
       <div class="community-cover-copy">
         <div class="meta-line">
-          <span>{{ featured.pinned ? '置顶' : featured.category }}</span
-          ><time>{{ featured.time }}</time>
+          <span>{{ featured.pinned ? '置顶' : featured.category }}</span><time>{{
+            featured.time
+          }}</time>
         </div>
         <h2>
           <button :data-discussion="featured.id">{{ featured.title }}</button>
@@ -60,8 +61,8 @@
         <span>{{ String(i + 1).padStart(2, '0') }}</span>
         <div>
           <div class="meta-line">
-            <span>{{ item.category }}</span
-            ><span v-if="item.pinned">置顶</span><time>{{ item.time }}</time>
+            <span>{{ item.category }}</span><span v-if="item.pinned">置顶</span
+            ><time>{{ item.time }}</time>
           </div>
           <h3>
             <button :data-discussion="item.id">{{ item.title }}</button>

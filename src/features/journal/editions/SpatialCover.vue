@@ -3,8 +3,7 @@
     v-if="selected"
     ref="root"
     class="spatial-cover"
-    aria-label="最新动态封面"
-    aria-roledescription="轮播"
+    :aria-label="t('home.latest')"
     @pointerenter="hovered = true"
     @pointerleave="hovered = false"
     @focusin="focused = true"
@@ -14,7 +13,8 @@
   >
     <div class="cover-copy">
       <div class="cover-kicker">
-        <span class="status-light" />最新动态<span
+        <span class="status-light" />{{ t('home.latest')
+        }}<span
           >{{ String(index + 1).padStart(2, '0') }} /
           {{ String(items.length).padStart(2, '0') }}</span
         >
@@ -22,8 +22,9 @@
       <Transition name="cover-copy" mode="out-in"
         ><div :key="selected.id" class="cover-article cover-story">
           <div class="cover-source">
-            <span>{{ platforms[selected.platform] || selected.platform }}</span
-            ><time>{{ selected.time }}</time>
+            <span>{{ platforms[selected.platform] || selected.platform }}</span><time>{{
+              journalPostTimeLabel(selected, t, locale)
+            }}</time>
           </div>
           <h1>
             <button :data-open="selected.id">{{ selected.title }}</button>
@@ -39,14 +40,18 @@
               selected.author
             }}</span>
           </button>
-          <button class="round-action" :data-open="selected.id" aria-label="阅读动态">
-            <span>阅读动态</span><JournalIcon name="arrow-up-right" />
+          <button
+            class="round-action"
+            :data-open="selected.id"
+            :aria-label="t('journal.selection.open')"
+          >
+            <span>{{ t('journal.selection.open') }}</span><JournalIcon name="arrow-up-right" />
           </button></div
       ></Transition>
       <div class="cover-controls">
         <button
           class="icon-button"
-          aria-label="上一条封面"
+          :aria-label="t('journal.selection.previous')"
           :disabled="items.length < 2"
           @click="step(-1)"
         >
@@ -56,7 +61,7 @@
           <button
             v-for="(post, i) in items"
             :key="post.id"
-            :aria-label="`查看第 ${i + 1} 条封面`"
+            :aria-label="`${t('journal.selection.select')} ${i + 1}: ${post.title}`"
             :aria-pressed="selectedId === post.id"
             :class="{ active: selectedId === post.id }"
             @click="selectedId = post.id"
@@ -66,7 +71,7 @@
         </div>
         <button
           class="icon-button"
-          aria-label="下一条封面"
+          :aria-label="t('journal.selection.next')"
           :disabled="items.length < 2"
           @click="step(1)"
         >
@@ -77,7 +82,7 @@
           :aria-pressed="paused"
           @click="paused = !paused"
         >
-          {{ paused ? '播放' : '暂停' }}
+          {{ t(paused ? 'video.play' : 'video.pause') }}
         </button>
       </div>
     </div>
@@ -132,12 +137,15 @@
   </section>
 </template>
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, ref, watch, onMounted, onBeforeUnmount, onActivated, onDeactivated } from 'vue'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
+import { journalPostTimeLabel } from '../localizedPostTime'
 import { platforms, type JournalPost } from '../models'
 import { usePostSelection } from '../presentation'
+const { locale, t } = useI18n({ useScope: 'global' })
 const props = defineProps<{ posts: JournalPost[] }>()
 const items = computed(() => props.posts.slice(0, 6))
 const { selectedId, selected, index, step } = usePostSelection(items)

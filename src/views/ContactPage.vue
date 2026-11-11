@@ -32,8 +32,7 @@
         <legend class="sr-only">{{ $t('contact.message') }}</legend>
         <div class="contact-form__split">
           <div class="form-group">
-            <label for="contact-name">{{ $t('contact.name') }}</label
-            ><Input
+            <label for="contact-name">{{ $t('contact.name') }}</label><Input
               id="contact-name"
               v-model="form.name"
               autocomplete="name"
@@ -42,8 +41,7 @@
             />
           </div>
           <div class="form-group">
-            <label for="contact-email">{{ $t('contact.email') }}</label
-            ><Input
+            <label for="contact-email">{{ $t('contact.email') }}</label><Input
               id="contact-email"
               v-model="form.email"
               type="email"
@@ -53,12 +51,15 @@
           </div>
         </div>
         <div class="form-group">
-          <label for="contact-subject">{{ $t('contact.subject') }}</label
-          ><Input id="contact-subject" v-model="form.subject" maxlength="200" required />
+          <label for="contact-subject">{{ $t('contact.subject') }}</label><Input
+            id="contact-subject"
+            v-model="form.subject"
+            maxlength="200"
+            required
+          />
         </div>
         <div class="form-group">
-          <label for="contact-message">{{ $t('contact.message') }}</label
-          ><Textarea
+          <label for="contact-message">{{ $t('contact.message') }}</label><Textarea
             id="contact-message"
             v-model="form.message"
             :rows="7"

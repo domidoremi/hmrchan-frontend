@@ -1,3 +1,4 @@
+import { createJournalTestI18n } from './journalTestI18n'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import ArchiveHome from '../editions/ArchiveHome.vue'
@@ -22,6 +23,7 @@ const props = (states: JournalResourceStates) => ({
   month: '2026-11',
 })
 const global = {
+  plugins: [createJournalTestI18n()],
   stubs: {
     RouterLink: { template: '<a><slot /></a>' },
     JournalIcon: true,

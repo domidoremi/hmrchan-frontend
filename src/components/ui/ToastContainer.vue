@@ -128,7 +128,9 @@ const announcement = ref(''),
   urgentAnnouncement = ref(''),
   actionError = ref('')
 let returnTarget: HTMLElement | null = null
+let focusGeneration = 0
 let mounted = false
+const originTargets = new Map<string, HTMLElement | null>()
 
 function onPointerEnter(event: PointerEvent) {
   if (current.value && event.pointerType !== 'touch')
@@ -145,12 +147,17 @@ function toggleCollapsed() {
   if (collapsed.value) toastStore.pauseTimer(toast.id, 'collapsed')
   else toastStore.resumeTimer(toast.id, 'collapsed')
 }
-function restoreFocus() {
+function restoreFocus(preferred: HTMLElement | null = returnTarget) {
+  const modal =
+    portalTarget.value instanceof HTMLDialogElement && portalTarget.value.open
+      ? portalTarget.value
+      : null
   const target =
-    returnTarget?.isConnected && returnTarget.getClientRects().length
-      ? returnTarget
-      : (document.querySelector<HTMLElement>('dialog[open]') ??
-        document.querySelector<HTMLElement>('#main-content'))
+    preferred?.isConnected &&
+    preferred.getClientRects().length &&
+    (!modal || modal.contains(preferred))
+      ? preferred
+      : (modal ?? document.querySelector<HTMLElement>('#main-content'))
   target?.focus({ preventScroll: true })
 }
 function dismiss() {
@@ -161,22 +168,47 @@ function dismiss() {
 async function handleAction() {
   const toast = current.value
   if (!toast?.action || acting.value) return
+  const actionHadFocus = region.value?.contains(document.activeElement) ?? false
+  const actionReturnTarget = originTargets.get(toast.id) ?? null
+  const actionFocusGeneration = focusGeneration
+  const actionPortalTarget = portalTarget.value
+  const canRestoreActionFocus = () =>
+    !document.hidden &&
+    document.hasFocus() &&
+    focusGeneration === actionFocusGeneration &&
+    portalTarget.value === actionPortalTarget &&
+    (region.value?.contains(document.activeElement) ||
+      (actionHadFocus && (!document.activeElement || document.activeElement === document.body)))
+  let failed = false
   acting.value = true
   actionError.value = ''
   toastStore.pauseTimer(toast.id, 'action')
   try {
     await toast.action.onClick()
     if (mounted && current.value?.id === toast.id) {
-      if (region.value?.contains(document.activeElement)) restoreFocus()
+      // Disabling the action can move native Chrome focus to body. Restore
+      // only when focus still belongs to this action or was lost that way.
+      // A control the user focused while waiting keeps its own focus.
+      if (canRestoreActionFocus()) restoreFocus(actionReturnTarget)
       toastStore.removeToast(toast.id)
     }
   } catch {
+    failed = true
     if (mounted && current.value?.id === toast.id) {
       actionError.value = t('toast.actionFailed')
       urgentAnnouncement.value = actionError.value
     }
   } finally {
-    if (mounted && current.value?.id === toast.id) acting.value = false
+    if (mounted && current.value?.id === toast.id) {
+      acting.value = false
+      if (failed) {
+        await nextTick()
+        if (mounted && current.value?.id === toast.id && canRestoreActionFocus())
+          region.value
+            ?.querySelector<HTMLButtonElement>('.toast-card__action:not([disabled])')
+            ?.focus({ preventScroll: true })
+      }
+    }
     toastStore.resumeTimer(toast.id, 'action')
   }
 }
@@ -197,6 +229,7 @@ function protectFocusedControl(event?: FocusEvent) {
     region.value?.contains(target)
   )
     return
+  if (event) focusGeneration++
   returnTarget = target
   const notice = region.value?.getBoundingClientRect(),
     control = target.getBoundingClientRect()
@@ -230,6 +263,23 @@ async function activateCurrent(id: string | undefined) {
   if (region.value?.matches(':hover')) toastStore.pauseTimer(id!, 'pointer')
   if (region.value?.contains(document.activeElement)) toastStore.pauseTimer(id!, 'focus')
 }
+watch(
+  () => toastStore.toasts.map((toast) => toast.id),
+  (ids) => {
+    const currentIds = new Set(ids)
+    for (const id of originTargets.keys()) if (!currentIds.has(id)) originTargets.delete(id)
+    // This is the context where the notice enters the queue. An async request
+    // may have started from another control; later Tab traversal must not
+    // overwrite the context already owned by an existing notice.
+    const active = document.activeElement
+    const origin =
+      active instanceof HTMLElement && active !== document.body && !region.value?.contains(active)
+        ? active
+        : returnTarget
+    for (const id of ids) if (!originTargets.has(id)) originTargets.set(id, origin)
+  },
+  { flush: 'sync', immediate: true }
+)
 watch(() => current.value?.id, activateCurrent, { flush: 'post' })
 onMounted(() => {
   mounted = true
@@ -243,6 +293,7 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   mounted = false
+  originTargets.clear()
   window.removeEventListener('blur', onWindowBlur)
   window.removeEventListener('focus', onWindowFocus)
   toastStore.setVisibleToasts([])

@@ -14,13 +14,11 @@
     <div class="schedule-book">
       <aside class="schedule-book-cover" data-tilt>
         <div>
-          <span>{{ year }}</span
-          ><span>台北时间</span>
+          <span>{{ year }}</span><span>台北时间</span>
         </div>
         <Transition name="month-turn" mode="out-in"
           ><div :key="month" class="month-turn-face">
-            <strong>{{ String(number).padStart(2, '0') }}</strong
-            ><span>{{ monthName }}</span
+            <strong>{{ String(number).padStart(2, '0') }}</strong><span>{{ monthName }}</span
             ><i aria-hidden="true" /></div
         ></Transition>
         <div class="month-navigation">
@@ -64,8 +62,7 @@
             @click="$emit('change', 'day', String(day))"
           >
             <span class="sr-only">{{ number }} 月，星期</span>
-            <small>{{ weekday(day) }}</small
-            ><b>{{ String(day).padStart(2, '0') }}</b
+            <small>{{ weekday(day) }}</small><b>{{ String(day).padStart(2, '0') }}</b
             ><span class="sr-only">日，{{ dayEvents(day).length }} 项活动</span>
             <i :class="{ marked: dayEvents(day).length > 0 }" />
           </button>
@@ -73,8 +70,9 @@
         <div class="schedule-ledger">
           <div v-for="group in groups" :key="group.day" class="schedule-day-group" data-reveal>
             <div class="ledger-date">
-              <b>{{ String(group.day).padStart(2, '0') }}</b
-              ><span>星期{{ weekday(group.day) }}</span>
+              <b>{{ String(group.day).padStart(2, '0') }}</b><span
+                >星期{{ weekday(group.day) }}</span
+              >
             </div>
             <article v-for="event in group.events" :key="event.id" class="ledger-event">
               <span class="ledger-time"

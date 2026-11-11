@@ -4,12 +4,12 @@
       v-if="post && visible"
       class="archive-selection-dock"
       role="group"
-      aria-label="当前预览"
+      :aria-label="t('journal.selection.current')"
       :data-selected-post="post.id"
     >
       <button
         class="icon-button"
-        aria-label="上一条所选动态"
+        :aria-label="t('journal.selection.previous')"
         :disabled="total < 2"
         @click="$emit('step', -1)"
       >
@@ -21,7 +21,7 @@
       </button>
       <button
         class="icon-button"
-        aria-label="下一条所选动态"
+        :aria-label="t('journal.selection.next')"
         :disabled="total < 2"
         @click="$emit('step', 1)"
       >
@@ -30,7 +30,7 @@
       <button
         class="icon-button selection-dock-open"
         :data-open="post.id"
-        aria-label="打开所选动态"
+        :aria-label="t('journal.selection.open')"
       >
         <JournalIcon name="expand" />
       </button>
@@ -38,8 +38,10 @@
   </Transition>
 </template>
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import JournalIcon from '../JournalIcon.vue'
 import type { JournalPost } from '../models'
+const { t } = useI18n({ useScope: 'global' })
 defineProps<{ post?: JournalPost | undefined; index: number; total: number; visible: boolean }>()
 defineEmits<{ step: [delta: number]; preview: [] }>()
 </script>

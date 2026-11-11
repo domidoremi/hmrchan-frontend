@@ -8,10 +8,20 @@ import {
   type FavoriteTagStats,
   type ListFavoritesParams,
 } from '@/api/favoriteService'
+import type { RequestConfig } from '@/api/client'
 import { normalizeFavoritesSummaryCount } from '@/api/summaryCounts'
 import { useSettingsStore } from '@/stores/settings'
 import { resolvePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { registerPrivateSessionReset } from '@/services/privateSessionState'
+
+export type FavoriteFeedbackConfig = Pick<RequestConfig, 'skipErrorToast'>
+
+function feedbackRequestConfig(
+  feedback?: FavoriteFeedbackConfig
+): FavoriteFeedbackConfig | undefined {
+  const skipErrorToast = feedback?.skipErrorToast
+  return skipErrorToast === undefined ? undefined : { skipErrorToast }
+}
 
 const CHECKED_POST_CACHE_LIMIT = 300
 
@@ -137,10 +147,13 @@ export const useFavoritesStore = defineStore('favorites', () => {
   }
 
   async function refreshSummary(): Promise<void> {
+    const sessionVersion = restoreSessionVersion
     try {
       const summary = await favoriteService.getSummary({ skipErrorToast: true })
+      if (sessionVersion !== restoreSessionVersion) return
       total.value = normalizeFavoritesSummaryCount(summary)
     } catch {
+      if (sessionVersion !== restoreSessionVersion) return
       total.value = items.value.length > 0 ? items.value.length : null
     }
   }
@@ -195,8 +208,10 @@ export const useFavoritesStore = defineStore('favorites', () => {
     const cached = checkedPosts.value.get(postId)
     if (cached !== undefined) return cached
 
+    const sessionVersion = restoreSessionVersion
     try {
       const res = await favoriteService.check(assertUuidV7String(postId, 'favorite post id'))
+      if (sessionVersion !== restoreSessionVersion) return false
       rememberCheckedPost(postId, res.is_favorited)
       return res.is_favorited
     } catch {
@@ -204,12 +219,19 @@ export const useFavoritesStore = defineStore('favorites', () => {
     }
   }
 
-  async function addFavorite(postId: string, options?: { folder_name?: string; notes?: string }) {
+  async function addFavorite(
+    postId: string,
+    options?: { folder_name?: string; notes?: string },
+    feedback?: FavoriteFeedbackConfig
+  ) {
+    const sessionVersion = restoreSessionVersion
     try {
-      const res = await favoriteService.create(
-        assertUuidV7String(postId, 'favorite post id'),
-        options
-      )
+      const publicPostId = assertUuidV7String(postId, 'favorite post id')
+      const requestConfig = feedbackRequestConfig(feedback)
+      const res = requestConfig
+        ? await favoriteService.create(publicPostId, options, requestConfig)
+        : await favoriteService.create(publicPostId, options)
+      if (sessionVersion !== restoreSessionVersion) return { success: false }
       items.value.unshift(res)
       if (typeof total.value === 'number') {
         total.value += 1
@@ -221,17 +243,23 @@ export const useFavoritesStore = defineStore('favorites', () => {
     }
   }
 
-  async function restoreFavorite(original: FavoriteResponse, position = 0) {
+  async function restoreFavorite(
+    original: FavoriteResponse,
+    position = 0,
+    feedback?: FavoriteFeedbackConfig
+  ) {
     const sessionVersion = restoreSessionVersion
     try {
-      const restored = await favoriteService.create(
-        assertUuidV7String(original.post_id, 'favorite post id'),
-        {
-          ...(original.folder_name == null ? {} : { folder_name: original.folder_name }),
-          ...(original.notes == null ? {} : { notes: original.notes }),
-          ...(original.tags == null ? {} : { tags: [...original.tags] }),
-        }
-      )
+      const publicPostId = assertUuidV7String(original.post_id, 'favorite post id')
+      const options = {
+        ...(original.folder_name == null ? {} : { folder_name: original.folder_name }),
+        ...(original.notes == null ? {} : { notes: original.notes }),
+        ...(original.tags == null ? {} : { tags: [...original.tags] }),
+      }
+      const requestConfig = feedbackRequestConfig(feedback)
+      const restored = requestConfig
+        ? await favoriteService.create(publicPostId, options, requestConfig)
+        : await favoriteService.create(publicPostId, options)
       if (sessionVersion !== restoreSessionVersion) return { success: false }
       const alreadyPresent = items.value.some((item) => item.post_id === restored.post_id)
       const matchesFolder =
@@ -277,9 +305,14 @@ export const useFavoritesStore = defineStore('favorites', () => {
     }
   }
 
-  async function removeFavoriteByPostId(postId: string) {
+  async function removeFavoriteByPostId(postId: string, feedback?: FavoriteFeedbackConfig) {
+    const sessionVersion = restoreSessionVersion
     try {
-      await favoriteService.removeByPostId(assertUuidV7String(postId, 'favorite post id'))
+      const publicPostId = assertUuidV7String(postId, 'favorite post id')
+      const requestConfig = feedbackRequestConfig(feedback)
+      if (requestConfig) await favoriteService.removeByPostId(publicPostId, requestConfig)
+      else await favoriteService.removeByPostId(publicPostId)
+      if (sessionVersion !== restoreSessionVersion) return { success: false }
       items.value = items.value.filter((f) => f.post_id !== postId)
       if (typeof total.value === 'number') {
         total.value = Math.max(0, total.value - 1)
@@ -295,8 +328,10 @@ export const useFavoritesStore = defineStore('favorites', () => {
     favoriteId: string,
     data: { folder_name?: string | null; notes?: string | null }
   ) {
+    const sessionVersion = restoreSessionVersion
     try {
       const res = await favoriteService.update(assertUuidV7String(favoriteId, 'favorite id'), data)
+      if (sessionVersion !== restoreSessionVersion) return { success: false }
       const idx = items.value.findIndex((f) => f.id === favoriteId)
       if (idx !== -1) items.value[idx] = res
       return { success: true, data: res }

@@ -45,8 +45,7 @@
             : draft.status.value === 'failed'
               ? '草稿暂时无法保存'
               : ''
-        }}</span
-        ><span class="draft-length">{{ content.length }} / {{ CONTENT_MAX }}</span>
+        }}</span><span class="draft-length">{{ content.length }} / {{ CONTENT_MAX }}</span>
       </div>
       <div class="compose-footer">
         <button

@@ -7,8 +7,13 @@
     @click="closeOnBackdrop"
   >
     <header>
-      <h2 id="appearance-title">显示设置</h2>
-      <button type="button" class="icon-button" aria-label="关闭显示设置" @click="dialog?.close()">
+      <h2 id="appearance-title">{{ t('journal.appearance.title') }}</h2>
+      <button
+        type="button"
+        class="icon-button"
+        :aria-label="t('common.close')"
+        @click="dialog?.close()"
+      >
         <JournalIcon name="x" />
       </button>
     </header>
@@ -18,9 +23,11 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import JournalDisplaySettings from './JournalDisplaySettings.vue'
 import JournalIcon from './JournalIcon.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const emit = defineEmits<{ close: [] }>()
 const dialog = ref<HTMLDialogElement | null>(null)
 let previousFocus: HTMLElement | null = null
@@ -51,8 +58,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .journal-appearance-dialog {
-  width: min(820px, calc(100vw - 32px));
-  max-height: calc(100dvh - 32px);
+  inline-size: min(51.25rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 2rem);
   margin: auto;
   padding: 0;
   border: 1px solid var(--line);
@@ -64,32 +71,34 @@ onBeforeUnmount(() => {
 }
 .journal-appearance-dialog::backdrop {
   background: #101820b3;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(0.5rem);
 }
 .journal-appearance-dialog > header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 24px;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
   border-bottom: 1px solid var(--line);
 }
 .journal-appearance-dialog h2 {
-  font-size: 20px;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-size: 1.25rem;
   font-weight: 500;
 }
 .appearance-content {
-  max-height: calc(100dvh - 100px);
+  max-block-size: calc(100dvh - 6.25rem);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 24px;
+  padding: 1.5rem;
 }
 @media (max-width: 460px) {
   .appearance-content {
-    padding: 16px;
+    padding: 1rem;
   }
   .journal-appearance-dialog > header {
-    padding-inline: 16px;
+    padding-inline: 1rem;
   }
 }
 </style>

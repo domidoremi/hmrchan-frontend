@@ -193,6 +193,55 @@ describe('journal live data', () => {
     expect(data.posts.value[0]?.id).toBe('current')
   })
 
+  it('keeps loaded records and the cursor after a failed next page, then resumes without duplicates', async () => {
+    mocks.posts
+      .mockResolvedValueOnce({ items: [{ id: 'first' }], has_more: true, next_cursor: 'cursor-2' })
+      .mockRejectedValueOnce(new Error('next page unavailable'))
+      .mockResolvedValueOnce({
+        items: [{ id: 'first' }, { id: 'second' }],
+        has_more: false,
+        next_cursor: null,
+      })
+    const data = start('explore')
+    await flushPromises()
+    const loaded = data.posts.value
+    await data.load(true)
+    expect(data.resourceStates.value.posts).toBe('error')
+    expect(data.posts.value).toBe(loaded)
+    expect(data.hasMore.value).toBe(true)
+    expect(mocks.posts.mock.calls[1]![0].cursor).toBe('cursor-2')
+    const retry = data.load(true)
+    expect(data.loading.value).toBe(true)
+    expect(data.posts.value).toBe(loaded)
+    await retry
+    expect(mocks.posts.mock.calls[2]![0].cursor).toBe('cursor-2')
+    expect(data.posts.value.map((post) => post.id)).toEqual(['first', 'second'])
+    expect(data.resourceStates.value.posts).toBe('ready')
+    expect(data.hasMore.value).toBe(false)
+  })
+
+  it('ignores another next-page request while the current page is pending', async () => {
+    let finish!: (value: ReturnType<typeof response>) => void
+    mocks.posts
+      .mockResolvedValueOnce({ items: [{ id: 'first' }], has_more: true, next_cursor: 'cursor-2' })
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finish = resolve
+        })
+      )
+    const data = start('explore')
+    await flushPromises()
+    const pending = data.load(true)
+    const signal = mocks.posts.mock.calls[1]![1].signal
+    await data.load(true)
+    expect(mocks.posts).toHaveBeenCalledTimes(2)
+    expect(signal.aborted).toBe(false)
+    expect(data.posts.value.map((post) => post.id)).toEqual(['first'])
+    finish(response('second'))
+    await pending
+    expect(data.posts.value.map((post) => post.id)).toEqual(['first', 'second'])
+  })
+
   it('aborts pending requests when the page leaves', () => {
     mocks.posts.mockReturnValueOnce(new Promise(() => {}))
     start('explore')

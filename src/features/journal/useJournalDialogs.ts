@@ -7,6 +7,7 @@ import {
   type InjectionKey,
   type ShallowRef,
 } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { authorService } from '@/api/authorService'
 import { postService } from '@/api/postService'
@@ -15,13 +16,17 @@ import { ensureAuthStoreLoaded } from '@/services/authSurface'
 import { useAuthStore, useFavoritesStore } from '@/stores'
 import { isUuidV7String } from '@/types/publicId'
 import { getMediaStreamUrl, getMediaThumbnailUrl } from '@/utils/mediaOptimizer'
+import { journalPostTimeLabel } from './localizedPostTime'
 import { postModel, platforms, type JournalPost } from './models'
+import { journalFavoriteFeedback } from './feedback'
+import { useJournalOperationScope } from './useJournalOperationScope'
 import type { JournalRuntime } from './runtime'
 
 export const journalDialogsKey: InjectionKey<ReturnType<typeof useJournalDialogs>> =
   Symbol('journal-dialogs')
 
 export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
+  const { locale, t } = useI18n({ useScope: 'global' })
   const route = useRoute(),
     router = useRouter(),
     auth = useAuthStore(),
@@ -34,6 +39,24 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
   const pending = new Set<string>(),
     liked = new Map<string, { active: boolean; count: number | undefined }>()
   const confirmed = new Map<string, boolean>()
+  const operations = useJournalOperationScope(
+    () => auth.user?.id,
+    () => {
+      for (const button of document.querySelectorAll<HTMLElement>(
+        '[data-dialog-save][aria-busy]'
+      )) {
+        if (pending.has(button.dataset['dialogSave'] ?? '')) button.removeAttribute('aria-busy')
+      }
+      pending.clear()
+      liked.clear()
+      confirmed.clear()
+      for (const post of posts.values()) delete post.liked
+      refreshSaves()
+      for (const button of document.querySelectorAll<HTMLElement>('[data-dialog-like]')) {
+        button.setAttribute('aria-pressed', 'false')
+      }
+    }
+  )
   const lifetime = new AbortController()
   let searchRequest: AbortController | undefined, timer: ReturnType<typeof setTimeout> | undefined
   let generation = 0,
@@ -44,6 +67,19 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
   const esc = (value: unknown) => ui().escape(value)
   const icon = (name: string) => ui().icon(name)
   const active = (name: string) => Boolean(document.querySelector(`#app-dialog.${name}[open]`))
+  let searchState: {
+    kind: 'loading' | 'error' | 'results'
+    query: string
+    count: number
+    more: boolean
+  } = { kind: 'loading', query: '', count: 0, more: false }
+  function searchSummary() {
+    if (searchState.kind === 'loading') return t('common.loading')
+    if (searchState.kind === 'error') return t('common.loadingFailed')
+    return searchState.query
+      ? t('journal.search.results', { count: searchState.count, more: searchState.more ? '+' : '' })
+      : t('journal.search.recent')
+  }
   const config = () => ({ signal: lifetime.signal, skipErrorToast: true })
   const lines = (value: string) => esc(value).replace(/\n/g, '<br>')
   function remember(items: JournalPost[]) {
@@ -57,14 +93,15 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     return items
       .map(
         (post) =>
-          `<button class="search-result" data-dialog-post="${esc(post.id)}">${post.image ? `<img src="${esc(post.image)}" alt="" width="44" height="50">` : icon('file')}<span>${esc(post.title)}<small>${time ? esc(post.time) : `${esc(platforms[post.platform] || post.platform)} · ${esc(post.author)}`}</small></span>${icon('chevron')}</button>`
+          `<button class="search-result" data-dialog-post="${esc(post.id)}">${post.image ? `<img src="${esc(post.image)}" alt="" width="44" height="50">` : icon('file')}<span>${esc(post.title)}<small>${time ? `<span class="dialog-post-time" data-post-time="${esc(post.id)}">${esc(journalPostTimeLabel(post, t, locale.value))}</span>` : `${esc(platforms[post.platform] || post.platform)} · ${esc(post.author)}`}</small></span>${icon('chevron')}</button>`
       )
       .join('')
   }
   function paintSearch(query: string, data: { items: JournalPost[]; more: boolean }) {
     const container = document.querySelector('#search-results')
     if (!container) return
-    container.innerHTML = `<p class="results-count">${query ? `找到 ${data.items.length}${data.more ? '+' : ''} 条相关动态` : '最近更新'}</p>${resultRows(data.items.slice(0, 6)) || '<p class="dialog-copy">没有找到相关内容</p>'}`
+    searchState = { kind: 'results', query, count: data.items.length, more: data.more }
+    container.innerHTML = `<p class="results-count">${esc(searchSummary())}</p>${resultRows(data.items.slice(0, 6)) || `<p class="dialog-copy search-empty">${esc(t('common.noResults'))}</p>`}`
     ui().hydrate(container)
   }
   async function search(query: string) {
@@ -81,7 +118,8 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       return
     }
     const container = document.querySelector('#search-results')
-    if (container) container.innerHTML = '<p class="results-count">加载中…</p>'
+    searchState = { kind: 'loading', query, count: 0, more: false }
+    if (container) container.innerHTML = `<p class="results-count">${esc(searchSummary())}</p>`
     try {
       let items: JournalPost[],
         more = false
@@ -116,17 +154,18 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       if (searches.size > 30) searches.delete(searches.keys().next().value!)
       paintSearch(query, data)
     } catch {
-      if (valid() && container)
-        container.innerHTML =
-          '<p class="dialog-copy">暂时无法加载</p><button class="text-button" data-search-retry>重试</button>'
+      if (valid() && container) {
+        searchState = { kind: 'error', query, count: 0, more: false }
+        container.innerHTML = `<p class="dialog-copy search-error">${esc(searchSummary())}</p><button class="text-button" data-search-retry>${esc(t('common.retry'))}</button>`
+      }
     }
   }
   function openSearch(initial = '') {
     let query = initial
     ui().openDialog(
-      `<h2 id="dialog-title">搜索</h2><label class="explore-search">${icon('search')}<input id="global-search" type="search" placeholder="动态、作者、标签" aria-label="搜索动态、作者或标签" value="${esc(initial)}" autofocus></label><div id="search-results" class="search-results" aria-live="polite"></div>`,
+      `<h2 id="dialog-title">${esc(t('common.search'))}</h2><label class="explore-search">${icon('search')}<input id="global-search" type="search" placeholder="${esc(t('search.placeholder'))}" aria-label="${esc(t('journal.search.inputLabel'))}" value="${esc(initial)}" autofocus></label><div id="search-results" class="search-results" aria-live="polite"></div>`,
       'search-dialog',
-      { key: 'search', label: '搜索', render: () => openSearch(query) }
+      { key: 'search', labelKey: 'common.search', render: () => openSearch(query) }
     )
     const input = document.querySelector<HTMLInputElement>('#global-search')!
     input.addEventListener('input', () => {
@@ -148,31 +187,39 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     refreshSaves()
   }
   function saveButton(post: JournalPost, dark = true) {
-    return `<button class="button ${dark ? 'button-dark' : 'button-outline'} button-small detail-save ${saved(post.id) ? 'saved' : ''}" data-dialog-save="${esc(post.id)}" aria-pressed="${saved(post.id)}">${icon('bookmark')}${saved(post.id) ? '已收藏' : '收藏'}</button>`
+    return `<button class="button ${dark ? 'button-dark' : 'button-outline'} button-small detail-save ${saved(post.id) ? 'saved' : ''}" data-dialog-save="${esc(post.id)}" aria-pressed="${saved(post.id)}" aria-label="${esc(t(saved(post.id) ? 'journal.actions.removeFavorite' : 'journal.actions.addFavorite', { title: post.title }))}">${icon('bookmark')}<span class="dialog-save-label">${esc(t(saved(post.id) ? 'journal.actions.saved' : 'post.favorite'))}</span></button>`
   }
   function refreshSaves() {
     for (const button of document.querySelectorAll<HTMLElement>('[data-dialog-save]')) {
       const value = saved(button.dataset['dialogSave']!)
       button.classList.toggle('saved', value)
       button.setAttribute('aria-pressed', String(value))
-      button.innerHTML = `${icon('bookmark')}${value ? '已收藏' : '收藏'}`
+      const title = posts.get(button.dataset['dialogSave']!)?.title
+      button.setAttribute(
+        'aria-label',
+        title === undefined
+          ? t(value ? 'post.unfavorite' : 'post.favorite')
+          : t(value ? 'journal.actions.removeFavorite' : 'journal.actions.addFavorite', { title })
+      )
+      const label = button.querySelector('.dialog-save-label')
+      if (label) label.textContent = t(value ? 'journal.actions.saved' : 'post.favorite')
     }
   }
   function renderPost(post: JournalPost) {
     remember([post])
     const media = post.image
-      ? `<button class="detail-photo-open" data-dialog-gallery="${esc(post.id)}" aria-label="查看大图"><img class="detail-photo" src="${esc(post.originalImage || post.image)}" alt="${esc(post.title)}" width="400" height="500"><span>${icon('expand')} 查看大图</span></button>`
+      ? `<button class="detail-photo-open" data-dialog-gallery="${esc(post.id)}" aria-label="${esc(t('journal.gallery.open'))}"><img class="detail-photo" src="${esc(post.originalImage || post.image)}" alt="${esc(post.title)}" width="400" height="500"><span>${icon('expand')} <span class="detail-photo-label">${esc(t('journal.gallery.open'))}</span></span></button>`
       : ''
     const copy =
       post.text.trim() && post.text.trim() !== post.title.trim()
         ? `<p class="dialog-copy">${lines(post.text)}</p>`
         : ''
     ui().openDialog(
-      `<div class="post-detail${post.image ? '' : ' post-detail--text'}">${media ? `<div class="detail-media">${media}</div>` : ''}<div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i>${esc(platforms[post.platform] || post.platform)}</span><span>${esc(post.time)}</span></div><h2 id="dialog-title">${esc(post.title)}</h2>${copy}<div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small>作者 ${icon('arrow-up-right')}</small></span></button><div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id)?.active ?? post.liked ?? false}">${icon('heart')}<span>${liked.get(post.id)?.count ?? post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="打开动态页面">${icon('arrow-up-right')}</a></div></div></div>`,
+      `<div class="post-detail${post.image ? '' : ' post-detail--text'}">${media ? `<div class="detail-media">${media}</div>` : ''}<div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i>${esc(platforms[post.platform] || post.platform)}</span><span class="dialog-post-time" data-post-time="${esc(post.id)}">${esc(journalPostTimeLabel(post, t, locale.value))}</span></div><h2 id="dialog-title">${esc(post.title)}</h2>${copy}<div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small><span class="detail-author-label">${esc(t('search.type.author'))}</span> ${icon('arrow-up-right')}</small></span></button><div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id)?.active ?? post.liked ?? false}">${icon('heart')}<span>${liked.get(post.id)?.count ?? post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="${esc(t('journal.actions.openPostNamed', { title: post.title }))}">${icon('arrow-up-right')}</a></div></div></div>`,
       post.image ? 'detail-dialog' : 'detail-dialog detail-dialog--text',
       {
         key: `post:${post.id}`,
-        label: '详情',
+        labelKey: 'nav.postDetail',
         render: () => renderPost(posts.get(post.id) || post),
       }
     )
@@ -202,7 +249,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
         if (user === auth.user?.id) confirm(post.id, value)
       }
     } catch {
-      if (request === generation) ui().toast('完整内容暂时无法加载')
+      if (request === generation) ui().toast(t('journal.toast.postFailed'))
     }
   }
   function renderGallery(index: number, focus?: string) {
@@ -213,11 +260,11 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       current = galleryIndex,
       images = galleryImages
     ui().openDialog(
-      `<div class="gallery-toolbar"><div><span class="eyebrow">PHOTOS</span><h2 id="dialog-title">${esc(post.title)}</h2></div><div><button class="icon-button" data-gallery-zoom aria-label="放大图片" aria-pressed="false">${icon('expand')}</button>${saveButton(post, false)}</div></div><div class="gallery-stage"><button class="gallery-arrow gallery-arrow-prev icon-button" data-real-gallery-step="-1" aria-label="上一张图片" ${images.length < 2 ? 'disabled' : ''}>${icon('arrow-left')}</button><div class="gallery-image-area"><img class="gallery-image" src="${esc(item.src)}" alt="${esc(post.title)}" width="900" height="1200"></div><button class="gallery-arrow gallery-arrow-next icon-button" data-real-gallery-step="1" aria-label="下一张图片" ${images.length < 2 ? 'disabled' : ''}>${icon('arrow')}</button></div><div class="gallery-footer"><div class="gallery-counter" aria-live="polite">${String(current + 1).padStart(2, '0')}<span> / ${String(images.length).padStart(2, '0')}</span></div><div class="gallery-filmstrip" aria-label="图片缩略图">${images.map((image, i) => `<button data-real-gallery-index="${i}" class="${i === current ? 'active' : ''}" aria-pressed="${i === current}" aria-label="查看第 ${i + 1} 张图片"><img src="${esc(image.thumb)}" alt="" width="35" height="44"></button>`).join('')}</div><button class="text-button" data-dialog-post="${esc(post.id)}">查看详情 ${icon('arrow')}</button></div>`,
+      `<div class="gallery-toolbar"><div><span class="eyebrow">${esc(t('journal.views.gallery'))}</span><h2 id="dialog-title">${esc(post.title)}</h2></div><div><button class="icon-button" data-gallery-zoom aria-label="${esc(t('common.zoomIn'))}" aria-pressed="false">${icon('expand')}</button>${saveButton(post, false)}</div></div><div class="gallery-stage"><button class="gallery-arrow gallery-arrow-prev icon-button" data-real-gallery-step="-1" aria-label="${esc(t('journal.gallery.previous'))}" ${images.length < 2 ? 'disabled' : ''}>${icon('arrow-left')}</button><div class="gallery-image-area"><img class="gallery-image" src="${esc(item.src)}" alt="${esc(post.title)}" width="900" height="1200"></div><button class="gallery-arrow gallery-arrow-next icon-button" data-real-gallery-step="1" aria-label="${esc(t('journal.gallery.next'))}" ${images.length < 2 ? 'disabled' : ''}>${icon('arrow')}</button></div><div class="gallery-footer"><div class="gallery-counter" aria-live="polite">${String(current + 1).padStart(2, '0')}<span> / ${String(images.length).padStart(2, '0')}</span></div><div class="gallery-filmstrip" aria-label="${esc(t('journal.gallery.thumbnails'))}">${images.map((image, i) => `<button data-real-gallery-index="${i}" class="${i === current ? 'active' : ''}" aria-pressed="${i === current}" aria-label="${esc(t('journal.gallery.viewIndex', { index: i + 1 }))}"><img src="${esc(image.thumb)}" alt="" width="35" height="44"></button>`).join('')}</div><button class="text-button" data-dialog-post="${esc(post.id)}"><span class="gallery-details-label">${esc(t('post.viewDetail'))}</span> ${icon('arrow')}</button></div>`,
       'gallery-dialog journal-real-gallery',
       {
         key: 'real-gallery',
-        label: '图片',
+        labelKey: 'journal.views.gallery',
         render: () => {
           galleryPost = post
           galleryImages = images
@@ -261,12 +308,12 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
             ? [{ src: current.originalImage || current.image, thumb: current.image }]
             : []
       } catch {
-        if (request === generation) ui().toast('原图暂时无法加载')
+        if (request === generation) ui().toast(t('common.imageLoadFailed'))
       }
     }
     if (request !== generation) return
     if (!images.length) {
-      ui().toast('暂无图片')
+      ui().toast(t('journal.gallery.noImages'))
       if (active('detail-dialog')) renderPost(current)
       return
     }
@@ -278,7 +325,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     try {
       await ensureAuthStoreLoaded({ initialize: true })
     } catch {
-      ui().toast('暂时无法连接，请重试')
+      ui().toast(t('journal.toast.connectFailed'), undefined, { type: 'error' })
       return false
     }
     if (auth.isAuthenticated) return true
@@ -287,57 +334,70 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     return false
   }
   async function toggleSave(id: string, button: HTMLElement) {
-    if (!isUuidV7String(id) || pending.has(id) || !(await account())) return
+    if (!isUuidV7String(id) || pending.has(id) || !(await account()) || pending.has(id)) return
     pending.add(id)
-    const user = auth.user?.id
+    const currentSession = operations.capture()
     button.setAttribute('aria-busy', 'true')
     try {
       const previous = await favorites.checkFavorited(id)
-      if (user !== auth.user?.id) return
-      const original = favorites.items.find((item) => item.post_id === id)
+      if (!currentSession()) return
+      const originalPosition = favorites.items.findIndex((item) => item.post_id === id)
+      const original = favorites.items[originalPosition]
       const result = previous
-        ? await favorites.removeFavoriteByPostId(id)
-        : await favorites.addFavorite(id)
-      if (user !== auth.user?.id) return
+        ? await favorites.removeFavoriteByPostId(id, journalFavoriteFeedback)
+        : await favorites.addFavorite(id, undefined, journalFavoriteFeedback)
+      if (!currentSession()) return
       if (!result.success) {
-        ui().toast('暂时未能保存，请重试')
+        ui().toast(t('journal.toast.saveFailed'), undefined, { type: 'error' })
         return
       }
       confirm(id, !previous)
       runtime.value?.Experience.savedFeedback(button, id, !previous)
-      ui().toast(previous ? '已取消收藏' : '已收藏', {
-        label: '撤销',
-        run: () => {
-          if (user !== auth.user?.id || pending.has(id)) return
-          pending.add(id)
-          void (
-            previous
-              ? original
-                ? favorites.restoreFavorite(original)
-                : favorites.addFavorite(id)
-              : favorites.removeFavoriteByPostId(id)
-          )
-            .then((result) => {
-              if (result.success && user === auth.user?.id) confirm(id, previous)
-            })
-            .finally(() => pending.delete(id))
+      ui().toast(
+        t(previous ? 'journal.toast.favoriteRemoved' : 'journal.toast.favoriteAdded'),
+        {
+          label: t('spatial.undo'),
+          run: async () => {
+            if (!currentSession()) return
+            if (pending.has(id)) throw new Error('journal-action-busy')
+            pending.add(id)
+            try {
+              const result = previous
+                ? original
+                  ? await favorites.restoreFavorite(
+                      original,
+                      Math.max(0, originalPosition),
+                      journalFavoriteFeedback
+                    )
+                  : await favorites.addFavorite(id, undefined, journalFavoriteFeedback)
+                : await favorites.removeFavoriteByPostId(id, journalFavoriteFeedback)
+              if (!currentSession()) return
+              if (!result.success) throw new Error('journal-action-failed')
+              confirm(id, previous)
+            } finally {
+              if (currentSession()) pending.delete(id)
+            }
+          },
         },
-      })
+        { type: 'success' }
+      )
     } finally {
-      pending.delete(id)
-      button.removeAttribute('aria-busy')
+      if (currentSession()) {
+        pending.delete(id)
+        button.removeAttribute('aria-busy')
+      }
     }
   }
   async function toggleLike(id: string) {
     if (!isUuidV7String(id) || pending.has(id) || !(await account()) || pending.has(id)) return
     pending.add(id)
-    const user = auth.user?.id,
-      wasLiked = liked.get(id)?.active ?? posts.get(id)?.liked ?? false
+    const currentSession = operations.capture()
+    const wasLiked = liked.get(id)?.active ?? posts.get(id)?.liked ?? false
     try {
       const response = await (wasLiked
         ? postService.unlikePost(id, config())
         : postService.likePost(id, config()))
-      if (user !== auth.user?.id) return
+      if (!currentSession()) return
       liked.set(id, { active: response.is_liked, count: response.community_like_count })
       const post = posts.get(id)
       if (post) {
@@ -351,9 +411,9 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
         if (count) count.textContent = String(response.community_like_count)
       }
     } catch {
-      ui().toast('暂时未能保存，请重试')
+      if (currentSession()) ui().toast(t('journal.toast.saveFailed'), undefined, { type: 'error' })
     } finally {
-      pending.delete(id)
+      if (currentSession()) pending.delete(id)
     }
   }
   async function openAuthor(id: string, name: string) {
@@ -365,9 +425,9 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       count: number | null = null
     const render = () =>
       ui().openDialog(
-        `<div class="profile-summary"><img src="${esc(avatar)}" alt="${esc(name)}" width="85" height="85"><h2 id="dialog-title">${esc(name)}</h2><div class="profile-stats">${count !== null ? `<span><b>${count}</b>动态</span>` : ''}<span><b>${items.filter((post) => saved(post.id)).length}</b>已收藏</span></div>${id ? `<a class="button button-dark" href="/author/${esc(id)}">作者主页 ${icon('arrow-up-right')}</a>` : ''}</div><div class="search-results">${resultRows(items, true)}</div>`,
+        `<div class="profile-summary"><img src="${esc(avatar)}" alt="${esc(name)}" width="85" height="85"><h2 id="dialog-title">${esc(name)}</h2><div class="profile-stats">${count !== null ? `<span class="author-post-count" data-count="${count}">${esc(t('author.postCount', { count }))}</span>` : ''}<span class="author-favorite-count" data-count="${items.filter((post) => saved(post.id)).length}">${esc(t('favorites.totalCount', { count: items.filter((post) => saved(post.id)).length }))}</span></div>${id ? `<a class="button button-dark" href="/author/${esc(id)}"><span class="author-profile-label">${esc(t('nav.authorDetail'))}</span> ${icon('arrow-up-right')}</a>` : ''}</div><div class="search-results">${resultRows(items, true)}</div>`,
         'author-dialog',
-        { key: viewKey, label: '作者', render }
+        { key: viewKey, labelKey: 'search.type.author', render }
       )
     render()
     const request = generation
@@ -393,7 +453,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       count = author.post_count ?? null
       render()
     } catch {
-      if (request === generation) ui().toast('作者动态暂时无法加载')
+      if (request === generation) ui().toast(t('journal.toast.authorFailed'))
     }
   }
   function click(event: MouseEvent) {
@@ -432,6 +492,71 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     }
     if (button.hasAttribute('data-search-retry'))
       void search(document.querySelector<HTMLInputElement>('#global-search')?.value || '')
+  }
+  function refreshLocalizedControls() {
+    const root = document.querySelector('#app-dialog[open] #dialog-content')
+    if (!root || !runtime.value) return
+    const text = (selector: string, value: string) => {
+      const node = root.querySelector(selector)
+      if (node) node.textContent = value
+    }
+    if (active('search-dialog')) {
+      text('#dialog-title', t('common.search'))
+      const input = root.querySelector<HTMLInputElement>('#global-search')
+      if (input) {
+        input.placeholder = t('search.placeholder')
+        input.setAttribute('aria-label', t('journal.search.inputLabel'))
+      }
+      text('.results-count', searchSummary())
+      text('.search-empty', t('common.noResults'))
+      text('.search-error', t('common.loadingFailed'))
+      text('[data-search-retry]', t('common.retry'))
+    }
+    for (const node of root.querySelectorAll<HTMLElement>('[data-post-time]')) {
+      const post = posts.get(node.dataset['postTime']!)
+      if (post) node.textContent = journalPostTimeLabel(post, t, locale.value)
+    }
+    refreshSaves()
+    if (active('detail-dialog')) {
+      text('.detail-photo-label', t('journal.gallery.open'))
+      const photo = root.querySelector('[data-dialog-gallery]')
+      if (photo) photo.setAttribute('aria-label', t('journal.gallery.open'))
+      text('.detail-author-label', t('search.type.author'))
+      const link = root.querySelector('.detail-actions a[href]')
+      const title = root.querySelector('#dialog-title')?.textContent ?? ''
+      if (link) link.setAttribute('aria-label', t('journal.actions.openPostNamed', { title }))
+    }
+    if (active('journal-real-gallery')) {
+      text('.gallery-toolbar .eyebrow', t('journal.views.gallery'))
+      for (const [step, key] of [
+        ['-1', 'journal.gallery.previous'],
+        ['1', 'journal.gallery.next'],
+      ] as const) {
+        const button = root.querySelector(`[data-real-gallery-step="${step}"]`)
+        if (button) button.setAttribute('aria-label', t(key))
+      }
+      const filmstrip = root.querySelector('.gallery-filmstrip')
+      if (filmstrip) filmstrip.setAttribute('aria-label', t('journal.gallery.thumbnails'))
+      for (const button of root.querySelectorAll<HTMLElement>('[data-real-gallery-index]'))
+        button.setAttribute(
+          'aria-label',
+          t('journal.gallery.viewIndex', {
+            index: Number(button.dataset['realGalleryIndex']) + 1,
+          })
+        )
+      text('.gallery-details-label', t('post.viewDetail'))
+    }
+    if (active('author-dialog')) {
+      text('.author-profile-label', t('nav.authorDetail'))
+      const count = root.querySelector<HTMLElement>('.author-post-count')
+      if (count)
+        count.textContent = t('author.postCount', { count: Number(count.dataset['count']) })
+      const favorites = root.querySelector<HTMLElement>('.author-favorite-count')
+      if (favorites)
+        favorites.textContent = t('favorites.totalCount', {
+          count: Number(favorites.dataset['count']),
+        })
+    }
   }
   const changed = () => {
     generation++
@@ -478,16 +603,16 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       { signal: lifetime.signal }
     )
   })
+  watch(locale, refreshLocalizedControls, { flush: 'post' })
   watch(() => route.fullPath, changed)
   watch(
     () => auth.user?.id,
     (_next, previous) => {
-      liked.clear()
-      confirmed.clear()
+      changed()
       searches.clear()
-      for (const post of posts.values()) delete post.liked
       if (previous) runtime.value?.UI.closeDialog(true)
-    }
+    },
+    { flush: 'sync' }
   )
   watch(() => favorites.items, refreshSaves, { deep: true })
   onBeforeUnmount(() => {

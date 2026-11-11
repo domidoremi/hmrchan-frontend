@@ -4,28 +4,35 @@
     <button
       v-if="state === 'error'"
       class="button button-outline button-small"
-      :aria-label="`重新加载${label}`"
+      :aria-label="t('journal.states.retryNamed', { label: localizedLabel })"
       @click="$emit('retry')"
     >
-      重试
+      {{ t('common.retry') }}
     </button>
   </div>
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { JournalResourceState } from './resourceState'
 const props = defineProps<{
   state: JournalResourceState
   label: string
+  labelKey?: string
   empty: boolean
   emptyMessage: string
+  emptyMessageKey?: string
 }>()
 defineEmits<{ retry: [] }>()
+const { t } = useI18n({ useScope: 'global' })
+const localizedLabel = computed(() => (props.labelKey ? t(props.labelKey) : props.label))
 const message = computed(() =>
   props.state === 'error'
-    ? `${props.label}暂时无法加载`
+    ? t('journal.states.failed', { label: localizedLabel.value })
     : props.state === 'ready'
-      ? props.emptyMessage
-      : `正在加载${props.label}…`
+      ? props.emptyMessageKey
+        ? t(props.emptyMessageKey)
+        : props.emptyMessage
+      : t('journal.states.loading', { label: localizedLabel.value })
 )
 </script>

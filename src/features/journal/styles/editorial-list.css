@@ -1,0 +1,95 @@
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem 1.25rem;
+  padding-block: 1.75rem;
+}
+
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text > .text-post {
+  grid-column: 1;
+  grid-row: 1;
+  min-inline-size: 0;
+  aspect-ratio: auto;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text .text-post > p {
+  margin: 0;
+  max-inline-size: 68ch;
+  font-size: clamp(1rem, 0.9rem + 0.3vw, 1.25rem);
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 6;
+}
+
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text > .post-save {
+  position: static;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  margin: 0;
+  background: transparent;
+  color: var(--muted);
+  border: 0.0625rem solid var(--line);
+  backdrop-filter: none;
+}
+
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text > .post-save.saved {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text > .post-meta {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+  gap: 0.75rem 1.25rem;
+  padding: 0;
+  font-size: 0.6875rem;
+}
+
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text > .post-title {
+  grid-column: 1 / -1;
+  font-size: 1rem;
+}
+
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text > .post-bottom {
+  grid-column: 1 / -1;
+  border: 0;
+  padding: 0;
+  gap: 0.75rem;
+}
+
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text .post-author {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.site-body .journal-shell .editorial-gallery.layout-list .post-card--text .post-author > span {
+  min-inline-size: 0;
+}
+
+.site-body
+  .journal-shell
+  .editorial-gallery.layout-list
+  .post-card--text
+  :is(.text-post, .post-save):focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.1875rem;
+}
+
+@media (max-width: 47.5rem) {
+  .site-body .journal-shell .editorial-gallery.layout-list .post-card--text {
+    gap: 0.55rem 0.75rem;
+    padding-block: 1.25rem;
+  }
+
+  .site-body .journal-shell .editorial-gallery.layout-list .post-card--text .text-post > p {
+    font-size: 1rem;
+  }
+}

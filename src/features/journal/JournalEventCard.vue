@@ -1,8 +1,9 @@
 <template>
   <article class="event-card">
     <div class="event-date">
-      <strong>{{ String(event.day).padStart(2, '0') }}</strong
-      ><small>{{ event.month }} 月 · {{ event.week }}</small>
+      <strong>{{ String(event.day).padStart(2, '0') }}</strong><small
+        >{{ event.month }} 月 · {{ event.week }}</small
+      >
     </div>
     <div class="event-copy">
       <span class="badge" :class="`badge-${event.tone}`">{{ event.type }}</span>

@@ -1,5 +1,12 @@
 export function installUI(runtime, environment) {
-  const { document } = environment
+  const { document, feedback, translate } = environment
+  const listeners = []
+  let disposed = false
+  function listen(target, name, callback) {
+    if (!target) return
+    target.addEventListener(name, callback)
+    listeners.push(() => target.removeEventListener(name, callback))
+  }
   const paths = {
     search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/>',
     'arrow-up-right': '<path d="M6 18 18 6M6 6h12v12"/>',
@@ -72,9 +79,10 @@ export function installUI(runtime, environment) {
         })[c]
     )
   let toastTimer, toastAction
-  const toastElement = document.querySelector('#toast')
+  const toastElement = feedback ? null : document.querySelector('#toast')
   function expireToast() {
     clearTimeout(toastTimer)
+    if (disposed || !toastElement) return
     toastTimer = setTimeout(
       () => {
         if (toastElement.matches(':hover, :focus-within')) return
@@ -84,7 +92,13 @@ export function installUI(runtime, environment) {
       toastAction ? 6500 : 3200
     )
   }
-  function toast(message, action) {
+  function toast(message, action, options) {
+    if (disposed) return
+    if (feedback) {
+      feedback.show(message, action, options)
+      return
+    }
+    if (!toastElement) return
     toastAction = action
     // A toast belongs to the active top layer so its action remains reachable.
     const dialog = document.querySelector('#app-dialog')
@@ -93,7 +107,7 @@ export function installUI(runtime, environment) {
     toastElement.classList.add('visible')
     expireToast()
   }
-  toastElement.addEventListener('click', (event) => {
+  listen(toastElement, 'click', (event) => {
     if (!event.target.closest('[data-toast-action]')) return
     const action = toastAction
     toastAction = null
@@ -101,8 +115,8 @@ export function installUI(runtime, environment) {
     action?.run()
   })
   for (const name of ['pointerenter', 'focusin'])
-    toastElement.addEventListener(name, () => clearTimeout(toastTimer))
-  for (const name of ['pointerleave', 'focusout']) toastElement.addEventListener(name, expireToast)
+    listen(toastElement, name, () => clearTimeout(toastTimer))
+  for (const name of ['pointerleave', 'focusout']) listen(toastElement, name, expireToast)
 
   function focusSelector(element) {
     if (!element || element === document.body) return ''
@@ -158,6 +172,7 @@ export function installUI(runtime, environment) {
     }
   }
   function openDialog(content, className = '', view) {
+    if (disposed) return
     const el = document.querySelector('#app-dialog')
     const wasOpen = el.open
     const refreshing = wasOpen && !returning && view?.key && view.key === dialogView?.key
@@ -190,12 +205,13 @@ export function installUI(runtime, environment) {
     }
     const previous = dialogTrail.at(-1)
     back.hidden = !previous
-    back.innerHTML = `${icon('arrow-left')}<span>返回${escape(previous?.label || '')}</span>`
+    back.innerHTML = `${icon('arrow-left')}<span></span>`
+    refreshBackLabel()
     el.querySelector('.dialog-head .eyebrow').hidden = Boolean(previous)
     hydrate(el)
     document.body.classList.add('app-dialog-open')
     if (!wasOpen) el.showModal()
-    if (toastElement.classList.contains('visible')) el.append(toastElement)
+    if (toastElement?.classList.contains('visible')) el.append(toastElement)
     if (refreshing) {
       const target =
         focused?.isConnected && el.contains(focused)
@@ -214,6 +230,15 @@ export function installUI(runtime, environment) {
       runtime.SpatialMotion?.dialog(el)
       runtime.Atelier?.dialog(el)
     }
+  }
+  function refreshBackLabel() {
+    if (disposed) return
+    const previous = dialogTrail.at(-1)
+    const label =
+      previous?.labelKey && translate ? translate(previous.labelKey) : previous?.label || ''
+    const text = translate?.('journal.actions.backTo', { label }) ?? `Back to ${label}`
+    const span = document.querySelector('#app-dialog [data-dialog-back] span')
+    if (span) span.textContent = text
   }
   function backDialog() {
     const previous = dialogTrail.pop()
@@ -243,7 +268,7 @@ export function installUI(runtime, environment) {
     document.dispatchEvent(new Event('dialogwillchange'))
     runtime.Experience?.clearBook?.()
     document.body.classList.remove('app-dialog-open')
-    document.body.append(toastElement)
+    if (toastElement) document.body.append(toastElement)
     if (runtime.Atelier?.closeDialog(el, immediate === true)) return
     el.close()
   }
@@ -258,27 +283,27 @@ export function installUI(runtime, environment) {
     try {
       localStorage.setItem(`momichan-journal:${key}`, JSON.stringify(value))
     } catch {
-      toast('暂时无法保存')
+      toast(translate?.('journal.toast.storageFailed') ?? "Couldn't save this preference.")
     }
   }
-  document.addEventListener('click', (event) => {
+  listen(document, 'click', (event) => {
     if (event.target.closest('[data-dialog-back]')) backDialog()
     if (event.target.closest('[data-close]')) closeDialog()
   })
-  document.querySelector('#app-dialog')?.addEventListener('cancel', (event) => {
+  listen(document.querySelector('#app-dialog'), 'cancel', (event) => {
     event.preventDefault()
     closeDialog()
   })
-  document.querySelector('#app-dialog')?.addEventListener('close', () => {
+  listen(document.querySelector('#app-dialog'), 'close', () => {
     const el = document.querySelector('#app-dialog')
     if (el.open) return
     document.body.classList.remove('app-dialog-open')
-    document.body.append(toastElement)
+    if (toastElement) document.body.append(toastElement)
     dialogTrail = []
     dialogView = null
     if (outsideFocus?.isConnected) outsideFocus.focus({ preventScroll: true })
   })
-  document.querySelector('#app-dialog')?.addEventListener('click', (event) => {
+  listen(document.querySelector('#app-dialog'), 'click', (event) => {
     const box = event.currentTarget.getBoundingClientRect()
     if (
       event.target === event.currentTarget &&
@@ -299,6 +324,17 @@ export function installUI(runtime, environment) {
     read,
     save,
     focusSelector,
+    refreshBackLabel,
+    dispose() {
+      if (disposed) return
+      disposed = true
+      clearTimeout(toastTimer)
+      toastAction = null
+      toastElement?.classList.remove('visible')
+      toastElement?.querySelector('button')?.setAttribute('tabindex', '-1')
+      listeners.splice(0).forEach((remove) => remove())
+      feedback?.dispose?.()
+    },
   }
   hydrate()
 }

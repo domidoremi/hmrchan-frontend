@@ -40,11 +40,11 @@ import { useSettingsStore } from '@/stores'
 import { useAppearanceRuntime } from '@/composables/useAppearanceRuntime'
 import { useLocaleConfig } from '@/composables/useLocaleConfig'
 import { usePreferencesSync } from '@/composables/usePreferencesSync'
-const JournalShell = defineAsyncComponent(() => import('@/features/journal/JournalShell.vue'))
 import PageLoading from '@/components/ui/PageLoading.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import { clientChallengeState } from '@/api/clientChallengeBridge'
 import { verificationDialogState } from '@/api/verificationState'
+const JournalShell = defineAsyncComponent(() => import('@/features/journal/JournalShell.vue'))
 
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
 const ClientChallengeDialog = defineAsyncComponent(
@@ -85,11 +85,7 @@ const authKeepAliveExclude = [
 ]
 function resolveRouteKey(routeRecord: RouteLocationNormalizedLoaded): string {
   const viewKey = typeof routeRecord.meta.viewKey === 'string' ? routeRecord.meta.viewKey : ''
-  return (
-    (viewKey ? 'view:' + viewKey : (routeRecord.matched[0]?.path ?? routeRecord.path)) +
-    ':' +
-    currentLocale.value
-  )
+  return viewKey ? 'view:' + viewKey : (routeRecord.matched[0]?.path ?? routeRecord.path)
 }
 function handleRetry() {
   router.go(0)

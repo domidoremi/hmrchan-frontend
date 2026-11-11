@@ -5,8 +5,7 @@
     <Transition name="archive-preview" mode="out-in"
       ><article v-if="post" :key="post.id" class="preview-face post-card" :data-post="post.id">
         <div class="preview-caption">
-          <span>{{ platforms[post.platform] || post.platform }}</span
-          ><span>{{ post.type }}</span
+          <span>{{ platforms[post.platform] || post.platform }}</span><span>{{ post.type }}</span
           ><JournalIcon name="expand" />
         </div>
         <button
@@ -30,8 +29,7 @@
         <div class="preview-copy">
           <div class="meta-line">
             <button :data-author-id="post.authorId" :data-author-query="post.author">
-              {{ post.author }}</button
-            ><time>{{ post.time }}</time>
+              {{ post.author }}</button><time>{{ journalPostTimeLabel(post, t, locale) }}</time>
           </div>
           <h2 v-if="post.image || post.text.trim() !== post.title.trim()">
             <button :data-open="post.id">{{ post.title }}</button>
@@ -46,14 +44,20 @@
           </div>
           <div class="preview-actions">
             <button class="button button-dark" :data-open="post.id">
-              打开 <JournalIcon name="arrow-up-right" /></button
+              {{ t('journal.actions.open') }} <JournalIcon name="arrow-up-right" /></button
             ><button
               class="button button-outline"
               :aria-pressed="saved"
-              :aria-label="`${saved ? '已收藏，取消收藏' : '收藏'}：${post.title}`"
+              :aria-label="
+                t(saved ? 'journal.actions.removeFavorite' : 'journal.actions.addFavorite', {
+                  title: post.title,
+                })
+              "
               @click="$emit('save', post, $event)"
             >
-              <JournalIcon name="bookmark" />{{ saved ? '已收藏' : '收藏' }}</button
+              <JournalIcon name="bookmark" />{{
+                t(saved ? 'journal.actions.saved' : 'post.favorite')
+              }}</button
             ><span v-if="post.likes !== null"><JournalIcon name="heart" />{{ post.likes }}</span>
           </div>
         </div>
@@ -71,17 +75,20 @@
       </div>
       <div v-else class="preview-empty">
         <JournalIcon name="file" /><span>{{
-          state === 'error' ? '预览暂不可用' : '暂无内容'
+          t(state === 'error' ? 'journal.selection.unavailable' : 'journal.selection.empty')
         }}</span>
       </div>
     </template>
   </div>
 </template>
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
+import { journalPostTimeLabel } from '../localizedPostTime'
 import { platforms, type JournalPost } from '../models'
 import type { JournalResourceState } from '../resourceState'
+const { locale, t } = useI18n({ useScope: 'global' })
 defineProps<{
   post?: JournalPost | undefined
   saved: boolean
