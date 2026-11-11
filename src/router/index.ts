@@ -2,7 +2,6 @@
  * Vue Router Configuration
  */
 
-import { watch } from 'vue'
 import {
   createRouter,
   createWebHistory,
@@ -19,7 +18,7 @@ import {
   type SecurityLevel,
 } from '@/security/runtimeState'
 import { ensureAuthStoreLoaded } from '@/services/authSurface'
-import { applyPageMeta } from '@/utils/pageMeta'
+import { syncRoutePageMeta, watchRoutePageMeta } from './routePageMeta'
 import {
   buildLoginRedirect,
   resolveInvalidContractResourceRedirect,
@@ -625,25 +624,11 @@ router.beforeEach(async (to) => {
   return true
 })
 
-function syncRoutePageMeta(route: RouteLocationNormalizedLoadedGeneric): void {
-  const titleValue =
-    typeof route.meta.title === 'function' ? route.meta.title(route) : route.meta.title
-  const rawTitle = titleValue ? String(titleValue) : ''
-  const translatedTitle = rawTitle ? String(i18n.global.t(rawTitle)) : ''
-
-  applyPageMeta({
-    title: translatedTitle || undefined,
-    description: typeof route.meta.description === 'string' ? route.meta.description : undefined,
-    canonicalPath: route.path,
-    locale: i18n.global.locale.value,
-  })
-}
-
 router.afterEach((to) => {
   setCurrentSecurityLevel(
     to.meta.securityLevel ?? (to.meta.requiresAuth ? 'authenticated' : 'public')
   )
-  syncRoutePageMeta(to)
+  syncRoutePageMeta(to, i18n.global)
 
   if (to.name === 'post-detail' && to.params['id']) {
     import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
@@ -656,13 +641,6 @@ router.afterEach((to) => {
   }
 })
 
-watch(
-  () => i18n.global.locale.value,
-  () => {
-    const currentRoute = router.currentRoute.value
-    if (!currentRoute.matched.length) return
-    syncRoutePageMeta(currentRoute)
-  }
-)
+watchRoutePageMeta(router.currentRoute, i18n.global)
 
 export default router
