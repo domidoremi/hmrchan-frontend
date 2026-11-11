@@ -233,10 +233,14 @@ if (typeof HTMLCanvasElement !== 'undefined') {
 }
 
 afterEach(() => {
-  const scrollTo = window.scrollTo as ReturnType<typeof vi.fn>
-  scrollTo?.mockClear?.()
-  const getContext = HTMLCanvasElement.prototype.getContext as ReturnType<typeof vi.fn>
-  getContext?.mockClear?.()
-  const toDataURL = HTMLCanvasElement.prototype.toDataURL as ReturnType<typeof vi.fn>
-  toDataURL?.mockClear?.()
+  if (typeof window !== 'undefined') {
+    const scrollTo = window.scrollTo as ReturnType<typeof vi.fn>
+    scrollTo?.mockClear?.()
+  }
+  if (typeof HTMLCanvasElement !== 'undefined') {
+    const getContext = HTMLCanvasElement.prototype.getContext as ReturnType<typeof vi.fn>
+    getContext?.mockClear?.()
+    const toDataURL = HTMLCanvasElement.prototype.toDataURL as ReturnType<typeof vi.fn>
+    toDataURL?.mockClear?.()
+  }
 })
