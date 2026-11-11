@@ -4,7 +4,8 @@ import { installViewportMotion } from './viewport-motion.js'
 import { createLayoutMotion } from './layout-motion.js'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
 
-export function createJournalRuntime(navigate) {
+export function createJournalRuntime(navigate, options = {}) {
+  const { translate } = options
   const lifetime = new AbortController()
   const animations = new Set()
   const observed = new WeakSet()
@@ -27,7 +28,16 @@ export function createJournalRuntime(navigate) {
     },
   })
   const runtime = {}
-  installUI(runtime, { document: scopedDocument })
+  installUI(runtime, { document: scopedDocument, feedback: options.feedback, translate })
+  const zoomLabel = (enabled) =>
+    translate?.(enabled ? 'common.zoomOut' : 'common.zoomIn') ?? (enabled ? 'Zoom Out' : 'Zoom In')
+  runtime.refreshLocalizedControls = () => {
+    if (lifetime.signal.aborted) return
+    runtime.UI.refreshBackLabel()
+    const zoom = document.querySelector('#app-dialog[open] [data-gallery-zoom]')
+    if (zoom)
+      zoom.setAttribute('aria-label', zoomLabel(zoom.getAttribute('aria-pressed') === 'true'))
+  }
   let motion = 'full'
   const layoutMotion = createLayoutMotion({
     animate,
@@ -83,6 +93,7 @@ export function createJournalRuntime(navigate) {
     { threshold: 0.08 }
   )
   function mount(root = document) {
+    if (lifetime.signal.aborted) return
     runtime.UI.hydrate(root)
     observeReveals(root)
     viewport.refresh()
@@ -126,7 +137,7 @@ export function createJournalRuntime(navigate) {
       const gallery = document.querySelector('#app-dialog')
       const enabled = gallery.classList.toggle('gallery-zoomed')
       zoom.setAttribute('aria-pressed', String(enabled))
-      zoom.setAttribute('aria-label', enabled ? '缩小图片' : '放大图片')
+      zoom.setAttribute('aria-label', zoomLabel(enabled))
     }
     const target = event.target.closest?.('[data-action]')
     if (!target) return
@@ -179,6 +190,7 @@ export function createJournalRuntime(navigate) {
   runtime.getMotion = () => motion
   runtime.setMotion = preference.set
   runtime.transition = () => {
+    if (lifetime.signal.aborted) return
     runtime.UI.closeDialog(true)
     animate(
       document.querySelector('.journal-page, .journal-legacy'),
@@ -190,6 +202,7 @@ export function createJournalRuntime(navigate) {
     )
   }
   runtime.dispose = () => {
+    if (lifetime.signal.aborted) return
     lifetime.abort()
     observer.disconnect()
     contentObserver.disconnect()
@@ -198,6 +211,7 @@ export function createJournalRuntime(navigate) {
     frames.forEach(cancelAnimationFrame)
     animations.forEach((animation) => animation.cancel())
     runtime.UI.closeDialog(true)
+    runtime.UI.dispose()
   }
   mount()
   return runtime

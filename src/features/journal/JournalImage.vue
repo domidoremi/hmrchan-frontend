@@ -14,14 +14,16 @@
       @error="handleError"
     />
     <span v-else class="image-fallback" role="img" :aria-label="alt"
-      ><JournalIcon name="image" /><span>图片暂不可用</span></span
+      ><JournalIcon name="image" /><span>{{ t('journal.gallery.imageUnavailable') }}</span></span
     >
   </span>
 </template>
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted, useTemplateRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import JournalIcon from './JournalIcon.vue'
+const { t } = useI18n({ useScope: 'global' })
 const props = withDefaults(
   defineProps<{
     src: string

@@ -1647,5 +1647,170 @@
     "contents": "本期目录",
     "openBook": "翻开",
     "viewPhoto": "查看动态"
+  },
+  "journal": {
+    "actions": {
+      "addFavorite": "收藏：{title}",
+      "backTo": "返回{label}",
+      "open": "打开",
+      "openPostNamed": "打开动态：{title}",
+      "remind": "记下",
+      "remindNamed": "记下：{title}",
+      "reminded": "已记下",
+      "removeFavorite": "取消收藏：{title}",
+      "removeReminderNamed": "移除日程：{title}",
+      "saved": "已收藏"
+    },
+    "appearance": {
+      "archiveEdition": "资料库",
+      "colorMode": "明暗",
+      "currentSite": "当前站点",
+      "journalEdition": "杂志",
+      "languageChanging": "正在切换语言…",
+      "languageHint": "选择界面语言。投稿内容保持原文。",
+      "languageUnavailable": "所选语言暂时无法加载，当前使用{language}。",
+      "motion": "动效",
+      "motionFull": "动效全开",
+      "motionReduced": "动效简化",
+      "sites": "站点",
+      "thisDevice": "此设备",
+      "title": "显示设置",
+      "visit": "前往"
+    },
+    "browse": {
+      "adjustSearch": "调整搜索",
+      "continue": "继续浏览",
+      "count": "{count} 项",
+      "countUnknown": "结果数量尚未取得",
+      "emptyHint": "试试其他关键词，或调整筛选。当前条件保留在上方。",
+      "emptyKicker": "当前条件",
+      "errorKicker": "读取未完成",
+      "favoritesHint": "你收藏的动态会出现在这里。先去动态看看。",
+      "index": "动态索引",
+      "loadingHint": "正在读取资料，当前搜索与筛选会保留。",
+      "loadingKicker": "正在读取",
+      "moreRetryHint": "下一批内容暂未载入。可以继续浏览已有内容，或重试。",
+      "postAuthor": "动态 / 作者",
+      "retryHint": "请重新加载。当前搜索与筛选会保留，你可以从这里继续。",
+      "retrying": "重试中…",
+      "searchAndFilter": "搜索与筛选",
+      "time": "时间"
+    },
+    "calendar": {
+      "allEvents": "全部日程",
+      "eventCount": "{count} 项活动",
+      "noneThisMonth": "本月暂无日程",
+      "partialLoad": "部分日程暂时无法加载",
+      "taipeiTime": "台北时间"
+    },
+    "community": {
+      "closed": "讨论已结束",
+      "draft": "草稿",
+      "replyLabel": "回复内容"
+    },
+    "content": {
+      "photo": "写真",
+      "program": "节目",
+      "text": "文字"
+    },
+    "density": {
+      "compact": "紧凑",
+      "label": "显示密度",
+      "standard": "标准"
+    },
+    "filters": {
+      "active": "当前筛选",
+      "contentType": "内容类型",
+      "mostLiked": "最多赞",
+      "querySummary": "搜索：{query}",
+      "remove": "移除筛选：{filter}",
+      "sortSummary": "排序：{sort}",
+      "source": "来源",
+      "sourceSummary": "来源：{source}",
+      "typeSummary": "内容：{type}"
+    },
+    "gallery": {
+      "imageUnavailable": "图片暂不可用",
+      "next": "下一张图片",
+      "noImages": "暂无图片",
+      "open": "查看大图",
+      "previous": "上一张图片",
+      "thumbnails": "图片缩略图",
+      "viewIndex": "查看第 {index} 张图片"
+    },
+    "nav": {
+      "accountNavigation": "账号导航",
+      "calendar": "月历",
+      "closeDirectory": "关闭目录",
+      "collection": "我的收藏",
+      "discussions": "讨论",
+      "goToArchive": "前往资料库",
+      "goToJournal": "前往杂志",
+      "loginOrRegister": "登录 / 注册",
+      "mobileNavigation": "移动导航",
+      "my": "我的",
+      "myAccount": "我的账号",
+      "openDirectory": "打开目录",
+      "overview": "总览",
+      "posts": "动态",
+      "records": "资料检索",
+      "savedSchedule": "已记下的日程"
+    },
+    "search": {
+      "inputLabel": "搜索动态、作者或标签",
+      "recent": "最近更新",
+      "results": "找到 {count}{more} 条相关动态"
+    },
+    "selection": {
+      "current": "当前预览",
+      "empty": "暂无内容",
+      "next": "下一条动态",
+      "open": "打开所选动态",
+      "preview": "预览",
+      "previous": "上一条动态",
+      "returnToList": "返回列表",
+      "select": "选择",
+      "selected": "已选 {current} / {total}",
+      "unavailable": "读取完成后可预览"
+    },
+    "sources": {
+      "official": "官方"
+    },
+    "states": {
+      "archiveReadySoon": "记录与预览即将就绪。",
+      "checkNetwork": "请检查网络后重试，或继续浏览其他页面。",
+      "failed": "{label}暂时无法加载",
+      "journalReadySoon": "内容正在载入，稍后即可阅读。",
+      "loading": "正在加载{label}…",
+      "loadingPage": "正在翻开这一页。",
+      "loadingRecords": "正在读取内容。",
+      "noDiscussions": "暂无讨论",
+      "noEvents": "暂无日程",
+      "noFavorites": "还没有收藏",
+      "noPosts": "暂无动态",
+      "noRecords": "暂无记录",
+      "pageFailed": "这一页暂时未能载入。",
+      "pageLoadingLabel": "页面载入",
+      "resetFilters": "重置筛选",
+      "retryNamed": "重新加载{label}",
+      "slow": "加载时间比平时长，可以继续等待或重新加载。"
+    },
+    "toast": {
+      "authorFailed": "作者动态暂时无法加载",
+      "connectFailed": "暂时无法连接，请重试",
+      "discussionFailed": "完整讨论暂时无法加载",
+      "favoriteAdded": "已收藏",
+      "favoriteRemoved": "已取消收藏",
+      "favoriteUnavailable": "暂时无法收藏",
+      "postFailed": "完整内容暂时无法加载",
+      "reminderRemoved": "已移除日程",
+      "saveFailed": "暂时未能保存，请重试",
+      "storageFailed": "暂时无法保存此偏好"
+    },
+    "views": {
+      "gallery": "画廊",
+      "list": "阅读列表",
+      "wall": "照片墙"
+    }
   }
 }

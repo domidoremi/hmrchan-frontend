@@ -1,0 +1,158 @@
+.site-body .journal-shell .journal-browse-state {
+  color: var(--ink);
+  padding-block: clamp(1.5rem, 4vw, 3.5rem);
+}
+.site-body .journal-shell .browse-state-panel {
+  display: grid;
+  gap: 1.5rem;
+  min-inline-size: 0;
+}
+.site-body .journal-shell .browse-state-copy {
+  min-inline-size: 0;
+}
+.site-body .journal-shell .browse-state-kicker {
+  display: block;
+  margin-block-end: 1rem;
+  color: var(--accent);
+  font:
+    0.6875rem/1.6 ui-monospace,
+    monospace;
+  letter-spacing: 0.1em;
+}
+.site-body .journal-shell .browse-state-copy h2 {
+  margin: 0;
+  max-inline-size: 24ch;
+  font-size: clamp(1.375rem, 2.4vw, 2rem);
+  line-height: 1.45;
+  text-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.site-body .journal-shell .browse-state-copy p {
+  margin-block: 1rem 0;
+  max-inline-size: 44ch;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.9;
+}
+.site-body .journal-shell .browse-state-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-block-start: 1.5rem;
+}
+.site-body .journal-shell .browse-state-action {
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  padding-inline: 1rem;
+  font-size: 0.8125rem;
+}
+.site-body .journal-shell .browse-state-action .icon {
+  inline-size: 1em;
+  block-size: 1em;
+}
+.site-body .journal-shell .browse-state-action[aria-disabled='true'] {
+  cursor: progress;
+}
+.site-body .journal-shell .browse-state-visual {
+  color: var(--line);
+}
+.site-body .journal-shell .browse-state-visual svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.site-body .journal-shell .browse-state-visual .state-paper {
+  fill: var(--paper);
+}
+.site-body .journal-shell .browse-state-visual .state-accent {
+  stroke: var(--accent);
+}
+.site-body .edition-editorial .journal-browse-state .browse-state-panel {
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.65fr);
+  align-items: center;
+}
+.site-body .edition-editorial .journal-browse-state .browse-state-copy {
+  grid-column: 1;
+  grid-row: 1;
+  border-inline-start: 1px solid var(--line);
+  padding-inline-start: clamp(1rem, 3vw, 2rem);
+}
+.site-body .edition-editorial .journal-browse-state .browse-state-copy h2 {
+  font-family: Georgia, 'Songti SC', SimSun, serif;
+  font-weight: 400;
+}
+.site-body .edition-editorial .journal-browse-state .browse-state-visual {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  inline-size: min(100%, 17rem);
+  transform: rotate(-5deg);
+}
+.site-body .edition-archive .journal-browse-state {
+  background: color-mix(in srgb, var(--paper) 65%, transparent);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+}
+.site-body .edition-archive .journal-browse-state .browse-state-panel {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  min-block-size: 17rem;
+}
+.site-body .edition-archive .journal-browse-state .browse-state-visual {
+  inline-size: 3.5rem;
+  color: var(--accent);
+}
+.site-body .edition-archive .journal-browse-state .browse-state-copy h2 {
+  font-weight: 500;
+  font-size: clamp(1.25rem, 2vw, 1.625rem);
+}
+.site-body .journal-shell .journal-browse-state[data-has-posts='true'] {
+  padding-block: 1.5rem;
+}
+.site-body .journal-shell .journal-browse-state[data-has-posts='true'] .browse-state-panel {
+  min-block-size: 0;
+}
+.site-body .journal-shell .journal-browse-state[data-has-posts='true'] .browse-state-visual {
+  display: none;
+}
+.site-body .edition-editorial .journal-browse-state[data-has-posts='true'] .browse-state-panel {
+  grid-template-columns: minmax(0, 1fr);
+}
+.site-body[data-motion='full'] .journal-browse-state[data-state='loading'] .state-lines {
+  animation: browse-state-pulse 1.8s ease-in-out 3;
+}
+@keyframes browse-state-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@media (max-width: 760px) {
+  .site-body .edition-editorial .journal-browse-state .browse-state-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .site-body .edition-editorial .journal-browse-state .browse-state-visual {
+    grid-column: 1;
+    grid-row: 2;
+    inline-size: min(60%, 11rem);
+  }
+  .site-body .edition-archive .journal-browse-state .browse-state-panel {
+    min-block-size: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-body[data-motion='full'] .journal-browse-state[data-state='loading'] .state-lines {
+    animation: none;
+  }
+  .site-body[data-motion='full'] .journal-shell .browse-state-action,
+  .site-body .journal-shell .browse-state-action {
+    transition: none;
+  }
+}

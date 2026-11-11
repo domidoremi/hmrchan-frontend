@@ -1,15 +1,16 @@
 <template>
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
-    <a class="skip-link" href="#main-content">跳至内容</a>
+    <a class="skip-link" href="#main-content">{{ t('common.skipToContent') }}</a>
     <aside v-if="isNext && !isAuthRoute" class="archive-sidebar">
       <RouterLink class="archive-logo" to="/"
         ><span class="brand-mark">m.</span><span>MomiChan<small>ARCHIVE</small></span
-        ><span class="sr-only"> 首页</span></RouterLink
+        ><span class="sr-only"> {{ t('nav.home') }}</span></RouterLink
       >
       <button class="sidebar-search" data-action="search" aria-keyshortcuts="Control+K Meta+K">
-        <JournalIcon name="search" /><span>搜索</span><kbd>⌘ K</kbd>
+        <JournalIcon name="search" /><span>{{ t('common.search') }}</span
+        ><kbd>⌘ K</kbd>
       </button>
-      <nav aria-label="主导航">
+      <nav :aria-label="t('common.primaryNavigation')">
         <RouterLink
           v-for="item in navigation"
           :key="item.path"
@@ -17,35 +18,45 @@
           :class="{ active: pageName === item.key }"
           :aria-current="pageName === item.key ? 'page' : undefined"
         >
-          <JournalIcon :name="item.icon" /><span>{{ item.archive }}</span
+          <JournalIcon :name="item.icon" /><span>{{ t(item.archiveKey) }}</span
           ><span class="nav-index">{{ item.index }}</span>
         </RouterLink>
       </nav>
       <div class="sidebar-bottom">
         <button class="motion-switch" :aria-pressed="motion === 'full'" @click="toggleMotion">
-          <span class="status-light" :class="{ dim: motion !== 'full' }" />动效
-          {{ motion === 'full' ? '全开' : '简化' }}
+          <span class="status-light" :class="{ dim: motion !== 'full' }" />
+          {{
+            t(
+              motion === 'full'
+                ? 'journal.appearance.motionFull'
+                : 'journal.appearance.motionReduced'
+            )
+          }}
         </button>
         <RouterLink to="/profile"
           ><JournalIcon name="users" />{{
-            auth.isAuthenticated ? auth.user?.username || '我的账号' : '登录 / 注册'
+            auth.isAuthenticated
+              ? auth.user?.username || t('journal.nav.myAccount')
+              : t('journal.nav.loginOrRegister')
           }}<JournalIcon name="arrow-up-right"
         /></RouterLink>
-        <a href="https://momichan.com">前往杂志 <JournalIcon name="arrow" /></a>
+        <a href="https://momichan.com"
+          >{{ t('journal.nav.goToJournal') }} <JournalIcon name="arrow"
+        /></a>
       </div>
     </aside>
     <div class="edition-workspace">
       <header class="edition-header">
         <template v-if="!isNext">
           <RouterLink class="editorial-logo" to="/">MomiChan<span>JOURNAL</span></RouterLink>
-          <nav class="desktop-navigation" aria-label="主导航">
+          <nav class="desktop-navigation" :aria-label="t('common.primaryNavigation')">
             <RouterLink
               v-for="item in navigation"
               :key="item.path"
               :to="item.path"
               :class="{ active: pageName === item.key }"
               :aria-current="pageName === item.key ? 'page' : undefined"
-              >{{ item.main }}<sup>{{ item.index }}</sup></RouterLink
+              >{{ t(item.mainKey) }}<sup>{{ item.index }}</sup></RouterLink
             >
           </nav>
         </template>
@@ -58,15 +69,19 @@
         <div class="header-actions">
           <button
             class="icon-button appearance-trigger"
-            aria-label="显示设置"
+            :aria-label="t('journal.appearance.title')"
             @click="openAppearance"
           >
             <JournalIcon name="sliders" />
           </button>
-          <button class="icon-button" data-action="search" aria-label="搜索">
+          <button class="icon-button" data-action="search" :aria-label="t('common.search')">
             <JournalIcon name="search" />
           </button>
-          <button class="icon-button" data-action="notifications" aria-label="已记下的日程">
+          <button
+            class="icon-button"
+            data-action="notifications"
+            :aria-label="t('journal.nav.savedSchedule')"
+          >
             <JournalIcon name="calendar" />
           </button>
           <button
@@ -76,15 +91,19 @@
             @click="toggleMotion"
           >
             <span class="status-light" :class="{ dim: motion !== 'full' }" /><span>{{
-              motion === 'full' ? '动效全开' : '动效简化'
+              t(
+                motion === 'full'
+                  ? 'journal.appearance.motionFull'
+                  : 'journal.appearance.motionReduced'
+              )
             }}</span>
           </button>
           <RouterLink
             class="account-link"
             to="/profile"
-            :aria-label="auth.isAuthenticated ? '我的' : '登录'"
+            :aria-label="t(auth.isAuthenticated ? 'journal.nav.my' : 'nav.login')"
             ><JournalIcon name="users" /><span>{{
-              auth.isAuthenticated ? '我的' : '登录'
+              t(auth.isAuthenticated ? 'journal.nav.my' : 'nav.login')
             }}</span></RouterLink
           >
           <button
@@ -92,7 +111,7 @@
             class="mobile-menu-button icon-button"
             :aria-expanded="menuOpen"
             :aria-controls="menuOpen ? 'edition-mobile-menu' : undefined"
-            :aria-label="menuOpen ? '关闭目录' : '打开目录'"
+            :aria-label="t(menuOpen ? 'journal.nav.closeDirectory' : 'journal.nav.openDirectory')"
             @click="menuOpen = !menuOpen"
           >
             <JournalIcon :name="menuOpen ? 'x' : 'menu'" />
@@ -106,7 +125,7 @@
           :ref="(element) => (directory = element as HTMLElement | null)"
           class="mobile-directory"
         >
-          <nav aria-label="移动导航">
+          <nav :aria-label="t('journal.nav.mobileNavigation')">
             <RouterLink
               v-for="item in navigation"
               :key="item.path"
@@ -115,18 +134,24 @@
               @click="menuOpen = false"
               ><small>{{ item.index }}</small
               ><JournalIcon v-if="isNext" :name="item.icon" class="directory-icon" /><span>{{
-                isNext ? item.archive : item.main
+                t(isNext ? item.archiveKey : item.mainKey)
               }}</span
               ><JournalIcon name="arrow-up-right"
             /></RouterLink>
           </nav>
           <div class="directory-footer">
             <button class="motion-switch" :aria-pressed="motion === 'full'" @click="toggleMotion">
-              <span class="status-light" :class="{ dim: motion !== 'full' }" />动效
-              {{ motion === 'full' ? '全开' : '简化' }}
+              <span class="status-light" :class="{ dim: motion !== 'full' }" />
+              {{
+                t(
+                  motion === 'full'
+                    ? 'journal.appearance.motionFull'
+                    : 'journal.appearance.motionReduced'
+                )
+              }}
             </button>
             <a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'"
-              >{{ isNext ? '前往杂志' : '前往资料库' }} ↗</a
+              >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }} ↗</a
             >
           </div>
         </div>
@@ -148,9 +173,11 @@
           <span>MOMICHAN · {{ new Date().getFullYear() }}</span
           ><span>{{ isNext ? 'ARCHIVE' : 'JOURNAL' }}</span
           ><a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'"
-            >{{ isNext ? '前往杂志' : '前往资料库' }} <JournalIcon name="arrow-up-right" /></a
-          ><RouterLink to="/about">关于</RouterLink><RouterLink to="/contact">联系</RouterLink
-          ><button data-action="top">回到顶部 ↑</button>
+            >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }}
+            <JournalIcon name="arrow-up-right" /></a
+          ><RouterLink to="/about">{{ t('nav.about') }}</RouterLink
+          ><RouterLink to="/contact">{{ t('nav.contact') }}</RouterLink
+          ><button data-action="top">{{ t('common.backToTop') }} ↑</button>
         </div>
       </footer>
     </div>
@@ -158,13 +185,19 @@
     <dialog id="app-dialog" aria-labelledby="dialog-title">
       <div class="dialog-head">
         <span class="eyebrow">MOMICHAN</span
-        ><button class="icon-button" data-close aria-label="关闭"><JournalIcon name="x" /></button>
+        ><button class="icon-button" data-close :aria-label="t('common.close')">
+          <JournalIcon name="x" />
+        </button>
       </div>
       <div id="dialog-content" />
     </dialog>
-    <div id="toast" class="toast" role="status" aria-live="polite" />
     <div class="reading-progress" aria-hidden="true" />
-    <button class="back-to-top icon-button" data-action="top" aria-label="返回顶部" hidden>
+    <button
+      class="back-to-top icon-button"
+      data-action="top"
+      :aria-label="t('common.backToTop')"
+      hidden
+    >
       <JournalIcon name="arrow-up" />
     </button>
   </div>
@@ -183,9 +216,11 @@ import {
   watch,
 } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { useAuthStore } from '@/stores'
+import { useAuthStore, useToastStore } from '@/stores'
 import { designEdition } from '@/config/designEdition'
 import { createJournalRuntime, type JournalRuntime } from './runtime'
+import { createJournalFeedbackAdapter } from './feedback'
+import { useJournalOperationScope } from './useJournalOperationScope'
 import { journalKey } from './context'
 import { useJournalDialogs } from './useJournalDialogs'
 import { useJournalEvents } from './useJournalEvents'
@@ -198,13 +233,18 @@ import './styles/index.css'
 const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore()
+const feedback = createJournalFeedbackAdapter(useToastStore())
+useJournalOperationScope(
+  () => auth.user?.id,
+  () => feedback.reset()
+)
 const isNext = designEdition === 'archive'
-const { t } = useI18n()
+const { locale, t } = useI18n({ useScope: 'global' })
 const isAccountPage = computed(
   () => route.path.startsWith('/profile') && route.path !== '/profile/favorites'
 )
 const locationLabel = computed(() => {
-  if (labels[pageName.value]) return labels[pageName.value]
+  if (labels[pageName.value]) return t(labels[pageName.value]!)
   const title = typeof route.meta.title === 'function' ? route.meta.title(route) : route.meta.title
   return title ? t(String(title)) : 'MomiChan'
 })
@@ -227,36 +267,43 @@ provide(journalKey, runtime)
 useJournalDialogs(runtime)
 useJournalEvents(runtime)
 const navigation = [
-  { path: '/', key: 'home', main: '首页', archive: '总览', icon: 'home', index: '01' },
+  {
+    path: '/',
+    key: 'home',
+    mainKey: 'nav.home',
+    archiveKey: 'journal.nav.overview',
+    icon: 'home',
+    index: '01',
+  },
   {
     path: '/explore',
     key: 'explore',
-    main: '动态',
-    archive: '资料检索',
+    mainKey: 'journal.nav.posts',
+    archiveKey: 'journal.nav.records',
     icon: 'compass',
     index: '02',
   },
   {
     path: '/schedule',
     key: 'schedule',
-    main: '日程',
-    archive: '月历',
+    mainKey: 'nav.schedule',
+    archiveKey: 'journal.nav.calendar',
     icon: 'calendar',
     index: '03',
   },
   {
     path: '/community',
     key: 'community',
-    main: '社区',
-    archive: '讨论',
+    mainKey: 'nav.community',
+    archiveKey: 'journal.nav.discussions',
     icon: 'messages',
     index: '04',
   },
   {
     path: '/profile/favorites',
     key: 'favorites',
-    main: '收藏',
-    archive: '我的收藏',
+    mainKey: 'nav.favorites',
+    archiveKey: 'journal.nav.collection',
     icon: 'bookmark',
     index: '05',
   },
@@ -268,11 +315,11 @@ const pageName = computed(() =>
 )
 const isJournalPage = computed(() => pageName.value !== 'other')
 const labels: Record<string, string> = {
-  home: '总览',
-  explore: '资料检索',
-  schedule: '月历',
-  community: '讨论',
-  favorites: '我的收藏',
+  home: 'journal.nav.overview',
+  explore: 'journal.nav.records',
+  schedule: 'journal.nav.calendar',
+  community: 'journal.nav.discussions',
+  favorites: 'journal.nav.collection',
 }
 function toggleMotion() {
   motion.value = motion.value === 'full' ? 'reduced' : 'full'
@@ -296,12 +343,16 @@ onBeforeMount(() => {
   syncChrome()
 })
 onMounted(() => {
-  runtime.value = createJournalRuntime((path) => {
-    void router.push(path)
-  })
+  runtime.value = createJournalRuntime(
+    (path) => {
+      void router.push(path)
+    },
+    { feedback, translate: (key, named) => t(key, named ?? {}) }
+  )
   motion.value = runtime.value.getMotion()
   document.addEventListener('journalmotionchange', syncMotion)
 })
+watch(locale, () => runtime.value?.refreshLocalizedControls(), { flush: 'post' })
 watch(
   () => route.path,
   async () => {
@@ -315,6 +366,7 @@ watch(
 )
 onBeforeUnmount(() => {
   runtime.value?.dispose()
+  feedback.dispose()
   document.removeEventListener('journalmotionchange', syncMotion)
   document.body.classList.remove('site-body', 'next-body', 'reading-large', 'journal-auth')
   delete document.body.dataset['variant']
@@ -322,3 +374,27 @@ onBeforeUnmount(() => {
   delete document.body.dataset['motion']
 })
 </script>
+
+<style scoped>
+.archive-sidebar nav a > span,
+.workspace-location b {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.archive-sidebar nav .nav-index {
+  flex: none;
+}
+.desktop-navigation a {
+  min-inline-size: 0;
+  white-space: normal;
+}
+.sidebar-bottom .motion-switch,
+.directory-footer .motion-switch {
+  flex-wrap: wrap;
+  text-align: start;
+}
+.directory-footer {
+  flex-wrap: wrap;
+  row-gap: 1rem;
+}
+</style>

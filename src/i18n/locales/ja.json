@@ -1647,5 +1647,170 @@
     "contents": "今号の目次",
     "openBook": "開く",
     "viewPhoto": "投稿を見る"
+  },
+  "journal": {
+    "actions": {
+      "addFavorite": "お気に入りに追加：{title}",
+      "backTo": "{label}に戻る",
+      "open": "開く",
+      "openPostNamed": "投稿を開く：{title}",
+      "remind": "予定を保存",
+      "remindNamed": "予定を保存：{title}",
+      "reminded": "保存済み",
+      "removeFavorite": "お気に入りから削除：{title}",
+      "removeReminderNamed": "保存した予定を削除：{title}",
+      "saved": "保存済み"
+    },
+    "appearance": {
+      "archiveEdition": "Archive",
+      "colorMode": "カラーモード",
+      "currentSite": "現在のサイト",
+      "journalEdition": "Journal",
+      "languageChanging": "言語を切り替えています…",
+      "languageHint": "表示言語を選択します。投稿は原文のまま表示されます。",
+      "languageUnavailable": "選択した言語を読み込めませんでした。{language}で表示しています。",
+      "motion": "動き",
+      "motionFull": "すべての動き",
+      "motionReduced": "動きを軽減",
+      "sites": "サイト",
+      "thisDevice": "この端末",
+      "title": "表示設定",
+      "visit": "開く"
+    },
+    "browse": {
+      "adjustSearch": "検索条件を見直す",
+      "continue": "続きを見る",
+      "count": "{count}件",
+      "countUnknown": "結果件数はまだ取得されていません",
+      "emptyHint": "別のキーワードや絞り込み条件をお試しください。現在の条件は上に残っています。",
+      "emptyKicker": "現在の条件",
+      "errorKicker": "読み込みが完了していません",
+      "favoritesHint": "保存した投稿がここに表示されます。まずは投稿を見てみましょう。",
+      "index": "投稿一覧",
+      "loadingHint": "データを読み込んでいます。検索と絞り込み条件はそのまま保持されます。",
+      "loadingKicker": "読み込み中",
+      "moreRetryHint": "続きのデータを読み込めませんでした。表示済みの結果を閲覧するか、再読み込みできます。",
+      "postAuthor": "投稿 / 作者",
+      "retryHint": "もう一度読み込んでください。検索と絞り込み条件を保持したまま、ここから続けられます。",
+      "retrying": "再読み込み中…",
+      "searchAndFilter": "検索・絞り込み",
+      "time": "日時"
+    },
+    "calendar": {
+      "allEvents": "すべての予定",
+      "eventCount": "予定{count}件",
+      "noneThisMonth": "今月の予定はありません",
+      "partialLoad": "一部の予定を読み込めませんでした",
+      "taipeiTime": "台北時間"
+    },
+    "community": {
+      "closed": "このスレッドは終了しています",
+      "draft": "下書き",
+      "replyLabel": "返信内容"
+    },
+    "content": {
+      "photo": "写真",
+      "program": "番組",
+      "text": "テキスト"
+    },
+    "density": {
+      "compact": "コンパクト",
+      "label": "表示密度",
+      "standard": "標準"
+    },
+    "filters": {
+      "active": "適用中の条件",
+      "contentType": "コンテンツの種類",
+      "mostLiked": "いいねが多い順",
+      "querySummary": "検索：{query}",
+      "remove": "条件を解除：{filter}",
+      "sortSummary": "並び順：{sort}",
+      "source": "投稿元",
+      "sourceSummary": "投稿元：{source}",
+      "typeSummary": "種類：{type}"
+    },
+    "gallery": {
+      "imageUnavailable": "画像を表示できません",
+      "next": "次の画像",
+      "noImages": "画像はありません",
+      "open": "画像を大きく表示",
+      "previous": "前の画像",
+      "thumbnails": "画像のサムネイル",
+      "viewIndex": "{index}枚目の画像を見る"
+    },
+    "nav": {
+      "accountNavigation": "アカウントナビゲーション",
+      "calendar": "カレンダー",
+      "closeDirectory": "メニューを閉じる",
+      "collection": "お気に入り",
+      "discussions": "スレッド",
+      "goToArchive": "Archiveへ",
+      "goToJournal": "Journalへ",
+      "loginOrRegister": "ログイン / 新規登録",
+      "mobileNavigation": "モバイルナビゲーション",
+      "my": "マイページ",
+      "myAccount": "マイアカウント",
+      "openDirectory": "メニューを開く",
+      "overview": "概要",
+      "posts": "投稿",
+      "records": "資料検索",
+      "savedSchedule": "保存した予定"
+    },
+    "search": {
+      "inputLabel": "投稿・作者・タグを検索",
+      "recent": "最近の更新",
+      "results": "該当する投稿が{count}{more}件見つかりました"
+    },
+    "selection": {
+      "current": "現在のプレビュー",
+      "empty": "コンテンツはありません",
+      "next": "次の投稿",
+      "open": "選択した投稿を開く",
+      "preview": "プレビュー",
+      "previous": "前の投稿",
+      "returnToList": "一覧に戻る",
+      "select": "選択",
+      "selected": "{total}件中{current}件目を選択",
+      "unavailable": "読み込みが完了するとプレビューできます"
+    },
+    "sources": {
+      "official": "公式"
+    },
+    "states": {
+      "archiveReadySoon": "まもなく記録とプレビューを表示できます。",
+      "checkNetwork": "接続を確認して再試行するか、ほかのページをご覧ください。",
+      "failed": "{label}を読み込めません",
+      "journalReadySoon": "まもなく内容を読めます。",
+      "loading": "{label}を読み込み中…",
+      "loadingPage": "ページを開いています…",
+      "loadingRecords": "記録を読み込んでいます…",
+      "noDiscussions": "スレッドはまだありません",
+      "noEvents": "予定はありません",
+      "noFavorites": "お気に入りはまだありません",
+      "noPosts": "投稿はまだありません",
+      "noRecords": "記録はありません",
+      "pageFailed": "このページを読み込めませんでした。",
+      "pageLoadingLabel": "ページを読み込み中",
+      "resetFilters": "条件をリセット",
+      "retryNamed": "{label}を再読み込み",
+      "slow": "通常より時間がかかっています。そのまま待つか、再読み込みできます。"
+    },
+    "toast": {
+      "authorFailed": "この作者の投稿を読み込めませんでした。",
+      "connectFailed": "接続できませんでした。もう一度お試しください。",
+      "discussionFailed": "スレッド全体を読み込めませんでした。",
+      "favoriteAdded": "お気に入りに追加しました",
+      "favoriteRemoved": "お気に入りから削除しました",
+      "favoriteUnavailable": "この投稿は現在保存できません。",
+      "postFailed": "投稿の全文を読み込めませんでした。",
+      "reminderRemoved": "保存した予定を削除しました",
+      "saveFailed": "保存できませんでした。もう一度お試しください。",
+      "storageFailed": "この設定を保存できませんでした。"
+    },
+    "views": {
+      "gallery": "ギャラリー",
+      "list": "リーディングリスト",
+      "wall": "写真ウォール"
+    }
   }
 }

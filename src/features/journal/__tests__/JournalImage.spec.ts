@@ -1,3 +1,4 @@
+import { createJournalTestI18n } from './journalTestI18n'
 import { shallowMount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import JournalImage from '../JournalImage.vue'
@@ -15,6 +16,7 @@ describe('journal images', () => {
   it('uses the original when an actual thumbnail is too small for a high density preview', async () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const wrapper = shallowMount(JournalImage, {
+      global: { plugins: [createJournalTestI18n()] },
       props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo', fit: 'contain' },
     })
     loaded(wrapper.get('img').element)
@@ -25,6 +27,7 @@ describe('journal images', () => {
   it('keeps small rows light and upgrades after the image grows', async () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const wrapper = shallowMount(JournalImage, {
+      global: { plugins: [createJournalTestI18n()] },
       props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo' },
     })
     loaded(wrapper.get('img').element, 40, 49)
@@ -39,6 +42,7 @@ describe('journal images', () => {
   it('accounts for cover cropping instead of comparing only image width', async () => {
     vi.stubGlobal('devicePixelRatio', 1)
     const wrapper = shallowMount(JournalImage, {
+      global: { plugins: [createJournalTestI18n()] },
       props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo' },
     })
     loaded(wrapper.get('img').element, 200, 600)
@@ -49,6 +53,7 @@ describe('journal images', () => {
   it('defers a background cover original until that cover becomes selected', async () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const wrapper = shallowMount(JournalImage, {
+      global: { plugins: [createJournalTestI18n()] },
       props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo', upgrade: false },
     })
     loaded(wrapper.get('img').element, 480, 520)
@@ -64,6 +69,7 @@ describe('journal images', () => {
   })
   it('still falls back to an original when a background thumbnail fails', async () => {
     const wrapper = shallowMount(JournalImage, {
+      global: { plugins: [createJournalTestI18n()] },
       props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo', upgrade: false },
     })
     await wrapper.get('img').trigger('error')
@@ -75,6 +81,7 @@ describe('journal images', () => {
   })
   it('keeps the thumbnail after an original fails and resets for another backend image', async () => {
     const wrapper = shallowMount(JournalImage, {
+      global: { plugins: [createJournalTestI18n()] },
       props: { src: '/thumbnail.webp', originalSrc: '/photo.jpg', alt: 'Photo' },
     })
     loaded(wrapper.get('img').element, 800, 900)
@@ -91,6 +98,7 @@ describe('journal images', () => {
   })
   it('shows an accessible fallback on failure and retries when backend image changes', async () => {
     const wrapper = shallowMount(JournalImage, {
+      global: { plugins: [createJournalTestI18n()] },
       props: { src: '/missing.jpg', alt: 'A backend title' },
     })
     await wrapper.get('img').trigger('error')

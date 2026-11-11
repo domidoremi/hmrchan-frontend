@@ -1,4 +1,5 @@
-import { onBeforeUnmount, onMounted, type ShallowRef } from 'vue'
+import { onBeforeUnmount, onMounted, watch, type ShallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { discussionService, type DiscussionComment } from '@/api/discussionService'
 import { ensureAuthStoreLoaded } from '@/services/authSurface'
@@ -8,6 +9,7 @@ import { discussionModel, type JournalDiscussion } from './models'
 import type { JournalRuntime } from './runtime'
 
 export function useJournalDiscussion(runtime: ShallowRef<JournalRuntime | null>) {
+  const { locale, t } = useI18n({ useScope: 'global' })
   const auth = useAuthStore(),
     router = useRouter(),
     route = useRoute()
@@ -31,9 +33,9 @@ export function useJournalDiscussion(runtime: ShallowRef<JournalRuntime | null>)
         .join('')
     const render = () => {
       ui.openDialog(
-        `<span class="badge badge-purple">${esc(discussion.category)}</span><h2 id="dialog-title" style="margin-top:14px">${esc(discussion.title)}</h2><div class="discussion-meta"><span>${esc(discussion.author)}</span><span>·</span><span>${esc(discussion.time)}</span></div><p class="dialog-copy">${esc(discussion.text).replace(/\n/g, '<br>')}</p><div id="journal-comments">${rows()}</div><button class="text-button" data-more-comments ${cursor ? '' : 'hidden'}>更多回复</button>${closed ? '<p class="dialog-copy">讨论已结束</p>' : `<form id="comment-form" class="comment-form"><input name="comment" placeholder="回复…" aria-label="回复内容" maxlength="500" required><button type="submit" class="button button-dark button-small">回复</button></form>`}`,
+        `<span class="badge badge-purple">${esc(discussion.category)}</span><h2 id="dialog-title" style="margin-top:14px">${esc(discussion.title)}</h2><div class="discussion-meta"><span>${esc(discussion.author)}</span><span>·</span><span>${esc(discussion.time)}</span></div><p class="dialog-copy">${esc(discussion.text).replace(/\n/g, '<br>')}</p><div id="journal-comments">${rows()}</div><button class="text-button" data-more-comments ${cursor ? '' : 'hidden'}>${esc(t('comment.loadMoreReplies'))}</button>${closed ? `<p class="dialog-copy discussion-closed">${esc(t('journal.community.closed'))}</p>` : `<form id="comment-form" class="comment-form"><input name="comment" placeholder="${esc(t('comment.placeholder'))}" aria-label="${esc(t('journal.community.replyLabel'))}" maxlength="500" required><button type="submit" class="button button-dark button-small">${esc(t('comment.reply'))}</button></form>`}`,
         'discussion-dialog',
-        { key: `discussion:${item.id}`, label: '讨论', render }
+        { key: `discussion:${item.id}`, labelKey: 'journal.nav.discussions', render }
       )
       const current = version
       document.querySelector('#comment-form')?.addEventListener('submit', (event) => {
@@ -61,9 +63,9 @@ export function useJournalDiscussion(runtime: ShallowRef<JournalRuntime | null>)
             if (target) target.innerHTML = rows()
             if (input.value.trim() === content) input.value = ''
             input.focus({ preventScroll: true })
-            ui.toast('已回复')
+            ui.toast(t('comment.submitSuccess'))
           } catch {
-            if (current === version) ui.toast('暂时未能回复，请重试')
+            if (current === version) ui.toast(t('comment.error.addFailed'))
           } finally {
             pending = false
             button.disabled = false
@@ -89,7 +91,7 @@ export function useJournalDiscussion(runtime: ShallowRef<JournalRuntime | null>)
             if (more) more.hidden = !cursor
           })
           .catch(() => {
-            if (current === version) ui.toast('回复暂时无法加载')
+            if (current === version) ui.toast(t('comment.error.fetchRepliesFailed'))
           })
           .finally(() => {
             pending = false
@@ -124,9 +126,25 @@ export function useJournalDiscussion(runtime: ShallowRef<JournalRuntime | null>)
         }
       })
       .catch(() => {
-        if (request === version) ui.toast('完整讨论暂时无法加载')
+        if (request === version) ui.toast(t('journal.toast.discussionFailed'))
       })
   }
+  function refreshLocalizedControls() {
+    const root = document.querySelector('#app-dialog.discussion-dialog[open]')
+    if (!root) return
+    const more = root.querySelector('[data-more-comments]')
+    if (more) more.textContent = t('comment.loadMoreReplies')
+    const closed = root.querySelector('.discussion-closed')
+    if (closed) closed.textContent = t('journal.community.closed')
+    const input = root.querySelector<HTMLInputElement>('#comment-form input')
+    if (input) {
+      input.placeholder = t('comment.placeholder')
+      input.setAttribute('aria-label', t('journal.community.replyLabel'))
+    }
+    const submit = root.querySelector('#comment-form button[type="submit"]')
+    if (submit) submit.textContent = t('comment.reply')
+  }
+  watch(locale, refreshLocalizedControls, { flush: 'post' })
   onMounted(() =>
     document.addEventListener('dialogwillchange', () => version++, { signal: lifetime.signal })
   )

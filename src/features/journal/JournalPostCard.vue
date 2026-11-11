@@ -25,7 +25,11 @@
     <button
       class="icon-button post-save"
       :class="{ saved }"
-      :aria-label="`${saved ? '取消收藏' : '收藏'}：${post.title}`"
+      :aria-label="
+        t(saved ? 'journal.actions.removeFavorite' : 'journal.actions.addFavorite', {
+          title: post.title,
+        })
+      "
       :aria-pressed="saved"
       @click="$emit('save', post, $event)"
     >
@@ -36,7 +40,7 @@
         ><i class="platform-dot" :class="`platform-${post.platform}`" />{{
           platforms[post.platform] || post.platform
         }}</span
-      ><time>{{ post.time }}</time>
+      ><time>{{ journalPostTimeLabel(post, t, locale) }}</time>
     </div>
     <button v-if="post.image || distinctText" class="post-title" :data-open="post.id">
       {{ post.title }}
@@ -54,10 +58,13 @@
   </article>
 </template>
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 import JournalIcon from './JournalIcon.vue'
 import JournalImage from './JournalImage.vue'
+import { journalPostTimeLabel } from './localizedPostTime'
 import { platforms, type JournalPost } from './models'
+const { locale, t } = useI18n({ useScope: 'global' })
 const props = defineProps<{ post: JournalPost; saved: boolean }>()
 const textLines = computed(() => (props.post.text || props.post.title).split('\n'))
 const distinctText = computed(

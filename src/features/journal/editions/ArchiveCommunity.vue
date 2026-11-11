@@ -36,14 +36,13 @@
           @click="selectedId = item.id"
         >
           <div class="meta-line">
-            <span>{{ item.category }}</span
-            ><span v-if="item.pinned">置顶</span><time>{{ item.time }}</time>
+            <span>{{ item.category }}</span><span v-if="item.pinned">置顶</span
+            ><time>{{ item.time }}</time>
           </div>
           <h3>{{ item.title }}</h3>
           <p>{{ item.text }}</p>
           <div>
-            <span class="discussion-avatar">{{ item.avatar }}</span
-            ><span>{{ item.author }}</span
+            <span class="discussion-avatar">{{ item.avatar }}</span><span>{{ item.author }}</span
             ><small>{{ item.replies }} <JournalIcon name="messages" /></small>
           </div></button
         ><slot name="state" />
@@ -62,13 +61,11 @@
         <Transition name="archive-preview" mode="out-in"
           ><article v-if="selected" :key="selected.id">
             <div class="meta-line">
-              <span>{{ selected.category }}</span
-              ><time>{{ selected.time }}</time>
+              <span>{{ selected.category }}</span><time>{{ selected.time }}</time>
             </div>
             <h2>{{ selected.title }}</h2>
             <div class="forum-author">
-              <span class="discussion-avatar">{{ selected.avatar }}</span
-              ><span
+              <span class="discussion-avatar">{{ selected.avatar }}</span><span
                 >{{ selected.author }}<small>{{ selected.replies }} 条回复</small></span
               >
             </div>

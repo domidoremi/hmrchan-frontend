@@ -5,8 +5,9 @@
         <span class="eyebrow">OVERVIEW</span>
         <h1>总览<span class="title-dot">.</span></h1>
       </div>
-      <span class="archive-date">{{ date }}</span
-      ><RouterLink class="button button-outline" to="/explore"
+      <span class="archive-date">{{ date }}</span><RouterLink
+        class="button button-outline"
+        to="/explore"
         >资料检索 <JournalIcon name="arrow-up-right"
       /></RouterLink>
     </div>
@@ -103,8 +104,7 @@
           </div>
           <div v-for="group in groups" :key="group.label" class="timeline-group">
             <div class="timeline-label">
-              <span>{{ group.label }}</span
-              ><i />
+              <span>{{ group.label }}</span><i />
             </div>
             <button
               v-for="post in group.items"
@@ -137,8 +137,10 @@
           <JournalResourceState
             :state="states.posts"
             label="动态"
+            label-key="journal.nav.posts"
             :empty="!posts.length"
             empty-message="暂无动态"
+            empty-message-key="journal.states.noPosts"
             @retry="$emit('retry')"
           />
         </div>
@@ -209,8 +211,7 @@
             <span class="agenda-day"
               >{{ String(event.day).padStart(2, '0') }}<small>{{ event.week }}</small></span
             ><button :data-event="event.id">
-              <b>{{ event.title }}</b
-              ><small>{{ event.time }} · {{ event.venue }}</small></button
+              <b>{{ event.title }}</b><small>{{ event.time }} · {{ event.venue }}</small></button
             ><button
               class="icon-button remind"
               :data-remind="event.id"
@@ -223,8 +224,10 @@
           <JournalResourceState
             :state="states.events"
             label="日程"
+            label-key="nav.schedule"
             :empty="!events.length"
             empty-message="本月暂无日程"
+            empty-message-key="journal.calendar.noneThisMonth"
             @retry="$emit('retry')"
           />
         </div>
@@ -244,16 +247,19 @@
         >
           <span class="discussion-avatar">{{ item.avatar }}</span>
           <div>
-            <button :data-discussion="item.id">{{ item.title }}</button
-            ><small>{{ item.author }} · {{ item.category }}</small>
+            <button :data-discussion="item.id">{{ item.title }}</button><small
+              >{{ item.author }} · {{ item.category }}</small
+            >
           </div>
           <span>{{ item.replies }}<JournalIcon name="messages" /></span>
         </article>
         <JournalResourceState
           :state="states.discussions"
           label="讨论"
+          label-key="journal.nav.discussions"
           :empty="!discussions.length"
           empty-message="暂无讨论"
+          empty-message-key="journal.states.noDiscussions"
           @retry="$emit('retry')"
         />
       </section>

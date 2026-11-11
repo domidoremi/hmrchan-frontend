@@ -3,6 +3,7 @@ import { defineComponent, h, nextTick, onErrorCaptured, ref, Suspense } from 'vu
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { journalAsyncView, useJournalModuleRecovery } from '../asyncView'
+import { createJournalTestI18n } from './journalTestI18n'
 
 let dispose: (() => void) | undefined
 beforeEach(() => vi.useFakeTimers())
@@ -32,6 +33,7 @@ async function mountView(loader: () => Promise<ReturnType<typeof defineComponent
         )
     },
   })
+  const i18n = createJournalTestI18n()
   const wrapper = mount(
     defineComponent({
       setup() {
@@ -46,13 +48,13 @@ async function mountView(loader: () => Promise<ReturnType<typeof defineComponent
           })
       },
     }),
-    { global: { plugins: [router] } }
+    { global: { plugins: [router, i18n] } }
   )
   dispose = () => wrapper.unmount()
   await flushPromises()
   show.value = true
   await nextTick()
-  return { wrapper, selected, failures }
+  return { wrapper, selected, failures, i18n }
 }
 const content = defineComponent({
   props: { title: String },
@@ -91,13 +93,15 @@ describe('journal page module feedback', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
   it('provides an actionable failure without exposing an internal error message', async () => {
-    const { wrapper, failures } = await mountView(async () => {
+    const { wrapper, failures, i18n } = await mountView(async () => {
       throw new Error('private module diagnostic')
     })
     await flushPromises()
     expect(failures).toHaveLength(0)
     expect(wrapper.get('.journal-route-state').attributes('data-state')).toBe('error')
-    expect(wrapper.text()).toContain('重新加载')
+    expect(wrapper.get('.route-state-recovery button').text()).toContain(
+      i18n.global.t('common.retry')
+    )
     expect(wrapper.text()).not.toContain('private module diagnostic')
     expect(wrapper.find('.route-state-skeleton').exists()).toBe(false)
   })

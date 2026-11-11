@@ -1647,5 +1647,170 @@
     "contents": "本期目錄",
     "openBook": "翻開",
     "viewPhoto": "查看動態"
+  },
+  "journal": {
+    "actions": {
+      "addFavorite": "收藏：{title}",
+      "backTo": "返回{label}",
+      "open": "開啟",
+      "openPostNamed": "開啟貼文：{title}",
+      "remind": "記下",
+      "remindNamed": "記下：{title}",
+      "reminded": "已記下",
+      "removeFavorite": "取消收藏：{title}",
+      "removeReminderNamed": "移除日程：{title}",
+      "saved": "已收藏"
+    },
+    "appearance": {
+      "archiveEdition": "資料庫",
+      "colorMode": "明暗",
+      "currentSite": "目前站點",
+      "journalEdition": "雜誌",
+      "languageChanging": "正在切換語言…",
+      "languageHint": "選擇介面語言。貼文內容保留原文。",
+      "languageUnavailable": "暫時無法載入所選語言，目前使用{language}。",
+      "motion": "動效",
+      "motionFull": "完整動效",
+      "motionReduced": "簡化動效",
+      "sites": "站點",
+      "thisDevice": "此裝置",
+      "title": "顯示設定",
+      "visit": "前往"
+    },
+    "browse": {
+      "adjustSearch": "調整搜尋",
+      "continue": "繼續瀏覽",
+      "count": "{count} 項",
+      "countUnknown": "結果數量尚未取得",
+      "emptyHint": "試試其他關鍵字，或調整篩選。目前條件保留在上方。",
+      "emptyKicker": "目前條件",
+      "errorKicker": "讀取未完成",
+      "favoritesHint": "你收藏的動態會出現在這裡。先去動態看看。",
+      "index": "貼文索引",
+      "loadingHint": "正在讀取資料，目前搜尋與篩選會保留。",
+      "loadingKicker": "正在讀取",
+      "moreRetryHint": "下一批內容暫未載入。可以繼續瀏覽已有內容，或重試。",
+      "postAuthor": "貼文 / 作者",
+      "retryHint": "請重新載入。目前搜尋與篩選會保留，你可以從這裡繼續。",
+      "retrying": "重試中…",
+      "searchAndFilter": "搜尋與篩選",
+      "time": "時間"
+    },
+    "calendar": {
+      "allEvents": "全部日程",
+      "eventCount": "{count} 項活動",
+      "noneThisMonth": "本月暫無日程",
+      "partialLoad": "部分日程暫時無法載入",
+      "taipeiTime": "台北時間"
+    },
+    "community": {
+      "closed": "討論已結束",
+      "draft": "草稿",
+      "replyLabel": "回覆內容"
+    },
+    "content": {
+      "photo": "寫真",
+      "program": "節目",
+      "text": "文字"
+    },
+    "density": {
+      "compact": "緊湊",
+      "label": "顯示密度",
+      "standard": "標準"
+    },
+    "filters": {
+      "active": "目前篩選",
+      "contentType": "內容類型",
+      "mostLiked": "最多讚",
+      "querySummary": "搜尋：{query}",
+      "remove": "移除篩選：{filter}",
+      "sortSummary": "排序：{sort}",
+      "source": "來源",
+      "sourceSummary": "來源：{source}",
+      "typeSummary": "內容：{type}"
+    },
+    "gallery": {
+      "imageUnavailable": "暫時無法顯示圖片",
+      "next": "下一張圖片",
+      "noImages": "暫無圖片",
+      "open": "檢視大圖",
+      "previous": "上一張圖片",
+      "thumbnails": "圖片縮圖",
+      "viewIndex": "查看第 {index} 張圖片"
+    },
+    "nav": {
+      "accountNavigation": "帳號導覽",
+      "calendar": "月曆",
+      "closeDirectory": "關閉目錄",
+      "collection": "我的收藏",
+      "discussions": "討論",
+      "goToArchive": "前往資料庫",
+      "goToJournal": "前往雜誌",
+      "loginOrRegister": "登入 / 註冊",
+      "mobileNavigation": "行動版導覽",
+      "my": "我的",
+      "myAccount": "我的帳號",
+      "openDirectory": "開啟目錄",
+      "overview": "總覽",
+      "posts": "貼文",
+      "records": "資料檢索",
+      "savedSchedule": "已記下的日程"
+    },
+    "search": {
+      "inputLabel": "搜尋貼文、作者或標籤",
+      "recent": "最近更新",
+      "results": "找到 {count}{more} 則相關貼文"
+    },
+    "selection": {
+      "current": "目前預覽",
+      "empty": "暫無內容",
+      "next": "下一則貼文",
+      "open": "開啟選取的貼文",
+      "preview": "預覽",
+      "previous": "上一則貼文",
+      "returnToList": "返回列表",
+      "select": "選取",
+      "selected": "已選 {current} / {total}",
+      "unavailable": "讀取完成後可預覽"
+    },
+    "sources": {
+      "official": "官方"
+    },
+    "states": {
+      "archiveReadySoon": "紀錄與預覽即將就緒。",
+      "checkNetwork": "請檢查網路後重試，或繼續瀏覽其他頁面。",
+      "failed": "{label}暫時無法載入",
+      "journalReadySoon": "內容正在載入，稍後即可閱讀。",
+      "loading": "正在載入{label}…",
+      "loadingPage": "正在翻開這一頁。",
+      "loadingRecords": "正在讀取內容。",
+      "noDiscussions": "尚無討論",
+      "noEvents": "暫無日程",
+      "noFavorites": "尚無收藏",
+      "noPosts": "尚無貼文",
+      "noRecords": "暫無紀錄",
+      "pageFailed": "暫時無法載入這一頁。",
+      "pageLoadingLabel": "頁面載入",
+      "resetFilters": "重設篩選",
+      "retryNamed": "重新載入{label}",
+      "slow": "載入時間比平常久，可以繼續等待或重新載入。"
+    },
+    "toast": {
+      "authorFailed": "作者貼文暫時無法載入",
+      "connectFailed": "暫時無法連線，請重試",
+      "discussionFailed": "暫時無法載入完整討論",
+      "favoriteAdded": "已收藏",
+      "favoriteRemoved": "已取消收藏",
+      "favoriteUnavailable": "暫時無法收藏",
+      "postFailed": "完整內容暫時無法載入",
+      "reminderRemoved": "已移除日程",
+      "saveFailed": "暫時無法儲存，請重試",
+      "storageFailed": "暫時無法儲存此偏好"
+    },
+    "views": {
+      "gallery": "畫廊",
+      "list": "閱讀列表",
+      "wall": "照片牆"
+    }
   }
 }
