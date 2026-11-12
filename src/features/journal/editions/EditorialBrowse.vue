@@ -78,11 +78,7 @@
           <option value="latest">{{ t('explore.newest') }}</option>
           <option value="popular">{{ t('journal.filters.mostLiked') }}</option>
         </select></label
-      ><button
-        v-if="query || platform !== 'all' || contentType !== '全部'"
-        class="text-button"
-        @click="$emit('reset')"
-      >
+      ><button v-if="hasFilters" class="text-button" @click="resetFilters">
         {{ t('common.clear') }} <JournalIcon name="x" />
       </button>
     </div>
@@ -138,6 +134,7 @@ import type { JournalResourceState } from '../resourceState'
 import { useJournal } from '../context'
 import { journalContentTypeLabel, journalSourceLabel } from '../controlLabels'
 import { sourceGroups } from '../presentation'
+import { useBrowseFilterFocus } from '../useBrowseFilterFocus'
 const { t } = useI18n({ useScope: 'global' })
 const props = defineProps<{
   posts: JournalPost[]
@@ -154,7 +151,7 @@ const props = defineProps<{
   state?: JournalResourceState
   retry?: () => Promise<void>
 }>()
-defineEmits<{
+const emit = defineEmits<{
   change: [key: string, value: string]
   reset: []
   save: [post: JournalPost, event: MouseEvent]
@@ -166,6 +163,10 @@ const search = ref(props.query),
   searchInput = ref<HTMLInputElement>(),
   grid = ref<HTMLElement>(),
   runtime = useJournal()
+const rememberFilterFocus = useBrowseFilterFocus(
+  () => [props.query, props.platform, props.contentType, props.sort],
+  searchInput
+)
 const readState = computed(() => props.state ?? (props.loading ? 'loading' : 'ready'))
 const countUnknown = computed(() => !props.allPosts.length && readState.value !== 'ready')
 const hasFilters = computed(
@@ -175,6 +176,10 @@ const hasFilters = computed(
     props.contentType !== '全部' ||
     props.sort !== 'latest'
 )
+function resetFilters(event: MouseEvent) {
+  rememberFilterFocus(event)
+  emit('reset')
+}
 async function focusResults(trigger: HTMLButtonElement) {
   await nextTick()
   if (document.activeElement !== trigger && document.activeElement !== document.body) return

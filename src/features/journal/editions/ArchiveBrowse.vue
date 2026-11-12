@@ -59,7 +59,7 @@
           <option value="latest">{{ t('explore.newest') }}</option>
           <option value="popular">{{ t('journal.filters.mostLiked') }}</option>
         </select></label
-      ><button v-if="activeFilters.length" class="text-button" @click="$emit('reset')">
+      ><button v-if="activeFilters.length" class="text-button" @click="resetFilters">
         {{ t('common.clear') }} <JournalIcon name="x" />
       </button>
       <div class="density-toggle" role="group" :aria-label="t('journal.density.label')">
@@ -83,7 +83,7 @@
         v-for="filter in activeFilters"
         :key="filter.key"
         :aria-label="t('journal.filters.remove', { filter: filter.label })"
-        @click="$emit('change', filter.key, filter.reset)"
+        @click="removeFilter(filter.key, filter.reset, $event)"
       >
         <span>{{ filter.label }}</span><JournalIcon name="x" />
       </button>
@@ -201,6 +201,7 @@ import { journalPostTimeLabel } from '../localizedPostTime'
 import { platforms, type JournalPost } from '../models'
 import { journalContentTypeLabel, journalSourceLabel } from '../controlLabels'
 import { sourceGroups } from '../presentation'
+import { useBrowseFilterFocus } from '../useBrowseFilterFocus'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
 import ArchivePreview from './ArchivePreview.vue'
@@ -235,6 +236,18 @@ const emit = defineEmits<{
 }>()
 const search = ref(props.query)
 const searchInput = ref<HTMLInputElement>()
+const rememberFilterFocus = useBrowseFilterFocus(
+  () => [props.query, props.platform, props.contentType, props.sort],
+  searchInput
+)
+function resetFilters(event: MouseEvent) {
+  rememberFilterFocus(event)
+  emit('reset')
+}
+function removeFilter(key: string, value: string, event: MouseEvent) {
+  rememberFilterFocus(event)
+  emit('change', key, value)
+}
 const readState = computed(() => props.state ?? (props.loading ? 'loading' : 'ready'))
 const countUnknown = computed(() => !props.allPosts.length && readState.value !== 'ready')
 async function focusResults(trigger: HTMLButtonElement) {
