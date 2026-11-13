@@ -1709,7 +1709,22 @@
     "community": {
       "closed": "討論已結束",
       "draft": "草稿",
-      "replyLabel": "回覆內容"
+      "replyLabel": "回覆內容",
+      "all": "全部",
+      "general": "日常閒聊",
+      "question": "提問",
+      "sharing": "分享",
+      "feedback": "回饋",
+      "conversations": "社群討論",
+      "index": "討論索引",
+      "categories": "討論分類",
+      "threads": "討論列表",
+      "allDiscussions": "全部討論",
+      "replies": "{count} 則回覆",
+      "readNamed": "閱讀：{title}",
+      "more": "更多討論",
+      "preview": "討論預覽",
+      "readAndReply": "閱讀與回覆"
     },
     "content": {
       "photo": "寫真",
@@ -1814,6 +1829,38 @@
       "gallery": "畫廊",
       "list": "閱讀列表",
       "wall": "照片牆"
+    },
+    "home": {
+      "masthead": "本刊",
+      "subjects": "影像 · 動態 · 人物",
+      "latest": "最近更新",
+      "latestKicker": "最新動態",
+      "allPosts": "全部動態",
+      "readingNote": "從這裡，讀起今天的更新。",
+      "calendarKicker": "日程速覽",
+      "communityKicker": "社群",
+      "visitCommunity": "進入社群",
+      "contents": "本期目錄",
+      "contentsKicker": "本期內容",
+      "overviewKicker": "總覽",
+      "currentPosts": "目前動態",
+      "sourcesCountUnknown": "來源數量尚未讀取",
+      "eventsCountUnknown": "日程數量尚未讀取",
+      "discussionsCountUnknown": "討論數量尚未讀取",
+      "sourceDistribution": "目前動態來源分布",
+      "allSources": "全部來源",
+      "monthEvents": "{month}日程",
+      "openCalendar": "開啟月曆",
+      "openCommunity": "開啟社群"
+    },
+    "film": {
+      "title": "影像",
+      "kicker": "影像",
+      "previous": "向前瀏覽影像",
+      "next": "向後瀏覽影像",
+      "region": "影像橫卷",
+      "progress": "影像瀏覽進度",
+      "position": "第 {index} 張，共 {total} 張"
     }
   }
 }

@@ -5,7 +5,9 @@
     <Transition name="archive-preview" mode="out-in"
       ><article v-if="post" :key="post.id" class="preview-face post-card" :data-post="post.id">
         <div class="preview-caption">
-          <span>{{ platforms[post.platform] || post.platform }}</span><span>{{ post.type }}</span
+          <span>{{
+            journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
+          }}</span><span>{{ journalContentTypeLabel(post.type, t) }}</span
           ><JournalIcon name="expand" />
         </div>
         <button
@@ -69,7 +71,7 @@
         class="archive-loading-preview"
         aria-hidden="true"
       >
-        <span>PREVIEW</span>
+        <span>{{ t('journal.selection.preview') }}</span>
         <div><i /><i /><i /></div>
         <small>· · ·</small>
       </div>
@@ -85,6 +87,7 @@
 import { useI18n } from 'vue-i18n'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
+import { journalContentTypeLabel, journalSourceLabel } from '../controlLabels'
 import { journalPostTimeLabel } from '../localizedPostTime'
 import { platforms, type JournalPost } from '../models'
 import type { JournalResourceState } from '../resourceState'

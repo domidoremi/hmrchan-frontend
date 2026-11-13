@@ -129,7 +129,9 @@
             ><span class="result-title"
               ><b>{{ post.title }}</b
               ><small>{{ post.author }}</small></span
-            ><span class="result-source">{{ platforms[post.platform] || post.platform }}</span
+            ><span class="result-source">{{
+              journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
+            }}</span
             ><time>{{ journalPostTimeLabel(post, t, locale) }}</time
             ><JournalIcon name="chevron" />
           </button>

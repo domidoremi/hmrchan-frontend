@@ -1709,7 +1709,22 @@
     "community": {
       "closed": "讨论已结束",
       "draft": "草稿",
-      "replyLabel": "回复内容"
+      "replyLabel": "回复内容",
+      "all": "全部",
+      "general": "日常闲聊",
+      "question": "提问",
+      "sharing": "分享",
+      "feedback": "反馈",
+      "conversations": "社区讨论",
+      "index": "讨论索引",
+      "categories": "讨论分类",
+      "threads": "讨论列表",
+      "allDiscussions": "全部讨论",
+      "replies": "{count} 条回复",
+      "readNamed": "阅读：{title}",
+      "more": "更多讨论",
+      "preview": "讨论预览",
+      "readAndReply": "阅读与回复"
     },
     "content": {
       "photo": "写真",
@@ -1814,6 +1829,38 @@
       "gallery": "画廊",
       "list": "阅读列表",
       "wall": "照片墙"
+    },
+    "home": {
+      "masthead": "本刊",
+      "subjects": "影像 · 动态 · 人物",
+      "latest": "最近更新",
+      "latestKicker": "最新动态",
+      "allPosts": "全部动态",
+      "readingNote": "从这里，读起今天的更新。",
+      "calendarKicker": "日程速览",
+      "communityKicker": "社区",
+      "visitCommunity": "进入社区",
+      "contents": "本期目录",
+      "contentsKicker": "本期内容",
+      "overviewKicker": "总览",
+      "currentPosts": "当前动态",
+      "sourcesCountUnknown": "来源数量尚未读取",
+      "eventsCountUnknown": "日程数量尚未读取",
+      "discussionsCountUnknown": "讨论数量尚未读取",
+      "sourceDistribution": "当前动态来源分布",
+      "allSources": "全部来源",
+      "monthEvents": "{month}日程",
+      "openCalendar": "打开月历",
+      "openCommunity": "打开社区"
+    },
+    "film": {
+      "title": "影像",
+      "kicker": "影像",
+      "previous": "向前浏览影像",
+      "next": "向后浏览影像",
+      "region": "影像横卷",
+      "progress": "影像浏览进度",
+      "position": "第 {index} 张，共 {total} 张"
     }
   }
 }

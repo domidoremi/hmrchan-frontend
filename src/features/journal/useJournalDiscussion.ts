@@ -5,6 +5,7 @@ import { discussionService, type DiscussionComment } from '@/api/discussionServi
 import { ensureAuthStoreLoaded } from '@/services/authSurface'
 import { useAuthStore } from '@/stores'
 import { isUuidV7String } from '@/types/publicId'
+import { journalCategoryLabel } from './controlLabels'
 import { discussionModel, type JournalDiscussion } from './models'
 import type { JournalRuntime } from './runtime'
 
@@ -33,7 +34,7 @@ export function useJournalDiscussion(runtime: ShallowRef<JournalRuntime | null>)
         .join('')
     const render = () => {
       ui.openDialog(
-        `<span class="badge badge-purple">${esc(discussion.category)}</span><h2 id="dialog-title" style="margin-top:14px">${esc(discussion.title)}</h2><div class="discussion-meta"><span>${esc(discussion.author)}</span><span>·</span><span>${esc(discussion.time)}</span></div><p class="dialog-copy">${esc(discussion.text).replace(/\n/g, '<br>')}</p><div id="journal-comments">${rows()}</div><button class="text-button" data-more-comments ${cursor ? '' : 'hidden'}>${esc(t('comment.loadMoreReplies'))}</button>${closed ? `<p class="dialog-copy discussion-closed">${esc(t('journal.community.closed'))}</p>` : `<form id="comment-form" class="comment-form"><input name="comment" placeholder="${esc(t('comment.placeholder'))}" aria-label="${esc(t('journal.community.replyLabel'))}" maxlength="500" required><button type="submit" class="button button-dark button-small">${esc(t('comment.reply'))}</button></form>`}`,
+        `<span class="badge badge-purple discussion-category" data-category="${esc(discussion.category)}">${esc(journalCategoryLabel(discussion.category, t))}</span><h2 id="dialog-title" style="margin-top:14px">${esc(discussion.title)}</h2><div class="discussion-meta"><span>${esc(discussion.author)}</span><span>·</span><span>${esc(discussion.time)}</span></div><p class="dialog-copy">${esc(discussion.text).replace(/\n/g, '<br>')}</p><div id="journal-comments">${rows()}</div><button class="text-button" data-more-comments ${cursor ? '' : 'hidden'}>${esc(t('comment.loadMoreReplies'))}</button>${closed ? `<p class="dialog-copy discussion-closed">${esc(t('journal.community.closed'))}</p>` : `<form id="comment-form" class="comment-form"><input name="comment" placeholder="${esc(t('comment.placeholder'))}" aria-label="${esc(t('journal.community.replyLabel'))}" maxlength="500" required><button type="submit" class="button button-dark button-small">${esc(t('comment.reply'))}</button></form>`}`,
         'discussion-dialog',
         { key: `discussion:${item.id}`, labelKey: 'journal.nav.discussions', render }
       )
@@ -132,6 +133,8 @@ export function useJournalDiscussion(runtime: ShallowRef<JournalRuntime | null>)
   function refreshLocalizedControls() {
     const root = document.querySelector('#app-dialog.discussion-dialog[open]')
     if (!root) return
+    const category = root.querySelector<HTMLElement>('.discussion-category')
+    if (category) category.textContent = journalCategoryLabel(category.dataset['category']!, t)
     const more = root.querySelector('[data-more-comments]')
     if (more) more.textContent = t('comment.loadMoreReplies')
     const closed = root.querySelector('.discussion-closed')

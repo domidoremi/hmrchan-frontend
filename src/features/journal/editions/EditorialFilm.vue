@@ -1,12 +1,12 @@
 <template>
   <section class="editorial-film" data-reveal data-depth-scene>
     <div class="film-heading">
-      <span>02 / PHOTOGRAPHS</span>
-      <h2>影像</h2>
+      <span>02 / {{ t('journal.film.kicker') }}</span>
+      <h2>{{ t('journal.film.title') }}</h2>
       <div>
         <button
           class="icon-button"
-          aria-label="向前浏览影像"
+          :aria-label="t('journal.film.previous')"
           :disabled="!canScroll || progress <= 0.002"
           @click="step(-1)"
         >
@@ -14,7 +14,7 @@
         </button>
         <button
           class="icon-button"
-          aria-label="向后浏览影像"
+          :aria-label="t('journal.film.next')"
           :disabled="!canScroll || progress >= 0.998"
           @click="step(1)"
         >
@@ -27,7 +27,7 @@
       class="film-track"
       :class="{ 'is-dragging': dragging }"
       role="region"
-      aria-label="影像横卷"
+      :aria-label="t('journal.film.region')"
       tabindex="0"
       @scroll.passive="schedule"
       @keydown="keydown"
@@ -64,14 +64,14 @@
         ><span>/ {{ String(posts.length).padStart(2, '0') }}</span></span
       >
       <label class="film-scrubber" :style="{ '--film-progress': progress }"
-        ><span class="sr-only">影像浏览进度</span
+        ><span class="sr-only">{{ t('journal.film.progress') }}</span
         ><input
           type="range"
           min="0"
           max="1000"
           :value="Math.round(progress * 1000)"
           :disabled="!canScroll"
-          :aria-valuetext="`第 ${index + 1} 张，共 ${posts.length} 张`"
+          :aria-valuetext="t('journal.film.position', { index: index + 1, total: posts.length })"
           @input="scrub" /><i aria-hidden="true"
       /></label>
       <span class="film-current-author">{{ posts[index]?.author }}</span>
@@ -80,10 +80,12 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
 import type { JournalPost } from '../models'
 import { useFilmstrip } from './useFilmstrip'
+const { t } = useI18n({ useScope: 'global' })
 const props = defineProps<{ posts: JournalPost[] }>()
 const {
   setTrack,

@@ -7,6 +7,19 @@ const contentTypeKeys: Record<string, string> = {
   节目: 'journal.content.program',
 }
 
+const categoryKeys: Record<string, string> = {
+  全部: 'journal.community.all',
+  日常闲聊: 'journal.community.general',
+  提问: 'journal.community.question',
+  分享: 'journal.community.sharing',
+  反馈: 'journal.community.feedback',
+}
+
+export function journalCategoryLabel(value: string, translate: TranslateControl): string {
+  const key = categoryKeys[value]
+  return key ? translate(key) : value
+}
+
 // This is a presentation map for the fixed Browse options, not author taxonomy.
 export function journalContentTypeLabel(value: string, translate: TranslateControl): string {
   const key = contentTypeKeys[value]

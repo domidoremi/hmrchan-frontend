@@ -1,6 +1,8 @@
 <template>
-  <nav class="editorial-contents" aria-label="本期目录">
-    <span class="contents-caption">本期目录<small>IN THIS ISSUE</small></span>
+  <nav class="editorial-contents" :aria-label="t('journal.home.contents')">
+    <span class="contents-caption"
+      >{{ t('journal.home.contents') }}<small>{{ t('journal.home.contentsKicker') }}</small></span
+    >
     <a
       v-for="section in sections"
       :key="section.id"
@@ -9,7 +11,7 @@
       @click.prevent="go(section.id)"
     >
       <span>{{ section.number }}</span><b>{{ section.label }}</b
-      ><small :aria-label="section.count === null ? '数量尚未读取' : undefined">{{
+      ><small :aria-label="section.count === null ? t('journal.browse.countUnknown') : undefined">{{
         section.count ?? '—'
       }}</small>
     </a>
@@ -17,7 +19,9 @@
 </template>
 <script setup lang="ts">
 import { nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
+const { t } = useI18n({ useScope: 'global' })
 const props = defineProps<{
   sections: { id: string; number: string; label: string; count: number | null }[]
 }>()

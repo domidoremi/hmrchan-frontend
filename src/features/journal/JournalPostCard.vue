@@ -10,7 +10,9 @@
         loading="lazy"
       />
       <span class="media-type"
-        ><JournalIcon :name="post.type === '节目' ? 'headphones' : 'image'" />{{ post.type }}</span
+        ><JournalIcon :name="post.type === '节目' ? 'headphones' : 'image'" />{{
+          journalContentTypeLabel(post.type, t)
+        }}</span
       >
     </button>
     <button v-else class="text-post" :data-open="post.id">
@@ -38,7 +40,7 @@
     <div class="post-meta">
       <span class="platform"
         ><i class="platform-dot" :class="`platform-${post.platform}`" />{{
-          platforms[post.platform] || post.platform
+          journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
         }}</span
       ><time>{{ journalPostTimeLabel(post, t, locale) }}</time>
     </div>
@@ -62,6 +64,7 @@ import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 import JournalIcon from './JournalIcon.vue'
 import JournalImage from './JournalImage.vue'
+import { journalContentTypeLabel, journalSourceLabel } from './controlLabels'
 import { journalPostTimeLabel } from './localizedPostTime'
 import { platforms, type JournalPost } from './models'
 const { locale, t } = useI18n({ useScope: 'global' })

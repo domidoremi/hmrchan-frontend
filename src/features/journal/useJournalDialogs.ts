@@ -17,6 +17,7 @@ import { useAuthStore, useFavoritesStore } from '@/stores'
 import { isUuidV7String } from '@/types/publicId'
 import { getMediaStreamUrl, getMediaThumbnailUrl } from '@/utils/mediaOptimizer'
 import { journalPostTimeLabel } from './localizedPostTime'
+import { journalSourceLabel } from './controlLabels'
 import { postModel, platforms, type JournalPost } from './models'
 import { journalFavoriteFeedback } from './feedback'
 import { useJournalOperationScope } from './useJournalOperationScope'
@@ -215,7 +216,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
         ? `<p class="dialog-copy">${lines(post.text)}</p>`
         : ''
     ui().openDialog(
-      `<div class="post-detail${post.image ? '' : ' post-detail--text'}">${media ? `<div class="detail-media">${media}</div>` : ''}<div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i>${esc(platforms[post.platform] || post.platform)}</span><span class="dialog-post-time" data-post-time="${esc(post.id)}">${esc(journalPostTimeLabel(post, t, locale.value))}</span></div><h2 id="dialog-title">${esc(post.title)}</h2>${copy}<div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small><span class="detail-author-label">${esc(t('search.type.author'))}</span> ${icon('arrow-up-right')}</small></span></button><div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id)?.active ?? post.liked ?? false}">${icon('heart')}<span>${liked.get(post.id)?.count ?? post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="${esc(t('journal.actions.openPostNamed', { title: post.title }))}">${icon('arrow-up-right')}</a></div></div></div>`,
+      `<div class="post-detail${post.image ? '' : ' post-detail--text'}">${media ? `<div class="detail-media">${media}</div>` : ''}<div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i><span class="detail-platform-label" data-platform="${esc(post.platform)}">${esc(journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t))}</span></span><span class="dialog-post-time" data-post-time="${esc(post.id)}">${esc(journalPostTimeLabel(post, t, locale.value))}</span></div><h2 id="dialog-title">${esc(post.title)}</h2>${copy}<div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small><span class="detail-author-label">${esc(t('search.type.author'))}</span> ${icon('arrow-up-right')}</small></span></button><div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id)?.active ?? post.liked ?? false}">${icon('heart')}<span>${liked.get(post.id)?.count ?? post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="${esc(t('journal.actions.openPostNamed', { title: post.title }))}">${icon('arrow-up-right')}</a></div></div></div>`,
       post.image ? 'detail-dialog' : 'detail-dialog detail-dialog--text',
       {
         key: `post:${post.id}`,
@@ -522,6 +523,11 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       const photo = root.querySelector('[data-dialog-gallery]')
       if (photo) photo.setAttribute('aria-label', t('journal.gallery.open'))
       text('.detail-author-label', t('search.type.author'))
+      const platform = root.querySelector<HTMLElement>('.detail-platform-label')
+      if (platform) {
+        const key = platform.dataset['platform']!
+        platform.textContent = journalSourceLabel(key, platforms[key] || key, t)
+      }
       const link = root.querySelector('.detail-actions a[href]')
       const title = root.querySelector('#dialog-title')?.textContent ?? ''
       if (link) link.setAttribute('aria-label', t('journal.actions.openPostNamed', { title }))
