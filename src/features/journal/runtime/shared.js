@@ -1,3 +1,5 @@
+import { prepareDialogLinks, trapDialogTab } from './dialog-focus.js'
+
 export function installUI(runtime, environment) {
   const { document, feedback, translate } = environment
   const listeners = []
@@ -209,6 +211,7 @@ export function installUI(runtime, environment) {
     refreshBackLabel()
     el.querySelector('.dialog-head .eyebrow').hidden = Boolean(previous)
     hydrate(el)
+    prepareDialogLinks(el)
     document.body.classList.add('app-dialog-open')
     if (!wasOpen) el.showModal()
     if (toastElement?.classList.contains('visible')) el.append(toastElement)
@@ -294,6 +297,8 @@ export function installUI(runtime, environment) {
     event.preventDefault()
     closeDialog()
   })
+  const dialog = document.querySelector('#app-dialog')
+  listen(dialog, 'keydown', (event) => trapDialogTab(dialog, event))
   listen(document.querySelector('#app-dialog'), 'close', () => {
     const el = document.querySelector('#app-dialog')
     if (el.open) return
