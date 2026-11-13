@@ -1709,7 +1709,22 @@
     "community": {
       "closed": "このスレッドは終了しています",
       "draft": "下書き",
-      "replyLabel": "返信内容"
+      "replyLabel": "返信内容",
+      "all": "すべて",
+      "general": "雑談",
+      "question": "質問",
+      "sharing": "共有",
+      "feedback": "フィードバック",
+      "conversations": "会話",
+      "index": "スレッド一覧",
+      "categories": "スレッドのカテゴリー",
+      "threads": "スレッド",
+      "allDiscussions": "すべてのスレッド",
+      "replies": "返信 {count} 件",
+      "readNamed": "読む：{title}",
+      "more": "スレッドをもっと見る",
+      "preview": "スレッドのプレビュー",
+      "readAndReply": "読んで返信する"
     },
     "content": {
       "photo": "写真",
@@ -1814,6 +1829,38 @@
       "gallery": "ギャラリー",
       "list": "リーディングリスト",
       "wall": "写真ウォール"
+    },
+    "home": {
+      "masthead": "ジャーナル",
+      "subjects": "写真 · 投稿 · 人々",
+      "latest": "最近の更新",
+      "latestKicker": "最新情報",
+      "allPosts": "すべての投稿",
+      "readingNote": "今日の更新は、ここから。",
+      "calendarKicker": "今後の予定",
+      "communityKicker": "コミュニティ",
+      "visitCommunity": "コミュニティへ",
+      "contents": "今号の目次",
+      "contentsKicker": "今号の内容",
+      "overviewKicker": "概要",
+      "currentPosts": "最近の投稿",
+      "sourcesCountUnknown": "情報源の数は未取得です",
+      "eventsCountUnknown": "予定の数は未取得です",
+      "discussionsCountUnknown": "スレッドの数は未取得です",
+      "sourceDistribution": "最近の投稿の情報源",
+      "allSources": "すべての情報源",
+      "monthEvents": "{month}の予定",
+      "openCalendar": "カレンダーを開く",
+      "openCommunity": "コミュニティを開く"
+    },
+    "film": {
+      "title": "写真",
+      "kicker": "写真",
+      "previous": "前の写真を見る",
+      "next": "次の写真を見る",
+      "region": "写真の横スクロール",
+      "progress": "写真の閲覧位置",
+      "position": "{total} 枚中 {index} 枚目"
     }
   }
 }

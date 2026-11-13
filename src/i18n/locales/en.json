@@ -1709,7 +1709,22 @@
     "community": {
       "closed": "Discussion closed",
       "draft": "Draft",
-      "replyLabel": "Reply text"
+      "replyLabel": "Reply text",
+      "all": "All",
+      "general": "General",
+      "question": "Questions",
+      "sharing": "Sharing",
+      "feedback": "Feedback",
+      "conversations": "CONVERSATIONS",
+      "index": "Discussion index",
+      "categories": "Discussion categories",
+      "threads": "THREADS",
+      "allDiscussions": "All discussions",
+      "replies": "{count} replies",
+      "readNamed": "Read: {title}",
+      "more": "More discussions",
+      "preview": "Discussion preview",
+      "readAndReply": "Read and reply"
     },
     "content": {
       "photo": "Photographs",
@@ -1814,6 +1829,38 @@
       "gallery": "Gallery",
       "list": "Reading list",
       "wall": "Photo wall"
+    },
+    "home": {
+      "masthead": "THE JOURNAL",
+      "subjects": "PHOTOS · POSTS · PEOPLE",
+      "latest": "Latest updates",
+      "latestKicker": "THE LATEST",
+      "allPosts": "All posts",
+      "readingNote": "Start here with today's updates.",
+      "calendarKicker": "ON THE CALENDAR",
+      "communityKicker": "COMMUNITY",
+      "visitCommunity": "Visit community",
+      "contents": "This issue",
+      "contentsKicker": "IN THIS ISSUE",
+      "overviewKicker": "OVERVIEW",
+      "currentPosts": "Current posts",
+      "sourcesCountUnknown": "Source count is not available yet",
+      "eventsCountUnknown": "Event count is not available yet",
+      "discussionsCountUnknown": "Discussion count is not available yet",
+      "sourceDistribution": "Sources of current posts",
+      "allSources": "All sources",
+      "monthEvents": "Events in {month}",
+      "openCalendar": "Open calendar",
+      "openCommunity": "Open community"
+    },
+    "film": {
+      "title": "Photographs",
+      "kicker": "PHOTOGRAPHS",
+      "previous": "Browse previous photographs",
+      "next": "Browse next photographs",
+      "region": "Photograph strip",
+      "progress": "Photograph progress",
+      "position": "Photograph {index} of {total}"
     }
   }
 }

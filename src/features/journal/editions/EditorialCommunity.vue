@@ -1,13 +1,13 @@
 <template>
   <div class="editorial-page editorial-community">
     <header class="editorial-page-heading" data-reveal>
-      <span class="eyebrow">CONVERSATIONS</span>
+      <span class="eyebrow">{{ t('journal.community.conversations') }}</span>
       <div>
         <h1>
-          社区<em>{{ String(discussions.length).padStart(2, '0') }}</em>
+          {{ t('community.title') }}<em>{{ String(discussions.length).padStart(2, '0') }}</em>
         </h1>
         <button class="round-action" @click="$emit('compose')">
-          <span>发起讨论</span><JournalIcon name="plus" />
+          <span>{{ t('community.newDiscussion') }}</span><JournalIcon name="plus" />
         </button>
       </div>
     </header>
@@ -17,20 +17,22 @@
       </div>
       <div class="community-cover-copy">
         <div class="meta-line">
-          <span>{{ featured.pinned ? '置顶' : featured.category }}</span><time>{{
-            featured.time
-          }}</time>
+          <span>{{
+            featured.pinned ? t('community.pinned') : journalCategoryLabel(featured.category, t)
+          }}</span><time>{{ journalDateLabel(featured.time, locale) }}</time>
         </div>
         <h2>
           <button :data-discussion="featured.id">{{ featured.title }}</button>
         </h2>
         <p>{{ featured.text }}</p>
         <div>
-          <span>{{ featured.author }} · {{ featured.replies }} 条回复</span
+          <span
+            >{{ featured.author }} ·
+            {{ t('journal.community.replies', { count: featured.replies }) }}</span
           ><button
             class="icon-button"
             :data-discussion="featured.id"
-            :aria-label="`阅读：${featured.title}`"
+            :aria-label="t('journal.community.readNamed', { title: featured.title })"
           >
             <JournalIcon name="arrow-up-right" />
           </button>
@@ -38,7 +40,7 @@
       </div>
     </section>
     <div class="community-index-bar">
-      <h2>讨论索引</h2>
+      <h2>{{ t('journal.community.index') }}</h2>
       <div class="chips">
         <button
           v-for="label in categories"
@@ -47,7 +49,7 @@
           :class="{ active: category === label }"
           @click="$emit('category', label)"
         >
-          {{ label }}
+          {{ journalCategoryLabel(label, t) }}
         </button>
       </div>
     </div>
@@ -61,16 +63,25 @@
         <span>{{ String(i + 1).padStart(2, '0') }}</span>
         <div>
           <div class="meta-line">
-            <span>{{ item.category }}</span><span v-if="item.pinned">置顶</span
-            ><time>{{ item.time }}</time>
+            <span>{{ journalCategoryLabel(item.category, t) }}</span><span v-if="item.pinned">{{
+              t('community.pinned')
+            }}</span
+            ><time>{{ journalDateLabel(item.time, locale) }}</time>
           </div>
           <h3>
             <button :data-discussion="item.id">{{ item.title }}</button>
           </h3>
           <p>{{ item.text }}</p>
-          <small>{{ item.author }} · {{ item.replies }} 条回复</small>
+          <small
+            >{{ item.author }} ·
+            {{ t('journal.community.replies', { count: item.replies }) }}</small
+          >
         </div>
-        <button class="icon-button" :data-discussion="item.id" :aria-label="`阅读：${item.title}`">
+        <button
+          class="icon-button"
+          :data-discussion="item.id"
+          :aria-label="t('journal.community.readNamed', { title: item.title })"
+        >
           <JournalIcon name="arrow-up-right" />
         </button>
       </article>
@@ -78,22 +89,26 @@
     <slot name="state" />
     <div v-if="!discussions.length && !loading && !error" class="empty-state">
       <JournalIcon name="messages" />
-      <h3>暂无讨论</h3>
+      <h3>{{ t('journal.states.noDiscussions') }}</h3>
       <button class="text-button" @click="$emit('compose')">
-        发起讨论 <JournalIcon name="plus" />
+        {{ t('community.newDiscussion') }} <JournalIcon name="plus" />
       </button>
     </div>
     <div v-if="hasMore" class="load-more">
       <button class="button button-outline" :disabled="loading" @click="$emit('more')">
-        更多讨论 <JournalIcon name="plus" />
+        {{ t('journal.community.more') }} <JournalIcon name="plus" />
       </button>
     </div>
   </div>
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { journalCategoryLabel } from '../controlLabels'
+import { journalDateLabel } from '../localizedDate'
 import JournalIcon from '../JournalIcon.vue'
 import type { JournalDiscussion } from '../models'
+const { locale, t } = useI18n({ useScope: 'global' })
 const props = defineProps<{
   discussions: JournalDiscussion[]
   category: string

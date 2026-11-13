@@ -2,29 +2,37 @@
   <div class="archive-page archive-community">
     <header class="archive-page-title" data-reveal>
       <div>
-        <span class="eyebrow">COMMUNITY</span>
-        <h1>讨论<span class="title-dot">.</span></h1>
+        <span class="eyebrow">{{ t('journal.home.communityKicker') }}</span>
+        <h1>{{ t('journal.nav.discussions') }}<span class="title-dot">.</span></h1>
       </div>
       <button class="button button-dark" @click="$emit('compose')">
-        <JournalIcon name="plus" />发起讨论
+        <JournalIcon name="plus" />{{ t('community.newDiscussion') }}
       </button>
     </header>
     <div class="archive-forum">
-      <nav class="forum-categories" aria-label="讨论分类">
+      <nav class="forum-categories" :aria-label="t('journal.community.categories')">
         <button
           v-for="(label, i) in categories"
           :key="label"
           :class="{ active: category === label }"
           @click="$emit('category', label)"
         >
-          <JournalIcon :name="icons[i] || 'messages'" /><span>{{ label }}</span
+          <JournalIcon :name="icons[i] || 'messages'" /><span>{{
+            journalCategoryLabel(label, t)
+          }}</span
           ><JournalIcon name="chevron" />
         </button>
       </nav>
       <section class="forum-threads" data-reveal>
         <div class="panel-heading">
-          <span>THREADS</span>
-          <h2>{{ category === '全部' ? '全部讨论' : category }}</h2>
+          <span>{{ t('journal.community.threads') }}</span>
+          <h2>
+            {{
+              category === '全部'
+                ? t('journal.community.allDiscussions')
+                : journalCategoryLabel(category, t)
+            }}
+          </h2>
           <span class="meta-count">{{ discussions.length }}</span>
         </div>
         <button
@@ -36,8 +44,10 @@
           @click="selectedId = item.id"
         >
           <div class="meta-line">
-            <span>{{ item.category }}</span><span v-if="item.pinned">置顶</span
-            ><time>{{ item.time }}</time>
+            <span>{{ journalCategoryLabel(item.category, t) }}</span><span v-if="item.pinned">{{
+              t('community.pinned')
+            }}</span
+            ><time>{{ journalDateLabel(item.time, locale) }}</time>
           </div>
           <h3>{{ item.title }}</h3>
           <p>{{ item.text }}</p>
@@ -48,33 +58,40 @@
         ><slot name="state" />
         <div v-if="!discussions.length && !loading && !error" class="empty-state">
           <JournalIcon name="messages" />
-          <h3>暂无讨论</h3>
+          <h3>{{ t('journal.states.noDiscussions') }}</h3>
         </div>
         <div v-if="hasMore" class="load-more">
           <button class="button button-outline" :disabled="loading" @click="$emit('more')">
-            更多讨论 <JournalIcon name="plus" />
+            {{ t('journal.community.more') }} <JournalIcon name="plus" />
           </button>
         </div>
       </section>
       <aside class="forum-preview">
-        <div class="inspector-heading"><span>讨论预览</span><JournalIcon name="messages" /></div>
+        <div class="inspector-heading">
+          <span>{{ t('journal.community.preview') }}</span><JournalIcon name="messages" />
+        </div>
         <Transition name="archive-preview" mode="out-in"
           ><article v-if="selected" :key="selected.id">
             <div class="meta-line">
-              <span>{{ selected.category }}</span><time>{{ selected.time }}</time>
+              <span>{{ journalCategoryLabel(selected.category, t) }}</span><time>{{
+                journalDateLabel(selected.time, locale)
+              }}</time>
             </div>
             <h2>{{ selected.title }}</h2>
             <div class="forum-author">
               <span class="discussion-avatar">{{ selected.avatar }}</span><span
-                >{{ selected.author }}<small>{{ selected.replies }} 条回复</small></span
+                >{{ selected.author
+                }}<small>{{
+                  t('journal.community.replies', { count: selected.replies })
+                }}</small></span
               >
             </div>
             <p>{{ selected.text }}</p>
             <button class="button button-dark" :data-discussion="selected.id">
-              阅读与回复 <JournalIcon name="arrow-up-right" />
+              {{ t('journal.community.readAndReply') }} <JournalIcon name="arrow-up-right" />
             </button>
           </article>
-          <div v-else class="empty-state">暂无讨论</div></Transition
+          <div v-else class="empty-state">{{ t('journal.states.noDiscussions') }}</div></Transition
         >
       </aside>
     </div>
@@ -82,8 +99,12 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { journalCategoryLabel } from '../controlLabels'
+import { journalDateLabel } from '../localizedDate'
 import JournalIcon from '../JournalIcon.vue'
 import type { JournalDiscussion } from '../models'
+const { locale, t } = useI18n({ useScope: 'global' })
 const props = defineProps<{
   discussions: JournalDiscussion[]
   category: string

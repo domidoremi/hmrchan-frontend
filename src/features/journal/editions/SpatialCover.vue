@@ -22,9 +22,13 @@
       <Transition name="cover-copy" mode="out-in"
         ><div :key="selected.id" class="cover-article cover-story">
           <div class="cover-source">
-            <span>{{ platforms[selected.platform] || selected.platform }}</span><time>{{
-              journalPostTimeLabel(selected, t, locale)
-            }}</time>
+            <span>{{
+              journalSourceLabel(
+                selected.platform,
+                platforms[selected.platform] || selected.platform,
+                t
+              )
+            }}</span><time>{{ journalPostTimeLabel(selected, t, locale) }}</time>
           </div>
           <h1>
             <button :data-open="selected.id">{{ selected.title }}</button>
@@ -125,13 +129,18 @@
           >
           <span class="sheet-caption"
             ><b>{{ String(i + 1).padStart(2, '0') }}</b
-            ><span>{{ post.author || platforms[post.platform] || post.platform }}</span
+            ><span>{{
+              post.author ||
+              journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
+            }}</span
             ><JournalIcon name="arrow-up-right"
           /></span>
         </button>
       </div>
       <div class="cover-coordinate" aria-hidden="true">
-        <span>CONTENTS</span><span>{{ String(index + 1).padStart(2, '0') }}</span>
+        <span>{{ t('journal.home.contentsKicker') }}</span><span>{{
+          String(index + 1).padStart(2, '0')
+        }}</span>
       </div>
     </div>
   </section>
@@ -142,6 +151,7 @@ import { computed, ref, watch, onMounted, onBeforeUnmount, onActivated, onDeacti
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
+import { journalSourceLabel } from '../controlLabels'
 import { journalPostTimeLabel } from '../localizedPostTime'
 import { platforms, type JournalPost } from '../models'
 import { usePostSelection } from '../presentation'

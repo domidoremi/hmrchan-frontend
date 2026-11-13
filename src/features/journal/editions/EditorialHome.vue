@@ -1,9 +1,9 @@
 <template>
   <div class="editorial-home editorial-page">
     <div class="journal-masthead" data-reveal>
-      <span>THE JOURNAL</span><strong>MomiChan<span>↗</span></strong>
+      <span>{{ t('journal.home.masthead') }}</span><strong>MomiChan<span>↗</span></strong>
       <div>
-        <span>{{ date }}</span><span>PHOTOS · POSTS · PEOPLE</span>
+        <span>{{ date }}</span><span>{{ t('journal.home.subjects') }}</span>
       </div>
     </div>
     <div
@@ -40,17 +40,20 @@
     >
       <div class="section-heading">
         <span class="section-number">01</span>
-        <h2>最近更新<small>THE LATEST</small></h2>
-        <RouterLink to="/explore">全部动态 <JournalIcon name="arrow-up-right" /></RouterLink>
+        <h2>
+          {{ t('journal.home.latest') }}<small>{{ t('journal.home.latestKicker') }}</small>
+        </h2>
+        <RouterLink to="/explore"
+          >{{ t('journal.home.allPosts') }} <JournalIcon name="arrow-up-right"
+        /></RouterLink>
       </div>
       <p class="reading-section-note">
-        <span>从这里，读起今天的更新。</span
-        ><span>{{
+        <span>{{ t('journal.home.readingNote') }}</span><span>{{
           states.posts === 'ready'
-            ? posts.length + ' 条动态'
+            ? t('journal.browse.count', { count: posts.length })
             : states.posts === 'error'
-              ? '动态暂时无法读取'
-              : '正在读取动态'
+              ? t('journal.states.failed', { label: t('journal.nav.posts') })
+              : t('journal.states.loading', { label: t('journal.nav.posts') })
         }}</span>
       </p>
       <div class="editorial-source-bar">
@@ -60,25 +63,24 @@
             :class="{ active: platform === 'all' }"
             @click="$emit('platform', 'all')"
           >
-            全部</button
-          ><button
+            {{ t('common.all') }}</button><button
             v-for="source in sources"
             :key="source.key"
             class="chip"
             :class="{ active: platform === source.key }"
             @click="$emit('platform', source.key)"
           >
-            {{ source.label }}
+            {{ journalSourceLabel(source.key, source.label, t) }}
           </button>
         </div>
         <label
-          ><span class="sr-only">排序</span
+          ><span class="sr-only">{{ t('explore.sortBy') }}</span
           ><select
             :value="sort"
             @change="$emit('sort', ($event.target as HTMLSelectElement).value)"
           >
-            <option value="latest">最新发布</option>
-            <option value="popular">最多赞</option>
+            <option value="latest">{{ t('explore.newest') }}</option>
+            <option value="popular">{{ t('journal.filters.mostLiked') }}</option>
           </select></label
         >
       </div>
@@ -109,8 +111,12 @@
     >
       <div class="section-heading">
         <span class="section-number">03</span>
-        <h2>日程<small>ON THE CALENDAR</small></h2>
-        <RouterLink to="/schedule">全部日程 <JournalIcon name="arrow-up-right" /></RouterLink>
+        <h2>
+          {{ t('schedule.title') }}<small>{{ t('journal.home.calendarKicker') }}</small>
+        </h2>
+        <RouterLink to="/schedule"
+          >{{ t('journal.calendar.allEvents') }} <JournalIcon name="arrow-up-right"
+        /></RouterLink>
       </div>
       <div class="editorial-calendar-body">
         <RouterLink class="month-poster" to="/schedule" data-tilt
@@ -145,9 +151,11 @@
       data-reveal
     >
       <div class="conversation-heading">
-        <span>04 / COMMUNITY</span>
-        <h2>讨论</h2>
-        <RouterLink to="/community">进入社区 <JournalIcon name="arrow-up-right" /></RouterLink>
+        <span>04 / {{ t('journal.home.communityKicker') }}</span>
+        <h2>{{ t('journal.nav.discussions') }}</h2>
+        <RouterLink to="/community"
+          >{{ t('journal.home.visitCommunity') }} <JournalIcon name="arrow-up-right"
+        /></RouterLink>
       </div>
       <div>
         <article
@@ -158,13 +166,16 @@
           <span>{{ String(i + 1).padStart(2, '0') }}</span>
           <div>
             <div class="meta-line">
-              <span>{{ item.category }}</span><time>{{ item.time }}</time>
+              <span>{{ journalCategoryLabel(item.category, t) }}</span><time>{{
+                journalDateLabel(item.time, locale)
+              }}</time>
             </div>
             <h3>
               <button :data-discussion="item.id">{{ item.title }}</button>
             </h3>
             <p>
-              {{ item.author }} <span>· {{ item.replies }} 条回复</span>
+              {{ item.author }}
+              <span>· {{ t('journal.community.replies', { count: item.replies }) }}</span>
             </p>
           </div>
           <JournalIcon name="arrow-up-right" />
@@ -184,6 +195,9 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { journalCategoryLabel, journalSourceLabel } from '../controlLabels'
+import { journalDateLabel } from '../localizedDate'
 import { RouterLink } from 'vue-router'
 import SpatialCover from './SpatialCover.vue'
 import EditorialContents from './EditorialContents.vue'
@@ -196,6 +210,7 @@ import JournalPostCard from '../JournalPostCard.vue'
 import JournalEventCard from '../JournalEventCard.vue'
 import { sourceGroups } from '../presentation'
 import type { JournalPost, JournalEvent, JournalDiscussion } from '../models'
+const { locale, t } = useI18n({ useScope: 'global' })
 const props = defineProps<{
   states: JournalResourceStates
   posts: JournalPost[]
@@ -220,36 +235,46 @@ const contents = computed(() => [
   {
     id: 'issue-latest',
     number: '01',
-    label: '动态',
+    label: t('journal.nav.posts'),
     count: props.states.posts === 'ready' ? props.posts.length : null,
   },
   ...(pictures.value.length
-    ? [{ id: 'issue-film', number: '02', label: '影像', count: pictures.value.length }]
+    ? [
+        {
+          id: 'issue-film',
+          number: '02',
+          label: t('journal.film.title'),
+          count: pictures.value.length,
+        },
+      ]
     : []),
   {
     id: 'issue-calendar',
     number: '03',
-    label: '日程',
+    label: t('schedule.title'),
     count: props.states.events === 'ready' ? props.events.length : null,
   },
   {
     id: 'issue-conversation',
     number: '04',
-    label: '讨论',
+    label: t('journal.nav.discussions'),
     count: props.states.discussions === 'ready' ? props.discussions.length : null,
   },
 ])
-const date = new Intl.DateTimeFormat('en', {
-  timeZone: 'Asia/Taipei',
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-})
-  .format(new Date())
-  .toUpperCase()
+const today = new Date()
+const date = computed(() =>
+  new Intl.DateTimeFormat(locale.value, {
+    timeZone: 'Asia/Taipei',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+    .format(today)
+    .toUpperCase()
+)
 const monthName = computed(() =>
-  new Intl.DateTimeFormat('en', { month: 'long', timeZone: 'UTC' })
-    .format(new Date(props.month + '-01T00:00:00Z'))
+  new Intl.DateTimeFormat(locale.value, { month: 'long', timeZone: 'Asia/Taipei' })
+    .format(new Date(props.month + '-01T04:00:00Z'))
     .toUpperCase()
 )
 </script>

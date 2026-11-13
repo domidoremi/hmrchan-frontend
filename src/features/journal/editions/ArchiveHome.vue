@@ -2,74 +2,88 @@
   <div :ref="setRoot" @keydown="keydown" class="archive-page archive-home">
     <div class="archive-page-title" data-reveal>
       <div>
-        <span class="eyebrow">OVERVIEW</span>
-        <h1>总览<span class="title-dot">.</span></h1>
+        <span class="eyebrow">{{ t('journal.home.overviewKicker') }}</span>
+        <h1>{{ t('journal.nav.overview') }}<span class="title-dot">.</span></h1>
       </div>
       <span class="archive-date">{{ date }}</span><RouterLink
         class="button button-outline"
         to="/explore"
-        >资料检索 <JournalIcon name="arrow-up-right"
+        >{{ t('journal.nav.records') }} <JournalIcon name="arrow-up-right"
       /></RouterLink>
     </div>
     <div class="archive-summary" data-reveal>
       <div>
         <JournalIcon name="file" /><span
-          >当前动态<strong
-            :aria-label="states.posts !== 'ready' ? '动态数量尚未读取' : undefined"
+          >{{ t('journal.home.currentPosts')
+          }}<strong
+            :aria-label="states.posts !== 'ready' ? t('journal.browse.countUnknown') : undefined"
             >{{ states.posts === 'ready' ? posts.length : '—' }}</strong
           ></span
         >
       </div>
       <div>
         <JournalIcon name="compass" /><span
-          >来源<strong :aria-label="states.posts !== 'ready' ? '来源数量尚未读取' : undefined">{{
-            states.posts === 'ready' ? sources.length : '—'
-          }}</strong></span
+          >{{ t('journal.filters.source')
+          }}<strong
+            :aria-label="
+              states.posts !== 'ready' ? t('journal.home.sourcesCountUnknown') : undefined
+            "
+            >{{ states.posts === 'ready' ? sources.length : '—' }}</strong
+          ></span
         >
       </div>
       <div>
         <JournalIcon name="calendar" /><span
-          >{{ Number(month.slice(5)) }} 月日程<strong
-            :aria-label="states.events !== 'ready' ? '日程数量尚未读取' : undefined"
+          >{{ t('journal.home.monthEvents', { month: monthName })
+          }}<strong
+            :aria-label="
+              states.events !== 'ready' ? t('journal.home.eventsCountUnknown') : undefined
+            "
             >{{ states.events === 'ready' ? events.length : '—' }}</strong
           ></span
         >
       </div>
       <div>
         <JournalIcon name="messages" /><span
-          >最近讨论<strong
-            :aria-label="states.discussions !== 'ready' ? '讨论数量尚未读取' : undefined"
+          >{{ t('community.recentDiscussions')
+          }}<strong
+            :aria-label="
+              states.discussions !== 'ready' ? t('journal.home.discussionsCountUnknown') : undefined
+            "
             >{{ states.discussions === 'ready' ? discussions.length : '—' }}</strong
           ></span
         >
       </div>
-      <div class="source-distribution" aria-label="当前动态来源分布">
+      <div class="source-distribution" :aria-label="t('journal.home.sourceDistribution')">
         <div>
           <span
             v-for="(source, i) in sources"
             :key="source.key"
             :style="{ flex: source.count, '--source-index': i }"
-            :title="`${source.label} · ${source.count}`"
+            :title="`${journalSourceLabel(source.key, source.label, t)} · ${source.count}`"
           />
         </div>
         <span v-for="source in sources.slice(0, 3)" :key="source.key"
-          >{{ source.label }} <b>{{ source.count }}</b></span
+          >{{ journalSourceLabel(source.key, source.label, t) }} <b>{{ source.count }}</b></span
         >
       </div>
     </div>
     <section class="archive-command" data-reveal>
       <div>
         <span class="command-marker">⌕</span>
-        <h2>动态索引</h2>
+        <h2>{{ t('journal.browse.index') }}</h2>
         <span
           class="meta-count"
-          :aria-label="states.posts !== 'ready' ? '动态数量尚未读取' : undefined"
+          :aria-label="states.posts !== 'ready' ? t('journal.browse.countUnknown') : undefined"
           >{{ states.posts === 'ready' ? posts.length : '—' }}</span
         >
       </div>
       <button data-action="search">
-        <JournalIcon name="search" /><span>搜索动态、作者、标签</span><kbd>⌘ K</kbd></button
-      ><RouterLink to="/explore" class="text-button">全部 <JournalIcon name="arrow" /></RouterLink>
+        <JournalIcon name="search" /><span>{{ t('journal.search.inputLabel') }}</span
+        ><kbd>⌘ K</kbd></button
+      ><RouterLink to="/explore" class="text-button"
+        >{{ t('common.all') }} <JournalIcon name="arrow"
+      /></RouterLink>
     </section>
     <ArchiveNavigationHint
       :index="index"
@@ -82,14 +96,13 @@
       <section class="archive-stream" data-reveal>
         <div class="stream-tabs">
           <button :class="{ active: platform === 'all' }" @click="$emit('platform', 'all')">
-            全部来源</button
-          ><button
+            {{ t('journal.home.allSources') }}</button><button
             v-for="source in sources"
             :key="source.key"
             :class="{ active: platform === source.key }"
             @click="$emit('platform', source.key)"
           >
-            {{ source.label }}
+            {{ journalSourceLabel(source.key, source.label, t) }}
           </button>
         </div>
         <div class="stream-content" :aria-busy="states.posts === 'loading'">
@@ -102,7 +115,7 @@
               <i /><span><i /><i /></span>
             </div>
           </div>
-          <div v-for="group in groups" :key="group.label" class="timeline-group">
+          <div v-for="group in groups" :key="group.key" class="timeline-group">
             <div class="timeline-label">
               <span>{{ group.label }}</span><i />
             </div>
@@ -129,7 +142,10 @@
               /><JournalIcon v-else name="file" /><span class="stream-row-copy"
                 ><b>{{ post.title }}</b
                 ><small
-                  >{{ post.author }}<i>·</i>{{ platforms[post.platform] || post.platform }}</small
+                  >{{ post.author }}<i>·</i
+                  >{{
+                    journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
+                  }}</small
                 ></span
               ><JournalIcon name="arrow-up-right" />
             </button>
@@ -145,24 +161,25 @@
           />
         </div>
         <RouterLink to="/explore" class="stream-more"
-          >全部动态 <JournalIcon name="arrow"
+          >{{ t('journal.home.allPosts') }} <JournalIcon name="arrow"
         /></RouterLink>
       </section>
       <aside
         :id="previewId"
         :ref="setPreview"
-        aria-label="所选动态预览"
+        :aria-label="t('journal.selection.current')"
         class="observatory-preview"
         data-reveal
       >
         <div class="preview-label">
-          <span class="status-light" />预览<button
+          <span class="status-light" />{{ t('journal.selection.preview')
+          }}<button
             class="text-button"
             :disabled="!selected"
             :data-open="selected?.id"
             data-preview-open
           >
-            打开 <JournalIcon name="arrow-up-right" /></button
+            {{ t('journal.actions.open') }} <JournalIcon name="arrow-up-right" /></button
           ><span
             >{{
               states.posts === 'ready' ? String(posts.length ? index + 1 : 0).padStart(2, '0') : '—'
@@ -180,7 +197,7 @@
         <div class="preview-steppers">
           <button
             class="icon-button"
-            aria-label="上一条预览"
+            :aria-label="t('journal.selection.previous')"
             :disabled="posts.length < 2"
             @click="step(-1)"
           >
@@ -188,7 +205,7 @@
           ><span>{{ selected?.author }}</span
           ><button
             class="icon-button"
-            aria-label="下一条预览"
+            :aria-label="t('journal.selection.next')"
             :disabled="posts.length < 2"
             @click="step(1)"
           >
@@ -200,16 +217,19 @@
     <div class="archive-bottom-grid">
       <section class="archive-panel" data-reveal>
         <div class="panel-heading">
-          <span>CALENDAR</span>
-          <h2>{{ Number(month.slice(5)) }} 月日程</h2>
+          <span>{{ t('journal.home.calendarKicker') }}</span>
+          <h2>{{ t('journal.home.monthEvents', { month: monthName }) }}</h2>
           <RouterLink to="/schedule"
-            ><JournalIcon name="arrow-up-right" /><span class="sr-only">打开月历</span></RouterLink
+            ><JournalIcon name="arrow-up-right" /><span class="sr-only">{{
+              t('journal.home.openCalendar')
+            }}</span></RouterLink
           >
         </div>
         <div class="archive-agenda">
           <article v-for="event in events.slice(0, 4)" :key="event.id">
             <span class="agenda-day"
-              >{{ String(event.day).padStart(2, '0') }}<small>{{ event.week }}</small></span
+              >{{ String(event.day).padStart(2, '0')
+              }}<small>{{ eventWeekday(event.date) }}</small></span
             ><button :data-event="event.id">
               <b>{{ event.title }}</b><small
                 >{{ journalEventTimeLabel(event, t) }} · {{ event.venue }}</small
@@ -218,7 +238,14 @@
               class="icon-button remind"
               :data-remind="event.id"
               :aria-pressed="reminders.has(event.id)"
-              :aria-label="`记下：${event.title}`"
+              :aria-label="
+                t(
+                  reminders.has(event.id)
+                    ? 'journal.actions.removeReminderNamed'
+                    : 'journal.actions.remindNamed',
+                  { title: event.title }
+                )
+              "
             >
               <JournalIcon :name="reminders.has(event.id) ? 'check' : 'plus'" />
             </button>
@@ -236,10 +263,12 @@
       </section>
       <section class="archive-panel" data-reveal>
         <div class="panel-heading">
-          <span>COMMUNITY</span>
-          <h2>最近讨论</h2>
+          <span>{{ t('journal.home.communityKicker') }}</span>
+          <h2>{{ t('community.recentDiscussions') }}</h2>
           <RouterLink to="/community"
-            ><JournalIcon name="arrow-up-right" /><span class="sr-only">打开社区</span></RouterLink
+            ><JournalIcon name="arrow-up-right" /><span class="sr-only">{{
+              t('journal.home.openCommunity')
+            }}</span></RouterLink
           >
         </div>
         <article
@@ -250,7 +279,7 @@
           <span class="discussion-avatar">{{ item.avatar }}</span>
           <div>
             <button :data-discussion="item.id">{{ item.title }}</button><small
-              >{{ item.author }} · {{ item.category }}</small
+              >{{ item.author }} · {{ journalCategoryLabel(item.category, t) }}</small
             >
           </div>
           <span>{{ item.replies }}<JournalIcon name="messages" /></span>
@@ -280,6 +309,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { journalEventTimeLabel } from '../localizedEventTime'
+import { journalCategoryLabel, journalSourceLabel } from '../controlLabels'
 import { RouterLink } from 'vue-router'
 import JournalIcon from '../JournalIcon.vue'
 import JournalResourceState from '../JournalResourceState.vue'
@@ -304,7 +334,7 @@ const props = defineProps<{
   sort: string
   month: string
 }>()
-const { t } = useI18n({ useScope: 'global' })
+const { locale, t } = useI18n({ useScope: 'global' })
 const emit = defineEmits<{
   retry: []
   open: [post: JournalPost]
@@ -329,13 +359,28 @@ const {
   (post) => emit('open', post)
 )
 const sources = computed(() => sourceGroups(props.allPosts)),
-  groups = computed(() => timelineGroups(props.posts))
-const date = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'Asia/Taipei',
-  year: 'numeric',
-  month: 'short',
-  day: '2-digit',
-})
-  .format(new Date())
-  .toUpperCase()
+  groups = computed(() => timelineGroups(props.posts, locale.value, t('journal.nav.posts')))
+const today = new Date()
+const date = computed(() =>
+  new Intl.DateTimeFormat(locale.value, {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+  })
+    .format(today)
+    .toUpperCase()
+)
+const monthName = computed(() =>
+  new Intl.DateTimeFormat(locale.value, { month: 'long', timeZone: 'Asia/Taipei' }).format(
+    new Date(props.month + '-01T04:00:00Z')
+  )
+)
+const eventWeekdayFormatter = computed(
+  () => new Intl.DateTimeFormat(locale.value, { weekday: 'short', timeZone: 'Asia/Taipei' })
+)
+const eventWeekday = (date: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(date)
+    ? eventWeekdayFormatter.value.format(new Date(date + 'T04:00:00Z'))
+    : date
 </script>

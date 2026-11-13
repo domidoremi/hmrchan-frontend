@@ -33,10 +33,10 @@ export function sourceGroups(posts: JournalPost[]) {
     .sort((a, b) => b.count - a.count)
 }
 
-export function dateLabel(value?: string) {
+export function dateLabel(value?: string, locale = 'zh-CN') {
   const date = value ? new Date(value) : null
   return date && !Number.isNaN(date.getTime())
-    ? new Intl.DateTimeFormat('zh-CN', {
+    ? new Intl.DateTimeFormat(locale, {
         timeZone: 'Asia/Taipei',
         month: '2-digit',
         day: '2-digit',
@@ -44,11 +44,15 @@ export function dateLabel(value?: string) {
     : ''
 }
 
-export function timelineGroups(posts: JournalPost[]) {
+export function timelineGroups(posts: JournalPost[], locale = 'zh-CN', fallback = '动态') {
   const groups = new Map<string, JournalPost[]>()
   posts.forEach((post) => {
-    const label = dateLabel(post.publishedAt) || post.time || '动态'
-    groups.set(label, [...(groups.get(label) || []), post])
+    const key = dateLabel(post.publishedAt) || post.time || 'undated'
+    groups.set(key, [...(groups.get(key) || []), post])
   })
-  return [...groups].map(([label, items]) => ({ label, items }))
+  return [...groups].map(([key, items]) => ({
+    key,
+    label: dateLabel(items[0]?.publishedAt, locale) || items[0]?.time || fallback,
+    items,
+  }))
 }
