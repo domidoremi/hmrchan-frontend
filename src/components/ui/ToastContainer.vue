@@ -130,7 +130,7 @@ let placementFrame = 0
 let resizeObserver: ResizeObserver | null = null
 const originTargets = new Map<string, HTMLElement | null>()
 
-function availableShift() {
+function availableShift(gapScale = 1) {
   const element = region.value
   if (!element) return null
   const rect = element.getBoundingClientRect()
@@ -157,12 +157,13 @@ function availableShift() {
       (control) =>
         control.width && control.height && control.bottom > 0 && control.top < innerHeight
     )
-  const gap = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) / 2
+  const gap =
+    (Number.parseFloat(getComputedStyle(document.documentElement).fontSize) / 2) * gapScale
   return findToastShift(notice, controls, dock.value, innerHeight, gap)
 }
 function placeToast() {
   if (!mounted || !current.value || !region.value) return
-  const shift = availableShift()
+  const shift = availableShift() ?? availableShift(0.5)
   if (shift !== null) {
     placementShift.value = shift
     return
@@ -172,7 +173,7 @@ function placeToast() {
   placementShift.value = 0
   void nextTick(() => {
     if (!mounted || current.value?.id !== id) return
-    placementShift.value = availableShift() ?? 0
+    placementShift.value = availableShift() ?? availableShift(0.5) ?? 0
   })
 }
 function schedulePlacement(event?: Event) {

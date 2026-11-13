@@ -133,6 +133,53 @@ describe('toast presenter', () => {
       headingAction.remove()
     }
   })
+  it('uses the narrow clear space in a dense phone calendar without covering controls', async () => {
+    vi.stubGlobal('innerHeight', 1000)
+    const bounds = [
+      new DOMRect(234, 96.5, 128, 38),
+      new DOMRect(18, 177, 28, 40),
+      new DOMRect(18, 236, 28, 40),
+      new DOMRect(312, 345, 49, 78),
+      new DOMRect(19, 423, 342, 390),
+      new DOMRect(39, 921.5, 126, 23.8),
+    ]
+    const controls = bounds.map((rect) => {
+      const button = document.createElement('button')
+      button.getBoundingClientRect = () => rect
+      document.body.append(button)
+      return button
+    })
+    outside.getBoundingClientRect = () => new DOMRect(315, 885.5, 26, 26)
+    const originalRect = HTMLElement.prototype.getBoundingClientRect
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement
+    ) {
+      if (this.classList.contains('toast-viewport')) {
+        const top = this.classList.contains('toast-viewport--bottom') ? 922 : 80
+        const shift = Number.parseFloat(this.style.getPropertyValue('--toast-shift')) || 0
+        return new DOMRect(12, top + shift, 356, 62)
+      }
+      return originalRect.call(this)
+    })
+    try {
+      store.info('Saved', 0)
+      await settle()
+      await settle()
+      const viewport = find('.toast-viewport')
+      const rect = viewport.getBoundingClientRect()
+      expect(rect.top).toBeGreaterThanOrEqual(813 + 4)
+      expect(rect.bottom).toBeLessThanOrEqual(885.5 - 4)
+      expect(document.activeElement).toBe(outside)
+      window.dispatchEvent(new Event('scroll'))
+      vi.advanceTimersByTime(20)
+      await settle()
+      expect(viewport.getBoundingClientRect().top).toBe(rect.top)
+      expect(store.toasts).toHaveLength(1)
+    } finally {
+      controls.forEach((control) => control.remove())
+      vi.unstubAllGlobals()
+    }
+  })
   it('keeps a collapsed notification available without consuming the remaining time', async () => {
     store.info('Long message', 1000)
     await settle()
