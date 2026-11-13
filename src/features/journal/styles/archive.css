@@ -1420,7 +1420,12 @@ body.site-body.next-body {
     gap: 12px;
   }
   .site-body .journal-shell .density-toggle {
-    display: none;
+    margin-inline-start: 0;
+  }
+  .site-body .journal-shell .density-toggle button {
+    min-block-size: 2.25rem;
+    padding-inline: 0.75rem;
+    font-size: 0.75rem;
   }
   .site-body .journal-shell .archive-inspector .preview-media {
     height: 260px;
