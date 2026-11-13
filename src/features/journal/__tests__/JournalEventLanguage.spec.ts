@@ -84,8 +84,8 @@ afterEach(() => {
   vi.restoreAllMocks()
   document.body.innerHTML = ''
 })
-function openEvent() {
-  events.remember([item()])
+function openEvent(value: JournalEvent = item()) {
+  events.remember([value])
   const button = document.createElement('button')
   button.dataset['event'] = id
   document.body.append(button)
@@ -93,6 +93,24 @@ function openEvent() {
 }
 
 describe('event dialog language', () => {
+  it('refreshes the all-day time without replacing the dialog or losing reminder focus', async () => {
+    openEvent({ ...item(), allDay: true, time: '全天' })
+    const time = document.querySelector('.event-time')!
+    const reminder = document.querySelector<HTMLButtonElement>('.event-dialog-remind')!
+    reminder.focus()
+    const renders = vi.mocked(runtime.UI.openDialog).mock.calls.length
+    expect(time.textContent).toBe(i18n.global.t('schedule.allDay'))
+    i18n.global.locale.value = 'ja'
+    await nextTick()
+    expect(document.querySelector('.event-time')).toBe(time)
+    expect(time.textContent).toBe(i18n.global.t('schedule.allDay'))
+    expect(document.activeElement).toBe(reminder)
+    expect(vi.mocked(runtime.UI.openDialog).mock.calls).toHaveLength(renders)
+    expect(document.querySelector('.event-date')!.textContent).toBe(
+      journalDateLabel(item().date, 'ja')
+    )
+  })
+
   it('keeps author data, reminder values and focus while translating actions', async () => {
     openEvent()
     const button = document.querySelector<HTMLButtonElement>('.event-dialog-remind')!

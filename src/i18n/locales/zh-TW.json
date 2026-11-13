@@ -1697,7 +1697,10 @@
       "time": "時間"
     },
     "calendar": {
+      "allDates": "全部日期",
       "allEvents": "全部日程",
+      "dayLabel": "{date}，{count} 項活動",
+      "monthEvents": "本月日程",
       "eventCount": "{count} 項活動",
       "noneThisMonth": "本月暫無日程",
       "partialLoad": "部分日程暫時無法載入",

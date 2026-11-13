@@ -1697,7 +1697,10 @@
       "time": "Time"
     },
     "calendar": {
+      "allDates": "All dates",
       "allEvents": "All events",
+      "dayLabel": "{date}, {count} events",
+      "monthEvents": "This month's events",
       "eventCount": "{count} events",
       "noneThisMonth": "No events this month",
       "partialLoad": "Some events couldn't be loaded",
