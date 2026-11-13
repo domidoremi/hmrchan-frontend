@@ -85,7 +85,7 @@
     "pinia-plugin-persistedstate": "^4.7.1",
     "vue": "3.5.45",
     "vue-i18n": "11.4.19",
-    "vue-router": "5.5.0"
+    "vue-router": "5.5.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261113.1",
@@ -118,7 +118,7 @@
     "vite-plugin-vue-devtools": "^8.2.1",
     "vitest": "5.1.0",
     "vue-tsc": "^3.3.14",
-    "wrangler": "4.161.0"
+    "wrangler": "4.162.0"
   },
   "lint-staged": {
     "*.{ts,tsx,vue}": [
