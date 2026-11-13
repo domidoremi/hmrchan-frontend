@@ -1,8 +1,8 @@
 <template>
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
-    <a class="skip-link" href="#main-content">{{ t('common.skipToContent') }}</a>
+    <a class="skip-link" href="#main-content" tabindex="0">{{ t('common.skipToContent') }}</a>
     <aside v-if="isNext && !isAuthRoute" class="archive-sidebar">
-      <RouterLink class="archive-logo" to="/"
+      <RouterLink class="archive-logo" to="/" tabindex="0"
         ><span class="brand-mark">m.</span><span>MomiChan<small>ARCHIVE</small></span
         ><span class="sr-only"> {{ t('nav.home') }}</span></RouterLink
       >
@@ -12,6 +12,7 @@
       </button>
       <nav :aria-label="t('common.primaryNavigation')">
         <RouterLink
+          tabindex="0"
           v-for="item in navigation"
           :key="item.path"
           :to="item.path"
@@ -33,14 +34,14 @@
             )
           }}
         </button>
-        <RouterLink to="/profile"
+        <RouterLink to="/profile" tabindex="0"
           ><JournalIcon name="users" />{{
             auth.isAuthenticated
               ? auth.user?.username || t('journal.nav.myAccount')
               : t('journal.nav.loginOrRegister')
           }}<JournalIcon name="arrow-up-right"
         /></RouterLink>
-        <a href="https://momichan.com"
+        <a href="https://momichan.com" tabindex="0"
           >{{ t('journal.nav.goToJournal') }} <JournalIcon name="arrow"
         /></a>
       </div>
@@ -48,9 +49,12 @@
     <div class="edition-workspace">
       <header class="edition-header">
         <template v-if="!isNext">
-          <RouterLink class="editorial-logo" to="/">MomiChan<span>JOURNAL</span></RouterLink>
+          <RouterLink class="editorial-logo" to="/" tabindex="0"
+            >MomiChan<span>JOURNAL</span></RouterLink
+          >
           <nav class="desktop-navigation" :aria-label="t('common.primaryNavigation')">
             <RouterLink
+              tabindex="0"
               v-for="item in navigation"
               :key="item.path"
               :to="item.path"
@@ -61,7 +65,7 @@
           </nav>
         </template>
         <template v-else>
-          <RouterLink class="mobile-archive-logo" to="/">m.</RouterLink>
+          <RouterLink class="mobile-archive-logo" to="/" tabindex="0">m.</RouterLink>
           <div class="workspace-location">
             <span>MOMICHAN</span><i>/</i><b>{{ locationLabel }}</b>
           </div>
@@ -99,6 +103,7 @@
             }}</span>
           </button>
           <RouterLink
+            tabindex="0"
             class="account-link"
             to="/profile"
             :aria-label="t(auth.isAuthenticated ? 'journal.nav.my' : 'nav.login')"
@@ -127,6 +132,7 @@
         >
           <nav :aria-label="t('journal.nav.mobileNavigation')">
             <RouterLink
+              tabindex="0"
               v-for="item in navigation"
               :key="item.path"
               :to="item.path"
@@ -150,7 +156,7 @@
                 )
               }}
             </button>
-            <a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'"
+            <a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'" tabindex="0"
               >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }} ↗</a
             >
           </div>
@@ -172,11 +178,11 @@
         <div class="footer-bottom">
           <span>MOMICHAN · {{ new Date().getFullYear() }}</span
           ><span>{{ isNext ? 'ARCHIVE' : 'JOURNAL' }}</span
-          ><a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'"
+          ><a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'" tabindex="0"
             >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }}
             <JournalIcon name="arrow-up-right" /></a
-          ><RouterLink to="/about">{{ t('nav.about') }}</RouterLink
-          ><RouterLink to="/contact">{{ t('nav.contact') }}</RouterLink
+          ><RouterLink to="/about" tabindex="0">{{ t('nav.about') }}</RouterLink
+          ><RouterLink to="/contact" tabindex="0">{{ t('nav.contact') }}</RouterLink
           ><button data-action="top">{{ t('common.backToTop') }} ↑</button>
         </div>
       </footer>

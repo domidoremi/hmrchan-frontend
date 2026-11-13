@@ -102,3 +102,72 @@ describe('dialog refresh and navigation', () => {
     expect(runtime.SpatialMotion.dialog).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('dialog keyboard boundaries', () => {
+  function showActions() {
+    runtime.UI.openDialog(
+      '<h2 id="dialog-title">Details</h2><button id="action">Action</button><a id="detail" href="/post/one">Full detail</a><a id="skip" href="/post/two" tabindex="-1">Skip</a><button id="disabled" disabled>Disabled</button><button id="hidden" hidden>Hidden</button>',
+      'detail-dialog',
+      { key: 'post:one' }
+    )
+    for (const element of dialog.querySelectorAll('button,a'))
+      element.getClientRects = () => (element.hidden ? [] : [{ width: 20, height: 20 }])
+  }
+  function tab(target, options = {}) {
+    const event = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      bubbles: true,
+      cancelable: true,
+      ...options,
+    })
+    target.dispatchEvent(event)
+    return event
+  }
+  it('cycles from the final detail link while preserving skipped controls', () => {
+    showActions()
+    const detail = body.querySelector('#detail')
+    expect(detail.getAttribute('tabindex')).toBe('0')
+    expect(body.querySelector('#skip').getAttribute('tabindex')).toBe('-1')
+    detail.focus()
+    expect(tab(detail).defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(dialog.querySelector('[data-close]'))
+    expect(tab(document.activeElement, { shiftKey: true }).defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(detail)
+  })
+  it('uses the current controls after a dialog refresh', () => {
+    showActions()
+    runtime.UI.openDialog(
+      '<h2 id="dialog-title">Updated</h2><a id="new-detail" href="/post/one">Full detail</a>',
+      'detail-dialog',
+      { key: 'post:one' }
+    )
+    const detail = body.querySelector('#new-detail')
+    detail.getClientRects = () => [{ width: 20, height: 20 }]
+    detail.focus()
+    tab(detail)
+    expect(document.activeElement).toBe(dialog.querySelector('[data-close]'))
+  })
+  it('reaches the last action from a backwards Tab on the heading', () => {
+    showActions()
+    const heading = body.querySelector('#dialog-title')
+    heading.focus()
+    expect(tab(heading, { shiftKey: true }).defaultPrevented).toBe(true)
+    expect(document.activeElement.id).toBe('detail')
+  })
+  it('keeps browser shortcuts and closed-dialog events available', () => {
+    showActions()
+    const detail = body.querySelector('#detail')
+    detail.focus()
+    expect(tab(detail, { ctrlKey: true }).defaultPrevented).toBe(false)
+    expect(tab(detail, { altKey: true }).defaultPrevented).toBe(false)
+    runtime.UI.closeDialog(true)
+    expect(tab(detail).defaultPrevented).toBe(false)
+  })
+  it('removes the keyboard handler with the runtime', () => {
+    showActions()
+    const detail = body.querySelector('#detail')
+    detail.focus()
+    runtime.UI.dispose()
+    expect(tab(detail).defaultPrevented).toBe(false)
+  })
+})
