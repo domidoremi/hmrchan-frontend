@@ -1,7 +1,6 @@
 <template>
   <div class="editorial-page editorial-schedule">
     <header class="editorial-page-heading" data-reveal>
-      <span class="eyebrow">THE CALENDAR</span>
       <div>
         <h1>
           {{ t('nav.schedule') }}<em>{{ String(events.length).padStart(2, '0') }}</em>

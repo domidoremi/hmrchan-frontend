@@ -1,9 +1,6 @@
 <template>
   <div class="editorial-page editorial-browse">
     <header class="editorial-page-heading" data-reveal>
-      <span class="eyebrow">{{
-        t(favorites ? 'journal.nav.collection' : 'journal.browse.index')
-      }}</span>
       <div>
         <h1>
           {{ t(favorites ? 'nav.favorites' : 'journal.nav.posts')

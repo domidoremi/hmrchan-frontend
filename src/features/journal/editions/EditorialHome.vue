@@ -1,9 +1,9 @@
 <template>
   <div class="editorial-home editorial-page">
     <div class="journal-masthead" data-reveal>
-      <span>{{ t('journal.home.masthead') }}</span><strong>MomiChan<span>↗</span></strong>
+      <strong>MomiChan<span>↗</span></strong>
       <div>
-        <span>{{ date }}</span><span>{{ t('journal.home.subjects') }}</span>
+        <span>{{ date }}</span>
       </div>
     </div>
     <div
@@ -40,22 +40,11 @@
     >
       <div class="section-heading">
         <span class="section-number">01</span>
-        <h2>
-          {{ t('journal.home.latest') }}<small>{{ t('journal.home.latestKicker') }}</small>
-        </h2>
+        <h2>{{ t('journal.home.latest') }}</h2>
         <RouterLink to="/explore"
           >{{ t('journal.home.allPosts') }} <JournalIcon name="arrow-up-right"
         /></RouterLink>
       </div>
-      <p class="reading-section-note">
-        <span>{{ t('journal.home.readingNote') }}</span><span>{{
-          states.posts === 'ready'
-            ? t('journal.browse.count', { count: posts.length })
-            : states.posts === 'error'
-              ? t('journal.states.failed', { label: t('journal.nav.posts') })
-              : t('journal.states.loading', { label: t('journal.nav.posts') })
-        }}</span>
-      </p>
       <div class="editorial-source-bar">
         <div class="chips">
           <button
@@ -111,9 +100,7 @@
     >
       <div class="section-heading">
         <span class="section-number">03</span>
-        <h2>
-          {{ t('schedule.title') }}<small>{{ t('journal.home.calendarKicker') }}</small>
-        </h2>
+        <h2>{{ t('schedule.title') }}</h2>
         <RouterLink to="/schedule"
           >{{ t('journal.calendar.allEvents') }} <JournalIcon name="arrow-up-right"
         /></RouterLink>
@@ -151,7 +138,7 @@
       data-reveal
     >
       <div class="conversation-heading">
-        <span>04 / {{ t('journal.home.communityKicker') }}</span>
+        <span aria-hidden="true">04</span>
         <h2>{{ t('journal.nav.discussions') }}</h2>
         <RouterLink to="/community"
           >{{ t('journal.home.visitCommunity') }} <JournalIcon name="arrow-up-right"

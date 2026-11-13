@@ -1,7 +1,7 @@
 <template>
   <section class="editorial-film" data-reveal data-depth-scene>
     <div class="film-heading">
-      <span>02 / {{ t('journal.film.kicker') }}</span>
+      <span aria-hidden="true">02</span>
       <h2>{{ t('journal.film.title') }}</h2>
       <div>
         <button

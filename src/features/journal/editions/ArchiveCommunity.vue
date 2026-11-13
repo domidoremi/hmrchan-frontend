@@ -2,7 +2,6 @@
   <div class="archive-page archive-community">
     <header class="archive-page-title" data-reveal>
       <div>
-        <span class="eyebrow">{{ t('journal.home.communityKicker') }}</span>
         <h1>{{ t('journal.nav.discussions') }}<span class="title-dot">.</span></h1>
       </div>
       <button class="button button-dark" @click="$emit('compose')">
@@ -25,7 +24,6 @@
       </nav>
       <section class="forum-threads" data-reveal>
         <div class="panel-heading">
-          <span>{{ t('journal.community.threads') }}</span>
           <h2>
             {{
               category === '全部'
@@ -66,10 +64,7 @@
           </button>
         </div>
       </section>
-      <aside class="forum-preview">
-        <div class="inspector-heading">
-          <span>{{ t('journal.community.preview') }}</span><JournalIcon name="messages" />
-        </div>
+      <aside class="forum-preview" :aria-label="t('journal.community.preview')">
         <Transition name="archive-preview" mode="out-in"
           ><article v-if="selected" :key="selected.id">
             <div class="meta-line">

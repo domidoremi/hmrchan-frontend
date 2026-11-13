@@ -2,9 +2,6 @@
   <div :ref="setRoot" @keydown="keydown" class="archive-page archive-browse">
     <header class="archive-page-title" data-reveal>
       <div>
-        <span class="eyebrow">{{
-          t(favorites ? 'journal.nav.collection' : 'journal.browse.searchAndFilter')
-        }}</span>
         <h1>
           {{ t(favorites ? 'journal.nav.collection' : 'journal.nav.records')
           }}<span class="title-dot">.</span>

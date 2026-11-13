@@ -2,7 +2,6 @@
   <div class="archive-page archive-schedule">
     <header class="archive-page-title" data-reveal>
       <div>
-        <span class="eyebrow">CALENDAR</span>
         <h1>{{ t('journal.nav.calendar') }}<span class="title-dot">.</span></h1>
       </div>
       <button class="button button-outline" data-action="notifications">
