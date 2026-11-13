@@ -24,7 +24,24 @@
       >
         <div class="toast-card__heading">
           <component :is="icon" :size="18" aria-hidden="true" />
-          <span class="toast-card__kind">{{ t('toast.' + current.type) }}</span>
+          <div v-show="!collapsed" id="toast-message" class="toast-card__body">
+            <p v-if="current.title" class="toast-card__title">{{ current.title }}</p>
+            <p class="toast-card__message">{{ current.message }}</p>
+            <p v-if="actionError" class="toast-card__message">{{ actionError }}</p>
+            <div v-if="current.action" class="toast-card__footer">
+              <button
+                type="button"
+                class="toast-card__action"
+                :disabled="acting"
+                @click="handleAction"
+              >
+                {{ acting ? t('common.loading') : current.action.label }}
+              </button>
+            </div>
+          </div>
+          <span v-if="collapsed" class="toast-card__summary">{{
+            current.title || current.message
+          }}</span>
           <span v-if="queued" class="toast-card__queue">{{
             t('toast.queued', { count: queued })
           }}</span>
@@ -47,31 +64,6 @@
           >
             <X :size="18" />
           </button>
-        </div>
-        <div v-show="!collapsed" id="toast-message" class="toast-card__body">
-          <p v-if="current.title" class="toast-card__title">{{ current.title }}</p>
-          <p class="toast-card__message">{{ current.message }}</p>
-          <p v-if="actionError" class="toast-card__message">{{ actionError }}</p>
-          <div class="toast-card__footer">
-            <button
-              v-if="current.action"
-              type="button"
-              class="toast-card__action"
-              :disabled="acting"
-              @click="handleAction"
-            >
-              {{ acting ? t('common.loading') : current.action.label }}
-            </button>
-            <span class="toast-card__reading">{{
-              t(
-                current.duration === 0
-                  ? 'toast.persistent'
-                  : timing?.paused
-                    ? 'toast.paused'
-                    : 'toast.reading'
-              )
-            }}</span>
-          </div>
         </div>
         <span
           v-if="current.duration > 0 && !collapsed"
