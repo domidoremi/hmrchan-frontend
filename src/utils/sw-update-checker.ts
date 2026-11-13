@@ -643,19 +643,25 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
     .then(() => {
       if (!isInitialized || token !== initToken) return
 
+      let observedController = navigator.serviceWorker.controller
       controllerChangeHandler = () => {
-        const nextControllerScriptUrl = navigator.serviceWorker.controller?.scriptURL ?? null
+        const nextController = navigator.serviceWorker.controller
+        const previousController = observedController
+        observedController = nextController
+        const nextControllerScriptUrl = nextController?.scriptURL ?? null
         logDebug('controllerchange', {
           scriptUrl: nextControllerScriptUrl,
           pendingActivationMode,
           pendingActivationScriptUrl,
         })
 
-        if (!pendingActivationMode) {
+        const changedExistingController =
+          previousController && nextController && previousController !== nextController
+        if (!pendingActivationMode && !changedExistingController) {
           return
         }
 
-        const mode = pendingActivationMode
+        const mode = pendingActivationMode ?? 'auto'
         const scriptUrl =
           pendingActivationScriptUrl ||
           nextControllerScriptUrl ||
