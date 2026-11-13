@@ -107,6 +107,22 @@ async function flushMicrotasks(): Promise<void> {
   await Promise.resolve()
 }
 
+async function prepareNativeActivation(controllerScriptUrl: string | null) {
+  const registration: MockRegistration = {
+    waiting: null,
+    update: vi.fn().mockResolvedValue(undefined),
+    active: {} as ServiceWorker,
+    installing: null,
+  }
+  const serviceWorker = new MockServiceWorkerContainer(registration, controllerScriptUrl)
+  const reloadSpy = vi.fn()
+  vi.stubGlobal('navigator', { serviceWorker })
+  swUpdateChecker.setReloadPageForSwActivationForTest(reloadSpy)
+  swUpdateChecker.initSwUpdateChecker({ checkInterval: 60_000, showToast: true })
+  await flushMicrotasks()
+  return { serviceWorker, reloadSpy }
+}
+
 describe('sw-update-checker', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -167,6 +183,68 @@ describe('sw-update-checker', () => {
     expect(registration.update).toHaveBeenCalledTimes(1)
     expect(waitingWorker.postMessage).not.toHaveBeenCalled()
     expect(mocks.toastStore.info).toHaveBeenCalledTimes(1)
+  })
+
+  it('reloads an idle page when an existing controller changes without a waiting request', async () => {
+    const scriptUrl = 'https://momichan.com/sw.js'
+    const { serviceWorker, reloadSpy } = await prepareNativeActivation(scriptUrl)
+    vi.advanceTimersByTime(15_000)
+
+    serviceWorker.controller = { scriptURL: scriptUrl }
+    serviceWorker.dispatchEvent(new Event('controllerchange'))
+    expect(reloadSpy).toHaveBeenCalledTimes(1)
+
+    serviceWorker.dispatchEvent(new Event('controllerchange'))
+    expect(reloadSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not reload on the first native controller claim', async () => {
+    const { serviceWorker, reloadSpy } = await prepareNativeActivation(null)
+    vi.advanceTimersByTime(15_000)
+
+    serviceWorker.controller = { scriptURL: 'https://momichan.com/sw.js' }
+    serviceWorker.dispatchEvent(new Event('controllerchange'))
+    vi.advanceTimersByTime(20_000)
+
+    expect(reloadSpy).not.toHaveBeenCalled()
+    expect(mocks.reportClientEvent).not.toHaveBeenCalledWith(
+      'sw.update.activated',
+      expect.anything()
+    )
+  })
+
+  it.each([
+    { name: 'a draft blocker', routeMode: 'auto', strategy: 'public-idle-refresh', blocker: true },
+    {
+      name: 'a protected page',
+      routeMode: 'prompt',
+      strategy: 'public-idle-refresh',
+      blocker: false,
+    },
+    {
+      name: 'the prompt-only preference',
+      routeMode: 'auto',
+      strategy: 'prompt-only',
+      blocker: false,
+    },
+  ] as const)('keeps $name protected after a native controller change', async (scenario) => {
+    setRoute('/explore', scenario.routeMode)
+    mocks.settingsStore.settings.appUpdateStrategy = scenario.strategy
+    if (scenario.blocker) setUpdateBlockerActive('discussion-composer:create', true)
+    const scriptUrl = 'https://momichan.com/sw.js'
+    const { serviceWorker, reloadSpy } = await prepareNativeActivation(scriptUrl)
+    vi.advanceTimersByTime(15_000)
+
+    serviceWorker.controller = { scriptURL: scriptUrl }
+    serviceWorker.dispatchEvent(new Event('controllerchange'))
+    vi.advanceTimersByTime(20_000)
+
+    expect(reloadSpy).not.toHaveBeenCalled()
+    expect(mocks.toastStore.info).toHaveBeenCalledWith(
+      expect.any(String),
+      6000,
+      expect.objectContaining({ title: expect.any(String) })
+    )
   })
 
   it('auto activates on auto routes and reloads after the idle window', async () => {
