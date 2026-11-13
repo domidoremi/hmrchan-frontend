@@ -94,6 +94,45 @@ describe('toast presenter', () => {
     await settle()
     expect(store.toasts).toHaveLength(0)
   })
+  it('keeps page controls clear through scrolling without changing focus or the queue', async () => {
+    const headingAction = document.createElement('button')
+    let headingTop = 96.5
+    headingAction.getBoundingClientRect = () => new DOMRect(240, headingTop, 122, 38)
+    outside.getBoundingClientRect = () => new DOMRect(315, 885.5, 26, 26)
+    const originalRect = HTMLElement.prototype.getBoundingClientRect
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement
+    ) {
+      if (this.classList.contains('toast-viewport')) {
+        const top = this.classList.contains('toast-viewport--bottom') ? 922 : 80
+        const shift = Number.parseFloat(this.style.getPropertyValue('--toast-shift')) || 0
+        return new DOMRect(12, top + shift, 356, 62)
+      }
+      return originalRect.call(this)
+    })
+    document.body.append(headingAction)
+    try {
+      store.info('First', 0)
+      store.info('Second', 0)
+      await settle()
+      await settle()
+      const viewport = find('.toast-viewport')
+      const queuedIds = store.toasts.map((toast) => toast.id)
+      expect(viewport.getBoundingClientRect().top).toBeGreaterThan(
+        headingAction.getBoundingClientRect().bottom
+      )
+      expect(document.activeElement).toBe(outside)
+      headingTop = 270
+      window.dispatchEvent(new Event('scroll'))
+      vi.advanceTimersByTime(20)
+      await settle()
+      expect(viewport.getBoundingClientRect().top).toBe(80)
+      expect(store.toasts.map((toast) => toast.id)).toEqual(queuedIds)
+      expect(document.activeElement).toBe(outside)
+    } finally {
+      headingAction.remove()
+    }
+  })
   it('keeps a collapsed notification available without consuming the remaining time', async () => {
     store.info('Long message', 1000)
     await settle()

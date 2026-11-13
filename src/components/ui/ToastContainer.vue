@@ -5,6 +5,7 @@
       ref="region"
       class="toast-viewport"
       :class="{ 'toast-viewport--bottom': dock === 'bottom' }"
+      :style="{ '--toast-shift': placementShift + 'px' }"
       :data-edition="designEdition"
       :data-preset="settings.appearancePreset"
       :data-color-mode="resolvedTheme"
@@ -92,7 +93,9 @@ import { useI18n } from 'vue-i18n'
 import { Check, Info, TriangleAlert, CircleAlert, X, Minus, ChevronDown } from '@lucide/vue'
 import { designEdition } from '@/config/designEdition'
 import { useToastStore, useThemeStore, useSettingsStore } from '@/stores'
+import { createResizeObserver } from '@/utils/modernAPIs'
 import { useToastPortal } from './useToastPortal'
+import { findToastShift } from './toastPlacement'
 import './toast.css'
 
 defineOptions({ name: 'UiToastContainer', inheritAttrs: false })
@@ -113,6 +116,7 @@ const icon = computed(
     ]
 )
 const region = ref<HTMLElement | null>(null)
+const placementShift = ref(0)
 const collapsed = ref(false),
   acting = ref(false),
   dock = ref<'top' | 'bottom'>('top')
@@ -122,8 +126,70 @@ const announcement = ref(''),
 let returnTarget: HTMLElement | null = null
 let focusGeneration = 0
 let mounted = false
+let placementFrame = 0
+let resizeObserver: ResizeObserver | null = null
 const originTargets = new Map<string, HTMLElement | null>()
 
+function availableShift() {
+  const element = region.value
+  if (!element) return null
+  const rect = element.getBoundingClientRect()
+  if (!rect.height) return null
+  const notice = {
+    left: rect.left,
+    right: rect.right,
+    top: rect.top - placementShift.value,
+    bottom: rect.bottom - placementShift.value,
+    height: rect.height,
+  }
+  const scope =
+    portalTarget.value instanceof HTMLDialogElement && portalTarget.value.open
+      ? portalTarget.value
+      : document
+  const controls = [
+    ...scope.querySelectorAll<HTMLElement>(
+      'button,a[href],input,textarea,select,[role="button"],[contenteditable="true"],[tabindex]:not([tabindex="-1"])'
+    ),
+  ]
+    .filter((control) => !element.contains(control) && !control.matches(':disabled'))
+    .map((control) => control.getBoundingClientRect())
+    .filter(
+      (control) =>
+        control.width && control.height && control.bottom > 0 && control.top < innerHeight
+    )
+  const gap = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) / 2
+  return findToastShift(notice, controls, dock.value, innerHeight, gap)
+}
+function placeToast() {
+  if (!mounted || !current.value || !region.value) return
+  const shift = availableShift()
+  if (shift !== null) {
+    placementShift.value = shift
+    return
+  }
+  const id = current.value.id
+  dock.value = dock.value === 'top' ? 'bottom' : 'top'
+  placementShift.value = 0
+  void nextTick(() => {
+    if (!mounted || current.value?.id !== id) return
+    placementShift.value = availableShift() ?? 0
+  })
+}
+function schedulePlacement(event?: Event) {
+  if (
+    !mounted ||
+    !current.value ||
+    placementFrame ||
+    (event?.type === 'scroll' &&
+      event.target instanceof Node &&
+      region.value?.contains(event.target))
+  )
+    return
+  placementFrame = requestAnimationFrame(() => {
+    placementFrame = 0
+    placeToast()
+  })
+}
 function onPointerEnter(event: PointerEvent) {
   if (current.value && event.pointerType !== 'touch')
     toastStore.pauseTimer(current.value.id, 'pointer')
@@ -233,14 +299,18 @@ function protectFocusedControl(event?: FocusEvent) {
     control.right > notice.left &&
     control.top < notice.bottom &&
     control.bottom > notice.top
-  )
+  ) {
     dock.value = control.top < innerHeight / 2 ? 'bottom' : 'top'
+    placementShift.value = 0
+    schedulePlacement()
+  }
 }
 async function activateCurrent(id: string | undefined) {
   collapsed.value = false
   acting.value = false
   actionError.value = ''
   dock.value = 'top'
+  placementShift.value = 0
   announcement.value = ''
   urgentAnnouncement.value = ''
   syncPortal()
@@ -252,6 +322,9 @@ async function activateCurrent(id: string | undefined) {
   if (current.value.type === 'error') urgentAnnouncement.value = message
   else announcement.value = message
   protectFocusedControl()
+  await nextTick()
+  if (id !== current.value?.id || !mounted) return
+  placeToast()
   if (region.value?.matches(':hover')) toastStore.pauseTimer(id!, 'pointer')
   if (region.value?.contains(document.activeElement)) toastStore.pauseTimer(id!, 'focus')
 }
@@ -273,21 +346,34 @@ watch(
   { flush: 'sync', immediate: true }
 )
 watch(() => current.value?.id, activateCurrent, { flush: 'post' })
+watch([portalTarget, collapsed, actionError, queued], () => schedulePlacement(), { flush: 'post' })
+watch(region, (element, previous) => {
+  if (previous) resizeObserver?.unobserve(previous)
+  if (element) resizeObserver?.observe(element)
+})
 onMounted(() => {
   mounted = true
+  resizeObserver = createResizeObserver(() => schedulePlacement())
+  if (region.value) resizeObserver?.observe(region.value)
   syncVisibility()
   toastStore.setWindowFocused(document.hasFocus())
   window.addEventListener('blur', onWindowBlur)
   window.addEventListener('focus', onWindowFocus)
+  window.addEventListener('resize', schedulePlacement)
+  window.addEventListener('scroll', schedulePlacement, { capture: true, passive: true })
   void activateCurrent(current.value?.id)
   document.addEventListener('visibilitychange', syncVisibility)
   document.addEventListener('focusin', protectFocusedControl)
 })
 onBeforeUnmount(() => {
   mounted = false
+  if (placementFrame) cancelAnimationFrame(placementFrame)
+  resizeObserver?.disconnect()
   originTargets.clear()
   window.removeEventListener('blur', onWindowBlur)
   window.removeEventListener('focus', onWindowFocus)
+  window.removeEventListener('resize', schedulePlacement)
+  window.removeEventListener('scroll', schedulePlacement, true)
   toastStore.setVisibleToasts([])
   document.removeEventListener('visibilitychange', syncVisibility)
   document.removeEventListener('focusin', protectFocusedControl)
