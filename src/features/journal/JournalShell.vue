@@ -219,8 +219,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAuthStore, useToastStore } from '@/stores'
 import { designEdition } from '@/config/designEdition'
 import { createJournalRuntime, type JournalRuntime } from './runtime'
-import { createJournalFeedbackAdapter } from './feedback'
-import { useJournalOperationScope } from './useJournalOperationScope'
+import { createJournalFeedbackAdapter, useJournalFeedbackScope } from './feedback'
 import { journalKey } from './context'
 import { useJournalDialogs } from './useJournalDialogs'
 import { useJournalEvents } from './useJournalEvents'
@@ -234,10 +233,7 @@ const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore()
 const feedback = createJournalFeedbackAdapter(useToastStore())
-useJournalOperationScope(
-  () => auth.user?.id,
-  () => feedback.reset()
-)
+useJournalFeedbackScope(() => auth.user?.id, feedback)
 const isNext = designEdition === 'archive'
 const { locale, t } = useI18n({ useScope: 'global' })
 const isAccountPage = computed(

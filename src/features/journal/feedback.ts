@@ -1,5 +1,6 @@
 import type { useToastStore } from '@/stores/toast'
 import type { JournalFeedbackAdapter } from './runtime'
+import { useJournalOperationScope } from './useJournalOperationScope'
 
 // Only ordinary request feedback is delegated to the Journal owner.
 // Authentication, challenge, integrity, trust and rate handling stay in client.
@@ -10,6 +11,18 @@ export interface SessionJournalFeedbackAdapter extends JournalFeedbackAdapter {
   dispose(): void
   readonly active: boolean
   readonly ownedIds: readonly string[]
+}
+
+export function useJournalFeedbackScope(
+  identity: () => string | undefined,
+  feedback: SessionJournalFeedbackAdapter
+) {
+  let principalId = identity()
+  return useJournalOperationScope(identity, () => {
+    const nextPrincipalId = identity()
+    if (principalId !== undefined || nextPrincipalId !== undefined) feedback.reset()
+    principalId = nextPrincipalId
+  })
 }
 
 export function createJournalFeedbackAdapter(
