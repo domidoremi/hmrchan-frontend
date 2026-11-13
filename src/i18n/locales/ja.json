@@ -1697,7 +1697,10 @@
       "time": "日時"
     },
     "calendar": {
+      "allDates": "すべての日付",
       "allEvents": "すべての予定",
+      "dayLabel": "{date}、予定 {count} 件",
+      "monthEvents": "今月の予定",
       "eventCount": "予定{count}件",
       "noneThisMonth": "今月の予定はありません",
       "partialLoad": "一部の予定を読み込めませんでした",

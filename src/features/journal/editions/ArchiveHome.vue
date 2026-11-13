@@ -211,7 +211,9 @@
             <span class="agenda-day"
               >{{ String(event.day).padStart(2, '0') }}<small>{{ event.week }}</small></span
             ><button :data-event="event.id">
-              <b>{{ event.title }}</b><small>{{ event.time }} · {{ event.venue }}</small></button
+              <b>{{ event.title }}</b><small
+                >{{ journalEventTimeLabel(event, t) }} · {{ event.venue }}</small
+              ></button
             ><button
               class="icon-button remind"
               :data-remind="event.id"
@@ -276,6 +278,8 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { journalEventTimeLabel } from '../localizedEventTime'
 import { RouterLink } from 'vue-router'
 import JournalIcon from '../JournalIcon.vue'
 import JournalResourceState from '../JournalResourceState.vue'
@@ -300,6 +304,7 @@ const props = defineProps<{
   sort: string
   month: string
 }>()
+const { t } = useI18n({ useScope: 'global' })
 const emit = defineEmits<{
   retry: []
   open: [post: JournalPost]

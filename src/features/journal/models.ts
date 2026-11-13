@@ -50,6 +50,7 @@ export interface JournalEvent {
   date: string
   week: string
   time: string
+  allDay?: boolean
   venue: string
   type: string
   tone: string
@@ -174,6 +175,7 @@ export function eventModel(item: ScheduleResponse): JournalEvent {
           minute: '2-digit',
           hour12: false,
         }).format(date),
+    allDay: item.is_all_day,
     venue: item.venue || '',
     type: { live: 'LIVE', media: 'MEDIA', birth: 'BIRTHDAY', other: 'EVENT' }[item.category],
     tone: item.category === 'live' ? 'purple' : 'green',
