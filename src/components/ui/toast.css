@@ -6,14 +6,14 @@
   --toast-accent: var(--accent, var(--color-primary));
   position: fixed;
   z-index: var(--z-toast);
-  inset-block-start: calc(env(safe-area-inset-top, 0px) + 92px);
-  inset-inline-end: max(20px, calc((100vw - 1440px) / 2 + 24px));
-  inline-size: min(360px, calc(100% - 32px));
+  inset-block-start: calc(env(safe-area-inset-top, 0px) + 5.75rem);
+  inset-inline-end: max(1.25rem, calc((100vw - 90rem) / 2 + 1.5rem));
+  inline-size: min(22.5rem, calc(100% - 2rem));
   pointer-events: none;
   color: var(--toast-ink);
 }
 .toast-viewport[data-edition='archive'] {
-  inset-block-start: calc(env(safe-area-inset-top, 0px) + 24px);
+  inset-block-start: calc(env(safe-area-inset-top, 0px) + 1.5rem);
 }
 .toast-card {
   pointer-events: auto;
@@ -35,27 +35,29 @@
 }
 .toast-card__heading {
   display: flex;
-  align-items: center;
-  min-block-size: 52px;
-  padding-inline: 16px 4px;
-  gap: 8px;
-  border-block-end: 1px solid var(--toast-line);
+  align-items: flex-start;
+  padding: 0.5rem 0.25rem 0.5rem 1rem;
+  gap: 0.5rem;
 }
 .toast-card__heading > svg {
   flex-shrink: 0;
+  margin-block-start: 0.8125rem;
   color: var(--toast-accent);
 }
-.toast-card__kind {
+.toast-card__summary {
+  flex: 1;
+  align-self: center;
   min-inline-size: 0;
-  overflow-wrap: anywhere;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  margin-inline-end: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
 }
 .toast-card__queue {
+  align-self: center;
   max-inline-size: 5.5em;
   overflow-wrap: anywhere;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--toast-muted);
 }
 .toast-card__close,
@@ -64,8 +66,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 44px;
-  min-inline-size: 44px;
+  min-block-size: 2.75rem;
+  min-inline-size: 2.75rem;
   border: 1px solid transparent;
   border-radius: 2px;
   font: inherit;
@@ -89,28 +91,30 @@
   outline-offset: -4px;
 }
 .toast-card__body {
-  padding: 16px;
-  max-block-size: min(320px, calc(100dvh - 172px));
+  flex: 1;
+  min-inline-size: 0;
+  padding-block: 0.5rem;
+  max-block-size: min(20rem, calc(100dvh - 10.75rem));
   overflow: auto;
   overscroll-behavior: contain;
 }
 .toast-card__title {
-  margin: 0 0 8px;
+  margin: 0 0 0.5rem;
   font:
-    500 18px/1.45 Georgia,
+    500 1.125rem/1.45 Georgia,
     'Songti SC',
     serif;
   overflow-wrap: anywhere;
 }
 .toast-viewport[data-edition='archive'] .toast-card__title {
   font-family: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.5;
 }
 .toast-card__message {
   margin: 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.65;
   color: var(--toast-ink);
   overflow-wrap: anywhere;
@@ -120,28 +124,21 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-block-start: 12px;
+  gap: 0.625rem;
+  margin-block-start: 0.75rem;
 }
 .toast-card__action {
-  padding: 8px 16px;
+  padding: 0.5rem 1rem;
   border-color: var(--toast-line);
   background: var(--canvas, var(--toast-paper));
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .toast-card__action:hover {
   border-color: var(--toast-accent);
 }
-.toast-card__reading {
-  color: var(--toast-muted);
-  font-size: 11px;
-}
 .toast-card button:disabled {
   opacity: 0.6;
   cursor: wait;
-}
-.toast-card.is-collapsed .toast-card__heading {
-  border-block-end: 0;
 }
 .toast-card__progress {
   position: absolute;
@@ -165,12 +162,12 @@
 }
 .toast-viewport.toast-viewport--bottom {
   inset-block-start: auto;
-  inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 1rem);
 }
 @keyframes toast-arrive {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-0.5rem);
   }
   to {
     opacity: 1;
@@ -188,12 +185,12 @@
 @media (max-width: 800px) {
   .toast-viewport,
   .toast-viewport[data-edition='archive'] {
-    inset-block-start: calc(env(safe-area-inset-top, 0px) + 80px);
-    inset-inline-end: 12px;
-    inline-size: min(360px, calc(100% - 24px));
+    inset-block-start: calc(env(safe-area-inset-top, 0px) + 5rem);
+    inset-inline-end: 0.75rem;
+    inline-size: min(22.5rem, calc(100% - 1.5rem));
   }
   .toast-card__body {
-    max-block-size: min(260px, calc(100dvh - 164px));
+    max-block-size: min(16.25rem, calc(100dvh - 10.25rem));
   }
   .toast-viewport.toast-viewport--bottom {
     inset-block-start: auto;
@@ -201,7 +198,7 @@
 }
 @media (max-height: 480px) {
   .toast-card__body {
-    max-block-size: calc(100dvh - 164px);
+    max-block-size: calc(100dvh - 10.25rem);
   }
 }
 .toast-viewport[data-motion='reduced'] .toast-card {
