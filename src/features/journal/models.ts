@@ -179,7 +179,7 @@ export function eventModel(item: ScheduleResponse): JournalEvent {
     venue: item.venue || '',
     type: { live: 'LIVE', media: 'MEDIA', birth: 'BIRTHDAY', other: 'EVENT' }[item.category],
     tone: item.category === 'live' ? 'purple' : 'green',
-    description: item.description || '',
+    description: (item.description || '').replace(/<\/?br\s*\/?>/gi, '\n').trim(),
     url: item.event_url || item.source_url || null,
   }
 }
