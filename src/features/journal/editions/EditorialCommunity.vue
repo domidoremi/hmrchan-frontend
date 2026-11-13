@@ -1,7 +1,6 @@
 <template>
   <div class="editorial-page editorial-community">
     <header class="editorial-page-heading" data-reveal>
-      <span class="eyebrow">{{ t('journal.community.conversations') }}</span>
       <div>
         <h1>
           {{ t('community.title') }}<em>{{ String(discussions.length).padStart(2, '0') }}</em>

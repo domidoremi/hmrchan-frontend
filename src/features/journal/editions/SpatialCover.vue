@@ -135,11 +135,6 @@
           /></span>
         </button>
       </div>
-      <div class="cover-coordinate" aria-hidden="true">
-        <span>{{ t('journal.home.contentsKicker') }}</span><span>{{
-          String(index + 1).padStart(2, '0')
-        }}</span>
-      </div>
     </div>
   </section>
 </template>

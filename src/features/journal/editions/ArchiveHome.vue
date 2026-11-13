@@ -2,7 +2,6 @@
   <div :ref="setRoot" @keydown="keydown" class="archive-page archive-home">
     <div class="archive-page-title" data-reveal>
       <div>
-        <span class="eyebrow">{{ t('journal.home.overviewKicker') }}</span>
         <h1>{{ t('journal.nav.overview') }}<span class="title-dot">.</span></h1>
       </div>
       <span class="archive-date">{{ date }}</span><RouterLink
@@ -217,7 +216,6 @@
     <div class="archive-bottom-grid">
       <section class="archive-panel" data-reveal>
         <div class="panel-heading">
-          <span>{{ t('journal.home.calendarKicker') }}</span>
           <h2>{{ t('journal.home.monthEvents', { month: monthName }) }}</h2>
           <RouterLink to="/schedule"
             ><JournalIcon name="arrow-up-right" /><span class="sr-only">{{
@@ -263,7 +261,6 @@
       </section>
       <section class="archive-panel" data-reveal>
         <div class="panel-heading">
-          <span>{{ t('journal.home.communityKicker') }}</span>
           <h2>{{ t('community.recentDiscussions') }}</h2>
           <RouterLink to="/community"
             ><JournalIcon name="arrow-up-right" /><span class="sr-only">{{

@@ -1,8 +1,5 @@
 <template>
   <nav class="editorial-contents" :aria-label="t('journal.home.contents')">
-    <span class="contents-caption"
-      >{{ t('journal.home.contents') }}<small>{{ t('journal.home.contentsKicker') }}</small></span
-    >
     <a
       v-for="section in sections"
       :key="section.id"
