@@ -286,6 +286,52 @@ describe('functions/_middleware', () => {
     expect(response).toBe(original)
   })
 
+  it.each([
+    { path: '/api', status: 404, headers: {} },
+    { path: '/api/v1/posts', status: 403, headers: { 'cf-mitigated': 'challenge' } },
+    { path: '/api/v1/discussions', status: 429, headers: { 'Retry-After': '60' } },
+    { path: '/api/v1/schedules', status: 502, headers: {} },
+  ])(
+    'preserves the HTML API response at $path with status $status',
+    async ({ path, status, headers }) => {
+      resolveHtmlDocumentWithEdgeData.mockResolvedValue({
+        status: 404,
+        title: 'Page not found · MomiChan',
+        canonicalPath: path,
+        shellTitle: 'Page not found · MomiChan',
+      })
+      const body =
+        '<!doctype html><html><head><title>Upstream response</title></head><body>Upstream unavailable</body></html>'
+      const original = new MockResponse(body, {
+        status,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store',
+          'X-Proxy-Upstream-Source': 'public-fallback',
+          'X-Proxy-Upstream-Domain': 'content',
+          ...headers,
+        },
+      })
+      const { onRequest } = await import('../_middleware')
+      const response = await onRequest({
+        request: new Request(`https://momichan.com${path}`),
+        env: {},
+        next: () => Promise.resolve(original),
+      } as never)
+
+      expect(response).toBe(original)
+      expect(response.status).toBe(status)
+      expect(response.headers.get('Cache-Control')).toBe('no-store')
+      expect(response.headers.get('X-Proxy-Upstream-Source')).toBe('public-fallback')
+      expect(response.headers.get('X-Proxy-Upstream-Domain')).toBe('content')
+      expect(response.headers.get('cf-mitigated')).toBe(original.headers.get('cf-mitigated'))
+      expect(response.headers.get('Retry-After')).toBe(original.headers.get('Retry-After'))
+      expect(await response.text()).toBe(body)
+      expect(resolveHtmlDocumentWithEdgeData).not.toHaveBeenCalled()
+      expect(renderPrerenderShell).not.toHaveBeenCalled()
+    }
+  )
+
   it('marks auth-route HTML responses as no-store', async () => {
     resolveHtmlDocumentWithEdgeData.mockResolvedValue({
       status: 200,
