@@ -2,6 +2,7 @@ import { createApp, watch } from 'vue'
 import { createPinia } from 'pinia'
 import { createPersistedState } from 'pinia-plugin-persistedstate'
 import { optionalLocalStorage } from './utils/optionalStorage'
+import { createChunkReloadGuard } from './utils/chunkReloadGuard'
 
 import App from './App.vue'
 import router from './router'
@@ -197,6 +198,7 @@ app.directive('click-outside', vClickOutside)
 const CHUNK_ERROR_RE =
   /chunkloaderror|loading chunk [\w-]+ failed|failed to fetch dynamically imported module|importing a module script failed|dynamically imported module/i
 const CHUNK_RELOAD_ONCE_KEY = '__chunk_reload_once__'
+const chunkReloadGuard = typeof window === 'undefined' ? null : createChunkReloadGuard(window)
 
 // One session-scoped reload recovers stale chunk URLs after deployment without a reload loop.
 
@@ -210,7 +212,8 @@ function isChunkLoadError(error: unknown): boolean {
 }
 
 function reloadOnceForChunkError(reason: string): void {
-  if (typeof window === 'undefined') return
+  // Leaving a document can cancel imports; recovery must not replace that navigation.
+  if (typeof window === 'undefined' || !chunkReloadGuard?.canReload()) return
 
   try {
     if (sessionStorage.getItem(CHUNK_RELOAD_ONCE_KEY) === '1') {
@@ -235,6 +238,10 @@ function reloadOnceForChunkError(reason: string): void {
     { severity: 'warn' }
   )
   window.location.reload()
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => chunkReloadGuard?.dispose())
 }
 
 if (typeof window !== 'undefined') {
