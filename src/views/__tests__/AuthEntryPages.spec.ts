@@ -468,8 +468,14 @@ describe('Auth entry pages', () => {
 
     await flushPromises()
 
-    expect(testState.googleAuth.prepareGoogleAuthHandoff).toHaveBeenCalledWith('popup-handoff', '')
-    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('popup-handoff')
+    expect(testState.googleAuth.prepareGoogleAuthHandoff).toHaveBeenCalledWith(
+      'popup-handoff',
+      '',
+      { signal: expect.any(AbortSignal) }
+    )
+    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('popup-handoff', {
+      signal: expect.any(AbortSignal),
+    })
     expect(testState.routerReplace).toHaveBeenCalledWith('/feed')
   })
 
@@ -661,8 +667,11 @@ describe('Auth entry pages', () => {
 
     expect(testState.clientSecurity.verify).toHaveBeenCalledWith('verified-token', {
       diagnosticsContext: 'google-auth',
+      signal: expect.any(AbortSignal),
     })
-    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('popup-handoff')
+    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('popup-handoff', {
+      signal: expect.any(AbortSignal),
+    })
     expect(wrapper.text()).toContain('auth.error.googleLoginFailed')
     expect(wrapper.text()).toContain('Failed to complete Google login')
   })

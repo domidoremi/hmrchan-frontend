@@ -199,7 +199,8 @@ describe('auth store', () => {
         username: 'tester@example.com',
         email: 'tester@example.com',
         password: 'password123',
-      })
+      }),
+      { signal: expect.any(AbortSignal) }
     )
   })
 
@@ -560,7 +561,9 @@ describe('auth store', () => {
 
     await store.login('tester@example.com', 'password123', 'turnstile-token')
 
-    expect(clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token', {
+      signal: expect.any(AbortSignal),
+    })
   })
 
   it('keeps username-only logins free of the email compatibility field', async () => {
@@ -573,12 +576,14 @@ describe('auth store', () => {
       expect.objectContaining({
         username: 'local-smoke-main',
         password: 'password123',
-      })
+      }),
+      { signal: expect.any(AbortSignal) }
     )
     expect(authService.login).toHaveBeenCalledWith(
       expect.not.objectContaining({
         email: expect.anything(),
-      })
+      }),
+      { signal: expect.any(AbortSignal) }
     )
   })
 
