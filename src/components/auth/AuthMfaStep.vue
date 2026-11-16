@@ -1,19 +1,29 @@
 <template>
-  <div class="auth-card auth-card--stack glass-surface--base auth-mfa-step">
+  <div ref="mfaStep" class="auth-card auth-card--stack glass-surface--base auth-mfa-step">
     <div class="auth-mfa-step__copy">
-      <h2 class="auth-title auth-title--section">{{ title }}</h2>
-      <p class="auth-helper">{{ hint }}</p>
+      <h2 :id="`${stepId}-title`" class="auth-title auth-title--section">{{ title }}</h2>
+      <p :id="`${stepId}-hint`" class="auth-helper">{{ hint }}</p>
       <p v-if="message" class="auth-helper auth-helper--emphasis">{{ message }}</p>
     </div>
 
-    <div v-if="methodOptions.length > 1" class="auth-mfa-step__methods" role="tablist">
+    <div
+      v-if="hasMethodTabs"
+      class="auth-mfa-step__methods"
+      role="tablist"
+      :aria-labelledby="`${stepId}-title`"
+      @keydown="handleTabListKeydown"
+    >
       <button
         v-for="option in methodOptions"
         :key="option.value"
+        :id="`${stepId}-tab-${option.value}`"
         type="button"
+        role="tab"
         class="auth-mfa-step__method"
         :class="{ 'auth-mfa-step__method--active': selectedMethod === option.value }"
-        :aria-pressed="selectedMethod === option.value"
+        :aria-selected="selectedMethod === option.value"
+        :aria-controls="`${stepId}-panel`"
+        :tabindex="selectedMethod === option.value ? 0 : -1"
         :disabled="isBusy"
         @click="selectedMethod = option.value"
       >
@@ -21,45 +31,44 @@
       </button>
     </div>
 
-    <div v-if="usesCodeEntry" class="auth-form">
-      <div class="form-group">
-        <label for="mfa-code">{{ codeLabel }}</label>
+    <div
+      :id="`${stepId}-panel`"
+      class="auth-form"
+      :role="hasMethodTabs ? 'tabpanel' : undefined"
+      :aria-labelledby="hasMethodTabs ? `${stepId}-tab-${selectedMethod}` : undefined"
+      :tabindex="hasMethodTabs && !usesCodeEntry ? 0 : -1"
+    >
+      <div v-if="usesCodeEntry" class="form-group">
+        <label :for="`${stepId}-code`">{{ codeLabel }}</label>
         <Input
-          id="mfa-code"
+          :id="`${stepId}-code`"
           v-model="code"
           type="text"
           :inputmode="selectedMethod === 'backup_code' ? 'text' : 'numeric'"
           :placeholder="$t('auth.twoFactorCodePlaceholder')"
           autocomplete="one-time-code"
+          :aria-describedby="`${stepId}-hint${errorMessage ? ` ${stepId}-error` : ''}`"
+          :aria-invalid="errorMessage ? 'true' : undefined"
           :disabled="isBusy"
           @keyup.enter="handleCodeSubmit"
         />
       </div>
-
-      <p v-if="errorMessage" class="field-error">{{ errorMessage }}</p>
-
-      <div class="action-group">
-        <Button type="button" full-width :loading="isBusy" @click="handleCodeSubmit">
-          {{ $t('auth.verifyButton') }}
-        </Button>
-      </div>
-    </div>
-
-    <div v-else class="auth-form">
-      <p class="auth-helper">{{ $t('auth.mfa.passkeyHint') }}</p>
-      <p v-if="errorMessage" class="field-error">{{ errorMessage }}</p>
+      <p v-else class="auth-helper">{{ $t('auth.mfa.passkeyHint') }}</p>
+      <p v-if="errorMessage" :id="`${stepId}-error`" class="field-error" role="alert">
+        {{ errorMessage }}
+      </p>
       <div class="action-group">
         <Button
           type="button"
           full-width
           :loading="isBusy"
-          :disabled="!webauthnSupported"
-          @click="handlePasskeySubmit"
+          :disabled="!usesCodeEntry && !webauthnSupported"
+          @click="usesCodeEntry ? handleCodeSubmit() : handlePasskeySubmit()"
         >
-          {{ $t('auth.mfa.passkeyAction') }}
+          {{ usesCodeEntry ? $t('auth.verifyButton') : $t('auth.mfa.passkeyAction') }}
         </Button>
       </div>
-      <p v-if="!webauthnSupported" class="field-hint">
+      <p v-if="!usesCodeEntry && !webauthnSupported" class="field-hint">
         {{ $t('auth.error.webauthnUnsupported') }}
       </p>
     </div>
@@ -67,12 +76,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useId, useTemplateRef, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import { useAuthStore, type AuthFlowResult } from '@/stores/auth'
+import { handleTabListKeydown } from '@/utils/tabNavigation'
 import {
   getWebAuthnAssertion,
   isWebAuthnSupported,
@@ -103,6 +113,8 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const authStore = useAuthStore()
 const { isLoading } = storeToRefs(authStore)
+const stepId = `mfa-${useId()}`
+const mfaStep = useTemplateRef<HTMLElement>('mfaStep')
 
 const code = ref('')
 const selectedMethod = ref('totp')
@@ -157,8 +169,24 @@ const defaultMethod = computed(() => {
 watch(
   normalizedMethods,
   (methods) => {
-    if (!methods.includes(selectedMethod.value)) {
-      selectedMethod.value = defaultMethod.value
+    const methodRemoved = !methods.includes(selectedMethod.value)
+    const restoreFocus =
+      mfaStep.value?.contains(document.activeElement) &&
+      (methodRemoved ||
+        (methods.length < 2 && document.activeElement?.getAttribute('role') === 'tab'))
+    if (methodRemoved) selectedMethod.value = defaultMethod.value
+    if (restoreFocus) {
+      void nextTick(() => {
+        const step = mfaStep.value
+        if (!step || isBusy.value) return
+        const active = document.activeElement
+        if (active !== document.body && active?.isConnected && !step.contains(active)) return
+        const target =
+          step.querySelector<HTMLElement>(
+            '[role="tab"][aria-selected="true"], input:not(:disabled), .action-group button:not(:disabled)'
+          ) ?? step.querySelector<HTMLElement>('.auth-form')
+        target?.focus({ preventScroll: true })
+      })
     }
   },
   { immediate: true }
@@ -170,6 +198,7 @@ const methodOptions = computed(() =>
     label: localizeMethod(value),
   }))
 )
+const hasMethodTabs = computed(() => methodOptions.value.length > 1)
 
 const usesCodeEntry = computed(() => selectedMethod.value !== 'webauthn')
 const title = computed(() => props.title || t('auth.mfa.title'))
