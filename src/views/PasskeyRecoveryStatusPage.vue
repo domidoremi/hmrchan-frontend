@@ -43,6 +43,7 @@
                 id="recovery-device-name"
                 v-model="deviceName"
                 type="text"
+                :disabled="isRegistering"
                 :placeholder="$t('profile.passkeyDeviceNamePlaceholder')"
               />
             </div>
@@ -60,7 +61,13 @@
             >
               {{ $t('auth.passkeyRecovery.restartAction') }}
             </Button>
-            <Button type="button" variant="ghost" full-width :disabled="isLoading" @click="refresh">
+            <Button
+              type="button"
+              variant="ghost"
+              full-width
+              :disabled="isLoading || isRegistering"
+              @click="refresh"
+            >
               {{ $t('auth.passkeyRecovery.refreshAction') }}
             </Button>
             <Button
@@ -69,6 +76,7 @@
               type="button"
               full-width
               :loading="isRegistering"
+              :disabled="isLoading"
               @click="handleRegister"
             >
               {{ $t('auth.passkeyRecovery.registerAction') }}
@@ -90,12 +98,13 @@
 <script setup lang="ts">
 defineOptions({ name: 'PasskeyRecoveryStatusPage' })
 
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ApiError, authService } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import { getDeviceInfo } from '@/utils/device'
+import { subscribeAuthSessionScope } from '@/services/authSessionScope'
 import { createWebAuthnCredential, serializePublicKeyCredential } from '@/utils/webauthn'
 import { AuthEntryShell } from '@/components/auth/entry'
 import Button from '@/components/ui/Button.vue'
@@ -132,7 +141,18 @@ const statusHint = computed(() => {
   }
 })
 let refreshTimer: ReturnType<typeof setInterval> | null = null
-let refreshInFlight = false
+let statusController: AbortController | null = null
+let registrationController: AbortController | null = null
+let disposed = false
+
+function cancelOperations() {
+  statusController?.abort()
+  registrationController?.abort()
+  statusController = null
+  registrationController = null
+  isLoading.value = false
+  isRegistering.value = false
+}
 
 function handleBack() {
   if (window.history.length > 1) {
@@ -157,35 +177,57 @@ function formatDateTime(value?: string | null) {
 }
 
 async function refresh() {
-  if (refreshInFlight) return
+  if (statusController || isRegistering.value || disposed) return
 
-  refreshInFlight = true
+  const controller = new AbortController()
+  const id = recoveryId.value
+  statusController = controller
+  const isCurrent = () =>
+    statusController === controller && !controller.signal.aborted && recoveryId.value === id
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    status.value = await authService.getPasskeyRecoveryStatus(recoveryId.value)
+    const response = await authService.getPasskeyRecoveryStatus(id, { signal: controller.signal })
+    if (isCurrent()) status.value = response
   } catch (error) {
-    errorMessage.value = error instanceof ApiError ? error.message : t('auth.error.unknown')
+    if (isCurrent()) {
+      errorMessage.value = error instanceof ApiError ? error.message : t('auth.error.unknown')
+    }
   } finally {
-    refreshInFlight = false
-    isLoading.value = false
+    if (statusController === controller) {
+      statusController = null
+      isLoading.value = false
+    }
   }
 }
 
 async function handleRegister() {
-  if (!status.value?.can_register || isRegistering.value) return
+  if (!status.value?.can_register || isLoading.value || isRegistering.value || disposed) return
 
+  const controller = new AbortController()
+  const id = recoveryId.value
+  const name = deviceName.value.trim()
+  registrationController = controller
+  const isCurrent = () =>
+    registrationController === controller && !controller.signal.aborted && recoveryId.value === id
   isRegistering.value = true
   errorMessage.value = ''
 
   try {
-    const options = await authService.beginRecoveryPasskeyRegistration({
-      recovery_id: recoveryId.value,
-      ...(deviceName.value.trim() ? { device_name: deviceName.value.trim() } : {}),
-    })
+    const options = await authService.beginRecoveryPasskeyRegistration(
+      {
+        recovery_id: id,
+        ...(name ? { device_name: name } : {}),
+      },
+      { signal: controller.signal }
+    )
+    if (!isCurrent()) return
 
-    const credential = await createWebAuthnCredential(options.options)
+    const credential = await createWebAuthnCredential(options.options, {
+      signal: controller.signal,
+    })
+    if (!isCurrent()) return
     if (
       typeof PublicKeyCredential === 'undefined' ||
       !(credential instanceof PublicKeyCredential)
@@ -194,21 +236,42 @@ async function handleRegister() {
     }
 
     await authService.finishRecoveryPasskeyRegistration(
-      recoveryId.value,
+      id,
       options.ceremony_id,
       serializePublicKeyCredential(credential),
-      deviceName.value.trim() || undefined
+      name || undefined,
+      { signal: controller.signal }
     )
+    if (!isCurrent()) return
 
     toastStore.success(t('auth.passkeyRecovery.registerSuccess'))
     authStore.clearLocalSession({ navigateToLogin: true })
   } catch (error) {
-    errorMessage.value =
-      error instanceof ApiError ? error.message : t('auth.error.webauthnRegistrationFailed')
+    if (isCurrent()) {
+      errorMessage.value =
+        error instanceof ApiError ? error.message : t('auth.error.webauthnRegistrationFailed')
+    }
   } finally {
-    isRegistering.value = false
+    if (registrationController === controller) {
+      registrationController = null
+      isRegistering.value = false
+    }
   }
 }
+
+watch(
+  recoveryId,
+  () => {
+    cancelOperations()
+    status.value = null
+    errorMessage.value = ''
+    deviceName.value = getDeviceInfo().device_name
+    void refresh()
+  },
+  { flush: 'sync' }
+)
+
+const stopSessionObservation = subscribeAuthSessionScope(cancelOperations)
 
 onMounted(() => {
   void refresh()
@@ -220,6 +283,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  disposed = true
+  cancelOperations()
+  stopSessionObservation()
   if (refreshTimer) {
     clearInterval(refreshTimer)
     refreshTimer = null
