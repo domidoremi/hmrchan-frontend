@@ -1,8 +1,18 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import PasskeyRecoveryPage from '../PasskeyRecoveryPage.vue'
 import PasskeyRecoveryStatusPage from '../PasskeyRecoveryStatusPage.vue'
+
+const statusWrappers: VueWrapper[] = []
+
+function mountStatus() {
+  const wrapper = mount(PasskeyRecoveryStatusPage, {
+    global: { mocks: { $t: (key: string) => key } },
+  })
+  statusWrappers.push(wrapper)
+  return wrapper
+}
 
 const state = vi.hoisted(() => ({
   route: {
@@ -80,6 +90,7 @@ vi.mock('@/utils/webauthn', () => ({
 
 describe('Passkey recovery pages', () => {
   afterEach(() => {
+    for (const wrapper of statusWrappers.splice(0)) wrapper.unmount()
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })
@@ -201,5 +212,102 @@ describe('Passkey recovery pages', () => {
     )
     expect(state.authStore.clearLocalSession).toHaveBeenCalledWith({ navigateToLogin: true })
     expect(state.toastStore.success).toHaveBeenCalledWith('auth.passkeyRecovery.registerSuccess')
+    wrapper.unmount()
+  })
+
+  it.each(['expired', 'denied', 'completed'])(
+    'explains the %s outcome and offers the appropriate next step',
+    async (status) => {
+      vi.useFakeTimers()
+      state.api.getPasskeyRecoveryStatus.mockResolvedValue({ status, can_register: false })
+      const wrapper = mountStatus()
+      await flushPromises()
+
+      expect(wrapper.text()).toContain(`auth.passkeyRecovery.${status}Hint`)
+      expect(wrapper.text()).not.toContain('auth.passkeyRecovery.pendingHint')
+      expect(wrapper.text()).not.toContain('auth.passkeyRecovery.readyHint')
+      expect(wrapper.find('#recovery-device-name').exists()).toBe(false)
+      expect(wrapper.find('.recovery-register-btn').exists()).toBe(false)
+      expect(wrapper.get('.auth-footer').text()).toContain('nav.login')
+
+      const restart = wrapper.find('.recovery-restart-btn')
+      expect(restart.exists()).toBe(status !== 'completed')
+      if (restart.exists()) {
+        await restart.trigger('click')
+      }
+      expect(state.router.push.mock.calls).toEqual(
+        status === 'completed' ? [] : [['/auth/passkeys/recovery']]
+      )
+      expect(state.api.startPasskeyRecovery).not.toHaveBeenCalled()
+      expect(state.api.beginRecoveryPasskeyRegistration).not.toHaveBeenCalled()
+      expect(state.api.finishRecoveryPasskeyRegistration).not.toHaveBeenCalled()
+    }
+  )
+
+  it.each(['expired', 'denied', 'completed'])(
+    'stops automatic status requests after a pending flow becomes %s',
+    async (status) => {
+      vi.useFakeTimers()
+      state.api.getPasskeyRecoveryStatus
+        .mockResolvedValueOnce({ status: 'pending_review', can_register: false })
+        .mockResolvedValue({ status, can_register: false })
+      const wrapper = mountStatus()
+      await flushPromises()
+      expect(wrapper.text()).toContain('auth.passkeyRecovery.pendingHint')
+
+      await vi.advanceTimersByTimeAsync(15000)
+      expect(state.api.getPasskeyRecoveryStatus).toHaveBeenCalledTimes(2)
+      await vi.advanceTimersByTimeAsync(60000)
+      expect(state.api.getPasskeyRecoveryStatus).toHaveBeenCalledTimes(2)
+
+      const refresh = wrapper
+        .findAll('button')
+        .find((button) => button.text() === 'auth.passkeyRecovery.refreshAction')
+      expect(refresh).toBeDefined()
+      await refresh!.trigger('click')
+      await flushPromises()
+      expect(state.api.getPasskeyRecoveryStatus).toHaveBeenCalledTimes(3)
+      await vi.advanceTimersByTimeAsync(15000)
+      expect(state.api.getPasskeyRecoveryStatus).toHaveBeenCalledTimes(3)
+    }
+  )
+
+  it.each(['pending_review', 'approved'])(
+    'keeps polling %s while the server withholds registration permission',
+    async (status) => {
+      vi.useFakeTimers()
+      state.api.getPasskeyRecoveryStatus
+        .mockResolvedValueOnce({ status, can_register: false })
+        .mockResolvedValue({ status: 'approved', can_register: true })
+      const wrapper = mountStatus()
+      await flushPromises()
+      expect(wrapper.find('.recovery-register-btn').exists()).toBe(false)
+
+      await vi.advanceTimersByTimeAsync(15000)
+      expect(state.api.getPasskeyRecoveryStatus).toHaveBeenCalledTimes(2)
+      expect(wrapper.text()).toContain('auth.passkeyRecovery.readyHint')
+      expect(wrapper.find('.recovery-register-btn').exists()).toBe(true)
+      await vi.advanceTimersByTimeAsync(30000)
+      expect(state.api.getPasskeyRecoveryStatus).toHaveBeenCalledTimes(2)
+    }
+  )
+
+  it('does not overlap an outstanding status request and stops polling on unmount', async () => {
+    vi.useFakeTimers()
+    let resolveStatus!: (value: { status: string; can_register: boolean }) => void
+    state.api.getPasskeyRecoveryStatus.mockReturnValue(
+      new Promise((resolve) => {
+        resolveStatus = resolve
+      })
+    )
+    const wrapper = mountStatus()
+    await vi.advanceTimersByTimeAsync(45000)
+    expect(state.api.getPasskeyRecoveryStatus).toHaveBeenCalledTimes(1)
+    resolveStatus({ status: 'pending_review', can_register: false })
+    await flushPromises()
+    wrapper.unmount()
+    statusWrappers.splice(statusWrappers.indexOf(wrapper), 1)
+    await vi.advanceTimersByTimeAsync(30000)
+    expect(state.api.getPasskeyRecoveryStatus).toHaveBeenCalledTimes(1)
   })
 })

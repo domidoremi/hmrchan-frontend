@@ -31,12 +31,8 @@
               </div>
             </dl>
 
-            <p class="auth-helper auth-helper--emphasis">
-              {{
-                status.can_register
-                  ? $t('auth.passkeyRecovery.readyHint')
-                  : $t('auth.passkeyRecovery.pendingHint')
-              }}
+            <p class="auth-helper auth-helper--emphasis" role="status">
+              {{ statusHint }}
             </p>
 
             <div v-if="status.can_register" class="form-group">
@@ -55,6 +51,15 @@
           <p v-if="errorMessage" class="field-error">{{ errorMessage }}</p>
 
           <div class="action-group">
+            <Button
+              v-if="canRestart"
+              class="recovery-restart-btn"
+              type="button"
+              full-width
+              @click="router.push('/auth/passkeys/recovery')"
+            >
+              {{ $t('auth.passkeyRecovery.restartAction') }}
+            </Button>
             <Button type="button" variant="ghost" full-width :disabled="isLoading" @click="refresh">
               {{ $t('auth.passkeyRecovery.refreshAction') }}
             </Button>
@@ -108,7 +113,26 @@ const isLoading = ref(true)
 const isRegistering = ref(false)
 const errorMessage = ref('')
 const deviceName = ref(getDeviceInfo().device_name)
+const isTerminal = computed(() =>
+  ['expired', 'denied', 'completed'].includes(status.value?.status ?? '')
+)
+const canRestart = computed(() => ['expired', 'denied'].includes(status.value?.status ?? ''))
+const statusHint = computed(() => {
+  switch (status.value?.status) {
+    case 'expired':
+      return t('auth.passkeyRecovery.expiredHint')
+    case 'denied':
+      return t('auth.passkeyRecovery.deniedHint')
+    case 'completed':
+      return t('auth.passkeyRecovery.completedHint')
+    default:
+      return status.value?.can_register
+        ? t('auth.passkeyRecovery.readyHint')
+        : t('auth.passkeyRecovery.pendingHint')
+  }
+})
 let refreshTimer: ReturnType<typeof setInterval> | null = null
+let refreshInFlight = false
 
 function handleBack() {
   if (window.history.length > 1) {
@@ -133,6 +157,9 @@ function formatDateTime(value?: string | null) {
 }
 
 async function refresh() {
+  if (refreshInFlight) return
+
+  refreshInFlight = true
   isLoading.value = true
   errorMessage.value = ''
 
@@ -141,6 +168,7 @@ async function refresh() {
   } catch (error) {
     errorMessage.value = error instanceof ApiError ? error.message : t('auth.error.unknown')
   } finally {
+    refreshInFlight = false
     isLoading.value = false
   }
 }
@@ -185,7 +213,7 @@ async function handleRegister() {
 onMounted(() => {
   void refresh()
   refreshTimer = setInterval(() => {
-    if (!status.value?.can_register) {
+    if (!status.value?.can_register && !isTerminal.value) {
       void refresh()
     }
   }, 15000)
