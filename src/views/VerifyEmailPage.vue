@@ -33,7 +33,7 @@
           <Button full-width @click="goToLogin">
             {{ $t('auth.loginButton') }}
           </Button>
-          <Button variant="ghost" full-width @click="resend">
+          <Button variant="ghost" full-width :loading="isResending" @click="resend">
             {{ $t('email.resend') }}
           </Button>
         </div>
@@ -57,7 +57,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'VerifyEmailPage' })
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { CheckCircle, XCircle, AlertTriangle } from '@lucide/vue'
@@ -74,12 +74,31 @@ const toastStore = useToastStore()
 type Status = 'loading' | 'success' | 'error' | 'invalid'
 const status = ref<Status>('loading')
 const errorMessage = ref('')
+const isResending = ref(false)
 let verifyController: AbortController | null = null
+let resendController: AbortController | null = null
+let disposed = false
 
-onMounted(async () => {
+function cancelResend() {
+  resendController?.abort()
+  resendController = null
+  isResending.value = false
+}
+
+function cancelRequests() {
+  verifyController?.abort()
+  verifyController = null
+  cancelResend()
+}
+
+async function verifyCurrentLink() {
+  if (disposed) return
+  cancelRequests()
+  errorMessage.value = ''
+  status.value = 'loading'
   const token = route.query['token']
   scrubSensitiveUrlParameters(['token'])
-  if (typeof token !== 'string' || !token) {
+  if (typeof token !== 'string' || !token.trim()) {
     status.value = 'invalid'
     return
   }
@@ -87,7 +106,7 @@ onMounted(async () => {
   const controller = new AbortController()
   verifyController = controller
   try {
-    await authService.verifyEmail(token, { signal: controller.signal })
+    await authService.verifyEmail(token.trim(), { signal: controller.signal })
     if (controller.signal.aborted) return
     status.value = 'success'
   } catch (err) {
@@ -101,26 +120,42 @@ onMounted(async () => {
       verifyController = null
     }
   }
-})
+}
 
-onUnmounted(() => {
-  verifyController?.abort()
-  verifyController = null
+watch(() => route.query['token'], verifyCurrentLink, { immediate: true, flush: 'sync' })
+watch(() => route.query['email'], cancelResend, { flush: 'sync' })
+watch(
+  () => route.query,
+  () => scrubSensitiveUrlParameters(['token']),
+  { deep: true, flush: 'sync' }
+)
+
+onBeforeUnmount(() => {
+  disposed = true
+  cancelRequests()
 })
 
 function goToLogin() {
+  cancelRequests()
   router.push('/login')
 }
 
 async function resend() {
+  if (disposed || isResending.value || status.value !== 'error') return
   const emailFromQuery = route.query['email']
   const emailParam =
     typeof emailFromQuery === 'string' && emailFromQuery ? { email: emailFromQuery } : undefined
 
+  const controller = new AbortController()
+  resendController = controller
+  const isCurrent = () => resendController === controller && !controller.signal.aborted
+  isResending.value = true
   try {
-    await authService.sendVerificationEmail(emailParam)
+    await authService.sendVerificationEmail(emailParam, { signal: controller.signal })
+    if (!isCurrent()) return
     toastStore.success(t('email.resendSuccess'))
   } catch (err) {
+    if (!isCurrent()) return
     if (err instanceof ApiError) {
       if (err.status === 401 && emailParam) {
         toastStore.warning(t('email.loginToResend'))
@@ -129,6 +164,11 @@ async function resend() {
       }
     } else {
       toastStore.error(t('email.resendFailed'))
+    }
+  } finally {
+    if (resendController === controller) {
+      resendController = null
+      isResending.value = false
     }
   }
 }

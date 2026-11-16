@@ -113,7 +113,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ResetPasswordPage' })
 
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onBeforeUnmount, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { CheckCircle, AlertTriangle, Eye, EyeOff } from '@lucide/vue'
@@ -130,13 +130,7 @@ const router = useRouter()
 const { t } = useI18n()
 const toastStore = useToastStore()
 
-const token = ref(
-  (() => {
-    const t = route.query['token']
-    return typeof t === 'string' && t ? t : ''
-  })()
-)
-scrubSensitiveUrlParameters(['token'])
+const token = ref('')
 
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -145,6 +139,37 @@ const showConfirm = ref(false)
 const isLoading = ref(false)
 const resetSuccess = ref(false)
 let redirectTimer: ReturnType<typeof setTimeout> | null = null
+let resetController: AbortController | null = null
+let disposed = false
+
+function cancelReset() {
+  resetController?.abort()
+  resetController = null
+  isLoading.value = false
+  if (redirectTimer) clearTimeout(redirectTimer)
+  redirectTimer = null
+}
+
+watch(
+  () => route.query['token'],
+  () => {
+    cancelReset()
+    const queryToken = route.query['token']
+    token.value = typeof queryToken === 'string' ? queryToken.trim() : ''
+    scrubSensitiveUrlParameters(['token'])
+    newPassword.value = ''
+    confirmPassword.value = ''
+    showPassword.value = false
+    showConfirm.value = false
+    resetSuccess.value = false
+  },
+  { immediate: true, flush: 'sync' }
+)
+watch(
+  () => route.query,
+  () => scrubSensitiveUrlParameters(['token']),
+  { deep: true, flush: 'sync' }
+)
 
 const passwordStrengthResult = computed(() => checkPasswordStrength(newPassword.value))
 const passwordStrengthText = computed(() => {
@@ -180,6 +205,7 @@ const canSubmit = computed(() => {
 })
 
 function handleBack() {
+  cancelReset()
   if (window.history.length > 1) {
     router.back()
     return
@@ -189,22 +215,28 @@ function handleBack() {
 }
 
 async function handleReset() {
-  if (!canSubmit.value) return
+  if (disposed || isLoading.value || resetSuccess.value || !token.value || !canSubmit.value) return
 
   if (newPassword.value.length < 8) {
     toastStore.warning(t('auth.error.passwordTooShort'))
     return
   }
 
+  cancelReset()
+  const controller = new AbortController()
+  resetController = controller
+  const isCurrent = () => resetController === controller && !controller.signal.aborted
   isLoading.value = true
 
   try {
-    await authService.resetPassword({
-      token: token.value,
-      new_password: newPassword.value,
-    })
+    await authService.resetPassword(
+      { token: token.value, new_password: newPassword.value },
+      { signal: controller.signal }
+    )
+    if (!isCurrent()) return
     resetSuccess.value = true
   } catch (err) {
+    if (!isCurrent()) return
     if (err instanceof ApiError) {
       toastStore.error(err.message)
       // If token expired/invalid, offer to request a new link
@@ -212,21 +244,22 @@ async function handleReset() {
         if (redirectTimer) {
           clearTimeout(redirectTimer)
         }
-        redirectTimer = setTimeout(() => router.push('/forgot-password'), 2000)
+        redirectTimer = setTimeout(() => {
+          redirectTimer = null
+          if (isCurrent()) void router.push('/forgot-password')
+        }, 2000)
       }
     } else {
       toastStore.error(t('auth.error.unknown'))
     }
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
-onUnmounted(() => {
-  if (redirectTimer) {
-    clearTimeout(redirectTimer)
-    redirectTimer = null
-  }
+onBeforeUnmount(() => {
+  disposed = true
+  cancelReset()
 })
 </script>
 
