@@ -252,9 +252,13 @@ export interface RecoveryPasskeyRegistrationOptionsResponse {
 }
 
 export const authService = {
-  async login(credentials: LoginRequest): Promise<AuthLoginFlowResponse> {
+  async login(
+    credentials: LoginRequest,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<AuthLoginFlowResponse> {
     let securityWarning: AuthResponse['_securityWarning']
     const response = await apiClient.post<AuthLoginFlowResponse>('/auth/login', credentials, {
+      ...options,
       skipAuth: true,
       skipErrorToast: true,
       skipChallengeRetry: true,

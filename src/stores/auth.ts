@@ -190,34 +190,40 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(
     usernameOrEmail: string,
     password: string,
-    turnstileToken?: string
+    turnstileToken?: string,
+    options: AuthRequestOptions = {}
   ): Promise<AuthFlowResult> {
+    if (options.signal?.aborted) return cancelledAuthResult()
     if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-    isLoading.value = true
-    error.value = null
+    const operation = startAuthRequest(options.signal)
 
     try {
       const deviceInfo = getDeviceInfo()
       if (turnstileToken) {
-        await clientSecurityService.verify(turnstileToken)
+        await clientSecurityService.verify(turnstileToken, { signal: operation.signal })
       }
-      const response = await authService.login({
-        username: usernameOrEmail,
-        ...(usernameOrEmail.includes('@') ? { email: usernameOrEmail } : {}),
-        password,
-        device_name: deviceInfo.device_name,
-        device_type: deviceInfo.device_type,
-        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
-      })
+      if (!operation.isCurrent()) return cancelledAuthResult()
+      const response = await authService.login(
+        {
+          username: usernameOrEmail,
+          ...(usernameOrEmail.includes('@') ? { email: usernameOrEmail } : {}),
+          password,
+          device_name: deviceInfo.device_name,
+          device_type: deviceInfo.device_type,
+          ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+        },
+        { signal: operation.signal }
+      )
 
-      return await resolveAuthFlowResponse(response)
+      return await resolveAuthFlowResponse(response, operation)
     } catch (err) {
+      if (!operation.isCurrent()) return cancelledAuthResult()
       const errorResult = mapApiError(err)
       error.value = errorResult.error
       return errorResult
     } finally {
-      isLoading.value = false
+      operation.dispose()
     }
   }
 

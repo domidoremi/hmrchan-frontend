@@ -413,7 +413,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'LoginPage' })
 
-import { computed, onMounted, onBeforeUnmount, ref, watch, useTemplateRef } from 'vue'
+import { computed, onMounted, ref, watch, useTemplateRef } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { CircleAlert, Eye, EyeOff, LoaderCircle } from '@lucide/vue'
@@ -428,7 +428,6 @@ import {
   prepareGoogleAuthHandoff,
   resolveGoogleAuthSecurityError,
   type GooglePopupMessage,
-  type GooglePopupState,
 } from '@/services/googleAuthService'
 import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
@@ -450,6 +449,8 @@ import IconGoogle from '@/components/icons/IconGoogle.vue'
 import * as loginModel from './login/loginPageModel'
 import { useLoginPasskeyAttempt, type PasskeyKind } from './login/useLoginPasskeyAttempt'
 
+import { useAuthEntryAttempt, isCancelledAuthResult } from '@/composables/useAuthEntryAttempt'
+import { useGooglePopupState } from '@/composables/useGooglePopupState'
 const GOOGLE_AUTH_ENABLED =
   import.meta.env.MODE === 'test' || import.meta.env['VITEST'] === 'true'
     ? true
@@ -468,7 +469,10 @@ const {
   cancel: cancelPasskeyAttempt,
   stopConditional: stopConditionalPasskeyAutofill,
 } = useLoginPasskeyAttempt()
-const isLoading = computed(() => storeLoading.value || passkeyBusy.value)
+const formRequests = useAuthEntryAttempt()
+const isLoading = computed(
+  () => storeLoading.value || passkeyBusy.value || formRequests.busy.value || googleBusy.value
+)
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 
 const loginIdentifier = ref('')
@@ -492,16 +496,6 @@ const mfaMessage = ref('')
 const mfaError = ref('')
 
 const nextRedirectTarget = ref('/')
-const googlePopupState = ref<GooglePopupState>('idle')
-const googlePopupErrorKey = ref('')
-const pendingGoogleHandoffCode = ref('')
-const googleClientChallengeSiteKey = ref('')
-const googleClientChallengeError = ref('')
-const googleClientChallengeDetail = ref('')
-const isGoogleClientChallengeSubmitting = ref(false)
-let googlePopupDispose: (() => void) | null = null
-let activeGooglePopupWindow: Window | null = null
-let googlePopupFlowToken = 0
 
 const restoreIdentifier = ref('')
 const restorePassword = ref('')
@@ -520,11 +514,28 @@ type TurnstileWidgetHandle = {
 
 const credentialsTurnstileRef = useTemplateRef<TurnstileWidgetHandle>('credentialsTurnstileRef')
 const googleClientChallengeRef = useTemplateRef<TurnstileWidgetHandle>('googleClientChallengeRef')
+const {
+  googlePopupState,
+  googlePopupErrorKey,
+  pendingGoogleHandoffCode,
+  googleClientChallengeSiteKey,
+  googleClientChallengeError,
+  googleClientChallengeDetail,
+  googleClientChallengeStatus,
+  googleBusy,
+  resetGoogleClientChallengeState,
+  setGooglePopupStatus,
+  clearGooglePopupListener,
+  resetGooglePopupState,
+  currentGoogleAttempt,
+  beginGoogleChallenge,
+  finishGoogleChallenge,
+  listenForGooglePopup,
+} = useGooglePopupState(googleClientChallengeRef, () => route.query)
 const riskTurnstileRef = useTemplateRef<TurnstileWidgetHandle>('riskTurnstileRef')
 const credentialsTurnstileToken = ref<string | null>(null)
 const credentialsTurnstileIssuedAt = ref<number | null>(null)
 const credentialsTurnstileStatus = ref<TurnstileWidgetStatus>('idle')
-const googleClientChallengeStatus = ref<TurnstileWidgetStatus>('idle')
 const riskTurnstileStatus = ref<TurnstileWidgetStatus>('idle')
 const riskTurnstileToken = ref<string | null>(null)
 const riskTurnstileIssuedAt = ref<number | null>(null)
@@ -639,57 +650,6 @@ function clearInlineErrors() {
   mfaError.value = ''
 }
 
-function resetGoogleClientChallengeState() {
-  pendingGoogleHandoffCode.value = ''
-  googleClientChallengeSiteKey.value = ''
-  googleClientChallengeError.value = ''
-  googleClientChallengeDetail.value = ''
-  isGoogleClientChallengeSubmitting.value = false
-  googleClientChallengeStatus.value = 'idle'
-  googleClientChallengeRef.value?.reset?.()
-}
-
-function setGooglePopupStatus(state: GooglePopupState, errorKey = '') {
-  googlePopupState.value = state
-  googlePopupErrorKey.value = errorKey
-}
-
-function closeActiveGooglePopupWindow() {
-  const popup = activeGooglePopupWindow
-  activeGooglePopupWindow = null
-
-  if (!popup) return
-
-  try {
-    if (!popup.closed) {
-      popup.close()
-    }
-  } catch {
-    /* noop */
-  }
-}
-
-function clearGooglePopupListener(options: { closePopup?: boolean; invalidate?: boolean } = {}) {
-  if (options.invalidate !== false) {
-    googlePopupFlowToken += 1
-  }
-  if (googlePopupDispose) {
-    googlePopupDispose()
-    googlePopupDispose = null
-  }
-  if (options.closePopup) {
-    closeActiveGooglePopupWindow()
-    return
-  }
-  activeGooglePopupWindow = null
-}
-
-function resetGooglePopupState() {
-  clearGooglePopupListener()
-  setGooglePopupStatus('idle')
-  resetGoogleClientChallengeState()
-}
-
 function getPrimaryFallbackRedirect(): string {
   return resolveAuthRedirectTarget(nextRedirectTarget.value, redirectTo.value)
 }
@@ -711,6 +671,9 @@ function returnToCredentials() {
 }
 
 function handleBack() {
+  formRequests.cancel()
+  resetGooglePopupState()
+  cancelPasskeyAttempt()
   switch (
     loginModel.resolveLoginBackNavigationIntent({
       step: step.value,
@@ -795,89 +758,77 @@ async function applyAuthFlowResult(result: AuthFlowResult) {
 
 async function handleCredentialsSubmit() {
   if (isLoading.value) return
-
   stopConditionalPasskeyAutofill()
   clearInlineErrors()
   resetGooglePopupState()
-
   const validation = loginModel.validateLoginCredentials({
     identifier: loginIdentifier.value,
     password: loginPassword.value,
   })
-
   if (!validation.valid) {
     credentialsError.value = t(validation.messageKey)
     return
   }
-
-  if (
-    showCredentialsTurnstile.value &&
-    !loginModel.isTurnstileTokenFresh({
-      token: credentialsTurnstileToken.value,
-      issuedAt: credentialsTurnstileIssuedAt.value,
-      enabled: turnstileEnabled.value,
-    })
-  ) {
-    const token = await executeTurnstileChallenge(credentialsTurnstileRef.value, (nextToken) => {
-      credentialsTurnstileToken.value = nextToken
-      credentialsTurnstileIssuedAt.value = Date.now()
-    })
-    if (!token) {
-      credentialsError.value = t('auth.error.turnstileRequired')
-      return
-    }
-  }
-
   nextRedirectTarget.value = redirectTo.value
-
-  const result = await authStore.login(
-    validation.trimmedIdentifier,
-    loginPassword.value,
-    credentialsTurnstileToken.value || undefined
-  )
-  if (turnstileEnabled.value) {
-    resetCredentialsTurnstile()
-  }
-  await applyAuthFlowResult(result)
+  await submitLoginForm('credentials', validation.trimmedIdentifier, loginPassword.value)
 }
 
 async function handleRiskVerificationSubmit() {
   if (isLoading.value) return
   clearInlineErrors()
   const code = loginModel.normalizeRiskVerificationCode(riskVerificationCode.value)
-
   if (!code) {
     riskError.value = t('auth.error.codeRequired')
     return
   }
+  await submitLoginForm('risk', riskPendingToken.value, code)
+}
 
-  if (
-    turnstileEnabled.value &&
-    !loginModel.isTurnstileTokenFresh({
-      token: riskTurnstileToken.value,
-      issuedAt: riskTurnstileIssuedAt.value,
-      enabled: turnstileEnabled.value,
-    })
-  ) {
-    const token = await executeTurnstileChallenge(riskTurnstileRef.value, (nextToken) => {
-      riskTurnstileToken.value = nextToken
-      riskTurnstileIssuedAt.value = Date.now()
-    })
-    if (!token) {
-      riskError.value = t('auth.error.turnstileRequired')
-      return
+async function submitLoginForm(kind: 'credentials' | 'risk', identifier: string, secret: string) {
+  const attempt = formRequests.begin()
+  if (!attempt) return
+  const risk = kind === 'risk'
+  const challengeToken = risk ? riskTurnstileToken : credentialsTurnstileToken
+  const issuedAt = risk ? riskTurnstileIssuedAt : credentialsTurnstileIssuedAt
+  const fieldError = risk ? riskError : credentialsError
+  try {
+    if (
+      (risk ? turnstileEnabled.value : showCredentialsTurnstile.value) &&
+      !loginModel.isTurnstileTokenFresh({
+        token: challengeToken.value,
+        issuedAt: issuedAt.value,
+        enabled: turnstileEnabled.value,
+      })
+    ) {
+      const token = await executeTurnstileChallenge(
+        risk ? riskTurnstileRef.value : credentialsTurnstileRef.value
+      )
+      if (!attempt.isCurrent()) return
+      if (!token) {
+        fieldError.value = t('auth.error.turnstileRequired')
+        return
+      }
+      challengeToken.value = token
+      issuedAt.value = Date.now()
     }
+    attempt.handoffToStore()
+    const options = { signal: attempt.signal }
+    const result = risk
+      ? await authStore.verifyRiskLogin(
+          identifier,
+          secret,
+          challengeToken.value || undefined,
+          options
+        )
+      : await authStore.login(identifier, secret, challengeToken.value || undefined, options)
+    if (!attempt.isCurrent() || isCancelledAuthResult(result)) return
+    if (turnstileEnabled.value) (risk ? resetRiskTurnstile : resetCredentialsTurnstile)()
+    await applyAuthFlowResult(result)
+  } catch (error) {
+    if (attempt.isCurrent()) fieldError.value = t(getTurnstileErrorMessageKey(error))
+  } finally {
+    attempt.dispose()
   }
-
-  const result = await authStore.verifyRiskLogin(
-    riskPendingToken.value,
-    code,
-    riskTurnstileToken.value || undefined
-  )
-  if (turnstileEnabled.value) {
-    resetRiskTurnstile()
-  }
-  await applyAuthFlowResult(result)
 }
 
 async function handleRiskPasskeyContinue() {
@@ -889,6 +840,8 @@ async function handleMfaResolved(result: AuthFlowResult) {
 }
 
 async function handleGooglePopupResult(message: GooglePopupMessage) {
+  const attempt = currentGoogleAttempt()
+  if (!attempt) return
   if (message.status === 'success' && message.handoffCode) {
     nextRedirectTarget.value = resolveAuthRedirectTarget(
       message.redirectTo,
@@ -900,8 +853,10 @@ async function handleGooglePopupResult(message: GooglePopupMessage) {
 
     const handoffPreparation = await prepareGoogleAuthHandoff(
       message.handoffCode,
-      turnstileSiteKey.value.trim()
+      turnstileSiteKey.value.trim(),
+      { signal: attempt.signal }
     )
+    if (!attempt.isCurrent()) return
 
     if (handoffPreparation.status === 'challenge-required') {
       googleClientChallengeSiteKey.value = handoffPreparation.siteKey
@@ -916,7 +871,16 @@ async function handleGooglePopupResult(message: GooglePopupMessage) {
       return
     }
 
-    const result = await authStore.completeGoogleAuth(handoffPreparation.handoffCode)
+    attempt.handoffToStore()
+    const result = await authStore.completeGoogleAuth(handoffPreparation.handoffCode, {
+      signal: attempt.signal,
+    })
+    if (!attempt.isCurrent()) return
+    if (isCancelledAuthResult(result)) {
+      resetGooglePopupState()
+      return
+    }
+    if (result.status === 'error') attempt.observeSession()
     await applyAuthFlowResult(result)
     return
   }
@@ -936,22 +900,32 @@ function handleGoogleClientChallengeExpire() {
 }
 
 async function handleGoogleClientChallengeVerify(token: string) {
-  if (isGoogleClientChallengeSubmitting.value) return
-
-  isGoogleClientChallengeSubmitting.value = true
-  googleClientChallengeError.value = ''
-  googleClientChallengeDetail.value = ''
+  if (isLoading.value) return
+  const attempt = beginGoogleChallenge()
+  if (!attempt) return
+  const handoff = pendingGoogleHandoffCode.value.trim()
 
   try {
-    await clientSecurityService.verify(token, { diagnosticsContext: 'google-auth' })
+    await clientSecurityService.verify(token, {
+      diagnosticsContext: 'google-auth',
+      signal: attempt.signal,
+    })
+    if (!attempt.isCurrent()) return
 
-    if (!pendingGoogleHandoffCode.value.trim()) {
+    if (!handoff) {
       setGooglePopupStatus('error', 'auth.error.callbackMissingHandoffCode')
       credentialsError.value = t('auth.error.callbackMissingHandoffCode')
       return
     }
 
-    const result = await authStore.completeGoogleAuth(pendingGoogleHandoffCode.value.trim())
+    attempt.handoffToStore()
+    const result = await authStore.completeGoogleAuth(handoff, { signal: attempt.signal })
+    if (!attempt.isCurrent()) return
+    if (isCancelledAuthResult(result)) {
+      resetGooglePopupState()
+      return
+    }
+    if (result.status === 'error') attempt.observeSession()
     if (result.status === 'error') {
       if (loginModel.isExpiredGoogleHandoffResult(result)) {
         resetGoogleClientChallengeState()
@@ -965,16 +939,19 @@ async function handleGoogleClientChallengeVerify(token: string) {
     }
     await applyAuthFlowResult(result)
   } catch (error) {
+    if (!attempt.isCurrent()) return
     const resolvedError = resolveGoogleAuthSecurityError(error)
     googleClientChallengeError.value = t(resolvedError.messageKey)
     googleClientChallengeDetail.value = resolvedError.detail
     googleClientChallengeRef.value?.reset?.()
   } finally {
-    isGoogleClientChallengeSubmitting.value = false
+    finishGoogleChallenge(attempt)
   }
 }
 
 async function continueGoogleInCurrentPage(options: { closePopup?: boolean } = {}) {
+  formRequests.cancel()
+  cancelPasskeyAttempt()
   if (!GOOGLE_AUTH_ENABLED) {
     credentialsError.value = t('auth.error.googleLoginFailed')
     return
@@ -1016,21 +993,7 @@ async function handleGoogleContinue() {
     return
   }
 
-  const flowToken = ++googlePopupFlowToken
-  activeGooglePopupWindow = popupResult.popup
-  googlePopupDispose = popupResult.dispose
-  setGooglePopupStatus('waiting')
-
-  void popupResult.promise.then(async (message) => {
-    if (flowToken !== googlePopupFlowToken) {
-      return
-    }
-
-    googlePopupDispose = null
-    activeGooglePopupWindow = null
-    setGooglePopupStatus('handling')
-    await handleGooglePopupResult(message)
-  })
+  listenForGooglePopup(popupResult, handleGooglePopupResult)
 }
 
 async function handlePasswordlessContinue() {
@@ -1128,7 +1091,15 @@ async function initializeConditionalPasskeyAutofill() {
   await runPasskeyAttempt('conditional')
 }
 
-watch([step, riskPendingToken], cancelPasskeyAttempt, { flush: 'sync' })
+watch(
+  [step, riskPendingToken],
+  () => {
+    cancelPasskeyAttempt()
+    formRequests.cancel()
+  },
+  { flush: 'sync' }
+)
+watch(() => route.query, formRequests.cancel, { deep: true, flush: 'sync' })
 watch(() => route.query, cancelPasskeyAttempt, { deep: true, flush: 'sync' })
 
 async function maybePromptPasskeyEnrollment() {
@@ -1216,10 +1187,6 @@ onMounted(() => {
   void import('@/views/RegisterPage.vue').catch(() => {})
   void import('@/views/ForgotPasswordPage.vue').catch(() => {})
   void initializeConditionalPasskeyAutofill()
-})
-
-onBeforeUnmount(() => {
-  clearGooglePopupListener({ closePopup: true })
 })
 </script>
 
