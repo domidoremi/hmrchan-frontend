@@ -423,12 +423,15 @@ describe('Auth entry pages', () => {
     await wrapper.find('form.auth-form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(testState.clientSecurity.verify).toHaveBeenCalledWith('turnstile-token')
+    expect(testState.clientSecurity.verify).toHaveBeenCalledWith('turnstile-token', {
+      signal: expect.any(AbortSignal),
+    })
     expect(testState.api.authService.requestPasswordReset).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 'tester@example.com',
         turnstile_token: 'turnstile-token',
-      })
+      }),
+      { signal: expect.any(AbortSignal) }
     )
   })
 

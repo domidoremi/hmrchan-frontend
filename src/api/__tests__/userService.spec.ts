@@ -68,6 +68,23 @@ describe('normalizeAvatarUrl', () => {
     )
   })
 
+  it('preserves default account-restoration request policies', async () => {
+    const data = { identifier: 'fixture', password: 'fixture-password' }
+
+    await userService.restoreAccount(data)
+
+    expect(apiClient.post).toHaveBeenCalledExactlyOnceWith('/account/restore', data, {})
+  })
+
+  it('forwards account-restoration cancellation and caller-owned feedback', async () => {
+    const data = { identifier: 'fixture', password: 'fixture-password' }
+    const options = { signal: new AbortController().signal, skipErrorToast: true }
+
+    await userService.restoreAccount(data, options)
+
+    expect(apiClient.post).toHaveBeenCalledExactlyOnceWith('/account/restore', data, options)
+  })
+
   it('starts asynchronous account exports with a verification header', async () => {
     vi.mocked(ensureVerificationToken).mockResolvedValueOnce('export-token')
     vi.mocked(apiClient.post).mockResolvedValueOnce(undefined)

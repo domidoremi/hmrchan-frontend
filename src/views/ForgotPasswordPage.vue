@@ -13,14 +13,20 @@
             <Mail :size="24" />
           </div>
           <div class="action-group">
-            <Button variant="ghost" full-width :disabled="resendCooldown > 0" @click="handleSubmit">
+            <Button
+              variant="ghost"
+              full-width
+              :loading="isLoading"
+              :disabled="resendCooldown > 0"
+              @click="handleSubmit"
+            >
               {{
                 resendCooldown > 0
                   ? $t('email.resendCooldown', { seconds: resendCooldown })
                   : $t('email.resend')
               }}
             </Button>
-            <RouterLink to="/login" class="auth-link">
+            <RouterLink to="/login" class="auth-link" @click="requests.cancel">
               {{ $t('email.backToLogin') }}
             </RouterLink>
           </div>
@@ -97,7 +103,7 @@
       <template #footer>
         <p class="auth-footer">
           {{ $t('email.rememberPassword') }}
-          <RouterLink to="/login">{{ $t('nav.login') }}</RouterLink>
+          <RouterLink to="/login" @click="requests.cancel">{{ $t('nav.login') }}</RouterLink>
         </p>
       </template>
     </AuthEntryShell>
@@ -107,7 +113,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ForgotPasswordPage' })
 
-import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, useTemplateRef } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Mail } from '@lucide/vue'
@@ -122,13 +128,15 @@ import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
 import { isTurnstileBusy, type TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
+import { useAuthEntryAttempt } from '@/composables/useAuthEntryAttempt'
 
 const { t } = useI18n()
 const toastStore = useToastStore()
 const router = useRouter()
 
 const email = ref('')
-const isLoading = ref(false)
+const requests = useAuthEntryAttempt()
+const isLoading = requests.busy
 const emailSent = ref(false)
 const resendCooldown = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
@@ -175,14 +183,30 @@ onMounted(() => {
   void import('@/views/RegisterPage.vue').catch(() => {})
 })
 
-onUnmounted(() => {
+function stopCooldown() {
   if (cooldownTimer) {
     clearInterval(cooldownTimer)
     cooldownTimer = null
   }
-})
+  resendCooldown.value = 0
+}
+onUnmounted(stopCooldown)
+
+watch(
+  email,
+  () => {
+    requests.cancel()
+    stopCooldown()
+    emailSent.value = false
+    turnstileToken.value = null
+    turnstileStatus.value = 'idle'
+    turnstileRef.value?.reset()
+  },
+  { flush: 'sync' }
+)
 
 function handleBack() {
+  requests.cancel()
   if (window.history.length > 1) {
     router.back()
     return
@@ -192,38 +216,38 @@ function handleBack() {
 }
 
 async function handleSubmit() {
+  if (isLoading.value || resendCooldown.value > 0) return
   if (!email.value) {
     toastStore.warning(t('auth.emailRequired'))
     return
   }
 
-  if (showTurnstileChallenge.value && !turnstileToken.value) {
-    const token = await turnstileRef.value?.execute?.()
-    if (token) {
-      turnstileToken.value = token
-    } else {
-      toastStore.warning(t('auth.error.turnstileRequired'))
-      return
-    }
-  }
-
-  isLoading.value = true
-
+  const submittedEmail = email.value
+  const attempt = requests.begin()
+  if (!attempt) return
   try {
-    if (turnstileToken.value) {
-      await clientSecurityService.verify(turnstileToken.value)
+    if (showTurnstileChallenge.value && !turnstileToken.value) {
+      const token = await turnstileRef.value?.execute?.()
+      if (!attempt.isCurrent()) return
+      if (!token) {
+        toastStore.warning(t('auth.error.turnstileRequired'))
+        return
+      }
+      turnstileToken.value = token
     }
-
-    await authService.requestPasswordReset({
-      email: email.value,
-      ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
-    })
-    maskedEmail.value = maskEmail(email.value)
-    emailSent.value = true
-    requiresTurnstileChallenge.value = false
-    turnstileToken.value = null
-    startCooldown()
+    const token = turnstileToken.value
+    if (token) {
+      await clientSecurityService.verify(token, { signal: attempt.signal })
+    }
+    if (!attempt.isCurrent()) return
+    await authService.requestPasswordReset(
+      { email: submittedEmail, ...(token ? { turnstile_token: token } : {}) },
+      { signal: attempt.signal }
+    )
+    if (!attempt.isCurrent()) return
+    markEmailSent(submittedEmail)
   } catch (error) {
+    if (!attempt.isCurrent()) return
     if (error instanceof ApiError) {
       if (isTurnstileRequiredError(error) && turnstileEnabled.value) {
         requiresTurnstileChallenge.value = true
@@ -234,11 +258,7 @@ async function handleSubmit() {
       }
 
       if (error.status === 404 || error.status === 422) {
-        maskedEmail.value = maskEmail(email.value)
-        emailSent.value = true
-        requiresTurnstileChallenge.value = false
-        turnstileToken.value = null
-        startCooldown()
+        markEmailSent(submittedEmail)
       } else {
         toastStore.error(error.message)
       }
@@ -249,8 +269,16 @@ async function handleSubmit() {
     turnstileToken.value = null
     turnstileRef.value?.reset()
   } finally {
-    isLoading.value = false
+    attempt.dispose()
   }
+}
+
+function markEmailSent(submittedEmail: string) {
+  maskedEmail.value = maskEmail(submittedEmail)
+  emailSent.value = true
+  requiresTurnstileChallenge.value = false
+  turnstileToken.value = null
+  startCooldown()
 }
 
 function handleTurnstileVerify(token: string) {

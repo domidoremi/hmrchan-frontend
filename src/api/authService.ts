@@ -415,8 +415,12 @@ export const authService = {
     )
   },
 
-  async requestPasswordReset(data: RequestPasswordResetRequest): Promise<{ message: string }> {
+  async requestPasswordReset(
+    data: RequestPasswordResetRequest,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<{ message: string }> {
     return apiClient.post('/email/request-password-reset', data, {
+      ...options,
       skipAuth: true,
       skipErrorToast: true,
       skipChallengeRetry: true,
