@@ -237,9 +237,14 @@ export async function isConditionalMediationAvailable(): Promise<boolean> {
 }
 
 export async function createWebAuthnCredential(
-  options: PublicKeyCredentialCreationOptionsJSON
+  options: PublicKeyCredentialCreationOptionsJSON,
+  requestOptions: { signal?: AbortSignal } = {}
 ): Promise<Credential | null> {
-  return navigator.credentials.create(mapCreationOptions(options))
+  requestOptions.signal?.throwIfAborted()
+  return navigator.credentials.create({
+    ...mapCreationOptions(options),
+    ...(requestOptions.signal ? { signal: requestOptions.signal } : {}),
+  })
 }
 
 export async function getWebAuthnAssertion(

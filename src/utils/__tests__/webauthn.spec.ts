@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { getWebAuthnAssertion, isConditionalMediationAvailable } from '../webauthn'
+import {
+  createWebAuthnCredential,
+  getWebAuthnAssertion,
+  isConditionalMediationAvailable,
+} from '../webauthn'
 
 function installPublicKeyCredential(overrides: Record<string, unknown> = {}) {
   const credentialConstructor = {
@@ -28,6 +32,40 @@ describe('webauthn utilities', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
+
+  it.each([true, false])(
+    'passes creation cancellation through the native parser=%s',
+    async (native) => {
+      const create = vi.fn(async () => null)
+      Object.defineProperty(navigator, 'credentials', { value: { create }, configurable: true })
+      installPublicKeyCredential({
+        parseCreationOptionsFromJSON: native ? vi.fn((options: unknown) => options) : undefined,
+      })
+      const controller = new AbortController()
+      const options = {
+        challenge: 'AQI',
+        rp: { name: 'Site' },
+        user: { id: 'AwQ', name: 'user', displayName: 'User' },
+        pubKeyCredParams: [{ type: 'public-key' as const, alg: -7 }],
+      }
+      await createWebAuthnCredential(options, { signal: controller.signal })
+      expect(create).toHaveBeenCalledExactlyOnceWith({
+        signal: controller.signal,
+        publicKey: native
+          ? options
+          : {
+              ...options,
+              challenge: new Uint8Array([1, 2]),
+              user: { ...options.user, id: new Uint8Array([3, 4]) },
+            },
+      })
+      controller.abort()
+      await expect(
+        createWebAuthnCredential(options, { signal: controller.signal })
+      ).rejects.toMatchObject({ name: 'AbortError' })
+      expect(create).toHaveBeenCalledOnce()
+    }
+  )
 
   it('decodes credential IDs and challenges without native JSON parsers', async () => {
     const get = installCredentialsGet()

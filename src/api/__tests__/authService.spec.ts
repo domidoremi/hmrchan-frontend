@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const apiClientPost = vi.hoisted(() => vi.fn())
+const apiClientGet = vi.hoisted(() => vi.fn())
 
 vi.mock('../client', async () => {
   const actual = await vi.importActual<typeof import('../client')>('../client')
@@ -8,6 +9,7 @@ vi.mock('../client', async () => {
     ...actual,
     apiClient: {
       post: apiClientPost,
+      get: apiClientGet,
     },
   }
 })
@@ -30,11 +32,46 @@ describe('authService', () => {
   })
   beforeEach(() => {
     apiClientPost.mockReset()
+    apiClientGet.mockReset()
     vi.useRealTimers()
   })
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('forwards recovery cancellation with the original payload and anonymous security policy', async () => {
+    const controller = new AbortController()
+    const config = { signal: controller.signal, skipAuth: true, skipErrorToast: true }
+    const credential = { id: 'credential' } as never
+    await authService.getPasskeyRecoveryStatus('recovery', { signal: controller.signal })
+    await authService.beginRecoveryPasskeyRegistration(
+      { recovery_id: 'recovery', device_name: 'Device' },
+      { signal: controller.signal }
+    )
+    await authService.finishRecoveryPasskeyRegistration(
+      'recovery',
+      'ceremony',
+      credential,
+      'Device',
+      { signal: controller.signal }
+    )
+    expect(apiClientGet).toHaveBeenCalledExactlyOnceWith(
+      '/auth/passkeys/recovery/recovery/status',
+      config
+    )
+    expect(apiClientPost.mock.calls).toEqual([
+      [
+        '/auth/passkeys/recovery/register/options',
+        { recovery_id: 'recovery', device_name: 'Device' },
+        config,
+      ],
+      [
+        '/auth/passkeys/recovery/register/verify',
+        { recovery_id: 'recovery', ceremony_id: 'ceremony', credential, device_name: 'Device' },
+        config,
+      ],
+    ])
   })
 
   it('attaches security warnings to authenticated BFF summaries without access tokens', async () => {

@@ -634,20 +634,26 @@ export const authService = {
     })
   },
 
-  async getPasskeyRecoveryStatus(recoveryId: string): Promise<PasskeyRecoveryStatus> {
+  async getPasskeyRecoveryStatus(
+    recoveryId: string,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<PasskeyRecoveryStatus> {
     return apiClient.get<PasskeyRecoveryStatus>(`/auth/passkeys/recovery/${recoveryId}/status`, {
+      ...options,
       skipAuth: true,
       skipErrorToast: true,
     })
   },
 
   async beginRecoveryPasskeyRegistration(
-    data: RecoveryPasskeyRegistrationRequest
+    data: RecoveryPasskeyRegistrationRequest,
+    options: { signal?: AbortSignal } = {}
   ): Promise<RecoveryPasskeyRegistrationOptionsResponse> {
     return apiClient.post<RecoveryPasskeyRegistrationOptionsResponse>(
       '/auth/passkeys/recovery/register/options',
       data,
       {
+        ...options,
         skipAuth: true,
         skipErrorToast: true,
       }
@@ -658,7 +664,8 @@ export const authService = {
     recoveryId: string,
     ceremonyId: string,
     credential: SerializedPublicKeyCredential,
-    deviceName?: string
+    deviceName?: string,
+    options: { signal?: AbortSignal } = {}
   ): Promise<{ success?: boolean; message?: string }> {
     return apiClient.post(
       '/auth/passkeys/recovery/register/verify',
@@ -669,6 +676,7 @@ export const authService = {
         ...(deviceName ? { device_name: deviceName } : {}),
       },
       {
+        ...options,
         skipAuth: true,
         skipErrorToast: true,
       }
