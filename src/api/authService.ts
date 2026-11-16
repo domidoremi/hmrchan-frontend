@@ -545,7 +545,8 @@ export const authService = {
   },
 
   async beginRiskWebAuthnLogin(
-    pendingToken: string
+    pendingToken: string,
+    options: { signal?: AbortSignal } = {}
   ): Promise<WebAuthnAuthenticationOptionsResponse> {
     return requestPasskeyOptions<WebAuthnAuthenticationOptionsResponse>(
       'risk-login',
@@ -553,7 +554,8 @@ export const authService = {
       {
         pending_token: pendingToken,
       },
-      pendingToken
+      pendingToken,
+      options
     )
   },
 
@@ -562,7 +564,8 @@ export const authService = {
     ceremonyId: string,
     credential: SerializedPublicKeyCredential,
     deviceName?: string,
-    deviceType?: string
+    deviceType?: string,
+    options: { signal?: AbortSignal } = {}
   ): Promise<AuthResponse | MfaRequiredResponse> {
     return apiClient.post<AuthResponse | MfaRequiredResponse>(
       '/auth/risk-login/webauthn/verify',
@@ -574,6 +577,7 @@ export const authService = {
         ...(deviceType ? { device_type: deviceType } : {}),
       },
       {
+        ...options,
         skipAuth: true,
         skipErrorToast: true,
       }
@@ -597,7 +601,8 @@ export const authService = {
     ceremonyId: string,
     credential: SerializedPublicKeyCredential,
     deviceName?: string,
-    deviceType?: string
+    deviceType?: string,
+    options: { signal?: AbortSignal } = {}
   ): Promise<AuthResponse> {
     return apiClient.post<AuthResponse>(
       '/auth/passkeys/login/verify',
@@ -608,6 +613,7 @@ export const authService = {
         ...(deviceType ? { device_type: deviceType } : {}),
       },
       {
+        ...options,
         skipAuth: true,
         skipErrorToast: true,
       }

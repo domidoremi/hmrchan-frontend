@@ -413,7 +413,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'LoginPage' })
 
-import { computed, onMounted, onUnmounted, ref, watch, useTemplateRef } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch, useTemplateRef } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { CircleAlert, Eye, EyeOff, LoaderCircle } from '@lucide/vue'
@@ -448,6 +448,7 @@ import { AuthDivider, AuthEntryShell, AuthProviderButton } from '@/components/au
 import { AuthMfaStep, AuthTurnstileStatus } from '@/components/auth/security'
 import IconGoogle from '@/components/icons/IconGoogle.vue'
 import * as loginModel from './login/loginPageModel'
+import { useLoginPasskeyAttempt, type PasskeyKind } from './login/useLoginPasskeyAttempt'
 
 const GOOGLE_AUTH_ENABLED =
   import.meta.env.MODE === 'test' || import.meta.env['VITEST'] === 'true'
@@ -460,7 +461,14 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { t } = useI18n()
 
-const { isAuthenticated, isLoading } = storeToRefs(authStore)
+const { isAuthenticated, isLoading: storeLoading } = storeToRefs(authStore)
+const {
+  busy: passkeyBusy,
+  begin: beginPasskeyAttempt,
+  cancel: cancelPasskeyAttempt,
+  stopConditional: stopConditionalPasskeyAutofill,
+} = useLoginPasskeyAttempt()
+const isLoading = computed(() => storeLoading.value || passkeyBusy.value)
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 
 const loginIdentifier = ref('')
@@ -502,7 +510,6 @@ const isRestoringAccount = ref(false)
 const showRestorePanel = ref(false)
 const webauthnSupported = isWebAuthnSupported()
 const conditionalPasskeyAvailable = ref(false)
-let conditionalPasskeyAbortController: AbortController | null = null
 let conditionalPasskeyStarted = false
 const PASSKEY_RECOMMENDATION_STORAGE_KEY = 'hmrchan:passkey-recommendation-dismissed:v1'
 
@@ -688,6 +695,7 @@ function getPrimaryFallbackRedirect(): string {
 }
 
 function returnToCredentials() {
+  cancelPasskeyAttempt()
   step.value = 'credentials'
   riskPendingToken.value = ''
   riskVerificationCode.value = ''
@@ -834,6 +842,7 @@ async function handleCredentialsSubmit() {
 }
 
 async function handleRiskVerificationSubmit() {
+  if (isLoading.value) return
   clearInlineErrors()
   const code = loginModel.normalizeRiskVerificationCode(riskVerificationCode.value)
 
@@ -872,33 +881,7 @@ async function handleRiskVerificationSubmit() {
 }
 
 async function handleRiskPasskeyContinue() {
-  if (!webauthnSupported) {
-    riskError.value = t('auth.error.webauthnUnsupported')
-    return
-  }
-
-  const optionsResult = await authStore.beginRiskWebAuthnLogin(riskPendingToken.value)
-  if (optionsResult.status === 'error') {
-    riskError.value = t(optionsResult.error)
-    return
-  }
-
-  try {
-    const assertion = await getWebAuthnAssertion(optionsResult.options)
-    if (!(assertion instanceof PublicKeyCredential)) {
-      riskError.value = t('auth.error.webauthnLoginFailed')
-      return
-    }
-
-    const result = await authStore.finishRiskWebAuthnLogin(
-      riskPendingToken.value,
-      optionsResult.ceremonyId,
-      serializePublicKeyCredential(assertion)
-    )
-    await applyAuthFlowResult(result)
-  } catch {
-    riskError.value = t('auth.error.webauthnLoginFailed')
-  }
+  await runPasskeyAttempt('risk')
 }
 
 async function handleMfaResolved(result: AuthFlowResult) {
@@ -1051,47 +1034,85 @@ async function handleGoogleContinue() {
 }
 
 async function handlePasswordlessContinue() {
-  if (!webauthnSupported) {
-    credentialsError.value = t('auth.error.webauthnUnsupported')
-    return
-  }
-
-  stopConditionalPasskeyAutofill()
-  clearInlineErrors()
-  resetGooglePopupState()
-
-  const optionsResult = await authStore.beginPasswordlessLogin(
-    loginIdentifier.value.trim() || undefined
-  )
-  if (optionsResult.status === 'error') {
-    credentialsError.value = t(optionsResult.error)
-    return
-  }
-
-  try {
-    const assertion = await getWebAuthnAssertion(optionsResult.options)
-    if (!(assertion instanceof PublicKeyCredential)) {
-      credentialsError.value = t('auth.error.webauthnLoginFailed')
-      return
-    }
-
-    const result = await authStore.finishPasswordlessLogin(
-      optionsResult.ceremonyId,
-      serializePublicKeyCredential(assertion)
-    )
-    await applyAuthFlowResult(result)
-  } catch {
-    credentialsError.value = t('auth.error.webauthnLoginFailed')
-  }
-}
-
-function stopConditionalPasskeyAutofill() {
-  conditionalPasskeyAbortController?.abort()
-  conditionalPasskeyAbortController = null
+  await runPasskeyAttempt('passwordless')
 }
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
+}
+
+async function runPasskeyAttempt(kind: PasskeyKind) {
+  if (isLoading.value) return
+  const targetError = kind === 'risk' ? riskError : credentialsError
+  if (!webauthnSupported) {
+    targetError.value = t('auth.error.webauthnUnsupported')
+    return
+  }
+
+  const attempt = beginPasskeyAttempt(kind)
+  if (!attempt) return
+  if (kind !== 'risk') nextRedirectTarget.value = redirectTo.value
+  const { isCurrent, signal } = attempt
+  const pendingToken = riskPendingToken.value
+  const identifier = loginIdentifier.value.trim() || undefined
+  if (kind !== 'conditional') {
+    clearInlineErrors()
+    resetGooglePopupState()
+  }
+
+  try {
+    if (kind === 'conditional') {
+      const available = await isConditionalMediationAvailable()
+      if (!isCurrent()) return
+      conditionalPasskeyAvailable.value = available
+      if (!available) return
+    }
+    const optionsResult =
+      kind === 'risk'
+        ? await authStore.beginRiskWebAuthnLogin(pendingToken, { signal })
+        : await authStore.beginPasswordlessLogin(kind === 'conditional' ? undefined : identifier, {
+            signal,
+            background: kind === 'conditional',
+          })
+    if (!isCurrent()) return
+    if (optionsResult.status === 'error') {
+      if (kind !== 'conditional' && optionsResult.code !== 'auth_flow_cancelled') {
+        targetError.value = t(optionsResult.error)
+      }
+      return
+    }
+
+    const assertion = await getWebAuthnAssertion(optionsResult.options, {
+      signal,
+      ...(kind === 'conditional' ? { conditional: true } : {}),
+    })
+    if (!isCurrent()) return
+    if (!(assertion instanceof PublicKeyCredential)) {
+      targetError.value = t('auth.error.webauthnLoginFailed')
+      return
+    }
+    if (storeLoading.value) return
+    passkeyBusy.value = true
+    // The store owns session transitions during response acceptance, including
+    // its own successful login. Page disposal still cancels the external signal.
+    attempt.handoffToStore()
+    const credential = serializePublicKeyCredential(assertion)
+    const result =
+      kind === 'risk'
+        ? await authStore.finishRiskWebAuthnLogin(
+            pendingToken,
+            optionsResult.ceremonyId,
+            credential,
+            { signal }
+          )
+        : await authStore.finishPasswordlessLogin(optionsResult.ceremonyId, credential, { signal })
+    if (!isCurrent() || (result.status === 'error' && result.code === 'auth_flow_cancelled')) return
+    await applyAuthFlowResult(result)
+  } catch (error) {
+    if (isCurrent() && !isAbortError(error)) targetError.value = t('auth.error.webauthnLoginFailed')
+  } finally {
+    attempt.dispose()
+  }
 }
 
 async function initializeConditionalPasskeyAutofill() {
@@ -1101,50 +1122,14 @@ async function initializeConditionalPasskeyAutofill() {
       webauthnSupported,
       isAuthenticated: isAuthenticated.value,
     })
-  ) {
+  )
     return
-  }
-
   conditionalPasskeyStarted = true
-  conditionalPasskeyAvailable.value = await isConditionalMediationAvailable()
-  if (!conditionalPasskeyAvailable.value) return
-  const abortController = new AbortController()
-  conditionalPasskeyAbortController = abortController
-
-  try {
-    const optionsResult = await authStore.beginPasswordlessLogin(undefined, {
-      background: true,
-      signal: abortController.signal,
-    })
-    if (optionsResult.status === 'error' || abortController.signal.aborted) {
-      return
-    }
-
-    const assertion = await getWebAuthnAssertion(optionsResult.options, {
-      conditional: true,
-      signal: abortController.signal,
-    })
-    if (!(assertion instanceof PublicKeyCredential) || abortController.signal.aborted) {
-      return
-    }
-
-    const result = await authStore.finishPasswordlessLogin(
-      optionsResult.ceremonyId,
-      serializePublicKeyCredential(assertion)
-    )
-    if (!abortController.signal.aborted) {
-      await applyAuthFlowResult(result)
-    }
-  } catch (error) {
-    if (!isAbortError(error)) {
-      credentialsError.value = t('auth.error.webauthnLoginFailed')
-    }
-  } finally {
-    if (conditionalPasskeyAbortController === abortController) {
-      conditionalPasskeyAbortController = null
-    }
-  }
+  await runPasskeyAttempt('conditional')
 }
+
+watch([step, riskPendingToken], cancelPasskeyAttempt, { flush: 'sync' })
+watch(() => route.query, cancelPasskeyAttempt, { deep: true, flush: 'sync' })
 
 async function maybePromptPasskeyEnrollment() {
   if (!webauthnSupported) return
@@ -1233,8 +1218,7 @@ onMounted(() => {
   void initializeConditionalPasskeyAutofill()
 })
 
-onUnmounted(() => {
-  stopConditionalPasskeyAutofill()
+onBeforeUnmount(() => {
   clearGooglePopupListener({ closePopup: true })
 })
 </script>

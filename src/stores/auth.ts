@@ -77,9 +77,9 @@ type WebAuthnLoginOptionsResult =
     }
   | AuthFlowErrorResult
 
-type MfaRequestOptions = { signal?: AbortSignal }
+type AuthRequestOptions = { signal?: AbortSignal }
 
-function cancelledMfaResult(): AuthFlowErrorResult {
+function cancelledAuthResult(): AuthFlowErrorResult {
   return { status: 'error', error: 'auth.error.loginFailed', code: 'auth_flow_cancelled' }
 }
 
@@ -329,20 +329,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  let activeMfaRequest: AbortController | null = null
+  let activeAuthRequest: AbortController | null = null
 
-  function startMfaRequest(externalSignal?: AbortSignal) {
+  function startAuthRequest(externalSignal?: AbortSignal, background = false) {
     const controller = new AbortController()
-    activeMfaRequest = controller
-    isLoading.value = true
-    error.value = null
+    if (!background) {
+      activeAuthRequest = controller
+      isLoading.value = true
+      error.value = null
+    }
     let stopSessionObservation = () => {}
     const cancel = () => {
       controller.abort()
       stopSessionObservation()
       externalSignal?.removeEventListener('abort', cancel)
-      if (activeMfaRequest === controller) {
-        activeMfaRequest = null
+      if (activeAuthRequest === controller) {
+        activeAuthRequest = null
         isLoading.value = false
       }
     }
@@ -350,7 +352,8 @@ export const useAuthStore = defineStore('auth', () => {
     stopSessionObservation = subscribeAuthSessionScope(cancel)
     return {
       signal: controller.signal,
-      isCurrent: () => activeMfaRequest === controller && !controller.signal.aborted,
+      isCurrent: () =>
+        (background || activeAuthRequest === controller) && !controller.signal.aborted,
       acceptResponse<T>(accept: () => T): T {
         // Establishing this session changes the scope synchronously. Observe later
         // transitions again while the accepted session hydrates its user details.
@@ -358,7 +361,7 @@ export const useAuthStore = defineStore('auth', () => {
         try {
           return accept()
         } finally {
-          if (activeMfaRequest === controller && !controller.signal.aborted) {
+          if (activeAuthRequest === controller && !controller.signal.aborted) {
             stopSessionObservation = subscribeAuthSessionScope(cancel)
           }
         }
@@ -366,8 +369,8 @@ export const useAuthStore = defineStore('auth', () => {
       dispose() {
         stopSessionObservation()
         externalSignal?.removeEventListener('abort', cancel)
-        if (activeMfaRequest === controller) {
-          activeMfaRequest = null
+        if (activeAuthRequest === controller) {
+          activeAuthRequest = null
           isLoading.value = false
         }
       },
@@ -377,12 +380,12 @@ export const useAuthStore = defineStore('auth', () => {
   async function completeMfaLogin(
     pendingMfaLoginToken: string,
     code: string,
-    options: MfaRequestOptions = {}
+    options: AuthRequestOptions = {}
   ): Promise<AuthFlowResult> {
-    if (options.signal?.aborted) return cancelledMfaResult()
+    if (options.signal?.aborted) return cancelledAuthResult()
     if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-    const operation = startMfaRequest(options.signal)
+    const operation = startAuthRequest(options.signal)
 
     try {
       const deviceInfo = getDeviceInfo()
@@ -394,10 +397,10 @@ export const useAuthStore = defineStore('auth', () => {
         { signal: operation.signal }
       )
 
-      if (!operation.isCurrent()) return cancelledMfaResult()
+      if (!operation.isCurrent()) return cancelledAuthResult()
       return await resolveAuthFlowResponse(response, operation)
     } catch (err) {
-      if (!operation.isCurrent()) return cancelledMfaResult()
+      if (!operation.isCurrent()) return cancelledAuthResult()
       const errorResult = mapApiError(err, {
         defaultError: 'auth.error.twoFactorInvalid',
         invalidStatusCodes: [400, 401, 403, 422],
@@ -411,18 +414,18 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function beginWebAuthnLogin(
     pendingMfaLoginToken: string,
-    options: MfaRequestOptions = {}
+    options: AuthRequestOptions = {}
   ): Promise<WebAuthnLoginOptionsResult> {
-    if (options.signal?.aborted) return cancelledMfaResult()
+    if (options.signal?.aborted) return cancelledAuthResult()
     if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-    const operation = startMfaRequest(options.signal)
+    const operation = startAuthRequest(options.signal)
 
     try {
       const response = await twoFactorService.beginWebAuthnLogin(pendingMfaLoginToken, {
         signal: operation.signal,
       })
-      if (!operation.isCurrent()) return cancelledMfaResult()
+      if (!operation.isCurrent()) return cancelledAuthResult()
       return {
         status: 'success',
         ceremonyId: response.ceremony_id,
@@ -431,7 +434,7 @@ export const useAuthStore = defineStore('auth', () => {
         ...(response.provider === undefined ? {} : { provider: response.provider }),
       }
     } catch (err) {
-      if (!operation.isCurrent()) return cancelledMfaResult()
+      if (!operation.isCurrent()) return cancelledAuthResult()
       const errorResult = mapApiError(err, {
         defaultError: 'auth.error.webauthnNotEnrolled',
         invalidStatusCodes: [400, 401, 403, 422],
@@ -447,12 +450,12 @@ export const useAuthStore = defineStore('auth', () => {
     pendingMfaLoginToken: string,
     ceremonyId: string,
     credential: SerializedPublicKeyCredential,
-    options: MfaRequestOptions = {}
+    options: AuthRequestOptions = {}
   ): Promise<AuthFlowResult> {
-    if (options.signal?.aborted) return cancelledMfaResult()
+    if (options.signal?.aborted) return cancelledAuthResult()
     if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-    const operation = startMfaRequest(options.signal)
+    const operation = startAuthRequest(options.signal)
 
     try {
       const deviceInfo = getDeviceInfo()
@@ -465,10 +468,10 @@ export const useAuthStore = defineStore('auth', () => {
         { signal: operation.signal }
       )
 
-      if (!operation.isCurrent()) return cancelledMfaResult()
+      if (!operation.isCurrent()) return cancelledAuthResult()
       return await resolveAuthFlowResponse(response, operation)
     } catch (err) {
-      if (!operation.isCurrent()) return cancelledMfaResult()
+      if (!operation.isCurrent()) return cancelledAuthResult()
       const errorResult = mapApiError(err, {
         defaultError: 'auth.error.webauthnLoginFailed',
       })
@@ -521,9 +524,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function resolveAuthFlowResponse(
     response: unknown,
-    operation?: ReturnType<typeof startMfaRequest>
+    operation?: ReturnType<typeof startAuthRequest>
   ): Promise<AuthFlowResult> {
-    if (operation && !operation.isCurrent()) return cancelledMfaResult()
+    if (operation && !operation.isCurrent()) return cancelledAuthResult()
     if (isRiskVerificationPendingResponse(response)) {
       return {
         status: 'risk-verification',
@@ -559,7 +562,7 @@ export const useAuthStore = defineStore('auth', () => {
     await (operation
       ? operation.acceptResponse(() => establishSession(successResponse as AuthResponse))
       : establishSession(successResponse as AuthResponse))
-    if (operation && !operation.isCurrent()) return cancelledMfaResult()
+    if (operation && !operation.isCurrent()) return cancelledAuthResult()
     resetRiskMode()
     clearPendingGoogleAuthRequest()
 
@@ -822,14 +825,20 @@ export const useAuthStore = defineStore('auth', () => {
     completeMfaLogin,
     beginWebAuthnLogin,
     finishWebAuthnLogin,
-    async beginRiskWebAuthnLogin(pendingToken: string): Promise<WebAuthnLoginOptionsResult> {
+    async beginRiskWebAuthnLogin(
+      pendingToken: string,
+      options: AuthRequestOptions = {}
+    ): Promise<WebAuthnLoginOptionsResult> {
+      if (options.signal?.aborted) return cancelledAuthResult()
       if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-      isLoading.value = true
-      error.value = null
+      const operation = startAuthRequest(options.signal)
 
       try {
-        const response = await authService.beginRiskWebAuthnLogin(pendingToken)
+        const response = await authService.beginRiskWebAuthnLogin(pendingToken, {
+          signal: operation.signal,
+        })
+        if (!operation.isCurrent()) return cancelledAuthResult()
         return {
           status: 'success',
           ceremonyId: response.ceremony_id,
@@ -838,6 +847,7 @@ export const useAuthStore = defineStore('auth', () => {
           ...(response.provider === undefined ? {} : { provider: response.provider }),
         }
       } catch (err) {
+        if (!operation.isCurrent()) return cancelledAuthResult()
         const errorResult = mapApiError(err, {
           defaultError: 'auth.error.webauthnNotEnrolled',
           invalidStatusCodes: [400, 401, 403, 422],
@@ -845,18 +855,19 @@ export const useAuthStore = defineStore('auth', () => {
         error.value = errorResult.error
         return errorResult
       } finally {
-        isLoading.value = false
+        operation.dispose()
       }
     },
     async finishRiskWebAuthnLogin(
       pendingToken: string,
       ceremonyId: string,
-      credential: SerializedPublicKeyCredential
+      credential: SerializedPublicKeyCredential,
+      options: AuthRequestOptions = {}
     ): Promise<AuthFlowResult> {
+      if (options.signal?.aborted) return cancelledAuthResult()
       if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-      isLoading.value = true
-      error.value = null
+      const operation = startAuthRequest(options.signal)
 
       try {
         const deviceInfo = getDeviceInfo()
@@ -865,29 +876,29 @@ export const useAuthStore = defineStore('auth', () => {
           ceremonyId,
           credential,
           deviceInfo.device_name,
-          deviceInfo.device_type
+          deviceInfo.device_type,
+          { signal: operation.signal }
         )
-        return await resolveAuthFlowResponse(response)
+        return await resolveAuthFlowResponse(response, operation)
       } catch (err) {
+        if (!operation.isCurrent()) return cancelledAuthResult()
         const errorResult = mapApiError(err, {
           defaultError: 'auth.error.webauthnLoginFailed',
         })
         error.value = errorResult.error
         return errorResult
       } finally {
-        isLoading.value = false
+        operation.dispose()
       }
     },
     async beginPasswordlessLogin(
       identifier?: string,
       options: { background?: boolean; signal?: AbortSignal } = {}
     ): Promise<WebAuthnLoginOptionsResult> {
+      if (options.signal?.aborted) return cancelledAuthResult()
       if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-      if (!options.background) {
-        isLoading.value = true
-        error.value = null
-      }
+      const operation = startAuthRequest(options.signal, options.background)
 
       try {
         const normalizedIdentifier = identifier?.trim()
@@ -897,10 +908,9 @@ export const useAuthStore = defineStore('auth', () => {
               ? { email: normalizedIdentifier }
               : { username: normalizedIdentifier }
             : undefined,
-          options.background
-            ? { skipChallengeRetry: true, ...(options.signal ? { signal: options.signal } : {}) }
-            : undefined
+          { signal: operation.signal, ...(options.background ? { skipChallengeRetry: true } : {}) }
         )
+        if (!operation.isCurrent()) return cancelledAuthResult()
         return {
           status: 'success',
           ceremonyId: response.ceremony_id,
@@ -909,6 +919,7 @@ export const useAuthStore = defineStore('auth', () => {
           ...(response.provider === undefined ? {} : { provider: response.provider }),
         }
       } catch (err) {
+        if (!operation.isCurrent()) return cancelledAuthResult()
         const errorResult = mapApiError(err, {
           defaultError: 'auth.error.webauthnLoginFailed',
           invalidStatusCodes: [400, 401, 403, 422, 429],
@@ -916,17 +927,18 @@ export const useAuthStore = defineStore('auth', () => {
         if (!options.background) error.value = errorResult.error
         return errorResult
       } finally {
-        if (!options.background) isLoading.value = false
+        operation.dispose()
       }
     },
     async finishPasswordlessLogin(
       ceremonyId: string,
-      credential: SerializedPublicKeyCredential
+      credential: SerializedPublicKeyCredential,
+      options: AuthRequestOptions = {}
     ): Promise<AuthFlowResult> {
+      if (options.signal?.aborted) return cancelledAuthResult()
       if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-      isLoading.value = true
-      error.value = null
+      const operation = startAuthRequest(options.signal)
 
       try {
         const deviceInfo = getDeviceInfo()
@@ -934,17 +946,19 @@ export const useAuthStore = defineStore('auth', () => {
           ceremonyId,
           credential,
           deviceInfo.device_name,
-          deviceInfo.device_type
+          deviceInfo.device_type,
+          { signal: operation.signal }
         )
-        return await resolveAuthFlowResponse(response)
+        return await resolveAuthFlowResponse(response, operation)
       } catch (err) {
+        if (!operation.isCurrent()) return cancelledAuthResult()
         const errorResult = mapApiError(err, {
           defaultError: 'auth.error.webauthnLoginFailed',
         })
         error.value = errorResult.error
         return errorResult
       } finally {
-        isLoading.value = false
+        operation.dispose()
       }
     },
     register,

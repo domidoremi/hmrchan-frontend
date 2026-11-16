@@ -74,6 +74,9 @@ vi.mock('@/api', async () => {
       verifyRiskLogin: vi.fn(),
       logout: vi.fn(),
       beginPasswordlessLogin: vi.fn(),
+      finishPasswordlessLogin: vi.fn(),
+      beginRiskWebAuthnLogin: vi.fn(),
+      finishRiskWebAuthnLogin: vi.fn(),
     },
     twoFactorService: {
       ...actual.twoFactorService,
@@ -142,6 +145,7 @@ describe('auth store', () => {
     expect(store.isLoading).toBe(false)
     expect(store.error).toBeNull()
     expect(authService.beginPasswordlessLogin).toHaveBeenCalledWith(undefined, {
+      signal: expect.any(AbortSignal),
       skipChallengeRetry: true,
     })
   })
@@ -425,6 +429,26 @@ describe('auth store', () => {
     expect(twoFactorService.finishWebAuthnLogin).not.toHaveBeenCalled()
     expect(store.isLoading).toBe(false)
     expect(store.error).toBeNull()
+  })
+
+  it('does not dispatch passwordless or risk Passkey requests for an already cancelled attempt', async () => {
+    const store = useAuthStore(),
+      controller = new AbortController()
+    controller.abort()
+    const options = { signal: controller.signal }
+    const results = await Promise.all([
+      store.beginPasswordlessLogin(undefined, options),
+      store.beginPasswordlessLogin(undefined, { ...options, background: true }),
+      store.finishPasswordlessLogin('ceremony', {} as never, options),
+      store.beginRiskWebAuthnLogin('pending', options),
+      store.finishRiskWebAuthnLogin('pending', 'ceremony', {} as never, options),
+    ])
+    for (const result of results) expect(result).toMatchObject({ code: 'auth_flow_cancelled' })
+    expect(authService.beginPasswordlessLogin).not.toHaveBeenCalled()
+    expect(authService.finishPasswordlessLogin).not.toHaveBeenCalled()
+    expect(authService.beginRiskWebAuthnLogin).not.toHaveBeenCalled()
+    expect(authService.finishRiskWebAuthnLogin).not.toHaveBeenCalled()
+    expect(store.isLoading).toBe(false)
   })
 
   it('returns current WebAuthn options and establishes a passkey session', async () => {
