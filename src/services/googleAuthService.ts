@@ -752,8 +752,10 @@ export function resolveGoogleAuthSecurityError(error: unknown): GoogleAuthSecuri
 
 export async function prepareGoogleAuthHandoff(
   handoffCode: string,
-  fallbackSiteKey = ''
+  fallbackSiteKey = '',
+  options: { signal?: AbortSignal } = {}
 ): Promise<GoogleAuthHandoffPreparationResult> {
+  options.signal?.throwIfAborted()
   const normalizedHandoffCode = handoffCode.trim()
   if (!normalizedHandoffCode) {
     return {
@@ -767,6 +769,7 @@ export async function prepareGoogleAuthHandoff(
 
   try {
     let initResponse = await clientSecurityService.init(false, { promptChallenge: false })
+    options.signal?.throwIfAborted()
     resolvedSiteKey = initResponse.turnstile_site_key?.trim() || resolvedSiteKey
 
     if (
@@ -786,6 +789,7 @@ export async function prepareGoogleAuthHandoff(
         }
       )
       initResponse = await clientSecurityService.init(true, { promptChallenge: false })
+      options.signal?.throwIfAborted()
       resolvedSiteKey = initResponse.turnstile_site_key?.trim() || resolvedSiteKey
     }
 
@@ -820,6 +824,7 @@ export async function prepareGoogleAuthHandoff(
       handoffCode: normalizedHandoffCode,
     }
   } catch (error) {
+    options.signal?.throwIfAborted()
     return {
       status: 'error',
       ...resolveGoogleAuthSecurityError(error),
@@ -827,12 +832,12 @@ export async function prepareGoogleAuthHandoff(
   }
 }
 
-export async function exchangeGoogleHandoff(payload: {
-  handoff_code: string
-  device_name?: string
-  device_type?: string
-}): Promise<GoogleAuthFlowResponse> {
+export async function exchangeGoogleHandoff(
+  payload: { handoff_code: string; device_name?: string; device_type?: string },
+  options: { signal?: AbortSignal } = {}
+): Promise<GoogleAuthFlowResponse> {
   return apiClient.post<GoogleAuthFlowResponse>('/auth/google/exchange', payload, {
+    ...options,
     skipAuth: true,
     skipErrorToast: true,
     skipChallengeRetry: true,

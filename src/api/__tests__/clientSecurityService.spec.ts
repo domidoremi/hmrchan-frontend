@@ -138,6 +138,60 @@ describe('clientSecurityService', () => {
     expect(config?.skipSecurity).not.toBe(true)
   })
 
+  it('does not dispatch verification for an already cancelled caller', async () => {
+    const controller = new AbortController()
+    controller.abort()
+    await expect(
+      clientSecurityService.verify('token', { signal: controller.signal })
+    ).rejects.toMatchObject({ name: 'AbortError' })
+    expect(mockApiClient.post).not.toHaveBeenCalled()
+  })
+
+  it.each(['response', 'recoverable-error'] as const)(
+    'discards a late verification %s without recovery',
+    async (outcome) => {
+      const controller = new AbortController()
+      let finish!: () => void
+      const pending = new Promise<void>((resolve) => {
+        finish = resolve
+      })
+      mockApiClient.post.mockImplementationOnce(async () => {
+        await pending
+        if (outcome === 'recoverable-error')
+          throw new MockApiError('expired', 400, 'CLIENT_TOKEN_EXPIRED')
+        return { success: true, trust_level: 'verified' }
+      })
+      const result = clientSecurityService.verify('token', { signal: controller.signal })
+      const rejected = result.catch((error: unknown) => error)
+      controller.abort()
+      finish()
+      expect(await rejected).toMatchObject({ name: 'AbortError' })
+      expect(mockApiClient.post).toHaveBeenCalledOnce()
+      expect(mockApiClient.post.mock.calls[0]?.[2].signal).toBe(controller.signal)
+      expect(mockReportClientEvent).not.toHaveBeenCalled()
+    }
+  )
+
+  it('leaves shared initialization usable but does not retry verification after caller cancellation', async () => {
+    const controller = new AbortController()
+    let finish!: (value: unknown) => void
+    const pending = new Promise((resolve) => {
+      finish = resolve
+    })
+    mockApiClient.post
+      .mockRejectedValueOnce(new MockApiError('expired', 400, 'CLIENT_TOKEN_EXPIRED'))
+      .mockReturnValueOnce(pending)
+    const result = clientSecurityService.verify('token', { signal: controller.signal })
+    const rejected = result.catch((error: unknown) => error)
+    await vi.waitFor(() => expect(mockApiClient.post).toHaveBeenCalledTimes(2))
+    controller.abort()
+    finish({ client_token: 'reissued', client_secret: 'reissued-secret', trust_level: 'basic' })
+    expect(await rejected).toMatchObject({ name: 'AbortError' })
+    expect(mockApiClient.post).toHaveBeenCalledTimes(2)
+    expect(clientSecurityManager.getClientToken()).toBe('reissued')
+    expect(mockReportClientEvent).not.toHaveBeenCalled()
+  })
+
   it('keeps security headers enabled for client status requests', async () => {
     await clientSecurityService.getStatus()
 

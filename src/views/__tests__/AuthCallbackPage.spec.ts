@@ -1,8 +1,10 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import AuthCallbackPage from '../AuthCallbackPage.vue'
+
+enableAutoUnmount(afterEach)
 
 const testState = vi.hoisted(() => ({
   route: { query: {} as Record<string, unknown> },
@@ -56,8 +58,12 @@ vi.mock('vue-i18n', async () => {
 })
 
 vi.mock('@/stores', async () => {
-  const { reactive } = await vi.importActual<typeof import('vue')>('vue')
-  const authStore = reactive(testState.authStore)
+  const { reactive, ref } = await vi.importActual<typeof import('vue')>('vue')
+  const authStore = reactive({
+    isLoading: ref(false),
+    completeGoogleAuth: (...args: unknown[]) => testState.authStore.completeGoogleAuth(...args),
+    verifyRiskLogin: (...args: unknown[]) => testState.authStore.verifyRiskLogin(...args),
+  })
   return {
     useAuthStore: () => authStore,
     useToastStore: () => testState.toastStore,
@@ -413,7 +419,9 @@ describe('AuthCallbackPage', () => {
     expect(testState.api.clientSecurityService.init).toHaveBeenCalledWith(false, {
       promptChallenge: false,
     })
-    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('redirect-handoff')
+    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('redirect-handoff', {
+      signal: expect.any(AbortSignal),
+    })
   })
 
   it('shows an inline client challenge step before exchange when client init requires verification', async () => {
@@ -489,8 +497,11 @@ describe('AuthCallbackPage', () => {
 
     expect(testState.api.clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token', {
       diagnosticsContext: 'google-auth',
+      signal: expect.any(AbortSignal),
     })
-    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('redirect-handoff')
+    expect(testState.authStore.completeGoogleAuth).toHaveBeenCalledWith('redirect-handoff', {
+      signal: expect.any(AbortSignal),
+    })
   })
 
   it('exits the callback client challenge step when the Google handoff has expired', async () => {
@@ -531,6 +542,7 @@ describe('AuthCallbackPage', () => {
 
     expect(testState.api.clientSecurityService.verify).toHaveBeenCalledWith('turnstile-token', {
       diagnosticsContext: 'google-auth',
+      signal: expect.any(AbortSignal),
     })
     expect(wrapper.text()).toContain('auth.error.googleLoginExpired')
     expect(wrapper.text()).not.toContain('auth.clientChallengeHint')

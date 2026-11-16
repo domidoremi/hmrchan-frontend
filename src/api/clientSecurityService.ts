@@ -50,6 +50,7 @@ export interface ClientVerifyResponse {
 
 export interface ClientVerifyOptions {
   diagnosticsContext?: 'google-auth'
+  signal?: AbortSignal
 }
 
 export interface ClientStatusResponse {
@@ -352,22 +353,29 @@ export const clientSecurityService = {
     turnstileToken: string,
     options: ClientVerifyOptions = {}
   ): Promise<ClientVerifyResponse> {
+    options.signal?.throwIfAborted()
+    const config = { ...publicClientConfig, ...(options.signal ? { signal: options.signal } : {}) }
     try {
-      return await apiClient.post<ClientVerifyResponse>(
+      const response = await apiClient.post<ClientVerifyResponse>(
         '/client/verify',
         { turnstile_token: turnstileToken },
-        publicClientConfig
+        config
       )
+      options.signal?.throwIfAborted()
+      return response
     } catch (error) {
+      options.signal?.throwIfAborted()
       if (isRecoverableVerifyError(error)) {
         // A single forced re-initialization recovers expired tokens; later failures propagate.
         await this.init(true, { promptChallenge: false })
+        options.signal?.throwIfAborted()
         if (clientSecurityManager.getClientToken()) {
           const result = await apiClient.post<ClientVerifyResponse>(
             '/client/verify',
             { turnstile_token: turnstileToken },
-            publicClientConfig
+            config
           )
+          options.signal?.throwIfAborted()
           if (options.diagnosticsContext === 'google-auth') {
             reportClientEvent(
               'google.challenge.verify_reinit_recovered',

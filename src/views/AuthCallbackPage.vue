@@ -185,7 +185,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'AuthCallbackPage' })
 
-import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { AlertCircle } from '@lucide/vue'
@@ -203,6 +203,7 @@ import {
   startGoogleAuthRedirect,
 } from '@/services/googleAuthService'
 import { resolveAuthRedirectTarget } from '@/utils/authRedirect'
+import { subscribeAuthSessionScope } from '@/services/authSessionScope'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
 import { isTurnstileBusy, type TurnstileWidgetStatus } from '@/utils/turnstileWidgetStatus'
@@ -232,7 +233,9 @@ const router = useRouter()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { t } = useI18n()
-const { isLoading } = storeToRefs(authStore)
+const { isLoading: storeLoading } = storeToRefs(authStore)
+const callbackBusy = ref(false)
+const isLoading = computed(() => storeLoading.value || callbackBusy.value)
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 
 const pendingRequest = getPendingGoogleAuthRequest()
@@ -283,6 +286,67 @@ const resolvedClientChallengeSiteKey = computed(
   () => clientChallengeSiteKey.value || turnstileSiteKey.value
 )
 const isRiskTurnstileBusy = computed(() => isTurnstileBusy(riskTurnstileStatus.value))
+
+type CallbackFlow = {
+  signal: AbortSignal
+  isCurrent: () => boolean
+  observeSession: () => void
+  handoffToStore: () => void
+  abort: () => void
+}
+let currentFlow: CallbackFlow | null = null
+let disposed = false
+
+function cancelCallbackFlow() {
+  const previous = currentFlow
+  currentFlow = null
+  previous?.abort()
+  callbackBusy.value = false
+  isClientChallengeSubmitting.value = false
+}
+
+function showCancelledCallback() {
+  cancelCallbackFlow()
+  currentStep.value = 'error'
+  errorMessage.value = t('auth.error.googleLoginFailed')
+  errorDetail.value = ''
+}
+
+function beginCallbackFlow(): CallbackFlow | null {
+  if (disposed) return null
+  cancelCallbackFlow()
+  const controller = new AbortController()
+  let stopSessionObservation = () => {}
+  const flow: CallbackFlow = {
+    signal: controller.signal,
+    isCurrent: () => currentFlow === flow && !controller.signal.aborted,
+    observeSession() {
+      stopSessionObservation()
+      if (flow.isCurrent())
+        stopSessionObservation = subscribeAuthSessionScope(showCancelledCallback)
+    },
+    handoffToStore: () => stopSessionObservation(),
+    abort() {
+      controller.abort()
+      stopSessionObservation()
+    },
+  }
+  currentFlow = flow
+  flow.observeSession()
+  return flow
+}
+
+async function completeCallbackRequest(flow: CallbackFlow, request: () => Promise<AuthFlowResult>) {
+  flow.handoffToStore()
+  const result = await request()
+  if (!flow.isCurrent()) return
+  if (result.status === 'error' && result.code === 'auth_flow_cancelled') {
+    showCancelledCallback()
+    return
+  }
+  if (result.status !== 'success' && result.status !== 'mfa') flow.observeSession()
+  await applyCallbackResult(result)
+}
 
 const pageTitle = computed(() => {
   if (isPopupBridgeMode.value) {
@@ -351,15 +415,10 @@ function handleTurnstileError(error?: Error) {
 }
 
 async function executeTurnstileChallenge(
-  widget: TurnstileWidgetHandle | null | undefined,
-  onToken?: (token: string) => void
+  widget: TurnstileWidgetHandle | null | undefined
 ): Promise<string | null> {
   const token = await widget?.execute?.()
-  if (token) {
-    onToken?.(token)
-    return token
-  }
-  return null
+  return token || null
 }
 
 function resolveSecurityStepError(error: unknown): { message: string; detail: string } {
@@ -427,14 +486,20 @@ function handleClientChallengeWidgetError(error?: Error) {
 }
 
 async function handleClientChallengeVerify(token: string) {
-  if (isClientChallengeSubmitting.value) return
+  const flow = currentFlow
+  if (!flow?.isCurrent() || currentStep.value !== 'client-challenge' || isLoading.value) return
 
+  callbackBusy.value = true
   isClientChallengeSubmitting.value = true
   clientChallengeError.value = ''
   clientChallengeDetail.value = ''
 
   try {
-    await clientSecurityService.verify(token, { diagnosticsContext: 'google-auth' })
+    await clientSecurityService.verify(token, {
+      diagnosticsContext: 'google-auth',
+      signal: flow.signal,
+    })
+    if (!flow.isCurrent()) return
 
     if (!pendingGoogleHandoffCode.value.trim()) {
       currentStep.value = 'error'
@@ -444,16 +509,21 @@ async function handleClientChallengeVerify(token: string) {
 
     currentStep.value = 'loading'
     const handoffCode = pendingGoogleHandoffCode.value.trim()
-    const result = await authStore.completeGoogleAuth(handoffCode)
-    await applyCallbackResult(result)
+    await completeCallbackRequest(flow, () =>
+      authStore.completeGoogleAuth(handoffCode, { signal: flow.signal })
+    )
   } catch (error) {
+    if (!flow.isCurrent()) return
     currentStep.value = 'client-challenge'
     const resolvedError = resolveSecurityStepError(error)
     clientChallengeError.value = resolvedError.message
     clientChallengeDetail.value = resolvedError.detail
     clientChallengeTurnstileRef.value?.reset?.()
   } finally {
-    isClientChallengeSubmitting.value = false
+    if (flow.isCurrent()) {
+      callbackBusy.value = false
+      isClientChallengeSubmitting.value = false
+    }
   }
 }
 
@@ -481,6 +551,7 @@ async function applyCallbackResult(result: AuthFlowResult) {
       resetRiskTurnstile()
       return
     case 'mfa':
+      currentFlow?.handoffToStore()
       currentStep.value = 'mfa'
       pendingMfaLoginToken.value = result.pendingMfaLoginToken
       mfaMethods.value = result.methods
@@ -519,6 +590,7 @@ async function applyCallbackResult(result: AuthFlowResult) {
 }
 
 function returnToLogin() {
+  cancelCallbackFlow()
   const redirect = resolveAuthRedirectTarget(nextRedirectTarget.value, '/')
   if (redirect === '/') {
     void router.replace('/login')
@@ -543,6 +615,7 @@ function clearPopupBridgeTimers() {
 }
 
 async function retryGoogleAuth() {
+  cancelCallbackFlow()
   if (!GOOGLE_AUTH_ENABLED) {
     currentStep.value = 'error'
     errorMessage.value = t('auth.error.googleLoginFailed')
@@ -556,6 +629,8 @@ async function retryGoogleAuth() {
 }
 
 async function handleRiskVerificationSubmit() {
+  const flow = currentFlow
+  if (!flow?.isCurrent() || currentStep.value !== 'risk-verification' || isLoading.value) return
   clearInlineErrors()
 
   if (!riskVerificationCode.value.trim()) {
@@ -563,29 +638,37 @@ async function handleRiskVerificationSubmit() {
     return
   }
 
-  if (!isTurnstileTokenFresh(riskTurnstileToken.value, riskTurnstileIssuedAt.value)) {
-    const token = await executeTurnstileChallenge(riskTurnstileRef.value, (nextToken) => {
-      riskTurnstileToken.value = nextToken
+  const pendingToken = riskPendingToken.value
+  const code = riskVerificationCode.value.trim()
+  callbackBusy.value = true
+  try {
+    if (!isTurnstileTokenFresh(riskTurnstileToken.value, riskTurnstileIssuedAt.value)) {
+      const token = await executeTurnstileChallenge(riskTurnstileRef.value)
+      if (!flow.isCurrent()) return
+      if (!token) {
+        riskError.value = t('auth.error.turnstileRequired')
+        return
+      }
+      riskTurnstileToken.value = token
       riskTurnstileIssuedAt.value = Date.now()
-    })
-    if (!token) {
-      riskError.value = t('auth.error.turnstileRequired')
-      return
+    }
+    await completeCallbackRequest(flow, () =>
+      authStore.verifyRiskLogin(pendingToken, code, riskTurnstileToken.value || undefined, {
+        signal: flow.signal,
+      })
+    )
+  } catch (error) {
+    if (flow.isCurrent()) riskError.value = t(getTurnstileErrorMessageKey(error))
+  } finally {
+    if (flow.isCurrent()) {
+      if (turnstileEnabled.value) resetRiskTurnstile()
+      callbackBusy.value = false
     }
   }
-
-  const result = await authStore.verifyRiskLogin(
-    riskPendingToken.value,
-    riskVerificationCode.value.trim(),
-    riskTurnstileToken.value || undefined
-  )
-  if (turnstileEnabled.value) {
-    resetRiskTurnstile()
-  }
-  await applyCallbackResult(result)
 }
 
 async function handleMfaResolved(result: AuthFlowResult) {
+  if (!currentFlow?.isCurrent() || currentStep.value !== 'mfa') return
   await applyCallbackResult(result)
 }
 
@@ -593,7 +676,7 @@ function shouldUsePopupBridge(): boolean {
   return resolveGooglePopupBridgeMessage({ pendingRequest }) !== null
 }
 
-async function runPopupBridge(): Promise<boolean> {
+function runPopupBridge(): boolean {
   if (!shouldUsePopupBridge()) return false
 
   isPopupBridgeMode.value = true
@@ -616,6 +699,8 @@ async function runPopupBridge(): Promise<boolean> {
 }
 
 async function runInitialExchange() {
+  const flow = beginCallbackFlow()
+  if (!flow) return
   if (!GOOGLE_AUTH_ENABLED) {
     currentStep.value = 'error'
     errorMessage.value = t('auth.error.googleLoginFailed')
@@ -625,6 +710,13 @@ async function runInitialExchange() {
 
   clearInlineErrors()
   currentStep.value = 'loading'
+  clearPendingGoogleHandoff()
+  riskPendingToken.value = ''
+  pendingMfaLoginToken.value = ''
+  nextRedirectTarget.value = resolveAuthRedirectTarget(
+    typeof route.query['redirect'] === 'string' ? route.query['redirect'] : null,
+    pendingRequest?.redirectTo || '/'
+  )
 
   const callbackError = typeof route.query['error'] === 'string' ? route.query['error'].trim() : ''
   const handoffCode =
@@ -649,36 +741,54 @@ async function runInitialExchange() {
   }
 
   pendingGoogleHandoffCode.value = handoffCode.trim()
-  const handoffPreparation = await prepareGoogleAuthHandoff(
-    pendingGoogleHandoffCode.value,
-    turnstileSiteKey.value.trim()
-  )
-
-  if (handoffPreparation.status === 'challenge-required') {
-    enterClientChallengeStep(handoffPreparation.siteKey)
-    return
-  }
-
-  if (handoffPreparation.status === 'error') {
+  const code = pendingGoogleHandoffCode.value
+  callbackBusy.value = true
+  try {
+    const preparation = await prepareGoogleAuthHandoff(code, turnstileSiteKey.value.trim(), {
+      signal: flow.signal,
+    })
+    if (!flow.isCurrent()) return
+    if (preparation.status === 'challenge-required') {
+      enterClientChallengeStep(preparation.siteKey)
+      return
+    }
+    if (preparation.status === 'error') {
+      currentStep.value = 'error'
+      errorMessage.value = t(preparation.messageKey)
+      errorDetail.value = preparation.detail
+      return
+    }
+    await completeCallbackRequest(flow, () =>
+      authStore.completeGoogleAuth(code, { signal: flow.signal })
+    )
+  } catch (error) {
+    if (!flow.isCurrent()) return
     currentStep.value = 'error'
-    errorMessage.value = t(handoffPreparation.messageKey)
-    errorDetail.value = handoffPreparation.detail
-    return
+    const resolved = resolveSecurityStepError(error)
+    errorMessage.value = resolved.message
+    errorDetail.value = resolved.detail
+  } finally {
+    if (flow.isCurrent()) callbackBusy.value = false
   }
-
-  const result = await authStore.completeGoogleAuth(pendingGoogleHandoffCode.value)
-  await applyCallbackResult(result)
 }
 
-onMounted(async () => {
-  if (await runPopupBridge()) {
+function initializeCallback() {
+  if (disposed) return
+  cancelCallbackFlow()
+  clearPopupBridgeTimers()
+  isPopupBridgeMode.value = false
+  if (runPopupBridge()) {
     return
   }
-
   void runInitialExchange()
-})
+}
 
-onUnmounted(() => {
+onMounted(initializeCallback)
+watch(() => route.query, initializeCallback, { deep: true, flush: 'sync' })
+
+onBeforeUnmount(() => {
+  disposed = true
+  cancelCallbackFlow()
   clearPopupBridgeTimers()
 })
 </script>

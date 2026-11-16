@@ -224,28 +224,32 @@ export const useAuthStore = defineStore('auth', () => {
   async function verifyRiskLogin(
     pendingToken: string,
     verificationCode: string,
-    turnstileToken?: string
+    turnstileToken?: string,
+    options: AuthRequestOptions = {}
   ): Promise<AuthFlowResult> {
+    if (options.signal?.aborted) return cancelledAuthResult()
     if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-    isLoading.value = true
-    error.value = null
+    const operation = startAuthRequest(options.signal)
 
     try {
       const deviceInfo = getDeviceInfo()
       if (turnstileToken) {
-        await clientSecurityService.verify(turnstileToken)
+        await clientSecurityService.verify(turnstileToken, { signal: operation.signal })
       }
+      if (!operation.isCurrent()) return cancelledAuthResult()
       const response = await authService.verifyRiskLogin(
         pendingToken,
         verificationCode,
         turnstileToken,
         deviceInfo.device_name,
-        deviceInfo.device_type
+        deviceInfo.device_type,
+        { signal: operation.signal }
       )
 
-      return await resolveAuthFlowResponse(response)
+      return await resolveAuthFlowResponse(response, operation)
     } catch (err) {
+      if (!operation.isCurrent()) return cancelledAuthResult()
       const errorResult = mapApiError(err, {
         defaultError: 'auth.error.riskVerificationInvalid',
         invalidStatusCodes: [400, 401, 403, 422],
@@ -253,7 +257,7 @@ export const useAuthStore = defineStore('auth', () => {
       error.value = errorResult.error
       return errorResult
     } finally {
-      isLoading.value = false
+      operation.dispose()
     }
   }
 
@@ -290,7 +294,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function completeGoogleAuth(handoffCode: string): Promise<AuthFlowResult> {
+  async function completeGoogleAuth(
+    handoffCode: string,
+    options: AuthRequestOptions = {}
+  ): Promise<AuthFlowResult> {
+    if (options.signal?.aborted) return cancelledAuthResult()
     if (!GOOGLE_AUTH_ENABLED) {
       return {
         status: 'error',
@@ -301,19 +309,22 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (isLoading.value) return { status: 'error', error: 'auth.error.inProgress' }
 
-    isLoading.value = true
-    error.value = null
+    const operation = startAuthRequest(options.signal)
 
     try {
       const deviceInfo = getDeviceInfo()
-      const response = await exchangeGoogleHandoff({
-        handoff_code: handoffCode,
-        device_name: deviceInfo.device_name,
-        device_type: deviceInfo.device_type,
-      })
+      const response = await exchangeGoogleHandoff(
+        {
+          handoff_code: handoffCode,
+          device_name: deviceInfo.device_name,
+          device_type: deviceInfo.device_type,
+        },
+        { signal: operation.signal }
+      )
 
-      return await resolveAuthFlowResponse(response)
+      return await resolveAuthFlowResponse(response, operation)
     } catch (err) {
+      if (!operation.isCurrent()) return cancelledAuthResult()
       if (err instanceof ApiError) {
         reportGoogleExchangeFailure(err)
       }
@@ -325,7 +336,7 @@ export const useAuthStore = defineStore('auth', () => {
       error.value = errorResult.error
       return errorResult
     } finally {
-      isLoading.value = false
+      operation.dispose()
     }
   }
 
