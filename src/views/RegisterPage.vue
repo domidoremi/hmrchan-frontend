@@ -70,7 +70,7 @@
               <Button
                 type="submit"
                 :loading="isSendingCode || sendCodeTurnstileStatus === 'executing'"
-                :disabled="!email || isSendCodeTurnstileBusy"
+                :disabled="!email || isSendCodeTurnstileBusy || isLoading"
                 full-width
               >
                 {{ $t('auth.sendCodeButton') }}
@@ -192,7 +192,7 @@
                 <button
                   type="button"
                   class="resend-btn"
-                  :disabled="resendCooldown > 0 || isSendingCode"
+                  :disabled="resendCooldown > 0 || isLoading"
                   @click="handleResendCodeClick"
                 >
                   {{
@@ -458,7 +458,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'RegisterPage' })
 
-import { computed, onMounted, onUnmounted, ref, watch, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, useTemplateRef } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { CircleAlert, Eye, EyeOff, LoaderCircle, Mail } from '@lucide/vue'
@@ -504,7 +504,11 @@ const { t } = useI18n()
 
 const { isLoading: storeLoading, isAuthenticated } = storeToRefs(authStore)
 const formRequests = useAuthEntryAttempt()
-const isLoading = computed(() => storeLoading.value || formRequests.busy.value || googleBusy.value)
+const codeRequests = useAuthEntryAttempt()
+const isSendingCode = codeRequests.busy
+const isLoading = computed(
+  () => storeLoading.value || formRequests.busy.value || isSendingCode.value || googleBusy.value
+)
 
 const step = ref<registerModel.RegisterStep>('email')
 const primaryStep = ref<registerModel.RegistrationStep>('email')
@@ -518,7 +522,6 @@ const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const verificationCode = ref('')
 const codeError = ref(false)
-const isSendingCode = ref(false)
 const registerToken = ref<string | null>(null)
 const registerTokenExpiresAt = ref<number | null>(null)
 const forceTurnstileForSend = ref(false)
@@ -582,8 +585,6 @@ const riskTurnstileStatus = ref<TurnstileWidgetStatus>('idle')
 
 const resendCooldown = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
-let registrationCodeController: AbortController | null = null
-let registrationCodeRequestToken = 0
 
 const redirectTo = computed(() => {
   const redirect = typeof route.query['redirect'] === 'string' ? route.query['redirect'] : null
@@ -603,7 +604,7 @@ const googleProviderBusy = computed(() =>
 )
 const googleAuthEnabled = computed(() => GOOGLE_AUTH_ENABLED)
 const showRegisterTurnstile = computed(
-  () => turnstileEnabled.value && !hasValidRegisterToken() && forceTurnstileForRegister.value
+  () => turnstileEnabled.value && (forceTurnstileForSend.value || forceTurnstileForRegister.value)
 )
 const isSendCodeTurnstileBusy = computed(() => isTurnstileBusy(sendCodeTurnstileStatus.value))
 const isRegisterTurnstileBusy = computed(() => isTurnstileBusy(registerTurnstileStatus.value))
@@ -623,9 +624,15 @@ const showGoogleClientChallenge = computed(() =>
 const pageTitle = computed(() => t(registerModel.resolveRegisterPageTitleKey(step.value)))
 const pageSubtitle = computed(() => t(registerModel.resolveRegisterPageSubtitleKey(step.value)))
 
-watch(email, () => {
-  emailError.value = ''
-})
+watch(
+  email,
+  () => {
+    cancelRegistrationRequests()
+    setRegisterToken()
+    emailError.value = ''
+  },
+  { flush: 'sync' }
+)
 
 watch(password, () => {
   serverPasswordErrors.value = []
@@ -663,7 +670,7 @@ function returnToPrimaryStep() {
 }
 
 function handleBack() {
-  formRequests.cancel()
+  cancelRegistrationRequests()
   resetGooglePopupState()
   if (step.value === 'register') {
     goBackToEmail()
@@ -699,12 +706,13 @@ function startCooldown() {
   }, 1000)
 }
 
-function abortRegistrationCodeRequest() {
-  registrationCodeController?.abort()
-  registrationCodeController = null
+function cancelRegistrationRequests() {
+  codeRequests.cancel()
+  formRequests.cancel()
 }
 
 function setRegisterToken(token?: string, expiresIn?: number) {
+  forceTurnstileForRegister.value = false
   if (!token) {
     registerToken.value = null
     registerTokenExpiresAt.value = null
@@ -745,24 +753,30 @@ async function executeTurnstileChallenge(
   return null
 }
 
-async function ensureRegistrationTurnstileToken(): Promise<string | null> {
+async function ensureRegistrationTurnstileToken(
+  attempt: NonNullable<ReturnType<typeof codeRequests.begin>>
+): Promise<string | null> {
   if (!turnstileEnabled.value) return null
 
   if (isTurnstileTokenFresh() && turnstileToken.value) {
     return turnstileToken.value
   }
 
-  const token = await executeTurnstileChallenge(turnstileRef.value, (nextToken) => {
-    turnstileToken.value = nextToken
-    turnstileIssuedAt.value = Date.now()
-  })
+  if (step.value === 'register') {
+    forceTurnstileForSend.value = true
+    await nextTick()
+    if (!attempt.isCurrent()) return null
+  }
+  const token = await executeTurnstileChallenge(turnstileRef.value)
+  if (!attempt.isCurrent()) return null
 
   if (!token) {
     forceTurnstileForSend.value = true
     toastStore.warning(t('auth.error.turnstileRequired'))
     return null
   }
-
+  turnstileToken.value = token
+  turnstileIssuedAt.value = Date.now()
   forceTurnstileForSend.value = false
   return token
 }
@@ -1038,78 +1052,59 @@ async function handleGoogleContinue() {
 }
 
 async function handleSendCode() {
+  await requestRegistrationCode(false)
+}
+
+async function requestRegistrationCode(resend: boolean) {
+  if (isLoading.value || (resend && resendCooldown.value > 0)) return
   clearInlineErrors()
-
   if (!email.value.trim()) {
-    emailError.value = t('auth.emailRequired')
+    if (resend) toastStore.warning(t('auth.emailRequired'))
+    else emailError.value = t('auth.emailRequired')
     return
   }
-
-  const validation = validateRegistrationEmail()
-  if (!validation.valid) {
-    return
-  }
-
+  const validation = validateRegistrationEmail({ showToast: resend })
+  if (!validation.valid) return
   const normalizedEmail = validation.normalizedEmail
   email.value = normalizedEmail
-
-  if (turnstileEnabled.value) {
-    const token = await ensureRegistrationTurnstileToken()
-    if (!token) return
-  }
-
-  abortRegistrationCodeRequest()
-  const controller = new AbortController()
-  registrationCodeController = controller
-  const requestToken = ++registrationCodeRequestToken
-
-  isSendingCode.value = true
+  resetGooglePopupState()
+  const attempt = codeRequests.begin()
+  if (!attempt) return
   try {
-    if (turnstileToken.value) {
-      await clientSecurityService.verify(turnstileToken.value)
-    }
-
+    const token = await ensureRegistrationTurnstileToken(attempt)
+    if (!attempt.isCurrent() || (turnstileEnabled.value && !token)) return
+    if (token) await clientSecurityService.verify(token, { signal: attempt.signal })
+    if (!attempt.isCurrent()) return
     const response = await authService.sendRegistrationCode(
-      {
-        email: normalizedEmail,
-        ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
-      },
-      { signal: controller.signal }
+      { email: normalizedEmail, ...(token ? { turnstile_token: token } : {}) },
+      { signal: attempt.signal }
     )
-
-    if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
-
+    if (!attempt.isCurrent()) return
     setRegisterToken(response.register_token, response.expires_in)
-    step.value = 'register'
-    primaryStep.value = 'register'
+    if (!resend) {
+      step.value = 'register'
+      primaryStep.value = 'register'
+    } else {
+      verificationCode.value = ''
+      codeError.value = false
+      codeInputRef.value?.reset()
+    }
     forceTurnstileForSend.value = false
     toastStore.success(t('emailCode.codeSent'))
     startCooldown()
-
-    if (turnstileEnabled.value) {
-      turnstileToken.value = null
-      turnstileIssuedAt.value = null
-      turnstileRef.value?.reset()
-    }
+    resetRegistrationTurnstile()
   } catch (error) {
-    if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
-
-    turnstileToken.value = null
-    turnstileIssuedAt.value = null
-    turnstileRef.value?.reset()
-
+    if (!attempt.isCurrent()) return
+    resetRegistrationTurnstile()
     if (error instanceof ApiError) {
       if (isTurnstileRequiredError(error)) {
         forceTurnstileForSend.value = true
         toastStore.warning(t('auth.error.turnstileRequired'))
-        return
-      }
-
-      if (error.status === 429) {
+      } else if (error.status === 429) {
         toastStore.error(t('emailCode.tooManyRequests'))
-      } else if (error.code === 'EMAIL_EXISTS' || error.status === 409) {
+      } else if (!resend && (error.code === 'EMAIL_EXISTS' || error.status === 409)) {
         emailError.value = t('auth.error.emailExists')
-      } else if (error.status === 400) {
+      } else if (!resend && error.status === 400) {
         emailError.value = error.message || t('error.badRequest')
       } else {
         toastStore.error(error.message)
@@ -1118,103 +1113,18 @@ async function handleSendCode() {
       toastStore.error(t('emailCode.sendFailed'))
     }
   } finally {
-    if (requestToken === registrationCodeRequestToken) {
-      isSendingCode.value = false
-      if (registrationCodeController === controller) {
-        registrationCodeController = null
-      }
-    }
+    attempt.dispose()
   }
 }
 
-async function handleResendCode() {
-  if (!email.value.trim()) {
-    toastStore.warning(t('auth.emailRequired'))
-    return
-  }
-
-  const validation = validateRegistrationEmail({ showToast: true })
-  if (!validation.valid) {
-    return
-  }
-
-  const normalizedEmail = validation.normalizedEmail
-  email.value = normalizedEmail
-
-  if (turnstileEnabled.value) {
-    const token = await ensureRegistrationTurnstileToken()
-    if (!token) return
-  }
-
-  abortRegistrationCodeRequest()
-  const controller = new AbortController()
-  registrationCodeController = controller
-  const requestToken = ++registrationCodeRequestToken
-
-  isSendingCode.value = true
-  try {
-    if (turnstileToken.value) {
-      await clientSecurityService.verify(turnstileToken.value)
-    }
-
-    const response = await authService.sendRegistrationCode(
-      {
-        email: normalizedEmail,
-        ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
-      },
-      { signal: controller.signal }
-    )
-
-    if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
-
-    setRegisterToken(response.register_token, response.expires_in)
-    toastStore.success(t('emailCode.codeSent'))
-    codeError.value = false
-    codeInputRef.value?.reset()
-    forceTurnstileForSend.value = false
-    startCooldown()
-
-    if (turnstileEnabled.value) {
-      turnstileToken.value = null
-      turnstileIssuedAt.value = null
-      turnstileRef.value?.reset()
-    }
-  } catch (error) {
-    if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
-
-    if (turnstileEnabled.value) {
-      turnstileToken.value = null
-      turnstileIssuedAt.value = null
-      turnstileRef.value?.reset()
-    }
-
-    if (error instanceof ApiError) {
-      if (isTurnstileRequiredError(error)) {
-        forceTurnstileForSend.value = true
-        toastStore.warning(t('auth.error.turnstileRequired'))
-        return
-      }
-
-      if (error.status === 429) {
-        toastStore.error(t('emailCode.tooManyRequests'))
-      } else {
-        toastStore.error(error.message)
-      }
-    } else {
-      toastStore.error(t('emailCode.sendFailed'))
-    }
-  } finally {
-    if (requestToken === registrationCodeRequestToken) {
-      isSendingCode.value = false
-      if (registrationCodeController === controller) {
-        registrationCodeController = null
-      }
-    }
-  }
+function resetRegistrationTurnstile() {
+  turnstileToken.value = null
+  turnstileIssuedAt.value = null
+  turnstileRef.value?.reset()
 }
 
 function handleResendCodeClick() {
-  void handleResendCode()
+  void requestRegistrationCode(true)
 }
 
 function handleChangeEmailClick() {
@@ -1226,8 +1136,7 @@ function handleCodeComplete(code: string) {
 }
 
 function goBackToEmail() {
-  abortRegistrationCodeRequest()
-  isSendingCode.value = false
+  cancelRegistrationRequests()
   step.value = 'email'
   primaryStep.value = 'email'
   verificationCode.value = ''
@@ -1247,6 +1156,7 @@ function goBackToEmail() {
 }
 
 async function handleRegister() {
+  if (isLoading.value) return
   const emailValidation = validateRegistrationEmail({ showToast: true })
   const normalizedEmail = emailValidation.normalizedEmail
   const formValidation = registerModel.validateRegisterForm({
@@ -1266,40 +1176,61 @@ async function handleRegister() {
   }
 
   email.value = normalizedEmail
-
-  const needsTurnstile = !hasValidRegisterToken()
-  if (turnstileEnabled.value && needsTurnstile && !isTurnstileTokenFresh()) {
-    forceTurnstileForRegister.value = true
-    const token = await executeTurnstileChallenge(turnstileRef.value, (nextToken) => {
-      turnstileToken.value = nextToken
+  resetGooglePopupState()
+  const attempt = formRequests.begin()
+  if (!attempt) return
+  const submittedPassword = password.value
+  const submittedCode = verificationCode.value
+  const submittedToken = hasValidRegisterToken() ? registerToken.value || undefined : undefined
+  const loginTarget = registerModel.resolveRegisterLoginTarget(redirectTo.value)
+  try {
+    if (turnstileEnabled.value && !submittedToken && !isTurnstileTokenFresh()) {
+      forceTurnstileForRegister.value = true
+      await nextTick()
+      if (!attempt.isCurrent()) return
+      const token = await executeTurnstileChallenge(turnstileRef.value)
+      if (!attempt.isCurrent()) return
+      if (!token) {
+        toastStore.warning(t('auth.error.turnstileRequired'))
+        return
+      }
+      turnstileToken.value = token
       turnstileIssuedAt.value = Date.now()
-    })
-    if (!token) {
-      toastStore.warning(t('auth.error.turnstileRequired'))
-      return
     }
+    serverPasswordErrors.value = []
+    attempt.handoffToStore()
+    const result = await authStore.register(
+      formValidation.trimmedUsername,
+      normalizedEmail,
+      submittedPassword,
+      submittedCode,
+      undefined,
+      submittedToken ? undefined : turnstileToken.value || undefined,
+      submittedToken,
+      { signal: attempt.signal }
+    )
+    if (!attempt.isCurrent() || (!result.success && result.code === 'auth_flow_cancelled')) return
+    await applyRegistrationResult(result, loginTarget)
+  } catch (error) {
+    if (attempt.isCurrent()) toastStore.error(t(getTurnstileErrorMessageKey(error)))
+  } finally {
+    attempt.dispose()
   }
+}
 
-  serverPasswordErrors.value = []
-
-  const result = await authStore.register(
-    formValidation.trimmedUsername,
-    normalizedEmail,
-    password.value,
-    verificationCode.value,
-    undefined,
-    needsTurnstile ? turnstileToken.value || undefined : undefined,
-    hasValidRegisterToken() ? registerToken.value || undefined : undefined
-  )
-
+async function applyRegistrationResult(
+  result: Awaited<ReturnType<typeof authStore.register>>,
+  loginTarget: string
+) {
   if (result.success) {
     forceTurnstileForRegister.value = false
     toastStore.success(t('auth.registerSuccess'))
-    await router.replace(registerModel.resolveRegisterLoginTarget(redirectTo.value))
+    await router.replace(loginTarget)
     return
   }
 
   codeError.value = true
+  verificationCode.value = ''
   codeInputRef.value?.reset()
 
   if (result.passwordErrors && result.passwordErrors.length > 0) {
@@ -1310,6 +1241,7 @@ async function handleRegister() {
     result.error === 'auth.error.turnstileRequired' ||
     result.error === 'auth.error.turnstileFailed'
   ) {
+    setRegisterToken()
     forceTurnstileForRegister.value = true
     turnstileToken.value = null
     turnstileIssuedAt.value = null
@@ -1367,7 +1299,7 @@ async function handleRiskVerificationSubmit() {
 }
 
 watch([step, riskPendingToken], formRequests.cancel, { flush: 'sync' })
-watch(() => route.query, formRequests.cancel, { deep: true, flush: 'sync' })
+watch(() => route.query, cancelRegistrationRequests, { deep: true, flush: 'sync' })
 
 async function handleMfaResolved(result: AuthFlowResult) {
   await applyAuthFlowResult(result)
@@ -1378,7 +1310,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  abortRegistrationCodeRequest()
   if (cooldownTimer) {
     clearInterval(cooldownTimer)
     cooldownTimer = null
