@@ -385,8 +385,12 @@ export const authService = {
     })
   },
 
-  async sendVerificationEmail(data?: SendVerificationEmailRequest): Promise<{ message: string }> {
+  async sendVerificationEmail(
+    data?: SendVerificationEmailRequest,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<{ message: string }> {
     return apiClient.post('/email/send-verification-email', data ?? null, {
+      ...options,
       skipErrorToast: true,
     })
   },
@@ -411,8 +415,12 @@ export const authService = {
     })
   },
 
-  async resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
+  async resetPassword(
+    data: ResetPasswordRequest,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<{ message: string }> {
     return apiClient.post('/email/reset-password', data, {
+      ...options,
       skipAuth: true,
       skipErrorToast: true,
     })
