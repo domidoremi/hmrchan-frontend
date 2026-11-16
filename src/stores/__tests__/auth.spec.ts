@@ -8,7 +8,11 @@ import {
   exchangeGoogleHandoff,
   startGoogleAuthRedirect,
 } from '@/services/googleAuthService'
-import { clearAuthRuntimeSession, getRuntimeAccessToken } from '@/api/client/auth-runtime'
+import {
+  clearAuthRuntimeSession,
+  getAuthRuntimeSession,
+  getRuntimeAccessToken,
+} from '@/api/client/auth-runtime'
 import { enterRiskMode, getRiskMode } from '@/security/runtimeState'
 
 const mockRouterPush = vi.hoisted(() => vi.fn())
@@ -74,6 +78,8 @@ vi.mock('@/api', async () => {
     twoFactorService: {
       ...actual.twoFactorService,
       verifyLogin: vi.fn(),
+      beginWebAuthnLogin: vi.fn(),
+      finishWebAuthnLogin: vi.fn(),
     },
   }
 })
@@ -110,6 +116,16 @@ function createMeResponse(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((done, fail) => {
+    resolve = done
+    reject = fail
+  })
+  return { promise, resolve, reject }
+}
+
 describe('auth store', () => {
   it('keeps password login available while passive passkey discovery waits or fails', async () => {
     const store = useAuthStore()
@@ -132,6 +148,9 @@ describe('auth store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    vi.mocked(twoFactorService.verifyLogin).mockReset()
+    vi.mocked(twoFactorService.beginWebAuthnLogin).mockReset()
+    vi.mocked(twoFactorService.finishWebAuthnLogin).mockReset()
     clearAuthRuntimeSession()
     enterRiskMode('test-reset')
     vi.mocked(authService.getCurrentUser).mockResolvedValue(createMeResponse())
@@ -301,10 +320,197 @@ describe('auth store', () => {
       'pending-mfa-token',
       '123456',
       'Chrome',
-      'desktop'
+      'desktop',
+      { signal: expect.any(AbortSignal) }
     )
     expect(store.user).toEqual(expect.objectContaining({ email: 'tester@example.com' }))
   })
+
+  it.each(['code', 'passkey'] as const)(
+    'ignores a late %s success after cancellation and unlocks immediately',
+    async (method) => {
+      const store = useAuthStore(),
+        controller = new AbortController()
+      const pending = deferred<ReturnType<typeof createSessionSummary>>()
+      const service =
+        method === 'code'
+          ? vi.mocked(twoFactorService.verifyLogin)
+          : vi.mocked(twoFactorService.finishWebAuthnLogin)
+      service.mockReturnValueOnce(pending.promise)
+      const result =
+        method === 'code'
+          ? store.completeMfaLogin('pending', '123456', { signal: controller.signal })
+          : store.finishWebAuthnLogin('pending', 'ceremony', { id: 'credential' } as never, {
+              signal: controller.signal,
+            })
+      expect(store.isLoading).toBe(true)
+      controller.abort()
+      expect(store.isLoading).toBe(false)
+      pending.resolve(createSessionSummary())
+      expect(await result).toMatchObject({ status: 'error', code: 'auth_flow_cancelled' })
+      expect(store.user).toBeNull()
+      expect(store.isAuthenticated).toBe(false)
+      expect(getAuthRuntimeSession()).toBeNull()
+      expect(authService.getCurrentUser).not.toHaveBeenCalled()
+      expect(clearPendingGoogleAuthRequest).not.toHaveBeenCalled()
+      expect(getRiskMode()).toBe('degraded')
+      expect(store.error).toBeNull()
+    }
+  )
+
+  it('does not let an abandoned request clear a new MFA request or set its error', async () => {
+    const store = useAuthStore(),
+      controller = new AbortController()
+    const old = deferred<ReturnType<typeof createSessionSummary>>()
+    const current = deferred<ReturnType<typeof createSessionSummary>>()
+    vi.mocked(twoFactorService.verifyLogin)
+      .mockReturnValueOnce(old.promise)
+      .mockReturnValueOnce(current.promise)
+    const first = store.completeMfaLogin('old-token', '111111', { signal: controller.signal })
+    controller.abort()
+    const second = store.completeMfaLogin('new-token', '222222')
+    old.reject(new ApiError('Expired verification', 401))
+    expect(await first).toMatchObject({ code: 'auth_flow_cancelled' })
+    expect(store.isLoading).toBe(true)
+    expect(store.error).toBeNull()
+    current.resolve(createSessionSummary())
+    expect(await second).toMatchObject({ status: 'success' })
+    expect(store.isLoading).toBe(false)
+    expect(store.isAuthenticated).toBe(true)
+  })
+
+  it('invalidates a pending MFA request when the session is cleared', async () => {
+    const store = useAuthStore(),
+      pending = deferred<ReturnType<typeof createSessionSummary>>()
+    vi.mocked(twoFactorService.verifyLogin).mockReturnValueOnce(pending.promise)
+    const result = store.completeMfaLogin('pending', '123456')
+    store.clearLocalSession()
+    expect(store.isLoading).toBe(false)
+    pending.resolve(createSessionSummary())
+    expect(await result).toMatchObject({ code: 'auth_flow_cancelled' })
+    expect(store.user).toBeNull()
+    expect(getAuthRuntimeSession()).toBeNull()
+  })
+
+  it('does not return obsolete WebAuthn options after cancellation', async () => {
+    const store = useAuthStore(),
+      controller = new AbortController()
+    const pending = deferred<Awaited<ReturnType<typeof twoFactorService.beginWebAuthnLogin>>>()
+    vi.mocked(twoFactorService.beginWebAuthnLogin).mockReturnValueOnce(pending.promise)
+    const result = store.beginWebAuthnLogin('pending', { signal: controller.signal })
+    controller.abort()
+    pending.resolve({ ceremony_id: 'old', options: { challenge: 'old-challenge' } })
+    expect(await result).toMatchObject({ code: 'auth_flow_cancelled' })
+    expect(store.isLoading).toBe(false)
+    const signal = vi.mocked(twoFactorService.beginWebAuthnLogin).mock.calls[0]?.[1]?.signal
+    expect(signal?.aborted).toBe(true)
+  })
+
+  it('does not dispatch any MFA call for an already aborted attempt', async () => {
+    const store = useAuthStore(),
+      controller = new AbortController()
+    controller.abort()
+    const options = { signal: controller.signal }
+    expect(await store.completeMfaLogin('pending', '123456', options)).toMatchObject({
+      code: 'auth_flow_cancelled',
+    })
+    expect(await store.beginWebAuthnLogin('pending', options)).toMatchObject({
+      code: 'auth_flow_cancelled',
+    })
+    expect(
+      await store.finishWebAuthnLogin('pending', 'ceremony', {} as never, options)
+    ).toMatchObject({ code: 'auth_flow_cancelled' })
+    expect(twoFactorService.verifyLogin).not.toHaveBeenCalled()
+    expect(twoFactorService.beginWebAuthnLogin).not.toHaveBeenCalled()
+    expect(twoFactorService.finishWebAuthnLogin).not.toHaveBeenCalled()
+    expect(store.isLoading).toBe(false)
+    expect(store.error).toBeNull()
+  })
+
+  it('returns current WebAuthn options and establishes a passkey session', async () => {
+    const store = useAuthStore()
+    const controller = new AbortController()
+    vi.mocked(twoFactorService.beginWebAuthnLogin).mockResolvedValueOnce({
+      ceremony_id: 'current',
+      options: { challenge: 'challenge' },
+      methods: ['webauthn'],
+      provider: 'local',
+    })
+    expect(await store.beginWebAuthnLogin('pending', { signal: controller.signal })).toEqual({
+      status: 'success',
+      ceremonyId: 'current',
+      options: { challenge: 'challenge' },
+      methods: ['webauthn'],
+      provider: 'local',
+    })
+    expect(store.isLoading).toBe(false)
+    vi.mocked(twoFactorService.finishWebAuthnLogin).mockResolvedValueOnce(createSessionSummary())
+    expect(
+      await store.finishWebAuthnLogin('pending', 'current', { id: 'credential' } as never, {
+        signal: controller.signal,
+      })
+    ).toMatchObject({ status: 'success' })
+    expect(store.isAuthenticated).toBe(true)
+    expect(store.isLoading).toBe(false)
+    expect(getRiskMode()).toBe('normal')
+    expect(clearPendingGoogleAuthRequest).toHaveBeenCalledOnce()
+    const signal = vi.mocked(twoFactorService.finishWebAuthnLogin).mock.calls[0]?.[5]?.signal
+    controller.abort()
+    expect(signal?.aborted).toBe(false)
+  })
+
+  it.each(['code', 'options', 'passkey'] as const)(
+    'preserves current %s failures and releases loading',
+    async (method) => {
+      const store = useAuthStore()
+      const failure = new ApiError('Invalid verification', 400)
+      vi.mocked(twoFactorService.verifyLogin).mockRejectedValueOnce(failure)
+      vi.mocked(twoFactorService.beginWebAuthnLogin).mockRejectedValueOnce(failure)
+      vi.mocked(twoFactorService.finishWebAuthnLogin).mockRejectedValueOnce(failure)
+      const result = await (method === 'code'
+        ? store.completeMfaLogin('pending', '123456')
+        : method === 'options'
+          ? store.beginWebAuthnLogin('pending')
+          : store.finishWebAuthnLogin('pending', 'current', {} as never))
+      const expectedError = {
+        code: 'auth.error.twoFactorInvalid',
+        options: 'auth.error.webauthnNotEnrolled',
+        passkey: 'auth.error.validationError',
+      }[method]
+      expect(result).toMatchObject({ status: 'error', error: expectedError })
+      expect(store.error).toBe(expectedError)
+      expect(store.isLoading).toBe(false)
+      expect(store.user).toBeNull()
+    }
+  )
+
+  it.each(['abort', 'logout'] as const)(
+    'suppresses completion after %s during accepted-session hydration',
+    async (action) => {
+      const store = useAuthStore()
+      const controller = new AbortController()
+      const hydration = deferred<ReturnType<typeof createMeResponse>>()
+      vi.mocked(twoFactorService.verifyLogin).mockResolvedValueOnce(createSessionSummary())
+      vi.mocked(authService.getCurrentUser).mockReturnValueOnce(hydration.promise)
+      const result = store.completeMfaLogin('pending', '123456', { signal: controller.signal })
+      await Promise.resolve()
+      expect(store.isAuthenticated).toBe(true)
+      expect(authService.getCurrentUser).toHaveBeenCalledOnce()
+      if (action === 'abort') controller.abort()
+      else store.clearLocalSession()
+      const clearedGoogleState = vi.mocked(clearPendingGoogleAuthRequest).mock.calls.length
+      expect(store.isLoading).toBe(false)
+      hydration.resolve(createMeResponse())
+      expect(await result).toMatchObject({ code: 'auth_flow_cancelled' })
+      // Abort cannot roll back a response already accepted into the session.
+      expect(store.isAuthenticated).toBe(action === 'abort')
+      expect(Boolean(getAuthRuntimeSession())).toBe(action === 'abort')
+      expect(clearPendingGoogleAuthRequest).toHaveBeenCalledTimes(clearedGoogleState)
+      expect(getRiskMode()).toBe('degraded')
+      expect(store.error).toBeNull()
+      store.clearLocalSession()
+    }
+  )
 
   it('pre-verifies challenge trust before password login when a turnstile token is provided', async () => {
     const store = useAuthStore()

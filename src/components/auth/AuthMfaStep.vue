@@ -204,7 +204,9 @@ async function handleCodeSubmit() {
   const attempt = beginAttempt()
   if (!attempt) return
   try {
-    const result = await authStore.completeMfaLogin(attempt.token, nextCode)
+    const result = await authStore.completeMfaLogin(attempt.token, nextCode, {
+      signal: attempt.controller.signal,
+    })
     if (!isCurrentAttempt(attempt)) return
     if (result.status !== 'error') code.value = ''
     emit('resolved', result)
@@ -230,7 +232,9 @@ async function handlePasskeySubmit() {
   const attempt = beginAttempt()
   if (!attempt) return
   try {
-    const optionsResult = await authStore.beginWebAuthnLogin(attempt.token)
+    const optionsResult = await authStore.beginWebAuthnLogin(attempt.token, {
+      signal: attempt.controller.signal,
+    })
     if (!isCurrentAttempt(attempt)) return
     if (optionsResult.status === 'error') {
       emit('resolved', optionsResult)
@@ -252,7 +256,8 @@ async function handlePasskeySubmit() {
     const result = await authStore.finishWebAuthnLogin(
       attempt.token,
       optionsResult.ceremonyId,
-      serializePublicKeyCredential(assertion)
+      serializePublicKeyCredential(assertion),
+      { signal: attempt.controller.signal }
     )
     if (isCurrentAttempt(attempt)) emit('resolved', result)
   } catch {

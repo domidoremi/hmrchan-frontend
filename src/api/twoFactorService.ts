@@ -123,14 +123,19 @@ export const twoFactorService = {
     pendingMfaLoginToken: string,
     code: string,
     deviceName?: string,
-    deviceType?: string
+    deviceType?: string,
+    options: { signal?: AbortSignal } = {}
   ): Promise<AuthResponse | RiskVerificationChallengeResponse | MfaRequiredResponse> {
-    return apiClient.post('/2fa/verify-login', {
-      pending_mfa_login_token: pendingMfaLoginToken,
-      code,
-      ...(deviceName ? { device_name: deviceName } : {}),
-      ...(deviceType ? { device_type: deviceType } : {}),
-    })
+    return apiClient.post(
+      '/2fa/verify-login',
+      {
+        pending_mfa_login_token: pendingMfaLoginToken,
+        code,
+        ...(deviceName ? { device_name: deviceName } : {}),
+        ...(deviceType ? { device_type: deviceType } : {}),
+      },
+      { ...options, skipErrorToast: true }
+    )
   },
 
   async regenerateBackupCodes(code?: string, password?: string): Promise<BackupCodesResponse> {
@@ -189,7 +194,8 @@ export const twoFactorService = {
   },
 
   async beginWebAuthnLogin(
-    pendingMfaLoginToken: string
+    pendingMfaLoginToken: string,
+    options: { signal?: AbortSignal } = {}
   ): Promise<WebAuthnAuthenticationOptionsResponse> {
     return apiClient.post<WebAuthnAuthenticationOptionsResponse>(
       '/2fa/webauthn/authenticate/options',
@@ -197,6 +203,7 @@ export const twoFactorService = {
         pending_mfa_login_token: pendingMfaLoginToken,
       },
       {
+        ...options,
         skipAuth: true,
         skipErrorToast: true,
       }
@@ -208,7 +215,8 @@ export const twoFactorService = {
     ceremonyId: string,
     credential: SerializedPublicKeyCredential,
     deviceName?: string,
-    deviceType?: string
+    deviceType?: string,
+    options: { signal?: AbortSignal } = {}
   ): Promise<AuthResponse> {
     return apiClient.post<AuthResponse>(
       '/2fa/webauthn/authenticate/verify',
@@ -220,6 +228,7 @@ export const twoFactorService = {
         ...(deviceType ? { device_type: deviceType } : {}),
       },
       {
+        ...options,
         skipAuth: true,
         skipErrorToast: true,
       }

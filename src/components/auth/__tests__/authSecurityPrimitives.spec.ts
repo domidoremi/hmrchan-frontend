@@ -165,7 +165,9 @@ describe('auth security primitives', () => {
     await verifyButton!.trigger('click')
     await flushPromises()
 
-    expect(state.authStore.completeMfaLogin).toHaveBeenCalledWith('pending-token', 'backup-123')
+    expect(state.authStore.completeMfaLogin).toHaveBeenCalledWith('pending-token', 'backup-123', {
+      signal: expect.any(AbortSignal),
+    })
     expect(wrapper.emitted('resolved')?.[0]).toEqual([{ status: 'success' }])
     expect((wrapper.get('input').element as HTMLInputElement).value).toBe('')
   })
@@ -202,7 +204,9 @@ describe('auth security primitives', () => {
     await wrapper.get('button').trigger('click')
     await flushPromises()
 
-    expect(state.authStore.beginWebAuthnLogin).toHaveBeenCalledWith('pending-token')
+    expect(state.authStore.beginWebAuthnLogin).toHaveBeenCalledWith('pending-token', {
+      signal: expect.any(AbortSignal),
+    })
     expect(state.webauthn.getWebAuthnAssertion).toHaveBeenCalledWith(
       { challenge: 'challenge-1' },
       { signal: expect.any(AbortSignal) }
@@ -211,7 +215,8 @@ describe('auth security primitives', () => {
     expect(state.authStore.finishWebAuthnLogin).toHaveBeenCalledWith(
       'pending-token',
       'ceremony-1',
-      { id: 'credential-1' }
+      { id: 'credential-1' },
+      { signal: expect.any(AbortSignal) }
     )
     expect(wrapper.emitted('resolved')?.[0]).toEqual([{ status: 'success' }])
   })
@@ -336,7 +341,8 @@ describe('auth security primitives', () => {
     expect(state.authStore.finishWebAuthnLogin).toHaveBeenCalledExactlyOnceWith(
       'new-token',
       'ceremony-1',
-      { id: 'credential-1' }
+      { id: 'credential-1' },
+      { signal: expect.any(AbortSignal) }
     )
     expect(wrapper.emitted('resolved')).toEqual([[{ status: 'success' }]])
   })
