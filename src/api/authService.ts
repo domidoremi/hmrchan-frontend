@@ -352,7 +352,8 @@ export const authService = {
     code: string,
     turnstileToken?: string,
     deviceName?: string,
-    deviceType?: string
+    deviceType?: string,
+    options: { signal?: AbortSignal } = {}
   ): Promise<AuthResponse | MfaRequiredResponse> {
     return apiClient.post<AuthResponse | MfaRequiredResponse>(
       '/auth/verify-risk-login',
@@ -364,6 +365,7 @@ export const authService = {
         ...(deviceType ? { device_type: deviceType } : {}),
       },
       {
+        ...options,
         skipAuth: true,
         skipErrorToast: true,
         skipChallengeRetry: true,

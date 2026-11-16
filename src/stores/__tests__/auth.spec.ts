@@ -260,7 +260,8 @@ describe('auth store', () => {
       '123456',
       undefined,
       'Chrome',
-      'desktop'
+      'desktop',
+      { signal: expect.any(AbortSignal) }
     )
     expect(store.user).toEqual(expect.objectContaining({ email: 'tester@example.com' }))
   })
@@ -290,6 +291,23 @@ describe('auth store', () => {
       })
     )
     expect(clearPendingGoogleAuthRequest).toHaveBeenCalled()
+  })
+
+  it('rejects pre-cancelled Google and risk attempts without transport or challenge dispatch', async () => {
+    const store = useAuthStore()
+    const controller = new AbortController()
+    controller.abort()
+    expect(await store.completeGoogleAuth('handoff', { signal: controller.signal })).toMatchObject({
+      status: 'error',
+      code: 'auth_flow_cancelled',
+    })
+    expect(
+      await store.verifyRiskLogin('pending', '123456', 'challenge', { signal: controller.signal })
+    ).toMatchObject({ status: 'error', code: 'auth_flow_cancelled' })
+    expect(exchangeGoogleHandoff).not.toHaveBeenCalled()
+    expect(authService.verifyRiskLogin).not.toHaveBeenCalled()
+    expect(clientSecurityService.verify).not.toHaveBeenCalled()
+    expect(store.isLoading).toBe(false)
   })
 
   it('keeps invalid Google handoff failures in Google auth semantics', async () => {
