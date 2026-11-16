@@ -277,8 +277,12 @@ export const authService = {
     return response
   },
 
-  async register(data: RegisterRequest): Promise<RegisterResponse> {
+  async register(
+    data: RegisterRequest,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<RegisterResponse> {
     return apiClient.post<RegisterResponse>('/auth/register', data, {
+      ...options,
       skipAuth: true,
       skipErrorToast: true,
       skipChallengeRetry: true,

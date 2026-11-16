@@ -21,7 +21,7 @@ import { createAuthSessionController } from '@/services/authSessionController'
 import { reportClientEvent } from '@/utils/clientReporter'
 import { resetRiskMode } from '@/security/runtimeState'
 import { resetPrivateSessionState } from '@/services/privateSessionState'
-import { subscribeAuthSessionScope } from '@/services/authSessionScope'
+import { createAuthRequestScope } from '@/services/authRequestScope'
 
 export type AuthUser = UserResponse
 type RuntimeAuthzCache = {
@@ -79,6 +79,14 @@ type WebAuthnLoginOptionsResult =
 
 type AuthRequestOptions = { signal?: AbortSignal }
 
+type RegistrationResult =
+  | { success: true; user: AuthUser }
+  | { success: false; error: string; code?: string; passwordErrors?: string[] }
+
+function cancelledRegistrationResult(): RegistrationResult {
+  return { success: false, error: 'auth.error.registerFailed', code: 'auth_flow_cancelled' }
+}
+
 function cancelledAuthResult(): AuthFlowErrorResult {
   return { status: 'error', error: 'auth.error.loginFailed', code: 'auth_flow_cancelled' }
 }
@@ -119,6 +127,7 @@ export const useAuthStore = defineStore('auth', () => {
   const stepUpRequired = ref(false)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const startAuthRequest = createAuthRequestScope({ isLoading, error })
 
   const isInitialized = ref(false)
 
@@ -142,31 +151,36 @@ export const useAuthStore = defineStore('auth', () => {
     verificationCode: string,
     fullName?: string,
     turnstileToken?: string,
-    registerToken?: string
-  ) {
+    registerToken?: string,
+    options: AuthRequestOptions = {}
+  ): Promise<RegistrationResult> {
+    if (options.signal?.aborted) return cancelledRegistrationResult()
     if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
-
-    isLoading.value = true
-    error.value = null
+    const operation = startAuthRequest(options.signal)
 
     try {
       if (turnstileToken) {
-        await clientSecurityService.verify(turnstileToken)
+        await clientSecurityService.verify(turnstileToken, { signal: operation.signal })
       }
-
-      const response = await authService.register({
-        username,
-        email,
-        password,
-        verification_code: verificationCode,
-        ...(fullName ? { full_name: fullName } : {}),
-        ...(registerToken ? { register_token: registerToken } : {}),
-        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
-      })
-      sessionController.clearSession()
+      if (!operation.isCurrent()) return cancelledRegistrationResult()
+      const response = await authService.register(
+        {
+          username,
+          email,
+          password,
+          verification_code: verificationCode,
+          ...(fullName ? { full_name: fullName } : {}),
+          ...(registerToken ? { register_token: registerToken } : {}),
+          ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+        },
+        { signal: operation.signal }
+      )
+      if (!operation.isCurrent()) return cancelledRegistrationResult()
+      operation.acceptResponse(() => sessionController.clearSession())
 
       return { success: true, user: response.user }
     } catch (err) {
+      if (!operation.isCurrent()) return cancelledRegistrationResult()
       let errorMessage = 'auth.error.registerFailed'
       let passwordErrors: string[] | undefined
       if (err instanceof ApiError) {
@@ -181,9 +195,9 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
       error.value = errorMessage
-      return { success: false, error: errorMessage, passwordErrors }
+      return { success: false, error: errorMessage, ...(passwordErrors ? { passwordErrors } : {}) }
     } finally {
-      isLoading.value = false
+      operation.dispose()
     }
   }
 
@@ -343,54 +357,6 @@ export const useAuthStore = defineStore('auth', () => {
       return errorResult
     } finally {
       operation.dispose()
-    }
-  }
-
-  let activeAuthRequest: AbortController | null = null
-
-  function startAuthRequest(externalSignal?: AbortSignal, background = false) {
-    const controller = new AbortController()
-    if (!background) {
-      activeAuthRequest = controller
-      isLoading.value = true
-      error.value = null
-    }
-    let stopSessionObservation = () => {}
-    const cancel = () => {
-      controller.abort()
-      stopSessionObservation()
-      externalSignal?.removeEventListener('abort', cancel)
-      if (activeAuthRequest === controller) {
-        activeAuthRequest = null
-        isLoading.value = false
-      }
-    }
-    externalSignal?.addEventListener('abort', cancel, { once: true })
-    stopSessionObservation = subscribeAuthSessionScope(cancel)
-    return {
-      signal: controller.signal,
-      isCurrent: () =>
-        (background || activeAuthRequest === controller) && !controller.signal.aborted,
-      acceptResponse<T>(accept: () => T): T {
-        // Establishing this session changes the scope synchronously. Observe later
-        // transitions again while the accepted session hydrates its user details.
-        stopSessionObservation()
-        try {
-          return accept()
-        } finally {
-          if (activeAuthRequest === controller && !controller.signal.aborted) {
-            stopSessionObservation = subscribeAuthSessionScope(cancel)
-          }
-        }
-      },
-      dispose() {
-        stopSessionObservation()
-        externalSignal?.removeEventListener('abort', cancel)
-        if (activeAuthRequest === controller) {
-          activeAuthRequest = null
-          isLoading.value = false
-        }
-      },
     }
   }
 
