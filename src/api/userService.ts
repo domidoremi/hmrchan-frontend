@@ -101,8 +101,11 @@ export const userService = {
     )
   },
 
-  async restoreAccount(data: RestoreAccountRequest): Promise<void> {
-    await apiClient.post('/account/restore', data)
+  async restoreAccount(
+    data: RestoreAccountRequest,
+    options: Pick<RequestConfig, 'signal' | 'skipErrorToast'> = {}
+  ): Promise<void> {
+    await apiClient.post('/account/restore', data, options)
   },
 
   async getDeletionStatus(): Promise<{

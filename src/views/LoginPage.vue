@@ -395,7 +395,7 @@
           variant="ghost"
           full-width
           :loading="isRestoringAccount"
-          :disabled="!canRestoreAccount"
+          :disabled="!canRestoreAccount || isLoading"
           @click="handleRestoreAccount"
         >
           {{ $t('auth.restoreButton') }}
@@ -470,8 +470,14 @@ const {
   stopConditional: stopConditionalPasskeyAutofill,
 } = useLoginPasskeyAttempt()
 const formRequests = useAuthEntryAttempt()
+const restoreRequests = useAuthEntryAttempt()
 const isLoading = computed(
-  () => storeLoading.value || passkeyBusy.value || formRequests.busy.value || googleBusy.value
+  () =>
+    storeLoading.value ||
+    passkeyBusy.value ||
+    formRequests.busy.value ||
+    restoreRequests.busy.value ||
+    googleBusy.value
 )
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 
@@ -500,7 +506,7 @@ const nextRedirectTarget = ref('/')
 const restoreIdentifier = ref('')
 const restorePassword = ref('')
 const showRestorePassword = ref(false)
-const isRestoringAccount = ref(false)
+const isRestoringAccount = restoreRequests.busy
 const showRestorePanel = ref(false)
 const webauthnSupported = isWebAuthnSupported()
 const conditionalPasskeyAvailable = ref(false)
@@ -672,6 +678,7 @@ function returnToCredentials() {
 
 function handleBack() {
   formRequests.cancel()
+  restoreRequests.cancel()
   resetGooglePopupState()
   cancelPasskeyAttempt()
   switch (
@@ -951,6 +958,7 @@ async function handleGoogleClientChallengeVerify(token: string) {
 
 async function continueGoogleInCurrentPage(options: { closePopup?: boolean } = {}) {
   formRequests.cancel()
+  restoreRequests.cancel()
   cancelPasskeyAttempt()
   if (!GOOGLE_AUTH_ENABLED) {
     credentialsError.value = t('auth.error.googleLoginFailed')
@@ -1096,11 +1104,14 @@ watch(
   () => {
     cancelPasskeyAttempt()
     formRequests.cancel()
+    restoreRequests.cancel()
   },
   { flush: 'sync' }
 )
 watch(() => route.query, formRequests.cancel, { deep: true, flush: 'sync' })
 watch(() => route.query, cancelPasskeyAttempt, { deep: true, flush: 'sync' })
+watch(() => route.query, restoreRequests.cancel, { deep: true, flush: 'sync' })
+watch([restoreIdentifier, showRestorePanel], restoreRequests.cancel, { flush: 'sync' })
 
 async function maybePromptPasskeyEnrollment() {
   if (!webauthnSupported) return
@@ -1128,7 +1139,7 @@ async function maybePromptPasskeyEnrollment() {
 }
 
 async function handleRestoreAccount() {
-  if (isRestoringAccount.value) return
+  if (isLoading.value) return
 
   const validation = loginModel.validateRestoreAccountForm({
     identifier: restoreIdentifier.value,
@@ -1140,23 +1151,28 @@ async function handleRestoreAccount() {
     return
   }
 
-  isRestoringAccount.value = true
+  stopConditionalPasskeyAutofill()
+  resetGooglePopupState()
+  const attempt = restoreRequests.begin()
+  if (!attempt) return
+  const query = loginModel.buildLoginQueryWithoutRestore(route.query)
   try {
-    await userService.restoreAccount({
-      identifier: validation.trimmedIdentifier,
-      password: restorePassword.value,
-    })
-
+    await userService.restoreAccount(
+      { identifier: validation.trimmedIdentifier, password: restorePassword.value },
+      { signal: attempt.signal, skipErrorToast: true }
+    )
+    if (!attempt.isCurrent()) return
     restorePassword.value = ''
     toastStore.success(t('profile.restoreAccountSuccess'))
     await router.replace({
       name: 'login',
-      query: loginModel.buildLoginQueryWithoutRestore(route.query),
+      query,
     })
   } catch (error) {
+    if (!attempt.isCurrent()) return
     toastStore.error(error instanceof ApiError ? error.message : t('common.error'))
   } finally {
-    isRestoringAccount.value = false
+    attempt.dispose()
   }
 }
 
