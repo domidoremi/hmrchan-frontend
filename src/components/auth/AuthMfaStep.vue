@@ -14,6 +14,7 @@
         class="auth-mfa-step__method"
         :class="{ 'auth-mfa-step__method--active': selectedMethod === option.value }"
         :aria-pressed="selectedMethod === option.value"
+        :disabled="isBusy"
         @click="selectedMethod = option.value"
       >
         {{ option.label }}
@@ -30,6 +31,7 @@
           :inputmode="selectedMethod === 'backup_code' ? 'text' : 'numeric'"
           :placeholder="$t('auth.twoFactorCodePlaceholder')"
           autocomplete="one-time-code"
+          :disabled="isBusy"
           @keyup.enter="handleCodeSubmit"
         />
       </div>
@@ -37,7 +39,7 @@
       <p v-if="errorMessage" class="field-error">{{ errorMessage }}</p>
 
       <div class="action-group">
-        <Button type="button" full-width :loading="isLoading" @click="handleCodeSubmit">
+        <Button type="button" full-width :loading="isBusy" @click="handleCodeSubmit">
           {{ $t('auth.verifyButton') }}
         </Button>
       </div>
@@ -50,7 +52,7 @@
         <Button
           type="button"
           full-width
-          :loading="isLoading"
+          :loading="isBusy"
           :disabled="!webauthnSupported"
           @click="handlePasskeySubmit"
         >
@@ -65,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/Button.vue'
@@ -105,6 +107,40 @@ const { isLoading } = storeToRefs(authStore)
 const code = ref('')
 const selectedMethod = ref('totp')
 const webauthnSupported = isWebAuthnSupported()
+const isSubmitting = ref(false)
+const isBusy = computed(() => isLoading.value || isSubmitting.value)
+
+type MfaAttempt = { token: string; controller: AbortController }
+let activeAttempt: MfaAttempt | null = null
+
+function cancelAttempt() {
+  activeAttempt?.controller.abort()
+  activeAttempt = null
+  isSubmitting.value = false
+  code.value = ''
+}
+
+function beginAttempt(): MfaAttempt | null {
+  if (isBusy.value) return null
+  const attempt = { token: props.pendingMfaLoginToken, controller: new AbortController() }
+  activeAttempt = attempt
+  isSubmitting.value = true
+  return attempt
+}
+
+function isCurrentAttempt(attempt: MfaAttempt): boolean {
+  return activeAttempt === attempt && !attempt.controller.signal.aborted
+}
+
+function finishAttempt(attempt: MfaAttempt) {
+  if (activeAttempt === attempt) {
+    activeAttempt = null
+    isSubmitting.value = false
+  }
+}
+
+watch(() => props.pendingMfaLoginToken, cancelAttempt, { flush: 'sync' })
+onBeforeUnmount(cancelAttempt)
 
 const normalizedMethods = computed(() => {
   const values = Array.isArray(props.methods) ? props.methods : []
@@ -155,6 +191,7 @@ function localizeMethod(method: string): string {
 }
 
 async function handleCodeSubmit() {
+  if (isBusy.value) return
   const nextCode = code.value.trim()
   if (!nextCode) {
     emit('resolved', {
@@ -164,14 +201,24 @@ async function handleCodeSubmit() {
     return
   }
 
-  const result = await authStore.completeMfaLogin(props.pendingMfaLoginToken, nextCode)
-  if (result.status !== 'error') {
-    code.value = ''
+  const attempt = beginAttempt()
+  if (!attempt) return
+  try {
+    const result = await authStore.completeMfaLogin(attempt.token, nextCode)
+    if (!isCurrentAttempt(attempt)) return
+    if (result.status !== 'error') code.value = ''
+    emit('resolved', result)
+  } catch {
+    if (isCurrentAttempt(attempt)) {
+      emit('resolved', { status: 'error', error: 'auth.error.twoFactorInvalid' })
+    }
+  } finally {
+    finishAttempt(attempt)
   }
-  emit('resolved', result)
 }
 
 async function handlePasskeySubmit() {
+  if (isBusy.value) return
   if (!webauthnSupported) {
     emit('resolved', {
       status: 'error',
@@ -180,14 +227,20 @@ async function handlePasskeySubmit() {
     return
   }
 
-  const optionsResult = await authStore.beginWebAuthnLogin(props.pendingMfaLoginToken)
-  if (optionsResult.status === 'error') {
-    emit('resolved', optionsResult)
-    return
-  }
-
+  const attempt = beginAttempt()
+  if (!attempt) return
   try {
-    const assertion = await getWebAuthnAssertion(optionsResult.options)
+    const optionsResult = await authStore.beginWebAuthnLogin(attempt.token)
+    if (!isCurrentAttempt(attempt)) return
+    if (optionsResult.status === 'error') {
+      emit('resolved', optionsResult)
+      return
+    }
+
+    const assertion = await getWebAuthnAssertion(optionsResult.options, {
+      signal: attempt.controller.signal,
+    })
+    if (!isCurrentAttempt(attempt)) return
     if (!(assertion instanceof PublicKeyCredential)) {
       emit('resolved', {
         status: 'error',
@@ -197,16 +250,17 @@ async function handlePasskeySubmit() {
     }
 
     const result = await authStore.finishWebAuthnLogin(
-      props.pendingMfaLoginToken,
+      attempt.token,
       optionsResult.ceremonyId,
       serializePublicKeyCredential(assertion)
     )
-    emit('resolved', result)
+    if (isCurrentAttempt(attempt)) emit('resolved', result)
   } catch {
-    emit('resolved', {
-      status: 'error',
-      error: 'auth.error.webauthnLoginFailed',
-    })
+    if (isCurrentAttempt(attempt)) {
+      emit('resolved', { status: 'error', error: 'auth.error.webauthnLoginFailed' })
+    }
+  } finally {
+    finishAttempt(attempt)
   }
 }
 </script>
