@@ -603,7 +603,7 @@ describe('auth entry lifecycle with real stores and services', () => {
       const wrapper = page === 'register' ? await googleStart(page) : mountEntry(page)
       if (page === 'login') await passwordSubmit(wrapper)
       expect(useAuthStore().isAuthenticated).toBe(false)
-      await wrapper.get('#mfa-code').setValue('123456')
+      await wrapper.get('.auth-mfa-step input').setValue('123456')
       await button(wrapper, 'auth.verifyButton').trigger('click')
       await flushPromises()
       expect(useAuthStore().isAuthenticated).toBe(true)
