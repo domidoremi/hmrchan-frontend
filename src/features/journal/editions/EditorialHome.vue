@@ -94,6 +94,7 @@
     <section
       id="issue-calendar"
       class="editorial-calendar"
+      data-depth-scene
       data-reading-section
       tabindex="-1"
       data-reveal

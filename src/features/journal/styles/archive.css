@@ -102,10 +102,6 @@ body.site-body.next-body {
   gap: 14px;
   font-size: 10px;
 }
-.site-body .journal-shell .sidebar-bottom .motion-switch {
-  align-self: flex-start;
-  margin: 0 8px 5px;
-}
 .site-body .journal-shell .sidebar-bottom > a {
   display: flex;
   gap: 8px;

@@ -24,16 +24,6 @@
         </RouterLink>
       </nav>
       <div class="sidebar-bottom">
-        <button class="motion-switch" :aria-pressed="motion === 'full'" @click="toggleMotion">
-          <span class="status-light" :class="{ dim: motion !== 'full' }" />
-          {{
-            t(
-              motion === 'full'
-                ? 'journal.appearance.motionFull'
-                : 'journal.appearance.motionReduced'
-            )
-          }}
-        </button>
         <RouterLink to="/profile" tabindex="0"
           ><JournalIcon name="users" />{{
             auth.isAuthenticated
@@ -88,20 +78,6 @@
           >
             <JournalIcon name="calendar" />
           </button>
-          <button
-            v-if="!isNext"
-            class="motion-switch"
-            :aria-pressed="motion === 'full'"
-            @click="toggleMotion"
-          >
-            <span class="status-light" :class="{ dim: motion !== 'full' }" /><span>{{
-              t(
-                motion === 'full'
-                  ? 'journal.appearance.motionFull'
-                  : 'journal.appearance.motionReduced'
-              )
-            }}</span>
-          </button>
           <RouterLink
             tabindex="0"
             class="account-link"
@@ -146,16 +122,6 @@
             /></RouterLink>
           </nav>
           <div class="directory-footer">
-            <button class="motion-switch" :aria-pressed="motion === 'full'" @click="toggleMotion">
-              <span class="status-light" :class="{ dim: motion !== 'full' }" />
-              {{
-                t(
-                  motion === 'full'
-                    ? 'journal.appearance.motionFull'
-                    : 'journal.appearance.motionReduced'
-                )
-              }}
-            </button>
             <a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'" tabindex="0"
               >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }} ↗</a
             >
@@ -262,7 +228,6 @@ const authRoutes = new Set([
 ])
 const isAuthRoute = computed(() => authRoutes.has(String(route.name)))
 const runtime = shallowRef<JournalRuntime | null>(null)
-const motion = ref<'full' | 'reduced'>('full')
 const appearanceOpen = ref(false)
 const { menuOpen, menuButton, directory } = useJournalDirectory()
 provide(journalKey, runtime)
@@ -323,16 +288,9 @@ const labels: Record<string, string> = {
   community: 'journal.nav.discussions',
   favorites: 'journal.nav.collection',
 }
-function toggleMotion() {
-  motion.value = motion.value === 'full' ? 'reduced' : 'full'
-  runtime.value?.setMotion(motion.value)
-}
 function openAppearance() {
   menuOpen.value = false
   appearanceOpen.value = true
-}
-function syncMotion() {
-  motion.value = runtime.value?.getMotion() === 'reduced' ? 'reduced' : 'full'
 }
 function syncChrome() {
   document.body.classList.toggle('journal-auth', isAuthRoute.value)
@@ -351,8 +309,6 @@ onMounted(() => {
     },
     { feedback, translate: (key, named) => t(key, named ?? {}) }
   )
-  motion.value = runtime.value.getMotion()
-  document.addEventListener('journalmotionchange', syncMotion)
 })
 watch(locale, () => runtime.value?.refreshLocalizedControls(), { flush: 'post' })
 watch(
@@ -369,7 +325,6 @@ watch(
 onBeforeUnmount(() => {
   runtime.value?.dispose()
   feedback.dispose()
-  document.removeEventListener('journalmotionchange', syncMotion)
   document.body.classList.remove('site-body', 'next-body', 'reading-large', 'journal-auth')
   delete document.body.dataset['variant']
   delete document.body.dataset['page']
@@ -389,11 +344,6 @@ onBeforeUnmount(() => {
 .desktop-navigation a {
   min-inline-size: 0;
   white-space: normal;
-}
-.sidebar-bottom .motion-switch,
-.directory-footer .motion-switch {
-  flex-wrap: wrap;
-  text-align: start;
 }
 .directory-footer {
   flex-wrap: wrap;

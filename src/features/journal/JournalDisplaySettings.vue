@@ -15,6 +15,20 @@
         </label>
       </div>
     </fieldset>
+    <div class="display-motion-row">
+      <div>
+        <h3>{{ t('journal.appearance.motion') }}</h3>
+        <span>{{ t('journal.appearance.thisDevice') }}</span>
+      </div>
+      <div class="display-motion-options" role="group" :aria-label="t('journal.appearance.motion')">
+        <button type="button" :aria-pressed="motion === 'full'" @click="selectMotion('full')">
+          {{ t('settings.animationFull') }}
+        </button>
+        <button type="button" :aria-pressed="motion === 'reduced'" @click="selectMotion('reduced')">
+          {{ t('settings.animationReduced') }}
+        </button>
+      </div>
+    </div>
     <fieldset class="display-language-field" :aria-busy="languagePending">
       <legend :id="languageGroup">{{ t('settings.language') }}</legend>
       <p class="display-language-hint">{{ t('journal.appearance.languageHint') }}</p>
@@ -63,20 +77,6 @@
           }}</span></span
         >
       </a>
-    </div>
-    <div class="display-motion-row">
-      <div>
-        <h3>{{ t('journal.appearance.motion') }}</h3>
-        <span>{{ t('journal.appearance.thisDevice') }}</span>
-      </div>
-      <div class="display-motion-options" role="group" :aria-label="t('journal.appearance.motion')">
-        <button type="button" :aria-pressed="motion === 'full'" @click="selectMotion('full')">
-          {{ t('settings.animationFull') }}
-        </button>
-        <button type="button" :aria-pressed="motion === 'reduced'" @click="selectMotion('reduced')">
-          {{ t('settings.animationReduced') }}
-        </button>
-      </div>
     </div>
   </div>
 </template>
@@ -252,7 +252,7 @@ onBeforeUnmount(() => document.removeEventListener('journalmotionchange', syncMo
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding-block: 1.5rem;
+  padding-block-start: 1.5rem;
   gap: 1.25rem;
   border-top: 1px solid var(--line);
 }

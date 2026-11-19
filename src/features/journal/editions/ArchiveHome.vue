@@ -53,19 +53,6 @@
           ></span
         >
       </div>
-      <div class="source-distribution" :aria-label="t('journal.home.sourceDistribution')">
-        <div>
-          <span
-            v-for="(source, i) in sources"
-            :key="source.key"
-            :style="{ flex: source.count, '--source-index': i }"
-            :title="`${journalSourceLabel(source.key, source.label, t)} · ${source.count}`"
-          />
-        </div>
-        <span v-for="source in sources.slice(0, 3)" :key="source.key"
-          >{{ journalSourceLabel(source.key, source.label, t) }} <b>{{ source.count }}</b></span
-        >
-      </div>
     </div>
     <section class="archive-command" data-reveal>
       <div>
@@ -85,134 +72,147 @@
       /></RouterLink>
     </section>
     <ArchiveNavigationHint
+      class="sr-only"
       :index="index"
       :total="posts.length"
       :state="states.posts"
       :preview-id="previewId"
       :title="selected?.title"
     />
-    <div class="archive-observatory">
-      <section class="archive-stream" data-reveal>
-        <div class="stream-tabs">
-          <button :class="{ active: platform === 'all' }" @click="$emit('platform', 'all')">
-            {{ t('journal.home.allSources') }}</button><button
-            v-for="source in sources"
-            :key="source.key"
-            :class="{ active: platform === source.key }"
-            @click="$emit('platform', source.key)"
-          >
-            {{ journalSourceLabel(source.key, source.label, t) }}
-          </button>
-        </div>
-        <div class="stream-content" :aria-busy="states.posts === 'loading'">
-          <div
-            v-if="states.posts === 'loading' && !posts.length"
-            class="archive-loading-list"
-            aria-hidden="true"
-          >
-            <div v-for="row in 4" :key="row">
-              <i /><span><i /><i /></span>
-            </div>
-          </div>
-          <div v-for="group in groups" :key="group.key" class="timeline-group">
-            <div class="timeline-label">
-              <span>{{ group.label }}</span><i />
-            </div>
-            <button
-              v-for="post in group.items"
-              :key="post.id"
-              class="stream-row"
-              :class="{ selected: selectedId === post.id }"
-              :aria-pressed="selectedId === post.id"
-              :data-select-post="post.id"
-              :aria-controls="previewId"
-              :aria-describedby="`${previewId}-hint`"
-              @click="select(post.id)"
-              :tabindex="selectedId === post.id ? 0 : -1"
+    <ScrollRegion
+      kind="index"
+      :count="posts.length"
+      :position="index / Math.max(1, posts.length - 1)"
+      @step="followStep"
+    >
+      <div class="archive-observatory">
+        <section class="archive-stream" data-reveal>
+          <div class="stream-tabs">
+            <button :class="{ active: platform === 'all' }" @click="$emit('platform', 'all')">
+              {{ t('journal.home.allSources') }}</button><button
+              v-for="source in sources"
+              :key="source.key"
+              :class="{ active: platform === source.key }"
+              @click="$emit('platform', source.key)"
             >
-              <span class="stream-dot" /><JournalImage
-                v-if="post.image"
-                :src="post.image"
-                :original-src="post.originalImage"
-                alt=""
-                width="48"
-                height="60"
-                loading="lazy"
-              /><JournalIcon v-else name="file" /><span class="stream-row-copy"
-                ><b>{{ post.title }}</b
-                ><small
-                  >{{ post.author }}<i>·</i
-                  >{{
-                    journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
-                  }}</small
-                ></span
-              ><JournalIcon name="arrow-up-right" />
+              {{ journalSourceLabel(source.key, source.label, t) }}
             </button>
           </div>
-          <JournalResourceState
+          <div
+            ref="stream"
+            class="stream-content"
+            data-scroll-content
+            :aria-busy="states.posts === 'loading'"
+          >
+            <div
+              v-if="states.posts === 'loading' && !posts.length"
+              class="archive-loading-list"
+              aria-hidden="true"
+            >
+              <div v-for="row in 4" :key="row">
+                <i /><span><i /><i /></span>
+              </div>
+            </div>
+            <div v-for="group in groups" :key="group.key" class="timeline-group">
+              <div class="timeline-label">
+                <span>{{ group.label }}</span><i />
+              </div>
+              <button
+                v-for="post in group.items"
+                :key="post.id"
+                class="stream-row"
+                :class="{ selected: selectedId === post.id }"
+                :aria-pressed="selectedId === post.id"
+                :data-select-post="post.id"
+                :aria-controls="previewId"
+                :aria-describedby="`${previewId}-hint`"
+                @click="select(post.id)"
+                :tabindex="selectedId === post.id ? 0 : -1"
+              >
+                <span class="stream-dot" /><JournalImage
+                  v-if="post.image"
+                  :src="post.image"
+                  :original-src="post.originalImage"
+                  alt=""
+                  width="48"
+                  height="60"
+                  loading="lazy"
+                /><JournalIcon v-else name="file" /><span class="stream-row-copy"
+                  ><b>{{ post.title }}</b
+                  ><small
+                    >{{ post.author }}<i>·</i
+                    >{{
+                      journalSourceLabel(
+                        post.platform,
+                        platforms[post.platform] || post.platform,
+                        t
+                      )
+                    }}</small
+                  ></span
+                ><JournalIcon name="arrow-up-right" />
+              </button>
+            </div>
+            <JournalResourceState
+              :state="states.posts"
+              label="动态"
+              label-key="journal.nav.posts"
+              :empty="!posts.length"
+              empty-message="暂无动态"
+              empty-message-key="journal.states.noPosts"
+              @retry="$emit('retry')"
+            />
+          </div>
+          <RouterLink to="/explore" class="stream-more"
+            >{{ t('journal.home.allPosts') }} <JournalIcon name="arrow"
+          /></RouterLink>
+        </section>
+        <aside
+          :id="previewId"
+          :ref="setPreview"
+          :aria-label="t('journal.selection.current')"
+          class="observatory-preview"
+          data-reveal
+        >
+          <div class="preview-label">
+            <span
+              >{{
+                states.posts === 'ready'
+                  ? String(posts.length ? index + 1 : 0).padStart(2, '0')
+                  : '—'
+              }}
+              / {{ states.posts === 'ready' ? String(posts.length).padStart(2, '0') : '—' }}</span
+            >
+          </div>
+          <ArchivePreview
+            :post="selected"
             :state="states.posts"
-            label="动态"
-            label-key="journal.nav.posts"
-            :empty="!posts.length"
-            empty-message="暂无动态"
-            empty-message-key="journal.states.noPosts"
-            @retry="$emit('retry')"
+            :saved="Boolean(selected && savedPosts.has(selected.id))"
+            spatial
+            scroll-scene
+            data-scroll-content
+            @save="(item, event) => $emit('save', item, event)"
           />
-        </div>
-        <RouterLink to="/explore" class="stream-more"
-          >{{ t('journal.home.allPosts') }} <JournalIcon name="arrow"
-        /></RouterLink>
-      </section>
-      <aside
-        :id="previewId"
-        :ref="setPreview"
-        :aria-label="t('journal.selection.current')"
-        class="observatory-preview"
-        data-reveal
-      >
-        <div class="preview-label">
-          <span class="status-light" />{{ t('journal.selection.preview')
-          }}<button
-            class="text-button"
-            :disabled="!selected"
-            :data-open="selected?.id"
-            data-preview-open
-          >
-            {{ t('journal.actions.open') }} <JournalIcon name="arrow-up-right" /></button
-          ><span
-            >{{
-              states.posts === 'ready' ? String(posts.length ? index + 1 : 0).padStart(2, '0') : '—'
-            }}
-            / {{ states.posts === 'ready' ? String(posts.length).padStart(2, '0') : '—' }}</span
-          >
-        </div>
-        <ArchivePreview
-          :post="selected"
-          :state="states.posts"
-          :saved="Boolean(selected && savedPosts.has(selected.id))"
-          spatial
-          @save="(item, event) => $emit('save', item, event)"
-        />
-        <div class="preview-steppers">
-          <button
-            class="icon-button"
-            :aria-label="t('journal.selection.previous')"
-            :disabled="posts.length < 2"
-            @click="step(-1)"
-          >
-            <JournalIcon name="arrow-left" /></button
-          ><span>{{ selected?.author }}</span
-          ><button
-            class="icon-button"
-            :aria-label="t('journal.selection.next')"
-            :disabled="posts.length < 2"
-            @click="step(1)"
-          >
-            <JournalIcon name="arrow" />
-          </button>
-        </div>
-      </aside>
-    </div>
+          <div class="preview-steppers">
+            <button
+              class="icon-button"
+              :aria-label="t('journal.selection.previous')"
+              :disabled="posts.length < 2"
+              @click="step(-1)"
+            >
+              <JournalIcon name="arrow-left" /></button
+            ><span>{{ selected?.author }}</span
+            ><button
+              class="icon-button"
+              :aria-label="t('journal.selection.next')"
+              :disabled="posts.length < 2"
+              @click="step(1)"
+            >
+              <JournalIcon name="arrow" />
+            </button>
+          </div>
+        </aside>
+      </div>
+    </ScrollRegion>
     <div class="archive-bottom-grid">
       <section class="archive-panel" data-reveal>
         <div class="panel-heading">
@@ -303,7 +303,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { journalEventTimeLabel } from '../localizedEventTime'
 import { journalCategoryLabel, journalSourceLabel } from '../controlLabels'
@@ -315,6 +315,7 @@ import '../styles/home-loading.css'
 import JournalImage from '../JournalImage.vue'
 import ArchivePreview from './ArchivePreview.vue'
 import ArchiveSelectionDock from './ArchiveSelectionDock.vue'
+import ScrollRegion from './ScrollRegion.vue'
 import { useArchiveNavigation } from './useArchiveNavigation'
 import ArchiveNavigationHint from './ArchiveNavigationHint.vue'
 import { sourceGroups, timelineGroups } from '../presentation'
@@ -339,6 +340,8 @@ const emit = defineEmits<{
   platform: [value: string]
   sort: [value: string]
 }>()
+const groups = computed(() => timelineGroups(props.posts, locale.value, t('journal.nav.posts')))
+const orderedPosts = computed(() => groups.value.flatMap((group) => group.items))
 const {
   selected,
   selectedId,
@@ -351,12 +354,23 @@ const {
   select,
   keydown,
   showPreview,
-} = useArchiveNavigation(
-  computed(() => props.posts),
-  (post) => emit('open', post)
-)
-const sources = computed(() => sourceGroups(props.allPosts)),
-  groups = computed(() => timelineGroups(props.posts, locale.value, t('journal.nav.posts')))
+} = useArchiveNavigation(orderedPosts, (post) => emit('open', post))
+const sources = computed(() => sourceGroups(props.allPosts))
+const stream = ref<HTMLElement>()
+function followStep(direction: number) {
+  const list = stream.value
+  if (!list) return
+  const rows = list.querySelectorAll<HTMLElement>('[data-select-post]')
+  const row = rows[Math.min(rows.length - 1, Math.max(0, index.value + direction))]
+  const id = row?.dataset['selectPost']
+  if (!row || !id || selectedId.value === id) return
+  select(id)
+  const offset = row.getBoundingClientRect().top - list.getBoundingClientRect().top
+  list.scrollTo({
+    top: list.scrollTop + offset - (list.clientHeight - row.offsetHeight) / 2,
+    behavior: 'instant',
+  })
+}
 const today = new Date()
 const date = computed(() =>
   new Intl.DateTimeFormat(locale.value, {

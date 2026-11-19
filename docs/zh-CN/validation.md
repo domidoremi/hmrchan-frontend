@@ -81,3 +81,5 @@ Runner 实现与阶段合同位于 [`scripts/validate-release.mjs`](../../script
 可使用显式的 `LOCAL_AUDIT_SCOPED_QA_SESSION=true` 为浏览器验收准备单个专用测试访客。必须同时提供精确的 `LOCAL_AUDIT_SCOPED_ORIGINS` 白名单及 `qa-` 开头、邮箱为 `@local-smoke.invalid` 的已建测试账号。可在本地忽略配置中保存随机的 48 位十六进制 `LOCAL_AUDIT_SCOPED_FINGERPRINT`，复用同一测试设备。
 
 此模式只设置该测试访客的短期缓存，并以账号和设备记录校验复用权限；不扫描其他访客，不清空限流，不改变后端全局配置。浏览器请求按现有限速排队；HTTP 响应和页面断言保持真实。它验证账号与页面操作，不代表真实 Turnstile 验证已通过。注册、验证邮箱和密码重置仍需真实收信。默认关闭。
+
+`LOCAL_AUDIT_SCOPED_NAVIGATION_INTERVAL_MS` 可调整专用账号验收的导航间隔，默认 6500 毫秒，范围为 6500–60000 毫秒。受控站点和生产扫描可使用 15000 毫秒，在现有请求限流下依次访问页面。该设置只调整测试访问节奏。

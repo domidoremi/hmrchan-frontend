@@ -86,9 +86,9 @@ export function useArchiveNavigation(
   onMounted(() => {
     observer = createVisibilityObserver(
       ([entry]) => {
-        previewVisible.value = Boolean(entry && entry.intersectionRatio >= 0.6)
+        previewVisible.value = Boolean(entry?.isIntersecting)
       },
-      { threshold: 0.6, rootMargin: '-72px 0px -88px 0px' }
+      { rootMargin: '-72px 0px -88px 0px' }
     )
     if (preview.value) observer.observe(preview.value)
   })

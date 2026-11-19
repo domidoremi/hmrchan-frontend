@@ -8,7 +8,11 @@ let lastNavigationAt = 0
 
 export async function paceScopedQaNavigation(env) {
   if (env.LOCAL_AUDIT_SCOPED_QA_SESSION !== 'true') return
-  const delay = Math.max(0, lastNavigationAt + 6500 - Date.now())
+  const configuredInterval = Number(env.LOCAL_AUDIT_SCOPED_NAVIGATION_INTERVAL_MS ?? 6500)
+  const interval = Number.isFinite(configuredInterval)
+    ? Math.min(60000, Math.max(6500, configuredInterval))
+    : 6500
+  const delay = Math.max(0, lastNavigationAt + interval - Date.now())
   if (delay) await new Promise((resolve) => setTimeout(resolve, delay))
   lastNavigationAt = Date.now()
 }
