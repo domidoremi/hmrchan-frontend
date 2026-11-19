@@ -2,13 +2,12 @@
   <div class="archive-preview" :class="{ 'preview-spatial': spatial }" data-tilt>
     <div class="preview-edge" aria-hidden="true" />
     <div class="preview-edge second" aria-hidden="true" />
-    <Transition name="archive-preview" mode="out-in"
+    <Transition name="archive-preview" :mode="scrollScene ? 'default' : 'out-in'"
       ><article v-if="post" :key="post.id" class="preview-face post-card" :data-post="post.id">
         <div class="preview-caption">
           <span>{{
             journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
-          }}</span><span>{{ journalContentTypeLabel(post.type, t) }}</span
-          ><JournalIcon name="expand" />
+          }}</span><span v-if="!scrollScene">{{ journalContentTypeLabel(post.type, t) }}</span>
         </div>
         <button
           class="preview-media"
@@ -96,6 +95,7 @@ defineProps<{
   post?: JournalPost | undefined
   saved: boolean
   spatial?: boolean
+  scrollScene?: boolean
   state?: JournalResourceState
 }>()
 defineEmits<{ save: [post: JournalPost, event: MouseEvent] }>()

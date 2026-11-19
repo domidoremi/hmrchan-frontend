@@ -87,7 +87,9 @@ describe('SpatialCover public controls language', () => {
       )
       expect(pagination[0]!.attributes('aria-pressed')).toBe('true')
       expect(pagination[1]!.attributes('aria-pressed')).toBe('false')
-      expect(wrapper.get('.cover-pause').text()).toBe(i18n.global.t('video.pause'))
+      expect(wrapper.get('.cover-pause').attributes('aria-label')).toBe(
+        i18n.global.t('video.pause')
+      )
       expect(wrapper.get('.cover-pause').attributes('aria-pressed')).toBe('false')
       expect(wrapper.get('.cover-article h1').text()).toBe(items[0]!.title)
       expect(wrapper.get('.cover-article p').text()).toBe(items[0]!.text)
@@ -119,7 +121,7 @@ describe('SpatialCover public controls language', () => {
       expect(wrapper.get('.cover-pagination button:nth-child(2)').element).toBe(second.element)
       expect(document.activeElement).toBe(pause.element)
       expect(pause.attributes('aria-pressed')).toBe('true')
-      expect(pause.text()).toBe(i18n.global.t('video.play'))
+      expect(pause.attributes('aria-label')).toBe(i18n.global.t('video.play'))
       expect(previous.attributes('aria-label')).toBe(i18n.global.t('journal.selection.previous'))
       expect(next.attributes('aria-label')).toBe(i18n.global.t('journal.selection.next'))
       expect(second.attributes('aria-pressed')).toBe('true')
@@ -137,7 +139,7 @@ describe('SpatialCover public controls language', () => {
       expect(items).toEqual(originalItems)
       await pause.trigger('click')
       expect(pause.attributes('aria-pressed')).toBe('false')
-      expect(pause.text()).toBe(i18n.global.t('video.pause'))
+      expect(pause.attributes('aria-label')).toBe(i18n.global.t('video.pause'))
     }
   )
 

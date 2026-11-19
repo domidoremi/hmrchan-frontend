@@ -93,9 +93,7 @@ body.site-body::after {
   stroke-linejoin: round;
   vertical-align: middle;
 }
-.site-body
-  .journal-shell
-  :is(.icon-button, .button, .text-button, .account-link, .round-action, .motion-switch) {
+.site-body .journal-shell :is(.icon-button, .button, .text-button, .account-link, .round-action) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -163,14 +161,6 @@ body.site-body::after {
   background: var(--accent);
   border-radius: 50%;
   flex-shrink: 0;
-}
-.site-body .journal-shell .status-light.dim {
-  background: var(--muted);
-}
-.site-body .journal-shell .motion-switch {
-  font-size: 10px;
-  gap: 7px;
-  min-height: 36px;
 }
 .site-body .journal-shell .chips {
   display: flex;
@@ -473,9 +463,6 @@ body.site-body::after {
   }
   .site-body .journal-shell .mobile-menu-button {
     display: inline-flex;
-  }
-  .site-body .journal-shell .header-actions > .motion-switch {
-    display: none;
   }
   .site-body .journal-shell .edition-footer {
     margin: 50px 22px 0;

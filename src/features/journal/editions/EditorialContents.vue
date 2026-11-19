@@ -7,10 +7,7 @@
       :aria-current="active === section.id ? 'location' : undefined"
       @click.prevent="go(section.id)"
     >
-      <span>{{ section.number }}</span><b>{{ section.label }}</b
-      ><small :aria-label="section.count === null ? t('journal.browse.countUnknown') : undefined">{{
-        section.count ?? '—'
-      }}</small>
+      <b>{{ section.label }}</b>
     </a>
   </nav>
 </template>

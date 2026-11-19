@@ -20,12 +20,13 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
   function measure() {
     frame = 0
     const element = track.value
-    if (!element || !visible || document.hidden) return
+    if (!element || document.hidden) return
     const width = element.clientWidth
     if (!width) return
     const left = element.scrollLeft
     const max = element.scrollWidth - width
     canScroll.value = max > 2
+    if (!visible) return
     progress.value = max > 0 ? Math.min(1, Math.max(0, left / max)) : 0
     let closest = Infinity
     const positions = cards().map((card) => ({
@@ -58,6 +59,12 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
   }
   function step(direction: number) {
     go(index.value + direction)
+  }
+  function pan(pixels: number) {
+    const element = track.value
+    if (!element || dragging.value) return
+    element.scrollLeft += pixels
+    measure()
   }
   function scrub(event: Event) {
     const element = track.value
@@ -169,6 +176,7 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
   }
   return {
     setTrack,
+    pan,
     index,
     progress,
     canScroll,

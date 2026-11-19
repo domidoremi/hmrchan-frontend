@@ -30,6 +30,7 @@ export function installUI(runtime, environment) {
     home: '<path d="m3 10 9-7 9 7v11h-6v-7H9v7H3z"/>',
     compass: '<circle cx="12" cy="12" r="9"/><path d="m16 8-3 5-5 3 3-5z"/>',
     play: '<path d="m9 5 11 7-11 7z"/>',
+    pause: '<path d="M9 5v14M15 5v14"/>',
     image:
       '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1"/><path d="m21 15-6-6L3 21"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/>',
