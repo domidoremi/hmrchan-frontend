@@ -1,6 +1,8 @@
 <template>
   <div class="archive-page archive-home next-home immersive-home">
-    <ImmersiveChapter id="next-index" kind="index" opening>
+    <HomeAtmosphere />
+    <EditorialContents class="next-contents" :sections="contents" />
+    <ImmersiveChapter id="next-index" kind="index">
       <header class="next-desk-header">
         <h1 class="next-desk-mark" aria-label="MomiChan Next">
           <MotionTitle text="next" /><span aria-hidden="true">↗</span>
@@ -146,6 +148,8 @@ import { useBrowseFilterFocus } from '../useBrowseFilterFocus'
 import JournalIcon from '../JournalIcon.vue'
 import JournalResourceState from '../JournalResourceState.vue'
 import NextStage from './NextStage.vue'
+import HomeAtmosphere from './HomeAtmosphere.vue'
+import EditorialContents from './EditorialContents.vue'
 import ImmersiveChapter from './ImmersiveChapter.vue'
 import MotionTitle from './MotionTitle.vue'
 import NextCollection from './NextCollection.vue'
@@ -183,6 +187,14 @@ const emit = defineEmits<{
   more: []
 }>()
 const { locale, t } = useI18n({ useScope: 'global' })
+const contents = computed(() => [
+  { id: 'next-index', number: '01', label: t('journal.next.index'), count: null },
+  ...(!props.query.trim() && props.allPosts.length
+    ? [{ id: 'next-featured', number: '02', label: t('journal.next.featured'), count: null }]
+    : []),
+  { id: 'next-calendar', number: '03', label: t('schedule.title'), count: null },
+  { id: 'next-community', number: '04', label: t('journal.nav.discussions'), count: null },
+])
 const router = useRouter()
 const search = ref(props.query),
   searchInput = ref<HTMLInputElement>()

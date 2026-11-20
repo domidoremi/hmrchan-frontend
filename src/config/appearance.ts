@@ -1,4 +1,5 @@
 import type { AppearancePreset, SceneRole } from '@/types'
+import { designEdition } from './designEdition'
 
 export interface AppearancePresetSpec {
   preset: AppearancePreset
@@ -54,7 +55,8 @@ const IMMERSIVE_ROUTE_NAMES = new Set([
   'favorites',
 ])
 
-export const DEFAULT_APPEARANCE_PRESET: AppearancePreset = 'minimal-editorial'
+export const DEFAULT_APPEARANCE_PRESET: AppearancePreset =
+  designEdition === 'archive' ? 'gradient-narrative' : 'minimal-editorial'
 
 export function isAppearancePreset(value: string | null | undefined): value is AppearancePreset {
   return typeof value === 'string' && APPEARANCE_PRESETS.includes(value as AppearancePreset)

@@ -120,6 +120,7 @@ import { useSettingsStore, useThemeStore } from '@/stores'
 import AppearancePresetPicker from '@/components/appearance/AppearancePresetPicker.vue'
 import type { Theme } from '@/types'
 import { designEdition } from '@/config/designEdition'
+import { DEFAULT_APPEARANCE_PRESET } from '@/config/appearance'
 import {
   readDisplayPreference,
   setDisplayPreference,
@@ -173,9 +174,9 @@ const editions = [
 ]
 type MotionChoice = 'auto' | 'full' | 'reduced'
 const motionOptions: { value: MotionChoice; labelKey: string }[] = [
-  { value: 'auto', labelKey: 'settings.auto' },
   { value: 'full', labelKey: 'settings.animationFull' },
   { value: 'reduced', labelKey: 'settings.animationReduced' },
+  { value: 'auto', labelKey: 'settings.auto' },
 ]
 const textOptions: { value: JournalTextSize; labelKey: string }[] = [
   { value: 'standard', labelKey: 'journal.appearance.textStandard' },
@@ -185,12 +186,12 @@ const densityOptions: { value: JournalDensity; labelKey: string }[] = [
   { value: 'standard', labelKey: 'journal.density.standard' },
   { value: 'compact', labelKey: 'journal.density.compact' },
 ]
-const motion = ref<MotionChoice>('auto')
+const motion = ref<MotionChoice>('full')
 const textSize = ref<JournalTextSize>('standard')
 const density = ref<JournalDensity>('standard')
 function syncMotion() {
   const value = document.body.dataset['motionPreference'] ?? document.body.dataset['motion']
-  motion.value = value === 'full' || value === 'reduced' ? value : 'auto'
+  motion.value = value === 'auto' || value === 'reduced' ? value : 'full'
 }
 function selectMotion(value: MotionChoice) {
   document.dispatchEvent(new CustomEvent('journalmotionrequest', { detail: value }))
@@ -205,8 +206,8 @@ function syncDisplay() {
 }
 function reset() {
   themeStore.setTheme('auto')
-  settingsStore.setAppearancePreset('minimal-editorial')
-  selectMotion('auto')
+  settingsStore.setAppearancePreset(DEFAULT_APPEARANCE_PRESET)
+  selectMotion('full')
   setDisplayPreference('textSize', 'standard')
   setDisplayPreference('density', 'standard')
 }

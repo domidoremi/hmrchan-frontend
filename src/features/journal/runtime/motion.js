@@ -12,8 +12,8 @@ export const motionTiming = Object.freeze({
 
 export function createMotionPreference({ read, save, changed, signal }) {
   const system = window.matchMedia('(prefers-reduced-motion: reduce)')
-  const stored = read('presentation-motion', '')
-  let choice = stored === 'full' || stored === 'reduced' ? stored : 'auto'
+  const normalize = (value) => (value === 'auto' || value === 'reduced' ? value : 'full')
+  let choice = normalize(read('presentation-motion', 'full'))
   const get = () => (choice === 'auto' ? (system.matches ? 'reduced' : 'full') : choice)
   const sync = () => {
     document.body.dataset.motion = get()
@@ -22,7 +22,7 @@ export function createMotionPreference({ read, save, changed, signal }) {
     document.dispatchEvent(new CustomEvent('journalmotionchange', { detail: get() }))
   }
   const set = (value) => {
-    choice = value === 'full' || value === 'reduced' ? value : 'auto'
+    choice = normalize(value)
     save('presentation-motion', choice)
     sync()
   }
@@ -32,8 +32,7 @@ export function createMotionPreference({ read, save, changed, signal }) {
     'storage',
     (event) => {
       if (event.key !== 'momichan-journal:presentation-motion') return
-      const value = read('presentation-motion', 'auto')
-      choice = value === 'full' || value === 'reduced' ? value : 'auto'
+      choice = normalize(read('presentation-motion', 'full'))
       sync()
     },
     { signal }

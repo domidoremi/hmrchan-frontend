@@ -182,6 +182,7 @@ import {
 } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAuthStore, useToastStore } from '@/stores'
+import { useSettingsStore } from '@/stores/settings'
 import { designEdition } from '@/config/designEdition'
 import { createJournalRuntime, type JournalRuntime } from './runtime'
 import { createJournalFeedbackAdapter, useJournalFeedbackScope } from './feedback'
@@ -199,6 +200,7 @@ const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore()
 const feedback = createJournalFeedbackAdapter(useToastStore())
+const settingsStore = useSettingsStore()
 useJournalFeedbackScope(() => auth.user?.id, feedback)
 const isNext = designEdition === 'archive'
 const { locale, t } = useI18n({ useScope: 'global' })
@@ -284,6 +286,15 @@ onBeforeMount(() => {
   document.body.classList.toggle('next-body', isNext)
   document.body.dataset['variant'] = isNext ? 'next' : 'main'
   installDisplayPreferences(displayLifetime.signal)
+  document.addEventListener(
+    'journalmotionchange',
+    () => {
+      settingsStore.setAnimationIntensity(
+        document.body.dataset['motion'] === 'full' ? 'full' : 'reduced'
+      )
+    },
+    { signal: displayLifetime.signal }
+  )
   syncChrome()
 })
 onMounted(() => {

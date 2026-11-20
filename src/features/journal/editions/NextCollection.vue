@@ -89,7 +89,7 @@
           </select>
         </label>
         <label>
-          <span>{{ t('explore.sortBy') }}</span>
+          <span class="sr-only">{{ t('explore.sortBy') }}</span>
           <select
             :value="sort"
             @change="$emit('change', 'sort', ($event.target as HTMLSelectElement).value)"

@@ -1,11 +1,11 @@
 <template>
   <div class="editorial-home editorial-page immersive-home">
-    <ImmersiveChapter id="issue-cover" kind="cover" opening>
+    <HomeAtmosphere />
+    <EditorialContents :sections="contents" />
+    <ImmersiveChapter id="issue-cover" kind="cover">
       <div class="journal-masthead" data-masthead>
-        <strong>MomiChan<span>↗</span></strong>
-        <div>
-          <span>{{ date }}</span>
-        </div>
+        <strong><MotionTitle text="MomiChan" /></strong>
+        <time>{{ date }}</time>
       </div>
       <div
         v-if="states.posts === 'loading' && !posts.length"
@@ -32,7 +32,6 @@
         @retry="$emit('retry')"
       />
     </ImmersiveChapter>
-    <EditorialContents :sections="contents" />
     <ImmersiveChapter id="issue-latest" kind="reading" data-reading-section>
       <div class="editorial-reading-layout">
         <section class="editorial-latest" data-reveal>
@@ -185,6 +184,8 @@ import { journalCategoryLabel, journalSourceLabel } from '../controlLabels'
 import { journalDateLabel } from '../localizedDate'
 import { RouterLink } from 'vue-router'
 import SpatialCover from './SpatialCover.vue'
+import HomeAtmosphere from './HomeAtmosphere.vue'
+import MotionTitle from './MotionTitle.vue'
 import ImmersiveChapter from './ImmersiveChapter.vue'
 import EditorialContents from './EditorialContents.vue'
 import JournalIcon from '../JournalIcon.vue'
@@ -242,6 +243,7 @@ watch(
   { flush: 'pre' }
 )
 const contents = computed(() => [
+  { id: 'issue-cover', number: '00', label: t('home.latest'), count: null },
   {
     id: 'issue-latest',
     number: '01',

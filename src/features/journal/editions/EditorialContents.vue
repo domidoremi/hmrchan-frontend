@@ -7,10 +7,8 @@
       :aria-current="active === section.id ? 'location' : undefined"
       @click.prevent="go(section.id)"
     >
-      <span>{{ section.number }}</span><b>{{ section.label }}</b
-      ><small :aria-label="section.count === null ? t('journal.browse.countUnknown') : undefined">{{
-        section.count ?? '—'
-      }}</small>
+      <span aria-hidden="true">{{ section.number }}</span><b>{{ section.label }}</b
+      ><small v-if="section.count !== null" class="sr-only">{{ section.count }}</small>
     </a>
   </nav>
 </template>
@@ -22,7 +20,7 @@ const { t } = useI18n({ useScope: 'global' })
 const props = defineProps<{
   sections: { id: string; number: string; label: string; count: number | null }[]
 }>()
-const active = ref('issue-latest')
+const active = ref(props.sections[0]?.id ?? '')
 const directory = ref<HTMLElement>()
 let sectionElements: HTMLElement[] = []
 let resize: ResizeObserver | null = null
