@@ -1,5 +1,5 @@
 <template>
-  <div class="archive-navigation-hint">
+  <div class="archive-navigation-hint sr-only">
     <p role="status" aria-live="polite" aria-atomic="true">
       <span class="selection-marker" aria-hidden="true" />
       {{

@@ -1,8 +1,10 @@
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, reactive, shallowRef, type Component } from 'vue'
+import { routerKey } from 'vue-router'
 import EditorialBrowse from '../editions/EditorialBrowse.vue'
 import ArchiveBrowse from '../editions/ArchiveBrowse.vue'
+import ArchiveHome from '../editions/ArchiveHome.vue'
 import { journalKey } from '../context'
 import type { JournalPost } from '../models'
 import { createJournalTestI18n } from './journalTestI18n'
@@ -49,15 +51,37 @@ function mountBrowse(component: Component) {
   const change = vi.fn()
   const host = defineComponent({
     setup() {
-      return () => h(component, { ...data, onReset: reset, onChange: change })
+      return () =>
+        h(component, {
+          ...data,
+          ...(component === ArchiveHome
+            ? {
+                states: { posts: 'ready', events: 'ready', discussions: 'ready' },
+                events: [],
+                discussions: [],
+                reminders: new Set<string>(),
+                month: '2026-11',
+              }
+            : {}),
+          onReset: reset,
+          onChange: change,
+        })
     },
   })
   const wrapper = mount(host, {
     attachTo: document.body,
     global: {
       plugins: [createJournalTestI18n('en')],
-      provide: { [journalKey as symbol]: shallowRef(null) },
-      stubs: { JournalIcon: true, JournalImage: true, JournalPostCard: true },
+      provide: {
+        [journalKey as symbol]: shallowRef(null),
+        [routerKey as symbol]: { push: vi.fn() },
+      },
+      stubs: {
+        JournalIcon: true,
+        JournalImage: true,
+        JournalPostCard: true,
+        RouterLink: { template: '<a><slot /></a>' },
+      },
     },
   })
   wrappers.push(wrapper)
@@ -72,12 +96,13 @@ afterEach(() => {
 })
 
 describe.each([
-  ['editorial', EditorialBrowse, '.browse-filter-row > .text-button'],
-  ['archive', ArchiveBrowse, '.archive-querybar > .text-button'],
-] as const)('%s filter reset focus', (_edition, component, resetSelector) => {
+  ['editorial', EditorialBrowse, '.browse-filter-row > .text-button', '#explore-input'],
+  ['archive', ArchiveBrowse, '.archive-querybar > .text-button', '#explore-input'],
+  ['next home', ArchiveHome, '.next-filter-selects > .text-button', '.next-searchbar input'],
+] as const)('%s filter reset focus', (_edition, component, resetSelector, inputSelector) => {
   it('offers reset for sorting alone and returns focus only after the reset is applied', async () => {
     const { wrapper, data, reset } = mountBrowse(component)
-    const input = wrapper.get<HTMLInputElement>('#explore-input')
+    const input = wrapper.get<HTMLInputElement>(inputSelector)
     await input.setValue('Unsubmitted search draft')
     const button = wrapper.get<HTMLButtonElement>(resetSelector).element
     button.focus()
@@ -91,7 +116,7 @@ describe.each([
     await nextTick()
     expect(button.isConnected).toBe(false)
     expect(document.activeElement).toBe(input.element)
-    expect(wrapper.get('#explore-input').element).toBe(input.element)
+    expect(wrapper.get(inputSelector).element).toBe(input.element)
     expect(input.element.value).toBe('Unsubmitted search draft')
     expect(data.posts[0]?.id).toBe(record.id)
   })
@@ -101,7 +126,7 @@ describe.each([
     const button = wrapper.get<HTMLButtonElement>(resetSelector).element
     button.focus()
     button.click()
-    const input = wrapper.get<HTMLInputElement>('#explore-input').element
+    const input = wrapper.get<HTMLInputElement>(inputSelector).element
     input.focus()
 
     data.sort = 'latest'

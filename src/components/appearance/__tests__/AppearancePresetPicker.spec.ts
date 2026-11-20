@@ -21,20 +21,11 @@ vi.mock('pinia', async () => {
   }
 })
 
-const pickerMocks = vi.hoisted(() => ({
-  applyAppearancePreset: vi.fn(),
-  toastError: vi.fn(),
-}))
-
 const settingsStoreState = reactive({
   settings: reactive({
     appearancePreset: 'minimal-editorial',
   }),
   setAppearancePreset: vi.fn(),
-})
-
-const themeStoreState = reactive({
-  resolvedTheme: 'dark',
 })
 
 vi.mock('vue-i18n', () => ({
@@ -45,77 +36,30 @@ vi.mock('vue-i18n', () => ({
 
 vi.mock('@/stores', () => ({
   useSettingsStore: () => settingsStoreState,
-  useThemeStore: () => themeStoreState,
-  useToastStore: () => ({
-    error: pickerMocks.toastError,
-  }),
 }))
 
 vi.mock('@/config/appearance', () => ({
-  getAppearancePresetSpecs: () => [{ preset: 'minimal-editorial' }, { preset: 'material-calm' }],
-}))
-
-vi.mock('@/services/appearanceLoader', () => ({
-  applyAppearancePreset: pickerMocks.applyAppearancePreset,
-}))
-
-vi.mock('@/utils/modernAPIs', () => ({
-  createVisibilityObserver: vi.fn((callback: IntersectionObserverCallback) => {
-    const observer = {
-      observe: vi.fn((target: Element) => {
-        callback([{ target, isIntersecting: true } as IntersectionObserverEntry], observer)
-      }),
-      unobserve: vi.fn(),
-      disconnect: vi.fn(),
-    }
-    return observer
-  }),
+  getAppearancePresetSpecs: () => [{ preset: 'minimal-editorial' }, { preset: 'fluent-soft' }],
 }))
 
 describe('AppearancePresetPicker', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     settingsStoreState.settings.appearancePreset = 'minimal-editorial'
-    pickerMocks.applyAppearancePreset.mockResolvedValue(true)
   })
 
-  it('reveals preset previews through the shared visibility observer', async () => {
+  it('presents the available themes with selected state', () => {
     const wrapper = mount(AppearancePresetPicker)
-
-    await flushPromises()
-
-    expect(wrapper.findAll('.appearance-preset-card--revealed')).toHaveLength(2)
+    expect(wrapper.findAll('button')).toHaveLength(2)
+    expect(wrapper.find('[data-preset="minimal-editorial"]').attributes('aria-pressed')).toBe(
+      'true'
+    )
   })
 
-  it('applies a different preset with the resolved theme', async () => {
+  it('applies a different preset without waiting for another network request', async () => {
     const wrapper = mount(AppearancePresetPicker)
-
-    await wrapper.find('[data-preset="material-calm"]').trigger('click')
+    await wrapper.find('[data-preset="fluent-soft"]').trigger('click')
     await flushPromises()
-
-    expect(pickerMocks.applyAppearancePreset).toHaveBeenCalledWith('material-calm', 'dark')
-    expect(settingsStoreState.setAppearancePreset).toHaveBeenCalledWith('material-calm')
-    expect(pickerMocks.toastError).not.toHaveBeenCalled()
-  })
-
-  it('reports runtime failures without mutating the selected preset', async () => {
-    pickerMocks.applyAppearancePreset.mockResolvedValueOnce(false)
-    const wrapper = mount(AppearancePresetPicker)
-
-    await wrapper.find('[data-preset="material-calm"]').trigger('click')
-    await flushPromises()
-
-    expect(settingsStoreState.setAppearancePreset).not.toHaveBeenCalled()
-    expect(pickerMocks.toastError).toHaveBeenCalledWith('settings.appearanceRuntimeFailed')
-  })
-
-  it('skips applying the active preset', async () => {
-    const wrapper = mount(AppearancePresetPicker)
-
-    await wrapper.find('[data-preset="minimal-editorial"]').trigger('click')
-    await flushPromises()
-
-    expect(pickerMocks.applyAppearancePreset).not.toHaveBeenCalled()
-    expect(settingsStoreState.setAppearancePreset).not.toHaveBeenCalled()
+    expect(settingsStoreState.setAppearancePreset).toHaveBeenCalledWith('fluent-soft')
   })
 })

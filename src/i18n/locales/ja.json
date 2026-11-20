@@ -400,14 +400,10 @@
     "preferencesReplaced": "クラウド設定を上書きしました",
     "appearanceRuntimeFailed": "プリセットを読み込めませんでした。現在の設定を維持します。",
     "presets": {
-      "minimal-editorial": "花便り",
-      "fluent-soft": "やわらかアルバム",
-      "material-calm": "ステージ手帖",
-      "organic-natural": "森からの手紙",
-      "biophilic-serene": "晴れの日の庭",
-      "clay-playful": "お菓子の小屋",
-      "sketch-doodle": "応援スクラップブック",
-      "gradient-narrative": "夜のツアー"
+      "minimal-editorial": "ペーパー",
+      "fluent-soft": "ガラス",
+      "organic-natural": "ナチュラル",
+      "gradient-narrative": "スペクトラム"
     },
     "preferencesLoadFailed": "設定を同期できませんでした",
     "preferencesSaveFailed": "設定を保存できませんでした",
@@ -1666,10 +1662,10 @@
       "saved": "保存済み"
     },
     "appearance": {
-      "archiveEdition": "Archive",
+      "archiveEdition": "Next",
       "colorMode": "カラーモード",
       "currentSite": "現在のサイト",
-      "journalEdition": "Journal",
+      "journalEdition": "メインサイト",
       "languageChanging": "言語を切り替えています…",
       "languageHint": "表示言語を選択します。投稿は原文のまま表示されます。",
       "languageUnavailable": "選択した言語を読み込めませんでした。{language}で表示しています。",
@@ -1679,7 +1675,12 @@
       "sites": "サイト",
       "thisDevice": "この端末",
       "title": "表示設定",
-      "visit": "開く"
+      "visit": "開く",
+      "textSize": "文字サイズ",
+      "textStandard": "標準",
+      "textLarge": "大きめ",
+      "reset": "表示をリセット",
+      "done": "完了"
     },
     "browse": {
       "adjustSearch": "検索条件を見直す",
@@ -1854,6 +1855,15 @@
       "region": "写真の横スクロール",
       "progress": "写真の閲覧位置",
       "position": "{total} 枚中 {index} 枚目"
+    },
+    "next": {
+      "featured": "おすすめ",
+      "intro": "投稿、写真、出演情報。\nここで、続きを見よう。",
+      "browse": "投稿を見る",
+      "view": "表示形式",
+      "gallery": "ギャラリー",
+      "index": "インデックス",
+      "indexDensity": "インデックスの密度"
     }
   }
 }

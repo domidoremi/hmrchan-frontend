@@ -6,6 +6,7 @@ import ArchiveBrowse from '../editions/ArchiveBrowse.vue'
 import ArchivePreview from '../editions/ArchivePreview.vue'
 import { journalKey } from '../context'
 import { journalContentTypeLabel, journalSourceLabel } from '../controlLabels'
+import { setDisplayPreference } from '../displayPreferences'
 import type { JournalPost } from '../models'
 import { createJournalTestI18n } from './journalTestI18n'
 
@@ -36,6 +37,7 @@ const baseProps = () => ({
   platform: 'all',
   sort: 'latest',
   contentType: '全部',
+  layout: 'list',
   hasMore: false,
   loading: false,
 })
@@ -49,6 +51,7 @@ function global(i18n: ReturnType<typeof createJournalTestI18n>) {
 afterEach(() => {
   for (const wrapper of wrappers.splice(0)) wrapper.unmount()
   localStorage.removeItem('momichan-journal:archive-density')
+  delete document.body.dataset['archiveDensity']
   document.body.innerHTML = ''
 })
 
@@ -89,13 +92,7 @@ describe.each([
       expect(wrapper.emitted('change')!.at(-1)).toEqual(['sort', 'popular'])
       expect(wrapper.text()).toContain('custom-platform')
       let sourceLabel: string
-      if (edition === 'archive') {
-        const source = wrapper
-          .findAll<HTMLSelectElement>('select')
-          .find((node) => node.find('option[value="official"]').exists())!
-        sourceLabel = source.get('option[value="official"]').text()
-        await source.setValue('official')
-      } else {
+      {
         const source = wrapper
           .findAll('button.chip')
           .find((node) => node.text() === i18n.global.t('journal.sources.official'))!
@@ -139,7 +136,8 @@ describe.each([
   })
 })
 
-it('keeps Archive density, selected record and exact reset values while translating summaries', async () => {
+it('keeps the Next density from settings, selected record and exact reset values while translating summaries', async () => {
+  setDisplayPreference('density', 'compact')
   const i18n = createJournalTestI18n('en')
   const wrapper = mount(ArchiveBrowse, {
     attachTo: document.body,
@@ -153,12 +151,12 @@ it('keeps Archive density, selected record and exact reset values while translat
     global: global(i18n),
   })
   wrappers.push(wrapper)
-  await wrapper.get('.density-toggle button:last-child').trigger('click')
+  expect(wrapper.find('.density-toggle').exists()).toBe(false)
   const selected = wrapper.get('[data-select-post="first"]')
   selected.element.focus()
   i18n.global.locale.value = 'ja'
   await nextTick()
-  expect(wrapper.get('.density-toggle button:last-child').attributes('aria-pressed')).toBe('true')
+  expect(wrapper.get('.next-collection').classes()).toContain('compact')
   expect(localStorage.getItem('momichan-journal:archive-density')).toBe('compact')
   expect(wrapper.get('[data-select-post="first"]').element).toBe(selected.element)
   expect(document.activeElement).toBe(selected.element)

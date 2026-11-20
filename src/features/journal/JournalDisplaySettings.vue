@@ -15,23 +15,9 @@
         </label>
       </div>
     </fieldset>
-    <div class="display-motion-row">
-      <div>
-        <h3>{{ t('journal.appearance.motion') }}</h3>
-        <span>{{ t('journal.appearance.thisDevice') }}</span>
-      </div>
-      <div class="display-motion-options" role="group" :aria-label="t('journal.appearance.motion')">
-        <button type="button" :aria-pressed="motion === 'full'" @click="selectMotion('full')">
-          {{ t('settings.animationFull') }}
-        </button>
-        <button type="button" :aria-pressed="motion === 'reduced'" @click="selectMotion('reduced')">
-          {{ t('settings.animationReduced') }}
-        </button>
-      </div>
-    </div>
     <fieldset class="display-language-field" :aria-busy="languagePending">
       <legend :id="languageGroup">{{ t('settings.language') }}</legend>
-      <p class="display-language-hint">{{ t('journal.appearance.languageHint') }}</p>
+      <p class="display-language-hint sr-only">{{ t('journal.appearance.languageHint') }}</p>
       <div class="display-language-options" role="group" :aria-labelledby="languageGroup">
         <button
           v-for="option in languageOptions"
@@ -78,6 +64,50 @@
         >
       </a>
     </div>
+    <div class="display-motion-row">
+      <div>
+        <h3>{{ t('journal.appearance.motion') }}</h3>
+      </div>
+      <div class="display-motion-options" role="group" :aria-label="t('journal.appearance.motion')">
+        <button
+          v-for="option in motionOptions"
+          :key="option.value"
+          type="button"
+          :aria-pressed="motion === option.value"
+          @click="selectMotion(option.value)"
+        >
+          {{ t(option.labelKey) }}
+        </button>
+      </div>
+    </div>
+    <fieldset class="display-text-field">
+      <legend>{{ t('journal.appearance.textSize') }}</legend>
+      <div class="display-motion-options">
+        <button
+          v-for="option in textOptions"
+          :key="option.value"
+          type="button"
+          :aria-pressed="textSize === option.value"
+          @click="setDisplayPreference('textSize', option.value)"
+        >
+          {{ t(option.labelKey) }}
+        </button>
+      </div>
+    </fieldset>
+    <fieldset v-if="designEdition === 'archive'" class="display-density-field">
+      <legend>{{ t('journal.next.indexDensity') }}</legend>
+      <div class="display-motion-options">
+        <button
+          v-for="option in densityOptions"
+          :key="option.value"
+          type="button"
+          :aria-pressed="density === option.value"
+          @click="setDisplayPreference('density', option.value)"
+        >
+          {{ t(option.labelKey) }}
+        </button>
+      </div>
+    </fieldset>
   </div>
 </template>
 
@@ -86,13 +116,20 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { setLocale, type SupportedLocale } from '@/i18n'
 import { storeToRefs } from 'pinia'
-import { useThemeStore } from '@/stores'
+import { useSettingsStore, useThemeStore } from '@/stores'
 import AppearancePresetPicker from '@/components/appearance/AppearancePresetPicker.vue'
 import type { Theme } from '@/types'
 import { designEdition } from '@/config/designEdition'
+import {
+  readDisplayPreference,
+  setDisplayPreference,
+  type JournalDensity,
+  type JournalTextSize,
+} from './displayPreferences'
 
 const { locale, t } = useI18n({ useScope: 'global' })
 const themeStore = useThemeStore()
+const settingsStore = useSettingsStore()
 const { theme } = storeToRefs(themeStore)
 const colorGroup = useId()
 const languageGroup = useId()
@@ -134,18 +171,56 @@ const editions = [
     href: 'https://next.momichan.com',
   },
 ]
-const motion = ref<'full' | 'reduced'>('full')
+type MotionChoice = 'auto' | 'full' | 'reduced'
+const motionOptions: { value: MotionChoice; labelKey: string }[] = [
+  { value: 'auto', labelKey: 'settings.auto' },
+  { value: 'full', labelKey: 'settings.animationFull' },
+  { value: 'reduced', labelKey: 'settings.animationReduced' },
+]
+const textOptions: { value: JournalTextSize; labelKey: string }[] = [
+  { value: 'standard', labelKey: 'journal.appearance.textStandard' },
+  { value: 'large', labelKey: 'journal.appearance.textLarge' },
+]
+const densityOptions: { value: JournalDensity; labelKey: string }[] = [
+  { value: 'standard', labelKey: 'journal.density.standard' },
+  { value: 'compact', labelKey: 'journal.density.compact' },
+]
+const motion = ref<MotionChoice>('auto')
+const textSize = ref<JournalTextSize>('standard')
+const density = ref<JournalDensity>('standard')
 function syncMotion() {
-  motion.value = document.body.dataset['motion'] === 'reduced' ? 'reduced' : 'full'
+  const value = document.body.dataset['motionPreference'] ?? document.body.dataset['motion']
+  motion.value = value === 'full' || value === 'reduced' ? value : 'auto'
 }
-function selectMotion(value: 'full' | 'reduced') {
+function selectMotion(value: MotionChoice) {
   document.dispatchEvent(new CustomEvent('journalmotionrequest', { detail: value }))
 }
+function syncDisplay() {
+  const text = document.body.dataset['textSize'],
+    index = document.body.dataset['archiveDensity']
+  textSize.value =
+    text === 'large' || text === 'standard' ? text : readDisplayPreference('textSize')
+  density.value =
+    index === 'compact' || index === 'standard' ? index : readDisplayPreference('density')
+}
+function reset() {
+  themeStore.setTheme('auto')
+  settingsStore.setAppearancePreset('minimal-editorial')
+  selectMotion('auto')
+  setDisplayPreference('textSize', 'standard')
+  setDisplayPreference('density', 'standard')
+}
+defineExpose({ reset })
 onMounted(() => {
   document.addEventListener('journalmotionchange', syncMotion)
+  document.addEventListener('journaldisplaychange', syncDisplay)
+  syncDisplay()
   void nextTick(syncMotion)
 })
-onBeforeUnmount(() => document.removeEventListener('journalmotionchange', syncMotion))
+onBeforeUnmount(() => {
+  document.removeEventListener('journalmotionchange', syncMotion)
+  document.removeEventListener('journaldisplaychange', syncDisplay)
+})
 </script>
 
 <style scoped>
@@ -162,7 +237,7 @@ onBeforeUnmount(() => document.removeEventListener('journalmotionchange', syncMo
   display: grid;
   color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 1rem;
   overflow: hidden;
 }
 .display-edition.selected {
@@ -175,25 +250,26 @@ onBeforeUnmount(() => document.removeEventListener('journalmotionchange', syncMo
   block-size: 11.25rem;
   overflow: hidden;
   perspective: 50rem;
-  background: #e8e4d8;
-  color: #2d3029;
+  background: #f0edf8;
+  color: #303044;
 }
 .display-edition-art i {
   position: absolute;
   inline-size: 6.75rem;
   block-size: 8.75rem;
-  background: #faf9f3;
-  border: 1px solid #c5c2b5;
+  background: #ffffff;
+  border: 1px solid #e9e5f0;
+  border-radius: 0.65rem;
   transform: rotateY(-20deg) rotateZ(-10deg);
   transition: transform 0.6s;
 }
 .display-edition-art i:nth-child(1) {
   transform: translate(1.75rem, -0.5rem) rotateY(-20deg) rotateZ(9deg);
-  background: #b83d29;
+  background: #7960c5;
 }
 .display-edition-art i:nth-child(2) {
   transform: translate(0.875rem, -0.25rem) rotateY(-20deg) rotateZ(0deg);
-  background: #dad7ca;
+  background: #d8c9f0;
 }
 .display-edition-art b {
   position: relative;
@@ -203,23 +279,23 @@ onBeforeUnmount(() => document.removeEventListener('journalmotionchange', syncMo
   transform: rotateY(-20deg) rotateZ(-10deg);
 }
 .display-edition.archive .display-edition-art {
-  background: #10211b;
-  color: #b8f4ce;
+  background: linear-gradient(135deg, #e8e3ff, #e4f4f5);
+  color: #5c46e8;
 }
 .display-edition.archive .display-edition-art i {
-  background: #244437;
-  border-color: #668675;
+  background: #f8f7ff;
+  border-color: #beb9f0;
   inline-size: 9.375rem;
   block-size: 6rem;
   transform: rotateX(40deg) rotateZ(-24deg);
 }
 .display-edition.archive .display-edition-art i:nth-child(1) {
   transform: translateY(1.375rem) rotateX(40deg) rotateZ(-24deg);
-  background: #406b53;
+  background: #aca3f0;
 }
 .display-edition.archive .display-edition-art i:nth-child(2) {
   transform: translateY(0.6875rem) rotateX(40deg) rotateZ(-24deg);
-  background: #315440;
+  background: #d8d2ff;
 }
 .display-edition.archive .display-edition-art b {
   transform: rotateX(40deg) rotateZ(-24deg);
@@ -252,7 +328,7 @@ onBeforeUnmount(() => document.removeEventListener('journalmotionchange', syncMo
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding-block-start: 1.5rem;
+  padding-block: 1.5rem;
   gap: 1.25rem;
   border-top: 1px solid var(--line);
 }
@@ -359,5 +435,17 @@ onBeforeUnmount(() => document.removeEventListener('journalmotionchange', syncMo
   color: var(--muted);
   font-size: 0.875rem;
   overflow-wrap: anywhere;
+}
+.display-text-field,
+.display-density-field {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+.display-text-field legend,
+.display-density-field legend {
+  padding: 0;
+  margin-block-end: 0.875rem;
 }
 </style>

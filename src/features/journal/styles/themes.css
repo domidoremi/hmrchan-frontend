@@ -1,0 +1,338 @@
+/* One theme contract covers the journal, overlays and account surfaces. */
+body.site-body {
+  --journal-round: var(--theme-radius);
+  --journal-ease: var(--theme-ease);
+  --journal-duration-panel: var(--theme-duration);
+  --green: var(--appearance-accent);
+  --faint: var(--appearance-text-secondary);
+  --on-accent: var(--appearance-on-accent);
+}
+.site-body .journal-shell .editorial-page {
+  --journal-display: var(--theme-title-font);
+}
+.site-body
+  .journal-shell
+  :is(
+    .post-card,
+    .archive-panel,
+    .archive-inspector,
+    .forum-sidebar,
+    .community-welcome,
+    .author-card,
+    .calendar-shell,
+    .schedule-calendar,
+    .profile-card,
+    .security-panel,
+    .settings-group-panel,
+    .settings-section,
+    .auth-card,
+    .journal-resource-state
+  ) {
+  border-color: var(--line);
+  border-radius: var(--theme-radius);
+  background-color: var(--paper);
+  box-shadow: var(--theme-shadow);
+  color: var(--ink);
+}
+.site-body
+  .journal-shell
+  :is(
+    .home-reading-grid .post-card:nth-child(n),
+    .post-media,
+    .cover-sheet,
+    .next-stage-photo,
+    .next-gallery-card,
+    .next-gallery-media,
+    .preview-artwork,
+    .archive-preview-media
+  ) {
+  border-radius: var(--theme-photo-radius);
+}
+.site-body
+  .journal-shell
+  :is(.home-reading-grid, .archive-bottom-grid, .author-grid, .forum-layout) {
+  gap: var(--theme-gap);
+}
+.site-body
+  .journal-shell
+  :is(
+    .button,
+    .chip,
+    .account-link,
+    .view-toggle,
+    .next-view-toggle,
+    .density-toggle,
+    select,
+    .event-date,
+    .active-query-summary button
+  ) {
+  border-radius: var(--theme-control-radius);
+}
+.site-body .journal-shell :is(input, textarea, select)::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.site-body
+  .journal-shell
+  :is(
+    .cover-story .round-action,
+    .button-accent,
+    .month-poster,
+    .event-date.today,
+    .calendar-day.is-today
+  ) {
+  color: var(--on-accent);
+  background-color: var(--accent);
+}
+.site-body .journal-shell .button-dark:hover {
+  color: var(--on-accent);
+}
+.site-body .journal-shell .editorial-film {
+  --ink: #f6f4ec;
+  --muted: #d6ded1;
+  --faint: #d6ded1;
+  --paper: #fffdf8;
+  --line: #839486;
+  --accent: #f2d5ab;
+  background: var(--theme-film);
+  color: var(--ink);
+}
+.site-body .journal-shell .film-photo {
+  border-radius: var(--theme-photo-radius);
+  background: #fffdf8;
+  color: #263126;
+}
+.site-body .journal-shell .film-position {
+  color: var(--muted);
+}
+.site-body .journal-shell .film-scrubber {
+  color: var(--accent);
+}
+.site-body .journal-shell .film-track {
+  overscroll-behavior-inline: auto;
+  overscroll-behavior-block: auto;
+}
+.site-body .journal-shell .film-track.is-wheel-scrolling {
+  scroll-snap-type: none;
+}
+.site-body .journal-shell :is(.archive-result-row.selected, .archive-result-row:focus-within) {
+  background: var(--accent-soft);
+  color: var(--ink);
+  box-shadow: inset 3px 0 var(--accent);
+}
+.site-body .journal-shell .archive-result-row.selected :is(small, time, p) {
+  color: var(--ink);
+}
+.site-body .journal-shell :is(.archive-row-summary, .post-excerpt, .preview-content p) {
+  color: var(--muted);
+}
+.site-body .journal-shell :is(.reader-body, .reading-content, .post-detail-content) {
+  line-height: var(--appearance-reading-line-height);
+  max-inline-size: var(--appearance-reading-max-inline-size);
+}
+.site-body :is(#app-dialog, .journal-appearance-dialog) {
+  border: 1px solid var(--line);
+  border-radius: var(--theme-radius);
+  background: var(--paper);
+  color: var(--ink);
+}
+.site-body .journal-shell .display-color-options span {
+  border-radius: var(--theme-control-radius);
+}
+.site-body .journal-shell .appearance-preset-card {
+  border-radius: var(--theme-control-radius);
+}
+.site-body .journal-shell :is(.empty-state, .error-state, .journal-state) {
+  color: var(--ink);
+}
+.site-body .journal-shell :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Paper keeps ruled sections and photographs framed like a printed spread. */
+[data-preset='minimal-editorial'] .journal-shell .home-reading-grid .post-card:nth-child(n) {
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0 0 1.25rem;
+  background: transparent;
+  box-shadow: none;
+}
+[data-preset='minimal-editorial'] .journal-shell .section-heading {
+  border-block-start: 2px solid var(--ink);
+  padding-block-start: 1rem;
+}
+[data-preset='minimal-editorial'] .journal-shell .archive-panel {
+  box-shadow: none;
+}
+[data-preset='minimal-editorial'] .journal-shell .reader-body {
+  font-family: var(--theme-title-font);
+}
+
+/* Glass uses inset panels and rounded, separated records. */
+[data-preset='fluent-soft']
+  .journal-shell
+  :is(.archive-inspector, .next-stage, .month-poster, .community-welcome) {
+  background-image: var(--theme-wash);
+}
+[data-preset='fluent-soft'] .journal-shell .archive-result-row {
+  margin-block: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+[data-preset='fluent-soft'] .journal-shell .section-heading {
+  padding: 1rem 1.25rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+}
+[data-preset='fluent-soft'] .journal-shell .edition-header {
+  box-shadow: var(--theme-shadow);
+}
+
+/* Nature gives reading more space and uses asymmetric, rectangular photo frames. */
+[data-preset='organic-natural'] .journal-shell .home-reading-grid .post-card:nth-child(n) {
+  padding: 1.25rem;
+  border-radius: var(--theme-radius);
+}
+[data-preset='organic-natural'] .journal-shell .post-title {
+  font-family: var(--theme-title-font);
+}
+[data-preset='organic-natural'] .journal-shell .section-heading {
+  padding-block: 1.25rem;
+  border-block-start: 1px solid var(--accent);
+}
+[data-preset='organic-natural'] .journal-shell .archive-result-row {
+  padding-block: 1.15rem;
+}
+[data-preset='organic-natural'] .journal-shell .archive-inspector {
+  background-image: var(--theme-wash);
+  padding: 1.5rem;
+}
+
+/* Spectrum uses split compositions, luminous edges and quiet surfaces behind text. */
+[data-preset='gradient-narrative']
+  .journal-shell
+  :is(.archive-inspector, .next-stage, .spatial-cover, .community-welcome) {
+  background-image: var(--theme-wash);
+}
+[data-preset='gradient-narrative'] .journal-shell .section-heading {
+  border-inline-start: 3px solid var(--accent);
+  padding-inline-start: 1rem;
+}
+[data-preset='gradient-narrative'] .journal-shell .home-reading-grid .post-card:nth-child(n) {
+  border-block-start: 2px solid var(--accent);
+  border-radius: var(--theme-radius);
+}
+[data-preset='gradient-narrative'] .journal-shell .archive-result-row.selected {
+  box-shadow:
+    inset 3px 0 var(--accent),
+    0 0 1.5rem color-mix(in srgb, var(--accent) 12%, transparent);
+}
+[data-preset='gradient-narrative'] .journal-shell .preview-content {
+  border-inline-start: 2px solid var(--accent);
+}
+
+@media (min-width: 960px) {
+  .site-body .journal-shell .spatial-cover {
+    grid-template-columns: var(--theme-cover-columns);
+  }
+  .site-body .journal-shell .next-collection .next-index-browser {
+    grid-template-columns: var(--theme-index-columns);
+  }
+  [data-preset='fluent-soft'] .journal-shell .editorial-reading-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.38fr);
+  }
+  [data-preset='organic-natural'] .journal-shell .editorial-reading-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.32fr);
+    gap: 3rem;
+  }
+  [data-preset='gradient-narrative'] .journal-shell .home-reading-grid .post-card:first-child {
+    grid-column: 1 / -1;
+  }
+  [data-preset='gradient-narrative']
+    .journal-shell
+    .home-reading-grid
+    .post-card:first-child
+    .post-media {
+    aspect-ratio: 16 / 9;
+  }
+}
+@media (max-width: 600px) {
+  .site-body .journal-shell :is(.section-heading, .archive-inspector) {
+    padding-inline: 1rem;
+  }
+  .site-body .journal-shell .appearance-preset-picker {
+    gap: 0.65rem;
+  }
+}
+
+.site-body[data-motion='full'] .journal-shell .scene-light {
+  position: absolute;
+  inset: 12% 4%;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    transparent 70%
+  );
+  animation: theme-light-breathe var(--theme-ambient-duration) ease-in-out infinite alternate;
+}
+.site-body[data-motion='full'] .journal-shell .cover-deck {
+  animation: theme-photo-float var(--theme-ambient-duration) ease-in-out infinite alternate;
+}
+.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-planes {
+  animation:
+    next-scene-arrive 1450ms var(--theme-ease) backwards,
+    theme-photo-float var(--theme-ambient-duration) ease-in-out 1450ms infinite alternate;
+}
+.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-orbit {
+  animation:
+    next-orbit-arrive 1600ms var(--theme-ease) backwards,
+    theme-orbit-breathe var(--theme-ambient-duration) ease-in-out 1600ms infinite alternate;
+}
+.site-body[data-motion='full'] .journal-shell .status-light:not(.dim)::after {
+  animation-iteration-count: infinite;
+}
+.site-body[data-motion='full'] .journal-shell :is(.cover-sheet, .next-stage-photo) {
+  transition-timing-function: var(--theme-ease);
+}
+.site-body[data-motion='full']
+  .journal-shell
+  :is(.spatial-cover, .next-stage).motion-offscreen
+  :is(.cover-deck, .scene-light, .next-stage-planes, .next-orbit) {
+  animation-play-state: paused;
+}
+@keyframes theme-photo-float {
+  from {
+    translate: calc(var(--theme-float-x, 0rem) * -1) calc(var(--theme-float-y, 0.25rem) * -1);
+    rotate: calc(var(--theme-float-angle, 0deg) * -1);
+  }
+  to {
+    translate: var(--theme-float-x, 0rem) var(--theme-float-y, 0.25rem);
+    rotate: var(--theme-float-angle, 0deg);
+  }
+}
+@keyframes theme-light-breathe {
+  from {
+    opacity: 0.45;
+    transform: translate(-4%, -2%) scale(0.94);
+  }
+  to {
+    opacity: 0.95;
+    transform: translate(4%, 3%) scale(1.08);
+  }
+}
+@keyframes theme-orbit-breathe {
+  from {
+    opacity: 0.35;
+    scale: 0.97;
+  }
+  to {
+    opacity: 0.85;
+    scale: 1.035;
+  }
+}

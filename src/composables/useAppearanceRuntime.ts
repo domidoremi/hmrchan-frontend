@@ -1,10 +1,9 @@
-import { computed, ref, watch, watchEffect, type MaybeRefOrGetter, toValue } from 'vue'
+import { computed, watchEffect, type MaybeRefOrGetter, toValue } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
-import { DEFAULT_APPEARANCE_PRESET, resolveSceneRole } from '@/config/appearance'
+import { normalizeAppearancePreset, resolveSceneRole } from '@/config/appearance'
 import { designEdition } from '@/config/designEdition'
-import { applyAppearancePreset } from '@/services/appearanceLoader'
 import { useAppearanceColorSync } from './useAppearanceColorSync'
 
 export function useAppearanceRuntime(
@@ -16,22 +15,11 @@ export function useAppearanceRuntime(
   const { resolvedColorMode } = storeToRefs(themeStore)
   const { settings, motionMode } = storeToRefs(settingsStore)
 
-  const activePreset = ref(settings.value.appearancePreset ?? DEFAULT_APPEARANCE_PRESET)
+  const activePreset = computed(() => normalizeAppearancePreset(settings.value.appearancePreset))
 
   const routeSceneRole = computed(() => resolveSceneRole(toValue(routeSource)))
 
   useAppearanceColorSync([activePreset, resolvedColorMode])
-
-  watch(
-    () => [settings.value.appearancePreset, resolvedColorMode.value] as const,
-    async ([preset, colorMode]) => {
-      const applied = await applyAppearancePreset(preset, colorMode)
-      if (applied) {
-        activePreset.value = preset
-      }
-    },
-    { immediate: true }
-  )
 
   watchEffect(() => {
     if (typeof document === 'undefined') return

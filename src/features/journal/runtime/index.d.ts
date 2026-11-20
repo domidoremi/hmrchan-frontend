@@ -36,9 +36,13 @@ export interface JournalRuntime {
     dispose(): void
   }
   Experience: { savedFeedback(button: Element, id: string, saved: boolean): void }
-  SpatialMotion: { layout(root: Element, update: () => void | Promise<void>): Promise<void> }
+  SpatialMotion: {
+    layout(root: Element, update: () => void | Promise<void>): Promise<void>
+    preview(source: HTMLImageElement | null | undefined, target: HTMLImageElement | null): void
+    stopPreview(): void
+  }
   getMotion(): 'full' | 'reduced'
-  setMotion(value: 'full' | 'reduced'): void
+  setMotion(value: 'auto' | 'full' | 'reduced'): void
   mount(root?: ParentNode): void
   refreshLocalizedControls(): void
   transition(): void

@@ -124,6 +124,7 @@ const surfaces: {
           platform: 'all',
           sort: 'latest',
           contentType: '全部',
+          layout: 'list',
           hasMore: false,
           loading: false,
         },

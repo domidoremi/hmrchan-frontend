@@ -128,6 +128,7 @@ it('keeps the same selected and focused Archive row when its date heading change
     global: { plugins: [i18n], stubs },
   })
   wrappers.push(wrapper)
+  await wrapper.get('.next-view-toggle button:last-child').trigger('click')
   const row = wrapper.get<HTMLButtonElement>('[data-select-post="post-two"]')
   await row.trigger('click')
   row.element.focus()

@@ -1,6 +1,6 @@
 <template>
   <div class="editorial-home editorial-page">
-    <div class="journal-masthead" data-reveal>
+    <div class="journal-masthead" data-masthead>
       <strong>MomiChan<span>↗</span></strong>
       <div>
         <span>{{ date }}</span>
@@ -20,70 +20,80 @@
         <div class="cover-deck"><div class="cover-placeholder" /></div>
       </div>
     </div>
-    <SpatialCover :posts="posts" />
+    <SpatialCover :posts="allPosts" />
     <EditorialContents :sections="contents" />
     <JournalResourceState
       :state="states.posts"
       label="动态"
       label-key="journal.nav.posts"
-      :empty="!posts.length"
+      :empty="!allPosts.length"
       empty-message="暂无动态"
       empty-message-key="journal.states.noPosts"
       @retry="$emit('retry')"
     />
-    <section
-      id="issue-latest"
-      class="editorial-latest"
-      data-reading-section
-      tabindex="-1"
-      data-reveal
-    >
-      <div class="section-heading">
-        <span class="section-number">01</span>
-        <h2>{{ t('journal.home.latest') }}</h2>
-        <RouterLink to="/explore"
-          >{{ t('journal.home.allPosts') }} <JournalIcon name="arrow-up-right"
-        /></RouterLink>
-      </div>
-      <div class="editorial-source-bar">
-        <div class="chips">
-          <button
-            class="chip"
-            :class="{ active: platform === 'all' }"
-            @click="$emit('platform', 'all')"
-          >
-            {{ t('common.all') }}</button><button
-            v-for="source in sources"
-            :key="source.key"
-            class="chip"
-            :class="{ active: platform === source.key }"
-            @click="$emit('platform', source.key)"
-          >
-            {{ journalSourceLabel(source.key, source.label, t) }}
-          </button>
+    <div class="editorial-reading-layout">
+      <section
+        id="issue-latest"
+        class="editorial-latest"
+        data-reading-section
+        tabindex="-1"
+        data-reveal
+      >
+        <div class="section-heading">
+          <span class="section-number">01</span>
+          <h2>{{ t('journal.home.latest') }}</h2>
+          <RouterLink to="/explore"
+            >{{ t('journal.home.allPosts') }} <JournalIcon name="arrow-up-right"
+          /></RouterLink>
         </div>
-        <label
-          ><span class="sr-only">{{ t('explore.sortBy') }}</span
-          ><select
-            :value="sort"
-            @change="$emit('sort', ($event.target as HTMLSelectElement).value)"
+        <div class="editorial-source-bar">
+          <div class="chips" data-indicator>
+            <button
+              class="chip"
+              :class="{ active: platform === 'all' }"
+              @click="$emit('platform', 'all')"
+            >
+              {{ t('common.all') }}</button><button
+              v-for="source in sources"
+              :key="source.key"
+              class="chip"
+              :class="{ active: platform === source.key }"
+              @click="$emit('platform', source.key)"
+            >
+              {{ journalSourceLabel(source.key, source.label, t) }}
+            </button>
+          </div>
+          <label
+            ><span class="sr-only">{{ t('explore.sortBy') }}</span
+            ><select :value="sort" @change="changeSort">
+              <option value="latest">{{ t('explore.newest') }}</option>
+              <option value="popular">{{ t('journal.filters.mostLiked') }}</option>
+            </select></label
           >
-            <option value="latest">{{ t('explore.newest') }}</option>
-            <option value="popular">{{ t('journal.filters.mostLiked') }}</option>
-          </select></label
-        >
-      </div>
-      <div class="editorial-grid home-reading-grid">
-        <JournalPostCard
-          v-for="post in posts.slice(0, 8)"
-          :key="post.id"
-          :post="post"
-          :saved="savedPosts.has(post.id)"
-          data-reveal
-          @save="(item, event) => $emit('save', item, event)"
-        />
-      </div>
-    </section>
+        </div>
+        <div ref="readingGrid" class="editorial-grid home-reading-grid">
+          <JournalPostCard
+            v-for="post in posts.slice(0, 8)"
+            :key="post.id"
+            :post="post"
+            :saved="savedPosts.has(post.id)"
+            data-reveal
+            @save="(item, event) => $emit('save', item, event)"
+          />
+        </div>
+        <div v-if="!posts.length && allPosts.length" class="reading-filter-empty">
+          <p>{{ t('common.noResults') }}</p>
+          <button class="button" @click="$emit('platform', 'all')">{{ t('common.clear') }}</button>
+        </div>
+      </section>
+      <EditorialReadingAside
+        :posts="allPosts"
+        :events="events"
+        :states="states"
+        :month-name="monthName"
+        @retry="$emit('retry')"
+      />
+    </div>
     <EditorialFilm
       v-if="pictures.length"
       id="issue-film"
@@ -182,7 +192,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject, nextTick, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { journalCategoryLabel, journalSourceLabel } from '../controlLabels'
 import { journalDateLabel } from '../localizedDate'
@@ -194,10 +204,12 @@ import JournalResourceState from '../JournalResourceState.vue'
 import type { JournalResourceStates } from '../resourceState'
 import '../styles/home-loading.css'
 import EditorialFilm from './EditorialFilm.vue'
+import EditorialReadingAside from './EditorialReadingAside.vue'
 import JournalPostCard from '../JournalPostCard.vue'
 import JournalEventCard from '../JournalEventCard.vue'
 import { sourceGroups } from '../presentation'
 import type { JournalPost, JournalEvent, JournalDiscussion } from '../models'
+import { journalKey } from '../context'
 const { locale, t } = useI18n({ useScope: 'global' })
 const props = defineProps<{
   states: JournalResourceStates
@@ -211,14 +223,36 @@ const props = defineProps<{
   sort: string
   month: string
 }>()
-defineEmits<{
+const emit = defineEmits<{
   retry: []
   save: [post: JournalPost, event: MouseEvent]
   platform: [value: string]
   sort: [value: string]
 }>()
+function changeSort(event: Event) {
+  const control = event.currentTarget
+  if (control instanceof HTMLSelectElement) emit('sort', control.value)
+}
 const sources = computed(() => sourceGroups(props.allPosts)),
-  pictures = computed(() => props.posts.filter((post) => post.image).slice(0, 10))
+  pictures = computed(() => props.allPosts.filter((post) => post.image).slice(0, 10))
+const runtime = inject(journalKey, shallowRef(null))
+const readingGrid = ref<HTMLElement>()
+watch(
+  () => props.posts,
+  async (_posts, _previous, onCleanup) => {
+    let current = true
+    onCleanup(() => {
+      current = false
+    })
+    const grid = readingGrid.value
+    if (!grid || !runtime.value) return
+    await runtime.value.SpatialMotion.layout(grid, async () => {
+      await nextTick()
+      if (current) runtime.value?.mount(grid)
+    })
+  },
+  { flush: 'pre' }
+)
 const contents = computed(() => [
   {
     id: 'issue-latest',

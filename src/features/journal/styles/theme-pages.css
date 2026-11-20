@@ -1,0 +1,211 @@
+/* Explicit roles also cover components loaded after the main journal stylesheet. */
+html[data-preset]
+  .site-body
+  .journal-shell
+  :is(
+    .post-meta,
+    .meta-line,
+    .result-source,
+    .archive-result-row time,
+    .next-preview-position,
+    .next-feature-count,
+    .cover-kicker,
+    .cover-source,
+    .cover-pause,
+    .journal-masthead > div,
+    .footer-bottom,
+    .mobile-navigation a,
+    .inspector-heading,
+    .next-index-heading
+  ) {
+  font-size: calc(0.75rem * var(--journal-reading-scale));
+}
+html[data-preset] body.site-body #app #main-content.journal-legacy {
+  --profile-shell-radius: var(--theme-radius);
+  --profile-section-radius: var(--theme-radius);
+  --appearance-page-surface-shadow: var(--theme-shadow);
+  --appearance-page-control-shadow: none;
+}
+html[data-preset]
+  .site-body
+  #app
+  :is(
+    .author-card,
+    .profile-card,
+    .profile-group,
+    .settings-section,
+    .security-panel,
+    .security-workspace,
+    .discussion-card,
+    .forum-main,
+    .forum-sidebar,
+    .archive-month,
+    .archive-calendar-inspector,
+    .schedule-book,
+    .about-link-group,
+    .contact-panel
+  ) {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--line);
+  border-radius: var(--theme-radius);
+  box-shadow: var(--theme-shadow);
+}
+html[data-preset]
+  .site-body
+  #app
+  :is(
+    .page-control,
+    .page-inline-cta,
+    .ui-input,
+    .auth-provider-button,
+    .settings-category-switcher__item,
+    .forum-categories button,
+    .archive-month-day,
+    .editorial-date-strip button
+  ) {
+  border-radius: var(--theme-control-radius);
+}
+html[data-preset]
+  .site-body
+  #app
+  :is(.page-hero-shell__title, .sub-header h1, .auth-title, .about-title, .contact-title) {
+  font-family: var(--theme-title-font);
+  color: var(--ink);
+}
+html[data-preset] .site-body #app :is(.schedule-book-cover, .month-poster) {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+html[data-preset]
+  .site-body
+  #app
+  :is(.archive-month-day.selected, .editorial-date-strip button.active) {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+html[data-preset]
+  .site-body
+  #app
+  :is(.archive-month-day.selected, .editorial-date-strip button.active)
+  :is(small, b, span) {
+  color: inherit;
+}
+html[data-preset] .site-body #app .month-day-events > span {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+html[data-preset] .site-body #app .auth-shell {
+  border-radius: var(--theme-radius);
+  background: var(--paper);
+  border-color: var(--line);
+  box-shadow: var(--theme-shadow);
+}
+html[data-preset] .site-body #app .edition-auth-art {
+  --auth-art-paper: var(--appearance-surface-2);
+  background: var(--theme-wash), var(--appearance-surface-2);
+  color: var(--ink);
+}
+html[data-preset] .site-body #app .auth-art-sheet {
+  border-color: var(--line);
+  border-radius: var(--theme-photo-radius);
+  background: var(--paper);
+  color: var(--ink);
+}
+html[data-preset] .site-body #app .auth-art-sheet:nth-child(2) {
+  background: var(--canvas);
+}
+html[data-preset] .site-body #app .auth-art-sheet:nth-child(3) {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+html[data-preset] .site-body #app .auth-page .btn {
+  border-radius: var(--theme-control-radius);
+}
+html[data-preset] .site-body #app :is(.btn-primary, .next-gallery-card .post-save.saved) {
+  color: var(--on-accent);
+  background: var(--accent);
+}
+html[data-preset]
+  .site-body
+  #app
+  :is(.authors-grid, .settings-grid, .profile-grid, .community-panels) {
+  gap: var(--theme-gap);
+}
+html[data-preset] .site-body #app .author-card {
+  padding: calc(var(--theme-gap) + 0.5rem);
+}
+html[data-preset]
+  .site-body
+  #app
+  :is(.auth-subtitle, .form-label, .author-username, .sub-header__hint) {
+  color: var(--muted);
+}
+html[data-preset] .site-body #app .form-group :is(input, textarea) {
+  color: var(--ink);
+  background: var(--paper);
+  border-color: var(--line);
+}
+html[data-preset] .site-body #app :is(.form-error, .error-message) {
+  color: var(--appearance-danger);
+}
+
+html[data-preset='minimal-editorial']
+  .site-body
+  #app
+  :is(.author-card, .discussion-card, .settings-section, .profile-group) {
+  border-radius: 0.25rem;
+  border-block-start: 2px solid var(--ink);
+  box-shadow: none;
+}
+html[data-preset='fluent-soft']
+  .site-body
+  #app
+  :is(.archive-calendar-inspector, .forum-sidebar, .author-card, .profile-group) {
+  background: var(--theme-wash), var(--paper);
+}
+html[data-preset='fluent-soft'] .site-body #app .archive-month-grid {
+  gap: 0.4rem;
+}
+html[data-preset='organic-natural'] .site-body #app :is(.discussion-card, .ledger-event) {
+  padding-block: var(--theme-gap);
+}
+html[data-preset='organic-natural'] .site-body #app .archive-month-grid {
+  gap: 0.3rem;
+}
+html[data-preset='organic-natural'] .site-body #app .author-card {
+  border-block-end: 3px solid var(--accent);
+}
+html[data-preset='gradient-narrative']
+  .site-body
+  #app
+  :is(.author-card, .discussion-card, .settings-section) {
+  border-inline-start: 3px solid var(--accent);
+}
+html[data-preset='gradient-narrative'] .site-body #app .archive-calendar-inspector {
+  background: var(--theme-wash), var(--paper);
+}
+
+@media (min-width: 960px) {
+  html[data-preset='fluent-soft'] .site-body #app .auth-shell {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  }
+  html[data-preset='organic-natural'] .site-body #app .auth-shell {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  html[data-preset='gradient-narrative'] .site-body #app .auth-shell {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+  html[data-preset='fluent-soft'] .site-body #app .archive-calendar-workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.4fr);
+    gap: 1.25rem;
+  }
+  html[data-preset='organic-natural'] .site-body #app .archive-calendar-workspace {
+    gap: 2rem;
+  }
+  html[data-preset='gradient-narrative'] .site-body #app .archive-calendar-workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.5fr);
+  }
+}

@@ -3,14 +3,7 @@ export type ColorMode = 'light' | 'dark' | 'auto'
 export type Theme = ColorMode
 
 export type AppearancePreset =
-  | 'minimal-editorial'
-  | 'fluent-soft'
-  | 'material-calm'
-  | 'organic-natural'
-  | 'biophilic-serene'
-  | 'clay-playful'
-  | 'sketch-doodle'
-  | 'gradient-narrative'
+  'minimal-editorial' | 'fluent-soft' | 'organic-natural' | 'gradient-narrative'
 
 export type MotionMode = 'none' | 'reduced' | 'standard' | 'expressive'
 
