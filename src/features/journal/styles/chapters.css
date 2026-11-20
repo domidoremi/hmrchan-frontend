@@ -1,4 +1,4 @@
-/* Document scroll is the only vertical timeline; every chapter owns one viewport. */
+/* Native content flows continuously; only media sequences reserve scroll travel. */
 .site-body .journal-shell .immersive-home:is(.editorial-home, .next-home) {
   --chapter-inset: max(1.5rem, calc((100% - 82rem) / 2));
   inline-size: 100%;
@@ -8,6 +8,7 @@
   --chapter-height: calc(100svh - 4.5rem);
   --chapter-enter: 1;
   --chapter-leave: 0;
+  --chapter-flow: 0.5;
   --chapter-shift: 0rem;
   --chapter-turn: 2deg;
   position: relative;
@@ -31,25 +32,21 @@
   padding: clamp(1rem, 3svh, 2.5rem) var(--chapter-inset);
   display: flow-root;
 }
-.site-body .journal-shell .immersive-chapter[data-scene-enhanced='true'] {
+.site-body .journal-shell .immersive-chapter[data-scene-pinned='true'] {
   block-size: calc(var(--chapter-height) + var(--chapter-run, 0rem));
 }
-.site-body .journal-shell [data-scene-enhanced='true'] > .chapter-stage {
+.site-body .journal-shell [data-scene-pinned='true'] > .chapter-stage {
   position: sticky;
   inset-block-start: var(--chapter-top);
   block-size: var(--chapter-height);
-  overflow: clip;
+  overflow: visible;
   perspective: 100rem;
 }
-.site-body .journal-shell [data-scene-enhanced='true'] .chapter-surface {
+.site-body .journal-shell [data-scene-pinned='true'] .chapter-surface {
   block-size: 100%;
-  transform-origin: 50% 15%;
-  transform: translateY(calc((1 - var(--chapter-enter)) * 4rem))
-    rotateX(calc((1 - var(--chapter-enter)) * var(--chapter-turn)))
-    scale(calc(0.94 + var(--chapter-enter) * 0.06 - var(--chapter-leave) * 0.04));
-  opacity: calc(0.65 + var(--chapter-enter) * 0.35 - var(--chapter-leave) * 0.25);
+  overflow: clip;
 }
-.site-body .journal-shell [data-scene-enhanced='true'] .chapter-content {
+.site-body .journal-shell [data-scene-pinned='true'] .chapter-content {
   transform: translateY(var(--chapter-shift));
 }
 .site-body
@@ -183,11 +180,7 @@
 .site-body .journal-shell .immersive-chapter .archive-discussion-row button {
   font-size: calc(clamp(1rem, 1.5vw, 1.4rem) * var(--journal-reading-scale));
 }
-.site-body .journal-shell [data-scene-enhanced='true'] .archive-inspector {
-  position: relative;
-  top: auto;
-}
-.site-body .journal-shell .chapter-stage > .archive-selection-dock {
+.site-body .journal-shell [data-scene-pinned='true'] .chapter-stage > .archive-selection-dock {
   position: absolute;
   inset-block-end: 1rem;
 }

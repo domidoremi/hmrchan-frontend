@@ -20,6 +20,16 @@
   margin: 0;
   pointer-events: none;
 }
+.site-body
+  .journal-shell:has([data-scene-pinned='true']:not([data-scene-state='outside']))
+  .back-to-top:not(:focus-visible) {
+  visibility: hidden;
+  pointer-events: none;
+}
+.site-body .journal-shell [data-scene-state='outside'] .archive-selection-dock {
+  visibility: hidden;
+  pointer-events: none;
+}
 .site-body .journal-shell .home-atmosphere-field {
   position: sticky;
   inset-block-start: 0;
@@ -33,7 +43,6 @@
   inset: -10%;
   transform: translate3d(calc(var(--home-progress) * -3%), calc(var(--home-progress) * 2%), 0)
     rotate(calc(var(--home-progress) * 12deg));
-  transition: transform 1.6s var(--theme-ease);
 }
 .home-light i {
   position: absolute;
@@ -148,9 +157,7 @@
 }
 .site-body .journal-shell .immersive-home [data-scene-enhanced='true'] .chapter-surface {
   opacity: 1;
-  transform: translateY(calc((1 - var(--chapter-enter)) * var(--composition-distance)))
-    rotateX(calc((1 - var(--chapter-enter)) * var(--composition-angle)))
-    scale(calc(0.96 + var(--chapter-enter) * 0.04 - var(--chapter-leave) * 0.025));
+  transform: none;
 }
 .site-body
   .journal-shell
@@ -167,7 +174,8 @@
   .immersive-home
   [data-scene-enhanced='true']
   :is(.cover-scene, .next-stage-scene) {
-  translate: 0 calc(var(--chapter-progress) * -0.75rem + var(--chapter-leave) * 2rem);
+  translate: calc((var(--chapter-flow) - 0.5) * -2rem) calc((var(--chapter-flow) - 0.5) * -3rem);
+  scale: calc(0.95 + var(--chapter-enter) * 0.05 - var(--chapter-leave) * 0.06);
 }
 .site-body .journal-shell .immersive-home .journal-masthead {
   display: flex;
@@ -400,8 +408,13 @@
   letter-spacing: -0.045em;
 }
 @media (min-width: 960px) {
-  .site-body .journal-shell .next-home [data-scene-enhanced='true'] .archive-inspector {
-    translate: 0 var(--chapter-pin, 0px);
+  .site-body
+    .journal-shell
+    .next-home
+    [data-scene-enhanced='true']
+    .archive-inspector[data-can-pin='true'] {
+    position: sticky;
+    inset-block-start: calc(var(--chapter-top) + 1rem);
   }
   .site-body .journal-shell .next-home .preview-media {
     max-block-size: max(9rem, calc(var(--chapter-height) - 28rem));
@@ -430,6 +443,89 @@
     .post-card:first-child
     :is(.post-meta, .post-title, .post-excerpt, .post-bottom) {
     grid-column: 2;
+  }
+}
+/* Copy shares a stable grid cell; photographs move continuously around readable text. */
+.site-body .journal-shell .cover-copy {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+.site-body .journal-shell .cover-kicker {
+  grid-area: 1 / 1;
+}
+.site-body .journal-shell .cover-story {
+  grid-area: 2 / 1;
+}
+.site-body .journal-shell .cover-controls {
+  grid-area: 3 / 1;
+}
+.site-body .journal-shell .next-stage-copy {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: center;
+}
+.site-body .journal-shell .next-stage-copy > .eyebrow {
+  grid-area: 1 / 1;
+}
+.site-body .journal-shell .next-stage-entry {
+  grid-area: 2 / 1;
+  align-self: center;
+}
+.site-body .journal-shell :is(.cover-story, .next-stage-entry) {
+  translate: 0 calc(var(--copy-offset, 0) * 1.75rem);
+  transition:
+    opacity 450ms var(--theme-ease),
+    translate 600ms var(--theme-ease);
+}
+.site-body[data-motion='full']
+  .journal-shell
+  [data-scrubbing='true']
+  :is(.cover-sheet, .next-stage-photo) {
+  transition: none;
+}
+.site-body .journal-shell [data-scrubbing='true'] :is(.cover-story, .next-stage-entry) {
+  transition: opacity 180ms linear;
+}
+.site-body .journal-shell [data-scrubbing='true'] .motion-letter {
+  animation: none;
+}
+.site-body .journal-shell [data-scene-enhanced='true'] .journal-masthead {
+  transform-origin: left top;
+  translate: calc(var(--chapter-flow) * -2rem) calc(var(--chapter-flow) * -2rem);
+  scale: calc(1 - var(--chapter-flow) * 0.12);
+}
+.site-body .journal-shell [data-scene-enhanced='true'] .home-reading-grid .post-card {
+  translate: 0 calc(var(--view-offset, 0) * 2.5rem);
+}
+.site-body .journal-shell [data-scene-enhanced='true'] .home-reading-grid .post-card:nth-child(2n) {
+  translate: 0 calc(var(--view-offset, 0) * -2.5rem);
+}
+.site-body .journal-shell [data-scene-enhanced='true'] .month-poster {
+  translate: calc(var(--view-offset, 0) * -2rem) calc(var(--view-offset, 0) * 3rem);
+  rotate: calc(var(--view-offset, 0) * -4deg);
+  scale: calc(1 + var(--view-offset, 0) * 0.06);
+}
+.site-body
+  .journal-shell
+  [data-scene-enhanced='true']
+  :is(.editorial-discussion, .archive-discussion-row, .archive-agenda article) {
+  translate: calc(var(--view-offset, 0) * 2rem) 0;
+}
+.site-body .journal-shell .immersive-home .editorial-film {
+  border-radius: calc((1 - var(--chapter-enter)) * 5rem) calc((1 - var(--chapter-enter)) * 5rem)
+    calc(var(--chapter-leave) * 5rem) calc(var(--chapter-leave) * 5rem);
+  overflow: clip;
+}
+@media (max-width: 560px) {
+  .site-body .journal-shell [data-scene-enhanced='true'] .home-reading-grid .post-card {
+    translate: 0 calc(var(--view-offset, 0) * 1rem);
+  }
+  .site-body
+    .journal-shell
+    [data-scene-enhanced='true']
+    .home-reading-grid
+    .post-card:nth-child(2n) {
+    translate: 0 calc(var(--view-offset, 0) * -1rem);
   }
 }
 @media (max-width: 800px) {

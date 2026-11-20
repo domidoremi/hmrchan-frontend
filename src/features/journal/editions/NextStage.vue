@@ -2,6 +2,7 @@
   <section
     :ref="setRoot"
     class="next-stage"
+    :data-scrubbing="scrubbing"
     :class="{ 'has-entered': hasEntered }"
     data-depth-scene
     :aria-label="t('journal.next.featured')"
@@ -14,15 +15,20 @@
   >
     <div class="next-stage-copy">
       <span class="eyebrow"><span class="status-light" />{{ t('journal.next.featured') }}</span>
-      <Transition name="cover-copy" mode="out-in">
-        <div v-if="selected" :key="selected.id" class="next-stage-entry">
-          <h2 :aria-label="selected.title"><MotionTitle :text="selected.title" /></h2>
-          <p>{{ selected.author }} · {{ journalPostTimeLabel(selected, t, locale) }}</p>
-          <button class="button button-dark" :data-open="selected.id" data-magnet>
-            {{ t('journal.actions.open') }}<JournalIcon name="arrow-up-right" />
-          </button>
-        </div>
-      </Transition>
+      <div
+        v-for="(post, i) in items"
+        :key="post.id"
+        class="next-stage-entry"
+        :style="copyStyle(i)"
+        :inert="post.id !== selectedId || undefined"
+        :aria-hidden="post.id !== selectedId || undefined"
+      >
+        <h2 :aria-label="post.title"><MotionTitle :text="post.title" /></h2>
+        <p>{{ post.author }} · {{ journalPostTimeLabel(post, t, locale) }}</p>
+        <button class="button button-dark" :data-open="post.id" data-magnet>
+          {{ t('journal.actions.open') }}<JournalIcon name="arrow-up-right" />
+        </button>
+      </div>
     </div>
     <div
       v-if="selected"
@@ -165,6 +171,8 @@ const {
   index,
   step,
   position,
+  copyStyle,
+  scrubbing,
   selectSheet,
   hovered,
   focused,
@@ -183,8 +191,8 @@ function photoStyle(i: number) {
   return {
     '--slot': offset,
     '--depth': Math.abs(offset),
-    zIndex: items.value.length - Math.abs(offset),
-    pointerEvents: offset === 0 ? ('auto' as const) : ('none' as const),
+    zIndex: items.value.length - Math.round(Math.abs(offset)),
+    pointerEvents: i === index.value ? ('auto' as const) : ('none' as const),
   }
 }
 </script>

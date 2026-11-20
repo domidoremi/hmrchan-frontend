@@ -131,7 +131,7 @@ describe('immersive document chapters', () => {
     window.dispatchEvent(new Event('resize'))
     expect(context.enabled.value).toBe(true)
   })
-  it('keeps manual seeking consistent when a small collection uses the minimum reading interval', async () => {
+  it('keeps manual seeking consistent with a small collection’s actual travel', async () => {
     await render()
     context.travel.value = 40
     await nextTick()
@@ -139,29 +139,29 @@ describe('immersive document chapters', () => {
     await vi.advanceTimersByTimeAsync(20)
     expect(context.progress.value).toBeCloseTo(1)
   })
-  it('reveals a preview before pinning it and releases previews taller than the viewport', async () => {
+  it('keeps ordinary content in native flow and allows only fitting previews to stick', async () => {
     const chapter = await render()
     const content = chapter.querySelector<HTMLElement>('.chapter-content')!
     const inspector = document.createElement('aside')
     inspector.className = 'archive-inspector'
     content.append(inspector)
     let previewHeight = 400
-    Object.defineProperties(inspector, {
-      offsetHeight: { get: () => previewHeight },
-      offsetTop: { get: () => 300 },
-      offsetParent: { get: () => content },
-    })
+    Object.defineProperty(inspector, 'offsetHeight', { get: () => previewHeight })
     window.dispatchEvent(new Event('resize'))
     await scrollTo(1000)
-    expect(chapter.style.getPropertyValue('--chapter-pin')).toBe('0px')
+    expect(chapter.dataset['scenePinned']).toBe('false')
+    expect(chapter.style.getPropertyValue('--chapter-run')).toBe('0px')
+    expect(inspector.dataset['canPin']).toBe('true')
     await scrollTo(1300)
-    expect(chapter.style.getPropertyValue('--chapter-pin')).toBe('138px')
+    expect(chapter.style.getPropertyValue('--chapter-shift')).toBe('0px')
     previewHeight = 900
     window.dispatchEvent(new Event('resize'))
-    expect(chapter.style.getPropertyValue('--chapter-pin')).toBe('0px')
+    expect(inspector.dataset['canPin']).toBe('false')
   })
   it('remeasures changed content and removes observers and pending frames on unmount', async () => {
     const chapter = await render()
+    context.travel.value = 600
+    await nextTick()
     const oldRun = chapter.style.getPropertyValue('--chapter-run')
     contentHeight = 1500
     chapter.querySelector('.chapter-content')!.append(document.createElement('p'))

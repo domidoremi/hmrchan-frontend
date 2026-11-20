@@ -16,6 +16,7 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { createResizeObserver } from '@/utils/modernAPIs'
+import { scrollHomeTo } from './useHomeScroll'
 const { t } = useI18n({ useScope: 'global' })
 const props = defineProps<{
   sections: { id: string; number: string; label: string; count: number | null }[]
@@ -62,10 +63,10 @@ function go(id: string) {
   const offset = nav
     ? (Number.parseFloat(getComputedStyle(nav).top) || 0) + nav.getBoundingClientRect().height
     : 0
-  window.scrollTo({
-    top: window.scrollY + element.getBoundingClientRect().top - offset,
-    behavior: document.body.dataset['motion'] === 'full' ? 'smooth' : 'instant',
-  })
+  scrollHomeTo(
+    window.scrollY + element.getBoundingClientRect().top - offset,
+    document.body.dataset['motion'] === 'full'
+  )
 }
 watch(() => props.sections, refresh, { flush: 'post' })
 onMounted(() => {
