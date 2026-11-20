@@ -1,5 +1,6 @@
 import {
   computed,
+  inject,
   onActivated,
   onBeforeUnmount,
   onDeactivated,
@@ -11,9 +12,11 @@ import {
 import { createVisibilityObserver } from '@/utils/modernAPIs'
 import { usePostSelection } from '../presentation'
 import { createWheelRegion } from './wheelRegion'
+import { chapterKey } from './chapterContext'
 import type { JournalPost } from '../models'
 
 export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
+  const chapter = inject(chapterKey, null)
   const items = computed(() => posts.value.slice(0, 6))
   const selection = usePostSelection(items)
   const root = ref<HTMLElement>()
@@ -44,6 +47,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
       !hovered.value &&
       !focused.value &&
       !paused.value &&
+      !chapter?.enabled.value &&
       items.value.length > 1
   )
   function clearTimer() {
@@ -77,7 +81,15 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     return offset > length / 2 ? offset - length : offset
   }
   function selectSheet(id: string) {
-    if (id !== selection.selectedId.value) selection.selectedId.value = id
+    if (id === selection.selectedId.value) return
+    selection.selectedId.value = id
+    if (chapter?.enabled.value)
+      chapter.seek(selection.index.value / Math.max(1, items.value.length - 1))
+  }
+  function step(direction: number) {
+    const count = items.value.length
+    const item = items.value[(selection.index.value + direction + count) % count]
+    if (item) selectSheet(item.id)
   }
   function touchStart(event: TouchEvent) {
     const point = event.changedTouches[0]
@@ -90,7 +102,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     if (!point || !start || performance.now() - start.at > 1200) return
     const dx = point.clientX - start.x,
       dy = point.clientY - start.y
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) selection.step(dx < 0 ? 1 : -1)
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) step(dx < 0 ? 1 : -1)
   }
   function touchCancel() {
     touch = undefined
@@ -110,7 +122,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
       position: () => selection.index.value,
       maximum: () => items.value.length - 1,
       stepped: true,
-      enabled: () => active.value && !blocked.value,
+      enabled: () => active.value && !blocked.value && !chapter?.enabled.value,
       move: (index) => {
         const post = items.value[index]
         if (post) selectSheet(post.id)
@@ -175,8 +187,23 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     observer?.disconnect()
     dialogObserver?.disconnect()
   })
+  if (chapter) {
+    watch(
+      [chapter.height, () => items.value.length],
+      ([height, count]) => {
+        chapter.travel.value = Math.max(0, count - 1) * height * 0.6
+      },
+      { immediate: true }
+    )
+    watch(chapter.progress, (value) => {
+      if (!chapter.enabled.value || !active.value || blocked.value || paused.value) return
+      const item = items.value[Math.round(value * (items.value.length - 1))]
+      if (item) selection.selectedId.value = item.id
+    })
+  }
   return {
     ...selection,
+    step,
     root,
     setRoot,
     items,

@@ -1,5 +1,6 @@
-import { onBeforeUnmount, onMounted, type Ref } from 'vue'
+import { inject, onBeforeUnmount, onMounted, type Ref } from 'vue'
 import { createWheelRegion } from './wheelRegion'
+import { chapterKey } from './chapterContext'
 
 export function useCollectionScroll(
   root: Ref<HTMLElement | undefined>,
@@ -7,6 +8,7 @@ export function useCollectionScroll(
   count: () => number,
   selectIndex: (index: number) => void
 ) {
+  const chapter = inject(chapterKey, null)
   const lifetime = new AbortController()
   let pending = 0
   let pointerX = -1
@@ -26,6 +28,7 @@ export function useCollectionScroll(
               position: () => index.value,
               maximum: () => count() - 1,
               stepped: true,
+              enabled: () => !chapter?.enabled.value,
               move: selectIndex,
             })
           }

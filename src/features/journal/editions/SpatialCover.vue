@@ -72,7 +72,7 @@
             :aria-label="`${t('journal.selection.select')} ${i + 1}: ${post.title}`"
             :aria-pressed="selectedId === post.id"
             :class="{ active: selectedId === post.id }"
-            @click="selectedId = post.id"
+            @click="selectSheet(post.id)"
           >
             <span />
           </button>

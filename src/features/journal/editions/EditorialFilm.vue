@@ -29,7 +29,7 @@
       role="region"
       :aria-label="t('journal.film.region')"
       tabindex="0"
-      @scroll.passive="schedule"
+      @scroll.passive="scroll"
       @keydown="keydown"
       @pointerdown="pointerdown"
       @pointermove="pointermove"
@@ -100,7 +100,7 @@ const {
   progress,
   canScroll,
   dragging,
-  schedule,
+  scroll,
   step,
   scrub,
   keydown,

@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import EditorialFilm from '../editions/EditorialFilm.vue'
 import type { JournalPost } from '../models'
 import { createJournalTestI18n } from './journalTestI18n'
+import { nextTick, ref } from 'vue'
+import { chapterKey, type ChapterContext } from '../editions/chapterContext'
 
 vi.mock('@/utils/modernAPIs', () => ({
   createResizeObserver: () => ({ observe: vi.fn(), disconnect: vi.fn() }),
@@ -163,11 +165,12 @@ describe('EditorialFilm entering the reading viewport', () => {
   })
 })
 
-async function renderFilm() {
+async function renderFilm(chapter?: ChapterContext) {
   wrapper = mount(EditorialFilm, {
     attachTo: document.body,
     props: { posts },
     global: {
+      provide: chapter ? { [chapterKey as symbol]: chapter } : {},
       plugins: [createJournalTestI18n('en')],
       stubs: { JournalImage: true, JournalIcon: true },
     },
@@ -177,6 +180,34 @@ async function renderFilm() {
 }
 
 describe('EditorialFilm without visibility or animation-frame notifications', () => {
+  it('follows the chapter timeline without consuming wheel gestures and retains keyboard navigation', async () => {
+    const progress = ref(0)
+    const chapter: ChapterContext = {
+      enabled: ref(true),
+      height: ref(700),
+      progress,
+      travel: ref(0),
+      seek: vi.fn(),
+    }
+    const film = await renderFilm(chapter)
+    const track = film.get<HTMLElement>('.film-track')
+    expect(chapter.travel.value).toBe(472)
+    progress.value = 0.5
+    await nextTick()
+    expect(track.element.scrollLeft).toBe(236)
+    progress.value = 1
+    await nextTick()
+    expect(track.element.scrollLeft).toBe(472)
+    progress.value = 0
+    await nextTick()
+    expect(track.element.scrollLeft).toBe(0)
+    const wheel = new WheelEvent('wheel', { deltaY: 120, cancelable: true, bubbles: true })
+    track.element.dispatchEvent(wheel)
+    expect(wheel.defaultPrevented).toBe(false)
+    await track.trigger('keydown', { key: 'End' })
+    expect(chapter.seek).toHaveBeenCalled()
+    expect(document.activeElement).toBe(film.findAll('.film-photo')[2]!.element)
+  })
   it('enables reduced-motion browsing as soon as the album is mounted', async () => {
     const film = await renderFilm()
     expect(film.get('.film-heading button:last-child').attributes('disabled')).toBeUndefined()

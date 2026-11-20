@@ -1,130 +1,138 @@
 <template>
-  <div class="archive-page archive-home next-home">
-    <header class="next-desk-header">
-      <h1 class="next-desk-mark" aria-label="MomiChan Next">
-        <MotionTitle text="next" /><span aria-hidden="true">↗</span>
-      </h1>
-      <form class="next-searchbar" role="search" @submit.prevent="commitSearch">
-        <JournalIcon name="search" />
-        <input
-          ref="searchInput"
-          v-model="search"
-          type="search"
-          :placeholder="t('journal.search.inputLabel')"
-          :aria-label="t('journal.search.inputLabel')"
-          @input="scheduleSearch"
-        />
-        <button type="submit" class="icon-button" :aria-label="t('common.search')">
-          <JournalIcon name="arrow" />
-        </button>
-        <kbd aria-hidden="true">Ctrl K</kbd>
-      </form>
-    </header>
-    <NextCollection
-      id="next-collection"
-      :posts="posts"
-      :all-posts="allPosts"
-      :saved-posts="savedPosts"
-      :platform="platform"
-      :sort="sort"
-      :query="query"
-      :layout="layout"
-      :has-more="hasMore"
-      :state="states.posts"
-      v-bind="retry ? { retry } : {}"
-      @change="change"
-      @reset="resetFilters"
-      @retry="$emit('retry')"
-      @more="$emit('more')"
-      @adjust="searchInput?.focus()"
-      @explore="router.push('/explore')"
-      @open="$emit('open', $event)"
-      @save="(post, event) => $emit('save', post, event)"
-    />
-    <div class="next-collection-footer">
-      <RouterLink class="next-all-posts text-button" to="/explore">
-        {{ t('journal.home.allPosts') }}<JournalIcon name="arrow-up-right" />
-      </RouterLink>
-    </div>
-    <NextStage v-if="!query.trim() && allPosts.length" :posts="allPosts" />
-    <div class="archive-bottom-grid">
-      <section class="archive-panel" data-reveal>
-        <div class="panel-heading">
-          <h2>{{ t('journal.home.monthEvents', { month: monthName }) }}</h2>
-          <RouterLink to="/schedule"
-            ><JournalIcon name="arrow-up-right" /><span class="sr-only">{{
-              t('journal.home.openCalendar')
-            }}</span></RouterLink
-          >
-        </div>
-        <div class="archive-agenda">
-          <article v-for="event in events.slice(0, 4)" :key="event.id">
-            <span class="agenda-day"
-              >{{ String(event.day).padStart(2, '0')
-              }}<small>{{ eventWeekday(event.date) }}</small></span
-            ><button :data-event="event.id">
-              <b>{{ event.title }}</b><small
-                >{{ journalEventTimeLabel(event, t) }} · {{ event.venue }}</small
-              ></button
-            ><button
-              class="icon-button remind"
-              :data-remind="event.id"
-              :aria-pressed="reminders.has(event.id)"
-              :aria-label="
-                t(
-                  reminders.has(event.id)
-                    ? 'journal.actions.removeReminderNamed'
-                    : 'journal.actions.remindNamed',
-                  { title: event.title }
-                )
-              "
-            >
-              <JournalIcon :name="reminders.has(event.id) ? 'check' : 'plus'" />
-            </button>
-          </article>
-          <JournalResourceState
-            :state="states.events"
-            label="日程"
-            label-key="nav.schedule"
-            :empty="!events.length"
-            empty-message="本月暂无日程"
-            empty-message-key="journal.calendar.noneThisMonth"
-            @retry="$emit('retry')"
+  <div class="archive-page archive-home next-home immersive-home">
+    <ImmersiveChapter id="next-index" kind="index" opening>
+      <header class="next-desk-header">
+        <h1 class="next-desk-mark" aria-label="MomiChan Next">
+          <MotionTitle text="next" /><span aria-hidden="true">↗</span>
+        </h1>
+        <form class="next-searchbar" role="search" @submit.prevent="commitSearch">
+          <JournalIcon name="search" />
+          <input
+            ref="searchInput"
+            v-model="search"
+            type="search"
+            :placeholder="t('journal.search.inputLabel')"
+            :aria-label="t('journal.search.inputLabel')"
+            @input="scheduleSearch"
           />
-        </div>
-      </section>
-      <section class="archive-panel" data-reveal>
-        <div class="panel-heading">
-          <h2>{{ t('community.recentDiscussions') }}</h2>
-          <RouterLink to="/community"
-            ><JournalIcon name="arrow-up-right" /><span class="sr-only">{{
-              t('journal.home.openCommunity')
-            }}</span></RouterLink
-          >
-        </div>
-        <article
-          v-for="item in discussions.slice(0, 4)"
-          :key="item.id"
-          class="archive-discussion-row"
-        >
-          <span class="discussion-avatar">{{ item.avatar }}</span>
-          <div>
-            <button :data-discussion="item.id">{{ item.title }}</button><small
-              >{{ item.author }} · {{ journalCategoryLabel(item.category, t) }}</small
+          <button type="submit" class="icon-button" :aria-label="t('common.search')">
+            <JournalIcon name="arrow" />
+          </button>
+          <kbd aria-hidden="true">Ctrl K</kbd>
+        </form>
+      </header>
+      <NextCollection
+        id="next-collection"
+        :posts="posts"
+        :all-posts="allPosts"
+        :saved-posts="savedPosts"
+        :platform="platform"
+        :sort="sort"
+        :query="query"
+        :layout="layout"
+        :has-more="hasMore"
+        :state="states.posts"
+        v-bind="retry ? { retry } : {}"
+        @change="change"
+        @reset="resetFilters"
+        @retry="$emit('retry')"
+        @more="$emit('more')"
+        @adjust="searchInput?.focus()"
+        @explore="router.push('/explore')"
+        @open="$emit('open', $event)"
+        @save="(post, event) => $emit('save', post, event)"
+      />
+      <div class="next-collection-footer">
+        <RouterLink class="next-all-posts text-button" to="/explore">
+          {{ t('journal.home.allPosts') }}<JournalIcon name="arrow-up-right" />
+        </RouterLink>
+      </div>
+    </ImmersiveChapter>
+    <ImmersiveChapter v-if="!query.trim() && allPosts.length" id="next-featured" kind="stage">
+      <NextStage :posts="allPosts" />
+    </ImmersiveChapter>
+    <div class="archive-bottom-grid">
+      <ImmersiveChapter id="next-calendar" kind="calendar">
+        <section class="archive-panel" data-reveal>
+          <div class="panel-heading">
+            <h2>{{ t('journal.home.monthEvents', { month: monthName }) }}</h2>
+            <RouterLink to="/schedule"
+              ><JournalIcon name="arrow-up-right" /><span class="sr-only">{{
+                t('journal.home.openCalendar')
+              }}</span></RouterLink
             >
           </div>
-          <span>{{ item.replies }}<JournalIcon name="messages" /></span>
-        </article>
-        <JournalResourceState
-          :state="states.discussions"
-          label="讨论"
-          label-key="journal.nav.discussions"
-          :empty="!discussions.length"
-          empty-message="暂无讨论"
-          empty-message-key="journal.states.noDiscussions"
-          @retry="$emit('retry')"
-        />
-      </section>
+          <div class="archive-agenda">
+            <article v-for="event in events.slice(0, 4)" :key="event.id">
+              <span class="agenda-day"
+                >{{ String(event.day).padStart(2, '0')
+                }}<small>{{ eventWeekday(event.date) }}</small></span
+              ><button :data-event="event.id">
+                <b>{{ event.title }}</b><small
+                  >{{ journalEventTimeLabel(event, t) }} · {{ event.venue }}</small
+                ></button
+              ><button
+                class="icon-button remind"
+                :data-remind="event.id"
+                :aria-pressed="reminders.has(event.id)"
+                :aria-label="
+                  t(
+                    reminders.has(event.id)
+                      ? 'journal.actions.removeReminderNamed'
+                      : 'journal.actions.remindNamed',
+                    { title: event.title }
+                  )
+                "
+              >
+                <JournalIcon :name="reminders.has(event.id) ? 'check' : 'plus'" />
+              </button>
+            </article>
+            <JournalResourceState
+              :state="states.events"
+              label="日程"
+              label-key="nav.schedule"
+              :empty="!events.length"
+              empty-message="本月暂无日程"
+              empty-message-key="journal.calendar.noneThisMonth"
+              @retry="$emit('retry')"
+            />
+          </div>
+        </section>
+      </ImmersiveChapter>
+      <ImmersiveChapter id="next-community" kind="community">
+        <section class="archive-panel" data-reveal>
+          <div class="panel-heading">
+            <h2>{{ t('community.recentDiscussions') }}</h2>
+            <RouterLink to="/community"
+              ><JournalIcon name="arrow-up-right" /><span class="sr-only">{{
+                t('journal.home.openCommunity')
+              }}</span></RouterLink
+            >
+          </div>
+          <article
+            v-for="item in discussions.slice(0, 4)"
+            :key="item.id"
+            class="archive-discussion-row"
+          >
+            <span class="discussion-avatar">{{ item.avatar }}</span>
+            <div>
+              <button :data-discussion="item.id">{{ item.title }}</button><small
+                >{{ item.author }} · {{ journalCategoryLabel(item.category, t) }}</small
+              >
+            </div>
+            <span>{{ item.replies }}<JournalIcon name="messages" /></span>
+          </article>
+          <JournalResourceState
+            :state="states.discussions"
+            label="讨论"
+            label-key="journal.nav.discussions"
+            :empty="!discussions.length"
+            empty-message="暂无讨论"
+            empty-message-key="journal.states.noDiscussions"
+            @retry="$emit('retry')"
+          />
+        </section>
+      </ImmersiveChapter>
     </div>
   </div>
 </template>
@@ -138,6 +146,7 @@ import { useBrowseFilterFocus } from '../useBrowseFilterFocus'
 import JournalIcon from '../JournalIcon.vue'
 import JournalResourceState from '../JournalResourceState.vue'
 import NextStage from './NextStage.vue'
+import ImmersiveChapter from './ImmersiveChapter.vue'
 import MotionTitle from './MotionTitle.vue'
 import NextCollection from './NextCollection.vue'
 import type { JournalResourceStates } from '../resourceState'

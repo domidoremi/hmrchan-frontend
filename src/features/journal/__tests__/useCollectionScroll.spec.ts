@@ -2,6 +2,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useCollectionScroll } from '../editions/useCollectionScroll'
+import { chapterKey } from '../editions/chapterContext'
 
 let wrapper: VueWrapper | undefined
 afterEach(() => {
@@ -10,6 +11,39 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 describe('collection scroll preview', () => {
+  it('leaves vertical wheel browsing native inside an immersive chapter', () => {
+    const enabled = ref(true),
+      select = vi.fn()
+    wrapper = mount(
+      defineComponent({
+        setup() {
+          const root = ref<HTMLElement>()
+          useCollectionScroll(root, ref(0), () => 3, select)
+          return () => h('section', { ref: root }, [h('aside', { class: 'archive-inspector' })])
+        },
+      }),
+      { global: { provide: { [chapterKey as symbol]: { enabled } } } }
+    )
+    const inspector = wrapper.get('.archive-inspector').element
+    vi.spyOn(inspector, 'getBoundingClientRect').mockReturnValue({
+      left: 100,
+      right: 700,
+      top: 100,
+      bottom: 600,
+      width: 600,
+      height: 500,
+    } as DOMRect)
+    const event = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 400,
+      clientY: 300,
+      deltaY: 120,
+    })
+    inspector.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(false)
+    expect(select).not.toHaveBeenCalled()
+  })
   it('follows only wheel browsing over the list without moving keyboard focus', () => {
     const selected = ref(0),
       select = vi.fn((value: number) => {
