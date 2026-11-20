@@ -3,6 +3,7 @@
     v-if="selected"
     :ref="setRoot"
     class="spatial-cover"
+    :data-scrubbing="scrubbing"
     data-depth-scene
     :aria-label="t('home.latest')"
     @pointerenter="hovered = true"
@@ -20,42 +21,42 @@
           {{ String(items.length).padStart(2, '0') }}</span
         >
       </div>
-      <Transition name="cover-copy" mode="out-in"
-        ><div :key="selected.id" class="cover-article cover-story">
-          <div class="cover-source">
-            <span>{{
-              journalSourceLabel(
-                selected.platform,
-                platforms[selected.platform] || selected.platform,
-                t
-              )
-            }}</span><time>{{ journalPostTimeLabel(selected, t, locale) }}</time>
-          </div>
-          <h1>
-            <button :data-open="selected.id" :aria-label="selected.title">
-              <MotionTitle :text="selected.title" />
-            </button>
-          </h1>
-          <p v-if="selected.text && selected.text !== selected.title">{{ selected.text }}</p>
-          <button
-            v-if="selected.author"
-            class="cover-author"
-            :data-author-id="selected.authorId"
-            :data-author-query="selected.author"
-          >
-            <img :src="selected.avatar" alt="" width="28" height="28" /><span>{{
-              selected.author
-            }}</span>
+      <div
+        v-for="(post, i) in items"
+        :key="post.id"
+        class="cover-article cover-story"
+        :style="copyStyle(i)"
+        :inert="post.id !== selectedId || undefined"
+        :aria-hidden="post.id !== selectedId || undefined"
+      >
+        <div class="cover-source">
+          <span>{{
+            journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
+          }}</span><time>{{ journalPostTimeLabel(post, t, locale) }}</time>
+        </div>
+        <h1>
+          <button :data-open="post.id" :aria-label="post.title">
+            <MotionTitle :text="post.title" />
           </button>
-          <button
-            class="round-action"
-            :data-open="selected.id"
-            :aria-label="t('journal.selection.open')"
-            data-magnet
-          >
-            <span>{{ t('journal.selection.open') }}</span><JournalIcon name="arrow-up-right" />
-          </button></div
-      ></Transition>
+        </h1>
+        <p v-if="post.text && post.text !== post.title">{{ post.text }}</p>
+        <button
+          v-if="post.author"
+          class="cover-author"
+          :data-author-id="post.authorId"
+          :data-author-query="post.author"
+        >
+          <img :src="post.avatar" alt="" width="28" height="28" /><span>{{ post.author }}</span>
+        </button>
+        <button
+          class="round-action"
+          :data-open="post.id"
+          :aria-label="t('journal.selection.open')"
+          data-magnet
+        >
+          <span>{{ t('journal.selection.open') }}</span><JournalIcon name="arrow-up-right" />
+        </button>
+      </div>
       <div class="cover-controls">
         <button
           class="icon-button"
@@ -166,6 +167,8 @@ const {
   index,
   step,
   position,
+  copyStyle,
+  scrubbing,
   hovered,
   focused,
   paused,
@@ -180,8 +183,8 @@ function sheetStyle(i: number) {
   return {
     '--slot': offset,
     '--depth': Math.abs(offset),
-    zIndex: items.value.length - Math.abs(offset),
-    opacity: Math.abs(offset) > 2 ? 0 : 1,
+    zIndex: items.value.length - Math.round(Math.abs(offset)),
+    opacity: Math.min(1, Math.max(0, 3 - Math.abs(offset))),
     pointerEvents: Math.abs(offset) > 2 ? ('none' as const) : ('auto' as const),
   }
 }

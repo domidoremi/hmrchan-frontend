@@ -2,6 +2,7 @@ import { onBeforeUnmount, onMounted, provide, ref, watch, type Ref } from 'vue'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { chapterKey } from './chapterContext'
 import { chapterPosition } from './chapterScene'
+import { scrollHomeTo } from './useHomeScroll'
 
 export function useChapterScene(
   root: Ref<HTMLElement | undefined>,
@@ -14,16 +15,12 @@ export function useChapterScene(
     travel = ref(0)
   let top = 0,
     overflow = 0,
-    pinStart = 0,
-    canPin = false,
     frame = 0
   let resize: ResizeObserver | null = null
   let mutation: MutationObserver | undefined
-  let home: HTMLElement | null = null
-  let order = 0
   const lifetime = new AbortController()
   const styles = new Map<string, string>()
-  const duration = () => Math.max(height.value * 0.45, travel.value)
+  const duration = () => Math.max(0, travel.value)
   function property(name: string, value: string) {
     if (styles.get(name) === value) return
     styles.set(name, value)
@@ -48,22 +45,13 @@ export function useChapterScene(
     property('--chapter-top', `${top}px`)
     property('--chapter-height', `${height.value}px`)
     property('--chapter-bottom', `${bottom}px`)
-    home = element.closest('.immersive-home')
-    order = home ? [...home.querySelectorAll('.immersive-chapter')].indexOf(element) : 0
     enabled.value = height.value >= 360 && document.body.dataset['motion'] === 'full'
     element.dataset['sceneEnhanced'] = String(enabled.value)
+    element.dataset['scenePinned'] = String(enabled.value && duration() > 0)
     overflow = Math.max(0, content.value.offsetHeight - height.value)
     const inspector = content.value.querySelector<HTMLElement>('.archive-inspector')
-    canPin = Boolean(inspector && inspector.offsetHeight < height.value - 32)
-    pinStart = -16
-    for (
-      let node = inspector;
-      node && node !== content.value;
-      node = node.offsetParent as HTMLElement | null
-    ) {
-      pinStart += node.offsetTop
-    }
-    property('--chapter-run', `${enabled.value ? duration() + overflow : 0}px`)
+    if (inspector) inspector.dataset['canPin'] = String(inspector.offsetHeight < height.value - 32)
+    property('--chapter-run', `${enabled.value && duration() > 0 ? duration() + overflow : 0}px`)
     update()
   }
   function update() {
@@ -75,11 +63,8 @@ export function useChapterScene(
     property('--chapter-enter', String(enabled.value ? position.enter : 1))
     property('--chapter-leave', String(enabled.value ? position.leave : 0))
     property('--chapter-progress', String(enabled.value ? position.progress : 0))
-    property('--chapter-shift', `${enabled.value ? -position.shift : 0}px`)
-    property(
-      '--chapter-pin',
-      `${enabled.value && canPin ? Math.max(0, position.shift - pinStart) : 0}px`
-    )
+    property('--chapter-flow', String(enabled.value ? position.flow : 0.5))
+    property('--chapter-shift', `${enabled.value && duration() > 0 ? -position.shift : 0}px`)
     const state =
       rect.top >= innerHeight || rect.bottom <= top
         ? 'outside'
@@ -89,11 +74,6 @@ export function useChapterScene(
             ? 'leaving'
             : 'reading'
     if (element.dataset['sceneState'] !== state) element.dataset['sceneState'] = state
-    if (home && rect.top <= top + height.value * 0.5 && rect.bottom > top + height.value * 0.5) {
-      const phase = enabled.value ? (top - rect.top) / Math.max(1, rect.height) : 0
-      home.style.setProperty('--home-progress', String(order + Math.min(1, Math.max(0, phase))))
-      home.dataset['activeChapter'] = element.dataset['chapter']
-    }
     progress.value = position.progress
   }
   function schedule() {
@@ -105,33 +85,36 @@ export function useChapterScene(
   }
   function seek(value: number, smooth = false) {
     if (!enabled.value || !root.value) return
-    window.scrollTo({
-      top:
-        scrollY +
+    scrollHomeTo(
+      scrollY +
         root.value.getBoundingClientRect().top -
         top +
         overflow +
         Math.min(1, Math.max(0, value)) * duration(),
-      behavior: smooth ? 'smooth' : 'instant',
-    })
+      smooth
+    )
     schedule()
   }
   function focus(event: FocusEvent) {
     const target = event.target
-    if (!enabled.value || !root.value || target === root.value || !(target instanceof HTMLElement))
+    if (
+      !enabled.value ||
+      duration() <= 0 ||
+      !root.value ||
+      target === root.value ||
+      !(target instanceof HTMLElement)
+    )
       return
     const bounds = target.getBoundingClientRect()
     if (bounds.top >= top && bounds.bottom <= top + height.value) return
     const current = Math.max(0, Math.min(overflow, top - root.value.getBoundingClientRect().top))
     const delta = bounds.top < top ? bounds.top - top - 16 : bounds.bottom - top - height.value + 16
-    window.scrollTo({
-      top:
-        scrollY +
+    scrollHomeTo(
+      scrollY +
         root.value.getBoundingClientRect().top -
         top +
-        Math.max(0, Math.min(overflow, current + delta)),
-      behavior: 'instant',
-    })
+        Math.max(0, Math.min(overflow, current + delta))
+    )
     if (stage.value) stage.value.scrollTop = 0
     schedule()
   }

@@ -91,9 +91,9 @@ describe('SpatialCover public controls language', () => {
         i18n.global.t('video.pause')
       )
       expect(wrapper.get('.cover-pause').attributes('aria-pressed')).toBe('false')
-      expect(wrapper.get('.cover-article h1').text()).toBe(items[0]!.title)
-      expect(wrapper.get('.cover-article p').text()).toBe(items[0]!.text)
-      expect(wrapper.get('.cover-author').text()).toBe(items[0]!.author)
+      expect(wrapper.get('.cover-story:not([inert]) h1').text()).toBe(items[0]!.title)
+      expect(wrapper.get('.cover-story:not([inert]) p').text()).toBe(items[0]!.text)
+      expect(wrapper.get('.cover-story:not([inert]) .cover-author').text()).toBe(items[0]!.author)
       expect(toRaw(wrapper.props('posts')[0])).toBe(items[0])
     }
   )
@@ -110,7 +110,7 @@ describe('SpatialCover public controls language', () => {
       const previous = wrapper.get('.cover-controls > button:first-child')
       const next = wrapper.get('.cover-controls > button:nth-of-type(2)')
       const second = wrapper.get('.cover-pagination button:nth-child(2)')
-      const time = wrapper.get('.cover-source time')
+      const time = wrapper.get('.cover-story:not([inert]) .cover-source time')
       const boundPost = wrapper.props('posts')[1]
       document.documentElement.lang = locale
       i18n.global.locale.value = locale
@@ -129,11 +129,11 @@ describe('SpatialCover public controls language', () => {
         `${i18n.global.t('journal.selection.select')} 2: ${items[1]!.title}`
       )
       expect(wrapper.get('[data-cover-id="second"]').classes()).toContain('is-current')
-      expect(wrapper.get('.cover-source time').element).toBe(time.element)
+      expect(wrapper.get('.cover-story:not([inert]) .cover-source time').element).toBe(time.element)
       expect(time.text()).toBe(i18n.global.t('common.minutesAgo', { n: 2 }))
-      expect(wrapper.get('.cover-article h1').text()).toBe(items[1]!.title)
-      expect(wrapper.get('.cover-article p').text()).toBe(items[1]!.text)
-      expect(wrapper.get('.cover-author').text()).toBe(items[1]!.author)
+      expect(wrapper.get('.cover-story:not([inert]) h1').text()).toBe(items[1]!.title)
+      expect(wrapper.get('.cover-story:not([inert]) p').text()).toBe(items[1]!.text)
+      expect(wrapper.get('.cover-story:not([inert]) .cover-author').text()).toBe(items[1]!.author)
       expect(wrapper.props('posts')[1]).toBe(boundPost)
       expect(toRaw(boundPost)).toBe(items[1])
       expect(items).toEqual(originalItems)

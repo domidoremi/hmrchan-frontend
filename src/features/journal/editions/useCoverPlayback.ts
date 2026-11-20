@@ -30,6 +30,8 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
   const blocked = ref(false),
     documentVisible = ref(!document.hidden)
   const lifetime = new AbortController()
+  const cursor = ref(0)
+  const scrubbing = computed(() => Boolean(chapter?.enabled.value))
   let timer: ReturnType<typeof setTimeout> | undefined
   let observer: IntersectionObserver | undefined
   let dialogObserver: MutationObserver | undefined
@@ -77,14 +79,25 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
   function position(i: number) {
     const length = items.value.length
     if (!length) return 0
+    if (scrubbing.value) return i - cursor.value
     const offset = (i - selection.index.value + length) % length
     return offset > length / 2 ? offset - length : offset
+  }
+  function copyStyle(i: number) {
+    const offset = position(i)
+    return {
+      '--copy-offset': scrubbing.value ? 0 : Math.max(-1, Math.min(1, offset)),
+      opacity: i === selection.index.value ? 1 : 0,
+      pointerEvents: i === selection.index.value ? ('auto' as const) : ('none' as const),
+    }
   }
   function selectSheet(id: string) {
     if (id === selection.selectedId.value) return
     selection.selectedId.value = id
-    if (chapter?.enabled.value)
-      chapter.seek(selection.index.value / Math.max(1, items.value.length - 1))
+    if (chapter?.enabled.value) {
+      if (paused.value) cursor.value = selection.index.value
+      chapter.seek(selection.index.value / Math.max(1, items.value.length - 1), true)
+    }
   }
   function step(direction: number) {
     const count = items.value.length
@@ -195,9 +208,10 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
       },
       { immediate: true }
     )
-    watch(chapter.progress, (value) => {
-      if (!chapter.enabled.value || !active.value || blocked.value || paused.value) return
-      const item = items.value[Math.round(value * (items.value.length - 1))]
+    watch([chapter.progress, chapter.enabled, active, blocked, paused], ([value, enabled]) => {
+      if (!enabled || !active.value || blocked.value || paused.value) return
+      cursor.value = value * Math.max(0, items.value.length - 1)
+      const item = items.value[Math.round(cursor.value)]
       if (item) selection.selectedId.value = item.id
     })
   }
@@ -213,6 +227,8 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     playing,
     hasEntered,
     position,
+    copyStyle,
+    scrubbing,
     selectSheet,
     focusOut,
     touchStart,

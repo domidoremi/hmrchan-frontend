@@ -242,8 +242,7 @@
     opacity 800ms,
     box-shadow 600ms;
 }
-.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-copy > .eyebrow,
-.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-entry {
+.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-copy {
   animation: next-copy-arrive 900ms var(--journal-ease) 180ms backwards;
 }
 .site-body[data-motion='full'] .journal-shell .next-desk-mark .motion-letter {

@@ -92,6 +92,17 @@ describe('recommendation playback', () => {
     await render(chapter)
     expect(playback.playing.value).toBe(false)
     expect(chapter.travel.value).toBe(840)
+    progress.value = 0.1
+    await nextTick()
+    expect(playback.position(0)).toBeCloseTo(-0.2)
+    expect(playback.position(1)).toBeCloseTo(0.8)
+    expect(playback.selectedId.value).toBe('first')
+    progress.value = 0.2
+    await nextTick()
+    expect(playback.position(0)).toBeCloseTo(-0.4)
+    expect(playback.selectedId.value).toBe('first')
+    expect(playback.copyStyle(0).opacity).toBe(1)
+    expect(playback.copyStyle(1).opacity).toBe(0)
     progress.value = 1
     await nextTick()
     expect(playback.selectedId.value).toBe('third')
@@ -100,9 +111,9 @@ describe('recommendation playback', () => {
     await nextTick()
     expect(playback.selectedId.value).toBe('second')
     playback.step(-1)
-    expect(chapter.seek).toHaveBeenCalledWith(0)
+    expect(chapter.seek).toHaveBeenCalledWith(0, true)
     playback.selectSheet('third')
-    expect(chapter.seek).toHaveBeenLastCalledWith(1)
+    expect(chapter.seek).toHaveBeenLastCalledWith(1, true)
     playback.paused.value = true
     progress.value = 0
     await nextTick()
