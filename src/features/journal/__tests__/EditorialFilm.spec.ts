@@ -66,6 +66,101 @@ afterEach(() => {
   if (originalScrollTo) Object.defineProperty(HTMLElement.prototype, 'scrollTo', originalScrollTo)
   else Reflect.deleteProperty(HTMLElement.prototype, 'scrollTo')
   delete document.body.dataset['motion']
+  vi.unstubAllGlobals()
+})
+
+describe('EditorialFilm entering the reading viewport', () => {
+  let sectionTop: number
+  let sectionHeight: number
+
+  async function layout() {
+    vi.stubGlobal('innerHeight', 900)
+    vi.stubGlobal('scrollY', 1000)
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+    sectionTop = 280
+    sectionHeight = 778
+    const film = await renderFilm()
+    const track = film.get<HTMLElement>('.film-track').element
+    const box = (top: number, height: number) =>
+      ({ top, bottom: top + height, height, left: 100, right: 600, width: 500 }) as DOMRect
+    vi.spyOn(film.element, 'getBoundingClientRect').mockImplementation(() =>
+      box(sectionTop, sectionHeight)
+    )
+    vi.spyOn(track, 'getBoundingClientRect').mockImplementation(() =>
+      box(sectionTop + 80, sectionHeight - 160)
+    )
+    vi.spyOn(film.get('.film-heading').element, 'getBoundingClientRect').mockImplementation(() =>
+      box(sectionTop + 18, 52)
+    )
+    vi.spyOn(film.get('.film-position').element, 'getBoundingClientRect').mockImplementation(() =>
+      box(sectionTop + sectionHeight - 62, 44)
+    )
+    const scroll = vi.spyOn(window, 'scrollTo').mockImplementation((options) => {
+      sectionTop -= (options as ScrollToOptions).top! - window.scrollY
+    })
+    const wheel = (deltaY = 120, clientX = 350) => {
+      const event = new WheelEvent('wheel', {
+        bubbles: true,
+        cancelable: true,
+        clientX,
+        clientY: Math.max(180, Math.min(700, sectionTop + 300)),
+        deltaY,
+      })
+      track.dispatchEvent(event)
+      return event
+    }
+    return { film, track, scroll, wheel }
+  }
+
+  it('keeps scrolling the page while the bottom information is still below the viewport', async () => {
+    const { track, scroll, wheel } = await layout()
+    expect(wheel().defaultPrevented).toBe(false)
+    expect(track.scrollLeft).toBe(0)
+    expect(scroll).not.toHaveBeenCalled()
+  })
+
+  it('finishes entering the panel before consuming the next gesture horizontally', async () => {
+    const { track, scroll, wheel } = await layout()
+    sectionTop = 100
+    sectionHeight = 900
+    expect(wheel().defaultPrevented).toBe(true)
+    expect(scroll).toHaveBeenCalledWith({ top: 1100, behavior: 'instant' })
+    expect(sectionTop).toBe(0)
+    expect(track.scrollLeft).toBe(0)
+    expect(wheel().defaultPrevented).toBe(true)
+    expect(track.scrollLeft).toBe(120)
+  })
+
+  it('releases at the first and last image and when the pointer uses the edge', async () => {
+    const { track, wheel } = await layout()
+    sectionTop = 0
+    expect(wheel(-120).defaultPrevented).toBe(false)
+    expect(wheel(120, 110).defaultPrevented).toBe(false)
+    track.scrollLeft = track.scrollWidth - track.clientWidth
+    expect(wheel().defaultPrevented).toBe(false)
+  })
+
+  it('never captures vertical browsing when a short viewport cannot display the panel', async () => {
+    const { track, scroll, wheel } = await layout()
+    vi.stubGlobal('innerHeight', 400)
+    sectionTop = 40
+    sectionHeight = 432
+    expect(wheel().defaultPrevented).toBe(false)
+    expect(track.scrollLeft).toBe(0)
+    expect(scroll).not.toHaveBeenCalled()
+  })
+
+  it('aligns when returning from below without wrapping at the first image', async () => {
+    const { track, scroll, wheel } = await layout()
+    sectionHeight = 900
+    sectionTop = -100
+    track.scrollLeft = 200
+    expect(wheel(-120).defaultPrevented).toBe(true)
+    expect(scroll).toHaveBeenCalledWith({ top: 900, behavior: 'instant' })
+    expect(track.scrollLeft).toBe(200)
+    expect(wheel(-120).defaultPrevented).toBe(true)
+    expect(track.scrollLeft).toBe(80)
+  })
 })
 
 async function renderFilm() {

@@ -1,6 +1,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import { createResizeObserver, createVisibilityObserver } from '@/utils/modernAPIs'
 import { createWheelRegion } from './wheelRegion'
+import { createFilmViewport } from './filmViewport'
 import type { JournalPost } from '../models'
 
 export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
@@ -16,6 +17,7 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     suppressUntil = 0
   let wheelHandler: ((event: WheelEvent) => void) | undefined
   let wheelEnd: ReturnType<typeof setTimeout> | undefined
+  let viewport: ReturnType<typeof createFilmViewport> | undefined
   let pointer: { id: number; x: number; y: number; left: number } | undefined
   const cards = () => [...(track.value?.querySelectorAll<HTMLElement>('.film-frame') || [])]
   const behavior = (): ScrollBehavior =>
@@ -56,6 +58,10 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
       return
     }
     if (!frame) frame = requestAnimationFrame(measure)
+  }
+  function resizeFilm() {
+    viewport?.refresh()
+    schedule()
   }
   function go(next: number, focus = false) {
     const element = track.value,
@@ -162,7 +168,7 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     }
   )
   onMounted(() => {
-    resize = createResizeObserver(schedule)
+    resize = createResizeObserver(resizeFilm)
     visibility = createVisibilityObserver(
       ([entry]) => {
         visible = Boolean(entry?.isIntersecting)
@@ -172,12 +178,16 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     )
     if (track.value) {
       const element = track.value
+      viewport = createFilmViewport(element)
+      viewport.refresh()
+      viewport.chrome.forEach((item) => resize?.observe(item))
       wheelHandler = createWheelRegion({
         element,
         position: () => element.scrollLeft,
         maximum: () => element.scrollWidth - element.clientWidth,
-        enabled: () => !dragging.value,
+        enabled: (event) => !dragging.value && viewport!.canBrowse(event),
         move: (left) => {
+          if (viewport!.align()) return
           element.classList.add('is-wheel-scrolling')
           element.scrollTo({ left, behavior: 'instant' })
           schedule()
@@ -193,6 +203,7 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
       visibility.observe(track.value)
     }
     document.addEventListener('journalmotionchange', schedule)
+    window.addEventListener('resize', resizeFilm)
     schedule()
   })
   onBeforeUnmount(() => {
@@ -202,6 +213,7 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     resize?.disconnect()
     visibility?.disconnect()
     document.removeEventListener('journalmotionchange', schedule)
+    window.removeEventListener('resize', resizeFilm)
   })
   function setTrack(element: unknown) {
     track.value = element instanceof HTMLElement ? element : undefined

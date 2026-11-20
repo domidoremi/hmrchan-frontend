@@ -60,8 +60,12 @@ function go(id: string) {
   if (!element) return
   active.value = id
   element.focus({ preventScroll: true })
-  element.scrollIntoView({
-    block: 'start',
+  const nav = directory.value
+  const offset = nav
+    ? (Number.parseFloat(getComputedStyle(nav).top) || 0) + nav.getBoundingClientRect().height
+    : 0
+  window.scrollTo({
+    top: window.scrollY + element.getBoundingClientRect().top - offset,
     behavior: document.body.dataset['motion'] === 'full' ? 'smooth' : 'instant',
   })
 }
