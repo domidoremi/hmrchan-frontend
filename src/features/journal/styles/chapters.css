@@ -22,7 +22,7 @@
 .site-body .journal-shell .chapter-surface {
   position: relative;
   min-block-size: var(--chapter-height);
-  background: var(--canvas);
+  background: transparent;
   isolation: isolate;
 }
 .site-body .journal-shell .chapter-content {
@@ -61,44 +61,6 @@
 .site-body .journal-shell [data-scene-enhanced='true'] .month-poster {
   translate: calc((var(--chapter-enter) - 1) * 3rem) 0;
   rotate: calc((1 - var(--chapter-enter) + var(--chapter-leave)) * -3deg);
-}
-.site-body .journal-shell .chapter-atmosphere {
-  position: absolute;
-  inset: 0;
-  overflow: clip;
-  pointer-events: none;
-  z-index: -1;
-}
-.site-body .journal-shell .chapter-atmosphere i {
-  position: absolute;
-  inset: -15% -10% 20% 30%;
-  border-radius: 50%;
-  background: radial-gradient(
-    ellipse,
-    color-mix(in srgb, var(--accent) 9%, transparent),
-    transparent 68%
-  );
-  transform: rotate(-20deg);
-}
-.site-body .journal-shell .chapter-atmosphere i + i {
-  inset: 30% 30% -25% -20%;
-  opacity: 0.6;
-}
-.site-body[data-motion='full'] .journal-shell [data-scene-enhanced='true'] .chapter-atmosphere i {
-  animation: chapter-drift 16s ease-in-out infinite alternate;
-  animation-play-state: var(--chapter-play, running);
-}
-.site-body[data-motion='full']
-  .journal-shell
-  [data-scene-enhanced='true']
-  .chapter-atmosphere
-  i
-  + i {
-  animation-delay: -9s;
-  animation-direction: alternate-reverse;
-}
-.site-body .journal-shell [data-scene-state='outside'] {
-  --chapter-play: paused;
 }
 .site-body .journal-shell .immersive-home .editorial-contents {
   margin-block: 0;
@@ -192,14 +154,6 @@
 .site-body .journal-shell .next-home section.immersive-chapter {
   --chapter-turn: -4deg;
 }
-.site-body .journal-shell .next-home .chapter-atmosphere i {
-  border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
-  background: radial-gradient(
-    ellipse,
-    color-mix(in srgb, var(--accent) 12%, transparent),
-    transparent 70%
-  );
-}
 .site-body .journal-shell .immersive-chapter .next-stage {
   margin: 0;
   min-block-size: calc(var(--chapter-height) - 4rem);
@@ -236,45 +190,6 @@
 .site-body .journal-shell .chapter-stage > .archive-selection-dock {
   position: absolute;
   inset-block-end: 1rem;
-}
-/* Scene geometry complements each theme without changing its contrast tokens. */
-html[data-preset='minimal-editorial'] .site-body .journal-shell .immersive-chapter {
-  --chapter-turn: 0deg;
-}
-html[data-preset='minimal-editorial'] .site-body .journal-shell .chapter-atmosphere i {
-  border-radius: 0;
-  background: linear-gradient(
-    110deg,
-    transparent 35%,
-    color-mix(in srgb, var(--accent) 7%, transparent) 50%,
-    transparent 65%
-  );
-}
-html[data-preset='fluent-soft'] .site-body .journal-shell .chapter-surface {
-  border-start-start-radius: calc(var(--theme-radius) * (1 - var(--chapter-enter)));
-  border-start-end-radius: calc(var(--theme-radius) * (1 - var(--chapter-enter)));
-}
-html[data-preset='organic-natural'] .site-body .journal-shell .chapter-atmosphere i {
-  border-radius: 38% 62% 70% 30% / 60% 35% 65% 40%;
-  border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
-}
-html[data-preset='gradient-narrative'] .site-body .journal-shell .chapter-atmosphere i {
-  background: conic-gradient(
-    from 45deg,
-    transparent,
-    color-mix(in srgb, var(--accent) 12%, transparent),
-    transparent,
-    var(--accent-soft),
-    transparent
-  );
-}
-@keyframes chapter-drift {
-  from {
-    transform: translate3d(-3%, -2%, 0) rotate(-15deg) scale(0.96);
-  }
-  to {
-    transform: translate3d(4%, 4%, 0) rotate(12deg) scale(1.08);
-  }
 }
 @media (max-width: 800px) {
   .site-body .journal-shell .immersive-home,

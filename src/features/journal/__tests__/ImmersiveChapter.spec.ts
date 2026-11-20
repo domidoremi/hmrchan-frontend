@@ -139,6 +139,27 @@ describe('immersive document chapters', () => {
     await vi.advanceTimersByTimeAsync(20)
     expect(context.progress.value).toBeCloseTo(1)
   })
+  it('reveals a preview before pinning it and releases previews taller than the viewport', async () => {
+    const chapter = await render()
+    const content = chapter.querySelector<HTMLElement>('.chapter-content')!
+    const inspector = document.createElement('aside')
+    inspector.className = 'archive-inspector'
+    content.append(inspector)
+    let previewHeight = 400
+    Object.defineProperties(inspector, {
+      offsetHeight: { get: () => previewHeight },
+      offsetTop: { get: () => 300 },
+      offsetParent: { get: () => content },
+    })
+    window.dispatchEvent(new Event('resize'))
+    await scrollTo(1000)
+    expect(chapter.style.getPropertyValue('--chapter-pin')).toBe('0px')
+    await scrollTo(1300)
+    expect(chapter.style.getPropertyValue('--chapter-pin')).toBe('138px')
+    previewHeight = 900
+    window.dispatchEvent(new Event('resize'))
+    expect(chapter.style.getPropertyValue('--chapter-pin')).toBe('0px')
+  })
   it('remeasures changed content and removes observers and pending frames on unmount', async () => {
     const chapter = await render()
     const oldRun = chapter.style.getPropertyValue('--chapter-run')

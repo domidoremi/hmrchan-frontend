@@ -15,11 +15,28 @@ afterEach(() => {
   delete document.body.dataset.motionPreference
 })
 describe('journal motion preferences', () => {
+  it.each(['', null, undefined, 'invalid'])(
+    'starts with full motion for an unset or invalid choice (%s)',
+    (stored) => {
+      const save = vi.fn()
+      const preference = createMotionPreference({
+        read: () => stored,
+        save,
+        changed: vi.fn(),
+        signal: lifetime.signal,
+      })
+      expect(preference.get()).toBe('full')
+      expect(preference.choice()).toBe('full')
+      media.dispatchEvent(new Event('change'))
+      expect(document.body.dataset.motion).toBe('full')
+      expect(save).not.toHaveBeenCalled()
+    }
+  )
   it('follows system changes until the visitor makes an explicit choice', () => {
     const save = vi.fn(),
       changed = vi.fn()
     const preference = createMotionPreference({
-      read: () => '',
+      read: () => 'auto',
       save,
       changed,
       signal: lifetime.signal,
@@ -47,6 +64,21 @@ describe('journal motion preferences', () => {
     document.dispatchEvent(new CustomEvent('journalmotionrequest', { detail: 'reduced' }))
     media.dispatchEvent(new Event('change'))
     expect(changed).toHaveBeenCalledTimes(1)
+  })
+  it('preserves reduced motion across visits and resets removed preferences to full', () => {
+    const read = vi.fn().mockReturnValue('reduced')
+    const preference = createMotionPreference({
+      read,
+      save: vi.fn(),
+      changed: vi.fn(),
+      signal: lifetime.signal,
+    })
+    expect(preference.get()).toBe('reduced')
+    read.mockReturnValue('')
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'momichan-journal:presentation-motion', newValue: null })
+    )
+    expect(preference.get()).toBe('full')
   })
   it('follows the current system preference again after restoring automatic motion', () => {
     const save = vi.fn()

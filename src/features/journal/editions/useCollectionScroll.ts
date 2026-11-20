@@ -21,6 +21,8 @@ export function useCollectionScroll(
       (event) => {
         const target = (event.target as Element).closest<HTMLElement>('.archive-inspector')
         if (target) {
+          pointerX = -1
+          pointerY = -1
           if (target !== inspector) {
             inspector = target
             wheel = createWheelRegion({

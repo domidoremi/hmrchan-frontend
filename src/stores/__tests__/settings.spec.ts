@@ -3,6 +3,7 @@ import { createApp, nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useSettingsStore } from '../settings'
+import { DEFAULT_APPEARANCE_PRESET } from '@/config/appearance'
 
 describe('Settings Store', () => {
   beforeEach(() => {
@@ -14,6 +15,16 @@ describe('Settings Store', () => {
     const store = useSettingsStore()
 
     expect(store.settings.appUpdateStrategy).toBe('public-idle-refresh')
+  })
+  it('enables complete motion by default and after reset, while preserving a selected reduction', async () => {
+    const store = useSettingsStore()
+    expect(store.motionMode).toBe('expressive')
+    store.setAnimationIntensity('reduced')
+    await nextTick()
+    expect(store.motionMode).toBe('reduced')
+    store.resetSettings()
+    expect(store.settings.enableAnimations).toBe(true)
+    expect(store.motionMode).toBe('expressive')
   })
 
   it('applies backend preferences without overwriting local-only settings', () => {
@@ -97,7 +108,7 @@ describe('Settings Store', () => {
   it('keeps retired appearance fields out of new settings', () => {
     const store = useSettingsStore()
 
-    expect(store.settings.appearancePreset).toBe('minimal-editorial')
+    expect(store.settings.appearancePreset).toBe(DEFAULT_APPEARANCE_PRESET)
     expect('densityMode' in store.settings).toBe(false)
     expect('contrastMode' in store.settings).toBe(false)
     expect('textureLevel' in store.settings).toBe(false)
@@ -211,7 +222,7 @@ describe('Settings Store', () => {
     legacySnapshot.appearancePreset = undefined
     await nextTick()
 
-    expect(store.settings.appearancePreset).toBe('minimal-editorial')
+    expect(store.settings.appearancePreset).toBe(DEFAULT_APPEARANCE_PRESET)
     expect('uiStyle' in store.settings).toBe(false)
   })
 

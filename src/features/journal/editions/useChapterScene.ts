@@ -6,8 +6,7 @@ import { chapterPosition } from './chapterScene'
 export function useChapterScene(
   root: Ref<HTMLElement | undefined>,
   stage: Ref<HTMLElement | undefined>,
-  content: Ref<HTMLElement | undefined>,
-  opening: boolean
+  content: Ref<HTMLElement | undefined>
 ) {
   const enabled = ref(false),
     height = ref(0),
@@ -15,9 +14,13 @@ export function useChapterScene(
     travel = ref(0)
   let top = 0,
     overflow = 0,
+    pinStart = 0,
+    canPin = false,
     frame = 0
   let resize: ResizeObserver | null = null
   let mutation: MutationObserver | undefined
+  let home: HTMLElement | null = null
+  let order = 0
   const lifetime = new AbortController()
   const styles = new Map<string, string>()
   const duration = () => Math.max(height.value * 0.45, travel.value)
@@ -35,7 +38,7 @@ export function useChapterScene(
     const mobile = shell?.querySelector('.mobile-navigation')?.getBoundingClientRect()
     const headerStyle = header && getComputedStyle(header)
     top = (header?.offsetHeight ?? 0) + (Number.parseFloat(headerStyle?.top ?? '') || 0)
-    if (!opening && directory)
+    if (directory)
       top = Math.max(
         top,
         (Number.parseFloat(getComputedStyle(directory).top) || 0) + directory.offsetHeight
@@ -45,9 +48,21 @@ export function useChapterScene(
     property('--chapter-top', `${top}px`)
     property('--chapter-height', `${height.value}px`)
     property('--chapter-bottom', `${bottom}px`)
+    home = element.closest('.immersive-home')
+    order = home ? [...home.querySelectorAll('.immersive-chapter')].indexOf(element) : 0
     enabled.value = height.value >= 360 && document.body.dataset['motion'] === 'full'
     element.dataset['sceneEnhanced'] = String(enabled.value)
     overflow = Math.max(0, content.value.offsetHeight - height.value)
+    const inspector = content.value.querySelector<HTMLElement>('.archive-inspector')
+    canPin = Boolean(inspector && inspector.offsetHeight < height.value - 32)
+    pinStart = -16
+    for (
+      let node = inspector;
+      node && node !== content.value;
+      node = node.offsetParent as HTMLElement | null
+    ) {
+      pinStart += node.offsetTop
+    }
     property('--chapter-run', `${enabled.value ? duration() + overflow : 0}px`)
     update()
   }
@@ -59,7 +74,12 @@ export function useChapterScene(
     const position = chapterPosition(top - rect.top, overflow, duration(), height.value)
     property('--chapter-enter', String(enabled.value ? position.enter : 1))
     property('--chapter-leave', String(enabled.value ? position.leave : 0))
+    property('--chapter-progress', String(enabled.value ? position.progress : 0))
     property('--chapter-shift', `${enabled.value ? -position.shift : 0}px`)
+    property(
+      '--chapter-pin',
+      `${enabled.value && canPin ? Math.max(0, position.shift - pinStart) : 0}px`
+    )
     const state =
       rect.top >= innerHeight || rect.bottom <= top
         ? 'outside'
@@ -69,6 +89,11 @@ export function useChapterScene(
             ? 'leaving'
             : 'reading'
     if (element.dataset['sceneState'] !== state) element.dataset['sceneState'] = state
+    if (home && rect.top <= top + height.value * 0.5 && rect.bottom > top + height.value * 0.5) {
+      const phase = enabled.value ? (top - rect.top) / Math.max(1, rect.height) : 0
+      home.style.setProperty('--home-progress', String(order + Math.min(1, Math.max(0, phase))))
+      home.dataset['activeChapter'] = element.dataset['chapter']
+    }
     progress.value = position.progress
   }
   function schedule() {

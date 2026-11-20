@@ -44,7 +44,7 @@ const defaultSettings: Settings = {
   dataCollection: false,
   personalizedContent: false,
   defaultSort: 'newest',
-  animationIntensity: 'normal',
+  animationIntensity: 'full',
   postDetailViewMode: 'stream',
   appearancePreset: DEFAULT_APPEARANCE_PRESET,
   appUpdateStrategy: 'public-idle-refresh',
@@ -117,6 +117,9 @@ export const useSettingsStore = defineStore(
     const settings = ref<Settings>(createDefaultSettings())
 
     nextTick(() => {
+      if (!settings.value.animationIntensity) {
+        settings.value.animationIntensity = defaultSettings.animationIntensity
+      }
       if (!settings.value.appearancePreset)
         settings.value.appearancePreset = DEFAULT_APPEARANCE_PRESET
       if (settings.value.cookieConsent === undefined) settings.value.cookieConsent = null

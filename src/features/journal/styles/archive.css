@@ -464,6 +464,8 @@ body.site-body.next-body {
 }
 .site-body .journal-shell .preview-face {
   position: relative;
+  /* Keep transformed controls on the interactive face of the 3D stack. */
+  isolation: isolate;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 5px;

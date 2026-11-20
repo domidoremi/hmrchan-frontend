@@ -10,6 +10,7 @@ import type { JournalPost } from '../models'
 import { createJournalTestI18n } from './journalTestI18n'
 
 vi.mock('@/utils/modernAPIs', () => ({
+  createResizeObserver: () => null,
   createVisibilityObserver: () => ({
     observe: vi.fn(),
     unobserve: vi.fn(),
