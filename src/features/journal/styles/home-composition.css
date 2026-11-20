@@ -1,11 +1,9 @@
 /* One surface connects the chapters; content and light share document progress. */
 .site-body .journal-shell .immersive-home {
-  --home-progress: 0;
   --composition-gap: clamp(1.25rem, 3vw, 3rem);
   --composition-rule: color-mix(in srgb, var(--accent) 24%, transparent);
   --composition-curve: 1.25rem;
   --composition-distance: 3rem;
-  --composition-angle: 2deg;
   --composition-duration: 14s;
   --composition-light: 12%;
   --composition-orbit: 0.25;
@@ -41,8 +39,6 @@
 .home-orbit {
   position: absolute;
   inset: -10%;
-  transform: translate3d(calc(var(--home-progress) * -3%), calc(var(--home-progress) * 2%), 0)
-    rotate(calc(var(--home-progress) * 12deg));
 }
 .home-light i {
   position: absolute;
@@ -168,14 +164,6 @@
     calc(
       (1 - var(--chapter-enter)) * var(--composition-distance) * 0.6 - var(--chapter-leave) * 1.5rem
     );
-}
-.site-body
-  .journal-shell
-  .immersive-home
-  [data-scene-enhanced='true']
-  :is(.cover-scene, .next-stage-scene) {
-  translate: calc((var(--chapter-flow) - 0.5) * -2rem) calc((var(--chapter-flow) - 0.5) * -3rem);
-  scale: calc(0.95 + var(--chapter-enter) * 0.05 - var(--chapter-leave) * 0.06);
 }
 .site-body .journal-shell .immersive-home .journal-masthead {
   display: flex;
@@ -307,7 +295,6 @@
 /* Next has a curved instrument rail and one continuous, luminous workspace. */
 .site-body .journal-shell .next-home.immersive-home {
   --composition-distance: 5rem;
-  --composition-angle: -5deg;
   --composition-light: 23%;
   --composition-orbit: 0.4;
 }
@@ -494,39 +481,10 @@
   translate: calc(var(--chapter-flow) * -2rem) calc(var(--chapter-flow) * -2rem);
   scale: calc(1 - var(--chapter-flow) * 0.12);
 }
-.site-body .journal-shell [data-scene-enhanced='true'] .home-reading-grid .post-card {
-  translate: 0 calc(var(--view-offset, 0) * 2.5rem);
-}
-.site-body .journal-shell [data-scene-enhanced='true'] .home-reading-grid .post-card:nth-child(2n) {
-  translate: 0 calc(var(--view-offset, 0) * -2.5rem);
-}
-.site-body .journal-shell [data-scene-enhanced='true'] .month-poster {
-  translate: calc(var(--view-offset, 0) * -2rem) calc(var(--view-offset, 0) * 3rem);
-  rotate: calc(var(--view-offset, 0) * -4deg);
-  scale: calc(1 + var(--view-offset, 0) * 0.06);
-}
-.site-body
-  .journal-shell
-  [data-scene-enhanced='true']
-  :is(.editorial-discussion, .archive-discussion-row, .archive-agenda article) {
-  translate: calc(var(--view-offset, 0) * 2rem) 0;
-}
 .site-body .journal-shell .immersive-home .editorial-film {
   border-radius: calc((1 - var(--chapter-enter)) * 5rem) calc((1 - var(--chapter-enter)) * 5rem)
     calc(var(--chapter-leave) * 5rem) calc(var(--chapter-leave) * 5rem);
   overflow: clip;
-}
-@media (max-width: 560px) {
-  .site-body .journal-shell [data-scene-enhanced='true'] .home-reading-grid .post-card {
-    translate: 0 calc(var(--view-offset, 0) * 1rem);
-  }
-  .site-body
-    .journal-shell
-    [data-scene-enhanced='true']
-    .home-reading-grid
-    .post-card:nth-child(2n) {
-    translate: 0 calc(var(--view-offset, 0) * -1rem);
-  }
 }
 @media (max-width: 800px) {
   .site-body .journal-shell .immersive-home {
